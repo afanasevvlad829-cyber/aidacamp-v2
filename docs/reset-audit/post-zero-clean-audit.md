@@ -22,6 +22,7 @@ Model: dist-centric runtime reset-cleanup
 - smoke: PASS
 - quality-check: FAIL (known dist line threshold)
 - quality-gate: FAIL (known baseline mismatch on dist metrics)
+- proof: `docs/reset-audit/phase-checks/phase-9-rerun-20260408_103605.md`
 
 ## Architecture verdict (current wave)
 - Runtime model: DIST-CENTRIC CONFIRMED
@@ -29,3 +30,6 @@ Model: dist-centric runtime reset-cleanup
 - Legacy-active clusters: MAPPED, partially reduced in prior passes
 - Compat layers: CONFIRMED
 - Next simplification wave: required for measurable debt reduction
+
+## Phase 9 status
+- COMPLETE (comparative audit snapshot finalized for current wave)

@@ -27,6 +27,7 @@ Program model: dist-centric runtime with source-fed artifacts
 | 6 | Quality gate realignment | IN PROGRESS | `docs/reset-audit/phase-6-quality-gate-realignment.md` | rerun proof: `docs/reset-audit/phase-checks/phase-6-rerun-20260408_102755.md` |
 | 7 | Source vs output discipline audit | IN PROGRESS | `docs/reset-audit/phase-7-source-output-discipline.md` | rerun proof: `docs/reset-audit/phase-checks/phase-7-rerun-20260408_102946.md` |
 | 8 | Final cleanup pass (current wave) | COMPLETE | `docs/reset-audit/phase-8-final-cleanup.md`, `docs/reset-audit/delete-manifest.md` | rerun proof: `docs/reset-audit/phase-checks/phase-8-rerun-20260408_103346.md` |
+| 9 | Final comparative audit (current wave) | COMPLETE | `docs/reset-audit/post-zero-clean-audit.md`, `docs/reset-audit/zero-clean-final-report.md` | rerun proof: `docs/reset-audit/phase-checks/phase-9-rerun-20260408_103605.md` |
 
 ## Known Gates (not introduced by phases 0-2)
 - `dist_max_line_length` above strict threshold.
@@ -57,3 +58,11 @@ Program model: dist-centric runtime with source-fed artifacts
 - quality-gate: FAIL (known dist-threshold class)
 - no new destructive deletion in this wave; delete scope unchanged from already-proven Phase 5 set
 - rerun file: `docs/reset-audit/phase-checks/phase-8-rerun-20260408_103346.md`
+
+## Phase 9 snapshot (2026-04-08 10:36 MSK)
+- build: PASS
+- smoke: PASS
+- quality-check: FAIL (known dist-threshold class)
+- quality-gate: FAIL (known dist-threshold class)
+- comparative audit docs updated with current-wave closure status
+- rerun file: `docs/reset-audit/phase-checks/phase-9-rerun-20260408_103605.md`
