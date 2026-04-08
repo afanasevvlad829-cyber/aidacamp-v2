@@ -4,10 +4,10 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  ./tools/run-stage-a-batch.sh --label <name> [--mode quick|full] [--with-gate] [--no-backup]
+  ./tools/run-stage-a-batch.sh --label <name> [--mode fast|full] [--with-gate] [--no-backup]
 
 Modes:
-  quick  : build + smoke
+  fast   : build + smoke
   full   : build + quality-check + smoke
 
 Flags:
@@ -17,7 +17,7 @@ USAGE
 }
 
 LABEL=""
-MODE="quick"
+MODE="fast"
 WITH_GATE=0
 DO_BACKUP=1
 
@@ -57,8 +57,12 @@ if [[ -z "$LABEL" ]]; then
   exit 2
 fi
 
-if [[ "$MODE" != "quick" && "$MODE" != "full" ]]; then
-  echo "--mode must be quick or full" >&2
+if [[ "$MODE" == "quick" ]]; then
+  MODE="fast"
+fi
+
+if [[ "$MODE" != "fast" && "$MODE" != "full" ]]; then
+  echo "--mode must be fast or full (quick is accepted as alias)" >&2
   exit 2
 fi
 

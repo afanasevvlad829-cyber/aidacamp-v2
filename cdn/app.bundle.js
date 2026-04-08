@@ -2312,6 +2312,142 @@ function runOfferSearch(overrides){
 })();
 
 
+/* src/scripts/features/booking-reminder-compat.js */
+(function () {
+  const initBookingReminderCompat = () => {
+    if (window.__acBookingReminderCompatInit) return true;
+
+    const root = document.querySelector('[data-booking-root]');
+    if (!root) return false;
+
+    const modal = document.getElementById('bookingReminderModal');
+    const closeModal = () => modal?.close();
+
+    root
+      .querySelector('[data-booking-reminder-close]')
+      ?.addEventListener('click', closeModal);
+
+    modal?.addEventListener('click', (event) => {
+      if (event.target === modal) closeModal();
+    });
+
+    const normalizePhone = (raw) => {
+      let digits = String(raw || '').replace(/\D/g, '');
+      if (digits.startsWith('8')) digits = `7${digits.slice(1)}`;
+      if (!digits.startsWith('7')) digits = `7${digits}`;
+      digits = digits.slice(0, 11);
+
+      const parts = [
+        digits[0],
+        digits.slice(1, 4),
+        digits.slice(4, 7),
+        digits.slice(7, 9),
+        digits.slice(9, 11),
+      ];
+
+      let formatted = '+7';
+      if (parts[1]) formatted += ` (${parts[1]}`;
+      if (parts[1]?.length === 3) formatted += ')';
+      if (parts[2]) formatted += ` ${parts[2]}`;
+      if (parts[3]) formatted += `-${parts[3]}`;
+      if (parts[4]) formatted += `-${parts[4]}`;
+
+      return { formatted, digits };
+    };
+
+    Array.from(root.querySelectorAll('form[data-form]')).forEach((form) => {
+      const ageInput = form.querySelector('[data-age-input]');
+      const ageButtons = Array.from(form.querySelectorAll('[data-age-btn]'));
+      const phoneInput = form.querySelector('[data-phone-input]');
+      const consent = form.querySelector('[data-consent]');
+      const submit = form.querySelector('[data-submit-btn]');
+
+      if (!(ageInput && phoneInput && consent && submit && ageButtons.length)) return;
+
+      const setAge = (value) => {
+        ageInput.value = value;
+        ageButtons.forEach((btn) => {
+          const active = (btn.getAttribute('data-age-value') || '') === value;
+          btn.setAttribute('aria-checked', String(active));
+          btn.classList.toggle('border-[#ec7c00]', active);
+          btn.classList.toggle('bg-[#ec7c00]', active);
+          btn.classList.toggle('text-white', active);
+          btn.classList.toggle('border-[#e6e6e6]', !active);
+          btn.classList.toggle('bg-white', !active);
+          btn.classList.toggle('text-[#333]', !active);
+        });
+      };
+
+      const isPhoneValid = () => {
+        const digits = String(phoneInput.value || '').replace(/\D/g, '');
+        return digits.length === 11 && digits.startsWith('7');
+      };
+
+      const syncSubmit = () => {
+        submit.disabled = !(isPhoneValid() && !!consent.checked);
+      };
+
+      ageButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          setAge(btn.getAttribute('data-age-value') || '');
+          syncSubmit();
+        });
+      });
+
+      phoneInput.addEventListener('input', () => {
+        const { formatted } = normalizePhone(phoneInput.value);
+        phoneInput.value = formatted;
+        syncSubmit();
+      });
+
+      consent.addEventListener('change', syncSubmit);
+
+      form.addEventListener('submit', (event) => {
+        const phoneOk = isPhoneValid();
+        const consentOk = !!consent.checked;
+        if (phoneOk && consentOk) return;
+
+        event.preventDefault();
+        submit.disabled = true;
+        window.acTrack?.('booking_validation_error', {
+          form: form.getAttribute('data-form') || '',
+          phone: phoneOk ? 'ok' : 'missing',
+          consent: consentOk ? 'ok' : 'missing',
+        });
+        modal?.showModal();
+      });
+
+      setAge(ageInput.value || ageButtons[0]?.getAttribute('data-age-value') || '');
+      syncSubmit();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && modal?.open) closeModal();
+    });
+
+    window.__acBookingReminderCompatInit = true;
+    return true;
+  };
+
+  const run = () => {
+    if (initBookingReminderCompat()) return;
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
+      if (initBookingReminderCompat() || tries >= 10) {
+        clearInterval(timer);
+      }
+    }, 100);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run, { once: true });
+  } else {
+    run();
+  }
+})();
+
+
 /* src/scripts/features/booking-runtime.js */
 (function registerBookingRuntime() {
   "use strict";
@@ -9223,6 +9359,65 @@ function runOfferSearch(overrides){
 })();
 
 
+/* src/scripts/features/faq-filter-compat.js */
+(function () {
+  const initFaqFilterCompat = () => {
+    if (window.__acFaqFilterCompatInit) return true;
+
+    const root = document.querySelector('[data-faq-root]') || document.getElementById('faq');
+    if (!root) return false;
+
+    const buttons = Array.from(root.querySelectorAll('[data-faq-filter-btn]'));
+    const panels = Array.from(root.querySelectorAll('[data-faq-group-panel]'));
+    if (!buttons.length || !panels.length) return false;
+
+    const setGroup = (group) => {
+      buttons.forEach((btn) => {
+        const active = (btn.dataset.faqGroup || '') === group;
+        btn.classList.toggle('border-[#ff8b1f]', active);
+        btn.classList.toggle('bg-[#fff2e3]', active);
+        btn.classList.toggle('text-[#ff8b1f]', active);
+        btn.classList.toggle('border-slate-200', !active);
+        btn.classList.toggle('bg-white', !active);
+        btn.classList.toggle('text-slate-600', !active);
+      });
+
+      panels.forEach((panel) => {
+        panel.classList.toggle('hidden', panel.getAttribute('data-faq-group-panel') !== group);
+      });
+    };
+
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const group = btn.dataset.faqGroup || '';
+        setGroup(group);
+        window.acTrack?.('faq_filter', { filter: group });
+      });
+    });
+
+    window.__acFaqFilterCompatInit = true;
+    return true;
+  };
+
+  const run = () => {
+    if (initFaqFilterCompat()) return;
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
+      if (initFaqFilterCompat() || tries >= 10) {
+        clearInterval(timer);
+      }
+    }, 100);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run, { once: true });
+  } else {
+    run();
+  }
+})();
+
+
 /* src/scripts/features/floating-contacts-compat.js */
 (function () {
   const initFloatingContacts = () => {
@@ -9367,6 +9562,205 @@ function runOfferSearch(overrides){
 
   window.AC_FEATURES = window.AC_FEATURES || {};
   window.AC_FEATURES.funnel = window.AC_FEATURES.funnel || {};
+})();
+
+
+/* src/scripts/features/gallery-compat.js */
+(function () {
+  const initGalleryCompat = () => {
+    if (window.__acGalleryCompatInit) return true;
+
+    const root = document.querySelector('[data-gallery-root]');
+    if (!root) return false;
+
+    const filterButtons = Array.from(root.querySelectorAll('[data-gallery-filter-btn]'));
+    const categories = Array.from(root.querySelectorAll('[data-gallery-category]'));
+    const mobileCategories = Array.from(root.querySelectorAll('[data-gallery-mobile-category]'));
+    const lightbox = document.getElementById('galleryLightbox');
+    const lightboxImage = root.querySelector('#galleryLightboxImage');
+    const closeBtn = root.querySelector('[data-gallery-close]');
+    const prevBtn = root.querySelector('[data-gallery-prev]');
+    const nextBtn = root.querySelector('[data-gallery-next]');
+
+    let activeList = [];
+    let activeIndex = 0;
+    const mobileIndexMap = new Map();
+
+    const getFilterList = (filter) => (
+      Array.from(root.querySelectorAll(`[data-gallery-open][data-gallery-filter="${filter}"]`))
+    );
+
+    const renderLightbox = () => {
+      if (!lightboxImage || !activeList.length) return;
+      const active = activeList[activeIndex];
+      if (!active) return;
+      lightboxImage.src = active.getAttribute('data-gallery-src') || '';
+      lightboxImage.alt = active.getAttribute('data-gallery-alt') || '';
+    };
+
+    const syncMobileCategory = (filter, index, smooth = true) => {
+      const group = root.querySelector(`[data-gallery-mobile-category="${filter}"]`);
+      if (!group) return;
+
+      const thumbs = Array.from(group.querySelectorAll('[data-gallery-mobile-thumb]'));
+      if (!thumbs.length) return;
+
+      const normalized = (index + thumbs.length) % thumbs.length;
+      mobileIndexMap.set(filter, normalized);
+
+      const current = thumbs[normalized];
+      const src = current.getAttribute('data-gallery-src') || '';
+      const alt = current.getAttribute('data-gallery-alt') || '';
+
+      const mainImage = group.querySelector('[data-gallery-mobile-main-image]');
+      const mainOpen = group.querySelector('[data-gallery-mobile-main-open]');
+      if (mainImage) {
+        mainImage.src = src;
+        mainImage.alt = alt;
+      }
+      if (mainOpen) {
+        mainOpen.setAttribute('data-gallery-mobile-index', String(normalized));
+        mainOpen.setAttribute('data-gallery-src', src);
+        mainOpen.setAttribute('data-gallery-alt', alt);
+      }
+
+      thumbs.forEach((thumb, i) => {
+        thumb.classList.toggle('border-[#ff8b1f]', i === normalized);
+        thumb.classList.toggle('border-slate-200', i !== normalized);
+      });
+
+      Array.from(group.querySelectorAll('[data-gallery-mobile-dot]')).forEach((dot, i) => {
+        dot.classList.toggle('bg-[#ff8b1f]', i === normalized);
+        dot.classList.toggle('bg-slate-300', i !== normalized);
+      });
+
+      if (smooth) {
+        // no-op placeholder for behavior parity flag
+      }
+    };
+
+    const applyFilter = (filter) => {
+      window.acTrack?.('gallery_filter', { filter });
+
+      filterButtons.forEach((btn) => {
+        const active = btn.getAttribute('data-gallery-filter') === filter;
+        btn.classList.toggle('bg-[#ff8b1f]', active);
+        btn.classList.toggle('text-white', active);
+        btn.classList.toggle('bg-slate-100', !active);
+        btn.classList.toggle('text-slate-700', !active);
+      });
+
+      categories.forEach((node) => {
+        node.classList.toggle('hidden', node.getAttribute('data-gallery-category') !== filter);
+      });
+      mobileCategories.forEach((node) => {
+        node.classList.toggle('hidden', node.getAttribute('data-gallery-mobile-category') !== filter);
+      });
+
+      activeList = getFilterList(filter);
+      activeIndex = 0;
+      syncMobileCategory(filter, mobileIndexMap.get(filter) ?? 0, false);
+    };
+
+    const openItem = (node) => {
+      if (!(lightbox && lightboxImage && node)) return;
+      const filter = node.getAttribute('data-gallery-filter') || '';
+      activeList = getFilterList(filter);
+      const idx = activeList.indexOf(node);
+      activeIndex = idx >= 0 ? idx : 0;
+      renderLightbox();
+      window.acTrack?.('gallery_open', { src: lightboxImage.src, alt: lightboxImage.alt });
+      window.acTrack?.('photo_open', { src: lightboxImage.src, alt: lightboxImage.alt });
+      lightbox.showModal();
+    };
+
+    const shiftLightbox = (delta) => {
+      if (activeList.length <= 1) return;
+      activeIndex = (activeIndex + delta + activeList.length) % activeList.length;
+      renderLightbox();
+      window.acTrack?.('photo_open', { src: lightboxImage?.src || '', alt: lightboxImage?.alt || '' });
+    };
+
+    const closeLightbox = () => lightbox?.close();
+
+    filterButtons.forEach((btn) => {
+      btn.addEventListener('click', () => applyFilter(btn.getAttribute('data-gallery-filter') || ''));
+    });
+
+    root.querySelectorAll('[data-gallery-open]').forEach((node) => {
+      node.addEventListener('click', () => openItem(node));
+    });
+
+    root.querySelectorAll('[data-gallery-mobile-thumb]').forEach((thumb) => {
+      thumb.addEventListener('click', () => {
+        const filter = thumb.getAttribute('data-gallery-mobile-filter') || '';
+        const idx = Number(thumb.getAttribute('data-gallery-mobile-index') || '0');
+        syncMobileCategory(filter, idx);
+      });
+    });
+
+    root.querySelectorAll('[data-gallery-mobile-prev]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const filter = btn.getAttribute('data-gallery-mobile-filter') || '';
+        const idx = mobileIndexMap.get(filter) ?? 0;
+        syncMobileCategory(filter, idx - 1);
+      });
+    });
+
+    root.querySelectorAll('[data-gallery-mobile-next]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const filter = btn.getAttribute('data-gallery-mobile-filter') || '';
+        const idx = mobileIndexMap.get(filter) ?? 0;
+        syncMobileCategory(filter, idx + 1);
+      });
+    });
+
+    root.querySelectorAll('[data-gallery-mobile-dot]').forEach((dot) => {
+      dot.addEventListener('click', () => {
+        const filter = dot.getAttribute('data-gallery-mobile-filter') || '';
+        const idx = Number(dot.getAttribute('data-gallery-mobile-dot-index') || '0');
+        syncMobileCategory(filter, idx);
+      });
+    });
+
+    closeBtn?.addEventListener('click', closeLightbox);
+    prevBtn?.addEventListener('click', () => shiftLightbox(-1));
+    nextBtn?.addEventListener('click', () => shiftLightbox(1));
+
+    lightbox?.addEventListener('click', (event) => {
+      if (event.target === lightbox) closeLightbox();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (!lightbox?.open) return;
+      if (event.key === 'Escape') closeLightbox();
+      if (event.key === 'ArrowLeft') shiftLightbox(-1);
+      if (event.key === 'ArrowRight') shiftLightbox(1);
+    });
+
+    const defaultFilter = root.getAttribute('data-default-filter') || filterButtons[0]?.getAttribute('data-gallery-filter') || '';
+    if (defaultFilter) applyFilter(defaultFilter);
+
+    window.__acGalleryCompatInit = true;
+    return true;
+  };
+
+  const run = () => {
+    if (initGalleryCompat()) return;
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
+      if (initGalleryCompat() || tries >= 10) {
+        clearInterval(timer);
+      }
+    }, 100);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run, { once: true });
+  } else {
+    run();
+  }
 })();
 
 
@@ -11638,6 +12032,89 @@ function runOfferSearch(overrides){
 })(window);
 
 
+/* src/scripts/features/reviews-slider-compat.js */
+(function () {
+  const initReviewsSliderCompat = () => {
+    if (window.__acReviewsSliderCompatInit) return true;
+
+    const root = document.querySelector('[data-reviews-root]');
+    if (!root) return false;
+
+    const track = root.querySelector('[data-reviews-track]');
+    const cards = Array.from(root.querySelectorAll('[data-review-card]'));
+    const dots = Array.from(root.querySelectorAll('[data-reviews-dot]'));
+    const prev = root.querySelector('[data-reviews-prev]');
+    const next = root.querySelector('[data-reviews-next]');
+
+    if (!(track && cards.length)) return false;
+
+    let index = 0;
+
+    const syncDots = (active) => {
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('bg-[#ff8b1f]', i === active);
+        dot.classList.toggle('bg-slate-300', i !== active);
+      });
+    };
+
+    const scrollToIndex = (nextIndex, smooth = true) => {
+      if (!cards.length) return;
+      index = (nextIndex + cards.length) % cards.length;
+      track.scrollTo({
+        left: cards[index].offsetLeft - 4,
+        behavior: smooth ? 'smooth' : 'auto',
+      });
+      syncDots(index);
+    };
+
+    const syncFromScroll = () => {
+      const left = track.scrollLeft;
+      let nearest = 0;
+      let minDelta = Number.POSITIVE_INFINITY;
+      cards.forEach((card, i) => {
+        const delta = Math.abs(card.offsetLeft - left);
+        if (delta < minDelta) {
+          minDelta = delta;
+          nearest = i;
+        }
+      });
+      index = nearest;
+      syncDots(index);
+    };
+
+    prev?.addEventListener('click', () => scrollToIndex(index - 1));
+    next?.addEventListener('click', () => scrollToIndex(index + 1));
+    dots.forEach((dot) => {
+      dot.addEventListener('click', () => {
+        scrollToIndex(Number(dot.getAttribute('data-reviews-dot-index') || '0'));
+      });
+    });
+    track.addEventListener('scroll', syncFromScroll, { passive: true });
+
+    syncDots(0);
+    window.__acReviewsSliderCompatInit = true;
+    return true;
+  };
+
+  const run = () => {
+    if (initReviewsSliderCompat()) return;
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
+      if (initReviewsSliderCompat() || tries >= 10) {
+        clearInterval(timer);
+      }
+    }, 100);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run, { once: true });
+  } else {
+    run();
+  }
+})();
+
+
 /* src/scripts/features/shift-options-flow.js */
 (function(){
   function createShiftOptionsFlow(ctx = {}){
@@ -11937,12 +12414,419 @@ function runOfferSearch(overrides){
 })();
 
 
+/* src/scripts/features/stay-gallery-compat.js */
+(function () {
+  const initStayGalleryCompat = () => {
+    if (window.__acStayGalleryCompatInit) return true;
+
+    const root = document.querySelector('[data-stay-root]');
+    if (!root) return false;
+
+    const opens = Array.from(root.querySelectorAll('[data-stay-open]'));
+    const lightbox = root.querySelector('#stayLightbox');
+    const image = root.querySelector('#stayLightboxImage');
+    const closeBtn = root.querySelector('[data-stay-close]');
+    const prevBtn = root.querySelector('[data-stay-prev]');
+    const nextBtn = root.querySelector('[data-stay-next]');
+    const track = root.querySelector('[data-stay-track]');
+    const cards = Array.from(root.querySelectorAll('[data-stay-card]'));
+    const dots = Array.from(root.querySelectorAll('[data-stay-dot]'));
+    const listPrev = root.querySelector('[data-stay-list-prev]');
+    const listNext = root.querySelector('[data-stay-list-next]');
+
+    let mediaIndex = 0;
+    let listIndex = 0;
+
+    const renderLightbox = () => {
+      if (!image || !opens.length) return;
+      const item = opens[mediaIndex];
+      image.src = item.getAttribute('data-stay-src') || '';
+      image.alt = item.getAttribute('data-stay-alt') || '';
+    };
+
+    const openAt = (next) => {
+      if (!lightbox || !opens.length) return;
+      mediaIndex = (next + opens.length) % opens.length;
+      renderLightbox();
+      window.acTrack?.('stay_photo_open', { index: mediaIndex, src: image?.src || '' });
+      lightbox.showModal();
+    };
+
+    const shiftLightbox = (delta) => {
+      if (opens.length <= 1) return;
+      mediaIndex = (mediaIndex + delta + opens.length) % opens.length;
+      renderLightbox();
+      window.acTrack?.('stay_photo_open', { index: mediaIndex, src: image?.src || '' });
+    };
+
+    const closeLightbox = () => lightbox?.close();
+
+    const syncDots = (active) => {
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('bg-[#ff8b1f]', i === active);
+        dot.classList.toggle('bg-slate-300', i !== active);
+      });
+    };
+
+    const scrollListTo = (next, smooth = true) => {
+      if (!(track && cards.length)) return;
+      listIndex = (next + cards.length) % cards.length;
+      track.scrollTo({
+        left: cards[listIndex].offsetLeft - 8,
+        behavior: smooth ? 'smooth' : 'auto',
+      });
+      syncDots(listIndex);
+    };
+
+    const syncFromListScroll = () => {
+      if (!(track && cards.length)) return;
+      const left = track.scrollLeft;
+      let nearest = 0;
+      let minDelta = Number.POSITIVE_INFINITY;
+      cards.forEach((card, i) => {
+        const delta = Math.abs(card.offsetLeft - left);
+        if (delta < minDelta) {
+          minDelta = delta;
+          nearest = i;
+        }
+      });
+      listIndex = nearest;
+      syncDots(listIndex);
+    };
+
+    opens.forEach((node, i) => {
+      node.addEventListener('click', () => openAt(i));
+    });
+
+    prevBtn?.addEventListener('click', () => shiftLightbox(-1));
+    nextBtn?.addEventListener('click', () => shiftLightbox(1));
+    closeBtn?.addEventListener('click', closeLightbox);
+
+    listPrev?.addEventListener('click', () => scrollListTo(listIndex - 1));
+    listNext?.addEventListener('click', () => scrollListTo(listIndex + 1));
+
+    dots.forEach((dot) => {
+      dot.addEventListener('click', () => {
+        scrollListTo(Number(dot.getAttribute('data-stay-dot-index') || '0'));
+      });
+    });
+
+    track?.addEventListener('scroll', syncFromListScroll, { passive: true });
+
+    lightbox?.addEventListener('click', (event) => {
+      if (event.target === lightbox) closeLightbox();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (!lightbox?.open) return;
+      if (event.key === 'Escape') closeLightbox();
+      if (event.key === 'ArrowLeft') shiftLightbox(-1);
+      if (event.key === 'ArrowRight') shiftLightbox(1);
+    });
+
+    syncDots(0);
+    window.__acStayGalleryCompatInit = true;
+    return true;
+  };
+
+  const run = () => {
+    if (initStayGalleryCompat()) return;
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
+      if (initStayGalleryCompat() || tries >= 10) {
+        clearInterval(timer);
+      }
+    }, 100);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run, { once: true });
+  } else {
+    run();
+  }
+})();
+
+
+/* src/scripts/features/team-compat.js */
+(function () {
+  const initTeamCompat = () => {
+    if (window.__acTeamCompatInit) return true;
+
+    const root = document.querySelector('[data-team-root]');
+    if (!root) return false;
+
+    const slots = Array.from(root.querySelectorAll('[data-team-slot]'));
+    const prev = root.querySelector('[data-team-prev]');
+    const next = root.querySelector('[data-team-next]');
+    const payloadNode = root.querySelector('[data-team-carousel-payload]');
+    const payload = payloadNode ? JSON.parse(payloadNode.textContent || '[]') : [];
+
+    const mobileTrack = root.querySelector('[data-team-mobile-track]');
+    const mobileCards = Array.from(root.querySelectorAll('[data-team-mobile-card]'));
+    const mobileDots = Array.from(root.querySelectorAll('[data-team-mobile-dot]'));
+    const mobilePrev = root.querySelector('[data-team-mobile-prev]');
+    const mobileNext = root.querySelector('[data-team-mobile-next]');
+
+    let desktopOffset = 0;
+    let mobileIndex = 0;
+
+    const renderSlot = (slot, item) => {
+      if (!(slot && item)) return;
+      slot.innerHTML = `
+        <img src="${item.src}" alt="${item.title}" loading="lazy" class="mx-auto h-20 w-20 rounded-full border border-slate-200 object-cover" />
+        <h3 class="mt-4 text-center text-[32px] font-semibold text-slate-900">${item.title}</h3>
+        ${item.role ? `<p class="mt-2 text-center text-[15px] font-semibold text-slate-500">${item.role}</p>` : ''}
+        <p class="mt-2 text-center text-[15px] leading-[1.55] text-slate-600">${item.text}</p>
+      `;
+    };
+
+    const renderDesktop = () => {
+      if (!(payload.length && slots.length)) return;
+      slots.forEach((slot, i) => {
+        const idx = (desktopOffset + i) % payload.length;
+        renderSlot(slot, payload[idx]);
+      });
+    };
+
+    const syncMobileDots = (active) => {
+      mobileDots.forEach((dot, i) => {
+        dot.classList.toggle('bg-[#ff8b1f]', i === active);
+        dot.classList.toggle('bg-slate-300', i !== active);
+      });
+    };
+
+    const goMobile = (nextIndex, smooth = true) => {
+      if (!(mobileTrack && mobileCards.length)) return;
+      mobileIndex = (nextIndex + mobileCards.length) % mobileCards.length;
+      mobileTrack.scrollTo({
+        left: mobileCards[mobileIndex].offsetLeft - 8,
+        behavior: smooth ? 'smooth' : 'auto',
+      });
+      syncMobileDots(mobileIndex);
+    };
+
+    const syncMobileFromScroll = () => {
+      if (!(mobileTrack && mobileCards.length)) return;
+      const left = mobileTrack.scrollLeft;
+      let nearest = 0;
+      let minDelta = Number.POSITIVE_INFINITY;
+      mobileCards.forEach((card, i) => {
+        const delta = Math.abs(card.offsetLeft - left);
+        if (delta < minDelta) {
+          minDelta = delta;
+          nearest = i;
+        }
+      });
+      mobileIndex = nearest;
+      syncMobileDots(mobileIndex);
+    };
+
+    prev?.addEventListener('click', () => {
+      if (!payload.length) return;
+      desktopOffset = (desktopOffset - 1 + payload.length) % payload.length;
+      renderDesktop();
+      window.acTrack?.('team_carousel_prev', { offset: desktopOffset });
+    });
+
+    next?.addEventListener('click', () => {
+      if (!payload.length) return;
+      desktopOffset = (desktopOffset + 1) % payload.length;
+      renderDesktop();
+      window.acTrack?.('team_carousel_next', { offset: desktopOffset });
+    });
+
+    mobilePrev?.addEventListener('click', () => goMobile(mobileIndex - 1));
+    mobileNext?.addEventListener('click', () => goMobile(mobileIndex + 1));
+    mobileDots.forEach((dot) => {
+      dot.addEventListener('click', () => {
+        goMobile(Number(dot.getAttribute('data-team-mobile-dot-index') || '0'));
+      });
+    });
+    mobileTrack?.addEventListener('scroll', syncMobileFromScroll, { passive: true });
+
+    renderDesktop();
+    syncMobileDots(0);
+
+    const bookModal = root.querySelector('#teamBookModal');
+    const bookOpen = root.querySelector('[data-book-open]');
+    const bookClose = root.querySelector('[data-team-book-close]');
+    const closeBookModal = () => bookModal?.close();
+
+    bookOpen?.addEventListener('click', () => {
+      bookModal?.showModal();
+      window.acTrack?.('team_book_open', { source: 'team_block' });
+    });
+    bookClose?.addEventListener('click', closeBookModal);
+    bookModal?.addEventListener('click', (event) => {
+      if (event.target === bookModal) closeBookModal();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && bookModal?.open) closeBookModal();
+    });
+
+    window.__acTeamCompatInit = true;
+    return true;
+  };
+
+  const run = () => {
+    if (initTeamCompat()) return;
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
+      if (initTeamCompat() || tries >= 10) {
+        clearInterval(timer);
+      }
+    }, 100);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run, { once: true });
+  } else {
+    run();
+  }
+})();
+
+
 /* src/scripts/features/toggle.js */
 (function () {
   "use strict";
 
   window.AC_FEATURES = window.AC_FEATURES || {};
   window.AC_FEATURES.toggle = window.AC_FEATURES.toggle || {};
+})();
+
+
+/* src/scripts/features/videos-compat.js */
+(function () {
+  const initVideosCompat = () => {
+    if (window.__acVideosCompatInit) return true;
+
+    const root = document.querySelector('[data-videos-root]');
+    if (!root) return false;
+
+    const modal = document.getElementById('videoModal');
+    const frame = document.getElementById('videoFrame');
+    const closeBtn = root.querySelector('[data-video-close]');
+    const prevBtn = root.querySelector('[data-video-prev]');
+    const nextBtn = root.querySelector('[data-video-next]');
+    const carousel = root.querySelector('[data-video-carousel]');
+    const cards = Array.from(root.querySelectorAll('[data-video-card]'));
+    const openMain = root.querySelector('[data-video-open-main]');
+    const mainImage = root.querySelector('[data-video-main-image]');
+    const mainTitle = root.querySelector('[data-video-main-title]');
+    const thumbs = Array.from(root.querySelectorAll('[data-video-thumb]'));
+
+    let index = 0;
+    let focusBack = null;
+
+    const openVideo = (url, title = '') => {
+      if (!(modal && frame && url)) return;
+      frame.src = url;
+      window.acTrack?.('video_play', { url });
+      window.acTrack?.('video_open', { url, title });
+      modal.showModal();
+    };
+
+    const scrollToIndex = (nextIndex) => {
+      if (!(carousel && cards.length)) return;
+      index = (nextIndex + cards.length) % cards.length;
+      const card = cards[index];
+      carousel.scrollTo({ left: card.offsetLeft - 8, behavior: 'smooth' });
+    };
+
+    const syncIndexFromScroll = () => {
+      if (!(carousel && cards.length)) return;
+      const left = carousel.scrollLeft;
+      let nearest = 0;
+      let delta = Number.POSITIVE_INFINITY;
+      cards.forEach((card, i) => {
+        const current = Math.abs(card.offsetLeft - 8 - left);
+        if (current < delta) {
+          delta = current;
+          nearest = i;
+        }
+      });
+      index = nearest;
+    };
+
+    const closeModal = () => {
+      if (frame) frame.src = '';
+      modal?.close();
+      if (focusBack instanceof HTMLElement) focusBack.focus();
+    };
+
+    prevBtn?.addEventListener('click', () => scrollToIndex(index - 1));
+    nextBtn?.addEventListener('click', () => scrollToIndex(index + 1));
+    carousel?.addEventListener('scroll', syncIndexFromScroll, { passive: true });
+
+    root.querySelectorAll('[data-video-open]').forEach((node) => {
+      node.addEventListener('click', () => {
+        const url = node.getAttribute('data-video-open');
+        const title = node.getAttribute('data-video-title') || '';
+        focusBack = node;
+        openVideo(url, title);
+      });
+    });
+
+    openMain?.addEventListener('click', () => {
+      const url = openMain.getAttribute('data-video-url');
+      const title = openMain.getAttribute('data-video-title') || '';
+      focusBack = openMain;
+      openVideo(url, title);
+    });
+
+    thumbs.forEach((thumb) => {
+      thumb.addEventListener('click', () => {
+        const cover = thumb.getAttribute('data-video-cover') || '';
+        const title = thumb.getAttribute('data-video-title') || '';
+        const url = thumb.getAttribute('data-video-url') || '';
+        if (mainImage) {
+          mainImage.src = cover;
+          mainImage.alt = title;
+        }
+        if (mainTitle) {
+          mainTitle.textContent = title;
+        }
+        if (openMain) {
+          openMain.setAttribute('data-video-url', url);
+          openMain.setAttribute('data-video-title', title);
+        }
+      });
+    });
+
+    closeBtn?.addEventListener('click', closeModal);
+    modal?.addEventListener('click', (event) => {
+      if (event.target === modal) closeModal();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft' && !modal?.open) scrollToIndex(index - 1);
+      if (event.key === 'ArrowRight' && !modal?.open) scrollToIndex(index + 1);
+      if (modal?.open && event.key === 'Escape') closeModal();
+    });
+
+    window.__acVideosCompatInit = true;
+    return true;
+  };
+
+  const run = () => {
+    if (initVideosCompat()) return;
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
+      if (initVideosCompat() || tries >= 10) {
+        clearInterval(timer);
+      }
+    }, 100);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run, { once: true });
+  } else {
+    run();
+  }
 })();
 
 
