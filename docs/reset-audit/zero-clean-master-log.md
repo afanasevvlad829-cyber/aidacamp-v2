@@ -25,6 +25,7 @@ Program model: dist-centric runtime with source-fed artifacts
 | 4 | Dist-centric JS cleanup (inline -> source migration) | IN PROGRESS | `docs/reset-audit/phase-4-js-domain-audit.md`, `docs/reset-audit/phase-4-js-cleanup.md` | build PASS, smoke PASS, quality-check/gate known dist FAIL |
 | 5 | Asset root normalization | IN PROGRESS | `docs/reset-audit/phase-5-asset-root-map.md`, `docs/reset-audit/phase-5-asset-normalization.md` | build PASS, smoke PASS, quality-check/gate known dist FAIL |
 | 6 | Quality gate realignment | IN PROGRESS | `docs/reset-audit/phase-6-quality-gate-realignment.md` | rerun proof: `docs/reset-audit/phase-checks/phase-6-rerun-20260408_102755.md` |
+| 7 | Source vs output discipline audit | IN PROGRESS | `docs/reset-audit/phase-7-source-output-discipline.md` | rerun proof: `docs/reset-audit/phase-checks/phase-7-rerun-20260408_102946.md` |
 
 ## Known Gates (not introduced by phases 0-2)
 - `dist_max_line_length` above strict threshold.
@@ -40,3 +41,10 @@ Program model: dist-centric runtime with source-fed artifacts
 - quality-check: FAIL (`dist_max_line_length`, baseline delta `dist_bytes` and `dist_max_line_length`)
 - quality-gate: FAIL (same known reasons)
 - latest measured: `dist_bytes=163523`, `dist_max_line_length=136289`
+
+## Source/output discipline snapshot (2026-04-08 10:29 MSK)
+- build pipeline proof confirms:
+  - source-fed bundles from `src/styles/main.css` and `src/scripts/**`
+  - generated artifacts in `dist/cdn/*` and `cdn/*`
+  - `dist/index.html` canonical shell is not rewritten by default (`AC_ALLOW_DIST_REWRITE=1` required)
+- rerun file: `docs/reset-audit/phase-checks/phase-7-rerun-20260408_102946.md`
