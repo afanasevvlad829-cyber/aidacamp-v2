@@ -14563,15 +14563,6 @@ function runOfferSearch(overrides){
       }
     }
 
-    function getShiftContextLine(shift){
-      if(!shift) return '';
-      if(!hasSelectedAge()){
-        return '';
-      }
-      const age = ageLabel(state.age);
-      return `Подходит для ${age}.`;
-    }
-
     function isOfferActive(){
       return !!(state.expiresAt && Date.now() < state.expiresAt);
     }
@@ -14797,19 +14788,6 @@ function runOfferSearch(overrides){
 
     function stripRemainingPrefix(text){
       return String(text || '').replace(/^\s*Осталось[:\s]*/i, '').trim();
-    }
-
-    function formatOfferDeadline(ts){
-      if(!ts) return '';
-      const date = new Date(ts);
-      if(Number.isNaN(date.getTime())) return '';
-      const formatted = date.toLocaleString('ru-RU', {
-        day:'numeric',
-        month:'long',
-        hour:'numeric',
-        minute:'2-digit'
-      });
-      return formatted.replace(/\b0(\d):(\d{2})\b/, '$1:$2');
     }
 
     function updateBookingScarcityUi(){
@@ -15222,10 +15200,6 @@ function runOfferSearch(overrides){
       return runtimeInvoke.applyMobileTemplatesToDesktopSections(...args);
     }
 
-    function applyMobileSectionAccordion(){
-      return;
-    }
-
     // SECTION 8: Global orchestrator.
     function renderAll(){
       applyMobileTemplatesToDesktopSections();
@@ -15234,9 +15208,6 @@ function runOfferSearch(overrides){
       safeInvoke(ensureBookingHintFlow(), 'syncDesktopAgeTapHintVisibility', [], null);
       safeInvoke(ensureBookingHintFlow(), 'scheduleDesktopAgeTapHint', [], null);
       renderMediaSections();
-      if(!useDesktopBaseForMobileCfg){
-        applyMobileSectionAccordion();
-      }
       renderDesktopMobileDocsBlock();
       renderSummary();
       syncLegalDocLinks();
