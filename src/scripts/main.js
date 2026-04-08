@@ -88,6 +88,89 @@
       camp: 'Атмосфера',
       stay: 'Размещение'
     });
+    const BOOKING_TEXT_FALLBACK = Object.freeze({
+      ageToSeeShiftsPrices: 'Выберите возраст, чтобы увидеть смены и цены',
+      allShiftsByAge: 'Все смены по возрасту',
+      bookPreviewAlt: 'Превью бронирования',
+      bookingAfterCheckPriceLabel: 'После проверки',
+      bookingCheckPriceTitle: 'Проверить цену',
+      bookingCompletedTitle: 'Заявка отправлена',
+      bookingCurrentPriceLabel: 'Текущая цена',
+      bookingFinalizeBenefitLine: 'Ваша выгода',
+      bookingPreliminaryPriceLabel: 'Предварительная цена',
+      bookingReferralImageAria: 'Открыть изображение реферальной акции',
+      bookingReferralNote: 'Поделитесь ссылкой и получите бонус',
+      bookingShiftsForAgePrefix: 'Смены для возраста',
+      bookingStage4AwaitingNote: 'Ожидаем подтверждение менеджера',
+      bookingStage4BenefitLabel: 'Выгода',
+      bookingStage4CodeLabel: 'Код',
+      bookingStage4DiscountLabel: 'Скидка',
+      bookingStage4FixedPriceLabel: 'Фиксированная цена',
+      bookingTimerPinnedTitle: 'Цена удерживается',
+      bookingTimerPrefix: 'Осталось',
+      bookingYourTermsTitle: 'Ваши условия',
+      heroSeasonCalendarAria: 'Открыть календарь смен',
+      heroSeasonCalendarText: 'Календарь смен',
+      heroSeasonOfferPriceText: 'от 48 000 ₽ за смену',
+      heroSeasonSlogan: 'Смена, где ребёнок уедет с проектом',
+      inviteCopyFailed: 'Не удалось скопировать ссылку',
+      inviteCopyManual: 'Скопируйте ссылку вручную',
+      inviteCopySuccess: 'Ссылка скопирована',
+      offerSavedOnDevice: 'Предложение сохранено на этом устройстве',
+      primaryCtaAccepted: 'Готово',
+      referralHoodieAlt: 'Подарочный худи',
+      returnWelcomeMessage: 'Рады видеть вас снова',
+      returnWelcomeTitle: 'С возвращением',
+      reviewsBlogLabel: 'Отзывы родителей',
+      selectAge: 'Сначала выберите возраст',
+      selectShift: 'Сначала выберите смену',
+      selectShiftForPrice: 'Выберите смену, чтобы увидеть итоговую цену',
+      stage1TypewriterAccentChar: '•',
+      stage1TypewriterBase: 'Выберите возраст',
+      stage1TypewriterChooseWord: 'выберите',
+      stage1TypewriterFinal: 'Выберите возраст и смену',
+      stage1TypewriterPricesPhrase: 'цены смен',
+      stage1TypewriterPricesSwap: 'и цены',
+      stage1TypewriterSeenWord: 'посмотрите',
+      teamHiddenMobileName: 'Команда'
+    });
+    const BOOKING_TEXT_CONFIG = (window.AC_RUNTIME_CONFIG && window.AC_RUNTIME_CONFIG.bookingText) || {};
+    const BOOKING_TEXT_MAP = Object.freeze({ ...BOOKING_TEXT_FALLBACK, ...BOOKING_TEXT_CONFIG });
+    function bookingText(key){
+      const k = String(key || '');
+      return String(BOOKING_TEXT_MAP[k] || k);
+    }
+    function renderGuidedState(...args){
+      return runtimeInvoke.renderGuidedState(...args);
+    }
+    function pulseNode(...args){
+      return runtimeInvoke.pulseNode(...args);
+    }
+    function nudgeUserToNextStep(...args){
+      return runtimeInvoke.nudgeUserToNextStep(...args);
+    }
+    function showHint(...args){
+      return runtimeInvoke.showHint(...args);
+    }
+    function syncBookingHints(...args){
+      return runtimeInvoke.syncBookingHints(...args);
+    }
+    function emitModularEvent(...args){
+      return runtimeInvoke.emitModularEvent(...args);
+    }
+    function syncModularState(...args){
+      return runtimeInvoke.syncModularState(...args);
+    }
+    function splitPrimaryActionText(text){
+      const source = String(text || '').trim();
+      return { stacked: false, main: source, gainText: '' };
+    }
+    function uiBookingHintTemplate(key, params = {}){
+      const map = (window.CONTENT_MAP && window.CONTENT_MAP.ui) || {};
+      const source = String(map[key] || '');
+      if(!source) return '';
+      return source.replace(/\{\{(\w+)\}\}/g, (_, token) => String(params[token] ?? ''));
+    }
     const AIDACAMP_RUNTIME = (window.__AIDACAMP_RUNTIME && typeof window.__AIDACAMP_RUNTIME === 'object')
       ? window.__AIDACAMP_RUNTIME
       : {};
@@ -149,6 +232,7 @@
     let activePhotoList = [];
     let photoGalleryList = [];
     // SECTION 2: State normalization and hydration.
+    let bookingRuntimeBridgeApi = null;
     const stateNormalizeResult = safeInvoke(ensureBookingRuntimeBridge(), 'normalizeInitialState', [{
       state,
       useDesktopBaseForMobile: useDesktopBaseForMobileCfg
@@ -239,7 +323,6 @@
     let mediaFlowApi = null;
     let runtimeQualityPipelineApi = null;
     let runtimeQualityOrchestratorApi = null;
-    let bookingRuntimeBridgeApi = null;
     let bookingCalendarRuntimeFlowApi = null;
     let runtimeActionFlowApi = null;
     let runtimeInitFlowApi = null;
@@ -611,7 +694,7 @@
         getState: () => state,
         getSelectedShift,
         shiftDaysLabel,
-        clearShiftOptionPanels,
+        clearShiftOptionPanels: () => runtimeInvoke.clearShiftOptionPanels(),
         persist,
         renderAll,
         bookingText,
@@ -1020,13 +1103,13 @@
       safeInvoke(ensureHeroVariantFlow(), 'injectHeroSeasonOfferCta')
     );
 
-    const formatVariantHint = (template) => (
-      safeInvoke(ensureHeroVariantFlow(), 'formatVariantHint', [template], () => {
+    function formatVariantHint(template){
+      return safeInvoke(ensureHeroVariantFlow(), 'formatVariantHint', [template], () => {
         const source = String(template || '').trim();
         if(!source) return '';
         return source.replace('{{age}}', ageLabel(state.age || '10-12'));
-      })
-    );
+      });
+    }
 
     const clearVariantCoachReminderTimer = () => (
       safeInvoke(ensureHeroVariantFlow(), 'clearVariantCoachReminderTimer')
@@ -1681,7 +1764,9 @@
       }], { text:'', disabled:true, hint:'' });
     }
 
-    const getResolvedPrimaryActionText = runtimeInvoke.getResolvedPrimaryActionText;
+    function getResolvedPrimaryActionText(...args){
+      return runtimeInvoke.getResolvedPrimaryActionText(...args);
+    }
 
     function getStepState(){
       syncGuidedState();
@@ -1825,12 +1910,6 @@
       });
     }
 
-    const renderGuidedState = runtimeInvoke.renderGuidedState;
-    const pulseNode = runtimeInvoke.pulseNode;
-    const nudgeUserToNextStep = runtimeInvoke.nudgeUserToNextStep;
-    const showHint = runtimeInvoke.showHint;
-    const syncBookingHints = runtimeInvoke.syncBookingHints;
-
     function formatRemainingClock(diff){
       if(diff <= 0) return '';
       const totalSeconds = Math.max(0, Math.floor(diff / 1000));
@@ -1943,12 +2022,24 @@
       });
     }
 
-    const stopBookingStage1TitleTypewriter = runtimeInvoke.stopBookingStage1TitleTypewriter;
-    const runBookingStage1TitleTypewriter = runtimeInvoke.runBookingStage1TitleTypewriter;
-    const renderBookingInfo = runtimeInvoke.renderBookingInfo;
-    const renderBookingPanels = runtimeInvoke.renderBookingPanels;
-    const getViewportPreviewView = runtimeInvoke.getViewportPreviewView;
-    const switchView = runtimeInvoke.switchView;
+    function stopBookingStage1TitleTypewriter(...args){
+      return runtimeInvoke.stopBookingStage1TitleTypewriter(...args);
+    }
+    function runBookingStage1TitleTypewriter(...args){
+      return runtimeInvoke.runBookingStage1TitleTypewriter(...args);
+    }
+    function renderBookingInfo(...args){
+      return runtimeInvoke.renderBookingInfo(...args);
+    }
+    function renderBookingPanels(...args){
+      return runtimeInvoke.renderBookingPanels(...args);
+    }
+    function getViewportPreviewView(...args){
+      return runtimeInvoke.getViewportPreviewView(...args);
+    }
+    function switchView(...args){
+      return runtimeInvoke.switchView(...args);
+    }
 
     function applyOfferLayoutMode(){
       const mode = normalizeMode(state[OFFER_LAYOUT_KEY], offerLayoutModesCfg, 'current');
@@ -2043,18 +2134,42 @@
       });
     }
 
-    const toggleShiftOptionPanel = runtimeInvoke.toggleShiftOptionPanel;
-    const clearShiftOptionPanels = runtimeInvoke.clearShiftOptionPanels;
-    const parseShiftDate = runtimeInvoke.parseShiftDate;
-    const renderCalendar = runtimeInvoke.renderCalendar;
-    const renderSeasonCalendar = runtimeInvoke.renderSeasonCalendar;
-    const openCalendar = runtimeInvoke.openCalendar;
-    const openSeasonCalendar = runtimeInvoke.openSeasonCalendar;
-    const closeCalendar = runtimeInvoke.closeCalendar;
-    const selectedShiftPayload = runtimeInvoke.selectedShiftPayload;
-    const clearOfferTimeout = runtimeInvoke.clearOfferTimeout;
-    const resetOfferState = runtimeInvoke.resetOfferState;
-    const buildBookingSummaryHtml = runtimeInvoke.buildBookingSummaryHtml;
+    function toggleShiftOptionPanel(...args){
+      return runtimeInvoke.toggleShiftOptionPanel(...args);
+    }
+    function clearShiftOptionPanels(...args){
+      return runtimeInvoke.clearShiftOptionPanels(...args);
+    }
+    function parseShiftDate(...args){
+      return runtimeInvoke.parseShiftDate(...args);
+    }
+    function renderCalendar(...args){
+      return runtimeInvoke.renderCalendar(...args);
+    }
+    function renderSeasonCalendar(...args){
+      return runtimeInvoke.renderSeasonCalendar(...args);
+    }
+    function openCalendar(...args){
+      return runtimeInvoke.openCalendar(...args);
+    }
+    function openSeasonCalendar(...args){
+      return runtimeInvoke.openSeasonCalendar(...args);
+    }
+    function closeCalendar(...args){
+      return runtimeInvoke.closeCalendar(...args);
+    }
+    function selectedShiftPayload(...args){
+      return runtimeInvoke.selectedShiftPayload(...args);
+    }
+    function clearOfferTimeout(...args){
+      return runtimeInvoke.clearOfferTimeout(...args);
+    }
+    function resetOfferState(...args){
+      return runtimeInvoke.resetOfferState(...args);
+    }
+    function buildBookingSummaryHtml(...args){
+      return runtimeInvoke.buildBookingSummaryHtml(...args);
+    }
 
     function generateCode(){
       return 'AC-' + Math.random().toString(36).slice(2,6).toUpperCase();
@@ -2066,10 +2181,18 @@
       return `Ссылка: ${inviteUrl}`;
     }
 
-    const bindAgeTabs = runtimeInvoke.bindAgeTabs;
-    const focusMobileAgeGate = runtimeInvoke.focusMobileAgeGate;
-    const resetAgeSelection = runtimeInvoke.resetAgeSelection;
-    const resetShiftSelection = runtimeInvoke.resetShiftSelection;
+    function bindAgeTabs(...args){
+      return runtimeInvoke.bindAgeTabs(...args);
+    }
+    function focusMobileAgeGate(...args){
+      return runtimeInvoke.focusMobileAgeGate(...args);
+    }
+    function resetAgeSelection(...args){
+      return runtimeInvoke.resetAgeSelection(...args);
+    }
+    function resetShiftSelection(...args){
+      return runtimeInvoke.resetShiftSelection(...args);
+    }
 
     function setPhotoFilter(filter){
       Object.assign(state, { photoFilter: filter });
@@ -2148,17 +2271,39 @@
       bindAgeTabs('mobileAgeTabs');
     }
 
-    const getShiftDisplayDescription = runtimeInvoke.getShiftDisplayDescription;
-    const openShiftAboutModal = runtimeInvoke.openShiftAboutModal;
-    const renderShiftOptions = runtimeInvoke.renderShiftOptions;
-    const renderShiftCards = runtimeInvoke.renderShiftCards;
-    const contactIconMarkup = runtimeInvoke.contactIconMarkup;
-    const resolveFloatingContactLinks = runtimeInvoke.resolveFloatingContactLinks;
-    const initFloatingContactsWidget = runtimeInvoke.initFloatingContactsWidget;
-    const socialBadgeMark = runtimeInvoke.socialBadgeMark;
-    const socialDisplayName = runtimeInvoke.socialDisplayName;
-    const faqGlyph = runtimeInvoke.faqGlyph;
-    const renderStars = runtimeInvoke.renderStars;
+    function getShiftDisplayDescription(...args){
+      return runtimeInvoke.getShiftDisplayDescription(...args);
+    }
+    function openShiftAboutModal(...args){
+      return runtimeInvoke.openShiftAboutModal(...args);
+    }
+    function renderShiftOptions(...args){
+      return runtimeInvoke.renderShiftOptions(...args);
+    }
+    function renderShiftCards(...args){
+      return runtimeInvoke.renderShiftCards(...args);
+    }
+    function contactIconMarkup(...args){
+      return runtimeInvoke.contactIconMarkup(...args);
+    }
+    function resolveFloatingContactLinks(...args){
+      return runtimeInvoke.resolveFloatingContactLinks(...args);
+    }
+    function initFloatingContactsWidget(...args){
+      return runtimeInvoke.initFloatingContactsWidget(...args);
+    }
+    function socialBadgeMark(...args){
+      return runtimeInvoke.socialBadgeMark(...args);
+    }
+    function socialDisplayName(...args){
+      return runtimeInvoke.socialDisplayName(...args);
+    }
+    function faqGlyph(...args){
+      return runtimeInvoke.faqGlyph(...args);
+    }
+    function renderStars(...args){
+      return runtimeInvoke.renderStars(...args);
+    }
 
     // SECTION 5: Content and media rendering.
     function renderMediaSections(){
@@ -2234,9 +2379,15 @@
       syncLegalDocLinks();
     }
 
-    const renderDesktopMobileDocsBlock = runtimeInvoke.renderDesktopMobileDocsBlock;
-    const syncMobileDocsExpandedUi = runtimeInvoke.syncMobileDocsExpandedUi;
-    const applyMobileTemplatesToDesktopSections = runtimeInvoke.applyMobileTemplatesToDesktopSections;
+    function renderDesktopMobileDocsBlock(...args){
+      return runtimeInvoke.renderDesktopMobileDocsBlock(...args);
+    }
+    function syncMobileDocsExpandedUi(...args){
+      return runtimeInvoke.syncMobileDocsExpandedUi(...args);
+    }
+    function applyMobileTemplatesToDesktopSections(...args){
+      return runtimeInvoke.applyMobileTemplatesToDesktopSections(...args);
+    }
 
     function applyMobileSectionAccordion(){
       return;
@@ -2388,7 +2539,9 @@
       })
     );
 
-    const startTimer = runtimeInvoke.startTimer;
+    function startTimer(...args){
+      return runtimeInvoke.startTimer(...args);
+    }
 
     function isSummaryCompactMode(){
       if(state.previewView === 'mobile' && !useDesktopBaseForMobileCfg){
@@ -2405,9 +2558,15 @@
       return !!safeInvoke(ensureSummaryFlow(), 'isBookingPrimaryCtaVisibleInViewport', [], false);
     }
 
-    const updateSummaryBarVisibility = runtimeInvoke.updateSummaryBarVisibility;
-    const dismissSummaryBarTemporarily = runtimeInvoke.dismissSummaryBarTemporarily;
-    const renderSummary = runtimeInvoke.renderSummary;
+    function updateSummaryBarVisibility(...args){
+      return runtimeInvoke.updateSummaryBarVisibility(...args);
+    }
+    function dismissSummaryBarTemporarily(...args){
+      return runtimeInvoke.dismissSummaryBarTemporarily(...args);
+    }
+    function renderSummary(...args){
+      return runtimeInvoke.renderSummary(...args);
+    }
 
     safeInvoke(ensureMediaGestureBindingsApi(), 'init', [{
       document,
