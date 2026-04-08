@@ -19,3 +19,14 @@ Reduce multi-root ambiguity without breaking dist-centric runtime references.
 ## Immediate safe action
 - Document and enforce source/output ownership before path rewrites.
 - Localize any remaining external runtime assets to local roots.
+
+## Verified current ownership (runtime)
+- Shell markup: `dist/index.html`
+- Runtime CSS/JS artifacts: `dist/cdn/app.css`, `dist/cdn/app.bundle.js`, `dist/cdn/app.tilda.js`
+- Mirror artifacts for publish: `cdn/app.css`, `cdn/app.bundle.js`, `cdn/app.tilda.js`
+- Asset roots in active runtime refs: `/images`, `/icons`, `/assets`, `/cdn`
+
+## Phase-5 status
+- No destructive root merge executed yet.
+- Policy locked: quarantine-first for any root consolidation.
+- Runtime validation before/after remains stable (build PASS, smoke PASS).

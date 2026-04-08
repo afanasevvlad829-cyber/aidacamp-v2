@@ -11,6 +11,20 @@ Date: 2026-04-08 (Europe/Moscow)
 - `dist/index.html` max line length: `117808`
 - Runtime smoke remains PASS under current values.
 
+## Latest execution evidence (2026-04-08)
+- Evidence file: `docs/reset-audit/phase-checks/phase-6-rerun-20260408_102755.md`
+- `build.sh`: PASS
+- `smoke-booking-ui-playwright`: PASS
+- `quality-check`: FAIL (known dist thresholds only)
+  - `dist_bytes=163523` (hard limit PASS, baseline delta FAIL)
+  - `dist_max_line_length=136289` (hard limit FAIL, baseline delta FAIL)
+- `quality-gate`: FAIL (same known dist threshold reasons)
+
+## Known-fail status
+- This remains a `KNOWN_FAIL` class for the current dist-centric shell until either:
+1. dist shell formatting/size is reduced structurally, or
+2. phase-6 baseline policy is explicitly realigned with approved rationale.
+
 ## Interpretation
 - Failures are currently mostly structural/baseline-mismatch for dist-centric shell format.
 - They are useful as debt signal, but not always direct runtime-break indicators.
