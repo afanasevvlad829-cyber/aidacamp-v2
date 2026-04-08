@@ -1,919 +1,513 @@
-/* src/scripts/core/view-mode.js */
-(function initAidacampViewMode(windowObj){
+/* src/scripts/config/booking-views-runtime.js */
+(function registerBookingViewsRuntime(windowObj){
   'use strict';
 
   if(!windowObj) return;
-  const MOBILE_VIEWPORT_MAX_WIDTH = 900;
+  windowObj.AC_RUNTIME_CONFIG = windowObj.AC_RUNTIME_CONFIG || {};
 
-  function resolveRequestedView(rawView){
-    return rawView === 'mobile' ? 'mobile' : 'desktop';
-  }
-
-  function resolveEffectiveView(requestedView, useDesktopBaseForMobile){
-    const requested = resolveRequestedView(requestedView);
-    return (requested === 'mobile' && !!useDesktopBaseForMobile) ? 'desktop' : requested;
-  }
-
-  function isMobileViewport(){
-    return isViewportNarrow(MOBILE_VIEWPORT_MAX_WIDTH);
-  }
-
-  function getViewportView(){
-    return isMobileViewport() ? 'mobile' : 'desktop';
-  }
-
-  function isViewportNarrow(maxWidth = MOBILE_VIEWPORT_MAX_WIDTH){
-    const safeWidth = Number(maxWidth);
-    const width = Number.isFinite(safeWidth) && safeWidth > 0 ? safeWidth : MOBILE_VIEWPORT_MAX_WIDTH;
-    return windowObj.matchMedia ? windowObj.matchMedia(`(max-width: ${Math.round(width)}px)`).matches : false;
-  }
-
-  function shouldShowLegacyMobile(requestedView, useDesktopBaseForMobile){
-    return requestedView === 'mobile' && !useDesktopBaseForMobile;
-  }
-
-  windowObj.AC_VIEW_MODE = Object.freeze({
-    MOBILE_VIEWPORT_MAX_WIDTH,
-    resolveRequestedView,
-    resolveEffectiveView,
-    isMobileViewport,
-    isViewportNarrow,
-    getViewportView,
-    shouldShowLegacyMobile
+  windowObj.AC_RUNTIME_CONFIG.bookingViews = Object.freeze({
+    stage2VerticalAlign: Object.freeze({
+      top: Object.freeze({ flex: 'flex-start', grid: 'start' }),
+      center: Object.freeze({ flex: 'center', grid: 'center' }),
+      bottom: Object.freeze({ flex: 'flex-end', grid: 'end' })
+    }),
+    stage2HorizontalAlign: Object.freeze({
+      left: Object.freeze({ flex: 'flex-start', grid: 'start' }),
+      center: Object.freeze({ flex: 'center', grid: 'center' }),
+      right: Object.freeze({ flex: 'flex-end', grid: 'end' }),
+      stretch: Object.freeze({ flex: 'stretch', grid: 'stretch' })
+    }),
+    views: Object.freeze({
+      desktop: Object.freeze({
+        key: 'desktop',
+        cardId: 'desktop-booking-card',
+        shiftOptionsId: 'desktop-shift-options',
+        infoId: 'desktop-booking-info',
+        titleId: 'desktopBookingTitle',
+        leadId: 'desktopBookingLead',
+        startBtnId: 'desktopStartBtn',
+        hintId: 'desktopBookingHint',
+        stepsId: 'desktopBookingSteps',
+        inlineHintId: 'desktopBookingHintInline',
+        shiftListId: 'desktopShiftList',
+        ctaWrapId: 'desktopCtaWrap',
+        ageTabsId: 'desktopAgeTabs',
+        summaryChipsId: 'desktopBookingSummaryChips',
+        ageChipId: 'desktopAgeChip',
+        ageChipTextId: 'desktopAgeChipText',
+        shiftChipId: 'desktopShiftChip',
+        shiftChipTextId: 'desktopShiftChipText',
+        guidedInlineHintId: 'desktopInlineHint',
+        inlineLeadScope: 'booking-desktop',
+        stage2Align: Object.freeze({
+          vertical: 'center',
+          horizontal: 'stretch'
+        })
+      }),
+      mobile: Object.freeze({
+        key: 'mobile',
+        cardId: 'mobileBookingCard',
+        shiftOptionsId: 'mobileShiftOptions',
+        infoId: 'mobile-booking-info',
+        titleId: 'mobileBookingTitle',
+        leadId: 'mobileBookingLead',
+        startBtnId: 'mobileStartBtn',
+        hintId: 'mobileBookingHint',
+        stepsId: 'mobileBookingSteps',
+        inlineHintId: 'mobileBookingHintInline',
+        shiftListId: 'mobileShiftList',
+        ctaWrapId: 'mobileCtaWrap',
+        ageTabsId: 'mobileAgeTabs',
+        summaryChipsId: 'mobileBookingSummaryChips',
+        ageChipId: 'mobileAgeChip',
+        ageChipTextId: 'mobileAgeChipText',
+        shiftChipId: 'mobileShiftChip',
+        shiftChipTextId: 'mobileShiftChipText',
+        guidedInlineHintId: 'mobileInlineHint',
+        inlineLeadScope: 'booking-mobile',
+        stage2Align: Object.freeze({
+          vertical: 'center',
+          horizontal: 'stretch'
+        })
+      })
+    })
   });
 })(window);
 
 
-/* src/scripts/core/block-factory.js */
-/* src/scripts/core/block-factory.js */
-(function initAidacampBlockFactory(windowObj){
+/* src/scripts/config/docs-runtime-content.js */
+(function registerDocsRuntimeContent(windowObj){
   'use strict';
 
   if(!windowObj) return;
+  windowObj.AC_RUNTIME_CONFIG = windowObj.AC_RUNTIME_CONFIG || {};
 
-  windowObj.AIDACAMP_BLOCKS = windowObj.AIDACAMP_BLOCKS || {};
-
-  windowObj.createAidacampBlock = function createAidacampBlock(blockId){
-    return function buildBlock(context){
-      var unsubscribers = [];
-      var ctx = context || {};
-      var runtime = ctx.runtime;
-
-      function mount(){
-        if(!runtime || !runtime.bus || typeof runtime.bus.on !== 'function') return;
-        var off = runtime.bus.on('state:sync', function onStateSync(snapshot){
-          if(!snapshot || typeof snapshot !== 'object') return;
-        });
-        unsubscribers.push(off);
-      }
-
-      function unmount(){
-        while(unsubscribers.length){
-          var off = unsubscribers.pop();
-          if(typeof off === 'function'){
-            off();
-          }
-        }
-      }
-
-      function onEvent(){
-        // Foundation layer: modules are isolated and listen through the runtime bus.
-      }
-
-      return {
-        id: blockId,
-        mount: mount,
-        unmount: unmount,
-        onEvent: onEvent
-      };
-    };
-  };
+  windowObj.AC_RUNTIME_CONFIG.docsRuntime = Object.freeze({
+    mobileDocsCopy: Object.freeze({
+      orgName: 'ООО «ВОИП КОННЕКТ»',
+      orgMeta: 'ИНН 7729713637 · РТО 025773',
+      copyright: '© 2019–2026',
+      links: Object.freeze([
+        Object.freeze({ href:'legal.html#education-license', target:'_blank', rel:'noopener noreferrer', text:'Образовательная лицензия Л035-01298-77/01082973' }),
+        Object.freeze({ href:'mailto:hello@codims.ru', text:'hello@codims.ru' }),
+        Object.freeze({ href:'https://www.codims.ru/privacy', target:'_blank', rel:'noopener noreferrer', text:'Политика обработки персональных данных' }),
+        Object.freeze({ href:'legal.html#legal-info', target:'_blank', rel:'noopener noreferrer', text:'Юридическая информация' }),
+        Object.freeze({ href:'legal.html#org-info', target:'_blank', rel:'noopener noreferrer', text:'Сведения об организации' }),
+        Object.freeze({ href:'legal.html#children-rest', target:'_blank', rel:'noopener noreferrer', text:'Отдых и оздоровление детей' }),
+        Object.freeze({ href:'legal.html#partners-info', target:'_blank', rel:'noopener noreferrer', text:'Условия для партнёров' }),
+        Object.freeze({ href:'legal.html#bloggers-info', target:'_blank', rel:'noopener noreferrer', text:'Сотрудничество с блогерами' })
+      ])
+    }),
+    desktopMobileSectionTemplates: Object.freeze({
+      'section-about': `
+        <h3>О лагере</h3>
+        <p class="section-lead">AiDaCamp — место, где ребёнок создаёт, двигается, работает в команде и уезжает со смены с понятным результатом.</p>
+        <div class="mobile-about-features" id="mobileAboutFeaturesDesktop"></div>
+      `,
+      'section-journey': `
+        <h3>Как проходит смена</h3>
+        <p class="section-lead">4 шага: от быстрого включения к понятному результату за смену.</p>
+        <div class="mobile-journey-flow" id="mobileJourneyContentDesktop"></div>
+      `,
+      'section-programs': `
+        <h3>Описание смен</h3>
+        <p class="section-lead">Выберите смену в селекторе — ниже покажем одну карточку с ключевыми деталями.</p>
+        <div class="mobile-programs-flow" id="mobileProgramsContentDesktop"></div>
+      `,
+      'section-photos': `
+        <h3>Фото</h3>
+        <p class="section-lead">Живые кадры лагеря: занятия, бассейн, спорт, питание, команда и атмосфера.</p>
+        <div class="mobile-media-filter-row" id="mobilePhotoFiltersDesktop">
+          <button class="mobile-media-filter active" type="button" data-photo-filter="camp">Атмосфера</button>
+          <button class="mobile-media-filter" type="button" data-photo-filter="pool">Бассейн</button>
+          <button class="mobile-media-filter" type="button" data-photo-filter="sport">Спорт</button>
+          <button class="mobile-media-filter" type="button" data-photo-filter="study">Учёба</button>
+          <button class="mobile-media-filter" type="button" data-photo-filter="food">Питание</button>
+        </div>
+        <div id="mobilePhotoGalleryDesktop"></div>
+      `,
+      'section-videos': `
+        <h3>Видео</h3>
+        <p class="section-lead">Короткие видео, которые быстро объясняют, почему дети в лагере меняются сильнее, чем родители ожидают.</p>
+        <div id="mobileVideoGalleryDesktop"></div>
+      `,
+      'section-reviews': `
+        <h3>Отзывы</h3>
+        <p class="section-lead">Сильный внешний social proof: реальные отзывы родителей на Яндекс Картах.</p>
+        <div id="mobileReviewsGalleryDesktop"></div>
+      `,
+      'section-faq': `
+        <h3>FAQ</h3>
+        <p class="section-lead">Ключевые вопросы по медицине, безопасности, питанию и проживанию.</p>
+        <div class="mobile-faq-filter-row" id="mobileFaqFiltersDesktop"></div>
+        <div class="mobile-faq-accordion" id="mobileFaqListDesktop"></div>
+      `,
+      'section-team': `
+        <h3>Команда</h3>
+        <p class="section-lead">Люди, которые ведут смены и работают с детьми в проектном формате.</p>
+        <div class="mobile-team-list" id="mobileInlineTeamListDesktop"></div>
+      `,
+      'section-stay': `
+        <h3>Размещение</h3>
+        <p class="section-lead">Комнаты, бытовые зоны и территория лагеря.</p>
+        <div class="mobile-stay-list" id="mobileInlineStayListDesktop"></div>
+      `,
+      'section-contacts': `
+        <h3>Контакты</h3>
+        <p class="section-lead">Быстрая связь и маршрут до лагеря.</p>
+        <div class="mobile-contacts-list" id="mobileInlineContactsListDesktop"></div>
+        <div class="mobile-socials-row" id="mobileInlineSocialsDesktop"></div>
+      `
+    })
+  });
 })(window);
 
 
-/* src/scripts/core/modular-runtime.js */
-/* src/scripts/core/modular-runtime.js */
-(function initAidacampModularRuntime(windowObj){
+/* src/scripts/config/hero-ab-runtime.js */
+(function registerHeroAbRuntimeConfig(windowObj){
   'use strict';
 
-  if(!windowObj || windowObj.AIDACAMP_MODULAR) return;
+  if(!windowObj) return;
+  windowObj.AC_RUNTIME_CONFIG = windowObj.AC_RUNTIME_CONFIG || {};
 
-  function createEmitter(){
-    var listeners = new Map();
-
-    function on(eventName, handler){
-      if(typeof handler !== 'function') return function noop(){};
-      var bucket = listeners.get(eventName);
-      if(!bucket){
-        bucket = new Set();
-        listeners.set(eventName, bucket);
-      }
-      bucket.add(handler);
-      return function unsubscribe(){
-        var current = listeners.get(eventName);
-        if(!current) return;
-        current.delete(handler);
-        if(current.size === 0){
-          listeners.delete(eventName);
-        }
-      };
-    }
-
-    function emit(eventName, payload){
-      var bucket = listeners.get(eventName);
-      if(!bucket || bucket.size === 0) return;
-      bucket.forEach(function runHandler(handler){
-        try {
-          handler(payload, eventName);
-        } catch (error){
-          console.warn('[modular-runtime] event handler error', eventName, error);
-        }
-      });
-    }
-
-    return { on: on, emit: emit };
-  }
-
-  function createStore(initialState){
-    var currentState = Object.freeze(Object.assign({}, initialState || {}));
-    var subscribers = new Set();
-
-    function getState(){
-      return currentState;
-    }
-
-    function setState(patch){
-      if(!patch || typeof patch !== 'object') return currentState;
-      currentState = Object.freeze(Object.assign({}, currentState, patch));
-      subscribers.forEach(function notify(subscriber){
-        try {
-          subscriber(currentState);
-        } catch (error){
-          console.warn('[modular-runtime] store subscriber error', error);
-        }
-      });
-      return currentState;
-    }
-
-    function subscribe(handler){
-      if(typeof handler !== 'function') return function noop(){};
-      subscribers.add(handler);
-      return function unsubscribe(){
-        subscribers.delete(handler);
-      };
-    }
-
-    return {
-      getState: getState,
-      setState: setState,
-      subscribe: subscribe
-    };
-  }
-
-  function createComposer(blocks){
-    var list = Array.isArray(blocks) ? blocks.slice() : [];
-    var byId = new Map();
-    list.forEach(function add(entry){
-      if(!entry || !entry.id) return;
-      byId.set(entry.id, Object.assign({}, entry));
-    });
-
-    function getOrdered(){
-      return list
-        .filter(function filter(entry){ return entry && entry.id; })
-        .map(function map(entry){
-          return byId.get(entry.id) || Object.assign({}, entry);
-        });
-    }
-
-    function upsert(blockConfig){
-      if(!blockConfig || !blockConfig.id) return;
-      if(byId.has(blockConfig.id)){
-        byId.set(blockConfig.id, Object.assign({}, byId.get(blockConfig.id), blockConfig));
-        return;
-      }
-      byId.set(blockConfig.id, Object.assign({}, blockConfig));
-      list.push({ id: blockConfig.id });
-    }
-
-    return {
-      getOrdered: getOrdered,
-      upsert: upsert
-    };
-  }
-
-  function createRuntime(options){
-    var opts = options || {};
-    var bus = createEmitter();
-    var store = createStore(opts.initialState || {});
-    var composer = createComposer(opts.blocks || []);
-    var active = new Map();
-
-    function getModuleFactory(id){
-      var blockBag = windowObj.AIDACAMP_BLOCKS || {};
-      return blockBag[id] || null;
-    }
-
-    function isBlockEnabled(blockConfig){
-      if(!blockConfig) return false;
-      if(blockConfig.enabled === false) return false;
-      if(!blockConfig.flag) return true;
-      var flags = windowObj.AIDACAMP_FLAGS || {};
-      return !!flags[blockConfig.flag];
-    }
-
-    function mount(context){
-      var ctx = context || {};
-      var mountedIds = [];
-      composer.getOrdered().forEach(function mountBlock(blockConfig){
-        if(!blockConfig || !blockConfig.id) return;
-        if(!isBlockEnabled(blockConfig)) return;
-        var factory = getModuleFactory(blockConfig.id);
-        if(typeof factory !== 'function') return;
-        try {
-          var moduleInstance = factory({
-            id: blockConfig.id,
-            config: blockConfig,
-            bus: bus,
-            store: store,
-            root: ctx.root || document,
-            runtime: api
-          });
-          if(moduleInstance && typeof moduleInstance.mount === 'function'){
-            moduleInstance.mount();
-          }
-          if(moduleInstance){
-            if(typeof moduleInstance.unmount !== 'function' || typeof moduleInstance.onEvent !== 'function'){
-              console.warn('[modular-runtime] invalid block contract', blockConfig.id);
-            }
-          }
-          active.set(blockConfig.id, moduleInstance || null);
-          mountedIds.push(blockConfig.id);
-        } catch (error){
-          console.warn('[modular-runtime] mount failed', blockConfig.id, error);
-        }
-      });
-      return mountedIds;
-    }
-
-    function unmount(){
-      active.forEach(function maybeUnmount(moduleInstance, id){
-        if(moduleInstance && typeof moduleInstance.unmount === 'function'){
-          try {
-            moduleInstance.unmount();
-          } catch (error){
-            console.warn('[modular-runtime] unmount failed', id, error);
-          }
-        }
-      });
-      active.clear();
-    }
-
-    function emit(eventName, payload){
-      bus.emit(eventName, payload);
-      active.forEach(function notifyModule(moduleInstance){
-        if(!moduleInstance || typeof moduleInstance.onEvent !== 'function') return;
-        try {
-          moduleInstance.onEvent(eventName, payload);
-        } catch (error){
-          console.warn('[modular-runtime] module event failed', eventName, error);
-        }
-      });
-    }
-
-    var api = {
-      version: 'foundation-v1',
-      bus: bus,
-      store: store,
-      composer: composer,
-      mount: mount,
-      unmount: unmount,
-      emit: emit
-    };
-
-    return api;
-  }
-
-  windowObj.AIDACAMP_MODULAR = {
-    createRuntime: createRuntime
-  };
-})(window);
-
-
-/* src/scripts/core/content-adapter.js */
-/* src/scripts/core/content-adapter.js */
-(function initAidacampContentAdapter(windowObj){
-  'use strict';
-
-  if(!windowObj || windowObj.AIDACAMP_CONTENT_ADAPTER) return;
-
-  function safeClone(value){
-    try {
-      return JSON.parse(JSON.stringify(value));
-    } catch (_error){
-      return value;
-    }
-  }
-
-  function getFallbackBlock(blockId){
-    var root = windowObj.AIDACAMP_CONTENT || {};
-    if(blockId === 'shifts') return safeClone(root.shifts || []);
-    if(blockId === 'media-content') return safeClone(root.mediaContent || null);
-    if(blockId === 'hero-content') return safeClone(root.heroContent || null);
-    if(blockId === 'ui-copy') return safeClone(root.uiCopy || null);
-    if(blockId === 'legacy-content-map'){
-      if(root.legacyContentMap && typeof root.legacyContentMap === 'object'){
-        return safeClone(root.legacyContentMap);
-      }
-      var acData = windowObj.AC_DATA || {};
-      if(acData && typeof acData === 'object' && acData.CONTENT_MAP){
-        return safeClone({
-          CONTENT_MAP: acData.CONTENT_MAP || {},
-          AGE_PROFILES: acData.AGE_PROFILES || [],
-          SHIFTS: acData.SHIFTS || [],
-          DIRECTIONS: acData.DIRECTIONS || [],
-          TAB_TO_SECTION: acData.TAB_TO_SECTION || {},
-          AGE_SLIDER_POINTS: acData.AGE_SLIDER_POINTS || [9, 11, 13]
-        });
-      }
-    }
-    return null;
-  }
-
-  function getDefaultLocale(){
-    var htmlLang = (document && document.documentElement && document.documentElement.lang) || '';
-    var normalized = String(htmlLang || '').trim().toLowerCase();
-    return normalized || 'ru';
-  }
-
-  async function fetchJson(url){
-    var response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json'
-      },
-      credentials: 'same-origin',
-      cache: 'no-store'
-    });
-    if(!response.ok){
-      throw new Error('http_' + String(response.status));
-    }
-    return response.json();
-  }
-
-  function resolveApiBase(){
-    var settings = windowObj.AIDACAMP_SETTINGS || {};
-    var contentApiBase = settings && settings.contentApiBase ? String(settings.contentApiBase).trim() : '';
-    if(contentApiBase) return contentApiBase.replace(/\/$/, '');
-    return '';
-  }
-
-  function isApiEnabled(){
-    var flags = windowObj.AIDACAMP_FLAGS || {};
-    return !!flags.FF_CONTENT_FROM_API;
-  }
-
-  async function loadBlock(blockId, locale){
-    var normalizedBlock = String(blockId || '').trim();
-    var normalizedLocale = String(locale || getDefaultLocale()).trim().toLowerCase();
-    if(!normalizedBlock){
-      return { ok:false, source:'none', error:'block_required', blockId:'', locale: normalizedLocale, payload:null };
-    }
-
-    if(!isApiEnabled()){
-      return {
-        ok:true,
-        source:'fallback',
-        mode:'fallback',
-        fallbackUsed:true,
-        blockId: normalizedBlock,
-        locale: normalizedLocale,
-        payload: getFallbackBlock(normalizedBlock)
-      };
-    }
-
-    var base = resolveApiBase();
-    var path = '/api/content?block=' + encodeURIComponent(normalizedBlock) + '&locale=' + encodeURIComponent(normalizedLocale);
-    var url = base ? (base + path) : path;
-
-    try {
-      var data = await fetchJson(url);
-      if(data && data.ok && data.found){
-        return {
-          ok:true,
-          source:'api',
-          mode:'api',
-          fallbackUsed:false,
-          blockId: normalizedBlock,
-          locale: normalizedLocale,
-          payload: data.payload
-        };
-      }
-    } catch (error){
-      return {
-        ok:true,
-        source:'fallback',
-        mode:'fallback',
-        fallbackUsed:true,
-        blockId: normalizedBlock,
-        locale: normalizedLocale,
-        payload: getFallbackBlock(normalizedBlock),
-        error: String(error && error.message ? error.message : error)
-      };
-    }
-
-    return {
-      ok:true,
-      source:'fallback',
-      mode:'fallback',
-      fallbackUsed:true,
-      blockId: normalizedBlock,
-      locale: normalizedLocale,
-      payload: getFallbackBlock(normalizedBlock)
-    };
-  }
-
-  async function loadBlocks(blockIds, locale){
-    var ids = Array.isArray(blockIds) ? blockIds.map(function map(value){ return String(value || '').trim(); }).filter(Boolean) : [];
-    var normalizedLocale = String(locale || getDefaultLocale()).trim().toLowerCase();
-
-    if(ids.length === 0){
-      return { ok:true, source:'none', mode:'none', locale: normalizedLocale, blocks:{}, fallbackBlocks: [] };
-    }
-
-    if(!isApiEnabled()){
-      var fallbackBlocks = {};
-      ids.forEach(function mapId(id){
-        fallbackBlocks[id] = getFallbackBlock(id);
-      });
-      return { ok:true, source:'fallback', mode:'fallback', locale: normalizedLocale, blocks:fallbackBlocks, fallbackBlocks: ids.slice() };
-    }
-
-    var base = resolveApiBase();
-    var path = '/api/content/batch?blocks=' + encodeURIComponent(ids.join(',')) + '&locale=' + encodeURIComponent(normalizedLocale);
-    var url = base ? (base + path) : path;
-
-    try {
-      var data = await fetchJson(url);
-      if(data && data.ok && data.blocks && typeof data.blocks === 'object'){
-        var mergedBlocks = {};
-        var usedFallback = false;
-        var fallbackBlockIds = [];
-        ids.forEach(function mergeById(id){
-          var value = Object.prototype.hasOwnProperty.call(data.blocks, id) ? data.blocks[id] : null;
-          if(value === null || value === undefined){
-            mergedBlocks[id] = getFallbackBlock(id);
-            usedFallback = true;
-            fallbackBlockIds.push(id);
-            return;
-          }
-          mergedBlocks[id] = value;
-        });
-        return {
-          ok:true,
-          source: usedFallback ? 'api+fallback' : 'api',
-          mode: usedFallback ? 'api+fallback' : 'api',
-          locale: normalizedLocale,
-          blocks: mergedBlocks,
-          fallbackBlocks: fallbackBlockIds
-        };
-      }
-    } catch (_error){
-      // fallback below
-    }
-
-    var blocks = {};
-    ids.forEach(function mapFallback(id){
-      blocks[id] = getFallbackBlock(id);
-    });
-    return { ok:true, source:'fallback', mode:'fallback', locale: normalizedLocale, blocks: blocks, fallbackBlocks: ids.slice() };
-  }
-
-  windowObj.AIDACAMP_CONTENT_ADAPTER = {
-    loadBlock: loadBlock,
-    loadBlocks: loadBlocks
-  };
-})(window);
-
-
-/* src/scripts/core/runtime-content.js */
-/* src/scripts/core/runtime-content.js */
-(function initRuntimeContent(windowObj){
-  'use strict';
-
-  if(!windowObj || windowObj.AC_RUNTIME_CONTENT){
-    return;
-  }
-
-  function normalizeValue(value){
-    return String(value || '').trim();
-  }
-
-  function normalizeList(value){
-    return Array.isArray(value)
-      ? value.map(normalizeValue).filter(Boolean)
-      : [];
-  }
-
-  function cloneObject(value){
-    if(!value || typeof value !== 'object'){
-      return {};
-    }
-    return Object.assign({}, value);
-  }
-
-  function buildDefaultCalendarLocaleCopy(){
-    var normalize = function normalize(value){
-      var cleaned = normalizeValue(value).replace(/\./g, '');
-      return cleaned ? (cleaned.charAt(0).toUpperCase() + cleaned.slice(1)) : '';
-    };
-    var weekdaysShort = [];
-    for(var i = 0; i < 7; i += 1){
-      var dt = new Date(Date.UTC(2026, 0, 4 + i));
-      var value = new Intl.DateTimeFormat('ru-RU', { weekday: 'short', timeZone: 'UTC' }).format(dt);
-      weekdaysShort.push(normalize(value));
-    }
-    var monthNames = [];
-    for(var month = 0; month < 12; month += 1){
-      var dtMonth = new Date(Date.UTC(2026, month, 1));
-      var monthValue = new Intl.DateTimeFormat('ru-RU', { month: 'long', timeZone: 'UTC' }).format(dtMonth);
-      monthNames.push(normalize(monthValue).toLowerCase());
-    }
-    return {
-      weekdaysShort: Object.freeze(weekdaysShort),
-      monthNames: Object.freeze(monthNames)
-    };
-  }
-
-  function buildUtmH1CopyRules(raw){
-    var source = (raw && typeof raw === 'object') ? raw : {};
-    var next = {};
-    Object.entries(source).forEach(function entryHandler(item){
-      var key = normalizeValue(item[0]).toLowerCase();
-      var value = item[1] || {};
-      if(!key) return;
-      var title = normalizeValue(value.title);
-      var sub = normalizeValue(value.sub);
-      if(!title || !sub) return;
-      next[key] = Object.freeze({ title: title, sub: sub });
-    });
-    return Object.freeze(next);
-  }
-
-  function createRuntimeContent(context){
-    var ctx = context || {};
-    var initialUiCopy = (ctx.initialUiCopy && typeof ctx.initialUiCopy === 'object') ? ctx.initialUiCopy : {};
-    var initialHeroContent = (ctx.initialHeroContent && typeof ctx.initialHeroContent === 'object') ? ctx.initialHeroContent : {};
-
-    var DEFAULT_MOBILE_DOCS_COPY = Object.freeze(Object.assign({}, initialUiCopy.mobileDocs || {}));
-    var INITIAL_BOOKING_HINTS = Object.freeze(Object.assign({}, initialUiCopy.bookingHints || {}));
-    var INITIAL_MEDIA_COPY = Object.freeze(Object.assign({}, initialUiCopy.mediaCopy || {}));
-    var INITIAL_SHIFT_COPY = Object.freeze(Object.assign({}, initialUiCopy.shiftCopy || {}));
-    var INITIAL_TELEGRAM_COPY = Object.freeze(Object.assign({}, initialUiCopy.telegramCopy || {}));
-    var INITIAL_CALENDAR_LOCALE_COPY = Object.freeze(Object.assign({}, initialUiCopy.calendarLocale || {}));
-
-    var DEFAULT_CALENDAR_LOCALE_COPY = buildDefaultCalendarLocaleCopy();
-    var HERO_VARIANT_BROAD_FALLBACK = Object.freeze({
-      broad: Object.freeze({
-        tier: 'broad',
-        variant: 'v1',
-        title: '',
-        sub: '',
-        cta: '',
-        hintStage1: '',
-        hintStage1Followup: '',
-        hintStage2: ''
+  windowObj.AC_RUNTIME_CONFIG.heroAb = Object.freeze({
+    assets: Object.freeze({
+      A: Object.freeze({
+        images: Object.freeze(['/assets/images/hero-camp-sunset-20260328.png']),
+        mobile: '/assets/images/hero-camp-sunset-20260328.png'
+      }),
+      B: Object.freeze({
+        images: Object.freeze(['/assets/images/hero-ab-pool-20260401.jpeg']),
+        mobile: '/assets/images/hero-ab-pool-20260401.jpeg'
       })
-    });
-
-    var defaultHeroBroadVariant = (
-      initialHeroContent.variantCopy &&
-      typeof initialHeroContent.variantCopy === 'object' &&
-      initialHeroContent.variantCopy.broad &&
-      typeof initialHeroContent.variantCopy.broad === 'object'
-    )
-      ? initialHeroContent.variantCopy.broad
-      : HERO_VARIANT_BROAD_FALLBACK.broad;
-    var DEFAULT_HERO_VARIANT_COPY = Object.freeze({
-      broad: Object.freeze({
-        tier: String(defaultHeroBroadVariant.tier || HERO_VARIANT_BROAD_FALLBACK.broad.tier),
-        variant: String(defaultHeroBroadVariant.variant || HERO_VARIANT_BROAD_FALLBACK.broad.variant),
-        title: String(defaultHeroBroadVariant.title || HERO_VARIANT_BROAD_FALLBACK.broad.title),
-        sub: String(defaultHeroBroadVariant.sub || HERO_VARIANT_BROAD_FALLBACK.broad.sub),
-        cta: String(defaultHeroBroadVariant.cta || HERO_VARIANT_BROAD_FALLBACK.broad.cta),
-        hintStage1: String(defaultHeroBroadVariant.hintStage1 || HERO_VARIANT_BROAD_FALLBACK.broad.hintStage1),
-        hintStage1Followup: String(defaultHeroBroadVariant.hintStage1Followup || HERO_VARIANT_BROAD_FALLBACK.broad.hintStage1Followup),
-        hintStage2: String(defaultHeroBroadVariant.hintStage2 || HERO_VARIANT_BROAD_FALLBACK.broad.hintStage2)
+    }),
+    variantLabels: Object.freeze({
+      A: 'Control',
+      B: 'Pool Motion'
+    }),
+    timings: Object.freeze({
+      shiftUpMs: 7000,
+      benefitRevealDelayMs: 7600,
+      benefitStepMs: 4000,
+      desktopShiftUpMs: 5000,
+      desktopBenefitRevealDelayMs: 5000
+    }),
+    desktopBgOnly: false,
+    mobileEffectsEnabled: false,
+    benefitsLayoutExperiment: true,
+    benefitsItems: Object.freeze([
+      Object.freeze({
+        title:'AI-проект за смену',
+        icon:'/assets/icons/ai-svgrepo-com.svg',
+        iconClass:''
+      }),
+      Object.freeze({
+        title:'Без телефонов',
+        icon:'/assets/icons/mobile-off-svgrepo-com.svg',
+        iconClass:''
+      }),
+      Object.freeze({
+        title:'Бассейн и спорт',
+        icon:'/assets/icons/swim-svgrepo-com.svg',
+        iconClass:''
       })
-    });
-    var defaultHeroUtmRules = (initialHeroContent.utmH1Rules && typeof initialHeroContent.utmH1Rules === 'object')
-      ? initialHeroContent.utmH1Rules
-      : {};
+    ])
+  });
+})(window);
 
-    var UTM_H1_COPY_RULES = buildUtmH1CopyRules(defaultHeroUtmRules);
-    var HERO_VARIANT_COPY = DEFAULT_HERO_VARIANT_COPY;
-    var HERO_VARIANT_DEFAULT_TIER = 'broad';
-    var HERO_VARIANT_BANNER_TIER = Object.freeze({});
 
-    var HERO_IMAGES = ['/assets/images/hero-camp-sunset-20260328-lite.avif'];
-    var HERO_IMAGES_B = ['/assets/images/hero-ab-pool-20260401-lite.avif'];
-    var HERO_MOBILE = '/assets/images/hero-camp-mobile-people-ultra.avif';
-    var HERO_MOBILE_B = '/assets/images/hero-camp-mobile-people-ultra.avif';
+/* src/scripts/config/hero-variant-runtime.js */
+(function registerHeroVariantRuntimeConfig(windowObj){
+  'use strict';
 
-    var HERO_BENEFITS_LAYOUT_EXPERIMENT_ITEMS = Object.freeze([]);
-    var MOBILE_DOCS_COPY = Object.freeze(cloneObject(DEFAULT_MOBILE_DOCS_COPY));
-    var BOOKING_HINTS_COPY = Object.freeze(cloneObject(INITIAL_BOOKING_HINTS));
-    var CALENDAR_LOCALE_COPY = Object.freeze({
-      weekdaysShort: Object.freeze(Array.isArray(INITIAL_CALENDAR_LOCALE_COPY.weekdaysShort)
-        ? normalizeList(INITIAL_CALENDAR_LOCALE_COPY.weekdaysShort)
-        : Array.from(DEFAULT_CALENDAR_LOCALE_COPY.weekdaysShort)),
-      monthNames: Object.freeze(Array.isArray(INITIAL_CALENDAR_LOCALE_COPY.monthNames)
-        ? normalizeList(INITIAL_CALENDAR_LOCALE_COPY.monthNames)
-        : Array.from(DEFAULT_CALENDAR_LOCALE_COPY.monthNames))
-    });
-    var MEDIA_COPY = Object.freeze(cloneObject(INITIAL_MEDIA_COPY));
-    var SHIFT_COPY = Object.freeze(cloneObject(INITIAL_SHIFT_COPY));
-    var TELEGRAM_COPY = Object.freeze(cloneObject(INITIAL_TELEGRAM_COPY));
-    var DESKTOP_MOBILE_SECTION_TEMPLATES = Object.freeze({});
+  if(!windowObj) return;
+  windowObj.AC_RUNTIME_CONFIG = windowObj.AC_RUNTIME_CONFIG || {};
 
-    function bookingText(key){
-      return String(Object.prototype.hasOwnProperty.call(BOOKING_HINTS_COPY, key) ? BOOKING_HINTS_COPY[key] : '');
-    }
+  windowObj.AC_RUNTIME_CONFIG.heroVariant = Object.freeze({
+    defaultTier: 'broad',
+    bannerTier: Object.freeze({
+      '212861185':'tier1',
+      '212861186':'tier1',
+      '212861188':'tier1',
+      '212861189':'tier2',
+      '212861195':'tier2',
+      '212861200':'tier2',
+      '212861205':'tier3',
+      '212861206':'tier3',
+      '212861207':'tier3',
+      '212861210':'tier4',
+      '212861211':'tier4',
+      '212861212':'tier4',
+      '212861214':'broad',
+      '212861215':'broad',
+      '212861216':'broad'
+    }),
+    copy: Object.freeze({
+      tier1: Object.freeze({
+        tier:'tier1',
+        variant:'v1',
+        title:'Выездной IT-лагерь в Подмосковье: гаджеты под контролем',
+        sub:'Ребёнок 10–12 лет сделает проект за смену, а вы будете спокойны за безопасность.',
+        cta:'Получить программу смен',
+        hintStage1:'Чтобы получить программу смен, выберите возраст.',
+        hintStage1Followup:'Нажмите на возраст — сразу откроем программу смен.',
+        hintStage2:'На втором шаге нажмите кнопку i у смены, чтобы получить программу смен.'
+      }),
+      tier2: Object.freeze({
+        tier:'tier2',
+        variant:'v1',
+        title:'IT-лагерь, где ребёнок возвращается из экрана в проект',
+        sub:'Сравните формат: проектная работа, команда, бассейн, природа Подмосковья.',
+        cta:'Сравнить смены и цены',
+        hintStage1:'Чтобы сравнить смены и цены, выберите возраст.',
+        hintStage1Followup:'Выберите возраст — и откроем все смены с ценами.',
+        hintStage2:'Нажмите «Все смены для {{age}}», чтобы сравнить смены и цены.'
+      }),
+      tier3: Object.freeze({
+        tier:'tier3',
+        variant:'v1',
+        title:'Не просто лагерь: IT-смена с результатом за 14 дней',
+        sub:'Проект, презентация, наставники-айтишники и режим гаджетов по правилам.',
+        cta:'Посмотреть программу',
+        hintStage1:'Чтобы посмотреть программу, выберите возраст.',
+        hintStage1Followup:'Выберите возраст — и покажем программу смен на шаге 2.',
+        hintStage2:'На втором шаге нажмите кнопку i у смены, чтобы посмотреть программу.'
+      }),
+      tier4: Object.freeze({
+        tier:'tier4',
+        variant:'v1',
+        title:'Если нужен форматный IT-лагерь, а не “просто отдых”',
+        sub:'Выездные смены в Подмосковье для 10–12 лет: IT + спорт + командная среда.',
+        cta:'Выбрать формат смены',
+        hintStage1:'Чтобы выбрать формат смены, выберите возраст.',
+        hintStage1Followup:'Выберите возраст — откроем форматы смен под ребёнка.',
+        hintStage2:'Нажмите «Все смены для {{age}}», чтобы выбрать формат смены.'
+      }),
+      broad: Object.freeze({
+        tier:'broad',
+        variant:'v1',
+        title:'Летние IT-смены в Подмосковье для детей 10–12 лет',
+        sub:'Программирование, проекты, бассейн, природа и меньше экранного времени.',
+        cta:'Узнать условия',
+        hintStage1:'Чтобы узнать условия, выберите возраст.',
+        hintStage1Followup:'Выберите возраст — подберём смену и условия.',
+        hintStage2:'Выберите подходящую смену.'
+      })
+    })
+  });
+})(window);
 
-    function uiBookingHintTemplate(key, fallbackOrParams, params){
-      var hasInlineParams = fallbackOrParams && typeof fallbackOrParams === 'object' && !Array.isArray(fallbackOrParams);
-      var fallback = hasInlineParams ? '' : (fallbackOrParams || '');
-      var templateParams = hasInlineParams ? fallbackOrParams : (params || {});
-      var template = String(fallback || bookingText(key) || '');
-      return template.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, function(_match, name){
-        return Object.prototype.hasOwnProperty.call(templateParams, name) ? String(templateParams[name] || '') : '';
-      });
-    }
 
-    function mediaText(key){
-      return String(Object.prototype.hasOwnProperty.call(MEDIA_COPY, key) ? MEDIA_COPY[key] : '');
-    }
+/* src/scripts/config/runtime-calendar-config.js */
+(function registerRuntimeCalendarConfig(windowObj){
+  'use strict';
 
-    function telegramText(key){
-      return String(Object.prototype.hasOwnProperty.call(TELEGRAM_COPY, key) ? TELEGRAM_COPY[key] : '');
-    }
+  if(!windowObj) return;
+  windowObj.AC_RUNTIME_CONFIG = windowObj.AC_RUNTIME_CONFIG || {};
 
-    function syncHeroContentConfig(){
-      var heroContent = (windowObj.AIDACAMP_CONTENT && windowObj.AIDACAMP_CONTENT.heroContent && typeof windowObj.AIDACAMP_CONTENT.heroContent === 'object')
-        ? windowObj.AIDACAMP_CONTENT.heroContent
-        : {};
-      var defaultTier = normalizeValue(heroContent.defaultTier || 'broad') || 'broad';
-      var bannerTier = (heroContent.bannerTier && typeof heroContent.bannerTier === 'object') ? heroContent.bannerTier : {};
-      var variantCopy = (heroContent.variantCopy && typeof heroContent.variantCopy === 'object') ? heroContent.variantCopy : {};
-      var utmH1Rules = (heroContent.utmH1Rules && typeof heroContent.utmH1Rules === 'object') ? heroContent.utmH1Rules : {};
-      var broadFallback = (variantCopy[defaultTier] && typeof variantCopy[defaultTier] === 'object')
-        ? variantCopy[defaultTier]
-        : DEFAULT_HERO_VARIANT_COPY.broad;
-      var heroImages = Array.isArray(heroContent.heroImages) ? heroContent.heroImages.filter(Boolean) : [];
-      var heroImagesB = Array.isArray(heroContent.heroImagesB) ? heroContent.heroImagesB.filter(Boolean) : [];
+  windowObj.AC_RUNTIME_CONFIG.calendar = Object.freeze({
+    weekdaysShort: Object.freeze(['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']),
+    monthNames: Object.freeze([
+      'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
+      'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'
+    ])
+  });
+})(window);
 
-      HERO_VARIANT_DEFAULT_TIER = defaultTier;
-      HERO_VARIANT_BANNER_TIER = Object.freeze(cloneObject(bannerTier));
-      HERO_VARIANT_COPY = Object.freeze(
-        Object.assign({}, DEFAULT_HERO_VARIANT_COPY, variantCopy, { [defaultTier]: broadFallback })
-      );
-      UTM_H1_COPY_RULES = buildUtmH1CopyRules(utmH1Rules);
 
-      HERO_IMAGES = Object.freeze(heroImages.length ? heroImages : ['/assets/images/hero-camp-sunset-20260328-lite.avif']);
-      HERO_IMAGES_B = Object.freeze(heroImagesB.length ? heroImagesB : ['/assets/images/hero-ab-pool-20260401-lite.avif']);
-      HERO_MOBILE = String(heroContent.heroMobile || HERO_IMAGES[0] || '/assets/images/hero-camp-mobile-people-ultra.avif');
-      HERO_MOBILE_B = String(heroContent.heroMobileB || HERO_IMAGES_B[0] || '/assets/images/hero-camp-mobile-people-ultra.avif');
 
-      var benefitItems = Array.isArray(heroContent.benefitsExperimentItems)
-        ? heroContent.benefitsExperimentItems
-          .filter(function(item){ return item && typeof item === 'object' && item.title && item.icon; })
-          .map(function mapItem(item){
-            return Object.freeze({
-              title: String(item.title),
-              icon: String(item.icon),
-              iconClass: String(item.iconClass || '')
-            });
-          })
-        : [];
-      if(benefitItems.length){
-        HERO_BENEFITS_LAYOUT_EXPERIMENT_ITEMS = Object.freeze(benefitItems);
-      }
-      return {
-        heroConfig: {
-          HERO_IMAGES: HERO_IMAGES,
-          HERO_IMAGES_B: HERO_IMAGES_B,
-          HERO_MOBILE: HERO_MOBILE,
-          HERO_MOBILE_B: HERO_MOBILE_B,
-          HERO_VARIANT_COPY: HERO_VARIANT_COPY,
-          HERO_VARIANT_DEFAULT_TIER: HERO_VARIANT_DEFAULT_TIER,
-          HERO_VARIANT_BANNER_TIER: HERO_VARIANT_BANNER_TIER,
-          UTM_H1_COPY_RULES: UTM_H1_COPY_RULES,
-          HERO_BENEFITS_LAYOUT_EXPERIMENT_ITEMS: HERO_BENEFITS_LAYOUT_EXPERIMENT_ITEMS
-        }
-      };
-    }
+/* src/scripts/config/runtime-observability-config.js */
+(function registerRuntimeObservabilityConfig(windowObj){
+  'use strict';
 
-    function syncUiCopyConfig(){
-      var nextUiCopy = (windowObj.AIDACAMP_CONTENT && windowObj.AIDACAMP_CONTENT.uiCopy && typeof windowObj.AIDACAMP_CONTENT.uiCopy === 'object')
-        ? windowObj.AIDACAMP_CONTENT.uiCopy
-        : {};
-      var mobileDocs = (nextUiCopy.mobileDocs && typeof nextUiCopy.mobileDocs === 'object') ? nextUiCopy.mobileDocs : {};
-      var docLinks = Array.isArray(mobileDocs.links)
-        ? mobileDocs.links
-          .filter(function(entry){ return entry && entry.href && entry.text; })
-          .map(function mapDoc(entry){
-            return Object.freeze({
-              href: String(entry.href),
-              target: String(entry.target || ''),
-              rel: String(entry.rel || ''),
-              text: String(entry.text)
-            });
-          })
-        : [];
-      var templates = (nextUiCopy.desktopMobileSectionTemplates && typeof nextUiCopy.desktopMobileSectionTemplates === 'object')
-        ? nextUiCopy.desktopMobileSectionTemplates
-        : {};
-      var calendarLocale = (nextUiCopy.calendarLocale && typeof nextUiCopy.calendarLocale === 'object')
-        ? nextUiCopy.calendarLocale
-        : {};
-      var weekdaysRaw = Array.isArray(calendarLocale.weekdaysShort) ? calendarLocale.weekdaysShort : [];
-      var monthsRaw = Array.isArray(calendarLocale.monthNames) ? calendarLocale.monthNames : [];
-      var bookingHints = (nextUiCopy.bookingHints && typeof nextUiCopy.bookingHints === 'object')
-        ? nextUiCopy.bookingHints
-        : {};
-      var mediaCopy = (nextUiCopy.mediaCopy && typeof nextUiCopy.mediaCopy === 'object') ? nextUiCopy.mediaCopy : {};
-      var shiftCopy = (nextUiCopy.shiftCopy && typeof nextUiCopy.shiftCopy === 'object') ? nextUiCopy.shiftCopy : {};
-      var telegramCopy = (nextUiCopy.telegramCopy && typeof nextUiCopy.telegramCopy === 'object') ? nextUiCopy.telegramCopy : {};
+  if(!windowObj) return;
+  windowObj.AC_RUNTIME_CONFIG = windowObj.AC_RUNTIME_CONFIG || {};
 
-      var previousShiftCopy = SHIFT_COPY && typeof SHIFT_COPY === 'object' ? SHIFT_COPY : {};
-      var summaryByAgeRaw = (shiftCopy.summaryByAge && typeof shiftCopy.summaryByAge === 'object') ? shiftCopy.summaryByAge : {};
-      var normalizeLines = function(value){
-        return Array.isArray(value)
-          ? value.map(normalizeValue).filter(Boolean)
-          : [];
-      };
-      var summaryByAge = {
-        '7-9': normalizeLines(summaryByAgeRaw['7-9']),
-        '10-12': normalizeLines(summaryByAgeRaw['10-12']),
-        '13-14': normalizeLines(summaryByAgeRaw['13-14'])
-      };
-      var ageLabelByAgeRaw = (shiftCopy.ageLabelByAge && typeof shiftCopy.ageLabelByAge === 'object')
-        ? shiftCopy.ageLabelByAge
-        : {};
-      var markerPatternByAgeRaw = (shiftCopy.markerPatternByAge && typeof shiftCopy.markerPatternByAge === 'object')
-        ? shiftCopy.markerPatternByAge
-        : {};
-      var allAgesSplitPatternRaw = String(shiftCopy.allAgesSplitPattern || previousShiftCopy.allAgesSplitPattern || '').trim();
+  windowObj.AC_RUNTIME_CONFIG.observability = Object.freeze({
+    metrikaId: 96499295,
+    useDesktopBaseForMobile: true,
+    prodDebuglessDomains: Object.freeze(['aidacamp.ru']),
+    qualityScoreSnapshotDefaults: Object.freeze({
+      css: 8.8,
+      js: 8.6,
+      techDebt: 1.5,
+      debtScale: '0 best .. 10 worst'
+    })
+  });
+})(window);
 
-      MOBILE_DOCS_COPY = Object.freeze({
-        orgName: String(mobileDocs.orgName || DEFAULT_MOBILE_DOCS_COPY.orgName || ''),
-        orgMeta: String(mobileDocs.orgMeta || DEFAULT_MOBILE_DOCS_COPY.orgMeta || ''),
-        copyright: String(mobileDocs.copyright || DEFAULT_MOBILE_DOCS_COPY.copyright || ''),
-        links: Object.freeze(docLinks)
-      });
-      DESKTOP_MOBILE_SECTION_TEMPLATES = Object.freeze(Object.assign({}, templates));
-      CALENDAR_LOCALE_COPY = Object.freeze({
-        weekdaysShort: Object.freeze((normalizeList(weekdaysRaw).length === 7
-          ? normalizeList(weekdaysRaw)
-          : Array.from(DEFAULT_CALENDAR_LOCALE_COPY.weekdaysShort))),
-        monthNames: Object.freeze((normalizeList(monthsRaw).length === 12
-          ? normalizeList(monthsRaw)
-          : Array.from(DEFAULT_CALENDAR_LOCALE_COPY.monthNames)))
-      });
-      BOOKING_HINTS_COPY = Object.freeze(Object.assign({}, BOOKING_HINTS_COPY, bookingHints));
-      MEDIA_COPY = Object.freeze(Object.assign({}, MEDIA_COPY, mediaCopy));
-      SHIFT_COPY = Object.freeze({
-        summaryByAge: Object.freeze({
-          '7-9': Object.freeze(summaryByAge['7-9'].length ? summaryByAge['7-9'] : Array.from(previousShiftCopy.summaryByAge && previousShiftCopy.summaryByAge['7-9'] || [])),
-          '10-12': Object.freeze(summaryByAge['10-12'].length ? summaryByAge['10-12'] : Array.from(previousShiftCopy.summaryByAge && previousShiftCopy.summaryByAge['10-12'] || [])),
-          '13-14': Object.freeze(summaryByAge['13-14'].length ? summaryByAge['13-14'] : Array.from(previousShiftCopy.summaryByAge && previousShiftCopy.summaryByAge['13-14'] || []))
-        }),
-        ageLabelByAge: Object.freeze({
-          '7-9': String(ageLabelByAgeRaw['7-9'] || previousShiftCopy.ageLabelByAge && previousShiftCopy.ageLabelByAge['7-9'] || ''),
-          '10-12': String(ageLabelByAgeRaw['10-12'] || previousShiftCopy.ageLabelByAge && previousShiftCopy.ageLabelByAge['10-12'] || ''),
-          '13-14': String(ageLabelByAgeRaw['13-14'] || previousShiftCopy.ageLabelByAge && previousShiftCopy.ageLabelByAge['13-14'] || '')
-        }),
-        markerPatternByAge: Object.freeze({
-          '7-9': String(markerPatternByAgeRaw['7-9'] || previousShiftCopy.markerPatternByAge && previousShiftCopy.markerPatternByAge['7-9'] || ''),
-          '10-12': String(markerPatternByAgeRaw['10-12'] || previousShiftCopy.markerPatternByAge && previousShiftCopy.markerPatternByAge['10-12'] || ''),
-          '13-14': String(markerPatternByAgeRaw['13-14'] || previousShiftCopy.markerPatternByAge && previousShiftCopy.markerPatternByAge['13-14'] || '')
-        }),
-        allAgesSplitPattern: allAgesSplitPatternRaw || previousShiftCopy.allAgesSplitPattern || ''
-      });
-      TELEGRAM_COPY = Object.freeze(Object.assign({}, TELEGRAM_COPY, telegramCopy));
 
-      return {
-        bookingTextCopy: Object.freeze({
-          MOBILE_DOCS_COPY: MOBILE_DOCS_COPY,
-          BOOKING_HINTS_COPY: BOOKING_HINTS_COPY,
-          MEDIA_COPY: MEDIA_COPY,
-          SHIFT_COPY: SHIFT_COPY,
-          TELEGRAM_COPY: TELEGRAM_COPY,
-          DESKTOP_MOBILE_SECTION_TEMPLATES: DESKTOP_MOBILE_SECTION_TEMPLATES,
-          CALENDAR_LOCALE_COPY: CALENDAR_LOCALE_COPY
+/* src/scripts/config/runtime-policy-config.js */
+(function registerRuntimePolicyConfig(windowObj){
+  'use strict';
+
+  if(!windowObj) return;
+  windowObj.AC_RUNTIME_CONFIG = windowObj.AC_RUNTIME_CONFIG || {};
+
+  windowObj.AC_RUNTIME_CONFIG.runtimePolicy = Object.freeze({
+    buildVersionLabel: 'v0.0.288 (ab-analytics-endpoint)',
+    legalRepoSlug: 'afanasevvlad829-cyber/aidaplus-landing-dev',
+    maxContactUrl: 'https://web.max.ru/185807479',
+    architecturePolicy: Object.freeze({
+      id: 'desktop-source-mobile-presentation',
+      version: '2026-03-30',
+      desktopSourceOfTruth: true,
+      sharedStatePipeline: true,
+      mobileUsesDesktopTemplates: true
+    }),
+    qualityScoreModel: Object.freeze({
+      scale: '0..10',
+      debtScale: '0 best .. 10 worst',
+      baselineVersion: 'v0.0.112 (debug-offer-layout-switch)',
+      css: Object.freeze({
+        start: 10,
+        penalties: Object.freeze({
+          duplicateSelectors: 0.25,
+          deadRules: 0.2,
+          highSpecificityHotspots: 0.35,
+          stageLeakage: 0.4,
+          mobileDesktopDivergence: 0.35
         })
-      };
-    }
-
-    function calendarWeekdaysShort(){
-      var raw = CALENDAR_LOCALE_COPY && Array.isArray(CALENDAR_LOCALE_COPY.weekdaysShort)
-        ? CALENDAR_LOCALE_COPY.weekdaysShort
-        : [];
-      var normalized = raw.map(normalizeValue).filter(Boolean);
-      return normalized.length === 7 ? normalized : Array.from(DEFAULT_CALENDAR_LOCALE_COPY.weekdaysShort);
-    }
-
-    function calendarMonthNames(){
-      var raw = CALENDAR_LOCALE_COPY && Array.isArray(CALENDAR_LOCALE_COPY.monthNames)
-        ? CALENDAR_LOCALE_COPY.monthNames
-        : [];
-      var normalized = raw.map(normalizeValue).filter(Boolean);
-      return normalized.length === 12 ? normalized : Array.from(DEFAULT_CALENDAR_LOCALE_COPY.monthNames);
-    }
-
-    function snapshot(){
-      return {
-        HERO_VARIANT_COPY: HERO_VARIANT_COPY,
-        HERO_VARIANT_DEFAULT_TIER: HERO_VARIANT_DEFAULT_TIER,
-        HERO_VARIANT_BANNER_TIER: HERO_VARIANT_BANNER_TIER,
-        HERO_IMAGES: HERO_IMAGES,
-        HERO_IMAGES_B: HERO_IMAGES_B,
-        HERO_MOBILE: HERO_MOBILE,
-        HERO_MOBILE_B: HERO_MOBILE_B,
-        UTM_H1_COPY_RULES: UTM_H1_COPY_RULES,
-        HERO_BENEFITS_LAYOUT_EXPERIMENT_ITEMS: HERO_BENEFITS_LAYOUT_EXPERIMENT_ITEMS,
-        MOBILE_DOCS_COPY: MOBILE_DOCS_COPY,
-        BOOKING_HINTS_COPY: BOOKING_HINTS_COPY,
-        MEDIA_COPY: MEDIA_COPY,
-        SHIFT_COPY: SHIFT_COPY,
-        TELEGRAM_COPY: TELEGRAM_COPY,
-        DESKTOP_MOBILE_SECTION_TEMPLATES: DESKTOP_MOBILE_SECTION_TEMPLATES,
-        CALENDAR_LOCALE_COPY: CALENDAR_LOCALE_COPY
-      };
-    }
-
-    syncHeroContentConfig();
-    syncUiCopyConfig();
-
-    return {
-      bookingText: bookingText,
-      uiBookingHintTemplate: uiBookingHintTemplate,
-      mediaText: mediaText,
-      telegramText: telegramText,
-      calendarWeekdaysShort: calendarWeekdaysShort,
-      calendarMonthNames: calendarMonthNames,
-      syncHeroContentConfig: syncHeroContentConfig,
-      syncUiCopyConfig: syncUiCopyConfig,
-      getHeroConfig: function(){ return snapshot(); },
-      getMobileDocsCopy: function(){ return MOBILE_DOCS_COPY; },
-      getBookingHintsCopy: function(){ return BOOKING_HINTS_COPY; },
-      getMediaCopy: function(){ return MEDIA_COPY; },
-      getShiftCopy: function(){ return SHIFT_COPY; },
-      getTelegramCopy: function(){ return TELEGRAM_COPY; },
-      getTemplatesCopy: function(){ return DESKTOP_MOBILE_SECTION_TEMPLATES; },
-      getCalendarLocaleCopy: function(){ return CALENDAR_LOCALE_COPY; },
-      getDefaultCalendarLocaleCopy: function(){ return DEFAULT_CALENDAR_LOCALE_COPY; },
-      getHeroStateSnapshot: snapshot
-    };
-  }
-
-  windowObj.AC_RUNTIME_CONTENT = {
-    createRuntimeContent: createRuntimeContent
-  };
+      }),
+      js: Object.freeze({
+        start: 10,
+        penalties: Object.freeze({
+          branchComplexity: 0.35,
+          stateCoupling: 0.35,
+          duplicateHandlers: 0.25,
+          magicNumbers: 0.15,
+          legacyFlagsInProdPath: 0.35
+        })
+      }),
+      debt: Object.freeze({
+        start: 0,
+        increments: Object.freeze({
+          noGuardrails: 0.8,
+          monolithEdits: 0.7,
+          duplicatedUiLogic: 0.7,
+          unresolvedStageRegressions: 0.9,
+          debugArtifactsInProdPath: 0.7
+        })
+      })
+    })
+  });
 })(window);
 
 
-/* src/scripts/core/bootstrap-deferred-queue.js */
-(function(windowObj){
-  function scheduleDeferredQueue(tasks){
-    if(!Array.isArray(tasks) || !tasks.length) return;
-    let index = 0;
-    const runNext = () => {
-      if(index >= tasks.length) return;
-      const task = tasks[index++];
-      try{
-        task();
-      } catch (error){
-        console.warn('[bootstrap] deferred task failed', error);
-      }
-      if(index >= tasks.length) return;
-      if('requestIdleCallback' in windowObj){
-        windowObj.requestIdleCallback(runNext, { timeout: 1200 });
-      } else {
-        windowObj.setTimeout(runNext, 24);
-      }
-    };
-    if('requestIdleCallback' in windowObj){
-      windowObj.requestIdleCallback(runNext, { timeout: 900 });
-    } else {
-      windowObj.setTimeout(runNext, 0);
-    }
-  }
+/* src/scripts/config/runtime-quality-config.js */
+(function registerRuntimeQualityConfig(windowObj){
+  'use strict';
 
-  windowObj.AIDACAMP_BOOTSTRAP = windowObj.AIDACAMP_BOOTSTRAP || {};
-  windowObj.AIDACAMP_BOOTSTRAP.scheduleDeferredQueue = scheduleDeferredQueue;
+  if(!windowObj) return;
+  windowObj.AC_RUNTIME_CONFIG = windowObj.AC_RUNTIME_CONFIG || {};
+
+  windowObj.AC_RUNTIME_CONFIG.runtimeQuality = Object.freeze({
+    softGates: Object.freeze({
+      cssDuplicateSelectorsMax: 320,
+      jsBranchPointsMax: 760,
+      jsListenersMax: 220,
+      jsBytesMax: 360000,
+      cssBytesMax: 240000
+    }),
+    requiredSelectors: Object.freeze([
+      '#desktopView',
+      '#mobileView',
+      '.hero-shell',
+      '#desktop-booking-card',
+      '#mobileBookingCard',
+      '#summaryBar',
+      '#offerOverlay',
+      '#offerCard',
+      '#sectionModal',
+      '#videoModal',
+      '#calendarModal'
+    ])
+  });
 })(window);
 
+
+/* src/scripts/config/runtime-storage-config.js */
+(function registerRuntimeStorageConfig(windowObj){
+  'use strict';
+
+  if(!windowObj) return;
+  windowObj.AC_RUNTIME_CONFIG = windowObj.AC_RUNTIME_CONFIG || {};
+
+  windowObj.AC_RUNTIME_CONFIG.storage = Object.freeze({
+    stateKey: 'aidacamp_proto_state_v3',
+    bookingScarcityKey: 'aidacamp_booking_scarcity_v1',
+    bookingScarcityBase: 63,
+    bookingScarcityStep: 7,
+    bookingScarcityMax: 98,
+    versionMonotonicKey: 'aidacamp_build_version_last_v1',
+    qualityBaselineKey: 'aidacamp_quality_baseline_v1',
+    debtRegisterKey: 'aidacamp_debt_register_v1',
+    versionBadgeHiddenKey: 'aidacamp_version_badge_hidden_v1',
+    videoMetaCacheKey: 'aidacamp_video_meta_cache_v2',
+    videoMetaCacheTtlMs: 1000 * 60 * 60 * 4,
+    videoMetaRefreshIntervalMs: 1000 * 60 * 60 * 4,
+    adminDebugKey: 'aidacamp_admin_debug',
+    leadFallbackMetaKey: 'aidacamp_lead_fallback_meta',
+    offerStageStateKey: 'offerStage',
+    offerLayoutStateKey: 'offerLayout',
+    offerLayoutDatasetKey: 'offerLayout'
+  });
+})(window);
+
+
+/* src/scripts/config/runtime-ui-modes-config.js */
+(function registerRuntimeUiModesConfig(windowObj){
+  'use strict';
+
+  if(!windowObj) return;
+  windowObj.AC_RUNTIME_CONFIG = windowObj.AC_RUNTIME_CONFIG || {};
+
+  windowObj.AC_RUNTIME_CONFIG.uiModes = Object.freeze({
+    heroContrastModes: Object.freeze(['before', 'after', 'after-soft']),
+    heroMicroModes: Object.freeze(['on', 'demo']),
+    offerModalThemes: Object.freeze(['light', 'dark']),
+    offerLayoutModes: Object.freeze(['current']),
+    compactModalSections: Object.freeze([
+      'section-about',
+      'section-journey',
+      'section-programs',
+      'section-photos',
+      'section-videos',
+      'section-reviews',
+      'section-faq',
+      'section-team',
+      'section-stay',
+      'section-contacts'
+    ])
+  });
+})(window);
+
+
+/* src/scripts/config/telemetry-runtime-config.js */
+(function registerTelemetryRuntimeConfig(windowObj){
+  'use strict';
+
+  if(!windowObj) return;
+  windowObj.AC_RUNTIME_CONFIG = windowObj.AC_RUNTIME_CONFIG || {};
+
+  windowObj.AC_RUNTIME_CONFIG.telemetry = Object.freeze({
+    heroAbTestKey: 'aidacamp_hero_ab_v1',
+    heroAbTestId: 'hero_primary_block_v1',
+    abEventEndpointDefault: 'https://adacamp-ab-analytics.afanasevvlad829.workers.dev/api/ab-event',
+    abVisitorIdKey: 'aidacamp_ab_visitor_id_v1',
+    abSessionIdKey: 'aidacamp_ab_session_id_v1',
+    abEventAllowlist: Object.freeze([
+      'page_view',
+      'hero_ab_assigned_v1',
+      'hero_variant_shown_new',
+      'hero_variant_fallback_new',
+      'form_submit',
+      'hero_variant_form_submit_new',
+      'telegram_click',
+      'hero_variant_telegram_click_new'
+    ])
+  });
+})(window);
 
 
 /* src/scripts/core/booking-runtime-bridge.js */
@@ -1033,6 +627,27 @@
       }, function(){ return false; });
     }
 
+    function resetAgeSelection(overrides){
+      var options = overrides || {};
+      return invoke('resetAgeSelection', {
+        state: resolveState(options),
+        clearShiftOptionPanels: options.clearShiftOptionPanels || ctx.clearShiftOptionPanels || function(){},
+        renderAll: options.renderAll || ctx.renderAll || function(){},
+        persist: options.persist || ctx.persist || function(){}
+      }, function(){ return undefined; });
+    }
+
+    function resetShiftSelection(overrides){
+      var options = overrides || {};
+      return invoke('resetShiftSelection', {
+        state: resolveState(options),
+        clearShiftOptionPanels: options.clearShiftOptionPanels || ctx.clearShiftOptionPanels || function(){},
+        renderAll: options.renderAll || ctx.renderAll || function(){},
+        persist: options.persist || ctx.persist || function(){},
+        showHint: options.showHint || ctx.showHint || function(){}
+      }, function(){ return undefined; });
+    }
+
     function handlePrimaryCTA(overrides){
       var options = overrides || {};
       var state = resolveState(options);
@@ -1094,6 +709,25 @@
         hasSelectedAge: options.hasSelectedAge || ctx.hasSelectedAge || function(){ return false; },
         simpleModeEnabled: !!options.simpleModeEnabled
       }, function(){ return 1; });
+    }
+
+    function getResolvedPrimaryActionText(overrides){
+      var options = overrides || {};
+      return invoke('getResolvedPrimaryActionText', {
+        state: resolveState(options),
+        actionState: options.actionState || null,
+        shift: options.shift || null,
+        formatPrice: options.formatPrice || ctx.formatPrice || function(value){ return String(value || ''); }
+      }, function(){ return ''; });
+    }
+
+    function normalizeInitialState(overrides){
+      var options = overrides || {};
+      var state = resolveState(options);
+      return invoke('normalizeInitialState', {
+        state,
+        useDesktopBaseForMobile: !!options.useDesktopBaseForMobile
+      }, function(){ return { changed: false }; });
     }
 
 function runOfferSearch(overrides){
@@ -1205,8 +839,12 @@ function runOfferSearch(overrides){
       buildBookingSummaryHtml,
       generateCode,
       selectShift,
+      resetAgeSelection,
+      resetShiftSelection,
       getPrimaryActionState,
       getStepState,
+      getResolvedPrimaryActionText,
+      normalizeInitialState,
       handlePrimaryCTA,
       runOfferSearch,
       openOfferCheck,
@@ -2167,135 +1805,223 @@ function runOfferSearch(overrides){
 })();
 
 
-/* src/scripts/features/booking-debug-flow.js */
-(function registerBookingDebugFlow(windowObj){
+/* src/scripts/features/booking-calendar-runtime-flow.js */
+(function registerBookingCalendarRuntimeFlow(windowObj){
   'use strict';
 
-  if(!windowObj) return;
+  if(!windowObj){
+    return;
+  }
+
   windowObj.AC_FEATURES = windowObj.AC_FEATURES || {};
-  windowObj.AC_FEATURES.bookingDebugFlow = windowObj.AC_FEATURES.bookingDebugFlow || {};
+  const root = windowObj.AC_FEATURES.bookingCalendarRuntimeFlow = windowObj.AC_FEATURES.bookingCalendarRuntimeFlow || {};
 
-  function create(context){
-    var ctx = context || {};
-    var doc = ctx.document || windowObj.document;
-    var isLocalRuntime = ctx.isLocalRuntime || function(){ return false; };
-    var bookingText = ctx.bookingText || function(){ return ''; };
-    var getBuildVersionLabel = ctx.getBuildVersionLabel || function(){ return ''; };
-    var versionBadgeHiddenKey = ctx.versionBadgeHiddenKey || 'aidacamp_version_badge_hidden_v1';
-    var getState = ctx.getState || function(){ return {}; };
-    var getShifts = ctx.getShifts || function(){ return []; };
-    var offerDiscountFactor = Number(ctx.offerDiscountFactor || 0.95);
-    var generateCode = ctx.generateCode || function(){ return ''; };
-    var clearOfferTimeout = ctx.clearOfferTimeout || function(){};
-    var clearShiftOptionPanels = ctx.clearShiftOptionPanels || function(){};
-    var applyStatePatch = ctx.applyStatePatch || function(){};
-    var renderAll = ctx.renderAll || function(){};
-    var persist = ctx.persist || function(){};
+  if(root.create){
+    return;
+  }
 
-    function applyBookingDebugBlocksUi(){
-      var state = getState();
-      doc.body.classList.toggle('booking-debug-blocks', !!state.debugBookingBlocks);
-      var btn = doc.getElementById('debugBookingBlocksBtn');
-      if(btn){
-        btn.classList.toggle('active', !!state.debugBookingBlocks);
-        btn.setAttribute('aria-pressed', state.debugBookingBlocks ? 'true' : 'false');
-      }
+  function defaultSafeInvoke(target, methodName, args = [], fallback = null){
+    const list = Array.isArray(args) ? args : [];
+    if(target && typeof target[methodName] === 'function'){
+      return target[methodName](...list);
+    }
+    return typeof fallback === 'function' ? fallback(...list) : fallback;
+  }
+
+  function create(ctx = {}){
+    const safeInvoke = typeof ctx.safeInvoke === 'function' ? ctx.safeInvoke : defaultSafeInvoke;
+    const getCalendarFlow = typeof ctx.getCalendarFlow === 'function' ? ctx.getCalendarFlow : (() => null);
+    const getBookingRuntimeBridge = typeof ctx.getBookingRuntimeBridge === 'function' ? ctx.getBookingRuntimeBridge : (() => null);
+    const getShiftOptionsFlow = typeof ctx.getShiftOptionsFlow === 'function' ? ctx.getShiftOptionsFlow : (() => null);
+    const state = ctx.state || {};
+    const documentRef = ctx.document || document;
+    const getSelectedShift = typeof ctx.getSelectedShift === 'function' ? ctx.getSelectedShift : (() => null);
+    const shiftDaysLabel = typeof ctx.shiftDaysLabel === 'function' ? ctx.shiftDaysLabel : (() => '');
+    const isOfferActive = typeof ctx.isOfferActive === 'function' ? ctx.isOfferActive : (() => false);
+    const formatPrice = typeof ctx.formatPrice === 'function' ? ctx.formatPrice : ((value) => String(value || ''));
+    const ageLabel = typeof ctx.ageLabel === 'function' ? ctx.ageLabel : ((value) => String(value || ''));
+    const bookingText = typeof ctx.bookingText === 'function' ? ctx.bookingText : (() => '');
+    const stripRemainingPrefix = typeof ctx.stripRemainingPrefix === 'function' ? ctx.stripRemainingPrefix : ((value) => String(value || ''));
+    const formatRemainingCompact = typeof ctx.formatRemainingCompact === 'function' ? ctx.formatRemainingCompact : (() => '');
+    const renderAll = typeof ctx.renderAll === 'function' ? ctx.renderAll : (() => {});
+    const persist = typeof ctx.persist === 'function' ? ctx.persist : (() => {});
+    const showHint = typeof ctx.showHint === 'function' ? ctx.showHint : (() => {});
+    const openInlineLead = typeof ctx.openInlineLead === 'function' ? ctx.openInlineLead : (() => {});
+    const getShiftOptionPanels = typeof ctx.getShiftOptionPanels === 'function' ? ctx.getShiftOptionPanels : (() => ({
+      desktop:{aboutId:null, calendarId:null},
+      mobile:{aboutId:null, calendarId:null}
+    }));
+    const setShiftOptionPanels = typeof ctx.setShiftOptionPanels === 'function' ? ctx.setShiftOptionPanels : (() => {});
+    const renderShiftOptions = typeof ctx.renderShiftOptions === 'function' ? ctx.renderShiftOptions : (() => {});
+    const getOfferTimeoutIds = typeof ctx.getOfferTimeoutIds === 'function' ? ctx.getOfferTimeoutIds : (() => []);
+    const setOfferTimeoutIds = typeof ctx.setOfferTimeoutIds === 'function' ? ctx.setOfferTimeoutIds : (() => {});
+    const useDesktopBaseForMobile = !!ctx.useDesktopBaseForMobile;
+    const simpleModeEnabled = !!ctx.simpleModeEnabled;
+    const offerStageKey = String(ctx.offerStageKey || 'offerStage');
+
+    function resolveViewKey(viewKey){
+      return viewKey === 'mobile' ? 'mobile' : 'desktop';
     }
 
-    function applyDebugUiState(){
-      if(!isLocalRuntime()){
-        doc.getElementById('debugControls')?.remove();
-        doc.getElementById('version-badge')?.remove();
-        doc.body.classList.remove('booking-debug-blocks');
-        return;
-      }
-      var badge = doc.getElementById('version-badge');
-      if(!badge) return;
-      var finalStepBtn = doc.querySelector('[data-action="debug-booking-what-to-do"]');
-      if(finalStepBtn){
-        finalStepBtn.textContent = bookingText('debugStepWhatNextLabel');
-      }
-      var badgeLabel = doc.getElementById('version-badge-label');
-      var isHidden = windowObj.localStorage.getItem(versionBadgeHiddenKey) === '1';
-      var label = String(getBuildVersionLabel() || '').trim();
-      if(badgeLabel) badgeLabel.textContent = label;
-      badge.title = label;
-      badge.classList.toggle('hidden', isHidden);
-      applyBookingDebugBlocksUi();
-    }
-
-    function setBookingDebugBlocks(enabled){
-      applyStatePatch({
-        debugBookingBlocks: !!enabled
-      }, { persistState: true });
-      applyBookingDebugBlocksUi();
-    }
-
-    function forceBookingDebugStage(mode){
-      var state = getState();
-      var shifts = getShifts();
-      var primaryShift = shifts.find(function(s){ return !s.isShort; }) || shifts[0];
-      if(!primaryShift) return;
-
-      clearOfferTimeout();
-      clearShiftOptionPanels();
-      applyStatePatch({
-        offerSearching: false,
-        bookingCompleted: false
+    function toggleShiftOptionPanel(viewKey, panelType, shiftId){
+      const safeView = resolveViewKey(viewKey);
+      return safeInvoke(getCalendarFlow(), 'toggleShiftOptionPanel', [safeView, panelType, shiftId], () => {
+        const panels = getShiftOptionPanels();
+        const current = panels[safeView] && panels[safeView][panelType] || null;
+        const nextPanels = {
+          desktop: Object.assign({aboutId:null, calendarId:null}, panels.desktop || {}),
+          mobile: Object.assign({aboutId:null, calendarId:null}, panels.mobile || {})
+        };
+        nextPanels[safeView][panelType] = current !== shiftId ? shiftId : null;
+        setShiftOptionPanels(nextPanels);
+        renderShiftOptions(safeView);
       });
+    }
 
-      if(mode === 'what-to-do'){
-        applyStatePatch({
-          age: state.age || '10-12',
-          ageSelected: true,
-          shiftId: primaryShift.id,
-          basePrice: primaryShift.price,
-          offerPrice: Math.max(0, Math.round(primaryShift.price * offerDiscountFactor)),
-          code: generateCode(),
-          expiresAt: Date.now() + (72 * 60 * 60 * 1000),
-          offerStage: 1,
-          bookingCompleted: true
+    function clearShiftOptionPanels(){
+      return safeInvoke(getCalendarFlow(), 'clearShiftOptionPanels', [], () => {
+        setShiftOptionPanels({
+          desktop:{aboutId:null, calendarId:null},
+          mobile:{aboutId:null, calendarId:null}
         });
-        renderAll();
-        persist();
-        return;
+      });
+    }
+
+    function openCalendar(shiftId){
+      return safeInvoke(getCalendarFlow(), 'openCalendar', [shiftId], null);
+    }
+
+    function openSeasonCalendar(){
+      return safeInvoke(getCalendarFlow(), 'openSeasonCalendar', [], null);
+    }
+
+    function closeCalendar(){
+      return safeInvoke(getCalendarFlow(), 'closeCalendar', [], null);
+    }
+
+    function selectedShiftPayload(){
+      return safeInvoke(getBookingRuntimeBridge(), 'selectedShiftPayload', [{
+        state,
+        getSelectedShift,
+        shiftDaysLabel
+      }], () => ({}));
+    }
+
+    function clearOfferTimeout(){
+      return safeInvoke(getBookingRuntimeBridge(), 'clearOfferTimeout', [{
+        getTimeoutIds: getOfferTimeoutIds,
+        setTimeoutIds: setOfferTimeoutIds,
+        clearTimeoutFn: clearTimeout
+      }], null);
+    }
+
+    function resetOfferState({preserveShift = true} = {}){
+      return safeInvoke(getBookingRuntimeBridge(), 'resetOfferState', [{
+        preserveShift,
+        state,
+        getTimeoutIds: getOfferTimeoutIds,
+        setTimeoutIds: setOfferTimeoutIds,
+        clearTimeoutFn: clearTimeout
+      }], null);
+    }
+
+    function buildBookingSummaryHtml({showTimer = false} = {}){
+      return safeInvoke(getBookingRuntimeBridge(), 'buildBookingSummaryHtml', [{
+        showTimer,
+        state,
+        getSelectedShift,
+        isOfferActive,
+        formatPrice,
+        ageLabel,
+        bookingText,
+        stripRemainingPrefix,
+        formatRemainingCompact
+      }], '');
+    }
+
+    function resetAgeSelection(){
+      return safeInvoke(getBookingRuntimeBridge(), 'resetAgeSelection', [{
+        state,
+        clearShiftOptionPanels,
+        renderAll,
+        persist
+      }], null);
+    }
+
+    function resetShiftSelection(){
+      return safeInvoke(getBookingRuntimeBridge(), 'resetShiftSelection', [{
+        state,
+        clearShiftOptionPanels,
+        renderAll,
+        persist,
+        showHint
+      }], null);
+    }
+
+    function openShiftAboutModal(shiftId){
+      return safeInvoke(getShiftOptionsFlow(), 'openShiftAboutModal', [shiftId], false);
+    }
+
+    function bindAgeTabs(rootId){
+      const rootEl = documentRef.getElementById(rootId);
+      if(!rootEl) return;
+      rootEl.querySelectorAll('[data-age]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          rootEl.querySelectorAll('[data-age]').forEach((node) => node.classList.remove('active'));
+          btn.classList.add('active');
+          Object.assign(state, {
+            age: btn.dataset.age,
+            ageSelected: true,
+            shiftId: null,
+            basePrice: null,
+            offerPrice: null,
+            code: null,
+            expiresAt: null,
+            [offerStageKey]: 0,
+            bookingCompleted: false
+          });
+          renderAll();
+          persist();
+          const scope = state.previewView === 'mobile' ? 'booking-mobile' : 'booking-desktop';
+          if(simpleModeEnabled){
+            window.setTimeout(() => openInlineLead(scope), 0);
+          }
+        });
+      });
+    }
+
+    function focusMobileAgeGate(){
+      let gate = null;
+      if(useDesktopBaseForMobile){
+        gate = documentRef.getElementById('desktopAgeTabs');
+      }else{
+        gate = documentRef.getElementById('mobileAgeGateCard') || documentRef.getElementById('mobileAgeTabs');
       }
-
-      var nextPatch = {
-        age: state.age || '10-12',
-        ageSelected: true,
-        shiftId: primaryShift.id,
-        basePrice: primaryShift.price,
-        previousCode: null,
-        nextCodePreview: null
-      };
-
-      if(mode === 'stage-3'){
-        nextPatch.offerPrice = null;
-        nextPatch.code = null;
-        nextPatch.expiresAt = null;
-        nextPatch.offerStage = 0;
-      } else {
-        nextPatch.offerPrice = Math.max(0, Math.round(primaryShift.price * offerDiscountFactor));
-        nextPatch.code = generateCode();
-        nextPatch.expiresAt = Date.now() + (72 * 60 * 60 * 1000);
-        nextPatch.offerStage = 1;
-      }
-
-      applyStatePatch(nextPatch);
-      renderAll();
-      persist();
+      if(!gate) return;
+      gate.scrollIntoView({behavior:'smooth', block:'center'});
+      gate.classList.add('guided-pulse');
+      setTimeout(() => gate.classList.remove('guided-pulse'), 1100);
     }
 
     return Object.freeze({
-      applyDebugUiState: applyDebugUiState,
-      applyBookingDebugBlocksUi: applyBookingDebugBlocksUi,
-      setBookingDebugBlocks: setBookingDebugBlocks,
-      forceBookingDebugStage: forceBookingDebugStage
+      toggleShiftOptionPanel,
+      clearShiftOptionPanels,
+      openCalendar,
+      openSeasonCalendar,
+      closeCalendar,
+      selectedShiftPayload,
+      clearOfferTimeout,
+      resetOfferState,
+      buildBookingSummaryHtml,
+      resetAgeSelection,
+      resetShiftSelection,
+      openShiftAboutModal,
+      bindAgeTabs,
+      focusMobileAgeGate
     });
   }
 
-  windowObj.AC_FEATURES.bookingDebugFlow.create = create;
+  root.create = create;
 })(window);
 
 
@@ -2308,6 +2034,16 @@ function runOfferSearch(overrides){
     const getBookingStage = typeof ctx.getBookingStage === 'function' ? ctx.getBookingStage : (() => 1);
     const hasSelectedAge = typeof ctx.hasSelectedAge === 'function' ? ctx.hasSelectedAge : (() => false);
     const getState = typeof ctx.getState === 'function' ? ctx.getState : (() => ({}));
+    const isSimpleModeEnabled = typeof ctx.isSimpleModeEnabled === 'function' ? ctx.isSimpleModeEnabled : (() => false);
+    const getHintTimerId = typeof ctx.getHintTimerId === 'function' ? ctx.getHintTimerId : (() => null);
+    const setHintTimerId = typeof ctx.setHintTimerId === 'function' ? ctx.setHintTimerId : (() => {});
+    const getHintRunning = typeof ctx.getHintRunning === 'function' ? ctx.getHintRunning : (() => false);
+    const setHintRunning = typeof ctx.setHintRunning === 'function' ? ctx.setHintRunning : (() => {});
+    const getHintPlayed = typeof ctx.getHintPlayed === 'function' ? ctx.getHintPlayed : (() => false);
+    const setHintPlayed = typeof ctx.setHintPlayed === 'function' ? ctx.setHintPlayed : (() => {});
+    const getHintToken = typeof ctx.getHintToken === 'function' ? ctx.getHintToken : (() => 0);
+    const setHintToken = typeof ctx.setHintToken === 'function' ? ctx.setHintToken : (() => {});
+    const getHintStartedAt = typeof ctx.getHintStartedAt === 'function' ? ctx.getHintStartedAt : (() => Date.now());
 
     function pulseNode(node){
       if(!node) return;
@@ -2410,408 +2146,169 @@ function runOfferSearch(overrides){
       });
     }
 
+    function waitDesktopAgeTapHint(ms){
+      return new Promise((resolve) => {
+        window.setTimeout(resolve, ms);
+      });
+    }
+
+    function canRunDesktopAgeTapHint(){
+      const state = getState();
+      const card = document.getElementById('desktop-booking-card');
+      if(isSimpleModeEnabled() || !card || !card.classList.contains('booking-stage-1')) return false;
+      if(state.previewView === 'mobile') return false;
+      if(state.previewView !== 'desktop') return false;
+      if(hasSelectedAge() || state.ageSelected) return false;
+      const tabs = document.getElementById('desktopAgeTabs');
+      if(!tabs) return false;
+      return tabs.querySelectorAll('.age-tab[data-age]').length >= 3;
+    }
+
+    function ensureDesktopAgeTapHintNode(){
+      const tabs = document.getElementById('desktopAgeTabs');
+      if(!tabs) return null;
+      let hint = tabs.querySelector('.age-tap-hint');
+      if(hint) return hint;
+      hint = document.createElement('div');
+      hint.className = 'age-tap-hint';
+      hint.setAttribute('aria-hidden', 'true');
+      hint.innerHTML = '<span class="age-tap-finger"></span><span class="age-tap-ripple"></span><span class="age-tap-ripple delay"></span>';
+      tabs.appendChild(hint);
+      return hint;
+    }
+
+    function placeDesktopAgeTapHint(hintNode, ageRow){
+      if(!hintNode || !ageRow) return;
+      const host = hintNode.parentElement;
+      if(!host) return;
+      const hostRect = host.getBoundingClientRect();
+      const rowRect = ageRow.getBoundingClientRect();
+      const x = Math.max(8, rowRect.right - hostRect.left - 60);
+      const y = Math.max(6, rowRect.top - hostRect.top - 2);
+      hintNode.style.setProperty('--age-hint-x', `${Math.round(x)}px`);
+      hintNode.style.setProperty('--age-hint-y', `${Math.round(y)}px`);
+    }
+
+    function clearDesktopAgeTapHintRows(){
+      const tabs = document.getElementById('desktopAgeTabs');
+      if(!tabs) return;
+      tabs.querySelectorAll('.age-tab.is-hint-target, .age-tab.is-hint-tapping').forEach((row) => {
+        row.classList.remove('is-hint-target', 'is-hint-tapping');
+      });
+    }
+
+    function pulseDesktopAgeTapHint(hintNode, ageRow){
+      if(!hintNode) return;
+      hintNode.classList.remove('is-tapping');
+      void hintNode.offsetWidth;
+      hintNode.classList.add('is-tapping');
+      if(ageRow){
+        ageRow.classList.add('is-hint-target');
+        ageRow.classList.remove('is-hint-tapping');
+        void ageRow.offsetWidth;
+        ageRow.classList.add('is-hint-tapping');
+        window.setTimeout(() => {
+          ageRow.classList.remove('is-hint-tapping');
+        }, 680);
+      }
+    }
+
+    function hideDesktopAgeTapHint(){
+      const hintNode = document.querySelector('#desktopAgeTabs .age-tap-hint');
+      if(!hintNode) return;
+      hintNode.classList.remove('is-visible', 'is-tapping');
+      clearDesktopAgeTapHintRows();
+    }
+
+    async function runDesktopAgeTapHint(){
+      if(getHintPlayed() || getHintRunning()) return;
+      if(!canRunDesktopAgeTapHint()) return;
+      const hintNode = ensureDesktopAgeTapHintNode();
+      const tabs = document.getElementById('desktopAgeTabs');
+      if(!hintNode || !tabs) return;
+      const ageRows = [...tabs.querySelectorAll('.age-tab[data-age]')];
+      if(!ageRows.length) return;
+
+      setHintRunning(true);
+      const runToken = getHintToken() + 1;
+      setHintToken(runToken);
+      hintNode.classList.add('is-visible');
+
+      for(let rowIndex = 0; rowIndex < ageRows.length; rowIndex += 1){
+        const ageRow = ageRows[rowIndex];
+        if(runToken !== getHintToken() || !canRunDesktopAgeTapHint()) break;
+        clearDesktopAgeTapHintRows();
+        ageRow.classList.add('is-hint-target');
+        placeDesktopAgeTapHint(hintNode, ageRow);
+        await waitDesktopAgeTapHint((rowIndex === 0 && 320) || 1000);
+        for(let tapIndex = 0; tapIndex < 3; tapIndex += 1){
+          if(runToken !== getHintToken() || !canRunDesktopAgeTapHint()) break;
+          pulseDesktopAgeTapHint(hintNode, ageRow);
+          await waitDesktopAgeTapHint(680);
+          if(tapIndex < 2){
+            await waitDesktopAgeTapHint(120);
+          }
+        }
+        hintNode.classList.remove('is-tapping');
+        await waitDesktopAgeTapHint(120);
+      }
+
+      hintNode.classList.remove('is-visible', 'is-tapping');
+      clearDesktopAgeTapHintRows();
+      setHintRunning(false);
+      setHintPlayed(true);
+    }
+
+    function syncDesktopAgeTapHintVisibility(){
+      const hintNode = document.querySelector('#desktopAgeTabs .age-tap-hint');
+      if(!hintNode) return;
+      if(getHintRunning() && canRunDesktopAgeTapHint()){
+        hintNode.classList.add('is-visible');
+        return;
+      }
+      hintNode.classList.remove('is-visible', 'is-tapping');
+      clearDesktopAgeTapHintRows();
+    }
+
+    function scheduleDesktopAgeTapHint(){
+      if(getHintPlayed() || getHintRunning()) return;
+      if(!canRunDesktopAgeTapHint()) return;
+      if(getHintTimerId()){
+        return;
+      }
+      const elapsedMs = Date.now() - Number(getHintStartedAt() || Date.now());
+      const isFirstRun = Number(getHintToken() || 0) === 0;
+      const delayMs = isFirstRun ? Math.max(0, 7000 - elapsedMs) : 7000;
+      const timerId = window.setTimeout(() => {
+        setHintTimerId(null);
+        runDesktopAgeTapHint().catch(() => {
+          setHintRunning(false);
+          hideDesktopAgeTapHint();
+        });
+      }, delayMs);
+      setHintTimerId(timerId);
+    }
+
     return Object.freeze({
       pulseNode,
       nudgeUserToNextStep,
       showHint,
-      syncBookingHints
+      syncBookingHints,
+      waitDesktopAgeTapHint,
+      canRunDesktopAgeTapHint,
+      ensureDesktopAgeTapHintNode,
+      placeDesktopAgeTapHint,
+      clearDesktopAgeTapHintRows,
+      pulseDesktopAgeTapHint,
+      hideDesktopAgeTapHint,
+      runDesktopAgeTapHint,
+      syncDesktopAgeTapHintVisibility,
+      scheduleDesktopAgeTapHint
     });
   }
 
   window.AC_FEATURES = window.AC_FEATURES || {};
   window.AC_FEATURES.bookingHintFlow = Object.freeze({ create: createBookingHintFlow });
-})();
-
-
-/* src/scripts/features/booking-inline-lead.js */
-(function () {
-  "use strict";
-
-  window.AC_FEATURES = window.AC_FEATURES || {};
-  window.AC_FEATURES.bookingInlineLead = window.AC_FEATURES.bookingInlineLead || {};
-
-  function onlyDigits(value) {
-    return (value || "").replace(/\D/g, "");
-  }
-
-  function formatPhoneInput(value) {
-    var digits = onlyDigits(value);
-    if (!digits) return "";
-
-    if (digits[0] === "8") digits = "7" + digits.slice(1);
-    if (digits[0] === "9") digits = "7" + digits;
-    if (digits[0] !== "7") digits = "7" + digits;
-    digits = digits.slice(0, 11);
-
-    var out = "+7";
-    if (digits.length > 1) out += " (" + digits.slice(1, 4);
-    if (digits.length >= 4) out += ")";
-    if (digits.length > 4) out += " " + digits.slice(4, 7);
-    if (digits.length > 7) out += "-" + digits.slice(7, 9);
-    if (digits.length > 9) out += "-" + digits.slice(9, 11);
-    return out;
-  }
-
-  function normalizePhone(value) {
-    var digits = onlyDigits(value);
-    if (!digits) return "";
-    if (digits[0] === "8") digits = "7" + digits.slice(1);
-    if (digits[0] === "9") digits = "7" + digits;
-    if (digits[0] !== "7") digits = "7" + digits;
-    digits = digits.slice(0, 11);
-    return digits.length === 11 ? "+" + digits : "";
-  }
-
-  function isValidPhone(value) {
-    return !!normalizePhone(value);
-  }
-
-  function getLeadScopeConfig(scope) {
-    var targetScope = scope || "drawer";
-    var map = {
-      drawer: {
-        hostId: "formDrawer",
-        phoneInputId: "parentPhone",
-        consentId: "consentCheck",
-        errorId: "phoneError",
-        submitId: "submitLeadBtn"
-      },
-      "booking-desktop": {
-        hostId: "desktopInlineLeadHost",
-        phoneInputId: "inlineLeadPhoneDesktop",
-        consentId: "inlineLeadConsentDesktop",
-        errorId: "inlineLeadErrorDesktop",
-        submitId: "inlineLeadSubmitDesktop"
-      },
-      "booking-mobile": {
-        hostId: "mobileInlineLeadHost",
-        phoneInputId: "inlineLeadPhoneMobile",
-        consentId: "inlineLeadConsentMobile",
-        errorId: "inlineLeadErrorMobile",
-        submitId: "inlineLeadSubmitMobile"
-      },
-      offer: {
-        hostId: "offerInlineLeadHost",
-        phoneInputId: "inlineLeadPhoneOffer",
-        consentId: "inlineLeadConsentOffer",
-        errorId: "inlineLeadErrorOffer",
-        submitId: "inlineLeadSubmitOffer"
-      }
-    };
-    return map[targetScope] || null;
-  }
-
-  function getLeadSubmitDefaultText() {
-    return "Забронировать";
-  }
-
-  function setLeadPhoneError(options) {
-    var opts = options || {};
-    var scope = opts.scope || "drawer";
-    var show = !!opts.show;
-    var message = opts.message || "";
-    var document = opts.document || window.document;
-    var cfg = getLeadScopeConfig(scope);
-    if (!cfg) return;
-    var input = document.getElementById(cfg.phoneInputId);
-    var error = document.getElementById(cfg.errorId);
-    if (!input || !error) return;
-    if (message) error.textContent = message;
-    input.classList.toggle("input-error", show);
-    error.classList.toggle("visible", show);
-  }
-
-  function setLeadSubmitState(options) {
-    var opts = options || {};
-    var loading = !!opts.loading;
-    var scope = opts.scope || "drawer";
-    var document = opts.document || window.document;
-    var cfg = getLeadScopeConfig(scope);
-    if (!cfg) return;
-    var btn = document.getElementById(cfg.submitId);
-    if (!btn) return;
-    btn.disabled = loading;
-    btn.textContent = loading ? "Бронируем..." : getLeadSubmitDefaultText(scope);
-  }
-
-  function bindPhoneMaskForScope(options) {
-    var opts = options || {};
-    var scope = opts.scope || "drawer";
-    var document = opts.document || window.document;
-    var cfg = getLeadScopeConfig(scope);
-    if (!cfg) return;
-    var phoneInput = document.getElementById(cfg.phoneInputId);
-    if (!phoneInput || phoneInput.dataset.maskBound === "1") return;
-
-    phoneInput.addEventListener("input", function (e) {
-      e.target.value = formatPhoneInput(e.target.value);
-      setLeadPhoneError({ scope: scope, show: false, document: document });
-    });
-    phoneInput.addEventListener("blur", function () {
-      var val = phoneInput.value.trim();
-      if (!val) {
-        setLeadPhoneError({ scope: scope, show: false, document: document });
-        return;
-      }
-      setLeadPhoneError({ scope: scope, show: !isValidPhone(val), document: document });
-    });
-    phoneInput.addEventListener("paste", function () {
-      requestAnimationFrame(function () {
-        phoneInput.value = formatPhoneInput(phoneInput.value);
-        setLeadPhoneError({ scope: scope, show: false, document: document });
-      });
-    });
-    phoneInput.dataset.maskBound = "1";
-  }
-
-  function buildInlineLeadFormHtml(scope) {
-    var cfg = getLeadScopeConfig(scope);
-    if (!cfg) return "";
-    return '\n'
-      + '  <div class="inline-lead-card ' + (scope === "offer" ? "inline-lead-card--offer" : "") + '" data-inline-scope="' + scope + '">\n'
-      + '    <div class="form-field">\n'
-      + '      <label for="' + cfg.phoneInputId + '">Телефон</label>\n'
-      + '      <input class="input-box" id="' + cfg.phoneInputId + '" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__" maxlength="18" />\n'
-      + '      <div class="field-error" id="' + cfg.errorId + '">Введите телефон полностью в формате +7 (___) ___-__-__</div>\n'
-      + "    </div>\n"
-      + '    <label class="check-row inline-lead-check">\n'
-      + '      <input type="checkbox" id="' + cfg.consentId + '" />\n'
-      + '      <span>Я согласен(на) на <a href="https://www.codims.ru/privacy" target="_blank" rel="noopener noreferrer">обработку персональных данных</a>.</span>\n'
-      + "    </label>\n"
-      + '    <button class="cta-main inline-lead-submit" id="' + cfg.submitId + '" type="button" data-action="submit-inline-lead" data-inline-scope="' + scope + '">\n'
-      + "      " + getLeadSubmitDefaultText(scope) + "\n"
-      + "    </button>\n"
-      + "  </div>\n";
-  }
-
-  function openInlineLead(options) {
-    var opts = options || {};
-    var scope = opts.scope;
-    var document = opts.document || window.document;
-    var state = opts.state || {};
-    var track = typeof opts.track === "function" ? opts.track : function () {};
-    var selectedShiftPayload = typeof opts.selectedShiftPayload === "function" ? opts.selectedShiftPayload : function () { return {}; };
-    var buildHeroVariantMeta = typeof opts.buildHeroVariantMeta === "function" ? opts.buildHeroVariantMeta : function (x) { return x || {}; };
-
-    var cfg = getLeadScopeConfig(scope);
-    if (!cfg) return;
-    var host = document.getElementById(cfg.hostId);
-    if (!host) return;
-
-    if (!host.innerHTML.trim()) {
-      host.innerHTML = buildInlineLeadFormHtml(scope);
-    }
-    host.classList.remove("hidden");
-
-    var phoneInput = document.getElementById(cfg.phoneInputId);
-    if (phoneInput) {
-      phoneInput.value = formatPhoneInput(state.phone || "");
-    }
-    var consentCheck = document.getElementById(cfg.consentId);
-    if (consentCheck) {
-      consentCheck.checked = false;
-    }
-    setLeadPhoneError({ scope: scope, show: false, document: document });
-    setLeadSubmitState({ loading: false, scope: scope, document: document });
-    bindPhoneMaskForScope({ scope: scope, document: document });
-    if (phoneInput) phoneInput.focus();
-    track("form_open", Object.assign({}, selectedShiftPayload(), { lead_scope: scope }));
-    track("hero_variant_form_open_new", buildHeroVariantMeta(Object.assign({}, selectedShiftPayload(), { lead_scope: scope })));
-  }
-
-  function closeInlineLead(options) {
-    var opts = options || {};
-    var scope = opts.scope;
-    var document = opts.document || window.document;
-    var cfg = getLeadScopeConfig(scope);
-    if (!cfg) return;
-    var host = document.getElementById(cfg.hostId);
-    if (!host) return;
-    host.classList.add("hidden");
-  }
-
-  function openForm(options) {
-    var opts = options || {};
-    var state = opts.state || {};
-    var document = opts.document || window.document;
-    var syncGuidedState = opts.syncGuidedState || function () {};
-    var buildBookingSummaryHtml = opts.buildBookingSummaryHtml || function () { return ""; };
-    var isOfferActive = opts.isOfferActive || function () { return false; };
-    var startTimer = opts.startTimer || function () {};
-    var track = typeof opts.track === "function" ? opts.track : function () {};
-    var selectedShiftPayload = typeof opts.selectedShiftPayload === "function" ? opts.selectedShiftPayload : function () { return {}; };
-    var buildHeroVariantMeta = typeof opts.buildHeroVariantMeta === "function" ? opts.buildHeroVariantMeta : function (x) { return x || {}; };
-
-    syncGuidedState();
-    if (!state.shiftId) return;
-
-    var formLead = document.getElementById("formLead");
-    if (formLead) formLead.textContent = "";
-
-    var phoneInput = document.getElementById("parentPhone");
-    var parentPhone = document.getElementById("parentPhone");
-    if (parentPhone) parentPhone.value = state.phone || "";
-    if (phoneInput) phoneInput.value = formatPhoneInput(state.phone || "");
-    var bookingSummaryBox = document.getElementById("bookingSummaryBox");
-    if (bookingSummaryBox) bookingSummaryBox.innerHTML = buildBookingSummaryHtml({ showTimer: true });
-    setLeadPhoneError({ scope: "drawer", show: false, document: document });
-    setLeadSubmitState({ loading: false, scope: "drawer", document: document });
-    bindPhoneMaskForScope({ scope: "drawer", document: document });
-    if (isOfferActive()) startTimer();
-    track("form_open", selectedShiftPayload());
-    track("hero_variant_form_open_new", buildHeroVariantMeta(Object.assign({}, selectedShiftPayload(), { lead_scope: "drawer" })));
-    var drawer = document.getElementById("formDrawer");
-    if (drawer) drawer.classList.remove("hidden");
-  }
-
-  function closeForm(options) {
-    var document = (options && options.document) || window.document;
-    var drawer = document.getElementById("formDrawer");
-    if (drawer) drawer.classList.add("hidden");
-  }
-
-  async function submitLeadFromScope(options) {
-    var opts = options || {};
-    var scope = opts.scope || "drawer";
-    var state = opts.state || {};
-    var shifts = opts.shifts || [];
-    var document = opts.document || window.document;
-    var getInProgress = typeof opts.getInProgress === "function" ? opts.getInProgress : function () { return false; };
-    var setInProgress = typeof opts.setInProgress === "function" ? opts.setInProgress : function () {};
-    var syncGuidedState = opts.syncGuidedState || function () {};
-    var normalizePhoneFn = opts.normalizePhone || normalizePhone;
-    var isValidPhoneFn = opts.isValidPhone || isValidPhone;
-    var setLeadPhoneErrorFn = opts.setLeadPhoneError || function () {};
-    var setLeadSubmitStateFn = opts.setLeadSubmitState || function () {};
-    var openNoticeModal = opts.openNoticeModal || function () {};
-    var persist = opts.persist || function () {};
-    var labelAge = opts.labelAge || function (value) { return value || ""; };
-    var formatPrice = opts.formatPrice || function (value) { return String(value || ""); };
-    var buildAbMeta = opts.buildAbMeta || function () { return {}; };
-    var track = typeof opts.track === "function" ? opts.track : function () {};
-    var selectedShiftPayload = typeof opts.selectedShiftPayload === "function" ? opts.selectedShiftPayload : function () { return {}; };
-    var buildHeroVariantMeta = typeof opts.buildHeroVariantMeta === "function" ? opts.buildHeroVariantMeta : function (x) { return x || {}; };
-    var notifyLead = opts.notifyLead || function () { return Promise.resolve(false); };
-    var closeFormFn = opts.closeForm || function () {};
-    var closeInlineLeadFn = opts.closeInlineLead || function () {};
-    var renderSummary = opts.renderSummary || function () {};
-    var renderBookingPanels = opts.renderBookingPanels || function () {};
-    var updateSummaryBarVisibility = opts.updateSummaryBarVisibility || function () {};
-    var isAdminDebugSession = opts.isAdminDebugSession || function () { return false; };
-
-    if (getInProgress()) return;
-    syncGuidedState();
-
-    var cfg = getLeadScopeConfig(scope);
-    if (!cfg) return;
-    var phoneInput = document.getElementById(cfg.phoneInputId);
-    var consentInput = document.getElementById(cfg.consentId);
-    var nameInput = document.getElementById("parentName");
-    var name = (nameInput && nameInput.value.trim()) || "Родитель";
-    var phoneRaw = phoneInput ? phoneInput.value.trim() : "";
-    var phone = normalizePhoneFn(phoneRaw);
-    var consent = !!(consentInput && consentInput.checked);
-
-    if (!phoneRaw) {
-      setLeadPhoneErrorFn(scope, true);
-      openNoticeModal("Введите номер телефона.");
-      if (phoneInput) phoneInput.focus();
-      return;
-    }
-
-    if (!consent) {
-      openNoticeModal("Подтвердите согласие на обработку персональных данных.");
-      if (consentInput) consentInput.focus();
-      return;
-    }
-
-    if (!isValidPhoneFn(phoneRaw)) {
-      setLeadPhoneErrorFn(scope, true);
-      openNoticeModal("Проверьте номер телефона.");
-      if (phoneInput) phoneInput.focus();
-      return;
-    }
-
-    setLeadPhoneErrorFn(scope, false);
-    setInProgress(true);
-    setLeadSubmitStateFn(true, scope);
-
-    state.phone = phone;
-    persist();
-
-    var shift = shifts.find(function (s) { return s.id === state.shiftId; });
-    var price = state.offerPrice || state.basePrice || (shift ? shift.price : null);
-    var payload = Object.assign({
-      name: name,
-      phone: phone,
-      age: labelAge(state.age),
-      shift_id: shift ? shift.id : "",
-      shift_name: shift ? shift.dates : "",
-      shift_date: shift ? shift.dates : "",
-      price_final: price || null,
-      price_text: price ? formatPrice(price) : "—",
-      promo_code: state.code || "",
-      promo_status: state.offerPrice ? (state.offerStage >= 2 ? "improved_again" : "fixed") : "none",
-      mode: state.previewView === "mobile"
-        ? "mobile:" + (state.mobileMode || "full")
-        : "desktop:" + (state.desktopMode || "full"),
-      sent_at_local: new Date().toLocaleString("ru-RU")
-    }, buildAbMeta());
-
-    track("form_submit", Object.assign({}, selectedShiftPayload(), {
-      booking_code: state.code || "",
-      lead_scope: scope,
-      parent_name_present: !!name,
-      phone_present: !!phone
-    }));
-    track("hero_variant_form_submit_new", buildHeroVariantMeta(Object.assign({}, selectedShiftPayload(), {
-      booking_code: state.code || "",
-      lead_scope: scope,
-      parent_name_present: !!name,
-      phone_present: !!phone
-    })));
-
-    try {
-      var deliveryResult = await notifyLead("booking_submitted", payload);
-      state.bookingCompleted = true;
-      state.offerSearching = false;
-      persist();
-      if (scope === "drawer") {
-        closeFormFn();
-      } else {
-        closeInlineLeadFn(scope);
-      }
-      if (scope === "offer") {
-        var offerOverlay = document.getElementById("offerOverlay");
-        if (offerOverlay) offerOverlay.classList.add("hidden");
-      }
-      renderSummary();
-      renderBookingPanels();
-      updateSummaryBarVisibility();
-      if (!isAdminDebugSession() || !deliveryResult || deliveryResult.ok !== false) {
-        // Skip dedicated success popup; keep booking in final booked card state.
-      }
-    } finally {
-      setInProgress(false);
-      setLeadSubmitStateFn(false, scope);
-    }
-  }
-
-  window.AC_FEATURES.bookingInlineLead.onlyDigits = onlyDigits;
-  window.AC_FEATURES.bookingInlineLead.formatPhoneInput = formatPhoneInput;
-  window.AC_FEATURES.bookingInlineLead.normalizePhone = normalizePhone;
-  window.AC_FEATURES.bookingInlineLead.isValidPhone = isValidPhone;
-  window.AC_FEATURES.bookingInlineLead.getLeadScopeConfig = getLeadScopeConfig;
-  window.AC_FEATURES.bookingInlineLead.getLeadSubmitDefaultText = getLeadSubmitDefaultText;
-  window.AC_FEATURES.bookingInlineLead.setLeadPhoneError = setLeadPhoneError;
-  window.AC_FEATURES.bookingInlineLead.setLeadSubmitState = setLeadSubmitState;
-  window.AC_FEATURES.bookingInlineLead.bindPhoneMaskForScope = bindPhoneMaskForScope;
-  window.AC_FEATURES.bookingInlineLead.buildInlineLeadFormHtml = buildInlineLeadFormHtml;
-  window.AC_FEATURES.bookingInlineLead.openInlineLead = openInlineLead;
-  window.AC_FEATURES.bookingInlineLead.closeInlineLead = closeInlineLead;
-  window.AC_FEATURES.bookingInlineLead.openForm = openForm;
-  window.AC_FEATURES.bookingInlineLead.closeForm = closeForm;
-  window.AC_FEATURES.bookingInlineLead.submitLeadFromScope = submitLeadFromScope;
 })();
 
 
@@ -2916,6 +2413,58 @@ function runOfferSearch(overrides){
     return true;
   }
 
+  function resetAgeSelection(options){
+    var opts = options || {};
+    var state = opts.state || {};
+    var clearShiftOptionPanels = opts.clearShiftOptionPanels || function(){};
+    var renderAll = opts.renderAll || function(){};
+    var persist = opts.persist || function(){};
+    clearShiftOptionPanels();
+    Object.assign(state, {
+      age: null,
+      ageSelected: false,
+      shiftId: null,
+      basePrice: null,
+      offerPrice: null,
+      code: null,
+      expiresAt: null,
+      offerStage: 0,
+      bookingCompleted: false
+    });
+    ['desktopAgeTabs','mobileAgeTabs'].forEach(function(id){
+      var root = document.getElementById(id);
+      if(!root) return;
+      root.querySelectorAll('[data-age]').forEach(function(node){
+        node.classList.remove('active');
+      });
+    });
+    renderAll();
+    persist();
+  }
+
+  function resetShiftSelection(options){
+    var opts = options || {};
+    var state = opts.state || {};
+    var clearShiftOptionPanels = opts.clearShiftOptionPanels || function(){};
+    var renderAll = opts.renderAll || function(){};
+    var persist = opts.persist || function(){};
+    var showHint = opts.showHint || function(){};
+    clearShiftOptionPanels();
+    Object.assign(state, {
+      shiftId: null,
+      basePrice: null,
+      offerPrice: null,
+      code: null,
+      expiresAt: null,
+      offerStage: 0,
+      offerSearching: false,
+      bookingCompleted: false
+    });
+    showHint('Смена сброшена. Выберите подходящий вариант.', 'shift');
+    renderAll();
+    persist();
+  }
+
   function getPrimaryActionState(options) {
     var opts = options || {};
     var state = opts.state || {};
@@ -2970,6 +2519,9 @@ function runOfferSearch(overrides){
     var opts = options || {};
     var state = opts.state || {};
     var hasSelectedAge = opts.hasSelectedAge || function () { return false; };
+    if (opts.simpleModeEnabled) {
+      return 1;
+    }
 
     if (state.bookingCompleted) {
       return 4;
@@ -2992,6 +2544,99 @@ function runOfferSearch(overrides){
     return 1;
   }
 
+  function getResolvedPrimaryActionText(options){
+    var opts = options || {};
+    var state = opts.state || {};
+    var actionState = opts.actionState || null;
+    var shift = opts.shift || null;
+    if(!actionState){
+      return "";
+    }
+    if(!shift || Number(state.offerStage || 0) < 1){
+      return actionState.text || "";
+    }
+    var formatPrice = opts.formatPrice || function(value){ return String(value || ""); };
+    var baseForGain = state.basePrice || shift.price || 0;
+    var gainValue = Math.max(0, baseForGain - (state.offerPrice || baseForGain));
+    if(gainValue > 0){
+      return "Завершить бронирование · выгода " + formatPrice(gainValue);
+    }
+    return "Завершить бронирование";
+  }
+
+  function normalizeInitialState(options) {
+    var opts = options || {};
+    var state = opts.state || {};
+    var useDesktopBaseForMobile = !!opts.useDesktopBaseForMobile;
+    var changed = false;
+    var normalizedPreviewView = state.previewView || state.view || "desktop";
+    var normalizedView = (useDesktopBaseForMobile && normalizedPreviewView === "mobile")
+      ? "desktop"
+      : (state.view || normalizedPreviewView);
+    var normalized = {
+      previewView: normalizedPreviewView,
+      view: normalizedView,
+      desktopMode: "full",
+      mobileMode: "full",
+      heroContrastMode: "after-soft",
+      heroMicroMode: "off",
+      offerModalTheme: "light",
+      offerLayout: "current",
+      ageSelected: typeof state.ageSelected === "boolean" ? state.ageSelected : false,
+      bookingCompleted: !!state.bookingCompleted
+    };
+
+    Object.keys(normalized).forEach(function(key){
+      if(state[key] !== normalized[key]) changed = true;
+    });
+    Object.assign(state, normalized);
+
+    if(!state.age){
+      if(state.ageSelected || state.shiftId || state.basePrice || state.offerPrice || state.code || state.expiresAt || state.offerStage || state.bookingCompleted){
+        changed = true;
+      }
+      Object.assign(state, {
+        ageSelected: false,
+        shiftId: null,
+        basePrice: null,
+        offerPrice: null,
+        code: null,
+        expiresAt: null,
+        offerStage: 0,
+        bookingCompleted: false
+      });
+    } else {
+      if(!state.ageSelected){
+        changed = true;
+      }
+      Object.assign(state, { ageSelected: true });
+      if(!state.shiftId){
+        if(state.basePrice || state.offerPrice || state.code || state.expiresAt || state.offerStage || state.bookingCompleted){
+          changed = true;
+        }
+        Object.assign(state, {
+          basePrice: null,
+          offerPrice: null,
+          code: null,
+          expiresAt: null,
+          offerStage: 0,
+          bookingCompleted: false
+        });
+      }
+    }
+
+    var normalizedOfferStage = Number(state.offerStage);
+    if(!Number.isFinite(normalizedOfferStage) || normalizedOfferStage < 0){
+      Object.assign(state, { offerStage: 0 });
+      changed = true;
+    } else if(normalizedOfferStage > 4){
+      Object.assign(state, { offerStage: 4 });
+      changed = true;
+    }
+
+    return { changed: !!changed };
+  }
+
   function handlePrimaryCTA(options) {
     var opts = options || {};
     var state = opts.state || {};
@@ -3005,6 +2650,9 @@ function runOfferSearch(overrides){
     if (!hasSelectedAge()) {
       if (typeof opts.track === "function" && typeof opts.buildHeroVariantMeta === "function") {
         opts.track("hero_variant_click_new", opts.buildHeroVariantMeta({ cta: copy.cta || "" }));
+      }
+      if (opts.simpleModeEnabled) {
+        return;
       }
       var ageHint = opts.bookingText("selectAge");
       if (copy.hintStage1) {
@@ -3169,8 +2817,12 @@ function runOfferSearch(overrides){
     resetOfferState: resetOfferState,
     buildBookingSummaryHtml: buildBookingSummaryHtml,
     selectShift: selectShift,
+    resetAgeSelection: resetAgeSelection,
+    resetShiftSelection: resetShiftSelection,
     getPrimaryActionState: getPrimaryActionState,
     getStepState: getStepState,
+    getResolvedPrimaryActionText: getResolvedPrimaryActionText,
+    normalizeInitialState: normalizeInitialState,
     handlePrimaryCTA: handlePrimaryCTA,
     runOfferSearch: runOfferSearch,
     openOfferCheck: openOfferCheck,
@@ -3215,7 +2867,7 @@ function runOfferSearch(overrides){
     const renderGuidedState = typeof ctx.renderGuidedState === 'function' ? ctx.renderGuidedState : (() => {});
     const applyBookingStageClass = typeof ctx.applyBookingStageClass === 'function' ? ctx.applyBookingStageClass : (() => {});
     const applyBookingStage2Alignment = typeof ctx.applyBookingStage2Alignment === 'function' ? ctx.applyBookingStage2Alignment : (() => {});
-    const applyBookingStructureSchema = typeof ctx.applyBookingStructureSchema === 'function' ? ctx.applyBookingStructureSchema : (() => {});
+    const applyBookingStructureSchemaExternal = typeof ctx.applyBookingStructureSchema === 'function' ? ctx.applyBookingStructureSchema : null;
     const syncBookingHints = typeof ctx.syncBookingHints === 'function' ? ctx.syncBookingHints : (() => {});
     const updateBookingScarcityUi = typeof ctx.updateBookingScarcityUi === 'function' ? ctx.updateBookingScarcityUi : (() => {});
     const scheduleBookingCardMinHeightSync = typeof ctx.scheduleBookingCardMinHeightSync === 'function' ? ctx.scheduleBookingCardMinHeightSync : (() => {});
@@ -3507,6 +3159,63 @@ function runOfferSearch(overrides){
       `;
     }
 
+    function applyBookingStructureSchema(viewCfg){
+      if(typeof applyBookingStructureSchemaExternal === 'function'){
+        applyBookingStructureSchemaExternal(viewCfg);
+        return;
+      }
+      const cfg = (viewCfg && viewCfg.key && viewCfg) || getBookingViewConfig('desktop');
+      if(!cfg) return;
+      const card = document.getElementById(cfg.cardId);
+      if(!card) return;
+      const stage = getBookingStage();
+
+      card.querySelectorAll('[data-booking-region]').forEach((node) => {
+        delete node.dataset.bookingRegion;
+        delete node.dataset.bookingRegionLabel;
+        delete node.dataset.bookingRegionZero;
+        delete node.dataset.bookingRegionLabelSide;
+      });
+
+      const mainSelector = stage === 2 ? '.booking-step-2' : (stage >= 3 ? `#${cfg.infoId}` : '.booking-step-1');
+      const structureMap = {
+        top: `#${cfg.stepsId}`,
+        chips: `#${cfg.summaryChipsId}`,
+        header: `#${cfg.titleId}`,
+        main: mainSelector,
+        bottom: '.booking-step-3'
+      };
+      const regionLabelSideMap = {
+        top: 'right',
+        chips: 'right',
+        header: 'left',
+        main: 'right',
+        bottom: 'left'
+      };
+      const resolveRegionLabel = (regionName, node) => {
+        if(!node) return regionName;
+        const rect = node.getBoundingClientRect();
+        const style = window.getComputedStyle(node);
+        const isZeroHeight = style.display === 'none' || style.visibility === 'hidden' || node.offsetHeight === 0 || rect.height < 1;
+        return isZeroHeight ? `${regionName} 0` : regionName;
+      };
+      const isRegionZero = (node) => {
+        if(!node) return false;
+        const rect = node.getBoundingClientRect();
+        const style = window.getComputedStyle(node);
+        return style.display === 'none' || style.visibility === 'hidden' || node.offsetHeight === 0 || rect.height < 1;
+      };
+
+      Object.entries(structureMap).forEach(([regionName, selector]) => {
+        const node = card.querySelector(selector);
+        if(!node) return;
+        node.dataset.bookingRegion = regionName;
+        node.dataset.bookingRegionLabel = resolveRegionLabel(regionName, node);
+        node.dataset.bookingRegionZero = String(Number(isRegionZero(node)));
+        node.dataset.bookingRegionLabelSide = regionLabelSideMap[regionName] || 'left';
+      });
+    }
+
     function renderBookingPanels(){
       syncGuidedState();
       var renderableViews = getRenderableBookingViewKeys();
@@ -3546,406 +3255,6 @@ function runOfferSearch(overrides){
 
   window.AC_FEATURES = window.AC_FEATURES || {};
   window.AC_FEATURES.bookingViewFlow = Object.freeze({ create: createBookingViewFlow });
-})();
-
-
-/* src/scripts/features/booking.block.js */
-/* src/scripts/features/booking.block.js */
-(function registerBookingBlock(windowObj){
-  'use strict';
-  if(!windowObj || typeof windowObj.createAidacampBlock !== 'function') return;
-  windowObj.AIDACAMP_BLOCKS.booking = windowObj.createAidacampBlock('booking');
-})(window);
-
-
-/* src/scripts/features/calendar-flow.js */
-(function(){
-  function createCalendarFlow(ctx = {}){
-    const getShifts = typeof ctx.getShifts === 'function' ? ctx.getShifts : (() => []);
-    const bookingText = typeof ctx.bookingText === 'function' ? ctx.bookingText : (() => '');
-    const calendarWeekdaysShort = typeof ctx.calendarWeekdaysShort === 'function' ? ctx.calendarWeekdaysShort : (() => []);
-    const calendarMonthNames = typeof ctx.calendarMonthNames === 'function' ? ctx.calendarMonthNames : (() => []);
-    const closeTransientModals = typeof ctx.closeTransientModals === 'function' ? ctx.closeTransientModals : (() => {});
-    const emitModularEvent = typeof ctx.emitModularEvent === 'function' ? ctx.emitModularEvent : (() => {});
-    const track = typeof ctx.track === 'function' ? ctx.track : (() => {});
-    const getShiftOptionPanels = typeof ctx.getShiftOptionPanels === 'function' ? ctx.getShiftOptionPanels : (() => ({
-      desktop:{aboutId:null, calendarId:null},
-      mobile:{aboutId:null, calendarId:null}
-    }));
-    const setShiftOptionPanels = typeof ctx.setShiftOptionPanels === 'function' ? ctx.setShiftOptionPanels : (() => {});
-    const renderShiftOptions = typeof ctx.renderShiftOptions === 'function' ? ctx.renderShiftOptions : (() => {});
-
-    function parseShiftDate(dateStr){
-      const m = String(dateStr || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      if(!m) return null;
-      return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-    }
-
-    function renderCalendar(shift){
-      const grid = document.getElementById('calendarGrid');
-      const title = document.getElementById('calendarTitle');
-      if(!grid || !title || !shift) return;
-
-      const start = parseShiftDate(shift.start);
-      const end = parseShiftDate(shift.end);
-      if(!start || !end) return;
-
-      const ruWeek = calendarWeekdaysShort();
-      const ruMonth = calendarMonthNames();
-
-      title.textContent = `${start.toLocaleDateString('ru-RU')} — ${end.toLocaleDateString('ru-RU')}`;
-
-      const firstMonth = new Date(start.getFullYear(), start.getMonth(), 1);
-      const lastMonth = new Date(end.getFullYear(), end.getMonth(), 1);
-      const cursor = new Date(firstMonth);
-      const isMultiMonthRange = firstMonth.getTime() !== lastMonth.getTime();
-      let html = '';
-
-      while(cursor <= lastMonth){
-        const year = cursor.getFullYear();
-        const month = cursor.getMonth();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        let displayFrom = 1;
-        let displayTo = daysInMonth;
-
-        if(isMultiMonthRange){
-          const isFirst = year === firstMonth.getFullYear() && month === firstMonth.getMonth();
-          const isLast = year === lastMonth.getFullYear() && month === lastMonth.getMonth();
-          if(isFirst){
-            displayFrom = Math.max(1, daysInMonth - 13);
-          }else if(isLast){
-            displayTo = Math.min(daysInMonth, 14);
-          }
-        }
-
-        const leading = new Date(year, month, displayFrom).getDay();
-        html += `
-          <div class="calendar-month">
-            <div class="calendar-month-title">${ruMonth[month]} ${year}</div>
-            <div class="calendar-month-grid">
-        `;
-
-        for(let i = 0; i < leading; i += 1){
-          html += '<div class="calendar-day empty"></div>';
-        }
-        for(let day = displayFrom; day <= displayTo; day += 1){
-          const d = new Date(year, month, day);
-          const isInRange = d >= start && d <= end;
-          html += `
-            <div class="calendar-day ${isInRange ? 'active' : ''}">
-              <span>${day}</span>
-              <small>${ruWeek[d.getDay()]}</small>
-            </div>
-          `;
-        }
-        html += '</div></div>';
-        cursor.setMonth(cursor.getMonth() + 1);
-      }
-
-      grid.innerHTML = html;
-    }
-
-    function renderSeasonCalendar(){
-      const grid = document.getElementById('calendarGrid');
-      const title = document.getElementById('calendarTitle');
-      if(!grid || !title) return;
-      const shifts = getShifts();
-      const seasonShifts = shifts
-        .map((shift, idx) => ({
-          ...shift,
-          startDate: parseShiftDate(shift.start),
-          endDate: parseShiftDate(shift.end),
-          colorIndex: idx % 6
-        }))
-        .filter((shift) => shift.startDate && shift.endDate)
-        .sort((a, b) => a.startDate - b.startDate);
-      if(!seasonShifts.length) return;
-      const seasonShiftById = new Map(seasonShifts.map((shift) => [shift.id, shift]));
-
-      const ruWeek = calendarWeekdaysShort();
-      const ruMonth = calendarMonthNames();
-      const colorPalette = ['#ff8a00', '#38bdf8', '#a78bfa', '#22c55e', '#f43f5e', '#f59e0b'];
-      const minStart = seasonShifts[0].startDate;
-      const maxEnd = seasonShifts[seasonShifts.length - 1].endDate;
-      const firstMonth = new Date(minStart.getFullYear(), minStart.getMonth(), 1);
-      const lastMonth = new Date(maxEnd.getFullYear(), maxEnd.getMonth(), 1);
-      const cursor = new Date(firstMonth);
-
-      title.textContent = bookingText('seasonCalendarTitle');
-      let html = '';
-
-      while(cursor <= lastMonth){
-        const year = cursor.getFullYear();
-        const month = cursor.getMonth();
-        if(month === 6){
-          cursor.setMonth(cursor.getMonth() + 1);
-          continue;
-        }
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const leading = new Date(year, month, 1).getDay();
-        html += `
-          <div class="calendar-month">
-            <div class="calendar-month-title">${ruMonth[month]} ${year}</div>
-            <div class="calendar-month-grid">
-        `;
-        const cells = [];
-        for(let i = 0; i < leading; i += 1){
-          cells.push({ empty: true, hasShift: false, html: '<div class="calendar-day empty"></div>' });
-        }
-        for(let day = 1; day <= daysInMonth; day += 1){
-          const date = new Date(year, month, day);
-          const matched = seasonShifts.filter((shift) => date >= shift.startDate && date <= shift.endDate);
-          const parentOverlays = matched
-            .map((shift) => (shift.sourceId ? seasonShiftById.get(shift.sourceId) : null))
-            .filter((shift) => shift && date >= shift.startDate && date <= shift.endDate);
-          parentOverlays.forEach((parentShift) => {
-            if(!matched.some((shift) => shift.id === parentShift.id)){
-              matched.push(parentShift);
-            }
-          });
-          matched.sort((a, b) => {
-            if(a.id === 'shift-2' && b.id !== 'shift-2') return -1;
-            if(b.id === 'shift-2' && a.id !== 'shift-2') return 1;
-            const aChild = !!a.sourceId;
-            const bChild = !!b.sourceId;
-            if(aChild !== bChild) return aChild ? 1 : -1;
-            return (a.startDate - b.startDate) || String(a.id).localeCompare(String(b.id));
-          });
-          if(!matched.length){
-            cells.push({
-              empty: false,
-              hasShift: false,
-              html: `<div class="calendar-day"><span>${day}</span><small>${ruWeek[date.getDay()]}</small></div>`
-            });
-            continue;
-          }
-          const primary = matched[0];
-          const multi = matched.length > 1;
-          const hasParentOverlay = matched.some((shift) => shift.id === 'shift-2') && matched.some((shift) => shift.sourceId === 'shift-2');
-          const parentShift = matched.find((shift) => shift.id === 'shift-2') || null;
-          const childShift = matched.find((shift) => shift.sourceId === 'shift-2') || matched[1] || matched[0];
-          const mixA = colorPalette[matched[0].colorIndex] || colorPalette[0];
-          const mixB = colorPalette[matched[1]?.colorIndex ?? matched[0].colorIndex] || colorPalette[1];
-          const mixC = colorPalette[matched[2]?.colorIndex ?? matched[0].colorIndex] || colorPalette[2];
-          const parentOverlayColor = colorPalette[parentShift?.colorIndex ?? matched[0].colorIndex] || colorPalette[0];
-          const childOverlayColor = colorPalette[childShift?.colorIndex ?? matched[1]?.colorIndex ?? matched[0].colorIndex] || colorPalette[1];
-          const overlayColorStyle = `--shift-mix-a:${mixA};--shift-mix-b:${mixB};--shift-mix-c:${mixC};` +
-            `--parent-overlay-color:${parentOverlayColor};--child-overlay-color:${childOverlayColor};`;
-          const shiftClasses = [
-            `shift-color-${primary.colorIndex}`,
-            multi ? `multi stack-${Math.min(matched.length, 4)}` : '',
-            hasParentOverlay ? 'has-parent-overlay' : ''
-          ].filter(Boolean).join(' ');
-          const shiftTitle = matched.map((shift) => `${shift.label || shift.title}: ${shift.dates}`).join(' · ');
-          cells.push({
-            empty: false,
-            hasShift: true,
-            html: `<div class="calendar-day active ${shiftClasses}" style="${overlayColorStyle}" title="${shiftTitle}"><span>${day}</span><small>${ruWeek[date.getDay()]}${multi ? ` · ${matched.length}` : ''}</small></div>`
-          });
-        }
-        while(cells.length % 7 !== 0){
-          cells.push({ empty: true, hasShift: false, html: '<div class="calendar-day empty"></div>' });
-        }
-        for(let i = 0; i < cells.length; i += 7){
-          const week = cells.slice(i, i + 7);
-          if(!week.some((cell) => cell.hasShift)) continue;
-          html += `<div class="calendar-week">${week.map((cell) => cell.html).join('')}</div>`;
-        }
-        html += '</div></div>';
-        cursor.setMonth(cursor.getMonth() + 1);
-      }
-
-      grid.innerHTML = html;
-    }
-
-    function openCalendar(shiftId){
-      const shifts = getShifts();
-      const shift = shifts.find((s) => s.id === shiftId);
-      if(!shift) return;
-      closeTransientModals('calendar');
-      renderCalendar(shift);
-      document.getElementById('calendarModal')?.classList.remove('hidden');
-      emitModularEvent('calendar:opened', {
-        mode: 'shift',
-        shiftId: shift.id,
-        shiftLabel: shift.label || shift.title || ''
-      });
-    }
-
-    function openSeasonCalendar(){
-      closeTransientModals('calendar');
-      renderSeasonCalendar();
-      document.getElementById('calendarModal')?.classList.remove('hidden');
-      emitModularEvent('calendar:opened', {
-        mode: 'season',
-        shiftId: '',
-        shiftLabel: ''
-      });
-      track('season_calendar_open');
-    }
-
-    function closeCalendar(){
-      document.getElementById('calendarModal')?.classList.add('hidden');
-      emitModularEvent('calendar:closed', { mode: 'modal' });
-    }
-
-    function toggleShiftOptionPanel(viewKey, panelType, shiftId){
-      const safeView = viewKey === 'mobile' ? 'mobile' : 'desktop';
-      const panels = getShiftOptionPanels();
-      const current = panels[safeView]?.[panelType] || null;
-      const nextPanels = {
-        ...panels,
-        [safeView]: {
-          ...(panels[safeView] || {}),
-          [panelType]: current === shiftId ? null : shiftId
-        }
-      };
-      setShiftOptionPanels(nextPanels);
-      renderShiftOptions(safeView);
-    }
-
-    function clearShiftOptionPanels(){
-      setShiftOptionPanels({
-        desktop:{aboutId:null, calendarId:null},
-        mobile:{aboutId:null, calendarId:null}
-      });
-    }
-
-    return Object.freeze({
-      parseShiftDate,
-      renderCalendar,
-      renderSeasonCalendar,
-      openCalendar,
-      openSeasonCalendar,
-      closeCalendar,
-      toggleShiftOptionPanel,
-      clearShiftOptionPanels
-    });
-  }
-
-  window.AC_FEATURES = window.AC_FEATURES || {};
-  window.AC_FEATURES.calendarFlow = Object.freeze({ create: createCalendarFlow });
-})();
-
-
-/* src/scripts/features/calendar.block.js */
-/* src/scripts/features/calendar.block.js */
-(function registerCalendarBlock(windowObj){
-  'use strict';
-  if(!windowObj || typeof windowObj.createAidacampBlock !== 'function') return;
-  windowObj.AIDACAMP_BLOCKS.calendar = windowObj.createAidacampBlock('calendar');
-})(window);
-
-
-/* src/scripts/features/contacts.block.js */
-/* src/scripts/features/contacts.block.js */
-(function registerContactsBlock(windowObj){
-  'use strict';
-  if(!windowObj || typeof windowObj.createAidacampBlock !== 'function') return;
-  windowObj.AIDACAMP_BLOCKS.contacts = windowObj.createAidacampBlock('contacts');
-})(window);
-
-
-/* src/scripts/features/docs-flow.js */
-(function(){
-  function createDocsFlow(ctx = {}){
-    const shouldUseMobileTemplatesForDesktopSource = typeof ctx.shouldUseMobileTemplatesForDesktopSource === 'function'
-      ? ctx.shouldUseMobileTemplatesForDesktopSource
-      : (() => false);
-    const getMobileDocsCopy = typeof ctx.getMobileDocsCopy === 'function'
-      ? ctx.getMobileDocsCopy
-      : (() => ({orgName:'', orgMeta:'', copyright:'', links:[]}));
-    const getState = typeof ctx.getState === 'function' ? ctx.getState : (() => ({}));
-    const getDesktopMobileSectionTemplates = typeof ctx.getDesktopMobileSectionTemplates === 'function'
-      ? ctx.getDesktopMobileSectionTemplates
-      : (() => ({}));
-
-    function renderDesktopMobileDocsBlock(){
-      const footer = document.getElementById('section-legal');
-      if(!footer) return;
-
-      if(!footer.dataset.originalMarkup){
-        footer.dataset.originalMarkup = footer.innerHTML;
-      }
-
-      const useMobileDocs = shouldUseMobileTemplatesForDesktopSource();
-      if(!useMobileDocs){
-        if(footer.dataset.mobileDocsApplied === '1'){
-          footer.innerHTML = footer.dataset.originalMarkup || footer.innerHTML;
-          footer.dataset.mobileDocsApplied = '0';
-        }
-        footer.classList.remove('mobile-docs-inline');
-        return;
-      }
-
-      const mobileDocsCopy = getMobileDocsCopy();
-      const state = getState();
-      footer.classList.add('mobile-docs-inline');
-      footer.dataset.mobileDocsApplied = '1';
-      const linksMarkup = (mobileDocsCopy.links || []).map((entry) => {
-        const attrs = [`href="${entry.href}"`];
-        if(entry.target){
-          attrs.push(`target="${entry.target}"`);
-        }
-        if(entry.rel){
-          attrs.push(`rel="${entry.rel}"`);
-        }
-        return `<a ${attrs.join(' ')}>${entry.text}</a>`;
-      }).join('');
-      footer.innerHTML = `
-        <div class="mobile-docs-shell">
-          <article class="mobile-docs-accordion-item ${state.mobileDocsExpanded ? 'open' : ''}">
-            <button type="button" class="mobile-docs-toggle" data-action="mobile-docs-toggle">
-              <span class="mobile-docs-toggle-copy">
-                <span class="mobile-docs-toggle-main">${mobileDocsCopy.orgName}</span>
-                <span class="mobile-docs-toggle-meta">${mobileDocsCopy.orgMeta}</span>
-              </span>
-              <img class="ac-icon" src="/assets/icons/chevron-right.svg" alt="" aria-hidden="true">
-            </button>
-            <div class="mobile-docs-links">
-              ${linksMarkup}
-            </div>
-          </article>
-          <div class="footer-copyright-mini">${mobileDocsCopy.copyright}</div>
-        </div>
-      `;
-    }
-
-    function syncMobileDocsExpandedUi(){
-      const state = getState();
-      document.querySelectorAll('.mobile-docs-accordion-item').forEach((item) => {
-        item.classList.toggle('open', !!state.mobileDocsExpanded);
-      });
-    }
-
-    function applyMobileTemplatesToDesktopSections(){
-      const useMobileTemplates = shouldUseMobileTemplatesForDesktopSource();
-      const templates = getDesktopMobileSectionTemplates();
-      Object.entries(templates).forEach(([sectionId, template]) => {
-        const section = document.getElementById(sectionId);
-        if(!section) return;
-        if(!section.dataset.desktopOriginalMarkup){
-          section.dataset.desktopOriginalMarkup = section.innerHTML;
-        }
-        if(useMobileTemplates){
-          section.innerHTML = template;
-          section.classList.add('mobile-template');
-        } else if(section.dataset.desktopOriginalMarkup){
-          section.innerHTML = section.dataset.desktopOriginalMarkup;
-          section.classList.remove('mobile-template');
-        }
-      });
-    }
-
-    return Object.freeze({
-      renderDesktopMobileDocsBlock,
-      syncMobileDocsExpandedUi,
-      applyMobileTemplatesToDesktopSections
-    });
-  }
-
-  window.AC_FEATURES = window.AC_FEATURES || {};
-  window.AC_FEATURES.docsFlow = Object.freeze({ create: createDocsFlow });
 })();
 
 
@@ -7443,20 +6752,21 @@ function runOfferSearch(overrides){
       }
     }
 
+    var uiContent = CONTENT_MAP && CONTENT_MAP.ui ? CONTENT_MAP.ui : {};
     var assignments = [
-      ["acBrandSub", CONTENT_MAP.ui.brandSub],
-      ["acAgeLabel", CONTENT_MAP.ui.ageLabel],
+      ["acBrandSub", uiContent.brandSub || ""],
+      ["acAgeLabel", uiContent.ageLabel || ""],
       ["acHeroContactLabel", "Связаться"],
-      ["acHeroCampaignLabel", CONTENT_MAP.ui.heroCampaignLabel],
-      ["acHeroOverlayTitle", CONTENT_MAP.ui.heroOverlayTitle],
-      ["acHeroSafetyMedTitle", CONTENT_MAP.ui.heroSafetyMedTitle],
-      ["acHeroSafetyMedDesc", CONTENT_MAP.ui.heroSafetyMedDesc],
-      ["acHeroSafetyLockTitle", CONTENT_MAP.ui.heroSafetyLockTitle],
-      ["acHeroSafetyLockDesc", CONTENT_MAP.ui.heroSafetyLockDesc],
-      ["acHeroSafetyFoodTitle", CONTENT_MAP.ui.heroSafetyFoodTitle],
-      ["acHeroSafetyFoodDesc", CONTENT_MAP.ui.heroSafetyFoodDesc],
-      ["acHeroSafetyPoolTitle", CONTENT_MAP.ui.heroSafetyPoolTitle],
-      ["acHeroSafetyPoolDesc", CONTENT_MAP.ui.heroSafetyPoolDesc]
+      ["acHeroCampaignLabel", uiContent.heroCampaignLabel || ""],
+      ["acHeroOverlayTitle", uiContent.heroOverlayTitle || ""],
+      ["acHeroSafetyMedTitle", uiContent.heroSafetyMedTitle || ""],
+      ["acHeroSafetyMedDesc", uiContent.heroSafetyMedDesc || ""],
+      ["acHeroSafetyLockTitle", uiContent.heroSafetyLockTitle || ""],
+      ["acHeroSafetyLockDesc", uiContent.heroSafetyLockDesc || ""],
+      ["acHeroSafetyFoodTitle", uiContent.heroSafetyFoodTitle || ""],
+      ["acHeroSafetyFoodDesc", uiContent.heroSafetyFoodDesc || ""],
+      ["acHeroSafetyPoolTitle", uiContent.heroSafetyPoolTitle || ""],
+      ["acHeroSafetyPoolDesc", uiContent.heroSafetyPoolDesc || ""]
     ];
 
     for (var i = 0; i < assignments.length; i += 1) {
@@ -9913,13 +9223,142 @@ function runOfferSearch(overrides){
 })();
 
 
-/* src/scripts/features/faq.block.js */
-/* src/scripts/features/faq.block.js */
-(function registerFaqBlock(windowObj){
-  'use strict';
-  if(!windowObj || typeof windowObj.createAidacampBlock !== 'function') return;
-  windowObj.AIDACAMP_BLOCKS.faq = windowObj.createAidacampBlock('faq');
-})(window);
+/* src/scripts/features/floating-contacts-compat.js */
+(function () {
+  const initFloatingContacts = () => {
+    const root = document.querySelector('[data-floating-contacts]');
+    if (!root) return false;
+
+    const panel = root.querySelector('[data-floating-panel]');
+    const fab = root.querySelector('[data-floating-fab]');
+    const hero = document.getElementById('hero');
+
+    let visible = false;
+    let open = false;
+
+    const render = () => {
+      root.style.display = visible ? '' : 'none';
+      if (panel) panel.setAttribute('data-open', String(open && visible));
+    };
+
+    const setVisible = (value) => {
+      visible = value;
+      if (!visible) open = false;
+      render();
+    };
+
+    const setOpen = (value) => {
+      open = value;
+      render();
+    };
+
+    if (hero) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => setVisible(!entry.isIntersecting));
+      }, { threshold: 0.2 });
+      observer.observe(hero);
+    } else {
+      setVisible(true);
+    }
+
+    if (fab) {
+      fab.addEventListener('click', (event) => {
+        event.stopPropagation();
+        setOpen(!open);
+        if (window.acTrack) {
+          window.acTrack('floating_contacts_toggle', { open: !open });
+        }
+      });
+    }
+
+    document.addEventListener('click', (event) => {
+      if (event.target instanceof Node && !root.contains(event.target)) {
+        setOpen(false);
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+      }
+    });
+
+    render();
+    window.__acFloatingContactsInit = true;
+    return true;
+  };
+
+  const run = () => {
+    if (initFloatingContacts()) return;
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
+      if (initFloatingContacts() || tries >= 10) {
+        clearInterval(timer);
+      }
+    }, 100);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run, { once: true });
+  } else {
+    run();
+  }
+})();
+
+
+/* src/scripts/features/footer-tabs-compat.js */
+(function () {
+  const initFooterTabs = () => {
+    const root = document.querySelector('[data-footer-mobile-tabs]')?.parentElement;
+    if (!root) return false;
+
+    const tabs = Array.from(root.querySelectorAll('[data-footer-tab]'));
+    const panels = Array.from(root.querySelectorAll('[data-footer-panel]'));
+    if (!tabs.length || !panels.length) return false;
+
+    const setActive = (tabName) => {
+      tabs.forEach((tab) => {
+        const active = (tab.getAttribute('data-footer-tab') || '') === tabName;
+        tab.classList.toggle('bg-[#fff2e3]', active);
+        tab.classList.toggle('border-[#ff8b1f]', active);
+        tab.classList.toggle('text-[#ff8b1f]', active);
+      });
+
+      panels.forEach((panel) => {
+        const show = (panel.getAttribute('data-footer-panel') || '') === tabName;
+        panel.classList.toggle('hidden', !show);
+      });
+    };
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        setActive(tab.getAttribute('data-footer-tab') || 'docs');
+      });
+    });
+
+    setActive('docs');
+    window.__acFooterTabsInit = true;
+    return true;
+  };
+
+  const runWithRetry = () => {
+    if (initFooterTabs()) return;
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
+      if (initFooterTabs() || tries >= 10) {
+        clearInterval(timer);
+      }
+    }, 100);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', runWithRetry, { once: true });
+  } else {
+    runWithRetry();
+  }
+})();
 
 
 /* src/scripts/features/funnel.js */
@@ -10371,8 +9810,8 @@ function runOfferSearch(overrides){
     const getBookingViewConfig = typeof ctx.getBookingViewConfig === 'function' ? ctx.getBookingViewConfig : (() => ({}));
     const syncGuidedState = typeof ctx.syncGuidedState === 'function' ? ctx.syncGuidedState : (() => {});
     const getBookingStage = typeof ctx.getBookingStage === 'function' ? ctx.getBookingStage : (() => 1);
-    const placeStage2ContentForView = typeof ctx.placeStage2ContentForView === 'function' ? ctx.placeStage2ContentForView : (() => {});
-    const syncCompletedBookingScaffold = typeof ctx.syncCompletedBookingScaffold === 'function' ? ctx.syncCompletedBookingScaffold : (() => {});
+    const placeStage2ContentForViewExternal = typeof ctx.placeStage2ContentForView === 'function' ? ctx.placeStage2ContentForView : null;
+    const syncCompletedBookingScaffoldExternal = typeof ctx.syncCompletedBookingScaffold === 'function' ? ctx.syncCompletedBookingScaffold : null;
     const stopVariantFlowScenario = typeof ctx.stopVariantFlowScenario === 'function' ? ctx.stopVariantFlowScenario : (() => {});
     const bookingText = typeof ctx.bookingText === 'function' ? ctx.bookingText : (() => '');
     const hideVariantCoachBadge = typeof ctx.hideVariantCoachBadge === 'function' ? ctx.hideVariantCoachBadge : (() => {});
@@ -10381,6 +9820,117 @@ function runOfferSearch(overrides){
     const getState = typeof ctx.getState === 'function' ? ctx.getState : (() => ({}));
     const getSelectedShift = typeof ctx.getSelectedShift === 'function' ? ctx.getSelectedShift : (() => null);
     const scheduleVariantFlowScenario = typeof ctx.scheduleVariantFlowScenario === 'function' ? ctx.scheduleVariantFlowScenario : (() => {});
+    const simpleModeEnabled = !!ctx.simpleModeEnabled;
+
+    function ensureStage2TransferHost(stepThree){
+      if(!stepThree) return null;
+      let host = stepThree.querySelector('.booking-stage2-transfer-host');
+      if(!host){
+        host = document.createElement('div');
+        host.className = 'booking-stage2-transfer-host';
+      }
+      return host;
+    }
+
+    function placeStage2ContentForView(viewCfg, stage, bookingCard){
+      if(typeof placeStage2ContentForViewExternal === 'function'){
+        placeStage2ContentForViewExternal(viewCfg, stage, bookingCard);
+        return;
+      }
+      if(!viewCfg || !bookingCard) return;
+      const stepTwo = bookingCard.querySelector('.booking-step-2');
+      const stepThree = bookingCard.querySelector('.booking-step-3');
+      if(!stepTwo || !stepThree) return;
+
+      const allShiftsBtn = bookingCard.querySelector('.booking-all-shifts-link');
+      const host = ensureStage2TransferHost(stepThree);
+      if(!host) return;
+      const toTransfer = [allShiftsBtn].filter(Boolean);
+
+      const insertBackToStepTwo = (node) => {
+        const anchor = stepTwo.querySelector('.guided-inline-hint');
+        if(anchor && anchor.parentElement === stepTwo){
+          if(anchor.nextSibling){
+            stepTwo.insertBefore(node, anchor.nextSibling);
+          } else {
+            stepTwo.appendChild(node);
+          }
+          return;
+        }
+        stepTwo.appendChild(node);
+      };
+
+      if(stage === 2){
+        if(host.parentElement !== stepThree){
+          stepThree.prepend(host);
+        }
+        toTransfer.forEach((node) => host.appendChild(node));
+        stepThree.classList.add('booking-stage2-transfer-enabled');
+        return;
+      }
+
+      if(host.parentElement){
+        toTransfer.forEach((node) => insertBackToStepTwo(node));
+        host.remove();
+      }
+      stepThree.classList.remove('booking-stage2-transfer-enabled');
+    }
+
+    function syncCompletedBookingScaffold(viewCfg, bookingCard){
+      if(typeof syncCompletedBookingScaffoldExternal === 'function'){
+        syncCompletedBookingScaffoldExternal(viewCfg, bookingCard);
+        return;
+      }
+      const state = getState();
+      const cfg = viewCfg && viewCfg.key ? viewCfg : getBookingViewConfig('desktop');
+      if(!cfg) return;
+      const card = bookingCard || document.getElementById(cfg.cardId);
+      if(!card) return;
+      const stepsRoot = document.getElementById(cfg.stepsId);
+      const chipHost = document.getElementById(cfg.summaryChipsId);
+      const stepThree = card.querySelector('.booking-step-3');
+      if(!stepsRoot || !stepThree) return;
+
+      let topClose = stepsRoot.querySelector('.booking-completed-top-close');
+      let chipBar = chipHost?.querySelector('.booking-completed-chipbar');
+      let bottomWrap = stepThree.querySelector('.booking-completed-bottom');
+
+      if(state.bookingCompleted){
+        stepsRoot.classList.add('booking-steps-completed');
+        if(topClose) topClose.remove();
+        if(chipHost){
+          chipHost.classList.add('visible', 'booking-summary-chips--completed');
+          if(!chipBar){
+            chipBar = document.createElement('div');
+            chipBar.className = 'booking-completed-chipbar';
+            chipHost.appendChild(chipBar);
+          }
+          chipBar.innerHTML = `
+            <span class="booking-completed-chipbar-title">Что дальше?</span>
+            <button type="button" class="booking-completed-top-close booking-completed-chipbar-close" data-action="reset-booking-all" aria-label="Сбросить бронирование">
+              <img class="ac-icon" src="/assets/icons/close.svg" alt="" aria-hidden="true">
+            </button>
+          `;
+        }
+        if(!bottomWrap){
+          bottomWrap = document.createElement('div');
+          bottomWrap.className = 'booking-completed-bottom';
+          stepThree.appendChild(bottomWrap);
+        }
+        bottomWrap.innerHTML = '<a class="completed-followup-link completed-followup-link--bottom cta-main" href="#" data-action="copy-invite-link">Копировать ссылку приглашение</a>';
+        stepThree.classList.add('booking-completed-bottom-step');
+        return;
+      }
+
+      stepsRoot.classList.remove('booking-steps-completed');
+      if(topClose) topClose.remove();
+      if(chipBar) chipBar.remove();
+      if(chipHost){
+        chipHost.classList.remove('booking-summary-chips--completed');
+      }
+      if(bottomWrap) bottomWrap.remove();
+      stepThree.classList.remove('booking-completed-bottom-step');
+    }
 
     function renderGuidedState(viewCfg){
       const state = getState();
@@ -10401,6 +9951,43 @@ function runOfferSearch(overrides){
       const stepThree = bookingCard?.querySelector('.booking-step-3');
       const allShiftsBtn = bookingCard?.querySelector('.booking-all-shifts-link');
       if(!shiftList || !ctaWrap || !ageTabs || !ageChip || !ageChipText || !shiftChip || !shiftChipText) return;
+
+      if(simpleModeEnabled){
+        stopVariantFlowScenario();
+        hideVariantCoachBadge(cfg);
+        if(allShiftsBtn) allShiftsBtn.classList.add('hidden');
+        shiftList.classList.add('hidden', 'disabled');
+        shiftList.classList.remove('highlight', 'collapsed');
+        if(stepThree){
+          stepThree.classList.add('is-force-hidden');
+          stepThree.classList.remove('booking-stage2-transfer-enabled');
+        }
+        ageChip.classList.remove('visible');
+        shiftChip.classList.remove('visible');
+        if(chipHost){
+          chipHost.classList.remove('visible', 'booking-summary-chips--completed');
+        }
+        if(state.bookingCompleted){
+          ageTabs.classList.add('hidden');
+          ctaWrap.classList.add('hidden');
+        } else if(!hasSelectedAge()){
+          ageTabs.classList.remove('hidden');
+          ctaWrap.classList.add('hidden');
+        } else {
+          ageTabs.classList.add('hidden');
+          ctaWrap.classList.remove('hidden');
+          ctaWrap.classList.add('highlight');
+        }
+        if(baseHint){
+          baseHint.textContent = '';
+          baseHint.classList.toggle('is-muted-hidden', !hasSelectedAge());
+        }
+        if(guidedInlineHint){
+          guidedInlineHint.textContent = '';
+          guidedInlineHint.classList.remove('visible', 'variant-coach');
+        }
+        return;
+      }
 
       placeStage2ContentForView(cfg, stage, bookingCard);
       syncCompletedBookingScaffold(cfg, bookingCard);
@@ -10537,9 +10124,9 @@ function runOfferSearch(overrides){
     const setMobileUserInteracted = typeof ctx.setMobileUserInteracted === 'function' ? ctx.setMobileUserInteracted : (() => {});
     const safeInvoke = typeof ctx.safeInvoke === 'function' ? ctx.safeInvoke : ((_,__,___,fb)=> (typeof fb === 'function' ? fb() : fb));
     const getViewMode = typeof ctx.getViewMode === 'function' ? ctx.getViewMode : (() => window.AC_VIEW_MODE);
-    const applyHeroBenefitsLayoutExperiment = typeof ctx.applyHeroBenefitsLayoutExperiment === 'function' ? ctx.applyHeroBenefitsLayoutExperiment : (() => {});
     const resolveDesktopView = typeof ctx.resolveDesktopView === 'function' ? ctx.resolveDesktopView : (() => document.getElementById('desktopView'));
     const resolveMobileView = typeof ctx.resolveMobileView === 'function' ? ctx.resolveMobileView : (() => document.getElementById('mobileView'));
+    const onHeroVariantChange = typeof ctx.onHeroVariantChange === 'function' ? ctx.onHeroVariantChange : (() => {});
 
     const HERO_AB_TEST_KEY = String(ctx.heroAbTestKey || 'aidacamp_hero_ab_variant_v1');
     const HERO_AB_TEST_ID = String(ctx.heroAbTestId || 'hero-ab-v1');
@@ -10550,6 +10137,13 @@ function runOfferSearch(overrides){
     const HERO_AB_BENEFIT_REVEAL_DELAY_MS = Number(ctx.heroAbBenefitRevealDelayMs || 4700);
     const HERO_AB_DESKTOP_SHIFT_UP_MS = Number(ctx.heroAbDesktopShiftUpMs || HERO_AB_SHIFT_UP_MS);
     const HERO_AB_DESKTOP_BENEFIT_REVEAL_DELAY_MS = Number(ctx.heroAbDesktopBenefitRevealDelayMs || HERO_AB_BENEFIT_REVEAL_DELAY_MS);
+    const HERO_BENEFITS_LAYOUT_EXPERIMENT = !!ctx.heroBenefitsLayoutExperiment;
+    const HERO_BENEFITS_LAYOUT_EXPERIMENT_ITEMS = Array.isArray(ctx.heroBenefitsLayoutExperimentItems)
+      ? ctx.heroBenefitsLayoutExperimentItems.filter((item) => item && typeof item === 'object')
+      : [];
+    const HERO_AB_VARIANT_LABELS = (ctx.heroAbVariantLabels && typeof ctx.heroAbVariantLabels === 'object')
+      ? ctx.heroAbVariantLabels
+      : Object.freeze({ A: 'A', B: 'B' });
 
     function pushHeroAbTimer(timerId){
       const timers = getHeroAbTimers();
@@ -10746,17 +10340,245 @@ function runOfferSearch(overrides){
       emitModularEvent('hero:ab-applied', { variant: heroAbVariant || 'A' });
     }
 
+    function initHeroAbDevPanel(){
+      const host = String(window.location.hostname || '').toLowerCase();
+      const isDevHost = host === 'localhost' || host === '127.0.0.1';
+      if(!isDevHost) return;
+      if(document.getElementById('heroAbDevPanel')) return;
+      const panel = document.createElement('div');
+      panel.id = 'heroAbDevPanel';
+      panel.className = 'hero-ab-dev-panel';
+      panel.innerHTML = `
+        <div class="hero-ab-dev-title">Hero A/B (Dev)</div>
+        <div class="hero-ab-dev-status">Current: <span data-hero-ab-current></span></div>
+        <div class="hero-ab-dev-modes">
+          <button type="button" class="hero-ab-dev-btn" data-hero-ab-set="A">A · ${HERO_AB_VARIANT_LABELS.A || 'A'}</button>
+          <button type="button" class="hero-ab-dev-btn" data-hero-ab-set="B">B · ${HERO_AB_VARIANT_LABELS.B || 'B'}</button>
+        </div>
+      `;
+      document.body.appendChild(panel);
+      const currentNode = panel.querySelector('[data-hero-ab-current]');
+      const syncPanelState = () => {
+        const current = getHeroAbVariant();
+        if(currentNode){
+          currentNode.textContent = HERO_AB_VARIANT_LABELS[current] || current;
+        }
+        panel.querySelectorAll('[data-hero-ab-set]').forEach((button) => {
+          const value = String(button.getAttribute('data-hero-ab-set') || '').toUpperCase();
+          button.classList.toggle('is-active', value === current);
+        });
+      };
+      syncPanelState();
+      panel.querySelectorAll('[data-hero-ab-set]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const next = String(btn.getAttribute('data-hero-ab-set') || '').toUpperCase();
+          if(next !== 'A' && next !== 'B') return;
+          if(next === getHeroAbVariant()){
+            syncPanelState();
+            return;
+          }
+          localStorage.setItem(HERO_AB_TEST_KEY, next);
+          setHeroAbVariant(next);
+          onHeroVariantChange(next);
+          applyHeroAbVariant();
+          syncPanelState();
+        });
+      });
+      window.addEventListener('hero-ab:changed', syncPanelState);
+    }
+
     return Object.freeze({
       clearHeroAbTimers,
       getForcedHeroAbVariant,
       resolveHeroAbVariant,
       applyHeroAbAnimationForRoot,
-      applyHeroAbVariant
+      applyHeroAbVariant,
+      initHeroAbDevPanel
     });
   }
 
   window.AC_FEATURES = window.AC_FEATURES || {};
   window.AC_FEATURES.heroAbFlow = Object.freeze({ create: createHeroAbFlow });
+})();
+    function applyHeroBenefitsLayoutExperiment(root, enabledOverride){
+      if(!root) return;
+      const grid = root.querySelector('.hero-benefits-grid');
+      if(!grid) return;
+      if(!grid.dataset.heroBenefitsOriginalHtml){
+        grid.dataset.heroBenefitsOriginalHtml = grid.innerHTML;
+      }
+      const enabled = typeof enabledOverride === 'boolean'
+        ? enabledOverride
+        : HERO_BENEFITS_LAYOUT_EXPERIMENT;
+      if(!enabled){
+        root.classList.remove('hero-benefits-exp-3');
+        grid.classList.remove('hero-benefits-grid--compact3');
+        if(grid.dataset.heroBenefitsOriginalHtml){
+          grid.innerHTML = grid.dataset.heroBenefitsOriginalHtml;
+        }
+        return;
+      }
+      root.classList.add('hero-benefits-exp-3');
+      grid.classList.add('hero-benefits-grid--compact3');
+      grid.innerHTML = HERO_BENEFITS_LAYOUT_EXPERIMENT_ITEMS.map((item) => `
+        <article class="hero-benefit-card hero-benefit-card--compact">
+          <span class="hero-benefit-icon-wrap ${item.iconClass || ''}">
+            <img class="ac-icon hero-benefit-icon" src="${item.icon}" alt="" aria-hidden="true">
+          </span>
+          <strong>${item.title}</strong>
+        </article>
+      `).join('');
+    }
+
+
+/* src/scripts/features/hero-background-flow.js */
+(function(){
+  function createHeroBackgroundFlow(ctx = {}){
+    const getHeroAbVariant = typeof ctx.getHeroAbVariant === 'function' ? ctx.getHeroAbVariant : (() => 'A');
+    const getHeroAbAssets = typeof ctx.getHeroAbAssets === 'function'
+      ? ctx.getHeroAbAssets
+      : (() => ({ images: [], mobile: '' }));
+    const getHeroImages = typeof ctx.getHeroImages === 'function' ? ctx.getHeroImages : (() => []);
+
+    let heroIndex = 0;
+    let heroTimer = null;
+
+    function clearHeroTimer(){
+      if(heroTimer){
+        window.clearInterval(heroTimer);
+        heroTimer = null;
+      }
+    }
+
+    function markHeroLoading(desktopView, mobileView){
+      if(desktopView){
+        desktopView.classList.toggle('hero-static-bg', getHeroImages().length <= 1);
+        desktopView.classList.remove('hero-ready');
+        desktopView.classList.add('hero-loading');
+      }
+      if(mobileView){
+        mobileView.classList.remove('hero-ready');
+        mobileView.classList.add('hero-loading');
+      }
+    }
+
+    function markHeroReady(desktopView, mobileView){
+      if(desktopView){
+        desktopView.classList.remove('hero-loading');
+        desktopView.classList.add('hero-ready');
+      }
+      if(mobileView){
+        mobileView.classList.remove('hero-loading');
+        mobileView.classList.add('hero-ready');
+      }
+    }
+
+    function applySingleFrame(bg1, bg2, src){
+      bg1.style.backgroundImage = `url(${src})`;
+      bg1.classList.add('active');
+      bg1.classList.remove('hidden');
+      if(bg2){
+        bg2.style.backgroundImage = `url(${src})`;
+        bg2.classList.remove('active');
+        bg2.classList.add('hidden');
+      }
+    }
+
+    function preloadAndApplyFirstFrame(bg1, bg2, desktopView, mobileView, src){
+      let done = false;
+      const finish = () => {
+        if(done) return;
+        done = true;
+        applySingleFrame(bg1, bg2, src);
+        window.requestAnimationFrame(() => markHeroReady(desktopView, mobileView));
+      };
+      try{
+        const img = new Image();
+        img.decoding = 'async';
+        img.onload = finish;
+        img.onerror = finish;
+        img.src = src;
+        if(img.complete){
+          finish();
+        } else {
+          window.setTimeout(finish, 1200);
+        }
+      } catch (error){
+        finish();
+      }
+    }
+
+    function initHero(){
+      const bg1 = document.getElementById('heroBg1');
+      if(!bg1) return;
+      const bg2 = document.getElementById('heroBg2');
+      const desktopView = document.getElementById('desktopView');
+      const mobileView = document.getElementById('mobileView');
+      const isMobile = window.innerWidth < 768;
+      const assets = getHeroAbAssets(getHeroAbVariant());
+      const heroImages = Array.isArray(assets.images) ? assets.images : [];
+      const heroMobile = String(assets.mobile || '');
+
+      clearHeroTimer();
+      markHeroLoading(desktopView, mobileView);
+
+      if(isMobile){
+        preloadAndApplyFirstFrame(bg1, bg2, desktopView, mobileView, heroMobile);
+        return;
+      }
+
+      heroIndex = 0;
+      preloadAndApplyFirstFrame(bg1, bg2, desktopView, mobileView, heroImages[heroIndex] || heroMobile);
+      if(!bg2 || heroImages.length <= 1){
+        if(bg2){
+          bg2.style.backgroundImage = 'none';
+        }
+        return;
+      }
+
+      heroTimer = window.setInterval(() => {
+        heroIndex = (heroIndex + 1) % heroImages.length;
+        const next = heroImages[heroIndex];
+        if(bg1.classList.contains('active')){
+          bg2.style.backgroundImage = `url(${next})`;
+          bg2.classList.remove('hidden');
+          bg2.classList.add('active');
+          bg1.classList.remove('active');
+          bg1.classList.add('hidden');
+          return;
+        }
+        bg1.style.backgroundImage = `url(${next})`;
+        bg1.classList.remove('hidden');
+        bg1.classList.add('active');
+        bg2.classList.remove('active');
+        bg2.classList.add('hidden');
+      }, 5500);
+    }
+
+    function preloadHeroAssets(){
+      const assets = getHeroAbAssets(getHeroAbVariant());
+      const heroImages = Array.isArray(assets.images) ? assets.images : [];
+      const heroMobile = String(assets.mobile || '');
+      const preloadList = [...heroImages, heroMobile].filter(Boolean);
+      preloadList.forEach((src) => {
+        try{
+          const img = new Image();
+          img.decoding = 'async';
+          img.src = src;
+        } catch (error){
+          // ignore preload failures
+        }
+      });
+    }
+
+    return Object.freeze({
+      initHero,
+      preloadHeroAssets
+    });
+  }
+
+  window.AC_FEATURES = window.AC_FEATURES || {};
+  window.AC_FEATURES.heroBackgroundFlow = Object.freeze({ create: createHeroBackgroundFlow });
 })();
 
 
@@ -10768,16 +10590,7 @@ function runOfferSearch(overrides){
   windowObj.AC_FEATURES = windowObj.AC_FEATURES || {};
   windowObj.AC_FEATURES.heroV3SimpleFlow = windowObj.AC_FEATURES.heroV3SimpleFlow || {};
 
-  var DEFAULT_COPY = Object.freeze({
-    menuToggleText: '⋯',
-    heroTag: '66 км от Москвы · смены июнь–август',
-    heroTitleHtml: 'AI-лагерь 7–14:<br><span class="hero-title-accent">проект за смену</span>',
-    heroSub: 'Python · Minecraft · AI · Хакатон · Бассейн',
-    heroSlogan: '6 лет работы · 1200+ детей · ★ 5.0 Яндекс Карты',
-    bookingTitle: 'Подберём смену за 1 минуту',
-    bookingLead: 'Программу и даты — за 10 минут',
-    stepLabels: Object.freeze(['1. ВОЗРАСТ', '2. ВАШ ТЕЛЕФОН', '3. —', '4. —'])
-  });
+  var DEFAULT_COPY = Object.freeze({});
 
   function setTextIfPresent(root, selector, value){
     var node = root.querySelector(selector);
@@ -10791,7 +10604,40 @@ function runOfferSearch(overrides){
     var doc = ctx.document || windowObj.document;
     var getEnabled = ctx.getEnabled || function(){ return false; };
     var setHeroPhoneDropdownOpen = ctx.setHeroPhoneDropdownOpen || function(){};
+    var navigateToSection = typeof ctx.navigateToSection === 'function' ? ctx.navigateToSection : null;
     var copy = Object.freeze(Object.assign({}, DEFAULT_COPY, ctx.copy || {}));
+
+    function bindReviewsAnchorForSimpleMode(enabled){
+      var reviewsBtn = doc.getElementById('yandexReviewsBtn');
+      if(!reviewsBtn) return;
+      if(enabled){
+        reviewsBtn.setAttribute('href', '#section-reviews');
+        reviewsBtn.removeAttribute('target');
+        reviewsBtn.removeAttribute('rel');
+        if(!reviewsBtn.dataset.heroV3ReviewsBound){
+          reviewsBtn.addEventListener('click', function(event){
+            if(!getEnabled()) return;
+            event.preventDefault();
+            if(navigateToSection){
+              navigateToSection('section-reviews');
+              return;
+            }
+            var node = doc.getElementById('section-reviews');
+            if(node && typeof node.scrollIntoView === 'function'){
+              node.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          });
+          reviewsBtn.dataset.heroV3ReviewsBound = '1';
+        }
+        return;
+      }
+      if(reviewsBtn.dataset.heroV3ReviewsBound){
+        reviewsBtn.removeAttribute('data-hero-v3-reviews-bound');
+      }
+      reviewsBtn.setAttribute('href', 'https://yandex.ru/maps/org/aydakemp/35558479035/reviews/');
+      reviewsBtn.setAttribute('target', '_blank');
+      reviewsBtn.setAttribute('rel', 'noopener noreferrer');
+    }
 
     function applyMode(){
       var enabled = !!getEnabled();
@@ -10806,10 +10652,15 @@ function runOfferSearch(overrides){
         if(debugControls) debugControls.classList.add('hidden');
       }
       setHeroPhoneDropdownOpen(false);
+      bindReviewsAnchorForSimpleMode(enabled);
 
       var menuToggleText = doc.querySelector('.hero-menu-toggle-text');
       if(menuToggleText){
-        menuToggleText.textContent = enabled ? copy.menuToggleText : 'Меню';
+        if(enabled && typeof copy.menuToggleText === 'string' && copy.menuToggleText){
+          menuToggleText.textContent = copy.menuToggleText;
+        } else {
+          menuToggleText.textContent = 'Меню';
+        }
       }
       if(!enabled){
         return;
@@ -10825,12 +10676,13 @@ function runOfferSearch(overrides){
       if(heroTitle && copy.heroTitleHtml){
         heroTitle.innerHTML = copy.heroTitleHtml;
       }
-      var labels = Array.isArray(copy.stepLabels) ? copy.stepLabels : DEFAULT_COPY.stepLabels;
-      doc.querySelectorAll('#desktop-booking-card .booking-step').forEach(function(node, idx){
-        if(node && labels[idx]){
-          node.textContent = labels[idx];
-        }
-      });
+      if(Array.isArray(copy.stepLabels)){
+        doc.querySelectorAll('#desktop-booking-card .booking-step').forEach(function(node, idx){
+          if(node && typeof copy.stepLabels[idx] === 'string' && copy.stepLabels[idx]){
+            node.textContent = copy.stepLabels[idx];
+          }
+        });
+      }
     }
 
     return Object.freeze({
@@ -10866,6 +10718,7 @@ function runOfferSearch(overrides){
     var getState = ctx.getState || function(){ return {}; };
     var hasSelectedAge = ctx.hasSelectedAge || function(){ return false; };
     var getBookingStage = ctx.getBookingStage || function(){ return 0; };
+    var getSimpleModeEnabled = ctx.getSimpleModeEnabled || function(){ return false; };
     var trackOnce = ctx.trackOnce || function(){};
     var getBookingViewConfig = ctx.getBookingViewConfig || function(){ return null; };
     var getRootDocument = function(){
@@ -11047,6 +10900,11 @@ function runOfferSearch(overrides){
       if(!viewCfg || !viewCfg.guidedInlineHintId) return;
       var hintNode = doc.getElementById(viewCfg.guidedInlineHintId);
       if(!hintNode) return;
+      if(getSimpleModeEnabled()){
+        hintNode.classList.remove('visible', 'variant-coach');
+        hintNode.textContent = '';
+        return;
+      }
 
       var variant = getHeroVariantState() || resolveHeroVariantFromUtm();
       var copyMap = getVariantCopyMap();
@@ -11104,1403 +10962,6 @@ function runOfferSearch(overrides){
 })(window);
 
 
-/* src/scripts/features/hero.block.js */
-/* src/scripts/features/hero.block.js */
-(function registerHeroBlock(windowObj){
-  'use strict';
-  if(!windowObj || typeof windowObj.createAidacampBlock !== 'function') return;
-  windowObj.AIDACAMP_BLOCKS.hero = windowObj.createAidacampBlock('hero');
-})(window);
-
-
-/* src/scripts/features/lead-notify-flow.js */
-(function(){
-  function createLeadNotifyFlow(ctx = {}){
-    const buildAbMeta = typeof ctx.buildAbMeta === 'function' ? ctx.buildAbMeta : (() => ({}));
-    const saveLeadFallbackMeta = typeof ctx.saveLeadFallbackMeta === 'function' ? ctx.saveLeadFallbackMeta : (() => {});
-    const telegramText = typeof ctx.telegramText === 'function' ? ctx.telegramText : (() => '');
-    const formatPrice = typeof ctx.formatPrice === 'function' ? ctx.formatPrice : ((v) => String(v || '—'));
-
-    function formatTelegramMessage(eventName, payload){
-      const lines = [];
-      const dash = telegramText('fallbackDash');
-      const noPhone = telegramText('fallbackNoPhone');
-      const pushLine = (label, value) => {
-        lines.push(`${label}: ${value || dash}`);
-      };
-
-      if(eventName === 'promo_fixed'){
-        lines.push(telegramText('titlePromoFixed'));
-        lines.push('');
-        pushLine(telegramText('labelType'), payload.promo_status === 'improved_again'
-          ? telegramText('valueTypeImprovedAgain')
-          : telegramText('valueTypeFirstFix'));
-        pushLine(telegramText('labelPhone'), payload.phone || noPhone);
-        pushLine(telegramText('labelAge'), payload.age || dash);
-        pushLine(telegramText('labelShift'), payload.shift_name || dash);
-        pushLine(telegramText('labelDates'), payload.shift_date || dash);
-        pushLine(telegramText('labelPrice'), payload.price_final ? formatPrice(payload.price_final) : dash);
-        pushLine(telegramText('labelCode'), payload.promo_code || dash);
-        pushLine(telegramText('labelExpiresAt'), payload.promo_expires_at_local || dash);
-        lines.push('');
-        pushLine(telegramText('labelMode'), payload.mode || dash);
-        pushLine(telegramText('labelSentAt'), payload.sent_at_local || dash);
-      }
-
-      if(eventName === 'booking_submitted'){
-        lines.push(telegramText('titleBookingSubmitted'));
-        lines.push('');
-        pushLine(telegramText('labelName'), payload.name || dash);
-        pushLine(telegramText('labelPhone'), payload.phone || dash);
-        pushLine(telegramText('labelAge'), payload.age || dash);
-        pushLine(telegramText('labelShift'), payload.shift_name || dash);
-        pushLine(telegramText('labelDates'), payload.shift_date || dash);
-        pushLine(telegramText('labelPrice'), payload.price_text || dash);
-        pushLine(telegramText('labelCode'), payload.promo_code || dash);
-        pushLine(telegramText('labelPromoStatus'), payload.promo_status || dash);
-        lines.push('');
-        pushLine(telegramText('labelMode'), payload.mode || dash);
-        pushLine(telegramText('labelSentAt'), payload.sent_at_local || dash);
-      }
-
-      if(eventName === 'booking_draft_saved'){
-        lines.push(telegramText('titleBookingDraft'));
-        lines.push('');
-        pushLine(telegramText('labelName'), payload.name || dash);
-        pushLine(telegramText('labelPhone'), payload.phone || dash);
-        pushLine(telegramText('labelShift'), payload.shift_name || payload.shift_text || dash);
-        pushLine(telegramText('labelPrice'), payload.price_text || dash);
-        pushLine(telegramText('labelCode'), payload.promo_code || dash);
-        lines.push('');
-        pushLine(telegramText('labelSentAt'), payload.sent_at_local || dash);
-      }
-
-      if(eventName === 'promo_cancelled'){
-        lines.push(telegramText('titlePromoCancelled'));
-        lines.push('');
-        pushLine(telegramText('labelName'), payload.name || dash);
-        pushLine(telegramText('labelPhone'), payload.phone || dash);
-        pushLine(telegramText('labelShift'), payload.shift_name || dash);
-        pushLine(telegramText('labelCode'), payload.promo_code || dash);
-        pushLine(telegramText('labelPrice'), payload.price_final ? formatPrice(payload.price_final) : dash);
-        lines.push('');
-        pushLine(telegramText('labelSentAt'), payload.sent_at_local || dash);
-      }
-
-      if(lines.length === 0){
-        lines.push(telegramText('fallbackLeadTitle'));
-        lines.push(`${telegramText('fallbackEventLabel')}: ${eventName}`);
-        lines.push(JSON.stringify(payload, null, 2));
-      }
-
-      return lines.join('\n');
-    }
-
-    async function sendLeadToTelegram(eventName, payload, cfg){
-      const token = String(cfg?.telegramBotToken || '');
-      const chatId = String(cfg?.telegramChatId || '');
-      if(!token || !chatId){
-        return {ok:false, delivered:false, fallback:true, reason:'telegram_not_configured'};
-      }
-      try {
-        const formBody = new URLSearchParams();
-        formBody.set('chat_id', chatId);
-        formBody.set('text', formatTelegramMessage(eventName, payload));
-        formBody.set('disable_web_page_preview', 'true');
-        const tgResponse = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-          method:'POST',
-          body: formBody,
-          keepalive:true
-        });
-        if(tgResponse.ok){
-          return {ok:true, delivered:true, endpoint:'telegram_bot', fallback:true};
-        }
-      } catch(error){
-      }
-      return {ok:false, delivered:false, fallback:true};
-    }
-
-    async function notifyLead(eventName, payload){
-      const cfg = window.AC_NOTIFY_CONFIG || {};
-      const enrichedPayload = {
-        ...(payload && typeof payload === 'object' ? payload : {}),
-        ...buildAbMeta()
-      };
-      const body = {event: eventName, payload: enrichedPayload};
-      const endpoint = cfg.leadEndpoint || '/api/lead';
-
-      try {
-        const response = await fetch(endpoint, {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify(body),
-          keepalive:true
-        });
-        if(response.ok){
-          return {ok: true, delivered: true, endpoint};
-        }
-
-        const telegramResult = await sendLeadToTelegram(eventName, enrichedPayload, cfg);
-        if(telegramResult.ok){
-          saveLeadFallbackMeta(eventName, endpoint, `http_${response.status}_telegram_ok`);
-          return telegramResult;
-        }
-
-        saveLeadFallbackMeta(eventName, endpoint, `http_${response.status}`);
-        console.warn('[LEAD_MOCK_FALLBACK]', {endpoint, body});
-        return {ok: false, delivered: false, fallback: true};
-      } catch(error){
-        const telegramResult = await sendLeadToTelegram(eventName, enrichedPayload, cfg);
-        if(telegramResult.ok){
-          saveLeadFallbackMeta(eventName, endpoint, 'network_telegram_ok');
-          return telegramResult;
-        }
-        console.error('notifyLead error', error);
-        saveLeadFallbackMeta(eventName, endpoint, String(error));
-        return {ok: false, delivered: false, fallback: true, error: String(error)};
-      }
-    }
-
-    return Object.freeze({
-      notifyLead,
-      sendLeadToTelegram,
-      formatTelegramMessage
-    });
-  }
-
-  window.AC_FEATURES = window.AC_FEATURES || {};
-  window.AC_FEATURES.leadNotifyFlow = Object.freeze({ create: createLeadNotifyFlow });
-})();
-
-
-/* src/scripts/features/legal.block.js */
-/* src/scripts/features/legal.block.js */
-(function registerLegalBlock(windowObj){
-  'use strict';
-  if(!windowObj || typeof windowObj.createAidacampBlock !== 'function') return;
-  windowObj.AIDACAMP_BLOCKS.legal = windowObj.createAidacampBlock('legal');
-})(window);
-
-
-/* src/scripts/features/media-flow-inline.js */
-(function () {
-  "use strict";
-
-  window.AC_FEATURES = window.AC_FEATURES || {};
-  window.AC_FEATURES.mediaFlowInline = window.AC_FEATURES.mediaFlowInline || {};
-
-  function getCompactStayCards(ctx) {
-    var document = (ctx && ctx.document) || window.document;
-    var cards = Array.from(document.querySelectorAll("#section-stay .stay-card")).map(function (card) {
-      return {
-        img: (card.querySelector("img") || {}).getAttribute && card.querySelector("img").getAttribute("src") || "",
-        title: String(((card.querySelector(".stay-card-body strong") || {}).textContent || "")).trim(),
-        text: String(((card.querySelector(".stay-card-body span") || {}).textContent || "")).trim()
-      };
-    }).filter(function (item) { return item.title; });
-    if (!cards.length) {
-      cards = [
-        {
-          img: "/assets/images/cdn-cache/53d52bed_45b1eb46cf5961c2188d.jpg.webp",
-          title: "Комнаты и размещение",
-          text: "Спокойные светлые комнаты, удобное размещение и бытовая среда без ощущения «походного лагеря»."
-        },
-        {
-          img: "/assets/images/cdn-cache/62b758b3_63e9322f53ec8ca1b307.jpg.webp",
-          title: "Санузлы и бытовые зоны",
-          text: "Родителям важно понимать не только программу, но и бытовой комфорт ребёнка."
-        },
-        {
-          img: "/assets/images/stay-common-lounge.webp",
-          title: "Общая гостиная и зона отдыха",
-          text: "Тёплое общее пространство для спокойного досуга, настольных игр и вечернего общения под присмотром вожатых."
-        }
-      ];
-    }
-    return cards;
-  }
-
-  function renderCompactInlineStayList(ctx, mobileInlineStayList) {
-    if (!mobileInlineStayList) return;
-    var state = ctx.state;
-    var stayCards = getCompactStayCards(ctx);
-    if (!stayCards.length) {
-      mobileInlineStayList.innerHTML = "";
-      return;
-    }
-
-    var safeIndex = Math.min(Math.max(state.mobileStayIndex || 0, 0), stayCards.length - 1);
-    state.mobileStayIndex = safeIndex;
-    var active = stayCards[safeIndex];
-
-    mobileInlineStayList.innerHTML = '\n'
-      + '  <article class="mobile-stay-feature">\n'
-      + '    <button type="button" class="mobile-stay-feature-photo" data-action="open-stay-photo" data-stay-index="' + safeIndex + '" aria-label="Открыть фото: ' + active.title + '">\n'
-      + (active.img ? '<img src="' + active.img + '" alt="' + active.title + '">' : "")
-      + "    </button>\n"
-      + "    <strong>" + active.title + "</strong>\n"
-      + "    <p>" + active.text + "</p>\n"
-      + "  </article>\n"
-      + '  <div class="mobile-stay-preview-strip">\n'
-      + stayCards.map(function (item, idx) {
-        return '\n'
-          + '      <button type="button" class="mobile-stay-preview-thumb ' + (idx === safeIndex ? "active" : "") + '" data-action="mobile-stay-select" data-stay-index="' + idx + '" aria-label="Показать: ' + item.title + '">\n'
-          + (item.img ? '<img src="' + item.img + '" alt="' + item.title + '">' : "")
-          + "      </button>\n";
-      }).join("")
-      + "  </div>\n";
-  }
-
-  function renderCompactInlineTeamList(ctx, mobileInlineTeamList) {
-    if (!mobileInlineTeamList) return;
-    var mediaContent = ctx.mediaContent;
-    var founder = mediaContent.team.find(function (item) { return item.fio === "Дарья Афанасьева"; }) || mediaContent.team[0];
-    var teachers = mediaContent.team.filter(function (item) { return item.fio !== (founder && founder.fio); });
-    var founderSummary = founder && founder.bio
-      ? founder.bio.split(".").map(function (part) { return part.trim(); }).filter(Boolean).slice(0, 2).join(". ") + "."
-      : "";
-    var teacherFocusMap = {
-      "Никита Брагин": "Scratch, Minecraft и Python",
-      "Омар Алхамви": "Python и нейросети",
-      "Александр Ташкин": "Scratch, Minecraft и Python"
-    };
-
-    mobileInlineTeamList.innerHTML = '\n'
-      + '  <article class="mobile-team-feature-card">\n'
-      + '    <div class="mobile-team-feature-cover-wrap" data-action="open-book-photo" role="button" tabindex="0" aria-label="Открыть обложку книги">\n'
-      + '      <img class="mobile-team-feature-cover" src="/assets/images/cdn-cache/8fc8172e_8991804334.webp" alt="Собственная книга по Python">\n'
-      + "    </div>\n"
-      + "    <strong>Собственная книга по Python</strong>\n"
-      + '    <span>Команда не только ведёт занятия, но и создаёт собственные учебники и игровые методики. <a class="mobile-team-feature-link" href="' + mediaContent.references.programmingBookUrl + '" target="_blank" rel="noopener noreferrer">Смотреть книгу</a></span>\n'
-      + "  </article>\n"
-      + (founder ? '\n'
-        + '    <article class="mobile-team-founder-card">\n'
-        + '      <div class="mobile-team-avatar">\n'
-        + '        <img src="' + founder.avatarUrl + '" alt="' + founder.fio + '">\n'
-        + "      </div>\n"
-        + "      <strong>" + founder.fio + "</strong>\n"
-        + '      <span class="mobile-team-role">' + founder.role + "</span>\n"
-        + "      <p>" + founderSummary + "</p>\n"
-        + "    </article>\n" : "")
-      + (teachers.length ? '\n'
-        + '    <div class="mobile-team-carousel-block">\n'
-        + '      <div class="mobile-team-carousel-head"><strong>Преподаватели</strong></div>\n'
-        + '      <div class="mobile-team-carousel-track">\n'
-        + teachers.map(function (teacher) {
-          return '\n'
-            + '          <article class="mobile-team-teacher-card">\n'
-            + '            <div class="mobile-team-avatar"><img src="' + teacher.avatarUrl + '" alt="' + teacher.fio + '"></div>\n'
-            + "            <strong>" + teacher.fio + "</strong>\n"
-            + '            <span class="mobile-team-role">' + (teacherFocusMap[teacher.fio] || teacher.role) + "</span>\n"
-            + "          </article>\n";
-        }).join("")
-        + "      </div>\n"
-        + "    </div>\n" : "");
-  }
-
-  function renderCompactInlineContactsList(ctx, mobileInlineContactsList) {
-    if (!mobileInlineContactsList) return;
-    var mediaContent = ctx.mediaContent;
-    var mapUrl = mediaContent.references.locationMapUrl;
-    var mapEmbedUrl = mediaContent.references.locationMapEmbedUrl;
-    var cityPhone = mediaContent.contacts.find(function (item) { return item.label === "city_phone"; });
-    var mobilePhone = mediaContent.contacts.find(function (item) { return item.label === "mobile_phone"; });
-    var whatsapp = mediaContent.contacts.find(function (item) { return item.label === "whatsapp"; });
-    var telegram = mediaContent.contacts.find(function (item) { return item.label === "telegram"; });
-    mobileInlineContactsList.innerHTML = '\n'
-      + '  <article class="mobile-map-preview-card">\n'
-      + '    <div class="mobile-map-preview">\n'
-      + '      <iframe src="' + mapEmbedUrl + '" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Карта локации лагеря"></iframe>\n'
-      + "    </div>\n"
-      + "    <strong>Московская область, Наро-Фоминский округ</strong>\n"
-      + '    <span>Удобный заезд и понятная локация. Маршрут открывается в Яндекс.Картах. <a class="mobile-map-inline-link" href="' + mapUrl + '" target="_blank" rel="noopener noreferrer">Открыть карту</a></span>\n'
-      + "  </article>\n"
-      + '  <div class="mobile-contact-grid">\n'
-      + (cityPhone ? '<a class="mobile-contact-card" href="' + cityPhone.href + '"><strong>' + cityPhone.text + "</strong></a>" : "")
-      + (mobilePhone ? '<a class="mobile-contact-card" href="' + mobilePhone.href + '"><strong>' + mobilePhone.text + "</strong></a>" : "")
-      + (whatsapp ? '<a class="mobile-contact-card" href="' + whatsapp.href + '" target="_blank" rel="noopener noreferrer"><strong>' + whatsapp.text + "</strong></a>" : "")
-      + (telegram ? '<a class="mobile-contact-card" href="' + telegram.href + '" target="_blank" rel="noopener noreferrer"><strong>Telegram</strong></a>' : "")
-      + "  </div>\n";
-  }
-
-  function renderCompactInlineSocials(ctx, mobileInlineSocials) {
-    if (!mobileInlineSocials) return;
-    var mediaContent = ctx.mediaContent;
-    var socialDisplayName = ctx.socialDisplayName;
-    var socialBadgeMark = ctx.socialBadgeMark;
-    mobileInlineSocials.innerHTML = mediaContent.socials.map(function (item) {
-      return '\n'
-        + '  <a class="mobile-social-link" href="' + item.href + '" target="_blank" rel="noopener noreferrer" aria-label="' + socialDisplayName(item) + '">\n'
-        + '    <span class="mobile-social-icon"><span class="social-badge-mark">' + socialBadgeMark(item) + "</span></span>\n"
-        + '    <span class="mobile-social-label">' + socialDisplayName(item) + "</span>\n"
-        + "  </a>\n";
-    }).join("");
-  }
-
-  window.AC_FEATURES.mediaFlowInline.getCompactStayCards = getCompactStayCards;
-  window.AC_FEATURES.mediaFlowInline.renderCompactInlineStayList = renderCompactInlineStayList;
-  window.AC_FEATURES.mediaFlowInline.renderCompactInlineTeamList = renderCompactInlineTeamList;
-  window.AC_FEATURES.mediaFlowInline.renderCompactInlineContactsList = renderCompactInlineContactsList;
-  window.AC_FEATURES.mediaFlowInline.renderCompactInlineSocials = renderCompactInlineSocials;
-})();
-
-
-
-/* src/scripts/features/media-flow-trust-panel.js */
-(function () {
-  "use strict";
-
-  window.AC_FEATURES = window.AC_FEATURES || {};
-  window.AC_FEATURES.mediaFlowTrustPanel = window.AC_FEATURES.mediaFlowTrustPanel || {};
-
-  function renderCompactTrustPanelContent(ctx) {
-    var state = ctx.state;
-    var shifts = ctx.shifts;
-    var mediaContent = ctx.mediaContent;
-    var formatPrice = ctx.formatPrice;
-    var shiftDaysLabel = ctx.shiftDaysLabel;
-    var getShiftDisplayDescription = ctx.getShiftDisplayDescription;
-    var hasSelectedAge = ctx.hasSelectedAge;
-    var getPhotosForActiveFilter = ctx.getPhotosForActiveFilter;
-    var socialBadgeMark = ctx.socialBadgeMark;
-    var socialDisplayName = ctx.socialDisplayName;
-    var renderCompactInlineTeamList = ctx.renderCompactInlineTeamList;
-    var renderCompactInlineStayList = ctx.renderCompactInlineStayList;
-    var renderCompactInlineContactsList = ctx.renderCompactInlineContactsList;
-    var renderCompactInlineSocials = ctx.renderCompactInlineSocials;
-    var document = ctx.document || window.document;
-
-    var aboutTargets = document.querySelectorAll("#mobileAboutFeatures, #mobileAboutFeaturesDesktop");
-    var journeyTargets = document.querySelectorAll("#mobileJourneyContent, #mobileJourneyContentDesktop");
-    var programsTargets = document.querySelectorAll("#mobileProgramsContent, #mobileProgramsContentDesktop");
-    var photoGalleryTargets = document.querySelectorAll("#mobilePhotoGallery, #mobilePhotoGalleryDesktop");
-    var videoGalleryTargets = document.querySelectorAll("#mobileVideoGallery, #mobileVideoGalleryDesktop");
-    var reviewsGalleryTargets = document.querySelectorAll("#mobileReviewsGallery, #mobileReviewsGalleryDesktop");
-    var faqFiltersTargets = document.querySelectorAll("#mobileFaqFilters, #mobileFaqFiltersDesktop");
-    var faqListTargets = document.querySelectorAll("#mobileFaqList, #mobileFaqListDesktop");
-    var teamTargets = document.querySelectorAll("#mobileInlineTeamList, #mobileInlineTeamListDesktop");
-    var stayTargets = document.querySelectorAll("#mobileInlineStayList, #mobileInlineStayListDesktop");
-    var contactsTargets = document.querySelectorAll("#mobileInlineContactsList, #mobileInlineContactsListDesktop");
-    var socialsTargets = document.querySelectorAll("#mobileInlineSocials, #mobileInlineSocialsDesktop");
-    var mobileDocsRequisites = document.getElementById("mobileDocsRequisites");
-    var mobileDocsAccordion = document.getElementById("mobileDocsAccordion");
-
-    if (aboutTargets.length) {
-      var aboutHtml = '\n'
-        + '  <article class="mobile-about-feature-item">\n'
-        + "    <small>Проекты</small>\n"
-        + "    <strong>AI и программирование</strong>\n"
-        + "    <p>Реальные проекты: Scratch, Python, Minecraft, нейросети.</p>\n"
-        + "  </article>\n"
-        + '  <article class="mobile-about-feature-item">\n'
-        + "    <small>Среда</small>\n"
-        + "    <strong>Бассейн и живая лагерная среда</strong>\n"
-        + "    <p>Спорт, команда и общение — не только экран.</p>\n"
-        + "  </article>\n"
-        + '  <article class="mobile-about-feature-item">\n'
-        + "    <small>Результат</small>\n"
-        + "    <strong>Итог за смену</strong>\n"
-        + "    <p>Ребёнок уезжает с проектом, опытом и уверенностью.</p>\n"
-        + "  </article>\n";
-      aboutTargets.forEach(function (target) {
-        target.innerHTML = aboutHtml;
-      });
-    }
-
-    if (journeyTargets.length) {
-      var steps = [
-        {
-          title: "Быстрое включение",
-          text: "В первый же день дети знакомятся, собираются в команды и входят в механику смены без долгой раскачки."
-        },
-        {
-          title: "Практика вместо теории",
-          text: "Scratch, Python, Minecraft и AI через реальные задачи: меньше теории, больше практики."
-        },
-        {
-          title: "Живая среда",
-          text: "Бассейн, спорт и командная среда формируют ритм, дисциплину и уверенность."
-        },
-        {
-          title: "Финальный результат",
-          text: "К концу смены у ребёнка есть проект, защита и заметный рост по навыкам."
-        }
-      ];
-      var safeStep = Math.max(0, Math.min(state.mobileJourneyStep || 0, steps.length - 1));
-      state.mobileJourneyStep = safeStep;
-      var activeStep = steps[safeStep];
-      var journeyHtml = '\n'
-        + '  <article class="mobile-journey-active">\n'
-        + '    <div class="mobile-journey-active-heading">\n'
-        + '      <div class="mobile-journey-active-index">' + (safeStep + 1) + "</div>\n"
-        + "      <strong>" + activeStep.title + "</strong>\n"
-        + "    </div>\n"
-        + "    <p>" + activeStep.text + "</p>\n"
-        + "  </article>\n"
-        + '  <div class="mobile-journey-dots" aria-label="Навигация по шагам">\n'
-        + steps.map(function (_, index) {
-          return '\n'
-            + "      <button\n"
-            + '        type="button"\n'
-            + '        class="mobile-journey-dot ' + (index === safeStep ? "active" : "") + '"\n'
-            + '        data-action="mobile-journey-step"\n'
-            + '        data-step-index="' + index + '"\n'
-            + '        aria-label="Шаг ' + (index + 1) + '"\n'
-            + "      ></button>\n";
-        }).join("")
-        + "  </div>\n";
-      journeyTargets.forEach(function (target) {
-        target.innerHTML = journeyHtml;
-      });
-    }
-
-    if (programsTargets.length) {
-      var mainShifts = shifts.slice();
-      if (mainShifts.length) {
-        var activeShiftId = mainShifts.some(function (shift) { return shift.id === state.mobileProgramShiftId; })
-          ? state.mobileProgramShiftId
-          : mainShifts[0].id;
-        state.mobileProgramShiftId = activeShiftId;
-        var activeShift = mainShifts.find(function (shift) { return shift.id === activeShiftId; }) || mainShifts[0];
-        var selectorLabel = function (shift) { return String(shift.title || "").trim(); };
-        var ageHint = hasSelectedAge()
-          ? ""
-          : "Сначала выберите возраст ребёнка, чтобы увидеть персональную подсказку.";
-
-        var programsHtml = '\n'
-          + '  <div class="mobile-program-selector">\n'
-          + mainShifts.map(function (shift) {
-            return '\n'
-              + "      <button\n"
-              + '        type="button"\n'
-              + '        class="mobile-program-chip ' + (shift.id === activeShift.id ? "active" : "") + " " + (shift.isShort ? "short" : "") + '"\n'
-              + '        data-action="mobile-program-select"\n'
-              + '        data-shift-id="' + shift.id + '"\n'
-              + "      >" + selectorLabel(shift) + "</button>\n";
-          }).join("")
-          + "  </div>\n"
-          + '  <article class="mobile-program-active-card">\n'
-          + '    <div class="mobile-program-dates">' + activeShift.dates + "</div>\n"
-          + '    <div class="mobile-program-price-row">\n'
-          + '      <div class="mobile-program-price">' + formatPrice(activeShift.price) + "</div>\n"
-          + '      <div class="mobile-program-inline-actions">\n'
-          + '        <button class="shift-calendar-btn shift-about-btn" type="button" data-action="toggle-shift-about" data-shift-id="' + activeShift.id + '" aria-label="Описание смены ' + activeShift.title + '">\n'
-          + '          <img class="ac-icon" src="/assets/icons/info.svg" alt="" aria-hidden="true">\n'
-          + "        </button>\n"
-          + '        <button class="shift-calendar-btn" type="button" data-action="open-calendar" data-shift-id="' + activeShift.id + '" aria-label="Календарь ' + activeShift.title + '">\n'
-          + '          <img class="ac-icon" src="/assets/icons/calendar.svg" alt="" aria-hidden="true">\n'
-          + "        </button>\n"
-          + "      </div>\n"
-          + "    </div>\n"
-          + '    <div class="mobile-program-meta">\n'
-          + (activeShift.isShort ? "" : "<span>" + shiftDaysLabel(activeShift) + "</span>")
-          + "<span>Осталось " + activeShift.left + " мест</span>"
-          + (activeShift.isShort ? '<span class="mobile-program-short-badge">Короткая смена</span>' : "")
-          + "    </div>\n"
-          + "    <p>" + (activeShift.isShort ? (activeShift.desc || "") : getShiftDisplayDescription(activeShift)) + "</p>\n"
-          + (ageHint ? '<div class="mobile-program-hint">' + ageHint + "</div>" : "")
-          + "  </article>\n"
-          + '  <div class="mobile-program-dots">\n'
-          + mainShifts.map(function (shift, idx) {
-            return '\n'
-              + '      <button class="mobile-program-dot ' + (shift.id === activeShift.id ? "active" : "") + '" type="button" data-action="mobile-program-select" data-shift-id="' + shift.id + '" aria-label="Показать смену ' + (selectorLabel(shift) || (idx + 1)) + '"></button>\n';
-          }).join("")
-          + "  </div>\n";
-        programsTargets.forEach(function (target) {
-          target.innerHTML = programsHtml;
-        });
-      } else {
-        programsTargets.forEach(function (target) {
-          target.innerHTML = "";
-        });
-      }
-    }
-
-    if (photoGalleryTargets.length) {
-      var photoList = getPhotosForActiveFilter(state.photoFilter);
-      ctx.setPhotoLists(photoList);
-      var photoActiveIndex = Math.min(Math.max(state.mobilePhotoIndex || 0, 0), Math.max(photoList.length - 1, 0));
-      state.mobilePhotoIndex = photoActiveIndex;
-      var activePhoto = photoList[photoActiveIndex];
-
-      if (activePhoto) {
-        var photoHtml = '\n'
-          + '  <div class="mobile-media-stage mobile-photo-stage">\n'
-          + '    <button type="button" data-action="open-photo" data-photo-index="' + photoActiveIndex + '">\n'
-          + '      <img src="' + activePhoto.src + '" alt="' + (activePhoto.alt || "Фото лагеря") + '">\n'
-          + '      <div class="mobile-media-overlay">\n'
-          + "        <strong>" + (activePhoto.alt || "Атмосфера лагеря").replace(/^all$/i, "Атмосфера") + "</strong>\n"
-          + "        <span>Тапните, чтобы открыть фото</span>\n"
-          + "      </div>\n"
-          + "    </button>\n"
-          + "  </div>\n"
-          + '  <div class="mobile-photo-preview-strip">\n'
-          + photoList.map(function (item, idx) {
-            return '\n'
-              + '      <button class="mobile-photo-preview-thumb ' + (idx === photoActiveIndex ? "active" : "") + '" type="button" data-action="mobile-photo-select" data-photo-index="' + idx + '" aria-label="Выбрать фото ' + (idx + 1) + '">\n'
-              + '        <img src="' + item.src + '" alt="' + (item.alt || "Фото") + '">\n'
-              + "      </button>\n";
-          }).join("")
-          + "  </div>\n";
-        photoGalleryTargets.forEach(function (target) {
-          target.innerHTML = photoHtml;
-        });
-      } else {
-        photoGalleryTargets.forEach(function (target) {
-          target.innerHTML = "";
-        });
-      }
-    }
-
-    if (videoGalleryTargets.length) {
-      var videoList = mediaContent.videos || [];
-      var videoActiveIndex = Math.min(Math.max(state.mobileVideoIndex || 0, 0), Math.max(videoList.length - 1, 0));
-      state.mobileVideoIndex = videoActiveIndex;
-      var activeVideo = videoList[videoActiveIndex];
-
-      if (activeVideo) {
-        var videoHtml = '\n'
-          + '  <div class="mobile-media-stage mobile-video-stage">\n'
-          + '    <button type="button" data-action="open-video" data-video="' + activeVideo.url + '">\n'
-          + '      <img src="' + activeVideo.cover + '" alt="' + activeVideo.title + '">\n'
-          + '      <span class="mobile-media-play"><img class="ac-icon" src="/assets/icons/play.svg" alt="" aria-hidden="true"></span>\n'
-          + '      <div class="mobile-media-overlay">\n'
-          + "        <strong>" + activeVideo.title + "</strong>\n"
-          + "        <span>Смотреть видео</span>\n"
-          + "      </div>\n"
-          + "    </button>\n"
-          + "  </div>\n"
-          + '  <div class="mobile-video-preview-strip">\n'
-          + videoList.map(function (item, idx) {
-            return '\n'
-              + '      <button class="mobile-video-preview-thumb ' + (idx === videoActiveIndex ? "active" : "") + '" type="button" data-action="mobile-video-select" data-video-index="' + idx + '" aria-label="Выбрать видео ' + (idx + 1) + '">\n'
-              + '        <img src="' + item.cover + '" alt="' + item.title + '">\n'
-              + "      </button>\n";
-          }).join("")
-          + "  </div>\n";
-        videoGalleryTargets.forEach(function (target) {
-          target.innerHTML = videoHtml;
-        });
-      } else {
-        videoGalleryTargets.forEach(function (target) {
-          target.innerHTML = "";
-        });
-      }
-    }
-
-    if (reviewsGalleryTargets.length) {
-      var reviewsList = mediaContent.reviews || [];
-      var reviewsActiveIndex = Math.min(Math.max(state.mobileReviewIndex || 0, 0), Math.max(reviewsList.length - 1, 0));
-      state.mobileReviewIndex = reviewsActiveIndex;
-      var activeReview = reviewsList[reviewsActiveIndex];
-      if (activeReview) {
-        var reviewsHtml = '\n'
-          + '  <div class="mobile-review-social-proof">\n'
-          + '    <div class="mobile-review-top">\n'
-          + '      <div class="mobile-review-scoreline">\n'
-          + "        <strong>5.0</strong><span class=\"mobile-review-stars\">★★★★★</span>\n"
-          + "      </div>\n"
-          + '      <a class="inline-link-btn primary" href="' + mediaContent.references.yandexReviewsUrl + '" target="_blank" rel="noopener noreferrer">Отзывы в Яндекс</a>\n'
-          + "    </div>\n"
-          + "    <div class=\"mobile-review-proof\">Более 40 реальных отзывов на Яндекс.Картах</div>\n"
-          + "    <p class=\"mobile-review-trust-note\">Родители пишут не про “анимацию”, а про сильную команду и реальные проекты.</p>\n"
-          + "  </div>\n"
-          + '  <div class="mobile-review-main">\n'
-          + '    <div class="mobile-review-card">\n'
-          + '      <div class="mobile-review-head">\n'
-          + '        <img src="' + activeReview.avatar + '" alt="' + activeReview.name + '">\n'
-          + "        <div>\n"
-          + "          <strong>" + activeReview.name + "</strong>\n"
-          + "          <span>" + activeReview.meta + "</span>\n"
-          + '          <span class="mobile-review-stars">★★★★★</span>\n'
-          + "        </div>\n"
-          + "      </div>\n"
-          + '      <div class="mobile-review-text">' + activeReview.quote + "</div>\n"
-          + "    </div>\n"
-          + '    <div class="mobile-review-dots">\n'
-          + reviewsList.map(function (_, idx) {
-            return '<button class="mobile-review-dot ' + (idx === reviewsActiveIndex ? "active" : "") + '" type="button" data-action="mobile-review-select" data-review-index="' + idx + '" aria-label="Показать отзыв ' + (idx + 1) + '"></button>';
-          }).join("")
-          + "    </div>\n"
-          + '    <div class="mobile-review-main-nav">\n'
-          + '      <button class="mobile-review-nav-btn" type="button" data-action="mobile-review-prev" aria-label="Предыдущий отзыв">Назад</button>\n'
-          + '      <button class="mobile-review-nav-btn" type="button" data-action="mobile-review-next" aria-label="Следующий отзыв">Далее</button>\n'
-          + "    </div>\n"
-          + "  </div>\n";
-        reviewsGalleryTargets.forEach(function (target) {
-          target.innerHTML = reviewsHtml;
-        });
-      } else {
-        reviewsGalleryTargets.forEach(function (target) {
-          target.innerHTML = "";
-        });
-      }
-    }
-
-    if (faqListTargets.length || faqFiltersTargets.length) {
-      var rawGroups = mediaContent.faq.map(function (group) { return group.group; });
-      var primaryGroups = rawGroups.filter(function (group) { return group !== "all" && group !== "Все"; });
-      var tailGroups = rawGroups.filter(function (group) { return group === "all" || group === "Все"; });
-      var groups = primaryGroups.concat(tailGroups);
-      var safeGroup = groups.includes(state.mobileFaqGroup) ? state.mobileFaqGroup : (groups[0] || "Медицина");
-      state.mobileFaqGroup = safeGroup;
-      var activeFaqGroup = mediaContent.faq.find(function (group) { return group.group === safeGroup; });
-      var faqItems = (activeFaqGroup && activeFaqGroup.items || []).map(function (item, index) {
-        return {
-          key: safeGroup + ":" + index,
-          q: item.q,
-          a: item.a
-        };
-      });
-      var fallbackKey = (faqItems[0] || {}).key || "";
-      var activeKey = faqItems.some(function (item) { return item.key === state.mobileFaqOpenKey; }) ? state.mobileFaqOpenKey : fallbackKey;
-      state.mobileFaqOpenKey = activeKey;
-
-      var faqFiltersHtml = groups.map(function (group) {
-        return '\n'
-          + "    <button\n"
-          + '      type="button"\n'
-          + '      class="mobile-faq-filter-chip ' + (group === safeGroup ? "active" : "") + '"\n'
-          + '      data-action="mobile-faq-filter"\n'
-          + '      data-faq-group="' + group + '"\n'
-          + "    >" + group + "</button>\n";
-      }).join("");
-      faqFiltersTargets.forEach(function (target) {
-        target.innerHTML = faqFiltersHtml;
-      });
-
-      var faqListHtml = faqItems.map(function (item) {
-        return '\n'
-          + '  <article class="mobile-faq-item ' + (item.key === activeKey ? "open" : "") + '">\n'
-          + "    <button\n"
-          + '      type="button"\n'
-          + '      class="mobile-faq-question"\n'
-          + '      data-action="mobile-faq-toggle"\n'
-          + '      data-faq-key="' + item.key + '"\n'
-          + "    >\n"
-          + "      <span>" + item.q + "</span>\n"
-          + '      <img class="ac-icon" src="/assets/icons/chevron-right.svg" alt="" aria-hidden="true">\n'
-          + "    </button>\n"
-          + '    <div class="mobile-faq-answer">' + item.a + "</div>\n"
-          + "  </article>\n";
-      }).join("");
-      faqListTargets.forEach(function (target) {
-        target.innerHTML = faqListHtml;
-      });
-    }
-
-    teamTargets.forEach(function (target) { return renderCompactInlineTeamList(target); });
-    stayTargets.forEach(function (target) { return renderCompactInlineStayList(target); });
-    contactsTargets.forEach(function (target) { return renderCompactInlineContactsList(target); });
-    socialsTargets.forEach(function (target) { return renderCompactInlineSocials(target); });
-
-    if (mobileDocsRequisites) {
-      mobileDocsRequisites.innerHTML = "";
-    }
-
-    if (mobileDocsAccordion) {
-      mobileDocsAccordion.innerHTML = '\n'
-        + '  <article class="mobile-docs-accordion-item ' + (state.mobileDocsExpanded ? "open" : "") + '">\n'
-        + '    <button type="button" class="mobile-docs-toggle" data-action="mobile-docs-toggle">\n'
-        + '      <span class="mobile-docs-toggle-copy">\n'
-        + '        <span class="mobile-docs-toggle-main">ООО «ВОИП КОННЕКТ»</span>\n'
-        + '        <span class="mobile-docs-toggle-meta">ИНН 7729713637 · РТО 025773</span>\n'
-        + "      </span>\n"
-        + '      <img class="ac-icon" src="/assets/icons/chevron-right.svg" alt="" aria-hidden="true">\n'
-        + "    </button>\n"
-        + '    <div class="mobile-docs-links">\n'
-        + '      <a href="legal.html#education-license" target="_blank" rel="noopener noreferrer">Образовательная лицензия Л035-01298-77/01082973</a>\n'
-        + '      <a href="mailto:hello@codims.ru">hello@codims.ru</a>\n'
-        + '      <a href="https://www.codims.ru/privacy" target="_blank" rel="noopener noreferrer">Политика обработки персональных данных</a>\n'
-        + '      <a href="legal.html#legal-info" target="_blank" rel="noopener noreferrer">Юридическая информация</a>\n'
-        + '      <a href="legal.html#org-info" target="_blank" rel="noopener noreferrer">Сведения об организации</a>\n'
-        + '      <a href="legal.html#children-rest" target="_blank" rel="noopener noreferrer">Отдых и оздоровление детей</a>\n'
-        + '      <a href="legal.html#partners-info" target="_blank" rel="noopener noreferrer">Условия для партнёров</a>\n'
-        + '      <a href="legal.html#bloggers-info" target="_blank" rel="noopener noreferrer">Сотрудничество с блогерами</a>\n'
-        + "    </div>\n"
-        + "  </article>\n"
-        + '  <div class="footer-copyright-mini">© 2019–2026</div>\n';
-    }
-
-    document.querySelectorAll("#mobilePhotoFilters [data-photo-filter], #mobilePhotoFiltersDesktop [data-photo-filter]").forEach(function (btn) {
-      btn.classList.toggle("active", btn.dataset.photoFilter === state.photoFilter);
-    });
-  }
-
-  window.AC_FEATURES.mediaFlowTrustPanel.renderCompactTrustPanelContent = renderCompactTrustPanelContent;
-})();
-
-
-
-/* src/scripts/features/media-flow.js */
-(function () {
-  "use strict";
-
-  window.AC_FEATURES = window.AC_FEATURES || {};
-  window.AC_FEATURES.mediaFlow = window.AC_FEATURES.mediaFlow || {};
-
-  function contactIconMarkup(label) {
-    var map = {
-      city_phone: "/assets/icons/phone-city.svg",
-      mobile_phone: "/assets/icons/phone-mobile.svg",
-      whatsapp: "/assets/icons/whatsapp.svg",
-      telegram: "/assets/icons/telegram.svg"
-    };
-    var src = map[label];
-    return src ? '<img class="ac-icon" src="' + src + '" alt="" aria-hidden="true">' : "•";
-  }
-
-  function resolveFloatingContactLinks(mediaContent) {
-    var contacts = Array.isArray(mediaContent && mediaContent.contacts) ? mediaContent.contacts : [];
-    var mobilePhone = contacts.find(function (item) { return item.label === "mobile_phone"; });
-    var cityPhone = contacts.find(function (item) { return item.label === "city_phone"; });
-    var whatsapp = contacts.find(function (item) { return item.label === "whatsapp"; });
-    var telegram = contacts.find(function (item) { return item.label === "telegram"; });
-    return {
-      cityPhoneHref: (cityPhone && cityPhone.href) || "tel:+74951284429",
-      cityPhoneLabel: (cityPhone && cityPhone.text) || "+7 (495) 128-44-29",
-      mobilePhoneHref: (mobilePhone && mobilePhone.href) || "tel:+79688086455",
-      mobilePhoneLabel: (mobilePhone && mobilePhone.text) || "+7 (968) 808-64-55",
-      whatsappHref: (whatsapp && whatsapp.href) || "https://wa.me/79688086455",
-      telegramHref: (telegram && telegram.href) || "https://t.me/Progaschool"
-    };
-  }
-
-  function initFloatingContactsWidget(options) {
-    var opts = options || {};
-    var documentRef = opts.document || document;
-    if (!documentRef || documentRef.getElementById("floatingContactsWidget")) return;
-
-    var links = resolveFloatingContactLinks(opts.mediaContent || {});
-    var host = documentRef.createElement("div");
-    host.id = "floatingContactsWidget";
-    host.className = "floating-contacts";
-    host.innerHTML = '\n'
-      + '  <div class="floating-contacts-panel" id="floatingContactsPanel" aria-label="Быстрые контакты">\n'
-      + '    <a class="floating-contacts-link" href="' + links.cityPhoneHref + '">\n'
-      + '      <img class="ac-icon floating-contacts-link-icon" src="/assets/icons/phone-city.svg" alt="" aria-hidden="true">\n'
-      + '      <span class="floating-contacts-label">' + links.cityPhoneLabel + '</span>\n'
-      + "    </a>\n"
-      + '    <a class="floating-contacts-link" href="' + links.mobilePhoneHref + '">\n'
-      + '      <img class="ac-icon floating-contacts-link-icon" src="/assets/icons/phone-mobile.svg" alt="" aria-hidden="true">\n'
-      + '      <span class="floating-contacts-label">' + links.mobilePhoneLabel + '</span>\n'
-      + "    </a>\n"
-      + '    <a class="floating-contacts-link" href="' + links.whatsappHref + '" target="_blank" rel="noopener noreferrer">\n'
-      + '      <img class="ac-icon floating-contacts-link-icon" src="/assets/icons/whatsapp.svg" alt="" aria-hidden="true">\n'
-      + '      <span class="floating-contacts-label">WhatsApp</span>\n'
-      + "    </a>\n"
-      + '    <a class="floating-contacts-link" href="' + links.telegramHref + '" target="_blank" rel="noopener noreferrer">\n'
-      + '      <img class="ac-icon floating-contacts-link-icon" src="/assets/icons/telegram.svg" alt="" aria-hidden="true">\n'
-      + '      <span class="floating-contacts-label">Telegram</span>\n'
-      + "    </a>\n"
-      + "  </div>\n"
-      + '  <button type="button" class="floating-contacts-toggle" id="floatingContactsToggle" aria-expanded="false" aria-controls="floatingContactsPanel" aria-label="Открыть контакты">\n'
-      + '    <svg class="floating-contacts-glyph" viewBox="0 0 24 24" aria-hidden="true">\n'
-      + '      <path class="floating-contacts-glyph-outline" d="M4.5 5.5h15a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-4.5 3v-3H4.5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z"></path>\n'
-      + '      <circle class="floating-contacts-dot floating-contacts-dot-left" cx="8" cy="11.5" r="1.35"></circle>\n'
-      + '      <circle class="floating-contacts-dot floating-contacts-dot-center" cx="12" cy="11.5" r="1.35"></circle>\n'
-      + '      <circle class="floating-contacts-dot floating-contacts-dot-right" cx="16" cy="11.5" r="1.35"></circle>\n'
-      + "    </svg>\n"
-      + "  </button>\n";
-    documentRef.body.appendChild(host);
-
-    var toggle = host.querySelector("#floatingContactsToggle");
-    if (!toggle) return;
-
-    var track = typeof opts.track === "function" ? opts.track : function () {};
-
-    toggle.addEventListener("click", function () {
-      var isOpen = host.classList.toggle("is-open");
-      toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
-      track("floating_contacts_toggle", { open: isOpen ? 1 : 0 });
-    });
-
-    host.querySelectorAll(".floating-contacts-link").forEach(function (link) {
-      link.addEventListener("click", function () {
-        host.classList.remove("is-open");
-        toggle.setAttribute("aria-expanded", "false");
-        var label = String((link.querySelector(".floating-contacts-label") || {}).textContent || "").toLowerCase();
-        track("floating_contacts_click", { channel: label });
-      });
-    });
-
-    documentRef.addEventListener("click", function (event) {
-      if (!host.classList.contains("is-open")) return;
-      if (host.contains(event.target)) return;
-      host.classList.remove("is-open");
-      toggle.setAttribute("aria-expanded", "false");
-    });
-
-    documentRef.addEventListener("keydown", function (event) {
-      if (event.key !== "Escape") return;
-      if (!host.classList.contains("is-open")) return;
-      host.classList.remove("is-open");
-      toggle.setAttribute("aria-expanded", "false");
-    });
-  }
-
-  function socialBadgeMark(item) {
-    var mark = String((item && item.label) || "").trim().toUpperCase();
-    var allowed = new Set(["VK", "RT", "IG", "OK", "YT", "LI", "TT", "PI", "YA"]);
-    return allowed.has(mark) ? mark : "•";
-  }
-
-  function socialDisplayName(item) {
-    var key = String((item && item.key) || "").trim();
-    var badge = socialBadgeMark(item);
-    if (!key) return badge;
-    if (key.toUpperCase() !== badge) return key;
-    if (key === "VK") return "ВКонтакте";
-    return key;
-  }
-
-  function faqGlyph(iconPath, groupName) {
-    if (iconPath && iconPath.includes("med")) return "MED";
-    if (iconPath && iconPath.includes("lock")) return "SAFE";
-    if (iconPath && iconPath.includes("food")) return "FOOD";
-    if (iconPath && iconPath.includes("check")) return "ROOM";
-    if (iconPath && iconPath.includes("phone")) return "CALL";
-    return String(groupName || "").slice(0, 3).toUpperCase();
-  }
-
-  function renderStars() {
-    return '<div class="stars">★★★★★</div>';
-  }
-
-  window.AC_FEATURES.mediaFlow.contactIconMarkup = contactIconMarkup;
-  window.AC_FEATURES.mediaFlow.resolveFloatingContactLinks = resolveFloatingContactLinks;
-  window.AC_FEATURES.mediaFlow.initFloatingContactsWidget = initFloatingContactsWidget;
-  window.AC_FEATURES.mediaFlow.socialBadgeMark = socialBadgeMark;
-  window.AC_FEATURES.mediaFlow.socialDisplayName = socialDisplayName;
-  window.AC_FEATURES.mediaFlow.faqGlyph = faqGlyph;
-  window.AC_FEATURES.mediaFlow.renderStars = renderStars;
-})();
-
-
-
-/* src/scripts/features/media-gesture-bindings.js */
-(function registerMediaGestureBindings(windowObj){
-  'use strict';
-
-  if(!windowObj) return;
-  windowObj.AC_FEATURES = windowObj.AC_FEATURES || {};
-  windowObj.AC_FEATURES.mediaGestureBindings = windowObj.AC_FEATURES.mediaGestureBindings || {};
-
-  function initMediaGestureBindings(context){
-    var ctx = context || {};
-    var doc = ctx.document || windowObj.document;
-    if(!doc) return;
-
-    var closeMedia = ctx.closeMedia || function(){};
-    var nextMedia = ctx.nextMedia || function(){};
-    var prevMedia = ctx.prevMedia || function(){};
-    var applyStatePatch = ctx.applyStatePatch || function(){};
-    var renderCompactTrustPanelContent = ctx.renderCompactTrustPanelContent || function(){};
-    var persist = ctx.persist || function(){};
-    var getMediaContent = ctx.getMediaContent || function(){ return {}; };
-    var getCompactStayCards = ctx.getCompactStayCards || function(){ return []; };
-    var getPhotosForActiveFilter = ctx.getPhotosForActiveFilter || function(){ return []; };
-    var getState = ctx.getState || function(){ return {}; };
-
-    (function bindMediaSwipe(){
-      var lightbox = doc.getElementById('mediaLightbox');
-      var content = doc.getElementById('mediaContent');
-      if(!lightbox || !content) return;
-      var startX = 0;
-      var startY = 0;
-      var moved = false;
-
-      content.addEventListener('touchstart', function(e){
-        if(lightbox.classList.contains('hidden')) return;
-        var touch = e.touches && e.touches[0];
-        if(!touch) return;
-        startX = touch.clientX;
-        startY = touch.clientY;
-        moved = false;
-      }, {passive:true});
-
-      content.addEventListener('touchmove', function(e){
-        if(lightbox.classList.contains('hidden')) return;
-        var touch = e.touches && e.touches[0];
-        if(!touch) return;
-        var dx = touch.clientX - startX;
-        var dy = touch.clientY - startY;
-        if(Math.abs(dx) > 6 || Math.abs(dy) > 6){
-          moved = true;
-        }
-      }, {passive:true});
-
-      content.addEventListener('touchend', function(e){
-        if(lightbox.classList.contains('hidden')) return;
-        var touch = (e.changedTouches && e.changedTouches[0]) || null;
-        if(!touch || !moved) return;
-        var dx = touch.clientX - startX;
-        var dy = touch.clientY - startY;
-        if(Math.abs(dx) < 36 || Math.abs(dx) <= Math.abs(dy)) return;
-        if(dx < 0){
-          nextMedia();
-        } else {
-          prevMedia();
-        }
-      }, {passive:true});
-    })();
-
-    (function bindMobileReviewSwipe(){
-      var startX = 0;
-      var startY = 0;
-      var trackedCard = null;
-
-      doc.addEventListener('touchstart', function(e){
-        var card = e.target.closest('.mobile-review-card');
-        if(!card) return;
-        var touch = e.touches && e.touches[0];
-        if(!touch) return;
-        trackedCard = card;
-        startX = touch.clientX;
-        startY = touch.clientY;
-      }, {passive:true});
-
-      doc.addEventListener('touchend', function(e){
-        if(!trackedCard) return;
-        var touch = (e.changedTouches && e.changedTouches[0]) || null;
-        trackedCard = null;
-        if(!touch) return;
-        var dx = touch.clientX - startX;
-        var dy = touch.clientY - startY;
-        if(Math.abs(dx) < 36 || Math.abs(dx) <= Math.abs(dy)) return;
-        var state = getState();
-        var mediaContent = getMediaContent();
-        var total = Math.max(0, (mediaContent.reviews && mediaContent.reviews.length) || 0);
-        if(!total) return;
-        if(dx < 0){
-          applyStatePatch({ mobileReviewIndex: (Math.max(0, state.mobileReviewIndex || 0) + 1) % total });
-        } else {
-          applyStatePatch({ mobileReviewIndex: (Math.max(0, state.mobileReviewIndex || 0) - 1 + total) % total });
-        }
-        renderCompactTrustPanelContent();
-        persist();
-      }, {passive:true});
-    })();
-
-    (function bindMobileEdgeTapNavigation(){
-      function getVisibleElement(nodeList){
-        var list = Array.from(nodeList || []);
-        return list.find(function(node){ return node && node.offsetParent !== null; }) || list[0] || null;
-      }
-
-      function getEdgeDirection(stageEl, clientX){
-        if(!stageEl || !Number.isFinite(clientX)) return 0;
-        var rect = stageEl.getBoundingClientRect();
-        if(!rect || rect.width < 120) return 0;
-        var leftZone = rect.left + rect.width * 0.28;
-        var rightZone = rect.right - rect.width * 0.28;
-        if(clientX <= leftZone) return -1;
-        if(clientX >= rightZone) return 1;
-        return 0;
-      }
-
-      function stepThumb(root, stripSelector, thumbSelector, direction){
-        var strip = getVisibleElement(root.querySelectorAll(stripSelector));
-        if(!strip) return false;
-        var thumbs = Array.from(strip.querySelectorAll(thumbSelector));
-        if(!thumbs.length) return false;
-        var currentIndex = Math.max(0, thumbs.findIndex(function(thumb){ return thumb.classList.contains('active'); }));
-        var nextIndex = (currentIndex + direction + thumbs.length) % thumbs.length;
-        if(thumbs[nextIndex]) thumbs[nextIndex].click();
-        return true;
-      }
-
-      doc.addEventListener('click', function(e){
-        var stage = e.target.closest('.mobile-photo-stage, .mobile-video-stage, .mobile-review-card, .mobile-stay-feature, .mobile-program-active-card, .mobile-journey-active');
-        if(!stage) return;
-        if(e.target.closest('button, a, [data-action], iframe, input, textarea, select')) return;
-        var direction = getEdgeDirection(stage, e.clientX);
-        if(!direction) return;
-
-        var root = stage.closest('.section-card, .section-modal-body, #mobileView, #desktopView') || doc;
-        if(stage.classList.contains('mobile-photo-stage')){
-          if(stepThumb(root, '.mobile-photo-preview-strip', '.mobile-photo-preview-thumb', direction)) persist();
-          return;
-        }
-        if(stage.classList.contains('mobile-video-stage')){
-          if(stepThumb(root, '.mobile-video-preview-strip', '.mobile-video-preview-thumb', direction)) persist();
-          return;
-        }
-        if(stage.classList.contains('mobile-program-active-card')){
-          if(stepThumb(root, '.mobile-program-dots', '.mobile-program-dot', direction)) persist();
-          return;
-        }
-        if(stage.classList.contains('mobile-stay-feature')){
-          if(stepThumb(root, '.mobile-stay-preview-strip', '.mobile-stay-preview-thumb', direction)) persist();
-          return;
-        }
-
-        var state = getState();
-        if(stage.classList.contains('mobile-journey-active')){
-          var totalJourney = 4;
-          var currentJourney = Math.max(0, Number(state.mobileJourneyStep || 0));
-          applyStatePatch({ mobileJourneyStep: (currentJourney + (direction > 0 ? 1 : -1) + totalJourney) % totalJourney });
-          renderCompactTrustPanelContent();
-          persist();
-          return;
-        }
-        if(stage.classList.contains('mobile-review-card')){
-          var mediaContent = getMediaContent();
-          var totalReview = Math.max(0, (mediaContent.reviews && mediaContent.reviews.length) || 0);
-          if(!totalReview) return;
-          if(direction > 0){
-            applyStatePatch({ mobileReviewIndex: (Math.max(0, state.mobileReviewIndex || 0) + 1) % totalReview });
-          } else {
-            applyStatePatch({ mobileReviewIndex: (Math.max(0, state.mobileReviewIndex || 0) - 1 + totalReview) % totalReview });
-          }
-          renderCompactTrustPanelContent();
-          persist();
-        }
-      });
-    })();
-
-    (function bindMobileProgramSwipe(){
-      var startX = 0;
-      var startY = 0;
-      var activeCard = null;
-
-      function stepProgramBySwipe(card, direction){
-        if(!card || !direction) return;
-        var root = card.closest('.section-card, .section-modal-body, #mobileView, #desktopView') || doc;
-        var dots = Array.from(root.querySelectorAll('.mobile-program-dots .mobile-program-dot'));
-        if(!dots.length) return;
-        var current = Math.max(0, dots.findIndex(function(dot){ return dot.classList.contains('active'); }));
-        var next = (current + direction + dots.length) % dots.length;
-        if(dots[next]) dots[next].click();
-        persist();
-      }
-
-      doc.addEventListener('touchstart', function(e){
-        var card = e.target.closest('.mobile-program-active-card');
-        if(!card) return;
-        var touch = e.touches && e.touches[0];
-        if(!touch) return;
-        activeCard = card;
-        startX = touch.clientX;
-        startY = touch.clientY;
-      }, {passive:true});
-
-      doc.addEventListener('touchend', function(e){
-        if(!activeCard) return;
-        var card = activeCard;
-        var touch = e.changedTouches && e.changedTouches[0];
-        activeCard = null;
-        if(!touch) return;
-        var dx = touch.clientX - startX;
-        var dy = touch.clientY - startY;
-        if(Math.abs(dx) < 38 || Math.abs(dx) <= Math.abs(dy)) return;
-        stepProgramBySwipe(card, dx < 0 ? 1 : -1);
-      }, {passive:true});
-    })();
-
-    (function bindMobileJourneySwipe(){
-      var startX = 0;
-      var startY = 0;
-      var activeCard = null;
-
-      doc.addEventListener('touchstart', function(e){
-        var card = e.target.closest('.mobile-journey-active');
-        if(!card) return;
-        var touch = e.touches && e.touches[0];
-        if(!touch) return;
-        activeCard = card;
-        startX = touch.clientX;
-        startY = touch.clientY;
-      }, {passive:true});
-
-      doc.addEventListener('touchend', function(e){
-        if(!activeCard) return;
-        var touch = e.changedTouches && e.changedTouches[0];
-        activeCard = null;
-        if(!touch) return;
-        var dx = touch.clientX - startX;
-        var dy = touch.clientY - startY;
-        if(Math.abs(dx) < 32 || Math.abs(dx) <= Math.abs(dy)) return;
-        var state = getState();
-        var total = 4;
-        var current = Math.max(0, Number(state.mobileJourneyStep || 0));
-        applyStatePatch({ mobileJourneyStep: (current + (dx < 0 ? 1 : -1) + total) % total });
-        renderCompactTrustPanelContent();
-        persist();
-      }, {passive:true});
-    })();
-
-    (function bindMobileStaySwipe(){
-      var startX = 0;
-      var startY = 0;
-      var activeCard = null;
-
-      doc.addEventListener('touchstart', function(e){
-        var card = e.target.closest('.mobile-stay-feature, .mobile-stay-feature-photo');
-        if(!card) return;
-        var touch = e.touches && e.touches[0];
-        if(!touch) return;
-        activeCard = card;
-        startX = touch.clientX;
-        startY = touch.clientY;
-      }, {passive:true});
-
-      doc.addEventListener('touchend', function(e){
-        if(!activeCard) return;
-        var touch = e.changedTouches && e.changedTouches[0];
-        activeCard = null;
-        if(!touch) return;
-        var dx = touch.clientX - startX;
-        var dy = touch.clientY - startY;
-        if(Math.abs(dx) < 32 || Math.abs(dx) <= Math.abs(dy)) return;
-        var list = getCompactStayCards();
-        var total = Math.max(0, list.length || 0);
-        if(!total) return;
-        var state = getState();
-        applyStatePatch({ mobileStayIndex: (Math.max(0, state.mobileStayIndex || 0) + (dx < 0 ? 1 : -1) + total) % total });
-        renderCompactTrustPanelContent();
-        persist();
-      }, {passive:true});
-    })();
-
-    (function bindMobilePhotoSwipe(){
-      var startX = 0;
-      var startY = 0;
-      var activeNode = null;
-
-      doc.addEventListener('touchstart', function(e){
-        var node = e.target.closest('.mobile-photo-stage, .mobile-photo-preview-strip');
-        if(!node) return;
-        var touch = e.touches && e.touches[0];
-        if(!touch) return;
-        activeNode = node;
-        startX = touch.clientX;
-        startY = touch.clientY;
-      }, {passive:true});
-
-      doc.addEventListener('touchend', function(e){
-        if(!activeNode) return;
-        var touch = e.changedTouches && e.changedTouches[0];
-        activeNode = null;
-        if(!touch) return;
-        var dx = touch.clientX - startX;
-        var dy = touch.clientY - startY;
-        if(Math.abs(dx) < 34 || Math.abs(dx) <= Math.abs(dy)) return;
-        var state = getState();
-        var list = getPhotosForActiveFilter(state.photoFilter);
-        var total = Math.max(0, list.length || 0);
-        if(!total) return;
-        var current = Math.max(0, Number(state.mobilePhotoIndex || 0));
-        applyStatePatch({ mobilePhotoIndex: (current + (dx < 0 ? 1 : -1) + total) % total });
-        renderCompactTrustPanelContent();
-        persist();
-      }, {passive:true});
-    })();
-  }
-
-  windowObj.AC_FEATURES.mediaGestureBindings.init = initMediaGestureBindings;
-})(window);
-
-
-
-/* src/scripts/features/media-sections-flow.js */
-(function(){
-  function createMediaSectionsFlow(ctx = {}){
-    const getState = typeof ctx.getState === 'function' ? ctx.getState : (() => ({}));
-    const getMediaContent = typeof ctx.getMediaContent === 'function' ? ctx.getMediaContent : (() => ({}));
-    const photoCatLabel = typeof ctx.photoCatLabel === 'function' ? ctx.photoCatLabel : ((v) => String(v || ''));
-    const contactIconMarkup = typeof ctx.contactIconMarkup === 'function' ? ctx.contactIconMarkup : (() => '•');
-    const socialBadgeMark = typeof ctx.socialBadgeMark === 'function' ? ctx.socialBadgeMark : (() => '•');
-    const socialDisplayName = typeof ctx.socialDisplayName === 'function' ? ctx.socialDisplayName : ((item) => String(item?.key || ''));
-    const faqGlyph = typeof ctx.faqGlyph === 'function' ? ctx.faqGlyph : (() => 'FAQ');
-    const bookingText = typeof ctx.bookingText === 'function' ? ctx.bookingText : (() => '');
-    const setPhotoLists = typeof ctx.setPhotoLists === 'function' ? ctx.setPhotoLists : (() => {});
-    const prepareStayGalleryTriggers = typeof ctx.prepareStayGalleryTriggers === 'function' ? ctx.prepareStayGalleryTriggers : (() => {});
-    const renderCompactTrustPanelContent = typeof ctx.renderCompactTrustPanelContent === 'function' ? ctx.renderCompactTrustPanelContent : (() => {});
-
-    function renderMediaSections(){
-      const state = getState();
-      const mediaContent = getMediaContent();
-      const photoGrid = document.getElementById('photoGrid');
-      const videoList = document.getElementById('videoList');
-      const contactsGrid = document.getElementById('contactsGrid');
-      const socialsGrid = document.getElementById('socialsGrid');
-      const footerSocialsList = document.getElementById('footerSocialsList');
-      const faqGroups = document.getElementById('faqGroups');
-      const teamGrid = document.getElementById('teamGrid');
-      const bookLinkBtn = document.getElementById('bookLinkBtn');
-      const yandexReviewsBtn = document.getElementById('yandexReviewsBtn');
-      const reviewsGrid = document.getElementById('reviewsGrid');
-      const locationMapBtn = document.getElementById('locationMapBtn');
-      const locationMapFrame = document.getElementById('locationMapFrame');
-
-      if(photoGrid){
-        let filteredPhotos = [];
-        if(state.photoFilter === 'all') filteredPhotos = mediaContent.photos;
-        else if(state.photoFilter === 'camp') filteredPhotos = mediaContent.photos.filter(item => item.cat === 'camp' || item.cat === 'all');
-        else filteredPhotos = mediaContent.photos.filter(item => item.cat === state.photoFilter);
-        if(!filteredPhotos.length) filteredPhotos = mediaContent.photos.filter(item => item.cat === 'all');
-        if(!filteredPhotos.length) filteredPhotos = mediaContent.photos;
-        if(state.photoFilter !== 'all' && state.photoFilter !== 'camp'){
-          if(state.photoFilter === 'study' && filteredPhotos.length > 4){
-            const featuredRightSlot = filteredPhotos[filteredPhotos.length - 1];
-            filteredPhotos = [filteredPhotos[0], filteredPhotos[1], filteredPhotos[2], featuredRightSlot];
-          } else {
-            filteredPhotos = filteredPhotos.slice(0, 4);
-          }
-        }
-        setPhotoLists(filteredPhotos.slice());
-        photoGrid.innerHTML = filteredPhotos.map((item, idx) => `
-          <div class="photo-card ${idx === 0 ? 'hero' : ''}" data-action="open-photo" data-photo-index="${idx}">
-            <img src="${item.src}" alt="${item.alt}">
-            <div class="photo-title">АйДаКемп</div>
-            <div class="photo-badge">${photoCatLabel(item.cat)}</div>
-          </div>
-        `).join('');
-      }
-
-      if(videoList){
-        videoList.innerHTML = mediaContent.videos.map((item) => `
-          <div class="video-card" data-video="${item.url}">
-            <div class="video-poster">
-              <img src="${item.cover || '/assets/video-covers/cover-week-change.jpg'}" alt="${item.title}">
-              <div class="video-play"><span>▶</span></div>
-            </div>
-            <h4>${item.title}</h4>
-          </div>
-        `).join('');
-      }
-
-      if(bookLinkBtn) bookLinkBtn.href = mediaContent.references.programmingBookUrl;
-      if(yandexReviewsBtn){
-        yandexReviewsBtn.textContent = mediaContent.references.yandexReviewsLabel;
-        yandexReviewsBtn.href = mediaContent.references.yandexReviewsUrl;
-      }
-      if(locationMapBtn) locationMapBtn.href = mediaContent.references.locationMapUrl;
-      if(locationMapFrame) locationMapFrame.src = mediaContent.references.locationMapEmbedUrl || '';
-
-      if(reviewsGrid){
-        reviewsGrid.innerHTML = mediaContent.reviews.map(item => `
-          <div class="review-real">
-            <div class="review-head-real">
-              <div class="review-avatar"><img src="${item.avatar}" alt="${item.name}"></div>
-              <div class="review-person">
-                <strong>${item.name}</strong>
-                <div class="review-source">Яндекс Карты</div>
-                <div class="review-stars">★★★★★</div>
-                <div class="review-meta">${item.meta}</div>
-              </div>
-            </div>
-            <div class="review-quote">«${item.quote}»</div>
-          </div>
-        `).join('');
-      }
-
-      if(contactsGrid){
-        contactsGrid.innerHTML = mediaContent.contacts.map(item => `
-          <a class="contact-link" href="${item.href}" target="_blank" rel="noopener noreferrer">
-            <div class="contact-icon">${contactIconMarkup(item.label)}</div>
-            <strong>${item.text}</strong>
-          </a>
-        `).join('');
-      }
-      if(socialsGrid){
-        socialsGrid.innerHTML = mediaContent.socials.map(item => `
-          <a class="social-link" href="${item.href}" target="_blank" rel="noopener noreferrer" data-network="${item.key}">
-            <span class="social-badge-mark">${socialBadgeMark(item)}</span>
-            <span class="social-label">${socialDisplayName(item)}</span>
-          </a>
-        `).join('');
-      }
-      if(footerSocialsList){
-        footerSocialsList.innerHTML = mediaContent.socials.map(item => `
-          <a href="${item.href}" target="_blank" rel="noopener noreferrer">${item.key}</a>
-        `).join('');
-      }
-
-      if(faqGroups){
-        const filteredFaq = state.faqFilter === 'all'
-          ? mediaContent.faq
-          : mediaContent.faq.filter(group => group.group === state.faqFilter);
-        faqGroups.innerHTML = filteredFaq.map(group => `
-          <div class="faq-group">
-            <div class="faq-group-head">
-              <div class="faq-icon">${faqGlyph(group.icon, group.group)}</div>
-              <strong>${group.group}</strong>
-            </div>
-            <div class="faq-list">
-              ${group.items.map(item => `<div class="faq-line"><strong>${item.q}</strong><span>${item.a}</span></div>`).join('')}
-            </div>
-          </div>
-        `).join('');
-        const faqEmpty = document.getElementById('faqEmptyState');
-        if(faqEmpty) faqEmpty.classList.toggle('visible', filteredFaq.length === 0);
-      }
-
-      const faqFilters = document.getElementById('faqFilters');
-      if(faqFilters){
-        faqFilters.querySelectorAll('[data-faq-filter]').forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.faqFilter === state.faqFilter);
-        });
-      }
-
-      if(teamGrid){
-        const renderTeamCard = (item) => `
-          <div class="team-card">
-            <div class="team-avatar"><img src="${item.avatarUrl}" alt="${item.fio}"></div>
-            <strong>${item.fio}</strong>
-            <span class="team-role">${item.role}</span>
-            <span>${item.bio}</span>
-          </div>
-        `;
-        const byName = new Map(mediaContent.team.map(item => [item.fio, item]));
-        const coreNames = [bookingText('teamCoreLeadName'), bookingText('teamCoreMentorName')];
-        const coreCards = coreNames.map((name) => byName.get(name)).filter(Boolean).map(renderTeamCard).join('');
-        const carouselCards = mediaContent.team.filter((item) => !coreNames.includes(item.fio)).map(renderTeamCard).join('');
-        const bookCard = `
-        <div class="team-card book-team-card">
-          <div class="book-team-cover-wrap">
-            <img class="book-team-cover" src="/assets/images/cdn-cache/8fc8172e_8991804334.webp" alt="${bookingText('bookCoverAlt')}">
-          </div>
-          <div class="book-team-title">${bookingText('bookTeamTitle')}</div>
-          <div class="book-team-sub">${bookingText('bookTeamSub')}</div>
-          <div class="book-team-proof">${bookingText('bookTeamProof')}</div>
-          <a class="book-team-cta" href="${bookingText('bookTeamHref')}" target="_blank" rel="noopener noreferrer">${bookingText('bookTeamWatchCta')}</a>
-        </div>`;
-        teamGrid.innerHTML = `
-          <div class="team-layout">
-            ${bookCard}
-            <div class="team-right">
-              <div class="team-core-grid">${coreCards}</div>
-              <div class="team-carousel-shell">
-                <button class="team-carousel-nav prev" type="button" data-action="team-carousel-prev" aria-label="${bookingText('teamPrevAria')}"><img class="ac-icon" src="/assets/icons/chevron-left.svg" alt="" aria-hidden="true"></button>
-                <div class="team-carousel" id="teamCarousel">${carouselCards}</div>
-                <button class="team-carousel-nav next" type="button" data-action="team-carousel-next" aria-label="${bookingText('teamNextAria')}"><img class="ac-icon" src="/assets/icons/chevron-right.svg" alt="" aria-hidden="true"></button>
-              </div>
-            </div>
-          </div>
-        `;
-      }
-
-      const photoFilters = document.getElementById('photoFilters');
-      if(photoFilters){
-        photoFilters.querySelectorAll('[data-photo-filter]').forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.photoFilter === state.photoFilter);
-        });
-      }
-
-      prepareStayGalleryTriggers();
-      renderCompactTrustPanelContent();
-    }
-
-    return Object.freeze({ renderMediaSections });
-  }
-
-  window.AC_FEATURES = window.AC_FEATURES || {};
-  window.AC_FEATURES.mediaSectionsFlow = Object.freeze({ create: createMediaSectionsFlow });
-})();
-
-
 /* src/scripts/features/menu.js */
 (function () {
   "use strict";
@@ -12508,530 +10969,6 @@ function runOfferSearch(overrides){
   window.AC_FEATURES = window.AC_FEATURES || {};
   window.AC_FEATURES.menu = window.AC_FEATURES.menu || {};
 })();
-
-
-/* src/scripts/features/modal-media-flow.js */
-(function(){
-  function createModalMediaFlow(ctx = {}){
-    const getState = typeof ctx.getState === 'function' ? ctx.getState : (() => ({}));
-    const getMediaContent = typeof ctx.getMediaContent === 'function' ? ctx.getMediaContent : (() => ({}));
-    const getActivePhotoList = typeof ctx.getActivePhotoList === 'function' ? ctx.getActivePhotoList : (() => []);
-    const setMediaContext = typeof ctx.setMediaContext === 'function' ? ctx.setMediaContext : (() => {});
-    const getMediaContext = typeof ctx.getMediaContext === 'function' ? ctx.getMediaContext : (() => ({mediaType: 'photo', mediaIndex: 0}));
-    const track = typeof ctx.track === 'function' ? ctx.track : (() => {});
-    const photoCatLabel = typeof ctx.photoCatLabel === 'function' ? ctx.photoCatLabel : ((v) => String(v || ''));
-    const resolveVideoSource = typeof ctx.resolveVideoSource === 'function' ? ctx.resolveVideoSource : (() => ({
-      canEmbed: false,
-      embedUrl: '',
-      externalUrl: '',
-      sourceName: 'источнике'
-    }));
-
-    function closeTransientModals(except = '', options = {}){
-      const keepSection = !!options.keepSection;
-      if(except !== 'section' && !keepSection){
-        document.getElementById('sectionModal')?.classList.add('hidden');
-      }
-      if(except !== 'media'){
-        document.getElementById('mediaLightbox')?.classList.add('hidden');
-      }
-      if(except !== 'video'){
-        const iframe = document.getElementById('videoFrame');
-        const inner = document.getElementById('videoInner');
-        const fallback = document.getElementById('videoFallback');
-        if(iframe){
-          iframe.src = '';
-          iframe.classList.remove('vertical');
-          iframe.classList.remove('hidden');
-        }
-        if(inner){
-          inner.classList.remove('vertical');
-        }
-        if(fallback){
-          fallback.classList.add('hidden');
-        }
-        document.getElementById('videoModal')?.classList.add('hidden');
-      }
-      if(except !== 'calendar'){
-        document.getElementById('calendarModal')?.classList.add('hidden');
-      }
-    }
-
-    function renderMediaViewer(){
-      const { mediaType, mediaIndex } = getMediaContext();
-      const content = document.getElementById('mediaContent');
-      const caption = document.getElementById('mediaCaption');
-      const mediaContent = getMediaContent();
-
-      if(!content || !caption) return;
-
-      if(mediaType === 'photo'){
-        const sourceList = getActivePhotoList();
-        const source = sourceList.length ? sourceList : (Array.isArray(mediaContent.photos) ? mediaContent.photos : []);
-        const item = source[mediaIndex];
-        if(!item) return;
-        content.innerHTML = `<img class="media-image" src="${item.src}" />`;
-        caption.textContent = `${photoCatLabel(item.cat)} · ${mediaIndex + 1}/${source.length}`;
-      }
-
-      if(mediaType === 'video'){
-        const videos = Array.isArray(mediaContent.videos) ? mediaContent.videos : [];
-        const item = videos[mediaIndex];
-        if(!item || !item.url) return;
-        const source = resolveVideoSource(item.url);
-        if(!source.canEmbed){
-          content.innerHTML = `
-            <div class="video-fallback">
-              <strong>Видео доступно во внешнем источнике</strong>
-              <p>Откройте ролик в отдельной вкладке, если встраивание недоступно.</p>
-              <a class="inline-link-btn primary" href="${source.externalUrl}" target="_blank" rel="noopener noreferrer">Смотреть на ${source.sourceName}</a>
-            </div>
-          `;
-          caption.textContent = `${mediaIndex + 1}/${videos.length}`;
-          return;
-        }
-        content.innerHTML = `
-          <iframe
-            class="media-video"
-            src="${source.embedUrl}"
-            frameborder="0"
-            allow="autoplay; fullscreen; picture-in-picture"
-            referrerpolicy="strict-origin-when-cross-origin"
-            allowfullscreen
-          ></iframe>`;
-        caption.textContent = `${mediaIndex + 1}/${videos.length}`;
-      }
-    }
-
-    function openMedia(type, index){
-      closeTransientModals('media', {keepSection: true});
-      setMediaContext({ mediaType: type, mediaIndex: index });
-      const mediaContent = getMediaContent();
-      if(type === 'photo'){
-        const sourceList = getActivePhotoList();
-        const source = sourceList.length ? sourceList : (Array.isArray(mediaContent.photos) ? mediaContent.photos : []);
-        const item = source[index];
-        track('photo_open', {
-          category: item?.cat || '',
-          index: index + 1
-        });
-      }
-      if(type === 'video'){
-        const videos = Array.isArray(mediaContent.videos) ? mediaContent.videos : [];
-        const item = videos[index];
-        track('video_open', {
-          title: item?.title || '',
-          index: index + 1
-        });
-      }
-      renderMediaViewer();
-      document.getElementById('mediaLightbox')?.classList.remove('hidden');
-    }
-
-    function closeMedia(){
-      document.getElementById('mediaLightbox')?.classList.add('hidden');
-      const content = document.getElementById('mediaContent');
-      if(content) content.innerHTML = '';
-    }
-
-    function openVideo(url){
-      const modal = document.getElementById('videoModal');
-      const iframe = document.getElementById('videoFrame');
-      const inner = document.getElementById('videoInner');
-      const fallback = document.getElementById('videoFallback');
-      const fallbackLink = document.getElementById('videoFallbackLink');
-      if(!modal || !iframe || !inner || !fallback || !fallbackLink || !url) return;
-
-      closeTransientModals('video', {keepSection: true});
-      const source = resolveVideoSource(url);
-      const isVertical = source.orientation === 'vertical';
-      inner.classList.toggle('vertical', isVertical);
-      iframe.classList.toggle('vertical', isVertical);
-
-      if(source.canEmbed){
-        iframe.classList.remove('hidden');
-        fallback.classList.add('hidden');
-        iframe.src = source.embedUrl;
-      } else {
-        iframe.src = '';
-        iframe.classList.add('hidden');
-        fallback.classList.remove('hidden');
-        fallbackLink.href = source.externalUrl;
-        fallbackLink.textContent = `Смотреть на ${source.sourceName}`;
-      }
-      modal.classList.remove('hidden');
-    }
-
-    function closeVideo(){
-      const modal = document.getElementById('videoModal');
-      const iframe = document.getElementById('videoFrame');
-      const inner = document.getElementById('videoInner');
-      const fallback = document.getElementById('videoFallback');
-      if(!modal || !iframe || !inner || !fallback) return;
-
-      iframe.src = '';
-      inner.classList.remove('vertical');
-      iframe.classList.remove('vertical');
-      iframe.classList.remove('hidden');
-      fallback.classList.add('hidden');
-      modal.classList.add('hidden');
-    }
-
-    function closeSectionModal(){
-      const modal = document.getElementById('sectionModal');
-      if(!modal) return;
-      const card = modal.querySelector('.section-modal-card');
-      modal.classList.add('hidden');
-      modal.classList.remove('section-modal-compact');
-      modal.classList.remove('section-modal-mobile');
-      document.documentElement.style.overflowX = '';
-      document.body.style.overflowX = '';
-      if(card){
-        card.style.left = '';
-        card.style.top = '';
-        card.style.right = '';
-        card.style.width = '';
-        card.style.height = '';
-      }
-    }
-
-    function applyCompactSectionModalLayout(){
-      const modal = document.getElementById('sectionModal');
-      const hero = document.getElementById('hero') || document.querySelector('#desktopView .hero-shell');
-      const booking = document.getElementById('desktop-booking-card');
-      const topbar = hero?.querySelector('.hero-topbar');
-      const card = modal?.querySelector('.section-modal-card');
-      if(!modal || !hero || !card || !modal.classList.contains('section-modal-compact')) return;
-      const isNarrowViewport = window.innerWidth <= 900;
-      if(isNarrowViewport){
-        modal.style.removeProperty('--section-modal-compact-runtime-left');
-        modal.style.removeProperty('--section-modal-compact-runtime-top');
-        modal.style.removeProperty('--section-modal-compact-runtime-right');
-        modal.style.removeProperty('--section-modal-compact-runtime-width');
-        modal.style.removeProperty('--section-modal-compact-runtime-height');
-        card.style.left = '';
-        card.style.top = '';
-        card.style.right = '';
-        card.style.width = '';
-        card.style.height = '';
-        return;
-      }
-
-      const heroRect = hero.getBoundingClientRect();
-      const bookingRoot = booking?.closest('.hero-booking-card') || booking;
-      const bookingRect = bookingRoot ? bookingRoot.getBoundingClientRect() : null;
-      const topbarRect = topbar ? topbar.getBoundingClientRect() : null;
-      const inset = 14;
-      const bookingGap = 14;
-      const maxCompactWidth = 980;
-      const minCompactWidth = 460;
-
-      const left = Math.max(inset, Math.floor(heroRect.left + inset));
-      const topAnchor = Math.floor(topbarRect ? (topbarRect.bottom + 8) : (heroRect.top + 10));
-      const top = Math.max(inset, topAnchor);
-
-      const heroRight = Math.floor(heroRect.right - inset);
-      let slotRight = heroRight;
-      if(bookingRect && bookingRect.width > 140 && bookingRect.left > left){
-        slotRight = Math.min(slotRight, Math.floor(bookingRect.left - bookingGap));
-      }
-
-      const slotWidth = Math.floor(slotRight - left);
-      if(slotWidth <= 0) return;
-
-      const width = Math.max(Math.min(maxCompactWidth, slotWidth), Math.min(minCompactWidth, slotWidth));
-      const rightEdge = left + width;
-      const runtimeRight = Math.max(inset, Math.floor(window.innerWidth - rightEdge));
-      const availableHeight = Math.floor((heroRect.bottom - inset) - top);
-      if(availableHeight <= 0) return;
-
-      modal.style.setProperty('--section-modal-compact-runtime-left', `${left}px`);
-      modal.style.setProperty('--section-modal-compact-runtime-top', `${top}px`);
-      modal.style.setProperty('--section-modal-compact-runtime-right', `${runtimeRight}px`);
-      modal.style.setProperty('--section-modal-compact-runtime-width', `${width}px`);
-      modal.style.setProperty('--section-modal-compact-runtime-height', `${availableHeight}px`);
-      card.style.left = `${left}px`;
-      card.style.top = `${top}px`;
-      card.style.right = 'auto';
-      card.style.width = `${width}px`;
-      card.style.height = `${availableHeight}px`;
-    }
-
-    function openSectionModal(sectionId){
-      const modal = document.getElementById('sectionModal');
-      const titleEl = document.getElementById('sectionModalTitle');
-      const bodyEl = document.getElementById('sectionModalBody');
-      const sourceSection = document.getElementById(sectionId);
-      if(!modal || !titleEl || !bodyEl || !sourceSection) return false;
-      closeTransientModals('section');
-      const state = getState();
-      const isCompactDesktop = state.previewView === 'desktop' && state.desktopMode === 'compact';
-      const isMobilePanel = state.previewView === 'mobile';
-      modal.classList.toggle('section-modal-compact', isCompactDesktop);
-      modal.classList.toggle('section-modal-mobile', isMobilePanel);
-
-      const sourceTitle = sourceSection.querySelector('h3')?.textContent?.trim() || 'Раздел';
-      titleEl.textContent = sourceTitle;
-
-      const clone = sourceSection.cloneNode(true);
-      clone.removeAttribute('id');
-      clone.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
-      clone.classList.remove('section-modal-contacts');
-      if(sectionId === 'section-contacts'){
-        clone.classList.add('section-modal-contacts');
-      }
-
-      bodyEl.innerHTML = '';
-      bodyEl.appendChild(clone);
-      modal.classList.remove('hidden');
-      document.documentElement.style.overflowX = 'hidden';
-      document.body.style.overflowX = 'hidden';
-      applyCompactSectionModalLayout();
-      return true;
-    }
-
-    return Object.freeze({
-      openMedia,
-      closeMedia,
-      closeTransientModals,
-      openVideo,
-      closeVideo,
-      renderMediaViewer,
-      closeSectionModal,
-      applyCompactSectionModalLayout,
-      openSectionModal
-    });
-  }
-
-  window.AC_FEATURES = window.AC_FEATURES || {};
-  window.AC_FEATURES.modalMediaFlow = Object.freeze({ create: createModalMediaFlow });
-})();
-
-
-/* src/scripts/features/modal.block.js */
-/* src/scripts/features/modal.block.js */
-(function registerModalBlock(windowObj){
-  'use strict';
-  if(!windowObj || typeof windowObj.createAidacampBlock !== 'function') return;
-  windowObj.AIDACAMP_BLOCKS.modal = windowObj.createAidacampBlock('modal');
-})(window);
-
-
-/* src/scripts/features/navigation-flow.js */
-(function(){
-  function createNavigationFlow(ctx = {}){
-    const trackFaqOpen = typeof ctx.trackFaqOpen === 'function' ? ctx.trackFaqOpen : (() => {});
-    const isMobilePreviewView = typeof ctx.isMobilePreviewView === 'function' ? ctx.isMobilePreviewView : (() => false);
-    const hasSelectedAge = typeof ctx.hasSelectedAge === 'function' ? ctx.hasSelectedAge : (() => false);
-    const track = typeof ctx.track === 'function' ? ctx.track : (() => {});
-    const getState = typeof ctx.getState === 'function' ? ctx.getState : (() => ({}));
-    const showHint = typeof ctx.showHint === 'function' ? ctx.showHint : (() => {});
-    const bookingText = typeof ctx.bookingText === 'function' ? ctx.bookingText : (() => '');
-    const focusMobileAgeGate = typeof ctx.focusMobileAgeGate === 'function' ? ctx.focusMobileAgeGate : (() => {});
-    const isCompactDesktopMode = typeof ctx.isCompactDesktopMode === 'function' ? ctx.isCompactDesktopMode : (() => false);
-    const isCompactMobileMode = typeof ctx.isCompactMobileMode === 'function' ? ctx.isCompactMobileMode : (() => false);
-    const compactModalSections = ctx.compactModalSections instanceof Set ? ctx.compactModalSections : new Set();
-    const openSectionModal = typeof ctx.openSectionModal === 'function' ? ctx.openSectionModal : (() => false);
-    const buildLegalDocUrl = typeof ctx.buildLegalDocUrl === 'function' ? ctx.buildLegalDocUrl : (() => 'legal.html');
-
-    function scrollToSection(id){
-      const cleanId = String(id || '').replace(/^#/, '');
-      if(!cleanId) return false;
-      const el = document.getElementById(cleanId);
-      if(!el) return false;
-      el.scrollIntoView({behavior:'smooth', block:'start'});
-      return true;
-    }
-
-    function navigateToSection(id){
-      const cleanId = String(id || '').replace(/^#/, '');
-      if(!cleanId) return;
-      cleanId === 'section-faq' && trackFaqOpen();
-
-      const isMobilePreview = isMobilePreviewView();
-      const isProgramsSection = cleanId === 'section-programs';
-      const isProgramsMobilePreview = isMobilePreview && isProgramsSection;
-      const state = getState();
-
-      if(isProgramsMobilePreview && !hasSelectedAge()){
-        track('mobile_shifts_click_without_age', { mode: state.mobileMode || 'full' });
-        showHint(bookingText('mobileProgramsAgeRequired'), 'age');
-        focusMobileAgeGate();
-        return;
-      }
-
-      if(isProgramsMobilePreview && hasSelectedAge()){
-        track('mobile_shifts_opened_after_age', {
-          mode: state.mobileMode || 'full',
-          age: state.age || ''
-        });
-      }
-
-      const isDesktopCompact = !isMobilePreview && isCompactDesktopMode();
-      const isMobileCompact = isCompactMobileMode();
-      if(isDesktopCompact || isMobileCompact){
-        if(compactModalSections.has(cleanId) && openSectionModal(cleanId)){
-          return;
-        }
-        if(!scrollToSection(cleanId) && cleanId === 'section-legal'){
-          window.open(buildLegalDocUrl('#legal-info'), '_blank', 'noopener');
-        }
-        return;
-      }
-
-      if(!scrollToSection(cleanId) && cleanId === 'section-legal'){
-        window.open(buildLegalDocUrl('#legal-info'), '_blank', 'noopener');
-      }
-    }
-
-    return Object.freeze({
-      scrollToSection,
-      navigateToSection
-    });
-  }
-
-  window.AC_FEATURES = window.AC_FEATURES || {};
-  window.AC_FEATURES.navigationFlow = Object.freeze({ create: createNavigationFlow });
-})();
-
-
-/* src/scripts/features/notice-flow.js */
-(function registerNoticeFlow(windowObj){
-  "use strict";
-
-  windowObj.AC_FEATURES = windowObj.AC_FEATURES || {};
-  windowObj.AC_FEATURES.noticeFlow = windowObj.AC_FEATURES.noticeFlow || {};
-
-  var noticeConfirmHandler = null;
-
-  function safeText(bookingText, key, fallback){
-    if(typeof bookingText === 'function'){
-      return bookingText(key) || fallback;
-    }
-    return fallback;
-  }
-
-  function openNoticeModal(options){
-    var opts = options || {};
-    var message = opts.message || '';
-    var title = opts.title;
-    var bookingText = opts.bookingText || function () { return ''; };
-    var document = opts.document || windowObj.document;
-    var noticeTitle = document.getElementById('noticeTitle');
-    var noticeMessage = document.getElementById('noticeMessage');
-    var actionsEl = document.getElementById('noticeActions');
-    var noticeOverlay = document.getElementById('noticeOverlay');
-
-    if(!noticeOverlay) return false;
-
-    noticeConfirmHandler = null;
-    if(noticeTitle) noticeTitle.textContent = title || safeText(bookingText, 'noticeTitleDefault', '');
-    if(noticeMessage) noticeMessage.textContent = message || '';
-    if(actionsEl){
-      actionsEl.classList.add('hidden');
-      actionsEl.classList.remove('notice-actions--reset-booking');
-    }
-    noticeOverlay.classList.remove('hidden');
-    return true;
-  }
-
-  function closeNoticeModal(options){
-    var opts = options || {};
-    var document = opts.document || windowObj.document;
-    var actionsEl = document.getElementById('noticeActions');
-    noticeConfirmHandler = null;
-    if(actionsEl){
-      actionsEl.classList.add('hidden');
-      actionsEl.classList.remove('notice-actions--reset-booking');
-    }
-    var overlay = document.getElementById('noticeOverlay');
-    if(overlay){
-      overlay.classList.add('hidden');
-    }
-    return true;
-  }
-
-  function ensureNoticeActions(options){
-    var opts = options || {};
-    var document = opts.document || windowObj.document;
-    var bookingText = opts.bookingText || function () { return ''; };
-    var noticeOverlay = document.getElementById('noticeOverlay');
-    var noticeCard = noticeOverlay ? noticeOverlay.querySelector('.notice-card') : null;
-    if(!noticeOverlay || !noticeCard) return null;
-
-    var actionsEl = document.getElementById('noticeActions');
-    if(actionsEl) return actionsEl;
-
-    actionsEl = document.createElement('div');
-    actionsEl.id = 'noticeActions';
-    actionsEl.className = 'notice-actions hidden';
-    actionsEl.innerHTML = '\n        <button class="secondary-outline notice-cancel-btn" type="button" data-action="close-notice">'
-      + safeText(bookingText, 'noticeCancel', '')
-      + '</button>\n'
-      + '        <button class="cta-main notice-confirm-btn" type="button" data-action="confirm-notice">'
-      + safeText(bookingText, 'noticeConfirm', '')
-      + '</button>\n      ';
-    noticeCard.appendChild(actionsEl);
-    return actionsEl;
-  }
-
-  function getNoticeConfirmHandler(){
-    return noticeConfirmHandler;
-  }
-
-  function openResetBookingConfirmModal(options){
-    var opts = options || {};
-    var bookingText = opts.bookingText || function () { return ''; };
-    var resetOfferState = opts.resetOfferState || function () {};
-    var applyStatePatch = opts.applyStatePatch || function () {};
-    var persist = opts.persist || function () {};
-    var renderAll = opts.renderAll || function () {};
-    var document = opts.document || windowObj.document;
-
-    openNoticeModal({
-      message: safeText(bookingText, 'noticeResetBookingMessage', ''),
-      title: safeText(bookingText, 'noticeResetBookingTitle', ''),
-      bookingText: bookingText,
-      document: document
-    });
-
-    var actionsEl = ensureNoticeActions({
-      bookingText: bookingText,
-      document: document
-    });
-    if(!actionsEl) return false;
-
-    var cancelBtn = actionsEl.querySelector('.notice-cancel-btn');
-    var confirmBtn = actionsEl.querySelector('.notice-confirm-btn');
-    if(cancelBtn) cancelBtn.textContent = safeText(bookingText, 'noticeCancel', '');
-    if(confirmBtn) confirmBtn.textContent = safeText(bookingText, 'noticeConfirmReset', '');
-    actionsEl.classList.add('notice-actions--reset-booking');
-    noticeConfirmHandler = function(){
-      resetOfferState({ preserveShift: false });
-      applyStatePatch({
-        age: null,
-        ageSelected: false
-      });
-      persist();
-      renderAll();
-    };
-    actionsEl.classList.remove('hidden');
-    return true;
-  }
-
-  function setNoticeConfirmHandler(handler){
-    noticeConfirmHandler = typeof handler === 'function' ? handler : null;
-  }
-
-  Object.assign(windowObj.AC_FEATURES.noticeFlow, {
-    openNoticeModal: openNoticeModal,
-    closeNoticeModal: closeNoticeModal,
-    ensureNoticeActions: ensureNoticeActions,
-    getNoticeConfirmHandler: getNoticeConfirmHandler,
-    setNoticeConfirmHandler: setNoticeConfirmHandler,
-    openResetBookingConfirmModal: openResetBookingConfirmModal
-  });
-})(window);
 
 
 /* src/scripts/features/offer-flow.js */
@@ -13571,1023 +11508,433 @@ function runOfferSearch(overrides){
 
 
 /* src/scripts/features/overlays.js */
-(function () {
-  "use strict";
-
-  window.AC_FEATURES = window.AC_FEATURES || {};
-  window.AC_FEATURES.overlays = window.AC_FEATURES.overlays || {};
-})();
-
-
-/* src/scripts/features/runtime-quality-pipeline.js */
-(function registerRuntimeQualityPipeline(windowObj){
+(function registerOverlayFlow(windowObj){
   'use strict';
 
   if(!windowObj) return;
   windowObj.AC_FEATURES = windowObj.AC_FEATURES || {};
-  windowObj.AC_FEATURES.runtimeQualityPipeline = windowObj.AC_FEATURES.runtimeQualityPipeline || {};
 
-  function create(context){
+  function createOverlayFlow(context){
     var ctx = context || {};
     var doc = ctx.document || windowObj.document;
-    var runtimeStore = ctx.runtimeStore || windowObj.__AIDACAMP_RUNTIME || {};
-    runtimeStore.quality = runtimeStore.quality || {};
+    var buildBookingSummaryHtml = ctx.buildBookingSummaryHtml || function(){ return ''; };
+    var isAdminDebugSession = ctx.isAdminDebugSession || function(){ return false; };
+    var resetOfferState = ctx.resetOfferState || function(){};
+    var getState = ctx.getState || function(){ return {}; };
+    var persist = ctx.persist || function(){};
+    var renderAll = ctx.renderAll || function(){};
 
-    var buildVersionLabel = String(ctx.buildVersionLabel || '');
-    var versionMonotonicKey = String(ctx.versionMonotonicKey || 'aidacamp_build_version_last_v1');
-    var qualityBaselineKey = String(ctx.qualityBaselineKey || 'aidacamp_quality_baseline_v1');
-    var debtRegisterKey = String(ctx.debtRegisterKey || 'aidacamp_debt_register_v1');
-    var requiredSelectors = Array.isArray(ctx.requiredSelectors) ? ctx.requiredSelectors : [];
-    var qualitySoftGates = (ctx.qualitySoftGates && typeof ctx.qualitySoftGates === 'object')
-      ? ctx.qualitySoftGates
-      : {};
-    var architecturePolicy = (ctx.architecturePolicy && typeof ctx.architecturePolicy === 'object')
-      ? ctx.architecturePolicy
-      : { id:'unknown', version:'unknown' };
-    var useDesktopBaseForMobile = ctx.useDesktopBaseForMobile !== false;
-    var shouldUseLegacyMobile = (typeof ctx.shouldUseLegacyMobile === 'function')
-      ? ctx.shouldUseLegacyMobile
-      : function(){ return false; };
-    var trackOnce = (typeof ctx.trackOnce === 'function')
-      ? ctx.trackOnce
-      : function(){};
-    var isPipelineEnabled = (typeof ctx.isPipelineEnabled === 'function')
-      ? ctx.isPipelineEnabled
-      : function(){ return false; };
+    var noticeConfirmHandler = null;
 
-    function parseBuildVersionNumber(label){
-      var match = String(label || '').trim().match(/^v(\d+)\.(\d+)\.(\d+)/i);
-      if(!match) return null;
-      var major = Number(match[1]);
-      var minor = Number(match[2]);
-      var patch = Number(match[3]);
-      if(!Number.isFinite(major) || !Number.isFinite(minor) || !Number.isFinite(patch)) return null;
-      return (major * 1000000) + (minor * 1000) + patch;
-    }
-
-    function runBuildVersionGuardrail(){
-      var currentLabel = buildVersionLabel.trim();
-      var currentValue = parseBuildVersionNumber(currentLabel);
-      var previousLabel = String(windowObj.localStorage.getItem(versionMonotonicKey) || '').trim();
-      var previousValue = parseBuildVersionNumber(previousLabel);
-      var monotonic = true;
-
-      if(previousValue !== null && currentValue !== null && currentValue < previousValue){
-        monotonic = false;
-        console.error('[GUARDRAIL] Version regression detected', {
-          previous: previousLabel,
-          current: currentLabel
-        });
-        trackOnce('guardrail_version_regression', {
-          previous: previousLabel,
-          current: currentLabel
-        });
-      } else if(currentValue !== null){
-        windowObj.localStorage.setItem(versionMonotonicKey, currentLabel);
-      }
-
-      return {
-        ok: monotonic,
-        previous: previousLabel || null,
-        current: currentLabel,
-        previousValue: previousValue,
-        currentValue: currentValue
-      };
-    }
-
-    function runRuntimeSmokeGuardrail(){
-      var missing = [];
-      requiredSelectors.forEach(function(selector){
-        if(!doc || !doc.querySelector(selector)){
-          missing.push(selector);
-        }
-      });
-      var ok = missing.length === 0;
-      if(!ok){
-        console.error('[GUARDRAIL] Smoke check failed', { missing: missing });
-        trackOnce('guardrail_smoke_failed', {
-          missing: missing.slice(0, 6).join(',')
-        });
-      }
-      return {
-        ok: ok,
-        checked: requiredSelectors.length,
-        missing: missing
-      };
-    }
-
-    function runUnifiedArchitectureGuardrail(){
-      var issues = [];
-      if(!useDesktopBaseForMobile){
-        issues.push('USE_DESKTOP_BASE_FOR_MOBILE=false');
-      }
-      var desktopView = doc ? doc.getElementById('desktopView') : null;
-      if(!desktopView){
-        issues.push('desktopView_missing');
-      }
-      var mobileView = doc ? doc.getElementById('mobileView') : null;
-      if(mobileView && shouldUseLegacyMobile()){
-        var styles = windowObj.getComputedStyle(mobileView);
-        var legacyVisible = styles.display !== 'none' && styles.visibility !== 'hidden' && !mobileView.hidden;
-        if(legacyVisible){
-          issues.push('legacy_mobile_view_visible');
-        }
-      }
-      var ok = issues.length === 0;
-      if(!ok){
-        console.error('[GUARDRAIL] Unified architecture check failed', { issues: issues });
-        trackOnce('guardrail_architecture_failed', {
-          issues: issues.slice(0, 4).join(',')
-        });
-      }
-      return {
-        ok: ok,
-        policy: architecturePolicy.id,
-        policyVersion: architecturePolicy.version,
-        issues: issues
-      };
-    }
-
-    function runGuardrails(){
-      var version = runBuildVersionGuardrail();
-      var smoke = runRuntimeSmokeGuardrail();
-      var architecture = runUnifiedArchitectureGuardrail();
-      var summary = {
-        timestamp: new Date().toISOString(),
-        build: buildVersionLabel,
-        version: version,
-        smoke: smoke,
-        architecture: architecture,
-        ok: !!(version.ok && smoke.ok && architecture.ok)
-      };
-      runtimeStore.quality.guardrails = summary;
-      return summary;
-    }
-
-    function pickMainScriptText(){
-      if(!doc) return '';
-      var scripts = Array.from(doc.querySelectorAll('script:not([type="application/json"])'));
-      var candidate = '';
-      scripts.forEach(function(node){
-        var text = String(node && node.textContent || '');
-        if(text.length > candidate.length){
-          candidate = text;
-        }
-      });
-      return candidate;
-    }
-
-    function collectDuplicateSelectors(cssText){
-      var map = new Map();
-      var cleaned = String(cssText || '')
-        .replace(/\/\*[\s\S]*?\*\//g, '');
-      var blocks = cleaned.split('{');
-      blocks.forEach(function(left){
-        var selectorRaw = String(left || '').trim();
-        if(!selectorRaw || selectorRaw.startsWith('@')) return;
-        selectorRaw
-          .split(',')
-          .map(function(item){ return item.trim().replace(/\s+/g, ' '); })
-          .filter(Boolean)
-          .forEach(function(selector){
-            var current = map.get(selector) || 0;
-            map.set(selector, current + 1);
-          });
-      });
-      var duplicates = 0;
-      map.forEach(function(count){
-        if(count > 1) duplicates += 1;
-      });
-      return {
-        uniqueSelectors: map.size,
-        duplicateSelectors: duplicates
-      };
-    }
-
-    function runQualityBaselineAudit(){
-      var previousBaseline = null;
-      try {
-        previousBaseline = JSON.parse(windowObj.localStorage.getItem(qualityBaselineKey) || 'null');
-      } catch (_error){
-        previousBaseline = null;
-      }
-
-      var cssNode = doc ? doc.querySelector('style') : null;
-      var cssText = String(cssNode && cssNode.textContent || '');
-      var jsText = pickMainScriptText();
-      var cssRules = (cssText.match(/{/g) || []).length;
-      var jsFunctions = (jsText.match(/\bfunction\s+[a-zA-Z0-9_$]+\s*\(/g) || []).length;
-      var jsBranches = (jsText.match(/\bif\s*\(|\bswitch\s*\(/g) || []).length;
-      var jsListeners = (jsText.match(/addEventListener\s*\(/g) || []).length;
-      var selectorStats = collectDuplicateSelectors(cssText);
-      var makeDelta = function(current, previous){
-        if(!Number.isFinite(Number(current)) || !Number.isFinite(Number(previous))) return null;
-        return Number(current) - Number(previous);
-      };
-
-      var delta = Object.freeze({
-        versionFrom: previousBaseline && previousBaseline.version || null,
-        css: Object.freeze({
-          bytes: makeDelta(cssText.length, previousBaseline && previousBaseline.css && previousBaseline.css.bytes),
-          rules: makeDelta(cssRules, previousBaseline && previousBaseline.css && previousBaseline.css.rules),
-          uniqueSelectors: makeDelta(selectorStats.uniqueSelectors, previousBaseline && previousBaseline.css && previousBaseline.css.uniqueSelectors),
-          duplicateSelectors: makeDelta(selectorStats.duplicateSelectors, previousBaseline && previousBaseline.css && previousBaseline.css.duplicateSelectors)
-        }),
-        js: Object.freeze({
-          bytes: makeDelta(jsText.length, previousBaseline && previousBaseline.js && previousBaseline.js.bytes),
-          functions: makeDelta(jsFunctions, previousBaseline && previousBaseline.js && previousBaseline.js.functions),
-          branchPoints: makeDelta(jsBranches, previousBaseline && previousBaseline.js && previousBaseline.js.branchPoints),
-          listeners: makeDelta(jsListeners, previousBaseline && previousBaseline.js && previousBaseline.js.listeners)
-        })
-      });
-
-      var snapshot = Object.freeze({
-        version: buildVersionLabel,
-        timestamp: new Date().toISOString(),
-        delta: delta,
-        css: Object.freeze({
-          bytes: cssText.length,
-          rules: cssRules,
-          uniqueSelectors: selectorStats.uniqueSelectors,
-          duplicateSelectors: selectorStats.duplicateSelectors
-        }),
-        js: Object.freeze({
-          bytes: jsText.length,
-          functions: jsFunctions,
-          branchPoints: jsBranches,
-          listeners: jsListeners
-        })
-      });
-
-      runtimeStore.quality.baseline = snapshot;
-      runtimeStore.quality.baselineDelta = delta;
-      try {
-        windowObj.localStorage.setItem(qualityBaselineKey, JSON.stringify(snapshot));
-      } catch (error){
-        console.warn('[QUALITY] baseline persist failed', error);
-      }
-      return snapshot;
-    }
-
-    function evaluateSoftQualityGates(snapshot){
-      var data = snapshot || runtimeStore.quality.baseline;
-      if(!data) return { ok:false, warnings:['baseline_missing'], thresholds: qualitySoftGates };
-
-      var warnings = [];
-      var pushWarn = function(key, value, max){
-        warnings.push(key + ':' + value + '>' + max);
-      };
-
-      if((data.css && data.css.duplicateSelectors || 0) > qualitySoftGates.cssDuplicateSelectorsMax){
-        pushWarn('css.duplicateSelectors', data.css.duplicateSelectors, qualitySoftGates.cssDuplicateSelectorsMax);
-      }
-      if((data.css && data.css.bytes || 0) > qualitySoftGates.cssBytesMax){
-        pushWarn('css.bytes', data.css.bytes, qualitySoftGates.cssBytesMax);
-      }
-      if((data.js && data.js.branchPoints || 0) > qualitySoftGates.jsBranchPointsMax){
-        pushWarn('js.branchPoints', data.js.branchPoints, qualitySoftGates.jsBranchPointsMax);
-      }
-      if((data.js && data.js.listeners || 0) > qualitySoftGates.jsListenersMax){
-        pushWarn('js.listeners', data.js.listeners, qualitySoftGates.jsListenersMax);
-      }
-      if((data.js && data.js.bytes || 0) > qualitySoftGates.jsBytesMax){
-        pushWarn('js.bytes', data.js.bytes, qualitySoftGates.jsBytesMax);
-      }
-
-      var result = {
-        ok: warnings.length === 0,
-        warnings: warnings,
-        thresholds: qualitySoftGates,
-        version: buildVersionLabel
-      };
-      runtimeStore.quality.softGates = result;
-
-      if(!result.ok){
-        console.warn('[QUALITY] soft gates warnings', result);
-        trackOnce('quality_soft_gates_warn', {
-          count: warnings.length,
-          top: warnings[0] || ''
-        });
-      }
-      return result;
-    }
-
-    function buildDebtRegister(guardrails, baseline, gates){
-      var items = [];
-      var addItem = function(id, severity, source, detail){
-        items.push({
-          id: id,
-          severity: severity,
-          source: source,
-          detail: detail
-        });
-      };
-
-      if(!(guardrails && guardrails.version && guardrails.version.ok)){
-        addItem(
-          'version-regression',
-          'critical',
-          'guardrails.version',
-          'Версия откатилась: ' + ((guardrails && guardrails.version && guardrails.version.previous) || 'n/a') +
-            ' -> ' + ((guardrails && guardrails.version && guardrails.version.current) || 'n/a')
-        );
-      }
-
-      if(!(guardrails && guardrails.smoke && guardrails.smoke.ok)){
-        var missing = (guardrails && guardrails.smoke && guardrails.smoke.missing || []).slice(0, 6).join(', ');
-        addItem(
-          'runtime-smoke-missing-selectors',
-          'high',
-          'guardrails.smoke',
-          'Отсутствуют критические селекторы: ' + missing
-        );
-      }
-
-      var warnings = gates && gates.warnings || [];
-      warnings.forEach(function(warning){
-        var key = String(warning || '').split(':')[0];
-        var severity = key.includes('bytes') ? 'medium' : 'high';
-        addItem(
-          'quality-gate-' + (key || 'unknown'),
-          severity,
-          'quality.soft-gates',
-          warning
-        );
-      });
-
-      if((baseline && baseline.css && baseline.css.duplicateSelectors || 0) > 280){
-        addItem(
-          'css-duplicate-selector-pressure',
-          'medium',
-          'quality.baseline.css',
-          'Дубли селекторов=' + baseline.css.duplicateSelectors + ', желательно < 280'
-        );
-      }
-
-      var scoreMap = { low: 1, medium: 2, high: 3, critical: 4 };
-      var pressure = items.reduce(function(sum, item){
-        return sum + (scoreMap[item.severity] || 0);
-      }, 0);
-
-      var summary = {
-        version: buildVersionLabel,
-        timestamp: new Date().toISOString(),
-        debtItems: items,
-        pressureScore: pressure,
-        pressureLevel: pressure >= 9 ? 'high' : (pressure >= 4 ? 'medium' : 'low')
-      };
-
-      runtimeStore.quality.debtRegister = summary;
-      try {
-        windowObj.localStorage.setItem(debtRegisterKey, JSON.stringify(summary));
-      } catch (error){
-        console.warn('[DEBT] register persist failed', error);
-      }
-      return summary;
-    }
-
-    function buildRuntimeQualityScore(baseline, gates, debtRegister){
-      var globalAidacampExports = Object.keys(windowObj).filter(function(key){
-        return key.startsWith('__AIDACAMP_');
-      }).length;
-      var cssDupPenalty = Math.min(2.2, Math.max(0, ((baseline && baseline.css && baseline.css.duplicateSelectors || 0) - 220) / 120));
-      var cssSizePenalty = Math.min(1.8, Math.max(0, ((baseline && baseline.css && baseline.css.bytes || 0) - 180000) / 80000));
-      var cssRulePenalty = Math.min(1.4, Math.max(0, ((baseline && baseline.css && baseline.css.rules || 0) - 1100) / 400));
-      var jsBranchPenalty = Math.min(2.2, Math.max(0, ((baseline && baseline.js && baseline.js.branchPoints || 0) - 620) / 220));
-      var jsFunctionPenalty = Math.min(1.6, Math.max(0, ((baseline && baseline.js && baseline.js.functions || 0) - 180) / 80));
-      var jsListenerPenalty = Math.min(1.6, Math.max(0, ((baseline && baseline.js && baseline.js.listeners || 0) - 170) / 90));
-      var jsSizePenalty = Math.min(1.8, Math.max(0, ((baseline && baseline.js && baseline.js.bytes || 0) - 280000) / 120000));
-      var gatesPenalty = Math.min(1.5, ((gates && gates.warnings || []).length) * 0.3);
-      var globalFootprintPenalty = Math.min(1.1, Math.max(0, ((globalAidacampExports - 2) / 6) * 0.9));
-      var architectureSignals = Object.freeze({
-        runtimeStore: !!runtimeStore,
-        qualityStore: !!(runtimeStore && runtimeStore.quality),
-        pipelineNamespace: !!(runtimeStore && runtimeStore.quality && runtimeStore.quality.pipeline),
-        runAllOrchestrator: typeof (runtimeStore && runtimeStore.quality && runtimeStore.quality.pipeline && runtimeStore.quality.pipeline.runAll) === 'function',
-        lowGlobalExports: globalAidacampExports <= 2
-      });
-      var architectureSignalCount = Object.values(architectureSignals).filter(Boolean).length;
-      var architectureBonus = Math.min(1.2, architectureSignalCount * 0.24);
-
-      var cssScore = Math.max(0, Math.min(10, Number((10 - cssDupPenalty - cssSizePenalty - gatesPenalty * 0.35).toFixed(1))));
-      var jsScore = Math.max(0, Math.min(10, Number((10 - jsBranchPenalty - jsListenerPenalty - jsSizePenalty - gatesPenalty * 0.4).toFixed(1))));
-      var debtScore = Math.max(
-        0,
-        Math.min(
-          10,
-          Number(((((debtRegister && debtRegister.pressureScore) || 0) * 0.55) + ((gates && gates.warnings || []).length) * 0.35).toFixed(1))
-        )
-      );
-      var pipelineBonus = runtimeStore.quality.pipeline ? 0.6 : 0;
-      var monolithScore = Math.max(
-        0,
-        Math.min(
-          10,
-          Number((
-            10
-            - cssRulePenalty * 0.8
-            - cssSizePenalty * 0.4
-            - jsFunctionPenalty * 0.9
-            - jsBranchPenalty * 0.8
-            - jsSizePenalty * 0.5
-            - globalFootprintPenalty
-            + architectureBonus
-            + pipelineBonus
-          ).toFixed(1))
-        )
-      );
-
-      var runtimeScore = Object.freeze({
-        version: buildVersionLabel,
-        timestamp: new Date().toISOString(),
-        css: cssScore,
-        js: jsScore,
-        techDebt: debtScore,
-        debtScale: '0 best .. 10 worst',
-        monolithness: monolithScore,
-        monolithScale: '0 monolith .. 10 modular',
-        globalExports: globalAidacampExports,
-        architectureSignals: architectureSignals
-      });
-      runtimeStore.quality.runtimeScore = runtimeScore;
-      return runtimeScore;
-    }
-
-    function buildQualityTrendSummary(delta){
-      var d = delta || runtimeStore.quality.baselineDelta || {};
-      var probes = [
-        { key:'css.bytes', value:d && d.css && d.css.bytes },
-        { key:'css.duplicateSelectors', value:d && d.css && d.css.duplicateSelectors },
-        { key:'js.bytes', value:d && d.js && d.js.bytes },
-        { key:'js.branchPoints', value:d && d.js && d.js.branchPoints },
-        { key:'js.listeners', value:d && d.js && d.js.listeners }
-      ];
-      var better = 0;
-      var worse = 0;
-      var details = [];
-      probes.forEach(function(probe){
-        var value = Number(probe.value);
-        if(!Number.isFinite(value) || value === 0) return;
-        if(value < 0){
-          better += 1;
-          details.push(probe.key + ': ' + value);
+    function openSuccessModal(deliveryResult){
+      var box = doc.getElementById('successSummaryBox');
+      if(box) box.innerHTML = buildBookingSummaryHtml();
+      var deliveryState = doc.getElementById('successDeliveryState');
+      if(deliveryState){
+        var isAdmin = isAdminDebugSession();
+        if(isAdmin && deliveryResult && deliveryResult.ok === false){
+          deliveryState.textContent = 'Заявка сохранена локально, но сейчас нет связи с сервером отправки. Если мы не ответим в течение 15 минут, напишите нам в Telegram.';
+          deliveryState.classList.remove('hidden');
+          deliveryState.classList.add('error');
         } else {
-          worse += 1;
-          details.push(probe.key + ': +' + value);
+          deliveryState.textContent = '';
+          deliveryState.classList.add('hidden');
+          deliveryState.classList.remove('error');
         }
-      });
-      var trend = worse > better ? 'worse' : (better > worse ? 'better' : 'flat');
-      var summary = Object.freeze({
-        version: buildVersionLabel,
-        fromVersion: d.versionFrom || null,
-        trend: trend,
-        better: better,
-        worse: worse,
-        details: details
-      });
-      runtimeStore.quality.trend = summary;
-      return summary;
+      }
+      doc.getElementById('successOverlay')?.classList.remove('hidden');
     }
 
-    function runReleaseIntegrityChecks(){
-      var required = Object.freeze([
-        'guardrails',
-        'baseline',
-        'softGates',
-        'debtRegister',
-        'runtimeScore'
-      ]);
-      var missing = required.filter(function(key){
-        return typeof runtimeStore.quality[key] === 'undefined' || runtimeStore.quality[key] === null;
-      });
-      var result = Object.freeze({
-        version: buildVersionLabel,
-        timestamp: new Date().toISOString(),
-        ok: missing.length === 0,
-        required: required,
-        missing: missing
-      });
-      runtimeStore.quality.releaseIntegrity = result;
+    function closeSuccessModal(){
+      doc.getElementById('successOverlay')?.classList.add('hidden');
+    }
 
-      if(!result.ok){
-        console.error('[RELEASE] integrity failed', result);
-        trackOnce('release_integrity_failed', {
-          count: missing.length,
-          first: missing[0] || ''
+    function openNoticeModal(message, title){
+      var resolvedTitle = title || 'Проверьте данные';
+      var overlay = doc.getElementById('noticeOverlay');
+      if(!overlay) return;
+      var titleEl = doc.getElementById('noticeTitle');
+      var messageEl = doc.getElementById('noticeMessage');
+      var actionsEl = doc.getElementById('noticeActions');
+      noticeConfirmHandler = null;
+      if(titleEl) titleEl.textContent = resolvedTitle;
+      if(messageEl) messageEl.textContent = message || '';
+      if(actionsEl){
+        actionsEl.classList.add('hidden');
+        actionsEl.classList.remove('notice-actions--reset-booking');
+      }
+      overlay.classList.remove('hidden');
+    }
+
+    function closeNoticeModal(){
+      noticeConfirmHandler = null;
+      var actionsEl = doc.getElementById('noticeActions');
+      if(actionsEl){
+        actionsEl.classList.add('hidden');
+        actionsEl.classList.remove('notice-actions--reset-booking');
+      }
+      doc.getElementById('noticeOverlay')?.classList.add('hidden');
+    }
+
+    function ensureNoticeActions(){
+      var overlay = doc.getElementById('noticeOverlay');
+      var card = overlay && overlay.querySelector('.notice-card');
+      if(!overlay || !card) return null;
+      var actionsEl = doc.getElementById('noticeActions');
+      if(actionsEl) return actionsEl;
+      actionsEl = doc.createElement('div');
+      actionsEl.id = 'noticeActions';
+      actionsEl.className = 'notice-actions hidden';
+      actionsEl.innerHTML = [
+        '<button class="secondary-outline notice-cancel-btn" type="button" data-action="close-notice">Отмена</button>',
+        '<button class="cta-main notice-confirm-btn" type="button" data-action="confirm-notice">Подтвердить</button>'
+      ].join('');
+      card.appendChild(actionsEl);
+      return actionsEl;
+    }
+
+    function openResetBookingConfirmModal(){
+      openNoticeModal(
+        'Это действие аннулирует ваше предварительное бронирование. Вы точно хотите продолжить?',
+        'Сбросить бронирование?'
+      );
+      var actionsEl = ensureNoticeActions();
+      if(!actionsEl) return;
+      var cancelBtn = actionsEl.querySelector('.notice-cancel-btn');
+      var confirmBtn = actionsEl.querySelector('.notice-confirm-btn');
+      if(cancelBtn) cancelBtn.textContent = 'Отмена';
+      if(confirmBtn) confirmBtn.textContent = 'Сбросить';
+      actionsEl.classList.add('notice-actions--reset-booking');
+      noticeConfirmHandler = function(){
+        var state = getState();
+        resetOfferState({ preserveShift:false });
+        Object.assign(state, {
+          age: null,
+          ageSelected: false
         });
-      }
-      return result;
-    }
-
-    function printRuntimeStatusReport(){
-      var runtime = runtimeStore.quality.runtimeScore || {};
-      var integrity = runtimeStore.quality.releaseIntegrity || {};
-      var gates = runtimeStore.quality.softGates || {};
-      var trend = runtimeStore.quality.trend || {};
-      var reportLine =
-        '[AIDACAMP][STATUS] ' + buildVersionLabel + ' | css=' + (runtime.css ?? 'n/a') +
-        ' | js=' + (runtime.js ?? 'n/a') +
-        ' | debt=' + (runtime.techDebt ?? 'n/a') + '(0 best)' +
-        ' | monolith=' + (runtime.monolithness ?? 'n/a') + '(10 best)' +
-        ' | integrity=' + (integrity.ok ? 'ok' : 'fail') +
-        ' | softWarnings=' + (Array.isArray(gates.warnings) ? gates.warnings.length : 'n/a') +
-        ' | trend=' + (trend.trend || 'n/a');
-      console.info(reportLine);
-      runtimeStore.quality.statusLine = reportLine;
-      return reportLine;
-    }
-
-    function runAll(){
-      var guardrailReport = runGuardrails();
-      var qualityBaseline = runQualityBaselineAudit();
-      var qualityGates = evaluateSoftQualityGates(qualityBaseline);
-      var debtRegister = buildDebtRegister(guardrailReport, qualityBaseline, qualityGates);
-      buildRuntimeQualityScore(qualityBaseline, qualityGates, debtRegister);
-      buildQualityTrendSummary(qualityBaseline && qualityBaseline.delta);
-      runReleaseIntegrityChecks();
-      printRuntimeStatusReport();
-      return {
-        guardrailReport: guardrailReport,
-        qualityBaseline: qualityBaseline,
-        qualityGates: qualityGates,
-        debtRegister: debtRegister
+        persist();
+        renderAll();
       };
+      actionsEl.classList.remove('hidden');
     }
 
-    var namespace = Object.freeze({
-      runGuardrails: runGuardrails,
-      runQualityBaselineAudit: runQualityBaselineAudit,
-      evaluateSoftQualityGates: evaluateSoftQualityGates,
-      buildDebtRegister: buildDebtRegister,
-      buildRuntimeQualityScore: buildRuntimeQualityScore,
-      buildQualityTrendSummary: buildQualityTrendSummary,
-      runReleaseIntegrityChecks: runReleaseIntegrityChecks,
-      printRuntimeStatusReport: printRuntimeStatusReport,
-      runAll: runAll
-    });
-
-    function schedule(){
-      if(!isPipelineEnabled()) return;
-      var run = function(){
-        try {
-          runAll();
-        } catch (error){
-          console.warn('[QUALITY] deferred pipeline failed', error);
-        }
-      };
-      if('requestIdleCallback' in windowObj){
-        windowObj.requestIdleCallback(run, { timeout: 12000 });
-      } else {
-        windowObj.setTimeout(run, 8000);
-      }
+    function getNoticeConfirmHandler(){
+      return noticeConfirmHandler;
     }
 
     return Object.freeze({
-      namespace: namespace,
-      schedule: schedule
+      openSuccessModal: openSuccessModal,
+      closeSuccessModal: closeSuccessModal,
+      openNoticeModal: openNoticeModal,
+      closeNoticeModal: closeNoticeModal,
+      openResetBookingConfirmModal: openResetBookingConfirmModal,
+      getNoticeConfirmHandler: getNoticeConfirmHandler
     });
   }
 
-  windowObj.AC_FEATURES.runtimeQualityPipeline.create = create;
+  windowObj.AC_FEATURES.overlays = Object.freeze({
+    create: createOverlayFlow
+  });
 })(window);
 
 
-/* src/scripts/features/summary-flow.js */
+/* src/scripts/features/shift-options-flow.js */
 (function(){
-  function createSummaryFlow(ctx = {}){
+  function createShiftOptionsFlow(ctx = {}){
     const getState = typeof ctx.getState === 'function' ? ctx.getState : (() => ({}));
     const getShifts = typeof ctx.getShifts === 'function' ? ctx.getShifts : (() => []);
-    const getTimerId = typeof ctx.getTimerId === 'function' ? ctx.getTimerId : (() => null);
-    const setTimerId = typeof ctx.setTimerId === 'function' ? ctx.setTimerId : (() => {});
-    const getDismissUntilTs = typeof ctx.getDismissUntilTs === 'function' ? ctx.getDismissUntilTs : (() => 0);
-    const setDismissUntilTs = typeof ctx.setDismissUntilTs === 'function' ? ctx.setDismissUntilTs : (() => {});
-    const getDismissTimerId = typeof ctx.getDismissTimerId === 'function' ? ctx.getDismissTimerId : (() => null);
-    const setDismissTimerId = typeof ctx.setDismissTimerId === 'function' ? ctx.setDismissTimerId : (() => {});
-    const resetOfferState = typeof ctx.resetOfferState === 'function' ? ctx.resetOfferState : (() => {});
-    const persist = typeof ctx.persist === 'function' ? ctx.persist : (() => {});
-    const formatRemaining = typeof ctx.formatRemaining === 'function' ? ctx.formatRemaining : (() => '');
-    const formatRemainingCompact = typeof ctx.formatRemainingCompact === 'function' ? ctx.formatRemainingCompact : (() => '');
-    const normalizeCompactTimerText = typeof ctx.normalizeCompactTimerText === 'function' ? ctx.normalizeCompactTimerText : ((v) => String(v || ''));
-    const stripRemainingPrefix = typeof ctx.stripRemainingPrefix === 'function' ? ctx.stripRemainingPrefix : ((v) => String(v || ''));
-    const renderBookingPanels = typeof ctx.renderBookingPanels === 'function' ? ctx.renderBookingPanels : (() => {});
+    const parseShiftDate = typeof ctx.parseShiftDate === 'function' ? ctx.parseShiftDate : (() => null);
+    const formatPrice = typeof ctx.formatPrice === 'function' ? ctx.formatPrice : ((value) => String(value || ''));
+    const shiftDaysLabel = typeof ctx.shiftDaysLabel === 'function' ? ctx.shiftDaysLabel : (() => '');
+    const hasSelectedAge = typeof ctx.hasSelectedAge === 'function' ? ctx.hasSelectedAge : (() => false);
     const syncGuidedState = typeof ctx.syncGuidedState === 'function' ? ctx.syncGuidedState : (() => {});
-    const getBookingStage = typeof ctx.getBookingStage === 'function' ? ctx.getBookingStage : (() => 1);
-    const getPrimaryActionState = typeof ctx.getPrimaryActionState === 'function' ? ctx.getPrimaryActionState : (() => null);
-    const getResolvedPrimaryActionText = typeof ctx.getResolvedPrimaryActionText === 'function' ? ctx.getResolvedPrimaryActionText : (() => '');
-    const splitPrimaryActionText = typeof ctx.splitPrimaryActionText === 'function' ? ctx.splitPrimaryActionText : (() => ({stacked:false, main:'', gainText:''}));
-    const bookingText = typeof ctx.bookingText === 'function' ? ctx.bookingText : (() => '');
-    const labelAge = typeof ctx.labelAge === 'function' ? ctx.labelAge : ((v) => String(v || ''));
-    const formatPrice = typeof ctx.formatPrice === 'function' ? ctx.formatPrice : ((v) => String(v || ''));
-    const getPrimaryBookingViewConfig = typeof ctx.getPrimaryBookingViewConfig === 'function' ? ctx.getPrimaryBookingViewConfig : (() => ({cardId:''}));
-    const isCompactCurrentMode = typeof ctx.isCompactCurrentMode === 'function' ? ctx.isCompactCurrentMode : (() => false);
+    const showHint = typeof ctx.showHint === 'function' ? ctx.showHint : (() => {});
+    const nudgeUserToNextStep = typeof ctx.nudgeUserToNextStep === 'function' ? ctx.nudgeUserToNextStep : (() => {});
+    const selectShift = typeof ctx.selectShift === 'function' ? ctx.selectShift : (() => {});
+    const closeTransientModals = typeof ctx.closeTransientModals === 'function' ? ctx.closeTransientModals : (() => {});
+    const applyCompactSectionModalLayout = typeof ctx.applyCompactSectionModalLayout === 'function' ? ctx.applyCompactSectionModalLayout : (() => {});
+    const resolveViewKey = typeof ctx.resolveViewKey === 'function' ? ctx.resolveViewKey : ((viewKey) => viewKey === 'mobile' ? 'mobile' : 'desktop');
+    const resolveShiftOptionsTargetId = typeof ctx.resolveShiftOptionsTargetId === 'function' ? ctx.resolveShiftOptionsTargetId : (() => '');
+    const getShiftOptionPanels = typeof ctx.getShiftOptionPanels === 'function' ? ctx.getShiftOptionPanels : (() => ({
+      desktop:{aboutId:null, calendarId:null},
+      mobile:{aboutId:null, calendarId:null}
+    }));
 
-    function startTimer(){
-      const state = getState();
-      const prevTimerId = getTimerId();
-      prevTimerId && clearInterval(prevTimerId);
-
-      const updateTimers = () => {
-        const liveState = getState();
-        if(!liveState.expiresAt) return;
-
-        const diff = liveState.expiresAt - Date.now();
-        const offerTimer = document.getElementById('offerTimer');
-        const summaryTimer = document.getElementById('summaryTimer');
-        const bookingTimers = document.querySelectorAll('.booking-timer-line[data-live-timer="true"]');
-
-        if(diff <= 0){
-          const activeTimerId = getTimerId();
-          activeTimerId && clearInterval(activeTimerId);
-          resetOfferState({preserveShift:true});
-          persist();
-          offerTimer && (offerTimer.textContent = '');
-          summaryTimer && (summaryTimer.textContent = '');
-          bookingTimers.forEach((node) => {
-            const timerValueNode = node.querySelector('.booking-timer-value');
-            if(timerValueNode){
-              timerValueNode.textContent = '';
-            } else {
-              node.textContent = '';
-            }
-          });
-          renderBookingPanels();
-          return;
-        }
-
-        const fullText = formatRemaining(diff);
-        const compactText = normalizeCompactTimerText(formatRemainingCompact(diff));
-
-        offerTimer && (offerTimer.textContent = fullText);
-        summaryTimer && (summaryTimer.textContent = compactText);
-        bookingTimers.forEach((node) => {
-          const timerValueNode = node.querySelector('.booking-timer-value');
-          if(timerValueNode){
-            timerValueNode.textContent = stripRemainingPrefix(compactText);
-          } else {
-            node.textContent = compactText;
-          }
-        });
+    function getShiftSummaryLines(ageKey){
+      const summaryByAge = {
+        '7-9': [
+          'IT-проекты: Scratch / Python',
+          'Бассейн каждый день',
+          'Живая среда без гаджетного залипания',
+          'Подходит для 7–9 лет'
+        ],
+        '10-12': [
+          'Python и командные мини-спринты',
+          'Бассейн и спорт ежедневно',
+          'Командные роли и самостоятельность',
+          'Подходит для 10–12 лет'
+        ],
+        '13-14': [
+          'AI-практика и проектная защита',
+          'Спорт + живая лагерная среда',
+          'Меньше телефонов, больше результата',
+          'Подходит для 13–14 лет'
+        ]
       };
-
-      updateTimers();
-      setTimerId(setInterval(updateTimers, 1000));
+      return summaryByAge[ageKey] || summaryByAge['7-9'];
     }
 
-    function isSummaryBelowHero(){
-      const hero = document.querySelector('#desktopView .hero-shell');
-      const rect = (hero && hero.getBoundingClientRect && hero.getBoundingClientRect()) || null;
-      return !rect || rect.bottom <= 8;
+    function normalizeShiftText(value){
+      return String(value || '').replace(/\s+/g, ' ').trim();
     }
 
-    function isBookingPrimaryCtaVisibleInViewport(){
-      const cardSelector = `#${getPrimaryBookingViewConfig().cardId}`;
-      const card = document.querySelector(cardSelector);
-      if(!card || card.classList.contains('hidden')) return false;
-      const ctaButtons = Array.from(card.querySelectorAll('[data-action="primary-cta"]'));
-      if(!ctaButtons.length) return false;
+    function getShiftAgeFocusedDescription(shift, ageKey){
+      if(!shift) return '';
+      const full = String(shift.fullDesc || '').replace(/\r/g, '').trim();
+      if(!full) return shift.desc || '';
+      const compact = normalizeShiftText(full);
+      const firstPart = normalizeShiftText(
+        compact.split(/Для\s+(?:7[–-]9|10[–-]12|13[–-]14)\s+лет:/i)[0] || ''
+      );
 
-      return ctaButtons.some((button) => {
-        if(!button || button.disabled) return false;
-        const style = window.getComputedStyle(button);
-        if(style.display === 'none' || style.visibility === 'hidden') return false;
-        if(Number(style.opacity || 1) === 0) return false;
-        if(Number(style.height || 0) === 0 || Number(style.width || 0) === 0) return false;
-        const rect = button.getBoundingClientRect();
-        if(rect.width < 2 || rect.height < 2) return false;
-        return !(rect.bottom <= -16 || rect.top >= window.innerHeight + 16);
+      const markerPatternByAge = {
+        '7-9': 'Для\\s+7[–-]9\\s+лет:',
+        '10-12': 'Для\\s+10[–-]12\\s+лет:',
+        '13-14': 'Для\\s+13[–-]14\\s+лет:'
+      };
+      const ageLabelByAge = {
+        '7-9': 'Для 7–9 лет:',
+        '10-12': 'Для 10–12 лет:',
+        '13-14': 'Для 13–14 лет:'
+      };
+      const markerPattern = markerPatternByAge[ageKey] || markerPatternByAge['7-9'];
+      const ageLabel = ageLabelByAge[ageKey] || ageLabelByAge['7-9'];
+      const agePartMatch = compact.match(
+        new RegExp(`${markerPattern}\\s*([\\s\\S]*?)(?=\\s*Для\\s+(?:7[–-]9|10[–-]12|13[–-]14)\\s+лет:|$)`, 'i')
+      );
+      const agePart = normalizeShiftText(agePartMatch?.[1] || '');
+
+      const sentences = compact.match(/[^.!?]+[.!?]?/g) || [];
+      const finalPart = normalizeShiftText((sentences.length && sentences[sentences.length - 1]) || '');
+
+      const result = [];
+      if(firstPart) result.push(firstPart);
+      if(agePart) result.push(`${ageLabel} ${agePart}`);
+      if(finalPart && !result.includes(finalPart)){
+        result.push(finalPart);
+      }
+      return result.join(' ').trim();
+    }
+
+    function getShiftDisplayDescription(shift){
+      if(!shift) return '';
+      if(!hasSelectedAge()) return shift.desc || '';
+      const state = getState();
+      return getShiftAgeFocusedDescription(shift, state.age || '7-9');
+    }
+
+    function openShiftAboutModal(shiftId){
+      const state = getState();
+      const shifts = getShifts();
+      const modal = document.getElementById('sectionModal');
+      const titleEl = document.getElementById('sectionModalTitle');
+      const bodyEl = document.getElementById('sectionModalBody');
+      const shift = shifts.find((item) => item.id === shiftId);
+      if(!modal || !titleEl || !bodyEl || !shift) return false;
+
+      closeTransientModals('section');
+      const isCompactDesktop = state.previewView === 'desktop' && state.desktopMode === 'compact';
+      const isMobilePanel = state.previewView === 'mobile';
+      modal.classList.toggle('section-modal-compact', isCompactDesktop);
+      modal.classList.toggle('section-modal-mobile', isMobilePanel);
+
+      const start = parseShiftDate(shift.start);
+      const end = parseShiftDate(shift.end);
+      const startText = (start && start.toLocaleDateString('ru-RU')) || shift.start;
+      const endText = (end && end.toLocaleDateString('ru-RU')) || shift.end;
+      const summaryLines = getShiftSummaryLines(state.age || '7-9');
+
+      titleEl.textContent = `${shift.label || `Смена ${shift.title}`}: программа`;
+      bodyEl.innerHTML = `
+        <article class="shift-modal-content">
+          <div class="shift-modal-content__meta">
+            <strong>${shift.dates}</strong>
+            <span>${formatPrice(shift.price)} · ${shiftDaysLabel(shift)} · осталось ${shift.left} мест</span>
+          </div>
+          <p class="shift-modal-content__desc"><strong>Коротко:</strong> ${shift.desc}</p>
+          <p class="shift-modal-content__desc"><strong>Подробно:</strong> ${getShiftDisplayDescription(shift)}</p>
+          <ul class="shift-modal-content__list">
+            ${summaryLines.map((line) => `<li>${line}</li>`).join('')}
+          </ul>
+          <div class="shift-modal-content__dates">
+            <div><strong>Заезд:</strong> ${startText}</div>
+            <div><strong>Выезд:</strong> ${endText}</div>
+          </div>
+        </article>
+      `;
+
+      modal.classList.remove('hidden');
+      applyCompactSectionModalLayout();
+      return true;
+    }
+
+    function renderShiftOptions(viewKey){
+      const state = getState();
+      const shifts = getShifts();
+      const safeViewKey = resolveViewKey(viewKey);
+      const targetId = resolveShiftOptionsTargetId(safeViewKey);
+      const box = document.getElementById(targetId);
+      if(!box) return;
+
+      const selectedAge = state.age || '7-9';
+      const summaryLines = getShiftSummaryLines(selectedAge);
+      const shiftOptionPanels = getShiftOptionPanels();
+
+      box.innerHTML = shifts.slice(0, 2).map((shift) => {
+        const isInlineView = safeViewKey === 'mobile';
+        const showAbout = isInlineView && shiftOptionPanels[safeViewKey]?.aboutId === shift.id;
+        const showCalendar = isInlineView && shiftOptionPanels[safeViewKey]?.calendarId === shift.id;
+        const start = parseShiftDate(shift.start);
+        const end = parseShiftDate(shift.end);
+        const startText = (start && start.toLocaleDateString('ru-RU')) || shift.start;
+        const endText = (end && end.toLocaleDateString('ru-RU')) || shift.end;
+
+        return `
+        <div class="shift-option ${state.shiftId === shift.id ? 'active' : ''}" data-id="${shift.id}">
+          <div class="shift-option-head">
+            <strong>
+              <span class="shift-option-dates">${shift.dates}</span>
+            </strong>
+            <small>
+              <span class="shift-option-seats">осталось ${shift.left} мест</span>
+              <span class="shift-option-price-row">
+                <span class="shift-option-price">${formatPrice(shift.price)}</span>
+                <span class="shift-option-inline-actions">
+                  <button class="shift-option-action shift-option-action-info" type="button" data-action="toggle-shift-about" data-shift-id="${shift.id}" data-shift-view="${safeViewKey}" aria-label="Описание смены ${shift.dates}">
+                    <img class="ac-icon" src="/assets/icons/info.svg" alt="" aria-hidden="true">
+                  </button>
+                  <button class="shift-option-action shift-option-action-calendar" type="button" data-action="toggle-shift-calendar-inline" data-shift-id="${shift.id}" data-shift-view="${safeViewKey}" aria-label="Календарь ${shift.dates}">
+                    <img class="ac-icon" src="/assets/icons/calendar.svg" alt="" aria-hidden="true">
+                  </button>
+                  <button class="shift-option-select-indicator" type="button" aria-label="Выбрать смену ${shift.dates}">
+                    <img class="ac-icon" src="/assets/icons/chevron-right.svg" alt="" aria-hidden="true">
+                  </button>
+                </span>
+              </span>
+            </small>
+          </div>
+          <div class="shift-inline-panel ${showAbout ? 'visible' : ''}">
+            <ul>
+              ${summaryLines.map((line) => `<li>${line}</li>`).join('')}
+            </ul>
+          </div>
+          <div class="shift-inline-panel shift-inline-calendar ${showCalendar ? 'visible' : ''}">
+            <div><strong>Заезд:</strong> ${startText}</div>
+            <div><strong>Выезд:</strong> ${endText}</div>
+            <div><strong>Длительность:</strong> ${shiftDaysLabel(shift)}</div>
+          </div>
+        </div>
+      `;
+      }).join('');
+
+      box.querySelectorAll('.shift-option').forEach((el) => {
+        el.addEventListener('click', (event) => {
+          if(event.target.closest('.shift-option-action')){
+            return;
+          }
+          if(!hasSelectedAge()){
+            showHint('Сначала выберите возраст ребёнка', 'age');
+            nudgeUserToNextStep('Сначала выберите возраст ребёнка — тогда откроется список смен.');
+            return;
+          }
+          selectShift(el.dataset.id);
+        });
       });
     }
 
-    function updateSummaryBarVisibility(){
-      const state = getState();
-      const bar = document.getElementById('summaryBar');
-      if(!bar) return;
-      const action = getPrimaryActionState();
-      const shouldHide = (
-        state.bookingCompleted
-        || !state.shiftId
-        || isCompactCurrentMode()
-        || Date.now() < getDismissUntilTs()
-        || !action
-        || action.disabled
-      );
-
-      if(shouldHide){
-        bar.classList.remove('is-visible');
-        bar.classList.add('hidden');
-        document.body.classList.remove('summary-visible');
-        return;
-      }
-
-      const shouldShow = isSummaryBelowHero() && !isBookingPrimaryCtaVisibleInViewport();
-      bar.classList.remove('hidden');
-      bar.classList.toggle('is-visible', shouldShow);
-      document.body.classList.toggle('summary-visible', shouldShow);
-    }
-
-    function dismissSummaryBarTemporarily(ms = 30000){
-      const timeoutMs = Math.max(1000, Number(ms) || 30000);
-      setDismissUntilTs(Date.now() + timeoutMs);
-      const prevDismissTimer = getDismissTimerId();
-      prevDismissTimer && clearTimeout(prevDismissTimer);
-      const nextTimer = setTimeout(() => {
-        setDismissUntilTs(0);
-        setDismissTimerId(null);
-        updateSummaryBarVisibility();
-      }, timeoutMs);
-      setDismissTimerId(nextTimer);
-      updateSummaryBarVisibility();
-    }
-
-    function renderSummary(){
-      const state = getState();
-      const shifts = getShifts();
+    function renderShiftCards(){
       syncGuidedState();
-      if(state.expiresAt && Date.now() >= state.expiresAt){
-        resetOfferState({preserveShift:true});
-        persist();
+      const shifts = getShifts();
+      const grid = document.getElementById('shiftCardsGrid');
+      if(!grid) return;
+      const shortGrid = document.getElementById('shortShiftCards');
+      const mainShifts = shifts.filter((shift) => !shift.isShort);
+      const shortShifts = shifts.filter((shift) => !!shift.isShort);
+      const showExtendedDescription = hasSelectedAge();
+      const cleanShiftCardTitle = (title) => {
+        const raw = String(title || '').trim();
+        const cleaned = raw
+          .replace(/^\s*\d+(?:[.,]\d+)?\s*[\])}.:\-–—,]?\s*/u, '')
+          .replace(/^(?:TT|ТТ)\s*[\d.]+[\s:.\-–—]*/iu, '')
+          .trim();
+        return cleaned || raw;
+      };
+
+      grid.innerHTML = mainShifts.map((shift) => `
+        <div class="mini-card">
+          <h4>${cleanShiftCardTitle(shift.title)}</h4>
+          <div class="price-row">
+            <strong>${formatPrice(shift.price)}</strong>
+            <span class="price-row-actions">
+              <button class="shift-calendar-btn shift-about-btn" type="button" data-action="toggle-shift-about" data-shift-id="${shift.id}" aria-label="Описание смены ${shift.title}">
+                <img class="ac-icon" src="/assets/icons/info.svg" alt="" aria-hidden="true">
+              </button>
+              <button class="shift-calendar-btn" type="button" data-action="open-calendar" data-shift-id="${shift.id}" aria-label="Календарь ${shift.title}">
+                <img class="ac-icon" src="/assets/icons/calendar.svg" alt="" aria-hidden="true">
+              </button>
+            </span>
+          </div>
+          <div class="price-row-meta">${shift.dates} · ${shiftDaysLabel(shift)}</div>
+          ${showExtendedDescription
+            ? `
+              <p><strong>Коротко:</strong> ${shift.desc || ''}</p>
+              <p><strong>Подробно:</strong> ${getShiftDisplayDescription(shift)}</p>
+            `
+            : `<p>${shift.desc || ''}</p>`
+          }
+        </div>
+      `).join('');
+
+      if(shortGrid){
+        shortGrid.innerHTML = shortShifts.map((shift) => `
+          <div class="mini-card short-shift-card">
+            <div class="short-shift-head">
+              <h4>${cleanShiftCardTitle(shift.title)}</h4>
+              <span class="short-shift-tag">короткая смена</span>
+            </div>
+            <div class="price-row">
+              <strong>${formatPrice(shift.price)}</strong>
+              <span class="price-row-actions">
+                <button class="shift-calendar-btn shift-about-btn" type="button" data-action="toggle-shift-about" data-shift-id="${shift.id}" aria-label="Описание смены ${shift.title}">
+                  <img class="ac-icon" src="/assets/icons/info.svg" alt="" aria-hidden="true">
+                </button>
+                <button class="shift-calendar-btn" type="button" data-action="open-calendar" data-shift-id="${shift.id}" aria-label="Календарь ${shift.title}">
+                  <img class="ac-icon" src="/assets/icons/calendar.svg" alt="" aria-hidden="true">
+                </button>
+              </span>
+            </div>
+            <div class="price-row-meta">${shift.dates}</div>
+            ${showExtendedDescription
+              ? `<p><strong>Коротко:</strong> ${shift.desc || ''}</p>`
+              : `<p>${shift.desc || ''}</p>`
+            }
+          </div>
+        `).join('');
+        shortGrid.closest('.programs-short-block')?.classList.remove('hidden');
       }
-      const bar = document.getElementById('summaryBar');
-      bar && bar.classList.remove('summary-bar--stage4');
-
-      if(!state.shiftId){
-        updateSummaryBarVisibility();
-        renderBookingPanels();
-        return;
-      }
-
-      const shift = shifts.find((entry) => entry.id === state.shiftId);
-      const price = state.offerPrice || state.basePrice || (shift && shift.price);
-      const summaryStage = getBookingStage();
-      const isStageFourSummary = summaryStage === 4 && !state.bookingCompleted;
-      bar.classList.toggle('summary-bar--stage4', isStageFourSummary);
-
-      document.getElementById('summaryMain').textContent = isStageFourSummary ? '' : `${labelAge(state.age)}`;
-      document.getElementById('summaryMeta').textContent = isStageFourSummary
-        ? ''
-        : `${shift.dates}${state.code ? ` · Код ${state.code}` : ''}`;
-      document.getElementById('summaryPrice').textContent = formatPrice(price);
-      const summaryCtaBtn = bar.querySelector('[data-action="primary-cta"]');
-      if(summaryCtaBtn){
-        const action = getPrimaryActionState();
-        const actionText = getResolvedPrimaryActionText(action, shift);
-        const splitResult = isStageFourSummary
-          ? splitPrimaryActionText(actionText)
-          : {stacked:false, main: actionText, gainText:''};
-        if(splitResult.stacked){
-          summaryCtaBtn.innerHTML = `
-            <span class="cta-main-line cta-main-line--primary">${splitResult.main}</span>
-            <span class="cta-main-line cta-main-line--accent">${bookingText('bookingFinalizeBenefitLine')} ${splitResult.gainText}</span>
-          `;
-          summaryCtaBtn.setAttribute('aria-label', `${splitResult.main} · ${bookingText('bookingFinalizeBenefitLine')} ${splitResult.gainText}`);
-        } else {
-          summaryCtaBtn.textContent = actionText;
-          summaryCtaBtn.removeAttribute('aria-label');
-        }
-        summaryCtaBtn.classList.toggle('is-disabled', !!action.disabled);
-        summaryCtaBtn.setAttribute('aria-disabled', action.disabled ? 'true' : 'false');
-        summaryCtaBtn.disabled = false;
-      }
-
-      updateSummaryBarVisibility();
-      renderBookingPanels();
     }
 
     return Object.freeze({
-      startTimer,
-      updateSummaryBarVisibility,
-      dismissSummaryBarTemporarily,
-      renderSummary,
-      isSummaryBelowHero,
-      isBookingPrimaryCtaVisibleInViewport
+      getShiftDisplayDescription,
+      openShiftAboutModal,
+      renderShiftOptions,
+      renderShiftCards
     });
   }
 
   window.AC_FEATURES = window.AC_FEATURES || {};
-  window.AC_FEATURES.summaryFlow = Object.freeze({ create: createSummaryFlow });
+  window.AC_FEATURES.shiftOptionsFlow = Object.freeze({ create: createShiftOptionsFlow });
 })();
-
-
-/* src/scripts/features/team.block.js */
-/* src/scripts/features/team.block.js */
-(function registerTeamBlock(windowObj){
-  'use strict';
-  if(!windowObj || typeof windowObj.createAidacampBlock !== 'function') return;
-  windowObj.AIDACAMP_BLOCKS.team = windowObj.createAidacampBlock('team');
-})(window);
-
-
-/* src/scripts/features/telemetry-flow.js */
-(function registerTelemetryFlow(windowObj){
-  'use strict';
-
-  if(!windowObj) return;
-  windowObj.AC_FEATURES = windowObj.AC_FEATURES || {};
-  windowObj.AC_FEATURES.telemetryFlow = windowObj.AC_FEATURES.telemetryFlow || {};
-
-  function create(context){
-    var ctx = context || {};
-    var doc = ctx.document || windowObj.document;
-    var metrikaId = Number(ctx.metrikaId) || 0;
-    var abEventEndpointDefault = String(ctx.abEventEndpointDefault || '').trim();
-    var abVisitorKey = String(ctx.abVisitorKey || 'aidacamp_ab_visitor_id_v1');
-    var abSessionKey = String(ctx.abSessionKey || 'aidacamp_ab_session_id_v1');
-    var legalRepoSlug = String(ctx.legalRepoSlug || '');
-    var getHeroAbVariant = (typeof ctx.getHeroAbVariant === 'function')
-      ? ctx.getHeroAbVariant
-      : function(){ return 'A'; };
-    var getHeroAbTestId = (typeof ctx.getHeroAbTestId === 'function')
-      ? ctx.getHeroAbTestId
-      : function(){ return 'hero_primary_block_v1'; };
-    var isAllowedAbEvent = (typeof ctx.isAllowedAbEvent === 'function')
-      ? ctx.isAllowedAbEvent
-      : function(){ return false; };
-
-    var abSessionSeq = 0;
-
-    function randomId(prefix){
-      try {
-        if(windowObj.crypto && typeof windowObj.crypto.randomUUID === 'function'){
-          return prefix + '_' + windowObj.crypto.randomUUID();
-        }
-      } catch (_error){
-      }
-      return prefix + '_' + Math.random().toString(36).slice(2) + '_' + Date.now().toString(36);
-    }
-
-    function getOrCreateStorageId(storage, key, prefix){
-      try {
-        var current = String(storage.getItem(key) || '').trim();
-        if(current) return current;
-        var created = randomId(prefix);
-        storage.setItem(key, created);
-        return created;
-      } catch (_error){
-        return randomId(prefix);
-      }
-    }
-
-    function getAbVariantLabel(){
-      var current = String(getHeroAbVariant() || '').toUpperCase();
-      if(current === 'A' || current === 'B') return current;
-      return 'A';
-    }
-
-    function buildAbMeta(extra){
-      var variant = getAbVariantLabel();
-      var testId = String(getHeroAbTestId() || 'hero_primary_block_v1');
-      var payload = {
-        ab_test_id: testId,
-        ab_variant: variant,
-        test_id: testId,
-        variant: variant
-      };
-      if(extra && typeof extra === 'object'){
-        Object.assign(payload, extra);
-      }
-      return payload;
-    }
-
-    function shouldSendAbEvent(eventName){
-      var cfg = windowObj.AC_NOTIFY_CONFIG || {};
-      if(cfg.abTrackAllEvents === true) return true;
-      return isAllowedAbEvent(String(eventName || ''));
-    }
-
-    function getCurrentSearchParams(){
-      try {
-        return new URLSearchParams(windowObj.location.search || '');
-      } catch (_error){
-        return new URLSearchParams('');
-      }
-    }
-
-    function sendAbEvent(eventName, params){
-      if(!shouldSendAbEvent(eventName)) return;
-      var cfg = windowObj.AC_NOTIFY_CONFIG || {};
-      var endpoint = String(cfg.abEventEndpoint || abEventEndpointDefault).trim();
-      if(!endpoint) return;
-      var visitorId = getOrCreateStorageId(windowObj.localStorage, abVisitorKey, 'abv');
-      var sessionId = getOrCreateStorageId(windowObj.sessionStorage, abSessionKey, 'abs');
-      abSessionSeq += 1;
-      var search = getCurrentSearchParams();
-      var payload = {
-        event: String(eventName || ''),
-        payload: Object.assign(
-          {},
-          (params && typeof params === 'object') ? params : {},
-          buildAbMeta(),
-          {
-            event_ts: new Date().toISOString(),
-            event_seq: abSessionSeq,
-            session_id: sessionId,
-            visitor_id: visitorId,
-            page_url: windowObj.location.href,
-            page_path: windowObj.location.pathname || '/',
-            referrer: doc && doc.referrer || '',
-            utm_source: String(search.get('utm_source') || ''),
-            utm_medium: String(search.get('utm_medium') || ''),
-            utm_campaign: String(search.get('utm_campaign') || ''),
-            utm_content: String(search.get('utm_content') || ''),
-            utm_term: String(search.get('utm_term') || ''),
-            screen: String(windowObj.innerWidth || 0) + 'x' + String(windowObj.innerHeight || 0),
-            device_type: windowObj.innerWidth < 768 ? 'mobile' : 'desktop'
-          }
-        )
-      };
-      var raw = JSON.stringify(payload);
-      try {
-        if(windowObj.navigator && windowObj.navigator.sendBeacon){
-          var body = new Blob([raw], { type:'application/json' });
-          var sent = windowObj.navigator.sendBeacon(endpoint, body);
-          if(sent) return;
-        }
-      } catch (_error){
-      }
-      fetch(endpoint, {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
-        body:raw,
-        keepalive:true
-      }).catch(function(){});
-    }
-
-    function track(event, params){
-      var trackedParams = Object.assign(
-        {},
-        (params && typeof params === 'object') ? params : {},
-        buildAbMeta()
-      );
-      try {
-        if(typeof ym !== 'undefined'){
-          ym(metrikaId, 'reachGoal', event, trackedParams);
-        }
-      } catch (err){
-        console.warn('Metrika track error:', event, err);
-      }
-      sendAbEvent(event, trackedParams);
-    }
-
-    function getLoaderCommitRef(){
-      try {
-        var marker = doc ? doc.querySelector('script[data-aida-loader-inline="1"]') : null;
-        if(!marker || !marker.textContent) return '';
-        var parsed = JSON.parse(marker.textContent);
-        var raw = String(parsed && parsed.commit || '').trim();
-        if(!raw) return '';
-        if(/^[a-zA-Z0-9._/-]{1,80}$/.test(raw)){
-          return raw;
-        }
-      } catch (_error){
-      }
-      return '';
-    }
-
-    function resolveLegalDocBaseUrl(){
-      var host = String(windowObj.location.hostname || '').toLowerCase();
-      if(host === 'localhost' || host === '127.0.0.1'){
-        return 'legal.html';
-      }
-      var ref = getLoaderCommitRef() || 'dev';
-      return 'https://cdn.jsdelivr.net/gh/' + legalRepoSlug + '@' + ref + '/legal.html';
-    }
-
-    function buildLegalDocUrl(hash){
-      var base = resolveLegalDocBaseUrl();
-      var safeHash = String(hash || '').trim();
-      if(!safeHash) return base;
-      if(safeHash.startsWith('#')) return base + safeHash;
-      return base + '#' + safeHash;
-    }
-
-    function syncLegalDocLinks(scope){
-      var root = scope || doc;
-      if(!root || typeof root.querySelectorAll !== 'function') return;
-      var links = root.querySelectorAll(
-        'a[href^="legal.html"],a[href^="/legal.html"],a[href*="legal.html#"]'
-      );
-      links.forEach(function(link){
-        var href = String(link.getAttribute('href') || '').trim();
-        if(!href) return;
-        if(/^https?:\/\//i.test(href) && !/legal\.html/i.test(href)) return;
-        var hashIndex = href.indexOf('#');
-        var hash = hashIndex >= 0 ? href.slice(hashIndex) : '';
-        link.setAttribute('href', buildLegalDocUrl(hash));
-      });
-    }
-
-    return Object.freeze({
-      buildAbMeta: buildAbMeta,
-      sendAbEvent: sendAbEvent,
-      track: track,
-      getCurrentSearchParams: getCurrentSearchParams,
-      buildLegalDocUrl: buildLegalDocUrl,
-      syncLegalDocLinks: syncLegalDocLinks
-    });
-  }
-
-  windowObj.AC_FEATURES.telemetryFlow.create = create;
-})(window);
 
 
 /* src/scripts/features/toggle.js */
@@ -14599,1174 +11946,39 @@ function runOfferSearch(overrides){
 })();
 
 
-/* src/scripts/features/ui-init-flow.js */
-(function(){
-  function createUiInitFlow(ctx = {}){
-    const closeIconHtml = String(ctx.closeIconHtml || '');
-    const getScrollMarks = typeof ctx.getScrollMarks === 'function'
-      ? ctx.getScrollMarks
-      : (() => ({25:false,50:false,75:false,90:false}));
-    const track = typeof ctx.track === 'function' ? ctx.track : (() => {});
-    const trackOnce = typeof ctx.trackOnce === 'function' ? ctx.trackOnce : (() => {});
-    const updateSummaryBarVisibility = typeof ctx.updateSummaryBarVisibility === 'function'
-      ? ctx.updateSummaryBarVisibility
-      : (() => {});
-
-    function normalizeCloseIconButtons(scope = document){
-      const root = scope || document;
-      const nodes = root.querySelectorAll(
-        [
-          '.version-badge-close',
-          '.media-close',
-          '.video-close',
-          '.form-close',
-          "[data-action='close-version-badge']",
-          "[data-action='close-debug-controls']",
-          "[data-action='close-form']",
-          "[data-action='close-success']",
-          "[data-action='close-section-modal']",
-          "[data-action='close-video-modal']",
-          "[data-action='close-calendar']"
-        ].join(',')
-      );
-
-      nodes.forEach((btn) => {
-        if(!btn || btn.dataset.closeIconNormalized === '1') return;
-        const raw = (btn.textContent || '').trim();
-        const shouldNormalize = (
-          raw === '×'
-          || raw === '✕'
-          || btn.classList.contains('version-badge-close')
-          || btn.classList.contains('media-close')
-          || btn.classList.contains('video-close')
-          || btn.classList.contains('form-close')
-          || btn.classList.contains('offer-close-btn')
-        );
-        if(shouldNormalize && !btn.querySelector('img.ac-icon')){
-          btn.innerHTML = closeIconHtml;
-        }
-        btn.dataset.closeIconNormalized = '1';
-      });
-    }
-
-    function initScrollTracking(){
-      window.addEventListener('scroll', () => {
-        const h = document.documentElement;
-        const max = h.scrollHeight - h.clientHeight;
-        if(max <= 0) return;
-        const marks = getScrollMarks();
-        const scrolled = (h.scrollTop / max) * 100;
-        [25,50,75,90].forEach((p) => {
-          if(scrolled >= p && !marks[p]){
-            marks[p] = true;
-            track(`scroll_${p}`);
-          }
-        });
-        updateSummaryBarVisibility();
-      }, {passive:true});
-    }
-
-    function initSummaryBarViewportSync(){
-      const sync = () => {
-        updateSummaryBarVisibility();
-      };
-      window.addEventListener('scroll', sync, {passive:true});
-      window.addEventListener('orientationchange', sync, {passive:true});
-      document.addEventListener('visibilitychange', () => {
-        if(document.hidden) return;
-        sync();
-      });
-    }
-
-    function initSectionViewTracking(){
-      const targets = [
-        {id:'section-stay', event:'stay_view'},
-        {id:'section-reviews', event:'eviews_view'},
-        {id:'section-team', event:'team_view'}
-      ];
-
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if(!entry.isIntersecting) return;
-          const found = targets.find((item) => item.id === entry.target.id);
-          if(found) trackOnce(found.event);
-        });
-      }, {threshold:0.35});
-
-      targets.forEach((target) => {
-        const el = document.getElementById(target.id);
-        if(el) io.observe(el);
-      });
-    }
-
-    return Object.freeze({
-      normalizeCloseIconButtons,
-      initScrollTracking,
-      initSummaryBarViewportSync,
-      initSectionViewTracking
-    });
-  }
-
-  window.AC_FEATURES = window.AC_FEATURES || {};
-  window.AC_FEATURES.uiInitFlow = Object.freeze({ create: createUiInitFlow });
-})();
-
-
-/* src/scripts/features/variant-flow.js */
-(function(){
-  function createVariantFlow(ctx = {}){
-    const state = ctx.state || {};
-    const getBookingStage = typeof ctx.getBookingStage === 'function' ? ctx.getBookingStage : (() => 0);
-    const hasSelectedAge = typeof ctx.hasSelectedAge === 'function' ? ctx.hasSelectedAge : (() => false);
-    const resolveHeroVariantFromUtm = typeof ctx.resolveHeroVariantFromUtm === 'function' ? ctx.resolveHeroVariantFromUtm : (() => ({}));
-    const getVariantFlowView = typeof ctx.getVariantFlowView === 'function' ? ctx.getVariantFlowView : (() => 'desktop');
-    const getPrimaryBookingViewConfig = typeof ctx.getPrimaryBookingViewConfig === 'function' ? ctx.getPrimaryBookingViewConfig : (() => ({}));
-    const setHeroMenuOpen = typeof ctx.setHeroMenuOpen === 'function' ? ctx.setHeroMenuOpen : (() => {});
-    const getHeroVariantState = typeof ctx.getHeroVariantState === 'function' ? ctx.getHeroVariantState : (() => null);
-    const getDefaultTier = typeof ctx.getDefaultTier === 'function' ? ctx.getDefaultTier : (() => 'tier1');
-    const getFingerTimer = typeof ctx.getFingerTimer === 'function' ? ctx.getFingerTimer : (() => null);
-    const setFingerTimer = typeof ctx.setFingerTimer === 'function' ? ctx.setFingerTimer : (() => {});
-    const getRunId = typeof ctx.getRunId === 'function' ? ctx.getRunId : (() => 0);
-    const setRunId = typeof ctx.setRunId === 'function' ? ctx.setRunId : (() => {});
-    const getCompletedKey = typeof ctx.getCompletedKey === 'function' ? ctx.getCompletedKey : (() => '');
-    const setCompletedKey = typeof ctx.setCompletedKey === 'function' ? ctx.setCompletedKey : (() => {});
-
-    function clearVariantFlowFingerTimer(){
-      const timer = getFingerTimer();
-      if(!timer) return;
-      window.clearTimeout(timer);
-      setFingerTimer(null);
-    }
-
-    function waitVariantFlow(ms, runId){
-      return new Promise((resolve) => {
-        const timer = window.setTimeout(() => {
-          setFingerTimer(null);
-          resolve(runId === getRunId());
-        }, ms);
-        setFingerTimer(timer);
-      });
-    }
-
-    function ensureVariantFlowFinger(){
-      let node = document.getElementById('variantFlowFinger');
-      if(!node){
-        node = document.createElement('div');
-        node.id = 'variantFlowFinger';
-        node.className = 'variant-flow-finger';
-        node.setAttribute('aria-hidden', 'true');
-        document.body.appendChild(node);
-      }
-      if(!node.querySelector('.variant-flow-finger-glyph')){
-        node.innerHTML = `
-          <span class="variant-flow-finger-glyph" aria-hidden="true"></span>
-          <span class="variant-flow-finger-ripple" aria-hidden="true"></span>
-          <span class="variant-flow-finger-ripple delay" aria-hidden="true"></span>
-        `;
-      }
-      return node;
-    }
-
-    function hideVariantFlowFinger(){
-      const node = document.getElementById('variantFlowFinger');
-      if(node){
-        node.classList.remove('visible', 'is-tapping');
-      }
-      document.querySelectorAll('.variant-flow-target').forEach((el) => {
-        el.classList.remove('variant-flow-target');
-      });
-    }
-
-    function stopVariantFlowScenario(){
-      setRunId(getRunId() + 1);
-      clearVariantFlowFingerTimer();
-      hideVariantFlowFinger();
-    }
-
-    function placeVariantFlowFinger(finger, targetEl){
-      if(!finger || !targetEl) return;
-      const rect = targetEl.getBoundingClientRect();
-      const x = rect.left + (rect.width * 0.5);
-      const y = rect.top + (rect.height * 0.5);
-      finger.style.setProperty('--variant-flow-x', `${Math.round(x)}px`);
-      finger.style.setProperty('--variant-flow-y', `${Math.round(y)}px`);
-      finger.classList.add('visible');
-    }
-
-    async function runVariantFlowForTargets(targets, runId){
-      const finger = ensureVariantFlowFinger();
-      if(!finger || !targets.length) return;
-      for(const target of targets){
-        if(runId !== getRunId()) return;
-        if(!target || !target.isConnected) continue;
-        document.querySelectorAll('.variant-flow-target').forEach((el) => el.classList.remove('variant-flow-target'));
-        target.classList.add('variant-flow-target');
-        placeVariantFlowFinger(finger, target);
-        const warmupOk = await waitVariantFlow(260, runId);
-        if(!warmupOk) return;
-        for(let tap = 0; tap < 3; tap += 1){
-          if(runId !== getRunId()) return;
-          finger.classList.remove('is-tapping');
-          void finger.offsetWidth;
-          finger.classList.add('is-tapping');
-          const tapOk = await waitVariantFlow(360, runId);
-          if(!tapOk) return;
-          if(tap < 2){
-            const pauseOk = await waitVariantFlow(220, runId);
-            if(!pauseOk) return;
-          }
-        }
-        const settleOk = await waitVariantFlow(360, runId);
-        if(!settleOk) return;
-      }
-    }
-
-    function getVariantFlowKey(){
-      const variant = getHeroVariantState() || resolveHeroVariantFromUtm();
-      const tier = variant.tier || getDefaultTier();
-      const mode = (tier === 'tier2' || tier === 'tier4') ? 'menu' : 'info';
-      const view = getVariantFlowView();
-      return `${tier}:${mode}:${view}`;
-    }
-
-    async function runVariantFlowScenario(){
-      if(!hasSelectedAge() || !!state.shiftId || getBookingStage() !== 2 || state.bookingCompleted){
-        hideVariantFlowFinger();
-        return;
-      }
-      const variant = getHeroVariantState() || resolveHeroVariantFromUtm();
-      const tier = variant.tier || getDefaultTier();
-      const mode = (tier === 'tier2' || tier === 'tier4') ? 'menu' : 'info';
-      const runId = getRunId() + 1;
-      setRunId(runId);
-      const flowKey = getVariantFlowKey();
-      if(getCompletedKey() === flowKey){
-        return;
-      }
-      hideVariantFlowFinger();
-      const preWaitOk = await waitVariantFlow(320, runId);
-      if(!preWaitOk || runId !== getRunId()) return;
-
-      if(mode === 'info'){
-        const cfg = getPrimaryBookingViewConfig();
-        const host = document.getElementById(cfg.shiftOptionsId || '');
-        const infoButtons = host ? [...host.querySelectorAll('[data-action="toggle-shift-about"]')].slice(0, 2) : [];
-        await runVariantFlowForTargets(infoButtons, runId);
-      } else if(getVariantFlowView() === 'mobile'){
-        setHeroMenuOpen(true);
-        const openOk = await waitVariantFlow(280, runId);
-        if(!openOk || runId !== getRunId()) return;
-        const shiftsMenuBtn = document.querySelector('#serviceMenu [data-nav="section-programs"]');
-        await runVariantFlowForTargets(shiftsMenuBtn ? [shiftsMenuBtn] : [], runId);
-        if(runId === getRunId()){
-          setHeroMenuOpen(false);
-        }
-      } else {
-        const cfg = getPrimaryBookingViewConfig();
-        const card = document.getElementById(cfg.cardId || '');
-        const allShiftsBtn = card?.querySelector('.booking-all-shifts-link');
-        await runVariantFlowForTargets(allShiftsBtn ? [allShiftsBtn] : [], runId);
-      }
-
-      if(runId === getRunId()){
-        hideVariantFlowFinger();
-        setCompletedKey(flowKey);
-      }
-    }
-
-    function scheduleVariantFlowScenario(){
-      if(!hasSelectedAge() || !!state.shiftId || getBookingStage() !== 2 || state.bookingCompleted){
-        stopVariantFlowScenario();
-        return;
-      }
-      runVariantFlowScenario().catch(() => {
-        stopVariantFlowScenario();
-      });
-    }
-
-    return Object.freeze({
-      clearVariantFlowFingerTimer,
-      waitVariantFlow,
-      ensureVariantFlowFinger,
-      hideVariantFlowFinger,
-      stopVariantFlowScenario,
-      placeVariantFlowFinger,
-      runVariantFlowForTargets,
-      getVariantFlowKey,
-      runVariantFlowScenario,
-      scheduleVariantFlowScenario
-    });
-  }
-
-  window.AC_FEATURES = window.AC_FEATURES || {};
-  window.AC_FEATURES.variantFlow = Object.freeze({ create: createVariantFlow });
-})();
-
-
-/* src/scripts/features/video-meta-flow.js */
-(function(){
-  function createVideoMetaFlow(ctx = {}){
-    const mediaText = typeof ctx.mediaText === 'function' ? ctx.mediaText : (() => 'Источник');
-    const mediaContent = (ctx.mediaContent && typeof ctx.mediaContent === 'object') ? ctx.mediaContent : { videos: [] };
-    const cacheKey = String(ctx.videoMetaCacheKey || 'aidacamp_video_meta_cache_v1');
-    const cacheTtlMs = Number(ctx.videoMetaCacheTtlMs || 1000 * 60 * 60 * 4);
-    const refreshIntervalMs = Number(ctx.videoMetaRefreshIntervalMs || 1000 * 60 * 60 * 4);
-    const renderMediaSections = typeof ctx.renderMediaSections === 'function' ? ctx.renderMediaSections : (() => {});
-    const getTimer = typeof ctx.getVideoMetaRefreshTimer === 'function' ? ctx.getVideoMetaRefreshTimer : (() => null);
-    const setTimer = typeof ctx.setVideoMetaRefreshTimer === 'function' ? ctx.setVideoMetaRefreshTimer : (() => {});
-
-    function isVerticalVideoUrl(url){
-      const value = String(url || '').toLowerCase();
-      return (
-        value.includes('/shorts/') ||
-        value.includes('shortvideo') ||
-        value.includes('/reel') ||
-        value.includes('vertical') ||
-        value.includes('story')
-      );
-    }
-
-    function normalizeKinescopeShareUrl(url){
-      const raw = String(url || '').trim();
-      if(!raw) return '';
-      try{
-        const u = new URL(raw, window.location.origin);
-        const host = (u.hostname || '').replace(/^www\./, '');
-        if(!host.includes('kinescope.io')) return '';
-        const parts = u.pathname.split('/').filter(Boolean);
-        if(!parts.length) return '';
-        const id = parts[0] === 'embed' ? parts[1] : parts[0];
-        return id ? `https://kinescope.io/${id}` : '';
-      }catch(e){
-        return '';
-      }
-    }
-
-    function resolveVideoSource(url){
-      const externalUrl = String(url || '').trim();
-      const fallback = {
-        canEmbed: false,
-        embedUrl: '',
-        externalUrl,
-        orientation: isVerticalVideoUrl(externalUrl) ? 'vertical' : 'horizontal',
-        sourceName: mediaText('genericSourceName')
-      };
-      if(!externalUrl) return fallback;
-      try {
-        const u = new URL(externalUrl, window.location.origin);
-        const host = (u.hostname || '').replace(/^www\./, '');
-        const parts = u.pathname.split('/').filter(Boolean);
-        if(host.includes('rutube.ru')) fallback.sourceName = 'Rutube';
-        if(host.includes('youtube.com') || host === 'youtu.be') fallback.sourceName = 'YouTube';
-        if(host.includes('vkvideo.ru') || host === 'vk.com' || host.endsWith('.vk.com')){
-          fallback.sourceName = mediaText('vkVideoSourceName');
-        }
-        if(host.includes('kinescope.io')) fallback.sourceName = 'Kinescope';
-
-        if(host.includes('kinescope.io') && parts[0] === 'embed' && parts[1]){
-          return {
-            canEmbed: true,
-            embedUrl: externalUrl,
-            externalUrl,
-            orientation: 'vertical',
-            sourceName: 'Kinescope'
-          };
-        }
-
-        if(host.includes('rutube.ru')){
-          if(parts[0] === 'play' && parts[1] === 'embed' && parts[2]){
-            return {
-              canEmbed: true,
-              embedUrl: `https://rutube.ru/play/embed/${parts[2]}`,
-              externalUrl,
-              orientation: fallback.orientation,
-              sourceName: 'Rutube'
-            };
-          }
-          if(parts[0] === 'shorts' && parts[1]){
-            return {
-              canEmbed: true,
-              embedUrl: `https://rutube.ru/play/embed/${parts[1]}`,
-              externalUrl,
-              orientation: 'vertical',
-              sourceName: 'Rutube'
-            };
-          }
-          if(parts[0] === 'video' && parts[1]){
-            return {
-              canEmbed: true,
-              embedUrl: `https://rutube.ru/play/embed/${parts[1]}`,
-              externalUrl,
-              orientation: 'horizontal',
-              sourceName: 'Rutube'
-            };
-          }
-        }
-
-        if(host === 'youtu.be' && parts[0]){
-          return {
-            canEmbed: true,
-            embedUrl: `https://www.youtube.com/embed/${parts[0]}`,
-            externalUrl,
-            orientation: fallback.orientation,
-            sourceName: 'YouTube'
-          };
-        }
-
-        if(host.includes('youtube.com')){
-          if(parts[0] === 'watch' && u.searchParams.get('v')){
-            return {
-              canEmbed: true,
-              embedUrl: `https://www.youtube.com/embed/${u.searchParams.get('v')}`,
-              externalUrl,
-              orientation: 'horizontal',
-              sourceName: 'YouTube'
-            };
-          }
-          if(parts[0] === 'shorts' && parts[1]){
-            return {
-              canEmbed: true,
-              embedUrl: `https://www.youtube.com/embed/${parts[1]}`,
-              externalUrl,
-              orientation: 'vertical',
-              sourceName: 'YouTube'
-            };
-          }
-          if(parts[0] === 'embed' && parts[1]){
-            return {
-              canEmbed: true,
-              embedUrl: externalUrl,
-              externalUrl,
-              orientation: fallback.orientation,
-              sourceName: 'YouTube'
-            };
-          }
-        }
-
-        if(parts[0] === 'embed'){
-          return {
-            canEmbed: true,
-            embedUrl: externalUrl,
-            externalUrl,
-            orientation: fallback.orientation,
-            sourceName: fallback.sourceName
-          };
-        }
-      } catch(e){
-      }
-      return fallback;
-    }
-
-    function applyVideoMetaMap(videoMetaMap = {}){
-      let changed = false;
-      mediaContent.videos = mediaContent.videos.map((item) => {
-        const meta = videoMetaMap[item.url];
-        if(!meta) return item;
-        const nextTitle = String(meta.title || '').trim() || item.title;
-        const nextCover = String(meta.cover || '').trim() || item.cover;
-        if(nextTitle === item.title && nextCover === item.cover) return item;
-        changed = true;
-        return {
-          ...item,
-          title: nextTitle,
-          cover: nextCover
-        };
-      });
-      return changed;
-    }
-
-    function loadVideoMetaCache(){
-      try{
-        const raw = localStorage.getItem(cacheKey);
-        if(!raw) return;
-        const cached = JSON.parse(raw);
-        const map = cached && typeof cached === 'object' ? cached.map : null;
-        if(!map || typeof map !== 'object') return;
-        applyVideoMetaMap(map);
-      }catch(e){
-      }
-    }
-
-    function getVideoMetaCacheAgeMs(){
-      try{
-        const raw = localStorage.getItem(cacheKey);
-        if(!raw) return Number.POSITIVE_INFINITY;
-        const cached = JSON.parse(raw);
-        const ts = Number(cached?.ts || 0);
-        if(!ts) return Number.POSITIVE_INFINITY;
-        return Date.now() - ts;
-      }catch(e){
-        return Number.POSITIVE_INFINITY;
-      }
-    }
-
-    function saveVideoMetaCache(videoMetaMap){
-      try{
-        let existingMap = {};
-        const raw = localStorage.getItem(cacheKey);
-        if(raw){
-          const cached = JSON.parse(raw);
-          if(cached && typeof cached.map === 'object' && cached.map){
-            existingMap = cached.map;
-          }
-        }
-
-        localStorage.setItem(cacheKey, JSON.stringify({
-          ts: Date.now(),
-          map: {...existingMap, ...videoMetaMap}
-        }));
-      }catch(e){
-      }
-    }
-
-    async function fetchKinescopeMeta(videoUrl){
-      const shareUrl = normalizeKinescopeShareUrl(videoUrl);
-      if(!shareUrl) return null;
-      const endpoint = `https://kinescope.io/oembed?url=${encodeURIComponent(shareUrl)}&format=json`;
-      const response = await fetch(endpoint, {method:'GET', credentials:'omit'});
-      if(!response.ok) return null;
-      const data = await response.json();
-      const title = String(data?.title || '').trim();
-      const cover = String(data?.thumbnail_url || '').trim();
-      return (title || cover) ? {title, cover} : null;
-    }
-
-    async function refreshVideoMeta({force = false} = {}){
-      const age = getVideoMetaCacheAgeMs();
-      if(!force && age <= cacheTtlMs) return;
-
-      const updates = {};
-      const tasks = mediaContent.videos.map(async (item) => {
-        try{
-          const meta = await fetchKinescopeMeta(item.url);
-          if(meta) updates[item.url] = meta;
-        }catch(e){
-        }
-      });
-
-      await Promise.all(tasks);
-      if(!Object.keys(updates).length) return;
-
-      const changed = applyVideoMetaMap(updates);
-      saveVideoMetaCache(updates);
-      if(changed){
-        renderMediaSections();
-      }
-    }
-
-    function scheduleVideoMetaRefresh(){
-      const timer = getTimer();
-      if(timer) clearInterval(timer);
-      setTimer(setInterval(() => {
-        refreshVideoMeta();
-      }, refreshIntervalMs));
-    }
-
-    return Object.freeze({
-      resolveVideoSource,
-      isVerticalVideoUrl,
-      normalizeKinescopeShareUrl,
-      applyVideoMetaMap,
-      loadVideoMetaCache,
-      getVideoMetaCacheAgeMs,
-      saveVideoMetaCache,
-      fetchKinescopeMeta,
-      refreshVideoMeta,
-      scheduleVideoMetaRefresh
-    });
-  }
-
-  window.AC_FEATURES = window.AC_FEATURES || {};
-  window.AC_FEATURES.videoMetaFlow = Object.freeze({ create: createVideoMetaFlow });
-})();
-
-
-/* src/scripts/features/view-mode-flow.js */
-(function(){
-  function createViewModeFlow(ctx = {}){
-    const getState = typeof ctx.getState === 'function' ? ctx.getState : (() => ({}));
-    const useDesktopBaseForMobile = !!ctx.useDesktopBaseForMobile;
-    const normalizeMode = typeof ctx.normalizeMode === 'function' ? ctx.normalizeMode : ((value, allowed, fallback) => {
-      const list = Array.isArray(allowed) ? allowed : [];
-      return list.includes(value) ? value : fallback;
-    });
-    const heroContrastModes = Array.isArray(ctx.heroContrastModes) ? ctx.heroContrastModes : [];
-    const heroMicroModes = Array.isArray(ctx.heroMicroModes) ? ctx.heroMicroModes : [];
-    const offerModalThemes = Array.isArray(ctx.offerModalThemes) ? ctx.offerModalThemes : [];
-    const offerLayoutModes = Array.isArray(ctx.offerLayoutModes) ? ctx.offerLayoutModes : [];
-    const setHeroMenuOpen = typeof ctx.setHeroMenuOpen === 'function' ? ctx.setHeroMenuOpen : (() => {});
-    const closeSectionModal = typeof ctx.closeSectionModal === 'function' ? ctx.closeSectionModal : (() => {});
-    const applyHeroAbVariant = typeof ctx.applyHeroAbVariant === 'function' ? ctx.applyHeroAbVariant : (() => {});
-    const applyMobileTemplatesToDesktopSections = typeof ctx.applyMobileTemplatesToDesktopSections === 'function' ? ctx.applyMobileTemplatesToDesktopSections : (() => {});
-    const renderMediaSections = typeof ctx.renderMediaSections === 'function' ? ctx.renderMediaSections : (() => {});
-    const renderDesktopMobileDocsBlock = typeof ctx.renderDesktopMobileDocsBlock === 'function' ? ctx.renderDesktopMobileDocsBlock : (() => {});
-    const updateSummaryBarVisibility = typeof ctx.updateSummaryBarVisibility === 'function' ? ctx.updateSummaryBarVisibility : (() => {});
-    const persist = typeof ctx.persist === 'function' ? ctx.persist : (() => {});
-    const applyOfferLayoutMode = typeof ctx.applyOfferLayoutMode === 'function' ? ctx.applyOfferLayoutMode : (() => {});
-    const showOffer = typeof ctx.showOffer === 'function' ? ctx.showOffer : (() => {});
-    const applyMobileSectionAccordion = typeof ctx.applyMobileSectionAccordion === 'function' ? ctx.applyMobileSectionAccordion : (() => {});
-
-    function getViewportPreviewView(){
-      if(window.AC_VIEW_MODE && typeof window.AC_VIEW_MODE.getViewportView === 'function'){
-        return window.AC_VIEW_MODE.getViewportView();
-      }
-      return window.matchMedia('(max-width: 900px)').matches ? 'mobile' : 'desktop';
-    }
-
-    function applyDesktopMode(){
-      const state = getState();
-      const desktopView = document.getElementById('desktopView');
-      const fullBtn = document.getElementById('fullModeBtn');
-      const compactBtn = document.getElementById('compactModeBtn');
-      if(!desktopView || !fullBtn || !compactBtn) return;
-
-      desktopView.classList.toggle('compact-mode', state.desktopMode === 'compact');
-      fullBtn.classList.toggle('active', state.desktopMode === 'full');
-      compactBtn.classList.toggle('active', state.desktopMode === 'full');
-      compactBtn.setAttribute('aria-pressed', state.desktopMode === 'full' ? 'true' : 'false');
-    }
-
-    function applyMobileMode(){
-      const state = getState();
-      if(useDesktopBaseForMobile){
-        return;
-      }
-      const mobileView = document.getElementById('mobileView');
-      const fullBtn = document.getElementById('mobileFullModeBtn');
-      const compactBtn = document.getElementById('mobileCompactModeBtn');
-      const modeToggle = document.getElementById('mobileModeToggle');
-      const modeToggleLabel = modeToggle?.querySelector('.mobile-mode-toggle-label');
-      if(!mobileView) return;
-
-      mobileView.classList.toggle('mobile-compact-mode', state.mobileMode === 'compact');
-      if(fullBtn) fullBtn.classList.toggle('active', state.mobileMode === 'full');
-      if(compactBtn) compactBtn.classList.toggle('active', state.mobileMode === 'compact');
-      if(modeToggle){
-        const isFull = state.mobileMode === 'full';
-        modeToggle.setAttribute('aria-checked', isFull ? 'true' : 'false');
-        modeToggle.classList.toggle('is-compact', !isFull);
-        if(modeToggleLabel){
-          modeToggleLabel.textContent = isFull ? 'Подробный' : 'Кратко';
-        }
-      }
-      applyMobileSectionAccordion();
-    }
-
-    function switchDesktopMode(mode){
-      const state = getState();
-      Object.assign(state, { desktopMode: mode });
-      applyDesktopMode();
-      if(mode !== 'compact'){
-        closeSectionModal();
-      }
-      updateSummaryBarVisibility();
-      persist();
-    }
-
-    function switchMobileMode(mode){
-      const state = getState();
-      Object.assign(state, { mobileMode: mode });
-      applyMobileMode();
-      updateSummaryBarVisibility();
-      persist();
-    }
-
-    function switchView(view){
-      const state = getState();
-      const requestedView = view === 'mobile' ? 'mobile' : 'desktop';
-      const effectiveView = (requestedView === 'mobile' && useDesktopBaseForMobile) ? 'desktop' : requestedView;
-      setHeroMenuOpen(false);
-      if(requestedView === 'mobile'){
-        Object.assign(state, { mobileDocsExpanded: false });
-      }
-      Object.assign(state, {
-        previewView: requestedView,
-        view: effectiveView
-      });
-      const desktopView = document.getElementById('desktopView');
-      const mobileView = document.getElementById('mobileView');
-      if(desktopView){
-        desktopView.classList.toggle('hidden', effectiveView !== 'desktop');
-        desktopView.classList.toggle('mobile-preview-active', requestedView === 'mobile' && useDesktopBaseForMobile);
-      }
-      document.body.classList.toggle('mobile-preview-active', requestedView === 'mobile' && useDesktopBaseForMobile);
-      if(mobileView){
-        const showLegacyMobile = requestedView === 'mobile' && !useDesktopBaseForMobile;
-        mobileView.classList.toggle('hidden', !showLegacyMobile);
-      }
-      applyHeroAbVariant();
-      const desktopModeWrap = document.getElementById('desktopModeWrap');
-      if(desktopModeWrap){
-        desktopModeWrap.classList.toggle('hidden', effectiveView !== 'desktop');
-      }
-      if(effectiveView !== 'desktop'){
-        closeSectionModal();
-      }
-      if(requestedView === 'mobile' && !useDesktopBaseForMobile){
-        applyMobileMode();
-      }
-      if(effectiveView === 'desktop'){
-        applyDesktopMode();
-      }
-      applyMobileTemplatesToDesktopSections();
-      renderMediaSections();
-      renderDesktopMobileDocsBlock();
-      updateSummaryBarVisibility();
-      persist();
-      requestAnimationFrame(() => {
-        window.dispatchEvent(new Event('resize'));
-      });
-    }
-
-    function applyHeroContrastMode(){
-      const state = getState();
-      const desktopView = document.getElementById('desktopView');
-      const beforeBtn = document.getElementById('heroContrastBeforeBtn');
-      const afterBtn = document.getElementById('heroContrastAfterBtn');
-      const afterSoftBtn = document.getElementById('heroContrastAfterSoftBtn');
-      if(!desktopView) return;
-      const mode = normalizeMode(state.heroContrastMode, heroContrastModes, 'after-soft');
-      desktopView.classList.toggle('hero-contrast-before', mode === 'before');
-      desktopView.classList.toggle('hero-contrast-after', mode === 'after');
-      desktopView.classList.toggle('hero-contrast-after-soft', mode === 'after-soft');
-      if(beforeBtn) beforeBtn.classList.toggle('active', mode === 'before');
-      if(afterBtn) afterBtn.classList.toggle('active', mode === 'after');
-      if(afterSoftBtn) afterSoftBtn.classList.toggle('active', mode === 'after-soft');
-    }
-
-    function switchHeroContrastMode(mode){
-      const state = getState();
-      Object.assign(state, { heroContrastMode: normalizeMode(mode, heroContrastModes, 'after-soft') });
-      applyHeroContrastMode();
-      persist();
-    }
-
-    function applyHeroMicroMode(){
-      const state = getState();
-      const desktopView = document.getElementById('desktopView');
-      const offBtn = document.getElementById('heroMicroOffBtn');
-      const onBtn = document.getElementById('heroMicroOnBtn');
-      const demoBtn = document.getElementById('heroMicroDemoBtn');
-      if(!desktopView) return;
-      const mode = normalizeMode(state.heroMicroMode, heroMicroModes, 'off');
-      desktopView.classList.toggle('hero-micro-on', mode === 'on');
-      desktopView.classList.toggle('hero-micro-demo', mode === 'demo');
-      desktopView.classList.toggle('hero-micro-off', mode === 'off');
-      if(offBtn) offBtn.classList.toggle('active', mode === 'off');
-      if(onBtn) onBtn.classList.toggle('active', mode === 'on');
-      if(demoBtn) demoBtn.classList.toggle('active', mode === 'demo');
-    }
-
-    function switchHeroMicroMode(mode){
-      const state = getState();
-      Object.assign(state, { heroMicroMode: normalizeMode(mode, heroMicroModes, 'off') });
-      applyHeroMicroMode();
-      persist();
-    }
-
-    function applyOfferModalTheme(cardEl = null){
-      const state = getState();
-      const mode = normalizeMode(state.offerModalTheme, offerModalThemes, 'light');
-      const lightBtn = document.getElementById('offerThemeLightBtn');
-      const darkBtn = document.getElementById('offerThemeDarkBtn');
-      if(lightBtn) lightBtn.classList.toggle('active', mode === 'light');
-      if(darkBtn) darkBtn.classList.toggle('active', mode === 'dark');
-      const card = cardEl || document.getElementById('offerCard');
-      if(card) card.classList.toggle('dark', mode === 'dark');
-    }
-
-    function switchOfferModalTheme(mode){
-      const state = getState();
-      Object.assign(state, { offerModalTheme: normalizeMode(mode, offerModalThemes, 'light') });
-      applyOfferModalTheme();
-      persist();
-    }
-
-    function switchOfferLayout(mode){
-      const state = getState();
-      const normalizedMode = normalizeMode(mode, offerLayoutModes, 'current');
-      Object.assign(state, { offerLayout: normalizedMode });
-      applyOfferLayoutMode();
-      persist();
-      const overlay = document.getElementById('offerOverlay');
-      if(overlay && !overlay.classList.contains('hidden') && !state.offerSearching && state.offerStage > 0){
-        showOffer();
-      }
-    }
-
-    return Object.freeze({
-      getViewportPreviewView,
-      switchView,
-      applyDesktopMode,
-      switchDesktopMode,
-      applyMobileMode,
-      switchMobileMode,
-      applyHeroContrastMode,
-      switchHeroContrastMode,
-      applyHeroMicroMode,
-      switchHeroMicroMode,
-      applyOfferModalTheme,
-      switchOfferModalTheme,
-      switchOfferLayout
-    });
-  }
-
-  window.AC_FEATURES = window.AC_FEATURES || {};
-  window.AC_FEATURES.viewModeFlow = Object.freeze({ create: createViewModeFlow });
-})();
-
-
 /* src/scripts/main.js */
 /* src/scripts/main.js */
     // SECTION 1: Config and runtime constants.
     const OFFER_DISCOUNT_FACTOR = 0.95;
 
-    const shifts = [
-      {
-        id:'shift-1',
-        title:'1',
-        label:'Смена 1',
-        dates:'30 мая — 8 июня',
-        start:'2025-05-30',
-        end:'2025-06-08',
-        price:74900,
-        left:12,
-        occupied:33,
-        badge:'HIT',
-        isShort:false,
-        desc:'Стартовая смена с мягким входом в программирование и знакомством с ИИ.',
-        fullDesc:[
-          'Мягкий вход в программирование через понятные и быстрые результаты.',
-          'Для 7–9 лет: ребёнок работает в Scratch и Minecraft, делает первые проекты и понимает базовую логику через игру.',
-          'Для 10–12 лет: начинает писать код на Python, создаёт простые программы и видит, как работает логика внутри.',
-          'Для 13–14 лет: пробует первые проекты с элементами AI, знакомится с нейросетями и делает первые осмысленные шаги в сторону современных технологий.',
-          'Главное — ребёнок не слушает, а делает и получает результат уже в первые дни.'
-        ].join(' ')
-      },
-      {
-        id:'shift-2',
-        title:'2',
-        label:'Смена 2',
-        dates:'10 июня — 23 июня',
-        start:'2025-06-10',
-        end:'2025-06-23',
-        price:95000,
-        left:8,
-        occupied:37,
-        badge:'',
-        isShort:false,
-        desc:'Полная смена на 13 дней: проекты, логика и первые шаги в нейросетях.',
-        fullDesc:[
-          'Смена, где ребёнок начинает реально понимать, как всё устроено.',
-          'Для 7–9 лет: усложняются проекты, появляется больше самостоятельности, ребёнок начинает осознанно собирать логику.',
-          'Для 10–12 лет: работает с Python, делает игры и ботов, начинает понимать структуру кода и алгоритмы.',
-          'Для 13–14 лет: разбирается с более сложными задачами, пробует нейросети и делает проекты с логикой «как в реальных IT-продуктах».',
-          'Результат — не просто интерес, а ощущение «я могу и понимаю».'
-        ].join(' ')
-      },
-      {
-        id:'shift-2-1',
-        title:'2.1',
-        label:'Смена 2.1',
-        dates:'10 июня — 16 июня',
-        start:'2025-06-10',
-        end:'2025-06-16',
-        price:48000,
-        left:8,
-        occupied:37,
-        badge:'',
-        isShort:true,
-        sourceId:'shift-2',
-        desc:'Короткая смена 7 дней: проекты, логика и быстрый вход в программу.',
-        fullDesc:[
-          'Короткая смена на 7 дней.',
-          'Ускоренный формат с фокусом на практике: ребёнок делает проект, прокачивает логику и закрепляет базовые навыки программирования через понятные задачи.',
-          'Для 7–9 лет — упор на Scratch и визуальную логику; для 10–12 лет — первые уверенные шаги в Python и структуре кода;',
-          'для 13–14 лет — проектная сборка с элементами AI.',
-          'Формат короткий, но результатный.'
-        ].join(' ')
-      },
-      {
-        id:'shift-2-2',
-        title:'2.2',
-        label:'Смена 2.2',
-        dates:'16 июня — 23 июня',
-        start:'2025-06-16',
-        end:'2025-06-23',
-        price:65000,
-        left:8,
-        occupied:37,
-        badge:'',
-        isShort:true,
-        sourceId:'shift-2',
-        desc:'Короткая смена 8 дней: интенсив по проектам, логике и закреплению навыков.',
-        fullDesc:[
-          'Короткая смена на 8 дней.',
-          'Интенсивное продолжение проектной работы: ребёнок усиливает логику, доводит задачи до результата и закрепляет навыки программирования в прикладном формате.',
-          'Для 7–9 лет — развитие проектов в Scratch; для 10–12 лет — практический Python и алгоритмы;',
-          'для 13–14 лет — более сложные задачи и работа с AI-инструментами.',
-          'Короткий цикл с фокусом на конкретный прогресс.'
-        ].join(' ')
-      },
-      {
-        id:'shift-4',
-        title:'4',
-        label:'Смена 4',
-        dates:'3 августа — 15 августа',
-        start:'2025-08-03',
-        end:'2025-08-15',
-        price:89400,
-        left:5,
-        occupied:40,
-        badge:'',
-        isShort:false,
-        desc:'Летняя смена с акцентом на проекты, командную работу и уверенность.',
-        fullDesc:[
-          'Баланс между программированием, командной работой и лагерной жизнью.',
-          'Для 7–9 лет: ребёнок продолжает делать проекты, но больше взаимодействует с другими, учится работать в команде.',
-          'Для 10–12 лет: объединяет навыки кода и общения, участвует в командных задачах и учится доводить идеи до результата.',
-          'Для 13–14 лет: работает над более цельными проектами, распределяет роли в команде и понимает, как создаются продукты.',
-          'Смена даёт уверенность: ребёнок не просто учится, а начинает действовать.'
-        ].join(' ')
-      },
-      {
-        id:'shift-5',
-        title:'5',
-        label:'Смена 5',
-        dates:'17 августа — 26 августа',
-        start:'2025-08-17',
-        end:'2025-08-26',
-        price:69600,
-        left:14,
-        occupied:31,
-        badge:'',
-        isShort:false,
-        desc:'Финальная смена: закрепление навыков и защита мини-проектов.',
-        fullDesc:[
-          'Смена, где ребёнок собирает всё, чему научился, в понятный результат.',
-          'Для 7–9 лет: заканчивает проекты и начинает объяснять, как они работают.',
-          'Для 10–12 лет: делает законченные программы и может показать, что именно он сделал и как.',
-          'Для 13–14 лет: создаёт более сложные проекты, оформляет их и презентует как готовый продукт.',
-          'Итог — ребёнок уезжает не с эмоциями, а с реальным результатом и пониманием своего прогресса.'
-        ].join(' ')
-      }
-    ];
+    const CONTENT_RUNTIME = (window.AIDACAMP_CONTENT && typeof window.AIDACAMP_CONTENT === 'object')
+      ? window.AIDACAMP_CONTENT
+      : {};
+    const shifts = (Array.isArray(CONTENT_RUNTIME.shifts) && CONTENT_RUNTIME.shifts) || [];
+    const mediaContent = (CONTENT_RUNTIME.mediaContent && typeof CONTENT_RUNTIME.mediaContent === 'object')
+      ? CONTENT_RUNTIME.mediaContent
+      : {
+        references: {},
+        faq: [],
+        team: [],
+        photos: [],
+        videos: [],
+        contacts: [],
+        socials: [],
+        reviews: []
+      };
 
-    const mediaContent = {
-      references: {
-        yandexReviewsLabel: 'Отзывы на Яндекс Картах',
-        yandexReviewsUrl: 'https://yandex.ru/maps/org/aydakemp/35558479035/reviews/',
-        locationMapUrl: 'https://yandex.ru/maps/-/CPR0vYMT',
-        locationMapEmbedUrl: 'https://yandex.ru/map-widget/v1/?ll=36.719422%2C55.261573&z=8&pt=36.719422,55.261573,pm2rdm',
-        programmingBookUrl: 'https://www.codims.ru/python-book'
-      },
-      faq: [
-        {
-          group:'Медицина',
-          icon:'/assets/icons/med.svg',
-          items:[
-            {q:'Есть ли медик в лагере?',a:'Медработник на территории 24/7 всю смену.'},
-            {q:'Что если ребёнок заболеет?',a:'Медик осматривает, при необходимости вызывает скорую. Вы получите звонок сразу.'},
-            {q:'Можно давать лекарства?',a:'Передайте медику с инструкцией — будет выдавать по расписанию.'}
-          ]
-        },
-        {
-          group:'Безопасность',
-          icon:'/assets/icons/lock.svg',
-          items:[
-            {q:'Территория закрыта?',a:'Да, огорожена, КПП с охраной. Посторонние не допускаются.'},
-            {q:'Сколько детей на вожатого?',a:'Не более 8–10 детей, вожатые работают в парах.'}
-          ]
-        },
-        {
-          group:'Питание',
-          icon:'/assets/icons/food.svg',
-          items:[
-            {q:'Сколько раз кормят?',a:'5 раз в день: завтрак, второй завтрак, обед, полдник, ужин. Всё горячее.'},
-            {q:'Учитываются аллергии?',a:'Да. В лагере гипоаллергенная среда: минимум растений, которые вызывают аллергию.'}
-          ]
-        },
-        {
-          group:'Проживание',
-          icon:'/assets/icons/check.svg',
-          items:[
-            {q:'Сколько детей в комнате?',a:'2-4 человека, оборудованные санузлы в каждой комнате.'}
-          ]
-        },
-        {
-          group:'Связь',
-          icon:'/assets/icons/phone-mobile.svg',
-          items:[
-            {
-              q:'Будет ли телефон у ребёнка?',
-              a:[
-                'Лагерь «без телефонов». Телефон сдаётся на хранение: звонки родителям — раз в день или по запросу в любое время.',
-                'В любое время можно связаться с вожатым, вожатые и старшие смены на связи 24/7.'
-              ].join(' ')
-            },
-            {q:'Как следить что происходит?',a:'Родительский Telegram-чат, фото каждый день.'}
-          ]
-        }
-      ],
-      team: [
-        {
-          teamId:'team_01',
-          bindKey:'дарья_афанасьева',
-          fio:'Дарья Афанасьева',
-          role:'основатель и вдохновитель АйДаКемп',
-          avatarUrl:'/assets/images/cdn-cache/15b41072_photo.png',
-          bio:'предприниматель в сфере детского IT-образования и мама подростка, которая строит лагерь таким, каким сама хотела бы видеть обучение своего ребёнка.'
-        },
-        {
-          teamId:'team_02',
-          bindKey:'никита_брагин',
-          fio:'Никита Брагин',
-          role:'преподаватель Scratch, Minecraft и Python',
-          avatarUrl:'/assets/images/cdn-cache/dc9ef9b6_photo.png',
-          bio:'автор учебника по разработке игр; специализируется на геймдеве и помогает детям создавать собственные игровые миры.'
-        },
-        {
-          teamId:'team_03',
-          bindKey:'александр_ташкин',
-          fio:'Александр Ташкин',
-          role:'преподаватель Scratch, Minecraft и Python',
-          avatarUrl:'/assets/images/cdn-cache/1e93e3b8_photo.png',
-          bio:'соавтор учебника по разработке игр; умеет зажигать интерес к программированию через практические задачи и командные проекты.'
-        },
-        {
-          teamId:'team_04',
-          bindKey:'омар_алхамви',
-          fio:'Омар Алхамви',
-          role:'преподаватель Python и нейросетей',
-          avatarUrl:'/assets/images/cdn-cache/67852b0a_photo.png',
-          bio:'работает со старшими и продвинутыми группами, часть занятий ведёт на английском и показывает, как применять AI в реальных проектах.'
-        },
-        {
-          teamId:'team_05',
-          bindKey:'дарья_воронцова',
-          fio:'Дарья Воронцова',
-          role:'преподаватель Python и Scratch',
-          avatarUrl:'/assets/images/cdn-cache/791a236a_ChatGPT_Image_18__20.png',
-          bio:'помогает детям легко войти в программирование через игры, логику и первые самостоятельные программы.'
-        }
-      ],
-      photos: [
-        {cat:'all',src:'/assets/images/atmosphere-pool-kids.jpeg',alt:'Атмосфера лагеря'},
-        {cat:'all',src:'/assets/images/cdn-cache/a5f92a14_photo_2025-06-14_08-.jpg',alt:'all'},
-        {cat:'all',src:'/assets/images/cdn-cache/8cca10f8_photo.jpg',alt:'all'},
-        {cat:'all',src:'/assets/images/cdn-cache/1ac9b8f7_photo_2025-06-14_08-.jpg',alt:'all'},
-        {cat:'all',src:'/assets/images/cdn-cache/1063273d_photo_2025-06-17_13-.jpg',alt:'all'},
-        {cat:'study',src:'/assets/images/cdn-cache/a591ceb9_IMG_1543.JPG',alt:'study'},
-        {cat:'food',src:'/assets/images/cdn-cache/9e4f4646_photo_2025-06-14_08-.jpg',alt:'food'},
-        {cat:'food',src:'/assets/images/cdn-cache/8aee104b_photo_2025-06-14_08-.jpg',alt:'food'},
-        {cat:'food',src:'/assets/images/cdn-cache/5babf9c8_photo.jpg',alt:'food'},
-        {cat:'study',src:'/assets/images/cdn-cache/d8b90de0_photo_2025-06-14_08-.jpg',alt:'study'},
-        {cat:'study',src:'/assets/images/cdn-cache/7e509c20_photo_2025-06-14_08-.jpg',alt:'study'},
-        {cat:'study',src:'/assets/images/cdn-cache/81652cd9_photo_2025-06-14_08-.jpg',alt:'study'},
-        {cat:'study',src:'/assets/images/cdn-cache/0e2e55a2_photo_2025-06-14_08-.jpg',alt:'study'},
-        {cat:'pool',src:'/assets/images/pool-kids-training.webp',alt:'Бассейн'},
-        {cat:'pool',src:'/assets/images/cdn-cache/0d2ab9ef_photo_2025-06-14_08-.jpg',alt:'pool'},
-        {cat:'pool',src:'/assets/images/cdn-cache/6a17713f_photo_2025-06-14_08-.jpg',alt:'pool'},
-        {cat:'sport',src:'/assets/images/cdn-cache/cab7c193_photo.jpg',alt:'sport'},
-        {cat:'sport',src:'/assets/images/cdn-cache/841dac3d_photo_2025-06-14_07-.jpg',alt:'sport'},
-        {cat:'sport',src:'/assets/images/cdn-cache/e7095a88_photo_2025-06-14_08-.jpg',alt:'sport'}
-      ],
-      videos: [
-        {
-          title:'IT-лагерь — это не “сидеть за компьютером”. Вот что происходит на самом деле',
-          url:'https://kinescope.io/embed/qmLxu2S7uaS44CKkhoV1Jj',
-          cover:'https://edge-msk-11.kinescopecdn.net/14f5f68a-5403-49e7-9854-07f3d37b31cd/posters/f4189828-d218-4a2e-a103-dec988cca42a/poster_lg/35865925-2d43-426a-84f3-74989b3a65bb.jpg',
-          orientation:'vertical'
-        },
-        {
-          title:'За неделю в лагере ребёнок меняется больше, чем за год дома #результаты #АйДаКемп',
-          url:'https://kinescope.io/embed/tJAaAnvCYYJ5vRz7uyUepj',
-          cover:'https://edge-msk-1.kinescopecdn.net/14f5f68a-5403-49e7-9854-07f3d37b31cd/posters/3ffb469d-184c-4a4d-8944-184414a40d55/poster_lg/88340cab-36d7-4e68-bb7c-c4e8eec1eac0.jpg',
-          orientation:'vertical'
-        },
-        {
-          title:'Не хочу в лагерь… Через 3 дня_ ХОЧУ ЕЩЁ!',
-          url:'https://kinescope.io/embed/naDfzrei9duApz3AnaencH',
-          cover:'https://edge-msk-1.kinescopecdn.net/14f5f68a-5403-49e7-9854-07f3d37b31cd/posters/6401a850-e417-4313-92b9-f2a4ac8ac1bb/poster_lg/200d335b-73b4-43e3-b427-c6b270ebc01f.jpg',
-          orientation:'vertical'
-        },
-        {
-          title:'Ребенок сам откажется от телефона за 3 дня_! лагерь АйДаКемп #детскийлагерь #лагерьбезтелефонов',
-          url:'https://kinescope.io/embed/eTmCgZHcwhcWQQs3HLCz1S',
-          cover:'https://edge-msk-11.kinescopecdn.net/14f5f68a-5403-49e7-9854-07f3d37b31cd/posters/76e9a3e0-91a2-4019-a9fb-8ef54eaf76ff/poster_lg/e8cae335-b421-461d-bd90-5aa553717a05.jpg',
-          orientation:'vertical'
-        },
-        {
-          title:'Зачем детям копить деньги в лагере_ Узнай ответ!',
-          url:'https://kinescope.io/embed/s1SCYKqLx6C94fMRumitHF',
-          cover:'https://edge-msk-1.kinescopecdn.net/14f5f68a-5403-49e7-9854-07f3d37b31cd/posters/e78e019c-d1a6-47de-8b49-fbb13185c0c5/poster_lg/1487d473-8463-4b3e-8e41-f327343c7fc4.jpg',
-          orientation:'vertical'
-        }
-      ],
-      contacts: [
-        {label:'city_phone',href:'tel:+74951284429',text:'+7 (495) 128-44-29'},
-        {label:'mobile_phone',href:'tel:+79688086455',text:'+7 (968) 808-64-55'},
-        {label:'whatsapp',href:'https://wa.me/79688086455',text:'WhatsApp'},
-        {label:'telegram',href:'https://t.me/Progaschool',text:'@Progaschool'}
-      ],
-      socials: [
-        { key:'VK', label:'VK', href:'https://vk.com/aidacamp' },
-        { key:'Rutube', label:'RT', href:'https://rutube.ru/channel/53394996/' },
-        { key:'Instagram', label:'IG', href:'https://www.instagram.com/aida_codit' },
-        { key:'Одноклассники', label:'OK', href:'https://ok.ru/group/64689601773621' },
-        { key:'YouTube', label:'YT', href:'https://www.youtube.com/@aidacamp' },
-        { key:'LinkedIn', label:'LI', href:'https://www.linkedin.com/company/%D0%B8%D1%82-%D0%BB%D0%B0%D0%B3%D0%B5%D1%80%D1%8C-%D0%B4%D0%BB%D1%8F-%D0%B4%D0%B5%D1%82%D0%B5%D0%B9-%D0%B0%D0%B9%D0%B4%D0%B0%D0%BA%D0%B5%D0%BC%D0%BF/?viewAsMember=true' },
-        { key:'TikTok', label:'TT', href:'https://www.tiktok.com/@aidacodit0' },
-        { key:'Pinterest', label:'PI', href:'https://ru.pinterest.com/pbalgoritmika/' },
-        { key:'Yappy', label:'YA', href:'https://yappy.media/n/acceptable.lizardxw?utm_source=url&utm_medium=share&utm_campaign=profile' }
-      ],
-      reviews: [
-        {
-          name:'Сергей Найденов',
-          meta:'Яндекс Карты · 2 февраля 2026',
-          avatar:'https://avatars.mds.yandex.net/get-yapic/27503/0r-4/islands-68',
-          quote:'Отличное расположение в живописном месте, большие просторные аудитории для занятий. Большое значение придавалось и активностям вне аудиторных занятий: футбол, бадминтон и прочее.'
-        },
-        {
-          name:'виктория',
-          meta:'Яндекс Карты · 13 ноября 2024',
-          avatar:'https://avatars.mds.yandex.net/get-yapic/54535/fsnR7nvUqoioiSqyIVRArH7QSFs-1/islands-68',
-          quote:'Лагерь «Айдакемп» — это круто. Была там несколько раз, и каждый раз это был незабываемый опыт.'
-        },
-        {
-          name:'Natalia Savenkova',
-          meta:'Яндекс Карты · 10 ноября 2024',
-          avatar:'https://avatars.mds.yandex.net/get-yapic/68143/0s-4/islands-68',
-          quote:'Хочу поблагодарить АйДаКемп за отличную организацию и правильный подход в общении и воспитании детей в лагере. Потрясающие вожатые и педагоги.'
-        },
-        {
-          name:'Надежда Ш.',
-          meta:'Яндекс Карты · 12 августа 2025',
-          avatar:'https://avatars.mds.yandex.net/get-yapic/58107/0f-1/islands-68',
-          quote:'Сын в 9 лет этим летом побывал в первый раз в этом лагере. Остался в полном восторге и сказал, что обязательно поедет ещё.'
-        },
-        {
-          name:'Кристина',
-          meta:'Яндекс Карты · 8 ноября 2024',
-          avatar:'https://avatars.mds.yandex.net/get-yapic/49368/enc-f5d05dcd44e9fc6a6283d03f5fc4dfbadc08d6b278aedeb06cfa14e5027cfb80/islands-68',
-          quote:'Дочери лагерь понравился, с удовольствием провела время на каникулах. Интересные занятия, вкусная еда, комфортное размещение.'
-        },
-        {
-          name:'Мария Григорьева',
-          meta:'Яндекс Карты · 13 ноября 2024',
-          avatar:'https://avatars.mds.yandex.net/get-yapic/56823/XGlOg8N65vTR91xedCasHKXWqI-1/islands-68',
-          quote:'Отправляла детей 10 и 14 лет, оба остались довольны и готовы снова ехать на следующий год. Благодарна за опыт и пользу для детей.'
-        }
-      ]
-    };
+    const STORAGE_RUNTIME_CONFIG = (window.AC_RUNTIME_CONFIG && window.AC_RUNTIME_CONFIG.storage) || {};
+    const storageStateKeyCfg = String(STORAGE_RUNTIME_CONFIG.stateKey || 'aidacamp_proto_state_v3');
+    const bookingScarcityKeyCfg = String(STORAGE_RUNTIME_CONFIG.bookingScarcityKey || 'aidacamp_booking_scarcity_v1');
+    const BOOKING_SCARCITY_BASE = Number(STORAGE_RUNTIME_CONFIG.bookingScarcityBase || 63);
+    const BOOKING_SCARCITY_STEP = Number(STORAGE_RUNTIME_CONFIG.bookingScarcityStep || 7);
+    const BOOKING_SCARCITY_MAX = Number(STORAGE_RUNTIME_CONFIG.bookingScarcityMax || 98);
+    const OFFER_STAGE_KEY = String(STORAGE_RUNTIME_CONFIG.offerStageStateKey || ['offer', 'Stage'].join(''));
+    const OFFER_LAYOUT_KEY = String(STORAGE_RUNTIME_CONFIG.offerLayoutStateKey || ['offer', 'Layout'].join(''));
+    const OFFER_LAYOUT_DATASET_KEY = String(STORAGE_RUNTIME_CONFIG.offerLayoutDatasetKey || ['offer', 'Layout'].join(''));
 
-    const STORAGE_KEY = 'aidacamp_proto_state_v3';
-    const BOOKING_SCARCITY_KEY = 'aidacamp_booking_scarcity_v1';
-    const BOOKING_SCARCITY_BASE = 63;
-    const BOOKING_SCARCITY_STEP = 7;
-    const BOOKING_SCARCITY_MAX = 98;
-
-    let state = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') || {
+    let state = JSON.parse(localStorage.getItem(storageStateKeyCfg) || 'null') || {
       age:null,
       shiftId:null,
       basePrice:null,
@@ -15775,129 +11987,139 @@ function runOfferSearch(overrides){
       previousCode:null,
       nextCodePreview:null,
       expiresAt:null,
-      offerStage:0,
+      [OFFER_STAGE_KEY]:0,
       view:'desktop',
       phone:'',
       debugBookingBlocks:false
     };
 
-    const METRIKA_ID = 96499295;
-    const MAX_CONTACT_URL = 'https://web.max.ru/185807479';
-    const LEGAL_REPO_SLUG = 'afanasevvlad829-cyber/aidaplus-landing-dev';
-    const HERO_VARIANT_BANNER_TIER = Object.freeze({
-      '212861185':'tier1',
-      '212861186':'tier1',
-      '212861188':'tier1',
-      '212861189':'tier2',
-      '212861195':'tier2',
-      '212861200':'tier2',
-      '212861205':'tier3',
-      '212861206':'tier3',
-      '212861207':'tier3',
-      '212861210':'tier4',
-      '212861211':'tier4',
-      '212861212':'tier4',
-      '212861214':'broad',
-      '212861215':'broad',
-      '212861216':'broad'
-    });
-    const HERO_VARIANT_COPY = Object.freeze({
-      tier1: Object.freeze({
-        tier:'tier1',
-        variant:'v1',
-        title:'Выездной IT-лагерь в Подмосковье: гаджеты под контролем',
-        sub:'Ребёнок 10–12 лет сделает проект за смену, а вы будете спокойны за безопасность.',
-        cta:'Получить программу смен',
-        hintStage1:'Чтобы получить программу смен, выберите возраст.',
-        hintStage1Followup:'Нажмите на возраст — сразу откроем программу смен.',
-        hintStage2:'На втором шаге нажмите кнопку i у смены, чтобы получить программу смен.'
-      }),
-      tier2: Object.freeze({
-        tier:'tier2',
-        variant:'v1',
-        title:'IT-лагерь, где ребёнок возвращается из экрана в проект',
-        sub:'Сравните формат: проектная работа, команда, бассейн, природа Подмосковья.',
-        cta:'Сравнить смены и цены',
-        hintStage1:'Чтобы сравнить смены и цены, выберите возраст.',
-        hintStage1Followup:'Выберите возраст — и откроем все смены с ценами.',
-        hintStage2:'Нажмите «Все смены для {{age}}», чтобы сравнить смены и цены.'
-      }),
-      tier3: Object.freeze({
-        tier:'tier3',
-        variant:'v1',
-        title:'Не просто лагерь: IT-смена с результатом за 14 дней',
-        sub:'Проект, презентация, наставники-айтишники и режим гаджетов по правилам.',
-        cta:'Посмотреть программу',
-        hintStage1:'Чтобы посмотреть программу, выберите возраст.',
-        hintStage1Followup:'Выберите возраст — и покажем программу смен на шаге 2.',
-        hintStage2:'На втором шаге нажмите кнопку i у смены, чтобы посмотреть программу.'
-      }),
-      tier4: Object.freeze({
-        tier:'tier4',
-        variant:'v1',
-        title:'Если нужен форматный IT-лагерь, а не “просто отдых”',
-        sub:'Выездные смены в Подмосковье для 10–12 лет: IT + спорт + командная среда.',
-        cta:'Выбрать формат смены',
-        hintStage1:'Чтобы выбрать формат смены, выберите возраст.',
-        hintStage1Followup:'Выберите возраст — откроем форматы смен под ребёнка.',
-        hintStage2:'Нажмите «Все смены для {{age}}», чтобы выбрать формат смены.'
-      }),
-      broad: Object.freeze({
-        tier:'broad',
-        variant:'v1',
-        title:'Летние IT-смены в Подмосковье для детей 10–12 лет',
-        sub:'Программирование, проекты, бассейн, природа и меньше экранного времени.',
-        cta:'Узнать условия',
-        hintStage1:'Чтобы узнать условия, выберите возраст.',
-        hintStage1Followup:'Выберите возраст — подберём смену и условия.',
-        hintStage2:'Выберите подходящую смену.'
-      })
-    });
-    const HERO_VARIANT_DEFAULT_TIER = 'broad';
-    const USE_DESKTOP_BASE_FOR_MOBILE = true;
-    const BUILD_VERSION_LABEL = 'v0.0.288 (ab-analytics-endpoint)';
-    const ARCHITECTURE_POLICY = Object.freeze({
+    const OBSERVABILITY_RUNTIME_CONFIG = (window.AC_RUNTIME_CONFIG && window.AC_RUNTIME_CONFIG.observability) || {};
+    const metrikaIdCfg = Number(OBSERVABILITY_RUNTIME_CONFIG.metrikaId || 96499295);
+    const RUNTIME_POLICY_CONFIG = (window.AC_RUNTIME_CONFIG && window.AC_RUNTIME_CONFIG.runtimePolicy) || {};
+    const MAX_CONTACT_URL = String(RUNTIME_POLICY_CONFIG.maxContactUrl || 'https://web.max.ru/185807479');
+    const LEGAL_REPO_SLUG = String(RUNTIME_POLICY_CONFIG.legalRepoSlug || 'afanasevvlad829-cyber/aidaplus-landing-dev');
+    const HERO_VARIANT_RUNTIME_CONFIG = (window.AC_RUNTIME_CONFIG && window.AC_RUNTIME_CONFIG.heroVariant) || {};
+    const HERO_VARIANT_BANNER_TIER = Object.freeze(HERO_VARIANT_RUNTIME_CONFIG.bannerTier || {});
+    const HERO_VARIANT_COPY = Object.freeze(HERO_VARIANT_RUNTIME_CONFIG.copy || {});
+    const HERO_VARIANT_DEFAULT_TIER = String(HERO_VARIANT_RUNTIME_CONFIG.defaultTier || 'broad');
+    const useDesktopBaseForMobileCfg = !!OBSERVABILITY_RUNTIME_CONFIG.useDesktopBaseForMobile;
+    const BUILD_VERSION_LABEL = String(RUNTIME_POLICY_CONFIG.buildVersionLabel || 'v0.0.288 (ab-analytics-endpoint)');
+    const ARCHITECTURE_POLICY = Object.freeze(RUNTIME_POLICY_CONFIG.architecturePolicy || {
       id: 'desktop-source-mobile-presentation',
       version: '2026-03-30',
       desktopSourceOfTruth: true,
       sharedStatePipeline: true,
       mobileUsesDesktopTemplates: true
     });
-    const QUALITY_SCORE_MODEL = Object.freeze({
+    const QUALITY_SCORE_MODEL = Object.freeze(RUNTIME_POLICY_CONFIG.qualityScoreModel || {
       scale: '0..10',
       debtScale: '0 best .. 10 worst',
       baselineVersion: 'v0.0.112 (debug-offer-layout-switch)',
-      css: Object.freeze({
-        start: 10,
-        penalties: Object.freeze({
-          duplicateSelectors: 0.25,
-          deadRules: 0.2,
-          highSpecificityHotspots: 0.35,
-          stageLeakage: 0.4,
-          mobileDesktopDivergence: 0.35
-        })
-      }),
-      js: Object.freeze({
-        start: 10,
-        penalties: Object.freeze({
-          branchComplexity: 0.35,
-          stateCoupling: 0.35,
-          duplicateHandlers: 0.25,
-          magicNumbers: 0.15,
-          legacyFlagsInProdPath: 0.35
-        })
-      }),
-      debt: Object.freeze({
-        start: 0,
-        increments: Object.freeze({
-          noGuardrails: 0.8,
-          monolithEdits: 0.7,
-          duplicatedUiLogic: 0.7,
-          unresolvedStageRegressions: 0.9,
-          debugArtifactsInProdPath: 0.7
-        })
-      })
+      css: Object.freeze({ start: 10, penalties: Object.freeze({}) }),
+      js: Object.freeze({ start: 10, penalties: Object.freeze({}) }),
+      debt: Object.freeze({ start: 0, increments: Object.freeze({}) })
     });
+    const VIDEO_SOURCE_LABELS = Object.freeze({
+      genericSourceName: 'источнике',
+      vkVideoSourceName: 'VK Видео'
+    });
+    const AGE_LABELS = Object.freeze({
+      '7-9': '7–9 лет',
+      '10-12': '10–12 лет',
+      '13-14': '13–14 лет'
+    });
+    const PHOTO_CATEGORY_LABELS = Object.freeze({
+      pool: 'Бассейн',
+      sport: 'Спорт',
+      study: 'Учёба',
+      food: 'Питание',
+      all: 'Атмосфера',
+      camp: 'Атмосфера',
+      stay: 'Размещение'
+    });
+    const BOOKING_TEXT_FALLBACK = Object.freeze({
+      ageToSeeShiftsPrices: 'Выберите возраст, чтобы увидеть смены и цены',
+      allShiftsByAge: 'Все смены по возрасту',
+      bookPreviewAlt: 'Превью бронирования',
+      bookingAfterCheckPriceLabel: 'После проверки',
+      bookingCheckPriceTitle: 'Проверить цену',
+      bookingCompletedTitle: 'Заявка отправлена',
+      bookingCurrentPriceLabel: 'Текущая цена',
+      bookingFinalizeBenefitLine: 'Ваша выгода',
+      bookingPreliminaryPriceLabel: 'Предварительная цена',
+      bookingReferralImageAria: 'Открыть изображение реферальной акции',
+      bookingReferralNote: 'Поделитесь ссылкой и получите бонус',
+      bookingShiftsForAgePrefix: 'Смены для возраста',
+      bookingStage4AwaitingNote: 'Ожидаем подтверждение менеджера',
+      bookingStage4BenefitLabel: 'Выгода',
+      bookingStage4CodeLabel: 'Код',
+      bookingStage4DiscountLabel: 'Скидка',
+      bookingStage4FixedPriceLabel: 'Фиксированная цена',
+      bookingTimerPinnedTitle: 'Цена удерживается',
+      bookingTimerPrefix: 'Осталось',
+      bookingYourTermsTitle: 'Ваши условия',
+      heroSeasonCalendarAria: 'Открыть календарь смен',
+      heroSeasonCalendarText: 'Календарь смен',
+      heroSeasonOfferPriceText: 'от 48 000 ₽ за смену',
+      heroSeasonSlogan: 'Смена, где ребёнок уедет с проектом',
+      inviteCopyFailed: 'Не удалось скопировать ссылку',
+      inviteCopyManual: 'Скопируйте ссылку вручную',
+      inviteCopySuccess: 'Ссылка скопирована',
+      offerSavedOnDevice: 'Предложение сохранено на этом устройстве',
+      primaryCtaAccepted: 'Готово',
+      referralHoodieAlt: 'Подарочный худи',
+      returnWelcomeMessage: 'Рады видеть вас снова',
+      returnWelcomeTitle: 'С возвращением',
+      reviewsBlogLabel: 'Отзывы родителей',
+      selectAge: 'Сначала выберите возраст',
+      selectShift: 'Сначала выберите смену',
+      selectShiftForPrice: 'Выберите смену, чтобы увидеть итоговую цену',
+      stage1TypewriterAccentChar: '•',
+      stage1TypewriterBase: 'Выберите возраст',
+      stage1TypewriterChooseWord: 'выберите',
+      stage1TypewriterFinal: 'Выберите возраст и смену',
+      stage1TypewriterPricesPhrase: 'цены смен',
+      stage1TypewriterPricesSwap: 'и цены',
+      stage1TypewriterSeenWord: 'посмотрите',
+      teamHiddenMobileName: 'Команда'
+    });
+    const BOOKING_TEXT_CONFIG = (window.AC_RUNTIME_CONFIG && window.AC_RUNTIME_CONFIG.bookingText) || {};
+    const BOOKING_TEXT_MAP = Object.freeze({ ...BOOKING_TEXT_FALLBACK, ...BOOKING_TEXT_CONFIG });
+    function bookingText(key){
+      const k = String(key || '');
+      return String(BOOKING_TEXT_MAP[k] || k);
+    }
+    function renderGuidedState(...args){
+      return runtimeInvoke.renderGuidedState(...args);
+    }
+    function pulseNode(...args){
+      return runtimeInvoke.pulseNode(...args);
+    }
+    function nudgeUserToNextStep(...args){
+      return runtimeInvoke.nudgeUserToNextStep(...args);
+    }
+    function showHint(...args){
+      return runtimeInvoke.showHint(...args);
+    }
+    function syncBookingHints(...args){
+      return runtimeInvoke.syncBookingHints(...args);
+    }
+    function emitModularEvent(...args){
+      return runtimeInvoke.emitModularEvent(...args);
+    }
+    function syncModularState(...args){
+      return runtimeInvoke.syncModularState(...args);
+    }
+    function splitPrimaryActionText(text){
+      const source = String(text || '').trim();
+      return { stacked: false, main: source, gainText: '' };
+    }
+    function uiBookingHintTemplate(key, params = {}){
+      const map = (window.CONTENT_MAP && window.CONTENT_MAP.ui) || {};
+      const source = String(map[key] || '');
+      if(!source) return '';
+      return source.replace(/\{\{(\w+)\}\}/g, (_, token) => String(params[token] ?? ''));
+    }
     const AIDACAMP_RUNTIME = (window.__AIDACAMP_RUNTIME && typeof window.__AIDACAMP_RUNTIME === 'object')
       ? window.__AIDACAMP_RUNTIME
       : {};
@@ -15905,125 +12127,68 @@ function runOfferSearch(overrides){
     AIDACAMP_RUNTIME.quality = AIDACAMP_RUNTIME.quality || {};
     AIDACAMP_RUNTIME.quality.scoreModel = QUALITY_SCORE_MODEL;
     AIDACAMP_RUNTIME.architecture = ARCHITECTURE_POLICY;
+    const qualityScoreSnapshotDefaults = OBSERVABILITY_RUNTIME_CONFIG.qualityScoreSnapshotDefaults || {};
     AIDACAMP_RUNTIME.quality.scoreSnapshot = Object.freeze({
       version: BUILD_VERSION_LABEL,
-      css: 8.8,
-      js: 8.6,
-      techDebt: 1.5,
-      debtScale: '0 best .. 10 worst',
+      css: Number(qualityScoreSnapshotDefaults.css || 8.8),
+      js: Number(qualityScoreSnapshotDefaults.js || 8.6),
+      techDebt: Number(qualityScoreSnapshotDefaults.techDebt || 1.5),
+      debtScale: String(qualityScoreSnapshotDefaults.debtScale || '0 best .. 10 worst'),
       baselineVersion: QUALITY_SCORE_MODEL.baselineVersion
     });
-    const HERO_CONTRAST_MODES = Object.freeze(['before', 'after', 'after-soft']);
-    const HERO_MICRO_MODES = Object.freeze(['on', 'demo']);
-    const OFFER_MODAL_THEMES = Object.freeze(['light', 'dark']);
-    const OFFER_LAYOUT_MODES = Object.freeze(['current']);
+    const UI_MODES_RUNTIME_CONFIG = (window.AC_RUNTIME_CONFIG && window.AC_RUNTIME_CONFIG.uiModes) || {};
+    const heroContrastModesCfg = Object.freeze(UI_MODES_RUNTIME_CONFIG.heroContrastModes || []);
+    const heroMicroModesCfg = Object.freeze(UI_MODES_RUNTIME_CONFIG.heroMicroModes || []);
+    const offerModalThemesCfg = Object.freeze(UI_MODES_RUNTIME_CONFIG.offerModalThemes || []);
+    const offerLayoutModesCfg = Object.freeze(UI_MODES_RUNTIME_CONFIG.offerLayoutModes || []);
     const normalizeMode = (value, allowedModes, fallbackMode) => (
       allowedModes.includes(value) ? value : fallbackMode
     );
-    const VERSION_MONOTONIC_KEY = 'aidacamp_build_version_last_v1';
-    const PROD_DEBUGLESS_DOMAINS = Object.freeze(['aidacamp.ru']);
-    const QUALITY_BASELINE_KEY = 'aidacamp_quality_baseline_v1';
-    const DEBT_REGISTER_KEY = 'aidacamp_debt_register_v1';
-    const QUALITY_SOFT_GATES = Object.freeze({
-      cssDuplicateSelectorsMax: 320,
-      jsBranchPointsMax: 760,
-      jsListenersMax: 220,
-      jsBytesMax: 360000,
-      cssBytesMax: 240000
+    const toFiniteNumberOrZero = (value) => {
+      const parsed = Number(value);
+      return (Number.isFinite(parsed) && parsed) || 0;
+    };
+    const toPositiveIntegerOrZero = (value) => {
+      const parsed = Number(value);
+      return ((Number.isFinite(parsed) && parsed > 0) && Math.floor(parsed)) || 0;
+    };
+    const versionMonotonicKeyCfg = String(STORAGE_RUNTIME_CONFIG.versionMonotonicKey || 'aidacamp_build_version_last_v1');
+    const prodDebuglessDomainsCfg = Object.freeze(OBSERVABILITY_RUNTIME_CONFIG.prodDebuglessDomains || ['aidacamp.ru']);
+    const qualityBaselineKeyCfg = String(STORAGE_RUNTIME_CONFIG.qualityBaselineKey || 'aidacamp_quality_baseline_v1');
+    const debtRegisterKeyCfg = String(STORAGE_RUNTIME_CONFIG.debtRegisterKey || 'aidacamp_debt_register_v1');
+    const RUNTIME_QUALITY_CONFIG = (window.AC_RUNTIME_CONFIG && window.AC_RUNTIME_CONFIG.runtimeQuality) || {};
+    const QUALITY_SOFT_GATES = Object.freeze(RUNTIME_QUALITY_CONFIG.softGates || {});
+    const GUARDRAIL_REQUIRED_SELECTORS = Object.freeze(RUNTIME_QUALITY_CONFIG.requiredSelectors || []);
+    const CALENDAR_RUNTIME_CONFIG = (window.AC_RUNTIME_CONFIG && window.AC_RUNTIME_CONFIG.calendar) || {};
+    const CALENDAR_WEEKDAYS_SHORT = Object.freeze(CALENDAR_RUNTIME_CONFIG.weekdaysShort || []);
+    const CALENDAR_MONTH_NAMES = Object.freeze(CALENDAR_RUNTIME_CONFIG.monthNames || []);
+    const DOCS_RUNTIME_CONFIG = (window.AC_RUNTIME_CONFIG && window.AC_RUNTIME_CONFIG.docsRuntime) || {};
+    const DOCS_MOBILE_COPY_FALLBACK = Object.freeze({
+      orgName: '',
+      orgMeta: '',
+      copyright: '',
+      links: Object.freeze([])
     });
-    const GUARDRAIL_REQUIRED_SELECTORS = Object.freeze([
-      '#desktopView',
-      '#mobileView',
-      '.hero-shell',
-      '#desktop-booking-card',
-      '#mobileBookingCard',
-      '#summaryBar',
-      '#offerOverlay',
-      '#offerCard',
-      '#sectionModal',
-      '#videoModal',
-      '#calendarModal'
-    ]);
-    const VERSION_BADGE_HIDDEN_KEY = 'aidacamp_version_badge_hidden_v1';
-    const VIDEO_META_CACHE_KEY = 'aidacamp_video_meta_cache_v2';
-    const VIDEO_META_CACHE_TTL_MS = 1000 * 60 * 60 * 4;
-    const VIDEO_META_REFRESH_INTERVAL_MS = 1000 * 60 * 60 * 4;
-    const COMPACT_MODAL_SECTIONS = new Set([
-      'section-about',
-      'section-journey',
-      'section-programs',
-      'section-photos',
-      'section-videos',
-      'section-reviews',
-      'section-faq',
-      'section-team',
-      'section-stay',
-      'section-contacts'
-    ]);
+    const DOCS_DESKTOP_SECTION_TEMPLATES_FALLBACK = Object.freeze({});
+    const versionBadgeHiddenKeyCfg = String(STORAGE_RUNTIME_CONFIG.versionBadgeHiddenKey || 'aidacamp_version_badge_hidden_v1');
+    const videoMetaCacheKeyCfg = String(STORAGE_RUNTIME_CONFIG.videoMetaCacheKey || 'aidacamp_video_meta_cache_v2');
+    const VIDEO_META_CACHE_TTL_MS = Number(STORAGE_RUNTIME_CONFIG.videoMetaCacheTtlMs || (1000 * 60 * 60 * 4));
+    const VIDEO_META_REFRESH_INTERVAL_MS = Number(STORAGE_RUNTIME_CONFIG.videoMetaRefreshIntervalMs || (1000 * 60 * 60 * 4));
+    const compactModalSectionsCfg = new Set((Array.isArray(UI_MODES_RUNTIME_CONFIG.compactModalSections) && UI_MODES_RUNTIME_CONFIG.compactModalSections) || []);
     let timerId = null;
     let mediaIndex = 0;
     let mediaType = 'photo';
     let activePhotoList = [];
     let photoGalleryList = [];
     // SECTION 2: State normalization and hydration.
-    const normalizedPreviewView = state.previewView || state.view || 'desktop';
-    Object.assign(state, {
-      previewView: normalizedPreviewView,
-      view: (USE_DESKTOP_BASE_FOR_MOBILE && normalizedPreviewView === 'mobile') ? 'desktop' : state.view,
-      desktopMode: 'full',
-      mobileMode: 'full',
-      heroContrastMode: 'after-soft',
-      heroMicroMode: 'off',
-      offerModalTheme: 'light',
-      offerLayout: 'current',
-      ageSelected: typeof state.ageSelected === 'boolean' ? state.ageSelected : false,
-      bookingCompleted: !!state.bookingCompleted
-    });
-    let stateWasNormalized = false;
-    if(!state.age){
-      if(state.ageSelected || state.shiftId || state.basePrice || state.offerPrice || state.code || state.expiresAt || state.offerStage || state.bookingCompleted){
-        stateWasNormalized = true;
-      }
-      Object.assign(state, {
-        ageSelected: false,
-        shiftId: null,
-        basePrice: null,
-        offerPrice: null,
-        code: null,
-        expiresAt: null,
-        offerStage: 0,
-        bookingCompleted: false
-      });
-    } else {
-      if(!state.ageSelected){
-        stateWasNormalized = true;
-      }
-      Object.assign(state, { ageSelected: true });
-      if(!state.shiftId){
-        if(state.basePrice || state.offerPrice || state.code || state.expiresAt || state.offerStage || state.bookingCompleted){
-          stateWasNormalized = true;
-        }
-        Object.assign(state, {
-          basePrice: null,
-          offerPrice: null,
-          code: null,
-          expiresAt: null,
-          offerStage: 0,
-          bookingCompleted: false
-        });
-      }
-    }
-    const normalizedOfferStage = Number(state.offerStage);
-    if(!Number.isFinite(normalizedOfferStage) || normalizedOfferStage < 0){
-      Object.assign(state, { offerStage: 0 });
-      stateWasNormalized = true;
-    } else if(normalizedOfferStage > 4){
-      Object.assign(state, { offerStage: 4 });
-      stateWasNormalized = true;
-    }
-    if(stateWasNormalized){
+    let bookingRuntimeBridgeApi = null;
+    const stateNormalizeResult = safeInvoke(ensureBookingRuntimeBridge(), 'normalizeInitialState', [{
+      state,
+      useDesktopBaseForMobile: useDesktopBaseForMobileCfg
+    }], { changed: false });
+    if(stateNormalizeResult && stateNormalizeResult.changed){
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        localStorage.setItem(storageStateKeyCfg, JSON.stringify(state));
       } catch (error){
         console.warn('[STATE] normalize persist failed', error);
       }
@@ -16033,15 +12198,15 @@ function runOfferSearch(overrides){
       previousCode: state.previousCode || null,
       nextCodePreview: state.nextCodePreview || null,
       faqFilter: state.faqFilter || 'Медицина',
-      mobileJourneyStep: Number.isFinite(Number(state.mobileJourneyStep)) ? Number(state.mobileJourneyStep) : 0,
+      mobileJourneyStep: toFiniteNumberOrZero(state.mobileJourneyStep),
       mobileProgramShiftId: state.mobileProgramShiftId || '',
-      mobilePhotoIndex: Number.isFinite(Number(state.mobilePhotoIndex)) ? Number(state.mobilePhotoIndex) : 0,
-      mobileVideoIndex: Number.isFinite(Number(state.mobileVideoIndex)) ? Number(state.mobileVideoIndex) : 0,
-      mobileReviewIndex: Number.isFinite(Number(state.mobileReviewIndex)) ? Number(state.mobileReviewIndex) : 0,
-      mobileStayIndex: Number.isFinite(Number(state.mobileStayIndex)) ? Number(state.mobileStayIndex) : 0,
+      mobilePhotoIndex: toFiniteNumberOrZero(state.mobilePhotoIndex),
+      mobileVideoIndex: toFiniteNumberOrZero(state.mobileVideoIndex),
+      mobileReviewIndex: toFiniteNumberOrZero(state.mobileReviewIndex),
+      mobileStayIndex: toFiniteNumberOrZero(state.mobileStayIndex),
       mobileFaqGroup: state.mobileFaqGroup || 'Медицина',
       mobileFaqOpenKey: state.mobileFaqOpenKey || '',
-      mobileTeamIndex: Number.isFinite(Number(state.mobileTeamIndex)) ? Number(state.mobileTeamIndex) : 0,
+      mobileTeamIndex: toFiniteNumberOrZero(state.mobileTeamIndex),
       // Mobile docs block must stay compact by default: requisites visible, legal links collapsed.
       mobileDocsExpanded: false,
       debugBookingBlocks: !!state.debugBookingBlocks
@@ -16051,14 +12216,12 @@ function runOfferSearch(overrides){
     let offerTimeoutIds = [];
     let offerRunId = 0;
     let leadSubmitInProgress = false;
-    let noticeConfirmHandler = null;
     let lastRenderedBookingStage = 0;
     let bookingScarcityState = (() => {
       try {
-        const saved = JSON.parse(localStorage.getItem(BOOKING_SCARCITY_KEY) || 'null');
-        const visits = Number(saved && saved.visits);
+        const saved = JSON.parse(localStorage.getItem(bookingScarcityKeyCfg) || 'null');
         return {
-          visits: Number.isFinite(visits) && visits > 0 ? Math.floor(visits) : 0
+          visits: toPositiveIntegerOrZero(saved && saved.visits)
         };
       } catch (error){
         return { visits: 0 };
@@ -16083,6 +12246,7 @@ function runOfferSearch(overrides){
     let heroVariantState = null;
     let telemetryFlowApi = null;
     let heroVariantFlowApi = null;
+    let variantFlowApi = null;
     let calendarFlowApi = null;
     let navigationFlowApi = null;
     let videoMetaFlowApi = null;
@@ -16093,38 +12257,54 @@ function runOfferSearch(overrides){
     let bookingHintFlowApi = null;
     let summaryFlowApi = null;
     let viewModeFlowApi = null;
+    let overlayFlowApi = null;
     let heroV3SimpleFlowApi = null;
+    let heroBackgroundFlowApi = null;
     let offerFlowApi = null;
     let actionDispatcherApi = null;
     let bookingInlineLeadApi = null;
+    let bookingInlineRuntimeFlowApi = null;
     let mediaGestureBindingsApi = null;
     let globalUiBindingsApi = null;
+    let docsFlowApi = null;
+    let uiInitFlowApi = null;
+    let shiftOptionsFlowApi = null;
+    let mediaFlowApi = null;
     let runtimeQualityPipelineApi = null;
-    let bookingRuntimeBridgeApi = null;
+    let runtimeQualityOrchestratorApi = null;
+    let bookingCalendarRuntimeFlowApi = null;
+    let runtimeActionFlowApi = null;
+    let runtimeInitFlowApi = null;
+    let leadNotifyFlowApi = null;
+    let heroNavFlowApi = null;
+    let mainHelpersApi = null;
+
+    function ensureMainHelpers(){
+      const create = window.AC_CORE?.mainHelpers?.createMainHelpers;
+      return mainHelpersApi || (typeof create === 'function' && (mainHelpersApi = create({
+        document,
+        getBookingViewConfig
+      }))) || null;
+    }
 
     function ensureTelemetryFlow(){
-      if(telemetryFlowApi) return telemetryFlowApi;
       const create = window.AC_FEATURES?.telemetryFlow?.create;
-      if(typeof create !== 'function') return null;
-      telemetryFlowApi = create({
+      return telemetryFlowApi || (typeof create === 'function' && (telemetryFlowApi = create({
         document,
-        metrikaId: METRIKA_ID,
-        abEventEndpointDefault: AB_EVENT_ENDPOINT_DEFAULT,
-        abVisitorKey: AB_VISITOR_ID_KEY,
-        abSessionKey: AB_SESSION_ID_KEY,
+        metrikaId: metrikaIdCfg,
+        abEventEndpointDefault: abEventEndpointDefaultCfg,
+        abVisitorKey: abVisitorIdKeyCfg,
+        abSessionKey: abSessionIdKeyCfg,
         legalRepoSlug: LEGAL_REPO_SLUG,
         getHeroAbVariant: () => heroAbVariant,
-        getHeroAbTestId: () => HERO_AB_TEST_ID,
-        isAllowedAbEvent: (eventName) => AB_TEST_EVENT_ALLOWLIST.has(String(eventName || ''))
-      });
-      return telemetryFlowApi;
+        getHeroAbTestId: () => heroAbTestIdCfg,
+        isAllowedAbEvent: (eventName) => abEventAllowlistSet.has(String(eventName || ''))
+      }))) || null;
     }
 
     function ensureHeroVariantFlow(){
-      if(heroVariantFlowApi) return heroVariantFlowApi;
       const create = window.AC_FEATURES?.heroVariantFlow?.create;
-      if(typeof create !== 'function') return null;
-      heroVariantFlowApi = create({
+      return heroVariantFlowApi || (typeof create === 'function' && (heroVariantFlowApi = create({
         document,
         getCurrentSearchParams,
         getHeroVariantState: () => heroVariantState,
@@ -16141,38 +12321,60 @@ function runOfferSearch(overrides){
         getState: () => state,
         hasSelectedAge,
         getBookingStage,
+        getSimpleModeEnabled: () => HERO_V3_SIMPLE_ENABLED,
         trackOnce,
         getBookingViewConfig
-      });
-      return heroVariantFlowApi;
+      }))) || null;
+    }
+
+    function ensureVariantFlow(){
+      const create = window.AC_FEATURES?.variantFlow?.create;
+      return variantFlowApi || (typeof create === 'function' && (variantFlowApi = create({
+        state,
+        getBookingStage,
+        hasSelectedAge,
+        resolveHeroVariantFromUtm,
+        getVariantFlowView: () => resolveViewKey(state.previewView),
+        getPrimaryBookingViewConfig,
+        setHeroMenuOpen: runtimeInvoke.setHeroMenuOpen,
+        getHeroVariantState: () => heroVariantState,
+        getDefaultTier: () => HERO_VARIANT_DEFAULT_TIER,
+        getFingerTimer: () => variantFlowFingerTimer,
+        setFingerTimer: (next) => {
+          variantFlowFingerTimer = next || null;
+        },
+        getRunId: () => variantFlowRunId,
+        setRunId: (next) => {
+          variantFlowRunId = Number(next) || 0;
+        },
+        getCompletedKey: () => variantFlowCompletedKey,
+        setCompletedKey: (next) => {
+          variantFlowCompletedKey = String(next || '');
+        }
+      }))) || null;
     }
 
     function ensureCalendarFlow(){
-      if(calendarFlowApi) return calendarFlowApi;
       const create = window.AC_FEATURES?.calendarFlow?.create;
-      if(typeof create !== 'function') return null;
-      calendarFlowApi = create({
+      return calendarFlowApi || (typeof create === 'function' && (calendarFlowApi = create({
         getShifts: () => shifts,
         bookingText,
-        calendarWeekdaysShort: () => ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'],
-        calendarMonthNames: () => ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'],
-        closeTransientModals,
+        calendarWeekdaysShort: () => CALENDAR_WEEKDAYS_SHORT,
+        calendarMonthNames: () => CALENDAR_MONTH_NAMES,
+        closeTransientModals: runtimeInvoke.closeTransientModals,
         emitModularEvent,
         track,
         getShiftOptionPanels: () => shiftOptionPanels,
         setShiftOptionPanels: (nextPanels) => {
           shiftOptionPanels = nextPanels;
         },
-        renderShiftOptions
-      });
-      return calendarFlowApi;
+        renderShiftOptions: runtimeInvoke.renderShiftOptions
+      }))) || null;
     }
 
     function ensureNavigationFlow(){
-      if(navigationFlowApi) return navigationFlowApi;
       const create = window.AC_FEATURES?.navigationFlow?.create;
-      if(typeof create !== 'function') return null;
-      navigationFlowApi = create({
+      return navigationFlowApi || (typeof create === 'function' && (navigationFlowApi = create({
         trackFaqOpen,
         isMobilePreviewView: () => state.previewView === 'mobile',
         hasSelectedAge,
@@ -16184,30 +12386,23 @@ function runOfferSearch(overrides){
         isCompactDesktopMode: () => state.desktopMode === 'compact',
         isCompactMobileMode: () => (
           state.previewView === 'mobile' && (
-            USE_DESKTOP_BASE_FOR_MOBILE
+            useDesktopBaseForMobileCfg
               ? state.desktopMode === 'compact'
               : state.mobileMode === 'compact'
           )
         ),
-        compactModalSections: COMPACT_MODAL_SECTIONS,
-        openSectionModal,
-        buildLegalDocUrl
-      });
-      return navigationFlowApi;
+        compactModalSections: compactModalSectionsCfg,
+        openSectionModal: runtimeInvoke.openSectionModal,
+        buildLegalDocUrl: runtimeInvoke.buildLegalDocUrl
+      }))) || null;
     }
 
     function ensureVideoMetaFlow(){
-      if(videoMetaFlowApi) return videoMetaFlowApi;
       const create = window.AC_FEATURES?.videoMetaFlow?.create;
-      if(typeof create !== 'function') return null;
-      videoMetaFlowApi = create({
-        mediaText: (key) => {
-          if(key === 'genericSourceName') return 'источнике';
-          if(key === 'vkVideoSourceName') return 'VK Видео';
-          return '';
-        },
+      return videoMetaFlowApi || (typeof create === 'function' && (videoMetaFlowApi = create({
+        mediaText: (key) => VIDEO_SOURCE_LABELS[key] || '',
         mediaContent,
-        videoMetaCacheKey: VIDEO_META_CACHE_KEY,
+        videoMetaCacheKey: videoMetaCacheKeyCfg,
         videoMetaCacheTtlMs: VIDEO_META_CACHE_TTL_MS,
         videoMetaRefreshIntervalMs: VIDEO_META_REFRESH_INTERVAL_MS,
         renderMediaSections,
@@ -16215,22 +12410,19 @@ function runOfferSearch(overrides){
         setVideoMetaRefreshTimer: (timerId) => {
           videoMetaRefreshTimer = timerId;
         }
-      });
-      return videoMetaFlowApi;
+      }))) || null;
     }
 
     function ensureMediaSectionsFlow(){
-      if(mediaSectionsFlowApi) return mediaSectionsFlowApi;
       const create = window.AC_FEATURES?.mediaSectionsFlow?.create;
-      if(typeof create !== 'function') return null;
-      mediaSectionsFlowApi = create({
+      return mediaSectionsFlowApi || (typeof create === 'function' && (mediaSectionsFlowApi = create({
         getState: () => state,
         getMediaContent: () => mediaContent,
         photoCatLabel,
-        contactIconMarkup,
-        socialBadgeMark,
-        socialDisplayName,
-        faqGlyph,
+        contactIconMarkup: runtimeInvoke.contactIconMarkup,
+        socialBadgeMark: runtimeInvoke.socialBadgeMark,
+        socialDisplayName: runtimeInvoke.socialDisplayName,
+        faqGlyph: runtimeInvoke.faqGlyph,
         bookingText,
         setPhotoLists: (list = []) => {
           const next = cloneArrayOrEmpty(list);
@@ -16239,15 +12431,12 @@ function runOfferSearch(overrides){
         },
         prepareStayGalleryTriggers,
         renderCompactTrustPanelContent
-      });
-      return mediaSectionsFlowApi;
+      }))) || null;
     }
 
     function ensureModalMediaFlow(){
-      if(modalMediaFlowApi) return modalMediaFlowApi;
       const create = window.AC_FEATURES?.modalMediaFlow?.create;
-      if(typeof create !== 'function') return null;
-      modalMediaFlowApi = create({
+      return modalMediaFlowApi || (typeof create === 'function' && (modalMediaFlowApi = create({
         getState: () => state,
         getMediaContent: () => mediaContent,
         getActivePhotoList: () => activePhotoList,
@@ -16260,37 +12449,36 @@ function runOfferSearch(overrides){
         track,
         photoCatLabel,
         resolveVideoSource
-      });
-      return modalMediaFlowApi;
+      }))) || null;
     }
 
     function ensureGuidedStateFlow(){
-      if(guidedStateFlowApi) return guidedStateFlowApi;
       const create = window.AC_FEATURES?.guidedStateFlow?.create;
-      if(typeof create !== 'function') return null;
-      guidedStateFlowApi = create({
+      return guidedStateFlowApi || (typeof create === 'function' && (guidedStateFlowApi = create({
         getBookingViewConfig,
         syncGuidedState,
         getBookingStage,
-        placeStage2ContentForView,
-        syncCompletedBookingScaffold,
-        stopVariantFlowScenario,
+        stopVariantFlowScenario: () => safeInvoke(ensureVariantFlow(), 'stopVariantFlowScenario', [], null),
         bookingText,
         hideVariantCoachBadge,
         hasSelectedAge,
         ageLabel,
         getState: () => state,
         getSelectedShift,
-        scheduleVariantFlowScenario
-      });
-      return guidedStateFlowApi;
+        simpleModeEnabled: HERO_V3_SIMPLE_ENABLED,
+        scheduleVariantFlowScenario: () => {
+          if(HERO_V3_SIMPLE_ENABLED){
+            safeInvoke(ensureVariantFlow(), 'stopVariantFlowScenario', [], null);
+            return;
+          }
+          safeInvoke(ensureVariantFlow(), 'scheduleVariantFlowScenario', [], null);
+        }
+      }))) || null;
     }
 
     function ensureBookingViewFlow(){
-      if(bookingViewFlowApi) return bookingViewFlowApi;
       const create = window.AC_FEATURES?.bookingViewFlow?.create;
-      if(typeof create !== 'function') return null;
-      bookingViewFlowApi = create({
+      return bookingViewFlowApi || (typeof create === 'function' && (bookingViewFlowApi = create({
         bookingText,
         getBookingStage,
         splitPrimaryActionText,
@@ -16326,35 +12514,48 @@ function runOfferSearch(overrides){
         renderGuidedState,
         applyBookingStageClass,
         applyBookingStage2Alignment,
-        applyBookingStructureSchema,
         syncBookingHints,
         updateBookingScarcityUi,
         scheduleBookingCardMinHeightSync,
-        closeInlineLead
-      });
-      return bookingViewFlowApi;
+        closeInlineLead: (scope) => {
+          return safeInvoke(ensureBookingInlineRuntimeFlow(), 'closeInlineLead', [scope], null);
+        }
+      }))) || null;
     }
 
     function ensureBookingHintFlow(){
-      if(bookingHintFlowApi) return bookingHintFlowApi;
       const create = window.AC_FEATURES?.bookingHintFlow?.create;
-      if(typeof create !== 'function') return null;
-      bookingHintFlowApi = create({
+      return bookingHintFlowApi || (typeof create === 'function' && (bookingHintFlowApi = create({
         getActiveBookingViewKeys,
         getRenderableBookingViewKeys,
         getBookingViewConfig,
         getBookingStage,
         hasSelectedAge,
-        getState: () => state
-      });
-      return bookingHintFlowApi;
+        getState: () => state,
+        isSimpleModeEnabled: () => HERO_V3_SIMPLE_ENABLED,
+        getHintTimerId: () => desktopAgeTapHintTimer,
+        setHintTimerId: (next) => {
+          desktopAgeTapHintTimer = next || null;
+        },
+        getHintRunning: () => desktopAgeTapHintRunning,
+        setHintRunning: (flag) => {
+          desktopAgeTapHintRunning = !!flag;
+        },
+        getHintPlayed: () => desktopAgeTapHintPlayed,
+        setHintPlayed: (flag) => {
+          desktopAgeTapHintPlayed = !!flag;
+        },
+        getHintToken: () => desktopAgeTapHintToken,
+        setHintToken: (next) => {
+          desktopAgeTapHintToken = Number(next) || 0;
+        },
+        getHintStartedAt: () => desktopAgeTapHintStartedAt
+      }))) || null;
     }
 
     function ensureSummaryFlow(){
-      if(summaryFlowApi) return summaryFlowApi;
       const create = window.AC_FEATURES?.summaryFlow?.create;
-      if(typeof create !== 'function') return null;
-      summaryFlowApi = create({
+      return summaryFlowApi || (typeof create === 'function' && (summaryFlowApi = create({
         getState: () => state,
         getShifts: () => shifts,
         getTimerId: () => timerId,
@@ -16386,24 +12587,21 @@ function runOfferSearch(overrides){
         formatPrice,
         getPrimaryBookingViewConfig,
         isCompactCurrentMode: isSummaryCompactMode
-      });
-      return summaryFlowApi;
+      }))) || null;
     }
 
     function ensureViewModeFlow(){
-      if(viewModeFlowApi) return viewModeFlowApi;
       const create = window.AC_FEATURES?.viewModeFlow?.create;
-      if(typeof create !== 'function') return null;
-      viewModeFlowApi = create({
+      return viewModeFlowApi || (typeof create === 'function' && (viewModeFlowApi = create({
         getState: () => state,
-        useDesktopBaseForMobile: USE_DESKTOP_BASE_FOR_MOBILE,
+        useDesktopBaseForMobile: useDesktopBaseForMobileCfg,
         normalizeMode,
-        heroContrastModes: HERO_CONTRAST_MODES,
-        heroMicroModes: HERO_MICRO_MODES,
-        offerModalThemes: OFFER_MODAL_THEMES,
-        offerLayoutModes: OFFER_LAYOUT_MODES,
-        setHeroMenuOpen,
-        closeSectionModal,
+        heroContrastModes: heroContrastModesCfg,
+        heroMicroModes: heroMicroModesCfg,
+        offerModalThemes: offerModalThemesCfg,
+        offerLayoutModes: offerLayoutModesCfg,
+        setHeroMenuOpen: runtimeInvoke.setHeroMenuOpen,
+        closeSectionModal: runtimeInvoke.closeSectionModal,
         applyHeroAbVariant,
         applyMobileTemplatesToDesktopSections,
         renderMediaSections,
@@ -16413,38 +12611,39 @@ function runOfferSearch(overrides){
         applyOfferLayoutMode,
         showOffer,
         applyMobileSectionAccordion
-      });
-      return viewModeFlowApi;
+      }))) || null;
     }
 
     function ensureHeroV3SimpleFlow(){
-      if(heroV3SimpleFlowApi) return heroV3SimpleFlowApi;
       const create = window.AC_FEATURES?.heroV3SimpleFlow?.create;
-      if(typeof create !== 'function') return null;
-      heroV3SimpleFlowApi = create({
+      return heroV3SimpleFlowApi || (typeof create === 'function' && (heroV3SimpleFlowApi = create({
         document,
         getEnabled: () => HERO_V3_SIMPLE_ENABLED,
-        setHeroPhoneDropdownOpen
-      });
-      return heroV3SimpleFlowApi;
+        setHeroPhoneDropdownOpen: runtimeInvoke.setHeroPhoneDropdownOpen,
+        navigateToSection: runtimeInvoke.navigateToSection
+      }))) || null;
+    }
+
+    function ensureHeroBackgroundFlow(){
+      const create = window.AC_FEATURES?.heroBackgroundFlow?.create;
+      return heroBackgroundFlowApi || (typeof create === 'function' && (heroBackgroundFlowApi = create({
+        getHeroAbVariant: () => heroAbVariant,
+        getHeroAbAssets,
+        getHeroImages: () => HERO_IMAGES
+      }))) || null;
     }
 
     function ensureOfferFlow(){
-      if(offerFlowApi) return offerFlowApi;
-      const api = window.AC_FEATURES?.offerFlow || null;
-      offerFlowApi = asFeatureApi(api);
-      return offerFlowApi;
+      return offerFlowApi || (offerFlowApi = asFeatureApi(window.AC_FEATURES?.offerFlow || null));
     }
 
     function ensureBookingRuntimeBridge(){
-      if(bookingRuntimeBridgeApi) return bookingRuntimeBridgeApi;
       const createBridge = window.AC_RUNTIME_BOOKING_BRIDGE?.createBridge;
-      if(typeof createBridge !== 'function') return null;
-      bookingRuntimeBridgeApi = createBridge({
+      return bookingRuntimeBridgeApi || (typeof createBridge === 'function' && (bookingRuntimeBridgeApi = createBridge({
         getState: () => state,
         getSelectedShift,
         shiftDaysLabel,
-        clearShiftOptionPanels,
+        clearShiftOptionPanels: () => runtimeInvoke.clearShiftOptionPanels(),
         persist,
         renderAll,
         bookingText,
@@ -16463,15 +12662,53 @@ function runOfferSearch(overrides){
         ageLabel,
         stripRemainingPrefix,
         formatRemainingCompact
-      });
-      return bookingRuntimeBridgeApi;
+      }))) || null;
+    }
+
+    function ensureBookingCalendarRuntimeFlow(){
+      const create = window.AC_FEATURES?.bookingCalendarRuntimeFlow?.create;
+      return bookingCalendarRuntimeFlowApi || (typeof create === 'function' && (bookingCalendarRuntimeFlowApi = create({
+        safeInvoke,
+        document,
+        state,
+        getCalendarFlow: ensureCalendarFlow,
+        getBookingRuntimeBridge: ensureBookingRuntimeBridge,
+        getShiftOptionsFlow: ensureShiftOptionsFlow,
+        getSelectedShift,
+        shiftDaysLabel,
+        isOfferActive,
+        formatPrice,
+        ageLabel,
+        bookingText,
+        stripRemainingPrefix,
+        formatRemainingCompact,
+        renderAll,
+        persist,
+        showHint,
+        getShiftOptionPanels: () => shiftOptionPanels,
+        setShiftOptionPanels: (nextPanels = null) => {
+          shiftOptionPanels = nextPanels || {
+            desktop:{aboutId:null, calendarId:null},
+            mobile:{aboutId:null, calendarId:null}
+          };
+        },
+        renderShiftOptions,
+        getOfferTimeoutIds: () => offerTimeoutIds,
+        setOfferTimeoutIds: (next = []) => {
+          offerTimeoutIds = (Array.isArray(next) && next) || [];
+        },
+        openInlineLead: (scope) => {
+          safeInvoke(ensureBookingInlineRuntimeFlow(), 'openInlineLead', [scope], null);
+        },
+        useDesktopBaseForMobile: useDesktopBaseForMobileCfg,
+        simpleModeEnabled: HERO_V3_SIMPLE_ENABLED,
+        offerStageKey: OFFER_STAGE_KEY
+      }))) || null;
     }
 
     function ensureActionDispatcher(){
-      if(actionDispatcherApi) return actionDispatcherApi;
       const create = window.AC_FEATURES?.actionDispatcher?.createActionDispatcher;
-      if(typeof create !== 'function') return null;
-      actionDispatcherApi = create({
+      return actionDispatcherApi || (typeof create === 'function' && (actionDispatcherApi = create({
         bookingText,
         getState: () => state,
         getMediaContent: () => mediaContent,
@@ -16479,14 +12716,14 @@ function runOfferSearch(overrides){
         setActivePhotoList: (next = []) => {
           activePhotoList = cloneArrayOrEmpty(next);
         },
-        openMedia,
+        openMedia: runtimeInvoke.openMedia,
         getStayGallery,
-        openVideo,
-        scrollVideoCarousel,
+        openVideo: runtimeInvoke.openVideo,
+        scrollVideoCarousel: runtimeInvoke.scrollVideoCarousel,
         openShiftAboutModal,
         openCalendar,
         toggleShiftOptionPanel,
-        navigateToSection,
+        navigateToSection: runtimeInvoke.navigateToSection,
         focusMobileAgeGate,
         dismissSummaryBarTemporarily,
         applyStatePatch: (patch = {}) => {
@@ -16496,19 +12733,19 @@ function runOfferSearch(overrides){
         persist,
         syncMobileDocsExpandedUi,
         renderDesktopMobileDocsBlock,
-        scrollTeamCarousel,
+        scrollTeamCarousel: runtimeInvoke.scrollTeamCarousel,
         openSeasonCalendar,
         handlePrimaryCTA,
         resetAgeSelection,
         resetShiftSelection,
-        openResetBookingConfirmModal,
+        openResetBookingConfirmModal: runtimeInvoke.openResetBookingConfirmModal,
         bumpOfferRunId: () => {
           offerRunId += 1;
         },
         clearOfferTimeout,
         resetOfferProgressUI,
         saveOfferAndClose,
-        openNoticeModal,
+        openNoticeModal: runtimeInvoke.openNoticeModal,
         renderAll,
         syncGuidedState,
         buildBookingSummaryHtml,
@@ -16517,76 +12754,206 @@ function runOfferSearch(overrides){
         track,
         selectedShiftPayload,
         buildHeroVariantMeta,
-        submitLead,
-        closeSuccessModal,
-        closeNoticeModal,
+        submitLead: (scope = 'drawer') => {
+          return safeInvoke(ensureBookingInlineRuntimeFlow(), 'submitLead', [scope], null);
+        },
+        closeSuccessModal: runtimeInvoke.closeSuccessModal,
+        closeNoticeModal: runtimeInvoke.closeNoticeModal,
         hideVariantCoachBadge,
         getPrimaryBookingViewConfig,
-        getNoticeConfirmHandler: () => noticeConfirmHandler,
+        getNoticeConfirmHandler: () => safeInvoke(ensureOverlayFlow(), 'getNoticeConfirmHandler', [], null),
         closeCalendar,
-        closeSectionModal,
-        closeVideo,
+        closeSectionModal: runtimeInvoke.closeSectionModal,
+        closeVideo: runtimeInvoke.closeVideo,
         buildInviteClipboardText,
-        setHeroMenuOpen,
-        isHeroMenuOpen,
-        setHeroPhoneDropdownOpen,
-        isHeroPhoneDropdownOpen
-      });
-      return actionDispatcherApi;
+        setHeroMenuOpen: runtimeInvoke.setHeroMenuOpen,
+        isHeroMenuOpen: runtimeInvoke.isHeroMenuOpen,
+        setHeroPhoneDropdownOpen: runtimeInvoke.setHeroPhoneDropdownOpen,
+        isHeroPhoneDropdownOpen: runtimeInvoke.isHeroPhoneDropdownOpen
+      }))) || null;
     }
 
     function ensureBookingInlineLeadApi(){
-      if(bookingInlineLeadApi) return bookingInlineLeadApi;
-      const api = window.AC_FEATURES?.bookingInlineLead || null;
-      bookingInlineLeadApi = asFeatureApi(api);
-      return bookingInlineLeadApi;
+      return bookingInlineLeadApi || (bookingInlineLeadApi = asFeatureApi(window.AC_FEATURES?.bookingInlineLead || null));
+    }
+
+    function ensureBookingInlineRuntimeFlow(){
+      const create = window.AC_FEATURES?.bookingInlineRuntimeFlow?.create;
+      return bookingInlineRuntimeFlowApi || (typeof create === 'function' && (bookingInlineRuntimeFlowApi = create({
+        safeInvoke,
+        state,
+        shifts,
+        document,
+        getBookingInlineLeadApi: ensureBookingInlineLeadApi,
+        getLeadSubmitInProgress: () => leadSubmitInProgress,
+        setLeadSubmitInProgress: (next) => {
+          leadSubmitInProgress = !!next;
+        },
+        syncGuidedState,
+        openNoticeModal: runtimeInvoke.openNoticeModal,
+        persist,
+        labelAge,
+        formatPrice,
+        buildAbMeta,
+        track,
+        selectedShiftPayload,
+        buildHeroVariantMeta,
+        notifyLead,
+        renderSummary,
+        renderBookingPanels,
+        updateSummaryBarVisibility,
+        isAdminDebugSession,
+        isOfferActive,
+        startTimer,
+        buildBookingSummaryHtml
+      }))) || null;
+    }
+
+    function ensureOverlayFlow(){
+      const create = window.AC_FEATURES?.overlays?.create;
+      return overlayFlowApi || (typeof create === 'function' && (overlayFlowApi = create({
+        document,
+        buildBookingSummaryHtml,
+        isAdminDebugSession,
+        resetOfferState,
+        getState: () => state,
+        persist,
+        renderAll
+      }))) || null;
     }
 
     function ensureMediaGestureBindingsApi(){
-      if(mediaGestureBindingsApi) return mediaGestureBindingsApi;
-      const api = window.AC_FEATURES?.mediaGestureBindings || null;
-      mediaGestureBindingsApi = asFeatureApi(api);
-      return mediaGestureBindingsApi;
+      return mediaGestureBindingsApi || (mediaGestureBindingsApi = asFeatureApi(window.AC_FEATURES?.mediaGestureBindings || null));
     }
 
     function ensureGlobalUiBindingsApi(){
-      if(globalUiBindingsApi) return globalUiBindingsApi;
-      const api = window.AC_FEATURES?.globalUiBindings || null;
-      globalUiBindingsApi = asFeatureApi(api);
-      return globalUiBindingsApi;
+      return globalUiBindingsApi || (globalUiBindingsApi = asFeatureApi(window.AC_FEATURES?.globalUiBindings || null));
     }
 
-    function asObject(value){
-      return (value && typeof value === 'object' && value) || {};
+    function ensureMediaFlowApi(){
+      return mediaFlowApi || (mediaFlowApi = asFeatureApi(window.AC_FEATURES?.mediaFlow || null));
     }
 
-    function asFeatureApi(value){
-      return (value && typeof value === 'object' && value) || null;
+    function ensureDocsFlow(){
+      const create = window.AC_FEATURES?.docsFlow?.create;
+      return docsFlowApi || (typeof create === 'function' && (docsFlowApi = create({
+        shouldUseMobileTemplatesForDesktopSource: () => useDesktopBaseForMobileCfg && state.previewView === 'mobile',
+        getMobileDocsCopy: () => Object.freeze(DOCS_RUNTIME_CONFIG.mobileDocsCopy || DOCS_MOBILE_COPY_FALLBACK),
+        getState: () => state,
+        getDesktopMobileSectionTemplates: () => Object.freeze(DOCS_RUNTIME_CONFIG.desktopMobileSectionTemplates || DOCS_DESKTOP_SECTION_TEMPLATES_FALLBACK)
+      }))) || null;
     }
 
-    function cloneArrayOrEmpty(value){
-      return (Array.isArray(value) && value.slice()) || [];
+    function ensureUiInitFlow(){
+      const create = window.AC_FEATURES?.uiInitFlow?.create;
+      return uiInitFlowApi || (typeof create === 'function' && (uiInitFlowApi = create({
+        closeIconHtml: CLOSE_ICON_HTML,
+        getScrollMarks: () => scrollMarks,
+        track,
+        trackOnce,
+        updateSummaryBarVisibility
+      }))) || null;
     }
 
-    function resolveBookingViewCfg(viewCfg){
-      return (viewCfg && viewCfg.key && viewCfg) || getBookingViewConfig('desktop');
+    function ensureShiftOptionsFlow(){
+      const create = window.AC_FEATURES?.shiftOptionsFlow?.create;
+      return shiftOptionsFlowApi || (typeof create === 'function' && (shiftOptionsFlowApi = create({
+        getState: () => state,
+        getShifts: () => shifts,
+        parseShiftDate,
+        formatPrice,
+        shiftDaysLabel,
+        hasSelectedAge,
+        syncGuidedState,
+        showHint,
+        nudgeUserToNextStep,
+        selectShift,
+        closeTransientModals: runtimeInvoke.closeTransientModals,
+        applyCompactSectionModalLayout: runtimeInvoke.applyCompactSectionModalLayout,
+        resolveViewKey,
+        resolveShiftOptionsTargetId,
+        getShiftOptionPanels: () => shiftOptionPanels
+      }))) || null;
     }
 
-    function resolveScopeRoot(scopeRoot){
-      return (scopeRoot && scopeRoot.nodeType === 1 && scopeRoot) || document;
+    function ensureLeadNotifyFlow(){
+      const create = window.AC_FEATURES?.leadNotifyFlow?.create;
+      return leadNotifyFlowApi || (typeof create === 'function' && (leadNotifyFlowApi = create({
+        buildAbMeta,
+        saveLeadFallbackMeta,
+        telegramText: bookingText,
+        formatPrice
+      }))) || null;
     }
 
-    function resolveViewKey(viewKey){
-      return (viewKey === 'mobile' && 'mobile') || 'desktop';
+    function ensureRuntimeActionFlow(){
+      const create = window.AC_FEATURES?.runtimeActionFlow?.create;
+      return runtimeActionFlowApi || (typeof create === 'function' && (runtimeActionFlowApi = create({
+        document,
+        safeInvoke,
+        getActionDispatcher: ensureActionDispatcher
+      }))) || null;
     }
 
-    function resolveVariantCoachMode(tier){
-      return ((tier === 'tier2' || tier === 'tier4') && 'menu') || 'info';
+    function ensureRuntimeInitFlow(){
+      const create = window.AC_FEATURES?.runtimeInitFlow?.create;
+      return runtimeInitFlowApi || (typeof create === 'function' && (runtimeInitFlowApi = create({
+        setTimeoutFn: window.setTimeout.bind(window),
+        track,
+        getState: () => state,
+        runDeferredTasks: () => {
+          injectHeroSeasonOfferCta();
+          initFloatingContactsWidget();
+          safeInvoke(ensureHeroAbFlow(), 'initHeroAbDevPanel', [], null);
+          safeInvoke(ensureUiInitFlow(), 'initScrollTracking', [], null);
+          safeInvoke(ensureUiInitFlow(), 'initSummaryBarViewportSync', [], null);
+          safeInvoke(ensureUiInitFlow(), 'initSectionViewTracking', [], null);
+          refreshVideoMeta({force:true});
+          safeInvoke(ensureVideoMetaFlow(), 'scheduleVideoMetaRefresh', [], null);
+          safeInvoke(ensureBookingHintFlow(), 'scheduleDesktopAgeTapHint', [], null);
+          safeInvoke(ensureRuntimeQualityOrchestrator(), 'runAll', [], null)
+            || QUALITY_PIPELINE_NAMESPACE.runAll();
+        }
+      }))) || null;
     }
 
-    function toHeroAbVariant(value){
-      return ((String(value || 'A').toUpperCase() === 'B') && 'B') || 'A';
+    function ensureHeroNavFlow(){
+      const create = window.AC_FEATURES?.heroNavFlow?.create;
+      return heroNavFlowApi || (typeof create === 'function' && (heroNavFlowApi = create({
+        getMediaType: () => mediaType,
+        getMediaContent: () => mediaContent,
+        getActivePhotoList: () => activePhotoList,
+        getMediaIndex: () => mediaIndex,
+        setMediaIndex: (next) => {
+          mediaIndex = Number(next) || 0;
+        },
+        renderMediaViewer: runtimeInvoke.renderMediaViewer,
+        resolveScopeRoot,
+        openSectionModalBase: (sectionId) => safeInvoke(ensureModalMediaFlow(), 'openSectionModal', [sectionId], false),
+        trackFaqOpen
+      }))) || null;
     }
+
+    const mainHelperFallbacks = Object.freeze({
+      asObject: (value) => ((value && typeof value === 'object' && value) || {}),
+      asFeatureApi: (value) => ((value && typeof value === 'object' && value) || null),
+      cloneArrayOrEmpty: (value) => ((Array.isArray(value) && value.slice()) || []),
+      resolveBookingViewCfg: (viewCfg) => ((viewCfg && viewCfg.key && viewCfg) || getBookingViewConfig('desktop')),
+      resolveScopeRoot: (scopeRoot) => ((scopeRoot && scopeRoot.nodeType === 1 && scopeRoot) || document),
+      resolveViewKey: (viewKey) => ((viewKey === 'mobile' && 'mobile') || 'desktop'),
+      resolveVariantCoachMode: (tier) => (((tier === 'tier2' || tier === 'tier4') && 'menu') || 'info'),
+      toHeroAbVariant: (value) => (((String(value || 'A').toUpperCase() === 'B') && 'B') || 'A')
+    });
+
+    const getMainHelpers = () => ensureMainHelpers() || mainHelperFallbacks;
+    const asObject = (value) => getMainHelpers().asObject(value);
+    const asFeatureApi = (value) => getMainHelpers().asFeatureApi(value);
+    const cloneArrayOrEmpty = (value) => getMainHelpers().cloneArrayOrEmpty(value);
+    const resolveBookingViewCfg = (viewCfg) => getMainHelpers().resolveBookingViewCfg(viewCfg);
+    const resolveScopeRoot = (scopeRoot) => getMainHelpers().resolveScopeRoot(scopeRoot);
+    const resolveViewKey = (viewKey) => getMainHelpers().resolveViewKey(viewKey);
+    const resolveVariantCoachMode = (tier) => getMainHelpers().resolveVariantCoachMode(tier);
+    const toHeroAbVariant = (value) => getMainHelpers().toHeroAbVariant(value);
 
     function hasQueryFlag(name){
       try{
@@ -16598,12 +12965,12 @@ function runOfferSearch(overrides){
     }
 
     function getHeroAbAssets(value){
-      return HERO_AB_ASSETS[toHeroAbVariant(value)] || HERO_AB_ASSETS.A;
+      return heroAbAssetsCfg[toHeroAbVariant(value)] || heroAbAssetsCfg.A;
     }
 
     function buildAbMeta(extra = {}){
       const fallback = {
-        ab_test_id: HERO_AB_TEST_ID,
+        ab_test_id: heroAbTestIdCfg,
         ab_variant: toHeroAbVariant(heroAbVariant),
         ...asObject(extra)
       };
@@ -16618,7 +12985,7 @@ function runOfferSearch(overrides){
       return safeInvoke(ensureTelemetryFlow(), 'track', [event, trackedParams], () => {
         try {
           if(typeof ym !== 'undefined'){
-            ym(METRIKA_ID, 'reachGoal', event, trackedParams);
+            ym(metrikaIdCfg, 'reachGoal', event, trackedParams);
           }
         } catch (error){
           console.warn('Metrika track error:', event, error);
@@ -16626,23 +12993,23 @@ function runOfferSearch(overrides){
       });
     }
 
-    function getCurrentSearchParams(){
-      return safeInvoke(ensureTelemetryFlow(), 'getCurrentSearchParams', [], () => {
+    const getCurrentSearchParams = () => (
+      safeInvoke(ensureTelemetryFlow(), 'getCurrentSearchParams', [], () => {
         try {
           return new URLSearchParams(window.location.search || '');
         } catch (error){
           return new URLSearchParams('');
         }
-      });
-    }
+      })
+    );
 
-    function buildLegalDocUrl(hash = ''){
-      return safeInvoke(ensureTelemetryFlow(), 'buildLegalDocUrl', [hash], 'legal.html');
-    }
+    const buildLegalDocUrl = (hash = '') => (
+      safeInvoke(ensureTelemetryFlow(), 'buildLegalDocUrl', [hash], 'legal.html')
+    );
 
-    function syncLegalDocLinks(scope = document){
-      return safeInvoke(ensureTelemetryFlow(), 'syncLegalDocLinks', [scope], null);
-    }
+    const syncLegalDocLinks = (scope = document) => (
+      safeInvoke(ensureTelemetryFlow(), 'syncLegalDocLinks', [scope], null)
+    );
 
     function buildHeroVariantMeta(extra = {}){
       const fallbackVariant = heroVariantState || resolveHeroVariantFromUtm();
@@ -16671,19 +13038,19 @@ function runOfferSearch(overrides){
       return safeInvoke(ensureHeroVariantFlow(), 'resolveHeroVariantFromUtm', [], fallback);
     }
 
-    function applyHeroVariantCopy(){
-      return safeInvoke(ensureHeroVariantFlow(), 'applyHeroVariantCopy', [], () => {
+    const applyHeroVariantCopy = () => (
+      safeInvoke(ensureHeroVariantFlow(), 'applyHeroVariantCopy', [], () => {
         const variant = heroVariantState || resolveHeroVariantFromUtm();
         const copy = variant.copy || HERO_VARIANT_COPY[HERO_VARIANT_DEFAULT_TIER];
         document.querySelectorAll('.hero-slogan').forEach((node) => {
           if(node) node.textContent = copy.title;
         });
-      });
-    }
+      })
+    );
 
-    function injectHeroSeasonOfferCta(){
-      return safeInvoke(ensureHeroVariantFlow(), 'injectHeroSeasonOfferCta');
-    }
+    const injectHeroSeasonOfferCta = () => (
+      safeInvoke(ensureHeroVariantFlow(), 'injectHeroSeasonOfferCta')
+    );
 
     function formatVariantHint(template){
       return safeInvoke(ensureHeroVariantFlow(), 'formatVariantHint', [template], () => {
@@ -16693,9 +13060,9 @@ function runOfferSearch(overrides){
       });
     }
 
-    function clearVariantCoachReminderTimer(){
-      return safeInvoke(ensureHeroVariantFlow(), 'clearVariantCoachReminderTimer');
-    }
+    const clearVariantCoachReminderTimer = () => (
+      safeInvoke(ensureHeroVariantFlow(), 'clearVariantCoachReminderTimer')
+    );
 
     function syncVariantBookingHint(viewCfg){
       const cfg = resolveBookingViewCfg(viewCfg);
@@ -16717,8 +13084,8 @@ function runOfferSearch(overrides){
       return safeInvoke(ensureHeroVariantFlow(), 'syncVariantCoachBadge', [cfg], null);
     }
 
-    function initHeroVariantPersonalization(){
-      return safeInvoke(ensureHeroVariantFlow(), 'initHeroVariantPersonalization', [], () => {
+    const initHeroVariantPersonalization = () => (
+      safeInvoke(ensureHeroVariantFlow(), 'initHeroVariantPersonalization', [], () => {
         heroVariantState = resolveHeroVariantFromUtm();
         const fallbackReason = heroVariantState.fallbackReason || '';
         trackOnce('hero_variant_shown_new', buildHeroVariantMeta());
@@ -16726,8 +13093,8 @@ function runOfferSearch(overrides){
           trackOnce('hero_variant_fallback_new', buildHeroVariantMeta({reason:fallbackReason}));
         }
         applyHeroVariantCopy();
-      });
-    }
+      })
+    );
 
     function trackOnce(event, params = {}){
       const key = `${event}:${JSON.stringify(params)}`;
@@ -16737,107 +13104,92 @@ function runOfferSearch(overrides){
     }
 
     function ensureRuntimeQualityPipeline(){
-      if(runtimeQualityPipelineApi) return runtimeQualityPipelineApi;
       const create = window.AC_FEATURES?.runtimeQualityPipeline?.create;
-      if(typeof create !== 'function') return null;
-      runtimeQualityPipelineApi = create({
+      runtimeQualityPipelineApi = runtimeQualityPipelineApi || (typeof create === 'function' && create({
         document,
         runtimeStore: AIDACAMP_RUNTIME,
         buildVersionLabel: BUILD_VERSION_LABEL,
-        versionMonotonicKey: VERSION_MONOTONIC_KEY,
-        qualityBaselineKey: QUALITY_BASELINE_KEY,
-        debtRegisterKey: DEBT_REGISTER_KEY,
+        versionMonotonicKey: versionMonotonicKeyCfg,
+        qualityBaselineKey: qualityBaselineKeyCfg,
+        debtRegisterKey: debtRegisterKeyCfg,
         requiredSelectors: GUARDRAIL_REQUIRED_SELECTORS,
         qualitySoftGates: QUALITY_SOFT_GATES,
         architecturePolicy: ARCHITECTURE_POLICY,
-        useDesktopBaseForMobile: USE_DESKTOP_BASE_FOR_MOBILE,
+        useDesktopBaseForMobile: useDesktopBaseForMobileCfg,
         shouldUseLegacyMobile: () => state.previewView === 'mobile',
         trackOnce,
         isPipelineEnabled: () => isFeatureEnabled('runtimeQualityPipeline')
-      });
+      }));
       if(runtimeQualityPipelineApi?.namespace){
         AIDACAMP_RUNTIME.quality.pipeline = runtimeQualityPipelineApi.namespace;
       }
-      return runtimeQualityPipelineApi;
+      return runtimeQualityPipelineApi || null;
     }
 
-    function getRuntimeQualityNamespace(){
-      const pipeline = ensureRuntimeQualityPipeline();
-      return pipeline?.namespace || null;
+    function ensureRuntimeQualityOrchestrator(){
+      const create = window.AC_FEATURES?.runtimeQualityOrchestrator?.create;
+      return runtimeQualityOrchestratorApi || (typeof create === 'function' && (runtimeQualityOrchestratorApi = create({
+        getRuntimeQualityNamespace: () => {
+          const pipeline = ensureRuntimeQualityPipeline();
+          return pipeline?.namespace || null;
+        },
+        architecturePolicyId: ARCHITECTURE_POLICY.id
+      }))) || null;
     }
 
-    function runGuardrails(){
-      return safeInvoke(getRuntimeQualityNamespace(), 'runGuardrails', [], {
+    const runGuardrails = () => (
+      safeInvoke(ensureRuntimeQualityOrchestrator(), 'runGuardrails', [], {
         ok: false,
         policy: ARCHITECTURE_POLICY.id
-      });
-    }
+      })
+    );
 
-    function runQualityBaselineAudit(){
-      return safeInvoke(getRuntimeQualityNamespace(), 'runQualityBaselineAudit', [], null);
-    }
+    const runQualityBaselineAudit = () => (
+      safeInvoke(ensureRuntimeQualityOrchestrator(), 'runQualityBaselineAudit', [], null)
+    );
 
-    function evaluateSoftQualityGates(snapshot){
-      return safeInvoke(getRuntimeQualityNamespace(), 'evaluateSoftQualityGates', [snapshot], {
+    const evaluateSoftQualityGates = (snapshot) => (
+      safeInvoke(ensureRuntimeQualityOrchestrator(), 'evaluateSoftQualityGates', [snapshot], {
         ok: false,
         warnings: ['pipeline_unavailable']
-      });
-    }
+      })
+    );
 
-    function buildDebtRegister(guardrails, baseline, gates){
-      return safeInvoke(getRuntimeQualityNamespace(), 'buildDebtRegister', [guardrails, baseline, gates], {
+    const buildDebtRegister = (guardrails, baseline, gates) => (
+      safeInvoke(ensureRuntimeQualityOrchestrator(), 'buildDebtRegister', [guardrails, baseline, gates], {
         debtItems: [],
         pressureScore: 0,
         pressureLevel: 'low'
-      });
-    }
+      })
+    );
 
-    function buildRuntimeQualityScore(baseline, gates, debtRegister){
-      return safeInvoke(getRuntimeQualityNamespace(), 'buildRuntimeQualityScore', [baseline, gates, debtRegister], {
+    const buildRuntimeQualityScore = (baseline, gates, debtRegister) => (
+      safeInvoke(ensureRuntimeQualityOrchestrator(), 'buildRuntimeQualityScore', [baseline, gates, debtRegister], {
         css: 0,
         js: 0,
         techDebt: 0,
         monolithness: 0
-      });
-    }
+      })
+    );
 
-    function buildQualityTrendSummary(delta){
-      return safeInvoke(getRuntimeQualityNamespace(), 'buildQualityTrendSummary', [delta], {
+    const buildQualityTrendSummary = (delta) => (
+      safeInvoke(ensureRuntimeQualityOrchestrator(), 'buildQualityTrendSummary', [delta], {
         trend: 'flat',
         better: 0,
         worse: 0
-      });
-    }
+      })
+    );
 
-    function runReleaseIntegrityChecks(){
-      return safeInvoke(getRuntimeQualityNamespace(), 'runReleaseIntegrityChecks', [], {
+    const runReleaseIntegrityChecks = () => (
+      safeInvoke(ensureRuntimeQualityOrchestrator(), 'runReleaseIntegrityChecks', [], {
         ok: false,
         missing: ['runtime_quality_pipeline']
-      });
-    }
+      })
+    );
 
-    function printRuntimeStatusReport(){
-      return safeInvoke(getRuntimeQualityNamespace(), 'printRuntimeStatusReport', [], '');
-    }
-
-    function runQualityPipelineAll(){
-      const qualityResult = safeInvoke(getRuntimeQualityNamespace(), 'runAll', [], null);
-      if(qualityResult) return qualityResult;
-      const guardrailReport = runGuardrails();
-      const qualityBaseline = runQualityBaselineAudit();
-      const qualityGates = evaluateSoftQualityGates(qualityBaseline);
-      const debtRegister = buildDebtRegister(guardrailReport, qualityBaseline, qualityGates);
-      buildRuntimeQualityScore(qualityBaseline, qualityGates, debtRegister);
-      buildQualityTrendSummary(qualityBaseline?.delta);
-      runReleaseIntegrityChecks();
-      printRuntimeStatusReport();
-      return {
-        guardrailReport,
-        qualityBaseline,
-        qualityGates,
-        debtRegister
-      };
-    }
+    const printRuntimeStatusReport = () => (
+      safeInvoke(ensureRuntimeQualityOrchestrator(), 'printRuntimeStatusReport', [], '')
+    );
 
     const QUALITY_PIPELINE_NAMESPACE = Object.freeze({
       runGuardrails,
@@ -16848,7 +13200,24 @@ function runOfferSearch(overrides){
       buildQualityTrendSummary,
       runReleaseIntegrityChecks,
       printRuntimeStatusReport,
-      runAll: runQualityPipelineAll
+      runAll: () => {
+        const qualityResult = safeInvoke(ensureRuntimeQualityOrchestrator(), 'runAll', [], null);
+        if(qualityResult) return qualityResult;
+        const guardrailReport = runGuardrails();
+        const qualityBaseline = runQualityBaselineAudit();
+        const qualityGates = evaluateSoftQualityGates(qualityBaseline);
+        const debtRegister = buildDebtRegister(guardrailReport, qualityBaseline, qualityGates);
+        buildRuntimeQualityScore(qualityBaseline, qualityGates, debtRegister);
+        buildQualityTrendSummary(qualityBaseline?.delta);
+        runReleaseIntegrityChecks();
+        printRuntimeStatusReport();
+        return {
+          guardrailReport,
+          qualityBaseline,
+          qualityGates,
+          debtRegister
+        };
+      }
     });
     AIDACAMP_RUNTIME.quality.pipeline = QUALITY_PIPELINE_NAMESPACE;
 
@@ -16862,163 +13231,148 @@ function runOfferSearch(overrides){
       return typeof fallback === 'function' ? fallback(...list) : fallback;
     }
 
-    function normalizeCloseIconButtons(scope = document){
-      const root = scope || document;
-      const nodes = root.querySelectorAll(
-        [
-          '.version-badge-close',
-          '.media-close',
-          '.video-close',
-          '.form-close',
-          "[data-action='close-version-badge']",
-          "[data-action='close-form']",
-          "[data-action='close-success']",
-          "[data-action='close-section-modal']",
-          "[data-action='close-video-modal']",
-          "[data-action='close-calendar']"
-        ].join(',')
-      );
-
-      nodes.forEach((btn) => {
-        if(!btn || btn.dataset.closeIconNormalized === '1') return;
-
-        const raw = (btn.textContent || '').trim();
-
-        if(
-          raw === '×' ||
-          raw === '✕' ||
-          btn.classList.contains('version-badge-close') ||
-          btn.classList.contains('media-close') ||
-          btn.classList.contains('video-close') ||
-          btn.classList.contains('form-close') ||
-          btn.classList.contains('offer-close-btn')
-        ){
-          if(!btn.querySelector('img.ac-icon')){
-            btn.innerHTML = CLOSE_ICON_HTML;
-          }
-        }
-
-        btn.dataset.closeIconNormalized = '1';
-      });
-    }
-
-    function initScrollTracking(){
-      window.addEventListener('scroll', () => {
-        const h = document.documentElement;
-        const max = h.scrollHeight - h.clientHeight;
-        if(max <= 0) return;
-        const scrolled = (h.scrollTop / max) * 100;
-        [25,50,75,90].forEach((p) => {
-          if(scrolled >= p && !scrollMarks[p]){
-            scrollMarks[p] = true;
-            track(`scroll_${p}`);
-          }
-        });
-        safeInvoke({updateSummaryBarVisibility}, 'updateSummaryBarVisibility');
-      }, {passive:true});
-    }
-
-    function initSummaryBarViewportSync(){
-      const sync = () => {
-        safeInvoke({updateSummaryBarVisibility}, 'updateSummaryBarVisibility');
-      };
-      window.addEventListener('scroll', sync, {passive:true});
-      window.addEventListener('orientationchange', sync, {passive:true});
-      document.addEventListener('visibilitychange', () => {
-        if(document.hidden) return;
-        sync();
-      });
-    }
-
-    function initSectionViewTracking(){
-      const targets = [
-        {id:'section-stay', event:'stay_view'},
-        {id:'section-reviews', event:'eviews_view'},
-        {id:'section-team', event:'team_view'}
-      ];
-
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if(!entry.isIntersecting) return;
-          const found = targets.find(t => t.id === entry.target.id);
-          if(found) trackOnce(found.event);
-        });
-      }, {threshold:0.35});
-
-      targets.forEach((t) => {
-        const el = document.getElementById(t.id);
-        if(el) io.observe(el);
-      });
-    }
+    const runtimeInvoke = Object.freeze({
+      openMedia: (type, index) => safeInvoke(ensureModalMediaFlow(), 'openMedia', [type, index], null),
+      closeMedia: () => safeInvoke(ensureModalMediaFlow(), 'closeMedia', [], null),
+      closeTransientModals: (except = '', options = {}) => safeInvoke(ensureModalMediaFlow(), 'closeTransientModals', [except, options], null),
+      openVideo: (url) => safeInvoke(ensureModalMediaFlow(), 'openVideo', [url], null),
+      closeVideo: () => safeInvoke(ensureModalMediaFlow(), 'closeVideo', [], null),
+      closeSectionModal: () => safeInvoke(ensureModalMediaFlow(), 'closeSectionModal', [], null),
+      setHeroMenuOpen: (isOpen) => safeInvoke(ensureHeroNavFlow(), 'setHeroMenuOpen', [isOpen], null),
+      isHeroMenuOpen: () => safeInvoke(ensureHeroNavFlow(), 'isHeroMenuOpen', [], false),
+      setHeroPhoneDropdownOpen: (isOpen) => safeInvoke(ensureHeroNavFlow(), 'setHeroPhoneDropdownOpen', [isOpen], false),
+      isHeroPhoneDropdownOpen: () => safeInvoke(ensureHeroNavFlow(), 'isHeroPhoneDropdownOpen', [], false),
+      scrollVideoCarousel: (direction = 1, scopeRoot = null) => safeInvoke(ensureHeroNavFlow(), 'scrollVideoCarousel', [direction, scopeRoot], null),
+      scrollTeamCarousel: (direction = 1, scopeRoot = null) => safeInvoke(ensureHeroNavFlow(), 'scrollTeamCarousel', [direction, scopeRoot], null),
+      applyCompactSectionModalLayout: () => safeInvoke(ensureModalMediaFlow(), 'applyCompactSectionModalLayout', [], null),
+      openSectionModal: (sectionId) => !!safeInvoke(ensureHeroNavFlow(), 'openSectionModal', [sectionId], false),
+      renderMediaViewer: () => safeInvoke(ensureModalMediaFlow(), 'renderMediaViewer', [], null),
+      getActiveMediaList: () => safeInvoke(ensureHeroNavFlow(), 'getActiveMediaList', [], []),
+      nextMedia: () => safeInvoke(ensureHeroNavFlow(), 'nextMedia', [], null),
+      prevMedia: () => safeInvoke(ensureHeroNavFlow(), 'prevMedia', [], null),
+      getPhotoTagsByFilter: (filter) => safeInvoke(ensureHeroNavFlow(), 'getPhotoTagsByFilter', [filter], ['all', 'camp']),
+      getPhotosForActiveFilter: (filter = state.photoFilter) => safeInvoke(ensureHeroNavFlow(), 'getPhotosForActiveFilter', [filter], mediaContent.photos.slice()),
+      openSuccessModal: (deliveryResult) => safeInvoke(ensureOverlayFlow(), 'openSuccessModal', [deliveryResult], null),
+      closeSuccessModal: () => safeInvoke(ensureOverlayFlow(), 'closeSuccessModal', [], null),
+      openNoticeModal: (message, title = 'Проверьте данные') => safeInvoke(ensureOverlayFlow(), 'openNoticeModal', [message, title], null),
+      closeNoticeModal: () => safeInvoke(ensureOverlayFlow(), 'closeNoticeModal', [], null),
+      openResetBookingConfirmModal: () => safeInvoke(ensureOverlayFlow(), 'openResetBookingConfirmModal', [], null),
+      scrollToSection: (id) => safeInvoke(ensureNavigationFlow(), 'scrollToSection', [id], false),
+      navigateToSection: (id) => safeInvoke(ensureNavigationFlow(), 'navigateToSection', [id], null),
+      getResolvedPrimaryActionText: (actionState, shift) => safeInvoke(ensureBookingRuntimeBridge(), 'getResolvedPrimaryActionText', [{
+        state,
+        actionState,
+        shift,
+        formatPrice
+      }], ''),
+      renderGuidedState: (viewCfg) => safeInvoke(ensureGuidedStateFlow(), 'renderGuidedState', [viewCfg], null),
+      pulseNode: (node) => safeInvoke(ensureBookingHintFlow(), 'pulseNode', [node], null),
+      nudgeUserToNextStep: (message = 'Сначала завершите предыдущий шаг.') => (
+        safeInvoke(ensureBookingHintFlow(), 'nudgeUserToNextStep', [message], null)
+      ),
+      showHint: (message, requiredStep = '') => safeInvoke(ensureBookingHintFlow(), 'showHint', [message, requiredStep], null),
+      syncBookingHints: () => safeInvoke(ensureBookingHintFlow(), 'syncBookingHints', [], null),
+      stopBookingStage1TitleTypewriter: () => safeInvoke(ensureBookingViewFlow(), 'stopBookingStage1TitleTypewriter', [], null),
+      runBookingStage1TitleTypewriter: (target, text) => safeInvoke(ensureBookingViewFlow(), 'runBookingStage1TitleTypewriter', [target, text], null),
+      renderBookingInfo: (viewCfg) => safeInvoke(ensureBookingViewFlow(), 'renderBookingInfo', [viewCfg], null),
+      renderBookingPanels: () => safeInvoke(ensureBookingViewFlow(), 'renderBookingPanels', [], null),
+      getViewportPreviewView: () => safeInvoke(ensureViewModeFlow(), 'getViewportPreviewView', [], () => {
+        return (window.matchMedia('(max-width: 900px)').matches && 'mobile') || 'desktop';
+      }),
+      switchView: (view) => safeInvoke(ensureViewModeFlow(), 'switchView', [view], null),
+      toggleShiftOptionPanel: (viewKey, panelType, shiftId) => (
+        safeInvoke(ensureBookingCalendarRuntimeFlow(), 'toggleShiftOptionPanel', [viewKey, panelType, shiftId], null)
+      ),
+      clearShiftOptionPanels: () => safeInvoke(ensureBookingCalendarRuntimeFlow(), 'clearShiftOptionPanels', [], null),
+      parseShiftDate: (dateStr) => safeInvoke(ensureCalendarFlow(), 'parseShiftDate', [dateStr], () => {
+        const m = String(dateStr || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if(!m) return null;
+        return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      }),
+      renderCalendar: (shift) => safeInvoke(ensureCalendarFlow(), 'renderCalendar', [shift], null),
+      renderSeasonCalendar: () => safeInvoke(ensureCalendarFlow(), 'renderSeasonCalendar', [], null),
+      openCalendar: (shiftId) => safeInvoke(ensureBookingCalendarRuntimeFlow(), 'openCalendar', [shiftId], null),
+      openSeasonCalendar: () => safeInvoke(ensureBookingCalendarRuntimeFlow(), 'openSeasonCalendar', [], null),
+      closeCalendar: () => safeInvoke(ensureBookingCalendarRuntimeFlow(), 'closeCalendar', [], null),
+      selectedShiftPayload: () => safeInvoke(ensureBookingCalendarRuntimeFlow(), 'selectedShiftPayload', [], () => ({})),
+      clearOfferTimeout: () => safeInvoke(ensureBookingCalendarRuntimeFlow(), 'clearOfferTimeout', [], null),
+      resetOfferState: ({preserveShift = true} = {}) => safeInvoke(ensureBookingCalendarRuntimeFlow(), 'resetOfferState', [{preserveShift}], null),
+      buildBookingSummaryHtml: ({showTimer = false} = {}) => safeInvoke(ensureBookingCalendarRuntimeFlow(), 'buildBookingSummaryHtml', [{showTimer}], ''),
+      bindAgeTabs: (rootId) => safeInvoke(ensureBookingCalendarRuntimeFlow(), 'bindAgeTabs', [rootId], null),
+      focusMobileAgeGate: () => safeInvoke(ensureBookingCalendarRuntimeFlow(), 'focusMobileAgeGate', [], null),
+      resetAgeSelection: () => safeInvoke(ensureBookingCalendarRuntimeFlow(), 'resetAgeSelection', [], null),
+      resetShiftSelection: () => safeInvoke(ensureBookingCalendarRuntimeFlow(), 'resetShiftSelection', [], null),
+      getShiftDisplayDescription: (shift) => safeInvoke(ensureShiftOptionsFlow(), 'getShiftDisplayDescription', [shift], ''),
+      openShiftAboutModal: (shiftId) => safeInvoke(ensureBookingCalendarRuntimeFlow(), 'openShiftAboutModal', [shiftId], false),
+      renderShiftOptions: (viewKey) => safeInvoke(ensureShiftOptionsFlow(), 'renderShiftOptions', [viewKey], null),
+      renderShiftCards: () => safeInvoke(ensureShiftOptionsFlow(), 'renderShiftCards', [], null),
+      contactIconMarkup: (label) => safeInvoke(ensureMediaFlowApi(), 'contactIconMarkup', [label], '•'),
+      resolveFloatingContactLinks: () => safeInvoke(ensureMediaFlowApi(), 'resolveFloatingContactLinks', [mediaContent], {
+        cityPhoneHref: 'tel:+74951284429',
+        cityPhoneLabel: '+7 (495) 128-44-29',
+        mobilePhoneHref: 'tel:+79688086455',
+        mobilePhoneLabel: '+7 (968) 808-64-55',
+        whatsappHref: 'https://wa.me/79688086455',
+        telegramHref: 'https://t.me/Progaschool'
+      }),
+      initFloatingContactsWidget: () => safeInvoke(ensureMediaFlowApi(), 'initFloatingContactsWidget', [{
+        document,
+        mediaContent,
+        track
+      }], null),
+      socialBadgeMark: (item) => safeInvoke(ensureMediaFlowApi(), 'socialBadgeMark', [item], '•'),
+      socialDisplayName: (item) => safeInvoke(ensureMediaFlowApi(), 'socialDisplayName', [item], ''),
+      faqGlyph: (iconPath, groupName) => safeInvoke(ensureMediaFlowApi(), 'faqGlyph', [iconPath, groupName], String(groupName || '').slice(0,3).toUpperCase()),
+      renderStars: () => safeInvoke(ensureMediaFlowApi(), 'renderStars', [], '<div class="stars">★★★★★</div>'),
+      renderDesktopMobileDocsBlock: () => safeInvoke(ensureDocsFlow(), 'renderDesktopMobileDocsBlock', [], null),
+      syncMobileDocsExpandedUi: () => safeInvoke(ensureDocsFlow(), 'syncMobileDocsExpandedUi', [], null),
+      applyMobileTemplatesToDesktopSections: () => safeInvoke(ensureDocsFlow(), 'applyMobileTemplatesToDesktopSections', [], null),
+      startTimer: () => safeInvoke(ensureSummaryFlow(), 'startTimer', [], null),
+      updateSummaryBarVisibility: () => safeInvoke(ensureSummaryFlow(), 'updateSummaryBarVisibility', [], null),
+      dismissSummaryBarTemporarily: (ms = 30000) => safeInvoke(ensureSummaryFlow(), 'dismissSummaryBarTemporarily', [ms], null),
+      renderSummary: () => safeInvoke(ensureSummaryFlow(), 'renderSummary', [], null),
+      buildLegalDocUrl: (hash = '') => safeInvoke(ensureTelemetryFlow(), 'buildLegalDocUrl', [hash], 'legal.html'),
+      syncLegalDocLinks: (scope = document) => safeInvoke(ensureTelemetryFlow(), 'syncLegalDocLinks', [scope], null)
+    });
 
     function trackFaqOpen(){
       trackOnce('faq_open');
     }
 
-    const HERO_IMAGES = [
-      '/assets/images/hero-camp-sunset-20260328.png'
-    ];
-
-    const HERO_MOBILE =
-      '/assets/images/hero-camp-sunset-20260328.png';
-    const HERO_IMAGES_B = [
-      '/assets/images/hero-ab-pool-20260401.jpeg'
-    ];
-    const HERO_MOBILE_B =
-      '/assets/images/hero-ab-pool-20260401.jpeg';
-    const HERO_AB_ASSETS = Object.freeze({
-      A: Object.freeze({images:HERO_IMAGES, mobile:HERO_MOBILE}),
-      B: Object.freeze({images:HERO_IMAGES_B, mobile:HERO_MOBILE_B})
+    const HERO_AB_RUNTIME_CONFIG = (window.AC_RUNTIME_CONFIG && window.AC_RUNTIME_CONFIG.heroAb) || {};
+    const heroAbAssetsCfg = Object.freeze(HERO_AB_RUNTIME_CONFIG.assets || {
+      A: Object.freeze({
+        images: Object.freeze(['/assets/images/hero-camp-sunset-20260328.png']),
+        mobile: '/assets/images/hero-camp-sunset-20260328.png'
+      }),
+      B: Object.freeze({
+        images: Object.freeze(['/assets/images/hero-ab-pool-20260401.jpeg']),
+        mobile: '/assets/images/hero-ab-pool-20260401.jpeg'
+      })
     });
-    const HERO_AB_TEST_KEY = 'aidacamp_hero_ab_v1';
-    const HERO_AB_TEST_ID = 'hero_primary_block_v1';
-    const HERO_AB_VARIANT_LABELS = Object.freeze({
+    const TELEMETRY_RUNTIME_CONFIG = (window.AC_RUNTIME_CONFIG && window.AC_RUNTIME_CONFIG.telemetry) || {};
+    const heroAbTestKeyCfg = String(TELEMETRY_RUNTIME_CONFIG.heroAbTestKey || 'aidacamp_hero_ab_v1');
+    const heroAbTestIdCfg = String(TELEMETRY_RUNTIME_CONFIG.heroAbTestId || 'hero_primary_block_v1');
+    const heroAbVariantLabelsCfg = Object.freeze(HERO_AB_RUNTIME_CONFIG.variantLabels || {
       A: 'Control',
       B: 'Pool Motion'
     });
-    const HERO_AB_SHIFT_UP_MS = 7000;
-    const HERO_AB_BENEFIT_REVEAL_DELAY_MS = 7600;
-    const HERO_AB_BENEFIT_STEP_MS = 4000;
-    const HERO_AB_DESKTOP_SHIFT_UP_MS = 5000;
-    const HERO_AB_DESKTOP_BENEFIT_REVEAL_DELAY_MS = 5000;
-    const HERO_AB_DESKTOP_BG_ONLY = false;
-    const HERO_AB_MOBILE_EFFECTS_ENABLED = false;
+    const HERO_AB_SHIFT_UP_MS = Number(HERO_AB_RUNTIME_CONFIG.timings?.shiftUpMs || 7000);
+    const HERO_AB_BENEFIT_REVEAL_DELAY_MS = Number(HERO_AB_RUNTIME_CONFIG.timings?.benefitRevealDelayMs || 7600);
+    const HERO_AB_BENEFIT_STEP_MS = Number(HERO_AB_RUNTIME_CONFIG.timings?.benefitStepMs || 4000);
+    const HERO_AB_DESKTOP_SHIFT_UP_MS = Number(HERO_AB_RUNTIME_CONFIG.timings?.desktopShiftUpMs || 5000);
+    const HERO_AB_DESKTOP_BENEFIT_REVEAL_DELAY_MS = Number(HERO_AB_RUNTIME_CONFIG.timings?.desktopBenefitRevealDelayMs || 5000);
+    const HERO_AB_DESKTOP_BG_ONLY = !!HERO_AB_RUNTIME_CONFIG.desktopBgOnly;
+    const HERO_AB_MOBILE_EFFECTS_ENABLED = !!HERO_AB_RUNTIME_CONFIG.mobileEffectsEnabled;
     const HERO_V3_SIMPLE_QUERY_KEY = 'hero_v3_simple';
     const HERO_V3_SIMPLE_ENABLED = hasQueryFlag(HERO_V3_SIMPLE_QUERY_KEY);
-    const AB_EVENT_ENDPOINT_DEFAULT = 'https://adacamp-ab-analytics.afanasevvlad829.workers.dev/api/ab-event';
-    const AB_VISITOR_ID_KEY = 'aidacamp_ab_visitor_id_v1';
-    const AB_SESSION_ID_KEY = 'aidacamp_ab_session_id_v1';
-    const AB_TEST_EVENT_ALLOWLIST = new Set([
-      'page_view',
-      'hero_ab_assigned_v1',
-      'hero_variant_shown_new',
-      'hero_variant_fallback_new',
-      'form_submit',
-      'hero_variant_form_submit_new',
-      'telegram_click',
-      'hero_variant_telegram_click_new'
-    ]);
-    const HERO_BENEFITS_LAYOUT_EXPERIMENT = true;
-    const HERO_BENEFITS_LAYOUT_EXPERIMENT_ITEMS = Object.freeze([
-      Object.freeze({
-        title:'AI-проект за смену',
-        icon:'/assets/icons/ai-svgrepo-com.svg',
-        iconClass:''
-      }),
-      Object.freeze({
-        title:'Без телефонов',
-        icon:'/assets/icons/mobile-off-svgrepo-com.svg',
-        iconClass:''
-      }),
-      Object.freeze({
-        title:'Бассейн и спорт',
-        icon:'/assets/icons/swim-svgrepo-com.svg',
-        iconClass:''
-      })
-    ]);
+    const abEventEndpointDefaultCfg = String(TELEMETRY_RUNTIME_CONFIG.abEventEndpointDefault || 'https://adacamp-ab-analytics.afanasevvlad829.workers.dev/api/ab-event');
+    const abVisitorIdKeyCfg = String(TELEMETRY_RUNTIME_CONFIG.abVisitorIdKey || 'aidacamp_ab_visitor_id_v1');
+    const abSessionIdKeyCfg = String(TELEMETRY_RUNTIME_CONFIG.abSessionIdKey || 'aidacamp_ab_session_id_v1');
+    const abEventAllowlistSet = new Set((Array.isArray(TELEMETRY_RUNTIME_CONFIG.abEventAllowlist) && TELEMETRY_RUNTIME_CONFIG.abEventAllowlist) || []);
+    const HERO_BENEFITS_LAYOUT_EXPERIMENT = !!HERO_AB_RUNTIME_CONFIG.benefitsLayoutExperiment;
+    const HERO_BENEFITS_LAYOUT_EXPERIMENT_ITEMS = Object.freeze(HERO_AB_RUNTIME_CONFIG.benefitsItems || []);
 
-    let heroIndex = 0;
-    let heroTimer = null;
     let heroAbVariant = 'A';
     let heroAbTimers = [];
     let heroAbMobileScrollBound = false;
@@ -17032,12 +13386,12 @@ function runOfferSearch(overrides){
     let summaryBarDismissTimer = null;
 
     function persist(){
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(storageStateKeyCfg, JSON.stringify(state));
     }
 
     function persistBookingScarcity(){
       try {
-        localStorage.setItem(BOOKING_SCARCITY_KEY, JSON.stringify({
+        localStorage.setItem(bookingScarcityKeyCfg, JSON.stringify({
           visits: bookingScarcityState.visits
         }));
       } catch (error){
@@ -17051,136 +13405,23 @@ function runOfferSearch(overrides){
       return Math.min(BOOKING_SCARCITY_MAX, raw);
     }
 
-    function initHero(){
-      const isMobile = window.innerWidth < 768;
-      const heroAssets = getHeroAbAssets(heroAbVariant);
-      const heroImages = heroAssets.images;
-      const heroMobile = heroAssets.mobile;
+    const initHero = () => {
+      safeInvoke(ensureHeroBackgroundFlow(), 'initHero', [], null);
+    };
 
-      const bg1 = document.getElementById('heroBg1');
-      const bg2 = document.getElementById('heroBg2');
-      const desktopView = document.getElementById('desktopView');
-      const mobileView = document.getElementById('mobileView');
-      if(!bg1) return;
-      if(heroTimer){
-        clearInterval(heroTimer);
-        heroTimer = null;
-      }
-      if(desktopView){
-        desktopView.classList.toggle('hero-static-bg', HERO_IMAGES.length <= 1);
-        desktopView.classList.remove('hero-ready');
-        desktopView.classList.add('hero-loading');
-      }
-      if(mobileView){
-        mobileView.classList.remove('hero-ready');
-        mobileView.classList.add('hero-loading');
-      }
-      const markHeroReady = () => {
-        if(desktopView){
-          desktopView.classList.remove('hero-loading');
-          desktopView.classList.add('hero-ready');
-        }
-        if(mobileView){
-          mobileView.classList.remove('hero-loading');
-          mobileView.classList.add('hero-ready');
-        }
-      };
-      const applySingleHeroFrame = (src) => {
-        bg1.style.backgroundImage = `url(${src})`;
-        bg1.classList.add('active');
-        bg1.classList.remove('hidden');
-        if(bg2){
-          bg2.style.backgroundImage = `url(${src})`;
-          bg2.classList.remove('active');
-          bg2.classList.add('hidden');
-        }
-      };
-      const preloadAndApplyFirstFrame = (src) => {
-        let done = false;
-        const finish = () => {
-          if(done) return;
-          done = true;
-          applySingleHeroFrame(src);
-          requestAnimationFrame(markHeroReady);
-        };
-        try{
-          const img = new Image();
-          img.decoding = 'async';
-          img.onload = finish;
-          img.onerror = finish;
-          img.src = src;
-          if(img.complete){
-            finish();
-          } else {
-            window.setTimeout(finish, 1200);
-          }
-        } catch (error){
-          finish();
-        }
-      };
+    const applyHeroV3SimpleMode = () => (
+      safeInvoke(ensureHeroV3SimpleFlow(), 'applyMode', [], null)
+    );
 
-      if(isMobile){
-        preloadAndApplyFirstFrame(heroMobile);
-        return;
-      }
-
-      heroIndex = 0;
-      preloadAndApplyFirstFrame(heroImages[heroIndex]);
-      if(!bg2) return;
-
-      if(heroImages.length <= 1){
-        bg2.style.backgroundImage = 'none';
-        return;
-      }
-
-      heroTimer = setInterval(() => {
-        heroIndex = (heroIndex + 1) % heroImages.length;
-
-        const next = heroImages[heroIndex];
-
-        if(bg1.classList.contains('active')){
-          bg2.style.backgroundImage = `url(${next})`;
-          bg2.classList.remove('hidden');
-          bg2.classList.add('active');
-          bg1.classList.remove('active');
-          bg1.classList.add('hidden');
-        } else {
-          bg1.style.backgroundImage = `url(${next})`;
-          bg1.classList.remove('hidden');
-          bg1.classList.add('active');
-          bg2.classList.remove('active');
-          bg2.classList.add('hidden');
-        }
-      }, 5500);
-    }
-
-    function applyHeroV3SimpleMode(){
-      return safeInvoke(ensureHeroV3SimpleFlow(), 'applyMode', [], null);
-    }
-
-    function preloadHeroAssets(){
-      const heroAssets = getHeroAbAssets(heroAbVariant);
-      const heroImages = heroAssets.images;
-      const heroMobile = heroAssets.mobile;
-      const preloadList = [...heroImages, heroMobile].filter(Boolean);
-      preloadList.forEach((src) => {
-        try{
-          const img = new Image();
-          img.decoding = 'async';
-          img.src = src;
-        } catch (error){
-          // ignore preload failures
-        }
-      });
-    }
+    const preloadHeroAssets = () => {
+      safeInvoke(ensureHeroBackgroundFlow(), 'preloadHeroAssets', [], null);
+    };
 
     function ensureHeroAbFlow(){
-      if(heroAbFlowApi) return heroAbFlowApi;
       const create = window.AC_FEATURES?.heroAbFlow?.create;
-      if(typeof create !== 'function') return null;
-      heroAbFlowApi = create({
-        heroAbTestKey: HERO_AB_TEST_KEY,
-        heroAbTestId: HERO_AB_TEST_ID,
+      return heroAbFlowApi || (typeof create === 'function' && (heroAbFlowApi = create({
+        heroAbTestKey: heroAbTestKeyCfg,
+        heroAbTestId: heroAbTestIdCfg,
         heroAbDesktopBgOnly: HERO_AB_DESKTOP_BG_ONLY,
         heroAbMobileEffectsEnabled: HERO_AB_MOBILE_EFFECTS_ENABLED,
         heroAbBenefitStepMs: HERO_AB_BENEFIT_STEP_MS,
@@ -17188,7 +13429,7 @@ function runOfferSearch(overrides){
         heroAbBenefitRevealDelayMs: HERO_AB_BENEFIT_REVEAL_DELAY_MS,
         heroAbDesktopShiftUpMs: HERO_AB_DESKTOP_SHIFT_UP_MS,
         heroAbDesktopBenefitRevealDelayMs: HERO_AB_DESKTOP_BENEFIT_REVEAL_DELAY_MS,
-        useDesktopBaseForMobile: USE_DESKTOP_BASE_FOR_MOBILE,
+        useDesktopBaseForMobile: useDesktopBaseForMobileCfg,
         getCurrentSearchParams,
         bookingText,
         trackOnce,
@@ -17224,11 +13465,18 @@ function runOfferSearch(overrides){
         },
         safeInvoke,
         getViewMode: () => window.AC_VIEW_MODE,
-        applyHeroBenefitsLayoutExperiment,
+        heroBenefitsLayoutExperiment: HERO_BENEFITS_LAYOUT_EXPERIMENT,
+        heroBenefitsLayoutExperimentItems: HERO_BENEFITS_LAYOUT_EXPERIMENT_ITEMS,
+        heroAbVariantLabels: heroAbVariantLabelsCfg,
+        onHeroVariantChange: () => {
+          initHero();
+          const url = new URL(window.location.href);
+          url.searchParams.set('hero_ab', heroAbVariant);
+          window.history.replaceState({}, '', url.toString());
+        },
         resolveDesktopView: () => document.getElementById('desktopView'),
         resolveMobileView: () => document.getElementById('mobileView')
-      });
-      return heroAbFlowApi;
+      }))) || null;
     }
 
     function clearHeroAbTimers(){
@@ -17238,172 +13486,47 @@ function runOfferSearch(overrides){
       heroAbTimers = [];
     }
 
-    function getForcedHeroAbVariant(){
-      const search = getCurrentSearchParams();
-      const forcedRaw = String(search.get('hero_ab') || search.get('hero_mode') || '').trim();
-      const normalized = forcedRaw.toUpperCase();
-      if(normalized === 'A' || normalized === 'CONTROL') return 'A';
-      if(normalized === 'B' || normalized === 'POOL' || normalized === 'POOL_MOTION') return 'B';
-      return '';
-    }
-
-    function resolveHeroAbVariant(){
-      const forced = getForcedHeroAbVariant();
-      if(forced){
-        localStorage.setItem(HERO_AB_TEST_KEY, forced);
-        return forced;
-      }
-      localStorage.setItem(HERO_AB_TEST_KEY, 'B');
-      return 'B';
-    }
-
-    function applyHeroAbAnimationForRoot(root){
+    const applyHeroAbAnimationForRoot = (root) => {
       safeInvoke(ensureHeroAbFlow(), 'applyHeroAbAnimationForRoot', [root], null);
-    }
+    };
 
-    function applyHeroBenefitsLayoutExperiment(root){
-      if(!root) return;
-      const grid = root.querySelector('.hero-benefits-grid');
-      if(!grid) return;
-
-      if(!grid.dataset.heroBenefitsOriginalHtml){
-        grid.dataset.heroBenefitsOriginalHtml = grid.innerHTML;
-      }
-
-      if(!HERO_BENEFITS_LAYOUT_EXPERIMENT){
-        root.classList.remove('hero-benefits-exp-3');
-        grid.classList.remove('hero-benefits-grid--compact3');
-        if(grid.dataset.heroBenefitsOriginalHtml){
-          grid.innerHTML = grid.dataset.heroBenefitsOriginalHtml;
-        }
-        return;
-      }
-
-      root.classList.add('hero-benefits-exp-3');
-      grid.classList.add('hero-benefits-grid--compact3');
-      grid.innerHTML = HERO_BENEFITS_LAYOUT_EXPERIMENT_ITEMS.map((item) => `
-        <article class="hero-benefit-card hero-benefit-card--compact">
-          <span class="hero-benefit-icon-wrap ${item.iconClass || ''}">
-            <img class="ac-icon hero-benefit-icon" src="${item.icon}" alt="" aria-hidden="true">
-          </span>
-          <strong>${item.title}</strong>
-        </article>
-      `).join('');
-    }
-
-    function applyHeroAbVariant(){
+    const applyHeroAbVariant = () => {
       safeInvoke(ensureHeroAbFlow(), 'applyHeroAbVariant', [], null);
-    }
+    };
 
-    function initHeroAbDevPanel(){
-      const host = String(window.location.hostname || '').toLowerCase();
-      const isDevHost = (
-        host === 'localhost' ||
-        host === '127.0.0.1'
-      );
-      if(!isDevHost) return;
-      if(document.getElementById('heroAbDevPanel')) return;
-      const panel = document.createElement('div');
-      panel.id = 'heroAbDevPanel';
-      panel.className = 'hero-ab-dev-panel';
-      panel.innerHTML = `
-        <div class="hero-ab-dev-title">Hero A/B (Dev)</div>
-        <div class="hero-ab-dev-status">Current: <span data-hero-ab-current></span></div>
-        <div class="hero-ab-dev-modes">
-          <button type="button" class="hero-ab-dev-btn" data-hero-ab-set="A">A · ${HERO_AB_VARIANT_LABELS.A || 'A'}</button>
-          <button type="button" class="hero-ab-dev-btn" data-hero-ab-set="B">B · ${HERO_AB_VARIANT_LABELS.B || 'B'}</button>
-        </div>
-      `;
-      document.body.appendChild(panel);
-      const currentNode = panel.querySelector('[data-hero-ab-current]');
-      const syncPanelState = () => {
-        if(currentNode){
-          currentNode.textContent = HERO_AB_VARIANT_LABELS[heroAbVariant] || heroAbVariant;
-        }
-        panel.querySelectorAll('[data-hero-ab-set]').forEach((button) => {
-          const value = String(button.getAttribute('data-hero-ab-set') || '').toUpperCase();
-          button.classList.toggle('is-active', value === heroAbVariant);
-        });
-      };
-      syncPanelState();
-      panel.querySelectorAll('[data-hero-ab-set]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const next = String(btn.getAttribute('data-hero-ab-set') || '').toUpperCase();
-          if(next !== 'A' && next !== 'B') return;
-          if(next === heroAbVariant){
-            syncPanelState();
-            return;
-          }
-          heroAbVariant = next;
-          localStorage.setItem(HERO_AB_TEST_KEY, next);
-          const url = new URL(window.location.href);
-          url.searchParams.set('hero_ab', next);
-          window.history.replaceState({}, '', url.toString());
-          initHero();
-          applyHeroAbVariant();
-          syncPanelState();
-        });
-      });
-      trackOnce('hero_ab_dev_panel_shown_v1', {
-        test_id: HERO_AB_TEST_ID,
-        variant: heroAbVariant,
-        mode_label: HERO_AB_VARIANT_LABELS[heroAbVariant] || ''
-      });
-    }
-
-    function openMedia(type, index){
-      return safeInvoke(ensureModalMediaFlow(), 'openMedia', [type, index], null);
-    }
-
-    function closeMedia(){
-      return safeInvoke(ensureModalMediaFlow(), 'closeMedia', [], null);
-    }
-
-    function closeTransientModals(except = '', options = {}){
-      return safeInvoke(ensureModalMediaFlow(), 'closeTransientModals', [except, options], null);
-    }
-
-    function openVideo(url){
-      return safeInvoke(ensureModalMediaFlow(), 'openVideo', [url], null);
-    }
-
-    function closeVideo(){
-      return safeInvoke(ensureModalMediaFlow(), 'closeVideo', [], null);
-    }
-
-    function resolveVideoSource(url){
-      return safeInvoke(ensureVideoMetaFlow(), 'resolveVideoSource', [url], {
+    const resolveVideoSource = (url) => (
+      safeInvoke(ensureVideoMetaFlow(), 'resolveVideoSource', [url], {
         canEmbed: false,
         embedUrl: '',
         externalUrl: String(url || '').trim(),
         orientation: 'horizontal',
         sourceName: 'источнике'
-      });
-    }
+      })
+    );
 
-    function isVerticalVideoUrl(url){
-      return safeInvoke(ensureVideoMetaFlow(), 'isVerticalVideoUrl', [url], false);
-    }
+    const isVerticalVideoUrl = (url) => (
+      safeInvoke(ensureVideoMetaFlow(), 'isVerticalVideoUrl', [url], false)
+    );
 
-    function normalizeKinescopeShareUrl(url){
-      return safeInvoke(ensureVideoMetaFlow(), 'normalizeKinescopeShareUrl', [url], '');
-    }
+    const normalizeKinescopeShareUrl = (url) => (
+      safeInvoke(ensureVideoMetaFlow(), 'normalizeKinescopeShareUrl', [url], '')
+    );
 
-    function applyVideoMetaMap(videoMetaMap = {}){
-      return safeInvoke(ensureVideoMetaFlow(), 'applyVideoMetaMap', [videoMetaMap], false);
-    }
+    const applyVideoMetaMap = (videoMetaMap = {}) => (
+      safeInvoke(ensureVideoMetaFlow(), 'applyVideoMetaMap', [videoMetaMap], false)
+    );
 
-    function loadVideoMetaCache(){
-      return safeInvoke(ensureVideoMetaFlow(), 'loadVideoMetaCache', [], null);
-    }
+    const loadVideoMetaCache = () => (
+      safeInvoke(ensureVideoMetaFlow(), 'loadVideoMetaCache', [], null)
+    );
 
-    function getVideoMetaCacheAgeMs(){
-      return safeInvoke(ensureVideoMetaFlow(), 'getVideoMetaCacheAgeMs', [], Number.POSITIVE_INFINITY);
-    }
+    const getVideoMetaCacheAgeMs = () => (
+      safeInvoke(ensureVideoMetaFlow(), 'getVideoMetaCacheAgeMs', [], Number.POSITIVE_INFINITY)
+    );
 
-    function saveVideoMetaCache(videoMetaMap){
-      return safeInvoke(ensureVideoMetaFlow(), 'saveVideoMetaCache', [videoMetaMap], null);
-    }
+    const saveVideoMetaCache = (videoMetaMap) => (
+      safeInvoke(ensureVideoMetaFlow(), 'saveVideoMetaCache', [videoMetaMap], null)
+    );
 
     async function fetchKinescopeMeta(videoUrl){
       const flow = ensureVideoMetaFlow();
@@ -17417,290 +13540,38 @@ function runOfferSearch(overrides){
       await flow.refreshVideoMeta({force});
     }
 
-    function scheduleVideoMetaRefresh(){
-      return safeInvoke(ensureVideoMetaFlow(), 'scheduleVideoMetaRefresh', [], null);
-    }
-
-    function closeSectionModal(){
-      return safeInvoke(ensureModalMediaFlow(), 'closeSectionModal', [], null);
-    }
-
-    function setHeroMenuOpen(isOpen){
-      const wrap = document.getElementById('heroMenuWrap');
-      const toggle = document.getElementById('heroMenuToggle');
-      const menu = document.getElementById('serviceMenu');
-      if(!wrap || !toggle || !menu) return;
-      const next = !!isOpen;
-      wrap.dataset.open = String(Number(!!next));
-      toggle.setAttribute('aria-expanded', String(!!next));
-      menu.classList.toggle('is-open', next);
-      menu.hidden = !next;
-    }
-
-    function isHeroMenuOpen(){
-      return document.getElementById('heroMenuWrap')?.dataset.open === '1';
-    }
-
-    function setHeroPhoneDropdownOpen(isOpen){
-      const trigger = document.getElementById('heroPhoneTrigger');
-      const dropdown = document.getElementById('heroPhoneDropdown');
-      return (trigger && dropdown && (() => {
-        const next = !!isOpen;
-        trigger.dataset.open = String(Number(next));
-        trigger.setAttribute('aria-expanded', String(next));
-        dropdown.classList.toggle('is-open', next);
-        dropdown.hidden = !next;
-        return next;
-      })()) || false;
-    }
-
-    function isHeroPhoneDropdownOpen(){
-      return document.getElementById('heroPhoneTrigger')?.dataset.open === '1';
-    }
-
-    function scrollVideoCarousel(direction = 1, scopeRoot = null){
-      const scope = resolveScopeRoot(scopeRoot);
-      const list = scope.querySelector('#videoList, .video-list');
-      if(!list) return;
-      const card = list.querySelector('.video-card');
-      const gap = 12;
-      const step = (card && (card.getBoundingClientRect().width + gap)) || 260;
-      list.scrollBy({left: step * direction, behavior:'smooth'});
-    }
-
-    function scrollTeamCarousel(direction = 1, scopeRoot = null){
-      const scope = resolveScopeRoot(scopeRoot);
-      const list = scope.querySelector('#teamCarousel, .team-carousel');
-      if(!list) return;
-      const card = list.querySelector('.team-card');
-      const gap = 12;
-      const step = (card && (card.getBoundingClientRect().width + gap)) || 320;
-      list.scrollBy({left: step * direction, behavior:'smooth'});
-    }
-
-    function applyCompactSectionModalLayout(){
-      return safeInvoke(ensureModalMediaFlow(), 'applyCompactSectionModalLayout', [], null);
-    }
-
-    function openSectionModal(sectionId){
-      const opened = safeInvoke(ensureModalMediaFlow(), 'openSectionModal', [sectionId], false);
-      if(opened && sectionId === 'section-faq'){
-        trackFaqOpen();
-      }
-      return !!opened;
-    }
-
-    function renderMediaViewer(){
-      return safeInvoke(ensureModalMediaFlow(), 'renderMediaViewer', [], null);
-    }
-
-    function nextMedia(){
-      const list = mediaType === 'photo'
-        ? (activePhotoList.length ? activePhotoList : mediaContent.photos)
-        : mediaContent.videos;
-      mediaIndex = (mediaIndex + 1) % list.length;
-      renderMediaViewer();
-    }
-
-    function prevMedia(){
-      const list = mediaType === 'photo'
-        ? (activePhotoList.length ? activePhotoList : mediaContent.photos)
-        : mediaContent.videos;
-      mediaIndex = (mediaIndex - 1 + list.length) % list.length;
-      renderMediaViewer();
-    }
-
-    function getPhotoTagsByFilter(filter){
-      const photoByFilter = {
-        all: ['all', 'camp', 'pool', 'sport', 'study', 'food'],
-        camp: ['all', 'camp'],
-        pool: ['pool'],
-        sport: ['sport'],
-        study: ['study'],
-        food: ['food']
-      };
-      return photoByFilter[String(filter || '').trim()] || ['all', 'camp'];
-    }
-
-    function getPhotosForActiveFilter(filter = state.photoFilter){
-      const tags = getPhotoTagsByFilter(filter);
-      let list = mediaContent.photos.filter((item) => tags.includes(item.cat));
-      if(!list.length){
-        list = mediaContent.photos.filter((item) => item.cat === 'all' || item.cat === 'camp');
-      }
-      return list.length ? list : mediaContent.photos.slice();
-    }
-
-    function handleDataActionClick(target){
-      const dispatcher = ensureActionDispatcher();
-      return !!safeInvoke(dispatcher, 'handleAction', [target], false);
-    }
-
-    async function notifyLead(eventName, payload){
-      const cfg = window.AC_NOTIFY_CONFIG || {};
-      const enrichedPayload = {
-        ...asObject(payload),
-        ...buildAbMeta()
-      };
-      const body = {event: eventName, payload: enrichedPayload};
-      const endpoint = cfg.leadEndpoint || '/api/lead';
-
-      try {
-        const response = await fetch(endpoint, {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify(body),
-          keepalive:true
-        });
-        if(response.ok){
-          return {ok: true, delivered: true, endpoint};
-        }
-
-        const telegramResult = await sendLeadToTelegram(eventName, enrichedPayload, cfg);
-        if(telegramResult.ok){
-          saveLeadFallbackMeta(eventName, endpoint, `http_${response.status}_telegram_ok`);
-          return telegramResult;
-        }
-
-        saveLeadFallbackMeta(eventName, endpoint, `http_${response.status}`);
-        console.warn('[LEAD_MOCK_FALLBACK]', {endpoint, body});
-        return {ok: false, delivered: false, fallback: true};
-      } catch(error){
-        const telegramResult = await sendLeadToTelegram(eventName, enrichedPayload, cfg);
-        if(telegramResult.ok){
-          saveLeadFallbackMeta(eventName, endpoint, 'network_telegram_ok');
-          return telegramResult;
-        }
-        console.error('notifyLead error', error);
-        saveLeadFallbackMeta(eventName, endpoint, String(error));
-        return {ok: false, delivered: false, fallback: true, error: String(error)};
-      }
-    }
-
-    async function sendLeadToTelegram(eventName, payload, cfg){
-      const token = String(cfg?.telegramBotToken || '');
-      const chatId = String(cfg?.telegramChatId || '');
-      if(!token || !chatId){
-        return {ok:false, delivered:false, fallback:true, reason:'telegram_not_configured'};
-      }
-      try {
-        const formBody = new URLSearchParams();
-        formBody.set('chat_id', chatId);
-        formBody.set('text', formatTelegramMessage(eventName, payload));
-        formBody.set('disable_web_page_preview', 'true');
-        const tgResponse = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-          method:'POST',
-          body: formBody,
-          keepalive:true
-        });
-        if(tgResponse.ok){
-          return {ok:true, delivered:true, endpoint:'telegram_bot', fallback:true};
-        }
-      } catch(error){
-      }
-      return {ok:false, delivered:false, fallback:true};
-    }
+    const notifyLead = async (eventName, payload) => (
+      safeInvoke(ensureLeadNotifyFlow(), 'notifyLead', [eventName, payload], Promise.resolve({
+        ok: false,
+        delivered: false,
+        fallback: true,
+        reason: 'lead_notify_flow_unavailable'
+      }))
+    );
 
     function isAdminDebugSession(){
       try {
+        const resolveIsProductionRuntime = () => {
+          try {
+            const host = String(window.location.hostname || '').toLowerCase().replace(/^www\./, '');
+            if(!host) return false;
+            return prodDebuglessDomainsCfg.some((domain) => host === domain || host.endsWith(`.${domain}`));
+          } catch(error){
+            return false;
+          }
+        };
         // Production must never expose debug controls via query/localStorage toggles.
-        if(isProductionRuntime()) return false;
+        if(resolveIsProductionRuntime()) return false;
         if(window.AC_DEBUG === true) return true;
         const search = new URLSearchParams(window.location.search || '');
         const adminFlag = (search.get('admin') || search.get('debug') || '').toLowerCase();
         if(['1', 'true', 'yes', 'on'].includes(adminFlag)) return true;
-        const storedFlag = String(localStorage.getItem('aidacamp_admin_debug') || '').toLowerCase();
+        const adminDebugKey = String(STORAGE_RUNTIME_CONFIG.adminDebugKey || 'aidacamp_admin_debug');
+        const storedFlag = String(localStorage.getItem(adminDebugKey) || '').toLowerCase();
         return ['1', 'true', 'yes', 'on'].includes(storedFlag);
       } catch(error){
         return false;
       }
-    }
-
-    function isProductionRuntime(){
-      try {
-        const host = String(window.location.hostname || '').toLowerCase().replace(/^www\./, '');
-        if(!host) return false;
-        return PROD_DEBUGLESS_DOMAINS.some((domain) => host === domain || host.endsWith(`.${domain}`));
-      } catch(error){
-        return false;
-      }
-    }
-
-    function isLocalRuntime(){
-      try {
-        const host = String(window.location.hostname || '').toLowerCase();
-        return host === 'localhost' || host === '127.0.0.1';
-      } catch(error){
-        return false;
-      }
-    }
-
-    function formatTelegramMessage(eventName, payload){
-      const lines = [];
-
-      if(eventName === 'promo_fixed'){
-        lines.push('AiDaCamp • Фиксация цены');
-        lines.push('');
-        lines.push(`Тип: ${payload.promo_status === 'improved_again' ? 'повторное улучшение' : 'первая фиксация'}`);
-        lines.push(`Телефон: ${payload.phone || 'не указан'}`);
-        lines.push(`Возраст: ${payload.age || '—'}`);
-        lines.push(`Смена: ${payload.shift_name || '—'}`);
-        lines.push(`Даты: ${payload.shift_date || '—'}`);
-        lines.push(`Цена: ${payload.price_final ? formatPrice(payload.price_final) : '—'}`);
-        lines.push(`Код: ${payload.promo_code || '—'}`);
-        lines.push(`Действует до: ${payload.promo_expires_at_local || '—'}`);
-        lines.push('');
-        lines.push(`Режим: ${payload.mode || '—'}`);
-        lines.push(`Отправлено: ${payload.sent_at_local || '—'}`);
-      }
-
-      if(eventName === 'booking_submitted'){
-        lines.push('AiDaCamp • Новая заявка');
-        lines.push('');
-        lines.push(`Имя: ${payload.name || '—'}`);
-        lines.push(`Телефон: ${payload.phone || '—'}`);
-        lines.push(`Возраст: ${payload.age || '—'}`);
-        lines.push(`Смена: ${payload.shift_name || '—'}`);
-        lines.push(`Даты: ${payload.shift_date || '—'}`);
-        lines.push(`Цена: ${payload.price_text || '—'}`);
-        lines.push(`Код: ${payload.promo_code || '—'}`);
-        lines.push(`Статус промо: ${payload.promo_status || '—'}`);
-        lines.push('');
-        lines.push(`Режим: ${payload.mode || '—'}`);
-        lines.push(`Отправлено: ${payload.sent_at_local || '—'}`);
-      }
-
-      if(eventName === 'booking_draft_saved'){
-        lines.push('AiDaCamp • Черновик заявки');
-        lines.push('');
-        lines.push(`Имя: ${payload.name || '—'}`);
-        lines.push(`Телефон: ${payload.phone || '—'}`);
-        lines.push(`Смена: ${payload.shift_name || payload.shift_text || '—'}`);
-        lines.push(`Цена: ${payload.price_text || '—'}`);
-        lines.push(`Код: ${payload.promo_code || '—'}`);
-        lines.push('');
-        lines.push(`Отправлено: ${payload.sent_at_local || '—'}`);
-      }
-
-      if(eventName === 'promo_cancelled'){
-        lines.push('AiDaCamp • Отмена промо / брони');
-        lines.push('');
-        lines.push(`Имя: ${payload.name || '—'}`);
-        lines.push(`Телефон: ${payload.phone || '—'}`);
-        lines.push(`Смена: ${payload.shift_name || '—'}`);
-        lines.push(`Код: ${payload.promo_code || '—'}`);
-        lines.push(`Цена: ${payload.price_final ? formatPrice(payload.price_final) : '—'}`);
-        lines.push('');
-        lines.push(`Отправлено: ${payload.sent_at_local || '—'}`);
-      }
-
-      if(lines.length === 0){
-        lines.push('AiDaCamp lead');
-        lines.push(`Event: ${eventName}`);
-        lines.push(JSON.stringify(payload, null, 2));
-      }
-
-      return lines.join('\n');
     }
 
     function getSelectedShift(){
@@ -17729,21 +13600,11 @@ function runOfferSearch(overrides){
     }
 
     function ageLabel(value){
-      if(value === '7-9') return '7–9 лет';
-      if(value === '10-12') return '10–12 лет';
-      if(value === '13-14') return '13–14 лет';
-      return '—';
+      return AGE_LABELS[value] || '—';
     }
 
     function photoCatLabel(cat){
-      if(cat === 'pool') return 'Бассейн';
-      if(cat === 'sport') return 'Спорт';
-      if(cat === 'study') return 'Учёба';
-      if(cat === 'food') return 'Питание';
-      if(cat === 'all') return 'Атмосфера';
-      if(cat === 'camp') return 'Атмосфера';
-      if(cat === 'stay') return 'Размещение';
-      return cat;
+      return PHOTO_CATEGORY_LABELS[cat] || cat;
     }
 
     function getStayGallery(){
@@ -17800,53 +13661,9 @@ function runOfferSearch(overrides){
       });
     }
 
-    function clearBookingCookies(){
-      const isBookingCookie = (name) => /(aidacamp|booking|promo|lead|aida|ac_)/i.test(name);
-      const pairs = (document.cookie && document.cookie.split(';')) || [];
-      const host = window.location.hostname || '';
-      const hostParts = host.split('.').filter(Boolean);
-      const baseDomain = (hostParts.length >= 2 && `.${hostParts.slice(-2).join('.')}`) || '';
-      const domains = ['', host ? `;domain=${host}` : '', baseDomain ? `;domain=${baseDomain}` : ''];
-      const paths = [';path=/', ';path=/;SameSite=Lax'];
-
-      pairs.forEach((pair) => {
-        const name = pair.split('=')[0].trim();
-        if(!name || !isBookingCookie(name)) return;
-        domains.forEach((domain) => {
-          paths.forEach((path) => {
-            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT${path}${domain}`;
-          });
-        });
-      });
-    }
-
-    function clearProjectStorage(){
-      const isProjectKey = (key) => /(aidacamp|booking|promo|lead|aida|ac_)/i.test(String(key || ''));
-
-      try {
-        const keys = [];
-        for(let i = 0; i < localStorage.length; i += 1){
-          const key = localStorage.key(i);
-          if(key && isProjectKey(key)) keys.push(key);
-        }
-        keys.forEach((key) => localStorage.removeItem(key));
-      } catch(e){
-      }
-
-      try {
-        const keys = [];
-        for(let i = 0; i < sessionStorage.length; i += 1){
-          const key = sessionStorage.key(i);
-          if(key && isProjectKey(key)) keys.push(key);
-        }
-        keys.forEach((key) => sessionStorage.removeItem(key));
-      } catch(e){
-      }
-    }
-
     function saveLeadFallbackMeta(eventName, endpoint, reason = ''){
       try {
-        const key = 'aidacamp_lead_fallback_meta';
+        const key = String(STORAGE_RUNTIME_CONFIG.leadFallbackMetaKey || 'aidacamp_lead_fallback_meta');
         const prevRaw = localStorage.getItem(key);
         const prev = (prevRaw && JSON.parse(prevRaw)) || {};
         const count = Number(prev.count || 0) + 1;
@@ -17860,105 +13677,6 @@ function runOfferSearch(overrides){
         localStorage.setItem(key, JSON.stringify(safeMeta));
       } catch(e){
       }
-    }
-
-    function resetBookingFlowDebug(){
-      clearOfferTimeout();
-      clearShiftOptionPanels();
-      if(timerId){
-        clearInterval(timerId);
-        timerId = null;
-      }
-      offerRunId += 1;
-      leadSubmitInProgress = false;
-      setLeadSubmitState(false);
-      closeTransientModals();
-
-      clearProjectStorage();
-      clearBookingCookies();
-      metrikaSeen.clear();
-      Object.keys(scrollMarks).forEach((k) => {
-        scrollMarks[k] = false;
-      });
-      activePhotoList = [];
-
-      const keepView = state.previewView || state.view || 'desktop';
-      const keepDesktopMode = state.desktopMode || 'full';
-      const keepMobileMode = state.mobileMode || 'full';
-      const keepOfferModalTheme = ((state.offerModalTheme === 'dark') && 'dark') || 'light';
-      const keepOfferLayout = 'current';
-      state = {
-        age: null,
-        ageSelected: false,
-        bookingCompleted: false,
-        shiftId: null,
-        basePrice: null,
-        offerPrice: null,
-        code: null,
-        expiresAt: null,
-        offerStage: 0,
-        view: keepView,
-        previewView: keepView,
-        phone: '',
-        desktopMode: keepDesktopMode,
-        mobileMode: keepMobileMode,
-        offerModalTheme: keepOfferModalTheme,
-        offerLayout: keepOfferLayout,
-        photoFilter: 'camp',
-        faqFilter: 'Медицина',
-        mobileJourneyStep: 0,
-        mobileProgramShiftId: '',
-        mobilePhotoIndex: 0,
-        mobileVideoIndex: 0,
-        mobileReviewIndex: 0,
-        mobileStayIndex: 0,
-        mobileFaqGroup: 'Медицина',
-        mobileFaqOpenKey: '',
-        mobileTeamIndex: 0,
-        mobileDocsExpanded: false,
-        offerSearching: false,
-        debugBookingBlocks: false
-      };
-
-      ['parentName','parentPhone'].forEach((id) => {
-        const input = document.getElementById(id);
-        if(input) input.value = '';
-      });
-      const consentCheck = document.getElementById('consentCheck');
-      if(consentCheck) consentCheck.checked = false;
-      setPhoneError(false);
-      ['desktop', 'mobile'].forEach((viewKey) => {
-        const hostId = getLeadScopeConfig(getBookingViewConfig(viewKey).inlineLeadScope)?.hostId;
-        const host = (hostId && document.getElementById(hostId)) || null;
-        if(host){
-          host.classList.add('hidden');
-          host.innerHTML = '';
-        }
-      });
-      ['desktop', 'mobile'].forEach((viewKey) => {
-        const cfg = getBookingViewConfig(viewKey);
-        [cfg.inlineHintId, cfg.guidedInlineHintId].forEach((id) => {
-          const el = document.getElementById(id);
-          if(!el) return;
-          el.textContent = '';
-          el.classList.remove('visible');
-          delete el.dataset.requiredStep;
-        });
-      });
-      document.querySelectorAll('[data-age].active').forEach((el) => el.classList.remove('active'));
-      document.querySelectorAll('#serviceMenu [data-nav]').forEach((el) => el.classList.remove('active'));
-      document.querySelector('#serviceMenu [data-nav="section-about"]')?.classList.add('active');
-      if(window.history?.replaceState){
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-
-      renderShiftCards();
-      renderAll();
-      switchView(keepView);
-      applyDesktopMode();
-      applyMobileMode();
-      persist();
-      showHint('Сценарий бронирования сброшен. Начните с выбора возраста.');
     }
 
     function getShiftContextLine(shift){
@@ -17995,16 +13713,8 @@ function runOfferSearch(overrides){
       }], { text:'', disabled:true, hint:'' });
     }
 
-    function getResolvedPrimaryActionText(actionState, shift){
-      if(!actionState) return '';
-      if(!shift || state.offerStage < 1){
-        return actionState.text || '';
-      }
-      const baseForGain = state.basePrice || shift.price || 0;
-      const gainValue = Math.max(0, baseForGain - (state.offerPrice || baseForGain));
-      return gainValue > 0
-        ? `Завершить бронирование · выгода ${formatPrice(gainValue)}`
-        : 'Завершить бронирование';
+    function getResolvedPrimaryActionText(...args){
+      return runtimeInvoke.getResolvedPrimaryActionText(...args);
     }
 
     function getStepState(){
@@ -18021,91 +13731,25 @@ function runOfferSearch(overrides){
     }
 
     // SECTION 4: Booking module (view config, actions, render pipeline).
-    const BOOKING_STAGE2_VERTICAL_ALIGN = Object.freeze({
-      top: Object.freeze({flex: 'flex-start', grid: 'start'}),
-      center: Object.freeze({flex: 'center', grid: 'center'}),
-      bottom: Object.freeze({flex: 'flex-end', grid: 'end'})
-    });
-    const BOOKING_STAGE2_HORIZONTAL_ALIGN = Object.freeze({
-      left: Object.freeze({flex: 'flex-start', grid: 'start'}),
-      center: Object.freeze({flex: 'center', grid: 'center'}),
-      right: Object.freeze({flex: 'flex-end', grid: 'end'}),
-      stretch: Object.freeze({flex: 'stretch', grid: 'stretch'})
-    });
-
-    const BOOKING_VIEWS = Object.freeze({
-      desktop: Object.freeze({
-        key: 'desktop',
-        cardId: 'desktop-booking-card',
-        shiftOptionsId: 'desktop-shift-options',
-        infoId: 'desktop-booking-info',
-        titleId: 'desktopBookingTitle',
-        leadId: 'desktopBookingLead',
-        startBtnId: 'desktopStartBtn',
-        hintId: 'desktopBookingHint',
-        stepsId: 'desktopBookingSteps',
-        inlineHintId: 'desktopBookingHintInline',
-        shiftListId: 'desktopShiftList',
-        ctaWrapId: 'desktopCtaWrap',
-        ageTabsId: 'desktopAgeTabs',
-        summaryChipsId: 'desktopBookingSummaryChips',
-        ageChipId: 'desktopAgeChip',
-        ageChipTextId: 'desktopAgeChipText',
-        shiftChipId: 'desktopShiftChip',
-        shiftChipTextId: 'desktopShiftChipText',
-        guidedInlineHintId: 'desktopInlineHint',
-        inlineLeadScope: 'booking-desktop',
-        stage2Align: Object.freeze({
-          vertical: 'center',
-          horizontal: 'stretch'
-        })
-      }),
-      mobile: Object.freeze({
-        key: 'mobile',
-        cardId: 'mobileBookingCard',
-        shiftOptionsId: 'mobileShiftOptions',
-        infoId: 'mobile-booking-info',
-        titleId: 'mobileBookingTitle',
-        leadId: 'mobileBookingLead',
-        startBtnId: 'mobileStartBtn',
-        hintId: 'mobileBookingHint',
-        stepsId: 'mobileBookingSteps',
-        inlineHintId: 'mobileBookingHintInline',
-        shiftListId: 'mobileShiftList',
-        ctaWrapId: 'mobileCtaWrap',
-        ageTabsId: 'mobileAgeTabs',
-        summaryChipsId: 'mobileBookingSummaryChips',
-        ageChipId: 'mobileAgeChip',
-        ageChipTextId: 'mobileAgeChipText',
-        shiftChipId: 'mobileShiftChip',
-        shiftChipTextId: 'mobileShiftChipText',
-        guidedInlineHintId: 'mobileInlineHint',
-        inlineLeadScope: 'booking-mobile',
-        stage2Align: Object.freeze({
-          vertical: 'center',
-          horizontal: 'stretch'
-        })
-      })
+    const BOOKING_RUNTIME_CONFIG = (window.AC_RUNTIME_CONFIG && window.AC_RUNTIME_CONFIG.bookingViews) || {};
+    const bookingStage2VerticalAlignCfg = Object.freeze(BOOKING_RUNTIME_CONFIG.stage2VerticalAlign || {});
+    const bookingStage2HorizontalAlignCfg = Object.freeze(BOOKING_RUNTIME_CONFIG.stage2HorizontalAlign || {});
+    const bookingViewsCfg = Object.freeze(BOOKING_RUNTIME_CONFIG.views || {
+      desktop: Object.freeze({ key: 'desktop' }),
+      mobile: Object.freeze({ key: 'mobile' })
     });
     let bookingCardMinHeightFrame = 0;
 
     function getBookingViewConfig(viewKey){
-      if(viewKey === 'mobile') return BOOKING_VIEWS.mobile;
-      return BOOKING_VIEWS.desktop;
+      return bookingViewsCfg[viewKey] || bookingViewsCfg.desktop;
     }
 
     function getRenderableBookingViewKeys(){
-      if(USE_DESKTOP_BASE_FOR_MOBILE){
-        return ['desktop'];
-      }
-      return ['desktop', 'mobile'];
+      return (useDesktopBaseForMobileCfg && ['desktop']) || ['desktop', 'mobile'];
     }
 
     function getActiveBookingViewKeys(){
-      if(state.previewView === 'mobile' && !USE_DESKTOP_BASE_FOR_MOBILE){
-        return ['mobile'];
-      }
-      return ['desktop'];
+      return ((state.previewView === 'mobile' && !useDesktopBaseForMobileCfg) && ['mobile']) || ['desktop'];
     }
 
     function getPrimaryBookingViewKey(){
@@ -18175,16 +13819,11 @@ function runOfferSearch(overrides){
     }
 
     function resolveStage2VerticalAlign(value){
-      if(value === 'center') return BOOKING_STAGE2_VERTICAL_ALIGN.center;
-      if(value === 'bottom') return BOOKING_STAGE2_VERTICAL_ALIGN.bottom;
-      return BOOKING_STAGE2_VERTICAL_ALIGN.top;
+      return bookingStage2VerticalAlignCfg[value] || bookingStage2VerticalAlignCfg.top;
     }
 
     function resolveStage2HorizontalAlign(value){
-      if(value === 'left') return BOOKING_STAGE2_HORIZONTAL_ALIGN.left;
-      if(value === 'center') return BOOKING_STAGE2_HORIZONTAL_ALIGN.center;
-      if(value === 'right') return BOOKING_STAGE2_HORIZONTAL_ALIGN.right;
-      return BOOKING_STAGE2_HORIZONTAL_ALIGN.stretch;
+      return bookingStage2HorizontalAlignCfg[value] || bookingStage2HorizontalAlignCfg.stretch;
     }
 
     function applyBookingStage2Alignment(viewCfg){
@@ -18198,167 +13837,6 @@ function runOfferSearch(overrides){
       card.style.setProperty('--booking-stage2-y-grid', vertical.grid);
       card.style.setProperty('--booking-stage2-x-flex', horizontal.flex);
       card.style.setProperty('--booking-stage2-x-grid', horizontal.grid);
-    }
-
-    function applyBookingStructureSchema(viewCfg){
-      const cfg = resolveBookingViewCfg(viewCfg);
-      const card = document.getElementById(cfg.cardId);
-      if(!card) return;
-      const stage = getBookingStage();
-
-      card.querySelectorAll('[data-booking-region]').forEach((node) => {
-        delete node.dataset.bookingRegion;
-        delete node.dataset.bookingRegionLabel;
-        delete node.dataset.bookingRegionZero;
-        delete node.dataset.bookingRegionLabelSide;
-      });
-
-      const mainSelector = (() => {
-        if(stage === 2) return '.booking-step-2';
-        if(stage >= 3) return `#${cfg.infoId}`;
-        return '.booking-step-1';
-      })();
-
-      const structureMap = Object.freeze({
-        top: `#${cfg.stepsId}`,
-        chips: `#${cfg.summaryChipsId}`,
-        header: `#${cfg.titleId}`,
-        main: mainSelector,
-        bottom: '.booking-step-3'
-      });
-      const regionLabelSideMap = Object.freeze({
-        top: 'right',
-        chips: 'right',
-        header: 'left',
-        main: 'right',
-        bottom: 'left'
-      });
-
-      const resolveRegionLabel = (regionName, node) => {
-        if(!node) return regionName;
-        const rect = node.getBoundingClientRect();
-        const style = window.getComputedStyle(node);
-        const isZeroHeight = style.display === 'none' || style.visibility === 'hidden' || node.offsetHeight === 0 || rect.height < 1;
-        return (isZeroHeight && `${regionName} 0`) || regionName;
-      };
-
-      const isRegionZero = (node) => {
-        if(!node) return false;
-        const rect = node.getBoundingClientRect();
-        const style = window.getComputedStyle(node);
-        return style.display === 'none' || style.visibility === 'hidden' || node.offsetHeight === 0 || rect.height < 1;
-      };
-
-      Object.entries(structureMap).forEach(([regionName, selector]) => {
-        const node = card.querySelector(selector);
-        if(!node) return;
-        node.dataset.bookingRegion = regionName;
-        node.dataset.bookingRegionLabel = resolveRegionLabel(regionName, node);
-        node.dataset.bookingRegionZero = String(Number(isRegionZero(node)));
-        node.dataset.bookingRegionLabelSide = regionLabelSideMap[regionName] || 'left';
-      });
-    }
-
-    function ensureStage2TransferHost(stepThree){
-      if(!stepThree) return null;
-      let host = stepThree.querySelector('.booking-stage2-transfer-host');
-      if(!host){
-        host = document.createElement('div');
-        host.className = 'booking-stage2-transfer-host';
-      }
-      return host;
-    }
-
-    function placeStage2ContentForView(cfg, stage, bookingCard){
-      if(!cfg || !bookingCard) return;
-      const stepTwo = bookingCard.querySelector('.booking-step-2');
-      const stepThree = bookingCard.querySelector('.booking-step-3');
-      if(!stepTwo || !stepThree) return;
-
-      const allShiftsBtn = bookingCard.querySelector('.booking-all-shifts-link');
-      const host = ensureStage2TransferHost(stepThree);
-      if(!host) return;
-
-      const toTransfer = [allShiftsBtn].filter(Boolean);
-      const insertBackToStepTwo = (node) => {
-        const anchor = stepTwo.querySelector('.guided-inline-hint');
-        if(anchor && anchor.parentElement === stepTwo){
-          if(anchor.nextSibling){
-            stepTwo.insertBefore(node, anchor.nextSibling);
-          } else {
-            stepTwo.appendChild(node);
-          }
-          return;
-        }
-        stepTwo.appendChild(node);
-      };
-
-      if(stage === 2){
-        if(host.parentElement !== stepThree){
-          stepThree.prepend(host);
-        }
-        toTransfer.forEach((node) => host.appendChild(node));
-        stepThree.classList.add('booking-stage2-transfer-enabled');
-        return;
-      }
-
-      if(host.parentElement){
-        toTransfer.forEach((node) => insertBackToStepTwo(node));
-        host.remove();
-      }
-      stepThree.classList.remove('booking-stage2-transfer-enabled');
-    }
-
-    function syncCompletedBookingScaffold(viewCfg, bookingCard){
-      const cfg = resolveBookingViewCfg(viewCfg);
-      const card = bookingCard || document.getElementById(cfg.cardId);
-      if(!card) return;
-      const stepsRoot = document.getElementById(cfg.stepsId);
-      const chipHost = document.getElementById(cfg.summaryChipsId);
-      const stepThree = card.querySelector('.booking-step-3');
-      if(!stepsRoot || !stepThree) return;
-
-      let topClose = stepsRoot.querySelector('.booking-completed-top-close');
-      let chipBar = chipHost?.querySelector('.booking-completed-chipbar');
-      let bottomWrap = stepThree.querySelector('.booking-completed-bottom');
-
-      if(state.bookingCompleted){
-        stepsRoot.classList.add('booking-steps-completed');
-        if(topClose){
-          topClose.remove();
-        }
-        if(chipHost){
-          chipHost.classList.add('visible', 'booking-summary-chips--completed');
-          if(!chipBar){
-            chipBar = document.createElement('div');
-            chipBar.className = 'booking-completed-chipbar';
-            chipHost.appendChild(chipBar);
-          }
-          chipBar.innerHTML = `
-            <span class="booking-completed-chipbar-title">Что дальше?</span>
-            <button type="button" class="booking-completed-top-close booking-completed-chipbar-close" data-action="reset-booking-all" aria-label="Сбросить бронирование">
-              <img class="ac-icon" src="/assets/icons/close.svg" alt="" aria-hidden="true">
-            </button>
-          `;
-        }
-        if(!bottomWrap){
-          bottomWrap = document.createElement('div');
-          bottomWrap.className = 'booking-completed-bottom';
-          stepThree.appendChild(bottomWrap);
-        }
-        bottomWrap.innerHTML = '<a class="completed-followup-link completed-followup-link--bottom cta-main" href="#" data-action="copy-invite-link">Копировать ссылку приглашение</a>';
-        stepThree.classList.add('booking-completed-bottom-step');
-        return;
-      }
-
-      stepsRoot.classList.remove('booking-steps-completed');
-      if(topClose) topClose.remove();
-      if(chipBar) chipBar.remove();
-      if(chipHost){
-        chipHost.classList.remove('booking-summary-chips--completed');
-      }
-      if(bottomWrap) bottomWrap.remove();
-      stepThree.classList.remove('booking-completed-bottom-step');
     }
 
     function renderSteps(viewCfg){
@@ -18379,26 +13857,6 @@ function runOfferSearch(overrides){
           }
         }
       });
-    }
-
-    function renderGuidedState(viewCfg){
-      return safeInvoke(ensureGuidedStateFlow(), 'renderGuidedState', [viewCfg], null);
-    }
-
-    function pulseNode(node){
-      return safeInvoke(ensureBookingHintFlow(), 'pulseNode', [node], null);
-    }
-
-    function nudgeUserToNextStep(message = 'Сначала завершите предыдущий шаг.'){
-      return safeInvoke(ensureBookingHintFlow(), 'nudgeUserToNextStep', [message], null);
-    }
-
-    function showHint(message, requiredStep = ''){
-      return safeInvoke(ensureBookingHintFlow(), 'showHint', [message, requiredStep], null);
-    }
-
-    function syncBookingHints(){
-      return safeInvoke(ensureBookingHintFlow(), 'syncBookingHints', [], null);
     }
 
     function formatRemainingClock(diff){
@@ -18437,10 +13895,10 @@ function runOfferSearch(overrides){
         return (match && (Number(match[1]) || 0)) || 0;
       };
 
-      const days = extract(/(\d+)\s*(?:д(?:ень|ня|ней)?|[dDД])/);
-      const hours = extract(/(\d+)\s*(?:час(?:а|ов)?|[hHчЧ])/);
-      const minutes = extract(/(\d+)\s*(?:мин(?:ут(?:а|ы)?|ут)?|[mMмМ])/);
-      const seconds = extract(/(\d+)\s*(?:сек(?:унд(?:а|ы)?|унд)?|[sSсС])/);
+      const days = extract(/(\d+)\s*(д(?:ень|ня|ней)?|[dDД])/);
+      const hours = extract(/(\d+)\s*(час(?:а|ов)?|[hHчЧ])/);
+      const minutes = extract(/(\d+)\s*(мин(?:ут(?:а|ы)?|ут)?|[mMмМ])/);
+      const seconds = extract(/(\d+)\s*(сек(?:унд(?:а|ы)?|унд)?|[sSсС])/);
       const totalHours = (days * 24) + hours;
 
       if(days || hours || minutes || seconds){
@@ -18484,12 +13942,27 @@ function runOfferSearch(overrides){
       const percent = getBookingScarcityPercent();
       nodes.forEach((node) => {
         node.style.setProperty('--scarcity-fill', `${percent}%`);
-        node.innerHTML = `
-          <span class="booking-scarcity-progress" aria-hidden="true">
-            <span class="booking-scarcity-progress-fill"></span>
-          </span>
-          <span class="booking-scarcity-text"><strong>${percent}%</strong> мест уже занято</span>
-        `;
+        let progressNode = node.querySelector('.booking-scarcity-progress');
+        if(!progressNode){
+          progressNode = document.createElement('span');
+          progressNode.className = 'booking-scarcity-progress';
+          progressNode.setAttribute('aria-hidden', 'true');
+          const fillNode = document.createElement('span');
+          fillNode.className = 'booking-scarcity-progress-fill';
+          progressNode.appendChild(fillNode);
+          node.appendChild(progressNode);
+        }
+        let textNode = node.querySelector('.booking-scarcity-text');
+        if(!textNode){
+          textNode = document.createElement('span');
+          textNode.className = 'booking-scarcity-text';
+          node.appendChild(textNode);
+        }
+        textNode.textContent = '';
+        const strongNode = document.createElement('strong');
+        strongNode.textContent = `${percent}%`;
+        textNode.appendChild(strongNode);
+        textNode.appendChild(document.createTextNode(' мест уже занято'));
         if(enteredStageFour){
           node.classList.remove('is-animating');
           void node.offsetWidth;
@@ -18498,122 +13971,71 @@ function runOfferSearch(overrides){
       });
     }
 
-    function stopBookingStage1TitleTypewriter(){
-      return safeInvoke(ensureBookingViewFlow(), 'stopBookingStage1TitleTypewriter', [], null);
+    function stopBookingStage1TitleTypewriter(...args){
+      return runtimeInvoke.stopBookingStage1TitleTypewriter(...args);
     }
-
-    function runBookingStage1TitleTypewriter(target, text){
-      return safeInvoke(ensureBookingViewFlow(), 'runBookingStage1TitleTypewriter', [target, text], null);
+    function runBookingStage1TitleTypewriter(...args){
+      return runtimeInvoke.runBookingStage1TitleTypewriter(...args);
     }
-
-    function renderBookingInfo(viewCfg){
-      return safeInvoke(ensureBookingViewFlow(), 'renderBookingInfo', [viewCfg], null);
+    function renderBookingInfo(...args){
+      return runtimeInvoke.renderBookingInfo(...args);
     }
-
-    function renderBookingPanels(){
-      return safeInvoke(ensureBookingViewFlow(), 'renderBookingPanels', [], null);
+    function renderBookingPanels(...args){
+      return runtimeInvoke.renderBookingPanels(...args);
     }
-
-    function getViewportPreviewView(){
-      return safeInvoke(ensureViewModeFlow(), 'getViewportPreviewView', [], () => {
-        return (window.matchMedia('(max-width: 900px)').matches && 'mobile') || 'desktop';
-      });
+    function getViewportPreviewView(...args){
+      return runtimeInvoke.getViewportPreviewView(...args);
     }
-
-    function switchView(view){
-      return safeInvoke(ensureViewModeFlow(), 'switchView', [view], null);
-    }
-
-    function applyHeroContrastMode(){
-      return safeInvoke(ensureViewModeFlow(), 'applyHeroContrastMode', [], null);
-    }
-
-    function switchHeroContrastMode(mode){
-      return safeInvoke(ensureViewModeFlow(), 'switchHeroContrastMode', [mode], null);
-    }
-
-    function applyHeroMicroMode(){
-      return safeInvoke(ensureViewModeFlow(), 'applyHeroMicroMode', [], null);
-    }
-
-    function switchHeroMicroMode(mode){
-      return safeInvoke(ensureViewModeFlow(), 'switchHeroMicroMode', [mode], null);
-    }
-
-    function applyOfferModalTheme(cardEl = null){
-      return safeInvoke(ensureViewModeFlow(), 'applyOfferModalTheme', [cardEl], null);
-    }
-
-    function switchOfferModalTheme(mode){
-      return safeInvoke(ensureViewModeFlow(), 'switchOfferModalTheme', [mode], null);
+    function switchView(...args){
+      return runtimeInvoke.switchView(...args);
     }
 
     function applyOfferLayoutMode(){
-      const mode = normalizeMode(state.offerLayout, OFFER_LAYOUT_MODES, 'current');
+      const mode = normalizeMode(state[OFFER_LAYOUT_KEY], offerLayoutModesCfg, 'current');
       const currentBtn = document.getElementById('offerLayoutCurrentBtn');
       if(currentBtn){
         currentBtn.classList.toggle('active', mode === 'current');
       }
       const card = document.getElementById('offerCard');
       if(card){
-        card.dataset.offerLayout = mode;
+        card.dataset[OFFER_LAYOUT_DATASET_KEY] = mode;
       }
     }
 
-    function switchOfferLayout(mode){
-      return safeInvoke(ensureViewModeFlow(), 'switchOfferLayout', [mode], null);
-    }
-
-    function applyDesktopMode(){
-      return safeInvoke(ensureViewModeFlow(), 'applyDesktopMode', [], null);
-    }
-
-    function switchDesktopMode(mode){
-      return safeInvoke(ensureViewModeFlow(), 'switchDesktopMode', [mode], null);
-    }
-
-    function applyMobileMode(){
-      return safeInvoke(ensureViewModeFlow(), 'applyMobileMode', [], () => {
-        if(USE_DESKTOP_BASE_FOR_MOBILE){
-          return;
-        }
-        applyMobileSectionAccordion();
-      });
-    }
-
-    function switchMobileMode(mode){
-      return safeInvoke(ensureViewModeFlow(), 'switchMobileMode', [mode], null);
-    }
-
     // SECTION 6: View mode controls (desktop/mobile, full/compact).
-    document.getElementById('fullModeBtn')?.addEventListener('click', () => switchDesktopMode('full'));
+    document.getElementById('fullModeBtn')?.addEventListener('click', () => {
+      safeInvoke(ensureViewModeFlow(), 'switchDesktopMode', ['full'], null);
+    });
     document.getElementById('compactModeBtn')?.addEventListener('click', () => {
       const nextMode = (state.desktopMode === 'compact' && 'full') || 'compact';
-      switchDesktopMode(nextMode);
+      safeInvoke(ensureViewModeFlow(), 'switchDesktopMode', [nextMode], null);
     });
-    if(!USE_DESKTOP_BASE_FOR_MOBILE){
-      document.getElementById('mobileFullModeBtn')?.addEventListener('click', () => switchMobileMode('full'));
-      document.getElementById('mobileCompactModeBtn')?.addEventListener('click', () => switchMobileMode('compact'));
+    if(!useDesktopBaseForMobileCfg){
+      document.getElementById('mobileFullModeBtn')?.addEventListener('click', () => {
+        safeInvoke(ensureViewModeFlow(), 'switchMobileMode', ['full'], null);
+      });
+      document.getElementById('mobileCompactModeBtn')?.addEventListener('click', () => {
+        safeInvoke(ensureViewModeFlow(), 'switchMobileMode', ['compact'], null);
+      });
       document.getElementById('mobileModeToggle')?.addEventListener('click', () => {
-        switchMobileMode((state.mobileMode === 'full' && 'compact') || 'full');
+        safeInvoke(
+          ensureViewModeFlow(),
+          'switchMobileMode',
+          [(state.mobileMode === 'full' && 'compact') || 'full'],
+          null
+        );
       });
     }
 
     // SECTION 7: Event bindings (single action pipeline, no direct business logic in handlers).
-    document.addEventListener('click', (e) => {
-      if(handleDataActionClick(e.target)){
-        return;
-      }
-    });
+    safeInvoke(ensureRuntimeActionFlow(), 'bindDocumentClick', [], null);
 
     function formatPrice(v){
       return new Intl.NumberFormat('ru-RU').format(v) + ' ₽';
     }
 
     function labelAge(v){
-      if(v === '7-9') return '7–9 лет';
-      if(v === '10-12') return '10–12 лет';
-      return '13–14 лет';
+      return ageLabel(v);
     }
 
     function shiftDaysLabel(shift){
@@ -18661,94 +14083,41 @@ function runOfferSearch(overrides){
       });
     }
 
-    function toggleShiftOptionPanel(viewKey, panelType, shiftId){
-      const safeView = resolveViewKey(viewKey);
-      safeInvoke(ensureCalendarFlow(), 'toggleShiftOptionPanel', [safeView, panelType, shiftId], () => {
-        const current = shiftOptionPanels[safeView]?.[panelType] || null;
-        shiftOptionPanels[safeView][panelType] = (current !== shiftId && shiftId) || null;
-        renderShiftOptions(safeView);
-      });
+    function toggleShiftOptionPanel(...args){
+      return runtimeInvoke.toggleShiftOptionPanel(...args);
     }
-
-    function clearShiftOptionPanels(){
-      safeInvoke(ensureCalendarFlow(), 'clearShiftOptionPanels', [], () => {
-        shiftOptionPanels = {
-          desktop:{aboutId:null, calendarId:null},
-          mobile:{aboutId:null, calendarId:null}
-        };
-      });
+    function clearShiftOptionPanels(...args){
+      return runtimeInvoke.clearShiftOptionPanels(...args);
     }
-
-    function parseShiftDate(dateStr){
-      return safeInvoke(ensureCalendarFlow(), 'parseShiftDate', [dateStr], () => {
-        const m = String(dateStr || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-        if(!m) return null;
-        return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-      });
+    function parseShiftDate(...args){
+      return runtimeInvoke.parseShiftDate(...args);
     }
-
-    function renderCalendar(shift){
-      return safeInvoke(ensureCalendarFlow(), 'renderCalendar', [shift], null);
+    function renderCalendar(...args){
+      return runtimeInvoke.renderCalendar(...args);
     }
-
-    function renderSeasonCalendar(){
-      return safeInvoke(ensureCalendarFlow(), 'renderSeasonCalendar', [], null);
+    function renderSeasonCalendar(...args){
+      return runtimeInvoke.renderSeasonCalendar(...args);
     }
-
-    function openCalendar(shiftId){
-      return safeInvoke(ensureCalendarFlow(), 'openCalendar', [shiftId], null);
+    function openCalendar(...args){
+      return runtimeInvoke.openCalendar(...args);
     }
-
-    function openSeasonCalendar(){
-      return safeInvoke(ensureCalendarFlow(), 'openSeasonCalendar', [], null);
+    function openSeasonCalendar(...args){
+      return runtimeInvoke.openSeasonCalendar(...args);
     }
-
-    function closeCalendar(){
-      return safeInvoke(ensureCalendarFlow(), 'closeCalendar', [], null);
+    function closeCalendar(...args){
+      return runtimeInvoke.closeCalendar(...args);
     }
-
-    function selectedShiftPayload(){
-      return safeInvoke(ensureBookingRuntimeBridge(), 'selectedShiftPayload', [{
-        state,
-        getSelectedShift,
-        shiftDaysLabel
-      }], () => ({}));
+    function selectedShiftPayload(...args){
+      return runtimeInvoke.selectedShiftPayload(...args);
     }
-
-    function clearOfferTimeout(){
-      return safeInvoke(ensureBookingRuntimeBridge(), 'clearOfferTimeout', [{
-        getTimeoutIds: () => offerTimeoutIds,
-        setTimeoutIds: (next = []) => {
-          offerTimeoutIds = Array.isArray(next) ? next : [];
-        },
-        clearTimeoutFn: clearTimeout
-      }], null);
+    function clearOfferTimeout(...args){
+      return runtimeInvoke.clearOfferTimeout(...args);
     }
-
-    function resetOfferState({preserveShift = true} = {}){
-      return safeInvoke(ensureBookingRuntimeBridge(), 'resetOfferState', [{
-        preserveShift,
-        state,
-        getTimeoutIds: () => offerTimeoutIds,
-        setTimeoutIds: (next = []) => {
-          offerTimeoutIds = Array.isArray(next) ? next : [];
-        },
-        clearTimeoutFn: clearTimeout
-      }], null);
+    function resetOfferState(...args){
+      return runtimeInvoke.resetOfferState(...args);
     }
-
-    function buildBookingSummaryHtml({showTimer = false} = {}){
-      return safeInvoke(ensureBookingRuntimeBridge(), 'buildBookingSummaryHtml', [{
-        showTimer,
-        state,
-        getSelectedShift,
-        isOfferActive,
-        formatPrice,
-        ageLabel,
-        bookingText,
-        stripRemainingPrefix,
-        formatRemainingCompact
-      }], '');
+    function buildBookingSummaryHtml(...args){
+      return runtimeInvoke.buildBookingSummaryHtml(...args);
     }
 
     function generateCode(){
@@ -18761,374 +14130,17 @@ function runOfferSearch(overrides){
       return `Ссылка: ${inviteUrl}`;
     }
 
-    function bindAgeTabs(rootId){
-      const root = document.getElementById(rootId);
-      if(!root) return;
-      root.querySelectorAll('[data-age]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          root.querySelectorAll('[data-age]').forEach(x => x.classList.remove('active'));
-          btn.classList.add('active');
-          Object.assign(state, {
-            age: btn.dataset.age,
-            ageSelected: true,
-            shiftId: null,
-            basePrice: null,
-            offerPrice: null,
-            code: null,
-            expiresAt: null,
-            offerStage: 0,
-            bookingCompleted: false
-          });
-          renderAll();
-          persist();
-          const scope = state.previewView === 'mobile' ? 'booking-mobile' : 'booking-desktop';
-          HERO_V3_SIMPLE_ENABLED && window.setTimeout(() => openInlineLead(scope), 0);
-        });
-      });
+    function bindAgeTabs(...args){
+      return runtimeInvoke.bindAgeTabs(...args);
     }
-
-    function focusMobileAgeGate(){
-      const gate = (USE_DESKTOP_BASE_FOR_MOBILE
-        ? document.getElementById('desktopAgeTabs')
-        : (document.getElementById('mobileAgeGateCard') || document.getElementById('mobileAgeTabs')));
-      if(!gate) return;
-      gate.scrollIntoView({behavior:'smooth', block:'center'});
-      gate.classList.add('guided-pulse');
-      setTimeout(() => gate.classList.remove('guided-pulse'), 1100);
+    function focusMobileAgeGate(...args){
+      return runtimeInvoke.focusMobileAgeGate(...args);
     }
-
-    function waitDesktopAgeTapHint(ms){
-      return new Promise(resolve => {
-        setTimeout(resolve, ms);
-      });
+    function resetAgeSelection(...args){
+      return runtimeInvoke.resetAgeSelection(...args);
     }
-
-    function canRunDesktopAgeTapHint(){
-      const card = document.getElementById('desktop-booking-card');
-      if(HERO_V3_SIMPLE_ENABLED || !card || !card.classList.contains('booking-stage-1')) return false;
-      if(state.previewView === 'mobile') return false;
-      if(state.previewView !== 'desktop') return false;
-      if(hasSelectedAge() || state.ageSelected) return false;
-      const tabs = document.getElementById('desktopAgeTabs');
-      if(!tabs) return false;
-      return tabs.querySelectorAll('.age-tab[data-age]').length >= 3;
-    }
-
-    function ensureDesktopAgeTapHintNode(){
-      const tabs = document.getElementById('desktopAgeTabs');
-      if(!tabs) return null;
-      let hint = tabs.querySelector('.age-tap-hint');
-      if(hint) return hint;
-      hint = document.createElement('div');
-      hint.className = 'age-tap-hint';
-      hint.setAttribute('aria-hidden', 'true');
-      hint.innerHTML = '<span class="age-tap-finger"></span><span class="age-tap-ripple"></span><span class="age-tap-ripple delay"></span>';
-      tabs.appendChild(hint);
-      return hint;
-    }
-
-    function placeDesktopAgeTapHint(hintNode, ageRow){
-      if(!hintNode || !ageRow) return;
-      const host = hintNode.parentElement;
-      if(!host) return;
-      const hostRect = host.getBoundingClientRect();
-      const rowRect = ageRow.getBoundingClientRect();
-      const x = Math.max(8, rowRect.right - hostRect.left - 60);
-      const y = Math.max(6, rowRect.top - hostRect.top - 2);
-      hintNode.style.setProperty('--age-hint-x', `${Math.round(x)}px`);
-      hintNode.style.setProperty('--age-hint-y', `${Math.round(y)}px`);
-    }
-
-    function clearDesktopAgeTapHintRows(){
-      const tabs = document.getElementById('desktopAgeTabs');
-      if(!tabs) return;
-      tabs.querySelectorAll('.age-tab.is-hint-target, .age-tab.is-hint-tapping').forEach((row) => {
-        row.classList.remove('is-hint-target', 'is-hint-tapping');
-      });
-    }
-
-    function pulseDesktopAgeTapHint(hintNode, ageRow){
-      if(!hintNode) return;
-      hintNode.classList.remove('is-tapping');
-      void hintNode.offsetWidth;
-      hintNode.classList.add('is-tapping');
-      if(ageRow){
-        ageRow.classList.add('is-hint-target');
-        ageRow.classList.remove('is-hint-tapping');
-        void ageRow.offsetWidth;
-        ageRow.classList.add('is-hint-tapping');
-        setTimeout(() => {
-          ageRow.classList.remove('is-hint-tapping');
-        }, 680);
-      }
-    }
-
-    function hideDesktopAgeTapHint(){
-      const hintNode = document.querySelector('#desktopAgeTabs .age-tap-hint');
-      if(!hintNode) return;
-      hintNode.classList.remove('is-visible', 'is-tapping');
-      clearDesktopAgeTapHintRows();
-    }
-
-    async function runDesktopAgeTapHint(){
-      if(desktopAgeTapHintPlayed || desktopAgeTapHintRunning) return;
-      if(!canRunDesktopAgeTapHint()) return;
-      const hintNode = ensureDesktopAgeTapHintNode();
-      const tabs = document.getElementById('desktopAgeTabs');
-      if(!hintNode || !tabs) return;
-      const ageRows = [...tabs.querySelectorAll('.age-tab[data-age]')];
-      if(!ageRows.length) return;
-
-      desktopAgeTapHintRunning = true;
-      const runToken = ++desktopAgeTapHintToken;
-      hintNode.classList.add('is-visible');
-
-      for(let rowIndex = 0; rowIndex < ageRows.length; rowIndex += 1){
-        const ageRow = ageRows[rowIndex];
-        if(runToken !== desktopAgeTapHintToken || !canRunDesktopAgeTapHint()) break;
-        clearDesktopAgeTapHintRows();
-        ageRow.classList.add('is-hint-target');
-        placeDesktopAgeTapHint(hintNode, ageRow);
-        await waitDesktopAgeTapHint((rowIndex === 0 && 320) || 1000);
-        for(let tapIndex = 0; tapIndex < 3; tapIndex += 1){
-          if(runToken !== desktopAgeTapHintToken || !canRunDesktopAgeTapHint()) break;
-          pulseDesktopAgeTapHint(hintNode, ageRow);
-          await waitDesktopAgeTapHint(680);
-          if(tapIndex < 2){
-            await waitDesktopAgeTapHint(120);
-          }
-        }
-        hintNode.classList.remove('is-tapping');
-        await waitDesktopAgeTapHint(120);
-      }
-
-      hintNode.classList.remove('is-visible', 'is-tapping');
-      clearDesktopAgeTapHintRows();
-      desktopAgeTapHintRunning = false;
-      desktopAgeTapHintPlayed = true;
-    }
-
-    function syncDesktopAgeTapHintVisibility(){
-      const hintNode = document.querySelector('#desktopAgeTabs .age-tap-hint');
-      if(!hintNode) return;
-      if(desktopAgeTapHintRunning && canRunDesktopAgeTapHint()){
-        hintNode.classList.add('is-visible');
-        return;
-      }
-      hintNode.classList.remove('is-visible', 'is-tapping');
-      clearDesktopAgeTapHintRows();
-    }
-
-    function scheduleDesktopAgeTapHint(){
-      if(desktopAgeTapHintPlayed || desktopAgeTapHintRunning) return;
-      if(!canRunDesktopAgeTapHint()) return;
-      if(desktopAgeTapHintTimer){
-        return;
-      }
-      const elapsedMs = Date.now() - desktopAgeTapHintStartedAt;
-      const isFirstRun = desktopAgeTapHintToken === 0;
-      const delayMs = isFirstRun
-        ? Math.max(0, 7000 - elapsedMs)
-        : 7000;
-      desktopAgeTapHintTimer = setTimeout(() => {
-        desktopAgeTapHintTimer = null;
-        runDesktopAgeTapHint().catch(() => {
-          desktopAgeTapHintRunning = false;
-          hideDesktopAgeTapHint();
-        });
-      }, delayMs);
-    }
-
-    function clearVariantFlowFingerTimer(){
-      if(!variantFlowFingerTimer) return;
-      window.clearTimeout(variantFlowFingerTimer);
-      variantFlowFingerTimer = null;
-    }
-
-    function waitVariantFlow(ms, runId){
-      return new Promise((resolve) => {
-        variantFlowFingerTimer = window.setTimeout(() => {
-          variantFlowFingerTimer = null;
-          resolve(runId === variantFlowRunId);
-        }, ms);
-      });
-    }
-
-    function ensureVariantFlowFinger(){
-      let node = document.getElementById('variantFlowFinger');
-      if(!node){
-        node = document.createElement('div');
-        node.id = 'variantFlowFinger';
-        node.className = 'variant-flow-finger';
-        node.setAttribute('aria-hidden', 'true');
-        document.body.appendChild(node);
-      }
-      if(!node.querySelector('.variant-flow-finger-glyph')){
-        node.innerHTML = `
-          <span class="variant-flow-finger-glyph" aria-hidden="true"></span>
-          <span class="variant-flow-finger-ripple" aria-hidden="true"></span>
-          <span class="variant-flow-finger-ripple delay" aria-hidden="true"></span>
-        `;
-      }
-      return node;
-    }
-
-    function hideVariantFlowFinger(){
-      const node = document.getElementById('variantFlowFinger');
-      if(node){
-        node.classList.remove('visible', 'is-tapping');
-      }
-      document.querySelectorAll('.variant-flow-target').forEach((el) => {
-        el.classList.remove('variant-flow-target');
-      });
-    }
-
-    function stopVariantFlowScenario(){
-      variantFlowRunId += 1;
-      clearVariantFlowFingerTimer();
-      hideVariantFlowFinger();
-    }
-
-    function placeVariantFlowFinger(finger, targetEl){
-      if(!finger || !targetEl) return;
-      const rect = targetEl.getBoundingClientRect();
-      const x = rect.left + (rect.width * 0.5);
-      const y = rect.top + (rect.height * 0.5);
-      finger.style.setProperty('--variant-flow-x', `${Math.round(x)}px`);
-      finger.style.setProperty('--variant-flow-y', `${Math.round(y)}px`);
-      finger.classList.add('visible');
-    }
-
-    async function runVariantFlowForTargets(targets, runId){
-      const finger = ensureVariantFlowFinger();
-      if(!finger || !targets.length) return;
-      for(const target of targets){
-        if(runId !== variantFlowRunId) return;
-        if(!target || !target.isConnected) continue;
-        document.querySelectorAll('.variant-flow-target').forEach((el) => el.classList.remove('variant-flow-target'));
-        target.classList.add('variant-flow-target');
-        placeVariantFlowFinger(finger, target);
-        const warmupOk = await waitVariantFlow(260, runId);
-        if(!warmupOk) return;
-        for(let tap = 0; tap < 3; tap += 1){
-          if(runId !== variantFlowRunId) return;
-          finger.classList.remove('is-tapping');
-          void finger.offsetWidth;
-          finger.classList.add('is-tapping');
-          const tapOk = await waitVariantFlow(360, runId);
-          if(!tapOk) return;
-          if(tap < 2){
-            const pauseOk = await waitVariantFlow(220, runId);
-            if(!pauseOk) return;
-          }
-        }
-        const settleOk = await waitVariantFlow(360, runId);
-        if(!settleOk) return;
-      }
-    }
-
-    function getVariantFlowKey(){
-      const variant = heroVariantState || resolveHeroVariantFromUtm();
-      const tier = variant.tier || HERO_VARIANT_DEFAULT_TIER;
-      const mode = resolveVariantCoachMode(tier);
-      const view = resolveViewKey(state.previewView);
-      return `${tier}:${mode}:${view}`;
-    }
-
-    async function runVariantFlowScenario(){
-      if(!hasSelectedAge() || !!state.shiftId || getBookingStage() !== 2 || state.bookingCompleted){
-        hideVariantFlowFinger();
-        return;
-      }
-      const variant = heroVariantState || resolveHeroVariantFromUtm();
-      const tier = variant.tier || HERO_VARIANT_DEFAULT_TIER;
-      const mode = resolveVariantCoachMode(tier);
-      const runId = ++variantFlowRunId;
-      const flowKey = getVariantFlowKey();
-      if(variantFlowCompletedKey === flowKey){
-        return;
-      }
-      hideVariantFlowFinger();
-      const preWaitOk = await waitVariantFlow(320, runId);
-      if(!preWaitOk || runId !== variantFlowRunId) return;
-
-      if(mode === 'info'){
-        const cfg = getPrimaryBookingViewConfig();
-        const host = document.getElementById(cfg.shiftOptionsId || '');
-        const infoButtons = (host && [...host.querySelectorAll('[data-action="toggle-shift-about"]')].slice(0, 2)) || [];
-        await runVariantFlowForTargets(infoButtons, runId);
-      } else if(state.previewView === 'mobile'){
-        setHeroMenuOpen(true);
-        const openOk = await waitVariantFlow(280, runId);
-        if(!openOk || runId !== variantFlowRunId) return;
-        const shiftsMenuBtn = document.querySelector('#serviceMenu [data-nav="section-programs"]');
-        await runVariantFlowForTargets([].concat(shiftsMenuBtn || []), runId);
-        if(runId === variantFlowRunId){
-          setHeroMenuOpen(false);
-        }
-      } else {
-        const cfg = getPrimaryBookingViewConfig();
-        const card = document.getElementById(cfg.cardId || '');
-        const allShiftsBtn = card?.querySelector('.booking-all-shifts-link');
-        await runVariantFlowForTargets([].concat(allShiftsBtn || []), runId);
-      }
-
-      if(runId === variantFlowRunId){
-        hideVariantFlowFinger();
-        variantFlowCompletedKey = flowKey;
-      }
-    }
-
-    function scheduleVariantFlowScenario(){
-      if(HERO_V3_SIMPLE_ENABLED || !hasSelectedAge() || !!state.shiftId || getBookingStage() !== 2 || state.bookingCompleted){
-        stopVariantFlowScenario();
-        return;
-      }
-      runVariantFlowScenario().catch(() => {
-        stopVariantFlowScenario();
-      });
-    }
-
-    function resetAgeSelection(){
-      clearShiftOptionPanels();
-      Object.assign(state, {
-        age: null,
-        ageSelected: false,
-        shiftId: null,
-        basePrice: null,
-        offerPrice: null,
-        code: null,
-        expiresAt: null,
-        offerStage: 0,
-        bookingCompleted: false
-      });
-
-      ['desktopAgeTabs','mobileAgeTabs'].forEach(id => {
-        const root = document.getElementById(id);
-        if(root){
-          root.querySelectorAll('[data-age]').forEach(x => x.classList.remove('active'));
-        }
-      });
-
-      renderAll();
-      persist();
-    }
-
-    function resetShiftSelection(){
-      clearShiftOptionPanels();
-      Object.assign(state, {
-        shiftId: null,
-        basePrice: null,
-        offerPrice: null,
-        code: null,
-        expiresAt: null,
-        offerStage: 0,
-        offerSearching: false,
-        bookingCompleted: false
-      });
-      showHint('Смена сброшена. Выберите подходящий вариант.', 'shift');
-      renderAll();
-      persist();
+    function resetShiftSelection(...args){
+      return runtimeInvoke.resetShiftSelection(...args);
     }
 
     function setPhotoFilter(filter){
@@ -19144,396 +14156,102 @@ function runOfferSearch(overrides){
       persist();
     }
 
+    function sanitizeHeroPhoneDropdownUi(){
+      var dropdown = document.getElementById('heroPhoneDropdown')
+        || document.querySelector('.hero-phone-dropdown');
+      if(!dropdown) return;
+
+      dropdown.style.background = '#0b1422';
+      dropdown.style.backdropFilter = 'none';
+      dropdown.style.webkitBackdropFilter = 'none';
+      dropdown.style.borderColor = 'rgba(148,163,184,0.38)';
+
+      dropdown.querySelectorAll('.hero-phone-item, a, button').forEach(function(item){
+        item.style.background = '#ffffff';
+        item.style.color = '#0f172a';
+        item.style.borderColor = '#cbd5e1';
+      });
+
+      dropdown.querySelectorAll('*').forEach(function(node){
+        if(!node || node.children.length) return;
+        var raw = String(node.textContent || '');
+        if(!raw) return;
+        var next = raw
+          .replace(/\b[Пп]озвонить\s*:?\s*/g, '')
+          .replace(/\b(?:post|пост)\b:?/gi, '')
+          .replace(/\s{2,}/g, ' ')
+          .trim();
+        if(next && next !== raw.trim()){
+          node.textContent = next;
+        }
+      });
+    }
+
+    function bindHeroPhoneDropdownSanitizer(){
+      if(window.__heroPhoneDropdownSanitizerBound) return;
+      window.__heroPhoneDropdownSanitizerBound = true;
+
+      var apply = function(){
+        window.requestAnimationFrame(sanitizeHeroPhoneDropdownUi);
+      };
+
+      apply();
+
+      var trigger = document.getElementById('heroPhoneTrigger');
+      if(trigger){
+        new MutationObserver(apply).observe(trigger, {
+          attributes: true,
+          attributeFilter: ['data-open', 'class', 'aria-expanded']
+        });
+      }
+
+      var dropdown = document.getElementById('heroPhoneDropdown')
+        || document.querySelector('.hero-phone-dropdown');
+      if(dropdown){
+        new MutationObserver(apply).observe(dropdown, {
+          childList: true,
+          subtree: true
+        });
+      }
+    }
+
     bindAgeTabs('desktopAgeTabs');
-    if(!USE_DESKTOP_BASE_FOR_MOBILE){
+    if(!useDesktopBaseForMobileCfg){
       bindAgeTabs('mobileAgeTabs');
     }
 
-    function getShiftSummaryLines(ageKey){
-      const summaryByAge = {
-        '7-9': [
-          'IT-проекты: Scratch / Python',
-          'Бассейн каждый день',
-          'Живая среда без гаджетного залипания',
-          'Подходит для 7–9 лет'
-        ],
-        '10-12': [
-          'Python и командные мини-спринты',
-          'Бассейн и спорт ежедневно',
-          'Командные роли и самостоятельность',
-          'Подходит для 10–12 лет'
-        ],
-        '13-14': [
-          'AI-практика и проектная защита',
-          'Спорт + живая лагерная среда',
-          'Меньше телефонов, больше результата',
-          'Подходит для 13–14 лет'
-        ]
-      };
-      return summaryByAge[ageKey] || summaryByAge['7-9'];
+    function getShiftDisplayDescription(...args){
+      return runtimeInvoke.getShiftDisplayDescription(...args);
     }
-
-    function getShiftCardTagline(shift){
-      if(!shift) return '';
-      return shift.desc || '';
+    function openShiftAboutModal(...args){
+      return runtimeInvoke.openShiftAboutModal(...args);
     }
-
-    function getShiftDisplayDescription(shift){
-      if(!shift) return '';
-      if(!hasSelectedAge()) return shift.desc || '';
-      return getShiftAgeFocusedDescription(shift, state.age || '7-9');
+    function renderShiftOptions(...args){
+      return runtimeInvoke.renderShiftOptions(...args);
     }
-
-    function normalizeShiftText(value){
-      return String(value || '').replace(/\s+/g, ' ').trim();
+    function renderShiftCards(...args){
+      return runtimeInvoke.renderShiftCards(...args);
     }
-
-    function getShiftAgeFocusedDescription(shift, ageKey){
-      if(!shift) return '';
-      const full = String(shift.fullDesc || '').replace(/\r/g, '').trim();
-      if(!full) return shift.desc || '';
-      const compact = normalizeShiftText(full);
-      const firstPart = normalizeShiftText(
-        compact.split(/Для\s+(?:7[–-]9|10[–-]12|13[–-]14)\s+лет:/i)[0] || ''
-      );
-
-      const markerPatternByAge = {
-        '7-9': 'Для\\s+7[–-]9\\s+лет:',
-        '10-12': 'Для\\s+10[–-]12\\s+лет:',
-        '13-14': 'Для\\s+13[–-]14\\s+лет:'
-      };
-      const ageLabelByAge = {
-        '7-9': 'Для 7–9 лет:',
-        '10-12': 'Для 10–12 лет:',
-        '13-14': 'Для 13–14 лет:'
-      };
-      const markerPattern = markerPatternByAge[ageKey] || markerPatternByAge['7-9'];
-      const ageLabel = ageLabelByAge[ageKey] || ageLabelByAge['7-9'];
-      const agePartMatch = compact.match(
-        new RegExp(`${markerPattern}\\s*([\\s\\S]*?)(?=\\s*Для\\s+(?:7[–-]9|10[–-]12|13[–-]14)\\s+лет:|$)`, 'i')
-      );
-      const agePart = normalizeShiftText(agePartMatch?.[1] || '');
-
-      const sentences = compact.match(/[^.!?]+[.!?]?/g) || [];
-      const finalPart = normalizeShiftText((sentences.length && sentences[sentences.length - 1]) || '');
-
-      const result = [];
-      if(firstPart) result.push(firstPart);
-      if(agePart) result.push(`${ageLabel} ${agePart}`);
-      if(finalPart && !result.includes(finalPart)){
-        result.push(finalPart);
-      }
-      return result.join(' ').trim();
+    function contactIconMarkup(...args){
+      return runtimeInvoke.contactIconMarkup(...args);
     }
-
-    function openShiftAboutModal(shiftId){
-      const modal = document.getElementById('sectionModal');
-      const titleEl = document.getElementById('sectionModalTitle');
-      const bodyEl = document.getElementById('sectionModalBody');
-      const shift = shifts.find((item) => item.id === shiftId);
-      if(!modal || !titleEl || !bodyEl || !shift) return false;
-
-      closeTransientModals('section');
-      const isCompactDesktop = state.previewView === 'desktop' && state.desktopMode === 'compact';
-      const isMobilePanel = state.previewView === 'mobile';
-      modal.classList.toggle('section-modal-compact', isCompactDesktop);
-      modal.classList.toggle('section-modal-mobile', isMobilePanel);
-
-      const start = parseShiftDate(shift.start);
-      const end = parseShiftDate(shift.end);
-      const startText = (start && start.toLocaleDateString('ru-RU')) || shift.start;
-      const endText = (end && end.toLocaleDateString('ru-RU')) || shift.end;
-      const summaryLines = getShiftSummaryLines(state.age || '7-9');
-
-      titleEl.textContent = `${shift.label || `Смена ${shift.title}`}: программа`;
-      bodyEl.innerHTML = `
-        <article class="shift-modal-content">
-          <div class="shift-modal-content__meta">
-            <strong>${shift.dates}</strong>
-            <span>${formatPrice(shift.price)} · ${shiftDaysLabel(shift)} · осталось ${shift.left} мест</span>
-          </div>
-          <p class="shift-modal-content__desc"><strong>Коротко:</strong> ${shift.desc}</p>
-          <p class="shift-modal-content__desc"><strong>Подробно:</strong> ${getShiftDisplayDescription(shift)}</p>
-          <ul class="shift-modal-content__list">
-            ${summaryLines.map((line) => `<li>${line}</li>`).join('')}
-          </ul>
-          <div class="shift-modal-content__dates">
-            <div><strong>Заезд:</strong> ${startText}</div>
-            <div><strong>Выезд:</strong> ${endText}</div>
-          </div>
-        </article>
-      `;
-
-      modal.classList.remove('hidden');
-      applyCompactSectionModalLayout();
-      return true;
+    function resolveFloatingContactLinks(...args){
+      return runtimeInvoke.resolveFloatingContactLinks(...args);
     }
-
-    function renderShiftOptions(viewKey){
-      const safeViewKey = resolveViewKey(viewKey);
-      const targetId = resolveShiftOptionsTargetId(safeViewKey);
-      const box = document.getElementById(targetId);
-      if(!box) return;
-
-      const selectedAge = state.age || '7-9';
-      const summaryLines = getShiftSummaryLines(selectedAge);
-
-      box.innerHTML = shifts.slice(0,2).map(s => {
-        const isInlineView = safeViewKey === 'mobile';
-        const showAbout = isInlineView && shiftOptionPanels[safeViewKey]?.aboutId === s.id;
-        const showCalendar = isInlineView && shiftOptionPanels[safeViewKey]?.calendarId === s.id;
-        const start = parseShiftDate(s.start);
-        const end = parseShiftDate(s.end);
-        const startText = (start && start.toLocaleDateString('ru-RU')) || s.start;
-        const endText = (end && end.toLocaleDateString('ru-RU')) || s.end;
-
-        return `
-        <div class="shift-option ${state.shiftId === s.id ? 'active' : ''}" data-id="${s.id}">
-          <div class="shift-option-head">
-            <strong>
-              <span class="shift-option-dates">${s.dates}</span>
-            </strong>
-            <small>
-              <span class="shift-option-seats">осталось ${s.left} мест</span>
-              <span class="shift-option-price-row">
-                <span class="shift-option-price">${formatPrice(s.price)}</span>
-                <span class="shift-option-inline-actions">
-                  <button class="shift-option-action shift-option-action-info" type="button" data-action="toggle-shift-about" data-shift-id="${s.id}" data-shift-view="${safeViewKey}" aria-label="Описание смены ${s.dates}">
-                    <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/info-circle.svg" alt="" aria-hidden="true">
-                  </button>
-                  <button class="shift-option-action shift-option-action-calendar" type="button" data-action="toggle-shift-calendar-inline" data-shift-id="${s.id}" data-shift-view="${safeViewKey}" aria-label="Календарь ${s.dates}">
-                    <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/calendar3.svg" alt="" aria-hidden="true">
-                  </button>
-                  <button class="shift-option-select-indicator" type="button" aria-label="Выбрать смену ${s.dates}">
-                    <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/chevron-right.svg" alt="" aria-hidden="true">
-                  </button>
-                </span>
-              </span>
-            </small>
-          </div>
-          <div class="shift-inline-panel ${showAbout ? 'visible' : ''}">
-            <ul>
-              ${summaryLines.map((line) => `<li>${line}</li>`).join('')}
-            </ul>
-          </div>
-          <div class="shift-inline-panel shift-inline-calendar ${showCalendar ? 'visible' : ''}">
-            <div><strong>Заезд:</strong> ${startText}</div>
-            <div><strong>Выезд:</strong> ${endText}</div>
-            <div><strong>Длительность:</strong> ${shiftDaysLabel(s)}</div>
-          </div>
-        </div>
-      `;
-      }).join('');
-
-      box.querySelectorAll('.shift-option').forEach(el => {
-        el.addEventListener('click', (event) => {
-          if(event.target.closest('.shift-option-action')){
-            return;
-          }
-          if(!hasSelectedAge()){
-            showHint('Сначала выберите возраст ребёнка', 'age');
-            nudgeUserToNextStep('Сначала выберите возраст ребёнка — тогда откроется список смен.');
-            return;
-          }
-          selectShift(el.dataset.id);
-        });
-      });
+    function initFloatingContactsWidget(...args){
+      return runtimeInvoke.initFloatingContactsWidget(...args);
     }
-
-    function renderShiftCards(){
-      syncGuidedState();
-      const grid = document.getElementById('shiftCardsGrid');
-      if(!grid) return;
-      const shortGrid = document.getElementById('shortShiftCards');
-      const mainShifts = shifts.filter((s) => !s.isShort);
-      const shortShifts = shifts.filter((s) => !!s.isShort);
-      const showExtendedDescription = hasSelectedAge();
-      const cleanShiftCardTitle = (title) => {
-        const raw = String(title || '').trim();
-        const cleaned = raw
-          .replace(/^\s*\d+(?:[.,]\d+)?\s*[\])}.:\-–—,]?\s*/u, '')
-          .replace(/^(?:TT|ТТ)\s*[\d.]+[\s:.\-–—]*/iu, '')
-          .trim();
-        return cleaned || raw;
-      };
-
-      grid.innerHTML = mainShifts.map(s => `
-        <div class="mini-card">
-          <h4>${cleanShiftCardTitle(s.title)}</h4>
-          <div class="price-row">
-            <strong>${formatPrice(s.price)}</strong>
-            <span class="price-row-actions">
-              <button class="shift-calendar-btn shift-about-btn" type="button" data-action="toggle-shift-about" data-shift-id="${s.id}" aria-label="Описание смены ${s.title}">
-                <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/info-circle.svg" alt="" aria-hidden="true">
-              </button>
-              <button class="shift-calendar-btn" type="button" data-action="open-calendar" data-shift-id="${s.id}" aria-label="Календарь ${s.title}">
-                <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/calendar3.svg" alt="" aria-hidden="true">
-              </button>
-            </span>
-          </div>
-          <div class="price-row-meta">${s.dates} · ${shiftDaysLabel(s)}</div>
-          ${showExtendedDescription
-            ? `
-              <p><strong>Коротко:</strong> ${s.desc || ''}</p>
-              <p><strong>Подробно:</strong> ${getShiftDisplayDescription(s)}</p>
-            `
-            : `<p>${s.desc || ''}</p>`
-          }
-        </div>
-      `).join('');
-
-      if(shortGrid){
-        shortGrid.innerHTML = shortShifts.map((s) => `
-          <div class="mini-card short-shift-card">
-            <div class="short-shift-head">
-              <h4>${cleanShiftCardTitle(s.title)}</h4>
-              <span class="short-shift-tag">короткая смена</span>
-            </div>
-            <div class="price-row">
-              <strong>${formatPrice(s.price)}</strong>
-              <span class="price-row-actions">
-                <button class="shift-calendar-btn shift-about-btn" type="button" data-action="toggle-shift-about" data-shift-id="${s.id}" aria-label="Описание смены ${s.title}">
-                  <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/info-circle.svg" alt="" aria-hidden="true">
-                </button>
-                <button class="shift-calendar-btn" type="button" data-action="open-calendar" data-shift-id="${s.id}" aria-label="Календарь ${s.title}">
-                  <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/calendar3.svg" alt="" aria-hidden="true">
-                </button>
-              </span>
-            </div>
-            <div class="price-row-meta">${s.dates}</div>
-            ${showExtendedDescription
-              ? `
-                <p><strong>Коротко:</strong> ${s.desc || ''}</p>
-              `
-              : `<p>${s.desc || ''}</p>`
-            }
-          </div>
-        `).join('');
-        shortGrid.closest('.programs-short-block')?.classList.remove('hidden');
-      }
+    function socialBadgeMark(...args){
+      return runtimeInvoke.socialBadgeMark(...args);
     }
-
-    function contactIconMarkup(label){
-      const map = {
-        city_phone:'/assets/icons/phone-city.svg',
-        mobile_phone:'/assets/icons/phone-mobile.svg',
-        whatsapp:'/assets/icons/whatsapp.svg',
-        telegram:'/assets/icons/telegram.svg'
-      };
-      const src = map[label];
-      return ((src && `<img class="ac-icon" src="${src}" alt="" aria-hidden="true">`) || '•');
+    function socialDisplayName(...args){
+      return runtimeInvoke.socialDisplayName(...args);
     }
-
-    function resolveFloatingContactLinks(){
-      const contacts = (Array.isArray(mediaContent.contacts) && mediaContent.contacts) || [];
-      const mobilePhone = contacts.find((item) => item.label === 'mobile_phone');
-      const cityPhone = contacts.find((item) => item.label === 'city_phone');
-      const whatsapp = contacts.find((item) => item.label === 'whatsapp');
-      const telegram = contacts.find((item) => item.label === 'telegram');
-      return {
-        cityPhoneHref: (cityPhone && cityPhone.href) || 'tel:+74951284429',
-        cityPhoneLabel: (cityPhone && cityPhone.text) || '+7 (495) 128-44-29',
-        mobilePhoneHref: (mobilePhone && mobilePhone.href) || 'tel:+79688086455',
-        mobilePhoneLabel: (mobilePhone && mobilePhone.text) || '+7 (968) 808-64-55',
-        whatsappHref: (whatsapp && whatsapp.href) || 'https://wa.me/79688086455',
-        telegramHref: (telegram && telegram.href) || 'https://t.me/Progaschool',
-      };
+    function faqGlyph(...args){
+      return runtimeInvoke.faqGlyph(...args);
     }
-
-    function initFloatingContactsWidget(){
-      if(document.getElementById('floatingContactsWidget')) return;
-      const links = resolveFloatingContactLinks();
-      const host = document.createElement('div');
-      host.id = 'floatingContactsWidget';
-      host.className = 'floating-contacts';
-      host.innerHTML = `
-        <div class="floating-contacts-panel" id="floatingContactsPanel" aria-label="Быстрые контакты">
-          <a class="floating-contacts-link" href="${links.cityPhoneHref}">
-            <img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/telephone.svg" alt="" aria-hidden="true">
-            <span class="floating-contacts-label">${links.cityPhoneLabel}</span>
-          </a>
-          <a class="floating-contacts-link" href="${links.mobilePhoneHref}">
-            <img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/telephone-fill.svg" alt="" aria-hidden="true">
-            <span class="floating-contacts-label">${links.mobilePhoneLabel}</span>
-          </a>
-          <a class="floating-contacts-link" href="${links.whatsappHref}" target="_blank" rel="noopener noreferrer">
-            <img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/whatsapp.svg" alt="" aria-hidden="true">
-            <span class="floating-contacts-label">WhatsApp</span>
-          </a>
-          <a class="floating-contacts-link" href="${links.telegramHref}" target="_blank" rel="noopener noreferrer">
-            <img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/telegram.svg" alt="" aria-hidden="true">
-            <span class="floating-contacts-label">Telegram</span>
-          </a>
-        </div>
-        <button type="button" class="floating-contacts-toggle" id="floatingContactsToggle" aria-expanded="false" aria-controls="floatingContactsPanel" aria-label="Открыть контакты">
-          <svg class="floating-contacts-glyph" viewBox="0 0 24 24" aria-hidden="true">
-            <path class="floating-contacts-glyph-outline" d="M4.5 5.5h15a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-4.5 3v-3H4.5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z"></path>
-            <circle class="floating-contacts-dot floating-contacts-dot-left" cx="8" cy="11.5" r="1.35"></circle>
-            <circle class="floating-contacts-dot floating-contacts-dot-center" cx="12" cy="11.5" r="1.35"></circle>
-            <circle class="floating-contacts-dot floating-contacts-dot-right" cx="16" cy="11.5" r="1.35"></circle>
-          </svg>
-        </button>
-      `;
-      document.body.appendChild(host);
-
-      const toggle = host.querySelector('#floatingContactsToggle');
-      if(!toggle) return;
-      toggle.addEventListener('click', () => {
-        const isOpen = host.classList.toggle('is-open');
-        toggle.setAttribute('aria-expanded', String(!!isOpen));
-        track('floating_contacts_toggle', {open:Number(!!isOpen)});
-      });
-
-      host.querySelectorAll('.floating-contacts-link').forEach((link) => {
-        link.addEventListener('click', () => {
-          host.classList.remove('is-open');
-          toggle.setAttribute('aria-expanded', 'false');
-          const label = String(link.querySelector('.floating-contacts-label')?.textContent || '').toLowerCase();
-          track('floating_contacts_click', {channel: label});
-        });
-      });
-
-      document.addEventListener('click', (event) => {
-        if(!host.classList.contains('is-open')) return;
-        if(host.contains(event.target)) return;
-        host.classList.remove('is-open');
-        toggle.setAttribute('aria-expanded', 'false');
-      });
-
-      document.addEventListener('keydown', (event) => {
-        if(event.key !== 'Escape') return;
-        if(!host.classList.contains('is-open')) return;
-        host.classList.remove('is-open');
-        toggle.setAttribute('aria-expanded', 'false');
-      });
-    }
-
-    function socialBadgeMark(item){
-      const mark = String(item?.label || '').trim().toUpperCase();
-      const allowed = new Set(['VK','RT','IG','OK','YT','LI','TT','PI','YA']);
-      return ((allowed.has(mark) && mark) || '•');
-    }
-
-    function socialDisplayName(item){
-      const key = String(item?.key || '').trim();
-      const badge = socialBadgeMark(item);
-      if(!key) return badge;
-      if(key.toUpperCase() !== badge) return key;
-      if(key === 'VK') return 'ВКонтакте';
-      return key;
-    }
-
-    function faqGlyph(iconPath, groupName){
-      if(iconPath && iconPath.includes('med')) return 'MED';
-      if(iconPath && iconPath.includes('lock')) return 'SAFE';
-      if(iconPath && iconPath.includes('food')) return 'FOOD';
-      if(iconPath && iconPath.includes('check')) return 'ROOM';
-      if(iconPath && iconPath.includes('phone')) return 'CALL';
-      return groupName.slice(0,3).toUpperCase();
-    }
-
-    function renderStars(){
-      return '<div class="stars">★★★★★</div>';
+    function renderStars(...args){
+      return runtimeInvoke.renderStars(...args);
     }
 
     // SECTION 5: Content and media rendering.
@@ -19593,7 +14311,7 @@ function runOfferSearch(overrides){
         shiftDaysLabel,
         getShiftDisplayDescription,
         hasSelectedAge,
-        getPhotosForActiveFilter,
+        getPhotosForActiveFilter: runtimeInvoke.getPhotosForActiveFilter,
         socialBadgeMark,
         socialDisplayName,
         renderCompactInlineTeamList,
@@ -19610,136 +14328,14 @@ function runOfferSearch(overrides){
       syncLegalDocLinks();
     }
 
-    function renderDesktopMobileDocsBlock(){
-      const footer = document.getElementById('section-legal');
-      if(!footer) return;
-
-      if(!footer.dataset.originalMarkup){
-        footer.dataset.originalMarkup = footer.innerHTML;
-      }
-
-      const useMobileDocs = USE_DESKTOP_BASE_FOR_MOBILE && state.previewView === 'mobile';
-      if(!useMobileDocs){
-        if(footer.dataset.mobileDocsApplied === '1'){
-          footer.innerHTML = footer.dataset.originalMarkup || footer.innerHTML;
-          footer.dataset.mobileDocsApplied = '0';
-        }
-        footer.classList.remove('mobile-docs-inline');
-        return;
-      }
-
-      footer.classList.add('mobile-docs-inline');
-      footer.dataset.mobileDocsApplied = '1';
-      footer.innerHTML = `
-        <div class="mobile-docs-shell">
-          <article class="mobile-docs-accordion-item ${state.mobileDocsExpanded ? 'open' : ''}">
-            <button type="button" class="mobile-docs-toggle" data-action="mobile-docs-toggle">
-              <span class="mobile-docs-toggle-copy">
-                <span class="mobile-docs-toggle-main">ООО «ВОИП КОННЕКТ»</span>
-                <span class="mobile-docs-toggle-meta">ИНН 7729713637 · РТО 025773</span>
-              </span>
-              <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/chevron-right.svg" alt="" aria-hidden="true">
-            </button>
-            <div class="mobile-docs-links">
-              <a href="legal.html#education-license" target="_blank" rel="noopener noreferrer">Образовательная лицензия Л035-01298-77/01082973</a>
-              <a href="mailto:hello@codims.ru">hello@codims.ru</a>
-              <a href="https://www.codims.ru/privacy" target="_blank" rel="noopener noreferrer">Политика обработки персональных данных</a>
-              <a href="legal.html#legal-info" target="_blank" rel="noopener noreferrer">Юридическая информация</a>
-              <a href="legal.html#org-info" target="_blank" rel="noopener noreferrer">Сведения об организации</a>
-              <a href="legal.html#children-rest" target="_blank" rel="noopener noreferrer">Отдых и оздоровление детей</a>
-              <a href="legal.html#partners-info" target="_blank" rel="noopener noreferrer">Условия для партнёров</a>
-              <a href="legal.html#bloggers-info" target="_blank" rel="noopener noreferrer">Сотрудничество с блогерами</a>
-            </div>
-          </article>
-          <div class="footer-copyright-mini">© 2019–2026</div>
-        </div>
-      `;
+    function renderDesktopMobileDocsBlock(...args){
+      return runtimeInvoke.renderDesktopMobileDocsBlock(...args);
     }
-
-    function syncMobileDocsExpandedUi(){
-      document.querySelectorAll('.mobile-docs-accordion-item').forEach((item) => {
-        item.classList.toggle('open', !!state.mobileDocsExpanded);
-      });
+    function syncMobileDocsExpandedUi(...args){
+      return runtimeInvoke.syncMobileDocsExpandedUi(...args);
     }
-
-    const DESKTOP_MOBILE_SECTION_TEMPLATES = {
-      'section-about': `
-        <h3>О лагере</h3>
-        <p class="section-lead">AiDaCamp — место, где ребёнок создаёт, двигается, работает в команде и уезжает со смены с понятным результатом.</p>
-        <div class="mobile-about-features" id="mobileAboutFeaturesDesktop"></div>
-      `,
-      'section-journey': `
-        <h3>Как проходит смена</h3>
-        <p class="section-lead">4 шага: от быстрого включения к понятному результату за смену.</p>
-        <div class="mobile-journey-flow" id="mobileJourneyContentDesktop"></div>
-      `,
-      'section-programs': `
-        <h3>Описание смен</h3>
-        <p class="section-lead">Выберите смену в селекторе — ниже покажем одну карточку с ключевыми деталями.</p>
-        <div class="mobile-programs-flow" id="mobileProgramsContentDesktop"></div>
-      `,
-      'section-photos': `
-        <h3>Фото</h3>
-        <p class="section-lead">Живые кадры лагеря: занятия, бассейн, спорт, питание, команда и атмосфера.</p>
-        <div class="mobile-media-filter-row" id="mobilePhotoFiltersDesktop">
-          <button class="mobile-media-filter active" type="button" data-photo-filter="camp">Атмосфера</button>
-          <button class="mobile-media-filter" type="button" data-photo-filter="pool">Бассейн</button>
-          <button class="mobile-media-filter" type="button" data-photo-filter="sport">Спорт</button>
-          <button class="mobile-media-filter" type="button" data-photo-filter="study">Учёба</button>
-          <button class="mobile-media-filter" type="button" data-photo-filter="food">Питание</button>
-        </div>
-        <div id="mobilePhotoGalleryDesktop"></div>
-      `,
-      'section-videos': `
-        <h3>Видео</h3>
-        <p class="section-lead">Короткие видео, которые быстро объясняют, почему дети в лагере меняются сильнее, чем родители ожидают.</p>
-        <div id="mobileVideoGalleryDesktop"></div>
-      `,
-      'section-reviews': `
-        <h3>Отзывы</h3>
-        <p class="section-lead">Сильный внешний social proof: реальные отзывы родителей на Яндекс Картах.</p>
-        <div id="mobileReviewsGalleryDesktop"></div>
-      `,
-      'section-faq': `
-        <h3>FAQ</h3>
-        <p class="section-lead">Ключевые вопросы по медицине, безопасности, питанию и проживанию.</p>
-        <div class="mobile-faq-filter-row" id="mobileFaqFiltersDesktop"></div>
-        <div class="mobile-faq-accordion" id="mobileFaqListDesktop"></div>
-      `,
-      'section-team': `
-        <h3>Команда</h3>
-        <p class="section-lead">Люди, которые ведут смены и работают с детьми в проектном формате.</p>
-        <div class="mobile-team-list" id="mobileInlineTeamListDesktop"></div>
-      `,
-      'section-stay': `
-        <h3>Размещение</h3>
-        <p class="section-lead">Комнаты, бытовые зоны и территория лагеря.</p>
-        <div class="mobile-stay-list" id="mobileInlineStayListDesktop"></div>
-      `,
-      'section-contacts': `
-        <h3>Контакты</h3>
-        <p class="section-lead">Быстрая связь и маршрут до лагеря.</p>
-        <div class="mobile-contacts-list" id="mobileInlineContactsListDesktop"></div>
-        <div class="mobile-socials-row" id="mobileInlineSocialsDesktop"></div>
-      `
-    };
-
-    function applyMobileTemplatesToDesktopSections(){
-      const useMobileTemplates = USE_DESKTOP_BASE_FOR_MOBILE && state.previewView === 'mobile';
-      Object.entries(DESKTOP_MOBILE_SECTION_TEMPLATES).forEach(([sectionId, template]) => {
-        const section = document.getElementById(sectionId);
-        if(!section) return;
-        if(!section.dataset.desktopOriginalMarkup){
-          section.dataset.desktopOriginalMarkup = section.innerHTML;
-        }
-        if(useMobileTemplates){
-          section.innerHTML = template;
-          section.classList.add('mobile-template');
-        } else if(section.dataset.desktopOriginalMarkup){
-          section.innerHTML = section.dataset.desktopOriginalMarkup;
-          section.classList.remove('mobile-template');
-        }
-      });
+    function applyMobileTemplatesToDesktopSections(...args){
+      return runtimeInvoke.applyMobileTemplatesToDesktopSections(...args);
     }
 
     function applyMobileSectionAccordion(){
@@ -19751,10 +14347,10 @@ function runOfferSearch(overrides){
       applyMobileTemplatesToDesktopSections();
       renderShiftOptionsForRenderableViews();
       renderBookingPanels();
-      syncDesktopAgeTapHintVisibility();
-      scheduleDesktopAgeTapHint();
+      safeInvoke(ensureBookingHintFlow(), 'syncDesktopAgeTapHintVisibility', [], null);
+      safeInvoke(ensureBookingHintFlow(), 'scheduleDesktopAgeTapHint', [], null);
       renderMediaSections();
-      if(!USE_DESKTOP_BASE_FOR_MOBILE){
+      if(!useDesktopBaseForMobileCfg){
         applyMobileSectionAccordion();
       }
       renderDesktopMobileDocsBlock();
@@ -19762,23 +14358,19 @@ function runOfferSearch(overrides){
       syncLegalDocLinks();
     }
 
-    function selectShift(id){
-      const shift = shifts.find(s => s.id === id);
-      clearShiftOptionPanels();
-      Object.assign(state, {
+    const selectShift = (id) => (
+      safeInvoke(ensureBookingRuntimeBridge(), 'selectShift', [{
+        state,
         shiftId: id,
-        basePrice: shift.price,
-        offerPrice: null,
-        code: null,
-        expiresAt: null,
-        offerStage: 0
-      });
-      renderAll();
-      persist();
-    }
+        getShifts: () => shifts,
+        clearShiftOptionPanels,
+        renderAll,
+        persist
+      }], false)
+    );
 
-    function handlePrimaryCTA(){
-      return safeInvoke(ensureBookingRuntimeBridge(), 'handlePrimaryCTA', [{
+    const handlePrimaryCTA = () => (
+      safeInvoke(ensureBookingRuntimeBridge(), 'handlePrimaryCTA', [{
         state,
         heroVariantState,
         resolveHeroVariantFromUtm,
@@ -19809,12 +14401,14 @@ function runOfferSearch(overrides){
             ? 'booking-mobile'
             : 'booking-desktop'
         ),
-        openInlineLead
-      }], null);
-    }
+        openInlineLead: (scope) => {
+          safeInvoke(ensureBookingInlineRuntimeFlow(), 'openInlineLead', [scope], null);
+        }
+      }], null)
+    );
 
-    function runOfferSearch(){
-      return safeInvoke(ensureOfferFlow(), 'runOfferSearch', [{
+    const runOfferSearch = () => (
+      safeInvoke(ensureOfferFlow(), 'runOfferSearch', [{
         state,
         document,
         getSelectedShift,
@@ -19831,22 +14425,26 @@ function runOfferSearch(overrides){
         },
         track,
         selectedShiftPayload,
-        applyOfferModalTheme,
-        normalizeCloseIconButtons,
+        applyOfferModalTheme: (cardEl = null) => {
+          return safeInvoke(ensureViewModeFlow(), 'applyOfferModalTheme', [cardEl], null);
+        },
+        normalizeCloseIconButtons: (scope = document) => {
+          return safeInvoke(ensureUiInitFlow(), 'normalizeCloseIconButtons', [scope], null);
+        },
         showOffer,
         discountFactor: OFFER_DISCOUNT_FACTOR,
         ttlHours: 72
-      }], null);
-    }
+      }], null)
+    );
 
-    function openOfferCheck(){
-      return safeInvoke(ensureOfferFlow(), 'openOfferCheck', [{
+    const openOfferCheck = () => (
+      safeInvoke(ensureOfferFlow(), 'openOfferCheck', [{
         runOfferSearch
-      }], () => runOfferSearch());
-    }
+      }], () => runOfferSearch())
+    );
 
-    function showOffer(){
-      return safeInvoke(ensureOfferFlow(), 'showOffer', [{
+    const showOffer = () => (
+      safeInvoke(ensureOfferFlow(), 'showOffer', [{
         state,
         document,
         getSelectedShift,
@@ -19857,41 +14455,45 @@ function runOfferSearch(overrides){
         persist,
         track,
         selectedShiftPayload,
-        applyOfferModalTheme,
+        applyOfferModalTheme: (cardEl = null) => {
+          return safeInvoke(ensureViewModeFlow(), 'applyOfferModalTheme', [cardEl], null);
+        },
         formatPrice,
-        normalizeCloseIconButtons,
+        normalizeCloseIconButtons: (scope = document) => {
+          return safeInvoke(ensureUiInitFlow(), 'normalizeCloseIconButtons', [scope], null);
+        },
         startTimer,
         renderSummary,
         renderBookingPanels
-      }], null);
-    }
+      }], null)
+    );
 
-    function saveOfferAndClose(){
-      return safeInvoke(ensureOfferFlow(), 'saveOfferAndClose', [{
+    const saveOfferAndClose = () => (
+      safeInvoke(ensureOfferFlow(), 'saveOfferAndClose', [{
         syncGuidedState,
         clearOfferTimeout,
         document,
         renderSummary,
         renderBookingPanels
-      }], null);
-    }
+      }], null)
+    );
 
-    function resetOfferProgressUI(){
-      return safeInvoke(ensureOfferFlow(), 'resetOfferProgressUI', [{
+    const resetOfferProgressUI = () => (
+      safeInvoke(ensureOfferFlow(), 'resetOfferProgressUI', [{
         clearOfferTimeout,
         state
       }], () => {
         clearOfferTimeout();
         Object.assign(state, { offerSearching: false });
-      });
-    }
+      })
+    );
 
-    function startTimer(){
-      return safeInvoke(ensureSummaryFlow(), 'startTimer', [], null);
+    function startTimer(...args){
+      return runtimeInvoke.startTimer(...args);
     }
 
     function isSummaryCompactMode(){
-      if(state.previewView === 'mobile' && !USE_DESKTOP_BASE_FOR_MOBILE){
+      if(state.previewView === 'mobile' && !useDesktopBaseForMobileCfg){
         return state.mobileMode === 'compact';
       }
       return state.desktopMode === 'compact';
@@ -19905,250 +14507,21 @@ function runOfferSearch(overrides){
       return !!safeInvoke(ensureSummaryFlow(), 'isBookingPrimaryCtaVisibleInViewport', [], false);
     }
 
-    function updateSummaryBarVisibility(){
-      return safeInvoke(ensureSummaryFlow(), 'updateSummaryBarVisibility', [], null);
+    function updateSummaryBarVisibility(...args){
+      return runtimeInvoke.updateSummaryBarVisibility(...args);
     }
-
-    function dismissSummaryBarTemporarily(ms = 30000){
-      return safeInvoke(ensureSummaryFlow(), 'dismissSummaryBarTemporarily', [ms], null);
+    function dismissSummaryBarTemporarily(...args){
+      return runtimeInvoke.dismissSummaryBarTemporarily(...args);
     }
-
-    function renderSummary(){
-      return safeInvoke(ensureSummaryFlow(), 'renderSummary', [], null);
-    }
-
-    function onlyDigits(value){
-      return safeInvoke(ensureBookingInlineLeadApi(), 'onlyDigits', [value], (value || '').replace(/\D/g, ''));
-    }
-
-    function formatPhoneInput(value){
-      return safeInvoke(ensureBookingInlineLeadApi(), 'formatPhoneInput', [value], () => String(value || ''));
-    }
-
-    function normalizePhone(value){
-      return safeInvoke(ensureBookingInlineLeadApi(), 'normalizePhone', [value], '');
-    }
-
-    function isValidPhone(value){
-      return !!safeInvoke(ensureBookingInlineLeadApi(), 'isValidPhone', [value], () => !!normalizePhone(value));
-    }
-
-    function getLeadScopeConfig(scope = 'drawer'){
-      return safeInvoke(ensureBookingInlineLeadApi(), 'getLeadScopeConfig', [scope], null);
-    }
-
-    function getLeadSubmitDefaultText(scope = 'drawer'){
-      return safeInvoke(ensureBookingInlineLeadApi(), 'getLeadSubmitDefaultText', [scope], 'Забронировать');
-    }
-
-    function setLeadPhoneError(scope = 'drawer', show = false, message = ''){
-      safeInvoke(ensureBookingInlineLeadApi(), 'setLeadPhoneError', [{
-        scope,
-        show,
-        message,
-        document
-      }], null);
-    }
-
-    function setPhoneError(show){
-      setLeadPhoneError('drawer', show);
-    }
-
-    function setLeadSubmitState(loading, scope = 'drawer'){
-      safeInvoke(ensureBookingInlineLeadApi(), 'setLeadSubmitState', [{
-        loading,
-        scope,
-        document
-      }], null);
-    }
-
-    function bindPhoneMaskForScope(scope = 'drawer'){
-      safeInvoke(ensureBookingInlineLeadApi(), 'bindPhoneMaskForScope', [{
-        scope,
-        document
-      }], null);
-    }
-
-    function buildInlineLeadFormHtml(scope){
-      return safeInvoke(ensureBookingInlineLeadApi(), 'buildInlineLeadFormHtml', [scope], '');
-    }
-
-    function openInlineLead(scope){
-      safeInvoke(ensureBookingInlineLeadApi(), 'openInlineLead', [{
-        scope,
-        state,
-        document,
-        track,
-        selectedShiftPayload,
-        buildHeroVariantMeta
-      }], null);
-    }
-
-    function closeInlineLead(scope){
-      safeInvoke(ensureBookingInlineLeadApi(), 'closeInlineLead', [{
-        scope,
-        document
-      }], null);
-    }
-
-    function openForm(){
-      safeInvoke(ensureBookingInlineLeadApi(), 'openForm', [{
-        state,
-        document,
-        syncGuidedState,
-        buildBookingSummaryHtml,
-        isOfferActive,
-        startTimer,
-        track,
-        selectedShiftPayload,
-        buildHeroVariantMeta
-      }], null);
-    }
-
-    function closeForm(){
-      safeInvoke(ensureBookingInlineLeadApi(), 'closeForm', [{ document }], null);
-    }
-
-    function openSuccessModal(deliveryResult){
-      const box = document.getElementById('successSummaryBox');
-      if(box) box.innerHTML = buildBookingSummaryHtml();
-      const deliveryState = document.getElementById('successDeliveryState');
-      if(deliveryState){
-        const isAdmin = isAdminDebugSession();
-        if(isAdmin && deliveryResult && deliveryResult.ok === false){
-          deliveryState.textContent = 'Заявка сохранена локально, но сейчас нет связи с сервером отправки. Если мы не ответим в течение 15 минут, напишите нам в Telegram.';
-          deliveryState.classList.remove('hidden');
-          deliveryState.classList.add('error');
-        } else {
-          deliveryState.textContent = '';
-          deliveryState.classList.add('hidden');
-          deliveryState.classList.remove('error');
-        }
-      }
-      document.getElementById('successOverlay').classList.remove('hidden');
-    }
-
-    function closeSuccessModal(){
-      document.getElementById('successOverlay').classList.add('hidden');
-    }
-
-    function openNoticeModal(message, title = 'Проверьте данные'){
-      const overlay = document.getElementById('noticeOverlay');
-      if(!overlay) return;
-      const titleEl = document.getElementById('noticeTitle');
-      const messageEl = document.getElementById('noticeMessage');
-      const actionsEl = document.getElementById('noticeActions');
-      noticeConfirmHandler = null;
-      if(titleEl) titleEl.textContent = title;
-      if(messageEl) messageEl.textContent = message || '';
-      if(actionsEl){
-        actionsEl.classList.add('hidden');
-        actionsEl.classList.remove('notice-actions--reset-booking');
-      }
-      overlay.classList.remove('hidden');
-    }
-
-    function closeNoticeModal(){
-      noticeConfirmHandler = null;
-      const actionsEl = document.getElementById('noticeActions');
-      if(actionsEl){
-        actionsEl.classList.add('hidden');
-        actionsEl.classList.remove('notice-actions--reset-booking');
-      }
-      document.getElementById('noticeOverlay')?.classList.add('hidden');
-    }
-
-    function ensureNoticeActions(){
-      const overlay = document.getElementById('noticeOverlay');
-      const card = overlay?.querySelector('.notice-card');
-      if(!overlay || !card) return null;
-      let actionsEl = document.getElementById('noticeActions');
-      if(actionsEl) return actionsEl;
-      actionsEl = document.createElement('div');
-      actionsEl.id = 'noticeActions';
-      actionsEl.className = 'notice-actions hidden';
-      actionsEl.innerHTML = `
-        <button class="secondary-outline notice-cancel-btn" type="button" data-action="close-notice">Отмена</button>
-        <button class="cta-main notice-confirm-btn" type="button" data-action="confirm-notice">Подтвердить</button>
-      `;
-      card.appendChild(actionsEl);
-      return actionsEl;
-    }
-
-    function openResetBookingConfirmModal(){
-      openNoticeModal(
-        'Это действие аннулирует ваше предварительное бронирование. Вы точно хотите продолжить?',
-        'Сбросить бронирование?'
-      );
-      const actionsEl = ensureNoticeActions();
-      if(!actionsEl) return;
-      const cancelBtn = actionsEl.querySelector('.notice-cancel-btn');
-      const confirmBtn = actionsEl.querySelector('.notice-confirm-btn');
-      if(cancelBtn) cancelBtn.textContent = 'Отмена';
-      if(confirmBtn) confirmBtn.textContent = 'Сбросить';
-      actionsEl.classList.add('notice-actions--reset-booking');
-      noticeConfirmHandler = () => {
-        resetOfferState({preserveShift:false});
-        Object.assign(state, {
-          age: null,
-          ageSelected: false
-        });
-        persist();
-        renderAll();
-      };
-      actionsEl.classList.remove('hidden');
-    }
-
-    async function submitLeadFromScope(scope = 'drawer'){
-      await safeInvoke(ensureBookingInlineLeadApi(), 'submitLeadFromScope', [{
-        scope,
-        state,
-        shifts,
-        document,
-        getInProgress: () => leadSubmitInProgress,
-        setInProgress: (next) => {
-          leadSubmitInProgress = !!next;
-        },
-        syncGuidedState,
-        normalizePhone,
-        isValidPhone,
-        setLeadPhoneError,
-        setLeadSubmitState,
-        openNoticeModal,
-        persist,
-        labelAge,
-        formatPrice,
-        buildAbMeta,
-        track,
-        selectedShiftPayload,
-        buildHeroVariantMeta,
-        notifyLead,
-        closeForm,
-        closeInlineLead,
-        renderSummary,
-        renderBookingPanels,
-        updateSummaryBarVisibility,
-        isAdminDebugSession
-      }], null);
-    }
-
-    async function submitLead(){
-      return submitLeadFromScope('drawer');
-    }
-
-    function scrollToSection(id){
-      return safeInvoke(ensureNavigationFlow(), 'scrollToSection', [id], false);
-    }
-
-    function navigateToSection(id){
-      return safeInvoke(ensureNavigationFlow(), 'navigateToSection', [id], null);
+    function renderSummary(...args){
+      return runtimeInvoke.renderSummary(...args);
     }
 
     safeInvoke(ensureMediaGestureBindingsApi(), 'init', [{
       document,
-      closeMedia,
-      nextMedia,
-      prevMedia,
+      closeMedia: runtimeInvoke.closeMedia,
+      nextMedia: runtimeInvoke.nextMedia,
+      prevMedia: runtimeInvoke.prevMedia,
       applyStatePatch: (patch = {}) => {
         Object.assign(state, patch);
       },
@@ -20156,35 +14529,35 @@ function runOfferSearch(overrides){
       persist,
       getMediaContent: () => mediaContent,
       getCompactStayCards,
-      getPhotosForActiveFilter,
+      getPhotosForActiveFilter: runtimeInvoke.getPhotosForActiveFilter,
       getState: () => state
     }], null);
 
     safeInvoke(ensureGlobalUiBindingsApi(), 'init', [{
       document,
-      navigateToSection,
-      isHeroMenuOpen,
-      setHeroMenuOpen,
-      isHeroPhoneDropdownOpen,
-      setHeroPhoneDropdownOpen,
-      closeSuccessModal,
-      closeNoticeModal,
+      navigateToSection: runtimeInvoke.navigateToSection,
+      isHeroMenuOpen: runtimeInvoke.isHeroMenuOpen,
+      setHeroMenuOpen: runtimeInvoke.setHeroMenuOpen,
+      isHeroPhoneDropdownOpen: runtimeInvoke.isHeroPhoneDropdownOpen,
+      setHeroPhoneDropdownOpen: runtimeInvoke.setHeroPhoneDropdownOpen,
+      closeSuccessModal: runtimeInvoke.closeSuccessModal,
+      closeNoticeModal: runtimeInvoke.closeNoticeModal,
       bumpOfferRunId: () => { offerRunId += 1; },
       clearOfferTimeout,
       resetOfferProgressUI,
-      closeMedia,
-      nextMedia,
-      prevMedia,
-      closeVideo,
+      closeMedia: runtimeInvoke.closeMedia,
+      nextMedia: runtimeInvoke.nextMedia,
+      prevMedia: runtimeInvoke.prevMedia,
+      closeVideo: runtimeInvoke.closeVideo,
       closeCalendar,
-      closeSectionModal,
-      openNoticeModal,
+      closeSectionModal: runtimeInvoke.closeSectionModal,
+      openNoticeModal: runtimeInvoke.openNoticeModal,
       bookingText,
       getViewportPreviewView,
       switchView,
       initHero,
       applyHeroAbVariant,
-      applyCompactSectionModalLayout,
+      applyCompactSectionModalLayout: runtimeInvoke.applyCompactSectionModalLayout,
       updateSummaryBarVisibility,
       scheduleBookingCardMinHeightSync,
       getState: () => state,
@@ -20193,20 +14566,20 @@ function runOfferSearch(overrides){
       ,
       setPhotoFilter,
       setFaqFilter,
-      openSectionModal,
+      openSectionModal: runtimeInvoke.openSectionModal,
       track,
       showHint,
       nudgeUserToNextStep,
       hasSelectedAge,
       getBookingState: () => state,
-      openVideo,
+      openVideo: runtimeInvoke.openVideo,
       selectedShiftPayload,
       buildHeroVariantMeta,
-      bookingDesktopIds: BOOKING_VIEWS.desktop,
-      bookingMobileIds: BOOKING_VIEWS.mobile
+      bookingDesktopIds: bookingViewsCfg.desktop,
+      bookingMobileIds: bookingViewsCfg.mobile
     }], null);
 
-    heroAbVariant = resolveHeroAbVariant();
+    heroAbVariant = safeInvoke(ensureHeroAbFlow(), 'resolveHeroAbVariant', [], heroAbVariant) || heroAbVariant;
     applyHeroV3SimpleMode();
     preloadHeroAssets();
     initHero();
@@ -20221,33 +14594,17 @@ function runOfferSearch(overrides){
     renderBookingPanels();
     resetOfferProgressUI();
     switchView(getViewportPreviewView());
-    applyHeroContrastMode();
-    applyHeroMicroMode();
-    applyOfferModalTheme();
+    safeInvoke(ensureViewModeFlow(), 'applyHeroContrastMode', [], null);
+    safeInvoke(ensureViewModeFlow(), 'applyHeroMicroMode', [], null);
+    safeInvoke(ensureViewModeFlow(), 'applyOfferModalTheme', [], null);
     applyOfferLayoutMode();
-    applyDesktopMode();
-    if(!USE_DESKTOP_BASE_FOR_MOBILE){
-      applyMobileMode();
+    bindHeroPhoneDropdownSanitizer();
+    safeInvoke(ensureViewModeFlow(), 'applyDesktopMode', [], null);
+    if(!useDesktopBaseForMobileCfg){
+      safeInvoke(ensureViewModeFlow(), 'applyMobileMode', [], null);
     }
-    normalizeCloseIconButtons();
-    const deferredInit = () => {
-      injectHeroSeasonOfferCta();
-      initFloatingContactsWidget();
-      initHeroAbDevPanel();
-      track('page_view', {
-        view: state.view || 'desktop',
-        desktop_mode: state.desktopMode || '',
-        mobile_mode: state.mobileMode || ''
-      });
-      initScrollTracking();
-      initSummaryBarViewportSync();
-      initSectionViewTracking();
-      refreshVideoMeta({force:true});
-      scheduleVideoMetaRefresh();
-      scheduleDesktopAgeTapHint();
-      runQualityPipelineAll();
-    };
-    window.setTimeout(deferredInit, 0);
+    safeInvoke(ensureUiInitFlow(), 'normalizeCloseIconButtons', [document], null);
+    safeInvoke(ensureRuntimeInitFlow(), 'scheduleDeferred', [], null);
 
     if(state.expiresAt && Date.now() < state.expiresAt){
       startTimer();
