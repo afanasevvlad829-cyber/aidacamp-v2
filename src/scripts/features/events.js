@@ -3491,20 +3491,21 @@
       }
     }
 
+    var uiContent = CONTENT_MAP && CONTENT_MAP.ui ? CONTENT_MAP.ui : {};
     var assignments = [
-      ["acBrandSub", CONTENT_MAP.ui.brandSub],
-      ["acAgeLabel", CONTENT_MAP.ui.ageLabel],
+      ["acBrandSub", uiContent.brandSub || ""],
+      ["acAgeLabel", uiContent.ageLabel || ""],
       ["acHeroContactLabel", "Связаться"],
-      ["acHeroCampaignLabel", CONTENT_MAP.ui.heroCampaignLabel],
-      ["acHeroOverlayTitle", CONTENT_MAP.ui.heroOverlayTitle],
-      ["acHeroSafetyMedTitle", CONTENT_MAP.ui.heroSafetyMedTitle],
-      ["acHeroSafetyMedDesc", CONTENT_MAP.ui.heroSafetyMedDesc],
-      ["acHeroSafetyLockTitle", CONTENT_MAP.ui.heroSafetyLockTitle],
-      ["acHeroSafetyLockDesc", CONTENT_MAP.ui.heroSafetyLockDesc],
-      ["acHeroSafetyFoodTitle", CONTENT_MAP.ui.heroSafetyFoodTitle],
-      ["acHeroSafetyFoodDesc", CONTENT_MAP.ui.heroSafetyFoodDesc],
-      ["acHeroSafetyPoolTitle", CONTENT_MAP.ui.heroSafetyPoolTitle],
-      ["acHeroSafetyPoolDesc", CONTENT_MAP.ui.heroSafetyPoolDesc]
+      ["acHeroCampaignLabel", uiContent.heroCampaignLabel || ""],
+      ["acHeroOverlayTitle", uiContent.heroOverlayTitle || ""],
+      ["acHeroSafetyMedTitle", uiContent.heroSafetyMedTitle || ""],
+      ["acHeroSafetyMedDesc", uiContent.heroSafetyMedDesc || ""],
+      ["acHeroSafetyLockTitle", uiContent.heroSafetyLockTitle || ""],
+      ["acHeroSafetyLockDesc", uiContent.heroSafetyLockDesc || ""],
+      ["acHeroSafetyFoodTitle", uiContent.heroSafetyFoodTitle || ""],
+      ["acHeroSafetyFoodDesc", uiContent.heroSafetyFoodDesc || ""],
+      ["acHeroSafetyPoolTitle", uiContent.heroSafetyPoolTitle || ""],
+      ["acHeroSafetyPoolDesc", uiContent.heroSafetyPoolDesc || ""]
     ];
 
     for (var i = 0; i < assignments.length; i += 1) {
