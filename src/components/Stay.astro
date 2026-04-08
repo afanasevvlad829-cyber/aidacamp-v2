@@ -1,0 +1,133 @@
+---
+const rooms = [
+  {
+    title: 'Комнаты размещения',
+    image: '/images/stay/stay-room-01.avif',
+    description: 'Светлые комнаты и спокойный бытовой режим.',
+  },
+  {
+    title: 'Санузлы и бытовые зоны',
+    image: '/images/stay/stay-bathroom-01.avif',
+    description: 'Чистые бытовые зоны и регулярный контроль.',
+  },
+  {
+    title: 'Общие пространства',
+    image: '/images/stay/stay-lounge-01.avif',
+    description: 'Пространства для отдыха и командных занятий.',
+  },
+];
+---
+
+<section id="stay" class="mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4">
+  <div class="bg-[#f7f5f2] p-[18px]">
+    <div class="flex items-center gap-2 mb-1"><div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div><h2 class="text-[22px] font-bold leading-[1.1] tracking-[-0.02em] text-slate-900 md:text-[28px]">Размещение</h2></div>
+
+    <p class="mt-4 text-[11px] text-slate-400 md:hidden">&larr; свайп &rarr;</p>
+    <div class="mt-1 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:pb-0">
+      {rooms.map((room, i) => (
+        <article class="min-w-[84%] snap-start overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_6px_18px_rgba(15,23,42,0.04)] md:min-w-0">
+          <button type="button" data-stay-open data-stay-index={i} class="block w-full text-left">
+            <img src={room.image} alt={room.title} class="h-[220px] w-full object-cover" loading="lazy" />
+            <div class="p-4">
+              <h3 class="text-[19px] font-semibold text-slate-900">{room.title}</h3>
+              <p class="mt-1 text-[15px] leading-[1.5] text-slate-600">{room.description}</p>
+            </div>
+          </button>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- Stay lightbox -->
+<dialog id="stayLightbox" class="m-0 h-full w-full max-w-none border-0 outline-none bg-black/90 p-4 backdrop:bg-black/90">
+  <div class="flex h-full items-center justify-center">
+    <!-- Close -->
+    <button type="button" data-stay-close aria-label="Закрыть" class="absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white">
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+    </button>
+
+    <!-- Prev -->
+    <button type="button" data-stay-prev aria-label="Назад" class="absolute left-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white">
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+    </button>
+
+    <!-- Next -->
+    <button type="button" data-stay-next aria-label="Вперёд" class="absolute right-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white">
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+    </button>
+
+    <div class="flex flex-col items-center">
+      <img id="stayLightboxImg" src="" alt="" class="max-h-[80vh] max-w-full rounded-[18px] object-contain" />
+      <p id="stayLightboxCaption" class="mt-3 text-center text-[14px] text-white/80"></p>
+      <p id="stayLightboxCounter" class="mt-1 text-center text-[12px] text-white/50"></p>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  function initStay() {
+    const modal = document.getElementById('stayLightbox') as HTMLDialogElement | null;
+    const img = document.getElementById('stayLightboxImg') as HTMLImageElement | null;
+    const caption = document.getElementById('stayLightboxCaption');
+    const counter = document.getElementById('stayLightboxCounter');
+    if (!modal || !img) return;
+
+    const photos = [
+      { src: '/images/stay/stay-room-01.avif', alt: 'Комнаты размещения' },
+      { src: '/images/stay/stay-bathroom-01.avif', alt: 'Санузлы и бытовые зоны' },
+      { src: '/images/stay/stay-lounge-01.avif', alt: 'Общие пространства' },
+    ];
+
+    let current = 0;
+
+    function show(index: number) {
+      current = ((index % photos.length) + photos.length) % photos.length;
+      img!.src = photos[current].src;
+      img!.alt = photos[current].alt;
+      if (caption) caption.textContent = photos[current].alt;
+      if (counter) counter.textContent = `${current + 1} / ${photos.length}`;
+    }
+
+    // Open on card click
+    document.querySelectorAll('[data-stay-open]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const idx = Number((btn as HTMLElement).dataset.stayIndex);
+        show(idx);
+        modal.showModal();
+      });
+    });
+
+    // Close
+    function closeLightbox() {
+      img!.src = '';
+      modal.close();
+    }
+
+    modal.querySelector('[data-stay-close]')?.addEventListener('click', closeLightbox);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeLightbox(); });
+
+    // Arrows
+    modal.querySelector('[data-stay-prev]')?.addEventListener('click', () => show(current - 1));
+    modal.querySelector('[data-stay-next]')?.addEventListener('click', () => show(current + 1));
+
+    // Keyboard arrows
+    modal.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') show(current - 1);
+      if (e.key === 'ArrowRight') show(current + 1);
+    });
+
+    // Swipe on mobile
+    let touchStartX = 0;
+    modal.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    modal.addEventListener('touchend', (e) => {
+      const diff = touchStartX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) {
+        show(diff > 0 ? current + 1 : current - 1);
+      }
+    });
+  }
+
+  document.addEventListener('astro:page-load', initStay);
+  initStay();
+</script>

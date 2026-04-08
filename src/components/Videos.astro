@@ -1,0 +1,149 @@
+---
+const videos = [
+  {
+    url: 'https://kinescope.io/embed/qmLxu2S7uaS44CKkhoV1Jj',
+    title: 'IT-лагерь — это не "сидеть за компьютером". Вот что происходит на самом деле',
+    thumb: '/images/videos/video-01.avif',
+  },
+  {
+    url: 'https://kinescope.io/embed/tJAaAnvCYYJ5vRz7uyUepj',
+    title: 'За неделю в лагере он меняется больше, чем за год дома',
+    thumb: '/images/videos/video-02.avif',
+  },
+  {
+    url: 'https://kinescope.io/embed/naDfzrei9duApz3AnaencH',
+    title: 'Не хочу в лагерь… Через 3 дня: хочу ещё',
+    thumb: '/images/videos/video-03.avif',
+  },
+  {
+    url: 'https://kinescope.io/embed/eTmCgZHcwhcWQQs3HLCz1S',
+    title: 'Ребёнок сам откажется от телефона за 3 дня',
+    thumb: '/images/videos/video-04.avif',
+  },
+  {
+    url: 'https://kinescope.io/embed/s1SCYKqLx6C94fMRumitHF',
+    title: 'Зачем детям копить деньги в лагере',
+    thumb: '/images/videos/video-05.avif',
+  },
+];
+---
+
+<section id="videos" class="mx-auto max-w-[1312px] px-[2px] pt-10 md:px-4" data-videos-root>
+  <div class="bg-white p-[18px]">
+    <div class="flex items-center gap-2 mb-1"><div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div><h2 class="text-[22px] font-bold leading-[1.1] tracking-[-0.02em] text-slate-900 md:text-[28px]">Видео</h2></div>
+
+    <!-- Desktop: all 5 visible with side arrows -->
+    <div class="relative mt-5">
+      <!-- Prev arrow -->
+      <button type="button" data-vid-prev aria-label="Назад" class="absolute -left-3 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 shadow-sm md:flex">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+      </button>
+      <!-- Next arrow -->
+      <button type="button" data-vid-next aria-label="Вперёд" class="absolute -right-3 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 shadow-sm md:flex">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+      </button>
+
+      <!-- Track -->
+      <p class="text-[11px] text-slate-400 mb-1 md:hidden">&larr; свайп &rarr;</p>
+      <div data-vid-track class="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-5 md:gap-4 md:overflow-hidden md:pb-0">
+        {videos.map((v, i) => (
+          <button
+            type="button"
+            data-video-open
+            data-video-url={v.url}
+            data-video-title={v.title}
+            data-vid-index={i}
+            class="group min-w-[65%] snap-start md:min-w-0"
+          >
+            <div class="relative overflow-hidden rounded-[18px]">
+              <img src={v.thumb} alt={v.title} class="aspect-[9/16] w-full object-cover transition group-hover:scale-105" loading="lazy" />
+              <div class="absolute inset-0 flex items-center justify-center bg-black/20">
+                <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-[#ff8b1f]">
+                  <svg class="ml-1 h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                </div>
+              </div>
+            </div>
+            <p class="mt-2 line-clamp-2 text-left text-[13px] leading-[1.4] text-slate-700">{v.title}</p>
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Video modal — vertical aspect -->
+<dialog id="videoModal" class="m-0 h-full w-full max-w-none border-0 outline-none bg-black/90 p-4 backdrop:bg-black/90">
+  <div class="flex h-full flex-col items-center justify-center">
+    <button type="button" data-video-close aria-label="Закрыть" class="absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white">
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+    </button>
+    <iframe id="videoFrame" class="aspect-[9/16] max-h-[85vh] w-auto rounded-[18px]" src="" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
+  </div>
+</dialog>
+
+<script>
+  import { trackGoal } from '../scripts/analytics';
+
+  function initVideos() {
+    const modal = document.getElementById('videoModal') as HTMLDialogElement | null;
+    const frame = document.getElementById('videoFrame') as HTMLIFrameElement | null;
+    const track = document.querySelector<HTMLElement>('[data-vid-track]');
+
+    // Open video modal
+    document.querySelectorAll('[data-video-open]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const url = (btn as HTMLElement).dataset.videoUrl;
+        if (frame && modal && url) {
+          frame.src = url;
+          modal.showModal();
+          trackGoal('video_open');
+        }
+      });
+    });
+
+    function closeVideo() {
+      if (frame) frame.src = '';
+      modal?.close();
+    }
+
+    modal?.querySelector('[data-video-close]')?.addEventListener('click', closeVideo);
+    modal?.addEventListener('click', (e) => { if (e.target === modal) closeVideo(); });
+
+    // Desktop arrows: scroll the grid by one card width
+    const prevBtn = document.querySelector<HTMLElement>('[data-vid-prev]');
+    const nextBtn = document.querySelector<HTMLElement>('[data-vid-next]');
+    if (track && prevBtn && nextBtn) {
+      const cards = track.querySelectorAll('[data-video-open]');
+      let offset = 0;
+      const total = cards.length;
+
+      function updateDesktopCarousel() {
+        // On desktop, reorder cards visually using CSS order
+        cards.forEach((card, i) => {
+          const order = (i - offset + total) % total;
+          (card as HTMLElement).style.order = String(order);
+        });
+      }
+
+      prevBtn.addEventListener('click', () => {
+        offset = (offset - 1 + total) % total;
+        updateDesktopCarousel();
+      });
+
+      nextBtn.addEventListener('click', () => {
+        offset = (offset + 1) % total;
+        updateDesktopCarousel();
+      });
+    }
+
+    // Mobile: arrow buttons for scroll snap
+    const mPrev = document.querySelector<HTMLElement>('[data-vid-prev]');
+    const mNext = document.querySelector<HTMLElement>('[data-vid-next]');
+    if (track) {
+      // Mobile swipe already handled by scroll-snap
+    }
+  }
+
+  document.addEventListener('astro:page-load', initVideos);
+  initVideos();
+</script>

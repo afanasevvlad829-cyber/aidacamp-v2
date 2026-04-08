@@ -1,0 +1,119 @@
+---
+const categories = [
+  {
+    id: 'medicine',
+    label: 'Медицина',
+    items: [
+      { q: 'Есть ли медик в лагере?', a: 'Медработник на территории 24/7 всю смену.' },
+      { q: 'Что если ребёнок заболеет?', a: 'Медик осматривает, при необходимости вызывает скорую. Вы получите звонок сразу.' },
+      { q: 'Можно давать лекарства?', a: 'Передайте медику с инструкцией — будет выдавать по расписанию.' },
+    ],
+  },
+  {
+    id: 'safety',
+    label: 'Безопасность',
+    items: [
+      { q: 'Территория закрыта?', a: 'Да, огорожена, КПП с охраной. Посторонние не допускаются.' },
+      { q: 'Сколько детей на вожатого?', a: 'Не более 8–10 детей, вожатые работают в парах.' },
+      { q: 'Есть ли видеонаблюдение?', a: 'Да, ключевые зоны под видеонаблюдением и контролем администрации.' },
+    ],
+  },
+  {
+    id: 'food',
+    label: 'Питание',
+    items: [
+      { q: 'Сколько раз кормят?', a: '5 раз в день: завтрак, второй завтрак, обед, полдник, ужин.' },
+      { q: 'Учитываются аллергии?', a: 'Да. В лагере учитываются индивидуальные ограничения и аллергии.' },
+      { q: 'Еда горячая?', a: 'Да, питание полноценное, горячее и регулярное.' },
+    ],
+  },
+  {
+    id: 'accommodation',
+    label: 'Проживание',
+    items: [
+      { q: 'Как размещают детей?', a: 'Два-четыре человека в комнате, оборудованной полноценным санузлом и душевой.' },
+      { q: 'Есть ли раздельное проживание?', a: 'Да, размещение организовано с учётом возраста и пола детей.' },
+      { q: 'Какой бытовой режим?', a: 'Ежедневный контроль чистоты, спокойный режим и сопровождение вожатых.' },
+    ],
+  },
+  {
+    id: 'communication',
+    label: 'Связь',
+    items: [
+      { q: 'Можно ли связаться с ребёнком?', a: 'Да, связь через вожатых и администрацию, родители всегда на контакте.' },
+      { q: 'Куда писать по вопросам?', a: 'WhatsApp и Telegram в разделе «Контакты», телефон +7 (968) 808-64-55.' },
+      { q: 'Как следить за новостями смены?', a: 'Ежедневные фото и сообщения в родительском канале.' },
+    ],
+  },
+];
+---
+
+<section id="faq" class="mx-auto max-w-[1312px] px-[2px] pt-8 md:px-4">
+  <div class="bg-[#f7f5f2] p-[18px]">
+    <div class="flex items-center gap-2 mb-1"><div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div><h2 class="text-[22px] font-bold leading-[1.1] tracking-[-0.02em] text-slate-900 md:text-[28px]">FAQ</h2></div>
+
+    <!-- Filter tabs -->
+    <div class="mt-4 grid grid-cols-3 gap-1.5 md:flex md:flex-wrap md:gap-2" data-faq-filters>
+      {categories.map((cat, i) => (
+        <button
+          type="button"
+          data-faq-filter-btn
+          data-faq-group={cat.id}
+          class={`whitespace-nowrap rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors md:px-4 md:py-2 md:text-sm ${i === 0 ? 'border-[#ff8b1f] bg-[#fff2e3] text-[#ff8b1f]' : 'border-slate-200 bg-white text-slate-600'}`}
+        >
+          {cat.label}
+        </button>
+      ))}
+    </div>
+
+    <!-- FAQ panels -->
+    {categories.map((cat, i) => (
+      <article data-faq-group-panel={cat.id} class={`mt-5 space-y-2 ${i === 0 ? '' : 'hidden'}`}>
+        {cat.items.map((item) => (
+          <details class="group rounded-[14px] border border-slate-200 bg-slate-50">
+            <summary class="flex cursor-pointer items-center justify-between p-4 text-[15px] font-semibold text-slate-900 list-none [&::-webkit-details-marker]:hidden">
+              {item.q}
+              <span class="text-lg text-slate-400 transition group-open:rotate-45">+</span>
+            </summary>
+            <div class="px-4 pb-4 text-[14px] leading-[1.6] text-slate-600">
+              {item.a}
+            </div>
+          </details>
+        ))}
+      </article>
+    ))}
+  </div>
+</section>
+
+<script>
+  import { trackGoal } from '../scripts/analytics';
+
+  function initFaq() {
+    const filterBtns = document.querySelectorAll<HTMLButtonElement>('[data-faq-filter-btn]');
+    const panels = document.querySelectorAll<HTMLElement>('[data-faq-group-panel]');
+
+    filterBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach((b) => {
+          b.classList.remove('border-[#ff8b1f]', 'bg-[#fff2e3]', 'text-[#ff8b1f]');
+          b.classList.add('border-slate-200', 'bg-white', 'text-slate-600');
+        });
+        btn.classList.remove('border-slate-200', 'bg-white', 'text-slate-600');
+        btn.classList.add('border-[#ff8b1f]', 'bg-[#fff2e3]', 'text-[#ff8b1f]');
+
+        const group = btn.dataset.faqGroup;
+        panels.forEach((p) => p.classList.toggle('hidden', p.dataset.faqGroupPanel !== group));
+      });
+    });
+
+    // Track FAQ open
+    document.querySelectorAll('#faq details').forEach((el) => {
+      el.addEventListener('toggle', () => {
+        if ((el as HTMLDetailsElement).open) trackGoal('faq_open');
+      });
+    });
+  }
+
+  document.addEventListener('astro:page-load', initFaq);
+  initFaq();
+</script>

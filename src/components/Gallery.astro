@@ -1,0 +1,249 @@
+---
+const filters = [
+  { value: 'camp', label: 'Атмосфера' },
+  { value: 'pool', label: 'Бассейн' },
+  { value: 'sport', label: 'Спорт' },
+  { value: 'study', label: 'Учёба' },
+  { value: 'food', label: 'Питание' },
+];
+
+const images: Record<string, { src: string; alt: string }[]> = {
+  camp: [
+    { src: '/images/gallery/IMG_7209.avif', alt: 'Атмосфера лагеря' },
+    { src: '/images/gallery/IMG_7212.avif', alt: 'Атмосфера лагеря' },
+    { src: '/images/gallery/gallery-03.jpg', alt: 'Атмосфера лагеря' },
+    { src: '/images/gallery/gallery-01.jpg', alt: 'Атмосфера лагеря' },
+  ],
+  pool: [
+    { src: '/images/gallery/IMG_7209.avif', alt: 'Бассейн' },
+    { src: '/images/gallery/gallery-10.jpg', alt: 'Бассейн' },
+    { src: '/images/gallery/gallery-01.jpg', alt: 'Бассейн' },
+    { src: '/images/gallery/IMG_7212.avif', alt: 'Бассейн' },
+  ],
+  sport: [
+    { src: '/images/gallery/gallery-11.jpg', alt: 'Спорт' },
+    { src: '/images/gallery/gallery-12.jpg', alt: 'Спорт' },
+    { src: '/images/gallery/gallery-03.jpg', alt: 'Спорт' },
+    { src: '/images/gallery/gallery-11.jpg', alt: 'Спорт' },
+  ],
+  study: [
+    { src: '/images/gallery/gallery-04.jpg', alt: 'Учебные занятия' },
+    { src: '/images/gallery/gallery-05.jpg', alt: 'Учебные занятия' },
+    { src: '/images/gallery/gallery-06.jpg', alt: 'Учебные занятия' },
+    { src: '/images/gallery/gallery-04.jpg', alt: 'Учебные занятия' },
+  ],
+  food: [
+    { src: '/images/gallery/IMG_7219.avif', alt: 'Питание' },
+    { src: '/images/gallery/gallery-08.jpg', alt: 'Питание' },
+    { src: '/images/gallery/gallery-05.jpg', alt: 'Питание' },
+    { src: '/images/gallery/IMG_7219.avif', alt: 'Питание' },
+  ],
+};
+---
+
+<section id="gallery" class="mx-auto max-w-[1312px] px-[2px] pt-10 md:px-4" data-gallery-root data-default-filter="camp">
+  <div class="bg-[#f7f5f2] p-[18px]">
+    <div class="flex items-center gap-2 mb-1"><div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div><h2 class="text-[22px] font-bold leading-[1.1] tracking-[-0.02em] text-slate-900 md:text-[28px]">Фото</h2></div>
+
+    <!-- Filter tabs -->
+    <div class="mt-4 flex flex-wrap gap-1.5 md:gap-2" data-gallery-filters>
+      {filters.map((f, i) => (
+        <button
+          type="button"
+          data-gallery-filter={f.value}
+          data-gallery-filter-label={f.label}
+          class={`whitespace-nowrap rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors md:px-4 md:py-2 md:text-sm ${i === 0 ? 'bg-[#ff8b1f] text-white' : 'bg-slate-100 text-slate-700'}`}
+        >
+          {f.label}
+        </button>
+      ))}
+    </div>
+
+    <!-- Image layouts per category -->
+    {filters.map((f, fi) => {
+      const imgs = images[f.value] || [];
+      const big = imgs[0];
+      const smalls = imgs.slice(1);
+
+      return (
+        <div
+          data-gallery-category={f.value}
+          data-gallery-label={f.label}
+          class={`mt-5 ${fi === 0 ? '' : 'hidden'}`}
+        >
+          {/* Desktop: 1 big left + small grid right (2 cols) */}
+          <div class="hidden gap-3 md:flex">
+            {/* Big image */}
+            {big && (
+              <button
+                type="button"
+                data-gallery-open
+                data-gallery-src={big.src}
+                data-gallery-alt={big.alt}
+                class="group relative w-[45%] shrink-0 self-stretch overflow-hidden rounded-[18px]"
+              >
+                <img src={big.src} alt={big.alt} class="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
+                <span class="absolute left-3 top-3 rounded-md bg-white/90 px-2.5 py-1 text-[11px] font-bold tracking-wide text-slate-900 backdrop-blur-sm">#АЙДАКЕМП</span>
+                <span class="absolute bottom-3 right-3 rounded-md bg-black/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">{f.label}</span>
+              </button>
+            )}
+            {/* Small images: 2-col grid */}
+            <div class="grid flex-1 grid-cols-2 gap-3">
+              {smalls.map((img) => (
+                <button
+                  type="button"
+                  data-gallery-open
+                  data-gallery-src={img.src}
+                  data-gallery-alt={img.alt}
+                  class="group relative overflow-hidden rounded-[18px]"
+                >
+                  <img src={img.src} alt={img.alt} class="aspect-square w-full object-cover transition group-hover:scale-105" loading="lazy" />
+                  <span class="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-bold tracking-wide text-slate-900 backdrop-blur-sm">#АЙДАКЕМП</span>
+                  <span class="absolute bottom-2 right-2 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">{f.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Mobile: 1 big on top + thumbnails below */}
+          <div class="md:hidden">
+            {/* Big image */}
+            {big && (
+              <button
+                type="button"
+                data-gallery-open
+                data-gallery-src={big.src}
+                data-gallery-alt={big.alt}
+                class="group relative w-full overflow-hidden rounded-[14px]"
+              >
+                <img src={big.src} alt={big.alt} class="aspect-[16/10] w-full object-cover transition group-hover:scale-105" loading="lazy" />
+                <span class="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-bold tracking-wide text-slate-900">#АЙДАКЕМП</span>
+                <span class="absolute bottom-2 right-2 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">{f.label}</span>
+              </button>
+            )}
+            {/* Thumbnails row */}
+            <div class="mt-2 flex gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              {smalls.map((img) => (
+                <button
+                  type="button"
+                  data-gallery-open
+                  data-gallery-src={img.src}
+                  data-gallery-alt={img.alt}
+                  class="group relative shrink-0 overflow-hidden rounded-[10px]"
+                >
+                  <img src={img.src} alt={img.alt} class="h-[80px] w-[100px] object-cover transition group-hover:scale-105" loading="lazy" />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</section>
+
+<!-- Lightbox -->
+<dialog id="galleryLightbox" class="m-0 h-full w-full max-w-none border-0 outline-none bg-black/90 p-4 backdrop:bg-black/90">
+  <div class="flex h-full items-center justify-center">
+    <button type="button" data-gallery-lightbox-close aria-label="Закрыть" class="absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white">
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+    </button>
+    <button type="button" data-gallery-prev aria-label="Назад" class="absolute left-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white">
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+    </button>
+    <button type="button" data-gallery-next aria-label="Вперёд" class="absolute right-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white">
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+    </button>
+    <div class="flex flex-col items-center">
+      <img data-gallery-lightbox-img class="max-h-[80vh] max-w-full rounded-lg object-contain" src="" alt="" />
+      <p data-gallery-counter class="mt-3 text-center text-[13px] text-white/60"></p>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  import { trackGoal } from '../scripts/analytics';
+
+  function initGallery() {
+    const root = document.querySelector('[data-gallery-root]');
+    if (!root) return;
+
+    const filterBtns = root.querySelectorAll<HTMLButtonElement>('[data-gallery-filter]');
+    const categories = root.querySelectorAll<HTMLElement>('[data-gallery-category]');
+
+    // Tab switching
+    filterBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach((b) => {
+          b.classList.remove('bg-[#ff8b1f]', 'text-white');
+          b.classList.add('bg-slate-100', 'text-slate-700');
+        });
+        btn.classList.remove('bg-slate-100', 'text-slate-700');
+        btn.classList.add('bg-[#ff8b1f]', 'text-white');
+
+        const filter = btn.dataset.galleryFilter;
+        categories.forEach((cat) => {
+          cat.classList.toggle('hidden', cat.dataset.galleryCategory !== filter);
+        });
+      });
+    });
+
+    // Collect all photos
+    const allPhotos = Array.from(
+      document.querySelectorAll('[data-gallery-open]')
+    ).map((btn) => ({
+      src: (btn as HTMLElement).dataset.gallerySrc || '',
+      alt: (btn as HTMLElement).dataset.galleryAlt || '',
+    }));
+
+    const lightbox = document.getElementById('galleryLightbox') as HTMLDialogElement | null;
+    const lbImg = lightbox?.querySelector<HTMLImageElement>('[data-gallery-lightbox-img]');
+    const counterEl = lightbox?.querySelector<HTMLElement>('[data-gallery-counter]');
+    if (!lightbox || !lbImg) return;
+
+    let current = 0;
+
+    function show(index: number) {
+      current = ((index % allPhotos.length) + allPhotos.length) % allPhotos.length;
+      lbImg!.src = allPhotos[current].src;
+      lbImg!.alt = allPhotos[current].alt;
+      if (counterEl) counterEl.textContent = `${current + 1} / ${allPhotos.length}`;
+    }
+
+    document.querySelectorAll('[data-gallery-open]').forEach((btn, i) => {
+      btn.addEventListener('click', () => {
+        show(i);
+        lightbox.showModal();
+        trackGoal('photo_open');
+      });
+    });
+
+    function closeLightbox() {
+      lbImg!.src = '';
+      lightbox.close();
+    }
+
+    lightbox.querySelector('[data-gallery-lightbox-close]')?.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
+
+    lightbox.querySelector('[data-gallery-prev]')?.addEventListener('click', () => show(current - 1));
+    lightbox.querySelector('[data-gallery-next]')?.addEventListener('click', () => show(current + 1));
+
+    lightbox.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') show(current - 1);
+      if (e.key === 'ArrowRight') show(current + 1);
+    });
+
+    let touchStartX = 0;
+    lightbox.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    lightbox.addEventListener('touchend', (e) => {
+      const diff = touchStartX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) {
+        show(diff > 0 ? current + 1 : current - 1);
+      }
+    });
+  }
+
+  document.addEventListener('astro:page-load', initGallery);
+  initGallery();
+</script>

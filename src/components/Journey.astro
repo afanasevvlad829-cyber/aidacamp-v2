@@ -1,0 +1,118 @@
+---
+const steps = [
+  {
+    num: 1,
+    title: 'Быстрое включение',
+    text: 'В первый же день дети знакомятся, собираются в команды и входят в механику смены без долгой раскачки.',
+  },
+  {
+    num: 2,
+    title: 'Практика вместо теории',
+    text: 'Scratch, Python, Minecraft и AI через реальные задачи: меньше теории, больше практики.',
+  },
+  {
+    num: 3,
+    title: 'Живая среда',
+    text: 'Бассейн, спорт и командная среда формируют ритм, дисциплину и уверенность.',
+  },
+  {
+    num: 4,
+    title: 'Финальный результат',
+    text: 'К завершению смены ребёнок показывает понятный результат.',
+  },
+];
+---
+
+<section id="journey" class="mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4">
+  <div class="bg-white p-[18px]">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2 mb-1"><div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div><h2 class="text-[18px] font-bold leading-[1.1] tracking-[-0.02em] text-slate-900 md:text-[22px]">Как проходит смена</h2></div>
+      <!-- Mobile arrows -->
+      <div class="flex gap-2 md:hidden">
+        <button type="button" data-journey-prev aria-label="Назад" class="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-400">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+        </button>
+        <button type="button" data-journey-next aria-label="Вперёд" class="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-400">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+        </button>
+      </div>
+    </div>
+
+    <div data-journey-track class="mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:mt-6 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:pb-0 xl:grid-cols-4">
+      {steps.map((step) => (
+        <article class="min-w-[84%] snap-start rounded-[18px] bg-white shadow-[0_2px_12px_rgba(15,23,42,0.06)] p-4 md:min-w-0 md:rounded-[20px] md:p-5">
+          <div class="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff2e3] text-sm font-bold text-[#ff8b1f] md:h-10 md:w-10">
+            {step.num}
+          </div>
+          <h3 class="mt-3 text-[17px] font-semibold leading-[1.25] text-slate-900 md:mt-4 md:text-[18px]">{step.title}</h3>
+          <p class="mt-2 text-[14px] leading-[1.6] text-slate-600 md:text-[15px]">{step.text}</p>
+        </article>
+      ))}
+    </div>
+
+    <!-- Dots -->
+    <div class="mt-3 flex justify-center gap-1.5 md:hidden" data-journey-dots>
+      {steps.map((_, i) => (
+        <button
+          type="button"
+          data-journey-dot={i}
+          class={`h-2 w-2 rounded-full transition ${i === 0 ? 'bg-[#ff8b1f]' : 'bg-slate-300'}`}
+          aria-label={`Шаг ${i + 1}`}
+        />
+      ))}
+    </div>
+  </div>
+</section>
+
+<script>
+  function initJourney() {
+    const track = document.querySelector<HTMLElement>('[data-journey-track]');
+    if (!track) return;
+    const dots = document.querySelectorAll<HTMLElement>('[data-journey-dot]');
+    const cards = track.querySelectorAll('article');
+
+    function updateDots() {
+      const scrollLeft = track!.scrollLeft;
+      const cardWidth = cards[0]?.offsetWidth || 1;
+      const gap = 12;
+      const idx = Math.round(scrollLeft / (cardWidth + gap));
+      dots.forEach((d, i) => {
+        d.classList.toggle('bg-[#ff8b1f]', i === idx);
+        d.classList.toggle('bg-slate-300', i !== idx);
+      });
+    }
+
+    track.addEventListener('scroll', updateDots, { passive: true });
+
+    function scrollTo(idx: number) {
+      const card = cards[idx];
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+    }
+
+    document.querySelector('[data-journey-prev]')?.addEventListener('click', () => {
+      const scrollLeft = track!.scrollLeft;
+      const cardWidth = cards[0]?.offsetWidth || 1;
+      const gap = 12;
+      const idx = Math.max(0, Math.round(scrollLeft / (cardWidth + gap)) - 1);
+      scrollTo(idx);
+    });
+
+    document.querySelector('[data-journey-next]')?.addEventListener('click', () => {
+      const scrollLeft = track!.scrollLeft;
+      const cardWidth = cards[0]?.offsetWidth || 1;
+      const gap = 12;
+      const idx = Math.min(cards.length - 1, Math.round(scrollLeft / (cardWidth + gap)) + 1);
+      scrollTo(idx);
+    });
+
+    dots.forEach((dot) => {
+      dot.addEventListener('click', () => {
+        const idx = Number(dot.dataset.journeyDot);
+        scrollTo(idx);
+      });
+    });
+  }
+
+  document.addEventListener('astro:page-load', initJourney);
+  initJourney();
+</script>
