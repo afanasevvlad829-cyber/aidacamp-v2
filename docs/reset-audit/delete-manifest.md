@@ -30,3 +30,9 @@ Rollback points:
 ## Next delete candidates
 - Dist fragment-level duplicate handlers that remain classified LEGACY/ORPHAN after Phase 6 validation.
 - Any candidate marked UNKNOWN stays preserved.
+
+## Phase 8 review outcome (2026-04-08 10:33 MSK)
+- No additional delete operations were approved in this wave.
+- Reason: residual candidates still map to active runtime class/hooks or require narrower proof.
+- Rerun proof (runtime remains stable):
+  - `docs/reset-audit/phase-checks/phase-8-rerun-20260408_103346.md`
