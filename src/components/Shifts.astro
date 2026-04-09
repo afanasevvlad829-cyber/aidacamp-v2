@@ -114,7 +114,7 @@ const shortShifts: Shift[] = [
   },
 ];
 
-const allShifts = [...mainShifts, ...shortShifts];
+const allShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShifts[2], mainShifts[3]];
 
 function renderCard(shift: Shift) {
   const total = shift.free + shift.occupied;
@@ -146,7 +146,7 @@ function renderCard(shift: Shift) {
           </button>
         ))}
       </div>
-      <p class="text-[11px] text-slate-400 mt-1">← свайп →</p>
+      <p class="text-[11px] font-medium text-slate-400 mt-0.5">свайп →</p>
 
       <div class="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" data-shifts-carousel>
         {allShifts.map((shift) => {
@@ -180,6 +180,7 @@ function renderCard(shift: Shift) {
               <p class="mt-3 text-[14px] leading-[1.55] text-slate-500">{shift.description}</p>
 
               <div class="mt-4 text-[26px] font-bold tracking-[-0.03em] text-[#ff8b1f]">{shift.price}</div>
+              <p class="text-[11px] text-slate-400 mt-1">Питание, проживание, программа включены</p>
 
               <div class="mt-3">
                 <div class="h-[6px] w-full overflow-hidden rounded-full bg-slate-200">
@@ -204,6 +205,12 @@ function renderCard(shift: Shift) {
             </article>
           );
         })}
+      </div>
+      <!-- Dots indicator -->
+      <div class="mt-3 flex justify-center gap-1.5 md:hidden" data-shifts-dots>
+        {allShifts.map((_, i) => (
+          <span class={`h-1.5 w-1.5 rounded-full transition-colors ${i === 0 ? 'bg-[#ff8b1f]' : 'bg-slate-300'}`} data-shifts-dot={i}></span>
+        ))}
       </div>
     </div>
 
@@ -242,6 +249,7 @@ function renderCard(shift: Shift) {
               <p class="mt-3 text-[15px] leading-[1.55] text-slate-500">{shift.description}</p>
 
               <div class="mt-4 text-[26px] font-bold tracking-[-0.03em] text-[#ff8b1f]">{shift.price}</div>
+              <p class="text-[11px] text-slate-400 mt-1">Питание, проживание, программа включены</p>
 
               <div class="mt-3">
                 <div class="h-[6px] w-full overflow-hidden rounded-full bg-slate-200">
@@ -301,6 +309,7 @@ function renderCard(shift: Shift) {
                   <p class="mt-3 text-[13px] leading-[1.6] text-slate-600">{shift.description}</p>
 
                   <div class="mt-3 text-[22px] font-bold tracking-[-0.03em] text-[#ff8b1f]">{shift.price}</div>
+                  <p class="text-[11px] text-slate-400 mt-1">Питание, проживание, программа включены</p>
 
                   <div class="mt-2">
                     <div class="h-[6px] w-full overflow-hidden rounded-full bg-slate-200">
@@ -335,7 +344,7 @@ function renderCard(shift: Shift) {
 <!-- Booking Modal (shift selection) -->
 <dialog id="shiftBookModal" class="m-0 h-full w-full max-w-none border-0 outline-none bg-black/50 p-4 backdrop:bg-black/50">
   <div class="relative mx-auto mt-[8vh] w-full max-w-[420px] rounded-[20px] bg-white p-5 shadow-[0_20px_50px_rgba(15,23,42,0.25)]">
-    <button type="button" data-shift-book-close aria-label="Закрыть" class="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500">
+    <button type="button" data-shift-book-close aria-label="Закрыть" class="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none">
       <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
     </button>
 
@@ -387,7 +396,7 @@ function renderCard(shift: Shift) {
 <!-- Calendar Modal -->
 <dialog id="shiftCalendarModal" class="m-0 h-full w-full max-w-none border-0 outline-none bg-black/50 p-4 backdrop:bg-black/50">
   <div class="relative mx-auto mt-[10vh] w-full max-w-[380px] rounded-[20px] bg-white p-5 shadow-[0_20px_50px_rgba(15,23,42,0.25)]">
-    <button type="button" data-calendar-close aria-label="Закрыть" class="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500">
+    <button type="button" data-calendar-close aria-label="Закрыть" class="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none">
       <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
     </button>
     <h3 class="text-[18px] font-semibold text-slate-900" data-calendar-title></h3>
@@ -398,7 +407,7 @@ function renderCard(shift: Shift) {
 <!-- Info Modal -->
 <dialog id="shiftInfoModal" class="m-0 h-full w-full max-w-none border-0 outline-none bg-black/50 p-2 backdrop:bg-black/50 md:p-4">
   <div class="relative mx-auto mt-[2vh] max-h-[96vh] w-full max-w-[920px] overflow-y-auto rounded-[20px] bg-white p-5 shadow-[0_20px_50px_rgba(15,23,42,0.25)] md:mt-[4vh] md:max-h-[90vh] md:p-6">
-    <button type="button" data-info-close aria-label="Закрыть" class="absolute right-3 top-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500">
+    <button type="button" data-info-close aria-label="Закрыть" class="absolute right-3 top-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none">
       <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
     </button>
 
@@ -429,6 +438,8 @@ function renderCard(shift: Shift) {
     const carousel = document.querySelector<HTMLElement>('[data-shifts-carousel]');
     const tabs = document.querySelectorAll<HTMLButtonElement>('[data-shifts-tab]');
 
+    const dots = document.querySelectorAll<HTMLElement>('[data-shifts-dot]');
+
     if (carousel && tabs.length) {
       const cards = Array.from(carousel.children) as HTMLElement[];
 
@@ -440,7 +451,7 @@ function renderCard(shift: Shift) {
         });
       });
 
-      // Scroll → update active tab
+      // Scroll → update active tab + dots
       const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
@@ -450,6 +461,10 @@ function renderCard(shift: Shift) {
               t.classList.toggle('text-white', ti === idx);
               t.classList.toggle('bg-slate-100', ti !== idx);
               t.classList.toggle('text-slate-700', ti !== idx);
+            });
+            dots.forEach((d, di) => {
+              d.classList.toggle('bg-[#ff8b1f]', di === idx);
+              d.classList.toggle('bg-slate-300', di !== idx);
             });
           }
         });
@@ -559,7 +574,8 @@ function renderCard(shift: Shift) {
       }
       // TODO: send to API
       bookModal.close();
-      alert('Заявка отправлена! Мы свяжемся с вами.');
+      const referralModal = document.getElementById('referralModal') as HTMLDialogElement | null;
+      referralModal?.showModal();
     });
 
     // === CALENDAR MODAL ===

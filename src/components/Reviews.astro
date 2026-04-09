@@ -58,10 +58,10 @@ const reviews = [
       <a href="https://yandex.ru/maps/org/aydakemp/35558479035/reviews/" target="_blank" rel="noopener" class="text-[#ff8b1f] underline">Яндекс.Картах</a>
     </p>
 
-    <p class="mt-4 text-[11px] text-slate-400 md:hidden">&larr; свайп &rarr;</p>
-    <div class="mt-1 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:pb-0 xl:grid-cols-3">
+    <p class="mt-4 text-[11px] font-medium text-slate-400 md:hidden">свайп →</p>
+    <div class="mt-1 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:pb-0 xl:grid-cols-3" data-reviews-track>
       {reviews.map((r) => (
-        <article class="min-w-[88%] snap-start rounded-[18px] bg-white shadow-[0_2px_12px_rgba(15,23,42,0.06)] p-4 md:min-w-0 md:rounded-[20px] md:p-5">
+        <article class="min-w-[90vw] snap-start rounded-[18px] bg-white shadow-[0_2px_12px_rgba(15,23,42,0.06)] p-4 md:min-w-0 md:rounded-[20px] md:p-5">
           <div class="flex items-center gap-3">
             <img src={r.photo} alt={r.name} class="h-10 w-10 rounded-full border border-slate-200 object-cover" width="40" height="40" loading="lazy" />
             <div>
@@ -78,5 +78,37 @@ const reviews = [
         </article>
       ))}
     </div>
+    <!-- Dots indicator (mobile) -->
+    <div class="mt-3 flex justify-center gap-1.5 md:hidden" data-reviews-dots>
+      {reviews.map((_, i) => (
+        <span class={`h-1.5 w-1.5 rounded-full transition-colors ${i === 0 ? 'bg-[#ff8b1f]' : 'bg-slate-300'}`} data-reviews-dot={i}></span>
+      ))}
+    </div>
   </div>
 </section>
+
+<script>
+  function initReviewsDots() {
+    const track = document.querySelector<HTMLElement>('[data-reviews-track]');
+    const dots = document.querySelectorAll<HTMLElement>('[data-reviews-dot]');
+    if (!track || !dots.length) return;
+
+    const cards = Array.from(track.children) as HTMLElement[];
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const idx = cards.indexOf(entry.target as HTMLElement);
+          dots.forEach((d, di) => {
+            d.classList.toggle('bg-[#ff8b1f]', di === idx);
+            d.classList.toggle('bg-slate-300', di !== idx);
+          });
+        }
+      });
+    }, { root: track, threshold: 0.6 });
+
+    cards.forEach((card) => observer.observe(card));
+  }
+
+  document.addEventListener('astro:page-load', initReviewsDots);
+  initReviewsDots();
+</script>

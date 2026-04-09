@@ -85,15 +85,21 @@ const members = [
         </div>
 
         <!-- Mobile: horizontal scroll carousel -->
-        <p class="text-[11px] text-slate-400 mb-1 md:hidden">&larr; свайп &rarr;</p>
-        <div class="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:hidden" data-team-mobile-track>
+        <p class="text-[11px] font-medium text-slate-400 mt-0.5 md:hidden">свайп →</p>
+        <div class="mt-1 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:hidden" data-team-mobile-track>
           {members.map((m) => (
-            <article class="min-w-[72%] snap-start rounded-[22px] bg-white p-5 shadow-[0_2px_12px_rgba(15,23,42,0.06)]">
+            <article class="min-w-[90vw] snap-start rounded-[22px] bg-white p-5 shadow-[0_2px_12px_rgba(15,23,42,0.06)]">
               <img src={m.photo} alt={m.name} class="mx-auto h-16 w-16 rounded-full object-cover object-top ring-2 ring-white" width="64" height="64" loading="lazy" />
               <h3 class="mt-3 text-center text-[16px] font-semibold text-slate-900">{m.name}</h3>
               <p class="mt-1 text-center text-[13px] font-medium text-slate-500">{m.role}</p>
               <p class="mt-2 text-center text-[13px] leading-[1.55] text-slate-500">{m.bio}</p>
             </article>
+          ))}
+        </div>
+        <!-- Dots indicator (mobile) -->
+        <div class="mt-3 flex justify-center gap-1.5 md:hidden" data-team-dots>
+          {members.map((_, i) => (
+            <span class={`h-1.5 w-1.5 rounded-full transition-colors ${i === 0 ? 'bg-[#ff8b1f]' : 'bg-slate-300'}`} data-team-dot={i}></span>
           ))}
         </div>
       </div>
@@ -105,7 +111,7 @@ const members = [
 <dialog id="teamBookModal" class="m-0 h-full w-full max-w-none border-0 outline-none bg-black/50 p-4 backdrop:bg-black/50">
   <div class="flex h-full items-center justify-center">
     <div class="relative w-full max-w-[420px] rounded-[20px] bg-white p-5 shadow-[0_20px_50px_rgba(15,23,42,0.25)]">
-      <button type="button" data-book-close aria-label="Закрыть" class="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500">
+      <button type="button" data-book-close aria-label="Закрыть" class="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none">
         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
       </button>
 
@@ -139,6 +145,25 @@ const members = [
     document.querySelector('[data-book-open]')?.addEventListener('click', () => modal?.showModal());
     modal?.querySelector('[data-book-close]')?.addEventListener('click', () => modal.close());
     modal?.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
+
+    // Mobile dots
+    const mobileTrack = document.querySelector<HTMLElement>('[data-team-mobile-track]');
+    const teamDots = document.querySelectorAll<HTMLElement>('[data-team-dot]');
+    if (mobileTrack && teamDots.length) {
+      const mCards = Array.from(mobileTrack.children) as HTMLElement[];
+      const mObs = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const idx = mCards.indexOf(entry.target as HTMLElement);
+            teamDots.forEach((d, di) => {
+              d.classList.toggle('bg-[#ff8b1f]', di === idx);
+              d.classList.toggle('bg-slate-300', di !== idx);
+            });
+          }
+        });
+      }, { root: mobileTrack, threshold: 0.6 });
+      mCards.forEach((c) => mObs.observe(c));
+    }
 
     // Desktop: bottom row carousel (3 members, show 2 at a time)
     const bottomRow = document.querySelector<HTMLElement>('[data-team-bottom-row]');
