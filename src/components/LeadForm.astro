@@ -91,12 +91,7 @@ const inputWidth = isDesktop ? 'w-[276px]' : 'w-full';
   >
     Узнать о свободных местах
   </button>
-  <p class={`${inputWidth} text-[11px] text-slate-400 text-center mt-2`}>Оставьте заявку → перезвоним за 10 мин → забронируем место</p>
-
-  <!-- Urgency -->
-  <p class={`mt-[2px] ${inputWidth} text-center text-[13px] font-semibold text-[#f5612e]`}>
-    🔥 Осталось 4 места на смену июня
-  </p>
+  <p class={`${inputWidth} text-[11px] text-slate-400 text-center mt-2`} data-response-time-steps>Оставьте заявку → перезвоним за 10 мин → забронируем место</p>
 
   <!-- Trust -->
   <p class={`mt-1 ${inputWidth} text-center text-[13px] text-[#8c8c8c]`}>
@@ -178,20 +173,33 @@ const inputWidth = isDesktop ? 'w-[276px]' : 'w-full';
       }
 
       // Form submit
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!isPhoneValid() || !consent?.checked) {
           const modal = document.getElementById('bookingReminderModal') as HTMLDialogElement | null;
           modal?.showModal();
           return;
         }
-        // TODO: send form data to endpoint
+
         trackGoal('form_submit', {
           form: form.dataset.form,
           age: ageInput?.value,
         });
 
-        // Show referral modal
+        try {
+          const res = await fetch('/api/lead', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              phone: phoneInput?.value || '',
+              age: ageInput?.value || '',
+              shift: '',
+              source: new URLSearchParams(window.location.search).get('utm_source') || '',
+            }),
+          });
+          await res.json();
+        } catch {}
+
         const referralModal = document.getElementById('referralModal') as HTMLDialogElement | null;
         referralModal?.showModal();
       });

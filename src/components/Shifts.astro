@@ -557,7 +557,7 @@ function renderCard(shift: Shift) {
     bookModal.addEventListener('click', (e) => { if (e.target === bookModal) bookModal.close(); });
 
     // Submit
-    bookSubmit?.addEventListener('click', () => {
+    bookSubmit?.addEventListener('click', async () => {
       if (!isPhoneValid()) {
         if (bookError) {
           bookError.textContent = 'Введите корректный номер телефона';
@@ -572,7 +572,21 @@ function renderCard(shift: Shift) {
         }
         return;
       }
-      // TODO: send to API
+
+      try {
+        const res = await fetch('/api/lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: bookPhone?.value || '',
+            age: selectedAge,
+            shift: bookName?.textContent || '',
+            source: new URLSearchParams(window.location.search).get('utm_source') || '',
+          }),
+        });
+        await res.json();
+      } catch {}
+
       bookModal.close();
       const referralModal = document.getElementById('referralModal') as HTMLDialogElement | null;
       referralModal?.showModal();

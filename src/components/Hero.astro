@@ -12,6 +12,10 @@ import LeadForm from './LeadForm.astro';
         alt=""
         aria-hidden="true"
         class="w-full aspect-[4/3] object-cover object-[center_20%]"
+        loading="eager"
+        fetchpriority="high"
+        width="1536"
+        height="1024"
       />
       <!-- Side gradient -->
       <div class="absolute inset-0 bg-[linear-gradient(92deg,rgba(6,10,18,0.72)_0%,rgba(6,10,18,0.46)_42%,rgba(6,10,18,0.2)_70%,rgba(6,10,18,0.06)_100%)]"></div>
@@ -37,7 +41,7 @@ import LeadForm from './LeadForm.astro';
       <!-- Info bar -->
       <div class="mb-4 flex items-center justify-between rounded-[12px] bg-white/10 px-4 py-2.5 text-[12px] text-white/80">
         <span>от 48 000 ₽ за 7 дней</span>
-        <span>✓ Ответим за 10 мин</span>
+        <span>✓ <span data-response-time>Ответим за 10 мин</span></span>
       </div>
       <!-- White card with form -->
       <LeadForm variant="mobile" />
@@ -51,6 +55,10 @@ import LeadForm from './LeadForm.astro';
       alt=""
       aria-hidden="true"
       class="absolute inset-0 h-full w-full object-cover object-[center_20%]"
+      loading="eager"
+      fetchpriority="high"
+      width="1536"
+      height="1024"
     />
 
     <!-- Desktop Overlays -->
@@ -93,7 +101,7 @@ import LeadForm from './LeadForm.astro';
       <p class="text-[13px] text-[#545454]">от 48 000 ₽ за 7 дней · проживание, питание, программа включены · Трансфер — опция</p>
       <div class="flex gap-6 text-[12px] text-[#787878]">
         <span>✓ Фиксация цены 72 ч</span>
-        <span>✓ Ответим за 10 мин</span>
+        <span>✓ <span data-response-time>Ответим за 10 мин</span></span>
       </div>
     </div>
   </div>
@@ -131,7 +139,7 @@ import LeadForm from './LeadForm.astro';
         <svg class="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
       </div>
       <h3 class="mt-3 text-[20px] font-bold text-slate-900">Заявка отправлена!</h3>
-      <p class="mt-2 text-[14px] leading-[1.5] text-slate-500">Мы перезвоним в течение 10 минут. А пока — расскажите друзьям про лагерь:</p>
+      <p class="mt-2 text-[14px] leading-[1.5] text-slate-500" id="referralSubtext">Мы перезвоним в течение 10 минут. А пока — расскажите друзьям про лагерь:</p>
     </div>
 
     <div class="mt-5 space-y-2">
@@ -164,9 +172,10 @@ import LeadForm from './LeadForm.astro';
     </div>
 
     <div class="flex items-center gap-3 mt-3">
-      <img src="/images/merch-hoodi.avif"
+      <img src="/images/merch-hoodie.avif"
            alt="Фирменная толстовка АйДаКемп"
-           class="w-20 h-20 object-cover object-top rounded-[12px] shrink-0">
+           class="w-20 h-20 object-cover object-top rounded-[12px] shrink-0"
+           loading="lazy" decoding="async" width="400" height="400">
       <div class="text-[12px] text-slate-600 leading-[1.5]">
         <p>👕 <strong>Первый раз</strong> → футболка Junior</p>
         <p class="mt-1">🧥 <strong>Второй раз</strong> → толстовка #Junior</p>
@@ -219,7 +228,35 @@ import LeadForm from './LeadForm.astro';
     });
   }
 
-  document.addEventListener('astro:page-load', () => { initModal(); initReferralModal(); });
+  function initResponseTime() {
+    const now = new Date();
+    const msk = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Moscow' }));
+    const hour = msk.getHours();
+    const isNight = hour >= 20 || hour < 11;
+
+    // Hero info bar + anywhere with data-response-time
+    document.querySelectorAll('[data-response-time]').forEach((el) => {
+      el.textContent = isNight ? 'Свяжемся с 11 до 12 МСК' : 'Перезвоним за 10 минут';
+    });
+
+    // Steps under form button
+    document.querySelectorAll('[data-response-time-steps]').forEach((el) => {
+      el.textContent = isNight
+        ? 'Оставьте заявку → свяжемся с 11 до 12 МСК → забронируем место'
+        : 'Оставьте заявку → перезвоним за 10 мин → забронируем место';
+    });
+
+    // Referral modal subtext
+    const sub = document.getElementById('referralSubtext');
+    if (sub) {
+      sub.textContent = isNight
+        ? 'Мы бы перезвонили за 10 минут, но сейчас ночь 🌙 Свяжемся с вами с 11 до 12 МСК. А пока — расскажите друзьям:'
+        : 'Мы перезвоним в течение 10 минут. А пока — расскажите друзьям про лагерь:';
+    }
+  }
+
+  document.addEventListener('astro:page-load', () => { initModal(); initReferralModal(); initResponseTime(); });
   initModal();
   initReferralModal();
+  initResponseTime();
 </script>
