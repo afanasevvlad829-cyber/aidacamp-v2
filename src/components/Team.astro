@@ -126,6 +126,9 @@ import { members } from '../data/team';
 
 <script type="application/json" id="team-json" set:html={JSON.stringify(members)} />
 <script>
+  import { initDialog } from '../scripts/dialog';
+  import { initCarouselDots } from '../scripts/carousel-dots';
+
   const allMembers = JSON.parse(document.getElementById('team-json')!.textContent!);
 
   function openMemberModal(index: number) {
@@ -143,9 +146,7 @@ import { members } from '../data/team';
 
   function initTeam() {
     // Member modal
-    const memberModal = document.getElementById('teamMemberModal') as HTMLDialogElement | null;
-    memberModal?.querySelector('[data-member-close]')?.addEventListener('click', () => memberModal.close());
-    memberModal?.addEventListener('click', (e) => { if (e.target === memberModal) memberModal.close(); });
+    const memberModal = initDialog('teamMemberModal', '[data-member-close]');
 
     // Delegate clicks on team member cards
     document.addEventListener('click', (e) => {
@@ -154,10 +155,8 @@ import { members } from '../data/team';
     });
 
     // Book modal
-    const modal = document.getElementById('teamBookModal') as HTMLDialogElement | null;
+    const modal = initDialog('teamBookModal', '[data-book-close]');
     document.querySelector('[data-book-open]')?.addEventListener('click', () => modal?.showModal());
-    modal?.querySelector('[data-book-close]')?.addEventListener('click', () => modal.close());
-    modal?.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
 
     // Mobile dots
     const mobileTrack = document.querySelector<HTMLElement>('[data-team-mobile-track]');
