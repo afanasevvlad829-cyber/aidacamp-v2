@@ -1,132 +1,10 @@
 ---
-/**
- * Основные смены — отображаются в левой части (2 колонки на десктопе).
- * Короткие смены 2.1 и 2.2 — отдельный блок справа.
- * Смена 4 → Смена 3, Смена 5 → Смена 4 (переименование).
- */
-
-interface Shift {
-  id: string;
-  name: string;
-  dates: string;
-  duration: string;
-  status: string;
-  statusType: 'available' | 'short';
-  description: string;
-  price: string;
-  free: number;
-  occupied: number;
-  highlighted?: boolean;
-  popular?: boolean;
-  startDate: string; // YYYY-MM-DD for calendar
-  endDate: string;
-}
-
-const mainShifts: Shift[] = [
-  {
-    id: 'shift-1',
-    name: 'Смена 1',
-    dates: '30 мая — 8 июня',
-    duration: '10 дней',
-    status: 'места есть',
-    statusType: 'available',
-    description: 'За 10 дней — от первого шага до собственного проекта с AI и понятным результатом.',
-    price: '74 900 ₽',
-    free: 12,
-    occupied: 23,
-    highlighted: true,
-    startDate: '2025-05-30',
-    endDate: '2025-06-08',
-  },
-  {
-    id: 'shift-2',
-    name: 'Смена 2',
-    dates: '10 июня — 23 июня',
-    duration: '14 дней',
-    status: 'места есть',
-    statusType: 'available',
-    description: 'Полный цикл создания проекта: больше самостоятельности и более сложный результат.',
-    price: '95 000 ₽',
-    free: 4,
-    occupied: 41,
-    popular: true,
-    startDate: '2025-06-10',
-    endDate: '2025-06-23',
-  },
-  {
-    id: 'shift-3',
-    name: 'Смена 3',
-    dates: '3 августа — 15 августа',
-    duration: '13 дней',
-    status: 'места есть',
-    statusType: 'available',
-    description: 'Проект от идеи до результата с акцентом на командную работу.',
-    price: '89 400 ₽',
-    free: 5,
-    occupied: 40,
-    startDate: '2025-08-03',
-    endDate: '2025-08-15',
-  },
-  {
-    id: 'shift-4',
-    name: 'Смена 4',
-    dates: '17 августа — 26 августа',
-    duration: '10 дней',
-    status: 'места есть',
-    statusType: 'available',
-    description: 'Закрытие лета: сильный проект и уверенный результат.',
-    price: '69 600 ₽',
-    free: 14,
-    occupied: 31,
-    startDate: '2025-08-17',
-    endDate: '2025-08-26',
-  },
-];
-
-const shortShifts: Shift[] = [
-  {
-    id: 'shift-2-1',
-    name: 'Смена 2.1',
-    dates: '10 июня — 16 июня',
-    duration: '7 дней',
-    status: 'короткая',
-    statusType: 'short',
-    description: 'За 7 дней — быстрый вход, свой проект и понятный результат без перегруза.',
-    price: '48 000 ₽',
-    free: 11,
-    occupied: 29,
-    startDate: '2025-06-10',
-    endDate: '2025-06-16',
-  },
-  {
-    id: 'shift-2-2',
-    name: 'Смена 2.2',
-    dates: '16 июня — 23 июня',
-    duration: '8 дней',
-    status: 'короткая',
-    statusType: 'short',
-    description: 'Интенсивная смена: больше времени на доработку и более сильный итоговый проект.',
-    price: '65 000 ₽',
-    free: 8,
-    occupied: 37,
-    startDate: '2025-06-16',
-    endDate: '2025-06-23',
-  },
-];
-
-const allShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShifts[2], mainShifts[3]];
-
-function renderCard(shift: Shift) {
-  const total = shift.free + shift.occupied;
-  const pct = Math.round((shift.occupied / total) * 100);
-  const badgeBg = shift.statusType === 'short' ? 'bg-amber-100' : 'bg-emerald-100';
-  const badgeText = shift.statusType === 'short' ? 'text-amber-700' : 'text-emerald-700';
-  const btnClass = shift.highlighted
-    ? 'bg-primary text-white transition-all duration-200 hover:shadow-[0_4px_16px_rgba(249,115,22,0.35)] hover:-translate-y-[1px] active:translate-y-0'
-    : 'border border-slate-200 bg-slate-100 text-slate-700 transition-all duration-200 hover:bg-white hover:-translate-y-[1px] active:translate-y-0';
-
-  return { total, pct, badgeBg, badgeText, btnClass };
-}
+import { mainShifts, shortShifts, allShifts } from '../data/shifts';
+import ShiftCard from './shifts/ShiftCard.astro';
+import ShortShiftCard from './shifts/ShortShiftCard.astro';
+import ShiftBookModal from './shifts/ShiftBookModal.astro';
+import ShiftCalendarModal from './shifts/ShiftCalendarModal.astro';
+import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
 ---
 
 <section id="shifts" class="mx-auto max-w-[1312px] px-[2px] pt-10 md:px-4">
@@ -151,69 +29,9 @@ function renderCard(shift: Shift) {
       </div>
 
       <div class="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" data-shifts-carousel>
-        {allShifts.map((shift) => {
-          const { pct, badgeBg, badgeText, btnClass } = renderCard(shift);
-          return (
-            <article class={`min-w-[calc(100vw-48px)] max-w-[calc(100vw-48px)] shrink-0 snap-start rounded-[20px] border bg-slate-50 p-4 shadow-[0_6px_18px_rgba(15,23,42,0.04)] ${shift.popular ? 'border-orange-400 ring-2 ring-orange-400' : 'border-slate-200'}`}>
-              <div class="flex items-start justify-between">
-                <div>
-                  <h3 class="text-[20px] font-semibold leading-[1.15] text-slate-900">{shift.name}</h3>
-                  <p class="mt-1 text-sm font-medium text-slate-500">{shift.dates}</p>
-                </div>
-                <div class="flex items-center gap-1.5 shrink-0">
-                  {shift.popular && <span class="rounded-full bg-orange-500 text-white text-[11px] font-medium px-2 py-0.5">🔥 Популярная</span>}
-                  <span class={`rounded-full ${badgeBg} ${badgeText} px-2 py-0.5 text-[11px] font-medium`}>{shift.status}</span>
-                </div>
-              </div>
-
-              <p class="text-xs text-slate-400">{shift.duration}</p>
-
-              <div class="mt-2 flex gap-2">
-                <button type="button" data-shift-calendar={shift.id} data-start={shift.startDate} data-end={shift.endDate} data-shift-name={shift.name} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-[11px] text-slate-500 hover:bg-slate-100" title="Календарь">
-                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                  календарь
-                </button>
-                <button type="button" data-shift-info={shift.id} data-shift-title={shift.name} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-[11px] text-slate-500 hover:bg-slate-100" title="Подробнее">
-                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0-4h.01" /></svg>
-                  инфо
-                </button>
-              </div>
-
-              <p class="mt-3 text-[14px] leading-[1.55] text-slate-500">{shift.description}</p>
-
-              <div class="mt-4 text-[20px] font-bold tracking-[-0.03em] text-slate-900">{shift.price}</div>
-              <p class="text-[12px] text-slate-400 mt-1">Питание, проживание, программа включены</p>
-
-              <div class="mt-3">
-                <div class="h-[10px] w-full overflow-hidden rounded-[6px] bg-slate-100">
-                  <div class="flex h-full">
-                    <div class="bg-slate-400 rounded-l-[6px]" style={`width:${pct}%`}></div>
-                    <div class="bg-emerald-400 rounded-r-[6px]" style={`width:${100 - pct}%`}></div>
-                  </div>
-                </div>
-                <div class="flex justify-between mt-1">
-                  <span class="text-[11px] text-slate-400">занято {shift.occupied}</span>
-                  <span class="text-[11px] text-emerald-600 font-medium">свободно {shift.free}</span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                data-shift-book={shift.id}
-                data-shift-book-name={shift.name}
-                data-shift-book-dates={shift.dates}
-                data-shift-book-duration={shift.duration}
-                data-shift-book-price={shift.price}
-                data-analytics-goal="shift_select"
-                data-analytics-label={shift.name}
-                class={`mt-4 w-full rounded-xl px-4 py-2.5 text-sm font-semibold ${btnClass}`}
-              >
-                Выбрать
-              </button>
-              <p class="text-[12px] text-slate-500 text-center mt-1.5">Не понравится в первые 3 дня — вернём 50%</p>
-            </article>
-          );
-        })}
+        {allShifts.map((shift) => (
+          <ShiftCard shift={shift} variant="mobile" />
+        ))}
       </div>
       <!-- Dots indicator -->
       <div class="mt-3 flex justify-center gap-1.5 md:hidden" data-shifts-dots>
@@ -227,69 +45,9 @@ function renderCard(shift: Shift) {
     <div class="mt-6 hidden md:flex md:gap-6">
       <!-- Left: Main shifts (2 col grid) -->
       <div class="grid flex-1 grid-cols-2 gap-4">
-        {mainShifts.map((shift) => {
-          const { pct, badgeBg, badgeText, btnClass } = renderCard(shift);
-          return (
-            <article class={`rounded-[20px] border border-slate-200 bg-slate-50 p-5 shadow-[0_6px_18px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_32px_rgba(15,23,42,0.08)] ${shift.popular ? 'ring-2 ring-orange-400' : ''}`}>
-              <div class="flex items-start justify-between">
-                <div>
-                  <h3 class="text-[20px] font-semibold leading-[1.15] text-slate-900">{shift.name}</h3>
-                  <p class="mt-1 text-sm font-medium text-slate-500">{shift.dates}</p>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  {shift.popular && <span class="rounded-full bg-orange-500 text-white text-[11px] font-medium px-2 py-0.5">🔥 Популярная</span>}
-                  <span class={`rounded-full ${badgeBg} ${badgeText} px-2 py-0.5 text-[11px] font-medium`}>{shift.status}</span>
-                </div>
-              </div>
-
-              <p class="text-xs text-slate-400">{shift.duration}</p>
-
-              <div class="mt-2 flex gap-2">
-                <button type="button" data-shift-calendar={shift.id} data-start={shift.startDate} data-end={shift.endDate} data-shift-name={shift.name} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-[11px] text-slate-500 hover:bg-slate-100" title="Календарь">
-                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                  календарь
-                </button>
-                <button type="button" data-shift-info={shift.id} data-shift-title={shift.name} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-[11px] text-slate-500 hover:bg-slate-100" title="Подробнее">
-                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0-4h.01" /></svg>
-                  инфо
-                </button>
-              </div>
-
-              <p class="mt-3 text-[15px] leading-[1.55] text-slate-500">{shift.description}</p>
-
-              <div class="mt-4 text-[22px] font-bold tracking-[-0.03em] text-slate-900">{shift.price}</div>
-              <p class="text-[12px] text-slate-400 mt-1">Питание, проживание, программа включены</p>
-
-              <div class="mt-3">
-                <div class="h-[10px] w-full overflow-hidden rounded-[6px] bg-slate-100">
-                  <div class="flex h-full">
-                    <div class="bg-slate-400 rounded-l-[6px]" style={`width:${pct}%`}></div>
-                    <div class="bg-emerald-400 rounded-r-[6px]" style={`width:${100 - pct}%`}></div>
-                  </div>
-                </div>
-                <div class="flex justify-between mt-1">
-                  <span class="text-[11px] text-slate-400">занято {shift.occupied}</span>
-                  <span class="text-[11px] text-emerald-600 font-medium">свободно {shift.free}</span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                data-shift-book={shift.id}
-                data-shift-book-name={shift.name}
-                data-shift-book-dates={shift.dates}
-                data-shift-book-duration={shift.duration}
-                data-shift-book-price={shift.price}
-                data-analytics-goal="shift_select"
-                data-analytics-label={shift.name}
-                class={`mt-4 w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition hover:-translate-y-0.5 ${btnClass}`}
-              >
-                Выбрать
-              </button>
-              <p class="text-[12px] text-slate-500 text-center mt-1.5">Не понравится в первые 3 дня — вернём 50%</p>
-            </article>
-          );
-        })}
+        {mainShifts.map((shift) => (
+          <ShiftCard shift={shift} variant="desktop" />
+        ))}
       </div>
 
       <!-- Right: Short shifts -->
@@ -298,60 +56,9 @@ function renderCard(shift: Shift) {
           <p class="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#2fa768]">Короткие смены</p>
           <p class="text-[12px] text-slate-400 mt-2 mb-1">Для тех, кто сомневается ехать ли надолго</p>
           <div class="mt-3 grid gap-3">
-            {shortShifts.map((shift) => {
-              const { pct, badgeBg, badgeText } = renderCard(shift);
-              return (
-                <div class="rounded-[16px] border border-slate-200 bg-white p-4">
-                  <div class="flex items-start justify-between">
-                    <div>
-                      <h3 class="text-[18px] font-semibold leading-[1.15] text-slate-900">{shift.name}</h3>
-                      <p class="mt-1 text-sm font-medium text-slate-500">{shift.dates}</p>
-                    </div>
-                    <span class={`rounded-full ${badgeBg} ${badgeText} px-2 py-0.5 text-[11px] font-medium`}>{shift.status}</span>
-                  </div>
-
-                  <p class="text-xs text-slate-400">{shift.duration}</p>
-
-                  <div class="mt-2 flex gap-2">
-                    <button type="button" data-shift-calendar={shift.id} data-start={shift.startDate} data-end={shift.endDate} data-shift-name={shift.name} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-[11px] text-slate-500 hover:bg-slate-100" title="Календарь">
-                      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                      календарь
-                    </button>
-                    <button type="button" data-shift-info={shift.id} data-shift-title={shift.name} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-[11px] text-slate-500 hover:bg-slate-100" title="Подробнее">
-                      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0-4h.01" /></svg>
-                      инфо
-                    </button>
-                  </div>
-
-                  <p class="mt-3 text-[13px] leading-[1.6] text-slate-600">{shift.description}</p>
-
-                  <div class="mt-3 text-[20px] font-bold tracking-[-0.03em] text-slate-900">{shift.price}</div>
-                  <p class="text-[12px] text-slate-400 mt-1">Питание, проживание, программа включены</p>
-
-                  <div class="mt-2">
-                    <div class="h-[6px] w-full overflow-hidden rounded-full bg-slate-200">
-                      <div class="h-full rounded-full bg-primary-light" style={`width:${pct}%`}></div>
-                    </div>
-                    <div class="mt-1 text-xs text-slate-500">Свободно {shift.free} · занято {shift.occupied}</div>
-                  </div>
-
-                  <button
-                    type="button"
-                    data-shift-book={shift.id}
-                    data-shift-book-name={shift.name}
-                    data-shift-book-dates={shift.dates}
-                    data-shift-book-duration={shift.duration}
-                    data-shift-book-price={shift.price}
-                    data-analytics-goal="shift_select"
-                    data-analytics-label={shift.name}
-                    class="mt-3 w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:bg-white"
-                  >
-                    Выбрать
-                  </button>
-                  <p class="text-[12px] text-slate-500 text-center mt-1.5">Не понравится в первые 3 дня — вернём 50%</p>
-                </div>
-              );
-            })}
+            {shortShifts.map((shift) => (
+              <ShortShiftCard shift={shift} />
+            ))}
           </div>
         </div>
       </div>
@@ -359,110 +66,25 @@ function renderCard(shift: Shift) {
   </div>
 </section>
 
-<!-- Booking Modal (shift selection) -->
-<dialog id="shiftBookModal" class="m-0 h-full w-full max-w-none border-0 outline-none bg-black/50 p-4 backdrop:bg-black/50">
-  <div class="relative mx-auto mt-[8vh] w-full max-w-[420px] rounded-[20px] bg-white p-5 shadow-[0_20px_50px_rgba(15,23,42,0.25)]">
-    <button type="button" data-shift-book-close aria-label="Закрыть" class="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none">
-      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-    </button>
-
-    <!-- Shift info -->
-    <div class="rounded-[14px] bg-slate-50 p-3">
-      <p class="text-[16px] font-semibold text-slate-900" data-book-shift-name></p>
-      <p class="mt-0.5 text-[13px] text-slate-500"><span data-book-shift-dates></span> · <span data-book-shift-duration></span></p>
-      <p class="mt-1 text-[20px] font-bold text-slate-900" data-book-shift-price></p>
-    </div>
-
-    <!-- Age -->
-    <p class="mt-4 text-[12px] font-semibold uppercase tracking-[0.08em] text-slate-500">Возраст</p>
-    <div class="mt-2 flex gap-2" data-book-age-group>
-      <button type="button" data-book-age="7-10" class="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 transition">7–10 лет</button>
-      <button type="button" data-book-age="10-12" class="flex-1 rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition">10–12 лет</button>
-      <button type="button" data-book-age="13-14" class="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 transition">13–14 лет</button>
-    </div>
-
-    <!-- Phone -->
-    <p class="mt-4 text-[12px] font-semibold uppercase tracking-[0.08em] text-slate-500">Ваш телефон</p>
-    <input
-      type="tel"
-      data-book-phone
-      placeholder="+7 (___) ___-__-__"
-      class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-[15px] text-slate-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-    />
-
-    <!-- Consent -->
-    <label class="mt-3 flex items-start gap-2 cursor-pointer">
-      <input type="checkbox" data-book-consent class="mt-0.5 h-4 w-4 rounded border-slate-300 text-primary accent-primary" />
-      <span class="text-[12px] leading-[1.4] text-slate-500">Согласен(а) на <a href="/legal" class="underline">обработку персональных данных</a></span>
-    </label>
-
-    <!-- Submit -->
-    <button
-      type="button"
-      data-book-submit
-      disabled
-      class="mt-4 w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white opacity-50 transition-all duration-200 hover:shadow-[0_4px_16px_rgba(249,115,22,0.35)] hover:-translate-y-[1px] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      Отправить заявку
-    </button>
-
-    <!-- Validation error -->
-    <p data-book-error class="mt-2 hidden text-center text-[12px] text-red-500"></p>
-  </div>
-</dialog>
-
-<!-- Calendar Modal -->
-<dialog id="shiftCalendarModal" class="m-0 h-full w-full max-w-none border-0 outline-none bg-black/50 p-4 backdrop:bg-black/50">
-  <div class="relative mx-auto mt-[10vh] w-full max-w-[380px] rounded-[20px] bg-white p-5 shadow-[0_20px_50px_rgba(15,23,42,0.25)]">
-    <button type="button" data-calendar-close aria-label="Закрыть" class="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none">
-      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-    </button>
-    <h3 class="text-[18px] font-semibold text-slate-900" data-calendar-title></h3>
-    <div data-calendar-grid class="mt-4"></div>
-  </div>
-</dialog>
-
-<!-- Info Modal -->
-<dialog id="shiftInfoModal" class="m-0 h-full w-full max-w-none border-0 outline-none bg-black/50 p-2 backdrop:bg-black/50 md:p-4">
-  <div class="relative mx-auto mt-[2vh] max-h-[96vh] w-full max-w-[920px] overflow-y-auto rounded-[20px] bg-white p-5 shadow-[0_20px_50px_rgba(15,23,42,0.25)] md:mt-[4vh] md:max-h-[90vh] md:p-6">
-    <button type="button" data-info-close aria-label="Закрыть" class="absolute right-3 top-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none">
-      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-    </button>
-
-    <div class="flex flex-col gap-5 md:flex-row md:gap-6">
-      <!-- Left: Shift info -->
-      <div class="w-full md:w-[55%]">
-        <h3 class="text-[22px] font-semibold text-slate-900" data-info-title></h3>
-        <p class="mt-1 text-[13px] text-slate-500" data-info-dates></p>
-        <p class="mt-1 text-[22px] font-bold text-primary-light" data-info-price></p>
-
-        <!-- Detailed description -->
-        <div class="mt-4" data-info-body></div>
-      </div>
-
-      <!-- Right: Schedule image (bigger on desktop) -->
-      <div class="w-full md:sticky md:top-0 md:w-[45%]">
-        <img src="/images/schedule-day.avif" alt="Распорядок дня в АйДаКемп" class="w-full rounded-[16px] shadow-md md:min-h-[500px] md:object-contain" loading="lazy" width="800" height="1200" />
-      </div>
-    </div>
-  </div>
-</dialog>
+<ShiftBookModal />
+<ShiftCalendarModal />
+<ShiftInfoModal />
 
 <script>
   import { trackGoal } from '../scripts/analytics';
   import { MAILRU_PIXEL_ID } from '../data/tracking';
+  import { renderCalendar } from '../scripts/shift-calendar';
+  import { shiftInfo } from '../data/shifts';
 
   function initShifts() {
     // === MOBILE CAROUSEL TABS ===
     const carousel = document.querySelector<HTMLElement>('[data-shifts-carousel]');
     const tabs = document.querySelectorAll<HTMLButtonElement>('[data-shifts-tab]');
-
     const dots = document.querySelectorAll<HTMLElement>('[data-shifts-dot]');
 
     if (carousel && tabs.length) {
       const cards = Array.from(carousel.children) as HTMLElement[];
 
-      // Tab click → scroll to card
       tabs.forEach((tab) => {
         tab.addEventListener('click', () => {
           const idx = parseInt(tab.dataset.shiftsTab || '0', 10);
@@ -470,7 +92,6 @@ function renderCard(shift: Shift) {
         });
       });
 
-      // Scroll → update active tab + dots
       const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
@@ -504,12 +125,10 @@ function renderCard(shift: Shift) {
     const bookConsent = bookModal.querySelector<HTMLInputElement>('[data-book-consent]');
     const bookSubmit = bookModal.querySelector<HTMLButtonElement>('[data-book-submit]');
     const bookError = bookModal.querySelector<HTMLElement>('[data-book-error]');
-    const ageGroup = bookModal.querySelector('[data-book-age-group]');
     const ageBtns = bookModal.querySelectorAll<HTMLButtonElement>('[data-book-age]');
 
     let selectedAge = '10-12';
 
-    // Age toggle
     ageBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
         ageBtns.forEach((b) => {
@@ -522,7 +141,6 @@ function renderCard(shift: Shift) {
       });
     });
 
-    // Phone mask
     if (bookPhone) {
       bookPhone.addEventListener('input', () => {
         let digits = bookPhone.value.replace(/\D/g, '');
@@ -541,7 +159,6 @@ function renderCard(shift: Shift) {
       });
     }
 
-    // Validation
     function isPhoneValid() {
       const digits = (bookPhone?.value || '').replace(/\D/g, '');
       return digits.length === 11;
@@ -557,7 +174,6 @@ function renderCard(shift: Shift) {
 
     bookConsent?.addEventListener('change', validateBookForm);
 
-    // Open booking modal
     document.querySelectorAll('[data-shift-book]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const el = btn as HTMLElement;
@@ -571,11 +187,9 @@ function renderCard(shift: Shift) {
       });
     });
 
-    // Close
     bookModal.querySelector('[data-shift-book-close]')?.addEventListener('click', () => bookModal.close());
     bookModal.addEventListener('click', (e) => { if (e.target === bookModal) bookModal.close(); });
 
-    // Submit
     bookSubmit?.addEventListener('click', async () => {
       if (!isPhoneValid()) {
         if (bookError) {
@@ -604,7 +218,6 @@ function renderCard(shift: Shift) {
           }),
         });
         await res.json();
-        // VK/Mail.ru pixel — реальная конверсия
         if (typeof _tmr !== 'undefined') {
           _tmr.push({ type: 'reachGoal', id: MAILRU_PIXEL_ID, value: 6375, goal: 'lead'});
         }
@@ -620,80 +233,18 @@ function renderCard(shift: Shift) {
     const calendarTitle = calendarModal?.querySelector('[data-calendar-title]');
     const calendarGrid = calendarModal?.querySelector('[data-calendar-grid]');
 
-    function renderCalendar(startStr: string, endStr: string, shiftName: string) {
-      if (!calendarGrid || !calendarTitle) return;
-      calendarTitle.textContent = shiftName;
-
-      const start = new Date(startStr);
-      const end = new Date(endStr);
-
-      // Collect only months that contain shift days
-      const months: { year: number; month: number }[] = [];
-      let cur = new Date(start.getFullYear(), start.getMonth(), 1);
-      const last = new Date(end.getFullYear(), end.getMonth(), 1);
-      while (cur <= last) {
-        months.push({ year: cur.getFullYear(), month: cur.getMonth() });
-        cur.setMonth(cur.getMonth() + 1);
-      }
-
-      const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-      const dayNames = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
-
-      // Find which weeks (Mon-Sun rows) contain shift days, then show only those weeks
-      let html = '';
-      for (const m of months) {
-        const daysInMonth = new Date(m.year, m.month + 1, 0).getDate();
-        const firstDow = (() => { const d = new Date(m.year, m.month, 1).getDay(); return d === 0 ? 6 : d - 1; })();
-
-        // Build all weeks as arrays of {day, date}
-        type Cell = { day: number; date: Date } | null;
-        const weeks: Cell[][] = [];
-        let week: Cell[] = [];
-        for (let i = 0; i < firstDow; i++) week.push(null);
-        for (let d = 1; d <= daysInMonth; d++) {
-          week.push({ day: d, date: new Date(m.year, m.month, d) });
-          if (week.length === 7) { weeks.push(week); week = []; }
-        }
-        if (week.length > 0) { while (week.length < 7) week.push(null); weeks.push(week); }
-
-        // Filter: only weeks that have at least one shift day
-        const shiftWeeks = weeks.filter(w => w.some(c => c && c.date >= start && c.date <= end));
-        if (shiftWeeks.length === 0) continue;
-
-        html += `<div class="mb-4"><p class="text-center text-[14px] font-semibold text-slate-900 mb-2">${monthNames[m.month]} ${m.year}</p>`;
-        html += '<div class="grid grid-cols-7 gap-1 text-center">';
-        for (const d of dayNames) {
-          html += `<div class="text-[11px] font-medium text-slate-400 pb-1">${d}</div>`;
-        }
-
-        for (const w of shiftWeeks) {
-          for (const cell of w) {
-            if (!cell) { html += '<div></div>'; continue; }
-            const isShift = cell.date >= start && cell.date <= end;
-            let classes = 'text-[13px] py-1 rounded-lg ';
-            classes += isShift ? 'bg-primary text-white font-semibold' : 'text-slate-600';
-            html += `<div class="${classes}">${cell.day}</div>`;
-          }
-        }
-        html += '</div></div>';
-      }
-
-      // Legend — only shift days
-      html += '<div class="flex items-center justify-center mt-2">';
-      html += '<div class="flex items-center gap-1.5"><div class="h-3 w-3 rounded bg-primary"></div><span class="text-[11px] text-slate-500">Дни смены</span></div>';
-      html += '</div>';
-
-      calendarGrid.innerHTML = html;
-    }
-
     document.querySelectorAll('[data-shift-calendar]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const el = btn as HTMLElement;
-        renderCalendar(
-          el.dataset.start || '',
-          el.dataset.end || '',
-          el.dataset.shiftName || ''
-        );
+        if (calendarGrid && calendarTitle) {
+          renderCalendar(
+            el.dataset.start || '',
+            el.dataset.end || '',
+            el.dataset.shiftName || '',
+            calendarGrid,
+            calendarTitle,
+          );
+        }
         calendarModal?.showModal();
       });
     });
@@ -707,222 +258,6 @@ function renderCard(shift: Shift) {
     const infoDates = infoModal?.querySelector('[data-info-dates]');
     const infoPrice = infoModal?.querySelector('[data-info-price]');
     const infoBody = infoModal?.querySelector('[data-info-body]');
-
-    function section(title: string, text: string) {
-      return `<div class="mt-4">
-        <p class="text-[13px] font-semibold text-slate-900">${title}</p>
-        <p class="mt-1 text-[13px] leading-[1.65] text-slate-600">${text}</p>
-      </div>`;
-    }
-    function bullet(items: string[]) {
-      return '<ul class="mt-1.5 space-y-1">' + items.map(i =>
-        `<li class="flex items-start gap-2 text-[13px] leading-[1.5] text-slate-600">
-          <span class="mt-1 block h-1.5 w-1.5 shrink-0 rounded-full bg-primary"></span>${i}
-        </li>`).join('') + '</ul>';
-    }
-    function ageBlock(ages: Record<string, string>) {
-      return '<div class="mt-4 space-y-2">' +
-        '<p class="text-[12px] font-semibold uppercase tracking-[0.08em] text-slate-500">По возрастам</p>' +
-        Object.entries(ages).map(([age, desc]) =>
-          `<div class="rounded-[12px] border border-slate-200 bg-slate-50 p-3">
-            <p class="text-[12px] font-semibold text-slate-400">${age}</p>
-            <p class="mt-1 text-[13px] leading-[1.5] text-slate-600">${desc}</p>
-          </div>`
-        ).join('') + '</div>';
-    }
-
-    // Shift detailed data
-    const shiftInfo: Record<string, {
-      dates: string; duration: string; price: string; html: string;
-    }> = {
-      'shift-1': {
-        dates: '30 мая — 8 июня', duration: '10 дней', price: '74 900 ₽',
-        html:
-          '<p class="text-[14px] leading-[1.6] text-slate-700">Смена выстроена как спокойный и понятный вход в программирование с гарантированным результатом на выходе.</p>' +
-          section('Первые дни — включение в процесс',
-            'Знакомство, деление на группы по возрасту и уровню. Сразу практика: собирается сцена, добавляется персонаж, настраивается движение и простые действия. Даже без опыта появляется первый результат уже в начале смены.') +
-          section('Далее — работа над своим проектом',
-            'Выбор идеи и пошаговая реализация. Например:') +
-          bullet([
-            'игра, где персонаж убегает от препятствий и набирает очки',
-            'игра с уровнями и усложнением',
-            'интерактивная история с выбором действий',
-            'проект с элементами AI (реакции или генерация событий)',
-          ]) +
-          '<p class="mt-2 text-[13px] leading-[1.65] text-slate-600">Каждый день — конкретный прогресс: добавляется механика → проверяется → дорабатывается → усиливается. Проект постепенно становится «живым» и рабочим.</p>' +
-          section('К середине смены', 'Уже есть работающий прототип, в который можно играть или взаимодействовать.') +
-          section('Вторая половина смены — усиление',
-            'Добавляются новые функции, усложняется логика, улучшается внешний вид, прорабатывается сценарий. За 2–3 дня до конца проходит хакатон: интенсивная работа, где проекты собираются в финальную версию.') +
-          section('Последние дни', 'Финальная доводка и подготовка проекта: исправляются ошибки, добавляются детали, оформляется результат.') +
-          ageBlock({
-            '7–9 лет': 'Простые игры: движение, взаимодействие, счёт',
-            '10–12 лет': 'Игры с уровнями, логикой и механикой',
-            '13–14 лет': 'Проекты с элементами AI и более сложной структурой',
-          }) +
-          section('Как устроен AI (простыми словами)',
-            'Используется как инструмент: например, чтобы игра генерировала события или персонаж реагировал «умнее», а не по заготовленному сценарию.') +
-          section('Внутренняя экономика',
-            'В течение всей смены работает игровая система: есть валюта — телефонное время. Её зарабатывают за активность, помощь, инициативу. И принимают решения: потратить сразу или накопить.') +
-          section('Дополнительно',
-            'Параллельно проходят чемпионаты лагеря (футбол, пионербол) — это часть общей игровой системы и смены активности.'),
-      },
-      'shift-2': {
-        dates: '10 июня — 23 июня', duration: '14 дней', price: '95 000 ₽',
-        html:
-          '<p class="text-[14px] leading-[1.6] text-slate-700">Смена построена с большим акцентом на самостоятельные решения и усложнение проектов.</p>' +
-          section('Первые дни — быстрый вход',
-            'Знакомство, деление по группам, первые задания. Уже на старте собираются базовые элементы: сцена, персонаж, движение, взаимодействие.') +
-          section('Далее — развитие проекта',
-            'После выбора идеи начинается работа, где постепенно добавляются механики, уровни, взаимодействие элементов, реакции и логика. Например:') +
-          bullet([
-            'игра с несколькими уровнями и усложнением',
-            'проект с системой очков и условиями победы',
-            'интерактивный сценарий с разными исходами',
-            'проекты с элементами AI (генерация или реакции)',
-          ]) +
-          '<p class="mt-2 text-[13px] leading-[1.65] text-slate-600">Каждый день — развитие: сделано → протестировано → улучшено → усложнено.</p>' +
-          section('К середине смены', 'Проект уже работает и имеет структуру: есть логика, цели и взаимодействие.') +
-          section('Вторая половина — углубление',
-            'Добавляются новые функции, усложняется поведение объектов, прорабатывается сценарий, улучшается внешний вид. За 2–3 дня до конца — хакатон: сборка финальной версии в интенсивном формате.') +
-          section('Финальные дни', 'Доработка проекта и приведение его в законченный вид.') +
-          ageBlock({
-            '7–9 лет': 'Игры с несколькими сценариями',
-            '10–12 лет': 'Проекты с уровнями, логикой и системой взаимодействия',
-            '13–14 лет': 'Проекты с AI и более сложной структурой',
-          }) +
-          section('Как устроен AI',
-            'Используется как инструмент внутри проекта: например, чтобы поведение элементов было не жёстко задано, а вариативно.') +
-          section('Внутренняя экономика',
-            'В течение всей смены действует система: телефонное время зарабатывается и тратится как ресурс. Это добавляет вовлечённости и учит принимать решения.') +
-          section('Дополнительно',
-            'Чемпионаты лагеря (футбол, пионербол) проходят в течение смены и встроены в общую динамику.'),
-      },
-      'shift-3': {
-        dates: '3 августа — 15 августа', duration: '13 дней', price: '89 400 ₽',
-        html:
-          '<p class="text-[14px] leading-[1.6] text-slate-700">Смена, в которой важна не только работа над проектом, но и взаимодействие внутри команды.</p>' +
-          section('Первые дни — старт и распределение',
-            'Знакомство, деление по группам, первые задания. Сразу начинается практика: сборка базовых элементов проекта.') +
-          section('Далее — работа над проектом',
-            'После выбора идеи начинается реализация. Например:') +
-          bullet([
-            'игра с уровнями',
-            'проект с несколькими сценариями',
-            'интерактивная система с реакциями',
-            'проект с элементами AI',
-          ]) +
-          '<p class="mt-2 text-[13px] leading-[1.65] text-slate-600">Часть задач выполняется индивидуально, часть — в команде.</p>' +
-          section('Командная работа',
-            'Проекты собираются совместно: распределяются роли, обсуждаются решения, объединяются части проекта. Это добавляет понимание, как создаётся общий результат.') +
-          section('К середине смены', 'Есть рабочий проект с базовой структурой.') +
-          section('Вторая половина — усиление',
-            'Добавляются функции, дорабатывается логика, улучшается внешний вид, собирается целостный проект. За 2–3 дня до конца — хакатон.') +
-          section('Финальные дни', 'Доработка и завершение проекта.') +
-          ageBlock({
-            '7–9 лет': 'Игровые проекты',
-            '10–12 лет': 'Проекты с логикой и взаимодействием',
-            '13–14 лет': 'Проекты с AI',
-          }) +
-          section('Как устроен AI',
-            'Используется как инструмент внутри проекта: например, для более «живого» поведения элементов.') +
-          section('Внутренняя экономика',
-            'Работает в течение всей смены: ресурсы ограничены, решения имеют значение.') +
-          section('Дополнительно',
-            'Чемпионаты лагеря (футбол, пионербол) проходят регулярно и дополняют программу.'),
-      },
-      'shift-4': {
-        dates: '17 августа — 26 августа', duration: '10 дней', price: '69 600 ₽',
-        html:
-          '<p class="text-[14px] leading-[1.6] text-slate-700">Смена с акцентом на аккуратность, завершённость и понимание того, что сделано.</p>' +
-          section('Первые дни — вход и база',
-            'Знакомство, деление по группам, стартовые задания. Собираются базовые элементы проекта.') +
-          section('Основная часть — разработка проекта',
-            'После выбора идеи начинается поэтапная работа. Например:') +
-          bullet([
-            'игра с уровнями и логикой',
-            'проект с системой взаимодействия',
-            'интерактивная история',
-            'проект с элементами AI',
-          ]) +
-          '<p class="mt-2 text-[13px] leading-[1.65] text-slate-600">Каждый день — видимый прогресс.</p>' +
-          section('К середине смены', 'Проект уже работает и имеет структуру.') +
-          section('Вторая половина — доведение до результата',
-            'Добавляются функции, исправляются ошибки, улучшается логика, проект приводится в законченный вид. За 2–3 дня до конца — хакатон.') +
-          section('Финальные дни', 'Финальная доработка и завершение проекта.') +
-          ageBlock({
-            '7–9 лет': 'Игровые проекты',
-            '10–12 лет': 'Проекты с логикой и механикой',
-            '13–14 лет': 'Проекты с AI',
-          }) +
-          section('Как устроен AI',
-            'Используется как инструмент внутри проекта для вариативности и усложнения поведения.') +
-          section('Внутренняя экономика',
-            'Действует в течение всей смены: телефонное время — ресурс, который нужно заработать и грамотно использовать.') +
-          section('Дополнительно',
-            'Чемпионаты лагеря (футбол, пионербол) проходят в течение смены и создают смену активности.'),
-      },
-      'shift-2-1': {
-        dates: '10 июня — 16 июня', duration: '7 дней', price: '48 000 ₽',
-        html:
-          '<p class="text-[14px] leading-[1.6] text-slate-700">Короткая смена с акцентом на практику: минимум разгона, максимум действий и быстрый результат.</p>' +
-          section('Первые дни — сразу в работу',
-            'Знакомство, деление на группы по возрасту и уровню. С первых часов — практика: собирается сцена, добавляется персонаж, настраивается движение и базовые действия. Результат появляется практически сразу.') +
-          section('Основная часть — быстрый рост проекта',
-            'Выбор идеи и реализация по шагам. Например:') +
-          bullet([
-            'простая игра с движением и препятствиями',
-            'игра с набором очков',
-            'интерактивная история',
-            'проект с простыми AI-элементами',
-          ]) +
-          '<p class="mt-2 text-[13px] leading-[1.65] text-slate-600">Каждый день — конкретный шаг: добавлена механика → протестирована → улучшена → добавлено новое. Проект быстро становится рабочим.</p>' +
-          section('Середина смены', 'Уже есть готовая основа: можно играть или взаимодействовать.') +
-          section('Финальные дни — сборка результата',
-            'За 1–2 дня до конца проходит мини-хакатон: интенсивная работа, где проект доводится до финальной версии. Далее — финальная доработка: исправляются ошибки, добавляются детали, оформляется итог.') +
-          ageBlock({
-            '7–9 лет': 'Простые игры с движением и взаимодействием',
-            '10–12 лет': 'Проекты с механикой, логикой и простыми уровнями',
-            '13–14 лет': 'Быстрые проекты с элементами AI',
-          }) +
-          section('Как устроен AI',
-            'Используется как дополнительный инструмент: например, чтобы добавить вариативные реакции или генерацию событий.') +
-          section('Внутренняя экономика',
-            'В течение смены действует система: телефонное время зарабатывается за активность и участие. Есть выбор: использовать сразу или копить.') +
-          section('Дополнительно',
-            'Чемпионаты лагеря (футбол, пионербол) проходят в течение смены и чередуются с занятиями.'),
-      },
-      'shift-2-2': {
-        dates: '16 июня — 23 июня', duration: '8 дней', price: '65 000 ₽',
-        html:
-          '<p class="text-[14px] leading-[1.6] text-slate-700">Формат, в котором достаточно времени не только собрать проект, но и довести его до уверенного результата.</p>' +
-          section('Первые дни — включение и база',
-            'Знакомство, деление по группам, первые задания. Сразу собираются базовые элементы: сцена, персонаж, движение, взаимодействие.') +
-          section('Основная часть — развитие проекта',
-            'После выбора идеи начинается поэтапная работа. Например:') +
-          bullet([
-            'игра с уровнями и усложнением',
-            'проект с системой очков и условиями',
-            'интерактивный сценарий',
-            'проект с элементами AI',
-          ]) +
-          '<p class="mt-2 text-[13px] leading-[1.65] text-slate-600">Каждый день — развитие: добавляются функции → проверяются → улучшаются → усложняются. Проект становится более структурным и интересным.</p>' +
-          section('К середине смены', 'Есть рабочий проект с логикой и взаимодействием.') +
-          section('Вторая половина — усиление',
-            'Добавляются новые механики, усложняется поведение объектов, улучшается внешний вид, прорабатывается сценарий. За 2 дня до конца — хакатон: интенсивная сборка финальной версии.') +
-          section('Финальные дни', 'Доработка проекта и приведение его в законченный вид.') +
-          ageBlock({
-            '7–9 лет': 'Проекты с несколькими сценариями',
-            '10–12 лет': 'Игры с уровнями и логикой',
-            '13–14 лет': 'Проекты с AI и более сложной структурой',
-          }) +
-          section('Как устроен AI',
-            'Используется внутри проекта как инструмент: например, для вариативного поведения или генерации элементов.') +
-          section('Внутренняя экономика',
-            'Работает в течение всей смены: телефонное время зарабатывается и используется как ресурс.') +
-          section('Дополнительно',
-            'Чемпионаты лагеря (футбол, пионербол) встроены в программу и чередуются с занятиями.'),
-      },
-    };
 
     document.querySelectorAll('[data-shift-info]').forEach((btn) => {
       btn.addEventListener('click', () => {

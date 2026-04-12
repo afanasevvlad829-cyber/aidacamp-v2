@@ -1,0 +1,61 @@
+---
+import type { Shift } from '../../data/shifts';
+import { renderCard } from '../../data/shifts';
+
+interface Props {
+  shift: Shift;
+}
+
+const { shift } = Astro.props;
+const { pct, badgeBg, badgeText } = renderCard(shift);
+---
+
+<div class="rounded-[16px] border border-slate-200 bg-white p-4">
+  <div class="flex items-start justify-between">
+    <div>
+      <h3 class="text-[18px] font-semibold leading-[1.15] text-slate-900">{shift.name}</h3>
+      <p class="mt-1 text-sm font-medium text-slate-500">{shift.dates}</p>
+    </div>
+    <span class={`rounded-full ${badgeBg} ${badgeText} px-2 py-0.5 text-[11px] font-medium`}>{shift.status}</span>
+  </div>
+
+  <p class="text-xs text-slate-400">{shift.duration}</p>
+
+  <div class="mt-2 flex gap-2">
+    <button type="button" data-shift-calendar={shift.id} data-start={shift.startDate} data-end={shift.endDate} data-shift-name={shift.name} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-[11px] text-slate-500 hover:bg-slate-100" title="Календарь">
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+      календарь
+    </button>
+    <button type="button" data-shift-info={shift.id} data-shift-title={shift.name} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-[11px] text-slate-500 hover:bg-slate-100" title="Подробнее">
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0-4h.01" /></svg>
+      инфо
+    </button>
+  </div>
+
+  <p class="mt-3 text-[13px] leading-[1.6] text-slate-600">{shift.description}</p>
+
+  <div class="mt-3 text-[20px] font-bold tracking-[-0.03em] text-slate-900">{shift.price}</div>
+  <p class="text-[12px] text-slate-400 mt-1">Питание, проживание, программа включены</p>
+
+  <div class="mt-2">
+    <div class="h-[6px] w-full overflow-hidden rounded-full bg-slate-200">
+      <div class="h-full rounded-full bg-primary-light" style={`width:${pct}%`}></div>
+    </div>
+    <div class="mt-1 text-xs text-slate-500">Свободно {shift.free} · занято {shift.occupied}</div>
+  </div>
+
+  <button
+    type="button"
+    data-shift-book={shift.id}
+    data-shift-book-name={shift.name}
+    data-shift-book-dates={shift.dates}
+    data-shift-book-duration={shift.duration}
+    data-shift-book-price={shift.price}
+    data-analytics-goal="shift_select"
+    data-analytics-label={shift.name}
+    class="mt-3 w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:bg-white"
+  >
+    Выбрать
+  </button>
+  <p class="text-[12px] text-slate-500 text-center mt-1.5">Не понравится в первые 3 дня — вернём 50%</p>
+</div>
