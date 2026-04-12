@@ -16,6 +16,18 @@ export function trackGoal(id: string, params?: object) {
   } catch {}
 }
 
+export function initContactTracking(scope: string) {
+  document.querySelectorAll<HTMLAnchorElement>(`${scope} a[href^="tel:"]`).forEach((a) => {
+    a.addEventListener('click', () => trackGoal('phone_click'));
+  });
+  document.querySelectorAll<HTMLAnchorElement>(`${scope} a[href*="wa.me"]`).forEach((a) => {
+    a.addEventListener('click', () => trackGoal('whatsapp_click'));
+  });
+  document.querySelectorAll<HTMLAnchorElement>(`${scope} a[href*="t.me"]`).forEach((a) => {
+    a.addEventListener('click', () => trackGoal('telegram_click'));
+  });
+}
+
 export function initScrollTracking() {
   const goals = [
     { p: 25, id: 'scroll_25' },

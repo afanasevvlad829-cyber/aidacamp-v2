@@ -5,7 +5,19 @@
 
 const NUDGE_KEY = 'aidacamp_nudges';
 const MAX_PER_SESSION = 3;
-const MIN_INTERVAL_MS = 60000;
+const MIN_INTERVAL_MS = 60_000;
+
+// Timing constants (ms)
+const NUDGE_DISPLAY_MS = 7_000;
+const NUDGE_FADE_MS = 300;
+const HERO_IDLE_MS = 15_000;
+const SHIFTS_FAST_THRESHOLD_MS = 5_000;
+const SHIFTS_FAST_DELAY_MS = 3_000;
+const MEDIA_ENGAGED_MS = 20_000;
+const FAQ_NUDGE_DELAY_MS = 1_000;
+const TEAM_NUDGE_DELAY_MS = 2_000;
+const LONG_SESSION_MS = 180_000;
+const EXIT_FOCUS_DELAY_MS = 700;
 
 function getMskHour(): number {
   return new Date(
@@ -40,11 +52,11 @@ export function showNudge(
 
   textEl.textContent = text;
   subEl.textContent = sub;
-  toast.style.display = 'block';
-  toast.style.cursor = onClick ? 'pointer' : 'default';
+  toast.classList.toggle('cursor-pointer', !!onClick);
+  toast.classList.toggle('cursor-default', !onClick);
   requestAnimationFrame(() => {
-    toast.style.opacity = '1';
-    toast.style.transform = 'translateY(0)';
+    toast.classList.remove('opacity-0', 'translate-y-full');
+    toast.classList.add('opacity-100', 'translate-y-0');
   });
 
   if (onClick) {
@@ -55,7 +67,7 @@ export function showNudge(
     toast.onclick = null;
   }
 
-  setTimeout(hideNudge, 7000);
+  setTimeout(hideNudge, NUDGE_DISPLAY_MS);
 
   shown.push({ id, time: Date.now() });
   sessionStorage.setItem(NUDGE_KEY, JSON.stringify(shown));
@@ -64,9 +76,8 @@ export function showNudge(
 export function hideNudge() {
   const toast = document.getElementById('nudge-toast');
   if (!toast) return;
-  toast.style.opacity = '0';
-  toast.style.transform = 'translateY(10px)';
-  setTimeout(() => { toast.style.display = 'none'; }, 300);
+  toast.classList.remove('opacity-100', 'translate-y-0');
+  toast.classList.add('opacity-0', 'translate-y-full');
 }
 
 export function initNudges() {
@@ -97,7 +108,7 @@ export function initNudges() {
         'Выберите — и подберём подходящую смену →',
         () => document.querySelector<HTMLElement>('[data-form] [data-age-btn]')
                ?.scrollIntoView({ behavior: 'smooth' })
-      ), 15000);
+      ), HERO_IDLE_MS);
     } else {
       clearTimeout(heroTimer);
     }
@@ -110,7 +121,7 @@ export function initNudges() {
   const shiftsObs = new IntersectionObserver(([e]) => {
     if (e.isIntersecting) {
       shiftsEnter = Date.now();
-    } else if (shiftsEnter && Date.now() - shiftsEnter < 5000) {
+    } else if (shiftsEnter && Date.now() - shiftsEnter < SHIFTS_FAST_THRESHOLD_MS) {
       const cards = Array.from(document.querySelectorAll('#shifts article'));
       const card = cards.find(c => (c as HTMLElement).offsetWidth > 0) || cards[1];
       const freePlaces = card?.querySelector('[data-free]')?.textContent?.trim() || '4';
@@ -119,7 +130,7 @@ export function initNudges() {
         'Смена 2 — самая популярная',
         `Осталось ${freePlaces} места · полный цикл проекта за 14 дней`,
         () => document.getElementById('shifts')?.scrollIntoView({ behavior: 'smooth' })
-      ), 3000);
+      ), SHIFTS_FAST_DELAY_MS);
       shiftsEnter = 0;
     }
   }, { threshold: 0.3 });
@@ -134,7 +145,7 @@ export function initNudges() {
         'media_engaged',
         'Наш рекорд — 6 возвратов',
         'Некоторые ездят дважды за лето: в начале и в конце'
-      ), 20000);
+      ), MEDIA_ENGAGED_MS);
     } else {
       clearTimeout(mediaTimer);
     }
@@ -155,7 +166,7 @@ export function initNudges() {
             'faq_engaged',
             'Закрытая территория · вожатые на связи 24/7',
             'Каждый день публикуем фотографии со смены'
-          ), 1000);
+          ), FAQ_NUDGE_DELAY_MS);
         }
       }
     });
@@ -169,7 +180,7 @@ export function initNudges() {
         '94% родителей рекомендуют лагерь друзьям',
         '★ 5.0 на Яндекс Картах →',
         () => window.open('https://yandex.ru/maps/org/aidacamp/187591197654/', '_blank')
-      ), 2000);
+      ), TEAM_NUDGE_DELAY_MS);
     }
   }, { threshold: 0.2 });
   const team = document.getElementById('team');
@@ -193,7 +204,7 @@ export function initNudges() {
               document.querySelector<HTMLInputElement>(
                 '[data-form=booking_desktop] input[type=tel]'
               )?.focus();
-            }, 700);
+            }, EXIT_FOCUS_DELAY_MS);
           }
         );
       }
@@ -205,5 +216,5 @@ export function initNudges() {
     'long_session',
     'Сам ребёнок может позвонить в любой момент',
     'Плюс вожатые и руководитель смены на связи 24/7'
-  ), 180000);
+  ), LONG_SESSION_MS);
 }
