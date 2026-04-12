@@ -48,7 +48,11 @@ async function log(level, tool, message, details) {
   const ts = new Date().toISOString();
   const line = JSON.stringify({ ts, level, tool, message, ...(details ? { details } : {}) });
   try { await appendFile(LOG_FILE, line + "\n"); } catch {}
-  if (level === "error") process.stderr.write(`[${ts}] ${tool}: ${message}\n`);
+  // Всегда выводим в stderr — видно в терминале
+  const icons = { info: "✅", error: "❌", warn: "⚠️" };
+  const icon = icons[level] || "·";
+  const time = ts.replace(/.*T/, "").replace(/\.\d+Z/, "");
+  process.stderr.write(`${icon} ${time} [${tool}] ${message}\n`);
 }
 
 // --- Error classification ---
@@ -482,22 +486,27 @@ const TOOLS = [
       budget_limit: { type: "string", description: "Общий бюджет группы (руб). Нельзя вместе с budget_limit_day" },
       budget_limit_day: { type: "string", description: "Дневной бюджет группы (руб). Нельзя вместе с budget_limit" },
       enable_utm: { type: "boolean", description: "Включить UTM-метки" },
+      conversion_event_id: { type: "number", description: "ID события конверсии (для оптимизации на конверсии)" },
       status: { type: "string", enum: ["active", "blocked", "deleted"], description: "Статус (для update)" },
     }, required: ["action"]},
   },
   {
     name: "vk_manage_ad",
-    description: "VK Ads: CRUD баннеров (banners). Создание: POST /ad_groups/{id}/banners.json. Требует: urls (id из POST /urls.json), textblocks (title_40_vkads, text_90), content (image_1080x607, icon_256x256 — id из POST /content.json).",
+    description: "VK Ads: CRUD баннеров (banners). Создание: POST /ad_groups/{id}/banners.json.\n\nДля мультиформата (pkg 3232): title + text + content_image_id + content_icon_id + url.\nДля других пакетов: передавай textblocks и content как объекты напрямую.\n\nПеред созданием вызови vk_manage_ad(action='list') на существующих баннерах группы, чтобы увидеть нужные слоты.\n\ncall_to_action: 'learnMore', 'buy', 'signUp', 'book', 'install', 'contact', 'fillForm', 'joinGroup' и др.",
     inputSchema: { type: "object", properties: {
       action: { type: "string", enum: ["list", "create", "update", "delete"], description: "Действие" },
       ad_group_id: { type: "number", description: "ID группы объявлений" },
       id: { type: "number", description: "ID баннера (для update/delete)" },
-      title: { type: "string", description: "Заголовок (до 40 символов, слот title_40_vkads)" },
-      text: { type: "string", description: "Описание (до 90 символов, слот text_90)" },
+      title: { type: "string", description: "Заголовок (до 40 символов, слот title_40_vkads) — шорткат для textblocks" },
+      text: { type: "string", description: "Описание (до 90 символов, слот text_90) — шорткат для textblocks" },
+      textblocks: { type: "object", description: "Произвольные textblocks: {title_40_vkads:{text}, text_90:{text}, cta_sites_full:{text:'learnMore'}, ...}" },
+      content: { type: "object", description: "Произвольный content: {image_1080x607:{id}, icon_256x256:{id}, ...}" },
       url: { type: "string", description: "Ссылка (создаст URL через /urls.json)" },
       url_id: { type: "number", description: "ID готовой ссылки (из /urls.json)" },
-      content_image_id: { type: "number", description: "ID изображения 1080x607 (из /content.json)" },
-      content_icon_id: { type: "number", description: "ID иконки 256x256 (из /content.json)" },
+      content_image_id: { type: "number", description: "ID изображения 1080x607 — шорткат для content" },
+      content_icon_id: { type: "number", description: "ID иконки 256x256 — шорткат для content" },
+      call_to_action: { type: "string", description: "CTA: learnMore, buy, signUp, book и др. — шорткат для textblocks.cta_sites_full" },
+      settings: { type: "object", description: "Доп. настройки баннера (settings)" },
       status: { type: "string", enum: ["active", "blocked", "deleted"], description: "Статус" },
     }, required: ["action"]},
   },
@@ -508,6 +517,133 @@ const TOOLS = [
       period: { type: "string", enum: ["yesterday", "week", "month", "quarter"], description: "Период" },
       level: { type: "string", enum: ["campaign", "group", "banner"], description: "Уровень детализации" },
     }},
+  },
+  // --- VK Ads: справочники и вспомогательные ---
+  {
+    name: "vk_urls",
+    description: "VK Ads: список и создание ссылок (urls). list — все ссылки, create — новая.",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list", "create"], description: "Действие" },
+      url: { type: "string", description: "URL для создания (action=create)" },
+    }, required: ["action"]},
+  },
+  {
+    name: "vk_content",
+    description: "VK Ads: список и загрузка креативов (content). list — все креативы, upload — загрузка по URL изображения. Возвращает id для использования в баннерах.",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list", "upload"], description: "Действие" },
+      image_url: { type: "string", description: "URL изображения для загрузки (action=upload)" },
+      content_type: { type: "string", enum: ["image", "video"], description: "Тип контента (по умолчанию image)" },
+    }, required: ["action"]},
+  },
+  {
+    name: "vk_packages",
+    description: "VK Ads: справочник форматов объявлений (packages). 3232=мультиформат и т.д.",
+    inputSchema: { type: "object", properties: {}},
+  },
+  {
+    name: "vk_pads",
+    description: "VK Ads: справочник площадок размещения (pads).",
+    inputSchema: { type: "object", properties: {}},
+  },
+  {
+    name: "vk_regions",
+    description: "VK Ads: справочник регионов для таргетинга.",
+    inputSchema: { type: "object", properties: {
+      country: { type: "string", description: "Код страны (RU, BY и т.д.)" },
+    }},
+  },
+  {
+    name: "vk_interests",
+    description: "VK Ads: справочник интересов для таргетинга.",
+    inputSchema: { type: "object", properties: {}},
+  },
+  {
+    name: "vk_demographics",
+    description: "VK Ads: справочник демографических параметров для таргетинга.",
+    inputSchema: { type: "object", properties: {}},
+  },
+  {
+    name: "vk_pixels",
+    description: "VK Ads: список пикселей (счётчиков) аккаунта.",
+    inputSchema: { type: "object", properties: {}},
+  },
+  {
+    name: "vk_pixel_events",
+    description: "VK Ads: список событий конверсий пикселя. Возвращает conversion_event_id для использования в группах объявлений.",
+    inputSchema: { type: "object", properties: {
+      pixel_id: { type: "number", description: "ID пикселя (если не указан — все события)" },
+    }},
+  },
+  {
+    name: "vk_audiences",
+    description: "VK Ads: CRUD аудиторий ретаргетинга.",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list", "create", "delete"], description: "Действие" },
+      id: { type: "number", description: "ID аудитории (для delete)" },
+      name: { type: "string", description: "Название (для create)" },
+      source_id: { type: "number", description: "ID источника аудитории (для create)" },
+    }, required: ["action"]},
+  },
+  {
+    name: "vk_audience_sources",
+    description: "VK Ads: список и создание источников аудиторий (файл, пиксель, похожая).",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list", "create"], description: "Действие" },
+      name: { type: "string", description: "Название (для create)" },
+      type: { type: "string", description: "Тип источника (для create)" },
+    }, required: ["action"]},
+  },
+  {
+    name: "vk_lookalike",
+    description: "VK Ads: создание похожей аудитории (lookalike).",
+    inputSchema: { type: "object", properties: {
+      source_audience_id: { type: "number", description: "ID исходной аудитории" },
+      name: { type: "string", description: "Название" },
+    }, required: ["source_audience_id"]},
+  },
+  {
+    name: "vk_remarketing_rules",
+    description: "VK Ads: правила ремаркетинга — список и создание.",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list", "create"], description: "Действие" },
+      pixel_id: { type: "number", description: "ID пикселя (для create)" },
+      name: { type: "string", description: "Название правила (для create)" },
+      event_type: { type: "string", description: "Тип события (для create)" },
+      url_pattern: { type: "string", description: "Шаблон URL (для create)" },
+    }, required: ["action"]},
+  },
+  {
+    name: "vk_banner_preview",
+    description: "VK Ads: превью объявления (баннера) по ID.",
+    inputSchema: { type: "object", properties: {
+      banner_id: { type: "number", description: "ID баннера" },
+    }, required: ["banner_id"]},
+  },
+  {
+    name: "vk_stats_summary",
+    description: "VK Ads: сводная статистика (не по дням) по кампаниям, группам или баннерам.",
+    inputSchema: { type: "object", properties: {
+      period: { type: "string", enum: ["yesterday", "week", "month", "quarter"], description: "Период" },
+      level: { type: "string", enum: ["campaign", "group", "banner"], description: "Уровень" },
+    }},
+  },
+  {
+    name: "vk_mass_action",
+    description: "VK Ads: массовые операции с кампаниями (остановить, запустить, удалить несколько сразу).",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["activate", "block", "delete"], description: "Действие" },
+      ids: { type: "array", items: { type: "number" }, description: "Массив ID кампаний" },
+    }, required: ["action", "ids"]},
+  },
+  {
+    name: "vk_lead_forms",
+    description: "VK Ads: список и создание лид-форм.",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list", "create"], description: "Действие" },
+      name: { type: "string", description: "Название формы (для create)" },
+      fields: { type: "array", items: { type: "string" }, description: "Поля формы: name, phone, email и т.д. (для create)" },
+    }, required: ["action"]},
   },
   // --- Яндекс Директ (полное управление) ---
   {
@@ -566,6 +702,209 @@ const TOOLS = [
       bid: { type: "number", description: "Ставка в рублях (для add/update)" },
     }, required: ["action"]},
   },
+  // --- Яндекс Директ: дополнительные сервисы ---
+  {
+    name: "direct_sitelinks",
+    description: "Яндекс Директ: быстрые ссылки (sitelinks). list — по ID набора, create — создать набор, delete — удалить.",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list", "create", "delete"], description: "Действие" },
+      ids: { type: "array", items: { type: "number" }, description: "ID наборов (для list/delete)" },
+      sitelinks: { type: "array", items: { type: "object" }, description: "Массив {Title, Href, Description} (для create)" },
+    }, required: ["action"]},
+  },
+  {
+    name: "direct_vcards",
+    description: "Яндекс Директ: визитки (vcards) — адрес, телефон, режим работы.",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list", "create", "delete"], description: "Действие" },
+      ids: { type: "array", items: { type: "number" }, description: "ID визиток (для list/delete)" },
+      campaign_id: { type: "number", description: "ID кампании (для list)" },
+      vcard: { type: "object", description: "Данные визитки: {CompanyName, Phone:{CountryCode,CityCode,PhoneNumber}, WorkTime, Country, City, Street}" },
+    }, required: ["action"]},
+  },
+  {
+    name: "direct_adimages",
+    description: "Яндекс Директ: изображения для объявлений. list — список, upload_url — загрузка по URL.",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list", "upload_url", "delete"], description: "Действие" },
+      image_url: { type: "string", description: "URL изображения для загрузки (action=upload_url)" },
+      name: { type: "string", description: "Имя изображения (для upload_url)" },
+      hashes: { type: "array", items: { type: "string" }, description: "Хеши изображений (для delete)" },
+    }, required: ["action"]},
+  },
+  {
+    name: "direct_adextensions",
+    description: "Яндекс Директ: расширения объявлений — уточнения (callouts).",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list", "create", "delete"], description: "Действие" },
+      ids: { type: "array", items: { type: "number" }, description: "ID расширений (для list/delete)" },
+      callout: { type: "string", description: "Текст уточнения (для create)" },
+      callouts: { type: "array", items: { type: "string" }, description: "Массив уточнений (для пакетного create)" },
+    }, required: ["action"]},
+  },
+  {
+    name: "direct_audience_targets",
+    description: "Яндекс Директ: аудиторные условия (ретаргетинг, look-alike, интересы).",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list", "create", "delete"], description: "Действие" },
+      ad_group_id: { type: "number", description: "ID группы (для list/create)" },
+      campaign_id: { type: "number", description: "ID кампании (для list)" },
+      retargeting_list_id: { type: "number", description: "ID списка ретаргетинга (для create)" },
+      interest_id: { type: "number", description: "ID интереса (для create)" },
+      context_bid: { type: "number", description: "Ставка в рублях (для create)" },
+      ids: { type: "array", items: { type: "number" }, description: "ID условий (для delete)" },
+    }, required: ["action"]},
+  },
+  {
+    name: "direct_retargeting_lists",
+    description: "Яндекс Директ: списки ретаргетинга — управление аудиториями Метрики.",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list", "create", "update", "delete"], description: "Действие" },
+      ids: { type: "array", items: { type: "number" }, description: "ID списков (для list/delete)" },
+      name: { type: "string", description: "Название (для create/update)" },
+      conditions: { type: "array", items: { type: "object" }, description: "Условия [{Type, Goals:[{GoalId, Value}]}] (для create/update)" },
+      id: { type: "number", description: "ID списка (для update)" },
+    }, required: ["action"]},
+  },
+  {
+    name: "direct_bid_modifiers",
+    description: "Яндекс Директ: корректировки ставок (пол, возраст, устройство, регион, погода).",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list", "create", "update", "delete"], description: "Действие" },
+      campaign_id: { type: "number", description: "ID кампании (для list/create)" },
+      ad_group_id: { type: "number", description: "ID группы (для list/create)" },
+      ids: { type: "array", items: { type: "number" }, description: "ID корректировок (для list/delete)" },
+      modifier: { type: "object", description: "Корректировка: {CampaignId, MobileAdjustment:{BidModifier}, DemographicsAdjustment:{...}}" },
+    }, required: ["action"]},
+  },
+  {
+    name: "direct_bids",
+    description: "Яндекс Директ: управление ставками на ключевые слова.",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["get", "set", "set_auto"], description: "Действие" },
+      campaign_id: { type: "number", description: "ID кампании (для get)" },
+      ad_group_id: { type: "number", description: "ID группы (для get)" },
+      keyword_ids: { type: "array", items: { type: "number" }, description: "ID ключевых слов" },
+      bid: { type: "number", description: "Ставка в рублях (для set)" },
+      context_bid: { type: "number", description: "Ставка в сетях (для set)" },
+    }, required: ["action"]},
+  },
+  {
+    name: "direct_changes",
+    description: "Яндекс Директ: проверка изменений — что менялось с указанной даты.",
+    inputSchema: { type: "object", properties: {
+      since: { type: "string", description: "Дата-время: YYYY-MM-DDTHH:MM:SSZ" },
+      campaign_ids: { type: "array", items: { type: "number" }, description: "ID кампаний" },
+      field_names: { type: "array", items: { type: "string" }, description: "Поля: CampaignIds, AdGroupIds, AdIds" },
+    }, required: ["since"]},
+  },
+  {
+    name: "direct_dictionaries",
+    description: "Яндекс Директ: справочники — регионы, валюты, интересы, площадки.",
+    inputSchema: { type: "object", properties: {
+      names: { type: "array", items: { type: "string" }, description: "Regions, Currencies, TimeZones, GeoRegions, Constants, InterestCategories, Interests, SupplySidePlatforms" },
+    }, required: ["names"]},
+  },
+  {
+    name: "direct_dynamic_targets",
+    description: "Яндекс Директ: условия нацеливания для динамических объявлений.",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list", "create", "update", "delete"], description: "Действие" },
+      campaign_id: { type: "number", description: "ID кампании (для list)" },
+      ad_group_id: { type: "number", description: "ID группы (для list/create)" },
+      id: { type: "number", description: "ID условия (для update/delete)" },
+      conditions: { type: "array", items: { type: "object" }, description: "[{Operand, Operator, Arguments}]" },
+      bid: { type: "number", description: "Ставка в рублях" },
+    }, required: ["action"]},
+  },
+  {
+    name: "direct_negative_keywords",
+    description: "Яндекс Директ: общие наборы минус-фраз (shared sets).",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list", "create", "update", "delete"], description: "Действие" },
+      ids: { type: "array", items: { type: "number" }, description: "ID наборов (для list/delete)" },
+      id: { type: "number", description: "ID набора (для update)" },
+      name: { type: "string", description: "Название" },
+      negative_keywords: { type: "array", items: { type: "string" }, description: "Минус-фразы" },
+    }, required: ["action"]},
+  },
+  {
+    name: "direct_turbopages",
+    description: "Яндекс Директ: турбо-страницы.",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list"], description: "Действие" },
+      ids: { type: "array", items: { type: "number" }, description: "ID турбо-страниц" },
+    }, required: ["action"]},
+  },
+  {
+    name: "direct_leads",
+    description: "Яндекс Директ: лиды из турбо-форм.",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list"], description: "Действие" },
+      since: { type: "string", description: "Дата с: YYYY-MM-DD" },
+      until: { type: "string", description: "Дата по: YYYY-MM-DD" },
+      turbo_page_ids: { type: "array", items: { type: "number" }, description: "ID турбо-страниц" },
+    }, required: ["action"]},
+  },
+  {
+    name: "direct_reports",
+    description: "Яндекс Директ: кастомные отчёты (Reports API).",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["create"], description: "Действие" },
+      report_type: { type: "string", description: "CAMPAIGN_PERFORMANCE_REPORT, AD_PERFORMANCE_REPORT, CUSTOM_REPORT и др." },
+      date_from: { type: "string", description: "YYYY-MM-DD" },
+      date_to: { type: "string", description: "YYYY-MM-DD" },
+      field_names: { type: "array", items: { type: "string" }, description: "Поля отчёта" },
+      filter: { type: "array", items: { type: "object" }, description: "[{Field, Operator, Values}]" },
+      report_name: { type: "string", description: "Уникальное имя отчёта" },
+    }, required: ["action"]},
+  },
+  {
+    name: "direct_agency_clients",
+    description: "Яндекс Директ: список клиентов агентства.",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list"], description: "Действие" },
+    }, required: ["action"]},
+  },
+  {
+    name: "direct_creatives",
+    description: "Яндекс Директ: креативы — видеодополнения, HTML5, смарт-центры.",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list"], description: "Действие" },
+      ids: { type: "array", items: { type: "number" }, description: "ID креативов" },
+      types: { type: "array", items: { type: "string" }, description: "VIDEO_EXTENSION, CPC_VIDEO_CREATIVE, SMART_CREATIVE" },
+    }, required: ["action"]},
+  },
+  {
+    name: "direct_feeds",
+    description: "Яндекс Директ: фиды товаров/услуг.",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list", "create", "update", "delete"], description: "Действие" },
+      ids: { type: "array", items: { type: "number" }, description: "ID фидов (для list/delete)" },
+      id: { type: "number", description: "ID фида (для update)" },
+      name: { type: "string", description: "Название" },
+      url: { type: "string", description: "URL фида (для create)" },
+    }, required: ["action"]},
+  },
+  {
+    name: "direct_businesses",
+    description: "Яндекс Директ: организации из Яндекс.Бизнеса.",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list"], description: "Действие" },
+      ids: { type: "array", items: { type: "number" }, description: "ID организаций" },
+    }, required: ["action"]},
+  },
+  {
+    name: "direct_smart_targets",
+    description: "Яндекс Директ: условия нацеливания для смарт-баннеров.",
+    inputSchema: { type: "object", properties: {
+      action: { type: "string", enum: ["list", "create", "update", "delete"], description: "Действие" },
+      campaign_id: { type: "number", description: "ID кампании (для list)" },
+      ad_group_id: { type: "number", description: "ID группы (для list/create)" },
+      id: { type: "number", description: "ID условия (для update/delete)" },
+      conditions: { type: "array", items: { type: "object" }, description: "Условия фильтрации фида" },
+    }, required: ["action"]},
+  },
   // --- Microsoft Clarity ---
   {
     name: "clarity",
@@ -616,6 +955,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
+  const callTime = new Date().toISOString().replace(/.*T/, "").replace(/\.\d+Z/, "");
+  // Логируем входящий вызов с параметрами
+  const argsSummary = Object.entries(args || {}).map(([k,v]) => `${k}=${typeof v === "string" && v.length > 60 ? v.slice(0,60) + "…" : v}`).join(", ");
+  process.stderr.write(`\n📥 ${callTime} ← ${name}(${argsSummary})\n`);
 
   try {
     if (name === "ssh") {
@@ -800,7 +1143,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     if (name === "vk_manage_ad_group") {
       if (args.action === "list") {
-        const params = { limit: "100", fields: "id,name,ad_plan_id,status,package_id,targetings,budget_limit,budget_limit_day,autobidding_mode" };
+        const params = { limit: "100", fields: "id,name,ad_plan_id,status,package_id,targetings,budget_limit,budget_limit_day,autobidding_mode,conversion_event_id" };
         if (args.campaign_id) params._ad_plan_id = args.campaign_id;
         return await vkResult(await vkApi("ad_groups.json", params), name, "list");
       }
@@ -811,6 +1154,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args.budget_limit) body.budget_limit = args.budget_limit;
         if (args.budget_limit_day) body.budget_limit_day = args.budget_limit_day;
         if (args.enable_utm !== undefined) body.enable_utm = args.enable_utm;
+        if (args.conversion_event_id) body.conversion_event_id = args.conversion_event_id;
         return await vkResult(await vkApiPost("ad_groups.json", body), name, "create");
       }
       if (args.action === "update") {
@@ -819,6 +1163,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args.targetings) body.targetings = args.targetings;
         if (args.budget_limit) body.budget_limit = args.budget_limit;
         if (args.budget_limit_day) body.budget_limit_day = args.budget_limit_day;
+        if (args.conversion_event_id) body.conversion_event_id = args.conversion_event_id;
         if (args.status) body.status = args.status;
         return await vkResult(await vkApiPatch(`ad_groups/${args.id}.json`, body), name, "update");
       }
@@ -847,22 +1192,34 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
         const body = {};
         if (urlId) body.urls = { primary: { id: urlId } };
-        const tb = {};
-        if (args.title) tb.title_40_vkads = { text: args.title };
-        if (args.text) tb.text_90 = { text: args.text };
+
+        // Textblocks: произвольные ИЛИ из шорткатов title/text/call_to_action
+        const tb = args.textblocks ? { ...args.textblocks } : {};
+        if (args.title && !tb.title_40_vkads) tb.title_40_vkads = { text: args.title };
+        if (args.text && !tb.text_90) tb.text_90 = { text: args.text };
+        if (args.call_to_action && !tb.cta_sites_full) tb.cta_sites_full = { text: args.call_to_action };
         if (Object.keys(tb).length) body.textblocks = tb;
-        const content = {};
-        if (args.content_image_id) content.image_1080x607 = { id: args.content_image_id };
-        if (args.content_icon_id) content.icon_256x256 = { id: args.content_icon_id };
-        if (Object.keys(content).length) body.content = content;
+
+        // Content: произвольный ИЛИ из шорткатов
+        const ct = args.content ? { ...args.content } : {};
+        if (args.content_image_id && !ct.image_1080x607) ct.image_1080x607 = { id: args.content_image_id };
+        if (args.content_icon_id && !ct.icon_256x256) ct.icon_256x256 = { id: args.content_icon_id };
+        if (Object.keys(ct).length) body.content = ct;
+
+        // Settings
+        if (args.settings) body.settings = args.settings;
+
         return await vkResult(await vkApiPost(`ad_groups/${args.ad_group_id}/banners.json`, body), name, "create");
       }
       if (args.action === "update") {
         const body = {};
-        const tb = {};
-        if (args.title) tb.title_40_vkads = { text: args.title };
-        if (args.text) tb.text_90 = { text: args.text };
+        const tb = args.textblocks ? { ...args.textblocks } : {};
+        if (args.title && !tb.title_40_vkads) tb.title_40_vkads = { text: args.title };
+        if (args.text && !tb.text_90) tb.text_90 = { text: args.text };
+        if (args.call_to_action && !tb.cta_sites_full) tb.cta_sites_full = { text: args.call_to_action };
         if (Object.keys(tb).length) body.textblocks = tb;
+        if (args.content) body.content = args.content;
+        if (args.settings) body.settings = args.settings;
         if (args.status) body.status = args.status;
         const gid = args.ad_group_id || "_";
         return await vkResult(await vkApiPatch(`ad_groups/${gid}/banners/${args.id}.json`, body), name, "update");
@@ -879,6 +1236,146 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const levelMap = { campaign: "ad_plans", group: "ad_groups", banner: "banners" };
       const endpoint = levelMap[args.level] || "ad_plans";
       return await vkResult(await vkApi(`statistics/${endpoint}/day.json`, { date_from: d.from, date_to: d.to, metrics: "all" }), name, "stats");
+    }
+
+    // --- VK Ads: справочники и вспомогательные ---
+    if (name === "vk_urls") {
+      if (args.action === "list") {
+        return await vkResult(await vkApi("urls.json", { limit: "100" }), name, "list");
+      }
+      if (args.action === "create") {
+        return await vkResult(await vkApiPost("urls.json", { url: args.url }), name, "create");
+      }
+      return ok("Unknown action");
+    }
+
+    if (name === "vk_content") {
+      if (args.action === "list") {
+        return await vkResult(await vkApi("content.json", { limit: "100" }), name, "list");
+      }
+      if (args.action === "upload") {
+        const body = { url: args.image_url };
+        if (args.content_type) body.content_type = args.content_type;
+        return await vkResult(await vkApiPost("content.json", body), name, "upload");
+      }
+      return ok("Unknown action");
+    }
+
+    if (name === "vk_packages") {
+      return await vkResult(await vkApi("packages.json", { limit: "200" }), name, "list");
+    }
+
+    if (name === "vk_pads") {
+      return await vkResult(await vkApi("pads.json", { limit: "200" }), name, "list");
+    }
+
+    if (name === "vk_regions") {
+      const params = { limit: "500" };
+      if (args.country) params.country = args.country;
+      return await vkResult(await vkApi("regions.json", params), name, "list");
+    }
+
+    if (name === "vk_interests") {
+      return await vkResult(await vkApi("interests.json", { limit: "500" }), name, "list");
+    }
+
+    if (name === "vk_demographics") {
+      return await vkResult(await vkApi("demographics.json", { limit: "200" }), name, "list");
+    }
+
+    if (name === "vk_pixels") {
+      return await vkResult(await vkApi("pixels.json", { limit: "50" }), name, "list");
+    }
+
+    if (name === "vk_pixel_events") {
+      const params = { limit: "200" };
+      if (args.pixel_id) params.pixel_id = args.pixel_id;
+      return await vkResult(await vkApi("pixel_events.json", params), name, "list");
+    }
+
+    if (name === "vk_audiences") {
+      if (args.action === "list") {
+        return await vkResult(await vkApi("audiences.json", { limit: "100" }), name, "list");
+      }
+      if (args.action === "create") {
+        const body = { name: args.name };
+        if (args.source_id) body.source_id = args.source_id;
+        return await vkResult(await vkApiPost("audiences.json", body), name, "create");
+      }
+      if (args.action === "delete") {
+        return await vkResult(await vkApiDelete(`audiences/${args.id}.json`), name, "delete");
+      }
+      return ok("Unknown action");
+    }
+
+    if (name === "vk_audience_sources") {
+      if (args.action === "list") {
+        return await vkResult(await vkApi("audience_sources.json", { limit: "100" }), name, "list");
+      }
+      if (args.action === "create") {
+        const body = { name: args.name };
+        if (args.type) body.type = args.type;
+        return await vkResult(await vkApiPost("audience_sources.json", body), name, "create");
+      }
+      return ok("Unknown action");
+    }
+
+    if (name === "vk_lookalike") {
+      const body = { source_audience_id: args.source_audience_id };
+      if (args.name) body.name = args.name;
+      return await vkResult(await vkApiPost("lookalike.json", body), name, "create");
+    }
+
+    if (name === "vk_remarketing_rules") {
+      if (args.action === "list") {
+        const params = { limit: "100" };
+        if (args.pixel_id) params.pixel_id = args.pixel_id;
+        return await vkResult(await vkApi("remarketing/rules.json", params), name, "list");
+      }
+      if (args.action === "create") {
+        const body = {};
+        if (args.pixel_id) body.pixel_id = args.pixel_id;
+        if (args.name) body.name = args.name;
+        if (args.event_type) body.event_type = args.event_type;
+        if (args.url_pattern) body.url_pattern = args.url_pattern;
+        return await vkResult(await vkApiPost("remarketing/rules.json", body), name, "create");
+      }
+      return ok("Unknown action");
+    }
+
+    if (name === "vk_banner_preview") {
+      return await vkResult(await vkApi(`banner_preview/${args.banner_id}.json`), name, "preview");
+    }
+
+    if (name === "vk_stats_summary") {
+      const d = calcDates(args.period || "week");
+      const levelMap = { campaign: "ad_plans", group: "ad_groups", banner: "banners" };
+      const endpoint = levelMap[args.level] || "ad_plans";
+      return await vkResult(await vkApi(`statistics/${endpoint}/summary.json`, { date_from: d.from, date_to: d.to, metrics: "all" }), name, "stats");
+    }
+
+    if (name === "vk_mass_action") {
+      const statusMap = { activate: "active", block: "blocked", delete: "deleted" };
+      const status = statusMap[args.action];
+      const results = [];
+      for (const id of args.ids) {
+        const res = await vkApiPatch(`ad_plans/${id}.json`, { status });
+        results.push({ id, status: res.status, ok: res.status < 400 });
+      }
+      await log("info", name, `mass ${args.action}: ${results.filter(r => r.ok).length}/${results.length} OK`);
+      return ok(results);
+    }
+
+    if (name === "vk_lead_forms") {
+      if (args.action === "list") {
+        return await vkResult(await vkApi("lead_forms.json", { limit: "100" }), name, "list");
+      }
+      if (args.action === "create") {
+        const body = { name: args.name };
+        if (args.fields) body.fields = args.fields;
+        return await vkResult(await vkApiPost("lead_forms.json", body), name, "create");
+      }
+      return ok("Unknown action");
     }
 
     // --- Яндекс Директ ---
@@ -1011,6 +1508,434 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
       if (args.action === "delete") {
         return await directResult(await directApi("keywords", "delete", { SelectionCriteria: { Ids: [args.id] } }), name, "delete");
+      }
+      return ok("Unknown action");
+    }
+
+    // --- Яндекс Директ: дополнительные сервисы ---
+    if (name === "direct_sitelinks") {
+      if (args.action === "list") {
+        return await directResult(await directApi("sitelinks", "get", {
+          SelectionCriteria: { Ids: args.ids || [] },
+          FieldNames: ["Id", "Sitelinks"],
+        }), name, "list");
+      }
+      if (args.action === "create") {
+        return await directResult(await directApi("sitelinks", "add", {
+          SitelinksSets: [{ Sitelinks: args.sitelinks }],
+        }), name, "create");
+      }
+      if (args.action === "delete") {
+        return await directResult(await directApi("sitelinks", "delete", {
+          SelectionCriteria: { Ids: args.ids },
+        }), name, "delete");
+      }
+      return ok("Unknown action");
+    }
+
+    if (name === "direct_vcards") {
+      if (args.action === "list") {
+        const criteria = {};
+        if (args.ids) criteria.Ids = args.ids;
+        if (args.campaign_id) criteria.CampaignIds = [args.campaign_id];
+        return await directResult(await directApi("vcards", "get", {
+          SelectionCriteria: criteria,
+          FieldNames: ["Id", "CampaignId", "CompanyName", "Phone", "WorkTime", "Country", "City", "Street"],
+        }), name, "list");
+      }
+      if (args.action === "create") {
+        const vcard = { CampaignId: args.campaign_id, ...args.vcard };
+        return await directResult(await directApi("vcards", "add", { VCards: [vcard] }), name, "create");
+      }
+      if (args.action === "delete") {
+        return await directResult(await directApi("vcards", "delete", {
+          SelectionCriteria: { Ids: args.ids },
+        }), name, "delete");
+      }
+      return ok("Unknown action");
+    }
+
+    if (name === "direct_adimages") {
+      if (args.action === "list") {
+        return await directResult(await directApi("adimages", "get", {
+          SelectionCriteria: {},
+          FieldNames: ["AdImageHash", "Name", "OriginalUrl", "Associated"],
+        }), name, "list");
+      }
+      if (args.action === "upload_url") {
+        return await directResult(await directApi("adimages", "add", {
+          AdImages: [{ ImageData: undefined, Name: args.name || "image", Url: args.image_url }],
+        }), name, "upload_url");
+      }
+      if (args.action === "delete") {
+        return await directResult(await directApi("adimages", "delete", {
+          SelectionCriteria: { AdImageHashes: args.hashes },
+        }), name, "delete");
+      }
+      return ok("Unknown action");
+    }
+
+    if (name === "direct_adextensions") {
+      if (args.action === "list") {
+        const criteria = args.ids ? { Ids: args.ids } : {};
+        return await directResult(await directApi("adextensions", "get", {
+          SelectionCriteria: criteria,
+          FieldNames: ["Id", "Type", "Callout", "Status", "StatusClarification"],
+        }), name, "list");
+      }
+      if (args.action === "create") {
+        const texts = args.callouts || [args.callout];
+        const extensions = texts.map(t => ({ Callout: { CalloutText: t } }));
+        return await directResult(await directApi("adextensions", "add", {
+          AdExtensions: extensions,
+        }), name, "create");
+      }
+      if (args.action === "delete") {
+        return await directResult(await directApi("adextensions", "delete", {
+          SelectionCriteria: { Ids: args.ids },
+        }), name, "delete");
+      }
+      return ok("Unknown action");
+    }
+
+    if (name === "direct_audience_targets") {
+      if (args.action === "list") {
+        const criteria = {};
+        if (args.ad_group_id) criteria.AdGroupIds = [args.ad_group_id];
+        if (args.campaign_id) criteria.CampaignIds = [args.campaign_id];
+        return await directResult(await directApi("audiencetargets", "get", {
+          SelectionCriteria: criteria,
+          FieldNames: ["Id", "AdGroupId", "CampaignId", "RetargetingListId", "InterestId", "ContextBid", "State"],
+        }), name, "list");
+      }
+      if (args.action === "create") {
+        const target = { AdGroupId: args.ad_group_id };
+        if (args.retargeting_list_id) target.RetargetingListId = args.retargeting_list_id;
+        if (args.interest_id) target.InterestId = args.interest_id;
+        if (args.context_bid) target.ContextBid = args.context_bid * 1_000_000;
+        return await directResult(await directApi("audiencetargets", "add", {
+          AudienceTargets: [target],
+        }), name, "create");
+      }
+      if (args.action === "delete") {
+        return await directResult(await directApi("audiencetargets", "delete", {
+          SelectionCriteria: { Ids: args.ids },
+        }), name, "delete");
+      }
+      return ok("Unknown action");
+    }
+
+    if (name === "direct_retargeting_lists") {
+      if (args.action === "list") {
+        const criteria = args.ids ? { Ids: args.ids } : {};
+        return await directResult(await directApi("retargetinglists", "get", {
+          SelectionCriteria: criteria,
+          FieldNames: ["Id", "Name", "Type", "IsAvailable", "Conditions"],
+        }), name, "list");
+      }
+      if (args.action === "create") {
+        return await directResult(await directApi("retargetinglists", "add", {
+          RetargetingLists: [{ Name: args.name, Conditions: args.conditions }],
+        }), name, "create");
+      }
+      if (args.action === "update") {
+        const list = { Id: args.id };
+        if (args.name) list.Name = args.name;
+        if (args.conditions) list.Conditions = args.conditions;
+        return await directResult(await directApi("retargetinglists", "update", {
+          RetargetingLists: [list],
+        }), name, "update");
+      }
+      if (args.action === "delete") {
+        return await directResult(await directApi("retargetinglists", "delete", {
+          SelectionCriteria: { Ids: args.ids },
+        }), name, "delete");
+      }
+      return ok("Unknown action");
+    }
+
+    if (name === "direct_bid_modifiers") {
+      if (args.action === "list") {
+        const criteria = {};
+        if (args.campaign_id) criteria.CampaignIds = [args.campaign_id];
+        if (args.ad_group_id) criteria.AdGroupIds = [args.ad_group_id];
+        if (args.ids) criteria.Ids = args.ids;
+        return await directResult(await directApi("bidmodifiers", "get", {
+          SelectionCriteria: criteria,
+          FieldNames: ["Id", "CampaignId", "AdGroupId", "Type", "Level"],
+          MobileAdjustmentFieldNames: ["BidModifier"],
+          DemographicsAdjustmentFieldNames: ["Gender", "Age", "BidModifier"],
+          RegionalAdjustmentFieldNames: ["RegionId", "BidModifier"],
+        }), name, "list");
+      }
+      if (args.action === "create") {
+        return await directResult(await directApi("bidmodifiers", "add", {
+          BidModifiers: [args.modifier],
+        }), name, "create");
+      }
+      if (args.action === "update") {
+        return await directResult(await directApi("bidmodifiers", "set", {
+          BidModifiers: [args.modifier],
+        }), name, "update");
+      }
+      if (args.action === "delete") {
+        return await directResult(await directApi("bidmodifiers", "delete", {
+          SelectionCriteria: { Ids: args.ids },
+        }), name, "delete");
+      }
+      return ok("Unknown action");
+    }
+
+    if (name === "direct_bids") {
+      if (args.action === "get") {
+        const criteria = {};
+        if (args.keyword_ids) criteria.KeywordIds = args.keyword_ids;
+        if (args.campaign_id) criteria.CampaignIds = [args.campaign_id];
+        if (args.ad_group_id) criteria.AdGroupIds = [args.ad_group_id];
+        return await directResult(await directApi("keywordbids", "get", {
+          SelectionCriteria: criteria,
+          FieldNames: ["KeywordId", "AdGroupId", "CampaignId", "Bid", "ContextBid"],
+        }), name, "get");
+      }
+      if (args.action === "set") {
+        const bids = args.keyword_ids.map(id => {
+          const b = { KeywordId: id };
+          if (args.bid) b.SearchBid = args.bid * 1_000_000;
+          if (args.context_bid) b.NetworkBid = args.context_bid * 1_000_000;
+          return b;
+        });
+        return await directResult(await directApi("keywordbids", "set", {
+          KeywordBids: bids,
+        }), name, "set");
+      }
+      if (args.action === "set_auto") {
+        const bids = args.keyword_ids.map(id => ({ KeywordId: id }));
+        return await directResult(await directApi("keywordbids", "setAuto", {
+          KeywordBids: bids,
+        }), name, "set_auto");
+      }
+      return ok("Unknown action");
+    }
+
+    if (name === "direct_changes") {
+      const params = {
+        Timestamp: args.since,
+        FieldNames: args.field_names || ["CampaignIds", "AdGroupIds", "AdIds"],
+      };
+      if (args.campaign_ids) params.CampaignIds = args.campaign_ids;
+      return await directResult(await directApi("changes", "check", params), name, "check");
+    }
+
+    if (name === "direct_dictionaries") {
+      return await directResult(await directApi("dictionaries", "get", {
+        DictionaryNames: args.names,
+      }), name, "get");
+    }
+
+    if (name === "direct_dynamic_targets") {
+      if (args.action === "list") {
+        const criteria = {};
+        if (args.campaign_id) criteria.CampaignIds = [args.campaign_id];
+        if (args.ad_group_id) criteria.AdGroupIds = [args.ad_group_id];
+        return await directResult(await directApi("dynamictextadtargets", "get", {
+          SelectionCriteria: criteria,
+          FieldNames: ["Id", "AdGroupId", "Bid", "ConditionType", "Conditions"],
+        }), name, "list");
+      }
+      if (args.action === "create") {
+        const target = { AdGroupId: args.ad_group_id, Conditions: args.conditions };
+        if (args.bid) target.Bid = args.bid * 1_000_000;
+        return await directResult(await directApi("dynamictextadtargets", "add", {
+          Webpages: [target],
+        }), name, "create");
+      }
+      if (args.action === "update") {
+        const target = { Id: args.id };
+        if (args.conditions) target.Conditions = args.conditions;
+        if (args.bid) target.Bid = args.bid * 1_000_000;
+        return await directResult(await directApi("dynamictextadtargets", "update", {
+          Webpages: [target],
+        }), name, "update");
+      }
+      if (args.action === "delete") {
+        return await directResult(await directApi("dynamictextadtargets", "delete", {
+          SelectionCriteria: { Ids: [args.id] },
+        }), name, "delete");
+      }
+      return ok("Unknown action");
+    }
+
+    if (name === "direct_negative_keywords") {
+      if (args.action === "list") {
+        const criteria = args.ids ? { Ids: args.ids } : {};
+        return await directResult(await directApi("negativekeywordsharedsets", "get", {
+          SelectionCriteria: criteria,
+          FieldNames: ["Id", "Name", "NegativeKeywords"],
+        }), name, "list");
+      }
+      if (args.action === "create") {
+        return await directResult(await directApi("negativekeywordsharedsets", "add", {
+          NegativeKeywordSharedSets: [{ Name: args.name, NegativeKeywords: args.negative_keywords }],
+        }), name, "create");
+      }
+      if (args.action === "update") {
+        const set = { Id: args.id };
+        if (args.name) set.Name = args.name;
+        if (args.negative_keywords) set.NegativeKeywords = args.negative_keywords;
+        return await directResult(await directApi("negativekeywordsharedsets", "update", {
+          NegativeKeywordSharedSets: [set],
+        }), name, "update");
+      }
+      if (args.action === "delete") {
+        return await directResult(await directApi("negativekeywordsharedsets", "delete", {
+          SelectionCriteria: { Ids: args.ids },
+        }), name, "delete");
+      }
+      return ok("Unknown action");
+    }
+
+    if (name === "direct_turbopages") {
+      return await directResult(await directApi("turbopages", "get", {
+        SelectionCriteria: args.ids ? { Ids: args.ids } : {},
+        FieldNames: ["Id", "Href", "Name", "TurboPageModeration"],
+      }), name, "list");
+    }
+
+    if (name === "direct_leads") {
+      const criteria = {};
+      if (args.turbo_page_ids) criteria.TurboPageIds = args.turbo_page_ids;
+      if (args.since) criteria.DateTimeFrom = args.since + "T00:00:00Z";
+      if (args.until) criteria.DateTimeTo = args.until + "T23:59:59Z";
+      return await directResult(await directApi("leads", "get", {
+        SelectionCriteria: criteria,
+        FieldNames: ["Id", "TurboPageId", "TurboPageName", "SubmitDateTime", "LeadData"],
+      }), name, "list");
+    }
+
+    if (name === "direct_reports") {
+      const token = getToken("YANDEX_ACCESS_TOKEN") || getToken("YANDEX_DIRECT_TOKEN");
+      const login = getToken("YANDEX_DIRECT_CLIENT_LOGIN") || getToken("YANDEX_DIRECT_LOGIN") || "kv145";
+      const fields = args.field_names || ["CampaignName", "Impressions", "Clicks", "Cost"];
+      const reportName = args.report_name || `report_${Date.now()}`;
+      const body = JSON.stringify({
+        params: {
+          SelectionCriteria: {
+            DateFrom: args.date_from,
+            DateTo: args.date_to,
+            ...(args.filter ? { Filter: args.filter } : {}),
+          },
+          FieldNames: fields,
+          ReportName: reportName,
+          ReportType: args.report_type || "CAMPAIGN_PERFORMANCE_REPORT",
+          DateRangeType: "CUSTOM_DATE",
+          Format: "TSV",
+          IncludeVAT: "YES",
+        },
+      });
+      const res = await apiRequest("https://api.direct.yandex.com/json/v5/reports", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Client-Login": login,
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(body),
+          processingMode: "auto",
+          returnMoneyInMicros: "false",
+        },
+        body,
+      });
+      if (res.status === 200) {
+        await log("info", name, `Report OK: ${reportName}`);
+        return ok(typeof res.body === "string" ? res.body : JSON.stringify(res.body));
+      }
+      if (res.status === 201 || res.status === 202) {
+        await log("info", name, `Report queued (${res.status}): ${reportName}`);
+        return ok(`Отчёт поставлен в очередь (HTTP ${res.status}). Повторите запрос через 10–30 секунд.`);
+      }
+      await log("error", name, `Report error: HTTP ${res.status}`, { body: res.body });
+      return { content: [{ type: "text", text: `❌ Отчёт: ошибка HTTP ${res.status}: ${JSON.stringify(res.body)}` }], isError: true };
+    }
+
+    if (name === "direct_agency_clients") {
+      return await directResult(await directApi("agencyclients", "get", {
+        SelectionCriteria: {},
+        FieldNames: ["Login", "ClientId", "Grants", "Representatives"],
+      }), name, "list");
+    }
+
+    if (name === "direct_creatives") {
+      const criteria = {};
+      if (args.ids) criteria.Ids = args.ids;
+      if (args.types) criteria.Types = args.types;
+      return await directResult(await directApi("creatives", "get", {
+        SelectionCriteria: criteria,
+        FieldNames: ["Id", "Type", "Name", "PreviewUrl", "ThumbnailUrl"],
+      }), name, "list");
+    }
+
+    if (name === "direct_feeds") {
+      if (args.action === "list") {
+        const criteria = args.ids ? { Ids: args.ids } : {};
+        return await directResult(await directApi("feeds", "get", {
+          SelectionCriteria: criteria,
+          FieldNames: ["Id", "Name", "Status", "SourceType", "UrlFeed", "NumberOfItems"],
+        }), name, "list");
+      }
+      if (args.action === "create") {
+        return await directResult(await directApi("feeds", "add", {
+          Feeds: [{ Name: args.name, UrlFeed: { Url: args.url } }],
+        }), name, "create");
+      }
+      if (args.action === "update") {
+        const feed = { Id: args.id };
+        if (args.name) feed.Name = args.name;
+        if (args.url) feed.UrlFeed = { Url: args.url };
+        return await directResult(await directApi("feeds", "update", { Feeds: [feed] }), name, "update");
+      }
+      if (args.action === "delete") {
+        return await directResult(await directApi("feeds", "delete", {
+          SelectionCriteria: { Ids: args.ids },
+        }), name, "delete");
+      }
+      return ok("Unknown action");
+    }
+
+    if (name === "direct_businesses") {
+      const criteria = args.ids ? { Ids: args.ids } : {};
+      return await directResult(await directApi("businesses", "get", {
+        SelectionCriteria: criteria,
+        FieldNames: ["Id", "Name", "Address", "Phone", "Urls"],
+      }), name, "list");
+    }
+
+    if (name === "direct_smart_targets") {
+      if (args.action === "list") {
+        const criteria = {};
+        if (args.campaign_id) criteria.CampaignIds = [args.campaign_id];
+        if (args.ad_group_id) criteria.AdGroupIds = [args.ad_group_id];
+        return await directResult(await directApi("smartadtargets", "get", {
+          SelectionCriteria: criteria,
+          FieldNames: ["Id", "AdGroupId", "Audience", "Conditions"],
+        }), name, "list");
+      }
+      if (args.action === "create") {
+        const target = { AdGroupId: args.ad_group_id };
+        if (args.conditions) target.Conditions = args.conditions;
+        return await directResult(await directApi("smartadtargets", "add", {
+          SmartAdTargets: [target],
+        }), name, "create");
+      }
+      if (args.action === "update") {
+        const target = { Id: args.id };
+        if (args.conditions) target.Conditions = args.conditions;
+        return await directResult(await directApi("smartadtargets", "update", {
+          SmartAdTargets: [target],
+        }), name, "update");
+      }
+      if (args.action === "delete") {
+        return await directResult(await directApi("smartadtargets", "delete", {
+          SelectionCriteria: { Ids: [args.id] },
+        }), name, "delete");
       }
       return ok("Unknown action");
     }
@@ -1194,10 +2119,37 @@ function run(cmd, args, timeout = 30_000) {
   });
 }
 
+// --- Crash protection ---
+process.on("uncaughtException", (err) => {
+  const msg = `💥 uncaughtException: ${err.message}\n${err.stack || ""}`;
+  process.stderr.write(msg + "\n");
+  log("error", "server", msg).catch(() => {});
+  // НЕ завершаем процесс — продолжаем работу
+});
+
+process.on("unhandledRejection", (reason) => {
+  const msg = `💥 unhandledRejection: ${reason?.message || reason}`;
+  process.stderr.write(msg + "\n");
+  log("error", "server", msg).catch(() => {});
+  // НЕ завершаем процесс
+});
+
+// Keepalive — не даём Node.js завершиться, если stdio idle
+const keepAlive = setInterval(() => {}, 30_000);
+process.on("SIGINT", () => { clearInterval(keepAlive); process.exit(0); });
+process.on("SIGTERM", () => { clearInterval(keepAlive); process.exit(0); });
+
 // --- Start ---
 
 // Создать папку для логов
 await mkdir(resolve(__dirname, "../logs"), { recursive: true }).catch(() => {});
+process.stderr.write(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+process.stderr.write(`  🟢 АйДаКемп MCP Server\n`);
+process.stderr.write(`  Инструментов: ${TOOLS.length}\n`);
+process.stderr.write(`  PID: ${process.pid}\n`);
+process.stderr.write(`  Время: ${new Date().toLocaleString("ru-RU", { timeZone: "Europe/Moscow" })} МСК\n`);
+process.stderr.write(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+process.stderr.write(`Ожидаю вызовы...\n\n`);
 await log("info", "server", `MCP-сервер запущен (${TOOLS.length} инструментов)`);
 
 const transport = new StdioServerTransport();
