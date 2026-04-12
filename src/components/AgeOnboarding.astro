@@ -1,0 +1,125 @@
+---
+const ageGroups = [
+  { label: '7–8', value: '7-8' },
+  { label: '9–10', value: '9-10' },
+  { label: '11–12', value: '11-12' },
+  { label: '13–14', value: '13-14' },
+];
+---
+
+<div
+  id="age-onboarding-overlay"
+  class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/40"
+  data-age-onboarding
+>
+  <div class="relative mx-4 w-full max-w-[380px] rounded-[20px] bg-[#07101e] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+    <button
+      type="button"
+      data-age-close
+      class="absolute right-4 top-4 text-white/40 hover:text-white/70 transition text-[20px] leading-none"
+      aria-label="Закрыть"
+    >&times;</button>
+
+    <h3 class="text-[18px] font-bold text-white">Сколько лет ребёнку?</h3>
+    <p class="mt-1.5 text-[13px] text-white/50">Подберём подходящую смену</p>
+
+    <div class="mt-5 grid grid-cols-2 gap-2.5">
+      {ageGroups.map((g) => (
+        <button
+          type="button"
+          data-age-select={g.value}
+          class="rounded-[14px] border border-white/12 bg-white/8 px-4 py-3.5 text-[16px] font-semibold text-white transition hover:bg-white/16 hover:border-white/24 active:scale-[0.97]"
+        >
+          {g.label} лет
+        </button>
+      ))}
+    </div>
+
+    <button
+      type="button"
+      data-age-skip
+      class="mt-4 w-full text-center text-[13px] text-white/40 transition hover:text-white/60"
+    >
+      или пропустить &rarr;
+    </button>
+  </div>
+</div>
+
+<script>
+  const SHOWN_KEY = 'age_onboarding_shown';
+  const AGE_KEY = 'user_age_group';
+  const SHOW_DELAY_MS = 3000;
+  const SCROLL_THRESHOLD = 0.25;
+
+  function initAgeOnboarding() {
+    if (localStorage.getItem(SHOWN_KEY) === 'true') return;
+
+    const overlay = document.getElementById('age-onboarding-overlay');
+    if (!overlay) return;
+
+    let shown = false;
+
+    function show() {
+      if (shown) return;
+      shown = true;
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+    }
+
+    function close() {
+      localStorage.setItem(SHOWN_KEY, 'true');
+      overlay.classList.add('hidden');
+      overlay.classList.remove('flex');
+    }
+
+    // Trigger 1: after 3 seconds
+    const timer = setTimeout(show, SHOW_DELAY_MS);
+
+    // Trigger 2: scroll 25%
+    function onScroll() {
+      const pct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+      if (pct >= SCROLL_THRESHOLD) {
+        show();
+        window.removeEventListener('scroll', onScroll);
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    // Age selection
+    overlay.querySelectorAll<HTMLButtonElement>('[data-age-select]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const value = btn.dataset.ageSelect;
+        if (value) localStorage.setItem(AGE_KEY, value);
+        close();
+        clearTimeout(timer);
+        document.getElementById('shifts')?.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+
+    // Close / skip
+    overlay.querySelector('[data-age-close]')?.addEventListener('click', () => {
+      close();
+      clearTimeout(timer);
+    });
+    overlay.querySelector('[data-age-skip]')?.addEventListener('click', () => {
+      close();
+      clearTimeout(timer);
+    });
+
+    // Click outside card
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        close();
+        clearTimeout(timer);
+      }
+    });
+
+    // Cleanup on show
+    function cleanup() {
+      window.removeEventListener('scroll', onScroll);
+    }
+  }
+
+  document.addEventListener('astro:page-load', initAgeOnboarding);
+  initAgeOnboarding();
+</script>

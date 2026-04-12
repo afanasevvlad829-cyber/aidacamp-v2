@@ -1,0 +1,81 @@
+---
+import type { Shift } from '../../data/shifts';
+import { renderCard } from '../../data/shifts';
+
+interface Props {
+  shift: Shift;
+  variant: 'mobile' | 'desktop';
+}
+
+const { shift, variant } = Astro.props;
+const { pct, badgeBg, badgeText, btnClass } = renderCard(shift);
+
+const isMobile = variant === 'mobile';
+
+const articleClass = isMobile
+  ? `min-w-[calc(100vw-48px)] max-w-[calc(100vw-48px)] shrink-0 snap-start rounded-[20px] border bg-slate-50 p-4 shadow-[0_6px_18px_rgba(15,23,42,0.04)] ${shift.popular ? 'border-orange-400 ring-2 ring-orange-400' : 'border-slate-200'}`
+  : `rounded-[20px] border border-slate-200 bg-slate-50 p-5 shadow-[0_6px_18px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_32px_rgba(15,23,42,0.08)] ${shift.popular ? 'ring-2 ring-orange-400' : ''}`;
+
+const descClass = isMobile ? 'text-[14px]' : 'text-[15px]';
+const priceClass = isMobile ? 'text-[20px]' : 'text-[22px]';
+const btnHover = isMobile ? '' : 'hover:-translate-y-0.5';
+---
+
+<article class={articleClass}>
+  <div class="flex items-start justify-between">
+    <div>
+      <h3 class="text-[20px] font-semibold leading-[1.15] text-slate-900">{shift.name}</h3>
+      <p class="mt-1 text-sm font-medium text-slate-500">{shift.dates}</p>
+    </div>
+    <div class={`flex items-center gap-1.5 ${isMobile ? 'shrink-0' : ''}`}>
+      {shift.popular && <span class="rounded-full bg-orange-500 text-white text-[11px] font-medium px-2 py-0.5">🔥 Популярная</span>}
+      <span class={`rounded-full ${badgeBg} ${badgeText} px-2 py-0.5 text-[11px] font-medium`}>{shift.status}</span>
+    </div>
+  </div>
+
+  <p class="text-xs text-slate-400">{shift.duration}</p>
+
+  <div class="mt-2 flex gap-2">
+    <button type="button" data-shift-calendar={shift.id} data-start={shift.startDate} data-end={shift.endDate} data-shift-name={shift.name} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-[11px] text-slate-500 hover:bg-slate-100" title="Календарь">
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+      календарь
+    </button>
+    <button type="button" data-shift-info={shift.id} data-shift-title={shift.name} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-[11px] text-slate-500 hover:bg-slate-100" title="Подробнее">
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0-4h.01" /></svg>
+      инфо
+    </button>
+  </div>
+
+  <p class={`mt-3 ${descClass} leading-[1.55] text-slate-500`}>{shift.description}</p>
+
+  <div class={`mt-4 ${priceClass} font-bold tracking-[-0.03em] text-slate-900`}>{shift.price}</div>
+  <p class="text-[12px] text-slate-400 mt-1">Питание, проживание, программа включены</p>
+
+  <div class="mt-3">
+    <div class="h-[10px] w-full overflow-hidden rounded-[6px] bg-slate-100">
+      <div class="flex h-full">
+        <div class="bg-slate-400 rounded-l-[6px]" style={`width:${pct}%`}></div>
+        <div class="bg-emerald-400 rounded-r-[6px]" style={`width:${100 - pct}%`}></div>
+      </div>
+    </div>
+    <div class="flex justify-between mt-1">
+      <span class="text-[11px] text-slate-400">занято {shift.occupied}</span>
+      <span class="text-[11px] text-emerald-600 font-medium">свободно {shift.free}</span>
+    </div>
+  </div>
+
+  <button
+    type="button"
+    data-shift-book={shift.id}
+    data-shift-book-name={shift.name}
+    data-shift-book-dates={shift.dates}
+    data-shift-book-duration={shift.duration}
+    data-shift-book-price={shift.price}
+    data-analytics-goal="shift_select"
+    data-analytics-label={shift.name}
+    class={`mt-4 w-full rounded-xl px-4 py-2.5 text-sm font-semibold ${btnHover} ${btnClass}`}
+  >
+    Выбрать
+  </button>
+  <p class="text-[12px] text-slate-500 text-center mt-1.5">Не понравится в первые 3 дня — вернём 50%</p>
+</article>

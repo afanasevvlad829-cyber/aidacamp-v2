@@ -1,0 +1,174 @@
+---
+import { mainShifts, shortShifts } from '../data/shifts';
+
+function getColor(pct: number) {
+  if (pct >= 90) return '#f5612e';
+  if (pct >= 70) return '#f5a624';
+  return '#5ea3fa';
+}
+
+function getIcon(pct: number) {
+  if (pct >= 90) return 'bi-fire';
+  if (pct >= 70) return 'bi-lightning-charge';
+  return 'bi-calendar-check';
+}
+
+function freeLabel(free: number) {
+  if (free === 1) return '1 место';
+  if (free < 5) return `${free} места`;
+  return `${free} мест`;
+}
+---
+
+<div data-shift-occupancy>
+  <!-- STATE: idle -->
+  <div data-state="idle">
+    <div class="rounded-2xl border border-slate-100 bg-slate-50 p-6 text-center">
+      <i class="bi bi-bar-chart-line text-[32px] text-slate-300"></i>
+      <p class="mt-2 text-[14px] font-medium text-slate-500">Проверить свободные места</p>
+      <p class="mt-1 text-[12px] text-slate-400">Данные обновляются в реальном времени</p>
+      <button data-check-occupancy
+              class="mt-4 inline-flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-orange-600 transition">
+        <i class="bi bi-search"></i>
+        Проверить занятость
+      </button>
+    </div>
+  </div>
+
+  <!-- STATE: loading -->
+  <div data-state="loading" class="hidden flex-col items-center justify-center py-8 gap-3">
+    <i class="bi bi-arrow-repeat text-orange-500 text-[28px] animate-spin"></i>
+    <p class="text-[13px] text-slate-500 font-medium">Проверяем занятость смен...</p>
+  </div>
+
+  <!-- STATE: loaded -->
+  <div data-state="loaded" class="hidden">
+    <div class="space-y-3">
+      {mainShifts.map((s) => {
+        const pct = Math.round((s.taken / s.total) * 100);
+        const free = s.total - s.taken;
+        const color = getColor(pct);
+        const icon = getIcon(pct);
+        return (
+          <div class="occupancy-row" style="opacity: 0">
+            <div class="flex items-center justify-between mb-1">
+              <div class="flex items-center gap-2">
+                <span class="text-[14px] font-semibold text-slate-800">{s.name}</span>
+                <span class="text-[12px] text-slate-400">{s.dates} · {s.duration}</span>
+              </div>
+              <span class="shift-label text-[13px] font-medium" style={`color: ${color}; opacity: 0`}>
+                <i class={`bi ${icon}`}></i> {freeLabel(free)}
+              </span>
+            </div>
+            <div class="h-[8px] w-full rounded-full bg-slate-100 overflow-hidden">
+              <div
+                class="shift-bar h-full rounded-full"
+                style={`width: 0%; background-color: ${color}`}
+                data-width={`${pct}%`}
+              ></div>
+            </div>
+          </div>
+        );
+      })}
+
+      <!-- Divider: short shifts -->
+      <div class="flex items-center gap-3 pt-2 pb-1">
+        <div class="h-px flex-1 bg-slate-200"></div>
+        <span class="text-[11px] font-medium uppercase tracking-[0.08em] text-slate-400">Короткие смены · 7–8 дней</span>
+        <div class="h-px flex-1 bg-slate-200"></div>
+      </div>
+
+      {shortShifts.map((s) => {
+        const pct = Math.round((s.taken / s.total) * 100);
+        const free = s.total - s.taken;
+        const color = getColor(pct);
+        const icon = getIcon(pct);
+        return (
+          <div class="occupancy-row" style="opacity: 0">
+            <div class="flex items-center justify-between mb-1">
+              <div class="flex items-center gap-2">
+                <span class="text-[14px] font-semibold text-slate-800">{s.name}</span>
+                <span class="text-[12px] text-slate-400">{s.dates} · {s.duration}</span>
+              </div>
+              <span class="shift-label text-[13px] font-medium" style={`color: ${color}; opacity: 0`}>
+                <i class={`bi ${icon}`}></i> {freeLabel(free)}
+              </span>
+            </div>
+            <div class="h-[8px] w-full rounded-full bg-slate-100 overflow-hidden">
+              <div
+                class="shift-bar h-full rounded-full"
+                style={`width: 0%; background-color: ${color}`}
+                data-width={`${pct}%`}
+              ></div>
+            </div>
+          </div>
+        );
+      })}
+
+      <div class="pt-2 text-center">
+        <a href="#shifts" class="inline-flex items-center gap-1.5 text-[13px] font-semibold text-orange-500 hover:text-orange-600 transition">
+          <i class="bi bi-arrow-down-circle"></i>
+          Смотреть цены &rarr;
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function initOccupancy() {
+    const root = document.querySelector('[data-shift-occupancy]');
+    if (!root) return;
+
+    const states = {
+      idle: root.querySelector('[data-state="idle"]') as HTMLElement,
+      loading: root.querySelector('[data-state="loading"]') as HTMLElement,
+      loaded: root.querySelector('[data-state="loaded"]') as HTMLElement,
+    };
+
+    function showState(name: 'idle' | 'loading' | 'loaded') {
+      Object.entries(states).forEach(([key, el]) => {
+        if (!el) return;
+        if (key === name) {
+          el.classList.remove('hidden');
+          if (name === 'loading') el.classList.add('flex');
+        } else {
+          el.classList.add('hidden');
+          el.classList.remove('flex');
+        }
+      });
+    }
+
+    function animateBars() {
+      root.querySelectorAll<HTMLElement>('.occupancy-row').forEach((row, i) => {
+        setTimeout(() => {
+          row.style.opacity = '1';
+          row.style.transition = 'opacity 0.4s ease';
+          const bar = row.querySelector<HTMLElement>('.shift-bar');
+          if (bar) {
+            bar.style.transition = 'width 0.9s cubic-bezier(0.4,0,0.2,1)';
+            bar.style.width = bar.dataset.width || '0%';
+          }
+          setTimeout(() => {
+            const label = row.querySelector<HTMLElement>('.shift-label');
+            if (label) {
+              label.style.transition = 'opacity 0.3s ease';
+              label.style.opacity = '1';
+            }
+          }, 700);
+        }, i * 150);
+      });
+    }
+
+    root.querySelector('[data-check-occupancy]')?.addEventListener('click', () => {
+      showState('loading');
+      setTimeout(() => {
+        showState('loaded');
+        animateBars();
+      }, 900);
+    });
+  }
+
+  document.addEventListener('astro:page-load', initOccupancy);
+  initOccupancy();
+</script>

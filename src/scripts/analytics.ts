@@ -1,3 +1,4 @@
+import { YANDEX_METRIKA_ID } from '../data/tracking';
 const fired = new Set<string>(JSON.parse(sessionStorage.getItem('ym_fired') || '[]'));
 
 function persist() {
@@ -10,9 +11,21 @@ export function trackGoal(id: string, params?: object) {
   persist();
   try {
     if (typeof (window as any).ym !== 'undefined') {
-      (window as any).ym(96499295, 'reachGoal', id, params ?? {});
+      (window as any).ym(YANDEX_METRIKA_ID, 'reachGoal', id, params ?? {});
     }
   } catch {}
+}
+
+export function initContactTracking(scope: string) {
+  document.querySelectorAll<HTMLAnchorElement>(`${scope} a[href^="tel:"]`).forEach((a) => {
+    a.addEventListener('click', () => trackGoal('phone_click'));
+  });
+  document.querySelectorAll<HTMLAnchorElement>(`${scope} a[href*="wa.me"]`).forEach((a) => {
+    a.addEventListener('click', () => trackGoal('whatsapp_click'));
+  });
+  document.querySelectorAll<HTMLAnchorElement>(`${scope} a[href*="t.me"]`).forEach((a) => {
+    a.addEventListener('click', () => trackGoal('telegram_click'));
+  });
 }
 
 export function initScrollTracking() {

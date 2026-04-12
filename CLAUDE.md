@@ -49,14 +49,31 @@
 # Лучшие фото по сцене (сортировка: сайт → соцсети → архив)
 ./scripts/yadisk.sh best занятие 5
 
-# Прямая ссылка на скачивание (нужен YADISK_TOKEN)
-./scripts/yadisk.sh url "disk:/Медиа/2024/Фото/Прочее/IMG_1234.jpg"
-
 # Список сцен с количеством
 ./scripts/yadisk.sh scenes
 ```
 
 MCP-инструмент `photos`: `photos(command: "search", query: "...")`, `photos(command: "best", query: "занятие", count: 5)`
+
+### Скачивание фото без токена — `/api/photo`
+
+Агентам **не нужен YADISK_TOKEN**. Токен хранится на сервере, фото отдаются через прокси:
+
+```bash
+# Одно фото — редирект на временную ссылку Яндекс.Диска
+curl -L "https://dev.aidacamp.ru/api/photo?path=disk:/Медиа/2024/Фото/Прочее/IMG_1234.jpg"
+
+# Превью (уменьшенное)
+curl -L "https://dev.aidacamp.ru/api/photo?path=disk:/...&preview=1"
+
+# Проксирование через сервер (без редиректа)
+curl "https://dev.aidacamp.ru/api/photo?path=disk:/...&mode=proxy"
+
+# Пакетно (до 20 фото) — POST, возвращает JSON с URL
+curl -X POST https://dev.aidacamp.ru/api/photo \
+  -H "Content-Type: application/json" \
+  -d '{"paths": ["disk:/Медиа/2024/Фото/...", "disk:/Медиа/2023/Фото/..."]}'
+```
 
 Данные: `scripts/photo_catalog.json`, `scripts/photo_catalog_summary.json`, `scripts/disk_index.json`
 
