@@ -102,16 +102,25 @@ function classifyVkError(tool, res, action) {
   const errMsg = body?.error?.message || body?.error_description || body?.detail || (typeof body === "string" ? body : JSON.stringify(body));
 
   if (status === 401 || status === 403) {
-    return `🔑 ${tool} [${action}]: ошибка авторизации VK (HTTP ${status}). Токен протух или нет прав. Повтори — токен обновится автоматически. Детали: ${errMsg}`;
+    return `🔑 ${tool} [${action}]: VK вернул HTTP ${status} (${errMsg}).\n` +
+      `Токен уже был автоматически обновлён и запрос повторён — но ошибка осталась.\n` +
+      `ДЕЙСТВИЯ: 1) Вызови diagnostics() чтобы проверить состояние токена. ` +
+      `2) Если diagnostics показывает VK: OK — проблема в правах доступа к объекту, не в токене. ` +
+      `3) Если diagnostics показывает VK: FAIL — сообщи пользователю: «VK OAuth не работает, нужна проверка client_id/client_secret». ` +
+      `НЕ проси перезапустить MCP и НЕ ищи конфиги через SSH.`;
   }
   if (status === 400 || status === 422) {
-    return `⚠️ ${tool} [${action}]: VK отклонил запрос (HTTP ${status}). Проверь параметры. Ошибка: ${errMsg}`;
+    return `⚠️ ${tool} [${action}]: VK отклонил запрос (HTTP ${status}). Ошибка: ${errMsg}\n` +
+      `ДЕЙСТВИЯ: Проверь параметры. Для создания объявлений сначала узнай формат через vk_packages(package_id: ...). ` +
+      `API-токен видит ТОЛЬКО объекты, созданные через API — объекты из веб-интерфейса ads.vk.com недоступны.`;
   }
   if (status === 404) {
-    return `🔍 ${tool} [${action}]: объект не найден в VK (HTTP 404). Проверь ID. Ошибка: ${errMsg}`;
+    return `🔍 ${tool} [${action}]: объект не найден (HTTP 404). Ошибка: ${errMsg}\n` +
+      `ДЕЙСТВИЯ: Проверь ID. API видит только объекты, созданные через API. ` +
+      `Для списка доступных кампаний: vk_campaigns(). Для групп: vk_manage_ad_group(action: "list", campaign_id: ...).`;
   }
   if (status >= 500) {
-    return `🔧 ${tool} [${action}]: ошибка на стороне VK (HTTP ${status}). MCP работает — проблема у VK. Попробуй повторить.`;
+    return `🔧 ${tool} [${action}]: ошибка на стороне VK (HTTP ${status}). MCP работает — проблема у VK. Повтори через 30 сек.`;
   }
   return null; // not an error
 }
@@ -123,9 +132,14 @@ function classifyDirectError(tool, res, action) {
     const code = body.error.error_code || "";
     const msg = body.error.error_detail || body.error.error_string || JSON.stringify(body.error);
     if (code === 53 || code === 52) {
-      return `🔑 ${tool} [${action}]: ошибка авторизации Директа (код ${code}). Проверь YANDEX_ACCESS_TOKEN. Ошибка: ${msg}`;
+      return `🔑 ${tool} [${action}]: Директ: ошибка авторизации (код ${code}). Ошибка: ${msg}\n` +
+        `ДЕЙСТВИЯ: 1) Вызови diagnostics() для проверки. ` +
+        `2) Сообщи пользователю: «Токен Яндекс.Директ невалиден, нужно обновить вручную через OAuth». ` +
+        `НЕ ищи токен через SSH — он хранится локально на Mac.`;
     }
-    return `⚠️ ${tool} [${action}]: Директ отклонил запрос (код ${code}). Ошибка: ${msg}`;
+    return `⚠️ ${tool} [${action}]: Директ отклонил запрос (код ${code}). Ошибка: ${msg}\n` +
+      `ДЕЙСТВИЯ: Проверь параметры. Структура кампаний: 708664426 (Поиск), 708698819 (РСЯ). ` +
+      `Для статистики используй stats(), не API Директа.`;
   }
   return null;
 }
@@ -314,6 +328,21 @@ const SSH_HOSTS = {
 };
 
 const TOOLS = [
+  {
+    name: "diagnostics",
+    description:
+      "Диагностика MCP-сервера: проверяет VK OAuth токен, Direct токен, SSH-доступ к серверу, логи последних ошибок. " +
+      "Вызывай ПЕРВЫМ ДЕЛОМ, если что-то не работает. НЕ проси пользователя перезапускать MCP — сначала проверь diagnostics.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        checks: {
+          type: "string",
+          description: "Что проверить: all (по умолчанию), vk, direct, ssh, logs",
+        },
+      },
+    },
+  },
   {
     name: "ssh",
     description:
@@ -986,6 +1015,88 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   process.stderr.write(`\n📥 ${callTime} ← ${name}(${argsSummary})\n`);
 
   try {
+    // --- Diagnostics tool ---
+    if (name === "diagnostics") {
+      const checks = (args.checks || "all").split(",").map(s => s.trim());
+      const doAll = checks.includes("all");
+      const results = [];
+      const startTime = Date.now();
+
+      // VK OAuth check
+      if (doAll || checks.includes("vk")) {
+        try {
+          _vkInvalidateToken(); // force fresh token
+          const token = await vkGetOAuthToken();
+          const testRes = await vkApi("ad_plans.json", { limit: "1" });
+          if (testRes.status === 200) {
+            results.push(`✅ VK Ads: OK (токен получен, API отвечает, кампаний: ${testRes.body?.count || "?"})`);
+          } else {
+            results.push(`❌ VK Ads: токен получен, но API вернул HTTP ${testRes.status}: ${JSON.stringify(testRes.body).slice(0, 200)}`);
+          }
+        } catch (e) {
+          results.push(`❌ VK Ads: ${e.message}`);
+        }
+      }
+
+      // Direct check
+      if (doAll || checks.includes("direct")) {
+        try {
+          const token = getToken("YANDEX_ACCESS_TOKEN") || getToken("YANDEX_DIRECT_TOKEN");
+          if (!token) {
+            results.push("❌ Яндекс.Директ: YANDEX_ACCESS_TOKEN не найден в .env");
+          } else {
+            const testRes = await directApi("campaigns", "get", { SelectionCriteria: { States: ["ON"] }, FieldNames: ["Id"], Page: { Limit: 1 } });
+            if (testRes.body?.result) {
+              results.push(`✅ Яндекс.Директ: OK (токен валиден, активных кампаний: ${testRes.body.result.Campaigns?.length || 0})`);
+            } else if (testRes.body?.error) {
+              results.push(`❌ Яндекс.Директ: код ${testRes.body.error.error_code} — ${testRes.body.error.error_detail || testRes.body.error.error_string}`);
+            } else {
+              results.push(`⚠️ Яндекс.Директ: неожиданный ответ — ${JSON.stringify(testRes.body).slice(0, 200)}`);
+            }
+          }
+        } catch (e) {
+          results.push(`❌ Яндекс.Директ: ${e.message}`);
+        }
+      }
+
+      // SSH check
+      if (doAll || checks.includes("ssh")) {
+        try {
+          const out = await run("ssh", ["-i", resolve(process.env.HOME || "", ".ssh/aidacamp_prod"), "-o", "ConnectTimeout=5", "-o", "StrictHostKeyChecking=no", "root@159.194.223.55", "echo OK && uptime"], 10_000);
+          results.push(`✅ SSH (159.194.223.55): ${out.trim()}`);
+        } catch (e) {
+          results.push(`❌ SSH: ${e.message}`);
+        }
+      }
+
+      // Recent errors from log
+      if (doAll || checks.includes("logs")) {
+        try {
+          const logContent = await readFile(LOG_FILE, "utf-8");
+          const lines = logContent.trim().split("\n").filter(l => l.includes('"error"')).slice(-5);
+          if (lines.length) {
+            results.push(`📋 Последние ошибки (${lines.length}):`);
+            for (const l of lines) {
+              try {
+                const entry = JSON.parse(l);
+                results.push(`  ${entry.ts.slice(11, 19)} [${entry.tool}] ${entry.message.slice(0, 120)}`);
+              } catch { results.push(`  ${l.slice(0, 120)}`); }
+            }
+          } else {
+            results.push("📋 Ошибок в логе нет");
+          }
+        } catch {
+          results.push("📋 Лог-файл не найден (ещё не было вызовов)");
+        }
+      }
+
+      const elapsed = Date.now() - startTime;
+      results.push(`\n⏱ Диагностика заняла ${elapsed}ms | PID: ${process.pid} | Uptime: ${Math.round(process.uptime())}s`);
+      results.push(`\n💡 Если всё ✅ — MCP работает. Проблема в параметрах запроса или правах доступа к объекту. НЕ проси перезапуск MCP.`);
+
+      return ok(results.join("\n"));
+    }
+
     if (name === "ssh") {
       const alias = SSH_HOSTS[args.host];
       const host = alias ? alias.host : args.host;
@@ -2105,21 +2216,29 @@ async function directResult(res, tool, action) {
 }
 
 async function vkApiPatch(path, body) {
-  const token = await vkGetOAuthToken();
-  const data = JSON.stringify(body);
-  return apiRequest(`https://ads.vk.com/api/v2/${path}`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "Content-Length": Buffer.byteLength(data) },
-    body: data,
-  });
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const token = await vkGetOAuthToken();
+    const data = JSON.stringify(body);
+    const res = await apiRequest(`https://ads.vk.com/api/v2/${path}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "Content-Length": Buffer.byteLength(data) },
+      body: data,
+    });
+    if (res.status === 401 && attempt === 0) { _vkInvalidateToken(); continue; }
+    return res;
+  }
 }
 
 async function vkApiDelete(path) {
-  const token = await vkGetOAuthToken();
-  return apiRequest(`https://ads.vk.com/api/v2/${path}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const token = await vkGetOAuthToken();
+    const res = await apiRequest(`https://ads.vk.com/api/v2/${path}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.status === 401 && attempt === 0) { _vkInvalidateToken(); continue; }
+    return res;
+  }
 }
 
 function calcDates(period = "week") {
