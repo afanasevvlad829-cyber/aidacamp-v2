@@ -1,0 +1,95 @@
+---
+const shifts = [
+  { label: '1 июня',  dur: '14 дн', total: 45, taken: 41 },
+  { label: '15 июня', dur: '14 дн', total: 45, taken: 35 },
+  { label: '1 июля',  dur: '14 дн', total: 45, taken: 28 },
+  { label: '15 июля', dur: '7 дн',  total: 45, taken: 23 },
+  { label: '1 авг',   dur: '14 дн', total: 45, taken: 20 },
+];
+
+function getColor(pct: number) {
+  if (pct >= 90) return '#f5612e';
+  if (pct >= 70) return '#f5a624';
+  return '#5ea3fa';
+}
+
+function getEmoji(pct: number) {
+  if (pct >= 90) return '🔥';
+  if (pct >= 70) return '⚡';
+  return '';
+}
+---
+
+<section class="mx-auto max-w-[1312px] px-[2px] pt-8 md:px-4" data-shift-occupancy>
+  <div class="bg-surface-warm rounded-[18px] p-[18px]">
+    <div class="flex items-center gap-2 mb-4">
+      <div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div>
+      <h2 class="text-[20px] font-bold leading-[1.1] tracking-[-0.02em] text-slate-900 md:text-[24px]">Занятость смен</h2>
+    </div>
+
+    <div class="space-y-3">
+      {shifts.map((s) => {
+        const pct = Math.round((s.taken / s.total) * 100);
+        const free = s.total - s.taken;
+        const color = getColor(pct);
+        const emoji = getEmoji(pct);
+        return (
+          <div class="occupancy-row opacity-0 transition-opacity duration-500">
+            <div class="flex items-center justify-between mb-1">
+              <div class="flex items-center gap-2">
+                <span class="text-[14px] font-semibold text-slate-800">{s.label}</span>
+                <span class="text-[12px] text-slate-400">{s.dur}</span>
+              </div>
+              <span class="text-[13px] font-medium" style={`color: ${color}`}>
+                {emoji} {free === 1 ? '1 место' : free < 5 ? `${free} места` : `${free} мест`}
+              </span>
+            </div>
+            <div class="h-[8px] w-full rounded-full bg-slate-100 overflow-hidden">
+              <div
+                class="occupancy-bar h-full rounded-full transition-[width] duration-[800ms] ease-out"
+                style={`width: 0%; background-color: ${color}`}
+                data-target-width={`${pct}%`}
+              ></div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+</section>
+
+<script>
+  function initOccupancy() {
+    const container = document.querySelector('[data-shift-occupancy]');
+    if (!container) return;
+
+    const bars = container.querySelectorAll<HTMLElement>('.occupancy-bar');
+    const rows = container.querySelectorAll<HTMLElement>('.occupancy-row');
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        // Fade in rows
+        rows.forEach((row, i) => {
+          setTimeout(() => {
+            row.classList.remove('opacity-0');
+            row.classList.add('opacity-100');
+          }, i * 80);
+        });
+
+        // Animate bars after a small delay
+        setTimeout(() => {
+          bars.forEach((bar) => {
+            bar.style.width = bar.dataset.targetWidth || '0%';
+          });
+        }, 300);
+
+        observer.disconnect();
+      }
+    }, { threshold: 0.3 });
+
+    observer.observe(container);
+  }
+
+  document.addEventListener('astro:page-load', initOccupancy);
+  initOccupancy();
+</script>
