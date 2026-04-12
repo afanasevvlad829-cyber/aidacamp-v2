@@ -231,28 +231,48 @@ async function vkCleanupToken() {
   } catch {}
 }
 
+function _vkInvalidateToken() {
+  _vkAccessToken = null;
+  _vkRefreshToken = null;
+  _vkTokenExpiry = 0;
+}
+
 async function vkApi(path, params = {}) {
-  const token = await vkGetOAuthToken();
-  const query = new URLSearchParams(params).toString();
-  const sep = query ? "?" : "";
-  return apiRequest(`https://ads.vk.com/api/v2/${path}${sep}${query}`, {
-    method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const token = await vkGetOAuthToken();
+    const query = new URLSearchParams(params).toString();
+    const sep = query ? "?" : "";
+    const res = await apiRequest(`https://ads.vk.com/api/v2/${path}${sep}${query}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.status === 401 && attempt === 0) {
+      _vkInvalidateToken();
+      continue;
+    }
+    return res;
+  }
 }
 
 async function vkApiPost(path, body) {
-  const token = await vkGetOAuthToken();
-  const data = JSON.stringify(body);
-  return apiRequest(`https://ads.vk.com/api/v2/${path}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "Content-Length": Buffer.byteLength(data),
-    },
-    body: data,
-  });
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const token = await vkGetOAuthToken();
+    const data = JSON.stringify(body);
+    const res = await apiRequest(`https://ads.vk.com/api/v2/${path}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(data),
+      },
+      body: data,
+    });
+    if (res.status === 401 && attempt === 0) {
+      _vkInvalidateToken();
+      continue;
+    }
+    return res;
+  }
 }
 
 function directApi(service, method, params) {
