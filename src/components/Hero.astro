@@ -330,8 +330,39 @@ import LeadForm from './LeadForm.astro';
     });
   }
 
-  document.addEventListener('astro:page-load', initHeroForm);
+  // --- Agree button with like animation ---
+  function initAgreeBtn() {
+    const btn = document.getElementById('hero-agree-btn');
+    const countEl = document.getElementById('hero-agree-count');
+    if (!btn || !countEl) return;
+
+    const STORAGE_KEY = 'hero_agree_count';
+    let count = parseInt(localStorage.getItem(STORAGE_KEY) || '300', 10);
+    if (isNaN(count) || count < 300) count = 300;
+    countEl.textContent = String(count);
+
+    btn.addEventListener('click', () => {
+      count++;
+      localStorage.setItem(STORAGE_KEY, String(count));
+      countEl.textContent = String(count);
+
+      // Animate "+1 👍" floating up
+      const floater = document.createElement('span');
+      floater.textContent = '+1 👍';
+      floater.style.cssText = 'position:absolute;left:50%;top:-4px;transform:translateX(-50%);font-size:13px;font-weight:600;color:#f5a624;pointer-events:none;opacity:1;transition:all 0.8s ease-out;';
+      btn.style.position = 'relative';
+      btn.appendChild(floater);
+      requestAnimationFrame(() => {
+        floater.style.top = '-28px';
+        floater.style.opacity = '0';
+      });
+      setTimeout(() => floater.remove(), 800);
+    });
+  }
+
+  document.addEventListener('astro:page-load', () => { initHeroForm(); initAgreeBtn(); });
   initHeroForm();
+  initAgreeBtn();
 </script>
 
 <!-- Validation Modal -->
