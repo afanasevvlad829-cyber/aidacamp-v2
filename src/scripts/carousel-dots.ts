@@ -2,7 +2,7 @@
 export function initCarouselDots(
   trackSelector: string,
   dotSelector: string,
-  activeClass = 'bg-[#ff8b1f]',
+  activeClass = 'bg-primary-light',
   inactiveClass = 'bg-slate-300',
   threshold = 0.6,
 ): void {
