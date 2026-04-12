@@ -14,8 +14,11 @@ export interface Shift {
   price: string;
   free: number;
   occupied: number;
+  total: number;
+  taken: number;
   highlighted?: boolean;
   popular?: boolean;
+  isShort?: boolean;
   startDate: string; // YYYY-MM-DD for calendar
   endDate: string;
 }
@@ -30,8 +33,10 @@ export const mainShifts: Shift[] = [
     statusType: 'available',
     description: 'За 10 дней — от первого шага до собственного проекта с AI и понятным результатом.',
     price: '74 900 ₽',
-    free: 12,
-    occupied: 23,
+    free: 4,
+    occupied: 41,
+    total: 45,
+    taken: 41,
     highlighted: true,
     startDate: '2025-05-30',
     endDate: '2025-06-08',
@@ -45,8 +50,10 @@ export const mainShifts: Shift[] = [
     statusType: 'available',
     description: 'Полный цикл создания проекта: больше самостоятельности и более сложный результат.',
     price: '95 000 ₽',
-    free: 4,
-    occupied: 41,
+    free: 10,
+    occupied: 35,
+    total: 45,
+    taken: 35,
     popular: true,
     startDate: '2025-06-10',
     endDate: '2025-06-23',
@@ -60,8 +67,10 @@ export const mainShifts: Shift[] = [
     statusType: 'available',
     description: 'Проект от идеи до результата с акцентом на командную работу.',
     price: '89 400 ₽',
-    free: 5,
-    occupied: 40,
+    free: 17,
+    occupied: 28,
+    total: 45,
+    taken: 28,
     startDate: '2025-08-03',
     endDate: '2025-08-15',
   },
@@ -74,8 +83,10 @@ export const mainShifts: Shift[] = [
     statusType: 'available',
     description: 'Закрытие лета: сильный проект и уверенный результат.',
     price: '69 600 ₽',
-    free: 14,
-    occupied: 31,
+    free: 25,
+    occupied: 20,
+    total: 45,
+    taken: 20,
     startDate: '2025-08-17',
     endDate: '2025-08-26',
   },
@@ -91,8 +102,11 @@ export const shortShifts: Shift[] = [
     statusType: 'short',
     description: 'За 7 дней — быстрый вход, свой проект и понятный результат без перегруза.',
     price: '48 000 ₽',
-    free: 11,
-    occupied: 29,
+    free: 22,
+    occupied: 23,
+    total: 45,
+    taken: 23,
+    isShort: true,
     startDate: '2025-06-10',
     endDate: '2025-06-16',
   },
@@ -105,8 +119,11 @@ export const shortShifts: Shift[] = [
     statusType: 'short',
     description: 'Интенсивная смена: больше времени на доработку и более сильный итоговый проект.',
     price: '65 000 ₽',
-    free: 8,
-    occupied: 37,
+    free: 16,
+    occupied: 29,
+    total: 45,
+    taken: 29,
+    isShort: true,
     startDate: '2025-06-16',
     endDate: '2025-06-23',
   },

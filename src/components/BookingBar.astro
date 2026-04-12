@@ -34,6 +34,13 @@ const { headline, id } = Astro.props;
           Перезвоните мне
         </button>
       </form>
+      <label class="flex items-center gap-1.5 cursor-pointer mt-1">
+        <input type="checkbox" name="consent" data-bar-consent required
+               class="h-3 w-3 rounded border border-slate-300 accent-[#ec7c00]" />
+        <span class="text-[9px] text-[rgba(109,123,138,0.50)] leading-tight">
+          Согласен(а) на <a href="/legal#privacy" class="underline">обработку персональных данных</a>
+        </span>
+      </label>
     </div>
     <p class="mt-2 text-[12px] text-white/40" data-response-time-steps>Оставьте заявку → перезвоним за 10 мин → забронируем место</p>
   </div>
@@ -53,6 +60,7 @@ const { headline, id } = Astro.props;
       const phoneInput = form.querySelector<HTMLInputElement>('[data-phone-input]');
       const submitBtn = form.querySelector<HTMLButtonElement>('[data-submit-btn]');
       const ageInput = form.querySelector<HTMLInputElement>('[data-age-input]');
+      const consent = root.querySelector<HTMLInputElement>('[data-bar-consent]');
       if (!phoneInput || !submitBtn) return;
 
       // Auto-fill age from localStorage
@@ -63,9 +71,12 @@ const { headline, id } = Astro.props;
 
       initPhoneInput(phoneInput);
 
-      phoneInput.addEventListener('input', () => {
-        submitBtn.disabled = !isPhoneValid(phoneInput.value);
-      });
+      function updateSubmit() {
+        submitBtn.disabled = !(isPhoneValid(phoneInput.value) && consent?.checked);
+      }
+
+      phoneInput.addEventListener('input', updateSubmit);
+      consent?.addEventListener('change', updateSubmit);
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
