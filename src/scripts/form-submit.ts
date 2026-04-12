@@ -1,6 +1,6 @@
 import { trackGoal } from './analytics';
 
-const MAILRU_PIXEL_ID = 3755202;
+import { MAILRU_PIXEL_ID } from '../data/tracking';
 
 /** Submit a lead to /api/lead and fire tracking pixels */
 export async function submitLead(data: {
