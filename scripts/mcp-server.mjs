@@ -132,6 +132,7 @@ function classifyDirectError(tool, res, action) {
 
 // --- HTTP helpers for APIs ---
 function apiRequest(url, options = {}) {
+  const timeoutMs = options.timeout || 30_000;
   return new Promise((resolve, reject) => {
     const mod = url.startsWith("https") ? httpsRequest : httpRequest;
     const req = mod(url, options, (res) => {
@@ -141,6 +142,10 @@ function apiRequest(url, options = {}) {
         try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
         catch { resolve({ status: res.statusCode, body: data }); }
       });
+    });
+    req.setTimeout(timeoutMs, () => {
+      req.destroy();
+      reject(new Error(`API timeout after ${timeoutMs}ms: ${url}`));
     });
     req.on("error", reject);
     if (options.body) req.write(options.body);
