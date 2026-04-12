@@ -1,0 +1,73 @@
+---
+interface Props {
+  h1: string;
+  subtitle: string;
+  breadcrumb: string;
+  keywords: string[];
+}
+
+const { h1, subtitle, breadcrumb, keywords } = Astro.props;
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://aidacamp.ru/" },
+    { "@type": "ListItem", "position": 2, "name": breadcrumb }
+  ]
+};
+---
+
+<section class="bg-[#0d1a2b] px-5 pt-16 pb-12 md:px-14 md:pt-20 md:pb-16">
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
+
+  <div class="mx-auto max-w-[1312px]">
+    <!-- Breadcrumb -->
+    <nav class="text-[13px] text-white/50">
+      <a href="/" class="hover:text-white/80 transition-colors">Главная</a>
+      <span class="mx-2">&rarr;</span>
+      <span class="text-white/70">{breadcrumb}</span>
+    </nav>
+
+    <!-- H1 -->
+    <h1 class="mt-4 text-[32px] md:text-[48px] font-bold leading-[1.1] tracking-[-0.03em] text-white max-w-[640px]">
+      {h1}
+    </h1>
+
+    <!-- Subtitle -->
+    <p class="mt-4 text-[15px] md:text-[17px] text-white/70 leading-[1.6] max-w-[540px]">
+      {subtitle}
+    </p>
+
+    <!-- Keywords -->
+    <ul class="mt-6 flex flex-col gap-2.5">
+      {keywords.map((kw) => (
+        <li class="flex items-center gap-2.5">
+          <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-orange-500/20 text-[11px] text-orange-400">&#10003;</span>
+          <span class="text-[14px] text-white/80">{kw}</span>
+        </li>
+      ))}
+    </ul>
+
+    <!-- CTA buttons -->
+    <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+      <a
+        href="#shifts"
+        class="inline-flex items-center justify-center rounded-[14px] bg-[#ec7c00] px-6 py-3.5 text-[15px] font-semibold text-white hover:shadow-[0_4px_16px_rgba(249,115,22,0.35)] hover:-translate-y-[1px] transition-all duration-200"
+      >
+        Забронировать место
+      </a>
+      <a
+        href="#shifts"
+        class="inline-flex items-center justify-center rounded-[14px] border border-white/20 px-6 py-3.5 text-[15px] text-white/80 hover:border-white/40 hover:text-white transition"
+      >
+        Смотреть смены &darr;
+      </a>
+    </div>
+
+    <!-- Meta line -->
+    <p class="mt-6 text-[12px] text-white/40">
+      66 км от Москвы &middot; смены июнь&ndash;август &middot; от 48 000 &#8381;
+    </p>
+  </div>
+</section>

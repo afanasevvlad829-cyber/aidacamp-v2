@@ -1,0 +1,48 @@
+---
+import '../styles/global.css';
+import Base from './Base.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import StickyCta from '../components/StickyCta.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  h1: string;
+  canonical?: string;
+}
+
+const { title, description, h1, canonical } = Astro.props;
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": ["EducationalOrganization", "LocalBusiness"],
+  "name": "АйДаКемп",
+  "description": "IT-лагерь для детей 7–14 лет в Подмосковье",
+  "url": "https://aidacamp.ru",
+  "telephone": "+74951284429",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Наро-Фоминский район",
+    "addressRegion": "Московская область",
+    "addressCountry": "RU"
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": 55.265643,
+    "longitude": 36.724185
+  }
+};
+---
+
+<Base title={title} description={description}>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </Fragment>
+  <Header />
+  <main class="pb-20 md:pb-0">
+    <slot />
+  </main>
+  <Footer />
+  <StickyCta />
+</Base>

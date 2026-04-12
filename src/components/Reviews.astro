@@ -39,6 +39,18 @@ const reviews = [
 ];
 ---
 
+<script type="application/ld+json" set:html={JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "АйДаКемп — летний IT-лагерь",
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.9",
+    "reviewCount": "47",
+    "bestRating": "5",
+    "worstRating": "1"
+  }
+})} />
 <section id="reviews" class="mx-auto max-w-[1312px] px-[2px] pt-10 md:px-4" data-reviews-root>
   <div class="bg-white p-[18px]">
     <div class="flex flex-wrap items-center gap-3">
@@ -60,8 +72,8 @@ const reviews = [
 
     <p class="mt-4 text-[11px] font-medium text-slate-400 md:hidden">свайп →</p>
     <div class="mt-1 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:pb-0 xl:grid-cols-3" data-reviews-track>
-      {reviews.map((r) => (
-        <article class="min-w-[90vw] snap-start rounded-[18px] bg-white shadow-[0_2px_12px_rgba(15,23,42,0.06)] p-4 md:min-w-0 md:rounded-[20px] md:p-5">
+      {reviews.map((r, i) => (
+        <article data-review-card={i} class="min-w-[90vw] snap-start rounded-[18px] bg-white shadow-[0_2px_12px_rgba(15,23,42,0.06)] p-4 md:min-w-0 md:rounded-[20px] md:p-5 cursor-pointer transition hover:shadow-[0_4px_20px_rgba(15,23,42,0.1)]">
           <div class="flex items-center gap-3">
             <img src={r.photo} alt={r.name} class="h-10 w-10 rounded-full border border-slate-200 object-cover" width="40" height="40" loading="lazy" />
             <div>
@@ -87,7 +99,62 @@ const reviews = [
   </div>
 </section>
 
+<!-- Review modal -->
+<dialog id="reviewModal" class="m-0 h-full w-full max-w-none border-0 outline-none bg-black/50 p-4 backdrop:bg-black/50">
+  <div class="flex h-full items-center justify-center">
+    <div class="relative w-full max-w-[480px] rounded-[20px] bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.25)]">
+      <button type="button" data-review-close aria-label="Закрыть" class="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+      <div class="flex items-center gap-3">
+        <img id="reviewModalPhoto" src="" alt="" class="h-12 w-12 rounded-full border border-slate-200 object-cover" width="48" height="48" />
+        <div>
+          <p id="reviewModalName" class="text-[16px] font-semibold text-slate-900"></p>
+          <p id="reviewModalDate" class="text-[13px] text-slate-400"></p>
+        </div>
+        <div class="ml-auto flex text-[#ff8b1f]">
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+        </div>
+      </div>
+      <p id="reviewModalText" class="mt-4 text-[15px] leading-[1.65] text-slate-600"></p>
+    </div>
+  </div>
+</dialog>
+
 <script>
+  const reviewsData = [
+    { name: 'Сергей Найденов', date: '2 февраля 2026', photo: '/images/reviews/review-01.jpg', text: 'Отличное расположение в живописном месте, большие просторные аудитории для занятий. Большое значение придавалось и активностям вне аудиторных занятий: футбол, бадминтон и прочее.' },
+    { name: 'виктория', date: '13 ноября 2024', photo: '/images/reviews/review-02.jpg', text: 'Лагерь «Айдакемп» — это круто. Была там несколько раз, и каждый раз это был незабываемый опыт.' },
+    { name: 'Natalia Savenkova', date: '10 ноября 2024', photo: '/images/reviews/review-03.jpg', text: 'Хочу поблагодарить АйДаКемп за отличную организацию и правильный подход в общении и воспитании детей в лагере. Потрясающие вожатые и педагоги.' },
+    { name: 'Надежда Ш.', date: '12 августа 2025', photo: '/images/reviews/review-04.jpg', text: 'Сын в 9 лет этим летом побывал в первый раз в этом лагере. Остался в полном восторге и сказал, что обязательно поедет ещё.' },
+    { name: 'Кристина', date: '8 ноября 2024', photo: '/images/reviews/review-05.jpg', text: 'Дочери лагерь понравился, с удовольствием провела время на каникулах. Интересные занятия, вкусная еда, комфортное размещение.' },
+    { name: 'Мария Григорьева', date: '13 ноября 2024', photo: '/images/reviews/review-06.jpg', text: 'Отправляла детей 10 и 14 лет, оба остались довольны и готовы снова ехать на следующий год. Благодарна за опыт и пользу для детей.' },
+  ];
+
+  function initReviews() {
+    const reviewModal = document.getElementById('reviewModal') as HTMLDialogElement | null;
+    reviewModal?.querySelector('[data-review-close]')?.addEventListener('click', () => reviewModal.close());
+    reviewModal?.addEventListener('click', (e) => { if (e.target === reviewModal) reviewModal.close(); });
+
+    document.querySelectorAll('[data-review-card]').forEach((card) => {
+      card.addEventListener('click', () => {
+        const idx = Number((card as HTMLElement).dataset.reviewCard);
+        const r = reviewsData[idx];
+        if (!r || !reviewModal) return;
+        (document.getElementById('reviewModalPhoto') as HTMLImageElement).src = r.photo;
+        (document.getElementById('reviewModalPhoto') as HTMLImageElement).alt = r.name;
+        document.getElementById('reviewModalName')!.textContent = r.name;
+        document.getElementById('reviewModalDate')!.textContent = r.date;
+        document.getElementById('reviewModalText')!.textContent = r.text;
+        reviewModal.showModal();
+      });
+    });
+  }
+
   function initReviewsDots() {
     const track = document.querySelector<HTMLElement>('[data-reviews-track]');
     const dots = document.querySelectorAll<HTMLElement>('[data-reviews-dot]');
@@ -109,6 +176,7 @@ const reviews = [
     cards.forEach((card) => observer.observe(card));
   }
 
-  document.addEventListener('astro:page-load', initReviewsDots);
+  document.addEventListener('astro:page-load', () => { initReviews(); initReviewsDots(); });
+  initReviews();
   initReviewsDots();
 </script>

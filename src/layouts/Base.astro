@@ -5,6 +5,7 @@ interface Props {
 }
 
 const { title, description = 'АйДаКемп — IT-лагерь для детей 7–14 лет. Программирование, AI, бассейн. 66 км от Москвы.' } = Astro.props;
+const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
 ---
 
 <!doctype html>
@@ -13,34 +14,124 @@ const { title, description = 'АйДаКемп — IT-лагерь для дет
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
+    <meta name="robots" content="noarchive">
     <title>{title}</title>
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="preload" as="image" href="/images/hero-custom-2026-04-07.avif" type="image/avif" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <!-- Yandex.Metrika -->
+    <link rel="preload" as="font" href="/fonts/inter-cyrillic.woff2" type="font/woff2" crossorigin />
+    <link rel="preload" as="font" href="/fonts/inter-latin.woff2" type="font/woff2" crossorigin />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="preconnect" href="https://mc.yandex.ru" />
+    <link rel="dns-prefetch" href="https://mc.yandex.ru" />
+    <link rel="preconnect" href="https://kinescope.io" />
+    <link rel="dns-prefetch" href="https://kinescope.io" />
     <script is:inline>
+      if (window.location.search.includes('ym_disable=1')) {
+        document.cookie = 'ym_disable96499295=true; expires=Thu, 31 Dec 2099 23:59:59 UTC; path=/';
+        document.cookie = 'clarity_disable=true; expires=Thu, 31 Dec 2099 23:59:59 UTC; path=/';
+      }
+      if (document.cookie.indexOf('ym_disable96499295=true') !== -1) {
+        window.ym_disable96499295 = true;
+      }
+      if (document.cookie.indexOf('clarity_disable=true') !== -1) {
+        window._clarityDisabled = true;
+      }
+    </script>
+    <!-- Yandex.Metrika — deferred until page is idle -->
+    <script is:inline>
+      function loadMetrika(){if(window._ymLoaded)return;window._ymLoaded=true;
       (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
       m[i].l=1*new Date();
       for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r)return}
       k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
       (window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");
-      ym(96499295,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:true});
+      ym(96499295,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:true});}
+      if('requestIdleCallback' in window){requestIdleCallback(loadMetrika)}else{setTimeout(loadMetrika,3500)}
+    </script>
+    <script is:inline type="text/javascript">
+      if (!window._clarityDisabled) {
+        (function(c,l,a,r,i,t,y){
+          c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+          t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+          y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "w8yoykmszl");
+      }
     </script>
     <!-- OG Meta -->
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="ru_RU" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content="https://aidacamp.ru/images/hero-custom-2026-04-07.avif" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="АйДаКемп" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://aidacamp.ru/images/hero-custom-2026-04-07.avif" />
+    <link rel="canonical" href={canonicalUrl} />
+    <slot name="head" />
+    <!-- Top.Mail.Ru counter -->
+    <script is:inline type="text/javascript">
+      var _tmr = window._tmr || (window._tmr = []);
+      _tmr.push({id: "3755202", type: "pageView", start: (new Date()).getTime()});
+      (function (d, w, id) {
+        if (d.getElementById(id)) return;
+        var ts = d.createElement("script"); ts.type = "text/javascript"; ts.async = true; ts.id = id;
+        ts.src = "https://top-fwz1.mail.ru/js/code.js";
+        var f = function () {var s = d.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ts, s);};
+        if (w.opera == "[object Opera]") { d.addEventListener("DOMContentLoaded", f, false); } else { f(); }
+      })(document, window, "tmr-code");
+    </script>
+    <noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3755202;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
+    <!-- /Top.Mail.Ru counter -->
   </head>
   <body class="font-sans text-[var(--color-text)] bg-white antialiased">
     <slot />
+    <!-- Nudge toast -->
+    <div
+      id="nudge-toast"
+      class="fixed bottom-20 left-4 right-4 z-50 mx-auto max-w-[420px] translate-y-full opacity-0 transition-all duration-300 pointer-events-auto md:bottom-6 md:left-auto md:right-6"
+    >
+      <div class="flex items-start gap-3 rounded-[14px] bg-slate-900/95 px-4 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-sm">
+        <span data-nudge-text class="flex-1 text-[14px] leading-[1.45] text-white/90"></span>
+        <button data-nudge-close class="shrink-0 mt-0.5 text-white/40 hover:text-white/70 transition text-[18px] leading-none">&times;</button>
+      </div>
+    </div>
     <script>
       import { initScrollTracking } from '../scripts/analytics';
-      document.addEventListener('DOMContentLoaded', initScrollTracking);
+      import { initNudges } from '../scripts/nudge';
+      document.addEventListener('DOMContentLoaded', () => {
+        initScrollTracking();
+        initNudges();
+      });
+    </script>
+
+    <!-- Cookie Banner -->
+    <div id="cookieBanner" class="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:w-[340px]" style="display:none">
+      <div class="flex items-center gap-3 rounded-[14px] bg-slate-900/90 px-4 py-3 text-[13px] text-white/80 backdrop-blur-sm shadow-lg">
+        <span class="shrink-0 text-[16px]">🍪</span>
+        <p class="flex-1 leading-[1.4]">Мы используем cookies для аналитики и улучшения сайта.</p>
+        <button id="cookieAccept" class="shrink-0 rounded-[8px] bg-white/15 px-3 py-1.5 text-[12px] font-medium text-white transition hover:bg-white/25">
+          Понятно
+        </button>
+      </div>
+    </div>
+
+    <script is:inline>
+      (function() {
+        if (!localStorage.getItem('cookieAccepted')) {
+          var banner = document.getElementById('cookieBanner');
+          if (banner) {
+            banner.style.display = 'block';
+            document.getElementById('cookieAccept').addEventListener('click', function() {
+              localStorage.setItem('cookieAccepted', '1');
+              banner.style.display = 'none';
+            });
+          }
+        }
+      })();
     </script>
   </body>
 </html>

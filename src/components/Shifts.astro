@@ -135,24 +135,26 @@ function renderCard(shift: Shift) {
 
     <!-- Mobile: tab nav + horizontal carousel -->
     <div class="mt-4 md:hidden">
-      <div class="flex gap-1.5 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" data-shifts-tabs>
-        {allShifts.map((shift, i) => (
-          <button
-            type="button"
-            data-shifts-tab={i}
-            class={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${i === 0 ? 'bg-[#ff8b1f] text-white' : 'bg-slate-100 text-slate-700'}`}
-          >
-            {shift.name}
-          </button>
-        ))}
+      <div class="flex gap-2 pb-2" data-shifts-tabs>
+        {allShifts.map((shift, i) => {
+          const num = shift.name.replace('Смена ', '');
+          return (
+            <button
+              type="button"
+              data-shifts-tab={i}
+              class={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold transition-colors ${i === 0 ? 'bg-[#ff8b1f] text-white' : 'bg-slate-100 text-slate-700'}`}
+            >
+              {num}
+            </button>
+          );
+        })}
       </div>
-      <p class="text-[11px] font-medium text-slate-400 mt-0.5">свайп →</p>
 
       <div class="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" data-shifts-carousel>
         {allShifts.map((shift) => {
           const { pct, badgeBg, badgeText, btnClass } = renderCard(shift);
           return (
-            <article class={`min-w-[90vw] shrink-0 snap-start rounded-[20px] border border-slate-200 bg-slate-50 p-4 shadow-[0_6px_18px_rgba(15,23,42,0.04)] ${shift.popular ? 'ring-2 ring-orange-400' : ''}`}>
+            <article class={`min-w-[calc(100vw-48px)] max-w-[calc(100vw-48px)] shrink-0 snap-start rounded-[20px] border bg-slate-50 p-4 shadow-[0_6px_18px_rgba(15,23,42,0.04)] ${shift.popular ? 'border-orange-400 ring-2 ring-orange-400' : 'border-slate-200'}`}>
               <div class="flex items-start justify-between">
                 <div>
                   <h3 class="text-[20px] font-semibold leading-[1.15] text-slate-900">{shift.name}</h3>
@@ -171,7 +173,7 @@ function renderCard(shift: Shift) {
                   <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                   календарь
                 </button>
-                <button type="button" data-shift-info={shift.id} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-[11px] text-slate-500 hover:bg-slate-100" title="Подробнее">
+                <button type="button" data-shift-info={shift.id} data-shift-title={shift.name} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-[11px] text-slate-500 hover:bg-slate-100" title="Подробнее">
                   <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0-4h.01" /></svg>
                   инфо
                 </button>
@@ -179,14 +181,20 @@ function renderCard(shift: Shift) {
 
               <p class="mt-3 text-[14px] leading-[1.55] text-slate-500">{shift.description}</p>
 
-              <div class="mt-4 text-[26px] font-bold tracking-[-0.03em] text-[#ff8b1f]">{shift.price}</div>
-              <p class="text-[11px] text-slate-400 mt-1">Питание, проживание, программа включены</p>
+              <div class="mt-4 text-[20px] font-bold tracking-[-0.03em] text-slate-900">{shift.price}</div>
+              <p class="text-[12px] text-slate-400 mt-1">Питание, проживание, программа включены</p>
 
               <div class="mt-3">
-                <div class="h-[6px] w-full overflow-hidden rounded-full bg-slate-200">
-                  <div class="h-full rounded-full bg-[#ff8b1f]" style={`width:${pct}%`}></div>
+                <div class="h-[10px] w-full overflow-hidden rounded-[6px] bg-slate-100">
+                  <div class="flex h-full">
+                    <div class="bg-slate-400 rounded-l-[6px]" style={`width:${pct}%`}></div>
+                    <div class="bg-emerald-400 rounded-r-[6px]" style={`width:${100 - pct}%`}></div>
+                  </div>
                 </div>
-                <div class="mt-1 text-xs text-slate-500">Свободно {shift.free} · занято {shift.occupied}</div>
+                <div class="flex justify-between mt-1">
+                  <span class="text-[11px] text-slate-400">занято {shift.occupied}</span>
+                  <span class="text-[11px] text-emerald-600 font-medium">свободно {shift.free}</span>
+                </div>
               </div>
 
               <button
@@ -202,6 +210,7 @@ function renderCard(shift: Shift) {
               >
                 Выбрать
               </button>
+              <p class="text-[12px] text-slate-500 text-center mt-1.5">Не понравится в первые 3 дня — вернём 50%</p>
             </article>
           );
         })}
@@ -240,7 +249,7 @@ function renderCard(shift: Shift) {
                   <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                   календарь
                 </button>
-                <button type="button" data-shift-info={shift.id} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-[11px] text-slate-500 hover:bg-slate-100" title="Подробнее">
+                <button type="button" data-shift-info={shift.id} data-shift-title={shift.name} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-[11px] text-slate-500 hover:bg-slate-100" title="Подробнее">
                   <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0-4h.01" /></svg>
                   инфо
                 </button>
@@ -248,14 +257,20 @@ function renderCard(shift: Shift) {
 
               <p class="mt-3 text-[15px] leading-[1.55] text-slate-500">{shift.description}</p>
 
-              <div class="mt-4 text-[26px] font-bold tracking-[-0.03em] text-[#ff8b1f]">{shift.price}</div>
-              <p class="text-[11px] text-slate-400 mt-1">Питание, проживание, программа включены</p>
+              <div class="mt-4 text-[22px] font-bold tracking-[-0.03em] text-slate-900">{shift.price}</div>
+              <p class="text-[12px] text-slate-400 mt-1">Питание, проживание, программа включены</p>
 
               <div class="mt-3">
-                <div class="h-[6px] w-full overflow-hidden rounded-full bg-slate-200">
-                  <div class="h-full rounded-full bg-[#ff8b1f]" style={`width:${pct}%`}></div>
+                <div class="h-[10px] w-full overflow-hidden rounded-[6px] bg-slate-100">
+                  <div class="flex h-full">
+                    <div class="bg-slate-400 rounded-l-[6px]" style={`width:${pct}%`}></div>
+                    <div class="bg-emerald-400 rounded-r-[6px]" style={`width:${100 - pct}%`}></div>
+                  </div>
                 </div>
-                <div class="mt-1 text-xs text-slate-500">Свободно {shift.free} · занято {shift.occupied}</div>
+                <div class="flex justify-between mt-1">
+                  <span class="text-[11px] text-slate-400">занято {shift.occupied}</span>
+                  <span class="text-[11px] text-emerald-600 font-medium">свободно {shift.free}</span>
+                </div>
               </div>
 
               <button
@@ -271,6 +286,7 @@ function renderCard(shift: Shift) {
               >
                 Выбрать
               </button>
+              <p class="text-[12px] text-slate-500 text-center mt-1.5">Не понравится в первые 3 дня — вернём 50%</p>
             </article>
           );
         })}
@@ -280,6 +296,7 @@ function renderCard(shift: Shift) {
       <div class="w-[320px] shrink-0">
         <div class="rounded-[20px] border border-slate-200 bg-slate-50 p-5">
           <p class="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#2fa768]">Короткие смены</p>
+          <p class="text-[12px] text-slate-400 mt-2 mb-1">Для тех, кто сомневается ехать ли надолго</p>
           <div class="mt-3 grid gap-3">
             {shortShifts.map((shift) => {
               const { pct, badgeBg, badgeText } = renderCard(shift);
@@ -300,7 +317,7 @@ function renderCard(shift: Shift) {
                       <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                       календарь
                     </button>
-                    <button type="button" data-shift-info={shift.id} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-[11px] text-slate-500 hover:bg-slate-100" title="Подробнее">
+                    <button type="button" data-shift-info={shift.id} data-shift-title={shift.name} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-[11px] text-slate-500 hover:bg-slate-100" title="Подробнее">
                       <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0-4h.01" /></svg>
                       инфо
                     </button>
@@ -308,8 +325,8 @@ function renderCard(shift: Shift) {
 
                   <p class="mt-3 text-[13px] leading-[1.6] text-slate-600">{shift.description}</p>
 
-                  <div class="mt-3 text-[22px] font-bold tracking-[-0.03em] text-[#ff8b1f]">{shift.price}</div>
-                  <p class="text-[11px] text-slate-400 mt-1">Питание, проживание, программа включены</p>
+                  <div class="mt-3 text-[20px] font-bold tracking-[-0.03em] text-slate-900">{shift.price}</div>
+                  <p class="text-[12px] text-slate-400 mt-1">Питание, проживание, программа включены</p>
 
                   <div class="mt-2">
                     <div class="h-[6px] w-full overflow-hidden rounded-full bg-slate-200">
@@ -331,6 +348,7 @@ function renderCard(shift: Shift) {
                   >
                     Выбрать
                   </button>
+                  <p class="text-[12px] text-slate-500 text-center mt-1.5">Не понравится в первые 3 дня — вернём 50%</p>
                 </div>
               );
             })}
@@ -352,7 +370,7 @@ function renderCard(shift: Shift) {
     <div class="rounded-[14px] bg-slate-50 p-3">
       <p class="text-[16px] font-semibold text-slate-900" data-book-shift-name></p>
       <p class="mt-0.5 text-[13px] text-slate-500"><span data-book-shift-dates></span> · <span data-book-shift-duration></span></p>
-      <p class="mt-1 text-[20px] font-bold text-[#ff8b1f]" data-book-shift-price></p>
+      <p class="mt-1 text-[20px] font-bold text-slate-900" data-book-shift-price></p>
     </div>
 
     <!-- Age -->
@@ -424,7 +442,7 @@ function renderCard(shift: Shift) {
 
       <!-- Right: Schedule image (bigger on desktop) -->
       <div class="w-full md:sticky md:top-0 md:w-[45%]">
-        <img src="/images/schedule-day.avif" alt="Распорядок дня в АйДаКемп" class="w-full rounded-[16px] shadow-md md:min-h-[500px] md:object-contain" loading="lazy" />
+        <img src="/images/schedule-day.avif" alt="Распорядок дня в АйДаКемп" class="w-full rounded-[16px] shadow-md md:min-h-[500px] md:object-contain" loading="lazy" width="800" height="1200" />
       </div>
     </div>
   </div>
@@ -585,6 +603,10 @@ function renderCard(shift: Shift) {
           }),
         });
         await res.json();
+        // VK/Mail.ru pixel — реальная конверсия
+        if (typeof _tmr !== 'undefined') {
+          _tmr.push({ type: 'reachGoal', id: 3755202, value: 6375, goal: 'lead'});
+        }
       } catch {}
 
       bookModal.close();
@@ -903,22 +925,14 @@ function renderCard(shift: Shift) {
 
     document.querySelectorAll('[data-shift-info]').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const el = btn as HTMLElement;
-        const shiftId = el.dataset.shiftInfo || '';
-        const card = el.closest('article, [class*="rounded-[16px]"]');
-        const name = card?.querySelector('h3')?.textContent || '';
-        const detail = shiftInfo[shiftId];
-
-        if (infoTitle) infoTitle.textContent = name;
-        if (infoDates && detail) infoDates.textContent = `${detail.dates} · ${detail.duration}`;
-        if (infoPrice && detail) infoPrice.textContent = detail.price;
-        if (infoBody && detail) infoBody.innerHTML = detail.html;
-
-        // Scroll modal content to top
-        const inner = infoModal?.querySelector('div');
-        if (inner) inner.scrollTop = 0;
-
-        infoModal?.showModal();
+        const id = (btn as HTMLElement).dataset.shiftInfo || '';
+        const info = shiftInfo[id];
+        if (!info || !infoModal) return;
+        if (infoTitle) infoTitle.textContent = (btn as HTMLElement).dataset.shiftTitle || id;
+        if (infoDates) infoDates.textContent = `${info.dates} · ${info.duration}`;
+        if (infoPrice) infoPrice.textContent = info.price;
+        if (infoBody) infoBody.innerHTML = info.html;
+        infoModal.showModal();
       });
     });
 

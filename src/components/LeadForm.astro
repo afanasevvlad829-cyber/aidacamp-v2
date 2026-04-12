@@ -7,7 +7,7 @@ const { variant } = Astro.props;
 const isDesktop = variant === 'desktop';
 
 const containerClass = isDesktop
-  ? 'absolute left-[1060px] top-[-390px] z-30 w-[320px] rounded-[28px] bg-white/95 backdrop-blur-sm p-[22px] shadow-[0_16px_48px_rgba(15,23,42,0.18)]'
+  ? 'absolute right-[24px] lg:right-[40px] top-[-440px] z-30 w-[320px] rounded-[28px] bg-white/95 backdrop-blur-sm p-[22px] shadow-[0_16px_48px_rgba(15,23,42,0.18)] xl:right-[calc((100%-1312px)/2+40px)]'
   : 'relative w-full rounded-[20px] bg-white px-5 pb-6 pt-4 shadow-[0_16px_48px_rgba(0,0,0,0.3)]';
 
 const inputWidth = isDesktop ? 'w-[276px]' : 'w-full';
@@ -19,7 +19,7 @@ const inputWidth = isDesktop ? 'w-[276px]' : 'w-full';
   novalidate
 >
   <!-- Age Selection -->
-  <p class="text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6e788a]">Возраст</p>
+  <p class="text-[12px] font-semibold uppercase tracking-[0.6px] text-[#4b5563]">Возраст</p>
   <input type="hidden" name="age" value="10–12" data-age-input />
   <div class={`mt-1 flex h-[34px] ${inputWidth} gap-[6px]`} role="radiogroup" aria-label="Возраст">
     <button
@@ -61,7 +61,7 @@ const inputWidth = isDesktop ? 'w-[276px]' : 'w-full';
   </div>
 
   <!-- Phone Input -->
-  <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6e788a]">Ваш телефон</p>
+  <p class="mt-3 text-[12px] font-semibold uppercase tracking-[0.6px] text-[#4b5563]">Ваш телефон</p>
   <input
     name="phone"
     type="tel"
@@ -74,7 +74,7 @@ const inputWidth = isDesktop ? 'w-[276px]' : 'w-full';
   />
 
   <!-- Consent -->
-  <label class={`mt-3 flex ${inputWidth} items-start gap-2 text-[11px] leading-[1.35] text-[#6e788a]`}>
+  <label class={`mt-3 flex ${inputWidth} items-start gap-2 text-[12px] leading-[1.35] text-[#4b5563]`}>
     <input type="checkbox" data-consent class="mt-[2px] h-4 w-4 rounded border border-slate-300 accent-[#ec7c00]" />
     <span>Согласен(а) на <a href="/legal#privacy" class="text-[#ec7c00] underline">обработку персональных данных</a></span>
   </label>
@@ -89,9 +89,9 @@ const inputWidth = isDesktop ? 'w-[276px]' : 'w-full';
     class={`mt-3 h-[44px] ${inputWidth} rounded-[10px] bg-[#ec7c00] text-[13px] font-semibold text-white transition-all duration-200 hover:shadow-[0_4px_16px_rgba(249,115,22,0.35)] hover:-translate-y-[1px] active:translate-y-0 disabled:cursor-not-allowed disabled:bg-[#f2b178]`}
     disabled
   >
-    Узнать о свободных местах
+    Забронировать место
   </button>
-  <p class={`${inputWidth} text-[11px] text-slate-400 text-center mt-2`} data-response-time-steps>Оставьте заявку → перезвоним за 10 мин → забронируем место</p>
+  <p class={`${inputWidth} text-[12px] text-slate-400 text-center mt-2`} data-response-time-steps>Оставьте заявку → свяжемся в течение 10 мин → забронируем место · Фото детей каждый день в чат</p>
 
   <!-- Trust -->
   <p class={`mt-1 ${inputWidth} text-center text-[13px] text-[#8c8c8c]`}>
@@ -99,7 +99,7 @@ const inputWidth = isDesktop ? 'w-[276px]' : 'w-full';
   </p>
 
   {!isDesktop && (
-    <div class="mt-3 flex w-full justify-between text-[10px] text-[#999]">
+    <div class="mt-3 flex w-full justify-between text-[12px] text-[#999]">
       <span>✓ Без оплаты</span>
       <span>✓ Договор</span>
       <span>✓ Трансфер — опция</span>
@@ -198,6 +198,10 @@ const inputWidth = isDesktop ? 'w-[276px]' : 'w-full';
             }),
           });
           await res.json();
+          // VK/Mail.ru pixel — реальная конверсия
+          if (typeof _tmr !== 'undefined') {
+            _tmr.push({ type: 'reachGoal', id: 3755202, value: 6375, goal: 'lead'});
+          }
         } catch {}
 
         const referralModal = document.getElementById('referralModal') as HTMLDialogElement | null;

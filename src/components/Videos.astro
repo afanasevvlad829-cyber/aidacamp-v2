@@ -4,26 +4,31 @@ const videos = [
     url: 'https://kinescope.io/embed/qmLxu2S7uaS44CKkhoV1Jj',
     title: 'IT-лагерь — это не "сидеть за компьютером". Вот что происходит на самом деле',
     thumb: '/images/videos/video-01.avif',
+    alt: 'IT-лагерь АйДаКемп — не просто сидеть за компьютером',
   },
   {
     url: 'https://kinescope.io/embed/tJAaAnvCYYJ5vRz7uyUepj',
     title: 'За неделю в лагере он меняется больше, чем за год дома',
     thumb: '/images/videos/video-02.avif',
+    alt: 'За неделю в лагере ребёнок меняется больше, чем за год дома',
   },
   {
     url: 'https://kinescope.io/embed/naDfzrei9duApz3AnaencH',
     title: 'Не хочу в лагерь… Через 3 дня: хочу ещё',
     thumb: '/images/videos/video-03.avif',
+    alt: 'Не хочу в лагерь — через 3 дня: хочу ещё',
   },
   {
     url: 'https://kinescope.io/embed/eTmCgZHcwhcWQQs3HLCz1S',
     title: 'Ребёнок сам откажется от телефона за 3 дня',
     thumb: '/images/videos/video-04.avif',
+    alt: 'Ребёнок сам откажется от телефона за 3 дня в АйДаКемп',
   },
   {
     url: 'https://kinescope.io/embed/s1SCYKqLx6C94fMRumitHF',
     title: 'Зачем детям копить деньги в лагере',
     thumb: '/images/videos/video-05.avif',
+    alt: 'Зачем детям копить деньги в лагере АйДаКемп',
   },
 ];
 ---
@@ -43,9 +48,53 @@ const videos = [
         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
       </button>
 
-      <!-- Track -->
-      <p class="text-[11px] font-medium text-slate-400 mt-0.5 md:hidden">свайп →</p>
-      <div data-vid-track class="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-5 md:gap-4 md:overflow-hidden md:pb-0">
+      <!-- Mobile: main video + thumbnails -->
+      <div class="md:hidden">
+        <button
+          type="button"
+          data-video-open
+          data-video-url={videos[0].url}
+          data-video-title={videos[0].title}
+          data-vid-index="0"
+          class="group w-full"
+          data-vid-main
+        >
+          <div class="relative overflow-hidden rounded-[18px]">
+            <img src={videos[0].thumb} alt={videos[0].alt} class="aspect-[9/16] w-full object-cover" loading="lazy" width="360" height="640" data-vid-main-img />
+            <div class="absolute inset-0 flex items-center justify-center bg-black/20">
+              <div class="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 text-[#ff8b1f]">
+                <svg class="ml-1 h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+              </div>
+            </div>
+          </div>
+          <p class="mt-2 text-left text-[14px] font-medium leading-[1.4] text-slate-700" data-vid-main-title>{videos[0].title}</p>
+        </button>
+        <div class="mt-3 grid grid-cols-4 gap-2">
+          {videos.slice(1).map((v, i) => (
+            <button
+              type="button"
+              data-video-thumb
+              data-video-url={v.url}
+              data-video-title={v.title}
+              data-video-thumb-src={v.thumb}
+              data-vid-index={i + 1}
+              class="group"
+            >
+              <div class="relative overflow-hidden rounded-[12px]">
+                <img src={v.thumb} alt={v.alt} class="aspect-[9/16] w-full object-cover" loading="lazy" width="180" height="320" />
+                <div class="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <div class="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-[#ff8b1f]">
+                    <svg class="ml-0.5 h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                  </div>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <!-- Desktop: 5-col grid -->
+      <div data-vid-track class="hidden md:grid md:grid-cols-5 md:gap-4">
         {videos.map((v, i) => (
           <button
             type="button"
@@ -53,10 +102,10 @@ const videos = [
             data-video-url={v.url}
             data-video-title={v.title}
             data-vid-index={i}
-            class="group min-w-[65%] snap-start md:min-w-0"
+            class="group"
           >
             <div class="relative overflow-hidden rounded-[18px]">
-              <img src={v.thumb} alt={v.title} class="aspect-[9/16] w-full object-cover transition group-hover:scale-105" loading="lazy" />
+              <img src={v.thumb} alt={v.alt} class="aspect-[9/16] w-full object-cover transition group-hover:scale-105" loading="lazy" width="360" height="640" />
               <div class="absolute inset-0 flex items-center justify-center bg-black/20">
                 <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-[#ff8b1f]">
                   <svg class="ml-1 h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
@@ -91,7 +140,7 @@ const videos = [
     const frame = document.getElementById('videoFrame') as HTMLIFrameElement | null;
     const track = document.querySelector<HTMLElement>('[data-vid-track]');
 
-    // Open video modal
+    // Open video modal (desktop + mobile main)
     document.querySelectorAll('[data-video-open]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const url = (btn as HTMLElement).dataset.videoUrl;
@@ -99,6 +148,27 @@ const videos = [
           frame.src = url;
           modal.showModal();
           trackGoal('video_open');
+        }
+      });
+    });
+
+    // Mobile thumbnails: click swaps into main + opens
+    const mainBtn = document.querySelector<HTMLElement>('[data-vid-main]');
+    const mainImg = document.querySelector<HTMLImageElement>('[data-vid-main-img]');
+    const mainTitle = document.querySelector<HTMLElement>('[data-vid-main-title]');
+    document.querySelectorAll('[data-video-thumb]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const el = btn as HTMLElement;
+        const url = el.dataset.videoUrl;
+        if (frame && modal && url) {
+          frame.src = url;
+          modal.showModal();
+          trackGoal('video_open');
+        }
+        if (mainBtn && mainImg && mainTitle) {
+          mainBtn.dataset.videoUrl = el.dataset.videoUrl || '';
+          mainImg.src = el.dataset.videoThumbSrc || '';
+          mainTitle.textContent = el.dataset.videoTitle || '';
         }
       });
     });
