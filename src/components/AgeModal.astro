@@ -36,9 +36,9 @@
         7–9 лет
       </button>
       <button data-age="10–12"
-        class="age-btn age-btn--active rounded-[14px] py-4 sm:py-4
+        class="age-btn rounded-[14px] py-4 sm:py-4
                text-[15px] sm:text-[16px] font-semibold
-               text-white bg-orange-500 border border-orange-500
+               text-white/70 bg-white/7 border border-white/18
                transition-all active:scale-95">
         10–12 лет
       </button>
@@ -54,15 +54,14 @@
     <!-- Подсказка — меняется по возрасту -->
     <p id="age-hint"
       class="text-[13px] text-orange-400/80 min-h-[18px] mb-6 transition-opacity duration-200">
-      Python + логика · создают игры с уровнями
     </p>
 
     <!-- CTA -->
-    <button id="age-confirm"
+    <button id="age-confirm" disabled
       class="w-full bg-orange-500 hover:bg-orange-600 active:scale-[0.98]
              rounded-[14px] py-4
              text-[15px] font-semibold text-white
-             transition-all">
+             transition-all disabled:opacity-40 disabled:cursor-not-allowed">
       Показать смены →
     </button>
 
@@ -83,7 +82,7 @@ const HINTS: Record<string, string> = {
   '13–14': 'Python + AI · хакатон и серьёзные проекты',
 };
 
-let selectedAge = '10–12';
+let selectedAge: string | null = null;
 
 const overlay  = document.getElementById('age-modal-overlay')!;
 const card     = document.getElementById('age-modal-card')!;
@@ -138,9 +137,11 @@ ageBtns.forEach(btn => {
 
     hint.style.opacity = '0';
     setTimeout(() => {
-      hint.textContent = HINTS[selectedAge];
+      hint.textContent = HINTS[selectedAge!];
       hint.style.opacity = '1';
     }, 150);
+
+    confirm.removeAttribute('disabled');
   });
 });
 
@@ -148,8 +149,16 @@ ageBtns.forEach(btn => {
 confirm.addEventListener('click', () => {
   hideModal();
 
+  if (!selectedAge) return;
+
   // сохранить выбор
   sessionStorage.setItem('selected_age', selectedAge);
+  localStorage.setItem('user_age_group', selectedAge);
+
+  // Яндекс.Метрика goal
+  if (typeof ym !== 'undefined') {
+    ym(96499295, 'reachGoal', 'age_select');
+  }
 
   // TMR goal: age_select
   if (typeof _tmr !== 'undefined') {
