@@ -81,8 +81,20 @@ classify_path() {
   echo unknown
 }
 
+# Compare working-tree file to its version on a given branch.
+# Returns 0 if identical, 1 if different or missing on branch.
+_same_as_branch() {
+  local path="$1" branch="$2"
+  local disk branch_hash
+  [[ -f "$path" ]] || return 1
+  disk="$(git hash-object -- "$path" 2>/dev/null)" || return 1
+  branch_hash="$(git rev-parse "$branch:$path" 2>/dev/null)" || return 1
+  [[ "$disk" == "$branch_hash" ]]
+}
+
 # Split working-tree changes (staged + unstaged + untracked) into buckets.
 # Sets arrays: CHG_SITE / CHG_TOOLING / CHG_IGNORE / CHG_UNKNOWN
+# Tooling files identical to their version on 'tooling' branch are filtered out.
 split_working_changes() {
   CHG_SITE=(); CHG_TOOLING=(); CHG_IGNORE=(); CHG_UNKNOWN=()
   local path cat
@@ -91,7 +103,13 @@ split_working_changes() {
     cat="$(classify_path "$path")"
     case "$cat" in
       site)    CHG_SITE+=("$path") ;;
-      tooling) CHG_TOOLING+=("$path") ;;
+      tooling)
+        if _same_as_branch "$path" tooling; then
+          : # already on tooling branch, skip
+        else
+          CHG_TOOLING+=("$path")
+        fi
+        ;;
       ignore)  CHG_IGNORE+=("$path") ;;
       *)       CHG_UNKNOWN+=("$path") ;;
     esac
