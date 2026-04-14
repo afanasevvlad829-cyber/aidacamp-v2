@@ -75,10 +75,12 @@ fi
 if (( ${#CHG_TOOLING[@]} && ! SITE_ONLY )); then
   info "Коммит tooling → tooling branch"
 
+  git worktree prune >/dev/null 2>&1 || true
   WT_DIR="$(mktemp -d -t aidacamp-tooling-XXXXXX)"
-  trap 'rm -rf "$WT_DIR"' EXIT
+  _cleanup_wt() { git worktree remove --force "$WT_DIR/wt" 2>/dev/null || true; rm -rf "$WT_DIR"; git worktree prune >/dev/null 2>&1 || true; }
+  trap _cleanup_wt EXIT
 
-  # Save current file contents of tooling files to a tarball, unstage them, apply on tooling branch
+  # Save current file contents of tooling files to a tarball, apply on tooling branch
   TAR="$WT_DIR/tooling.tar"
   tar -cf "$TAR" -- "${CHG_TOOLING[@]}"
 
@@ -86,7 +88,7 @@ if (( ${#CHG_TOOLING[@]} && ! SITE_ONLY )); then
   (
     cd "$WT_DIR/wt"
     tar -xf "$TAR"
-    git add -- "${CHG_TOOLING[@]}"
+    git add -f -- "${CHG_TOOLING[@]}"
     if git diff --cached --quiet; then
       warn "tooling: нет реальных отличий от tooling branch, скип"
     else
