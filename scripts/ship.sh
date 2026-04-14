@@ -96,11 +96,8 @@ if (( ${#CHG_TOOLING[@]} && ! SITE_ONLY )); then
   )
   git worktree remove --force "$WT_DIR/wt" >/dev/null
 
-  # Revert tooling files in main worktree (they now live on tooling branch)
-  # but first make sure they match the tooling branch so working tree is clean
-  for f in "${CHG_TOOLING[@]}"; do
-    git checkout tooling -- "$f" 2>/dev/null || true
-  done
+  # Files remain physically present in the main worktree as untracked.
+  # They live committed only on the 'tooling' branch — don't stage them here.
 fi
 
 # Push current branch
