@@ -1,5 +1,6 @@
 ---
 import AgeModal from '../components/AgeModal.astro';
+import '../styles/icons.css';
 
 interface Props {
   title: string;
@@ -22,8 +23,7 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
     <link rel="preload" as="image" href="/images/hero-custom-2026-04-07.avif" type="image/avif" />
     <link rel="preload" as="font" href="/fonts/inter-cyrillic.woff2" type="font/woff2" crossorigin />
     <link rel="preload" as="font" href="/fonts/inter-latin.woff2" type="font/woff2" crossorigin />
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- Bootstrap Icons: subset of 30 icons inlined locally (no CDN, no font download) -->
     <link rel="preconnect" href="https://mc.yandex.ru" />
     <link rel="dns-prefetch" href="https://mc.yandex.ru" />
     <script is:inline>
@@ -50,13 +50,13 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
       if('requestIdleCallback' in window){requestIdleCallback(loadMetrika)}else{setTimeout(loadMetrika,3500)}
     </script>
     <script is:inline type="text/javascript">
-      if (!window._clarityDisabled) {
-        (function(c,l,a,r,i,t,y){
-          c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-          t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-          y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-        })(window, document, "clarity", "script", "w8yoykmszl");
-      }
+      function loadClarity(){if(window._clarityDisabled||window._clarityLoaded)return;window._clarityLoaded=true;
+      (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+      })(window, document, "clarity", "script", "w8yoykmszl");}
+      if('requestIdleCallback' in window){requestIdleCallback(loadClarity,{timeout:4000})}else{setTimeout(loadClarity,3500)}
     </script>
     <!-- Leadfeeder — deferred load -->
     <script is:inline>
@@ -81,17 +81,20 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
     <meta name="twitter:image" content="https://aidacamp.ru/images/hero-custom-2026-04-07.avif" />
     <link rel="canonical" href={canonicalUrl} />
     <slot name="head" />
-    <!-- Top.Mail.Ru counter -->
+    <!-- Top.Mail.Ru counter — deferred -->
     <script is:inline type="text/javascript">
-      var _tmr = window._tmr || (window._tmr = []);
-      _tmr.push({id: "3755202", type: "pageView", start: (new Date()).getTime()});
-      (function (d, w, id) {
-        if (d.getElementById(id)) return;
-        var ts = d.createElement("script"); ts.type = "text/javascript"; ts.async = true; ts.id = id;
-        ts.src = "https://top-fwz1.mail.ru/js/code.js";
-        var f = function () {var s = d.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ts, s);};
-        if (w.opera == "[object Opera]") { d.addEventListener("DOMContentLoaded", f, false); } else { f(); }
-      })(document, window, "tmr-code");
+      function loadTopMailRu(){
+        if(window._tmrLoaded)return;window._tmrLoaded=true;
+        var _tmr = window._tmr || (window._tmr = []);
+        _tmr.push({id: "3755202", type: "pageView", start: (new Date()).getTime()});
+        (function (d, w, id) {
+          if (d.getElementById(id)) return;
+          var ts = d.createElement("script"); ts.type = "text/javascript"; ts.async = true; ts.id = id;
+          ts.src = "https://top-fwz1.mail.ru/js/code.js";
+          var s = d.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ts, s);
+        })(document, window, "tmr-code");
+      }
+      if('requestIdleCallback' in window){requestIdleCallback(loadTopMailRu,{timeout:5000})}else{setTimeout(loadTopMailRu,4000)}
     </script>
     <noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3755202;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
     <!-- /Top.Mail.Ru counter -->
