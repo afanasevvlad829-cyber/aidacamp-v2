@@ -183,16 +183,22 @@ import LeadForm from './LeadForm.astro';
     var source = params.get('utm_source');
 
     var variants = {
+      // Search utm_h1 values
       camp:        { title: 'Летний лагерь в Подмосковье для детей 7–14 лет', subtitle: 'IT, бассейн, проживание — всё включено. 66 км от Москвы' },
       result:      { title: 'За смену ребёнок создаёт реальный IT-проект', subtitle: 'Хакатон в финале каждой смены — защита перед жюри' },
       it:          { title: 'IT-лагерь для детей 7–14 лет — Python, Minecraft, AI', subtitle: 'Каждый уедет с проектом и новыми друзьями' },
       reviews:     { title: 'АйДаКемп — 40+ отзывов, рейтинг 5.0 на Яндекс Картах', subtitle: '6 лет работы · 1200+ детей · лицензия Минобра' },
       brand:       { title: 'АйДаКемп — IT-лагерь в Подмосковье', subtitle: '66 км от Москвы, программирование, бассейн, природа' },
       nophone:     { title: 'Телефон здесь зарабатывают', subtitle: 'Экранное время — за участие и инициативу, не выдаётся автоматически' },
-      price:       { title: 'IT-лагерь 7–14 лет от 48 900₽', subtitle: '7 дней: программирование, хакатон, бассейн — всё включено' },
+      price:       { title: 'IT-лагерь 7–14 лет от 48 000₽', subtitle: '7 дней: программирование, хакатон, бассейн — всё включено' },
       age:         { title: 'Лагерь для детей 7–14 лет', subtitle: 'Учатся программировать и защищают свой проект' },
-      parents:     { title: 'Ребёнок вернётся с проектом', subtitle: 'Не просто лагерь — дети создают игры и приложения' },
+      // РСЯ utm_content group values
+      keys:        { title: 'IT-лагерь в Подмосковье — вы знаете, куда отправляете ребёнка', subtitle: 'Лицензия Минобра · 6 лет работы · 1200+ детей' },
+      parents:     { title: 'Ребёнок в лагере — вы отдыхаете 14 дней', subtitle: 'Не просто лагерь — дети создают игры и приложения' },
+      edu:         { title: 'IT-лагерь 7–14 лет — ребёнок уедет с проектом на Python', subtitle: 'Хакатон в финале, лицензия Минобра, 66 км от Москвы' },
+      books:       { title: 'Не просто лагерь — среда развития', subtitle: 'Наши преподаватели написали книгу по Python. Учим серьёзно.' },
       competitors: { title: 'Лучший IT-лагерь Подмосковья', subtitle: '66 км от Москвы, хакатон в финале каждой смены' },
+      // Прочие
       telefon:     { title: 'Перестаёт сидеть в телефоне? IT-лагерь это исправит' },
       nichego:     { title: 'Ничего не хочет? В лагере это исчезает на 3-й день' },
       leto:        { title: 'Лето может пройти иначе — IT-лагерь под Москвой' },
@@ -228,7 +234,13 @@ import LeadForm from './LeadForm.astro';
       }
       if (v.subtitle) {
         if (subtitleEl) subtitleEl.textContent = v.subtitle;
-        if (subtitleMob) subtitleMob.textContent = v.subtitle;
+        // Mobile: replace only text node, keep agree button intact
+        if (subtitleMob) {
+          var firstNode = subtitleMob.firstChild;
+          if (firstNode && firstNode.nodeType === 3) {
+            firstNode.textContent = v.subtitle + ' ';
+          }
+        }
       }
       if (v.badge) {
         var badgesEl = document.getElementById('hero-badges');
