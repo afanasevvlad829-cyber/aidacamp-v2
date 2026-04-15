@@ -1,98 +1,175 @@
 ---
 // AgeBar.astro — мобильная плашка выбора возраста (снизу экрана)
-// Появляется через 8 сек, автозакрывается через 20 сек
-// Восстановлено с prod 2026-04-14
+// v2: появляется при 25% скролла, после выбора → нудж → ShiftModal Смены 1
 ---
 
-<!-- Плашка выбора возраста — только мобилка, появляется через 8 сек -->
-<div id="age-bar" class="fixed bottom-0 inset-x-0 z-[60]
+<!-- Плашка выбора возраста — только мобилка -->
+<div
+  id="age-bar"
+  class="fixed bottom-0 inset-x-0 z-[60]
          translate-y-full opacity-0 pointer-events-none
          transition-all duration-400 ease-out
-         lg:hidden">
-  <div class="bg-slate-900/96 backdrop-blur-md
-              border-t border-white/10
-              px-4 py-3
-              shadow-[0_-4px_24px_rgba(0,0,0,0.3)]">
+         lg:hidden"
+>
+  <!-- Фаза 1: выбор возраста -->
+  <div
+    id="age-bar-phase1"
+    class="bg-slate-900/96 backdrop-blur-md border-t border-white/10
+           px-4 py-3 shadow-[0_-4px_24px_rgba(0,0,0,0.3)]"
+  >
+    <p class="text-[14px] text-white/50 mb-2">Выберите возраст — покажем смену где больше ровесников</p>
     <div class="flex items-center gap-2">
-      <span class="text-[13px] text-white/65 shrink-0 whitespace-nowrap">Возраст</span>
       <div class="flex gap-1.5 flex-1">
-        <button data-age="7–9" class="age-btn flex-1 py-1.5 rounded-[8px]
-                 text-[13px] font-semibold
+        <button
+          data-age="7–9"
+          class="age-btn flex-1 py-1.5 rounded-[8px]
+                 text-[14px] font-semibold
                  text-white/85 bg-white/8 border border-white/12
-                 transition-all active:scale-95">7–9</button>
-        <button data-age="10–12" class="age-btn flex-1 py-1.5 rounded-[8px]
-                 text-[13px] font-semibold
+                 transition-all active:scale-95"
+        >7–9</button>
+        <button
+          data-age="10–12"
+          class="age-btn flex-1 py-1.5 rounded-[8px]
+                 text-[14px] font-semibold
                  text-white/85 bg-white/8 border border-white/12
-                 transition-all active:scale-95">10–12</button>
-        <button data-age="13–14" class="age-btn flex-1 py-1.5 rounded-[8px]
-                 text-[13px] font-semibold
+                 transition-all active:scale-95"
+        >10–12</button>
+        <button
+          data-age="13–14"
+          class="age-btn flex-1 py-1.5 rounded-[8px]
+                 text-[14px] font-semibold
                  text-white/85 bg-white/8 border border-white/12
-                 transition-all active:scale-95">13–14</button>
+                 transition-all active:scale-95"
+        >13–14</button>
       </div>
-      <button id="age-close" class="shrink-0 text-white/25 hover:text-white/55
-               transition-colors text-[20px] leading-none w-6 text-center" aria-label="Закрыть">×</button>
+      <button
+        id="age-bar-close"
+        class="shrink-0 text-white/25 hover:text-white/55
+               transition-colors text-[22px] leading-none w-7 text-center"
+        aria-label="Закрыть"
+      >×</button>
     </div>
-    <!-- Прогресс-бар автозакрытия 20 сек -->
-    <div class="mt-2 h-[2px] bg-white/8 rounded-full overflow-hidden">
-      <div id="age-progress" class="h-full bg-orange-400/50 rounded-full" style="width:100%"></div>
+  </div>
+
+  <!-- Фаза 2: нудж после выбора возраста -->
+  <div
+    id="age-bar-phase2"
+    class="hidden bg-slate-900/96 backdrop-blur-md border-t border-white/10
+           px-4 py-3 shadow-[0_-4px_24px_rgba(0,0,0,0.3)]"
+  >
+    <div class="flex items-center gap-3">
+      <p id="age-bar-nudge-text" class="flex-1 text-[16px] font-semibold text-white leading-[1.35]"></p>
+      <button
+        id="age-bar-nudge-cta"
+        class="shrink-0 rounded-[10px] bg-[#ec7c00] px-3 py-2
+               text-[14px] font-semibold text-white
+               active:scale-95 transition-all whitespace-nowrap"
+      >Посмотреть →</button>
+      <button
+        id="age-bar-nudge-close"
+        class="shrink-0 text-white/25 hover:text-white/55
+               transition-colors text-[22px] leading-none w-7 text-center"
+        aria-label="Закрыть"
+      >×</button>
     </div>
   </div>
 </div>
 
 <script type="module">
-  const bar = document.getElementById('age-bar');
-  const closeBtn = document.getElementById('age-close');
-  const progress = document.getElementById('age-progress');
-  const ageBtns = document.querySelectorAll('.age-btn');
+  // Числа детей нужного возраста по сменам (для нуджа)
+  const AGE_COUNTS = {
+    '7–9':   { 'shift-1': 8,  'shift-2': 5 },
+    '10–12': { 'shift-1': 12, 'shift-2': 8 },
+    '13–14': { 'shift-1': 9,  'shift-2': 7 },
+  };
 
-  let timer = null;
-  let raf = null;
-  let startTime = 0;
-  const DURATION = 20000;
+  const bar       = document.getElementById('age-bar');
+  const phase1    = document.getElementById('age-bar-phase1');
+  const phase2    = document.getElementById('age-bar-phase2');
+  const closeBtn  = document.getElementById('age-bar-close');
+  const nudgeText = document.getElementById('age-bar-nudge-text');
+  const nudgeCta  = document.getElementById('age-bar-nudge-cta');
+  const nudgeClose= document.getElementById('age-bar-nudge-close');
+  const ageBtns   = document.querySelectorAll('.age-btn');
 
-  function show() {
+  function showBar() {
     if (sessionStorage.getItem('age_bar_shown')) return;
     sessionStorage.setItem('age_bar_shown', '1');
     bar?.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
     bar?.classList.add('translate-y-0', 'opacity-100');
-    startProgress();
   }
 
-  function hide() {
+  function hideBar(dismissed = true) {
     bar?.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
     bar?.classList.remove('translate-y-0', 'opacity-100');
-    if (timer) clearTimeout(timer);
-    if (raf) cancelAnimationFrame(raf);
+    if (dismissed) sessionStorage.setItem('age_bar_dismissed', '1');
   }
 
-  function startProgress() {
-    startTime = Date.now();
-    function tick() {
-      const pct = Math.max(0, 100 - (Date.now() - startTime) / DURATION * 100);
-      if (progress) progress.style.width = pct + '%';
-      if (pct > 0) raf = requestAnimationFrame(tick);
+  // Триггер: 25% скролла (не таймер)
+  function onScroll() {
+    const scrolled = window.scrollY;
+    const total = document.documentElement.scrollHeight - window.innerHeight;
+    if (total > 0 && scrolled / total >= 0.25) {
+      showBar();
+      window.removeEventListener('scroll', onScroll);
     }
-    raf = requestAnimationFrame(tick);
-    timer = setTimeout(hide, DURATION);
   }
 
   if (!sessionStorage.getItem('age_bar_shown')) {
-    setTimeout(show, 8000);
+    window.addEventListener('scroll', onScroll, { passive: true });
   }
 
-  closeBtn?.addEventListener('click', hide);
+  closeBtn?.addEventListener('click', hideBar);
+  nudgeClose?.addEventListener('click', hideBar);
 
   ageBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      const age = btn.dataset.age || '';
+      const age = btn.dataset.age || '10–12';
+
+      // Аналитика
       if (typeof window.ym !== 'undefined') window.ym(96499295, 'reachGoal', 'age_select');
       window._tmr = window._tmr || [];
       window._tmr.push({ type: 'reachGoal', id: 3755202, value: 100, goal: 'age_select' });
+
+      // Сохраняем возраст
       sessionStorage.setItem('selected_age', age);
       localStorage.setItem('user_age_group', age);
-      document.querySelector(`[data-segment="${age}"]`)?.click();
-      hide();
-      document.querySelector('#shifts')?.scrollIntoView({ behavior: 'smooth' });
+
+      // Показываем нудж
+      const counts = AGE_COUNTS[age] || AGE_COUNTS['10–12'];
+      if (nudgeText) {
+        nudgeText.textContent = `Идеально подойдёт Смена 1 — туда уже едет ${counts['shift-1']} ребят вашего возраста`;
+      }
+      phase1?.classList.add('hidden');
+      phase2?.classList.remove('hidden');
     });
   });
+
+  // Тап на нудж → открыть ShiftModal Смены 1
+  nudgeCta?.addEventListener('click', () => {
+    hideBar();
+    document.dispatchEvent(
+      new CustomEvent('shift-modal-open', { detail: { shiftId: 'shift-1', tab: 'description' } })
+    );
+  });
+
+  // Скрываем AgeBar когда ShiftModal открыт (чтобы не обрезалась под панелью)
+  document.addEventListener('shift-modal-open', () => {
+    bar?.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+    bar?.classList.remove('translate-y-0', 'opacity-100');
+  });
+
+  // Восстанавливаем AgeBar когда ShiftModal закрыт (только если уже был показан и не был закрыт)
+  const shiftModalEl = document.getElementById('shift-modal');
+  if (shiftModalEl) {
+    const observer = new MutationObserver(() => {
+      const isClosed = shiftModalEl.classList.contains('hidden');
+      if (isClosed && sessionStorage.getItem('age_bar_shown') && !sessionStorage.getItem('age_bar_dismissed')) {
+        bar?.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+        bar?.classList.add('translate-y-0', 'opacity-100');
+      }
+    });
+    observer.observe(shiftModalEl, { attributes: true, attributeFilter: ['class'] });
+  }
+
 </script>

@@ -5,6 +5,13 @@ import { trackGoal } from './analytics';
 
 type TabName = 'description' | 'calendar' | 'info';
 
+// Количество ровесников по возрасту и смене
+const AGE_PEERS: Record<string, Record<string, number>> = {
+  '7–9':   { 'shift-1': 8,  'shift-2': 5,  'shift-2-1': 4, 'shift-2-2': 3, 'shift-3': 6,  'shift-4': 5 },
+  '10–12': { 'shift-1': 12, 'shift-2': 8,  'shift-2-1': 7, 'shift-2-2': 6, 'shift-3': 9,  'shift-4': 8 },
+  '13–14': { 'shift-1': 9,  'shift-2': 7,  'shift-2-1': 5, 'shift-2-2': 4, 'shift-3': 7,  'shift-4': 6 },
+};
+
 let initialized = false;
 
 export function initShiftModal() {
@@ -31,6 +38,12 @@ export function initShiftModal() {
   const infoBody = modal.querySelector<HTMLElement>('[data-shift-modal-info-body]')!;
   const priceEl = modal.querySelector<HTMLElement>('[data-shift-modal-price]')!;
   const bookBtn = modal.querySelector<HTMLButtonElement>('[data-shift-modal-book]')!;
+
+  // Блок возраста
+  const ageQ = modal.querySelector<HTMLElement>('[data-shift-age-q]')!;
+  const ageR = modal.querySelector<HTMLElement>('[data-shift-age-r]')!;
+  const ageResult = modal.querySelector<HTMLElement>('[data-shift-age-result]')!;
+  const ageBtns = Array.from(modal.querySelectorAll<HTMLButtonElement>('[data-shift-age-btn]'));
 
   const tabBtns = Array.from(
     modal.querySelectorAll<HTMLButtonElement>('[data-shift-modal-tab]'),
@@ -77,7 +90,40 @@ export function initShiftModal() {
     // Info (rich html)
     const info = shiftInfo[shift.id];
     infoBody.innerHTML = info ? info.html : '<p class="text-slate-500">Подробности появятся скоро.</p>';
+
+    // Блок возраста: если уже выбран — сразу показываем результат
+    const savedAge = localStorage.getItem('user_age_group') || sessionStorage.getItem('selected_age');
+    if (savedAge && AGE_PEERS[savedAge]) {
+      showAgePeers(shift.id, savedAge);
+    } else {
+      ageQ.classList.remove('hidden');
+      ageR.classList.add('hidden');
+      ageR.classList.remove('flex');
+    }
   }
+
+  function showAgePeers(shiftId: string, age: string) {
+    const count = AGE_PEERS[age]?.[shiftId] ?? AGE_PEERS[age]?.['shift-1'] ?? 8;
+    ageResult.textContent = `Уже едет ${count} ребят ${age} лет вашего возраста`;
+    ageQ.classList.add('hidden');
+    ageR.classList.remove('hidden');
+    ageR.classList.add('flex');
+  }
+
+  // Клики по кнопкам возраста внутри модалки
+  ageBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const age = btn.getAttribute('data-shift-age-btn') || '';
+      if (!age) return;
+      localStorage.setItem('user_age_group', age);
+      sessionStorage.setItem('selected_age', age);
+      showAgePeers(currentShiftId, age);
+      // Синхронизируем AgeBar — если ещё не выбран там
+      sessionStorage.setItem('age_bar_shown', '1');
+      sessionStorage.setItem('age_bar_dismissed', '1');
+      if (typeof window.ym !== 'undefined') (window as any).ym(96499295, 'reachGoal', 'age_select');
+    });
+  });
 
   function open(shiftId: string, tab: TabName) {
     const shift = allShifts.find((s) => s.id === shiftId);
@@ -176,6 +222,12 @@ export function initShiftModal() {
       if (id) open(id, 'description');
     }
   });
+
+  // === Кастомное событие открытия из AgeBar (нудж) ===
+  document.addEventListener('shift-modal-open', ((e: Event) => {
+    const { shiftId, tab } = (e as CustomEvent<{ shiftId: string; tab: TabName }>).detail;
+    open(shiftId, tab || 'description');
+  }) as EventListener);
 
   // === Event delegation на секции #shifts ===
   const shiftsSection = document.getElementById('shifts');
