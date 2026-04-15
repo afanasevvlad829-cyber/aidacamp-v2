@@ -38,25 +38,36 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
         window._clarityDisabled = true;
       }
     </script>
-    <!-- Yandex.Metrika (ID from src/data/tracking.ts) — deferred until page is idle -->
+    <!-- Stage 1: Yandex.Metrika — after 1.5s + requestIdleCallback -->
     <script is:inline>
-      function loadMetrika(){if(window._ymLoaded)return;window._ymLoaded=true;
+      function _loadStage1(){if(window._s1)return;window._s1=true;
+      if(!window.ym_disable96499295){
       (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
       m[i].l=1*new Date();
       for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r)return}
       k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
       (window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");
-      ym(96499295,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:true});}
-      if('requestIdleCallback' in window){requestIdleCallback(loadMetrika)}else{setTimeout(loadMetrika,3500)}
+      ym(96499295,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:false});}}
+      setTimeout(function(){if('requestIdleCallback' in window){requestIdleCallback(_loadStage1)}else{_loadStage1()}},1500);
     </script>
+    <!-- Stage 2: Clarity + Top.Mail.Ru — on first interaction OR after 8s -->
     <script is:inline type="text/javascript">
-      function loadClarity(){if(window._clarityDisabled||window._clarityLoaded)return;window._clarityLoaded=true;
+      function _loadStage2(){if(window._s2)return;window._s2=true;
+      if(!window._clarityDisabled){
       (function(c,l,a,r,i,t,y){
         c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
         t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
         y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-      })(window, document, "clarity", "script", "w8yoykmszl");}
-      if('requestIdleCallback' in window){requestIdleCallback(loadClarity,{timeout:4000})}else{setTimeout(loadClarity,3500)}
+      })(window,document,"clarity","script","w8yoykmszl");}
+      var _tmr=window._tmr||(window._tmr=[]);
+      _tmr.push({id:"3755202",type:"pageView",start:(new Date()).getTime()});
+      var ts=document.createElement("script");ts.type="text/javascript";ts.async=true;ts.id="tmr-code";
+      ts.src="https://top-fwz1.mail.ru/js/code.js";
+      var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(ts,s);}
+      var _s2t=setTimeout(_loadStage2,8000);
+      ['scroll','click','touchstart'].forEach(function(e){
+        document.addEventListener(e,function(){clearTimeout(_s2t);_loadStage2();},{once:true,passive:true});
+      });
     </script>
     <!-- Leadfeeder — deferred load -->
     <script is:inline>
@@ -81,23 +92,7 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
     <meta name="twitter:image" content="https://aidacamp.ru/images/hero-custom-2026-04-07.avif" />
     <link rel="canonical" href={canonicalUrl} />
     <slot name="head" />
-    <!-- Top.Mail.Ru counter — deferred -->
-    <script is:inline type="text/javascript">
-      function loadTopMailRu(){
-        if(window._tmrLoaded)return;window._tmrLoaded=true;
-        var _tmr = window._tmr || (window._tmr = []);
-        _tmr.push({id: "3755202", type: "pageView", start: (new Date()).getTime()});
-        (function (d, w, id) {
-          if (d.getElementById(id)) return;
-          var ts = d.createElement("script"); ts.type = "text/javascript"; ts.async = true; ts.id = id;
-          ts.src = "https://top-fwz1.mail.ru/js/code.js";
-          var s = d.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ts, s);
-        })(document, window, "tmr-code");
-      }
-      if('requestIdleCallback' in window){requestIdleCallback(loadTopMailRu,{timeout:5000})}else{setTimeout(loadTopMailRu,4000)}
-    </script>
     <noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3755202;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
-    <!-- /Top.Mail.Ru counter -->
   </head>
   <body class="font-sans text-[var(--color-text)] bg-white antialiased">
     <slot />
