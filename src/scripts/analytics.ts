@@ -14,6 +14,11 @@ export function trackGoal(id: string, params?: object) {
       (window as any).ym(YANDEX_METRIKA_ID, 'reachGoal', id, params ?? {});
     }
   } catch {}
+  // Fire JS event for VK pixel
+  try {
+    const event = new CustomEvent(id, { detail: params ?? {} });
+    window.dispatchEvent(event);
+  } catch {}
 }
 
 export function initContactTracking(scope: string) {
