@@ -1,14 +1,26 @@
 name: Deploy to Server
 
 on:
-  push:
-    branches: [Cloude]
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Введите "deploy" для подтверждения деплоя на ПРОД'
+        required: true
+        default: ''
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Check confirmation
+        if: github.event.inputs.confirm != 'deploy'
+        run: |
+          echo "❌ Отменено: введите 'deploy' для подтверждения"
+          exit 1
+
       - uses: actions/checkout@v4
+        with:
+          ref: Cloude
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
