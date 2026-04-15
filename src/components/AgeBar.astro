@@ -1,0 +1,97 @@
+---
+// AgeBar.astro — мобильная плашка выбора возраста (снизу экрана)
+// Появляется через 8 сек, автозакрывается через 20 сек
+// Восстановлено с prod 2026-04-14
+---
+
+<!-- Плашка выбора возраста — только мобилка, появляется через 8 сек -->
+<div id="age-bar" class="fixed bottom-0 inset-x-0 z-[60]
+         translate-y-full opacity-0 pointer-events-none
+         transition-all duration-400 ease-out
+         lg:hidden">
+  <div class="bg-slate-900/96 backdrop-blur-md
+              border-t border-white/10
+              px-4 py-3
+              shadow-[0_-4px_24px_rgba(0,0,0,0.3)]">
+    <div class="flex items-center gap-2">
+      <span class="text-[13px] text-white/65 shrink-0 whitespace-nowrap">Возраст</span>
+      <div class="flex gap-1.5 flex-1">
+        <button data-age="7–9" class="age-btn flex-1 py-1.5 rounded-[8px]
+                 text-[13px] font-semibold
+                 text-white/85 bg-white/8 border border-white/12
+                 transition-all active:scale-95">7–9</button>
+        <button data-age="10–12" class="age-btn flex-1 py-1.5 rounded-[8px]
+                 text-[13px] font-semibold
+                 text-white/85 bg-white/8 border border-white/12
+                 transition-all active:scale-95">10–12</button>
+        <button data-age="13–14" class="age-btn flex-1 py-1.5 rounded-[8px]
+                 text-[13px] font-semibold
+                 text-white/85 bg-white/8 border border-white/12
+                 transition-all active:scale-95">13–14</button>
+      </div>
+      <button id="age-close" class="shrink-0 text-white/25 hover:text-white/55
+               transition-colors text-[20px] leading-none w-6 text-center" aria-label="Закрыть">×</button>
+    </div>
+    <!-- Прогресс-бар автозакрытия 20 сек -->
+    <div class="mt-2 h-[2px] bg-white/8 rounded-full overflow-hidden">
+      <div id="age-progress" class="h-full bg-orange-400/50 rounded-full" style="width:100%"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  const bar = document.getElementById('age-bar');
+  const closeBtn = document.getElementById('age-close');
+  const progress = document.getElementById('age-progress');
+  const ageBtns = document.querySelectorAll('.age-btn');
+
+  let timer = null;
+  let raf = null;
+  let startTime = 0;
+  const DURATION = 20000;
+
+  function show() {
+    if (sessionStorage.getItem('age_bar_shown')) return;
+    sessionStorage.setItem('age_bar_shown', '1');
+    bar?.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+    bar?.classList.add('translate-y-0', 'opacity-100');
+    startProgress();
+  }
+
+  function hide() {
+    bar?.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+    bar?.classList.remove('translate-y-0', 'opacity-100');
+    if (timer) clearTimeout(timer);
+    if (raf) cancelAnimationFrame(raf);
+  }
+
+  function startProgress() {
+    startTime = Date.now();
+    function tick() {
+      const pct = Math.max(0, 100 - (Date.now() - startTime) / DURATION * 100);
+      if (progress) progress.style.width = pct + '%';
+      if (pct > 0) raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+    timer = setTimeout(hide, DURATION);
+  }
+
+  if (!sessionStorage.getItem('age_bar_shown')) {
+    setTimeout(show, 8000);
+  }
+
+  closeBtn?.addEventListener('click', hide);
+
+  ageBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const age = btn.dataset.age || '';
+      if (typeof window.ym !== 'undefined') window.ym(96499295, 'reachGoal', 'age_select');
+      if (typeof window._tmr !== 'undefined') window._tmr.push({ type: 'reachGoal', id: 3755202, value: 100, goal: 'age_select' });
+      sessionStorage.setItem('selected_age', age);
+      localStorage.setItem('user_age_group', age);
+      document.querySelector(`[data-segment="${age}"]`)?.click();
+      hide();
+      document.querySelector('#shifts')?.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>

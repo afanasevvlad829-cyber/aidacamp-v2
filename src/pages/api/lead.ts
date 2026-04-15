@@ -1,9 +1,27 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
+import { writeFile, appendFile, mkdir } from 'node:fs/promises';
+import { join } from 'node:path';
+
+const LEADS_DIR = '/var/www/aidacamp-dev/leads';
+
+async function saveLead(lead: Record<string, unknown>) {
+  try {
+    await mkdir(LEADS_DIR, { recursive: true });
+    const line = JSON.stringify({ ...lead, ts: new Date().toISOString() }) + '\n';
+    await appendFile(join(LEADS_DIR, 'leads.jsonl'), line);
+  } catch {
+    // filesystem backup is best-effort
+  }
+}
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { phone, age, shift, source } = await request.json();
+    const body = await request.json();
+    const { phone, age, shift, source } = body;
+
+    // Always save to filesystem first (backup)
+    await saveLead({ phone, age, shift, source });
 
     const token = process.env.TELEGRAM_BOT_TOKEN || import.meta.env.TELEGRAM_BOT_TOKEN;
     const chatId = process.env.TELEGRAM_CHAT_ID || import.meta.env.TELEGRAM_CHAT_ID;
@@ -31,7 +49,13 @@ export const POST: APIRoute = async ({ request }) => {
     );
 
     const data = await res.json();
-    return new Response(JSON.stringify({ ok: data.ok }), { status: 200 });
+
+    if (!data.ok) {
+      // Telegram failed — lead is saved in filesystem backup
+      return new Response(JSON.stringify({ ok: true, tg: false }), { status: 200 });
+    }
+
+    return new Response(JSON.stringify({ ok: true }), { status: 200 });
   } catch (e) {
     return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
   }

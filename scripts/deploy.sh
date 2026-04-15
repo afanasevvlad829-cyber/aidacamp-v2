@@ -9,8 +9,12 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-SSH_KEY="$HOME/.ssh/aidacamp_prod"
 SSH_HOST="root@159.194.223.55"
+
+# dev использует ограниченный ключ — может писать ТОЛЬКО в /var/www/aidacamp-dev/
+SSH_KEY_DEV="$HOME/.ssh/aidacamp_dev"
+# prod использует полный ключ — только у владельца проекта
+SSH_KEY_PROD="$HOME/.ssh/aidacamp_prod"
 
 TARGET="${1:-dev}"
 
@@ -18,10 +22,12 @@ case "$TARGET" in
   dev)
     REMOTE_DIR="/var/www/aidacamp-dev/current/"
     LABEL="DEV (dev.aidacamp.ru)"
+    SSH_KEY="$SSH_KEY_DEV"
     ;;
   prod)
     REMOTE_DIR="/var/www/aidacamp/current/"
     LABEL="PROD (aidacamp.ru)"
+    SSH_KEY="$SSH_KEY_PROD"
     echo ""
     echo "⚠️  ВНИМАНИЕ: деплой на ПРОДАКШН ($LABEL)"
     echo ""

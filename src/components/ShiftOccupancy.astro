@@ -28,7 +28,7 @@ function freeLabel(free: number) {
       <p class="mt-2 text-[14px] font-medium text-slate-500">Проверить свободные места</p>
       <p class="mt-1 text-[12px] text-slate-400">Данные обновляются в реальном времени</p>
       <button data-check-occupancy
-              class="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#ec7c00] px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-[#d46e00] transition">
+              class="mt-4 inline-flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-orange-600 transition">
         <i class="bi bi-search"></i>
         Проверить занятость
       </button>
@@ -45,12 +45,13 @@ function freeLabel(free: number) {
   <div data-state="loaded" class="hidden">
     <div class="space-y-3">
       {mainShifts.map((s) => {
-        const pct = Math.round((s.taken / s.total) * 100);
-        const free = s.total - s.taken;
+        const total = s.occupied + s.free;
+        const pct = Math.round((s.occupied / total) * 100);
+        const free = s.free;
         const color = getColor(pct);
         const icon = getIcon(pct);
         return (
-          <div class="occupancy-row" style="opacity: 0">
+          <div class="occupancy-row cursor-pointer rounded-lg -mx-1 px-1 py-1 hover:bg-slate-50 transition-colors" style="opacity: 0" data-occupancy-shift={s.id} role="button" tabindex="0">
             <div class="flex items-center justify-between mb-1">
               <div class="flex items-center gap-2">
                 <span class="text-[14px] font-semibold text-slate-800">{s.name}</span>
@@ -79,12 +80,13 @@ function freeLabel(free: number) {
       </div>
 
       {shortShifts.map((s) => {
-        const pct = Math.round((s.taken / s.total) * 100);
-        const free = s.total - s.taken;
+        const total = s.occupied + s.free;
+        const pct = Math.round((s.occupied / total) * 100);
+        const free = s.free;
         const color = getColor(pct);
         const icon = getIcon(pct);
         return (
-          <div class="occupancy-row" style="opacity: 0">
+          <div class="occupancy-row cursor-pointer rounded-lg -mx-1 px-1 py-1 hover:bg-slate-50 transition-colors" style="opacity: 0" data-occupancy-shift={s.id} role="button" tabindex="0">
             <div class="flex items-center justify-between mb-1">
               <div class="flex items-center gap-2">
                 <span class="text-[14px] font-semibold text-slate-800">{s.name}</span>
@@ -161,9 +163,6 @@ function freeLabel(free: number) {
     }
 
     root.querySelector('[data-check-occupancy]')?.addEventListener('click', () => {
-      if (typeof ym !== 'undefined') {
-        ym(96499295, 'reachGoal', 'available_spots');
-      }
       showState('loading');
       setTimeout(() => {
         showState('loaded');
