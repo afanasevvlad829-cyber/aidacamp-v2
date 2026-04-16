@@ -1,0 +1,88 @@
+name: Tilda jsDelivr Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag for Tilda CDN"
+        required: true
+        default: "tilda-prod"
+      purge:
+        description: "Purge jsDelivr cache after tag update"
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ensure main branch is selected
+        if: github.ref_name != 'main'
+        run: |
+          echo "Run this workflow from main branch."
+          exit 1
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Build CDN bundle for tag
+        env:
+          AC_CDN_REF: ${{ inputs.tag }}
+        run: |
+          chmod +x build.sh
+          bash build.sh
+          test -f cdn/app.bundle.js
+          test -f cdn/app.tilda.js
+
+      - name: Commit bundle update (if changed)
+        run: |
+          git add cdn/app.bundle.js cdn/app.tilda.js
+          if git diff --cached --quiet; then
+            echo "No CDN bundle changes to commit."
+          else
+            git commit -m "release: update cdn bundles for ${{ inputs.tag }}"
+            git push origin HEAD:main
+          fi
+
+      - name: Move release tag to current main
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          git fetch origin main --tags
+          git checkout main
+          git reset --hard origin/main
+          git tag -fa "$TAG" -m "Tilda CDN release ($TAG)"
+          git push origin "refs/tags/$TAG" --force
+
+      - name: Purge jsDelivr cache
+        if: ${{ inputs.purge }}
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          URL_BUNDLE="https://purge.jsdelivr.net/gh/${{ github.repository }}@$TAG/cdn/app.bundle.js"
+          URL_TILDA="https://purge.jsdelivr.net/gh/${{ github.repository }}@$TAG/cdn/app.tilda.js"
+          echo "Purging: $URL_BUNDLE"
+          curl -fsSL "$URL_BUNDLE" >/dev/null
+          echo "Purging: $URL_TILDA"
+          curl -fsSL "$URL_TILDA" >/dev/null
+
+      - name: Release summary
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          echo "Bundle URL:"
+          echo "https://cdn.jsdelivr.net/gh/${{ github.repository }}@$TAG/cdn/app.bundle.js"
+          echo "Tilda URL:"
+          echo "https://cdn.jsdelivr.net/gh/${{ github.repository }}@$TAG/cdn/app.tilda.js"

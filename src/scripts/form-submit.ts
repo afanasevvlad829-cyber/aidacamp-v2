@@ -24,9 +24,8 @@ export async function submitLead(data: {
       }),
     });
 
-    if (typeof _tmr !== 'undefined') {
-      _tmr.push({ type: 'reachGoal', id: MAILRU_PIXEL_ID, value: 6375, goal: 'lead' });
-    }
+    (window as any)._tmr = (window as any)._tmr || [];
+    (window as any)._tmr.push({ type: 'reachGoal', id: MAILRU_PIXEL_ID, value: 6375, goal: 'lead' });
 
     return true;
   } catch {
@@ -34,4 +33,3 @@ export async function submitLead(data: {
   }
 }
 
-declare const _tmr: Array<Record<string, unknown>> | undefined;

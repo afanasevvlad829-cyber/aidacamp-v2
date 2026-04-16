@@ -1,0 +1,35 @@
+name: Quality Gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - dev
+      - 'codex/**'
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: |
+          chmod +x build.sh
+          chmod +x tools/quality-metrics.sh
+          chmod +x tools/quality-gate.sh
+          chmod +x tools/quality-baseline.sh
+          chmod +x tools/quality-check.sh
+
+      - name: Prepare quality baseline
+        run: |
+          ./tools/quality-metrics.sh > /tmp/quality-snapshot-initial.md
+          if [ ! -f docs/quality/baseline.env ]; then
+            ./tools/quality-baseline.sh
+          fi
+
+      - name: Run quality check
+        run: ./tools/quality-check.sh

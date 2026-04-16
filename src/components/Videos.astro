@@ -1,4 +1,37 @@
 ---
+const projects = [
+  {
+    url: 'https://kinescope.io/embed/g2S7xxtEUP4S2E3WXYFNqZ',
+    title: 'Моя ферма',
+    thumb: '/images/videos/project-farm.avif',
+    alt: 'Игра «Моя ферма» — проект ученика АйДаКемп',
+  },
+  {
+    url: 'https://kinescope.io/embed/2ULnxEqqC4ssLNYCh5YPvo',
+    title: 'Программирование дронов',
+    thumb: '/images/videos/project-drones.avif',
+    alt: 'Программирование дронов — проект ученика АйДаКемп',
+  },
+  {
+    url: 'https://kinescope.io/embed/iFCF2uprpHLxx9VgJ1M7SP',
+    title: 'Игра на Unity',
+    thumb: '/images/videos/project-unity.avif',
+    alt: 'Игра на Unity — проект ученика АйДаКемп',
+  },
+  {
+    url: 'https://kinescope.io/embed/0Vs3qPMJr7Kvz13MWsxcbc',
+    title: 'Игра-исследователь',
+    thumb: '/images/videos/project-explorer.avif',
+    alt: 'Игра «Исследователь» — проект ученика АйДаКемп',
+  },
+  {
+    url: 'https://kinescope.io/embed/w1eZLPX8mqdC7dMniPaBWT',
+    title: 'Луиджи',
+    thumb: '/images/videos/project-luigi.avif',
+    alt: 'Игра «Луиджи» — проект ученика АйДаКемп',
+  },
+];
+
 const videos = [
   {
     url: 'https://kinescope.io/embed/qmLxu2S7uaS44CKkhoV1Jj',
@@ -31,23 +64,102 @@ const videos = [
     alt: 'Зачем детям копить деньги в лагере АйДаКемп',
   },
 ];
+
+const tabs = [
+  { value: 'projects', label: 'Проекты' },
+  { value: 'videos', label: 'Видео' },
+];
 ---
 
 <section id="videos" class="mx-auto max-w-[1312px] px-[2px] pt-10 md:px-4" data-videos-root>
   <div class="bg-white p-[18px]">
-    <div class="flex items-center gap-2 mb-1"><div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div><h2 class="text-[22px] font-bold leading-[1.1] tracking-[-0.02em] text-slate-900 md:text-[28px]">Видео</h2></div>
+    <div class="flex items-center gap-2 mb-1"><div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div><h2 class="text-[24px] font-bold leading-[1.1] tracking-[-0.02em] text-slate-900 md:text-[30px]">Видео</h2></div>
 
-    <!-- Desktop: all 5 visible with side arrows -->
-    <div class="relative mt-5">
-      <!-- Prev arrow -->
-      <button type="button" data-vid-prev aria-label="Назад" class="absolute -left-3 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 shadow-sm md:flex">
-        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
-      </button>
-      <!-- Next arrow -->
-      <button type="button" data-vid-next aria-label="Вперёд" class="absolute -right-3 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 shadow-sm md:flex">
-        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-      </button>
+    <!-- Filter tabs -->
+    <div class="mt-4 flex flex-wrap gap-1.5 md:gap-2" data-video-filters>
+      {tabs.map((t, i) => (
+        <button
+          type="button"
+          data-video-filter={t.value}
+          class={`whitespace-nowrap rounded-full px-3 py-1.5 text-[14px] font-medium transition-colors md:px-4 md:py-2 md:text-sm ${i === 0 ? 'bg-primary-light text-white' : 'bg-slate-100 text-slate-700'}`}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
 
+    <!-- Tab: Проекты -->
+    <div data-video-category="projects" class="mt-5">
+      <!-- Mobile: main + thumbs -->
+      <div class="md:hidden">
+        <button
+          type="button"
+          data-video-open
+          data-video-url={projects[0].url}
+          data-video-title={projects[0].title}
+          class="group w-full"
+          data-proj-main
+        >
+          <div class="relative overflow-hidden rounded-[18px]">
+            <img src={projects[0].thumb} alt={projects[0].alt} class="aspect-[9/16] w-full object-cover" loading="lazy" width="360" height="640" data-proj-main-img />
+            <div class="absolute inset-0 flex items-center justify-center bg-black/20">
+              <div class="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 text-primary-light">
+                <svg class="ml-1 h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+              </div>
+            </div>
+          </div>
+          <p class="mt-2 text-left text-[16px] font-medium leading-[1.4] text-slate-700" data-proj-main-title>{projects[0].title}</p>
+        </button>
+        {projects.length > 1 && (
+          <div class="mt-3 grid grid-cols-4 gap-2">
+            {projects.slice(1).map((v) => (
+              <button
+                type="button"
+                data-proj-thumb
+                data-video-url={v.url}
+                data-video-title={v.title}
+                data-video-thumb-src={v.thumb}
+                class="group"
+              >
+                <div class="relative overflow-hidden rounded-[12px]">
+                  <img src={v.thumb} alt={v.alt} class="aspect-[9/16] w-full object-cover" loading="lazy" width="180" height="320" />
+                  <div class="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <div class="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-primary-light">
+                      <svg class="ml-0.5 h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <!-- Desktop: grid -->
+      <div class="hidden md:grid md:grid-cols-5 md:gap-4">
+        {projects.map((v) => (
+          <button
+            type="button"
+            data-video-open
+            data-video-url={v.url}
+            data-video-title={v.title}
+            class="group"
+          >
+            <div class="relative overflow-hidden rounded-[18px]">
+              <img src={v.thumb} alt={v.alt} class="aspect-[9/16] w-full object-cover transition group-hover:scale-105" loading="lazy" width="360" height="640" />
+              <div class="absolute inset-0 flex items-center justify-center bg-black/20">
+                <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-primary-light">
+                  <svg class="ml-1 h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                </div>
+              </div>
+            </div>
+            <p class="mt-2 line-clamp-2 text-left text-[16px] leading-[1.4] text-slate-700">{v.title}</p>
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <!-- Tab: Видео -->
+    <div data-video-category="videos" class="mt-5 hidden">
       <!-- Mobile: main video + thumbnails -->
       <div class="md:hidden">
         <button
@@ -55,7 +167,6 @@ const videos = [
           data-video-open
           data-video-url={videos[0].url}
           data-video-title={videos[0].title}
-          data-vid-index="0"
           class="group w-full"
           data-vid-main
         >
@@ -67,17 +178,16 @@ const videos = [
               </div>
             </div>
           </div>
-          <p class="mt-2 text-left text-[14px] font-medium leading-[1.4] text-slate-700" data-vid-main-title>{videos[0].title}</p>
+          <p class="mt-2 text-left text-[16px] font-medium leading-[1.4] text-slate-700" data-vid-main-title>{videos[0].title}</p>
         </button>
         <div class="mt-3 grid grid-cols-4 gap-2">
-          {videos.slice(1).map((v, i) => (
+          {videos.slice(1).map((v) => (
             <button
               type="button"
               data-video-thumb
               data-video-url={v.url}
               data-video-title={v.title}
               data-video-thumb-src={v.thumb}
-              data-vid-index={i + 1}
               class="group"
             >
               <div class="relative overflow-hidden rounded-[12px]">
@@ -93,148 +203,126 @@ const videos = [
         </div>
       </div>
 
-      <!-- Desktop: 5-col grid -->
-      <div data-vid-track class="hidden md:grid md:grid-cols-5 md:gap-4">
-        {videos.map((v, i) => (
-          <button
-            type="button"
-            data-video-open
-            data-video-url={v.url}
-            data-video-title={v.title}
-            data-vid-index={i}
-            class="group"
-          >
-            <div class="relative overflow-hidden rounded-[18px]">
-              <img src={v.thumb} alt={v.alt} class="aspect-[9/16] w-full object-cover transition group-hover:scale-105" loading="lazy" width="360" height="640" />
-              <div class="absolute inset-0 flex items-center justify-center bg-black/20">
-                <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-primary-light">
-                  <svg class="ml-1 h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+      <!-- Desktop: 5-col grid with arrows -->
+      <div class="relative hidden md:block">
+        <button type="button" data-vid-prev aria-label="Назад" class="absolute -left-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 shadow-sm">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+        </button>
+        <button type="button" data-vid-next aria-label="Вперёд" class="absolute -right-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 shadow-sm">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+        </button>
+        <div data-vid-track class="grid grid-cols-5 gap-4">
+          {videos.map((v) => (
+            <button
+              type="button"
+              data-video-open
+              data-video-url={v.url}
+              data-video-title={v.title}
+              class="group"
+            >
+              <div class="relative overflow-hidden rounded-[18px]">
+                <img src={v.thumb} alt={v.alt} class="aspect-[9/16] w-full object-cover transition group-hover:scale-105" loading="lazy" width="360" height="640" />
+                <div class="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-primary-light">
+                    <svg class="ml-1 h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                  </div>
                 </div>
               </div>
-            </div>
-            <p class="mt-2 line-clamp-2 text-left text-[13px] leading-[1.4] text-slate-700">{v.title}</p>
-          </button>
-        ))}
+              <p class="mt-2 line-clamp-2 text-left text-[16px] leading-[1.4] text-slate-700">{v.title}</p>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Video modal — vertical aspect, Kinescope SDK -->
-<dialog id="videoModal" class="m-0 h-full w-full max-w-none border-0 outline-none bg-black/90 p-4 backdrop:bg-black/90">
-  <div class="flex h-full flex-col items-center justify-center">
-    <button type="button" data-video-close aria-label="Закрыть" class="absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white outline-none focus:outline-none focus:ring-0 focus-visible:outline-none">
+<!-- Video modal -->
+<dialog id="videoModal" class="m-0 h-full w-full max-w-none border-0 outline-none bg-black/90 p-0 backdrop:bg-black/90"
+        onclick="if(event.target===this){document.getElementById('videoFrame').src='';this.close()}">
+  <div class="flex h-full items-center justify-center p-4">
+    <button type="button" onclick="document.getElementById('videoFrame').src='';document.getElementById('videoModal').close()"
+            aria-label="Закрыть" class="absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white">
       <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
     </button>
-    <div class="mx-auto w-full max-w-[480px] md:max-w-[540px]">
-      <div id="playerContainer" class="w-full aspect-[9/16] rounded-[18px] overflow-hidden [&_iframe]:!w-full [&_iframe]:!h-full [&_iframe]:!absolute [&_iframe]:!inset-0 relative"></div>
-    </div>
+    <iframe id="videoFrame" class="rounded-[18px]" style="height:calc(100vh - 48px);aspect-ratio:9/16;max-width:calc(100vw - 32px);border:none"
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
   </div>
 </dialog>
 
-<script>
-  import { trackGoal } from '../scripts/analytics';
-
-  function waitForKinescope(): Promise<void> {
-    return new Promise((resolve) => {
-      if ((window as any).Kinescope?.IframePlayer) { resolve(); return; }
-      const check = setInterval(() => {
-        if ((window as any).Kinescope?.IframePlayer) { clearInterval(check); resolve(); }
-      }, 100);
-    });
-  }
-
-  function initVideos() {
-    const modal = document.getElementById('videoModal') as HTMLDialogElement | null;
-    const container = document.getElementById('playerContainer') as HTMLElement | null;
-    const track = document.querySelector<HTMLElement>('[data-vid-track]');
-    let player: any = null;
-
-    function extractVideoId(url: string): string {
-      // https://kinescope.io/embed/VIDEO_ID → VIDEO_ID
-      return url.split('/').pop() || '';
-    }
-
-    async function openVideo(url: string) {
-      if (!modal || !container) return;
-      modal.showModal();
-      trackGoal('video_open');
-
-      await waitForKinescope();
-      const videoId = extractVideoId(url);
-      const Kinescope = (window as any).Kinescope;
-
-      player = await Kinescope.IframePlayer.create('playerContainer', {
-        url: `https://kinescope.io/embed/${videoId}`,
-        size: { width: '100%', height: '100%' },
-        behaviour: { autoPlay: true },
+<script is:inline>
+  // Tab switching
+  document.querySelectorAll('[data-video-filter]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('[data-video-filter]').forEach(function(b) {
+        b.classList.remove('bg-primary-light', 'text-white');
+        b.classList.add('bg-slate-100', 'text-slate-700');
       });
-
-      player.on(Kinescope.PlayerEvent.PlaybackStateChanged, (state: string) => {
-        if (state === 'playing') trackGoal('video_play');
-      });
-    }
-
-    function closeVideo() {
-      if (player) { player.destroy(); player = null; }
-      modal?.close();
-    }
-
-    // Open video modal (desktop + mobile main)
-    document.querySelectorAll('[data-video-open]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const url = (btn as HTMLElement).dataset.videoUrl;
-        if (url) openVideo(url);
+      btn.classList.remove('bg-slate-100', 'text-slate-700');
+      btn.classList.add('bg-primary-light', 'text-white');
+      var filter = btn.dataset.videoFilter;
+      document.querySelectorAll('[data-video-category]').forEach(function(cat) {
+        cat.classList.toggle('hidden', cat.dataset.videoCategory !== filter);
       });
     });
+  });
 
-    // Mobile thumbnails: click swaps into main + opens
-    const mainBtn = document.querySelector<HTMLElement>('[data-vid-main]');
-    const mainImg = document.querySelector<HTMLImageElement>('[data-vid-main-img]');
-    const mainTitle = document.querySelector<HTMLElement>('[data-vid-main-title]');
-    document.querySelectorAll('[data-video-thumb]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const el = btn as HTMLElement;
-        const url = el.dataset.videoUrl;
-        if (url) openVideo(url);
-        if (mainBtn && mainImg && mainTitle) {
-          mainBtn.dataset.videoUrl = el.dataset.videoUrl || '';
-          mainImg.src = el.dataset.videoThumbSrc || '';
-          mainTitle.textContent = el.dataset.videoTitle || '';
-        }
-      });
+  // Open video modal
+  document.querySelectorAll('[data-video-open]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var url = btn.dataset.videoUrl;
+      if (!url) return;
+      var id = url.split('/').pop();
+      var frame = document.getElementById('videoFrame');
+      frame.src = 'https://kinescope.io/embed/' + id + '?autoplay=1';
+      document.getElementById('videoModal').showModal();
     });
+  });
 
-    modal?.querySelector('[data-video-close]')?.addEventListener('click', closeVideo);
-    modal?.addEventListener('click', (e) => { if (e.target === modal) closeVideo(); });
+  // Mobile video thumb → swap main (Videos tab)
+  document.querySelectorAll('[data-video-thumb]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var url = btn.dataset.videoUrl;
+      if (!url) return;
+      var id = url.split('/').pop();
+      document.getElementById('videoFrame').src = 'https://kinescope.io/embed/' + id + '?autoplay=1';
+      document.getElementById('videoModal').showModal();
+      var main = document.querySelector('[data-vid-main]');
+      var img = document.querySelector('[data-vid-main-img]');
+      var title = document.querySelector('[data-vid-main-title]');
+      if (main) main.dataset.videoUrl = btn.dataset.videoUrl;
+      if (img) img.src = btn.dataset.videoThumbSrc || '';
+      if (title) title.textContent = btn.dataset.videoTitle || '';
+    });
+  });
 
-    // Desktop arrows: scroll the grid by one card width
-    const prevBtn = document.querySelector<HTMLElement>('[data-vid-prev]');
-    const nextBtn = document.querySelector<HTMLElement>('[data-vid-next]');
-    if (track && prevBtn && nextBtn) {
-      const cards = track.querySelectorAll('[data-video-open]');
-      let offset = 0;
-      const total = cards.length;
+  // Mobile project thumb → swap main (Projects tab)
+  document.querySelectorAll('[data-proj-thumb]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var url = btn.dataset.videoUrl;
+      if (!url) return;
+      var id = url.split('/').pop();
+      document.getElementById('videoFrame').src = 'https://kinescope.io/embed/' + id + '?autoplay=1';
+      document.getElementById('videoModal').showModal();
+      var main = document.querySelector('[data-proj-main]');
+      var img = document.querySelector('[data-proj-main-img]');
+      var title = document.querySelector('[data-proj-main-title]');
+      if (main) main.dataset.videoUrl = btn.dataset.videoUrl;
+      if (img) img.src = btn.dataset.videoThumbSrc || '';
+      if (title) title.textContent = btn.dataset.videoTitle || '';
+    });
+  });
 
-      function updateDesktopCarousel() {
-        cards.forEach((card, i) => {
-          const order = (i - offset + total) % total;
-          (card as HTMLElement).style.order = String(order);
-        });
-      }
-
-      prevBtn.addEventListener('click', () => {
-        offset = (offset - 1 + total) % total;
-        updateDesktopCarousel();
-      });
-
-      nextBtn.addEventListener('click', () => {
-        offset = (offset + 1) % total;
-        updateDesktopCarousel();
-      });
-    }
-  }
-
-  document.addEventListener('astro:page-load', initVideos);
-  initVideos();
+  // Desktop carousel arrows (Videos tab)
+  (function() {
+    var track = document.querySelector('[data-vid-track]');
+    var prev = document.querySelector('[data-vid-prev]');
+    var next = document.querySelector('[data-vid-next]');
+    if (!track || !prev || !next) return;
+    var cards = track.querySelectorAll('[data-video-open]');
+    var offset = 0, total = cards.length;
+    function update() { cards.forEach(function(c, i) { c.style.order = (i - offset + total) % total; }); }
+    prev.addEventListener('click', function() { offset = (offset - 1 + total) % total; update(); });
+    next.addEventListener('click', function() { offset = (offset + 1) % total; update(); });
+  })();
 </script>

@@ -1,0 +1,54 @@
+# Pipeline routing rules
+# Used by scripts/ship.sh to categorize changed files into site / tooling / ignore buckets.
+#
+# Categories:
+#   site     — changes that affect the deployed website (go through site pipeline: dev → site-prod → prod)
+#   tooling  — dev infra, MCP, scripts, CI, agent config (go to `tooling` branch, never touches prod site)
+#   ignore   — generated artifacts, caches, never committed
+#
+# Order matters: first matching glob wins.
+# Globs are gitignore-style (use ** for recursive).
+
+ignore:
+  - dist/**
+  - node_modules/**
+  - .astro/**
+  - .cache/**
+  - .DS_Store
+  - "**/*.log"
+  - public/screenshots/**
+
+tooling:
+  - .claude/**
+  - .mcp.json
+  - .env
+  - .env.example
+  - .env.local
+  - CLAUDE.md
+  - AGENTS.md
+  - scripts/**
+  - .git-routing.yml
+  - .github/**
+  - .husky/**
+  - .vscode/**
+  - tsconfig.json
+  - .editorconfig
+  - .gitattributes
+
+site:
+  - src/**
+  - public/**
+  - astro.config.mjs
+  - package.json
+  - package-lock.json
+  - tailwind.config.*
+  - index.html
+  - "*.md"   # README, etc — site-level docs
+  # Pipeline infrastructure — travels with site branches so ./ship is always available
+  - .gitignore
+  - .git-routing.yml
+  - scripts/ship.sh
+  - scripts/promote.sh
+  - scripts/deploy-pipeline.sh
+  - scripts/status.sh
+  - scripts/pipeline-lib.sh
