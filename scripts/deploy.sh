@@ -21,11 +21,15 @@ TARGET="${1:-dev}"
 case "$TARGET" in
   dev)
     REMOTE_DIR="/var/www/aidacamp-dev/current/"
+    SSR_DIR="/var/www/aidacamp-dev/current/server/"
+    SERVICE="aidacamp-dev"
     LABEL="DEV (dev.aidacamp.ru)"
-    SSH_KEY="$SSH_KEY_DEV"
+    SSH_KEY="$SSH_KEY_PROD"   # dev-ключа нет для SSR-папки, используем prod
     ;;
   prod)
     REMOTE_DIR="/var/www/aidacamp/current/"
+    SSR_DIR="/var/www/aidacamp/current/server/"
+    SERVICE="aidacamp"
     LABEL="PROD (aidacamp.ru)"
     SSH_KEY="$SSH_KEY_PROD"
     echo ""
@@ -60,10 +64,9 @@ if [ ! -f "dist/client/index.html" ]; then
   exit 1
 fi
 
-# Деплой статики (dist/client/ → корень сервера)
-# --exclude: не трогать .env, server/, node_modules/, бэкапы, client/ подпапку
-echo "🚀 Деплой на $LABEL..."
-rsync -avz --delete \
+# 1. Деплой статики (dist/client/ → корень сервера)
+echo "🚀 Деплой статики на $LABEL..."
+rsync -az --delete \
   --exclude='.env' \
   --exclude='server/' \
   --exclude='node_modules/' \
@@ -72,7 +75,17 @@ rsync -avz --delete \
   -e "ssh -i $SSH_KEY" \
   dist/client/ "$SSH_HOST:$REMOTE_DIR"
 
+# 2. Деплой SSR-сервера (dist/server/ → server/ на сервере)
+echo "🔄 Деплой SSR-сервера..."
+rsync -az --delete \
+  -e "ssh -i $SSH_KEY" \
+  dist/server/ "$SSH_HOST:$SSR_DIR"
+
+# 3. Рестарт systemd-сервиса
+echo "♻️  Рестарт $SERVICE..."
+ssh -i "$SSH_KEY" "$SSH_HOST" "systemctl restart $SERVICE && sleep 2 && systemctl is-active $SERVICE"
+
 echo ""
 echo "✅ Задеплоено на $LABEL"
-echo "   Источник: dist/client/"
-echo "   Назначение: $SSH_HOST:$REMOTE_DIR"
+echo "   Статика:    dist/client/ → $REMOTE_DIR"
+echo "   SSR-сервер: dist/server/ → $SSR_DIR"

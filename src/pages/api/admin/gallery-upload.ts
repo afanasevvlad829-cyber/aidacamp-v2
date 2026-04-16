@@ -3,7 +3,6 @@ import { writeFile, mkdir } from 'fs/promises';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { join } from 'path';
-import { existsSync } from 'fs';
 
 const execFileAsync = promisify(execFile);
 
@@ -20,6 +19,8 @@ const ALLOWED = new Set([
   'study-coding','study-dome-group','study-dome-row','study-pitch','study-stage-girl',
   'territory-admin','territory-alley','territory-korpus',
 ]);
+
+export const GET: APIRoute = () => json({ status: 'gallery-upload API ready' });
 
 export const POST: APIRoute = async ({ request }) => {
   try {
