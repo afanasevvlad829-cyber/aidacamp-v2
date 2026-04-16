@@ -1,15 +1,23 @@
 ---
-// AgeBar.astro — мобильная плашка выбора возраста (снизу экрана)
+import { PEER_COUNTS } from '../data/shifts';
+// AgeBar.astro — плашка выбора возраста (снизу экрана)
 // v2: появляется при 25% скролла, после выбора → нудж → ShiftModal Смены 1
+
+// Формируем AGE_COUNTS для нуджа из единого источника
+const ageCountsJson = JSON.stringify({
+  '7–9':   { 'shift-1': PEER_COUNTS['shift-1']['7–9'],  'shift-2': PEER_COUNTS['shift-2']['7–9']  },
+  '10–12': { 'shift-1': PEER_COUNTS['shift-1']['10–12'], 'shift-2': PEER_COUNTS['shift-2']['10–12'] },
+  '13–14': { 'shift-1': PEER_COUNTS['shift-1']['13–14'], 'shift-2': PEER_COUNTS['shift-2']['13–14'] },
+});
 ---
 
-<!-- Плашка выбора возраста — только мобилка -->
+<!-- Плашка выбора возраста — мобилка + десктоп -->
 <div
   id="age-bar"
+  data-age-counts={ageCountsJson}
   class="fixed bottom-0 inset-x-0 z-[60]
          translate-y-full opacity-0 pointer-events-none
-         transition-all duration-400 ease-out
-         lg:hidden"
+         transition-all duration-400 ease-out"
 >
   <!-- Фаза 1: выбор возраста -->
   <div
@@ -76,12 +84,8 @@
 </div>
 
 <script type="module">
-  // Числа детей нужного возраста по сменам (для нуджа)
-  const AGE_COUNTS = {
-    '7–9':   { 'shift-1': 8,  'shift-2': 5 },
-    '10–12': { 'shift-1': 12, 'shift-2': 8 },
-    '13–14': { 'shift-1': 9,  'shift-2': 7 },
-  };
+  // Числа ровесников из единого источника (shifts.ts → data-age-counts)
+  const AGE_COUNTS = JSON.parse(bar?.dataset.ageCounts || '{}');
 
   const bar       = document.getElementById('age-bar');
   const phase1    = document.getElementById('age-bar-phase1');
@@ -134,6 +138,9 @@
       // Сохраняем возраст
       sessionStorage.setItem('selected_age', age);
       localStorage.setItem('user_age_group', age);
+
+      // Персонализация страницы
+      document.dispatchEvent(new CustomEvent('age-personalize', { detail: { age } }));
 
       // Показываем нудж
       const counts = AGE_COUNTS[age] || AGE_COUNTS['10–12'];

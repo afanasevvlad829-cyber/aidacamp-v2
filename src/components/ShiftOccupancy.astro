@@ -23,14 +23,14 @@ function freeLabel(free: number) {
 <div data-shift-occupancy>
   <!-- STATE: idle -->
   <div data-state="idle">
-    <div class="rounded-2xl border border-slate-100 bg-slate-50 p-6 text-center">
+    <div class="py-6 text-center">
       <i class="bi bi-bar-chart-line text-[32px] text-slate-300"></i>
       <p class="mt-2 text-[14px] font-medium text-slate-500">Проверить свободные места</p>
       <p class="mt-1 text-[14px] text-slate-400">Данные обновляются в реальном времени</p>
       <button data-check-occupancy
               class="mt-4 inline-flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-2.5 text-[14px] font-semibold text-white hover:bg-orange-600 transition">
         <i class="bi bi-search"></i>
-        Проверить занятость
+        Проверить
       </button>
     </div>
   </div>
@@ -44,7 +44,42 @@ function freeLabel(free: number) {
   <!-- STATE: loaded -->
   <div data-state="loaded" class="hidden">
     <div class="space-y-3">
-      {mainShifts.map((s) => {
+      {mainShifts.slice(0, 2).map((s) => {
+        const total = s.occupied + s.free;
+        const pct = Math.round((s.occupied / total) * 100);
+        const free = s.free;
+        const color = getColor(pct);
+        const icon = getIcon(pct);
+        return (
+          <div class="occupancy-row cursor-pointer rounded-lg -mx-1 px-1 py-1 hover:bg-slate-50 transition-colors" style="opacity: 0" data-occupancy-shift={s.id} role="button" tabindex="0">
+            <div class="flex items-center justify-between mb-1">
+              <div class="flex items-center gap-2">
+                <span class="text-[14px] font-semibold text-slate-800">{s.name}</span>
+                <span class="text-[14px] text-slate-400">{s.dates} · {s.duration}</span>
+              </div>
+              <span class="shift-label text-[14px] font-medium" style={`color: ${color}; opacity: 0`}>
+                <i class={`bi ${icon}`}></i> {freeLabel(free)}
+              </span>
+            </div>
+            <div class="h-[8px] w-full rounded-full bg-slate-100 overflow-hidden">
+              <div
+                class="shift-bar h-full rounded-full"
+                style={`width: 0%; background-color: ${color}`}
+                data-width={`${pct}%`}
+              ></div>
+            </div>
+          </div>
+        );
+      })}
+
+      <!-- July sold-out divider -->
+      <div class="flex items-center gap-3 py-1">
+        <div class="h-px flex-1 bg-red-100"></div>
+        <span class="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.08em] text-red-400"><i class="bi bi-lock-fill"></i> Июль — 100% забронирован</span>
+        <div class="h-px flex-1 bg-red-100"></div>
+      </div>
+
+      {mainShifts.slice(2).map((s) => {
         const total = s.occupied + s.free;
         const pct = Math.round((s.occupied / total) * 100);
         const free = s.free;

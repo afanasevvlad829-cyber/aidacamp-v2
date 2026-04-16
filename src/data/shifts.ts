@@ -114,6 +114,14 @@ export const shortShifts: Shift[] = [
 
 export const allShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShifts[2], mainShifts[3]];
 
+// Единый источник: сколько ровесников едет в каждую смену по возрасту
+export const PEER_COUNTS: Record<string, Record<string, number>> = {
+  'shift-1': { '7–9': 8,  '10–12': 12, '13–14': 9  },
+  'shift-2': { '7–9': 5,  '10–12': 8,  '13–14': 7  },
+  'shift-3': { '7–9': 3,  '10–12': 5,  '13–14': 4  },
+  'shift-4': { '7–9': 3,  '10–12': 4,  '13–14': 3  },
+};
+
 export function renderCard(shift: Shift) {
   const total = shift.free + shift.occupied;
   const pct = Math.round((shift.occupied / total) * 100);

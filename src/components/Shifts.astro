@@ -37,13 +37,27 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
           <span class={`h-1.5 w-1.5 rounded-full transition-colors ${i === 0 ? 'bg-primary-light' : 'bg-slate-300'}`} data-shifts-dot={i}></span>
         ))}
       </div>
+      <!-- July sold-out banner (mobile) -->
+      <div class="mt-4 flex items-center gap-2.5 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5">
+        <i class="bi bi-lock-fill text-[15px] text-red-500 shrink-0"></i>
+        <p class="text-[13px] font-semibold leading-[1.4] text-red-600">Июль — мест нет. Свободные места — в августе (Смена 3 и 4).</p>
+      </div>
     </div>
 
     <!-- Desktop: 2-col grid + short shifts sidebar -->
     <div class="mt-6 hidden md:flex md:gap-6">
       <!-- Left: Main shifts (2 col grid) -->
       <div class="grid flex-1 grid-cols-2 gap-4">
-        {mainShifts.map((shift) => (
+        {mainShifts.slice(0, 2).map((shift) => (
+          <ShiftCard shift={shift} variant="desktop" />
+        ))}
+        <!-- July sold-out banner -->
+        <div class="col-span-2 flex items-center gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5">
+          <i class="bi bi-lock-fill text-[16px] text-red-500 shrink-0"></i>
+          <p class="text-[14px] font-semibold text-red-600">Июль — мест нет. Все июльские смены укомплектованы.</p>
+          <span class="ml-auto text-[13px] text-red-400 whitespace-nowrap">Записаться в август →</span>
+        </div>
+        {mainShifts.slice(2).map((shift) => (
           <ShiftCard shift={shift} variant="desktop" />
         ))}
       </div>
@@ -228,4 +242,28 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
 
   document.addEventListener('astro:page-load', initShifts);
   initShifts();
+
+  // === AGE PERSONALIZATION: показываем счётчик ровесников ===
+  function showPeerCounts(age: string) {
+    document.querySelectorAll<HTMLElement>('.peer-count-badge').forEach((badge) => {
+      const counts = JSON.parse(badge.dataset.peerCounts || '{}');
+      const n = counts[age];
+      if (!n) return;
+      const textEl = badge.querySelector<HTMLElement>('.peer-count-text');
+      if (textEl) textEl.textContent = `${n} ровесников уже едут в эту смену`;
+      badge.classList.remove('hidden');
+      badge.classList.add('flex');
+    });
+  }
+
+  function initShiftAgePersonalization() {
+    const saved = localStorage.getItem('user_age_group');
+    if (saved) showPeerCounts(saved);
+    document.addEventListener('age-personalize', (e: Event) => {
+      showPeerCounts((e as CustomEvent<{ age: string }>).detail.age);
+    });
+  }
+
+  document.addEventListener('astro:page-load', initShiftAgePersonalization);
+  initShiftAgePersonalization();
 </script>
