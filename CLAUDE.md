@@ -2,22 +2,38 @@
 
 ## Git-воркфлоу (ОБЯЗАТЕЛЬНО соблюдать)
 
-**Рабочая ветка: `dev`** — вся разработка ведётся здесь.
-**Canonical: `main`** = всегда то, что задеплоено на `aidacamp.ru`.
+### Схема (единственно правильная):
 
-### Правило работы:
-1. **Всегда начинай на `dev`** — проверь `git branch` в начале сессии
-2. **Разработка → `dev`** → деплой на `dev.aidacamp.ru` для проверки
-3. **Выкатка в прод** → `git checkout main && git merge dev` → `./scripts/deploy.sh prod`
-4. **`dev` и `main` должны быть равны** после каждой выкатки в прод
+```
+Разработка на local dev
+        ↓  ./scripts/deploy.sh dev
+   dev.aidacamp.ru  ← тестовая зона, показываем владельцу
+        ↓  владелец утверждает ✅
+   git checkout main && git merge dev
+        ↓  ./scripts/deploy.sh prod
+   aidacamp.ru  ← КАНОН (прод)
+        ↓
+   git checkout dev  ← возвращаемся работать
+```
 
-### Текущее состояние (2026-04-16):
-- `dev` == `main` (синхронизированы после сессии рефакторинга)
-- Последний коммит: `feat: UX refactor — age personalization, icons, contacts single source, ShiftModal on landings`
+### Правила:
+1. **Всегда начинай на `dev`** — проверяй `git branch` в начале сессии
+2. **Никогда не коммить в `main` напрямую** — только через merge из dev
+3. **Никогда не деплоить прод без явного "выкатываем" от владельца**
+4. **После выкатки** — `dev` и `main` должны быть равны
+5. **Feature-ветки** (`button-system`, `refactor/*` и т.д.) — только если явно просят, потом мёрджить в dev и удалять
 
-### Никогда:
-- Не коммить напрямую в `main`
-- Не работай на feature-ветках без явного запроса (`button-system`, `refactor/*` и т.д. — только если просят)
+### Команды выкатки в прод (полный цикл):
+```bash
+git checkout main && git merge dev
+./scripts/deploy.sh prod
+git checkout dev
+```
+
+### Текущее состояние:
+- `dev` == `main` (синхронизированы, 2026-04-16)
+- GitHub `origin/dev` — актуальный бэкап
+- GitHub `origin/main` — не используется для деплоя, только rsync
 
 ---
 
