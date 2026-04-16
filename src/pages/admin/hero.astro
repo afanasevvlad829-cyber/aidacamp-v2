@@ -1,0 +1,222 @@
+---
+import { existsSync } from 'fs';
+import { join } from 'path';
+
+// Все лендинги с их заголовками
+const pages = [
+  { slug: 'detskiy-lager',              h1: 'Детский лагерь для детей 7–14 лет',              url: '/detskiy-lager/' },
+  { slug: 'detskiy-lager-podmoskove',   h1: 'Детский лагерь в Подмосковье с IT-программой',   url: '/detskiy-lager-podmoskove/' },
+  { slug: 'dlya-kompaniy',              h1: 'Путёвки в лагерь для детей сотрудников',          url: '/dlya-kompaniy/' },
+  { slug: 'kompyuternyy-lager',         h1: 'Компьютерный лагерь для детей в Подмосковье',    url: '/kompyuternyy-lager/' },
+  { slug: 'kupit-putevku-v-lager',      h1: 'Купить путёвку в детский лагерь 2026',            url: '/kupit-putevku-v-lager/' },
+  { slug: 'lager-bez-telefonov',        h1: 'Детский лагерь без телефонов в Подмосковье',     url: '/lager-bez-telefonov/' },
+  { slug: 'lager-dlya-podrostkov',      h1: 'Летний лагерь для подростков в Подмосковье',     url: '/lager-dlya-podrostkov/' },
+  { slug: 'lager-dlya-shkolnikov',      h1: 'Летний лагерь для школьников в Подмосковье',     url: '/lager-dlya-shkolnikov/' },
+  { slug: 'lager-na-avgust-podmoskove', h1: 'Лагерь на август в Подмосковье',                  url: '/lager-na-avgust-podmoskove/' },
+  { slug: 'lager-na-leto-2026',         h1: 'Летний лагерь на лето 2026',                      url: '/lager-na-leto-2026/' },
+  { slug: 'lager-nedorogo',             h1: 'Летний лагерь в Подмосковье — цены 2026',         url: '/lager-nedorogo/' },
+  { slug: 'lager-programmirovaniya',    h1: 'Лагерь программирования для детей',               url: '/lager-programmirovaniya/' },
+  { slug: 'lager-v-moskve',             h1: 'Летний лагерь в Москве и Подмосковье',            url: '/lager-v-moskve/' },
+  { slug: 'lager-v-podmoskove',         h1: 'Летний лагерь в Подмосковье для детей',           url: '/lager-v-podmoskove/' },
+  { slug: 'letnyaya-it-shkola',         h1: 'Летняя IT-школа для детей в Подмосковье',         url: '/letnyaya-it-shkola/' },
+  { slug: 'minecraft-lager',            h1: 'Детский лагерь Майнкрафт в Подмосковье',         url: '/minecraft-lager/' },
+  { slug: 'obrazovatelnyy-lager',       h1: 'Образовательный лагерь для детей в Подмосковье', url: '/obrazovatelnyy-lager/' },
+  { slug: 'tematicheskiy-lager',        h1: 'Тематический лагерь для детей в Подмосковье',    url: '/tematicheskiy-lager/' },
+];
+
+// Проверяем наличие hero-изображений на сервере
+const heroDirs = [
+  join(process.cwd(), 'images', 'hero'),          // сервер
+  join(process.cwd(), 'public', 'images', 'hero'), // локально
+];
+const heroBase = heroDirs.find(d => { try { return existsSync(d); } catch { return false; } }) ?? heroDirs[0];
+
+function hasHero(slug: string) {
+  return existsSync(join(heroBase, `${slug}.avif`)) || existsSync(join(heroBase, 'thumbs', `${slug}.avif`));
+}
+function thumbUrl(slug: string) {
+  return `/images/hero/thumbs/${slug}.avif`;
+}
+
+const withHero    = pages.filter(p => hasHero(p.slug)).length;
+const withoutHero = pages.length - withHero;
+---
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hero-картинки лендингов — АйДаКемп</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #1e293b; padding: 24px; }
+    h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .subtitle { font-size: 14px; color: #64748b; margin-bottom: 24px; }
+    .grid { display: flex; flex-direction: column; gap: 8px; }
+    .row {
+      display: grid;
+      grid-template-columns: 160px 1fr 200px;
+      gap: 14px;
+      align-items: center;
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+    .preview {
+      width: 160px; height: 90px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #e2e8f0;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .preview .empty {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; color: #94a3b8;
+    }
+    .info { min-width: 0; }
+    .page-title { font-size: 13px; font-weight: 600; color: #0f172a; line-height: 1.4; margin-bottom: 4px; }
+    .page-url { font-size: 11px; color: #64748b; }
+    .page-url a { color: #3b82f6; text-decoration: none; }
+    .page-url a:hover { text-decoration: underline; }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 99px;
+      font-size: 11px; font-weight: 600; margin-top: 6px;
+    }
+    .badge-good { background: #dcfce7; color: #15803d; }
+    .badge-bad  { background: #fee2e2; color: #b91c1c; }
+
+    /* Dropzone */
+    .dropzone {
+      border: 2px dashed #cbd5e1; border-radius: 10px;
+      padding: 10px; text-align: center; cursor: pointer;
+      transition: border-color .15s, background .15s;
+      position: relative; min-height: 70px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    }
+    .dropzone:hover, .dropzone.drag-over { border-color: #f97316; background: #fff7ed; }
+    .dropzone.success { border-color: #22c55e; background: #f0fdf4; }
+    .dropzone.error   { border-color: #ef4444; background: #fef2f2; }
+    .dropzone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .dz-icon { font-size: 20px; }
+    .dz-text { font-size: 11px; color: #64748b; }
+    .dz-status { font-size: 12px; font-weight: 600; display: none; }
+    .dropzone.loading .dz-status { display: block; color: #f97316; }
+    .dropzone.success .dz-status { display: block; color: #16a34a; }
+    .dropzone.error   .dz-status { display: block; color: #dc2626; }
+    .dropzone.loading .dz-text, .dropzone.success .dz-text, .dropzone.error .dz-text,
+    .dropzone.loading .dz-icon,  .dropzone.success .dz-icon,  .dropzone.error .dz-icon { display: none; }
+    progress { width: 100%; height: 4px; border-radius: 2px; accent-color: #f97316; display: none; }
+    .dropzone.loading progress { display: block; }
+  </style>
+</head>
+<body>
+  <h1>Hero-картинки лендингов</h1>
+  <p class="subtitle">
+    <span style="color:#16a34a; font-weight:600">{withHero} с картинкой</span> ·
+    <span style="color:#dc2626; font-weight:600">{withoutHero} пустых</span> ·
+    Перетащи нужное фото напротив страницы — оно сразу ляжет на сервер
+  </p>
+
+  <div class="grid">
+    {pages.map(page => {
+      const has = hasHero(page.slug);
+      return (
+        <div class="row" id={`row-${page.slug}`}>
+          <!-- Превью -->
+          <div class="preview">
+            {has
+              ? <img src={thumbUrl(page.slug)} alt={page.h1} loading="lazy"
+                     id={`img-${page.slug}`}
+                     onerror="this.parentElement.innerHTML='<div class=empty>🖼️</div>'" />
+              : <div class="empty">📷</div>
+            }
+          </div>
+
+          <!-- Инфо -->
+          <div class="info">
+            <div class="page-title">{page.h1}</div>
+            <div class="page-url">
+              <a href={`https://dev.aidacamp.ru${page.url}`} target="_blank">{page.url}</a>
+            </div>
+            <span class={`badge ${has ? 'badge-good' : 'badge-bad'}`} id={`badge-${page.slug}`}>
+              {has ? '✓ есть' : '✗ нет картинки'}
+            </span>
+          </div>
+
+          <!-- Dropzone -->
+          <div class="dropzone" data-slug={page.slug} id={`dz-${page.slug}`}>
+            <input type="file" accept="image/*" />
+            <div class="dz-icon">🖼️</div>
+            <div class="dz-text">Перетащи или кликни</div>
+            <div class="dz-status"></div>
+            <progress max="100" value="0"></progress>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+
+  <script>
+    document.querySelectorAll<HTMLElement>('.dropzone').forEach(dz => {
+      const input  = dz.querySelector<HTMLInputElement>('input[type=file]')!;
+      const status = dz.querySelector<HTMLElement>('.dz-status')!;
+      const prog   = dz.querySelector<HTMLProgressElement>('progress')!;
+      const slug   = dz.dataset.slug!;
+
+      function upload(file: File) {
+        setState('loading', '⏳ Загрузка...');
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('slug', slug);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/admin/hero-upload');
+        xhr.upload.onprogress = e => { if (e.lengthComputable) prog.value = e.loaded / e.total * 100; };
+        xhr.onload = () => {
+          try {
+            const res = JSON.parse(xhr.responseText);
+            if (res.ok) {
+              setState('success', '✓ Загружено!');
+              // Обновляем превью
+              const preview = document.querySelector<HTMLElement>(`#row-${slug} .preview`);
+              if (preview) {
+                preview.innerHTML = `<img src="/images/hero/thumbs/${slug}.avif?t=${Date.now()}" alt="" style="width:100%;height:100%;object-fit:cover">`;
+              }
+              // Обновляем бейдж
+              const badge = document.getElementById(`badge-${slug}`);
+              if (badge) { badge.textContent = '✓ есть'; badge.className = 'badge badge-good'; }
+            } else {
+              setState('error', '✗ ' + (res.error ?? 'Ошибка'));
+            }
+          } catch { setState('error', '✗ Ошибка сервера'); }
+        };
+        xhr.onerror = () => setState('error', '✗ Нет связи');
+        xhr.send(fd);
+      }
+
+      function setState(s: string, msg: string) {
+        dz.classList.remove('loading', 'success', 'error');
+        if (s) dz.classList.add(s);
+        status.textContent = msg;
+      }
+
+      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+      dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('drag-over');
+        const f = e.dataTransfer?.files[0];
+        if (f) upload(f);
+      });
+      input.addEventListener('change', () => {
+        const f = input.files?.[0];
+        if (f) { upload(f); input.value = ''; }
+      });
+    });
+  </script>
+</body>
+</html>
