@@ -3,7 +3,7 @@ import type { APIRoute } from 'astro';
 import { writeFile, mkdir } from 'fs/promises';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import { join } from 'path';
+import { join, extname } from 'path';
 
 const execFileAsync = promisify(execFile);
 
@@ -21,6 +21,14 @@ const ALLOWED = new Set([
   'territory-admin','territory-alley','territory-korpus',
 ]);
 
+// HDR-фильтр: насыщенность +30%, S-контраст, поднять тени, sharpening
+const HDR_ARGS = [
+  '-modulate', '103,130,100',
+  '-sigmoidal-contrast', '4,50%',
+  '-level', '3%,97%',
+  '-unsharp', '0x0.5+0.8+0.02',
+];
+
 export const GET: APIRoute = () => json({ status: 'gallery-upload API ready' });
 
 export const POST: APIRoute = async ({ request }) => {
@@ -37,39 +45,42 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const tmp = `/tmp/gallery-up-${Date.now()}-${name}`;
+
+    // Определяем расширение оригинала
+    const origExt = extname(file.name || '.jpg') || '.jpg';
+    const tmp = `/tmp/gallery-up-${Date.now()}-${name}${origExt}`;
     await writeFile(tmp, buffer);
 
-    // Пути на сервере (static-папка совпадает с cwd)
     const cwd = process.cwd();
-    const galleryDir = join(cwd, 'images', 'gallery');
-    const thumbsDir  = join(galleryDir, 'thumbs');
-    await mkdir(thumbsDir, { recursive: true });
+    const galleryDir   = join(cwd, 'images', 'gallery');
+    const originalsDir = join(galleryDir, 'originals');
+    const thumbsDir    = join(galleryDir, 'thumbs');
+    const jpgDir       = join(galleryDir, 'jpg');
 
-    const outFull  = join(galleryDir, `${name}.avif`);
-    const outThumb = join(thumbsDir,  `${name}.avif`);
+    await mkdir(originalsDir, { recursive: true });
+    await mkdir(thumbsDir,    { recursive: true });
+    await mkdir(jpgDir,       { recursive: true });
 
-    // convert (IM6) → cinematic filter → AVIF
-    await execFileAsync('convert', [
-      tmp,
-      '-modulate', '102,118,100',        // яркость, насыщенность, оттенок
-      '-sigmoidal-contrast', '2.5,50%',  // S-кривая контраста
-      '-unsharp', '0x0.4+0.6+0.02',      // лёгкий sharpening
-      outFull,
-    ]);
+    // 1. Сохраняем оригинал (нетронутый)
+    const origOut = join(originalsDir, `${name}${origExt}`);
+    await writeFile(origOut, buffer);
 
-    // thumb 400px wide
-    await execFileAsync('convert', [
-      outFull,
-      '-resize', '400x',
-      '-quality', '75',
-      outThumb,
-    ]);
+    // 2. HDR → AVIF (основной формат)
+    const outAvif  = join(galleryDir, `${name}.avif`);
+    await execFileAsync('convert', [tmp, ...HDR_ARGS, outAvif]);
+
+    // 3. HDR → JPEG (фоллбэк)
+    const outJpg = join(jpgDir, `${name}.jpg`);
+    await execFileAsync('convert', [tmp, ...HDR_ARGS, '-quality', '90', outJpg]);
+
+    // 4. Thumb из готового AVIF (400px)
+    const outThumb = join(thumbsDir, `${name}.avif`);
+    await execFileAsync('convert', [outAvif, '-resize', '400x', '-quality', '75', outThumb]);
 
     // Удаляем temp
     await execFileAsync('rm', ['-f', tmp]);
 
-    return json({ ok: true, name, full: outFull, thumb: outThumb });
+    return json({ ok: true, name, avif: outAvif, jpg: outJpg, original: origOut });
   } catch (err: any) {
     console.error('gallery-upload error:', err);
     return json({ error: String(err?.message ?? err) }, 500);
