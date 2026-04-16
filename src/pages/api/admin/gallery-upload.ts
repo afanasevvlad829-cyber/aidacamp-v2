@@ -1,3 +1,4 @@
+export const prerender = false;
 import type { APIRoute } from 'astro';
 import { writeFile, mkdir } from 'fs/promises';
 import { execFile } from 'child_process';
