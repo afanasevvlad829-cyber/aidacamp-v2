@@ -18,7 +18,7 @@ const ALLOWED = new Set([
   'pool-interior','pool-kids-edge','pool-noodles',
   'sport-ball','sport-field','sport-football','sport-goal','sport-volleyball',
   'study-coding','study-dome-group','study-dome-row','study-pitch','study-stage-girl',
-  'territory-admin','territory-alley','territory-building','territory-korpus','territory-main',
+  'territory-admin','territory-alley','territory-korpus',
 ]);
 
 export const POST: APIRoute = async ({ request }) => {

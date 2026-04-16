@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Аудит ссылок и UTM Яндекс Директ — 2026-04-15</title>
+<style>
+body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:13px;color:#1a1a1a;padding:20px;max-width:1800px;margin:0 auto;}
+h1{font-size:20px;margin-bottom:4px;}
+h2{font-size:15px;margin-top:28px;padding:8px 12px;border-radius:6px;color:#fff;}
+h2.search{background:#2c5ea8;}
+h2.rsya{background:#e6711a;}
+h2.retarget{background:#1c9963;}
+.meta{color:#666;font-size:11px;margin-bottom:16px;}
+table{border-collapse:collapse;width:100%;font-size:11px;margin-top:8px;}
+th,td{border:1px solid #d5d7db;padding:6px 8px;text-align:left;vertical-align:top;}
+th{background:#f3f4f6;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.3px;}
+tr:nth-child(even){background:#fafbfc;}
+.group-row{background:#eef3fa !important;font-weight:600;}
+.state-on{color:#1c9963;font-weight:600;}
+.state-off,.state-suspended{color:#b5651d;}
+.state-archived{color:#999;}
+code{background:#f3f4f6;padding:1px 4px;border-radius:3px;font-family:Menlo,monospace;font-size:10px;word-break:break-all;}
+.warn{background:#fff4d6;color:#7a4a00;padding:2px 6px;border-radius:4px;display:inline-block;font-size:10px;font-weight:600;}
+.ok{background:#e0f5e9;color:#186d3a;padding:2px 6px;border-radius:4px;display:inline-block;font-size:10px;font-weight:600;}
+.err{background:#fde0e0;color:#8a1c1c;padding:2px 6px;border-radius:4px;display:inline-block;font-size:10px;font-weight:600;}
+.hash{color:#8b4b1a;font-weight:600;}
+.col-title{width:22%;}
+.col-href{width:36%;}
+.col-utm{width:25%;}
+.col-anchor{width:9%;}
+.col-state{width:8%;}
+.summary{background:#f3f4f6;padding:12px 16px;border-radius:8px;margin:16px 0;font-size:12px;}
+.summary b{color:#1a1a1a;}
+</style>
+</head>
+<body>
+
+<h1>Аудит ссылок и UTM-меток Яндекс Директ</h1>
+<p class="meta">Дата аудита: 15 апреля 2026 · Клиент: kv145 · Активных кампаний: 3 · Групп: 18 · Объявлений: 46</p>
+
+<div class="summary">
+<b>Главное:</b><br>
+• Ссылок <code>/it-camp</code> в активных кампаниях <b>нет</b> — все ведут на главную <code>/</code> или <code>/guide</code>.<br>
+• <b>Подмена H1 не активна</b>: <code>getUtmH1Rules</code> пустой, <code>bannerTier</code> мапит только 212861xxx (Tilda legacy). Все клики из Директа видят один и тот же hero.<br>
+• <b>Ретаргет HOT/WARM/CONTENT/BOUNCE</b> делят <code>utm_campaign=retarget_hot</code> — в Метрике невозможно отличить тёплый трафик от горячего.<br>
+• <b>3 объявления ретаргета (CONTENT)</b> без UTM — только якоря <code>#section-*</code>.<br>
+• <b>Группы ретаргета пустые по TrackingParams</b> — UTM берутся только из ad-level href.<br>
+• UTM на уровне групп: <span class="ok">Поиск ✓</span> <span class="ok">РСЯ ✓</span> <span class="err">Ретаргет ✗</span>
+</div>
+
+<!-- ================================================================ -->
+<h2 class="search">🔎 Кампания 708664426 — «AidaCamp | Search | V2 pilot 2026-04-02» (Поиск)</h2>
+<p class="meta">Group TrackingParams: <code>utm_source=yandex&utm_medium=cpc&utm_campaign=search_v2&utm_content={group}</code> — но в каждом объявлении уже есть своя query-string, поэтому групповая разметка <b>не применяется</b> (Директ не добавляет TrackingParams, если в href есть <code>?</code>).</p>
+
+<table>
+<thead><tr>
+<th>Группа / UTM группы</th>
+<th class="col-title">Заголовок</th>
+<th class="col-href">Href (реальная ссылка)</th>
+<th class="col-utm">UTM (эффективная)</th>
+<th class="col-anchor">#якорь</th>
+<th class="col-state">Статус</th>
+</tr></thead>
+<tbody>
+
+<tr class="group-row"><td colspan="6">brand_core (5738412369) · group: <code>utm_campaign=search_v2&utm_content=brand</code></td></tr>
+<tr><td></td><td>IT-лагерь АйДаКемп</td><td><code>https://aidacamp.ru/?utm_source=yandex&utm_medium=cpc&utm_campaign=search_brand_msk_mo&utm_h1=brand&utm_sub=brand&utm_offer=brand&utm_content=brand_core_v1_{ad_id}&utm_term={keyword}&utm_region={region_id}&utm_device={device_type}&utm_pos={position_type}.{position}</code></td><td>ad-level: <code>campaign=search_brand_msk_mo · h1=brand · content=brand_core_v1</code></td><td>—</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>АйДаКемп: IT-лагерь 10-13</td><td><code>https://aidacamp.ru/?...utm_campaign=search_brand_msk_mo&utm_h1=brand&utm_content=brand_core_v2_{ad_id}...</code></td><td>ad-level: <code>campaign=search_brand_msk_mo · h1=brand · content=brand_core_v2</code></td><td>—</td><td class="state-on">ON</td></tr>
+
+<tr class="group-row"><td colspan="6">it_core_generic (5738412372) · group: <code>utm_campaign=search_v2&utm_content=it</code></td></tr>
+<tr><td></td><td>Компьютерный лагерь 10-13</td><td><code>https://aidacamp.ru/?...utm_campaign=search_it_core_msk_mo&utm_h1=it&utm_content=it_core_generic_v1_{ad_id}...</code></td><td>ad-level: <code>campaign=search_it_core_msk_mo · h1=it · content=it_core_generic_v1</code></td><td>—</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>Лагерь программирования</td><td><code>https://aidacamp.ru/?...utm_content=it_core_generic_v2_{ad_id}...</code></td><td>ad-level: <code>h1=it · content=it_core_generic_v2</code></td><td>—</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>IT-лагерь для детей 10-13</td><td><code>https://aidacamp.ru/?...utm_content=it_core_generic_v3_{ad_id}...</code></td><td>ad-level: <code>h1=it · content=it_core_generic_v3</code></td><td>—</td><td class="state-on">ON</td></tr>
+
+<tr class="group-row"><td colspan="6">age_core (5738412378) · group: <code>utm_campaign=search_v2&utm_content=age</code></td></tr>
+<tr><td></td><td>IT-лагерь для детей 10–13 лет</td><td><code>https://aidacamp.ru/?...utm_campaign=search_age_10_13_msk_mo&utm_h1=age&utm_content=age_core_v1_{ad_id}...</code></td><td>ad-level: <code>campaign=search_age_10_13_msk_mo · h1=age · content=age_core_v1</code></td><td>—</td><td class="state-suspended">SUSPENDED</td></tr>
+<tr><td></td><td>Лагерь для детей 10-13</td><td><code>https://aidacamp.ru/?...utm_content=age_core_v2_{ad_id}...</code></td><td>ad-level: <code>h1=age · content=age_core_v2</code></td><td>—</td><td class="state-suspended">SUSPENDED</td></tr>
+<tr><td></td><td>IT-лагерь для детей 10–13 лет</td><td><code>https://aidacamp.ru/?...utm_content=age_core_v3_{ad_id}...</code></td><td>ad-level: <code>h1=age · content=age_core_v3</code></td><td>—</td><td class="state-suspended">SUSPENDED</td></tr>
+
+<tr class="group-row"><td colspan="6">price_core (5738412396) · group: <code>utm_campaign=search_v2&utm_content=price</code></td></tr>
+<tr><td></td><td>Путевка в лагерь программирования</td><td><code>https://aidacamp.ru/?...utm_campaign=search_price_msk_mo&utm_h1=price&utm_content=price_core_v1_{ad_id}...</code></td><td>ad-level: <code>campaign=search_price_msk_mo · h1=price · content=price_core_v1</code></td><td>—</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>Стоимость IT-лагеря 2026</td><td><code>https://aidacamp.ru/?...utm_content=price_core_v2_{ad_id}...</code></td><td>ad-level: <code>h1=price · content=price_core_v2</code></td><td>—</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>Путевка в лагерь программирования</td><td><code>https://aidacamp.ru/?...utm_content=price_core_v3_{ad_id}...</code></td><td>ad-level: <code>h1=price · content=price_core_v3</code></td><td>—</td><td class="state-on">ON</td></tr>
+
+<tr class="group-row"><td colspan="6">camp_generic (5738747562) · group: <code>utm_campaign=search_v2&utm_content=camp</code></td></tr>
+<tr><td></td><td>Детский лагерь Подмосковье 2026</td><td><code>https://aidacamp.ru/?...utm_campaign=search_camp_msk_mo&utm_h1=camp&utm_content=camp_v1_{ad_id}...</code></td><td>ad-level: <code>campaign=search_camp_msk_mo · h1=camp · content=camp_v1</code></td><td>—</td><td class="state-suspended">SUSPENDED</td></tr>
+<tr><td></td><td>Летний лагерь для детей</td><td><code>https://aidacamp.ru/?...utm_content=camp_v2_{ad_id}...</code></td><td>ad-level: <code>h1=camp · content=camp_v2</code></td><td>—</td><td class="state-suspended">SUSPENDED</td></tr>
+
+<tr class="group-row"><td colspan="6">nophone (5738747563) · group: <code>utm_campaign=search_v2&utm_content=nophone</code></td></tr>
+<tr><td></td><td>Лагерь без телефонов для детей</td><td><code>https://aidacamp.ru/?...utm_campaign=search_nophone_msk_mo&utm_h1=nophone&utm_content=nophone_v1_{ad_id}...</code></td><td>ad-level: <code>campaign=search_nophone_msk_mo · h1=nophone · content=nophone_v1</code></td><td>—</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>Детский лагерь без гаджетов</td><td><code>https://aidacamp.ru/?...utm_content=nophone_v2_{ad_id}...</code></td><td>ad-level: <code>h1=nophone · content=nophone_v2</code></td><td>—</td><td class="state-on">ON</td></tr>
+
+</tbody>
+</table>
+
+<!-- ================================================================ -->
+<h2 class="rsya">🎯 Кампания 708698819 — «РСЯ лагерь / Claude / 03-04-2026» (РСЯ)</h2>
+<p class="meta">Group TrackingParams: <code>utm_source=yandex&utm_medium=cpc&utm_campaign=rsya&utm_content={group}</code> — <b>применяется ко всем объявлениям</b>, т.к. href чистый без <code>?</code>. Разметка группы наследуется как и задумано. ✅</p>
+
+<table>
+<thead><tr>
+<th>Группа / UTM группы</th>
+<th class="col-title">Заголовок</th>
+<th class="col-href">Href</th>
+<th class="col-utm">UTM (эффективная)</th>
+<th class="col-anchor">#якорь</th>
+<th class="col-state">Статус</th>
+</tr></thead>
+<tbody>
+
+<tr class="group-row"><td colspan="6">rsya_keys (5738764232) · group: <code>campaign=rsya&content=keys</code></td></tr>
+<tr><td></td><td>Вы знаете, куда отправляете ребёнка</td><td><code>https://aidacamp.ru/</code></td><td>group: <code>campaign=rsya · content=keys</code></td><td>—</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>Лагерь, после которого есть результат</td><td><code>https://aidacamp.ru/</code></td><td>group: <code>campaign=rsya · content=keys</code></td><td>—</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>Из игр — в создание своих проектов</td><td><code>https://aidacamp.ru/</code></td><td>group: <code>campaign=rsya · content=keys</code></td><td>—</td><td class="state-off">OFF</td></tr>
+
+<tr class="group-row"><td colspan="6">rsya_parents (5738764233) · group: <code>campaign=rsya&content=parents</code></td></tr>
+<tr><td></td><td>Пока дети взрослеют — вы отдыхаете</td><td><code>https://aidacamp.ru/</code></td><td>group: <code>campaign=rsya · content=parents</code></td><td>—</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>Он без телефона. Вы — без тревоги.</td><td><code>https://aidacamp.ru/</code></td><td>group: <code>campaign=rsya · content=parents</code></td><td>—</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>Ребёнок в лагере. Родители на свободе.</td><td><code>https://aidacamp.ru/</code></td><td>group: <code>campaign=rsya · content=parents</code></td><td>—</td><td class="state-on">ON</td></tr>
+
+<tr class="group-row"><td colspan="6">rsya_result (5738764234) · group: <code>campaign=rsya&content=result</code></td></tr>
+<tr><td></td><td>Летний лагерь. Ребёнок делает IT-проект</td><td><code>https://aidacamp.ru/</code></td><td>group: <code>campaign=rsya · content=result</code></td><td>—</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>После смены ребёнок верит в себя</td><td><code>https://aidacamp.ru/</code></td><td>group: <code>campaign=rsya · content=result</code></td><td>—</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>Летний лагерь. Неделя без телефонов</td><td><code>https://aidacamp.ru/</code></td><td>group: <code>campaign=rsya · content=result</code></td><td>—</td><td class="state-on">ON</td></tr>
+
+<tr class="group-row"><td colspan="6">rsya_edu (5738764235) · group: <code>campaign=rsya&content=edu</code></td></tr>
+<tr><td></td><td>Вы знаете, куда отправляете ребёнка</td><td><code>https://aidacamp.ru/</code></td><td>group: <code>campaign=rsya · content=edu</code></td><td>—</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>IT-лагерь для детей 8–14 лет</td><td><code>https://aidacamp.ru/</code></td><td>group: <code>campaign=rsya · content=edu</code></td><td>—</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>Летний лагерь. Ребёнок делает IT-проект</td><td><code>https://aidacamp.ru</code></td><td>group: <code>campaign=rsya · content=edu</code></td><td>—</td><td class="state-on">ON</td></tr>
+
+<tr class="group-row"><td colspan="6">rsya_books (5738764236) · group: <code>campaign=rsya&content=books</code></td></tr>
+<tr><td></td><td>Не просто лагерь. Среда развития</td><td><code>https://aidacamp.ru/</code></td><td>group: <code>campaign=rsya · content=books</code></td><td>—</td><td class="state-off">OFF</td></tr>
+<tr><td></td><td>Лагерь, после которого есть результат</td><td><code>https://aidacamp.ru</code></td><td>group: <code>campaign=rsya · content=books</code></td><td>—</td><td class="state-on">ON</td></tr>
+
+<tr class="group-row"><td colspan="6">rsya_competitors (5738764237) · group: <code>campaign=rsya&content=competitors</code></td></tr>
+<tr><td></td><td>Сравните до бронирования лагеря</td><td><code>https://aidacamp.ru/</code></td><td>group: <code>campaign=rsya · content=competitors</code></td><td>—</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>Подойдёт не каждому ребёнку</td><td><code>https://aidacamp.ru/</code></td><td>group: <code>campaign=rsya · content=competitors</code></td><td>—</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>Лагерь без телефонов в Подмосковье</td><td><code>https://aidacamp.ru/</code></td><td>group: <code>campaign=rsya · content=competitors</code></td><td>—</td><td class="state-on">ON</td></tr>
+
+</tbody>
+</table>
+
+<!-- ================================================================ -->
+<h2 class="retarget">🎯 Кампания 708615379 — «ретаргет по аудиториям API 2026-04-01 v2» (Ретаргет)</h2>
+<p class="meta">Group TrackingParams: <b>ПУСТЫЕ у всех 6 групп</b>. UTM работают только из ad-level href. <span class="err">⚠</span> Все HOT/WARM/CONTENT/BOUNCE помечены одной <code>utm_campaign=retarget_hot</code> — в Метрике неразличимы.</p>
+
+<table>
+<thead><tr>
+<th>Группа / UTM группы</th>
+<th class="col-title">Заголовок</th>
+<th class="col-href">Href</th>
+<th class="col-utm">UTM (эффективная)</th>
+<th class="col-anchor">#якорь</th>
+<th class="col-state">Статус</th>
+</tr></thead>
+<tbody>
+
+<tr class="group-row"><td colspan="6">HOT 7d - Высокий интент (5737873036) · group: <span class="err">пусто</span></td></tr>
+<tr><td></td><td>Ближайшие смены: осталось мало мест</td><td><code>https://aidacamp.ru/?utm_source=yandex&utm_medium=cpc&utm_campaign=retarget_hot&utm_content=hot_01#price</code></td><td>ad-level: <code>campaign=retarget_hot · content=hot_01</code></td><td class="hash">#price</td><td class="state-suspended">SUSPENDED</td></tr>
+<tr><td></td><td>Забронируйте место в смене за 1 минуту</td><td><code>https://aidacamp.ru/?...utm_campaign=retarget_hot&utm_content=hot_02#shifts</code></td><td>ad-level: <code>campaign=retarget_hot · content=hot_02</code></td><td class="hash">#shifts</td><td class="state-suspended">SUSPENDED</td></tr>
+<tr><td></td><td>IT-лагерь: программа и стоимость</td><td><code>https://aidacamp.ru/?...utm_content=hot_03#price</code></td><td>ad-level: <code>campaign=retarget_hot · content=hot_03</code></td><td class="hash">#price</td><td class="state-suspended">SUSPENDED</td></tr>
+
+<tr class="group-row"><td colspan="6">WARM 14d - Теплый интент (5737873046) · group: <span class="err">пусто</span></td></tr>
+<tr><td></td><td>Как проходит смена в IT-лагере</td><td><code>https://aidacamp.ru/?...utm_campaign=retarget_hot&utm_content=warm_01#program</code></td><td>ad-level: <code>campaign=retarget_hot · content=warm_01</code> <span class="warn">⚠ hot вместо warm</span></td><td class="hash">#program</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>Подросток уедет не просто отдохнувшим</td><td><code>https://aidacamp.ru/?...utm_content=warm_02#program</code></td><td>ad-level: <code>campaign=retarget_hot · content=warm_02</code></td><td class="hash">#program</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>Безопасно, структурно, с обратной связью</td><td><code>https://aidacamp.ru/?...utm_content=warm_03#program</code></td><td>ad-level: <code>campaign=retarget_hot · content=warm_03</code></td><td class="hash">#program</td><td class="state-on">ON</td></tr>
+
+<tr class="group-row"><td colspan="6">CONTENT 14d - Исследовательский (5737873073) · group: <span class="err">пусто</span></td></tr>
+<tr><td></td><td>Как выбрать IT-лагерь для подростка</td><td><code>https://aidacamp.ru/guide?...utm_campaign=retarget_hot&utm_content=content_01</code></td><td>ad-level: <code>campaign=retarget_hot · content=content_01</code></td><td>/guide</td><td class="state-suspended">SUSPENDED</td></tr>
+<tr><td></td><td>Чек-лист лагеря: 7 пунктов перед оплатой</td><td><code>https://aidacamp.ru/guide?...utm_content=content_02</code></td><td>ad-level: <code>campaign=retarget_hot · content=content_02</code></td><td>/guide</td><td class="state-suspended">SUSPENDED</td></tr>
+<tr><td></td><td>Пример реальной смены: от дня 1 до защиты</td><td><code>https://aidacamp.ru/?...utm_content=content_03#program</code></td><td>ad-level: <code>campaign=retarget_hot · content=content_03</code></td><td class="hash">#program</td><td class="state-archived">ARCHIVED</td></tr>
+<tr><td></td><td>40+ отзывов на Яндекс Картах — 5.0</td><td><code>https://aidacamp.ru/#section-reviews</code></td><td><span class="err">❌ НЕТ UTM</span></td><td class="hash">#section-reviews</td><td class="state-suspended">SUSPENDED</td></tr>
+<tr><td></td><td>Ребёнок уедет с проектом на Python</td><td><code>https://aidacamp.ru/#section-journey</code></td><td><span class="err">❌ НЕТ UTM</span></td><td class="hash">#section-journey</td><td class="state-suspended">SUSPENDED</td></tr>
+<tr><td></td><td>IT-лагерь с лицензией Минобра</td><td><code>https://aidacamp.ru/#section-faq</code></td><td><span class="err">❌ НЕТ UTM</span></td><td class="hash">#section-faq</td><td class="state-suspended">SUSPENDED</td></tr>
+
+<tr class="group-row"><td colspan="6">BOUNCE MOBILE 7d - Быстрый возврат (5737873078) · group: <span class="err">пусто</span></td></tr>
+<tr><td></td><td>Формат, цена и даты на одном экране</td><td><code>https://aidacamp.ru/?...utm_campaign=retarget_hot&utm_content=bounce_01#shifts</code></td><td>ad-level: <code>campaign=retarget_hot · content=bounce_01</code></td><td class="hash">#shifts</td><td class="state-suspended">SUSPENDED</td></tr>
+<tr><td></td><td>Узнайте условия участия за 60 секунд</td><td><code>https://aidacamp.ru/?...utm_content=bounce_02#shifts</code></td><td>ad-level: <code>campaign=retarget_hot · content=bounce_02</code></td><td class="hash">#shifts</td><td class="state-suspended">SUSPENDED</td></tr>
+<tr><td></td><td>Вернитесь к подбору смены с места остановки</td><td><code>https://aidacamp.ru/?...utm_content=bounce_03#shifts</code></td><td>ad-level: <code>campaign=retarget_hot · content=bounce_03</code></td><td class="hash">#shifts</td><td class="state-suspended">SUSPENDED</td></tr>
+
+<tr class="group-row"><td colspan="6">CRM - Клиенты школы Codims (5741570512) · group: <span class="err">пусто</span></td></tr>
+<tr><td></td><td>Ваш ребёнок интересуется ИТ? — попробуй лагерь</td><td><code>https://aidacamp.ru/?utm_source=direct&utm_medium=retarget&utm_campaign=codims</code></td><td>ad-level: <code>source=direct · medium=retarget · campaign=codims</code> <span class="warn">⚠ source=direct вместо yandex</span></td><td>—</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>Программирование оффлайн — с нуля</td><td><code>https://aidacamp.ru/?utm_source=direct&utm_medium=retarget&utm_campaign=codims</code></td><td>ad-level: <code>campaign=codims</code></td><td>—</td><td class="state-on">ON</td></tr>
+
+<tr class="group-row"><td colspan="6">CRM - Лиды лагеря (5741570514) · group: <span class="err">пусто</span></td></tr>
+<tr><td></td><td>Смена 2 — осталось 4 места</td><td><code>https://aidacamp.ru/?utm_source=direct&utm_medium=retarget&utm_campaign=leads</code></td><td>ad-level: <code>source=direct · campaign=leads</code></td><td>—</td><td class="state-on">ON</td></tr>
+<tr><td></td><td>Июнь заполняется — забронируй</td><td><code>https://aidacamp.ru/?utm_source=direct&utm_medium=retarget&utm_campaign=leads</code></td><td>ad-level: <code>source=direct · campaign=leads</code></td><td>—</td><td class="state-on">ON</td></tr>
+
+</tbody>
+</table>
+
+<h2 style="background:#4a5568;">📍 Подмены заголовка на лендинге — актуальное состояние</h2>
+<p class="meta">Реализовано в <code>src/components/Hero.astro</code> (inline-скрипт). Логика: сначала проверяется <code>utm_h1</code>, затем <code>utm_content</code>, затем <code>utm_source</code>. Подмена работает на обоих Hero (desktop #hero-title + mobile #hero-title-mobile).</p>
+<p class="meta"><b>Дефолт</b> (без UTM или неизвестный ключ): <b>H1</b> — «Летний лагерь в Подмосковье, 7–14» · <b>Subtitle</b> — «Каждый уедет с проектом и новыми друзьями.»</p>
+
+<table>
+<thead><tr>
+<th style="width:8%">Параметр</th>
+<th style="width:10%">Значение (ключ)</th>
+<th style="width:25%">Заголовок объявления в Директе</th>
+<th style="width:30%">H1 на лендинге после подмены</th>
+<th style="width:27%">Subtitle на лендинге</th>
+</tr></thead>
+<tbody>
+
+<tr class="group-row"><td colspan="5">🔎 Поиск — utm_h1 (кампания 708664426)</td></tr>
+<tr>
+  <td><code>utm_h1</code></td><td><code>brand</code></td>
+  <td>IT-лагерь АйДаКемп · АйДаКемп: IT-лагерь 10-13</td>
+  <td>АйДаКемп — IT-лагерь в Подмосковье</td>
+  <td>66 км от Москвы, программирование, бассейн, природа</td>
+</tr>
+<tr>
+  <td><code>utm_h1</code></td><td><code>it</code></td>
+  <td>Компьютерный лагерь 10-13 · Лагерь программирования · IT-лагерь для детей 10-13</td>
+  <td>IT-лагерь для детей 7–14 лет — Python, Minecraft, AI</td>
+  <td>Каждый уедет с проектом и новыми друзьями</td>
+</tr>
+<tr>
+  <td><code>utm_h1</code></td><td><code>age</code> <span class="warn">SUSPENDED</span></td>
+  <td>IT-лагерь для детей 10–13 лет · Лагерь для детей 10-13</td>
+  <td>Лагерь для детей 7–14 лет</td>
+  <td>Учатся программировать и защищают свой проект</td>
+</tr>
+<tr>
+  <td><code>utm_h1</code></td><td><code>price</code></td>
+  <td>Путевка в лагерь программирования · Стоимость IT-лагеря 2026</td>
+  <td>IT-лагерь 7–14 лет от 48 000₽</td>
+  <td>7 дней: программирование, хакатон, бассейн — всё включено</td>
+</tr>
+<tr>
+  <td><code>utm_h1</code></td><td><code>camp</code> <span class="warn">SUSPENDED</span></td>
+  <td>Детский лагерь Подмосковье 2026 · Летний лагерь для детей</td>
+  <td>Летний лагерь в Подмосковье для детей 7–14 лет</td>
+  <td>IT, бассейн, проживание — всё включено. 66 км от Москвы</td>
+</tr>
+<tr>
+  <td><code>utm_h1</code></td><td><code>nophone</code></td>
+  <td>Лагерь без телефонов для детей · Детский лагерь без гаджетов</td>
+  <td>Телефон здесь зарабатывают</td>
+  <td>Экранное время — за участие и инициативу, не выдаётся автоматически</td>
+</tr>
+
+<tr class="group-row"><td colspan="5">🎯 РСЯ — utm_content (кампания 708698819)</td></tr>
+<tr>
+  <td><code>utm_content</code></td><td><code>keys</code></td>
+  <td>Вы знаете, куда отправляете ребёнка · Лагерь, после которого есть результат</td>
+  <td>IT-лагерь в Подмосковье — вы знаете, куда отправляете ребёнка</td>
+  <td>Лицензия Минобра · 6 лет работы · 1200+ детей</td>
+</tr>
+<tr>
+  <td><code>utm_content</code></td><td><code>parents</code></td>
+  <td>Пока дети взрослеют — вы отдыхаете · Он без телефона. Вы — без тревоги.</td>
+  <td>Ребёнок в лагере — вы отдыхаете 14 дней</td>
+  <td>Не просто лагерь — дети создают игры и приложения</td>
+</tr>
+<tr>
+  <td><code>utm_content</code></td><td><code>result</code></td>
+  <td>Летний лагерь. Ребёнок делает IT-проект · После смены ребёнок верит в себя</td>
+  <td>За смену ребёнок создаёт реальный IT-проект</td>
+  <td>Хакатон в финале каждой смены — защита перед жюри</td>
+</tr>
+<tr>
+  <td><code>utm_content</code></td><td><code>edu</code></td>
+  <td>Вы знаете, куда отправляете ребёнка · IT-лагерь для детей 8–14 лет</td>
+  <td>IT-лагерь 7–14 лет — ребёнок уедет с проектом на Python</td>
+  <td>Хакатон в финале, лицензия Минобра, 66 км от Москвы</td>
+</tr>
+<tr>
+  <td><code>utm_content</code></td><td><code>books</code></td>
+  <td>Не просто лагерь. Среда развития · Лагерь, после которого есть результат</td>
+  <td>Не просто лагерь — среда развития</td>
+  <td>Наши преподаватели написали книгу по Python. Учим серьёзно.</td>
+</tr>
+<tr>
+  <td><code>utm_content</code></td><td><code>competitors</code></td>
+  <td>Сравните до бронирования лагеря · Подойдёт не каждому ребёнку</td>
+  <td>Лучший IT-лагерь Подмосковья</td>
+  <td>66 км от Москвы, хакатон в финале каждой смены</td>
+</tr>
+
+<tr class="group-row"><td colspan="5">📱 VK Ads — utm_source=vk_ads, utm_content (активные кампании: problem_photo, intent_kw)</td></tr>
+<tr>
+  <td><code>utm_content</code></td><td><code>telefon</code></td>
+  <td>Реклама про телефоны/гаджеты (кампании 135018692, problem_photo)</td>
+  <td>Перестаёт сидеть в телефоне? IT-лагерь это исправит</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td><code>utm_content</code></td><td><code>leto</code></td>
+  <td>Реклама про лето (кампании 135018694, problem_photo)</td>
+  <td>Лето может пройти иначе — IT-лагерь под Москвой</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td><code>utm_content</code></td><td><code>nichego</code></td>
+  <td>Реклама "ничего не хочет" (кампании 135018693, problem_photo)</td>
+  <td>Ничего не хочет? В лагере это исчезает на 3-й день</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td><code>utm_content</code></td><td><code>chem_zanyat</code></td>
+  <td>Реклама "чем занять" (кампании intent_kw, 135021106)</td>
+  <td>Чем занять ребёнка летом? IT-лагерь — проект за 7 дней</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td><code>utm_content</code></td><td><code>lager</code></td>
+  <td>Реклама "летний лагерь" (кампании intent_kw, 135021104)</td>
+  <td>Летний лагерь под Москвой — IT, проекты, бассейн</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td><code>utm_content</code></td><td><code>proekt</code></td>
+  <td>Реклама "проект" (кампания 135021375)</td>
+  <td>За 7 дней — свой проект. Бассейн, команда, настоящее лето</td>
+  <td>—</td>
+</tr>
+<tr>
+  <td><code>utm_content</code></td><td><code>214434612, 214774477...</code> <span class="err">❌</span></td>
+  <td>Часть кампаний гонит числовые VK ad ID вместо named ключей</td>
+  <td colspan="2"><span class="warn">Подмены нет</span> — числовые ID не совпадают ни с одним вариантом, показывается дефолтный H1. Нужно добавить <code>utm_content</code> с named ключами в эти кампании.</td>
+</tr>
+
+<tr class="group-row"><td colspan="5">🔁 Ретаргет CRM — utm_source (кампания 708615379)</td></tr>
+<tr>
+  <td><code>utm_source</code></td><td><code>codims</code></td>
+  <td>Ваш ребёнок интересуется ИТ? · Программирование оффлайн — с нуля</td>
+  <td>Попробовать IT за одно лето — и подтянуть информатику к сентябрю</td>
+  <td>Берём с нуля. Опыт не нужен — за смену ребёнок создаст реальный проект и придёт в сентябрь с преимуществом</td>
+</tr>
+<tr>
+  <td>—</td><td><code>retarget_hot / warm</code></td>
+  <td>Ближайшие смены: осталось мало мест · Как проходит смена</td>
+  <td colspan="2"><span class="warn">Подмены нет</span> — объявления ведут на якоря (#shifts, #program, #price), hero не в видимой зоне</td>
+</tr>
+
+</tbody>
+</table>
+
+<p class="meta" style="margin-top:12px">⚠️ <b>Проблема utm_source=codims:</b> в объявлениях стоит <code>utm_source=direct</code> вместо <code>yandex</code> — подмена по <code>sourceVariants</code> срабатывает, но Метрика атрибутирует этот трафик как Direct, не Paid.</p>
+
+<h2 style="background:#8a1c1c;">🚨 Что чинить</h2>
+<ol>
+<li><b>Ретаргет:</b> разнести <code>utm_campaign=retarget_hot</code> на <code>retarget_hot / retarget_warm / retarget_content / retarget_bounce</code> — сейчас атрибуция по тирам сломана.</li>
+<li><b>Ретаргет CONTENT:</b> 3 объявления без UTM вообще (якоря <code>#section-reviews, #section-journey, #section-faq</code>). Добавить UTM или проставить TrackingParams на группу.</li>
+<li><b>CRM-группы:</b> заменить <code>utm_source=direct</code> на <code>utm_source=yandex</code> — сейчас трафик уходит в "Прямые заходы" Метрики, а подмена H1 по <code>sourceVariants.codims</code> не срабатывает.</li>
+<li><b>Поиск (Search):</b> group-level TrackingParams бесполезны (ad-level href с <code>?</code> перекрывает) — можно удалить для чистоты.</li>
+<li><span class="ok">✓ ИСПРАВЛЕНО</span> <b>Подмена H1</b> — реализована в <code>src/components/Hero.astro</code>. Покрыты все группы Поиска и РСЯ. Деплой на dev.aidacamp.ru.</li>
+</ol>
+
+</body>
+</html>

@@ -56,6 +56,29 @@ git checkout dev
 
 ---
 
+## Фоновые агенты (headless) — без MCP
+
+MCP-серверы теряют соединение в длинных сессиях. Для фоновой автоматизации запускай **Claude Code headless**:
+
+```bash
+claude -p "задача" \
+  --no-session-persistence \
+  --no-chrome \
+  --tools "Bash,Read,Write,Edit,Glob,Grep" \
+  --max-turns 10 \
+  --permission-mode bypassPermissions
+```
+
+**Обязательные флаги для фона:** `--no-session-persistence` (не засоряет сессии), `--no-chrome` (не открывает браузер), `--max-turns N` (защита от зацикливания).
+
+**НЕ используй `--bare`** — отключает OAuth, агент не авторизуется.
+
+Для браузерных задач: Playwright headless отдельно (`headless=True`), затем Claude анализирует результат.
+
+Полная инструкция: `~/MCP/AGENT_INSTRUCTIONS.md` → раздел 0.
+
+---
+
 ## ВАЖНО: Используй только aidacamp-tools MCP
 
 **НЕ используй** Kapture, Desktop Commander, Chrome MCP, Claude in Chrome, удалённый MCP `5967f77d` (yandex-direct-metrica-mcp). Они либо зависают, либо отключены.
