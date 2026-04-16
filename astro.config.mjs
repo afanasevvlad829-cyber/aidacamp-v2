@@ -8,6 +8,7 @@ import partytown from '@astrojs/partytown';
 export default defineConfig({
   site: 'https://aidacamp.ru',
   adapter: node({ mode: 'standalone' }),
+  security: { checkOrigin: false },
   integrations: [
     sitemap(),
     partytown({
