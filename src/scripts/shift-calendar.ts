@@ -11,8 +11,13 @@ export function renderCalendar(
 ) {
   titleEl.textContent = shiftName;
 
-  const start = new Date(startStr);
-  const end = new Date(endStr);
+  // Парсим локально чтобы избежать timezone-сдвига (ISO строки = UTC midnight)
+  function parseLocal(s: string): Date {
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  const start = parseLocal(startStr);
+  const end = parseLocal(endStr);
 
   const months: { year: number; month: number }[] = [];
   let cur = new Date(start.getFullYear(), start.getMonth(), 1);

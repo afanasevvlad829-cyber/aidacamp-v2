@@ -3,8 +3,6 @@ import { mainShifts, shortShifts, allShifts } from '../data/shifts';
 import ShiftCard from './shifts/ShiftCard.astro';
 import ShortShiftCard from './shifts/ShortShiftCard.astro';
 import ShiftBookModal from './shifts/ShiftBookModal.astro';
-import ShiftCalendarModal from './shifts/ShiftCalendarModal.astro';
-import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
 ---
 
 <section id="shifts" class="mx-auto max-w-[1312px] px-[2px] pt-10 md:px-4">
@@ -20,7 +18,7 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
             <button
               type="button"
               data-shifts-tab={i}
-              class={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold transition-colors ${i === 0 ? 'bg-primary-light text-white' : 'bg-slate-100 text-slate-700'}`}
+              class={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[14px] font-semibold transition-colors ${i === 0 ? 'bg-primary-light text-white' : 'bg-slate-100 text-slate-700'}`}
             >
               {num}
             </button>
@@ -39,13 +37,27 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
           <span class={`h-1.5 w-1.5 rounded-full transition-colors ${i === 0 ? 'bg-primary-light' : 'bg-slate-300'}`} data-shifts-dot={i}></span>
         ))}
       </div>
+      <!-- July sold-out banner (mobile) -->
+      <div class="mt-4 flex items-center gap-2.5 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5">
+        <i class="bi bi-lock-fill text-[15px] text-red-500 shrink-0"></i>
+        <p class="text-[13px] font-semibold leading-[1.4] text-red-600">Июль — мест нет. Свободные места — в августе (Смена 3 и 4).</p>
+      </div>
     </div>
 
     <!-- Desktop: 2-col grid + short shifts sidebar -->
     <div class="mt-6 hidden md:flex md:gap-6">
       <!-- Left: Main shifts (2 col grid) -->
       <div class="grid flex-1 grid-cols-2 gap-4">
-        {mainShifts.map((shift) => (
+        {mainShifts.slice(0, 2).map((shift) => (
+          <ShiftCard shift={shift} variant="desktop" />
+        ))}
+        <!-- July sold-out banner -->
+        <div class="col-span-2 flex items-center gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5">
+          <i class="bi bi-lock-fill text-[16px] text-red-500 shrink-0"></i>
+          <p class="text-[14px] font-semibold text-red-600">Июль — мест нет. Все июльские смены укомплектованы.</p>
+          <span class="ml-auto text-[13px] text-red-400 whitespace-nowrap">Записаться в август →</span>
+        </div>
+        {mainShifts.slice(2).map((shift) => (
           <ShiftCard shift={shift} variant="desktop" />
         ))}
       </div>
@@ -53,8 +65,8 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
       <!-- Right: Short shifts -->
       <div class="w-[320px] shrink-0">
         <div class="rounded-[20px] border border-slate-200 bg-slate-50 p-5">
-          <p class="text-[12px] font-semibold uppercase tracking-[0.08em] text-accent-green">Короткие смены</p>
-          <p class="text-[12px] text-slate-400 mt-2 mb-1">Для тех, кто сомневается ехать ли надолго</p>
+          <p class="text-[14px] font-semibold uppercase tracking-[0.08em] text-[#2fa768]">Короткие смены</p>
+          <p class="text-[14px] text-slate-400 mt-2 mb-1">Для тех, кто сомневается ехать ли надолго</p>
           <div class="mt-3 grid gap-3">
             {shortShifts.map((shift) => (
               <ShortShiftCard shift={shift} />
@@ -67,14 +79,10 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
 </section>
 
 <ShiftBookModal />
-<ShiftCalendarModal />
-<ShiftInfoModal />
 
 <script>
   import { trackGoal } from '../scripts/analytics';
   import { MAILRU_PIXEL_ID } from '../data/tracking';
-  import { renderCalendar } from '../scripts/shift-calendar';
-  import { shiftInfo } from '../data/shifts';
 
   function initShifts() {
     // === MOBILE CAROUSEL TABS ===
@@ -184,9 +192,8 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
         if (bookError) bookError.classList.add('hidden');
         bookModal.showModal();
         trackGoal('shift_book_click', { shift: el.dataset.shiftBookName });
-        if (typeof _tmr !== 'undefined') {
-          _tmr.push({ type: 'reachGoal', id: 3755202, value: 500, goal: 'shift_book_click'});
-        }
+        (window as any)._tmr = (window as any)._tmr || [];
+        (window as any)._tmr.push({ type: 'reachGoal', id: 3755202, value: 500, goal: 'shift_book_click' });
       });
     });
 
@@ -221,9 +228,8 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
           }),
         });
         await res.json();
-        if (typeof _tmr !== 'undefined') {
-          _tmr.push({ type: 'reachGoal', id: MAILRU_PIXEL_ID, value: 6375, goal: 'lead'});
-        }
+        (window as any)._tmr = (window as any)._tmr || [];
+        (window as any)._tmr.push({ type: 'reachGoal', id: MAILRU_PIXEL_ID, value: 6375, goal: 'lead' });
       } catch {}
 
       bookModal.close();
@@ -231,54 +237,33 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
       referralModal?.showModal();
     });
 
-    // === CALENDAR MODAL ===
-    const calendarModal = document.getElementById('shiftCalendarModal') as HTMLDialogElement | null;
-    const calendarTitle = calendarModal?.querySelector('[data-calendar-title]');
-    const calendarGrid = calendarModal?.querySelector('[data-calendar-grid]');
-
-    document.querySelectorAll('[data-shift-calendar]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const el = btn as HTMLElement;
-        if (calendarGrid && calendarTitle) {
-          renderCalendar(
-            el.dataset.start || '',
-            el.dataset.end || '',
-            el.dataset.shiftName || '',
-            calendarGrid,
-            calendarTitle,
-          );
-        }
-        calendarModal?.showModal();
-      });
-    });
-
-    calendarModal?.querySelector('[data-calendar-close]')?.addEventListener('click', () => calendarModal.close());
-    calendarModal?.addEventListener('click', (e) => { if (e.target === calendarModal) calendarModal.close(); });
-
-    // === INFO MODAL ===
-    const infoModal = document.getElementById('shiftInfoModal') as HTMLDialogElement | null;
-    const infoTitle = infoModal?.querySelector('[data-info-title]');
-    const infoDates = infoModal?.querySelector('[data-info-dates]');
-    const infoPrice = infoModal?.querySelector('[data-info-price]');
-    const infoBody = infoModal?.querySelector('[data-info-body]');
-
-    document.querySelectorAll('[data-shift-info]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = (btn as HTMLElement).dataset.shiftInfo || '';
-        const info = shiftInfo[id];
-        if (!info || !infoModal) return;
-        if (infoTitle) infoTitle.textContent = (btn as HTMLElement).dataset.shiftTitle || id;
-        if (infoDates) infoDates.textContent = `${info.dates} · ${info.duration}`;
-        if (infoPrice) infoPrice.textContent = info.price;
-        if (infoBody) infoBody.innerHTML = info.html;
-        infoModal.showModal();
-      });
-    });
-
-    infoModal?.querySelector('[data-info-close]')?.addEventListener('click', () => infoModal.close());
-    infoModal?.addEventListener('click', (e) => { if (e.target === infoModal) infoModal.close(); });
+    // Calendar и Info модалки обрабатываются в ShiftModal (unified modal)
   }
 
   document.addEventListener('astro:page-load', initShifts);
   initShifts();
+
+  // === AGE PERSONALIZATION: показываем счётчик ровесников ===
+  function showPeerCounts(age: string) {
+    document.querySelectorAll<HTMLElement>('.peer-count-badge').forEach((badge) => {
+      const counts = JSON.parse(badge.dataset.peerCounts || '{}');
+      const n = counts[age];
+      if (!n) return;
+      const textEl = badge.querySelector<HTMLElement>('.peer-count-text');
+      if (textEl) textEl.textContent = `${n} ровесников уже едут в эту смену`;
+      badge.classList.remove('hidden');
+      badge.classList.add('flex');
+    });
+  }
+
+  function initShiftAgePersonalization() {
+    const saved = localStorage.getItem('user_age_group');
+    if (saved) showPeerCounts(saved);
+    document.addEventListener('age-personalize', (e: Event) => {
+      showPeerCounts((e as CustomEvent<{ age: string }>).detail.age);
+    });
+  }
+
+  document.addEventListener('astro:page-load', initShiftAgePersonalization);
+  initShiftAgePersonalization();
 </script>

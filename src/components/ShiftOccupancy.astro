@@ -23,14 +23,14 @@ function freeLabel(free: number) {
 <div data-shift-occupancy>
   <!-- STATE: idle -->
   <div data-state="idle">
-    <div class="rounded-2xl border border-slate-100 bg-slate-50 p-6 text-center">
+    <div class="py-6 text-center">
       <i class="bi bi-bar-chart-line text-[32px] text-slate-300"></i>
       <p class="mt-2 text-[14px] font-medium text-slate-500">Проверить свободные места</p>
-      <p class="mt-1 text-[12px] text-slate-400">Данные обновляются в реальном времени</p>
+      <p class="mt-1 text-[14px] text-slate-400">Данные обновляются в реальном времени</p>
       <button data-check-occupancy
-              class="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#ec7c00] px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-[#d46e00] transition">
+              class="mt-4 inline-flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-2.5 text-[14px] font-semibold text-white hover:bg-orange-600 transition">
         <i class="bi bi-search"></i>
-        Проверить занятость
+        Проверить
       </button>
     </div>
   </div>
@@ -38,25 +38,61 @@ function freeLabel(free: number) {
   <!-- STATE: loading -->
   <div data-state="loading" class="hidden flex-col items-center justify-center py-8 gap-3">
     <i class="bi bi-arrow-repeat text-orange-500 text-[28px] animate-spin"></i>
-    <p class="text-[13px] text-slate-500 font-medium">Проверяем занятость смен...</p>
+    <p class="text-[14px] text-slate-500 font-medium">Проверяем занятость смен...</p>
   </div>
 
   <!-- STATE: loaded -->
   <div data-state="loaded" class="hidden">
     <div class="space-y-3">
-      {mainShifts.map((s) => {
-        const pct = Math.round((s.taken / s.total) * 100);
-        const free = s.total - s.taken;
+      {mainShifts.slice(0, 2).map((s) => {
+        const total = s.occupied + s.free;
+        const pct = Math.round((s.occupied / total) * 100);
+        const free = s.free;
         const color = getColor(pct);
         const icon = getIcon(pct);
         return (
-          <div class="occupancy-row" style="opacity: 0">
+          <div class="occupancy-row cursor-pointer rounded-lg -mx-1 px-1 py-1 hover:bg-slate-50 transition-colors" style="opacity: 0" data-occupancy-shift={s.id} role="button" tabindex="0">
             <div class="flex items-center justify-between mb-1">
               <div class="flex items-center gap-2">
                 <span class="text-[14px] font-semibold text-slate-800">{s.name}</span>
-                <span class="text-[12px] text-slate-400">{s.dates} · {s.duration}</span>
+                <span class="text-[14px] text-slate-400">{s.dates} · {s.duration}</span>
               </div>
-              <span class="shift-label text-[13px] font-medium" style={`color: ${color}; opacity: 0`}>
+              <span class="shift-label text-[14px] font-medium" style={`color: ${color}; opacity: 0`}>
+                <i class={`bi ${icon}`}></i> {freeLabel(free)}
+              </span>
+            </div>
+            <div class="h-[8px] w-full rounded-full bg-slate-100 overflow-hidden">
+              <div
+                class="shift-bar h-full rounded-full"
+                style={`width: 0%; background-color: ${color}`}
+                data-width={`${pct}%`}
+              ></div>
+            </div>
+          </div>
+        );
+      })}
+
+      <!-- July sold-out divider -->
+      <div class="flex items-center gap-3 py-1">
+        <div class="h-px flex-1 bg-red-100"></div>
+        <span class="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.08em] text-red-400"><i class="bi bi-lock-fill"></i> Июль — 100% забронирован</span>
+        <div class="h-px flex-1 bg-red-100"></div>
+      </div>
+
+      {mainShifts.slice(2).map((s) => {
+        const total = s.occupied + s.free;
+        const pct = Math.round((s.occupied / total) * 100);
+        const free = s.free;
+        const color = getColor(pct);
+        const icon = getIcon(pct);
+        return (
+          <div class="occupancy-row cursor-pointer rounded-lg -mx-1 px-1 py-1 hover:bg-slate-50 transition-colors" style="opacity: 0" data-occupancy-shift={s.id} role="button" tabindex="0">
+            <div class="flex items-center justify-between mb-1">
+              <div class="flex items-center gap-2">
+                <span class="text-[14px] font-semibold text-slate-800">{s.name}</span>
+                <span class="text-[14px] text-slate-400">{s.dates} · {s.duration}</span>
+              </div>
+              <span class="shift-label text-[14px] font-medium" style={`color: ${color}; opacity: 0`}>
                 <i class={`bi ${icon}`}></i> {freeLabel(free)}
               </span>
             </div>
@@ -74,23 +110,24 @@ function freeLabel(free: number) {
       <!-- Divider: short shifts -->
       <div class="flex items-center gap-3 pt-2 pb-1">
         <div class="h-px flex-1 bg-slate-200"></div>
-        <span class="text-[11px] font-medium uppercase tracking-[0.08em] text-slate-400">Короткие смены · 7–8 дней</span>
+        <span class="text-[14px] font-medium uppercase tracking-[0.08em] text-slate-400">Короткие смены · 7–8 дней</span>
         <div class="h-px flex-1 bg-slate-200"></div>
       </div>
 
       {shortShifts.map((s) => {
-        const pct = Math.round((s.taken / s.total) * 100);
-        const free = s.total - s.taken;
+        const total = s.occupied + s.free;
+        const pct = Math.round((s.occupied / total) * 100);
+        const free = s.free;
         const color = getColor(pct);
         const icon = getIcon(pct);
         return (
-          <div class="occupancy-row" style="opacity: 0">
+          <div class="occupancy-row cursor-pointer rounded-lg -mx-1 px-1 py-1 hover:bg-slate-50 transition-colors" style="opacity: 0" data-occupancy-shift={s.id} role="button" tabindex="0">
             <div class="flex items-center justify-between mb-1">
               <div class="flex items-center gap-2">
                 <span class="text-[14px] font-semibold text-slate-800">{s.name}</span>
-                <span class="text-[12px] text-slate-400">{s.dates} · {s.duration}</span>
+                <span class="text-[14px] text-slate-400">{s.dates} · {s.duration}</span>
               </div>
-              <span class="shift-label text-[13px] font-medium" style={`color: ${color}; opacity: 0`}>
+              <span class="shift-label text-[14px] font-medium" style={`color: ${color}; opacity: 0`}>
                 <i class={`bi ${icon}`}></i> {freeLabel(free)}
               </span>
             </div>
@@ -106,7 +143,7 @@ function freeLabel(free: number) {
       })}
 
       <div class="pt-2 text-center">
-        <a href="#shifts" class="inline-flex items-center gap-1.5 text-[13px] font-semibold text-orange-500 hover:text-orange-600 transition">
+        <a href="#shifts" class="inline-flex items-center gap-1.5 text-[14px] font-semibold text-orange-500 hover:text-orange-600 transition">
           <i class="bi bi-arrow-down-circle"></i>
           Смотреть цены &rarr;
         </a>
@@ -161,9 +198,6 @@ function freeLabel(free: number) {
     }
 
     root.querySelector('[data-check-occupancy]')?.addEventListener('click', () => {
-      if (typeof ym !== 'undefined') {
-        ym(96499295, 'reachGoal', 'available_spots');
-      }
       showState('loading');
       setTimeout(() => {
         showState('loaded');

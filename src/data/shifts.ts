@@ -14,11 +14,8 @@ export interface Shift {
   price: string;
   free: number;
   occupied: number;
-  total: number;
-  taken: number;
   highlighted?: boolean;
   popular?: boolean;
-  isShort?: boolean;
   startDate: string; // YYYY-MM-DD for calendar
   endDate: string;
 }
@@ -33,13 +30,11 @@ export const mainShifts: Shift[] = [
     statusType: 'available',
     description: 'За 10 дней — от первого шага до собственного проекта с AI и понятным результатом.',
     price: '74 900 ₽',
-    free: 4,
-    occupied: 41,
-    total: 45,
-    taken: 41,
+    free: 12,
+    occupied: 23,
     highlighted: true,
-    startDate: '2025-05-30',
-    endDate: '2025-06-08',
+    startDate: '2026-05-30',
+    endDate: '2026-06-08',
   },
   {
     id: 'shift-2',
@@ -50,13 +45,11 @@ export const mainShifts: Shift[] = [
     statusType: 'available',
     description: 'Полный цикл создания проекта: больше самостоятельности и более сложный результат.',
     price: '95 000 ₽',
-    free: 10,
-    occupied: 35,
-    total: 45,
-    taken: 35,
+    free: 4,
+    occupied: 41,
     popular: true,
-    startDate: '2025-06-10',
-    endDate: '2025-06-23',
+    startDate: '2026-06-10',
+    endDate: '2026-06-23',
   },
   {
     id: 'shift-3',
@@ -67,12 +60,10 @@ export const mainShifts: Shift[] = [
     statusType: 'available',
     description: 'Проект от идеи до результата с акцентом на командную работу.',
     price: '89 400 ₽',
-    free: 17,
-    occupied: 28,
-    total: 45,
-    taken: 28,
-    startDate: '2025-08-03',
-    endDate: '2025-08-15',
+    free: 5,
+    occupied: 40,
+    startDate: '2026-08-03',
+    endDate: '2026-08-15',
   },
   {
     id: 'shift-4',
@@ -83,12 +74,10 @@ export const mainShifts: Shift[] = [
     statusType: 'available',
     description: 'Закрытие лета: сильный проект и уверенный результат.',
     price: '69 600 ₽',
-    free: 25,
-    occupied: 20,
-    total: 45,
-    taken: 20,
-    startDate: '2025-08-17',
-    endDate: '2025-08-26',
+    free: 14,
+    occupied: 31,
+    startDate: '2026-08-17',
+    endDate: '2026-08-26',
   },
 ];
 
@@ -102,13 +91,10 @@ export const shortShifts: Shift[] = [
     statusType: 'short',
     description: 'За 7 дней — быстрый вход, свой проект и понятный результат без перегруза.',
     price: '48 000 ₽',
-    free: 22,
-    occupied: 23,
-    total: 45,
-    taken: 23,
-    isShort: true,
-    startDate: '2025-06-10',
-    endDate: '2025-06-16',
+    free: 11,
+    occupied: 29,
+    startDate: '2026-06-10',
+    endDate: '2026-06-16',
   },
   {
     id: 'shift-2-2',
@@ -119,17 +105,22 @@ export const shortShifts: Shift[] = [
     statusType: 'short',
     description: 'Интенсивная смена: больше времени на доработку и более сильный итоговый проект.',
     price: '65 000 ₽',
-    free: 16,
-    occupied: 29,
-    total: 45,
-    taken: 29,
-    isShort: true,
-    startDate: '2025-06-16',
-    endDate: '2025-06-23',
+    free: 8,
+    occupied: 37,
+    startDate: '2026-06-16',
+    endDate: '2026-06-23',
   },
 ];
 
 export const allShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShifts[2], mainShifts[3]];
+
+// Единый источник: сколько ровесников едет в каждую смену по возрасту
+export const PEER_COUNTS: Record<string, Record<string, number>> = {
+  'shift-1': { '7–9': 8,  '10–12': 12, '13–14': 9  },
+  'shift-2': { '7–9': 5,  '10–12': 8,  '13–14': 7  },
+  'shift-3': { '7–9': 3,  '10–12': 5,  '13–14': 4  },
+  'shift-4': { '7–9': 3,  '10–12': 4,  '13–14': 3  },
+};
 
 export function renderCard(shift: Shift) {
   const total = shift.free + shift.occupied;
@@ -147,25 +138,25 @@ export function renderCard(shift: Shift) {
 
 function section(title: string, text: string) {
   return `<div class="mt-4">
-    <p class="text-[13px] font-semibold text-slate-900">${title}</p>
-    <p class="mt-1 text-[13px] leading-[1.65] text-slate-600">${text}</p>
+    <p class="text-[14px] font-semibold text-slate-900">${title}</p>
+    <p class="mt-1 text-[16px] leading-[1.65] text-slate-600">${text}</p>
   </div>`;
 }
 
 function bullet(items: string[]) {
   return '<ul class="mt-1.5 space-y-1">' + items.map(i =>
-    `<li class="flex items-start gap-2 text-[13px] leading-[1.5] text-slate-600">
+    `<li class="flex items-start gap-2 text-[16px] leading-[1.5] text-slate-600">
       <span class="mt-1 block h-1.5 w-1.5 shrink-0 rounded-full bg-primary"></span>${i}
     </li>`).join('') + '</ul>';
 }
 
 function ageBlock(ages: Record<string, string>) {
   return '<div class="mt-4 space-y-2">' +
-    '<p class="text-[12px] font-semibold uppercase tracking-[0.08em] text-slate-500">По возрастам</p>' +
+    '<p class="text-[14px] font-semibold uppercase tracking-[0.08em] text-slate-500">По возрастам</p>' +
     Object.entries(ages).map(([age, desc]) =>
       `<div class="rounded-[12px] border border-slate-200 bg-slate-50 p-3">
-        <p class="text-[12px] font-semibold text-slate-400">${age}</p>
-        <p class="mt-1 text-[13px] leading-[1.5] text-slate-600">${desc}</p>
+        <p class="text-[14px] font-semibold text-slate-400">${age}</p>
+        <p class="mt-1 text-[16px] leading-[1.5] text-slate-600">${desc}</p>
       </div>`
     ).join('') + '</div>';
 }
@@ -187,7 +178,7 @@ export const shiftInfo: Record<string, {
         'интерактивная история с выбором действий',
         'проект с элементами AI (реакции или генерация событий)',
       ]) +
-      '<p class="mt-2 text-[13px] leading-[1.65] text-slate-600">Каждый день — конкретный прогресс: добавляется механика → проверяется → дорабатывается → усиливается. Проект постепенно становится «живым» и рабочим.</p>' +
+      '<p class="mt-2 text-[16px] leading-[1.65] text-slate-600">Каждый день — конкретный прогресс: добавляется механика → проверяется → дорабатывается → усиливается. Проект постепенно становится «живым» и рабочим.</p>' +
       section('К середине смены', 'Уже есть работающий прототип, в который можно играть или взаимодействовать.') +
       section('Вторая половина смены — усиление',
         'Добавляются новые функции, усложняется логика, улучшается внешний вид, прорабатывается сценарий. За 2–3 дня до конца проходит хакатон: интенсивная работа, где проекты собираются в финальную версию.') +
@@ -218,7 +209,7 @@ export const shiftInfo: Record<string, {
         'интерактивный сценарий с разными исходами',
         'проекты с элементами AI (генерация или реакции)',
       ]) +
-      '<p class="mt-2 text-[13px] leading-[1.65] text-slate-600">Каждый день — развитие: сделано → протестировано → улучшено → усложнено.</p>' +
+      '<p class="mt-2 text-[16px] leading-[1.65] text-slate-600">Каждый день — развитие: сделано → протестировано → улучшено → усложнено.</p>' +
       section('К середине смены', 'Проект уже работает и имеет структуру: есть логика, цели и взаимодействие.') +
       section('Вторая половина — углубление',
         'Добавляются новые функции, усложняется поведение объектов, прорабатывается сценарий, улучшается внешний вид. За 2–3 дня до конца — хакатон: сборка финальной версии в интенсивном формате.') +
@@ -249,7 +240,7 @@ export const shiftInfo: Record<string, {
         'интерактивная система с реакциями',
         'проект с элементами AI',
       ]) +
-      '<p class="mt-2 text-[13px] leading-[1.65] text-slate-600">Часть задач выполняется индивидуально, часть — в команде.</p>' +
+      '<p class="mt-2 text-[16px] leading-[1.65] text-slate-600">Часть задач выполняется индивидуально, часть — в команде.</p>' +
       section('Командная работа',
         'Проекты собираются совместно: распределяются роли, обсуждаются решения, объединяются части проекта. Это добавляет понимание, как создаётся общий результат.') +
       section('К середине смены', 'Есть рабочий проект с базовой структурой.') +
@@ -282,7 +273,7 @@ export const shiftInfo: Record<string, {
         'интерактивная история',
         'проект с элементами AI',
       ]) +
-      '<p class="mt-2 text-[13px] leading-[1.65] text-slate-600">Каждый день — видимый прогресс.</p>' +
+      '<p class="mt-2 text-[16px] leading-[1.65] text-slate-600">Каждый день — видимый прогресс.</p>' +
       section('К середине смены', 'Проект уже работает и имеет структуру.') +
       section('Вторая половина — доведение до результата',
         'Добавляются функции, исправляются ошибки, улучшается логика, проект приводится в законченный вид. За 2–3 дня до конца — хакатон.') +
@@ -313,7 +304,7 @@ export const shiftInfo: Record<string, {
         'интерактивная история',
         'проект с простыми AI-элементами',
       ]) +
-      '<p class="mt-2 text-[13px] leading-[1.65] text-slate-600">Каждый день — конкретный шаг: добавлена механика → протестирована → улучшена → добавлено новое. Проект быстро становится рабочим.</p>' +
+      '<p class="mt-2 text-[16px] leading-[1.65] text-slate-600">Каждый день — конкретный шаг: добавлена механика → протестирована → улучшена → добавлено новое. Проект быстро становится рабочим.</p>' +
       section('Середина смены', 'Уже есть готовая основа: можно играть или взаимодействовать.') +
       section('Финальные дни — сборка результата',
         'За 1–2 дня до конца проходит мини-хакатон: интенсивная работа, где проект доводится до финальной версии. Далее — финальная доработка: исправляются ошибки, добавляются детали, оформляется итог.') +
@@ -343,7 +334,7 @@ export const shiftInfo: Record<string, {
         'интерактивный сценарий',
         'проект с элементами AI',
       ]) +
-      '<p class="mt-2 text-[13px] leading-[1.65] text-slate-600">Каждый день — развитие: добавляются функции → проверяются → улучшаются → усложняются. Проект становится более структурным и интересным.</p>' +
+      '<p class="mt-2 text-[16px] leading-[1.65] text-slate-600">Каждый день — развитие: добавляются функции → проверяются → улучшаются → усложняются. Проект становится более структурным и интересным.</p>' +
       section('К середине смены', 'Есть рабочий проект с логикой и взаимодействием.') +
       section('Вторая половина — усиление',
         'Добавляются новые механики, усложняется поведение объектов, улучшается внешний вид, прорабатывается сценарий. За 2 дня до конца — хакатон: интенсивная сборка финальной версии.') +

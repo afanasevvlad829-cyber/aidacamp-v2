@@ -1,5 +1,7 @@
 ---
-import AgeModal from '../components/AgeModal.astro';
+// AgeModal убран — заменён новым AgeBar.astro (без скролла к сменам)
+import iconsCSS from '../styles/icons.css?raw';
+import AgeBar from '../components/AgeBar.astro';
 
 interface Props {
   title: string;
@@ -14,16 +16,17 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
 <html lang="ru" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
+    <style set:html={iconsCSS}></style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <meta name="robots" content="noarchive">
     <title>{title}</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="preload" as="image" href="/images/hero-custom-2026-04-07.avif" type="image/avif" />
     <link rel="preload" as="font" href="/fonts/inter-cyrillic.woff2" type="font/woff2" crossorigin />
     <link rel="preload" as="font" href="/fonts/inter-latin.woff2" type="font/woff2" crossorigin />
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- Bootstrap Icons: subset of 30 icons inlined locally (no CDN, no font download) -->
     <link rel="preconnect" href="https://mc.yandex.ru" />
     <link rel="dns-prefetch" href="https://mc.yandex.ru" />
     <script is:inline>
@@ -38,25 +41,36 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
         window._clarityDisabled = true;
       }
     </script>
-    <!-- Yandex.Metrika (ID from src/data/tracking.ts) — deferred until page is idle -->
+    <!-- Stage 1: Yandex.Metrika — after 1.5s + requestIdleCallback -->
     <script is:inline>
-      function loadMetrika(){if(window._ymLoaded)return;window._ymLoaded=true;
+      function _loadStage1(){if(window._s1)return;window._s1=true;
+      if(!window.ym_disable96499295){
       (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
       m[i].l=1*new Date();
       for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r)return}
       k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
       (window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");
-      ym(96499295,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:true});}
-      if('requestIdleCallback' in window){requestIdleCallback(loadMetrika)}else{setTimeout(loadMetrika,3500)}
+      ym(96499295,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:false});}}
+      setTimeout(function(){if('requestIdleCallback' in window){requestIdleCallback(_loadStage1)}else{_loadStage1()}},1500);
     </script>
+    <!-- Stage 2: Clarity + Top.Mail.Ru — on first interaction OR after 8s -->
     <script is:inline type="text/javascript">
-      if (!window._clarityDisabled) {
-        (function(c,l,a,r,i,t,y){
-          c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-          t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-          y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-        })(window, document, "clarity", "script", "w8yoykmszl");
-      }
+      function _loadStage2(){if(window._s2)return;window._s2=true;
+      if(!window._clarityDisabled){
+      (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+      })(window,document,"clarity","script","w8yoykmszl");}
+      var _tmr=window._tmr||(window._tmr=[]);
+      _tmr.push({id:"3755202",type:"pageView",start:(new Date()).getTime()});
+      var ts=document.createElement("script");ts.type="text/javascript";ts.async=true;ts.id="tmr-code";
+      ts.src="https://top-fwz1.mail.ru/js/code.js";
+      var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(ts,s);}
+      var _s2t=setTimeout(_loadStage2,8000);
+      ['scroll','click','touchstart'].forEach(function(e){
+        document.addEventListener(e,function(){clearTimeout(_s2t);_loadStage2();},{once:true,passive:true});
+      });
     </script>
     <!-- Leadfeeder — deferred load -->
     <script is:inline>
@@ -64,8 +78,7 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
       (function(ss,ex){window.ldfdr=window.ldfdr||function(){(ldfdr._q=ldfdr._q||[]).push([].slice.call(arguments));};
       (function(d,s){fs=d.getElementsByTagName(s)[0];function ce(src){var cs=d.createElement(s);cs.src=src;cs.async=1;fs.parentNode.insertBefore(cs,fs);};
       ce('https://sc.lfeeder.com/lftracker_v1_'+ss+(ex?'_'+ex:'')+'.js');})(document,'script');}
-      )('YEgkB8lbGVx4ep3Z');
-      }
+      )('YEgkB8lbGVx4ep3Z');}
       if('requestIdleCallback' in window){requestIdleCallback(loadLeadfeeder)}else{setTimeout(loadLeadfeeder,5000)}
     </script>
     <!-- OG Meta -->
@@ -82,20 +95,7 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
     <meta name="twitter:image" content="https://aidacamp.ru/images/hero-custom-2026-04-07.avif" />
     <link rel="canonical" href={canonicalUrl} />
     <slot name="head" />
-    <!-- Top.Mail.Ru counter -->
-    <script is:inline type="text/javascript">
-      var _tmr = window._tmr || (window._tmr = []);
-      _tmr.push({id: "3755202", type: "pageView", start: (new Date()).getTime()});
-      (function (d, w, id) {
-        if (d.getElementById(id)) return;
-        var ts = d.createElement("script"); ts.type = "text/javascript"; ts.async = true; ts.id = id;
-        ts.src = "https://top-fwz1.mail.ru/js/code.js";
-        var f = function () {var s = d.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ts, s);};
-        if (w.opera == "[object Opera]") { d.addEventListener("DOMContentLoaded", f, false); } else { f(); }
-      })(document, window, "tmr-code");
-    </script>
     <noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3755202;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
-    <!-- /Top.Mail.Ru counter -->
   </head>
   <body class="font-sans text-[var(--color-text)] bg-white antialiased">
     <slot />
@@ -114,15 +114,14 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
     </div>
     <script>
       import { initScrollTracking } from '../scripts/analytics';
-      import { initNudges } from '../scripts/nudge';
+      // initNudges отключены
       document.addEventListener('DOMContentLoaded', () => {
         initScrollTracking();
-        initNudges();
       });
     </script>
 
     <!-- Cookie Banner -->
-    <div id="cookieBanner" class="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:w-[340px]" style="display:none">
+    <div id="cookieBanner" class="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:bottom-[90px] md:w-[340px]" style="display:none">
       <div class="flex items-center gap-3 rounded-[14px] bg-slate-900/90 px-4 py-3 text-[13px] text-white/80 backdrop-blur-sm shadow-lg">
         <span class="shrink-0 text-[16px]">🍪</span>
         <p class="flex-1 leading-[1.4]">Мы используем cookies для аналитики и улучшения сайта.</p>
@@ -146,6 +145,38 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
         }
       })();
     </script>
-    <AgeModal />
+    <!-- AgeBar: мобильная плашка выбора возраста -->
+    <AgeBar />
+
+    <!-- DEV ONLY: кнопка сброса состояния воронки -->
+    <script is:inline>
+      (function() {
+        if (location.hostname !== 'dev.aidacamp.ru') return;
+        var btn = document.createElement('button');
+        btn.textContent = '↺ сброс';
+        btn.title = 'Сбросить localStorage / sessionStorage воронки';
+        btn.style.cssText = [
+          'position:fixed', 'top:8px', 'left:8px', 'z-index:9999',
+          'background:#1e293b', 'color:#94a3b8',
+          'border:1px solid #334155', 'border-radius:6px',
+          'padding:3px 8px', 'font-size:11px', 'font-family:monospace',
+          'cursor:pointer', 'opacity:0.7', 'transition:opacity .15s'
+        ].join(';');
+        btn.onmouseenter = function() { btn.style.opacity = '1'; };
+        btn.onmouseleave = function() { btn.style.opacity = '0.7'; };
+        btn.addEventListener('click', function() {
+          // localStorage
+          ['age_onboarding_shown', 'user_age_group', 'cookieAccepted'].forEach(function(k) {
+            localStorage.removeItem(k);
+          });
+          // sessionStorage
+          ['age_bar_shown', 'selected_age', 'age_bar_dismissed'].forEach(function(k) {
+            sessionStorage.removeItem(k);
+          });
+          location.reload();
+        });
+        document.body.appendChild(btn);
+      })();
+    </script>
   </body>
 </html>

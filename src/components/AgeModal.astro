@@ -1,178 +1,134 @@
 ---
-// AgeModal.astro — онбординг выбор возраста
+// AgeModal.astro — компактная плашка выбора возраста (только мобилка)
 ---
 
-<div id="age-modal-overlay"
-  class="fixed inset-0 z-[999] flex items-end sm:items-center justify-center
-         bg-black/55 opacity-0 pointer-events-none transition-opacity duration-300">
+<!-- Плашка выбора возраста — только мобилка, появляется через 8 сек -->
+<div id="age-bar"
+  class="fixed bottom-0 inset-x-0 z-[60]
+         translate-y-full opacity-0 pointer-events-none
+         transition-all duration-400 ease-out
+         lg:hidden">
 
-  <div id="age-modal-card"
-    class="bg-[#07101e] border border-white/12
-           rounded-t-[24px] sm:rounded-[20px]
-           px-5 pt-8 pb-6 sm:p-10
-           w-full sm:w-[520px] sm:max-w-[90vw]
-           text-center
-           translate-y-4 scale-[0.98] sm:scale-[0.97]
-           transition-all duration-300">
+  <div class="bg-slate-900/96 backdrop-blur-md
+              border-t border-white/10
+              px-4 py-3
+              shadow-[0_-4px_24px_rgba(0,0,0,0.3)]">
 
-    <p class="text-[11px] text-orange-400/65 uppercase tracking-widest mb-4">
-      АйДаКемп · персональный подбор
-    </p>
+    <div class="flex items-center gap-2">
 
-    <h2 class="text-[20px] sm:text-[22px] font-semibold text-white mb-1.5 leading-snug">
-      Покажем подходящие смены сразу
-    </h2>
-    <p class="text-[14px] text-white/45 mb-6">
-      Сколько лет?
-    </p>
+      <span class="text-[14px] text-white/65 shrink-0 whitespace-nowrap">
+        Возраст
+      </span>
 
-    <!-- Три кнопки возраста -->
-    <div class="grid grid-cols-3 gap-2 sm:gap-2.5 mb-4">
-      <button data-age="7–9"
-        class="age-btn rounded-[14px] py-4 sm:py-4
-               text-[15px] sm:text-[16px] font-semibold
-               text-white/70 bg-white/7 border border-white/18
-               transition-all active:scale-95">
-        7–9 лет
-      </button>
-      <button data-age="10–12"
-        class="age-btn rounded-[14px] py-4 sm:py-4
-               text-[15px] sm:text-[16px] font-semibold
-               text-white/70 bg-white/7 border border-white/18
-               transition-all active:scale-95">
-        10–12 лет
-      </button>
-      <button data-age="13–14"
-        class="age-btn rounded-[14px] py-4 sm:py-4
-               text-[15px] sm:text-[16px] font-semibold
-               text-white/70 bg-white/7 border border-white/18
-               transition-all active:scale-95">
-        13–14 лет
-      </button>
+      <div class="flex gap-1.5 flex-1">
+        <button data-age="7–9"
+          class="age-btn flex-1 py-1.5 rounded-[8px]
+                 text-[14px] font-semibold
+                 text-white/85 bg-white/8 border border-white/12
+                 transition-all active:scale-95">
+          7–9
+        </button>
+        <button data-age="10–12"
+          class="age-btn flex-1 py-1.5 rounded-[8px]
+                 text-[14px] font-semibold
+                 text-white/85 bg-white/8 border border-white/12
+                 transition-all active:scale-95">
+          10–12
+        </button>
+        <button data-age="13–14"
+          class="age-btn flex-1 py-1.5 rounded-[8px]
+                 text-[14px] font-semibold
+                 text-white/85 bg-white/8 border border-white/12
+                 transition-all active:scale-95">
+          13–14
+        </button>
+      </div>
+
+      <button id="age-close"
+        class="shrink-0 text-white/25 hover:text-white/55
+               transition-colors text-[20px] leading-none w-6 text-center"
+        aria-label="Закрыть">×</button>
+
     </div>
 
-    <!-- Подсказка — меняется по возрасту -->
-    <p id="age-hint"
-      class="text-[13px] text-orange-400/80 min-h-[18px] mb-6 transition-opacity duration-200">
-    </p>
-
-    <!-- CTA -->
-    <button id="age-confirm" disabled
-      class="w-full bg-orange-500 hover:bg-orange-600 active:scale-[0.98]
-             rounded-[14px] py-4
-             text-[15px] font-semibold text-white
-             transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-      Показать смены →
-    </button>
-
-    <!-- Пропустить -->
-    <p id="age-skip"
-      class="text-[12px] text-white/25 hover:text-white/50
-             mt-4 cursor-pointer transition-colors">
-      или пропустить →
-    </p>
+    <!-- Прогресс-бар автозакрытия 20 сек -->
+    <div class="mt-2 h-[2px] bg-white/8 rounded-full overflow-hidden">
+      <div id="age-progress"
+        class="h-full bg-orange-400/50 rounded-full"
+        style="width:100%">
+      </div>
+    </div>
 
   </div>
 </div>
 
 <script>
-const HINTS: Record<string, string> = {
-  '7–9':   'Minecraft + первые игры · опыт не нужен',
-  '10–12': 'Python + логика · создают игры с уровнями',
-  '13–14': 'Python + AI · хакатон и серьёзные проекты',
-};
+// ── Константы ───────────────────────────────────────────
+const AGE_SHOW_DELAY    = 8_000;   // плашка появляется через 8 сек
+const AGE_AUTO_HIDE     = 20_000;  // плашка исчезает через 20 сек
 
-let selectedAge: string | null = null;
-
-const overlay  = document.getElementById('age-modal-overlay')!;
-const card     = document.getElementById('age-modal-card')!;
-const hint     = document.getElementById('age-hint')!;
-const confirm  = document.getElementById('age-confirm')!;
-const skip     = document.getElementById('age-skip')!;
+// ── Элементы плашки возраста ─────────────────────────
+const bar      = document.getElementById('age-bar');
+const closeBtn = document.getElementById('age-close');
+const progress = document.getElementById('age-progress');
 const ageBtns  = document.querySelectorAll<HTMLButtonElement>('.age-btn');
 
-// ── показать / скрыть ──────────────────────────────────────
-function showModal() {
-  if (sessionStorage.getItem('age_modal_shown')) return;
-  sessionStorage.setItem('age_modal_shown', '1');
+let hideTimer: ReturnType<typeof setTimeout> | null = null;
+let rafId: number | null = null;
+let startTime = 0;
 
-  overlay.classList.remove('opacity-0', 'pointer-events-none');
-  overlay.classList.add('opacity-100');
-  card.classList.remove('translate-y-4', 'scale-[0.98]', 'scale-[0.97]');
-  card.classList.add('translate-y-0', 'scale-100');
+// ── Показать плашку ──────────────────────────────────
+function showBar() {
+  if (sessionStorage.getItem('age_bar_shown')) return;
+  sessionStorage.setItem('age_bar_shown', '1');
+  bar?.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+  bar?.classList.add('translate-y-0', 'opacity-100');
+  startProgress();
 }
 
-function hideModal() {
-  overlay.classList.add('opacity-0', 'pointer-events-none');
-  overlay.classList.remove('opacity-100');
+// ── Скрыть плашку ────────────────────────────────────
+function hideBar() {
+  bar?.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+  bar?.classList.remove('translate-y-0', 'opacity-100');
+  if (hideTimer) clearTimeout(hideTimer);
+  if (rafId) cancelAnimationFrame(rafId);
 }
 
-// Закрыть по клику на оверлей (вне карточки)
-overlay.addEventListener('click', (e) => {
-  if (e.target === overlay) hideModal();
-});
-
-// ── триггер: первый скролл ИЛИ 8 сек ─────────────────────
-if (!sessionStorage.getItem('age_modal_shown')) {
-  let timer = setTimeout(showModal, 8000);
-
-  window.addEventListener('scroll', () => {
-    clearTimeout(timer);
-    showModal();
-  }, { once: true });
+// ── Прогресс-бар ─────────────────────────────────────
+function startProgress() {
+  startTime = Date.now();
+  function tick() {
+    const pct = Math.max(0, 100 - ((Date.now() - startTime) / AGE_AUTO_HIDE) * 100);
+    if (progress) progress.style.width = pct + '%';
+    if (pct > 0) rafId = requestAnimationFrame(tick);
+  }
+  rafId = requestAnimationFrame(tick);
+  hideTimer = setTimeout(hideBar, AGE_AUTO_HIDE);
 }
 
-// ── выбор возраста ────────────────────────────────────────
+// ── Триггер только по таймеру — скролл НЕ триггерит ──
+if (!sessionStorage.getItem('age_bar_shown')) {
+  setTimeout(showBar, AGE_SHOW_DELAY);
+}
+
+// ── Закрыть ──────────────────────────────────────────
+if (closeBtn) closeBtn.addEventListener('click', hideBar);
+
+// ── Выбор возраста → сразу скролл к сменам ───────────
 ageBtns.forEach(btn => {
   btn.addEventListener('click', () => {
-    selectedAge = btn.dataset.age!;
-
-    ageBtns.forEach(b => {
-      b.classList.remove('age-btn--active', 'bg-orange-500', 'border-orange-500', 'text-white');
-      b.classList.add('bg-white/7', 'border-white/18', 'text-white/70');
-    });
-
-    btn.classList.add('age-btn--active', 'bg-orange-500', 'border-orange-500', 'text-white');
-    btn.classList.remove('bg-white/7', 'border-white/18', 'text-white/70');
-
-    hint.style.opacity = '0';
-    setTimeout(() => {
-      hint.textContent = HINTS[selectedAge!];
-      hint.style.opacity = '1';
-    }, 150);
-
-    confirm.removeAttribute('disabled');
+    const age = btn.dataset.age || '';
+    // Цели в Метрику и Top.Mail
+    if (typeof (window as any).ym !== 'undefined') (window as any).ym(96499295, 'reachGoal', 'age_select');
+    (window as any)._tmr = (window as any)._tmr || [];
+    (window as any)._tmr.push({ type: 'reachGoal', id: 3755202, value: 100, goal: 'age_select' });
+    sessionStorage.setItem('selected_age', age);
+    localStorage.setItem('user_age_group', age);
+    // Переключить таб возрастного сегмента если есть
+    (document.querySelector(`[data-segment="${age}"]`) as HTMLElement | null)?.click();
+    // Закрыть плашку и перейти к сменам
+    hideBar();
+    document.querySelector('#shifts')?.scrollIntoView({ behavior: 'smooth' });
   });
 });
-
-// ── подтверждение ─────────────────────────────────────────
-confirm.addEventListener('click', () => {
-  hideModal();
-
-  if (!selectedAge) return;
-
-  // сохранить выбор
-  sessionStorage.setItem('selected_age', selectedAge);
-  localStorage.setItem('user_age_group', selectedAge);
-
-  // Яндекс.Метрика goal
-  if (typeof ym !== 'undefined') {
-    ym(96499295, 'reachGoal', 'age_select');
-  }
-
-  // TMR goal: age_select
-  if (typeof _tmr !== 'undefined') {
-    _tmr.push({ type: 'reachGoal', id: 3755202, value: 100, goal: 'age_select'});
-  }
-
-  // активировать нужный сегмент в Hero (если есть)
-  const seg = document.querySelector<HTMLElement>(`[data-segment="${selectedAge}"]`);
-  seg?.click();
-
-  // скролл к блоку смен
-  document.querySelector('#shifts')?.scrollIntoView({ behavior: 'smooth' });
-});
-
-// ── пропустить ────────────────────────────────────────────
-skip.addEventListener('click', hideModal);
 </script>
