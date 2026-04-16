@@ -1,4 +1,8 @@
 ---
+import HeroShiftsWidget from './HeroShiftsWidget.astro';
+import ShiftModal from './ShiftModal.astro';
+import { STAT_DISTANCE, CAMP_PRICE_FROM, CAMP_SEASON } from '../data/contacts';
+
 interface Props {
   h1: string;
   subtitle: string;
@@ -20,13 +24,34 @@ const breadcrumbJsonLd = {
 };
 ---
 
-<section class="bg-[#0d1a2b] px-5 pt-16 pb-12 md:px-14 md:pt-20 md:pb-16">
+<section class={`relative overflow-hidden ${image ? 'min-h-[560px] md:min-h-[620px]' : ''} bg-[#0d1a2b] px-5 pt-16 pb-12 md:px-14 md:pt-20 md:pb-16`}>
   <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
 
-  <div class="mx-auto max-w-[1312px]">
-    <div class={`flex gap-10 ${image ? 'items-center lg:flex-row flex-col' : ''}`}>
-      <!-- Text column -->
-      <div class={image ? 'flex-1 min-w-0' : ''}>
+  <!-- Фоновое изображение -->
+  {image && (
+    <div class="absolute inset-0 z-0">
+      <picture>
+        <source srcset={image} type="image/avif" />
+        <img
+          src={image.replace('/images/hero/', '/images/hero/jpg/').replace('.avif', '.jpg')}
+          alt={imageAlt}
+          class="w-full h-full object-cover"
+          loading="eager"
+          decoding="async"
+        />
+      </picture>
+      <!-- Градиент: слева плотный, справа прозрачный -->
+      <div class="absolute inset-0 bg-gradient-to-r from-[#0d1a2b]/95 via-[#0d1a2b]/65 to-[#0d1a2b]/10"></div>
+      <!-- Градиент снизу -->
+      <div class="absolute inset-0 bg-gradient-to-t from-[#0d1a2b]/50 via-transparent to-transparent"></div>
+    </div>
+  )}
+
+  <div class="relative z-10 mx-auto max-w-[1312px]">
+    <div class="flex flex-col gap-8 lg:grid lg:grid-cols-[1fr_360px] lg:items-center lg:gap-12">
+
+      <!-- Левая колонка: текст -->
+      <div class="min-w-0">
         <!-- Breadcrumb -->
         <nav class="text-[14px] text-white/50">
           <a href="/" class="hover:text-white/80 transition-colors">Главная</a>
@@ -35,12 +60,12 @@ const breadcrumbJsonLd = {
         </nav>
 
         <!-- H1 -->
-        <h1 class="mt-4 text-[32px] md:text-[48px] font-bold leading-[1.1] tracking-[-0.03em] text-white max-w-[640px]">
+        <h1 class="mt-4 text-[32px] md:text-[48px] font-bold leading-[1.1] tracking-[-0.03em] text-white">
           {h1}
         </h1>
 
         <!-- Subtitle -->
-        <p class="mt-4 text-[16px] md:text-[17px] text-white/70 leading-[1.6] max-w-[540px]">
+        <p class="mt-4 text-[16px] md:text-[17px] text-white/70 leading-[1.6]">
           {subtitle}
         </p>
 
@@ -55,42 +80,133 @@ const breadcrumbJsonLd = {
         </ul>
 
         <!-- CTA buttons -->
-        <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+        <div class="mt-8 flex flex-wrap items-center gap-4">
           <a
             href="#shifts"
-            class="inline-flex items-center justify-center rounded-[14px] bg-[#ec7c00] px-6 py-3.5 text-[15px] font-semibold text-white hover:shadow-[0_4px_16px_rgba(249,115,22,0.35)] hover:-translate-y-[1px] transition-all duration-200"
-          >
-            Узнать о свободных местах
-          </a>
-          <a
-            href="#shifts"
-            class="inline-flex items-center justify-center rounded-[14px] border border-white/20 px-6 py-3.5 text-[15px] text-white/80 hover:border-white/40 hover:text-white transition"
+            class="inline-flex items-center justify-center rounded-[14px] border border-white/30 bg-white/10 px-6 py-3.5 text-[15px] font-medium text-white/85 hover:bg-white/20 hover:text-white transition-all duration-200"
           >
             Смотреть смены &darr;
           </a>
+
+          <!-- Печать: ноутбук не нужен (десктоп) -->
+          <button
+            type="button"
+            id="equipment-stamp-landing"
+            aria-label="Почему не нужно привозить ноутбук"
+            class="hidden sm:flex select-none cursor-pointer group hover:scale-105 transition-transform duration-200 rotate-[-6deg] shrink-0"
+          >
+            <div class="relative flex h-[100px] w-[100px] items-center justify-center rounded-full border-[2.5px] border-dashed border-white/50 group-hover:border-white/80 transition-colors">
+              <div class="absolute inset-[7px] rounded-full border border-white/25 group-hover:border-white/45 transition-colors"></div>
+              <div class="flex flex-col items-center gap-0.5 px-3 text-center">
+                <span class="text-[22px] leading-none">🖥️</span>
+                <span class="mt-1 text-[9px] font-black uppercase tracking-[0.16em] text-white leading-[1.3]">Ноутбук<br/>не нужен</span>
+                <div class="mt-1 h-px w-8 bg-white/45"></div>
+                <span class="mt-1 text-[8px] font-semibold uppercase tracking-[0.1em] text-white/75 leading-[1.4]">у нас всё есть!</span>
+              </div>
+            </div>
+          </button>
         </div>
 
         <!-- Meta line -->
         <p class="mt-6 text-[14px] text-white/40">
-          66 км от Москвы &middot; смены июнь&ndash;август &middot; от 48 000 &#8381;
+          {STAT_DISTANCE} от Москвы &middot; смены {CAMP_SEASON} &middot; от {CAMP_PRICE_FROM}
         </p>
       </div>
 
-      <!-- Photo column (optional) -->
-      {image && (
-        <div class="lg:w-[480px] w-full shrink-0">
-          <picture>
-            <source srcset={image} type="image/avif" />
-            <img
-              src={image.replace('/images/hero/', '/images/hero/jpg/').replace('.avif', '.jpg')}
-              alt={imageAlt}
-              class="w-full h-[320px] lg:h-[420px] object-cover rounded-[20px]"
-              loading="eager"
-              decoding="async"
-            />
-          </picture>
-        </div>
-      )}
+      <!-- Правая колонка: виджет наличия мест -->
+      <div>
+        <HeroShiftsWidget />
+      </div>
+
     </div>
   </div>
 </section>
+
+<!-- Мобильная печать — тёмная, прозрачный фон, в белой зоне после хиро -->
+<div class="relative sm:hidden">
+  <button
+    type="button"
+    id="equipment-stamp-landing-mobile"
+    aria-label="Почему не нужно привозить ноутбук"
+    class="absolute top-[12px] left-5 z-30 rotate-[-10deg] select-none cursor-pointer group hover:scale-105 transition-transform duration-200"
+  >
+    <div class="relative flex h-[96px] w-[96px] items-center justify-center rounded-full border-[2.5px] border-dashed border-[#0d1a2b]/55 bg-transparent group-hover:border-[#0d1a2b]/85 transition-colors">
+      <div class="absolute inset-[7px] rounded-full border border-[#0d1a2b]/18 transition-colors"></div>
+      <div class="flex flex-col items-center gap-0 px-2 text-center">
+        <span class="text-[20px] leading-none">🖥️</span>
+        <span class="mt-0.5 text-[7.5px] font-black uppercase tracking-[0.14em] text-[#0d1a2b] leading-[1.3]">Ноутбук<br/>не нужен</span>
+        <div class="mt-1 h-px w-7 bg-[#0d1a2b]/30"></div>
+        <span class="mt-0.5 text-[6.5px] font-semibold uppercase tracking-[0.09em] text-[#0d1a2b]/55 leading-[1.4]">у нас всё есть!</span>
+      </div>
+    </div>
+  </button>
+</div>
+
+<ShiftModal />
+
+<!-- Equipment Modal (landing) -->
+<dialog
+  id="equipmentModalLanding"
+  class="fixed inset-0 m-auto w-[min(92vw,460px)] rounded-[20px] border-0 outline-none bg-white p-0 shadow-[0_24px_64px_rgba(15,23,42,0.22)] backdrop:bg-black/45 backdrop:backdrop-blur-sm"
+>
+  <div class="p-6">
+    <div class="flex items-start justify-between gap-3 mb-5">
+      <div class="flex items-center gap-3">
+        <span class="text-[32px] leading-none">🖥️</span>
+        <h3 class="text-[18px] font-bold text-slate-900 leading-[1.25]">Почему ноутбук<br/>не нужен</h3>
+      </div>
+      <button type="button" data-equip-landing-close
+        class="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+        aria-label="Закрыть">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="rounded-[14px] bg-slate-50 px-4 py-3.5 mb-4">
+      <p class="text-[14px] font-semibold text-slate-800 mb-1">Проблема с «домашними» ноутбуками</p>
+      <p class="text-[14px] text-slate-600 leading-[1.6]">У каждой семьи свой ноутбук — от дешёвого Windows до MacBook за 500 000 ₽. Разные ОС, драйверы, версии ПО. Для преподавателей это нескончаемый ад: «почему у тебя не запускается», «переустанови библиотеку».</p>
+    </div>
+    <p class="text-[14px] font-semibold text-slate-800 mb-3">Наше решение — одинаковый парк машин</p>
+    <ul class="space-y-2.5 mb-5">
+      <li class="flex items-start gap-3">
+        <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[14px]">⚡</span>
+        <div>
+          <p class="text-[14px] font-semibold text-slate-800">Сброс ОС за 15 секунд</p>
+          <p class="text-[13px] text-slate-500">Любая машина возвращается в эталонное состояние — одна кнопка, 15 секунд.</p>
+        </div>
+      </li>
+      <li class="flex items-start gap-3">
+        <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[14px]">🔄</span>
+        <div>
+          <p class="text-[14px] font-semibold text-slate-800">Полное восстановление за 15 минут</p>
+          <p class="text-[13px] text-slate-500">Если ребёнок что-то сломал — копируем проект, сбрасываем, восстанавливаем. Работа не теряется.</p>
+        </div>
+      </li>
+      <li class="flex items-start gap-3">
+        <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[14px]">✓</span>
+        <div>
+          <p class="text-[14px] font-semibold text-slate-800">Выверенные настройки</p>
+          <p class="text-[13px] text-slate-500">Все машины идентичны. Преподаватели знают их досконально — занятие идёт без технических пауз.</p>
+        </div>
+      </li>
+    </ul>
+    <div class="rounded-[14px] bg-[#0d1a2b] px-4 py-3.5">
+      <p class="text-[14px] font-semibold text-white/90 leading-[1.5]">Мы реально понимаем, как работает IT-образование — и строим инфраструктуру, которая не мешает учиться, а помогает.</p>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  function initLandingStamp() {
+    const modal = document.getElementById('equipmentModalLanding') as HTMLDialogElement | null;
+    if (!modal) return;
+    const open = () => modal.showModal();
+    document.getElementById('equipment-stamp-landing')?.addEventListener('click', open);
+    document.getElementById('equipment-stamp-landing-mobile')?.addEventListener('click', open);
+    modal.querySelector('[data-equip-landing-close]')?.addEventListener('click', () => modal.close());
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
+  }
+  document.addEventListener('astro:page-load', initLandingStamp);
+  initLandingStamp();
+</script>

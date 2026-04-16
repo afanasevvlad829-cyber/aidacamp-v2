@@ -65,13 +65,17 @@ export const POST: APIRoute = async ({ request }) => {
     const origOut = join(originalsDir, `${name}${origExt}`);
     await writeFile(origOut, buffer);
 
+    // HEIC/HEIF с iPhone содержит depth-map и другие слои — берём только [0]
+    const isHeic = /\.(heic|heif)$/i.test(origExt);
+    const tmpIn = isHeic ? `${tmp}[0]` : tmp;
+
     // 2. HDR → AVIF (основной формат)
     const outAvif  = join(galleryDir, `${name}.avif`);
-    await execFileAsync('convert', [tmp, ...HDR_ARGS, outAvif]);
+    await execFileAsync('convert', [tmpIn, ...HDR_ARGS, outAvif]);
 
     // 3. HDR → JPEG (фоллбэк)
     const outJpg = join(jpgDir, `${name}.jpg`);
-    await execFileAsync('convert', [tmp, ...HDR_ARGS, '-quality', '90', outJpg]);
+    await execFileAsync('convert', [tmpIn, ...HDR_ARGS, '-quality', '90', outJpg]);
 
     // 4. Thumb из готового AVIF (400px)
     const outThumb = join(thumbsDir, `${name}.avif`);

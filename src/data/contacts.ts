@@ -12,3 +12,11 @@ export const EMAIL_HREF = 'mailto:hello@codims.ru';
 
 export const WHATSAPP_URL = 'https://wa.me/79688086455';
 export const TELEGRAM_URL = 'https://t.me/Progaschool';
+
+export const STAT_YEARS = '7';           // лет работы
+export const STAT_KIDS = '1200+';        // детей
+export const STAT_RATING = '5.0';        // рейтинг
+export const STAT_DISTANCE = '66 км';    // от Москвы
+export const STAT_RETURN = '60%';        // возвращаются снова
+export const CAMP_SEASON = 'июнь–август 2026';
+export const CAMP_PRICE_FROM = '48 000 ₽';

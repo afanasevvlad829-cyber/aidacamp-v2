@@ -27,12 +27,12 @@
     holdHours: 72
   };
   var SHIFT_PRICE_META = [
-    { title: "1 смена", date: "30 мая - 8 июня", days: 8, seats: 12, finalPrice: 79000, oldPrice: 85000, badge: "ХИТ", monthLabel: "Июнь 2026", monthIndex: 5, year: 2026, startDay: 1, endDay: 8 },
-    { title: "2 смена", date: "10 июня - 16 июня", days: 6, seats: 8, finalPrice: 48000, oldPrice: 58000, badge: "", monthLabel: "Июнь 2026", monthIndex: 5, year: 2026, startDay: 10, endDay: 16 },
-    { title: "3 смена", date: "16 июня - 23 июня", days: 7, seats: 5, finalPrice: 65000, oldPrice: 69000, badge: "", monthLabel: "Июнь 2026", monthIndex: 5, year: 2026, startDay: 16, endDay: 23 },
-    { title: "4 смена", date: "10 июня — 23 июня", days: 13, seats: 14, finalPrice: 95000, oldPrice: 111000, badge: "", monthLabel: "Июнь 2026", monthIndex: 5, year: 2026, startDay: 10, endDay: 23 },
-    { title: "5 смена", date: "3 августа — 15 августа", days: 12, seats: 7, finalPrice: 89400, oldPrice: 98000, badge: "", monthLabel: "Август 2026", monthIndex: 7, year: 2026, startDay: 3, endDay: 15 },
-    { title: "6 смена", date: "17 августа — 26 августа", days: 9, seats: 15, finalPrice: 69600, oldPrice: 79000, badge: "", monthLabel: "Август 2026", monthIndex: 7, year: 2026, startDay: 17, endDay: 26 }
+    { title: "1 смена", date: "30 мая — 8 июня", days: 10, seats: 12, finalPrice: 74900, oldPrice: 85000, badge: "ХИТ", monthLabel: "Май–Июнь 2026", monthIndex: 4, year: 2026, startDay: 30, endDay: 8 },
+    { title: "2 смена (7 дней)", date: "10 июня — 16 июня", days: 7, seats: 11, finalPrice: 48000, oldPrice: 58000, badge: "", monthLabel: "Июнь 2026", monthIndex: 5, year: 2026, startDay: 10, endDay: 16 },
+    { title: "2 смена (8 дней)", date: "16 июня — 23 июня", days: 8, seats: 8, finalPrice: 65000, oldPrice: 69000, badge: "", monthLabel: "Июнь 2026", monthIndex: 5, year: 2026, startDay: 16, endDay: 23 },
+    { title: "2 смена (14 дней)", date: "10 июня — 23 июня", days: 14, seats: 4, finalPrice: 95000, oldPrice: 111000, badge: "", monthLabel: "Июнь 2026", monthIndex: 5, year: 2026, startDay: 10, endDay: 23 },
+    { title: "3 смена", date: "3 августа — 15 августа", days: 13, seats: 5, finalPrice: 89400, oldPrice: 98000, badge: "", monthLabel: "Август 2026", monthIndex: 7, year: 2026, startDay: 3, endDay: 15 },
+    { title: "4 смена", date: "17 августа — 26 августа", days: 10, seats: 14, finalPrice: 69600, oldPrice: 79000, badge: "", monthLabel: "Август 2026", monthIndex: 7, year: 2026, startDay: 17, endDay: 26 }
   ];
   var shiftsShowAll = false;
   var shiftCalendar = { open: false, shiftId: "" };
@@ -3536,7 +3536,7 @@
       '<details class="ac-contact-dropdown" open>' +
       '<summary>Каналы связи</summary>' +
       '<div class="ac-contact-list">' +
-      '<a class="ac-contact-item" href="tel:+74951234567"><span class="ac-contact-item__dot">•</span><span><strong>Городской телефон</strong><small>+7 (495) 123-45-67</small></span></a>' +
+      '<a class="ac-contact-item" href="tel:+74951284429"><span class="ac-contact-item__dot">•</span><span><strong>Городской телефон</strong><small>+7 (495) 128-44-29</small></span></a>' +
       '<a class="ac-contact-item" href="tel:+79688086455"><span class="ac-contact-item__dot">•</span><span><strong>Мобильный телефон</strong><small>+7 (968) 808-64-55</small></span></a>' +
       '<a class="ac-contact-item" href="https://t.me/proga_school" target="_blank" rel="noopener"><span class="ac-contact-item__dot">•</span><span><strong>Telegram</strong><small>@proga_school</small></span></a>' +
       '<a class="ac-contact-item" href="https://wa.me/79688086455" target="_blank" rel="noopener"><span class="ac-contact-item__dot">•</span><span><strong>WhatsApp</strong><small>Написать в WhatsApp</small></span></a>' +
