@@ -72,6 +72,8 @@ rsync -az --delete \
   --exclude='node_modules/' \
   --exclude='backup-*' \
   --exclude='client/' \
+  --exclude='images/hero/originals/' \
+  --exclude='images/gallery/originals/' \
   -e "ssh -i $SSH_KEY" \
   dist/client/ "$SSH_HOST:$REMOTE_DIR"
 
