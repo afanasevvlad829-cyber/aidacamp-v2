@@ -1,5 +1,26 @@
 # АйДаКемп — Project Rules
 
+## Git-воркфлоу (ОБЯЗАТЕЛЬНО соблюдать)
+
+**Рабочая ветка: `dev`** — вся разработка ведётся здесь.
+**Canonical: `main`** = всегда то, что задеплоено на `aidacamp.ru`.
+
+### Правило работы:
+1. **Всегда начинай на `dev`** — проверь `git branch` в начале сессии
+2. **Разработка → `dev`** → деплой на `dev.aidacamp.ru` для проверки
+3. **Выкатка в прод** → `git checkout main && git merge dev` → `./scripts/deploy.sh prod`
+4. **`dev` и `main` должны быть равны** после каждой выкатки в прод
+
+### Текущее состояние (2026-04-16):
+- `dev` == `main` (синхронизированы после сессии рефакторинга)
+- Последний коммит: `feat: UX refactor — age personalization, icons, contacts single source, ShiftModal on landings`
+
+### Никогда:
+- Не коммить напрямую в `main`
+- Не работай на feature-ветках без явного запроса (`button-system`, `refactor/*` и т.д. — только если просят)
+
+---
+
 ## ВАЖНО: Используй только aidacamp-tools MCP
 
 **НЕ используй** Kapture, Desktop Commander, Chrome MCP, Claude in Chrome, удалённый MCP `5967f77d` (yandex-direct-metrica-mcp). Они либо зависают, либо отключены.
