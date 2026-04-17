@@ -78,6 +78,12 @@ rsync -az --delete \
   -e "ssh -i $SSH_KEY" \
   dist/client/ "$SSH_HOST:$REMOTE_DIR"
 
+# 1b. Синхронизация изображений (без --delete — не удалять старые фото)
+echo "🖼️  Синхронизация изображений..."
+rsync -az -e "ssh -i $SSH_KEY" dist/client/images/hero/    "$SSH_HOST:${REMOTE_DIR}images/hero/"
+rsync -az -e "ssh -i $SSH_KEY" dist/client/images/gallery/ "$SSH_HOST:${REMOTE_DIR}images/gallery/"
+rsync -az -e "ssh -i $SSH_KEY" dist/client/images/team/    "$SSH_HOST:${REMOTE_DIR}images/team/"
+
 # 2. Деплой SSR-сервера (dist/server/ → server/ на сервере)
 echo "🔄 Деплой SSR-сервера..."
 rsync -az --delete \
