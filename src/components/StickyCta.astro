@@ -122,8 +122,6 @@ import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, WHATSAPP_
     const desktopToggle = document.getElementById('desktop-bubble-toggle');
     const desktopPanel = document.getElementById('desktop-bubble-panel');
 
-    if (!hero) return;
-
     // --- Mobile sticky — DISABLED (заменён AgeBar нуджем) ---
     // bar и bubble скрыты в HTML и не управляются JS
 
@@ -132,16 +130,23 @@ import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, WHATSAPP_
     if (desktopSticky && desktopToggle && desktopPanel) {
       let panelOpen = false;
 
-      const desktopObs = new IntersectionObserver(([e]) => {
-        if (e.isIntersecting) {
-          desktopSticky.classList.add('hidden');
-          desktopSticky.classList.remove('lg:flex');
-        } else {
-          desktopSticky.classList.remove('hidden');
-          desktopSticky.classList.add('lg:flex');
-        }
-      }, { threshold: 0.1 });
-      desktopObs.observe(hero);
+      // Если hero есть — скрываем кнопку пока hero виден; иначе всегда показываем
+      if (hero) {
+        const desktopObs = new IntersectionObserver(([e]) => {
+          if (e.isIntersecting) {
+            desktopSticky.classList.add('hidden');
+            desktopSticky.classList.remove('lg:flex');
+          } else {
+            desktopSticky.classList.remove('hidden');
+            desktopSticky.classList.add('lg:flex');
+          }
+        }, { threshold: 0.1 });
+        desktopObs.observe(hero);
+      } else {
+        // На лендингах hero нет — показываем сразу
+        desktopSticky.classList.remove('hidden');
+        desktopSticky.classList.add('lg:flex');
+      }
 
       desktopToggle.addEventListener('click', () => {
         panelOpen = !panelOpen;
