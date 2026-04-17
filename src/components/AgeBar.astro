@@ -1,9 +1,8 @@
 ---
 import { PEER_COUNTS } from '../data/shifts';
 // AgeBar.astro — плашка выбора возраста (снизу экрана)
-// v2: появляется при 25% скролла, после выбора → нудж → ShiftModal Смены 1
+// v3: scroll-triggered (25%), без таймера, мобилка + десктоп, вторичные страницы
 
-// Формируем AGE_COUNTS для нуджа из единого источника
 const ageCountsJson = JSON.stringify({
   '7–9':   { 'shift-1': PEER_COUNTS['shift-1']['7–9'],  'shift-2': PEER_COUNTS['shift-2']['7–9']  },
   '10–12': { 'shift-1': PEER_COUNTS['shift-1']['10–12'], 'shift-2': PEER_COUNTS['shift-2']['10–12'] },
@@ -11,7 +10,7 @@ const ageCountsJson = JSON.stringify({
 });
 ---
 
-<!-- Плашка выбора возраста — мобилка + десктоп -->
+<!-- Плашка выбора возраста — мобилка + десктоп, появляется при 25% скролла -->
 <div
   id="age-bar"
   data-age-counts={ageCountsJson}
@@ -23,39 +22,41 @@ const ageCountsJson = JSON.stringify({
   <div
     id="age-bar-phase1"
     class="bg-slate-900/96 backdrop-blur-md border-t border-white/10
-           px-4 py-3 shadow-[0_-4px_24px_rgba(0,0,0,0.3)]"
+           shadow-[0_-4px_24px_rgba(0,0,0,0.3)]"
   >
-    <p class="text-[14px] text-white/50 mb-2">Выберите возраст — покажем смену где больше ровесников</p>
-    <div class="flex items-center gap-2">
-      <div class="flex gap-1.5 flex-1">
+    <div class="mx-auto max-w-[640px] px-4 py-3">
+      <p class="text-[14px] text-white/50 mb-2">Выберите возраст — покажем смену где больше ровесников</p>
+      <div class="flex items-center gap-2">
+        <div class="flex gap-1.5 flex-1">
+          <button
+            data-age="7–9"
+            class="age-btn flex-1 py-1.5 rounded-[8px]
+                   text-[14px] font-semibold
+                   text-white/85 bg-white/8 border border-white/12
+                   transition-all active:scale-95"
+          >7–9</button>
+          <button
+            data-age="10–12"
+            class="age-btn flex-1 py-1.5 rounded-[8px]
+                   text-[14px] font-semibold
+                   text-white/85 bg-white/8 border border-white/12
+                   transition-all active:scale-95"
+          >10–12</button>
+          <button
+            data-age="13–14"
+            class="age-btn flex-1 py-1.5 rounded-[8px]
+                   text-[14px] font-semibold
+                   text-white/85 bg-white/8 border border-white/12
+                   transition-all active:scale-95"
+          >13–14</button>
+        </div>
         <button
-          data-age="7–9"
-          class="age-btn flex-1 py-1.5 rounded-[8px]
-                 text-[14px] font-semibold
-                 text-white/85 bg-white/8 border border-white/12
-                 transition-all active:scale-95"
-        >7–9</button>
-        <button
-          data-age="10–12"
-          class="age-btn flex-1 py-1.5 rounded-[8px]
-                 text-[14px] font-semibold
-                 text-white/85 bg-white/8 border border-white/12
-                 transition-all active:scale-95"
-        >10–12</button>
-        <button
-          data-age="13–14"
-          class="age-btn flex-1 py-1.5 rounded-[8px]
-                 text-[14px] font-semibold
-                 text-white/85 bg-white/8 border border-white/12
-                 transition-all active:scale-95"
-        >13–14</button>
+          id="age-bar-close"
+          class="shrink-0 text-white/25 hover:text-white/55
+                 transition-colors text-[22px] leading-none w-7 text-center"
+          aria-label="Закрыть"
+        >×</button>
       </div>
-      <button
-        id="age-bar-close"
-        class="shrink-0 text-white/25 hover:text-white/55
-               transition-colors text-[22px] leading-none w-7 text-center"
-        aria-label="Закрыть"
-      >×</button>
     </div>
   </div>
 
@@ -63,31 +64,31 @@ const ageCountsJson = JSON.stringify({
   <div
     id="age-bar-phase2"
     class="hidden bg-slate-900/96 backdrop-blur-md border-t border-white/10
-           px-4 py-3 shadow-[0_-4px_24px_rgba(0,0,0,0.3)]"
+           shadow-[0_-4px_24px_rgba(0,0,0,0.3)]"
   >
-    <div class="flex items-center gap-3">
-      <p id="age-bar-nudge-text" class="flex-1 text-[16px] font-semibold text-white leading-[1.35]"></p>
-      <button
-        id="age-bar-nudge-cta"
-        class="shrink-0 rounded-[10px] bg-[#ec7c00] px-3 py-2
-               text-[14px] font-semibold text-white
-               active:scale-95 transition-all whitespace-nowrap"
-      >Посмотреть →</button>
-      <button
-        id="age-bar-nudge-close"
-        class="shrink-0 text-white/25 hover:text-white/55
-               transition-colors text-[22px] leading-none w-7 text-center"
-        aria-label="Закрыть"
-      >×</button>
+    <div class="mx-auto max-w-[640px] px-4 py-3">
+      <div class="flex items-center gap-3">
+        <p id="age-bar-nudge-text" class="flex-1 text-[15px] font-semibold text-white leading-[1.35]"></p>
+        <button
+          id="age-bar-nudge-cta"
+          class="shrink-0 rounded-[10px] bg-[#ec7c00] px-3 py-2
+                 text-[14px] font-semibold text-white
+                 active:scale-95 transition-all whitespace-nowrap"
+        >Посмотреть →</button>
+        <button
+          id="age-bar-nudge-close"
+          class="shrink-0 text-white/25 hover:text-white/55
+                 transition-colors text-[22px] leading-none w-7 text-center"
+          aria-label="Закрыть"
+        >×</button>
+      </div>
     </div>
   </div>
 </div>
 
 <script type="module">
-  // Числа ровесников из единого источника (shifts.ts → data-age-counts)
-  const AGE_COUNTS = JSON.parse(bar?.dataset.ageCounts || '{}');
-
   const bar       = document.getElementById('age-bar');
+  const AGE_COUNTS = JSON.parse(bar?.dataset.ageCounts || '{}');
   const phase1    = document.getElementById('age-bar-phase1');
   const phase2    = document.getElementById('age-bar-phase2');
   const closeBtn  = document.getElementById('age-bar-close');
@@ -96,20 +97,42 @@ const ageCountsJson = JSON.stringify({
   const nudgeClose= document.getElementById('age-bar-nudge-close');
   const ageBtns   = document.querySelectorAll('.age-btn');
 
+  const DISMISSED_KEY = 'age_bar_dismissed';
+  const AGE_KEY       = 'user_age_group';
+
+  function isDismissed() {
+    return !!sessionStorage.getItem(DISMISSED_KEY);
+  }
+
   function showBar() {
-    if (sessionStorage.getItem('age_bar_shown')) return;
-    sessionStorage.setItem('age_bar_shown', '1');
+    if (isDismissed()) return;
+
+    const selectedAge = localStorage.getItem(AGE_KEY);
+    if (selectedAge && AGE_COUNTS[selectedAge]) {
+      // Возраст уже выбран → сразу показываем нудж (фаза 2)
+      showNudge(selectedAge);
+    }
+    // В любом случае показываем плашку
     bar?.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
     bar?.classList.add('translate-y-0', 'opacity-100');
   }
 
-  function hideBar(dismissed = true) {
+  function hideBar() {
     bar?.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
     bar?.classList.remove('translate-y-0', 'opacity-100');
-    if (dismissed) sessionStorage.setItem('age_bar_dismissed', '1');
+    sessionStorage.setItem(DISMISSED_KEY, '1');
   }
 
-  // Триггер: 25% скролла (не таймер)
+  function showNudge(age) {
+    const counts = AGE_COUNTS[age] || AGE_COUNTS['10–12'];
+    if (nudgeText) {
+      nudgeText.textContent = `Идеально подойдёт Смена 1 — туда уже едет ${counts['shift-1']} ребят вашего возраста`;
+    }
+    phase1?.classList.add('hidden');
+    phase2?.classList.remove('hidden');
+  }
+
+  // Триггер: 25% скролла (без таймера)
   function onScroll() {
     const scrolled = window.scrollY;
     const total = document.documentElement.scrollHeight - window.innerHeight;
@@ -119,7 +142,7 @@ const ageCountsJson = JSON.stringify({
     }
   }
 
-  if (!sessionStorage.getItem('age_bar_shown')) {
+  if (!isDismissed()) {
     window.addEventListener('scroll', onScroll, { passive: true });
   }
 
@@ -137,46 +160,52 @@ const ageCountsJson = JSON.stringify({
 
       // Сохраняем возраст
       sessionStorage.setItem('selected_age', age);
-      localStorage.setItem('user_age_group', age);
+      localStorage.setItem(AGE_KEY, age);
 
       // Персонализация страницы
       document.dispatchEvent(new CustomEvent('age-personalize', { detail: { age } }));
 
       // Показываем нудж
-      const counts = AGE_COUNTS[age] || AGE_COUNTS['10–12'];
-      if (nudgeText) {
-        nudgeText.textContent = `Идеально подойдёт Смена 1 — туда уже едет ${counts['shift-1']} ребят вашего возраста`;
-      }
-      phase1?.classList.add('hidden');
-      phase2?.classList.remove('hidden');
+      showNudge(age);
     });
   });
 
   // Тап на нудж → открыть ShiftModal Смены 1
   nudgeCta?.addEventListener('click', () => {
+    if (typeof window.ym !== 'undefined') {
+      window.ym(96499295, 'reachGoal', 'check_places');
+      window.ym(96499295, 'reachGoal', 'age_bar_nudge_click');
+    }
+    if (typeof window._tmr !== 'undefined') {
+      window._tmr.push({ type: 'reachGoal', id: 3755202, value: 100, goal: 'check_places' });
+      window._tmr.push({ type: 'reachGoal', id: 3755202, value: 100, goal: 'age_bar_nudge_click' });
+    }
     hideBar();
     document.dispatchEvent(
       new CustomEvent('shift-modal-open', { detail: { shiftId: 'shift-1', tab: 'description' } })
     );
   });
 
-  // Скрываем AgeBar когда ShiftModal открыт (чтобы не обрезалась под панелью)
+  // Скрываем AgeBar когда ShiftModal открыт
   document.addEventListener('shift-modal-open', () => {
     bar?.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
     bar?.classList.remove('translate-y-0', 'opacity-100');
   });
 
-  // Восстанавливаем AgeBar когда ShiftModal закрыт (только если уже был показан и не был закрыт)
+  // Восстанавливаем AgeBar когда ShiftModal закрыт (если не был закрыт пользователем)
   const shiftModalEl = document.getElementById('shift-modal');
   if (shiftModalEl) {
     const observer = new MutationObserver(() => {
       const isClosed = shiftModalEl.classList.contains('hidden');
-      if (isClosed && sessionStorage.getItem('age_bar_shown') && !sessionStorage.getItem('age_bar_dismissed')) {
-        bar?.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
-        bar?.classList.add('translate-y-0', 'opacity-100');
+      if (isClosed && !isDismissed()) {
+        const wasVisible = bar?.classList.contains('translate-y-0');
+        // Восстановить только если был показан до открытия ShiftModal
+        if (!wasVisible) {
+          bar?.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+          bar?.classList.add('translate-y-0', 'opacity-100');
+        }
       }
     });
     observer.observe(shiftModalEl, { attributes: true, attributeFilter: ['class'] });
   }
-
 </script>

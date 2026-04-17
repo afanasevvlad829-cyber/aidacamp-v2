@@ -23,7 +23,6 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
     <title>{title}</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
-    <link rel="preload" as="image" href="/images/hero-custom-2026-04-07.avif" type="image/avif" />
     <link rel="preload" as="font" href="/fonts/inter-cyrillic.woff2" type="font/woff2" crossorigin />
     <link rel="preload" as="font" href="/fonts/inter-latin.woff2" type="font/woff2" crossorigin />
     <!-- Bootstrap Icons: subset of 30 icons inlined locally (no CDN, no font download) -->
@@ -92,6 +91,41 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
     <meta name="twitter:image" content="https://aidacamp.ru/images/hero-custom-2026-04-07.avif" />
     <link rel="canonical" href={canonicalUrl} />
     <slot name="head" />
+    <!-- Analytics globals: trackGoal, initScrollTracking, initContactTracking — inline, no network request -->
+    <script is:inline>
+      (function () {
+        var YM_ID = 96499295;
+        var _fired = new Set(JSON.parse(sessionStorage.getItem('ym_fired') || '[]'));
+        function _persist() { try { sessionStorage.setItem('ym_fired', JSON.stringify([..._fired])); } catch(e){} }
+        window.trackGoal = function (id, params) {
+          if (_fired.has(id)) return;
+          _fired.add(id);
+          _persist();
+          try { if (typeof window.ym !== 'undefined') window.ym(YM_ID, 'reachGoal', id, params || {}); } catch(e){}
+          try { window.dispatchEvent(new CustomEvent(id, { detail: params || {} })); } catch(e){}
+        };
+        window.initScrollTracking = function () {
+          var goals = [{p:25,id:'scroll_25'},{p:50,id:'scroll_50'},{p:75,id:'scroll_75'},{p:90,id:'scroll_90'}];
+          window.addEventListener('scroll', function () {
+            var h = document.documentElement.scrollHeight - window.innerHeight;
+            if (!h) return;
+            var pct = Math.round(window.scrollY / h * 100);
+            goals.forEach(function (g) { if (pct >= g.p) window.trackGoal(g.id); });
+          }, { passive: true });
+        };
+        window.initContactTracking = function (scope) {
+          document.querySelectorAll(scope + ' a[href^="tel:"]').forEach(function (a) {
+            a.addEventListener('click', function () { window.trackGoal('phone_click'); });
+          });
+          document.querySelectorAll(scope + ' a[href*="wa.me"]').forEach(function (a) {
+            a.addEventListener('click', function () { window.trackGoal('whatsapp_click'); });
+          });
+          document.querySelectorAll(scope + ' a[href*="t.me"]').forEach(function (a) {
+            a.addEventListener('click', function () { window.trackGoal('telegram_click'); });
+          });
+        };
+      })();
+    </script>
     <noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3755202;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
   </head>
   <body class="font-sans text-[var(--color-text)] bg-white antialiased">
@@ -109,11 +143,10 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
         <button id="nudge-close" class="shrink-0 mt-0.5 text-white/40 hover:text-white/70 transition text-[18px] leading-none">&times;</button>
       </div>
     </div>
-    <script>
-      import { initScrollTracking } from '../scripts/analytics';
+    <script is:inline>
       // initNudges отключены
-      document.addEventListener('DOMContentLoaded', () => {
-        initScrollTracking();
+      document.addEventListener('DOMContentLoaded', function () {
+        if (window.initScrollTracking) window.initScrollTracking();
       });
     </script>
 

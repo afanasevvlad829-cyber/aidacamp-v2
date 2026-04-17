@@ -1,5 +1,3 @@
-import { trackGoal } from './analytics';
-
 import { MAILRU_PIXEL_ID } from '../data/tracking';
 
 /** Submit a lead to /api/lead and fire tracking pixels */
@@ -10,7 +8,7 @@ export async function submitLead(data: {
   source?: string;
   form?: string;
 }): Promise<boolean> {
-  trackGoal('form_submit', { form: data.form || 'booking', age: data.age });
+  (window as any).trackGoal?.('form_submit', { form: data.form || 'booking', age: data.age });
 
   try {
     await fetch('/api/lead', {

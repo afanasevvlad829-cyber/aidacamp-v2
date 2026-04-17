@@ -1,7 +1,6 @@
 // shift-modal.ts — единая модалка смены с табами Описание/Календарь/Подробнее
 import { allShifts, shiftInfo, type Shift } from '../data/shifts';
 import { renderCalendar } from './shift-calendar';
-import { trackGoal } from './analytics';
 
 type TabName = 'description' | 'calendar' | 'info';
 
@@ -122,6 +121,8 @@ export function initShiftModal() {
       sessionStorage.setItem('age_bar_shown', '1');
       sessionStorage.setItem('age_bar_dismissed', '1');
       if (typeof window.ym !== 'undefined') (window as any).ym(96499295, 'reachGoal', 'age_select');
+      (window as any)._tmr = (window as any)._tmr || [];
+      (window as any)._tmr.push({ type: 'reachGoal', id: 3755202, value: 100, goal: 'age_select' });
     });
   });
 
@@ -143,7 +144,7 @@ export function initShiftModal() {
       panel.classList.add('translate-y-0', 'md:translate-y-0', 'opacity-100');
     });
 
-    trackGoal('shift_modal_open', { shift: shift.name, tab });
+    (window as any).trackGoal?.('shift_modal_open', { shift: shift.name, tab });
   }
 
   function close() {
@@ -219,7 +220,10 @@ export function initShiftModal() {
     const row = target.closest<HTMLElement>('[data-occupancy-shift]');
     if (row) {
       const id = row.dataset.occupancyShift || '';
-      if (id) open(id, 'description');
+      if (id) {
+        (window as any).trackGoal?.('check_places');
+        open(id, 'description');
+      }
     }
   });
 

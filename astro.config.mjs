@@ -2,7 +2,6 @@ import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import node from '@astrojs/node';
 import sitemap from '@astrojs/sitemap';
-
 import partytown from '@astrojs/partytown';
 
 export default defineConfig({
