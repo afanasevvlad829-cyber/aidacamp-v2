@@ -1,15 +1,8 @@
 // shift-modal.ts — единая модалка смены с табами Описание/Календарь/Подробнее
-import { allShifts, shiftInfo, type Shift } from '../data/shifts';
+import { allShifts, shiftInfo, PEER_COUNTS, type Shift } from '../data/shifts';
 import { renderCalendar } from './shift-calendar';
 
 type TabName = 'description' | 'calendar' | 'info';
-
-// Количество ровесников по возрасту и смене
-const AGE_PEERS: Record<string, Record<string, number>> = {
-  '7–9':   { 'shift-1': 8,  'shift-2': 5,  'shift-2-1': 4, 'shift-2-2': 3, 'shift-3': 6,  'shift-4': 5 },
-  '10–12': { 'shift-1': 12, 'shift-2': 8,  'shift-2-1': 7, 'shift-2-2': 6, 'shift-3': 9,  'shift-4': 8 },
-  '13–14': { 'shift-1': 9,  'shift-2': 7,  'shift-2-1': 5, 'shift-2-2': 4, 'shift-3': 7,  'shift-4': 6 },
-};
 
 let initialized = false;
 
@@ -92,7 +85,7 @@ export function initShiftModal() {
 
     // Блок возраста: если уже выбран — сразу показываем результат
     const savedAge = localStorage.getItem('user_age_group') || sessionStorage.getItem('selected_age');
-    if (savedAge && AGE_PEERS[savedAge]) {
+    if (savedAge && Object.values(PEER_COUNTS).some(s => s[savedAge] !== undefined)) {
       showAgePeers(shift.id, savedAge);
     } else {
       ageQ.classList.remove('hidden');
@@ -102,7 +95,7 @@ export function initShiftModal() {
   }
 
   function showAgePeers(shiftId: string, age: string) {
-    const count = AGE_PEERS[age]?.[shiftId] ?? AGE_PEERS[age]?.['shift-1'] ?? 8;
+    const count = PEER_COUNTS[shiftId]?.[age] ?? PEER_COUNTS['shift-1']?.[age] ?? 8;
     ageResult.textContent = `Уже едет ${count} ребят ${age} лет вашего возраста`;
     ageQ.classList.add('hidden');
     ageR.classList.remove('hidden');
