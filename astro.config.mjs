@@ -1,8 +1,8 @@
+// ⚠️ ВНИМАНИЕ: Partytown ЗАПРЕЩЁН — не возвращайте его. См. CLAUDE.md → раздел «Запрещённые зависимости»
 import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import node from '@astrojs/node';
 import sitemap from '@astrojs/sitemap';
-import partytown from '@astrojs/partytown';
 
 export default defineConfig({
   site: 'https://aidacamp.ru',
@@ -10,11 +10,6 @@ export default defineConfig({
   security: { checkOrigin: false },
   integrations: [
     sitemap(),
-    partytown({
-      config: {
-        forward: ['ym'],
-      },
-    }),
   ],
   devToolbar: { enabled: false },
   vite: {
