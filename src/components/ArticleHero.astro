@@ -1,21 +1,21 @@
 ---
 /**
- * ArticleHero — переиспользуемый hero-блок для статей /stati/*.
+ * ArticleHero — hero-блок для статей /stati/* в стиле LandingHero.
  *
- * Слой статьи-блога:
- *   breadcrumbs → H1 → subtitle → meta (дата · ссылка на статью про ИИ) → фото
+ * Layout:
+ *   Темно-navy фон (#0d1a2b) с фоновым фото и slash-градиентом слева.
+ *   Контент в левой 2/3 ширины: breadcrumbs → H1 (белый) → subtitle → meta (дата + CTA на статью про ИИ).
  *
  * Props:
- *   - title: string        — H1
- *   - subtitle: string     — подзаголовок под H1 (одна строка, не длинная)
- *   - imageBase: string    — имя файла без размера и расширения, напр. 'problemy-obshcheniya'
- *                            Ожидает {imageBase}-1600.avif, -1200.avif, -800.avif, +jpg fallback
- *                            в public/images/articles/
- *   - imageAlt: string     — alt-текст
- *   - date: string         — дата публикации (напр. "Апрель 2026")
- *   - breadcrumbsLast: string  — последняя крошка (тема статьи)
- *   - showAiCta?: boolean  — показать ли ссылку на статью про ИИ (default true).
- *                            Не показываем на самой этой статье (/stati/ii-zamenit-programmista)
+ *   - title: string            — H1
+ *   - subtitle?: string        — подзаголовок
+ *   - imageBase: string        — имя файла без размера/расширения, напр. 'problemy-obshcheniya'
+ *                                Ожидает {base}-800/1200/1600.avif + .jpg в public/images/articles/
+ *   - imageAlt: string         — alt-текст
+ *   - date?: string            — дата публикации
+ *   - breadcrumbsLast: string  — последняя крошка
+ *   - showAiCta?: boolean      — показать ли CTA на статью про ИИ (default true)
+ *                                 Не показываем на самой ii-zamenit-programmista
  */
 
 interface Props {
@@ -41,62 +41,85 @@ const {
 const imgSrc = `/images/articles/${imageBase}-1600.jpg`;
 const avifSrcset = `/images/articles/${imageBase}-800.avif 800w, /images/articles/${imageBase}-1200.avif 1200w, /images/articles/${imageBase}-1600.avif 1600w`;
 const jpgSrcset  = `/images/articles/${imageBase}-800.jpg 800w, /images/articles/${imageBase}-1200.jpg 1200w, /images/articles/${imageBase}-1600.jpg 1600w`;
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://aidacamp.ru/" },
+    { "@type": "ListItem", "position": 2, "name": "Статьи", "item": "https://aidacamp.ru/stati/zavisimost-ot-kompyuternyh-igr" },
+    { "@type": "ListItem", "position": 3, "name": breadcrumbsLast }
+  ]
+};
 ---
 
-<header class="mx-auto max-w-[860px] px-4 pt-8 md:pt-12">
-  <!-- Breadcrumbs -->
-  <nav class="text-[13px] text-slate-400">
-    <a href="/" class="hover:text-[#ff8a00] transition">Главная</a>
-    <span class="mx-1">&rarr;</span>
-    <a href="/stati/zavisimost-ot-kompyuternyh-igr" class="hover:text-[#ff8a00] transition">Статьи</a>
-    <span class="mx-1">&rarr;</span>
-    <span class="text-slate-600">{breadcrumbsLast}</span>
-  </nav>
+<section class="relative overflow-hidden min-h-[460px] md:min-h-[540px] bg-[#0d1a2b] px-5 pt-14 pb-10 md:px-14 md:pt-18 md:pb-14">
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
 
-  <!-- H1 -->
-  <h1 class="mt-4 text-[30px] md:text-[40px] font-bold leading-[1.15] tracking-[-0.03em] text-slate-900">
-    {title}
-  </h1>
-
-  <!-- Subtitle -->
-  {subtitle && (
-    <p class="mt-3 text-[17px] md:text-[19px] leading-[1.5] text-slate-500">
-      {subtitle}
-    </p>
-  )}
-
-  <!-- Meta: date + CTA -->
-  <div class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] text-slate-500">
-    {date && <span>{date}</span>}
-    {showAiCta && (
-      <>
-        {date && <span class="text-slate-300">·</span>}
-        <a
-          href="/stati/ii-zamenit-programmista"
-          class="inline-flex items-center gap-1.5 rounded-full bg-orange-50 hover:bg-orange-100 border border-orange-200 px-2.5 py-1 text-[12px] font-medium text-orange-700 hover:text-orange-800 transition-colors group"
-        >
-          <span class="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white">?</span>
-          <span>«ИИ заменит программистов» — правда или реклама?</span>
-          <svg class="h-3 w-3 opacity-60 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-        </a>
-      </>
-    )}
+  <!-- Фоновое фото -->
+  <div class="absolute inset-0 z-0">
+    <picture>
+      <source type="image/avif" srcset={avifSrcset} sizes="100vw" />
+      <source type="image/jpeg" srcset={jpgSrcset} sizes="100vw" />
+      <img
+        src={imgSrc}
+        alt={imageAlt}
+        class="w-full h-full object-cover object-[center_30%]"
+        loading="eager"
+        decoding="async"
+        fetchpriority="high"
+        width="1600"
+        height="685"
+      />
+    </picture>
+    <!-- Градиент слева плотный → справа прозрачный -->
+    <div class="absolute inset-0 bg-gradient-to-r from-[#0d1a2b]/95 via-[#0d1a2b]/70 to-[#0d1a2b]/20"></div>
+    <!-- Градиент снизу для мобилки (фото меньше, текст перекрывает) -->
+    <div class="absolute inset-0 bg-gradient-to-t from-[#0d1a2b]/60 via-transparent to-transparent"></div>
   </div>
-</header>
 
-<!-- Hero image — full-width up to 1280, rounded -->
-<figure class="mx-auto mt-6 max-w-[1280px] px-4 md:mt-8">
-  <picture>
-    <source type="image/avif" srcset={avifSrcset} sizes="(min-width: 1280px) 1200px, 100vw" />
-    <source type="image/jpeg" srcset={jpgSrcset} sizes="(min-width: 1280px) 1200px, 100vw" />
-    <img
-      src={imgSrc}
-      alt={imageAlt}
-      class="w-full h-auto rounded-[16px] md:rounded-[20px] object-cover aspect-[21/10] md:aspect-[21/9] shadow-[0_4px_24px_rgba(0,0,0,0.08)]"
-      loading="eager"
-      fetchpriority="high"
-      width="1600"
-      height="685"
-    />
-  </picture>
-</figure>
+  <div class="relative z-10 mx-auto max-w-[1312px]">
+    <div class="flex flex-col gap-6 lg:max-w-[720px]">
+
+      <!-- Breadcrumb -->
+      <nav class="text-[14px] text-white/50">
+        <a href="/" class="hover:text-white/80 transition-colors">Главная</a>
+        <span class="mx-2">&rarr;</span>
+        <a href="/stati/zavisimost-ot-kompyuternyh-igr" class="hover:text-white/80 transition-colors">Статьи</a>
+        <span class="mx-2">&rarr;</span>
+        <span class="text-white/70">{breadcrumbsLast}</span>
+      </nav>
+
+      <!-- H1 -->
+      <h1 class="text-[30px] md:text-[44px] font-bold leading-[1.1] tracking-[-0.03em] text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.35)]">
+        {title}
+      </h1>
+
+      <!-- Subtitle -->
+      {subtitle && (
+        <p class="text-[16px] md:text-[18px] text-white/75 leading-[1.55] max-w-[640px]">
+          {subtitle}
+        </p>
+      )}
+
+      <!-- Meta: date + CTA -->
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-3 text-[13px] text-white/50">
+        {date && <span>{date}</span>}
+        {showAiCta && (
+          <>
+            {date && <span class="text-white/30">·</span>}
+            <a
+              href="/stati/ii-zamenit-programmista"
+              class="inline-flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 px-3 py-1.5 text-[13px] text-white/85 hover:text-white transition-colors group backdrop-blur-sm"
+            >
+              <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white">?</span>
+              <span>«ИИ заменит программистов» — правда или реклама?</span>
+              <svg class="h-3 w-3 opacity-60 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </a>
+          </>
+        )}
+      </div>
+
+    </div>
+  </div>
+</section>
