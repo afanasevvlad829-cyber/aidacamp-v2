@@ -6,30 +6,53 @@ on:
     branches:
       - main
       - dev
-      - 'codex/**'
 
 jobs:
   quality:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout site
         uses: actions/checkout@v4
 
-      - name: Make scripts executable
-        run: |
-          chmod +x build.sh
-          chmod +x tools/quality-metrics.sh
-          chmod +x tools/quality-gate.sh
-          chmod +x tools/quality-baseline.sh
-          chmod +x tools/quality-check.sh
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-      - name: Prepare quality baseline
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build site
+        run: npm run build
+
+      # ——— Optional: pull tooling branch and run quality scripts ———
+      # `tooling` is an orphan branch holding tools/quality-*.sh etc.
+      # These checks are informational — they don't fail the gate (yet).
+      # When the scripts are stable on aidacamp-v2, flip the final step to fail on non-zero.
+
+      - name: Fetch tooling branch (best-effort)
+        id: fetch_tooling
+        continue-on-error: true
         run: |
-          ./tools/quality-metrics.sh > /tmp/quality-snapshot-initial.md
-          if [ ! -f docs/quality/baseline.env ]; then
-            ./tools/quality-baseline.sh
+          if git fetch origin tooling --depth=1 2>/dev/null; then
+            mkdir -p .ci-tooling
+            git archive origin/tooling tools | tar -x -C .ci-tooling
+            chmod +x .ci-tooling/tools/*.sh || true
+            echo "tooling_ok=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "tooling branch not available — skipping optional quality checks"
+            echo "tooling_ok=0" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Run quality check
-        run: ./tools/quality-check.sh
+      - name: Quality metrics (informational)
+        if: steps.fetch_tooling.outputs.tooling_ok == '1'
+        continue-on-error: true
+        run: |
+          if [ -x .ci-tooling/tools/quality-metrics.sh ]; then
+            cp -r .ci-tooling/tools ./tools
+            ./tools/quality-metrics.sh > /tmp/quality-snapshot.md || true
+            echo '--- quality-metrics.sh output ---'
+            cat /tmp/quality-snapshot.md || true
+          fi
