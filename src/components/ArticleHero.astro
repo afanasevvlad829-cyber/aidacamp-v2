@@ -1,0 +1,102 @@
+---
+/**
+ * ArticleHero — переиспользуемый hero-блок для статей /stati/*.
+ *
+ * Слой статьи-блога:
+ *   breadcrumbs → H1 → subtitle → meta (дата · ссылка на статью про ИИ) → фото
+ *
+ * Props:
+ *   - title: string        — H1
+ *   - subtitle: string     — подзаголовок под H1 (одна строка, не длинная)
+ *   - imageBase: string    — имя файла без размера и расширения, напр. 'problemy-obshcheniya'
+ *                            Ожидает {imageBase}-1600.avif, -1200.avif, -800.avif, +jpg fallback
+ *                            в public/images/articles/
+ *   - imageAlt: string     — alt-текст
+ *   - date: string         — дата публикации (напр. "Апрель 2026")
+ *   - breadcrumbsLast: string  — последняя крошка (тема статьи)
+ *   - showAiCta?: boolean  — показать ли ссылку на статью про ИИ (default true).
+ *                            Не показываем на самой этой статье (/stati/ii-zamenit-programmista)
+ */
+
+interface Props {
+  title: string;
+  subtitle?: string;
+  imageBase: string;
+  imageAlt: string;
+  date?: string;
+  breadcrumbsLast: string;
+  showAiCta?: boolean;
+}
+
+const {
+  title,
+  subtitle,
+  imageBase,
+  imageAlt,
+  date,
+  breadcrumbsLast,
+  showAiCta = true,
+} = Astro.props;
+
+const imgSrc = `/images/articles/${imageBase}-1600.jpg`;
+const avifSrcset = `/images/articles/${imageBase}-800.avif 800w, /images/articles/${imageBase}-1200.avif 1200w, /images/articles/${imageBase}-1600.avif 1600w`;
+const jpgSrcset  = `/images/articles/${imageBase}-800.jpg 800w, /images/articles/${imageBase}-1200.jpg 1200w, /images/articles/${imageBase}-1600.jpg 1600w`;
+---
+
+<header class="mx-auto max-w-[860px] px-4 pt-8 md:pt-12">
+  <!-- Breadcrumbs -->
+  <nav class="text-[13px] text-slate-400">
+    <a href="/" class="hover:text-[#ff8a00] transition">Главная</a>
+    <span class="mx-1">&rarr;</span>
+    <a href="/stati/zavisimost-ot-kompyuternyh-igr" class="hover:text-[#ff8a00] transition">Статьи</a>
+    <span class="mx-1">&rarr;</span>
+    <span class="text-slate-600">{breadcrumbsLast}</span>
+  </nav>
+
+  <!-- H1 -->
+  <h1 class="mt-4 text-[30px] md:text-[40px] font-bold leading-[1.15] tracking-[-0.03em] text-slate-900">
+    {title}
+  </h1>
+
+  <!-- Subtitle -->
+  {subtitle && (
+    <p class="mt-3 text-[17px] md:text-[19px] leading-[1.5] text-slate-500">
+      {subtitle}
+    </p>
+  )}
+
+  <!-- Meta: date + CTA -->
+  <div class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] text-slate-500">
+    {date && <span>{date}</span>}
+    {showAiCta && (
+      <>
+        {date && <span class="text-slate-300">·</span>}
+        <a
+          href="/stati/ii-zamenit-programmista"
+          class="inline-flex items-center gap-1.5 rounded-full bg-orange-50 hover:bg-orange-100 border border-orange-200 px-2.5 py-1 text-[12px] font-medium text-orange-700 hover:text-orange-800 transition-colors group"
+        >
+          <span class="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white">?</span>
+          <span>«ИИ заменит программистов» — правда или реклама?</span>
+          <svg class="h-3 w-3 opacity-60 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        </a>
+      </>
+    )}
+  </div>
+</header>
+
+<!-- Hero image — full-width up to 1280, rounded -->
+<figure class="mx-auto mt-6 max-w-[1280px] px-4 md:mt-8">
+  <picture>
+    <source type="image/avif" srcset={avifSrcset} sizes="(min-width: 1280px) 1200px, 100vw" />
+    <source type="image/jpeg" srcset={jpgSrcset} sizes="(min-width: 1280px) 1200px, 100vw" />
+    <img
+      src={imgSrc}
+      alt={imageAlt}
+      class="w-full h-auto rounded-[16px] md:rounded-[20px] object-cover aspect-[21/10] md:aspect-[21/9] shadow-[0_4px_24px_rgba(0,0,0,0.08)]"
+      loading="eager"
+      fetchpriority="high"
+      width="1600"
+      height="685"
+    />
+  </picture>
+</figure>
