@@ -3,20 +3,20 @@
  * ArticleHero — hero-блок для статей /stati/* в стиле LandingHero.
  *
  * Layout:
- *   Темно-navy фон (#0d1a2b) с фоновым фото и slash-градиентом слева.
- *   Контент в левой 2/3 ширины: breadcrumbs → H1 (белый) → subtitle → meta (дата + CTA на статью про ИИ).
+ *   - Фон: #0d1a2b + фото + slash-gradient (светлее, чем в v2)
+ *   - 2-col: слева title + subtitle + meta, справа 3 плашки (Дарья / Вычет / Ближайшая смена)
+ *   - AI-CTA — в правом нижнем углу
+ *   - Живые данные смены — из src/data/shifts.ts (без хардкода)
  *
  * Props:
- *   - title: string            — H1
- *   - subtitle?: string        — подзаголовок
- *   - imageBase: string        — имя файла без размера/расширения, напр. 'problemy-obshcheniya'
- *                                Ожидает {base}-800/1200/1600.avif + .jpg в public/images/articles/
- *   - imageAlt: string         — alt-текст
- *   - date?: string            — дата публикации
- *   - breadcrumbsLast: string  — последняя крошка
- *   - showAiCta?: boolean      — показать ли CTA на статью про ИИ (default true)
- *                                 Не показываем на самой ii-zamenit-programmista
+ *   - title, subtitle, imageBase, imageAlt, breadcrumbsLast  — базовый контент
+ *   - date?, readTime?                                       — мета (дата + минуты)
+ *   - daryaQuote?: string                                    — цитата в тему статьи. Если нет — плашка скрывается
+ *   - showAiCta?: boolean (default true)
  */
+
+import TaxWidget from './TaxWidget.astro';
+import { mainShifts } from '../data/shifts';
 
 interface Props {
   title: string;
@@ -24,7 +24,9 @@ interface Props {
   imageBase: string;
   imageAlt: string;
   date?: string;
+  readTime?: string;
   breadcrumbsLast: string;
+  daryaQuote?: string;
   showAiCta?: boolean;
 }
 
@@ -34,13 +36,24 @@ const {
   imageBase,
   imageAlt,
   date,
+  readTime,
   breadcrumbsLast,
+  daryaQuote,
   showAiCta = true,
 } = Astro.props;
 
+// Image sources
 const imgSrc = `/images/articles/${imageBase}-1600.jpg`;
 const avifSrcset = `/images/articles/${imageBase}-800.avif 800w, /images/articles/${imageBase}-1200.avif 1200w, /images/articles/${imageBase}-1600.avif 1600w`;
 const jpgSrcset  = `/images/articles/${imageBase}-800.jpg 800w, /images/articles/${imageBase}-1200.jpg 1200w, /images/articles/${imageBase}-1600.jpg 1600w`;
+
+// Nearest available shift (no hardcode — from live data)
+const today = new Date().toISOString().slice(0, 10);
+const nearestShift = mainShifts
+  .filter(s => s.statusType === 'available' && s.startDate >= today)
+  .sort((a, b) => a.startDate.localeCompare(b.startDate))[0]
+  || mainShifts.find(s => s.statusType === 'available')
+  || mainShifts[0];
 
 const breadcrumbJsonLd = {
   "@context": "https://schema.org",
@@ -53,10 +66,10 @@ const breadcrumbJsonLd = {
 };
 ---
 
-<section class="relative overflow-hidden min-h-[460px] md:min-h-[540px] bg-[#0d1a2b] px-5 pt-14 pb-10 md:px-14 md:pt-18 md:pb-14">
+<section class="relative overflow-hidden bg-[#0d1a2b] px-5 pt-14 pb-8 md:px-14 md:pt-16 md:pb-12">
   <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
 
-  <!-- Фоновое фото -->
+  <!-- Background photo -->
   <div class="absolute inset-0 z-0">
     <picture>
       <source type="image/avif" srcset={avifSrcset} sizes="100vw" />
@@ -72,54 +85,108 @@ const breadcrumbJsonLd = {
         height="685"
       />
     </picture>
-    <!-- Градиент слева плотный → справа прозрачный -->
-    <div class="absolute inset-0 bg-gradient-to-r from-[#0d1a2b]/95 via-[#0d1a2b]/70 to-[#0d1a2b]/20"></div>
-    <!-- Градиент снизу для мобилки (фото меньше, текст перекрывает) -->
-    <div class="absolute inset-0 bg-gradient-to-t from-[#0d1a2b]/60 via-transparent to-transparent"></div>
+    <!-- Gradient overlay — softer, slashing from left -->
+    <div class="absolute inset-0 bg-gradient-to-r from-[#0d1a2b]/85 via-[#0d1a2b]/55 to-[#0d1a2b]/20"></div>
+    <div class="absolute inset-0 bg-gradient-to-t from-[#0d1a2b]/50 via-transparent to-transparent"></div>
   </div>
 
   <div class="relative z-10 mx-auto max-w-[1312px]">
-    <div class="flex flex-col gap-6 lg:max-w-[720px]">
 
-      <!-- Breadcrumb -->
-      <nav class="text-[14px] text-white/50">
-        <a href="/" class="hover:text-white/80 transition-colors">Главная</a>
-        <span class="mx-2">&rarr;</span>
-        <a href="/stati/zavisimost-ot-kompyuternyh-igr" class="hover:text-white/80 transition-colors">Статьи</a>
-        <span class="mx-2">&rarr;</span>
-        <span class="text-white/70">{breadcrumbsLast}</span>
-      </nav>
+    <!-- Breadcrumb on top -->
+    <nav class="text-[14px] text-white/55">
+      <a href="/" class="hover:text-white/85 transition-colors">Главная</a>
+      <span class="mx-2">&rarr;</span>
+      <a href="/stati/zavisimost-ot-kompyuternyh-igr" class="hover:text-white/85 transition-colors">Статьи</a>
+      <span class="mx-2">&rarr;</span>
+      <span class="text-white/75">{breadcrumbsLast}</span>
+    </nav>
 
-      <!-- H1 -->
-      <h1 class="text-[30px] md:text-[44px] font-bold leading-[1.1] tracking-[-0.03em] text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.35)]">
-        {title}
-      </h1>
+    <!-- 2-column layout: text left, plashki right -->
+    <div class="mt-8 grid gap-8 md:mt-10 md:grid-cols-[1.1fr_380px] md:gap-12 md:items-start">
 
-      <!-- Subtitle -->
-      {subtitle && (
-        <p class="text-[16px] md:text-[18px] text-white/75 leading-[1.55] max-w-[640px]">
-          {subtitle}
-        </p>
-      )}
+      <!-- LEFT: H1 + subtitle + meta (evenly distributed) -->
+      <div class="flex flex-col justify-between min-h-[320px] md:min-h-[420px]">
+        <div>
+          <h1 class="text-[30px] md:text-[46px] font-bold leading-[1.08] tracking-[-0.03em] text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.45)]">
+            {title}
+          </h1>
 
-      <!-- Meta: date + CTA -->
-      <div class="flex flex-wrap items-center gap-x-4 gap-y-3 text-[13px] text-white/50">
-        {date && <span>{date}</span>}
-        {showAiCta && (
-          <>
-            {date && <span class="text-white/30">·</span>}
-            <a
-              href="/stati/ii-zamenit-programmista"
-              class="inline-flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 px-3 py-1.5 text-[13px] text-white/85 hover:text-white transition-colors group backdrop-blur-sm"
-            >
-              <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white">?</span>
-              <span>«ИИ заменит программистов» — правда или реклама?</span>
-              <svg class="h-3 w-3 opacity-60 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-            </a>
-          </>
-        )}
+          {subtitle && (
+            <p class="mt-5 text-[16px] md:text-[19px] text-white/80 leading-[1.5] max-w-[560px]">
+              {subtitle}
+            </p>
+          )}
+        </div>
+
+        <!-- Meta: date + read time (bottom-left) -->
+        <div class="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px] text-white/55">
+          {date && <span>{date}</span>}
+          {date && readTime && <span class="text-white/25">·</span>}
+          {readTime && <span>{readTime}</span>}
+        </div>
       </div>
 
+      <!-- RIGHT: 3 plashki stack -->
+      <aside class="flex flex-col gap-3">
+
+        {daryaQuote && (
+          <!-- Plashka 1: Дарья + цитата -->
+          <div class="rounded-[16px] bg-white/10 backdrop-blur-md border border-white/15 p-4">
+            <div class="flex items-start gap-3">
+              <img
+                src="/images/team/sm/team-daria-main-01.avif"
+                alt="Дарья Афанасьева"
+                class="h-12 w-12 shrink-0 rounded-full object-cover object-top"
+                width="48"
+                height="48"
+                loading="lazy"
+              />
+              <div class="min-w-0">
+                <p class="text-[13.5px] leading-[1.5] text-white/90 italic">«{daryaQuote}»</p>
+                <p class="mt-2 text-[12px] font-semibold text-white/80">Дарья Афанасьева</p>
+                <p class="text-[11.5px] text-white/55">основатель АйДаКемп, мама подростка</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <!-- Plashka 2: Вычет (TaxWidget в тёмной вариации) -->
+        <TaxWidget variant="card" />
+
+        <!-- Plashka 3: Ближайшая смена (живые данные) -->
+        {nearestShift && (
+          <a
+            href="#shifts"
+            class="block rounded-[16px] bg-white/10 backdrop-blur-md border border-white/15 hover:bg-white/15 hover:border-white/25 p-4 transition-colors group"
+          >
+            <p class="text-[11px] font-semibold uppercase tracking-[0.1em] text-orange-400">Смены 2026</p>
+            <p class="mt-2 text-[15px] font-bold text-white leading-tight">
+              Ближайшая: {nearestShift.name}
+            </p>
+            <p class="mt-1 text-[13px] text-white/70">
+              {nearestShift.dates} · {nearestShift.duration}
+            </p>
+            <p class="mt-3 text-[12px] text-white/60 group-hover:text-white/80 transition-colors inline-flex items-center gap-1">
+              Посмотреть все смены
+              <svg class="h-3 w-3 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </p>
+          </a>
+        )}
+
+      </aside>
+
     </div>
+
+    <!-- AI CTA в правом нижнем углу -->
+    {showAiCta && (
+      <a
+        href="/stati/ii-zamenit-programmista"
+        class="mt-8 md:absolute md:right-14 md:bottom-6 inline-flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 px-3.5 py-2 text-[13px] text-white/85 hover:text-white transition-colors group backdrop-blur-sm self-end float-right"
+      >
+        <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white">?</span>
+        <span>«ИИ заменит программистов» — правда или реклама?</span>
+        <svg class="h-3 w-3 opacity-60 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+      </a>
+    )}
   </div>
 </section>
