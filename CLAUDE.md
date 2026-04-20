@@ -97,11 +97,18 @@ Instagram-успешной мамы-идеала.
 - `★` (U+2605), `✓` (U+2713), `•` — это typography symbols, не эмодзи. Можно оставить в тексте.
 - Внутри текста статьи (blog) эмодзи как часть цитаты — допустимо.
 
-### Если нужной bi-иконки нет
+### ⚠️ НИКОГДА не редактируй `src/styles/icons.css` вручную
 
-1. Найди аналог на https://icons.getbootstrap.com/ (~2000 иконок)
-2. Добавь SVG-mask rule в `src/styles/icons.css` по шаблону существующих
-3. Используй как `<i class="bi bi-новая-иконка">`
+`icons.css` — **AUTO-GENERATED** файл. Ручные правки будут перезаписаны при следующем `npm run icons`.
+
+**Как добавить иконку:**
+1. Найди имя на https://icons.getbootstrap.com/ (~2000 иконок)
+2. Добавь имя в `src/data/icons-manifest.json` (просто строка в JSON-массиве)
+3. Если иконки нет в bootstrap-icons — положи SVG в `src/styles/custom-icons/<name>.svg`
+4. Запусти `npm run icons` — скрипт перегенерирует `icons.css`
+5. Закоммить оба файла: `icons-manifest.json` + `icons.css`
+
+**Почему так устроено:** параллельные агенты конфликтовали при ручных правках icons.css (verbose vs compact форма). JSON-манифест мерджится без конфликтов. Один агент добавляет одну строчку в JSON — конфликта нет.
 
 ### Проверка перед PR
 
