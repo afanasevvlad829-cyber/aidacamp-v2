@@ -15,6 +15,7 @@
 
 import { mainShifts, shortShifts, type Shift } from '../data/shifts';
 import { members as teamMembers } from '../data/team';
+import { reviews } from '../data/reviews';
 import {
   PHONE_MAIN,
   PHONE_MOBILE,
@@ -30,6 +31,21 @@ const HERO_IMAGE = `${SITE_URL}/images/hero-custom-2026-04-07-1100.avif`;
 
 // Цена в рублях из строки "74 900 ₽" → "74900"
 const parsePrice = (p: string) => p.replace(/[^\d]/g, '');
+
+// "2 февраля 2026" → "2026-02-02"
+const MONTHS: Record<string, string> = {
+  января: '01', февраля: '02', марта: '03', апреля: '04', мая: '05', июня: '06',
+  июля: '07', августа: '08', сентября: '09', октября: '10', ноября: '11', декабря: '12',
+};
+const parseDate = (d: string) => {
+  const parts = d.split(' ');
+  if (parts.length === 3) {
+    const day = parts[0].padStart(2, '0');
+    const month = MONTHS[parts[1]] ?? '01';
+    return `${parts[2]}-${month}-${day}`;
+  }
+  return d;
+};
 
 const allShifts: Shift[] = [...mainShifts, ...shortShifts];
 
@@ -101,50 +117,13 @@ const summerCamp = {
     WHATSAPP_URL,
     TELEGRAM_URL,
   ],
-  review: [
-    {
-      '@type': 'Review',
-      reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' },
-      author: { '@type': 'Person', name: 'Анастасия М.' },
-      datePublished: '2025-08-20',
-      reviewBody: 'Сын ездил уже второй раз, и снова в восторге. Программирование подаётся так, что даже тот кто не любит учёбу — включается. Вожатые внимательные, контакт с родителями ежедневный. Уже записались на следующий год.',
-    },
-    {
-      '@type': 'Review',
-      reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' },
-      author: { '@type': 'Person', name: 'Елена К.' },
-      datePublished: '2025-07-15',
-      reviewBody: 'Дочь поехала первый раз и боялась что будет скучно. Вернулась с готовым проектом на Python и новыми друзьями из разных городов. Лагерь реально работает — не просто «сдать ребёнка».',
-    },
-    {
-      '@type': 'Review',
-      reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' },
-      author: { '@type': 'Person', name: 'Дмитрий С.' },
-      datePublished: '2024-08-10',
-      reviewBody: 'Всё чётко — договор, оплата, документы для налогового вычета пришли сами. Ребёнок защищал проект на хакатоне, до сих пор рассказывает об этом. Санаторий Изумруд — территория хорошая, питание нормальное.',
-    },
-    {
-      '@type': 'Review',
-      reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' },
-      author: { '@type': 'Person', name: 'Ольга Т.' },
-      datePublished: '2024-07-25',
-      reviewBody: 'Менеджер ответила через 5 минут после заявки, всё объяснила без давления. Место зафиксировали на 72 часа пока мы думали. Ребёнок вернулся довольный, просит снова. Рекомендую тем кто ищет лагерь с реальной программой.',
-    },
-    {
-      '@type': 'Review',
-      reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' },
-      author: { '@type': 'Person', name: 'Мария В.' },
-      datePublished: '2025-06-18',
-      reviewBody: 'Ехали с опасениями — ребёнок интроверт, плохо адаптируется. Вожатые молодцы — первые три дня мягко включали в группу. К концу смены сам вёл часть презентации на хакатоне. Это дорогого стоит.',
-    },
-    {
-      '@type': 'Review',
-      reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' },
-      author: { '@type': 'Person', name: 'Наталья Р.' },
-      datePublished: '2023-08-05',
-      reviewBody: 'Третий год подряд отправляем двух детей. Программа каждый год немного другая, не повторяется. Преподаватели — практики, не просто теория. 13% вычет получили без проблем, документы дали сразу.',
-    },
-  ],
+  review: reviews.map(r => ({
+    '@type': 'Review',
+    reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' },
+    author: { '@type': 'Person', name: r.name },
+    datePublished: parseDate(r.date),
+    reviewBody: r.fullText || r.text,
+  })),
 };
 
 const eventsList = {
