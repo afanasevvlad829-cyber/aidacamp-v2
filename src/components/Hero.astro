@@ -5,6 +5,16 @@ import { STAT_YEARS, STAT_KIDS, STAT_RATING, STAT_DISTANCE, STAT_RETURN, CAMP_PR
 ---
 
 <section id="hero" class="relative mx-auto w-full overflow-x-hidden bg-surface-warm md:max-w-[1440px]">
+  <!-- ===== SHARED H1 — единственный на странице, responsive позиционирование ===== -->
+  <!-- Desktop: в верхней левой колонке. Mobile: над subtitle в нижней зоне фото (z-10 выше градиентов, совпадает с логикой старого mobile-блока). -->
+  <h1
+    id="hero-title"
+    class="pointer-events-none absolute z-20 left-5 right-5 bottom-[80px] text-[36px] leading-[1.1] font-bold tracking-[-0.03em] text-white
+           md:pointer-events-auto md:left-16 md:right-auto md:bottom-auto md:top-[106px] md:w-[700px] md:text-[44px] md:leading-[52px] md:[text-shadow:0px_4px_12px_rgba(0,0,0,0.35)]"
+  >
+    Летний лагерь в&nbsp;Подмосковье,&nbsp;<span class="whitespace-nowrap">7–14</span>
+  </h1>
+
   <!-- ===== MOBILE HERO ===== -->
   <div class="relative w-full bg-dark-navy md:hidden">
     <!-- Photo with gradient fade to dark -->
@@ -26,14 +36,13 @@ import { STAT_YEARS, STAT_KIDS, STAT_RATING, STAT_DISTANCE, STAT_RETURN, CAMP_PR
       <!-- Bottom fade to dark -->
       <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-dark-navy"></div>
 
-      <!-- Text over photo -->
+      <!-- Text over photo (H1 рендерится отдельно, см. shared block выше) -->
       <div class="absolute bottom-6 left-5 right-5">
         <p class="text-[14px] tracking-[0.2px] text-white/80">
           <span class="text-orange-400">★ {STAT_RATING}</span> на Яндекс Картах · {STAT_YEARS} лет работы · {STAT_KIDS} детей
         </p>
-        <p id="hero-title-mobile" class="mt-1 text-[36px] font-bold leading-[1.1] tracking-[-0.03em] text-white">
-          Летний лагерь в&nbsp;Подмосковье,&nbsp;<span class="whitespace-nowrap">7–14</span>
-        </p>
+        <!-- Зарезервированное место под абсолютный H1 сверху — ~52px (одна строка text-[36px] leading-1.1) + mt-1 -->
+        <div aria-hidden="true" class="mt-1 h-[52px]"></div>
         <p id="hero-subtitle-mobile" class="mt-2 text-[14px] text-white/60">
           Вам — 14 дней для себя.
         </p>
@@ -97,13 +106,10 @@ import { STAT_YEARS, STAT_KIDS, STAT_RATING, STAT_DISTANCE, STAT_RETURN, CAMP_PR
       <p class="text-[14px] text-white/50 whitespace-nowrap">
         {STAT_DISTANCE} от Москвы · смены июнь–август
       </p>
-      <!-- H1 -->
-      <h1
-        id="hero-title"
-        class="mt-2 w-[700px] text-[44px] font-bold leading-[52px] tracking-[-0.03em] text-white [text-shadow:0px_4px_12px_rgba(0,0,0,0.35)]"
-      >
-        Летний лагерь в&nbsp;Подмосковье,&nbsp;<span class="whitespace-nowrap">7–14</span>
-      </h1>
+      <!-- H1 рендерится абсолютно в корневом блоке секции (см. вверху Hero.astro).
+           Зарезервированное место: mt-2 (8px) + две строки text-[44px]/52px = 104px + 8px mt-2 = 112px.
+           В сумме с mt-2 от location на "top-[106px]" попадаем ровно в правильную позицию. -->
+      <div aria-hidden="true" class="mt-2 h-[104px] w-[700px]"></div>
       <p id="hero-subtitle" class="mt-2 text-[15px] text-white/65">
         Каждый уедет с проектом и новыми друзьями.
       </p>
@@ -234,12 +240,10 @@ import { STAT_YEARS, STAT_KIDS, STAT_RATING, STAT_DISTANCE, STAT_RETURN, CAMP_PR
 
     if (v) {
       var titleEl = document.getElementById('hero-title');
-      var titleMob = document.getElementById('hero-title-mobile');
       var subtitleEl = document.getElementById('hero-subtitle');
       var subtitleMob = document.getElementById('hero-subtitle-mobile');
       if (v.title) {
         if (titleEl) titleEl.textContent = v.title;
-        if (titleMob) titleMob.textContent = v.title;
       }
       if (v.subtitle) {
         if (subtitleEl) subtitleEl.textContent = v.subtitle;
