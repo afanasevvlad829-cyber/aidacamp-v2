@@ -130,7 +130,7 @@ export function initShiftModal() {
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-    modal.setAttribute('aria-hidden', 'false');
+    modal.removeAttribute('inert');
     document.body.style.overflow = 'hidden';
 
     requestAnimationFrame(() => {
@@ -151,7 +151,7 @@ export function initShiftModal() {
     setTimeout(() => {
       modal.classList.add('hidden');
       modal.classList.remove('flex');
-      modal.setAttribute('aria-hidden', 'true');
+      modal.setAttribute('inert', '');
       document.body.style.overflow = '';
     }, 300);
   }
