@@ -8,11 +8,13 @@
  *  - ItemList из Event (смены из data/shifts.ts)
  *  - FAQPage (ключевые вопросы родителей)
  *  - BreadcrumbList
+ *  - Person × N (команда преподавателей из data/team.ts) — E-E-A-T
  *
  * Валидатор: https://search.google.com/test/rich-results + Яндекс.Вебмастер → Инструменты → Валидатор.
  */
 
 import { mainShifts, shortShifts, type Shift } from '../data/shifts';
+import { members as teamMembers } from '../data/team';
 import {
   PHONE_MAIN,
   PHONE_MOBILE,
@@ -226,6 +228,22 @@ const breadcrumbs = {
   ],
 };
 
+// Слаг для @id — убираем пробелы и приводим к латинице через фото-имя файла
+const teamSlug = (photo: string) => photo.replace(/^.*\/team-/, '').replace(/-main-\d+\.avif$/, '').replace(/\.avif$/, '');
+
+// E-E-A-T: Person для каждого преподавателя. Google QRG весом учитывает именно
+// публично-идентифицируемых экспертов, работающих с YMYL-аудиторией (дети).
+const teamPersons = teamMembers.map((m) => ({
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  '@id': `${SITE_URL}/#person-${teamSlug(m.photo)}`,
+  name: m.name,
+  jobTitle: m.role,
+  image: `${SITE_URL}${m.photo}`,
+  description: m.bio,
+  worksFor: { '@id': `${SITE_URL}/#organization` },
+}));
+
 const webSite = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
@@ -246,6 +264,7 @@ const graph = {
     eventsList,
     faqPage,
     breadcrumbs,
+    ...teamPersons,
   ],
 };
 ---
