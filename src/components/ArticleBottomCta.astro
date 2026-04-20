@@ -1,0 +1,172 @@
+---
+/**
+ * ArticleBottomCta — нижний блок статьи вместо кнопки "Лагерь ...".
+ *
+ * Структура:
+ *   1. STATS — 3 цифры по теме + источник (передаются prop'ом)
+ *   2. 2 виджета в ряд: ближайшие смены (live) + отзывы родителей
+ *   3. Inline booking form
+ *
+ * Иконки: Bootstrap Icons (CSS уже подключён в Base).
+ */
+
+import LeadForm from './LeadForm.astro';
+import { mainShifts } from '../data/shifts';
+import { reviews as allReviews } from '../data/reviews';
+
+interface Stat {
+  value: string;        // '8ч 39мин', '~40%'
+  label: string;        // что эта цифра значит
+  source: string;       // атрибуция источника
+}
+
+interface ReviewQuote {
+  name: string;         // имя родителя
+  quote: string;        // короткая цитата (1-2 предложения)
+}
+
+interface Props {
+  stats?: Stat[];                // если не передано — дефолтный набор про общение подростков
+  reviewQuotes?: ReviewQuote[];  // если не передано — возьмём первые 2 из src/data/reviews
+  bookingTitle?: string;         // h3 над формой
+  bookingSubtitle?: string;
+}
+
+const {
+  stats = [
+    {
+      value: '8ч 39мин',
+      label: 'в день подростки проводят за экраном — больше, чем с родителями и друзьями',
+      source: 'Common Sense Media, 2024',
+    },
+    {
+      value: '~40%',
+      label: 'молодых россиян признаются, что чувствуют одиночество',
+      source: 'ВЦИОМ, 2024',
+    },
+    {
+      value: '3 дня',
+      label: 'нужно подростку в лагере, чтобы забыть про телефон и начать играть с живыми людьми',
+      source: 'наши наблюдения, 1200+ детей',
+    },
+  ],
+  reviewQuotes,
+  bookingTitle = 'Забронируйте место на ближайшую смену',
+  bookingSubtitle = 'Ответим за 10 минут. Без скидок-на-лету и навязчивых звонков.',
+} = Astro.props;
+
+// Default reviews: first 2 relevant to communication topic
+const defaultReviews: ReviewQuote[] = [
+  {
+    name: allReviews[0]?.name.split(' ')[0] || 'Сергей',
+    quote: 'Играли всем отрядом — не в телефонах, а реально живые игры. Домой приехал загорелый, уставший и почему-то сразу полез смотреть про программирование.',
+  },
+  {
+    name: allReviews[1]?.name.split(' ')[0] || 'Виктория',
+    quote: 'Первый раз отправила и всю смену ждала жалоб. Жалоб не было. Зато было голосовое в час ночи: «мам, мы в мафию играли, я победила».',
+  },
+];
+const reviewsToShow = reviewQuotes && reviewQuotes.length > 0 ? reviewQuotes : defaultReviews;
+
+// Live shifts: 2 nearest available
+const today = new Date().toISOString().slice(0, 10);
+const upcomingShifts = mainShifts
+  .filter(s => s.statusType === 'available' && s.startDate >= today)
+  .sort((a, b) => a.startDate.localeCompare(b.startDate))
+  .slice(0, 2);
+---
+
+<section class="mx-auto max-w-[860px] px-4 mt-12 md:mt-16">
+
+  <!-- STATS ROW -->
+  <div class="grid gap-3 md:grid-cols-3 md:gap-4">
+    {stats.map((stat, i) => (
+      <div class="rounded-[16px] bg-slate-50 border border-slate-100 p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <i class={`bi ${['bi-clock-history', 'bi-emoji-frown', 'bi-calendar-check'][i] || 'bi-graph-up'} text-[20px] text-orange-500`}></i>
+        </div>
+        <p class="text-[26px] md:text-[28px] font-bold text-slate-900 leading-none">{stat.value}</p>
+        <p class="mt-2 text-[13.5px] md:text-[14px] leading-[1.45] text-slate-700">{stat.label}</p>
+        <p class="mt-3 text-[11px] text-slate-400 leading-tight">{stat.source}</p>
+      </div>
+    ))}
+  </div>
+
+  <!-- 2 WIDGETS ROW -->
+  <div class="mt-6 grid gap-4 md:grid-cols-2 md:gap-5">
+
+    <!-- Shifts widget — LIVE data -->
+    <div class="rounded-[18px] bg-gradient-to-br from-[#fff9f2] to-white border border-orange-100 p-5 md:p-6">
+      <div class="flex items-center gap-2">
+        <i class="bi bi-calendar-week text-[18px] text-orange-500"></i>
+        <h3 class="text-[14px] font-semibold uppercase tracking-[0.08em] text-orange-700">Ближайшие смены</h3>
+      </div>
+
+      <div class="mt-4 space-y-3">
+        {upcomingShifts.length > 0 ? upcomingShifts.map(shift => (
+          <a href="#shifts" class="block rounded-[12px] bg-white border border-slate-100 p-3.5 hover:border-orange-200 hover:shadow-[0_4px_12px_rgba(249,115,22,0.1)] transition-all group">
+            <div class="flex items-baseline justify-between gap-2">
+              <p class="text-[15px] font-bold text-slate-900">
+                {shift.name}
+                {shift.popular && <span class="ml-1.5 text-[10px] align-middle font-semibold uppercase tracking-[0.08em] text-orange-600 bg-orange-100 rounded px-1.5 py-0.5">популярная</span>}
+              </p>
+              <p class="text-[13px] font-semibold text-slate-600 shrink-0">{shift.price}</p>
+            </div>
+            <p class="mt-1 text-[13px] text-slate-500">{shift.dates} · {shift.duration}</p>
+            <p class="mt-2 inline-flex items-center gap-1.5 text-[12px] text-slate-600">
+              <i class="bi bi-circle-fill text-[6px] text-emerald-500"></i>
+              <span>Свободно {shift.free} мест</span>
+            </p>
+          </a>
+        )) : (
+          <p class="text-[14px] text-slate-500">Смены 2026 ещё не открыты</p>
+        )}
+      </div>
+
+      <a href="#shifts" class="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-orange-700 hover:text-orange-800 transition-colors group">
+        Смотреть все смены
+        <i class="bi bi-arrow-right group-hover:translate-x-0.5 transition-transform"></i>
+      </a>
+    </div>
+
+    <!-- Reviews widget -->
+    <div class="rounded-[18px] bg-white border border-slate-200 p-5 md:p-6">
+      <div class="flex items-center gap-2">
+        <i class="bi bi-chat-quote text-[18px] text-slate-500"></i>
+        <h3 class="text-[14px] font-semibold uppercase tracking-[0.08em] text-slate-600">Говорят родители</h3>
+      </div>
+
+      <div class="mt-4 space-y-4">
+        {reviewsToShow.slice(0, 2).map(r => (
+          <blockquote class="border-l-2 border-orange-300 pl-4">
+            <p class="text-[14px] leading-[1.55] text-slate-700 italic">«{r.quote}»</p>
+            <cite class="mt-2 block text-[12px] not-italic font-semibold text-slate-500">— {r.name}</cite>
+          </blockquote>
+        ))}
+      </div>
+
+      <a href="#reviews" class="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-600 hover:text-slate-900 transition-colors group">
+        <i class="bi bi-star-fill text-orange-400"></i>
+        Читать 40+ отзывов на Яндекс.Картах
+        <i class="bi bi-arrow-right group-hover:translate-x-0.5 transition-transform"></i>
+      </a>
+    </div>
+
+  </div>
+
+  <!-- BOOKING FORM -->
+  <div class="mt-6 rounded-[24px] bg-gradient-to-br from-slate-50 to-white border border-slate-100 p-5 md:p-8 shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+    <div class="text-center md:max-w-[560px] md:mx-auto">
+      <h3 class="text-[22px] md:text-[26px] font-bold leading-[1.15] tracking-[-0.02em] text-slate-900">
+        {bookingTitle}
+      </h3>
+      <p class="mt-2 text-[14.5px] md:text-[15px] leading-[1.55] text-slate-500">
+        {bookingSubtitle}
+      </p>
+    </div>
+    <div class="mt-5 md:max-w-[480px] md:mx-auto">
+      <LeadForm variant="mobile" />
+    </div>
+  </div>
+
+</section>
