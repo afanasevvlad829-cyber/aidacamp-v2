@@ -210,7 +210,7 @@ export function initShiftModal() {
     setTimeout(() => target?.click(), 320);
   });
 
-  // === Клик по строке ShiftOccupancy ===
+  // === Клик по строке ShiftOccupancy + по inline shiftLinkHtml() ===
   document.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
     const row = target.closest<HTMLElement>('[data-occupancy-shift]');
@@ -218,6 +218,15 @@ export function initShiftModal() {
       const id = row.dataset.occupancyShift || '';
       if (id) {
         (window as any).trackGoal?.('check_places');
+        open(id, 'description');
+      }
+      return;
+    }
+    const link = target.closest<HTMLElement>('[data-shift-link]');
+    if (link) {
+      const id = link.dataset.shiftLink || '';
+      if (id) {
+        (window as any).trackGoal?.('shift_link_click', { shiftId: id });
         open(id, 'description');
       }
     }
