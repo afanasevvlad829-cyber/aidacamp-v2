@@ -49,10 +49,67 @@ Instagram-успешной мамы-идеала.
 
 ## 🎨 UI-правила (критично)
 
-- **Иконки:** используем **Bootstrap Icons** через `src/styles/icons.css` — это **подмножество ~50 иконок**, не весь набор. Если нужной иконки нет — добавить SVG-mask rule по шаблону существующих в файле. Каталог: https://icons.getbootstrap.com/
-- **Эмодзи:** НЕ используем в интерфейсе (кнопки, заголовки, карточки, плашки). Только Bootstrap Icons или inline-SVG. Исключение — эмодзи внутри текста статьи как часть цитаты.
+### Иконки — только Bootstrap Icons, НЕ эмодзи
 
-Если видишь эмодзи в UI — замени на соответствующую `bi-*` иконку.
+**✅ Всегда** используй `<i class="bi bi-*">` с `aria-hidden="true"`:
+```astro
+<i class="bi bi-laptop text-[24px] text-white" aria-hidden="true"></i>
+<i class="bi bi-patch-check-fill text-[12px]" aria-hidden="true"></i>
+<i class="bi bi-telegram text-[15px]" aria-hidden="true"></i>
+```
+
+**❌ Никогда** не используй эмодзи в UI (кнопки, заголовки, карточки, плашки, badges):
+```astro
+<!-- ЗАПРЕЩЕНО -->
+<span>🖥️ Ноутбук не нужен</span>
+<span>📞 Позвонить</span>
+<span>⚡ Быстро</span>
+<span>🎯 Цель</span>
+```
+
+### Карта замены частых эмодзи → bi-иконки
+
+| Эмодзи | bi-icon | Применение |
+|---|---|---|
+| 🖥️ 💻 | `bi-laptop` | ноутбук, устройство |
+| 📞 ☎️ | `bi-telephone-fill` | звонок |
+| 💬 | `bi-chat-dots-fill` | сообщения |
+| ✈️ 📨 | `bi-send-fill` | отправить |
+| ⚡ | `bi-lightning-charge-fill` | скорость, энергия |
+| 🔄 ♻️ | `bi-arrow-repeat` | обновление, цикл |
+| ✅ ✔️ | `bi-check-lg` / `bi-check-circle-fill` | подтверждение |
+| ❌ | `bi-x-lg` | закрыть, отмена |
+| 🔒 | `bi-lock-fill` / `bi-shield-lock-fill` | закрыто, безопасность |
+| 📹 🎥 | `bi-camera-video-fill` | видео |
+| ❤️ | `bi-heart-fill` / `bi-heart-pulse-fill` | сердце, здоровье |
+| 🏆 🥇 | `bi-trophy-fill` | награда |
+| ⭐ | `bi-star-fill` | рейтинг (можно оставить `★` как typography) |
+| 🔥 | `bi-fire` | популярное |
+| 📷 | `bi-camera-fill` | фото |
+| 🛡 | `bi-shield-fill` / `bi-patch-check-fill` | защита, лицензия |
+| 💰 | `bi-cash-coin` / `bi-currency-ruble` | деньги |
+| 🎯 | `bi-bullseye` | цель |
+| 📋 | `bi-clipboard-check` | список |
+| ⚠️ | `bi-exclamation-triangle-fill` | внимание |
+| 🔔 | `bi-bell-fill` | уведомление |
+
+### Исключения (не эмодзи, допустимо как typography)
+- `★` (U+2605), `✓` (U+2713), `•` — это typography symbols, не эмодзи. Можно оставить в тексте.
+- Внутри текста статьи (blog) эмодзи как часть цитаты — допустимо.
+
+### Если нужной bi-иконки нет
+
+1. Найди аналог на https://icons.getbootstrap.com/ (~2000 иконок)
+2. Добавь SVG-mask rule в `src/styles/icons.css` по шаблону существующих
+3. Используй как `<i class="bi bi-новая-иконка">`
+
+### Проверка перед PR
+
+Перед каждым коммитом в `src/components/` запускай:
+```bash
+grep -rE '[\U0001F300-\U0001F9FF]' src/components/*.astro
+```
+Если нашло — замени на bi-иконки.
 
 ## 📝 Брендовые правила для текстов
 
