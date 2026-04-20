@@ -162,11 +162,17 @@ import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, WHATSAPP_
 </div>
 
 <script>
+  // Guard: prevent double-init on astro:page-load + direct call
+  let _stickyInited = false;
+
   function initStickyCta() {
+    if (_stickyInited) return;
+    _stickyInited = true;
+
     const hero = document.getElementById('hero');
     const bar = document.getElementById('sticky-bar');
     const bubble = document.getElementById('sticky-bubble');
-    const closeBtn = document.getElementById('sticky-close');
+    const closeBtn = bar?.querySelector<HTMLButtonElement>('#sticky-close');
     const desktopSticky = document.getElementById('desktop-sticky');
     const desktopToggle = document.getElementById('desktop-bubble-toggle');
     const desktopPanel = document.getElementById('desktop-bubble-panel');
@@ -175,21 +181,22 @@ import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, WHATSAPP_
     // Показывается после скролла 480px, скрывается кликом на крест (sessionStorage)
     if (bar && bar.hasAttribute('data-sticky-bar-v2') && window.innerWidth < 768) {
       const DISMISS_KEY = 'ac_sticky_v2_dismissed';
-      const dismissed = sessionStorage.getItem(DISMISS_KEY) === '1';
       let shown = false;
 
       function showBar() {
-        if (shown || dismissed) return;
+        // Re-read sessionStorage each time so dismiss is always respected
+        if (shown || sessionStorage.getItem(DISMISS_KEY) === '1') return;
         shown = true;
         bar.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
         bar.removeAttribute('inert');
       }
       function hideBar() {
+        shown = false;
         bar.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
         bar.setAttribute('inert', '');
       }
 
-      if (!dismissed) {
+      if (sessionStorage.getItem(DISMISS_KEY) !== '1') {
         const onScroll = () => {
           if (window.scrollY > 480) {
             showBar();
