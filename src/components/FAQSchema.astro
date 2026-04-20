@@ -1,0 +1,31 @@
+---
+/**
+ * FAQSchema — JSON-LD FAQPage из src/data/faq.ts.
+ *
+ * Без UI — только один <script type="application/ld+json"> в <head>/теле.
+ * Подключён в LandingLayout.astro — работает на всех лендингах автоматически.
+ * На главной уже есть свой SchemaOrg.astro с FAQPage — чтобы не дублировать,
+ * этот компонент НЕ включается в Base.astro / index.astro.
+ *
+ * Эффект:
+ *  - Rich-snippet accordion в Google/Yandex SERP → +CTR
+ *  - Попадание в AI-ответы (Яндекс Нейро, Google AI Overview, ChatGPT)
+ */
+
+import { faqFlat } from '../data/faq';
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqFlat.map((item) => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: item.a,
+    },
+  })),
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
