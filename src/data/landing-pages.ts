@@ -46,6 +46,7 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь на август', description: 'Смены августа 2026 в Подмосковье', url: '/lager-na-avgust-podmoskove', icon: 'bi-sun' },
 
   // 💰 Коммерческие
+  { title: 'Цены на смены 2026', description: 'Стоимость всех смен, что входит', url: '/ceny', icon: 'bi-coin' },
   { title: 'Купить путёвку в лагерь', description: 'Оплата, договор, рассрочка', url: '/kupit-putevku-v-lager', icon: 'bi-credit-card' },
   { title: 'Налоговый вычет 13%', description: 'Калькулятор возврата с путёвки', url: '/nalogovyj-vychet', icon: 'bi-receipt' },
   { title: 'Лагерь недорого', description: 'От 48 000 ₽ за смену, рассрочка', url: '/lager-nedorogo', icon: 'bi-tag' },
