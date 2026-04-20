@@ -1,0 +1,175 @@
+---
+/**
+ * TaxWidget — компактный CTA-виджет для налогового вычета 13%.
+ *
+ * Показывает ориентировочную сумму возврата за самую популярную смену (Смена 2)
+ * и при клике открывает модалку с полным TaxCalculator.
+ *
+ * Работает одинаково на десктопе и мобилке (модалка адаптивная).
+ *
+ * Props:
+ *   - variant: 'card' | 'compact'  (по умолчанию 'card')
+ *     - card     — большая карточка для правой колонки Journey
+ *     - compact  — строчка для встраивания в текст статьи / FAQ
+ *
+ * Метрика:
+ *   - Я.Метрика (ID 96499295): reachGoal 'tax_widget_click', 'tax_widget_modal_open'
+ *   - Top.Mail.Ru (VK Pixel, ID 3755202): reachGoal 'tax_widget_click'
+ *   - data-атрибуты: data-ya-goal="tax-widget-open"
+ */
+
+import TaxCalculator from './TaxCalculator.astro';
+
+interface Props {
+  variant?: 'card' | 'compact';
+}
+
+const { variant = 'card' } = Astro.props;
+
+// Расчёт для Смены 2 (самая популярная) — синхронизировано с TaxCalculator:
+//   price = 95000, days = 14
+//   residential = 3800 × 14 = 53 200
+//   edu = 95000 - 53200 = 41 800
+//   base = min(41800, 110000) = 41 800
+//   deduction = round(41800 × 0.13, to 100) = 5 400
+const SHIFT2_DEDUCTION_DISPLAY = '~5 400 ₽';
+const SHIFT2_PRICE = '95 000 ₽';
+const SHIFT2_DAYS = 14;
+---
+
+{variant === 'card' && (
+  <button
+    type="button"
+    id="tax-widget-trigger"
+    data-ya-goal="tax-widget-open"
+    aria-label="Открыть калькулятор налогового вычета 13%"
+    class="group block w-full text-left rounded-[16px] border border-orange-200 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-50 p-5 md:p-6 shadow-[0_4px_20px_rgba(249,115,22,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_28px_rgba(249,115,22,0.18)] hover:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2"
+  >
+    <div class="flex items-start gap-3">
+      <div class="flex h-10 w-10 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
+        <i class="bi bi-receipt text-[20px] md:text-[22px] text-orange-600"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="text-[11px] md:text-[12px] font-bold uppercase tracking-wider text-orange-700">
+          Налоговый вычет 13%
+        </div>
+        <div class="mt-1 text-[14px] md:text-[15px] leading-[1.4] text-slate-700">
+          Возврат за самую популярную <b>Смену 2</b> (14 дней, {SHIFT2_PRICE})
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4 flex items-baseline justify-between gap-2 rounded-[12px] bg-white/70 px-4 py-3 border border-orange-100">
+      <span class="text-[12px] md:text-[13px] text-slate-500">Ориентировочно:</span>
+      <span class="text-[24px] md:text-[28px] font-bold leading-none text-orange-600 tabular-nums">
+        {SHIFT2_DEDUCTION_DISPLAY}
+      </span>
+    </div>
+
+    <div class="mt-4 inline-flex items-center gap-2 text-[14px] md:text-[15px] font-semibold text-orange-600 group-hover:text-orange-700 transition-colors">
+      <i class="bi bi-calculator-fill text-[16px]"></i>
+      <span>Рассчитать точно и посмотреть остальные смены</span>
+      <i class="bi bi-arrow-right text-[16px] transition-transform group-hover:translate-x-0.5"></i>
+    </div>
+  </button>
+)}
+
+{variant === 'compact' && (
+  <button
+    type="button"
+    id="tax-widget-trigger"
+    data-ya-goal="tax-widget-open"
+    aria-label="Открыть калькулятор налогового вычета 13%"
+    class="inline-flex items-center gap-2 rounded-[10px] border border-orange-200 bg-orange-50 px-4 py-2.5 text-[14px] font-semibold text-orange-700 transition hover:bg-orange-100 hover:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
+  >
+    <i class="bi bi-receipt text-[16px]"></i>
+    <span>Вернуть 13% с путёвки (~5 400 ₽ за Смену 2)</span>
+    <i class="bi bi-arrow-right-short text-[18px]"></i>
+  </button>
+)}
+
+<!-- МОДАЛКА (рендерится один раз на странице) -->
+<div
+  id="tax-widget-modal"
+  class="fixed inset-0 z-[90] hidden items-start md:items-center justify-center p-0 md:p-4 bg-slate-900/60 backdrop-blur-sm"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="tax-widget-modal-title"
+>
+  <div
+    id="tax-widget-modal-inner"
+    class="relative w-full md:max-w-[760px] max-h-[100dvh] md:max-h-[92dvh] overflow-y-auto bg-white md:rounded-[16px] shadow-2xl"
+  >
+    <!-- Верхняя плашка с крестиком (sticky) -->
+    <div class="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-slate-100 bg-white/95 backdrop-blur px-4 md:px-6 py-3">
+      <h3 id="tax-widget-modal-title" class="text-[16px] md:text-[18px] font-bold text-slate-900 flex items-center gap-2">
+        <i class="bi bi-receipt text-orange-600"></i>
+        Калькулятор налогового вычета
+      </h3>
+      <button
+        type="button"
+        id="tax-widget-close"
+        aria-label="Закрыть"
+        class="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400"
+      >
+        <i class="bi bi-x-lg text-[18px]"></i>
+      </button>
+    </div>
+
+    <!-- Содержимое -->
+    <div class="px-0 pb-4">
+      <TaxCalculator variant="full" title="Посчитайте возврат по вашей смене" />
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+  (function () {
+    const triggers = document.querySelectorAll('#tax-widget-trigger');
+    const modal = document.getElementById('tax-widget-modal');
+    const closeBtn = document.getElementById('tax-widget-close');
+    if (!modal) return;
+
+    function sendMetrika(goal) {
+      try {
+        if (typeof window.ym !== 'undefined') window.ym(96499295, 'reachGoal', goal);
+      } catch (e) {}
+      try {
+        if (window._tmr && typeof window._tmr.push === 'function') {
+          window._tmr.push({ type: 'reachGoal', id: 3755202, value: 100, goal: goal });
+        }
+      } catch (e) {}
+    }
+
+    function openModal() {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+      sendMetrika('tax_widget_click');
+      sendMetrika('tax_widget_modal_open');
+      // Триггер пересчёта TaxCalculator при открытии (на случай если селект ещё не проинициализирован)
+      const sel = document.getElementById('tc-shift');
+      if (sel) sel.dispatchEvent(new Event('change'));
+    }
+
+    function closeModal() {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.style.overflow = '';
+      sendMetrika('tax_widget_modal_close');
+    }
+
+    triggers.forEach((t) => t.addEventListener('click', openModal));
+    closeBtn?.addEventListener('click', closeModal);
+
+    // Клик по backdrop закрывает
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    // Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+    });
+  })();
+</script>

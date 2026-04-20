@@ -1,0 +1,253 @@
+---
+/**
+ * Централизованный JSON-LD для главной страницы aidacamp.ru.
+ *
+ * Включает:
+ *  - Organization (бренд АйДаКемп)
+ *  - SummerCamp (LocalBusiness subtype) с адресом, контактами, AggregateRating
+ *  - ItemList из Event (смены из data/shifts.ts)
+ *  - FAQPage (ключевые вопросы родителей)
+ *  - BreadcrumbList
+ *
+ * Валидатор: https://search.google.com/test/rich-results + Яндекс.Вебмастер → Инструменты → Валидатор.
+ */
+
+import { mainShifts, shortShifts, type Shift } from '../data/shifts';
+import {
+  PHONE_MAIN,
+  PHONE_MOBILE,
+  EMAIL,
+  WHATSAPP_URL,
+  TELEGRAM_URL,
+  STAT_RATING,
+} from '../data/contacts';
+
+const SITE_URL = 'https://aidacamp.ru';
+const LOGO_URL = `${SITE_URL}/images/logo-aidacamp.svg`; // если нет — Astro/браузер просто не покажет лого
+const HERO_IMAGE = `${SITE_URL}/images/hero-custom-2026-04-07-1100.avif`;
+
+// Цена в рублях из строки "74 900 ₽" → "74900"
+const parsePrice = (p: string) => p.replace(/[^\d]/g, '');
+
+const allShifts: Shift[] = [...mainShifts, ...shortShifts];
+
+const organization = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  '@id': `${SITE_URL}/#organization`,
+  name: 'АйДаКемп',
+  alternateName: ['AidaCamp', 'IT-лагерь АйДаКемп'],
+  url: SITE_URL,
+  logo: LOGO_URL,
+  email: EMAIL,
+  telephone: PHONE_MAIN,
+  sameAs: [
+    WHATSAPP_URL,
+    TELEGRAM_URL,
+  ],
+  contactPoint: [
+    {
+      '@type': 'ContactPoint',
+      telephone: PHONE_MAIN,
+      contactType: 'customer service',
+      areaServed: 'RU',
+      availableLanguage: ['Russian'],
+    },
+    {
+      '@type': 'ContactPoint',
+      telephone: PHONE_MOBILE,
+      contactType: 'customer support',
+      areaServed: 'RU',
+      availableLanguage: ['Russian'],
+    },
+  ],
+};
+
+const summerCamp = {
+  '@context': 'https://schema.org',
+  '@type': ['SummerCamp', 'LocalBusiness'],
+  '@id': `${SITE_URL}/#camp`,
+  name: 'АйДаКемп — детский IT-лагерь',
+  description:
+    'Летний IT-лагерь для детей 7–14 лет в Подмосковье. Python, AI, Minecraft, бассейн. Каждый ребёнок уезжает с собственным проектом.',
+  url: SITE_URL,
+  image: HERO_IMAGE,
+  telephone: PHONE_MAIN,
+  email: EMAIL,
+  priceRange: '48 000 ₽ – 95 000 ₽',
+  address: {
+    '@type': 'PostalAddress',
+    addressLocality: 'Наро-Фоминский городской округ',
+    addressRegion: 'Московская область',
+    addressCountry: 'RU',
+    streetAddress: 'территория «Санаторий Изумруд»',
+  },
+  areaServed: [
+    { '@type': 'City', name: 'Москва' },
+    { '@type': 'AdministrativeArea', name: 'Московская область' },
+  ],
+  aggregateRating: {
+    '@type': 'AggregateRating',
+    ratingValue: STAT_RATING,
+    bestRating: '5',
+    worstRating: '1',
+    ratingCount: '40',
+    reviewCount: '40',
+  },
+  parentOrganization: { '@id': `${SITE_URL}/#organization` },
+  sameAs: [
+    WHATSAPP_URL,
+    TELEGRAM_URL,
+  ],
+};
+
+const eventsList = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Смены АйДаКемп 2026',
+  itemListElement: allShifts.map((shift, idx) => ({
+    '@type': 'ListItem',
+    position: idx + 1,
+    item: {
+      '@type': 'EducationEvent',
+      '@id': `${SITE_URL}/#event-${shift.id}`,
+      name: `${shift.name} — АйДаКемп 2026 (${shift.duration})`,
+      description: shift.description,
+      startDate: shift.startDate,
+      endDate: shift.endDate,
+      eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+      eventStatus: 'https://schema.org/EventScheduled',
+      location: {
+        '@type': 'Place',
+        name: 'Санаторий Изумруд',
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: 'Наро-Фоминский городской округ',
+          addressRegion: 'Московская область',
+          addressCountry: 'RU',
+        },
+      },
+      organizer: { '@id': `${SITE_URL}/#organization` },
+      image: HERO_IMAGE,
+      offers: {
+        '@type': 'Offer',
+        price: parsePrice(shift.price),
+        priceCurrency: 'RUB',
+        availability:
+          shift.free > 0
+            ? 'https://schema.org/InStock'
+            : 'https://schema.org/SoldOut',
+        url: `${SITE_URL}/#shifts`,
+        validFrom: '2026-01-01',
+      },
+      audience: {
+        '@type': 'PeopleAudience',
+        suggestedMinAge: 7,
+        suggestedMaxAge: 14,
+      },
+    },
+  })),
+};
+
+// Ключевые FAQ — 7 самых важных для сниппета и AI-цитирования
+const faqPage = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'Сколько стоит смена в лагере АйДаКемп?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Стоимость смены — от 48 000 ₽ за 7 дней до 95 000 ₽ за 14 дней. В стоимость включены проживание, питание 5 раз в день, программа с преподавателями, бассейн и досуг. Есть налоговый вычет 13%. Смены июнь–август 2026.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Для детей какого возраста лагерь?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Принимаем детей 7–14 лет. Программа адаптируется по возрастам: 7–9 лет — Scratch и Minecraft Education, 10–12 лет — Python и игры, 13–14 лет — AI, 3D и сложные проекты.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Где находится лагерь?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Лагерь расположен в 66 км от Москвы, Наро-Фоминский городской округ Московской области, территория санатория «Изумруд». Трансфер от метро — опция.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Есть ли медик в лагере?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Медработник находится на территории 24/7 всю смену. В случае заболевания осматривает ребёнка и связывается с родителями. Территория огорожена, КПП с охраной.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Можно ли связаться с ребёнком во время смены?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Да. Связь через вожатых и администрацию. Ежедневные фото и сообщения в родительском чате. Телефон ребёнка выдаётся по расписанию или при необходимости.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Нужно ли брать с собой ноутбук?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Нет. В лагере есть всё оборудование: компьютеры, программное обеспечение, материалы для творческих проектов. Ребёнок приезжает с личными вещами, остальное обеспечиваем мы.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'С чем ребёнок уезжает из лагеря?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'С собственным IT-проектом: игрой, ботом, модом, 3D-моделью или приложением — в зависимости от выбранной программы и возраста. Плюс навыки программирования, опыт командной работы и новые друзья.',
+      },
+    },
+  ],
+};
+
+const breadcrumbs = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    {
+      '@type': 'ListItem',
+      position: 1,
+      name: 'Главная',
+      item: SITE_URL,
+    },
+  ],
+};
+
+const webSite = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  '@id': `${SITE_URL}/#website`,
+  url: SITE_URL,
+  name: 'АйДаКемп',
+  inLanguage: 'ru-RU',
+  publisher: { '@id': `${SITE_URL}/#organization` },
+};
+
+// Одним @graph — проще для парсеров и убирает дубли @context
+const graph = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    organization,
+    summerCamp,
+    webSite,
+    eventsList,
+    faqPage,
+    breadcrumbs,
+  ],
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(graph)} />

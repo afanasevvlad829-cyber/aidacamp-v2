@@ -1,0 +1,239 @@
+---
+/**
+ * TaxCalculator — интерактивный калькулятор налогового вычета за путёвку в лагерь.
+ *
+ * Формула:
+ *   residential_part = 3 800 ₽ × кол-во дней смены
+ *     (наша внутренняя себестоимость проживания + питания)
+ *   educational_part = стоимость путёвки − residential_part
+ *   deduction_base = min(educational_part, 110 000 ₽)
+ *     (лимит НК РФ на обучение одного ребёнка в год)
+ *   возврат = deduction_base × 13%
+ *
+ * Props:
+ *   - variant: 'full' | 'compact' (по умолчанию 'full')
+ *   - title: заголовок над калькулятором (по умолчанию "Калькулятор налогового вычета")
+ */
+
+interface Props {
+  variant?: 'full' | 'compact';
+  title?: string;
+}
+
+const { variant = 'full', title = 'Калькулятор налогового вычета' } = Astro.props;
+
+const shifts = [
+  { id: 's1',   label: 'Смена 1 — 30 мая – 8 июня, 10 дней',  price: 74900, days: 10 },
+  { id: 's21',  label: 'Смена 2.1 — 10 – 16 июня, 7 дней',    price: 48000, days: 7  },
+  { id: 's2',   label: 'Смена 2 — 10 – 23 июня, 14 дней',     price: 95000, days: 14, popular: true },
+  { id: 's22',  label: 'Смена 2.2 — 16 – 23 июня, 8 дней',    price: 65000, days: 8  },
+  { id: 's3',   label: 'Смена 3 — 3 – 15 августа, 13 дней',   price: 89400, days: 13 },
+  { id: 's4',   label: 'Смена 4 — 17 – 26 августа, 10 дней',  price: 69600, days: 10 },
+];
+---
+
+<section class="tax-calc mx-auto my-8 max-w-[720px] rounded-[16px] border border-orange-100 bg-white p-6 md:p-8 shadow-[0_4px_20px_rgba(249,115,22,0.08)]">
+  <div class="mb-5 flex items-center gap-2">
+    <div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div>
+    <h3 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
+      {title}
+    </h3>
+  </div>
+
+  <p class="mb-5 text-[15px] leading-[1.6] text-slate-600">
+    Путёвка в АйДаКемп частично квалифицируется как оплата обучения ребёнка —
+    а это право на налоговый вычет 13%. Калькулятор покажет ориентировочную сумму возврата.
+  </p>
+
+  <!-- Выбор смены -->
+  <div class="mb-5">
+    <label for="tc-shift" class="mb-2 block text-[13px] font-semibold text-slate-700 uppercase tracking-wide">
+      Выберите смену 2026
+    </label>
+    <select
+      id="tc-shift"
+      class="w-full rounded-[10px] border border-slate-300 px-4 py-3 text-[15px] text-slate-900 focus:border-orange-500 focus:outline-none"
+    >
+      <option value="" disabled>— Выберите смену —</option>
+      {shifts.map((s) => (
+        <option
+          value={s.id}
+          data-price={s.price}
+          data-days={s.days}
+          selected={s.popular}
+        >
+          {s.label} — {s.price.toLocaleString('ru-RU')} ₽{s.popular ? ' ⭐' : ''}
+        </option>
+      ))}
+      <option value="custom" data-price="0" data-days="0">
+        Другая / ввести вручную
+      </option>
+    </select>
+  </div>
+
+  <!-- Ручной ввод (скрыт по умолчанию) -->
+  <div id="tc-manual" class="mb-5 hidden grid grid-cols-2 gap-3">
+    <div>
+      <label for="tc-price" class="mb-2 block text-[13px] font-semibold text-slate-700 uppercase tracking-wide">
+        Стоимость, ₽
+      </label>
+      <input
+        type="number"
+        id="tc-price"
+        min="0"
+        step="1000"
+        placeholder="75000"
+        class="w-full rounded-[10px] border border-slate-300 px-4 py-3 text-[15px] text-slate-900 focus:border-orange-500 focus:outline-none"
+      />
+    </div>
+    <div>
+      <label for="tc-days" class="mb-2 block text-[13px] font-semibold text-slate-700 uppercase tracking-wide">
+        Дней в смене
+      </label>
+      <input
+        type="number"
+        id="tc-days"
+        min="1"
+        max="30"
+        placeholder="10"
+        class="w-full rounded-[10px] border border-slate-300 px-4 py-3 text-[15px] text-slate-900 focus:border-orange-500 focus:outline-none"
+      />
+    </div>
+  </div>
+
+  <!-- Результат -->
+  <div class="rounded-[14px] bg-gradient-to-br from-orange-50 to-amber-50 p-5 border border-orange-100">
+    <div class="mb-3 flex items-baseline justify-between gap-2">
+      <span class="text-[14px] text-slate-600">Ориентировочный возврат:</span>
+      <span id="tc-deduction" class="text-[32px] md:text-[36px] font-bold leading-none text-orange-600">
+        ~5 400 ₽
+      </span>
+    </div>
+    <div class="text-[14px] text-slate-600">
+      Итого за смену:
+      <b id="tc-net" class="text-slate-900">89 600 ₽</b>
+      <span class="text-slate-400">(путёвка минус возврат)</span>
+    </div>
+  </div>
+
+  {variant === 'full' && (
+    <details class="mt-4 text-[14px] text-slate-600">
+      <summary class="cursor-pointer font-semibold text-orange-600 hover:text-orange-700">
+        Как считается (разбор по частям) ↓
+      </summary>
+      <ul class="mt-3 flex flex-col gap-2 pl-1">
+        <li>
+          <span class="text-slate-500">Стоимость путёвки:</span>
+          <b id="tc-price-out" class="text-slate-900">95 000 ₽</b>
+        </li>
+        <li>
+          <span class="text-slate-500">Бытовая часть (проживание + 5-разовое питание, 3 800 ₽/день):</span>
+          <b id="tc-resid-out" class="text-slate-900">53 200 ₽</b>
+        </li>
+        <li>
+          <span class="text-slate-500">Образовательная часть (IT-программа, преподаватели, материалы):</span>
+          <b id="tc-edu-out" class="text-slate-900">41 800 ₽</b>
+        </li>
+        <li>
+          <span class="text-slate-500">База для вычета (лимит НК РФ — 110 000 ₽/год на одного ребёнка):</span>
+          <b id="tc-base-out" class="text-slate-900">41 800 ₽</b>
+        </li>
+        <li class="mt-2 text-slate-700">
+          <span class="text-orange-600 font-semibold">13% × база = возврат:</span>
+          <b id="tc-deduction-out" class="text-orange-700">5 434 ₽</b>
+        </li>
+      </ul>
+    </details>
+  )}
+
+  <!-- Дисклеймеры -->
+  <div class="mt-5 flex flex-col gap-2 text-[13px] text-slate-500 leading-[1.5]">
+    <p>
+      ⓘ Предварительный расчёт — без учёта дополнительных скидок, сертификатов и индивидуальных акций.
+      Точная сумма возврата зависит от уплаченного вами НДФЛ за год и пакета документов.
+    </p>
+    <p>
+      📄 Договор, акт, платёжное поручение и копию лицензии оформляем <b>по запросу</b> после оплаты путёвки.
+    </p>
+    <p>
+      📅 Декларация 3-НДФЛ подаётся в следующем году за годом оплаты (смена лета 2026 → декларация в 2027).
+      Альтернатива — оформить вычет через работодателя в том же году.
+    </p>
+  </div>
+
+  <!-- CTA -->
+  <a
+    href="/kupit-putevku-v-lager/"
+    class="mt-5 inline-flex items-center gap-2 rounded-[12px] bg-orange-500 px-6 py-3 text-[15px] font-semibold text-white transition hover:bg-orange-600 hover:-translate-y-0.5 shadow-[0_4px_16px_rgba(249,115,22,0.3)]"
+  >
+    Купить путёвку в лагерь →
+  </a>
+</section>
+
+<script is:inline>
+  (function () {
+    const sel = document.getElementById('tc-shift');
+    const manual = document.getElementById('tc-manual');
+    const priceEl = document.getElementById('tc-price');
+    const daysEl = document.getElementById('tc-days');
+
+    const RESIDENTIAL_PER_DAY = 3800;
+    const DEDUCTION_LIMIT_CHILD = 110000;
+    const DEDUCTION_RATE = 0.13;
+
+    const fmt = (n) => n.toLocaleString('ru-RU');
+    const roundTo100 = (n) => Math.round(n / 100) * 100;
+
+    function recalc() {
+      let price, days;
+      const selected = sel.selectedOptions[0];
+      const isCustom = sel.value === 'custom';
+
+      manual.classList.toggle('hidden', !isCustom);
+      manual.classList.toggle('grid', isCustom);
+
+      if (isCustom) {
+        price = parseInt(priceEl.value) || 0;
+        days = parseInt(daysEl.value) || 0;
+      } else {
+        price = parseInt(selected?.dataset.price) || 0;
+        days = parseInt(selected?.dataset.days) || 0;
+      }
+
+      if (!price || !days) {
+        ['tc-deduction', 'tc-net', 'tc-price-out', 'tc-resid-out', 'tc-edu-out', 'tc-base-out', 'tc-deduction-out']
+          .forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = '—';
+          });
+        return;
+      }
+
+      const residential = RESIDENTIAL_PER_DAY * days;
+      const edu = Math.max(0, price - residential);
+      const base = Math.min(edu, DEDUCTION_LIMIT_CHILD);
+      const deduction = roundTo100(base * DEDUCTION_RATE);
+      const net = price - deduction;
+
+      const set = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      };
+
+      set('tc-deduction', '~' + fmt(deduction) + ' ₽');
+      set('tc-net', fmt(net) + ' ₽');
+      set('tc-price-out', fmt(price) + ' ₽');
+      set('tc-resid-out', fmt(residential) + ' ₽');
+      set('tc-edu-out', fmt(edu) + ' ₽');
+      set('tc-base-out', fmt(base) + ' ₽' + (edu > DEDUCTION_LIMIT_CHILD ? ' (лимит НК)' : ''));
+      set('tc-deduction-out', fmt(Math.round(base * DEDUCTION_RATE)) + ' ₽');
+    }
+
+    sel?.addEventListener('change', recalc);
+    priceEl?.addEventListener('input', recalc);
+    daysEl?.addEventListener('input', recalc);
+
+    // Initial render
+    recalc();
+  })();
+</script>
