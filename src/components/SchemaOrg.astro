@@ -32,6 +32,14 @@ const HERO_IMAGE = `${SITE_URL}/images/hero-custom-2026-04-07-1100.avif`;
 // Цена в рублях из строки "74 900 ₽" → "74900"
 const parsePrice = (p: string) => p.replace(/[^\d]/g, '');
 
+const allShiftsForPrice = [...mainShifts, ...shortShifts];
+const prices = allShiftsForPrice.map(s => parseInt(parsePrice(s.price), 10)).filter(Boolean);
+const minPrice = Math.min(...prices).toLocaleString('ru-RU');
+const maxPrice = Math.max(...prices).toLocaleString('ru-RU');
+const priceRange = `${minPrice} ₽ – ${maxPrice} ₽`;
+
+const reviewCount = reviews.length.toString();
+
 // "2 февраля 2026" → "2026-02-02"
 const MONTHS: Record<string, string> = {
   января: '01', февраля: '02', марта: '03', апреля: '04', мая: '05', июня: '06',
@@ -92,7 +100,7 @@ const summerCamp = {
   image: HERO_IMAGE,
   telephone: PHONE_MAIN,
   email: EMAIL,
-  priceRange: '48 000 ₽ – 95 000 ₽',
+  priceRange,
   address: {
     '@type': 'PostalAddress',
     addressLocality: 'Наро-Фоминский городской округ',
@@ -109,8 +117,8 @@ const summerCamp = {
     ratingValue: STAT_RATING,
     bestRating: '5',
     worstRating: '1',
-    ratingCount: '40',
-    reviewCount: '40',
+    ratingCount: reviewCount,
+    reviewCount: reviewCount,
   },
   parentOrganization: { '@id': `${SITE_URL}/#organization` },
   sameAs: [
