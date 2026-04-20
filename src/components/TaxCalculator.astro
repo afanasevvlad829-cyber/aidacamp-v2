@@ -15,6 +15,8 @@
  *   - title: заголовок над калькулятором (по умолчанию "Калькулятор налогового вычета")
  */
 
+import { mainShifts, shortShifts } from '../data/shifts';
+
 interface Props {
   variant?: 'full' | 'compact';
   title?: string;
@@ -22,14 +24,27 @@ interface Props {
 
 const { variant = 'full', title = 'Калькулятор налогового вычета' } = Astro.props;
 
-const shifts = [
-  { id: 's1',   label: 'Смена 1 — 30 мая – 8 июня, 10 дней',  price: 74900, days: 10 },
-  { id: 's21',  label: 'Смена 2.1 — 10 – 16 июня, 7 дней',    price: 48000, days: 7  },
-  { id: 's2',   label: 'Смена 2 — 10 – 23 июня, 14 дней',     price: 95000, days: 14, popular: true },
-  { id: 's22',  label: 'Смена 2.2 — 16 – 23 июня, 8 дней',    price: 65000, days: 8  },
-  { id: 's3',   label: 'Смена 3 — 3 – 15 августа, 13 дней',   price: 89400, days: 13 },
-  { id: 's4',   label: 'Смена 4 — 17 – 26 августа, 10 дней',  price: 69600, days: 10 },
+// Единый источник правды — data/shifts.ts.
+// Парсим цену из строки "74 900 ₽" и дни из "10 дней" чтобы не дублировать числа.
+const parsePrice = (s: string) => parseInt(s.replace(/[^\d]/g, ''), 10) || 0;
+const parseDays = (s: string) => parseInt(s, 10) || 0;
+
+// Порядок как в data/shifts.allShifts: 1, 2, 2.1, 2.2, 3, 4.
+const orderedShifts = [
+  mainShifts[0],
+  mainShifts[1],
+  ...shortShifts,
+  mainShifts[2],
+  mainShifts[3],
 ];
+
+const shifts = orderedShifts.map((s) => ({
+  id: s.id,
+  label: `${s.name} — ${s.dates}, ${s.duration}`,
+  price: parsePrice(s.price),
+  days: parseDays(s.duration),
+  popular: s.popular ?? false,
+}));
 ---
 
 <section class="tax-calc mx-auto my-8 max-w-[720px] rounded-[16px] border border-orange-100 bg-white p-6 md:p-8 shadow-[0_4px_20px_rgba(249,115,22,0.08)]">
@@ -50,9 +65,11 @@ const shifts = [
     <label for="tc-shift" class="mb-2 block text-[13px] font-semibold text-slate-700 uppercase tracking-wide">
       Выберите смену 2026
     </label>
+    <!-- appearance-none + кастомный chevron справа = одинаковое оформление во всех браузерах -->
+    <div class="relative">
     <select
       id="tc-shift"
-      class="w-full rounded-[10px] border border-slate-300 px-4 py-3 text-[15px] text-slate-900 focus:border-orange-500 focus:outline-none"
+      class="w-full appearance-none rounded-[10px] border border-slate-300 bg-white px-4 py-3 pr-10 text-[15px] text-slate-900 focus:border-orange-500 focus:outline-none"
     >
       <option value="" disabled>— Выберите смену —</option>
       {shifts.map((s) => (
@@ -62,13 +79,18 @@ const shifts = [
           data-days={s.days}
           selected={s.popular}
         >
-          {s.label} — {s.price.toLocaleString('ru-RU')} ₽{s.popular ? ' ⭐' : ''}
+          {s.label} — {s.price.toLocaleString('ru-RU')} ₽{s.popular ? ' · популярная' : ''}
         </option>
       ))}
       <option value="custom" data-price="0" data-days="0">
         Другая / ввести вручную
       </option>
     </select>
+      <i
+        class="bi bi-chevron-down pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[14px] text-slate-500"
+        aria-hidden="true"
+      ></i>
+    </div>
   </div>
 
   <!-- Ручной ввод (скрыт по умолчанию) -->
@@ -161,13 +183,22 @@ const shifts = [
     </p>
   </div>
 
-  <!-- CTA -->
-  <a
-    href="/kupit-putevku-v-lager/"
-    class="mt-5 inline-flex items-center gap-2 rounded-[12px] bg-orange-500 px-6 py-3 text-[15px] font-semibold text-white transition hover:bg-orange-600 hover:-translate-y-0.5 shadow-[0_4px_16px_rgba(249,115,22,0.3)]"
+  <!--
+    CTA «Купить смену» — открывает ShiftInfoModal для выбранной в dropdown смены
+    (возраст + описание + расписание), как клик по строке в ShiftOccupancy.
+    Flow: select смена → клик → shift-modal-open event → ShiftInfoModal → внутри него
+    есть «Выбрать смену» → открывает ShiftBookModal с формой бронирования.
+
+    Если смена = «custom» (ручной ввод) — fallback на /kupit-putevku-v-lager/.
+  -->
+  <button
+    type="button"
+    id="tc-buy-btn"
+    data-analytics-goal="tc_buy_shift"
+    class="mt-5 inline-flex items-center gap-2 rounded-[12px] bg-orange-500 px-6 py-3 text-[15px] font-semibold text-white transition hover:bg-orange-600 hover:-translate-y-0.5 shadow-[0_4px_16px_rgba(249,115,22,0.3)] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none disabled:hover:translate-y-0"
   >
-    Купить путёвку в лагерь →
-  </a>
+    Купить смену →
+  </button>
 </section>
 
 <script is:inline>
@@ -232,6 +263,24 @@ const shifts = [
     sel?.addEventListener('change', recalc);
     priceEl?.addEventListener('input', recalc);
     daysEl?.addEventListener('input', recalc);
+
+    // CTA «Купить смену» → открывает ShiftInfoModal для выбранной смены
+    // (или /kupit-putevku-v-lager/ если выбран «Другая / ввести вручную»).
+    const buyBtn = document.getElementById('tc-buy-btn');
+    buyBtn?.addEventListener('click', () => {
+      const shiftId = sel?.value;
+      if (!shiftId || shiftId === 'custom') {
+        window.location.href = '/kupit-putevku-v-lager/';
+        return;
+      }
+      // Совпадает с контрактом из src/scripts/shift-modal.ts:222
+      const ev = new CustomEvent('shift-modal-open', {
+        detail: { shiftId: shiftId, tab: 'description' }
+      });
+      document.dispatchEvent(ev);
+      // Аналитика (analytics goal через acTrack, как и другие кнопки)
+      window.acTrack && window.acTrack('tc_buy_shift', { shiftId: shiftId });
+    });
 
     // Initial render
     recalc();
