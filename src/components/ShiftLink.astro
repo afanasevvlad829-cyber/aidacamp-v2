@@ -1,0 +1,35 @@
+---
+/**
+ * ShiftLink — кликабельная ссылка «Смена N» в теле текста.
+ * Открывает ShiftInfoModal через shift-modal-open event (контракт src/scripts/shift-modal.ts).
+ *
+ * Использование:
+ *   <ShiftLink shiftId="shift-2">Смена 2</ShiftLink>
+ *   <ShiftLink shiftId="shift-2-1">Смена 2.1</ShiftLink>
+ *
+ * В списках LandingTwoCol можно использовать helper `shiftLinkHtml(id, text)`
+ * из '../lib/shift-link.ts' — возвращает HTML-строку с тем же data-атрибутом.
+ *
+ * Делегированный handler живёт в src/components/GlobalShiftLinkHandler.astro —
+ * включён в LandingLayout.astro, ловит все [data-shift-link] клики.
+ *
+ * Правило (CLAUDE.md): любое упоминание «Смена N» в контенте сайта должно быть
+ * этой ссылкой — чтобы пользователь мог в один клик посмотреть детали.
+ */
+
+interface Props {
+  shiftId: string;
+  /** Отдельная подсказка при hover. По умолчанию «Подробнее о смене». */
+  title?: string;
+}
+
+const { shiftId, title = 'Подробнее о смене' } = Astro.props;
+---
+
+<button
+  type="button"
+  data-shift-link
+  data-shift-id={shiftId}
+  title={title}
+  class="inline font-semibold text-orange-700 underline decoration-orange-300 decoration-dotted underline-offset-[3px] hover:text-orange-800 hover:decoration-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-300/40 rounded transition-colors"
+><slot /></button>

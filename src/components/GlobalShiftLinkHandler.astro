@@ -1,0 +1,35 @@
+---
+/**
+ * Глобальный делегированный click-handler для всех [data-shift-link] —
+ * ловит клики по ShiftLink-ам в любой части страницы и открывает ShiftInfoModal
+ * через event shift-modal-open (контракт src/scripts/shift-modal.ts:222).
+ *
+ * Встраивается один раз в LandingLayout.astro — работает для всех лендингов.
+ * На главной — через Base.astro или index.astro включать не надо, там уже есть
+ * свои обработчики (но handler идемпотентен — можно и вставить).
+ */
+---
+
+<script>
+  function initShiftLinkHandler() {
+    if ((window as any).__aidacampShiftLinkHandlerBound) return;
+    (window as any).__aidacampShiftLinkHandlerBound = true;
+
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement | null;
+      const link = target?.closest('[data-shift-link]') as HTMLElement | null;
+      if (!link) return;
+      const shiftId = link.getAttribute('data-shift-id') || '';
+      if (!shiftId) return;
+      e.preventDefault();
+      document.dispatchEvent(
+        new CustomEvent('shift-modal-open', {
+          detail: { shiftId, tab: 'description' },
+        }),
+      );
+      (window as any).acTrack?.('shift_link_click', { shiftId });
+    });
+  }
+  document.addEventListener('astro:page-load', initShiftLinkHandler);
+  initShiftLinkHandler();
+</script>
