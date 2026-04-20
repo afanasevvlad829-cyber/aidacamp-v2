@@ -125,12 +125,21 @@ const ageCountsJson = JSON.stringify({
   }
 
   let awakenTimer = null;
+
+  // Единый source of truth для «выбран ли возраст в текущей сессии» — sessionStorage.
+  // localStorage (AGE_KEY) остаётся только для персонала между визитами, но НЕ
+  // используется как триггер «уже выбрал» (Fix 2026-04-20 — синхронизация
+  // AgeBar ↔ ShiftModal ↔ Shifts.peer-count).
+  function currentAge() {
+    return sessionStorage.getItem('selected_age');
+  }
+
   function showBar() {
     if (isDismissed()) return;
 
-    const selectedAge = localStorage.getItem(AGE_KEY);
+    const selectedAge = currentAge();
     if (selectedAge && AGE_COUNTS[selectedAge]) {
-      // Возраст уже выбран → сразу показываем нудж (фаза 2)
+      // Возраст уже выбран в сессии → сразу показываем нудж (фаза 2)
       showNudge(selectedAge);
     }
     // В любом случае показываем плашку
@@ -141,12 +150,23 @@ const ageCountsJson = JSON.stringify({
     if (!selectedAge) {
       clearTimeout(awakenTimer);
       awakenTimer = setTimeout(() => {
-        if (!localStorage.getItem(AGE_KEY) && !isDismissed()) {
+        if (!currentAge() && !isDismissed()) {
           bar?.classList.add('age-bar-awaken');
         }
       }, 4000);
     }
   }
+
+  // Синхронизация: если возраст выбран в другом месте (ShiftModal) —
+  // AgeBar тоже переключается в nudge-фазу без перезагрузки.
+  document.addEventListener('age-personalize', (e) => {
+    const age = e.detail?.age;
+    if (!age || !AGE_COUNTS[age]) return;
+    if (isDismissed()) return;
+    bar?.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+    bar?.classList.add('translate-y-0', 'opacity-100', 'age-bar-awaken');
+    showNudge(age);
+  });
 
   function hideBar() {
     bar?.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');

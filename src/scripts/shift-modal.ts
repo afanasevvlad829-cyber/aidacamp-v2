@@ -83,8 +83,10 @@ export function initShiftModal() {
     const info = shiftInfo[shift.id];
     infoBody.innerHTML = info ? info.html : '<p class="text-slate-500">Подробности появятся скоро.</p>';
 
-    // Блок возраста: если уже выбран — сразу показываем результат
-    const savedAge = localStorage.getItem('user_age_group') || sessionStorage.getItem('selected_age');
+    // Блок возраста: персонализацию показываем ТОЛЬКО если выбор сделан в этой сессии.
+    // localStorage не читаем — иначе на первом визите сразу вылезает «X ребят
+    // вашего возраста» без реального выбора (Fix 2026-04-20).
+    const savedAge = sessionStorage.getItem('selected_age');
     if (savedAge && Object.values(PEER_COUNTS).some(s => s[savedAge] !== undefined)) {
       showAgePeers(shift.id, savedAge);
     } else {
@@ -110,7 +112,8 @@ export function initShiftModal() {
       localStorage.setItem('user_age_group', age);
       sessionStorage.setItem('selected_age', age);
       showAgePeers(currentShiftId, age);
-      // Синхронизируем AgeBar — если ещё не выбран там
+      // Синхронизируем AgeBar — если ещё не выбран там (Fix 2026-04-20)
+      document.dispatchEvent(new CustomEvent('age-personalize', { detail: { age } }));
       sessionStorage.setItem('age_bar_shown', '1');
       sessionStorage.setItem('age_bar_dismissed', '1');
       if (typeof window.ym !== 'undefined') (window as any).ym(96499295, 'reachGoal', 'age_select');
