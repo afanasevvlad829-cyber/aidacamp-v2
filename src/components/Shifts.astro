@@ -298,8 +298,11 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
   }
 
   function initShiftAgePersonalization() {
-    const saved = localStorage.getItem('user_age_group');
-    if (saved) showPeerCounts(saved);
+    // Fix 2026-04-20: показываем peer-count ТОЛЬКО после явного выбора в сессии
+    // (не читаем из localStorage — иначе на первом заходе показывается "ровесники"
+    // без реального выбора возраста, логика бьётся).
+    const sessionAge = sessionStorage.getItem('selected_age');
+    if (sessionAge) showPeerCounts(sessionAge);
     document.addEventListener('age-personalize', (e: Event) => {
       showPeerCounts((e as CustomEvent<{ age: string }>).detail.age);
     });
