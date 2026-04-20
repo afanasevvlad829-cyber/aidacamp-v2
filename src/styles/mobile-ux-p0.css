@@ -1,0 +1,115 @@
+/*
+ * Mobile UX P0 fixes — 2026-04-20
+ * Цель: закрыть критичные находки UX-аудита (62/100, 8 critical) для мобильных.
+ *  - body 16px + line-height 1.65 (аудит: 14px/1.4 слишком мелко и тесно)
+ *  - светло-серый secondary text (slate-400/500) → #4b5563 (WCAG AA)
+ *  - оранжевый CTA #ff7700 → #c45f00 (WCAG AA 4.5:1 на белом)
+ *  - основной CTA full-width + min-height 48px (Fitts's Law, 81% drop-off)
+ *  - вертикальные отступы секций 8→16px
+ *
+ * Scope: только мобилка (≤ 768px), чтобы не трогать desktop.
+ */
+
+@media (max-width: 768px) {
+  html, body {
+    font-size: 16px;
+    line-height: 1.65;
+  }
+
+  p, li, dd, blockquote {
+    font-size: max(15px, 1em);
+    line-height: 1.6;
+  }
+
+  /* Светло-серый текст → тёмнее (WCAG AA) */
+  .text-slate-400,
+  .text-slate-500,
+  .text-gray-400,
+  .text-gray-500,
+  .text-white\/60,
+  .text-white\/70 {
+    color: #4b5563 !important;
+  }
+  /* На тёмных блоках сохраняем светлый */
+  [class*="bg-dark"] .text-slate-400,
+  [class*="bg-dark"] .text-slate-500,
+  [class*="bg-black"] .text-slate-400,
+  [class*="bg-black"] .text-slate-500,
+  .bg-dark-navy .text-slate-400,
+  .bg-dark-navy .text-slate-500,
+  [class*="from-black"] .text-white\/60,
+  [class*="from-black"] .text-white\/70 {
+    color: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  /* Оранжевый CTA — WCAG AA */
+  .bg-primary,
+  .bg-\[\#ff8a00\],
+  .bg-\[\#ff7700\],
+  .bg-orange-500,
+  .bg-orange-600,
+  button.bg-primary,
+  a.bg-primary {
+    background-color: #c45f00 !important;
+  }
+  .text-primary,
+  .text-\[\#ff8a00\],
+  .text-orange-500,
+  .text-orange-600 {
+    color: #c45f00 !important;
+  }
+  .border-primary,
+  .border-\[\#ff8a00\] {
+    border-color: #c45f00 !important;
+  }
+
+  /* Primary CTA — 48px min-height, в формах/бронировании full-width */
+  a.bg-primary,
+  button.bg-primary,
+  a[class*="bg-orange"],
+  button[class*="bg-orange"] {
+    min-height: 48px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    font-size: 16px;
+  }
+  form a.bg-primary,
+  form button.bg-primary,
+  form button[type="submit"],
+  [class*="booking"] a.bg-primary,
+  [class*="booking"] button.bg-primary,
+  [class*="cta-block"] a.bg-primary,
+  [class*="cta-block"] button.bg-primary {
+    width: 100% !important;
+    justify-content: center;
+  }
+
+  /* Секции ≥16px */
+  section {
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: 16px;
+  }
+  section[class*="hero"],
+  section[class*="min-h-screen"],
+  [class*="hero"] section {
+    padding-top: unset;
+    padding-bottom: unset;
+  }
+
+  /* Заголовки */
+  h1, h2, h3 {
+    line-height: 1.2;
+  }
+  h1 {
+    font-size: clamp(24px, 6vw, 32px);
+  }
+  h2 {
+    font-size: clamp(20px, 5vw, 26px);
+  }
+
+  /* Tap targets */
+  a[role="button"],
+  button:not([class*="w-8"]):not([class*="w-10"]):not([class*="h-8"]):not([class*="h-9"]):not([class*="h-10"]) {
+    min-height: 44px;
+  }
+}

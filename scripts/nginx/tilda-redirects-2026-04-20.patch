@@ -1,0 +1,75 @@
+# Tilda redirects patch — 2026-04-20
+
+## Что добавляется
+
+6 новых 301-редиректов для устаревших Tilda slug-URL, которые сейчас отдают
+**404** на продакшене, но получают клики из Google (по данным GSC за 28 дней):
+
+| URL (404 сейчас) | Clicks/month | Position | Impressions | Куда 301 |
+|---|---|---|---|---|
+| `/letnij-lager-programmirovanie` | 1 | 10.3 | 112 | `/lager-programmirovaniya/` |
+| `/detskij-kompyuternyj-lager-ajdakemp` | 2 | 5.0 | 47 | `/kompyuternyy-lager/` |
+| `/kompyuternyj-lager-dlya-detej-obuchaem-programmirovaniyu-v-podmoskove` | 1 | 11.5 | 63 | `/kompyuternyy-lager/` |
+| `/location` | 1 | 5.5 | 50 | `/#contacts` |
+| `/media` | 1 | 9.2 | 13 | `/stati` |
+| `/requisites` | 1 | 20.0 | 7 | `/legal/` |
+
+**Источник:** Google Search Console → Performance → Pages, за последние 28 дней
+(по состоянию на 20.04.2026). Это страницы старого Tilda-сайта, которые
+всё ещё в индексе Google и генерят трафик.
+
+## Патч
+
+Вставить следующий блок сразу **после** строки:
+```
+rewrite ^/letnyaya-shkola-programmirovaniya.*/?$ /letnyaya-it-shkola/ permanent;
+```
+(~строка 94 в текущем конфиге)
+
+```nginx
+    # 301 редиректы с Tilda slug-URL (добавлено 2026-04-20, источник: GSC 28-day data)
+    rewrite ^/letnij-lager-programmirovanie/?$                                                    /lager-programmirovaniya/ permanent;
+    rewrite ^/detskij-kompyuternyj-lager-ajdakemp/?$                                              /kompyuternyy-lager/ permanent;
+    rewrite ^/kompyuternyj-lager-dlya-detej-obuchaem-programmirovaniyu-v-podmoskove/?$            /kompyuternyy-lager/ permanent;
+    rewrite ^/location/?$                                                                         /#contacts permanent;
+    rewrite ^/media/?$                                                                            /stati permanent;
+    rewrite ^/requisites/?$                                                                       /legal/ permanent;
+```
+
+**Важно про `/location` → `/#contacts`:** nginx `rewrite` не умеет передавать
+якорь (`#...`) — он обрезается клиентом. Если нужен именно якорь — использовать
+`return 301`:
+```nginx
+    location = /location { return 301 /#contacts; }
+```
+
+## Верификация после применения
+
+```bash
+for u in \
+  "/letnij-lager-programmirovanie" \
+  "/detskij-kompyuternyj-lager-ajdakemp" \
+  "/kompyuternyj-lager-dlya-detej-obuchaem-programmirovaniyu-v-podmoskove" \
+  "/location" \
+  "/media" \
+  "/requisites"; do
+  curl -sI -o /dev/null -w "%{http_code}\t%{redirect_url}\n" "https://aidacamp.ru$u"
+done
+```
+
+Ожидание: каждый URL отдаёт `301` + корректный `redirect_url`.
+
+## Эффект
+
+- ~7 кликов/месяц из Google переставать уходить в 404 → попадать на
+  релевантные лендинги
+- 292 impressions/месяц престают быть «мусорной» страницей → Google
+  улучшит перераспределение веса в индексе
+- Положительно влияет на общий trust домена (меньше soft-404)
+
+## После выкатки
+
+1. Запустить GSC → Coverage → подождать 1-2 недели, пока Google переиндексирует
+   старые URL и снимет их из индекса
+2. В Яндекс.Вебмастере сделать то же самое — «Переобход страниц»
+   для каждого из 6 URL
