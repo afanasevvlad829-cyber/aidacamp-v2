@@ -58,12 +58,20 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
           <ShiftCard shift={shift} variant="mobile" />
         ))}
       </div>
-      <!-- Dots indicator -->
-      <div class="mt-3 flex justify-center gap-1.5 md:hidden" data-shifts-dots>
+      <!-- Dots indicator (P1 2026-04-20: 6px → 8px + active pill) -->
+      <div class="mt-4 flex justify-center items-center gap-2 md:hidden" data-shifts-dots aria-label="Навигация по сменам">
         {allShifts.map((_, i) => (
-          <span class={`h-1.5 w-1.5 rounded-full transition-colors ${i === 0 ? 'bg-primary-light' : 'bg-slate-300'}`} data-shifts-dot={i}></span>
+          <span
+            class={`h-2 rounded-full transition-all duration-200 ${i === 0 ? 'w-6 bg-[#c45f00]' : 'w-2 bg-slate-300'}`}
+            data-shifts-dot={i}
+            aria-current={i === 0 ? 'true' : 'false'}
+          ></span>
         ))}
       </div>
+      <!-- Подсказка свайпа для первого визита -->
+      <p class="mt-2 text-center text-[12px] text-slate-500 md:hidden" data-shifts-swipe-hint>
+        ← свайп, чтобы увидеть все {allShifts.length} смен →
+      </p>
       <!-- July sold-out banner (mobile) -->
       <div class="mt-4 flex items-center gap-2.5 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5">
         <i class="bi bi-lock-fill text-[15px] text-red-500 shrink-0"></i>
@@ -137,9 +145,16 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
               t.classList.toggle('text-slate-700', ti !== idx);
             });
             dots.forEach((d, di) => {
-              d.classList.toggle('bg-primary-light', di === idx);
-              d.classList.toggle('bg-slate-300', di !== idx);
+              const isActive = di === idx;
+              d.classList.toggle('bg-[#c45f00]', isActive);
+              d.classList.toggle('w-6', isActive);
+              d.classList.toggle('bg-slate-300', !isActive);
+              d.classList.toggle('w-2', !isActive);
+              d.setAttribute('aria-current', isActive ? 'true' : 'false');
             });
+            if (idx > 0) {
+              document.querySelector('[data-shifts-swipe-hint]')?.classList.add('opacity-0');
+            }
           }
         });
       }, { root: carousel, threshold: 0.6 });
