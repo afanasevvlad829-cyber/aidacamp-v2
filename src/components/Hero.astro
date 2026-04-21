@@ -241,44 +241,58 @@ import { STAT_YEARS, STAT_KIDS, STAT_RATING, STAT_DISTANCE, STAT_RETURN, CAMP_PR
 
 <script is:inline>
   // UTM-based title variations
+  // Приоритет: utm_h1 → utm_content (точный) → utm_content (префикс) → utm_term (ключ поиска) → utm_source
   (function() {
     var params = new URLSearchParams(window.location.search);
-    var h1Key = params.get('utm_h1');
+    var h1Key  = params.get('utm_h1');
     var content = params.get('utm_content');
-    var source = params.get('utm_source');
+    var source  = params.get('utm_source');
+    var term    = params.get('utm_term');   // поисковая фраза из Директа ({keyword})
 
     var variants = {
-      // Search utm_h1 values
+      // ── Search: utm_h1 (старые) + точные utm_content ──────────────────────
       camp:        { title: 'Летний лагерь в Подмосковье для детей 7–15 лет', subtitle: 'IT, бассейн, проживание — всё включено. 66 км от Москвы' },
+      camp2026:    { title: 'Детский IT-лагерь 2026 — смены в Подмосковье', subtitle: 'Программирование, хакатон, бассейн. 7 и 14 дней, июнь–август. 66 км от МКАД.' },
       result:      { title: 'Уехал геймером — вернулся разработчиком', subtitle: 'Опыт сложных задач, ошибок и решений. Ребёнок уезжает с ощущением: я справляюсь сам.' },
       it:          { title: 'IT-лагерь для детей 7–15 лет — Python, Minecraft, AI', subtitle: 'Каждый уедет с проектом и новыми друзьями' },
       reviews:     { title: 'АйДаКемп — 40+ отзывов, рейтинг 5.0 на Яндекс Картах', subtitle: '6 лет работы · 1200+ детей · лицензия Минобра' },
       brand:       { title: 'АйДаКемп — IT-лагерь в Подмосковье', subtitle: '66 км от Москвы, программирование, бассейн, природа' },
       nophone:     { title: 'Телефон здесь зарабатывают', subtitle: 'Экранное время — за участие и инициативу, не выдаётся автоматически' },
       price:       { title: 'IT-лагерь 7–15 лет от 48 000₽', subtitle: '7 дней: программирование, хакатон, бассейн — всё включено' },
-      age:         { title: 'Лагерь для детей 7–15 лет', subtitle: 'Учатся программировать и защищают свой проект' },
-      // РСЯ utm_content group values
+      age:         { title: 'IT-лагерь для детей 10–13 лет', subtitle: 'Учатся программировать, создают проект и защищают его перед командой' },
+      // ── РСЯ: utm_content группы ───────────────────────────────────────────
       keys:        { title: 'IT-лагерь в Подмосковье — вы знаете, куда отправляете ребёнка', subtitle: 'Лицензия Минобра · 6 лет работы · 1200+ детей' },
       parents:     { title: 'Две недели без «мама, скучно»', subtitle: 'Ребёнок в IT-лагере: проекты, команда, бассейн. Без телефонов. 66 км от Москвы.' },
       edu:         { title: 'Лето без телефона — возможно', subtitle: 'Дети создают IT-проекты и живут в реальном мире. Смены от 2 недель.' },
       books:       { title: 'Лето с пользой — это реально', subtitle: 'Дети учатся программировать и делают настоящие проекты. Без телефонов. 66 км.' },
       competitors: { title: 'Лучший IT-лагерь Подмосковья', subtitle: '66 км от Москвы, хакатон в финале каждой смены' },
-      // Прочие
-      // VK problem_photo — ключи совпадают с содержанием
+      addiction:   { title: 'Он без телефона. Вы — без тревоги', subtitle: '14 дней IT-проектов, спорта и живого общения. Смены с июня. 66 км от Москвы.' },
+      // ── VK problem_photo ──────────────────────────────────────────────────
       telefon:     { title: 'На 3-й день дети сами забывают про телефон', subtitle: 'Потому что стало интереснее без него. IT-лагерь 66 км от Москвы' },
       nichego:     { title: '«Ничего не хочет» — это не правда', subtitle: 'Просто вокруг скучно. В лагере это исчезает на 3-й день' },
       leto:        { title: 'Пока другие дети скучают дома — твой делает игру', subtitle: 'IT-лагерь 66 км от Москвы · Python, Minecraft, AI · проект за смену' },
-      // VK intent_kw — те же объявления, ключи перепутаны → мэпим на правильный контент
+      // ── VK intent_kw ──────────────────────────────────────────────────────
       lager:       { title: 'На 3-й день дети сами забывают про телефон', subtitle: 'Потому что стало интереснее без него. IT-лагерь 66 км от Москвы' },
       it_lager:    { title: '«Ничего не хочет» — это не правда', subtitle: 'Просто вокруг скучно. В лагере это исчезает на 3-й день' },
       chem_zanyat: { title: 'Лето может пройти иначе', subtitle: 'IT-лагерь под Москвой — проект, друзья, бассейн. 66 км от МКАД' },
-      // VK crm_school — ключи точно совпадают с объявлениями
+      // ── Директ CRM Codims + ретаргет ──────────────────────────────────────
       next_step:   { title: 'Этим летом — не просто отдых', subtitle: 'Ребёнок знаком с IT? Свой проект за 7 дней, бассейн, друзья. 66 км от Москвы' },
       polza:       { title: 'Лето с пользой', subtitle: 'IT-лагерь 7–15 лет: свой проект за 7 дней, бассейн, команда. 66 км от Москвы' },
       proekt:      { title: 'За 7 дней — свой проект', subtitle: 'IT-лагерь под Москвой: бассейн, команда и настоящее лето' },
-      // Директ CRM Codims — клиенты школы Codims (utm_source=yandex&utm_content=codims)
-      // Тот же текст что и для органики с codims.ru (sourceVariants.codims), но через utm_content
-      codims:      { title: 'Попробовать IT за одно лето — и подтянуть информатику к сентябрю', subtitle: 'Берём с нуля. Опыт не нужен — за смену ребёнок создаст реальный проект и придёт в сентябрь с преимуществом', badge: 'Берём с нуля · опыт не нужен' }
+      codims:      { title: 'Попробовать IT за одно лето — и подтянуть информатику к сентябрю', subtitle: 'Берём с нуля. Опыт не нужен — за смену ребёнок создаст реальный проект и придёт в сентябрь с преимуществом', badge: 'Берём с нуля · опыт не нужен' },
+      // ── Ретаргет HOT 7d ───────────────────────────────────────────────────
+      hot_01:      { title: 'Смены июня заполняются — осталось мало мест', subtitle: 'Вы уже смотрели программу. Забронировать место можно за 1 минуту.' },
+      hot_02:      { title: 'Смены июня заполняются — осталось мало мест', subtitle: 'Вы уже смотрели программу. Забронировать место можно за 1 минуту.' },
+      hot_03:      { title: 'IT-лагерь: программа, даты и стоимость', subtitle: 'Вы уже смотрели. Забронировать место можно прямо сейчас — за 1 минуту.' },
+      // ── Ретаргет BOUNCE MOBILE 7d ─────────────────────────────────────────
+      bounce_01:   { title: 'Программа, даты, цены — за 30 секунд', subtitle: 'Смены от 48 000₽, 7 и 14 дней, июнь–август. Всё на одном экране.' },
+      bounce_02:   { title: 'Программа, даты, цены — за 30 секунд', subtitle: 'Смены от 48 000₽, 7 и 14 дней, июнь–август. Всё на одном экране.' },
+      bounce_03:   { title: 'Продолжите там, где остановились', subtitle: 'Смены, цены и программа — всё сохранилось. 66 км от Москвы.' },
+      // ── Ретаргет CONTENT 14d ──────────────────────────────────────────────
+      content_01:  { title: 'Как выбрать IT-лагерь — и не ошибиться', subtitle: '40+ отзывов на Яндекс Картах · рейтинг 5.0 · лицензия Минобра · 6 лет работы' },
+      content_02:  { title: 'Чек-лист готов — осталось выбрать смену', subtitle: 'Лицензия ✓ · медсестра 24/7 ✓ · реальные проекты ✓ · отзывы 5.0 ✓' },
+      // ── Ретаргет CRM Лиды (utm_content добавим в объявления отдельно) ─────
+      crm_leads:   { title: 'Вы оставляли заявку — места ещё есть', subtitle: 'Июньские смены заполняются. Звоните или напишите — подберём вариант.' },
     };
 
     var sourceVariants = {
@@ -289,9 +303,61 @@ import { STAT_YEARS, STAT_KIDS, STAT_RATING, STAT_DISTANCE, STAT_RETURN, CAMP_PR
       }
     };
 
-    var v = (h1Key && variants[h1Key])
+    // Префикс-маппинг: "age_core_v1_12345" → variants.age, "telefon_215563347" → variants.telefon
+    var prefixMap = {
+      // Директ Search (utm_content=key_{ad_id})
+      'age_core':         variants.age,
+      'brand_core':       variants.brand,
+      'it_core_generic':  variants.it,
+      'price_core':       variants.price,
+      'nophone_v':        variants.nophone,
+      'camp_v':           variants.camp,
+      'crm_leads':        variants.crm_leads,
+      // Директ РСЯ (utm_content=group_key)
+      'parents':          variants.nophone,
+      'addiction':        variants.nophone,
+      'edu':              variants.it,
+      'books':            variants.it,
+      'result':           variants.camp,
+      'keys':             variants.brand,
+      'competitors':      variants.price,
+      // VK (utm_content=key_{banner_id})
+      'telefon_':         variants.telefon,
+      'nichego_':         variants.nichego,
+      'leto_':            variants.leto,
+      'lager_':           variants.lager,
+      'it_lager_':        variants.it_lager,
+      'chem_zanyat_':     variants.chem_zanyat,
+    };
+
+    // Поиск по префиксу
+    function matchPrefix(key) {
+      if (!key) return null;
+      for (var p in prefixMap) {
+        if (key.indexOf(p) === 0) return prefixMap[p];
+      }
+      return null;
+    }
+
+    // Фоллбэк по поисковой фразе (utm_term={keyword} из Директа Search)
+    function matchTerm(t) {
+      if (!t) return null;
+      t = t.toLowerCase();
+      if (/без телефон|без гаджет|телефон.{0,15}лагер|гаджет/.test(t)) return variants.nophone;
+      if (/цен|стоимост|сколько стоит|путёвк|путевк|недорого/.test(t)) return variants.price;
+      if (/программирован|python|питон|minecraft|майнкрафт|scratch|скретч|it-лагер|айти лагер/.test(t)) return variants.it;
+      if (/для подростк|подростк|10 лет|11 лет|12 лет|13 лет/.test(t)) return variants.age;
+      if (/2026/.test(t)) return variants.camp2026;
+      if (/лагерь.{0,10}подмосков|подмосков.{0,10}лагерь/.test(t)) return variants.camp;
+      if (/зависим/.test(t)) return variants.addiction;
+      return null;
+    }
+
+    var v = (h1Key  && variants[h1Key])
          || (content && variants[content])
-         || (source && sourceVariants[source])
+         || (content && matchPrefix(content))
+         || matchTerm(term)
+         || (source  && sourceVariants[source])
          || null;
 
     if (v) {

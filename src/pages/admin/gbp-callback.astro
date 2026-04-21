@@ -1,15 +1,62 @@
 ---
 export const prerender = false;
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { join, dirname } from 'node:path';
+
+const CONFIG_PATH = '/var/www/aidacamp-dev/gbp-config.json';
+const CONFIG_PATH_LOCAL = join(process.cwd(), 'gbp-config.json');
+
+async function readConfig(): Promise<Record<string, string>> {
+  for (const p of [CONFIG_PATH, CONFIG_PATH_LOCAL]) {
+    try { return JSON.parse(await readFile(p, 'utf8')); } catch { /* skip */ }
+  }
+  return {};
+}
+
+async function saveConfig(data: Record<string, string>) {
+  const path = process.env.NODE_ENV === 'production' ? CONFIG_PATH : CONFIG_PATH_LOCAL;
+  try { await mkdir(dirname(path), { recursive: true }); } catch { /* ok */ }
+  await writeFile(path, JSON.stringify(data, null, 2), 'utf8');
+}
 
 const code  = Astro.url.searchParams.get('code');
 const error = Astro.url.searchParams.get('error');
 
-let result: { ok: boolean; error?: string } = { ok: false };
+let result: { ok: boolean; error?: string; accounts?: unknown[] } = { ok: false };
 
-if (code) {
+if (code && !error) {
   try {
-    const res = await fetch(`${Astro.url.origin}/api/gbp-auth?code=${encodeURIComponent(code)}`);
-    result = await res.json();
+    const cfg = await readConfig();
+    const clientId     = cfg.clientId     ?? import.meta.env.GBP_CLIENT_ID     ?? '';
+    const clientSecret = cfg.clientSecret ?? import.meta.env.GBP_CLIENT_SECRET ?? '';
+    const redirectUri  = cfg.redirectUri  ?? `${Astro.url.origin}/admin/gbp-callback`;
+
+    if (!clientId || !clientSecret) {
+      result = { ok: false, error: 'Client ID / Secret не настроены — вернись к шагу 1' };
+    } else {
+      const res = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          code,
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: redirectUri,
+          grant_type: 'authorization_code',
+        }),
+      });
+
+      const text = await res.text();
+      let tokens: { access_token?: string; refresh_token?: string; error?: string; error_description?: string };
+      try { tokens = JSON.parse(text); } catch { tokens = { error: text }; }
+
+      if (!tokens.refresh_token) {
+        result = { ok: false, error: tokens.error_description ?? tokens.error ?? 'Нет refresh_token' };
+      } else {
+        await saveConfig({ ...cfg, refreshToken: tokens.refresh_token });
+        result = { ok: true };
+      }
+    }
   } catch (e) {
     result = { ok: false, error: String(e) };
   }
@@ -22,9 +69,9 @@ if (code) {
   <title>GBP Auth — АйДаКемп</title>
   <style>
     body { font-family: -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .box { background: #1e293b; border-radius: 16px; padding: 32px; max-width: 400px; text-align: center; }
+    .box { background: #1e293b; border-radius: 16px; padding: 32px; max-width: 420px; text-align: center; }
     h1 { font-size: 20px; margin-bottom: 12px; }
-    p { font-size: 14px; color: #94a3b8; margin-bottom: 20px; }
+    p { font-size: 14px; color: #94a3b8; margin-bottom: 20px; word-break: break-word; }
     .ok  { color: #86efac; }
     .err { color: #fca5a5; }
     a { display: inline-block; background: #f97316; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; }

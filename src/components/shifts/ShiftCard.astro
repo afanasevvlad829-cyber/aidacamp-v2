@@ -13,15 +13,15 @@ const { pct, badgeBg, badgeText, btnClass } = renderCard(shift);
 const isMobile = variant === 'mobile';
 
 const articleClass = isMobile
-  ? `min-w-[calc(100vw-48px)] max-w-[calc(100vw-48px)] shrink-0 snap-start rounded-[20px] border bg-slate-50 p-4 shadow-[0_6px_18px_rgba(15,23,42,0.04)] ${shift.popular ? 'border-orange-400 ring-2 ring-orange-400' : 'border-slate-200'}`
-  : `rounded-[20px] border border-slate-200 bg-slate-50 p-5 shadow-[0_6px_18px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_32px_rgba(15,23,42,0.08)] ${shift.popular ? 'ring-2 ring-orange-400' : ''}`;
+  ? `min-w-[calc(100vw-48px)] max-w-[calc(100vw-48px)] shrink-0 snap-start rounded-[20px] border bg-slate-50 p-4 shadow-[0_6px_18px_rgba(15,23,42,0.04)] cursor-pointer select-none ${shift.popular ? 'border-orange-400 ring-2 ring-orange-400' : 'border-slate-200'}`
+  : `rounded-[20px] border border-slate-200 bg-slate-50 p-5 shadow-[0_6px_18px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_32px_rgba(15,23,42,0.08)] cursor-pointer select-none ${shift.popular ? 'ring-2 ring-orange-400' : ''}`;
 
 const descClass = isMobile ? 'text-[14px]' : 'text-[15px]';
 const priceClass = isMobile ? 'text-[20px]' : 'text-[22px]';
 const btnHover = isMobile ? '' : 'hover:-translate-y-0.5';
 ---
 
-<article class={articleClass}>
+<article class={articleClass} data-shift-card>
   <!-- Popular tag — отдельная строка сверху карточки, чтобы не конкурировать с заголовком на узких экранах -->
   {shift.popular && (
     <div class="mb-2 flex">
@@ -103,3 +103,25 @@ const btnHover = isMobile ? '' : 'hover:-translate-y-0.5';
     Выбрать
   </button>
 </article>
+
+<script>
+  document.querySelectorAll<HTMLElement>('article[data-shift-card]').forEach(card => {
+    let startX = 0;
+    let startY = 0;
+
+    card.addEventListener('pointerdown', (e) => {
+      startX = e.clientX;
+      startY = e.clientY;
+    });
+
+    card.addEventListener('click', (e) => {
+      // Игнорируем клики внутри кнопок и ссылок
+      if ((e.target as Element).closest('button, a')) return;
+      // Игнорируем если это был свайп (смещение > 8px)
+      const dx = Math.abs(e.clientX - startX);
+      const dy = Math.abs(e.clientY - startY);
+      if (dx > 8 || dy > 8) return;
+      (card.querySelector<HTMLButtonElement>('[data-shift-book]'))?.click();
+    });
+  });
+</script>
