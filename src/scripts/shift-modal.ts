@@ -83,6 +83,25 @@ export function initShiftModal() {
     const info = shiftInfo[shift.id];
     infoBody.innerHTML = info ? info.html : '<p class="text-slate-500">Подробности появятся скоро.</p>';
 
+    // Фокусируем блок «По возрастам» на выбранный возраст
+    const selectedAge = sessionStorage.getItem('selected_age') || localStorage.getItem('user_age_group');
+    if (selectedAge) {
+      const ageGroups = infoBody.querySelectorAll<HTMLElement>('[data-age-group]');
+      if (ageGroups.length) {
+        ageGroups.forEach((el) => {
+          if (el.dataset.ageGroup !== selectedAge) {
+            el.style.display = 'none';
+          } else {
+            el.classList.remove('bg-slate-50', 'border-slate-200');
+            el.classList.add('bg-orange-50', 'border-orange-200');
+          }
+        });
+        // Заменяем заголовок раздела
+        const title = infoBody.querySelector<HTMLElement>('[data-age-block-title]');
+        if (title) title.textContent = `Программа для ${selectedAge} лет`;
+      }
+    }
+
     // Блок возраста: персонализацию показываем ТОЛЬКО если выбор сделан в этой сессии.
     // localStorage не читаем — иначе на первом визите сразу вылезает «X ребят
     // вашего возраста» без реального выбора (Fix 2026-04-20).

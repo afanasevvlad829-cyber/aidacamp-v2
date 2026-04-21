@@ -170,13 +170,13 @@
                 <span class="shift-option-price">${formatPrice(shift.price)}</span>
                 <span class="shift-option-inline-actions">
                   <button class="shift-option-action shift-option-action-info" type="button" data-action="toggle-shift-about" data-shift-id="${shift.id}" data-shift-view="${safeViewKey}" aria-label="Описание смены ${shift.dates}">
-                    <img class="ac-icon" src="/assets/icons/info.svg" alt="" aria-hidden="true">
+                    <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/info-circle.svg" alt="" aria-hidden="true">
                   </button>
                   <button class="shift-option-action shift-option-action-calendar" type="button" data-action="toggle-shift-calendar-inline" data-shift-id="${shift.id}" data-shift-view="${safeViewKey}" aria-label="Календарь ${shift.dates}">
-                    <img class="ac-icon" src="/assets/icons/calendar.svg" alt="" aria-hidden="true">
+                    <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/calendar3.svg" alt="" aria-hidden="true">
                   </button>
                   <button class="shift-option-select-indicator" type="button" aria-label="Выбрать смену ${shift.dates}">
-                    <img class="ac-icon" src="/assets/icons/chevron-right.svg" alt="" aria-hidden="true">
+                    <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/chevron-right.svg" alt="" aria-hidden="true">
                   </button>
                 </span>
               </span>
@@ -236,10 +236,10 @@
             <strong>${formatPrice(shift.price)}</strong>
             <span class="price-row-actions">
               <button class="shift-calendar-btn shift-about-btn" type="button" data-action="toggle-shift-about" data-shift-id="${shift.id}" aria-label="Описание смены ${shift.title}">
-                <img class="ac-icon" src="/assets/icons/info.svg" alt="" aria-hidden="true">
+                <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/info-circle.svg" alt="" aria-hidden="true">
               </button>
               <button class="shift-calendar-btn" type="button" data-action="open-calendar" data-shift-id="${shift.id}" aria-label="Календарь ${shift.title}">
-                <img class="ac-icon" src="/assets/icons/calendar.svg" alt="" aria-hidden="true">
+                <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/calendar3.svg" alt="" aria-hidden="true">
               </button>
             </span>
           </div>
@@ -265,10 +265,10 @@
               <strong>${formatPrice(shift.price)}</strong>
               <span class="price-row-actions">
                 <button class="shift-calendar-btn shift-about-btn" type="button" data-action="toggle-shift-about" data-shift-id="${shift.id}" aria-label="Описание смены ${shift.title}">
-                  <img class="ac-icon" src="/assets/icons/info.svg" alt="" aria-hidden="true">
+                  <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/info-circle.svg" alt="" aria-hidden="true">
                 </button>
                 <button class="shift-calendar-btn" type="button" data-action="open-calendar" data-shift-id="${shift.id}" aria-label="Календарь ${shift.title}">
-                  <img class="ac-icon" src="/assets/icons/calendar.svg" alt="" aria-hidden="true">
+                  <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/calendar3.svg" alt="" aria-hidden="true">
                 </button>
               </span>
             </div>

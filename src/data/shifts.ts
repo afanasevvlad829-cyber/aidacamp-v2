@@ -130,7 +130,7 @@ export function renderCard(shift: Shift) {
   const badgeBg = shift.statusType === 'short' ? 'bg-amber-100' : 'bg-emerald-100';
   const badgeText = shift.statusType === 'short' ? 'text-amber-700' : 'text-emerald-700';
   const btnClass = shift.highlighted
-    ? 'bg-primary text-white transition-all duration-200 hover:shadow-[0_4px_16px_rgba(249,115,22,0.35)] hover:-translate-y-[1px] active:translate-y-0'
+    ? 'bg-primary text-[#1e2430] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(249,115,22,0.35)] hover:-translate-y-[1px] active:translate-y-0'
     : 'border border-slate-200 bg-slate-100 text-slate-700 transition-all duration-200 hover:bg-white hover:-translate-y-[1px] active:translate-y-0';
 
   return { total, pct, badgeBg, badgeText, btnClass };
@@ -153,14 +153,15 @@ function bullet(items: string[]) {
 }
 
 function ageBlock(ages: Record<string, string>) {
-  return '<div class="mt-4 space-y-2">' +
-    '<p class="text-[14px] font-semibold uppercase tracking-[0.08em] text-slate-500">По возрастам</p>' +
-    Object.entries(ages).map(([age, desc]) =>
-      `<div class="rounded-[12px] border border-slate-200 bg-slate-50 p-3">
+  return '<div class="mt-4 space-y-2" data-age-block-container>' +
+    '<p class="text-[14px] font-semibold uppercase tracking-[0.08em] text-slate-500" data-age-block-title>По возрастам</p>' +
+    Object.entries(ages).map(([age, desc]) => {
+      const key = age.replace(' лет', ''); // '7–9', '10–12', '13–15'
+      return `<div class="rounded-[12px] border border-slate-200 bg-slate-50 p-3" data-age-group="${key}">
         <p class="text-[14px] font-semibold text-slate-400">${age}</p>
         <p class="mt-1 text-[16px] leading-[1.5] text-slate-600">${desc}</p>
-      </div>`
-    ).join('') + '</div>';
+      </div>`;
+    }).join('') + '</div>';
 }
 
 export const shiftInfo: Record<string, {
