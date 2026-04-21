@@ -155,6 +155,24 @@ const sections = [
     <p class="mt-4 text-[14px] text-slate-500">
       Цены на 2026 зафиксированы. Оплата в рублях, без привязки к курсу валют. Клик по строке — подробное описание смены и бронирование.
     </p>
+
+    <!-- Urgency strip — дефицит мест -->
+    <div class="mt-4 flex flex-wrap items-center gap-3 rounded-[14px] bg-amber-50 border border-amber-200 px-4 py-3">
+      <div class="flex items-center gap-2 text-amber-800">
+        <i class="bi bi-fire text-[16px] text-orange-500 shrink-0" aria-hidden="true"></i>
+        <span class="text-[14px] font-semibold">Смена 2 (10–23 июня) — осталось ~20% мест</span>
+      </div>
+      <span class="hidden sm:block h-4 w-px bg-amber-200 shrink-0"></span>
+      <span class="text-[13px] text-amber-700">Популярные смены закрываются за 2–3 месяца до старта</span>
+      <button
+        type="button"
+        class="ml-auto shrink-0 inline-flex items-center gap-1.5 rounded-full bg-orange-500 hover:bg-orange-600 px-3 py-1.5 text-[13px] font-semibold text-white transition-colors"
+        onclick="document.dispatchEvent(new CustomEvent('shift-modal-open', {detail:{shiftId:'smena2',tab:'description'}}))"
+      >
+        Зафиксировать место
+        <i class="bi bi-arrow-right-short text-[15px]" aria-hidden="true"></i>
+      </button>
+    </div>
   </section>
 
   <LandingTwoCol sections={sections} />
@@ -176,6 +194,39 @@ const sections = [
 </LandingLayout>
 
 <script>
+  // Nudge toast на /ceny — через 45 сек если не было клика по таблице
+  (function() {
+    let nudgeFired = false;
+    const DELAY = 45000;
+    const t = setTimeout(function() {
+      if (nudgeFired) return;
+      const toast = document.getElementById('nudge-toast');
+      const text = document.getElementById('nudge-text');
+      const sub = document.getElementById('nudge-sub');
+      if (!toast || !text) return;
+      text.textContent = 'Смена 2 (10–23 июня) — последние места';
+      if (sub) sub.textContent = 'Нажмите, чтобы зафиксировать место';
+      toast.style.cursor = 'pointer';
+      toast.addEventListener('click', function(e) {
+        if ((e.target as Element).closest('#nudge-close')) return;
+        document.dispatchEvent(new CustomEvent('shift-modal-open', {detail:{shiftId:'smena2',tab:'description'}}));
+        window.trackGoal?.('ceny_nudge_click');
+      });
+      toast.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      document.getElementById('nudge-close')?.addEventListener('click', function() {
+        toast.classList.add('translate-y-full', 'opacity-0');
+      });
+      nudgeFired = true;
+      window.trackGoal?.('ceny_nudge_show');
+    }, DELAY);
+    // Отменяем если пользователь уже кликнул по таблице
+    document.addEventListener('shift-modal-open', function() {
+      clearTimeout(t);
+      nudgeFired = true;
+    }, {once: true});
+  })();
+
   // Клик по строке таблицы цен → ShiftInfoModal (возраст + описание + расписание).
   // Тот же контракт что у ShiftOccupancy row-clicks и TaxCalculator Buy-button.
   function initPriceTable() {
