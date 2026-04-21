@@ -42,8 +42,17 @@ ssh aidacamp "systemctl restart aidacamp-dev"
 
 ### Другие сервисы на сервере
 
-- `/var/www/codims-dev/` — сайт Codims (стейджинг), уже есть директория
-- `/var/www/html/` — дефолтный nginx root
+| Сервис | Порт | Путь | URL |
+|---|---|---|---|
+| `aidacamp-dev` | 4181 | `/var/www/aidacamp-dev/current/` | dev.aidacamp.ru |
+| `aidacamp` | 4180 | `/var/www/aidacamp/current/` | aidacamp.ru |
+| `codims-dev` | 4182 | `/var/www/codims-dev/current/` | dev.codims.ru |
+| codims prod | — | `/var/www/codims/` | codims.ru (сейчас Tilda, переезд планируется) |
+
+**Codims деплой** — автоматический: push в `main` → GitHub Actions → сервер (в отличие от AidaCamp, где деплой ручной через `deploy.sh`).
+
+Nginx конфиг Codims: `/etc/nginx/sites-enabled/codims-dev.conf`
+Редиректы: `/etc/nginx/snippets/codims-redirects.conf`
 
 ### MCP-сервер
 
