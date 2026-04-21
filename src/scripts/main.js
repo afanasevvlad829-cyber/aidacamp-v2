@@ -77,7 +77,7 @@
     const AGE_LABELS = Object.freeze({
       '7-9': '7–9 лет',
       '10-12': '10–12 лет',
-      '13-14': '13–14 лет'
+      '13-14': '13–15 лет'
     });
     const PHOTO_CATEGORY_LABELS = Object.freeze({
       pool: 'Бассейн',

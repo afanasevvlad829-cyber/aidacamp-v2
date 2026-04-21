@@ -22,7 +22,7 @@ export interface LandingPage {
 
 export const landingPages: LandingPage[] = [
   // ⭐ Жирные общие ключи — первыми
-  { title: 'Детский лагерь', description: 'Для детей 7–14 лет в Подмосковье', url: '/detskiy-lager', icon: 'bi-house-heart' },
+  { title: 'Детский лагерь', description: 'Для детей 7–15 лет в Подмосковье', url: '/detskiy-lager', icon: 'bi-house-heart' },
   { title: 'Детский лагерь в Подмосковье', description: '66 км от Москвы, проживание', url: '/detskiy-lager-podmoskove', icon: 'bi-houses' },
   { title: 'Лагерь в Подмосковье', description: 'Загородный, с бассейном', url: '/lager-v-podmoskove', icon: 'bi-tree' },
   { title: 'Лагерь на лето 2026', description: 'Смены июнь–август, календарь', url: '/lager-na-leto-2026', icon: 'bi-calendar-heart' },

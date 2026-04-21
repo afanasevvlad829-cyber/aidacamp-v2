@@ -37,7 +37,7 @@
           'AI-практика и проектная защита',
           'Спорт + живая лагерная среда',
           'Меньше телефонов, больше результата',
-          'Подходит для 13–14 лет'
+          'Подходит для 13–15 лет'
         ]
       };
       return summaryByAge[ageKey] || summaryByAge['7-9'];
@@ -64,7 +64,7 @@
       const ageLabelByAge = {
         '7-9': 'Для 7–9 лет:',
         '10-12': 'Для 10–12 лет:',
-        '13-14': 'Для 13–14 лет:'
+        '13-14': 'Для 13–15 лет:'
       };
       const markerPattern = markerPatternByAge[ageKey] || markerPatternByAge['7-9'];
       const ageLabel = ageLabelByAge[ageKey] || ageLabelByAge['7-9'];
