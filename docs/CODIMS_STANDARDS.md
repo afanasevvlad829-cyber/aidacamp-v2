@@ -25,8 +25,7 @@ src/
   scripts/       — TypeScript: form-submit.ts, tracking
   styles/        — global.css, tokens.css, mobile-ux-p0.css, icons.css
   data/          — contacts.ts, shifts.ts, landing-pages.ts, icons-manifest.json
-  partials/      — TODO: не найдено в структуре, возможно неактуально
-  lib/           — TODO: уточнить
+  lib/           — вспомогательные утилиты (уточнить структуру)
 ```
 
 ### Окружения

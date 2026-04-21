@@ -97,13 +97,15 @@ nohup bash /tmp/restart-mcp.sh &>/dev/null &
 | `form_submit` | 541048197 | 6 750₽ | `LeadForm.astro` → POST `/api/lead` |
 | `age_select` | 541048270 | — (авто) | `LeadForm.astro` кнопки возраста |
 | `phone_click` | 545216440 | 3 375₽ | `PhoneDropdown.astro` |
-| `telegram_click` | TODO: уточнить | 3 375₽ | `PhoneDropdown.astro`, `Contacts.astro` |
-| `whatsapp_click` | TODO: уточнить | TODO: уточнить | `PhoneDropdown.astro`, `Contacts.astro` |
-| `shift_book_click` | TODO: уточнить | 500₽ | `Shifts.astro` |
-| `scroll_25` | TODO: уточнить | — | `Base.astro` (`initScrollTracking()`) |
-| `scroll_50` | TODO: уточнить | — | `Base.astro` |
-| `scroll_75` | TODO: уточнить | — | `Base.astro` |
-| `scroll_90` | TODO: уточнить | — | `Base.astro` |
+| `telegram_click` | н/д¹ | 3 375₽ | `PhoneDropdown.astro`, `Contacts.astro` |
+| `whatsapp_click` | н/д¹ | уточнить | `PhoneDropdown.astro`, `Contacts.astro` |
+| `shift_book_click` | н/д¹ | 500₽ | `Shifts.astro` |
+| `scroll_25` | н/д¹ | — | `Base.astro` (`initScrollTracking()`) |
+| `scroll_50` | н/д¹ | — | `Base.astro` |
+| `scroll_75` | н/д¹ | — | `Base.astro` |
+| `scroll_90` | н/д¹ | — | `Base.astro` |
+
+¹ **Числовые GoalID в коде не хранятся** — они нужны только для поля `GoalId` в Яндекс.Директ. Сами цели работают через строковый идентификатор: `ym(96499295, 'reachGoal', 'telegram_click')`. Числовые ID смотреть в интерфейсе Метрики: «Цели» → название цели → ID в адресной строке.
 
 **Ключевая цель для автостратегий Директ:** `age_select` (GoalID 541048270) — 175 событий/нед, зелёная зона обучения. `form_submit` (4/нед) — слишком редкая для автостратегий.
 
@@ -324,7 +326,7 @@ vk_ads_stats(period: "week", level: "campaign")
 | Телефон 2 | +7(495)128-44-29 |
 | WhatsApp | wa.me/79688086455 |
 | Telegram | t.me/Progaschool |
-| Email | TODO: не найдено в исходниках |
+| Email | hello@codims.ru (единый для лагеря и школы, `src/data/contacts.ts`) |
 
 ---
 
@@ -360,15 +362,34 @@ curl -X POST https://dev.aidacamp.ru/api/photo \
 
 ### Видео (Kinescope)
 
-| ID | Описание |
-|---|---|
-| `qmLxu2S7uaS44CKkhoV1Jj` | video-01 |
-| `tJAaAnvCYYJ5vRz7uyUepj` | video-02 |
-| `naDfzrei9duApz3AnaencH` | video-03 |
-| `eTmCgZHcwhcWQQs3HLCz1S` | video-04 |
-| `s1SCYKqLx6C94fMRumitHF` | video-05 |
+**API-токен не нужен** — видео публично доступны через embed-URL без авторизации. Если понадобится управление через Kinescope API (загрузка, аналитика просмотров) — токен нужно будет запросить в личном кабинете kinescope.io.
 
-Паттерн встраивания: iframe с `loading="lazy"` + poster AVIF + Intersection Observer для активации.
+**Маркетинговые видео (для сайта):**
+
+| ID | Название |
+|---|---|
+| `qmLxu2S7uaS44CKkhoV1Jj` | IT-лагерь — это не «сидеть за компьютером» |
+| `tJAaAnvCYYJ5vRz7uyUepj` | За неделю в лагере он меняется больше, чем за год дома |
+| `naDfzrei9duApz3AnaencH` | Не хочу в лагерь… Через 3 дня: хочу ещё |
+| `eTmCgZHcwhcWQQs3HLCz1S` | Ребёнок сам откажется от телефона за 3 дня |
+| `s1SCYKqLx6C94fMRumitHF` | Зачем детям копить деньги в лагере |
+
+**Проектные видео (работы учеников):**
+
+| ID | Название |
+|---|---|
+| `g2S7xxtEUP4S2E3WXYFNqZ` | Игра «Моя ферма» |
+| `2ULnxEqqC4ssLNYCh5YPvo` | Программирование дронов |
+| `iFCF2uprpHLxx9VgJ1M7SP` | Игра на Unity |
+| `0Vs3qPMJr7Kvz13MWsxcbc` | Игра «Исследователь» |
+| `w1eZLPX8mqdC7dMniPaBWT` | Игра «Луиджи» |
+
+**Паттерн встраивания** (`Videos.astro`):
+```html
+<!-- poster + кнопка play → при клике подставляется iframe -->
+<iframe src="https://kinescope.io/embed/{id}?autoplay=1"></iframe>
+```
+Lazy-активация через Intersection Observer — iframe не грузится до появления в viewport.
 
 ---
 
@@ -477,7 +498,7 @@ EOF"
 | Яндекс Метрика | 96499295 | браузер / MCP | ✅ рабочий | `aidacamp-tools:stats` |
 | Microsoft Clarity | w8yoykmszl | браузер / MCP | ✅ рабочий | `aidacamp-tools:clarity` |
 | AlfaCRM | — | `/opt/mcp/.env` (ALFACRM_*) | ✅ рабочий | интеграция в lead.ts |
-| Kinescope | — | TODO: не найдено | ❓ уточнить | 5 видео залиты, embed через iframe |
+| Kinescope | — | не требуется | ✅ рабочий | embed без токена: `kinescope.io/embed/{id}` |
 | Яндекс Диск (фото) | — | сервер-прокси | ✅ рабочий | `aidacamp-tools:photos` |
 | Google Search Console | — | браузер | ✅ рабочий | лимит ~10 URL/день |
 | Яндекс Вебмастер | — | браузер | ✅ рабочий | ручная отправка URL |
