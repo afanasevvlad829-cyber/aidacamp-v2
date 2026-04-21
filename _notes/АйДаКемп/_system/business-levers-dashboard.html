@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Бизнес-рычаги АйДаКемп / АйДаКодить</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg-card: #161b22;
+    --bg-card-hover: #1c2330;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-dim: #7d8590;
+    --accent: #58a6ff;
+    --block-a: #f85149;
+    --block-b: #e3b341;
+    --block-c: #3fb950;
+    --block-d: #a371f7;
+    --block-e: #db6d28;
+    --block-f: #39c5cf;
+    --ready: #238636;
+    --partial: #9e6a03;
+    --missing: #da3633;
+    --priority-1: #da3633;
+    --priority-2: #e3b341;
+    --priority-3: #58a6ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 40px 20px;
+  }
+  .container { max-width: 1400px; margin: 0 auto; }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, rgba(88, 166, 255, 0.08), rgba(163, 113, 247, 0.08));
+    border-radius: 16px;
+    border: 1px solid var(--border);
+  }
+  h1 {
+    font-size: 2.4em;
+    font-weight: 700;
+    margin-bottom: 16px;
+    background: linear-gradient(90deg, #58a6ff, #a371f7, #f85149);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  header .subtitle { color: var(--text-dim); font-size: 1.1em; }
+
+  /* Formula block */
+  .formula {
+    margin: 32px auto;
+    max-width: 1000px;
+    padding: 28px;
+    background: var(--bg-card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+  .formula h2 { font-size: 1.1em; color: var(--text-dim); font-weight: 500; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+  .formula-expr {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 1.4em;
+    font-weight: 500;
+    margin: 12px 0;
+  }
+  .formula-expr .var { color: var(--accent); }
+  .formula-expr .op { color: var(--text-dim); }
+  .formula-expr.revenue { color: #3fb950; }
+  .formula-expr.profit { color: #f85149; }
+
+  /* Products comparison */
+  .products {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+  .product-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .product-card h3 { font-size: 1.3em; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .product-card dl { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; }
+  .product-card dt { color: var(--text-dim); font-size: 0.9em; }
+  .product-card dd { font-weight: 600; }
+
+  /* Blocks grid */
+  .blocks-nav {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .blocks-nav a {
+    padding: 10px 18px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+    font-size: 0.95em;
+  }
+  .blocks-nav a:hover { background: var(--bg-card-hover); border-color: var(--accent); }
+  .blocks-nav a .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+
+  /* Block section */
+  .block {
+    margin-bottom: 40px;
+    background: var(--bg-card);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .block-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .block-header .letter {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5em; font-weight: 700; color: #fff;
+  }
+  .block-header h2 { font-size: 1.4em; margin: 0; }
+  .block-header .sub { color: var(--text-dim); font-size: 0.9em; }
+
+  /* Levers grid */
+  .levers {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 16px;
+    padding: 20px;
+  }
+  .lever {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .lever:hover { transform: translateY(-2px); border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+  .lever-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+  .lever-id {
+    font-family: ui-monospace, monospace;
+    font-weight: 700;
+    font-size: 0.9em;
+    padding: 3px 8px;
+    background: rgba(88, 166, 255, 0.15);
+    color: var(--accent);
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .lever h3 { font-size: 1.05em; font-weight: 600; line-height: 1.35; flex: 1; }
+  .lever .stars { font-size: 0.85em; flex-shrink: 0; }
+  .lever .description { color: var(--text-dim); font-size: 0.9em; margin: 10px 0 12px; }
+  .lever .impact {
+    display: inline-block;
+    padding: 2px 8px;
+    background: rgba(63, 185, 80, 0.12);
+    color: #3fb950;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .lever-data {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+  }
+  .lever-data .label {
+    font-size: 0.75em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .lever-data .sources {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 8px;
+  }
+  .source-tag {
+    padding: 3px 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.78em;
+    font-family: ui-monospace, monospace;
+    color: #a5d6ff;
+  }
+  .source-tag.ready { border-color: var(--ready); background: rgba(35, 134, 54, 0.1); }
+  .source-tag.missing { border-color: var(--missing); background: rgba(218, 54, 51, 0.1); color: #ffa198; }
+
+  .status-badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+  .status-badge.ready { background: var(--ready); box-shadow: 0 0 8px var(--ready); }
+  .status-badge.partial { background: var(--partial); box-shadow: 0 0 8px var(--partial); }
+  .status-badge.missing { background: var(--missing); }
+
+  /* Priority section */
+  .priority-section {
+    margin-top: 48px;
+    padding: 28px;
+    background: linear-gradient(135deg, rgba(218, 54, 51, 0.05), rgba(88, 166, 255, 0.05));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+  .priority-section h2 { font-size: 1.4em; margin-bottom: 20px; }
+  .priority-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .priority-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    border-left: 4px solid var(--priority-1);
+  }
+  .priority-card.p2 { border-left-color: var(--priority-2); }
+  .priority-card.p3 { border-left-color: var(--priority-3); }
+  .priority-card .id { font-family: ui-monospace, monospace; font-weight: 700; color: var(--accent); }
+  .priority-card h4 { margin: 6px 0 8px; }
+  .priority-card .meta { color: var(--text-dim); font-size: 0.85em; }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    margin: 20px 0;
+    flex-wrap: wrap;
+    font-size: 0.9em;
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; color: var(--text-dim); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .legend-dot.ready { background: var(--ready); }
+  .legend-dot.partial { background: var(--partial); }
+  .legend-dot.missing { background: var(--missing); }
+
+  footer {
+    text-align: center;
+    color: var(--text-dim);
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    font-size: 0.9em;
+  }
+
+  @media (max-width: 768px) {
+    body { padding: 20px 12px; }
+    h1 { font-size: 1.8em; }
+    .products { grid-template-columns: 1fr; }
+    .levers { grid-template-columns: 1fr; }
+    .formula-expr { font-size: 1.1em; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Бизнес-рычаги АйДаКемп / АйДаКодить</h1>
+  <div class="subtitle">Карта 30 рычагов прибыли → какие данные нужны → где брать → что уже есть</div>
+</header>
+
+<!-- ФОРМУЛА -->
+<div class="formula">
+  <h2>Формула дохода — каждая переменная это рычаг</h2>
+  <div class="formula-expr revenue">
+    <span style="color:#3fb950">Revenue</span>
+    <span class="op">=</span>
+    <span class="var">Visits</span>
+    <span class="op">×</span>
+    <span class="var">CR<sub>lead</sub></span>
+    <span class="op">×</span>
+    <span class="var">CR<sub>sale</sub></span>
+    <span class="op">×</span>
+    <span class="var">AOV</span>
+    <span class="op">×</span>
+    <span class="var">Repeat</span>
+  </div>
+  <div class="formula-expr profit">
+    <span style="color:#f85149">Profit</span>
+    <span class="op">=</span>
+    <span style="color:#3fb950">Revenue</span>
+    <span class="op">−</span>
+    <span class="var">Ad<sub>cost</sub></span>
+    <span class="op">−</span>
+    <span class="var">Manager<sub>cost</sub></span>
+    <span class="op">−</span>
+    <span class="var">Product<sub>cost</sub></span>
+    <span class="op">−</span>
+    <span class="var">Refunds</span>
+  </div>
+  <div style="margin-top: 20px; color: var(--text-dim); font-size: 0.9em;">
+    ↓ Разбиваем на 6 блоков (A–F) рычагов ↓
+  </div>
+</div>
+
+<!-- ПРОДУКТЫ -->
+<div class="products">
+  <div class="product-card" style="border-left: 4px solid #f85149;">
+    <h3>🏕 АйДаКемп <span style="color:var(--text-dim); font-size:0.7em; font-weight:400;">(лагерь)</span></h3>
+    <dl>
+      <dt>Чек</dt><dd>56–75к ₽/смена</dd>
+      <dt>Цикл</dt><dd>2–4 недели</dd>
+      <dt>Сезон</dt><dd>весна → лето (пик)</dd>
+      <dt>Канал</dt><dd>90% звонки</dd>
+      <dt>Repeat</dt><dd>~1.5 смены</dd>
+      <dt>LTV</dt><dd>~100к ₽</dd>
+    </dl>
+  </div>
+  <div class="product-card" style="border-left: 4px solid #a371f7;">
+    <h3>💻 АйДаКодить <span style="color:var(--text-dim); font-size:0.7em; font-weight:400;">(онлайн-школа)</span></h3>
+    <dl>
+      <dt>Чек</dt><dd>2.5–5к ₽/мес</dd>
+      <dt>Цикл</dt><dd>1–3 дня</dd>
+      <dt>Сезон</dt><dd>круглогод</dd>
+      <dt>Канал</dt><dd>заявки + бот</dd>
+      <dt>Repeat</dt><dd>12+ мес</dd>
+      <dt>LTV</dt><dd>36к ₽ + длинное</dd>
+    </dl>
+  </div>
+</div>
+
+<!-- Легенда статусов -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot ready"></div> данные есть, можно делать</div>
+  <div class="legend-item"><div class="legend-dot partial"></div> данные частично / нужна доработка</div>
+  <div class="legend-item"><div class="legend-dot missing"></div> данных нет, нужен источник</div>
+</div>
+
+<!-- Навигация -->
+<div class="blocks-nav">
+  <a href="#block-a"><span class="dot" style="background:var(--block-a)"></span>A. Трафик</a>
+  <a href="#block-b"><span class="dot" style="background:var(--block-b)"></span>B. Конверсия сайта</a>
+  <a href="#block-c"><span class="dot" style="background:var(--block-c)"></span>C. Звонок → продажа</a>
+  <a href="#block-d"><span class="dot" style="background:var(--block-d)"></span>D. Средний чек</a>
+  <a href="#block-e"><span class="dot" style="background:var(--block-e)"></span>E. LTV / Retention</a>
+  <a href="#block-f"><span class="dot" style="background:var(--block-f)"></span>F. Стоимость</a>
+  <a href="#priority"><span class="dot" style="background:#da3633"></span>Приоритет</a>
+</div>
+
+<!-- ==================== БЛОК A: ТРАФИК ==================== -->
+<section id="block-a" class="block">
+  <div class="block-header">
+    <div class="letter" style="background: var(--block-a)">A</div>
+    <div>
+      <h2>Трафик — верх воронки</h2>
+      <div class="sub">Увеличиваем Visits, режем мусор, снижаем CPC</div>
+    </div>
+  </div>
+  <div class="levers">
+
+    <div class="lever">
+      <span class="status-badge ready"></span>
+      <div class="lever-header">
+        <span class="lever-id">A1</span>
+        <h3>Минус-площадки РСЯ</h3>
+        <span class="stars">⭐⭐⭐</span>
+      </div>
+      <div class="description">Баним «слив» трафика (cc, казино, дейтинг) — ~30% экономии бюджета при том же результате.</div>
+      <div class="impact">Эффект: −30% cost</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">direct_placements</span>
+          <span class="source-tag ready">direct_campaign_stats</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Источник: Yandex Direct API (уже в ETL). Триггер daily в CM v3.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge ready"></span>
+      <div class="lever-header">
+        <span class="lever-id">A2</span>
+        <h3>Корректировки демо / гео</h3>
+        <span class="stars">⭐⭐</span>
+      </div>
+      <div class="description">−100% мужчин 45+, +20% женщин 35–44, −90% СПб. Автоматизировать weekly review.</div>
+      <div class="impact">Эффект: +15% CR</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">metrika_demographics</span>
+          <span class="source-tag ready">metrika_geo</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Источник: Яндекс.Метрика API (уже в ETL).</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">A3</span>
+        <h3>Креативы — офферы</h3>
+        <span class="stars">⭐⭐</span>
+      </div>
+      <div class="description">Тестируем заголовки под ТА "хорошая мама". AI-генерация + human approve.</div>
+      <div class="impact">Эффект: +10-20% CTR</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">direct_ad_performance</span>
+          <span class="source-tag missing">ai_hypotheses</span>
+          <span class="source-tag ready">Позиционирование.md</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Нужно: Module D (Research Scout) + LLM-генерация.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge partial"></span>
+      <div class="lever-header">
+        <span class="lever-id">A4</span>
+        <h3>Расширение семантики</h3>
+        <span class="stars">⭐⭐</span>
+      </div>
+      <div class="description">Новые ключи из поиска / от конкурентов → новые группы объявлений.</div>
+      <div class="impact">Эффект: +20% охват</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">direct_search_terms</span>
+          <span class="source-tag missing">yandex_wordstat</span>
+          <span class="source-tag partial">конкуренты (ручной)</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Нужно: Wordstat API + скрипт weekly scan.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge partial"></span>
+      <div class="lever-header">
+        <span class="lever-id">A5</span>
+        <h3>Сети VK — реинкарнация</h3>
+        <span class="stars">⭐</span>
+      </div>
+      <div class="description">Переделать после инцидента age_select. Пока осторожно.</div>
+      <div class="impact">Эффект: ?</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">vk_ads_stats</span>
+          <span class="source-tag ready">metrika_goals</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Статус: paused. Возобновить после стабилизации.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">A6</span>
+        <h3>Telegram Ads</h3>
+        <span class="stars">⭐</span>
+      </div>
+      <div class="description">Новый канал, нет данных что работает для ЦА.</div>
+      <div class="impact">Эффект: ?</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag missing">telegram_ads_stats</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Нужно: запустить тест-кампанию для замера. Module D.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge partial"></span>
+      <div class="lever-header">
+        <span class="lever-id">A7</span>
+        <h3>SEO (блог, статьи)</h3>
+        <span class="stars">⭐</span>
+      </div>
+      <div class="description">Долгий процесс, бесплатный трафик. Ручной сейчас.</div>
+      <div class="impact">Эффект: +5-10% через год</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag missing">yandex_webmaster</span>
+          <span class="source-tag missing">позиции в поиске</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Не приоритет.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">A8</span>
+        <h3>Реферальная программа</h3>
+        <span class="stars">⭐⭐</span>
+      </div>
+      <div class="description">Каждый клиент даёт 1 нового → виральность LTV.</div>
+      <div class="impact">Эффект: +15-25% к LTV</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">ai_customers</span>
+          <span class="source-tag missing">referral_codes</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Нужно: CRM-level автоматизация + пром-страница.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ==================== БЛОК B: КОНВЕРСИЯ САЙТА ==================== -->
+<section id="block-b" class="block">
+  <div class="block-header">
+    <div class="letter" style="background: var(--block-b)">B</div>
+    <div>
+      <h2>Конверсия сайта — Visit → Lead</h2>
+      <div class="sub">Повышаем CR_lead: заявки, звонки, время на сайте</div>
+    </div>
+  </div>
+  <div class="levers">
+
+    <div class="lever">
+      <span class="status-badge partial"></span>
+      <div class="lever-header">
+        <span class="lever-id">B1</span>
+        <h3>A/B hero-экрана</h3>
+        <span class="stars">⭐⭐</span>
+      </div>
+      <div class="description">Заголовок, CTA, фото. Главный экран = 70% решения о дальнейшем скролле.</div>
+      <div class="impact">Эффект: +5-15% CR</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">metrika_goals</span>
+          <span class="source-tag ready">clarity_sessions</span>
+          <span class="source-tag missing">ab_test_engine</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Нужно: Astro A/B branch + Метрика-сплит.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge partial"></span>
+      <div class="lever-header">
+        <span class="lever-id">B2</span>
+        <h3>Фото детей на занятиях</h3>
+        <span class="stars">⭐⭐⭐</span>
+      </div>
+      <div class="description">Мама представляет "как похвастаюсь в чате" → CR ↑. Site-ready фото с Gemini-отбором.</div>
+      <div class="impact">Эффект: +10-20% CR</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">ai_tg_photos (330)</span>
+          <span class="source-tag ready">Gemini vision</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">После Export: 500+ фото, отобрать site-ready. Pipeline готов.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">B3</span>
+        <h3>Отзывы встроенные</h3>
+        <span class="stars">⭐⭐⭐</span>
+      </div>
+      <div class="description">Socialproof — главный триггер по Позиционированию. Яндекс.Карты + TG-родителей.</div>
+      <div class="impact">Эффект: +10-15% CR</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag missing">yandex_business_reviews</span>
+          <span class="source-tag ready">ai_dialogs</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Источник: Yandex.Business API scraper + widget на сайте.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge partial"></span>
+      <div class="lever-header">
+        <span class="lever-id">B4</span>
+        <h3>Форма заявки — упростить</h3>
+        <span class="stars">⭐</span>
+      </div>
+      <div class="description">Меньше полей = больше leads. Анализ drop-off по шагам формы.</div>
+      <div class="impact">Эффект: +5-10% CR</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">metrika_form_funnel</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Уже видим воронку — сокращаем поля.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">B5</span>
+        <h3>Видео-тур по лагерю</h3>
+        <span class="stars">⭐⭐</span>
+      </div>
+      <div class="description">2-3 мин ролик "что там внутри" → снижает страх #1 «Безопасность».</div>
+      <div class="impact">Эффект: +15% CR для сомневающихся</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag missing">видео со смены</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Продакт-задача, не AI. Снять в мае.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">B6</span>
+        <h3>Живой чат на сайте</h3>
+        <span class="stars">⭐</span>
+      </div>
+      <div class="description">Перехват колеблющихся. Но осторожно — звонки у нас конвертят лучше чата.</div>
+      <div class="impact">Эффект: +5% CR, но может −5% call</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag missing">jivochat integration</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">B7</span>
+        <h3>Калькулятор налогового вычета</h3>
+        <span class="stars">⭐⭐</span>
+      </div>
+      <div class="description">Рацио-крючок для мужа. Скидка 13% даже на 65к = 8.5к возврата.</div>
+      <div class="impact">Эффект: +10% CR на "семейное решение"</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">статичный JS-виджет</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Простой dev-таск, без данных.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ==================== БЛОК C: ЗВОНОК → ПРОДАЖА ==================== -->
+<section id="block-c" class="block">
+  <div class="block-header">
+    <div class="letter" style="background: var(--block-c)">C</div>
+    <div>
+      <h2>Звонок → Продажа — close rate менеджеров</h2>
+      <div class="sub">90% продаж идёт через звонки. Каждый % = деньги.</div>
+    </div>
+  </div>
+  <div class="levers">
+
+    <div class="lever">
+      <span class="status-badge partial"></span>
+      <div class="lever-header">
+        <span class="lever-id">C1</span>
+        <h3>Скорость ответа &lt; 2 мин</h3>
+        <span class="stars">⭐⭐⭐</span>
+      </div>
+      <div class="description">&lt;2 мин на звонок = ×2 конверсия. Telegram-алерт если лид висит &gt;10 мин.</div>
+      <div class="impact">Эффект: +20-40% close</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag partial">alfacrm_webhook</span>
+          <span class="source-tag missing">call_tracking</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Нужно: webhook из AlfaCRM → n8n → Telegram.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge partial"></span>
+      <div class="lever-header">
+        <span class="lever-id">C2</span>
+        <h3>Скрипт звонка</h3>
+        <span class="stars">⭐⭐⭐</span>
+      </div>
+      <div class="description">Снятие 5 страхов (безопасность, чек, спам, скука, результат). Речь по Позиционированию.</div>
+      <div class="impact">Эффект: +15-25% close</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">Позиционирование.md</span>
+          <span class="source-tag ready">Портрет клиента.md</span>
+          <span class="source-tag missing">записи звонков</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Готово по тексту. Нужны записи для А/В-анализа.</div>
+      </div>
+    </div>
+
+    <div class="lever" style="border: 2px solid var(--priority-1); box-shadow: 0 0 16px rgba(218,54,51,0.3);">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">C3</span>
+        <h3>Брифинг менеджера ДО звонка</h3>
+        <span class="stars">⭐⭐⭐</span>
+      </div>
+      <div class="description"><strong>КРИТИЧНО.</strong> Менеджер видит карточку клиента: откуда пришёл, что смотрел, ребёнок, бюджет, история диалогов, предложение ответа.</div>
+      <div class="impact">Эффект: +10-20% close rate</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">ai_customers (219)</span>
+          <span class="source-tag ready">ai_dialogs (5328)</span>
+          <span class="source-tag ready">ai_tg_users (2144)</span>
+          <span class="source-tag ready">metrika_sessions</span>
+          <span class="source-tag missing">/customer/briefing webhook</span>
+          <span class="source-tag missing">AlfaCRM Max extension</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Всё есть. Нужен webhook (3-4 часа) + Chrome extension.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">C4</span>
+        <h3>Auto-follow-up не дошедшим</h3>
+        <span class="stars">⭐⭐</span>
+      </div>
+      <div class="description">Если лид висит 2+ дня без касания → auto-Telegram «напомнить о лагере».</div>
+      <div class="impact">Эффект: +5-10% спасённых лидов</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag missing">ai_customer_scores</span>
+          <span class="source-tag missing">ai_next_actions</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Нужно: Module G (scoring).</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">C5</span>
+        <h3>«Дожим» сомневающимся</h3>
+        <span class="stars">⭐</span>
+      </div>
+      <div class="description">Предлагаем отзывы похожих семей (тот же возраст, бюджет, гео).</div>
+      <div class="impact">Эффект: +5% close</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">ai_customers</span>
+          <span class="source-tag missing">matching_engine</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">C6</span>
+        <h3>A/B скриптов звонка</h3>
+        <span class="stars">⭐</span>
+      </div>
+      <div class="description">Разные подходы для разных сегментов (мама 35-44 vs бабушка).</div>
+      <div class="impact">Эффект: +5-10% close</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag missing">call_recordings</span>
+          <span class="source-tag missing">nps_scores</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Нужна система записи звонков + NPS опрос.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ==================== БЛОК D: AOV ==================== -->
+<section id="block-d" class="block">
+  <div class="block-header">
+    <div class="letter" style="background: var(--block-d)">D</div>
+    <div>
+      <h2>Средний чек — AOV</h2>
+      <div class="sub">Повышаем выручку с клиента без увеличения привлечения</div>
+    </div>
+  </div>
+  <div class="levers">
+
+    <div class="lever">
+      <span class="status-badge partial"></span>
+      <div class="lever-header">
+        <span class="lever-id">D1</span>
+        <h3>Upsell 2-я смена</h3>
+        <span class="stars">⭐⭐</span>
+      </div>
+      <div class="description">"Берёте обе смены — скидка 10%". Менеджер инициирует.</div>
+      <div class="impact">Эффект: +30-50% AOV для 20% клиентов</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">ai_customers</span>
+          <span class="source-tag missing">offer_engine</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Скрипт менеджера + оффер-engine.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">D2</span>
+        <h3>Cross-sell Лагерь ↔ Школа</h3>
+        <span class="stars">⭐⭐⭐</span>
+      </div>
+      <div class="description">Выпускники лагеря → в школу, школьники → в летний лагерь. Удвоение LTV.</div>
+      <div class="impact">Эффект: +50-100% LTV</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">ai_customers (AidaCamp)</span>
+          <span class="source-tag missing">ai_customers (Kodit)</span>
+          <span class="source-tag missing">multi_project_workflow</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Нужно: AlfaCRM branch=1 sync + Multi-project n8n.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">D3</span>
+        <h3>Доп. услуги</h3>
+        <span class="stars">⭐</span>
+      </div>
+      <div class="description">Мастер-классы, экскурсии, индивидуалка в лагере.</div>
+      <div class="impact">Эффект: +5-10% AOV</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag missing">product_catalog</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge partial"></span>
+      <div class="lever-header">
+        <span class="lever-id">D4</span>
+        <h3>Package для второго ребёнка</h3>
+        <span class="stars">⭐⭐</span>
+      </div>
+      <div class="description">-20% для семьи. По данным — у 30% клиентов есть 2-й ребёнок.</div>
+      <div class="impact">Эффект: +15% AOV</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">ai_customers</span>
+          <span class="source-tag missing">children_count field</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Нужно: расширить AlfaCRM schema + offer.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">D5</span>
+        <h3>VIP-пакет</h3>
+        <span class="stars">⭐</span>
+      </div>
+      <div class="description">150к₽ вместо 75к — индивидуальная программа, отдельная комната, меньше детей в группе.</div>
+      <div class="impact">Эффект: +50-100% AOV для 5% клиентов</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag missing">price_sensitivity_analysis</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ==================== БЛОК E: LTV ==================== -->
+<section id="block-e" class="block">
+  <div class="block-header">
+    <div class="letter" style="background: var(--block-e)">E</div>
+    <div>
+      <h2>LTV / Retention / Referral</h2>
+      <div class="sub">Клиент возвращается + приводит друзей</div>
+    </div>
+  </div>
+  <div class="levers">
+
+    <div class="lever">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">E1</span>
+        <h3>Post-смена follow-up</h3>
+        <span class="stars">⭐⭐</span>
+      </div>
+      <div class="description">Через 3 дня после смены: «как вам?» + приглашение на след. сезон + просьба отзыв.</div>
+      <div class="impact">Эффект: +20-30% retention</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">ai_customers (season_end_date)</span>
+          <span class="source-tag missing">follow_up_cron</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Нужно: n8n weekly cron + Telegram-автосообщения.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge partial"></span>
+      <div class="lever-header">
+        <span class="lever-id">E2</span>
+        <h3>Reputation management</h3>
+        <span class="stars">⭐⭐</span>
+      </div>
+      <div class="description">Ответы на отзывы Яндекс.Карт. Мониторинг негатива → оперативная реакция.</div>
+      <div class="impact">Эффект: +15% CR через отзывы</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag missing">yandex_business_api</span>
+          <span class="source-tag ready">clarity_sessions</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Нужно: scraper + alert на новый отзыв.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">E3</span>
+        <h3>Реферальная программа</h3>
+        <span class="stars">⭐⭐</span>
+      </div>
+      <div class="description">"Приведи друга → получи скидку 5к на след. смену".</div>
+      <div class="impact">Эффект: +10-20% новых лидов</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag missing">referral_codes</span>
+          <span class="source-tag missing">tracking_logic</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">E4</span>
+        <h3>Newsletter для мам</h3>
+        <span class="stars">⭐</span>
+      </div>
+      <div class="description">Контент в стиле Позиционирования — лёгкий, "как у подруги". Не «учёба».</div>
+      <div class="impact">Эффект: +5% retention</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">Позиционирование.md</span>
+          <span class="source-tag missing">email_database</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge partial"></span>
+      <div class="lever-header">
+        <span class="lever-id">E5</span>
+        <h3>Instagram-образ Дарьи</h3>
+        <span class="stars">⭐⭐</span>
+      </div>
+      <div class="description">Фон доверия. Недосягаемый идеал, к которому можно «присоединиться» через покупку.</div>
+      <div class="impact">Эффект: долгосрочный trust</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag partial">instagram_posts</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Human-focus задача Дарьи. Мы помогаем фото/текстом.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">E6</span>
+        <h3>NPS после смены</h3>
+        <span class="stars">⭐</span>
+      </div>
+      <div class="description">Google-форма через 3 дня. Низкий NPS → немедленный alert менеджеру.</div>
+      <div class="impact">Эффект: −50% скрытого оттока</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag missing">nps_responses</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ==================== БЛОК F: СТОИМОСТЬ ==================== -->
+<section id="block-f" class="block">
+  <div class="block-header">
+    <div class="letter" style="background: var(--block-f)">F</div>
+    <div>
+      <h2>Стоимость — не тратить лишнего</h2>
+      <div class="sub">Режем затраты на каждом уровне</div>
+    </div>
+  </div>
+  <div class="levers">
+
+    <div class="lever" style="border: 2px solid var(--block-f);">
+      <span class="status-badge ready"></span>
+      <div class="lever-header">
+        <span class="lever-id">F1</span>
+        <h3>Не пропустить инцидент</h3>
+        <span class="stars">⭐⭐⭐</span>
+      </div>
+      <div class="description"><strong>Готово — CM v3!</strong> Автоалерт при Partytown-stop, ломке целей, нулевых конверсиях.</div>
+      <div class="impact">Эффект: −60к+ ₽ потерь на инцидент</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">direct_campaign_stats</span>
+          <span class="source-tag ready">metrika_goals</span>
+          <span class="source-tag ready">cm_v3_rules (3)</span>
+          <span class="source-tag ready">cm_v3_actions_log (11)</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Работает. Можно добавить 3 новых правила: budget-overspend, cpc-peak, conversion-drop.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge ready"></span>
+      <div class="lever-header">
+        <span class="lever-id">F2</span>
+        <h3>Оптим CPA Директа</h3>
+        <span class="stars">⭐⭐</span>
+      </div>
+      <div class="description">Правильный CPA (не 200, не 400) по данным за 30 дней. Стратегия PAY_FOR_CONVERSION.</div>
+      <div class="impact">Эффект: −15-25% CAC</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">direct_campaign_stats</span>
+          <span class="source-tag ready">direct_set_cpa executor</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Executor готов в CM v3. Добавить правило auto-tune CPA weekly.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge partial"></span>
+      <div class="lever-header">
+        <span class="lever-id">F3</span>
+        <h3>Снизить % отказных</h3>
+        <span class="stars">⭐⭐</span>
+      </div>
+      <div class="description">Лучшая квалификация на звонке. 32 категории отказов → топ-3 лечим.</div>
+      <div class="impact">Эффект: +10% close</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">ai_reject_categories (32)</span>
+          <span class="source-tag missing">ai_customer_scores</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Нужно: Module G + переделка скрипта звонка.</div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">F4</span>
+        <h3>Уменьшить no-show</h3>
+        <span class="stars">⭐⭐</span>
+      </div>
+      <div class="description">Предоплата 100% + напоминания за день и 2 часа. Сейчас ~10% no-show.</div>
+      <div class="impact">Эффект: −5% revenue loss</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag missing">alfacrm_booking</span>
+          <span class="source-tag missing">sms_reminder</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="lever">
+      <span class="status-badge missing"></span>
+      <div class="lever-header">
+        <span class="lever-id">F5</span>
+        <h3>Автоматизация скриптов</h3>
+        <span class="stars">⭐⭐</span>
+      </div>
+      <div class="description">Готовые ответы менеджеру в 1 клик → −30% времени на клиента.</div>
+      <div class="impact">Эффект: +30% throughput менеджеров</div>
+      <div class="lever-data">
+        <div class="label">Данные</div>
+        <div class="sources">
+          <span class="source-tag ready">Позиционирование.md</span>
+          <span class="source-tag missing">ai_next_actions</span>
+        </div>
+        <div style="font-size:0.85em; color:var(--text-dim);">Часть C3 — в том же /customer/briefing.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ==================== PRIORITY ==================== -->
+<section id="priority" class="priority-section">
+  <h2>🎯 Приоритет — что делаем в ближайшие 2 недели</h2>
+  <div style="color:var(--text-dim); margin-bottom:20px;">От самого быстрого ROI к долгим вложениям</div>
+
+  <h3 style="color: var(--priority-1); margin-top:16px;">⭐⭐⭐ Неделя 1 — критично, делаем сейчас</h3>
+  <div class="priority-grid">
+    <div class="priority-card">
+      <span class="id">C3</span>
+      <h4>Брифинг менеджера → /customer/briefing</h4>
+      <div class="meta">+10-20% close rate · 3-4 часа кода · данные ✅</div>
+    </div>
+    <div class="priority-card">
+      <span class="id">F1</span>
+      <h4>CM v3 — +3 правила</h4>
+      <div class="meta">−60к₽/инцидент · 2-3 часа · инфра ✅</div>
+    </div>
+    <div class="priority-card">
+      <span class="id">B3</span>
+      <h4>Отзывы Яндекс.Карт на сайт</h4>
+      <div class="meta">+10% CR · 2-3 часа · scraper</div>
+    </div>
+    <div class="priority-card">
+      <span class="id">B2</span>
+      <h4>Фото на hero сайта</h4>
+      <div class="meta">+10-20% CR · 2 часа · ждём TG export</div>
+    </div>
+  </div>
+
+  <h3 style="color: var(--priority-2); margin-top:28px;">⭐⭐ Неделя 2–3</h3>
+  <div class="priority-grid">
+    <div class="priority-card p2">
+      <span class="id">C1</span>
+      <h4>Alert на лид &gt;10 мин</h4>
+      <div class="meta">+20-40% close · нужен AlfaCRM webhook</div>
+    </div>
+    <div class="priority-card p2">
+      <span class="id">D2</span>
+      <h4>Cross-sell Лагерь ↔ Школа</h4>
+      <div class="meta">+50% LTV · Multi-project n8n</div>
+    </div>
+    <div class="priority-card p2">
+      <span class="id">C4</span>
+      <h4>Auto-follow-up не дошедшим</h4>
+      <div class="meta">+5-10% лидов · Module G</div>
+    </div>
+    <div class="priority-card p2">
+      <span class="id">E1</span>
+      <h4>Post-смена follow-up</h4>
+      <div class="meta">+20-30% retention · cron + Telegram</div>
+    </div>
+    <div class="priority-card p2">
+      <span class="id">F2</span>
+      <h4>Auto-optim CPA Директа</h4>
+      <div class="meta">−15-25% CAC · CM v3 правило</div>
+    </div>
+    <div class="priority-card p2">
+      <span class="id">E2</span>
+      <h4>Reputation monitoring</h4>
+      <div class="meta">+15% CR · Yandex.Business scraper</div>
+    </div>
+  </div>
+
+  <h3 style="color: var(--priority-3); margin-top:28px;">⭐ Потом (не приоритет)</h3>
+  <div style="color: var(--text-dim); font-size:0.9em;">
+    A3 (AI-креативы), A4 (семантика), A6 (Telegram Ads), A7 (SEO), A8 (реферальная),
+    B5 (видео-тур), B6 (чат на сайте), C6 (A/B скриптов), D1/D3/D5 (upsell),
+    E3 (реферальная), E4 (newsletter), E6 (NPS), F4 (no-show), F5 (скрипты в 1 клик).
+  </div>
+</section>
+
+<footer>
+  <p>АйДаКемп + АйДаКодить · карта бизнес-рычагов · версия 1 от 19.04.2026</p>
+  <p style="margin-top: 6px; font-size: 0.85em;">
+    Source: <code>_notes/АйДаКемп/_system/Бизнес-рычаги-и-AI-система.md</code> +
+    <code>_notes/АйДаКемп/Клиенты/Портрет клиента.md</code> +
+    <code>_notes/АйДаКемп/Маркетинг/Позиционирование бренда.md</code>
+  </p>
+</footer>
+
+</div>
+</body>
+</html>

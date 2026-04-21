@@ -3,6 +3,30 @@ import { projectVideos, campVideos } from '../data/videos';
 import VideoModal from './VideoModal.astro';
 
 const projects = projectVideos;
+
+const SITE = 'https://aidacamp.ru';
+const videoSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Видео АйДаКемп — IT-лагерь для детей',
+  itemListElement: campVideos.map((v, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    item: {
+      '@type': 'VideoObject',
+      name: v.title,
+      description: v.title,
+      thumbnailUrl: `${SITE}${v.thumb}`,
+      uploadDate: '2026-01-01',
+      embedUrl: v.url,
+      publisher: {
+        '@type': 'Organization',
+        name: 'АйДаКемп',
+        logo: { '@type': 'ImageObject', url: `${SITE}/images/logo-aidacamp.svg` },
+      },
+    },
+  })),
+};
 const videos = campVideos;
 
 const tabs = [
@@ -10,6 +34,8 @@ const tabs = [
   { value: 'videos', label: 'Видео' },
 ];
 ---
+
+<script type="application/ld+json" set:html={JSON.stringify(videoSchema)} />
 
 <section id="videos" class="mx-auto max-w-[1312px] px-[2px] pt-10 md:px-4" data-videos-root>
   <div class="bg-white p-[18px]">

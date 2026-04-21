@@ -11,6 +11,11 @@ import LeadForm from '../components/LeadForm.astro';
 import Gallery from '../components/Gallery.astro';
 import ShiftBookModal from '../components/shifts/ShiftBookModal.astro';
 import { STAT_DISTANCE, CAMP_PRICE_FROM } from '../data/contacts';
+import { mainShifts, shortShifts } from '../data/shifts';
+import TaxCalculator from '../components/TaxCalculator.astro';
+import { shiftLinkHtml } from '../lib/shift-link';
+
+const allShiftsForTable = [...mainShifts, ...shortShifts].sort((a, b) => a.startDate.localeCompare(b.startDate));
 
 const sections = [
   {
@@ -64,20 +69,57 @@ const sections = [
 
 <LandingLayout
   heroImage="/images/hero/lager-na-leto-2026.avif"
-  title="Летний лагерь на лето 2026 — IT Подмосковье | АйДаКемп"
-  description="Детский летний лагерь 2026 в Подмосковье. Смены июнь–август: от 48 000 ₽. Python, AI, Minecraft — проект за смену. 66 км от Москвы. Запись открыта."
-  h1="Летний лагерь на лето 2026"
+  title="Летний лагерь на лето 2026 в Подмосковье — цены и смены от 48 000 ₽ | АйДаКемп"
+  description="Лагерь на лето 2026: IT-смены от 48 000 ₽ в Подмосковье, 66 км от Москвы. Цены зафиксированы. Python, AI, Minecraft — проект за смену. Запись открыта, места заканчиваются."
+  h1="Летний лагерь на лето 2026 в Подмосковье"
   canonical="https://aidacamp.ru/lager-na-leto-2026"
 >
   <LandingHero slot="hero"
-    h1="Летний лагерь на лето 2026"
+    h1="Летний лагерь на лето 2026 в Подмосковье"
     subtitle="Смены июнь–август 2026 в Подмосковье. IT-программа, бассейн, питание. Места заканчиваются."
     breadcrumb="Лагерь на лето 2026"
     keywords={["Смены открыты: июнь, август 2026 — места ограничены", "IT-программа 2026: Python, AI, Minecraft — проект за смену", `${STAT_DISTANCE} от Москвы, от ${CAMP_PRICE_FROM}, проживание и питание включены`]}
     image="/images/hero/lager-na-leto-2026.avif"
     imageAlt="Летний лагерь 2026 АйДаКемп"
   />
+  <!-- Мини-таблица цен: сразу видна без прокрутки, целевой запрос «лагерь на лето 2026 цены» -->
+  <section class="mx-auto max-w-[1312px] px-4 pt-8 pb-4 md:pt-10">
+    <div class="flex items-center gap-2 mb-4">
+      <div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div>
+      <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
+        Смены и цены — лето 2026
+      </h2>
+    </div>
+    <div class="overflow-x-auto rounded-[16px] border border-slate-200">
+      <table class="w-full min-w-[560px] border-collapse bg-white text-[14px]">
+        <thead>
+          <tr class="bg-slate-50 text-[12px] font-semibold uppercase tracking-wide text-slate-500">
+            <th class="px-4 py-2.5 text-left">Смена</th>
+            <th class="px-4 py-2.5 text-left">Даты</th>
+            <th class="px-4 py-2.5 text-left">Дней</th>
+            <th class="px-4 py-2.5 text-right font-bold text-slate-700">Цена</th>
+          </tr>
+        </thead>
+        <tbody>
+          {allShiftsForTable.map((s) => (
+            <tr class="border-t border-slate-100 text-slate-700 hover:bg-orange-50/50 transition-colors">
+              <td class="px-4 py-2.5 font-semibold text-slate-900">
+                <span set:html={shiftLinkHtml(s.id, s.name)} />
+                {s.popular && <span class="ml-1.5 text-[10px] font-semibold uppercase tracking-wide text-orange-600 bg-orange-100 rounded px-1.5 py-0.5">хит</span>}
+              </td>
+              <td class="px-4 py-2.5 text-slate-500">{s.dates}</td>
+              <td class="px-4 py-2.5 text-slate-500">{s.duration}</td>
+              <td class="px-4 py-2.5 text-right font-bold text-[#ec7c00]">{s.price}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="mt-3 text-[13px] text-slate-400">В стоимость включены: проживание, 5-разовое питание, IT-программа, бассейн. <a href="/ceny" class="text-orange-600 hover:underline">Подробнее о ценах →</a></p>
+  </section>
+
   <LandingTwoCol sections={sections} />
+  <TaxCalculator variant="compact" title="Рассчитайте налоговый вычет 13% — до 14 300 ₽ возврата" />
   <Gallery />
   <Shifts />
   <FAQ />
