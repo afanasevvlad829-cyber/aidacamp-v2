@@ -9,10 +9,19 @@ import GlobalShiftLinkHandler from '../components/GlobalShiftLinkHandler.astro';
 interface Props {
   title: string;
   description?: string;
+  ogType?: string;
+  ogImageAlt?: string;
 }
 
-const { title, description = 'АйДаКемп — IT-лагерь для детей 7–14 лет. Программирование, AI, бассейн. 66 км от Москвы.' } = Astro.props;
+const {
+  title,
+  description = 'АйДаКемп — IT-лагерь для детей 7–14 лет. Программирование, AI, бассейн. 66 км от Москвы.',
+  ogType,
+  ogImageAlt = 'АйДаКемп — IT-лагерь для детей в Подмосковье',
+} = Astro.props;
 const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
+// Автодетект: /stati/ → article, остальные → website
+const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !Astro.url.pathname.endsWith('/stati/') ? 'article' : 'website');
 ---
 
 <!doctype html>
@@ -105,12 +114,13 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
     <!-- OG Meta -->
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={resolvedOgType} />
     <meta property="og:locale" content="ru_RU" />
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:image" content="https://aidacamp.ru/images/hero-custom-2026-04-07.avif" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={ogImageAlt} />
     <meta property="og:site_name" content="АйДаКемп" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="https://aidacamp.ru/images/hero-custom-2026-04-07.avif" />
