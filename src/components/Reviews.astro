@@ -21,7 +21,7 @@ import { reviews } from '../data/reviews';
       <a href="https://yandex.ru/maps/org/aydakemp/35558479035/reviews/" target="_blank" rel="noopener" class="text-orange-700 underline">Яндекс.Картах</a>
     </p>
 
-    <div class="mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:pb-0 xl:grid-cols-3">
+    <div class="mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:pb-0 xl:grid-cols-3" data-reviews-carousel>
       {reviews.map((r, i) => (
         <article class="min-w-[88%] snap-start rounded-[18px] border border-slate-200 bg-slate-50 p-4 md:min-w-0 md:rounded-[20px] md:p-5 flex flex-col">
           <div class="flex items-center gap-3">
@@ -48,6 +48,16 @@ import { reviews } from '../data/reviews';
             </svg>
           </button>
         </article>
+      ))}
+    </div>
+    <!-- Dots indicator — mobile only -->
+    <div class="mt-3 flex justify-center items-center gap-2 md:hidden" data-reviews-dots aria-label="Навигация по отзывам">
+      {reviews.map((_, i) => (
+        <span
+          class={`h-2 rounded-full transition-all duration-200 ${i === 0 ? 'w-6 bg-[#c45f00]' : 'w-2 bg-slate-300'}`}
+          data-reviews-dot={i}
+          aria-current={i === 0 ? 'true' : 'false'}
+        ></span>
       ))}
     </div>
   </div>
@@ -105,6 +115,29 @@ import { reviews } from '../data/reviews';
 
 <script>
   function initReviews() {
+    // Dots indicator for mobile carousel
+    const carousel = document.querySelector<HTMLElement>('[data-reviews-carousel]');
+    const dots = document.querySelectorAll<HTMLElement>('[data-reviews-dot]');
+    if (carousel && dots.length) {
+      const cards = Array.from(carousel.children) as HTMLElement[];
+      const dotObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const idx = cards.indexOf(entry.target as HTMLElement);
+            dots.forEach((d, di) => {
+              const isActive = di === idx;
+              d.classList.toggle('bg-[#c45f00]', isActive);
+              d.classList.toggle('w-6', isActive);
+              d.classList.toggle('bg-slate-300', !isActive);
+              d.classList.toggle('w-2', !isActive);
+              d.setAttribute('aria-current', isActive ? 'true' : 'false');
+            });
+          }
+        });
+      }, { root: carousel, threshold: 0.6 });
+      cards.forEach((card) => dotObserver.observe(card));
+    }
+
     const reviews = JSON.parse(document.getElementById('reviews-json')?.textContent || '[]');
     const modal    = document.getElementById('review-modal')!;
     const backdrop = document.getElementById('review-modal-backdrop')!;
