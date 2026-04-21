@@ -181,19 +181,23 @@ import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, WHATSAPP_
       const DISMISS_KEY = 'ac_sticky_v2_dismissed';
       let shown = false;
 
+      function hideBar() {
+        shown = false;
+        sessionStorage.setItem(DISMISS_KEY, '1');
+        bar.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+        bar.setAttribute('inert', '');
+      }
+
       function showBar() {
         if (shown || sessionStorage.getItem(DISMISS_KEY) === '1') return;
         shown = true;
-        bar.style.pointerEvents = 'auto';
-        bar.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+        // Сначала снимаем inert и pointer-events, потом анимируем
         bar.removeAttribute('inert');
-      }
-      function hideBar() {
-        shown = false;
-        bar.style.pointerEvents = '';
-        bar.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
-        bar.setAttribute('inert', '');
-        sessionStorage.setItem(DISMISS_KEY, '1');
+        bar.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+        // Вешаем listener на кнопку только после того как bar интерактивен
+        const closeBtn = bar.querySelector<HTMLElement>('[data-sticky-close]');
+        closeBtn?.addEventListener('click', hideBar, { once: true });
+        closeBtn?.addEventListener('touchend', (e) => { e.preventDefault(); hideBar(); }, { once: true, passive: false });
       }
 
       if (sessionStorage.getItem(DISMISS_KEY) !== '1') {
@@ -206,14 +210,6 @@ import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, WHATSAPP_
         window.addEventListener('scroll', onScroll, { passive: true });
         onScroll();
       }
-
-      // Event delegation на bar — надёжнее querySelector на inert-элементе
-      bar.addEventListener('click', (e) => {
-        const target = e.target as HTMLElement;
-        if (target.closest('[data-sticky-close]')) {
-          hideBar();
-        }
-      });
 
       bar.querySelector<HTMLAnchorElement>('[data-sticky-call]')?.addEventListener('click', () => {
         try { (window as any).trackGoal?.('sticky_call_mobile'); } catch {}
