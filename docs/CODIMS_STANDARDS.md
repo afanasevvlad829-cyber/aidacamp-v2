@@ -110,23 +110,21 @@ tooling (orphan) — скрипты CI, не мержится в dev/main
 
 ### Типографика
 
+> Источник правды: `/Users/vladimirafanasev/Aidacamp-cloude/Дизайн-архитектура.md`
+
 | Элемент | Десктоп | Мобилка | Вес | Цвет |
 |---|---|---|---|---|
 | H1 | 44px | 36px | 700 | `#0f172a` |
-| H2 | 34px | 26px | 700 | `#0f172a` + оранжевая полоса слева |
-| H3 | 22px | 18px | 700 | `#0f172a` |
-| Лид (подзаголовок) | 18px | 16px | 400 | `#475569` |
-| Body | 16px | 16px | 400 | `#1e2430` |
-| Small | 14px | 13px | 400 | `#64748b` |
-| Caption | 12px | 11px | 600 caps | `#94a3b8` |
+| H2 | 30px | 30px | 700 | `#0f172a` + оранжевая полоса слева |
+| H3 | 22px | 22px | 700 | `#0f172a` |
+| Лид | 16px | 16px | 400 | `#475569` |
+| Body | 15px | 15px | 400 | `#1e293b` |
+| Small | 13px | 13px | 400 | `#64748b` |
+| Caption | 11px | 11px | 600 caps | `#94a3b8` |
 | Ссылки | — | — | 500 | `#ec7c00` |
 
-**Правило `mobile-ux-p0.css`:** body всегда `font-size: 16px` (не 14px), `line-height: 1.65`
+**Правило `mobile-ux-p0.css`:** body минимум `font-size: 16px` (не 14px), `line-height: 1.65`
 
-**Шрифты:**
-- Основной: **Comfortaa** (system-ui fallback), sans-serif
-- UI/текст: **Inter** — preload из `/fonts/inter-cyrillic.woff2` + `/fonts/inter-latin.woff2` (crossorigin)
-- `font-display: swap`
 
 ### Брейкпоинты (Tailwind defaults, Tailwind v4)
 
@@ -175,6 +173,20 @@ tooling (orphan) — скрипты CI, не мержится в dev/main
 Добавить иконку: добавить имя в `icons-manifest.json` → `npm run icons` (не редактировать `icons.css` вручную).
 
 ---
+
+## 2b. ОТКРЫТЫЕ ЗАДАЧИ AIDACAMP (из Дизайн-архитектуры)
+
+Зафиксированы в `/Users/vladimirafanasev/Aidacamp-cloude/Дизайн-архитектура.md`, актуальны на 2026-04-21:
+
+| Приоритет | Задача |
+|---|---|
+| 🔴 КРИТ | CSS-переменные: смешаны хардкод-hex и `var()` — привести к единой схеме |
+| 🔴 КРИТ | `Base.astro` fix — восстановить age-selection modal (сломана воронка VK) |
+| 🟡 | Кнопки уровень 2 → единый контурный оранжевый (сейчас не единообразно) |
+| 🟡 | Team PNG → avif (400–520KB каждая) |
+| 🟡 | Gallery JPGs → avif |
+| 🟢 | `VideoFacade.astro` — ленивая загрузка для 5 Kinescope видео |
+
 
 ## 3. КОМПОНЕНТЫ
 
