@@ -1,0 +1,40 @@
+export const campData = {
+  shifts: [
+    { id: 'smena-1', name: 'Смена 1', dates: '30 мая — 8 июня', days: 10, price: 74900, available: true },
+    { id: 'smena-2', name: 'Смена 2', dates: '10 — 23 июня', days: 14, price: 95000, available: true, popular: true },
+    { id: 'smena-2-1', name: 'Смена 2.1', dates: '10 — 16 июня', days: 7, price: 48000, available: true },
+    { id: 'smena-3', name: 'Смена 3', dates: '3 — 15 августа', days: 13, price: 89400, available: true },
+    { id: 'smena-4', name: 'Смена 4', dates: '17 — 26 августа', days: 10, price: 69600, available: false },
+  ],
+  courses: [
+    { id: 'python', name: 'Python', ageRange: '10–16 лет', desc: 'Самый востребованный язык. Боты, игры, AI-проекты, веб.' },
+    { id: 'minecraft', name: 'Minecraft', ageRange: '8–12 лет', desc: 'Программирование через игру. Моды и скрипты на Python/Java.' },
+    { id: 'scratch', name: 'Scratch', ageRange: '7–10 лет', desc: 'Визуальные блоки. Первые игры и анимации без кода.' },
+    { id: 'unity', name: 'Unity', ageRange: '11–16 лет', desc: '3D и 2D игры на C#. Промышленный движок.' },
+    { id: 'cyber', name: 'Кибербезопасность', ageRange: '13–16 лет', desc: 'CTF, Linux, этичный хакинг, сети.' },
+    { id: 'ai', name: 'AI-проекты', ageRange: '12–16 лет', desc: 'Нейросети, ML, работа с API.' },
+  ],
+  facts: {
+    address: 'Санаторий Изумруд, Наро-Фоминский район МО',
+    coordinates: '55.265643, 36.724185',
+    distanceFromMoscow: '66 км от МКАД по Калужскому шоссе (A-101), ~1 час',
+    transfer: 'Автобус от м. Солнцево, входит в стоимость',
+    ageRange: '7–16 лет',
+    accommodation: 'Корпуса по 2–4 человека, WiFi',
+    meals: '4 раза в день, горячее. Аллергии учитываются',
+    pool: 'Каждый день, открытый',
+    security: 'Охрана 24/7, закрытая территория',
+    medical: 'Медсестра круглосуточно, больница в 15 минутах',
+    communication: 'Фото каждый день в WhatsApp-чат, звонки по расписанию',
+    hackathon: 'Последние 2 дня каждой смены — командный проект + защита',
+    experience: 'Не нужен. Начинаем с нуля. Если умеет — попадает в группу по уровню',
+    refundPolicy: 'За 30+ дней — полный возврат. За 14–30 дней — минус фактические расходы',
+    license: 'Министерства образования, лицензированный туроператор',
+    contact: '+7 (968) 808-64-55, wa.me/79688086455, @Progaschool',
+    workingHours: '11:00–20:00 МСК, обычно отвечаем за 10 минут',
+    cashback: 'Кешбэк 15% через Госуслуги применяется ко всем сменам',
+    included: 'Проживание, питание 4 раза в день, IT-программа по направлению, трансфер от м. Солнцево, бассейн',
+  },
+};
+
+export type CampData = typeof campData;
