@@ -58,6 +58,10 @@ export const landingPages: LandingPage[] = [
   { title: 'Тематический лагерь', description: 'Каждая смена — своя тема', url: '/tematicheskiy-lager', icon: 'bi-bullseye' },
   { title: 'Образовательный лагерь', description: 'Учёба + результат за смену', url: '/obrazovatelnyy-lager', icon: 'bi-book' },
   { title: 'Для компаний', description: 'Путёвки для сотрудников', url: '/dlya-kompaniy', icon: 'bi-building' },
+
+  // ℹ️ Информационные
+  { title: 'О лагере', description: 'Кто мы, история, как устроен день', url: '/o-lagere', icon: 'bi-info-circle' },
+  { title: 'Отзывы родителей', description: '5.0 — 40+ отзывов на Яндекс.Картах', url: '/otzyvy', icon: 'bi-chat-quote' },
 ];
 
 /**
