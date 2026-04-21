@@ -205,14 +205,20 @@ import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, WHATSAPP_
       }
 
       if (sessionStorage.getItem(DISMISS_KEY) !== '1') {
-        const onScroll = () => {
-          if (window.scrollY > 480) {
-            showBar();
-            window.removeEventListener('scroll', onScroll);
-          }
-        };
-        window.addEventListener('scroll', onScroll, { passive: true });
-        onScroll();
+        if (hero) {
+          // Показываем после того как hero покидает вьюпорт
+          const mobileHeroObs = new IntersectionObserver(([e]) => {
+            if (!e.isIntersecting) { showBar(); mobileHeroObs.disconnect(); }
+          }, { threshold: 0 });
+          mobileHeroObs.observe(hero);
+        } else {
+          // Нет hero (лендинги) — показываем после скролла 480px
+          const onScroll = () => {
+            if (window.scrollY > 480) { showBar(); window.removeEventListener('scroll', onScroll); }
+          };
+          window.addEventListener('scroll', onScroll, { passive: true });
+          onScroll();
+        }
       }
 
       bar.querySelector<HTMLAnchorElement>('[data-sticky-call]')?.addEventListener('click', () => {
