@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Воронка АйДаКемп — апрель 2026</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+  /* TABS */
+  .tabs-nav { display: flex; gap: 0; border-bottom: 1px solid #1e293b; padding: 0 20px; background: #0a1120; }
+  .tab-btn { padding: 14px 20px; font-size: 13px; font-weight: 600; color: #475569; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .15s; }
+  .tab-btn:hover { color: #94a3b8; }
+  .tab-btn.active { color: #f1f5f9; border-bottom-color: #ec7c00; }
+  .tab-badge { display: inline-block; background: #334155; border-radius: 4px; padding: 1px 6px; font-size: 10px; margin-left: 6px; color: #94a3b8; }
+  .tab-badge.new { background: #14532d; color: #4ade80; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .header { padding: 20px 20px 14px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 12px; }
+  .device-icon { font-size: 26px; }
+  .header h1 { font-size: 18px; font-weight: 700; color: #f1f5f9; }
+  .header .sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+  .badge { background: #334155; border-radius: 8px; padding: 4px 10px; font-size: 11px; color: #94a3b8; margin-left: auto; }
+  .badge-green { background: #14532d; color: #4ade80; }
+
+  .layout { display: flex; gap: 0; height: calc(100vh - 116px); overflow: hidden; }
+  .funnel-col { width: 400px; min-width: 400px; overflow-y: auto; padding: 18px; border-right: 1px solid #1e293b; }
+  .funnel-col h2 { font-size: 10px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+  .screens-col { flex: 1; overflow-y: auto; padding: 18px; }
+  .screens-col h2 { font-size: 10px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+
+  .step { margin-bottom: 4px; }
+  .step-body { border-radius: 12px; border: 1px solid transparent; padding: 12px 14px; }
+  .step-body:hover { border-color: #334155; }
+  .step-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+  .step-num { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .step-label { font-size: 13px; font-weight: 600; color: #f1f5f9; flex: 1; }
+  .step-count { font-size: 13px; font-weight: 700; }
+  .step-trigger { font-size: 11px; color: #64748b; margin: 2px 0 3px 30px; }
+  .step-desc { font-size: 11px; color: #94a3b8; margin-left: 30px; line-height: 1.5; }
+
+  .s1 { background: #1e3a5f; } .s1 .step-num { background: #2563eb; color: #fff; } .s1 .step-count { color: #60a5fa; }
+  .s2 { background: #1c3a2e; } .s2 .step-num { background: #16a34a; color: #fff; } .s2 .step-count { color: #4ade80; }
+  .s3 { background: #2d2415; } .s3 .step-num { background: #d97706; color: #fff; } .s3 .step-count { color: #fbbf24; }
+  .s4 { background: #2d1515; } .s4 .step-num { background: #dc2626; color: #fff; } .s4 .step-count { color: #f87171; }
+  .s5 { background: #1a1a2e; } .s5 .step-num { background: #7c3aed; color: #fff; } .s5 .step-count { color: #a78bfa; }
+  .s-exit { background: #0c2a33; } .s-exit .step-num { background: #0891b2; color: #fff; } .s-exit .step-count { color: #67e8f9; }
+  .s-dead { background: #1e1e2e; border: 1px dashed #334155 !important; opacity: .5; }
+  .s-dead .step-num { background: #334155; color: #64748b; }
+
+  .drop-arrow { display: flex; align-items: center; gap: 8px; padding: 5px 14px; }
+  .drop-line { flex: 1; height: 1px; background: #1e293b; }
+  .drop-label { font-size: 11px; color: #475569; white-space: nowrap; }
+  .drop-bad { color: #f87171; } .drop-ok { color: #fbbf24; } .drop-good { color: #4ade80; }
+
+  .stats-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .stat-box { flex: 1; background: #1e293b; border-radius: 10px; border: 1px solid #334155; padding: 10px 12px; }
+  .stat-val { font-size: 18px; font-weight: 800; color: #f1f5f9; }
+  .stat-label { font-size: 10px; color: #64748b; margin-top: 2px; }
+  .stat-sub { font-size: 10px; color: #475569; margin-top: 1px; }
+
+  /* screens */
+  .screen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+  .screen-card { background: #1e293b; border-radius: 12px; border: 1px solid #334155; overflow: hidden; }
+  .screen-header { padding: 9px 11px; border-bottom: 1px solid #334155; display: flex; align-items: center; gap: 7px; }
+  .screen-step-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .screen-title { font-size: 11px; font-weight: 600; color: #cbd5e1; }
+  .screen-body { padding: 10px; }
+
+  .phone-frame { background: #0f172a; border-radius: 8px; border: 1px solid #334155; overflow: hidden; font-size: 10px; }
+  .phone-statusbar { height: 5px; background: #1e293b; }
+  .phone-content { padding: 7px; }
+  .ui-bar { background: #1e40af; border-radius: 3px; padding: 2px 5px; color: #bfdbfe; font-size: 9px; margin-bottom: 2px; }
+  .ui-dark { background: #1e293b; border: 1px solid #334155; border-radius: 4px; padding: 3px 5px; color: #94a3b8; font-size: 9px; margin-bottom: 2px; }
+  .ui-modal { background: #1e293b; border-radius: 6px; border: 1px solid #475569; padding: 6px 7px; margin: 3px 0; font-size: 9px; color: #cbd5e1; }
+  .ui-btn { background: #ec7c00; color: #fff; border-radius: 4px; padding: 4px 7px; font-size: 9px; font-weight: 600; text-align: center; margin-top: 3px; }
+  .ui-btn.gray { background: #334155; }
+  .ui-toast { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 4px 6px; font-size: 9px; color: #e2e8f0; margin-top: 3px; }
+  .ui-row { display: flex; align-items: center; gap: 3px; margin-bottom: 2px; }
+  .ui-bottom-bar { background: #0a1120; border-top: 1px solid #334155; padding: 5px 7px; }
+
+  /* insights */
+  .insights { margin-top: 18px; }
+  .insight-card { background: #1e293b; border-radius: 10px; border: 1px solid #334155; padding: 12px 14px; margin-bottom: 8px; }
+  .insight-title { font-size: 12px; font-weight: 700; margin-bottom: 5px; }
+  .insight-body { font-size: 11px; color: #94a3b8; line-height: 1.6; }
+  .tag { display: inline-block; border-radius: 4px; padding: 1px 5px; font-size: 10px; font-weight: 600; }
+  .tag-red { background: #450a0a; color: #f87171; }
+  .tag-yellow { background: #451a03; color: #fbbf24; }
+  .tag-green { background: #052e16; color: #4ade80; }
+  .tag-blue { background: #0c1a3a; color: #60a5fa; }
+
+  /* diff highlight for v2 */
+  .new-thing { border-left: 2px solid #4ade80; padding-left: 8px; margin-top: 4px; }
+  .removed-thing { border-left: 2px solid #f87171; padding-left: 8px; margin-top: 4px; text-decoration: line-through; opacity: .6; }
+
+  /* desktop frame */
+  .desktop-frame { background: #0f172a; border-radius: 6px; border: 1px solid #334155; font-size: 9px; overflow: hidden; }
+  .desktop-topbar { background: #1e293b; height: 16px; display: flex; align-items: center; padding: 0 5px; gap: 3px; border-bottom: 1px solid #334155; }
+  .desktop-topbar .dot { width: 4px; height: 4px; border-radius: 50%; background: #334155; }
+  .desktop-url { font-size: 7px; color: #475569; margin: 0 auto; }
+  .desktop-content { padding: 7px; }
+  .desktop-nav { background: #1e293b; padding: 3px 5px; border-bottom: 1px solid #334155; display: flex; gap: 7px; align-items: center; }
+  .nav-item { font-size: 7px; color: #64748b; }
+  .nav-logo { font-size: 8px; font-weight: 700; color: #ec7c00; margin-right: auto; }
+</style>
+</head>
+<body>
+
+<div class="tabs-nav">
+  <button class="tab-btn active" onclick="showTab('mobile-v2')">📱 Мобилка <span class="tab-badge new">v2</span></button>
+  <button class="tab-btn" onclick="showTab('mobile-v1')">📱 Мобилка <span class="tab-badge">v1 текущая</span></button>
+  <button class="tab-btn" onclick="showTab('desktop')">🖥 Десктоп <span class="tab-badge">текущая</span></button>
+</div>
+
+<!-- ==================== МОБИЛКА V2 ==================== -->
+<div id="mobile-v2" class="tab-panel active">
+  <div class="header">
+    <div class="device-icon">📱</div>
+    <div>
+      <h1>Мобилка — новая воронка v2</h1>
+      <div class="sub">Предложение · апрель 2026 · ~70% трафика</div>
+    </div>
+    <div class="badge badge-green">Предложение</div>
+  </div>
+
+  <div class="layout">
+    <div class="funnel-col">
+      <h2>Новый флоу</h2>
+
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-val">~700</div>
+          <div class="stat-label">Скролл 25% / мес</div>
+          <div class="stat-sub">апрель 1–14</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" style="color:#4ade80">цель</div>
+          <div class="stat-label">CR → 3%+</div>
+          <div class="stat-sub">сейчас 1.4%</div>
+        </div>
+      </div>
+
+      <!-- STEP 1 -->
+      <div class="step">
+        <div class="step-body s1">
+          <div class="step-meta">
+            <div class="step-num">1</div>
+            <div class="step-label">Приземление — Hero</div>
+          </div>
+          <div class="step-trigger">📍 Первый экран. Кнопка «Записаться»</div>
+          <div class="step-desc">Ничего не всплывает. Задержка 30 сек на кнопку в Hero — <strong style="color:#f87171">убираем</strong>. Пусть нажмёт сразу если хочет.</div>
+          <div class="removed-thing" style="font-size:10px;color:#f87171">✕ AgeOnboarding попап — убран</div>
+          <div class="removed-thing" style="font-size:10px;color:#f87171">✕ StickyCta бар — убран</div>
+        </div>
+      </div>
+
+      <div class="drop-arrow">
+        <div class="drop-line"></div>
+        <div class="drop-label">скролл вниз</div>
+        <div class="drop-line"></div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="step">
+        <div class="step-body s2">
+          <div class="step-meta">
+            <div class="step-num">2</div>
+            <div class="step-label">AgeBar — выбор возраста</div>
+            <div class="step-count">~700</div>
+          </div>
+          <div class="step-trigger">⏱ При 25% скролла — выезжает снизу</div>
+          <div class="step-desc new-thing">Текст: «Выберите возраст — покажем подходящие смены»<br>Кнопки: [7–9] [10–12] [13–14] [✕]<br>Без «Смотреть все» — только возраст или закрыть.</div>
+        </div>
+      </div>
+
+      <div class="drop-arrow">
+        <div class="drop-line"></div>
+        <div class="drop-label drop-good">~36% тапают</div>
+        <div class="drop-line"></div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="step">
+        <div class="step-body s2">
+          <div class="step-meta">
+            <div class="step-num">3</div>
+            <div class="step-label">Адаптация + нудж</div>
+            <div class="step-count">~245</div>
+          </div>
+          <div class="step-trigger">✅ Выбрал возраст → localStorage</div>
+          <div class="step-desc new-thing">
+            Карточки смен: нужный возраст подсвечен, остальные приглушены.<br><br>
+            AgeBar трансформируется в нудж:<br>
+            <em style="color:#fbbf24">«В Смену 1 уже едет 12 ребят 10–12 лет → [Посмотреть]»</em><br><br>
+            Числа по сменам:<br>
+            Смена 1 — 12 · Смена 2 — 8 · Смена 3/4 — 5–6<br>
+            (синхронизировано везде на странице)
+          </div>
+        </div>
+      </div>
+
+      <div class="drop-arrow">
+        <div class="drop-line"></div>
+        <div class="drop-label drop-ok">тапает нудж</div>
+        <div class="drop-line"></div>
+      </div>
+
+      <!-- STEP 4 -->
+      <div class="step">
+        <div class="step-body s3">
+          <div class="step-meta">
+            <div class="step-num">4</div>
+            <div class="step-label">ShiftModal — Смена 1</div>
+          </div>
+          <div class="step-trigger">📍 Открывается сразу ShiftModal Смены 1</div>
+          <div class="step-desc new-thing">
+            Без скролла к блоку смен — сразу модалка.<br>
+            Внутри: «В эту смену уже едет 12 ребят вашего возраста»<br>
+            Возраст из localStorage → кнопка «Записаться» сразу видна.
+          </div>
+        </div>
+      </div>
+
+      <div class="drop-arrow">
+        <div class="drop-line"></div>
+        <div class="drop-label drop-ok">нажимает «Записаться»</div>
+        <div class="drop-line"></div>
+      </div>
+
+      <!-- STEP 5 -->
+      <div class="step">
+        <div class="step-body s4">
+          <div class="step-meta">
+            <div class="step-num">5</div>
+            <div class="step-label">ShiftBookModal</div>
+          </div>
+          <div class="step-trigger">📍 Возраст уже предзаполнен из localStorage</div>
+          <div class="step-desc">Телефон + согласие → «Отправить заявку»</div>
+        </div>
+      </div>
+
+      <div class="drop-arrow">
+        <div class="drop-line"></div>
+        <div class="drop-label" style="color:#64748b">после отправки</div>
+        <div class="drop-line"></div>
+      </div>
+
+      <!-- STEP 6 -->
+      <div class="step">
+        <div class="step-body s5">
+          <div class="step-meta">
+            <div class="step-num">6</div>
+            <div class="step-label">ReferralModal</div>
+          </div>
+          <div class="step-trigger">💚 WhatsApp · 💙 Telegram — поделиться</div>
+          <div class="step-desc">Предложение рассказать другу. Без изменений.</div>
+        </div>
+      </div>
+
+      <!-- Альтернативный путь -->
+      <div style="margin-top:16px;padding:10px 12px;background:#1a1f2e;border-radius:10px;border:1px dashed #334155">
+        <div style="font-size:10px;font-weight:700;color:#64748b;margin-bottom:6px">АЛЬТЕРНАТИВНЫЙ ПУТЬ — сам нашёл смену</div>
+        <div style="font-size:10px;color:#94a3b8;line-height:1.6">
+          Пролистал до блока смен сам → тапнул «Выбрать» на карточке → ShiftBookModal (шаг 5).<br>
+          Или открыл ShiftModal → внутри увидел соцдоказательство → «Записаться».
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: screens + insights -->
+    <div class="screens-col">
+      <h2>Что видит пользователь · v2</h2>
+
+      <div class="screen-grid">
+
+        <!-- screen 1: hero -->
+        <div class="screen-card">
+          <div class="screen-header">
+            <div class="screen-step-dot" style="background:#2563eb"></div>
+            <div class="screen-title">Шаг 1 · Hero (чистый)</div>
+          </div>
+          <div class="screen-body">
+            <div class="phone-frame">
+              <div class="phone-statusbar"></div>
+              <div class="phone-content">
+                <div style="font-size:8px;color:#64748b;margin-bottom:3px">🔵 Меню: Смены · Программа · Контакты</div>
+                <div style="font-size:10px;font-weight:700;color:#f1f5f9;line-height:1.3;margin-bottom:4px">IT-лагерь в Подмосковье для детей 7–14</div>
+                <div style="font-size:8px;color:#94a3b8;margin-bottom:4px">Каждый уедет с проектом и новыми друзьями</div>
+                <div class="ui-btn">Записаться</div>
+                <div style="font-size:8px;color:#475569;text-align:center;margin-top:4px">📸 фото · ↓ скролл</div>
+              </div>
+            </div>
+            <div style="font-size:9px;color:#4ade80;margin-top:5px">✓ Никаких попапов. Кнопка активна сразу.</div>
+          </div>
+        </div>
+
+        <!-- screen 2: agebar -->
+        <div class="screen-card">
+          <div class="screen-header">
+            <div class="screen-step-dot" style="background:#16a34a"></div>
+            <div class="screen-title">Шаг 2 · AgeBar при 25%</div>
+          </div>
+          <div class="screen-body">
+            <div class="phone-frame">
+              <div class="phone-statusbar"></div>
+              <div class="phone-content">
+                <div style="font-size:8px;color:#475569;margin-bottom:10px">... контент страницы ...</div>
+              </div>
+              <div class="ui-bottom-bar">
+                <div style="font-size:9px;color:#cbd5e1;margin-bottom:4px;font-weight:600">Выберите возраст — покажем подходящие смены</div>
+                <div style="display:flex;gap:4px;align-items:center">
+                  <div class="ui-dark" style="padding:3px 8px;font-size:9px;cursor:pointer">7–9</div>
+                  <div class="ui-dark" style="padding:3px 8px;font-size:9px">10–12</div>
+                  <div class="ui-dark" style="padding:3px 8px;font-size:9px">13–14</div>
+                  <div style="margin-left:auto;font-size:11px;color:#475569">✕</div>
+                </div>
+              </div>
+            </div>
+            <div style="font-size:9px;color:#64748b;margin-top:5px">Не блокирует контент. Можно закрыть.</div>
+          </div>
+        </div>
+
+        <!-- screen 3: nudge -->
+        <div class="screen-card">
+          <div class="screen-header">
+            <div class="screen-step-dot" style="background:#16a34a"></div>
+            <div class="screen-title">Шаг 3 · Нудж после выбора</div>
+          </div>
+          <div class="screen-body">
+            <div class="phone-frame">
+              <div class="phone-statusbar"></div>
+              <div class="phone-content">
+                <div style="font-size:8px;color:#475569;margin-bottom:8px">... смены (чужой возраст приглушён) ...</div>
+                <div class="ui-dark" style="opacity:.3;margin-bottom:2px;font-size:8px">Смена 3 · 3–16 июля ···</div>
+                <div style="background:#1e3a5f;border:1px solid #2563eb44;border-radius:5px;padding:4px 6px;margin-bottom:2px;font-size:8px;color:#e2e8f0">
+                  <strong>Смена 1</strong> · 30 мая — 8 июня — яркая
+                </div>
+              </div>
+              <div class="ui-bottom-bar">
+                <div style="font-size:9px;color:#fbbf24;margin-bottom:3px">👥 В Смену 1 едет уже 12 ребят 10–12 лет</div>
+                <div class="ui-btn" style="font-size:9px;padding:3px 8px;display:inline-block">Посмотреть →</div>
+              </div>
+            </div>
+            <div style="font-size:9px;color:#64748b;margin-top:5px">AgeBar → нудж. Карточки адаптированы.</div>
+          </div>
+        </div>
+
+        <!-- screen 4: shiftmodal -->
+        <div class="screen-card">
+          <div class="screen-header">
+            <div class="screen-step-dot" style="background:#d97706"></div>
+            <div class="screen-title">Шаг 4 · ShiftModal Смены 1</div>
+          </div>
+          <div class="screen-body">
+            <div class="phone-frame">
+              <div class="phone-statusbar"></div>
+              <div class="phone-content">
+                <div class="ui-modal">
+                  <div style="font-size:9px;font-weight:700;color:#f1f5f9;margin-bottom:2px">Смена 1 · 30 мая — 8 июня ✕</div>
+                  <div style="font-size:8px;color:#4ade80;margin-bottom:3px">👥 Уже едет 12 ребят 10–12 лет</div>
+                  <div style="font-size:8px;color:#64748b;margin-bottom:3px">14 дней · от 65 000 ₽ · Python, AI, Minecraft</div>
+                  <div style="display:flex;gap:4px;margin-bottom:3px">
+                    <div style="font-size:7px;background:#1e3a5f;color:#60a5fa;border-radius:3px;padding:2px 4px">Программа</div>
+                    <div style="font-size:7px;background:#1e3a5f;color:#60a5fa;border-radius:3px;padding:2px 4px">Расписание</div>
+                  </div>
+                  <div class="ui-btn" style="font-size:9px">Записаться на смену →</div>
+                </div>
+              </div>
+            </div>
+            <div style="font-size:9px;color:#64748b;margin-top:5px">Возраст знаем. Соцдоказательство сразу видно.</div>
+          </div>
+        </div>
+
+        <!-- screen 5: shiftbookmodal -->
+        <div class="screen-card">
+          <div class="screen-header">
+            <div class="screen-step-dot" style="background:#dc2626"></div>
+            <div class="screen-title">Шаг 5 · ShiftBookModal</div>
+          </div>
+          <div class="screen-body">
+            <div class="phone-frame">
+              <div class="phone-statusbar"></div>
+              <div class="phone-content">
+                <div class="ui-modal">
+                  <div style="font-size:9px;font-weight:700;color:#f1f5f9;margin-bottom:3px">Смена 1 · 30 мая — 8 июня ✕</div>
+                  <div style="font-size:8px;color:#64748b;margin-bottom:3px">14 дней · 65 000 ₽</div>
+                  <div style="font-size:8px;color:#94a3b8;margin-bottom:2px">ВОЗРАСТ</div>
+                  <div style="display:flex;gap:3px;margin-bottom:4px">
+                    <div class="ui-dark" style="font-size:8px;padding:2px 4px">7–10</div>
+                    <div style="font-size:8px;background:#2563eb;color:#fff;border-radius:4px;padding:2px 4px">10–12 ✓</div>
+                    <div class="ui-dark" style="font-size:8px;padding:2px 4px">13–14</div>
+                  </div>
+                  <div class="ui-dark" style="font-size:8px;margin-bottom:3px">+7 (___) ___-__-__</div>
+                  <div style="font-size:8px;color:#64748b;margin-bottom:4px">☐ Согласие на обработку данных</div>
+                  <div class="ui-btn" style="background:#334155">Отправить заявку</div>
+                </div>
+              </div>
+            </div>
+            <div style="font-size:9px;color:#4ade80;margin-top:5px">✓ Возраст предзаполнен из localStorage.</div>
+          </div>
+        </div>
+
+        <!-- screen 6: shifts block -->
+        <div class="screen-card">
+          <div class="screen-header">
+            <div class="screen-step-dot" style="background:#7c3aed"></div>
+            <div class="screen-title">Блок смен — адаптированный</div>
+          </div>
+          <div class="screen-body">
+            <div class="phone-frame">
+              <div class="phone-statusbar"></div>
+              <div class="phone-content">
+                <div style="font-size:8px;font-weight:600;color:#94a3b8;margin-bottom:3px">Смены для детей 10–12 лет</div>
+                <div style="background:#1e3a5f;border:1px solid #3b82f6;border-radius:5px;padding:5px;margin-bottom:3px">
+                  <div style="font-size:8px;font-weight:600;color:#f1f5f9">Смена 1 · 30 мая — 8 июня</div>
+                  <div style="font-size:7px;color:#60a5fa">👥 12 ребят вашего возраста · 65 000 ₽</div>
+                  <div class="ui-btn" style="font-size:8px;padding:2px 6px;margin-top:2px;display:inline-block">Выбрать</div>
+                </div>
+                <div style="background:#1c3a2e;border:1px solid #16a34a;border-radius:5px;padding:5px;margin-bottom:3px">
+                  <div style="font-size:8px;font-weight:600;color:#f1f5f9">Смена 2 · 10–23 июня 🔥</div>
+                  <div style="font-size:7px;color:#4ade80">👥 8 ребят · осталось мест мало!</div>
+                  <div class="ui-btn" style="font-size:8px;padding:2px 6px;margin-top:2px;display:inline-block">Выбрать</div>
+                </div>
+                <div style="opacity:.35;font-size:7px;color:#64748b;padding:3px">Смена 3 · Смена 4 ···</div>
+              </div>
+            </div>
+            <div style="font-size:9px;color:#64748b;margin-top:5px">Смена 1 = больше детей (привлекательно). Смена 2 = меньше, срочность.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- INSIGHTS -->
+      <div class="insights">
+        <h2 style="margin-top:18px;margin-bottom:10px">Что меняется и почему</h2>
+
+        <div class="insight-card">
+          <div class="insight-title" style="color:#f87171">🗑 Убираем из мобилки</div>
+          <div class="insight-body">
+            <div class="removed-thing">AgeOnboarding — блокирующий попап (нарушает чтение)</div>
+            <div class="removed-thing">StickyCta нижний бар (0 кликов за апрель)</div>
+            <div class="removed-thing">Задержка 30 сек на кнопку «Записаться» в Hero</div>
+          </div>
+        </div>
+
+        <div class="insight-card">
+          <div class="insight-title" style="color:#4ade80">✅ Добавляем / меняем</div>
+          <div class="insight-body">
+            <div class="new-thing">AgeBar при 25% с фреймингом «покажем подходящие смены»</div>
+            <div class="new-thing">После выбора → адаптация карточек + нудж с конкретной сменой</div>
+            <div class="new-thing">Соцдоказательство в ShiftModal: «X ребят вашего возраста»</div>
+            <div class="new-thing">Возраст из localStorage → предзаполнен в ShiftBookModal</div>
+            <div class="new-thing">Числа занятости синхронизированы везде (AgeBar нудж = ShiftModal = карточка)</div>
+          </div>
+        </div>
+
+        <div class="insight-card">
+          <div class="insight-title" style="color:#fbbf24">📊 Цифры по сменам (для каждого возраста)</div>
+          <div class="insight-body">
+            Смена 1 — <strong style="color:#60a5fa">12 ребят</strong> → максимум. Главная ставка, всегда первая.<br>
+            Смена 2 — <strong style="color:#fbbf24">8 ребят</strong> → срочность «осталось мест мало».<br>
+            Смены 3/4 — <strong>5–6 ребят</strong> → приглушены, не рекламируются активно.<br><br>
+            <span class="tag tag-blue">Логика</span> Разные числа для разных возрастов — реалистично выглядит и даёт персонализацию.
+          </div>
+        </div>
+
+        <div class="insight-card">
+          <div class="insight-title" style="color:#a78bfa">💡 Что ожидаем</div>
+          <div class="insight-body">
+            Сейчас: age_select → ShiftModal = 29% (уже лучше чем было)<br>
+            С нуджем прямо в AgeBar → ShiftModal должен вырасти до <strong style="color:#4ade80">50–60%</strong><br><br>
+            Итоговая CR: цель 3%+ от scroll_25 (сейчас 1.4%)
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== МОБИЛКА V1 ==================== -->
+<div id="mobile-v1" class="tab-panel">
+  <div class="header">
+    <div class="device-icon">📱</div>
+    <div>
+      <h1>Мобилка — текущая воронка v1</h1>
+      <div class="sub">Данные: апрель 1–14, 2026 · ~70% трафика</div>
+    </div>
+    <div class="badge">< 1024px</div>
+  </div>
+
+  <div class="layout">
+    <div class="funnel-col">
+      <h2>Текущий флоу</h2>
+
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-val">~700</div>
+          <div class="stat-label">Скролл 25%</div>
+          <div class="stat-sub">апрель 1–14</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" style="color:#4ade80">~1.4%</div>
+          <div class="stat-label">до заявки</div>
+          <div class="stat-sub">итоговая CR</div>
+        </div>
+      </div>
+
+      <div class="step"><div class="step-body s1">
+        <div class="step-meta"><div class="step-num">1</div><div class="step-label">Приземление</div><div class="step-count">~100%</div></div>
+        <div class="step-trigger">📍 Hero. Кнопка активна через 30 сек.</div>
+        <div class="step-desc">StickyCta скрыт пока Hero виден.</div>
+      </div></div>
+
+      <div class="drop-arrow"><div class="drop-line"></div><div class="drop-label">скролл вниз</div><div class="drop-line"></div></div>
+
+      <div class="step"><div class="step-body s1">
+        <div class="step-meta"><div class="step-num">2</div><div class="step-label">Скролл 25%</div><div class="step-count" style="color:#60a5fa">~700</div></div>
+        <div class="step-trigger">⏱ +3 сек ИЛИ скролл 25% → AgeOnboarding (блокирует!)</div>
+        <div class="step-trigger">👁 Hero ушёл → StickyCta нижний бар</div>
+        <div class="step-desc">AgeOnboarding перекрывает страницу оверлеем.</div>
+      </div></div>
+
+      <div class="drop-arrow"><div class="drop-line"></div><div class="drop-label drop-good">36% конверсия</div><div class="drop-line"></div></div>
+
+      <div class="step"><div class="step-body s2">
+        <div class="step-meta"><div class="step-num">3</div><div class="step-label">Выбор возраста</div><div class="step-count">~245</div></div>
+        <div class="step-trigger">🟢 AgeOnboarding или AgeBar (8 сек)</div>
+        <div class="step-desc">Скролл к #shifts. Дальше — пользователь сам ищет нужную смену.</div>
+      </div></div>
+
+      <div class="drop-arrow"><div class="drop-line"></div><div class="drop-label drop-ok">⚠ -71% отвал</div><div class="drop-line"></div></div>
+
+      <div class="step"><div class="step-body s3">
+        <div class="step-meta"><div class="step-num">4</div><div class="step-label">ShiftModal открыт</div><div class="step-count">~70</div></div>
+        <div class="step-trigger">📍 Цель «Проверить места» — любой способ</div>
+        <div class="step-desc">29% от age_select. Могут открывать несколько смен.</div>
+      </div></div>
+
+      <div class="drop-arrow"><div class="drop-line"></div><div class="drop-label drop-ok">~11% CR</div><div class="drop-line"></div></div>
+
+      <div class="step"><div class="step-body s4">
+        <div class="step-meta"><div class="step-num">5</div><div class="step-label">Отправка заявки</div><div class="step-count">~10</div></div>
+        <div class="step-trigger">📍 ShiftBookModal</div>
+      </div></div>
+
+      <div class="drop-arrow"><div class="drop-line"></div><div class="drop-label" style="color:#64748b">альтернатива</div><div class="drop-line"></div></div>
+
+      <div class="step"><div class="step-body s-dead">
+        <div class="step-meta"><div class="step-num">6</div><div class="step-label">StickyCta бар</div><div class="step-count" style="color:#f87171">0</div></div>
+        <div class="step-desc">0 кликов за апрель 2026. Занимает место, мешает.</div>
+      </div></div>
+
+    </div>
+
+    <div class="screens-col">
+      <h2>Проблемы текущей воронки</h2>
+      <div class="insights" style="margin-top:0">
+
+        <div class="insight-card">
+          <div class="insight-title" style="color:#f87171">🚨 AgeOnboarding блокирует страницу</div>
+          <div class="insight-body">Попап с оверлеем в момент чтения — раздражает. Часть закрывает не выбрав возраст, часть вообще уходит.</div>
+        </div>
+
+        <div class="insight-card">
+          <div class="insight-title" style="color:#f87171">🚨 StickyCta — 0 кликов</div>
+          <div class="insight-body">Нижний бар с телефоном/WhatsApp/Telegram не конвертит. Занимает 60px снизу, перекрывает кнопку «Выбрать» на карточках.</div>
+        </div>
+
+        <div class="insight-card">
+          <div class="insight-title" style="color:#fbbf24">⚠️ После выбора возраста — нет направления</div>
+          <div class="insight-body">245 человек выбирают возраст → скролл к #shifts → и никакого CTA. 71% теряется — не знают что делать дальше.</div>
+        </div>
+
+        <div class="insight-card">
+          <div class="insight-title" style="color:#4ade80">✅ Что хорошо</div>
+          <div class="insight-body">
+            • CR вырос с 0.5% до 1.4% (ShiftModal стал лучше)<br>
+            • 36% выбирают возраст — хороший показатель<br>
+            • Скролл 40–78%, active time 48–74 сек — люди читают
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ДЕСКТОП ==================== -->
+<div id="desktop" class="tab-panel">
+  <div class="header">
+    <div class="device-icon">🖥</div>
+    <div>
+      <h1>Десктоп — текущая воронка</h1>
+      <div class="sub">Данные: апрель 1–14, 2026 · ~30% трафика</div>
+    </div>
+    <div class="badge">≥ 1024px</div>
+  </div>
+
+  <div class="layout">
+    <div class="funnel-col">
+      <h2>Текущий флоу</h2>
+
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-val">~300</div>
+          <div class="stat-label">Скролл 25%</div>
+          <div class="stat-sub">апрель 1–14</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" style="color:#4ade80">~1.4%</div>
+          <div class="stat-label">до заявки</div>
+          <div class="stat-sub">итоговая CR</div>
+        </div>
+      </div>
+
+      <div class="step"><div class="step-body s1">
+        <div class="step-meta"><div class="step-num">1</div><div class="step-label">Приземление</div><div class="step-count">100%</div></div>
+        <div class="step-trigger">📍 Hero + навигация. Bubble скрыт.</div>
+      </div></div>
+
+      <div class="drop-arrow"><div class="drop-line"></div><div class="drop-label">скролл вниз</div><div class="drop-line"></div></div>
+
+      <div class="step"><div class="step-body s1">
+        <div class="step-meta"><div class="step-num">2</div><div class="step-label">Скролл 25% — триггеры</div><div class="step-count" style="color:#60a5fa">~300</div></div>
+        <div class="step-trigger">⏱ +3 сек ИЛИ скролл 25% → AgeOnboarding</div>
+        <div class="step-trigger">👁 Hero ушёл → 🟠 Bubble появляется</div>
+        <div class="step-desc">AgeBar — отсутствует на десктопе (lg:hidden).</div>
+      </div></div>
+
+      <div class="drop-arrow"><div class="drop-line"></div><div class="drop-label drop-good">~36% конверсия</div><div class="drop-line"></div></div>
+
+      <div class="step"><div class="step-body s2">
+        <div class="step-meta"><div class="step-num">3</div><div class="step-label">Выбор возраста</div><div class="step-count">~105</div></div>
+        <div class="step-trigger">🟢 AgeOnboarding (карточка по центру экрана)</div>
+        <div class="step-desc">Скролл к #shifts. AgeBar отсутствует на десктопе.</div>
+      </div></div>
+
+      <div class="drop-arrow"><div class="drop-line"></div><div class="drop-label drop-ok">⚠ -71% отвал</div><div class="drop-line"></div></div>
+
+      <div class="step"><div class="step-body s-exit">
+        <div class="step-meta"><div class="step-num" style="font-size:9px">EX</div><div class="step-label">Exit Intent</div></div>
+        <div class="step-trigger">🖱 Курсор уходит за верхний край — один раз</div>
+        <div class="step-desc">Показывает общий текст. Нет персонализации.</div>
+      </div></div>
+
+      <div class="drop-arrow"><div class="drop-line"></div><div class="drop-label" style="color:#64748b">продолжает</div><div class="drop-line"></div></div>
+
+      <div class="step"><div class="step-body s3">
+        <div class="step-meta"><div class="step-num">4a</div><div class="step-label">ShiftModal открыт</div><div class="step-count">~30</div></div>
+        <div class="step-trigger">📍 Цель «Проверить места»</div>
+      </div></div>
+
+      <div class="drop-arrow" style="padding-left:36px"><div class="drop-line"></div><div class="drop-label" style="color:#64748b">параллельно</div><div class="drop-line"></div></div>
+
+      <div class="step"><div class="step-body s3">
+        <div class="step-meta"><div class="step-num">4b</div><div class="step-label">«Выбрать смену»</div><div class="step-count">~10</div></div>
+        <div class="step-trigger">📍 Кнопка на карточке смены</div>
+      </div></div>
+
+      <div class="drop-arrow"><div class="drop-line"></div><div class="drop-label drop-ok">~13% CR</div><div class="drop-line"></div></div>
+
+      <div class="step"><div class="step-body s4">
+        <div class="step-meta"><div class="step-num">5</div><div class="step-label">Отправка заявки</div><div class="step-count">~4</div></div>
+        <div class="step-trigger">📍 ShiftBookModal (центр, Escape для закрытия)</div>
+      </div></div>
+
+      <div class="drop-arrow"><div class="drop-line"></div><div class="drop-label" style="color:#64748b">альтернатива</div><div class="drop-line"></div></div>
+
+      <div class="step"><div class="step-body s5">
+        <div class="step-meta"><div class="step-num">6</div><div class="step-label">Bubble контакты</div><div class="step-count" style="color:#f87171">~0</div></div>
+        <div class="step-trigger">🟠 Клик на bubble → панель</div>
+        <div class="step-desc">Клики не отслеживались. Нужна явная цель Метрики.</div>
+      </div></div>
+
+    </div>
+
+    <div class="screens-col">
+      <h2>Анализ и приоритеты</h2>
+      <div class="insights" style="margin-top:0">
+
+        <div class="insight-card">
+          <div class="insight-title" style="color:#4ade80">✅ CR 0.5% → 1.4%</div>
+          <div class="insight-body">~300 scroll_25 → ~105 age_select → ~30 ShiftModal → ~4 lead за 14 дней. ShiftModal с вкладками работает.</div>
+        </div>
+
+        <div class="insight-card">
+          <div class="insight-title" style="color:#f87171">🚨 Тот же отвал: возраст выбран → смена не открыта (-71%)</div>
+          <div class="insight-body">После AgeOnboarding пользователь видит большую 2-колоночную сетку — нет указания «вот твои смены».<br><br>
+            <span class="tag tag-yellow">Идея</span> Подсветить нужные карточки, остальные opacity-50. На большом экране это особенно заметно.
+          </div>
+        </div>
+
+        <div class="insight-card">
+          <div class="insight-title" style="color:#67e8f9">🖱 Exit Intent — нет персонализации</div>
+          <div class="insight-body">Показывает общий текст. Если знаем возраст (localStorage) → «Для 10–12 лет: Смена 2 — последние места. Записаться?» + CTA-кнопка.</div>
+        </div>
+
+        <div class="insight-card">
+          <div class="insight-title" style="color:#fbbf24">⚠️ Bubble — нет данных</div>
+          <div class="insight-body">Клики не трекаются явной целью. Добавить trackGoal('bubble_click') — тогда будет ясно: оставить или убрать.</div>
+        </div>
+
+        <div class="insight-card">
+          <div class="insight-title" style="color:#a78bfa">💡 Приоритеты для десктопа</div>
+          <div class="insight-body">
+            <strong>1.</strong> <span class="tag tag-yellow">Высокий</span> Подсветка карточек смен после выбора возраста<br><br>
+            <strong>2.</strong> <span class="tag tag-yellow">Высокий</span> Персонализированный exit intent + CTA<br><br>
+            <strong>3.</strong> <span class="tag tag-green">Средний</span> trackGoal на bubble_click<br><br>
+            <strong>4.</strong> <span class="tag tag-green">Средний</span> Нудж с конкретной сменой (аналог мобилки)
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+</script>
+</body>
+</html>
