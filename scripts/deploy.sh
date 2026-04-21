@@ -90,7 +90,14 @@ rsync -az --delete \
   -e "ssh -i $SSH_KEY" \
   dist/server/ "$SSH_HOST:$SSR_DIR"
 
-# 3. Рестарт systemd-сервиса
+# 3. node_modules symlink (entry.mjs needs it to resolve packages)
+REPO_MODULES="/var/www/aidacamp-dev/repo/node_modules"
+if [ "$TARGET" = "prod" ]; then
+  REPO_MODULES="/var/www/aidacamp/repo/node_modules"
+fi
+ssh -i "$SSH_KEY" "$SSH_HOST" "ln -sfn $REPO_MODULES ${REMOTE_DIR%/}/node_modules" 2>/dev/null || true
+
+# 4. Рестарт systemd-сервиса
 echo "♻️  Рестарт $SERVICE..."
 ssh -i "$SSH_KEY" "$SSH_HOST" "systemctl restart $SERVICE && sleep 2 && systemctl is-active $SERVICE"
 
