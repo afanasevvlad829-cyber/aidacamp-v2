@@ -1,0 +1,56 @@
+---
+export const prerender = false;
+
+const code  = Astro.url.searchParams.get('code');
+const error = Astro.url.searchParams.get('error');
+
+let result: { ok: boolean; error?: string } = { ok: false };
+
+if (code) {
+  try {
+    const res = await fetch(`${Astro.url.origin}/api/gbp-auth?code=${encodeURIComponent(code)}`);
+    result = await res.json();
+  } catch (e) {
+    result = { ok: false, error: String(e) };
+  }
+}
+---
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>GBP Auth — АйДаКемп</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .box { background: #1e293b; border-radius: 16px; padding: 32px; max-width: 400px; text-align: center; }
+    h1 { font-size: 20px; margin-bottom: 12px; }
+    p { font-size: 14px; color: #94a3b8; margin-bottom: 20px; }
+    .ok  { color: #86efac; }
+    .err { color: #fca5a5; }
+    a { display: inline-block; background: #f97316; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    {error ? (
+      <>
+        <h1 class="err">Ошибка авторизации</h1>
+        <p>{error}</p>
+        <a href="/admin/gbp-setup">← Назад к настройкам</a>
+      </>
+    ) : result.ok ? (
+      <>
+        <h1 class="ok">✓ Авторизация успешна!</h1>
+        <p>Refresh token сохранён. Теперь выбери локацию бизнеса.</p>
+        <a href="/admin/gbp-setup?done=1">Продолжить настройку →</a>
+      </>
+    ) : (
+      <>
+        <h1 class="err">Не удалось получить токен</h1>
+        <p>{result.error ?? 'Неизвестная ошибка'}</p>
+        <a href="/admin/gbp-setup">← Назад к настройкам</a>
+      </>
+    )}
+  </div>
+</body>
+</html>
