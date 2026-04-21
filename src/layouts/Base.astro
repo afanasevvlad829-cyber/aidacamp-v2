@@ -10,6 +10,7 @@ interface Props {
   title: string;
   description?: string;
   ogType?: string;
+  ogImage?: string;
   ogImageAlt?: string;
 }
 
@@ -17,8 +18,10 @@ const {
   title,
   description = 'АйДаКемп — IT-лагерь для детей 7–15 лет. Программирование, AI, бассейн. 66 км от Москвы.',
   ogType,
+  ogImage = 'https://aidacamp.ru/images/hero-custom-2026-04-07.avif',
   ogImageAlt = 'АйДаКемп — IT-лагерь для детей в Подмосковье',
 } = Astro.props;
+const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `https://aidacamp.ru${ogImage}`;
 const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
 // Автодетект: /stati/ → article, остальные → website
 const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !Astro.url.pathname.endsWith('/stati/') ? 'article' : 'website');
@@ -117,13 +120,13 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     <meta property="og:type" content={resolvedOgType} />
     <meta property="og:locale" content="ru_RU" />
     <meta property="og:url" content={canonicalUrl} />
-    <meta property="og:image" content="https://aidacamp.ru/images/hero-custom-2026-04-07.avif" />
+    <meta property="og:image" content={resolvedOgImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content={ogImageAlt} />
     <meta property="og:site_name" content="АйДаКемп" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="https://aidacamp.ru/images/hero-custom-2026-04-07.avif" />
+    <meta name="twitter:image" content={resolvedOgImage} />
     <link rel="canonical" href={canonicalUrl} />
     <slot name="head" />
     <!-- Analytics globals: trackGoal, initScrollTracking, initContactTracking — inline, no network request -->
