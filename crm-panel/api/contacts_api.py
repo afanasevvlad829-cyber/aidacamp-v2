@@ -206,9 +206,10 @@ REJECTION_PHRASES  = ["ребёнок не хочет", "ребенок не х�
                       "не будем", "не пойдём", "не пойдем", "отказ"]
 
 def _comment_has(r, phrases):
-    """True if last_comment contains any of the phrases (case-insensitive)."""
-    text = (r.get("last_comment") or "").lower()
-    return any(p in text for p in phrases)
+    """True if last_comment OR name contains any of the phrases (case-insensitive)."""
+    comment = (r.get("last_comment") or "").lower()
+    name    = (r.get("name") or "").lower()
+    return any(p in comment or p in name for p in phrases)
 
 def should_exclude(r):
     """Hard exclude: enrolled in camp, blacklist, ghosts, explicit refusals."""
@@ -218,11 +219,12 @@ def should_exclude(r):
     # Wrong number / moved abroad / dead / blacklist
     if flag(r, "f_killer"):
         return True, "невосстановимая причина"
-    # Aggressive / explicitly blacklisted — detected via comment text
-    if _comment_has(r, AGGRESSIVE_PHRASES):
+    # Aggressive — detected in comment OR name OR enriched context status
+    ctx_status = (CONTEXTS.get(r.get("customer_id", ""), {}) or {}).get("status", "")
+    if _comment_has(r, AGGRESSIVE_PHRASES) or ctx_status == "aggressive":
         return True, "агрессивный клиент"
-    # Explicit refusal — flag OR detected in comment
-    if flag(r, "f_lost") or _comment_has(r, REJECTION_PHRASES):
+    # Explicit refusal — flag OR detected in comment/name OR enriched context
+    if flag(r, "f_lost") or _comment_has(r, REJECTION_PHRASES) or ctx_status in ("rejected", "lost"):
         return True, "явный отказ"
     # Ghost: we wrote, they never replied, tiny convo
     in_total = to_int(r, "in_wa") + to_int(r, "in_tg")
