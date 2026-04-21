@@ -7,7 +7,7 @@ import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, WHATSAPP_
 <!-- Появляется после скролла >480px, закрывается крестом, hidden на desktop -->
 <div
   id="sticky-bar"
-  class="fixed bottom-0 inset-x-0 z-50 md:hidden translate-y-full opacity-0 pointer-events-none transition-all duration-300 ease-out"
+  class="fixed bottom-0 inset-x-0 z-[70] md:hidden translate-y-full opacity-0 pointer-events-none transition-all duration-300 ease-out"
   style="background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,1) 20%); border-top: 1px solid rgba(17,24,39,0.08); box-shadow: 0 -8px 24px rgba(15,23,42,0.10); padding-bottom: env(safe-area-inset-bottom, 0);"
   inert
   data-sticky-bar-v2
@@ -191,10 +191,14 @@ import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, WHATSAPP_
       function showBar() {
         if (shown || sessionStorage.getItem(DISMISS_KEY) === '1') return;
         shown = true;
-        // Сначала снимаем inert и pointer-events, потом анимируем
+        // Скрываем AgeBar чтобы она не перехватывала тапы (z-[60] < z-[70])
+        const ageBar = document.getElementById('age-bar');
+        if (ageBar) {
+          ageBar.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+        }
         bar.removeAttribute('inert');
         bar.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
-        // Вешаем listener на кнопку только после того как bar интерактивен
+        // Вешаем listener ПОСЛЕ снятия inert
         const closeBtn = bar.querySelector<HTMLElement>('[data-sticky-close]');
         closeBtn?.addEventListener('click', hideBar, { once: true });
         closeBtn?.addEventListener('touchend', (e) => { e.preventDefault(); hideBar(); }, { once: true, passive: false });
