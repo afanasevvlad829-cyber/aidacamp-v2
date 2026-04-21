@@ -1,0 +1,50 @@
+---
+/**
+ * RelatedArticles — блок перелинковки лендингов → статьи блога.
+ * Закрывает SEO-пробел: лендинги не ссылались на /stati/*.
+ */
+interface Article {
+  title: string;
+  description: string;
+  url: string;
+  icon?: string;
+}
+
+interface Props {
+  title?: string;
+  articles: Article[];
+}
+
+const { title = "Читать по теме", articles } = Astro.props;
+---
+
+<section class="mx-auto max-w-[1312px] px-4 mt-2 mb-4">
+  <div class="rounded-[24px] border border-slate-200 bg-white p-[18px] md:p-8">
+
+    <div class="flex items-center gap-2 mb-5">
+      <div class="w-1 h-5 rounded-full bg-slate-300 shrink-0"></div>
+      <h2 class="text-[18px] md:text-[20px] font-bold text-slate-900">{title}</h2>
+    </div>
+
+    <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+      {articles.map(article => (
+        <a href={article.url}
+          class="group flex items-start gap-3 rounded-[14px] border border-slate-100 bg-slate-50 p-4 hover:border-slate-200 hover:bg-white hover:shadow-[0_2px_8px_rgba(15,23,42,0.06)] transition-all duration-200">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white border border-slate-200 text-slate-500 group-hover:border-[#ec7c00]/30 group-hover:text-[#ec7c00] transition-colors">
+            <i class={`bi bi-${article.icon ?? 'file-text'} text-[15px]`} aria-hidden="true"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-[13px] font-semibold leading-[1.4] text-slate-800 group-hover:text-slate-900 transition-colors line-clamp-2">
+              {article.title}
+            </p>
+            {article.description && (
+              <p class="mt-1 text-[12px] leading-[1.5] text-slate-500 line-clamp-2">{article.description}</p>
+            )}
+          </div>
+          <i class="bi bi-arrow-right text-[13px] text-slate-300 group-hover:text-[#ec7c00] shrink-0 mt-0.5 transition-colors" aria-hidden="true"></i>
+        </a>
+      ))}
+    </div>
+
+  </div>
+</section>

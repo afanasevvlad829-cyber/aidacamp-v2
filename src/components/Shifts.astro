@@ -9,32 +9,39 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
   <div class="bg-white p-[18px]">
     <div class="flex items-center gap-2 mb-1"><div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div><h2 class="text-[22px] font-bold leading-[1.1] tracking-[-0.02em] text-slate-900 md:text-[28px]">Смены</h2></div>
 
-    <!-- Мерч за друга — тизер -->
-    <div class="mt-3 flex items-stretch gap-0 rounded-xl bg-emerald-50 border border-emerald-100 overflow-hidden">
-      <button
-        type="button"
-        data-gallery-open
-        data-gallery-src="/images/merch-hoodie.avif"
-        data-gallery-alt="Фирменная толстовка АйДаКемп"
-        class="shrink-0 cursor-zoom-in self-stretch"
-        aria-label="Посмотреть мерч"
-      >
-        <img
-          src="/images/merch-hoodie.avif"
-          alt="Мерч АйДаКемп"
-          class="h-full w-[96px] object-cover object-top transition hover:scale-105"
-          loading="lazy"
-        />
-      </button>
-      <div class="flex-1 px-4 py-3">
-        <p class="text-[14px] font-semibold text-slate-800">Те, кто едет в компании, адаптируются вдвое быстрее</p>
-        <p class="text-[13px] text-slate-500 mt-0.5">Позовите друга — подарим фирменный мерч каждому</p>
-        <div class="mt-1.5 flex flex-wrap gap-1.5">
-          <span class="inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-[12px] font-semibold text-emerald-700">Каждая 5-я — скидка 50%</span>
-          <span class="inline-block rounded-full bg-orange-100 px-2.5 py-0.5 text-[12px] font-semibold text-orange-700">Каждая 10-я — за 100 ₽</span>
+    <!-- Мерч за друга — компактная строка, разворачивается по клику -->
+    <details class="mt-3 group rounded-xl border border-emerald-100 bg-emerald-50 overflow-hidden">
+      <summary class="flex cursor-pointer items-center gap-2.5 px-4 py-2.5 list-none select-none">
+        <i class="bi bi-people-fill text-[14px] text-emerald-600 shrink-0" aria-hidden="true"></i>
+        <span class="flex-1 text-[13px] font-semibold text-slate-700">Едете с другом? Здесь скидки и мерч</span>
+        <i class="bi bi-chevron-down text-[12px] text-slate-400 transition-transform duration-200 group-open:rotate-180" aria-hidden="true"></i>
+      </summary>
+      <div class="flex items-stretch gap-0 border-t border-emerald-100">
+        <button
+          type="button"
+          data-gallery-open
+          data-gallery-src="/images/merch-hoodie.avif"
+          data-gallery-alt="Фирменная толстовка АйДаКемп"
+          class="shrink-0 cursor-zoom-in self-stretch"
+          aria-label="Посмотреть мерч"
+        >
+          <img
+            src="/images/merch-hoodie.avif"
+            alt="Мерч АйДаКемп"
+            class="h-full w-[96px] object-cover object-top transition hover:scale-105"
+            loading="lazy"
+          />
+        </button>
+        <div class="flex-1 px-4 py-3">
+          <p class="text-[14px] font-semibold text-slate-800">Те, кто едет в компании, адаптируются вдвое быстрее</p>
+          <p class="text-[13px] text-slate-500 mt-0.5">Позовите друга — подарим фирменный мерч каждому</p>
+          <div class="mt-1.5 flex flex-wrap gap-1.5">
+            <span class="inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-[12px] font-semibold text-emerald-700">Каждая 5-я — скидка 50%</span>
+            <span class="inline-block rounded-full bg-orange-100 px-2.5 py-0.5 text-[12px] font-semibold text-orange-700">Каждая 10-я — за 100 ₽</span>
+          </div>
         </div>
       </div>
-    </div>
+    </details>
 
     <!-- Mobile: tab nav + horizontal carousel -->
     <div class="mt-4 md:hidden">
@@ -68,8 +75,8 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
           ></span>
         ))}
       </div>
-      <!-- Подсказка свайпа для первого визита -->
-      <p class="mt-2 text-center text-[12px] text-slate-500 md:hidden" data-shifts-swipe-hint>
+      <!-- Подсказка свайпа — только для первого визита -->
+      <p class="mt-2 text-center text-[12px] text-slate-500 md:hidden transition-opacity duration-300" data-shifts-swipe-hint>
         ← свайп, чтобы увидеть все {allShifts.length} смен →
       </p>
       <!-- July sold-out banner (mobile) -->
@@ -134,6 +141,12 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
         });
       });
 
+      // Swipe hint: скрыть если уже свайпали раньше
+      const swipeHint = document.querySelector<HTMLElement>('[data-shifts-swipe-hint]');
+      if (swipeHint && localStorage.getItem('shifts_swiped')) {
+        swipeHint.style.display = 'none';
+      }
+
       const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
@@ -152,8 +165,9 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
               d.classList.toggle('w-2', !isActive);
               d.setAttribute('aria-current', isActive ? 'true' : 'false');
             });
-            if (idx > 0) {
-              document.querySelector('[data-shifts-swipe-hint]')?.classList.add('opacity-0');
+            if (idx > 0 && swipeHint) {
+              swipeHint.classList.add('opacity-0');
+              localStorage.setItem('shifts_swiped', '1');
             }
           }
         });
