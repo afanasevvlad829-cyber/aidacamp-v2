@@ -295,14 +295,14 @@ description: "[Продукт] [гео], [расстояние]. Детям [в�
 ### Шрифты
 
 ```html
-<!-- Preload в <head> (из Base.astro) -->
-<link rel="preload" as="font" href="/fonts/inter-cyrillic.woff2"
-      type="font/woff2" crossorigin />
-<link rel="preload" as="font" href="/fonts/inter-latin.woff2"
+<!-- Preload в <head> (из Base.astro) — Codims использует Manrope + JetBrains Mono -->
+<link rel="preload" as="font" href="https://fonts.gstatic.com/s/manrope/..."
       type="font/woff2" crossorigin />
 ```
 
-`font-display: swap` — обязательно. Шрифты хранятся локально в `/public/fonts/`.
+`font-display: swap` — обязательно. Для Codims шрифты подключаются через Google Fonts CDN (не локально).
+
+> **Inter / Comfortaa не используются в Codims.** Это шрифты AidaCamp.
 
 ### JS стратегия
 
@@ -575,7 +575,7 @@ utm_term:     [ключевое слово для поиска]
 ## 8b. ШАБЛОНЫ СТРАНИЦ CODIMS (дизайн-макеты)
 
 > Источник: `/Users/vladimirafanasev/Downloads/codims/*.html` — HTML-прототипы дизайна.
-> ⚠️ Шрифт в макетах: **Manrope + JetBrains Mono**. В реальном коде: **Inter + Comfortaa**. Требует решения перед вёрсткой.
+> Шрифты Codims: **Manrope** (основной) + **JetBrains Mono** (код/акценты). Inter и Comfortaa не используются.
 
 ### Карта шаблонов
 
@@ -657,7 +657,7 @@ utm_term:     [ключевое слово для поиска]
 ### Стек
 
 Идентичен AidaCamp: **Astro 6 + Tailwind 4 + Node 22**, `@astrojs/node` SSR.
-Дизайн-система **полностью идентична** — те же CSS-переменные, шрифты, цвета.
+Дизайн-система **полностью идентична** по цветам и компонентам. **Шрифты отличаются:** AidaCamp — Inter + Comfortaa; Codims — **Manrope + JetBrains Mono**.
 
 ### Продукт
 
