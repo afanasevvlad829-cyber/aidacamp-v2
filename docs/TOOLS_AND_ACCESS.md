@@ -311,21 +311,20 @@ vk_ads_stats(period: "week", level: "campaign")
 
 ### AlfaCRM
 
-| Параметр | Значение |
-|---|---|
-| Конфигурация | env `ALFACRM_*` в `/opt/mcp/.env` |
-| Код интеграции | `src/pages/api/lead.ts` |
-| База лидов | ~1500 интересовавшихся |
-| База клиентов | ~989 учащихся (школа) |
+| Параметр | АйДаКемп | Codims |
+|---|---|---|
+| Конфигурация | env `ALFACRM_*` в `/opt/mcp/.env` | **не подключён** |
+| branch_id | уточнить | **1** |
+| Код | `src/pages/api/lead.ts` | `/api/lead` → только Telegram |
+| База лидов | ~1500 интересовавшихся | — |
+| База клиентов | ~989 учащихся (школа) | — |
 
-**Что передаём при заявке:**
-- Телефон (очищен от нецифр)
-- Имя: `«Лид {age}»`
-- UTM параметры (source, medium, campaign, content, term)
-- yclid, gclid, ym_client_id
-- Примечание: смена/курс, referrer, landing_url
+**АйДаКемп — что передаём в AlfaCRM:**
+- Телефон, имя `«Лид {age}»`, UTM, yclid/gclid, ym_client_id, referrer, landing_url
 
-**Pending (не реализовано):**
+**⚠️ Codims `/api/lead` — только Telegram, AlfaCRM не подключён.** При подключении использовать `branch_id = 1`.
+
+**Pending:**
 - Аудитории Директ и VK из базы CRM не загружены → приоритет
 
 ### Telegram-уведомления о лидах
