@@ -77,7 +77,7 @@
     const AGE_LABELS = Object.freeze({
       '7-9': '7–9 лет',
       '10-12': '10–12 лет',
-      '13-14': '13–15 лет'
+      '13-15': '13–15 лет'
     });
     const PHOTO_CATEGORY_LABELS = Object.freeze({
       pool: 'Бассейн',
@@ -1631,7 +1631,7 @@
 
     function hasSelectedAge(){
       const age = String(state.age || '').trim();
-      return !!state.ageSelected || age === '7-9' || age === '10-12' || age === '13-14';
+      return !!state.ageSelected || age === '7-9' || age === '10-12' || age === '13-15';
     }
 
     function hasActiveBookingContext(){

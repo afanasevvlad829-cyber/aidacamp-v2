@@ -1,5 +1,15 @@
 ---
 export const prerender = false;
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
+async function readConfig() {
+  for (const p of ['/var/www/aidacamp-dev/gbp-config.json', join(process.cwd(), 'gbp-config.json')]) {
+    try { return JSON.parse(await readFile(p, 'utf8')); } catch { /* skip */ }
+  }
+  return {};
+}
+const cfg = await readConfig();
 ---
 <!DOCTYPE html>
 <html lang="ru">
@@ -81,11 +91,11 @@ export const prerender = false;
     <div class="row">
       <div class="field">
         <label>Client ID</label>
-        <input id="clientId" type="text" placeholder="xxx.apps.googleusercontent.com" />
+        <input id="clientId" type="text" placeholder="xxx.apps.googleusercontent.com" value={cfg.clientId ?? ''} />
       </div>
       <div class="field">
         <label>Client Secret</label>
-        <input id="clientSecret" type="password" placeholder="GOCSPX-..." />
+        <input id="clientSecret" type="password" placeholder="GOCSPX-..." value={cfg.clientSecret ?? ''} />
       </div>
     </div>
     <button class="btn btn-sec" onclick="saveCreds()">Сохранить credentials</button>

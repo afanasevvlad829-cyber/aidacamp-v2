@@ -43,6 +43,8 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь для школьников', description: '1–8 класс, IT-проект', url: '/lager-dlya-shkolnikov', icon: 'bi-backpack' },
 
   // 🗓 Сезонные
+  { title: 'Лагерь на июнь', description: 'Смены июня 2026, с 30 мая', url: '/lager-na-iyun', icon: 'bi-calendar-event' },
+  { title: 'Лагерь на июль', description: 'Июльские смены 2026 в Подмосковье', url: '/lager-na-iyul', icon: 'bi-sun' },
   { title: 'Лагерь на август', description: 'Смены августа 2026 в Подмосковье', url: '/lager-na-avgust-podmoskove', icon: 'bi-sun' },
 
   // 💰 Коммерческие
