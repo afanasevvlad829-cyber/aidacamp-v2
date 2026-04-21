@@ -7,7 +7,7 @@ import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, WHATSAPP_
 <!-- Появляется после скролла >480px, закрывается крестом, hidden на desktop -->
 <div
   id="sticky-bar"
-  class="fixed bottom-0 inset-x-0 z-50 md:hidden translate-y-full opacity-0 pointer-events-none transition-all duration-300 ease-out"
+  class="fixed bottom-0 inset-x-0 z-[70] md:hidden translate-y-full opacity-0 pointer-events-none transition-all duration-300 ease-out"
   style="background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,1) 20%); border-top: 1px solid rgba(17,24,39,0.08); box-shadow: 0 -8px 24px rgba(15,23,42,0.10); padding-bottom: env(safe-area-inset-bottom, 0);"
   inert
   data-sticky-bar-v2
@@ -43,11 +43,12 @@ import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, WHATSAPP_
     </a>
     <button
       id="sticky-close"
+      data-sticky-close
       type="button"
-      class="flex h-10 w-10 items-center justify-center rounded-full text-slate-400 hover:text-slate-700 transition-colors"
+      class="flex h-12 w-12 items-center justify-center rounded-full text-slate-400 active:text-slate-700 transition-colors"
       aria-label="Скрыть панель контактов"
     >
-      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      <svg class="h-5 w-5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
     </button>
   </div>
 </div>
@@ -162,11 +163,14 @@ import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, WHATSAPP_
 </div>
 
 <script>
+  let _stickyInited = false;
   function initStickyCta() {
+    if (_stickyInited) return;
+    _stickyInited = true;
+
     const hero = document.getElementById('hero');
     const bar = document.getElementById('sticky-bar');
     const bubble = document.getElementById('sticky-bubble');
-    const closeBtn = document.getElementById('sticky-close');
     const desktopSticky = document.getElementById('desktop-sticky');
     const desktopToggle = document.getElementById('desktop-bubble-toggle');
     const desktopPanel = document.getElementById('desktop-bubble-panel');
@@ -175,35 +179,47 @@ import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, WHATSAPP_
     // Показывается после скролла 480px, скрывается кликом на крест (sessionStorage)
     if (bar && bar.hasAttribute('data-sticky-bar-v2') && window.innerWidth < 768) {
       const DISMISS_KEY = 'ac_sticky_v2_dismissed';
-      const dismissed = sessionStorage.getItem(DISMISS_KEY) === '1';
       let shown = false;
 
-      function showBar() {
-        if (shown || dismissed) return;
-        shown = true;
-        bar.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
-        bar.removeAttribute('inert');
-      }
       function hideBar() {
+        shown = false;
+        sessionStorage.setItem(DISMISS_KEY, '1');
         bar.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
         bar.setAttribute('inert', '');
       }
 
-      if (!dismissed) {
-        const onScroll = () => {
-          if (window.scrollY > 480) {
-            showBar();
-            window.removeEventListener('scroll', onScroll);
-          }
-        };
-        window.addEventListener('scroll', onScroll, { passive: true });
-        onScroll();
+      function showBar() {
+        if (shown || sessionStorage.getItem(DISMISS_KEY) === '1') return;
+        shown = true;
+        // Скрываем AgeBar чтобы она не перехватывала тапы (z-[60] < z-[70])
+        const ageBar = document.getElementById('age-bar');
+        if (ageBar) {
+          ageBar.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+        }
+        bar.removeAttribute('inert');
+        bar.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+        // Вешаем listener ПОСЛЕ снятия inert
+        const closeBtn = bar.querySelector<HTMLElement>('[data-sticky-close]');
+        closeBtn?.addEventListener('click', hideBar, { once: true });
+        closeBtn?.addEventListener('touchend', (e) => { e.preventDefault(); hideBar(); }, { once: true, passive: false });
       }
 
-      closeBtn?.addEventListener('click', () => {
-        sessionStorage.setItem(DISMISS_KEY, '1');
-        hideBar();
-      });
+      if (sessionStorage.getItem(DISMISS_KEY) !== '1') {
+        if (hero) {
+          // Показываем после того как hero покидает вьюпорт
+          const mobileHeroObs = new IntersectionObserver(([e]) => {
+            if (!e.isIntersecting) { showBar(); mobileHeroObs.disconnect(); }
+          }, { threshold: 0 });
+          mobileHeroObs.observe(hero);
+        } else {
+          // Нет hero (лендинги) — показываем после скролла 480px
+          const onScroll = () => {
+            if (window.scrollY > 480) { showBar(); window.removeEventListener('scroll', onScroll); }
+          };
+          window.addEventListener('scroll', onScroll, { passive: true });
+          onScroll();
+        }
+      }
 
       bar.querySelector<HTMLAnchorElement>('[data-sticky-call]')?.addEventListener('click', () => {
         try { (window as any).trackGoal?.('sticky_call_mobile'); } catch {}

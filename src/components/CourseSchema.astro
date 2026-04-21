@@ -1,0 +1,82 @@
+---
+/**
+ * CourseSchema — JSON-LD schema.org/Course для программных лендингов.
+ *
+ * Использование: добавляй в <Fragment slot="head"> нужного лендинга.
+ *
+ * Props:
+ *   name       — название курса (рус.)
+ *   description — 1–2 предложения
+ *   url        — canonical URL страницы
+ *   level      — "Beginner" | "Intermediate" | "Advanced"
+ *   ageMin     — минимальный возраст ученика
+ *   ageMax     — максимальный возраст ученика
+ */
+
+interface Props {
+  name: string;
+  description: string;
+  url: string;
+  level?: string;
+  ageMin?: number;
+  ageMax?: number;
+}
+
+const {
+  name,
+  description,
+  url,
+  level = 'Beginner',
+  ageMin = 7,
+  ageMax = 14,
+} = Astro.props;
+
+const SITE_URL = 'https://aidacamp.ru';
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'Course',
+  name,
+  description,
+  url,
+  provider: {
+    '@type': 'Organization',
+    '@id': `${SITE_URL}/#organization`,
+    name: 'АйДаКемп',
+    url: SITE_URL,
+  },
+  educationalLevel: level,
+  teaches: name,
+  courseMode: 'onsite',
+  hasCourseInstance: {
+    '@type': 'CourseInstance',
+    courseMode: 'onsite',
+    location: {
+      '@type': 'Place',
+      name: 'Санаторий Изумруд, Наро-Фоминский округ, Московская область',
+    },
+    startDate: '2026-06-01',
+    endDate: '2026-08-31',
+    instructor: {
+      '@id': `${SITE_URL}/#organization`,
+    },
+  },
+  audience: {
+    '@type': 'EducationalAudience',
+    educationalRole: 'student',
+    suggestedMinAge: ageMin,
+    suggestedMaxAge: ageMax,
+  },
+  inLanguage: 'ru-RU',
+  isAccessibleForFree: false,
+  offers: {
+    '@type': 'Offer',
+    priceCurrency: 'RUB',
+    price: '48000',
+    availability: 'https://schema.org/InStock',
+    url: `${SITE_URL}/#shifts`,
+  },
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(schema)} />

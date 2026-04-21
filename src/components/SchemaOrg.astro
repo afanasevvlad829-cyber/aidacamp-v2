@@ -15,6 +15,7 @@
 
 import { mainShifts, shortShifts, type Shift } from '../data/shifts';
 import { members as teamMembers } from '../data/team';
+import { reviews } from '../data/reviews';
 import {
   PHONE_MAIN,
   PHONE_MOBILE,
@@ -30,6 +31,29 @@ const HERO_IMAGE = `${SITE_URL}/images/hero-custom-2026-04-07-1100.avif`;
 
 // Цена в рублях из строки "74 900 ₽" → "74900"
 const parsePrice = (p: string) => p.replace(/[^\d]/g, '');
+
+const allShiftsForPrice = [...mainShifts, ...shortShifts];
+const prices = allShiftsForPrice.map(s => parseInt(parsePrice(s.price), 10)).filter(Boolean);
+const minPrice = Math.min(...prices).toLocaleString('ru-RU');
+const maxPrice = Math.max(...prices).toLocaleString('ru-RU');
+const priceRange = `${minPrice} ₽ – ${maxPrice} ₽`;
+
+const reviewCount = reviews.length.toString();
+
+// "2 февраля 2026" → "2026-02-02"
+const MONTHS: Record<string, string> = {
+  января: '01', февраля: '02', марта: '03', апреля: '04', мая: '05', июня: '06',
+  июля: '07', августа: '08', сентября: '09', октября: '10', ноября: '11', декабря: '12',
+};
+const parseDate = (d: string) => {
+  const parts = d.split(' ');
+  if (parts.length === 3) {
+    const day = parts[0].padStart(2, '0');
+    const month = MONTHS[parts[1]] ?? '01';
+    return `${parts[2]}-${month}-${day}`;
+  }
+  return d;
+};
 
 const allShifts: Shift[] = [...mainShifts, ...shortShifts];
 
@@ -76,7 +100,7 @@ const summerCamp = {
   image: HERO_IMAGE,
   telephone: PHONE_MAIN,
   email: EMAIL,
-  priceRange: '48 000 ₽ – 95 000 ₽',
+  priceRange,
   address: {
     '@type': 'PostalAddress',
     addressLocality: 'Наро-Фоминский городской округ',
@@ -93,14 +117,21 @@ const summerCamp = {
     ratingValue: STAT_RATING,
     bestRating: '5',
     worstRating: '1',
-    ratingCount: '40',
-    reviewCount: '40',
+    ratingCount: reviewCount,
+    reviewCount: reviewCount,
   },
   parentOrganization: { '@id': `${SITE_URL}/#organization` },
   sameAs: [
     WHATSAPP_URL,
     TELEGRAM_URL,
   ],
+  review: reviews.map(r => ({
+    '@type': 'Review',
+    reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' },
+    author: { '@type': 'Person', name: r.name },
+    datePublished: parseDate(r.date),
+    reviewBody: r.fullText || r.text,
+  })),
 };
 
 const eventsList = {
@@ -244,6 +275,23 @@ const teamPersons = teamMembers.map((m) => ({
   worksFor: { '@id': `${SITE_URL}/#organization` },
 }));
 
+// E-E-A-T: основатель Дарья — явно, с sameAs на официальные каналы бренда
+const founderPerson = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  '@id': `${SITE_URL}/#person-daria-afanaseva`,
+  name: 'Дарья Афанасьева',
+  jobTitle: 'основатель АйДаКемп',
+  image: `${SITE_URL}/images/team/sm/team-daria-main-01.avif`,
+  description: 'Предприниматель в сфере детского IT-образования, мама подростка, основатель лагеря АйДаКемп с 2019 года.',
+  worksFor: { '@id': `${SITE_URL}/#organization` },
+  founder: true,
+  sameAs: [
+    'https://vk.com/aidacamp',
+    'https://t.me/aidacamp_ru',
+  ],
+};
+
 const webSite = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
@@ -264,6 +312,7 @@ const graph = {
     eventsList,
     faqPage,
     breadcrumbs,
+    founderPerson,
     ...teamPersons,
   ],
 };

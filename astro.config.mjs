@@ -16,6 +16,11 @@ export default defineConfig({
         !page.includes('/admin/') &&
         !page.includes('/попробовать/') &&
         !page.includes('/%D0%BF%D0%BE%D0%BF%D1%80%D0%BE%D0%B1%D0%BE%D0%B2%D0%B0%D1%82%D1%8C/'),
+      // lastmod = дата деплоя. Даём Google понять, что страницы актуальны.
+      serialize(item) {
+        item.lastmod = new Date().toISOString().split('T')[0];
+        return item;
+      },
     }),
   ],
   devToolbar: { enabled: false },
