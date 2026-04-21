@@ -6,7 +6,7 @@
   var TECH_BADGE_DISMISSED_KEY = "ac:tech-badge-dismissed";
   var techBadgeDismissedInSession = false;
   var BUILD_TAG = "TECH v2026.03.21-01";
-  var HERO_SUBTITLE_STATIC = "Для детей 7–14 лет: свои IT‑проекты, бассейн и спорт каждый день, внутренняя экономика с лагерной валютой.";
+  var HERO_SUBTITLE_STATIC = "Для детей 7–15 лет: свои IT‑проекты, бассейн и спорт каждый день, внутренняя экономика с лагерной валютой.";
   var ageSelectionConfirmed = false;
   var ageGateNudge = false;
   var heroSlideTimer = null;
