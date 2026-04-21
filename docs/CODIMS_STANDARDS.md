@@ -166,11 +166,24 @@ tooling (orphan) — скрипты CI, не мержится в dev/main
 --motion-duration-fast: 160ms   --motion-ease: ease-out
 ```
 
-### Иконки — только Bootstrap Icons
+### Иконки — только Bootstrap Icons, никаких эмодзи
 
-`<i class="bi bi-*" aria-hidden="true">` — только иконки из `src/data/icons-manifest.json` (80 штук на 2026-04-21). Эмодзи в UI — запрещены.
+```html
+<i class="bi bi-*" aria-hidden="true"></i>
+```
 
-Добавить иконку: добавить имя в `icons-manifest.json` → `npm run icons` (не редактировать `icons.css` вручную).
+**Правило распространяется на оба проекта: AidaCamp и Codims.**
+
+| Проект | Подключение | Доступные иконки |
+|---|---|---|
+| AidaCamp | локально через `icons-manifest.json` + `npm run icons` | только те, что в манифесте (80 шт.) |
+| Codims | CDN в `Base.astro`: `bootstrap-icons@1.11.3/font/bootstrap-icons.min.css` | все ~2000 иконок |
+
+**AidaCamp:** добавить иконку → имя в `src/data/icons-manifest.json` → `npm run icons` → закоммитить оба файла. Ставить иконку не из манифеста = чёрный квадрат.
+
+**Codims:** любая иконка из https://icons.getbootstrap.com/ доступна сразу, манифест не нужен. Но CDN = внешний запрос, зависимость от сети.
+
+**❌ Эмодзи в UI запрещены** в кнопках, заголовках, карточках, плашках — в обоих проектах.
 
 ---
 
