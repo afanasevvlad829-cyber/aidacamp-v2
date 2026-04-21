@@ -401,7 +401,8 @@ curl -X POST https://dev.aidacamp.ru/api/photo \
 
 ### Видео (Kinescope)
 
-**API-токен не нужен** — видео публично доступны через embed-URL без авторизации. Если понадобится управление через Kinescope API (загрузка, аналитика просмотров) — токен нужно будет запросить в личном кабинете kinescope.io.
+**API-токен:** хранить в `/opt/mcp/.env` как `KINESCOPE_API_TOKEN=...` (получить в личном кабинете kinescope.io → Настройки → API).
+Нужен для загрузки видео и аналитики просмотров через Kinescope API. Для embed-воспроизведения токен не требуется.
 
 **Маркетинговые видео (для сайта):**
 
@@ -537,7 +538,7 @@ EOF"
 | Яндекс Метрика | 96499295 | браузер / MCP | ✅ рабочий | `aidacamp-tools:stats` |
 | Microsoft Clarity | w8yoykmszl | браузер / MCP | ✅ рабочий | `aidacamp-tools:clarity` |
 | AlfaCRM | — | `/opt/mcp/.env` (ALFACRM_*) | ✅ рабочий | интеграция в lead.ts |
-| Kinescope | — | не требуется | ✅ рабочий | embed без токена: `kinescope.io/embed/{id}` |
+| Kinescope | — | docs/TOOLS_AND_ACCESS.md | ✅ рабочий | API-токен для загрузки/аналитики; embed без токена |
 | Яндекс Диск (фото) | — | сервер-прокси | ✅ рабочий | `aidacamp-tools:photos` |
 | Google Search Console | — | браузер | ✅ рабочий | лимит ~10 URL/день |
 | Яндекс Вебмастер | — | браузер | ✅ рабочий | ручная отправка URL |
