@@ -97,6 +97,17 @@ Instagram-успешной мамы-идеала.
 - `★` (U+2605), `✓` (U+2713), `•` — это typography symbols, не эмодзи. Можно оставить в тексте.
 - Внутри текста статьи (blog) эмодзи как часть цитаты — допустимо.
 
+### ⚠️ ОБЯЗАТЕЛЬНО: доступные иконки
+
+**Используй ТОЛЬКО иконки из `src/data/icons-manifest.json`** (74 штуки на 2026-04-21). Если иконки там нет — добавь её через манифест.
+
+```bash
+# Быстро проверить есть ли иконка в проекте:
+node -e "const m=require('./src/data/icons-manifest.json'); console.log(m.includes('ICONNAME') ? '✓ есть' : '✗ НЕТ — добавь в manifest')"
+```
+
+Если поставишь `bi-lightning-charge-fill` а в манифесте только `bi-lightning-charge` — получишь чёрный квадрат. Это критический баг.
+
 ### ⚠️ НИКОГДА не редактируй `src/styles/icons.css` вручную
 
 `icons.css` — **AUTO-GENERATED** файл. Ручные правки будут перезаписаны при следующем `npm run icons`.
@@ -110,13 +121,37 @@ Instagram-успешной мамы-идеала.
 
 **Почему так устроено:** параллельные агенты конфликтовали при ручных правках icons.css (verbose vs compact форма). JSON-манифест мерджится без конфликтов. Один агент добавляет одну строчку в JSON — конфликта нет.
 
+### Частые ловушки для агентов (из аудита 2026-04-21)
+
+| Ситуация | Неправильно | Правильно |
+|---|---|---|
+| fill-вариант иконки | `bi-lightning-charge-fill` (нет в манифесте) | `bi-lightning-charge` |
+| Галочка в кружке | `<span>✓</span>` | `<i class="bi bi-check-lg">` |
+| Toast-уведомления (nudge.ts) | `🔥 Текст` | `Текст` (plain text, bi-* недоступны) |
+| relatedPages icon | `emoji: "🔍"` | `icon: "search"` |
+| Cookie баннер | `🍪` | `<i class="bi bi-info-circle">` |
+| Документ/файл | `📄` | `<i class="bi bi-file-earmark-text">` |
+| Календарь/дата | `📅` | `<i class="bi bi-calendar-event">` |
+| Исключение | admin-страницы `/src/pages/admin/` | можно оставить символы ✓ ✗ в разметке |
+
 ### Проверка перед PR
 
-Перед каждым коммитом в `src/components/` запускай:
+Перед каждым коммитом запускай аудит эмодзи:
 ```bash
-grep -rE '[\U0001F300-\U0001F9FF]' src/components/*.astro
+python3 -c "
+import os, re
+emoji_re = re.compile(r'[\U0001F000-\U0001FFFF\U00002600-\U000027BF]')
+for root, dirs, files in os.walk('src'):
+    dirs[:] = [d for d in dirs if 'admin' not in root]
+    for f in files:
+        if f.endswith('.astro'):
+            path = os.path.join(root, f)
+            for i, line in enumerate(open(path, errors='ignore'), 1):
+                if emoji_re.search(line) and not any(x in line for x in ['//','<!--','статьи','article']):
+                    print(f'{path}:{i}: {line.strip()[:100]}')
+"
 ```
-Если нашло — замени на bi-иконки.
+Если нашло — замени на bi-иконки или убери.
 
 ## 📝 Брендовые правила для текстов
 
