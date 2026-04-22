@@ -3,7 +3,7 @@ import { z } from 'zod';
 const ChipSchema = z.object({
   label: z.string(),
   query: z.string().optional(),
-  action: z.enum(['book']).optional(),
+  action: z.enum(['book', 'contact_request']).optional(),
 });
 
 export const ResponseSchema = z.object({
