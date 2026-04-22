@@ -3,6 +3,7 @@ import type { APIRoute } from 'astro';
 import Anthropic from '@anthropic-ai/sdk';
 import { systemPrompt } from '../../lib/ai/systemPrompt';
 import { ResponseSchema } from '../../lib/ai/responseSchema';
+import { validateBotResponse, logGuardFlag } from '../../lib/ai/validator';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -60,16 +61,21 @@ export const POST: APIRoute = async ({ request }) => {
       throw new Error('No JSON in response');
     }
 
-    const parsed = ResponseSchema.safeParse(JSON.parse(jsonMatch[0]));
+    const rawParsed = JSON.parse(jsonMatch[0]);
+    const parsed = ResponseSchema.safeParse(rawParsed);
     if (!parsed.success) {
-      // Fallback: return just the text
+      // Fallback: extract text field if present, don't dump raw JSON
+      const fallbackText = typeof rawParsed?.text === 'string'
+        ? rawParsed.text
+        : raw.replace(/```json[\s\S]*?```|```[\s\S]*?```/g, '').replace(/\{[\s\S]*\}/, '').trim() || 'Уточните вопрос.';
+      console.warn('ResponseSchema parse failed:', parsed.error.issues.slice(0,3));
       return new Response(
         JSON.stringify({
           state: 'ok',
-          text: raw.replace(/```json|```/g, '').trim(),
-          block_type: null,
-          block_data: null,
-          chips: [
+          text: fallbackText,
+          block_type: rawParsed?.block_type ?? null,
+          block_data: rawParsed?.block_data ?? null,
+          chips: rawParsed?.chips ?? [
             { label: 'Смены 2026', query: 'смены' },
             { label: 'Цены', query: 'цены' },
             { label: 'Забронировать', action: 'book' },
@@ -78,6 +84,17 @@ export const POST: APIRoute = async ({ request }) => {
         { headers: { 'Content-Type': 'application/json' } }
       );
     }
+
+    // === VALIDATOR: check for hallucinations in background ===
+    const botText = parsed.data.text ?? '';
+
+    // Run validation async, don't block response
+    validateBotResponse(message, botText).then((validation) => {
+      if (!validation.valid && validation.issue && validation.correction) {
+        logGuardFlag(message, botText, validation.issue, validation.correction, false);
+        console.warn('[guard] hallucination caught:', validation.issue);
+      }
+    }).catch(() => {/* silent */});
 
     return new Response(
       JSON.stringify({ state: 'ok', ...parsed.data }),
