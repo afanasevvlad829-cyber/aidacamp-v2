@@ -135,33 +135,161 @@ function updateThemeIcon(theme){
 }
 initTheme();
 
-/* ── STARS ── */
+/* ── BACKGROUND ANIMATION ── */
 (()=>{
   const c=document.getElementById('stars'),ctx=c.getContext('2d');
-  let S=[];
+  let stars=[],bubbles=[],shoot=null,t=0;
+
+  function isDark(){return document.documentElement.getAttribute('data-theme')==='dark';}
+
+  /* ─ DARK: twinkling stars ─ */
+  function initStars(){
+    stars=Array.from({length:260},()=>({
+      x:Math.random()*c.width,
+      y:Math.random()*c.height*.85,
+      r:Math.random()<.08?Math.random()*.8+.9:Math.random()*.6+.15, // mostly tiny, few bigger
+      base:Math.random()*.55+.08,  // base opacity
+      sp:Math.random()*2+.5,       // twinkle speed
+      ph:Math.random()*Math.PI*2,  // phase offset
+      warm:Math.random()<.15,      // warm tint (yellowish)
+      blue:Math.random()<.2,       // cool tint (blue-white)
+      spark:Math.random()<.04,     // cross sparkle on bright stars
+    }));
+  }
+
+  /* ─ LIGHT: floating bokeh bubbles ─ */
+  function initBubbles(){
+    bubbles=Array.from({length:55},()=>makeBubble(true));
+  }
+  function makeBubble(random){
+    const w=c.width,h=c.height;
+    return {
+      x:Math.random()*w,
+      y:random?Math.random()*h:h+20,
+      r:Math.random()*18+6,
+      o:Math.random()*.055+.018,
+      sp:Math.random()*.18+.06,   // rise speed px/frame
+      drift:Math.random()*.4-.2,  // horizontal drift
+      ph:Math.random()*Math.PI*2,
+      pulse:Math.random()*.6+.8,  // pulse speed
+      orange:Math.random()<.25,   // orange tint
+    };
+  }
+
+  /* ─ SHOOTING STAR ─ */
+  function maybeShoot(){
+    if(shoot||Math.random()>0.003)return;
+    shoot={
+      x:Math.random()*c.width*.6+c.width*.1,
+      y:Math.random()*c.height*.3,
+      len:Math.random()*90+60,
+      angle:Math.PI/6+Math.random()*.3,
+      prog:0,life:1
+    };
+  }
+  function drawShoot(){
+    if(!shoot)return;
+    shoot.prog+=4;
+    const{x,y,len,angle,prog}=shoot;
+    const x2=x+Math.cos(angle)*prog,y2=y+Math.sin(angle)*prog;
+    const tail=Math.max(0,prog-len);
+    const x1=x+Math.cos(angle)*tail,y1=y+Math.sin(angle)*tail;
+    const g=ctx.createLinearGradient(x1,y1,x2,y2);
+    g.addColorStop(0,'rgba(255,255,255,0)');
+    g.addColorStop(1,`rgba(255,255,255,${shoot.life*.9})`);
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+    ctx.strokeStyle=g;ctx.lineWidth=1.5;ctx.stroke();
+    shoot.life-=.025;
+    if(shoot.life<=0)shoot=null;
+  }
+
+  /* ─ CROSS SPARKLE ─ */
+  function drawSparkle(x,y,r,a){
+    const arm=r*3.5;
+    ctx.globalAlpha=a*.7;
+    ctx.strokeStyle='rgba(255,255,255,1)';
+    ctx.lineWidth=.6;
+    ctx.beginPath();ctx.moveTo(x-arm,y);ctx.lineTo(x+arm,y);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x,y-arm);ctx.lineTo(x,y+arm);ctx.stroke();
+    // diagonal arms (dimmer)
+    ctx.globalAlpha=a*.3;
+    const d=arm*.6;
+    ctx.beginPath();ctx.moveTo(x-d,y-d);ctx.lineTo(x+d,y+d);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x+d,y-d);ctx.lineTo(x-d,y+d);ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+
   const resize=()=>{
     c.width=innerWidth;c.height=innerHeight;
-    S=Array.from({length:170},()=>({
-      x:Math.random()*c.width,
-      y:Math.random()*c.height*.75,
-      r:Math.random()*1.1+.2,
-      o:Math.random()*.5+.1,
-      sp:Math.random()*.4+.1,
-      ph:Math.random()*Math.PI*2
-    }));
+    initStars();initBubbles();
   };
-  const draw=t=>{
+
+  const draw=()=>{
+    t++;
     ctx.clearRect(0,0,c.width,c.height);
-    const cs=getComputedStyle(document.documentElement);
-    const sc=cs.getPropertyValue('--star-color').trim()||'13,27,42';
-    const sa=parseFloat(cs.getPropertyValue('--star-max-a').trim()||'0.12');
-    S.forEach(s=>{
-      const tw=(s.o+Math.sin(t*.001*s.sp+s.ph)*.25)*sa;
-      ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-      ctx.fillStyle=`rgba(${sc},${Math.max(0,Math.min(sa,tw))})`;ctx.fill();
-    });
+
+    if(isDark()){
+      /* ── DARK: stars ── */
+      maybeShoot();
+      stars.forEach(s=>{
+        // multi-frequency twinkle: fast flicker + slow breath
+        const fast=Math.sin(t*.04*s.sp+s.ph);
+        const slow=Math.sin(t*.008*s.sp+s.ph*1.3);
+        let a=(s.base+fast*.28+slow*.12);
+        a=Math.max(0,Math.min(.95,a));
+
+        // star color
+        let rgb='255,255,255';
+        if(s.warm)rgb='255,240,180';
+        else if(s.blue)rgb='180,210,255';
+
+        // glow for brighter stars
+        if(s.r>.7&&a>.4){
+          const g=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r*4);
+          g.addColorStop(0,`rgba(${rgb},${a*.35})`);
+          g.addColorStop(1,'rgba(255,255,255,0)');
+          ctx.beginPath();ctx.arc(s.x,s.y,s.r*4,0,Math.PI*2);
+          ctx.fillStyle=g;ctx.fill();
+        }
+
+        // core dot
+        ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+        ctx.fillStyle=`rgba(${rgb},${a})`;ctx.fill();
+
+        // sparkle cross on large bright stars
+        if(s.spark&&s.r>.9&&a>.55)drawSparkle(s.x,s.y,s.r,a);
+      });
+      drawShoot();
+
+    } else {
+      /* ── LIGHT: bokeh bubbles ── */
+      bubbles.forEach((b,i)=>{
+        b.y-=b.sp;
+        b.x+=b.drift;
+        const pulse=Math.sin(t*.015*b.pulse+b.ph);
+        const a=b.o*(0.7+pulse*.3);
+        const r=b.r*(0.92+pulse*.08);
+
+        // wrap around
+        if(b.y<-30||(b.x<-40||b.x>c.width+40))bubbles[i]=makeBubble(false);
+
+        // soft bokeh ring
+        ctx.beginPath();ctx.arc(b.x,b.y,r,0,Math.PI*2);
+        ctx.strokeStyle=b.orange?`rgba(236,124,0,${a*.9})`:`rgba(29,111,224,${a*.65})`;
+        ctx.lineWidth=.8;ctx.stroke();
+
+        // inner soft fill
+        const g=ctx.createRadialGradient(b.x-r*.25,b.y-r*.25,0,b.x,b.y,r);
+        const col=b.orange?`rgba(255,160,60,${a*.25})`:`rgba(100,160,255,${a*.2})`;
+        g.addColorStop(0,col);g.addColorStop(1,'rgba(255,255,255,0)');
+        ctx.beginPath();ctx.arc(b.x,b.y,r,0,Math.PI*2);
+        ctx.fillStyle=g;ctx.fill();
+      });
+    }
+
     requestAnimationFrame(draw);
   };
+
   resize();addEventListener('resize',resize);requestAnimationFrame(draw);
 })();
 
