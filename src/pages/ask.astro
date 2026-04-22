@@ -71,6 +71,16 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     .msg-text strong{color:var(--or)}
     .msg-text a{color:#c45f00;text-decoration:none}
     @keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+    @keyframes blockIn{
+      0%{opacity:0;transform:translateY(16px) scale(.98)}
+      60%{opacity:1;transform:translateY(-3px) scale(1.005)}
+      100%{opacity:1;transform:none;box-shadow:0 0 0 rgba(236,124,0,0)}
+    }
+    @keyframes blockGlow{
+      0%{box-shadow:0 0 0 0 rgba(236,124,0,.25)}
+      50%{box-shadow:0 4px 32px rgba(236,124,0,.18)}
+      100%{box-shadow:0 2px 16px rgba(13,27,42,.07)}
+    }
 
     .typing{align-self:flex-start;background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:4px 18px 18px 18px;padding:14px 18px;display:none;gap:5px;align-items:center;box-shadow:0 1px 6px rgba(13,27,42,.05)}
     .typing.show{display:flex}
@@ -98,7 +108,7 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     .contact-btn-tg:hover{background:#1a8abf}
 
     /* VISUAL BLOCKS — full width, no bubble constraint */
-    .vblock{align-self:stretch;width:100%;animation:up .3s cubic-bezier(.16,1,.3,1)}
+    .vblock{align-self:stretch;width:100%;animation:blockIn .45s cubic-bezier(.16,1,.3,1) both,blockGlow .8s .2s ease-out both}
     .block{background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)}
     .block-head{padding:13px 18px;border-bottom:1px solid rgba(13,27,42,.07);display:flex;align-items:center;justify-content:space-between}
     .block-title{font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:8px}
@@ -212,8 +222,9 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     .input-area{padding:8px 0 20px;flex-shrink:0;position:relative;z-index:10}
     .input-box{display:flex;background:#fff;border:1px solid rgba(13,27,42,.12);border-radius:14px;overflow:hidden;transition:.2s;box-shadow:0 1px 6px rgba(13,27,42,.06)}
     .input-box:focus-within{border-color:rgba(236,124,0,.4);background:#fff;box-shadow:0 0 0 3px rgba(236,124,0,.07)}
-    .inp{flex:1;padding:15px 18px;background:transparent;border:none;outline:none;font-family:var(--sans);font-size:16px;color:#0d1b2a}
+    .inp{flex:1;padding:15px 18px;background:transparent;border:none;outline:none;font-family:var(--sans);font-size:16px;color:#0d1b2a;resize:none;overflow-y:hidden;line-height:1.5;min-height:52px;max-height:140px;overflow-y:auto;display:block;align-self:center}
     .inp::placeholder{color:rgba(13,27,42,.3)}
+    .input-box{align-items:flex-end}
     .send{width:50px;background:var(--or);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0}
     .send:hover{background:var(--ord)}
     .send:disabled{background:rgba(255,255,255,.07);cursor:default}
@@ -305,7 +316,7 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
 
   <div class="input-area">
     <div class="input-box">
-      <input class="inp" id="inp" placeholder="Спросите про лагерь..." onkeydown="if(event.key==='Enter'&&!event.shiftKey)send()">
+      <textarea class="inp" id="inp" placeholder="Спросите про лагерь..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}" oninput="autoGrow(this)"></textarea>
       <button class="mic" id="micBtn" onclick="toggleMic()" aria-label="Голосовой ввод" title="Голосовой ввод">
         <i class="bi bi-mic" id="micIcon" aria-hidden="true"></i>
       </button>
@@ -431,7 +442,7 @@ function mkEl(tag, css, html){
 
 function blockSmeny(){
   // wrapper
-  const wrap=mkEl('div','width:100%;animation:up .3s cubic-bezier(.16,1,.3,1)');
+  const wrap=mkEl('div','width:100%;animation:blockIn .45s cubic-bezier(.16,1,.3,1) both,blockGlow .8s .2s ease-out both');
 
   // outer card
   const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
@@ -545,7 +556,7 @@ function blockCourses(blockData){
     ?(filtered.length+' подходит по возрасту')
     :(COURSES.length+' направлений');
 
-  const wrap=mkEl('div','width:100%;animation:up .3s cubic-bezier(.16,1,.3,1)');
+  const wrap=mkEl('div','width:100%;animation:blockIn .45s cubic-bezier(.16,1,.3,1) both,blockGlow .8s .2s ease-out both');
   const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
 
   // header
@@ -626,7 +637,7 @@ function blockCourses(blockData){
 }
 
 function blockDay(){
-  const wrap=mkEl('div','width:100%;animation:up .3s cubic-bezier(.16,1,.3,1)');
+  const wrap=mkEl('div','width:100%;animation:blockIn .45s cubic-bezier(.16,1,.3,1) both,blockGlow .8s .2s ease-out both');
   const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
   const head=mkEl('div','padding:13px 18px;border-bottom:1px solid rgba(13,27,42,.07)');
   head.innerHTML='<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:8px"><i class="bi bi-clock" aria-hidden="true"></i>Распорядок дня</span>';
@@ -647,7 +658,7 @@ function blockDay(){
 }
 
 function blockCond(){
-  const wrap=mkEl('div','width:100%;animation:up .3s cubic-bezier(.16,1,.3,1)');
+  const wrap=mkEl('div','width:100%;animation:blockIn .45s cubic-bezier(.16,1,.3,1) both,blockGlow .8s .2s ease-out both');
   const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
   const head=mkEl('div','padding:13px 18px;border-bottom:1px solid rgba(13,27,42,.07)');
   head.innerHTML='<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:8px"><i class="bi bi-houses" aria-hidden="true"></i>Условия в лагере</span>';
@@ -666,7 +677,7 @@ function blockCond(){
 }
 
 function blockLocation(){
-  const wrap=mkEl('div','width:100%;animation:up .3s cubic-bezier(.16,1,.3,1)');
+  const wrap=mkEl('div','width:100%;animation:blockIn .45s cubic-bezier(.16,1,.3,1) both,blockGlow .8s .2s ease-out both');
   const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
   const head=mkEl('div','padding:13px 18px;border-bottom:1px solid rgba(13,27,42,.07)');
   head.innerHTML='<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:8px"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i>Как добраться</span>';
@@ -691,7 +702,7 @@ function blockLocation(){
 }
 
 function blockPrices(){
-  const wrap=mkEl('div','width:100%;animation:up .3s cubic-bezier(.16,1,.3,1)');
+  const wrap=mkEl('div','width:100%;animation:blockIn .45s cubic-bezier(.16,1,.3,1) both,blockGlow .8s .2s ease-out both');
   const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
   const head=mkEl('div','padding:13px 18px;border-bottom:1px solid rgba(13,27,42,.07)');
   head.innerHTML='<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:8px"><i class="bi bi-tag" aria-hidden="true"></i>Стоимость смен</span>';
@@ -731,7 +742,7 @@ function blockPrices(){
 /* ── NEW VISUAL BLOCKS ── */
 
 function blockOccupancyChart(){
-  const wrap=mkEl('div','width:100%;animation:up .3s cubic-bezier(.16,1,.3,1)');
+  const wrap=mkEl('div','width:100%;animation:blockIn .45s cubic-bezier(.16,1,.3,1) both,blockGlow .8s .2s ease-out both');
   const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
   const head=mkEl('div','padding:13px 18px;border-bottom:1px solid rgba(13,27,42,.07);display:flex;align-items:center;justify-content:space-between');
   head.innerHTML='<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:8px"><i class="bi bi-bar-chart-fill" aria-hidden="true" style="color:rgba(13,27,42,.55)"></i>Наполненность смен</span>'
@@ -768,7 +779,7 @@ function blockOccupancyChart(){
 }
 
 function blockPhotoCarousel(){
-  const wrap=mkEl('div','width:100%;animation:up .3s cubic-bezier(.16,1,.3,1)');
+  const wrap=mkEl('div','width:100%;animation:blockIn .45s cubic-bezier(.16,1,.3,1) both,blockGlow .8s .2s ease-out both');
   const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
   const head=mkEl('div','padding:13px 18px;border-bottom:1px solid rgba(13,27,42,.07);display:flex;align-items:center;justify-content:space-between');
   head.innerHTML='<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:8px"><i class="bi bi-camera-fill" aria-hidden="true"></i>Фото с прошлых смен</span>'
@@ -822,7 +833,7 @@ function blockPhotoCarousel(){
 function blockVideoPlayer(blockData){
   const vid=(blockData&&blockData.video_id)||'qmLxu2S7uaS44CKkhoV1Jj';
   const title=(blockData&&blockData.title)||'О лагере за 2 минуты';
-  const wrap=mkEl('div','width:100%;animation:up .3s cubic-bezier(.16,1,.3,1)');
+  const wrap=mkEl('div','width:100%;animation:blockIn .45s cubic-bezier(.16,1,.3,1) both,blockGlow .8s .2s ease-out both');
   const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
   const head=mkEl('div','padding:13px 18px;border-bottom:1px solid rgba(13,27,42,.07);display:flex;align-items:center;justify-content:space-between');
   head.innerHTML='<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:8px"><i class="bi bi-camera-video-fill" aria-hidden="true"></i>'+title+'</span>'
@@ -851,7 +862,7 @@ function blockVideoPlayer(blockData){
 }
 
 function blockPricingBreakdown(){
-  const wrap=mkEl('div','width:100%;animation:up .3s cubic-bezier(.16,1,.3,1)');
+  const wrap=mkEl('div','width:100%;animation:blockIn .45s cubic-bezier(.16,1,.3,1) both,blockGlow .8s .2s ease-out both');
   const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
   const head=mkEl('div','padding:13px 18px;border-bottom:1px solid rgba(13,27,42,.07);display:flex;align-items:center;justify-content:space-between');
   head.innerHTML='<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:8px"><i class="bi bi-coin" aria-hidden="true"></i>Реальная стоимость</span>'
@@ -890,7 +901,7 @@ function blockPricingBreakdown(){
 }
 
 function blockHackathon(){
-  const wrap=mkEl('div','width:100%;animation:up .3s cubic-bezier(.16,1,.3,1)');
+  const wrap=mkEl('div','width:100%;animation:blockIn .45s cubic-bezier(.16,1,.3,1) both,blockGlow .8s .2s ease-out both');
   const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
   const head=mkEl('div','padding:13px 18px;border-bottom:1px solid rgba(13,27,42,.07);display:flex;align-items:center;justify-content:space-between');
   head.innerHTML='<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:8px"><i class="bi bi-trophy-fill" aria-hidden="true"></i>Финальный хакатон</span>'
@@ -972,6 +983,11 @@ function addEl(el){
   const box=document.getElementById('msgs');
   box.appendChild(el);
   box.scrollTop=box.scrollHeight;
+}
+
+function autoGrow(el){
+  el.style.height='auto';
+  el.style.height=Math.min(el.scrollHeight,140)+'px';
 }
 
 function autoLink(html){
@@ -1134,11 +1150,16 @@ async function go(txt){
   if(ageMatch) trackSession({age:parseInt(ageMatch[1])});
 
   try{
+    // 28-second timeout — Anthropic API can be slow on complex queries
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),28000);
     const res=await fetch('/api/ask',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({message:txt,history:history.slice(0,-1),sessionId})
+      body:JSON.stringify({message:txt,history:history.slice(0,-1),sessionId}),
+      signal:controller.signal
     });
+    clearTimeout(timer);
     const data=await res.json();
     hideTyping();
     aiState='speak';
@@ -1173,7 +1194,14 @@ async function go(txt){
     }
   } catch(e){
     hideTyping();
-    addMsg('ai','Потеряли связь. Попробуйте ещё раз или напишите нам в <a href="https://wa.me/79688086455">WhatsApp</a>.');
+    console.error('[ask] fetch error:', e?.name, e?.message);
+    const isTimeout=e?.name==='AbortError';
+    const errMsg=isTimeout
+      ? 'Долго нет ответа — возможно, сервер занят. <a href="#" onclick="event.preventDefault();go(\''+txt.replace(/'/g,"\\'")+'\')" style="color:var(--ord);font-weight:600">Попробовать ещё раз</a> или напишите в <a href="https://wa.me/79688086455" style="color:var(--ord)">WhatsApp</a>.'
+      : 'Потеряли связь. <a href="#" onclick="event.preventDefault();go(\''+txt.replace(/'/g,"\\'")+'\')" style="color:var(--ord);font-weight:600">Повторить вопрос</a> или написать в <a href="https://wa.me/79688086455" style="color:var(--ord)">WhatsApp</a>.';
+    addMsg('ai',errMsg);
+    busy=false;
+    document.getElementById('sendBtn').disabled=false;
   }
 
   setTimeout(()=>{aiState='idle'},2000);
@@ -1187,7 +1215,7 @@ function send(){
   const v=inp.value.trim();
   if(!v||busy)return;
   inp.value='';
-  inp.dispatchEvent(new Event('input'));
+  inp.style.height='auto'; // reset textarea height
   go(v);
 }
 
