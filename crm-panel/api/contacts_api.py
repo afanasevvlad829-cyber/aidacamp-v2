@@ -200,7 +200,7 @@ def to_int(r, k, default=0):
     except: return default
 
 # ── Phrases in last_comment that signal aggressive / impossible clients ──────
-AGGRESSIVE_PHRASES = ["сумасш", "агресс", "грубит", "хамит", "не работать", "в чёрный", "в черный", "психован", "неадекват"]
+AGGRESSIVE_PHRASES = ["сумасш", "агресс", "грубит", "хамит", "не работать", "не связываться", "не звонить", "не писать", "никогда больше", "больной не", "в чёрный", "в черный", "черный список", "чёрный список", "стоп-лист", "стоплист", "психован", "неадекват", "ненормальн", "мужик", "тест"]
 REJECTION_PHRASES  = ["ребёнок не хочет", "ребенок не хочет", "не хочет идти", "не интересно",
                       "передумали", "отказались", "записались в другой", "перешли в другой",
                       "не будем", "не пойдём", "не пойдем", "отказ"]
@@ -731,18 +731,32 @@ def _fmt_ts(ts):
     return f"{ts.day} {MONTHS[ts.month]} {ts.year} {ts.hour:02d}:{ts.minute:02d}"
 
 def get_conversation(customer_id):
-    # look up phone from CSV
+    # look up phone from PostgreSQL first (CSV fallback)
+    phone_raw = ""
     try:
-        with open(CSV_PATH, encoding="utf-8-sig") as f:
-            rows = list(csv.DictReader(f))
+        _conn = psycopg2.connect(DB_DSN)
+        _cur  = _conn.cursor()
+        _cur.execute("SELECT phone FROM crm_contacts WHERE customer_id = %s", (str(customer_id),))
+        _row = _cur.fetchone()
+        _cur.close(); _conn.close()
+        if _row:
+            phone_raw = _row[0] or ""
     except Exception:
-        return {"wa": [], "tg": [], "error": "csv not found"}
-
-    contact = next((r for r in rows if str(r.get("customer_id","")) == str(customer_id)), None)
-    if not contact:
+        pass
+    # fallback: try CSV if PG returned nothing
+    if not phone_raw:
+        try:
+            with open(CSV_PATH, encoding="utf-8-sig") as f:
+                rows = list(csv.DictReader(f))
+            contact = next((r for r in rows if str(r.get("customer_id","")) == str(customer_id)), None)
+            if contact:
+                phone_raw = contact.get("phone", "")
+        except Exception:
+            pass
+    if not phone_raw:
         return {"wa": [], "tg": []}
 
-    phone_raw   = contact.get("phone", "")
+    phone_raw   = phone_raw
     phone_clean = "".join(c for c in phone_raw if c.isdigit())
     if phone_clean.startswith("8"):
         phone_clean = "7" + phone_clean[1:]
