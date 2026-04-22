@@ -57,7 +57,23 @@ export const POST: APIRoute = async ({ request }) => {
     // Extract JSON even if Claude wraps it in ```json ... ```
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error('No JSON in response');
+      // AI returned plain text (e.g. for sensitive/negative questions) — wrap it gracefully
+      const cleanText = raw.replace(/```[\s\S]*?```/g, '').trim() || 'Уточните вопрос.';
+      console.warn('No JSON in response, using raw text as fallback. Length:', raw.length);
+      return new Response(
+        JSON.stringify({
+          state: 'ok',
+          text: cleanText,
+          block_type: null,
+          block_data: null,
+          chips: [
+            { label: 'Смены 2026', query: 'смены' },
+            { label: 'Цены', query: 'цены' },
+            { label: 'Написать менеджеру', action: 'contact_request' },
+          ],
+        }),
+        { headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
     const parsed = ResponseSchema.safeParse(JSON.parse(jsonMatch[0]));
