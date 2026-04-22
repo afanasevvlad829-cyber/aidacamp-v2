@@ -193,19 +193,29 @@ const inputWidth = isDesktop ? 'w-[276px]' : 'w-full';
       }
 
       // Form submit
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!isPhoneValid() || !consent?.checked) {
           const modal = document.getElementById('bookingReminderModal') as HTMLDialogElement | null;
           modal?.showModal();
           return;
         }
-        // TODO: send form data to endpoint
-        window.acTrack?.('form_submit', {
+
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Отправляем…';
+        }
+
+        const { submitLead } = await import('../scripts/form-submit');
+        const ok = await submitLead({
+          phone: phoneInput?.value || '',
+          age: ageInput?.value || '',
           form: form.dataset.form,
-          age: ageInput?.value,
-          phone: phoneInput?.value,
         });
+
+        if (submitBtn) {
+          submitBtn.textContent = ok ? 'Заявка принята!' : 'Отправлено';
+        }
       });
     });
   }
