@@ -1,0 +1,752 @@
+---
+export const prerender = true;
+import iconsCSS from '../styles/icons.css?raw';
+const title = 'Спросить про лагерь — АйДаКемп';
+const description = 'AI-ассистент IT-лагеря АйДаКемп. Задайте любой вопрос про смены, программу, цены и безопасность — отвечу честно и без скриптов продаж.';
+---
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{title}</title>
+  <meta name="description" content={description}>
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://aidacamp.ru/ask/">
+  <meta property="og:title" content={title}>
+  <meta property="og:description" content={description}>
+  <meta property="og:type" content="website">
+  <style set:html={iconsCSS}></style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --or:#ec7c00;--ord:#c45f00;--orl:rgba(236,124,0,.12);
+      --nv:#060e1a;--nv2:#0a1628;--nv3:#0f2040;
+      --wh:#fff;--hi:rgba(255,255,255,.5);--lo:rgba(255,255,255,.18);
+      --bd:rgba(255,255,255,.08);--bd2:rgba(255,255,255,.05);
+      --sans:'Manrope',sans-serif;--mono:'JetBrains Mono',monospace;
+    }
+    html,body{height:100%;overflow:hidden;background:var(--nv)}
+    body{font-family:var(--sans);color:var(--wh);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+
+    #stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+    .glow{position:fixed;bottom:-100px;left:50%;transform:translateX(-50%);width:500px;height:220px;background:radial-gradient(ellipse,rgba(236,124,0,.14) 0%,transparent 70%);z-index:0;pointer-events:none;animation:glow 5s ease-in-out infinite}
+    @keyframes glow{0%,100%{opacity:1}50%{opacity:.7}}
+
+    .topbar{position:relative;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:linear-gradient(to bottom,rgba(6,14,26,.95),transparent);flex-shrink:0}
+    .logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+    .logo-box{width:34px;height:34px;border-radius:9px;overflow:hidden;flex-shrink:0;box-shadow:0 0 16px rgba(236,124,0,.3)}
+    #logoCanvas{display:block}
+    .logo-name{font-size:15px;font-weight:700;color:#fff}
+    .logo-name span{color:var(--or)}
+    .back{font-size:13px;color:var(--lo);text-decoration:none;transition:.2s;display:flex;align-items:center;gap:5px}
+    .back:hover{color:var(--hi)}
+    .back .bi{font-size:14px}
+
+    .layout{position:relative;z-index:10;flex:1;display:flex;flex-direction:column;max-width:680px;margin:0 auto;width:100%;padding:0 16px;overflow:hidden}
+
+    .intro{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px 0 16px;transition:all .3s}
+    .intro.gone{opacity:0;pointer-events:none;max-height:0;padding:0;overflow:hidden}
+    .intro-icon{width:60px;height:60px;border-radius:16px;overflow:hidden;margin:0 auto 18px;box-shadow:0 0 30px rgba(236,124,0,.3)}
+    .intro-h{font-size:clamp(22px,4vw,36px);font-weight:800;line-height:1.15;letter-spacing:-.02em;margin-bottom:10px}
+    .intro-s{font-size:15px;color:var(--hi);margin-bottom:32px;line-height:1.6}
+    .hint{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:30px;padding:9px 18px;font-size:14px;color:var(--hi);margin-bottom:22px;backdrop-filter:blur(8px)}
+    .hint-dot{width:6px;height:6px;border-radius:50%;background:var(--or);box-shadow:0 0 6px var(--or);animation:blink 2s infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    .age-btns{display:flex;gap:10px;justify-content:center;margin-bottom:24px}
+    .age-btn{padding:14px 24px;border:1px solid rgba(255,255,255,.13);border-radius:36px;background:rgba(255,255,255,.04);font-family:var(--sans);font-size:15px;font-weight:600;color:rgba(255,255,255,.7);cursor:pointer;transition:.2s;backdrop-filter:blur(6px)}
+    .age-btn:hover{border-color:rgba(236,124,0,.5);color:#fff;background:rgba(236,124,0,.08);transform:translateY(-2px)}
+    .age-btn .n{display:block;font-size:22px;font-weight:800;color:#fff;line-height:1}
+    .age-btn .l{display:block;font-size:12px;color:var(--hi);margin-top:2px}
+
+    .messages{flex:1;overflow-y:auto;padding:8px 0 12px;display:none;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.06) transparent}
+    .messages.show{display:flex}
+    .messages::-webkit-scrollbar{width:3px}
+    .messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:3px}
+
+    .msg-user{align-self:flex-end;max-width:80%;background:var(--or);border-radius:18px 4px 18px 18px;padding:12px 16px;font-size:15px;color:#fff;line-height:1.55;animation:up .25s cubic-bezier(.16,1,.3,1)}
+    .msg-text{align-self:flex-start;max-width:85%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:4px 18px 18px 18px;padding:12px 16px;font-size:15px;color:#fff;line-height:1.6;animation:up .25s cubic-bezier(.16,1,.3,1)}
+    .msg-text strong{color:var(--or)}
+    .msg-text a{color:#ff9520;text-decoration:none}
+    @keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+    .typing{align-self:flex-start;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:4px 18px 18px 18px;padding:14px 18px;display:none;gap:5px;align-items:center}
+    .typing.show{display:flex}
+    .td{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3);animation:td .9s infinite}
+    .td:nth-child(2){animation-delay:.18s}.td:nth-child(3){animation-delay:.36s}
+    @keyframes td{0%,60%,100%{transform:translateY(0);opacity:.3}30%{transform:translateY(-5px);opacity:1}}
+
+    .chips{align-self:flex-start;display:flex;gap:7px;flex-wrap:wrap;animation:up .3s .1s cubic-bezier(.16,1,.3,1) both}
+    .chip{padding:8px 15px;border:1px solid rgba(255,255,255,.12);border-radius:22px;background:rgba(255,255,255,.04);font-family:var(--sans);font-size:13px;color:rgba(255,255,255,.7);cursor:pointer;transition:.15s;backdrop-filter:blur(4px)}
+    .chip:hover{border-color:rgba(236,124,0,.4);color:#fff;background:rgba(236,124,0,.08)}
+    .chip.cta{background:var(--or);border-color:var(--or);color:#fff;font-weight:600;box-shadow:0 4px 14px rgba(236,124,0,.3)}
+    .chip.cta:hover{background:var(--ord)}
+
+    /* VISUAL BLOCKS */
+    .vblock{align-self:flex-start;width:100%;max-width:480px;animation:up .3s cubic-bezier(.16,1,.3,1)}
+    .block{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:16px;overflow:hidden;backdrop-filter:blur(8px)}
+    .block-head{padding:13px 18px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between}
+    .block-title{font-size:13px;font-weight:600;color:rgba(255,255,255,.7);display:flex;align-items:center;gap:8px}
+    .block-title .bi{opacity:.6;font-size:14px;color:rgba(255,255,255,.7)}
+    .block-badge{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px}
+    .badge-green{background:rgba(34,197,94,.15);color:#4ade80}
+    .badge-red{background:rgba(239,68,68,.15);color:#f87171}
+    .badge-or{background:rgba(236,124,0,.2);color:#ffa040}
+
+    .smeny-list{padding:6px 0}
+    .smena-row{padding:11px 18px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;transition:.15s}
+    .smena-row:last-child{border-bottom:none}
+    .smena-row:hover{background:rgba(255,255,255,.04)}
+    .smena-row.sold{opacity:.4;cursor:default}
+    .smena-name{font-size:14px;font-weight:600;color:#fff}
+    .smena-dates{font-size:12px;color:var(--hi);margin-top:2px}
+    .smena-days{font-size:11px;color:rgba(255,255,255,.3);margin-top:1px}
+    .smena-price{text-align:right}
+    .smena-rub{font-size:15px;font-weight:700;color:#fff;white-space:nowrap}
+    .smena-hint{font-size:11px;color:rgba(255,255,255,.3);margin-top:1px}
+    .smena-sold-label{font-size:11px;color:#f87171}
+    .block-cta{margin:12px 18px;padding:12px;background:var(--or);border:none;border-radius:10px;font-family:var(--sans);font-size:14px;font-weight:700;color:#fff;cursor:pointer;width:calc(100% - 36px);transition:.15s;display:block}
+    .block-cta:hover{background:var(--ord)}
+    .block-foot{padding:8px 18px 12px;font-size:11px;color:rgba(255,255,255,.25);text-align:center}
+
+    .courses-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,.06)}
+    .course-cell{background:rgba(10,22,40,.8);padding:14px 16px;cursor:pointer;transition:.15s}
+    .course-cell:hover{background:rgba(236,124,0,.08)}
+    .course-icon{font-size:20px;margin-bottom:8px;display:block;color:var(--or)}
+    .course-name{font-size:13px;font-weight:700;color:#fff;margin-bottom:3px}
+    .course-age{font-size:11px;color:var(--or);font-weight:600}
+    .course-desc{font-size:11px;color:rgba(255,255,255,.4);margin-top:4px;line-height:1.45}
+    .courses-more{padding:12px 18px;font-size:13px;color:var(--hi);text-align:center;cursor:pointer;transition:.15s;border-top:1px solid rgba(255,255,255,.06)}
+    .courses-more:hover{color:#fff}
+
+    .day-list{padding:8px 0}
+    .day-row{padding:9px 18px;display:flex;gap:14px;align-items:flex-start;border-bottom:1px solid rgba(255,255,255,.05)}
+    .day-row:last-child{border-bottom:none}
+    .day-time{font-family:var(--mono);font-size:12px;color:var(--or);min-width:46px;margin-top:2px;flex-shrink:0}
+    .day-text{font-size:13px;color:rgba(255,255,255,.75);line-height:1.5}
+    .day-text strong{color:#fff}
+
+    .cond-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,.06)}
+    .cond-cell{background:rgba(10,22,40,.8);padding:14px 16px;display:flex;gap:10px;align-items:flex-start}
+    .cond-icon{font-size:20px;flex-shrink:0;color:var(--or)}
+    .cond-title{font-size:13px;font-weight:600;color:#fff;margin-bottom:3px}
+    .cond-desc{font-size:11px;color:rgba(255,255,255,.4);line-height:1.45}
+
+    .loc-body{padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+    .loc-row{display:flex;gap:12px;align-items:flex-start}
+    .loc-icon{font-size:16px;flex-shrink:0;margin-top:1px;color:var(--or)}
+    .loc-label{font-size:12px;color:var(--hi)}
+    .loc-val{font-size:14px;font-weight:600;color:#fff}
+    .loc-map{background:rgba(255,255,255,.04);border-radius:10px;height:100px;display:flex;align-items:center;justify-content:center;font-size:12px;color:rgba(255,255,255,.3);cursor:pointer;transition:.15s;border:1px solid rgba(255,255,255,.06);margin:0 18px 14px}
+    .loc-map:hover{background:rgba(255,255,255,.07);color:var(--hi)}
+
+    .price-tabs{display:flex;gap:1px;background:rgba(255,255,255,.06)}
+    .price-tab{flex:1;padding:10px;text-align:center;font-size:12px;font-weight:600;color:rgba(255,255,255,.4);cursor:pointer;transition:.15s;background:rgba(10,22,40,.8)}
+    .price-tab.on{background:rgba(236,124,0,.12);color:var(--or)}
+    .price-body{padding:14px 18px;display:none}
+    .price-body.show{display:block}
+    .price-num{font-size:28px;font-weight:800;color:#fff;margin-bottom:4px}
+    .price-per{font-size:13px;color:rgba(255,255,255,.4)}
+    .price-items{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+    .price-item{font-size:12px;color:rgba(255,255,255,.5);display:flex;gap:8px}
+    .price-item::before{content:"✓";color:var(--or);flex-shrink:0}
+    .price-cashback{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:9px 12px;font-size:12px;color:#4ade80;margin-top:12px;line-height:1.5}
+
+    .input-area{padding:8px 0 20px;flex-shrink:0;position:relative;z-index:10}
+    .input-box{display:flex;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;overflow:hidden;transition:.2s;backdrop-filter:blur(12px)}
+    .input-box:focus-within{border-color:rgba(236,124,0,.4);background:rgba(255,255,255,.08);box-shadow:0 0 0 3px rgba(236,124,0,.07)}
+    .inp{flex:1;padding:15px 18px;background:transparent;border:none;outline:none;font-family:var(--sans);font-size:15px;color:#fff}
+    .inp::placeholder{color:rgba(255,255,255,.22)}
+    .send{width:50px;background:var(--or);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0}
+    .send:hover{background:var(--ord)}
+    .send:disabled{background:rgba(255,255,255,.07);cursor:default}
+    .send .bi{font-size:16px;color:#fff}
+
+    .overlay{display:none;position:fixed;inset:0;background:rgba(3,8,18,.85);backdrop-filter:blur(6px);z-index:100;align-items:center;justify-content:center;padding:20px}
+    .overlay.open{display:flex}
+    .popup{background:#0b1729;border:1px solid rgba(255,255,255,.1);border-radius:22px;width:100%;max-width:390px;overflow:hidden;animation:pop .22s cubic-bezier(.16,1,.3,1)}
+    @keyframes pop{from{opacity:0;transform:scale(.94) translateY(10px)}to{opacity:1;transform:none}}
+    .ph{padding:20px 24px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;justify-content:space-between;align-items:center}
+    .ph-title{font-size:17px;font-weight:800}
+    .px{width:32px;height:32px;background:rgba(255,255,255,.07);border:none;border-radius:8px;cursor:pointer;color:rgba(255,255,255,.5);font-size:18px;display:flex;align-items:center;justify-content:center;transition:.15s}
+    .px:hover{background:rgba(255,255,255,.14);color:#fff}
+    .px .bi{font-size:16px}
+    .pb{padding:22px 24px}
+    .pfree{display:inline-block;background:rgba(13,40,24,.8);color:#86efac;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;border:1px solid rgba(134,239,172,.18);margin-bottom:18px}
+    .plbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.3);margin-bottom:8px;display:block}
+    .par{display:flex;gap:6px;margin-bottom:14px}
+    .pab{flex:1;padding:10px 4px;border:1px solid rgba(255,255,255,.1);border-radius:9px;background:transparent;font-family:var(--sans);font-size:12px;font-weight:600;color:rgba(255,255,255,.4);cursor:pointer;transition:.15s;text-align:center}
+    .pab:hover,.pab.on{border-color:var(--or);background:rgba(236,124,0,.12);color:#ffa040}
+    .psel{width:100%;padding:12px 14px;border:1px solid rgba(255,255,255,.1);border-radius:9px;background:rgba(255,255,255,.04);font-family:var(--sans);font-size:14px;color:#fff;outline:none;appearance:none;cursor:pointer;margin-bottom:12px}
+    .psel option{background:#0b1729}
+    .pin{width:100%;padding:13px 16px;border:1px solid rgba(255,255,255,.1);border-radius:9px;background:rgba(255,255,255,.04);font-family:var(--sans);font-size:15px;color:#fff;outline:none;margin-bottom:13px;transition:.2s}
+    .pin:focus{border-color:rgba(236,124,0,.5)}
+    .pin::placeholder{color:rgba(255,255,255,.2)}
+    .psub{width:100%;padding:14px;background:var(--or);color:#fff;border:none;border-radius:9px;font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;transition:.15s;margin-bottom:9px;box-shadow:0 4px 18px rgba(236,124,0,.3)}
+    .psub:hover{background:var(--ord)}
+    .ptr{font-size:11px;color:rgba(255,255,255,.25);text-align:center;line-height:1.6}
+    .pback{font-size:12px;color:rgba(255,255,255,.2);text-align:center;padding:8px 24px 18px}
+    .pback a{color:rgba(255,255,255,.25);text-decoration:none}
+    .pback a:hover{color:rgba(255,255,255,.5)}
+
+    @media(max-width:600px){
+      .topbar{padding:12px 14px}
+      .back span{display:none}
+      .layout{padding:0 12px}
+      .age-btns{gap:7px}
+      .age-btn{padding:12px 18px}
+      .age-btn .n{font-size:18px}
+      .msg-user,.msg-text{max-width:92%}
+      .vblock{max-width:100%}
+      .cond-grid{grid-template-columns:1fr}
+      .inp{padding:12px 14px}
+      .popup{margin:12px;border-radius:18px}
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+<div class="glow"></div>
+
+<div class="topbar">
+  <a href="/" class="logo">
+    <div class="logo-box"><canvas id="logoCanvas" width="34" height="34"></canvas></div>
+    <span class="logo-name">#АйДа<span>Кемп</span></span>
+  </a>
+  <a href="/" class="back">
+    <i class="bi bi-arrow-right" aria-hidden="true" style="transform:rotate(180deg);display:inline-block"></i>
+    <span>На сайт лагеря</span>
+  </a>
+</div>
+
+<div class="layout">
+  <div class="intro" id="intro">
+    <div class="intro-icon"><canvas id="heroCanvas" width="60" height="60"></canvas></div>
+    <h1 class="intro-h">Спросите всё про лагерь</h1>
+    <p class="intro-s">Отвечу честно — программа, цены, безопасность,<br>смены 2026. Без скриптов и давления.</p>
+    <div class="hint"><span class="hint-dot"></span>Обычно начинают с возраста ребёнка</div>
+    <div class="age-btns">
+      <button class="age-btn" onclick="go('Ребёнку 7–9 лет')">
+        <span class="n">7–9</span><span class="l">лет</span>
+      </button>
+      <button class="age-btn" onclick="go('Ребёнку 10–12 лет')">
+        <span class="n">10–12</span><span class="l">лет</span>
+      </button>
+      <button class="age-btn" onclick="go('Ребёнку 13–16 лет')">
+        <span class="n">13–16</span><span class="l">лет</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="messages" id="msgs"></div>
+  <div class="typing" id="typing"><span class="td"></span><span class="td"></span><span class="td"></span></div>
+
+  <div class="input-area">
+    <div class="input-box">
+      <input class="inp" id="inp" placeholder="Спросите про лагерь..." onkeydown="if(event.key==='Enter'&&!event.shiftKey)send()">
+      <button class="send" id="sendBtn" onclick="send()" aria-label="Отправить">
+        <i class="bi bi-send" aria-hidden="true"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="if(event.target===this)closePopup()">
+  <div class="popup">
+    <div class="ph">
+      <div class="ph-title">Забронировать смену</div>
+      <button class="px" onclick="closePopup()" aria-label="Закрыть">
+        <i class="bi bi-x-lg" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="pb">
+      <span class="pfree">Место фиксируется на 48 часов</span>
+      <label class="plbl">Возраст</label>
+      <div class="par">
+        <button class="pab" onclick="pa(this)">7–9 лет</button>
+        <button class="pab on" onclick="pa(this)">10–12 лет</button>
+        <button class="pab" onclick="pa(this)">13–16 лет</button>
+      </div>
+      <label class="plbl">Смена</label>
+      <select class="psel" id="popShift">
+        <option>Смена 1 — 30 мая–8 июня · 74 900 ₽</option>
+        <option>Смена 2 — 10–23 июня · 95 000 ₽</option>
+        <option>Смена 2.1 — 10–16 июня · 48 000 ₽</option>
+        <option>Смена 3 — 3–15 августа · 89 400 ₽</option>
+      </select>
+      <label class="plbl">Телефон</label>
+      <input class="pin" type="tel" id="popPhone" placeholder="+7 (___) ___-__-__">
+      <button class="psub" id="popSubmit" onclick="submitBooking()">Забронировать →</button>
+      <div class="ptr">Ответим за 10 мин · Лицензия Минобра<br>Кешбэк 15% через Госуслуги</div>
+    </div>
+    <div class="pback"><a href="#" onclick="closePopup();return false">← Вернуться к чату</a></div>
+  </div>
+</div>
+
+<script is:inline>
+/* ── STARS ── */
+(()=>{
+  const c=document.getElementById('stars'),ctx=c.getContext('2d');
+  let S=[];
+  const resize=()=>{
+    c.width=innerWidth;c.height=innerHeight;
+    S=Array.from({length:170},()=>({
+      x:Math.random()*c.width,
+      y:Math.random()*c.height*.75,
+      r:Math.random()*1.1+.2,
+      o:Math.random()*.5+.1,
+      sp:Math.random()*.4+.1,
+      ph:Math.random()*Math.PI*2
+    }));
+  };
+  const draw=t=>{
+    ctx.clearRect(0,0,c.width,c.height);
+    S.forEach(s=>{
+      const tw=s.o+Math.sin(t*.001*s.sp+s.ph)*.25;
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,255,${Math.max(0,Math.min(1,tw))})`;ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  };
+  resize();addEventListener('resize',resize);requestAnimationFrame(draw);
+})();
+
+/* ── CAMP DATA ── */
+const SMENY=[
+  {n:'Смена 1',dates:'30 мая — 8 июня',days:'10 дней',price:'74 900 ₽',available:true},
+  {n:'Смена 2',dates:'10 — 23 июня',days:'14 дней',price:'95 000 ₽',available:true,popular:true},
+  {n:'Смена 2.1',dates:'10 — 16 июня',days:'7 дней',price:'48 000 ₽',available:true},
+  {n:'Смена 3',dates:'3 — 15 августа',days:'13 дней',price:'89 400 ₽',available:true},
+  {n:'Смена 4',dates:'17 — 26 августа',days:'10 дней',price:'69 600 ₽',available:false},
+];
+const COURSES=[
+  {icon:'code-slash',name:'Python',age:'10–16 лет',desc:'Боты, игры, AI-проекты, веб'},
+  {icon:'blocks',name:'Minecraft',age:'8–12 лет',desc:'Программирование через игру'},
+  {icon:'keyboard',name:'Scratch',age:'7–10 лет',desc:'Первые игры и анимации'},
+  {icon:'controller',name:'Unity',age:'11–16 лет',desc:'3D-игры на C#'},
+  {icon:'shield-lock-fill',name:'Кибербез',age:'13–16 лет',desc:'CTF, Linux, хакинг'},
+  {icon:'cpu',name:'AI-проекты',age:'12–16 лет',desc:'Нейросети и ML'},
+];
+const DAY=[
+  {t:'08:30',txt:'<strong>Завтрак</strong>'},
+  {t:'09:30',txt:'<strong>IT-блок 1</strong> — основное направление, 90 мин'},
+  {t:'11:30',txt:'<strong>Перемена</strong> — спорт, игры на улице'},
+  {t:'13:00',txt:'<strong>Обед</strong>'},
+  {t:'14:00',txt:'<strong>Тихий час</strong> — кто хочет отдыхает'},
+  {t:'15:30',txt:'<strong>IT-блок 2</strong> — работа над проектом, 90 мин'},
+  {t:'17:30',txt:'<strong>Бассейн</strong> — каждый день'},
+  {t:'19:00',txt:'<strong>Ужин</strong>'},
+  {t:'20:00',txt:'<strong>Вечерняя программа</strong> — квесты, кино, мастерские'},
+];
+const COND=[
+  {icon:'house-door',title:'Проживание',desc:'Корпуса по 2–4 человека, WiFi'},
+  {icon:'cup-hot',title:'Питание',desc:'4 раза в день, горячее. Аллергии учитываем'},
+  {icon:'sun',title:'Бассейн',desc:'Каждый день, открытый'},
+  {icon:'shield-check',title:'Безопасность',desc:'Охрана 24/7, закрытая территория'},
+  {icon:'heart-pulse-fill',title:'Медицина',desc:'Медсестра круглосуточно на территории'},
+  {icon:'phone',title:'Связь',desc:'Фото в чат каждый день, звонки по расписанию'},
+];
+
+/* ── BLOCK RENDERERS ── */
+function icon(name){return `<i class="bi bi-${name}" aria-hidden="true"></i>`}
+
+function blockSmeny(){
+  const d=document.createElement('div');d.className='vblock';
+  d.innerHTML=`<div class="block">
+    <div class="block-head">
+      <span class="block-title">${icon('calendar-event')}Смены лета 2026</span>
+      <span class="block-badge badge-or">Запись открыта</span>
+    </div>
+    <div class="smeny-list">${SMENY.map(s=>`
+      <div class="smena-row${s.available?'':' sold'}" ${s.available?'onclick="openPopup()"':''}>
+        <div>
+          <div class="smena-name">${s.n}${s.popular?' ★':''}</div>
+          <div class="smena-dates">${s.dates}</div>
+          <div class="smena-days">${s.days}</div>
+        </div>
+        <div class="smena-price">
+          ${s.available?`<div class="smena-rub">${s.price}</div><div class="smena-hint">нажмите → бронь</div>`
+            :`<div class="smena-sold-label">мест нет</div>`}
+        </div>
+      </div>`).join('')}
+    </div>
+    <button class="block-cta" onclick="openPopup()">Выбрать смену и забронировать →</button>
+    <div class="block-foot">Кешбэк 15% через Госуслуги · Место фиксируется на 48ч</div>
+  </div>`;return d;
+}
+
+function blockCourses(){
+  const d=document.createElement('div');d.className='vblock';
+  d.innerHTML=`<div class="block">
+    <div class="block-head">
+      <span class="block-title">${icon('laptop')}IT-направления</span>
+      <span class="block-badge badge-or">${COURSES.length} курсов</span>
+    </div>
+    <div class="courses-grid">${COURSES.map(c=>`
+      <div class="course-cell" onclick="go('Расскажи подробнее про ${c.name}')">
+        <span class="course-icon">${icon(c.icon)}</span>
+        <div class="course-name">${c.name}</div>
+        <div class="course-age">${c.age}</div>
+        <div class="course-desc">${c.desc}</div>
+      </div>`).join('')}
+    </div>
+    <div class="courses-more" onclick="go('Как выбрать направление?')">Как выбрать → подскажу</div>
+  </div>`;return d;
+}
+
+function blockDay(){
+  const d=document.createElement('div');d.className='vblock';
+  d.innerHTML=`<div class="block">
+    <div class="block-head">
+      <span class="block-title">${icon('clock')}Распорядок дня</span>
+    </div>
+    <div class="day-list">${DAY.map(r=>`
+      <div class="day-row">
+        <span class="day-time">${r.t}</span>
+        <span class="day-text">${r.txt}</span>
+      </div>`).join('')}
+    </div>
+    <div class="block-foot">Последние 2 дня — хакатон: командный проект + защита</div>
+  </div>`;return d;
+}
+
+function blockCond(){
+  const d=document.createElement('div');d.className='vblock';
+  d.innerHTML=`<div class="block">
+    <div class="block-head">
+      <span class="block-title">${icon('houses')}Условия</span>
+    </div>
+    <div class="cond-grid">${COND.map(c=>`
+      <div class="cond-cell">
+        <span class="cond-icon">${icon(c.icon)}</span>
+        <div><div class="cond-title">${c.title}</div><div class="cond-desc">${c.desc}</div></div>
+      </div>`).join('')}
+    </div>
+  </div>`;return d;
+}
+
+function blockLocation(){
+  const d=document.createElement('div');d.className='vblock';
+  d.innerHTML=`<div class="block">
+    <div class="block-head">
+      <span class="block-title">${icon('geo-alt-fill')}Как добраться</span>
+    </div>
+    <div class="loc-body">
+      <div class="loc-row"><span class="loc-icon">${icon('geo-alt-fill')}</span><div><div class="loc-label">Адрес</div><div class="loc-val">Санаторий Изумруд, Наро-Фоминский р-н</div></div></div>
+      <div class="loc-row"><span class="loc-icon">${icon('arrow-right')}</span><div><div class="loc-label">От Москвы</div><div class="loc-val">66 км по Калужскому шоссе, ~1 час</div></div></div>
+      <div class="loc-row"><span class="loc-icon">${icon('bus-front')}</span><div><div class="loc-label">Трансфер</div><div class="loc-val">Автобус от м. Солнцево — входит в цену</div></div></div>
+    </div>
+    <div class="loc-map" onclick="window.open('https://yandex.ru/maps/?ll=36.724185,55.265643&z=14','_blank')">
+      55.265643, 36.724185 → открыть в Яндекс.Картах
+    </div>
+  </div>`;return d;
+}
+
+function blockPrices(){
+  const d=document.createElement('div');d.className='vblock';
+  d.innerHTML=`<div class="block">
+    <div class="block-head"><span class="block-title">${icon('tag')}Стоимость смен</span></div>
+    <div class="price-tabs">
+      <div class="price-tab on" onclick="switchTab(this,0)">7 дней</div>
+      <div class="price-tab" onclick="switchTab(this,1)">10 дней</div>
+      <div class="price-tab" onclick="switchTab(this,2)">14 дней</div>
+    </div>
+    <div class="price-body show" id="pt0">
+      <div class="price-num">48 000 ₽</div>
+      <div class="price-per">за смену · смена 2.1</div>
+      <div class="price-items">
+        <div class="price-item">Проживание в корпусе</div>
+        <div class="price-item">4-разовое питание</div>
+        <div class="price-item">IT-программа по направлению</div>
+        <div class="price-item">Трансфер от м. Солнцево</div>
+        <div class="price-item">Бассейн каждый день</div>
+      </div>
+      <div class="price-cashback">С кешбэком 15% через Госуслуги — фактически <strong>40 800 ₽</strong></div>
+    </div>
+    <div class="price-body" id="pt1">
+      <div class="price-num">69 600–74 900 ₽</div>
+      <div class="price-per">за смену · смены 1 и 4</div>
+      <div class="price-items">
+        <div class="price-item">Всё включено (проживание, питание, IT, трансфер)</div>
+        <div class="price-item">Хакатон в последние 2 дня</div>
+        <div class="price-item">Сертификат по итогам</div>
+      </div>
+      <div class="price-cashback">С кешбэком 15% — от <strong>59 160 ₽</strong></div>
+    </div>
+    <div class="price-body" id="pt2">
+      <div class="price-num">95 000 ₽</div>
+      <div class="price-per">за смену · смена 2 (популярная)</div>
+      <div class="price-items">
+        <div class="price-item">Самая полная программа — 14 дней</div>
+        <div class="price-item">Всё включено + хакатон</div>
+        <div class="price-item">Дети успевают подружиться по-настоящему</div>
+      </div>
+      <div class="price-cashback">С кешбэком 15% — <strong>80 750 ₽</strong></div>
+    </div>
+    <button class="block-cta" onclick="openPopup()">Выбрать и забронировать →</button>
+  </div>`;return d;
+}
+
+function switchTab(el,idx){
+  el.closest('.block').querySelectorAll('.price-tab').forEach((t,i)=>t.classList.toggle('on',i===idx));
+  el.closest('.block').querySelectorAll('.price-body').forEach((b,i)=>b.classList.toggle('show',i===idx));
+}
+
+/* ── STATE ── */
+let busy=false,active=false;
+let aiState='idle'; // idle | think | speak
+const history=[];
+
+/* ── UI HELPERS ── */
+function addEl(el){
+  const box=document.getElementById('msgs');
+  box.appendChild(el);
+  box.scrollTop=box.scrollHeight;
+}
+
+function addMsg(role,html){
+  if(!active){
+    active=true;
+    document.getElementById('intro').classList.add('gone');
+    document.getElementById('msgs').classList.add('show');
+  }
+  const d=document.createElement('div');
+  d.className=role==='user'?'msg-user':'msg-text';
+  d.innerHTML=html;
+  addEl(d);
+}
+
+function addChips(items){
+  const row=document.createElement('div');
+  row.className='chips';
+  items.forEach(item=>{
+    const b=document.createElement('button');
+    b.className='chip'+(item.action==='book'?' cta':'');
+    b.textContent=item.label;
+    b.onclick=item.action==='book'?()=>openPopup():()=>{row.remove();go(item.query||item.label)};
+    row.appendChild(b);
+  });
+  addEl(row);
+}
+
+function showTyping(){
+  const t=document.getElementById('typing');
+  const box=document.getElementById('msgs');
+  if(!active){active=true;document.getElementById('intro').classList.add('gone');document.getElementById('msgs').classList.add('show')}
+  box.after(t);t.classList.add('show');box.scrollTop=box.scrollHeight;
+}
+
+function hideTyping(){
+  document.getElementById('typing').classList.remove('show');
+}
+
+function renderBlock(blockType,blockData){
+  switch(blockType){
+    case 'smeny': return blockSmeny();
+    case 'courses': return blockCourses();
+    case 'day_schedule': return blockDay();
+    case 'conditions': return blockCond();
+    case 'prices': return blockPrices();
+    case 'location': return blockLocation();
+    default: return null;
+  }
+}
+
+/* ── AI REQUEST ── */
+async function go(txt){
+  if(busy)return;
+  busy=true;
+  aiState='think';
+  document.getElementById('sendBtn').disabled=true;
+  addMsg('user',txt);
+  showTyping();
+
+  // Fire Metrika goal
+  if(typeof ym!=='undefined'&&history.length===0){
+    ym(96499295,'reachGoal','ai_chat_start');
+  }
+
+  history.push({role:'user',content:txt});
+
+  try{
+    const res=await fetch('/api/ask',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message:txt,history:history.slice(0,-1)})
+    });
+    const data=await res.json();
+    hideTyping();
+    aiState='speak';
+
+    if(data.state==='error'||!data.text){
+      addMsg('ai',data.text||'Что-то пошло не так. Попробуйте ещё раз.');
+    } else {
+      addMsg('ai',data.text);
+      if(data.block_type){
+        const block=renderBlock(data.block_type,data.block_data);
+        if(block)addEl(block);
+        if(typeof ym!=='undefined'){
+          ym(96499295,'reachGoal','ai_block_shown',{block_type:data.block_type});
+        }
+      }
+      if(data.chips&&data.chips.length)addChips(data.chips);
+      history.push({role:'assistant',content:data.text});
+      if(history.length>20)history.splice(0,2);
+    }
+  } catch(e){
+    hideTyping();
+    addMsg('ai','Потеряли связь. Попробуйте ещё раз или напишите нам в <a href="https://wa.me/79688086455">WhatsApp</a>.');
+  }
+
+  setTimeout(()=>{aiState='idle'},2000);
+  busy=false;
+  document.getElementById('sendBtn').disabled=false;
+  document.getElementById('inp').focus();
+}
+
+function send(){
+  const v=document.getElementById('inp').value.trim();
+  if(!v||busy)return;
+  document.getElementById('inp').value='';
+  go(v);
+}
+
+/* ── POPUP ── */
+function openPopup(){
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  setTimeout(()=>document.getElementById('popPhone').focus(),300);
+  if(typeof ym!=='undefined'){
+    ym(96499295,'reachGoal','ai_chat_complete');
+  }
+}
+function closePopup(){
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+function pa(btn){
+  btn.closest('.par').querySelectorAll('.pab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+async function submitBooking(){
+  const phone=document.getElementById('popPhone').value.trim();
+  if(!phone||phone.replace(/\D/g,'').length<11){
+    document.getElementById('popPhone').focus();
+    return;
+  }
+  const shift=document.getElementById('popShift').value;
+  const age=document.querySelector('.pab.on')?.textContent||'';
+  const btn=document.getElementById('popSubmit');
+  btn.disabled=true;btn.textContent='Отправляем...';
+
+  try{
+    await fetch('/api/lead',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({phone,shift,age,source:'ask-chat',landing_url:location.href,page_title:document.title})
+    });
+    if(typeof ym!=='undefined'){
+      ym(96499295,'reachGoal','ai_form_submit');
+    }
+    btn.textContent='Заявка отправлена!';
+    setTimeout(closePopup,1500);
+  } catch(e){
+    btn.disabled=false;btn.textContent='Забронировать →';
+  }
+}
+
+/* ── PHONE MASK ── */
+document.getElementById('popPhone').addEventListener('input',function(){
+  let v=this.value.replace(/\D/g,'');
+  if(v.startsWith('8')&&v.length>1)v='7'+v.slice(1);
+  if(!v.startsWith('7')&&v.length>0)v='7'+v;
+  v=v.slice(0,11);
+  let r='+7';
+  if(v.length>1)r+=' ('+v.slice(1,4);
+  if(v.length>=4)r+=') '+v.slice(4,7);
+  if(v.length>=7)r+='-'+v.slice(7,9);
+  if(v.length>=9)r+='-'+v.slice(9,11);
+  this.value=r;
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePopup()});
+
+/* ── ORBIT AVATAR ── */
+function makeOrbitCanvas(canvas,size){
+  const ctx=canvas.getContext('2d');
+  const cx=size/2,cy=size/2,R=size/2-1;
+  let t=0;
+  const N=size>40?12:8;
+  const pts=Array.from({length:N},(_,i)=>({
+    a:(i/N)*Math.PI*2,
+    orb:(size>40?(8+(i%3)*10):(5+(i%3)*7))*(size/60),
+    sz:(1+(i%3)*.6)*(size/36),
+    sp:.35+(i%4)*.15,
+  }));
+  function draw(){
+    ctx.clearRect(0,0,size,size);
+    ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);
+    ctx.fillStyle='#060e1a';ctx.fill();
+    ctx.strokeStyle=`rgba(236,124,0,${aiState==='think'?.5:.25})`;
+    ctx.lineWidth=1;ctx.stroke();
+    const sp=aiState==='think'?3.5:aiState==='speak'?2:1;
+    [(size>40?8:5),(size>40?18:12),(size>40?28:19)].forEach(r=>{
+      ctx.beginPath();ctx.arc(cx,cy,r*(size/60),0,Math.PI*2);
+      ctx.strokeStyle=`rgba(236,124,0,${aiState==='think'?.12:.05})`;
+      ctx.lineWidth=.5;ctx.stroke();
+    });
+    pts.forEach(p=>{
+      p.a+=p.sp*.045*sp;
+      for(let j=4;j>=0;j--){
+        const ta=p.a-p.sp*.045*sp*j*2.2;
+        const tx=cx+Math.cos(ta)*p.orb,ty=cy+Math.sin(ta)*p.orb;
+        const a=aiState==='think'?.85:aiState==='speak'?.65:.45;
+        ctx.beginPath();ctx.arc(tx,ty,Math.max(.3,p.sz*(1-j*.18)),0,Math.PI*2);
+        ctx.fillStyle=`rgba(255,165,60,${a*(1-j*.22)})`;ctx.fill();
+      }
+      const px=cx+Math.cos(p.a)*p.orb,py=cy+Math.sin(p.a)*p.orb;
+      ctx.beginPath();ctx.arc(px,py,p.sz,0,Math.PI*2);
+      ctx.fillStyle=aiState==='think'?'rgba(255,210,100,1)':'rgba(255,165,60,.85)';ctx.fill();
+    });
+    const pulse=.5+Math.sin(t*(aiState==='think'?4:aiState==='speak'?2.5:1.5))*.5;
+    const cr=(4+pulse*3)*(size/36);
+    const g=ctx.createRadialGradient(cx,cy,0,cx,cy,cr);
+    g.addColorStop(0,'rgba(255,230,130,1)');
+    g.addColorStop(.5,'rgba(236,124,0,.9)');
+    g.addColorStop(1,'rgba(236,124,0,0)');
+    ctx.beginPath();ctx.arc(cx,cy,cr,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+    if(aiState==='think'||aiState==='speak'){
+      const pr=R*(.6+Math.sin(t*3)*.15);
+      ctx.beginPath();ctx.arc(cx,cy,pr,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(236,124,0,${.1+Math.sin(t*3)*.1})`;ctx.lineWidth=1;ctx.stroke();
+    }
+    t+=0.04;
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+makeOrbitCanvas(document.getElementById('logoCanvas'),34);
+makeOrbitCanvas(document.getElementById('heroCanvas'),60);
+</script>
+
+<!-- Yandex.Metrika -->
+<script is:inline>
+(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+m[i].l=1*new Date();
+for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return}}
+k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+(window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+ym(96499295, "init", {
+  clickmap:true,
+  trackLinks:true,
+  accurateTrackBounce:true,
+  webvisor:true
+});
+</script>
+
+</body>
+</html>
