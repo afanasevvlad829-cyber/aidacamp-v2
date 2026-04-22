@@ -50,9 +50,9 @@ const campData = {
       dates: "17 — 26 августа",
       days: 10,
       price: 69600,
-      available: false,
-      enrolled: 40,
-      enrolledByAge: { "7-9": 8, "10-12": 18, "13-16": 14 }
+      available: true,
+      enrolled: 15,
+      enrolledByAge: { "7-9": 4, "10-12": 7, "13-16": 4 }
     }
   ],
   courses: [
@@ -143,7 +143,7 @@ const campData = {
     cashback: "Кешбэк 15% через Госуслуги применяется ко всем сменам",
     payment: "50% при подписании договора, оставшиеся 50% за 3 недели до смены. При оплате 100% в течение 2–3 дней после подписания — скидка 5%. Рассрочку лагерь не оформляет — при необходимости через банк (Сбер, Тинькофф — за 5 минут в приложении).",
     referral: "Приводишь 1 друга → −10% вам обоим. Приводишь 5 человек → тебе −50%, пятому −50%. Приводишь 10 человек → твоя путёвка стоит 100 руб.",
-    counselorRatio: "1 вожатый на 8 детей. Работают парами (16 детей — 2 вожатых). Фактически лучше: часть дня половина группы на IT-занятиях, половина — на спорте или активностях.",
+    counselorRatio: "1 вожатый на 8 детей, работают парами. Дети живут по 2–4 человека в комнате. Вожатые на том же этаже — в отдельной вожатской. Там же сейф где хранятся телефоны и ноутбуки детей.",
     included: "Проживание, питание 4 раза в день, IT-программа по направлению, трансфер от м. Солнцево, бассейн"
   }
 };
@@ -458,7 +458,22 @@ const POST = async ({ request }) => {
     const raw = response.content[0].type === "text" ? response.content[0].text : "";
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error("No JSON in response");
+      const cleanText = raw.replace(/```[\s\S]*?```/g, "").trim() || "Уточните вопрос.";
+      console.warn("No JSON in response, using raw text as fallback. Length:", raw.length);
+      return new Response(
+        JSON.stringify({
+          state: "ok",
+          text: cleanText,
+          block_type: null,
+          block_data: null,
+          chips: [
+            { label: "Смены 2026", query: "смены" },
+            { label: "Цены", query: "цены" },
+            { label: "Написать менеджеру", action: "contact_request" }
+          ]
+        }),
+        { headers: { "Content-Type": "application/json" } }
+      );
     }
     const parsed = ResponseSchema.safeParse(JSON.parse(jsonMatch[0]));
     if (!parsed.success) {
