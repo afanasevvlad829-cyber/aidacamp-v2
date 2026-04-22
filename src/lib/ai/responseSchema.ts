@@ -12,7 +12,7 @@ export const ResponseSchema = z.object({
     'smeny', 'courses', 'day_schedule',
     'conditions', 'prices', 'location',
   ]).nullable(),
-  block_data: z.record(z.any()).nullable(),
+  block_data: z.record(z.string(), z.any()).nullable(),
   chips: z.array(ChipSchema).max(4),
 });
 
