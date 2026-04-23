@@ -7,11 +7,9 @@ import os
 import psycopg2
 
 
-def pg_connect(dbname="aidacamp", user="postgres", host="localhost", port=5432):
-    """Соединение с локальной PostgreSQL. host=localhost обязателен для md5-auth."""
-    return psycopg2.connect(
-        dbname=dbname, user=user, host=host, port=port
-    )
+def pg_connect(dbname="aidacamp", user="postgres"):
+    """Соединение с локальной PostgreSQL через Unix socket (peer auth, без пароля)."""
+    return psycopg2.connect(dbname=dbname, user=user)
 
 
 def get_preference(key: str, default=None, conn=None):

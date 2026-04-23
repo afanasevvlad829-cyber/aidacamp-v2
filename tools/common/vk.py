@@ -6,14 +6,13 @@
 Токен — Bearer, истекает через 24 ч. Обновляем через refresh_token.
 Refresh хранится в VK_REFRESH_TOKEN в etl/.env.
 
-Функция vk_refresh_token() — вызывать в начале скрипта если нужна свежая статистика.
+Функция vk_ensure_token() — вызывать в начале скрипта если нужна свежая статистика.
 """
 import json
 import os
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timedelta
 
 _BASE = "https://target.my.com/api/v2"
 _OAUTH = "https://target.my.com/api/v2/oauth2/token.json"
@@ -57,14 +56,12 @@ def vk_post(path: str, payload: dict) -> dict:
 def vk_refresh_token() -> bool:
     """Обновляет VK_TOKEN через refresh_token. Пишет в env-файл и os.environ.
 
-    Возвращает True при успехе, False при ошибке.
-    client_credentials (generates fresh pair) используем ТОЛЬКО если refresh не работает.
+    client_credentials используем ТОЛЬКО если refresh не работает (расходует лимит!).
     """
     refresh = os.environ.get("VK_REFRESH_TOKEN", "")
     client_id = os.environ.get("VK_CLIENT_ID", "")
     client_secret = os.environ.get("VK_CLIENT_SECRET", "")
 
-    # Пробуем refresh_token
     if refresh:
         try:
             data = urllib.parse.urlencode({
@@ -85,7 +82,6 @@ def vk_refresh_token() -> bool:
         except Exception as e:
             print(f"vk.refresh_token err: {e}")
 
-    # Fallback — client_credentials (расходует лимит!)
     if client_id and client_secret:
         try:
             data = urllib.parse.urlencode({
@@ -115,12 +111,9 @@ def _save_tokens(access: str, refresh: str):
     os.environ["VK_TOKEN"] = access
     if refresh:
         os.environ["VK_REFRESH_TOKEN"] = refresh
-
-    # Перезаписываем env-файл
     try:
         with open(_ENV_FILE) as f:
             lines = f.readlines()
-
         new_lines = []
         found_token = found_refresh = False
         for line in lines:
@@ -138,7 +131,7 @@ def _save_tokens(access: str, refresh: str):
             new_lines.append(f"VK_REFRESH_TOKEN={refresh}\n")
         with open(_ENV_FILE, "w") as f:
             f.writelines(new_lines)
-        print(f"✅ VK tokens updated in env")
+        print("✅ VK tokens updated in env")
     except Exception as e:
         print(f"vk._save_tokens file err: {e}")
 
@@ -146,7 +139,6 @@ def _save_tokens(access: str, refresh: str):
 def vk_ensure_token() -> bool:
     """Проверяет токен — если невалиден, обновляет. Вызывать в начале скриптов."""
     try:
-        # /user.json — лёгкий эндпоинт для проверки токена
         vk_get("/user.json")
         return True
     except urllib.error.HTTPError as e:
@@ -162,51 +154,42 @@ def vk_ensure_token() -> bool:
 # ── Статистика ─────────────────────────────────────────────────────────────────
 
 def _get_all_adplan_ids() -> list[str]:
-    """Возвращает все ID кампаний (ad_plans) аккаунта постранично."""
+    """Возвращает все ID кампаний (ad_plans). myTarget не принимает _count/_offset."""
     ids = []
-    offset = 0
-    limit = 50
-    while True:
-        try:
-            data = vk_get("/ad_plans.json", {"_count": limit, "_offset": offset})
-            items = data.get("items", [])
-            ids += [str(p["id"]) for p in items]
-            if len(items) < limit:
+    try:
+        data = vk_get("/ad_plans.json")
+        items = data.get("items", [])
+        total = data.get("count", len(items))
+        ids += [str(p["id"]) for p in items]
+        offset = len(items)
+        while offset < total:
+            try:
+                page = vk_get("/ad_plans.json", {"limit": 50, "offset": offset})
+                page_items = page.get("items", [])
+                if not page_items:
+                    break
+                ids += [str(p["id"]) for p in page_items]
+                offset += len(page_items)
+            except Exception:
                 break
-            offset += limit
-        except Exception as e:
-            print(f"vk._get_all_adplan_ids err: {e}")
-            break
+    except Exception as e:
+        print(f"vk._get_all_adplan_ids err: {e}")
     return ids
 
 
 def vk_stats_period(date_from: str, date_to: str,
-                    obj_type: str = "account", obj_id: str | None = None) -> dict:
-    """Статистика за произвольный период через myTarget API.
-
-    obj_type — 'account' (все ad_plans) | 'ad_plan' | 'campaign' (group) | 'banner'
-    obj_id   — ID объекта или список через запятую (None → все ad_plans)
-    Возвращает dict: {'spend': int, 'clicks': int, 'shows': int, 'ctr': float}
-    """
+                    obj_type: str = "account", obj_id=None) -> dict:
+    """Статистика за произвольный период через myTarget API (суммирует все ad_plans)."""
     try:
-        if obj_type == "account" or obj_id is None:
-            # Берём все ad_plan ID и суммируем через total
-            ids = _get_all_adplan_ids()
-            if not ids:
-                return {"spend": 0, "clicks": 0, "shows": 0, "ctr": 0}
-            path = "/statistics/ad_plans/day.json"
-            obj_id_str = ",".join(ids[:100])  # API лимит
-        else:
-            path = f"/statistics/{obj_type}s/day.json"
-            obj_id_str = str(obj_id)
-
-        data = vk_get(path, {
-            "id": obj_id_str,
+        ids = _get_all_adplan_ids()
+        if not ids:
+            return {"spend": 0, "clicks": 0, "shows": 0, "ctr": 0}
+        data = vk_get("/statistics/ad_plans/day.json", {
+            "id": ",".join(ids[:100]),
             "date_from": date_from,
             "date_to": date_to,
             "metrics": "base",
         })
-        # Используем агрегированный total вместо items (быстрее)
         base = data.get("total", {}).get("base", {})
         spend = int(float(base.get("spent", 0)))
         clicks = int(base.get("clicks", 0))
@@ -223,7 +206,7 @@ def vk_spend(date_from: str, date_to: str) -> int:
     return vk_stats_period(date_from, date_to)["spend"]
 
 
-def vk_spend_and_clicks(date_from: str, date_to: str) -> tuple[int, int]:
+def vk_spend_and_clicks(date_from: str, date_to: str) -> tuple:
     """Расходы и клики VK за период."""
     s = vk_stats_period(date_from, date_to)
     return s["spend"], s["clicks"]
@@ -232,13 +215,13 @@ def vk_spend_and_clicks(date_from: str, date_to: str) -> tuple[int, int]:
 # ── Кампании ───────────────────────────────────────────────────────────────────
 
 def vk_campaigns(status: str | None = None, limit: int = 50) -> list[dict]:
-    """Список кампаний (ad_plans). status='active'|'blocked'|None (все)."""
-    params: dict = {"_count": limit}
-    if status:
-        params["status"] = status
+    """Список кампаний (ad_plans)."""
     try:
-        data = vk_get("/ad_plans.json", params)
-        return data.get("items", [])
+        data = vk_get("/ad_plans.json")
+        items = data.get("items", [])
+        if status:
+            items = [p for p in items if p.get("status") == status]
+        return items
     except Exception as e:
         print(f"vk.campaigns err: {e}")
         return []
