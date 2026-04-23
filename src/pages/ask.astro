@@ -1093,6 +1093,74 @@ function blockPrices(){
   btn.onclick=openPopup;card.appendChild(btn);wrap.appendChild(card);return wrap;
 }
 
+function blockTaxCalculator(){
+  // Смены: [название, цена, дней]
+  const SHIFTS=[
+    ['Смена 1 — 10 июня–8 июн, 10 дней', 74900, 10],
+    ['Смена 2 — 10–23 июн, 14 дней ⭐', 95000, 14],
+    ['Смена 2.1 — 10–16 июн, 7 дней', 48000, 7],
+    ['Смена 2.2 — 16–23 июн, 8 дней', 65000, 8],
+    ['Смена 3 — 3–15 авг, 13 дней', 89400, 13],
+    ['Смена 4 — 17–26 авг, 10 дней', 69600, 10],
+  ];
+  const RESIDENTIAL_PER_DAY=3800;
+  const EDU_LIMIT=110000;
+  function calc(price,days){
+    const res=RESIDENTIAL_PER_DAY*days;
+    const edu=price-res;
+    const base=Math.min(edu,EDU_LIMIT);
+    return Math.round(base*0.13/100)*100;
+  }
+  const wrap=mkEl('div','width:100%;animation:blockPop .4s cubic-bezier(.16,1,.3,1) both,blockGlow .8s .2s ease-out both');
+  const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
+  // Header
+  const head=mkEl('div','padding:13px 18px;border-bottom:1px solid rgba(13,27,42,.07);display:flex;align-items:center;gap:8px');
+  head.innerHTML='<i class="bi bi-receipt" aria-hidden="true" style="font-size:15px;color:rgba(13,27,42,.45)"></i>'
+    +'<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55)">Налоговый вычет 13%</span>';
+  card.appendChild(head);
+  const body=mkEl('div','padding:14px 16px 16px;display:flex;flex-direction:column;gap:12px');
+  // Selector
+  const lbl=mkEl('label','font-size:13px;color:#4e6072;font-weight:500');
+  lbl.textContent='Выберите смену:';
+  body.appendChild(lbl);
+  const sel=document.createElement('select');
+  sel.style.cssText='width:100%;border:1px solid rgba(13,27,42,.15);border-radius:10px;padding:10px 12px;font-size:14px;font-family:inherit;color:#0d1b2a;background:#f9fafb;-webkit-appearance:none;cursor:pointer';
+  SHIFTS.forEach(([name,price,days],i)=>{
+    const opt=document.createElement('option');
+    opt.value=i; opt.textContent=name;
+    if(i===1) opt.selected=true;
+    sel.appendChild(opt);
+  });
+  body.appendChild(sel);
+  // Result card
+  const resCard=mkEl('div','background:linear-gradient(135deg,rgba(236,124,0,.07),rgba(236,124,0,.03));border:1px solid rgba(236,124,0,.2);border-radius:12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px');
+  const resLabel=mkEl('div','');
+  resLabel.innerHTML='<div style="font-size:12px;color:#7e9094;margin-bottom:2px">Ориентировочный возврат</div>'
+    +'<div style="font-size:11px;color:#9aaabb">через ФНС (НДФЛ 13%)</div>';
+  const resNum=mkEl('div','font-size:28px;font-weight:800;color:#c45f00;line-height:1;tabular-nums');
+  function updateResult(){
+    const i=parseInt(sel.value)||0;
+    const [,price,days]=SHIFTS[i];
+    const amount=calc(price,days);
+    resNum.textContent='~'+amount.toLocaleString('ru-RU')+' ₽';
+  }
+  updateResult();
+  sel.onchange=updateResult;
+  resCard.appendChild(resLabel); resCard.appendChild(resNum);
+  body.appendChild(resCard);
+  // Note
+  const note=mkEl('div','font-size:11px;color:#9aaabb;line-height:1.5');
+  note.textContent='* Расчёт ориентировочный. Точная сумма зависит от вашего дохода и уже использованных вычетов в этом году. Лимит НК РФ — 110 000 ₽ на обучение.';
+  body.appendChild(note);
+  // CTA
+  const btn=mkEl('button','padding:12px 16px;background:linear-gradient(135deg,#c45f00,#a34e00);border:none;border-radius:12px;font-family:inherit;font-size:15px;font-weight:700;color:#fff;cursor:pointer;width:100%;display:block;box-shadow:0 4px 14px rgba(236,124,0,.3)','Забронировать и вернуть вычет →');
+  btn.onclick=openPopup;
+  body.appendChild(btn);
+  card.appendChild(body);
+  wrap.appendChild(card);
+  return wrap;
+}
+
 /* ── NEW VISUAL BLOCKS ── */
 
 function blockOccupancyChart(){
@@ -1730,6 +1798,7 @@ function renderBlock(blockType,blockData){
     case 'youtube_comment': return blockYoutubeComment();
     case 'pricing_breakdown': return blockPricingBreakdown();
     case 'hackathon': return blockHackathon();
+    case 'tax_calculator': return blockTaxCalculator();
     default: return null;
   }
 }

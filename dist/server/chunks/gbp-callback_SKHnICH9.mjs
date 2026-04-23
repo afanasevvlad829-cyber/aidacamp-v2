@@ -1,7 +1,7 @@
 import { c as createComponent } from './astro-component_D56H0FPW.mjs';
 import 'piccolore';
 import { aY as renderHead, F as Fragment, L as renderTemplate } from './sequence_C7YAHkIp.mjs';
-import { r as renderComponent } from './server_Cejywh2f.mjs';
+import { r as renderComponent } from './server_o_YzkAAP.mjs';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 
