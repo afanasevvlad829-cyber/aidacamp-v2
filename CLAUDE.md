@@ -473,6 +473,33 @@ ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 \
 ./scripts/browser-agent.sh fetch <filename>
 ```
 
+### SEO-аудит всего сайта (аналог Screaming Frog — бесплатно)
+
+```bash
+# Полный аудит — обходит весь сайт, выгружает CSV
+ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 \
+  "node /opt/browser-agent/seo-audit.js https://aidacamp.ru 100 /opt/sf-output/audit.csv"
+
+# CSV доступен по адресу (если положить в /var/www/dev/screenshots/):
+# https://dev.aidacamp.ru/screenshots/audit.csv
+
+# Что выдаёт: URL, Status, Title+длина, Description+длина, H1, H1_count,
+# Canonical, Schema_types, Robots_meta, Word_count, Inlinks,
+# Internal_links_out, Images_no_alt, Redirect_to
+# + сводка проблем в консоли (title >65, desc >160, 4xx, missing H1, images no alt)
+```
+
+**Яндекс.Вебмастер API** (токен в .env: YANDEX_WEBMASTER_TOKEN):
+```bash
+# Топ поисковых запросов с позициями
+USER_ID=19303961
+HOST="https:aidacamp.ru:443"
+TOKEN=$(grep YANDEX_WEBMASTER_TOKEN .env | cut -d= -f2)
+curl -s "https://api.webmaster.yandex.net/v4/user/${USER_ID}/hosts/${HOST}/query-analytics/list" \
+  -H "Authorization: OAuth ${TOKEN}" -H "Content-Type: application/json" -X POST \
+  -d '{"filters":{"text_indicator":"QUERY"},"limit":50,"order_by":"IMPRESSIONS","date_from":"YYYY-MM-DD","date_to":"YYYY-MM-DD"}'
+```
+
 ### Скриншоты доступны по URL
 `https://dev.aidacamp.ru/screenshots/<filename>.png`
 
@@ -489,6 +516,7 @@ ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 \
 | `har.js` | Запись HAR-трейса сетевых запросов с анализом |
 | `lighthouse.js` | Аудит Lighthouse (Performance, SEO, Accessibility, Best Practices) |
 | `diff.js` | Попиксельное сравнение двух скриншотов |
+| `seo-audit.js` | **Полный SEO-краулер** (аналог Screaming Frog): обходит весь сайт, выдаёт CSV с Title/Desc/H1/Canonical/Schema/статус/inlinks/images-no-alt по каждой странице. Сводка проблем в консоли. |
 
 ### interact.js — формат скрипта
 ```json
