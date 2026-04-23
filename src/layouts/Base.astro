@@ -157,24 +157,9 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
             goals.forEach(function (g) { if (pct >= g.p) window.trackGoal(g.id); });
           }, { passive: true });
         };
-        // Защита tel: ссылок от перехвата сторонними скриптами (TMR, Metrika и др.)
-        // capture:true — перехватываем раньше всех async-скриптов.
-        // !e.isTrusted — блокируем программные (синтетические) клики по tel: → нет iOS-попапа.
-        // stopImmediatePropagation() — блокируем других handlers в capture-фазе (если есть).
-        document.addEventListener('click', function (e) {
-          var a = e.target && e.target.closest ? e.target.closest('a[href^="tel:"]') : null;
-          if (!a) return;
-          if (!e.isTrusted) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            return;
-          }
-          e.stopImmediatePropagation();
-          window.trackGoal('phone_click');
-        }, true);
         window.initContactTracking = function (scope) {
           document.querySelectorAll(scope + ' a[href^="tel:"]').forEach(function (a) {
-            // phone_click трекается через capture-обработчик выше
+            a.addEventListener('click', function () { window.trackGoal('phone_click'); });
           });
           document.querySelectorAll(scope + ' a[href*="wa.me"]').forEach(function (a) {
             a.addEventListener('click', function () { window.trackGoal('whatsapp_click'); });
