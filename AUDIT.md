@@ -27,7 +27,7 @@
 | **Anthropic Claude API** | LLM-анализ: дайджесты, рекомендации, обогащение контактов | `ANTHROPIC_API_KEY` | — (stateless) | `daily_intelligence`, `enrich_contacts`, `generate_next_actions` |
 | **OpenRouter** | LLM-прокси (claude-haiku, gpt-4o, llama) | `OPENROUTER_KEY` | — (stateless) | `critical_monitor`, `daily_intelligence`, `darya_feedback`, `generate_next_actions` |
 | **Telegram Bot API** | Исходящие сообщения, inline-кнопки, getUpdates | `TELEGRAM_BOT_TOKEN` / chat `244314247` | 24 ч | `daily_intelligence`, `critical_monitor`, `callback_listener`, `budget_pace`, `weekly_digest` |
-| **mem0.ai** | Внешняя память агентов (сохранение контекста между сессиями) | `MEM0_API_KEY` | На серверах mem0 | `mem0_api.py` (статус неясен) |
+| **~~mem0.ai~~** | ~~Внешняя память агентов~~ | ~~`MEM0_API_KEY`~~ | — | ❌ Удалён (эксперимент, не прижился — 23.04.2026) |
 | **DataForSEO** | SEO-данные, SERP, позиции конкурентов | `DATAFORSEO_LOGIN` / `DATAFORSEO_KEY` | — | Не используется в скриптах (зарезервировано) |
 | **Kinescope** | Видеохостинг (embed, статистика просмотров) | `KINESCOPE_TOKEN` | На Kinescope | Не используется в скриптах (зарезервировано) |
 | **Google Maps** | Геолокация, адрес лагеря | `GOOGLE_MAPS_KEY` | — | Фронтенд (JS) |
@@ -255,4 +255,66 @@ contacts_api.py ─────────────→ [HTTP :6300] ──�
 | 5 | Вынести общий код Metrika в `common/metrika.py` | 🟢 Улучшение | DRY принцип |
 | 6 | Разобраться с `cm-v3-*.py` — что делает, нужен ли | 🟡 Важно | Запускается каждые 30с, неясное назначение |
 | 7 | Архивировать 25+ устаревших ETL-скриптов | 🟢 Улучшение | Чистота репозитория |
-| 8 | Clarify `mem0_api.py` — активен или нет | 🟢 Улучшение | Неизвестный статус |
+| 8 | Wordstat + DataForSEO — написать первые скрипты | 🟡 Важно | Ключевые слова и SEO-конкуренты пока не мониторятся |
+
+**✅ Выполнено (23.04.2026):**
+- `daily-digest.py` отключён в cron (`#DISABLED_ETL_DEAD_DATA`)
+- `site_scraper.py` отключён в cron (`#DISABLED_DUPE`)
+- Все 13 ETL-таблиц удалены из PostgreSQL
+- `weekly_digest.py` переписан на API-first (Direct Reports + VK stats + Metrika)
+- `budget_pace.py` переписан на API-first (Direct Reports + VK stats)
+- `critical_monitor.py` переписан на API-first
+- `daily_intelligence.py` переписан на API-first (реальные активные кампании)
+- `mem0.ai` удалён из активных инструментов (эксперимент, не прижился)
+
+---
+
+## 💻 ЛОКАЛЬНЫЕ ИНСТРУМЕНТЫ НА MAC
+
+> Инструменты, установленные на MacBook разработчика (не на сервере)
+
+### Claude Agent / MCP
+
+| Инструмент | Версия/статус | Назначение |
+|---|---|---|
+| **Claude Desktop** | Текущая | Главный интерфейс агента |
+| **aidacamp-tools MCP** | Подключён | 50+ инструментов: Direct, VK, Metrika, SSH, фото, stats |
+| **secretctl** | Установлен (`~/.secretctl/`) | Локальный менеджер токенов для MCP без хранения в ENV |
+| **computer-use MCP** | Подключён | Управление Mac-экраном (скриншоты, клики, набор текста) |
+| **Claude Preview MCP** | Подключён | Превью веб-компонентов |
+| **Figma MCP** | Подключён | Работа с макетами |
+| **Apple Notes MCP** | Подключён | Чтение/запись заметок |
+
+### CLI-инструменты
+
+| Команда | Что делает |
+|---|---|
+| `gh` | GitHub CLI — PR, issues, releases, clone |
+| `jq` | JSON-процессор (используется в скриптах и цепочках curl) |
+| `node` / `npm` | Node.js — сборка фронтенда, скрипты |
+| `python3` | Python 3 — все аналитические скрипты локально |
+| `rg` (ripgrep) | Быстрый поиск по коду (используется Claude агентом) |
+| `ffmpeg` | Конвертация/обработка видео |
+| `curl` | HTTP-запросы, деплой скриптов на сервер |
+| `git` | Контроль версий |
+
+### Не установлено (к сведению)
+
+- `fd` — аналог find (не установлен)
+- `fzf` — fuzzy-поиск (не установлен)
+
+### secretctl — управление токенами
+
+```bash
+# Список секретов
+secretctl list
+
+# Получить значение
+secretctl get DIRECT_TOKEN
+
+# Установить секрет
+secretctl set MY_SECRET "value"
+```
+
+**Хранит 30 секретов** — полный список в TOOLS.md раздел "Секреты (secretctl)".  
+MCP `aidacamp-tools` автоматически инжектирует токены при вызове инструментов Direct/VK/Metrika/SSH.
