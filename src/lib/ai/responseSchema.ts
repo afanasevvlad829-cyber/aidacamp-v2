@@ -10,7 +10,8 @@ export const ResponseSchema = z.object({
   text: z.string(),
   block_type: z.enum([
     'smeny', 'courses', 'day_schedule',
-    'conditions', 'prices', 'location',
+    'conditions', 'prices', 'location', 'gallery',
+    'video_player', 'youtube_comment',
   ]).nullable(),
   block_data: z.record(z.string(), z.any()).nullable(),
   chips: z.array(ChipSchema).max(4),

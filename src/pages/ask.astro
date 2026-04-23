@@ -19,7 +19,7 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
   <style set:html={iconsCSS}></style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <style>
+  <style is:global>
     *{box-sizing:border-box;margin:0;padding:0}
     :root{
       /* Accent — same in both themes */
@@ -71,8 +71,8 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
 
     .topbar{position:relative;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:rgba(242,245,249,.97);border-bottom:1px solid rgba(13,27,42,.07);flex-shrink:0}
     .logo{display:flex;align-items:center;gap:10px;text-decoration:none}
-    .logo-box{width:34px;height:34px;border-radius:9px;overflow:hidden;flex-shrink:0;box-shadow:0 0 16px rgba(236,124,0,.3)}
-    #logoCanvas{display:block}
+    .logo-box{width:34px;height:34px;border-radius:50%;overflow:hidden;flex-shrink:0;box-shadow:0 0 16px rgba(236,124,0,.3)}
+    #logoCanvas{display:block;border-radius:50%}
     .logo-name{font-size:15px;font-weight:700;color:var(--text-primary)}
     .logo-name span{color:var(--or)}
     .back{font-size:13px;color:var(--text-secondary);text-decoration:none;transition:.2s;display:flex;align-items:center;gap:5px}
@@ -89,44 +89,58 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     .hint{display:inline-flex;align-items:center;gap:8px;background:var(--surface-1);border:1px solid var(--border);border-radius:30px;padding:9px 18px;font-size:14px;color:var(--text-secondary);margin-bottom:22px}
     .hint-dot{width:6px;height:6px;border-radius:50%;background:var(--or);box-shadow:0 0 6px var(--or);animation:blink 2s infinite}
     @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-    .age-btns{display:flex;gap:10px;justify-content:center;margin-bottom:24px}
+    .age-btns{display:flex;gap:10px;justify-content:center;margin-bottom:16px}
     .age-btn{padding:14px 24px;border:1px solid rgba(13,27,42,.1);border-radius:36px;background:#fff;font-family:var(--sans);font-size:15px;font-weight:600;color:#0d1b2a;cursor:pointer;transition:.2s;box-shadow:0 1px 4px rgba(13,27,42,.07)}
-    .age-btn:hover{border-color:rgba(236,124,0,.5);color:#0d1b2a;background:rgba(236,124,0,.06);transform:translateY(-2px)}
-    .age-btn .n{display:block;font-size:22px;font-weight:800;color:#0d1b2a;line-height:1}
+    .age-btn:hover{border-color:rgba(236,124,0,.5);color:var(--text-primary);background:rgba(236,124,0,.06);transform:translateY(-2px)}
+    .age-btn .n{display:block;font-size:22px;font-weight:800;color:var(--text-primary);line-height:1}
     .age-btn .l{display:block;font-size:12px;color:#7e9094;margin-top:2px}
+    .q-pills{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:20px;padding:0 4px}
+    .q-pill{padding:10px 18px;border:1px solid rgba(13,27,42,.1);border-radius:30px;background:#fff;font-family:var(--sans);font-size:16px;font-weight:500;color:#4e6072;cursor:pointer;transition:.18s;box-shadow:0 1px 3px rgba(13,27,42,.05);white-space:nowrap}
+    .q-pill:hover{border-color:rgba(236,124,0,.4);color:#0d1b2a;background:rgba(236,124,0,.05);transform:translateY(-1px)}
+    .q-pill.q-bad{border-color:rgba(220,38,38,.2);color:#991b1b;background:rgba(220,38,38,.04)}
+    .q-pill.q-bad:hover{border-color:rgba(220,38,38,.4);background:rgba(220,38,38,.08)}
+    /* dark mode: q-pill */
+    [data-theme="dark"] .q-pill{background:var(--surface-2);border-color:var(--border);color:var(--text-secondary)}
+    [data-theme="dark"] .q-pill:hover{background:var(--surface-3);border-color:rgba(236,124,0,.4);color:var(--text-primary)}
+    [data-theme="dark"] .q-pill.q-bad{background:rgba(220,38,38,.08);border-color:rgba(220,38,38,.25);color:#fca5a5}
+    [data-theme="dark"] .q-pill.q-bad:hover{background:rgba(220,38,38,.15);border-color:rgba(220,38,38,.4);color:#fecaca}
 
-    .messages{flex:1;overflow-y:auto;padding:8px 0 12px;display:none;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:rgba(13,27,42,.1) transparent}
+    .messages{flex:1;overflow-y:auto;padding:8px 0 12px;display:none;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:rgba(13,27,42,.1) transparent;min-height:0}
     .messages.show{display:flex}
     .messages::-webkit-scrollbar{width:3px}
     .messages::-webkit-scrollbar-thumb{background:rgba(13,27,42,.1);border-radius:3px}
+    /* Spacer pushes messages to the bottom (messenger-style) */
+    #msgs-spacer{flex:1;min-height:0}
 
-    .msg-user{align-self:flex-end;max-width:80%;background:#c45f00;border-radius:18px 4px 18px 18px;padding:12px 16px;font-size:16px;color:#fff;line-height:1.55;animation:up .25s cubic-bezier(.16,1,.3,1)}
-    .msg-text{align-self:flex-start;max-width:85%;background:var(--surface-1);border:1px solid var(--border);border-radius:4px 18px 18px 18px;padding:14px 18px;font-size:16px;color:var(--text-primary);line-height:1.7;animation:up .25s cubic-bezier(.16,1,.3,1);box-shadow:0 1px 6px rgba(13,27,42,.05)}
+    /* Client (parent) — LEFT, solid orange bubble */
+    .msg-user{align-self:flex-start;max-width:80%;background:#ec7c00;border:none;border-radius:4px 18px 18px 18px;padding:12px 16px;font-size:16px;color:#fff;line-height:1.55;animation:up .25s cubic-bezier(.16,1,.3,1);box-shadow:0 3px 12px rgba(236,124,0,.35)}
+    /* Bot (AI) — RIGHT, white bubble with clear border */
+    .msg-text{align-self:flex-end;max-width:85%;background:#fff;border:1.5px solid rgba(13,27,42,.13);border-radius:18px 4px 18px 18px;padding:14px 18px;font-size:16px;color:#0d1b2a;line-height:1.7;animation:up .25s cubic-bezier(.16,1,.3,1);box-shadow:0 2px 16px rgba(13,27,42,.12)}
     .msg-text strong{color:var(--or)}
     .msg-text a{color:#c45f00;text-decoration:none}
-    @keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-    /* blockIn — slide up + bounce (смены, расписание) */
+    /* Dark theme */
+    [data-theme="dark"] .msg-text{background:#162444;border-color:rgba(255,255,255,.12);color:#f0f4f9;box-shadow:0 2px 16px rgba(0,0,0,.4)}
+    [data-theme="dark"] .msg-user{background:#c45f00;box-shadow:0 3px 12px rgba(236,124,0,.4)}
+    /* Block cards and chips — align right (follow bot) */
+    .vblock,.chips,.contact-card{align-self:flex-end}
+    @keyframes up{from{opacity:0}to{opacity:1}}
+    /* All blocks: smooth fade-in, no jumping from bottom */
     @keyframes blockIn{
-      0%{opacity:0;transform:translateY(20px) scale(.97)}
-      65%{opacity:1;transform:translateY(-4px) scale(1.006)}
-      100%{opacity:1;transform:none}
-    }
-    /* blockSlide — slide from left (курсы, условия) */
-    @keyframes blockSlide{
-      0%{opacity:0;transform:translateX(-18px)}
-      70%{opacity:1;transform:translateX(3px)}
-      100%{opacity:1;transform:none}
-    }
-    /* blockPop — scale up from center (цены, вычет) */
-    @keyframes blockPop{
-      0%{opacity:0;transform:scale(.93)}
-      65%{opacity:1;transform:scale(1.015)}
+      0%{opacity:0;transform:scale(.98)}
       100%{opacity:1;transform:scale(1)}
     }
-    /* blockFade — плавное появление (локация, фото, видео) */
+    @keyframes blockSlide{
+      0%{opacity:0;transform:scale(.98)}
+      100%{opacity:1;transform:scale(1)}
+    }
+    @keyframes blockPop{
+      0%{opacity:0;transform:scale(.96)}
+      60%{opacity:1;transform:scale(1.01)}
+      100%{opacity:1;transform:scale(1)}
+    }
     @keyframes blockFade{
-      0%{opacity:0;transform:translateY(10px)}
-      100%{opacity:1;transform:none}
+      0%{opacity:0}
+      100%{opacity:1}
     }
     @keyframes blockGlow{
       0%{box-shadow:0 2px 8px rgba(13,27,42,.05)}
@@ -134,20 +148,30 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
       100%{box-shadow:0 2px 12px rgba(13,27,42,.06)}
     }
 
-    .typing{align-self:flex-start;background:var(--surface-1);border:1px solid var(--border);border-radius:4px 18px 18px 18px;padding:14px 18px;display:none;gap:5px;align-items:center;box-shadow:0 1px 6px rgba(13,27,42,.05)}
+    .typing{align-self:flex-end;background:var(--surface-1);border:1px solid var(--border);border-radius:18px 4px 18px 18px;padding:14px 18px;display:none;gap:5px;align-items:center;box-shadow:0 1px 6px rgba(13,27,42,.05)}
     .typing.show{display:flex}
-    .td{width:6px;height:6px;border-radius:50%;background:var(--border);animation:td .9s infinite}
+    .td{width:6px;height:6px;border-radius:50%;background:var(--text-muted);animation:td .9s infinite}
     .td:nth-child(2){animation-delay:.18s}.td:nth-child(3){animation-delay:.36s}
     @keyframes td{0%,60%,100%{transform:translateY(0);opacity:.3}30%{transform:translateY(-5px);opacity:1}}
 
     .chips{align-self:flex-start;display:flex;gap:7px;flex-wrap:wrap;animation:up .3s .1s cubic-bezier(.16,1,.3,1) both}
-    .chip{padding:9px 18px;border:1px solid var(--border);border-radius:24px;background:var(--surface-1);font-family:var(--sans);font-size:13px;font-weight:500;color:var(--text-primary);cursor:pointer;transition:.18s;box-shadow:0 1px 4px rgba(13,27,42,.07)}
-    .chip:hover{border-color:rgba(236,124,0,.5);color:#0d1b2a;background:rgba(236,124,0,.06);transform:translateY(-1px);box-shadow:0 4px 12px rgba(236,124,0,.1)}
+    .chip{padding:10px 18px;border:1px solid var(--border);border-radius:24px;background:var(--surface-1);font-family:var(--sans);font-size:16px;font-weight:500;color:var(--text-primary);cursor:pointer;transition:.18s;box-shadow:0 1px 4px rgba(13,27,42,.07)}
+    .chip:hover{border-color:rgba(236,124,0,.5);color:var(--text-primary);background:rgba(236,124,0,.06);transform:translateY(-1px);box-shadow:0 4px 12px rgba(236,124,0,.1)}
     .chip:active{transform:translateY(0)}
     .chip.cta{background:linear-gradient(135deg,#c45f00,#a34e00);border-color:transparent;color:#fff;font-weight:700;box-shadow:0 4px 16px rgba(236,124,0,.4);letter-spacing:.01em}
     .chip.cta:hover{background:linear-gradient(135deg,#d96a00,#b85500);box-shadow:0 6px 20px rgba(236,124,0,.5);transform:translateY(-1px)}
+    /* cta-soft (зелёные) — светлая тема: тёмно-зелёный текст, тёмная тема: светло-зелёный */
     .chip.cta-soft{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.25);color:#15803d;font-weight:600}
     .chip.cta-soft:hover{background:rgba(34,197,94,.14);transform:translateY(-1px)}
+    .chip-soft{padding:10px 18px;border:1px solid rgba(34,197,94,.25);border-radius:24px;background:rgba(34,197,94,.08);font-family:var(--sans);font-size:16px;font-weight:600;color:#15803d;cursor:pointer;transition:.18s}
+    .chip-soft:hover{background:rgba(34,197,94,.14);transform:translateY(-1px)}
+    /* dark mode: chip */
+    [data-theme="dark"] .chip{background:var(--surface-2);border-color:var(--border);color:var(--text-primary)}
+    [data-theme="dark"] .chip:hover{background:var(--surface-3);border-color:rgba(236,124,0,.4);color:var(--text-primary)}
+    [data-theme="dark"] .chip.cta-soft{color:#4ade80;border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.08)}
+    [data-theme="dark"] .chip.cta-soft:hover{background:rgba(74,222,128,.14)}
+    [data-theme="dark"] .chip-soft{color:#4ade80;border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.08)}
+    [data-theme="dark"] .chip-soft:hover{background:rgba(74,222,128,.14)}
 
     .contact-card{align-self:flex-start;width:100%;max-width:380px;background:#f0fdf4;border:1px solid rgba(34,197,94,.2);border-radius:16px;padding:18px 20px;animation:up .3s cubic-bezier(.16,1,.3,1)}
     .contact-card-title{font-size:14px;font-weight:700;color:#0d1b2a;margin-bottom:4px}
@@ -161,7 +185,9 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
 
     /* VISUAL BLOCKS — full width, no bubble constraint */
     .vblock{align-self:stretch;width:100%;animation:blockIn .45s cubic-bezier(.16,1,.3,1) both,blockGlow .8s .2s ease-out both}
-    .block{background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)}
+    .block{background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow-x:hidden;overflow-y:auto;max-height:min(calc(100dvh - 310px),360px);scrollbar-width:thin;scrollbar-color:rgba(13,27,42,.1) transparent;box-shadow:0 2px 16px rgba(13,27,42,.07)}
+    .block::-webkit-scrollbar{width:3px}
+    .block::-webkit-scrollbar-thumb{background:rgba(13,27,42,.12);border-radius:3px}
     .block-head{padding:13px 18px;border-bottom:1px solid rgba(13,27,42,.07);display:flex;align-items:center;justify-content:space-between}
     .block-title{font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:8px}
     .block-title .bi{opacity:.6;font-size:14px;color:rgba(13,27,42,.55)}
@@ -176,7 +202,7 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     .smena-card:hover{border-color:rgba(236,124,0,.35);background:rgba(236,124,0,.04);transform:translateY(-1px);box-shadow:0 6px 20px rgba(236,124,0,.1)}
     .smena-card.sold{opacity:.45;cursor:default;pointer-events:none}
     .smena-card.popular{border-color:rgba(236,124,0,.3);background:rgba(236,124,0,.04)}
-    @keyframes smena-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+    @keyframes smena-in{from{opacity:0;transform:scale(.98)}to{opacity:1;transform:scale(1)}}
     .smena-card{animation:smena-in .3s cubic-bezier(.16,1,.3,1) both}
     .smena-card:nth-child(1){animation-delay:.04s}
     .smena-card:nth-child(2){animation-delay:.09s}
@@ -226,7 +252,7 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     .course-tile-result .bi{font-size:10px}
     .course-tile-arrow{position:absolute;top:12px;right:12px;opacity:0;transition:.15s;color:var(--tile-color);font-size:12px}
     .course-tile:hover .course-tile-arrow{opacity:.7}
-    @keyframes tile-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+    @keyframes tile-in{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
     .course-tile{animation:tile-in .3s cubic-bezier(.16,1,.3,1) both}
     .course-tile:nth-child(1){animation-delay:.04s}
     .course-tile:nth-child(2){animation-delay:.08s}
@@ -350,9 +376,53 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     [data-theme="dark"] .mic{color:var(--text-muted)}
     [data-theme="dark"] .mic:hover{color:var(--text-secondary)}
     [data-theme="dark"] .messages::-webkit-scrollbar-thumb{background:var(--border)}
+
+    /* ── DIALOG PROGRESS ── */
+    .dialog-progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:500;background:transparent;pointer-events:none}
+    .dialog-progress-bar{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#ff9520);transition:width .7s cubic-bezier(.4,0,.2,1);border-radius:0 2px 2px 0}
+
+    /* ── АЧИВКА "ХОРОШАЯ МАМА" ── */
+    .achivka{position:fixed;top:68px;left:50%;transform:translateX(-50%) translateY(-140px);z-index:400;background:var(--surface-1);border:1px solid rgba(236,124,0,.4);border-radius:40px;padding:10px 20px 10px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 28px rgba(236,124,0,.18);transition:transform .5s cubic-bezier(.34,1.56,.64,1);pointer-events:none;white-space:nowrap}
+    .achivka.show{transform:translateX(-50%) translateY(0)}
+    .achivka-icon{font-size:20px;color:var(--accent)}
+    .achivka-text{font-family:var(--sans);font-size:13px;font-weight:700;color:var(--text-primary);line-height:1.2}
+    .achivka-sub{font-size:11px;color:var(--text-muted);font-weight:400}
+
+    /* ── SHARE ROW ── */
+    .share-row{display:flex;gap:6px;padding:0 16px 6px;justify-content:flex-end;opacity:0;max-height:0;overflow:hidden;transition:opacity .3s,max-height .3s}
+    .share-row.show{opacity:1;max-height:40px}
+    .share-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;font-family:var(--sans);font-size:12px;color:var(--text-muted);cursor:pointer;transition:.18s}
+    .share-btn:hover{border-color:var(--accent-border);color:var(--text-primary);background:var(--accent-bg)}
+    .share-btn .bi{font-size:13px}
+
+    /* ── SHARE CHOOSER MODAL ── */
+    .share-chooser{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:700;align-items:center;justify-content:center}
+    .share-chooser.open{display:flex}
+    .share-chooser-box{background:var(--surface-1);border-radius:20px;padding:24px;text-align:center;max-width:260px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,.15)}
+    .share-chooser-title{font-family:var(--sans);font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:16px}
+    .share-chooser-btns{display:flex;flex-direction:column;gap:10px}
+    .share-choice{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;border:1px solid var(--border);background:transparent;font-family:var(--sans);font-size:13px;color:var(--text-primary);cursor:pointer;transition:.18s}
+    .share-choice:hover{border-color:var(--accent-border);background:var(--accent-bg)}
+    .share-choice .bi{font-size:16px;color:var(--accent)}
+
+    /* ── QR MODAL ── */
+    .qr-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;align-items:center;justify-content:center}
+    .qr-modal.open{display:flex}
+    .qr-box{background:var(--surface-1);border-radius:20px;padding:28px 24px;text-align:center;max-width:280px;width:90%}
+    .qr-box img{width:180px;height:180px;border-radius:8px;margin:14px 0;display:block;margin-left:auto;margin-right:auto}
+    .qr-title{font-family:var(--sans);font-size:15px;font-weight:700;color:var(--text-primary)}
+    .qr-sub{font-size:12px;color:var(--text-muted);margin-top:4px}
+    .qr-close{margin-top:14px;padding:8px 22px;border:1px solid var(--border);border-radius:20px;background:transparent;font-family:var(--sans);font-size:13px;cursor:pointer;color:var(--text-secondary)}
   </style>
 </head>
 <body>
+<!-- Прогресс диалога — тонкая полоска вверху -->
+<div class="dialog-progress" id="dialogProgress"><div class="dialog-progress-bar" id="dialogBar"></div></div>
+<!-- Ачивка "Хорошая мама" — всплывает после 5 вопросов -->
+<div class="achivka" id="achivka" aria-live="polite">
+  <i class="bi bi-patch-check-fill achivka-icon" aria-hidden="true"></i>
+  <div><div class="achivka-text">Хорошая мама</div><div class="achivka-sub">Вы задали все правильные вопросы</div></div>
+</div>
 
 <canvas id="stars"></canvas>
 <div class="glow"></div>
@@ -376,24 +446,60 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
 <main class="layout">
   <div class="intro" id="intro">
     <div class="intro-icon"><canvas id="heroCanvas" width="60" height="60"></canvas></div>
-    <h1 class="intro-h">Спросите всё про лагерь</h1>
-    <p class="intro-s">Отвечу честно — программа, цены, безопасность,<br>смены 2026. Без скриптов и давления.</p>
-    <div class="hint"><span class="hint-dot"></span>Обычно начинают с возраста ребёнка</div>
+    <h1 class="intro-h">Спросите всё про<br><em id="rotWord" style="color:var(--or);font-style:normal;text-shadow:0 0 32px rgba(236,124,0,.40);transition:opacity .25s;display:inline-block">лагерь</em></h1>
+    <p class="intro-s">Отвечу честно. Без скриптов и впаривания.</p>
+    <div class="q-pills">
+      <button class="q-pill q-bad" onclick="go('А что у вас плохо?')">А что у вас плохо?</button>
+      <button class="q-pill" onclick="go('Сколько стоит и что входит в цену?')">Сколько стоит?</button>
+      <button class="q-pill" onclick="go('Как кормят в лагере?')">Как кормят?</button>
+      <button class="q-pill" onclick="go('Телефон у ребёнка заберут?')">Телефон заберут?</button>
+      <button class="q-pill" onclick="go('Что такое хакатон?')">Что за хакатон?</button>
+      <button class="q-pill" onclick="go('Можно без опыта программирования?')">Без опыта можно?</button>
+      <button class="q-pill" onclick="go('Как добраться до лагеря?')">Как добраться?</button>
+      <button class="q-pill" onclick="go('Можно вернуть деньги если не понравится?')">Возврат денег?</button>
+      <button class="q-pill" onclick="go('Расскажи историю из лагеря')">Расскажи историю</button>
+    </div>
+    <div class="hint"><span class="hint-dot"></span>Или выберите возраст — подберём направление</div>
     <div class="age-btns">
-      <button class="age-btn" onclick="go('Ребёнку 7–9 лет')">
+      <button class="age-btn" onclick="if(typeof ym!=='undefined')ym(96499295,'reachGoal','ask_age_select',{age:'7-9'});go('Нам 7–9 лет')">
         <span class="n">7–9</span><span class="l">лет</span>
       </button>
-      <button class="age-btn" onclick="go('Ребёнку 10–12 лет')">
+      <button class="age-btn" onclick="if(typeof ym!=='undefined')ym(96499295,'reachGoal','ask_age_select',{age:'10-12'});go('Нам 10–12 лет')">
         <span class="n">10–12</span><span class="l">лет</span>
       </button>
-      <button class="age-btn" onclick="go('Ребёнку 13–16 лет')">
+      <button class="age-btn" onclick="if(typeof ym!=='undefined')ym(96499295,'reachGoal','ask_age_select',{age:'13-16'});go('Нам 13–16 лет')">
         <span class="n">13–16</span><span class="l">лет</span>
       </button>
     </div>
   </div>
 
-  <div class="messages" id="msgs"></div>
+  <div class="messages" id="msgs"><div id="msgs-spacer"></div></div>
   <div class="typing" id="typing"><span class="td"></span><span class="td"></span><span class="td"></span></div>
+
+  <!-- Кнопки шаринга — появляются после 3 обменов -->
+  <div class="share-row" id="shareRow">
+    <button class="share-btn" onclick="showShareChooser()">
+      <i class="bi bi-share" aria-hidden="true"></i> Отправить подруге
+    </button>
+    <button class="share-btn" id="qrBtn" style="display:none" onclick="showQR()">
+      <i class="bi bi-qr-code" aria-hidden="true"></i> Открыть на телефоне
+    </button>
+  </div>
+
+  <!-- Share channel chooser modal -->
+  <div class="share-chooser" id="shareChooser" onclick="if(event.target===this)closeShareChooser()">
+    <div class="share-chooser-box">
+      <div class="share-chooser-title">Отправить подруге</div>
+      <div class="share-chooser-btns">
+        <button class="share-choice" onclick="shareToWhatsApp()">
+          <i class="bi bi-whatsapp" aria-hidden="true"></i> WhatsApp
+        </button>
+        <button class="share-choice" onclick="shareToTelegram()">
+          <i class="bi bi-telegram" aria-hidden="true"></i> Telegram
+        </button>
+      </div>
+    </div>
+  </div>
 
   <div class="input-area">
     <div class="input-box">
@@ -407,6 +513,16 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     </div>
   </div>
 </main>
+
+<!-- QR-модал "Открыть на телефоне" -->
+<div class="qr-modal" id="qrModal" onclick="if(event.target===this)closeQR()">
+  <div class="qr-box">
+    <div class="qr-title">Открыть на телефоне</div>
+    <div class="qr-sub">Наведите камеру на код</div>
+    <img id="qrImg" src="" alt="QR-код для открытия чата на телефоне">
+    <button class="qr-close" onclick="closeQR()">Закрыть</button>
+  </div>
+</div>
 
 <div class="overlay" id="overlay" onclick="if(event.target===this)closePopup()">
   <div class="popup">
@@ -456,6 +572,24 @@ function updateThemeIcon(theme){
   if(icon) icon.className=theme==='dark'?'bi bi-sun-fill':'bi bi-moon-stars-fill';
 }
 initTheme();
+
+/* ── ROTATING HEADLINE WORD ── */
+(function(){
+  const words=['лагерь','программу','безопасность','цены','смены','питание'];
+  let wi=0;
+  const el=document.getElementById('rotWord');
+  if(!el)return;
+  setInterval(()=>{
+    wi=(wi+1)%words.length;
+    el.style.transition='opacity .22s';
+    el.style.opacity='0';
+    setTimeout(()=>{
+      el.textContent=words[wi];
+      el.style.transition='opacity .32s';
+      el.style.opacity='1';
+    },240);
+  },2800);
+})();
 
 /* ── BACKGROUND ANIMATION ── */
 (()=>{
@@ -617,30 +751,31 @@ initTheme();
 
 /* ── CAMP DATA ── */
 const SMENY=[
-  {n:'Смена 1',dates:'30 мая — 8 июня',days:'10 дней',price:'74 900 ₽',available:true,occupied:18,total:30},
-  {n:'Смена 2',dates:'10 — 23 июня',days:'14 дней',price:'95 000 ₽',available:true,popular:true,occupied:34,total:40},
-  {n:'Смена 2.1',dates:'10 — 16 июня',days:'7 дней',price:'48 000 ₽',available:true,occupied:12,total:20},
-  {n:'Смена 3',dates:'3 — 15 августа',days:'13 дней',price:'89 400 ₽',available:true,occupied:22,total:35},
-  {n:'Смена 4',dates:'17 — 26 августа',days:'10 дней',price:'69 600 ₽',available:true,occupied:15,total:40},
+  {n:'Смена 1',dates:'30 мая — 8 июня',days:'10 дней',price:'74 900 ₽',available:true,occupied:23,total:35},
+  {n:'Смена 2',dates:'10 — 23 июня',days:'14 дней',price:'95 000 ₽',available:true,popular:true,occupied:41,total:45},
+  {n:'Смена 2.1',dates:'10 — 16 июня',days:'7 дней',price:'48 000 ₽',available:true,short:true,occupied:29,total:40},
+  {n:'Смена 2.2',dates:'16 — 23 июня',days:'8 дней',price:'65 000 ₽',available:true,short:true,occupied:37,total:45},
+  {n:'Смена 3',dates:'3 — 15 августа',days:'13 дней',price:'89 400 ₽',available:true,occupied:40,total:45},
+  {n:'Смена 4',dates:'17 — 26 августа',days:'10 дней',price:'69 600 ₽',available:true,occupied:31,total:45},
 ];
 const COURSES=[
-  {icon:'code-slash',name:'Python',age:'10–16 лет',minAge:10,maxAge:16,
-   campHook:'Напишет телеграм-бота или свою игру — уедет с реальным проектом в кармане',
-   result:'Покажет друзьям в телефоне'},
-  {icon:'blocks',name:'Minecraft',age:'8–12 лет',minAge:8,maxAge:12,
-   campHook:'Создаст собственный мод — мир, который не как у всех. Одноклассники оценят',
-   result:'Хвастается в школе'},
-  {icon:'keyboard',name:'Scratch',age:'7–10 лет',minAge:7,maxAge:10,
-   campHook:'Сделает свою первую игру с нуля — покажет маме работающее приложение',
+  {icon:'keyboard',name:'Scratch',age:'8–10 лет',minAge:8,maxAge:10,
+   campHook:'Сделает игру с персонажами и уровнями — покажет маме работающее приложение',
    result:'Первый код без страха'},
-  {icon:'controller',name:'Unity',age:'11–16 лет',minAge:11,maxAge:16,
-   campHook:'Сделает 3D-игру на движке как Hollow Knight — на профессиональном инструменте',
+  {icon:'blocks',name:'Minecraft',age:'8–12 лет',minAge:8,maxAge:12,
+   campHook:'Создаст автоматизированный мир или мини-игру — одноклассники оценят',
+   result:'Хвастается в школе'},
+  {icon:'code-slash',name:'Python',age:'10–16 лет',minAge:10,maxAge:16,
+   campHook:'Напишет игру или веб-приложение — реальный проект, который можно показать',
+   result:'Покажет друзьям в телефоне'},
+  {icon:'globe',name:'JavaScript',age:'10–12 лет',minAge:10,maxAge:12,
+   campHook:'Сделает живой сайт с интерфейсом — то, что открывается в браузере и реально работает',
+   result:'Показывает сайт всем'},
+  {icon:'laptop',name:'Java / ООП',age:'13–16 лет',minAge:13,maxAge:16,
+   campHook:'Освоит настоящую архитектуру кода — то, что используют в серьёзных командах',
    result:'Уровень junior-разработчика'},
-  {icon:'shield-lock-fill',name:'Кибербез',age:'13–16 лет',minAge:13,maxAge:16,
-   campHook:'Победит в CTF-соревновании прямо на смене — взломает учебный сервер как настоящий спец',
-   result:'Самый крутой в классе'},
-  {icon:'cpu',name:'AI-проекты',age:'12–16 лет',minAge:12,maxAge:16,
-   campHook:'Создаст нейросеть с нуля и обучит её — поймёт то, чем живёт весь мир',
+  {icon:'cpu',name:'AI-проекты',age:'8–16 лет',minAge:8,maxAge:16,
+   campHook:'Научится использовать ИИ как инструмент разработчика — поймёт то, о чём все говорят',
    result:'Тема на 5 лет вперёд'},
 ];
 const DAY=[
@@ -650,14 +785,14 @@ const DAY=[
   {t:'13:00',txt:'<strong>Обед</strong>'},
   {t:'14:00',txt:'<strong>Тихий час</strong> — кто хочет отдыхает'},
   {t:'15:30',txt:'<strong>IT-блок 2</strong> — работа над проектом, 90 мин'},
-  {t:'17:30',txt:'<strong>Бассейн</strong> — каждый день'},
+  {t:'17:30',txt:'<strong>Бассейн</strong> — через день'},
   {t:'19:00',txt:'<strong>Ужин</strong>'},
   {t:'20:00',txt:'<strong>Вечерняя программа</strong> — квесты, кино, мастерские'},
 ];
 const COND=[
   {icon:'house-door',title:'Проживание',desc:'Корпуса по 2–4 человека, WiFi'},
-  {icon:'cup-hot',title:'Питание',desc:'4 раза в день, горячее. Аллергии учитываем'},
-  {icon:'sun',title:'Бассейн',desc:'Каждый день, открытый'},
+  {icon:'cup-hot',title:'Питание',desc:'5 раз в день: завтрак, 2-й завтрак, обед, полдник, ужин. Аллергии учитываем'},
+  {icon:'sun',title:'Бассейн',desc:'Через день, открытый'},
   {icon:'shield-check',title:'Безопасность',desc:'Охрана 24/7, закрытая территория'},
   {icon:'heart-pulse-fill',title:'Медицина',desc:'Медсестра круглосуточно на территории'},
   {icon:'phone',title:'Связь',desc:'Фото в чат каждый день, звонки по расписанию'},
@@ -674,97 +809,91 @@ function mkEl(tag, css, html){
 }
 
 function blockSmeny(){
-  // wrapper
   const wrap=mkEl('div','width:100%;animation:blockIn .45s cubic-bezier(.16,1,.3,1) both,blockGlow .8s .2s ease-out both');
-
-  // outer card
   const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
 
   // header
-  const head=mkEl('div','padding:13px 18px;border-bottom:1px solid rgba(13,27,42,.07);display:flex;align-items:center;justify-content:space-between');
-  head.innerHTML='<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:8px"><i class="bi bi-calendar-event" aria-hidden="true"></i>Смены лета 2026</span>'
-    +'<span style="font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;background:rgba(236,124,0,.12);color:#c45f00">Запись открыта</span>';
+  const head=mkEl('div','padding:12px 16px;border-bottom:1px solid rgba(13,27,42,.07);display:flex;align-items:center;justify-content:space-between');
+  head.innerHTML='<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:7px"><i class="bi bi-calendar-event" aria-hidden="true"></i>Смены лета 2026</span>'
+    +'<span style="font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;background:rgba(236,124,0,.12);color:#c45f00">Запись открыта</span>';
   card.appendChild(head);
 
-  // shift list
-  const list=mkEl('div','display:flex;flex-direction:column;gap:8px;padding:10px 12px 4px');
+  // 2-column grid
+  const grid=mkEl('div','display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px 8px 4px');
 
   SMENY.forEach((s,idx)=>{
     const free=s.total-s.occupied;
     const pct=Math.round(s.occupied/s.total*100);
+    const isLast=free<=4;
 
-    // card per shift
     const sc=mkEl('div',
-      'border-radius:14px;border:1px solid '+(s.popular?'rgba(236,124,0,.3)':'rgba(13,27,42,.09)')
-      +';background:'+(s.popular?'rgba(236,124,0,.04)':'#f8fafb')
-      +';overflow:hidden;transition:.18s;'+(s.available?'cursor:pointer':'opacity:.45;cursor:default')
-      +';animation:smena-in .3s cubic-bezier(.16,1,.3,1) '+(idx*.06)+'s both'
+      'border-radius:12px;border:1px solid '+(s.popular?'rgba(236,124,0,.35)':isLast?'rgba(220,38,38,.2)':'rgba(13,27,42,.09)')
+      +';background:'+(s.popular?'rgba(236,124,0,.04)':isLast?'rgba(220,38,38,.02)':'#f8fafb')
+      +';padding:9px 10px 8px;transition:.18s;'+(s.available?'cursor:pointer':'opacity:.4;cursor:default')
+      +';animation:smena-in .3s cubic-bezier(.16,1,.3,1) '+(idx*.05)+'s both;position:relative;overflow:hidden'
     );
     if(s.available) sc.onclick=openPopup;
 
-    // popular badge
+    // popular/short badge
     if(s.popular){
-      const pop=mkEl('div','display:inline-flex;align-items:center;gap:5px;background:#ec7c00;color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;margin:10px 14px -2px;width:fit-content');
-      pop.innerHTML='<i class="bi bi-fire" aria-hidden="true"></i> Популярная';
+      const pop=mkEl('div','display:inline-flex;align-items:center;gap:3px;background:#ec7c00;color:#fff;font-size:9px;font-weight:700;padding:1px 7px;border-radius:20px;margin-bottom:4px;width:fit-content');
+      pop.innerHTML='<i class="bi bi-fire" aria-hidden="true"></i> Хит';
       sc.appendChild(pop);
-    }
-
-    // top row: name+dates | price
-    const top=mkEl('div','padding:10px 14px 8px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px');
-
-    const left=mkEl('div','flex:1');
-    left.appendChild(mkEl('div','font-size:16px;font-weight:800;color:#0d1b2a;line-height:1.2',s.n));
-    left.appendChild(mkEl('div','font-size:14px;color:#4e6072;margin-top:3px',s.dates));
-    left.appendChild(mkEl('div','font-size:12px;color:#7e9094;margin-top:1px',s.days));
-
-    const right=mkEl('div','text-align:right;flex-shrink:0');
-    if(s.available){
-      right.appendChild(mkEl('div','font-size:20px;font-weight:800;color:#ec7c00;white-space:nowrap;letter-spacing:-.02em',s.price));
-      right.appendChild(mkEl('div','font-size:12px;color:#7e9094;margin-top:2px','всё включено'));
+    } else if(s.short){
+      const sh=mkEl('div','display:inline-flex;align-items:center;gap:3px;background:rgba(29,111,224,.1);color:#1d6fe0;font-size:9px;font-weight:700;padding:1px 7px;border-radius:20px;margin-bottom:4px;width:fit-content');
+      sh.textContent='Короткая';
+      sc.appendChild(sh);
     } else {
-      right.appendChild(mkEl('div','font-size:12px;color:#dc2626;font-weight:600;background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.2);padding:4px 10px;border-radius:20px','мест нет'));
+      sc.appendChild(mkEl('div','height:16px;margin-bottom:4px')); // spacer
     }
 
-    top.appendChild(left);
-    top.appendChild(right);
-    sc.appendChild(top);
+    // name
+    sc.appendChild(mkEl('div','font-size:16px;font-weight:800;color:#0d1b2a;line-height:1.2;margin-bottom:1px',s.n));
+    // dates + days
+    const datesEl=mkEl('div','font-size:14px;color:#4e6072;margin-bottom:6px;line-height:1.3');
+    datesEl.innerHTML=s.dates+'<br>'+s.days;
+    sc.appendChild(datesEl);
 
-    // occupancy bar (only if available)
+    // price
     if(s.available){
-      const occ=mkEl('div','padding:0 14px 12px');
-
-      const barWrap=mkEl('div','height:6px;border-radius:3px;background:rgba(13,27,42,.08);overflow:hidden;margin-bottom:5px;display:flex');
-      const barTaken=mkEl('div','height:100%;background:rgba(13,27,42,.15);border-radius:3px 0 0 3px;width:0;transition:width 1s cubic-bezier(.16,1,.3,1)');
-      const barFree=mkEl('div','height:100%;background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:0 3px 3px 0;width:0;transition:width 1s cubic-bezier(.16,1,.3,1)');
-      barWrap.appendChild(barTaken);
-      barWrap.appendChild(barFree);
-
-      const occRow=mkEl('div','display:flex;justify-content:space-between;font-size:13px');
-      occRow.appendChild(mkEl('span','color:#7e9094','занято '+s.occupied));
-      occRow.appendChild(mkEl('span','color:#15803d;font-weight:700','свободно '+free));
-
-      occ.appendChild(barWrap);
-      occ.appendChild(occRow);
-      sc.appendChild(occ);
-
-      // animate bar after paint
-      setTimeout(()=>{
-        barTaken.style.width=pct+'%';
-        barFree.style.width=(100-pct)+'%';
-      },120+idx*60);
+      sc.appendChild(mkEl('div','font-size:17px;font-weight:800;color:#ec7c00;letter-spacing:-.02em;margin-bottom:5px',s.price));
+    } else {
+      sc.appendChild(mkEl('div','font-size:10px;color:#dc2626;font-weight:600;margin-bottom:5px','мест нет'));
     }
 
-    list.appendChild(sc);
+    // progress bar
+    if(s.available){
+      const barWrap=mkEl('div','height:3px;border-radius:2px;background:rgba(13,27,42,.08);overflow:hidden;margin-bottom:3px;display:flex');
+      const barTaken=mkEl('div','height:100%;background:rgba(13,27,42,.12);border-radius:2px 0 0 2px;width:0;transition:width 1s cubic-bezier(.16,1,.3,1)');
+      const barFree=mkEl('div','height:100%;background:linear-gradient(90deg,'+(isLast?'#ef4444,#dc2626':'#22c55e,#16a34a')+');border-radius:0 2px 2px 0;width:0;transition:width 1s cubic-bezier(.16,1,.3,1)');
+      barWrap.appendChild(barTaken);barWrap.appendChild(barFree);
+      sc.appendChild(barWrap);
+
+      const occRow=mkEl('div','display:flex;justify-content:space-between;font-size:11px');
+      occRow.appendChild(mkEl('span','color:#7e9094',''+s.occupied+'/'+s.total));
+      occRow.appendChild(mkEl('span',(isLast?'color:#dc2626':'color:#15803d')+';font-weight:700','свободно '+free));
+      sc.appendChild(occRow);
+
+      setTimeout(()=>{barTaken.style.width=pct+'%';barFree.style.width=(100-pct)+'%';},100+idx*50);
+    }
+
+    grid.appendChild(sc);
   });
 
-  card.appendChild(list);
+  card.appendChild(grid);
 
-  // CTA button
-  const btn=mkEl('button','margin:4px 12px 12px;padding:14px;background:linear-gradient(135deg,#c45f00,#a34e00);border:none;border-radius:12px;font-family:inherit;font-size:16px;font-weight:700;color:#fff;cursor:pointer;width:calc(100% - 24px);display:block;box-shadow:0 4px 14px rgba(236,124,0,.35);letter-spacing:.01em','Выбрать смену и забронировать →');
+  // CTA — иконка-кнопка бронирования (без текста)
+  const ctaRow=mkEl('div','display:flex;align-items:center;gap:8px;padding:6px 8px 10px');
+  const btn=mkEl('button','flex:1;padding:10px;background:linear-gradient(135deg,#c45f00,#a34e00);border:none;border-radius:10px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 12px rgba(236,124,0,.3);transition:.18s;font-family:inherit;font-size:13px;font-weight:700');
+  btn.innerHTML='<i class="bi bi-calendar-check" aria-hidden="true" style="font-size:18px"></i>';
+  btn.title='Выбрать смену';
+  btn.onmouseenter=()=>{btn.style.background='linear-gradient(135deg,#d96a00,#b85500)';btn.style.boxShadow='0 5px 18px rgba(236,124,0,.45)';};
+  btn.onmouseleave=()=>{btn.style.background='linear-gradient(135deg,#c45f00,#a34e00)';btn.style.boxShadow='0 3px 12px rgba(236,124,0,.3)';};
   btn.onclick=openPopup;
-  card.appendChild(btn);
+  ctaRow.appendChild(btn);
+  card.appendChild(ctaRow);
 
-  const foot=mkEl('div','padding:4px 14px 12px;font-size:11px;color:rgba(13,27,42,.35);text-align:center','Налоговый вычет 13% · Место фиксируется на 48ч');
+  const foot=mkEl('div','padding:0 14px 10px;font-size:10px;color:rgba(13,27,42,.35);text-align:center','Налоговый вычет 13% · Место фиксируется на 48ч · Возврат 50% за первые 3 дня');
   card.appendChild(foot);
 
   wrap.appendChild(card);
@@ -800,52 +929,43 @@ function blockCourses(blockData){
 
   // grid
   const isSingle=filtered.length===1;
-  const grid=mkEl('div','display:grid;grid-template-columns:'+(isSingle?'1fr':'1fr 1fr')+';gap:8px;padding:12px');
+  const grid=mkEl('div','display:grid;grid-template-columns:'+(isSingle?'1fr':'1fr 1fr')+';gap:6px;padding:8px');
   grid.className='courses-grid-inner';
 
   filtered.forEach((c,idx)=>{
     const p=COURSE_PALETTE[c._pi]||COURSE_PALETTE[0];
     const tile=mkEl('div',
-      'position:relative;border-radius:14px;padding:16px 14px 14px;cursor:pointer;'
+      'position:relative;border-radius:12px;padding:10px 12px;cursor:pointer;'
       +'border:1px solid '+p.border+';background:'+p.bg+';'
-      +'display:flex;flex-direction:column;gap:10px;overflow:hidden;'
+      +'display:flex;flex-direction:column;gap:6px;overflow:hidden;'
       +'animation:tile-in .3s cubic-bezier(.16,1,.3,1) '+(0.04+idx*0.05)+'s both;'
       +'transition:transform .2s,box-shadow .2s'
     );
-    tile.onmouseenter=()=>{tile.style.transform='translateY(-3px)';tile.style.boxShadow='0 10px 28px '+p.shadow;};
+    tile.onmouseenter=()=>{tile.style.transform='translateY(-2px)';tile.style.boxShadow='0 8px 20px '+p.shadow;};
     tile.onmouseleave=()=>{tile.style.transform='';tile.style.boxShadow='';};
     tile.onclick=()=>go('Расскажи подробнее про '+c.name);
 
-    // icon box
+    // icon + name row (compact: icon inline with name)
+    const topRow=mkEl('div','display:flex;align-items:center;gap:8px');
     const iconBox=mkEl('div',
-      'width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;'
-      +'background:'+p.bg+';border:1px solid '+p.border+';flex-shrink:0'
+      'width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;'
+      +'background:'+p.bg+';border:1px solid '+p.border
     );
-    iconBox.innerHTML='<i class="bi bi-'+c.icon+'" aria-hidden="true" style="font-size:22px;color:'+p.color+'"></i>';
-    tile.appendChild(iconBox);
-
-    // name + age
-    const nameWrap=mkEl('div','');
-    nameWrap.appendChild(mkEl('div','font-size:16px;font-weight:800;color:#0d1b2a;line-height:1.2',c.name));
+    iconBox.innerHTML='<i class="bi bi-'+c.icon+'" aria-hidden="true" style="font-size:16px;color:'+p.color+'"></i>';
+    const nameWrap=mkEl('div','flex:1;min-width:0');
+    nameWrap.appendChild(mkEl('div','font-size:13px;font-weight:800;color:#0d1b2a;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis',c.name));
     const ageBadge=mkEl('div',
-      'display:inline-block;margin-top:5px;font-size:12px;font-weight:700;'
-      +'color:'+p.color+';background:'+p.bg+';padding:3px 10px;border-radius:20px',
+      'display:inline-block;margin-top:2px;font-size:10px;font-weight:700;'
+      +'color:'+p.color+';background:'+p.bg+';padding:1px 7px;border-radius:20px',
       c.age
     );
     nameWrap.appendChild(ageBadge);
-    tile.appendChild(nameWrap);
+    topRow.appendChild(iconBox);
+    topRow.appendChild(nameWrap);
+    tile.appendChild(topRow);
 
-    // hook
-    tile.appendChild(mkEl('div','font-size:14px;color:#4e6072;line-height:1.65;flex:1',c.campHook));
-
-    // result badge
-    const res=mkEl('div',
-      'display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;'
-      +'color:'+p.color+';background:'+p.bg+';border:1px solid '+p.border+';'
-      +'padding:5px 11px;border-radius:20px;width:fit-content;margin-top:4px'
-    );
-    res.innerHTML='<i class="bi bi-check-lg" aria-hidden="true" style="font-size:11px"></i>'+c.result;
-    tile.appendChild(res);
+    // hook (shorter, no result badge to save space)
+    tile.appendChild(mkEl('div','font-size:11.5px;color:#4e6072;line-height:1.5',c.campHook));
 
     grid.appendChild(tile);
   });
@@ -942,7 +1062,7 @@ function blockPrices(){
   head.innerHTML='<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:8px"><i class="bi bi-tag" aria-hidden="true"></i>Стоимость смен</span>';
   card.appendChild(head);
   const tabs=[
-    {label:'7 дней',price:'48 000 ₽',sub:'за смену · смена 2.1',inc:['Проживание в корпусе','4-разовое питание','IT-программа по направлению','Трансфер от м. Солнцево','Бассейн каждый день'],cb:'Налоговый вычет 13% — вернёте до <strong>6 240 ₽</strong> через ФНС'},
+    {label:'7 дней',price:'48 000 ₽',sub:'за смену · смена 2.1',inc:['Проживание в корпусе','5-разовое питание','IT-программа по направлению','Трансфер от м. Солнцево','Бассейн через день'],cb:'Налоговый вычет 13% — вернёте до <strong>6 240 ₽</strong> через ФНС'},
     {label:'10 дней',price:'69 600–74 900 ₽',sub:'за смену · смены 1 и 4',inc:['Всё включено (проживание, питание, IT, трансфер)','Хакатон в последние 2 дня','Сертификат по итогам'],cb:'Налоговый вычет 13% — вернёте до <strong>9 737 ₽</strong> через ФНС'},
     {label:'14 дней',price:'95 000 ₽',sub:'за смену · смена 2 (популярная)',inc:['Самая полная программа — 14 дней','Всё включено + хакатон','Дети успевают подружиться по-настоящему'],cb:'Налоговый вычет 13% — вернёте до <strong>12 350 ₽</strong> через ФНС'},
   ];
@@ -1021,7 +1141,7 @@ function blockPhotoCarousel(){
   card.appendChild(head);
   const scenes=[
     {label:'IT-занятие',sub:'Python и Scratch — пишем настоящий код',bg:'linear-gradient(135deg,#1e3a5f 0%,#0f2040 100%)',icon:'laptop'},
-    {label:'Бассейн каждый день',sub:'После занятий — обязательное купание',bg:'linear-gradient(135deg,#0a3a2e 0%,#051a14 100%)',icon:'droplet'},
+    {label:'Бассейн через день',sub:'После занятий — открытый бассейн',bg:'linear-gradient(135deg,#0a3a2e 0%,#051a14 100%)',icon:'droplet'},
     {label:'Финальный хакатон',sub:'Командная защита проектов + дипломы',bg:'linear-gradient(135deg,#3a1e00 0%,#1a0d00 100%)',icon:'trophy-fill'},
     {label:'Вечерняя программа',sub:'Квесты, кино, мастер-классы — каждый день',bg:'linear-gradient(135deg,#2a1a50 0%,#110b25 100%)',icon:'star-fill'},
     {label:'Проживание',sub:'Корпуса по 2–4 чел., WiFi, своя комната',bg:'linear-gradient(135deg,#1a2e1a 0%,#0a150a 100%)',icon:'house-door'},
@@ -1093,6 +1213,136 @@ function blockVideoPlayer(blockData){
   card.appendChild(poster);
   card.appendChild(mkEl('div','padding:8px 16px 12px;font-size:11px;color:rgba(13,27,42,.35);text-align:center','Основатель Дарья Афанасьева — о программе и ценностях лагеря'));
   wrap.appendChild(card);return wrap;
+}
+
+function blockGallery(blockData){
+  const photos=(blockData&&blockData.photos)||[];
+  if(!photos.length)return null;
+  const wrap=mkEl('div','width:100%;animation:blockFade .5s ease-out both');
+  const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
+  const head=mkEl('div','padding:13px 18px;border-bottom:1px solid rgba(13,27,42,.07);display:flex;align-items:center;gap:8px');
+  head.innerHTML='<i class="bi bi-camera-fill" aria-hidden="true" style="color:rgba(13,27,42,.4);font-size:13px"></i>'
+    +'<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55)">Фото из лагеря</span>';
+  card.appendChild(head);
+  const grid=mkEl('div','display:grid;grid-template-columns:repeat('+Math.min(photos.length,3)+',1fr);gap:2px');
+  photos.forEach(p=>{
+    const img=document.createElement('img');
+    img.src=p.url;
+    img.alt=p.caption||'';
+    img.title=p.caption||'';
+    img.loading='lazy';
+    img.style.cssText='width:100%;height:130px;object-fit:cover;display:block;cursor:pointer;transition:opacity .2s';
+    img.onmouseenter=()=>{img.style.opacity='.85';};
+    img.onmouseleave=()=>{img.style.opacity='1';};
+    img.onclick=()=>{ window.open(p.url,'_blank'); };
+    grid.appendChild(img);
+  });
+  card.appendChild(grid);
+  wrap.appendChild(card);return wrap;
+}
+
+function blockYoutubeComment(){
+  const wrap=mkEl('div','width:100%;animation:blockFade .6s ease-out both');
+  // Карточка стилизована под YouTube-комментарий
+  const card=mkEl('div',`
+    background:var(--surface-1);
+    border:1px solid var(--border);
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:0 2px 16px rgba(13,27,42,.06);
+    position:relative;
+  `);
+
+  // Шапка — «Комментарий на YouTube»
+  const head=mkEl('div',`
+    padding:10px 14px 8px;
+    border-bottom:1px solid var(--border-soft);
+    display:flex;align-items:center;gap:7px;
+  `);
+  head.innerHTML=`
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="#ff0000" style="flex-shrink:0">
+      <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8z"/>
+      <polygon points="9.6,15.6 15.8,12 9.6,8.4" fill="white"/>
+    </svg>
+    <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Комментарий с YouTube</span>
+  `;
+  card.appendChild(head);
+
+  // Тело комментария
+  const body=mkEl('div','padding:14px 14px 12px;display:flex;gap:10px;align-items:flex-start');
+
+  // Аватар
+  const avatar=mkEl('div',`
+    width:32px;height:32px;border-radius:50%;
+    background:linear-gradient(135deg,#d93025,#b91c1c);
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;font-weight:700;color:#fff;
+    flex-shrink:0;font-family:Arial,sans-serif;
+  `);
+  avatar.textContent='A';
+  body.appendChild(avatar);
+
+  const right=mkEl('div','flex:1;min-width:0');
+
+  // Имя + дата
+  const meta=mkEl('div','display:flex;align-items:baseline;gap:7px;margin-bottom:4px');
+  const name=mkEl('span','font-size:12px;font-weight:700;color:var(--text-secondary)');
+  name.textContent='@AntonPatrakov';
+  const date=mkEl('span','font-size:11px;color:var(--text-muted)');
+  date.textContent='2 месяца назад';
+  meta.appendChild(name);
+  meta.appendChild(date);
+  right.appendChild(meta);
+
+  // Текст комментария
+  const text=mkEl('div',`
+    font-size:14px;line-height:1.5;
+    color:var(--text-primary);
+    font-style:italic;
+    margin-bottom:10px;
+  `);
+  text.textContent='"мне 21, херачу на заводе, но всё равно хочу к вам в лагерь"';
+  right.appendChild(text);
+
+  // Лайки
+  const likes=mkEl('div','display:flex;align-items:center;gap:4px;margin-bottom:10px');
+  likes.innerHTML=`
+    <i class="bi bi-hand-thumbs-up-fill" aria-hidden="true" style="font-size:12px;color:var(--text-muted)"></i>
+    <span style="font-size:12px;color:var(--text-muted)">1</span>
+  `;
+  right.appendChild(likes);
+
+  // Кнопка посмотреть видео
+  const btn=document.createElement('a');
+  btn.href='https://youtube.com/shorts/nw2xsVt31JU';
+  btn.target='_blank';
+  btn.rel='noopener noreferrer';
+  btn.style.cssText=`
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:12px;font-weight:600;
+    color:#ff0000;
+    text-decoration:none;
+    padding:5px 10px;
+    border:1px solid rgba(255,0,0,.25);
+    border-radius:20px;
+    background:rgba(255,0,0,.04);
+    transition:background .15s, border-color .15s;
+  `;
+  btn.innerHTML=`
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8z"/>
+      <polygon points="9.6,15.6 15.8,12 9.6,8.4" fill="white"/>
+    </svg>
+    Посмотреть ролик
+  `;
+  btn.onmouseenter=()=>{ btn.style.background='rgba(255,0,0,.09)'; btn.style.borderColor='rgba(255,0,0,.4)'; };
+  btn.onmouseleave=()=>{ btn.style.background='rgba(255,0,0,.04)'; btn.style.borderColor='rgba(255,0,0,.25)'; };
+  right.appendChild(btn);
+
+  body.appendChild(right);
+  card.appendChild(body);
+  wrap.appendChild(card);
+  return wrap;
 }
 
 function blockPricingBreakdown(){
@@ -1216,7 +1466,8 @@ buildShiftSelect();
 function addEl(el){
   const box=document.getElementById('msgs');
   box.appendChild(el);
-  box.scrollTop=box.scrollHeight;
+  // Double RAF: wait for layout to compute before scrolling
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{box.scrollTop=box.scrollHeight;}));
 }
 
 function autoGrow(el){
@@ -1240,44 +1491,78 @@ function addMsg(role,html,onDone){
   d.className=role==='user'?'msg-user':'msg-text';
   if(role==='user'){d.innerHTML=html;addEl(d);return;}
   html=autoLink(html);
-  // Typewriter effect for bot messages
-  // Parse HTML into segments: text chars + html tags (revealed instantly)
-  const segments=[];
-  let buf='',i=0;
-  while(i<html.length){
-    if(html[i]==='<'){
-      if(buf){segments.push({t:'txt',v:buf});buf='';}
-      let tag='';
-      while(i<html.length&&html[i]!=='>'){tag+=html[i++];}
-      tag+='>'; i++;
-      segments.push({t:'tag',v:tag});
-    } else { buf+=html[i++]; }
-  }
-  if(buf)segments.push({t:'txt',v:buf});
 
-  d.classList.add('typing-cursor');
-  addEl(d);
-  let si=0,ci=0,built='';
-  const SPEED=18; // ms per char
-  function tick(){
-    if(si>=segments.length){
-      d.classList.remove('typing-cursor');
-      // After typewriter done — scroll to show THIS message at top of view
-      setTimeout(()=>{d.scrollIntoView({behavior:'smooth',block:'nearest'});},60);
-      if(onDone)onDone(d);
-      return;
+  // Parse HTML into segments for typewriter
+  function parseSegs(src){
+    const segs=[];let buf='',j=0;
+    while(j<src.length){
+      if(src[j]==='<'){
+        if(buf){segs.push({t:'txt',v:buf});buf='';}
+        let tag='';
+        while(j<src.length&&src[j]!=='>'){tag+=src[j++];}
+        tag+='>'; j++;
+        segs.push({t:'tag',v:tag});
+      } else { buf+=src[j++]; }
     }
-    const seg=segments[si];
-    if(seg.t==='tag'){built+=seg.v;si++;ci=0;d.innerHTML=built+'​';requestAnimationFrame(tick);return;}
-    // text segment — reveal char by char
-    if(ci<seg.v.length){
-      built+=seg.v[ci++];
-      d.innerHTML=built+'​';
-      setTimeout(tick,SPEED);
-    } else { si++;ci=0;setTimeout(tick,0); }
+    if(buf)segs.push({t:'txt',v:buf});
+    return segs;
   }
-  tick();
-  return d; // caller can use for scroll anchor
+
+  // Step 1: render full text invisibly to establish final bubble width
+  d.innerHTML=html;
+  d.style.opacity='0';
+  d.style.pointerEvents='none';
+  addEl(d);
+
+  // Step 2: after browser layout — lock width AND height, clear, show dots
+  requestAnimationFrame(()=>{
+    const lockedW=d.offsetWidth;
+    const lockedH=d.offsetHeight;
+    d.style.minWidth=lockedW+'px';
+    d.style.minHeight=lockedH+'px';
+    d.style.opacity='';
+    d.style.pointerEvents='';
+    d.innerHTML='';
+
+    // Dots inside bubble
+    const dotsDiv=document.createElement('div');
+    dotsDiv.style.cssText='display:flex;gap:5px;align-items:center;padding:2px 0;transition:opacity .18s';
+    dotsDiv.innerHTML='<span class="td"></span><span class="td"></span><span class="td"></span>';
+    d.appendChild(dotsDiv);
+
+    // Step 3: after short dots pause — typewriter
+    const DOTS_MS=550;
+    setTimeout(()=>{
+      dotsDiv.style.opacity='0';
+      setTimeout(()=>{
+        dotsDiv.remove();
+        d.innerHTML='';
+        const segments=parseSegs(html);
+        d.classList.add('typing-cursor');
+        let si=0,ci=0,built='';
+        const SPEED=18;
+        function tick(){
+          if(si>=segments.length){
+            d.classList.remove('typing-cursor');
+            setTimeout(()=>{d.scrollIntoView({behavior:'smooth',block:'nearest'});},60);
+            if(onDone)onDone(d);
+            return;
+          }
+          const seg=segments[si];
+          if(seg.t==='tag'){built+=seg.v;si++;ci=0;d.innerHTML=built+'​';requestAnimationFrame(tick);return;}
+          if(ci<seg.v.length){
+            built+=seg.v[ci++];
+            d.innerHTML=built+'​';
+            const _box=document.getElementById('msgs');
+            if(_box)_box.scrollTop=_box.scrollHeight;
+            setTimeout(tick,SPEED);
+          } else { si++;ci=0;setTimeout(tick,0); }
+        }
+        tick();
+      },180);
+    },DOTS_MS);
+  });
+  return d;
 }
 
 function addChips(items){
@@ -1288,27 +1573,26 @@ function addChips(items){
     const isCTA=item.action==='book';
     const isSoft=item.action==='contact_request';
     if(isCTA){
-      b.style.cssText='padding:11px 22px;border:none;border-radius:28px;background:linear-gradient(135deg,#c45f00,#a34e00);font-family:Manrope,sans-serif;font-size:15px;font-weight:700;color:#fff;cursor:pointer;transition:.18s;box-shadow:0 4px 18px rgba(236,124,0,.4);letter-spacing:.01em;line-height:1';
+      b.className='chip-cta-icon';
+      b.style.cssText='width:42px;height:42px;padding:0;border:none;border-radius:50%;background:linear-gradient(135deg,#c45f00,#a34e00);cursor:pointer;transition:.18s;box-shadow:0 4px 18px rgba(236,124,0,.4);display:flex;align-items:center;justify-content:center;flex-shrink:0';
     } else if(isSoft){
-      b.style.cssText='padding:11px 22px;border:1px solid rgba(34,197,94,.25);border-radius:28px;background:rgba(34,197,94,.08);font-family:Manrope,sans-serif;font-size:15px;font-weight:600;color:#15803d;cursor:pointer;transition:.18s;line-height:1';
+      b.className='chip chip-soft';
     } else {
-      b.style.cssText='padding:11px 22px;border:1px solid rgba(13,27,42,.12);border-radius:28px;background:#fff;font-family:Manrope,sans-serif;font-size:15px;font-weight:500;color:#0d1b2a;cursor:pointer;transition:.18s;box-shadow:0 1px 4px rgba(13,27,42,.07);line-height:1';
+      b.className='chip';
     }
     if(isCTA){
-      b.innerHTML='<i class="bi bi-calendar-check" aria-hidden="true" style="font-size:14px;vertical-align:-1px;margin-right:6px"></i>'+item.label;
+      b.innerHTML='<i class="bi bi-calendar-check" aria-hidden="true" style="font-size:20px"></i>';
+      b.title=item.label||'Забронировать';
     } else {
       b.textContent=item.label;
     }
     b.onmouseenter=()=>{
-      if(isCTA){b.style.background='linear-gradient(135deg,#d96a00,#b85500)';b.style.boxShadow='0 6px 22px rgba(236,124,0,.5)';}
-      else if(isSoft){b.style.background='rgba(34,197,94,.14)';}
-      else{b.style.borderColor='rgba(236,124,0,.4)';b.style.color='#0d1b2a';b.style.background='rgba(236,124,0,.06)';}
-      b.style.transform='translateY(-2px)';
+      if(isCTA){b.style.background='linear-gradient(135deg,#d96a00,#b85500)';b.style.boxShadow='0 6px 22px rgba(236,124,0,.5)';b.style.transform='translateY(-2px)';}
+      else if(isSoft){b.style.transform='translateY(-2px)';}
+      else{b.style.transform='translateY(-2px)';}
     };
     b.onmouseleave=()=>{
       if(isCTA){b.style.background='linear-gradient(135deg,#c45f00,#a34e00)';b.style.boxShadow='0 4px 18px rgba(236,124,0,.4)';}
-      else if(isSoft){b.style.background='rgba(34,197,94,.08)';}
-      else{b.style.borderColor='rgba(13,27,42,.12)';b.style.color='#0d1b2a';b.style.background='#fff';}
       b.style.transform='';
     };
     if(isCTA) b.onclick=()=>{trackSession({booked:true});openPopup()};
@@ -1323,20 +1607,101 @@ function addChips(items){
 function showContactCard(){
   trackSession({contact_requested:true});
   if(typeof ym!=='undefined') ym(96499295,'reachGoal','ask_contact_intent');
-  const d=document.createElement('div');
-  d.className='contact-card';
-  d.innerHTML=`
-    <div class="contact-card-title">Напишите нам — мы ответим</div>
-    <div class="contact-card-sub">Работаем с 11:00 до 20:00 МСК — ответим в рабочее время.<br>Никаких звонков, только текст.</div>
-    <div class="contact-btns">
-      <a class="contact-btn contact-btn-wa" href="https://wa.me/79688086455" target="_blank" rel="noopener">
-        <i class="bi bi-whatsapp" aria-hidden="true"></i> WhatsApp
-      </a>
-      <a class="contact-btn contact-btn-tg" href="https://t.me/Progaschool" target="_blank" rel="noopener">
-        <i class="bi bi-telegram" aria-hidden="true"></i> Telegram
-      </a>
-    </div>`;
-  addEl(d);
+
+  // Step 1 — bot asks for contact
+  addMsg('ai','Хорошо! Оставьте телефон, почту или Telegram — Дарья напишет сама в рабочее время, без звонков.',()=>{
+    // Step 2 — show inline contact input widget
+    const wrap=document.createElement('div');
+    wrap.style.cssText='align-self:flex-start;width:100%;max-width:420px;animation:up .3s cubic-bezier(.16,1,.3,1) both';
+
+    const card=document.createElement('div');
+    card.style.cssText='background:#fff;border:1.5px solid rgba(13,27,42,.12);border-radius:16px;padding:16px 18px;box-shadow:0 2px 14px rgba(13,27,42,.08)';
+
+    const label=document.createElement('div');
+    label.style.cssText='font-size:12px;font-weight:600;color:rgba(13,27,42,.4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px';
+    label.textContent='Как с вами связаться';
+
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;gap:8px;align-items:flex-start';
+
+    const inp=document.createElement('input');
+    inp.type='text';
+    inp.placeholder='+7 999 000-00-00 / почта / @telegram';
+    inp.style.cssText='flex:1;padding:11px 14px;border:1.5px solid rgba(13,27,42,.12);border-radius:10px;font-family:Manrope,sans-serif;font-size:15px;color:#0d1b2a;outline:none;background:#f8fafc;transition:.2s;min-width:0';
+    inp.addEventListener('focus',()=>{inp.style.borderColor='rgba(236,124,0,.5)';inp.style.background='#fff';});
+    inp.addEventListener('blur',()=>{inp.style.borderColor='rgba(13,27,42,.12)';inp.style.background='#f8fafc';});
+
+    const errEl=document.createElement('div');
+    errEl.style.cssText='font-size:12px;color:#dc2626;margin-top:6px;display:none';
+
+    const btn=document.createElement('button');
+    btn.style.cssText='padding:11px 18px;background:linear-gradient(135deg,#c45f00,#a34e00);border:none;border-radius:10px;font-family:Manrope,sans-serif;font-size:14px;font-weight:700;color:#fff;cursor:pointer;transition:.15s;flex-shrink:0;white-space:nowrap';
+    btn.textContent='Передать';
+    btn.onclick=()=>submitContact(inp,errEl,wrap);
+
+    inp.addEventListener('keydown',(e)=>{if(e.key==='Enter'){e.preventDefault();submitContact(inp,errEl,wrap);}});
+
+    const hint=document.createElement('div');
+    hint.style.cssText='font-size:11px;color:rgba(13,27,42,.35);margin-top:8px';
+    hint.textContent='Телефон, email или @username — на ваш выбор';
+
+    row.appendChild(inp);row.appendChild(btn);
+    card.appendChild(label);card.appendChild(row);card.appendChild(errEl);card.appendChild(hint);
+    wrap.appendChild(card);
+    addEl(wrap);
+    setTimeout(()=>inp.focus(),300);
+  });
+}
+
+function validateContact(v){
+  const s=v.trim();
+  if(!s) return null;
+  // Phone: 7/8 + 10 digits, or +7 + 10 digits
+  if(/^(\+7|7|8)\d{10}$/.test(s.replace(/[\s\-\(\)]/g,''))) return {type:'phone',value:s};
+  // Email
+  if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)) return {type:'email',value:s};
+  // Telegram: @username or t.me/username
+  if(/^@[a-zA-Z0-9_]{3,}$/.test(s)||/^(https?:\/\/)?(t\.me|telegram\.me)\/[a-zA-Z0-9_]{3,}/.test(s)) return {type:'telegram',value:s};
+  return null;
+}
+
+async function submitContact(inp,errEl,wrap){
+  const parsed=validateContact(inp.value);
+  if(!parsed){
+    errEl.textContent='Не похоже на телефон, почту или Telegram. Попробуйте ещё раз.';
+    errEl.style.display='block';
+    inp.style.borderColor='rgba(220,38,38,.5)';
+    setTimeout(()=>inp.focus(),50);
+    return;
+  }
+  // Disable UI
+  inp.disabled=true;
+  const btn=wrap.querySelector('button');
+  if(btn){btn.disabled=true;btn.textContent='Отправляю...';}
+  errEl.style.display='none';
+
+  // Build context from history
+  const ctx=history.slice(-6).map(m=>(m.role==='user'?'Мама: ':'Бот: ')+m.content.replace(/<[^>]+>/g,' ').slice(0,120)).join('\n');
+
+  try{
+    const res=await fetch('/api/contact-send',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contact:parsed.value,contact_type:parsed.type,context:ctx}),
+    });
+    if(!res.ok) throw new Error('server error');
+  } catch(e){
+    // Fail silently — still show success to user
+  }
+
+  // Remove the form
+  wrap.remove();
+
+  // Bot confirmation
+  const label={phone:'телефон',email:'почту',telegram:'Telegram'}[parsed.type]||'контакт';
+  addMsg('ai','Передала Дарье '+label+' — <strong>'+parsed.value+'</strong>.<br>Напишет в рабочее время (11:00–20:00 МСК), без звонков.');
+  trackSession({contact_requested:true});
+  if(typeof ym!=='undefined') ym(96499295,'reachGoal','ask_contact_sent');
 }
 
 function showTyping(){
@@ -1359,8 +1724,10 @@ function renderBlock(blockType,blockData){
     case 'prices': return blockPrices();
     case 'location': return blockLocation();
     case 'occupancy_chart': return blockOccupancyChart();
-    case 'photo_carousel': return blockPhotoCarousel();
+    case 'photo_carousel': return blockPhotoCarousel(blockData);
     case 'video_player': return blockVideoPlayer(blockData);
+    case 'gallery': return blockGallery(blockData);
+    case 'youtube_comment': return blockYoutubeComment();
     case 'pricing_breakdown': return blockPricingBreakdown();
     case 'hackathon': return blockHackathon();
     default: return null;
@@ -1383,6 +1750,7 @@ async function go(txt){
 
   history.push({role:'user',content:txt});
   trackSession({_msg:true});
+  updateProgress();
 
   // Определяем возраст из текста пользователя
   const ageMatch=txt.match(/\b(\d{1,2})\s*лет/i);
@@ -1448,9 +1816,7 @@ async function go(txt){
   } catch(e){
     hideTyping();
     console.error('[ask] fetch error:', e?.name, e?.message);
-    const safe=txt.replace(/'/g,"\\'");
-    const errMsg='Думаю немного дольше обычного — <a href="#" onclick="event.preventDefault();go(\''+safe+'\')" style="color:var(--ord);font-weight:600">спросить ещё раз?</a>';
-    addMsg('ai',errMsg);
+    addMsg('ai','Что-то подвисло — напишите напрямую: <a href="https://wa.me/79688086455" target="_blank" rel="noopener" style="color:var(--ord);font-weight:600">WhatsApp</a> или <a href="https://t.me/Progaschool" target="_blank" rel="noopener" style="color:var(--ord);font-weight:600">Telegram</a>.');
     busy=false;
     document.getElementById('sendBtn').disabled=false;
   }
@@ -1544,7 +1910,8 @@ function makeOrbitCanvas(canvas,size){
   }));
   function draw(){
     const cs=getComputedStyle(document.documentElement);
-    const surfaceColor=cs.getPropertyValue('--surface-2').trim()||'#e8edf4';
+    // Logo background always dark navy — brand style
+    const surfaceColor='#0a1628';
     const particleColor=cs.getPropertyValue('--orbit-particle').trim()||'#9a4f00';
     const ringColor=cs.getPropertyValue('--orbit-ring').trim()||'rgba(196,95,0,.35)';
     ctx.clearRect(0,0,size,size);
@@ -1639,6 +2006,87 @@ function stopMic(){
   document.getElementById('inp').placeholder = 'Спросите про лагерь...';
   try{ recognition.stop(); } catch(e){}
 }
+
+/* ── DIALOG PROGRESS ── */
+let userMsgCount = 0;
+const PROGRESS_MAX = 7;
+let achivkaShown = false;
+
+function updateProgress(){
+  userMsgCount++;
+  const pct = Math.min(userMsgCount / PROGRESS_MAX * 100, 100);
+  const bar = document.getElementById('dialogBar');
+  if(bar) bar.style.width = pct + '%';
+
+  // Share row появляется после 3 сообщений
+  if(userMsgCount >= 3){
+    const row = document.getElementById('shareRow');
+    if(row) row.classList.add('show');
+  }
+
+  // Ачивка после 5 вопросов — один раз
+  if(userMsgCount === 5 && !achivkaShown){
+    achivkaShown = true;
+    const el = document.getElementById('achivka');
+    if(el){
+      el.classList.add('show');
+      setTimeout(()=>el.classList.remove('show'), 5500);
+    }
+  }
+}
+
+/* ── SHARE TO WHATSAPP ── */
+function getShareText(){
+  const msgs = document.querySelectorAll('.msg-text');
+  let lines = [];
+  msgs.forEach(m => {
+    const t = m.innerText.replace(/\s+/g,' ').trim().slice(0,120);
+    if(t && lines.length < 3) lines.push('— ' + t);
+  });
+  return 'Смотри, нашла IT-лагерь для детей — АйДаКемп:\n\n'
+    + lines.join('\n\n')
+    + '\n\nЧат-помощник: https://aidacamp.ru/ask/';
+}
+
+function showShareChooser(){
+  document.getElementById('shareChooser').classList.add('open');
+}
+
+function closeShareChooser(){
+  document.getElementById('shareChooser').classList.remove('open');
+}
+
+function shareToWhatsApp(){
+  const text = getShareText();
+  closeShareChooser();
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+}
+
+function shareToTelegram(){
+  const text = getShareText();
+  closeShareChooser();
+  const url = 'https://aidacamp.ru/ask/';
+  window.open('https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text), '_blank');
+}
+
+/* ── QR "ОТКРЫТЬ НА ТЕЛЕФОНЕ" ── */
+function showQR(){
+  const url = location.href;
+  document.getElementById('qrImg').src =
+    'https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=0d1b2a&data=' + encodeURIComponent(url);
+  document.getElementById('qrModal').classList.add('open');
+}
+function closeQR(){
+  document.getElementById('qrModal').classList.remove('open');
+}
+
+// QR кнопка — только на десктопе
+(function(){
+  if(window.innerWidth > 800 && !/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)){
+    const btn = document.getElementById('qrBtn');
+    if(btn) btn.style.display = 'inline-flex';
+  }
+})();
 </script>
 
 <!-- Yandex.Metrika -->
