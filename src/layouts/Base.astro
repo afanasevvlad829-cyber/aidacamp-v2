@@ -158,20 +158,20 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
           }, { passive: true });
         };
         // Защита tel: ссылок от перехвата сторонними скриптами (TMR, Metrika и др.)
-        // Bubble фаза: default action (<a href="tel:..."> → звонок) уже зафиксирован браузером.
-        // stopImmediatePropagation() блокирует последующих handlers на document (TMR, Metrika),
-        // которые иначе перехватили бы навигацию и перезапустили её программно → iOS-попап.
+        // capture:true — перехватываем раньше всех async-скриптов.
+        // !e.isTrusted — блокируем программные (синтетические) клики по tel: → нет iOS-попапа.
+        // stopImmediatePropagation() — блокируем других handlers в capture-фазе (если есть).
         document.addEventListener('click', function (e) {
-          var t = e.target;
-          while (t && t !== document) {
-            if (t.tagName === 'A' && t.href && t.href.indexOf('tel:') === 0) {
-              e.stopImmediatePropagation();
-              window.trackGoal('phone_click');
-              return;
-            }
-            t = t.parentElement;
+          var a = e.target && e.target.closest ? e.target.closest('a[href^="tel:"]') : null;
+          if (!a) return;
+          if (!e.isTrusted) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return;
           }
-        });
+          e.stopImmediatePropagation();
+          window.trackGoal('phone_click');
+        }, true);
         window.initContactTracking = function (scope) {
           document.querySelectorAll(scope + ' a[href^="tel:"]').forEach(function (a) {
             // phone_click трекается через capture-обработчик выше
