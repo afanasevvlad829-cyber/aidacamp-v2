@@ -64,11 +64,10 @@ def list_projects(page: int = 1, per_page: int = 50) -> list[dict]:
 
 # ── Видео ──────────────────────────────────────────────────────────────────────
 
-def list_videos(project_id: str, page: int = 1, per_page: int = 50) -> list[dict]:
-    """Список видео в проекте."""
+def list_videos(project_id: str | None = None, page: int = 1, per_page: int = 50) -> list[dict]:
+    """Список видео. project_id игнорируется — API возвращает все видео аккаунта через /videos."""
     try:
-        data = kinescope_get(f"/projects/{project_id}/videos",
-                             {"page": page, "per_page": per_page})
+        data = kinescope_get("/videos", {"page": page, "per_page": per_page})
         return data.get("data", [])
     except Exception as e:
         print(f"kinescope.list_videos err: {e}")
@@ -132,12 +131,12 @@ def project_stats(project_id: str, date_from: str = "", date_to: str = "") -> di
 
 # ── Удобные хелперы ────────────────────────────────────────────────────────────
 
-def get_all_videos(project_id: str) -> list[dict]:
-    """Возвращает все видео проекта (с автопагинацией)."""
+def get_all_videos(project_id: str | None = None) -> list[dict]:
+    """Возвращает все видео аккаунта (с автопагинацией)."""
     all_videos = []
     page = 1
     while True:
-        batch = list_videos(project_id, page=page, per_page=50)
+        batch = list_videos(page=page, per_page=50)
         if not batch:
             break
         all_videos.extend(batch)

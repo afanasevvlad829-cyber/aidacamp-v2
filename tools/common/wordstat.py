@@ -1,7 +1,12 @@
 """common/wordstat.py — Яндекс.Wordstat API v2.
 
 Документация: https://yandex.ru/dev/wordstat/doc/
-Токен: WORDSTAT_TOKEN (OAuth, тот же что Директ/Метрика)
+Токен: WORDSTAT_TOKEN
+
+⚠️ СТАТУС (апрель 2026):
+  Домен api.wordstat.yandex.com — NXDOMAIN (API ещё не запущен публично).
+  Код готов, будет работать когда Яндекс откроет API.
+  Пока используй DataForSEO (common/dataforseo.py) для SEO-данных.
 
 Основные методы:
   wordsByPhrases      — частоты для списка фраз (до 1000 за запрос)
