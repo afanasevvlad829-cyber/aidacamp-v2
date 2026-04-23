@@ -154,6 +154,8 @@ def get_direct_spend(date_from, date_to):
 # Правильный способ: /management/v1/counter/{id}/goals → узнаём goal_id → ym:s:goal<id>reaches
 LEAD_GOAL_NAME = "Отправка заявки-new"
 LEAD_GOAL_ID   = None  # будет заполнен при первом вызове
+# Hardcoded fallback — ID цели для счётчика 96499295
+_LEAD_GOAL_ID_FALLBACK = 541048197
 
 def _get_lead_goal_id():
     global LEAD_GOAL_ID
@@ -170,14 +172,14 @@ def _get_lead_goal_id():
             if g["name"] == LEAD_GOAL_NAME:
                 LEAD_GOAL_ID = g["id"]
                 return LEAD_GOAL_ID
-        # fallback: любая цель с "заявк" в имени
         for g in data.get("goals", []):
             if "заявк" in g["name"].lower():
                 LEAD_GOAL_ID = g["id"]
                 return LEAD_GOAL_ID
     except Exception as e:
-        print(f"metrika goal lookup err: {e}")
-    return None
+        print(f"metrika goal lookup err: {e} — using fallback id={_LEAD_GOAL_ID_FALLBACK}")
+    LEAD_GOAL_ID = _LEAD_GOAL_ID_FALLBACK
+    return LEAD_GOAL_ID
 
 def get_metrika_leads(date):
     """Заявки за дату через goal-specific метрику ym:s:goal<ID>reaches."""

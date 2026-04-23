@@ -183,8 +183,17 @@ def get_metrika_traffic(date):
 
 _METRIKA_GOALS_CACHE = None  # {name: goal_id}
 
+# Hardcoded fallback — ID цели «Отправка заявки-new» для счётчика 96499295
+_METRIKA_GOALS_FALLBACK = {
+    "Отправка заявки-new": 541048197,
+    "Выбор возраста-new":  541048270,
+    "Клик в Telegram-new": 541048649,
+}
+
 def get_metrika_goal_ids():
-    """Получить список целей счётчика (кэшируется на сессию)."""
+    """Получить список целей счётчика (кэшируется на сессию).
+    Fallback на hardcoded если management API недоступен.
+    """
     global _METRIKA_GOALS_CACHE
     if _METRIKA_GOALS_CACHE is not None:
         return _METRIKA_GOALS_CACHE
@@ -195,10 +204,11 @@ def get_metrika_goal_ids():
         )
         with urllib.request.urlopen(req, timeout=20) as r:
             data = json.loads(r.read())
-        _METRIKA_GOALS_CACHE = {g["name"]: g["id"] for g in data.get("goals", [])}
+        fetched = {g["name"]: g["id"] for g in data.get("goals", [])}
+        _METRIKA_GOALS_CACHE = fetched if fetched else _METRIKA_GOALS_FALLBACK
     except Exception as e:
-        print(f"metrika goals list err: {e}")
-        _METRIKA_GOALS_CACHE = {}
+        print(f"metrika goals list err: {e} — using fallback")
+        _METRIKA_GOALS_CACHE = _METRIKA_GOALS_FALLBACK
     return _METRIKA_GOALS_CACHE
 
 def get_metrika_goals(date):
