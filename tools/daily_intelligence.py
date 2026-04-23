@@ -211,33 +211,34 @@ def get_metrika_goal_ids():
         _METRIKA_GOALS_CACHE = _METRIKA_GOALS_FALLBACK
     return _METRIKA_GOALS_CACHE
 
-def get_metrika_goals(date):
-    """Количество достижений ключевых целей за дату.
-    Использует goal-specific метрики ym:s:goal<ID>reaches (dimension-free = надёжнее).
-    """
+def get_metrika_leads(date):
+    """Заявки за дату — ym:s:goal<ID>reaches для цели «Отправка заявки-new»."""
     goal_ids = get_metrika_goal_ids()
-    if not goal_ids:
+    # Найти ID цели-заявки
+    lead_id = None
+    for name, gid in goal_ids.items():
+        if "заявк" in name.lower() or "form" in name.lower():
+            lead_id = gid
+            break
+    if not lead_id:
         return {}
-
-    # Приоритет: заявки → всё остальное (берём первые 10 чтобы не перегружать API)
-    ordered = sorted(
-        goal_ids.items(),
-        key=lambda kv: (0 if ("заявк" in kv[0].lower() or "form" in kv[0].lower()) else 1, kv[0])
-    )[:10]
-
-    metrics_str = ",".join(f"ym:s:goal{gid}reaches" for _, gid in ordered)
     try:
         data = metrika_get({
             "ids": METRIKA_COUNTER,
-            "metrics": metrics_str,
+            "metrics": f"ym:s:goal{lead_id}reaches",
             "date1": date, "date2": date,
             "limit": 1,
         })
-        totals = data.get("totals", [])
-        return {name: int(totals[i]) for i, (name, _) in enumerate(ordered) if i < len(totals)}
+        totals = data.get("totals", [0])
+        goal_name = next((n for n, gid in goal_ids.items() if gid == lead_id), "Заявка")
+        return {goal_name: int(totals[0])} if totals else {}
     except Exception as e:
-        print(f"metrika goals err: {e}")
+        print(f"metrika leads err: {e}")
         return {}
+
+# Алиас для совместимости с вызовами
+def get_metrika_goals(date):
+    return get_metrika_leads(date)
 
 def pick_lead_goal(goals_dict):
     """Выбрать нужную цель — ищем «заявку»."""
