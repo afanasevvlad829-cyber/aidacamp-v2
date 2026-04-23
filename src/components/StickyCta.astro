@@ -198,11 +198,16 @@ import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, WHATSAPP_
           ageBar.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
         }
         bar.removeAttribute('inert');
-        bar.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
-        // Вешаем listener ПОСЛЕ снятия inert
-        const closeBtn = bar.querySelector<HTMLElement>('[data-sticky-close]');
-        closeBtn?.addEventListener('click', hideBar, { once: true });
-        closeBtn?.addEventListener('touchend', (e) => { e.preventDefault(); hideBar(); }, { once: true, passive: false });
+        // Анимация видимости — но пока pointer-events-none чтобы не было ghost click
+        bar.classList.remove('translate-y-full', 'opacity-0');
+        // Разрешаем клики только через 400мс после появления (защита от ghost click при скролле)
+        setTimeout(() => {
+          bar.classList.remove('pointer-events-none');
+          // Вешаем listener ПОСЛЕ снятия pointer-events-none
+          const closeBtn = bar.querySelector<HTMLElement>('[data-sticky-close]');
+          closeBtn?.addEventListener('click', hideBar, { once: true });
+          closeBtn?.addEventListener('touchend', (e) => { e.preventDefault(); hideBar(); }, { once: true, passive: false });
+        }, 400);
       }
 
       if (sessionStorage.getItem(DISMISS_KEY) !== '1') {
