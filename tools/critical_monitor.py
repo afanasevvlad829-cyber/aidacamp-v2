@@ -150,51 +150,57 @@ def get_direct_spend(date_from, date_to):
     return total_cost, total_clicks
 
 # ── Metrika API ───────────────────────────────────────────────────────────────
-def get_metrika_goal_by_name(date, goal_name="Отправка заявки-new"):
-    """Лиды по конкретной цели за дату."""
-    params = urllib.parse.urlencode({
-        "ids": METRIKA_COUNTER,
-        "metrics": "ym:s:reaches",
-        "dimensions": "ym:s:goalName",
-        "date1": date,
-        "date2": date,
-        "limit": 100,
-    })
-    url = f"https://api-metrika.yandex.net/stat/v1/data?{params}"
-    req = urllib.request.Request(url, headers={
-        "Authorization": f"OAuth {METRIKA_TOKEN}",
-    })
+# Цели Метрики нельзя запрашивать через dimension goalName + metric reaches (400).
+# Правильный способ: /management/v1/counter/{id}/goals → узнаём goal_id → ym:s:goal<id>reaches
+LEAD_GOAL_NAME = "Отправка заявки-new"
+LEAD_GOAL_ID   = None  # будет заполнен при первом вызове
+
+def _get_lead_goal_id():
+    global LEAD_GOAL_ID
+    if LEAD_GOAL_ID:
+        return LEAD_GOAL_ID
     try:
+        req = urllib.request.Request(
+            f"https://api-metrika.yandex.net/management/v1/counter/{METRIKA_COUNTER}/goals",
+            headers={"Authorization": f"OAuth {METRIKA_TOKEN}"}
+        )
         with urllib.request.urlopen(req, timeout=20) as r:
             data = json.loads(r.read())
-        for row in data.get("data", []):
-            dims = row.get("dimensions", [])
-            vals = row.get("metrics", [0])
-            if dims and goal_name in (dims[0].get("name", "")):
-                return int(vals[0])
-        return 0
-    except Exception:
-        return None
+        for g in data.get("goals", []):
+            if g["name"] == LEAD_GOAL_NAME:
+                LEAD_GOAL_ID = g["id"]
+                return LEAD_GOAL_ID
+        # fallback: любая цель с "заявк" в имени
+        for g in data.get("goals", []):
+            if "заявк" in g["name"].lower():
+                LEAD_GOAL_ID = g["id"]
+                return LEAD_GOAL_ID
+    except Exception as e:
+        print(f"metrika goal lookup err: {e}")
+    return None
 
-def get_metrika_any_goals(date):
-    """Сумма всех целевых достижений за дату (fallback)."""
+def get_metrika_leads(date):
+    """Заявки за дату через goal-specific метрику ym:s:goal<ID>reaches."""
+    goal_id = _get_lead_goal_id()
+    if not goal_id:
+        return None
     params = urllib.parse.urlencode({
         "ids": METRIKA_COUNTER,
-        "metrics": "ym:s:goalReachesAny",
-        "date1": date,
-        "date2": date,
+        "metrics": f"ym:s:goal{goal_id}reaches",
+        "date1": date, "date2": date,
         "limit": 1,
     })
-    url = f"https://api-metrika.yandex.net/stat/v1/data?{params}"
-    req = urllib.request.Request(url, headers={
-        "Authorization": f"OAuth {METRIKA_TOKEN}",
-    })
+    req = urllib.request.Request(
+        f"https://api-metrika.yandex.net/stat/v1/data?{params}",
+        headers={"Authorization": f"OAuth {METRIKA_TOKEN}"}
+    )
     try:
         with urllib.request.urlopen(req, timeout=20) as r:
             data = json.loads(r.read())
         totals = data.get("totals", [0])
         return int(totals[0]) if totals else 0
-    except Exception:
+    except Exception as e:
+        print(f"metrika leads err: {e}")
         return None
 
 # ── VK API ────────────────────────────────────────────────────────────────────
@@ -284,14 +290,10 @@ def main():
     cost_db, clicks_db = get_direct_spend(db, db)
     print(f"Direct spend: вчера={cost_yd}₽ ({clicks_yd} кл), позавчера={cost_db}₽ ({clicks_db} кл)")
 
-    # 3. Лиды Метрика — сначала конкретная цель, потом any как fallback
-    leads_yd = get_metrika_goal_by_name(yd)
-    leads_db = get_metrika_goal_by_name(db)
-    if leads_yd is None:
-        leads_yd = get_metrika_any_goals(yd)
-    if leads_db is None:
-        leads_db = get_metrika_any_goals(db)
-    print(f"Metrika leads: вчера={leads_yd}, позавчера={leads_db}")
+    # 3. Лиды Метрика — через goal-specific метрику (без dimension)
+    leads_yd = get_metrika_leads(yd)
+    leads_db = get_metrika_leads(db)
+    print(f"Metrika leads ({LEAD_GOAL_NAME}): вчера={leads_yd}, позавчера={leads_db}")
 
     # 4. VK расходы
     vk_yd = get_vk_spend(yd)

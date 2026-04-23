@@ -181,22 +181,50 @@ def get_metrika_traffic(date):
         print(f"metrika traffic err: {e}")
         return {"total": 0, "by_source": {}, "bounce": 0, "duration": 0}
 
+_METRIKA_GOALS_CACHE = None  # {name: goal_id}
+
+def get_metrika_goal_ids():
+    """Получить список целей счётчика (кэшируется на сессию)."""
+    global _METRIKA_GOALS_CACHE
+    if _METRIKA_GOALS_CACHE is not None:
+        return _METRIKA_GOALS_CACHE
+    try:
+        req = urllib.request.Request(
+            f"https://api-metrika.yandex.net/management/v1/counter/{METRIKA_COUNTER}/goals",
+            headers={"Authorization": f"OAuth {METRIKA_TOKEN}"}
+        )
+        with urllib.request.urlopen(req, timeout=20) as r:
+            data = json.loads(r.read())
+        _METRIKA_GOALS_CACHE = {g["name"]: g["id"] for g in data.get("goals", [])}
+    except Exception as e:
+        print(f"metrika goals list err: {e}")
+        _METRIKA_GOALS_CACHE = {}
+    return _METRIKA_GOALS_CACHE
+
 def get_metrika_goals(date):
-    """Количество достижений целей по имени цели."""
+    """Количество достижений ключевых целей за дату.
+    Использует goal-specific метрики ym:s:goal<ID>reaches (dimension-free = надёжнее).
+    """
+    goal_ids = get_metrika_goal_ids()
+    if not goal_ids:
+        return {}
+
+    # Приоритет: заявки → всё остальное (берём первые 10 чтобы не перегружать API)
+    ordered = sorted(
+        goal_ids.items(),
+        key=lambda kv: (0 if ("заявк" in kv[0].lower() or "form" in kv[0].lower()) else 1, kv[0])
+    )[:10]
+
+    metrics_str = ",".join(f"ym:s:goal{gid}reaches" for _, gid in ordered)
     try:
         data = metrika_get({
             "ids": METRIKA_COUNTER,
-            "dimensions": "ym:s:goalName",
-            "metrics": "ym:s:reaches",
+            "metrics": metrics_str,
             "date1": date, "date2": date,
-            "limit": 100,
+            "limit": 1,
         })
-        goals = {}
-        for row in data.get("data", []):
-            name = row["dimensions"][0].get("name", "")
-            val  = int(row["metrics"][0]) if row.get("metrics") else 0
-            goals[name] = val
-        return goals
+        totals = data.get("totals", [])
+        return {name: int(totals[i]) for i, (name, _) in enumerate(ordered) if i < len(totals)}
     except Exception as e:
         print(f"metrika goals err: {e}")
         return {}
