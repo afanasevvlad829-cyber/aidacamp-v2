@@ -146,7 +146,8 @@ def _save_tokens(access: str, refresh: str):
 def vk_ensure_token() -> bool:
     """Проверяет токен — если невалиден, обновляет. Вызывать в начале скриптов."""
     try:
-        vk_get("/ad_plans.json", {"_count": 1})
+        # /user.json — лёгкий эндпоинт для проверки токена
+        vk_get("/user.json")
         return True
     except urllib.error.HTTPError as e:
         if e.code in (401, 403):
@@ -160,35 +161,56 @@ def vk_ensure_token() -> bool:
 
 # ── Статистика ─────────────────────────────────────────────────────────────────
 
+def _get_all_adplan_ids() -> list[str]:
+    """Возвращает все ID кампаний (ad_plans) аккаунта постранично."""
+    ids = []
+    offset = 0
+    limit = 50
+    while True:
+        try:
+            data = vk_get("/ad_plans.json", {"_count": limit, "_offset": offset})
+            items = data.get("items", [])
+            ids += [str(p["id"]) for p in items]
+            if len(items) < limit:
+                break
+            offset += limit
+        except Exception as e:
+            print(f"vk._get_all_adplan_ids err: {e}")
+            break
+    return ids
+
+
 def vk_stats_period(date_from: str, date_to: str,
                     obj_type: str = "account", obj_id: str | None = None) -> dict:
-    """Статистика за произвольный период.
+    """Статистика за произвольный период через myTarget API.
 
-    obj_type — 'account' | 'campaign' | 'group' | 'banner'
-    obj_id   — ID объекта (None → VK_ACCOUNT_ID)
+    obj_type — 'account' (все ad_plans) | 'ad_plan' | 'campaign' (group) | 'banner'
+    obj_id   — ID объекта или список через запятую (None → все ad_plans)
     Возвращает dict: {'spend': int, 'clicks': int, 'shows': int, 'ctr': float}
     """
-    if obj_id is None:
-        obj_id = _account_id()
-
-    # myTarget статистика: GET /statistics/{type}s/day.json
-    path = f"/statistics/{obj_type}s/day.json"
-    params = {
-        "id": obj_id,
-        "date_from": date_from,
-        "date_to": date_to,
-        "metrics": "base",
-    }
     try:
-        data = vk_get(path, params)
-        items = data.get("items", []) if isinstance(data, dict) else data
-        spend = clicks = shows = 0
-        for item in items:
-            rows = item.get("rows", [])
-            for row in rows:
-                spend += int(float(row.get("spent", 0)))
-                clicks += int(row.get("clicks", 0))
-                shows += int(row.get("shows", 0))
+        if obj_type == "account" or obj_id is None:
+            # Берём все ad_plan ID и суммируем через total
+            ids = _get_all_adplan_ids()
+            if not ids:
+                return {"spend": 0, "clicks": 0, "shows": 0, "ctr": 0}
+            path = "/statistics/ad_plans/day.json"
+            obj_id_str = ",".join(ids[:100])  # API лимит
+        else:
+            path = f"/statistics/{obj_type}s/day.json"
+            obj_id_str = str(obj_id)
+
+        data = vk_get(path, {
+            "id": obj_id_str,
+            "date_from": date_from,
+            "date_to": date_to,
+            "metrics": "base",
+        })
+        # Используем агрегированный total вместо items (быстрее)
+        base = data.get("total", {}).get("base", {})
+        spend = int(float(base.get("spent", 0)))
+        clicks = int(base.get("clicks", 0))
+        shows = int(base.get("shows", 0))
         ctr = round(clicks / shows * 100, 2) if shows else 0
         return {"spend": spend, "clicks": clicks, "shows": shows, "ctr": ctr}
     except Exception as e:
