@@ -157,9 +157,24 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
             goals.forEach(function (g) { if (pct >= g.p) window.trackGoal(g.id); });
           }, { passive: true });
         };
+        // Защита tel: ссылок от перехвата сторонними скриптами (TMR, Metrika и др.)
+        // Bubble фаза: default action (<a href="tel:..."> → звонок) уже зафиксирован браузером.
+        // stopImmediatePropagation() блокирует последующих handlers на document (TMR, Metrika),
+        // которые иначе перехватили бы навигацию и перезапустили её программно → iOS-попап.
+        document.addEventListener('click', function (e) {
+          var t = e.target;
+          while (t && t !== document) {
+            if (t.tagName === 'A' && t.href && t.href.indexOf('tel:') === 0) {
+              e.stopImmediatePropagation();
+              window.trackGoal('phone_click');
+              return;
+            }
+            t = t.parentElement;
+          }
+        });
         window.initContactTracking = function (scope) {
           document.querySelectorAll(scope + ' a[href^="tel:"]').forEach(function (a) {
-            a.addEventListener('click', function () { window.trackGoal('phone_click'); });
+            // phone_click трекается через capture-обработчик выше
           });
           document.querySelectorAll(scope + ' a[href*="wa.me"]').forEach(function (a) {
             a.addEventListener('click', function () { window.trackGoal('whatsapp_click'); });
