@@ -1000,6 +1000,71 @@ stats = kinescope("GET", f"videos/{video_id}/statistics")
 
 ---
 
+## 📸 КАТАЛОГ ФОТ0 (Яндекс.Диск + Gemini Vision)
+
+**Скрипт:** `tools/sync_photos_catalog.py` (на сервере)  
+**БД:** PostgreSQL таблица `photos_catalog`  
+**Обновление:** ручное по требованию (не cron) — `python3 sync_photos_catalog.py`
+
+### Структура источника (Яндекс.Диск)
+```
+Лучшие фото/
+  ├── горизонтальные/     (154 фото)
+  └── вертикальные/       (212 фото)
+```
+
+### Таблица photos_catalog (PostgreSQL)
+```sql
+id              SERIAL PRIMARY KEY
+filename        VARCHAR(255)        — имя файла
+disk_path       TEXT               — путь на Яндекс.Диске
+format          VARCHAR(20)        — 'vertical' | 'horizontal'
+size_kb         INTEGER            — размер в KB
+ai_description  TEXT               — описание от Яндекса
+gemini_description TEXT            — анализ Gemini Vision
+tags            TEXT[]             — теги: дети, спорт, программирование, эмоции…
+use_cases       TEXT[]             — применение: website, ads, social, print
+download_url    TEXT               — публичная ссылка
+created_at      TIMESTAMP          — дата добавления
+updated_at      TIMESTAMP          — дата последнего обновления
+```
+
+### Поиск фото в коде
+```python
+# Из скрипта Python
+import psycopg2
+conn = psycopg2.connect("dbname=aidacamp_prod user=postgres host=localhost")
+cur = conn.cursor()
+
+# По формату
+cur.execute("SELECT * FROM photos_catalog WHERE format = %s LIMIT 10", ("vertical",))
+
+# По тегам (array overlap)
+cur.execute("SELECT * FROM photos_catalog WHERE tags && %s", (["дети", "спорт"],))
+
+# По use_cases
+cur.execute("SELECT * FROM photos_catalog WHERE use_cases && %s", (["website", "ads"],))
+
+# Случайное фото
+cur.execute("SELECT * FROM photos_catalog ORDER BY RANDOM() LIMIT 1")
+
+results = cur.fetchall()
+conn.close()
+```
+
+### Обогащение через Gemini Vision
+Анализ каждого фото через `google/gemini-1.5-flash` (OpenRouter):
+- **Описание:** что изображено, контекст, эмоции, ценность для лагеря
+- **Теги:** автоматически определяются по содержимому
+- **Use cases:** рекомендации для применения (веб, реклама, соцсети, печать)
+- **Format:** определяется по имени папки (горизонтальная/вертикальная)
+
+**Требуемые окружение переменные:**
+- `YADISK_TOKEN` — для доступа к файлам на Яндекс.Диске
+- `OPENROUTER_KEY` — для вызова Gemini Vision API
+
+---
+
 ## 🛠 MCP ИНСТРУМЕНТЫ (`mcp__aidacamp-tools__*`)
 
 Доступны всегда когда агент работает через Claude. Не требуют явного указания токенов.

@@ -21,7 +21,9 @@
 - `23.04.2026` · Исправлена обработка путей Яндекс.Диск API — избежана двойная префиксация `disk:disk:` при работе с публичными URL
 - `23.04.2026` · PostgreSQL таблица `photos_catalog` создана и заполнена (id, filename, disk_path, format, size_kb, ai_description, gemini_description, tags[], use_cases[], download_url, timestamps)
 - `23.04.2026` · **366 фото успешно добавлены** в каталог (0 ошибок) · формат auto-detect по имени папки (горизонтальные/вертикальные)
-- `23.04.2026` · **Ожидание:** GEMINI_API_KEY для обогащения каталога описаниями, тегами и use_cases через Gemini Vision API
+- `23.04.2026` · Интеграция OpenRouter для Gemini 1.5 Flash · используем OPENROUTER_KEY (уже есть в /opt/.env)
+- `23.04.2026` · Функция `analyze_with_gemini` переписана для OpenRouter API (google/gemini-1.5-flash)
+- `23.04.2026` · **В ПРОЦЕССЕ:** переобработка 366 фото через Gemini Vision (～15-30 мин) для обогащения описаниями, тегами и use_cases
 
 ### Исправления Direct API
 - `23.04.2026` · `token_health.py` — исправлен endpoint `/v5/accounts` → `/v5/campaigns` (accounts — только для агентов)
