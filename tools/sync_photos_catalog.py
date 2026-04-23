@@ -5,7 +5,7 @@
 Что делает:
   1. Читает папку "Лучшие фото" с Яндекс.Диска
   2. Получает AI-описания от Яндекса
-  3. Прогоняет через Gemini Vision для углубленного анализа
+  3. Прогоняет через Gemini Vision для углубленного анализа (OpenRouter API)
   4. Определяет формат (вертикальное/горизонтальное)
   5. Сохраняет в PostgreSQL (таблица photos_catalog) с embeddings
   6. Готово для поиска через RAG
@@ -173,7 +173,19 @@ def analyze_with_gemini(image_url: str, filename: str) -> dict:
         if image_url.startswith("http"):
             try:
                 with urllib.request.urlopen(image_url, timeout=10) as r:
-                    image_data = base64.b64encode(r.read()).decode()
+                    image_bytes = r.read()
+                    image_data = base64.b64encode(image_bytes).decode()
+                    # Определяем MIME-тип по первым байтам
+                    if image_bytes.startswith(b'\xff\xd8\xff'):
+                        mime_type = "image/jpeg"
+                    elif image_bytes.startswith(b'\x89PNG'):
+                        mime_type = "image/png"
+                    elif image_bytes.startswith(b'GIF8'):
+                        mime_type = "image/gif"
+                    elif image_bytes.startswith(b'RIFF') and b'WEBP' in image_bytes[:12]:
+                        mime_type = "image/webp"
+                    else:
+                        mime_type = "image/jpeg"  # default
             except Exception:
                 print(f"⚠️ Не удалось загрузить изображение по URL")
                 return {
@@ -184,8 +196,12 @@ def analyze_with_gemini(image_url: str, filename: str) -> dict:
                 }
         else:
             image_data = image_url
+            mime_type = "image/jpeg"  # default
 
         # OpenRouter API request через Gemini 1.5 Flash
+        # Формат: data:image/jpeg;base64,{base64_data}
+        image_url_format = f"data:{mime_type};base64,{image_data}"
+
         body = json.dumps({
             "model": "google/gemini-1.5-flash",
             "messages": [{
@@ -196,8 +212,10 @@ def analyze_with_gemini(image_url: str, filename: str) -> dict:
                         "text": prompt
                     },
                     {
-                        "type": "image",
-                        "image": image_data
+                        "type": "image_url",
+                        "image_url": {
+                            "url": image_url_format
+                        }
                     }
                 ]
             }],

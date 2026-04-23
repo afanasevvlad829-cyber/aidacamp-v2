@@ -1053,15 +1053,42 @@ conn.close()
 ```
 
 ### Обогащение через Gemini Vision
-Анализ каждого фото через `google/gemini-1.5-flash` (OpenRouter):
+Анализ каждого фото через `google/gemini-1.5-flash` (OpenRouter API):
 - **Описание:** что изображено, контекст, эмоции, ценность для лагеря
-- **Теги:** автоматически определяются по содержимому
-- **Use cases:** рекомендации для применения (веб, реклама, соцсети, печать)
-- **Format:** определяется по имени папки (горизонтальная/вертикальная)
+- **Теги:** автоматически определяются по содержимому (дети, спорт, программирование, эмоции)
+- **Use cases:** рекомендации для применения (website, ads, social, print)
+- **Format:** определяется по имени папки (горизонтальная/вертикальная) + подсказки от Gemini
+
+#### Техническая реализация (2026-04-23)
+**Исправление формата изображений для OpenRouter:**
+```python
+# ✅ ДО: HTTP 400 Bad Request
+{
+    "type": "image",
+    "image": "base64_raw_data"  # ❌ Неверный формат
+}
+
+# ✅ ПОСЛЕ: Работает корректно
+{
+    "type": "image_url",
+    "image_url": {
+        "url": "data:image/jpeg;base64,{base64_data}"  # ✅ Правильный формат
+    }
+}
+```
+
+**Детектирование MIME-типа:** сигнатура файла (JPEG/PNG/GIF/WebP)
+```python
+if image_bytes.startswith(b'\xff\xd8\xff'):  # JPEG
+    mime_type = "image/jpeg"
+elif image_bytes.startswith(b'\x89PNG'):    # PNG
+    mime_type = "image/png"
+# ...
+```
 
 **Требуемые окружение переменные:**
 - `YADISK_TOKEN` — для доступа к файлам на Яндекс.Диске
-- `OPENROUTER_KEY` — для вызова Gemini Vision API
+- `OPENROUTER_KEY` — для вызова Gemini Vision API (за счёт бюджета OpenRouter)
 
 ---
 
