@@ -12,9 +12,11 @@ export const ResponseSchema = z.object({
     'smeny', 'courses', 'day_schedule',
     'conditions', 'prices', 'location', 'gallery',
     'video_player', 'youtube_comment', 'tax_calculator',
+    'checklist', 'documents_list', 'faq_cards',
   ]).nullable(),
   block_data: z.record(z.string(), z.any()).nullable(),
   chips: z.array(ChipSchema).max(4),
+  badge: z.enum(['dad']).nullable().optional(),
 });
 
 export type AskResponse = z.infer<typeof ResponseSchema>;

@@ -160,7 +160,7 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
       100%{box-shadow:0 2px 12px rgba(13,27,42,.06)}
     }
 
-    .typing{align-self:flex-end;background:var(--surface-1);border:1px solid var(--border);border-radius:18px 4px 18px 18px;padding:14px 18px;display:none;gap:5px;align-items:center;box-shadow:0 1px 6px rgba(13,27,42,.05);margin-top:8px}
+    .typing{align-self:flex-end;background:var(--surface-1);border:1px solid var(--border);border-radius:18px 4px 18px 18px;padding:14px 18px;display:none;gap:5px;align-items:center;box-shadow:0 1px 6px rgba(13,27,42,.05);margin-top:8px;margin-bottom:6px}
     .typing.show{display:flex}
     .td{width:6px;height:6px;border-radius:50%;background:var(--text-muted);animation:td .9s infinite}
     .td:nth-child(2){animation-delay:.18s}.td:nth-child(3){animation-delay:.36s}
@@ -851,7 +851,7 @@ const COND=[
   {icon:'house-door',title:'Проживание',desc:'Корпуса по 2–4 человека, WiFi'},
   {icon:'cup-hot',title:'Питание',desc:'5 раз в день: завтрак, 2-й завтрак, обед, полдник, ужин. Аллергии учитываем'},
   {icon:'sun',title:'Бассейн',desc:'Через день, открытый'},
-  {icon:'shield-check',title:'Безопасность',desc:'Охрана 24/7, закрытая территория'},
+  {icon:'shield-check',title:'Охрана',desc:'24/7, видеокамеры — и фото в Telegram каждый день'},
   {icon:'heart-pulse-fill',title:'Медицина',desc:'Медсестра круглосуточно на территории'},
   {icon:'phone',title:'Связь',desc:'Фото в чат каждый день, звонки по расписанию'},
 ];
@@ -1310,20 +1310,35 @@ function blockPhotoCarousel(){
   wrap.appendChild(card);return wrap;
 }
 
+// Вертикальные видео (9:16, снятые на телефон)
+const VERTICAL_VIDS=new Set(['naDfzrei9duApz3AnaencH','tJAaAnvCYYJ5vRz7uyUepj','eTmCgZHcwhcWQQs3HLCz1S','s1SCYKqLx6C94fMRumitHF','wSsd3WTG8RWRFwg2usdpJC','wUhdcJ5RmsxpxKGu7DhtZH','g2S7xxtEUP4S2E3WXYFNqZ','2ULnxEqqC4ssLNYCh5YPvo']);
+// Подписи к видео
+const VIDEO_SUBS={'qmLxu2S7uaS44CKkhoV1Jj':'Основатель Дарья Афанасьева — о программе лагеря','tJAaAnvCYYJ5vRz7uyUepj':'Что меняется за неделю — рассказывает Дарья','naDfzrei9duApz3AnaencH':'Первые дни в лагере: от «не хочу» до «хочу ещё»','eTmCgZHcwhcWQQs3HLCz1S':'Как дети сами отказываются от телефона за 3 дня','s1SCYKqLx6C94fMRumitHF':'Внутренняя экономика лагеря: зарабатывают и тратят','wSsd3WTG8RWRFwg2usdpJC':'Игровая валюта и мотивация — как это работает','wUhdcJ5RmsxpxKGu7DhtZH':'Обзор лагеря: территория, корпуса, жизнь смены','g2S7xxtEUP4S2E3WXYFNqZ':'Проект участника — своя ферма на Scratch/Python','2ULnxEqqC4ssLNYCh5YPvo':'Проект участника — программирование дронов','iFCF2uprpHLxx9VgJ1M7SP':'Проект участника — игра на Unity'};
+
 function blockVideoPlayer(blockData){
   const vid=(blockData&&blockData.video_id)||'qmLxu2S7uaS44CKkhoV1Jj';
   const title=(blockData&&blockData.title)||'О лагере за 2 минуты';
+  const isVertical=VERTICAL_VIDS.has(vid);
+  const subtitle=VIDEO_SUBS[vid]||'АйДаКемп — видео из жизни лагеря';
   const wrap=mkEl('div','width:100%;animation:blockFade .5s ease-out both');
   const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
   const head=mkEl('div','padding:13px 18px;border-bottom:1px solid rgba(13,27,42,.07);display:flex;align-items:center;justify-content:space-between');
   head.innerHTML='<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:8px"><i class="bi bi-camera-video-fill" aria-hidden="true"></i>'+title+'</span>'
     +'<span style="font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;background:rgba(248,113,113,.12);color:#dc2626">Видео</span>';
   card.appendChild(head);
-  const poster=mkEl('div','cursor:pointer;overflow:hidden;background:linear-gradient(135deg,#e8edf4,#dee5ef)');
-  const pi=mkEl('div','height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px');
+
+  // Контейнер: для вертикальных — центрируем и ограничиваем ширину
+  const posterWrap=mkEl('div',isVertical?'display:flex;justify-content:center;background:#0d1b2a;padding:0':'');
+  const posterCss=isVertical
+    ? 'cursor:pointer;overflow:hidden;background:linear-gradient(135deg,#1a2a3a,#0d1b2a);width:min(280px,100%);aspect-ratio:9/16;position:relative'
+    : 'cursor:pointer;overflow:hidden;background:linear-gradient(135deg,#e8edf4,#dee5ef)';
+  const poster=mkEl('div',posterCss);
+  const pi=mkEl('div','width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px'+(isVertical?';min-height:300px':''));
+  if(!isVertical)pi.style.height='200px';
   const pb=mkEl('div','width:62px;height:62px;border-radius:50%;background:rgba(236,124,0,.9);display:flex;align-items:center;justify-content:center;box-shadow:0 0 32px rgba(236,124,0,.4);transition:.2s');
   pb.innerHTML='<i class="bi bi-play-fill" aria-hidden="true" style="font-size:26px;color:#fff;margin-left:3px"></i>';
-  pi.appendChild(pb);pi.appendChild(mkEl('div','font-size:13px;color:#4e6072','Нажмите для воспроизведения'));
+  const hintColor=isVertical?'rgba(255,255,255,.6)':'#4e6072';
+  pi.appendChild(pb);pi.appendChild(mkEl('div','font-size:13px;color:'+hintColor,'Нажмите для воспроизведения'));
   poster.appendChild(pi);
   poster.onmouseenter=()=>{pb.style.transform='scale(1.08)';pb.style.background='rgba(236,124,0,1)';};
   poster.onmouseleave=()=>{pb.style.transform='';pb.style.background='rgba(236,124,0,.9)';};
@@ -1331,13 +1346,19 @@ function blockVideoPlayer(blockData){
     poster.innerHTML='';
     const iframe=document.createElement('iframe');
     iframe.src='https://kinescope.io/embed/'+vid;
-    iframe.style.cssText='width:100%;height:220px;border:none;display:block';
+    if(isVertical){
+      iframe.style.cssText='width:100%;height:100%;border:none;display:block;position:absolute;top:0;left:0';
+      poster.style.position='relative';
+    } else {
+      iframe.style.cssText='width:100%;height:260px;border:none;display:block';
+    }
     iframe.allow='autoplay;fullscreen';iframe.setAttribute('allowfullscreen','');
     poster.appendChild(iframe);
     poster.style.cursor='default';poster.onmouseenter=null;poster.onmouseleave=null;poster.onclick=null;
   };
-  card.appendChild(poster);
-  card.appendChild(mkEl('div','padding:8px 16px 12px;font-size:11px;color:rgba(13,27,42,.35);text-align:center','Основатель Дарья Афанасьева — о программе и ценностях лагеря'));
+  posterWrap.appendChild(poster);
+  card.appendChild(posterWrap);
+  card.appendChild(mkEl('div','padding:8px 16px 12px;font-size:11px;color:rgba(13,27,42,.35);text-align:center',subtitle));
   wrap.appendChild(card);return wrap;
 }
 
