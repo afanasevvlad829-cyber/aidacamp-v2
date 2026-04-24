@@ -53,6 +53,9 @@ case "$cmd" in
     mkdir -p "$WORKTREE_DIR/.claude"
     cp "$REPO_ROOT/.claude/settings.json" "$WORKTREE_DIR/.claude/settings.json" 2>/dev/null || true
 
+    # Записываем назначенную ветку — pre-commit и session-start читают это
+    echo "$BRANCH" > "$WORKTREE_DIR/.claude/MY_BRANCH"
+
     echo ""
     echo -e "${GREEN}${BOLD}✅ Воркер создан!${NC}"
     echo ""
