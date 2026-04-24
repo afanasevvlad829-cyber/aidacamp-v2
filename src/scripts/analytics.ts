@@ -1,23 +1,24 @@
-import { YANDEX_METRIKA_ID } from '../data/tracking';
+import { YANDEX_METRIKA_ID, MAILRU_PIXEL_ID } from '../data/tracking';
 const fired = new Set<string>(JSON.parse(sessionStorage.getItem('ym_fired') || '[]'));
 
 function persist() {
   sessionStorage.setItem('ym_fired', JSON.stringify([...fired]));
 }
 
-export function trackGoal(id: string, params?: object) {
+export function trackGoal(id: string, params?: object, value = 100) {
   if (fired.has(id)) return;
   fired.add(id);
   persist();
+  // Яндекс.Метрика
   try {
     if (typeof (window as any).ym !== 'undefined') {
       (window as any).ym(YANDEX_METRIKA_ID, 'reachGoal', id, params ?? {});
     }
   } catch {}
-  // Fire JS event for VK pixel
+  // Top.Mail.Ru (VK Ads attribution) — единственное место вместо 11 дублирований
   try {
-    const event = new CustomEvent(id, { detail: params ?? {} });
-    window.dispatchEvent(event);
+    (window as any)._tmr = (window as any)._tmr ?? [];
+    (window as any)._tmr.push({ type: 'reachGoal', id: MAILRU_PIXEL_ID, value, goal: id });
   } catch {}
 }
 
