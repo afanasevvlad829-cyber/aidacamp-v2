@@ -180,6 +180,7 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
     const bookModal = document.getElementById('shiftBookModal') as HTMLDialogElement | null;
     if (!bookModal) return;
 
+    const bookShiftBlock = bookModal.querySelector<HTMLElement>('[data-book-shift-block]');
     const bookName = bookModal.querySelector('[data-book-shift-name]');
     const bookDates = bookModal.querySelector('[data-book-shift-dates]');
     const bookDuration = bookModal.querySelector('[data-book-shift-duration]');
@@ -240,13 +241,16 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
     document.querySelectorAll('[data-shift-book]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const el = btn as HTMLElement;
-        if (bookName) bookName.textContent = el.dataset.shiftBookName || '';
+        const name = el.dataset.shiftBookName || '';
+        if (bookName) bookName.textContent = name;
         if (bookDates) bookDates.textContent = el.dataset.shiftBookDates || '';
         if (bookDuration) bookDuration.textContent = el.dataset.shiftBookDuration || '';
         if (bookPrice) bookPrice.textContent = el.dataset.shiftBookPrice || '';
         if (bookError) bookError.classList.add('hidden');
+        // Показываем блок с данными о смене только если есть название
+        if (bookShiftBlock) bookShiftBlock.classList.toggle('hidden', !name);
         bookModal.showModal();
-        (window as any).trackGoal?.('shift_book_click', { shift: el.dataset.shiftBookName }, 500);
+        (window as any).trackGoal?.('shift_book_click', { shift: name }, 500);
       });
     });
 
