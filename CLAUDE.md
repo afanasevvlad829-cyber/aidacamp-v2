@@ -230,45 +230,65 @@ for root, dirs, files in os.walk('src'):
 
 ---
 
-## Параллельная разработка (несколько агентов одновременно)
+## Параллельная разработка — ЖЁСТКАЯ схема веток
 
-Владелец может запускать несколько агентов параллельно. Чтобы они не перетирали работу друг друга:
+```
+main  ← КАНОН. Только через PR из dev. Прямой пуш ЗАБЛОКИРОВАН GitHub.
+  ↑ PR (мастер-агент создаёт + мёрджит)
+dev   ← Тестовая зона. Только мастер-агент пишет напрямую (MASTER_AGENT=1).
+  ↑ PR (суб-агенты создают)
+agent/<задача>  ← Зона суб-агентов. Сюда пушить свободно.
+```
 
-### Правила для каждого агента:
+### Техническая защита (не обходить!)
 
-1. **Никогда не пушить напрямую в `dev`** — это зона главного агента (Claude). Только в свою ветку
-2. **Своя ветка называется `agent/<задача>`**, например:
-   - `agent/agebar-redesign`
-   - `agent/landing-seo`
-   - `agent/shifts-refactor`
-3. **Перед стартом** — получить свежий `dev`:
-   ```bash
-   git fetch origin
-   git checkout dev
-   git pull --rebase origin dev
-   git checkout -b agent/<задача>
-   ```
-4. **После завершения работы** — сообщить владельцу, НЕ мёрджить самостоятельно в `dev`
-5. **Владелец** сам решает когда и что мёрджить в `dev` и деплоить
+- **GitHub branch protection** на `main` — требует PR, прямой пуш отклоняется сервером
+- **pre-push hook** (`scripts/hooks/pre-push`) — блокирует пуш в `main` и `dev` без флага
 
-### Главный агент — Claude (основная сессия с владельцем):
+### Суб-агент — ОБЯЗАТЕЛЬНЫЙ алгоритм:
 
-- Работает напрямую на `dev`
-- Перед деплоем всегда проверяет нет ли чужих коммитов:
-  ```bash
-  git fetch origin
-  git log origin/dev..dev    # мои коммиты, которые не запушены
-  git log dev..origin/dev    # чужие коммиты, которые я не видел
-  ```
-- Если чужие коммиты есть — сначала `git pull --rebase origin dev`, потом деплой
+```bash
+# 1. Старт — взять свежий dev
+git fetch origin
+git checkout dev && git pull --rebase origin dev
 
-### Что произошло если коммит появился неожиданно:
+# 2. Создать свою ветку
+git checkout -b agent/<задача>   # например: agent/seo-articles, agent/hero-redesign
+
+# 3. Работать, коммитить, пушить ТОЛЬКО в свою ветку
+git push origin agent/<задача>
+
+# 4. Открыть PR в dev
+gh pr create --base dev --title "..." --body "..."
+
+# 5. Сообщить мастер-агенту — НЕ мёрджить самому
+```
+
+❌ **НИКОГДА:** `git push origin dev` — хук заблокирует и объяснит почему
+❌ **НИКОГДА:** `git push origin main` — GitHub отклонит
+
+### Мастер-агент (основная сессия с владельцем):
+
+```bash
+# Пуш в dev (только мастер-агент, после проверки PR от суб-агентов):
+MASTER_AGENT=1 git push origin dev
+
+# Деплой в прод — через PR (не прямой merge!):
+gh pr create --base main --head dev --title "deploy: <описание>"
+gh pr merge --merge   # или одобрить в GitHub UI
+
+# Перед любым пушем — проверить нет ли новых чужих коммитов:
+git fetch origin
+git log dev..origin/dev --oneline   # чужие коммиты которых я не видел
+```
+
+### Если коммит появился неожиданно:
 
 ```bash
 git fetch origin
-git log dev..origin/dev --oneline   # показывает новые чужие коммиты
-git show <hash>                      # смотришь что там
-git pull --rebase origin dev         # принимаешь изменения
+git log dev..origin/dev --oneline   # что пришло
+git show <hash>                      # посмотреть
+git pull --rebase origin dev         # принять
 ```
 
 ---
@@ -298,9 +318,12 @@ git pull --rebase origin dev         # принимаешь изменения
 
 ### Команды выкатки в прод (полный цикл):
 ```bash
-git checkout main && git merge dev
+# Создать PR dev → main и смёрджить (main защищён, прямой пуш заблокирован)
+gh pr create --base main --head dev --title "deploy: $(date +%Y-%m-%d)" --body "Production deploy"
+gh pr merge --merge --delete-branch=false
+
+# Задеплоить прод
 ./scripts/deploy.sh prod
-git checkout dev
 ```
 
 ### Текущее состояние:
