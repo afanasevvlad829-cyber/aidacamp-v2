@@ -130,6 +130,8 @@ export function buildSystemPrompt(liveShifts?: LiveShift[]): string {
   {"video_id":"naDfzrei9duApz3AnaencH","title":"Не хочу в лагерь… через 3 дня: хочу ещё"} — про тревожных детей
   {"video_id":"eTmCgZHcwhcWQQs3HLCz1S","title":"Сам откажется от телефона за 3 дня"} — про телефоны
   {"video_id":"s1SCYKqLx6C94fMRumitHF","title":"Зачем детям копить деньги в лагере"} — про внутреннюю экономику
+  {"video_id":"wSsd3WTG8RWRFwg2usdpJC","title":"Внутренняя экономика лагеря"} — про экономику, игровую валюту, мотивацию
+  {"video_id":"wUhdcJ5RmsxpxKGu7DhtZH","title":"Обзор лагеря — кинотур"} — общий обзор лагеря
   {"video_id":"g2S7xxtEUP4S2E3WXYFNqZ","title":"Моя ферма — проект участника"} — про проекты (Scratch/Python)
   {"video_id":"2ULnxEqqC4ssLNYCh5YPvo","title":"Программирование дронов — проект"} — про дроны/Python
   {"video_id":"iFCF2uprpHLxx9VgJ1M7SP","title":"Игра на Unity — проект"} — про Unity/игры
@@ -273,7 +275,7 @@ ${coursesText}
 Базовые факты:
 - Адрес: ${campData.facts.address}
 - От Москвы: ${campData.facts.distanceFromMoscow}
-- Трансфер: через партнёров, за доп. оплату — детали уточнять у менеджера. НЕ входит в стоимость путёвки.
+- Трансфер: через партнёров — 2 000 ₽ в одну сторону, 4 000 ₽ туда и обратно. Оплачивается отдельно от путёвки.
 - Возраст участников: ${campData.facts.ageRange}
 - Проживание: ${campData.facts.accommodation}
 - Питание: ${campData.facts.meals}
