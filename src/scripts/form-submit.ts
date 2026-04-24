@@ -1,4 +1,5 @@
 import { MAILRU_PIXEL_ID } from '../data/tracking';
+import { STORAGE_KEYS } from '../lib/storage';
 
 /** Читает _ym_uid из cookie как fallback для ym_client_id */
 function getYmUidCookie(): string {
@@ -17,7 +18,7 @@ function collectContext(): Record<string, string> {
 
   // UTM: если в URL есть — сохраняем в sessionStorage; иначе берём сохранённые
   const stored: Record<string, string> = JSON.parse(
-    sessionStorage.getItem('ac_attribution') || '{}'
+    sessionStorage.getItem(STORAGE_KEYS.attribution) || '{}'
   );
   const currentUtm: Record<string, string> = {
     utm_source: pick('utm_source'),
@@ -29,7 +30,7 @@ function collectContext(): Record<string, string> {
     gclid: pick('gclid'),
   };
   if (Object.values(currentUtm).some(Boolean)) {
-    sessionStorage.setItem('ac_attribution', JSON.stringify(currentUtm));
+    sessionStorage.setItem(STORAGE_KEYS.attribution, JSON.stringify(currentUtm));
   }
   const attr = Object.values(currentUtm).some(Boolean) ? currentUtm : stored;
 

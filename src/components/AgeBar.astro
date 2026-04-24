@@ -108,6 +108,7 @@ const ageCountsJson = JSON.stringify({
 
 <script type="module">
   import { trackGoal } from '../scripts/analytics';
+  import { STORAGE_KEYS } from '../lib/storage';
   const bar       = document.getElementById('age-bar');
   const AGE_COUNTS = JSON.parse(bar?.dataset.ageCounts || '{}');
   const phase1    = document.getElementById('age-bar-phase1');
@@ -118,21 +119,18 @@ const ageCountsJson = JSON.stringify({
   const nudgeClose= document.getElementById('age-bar-nudge-close');
   const ageBtns   = document.querySelectorAll('.age-btn');
 
-  const DISMISSED_KEY = 'age_bar_dismissed';
-  const AGE_KEY       = 'user_age_group';
-
   function isDismissed() {
-    return !!sessionStorage.getItem(DISMISSED_KEY);
+    return !!sessionStorage.getItem(STORAGE_KEYS.ageBarDismissed);
   }
 
   let awakenTimer = null;
 
   // Единый source of truth для «выбран ли возраст в текущей сессии» — sessionStorage.
-  // localStorage (AGE_KEY) остаётся только для персонала между визитами, но НЕ
+  // localStorage (userAgeGroup) остаётся только для персонализации между визитами, но НЕ
   // используется как триггер «уже выбрал» (Fix 2026-04-20 — синхронизация
   // AgeBar ↔ ShiftModal ↔ Shifts.peer-count).
   function currentAge() {
-    return sessionStorage.getItem('selected_age');
+    return sessionStorage.getItem(STORAGE_KEYS.selectedAge);
   }
 
   function showBar() {
@@ -172,7 +170,7 @@ const ageCountsJson = JSON.stringify({
   function hideBar() {
     bar?.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
     bar?.classList.remove('translate-y-0', 'opacity-100', 'age-bar-awaken');
-    sessionStorage.setItem(DISMISSED_KEY, '1');
+    sessionStorage.setItem(STORAGE_KEYS.ageBarDismissed, '1');
     clearTimeout(awakenTimer);
   }
 
@@ -214,8 +212,8 @@ const ageCountsJson = JSON.stringify({
       trackGoal('age_select');
 
       // Сохраняем возраст
-      sessionStorage.setItem('selected_age', age);
-      localStorage.setItem(AGE_KEY, age);
+      sessionStorage.setItem(STORAGE_KEYS.selectedAge, age);
+      localStorage.setItem(STORAGE_KEYS.userAgeGroup, age);
 
       // Персонализация страницы
       document.dispatchEvent(new CustomEvent('age-personalize', { detail: { age } }));

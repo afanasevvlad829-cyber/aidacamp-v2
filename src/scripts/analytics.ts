@@ -1,8 +1,9 @@
 import { YANDEX_METRIKA_ID, MAILRU_PIXEL_ID } from '../data/tracking';
-const fired = new Set<string>(JSON.parse(sessionStorage.getItem('ym_fired') || '[]'));
+import { STORAGE_KEYS } from '../lib/storage';
+const fired = new Set<string>(JSON.parse(sessionStorage.getItem(STORAGE_KEYS.ymFired) || '[]'));
 
 function persist() {
-  sessionStorage.setItem('ym_fired', JSON.stringify([...fired]));
+  sessionStorage.setItem(STORAGE_KEYS.ymFired, JSON.stringify([...fired]));
 }
 
 export function trackGoal(id: string, params?: object, value = 100) {
