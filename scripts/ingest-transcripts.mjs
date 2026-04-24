@@ -78,7 +78,7 @@ async function insertChunks(chunks) {
     for (let i = 0; i < chunks.length; i++) {
       if (!DRY) {
         await client.query(
-          'INSERT INTO knowledge_chunks (content, embedding, source) VALUES ($1, $2, $3)',
+          'INSERT INTO knowledge_chunks (text, embedding, source) VALUES ($1, $2, $3)',
           [chunks[i].text, JSON.stringify(vecs[i]), chunks[i].source]
         );
       }
@@ -106,7 +106,7 @@ async function ingestTranscripts() {
   const client = await pool.connect();
   let existing;
   try {
-    const r = await client.query('SELECT DISTINCT source FROM knowledge_chunks WHERE source LIKE \'audio_%\' OR source LIKE \'publication_%\'');
+    const r = await client.query('SELECT DISTINCT source FROM knowledge_chunks WHERE source LIKE \'audio_%\' OR source LIKE \'publication_%\' OR source LIKE \'pub_%\'');
     existing = new Set(r.rows.map(r => r.source));
   } finally { client.release(); }
 
@@ -152,7 +152,7 @@ async function ingestTranscripts() {
     }
   }
 
-  // ── Публикации ───────────────────────────────────────────
+  // ── Публикация мамы-тестировщика (legacy) ───────────────
   const pubFiles = fs.existsSync(notesDir)
     ? fs.readdirSync(notesDir).filter(f => f.startsWith('Публикация') && f.endsWith('.txt'))
     : [];
@@ -173,6 +173,41 @@ async function ingestTranscripts() {
     await insertChunks(chunks);
     total += chunks.length;
     await sleep(DELAY_MS);
+  }
+
+  // ── Публикации (папка Публикации/) ──────────────────────
+  const pubDir = path.join(notesDir, 'Публикации');
+  if (fs.existsSync(pubDir)) {
+    const pubFilesNew = fs.readdirSync(pubDir).filter(f => f.endsWith('.txt')).sort();
+    console.log(`\n📰 Публикации Дарьи (${pubFilesNew.length} файлов):`);
+
+    for (const file of pubFilesNew) {
+      // file = "publication_665eb6ad2d6c5926f57f227d.txt" → source = "pub_665eb6ad2d6c5926f57f227d"
+      const id = file.replace('publication_', '').replace('.txt', '');
+      const source = `pub_${id}`;
+
+      if (existing.has(source)) {
+        console.log(`  skip (уже есть): ${source}`);
+        continue;
+      }
+
+      const raw = fs.readFileSync(path.join(pubDir, file), 'utf-8');
+      if (raw.trim().length < 30) {
+        console.log(`  skip (пустой): ${file}`);
+        continue;
+      }
+
+      // First non-empty line = title
+      const title = raw.split('\n').find(l => l.trim().length > 5) || file;
+      const enriched = `ПУБЛИКАЦИЯ ДАРЬИ АФАНАСЬЕВОЙ (основатель АйДаКемп, IT-лагерь для детей) — "${title.trim()}"\n\n${raw}`;
+
+      const chunks = chunkText(enriched, source);
+      console.log(`  ${source}: ${chunks.length} чанков — "${title.trim().slice(0, 60)}"`);
+
+      await insertChunks(chunks);
+      total += chunks.length;
+      await sleep(DELAY_MS);
+    }
   }
 
   console.log(`\n✅ Готово. Добавлено ${total} новых чанков`);
