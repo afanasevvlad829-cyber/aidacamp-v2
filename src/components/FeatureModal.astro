@@ -1,0 +1,93 @@
+---
+export interface Props {
+  id: string;
+  icon: string;
+  iconBg: string;
+  iconColor: string;
+  title: string;
+  contentBg: string;
+  whatIs: string;
+  whyMatters: Array<{ title: string; description: string }>;
+  whatWeDo: string;
+}
+
+const { id, icon, iconBg, iconColor, title, contentBg, whatIs, whyMatters, whatWeDo } = Astro.props;
+const closeAttr = `data-${id}-close`;
+const modalId = `${id}Modal`;
+---
+
+<dialog
+  id={modalId}
+  class="fixed inset-0 m-auto w-[min(92vw,460px)] rounded-[20px] border-0 outline-none bg-white p-0 shadow-[0_24px_64px_rgba(15,23,42,0.22)] backdrop:bg-black/45 backdrop:backdrop-blur-sm"
+>
+  <div class="p-6">
+    <!-- Header -->
+    <div class="flex items-start justify-between gap-3 mb-5">
+      <div class="flex items-center gap-3">
+        <div class={`flex h-10 w-10 items-center justify-center rounded-lg ${iconBg}`}>
+          <i class={`bi ${icon} text-[20px] ${iconColor}`} aria-hidden="true"></i>
+        </div>
+        <h3 class="text-[18px] font-bold text-slate-900 leading-[1.25]">{title}</h3>
+      </div>
+      <button
+        type="button"
+        data-close-modal={id}
+        class="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition outline-none focus:outline-none"
+        aria-label="Закрыть"
+      >
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- What is it -->
+    <p class="text-[14px] font-semibold text-slate-800 mb-3">Что такое {title}?</p>
+    <p class="text-[14px] text-slate-600 leading-[1.6] mb-5">{whatIs}</p>
+
+    <!-- Why matters -->
+    <p class="text-[14px] font-semibold text-slate-800 mb-3">Зачем это нужно детям?</p>
+    <ul class="space-y-2.5 mb-5">
+      {whyMatters.map((item) => (
+        <li class="flex items-start gap-3">
+          <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center text-orange-500">
+            <i class="bi bi-check-lg text-[14px]" aria-hidden="true"></i>
+          </span>
+          <p class="text-[14px] text-slate-600">
+            <span class="font-semibold text-slate-800">{item.title}:</span> {item.description}
+          </p>
+        </li>
+      ))}
+    </ul>
+
+    <!-- What we do -->
+    <div class={`rounded-[14px] ${contentBg} px-4 py-3.5`}>
+      <p class="text-[14px] font-semibold text-slate-800 mb-2">Что мы с этим делаем</p>
+      <p class="text-[14px] text-slate-700 leading-[1.5]">{whatWeDo}</p>
+    </div>
+  </div>
+</dialog>
+
+<script is:inline>
+  (function() {
+    const modalId = document.currentScript?.previousElementSibling?.id || '{id}Modal';
+    const modal = document.getElementById(modalId);
+
+    if (!modal) return;
+
+    // Close button handler
+    const closeBtn = modal.querySelector('[data-close-modal="{id}"]');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        modal.close();
+      });
+    }
+
+    // Click outside to close
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.close();
+      }
+    });
+  })();
+</script>
