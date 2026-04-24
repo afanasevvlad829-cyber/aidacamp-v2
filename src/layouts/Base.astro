@@ -146,12 +146,13 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         var YM_ID = 96499295;
         var _fired = new Set(JSON.parse(sessionStorage.getItem('ym_fired') || '[]'));
         function _persist() { try { sessionStorage.setItem('ym_fired', JSON.stringify([..._fired])); } catch(e){} }
-        window.trackGoal = function (id, params) {
+        var TMR_ID = 3755202;
+        window.trackGoal = function (id, params, value) {
           if (_fired.has(id)) return;
           _fired.add(id);
           _persist();
           try { if (typeof window.ym !== 'undefined') window.ym(YM_ID, 'reachGoal', id, params || {}); } catch(e){}
-          try { window.dispatchEvent(new CustomEvent(id, { detail: params || {} })); } catch(e){}
+          try { window._tmr = window._tmr || []; window._tmr.push({ type: 'reachGoal', id: TMR_ID, value: value || 100, goal: id }); } catch(e){}
         };
         window.initScrollTracking = function () {
           var goals = [{p:25,id:'scroll_25'},{p:50,id:'scroll_50'},{p:75,id:'scroll_75'},{p:90,id:'scroll_90'}];
