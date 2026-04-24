@@ -9,6 +9,8 @@ import MomStory from '../components/MomStory.astro';
 import ShiftOccupancy from '../components/ShiftOccupancy.astro';
 import GlobalShiftLinkHandler from '../components/GlobalShiftLinkHandler.astro';
 import FAQSchema from '../components/FAQSchema.astro';
+import { PHONE_MAIN, EMAIL, STAT_RATING, CAMP_PRICE_FROM } from '../data/contacts';
+import { reviews } from '../data/reviews';
 
 interface Props {
   title: string;
@@ -20,16 +22,23 @@ interface Props {
 
 const { title, description, h1, canonical, heroImage } = Astro.props;
 
+const reviewCount = reviews.length.toString();
+
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": ["EducationalOrganization", "LocalBusiness"],
+  "@type": ["SummerCamp", "LocalBusiness"],
+  "@id": "https://aidacamp.ru/#camp",
   "name": "АйДаКемп",
-  "description": "IT-лагерь для детей 7–15 лет в Подмосковье",
+  "description": "Детский IT-лагерь для детей 7–15 лет в Подмосковье. Python, AI, Minecraft, бассейн. Каждый ребёнок уезжает с собственным проектом.",
   "url": "https://aidacamp.ru",
-  "telephone": "+74951284429",
+  "telephone": PHONE_MAIN,
+  "email": EMAIL,
+  "priceRange": `от ${CAMP_PRICE_FROM} ₽`,
+  "image": "https://aidacamp.ru/images/hero-custom-2026-04-07-1100.avif",
   "address": {
     "@type": "PostalAddress",
-    "addressLocality": "Наро-Фоминский район",
+    "streetAddress": "территория «Санаторий Изумруд»",
+    "addressLocality": "Наро-Фоминский городской округ",
     "addressRegion": "Московская область",
     "addressCountry": "RU"
   },
@@ -37,6 +46,19 @@ const jsonLd = {
     "@type": "GeoCoordinates",
     "latitude": 55.265643,
     "longitude": 36.724185
+  },
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": STAT_RATING,
+    "bestRating": "5",
+    "worstRating": "1",
+    "ratingCount": reviewCount,
+    "reviewCount": reviewCount
+  },
+  "parentOrganization": {
+    "@type": "Organization",
+    "@id": "https://aidacamp.ru/#organization",
+    "name": "АйДаКемп"
   }
 };
 ---
