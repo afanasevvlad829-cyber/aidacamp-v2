@@ -55,6 +55,11 @@ export const landingPages: LandingPage[] = [
   { title: 'Налоговый вычет 13%', description: 'Калькулятор возврата с путёвки', url: '/nalogovyj-vychet', icon: 'bi-receipt' },
   { title: 'Лагерь недорого', description: 'От 48 000 ₽ за смену, оплата частями', url: '/lager-nedorogo', icon: 'bi-tag' },
 
+  // 📍 Гео-LP
+  { title: 'Лагерь рядом с Подольском', description: 'IT-лагерь, 40 км от Подольска', url: '/lager-podolsk', icon: 'bi-geo-alt' },
+  { title: 'Лагерь в Наро-Фоминском районе', description: 'Санаторий Изумруд, 66 км от МКАД', url: '/lager-naro-fominsk', icon: 'bi-tree' },
+  { title: 'Лагерь из Новой Москвы', description: 'По Калужскому шоссе, 40–60 км', url: '/lager-novaya-moskva', icon: 'bi-geo-alt-fill' },
+
   // 🎨 Прочее
   { title: 'Лагерь без телефонов', description: 'Ребёнок без гаджетов 24/7', url: '/lager-bez-telefonov', icon: 'bi-phone-x' },
   { title: 'Тематический лагерь', description: 'Каждая смена — своя тема', url: '/tematicheskiy-lager', icon: 'bi-bullseye' },
