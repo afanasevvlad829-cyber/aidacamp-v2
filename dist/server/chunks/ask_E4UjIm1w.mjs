@@ -271,9 +271,9 @@ function buildSystemPrompt(liveShifts) {
 
 ПРАВИЛА БЛОКОВ:
 - Смены/даты/когда → block_type: "smeny"
-- Возраст/подходит ли для X лет/что для X-летнего/курсы/направления/что делают → block_type: "courses", передай {"age": N} если знаешь возраст
+- Возраст/подходит ли для X лет/что для X-летнего/курсы/направления/что делают на смене/чему учат/что изучают/программа обучения → block_type: "courses", передай {"age": N} если знаешь возраст
 - Вопрос «сколько процентов возвращаются» / «возвращаемость» без слова «деньги» / «вернуть» → это про детей которые едут снова (60%), а НЕ про возврат денег
-- Распорядок/как день проходит → block_type: "day_schedule"
+- Распорядок/как день проходит/по часам/с утра до вечера → block_type: "day_schedule"
 - Условия целиком / проживание+безопасность+всё-что-входит → block_type: "conditions"
 - ОДИН конкретный вопрос (питание, бассейн, медицина, охрана отдельно) → block_type: null, ответь коротко в тексте
 - Цены/стоимость → block_type: "prices"
@@ -396,6 +396,11 @@ TELEGRAM-КАНАЛ СМЕНЫ:
 Отзывы — только из КОНТЕКСТА. Не сочиняй похожие.
 Статистика (рейтинг, количество детей) — только: 5.0★ на Яндекс.Картах, 40+ отзывов, 7 лет, 1200+ детей, 60% возвращаются.
 
+ЗАПРЕЩЕНО ДОРИСОВЫВАТЬ ЛОГИЧНЫЕ ДЕТАЛИ:
+Если факта нет в разделе ФАКТЫ или КОНТЕКСТ — не добавляй его, даже если он звучит правдоподобно.
+Примеры запрещённых дорисовок: «ребята уже знают друг друга по фото до приезда», «в первый день обычно...», «педагоги заранее...», «принято что...»
+Правило: не знаешь — не говоришь. Вместо дорисовки — честный ответ «уточните у менеджера» + chip contact_request.
+
 ИСТОРИИ — АБСОЛЮТНЫЙ ЗАПРЕТ НА ВЫДУМКУ:
 Если просят «расскажи историю» / «был ли такой случай» / «приведи пример» — в КОНТЕКСТЕ ниже есть реальные истории Дарьи (source: darya_story_*) и реальные отзывы родителей. Используй ТОЛЬКО их.
 Пересказывай историю Дарьи своими словами в тоне подруги — «Дарья рассказывала, был у неё такой случай...»
@@ -423,7 +428,8 @@ ${coursesText}
 
 Базовые факты:
 - Адрес: ${campData.facts.address}
-- От Москвы: ${campData.facts.distanceFromMoscow}, трансфер от м. Солнцево включён
+- От Москвы: ${campData.facts.distanceFromMoscow}
+- Трансфер: через партнёров, за доп. оплату — детали уточнять у менеджера. НЕ входит в стоимость путёвки.
 - Возраст участников: ${campData.facts.ageRange}
 - Проживание: ${campData.facts.accommodation}
 - Питание: ${campData.facts.meals}
@@ -471,7 +477,8 @@ const ResponseSchema = z.object({
 const { Pool } = pg;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const DATABASE_URL = process.env.DATABASE_URL;
-const MIN_SCORE = 0.4;
+const MIN_SCORE_TRUSTED = 0.42;
+const MIN_SCORE_DIALOG = 0.45;
 let _pool = null;
 function getPool() {
   if (!_pool && DATABASE_URL) {
@@ -513,36 +520,58 @@ function openaiEmbed(text) {
     req.end();
   });
 }
-async function ragContext(question, topK = 5) {
+async function ragSearch(question) {
+  const empty = { context: "", isEmpty: true, trustedCount: 0 };
   const pool = getPool();
-  if (!pool || !OPENAI_API_KEY) return "";
+  if (!pool || !OPENAI_API_KEY) return empty;
   let qVec;
   try {
     qVec = await openaiEmbed(question);
   } catch {
-    return "";
+    return empty;
   }
-  if (!qVec.length) return "";
+  if (!qVec.length) return empty;
+  const vecStr = `[${qVec.join(",")}]`;
   try {
-    const { rows } = await pool.query(
+    const { rows: trusted } = await pool.query(
       `SELECT source, text, 1 - (embedding <=> $1::vector) AS score
        FROM knowledge_chunks
+       WHERE source NOT LIKE 'tg_%' AND source NOT LIKE 'wa_%'
        ORDER BY embedding <=> $1::vector
-       LIMIT $2`,
-      [`[${qVec.join(",")}]`, topK]
+       LIMIT 5`,
+      [vecStr]
     );
-    const relevant = rows.filter((r) => r.score >= MIN_SCORE);
-    if (!relevant.length) return "";
-    const texts = relevant.map((r) => `[${r.source}]
+    const trustedOk = trusted.filter((r) => r.score >= MIN_SCORE_TRUSTED);
+    let dialogOk = [];
+    if (trustedOk.length < 3) {
+      const need = 6 - trustedOk.length;
+      const { rows: dialogs } = await pool.query(
+        `SELECT source, text, 1 - (embedding <=> $1::vector) AS score
+         FROM knowledge_chunks
+         WHERE (source LIKE 'tg_%' OR source LIKE 'wa_%')
+         ORDER BY embedding <=> $1::vector
+         LIMIT $2`,
+        [vecStr, need * 2]
+        // берём с запасом, потом фильтруем
+      );
+      dialogOk = dialogs.filter((r) => r.score >= MIN_SCORE_DIALOG).slice(0, need);
+    }
+    const all = [...trustedOk, ...dialogOk];
+    if (!all.length) return empty;
+    const texts = all.map((r) => `[${r.source}]
 ${r.text}`).join("\n\n---\n\n");
-    return `
+    return {
+      context: `
 
-КОНТЕКСТ ИЗ БАЗЫ ЗНАНИЙ (реальные истории и слова Дарьи — используй если релевантно, своими словами):
+КОНТЕКСТ ИЗ БАЗЫ ЗНАНИЙ (реальные слова Дарьи и отзывы родителей — используй если релевантно, своими словами):
 
 ${texts}
-`;
+`,
+      isEmpty: false,
+      trustedCount: trustedOk.length
+    };
   } catch {
-    return "";
+    return empty;
   }
 }
 
@@ -590,6 +619,17 @@ function getLivePrompt() {
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || ""
 });
+const NO_RAG_FACTUAL = JSON.stringify({
+  state: "ok",
+  text: "По этому вопросу лучше уточнить напрямую — менеджер ответит точно и быстро.",
+  block_type: null,
+  block_data: null,
+  chips: [
+    { label: "Написать в WhatsApp", action: "contact_request" },
+    { label: "Смены 2026", query: "смены и цены" },
+    { label: "Условия", query: "условия проживания" }
+  ]
+});
 const TIMEOUT_FALLBACK = JSON.stringify({
   state: "ok",
   text: 'Что-то подвисло на сервере — бывает. Напишите нам напрямую, ответим быстро: <a href="https://wa.me/79688086455" target="_blank" rel="noopener">WhatsApp</a> или <a href="https://t.me/Progaschool" target="_blank" rel="noopener">Telegram @Progaschool</a>.',
@@ -610,11 +650,29 @@ const POST = async ({ request }) => {
         headers: { "Content-Type": "application/json" }
       });
     }
-    const [rag, basePrompt] = await Promise.all([
-      ragContext(message, 4),
+    const [ragResult, basePrompt] = await Promise.all([
+      ragSearch(message),
       Promise.resolve(getLivePrompt())
     ]);
-    const systemText = basePrompt + rag;
+    const factKeywordsNotInFacts = [
+      "трансфер",
+      "автобус",
+      "добраться",
+      "доехать",
+      "соседи",
+      "комнат",
+      "поселен",
+      "преподаватель",
+      "педагог",
+      "учитель",
+      "документ",
+      "справк"
+    ];
+    const needsRagGate = factKeywordsNotInFacts.some((kw) => message.toLowerCase().includes(kw));
+    if (needsRagGate && ragResult.isEmpty) {
+      return new Response(NO_RAG_FACTUAL, { headers: { "Content-Type": "application/json" } });
+    }
+    const systemText = basePrompt + ragResult.context;
     const messages = [
       ...history.slice(-10).map((m) => ({
         role: m.role,
@@ -625,6 +683,7 @@ const POST = async ({ request }) => {
     const response = await client.messages.create({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 1024,
+      temperature: 0,
       system: [
         {
           type: "text",

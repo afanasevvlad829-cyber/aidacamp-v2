@@ -3,7 +3,7 @@ import type { APIRoute } from 'astro';
 import Anthropic from '@anthropic-ai/sdk';
 import { buildSystemPrompt } from '../../lib/ai/systemPrompt';
 import { ResponseSchema } from '../../lib/ai/responseSchema';
-import { ragContext } from '../../lib/ai/rag';
+import { ragSearch } from '../../lib/ai/rag';
 import { findPhotos } from '../../lib/ai/photoSearch';
 import { readFileSync } from 'node:fs';
 
@@ -34,6 +34,34 @@ const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || import.meta.env.ANTHROPIC_API_KEY,
 });
 
+// Ключевые слова фактических вопросов — при отсутствии RAG-контекста не генерируем факты
+const FACTUAL_KEYWORDS = [
+  'трансфер', 'автобус', 'добраться', 'доехать', 'дорога', 'адрес',
+  'стоит', 'цена', 'стоимость', 'сколько', 'рублей', 'оплат',
+  'когда', 'дата', 'числа', 'июн', 'август', 'май', 'смена',
+  'соседи', 'комнат', 'живут', 'поселен',
+  'преподаватель', 'педагог', 'учитель', 'вожатый',
+  'документ', 'справк', 'договор', 'лицензи',
+];
+
+function isFactualQuestion(q: string): boolean {
+  const lower = q.toLowerCase();
+  return FACTUAL_KEYWORDS.some(kw => lower.includes(kw));
+}
+
+// Ответ-редирект к менеджеру — когда нет RAG для фактического вопроса
+const NO_RAG_FACTUAL = JSON.stringify({
+  state: 'ok',
+  text: 'По этому вопросу лучше уточнить напрямую — менеджер ответит точно и быстро.',
+  block_type: null,
+  block_data: null,
+  chips: [
+    { label: 'Написать в WhatsApp', action: 'contact_request' },
+    { label: 'Смены 2026', query: 'смены и цены' },
+    { label: 'Условия', query: 'условия проживания' },
+  ],
+});
+
 // Резервный ответ при таймауте — лучше чем пустой экран
 const TIMEOUT_FALLBACK = JSON.stringify({
   state: 'ok',
@@ -59,12 +87,25 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // RAG: ищем релевантные фрагменты из базы знаний (параллельно со сборкой промпта)
-    const [rag, basePrompt] = await Promise.all([
-      ragContext(message, 4),
+    const [ragResult, basePrompt] = await Promise.all([
+      ragSearch(message),
       Promise.resolve(getLivePrompt()),
     ]);
 
-    const systemText = basePrompt + rag;
+    // HARD GATE: фактический вопрос + нет RAG-контекста → редирект к менеджеру
+    // Исключение: вопросы про смены/цены/курсы покрыты facts в системном промпте
+    const factKeywordsNotInFacts = [
+      'трансфер', 'автобус', 'добраться', 'доехать',
+      'соседи', 'комнат', 'поселен',
+      'преподаватель', 'педагог', 'учитель',
+      'документ', 'справк',
+    ];
+    const needsRagGate = factKeywordsNotInFacts.some(kw => message.toLowerCase().includes(kw));
+    if (needsRagGate && ragResult.isEmpty) {
+      return new Response(NO_RAG_FACTUAL, { headers: { 'Content-Type': 'application/json' } });
+    }
+
+    const systemText = basePrompt + ragResult.context;
 
     const messages: Anthropic.MessageParam[] = [
       ...history.slice(-10).map((m) => ({
@@ -77,6 +118,7 @@ export const POST: APIRoute = async ({ request }) => {
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1024,
+      temperature: 0,
       system: [
         {
           type: 'text',
