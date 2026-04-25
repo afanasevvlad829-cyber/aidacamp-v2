@@ -62,6 +62,8 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь рядом с Химками', description: 'IT-лагерь, ~1.5 часа от Химок', url: '/lager-himki', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Одинцово', description: 'IT-лагерь, 35 км по Киевскому шоссе', url: '/lager-odintsovo', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Домодедово', description: 'IT-лагерь, ~60 км через Подольск', url: '/lager-domodedovo', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Серпуховом', description: 'IT-лагерь, ~70 км по Симферопольскому шоссе', url: '/lager-serpuhov', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Зеленоградом', description: 'IT-лагерь, ~70 км по Киевскому шоссе', url: '/lager-zelenograd', icon: 'bi-geo-alt' },
 
   // 🎨 Прочее
   { title: 'Лагерь без телефонов', description: 'Ребёнок без гаджетов 24/7', url: '/lager-bez-telefonov', icon: 'bi-phone-x' },
