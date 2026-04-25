@@ -22,6 +22,7 @@ interface Props {
 
 import { STAT_DISTANCE, CAMP_PRICE_FROM, CAMP_SEASON, YANDEX_MAPS_URL } from '../data/contacts';
 import { getArticleEffect } from '../lib/heroVariant';
+import { ARTICLE_DATES } from '../data/articleDates';
 
 // Детерминированный эффект по slug статьи
 const _slug = Astro.url.pathname.replace(/\/+$/, '').split('/').pop() ?? '';
@@ -50,13 +51,14 @@ const jpgSrcset = imageBase
   ? `/images/articles/${imageBase}-800.jpg 800w, /images/articles/${imageBase}-1200.jpg 1200w, /images/articles/${imageBase}-1600.jpg 1600w`
   : '';
 
-// CSS-фон по эффекту
-const CSS_BG: Record<string, string> = {
-  'editorial':     'radial-gradient(ellipse 85% 80% at -5% 55%, rgba(234,88,12,0.55) 0%, rgba(180,50,0,0.18) 40%, transparent 70%), linear-gradient(160deg, #111827 0%, #0d1a2b 50%, #070f1a 100%)',
-  'accent-bar':    'radial-gradient(ellipse 85% 80% at -5% 55%, rgba(37,99,235,0.55) 0%, rgba(15,50,180,0.18) 40%, transparent 70%), linear-gradient(160deg, #0b1323 0%, #0d1a2b 50%, #060d18 100%)',
-  'split-stagger': 'radial-gradient(ellipse 85% 80% at -5% 55%, rgba(99,102,241,0.55) 0%, rgba(67,56,202,0.18) 40%, transparent 70%), linear-gradient(160deg, #0d0f28 0%, #0d1a2b 50%, #07080f 100%)',
+// Цвета орбов по эффекту — 3 независимых пятна
+type OrbColors = { o1: string; o2: string; o3: string };
+const ORB_COLORS: Record<string, OrbColors> = {
+  'editorial':     { o1: 'rgba(234,88,12,0.80)',  o2: 'rgba(200,55,0,0.55)',   o3: 'rgba(250,130,30,0.40)' },
+  'accent-bar':    { o1: 'rgba(37,99,235,0.80)',   o2: 'rgba(15,60,200,0.55)',  o3: 'rgba(56,145,250,0.40)' },
+  'split-stagger': { o1: 'rgba(109,40,217,0.80)',  o2: 'rgba(80,50,210,0.55)', o3: 'rgba(145,80,245,0.40)' },
 };
-const cssBg = CSS_BG[_heroEffect] ?? CSS_BG['editorial'];
+const orb = ORB_COLORS[_heroEffect] ?? ORB_COLORS['editorial'];
 
 const breadcrumbJsonLd = {
   "@context": "https://schema.org",
@@ -68,17 +70,25 @@ const breadcrumbJsonLd = {
   ]
 };
 
-const formattedDate = date
-  ? new Date(date + 'T00:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+// Дата: из пропа → из реестра по slug → null
+const _rawDate = date ?? ARTICLE_DATES[_slug] ?? null;
+const formattedDate = _rawDate
+  ? new Date(_rawDate + 'T00:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
   : null;
 ---
 
 <section
-  class="relative overflow-hidden min-h-[420px] md:min-h-[480px] flex"
+  class="relative overflow-hidden bg-[#0d1a2b] min-h-[420px] md:min-h-[480px] flex"
   data-hero-effect={_heroEffect}
-  style={showPhoto ? 'background: #0d1a2b' : `background: ${cssBg}`}
 >
   <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
+
+  {!showPhoto && (
+    <!-- CSS-hero: три независимо пульсирующих орба -->
+    <div class="hero-orb hero-orb-1 absolute z-0" style={`background: radial-gradient(ellipse 80% 110% at -5% 55%, ${orb.o1} 0%, transparent 70%)`}></div>
+    <div class="hero-orb hero-orb-2 absolute z-0" style={`background: radial-gradient(ellipse 60% 80% at 5% 85%, ${orb.o2} 0%, transparent 65%)`}></div>
+    <div class="hero-orb hero-orb-3 absolute z-0" style={`background: radial-gradient(ellipse 45% 60% at 35% 10%, ${orb.o3} 0%, transparent 70%)`}></div>
+  )}
 
   {showPhoto && (
     <!-- Фото-hero для статей с уникальным изображением -->
