@@ -15,9 +15,10 @@ const flows: NudgeFlow[] = [
   { id: 'scroll-30', message: 'Смена 2 — самая популярная. Осталось 12 мест', trigger: 'scroll', value: 30, once: true },
   { id: 'scroll-60', message: 'Каждый день — фотоотчёт для родителей', trigger: 'scroll', value: 60, once: true },
   { id: 'scroll-80', message: 'Лицензированный туроператор РТО 025773', trigger: 'scroll', value: 80, once: true },
-  { id: 'time-30', message: 'Раннее бронирование — скидка до 10%', trigger: 'time', value: 30000, once: true },
-  { id: 'time-60', message: 'Более 200 семей уже выбрали АйДаКемп', trigger: 'time', value: 60000, once: true },
-  { id: 'time-90', message: 'Авторы учебника по Python для детей — наши преподаватели', trigger: 'time', value: 90000, once: true },
+  // time-based nudges отключены: всплывали через 30/60/90 сек, отвлекали от букинга
+  // { id: 'time-30', message: 'Раннее бронирование — скидка до 10%', trigger: 'time', value: 30000, once: true },
+  // { id: 'time-60', message: 'Более 200 семей уже выбрали АйДаКемп', trigger: 'time', value: 60000, once: true },
+  // { id: 'time-90', message: 'Авторы учебника по Python для детей — наши преподаватели', trigger: 'time', value: 90000, once: true },
   { id: 'exit', message: 'Уже уходите? Оставьте номер — расскажем подробнее', trigger: 'exit', value: 0, once: true },
 ];
 

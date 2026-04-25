@@ -112,12 +112,15 @@ const featureIds = Object.keys(features) as (keyof typeof features)[];
 ))}
 
 <script is:inline>
-  // Equipment modal open handler
-  const equipStamp = document.getElementById('equipment-stamp');
-  const equipmentModal = document.getElementById('equipmentModal');
-  if (equipStamp && equipmentModal) {
-    equipStamp.addEventListener('click', () => { equipmentModal.showModal(); });
-  }
+  // Equipment modal open handler — desktop + mobile stamps
+  // Используем event delegation, т.к. equipment-stamp-mobile в index.astro
+  // рендерится ПОСЛЕ HeroModals (script бы не нашёл элемент в момент выполнения).
+  document.addEventListener('click', (e) => {
+    const target = e.target.closest('#equipment-stamp, #equipment-stamp-mobile');
+    if (!target) return;
+    const equipmentModal = document.getElementById('equipmentModal');
+    if (equipmentModal) equipmentModal.showModal();
+  });
 
   // Equipment modal close handler
   const equipCloseBtn = document.querySelector('[data-equip-close]');

@@ -106,7 +106,7 @@ const ageCountsJson = JSON.stringify({
   #age-bar.age-bar-awaken .age-btn:nth-child(3) { animation-delay: 0.3s; }
 </style>
 
-<script type="module">
+<script>
   import { trackGoal } from '../scripts/analytics';
   import { STORAGE_KEYS } from '../lib/storage';
   const bar       = document.getElementById('age-bar');
@@ -195,6 +195,13 @@ const ageCountsJson = JSON.stringify({
 
   if (!isDismissed()) {
     window.addEventListener('scroll', onScroll, { passive: true });
+    // Триггер по таймеру: 10 сек, если не доскроллили до 25%
+    setTimeout(() => {
+      if (!isDismissed()) {
+        showBar();
+        window.removeEventListener('scroll', onScroll);
+      }
+    }, 10000);
   }
 
   closeBtn?.addEventListener('click', hideBar);
