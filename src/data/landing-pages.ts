@@ -60,6 +60,8 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь в Наро-Фоминском районе', description: 'Санаторий Изумруд, 66 км от МКАД', url: '/lager-naro-fominsk', icon: 'bi-tree' },
   { title: 'Лагерь из Новой Москвы', description: 'По Калужскому шоссе, 40–60 км', url: '/lager-novaya-moskva', icon: 'bi-geo-alt-fill' },
   { title: 'Лагерь рядом с Химками', description: 'IT-лагерь, ~1.5 часа от Химок', url: '/lager-himki', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Одинцово', description: 'IT-лагерь, 35 км по Киевскому шоссе', url: '/lager-odintsovo', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Домодедово', description: 'IT-лагерь, ~60 км через Подольск', url: '/lager-domodedovo', icon: 'bi-geo-alt' },
 
   // 🎨 Прочее
   { title: 'Лагерь без телефонов', description: 'Ребёнок без гаджетов 24/7', url: '/lager-bez-telefonov', icon: 'bi-phone-x' },
