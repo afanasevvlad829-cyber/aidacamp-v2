@@ -294,3 +294,103 @@
   z-index: 2;
   pointer-events: none;
 }
+
+/* ===== T2 Лендинги: mesh (A) — 3 анимированных блоба ===== */
+.lp-blob {
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.lp-blob-1 {
+  width: 55%;
+  height: 80%;
+  top: -10%;
+  left: -10%;
+  background: radial-gradient(ellipse, rgba(236,124,0,0.55) 0%, transparent 70%);
+  animation: lpBlob1 14s ease-in-out infinite;
+}
+.lp-blob-2 {
+  width: 50%;
+  height: 70%;
+  bottom: -15%;
+  right: -5%;
+  background: radial-gradient(ellipse, rgba(59,130,246,0.50) 0%, transparent 70%);
+  animation: lpBlob2 17s ease-in-out 2s infinite;
+}
+.lp-blob-3 {
+  width: 40%;
+  height: 60%;
+  top: 10%;
+  right: 5%;
+  background: radial-gradient(ellipse, rgba(168,85,247,0.40) 0%, transparent 70%);
+  animation: lpBlob3 11s ease-in-out 5s infinite backwards;
+}
+@keyframes lpBlob1 {
+  0%, 100% { transform: translate(0%, 0%)   scale(1);    opacity: 0.9; }
+  33%       { transform: translate(8%, 12%)  scale(1.12); opacity: 0.6; }
+  66%       { transform: translate(-5%, 8%)  scale(0.92); opacity: 1;   }
+}
+@keyframes lpBlob2 {
+  0%, 100% { transform: translate(0%, 0%)    scale(1);    opacity: 0.8; }
+  40%       { transform: translate(-10%, -8%) scale(1.1);  opacity: 0.5; }
+  70%       { transform: translate(5%, -12%)  scale(0.95); opacity: 1;   }
+}
+@keyframes lpBlob3 {
+  0%, 100% { transform: translate(0%, 0%)   scale(1);    opacity: 0.6; }
+  50%       { transform: translate(-8%, 10%) scale(1.15); opacity: 0.9; }
+}
+
+/* ===== T2 Лендинги: noise (B) — статичный градиент + SVG-шум ===== */
+.lp-noise-bg {
+  background:
+    radial-gradient(ellipse 70% 60% at 20% 50%, rgba(236,124,0,0.18) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 70% at 75% 30%, rgba(59,130,246,0.12) 0%, transparent 60%),
+    linear-gradient(160deg, #0d1220 0%, #0d1a2b 50%, #060e1a 100%);
+}
+.lp-noise-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.12'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ===== T2 Лендинги: grid (C) — перспективная сетка ===== */
+.lp-grid-lines {
+  position: absolute;
+  inset: 0;
+  background-color: transparent;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 60px 60px;
+  transform: perspective(600px) rotateX(35deg) scaleY(1.8);
+  transform-origin: center top;
+  animation: lpGridScroll 8s linear infinite;
+  will-change: background-position;
+}
+@keyframes lpGridScroll {
+  0%   { background-position: 0 0; }
+  100% { background-position: 0 60px; }
+}
+/* Тёмный фон + верхний фейд для grid */
+[data-hero-effect="grid"] .lp-grid-lines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(7,13,26,0.0) 0%, rgba(7,13,26,0.85) 100%);
+  pointer-events: none;
+}
+/* Оранжевый акцент поверх grid */
+[data-hero-effect="grid"]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 50% at 15% 55%, rgba(236,124,0,0.20) 0%, transparent 60%);
+  z-index: 1;
+  pointer-events: none;
+}
