@@ -23,23 +23,23 @@ const menu = [
     second_breakfast: "Яблоко, печенье",
     lunch: "Борщ со сметаной · Горячее на выбор: котлета куриная с картофельным пюре / овощная запеканка с сыром · Салат на выбор: из свежих огурцов / из капусты с морковью · Компот",
     snack: "Кефир, булочка",
-    dinner: "Рыба запечённая с рисом, свежий овощ, чай с лимоном",
+    dinner: "Горячее на выбор: куриные биточки с гречкой / макароны с сыром · Свежий овощ, чай с лимоном",
   },
   {
     day: "День 2",
     breakfast: "Омлет с зеленью, хлеб с маслом, чай с сахаром",
     second_breakfast: "Груша, вафли",
     lunch: "Суп куриный с лапшой · Горячее на выбор: гуляш говяжий с гречкой / тушёные овощи с сыром · Салат на выбор: из свежей капусты / из помидоров с зеленью · Сок",
-    snack: "Молоко, пряник",
-    dinner: "Макароны с тефтелями / с овощным соусом (на выбор), свежий огурец, кисель",
+    snack: "Кефир, пряник",
+    dinner: "Горячее на выбор: макароны с тефтелями / с овощным соусом · Свежий огурец, кисель",
   },
   {
     day: "День 3",
-    breakfast: "Творожная запеканка со сметаной, хлеб с маслом, молоко",
+    breakfast: "Творожная запеканка со сметаной, хлеб с маслом, какао с молоком",
     second_breakfast: "Апельсин, крекер",
     lunch: "Щи из свежей капусты · Горячее на выбор: курица тушёная с овощами / картофельная запеканка · Салат на выбор: из свежих огурцов и помидоров / из моркови с изюмом · Компот",
     snack: "Йогурт, печенье",
-    dinner: "Запеканка из рыбы с овощами / гречка с сыром (на выбор), хлеб, чай с сахаром",
+    dinner: "Горячее на выбор: запеканка из рыбы с овощами / гречка с сыром · Хлеб, чай с сахаром",
   },
 ];
 ---
@@ -133,16 +133,17 @@ const menu = [
                 <i class="bi bi-fire text-[#ec7c00]" aria-hidden="true"></i> Обед
               </div>
               <div class="text-gray-600 space-y-1">
-                {day.lunch.split(' · ').map((part, i) => (
-                  part.includes('на выбор:') ? (
+                {day.lunch.split(' · ').map((part) => {
+                  if (!part.includes('на выбор:')) return <p class="text-gray-600">{part}</p>;
+                  const label = (part.match(/^(.+?) на выбор:/) ?? ['',''])[1];
+                  const options = part.replace(/^[^:]+:\s*/, '');
+                  return (
                     <div class="rounded-lg bg-orange-50 border border-orange-100 px-2.5 py-1.5">
-                      <span class="text-[11px] font-semibold text-orange-600 uppercase tracking-wide">на выбор</span>
-                      <p class="mt-0.5">{part.replace(/^[^:]+:\s*/, '')}</p>
+                      <span class="text-[11px] font-semibold text-orange-600 uppercase tracking-wide">{label} — на выбор</span>
+                      <p class="mt-0.5">{options}</p>
                     </div>
-                  ) : (
-                    <p>{part}</p>
-                  )
-                ))}
+                  );
+                })}
               </div>
             </div>
             <div>
@@ -155,14 +156,19 @@ const menu = [
               <div class="flex items-center gap-1.5 font-bold text-[#0d1a2b] mb-1">
                 <i class="bi bi-moon text-[#ec7c00]" aria-hidden="true"></i> Ужин
               </div>
-              {day.dinner.includes('на выбор') ? (
-                <div class="rounded-lg bg-orange-50 border border-orange-100 px-2.5 py-1.5 text-gray-600">
-                  <span class="text-[11px] font-semibold text-orange-600 uppercase tracking-wide block mb-0.5">на выбор</span>
-                  {day.dinner}
-                </div>
-              ) : (
-                <p class="text-gray-600">{day.dinner}</p>
-              )}
+              <div class="text-gray-600 space-y-1">
+                {day.dinner.split(' · ').map((part) => {
+                  if (!part.includes('на выбор:')) return <p class="text-gray-600">{part}</p>;
+                  const label = (part.match(/^(.+?) на выбор:/) ?? ['',''])[1];
+                  const options = part.replace(/^[^:]+:\s*/, '');
+                  return (
+                    <div class="rounded-lg bg-orange-50 border border-orange-100 px-2.5 py-1.5">
+                      <span class="text-[11px] font-semibold text-orange-600 uppercase tracking-wide">{label} — на выбор</span>
+                      <p class="mt-0.5">{options}</p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
