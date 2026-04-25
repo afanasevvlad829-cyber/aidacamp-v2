@@ -1,6 +1,12 @@
 ---
 import ShiftModal from './ShiftModal.astro';
 import { STAT_DISTANCE, CAMP_PRICE_FROM, CAMP_SEASON, YANDEX_MAPS_URL } from '../data/contacts';
+import { getSeoEffect, getTopicEffect } from '../lib/heroVariant';
+
+// Детерминированный эффект по slug страницы
+const _TOPIC_SLUGS = new Set(['python-lager','ai-lager','minecraft-lager','scratch-lager','roblox-lager','3d-modelirovanie-lager']);
+const _slug = Astro.url.pathname.replace(/\/+$/, '').split('/').pop() ?? '';
+const _heroEffect = _TOPIC_SLUGS.has(_slug) ? getTopicEffect(_slug) : getSeoEffect(_slug);
 
 interface Props {
   h1: string;
@@ -23,7 +29,7 @@ const breadcrumbJsonLd = {
 };
 ---
 
-<section class={`relative overflow-hidden ${image ? 'min-h-[560px] md:min-h-[620px]' : ''} bg-[#0d1a2b] px-5 pt-16 pb-12 md:px-14 md:pt-20 md:pb-16`}>
+<section data-hero-effect={_heroEffect} class={`relative overflow-hidden ${image ? 'min-h-[560px] md:min-h-[620px]' : ''} bg-[#0d1a2b] px-5 pt-16 pb-12 md:px-14 md:pt-20 md:pb-16`}>
   <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
 
   <!-- Фоновое изображение -->
