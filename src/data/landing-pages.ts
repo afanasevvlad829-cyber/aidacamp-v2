@@ -48,20 +48,15 @@ export const landingPages: LandingPage[] = [
   { title: 'Летняя IT-школа', description: 'Загородный формат, с проживанием', url: '/letnyaya-it-shkola', icon: 'bi-mortarboard' },
 
   // 👧 Возрастные
-  { title: 'Лагерь для детей 7 лет', description: 'Scratch — первая программа для малышей', url: '/lager-7-let', icon: 'bi-emoji-smile' },
   { title: 'Лагерь для детей 8 лет', description: 'Scratch, Minecraft — первый код', url: '/lager-8-let', icon: 'bi-emoji-smile' },
-  { title: 'Лагерь для детей 9 лет', description: 'Scratch → Python, переходный возраст', url: '/lager-9-let', icon: 'bi-laptop' },
   { title: 'Лагерь для детей 10 лет', description: 'Python и боты для 9–11 лет', url: '/lager-10-let', icon: 'bi-laptop' },
   { title: 'Лагерь для детей 12 лет', description: 'Python, AI — для 11–13 лет', url: '/lager-12-let', icon: 'bi-rocket-takeoff' },
-  { title: 'Лагерь для подростков 14 лет', description: 'Python Advanced + AI-проекты', url: '/lager-14-let', icon: 'bi-rocket-takeoff' },
   { title: 'Лагерь для подростков', description: 'Программа 12–14 лет', url: '/lager-dlya-podrostkov', icon: 'bi-rocket-takeoff' },
   { title: 'Лагерь для школьников', description: '1–8 класс, IT-проект', url: '/lager-dlya-shkolnikov', icon: 'bi-backpack' },
-  { title: 'Лагерь для школьников Подмосковья', description: 'IT-программа 1–9 класс, смены 2026', url: '/lager-dlya-shkolnikov-podmoskove', icon: 'bi-backpack' },
   { title: 'Лагерь для мальчиков', description: 'Minecraft, Roblox, Python, AI', url: '/lager-dlya-malchikov', icon: 'bi-rocket-takeoff' },
   { title: 'Лагерь для девочек', description: 'AI, 3D-моделирование, Python', url: '/lager-dlya-devochek', icon: 'bi-star-fill' },
 
   // 📍 Гео-LP
-  { title: 'Лагерь рядом с домом', description: 'Подмосковье, 66 км от Москвы', url: '/lager-ryadom', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Подольском', description: 'IT-лагерь, 40 км от Подольска', url: '/lager-podolsk', icon: 'bi-geo-alt' },
   { title: 'Лагерь в Наро-Фоминском районе', description: 'Санаторий Изумруд, 66 км от МКАД', url: '/lager-naro-fominsk', icon: 'bi-tree' },
   { title: 'Лагерь из Новой Москвы', description: 'По Калужскому шоссе, 40–60 км', url: '/lager-novaya-moskva', icon: 'bi-geo-alt-fill' },
@@ -73,21 +68,6 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь рядом с Истрой', description: 'IT-лагерь, ~1.5 ч от Истры', url: '/lager-istra', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Клином', description: 'IT-лагерь, ~2 часа от Клина', url: '/lager-klin', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Пушкино', description: 'IT-лагерь, ~1.5 ч от Пушкино', url: '/lager-pushkino', icon: 'bi-geo-alt' },
-  { title: 'Лагерь рядом с Люберцами', description: 'IT-лагерь, ~1.5 ч от Люберец', url: '/lager-lubertsy', icon: 'bi-geo-alt' },
-  { title: 'Лагерь рядом с Мытищами', description: 'IT-лагерь, ~1.5 ч от Мытищ', url: '/lager-mytishchi', icon: 'bi-geo-alt' },
-  { title: 'Лагерь рядом с Обнинском', description: 'IT-лагерь, ~30 мин от Обнинска', url: '/lager-obnisk', icon: 'bi-geo-alt' },
-  { title: 'Лагерь рядом с Железнодорожным', description: 'IT-лагерь, ~1.5 ч от Железнодорожного', url: '/lager-jeleznodarozhnyj', icon: 'bi-geo-alt' },
-  { title: 'Лагерь рядом с Раменским', description: 'IT-лагерь, ~1.5 ч от Раменского', url: '/lager-ramenskoe', icon: 'bi-geo-alt' },
-  { title: 'Лагерь рядом с Красногорском', description: 'IT-лагерь, ~1.5 ч от Красногорска', url: '/lager-krasnogorsk', icon: 'bi-geo-alt' },
-  { title: 'Лагерь рядом с Королёвом', description: 'IT-лагерь, ~1.5 ч от Королёва', url: '/lager-korolev', icon: 'bi-geo-alt' },
-  { title: 'Лагерь рядом с Балашихой', description: 'IT-лагерь, ~1.5 ч от Балашихи', url: '/lager-balashiha', icon: 'bi-geo-alt' },
-  { title: 'Лагерь рядом с Чеховом', description: 'IT-лагерь, ~50 мин от Чехова', url: '/lager-chehov', icon: 'bi-geo-alt' },
-  { title: 'Лагерь рядом со Ступино', description: 'IT-лагерь, ~1.5 ч от Ступино', url: '/lager-stupino', icon: 'bi-geo-alt' },
-  { title: 'Лагерь рядом с Ногинском', description: 'IT-лагерь, ~1.5 ч от Ногинска', url: '/lager-nogink', icon: 'bi-geo-alt' },
-  { title: 'Лагерь рядом с Жуковским', description: 'IT-лагерь, ~1.5 ч от Жуковского', url: '/lager-zhukovskiy', icon: 'bi-geo-alt' },
-  { title: 'Лагерь рядом с Щёлково', description: 'IT-лагерь, ~1.5 ч от Щёлково', url: '/lager-shchelkovo', icon: 'bi-geo-alt' },
-  { title: 'Лагерь рядом с Реутовом', description: 'IT-лагерь, ~1.5 ч от Реутова', url: '/lager-reutov', icon: 'bi-geo-alt' },
-  { title: 'Лагерь рядом с Видным', description: 'IT-лагерь, ~35 мин от Видного', url: '/lager-vidnoe', icon: 'bi-geo-alt' },
 
   // 💰 Коммерческие
   { title: 'Цены на смены 2026', description: 'Стоимость всех смен, что входит', url: '/ceny', icon: 'bi-coin' },
