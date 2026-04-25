@@ -43,6 +43,8 @@ export const landingPages: LandingPage[] = [
   // 👧 Возрастные
   { title: 'Лагерь для подростков', description: 'Программа 12–14 лет', url: '/lager-dlya-podrostkov', icon: 'bi-rocket-takeoff' },
   { title: 'Лагерь для школьников', description: '1–8 класс, IT-проект', url: '/lager-dlya-shkolnikov', icon: 'bi-backpack' },
+  { title: 'Лагерь для мальчиков', description: 'Minecraft, Roblox, Python, AI', url: '/lager-dlya-malchikov', icon: 'bi-rocket-takeoff' },
+  { title: 'Лагерь для девочек', description: 'AI, 3D-моделирование, Python', url: '/lager-dlya-devochek', icon: 'bi-star-fill' },
 
   // 📍 Гео-LP
   { title: 'Лагерь рядом с Подольском', description: 'IT-лагерь, 40 км от Подольска', url: '/lager-podolsk', icon: 'bi-geo-alt' },
@@ -61,6 +63,7 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь недорого', description: 'От 48 000 ₽ за смену, оплата частями', url: '/lager-nedorogo', icon: 'bi-tag' },
 
   // 🗓 Сезонные
+  { title: 'Лагерь на каникулы', description: 'Июнь, июль, август 2026', url: '/lager-na-kanikuly', icon: 'bi-sun' },
   { title: 'Лагерь на июнь', description: 'Смены июня 2026, с 30 мая', url: '/lager-na-iyun', icon: 'bi-calendar-event' },
   { title: 'Лагерь на июль', description: 'Июльские смены 2026 в Подмосковье', url: '/lager-na-iyul', icon: 'bi-sun' },
   { title: 'Лагерь на август', description: 'Смены августа 2026 в Подмосковье', url: '/lager-na-avgust-podmoskove', icon: 'bi-sun' },
