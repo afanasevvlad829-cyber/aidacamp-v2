@@ -51,12 +51,21 @@ const jpgSrcset = imageBase
   ? `/images/articles/${imageBase}-800.jpg 800w, /images/articles/${imageBase}-1200.jpg 1200w, /images/articles/${imageBase}-1600.jpg 1600w`
   : '';
 
-// Цвета орбов по эффекту — 3 независимых пятна
-type OrbColors = { o1: string; o2: string; o3: string };
+// Цвета орбов по эффекту — без базового слоя, чтобы пульс был виден
+type OrbColors = { o1: string; o2: string };
 const ORB_COLORS: Record<string, OrbColors> = {
-  'editorial':     { o1: 'rgba(234,88,12,0.80)',  o2: 'rgba(200,55,0,0.55)',   o3: 'rgba(250,130,30,0.40)' },
-  'accent-bar':    { o1: 'rgba(37,99,235,0.80)',   o2: 'rgba(15,60,200,0.55)',  o3: 'rgba(56,145,250,0.40)' },
-  'split-stagger': { o1: 'rgba(109,40,217,0.80)',  o2: 'rgba(80,50,210,0.55)', o3: 'rgba(145,80,245,0.40)' },
+  'editorial': {
+    o1: 'radial-gradient(ellipse 90% 120% at 0% 50%, rgba(250,100,15,1.0) 0%, rgba(220,60,0,0.60) 35%, rgba(150,30,0,0.15) 60%, transparent 78%)',
+    o2: 'radial-gradient(ellipse 70% 90%  at 15% 95%, rgba(240,80,0,0.85) 0%, rgba(180,40,0,0.30) 50%, transparent 75%)',
+  },
+  'accent-bar': {
+    o1: 'radial-gradient(ellipse 90% 120% at 0% 50%, rgba(56,130,250,1.0) 0%, rgba(20,80,220,0.60) 35%, rgba(10,40,150,0.15) 60%, transparent 78%)',
+    o2: 'radial-gradient(ellipse 70% 90%  at 15% 95%, rgba(37,99,235,0.85) 0%, rgba(10,50,180,0.30) 50%, transparent 75%)',
+  },
+  'split-stagger': {
+    o1: 'radial-gradient(ellipse 90% 120% at 0% 50%, rgba(145,70,250,1.0) 0%, rgba(100,40,230,0.60) 35%, rgba(60,20,180,0.15) 60%, transparent 78%)',
+    o2: 'radial-gradient(ellipse 70% 90%  at 15% 95%, rgba(110,45,220,0.85) 0%, rgba(70,30,200,0.30) 50%, transparent 75%)',
+  },
 };
 const orb = ORB_COLORS[_heroEffect] ?? ORB_COLORS['editorial'];
 
@@ -84,10 +93,9 @@ const formattedDate = _rawDate
   <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
 
   {!showPhoto && (
-    <!-- CSS-hero: три независимо пульсирующих орба -->
-    <div class="hero-orb hero-orb-1 absolute z-0" style={`background: radial-gradient(ellipse 80% 110% at -5% 55%, ${orb.o1} 0%, transparent 70%)`}></div>
-    <div class="hero-orb hero-orb-2 absolute z-0" style={`background: radial-gradient(ellipse 60% 80% at 5% 85%, ${orb.o2} 0%, transparent 65%)`}></div>
-    <div class="hero-orb hero-orb-3 absolute z-0" style={`background: radial-gradient(ellipse 45% 60% at 35% 10%, ${orb.o3} 0%, transparent 70%)`}></div>
+    <!-- CSS-hero: 2 пульсирующих орба (без статичного слоя — чтобы пульс был виден) -->
+    <div class="hero-orb hero-orb-1 absolute inset-0 z-0" style={`background: ${orb.o1}`}></div>
+    <div class="hero-orb hero-orb-2 absolute inset-0 z-0" style={`background: ${orb.o2}`}></div>
   )}
 
   {showPhoto && (
