@@ -68,6 +68,13 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь рядом с Истрой', description: 'IT-лагерь, ~1.5 ч от Истры', url: '/lager-istra', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Клином', description: 'IT-лагерь, ~2 часа от Клина', url: '/lager-klin', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Пушкино', description: 'IT-лагерь, ~1.5 ч от Пушкино', url: '/lager-pushkino', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Люберцами', description: 'IT-лагерь, ~1.5 ч от Люберец', url: '/lager-lubertsy', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Мытищами', description: 'IT-лагерь, ~1.5 ч от Мытищ', url: '/lager-mytishchi', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Обнинском', description: 'IT-лагерь, ~30 мин от Обнинска', url: '/lager-obnisk', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Железнодорожным', description: 'IT-лагерь, ~1.5 ч от Железнодорожного', url: '/lager-jeleznodarozhnyj', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Раменским', description: 'IT-лагерь, ~1.5 ч от Раменского', url: '/lager-ramenskoe', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Красногорском', description: 'IT-лагерь, ~1.5 ч от Красногорска', url: '/lager-krasnogorsk', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Королёвом', description: 'IT-лагерь, ~1.5 ч от Королёва', url: '/lager-korolev', icon: 'bi-geo-alt' },
 
   // 💰 Коммерческие
   { title: 'Цены на смены 2026', description: 'Стоимость всех смен, что входит', url: '/ceny', icon: 'bi-coin' },
