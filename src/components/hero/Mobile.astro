@@ -7,25 +7,27 @@ interface Props {
   hasVariants?: boolean;
 }
 
-const { imageSrc = '/images/hero-custom-2026-04-07', hasVariants = true } = Astro.props;
+const { imageSrc = '/images/hero-mobile', hasVariants = false } = Astro.props;
 ---
 
 <!-- ===== MOBILE HERO ===== -->
 <div class="relative w-full bg-dark-navy md:hidden min-h-[95svh] flex flex-col">
   <!-- Photo with gradient fade to dark -->
   <div class="relative flex-1 min-h-[52vw]">
-    <img
-      src={hasVariants ? `${imageSrc}-600.avif` : imageSrc}
-      srcset={hasVariants ? `${imageSrc}-600.avif 600w, ${imageSrc}-900.avif 900w` : imageSrc}
-      sizes="100vw"
-      alt=""
-      aria-hidden="true"
-      class="absolute inset-0 h-full w-full object-cover object-[center_35%]"
-      loading="eager"
-      fetchpriority="high"
-      width="600"
-      height="400"
-    />
+    <picture>
+      <source type="image/avif" srcset={hasVariants ? `${imageSrc}-600.avif 600w, ${imageSrc}-900.avif 900w` : `${imageSrc}.avif`} />
+      <source type="image/webp" srcset={hasVariants ? `${imageSrc}-600.webp 600w, ${imageSrc}-900.webp 900w` : `${imageSrc}.webp`} />
+      <img
+        src={`${imageSrc}.webp`}
+        alt=""
+        aria-hidden="true"
+        class="absolute inset-0 h-full w-full object-cover object-[center_35%] animate-kenburns"
+        loading="eager"
+        fetchpriority="high"
+        width="390"
+        height="441"
+      />
+    </picture>
     <!-- Side gradient -->
     <div class="absolute inset-0 bg-[linear-gradient(92deg,rgba(6,10,18,0.72)_0%,rgba(6,10,18,0.46)_42%,rgba(6,10,18,0.2)_70%,rgba(6,10,18,0.06)_100%)]"></div>
     <!-- Bottom fade to dark -->
@@ -102,7 +104,6 @@ const { imageSrc = '/images/hero-custom-2026-04-07', hasVariants = true } = Astr
   </div>
 
   <!-- Form area — hidden initially, auto-reveals after 30s or on CTA tap -->
-  <div class="pb-2"></div>
   <div
     id="hero-booking-block"
     class="bg-dark-navy px-4 overflow-hidden"
