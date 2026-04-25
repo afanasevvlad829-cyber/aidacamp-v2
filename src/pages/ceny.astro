@@ -54,8 +54,7 @@ const sections = [
     text: 'В путёвку не входит — но можно заказать как опцию.',
     list: [
       'Трансфер от Москвы — опция',
-      'Страховка на время смены — рекомендуем оформить отдельно. По нашему договору выгодоприобретателем является ребёнок через законных представителей; свой полис даёт родителям как выгодоприобретателям полный контроль над суммами и процедурой выплат.',
-      'Дополнительные экскурсии за территорию (редко, по желанию группы)',
+      'Страховка на время смены — рекомендуем оформить отдельно. Выгодоприобретателем по своему полису становятся родители — это даёт полный контроль над суммами и процедурой выплат.',
     ],
   },
   {
@@ -197,38 +196,7 @@ const sections = [
 </LandingLayout>
 
 <script>
-  // Nudge toast на /ceny — через 45 сек если не было клика по таблице
-  (function() {
-    let nudgeFired = false;
-    const DELAY = 45000;
-    const t = setTimeout(function() {
-      if (nudgeFired) return;
-      const toast = document.getElementById('nudge-toast');
-      const text = document.getElementById('nudge-text');
-      const sub = document.getElementById('nudge-sub');
-      if (!toast || !text) return;
-      text.textContent = 'Смена 2 (10–23 июня) — последние места';
-      if (sub) sub.textContent = 'Нажмите, чтобы зафиксировать место';
-      toast.style.cursor = 'pointer';
-      toast.addEventListener('click', function(e) {
-        if ((e.target as Element).closest('#nudge-close')) return;
-        document.dispatchEvent(new CustomEvent('shift-modal-open', {detail:{shiftId:'smena2',tab:'description'}}));
-        window.trackGoal?.('ceny_nudge_click');
-      });
-      toast.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
-      toast.classList.add('translate-y-0', 'opacity-100');
-      document.getElementById('nudge-close')?.addEventListener('click', function() {
-        toast.classList.add('translate-y-full', 'opacity-0');
-      });
-      nudgeFired = true;
-      window.trackGoal?.('ceny_nudge_show');
-    }, DELAY);
-    // Отменяем если пользователь уже кликнул по таблице
-    document.addEventListener('shift-modal-open', function() {
-      clearTimeout(t);
-      nudgeFired = true;
-    }, {once: true});
-  })();
+  // Nudge toast отключён
 
   // Клик по строке таблицы цен → ShiftInfoModal (возраст + описание + расписание).
   // Тот же контракт что у ShiftOccupancy row-clicks и TaxCalculator Buy-button.
