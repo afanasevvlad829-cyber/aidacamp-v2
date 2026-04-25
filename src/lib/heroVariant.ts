@@ -18,10 +18,23 @@ export function getSeoEffect(slug: string): SeoEffect {
 }
 
 // T3 — Тематические страницы (python, minecraft, ai, scratch, roblox, 3d)
+// Базовый набор эффектов — fallback для топик-страниц без явного override
 const TOPIC_EFFECTS = ['particles', 'glitch', 'mesh-themed'] as const;
-export type TopicEffect = typeof TOPIC_EFFECTS[number];
+
+// Уникальный эффект на каждый топик (приоритет над hashSlug)
+const TOPIC_OVERRIDES: Record<string, string> = {
+  'python-lager': 'python-code',
+  'minecraft-lager': 'minecraft-pixels',
+  'roblox-lager': 'roblox-arcade',
+  '3d-modelirovanie-lager': '3d-wireframe',
+  // ai-lager → mesh-themed (оранжевый mesh — подходит)
+  // scratch-lager → glitch (RGB-split — подходит для визуального языка Scratch)
+};
+
+export type TopicEffect = string;
 
 export function getTopicEffect(slug: string): TopicEffect {
+  if (slug in TOPIC_OVERRIDES) return TOPIC_OVERRIDES[slug];
   return TOPIC_EFFECTS[hashSlug(slug) % TOPIC_EFFECTS.length];
 }
 
