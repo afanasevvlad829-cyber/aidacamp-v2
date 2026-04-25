@@ -2,23 +2,17 @@
 /**
  * ArticleHero — hero-блок для статей /stati/*.
  *
- * v5:
- *   - max-w-[1200px] (как на главной)
- *   - Вертикальная дистрибуция: breadcrumb top → H1+Дарья центр → meta bottom
- *   - Дарья: светлая плашка (не сливается с navy)
- *   - AI-CTA убрана из hero (перенесена в тело статьи)
- *
- * Props:
- *   - title, subtitle, imageBase, imageAlt, breadcrumbsLast
- *   - date?, readTime?
- *   - daryaQuote?: string
+ * v6 (Ф2):
+ *   - Статьи с уникальным фото → фото-hero
+ *   - Статьи с общим/типовым фото → CSS-hero (эффект по slug)
+ *   - 3 CSS-эффекта: editorial (оранжевый), accent-bar (синий), split-stagger (индиго)
  */
 
 interface Props {
   title: string;
   subtitle?: string;
-  imageBase: string;
-  imageAlt: string;
+  imageBase?: string;
+  imageAlt?: string;
   date?: string;
   readTime?: string;
   breadcrumbsLast: string;
@@ -37,7 +31,7 @@ const {
   title,
   subtitle,
   imageBase,
-  imageAlt,
+  imageAlt = '',
   date,
   readTime,
   breadcrumbsLast,
@@ -45,9 +39,36 @@ const {
   imagePosition = 'center_40%',
 } = Astro.props;
 
-const imgSrc = `/images/articles/${imageBase}-1600.jpg`;
-const avifSrcset = `/images/articles/${imageBase}-800.avif 800w, /images/articles/${imageBase}-1200.avif 1200w, /images/articles/${imageBase}-1600.avif 1600w`;
-const jpgSrcset  = `/images/articles/${imageBase}-800.jpg 800w, /images/articles/${imageBase}-1200.jpg 1200w, /images/articles/${imageBase}-1600.jpg 1600w`;
+// Изображения, используемые несколькими статьями → заменяем CSS-эффектом
+const SHARED_IMAGES = new Set([
+  'kuda-letom',
+  'ii-programmista',
+  'hakaton',
+  'bez-telefonov',
+  'problemy-obshcheniya',
+  'o-lagere',
+  'ne-hochet-uchitsya',
+  'igromaniya',
+]);
+
+// Показывать фото только если imageBase задан и это уникальное фото
+const showPhoto = !!imageBase && !SHARED_IMAGES.has(imageBase);
+
+const imgSrc = imageBase ? `/images/articles/${imageBase}-1600.jpg` : '';
+const avifSrcset = imageBase
+  ? `/images/articles/${imageBase}-800.avif 800w, /images/articles/${imageBase}-1200.avif 1200w, /images/articles/${imageBase}-1600.avif 1600w`
+  : '';
+const jpgSrcset = imageBase
+  ? `/images/articles/${imageBase}-800.jpg 800w, /images/articles/${imageBase}-1200.jpg 1200w, /images/articles/${imageBase}-1600.jpg 1600w`
+  : '';
+
+// CSS-фон по эффекту
+const CSS_BG: Record<string, string> = {
+  'editorial':     'radial-gradient(ellipse 85% 80% at -5% 55%, rgba(234,88,12,0.55) 0%, rgba(180,50,0,0.18) 40%, transparent 70%), linear-gradient(160deg, #111827 0%, #0d1a2b 50%, #070f1a 100%)',
+  'accent-bar':    'radial-gradient(ellipse 85% 80% at -5% 55%, rgba(37,99,235,0.55) 0%, rgba(15,50,180,0.18) 40%, transparent 70%), linear-gradient(160deg, #0b1323 0%, #0d1a2b 50%, #060d18 100%)',
+  'split-stagger': 'radial-gradient(ellipse 85% 80% at -5% 55%, rgba(99,102,241,0.55) 0%, rgba(67,56,202,0.18) 40%, transparent 70%), linear-gradient(160deg, #0d0f28 0%, #0d1a2b 50%, #07080f 100%)',
+};
+const cssBg = CSS_BG[_heroEffect] ?? CSS_BG['editorial'];
 
 const breadcrumbJsonLd = {
   "@context": "https://schema.org",
@@ -59,45 +80,48 @@ const breadcrumbJsonLd = {
   ]
 };
 
-// Форматирование даты: "2026-04-01" → "1 апреля 2026"
 const formattedDate = date
   ? new Date(date + 'T00:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
   : null;
 ---
 
-<section class="relative overflow-hidden bg-[#0d1a2b] min-h-[420px] md:min-h-[480px] flex" data-hero-effect={_heroEffect}>
+<section
+  class="relative overflow-hidden min-h-[420px] md:min-h-[480px] flex"
+  data-hero-effect={_heroEffect}
+  style={showPhoto ? 'background: #0d1a2b' : `background: ${cssBg}`}
+>
   <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
 
-  <!-- Background photo -->
-  <div class="absolute inset-0 z-0">
-    <picture>
-      <source type="image/avif" srcset={avifSrcset} sizes="100vw" />
-      <source type="image/jpeg" srcset={jpgSrcset} sizes="100vw" />
-      <img
-        src={imgSrc}
-        alt={imageAlt}
-        class="w-full h-full object-cover"
-        style={`object-position: ${imagePosition};`}
-        loading="eager"
-        decoding="async"
-        fetchpriority="high"
-        width="1600"
-        height="685"
-      />
-    </picture>
-    <!-- Soft gradient: photo stays visible -->
-    <div class="absolute inset-0 bg-gradient-to-r from-[#0d1a2b]/80 via-[#0d1a2b]/40 to-[#0d1a2b]/10"></div>
-    <div class="absolute inset-0 bg-gradient-to-t from-[#0d1a2b]/45 via-transparent to-transparent"></div>
-  </div>
+  {showPhoto && (
+    <!-- Фото-hero для статей с уникальным изображением -->
+    <div class="absolute inset-0 z-0">
+      <picture>
+        <source type="image/avif" srcset={avifSrcset} sizes="100vw" />
+        <source type="image/jpeg" srcset={jpgSrcset} sizes="100vw" />
+        <img
+          src={imgSrc}
+          alt={imageAlt}
+          class="w-full h-full object-cover"
+          style={`object-position: ${imagePosition};`}
+          loading="eager"
+          decoding="async"
+          fetchpriority="high"
+          width="1600"
+          height="685"
+        />
+      </picture>
+      <div class="absolute inset-0 bg-gradient-to-r from-[#0d1a2b]/80 via-[#0d1a2b]/40 to-[#0d1a2b]/10"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-[#0d1a2b]/45 via-transparent to-transparent"></div>
+    </div>
+  )}
 
-  <!-- Content container — vertical distribution via flex -->
+  <!-- Content container -->
   <div class="relative z-10 mx-auto max-w-[1200px] w-full px-5 py-8 md:px-10 md:py-10 flex flex-col justify-center">
 
     <div class="grid gap-5 md:grid-cols-[1.1fr_380px] md:gap-10 md:items-center">
 
-      <!-- LEFT: breadcrumb → H1 → subtitle → meta (tight stack) -->
+      <!-- LEFT: breadcrumb → H1 → subtitle → meta -->
       <div>
-        <!-- Breadcrumb — сразу над H1 -->
         <nav class="text-[13px] md:text-[14px] text-white/55 mb-3">
           <a href="/" class="hover:text-white/85 transition-colors">Главная</a>
           <span class="mx-1.5">&rarr;</span>
@@ -106,19 +130,16 @@ const formattedDate = date
           <span class="text-white/75">{breadcrumbsLast}</span>
         </nav>
 
-        <!-- H1 -->
         <h1 class="text-[30px] md:text-[44px] font-bold leading-[1.08] tracking-[-0.03em] text-white [text-shadow:0_2px_14px_rgba(0,0,0,0.5)]">
           {title}
         </h1>
 
-        <!-- Subtitle -->
         {subtitle && (
           <p class="mt-3 text-[16px] md:text-[18px] text-white/85 leading-[1.55] max-w-[560px] [text-shadow:0_1px_8px_rgba(0,0,0,0.4)]">
             {subtitle}
           </p>
         )}
 
-        <!-- Meta: дата + время чтения -->
         {(formattedDate || readTime) && (
           <div class="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[12.5px] text-white/45">
             {formattedDate && <span>{formattedDate}</span>}
@@ -127,7 +148,6 @@ const formattedDate = date
           </div>
         )}
 
-        <!-- Кликабельные чипы: карта · смены · цена -->
         <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] text-white/45">
           <a href={YANDEX_MAPS_URL} target="_blank" rel="noopener" class="flex items-center gap-1 hover:text-white/75 transition-colors">
             <i class="bi bi-geo-alt text-[12px]" aria-hidden="true"></i>
@@ -144,7 +164,7 @@ const formattedDate = date
         </div>
       </div>
 
-      <!-- RIGHT: Daria card — hidden on mobile, visible on md+ -->
+      <!-- RIGHT: Daria card — десктоп -->
       {daryaQuote && (
         <aside class="hidden md:block rounded-[18px] bg-white/95 shadow-[0_12px_32px_rgba(0,0,0,0.25)] p-5 md:p-6">
           <div class="flex items-start gap-4">
