@@ -25,6 +25,8 @@ export const landingPages: LandingPage[] = [
   { title: 'Лучшие детские лагеря Подмосковья', description: 'Рейтинг 5.0, лицензия Минобрнауки', url: '/luchshie-detskie-lagerya', icon: 'bi-trophy' },
   { title: 'Проверенный детский лагерь', description: 'Лицензия, РТО, 5.0 — всё проверяется', url: '/proverennyj-lager', icon: 'bi-patch-check-fill' },
   { title: 'Летний школьный лагерь', description: 'IT-программа для школьников 7–15 лет', url: '/letnyj-shkolnyj-lager', icon: 'bi-mortarboard' },
+  { title: 'Лагерь летнего пребывания', description: 'Официальный лицензированный лагерь с проживанием', url: '/lager-letnego-prebyvaniya', icon: 'bi-sun' },
+  { title: 'Оздоровительный лагерь', description: 'Бассейн, лес, медработник 24/7 в Подмосковье', url: '/ozdorovitelnyj-lager', icon: 'bi-heart-pulse-fill' },
   { title: 'Загородный лагерь', description: 'Лес, бассейн, 66 км от Москвы', url: '/zagorodnyj-lager', icon: 'bi-tree' },
   { title: 'Детский лагерь', description: 'Для детей 7–15 лет в Подмосковье', url: '/detskiy-lager', icon: 'bi-house-heart' },
   { title: 'Детский лагерь в Подмосковье', description: '66 км от Москвы, проживание', url: '/detskiy-lager-podmoskove', icon: 'bi-houses' },
@@ -45,6 +47,9 @@ export const landingPages: LandingPage[] = [
   { title: 'Летняя IT-школа', description: 'Загородный формат, с проживанием', url: '/letnyaya-it-shkola', icon: 'bi-mortarboard' },
 
   // 👧 Возрастные
+  { title: 'Лагерь для детей 8 лет', description: 'Scratch, Minecraft — первый код', url: '/lager-8-let', icon: 'bi-emoji-smile' },
+  { title: 'Лагерь для детей 10 лет', description: 'Python и боты для 9–11 лет', url: '/lager-10-let', icon: 'bi-laptop' },
+  { title: 'Лагерь для детей 12 лет', description: 'Python, AI — для 11–13 лет', url: '/lager-12-let', icon: 'bi-rocket-takeoff' },
   { title: 'Лагерь для подростков', description: 'Программа 12–14 лет', url: '/lager-dlya-podrostkov', icon: 'bi-rocket-takeoff' },
   { title: 'Лагерь для школьников', description: '1–8 класс, IT-проект', url: '/lager-dlya-shkolnikov', icon: 'bi-backpack' },
   { title: 'Лагерь для мальчиков', description: 'Minecraft, Roblox, Python, AI', url: '/lager-dlya-malchikov', icon: 'bi-rocket-takeoff' },
