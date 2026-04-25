@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Защита от случайных коммитов в защищённые ветки.
+#
+# Правила:
+# - Никогда нельзя коммитить напрямую в `main` (история должна идти через merge из dev).
+# - Прямые коммиты в главный репо разрешены ТОЛЬКО владельцу:
+#   обходится переменной окружения MASTER_AGENT=1 git commit ...
+#   Параллельные agent-сессии должны работать в своих worktrees, а не трогать главное дерево.
+
+branch="$(git symbolic-ref --short HEAD 2>/dev/null || echo DETACHED)"
+
+if [ "$branch" = "main" ]; then
+  echo "✖ Нельзя коммитить напрямую в main. Работай на dev, потом merge." >&2
+  exit 1
+fi
+
+# Определяем — мы в главном репо или в worktree?
+# git worktree list первой строкой показывает главный — сравниваем с текущим toplevel.
+toplevel="$(git rev-parse --show-toplevel 2>/dev/null)"
+main_worktree="$(git worktree list --porcelain 2>/dev/null | awk '/^worktree /{print $2; exit}')"
+
+if [ -n "$toplevel" ] && [ "$toplevel" = "$main_worktree" ]; then
+  # Проверяем lock-файл (главный агент зафиксировал работу в репо)
+  if [ -f "$main_worktree/.main-repo.lock" ] && [ "${MASTER_AGENT:-}" != "1" ]; then
+    echo "✖ Главный репо ЗАБЛОКИРОВАН: $(cat "$main_worktree/.main-repo.lock")" >&2
+    echo "  Не делай коммитов в главном дереве. Работай в worktree." >&2
+    exit 1
+  fi
+  if [ "${MASTER_AGENT:-}" != "1" ]; then
+    echo "✖ Прямой коммит в главный репо ($toplevel) разрешён только владельцу." >&2
+    echo "  Если ты агент — работай в своём worktree (.claude/worktrees/...), а не в главном дереве." >&2
+    echo "  Если ты владелец — добавь MASTER_AGENT=1 перед командой:" >&2
+    echo "    MASTER_AGENT=1 git commit -m \"...\"" >&2
+    exit 1
+  fi
+fi
+
+exit 0

@@ -13,6 +13,8 @@ export const EMAIL_HREF = 'mailto:hello@codims.ru';
 export const WHATSAPP_URL = 'https://wa.me/79688086455';
 export const TELEGRAM_URL = 'https://t.me/Progaschool';
 
+export const YANDEX_MAPS_URL = 'https://yandex.ru/maps/?ll=36.724185,55.265643&z=15&pt=36.724185,55.265643,pm2rdm';
+
 export const STAT_YEARS = '7';           // лет работы
 export const STAT_KIDS = '1200+';        // детей
 export const STAT_RATING = '5.0';        // рейтинг

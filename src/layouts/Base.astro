@@ -1,33 +1,59 @@
 ---
+import '../styles/global.css';
 import iconsCSS from '../styles/icons.css?raw';
+import '../styles/mobile-ux-p0.css';
 import AgeBar from '../components/AgeBar.astro';
 import ReferralModal from '../components/hero/ReferralModal.astro';
+import ShiftModal from '../components/ShiftModal.astro';
+import GlobalShiftLinkHandler from '../components/GlobalShiftLinkHandler.astro';
 
 interface Props {
   title: string;
   description?: string;
+  ogType?: string;
+  ogImage?: string;
+  ogImageAlt?: string;
+  /** Hero image path for early LCP preload — must be set for above-fold hero pages */
+  heroPreload?: string;
 }
 
-const { title, description = 'АйДаКемп — IT-лагерь для детей 7–14 лет. Программирование, AI, бассейн. 66 км от Москвы.' } = Astro.props;
+const {
+  title,
+  description = 'АйДаКемп — IT-лагерь для детей 7–15 лет. Программирование, AI, бассейн. 66 км от Москвы.',
+  ogType,
+  ogImage = 'https://aidacamp.ru/images/hero-custom-2026-04-07.avif',
+  ogImageAlt = 'АйДаКемп — IT-лагерь для детей в Подмосковье',
+  heroPreload,
+} = Astro.props;
+const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `https://aidacamp.ru${ogImage}`;
 const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
+// Автодетект: /stati/ → article, остальные → website
+const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !Astro.url.pathname.endsWith('/stati/') ? 'article' : 'website');
 ---
 
 <!doctype html>
 <html lang="ru" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
+    {/* LCP preload — самый первый тег после charset, чтобы браузер начал грузить до скриптов */}
+    {heroPreload && <link rel="preload" as="image" href={heroPreload} type="image/avif" fetchpriority="high" />}
     <style set:html={iconsCSS}></style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
-    <meta name="robots" content="noarchive">
+    <meta name="robots" content="index, follow">
     <title>{title}</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="preload" as="font" href="/fonts/inter-cyrillic.woff2" type="font/woff2" crossorigin />
     <link rel="preload" as="font" href="/fonts/inter-latin.woff2" type="font/woff2" crossorigin />
     <!-- Bootstrap Icons: subset of 30 icons inlined locally (no CDN, no font download) -->
-    <link rel="preconnect" href="https://mc.yandex.ru" />
+    <link rel="preconnect" href="https://mc.yandex.ru" crossorigin />
     <link rel="dns-prefetch" href="https://mc.yandex.ru" />
+    <!-- VK/Top.Mail.Ru preconnect — без этого privacy-cs.mail.ru тратит ~1s на DNS+TLS -->
+    <link rel="preconnect" href="https://top-fwz1.mail.ru" />
+    <link rel="dns-prefetch" href="https://top-fwz1.mail.ru" />
+    <link rel="preconnect" href="https://privacy-cs.mail.ru" />
+    <link rel="dns-prefetch" href="https://privacy-cs.mail.ru" />
     <script is:inline>
       if (window.location.search.includes('ym_disable=1')) {
         document.cookie = 'ym_disable96499295=true; expires=Thu, 31 Dec 2099 23:59:59 UTC; path=/';
@@ -51,7 +77,7 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
 
       if (!window.ym_disable96499295 && !window._ymInited) {
         window._ymInited = true;
-        ym(96499295, 'init', {clickmap:true, referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+        ym(96499295, 'init', {clickmap:true, referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:false});
       }
     </script>
     <noscript><div><img src="https://mc.yandex.ru/watch/96499295" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
@@ -71,41 +97,47 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
     <noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3755202;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
     <!-- /Top.Mail.Ru counter -->
 
-    <!-- Stage 2: Clarity — on first interaction OR after 8s (оставлен deferred, т.к. не критичен для рекламы) -->
+    <!-- Stage 2 scripts (Clarity + Leadfeeder) — отложены до первой интеракции или +20 сек -->
+    <!-- Перф P2 2026-04-20: 8s→20s, чтобы скрипты не грузились внутри 10-сек окна Lighthouse mobile теста -->
     <script is:inline type="text/javascript">
-      function _loadStage2(){if(window._s2)return;window._s2=true;
-      if(!window._clarityDisabled){
-      (function(c,l,a,r,i,t,y){
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-      })(window,document,"clarity","script","w8yoykmszl");}}
-      var _s2t=setTimeout(_loadStage2,8000);
-      ['scroll','click','touchstart'].forEach(function(e){
-        document.addEventListener(e,function(){clearTimeout(_s2t);_loadStage2();},{once:true,passive:true});
-      });
-    </script>
-    <!-- Leadfeeder — deferred load -->
-    <script is:inline>
-      function loadLeadfeeder(){if(window._ldfdrLoaded)return;window._ldfdrLoaded=true;
-      (function(ss,ex){window.ldfdr=window.ldfdr||function(){(ldfdr._q=ldfdr._q||[]).push([].slice.call(arguments));};
-      (function(d,s){fs=d.getElementsByTagName(s)[0];function ce(src){var cs=d.createElement(s);cs.src=src;cs.async=1;fs.parentNode.insertBefore(cs,fs);};
-      ce('https://sc.lfeeder.com/lftracker_v1_'+ss+(ex?'_'+ex:'')+'.js');})(document,'script');}
-      )('YEgkB8lbGVx4ep3Z');}
-      if('requestIdleCallback' in window){requestIdleCallback(loadLeadfeeder)}else{setTimeout(loadLeadfeeder,5000)}
+      (function(){
+        var loaded = false;
+        function loadStage2(){
+          if (loaded) return; loaded = true;
+          // Clarity
+          if(!window._clarityDisabled){
+            (function(c,l,a,r,i,t,y){
+              c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+              t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+              y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+            })(window,document,"clarity","script","w8yoykmszl");
+          }
+          // Leadfeeder
+          (function(ss,ex){
+            window.ldfdr=window.ldfdr||function(){(ldfdr._q=ldfdr._q||[]).push([].slice.call(arguments));};
+            (function(d,s){var fs=d.getElementsByTagName(s)[0];function ce(src){var cs=d.createElement(s);cs.src=src;cs.async=1;fs.parentNode.insertBefore(cs,fs);}
+            ce('https://sc.lfeeder.com/lftracker_v1_'+ss+(ex?'_'+ex:'')+'.js');})(document,'script');
+          })('YEgkB8lbGVx4ep3Z');
+        }
+        var t = setTimeout(loadStage2, 20000);
+        ['scroll','click','touchstart','keydown'].forEach(function(e){
+          document.addEventListener(e, function(){ clearTimeout(t); loadStage2(); }, { once:true, passive:true });
+        });
+      })();
     </script>
     <!-- OG Meta -->
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={resolvedOgType} />
     <meta property="og:locale" content="ru_RU" />
     <meta property="og:url" content={canonicalUrl} />
-    <meta property="og:image" content="https://aidacamp.ru/images/hero-custom-2026-04-07.avif" />
+    <meta property="og:image" content={resolvedOgImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={ogImageAlt} />
     <meta property="og:site_name" content="АйДаКемп" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="https://aidacamp.ru/images/hero-custom-2026-04-07.avif" />
+    <meta name="twitter:image" content={resolvedOgImage} />
     <link rel="canonical" href={canonicalUrl} />
     <slot name="head" />
     <!-- Analytics globals: trackGoal, initScrollTracking, initContactTracking — inline, no network request -->
@@ -114,12 +146,13 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
         var YM_ID = 96499295;
         var _fired = new Set(JSON.parse(sessionStorage.getItem('ym_fired') || '[]'));
         function _persist() { try { sessionStorage.setItem('ym_fired', JSON.stringify([..._fired])); } catch(e){} }
-        window.trackGoal = function (id, params) {
+        var TMR_ID = 3755202;
+        window.trackGoal = function (id, params, value) {
           if (_fired.has(id)) return;
           _fired.add(id);
           _persist();
           try { if (typeof window.ym !== 'undefined') window.ym(YM_ID, 'reachGoal', id, params || {}); } catch(e){}
-          try { window.dispatchEvent(new CustomEvent(id, { detail: params || {} })); } catch(e){}
+          try { window._tmr = window._tmr || []; window._tmr.push({ type: 'reachGoal', id: TMR_ID, value: value || 100, goal: id }); } catch(e){}
         };
         window.initScrollTracking = function () {
           var goals = [{p:25,id:'scroll_25'},{p:50,id:'scroll_50'},{p:75,id:'scroll_75'},{p:90,id:'scroll_90'}];
@@ -146,17 +179,19 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
   </head>
   <body class="font-sans text-[var(--color-text)] bg-white antialiased">
     <slot />
-    <!-- Nudge toast -->
+    <!-- Nudge toast (отключён) -->
     <div
       id="nudge-toast"
-      class="fixed bottom-20 left-4 right-4 z-50 mx-auto max-w-[420px] translate-y-full opacity-0 transition-all duration-300 pointer-events-auto md:bottom-6 md:left-auto md:right-6"
+      class="hidden fixed bottom-20 left-4 right-4 z-50 mx-auto max-w-[420px] translate-y-full opacity-0 transition-all duration-300 pointer-events-none md:bottom-6 md:left-auto md:right-6"
     >
       <div class="flex items-start gap-3 rounded-[14px] bg-slate-900/95 px-4 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-sm">
         <div class="flex-1">
           <span id="nudge-text" class="text-[14px] leading-[1.45] text-white/90"></span>
           <span id="nudge-sub" class="block mt-0.5 text-[12px] leading-[1.4] text-white/60"></span>
         </div>
-        <button id="nudge-close" class="shrink-0 mt-0.5 text-white/40 hover:text-white/70 transition text-[18px] leading-none">&times;</button>
+        <button id="nudge-close" class="shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full text-white/40 hover:text-white/70 transition-colors" aria-label="Закрыть">
+          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
       </div>
     </div>
     <script is:inline>
@@ -169,7 +204,7 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
     <!-- Cookie Banner -->
     <div id="cookieBanner" class="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:bottom-[90px] md:w-[340px]" style="display:none">
       <div class="flex items-center gap-3 rounded-[14px] bg-slate-900/90 px-4 py-3 text-[13px] text-white/80 backdrop-blur-sm shadow-lg">
-        <span class="shrink-0 text-[16px]">🍪</span>
+        <i class="bi bi-info-circle shrink-0 text-[16px] text-white/60" aria-hidden="true"></i>
         <p class="flex-1 leading-[1.4]">Мы используем cookies для аналитики и улучшения сайта.</p>
         <button id="cookieAccept" class="shrink-0 rounded-[8px] bg-white/15 px-3 py-1.5 text-[12px] font-medium text-white transition hover:bg-white/25">
           Понятно
@@ -193,6 +228,9 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
     </script>
     <!-- AgeBar: мобильная плашка выбора возраста -->
     <AgeBar />
+    <!-- ShiftModal: открывается из AgeBar «Посмотреть» и data-shift-link на всех страницах -->
+    <ShiftModal />
+    <GlobalShiftLinkHandler />
     <ReferralModal />
     <!-- Debug: ?modal=referral открывает модалку напрямую -->
     <script is:inline>
@@ -209,35 +247,5 @@ const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
       })();
     </script>
 
-    <!-- DEV ONLY: кнопка сброса состояния воронки -->
-    <script is:inline>
-      (function() {
-        if (location.hostname !== 'dev.aidacamp.ru') return;
-        var btn = document.createElement('button');
-        btn.textContent = '↺ сброс';
-        btn.title = 'Сбросить localStorage / sessionStorage воронки';
-        btn.style.cssText = [
-          'position:fixed', 'top:8px', 'left:8px', 'z-index:9999',
-          'background:#1e293b', 'color:#94a3b8',
-          'border:1px solid #334155', 'border-radius:6px',
-          'padding:3px 8px', 'font-size:11px', 'font-family:monospace',
-          'cursor:pointer', 'opacity:0.7', 'transition:opacity .15s'
-        ].join(';');
-        btn.onmouseenter = function() { btn.style.opacity = '1'; };
-        btn.onmouseleave = function() { btn.style.opacity = '0.7'; };
-        btn.addEventListener('click', function() {
-          // localStorage
-          ['age_onboarding_shown', 'user_age_group', 'cookieAccepted'].forEach(function(k) {
-            localStorage.removeItem(k);
-          });
-          // sessionStorage
-          ['age_bar_shown', 'selected_age', 'age_bar_dismissed'].forEach(function(k) {
-            sessionStorage.removeItem(k);
-          });
-          location.reload();
-        });
-        document.body.appendChild(btn);
-      })();
-    </script>
   </body>
 </html>

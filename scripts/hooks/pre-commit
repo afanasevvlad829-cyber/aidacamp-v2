@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# pre-commit hook — блокирует коммит в чужую ветку
+#
+# Воркер: читает .claude/MY_BRANCH, если текущая ветка другая — стоп.
+# Оркестратор (MASTER_AGENT=1): может коммитить в dev, но не в main напрямую.
+
+CURRENT=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+ASSIGNED_FILE="$(git rev-parse --show-toplevel)/.claude/MY_BRANCH"
+
+RED='\033[0;31m'
+NC='\033[0m'
+
+# --- Оркестратор ---
+if [[ -n "$MASTER_AGENT" ]]; then
+  if [[ "$CURRENT" == "main" ]]; then
+    echo -e "${RED}🚫 Оркестратор не коммитит напрямую в main. Используй PR из dev.${NC}"
+    exit 1
+  fi
+  exit 0
+fi
+
+# --- Воркер ---
+if [[ -f "$ASSIGNED_FILE" ]]; then
+  ASSIGNED=$(cat "$ASSIGNED_FILE" | tr -d '[:space:]')
+  if [[ "$CURRENT" != "$ASSIGNED" ]]; then
+    echo -e "${RED}"
+    echo "╔══════════════════════════════════════════════════════╗"
+    echo "║  🚫 СТОП: ты на ветке '$CURRENT'                    "
+    echo "║  Твоя ветка: '$ASSIGNED'                            "
+    echo "║                                                      ║"
+    echo "║  Переключись:  git checkout $ASSIGNED                "
+    echo "╚══════════════════════════════════════════════════════╝"
+    echo -e "${NC}"
+    exit 1
+  fi
+else
+  # Нет MY_BRANCH — блокируем коммит в защищённые ветки
+  if [[ "$CURRENT" == "dev" || "$CURRENT" == "main" ]]; then
+    echo -e "${RED}🚫 Воркер не коммитит в '$CURRENT'. Создай ветку agent/<задача>.${NC}"
+    exit 1
+  fi
+fi
+
+exit 0

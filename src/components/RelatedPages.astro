@@ -1,15 +1,31 @@
 ---
+/**
+ * RelatedPages — блок внутренней перелинковки со ссылками на другие лендинги.
+ *
+ * Иконки — только Bootstrap Icons из subset'а в src/styles/icons.css.
+ * Новая иконка = добавляй её определение в icons.css + в src/data/landing-pages.ts.
+ *
+ * Обратная совместимость: если у page есть поле `emoji`, оно не отображается
+ * (эмодзи запрещены в UI по CLAUDE.md). Используй `icon` в формате "bi-house-heart".
+ */
 interface Props {
   title?: string;
   pages: Array<{
     title: string;
     description: string;
     url: string;
-    emoji: string;
+    /** Класс иконки: "bi-house-heart" (с префиксом) или "house-heart" (без — legacy). */
+    icon?: string;
+    /** @deprecated эмодзи в UI запрещены — см. CLAUDE.md. Поле игнорируется. */
+    emoji?: string;
   }>;
 }
 
 const { title = "Подберите лагерь по интересам", pages } = Astro.props;
+
+// Поддержка обеих форм: "bi-house-heart" и "house-heart"
+const normalizeIcon = (icon: string | undefined) =>
+  icon ? (icon.startsWith('bi-') ? icon : `bi-${icon}`) : '';
 ---
 
 <section class="mx-auto max-w-[1312px] px-4 mt-8 mb-4">
@@ -30,7 +46,11 @@ const { title = "Подберите лагерь по интересам", pages
           href={page.url}
           class="group flex flex-col rounded-[16px] border border-slate-100 bg-white p-4 transition hover:border-orange-200 hover:shadow-[0_2px_12px_rgba(249,115,22,0.08)]"
         >
-          <span class="text-[24px]">{page.emoji}</span>
+          {normalizeIcon(page.icon) && (
+            <span class="flex h-10 w-10 items-center justify-center rounded-full bg-orange-50">
+              <i class={`bi ${normalizeIcon(page.icon)} text-[18px] text-orange-500`} aria-hidden="true"></i>
+            </span>
+          )}
           <span class="mt-2 text-[16px] font-semibold text-slate-900 leading-[1.3]">
             {page.title}
           </span>

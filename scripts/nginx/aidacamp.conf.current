@@ -1,0 +1,149 @@
+server {
+    listen 80;
+    listen [::]:80;
+    server_name aidacamp.ru www.aidacamp.ru;
+    return 301 https://aidacamp.ru$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name aidacamp.ru www.aidacamp.ru;
+
+    ssl_certificate     /etc/letsencrypt/live/aidacamp.ru/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/aidacamp.ru/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    root /var/www/aidacamp/current/;
+    index index.html;
+
+    # HTML: no-cache (браузер всегда проверяет свежесть)
+    location ~* .html$ {
+        add_header Cache-Control "no-cache, must-revalidate";
+        expires 0;
+    }
+
+    # Cache: images
+    location ~* \.(avif|webp|jpg|jpeg|png|gif|svg|ico)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        add_header Vary Accept;
+    }
+
+    # Cache: CSS/JS
+    location ~* \.(css|js)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Cache: fonts
+    location ~* \.(woff|woff2|ttf|otf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Gzip
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml application/json application/javascript application/xml+rss application/atom+xml image/svg+xml;
+
+
+    # Redirects from old URLs
+    rewrite ^/partners/?$                                                    /dlya-kompaniy/ permanent;
+    rewrite ^/ob-organiz.*$                                                  / permanent;
+    # 301 редиректы со старых Tilda-URL на Astro (2026-04-19)
+    # Топ-5 жирных
+    rewrite ^/tpost/pvng3n7ol1.*$       /stati/problemy-v-obschenii-podrostkov/ permanent;
+    rewrite ^/tpost/i1208avt81.*$       /stati/nizkaya-samootsenka-u-rebenka/ permanent;
+    rewrite ^/tpost/i5mpjtzy51.*$       /stati/podrostok-ne-hochet-uchitsya/ permanent;
+    rewrite ^/tpost/2m7evlurk1.*$       /stati/kak-pomoch-podrostku-kotoryj-nichego-ne-hochet/ permanent;
+    rewrite ^/tpost/r51b8evel1.*$       /stati/zavisimost-ot-telefona-u-podrostkov/ permanent;
+    # Средние
+    rewrite ^/stati/tpost/se7n9vvin1.*$ /stati/zavisimost-ot-kompyuternyh-igr/ permanent;
+    rewrite ^/tpost/8h6j3e22g1.*$       /stati/zavisimost-ot-telefona-u-podrostkov/ permanent;
+    rewrite ^/tpost/tonh1ogp11.*$       /stati/igromaniya-u-detej/ permanent;
+    rewrite ^/tpost/jhxf4cog71.*$       /detskiy-lager-podmoskove/ permanent;
+    rewrite ^/stati/tpost/ai1z0m7ni1.*$ /dlya-kompaniy/ permanent;
+    rewrite ^/tpost/01jmna9k31.*$       /stati/kak-izbavitsya-ot-zavisimosti-ot-igr/ permanent;
+    rewrite ^/tpost/9dm6t69pj1.*$       /3d-modelirovanie-lager/ permanent;
+    rewrite ^/tpost/og9xgkpn61.*$       /stati/kuda-det-rebenka-letom/ permanent;
+    # Хвост
+    rewrite ^/tpost/fu18rpf3f1.*$       /stati/igromaniya-u-detej/ permanent;
+    rewrite ^/tpost/zdi1tsf1o1.*$       /stati/zavisimost-ot-kompyuternyh-igr/ permanent;
+    rewrite ^/tpost/5f3mfy2b71.*$       /detskiy-lager/ permanent;
+    rewrite ^/tpost/rtypf41iy1.*$       /minecraft-lager/ permanent;
+    rewrite ^/tpost/vds0e300u1.*$       /stati/zavisimost-ot-telefona-u-podrostkov/ permanent;
+    rewrite ^/tpost/5pt411r9r1.*$       /detskiy-lager-podmoskove/ permanent;
+    rewrite ^/stati/tpost/rfsocy9b51.*$ / permanent;
+    rewrite ^/tpost/3r1yvj6531.*$       /stati/podrostok-ne-hochet-uchitsya/ permanent;
+    rewrite ^/tpost/yv7id2d0b1.*$       /lager-na-leto-2026/ permanent;
+    rewrite ^/tpost/20sdh5b1y1.*$       /minecraft-lager/ permanent;
+    rewrite ^/tpost/abbc4u2fa1.*$       /lager-na-leto-2026/ permanent;
+    rewrite ^/tpost/x4uc9ngha1.*$       /detskiy-lager-podmoskove/ permanent;
+    rewrite ^/tpost/r27684nhy1.*$       /stati/kak-izbavitsya-ot-zavisimosti-ot-igr/ permanent;
+    # Catch-all для остальных (неизвестных) /tpost/* и /stati/tpost/* — на главную
+    rewrite ^/stati/tpost/.*$           / permanent;
+    rewrite ^/tpost/.*$                 / permanent;
+    # /stati/ теперь имеет собственный index-page, редирект убран 2026-04-24
+    rewrite ^/detskij-lager-v-podmoskove/?$ /detskiy-lager-podmoskove/ permanent;
+    rewrite ^/letnij-lager-s-programmirovaniem-v-minecraft/?$ /minecraft-lager/ permanent;
+    rewrite ^/kompyuternye-lagerya-v-podmoskove.*/?$ /kompyuternyy-lager/ permanent;
+    rewrite ^/letniy-it-lager/?$ /kompyuternyy-lager/ permanent;
+    rewrite ^/letnyaya-shkola-programmirovaniya.*/?$ /letnyaya-it-shkola/ permanent;
+    rewrite ^/booking/?$ / permanent;
+
+    location ^~ /api/tg-debug {
+        client_max_body_size 20m;
+        if ($request_method = OPTIONS) {
+            add_header Access-Control-Allow-Origin "*" always;
+            add_header Access-Control-Allow-Methods "POST, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "Content-Type, X-TG-EXT-Version" always;
+            add_header Access-Control-Max-Age 86400 always;
+            return 204;
+        }
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Allow-Methods "POST, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, X-TG-EXT-Version" always;
+        proxy_pass http://127.0.0.1:9099/;
+        proxy_set_header Host $host;
+    }
+
+    location ^~ /n8n/ {
+        proxy_pass http://127.0.0.1:5678/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 300s;
+    }
+
+
+    location ^~ /api/ {
+        proxy_pass http://127.0.0.1:4181;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        try_files $uri $uri/ =404;
+        error_page 404 /404.html;
+    }
+
+    location ^~ /_ops/ {
+        allow 127.0.0.1;
+        allow ::1;
+        deny all;
+    }
+
+    location = /healthz {
+        access_log off;
+        return 200 "ok\n";
+    }
+}

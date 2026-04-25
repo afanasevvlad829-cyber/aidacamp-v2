@@ -1,0 +1,225 @@
+---
+import LandingLayout from '../layouts/LandingLayout.astro';
+import LandingHero from '../components/LandingHero.astro';
+import LandingTwoCol from '../components/LandingTwoCol.astro';
+import Shifts from '../components/Shifts.astro';
+import FAQ from '../components/FAQ.astro';
+import RelatedPages from '../components/RelatedPages.astro';
+import Gallery from '../components/Gallery.astro';
+import ShiftBookModal from '../components/shifts/ShiftBookModal.astro';
+import TaxCalculator from '../components/TaxCalculator.astro';
+import { getRelatedPages } from '../data/landing-pages';
+import { mainShifts, shortShifts } from '../data/shifts';
+
+// Таблица цен — формируем из data/shifts.ts, чтобы источник правды был один.
+const priceRows = [
+  ...mainShifts.map((s) => ({
+    id: s.id,
+    name: s.name,
+    dates: s.dates,
+    duration: s.duration,
+    price: s.price,
+    note: s.popular ? 'популярная' : '',
+  })),
+  ...shortShifts.map((s) => ({
+    id: s.id,
+    name: s.name,
+    dates: s.dates,
+    duration: s.duration,
+    price: s.price,
+    note: 'короткая',
+  })),
+];
+
+const sections = [
+  {
+    h2: 'Сколько стоит смена',
+    text: 'Цена зависит от длительности смены: короткие 7-дневные — от 48 000 ₽, полные 10–14-дневные — от 69 600 ₽ до 95 000 ₽. Все цены указаны за ребёнка, включают проживание, пятиразовое питание, полную программу и бассейн. Без скрытых доплат.',
+  },
+  {
+    h2: 'Что входит в стоимость',
+    text: 'Базовая путёвка закрывает всё необходимое на смене.',
+    list: [
+      'Проживание в комнатах по 2–4 человека с санузлом и душем',
+      '5-разовое питание (завтрак, 2-й завтрак, обед, полдник, ужин)',
+      'Образовательная программа: 2 раза в день по 90 минут — Python, AI, Minecraft, 3D, робототехника',
+      'Бассейн с ионизированной водой — через день',
+      'Вожатые 1:8, медработник на территории 24/7',
+      'Ноутбуки и всё оборудование — предоставляются в лагере',
+      'Родительский чат с ежедневными фото и сообщениями',
+    ],
+  },
+  {
+    h2: 'Что оплачивается отдельно',
+    text: 'В путёвку не входит — но можно заказать как опцию.',
+    list: [
+      'Трансфер от Москвы — опция',
+      'Страховка на время смены — рекомендуем оформить отдельно. Выгодоприобретателем по своему полису становятся родители — это даёт полный контроль над суммами и процедурой выплат.',
+    ],
+  },
+  {
+    h2: 'Способы оплаты',
+    text: 'Удобно и без давления.',
+    list: [
+      '100% оплата одним платежом — стандарт',
+      '50% предоплата при бронировании, остаток за 3 недели до начала смены',
+      'Банковский перевод, карта, СБП',
+      'Оплата через работодателя по безналу — предоставляем договор и акты',
+    ],
+  },
+  {
+    h2: 'Налоговый вычет 13%',
+    text: 'АйДаКемп работает по лицензии Минобрнауки, поэтому можно вернуть 13% от стоимости образовательных услуг (не от всей путёвки — из суммы вычитается бытовая часть: проживание и питание). Документы для вычета — договор, чек, копия лицензии — высылаем автоматически после оплаты. Расчёт возврата — в калькуляторе ниже.',
+  },
+  {
+    h2: 'Когда лучше бронировать',
+    text: 'Популярные смены закрываются за 2–3 месяца до старта. В апреле свободно 60–80% мест, в мае — остаётся 20–30%. Раннее бронирование = выбор любой даты и возрастной группы. Бронирование без предоплаты: 72 часа на размышление после звонка менеджера.',
+  },
+];
+---
+
+<LandingLayout
+  title="Цены на детский лагерь 2026 — от 48 000 ₽ за смену | АйДаКемп"
+  description="Лагерь на лето 2026: цены от 48 000 ₽ за 7 дней. Проживание, питание, программа включены. Налоговый вычет 13%. Купить путёвку."
+  h1="Цены на лагерь для детей — лето 2026, Подмосковье"
+  canonical="https://aidacamp.ru/ceny"
+  heroImage="/images/hero/kupit-putevku-v-lager.avif"
+>
+  <LandingHero slot="hero"
+    h1="Цены на лагерь для детей — лето 2026, Подмосковье"
+    subtitle="Лагеря на лето 2026 от 48 000 ₽ за 7 дней до 95 000 ₽ за 14 дней. Проживание, питание, программа и бассейн — всё включено."
+    breadcrumb="Цены"
+    keywords={[
+      'Лагеря на лето 2026 — путёвки от 48 000 ₽',
+      'Детский лагерь 2026 цены: без скрытых доплат',
+      'Налоговый вычет 13% — до 6 240 ₽ возврата',
+      'Оплата 100% или частями (50% сейчас + 50% за 3 нед. до смены), банковский перевод или карта',
+    ]}
+    image="/images/hero/kupit-putevku-v-lager.avif"
+    imageAlt="Цены на смены детского IT-лагеря АйДаКемп"
+  />
+
+  <!--
+    Таблица цен — каждая строка кликабельна и открывает ShiftInfoModal (возраст +
+    описание + расписание) через custom-event shift-modal-open. Контракт тот же,
+    что у кликов по строкам ShiftOccupancy, см. src/scripts/shift-modal.ts:222.
+  -->
+  <section class="mx-auto max-w-[1312px] px-4 py-10 md:py-14">
+    <div class="flex items-center gap-2 mb-6">
+      <div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div>
+      <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
+        Стоимость смен — лагерь на лето 2026 в Подмосковье
+      </h2>
+    </div>
+
+    <div class="overflow-x-auto rounded-[16px] border border-slate-200">
+      <table class="w-full min-w-[720px] border-collapse bg-white">
+        <thead>
+          <tr class="bg-slate-50 text-[13px] font-semibold uppercase tracking-wide text-slate-500">
+            <th class="px-4 py-3 text-left">Смена</th>
+            <th class="px-4 py-3 text-left">Даты</th>
+            <th class="px-4 py-3 text-left">Длительность</th>
+            <th class="px-4 py-3 text-right">Стоимость</th>
+            <th class="px-2 py-3 w-[110px]" aria-label="Метка"></th>
+            <th class="px-4 py-3 w-[160px] text-right" aria-label="Действие"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {priceRows.map((row) => (
+            <tr
+              class="price-row border-t border-slate-100 text-[15px] text-slate-700 cursor-pointer transition-colors hover:bg-orange-50/60"
+              data-price-shift={row.id}
+              role="button"
+              tabindex="0"
+              aria-label={`${row.name} — подробнее о смене`}
+            >
+              <td class="px-4 py-3 font-semibold text-slate-900">{row.name}</td>
+              <td class="px-4 py-3">{row.dates}</td>
+              <td class="px-4 py-3 text-slate-600">{row.duration}</td>
+              <td class="px-4 py-3 text-right font-bold text-[#ec7c00]">{row.price}</td>
+              <td class="px-2 py-3 text-right">
+                {row.note && (
+                  <span class="inline-flex rounded-full bg-orange-50 px-2.5 py-0.5 text-[12px] font-medium text-orange-700">{row.note}</span>
+                )}
+              </td>
+              <td class="px-4 py-3 text-right">
+                <span class="inline-flex items-center gap-1 rounded-full bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 text-[13px] font-semibold transition-colors whitespace-nowrap">
+                  Забронировать
+                  <i class="bi bi-arrow-right-short text-[15px]" aria-hidden="true"></i>
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <p class="mt-4 text-[14px] text-slate-500">
+      Цены на 2026 зафиксированы. Оплата в рублях, без привязки к курсу валют. Клик по строке — подробное описание смены и бронирование.
+    </p>
+
+    <!-- Urgency strip — дефицит мест -->
+    <div class="mt-4 flex flex-wrap items-center gap-3 rounded-[14px] bg-amber-50 border border-amber-200 px-4 py-3">
+      <div class="flex items-center gap-2 text-amber-800">
+        <i class="bi bi-fire text-[16px] text-orange-500 shrink-0" aria-hidden="true"></i>
+        <span class="text-[14px] font-semibold">Смена 2 (10–23 июня) — осталось ~20% мест</span>
+      </div>
+      <span class="hidden sm:block h-4 w-px bg-amber-200 shrink-0"></span>
+      <span class="text-[13px] text-amber-700">Популярные смены закрываются за 2–3 месяца до старта</span>
+      <button
+        type="button"
+        class="ml-auto shrink-0 inline-flex items-center gap-1.5 rounded-full bg-orange-500 hover:bg-orange-600 px-3 py-1.5 text-[13px] font-semibold text-white transition-colors"
+        onclick="document.dispatchEvent(new CustomEvent('shift-modal-open', {detail:{shiftId:'smena2',tab:'description'}}))"
+      >
+        Зафиксировать место
+        <i class="bi bi-arrow-right-short text-[15px]" aria-hidden="true"></i>
+      </button>
+    </div>
+  </section>
+
+  <LandingTwoCol sections={sections} />
+
+  <!-- Калькулятор налогового вычета (после PR #29 — кнопка «Купить смену» открывает ShiftInfoModal) -->
+  <TaxCalculator />
+
+  <!-- Карточки смен с кнопкой «Выбрать» -->
+  <Shifts />
+
+  <!-- Галерея для доверия -->
+  <Gallery />
+
+  <FAQ />
+
+  <ShiftBookModal />
+
+  <RelatedPages pages={getRelatedPages(Astro.url.pathname)} />
+</LandingLayout>
+
+<script>
+  // Nudge toast отключён
+
+  // Клик по строке таблицы цен → ShiftInfoModal (возраст + описание + расписание).
+  // Тот же контракт что у ShiftOccupancy row-clicks и TaxCalculator Buy-button.
+  function initPriceTable() {
+    document.querySelectorAll<HTMLTableRowElement>('.price-row').forEach((row) => {
+      const open = () => {
+        const shiftId = row.getAttribute('data-price-shift');
+        if (!shiftId) return;
+        const ev = new CustomEvent('shift-modal-open', {
+          detail: { shiftId, tab: 'description' },
+        });
+        document.dispatchEvent(ev);
+        (window as any).acTrack?.('ceny_row_click', { shiftId });
+      };
+      row.addEventListener('click', open);
+      row.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          open();
+        }
+      });
+    });
+  }
+  document.addEventListener('astro:page-load', initPriceTable);
+  initPriceTable();
+</script>

@@ -1,6 +1,8 @@
 // shift-modal.ts — единая модалка смены с табами Описание/Календарь/Подробнее
 import { allShifts, shiftInfo, PEER_COUNTS, type Shift } from '../data/shifts';
 import { renderCalendar } from './shift-calendar';
+import { trackGoal } from './analytics';
+import { STORAGE_KEYS } from '../lib/storage';
 
 type TabName = 'description' | 'calendar' | 'info';
 
@@ -83,8 +85,29 @@ export function initShiftModal() {
     const info = shiftInfo[shift.id];
     infoBody.innerHTML = info ? info.html : '<p class="text-slate-500">Подробности появятся скоро.</p>';
 
-    // Блок возраста: если уже выбран — сразу показываем результат
-    const savedAge = localStorage.getItem('user_age_group') || sessionStorage.getItem('selected_age');
+    // Фокусируем блок «По возрастам» на выбранный возраст
+    const selectedAge = sessionStorage.getItem(STORAGE_KEYS.selectedAge) || localStorage.getItem(STORAGE_KEYS.userAgeGroup);
+    if (selectedAge) {
+      const ageGroups = infoBody.querySelectorAll<HTMLElement>('[data-age-group]');
+      if (ageGroups.length) {
+        ageGroups.forEach((el) => {
+          if (el.dataset.ageGroup !== selectedAge) {
+            el.style.display = 'none';
+          } else {
+            el.classList.remove('bg-slate-50', 'border-slate-200');
+            el.classList.add('bg-orange-50', 'border-orange-200');
+          }
+        });
+        // Заменяем заголовок раздела
+        const title = infoBody.querySelector<HTMLElement>('[data-age-block-title]');
+        if (title) title.textContent = `Программа для ${selectedAge} лет`;
+      }
+    }
+
+    // Блок возраста: персонализацию показываем ТОЛЬКО если выбор сделан в этой сессии.
+    // localStorage не читаем — иначе на первом визите сразу вылезает «X ребят
+    // вашего возраста» без реального выбора (Fix 2026-04-20).
+    const savedAge = sessionStorage.getItem(STORAGE_KEYS.selectedAge);
     if (savedAge && Object.values(PEER_COUNTS).some(s => s[savedAge] !== undefined)) {
       showAgePeers(shift.id, savedAge);
     } else {
@@ -107,15 +130,14 @@ export function initShiftModal() {
     btn.addEventListener('click', () => {
       const age = btn.getAttribute('data-shift-age-btn') || '';
       if (!age) return;
-      localStorage.setItem('user_age_group', age);
-      sessionStorage.setItem('selected_age', age);
+      localStorage.setItem(STORAGE_KEYS.userAgeGroup, age);
+      sessionStorage.setItem(STORAGE_KEYS.selectedAge, age);
       showAgePeers(currentShiftId, age);
-      // Синхронизируем AgeBar — если ещё не выбран там
+      // Синхронизируем AgeBar — если ещё не выбран там (Fix 2026-04-20)
+      document.dispatchEvent(new CustomEvent('age-personalize', { detail: { age } }));
       sessionStorage.setItem('age_bar_shown', '1');
-      sessionStorage.setItem('age_bar_dismissed', '1');
-      if (typeof window.ym !== 'undefined') (window as any).ym(96499295, 'reachGoal', 'age_select');
-      (window as any)._tmr = (window as any)._tmr || [];
-      (window as any)._tmr.push({ type: 'reachGoal', id: 3755202, value: 100, goal: 'age_select' });
+      sessionStorage.setItem(STORAGE_KEYS.ageBarDismissed, '1');
+      trackGoal('age_select');
     });
   });
 
@@ -127,7 +149,7 @@ export function initShiftModal() {
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-    modal.setAttribute('aria-hidden', 'false');
+    modal.removeAttribute('inert');
     document.body.style.overflow = 'hidden';
 
     requestAnimationFrame(() => {
@@ -148,7 +170,7 @@ export function initShiftModal() {
     setTimeout(() => {
       modal.classList.add('hidden');
       modal.classList.remove('flex');
-      modal.setAttribute('aria-hidden', 'true');
+      modal.setAttribute('inert', '');
       document.body.style.overflow = '';
     }, 300);
   }
@@ -207,7 +229,7 @@ export function initShiftModal() {
     setTimeout(() => target?.click(), 320);
   });
 
-  // === Клик по строке ShiftOccupancy ===
+  // === Клик по строке ShiftOccupancy + по inline shiftLinkHtml() ===
   document.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
     const row = target.closest<HTMLElement>('[data-occupancy-shift]');
@@ -215,6 +237,15 @@ export function initShiftModal() {
       const id = row.dataset.occupancyShift || '';
       if (id) {
         (window as any).trackGoal?.('check_places');
+        open(id, 'description');
+      }
+      return;
+    }
+    const link = target.closest<HTMLElement>('[data-shift-link]');
+    if (link) {
+      const id = link.dataset.shiftLink || '';
+      if (id) {
+        (window as any).trackGoal?.('shift_link_click', { shiftId: id });
         open(id, 'description');
       }
     }

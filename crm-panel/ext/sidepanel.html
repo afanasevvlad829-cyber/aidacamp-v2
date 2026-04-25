@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>АйДаКемп CRM</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;
+       background:#f5f5f7;color:#1d1d1f;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+  /* ── Header ── */
+  .hdr{background:#1c1c1e;color:#fff;padding:9px 12px;display:flex;align-items:center;
+       gap:8px;flex-shrink:0}
+  .hdr h1{font-size:13px;font-weight:600}
+  .badge{background:#30d158;color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 7px}
+  .refresh{margin-left:auto;background:none;border:1px solid #48484a;color:#aeaeb2;
+           border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:4px}
+  .refresh:hover{border-color:#fff;color:#fff}
+
+  /* ── Search ── */
+  .srch{padding:7px 10px;background:#fff;border-bottom:1px solid #e5e5ea;flex-shrink:0}
+  .srch input{width:100%;border:1px solid #d1d1d6;border-radius:8px;padding:6px 10px 6px 32px;
+              font-size:13px;outline:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%23aaa' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.868-3.833zm-5.242 1.156a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E") no-repeat 10px center}
+  .srch input:focus{border-color:#007aff}
+
+  /* ── Scroll ── */
+  .scroll{flex:1;overflow-y:auto;padding:8px 0}
+
+  /* ── Accordion ── */
+  .group{margin:0 8px 6px;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+  .ghdr{display:flex;align-items:center;gap:7px;padding:9px 12px;cursor:pointer;
+        user-select:none;font-weight:600;font-size:12px}
+  .ghdr .cnt{margin-left:auto;background:rgba(0,0,0,.1);border-radius:10px;padding:1px 7px;font-size:11px}
+  .ghdr .chev{font-size:11px;transition:transform .2s}
+  .ghdr.open .chev{transform:rotate(90deg)}
+  .gbody{display:none}
+  .gbody.open{display:block}
+  .g-safe   .ghdr{background:#e8f9ee;color:#1a7a3c;border-bottom:1px solid #c3e6cb}
+  .g-warm   .ghdr{background:#fff8e1;color:#8a6200;border-bottom:1px solid #ffe082}
+  .g-risky  .ghdr{background:#fdecea;color:#9c2a1a;border-bottom:1px solid #f5c6cb}
+  .g-safe{border:1.5px solid #34c75933}
+  .g-warm{border:1.5px solid #ff9f0a33}
+  .g-risky{border:1.5px solid #ff453a33}
+
+  /* ── Contact card ── */
+  .card{padding:8px 10px 8px 10px;background:#fff;border-top:1px solid #f2f2f7;
+        cursor:pointer;transition:background .12s;display:flex;align-items:center;gap:8px;
+        overflow:hidden}
+  .card:hover{background:#f0f4ff}
+  .card.active{background:#e8f0fe;border-left:3px solid #007aff}
+  .card-info{flex:1;min-width:0;overflow:hidden}
+  .card-name{font-weight:600;font-size:13px;display:flex;align-items:center;gap:5px;
+             margin-bottom:3px}
+  .card-name-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+  .card-sub{color:#8e8e93;font-size:11px;display:flex;align-items:center;gap:4px;
+            flex-wrap:wrap;row-gap:3px}
+  .score-pill{color:#fff;font-size:12px;font-weight:700;border-radius:8px;
+              padding:3px 8px;white-space:nowrap;flex-shrink:0;min-width:36px;
+              text-align:center;cursor:help}
+  .score-pill.high{background:#34c759}
+  .score-pill.mid{background:#ff9f0a}
+  .score-pill.low{background:#ff3b30}
+
+  /* ── Flags (chips) ── */
+  .flag-chip{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:500;
+             border-radius:5px;padding:2px 6px;cursor:help;position:relative;white-space:nowrap;
+             max-width:140px;overflow:hidden}
+  .flag-chip span:not(.tipbox){overflow:hidden;text-overflow:ellipsis}
+  .flag-chip.hot{background:#fff0ee;color:#c0392b;border:1px solid #f5c6c2}
+  .flag-chip.price{background:#fff8e1;color:#856404;border:1px solid #ffe082}
+  .flag-chip.killer{background:#f8e0e0;color:#7b0000;border:1px solid #e6b3b3}
+  .flag-chip.dist{background:#e8f4ff;color:#1a5c8a;border:1px solid #bee0f5}
+  .flag-chip.competitor{background:#f3e8ff;color:#6a1b9a;border:1px solid #d9b3f5}
+  .flag-chip.camp{background:#e8f9ee;color:#1a7a3c;border:1px solid #c3e6cb}
+  .flag-chip.tg-only{background:#e8f4ff;color:#0088cc;border:1px solid #b3d9f5}
+
+  /* ── Tooltip ── */
+  .tip{position:relative}
+  .tip .tipbox{display:none;position:fixed;z-index:9999;background:#1c1c1e;color:#fff;
+               border-radius:8px;padding:8px 10px;width:220px;font-size:11px;line-height:1.5;
+               box-shadow:0 4px 16px rgba(0,0,0,.4);pointer-events:none;
+               white-space:normal}
+  .tip .tipbox strong{display:block;margin-bottom:4px;font-size:12px;color:#30d158}
+  .tip:hover .tipbox{display:block}
+
+  /* ── Detail panel ── */
+  .detail{background:#fff;flex-shrink:0;overflow-y:auto;display:none;
+          position:fixed;bottom:0;left:0;right:0;
+          height:92vh;
+          border-radius:16px 16px 0 0;
+          box-shadow:0 -4px 32px rgba(0,0,0,.18);
+          border-top:3px solid #007aff;
+          z-index:100}
+  .detail.open{display:block}
+  /* dim the list behind */
+  .detail-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);
+                   z-index:99;backdrop-filter:blur(2px)}
+  .detail-backdrop.open{display:block}
+  .dhdr{padding:12px 14px 9px;display:flex;align-items:flex-start;gap:10px;
+        border-bottom:1px solid #e5e5ea;position:sticky;top:0;
+        background:#fff;z-index:2;border-radius:16px 16px 0 0}
+  /* drag handle */
+  .dhdr::before{content:'';position:absolute;top:6px;left:50%;transform:translateX(-50%);
+                width:36px;height:4px;border-radius:2px;background:#d1d1d6}
+  .dhdr-info{flex:1;min-width:0}
+  .d-name{font-size:15px;font-weight:700;color:#1d1d1f}
+  .d-meta{font-size:11px;color:#636366;margin-top:4px;display:flex;flex-wrap:wrap;gap:6px}
+  .d-meta span{display:inline-flex;align-items:center;gap:3px}
+  .close-btn{background:#f2f2f7;border:none;border-radius:50%;width:28px;height:28px;
+             cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;
+             color:#636366;flex-shrink:0;margin-top:2px}
+  .close-btn:hover{background:#e0e0e5;color:#1d1d1f}
+
+  /* ── Flags row in detail ── */
+  .flags-row{display:flex;flex-wrap:wrap;gap:5px;padding:7px 12px;
+             border-bottom:1px solid #f2f2f7}
+
+  /* ── Interactions breakdown ── */
+  .interactions{padding:6px 12px;border-bottom:1px solid #f2f2f7;
+                font-size:11px;color:#636366;display:flex;gap:12px;flex-wrap:wrap}
+  .interactions span{display:inline-flex;align-items:center;gap:4px}
+
+  /* ── Message ── */
+  .msg-wrap{padding:10px 12px 6px}
+  .sec-label{font-size:10px;font-weight:700;color:#8e8e93;text-transform:uppercase;
+             letter-spacing:.5px;margin-bottom:5px;display:flex;align-items:center;gap:5px}
+  .msg-area{background:#f5f5f7;border-radius:8px;padding:10px;font-size:13px;
+            line-height:1.55;border:1px solid #e5e5ea;min-height:60px}
+  .msg-area:focus{outline:2px solid #007aff;border-color:transparent;background:#fff}
+  .why-text{font-size:11px;color:#636366;margin-top:5px;font-style:italic;
+            display:flex;align-items:flex-start;gap:4px}
+
+  /* ── Last comment ── */
+  .last-comm{margin:0 12px 8px;font-size:11px;color:#636366;background:#f9f9fb;
+             border-radius:8px;padding:8px 10px;line-height:1.5}
+  .last-comm .comm-label{font-weight:600;color:#1d1d1f;margin-bottom:3px;
+                         display:flex;align-items:center;gap:4px;font-size:11px}
+
+  /* ── Channel buttons ── */
+  .channels{display:flex;gap:8px;padding:0 12px 12px}
+  .ch-btn{flex:1;border:none;border-radius:10px;padding:9px 8px;cursor:pointer;
+          font-size:13px;font-weight:600;display:flex;align-items:center;
+          justify-content:center;gap:6px;transition:opacity .15s,transform .1s}
+  .ch-btn:active{transform:scale(.97)}
+  .ch-btn i{font-size:16px}
+  .wa-primary{background:#25d366;color:#fff}
+  .wa-secondary{background:#e8faf0;color:#1a8c46;border:1.5px solid #25d366}
+  .tg-primary{background:#0088cc;color:#fff}
+  .tg-secondary{background:#e8f4ff;color:#0060a0;border:1.5px solid #0088cc}
+  .ch-btn.disabled{opacity:.3;pointer-events:none}
+  .pref-star{font-size:10px;opacity:.8}
+
+  /* ── CRM link ── */
+  .crm-link{display:flex;align-items:center;justify-content:center;gap:6px;
+            margin:0 12px 12px;background:#f2f2f7;border-radius:8px;padding:8px;
+            color:#007aff;font-size:12px;font-weight:500;cursor:pointer;border:none;width:calc(100% - 24px)}
+  .crm-link:hover{background:#e5e5ea}
+
+  /* ── Reaction chips ── */
+  .rx-chip{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:500;
+           border-radius:5px;padding:2px 6px;cursor:help;position:relative;white-space:nowrap}
+  .rx-yes{background:#e8f9ee;color:#1a7a3c;border:1px solid #c3e6cb}
+  .rx-no{background:#f2f2f7;color:#8e8e93;border:1px solid #d1d1d6}
+
+  .loader{text-align:center;padding:30px;font-size:22px;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .empty{text-align:center;color:#8e8e93;padding:30px 20px;font-size:13px;line-height:1.6}
+
+  /* ── Activity dot ── */
+  .act-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;cursor:help;
+           display:inline-block;position:relative}
+  .act-dot .tipbox{width:210px;left:0;transform:none}
+
+  /* ── Archetype badge ── */
+  .arch-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;
+              border-radius:6px;padding:2px 7px;cursor:help;position:relative}
+  .arch-investor     {background:#e8f4ff;color:#1a5c8a;border:1px solid #bee0f5}
+  .arch-problem_solver{background:#fff0ee;color:#9c2a1a;border:1px solid #f5c6c2}
+  .arch-social       {background:#f3e8ff;color:#6a1b9a;border:1px solid #d9b3f5}
+  .arch-economist    {background:#fff8e1;color:#8a6200;border:1px solid #ffe082}
+  .arch-outbound     {background:#f2f2f7;color:#636366;border:1px solid #d1d1d6}
+
+  /* ── Manager note box ── */
+  .mgr-note{margin:0 12px 10px;background:#f0f7ff;border-radius:8px;padding:9px 11px;
+            border-left:3px solid #007aff;font-size:11px;line-height:1.6;color:#1d1d1f}
+  .mgr-note .mgr-label{font-weight:700;color:#007aff;font-size:10px;text-transform:uppercase;
+                        letter-spacing:.4px;margin-bottom:5px;display:flex;align-items:center;gap:4px}
+
+  /* ── Secondary archetype ── */
+  .arch-secondary{opacity:.7;font-size:9px}
+
+  /* ── Conversation modal ── */
+  .conv-modal{position:fixed;inset:0;z-index:10000;display:none;flex-direction:column;background:#fff}
+  .conv-modal.open{display:flex}
+  .conv-hdr{background:#1c1c1e;color:#fff;padding:10px 12px;display:flex;
+            align-items:center;gap:10px;flex-shrink:0}
+  .conv-hdr-title{flex:1;min-width:0;font-size:13px;font-weight:600;
+                  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .conv-tabs{display:flex;gap:6px;flex-shrink:0}
+  .conv-tab{background:rgba(255,255,255,.12);border:none;border-radius:8px;
+            color:#fff;font-size:12px;font-weight:600;padding:5px 12px;cursor:pointer}
+  .conv-tab.active{background:#007aff}
+  .conv-tab:disabled{opacity:.3;cursor:default}
+  .conv-close{background:rgba(255,255,255,.15);border:none;border-radius:50%;
+              width:28px;height:28px;color:#fff;font-size:15px;cursor:pointer;
+              display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .conv-close:hover{background:rgba(255,255,255,.3)}
+  .conv-body{flex:1;overflow-y:auto;padding:12px 10px;background:#f5f5f7;
+             display:flex;flex-direction:column;gap:6px}
+  .conv-empty{text-align:center;color:#8e8e93;padding:40px 20px;font-size:13px}
+  .bubble-row{display:flex;align-items:flex-end;gap:6px}
+  .bubble-row.out{flex-direction:row-reverse}
+  .bubble{max-width:78%;border-radius:16px;padding:8px 11px;font-size:12.5px;
+          line-height:1.5;word-break:break-word}
+  .bubble-row.in  .bubble{background:#fff;border-bottom-left-radius:4px;
+                           box-shadow:0 1px 2px rgba(0,0,0,.1)}
+  .bubble-row.out .bubble{background:#007aff;color:#fff;border-bottom-right-radius:4px}
+  .bubble-name{font-size:10px;font-weight:600;color:#007aff;margin-bottom:3px}
+  .bubble-row.out .bubble-name{color:rgba(255,255,255,.7)}
+  .bubble-ts{font-size:10px;color:rgba(0,0,0,.35);margin-top:3px;text-align:right}
+  .bubble-row.out .bubble-ts{color:rgba(255,255,255,.55)}
+  .date-divider{text-align:center;font-size:10px;color:#8e8e93;
+                margin:4px 0;display:flex;align-items:center;gap:8px}
+  .date-divider::before,.date-divider::after{content:'';flex:1;height:1px;background:#d1d1d6}
+  .conv-loader{text-align:center;padding:40px;font-size:28px;color:#007aff;
+               animation:spin 1s linear infinite}
+
+  /* ── Info panel ── */
+  .info-panel{position:fixed;inset:0;z-index:10001;display:none;flex-direction:column;
+              background:#f5f5f7;overflow-y:auto}
+  .info-panel.open{display:flex}
+  .info-hdr{background:#1c1c1e;color:#fff;padding:10px 12px;display:flex;
+            align-items:center;gap:10px;flex-shrink:0;position:sticky;top:0;z-index:2}
+  .info-hdr-title{flex:1;font-size:13px;font-weight:600}
+  .info-close{background:rgba(255,255,255,.15);border:none;border-radius:50%;
+              width:28px;height:28px;color:#fff;font-size:15px;cursor:pointer;
+              display:flex;align-items:center;justify-content:center}
+  .info-close:hover{background:rgba(255,255,255,.28)}
+  .info-body{padding:12px 12px 24px;display:flex;flex-direction:column;gap:10px}
+  .info-section{background:#fff;border-radius:12px;padding:12px 14px;
+                box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .info-section h3{font-size:12px;font-weight:700;color:#007aff;text-transform:uppercase;
+                   letter-spacing:.4px;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+  .info-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;font-size:12px;
+            line-height:1.5;color:#1d1d1f}
+  .info-row:last-child{margin-bottom:0}
+  .info-icon{font-size:16px;flex-shrink:0;width:20px;text-align:center}
+  .info-label{font-weight:600}
+  .info-sub{font-size:11px;color:#636366;margin-top:1px}
+  .info-badge{display:inline-block;border-radius:6px;padding:2px 8px;font-size:10px;
+              font-weight:700;margin-right:4px}
+  .ib-green{background:#e8f9ee;color:#1a7a3c;border:1px solid #c3e6cb}
+  .ib-yellow{background:#fff8e1;color:#8a6200;border:1px solid #ffe082}
+  .ib-red{background:#fdecea;color:#9c2a1a;border:1px solid #f5c6cb}
+  .ib-blue{background:#e8f4ff;color:#1a5c8a;border:1px solid #bee0f5}
+  .info-divider{height:1px;background:#f2f2f7;margin:6px 0}
+  .info-tech{background:#1c1c1e;border-radius:12px;padding:12px 14px}
+  .info-tech h3{color:#30d158}
+  .info-tech .info-row{color:#e0e0e0}
+  .info-tech .info-sub{color:#8e8e93}
+  .info-version{text-align:center;font-size:10px;color:#aeaeb2;margin-top:4px}
+  .info-btn{background:none;border:1.5px solid #48484a;color:#aeaeb2;border-radius:6px;
+            padding:3px 8px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:4px}
+  .info-btn:hover{border-color:#fff;color:#fff}
+
+  /* ── Manager note field ── */
+  .mgr-input-wrap{margin:0 12px 10px;position:relative}
+  .mgr-input-label{font-size:10px;font-weight:700;color:#007aff;text-transform:uppercase;
+                   letter-spacing:.4px;margin-bottom:5px;display:flex;align-items:center;
+                   justify-content:space-between}
+  .mgr-input-label .mgr-saved{font-size:10px;color:#34c759;font-weight:500;
+                               text-transform:none;letter-spacing:0;opacity:0;
+                               transition:opacity .3s}
+  .mgr-input-label .mgr-saved.show{opacity:1}
+  .mgr-textarea{width:100%;border:1.5px solid #d1d1d6;border-radius:10px;padding:8px 38px 8px 10px;
+                font-size:12px;line-height:1.55;resize:none;min-height:64px;max-height:150px;
+                font-family:inherit;background:#f9f9fb;color:#1d1d1f;outline:none}
+  .mgr-textarea:focus{border-color:#007aff;background:#fff}
+  .mgr-mic-btn{position:absolute;right:8px;bottom:8px;background:none;border:none;
+               cursor:pointer;font-size:18px;color:#8e8e93;padding:3px;border-radius:6px;
+               transition:color .15s,background .15s;line-height:1}
+  .mgr-mic-btn:hover{color:#007aff;background:#e8f0fe}
+  .mgr-mic-btn.recording{color:#ff3b30;animation:pulse-mic .8s ease-in-out infinite}
+  .mgr-prev-note{margin:0 12px 6px;font-size:11px;color:#636366;background:#f9f9fb;
+                 border-radius:8px;padding:6px 10px;line-height:1.5;display:none}
+  .mgr-prev-note .pn-label{font-weight:600;color:#007aff;font-size:10px;
+                            display:flex;align-items:center;gap:4px;margin-bottom:3px}
+  @keyframes pulse-mic{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.15)}}
+
+  /* ── Conversation peek buttons ── */
+  .conv-btns{display:flex;gap:8px;padding:0 12px 6px}
+  .conv-peek-btn{flex:1;border:1.5px solid;border-radius:10px;padding:7px 8px;
+                 cursor:pointer;font-size:12px;font-weight:600;background:#fff;
+                 display:flex;align-items:center;justify-content:center;gap:5px}
+  .conv-peek-btn.wa{border-color:#25d366;color:#1a8c46}
+  .conv-peek-btn.wa:hover{background:#e8faf0}
+  .conv-peek-btn.tg{border-color:#0088cc;color:#0060a0}
+  .conv-peek-btn.tg:hover{background:#e8f4ff}
+  .conv-peek-btn:disabled{opacity:.25;cursor:default}
+
+  /* ── AI Sales Coach ── */
+  .coach-wrap{margin:0 12px 10px}
+  .coach-start-btn{width:100%;border:1.5px dashed #636366;border-radius:10px;
+    padding:9px 12px;background:none;color:#636366;font-size:12px;font-weight:600;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
+    transition:all .15s}
+  .coach-start-btn:hover{border-color:#007aff;color:#007aff;background:#f0f7ff}
+  .coach-dialog{margin-top:8px;border:1.5px solid #e5e5ea;border-radius:12px;
+    overflow:hidden;background:#f9f9fb}
+  .coach-msgs{max-height:260px;overflow-y:auto;padding:10px 10px 4px;
+    display:flex;flex-direction:column;gap:8px}
+  .coach-msg{display:flex;flex-direction:column;gap:2px;max-width:88%}
+  .coach-msg.ai{align-self:flex-start}
+  .coach-msg.mgr{align-self:flex-end}
+  .coach-bubble{border-radius:14px;padding:8px 11px;font-size:12px;line-height:1.5;
+    word-break:break-word}
+  .coach-msg.ai  .coach-bubble{background:#fff;border-bottom-left-radius:4px;
+    box-shadow:0 1px 2px rgba(0,0,0,.08);color:#1d1d1f}
+  .coach-msg.mgr .coach-bubble{background:#007aff;color:#fff;border-bottom-right-radius:4px}
+  .coach-msg-label{font-size:10px;color:#8e8e93;padding:0 4px}
+  .coach-msg.mgr .coach-msg-label{text-align:right}
+  .coach-typing{font-size:11px;color:#8e8e93;padding:4px 4px 8px;
+    display:flex;align-items:center;gap:5px}
+  .coach-dots span{display:inline-block;width:5px;height:5px;border-radius:50%;
+    background:#8e8e93;animation:dot-bounce .9s ease-in-out infinite}
+  .coach-dots span:nth-child(2){animation-delay:.2s}
+  .coach-dots span:nth-child(3){animation-delay:.4s}
+  @keyframes dot-bounce{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+  .coach-input-row{display:flex;align-items:flex-end;gap:5px;
+    padding:6px 8px;border-top:1px solid #e5e5ea;background:#fff}
+  .coach-input{flex:1;border:none;outline:none;font-size:12px;line-height:1.5;
+    resize:none;min-height:36px;max-height:80px;font-family:inherit;
+    background:transparent;color:#1d1d1f}
+  .coach-mic-btn,.coach-send-btn{background:none;border:none;cursor:pointer;
+    font-size:17px;padding:4px;border-radius:6px;line-height:1;flex-shrink:0;
+    color:#8e8e93;transition:color .15s,background .15s}
+  .coach-mic-btn:hover{color:#007aff;background:#e8f0fe}
+  .coach-send-btn{color:#007aff}
+  .coach-send-btn:hover{background:#e8f0fe}
+  .coach-send-btn:disabled{color:#d1d1d6;cursor:default}
+  .coach-done{margin:6px 10px 10px;padding:8px 10px;background:#e8f9ee;
+    border-radius:8px;font-size:11px;color:#1a7a3c;line-height:1.5;
+    border-left:3px solid #34c759}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <i class="bi bi-people-fill" style="color:#30d158"></i>
+  <h1>АйДаКемп · Реактивация</h1>
+  <span class="badge" id="total-badge">—</span>
+  <button class="refresh" id="refresh-btn"><i class="bi bi-arrow-clockwise"></i> Обновить</button>
+  <button class="info-btn" id="info-btn"><i class="bi bi-info-circle"></i></button>
+</div>
+
+<div class="srch">
+  <input type="search" id="search" placeholder="Поиск по имени или телефону…">
+</div>
+
+<div class="scroll" id="scroll-area">
+  <div class="loader">⏳</div>
+</div>
+
+<div class="detail-backdrop" id="detail-backdrop"></div>
+<div class="detail" id="detail">
+  <div class="dhdr">
+    <div class="dhdr-info">
+      <div class="d-name" id="d-name"></div>
+      <div class="d-meta" id="d-meta"></div>
+    </div>
+    <button class="close-btn" id="d-close"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <div class="flags-row" id="d-flags"></div>
+  <div class="interactions" id="d-interactions"></div>
+
+  <div class="msg-wrap">
+    <div class="sec-label"><i class="bi bi-chat-text"></i> Предлагаемое сообщение</div>
+    <div class="msg-area" id="d-message" contenteditable="true"></div>
+    <div class="why-text"><i class="bi bi-lightbulb" style="flex-shrink:0;margin-top:1px"></i><span id="d-why"></span></div>
+  </div>
+
+  <div class="last-comm" id="d-comment" style="display:none">
+    <div class="comm-label"><i class="bi bi-clock-history"></i> Последний комментарий CRM</div>
+    <div id="d-comment-text"></div>
+  </div>
+
+  <!-- Manager note -->
+  <div class="mgr-prev-note" id="d-prev-note">
+    <div class="pn-label"><i class="bi bi-journal-text"></i> Предыдущая заметка</div>
+    <div id="d-prev-note-text"></div>
+  </div>
+  <div class="mgr-input-wrap">
+    <div class="mgr-input-label">
+      <span><i class="bi bi-pencil-square"></i> Заметка менеджера</span>
+      <span class="mgr-saved" id="mgr-saved-badge">✓ Сохранено</span>
+    </div>
+    <textarea class="mgr-textarea" id="mgr-textarea" placeholder="Что узнали из звонка, следующий шаг, особенности клиента…" rows="3"></textarea>
+    <button class="mgr-mic-btn" id="mgr-mic-btn" title="Надиктовать голосом">
+      <i class="bi bi-mic"></i>
+    </button>
+  </div>
+
+  <div class="channels" id="d-channels"></div>
+
+  <!-- ── AI Sales Coach Dialog ── -->
+  <div class="coach-wrap" id="coach-wrap">
+    <button class="coach-start-btn" id="coach-start-btn">
+      <i class="bi bi-robot"></i> Записать результат контакта
+    </button>
+    <div class="coach-dialog" id="coach-dialog" style="display:none">
+      <div class="coach-msgs" id="coach-msgs"></div>
+      <div class="coach-input-row">
+        <textarea class="coach-input" id="coach-input" placeholder="Что произошло при контакте…" rows="2"></textarea>
+        <button class="coach-mic-btn" id="coach-mic-btn" title="Надиктовать"><i class="bi bi-mic"></i></button>
+        <button class="coach-send-btn" id="coach-send-btn"><i class="bi bi-send-fill"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <button class="crm-link" id="d-crm-btn">
+    <i class="bi bi-box-arrow-up-right"></i> Открыть карточку в AlfaCRM
+  </button>
+</div>
+
+<!-- ── Info panel ────────────────────────────────────────────────────────── -->
+<div class="info-panel" id="info-panel">
+  <div class="info-hdr">
+    <i class="bi bi-info-circle-fill" style="color:#30d158;font-size:15px"></i>
+    <div class="info-hdr-title">Как работает панель</div>
+    <button class="info-close" id="info-close"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <div class="info-body">
+
+    <div class="info-section">
+      <h3><i class="bi bi-diagram-3"></i> Группы контактов</h3>
+      <div class="info-row">
+        <span class="info-icon">🟢</span>
+        <div>
+          <div><span class="info-label">Тёплые — писали сами</span></div>
+          <div class="info-sub">Клиент хотя бы раз сам написал нам. Наиболее перспективные — они уже проявляли инициативу.</div>
+        </div>
+      </div>
+      <div class="info-divider"></div>
+      <div class="info-row">
+        <span class="info-icon">🟡</span>
+        <div>
+          <div><span class="info-label">Работали мы</span></div>
+          <div class="info-sub">Мы писали первыми. Клиент мог ответить, но инициатива была наша. Нужен более мягкий заход.</div>
+        </div>
+      </div>
+      <div class="info-divider"></div>
+      <div class="info-row">
+        <span class="info-icon">🔴</span>
+        <div>
+          <div><span class="info-label">Последний шанс</span></div>
+          <div class="info-sub">4–5 наших сообщений подряд без ответа. Разрешена <b>1 попытка</b> — потом контакт уходит в заморозку на 6–12 месяцев. Используйте нестандартный подход.</div>
+        </div>
+      </div>
+      <div class="info-divider"></div>
+      <div class="info-row">
+        <span class="info-icon">🚫</span>
+        <div>
+          <div><span class="info-label">Заморожены (скрыты)</span></div>
+          <div class="info-sub">6+ сообщений без ответа — клиент не видит панель вообще. Автоматически вернутся через сезон после обновления данных.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <h3><i class="bi bi-bar-chart"></i> Скоринг (балл 0–100)</h3>
+      <div class="info-row" style="align-items:center">
+        <span class="info-badge ib-green" style="flex-shrink:0;min-width:42px;text-align:center">+60</span>
+        <div class="info-sub" style="margin:0">Клиент писал сам (SAFE_INCOMING)</div>
+      </div>
+      <div class="info-row" style="align-items:center">
+        <span class="info-badge ib-yellow" style="flex-shrink:0;min-width:42px;text-align:center">+40</span>
+        <div class="info-sub" style="margin:0">Мы писали первыми (WARM_OUTGOING)</div>
+      </div>
+      <div class="info-row" style="align-items:center">
+        <span class="info-badge ib-blue" style="flex-shrink:0;min-width:42px;text-align:center">+бонус</span>
+        <div class="info-sub" style="margin:0">Число касаний, горячий интерес, ценовой сигнал, недавняя активность, флаги лагеря</div>
+      </div>
+      <div class="info-row" style="align-items:center">
+        <span class="info-badge ib-red" style="flex-shrink:0;min-width:42px;text-align:center">−штраф</span>
+        <div class="info-sub" style="margin:0">Много неотвеченных, давность контакта, барьеры (расстояние, конкурент)</div>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <h3><i class="bi bi-chat-quote"></i> Анализ переписки</h3>
+      <div class="info-row">
+        <span class="info-icon">💬</span>
+        <div>
+          <div><span class="info-label">Ключевые цитаты</span></div>
+          <div class="info-sub">Из переписки автоматически извлекаются реальные фразы клиента по темам: отмена, цена, сомнение, интерес. Показываются с датой.</div>
+        </div>
+      </div>
+      <div class="info-divider"></div>
+      <div class="info-row">
+        <span class="info-icon">🎯</span>
+        <div>
+          <div><span class="info-label">Тональность</span></div>
+          <div class="info-sub">🎯 интерес · 🤔 сомнение · ⚠️ отказ · 🚫 отмена/обстоятельства — определяется по последним сообщениям клиента.</div>
+        </div>
+      </div>
+      <div class="info-divider"></div>
+      <div class="info-row">
+        <span class="info-icon">📊</span>
+        <div>
+          <div><span class="info-label">Неотвеченные</span></div>
+          <div class="info-sub">Считаем сколько наших сообщений отправлено после последнего ответа клиента. 0–3 = норма, 4–5 = последний шанс, 6+ = заморозка.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <h3><i class="bi bi-flag"></i> Флаги</h3>
+      <div class="info-row"><span class="info-icon">🌡️</span><div><span class="info-label">Горячий интерес</span><div class="info-sub">«Хочу записать», «запишите», «интересует» — клиент сам двигался к покупке</div></div></div>
+      <div class="info-row"><span class="info-icon">💰</span><div><span class="info-label">Ценовой барьер</span><div class="info-sub">Упоминал стоимость, скидки, рассрочку</div></div></div>
+      <div class="info-row"><span class="info-icon">📍</span><div><span class="info-label">Барьер расстояние</span><div class="info-sub">Ссылался на удалённость лагеря</div></div></div>
+      <div class="info-row"><span class="info-icon">🏢</span><div><span class="info-label">Конкурент</span><div class="info-sub">Упоминал другой лагерь или уже выбрал другое место</div></div></div>
+      <div class="info-row"><span class="info-icon">⛺</span><div><span class="info-label">Сигнал лагерь</span><div class="info-sub">Говорил о конкретной смене, датах, программе</div></div></div>
+    </div>
+
+    <div class="info-section info-tech">
+      <h3><i class="bi bi-cpu"></i> Под капотом</h3>
+      <div class="info-row">
+        <span class="info-icon">🏛️</span>
+        <div>
+          <div><span class="info-label" style="color:#fff">Natasha NLP</span></div>
+          <div class="info-sub">Русскоязычный NLP-фреймворк. Извлекает имена детей, города и организации из переписки через Named Entity Recognition (NER).</div>
+        </div>
+      </div>
+      <div class="info-divider" style="background:#2c2c2e"></div>
+      <div class="info-row">
+        <span class="info-icon">🎭</span>
+        <div>
+          <div><span class="info-label" style="color:#fff">Domain Sentiment</span></div>
+          <div class="info-sub">Тональность определяется через паттерны специфичные для продаж детских лагерей — точнее generic моделей обученных на твитах.</div>
+        </div>
+      </div>
+      <div class="info-divider" style="background:#2c2c2e"></div>
+      <div class="info-row">
+        <span class="info-icon">🗄️</span>
+        <div>
+          <div><span class="info-label" style="color:#fff">PostgreSQL · ai_dialogs</span></div>
+          <div class="info-sub">60 000+ сообщений WA + TG. Матчинг WA по номеру (@c.us), TG через таблицу ai_tg_users.</div>
+        </div>
+      </div>
+      <div class="info-divider" style="background:#2c2c2e"></div>
+      <div class="info-row">
+        <span class="info-icon">📁</span>
+        <div>
+          <div><span class="info-label" style="color:#fff">AlfaCRM Export</span></div>
+          <div class="info-sub">Данные обновляются из Excel-выгрузки. Контексты пересчитываются скриптом build_contexts.py и кешируются в contexts_cache.json.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-version">АйДаКемп CRM Panel · v1.2.0 · 2026</div>
+  </div>
+</div>
+
+<!-- ── Conversation modal ─────────────────────────────────────────────────── -->
+<div class="conv-modal" id="conv-modal">
+  <div class="conv-hdr">
+    <div class="conv-hdr-title" id="conv-hdr-title">Переписка</div>
+    <div class="conv-tabs">
+      <button class="conv-tab" id="conv-tab-wa"><i class="bi bi-whatsapp"></i> WhatsApp</button>
+      <button class="conv-tab" id="conv-tab-tg"><i class="bi bi-telegram"></i> Telegram</button>
+    </div>
+    <button class="conv-close" id="conv-close-btn"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <div class="conv-body" id="conv-body">
+    <div class="conv-loader">💬</div>
+  </div>
+</div>
+
+<script src="sidepanel.js"></script>
+</body>
+</html>

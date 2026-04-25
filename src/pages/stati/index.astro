@@ -1,0 +1,482 @@
+---
+import '../../styles/global.css';
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+
+type Article = {
+  url: string;
+  title: string;
+  description: string;
+  tag: string;
+  tagColor: string;
+  readTime?: string;
+};
+
+const clusters: { label: string; id: string; color: string; articles: Article[] }[] = [
+  {
+    label: 'Лагерь и летний отдых',
+    id: 'lager',
+    color: 'emerald',
+    articles: [
+      {
+        url: '/stati/kak-vybrat-lager',
+        title: 'Как выбрать детский лагерь: 7 критериев от мамы к маме',
+        description: 'Что смотреть в первую очередь, на что не вестись и какие вопросы задать менеджеру.',
+        tag: 'Выбор лагеря',
+        tagColor: 'bg-emerald-100 text-emerald-700',
+        readTime: '7 мин',
+      },
+      {
+        url: '/stati/mify-o-detskikh-lageryakh',
+        title: '7 мифов о детских лагерях, которые мешают маме решиться',
+        description: 'Разбираем страхи честно: буллинг, скучная еда, «ребёнку будет плохо без меня».',
+        tag: 'Выбор лагеря',
+        tagColor: 'bg-emerald-100 text-emerald-700',
+        readTime: '6 мин',
+      },
+      {
+        url: '/stati/pervyj-raz-v-lagere',
+        title: 'Ребёнок первый раз в лагере — страхи мамы и реальность',
+        description: 'Что на самом деле происходит в первые дни и как подготовить ребёнка (и себя).',
+        tag: 'Первый раз',
+        tagColor: 'bg-emerald-100 text-emerald-700',
+        readTime: '8 мин',
+      },
+      {
+        url: '/stati/chto-vzyat-v-lager',
+        title: 'Что взять в летний лагерь — полный список',
+        description: 'Одежда, документы, гигиена, гаджеты — чек-лист, чтобы ничего не забыть.',
+        tag: 'Подготовка',
+        tagColor: 'bg-emerald-100 text-emerald-700',
+        readTime: '5 мин',
+      },
+      {
+        url: '/stati/kak-dobratsya-do-lagera',
+        title: 'Как добраться до лагеря АйДаКемп — маршруты и трансфер',
+        description: '66 км от Москвы. На машине, трансфером от метро или электричкой с Киевского вокзала.',
+        tag: 'Маршрут',
+        tagColor: 'bg-emerald-100 text-emerald-700',
+        readTime: '5 мин',
+      },
+      {
+        url: '/stati/kuda-det-rebenka-letom',
+        title: 'Куда отправить ребёнка летом: разбор всех вариантов',
+        description: 'Бабушка, лагерь, кружки или с собой в отпуск — плюсы и минусы каждого.',
+        tag: 'Летний отдых',
+        tagColor: 'bg-emerald-100 text-emerald-700',
+        readTime: '6 мин',
+      },
+      {
+        url: '/stati/dokumenty-licenziya-strahovka',
+        title: 'Документы, лицензия и страховка АйДаКемп',
+        description: 'Лицензия Минобра, страховка, медперсонал — всё официально.',
+        tag: 'Официальное',
+        tagColor: 'bg-emerald-100 text-emerald-700',
+        readTime: '4 мин',
+      },
+      {
+        url: '/stati/spravki-dlya-lagera',
+        title: 'Справки для детского лагеря 2026 — полный список',
+        description: 'Форма 079/у, прививочный сертификат, ОМС, страховка — что брать и где получить.',
+        tag: 'Подготовка',
+        tagColor: 'bg-emerald-100 text-emerald-700',
+        readTime: '6 мин',
+      },
+      {
+        url: '/stati/strakhovka-v-lager',
+        title: 'Страховка в детский лагерь 2026 — нужна ли и какую выбрать',
+        description: 'ОМС vs НС-страховка: в чём разница, что покрывает, подборка страховых компаний 2026.',
+        tag: 'Официальное',
+        tagColor: 'bg-emerald-100 text-emerald-700',
+        readTime: '5 мин',
+      },
+      {
+        url: '/stati/rebenok-ne-hochet-v-lager',
+        title: 'Ребёнок не хочет в лагерь — разбираемся без скандалов',
+        description: 'Почему так бывает, как поговорить, когда настоять, а когда дать время.',
+        tag: 'Первый раз',
+        tagColor: 'bg-emerald-100 text-emerald-700',
+        readTime: '7 мин',
+      },
+      {
+        url: '/stati/rebenok-zabolel-v-lagere',
+        title: 'Ребёнок заболел в лагере — что делать и как не паниковать',
+        description: 'Как работает медпункт, когда сообщают родителям, когда забирать. Алгоритм для мамы.',
+        tag: 'Безопасность',
+        tagColor: 'bg-emerald-100 text-emerald-700',
+        readTime: '6 мин',
+      },
+      {
+        url: '/stati/socializaciya-rebenka-v-lagere',
+        title: 'Лагерь и социализация — что происходит за 2 недели',
+        description: 'Почему застенчивые дети расцветают в лагере. Командная работа, новые друзья, чистый лист.',
+        tag: 'Психология',
+        tagColor: 'bg-emerald-100 text-emerald-700',
+        readTime: '7 мин',
+      },
+    ],
+  },
+  {
+    label: 'IT-образование и программирование',
+    id: 'it',
+    color: 'orange',
+    articles: [
+      {
+        url: '/stati/ii-zamenit-programmista',
+        title: 'ИИ заменит программиста? Что стоит знать родителям',
+        description: 'Почему умение работать с AI — самый востребованный навык ближайшего десятилетия.',
+        tag: 'IT и будущее',
+        tagColor: 'bg-orange-100 text-orange-700',
+        readTime: '7 мин',
+      },
+      {
+        url: '/stati/hakaton-v-detskom-lagere',
+        title: 'Хакатон в детском лагере — как это устроено',
+        description: 'Почему защита проекта перед аудиторией — ключевой момент смены.',
+        tag: 'IT в лагере',
+        tagColor: 'bg-orange-100 text-orange-700',
+        readTime: '5 мин',
+      },
+      {
+        url: '/stati/vnutrennyaya-ekonomika-v-lagere',
+        title: 'Внутренняя экономика в лагере — зачем детям «лагерные деньги»',
+        description: 'Как игровая экономика учит ценить время и принимать решения.',
+        tag: 'IT в лагере',
+        tagColor: 'bg-orange-100 text-orange-700',
+        readTime: '5 мин',
+      },
+      {
+        url: '/stati/detskiy-lager-bez-telefonov',
+        title: 'Детский лагерь без телефонов — что это и зачем',
+        description: 'Как работает лагерь с ограниченным экранным временем и что дети получают взамен.',
+        tag: 'Лагерь без гаджетов',
+        tagColor: 'bg-orange-100 text-orange-700',
+        readTime: '6 мин',
+      },
+      {
+        url: '/stati/nejroseti-dlya-detej',
+        title: 'Нейросети для детей — с чего начать и зачем',
+        description: 'С какого возраста учить, что дети делают с ChatGPT, безопасность и почему код важнее промптов.',
+        tag: 'AI и нейросети',
+        tagColor: 'bg-orange-100 text-orange-700',
+        readTime: '7 мин',
+      },
+      {
+        url: '/stati/python-dlya-detej',
+        title: 'Python для детей — с нуля до первого проекта',
+        description: 'Почему Python первый язык, с какого возраста, что создают дети за 2 недели в лагере.',
+        tag: 'Программирование',
+        tagColor: 'bg-orange-100 text-orange-700',
+        readTime: '6 мин',
+      },
+      {
+        url: '/stati/scratch-dlya-detej',
+        title: 'Scratch для детей: первые шаги в программировании',
+        description: 'Что такое Scratch, почему с него начинают в 7-11 лет и как перейти к Python.',
+        tag: 'Программирование',
+        tagColor: 'bg-orange-100 text-orange-700',
+        readTime: '5 мин',
+      },
+      {
+        url: '/stati/programmirovanie-dlya-detej-s-nulya',
+        title: 'Программирование с нуля: путь до первого проекта',
+        description: 'Нулевой опыт — норма. Дорожная карта по возрастам, ресурсы дома, и зачем нужен лагерь.',
+        tag: 'Программирование',
+        tagColor: 'bg-orange-100 text-orange-700',
+        readTime: '7 мин',
+      },
+      {
+        url: '/stati/roblox-dlya-detej',
+        title: 'Roblox для детей — польза, риски и что с этим делать',
+        description: 'Чем полезна платформа, риски покупок и общения, как направить интерес к созданию игр.',
+        tag: 'Игры',
+        tagColor: 'bg-orange-100 text-orange-700',
+        readTime: '6 мин',
+      },
+      {
+        url: '/stati/3d-modelirovanie-dlya-detej',
+        title: '3D-моделирование для детей — первые шаги',
+        description: 'Почему Minecraft учит 3D-мышлению, Tinkercad и Blender для детей, связь с программированием.',
+        tag: 'IT-инструменты',
+        tagColor: 'bg-orange-100 text-orange-700',
+        readTime: '5 мин',
+      },
+    ],
+  },
+  {
+    label: 'Гаджеты и зависимость',
+    id: 'gadgets',
+    color: 'red',
+    articles: [
+      {
+        url: '/stati/zavisimost-ot-telefona-u-podrostkov',
+        title: 'Подросток в телефоне 24/7 — 5 способов без конфликта',
+        description: 'Почему забрать телефон не работает и что реально помогает снизить экранное время.',
+        tag: 'Телефон',
+        tagColor: 'bg-red-100 text-red-700',
+        readTime: '8 мин',
+      },
+      {
+        url: '/stati/zavisimost-ot-kompyuternyh-igr',
+        title: 'Ребёнок не вылезает из игр — 4 шага без скандалов',
+        description: 'Как отличить увлечение от зависимости и что делать если ребёнок проводит в играх всё время.',
+        tag: 'Игры',
+        tagColor: 'bg-red-100 text-red-700',
+        readTime: '7 мин',
+      },
+      {
+        url: '/stati/igromaniya-u-detej',
+        title: '«Просто играет» или уже зависимость? 7 признаков игромании',
+        description: 'Конкретные признаки, которые отличают нормальное увлечение от компьютерной зависимости.',
+        tag: 'Игры',
+        tagColor: 'bg-red-100 text-red-700',
+        readTime: '6 мин',
+      },
+      {
+        url: '/stati/priznaki-kompyuternoj-zavisimosti',
+        title: 'Признаки компьютерной зависимости у детей и подростков',
+        description: 'Поведенческие, эмоциональные и физические симптомы — чек-лист для родителей.',
+        tag: 'Зависимость',
+        tagColor: 'bg-red-100 text-red-700',
+        readTime: '5 мин',
+      },
+      {
+        url: '/stati/lechenie-kompyuternoj-zavisimosti',
+        title: 'Лечение компьютерной зависимости у детей',
+        description: 'Что работает, а что нет. Роль родителей, среды и смены обстановки.',
+        tag: 'Зависимость',
+        tagColor: 'bg-red-100 text-red-700',
+        readTime: '7 мин',
+      },
+      {
+        url: '/stati/profilaktika-kompyuternoj-zavisimosti',
+        title: 'Профилактика компьютерной зависимости у детей',
+        description: 'Как выстроить среду дома, чтобы зависимость не развилась — конкретные шаги.',
+        tag: 'Зависимость',
+        tagColor: 'bg-red-100 text-red-700',
+        readTime: '6 мин',
+      },
+      {
+        url: '/stati/kak-izbavitsya-ot-zavisimosti-ot-igr',
+        title: 'Как избавиться от зависимости от игр — пошаговый план',
+        description: 'Практический план действий для родителей: от диалога до смены среды.',
+        tag: 'Зависимость',
+        tagColor: 'bg-red-100 text-red-700',
+        readTime: '8 мин',
+      },
+      {
+        url: '/stati/ekrannoe-vremya-detej-norma',
+        title: 'Экранное время детей — нормы и как найти баланс',
+        description: 'Нормы ВОЗ по экранному времени, активный vs пассивный экран, признаки избытка.',
+        tag: 'Экранное время',
+        tagColor: 'bg-red-100 text-red-700',
+        readTime: '7 мин',
+      },
+    ],
+  },
+  {
+    label: 'Подростки и воспитание',
+    id: 'teens',
+    color: 'purple',
+    articles: [
+      {
+        url: '/stati/podrostok-ne-hochet-uchitsya',
+        title: 'Подросток не хочет учиться — что делать. Без нотаций',
+        description: 'По-человечески, от мамы к маме: что реально возвращает интерес к учёбе.',
+        tag: 'Учёба',
+        tagColor: 'bg-purple-100 text-purple-700',
+        readTime: '7 мин',
+      },
+      {
+        url: '/stati/nizkaya-samootsenka-u-rebenka',
+        title: '«Я неудачник» — что делать маме когда ребёнок говорит это',
+        description: 'Причины низкой самооценки и конкретные способы помочь ребёнку почувствовать себя успешным.',
+        tag: 'Самооценка',
+        tagColor: 'bg-purple-100 text-purple-700',
+        readTime: '8 мин',
+      },
+      {
+        url: '/stati/problemy-v-obschenii-podrostkov',
+        title: 'Подросток один и без друзей — что мама может сделать',
+        description: 'Почему подростки теряют друзей и как помочь ребёнку найти своих.',
+        tag: 'Общение',
+        tagColor: 'bg-purple-100 text-purple-700',
+        readTime: '7 мин',
+      },
+      {
+        url: '/stati/kak-pomoch-podrostku-kotoryj-nichego-ne-hochet',
+        title: 'Подростку ничего не надо — что за этим стоит и как помочь',
+        description: 'Апатия у подростка — не лень. Что на самом деле происходит и что делать родителям.',
+        tag: 'Апатия',
+        tagColor: 'bg-purple-100 text-purple-700',
+        readTime: '8 мин',
+      },
+    ],
+  },
+  {
+    label: 'По городам и районам',
+    id: 'geo',
+    color: 'sky',
+    articles: [
+      {
+        url: '/stati/lager-podolsk',
+        title: 'Детский IT-лагерь рядом с Подольском — смены 2026',
+        description: '55 км от Подольска, трансфер через партнёра по запросу от метро Солнцево. Python, AI, Minecraft, бассейн.',
+        tag: 'Подольск',
+        tagColor: 'bg-sky-100 text-sky-700',
+        readTime: '4 мин',
+      },
+      {
+        url: '/stati/lager-naro-fominsk',
+        title: 'Детский IT-лагерь в Наро-Фоминском районе — 2026',
+        description: '66 км от Москвы по А-101, трансфер через партнёра по запросу от метро Солнцево. Python, AI, Minecraft, бассейн.',
+        tag: 'Наро-Фоминск',
+        tagColor: 'bg-sky-100 text-sky-700',
+        readTime: '4 мин',
+      },
+      {
+        url: '/stati/lager-novaya-moskva',
+        title: 'Детский IT-лагерь рядом с Новой Москвой — 2026',
+        description: 'По трассе А-101 из Коммунарки и Троицка. ~35-50 км, трансфер через партнёра по запросу от метро Солнцево.',
+        tag: 'Новая Москва',
+        tagColor: 'bg-sky-100 text-sky-700',
+        readTime: '4 мин',
+      },
+    ],
+  },
+];
+
+const allArticles = clusters.flatMap(c => c.articles);
+const totalCount = allArticles.length;
+---
+
+<Base
+  title="Статьи для родителей о детях, лагере и IT — АйДаКемп"
+  description="Честные статьи о подростках, гаджетах, выборе лагеря и IT-образовании. Без нотаций — от мамы к маме. {totalCount} материалов от команды АйДаКемп."
+>
+  <Fragment slot="head">
+    <link rel="canonical" href="https://aidacamp.ru/stati" />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://aidacamp.ru/" },
+        { "@type": "ListItem", "position": 2, "name": "Статьи для родителей", "item": "https://aidacamp.ru/stati" }
+      ]
+    })} />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "name": "Статьи для родителей — АйДаКемп",
+      "description": "Честные статьи о подростках, гаджетах, выборе лагеря и IT-образовании.",
+      "url": "https://aidacamp.ru/stati",
+      "hasPart": allArticles.map(a => ({
+        "@type": "Article",
+        "name": a.title,
+        "url": `https://aidacamp.ru${a.url}`,
+        "description": a.description,
+      })),
+      "publisher": { "@type": "Organization", "name": "АйДаКемп", "url": "https://aidacamp.ru" }
+    })} />
+  </Fragment>
+
+  <Header />
+
+  <main class="mx-auto max-w-[1120px] px-4 py-8 pb-20">
+
+    <!-- Breadcrumb + Заголовок -->
+    <div class="mb-10">
+      <nav class="mb-3 text-[13px] text-slate-500" aria-label="Хлебные крошки">
+        <a href="/" class="hover:text-slate-800 transition-colors">Главная</a>
+        <span class="mx-1.5 text-slate-300">›</span>
+        <span class="text-slate-700 font-medium">Статьи</span>
+      </nav>
+      <h1 class="text-[28px] font-bold text-slate-900 md:text-[36px] tracking-[-0.02em]">
+        Статьи для родителей
+      </h1>
+      <p class="mt-2 text-[16px] text-slate-500 max-w-[580px] leading-[1.6]">
+        Честно о подростках, гаджетах и летнем отдыхе — без педагогических терминов и нотаций. {totalCount} материалов от команды АйДаКемп.
+      </p>
+      <!-- Быстрые фильтры -->
+      <div class="mt-5 flex flex-wrap gap-2">
+        {clusters.map(c => (
+          <a
+            href={`#${c.id}`}
+            class={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[13px] font-semibold transition-colors
+              ${c.color === 'emerald' ? 'border-emerald-200 text-emerald-700 hover:bg-emerald-50' :
+                c.color === 'orange' ? 'border-orange-200 text-orange-700 hover:bg-orange-50' :
+                c.color === 'red' ? 'border-red-200 text-red-700 hover:bg-red-50' :
+                c.color === 'sky' ? 'border-sky-200 text-sky-700 hover:bg-sky-50' :
+                'border-purple-200 text-purple-700 hover:bg-purple-50'}`}
+          >
+            {c.label}
+            <span class="text-[11px] opacity-60">{c.articles.length}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <!-- Кластеры -->
+    {clusters.map(cluster => (
+      <section id={cluster.id} class="mb-14 scroll-mt-6">
+        <div class="flex items-center gap-3 mb-6">
+          <div class={`w-1 h-6 rounded-full shrink-0
+            ${cluster.color === 'emerald' ? 'bg-emerald-500' :
+              cluster.color === 'orange' ? 'bg-orange-500' :
+              cluster.color === 'red' ? 'bg-red-500' :
+              cluster.color === 'sky' ? 'bg-sky-500' : 'bg-purple-500'}`}
+          ></div>
+          <h2 class="text-[20px] md:text-[22px] font-bold text-slate-900 tracking-[-0.01em]">
+            {cluster.label}
+          </h2>
+          <span class="text-[13px] text-slate-400 font-normal">{cluster.articles.length} статьи</span>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {cluster.articles.map(article => (
+            <a
+              href={article.url}
+              class="group flex flex-col rounded-[20px] border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] hover:shadow-[0_6px_20px_rgba(15,23,42,0.09)] hover:border-slate-300 transition-all duration-200"
+            >
+              <div class="flex items-start justify-between gap-2 mb-3">
+                <span class={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${article.tagColor}`}>
+                  {article.tag}
+                </span>
+                {article.readTime && (
+                  <span class="text-[11px] text-slate-400 shrink-0 mt-0.5">{article.readTime}</span>
+                )}
+              </div>
+              <h3 class="text-[15px] font-semibold leading-[1.4] text-slate-900 group-hover:text-[#ec7c00] transition-colors mb-2 flex-1">
+                {article.title}
+              </h3>
+              <p class="text-[13px] leading-[1.55] text-slate-500 mb-4">
+                {article.description}
+              </p>
+              <div class="flex items-center gap-1 text-[13px] font-medium text-[#ec7c00] mt-auto">
+                Читать
+                <i class="bi bi-arrow-right text-[12px] group-hover:translate-x-0.5 transition-transform" aria-hidden="true"></i>
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+    ))}
+
+    <!-- CTA -->
+    <div class="rounded-[24px] bg-[#0d1a2b] px-6 py-8 text-center md:px-12 md:py-10">
+      <p class="text-[13px] font-semibold uppercase tracking-wider text-white/50 mb-2">Детский IT-лагерь</p>
+      <h2 class="text-[22px] font-bold text-white md:text-[26px]">АйДаКемп — где статьи становятся практикой</h2>
+      <p class="mt-2 text-[15px] text-white/70 max-w-[500px] mx-auto leading-[1.6]">
+        Лагерь, где ребята программируют, общаются и возвращаются с проектом. 66 км от Москвы.
+      </p>
+      <a href="/ceny" class="mt-6 inline-flex items-center gap-2 rounded-full bg-[#ec7c00] px-6 py-3 text-[15px] font-semibold text-white hover:bg-[#d97000] transition-colors">
+        Смотреть смены и цены 2026
+        <i class="bi bi-arrow-right" aria-hidden="true"></i>
+      </a>
+    </div>
+
+  </main>
+
+  <Footer />
+</Base>

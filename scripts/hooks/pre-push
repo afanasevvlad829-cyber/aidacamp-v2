@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# ============================================================
+# pre-push hook — защита веток от прямого пуша суб-агентов
+# ============================================================
+# Правила:
+#   main  — запрещено всем без исключения (только через PR)
+#   dev   — запрещено суб-агентам (только через PR из agent/*)
+#             разрешено мастер-агенту (MASTER_AGENT=1 git push)
+#   agent/* — разрешено всем
+#
+# Обход для мастер-агента:
+#   MASTER_AGENT=1 git push origin dev
+#   MASTER_AGENT=1 git push origin main   ← всё равно будет отклонён GitHub (требует PR)
+# ============================================================
+
+PROTECTED_STRICT="main"       # никогда нельзя пушить напрямую
+PROTECTED_SOFT="dev"          # можно только мастер-агенту
+
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+while IFS=' ' read -r local_ref local_sha remote_ref remote_sha; do
+  branch="${remote_ref#refs/heads/}"
+
+  # --- main: запрещено всегда ---
+  if [[ "$branch" == "$PROTECTED_STRICT" ]]; then
+    echo -e "${RED}╔══════════════════════════════════════════════════════╗${NC}"
+    echo -e "${RED}║  🚫 СТОП: прямой пуш в 'main' запрещён              ║${NC}"
+    echo -e "${RED}║                                                      ║${NC}"
+    echo -e "${RED}║  Схема: agent/* → PR → dev → PR → main              ║${NC}"
+    echo -e "${RED}║  Мастер-агент деплоит main только через GitHub PR    ║${NC}"
+    echo -e "${RED}╚══════════════════════════════════════════════════════╝${NC}"
+    exit 1
+  fi
+
+  # --- dev: запрещено без флага MASTER_AGENT ---
+  if [[ "$branch" == "$PROTECTED_SOFT" ]]; then
+    if [[ -z "$MASTER_AGENT" ]]; then
+      echo -e "${YELLOW}╔══════════════════════════════════════════════════════╗${NC}"
+      echo -e "${YELLOW}║  🚫 СТОП: прямой пуш в 'dev' запрещён              ║${NC}"
+      echo -e "${YELLOW}║                                                     ║${NC}"
+      echo -e "${YELLOW}║  Суб-агент? Создай ветку и открой PR:              ║${NC}"
+      echo -e "${YELLOW}║    git checkout -b agent/<задача>                   ║${NC}"
+      echo -e "${YELLOW}║    git push origin agent/<задача>                   ║${NC}"
+      echo -e "${YELLOW}║    gh pr create --base dev                          ║${NC}"
+      echo -e "${YELLOW}║                                                     ║${NC}"
+      echo -e "${YELLOW}║  Мастер-агент? Добавь флаг:                        ║${NC}"
+      echo -e "${YELLOW}║    MASTER_AGENT=1 git push origin dev               ║${NC}"
+      echo -e "${YELLOW}╚══════════════════════════════════════════════════════╝${NC}"
+      exit 1
+    fi
+    echo "✅ Мастер-агент: пуш в dev разрешён (MASTER_AGENT=1)"
+  fi
+
+  # --- agent/* ветки: всегда разрешено ---
+  if [[ "$branch" == agent/* ]]; then
+    echo "✅ Суб-агент: пуш в $branch разрешён"
+  fi
+
+done
+
+exit 0

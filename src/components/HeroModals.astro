@@ -1,5 +1,25 @@
 ---
+import BookingInfoModal from './BookingInfoModal.astro';
+import FeatureModal from './FeatureModal.astro';
+import heroFeaturesData from '../data/hero-features.json';
+
+type Feature = {
+  icon: string;
+  iconBg: string;
+  iconColor: string;
+  title: string;
+  contentBg: string;
+  whatIs: string;
+  whyMatters: Array<{ title: string; description: string }>;
+  whatWeDo: string;
+};
+
+const features = heroFeaturesData as Record<string, Feature>;
+const featureIds = Object.keys(features) as (keyof typeof features)[];
 ---
+
+<BookingInfoModal />
+
 <!-- Validation Modal -->
 <dialog
   id="bookingReminderModal"
@@ -15,7 +35,7 @@
     <button
       type="button"
       data-booking-reminder-close
-      class="mt-4 inline-flex rounded-[10px] bg-[#ec7c00] px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:shadow-[0_4px_16px_rgba(249,115,22,0.35)] hover:-translate-y-[1px] active:translate-y-0"
+      class="mt-4 inline-flex rounded-[10px] bg-[#ec7c00] px-4 py-2 text-sm font-semibold text-[#1e2430] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(249,115,22,0.35)] hover:-translate-y-[1px] active:translate-y-0"
     >
       Понятно
     </button>
@@ -31,11 +51,11 @@
     <!-- Header -->
     <div class="flex items-start justify-between gap-3 mb-5">
       <div class="flex items-center gap-3">
-        <span class="text-[32px] leading-none">🖥️</span>
+        <i class="bi bi-laptop text-[32px] leading-none" aria-hidden="true"></i>
         <h3 class="text-[18px] font-bold text-slate-900 leading-[1.25]">Почему ноутбук<br/>не нужен</h3>
       </div>
       <button type="button" data-equip-close
-        class="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+        class="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition outline-none focus:outline-none"
         aria-label="Закрыть">
         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
@@ -55,21 +75,21 @@
     <p class="text-[14px] font-semibold text-slate-800 mb-3">Наше решение — одинаковый парк машин</p>
     <ul class="space-y-2.5 mb-5">
       <li class="flex items-start gap-3">
-        <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[14px]">⚡</span>
+        <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[14px]"><i class="bi bi-clock" aria-hidden="true"></i></span>
         <div>
           <p class="text-[14px] font-semibold text-slate-800">Сброс ОС за 15 секунд</p>
           <p class="text-[13px] text-slate-500">Любая машина возвращается в эталонное состояние — одна кнопка, 15 секунд.</p>
         </div>
       </li>
       <li class="flex items-start gap-3">
-        <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[14px]">🔄</span>
+        <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[14px]"><i class="bi bi-arrow-repeat" aria-hidden="true"></i></span>
         <div>
           <p class="text-[14px] font-semibold text-slate-800">Полное восстановление за 15 минут</p>
           <p class="text-[13px] text-slate-500">Если ребёнок что-то сломал — копируем проект, сбрасываем, восстанавливаем. Работа не теряется.</p>
         </div>
       </li>
       <li class="flex items-start gap-3">
-        <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[14px]">✓</span>
+        <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[14px]"><i class="bi bi-check-lg text-orange-600" aria-hidden="true"></i></span>
         <div>
           <p class="text-[14px] font-semibold text-slate-800">Выверенные настройки</p>
           <p class="text-[13px] text-slate-500">Все машины идентичны. Преподаватели знают их досконально — занятие идёт без технических пауз.</p>
@@ -86,42 +106,43 @@
   </div>
 </dialog>
 
-<script>
-  function initHero() {
-    const modal = document.getElementById('bookingReminderModal') as HTMLDialogElement | null;
-    modal?.querySelector('[data-booking-reminder-close]')?.addEventListener('click', () => modal.close());
-    modal?.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
+<!-- Feature Modals (Python, Minecraft, AI, Pool) -->
+{featureIds.map((featureId) => (
+  <FeatureModal id={featureId} {...features[featureId]} />
+))}
 
-    // Equipment modal
-    const equipModal = document.getElementById('equipmentModal') as HTMLDialogElement | null;
-    const openEquip = () => equipModal?.showModal();
-    document.getElementById('equipment-stamp')?.addEventListener('click', openEquip);
-    document.getElementById('equipment-stamp-mobile')?.addEventListener('click', openEquip);
-    equipModal?.querySelector('[data-equip-close]')?.addEventListener('click', () => equipModal.close());
-    equipModal?.addEventListener('click', (e) => { if (e.target === equipModal) equipModal.close(); });
-
-    // Mobile form: auto-reveal after 30 sec
-    const bookingBlock = document.getElementById('hero-booking-block') as HTMLElement | null;
-    let revealed = false;
-
-    function revealForm() {
-      if (revealed || !bookingBlock) return;
-      revealed = true;
-      bookingBlock.style.maxHeight = '700px';
-      bookingBlock.style.paddingTop = '1rem';
-      bookingBlock.style.paddingBottom = '1.5rem';
-      bookingBlock.style.opacity = '1';
-      bookingBlock.style.pointerEvents = 'auto';
-    }
-
-    setTimeout(() => {
-      const heroEl = document.getElementById('hero');
-      if (!heroEl) return;
-      const rect = heroEl.getBoundingClientRect();
-      if (window.innerWidth < 1024 && rect.bottom > 0) revealForm();
-    }, 30000);
+<script is:inline>
+  // Equipment modal open handler
+  const equipStamp = document.getElementById('equipment-stamp');
+  const equipmentModal = document.getElementById('equipmentModal');
+  if (equipStamp && equipmentModal) {
+    equipStamp.addEventListener('click', () => { equipmentModal.showModal(); });
   }
 
-  document.addEventListener('astro:page-load', initHero);
-  initHero();
+  // Equipment modal close handler
+  const equipCloseBtn = document.querySelector('[data-equip-close]');
+
+  if (equipCloseBtn && equipmentModal) {
+    equipCloseBtn.addEventListener('click', () => {
+      equipmentModal.close();
+    });
+  }
+
+  if (equipmentModal) {
+    equipmentModal.addEventListener('click', (e) => {
+      if (e.target === equipmentModal) {
+        equipmentModal.close();
+      }
+    });
+  }
+
+  // Booking reminder close handler
+  const bookingReminderModal = document.getElementById('bookingReminderModal');
+  const bookingReminderCloseBtn = document.querySelector('[data-booking-reminder-close]');
+
+  if (bookingReminderCloseBtn && bookingReminderModal) {
+    bookingReminderCloseBtn.addEventListener('click', () => {
+      bookingReminderModal.close();
+    });
+  }
 </script>

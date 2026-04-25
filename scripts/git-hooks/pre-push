@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Local gate: block force-push and non-fast-forward pushes to protected branches.
+set -e
+remote="$1"
+protected_re='^(refs/heads/)?(site-prod|main)$'
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [[ "$remote_ref" =~ $protected_re ]]; then
+    # Reject if remote sha is non-zero and not ancestor of local (force push)
+    if [[ "$remote_sha" != "0000000000000000000000000000000000000000" ]]; then
+      if ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+        echo "✖ Force-push/non-ff в '$remote_ref' запрещён. Используй ./promote или ./deploy." >&2
+        [[ "${PIPELINE_BYPASS:-}" == "1" ]] || exit 1
+      fi
+    fi
+  fi
+done
+exit 0

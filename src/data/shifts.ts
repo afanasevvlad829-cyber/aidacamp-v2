@@ -116,12 +116,12 @@ export const allShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShif
 
 // Единый источник: сколько ровесников едет в каждую смену по возрасту
 export const PEER_COUNTS: Record<string, Record<string, number>> = {
-  'shift-1':   { '7–9': 8,  '10–12': 12, '13–14': 9 },
-  'shift-2':   { '7–9': 5,  '10–12': 8,  '13–14': 7 },
-  'shift-2-1': { '7–9': 4,  '10–12': 7,  '13–14': 5 },
-  'shift-2-2': { '7–9': 3,  '10–12': 6,  '13–14': 4 },
-  'shift-3':   { '7–9': 3,  '10–12': 5,  '13–14': 4 },
-  'shift-4':   { '7–9': 3,  '10–12': 4,  '13–14': 3 },
+  'shift-1':   { '7–9': 8,  '10–12': 12, '13–15': 9 },
+  'shift-2':   { '7–9': 5,  '10–12': 8,  '13–15': 7 },
+  'shift-2-1': { '7–9': 4,  '10–12': 7,  '13–15': 5 },
+  'shift-2-2': { '7–9': 3,  '10–12': 6,  '13–15': 4 },
+  'shift-3':   { '7–9': 3,  '10–12': 5,  '13–15': 4 },
+  'shift-4':   { '7–9': 3,  '10–12': 4,  '13–15': 3 },
 };
 
 export function renderCard(shift: Shift) {
@@ -130,7 +130,7 @@ export function renderCard(shift: Shift) {
   const badgeBg = shift.statusType === 'short' ? 'bg-amber-100' : 'bg-emerald-100';
   const badgeText = shift.statusType === 'short' ? 'text-amber-700' : 'text-emerald-700';
   const btnClass = shift.highlighted
-    ? 'bg-primary text-white transition-all duration-200 hover:shadow-[0_4px_16px_rgba(249,115,22,0.35)] hover:-translate-y-[1px] active:translate-y-0'
+    ? 'bg-primary text-[#1e2430] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(249,115,22,0.35)] hover:-translate-y-[1px] active:translate-y-0'
     : 'border border-slate-200 bg-slate-100 text-slate-700 transition-all duration-200 hover:bg-white hover:-translate-y-[1px] active:translate-y-0';
 
   return { total, pct, badgeBg, badgeText, btnClass };
@@ -153,14 +153,15 @@ function bullet(items: string[]) {
 }
 
 function ageBlock(ages: Record<string, string>) {
-  return '<div class="mt-4 space-y-2">' +
-    '<p class="text-[14px] font-semibold uppercase tracking-[0.08em] text-slate-500">По возрастам</p>' +
-    Object.entries(ages).map(([age, desc]) =>
-      `<div class="rounded-[12px] border border-slate-200 bg-slate-50 p-3">
+  return '<div class="mt-4 space-y-2" data-age-block-container>' +
+    '<p class="text-[14px] font-semibold uppercase tracking-[0.08em] text-slate-500" data-age-block-title>По возрастам</p>' +
+    Object.entries(ages).map(([age, desc]) => {
+      const key = age.replace(' лет', ''); // '7–9', '10–12', '13–15'
+      return `<div class="rounded-[12px] border border-slate-200 bg-slate-50 p-3" data-age-group="${key}">
         <p class="text-[14px] font-semibold text-slate-400">${age}</p>
         <p class="mt-1 text-[16px] leading-[1.5] text-slate-600">${desc}</p>
-      </div>`
-    ).join('') + '</div>';
+      </div>`;
+    }).join('') + '</div>';
 }
 
 export const shiftInfo: Record<string, {
@@ -188,7 +189,7 @@ export const shiftInfo: Record<string, {
       ageBlock({
         '7–9 лет': 'Простые игры: движение, взаимодействие, счёт',
         '10–12 лет': 'Игры с уровнями, логикой и механикой',
-        '13–14 лет': 'Проекты с элементами AI и более сложной структурой',
+        '13–15 лет': 'Проекты с элементами AI и более сложной структурой',
       }) +
       section('Как устроен AI (простыми словами)',
         'Используется как инструмент: например, чтобы игра генерировала события или персонаж реагировал «умнее», а не по заготовленному сценарию.') +
@@ -219,7 +220,7 @@ export const shiftInfo: Record<string, {
       ageBlock({
         '7–9 лет': 'Игры с несколькими сценариями',
         '10–12 лет': 'Проекты с уровнями, логикой и системой взаимодействия',
-        '13–14 лет': 'Проекты с AI и более сложной структурой',
+        '13–15 лет': 'Проекты с AI и более сложной структурой',
       }) +
       section('Как устроен AI',
         'Используется как инструмент внутри проекта: например, чтобы поведение элементов было не жёстко задано, а вариативно.') +
@@ -252,7 +253,7 @@ export const shiftInfo: Record<string, {
       ageBlock({
         '7–9 лет': 'Игровые проекты',
         '10–12 лет': 'Проекты с логикой и взаимодействием',
-        '13–14 лет': 'Проекты с AI',
+        '13–15 лет': 'Проекты с AI',
       }) +
       section('Как устроен AI',
         'Используется как инструмент внутри проекта: например, для более «живого» поведения элементов.') +
@@ -283,7 +284,7 @@ export const shiftInfo: Record<string, {
       ageBlock({
         '7–9 лет': 'Игровые проекты',
         '10–12 лет': 'Проекты с логикой и механикой',
-        '13–14 лет': 'Проекты с AI',
+        '13–15 лет': 'Проекты с AI',
       }) +
       section('Как устроен AI',
         'Используется как инструмент внутри проекта для вариативности и усложнения поведения.') +
@@ -313,7 +314,7 @@ export const shiftInfo: Record<string, {
       ageBlock({
         '7–9 лет': 'Простые игры с движением и взаимодействием',
         '10–12 лет': 'Проекты с механикой, логикой и простыми уровнями',
-        '13–14 лет': 'Быстрые проекты с элементами AI',
+        '13–15 лет': 'Быстрые проекты с элементами AI',
       }) +
       section('Как устроен AI',
         'Используется как дополнительный инструмент: например, чтобы добавить вариативные реакции или генерацию событий.') +
@@ -344,7 +345,7 @@ export const shiftInfo: Record<string, {
       ageBlock({
         '7–9 лет': 'Проекты с несколькими сценариями',
         '10–12 лет': 'Игры с уровнями и логикой',
-        '13–14 лет': 'Проекты с AI и более сложной структурой',
+        '13–15 лет': 'Проекты с AI и более сложной структурой',
       }) +
       section('Как устроен AI',
         'Используется внутри проекта как инструмент: например, для вариативного поведения или генерации элементов.') +

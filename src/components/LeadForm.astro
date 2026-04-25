@@ -51,12 +51,12 @@ const inputWidth = isDesktop ? 'w-[276px]' : 'w-full';
       role="radio"
       aria-checked="false"
       data-age-btn
-      data-age-value="13–14 лет"
+      data-age-value="13–15 лет"
       data-analytics-goal="age_select"
-      data-analytics-label={`13–14 лет-${variant}`}
+      data-analytics-label={`13–15 лет-${variant}`}
       class="flex-1 rounded-[8px] border-[1.5px] border-[#e6e6e6] bg-white py-2 text-[14px] font-semibold text-[#333] transition"
     >
-      13–14 лет
+      13–15 лет
     </button>
   </div>
 
@@ -76,7 +76,7 @@ const inputWidth = isDesktop ? 'w-[276px]' : 'w-full';
   <!-- Consent -->
   <label class={`mt-3 flex ${inputWidth} items-start gap-2 text-[16px] leading-[1.35] text-[#6e788a]`}>
     <input type="checkbox" data-consent class="mt-[2px] h-4 w-4 rounded border border-slate-300 accent-[#ec7c00]" />
-    <span>Согласен(а) на <a href="/legal#privacy" class="text-[#ec7c00] underline">обработку персональных данных</a></span>
+    <span>Согласен(а) на <a href="/privacy-policy/" class="text-[#ec7c00] underline">обработку персональных данных</a></span>
   </label>
 
   <!-- Submit -->
@@ -86,22 +86,46 @@ const inputWidth = isDesktop ? 'w-[276px]' : 'w-full';
     data-analytics-goal="form_open"
     data-analytics-extra-goal="booking_cta_click,hero_cta_click,hero_variant_form_open_new"
     data-analytics-label={`booking_${variant}_cta`}
-    class={`mt-3 h-[48px] ${inputWidth} rounded-[10px] bg-[#ec7c00] text-[16px] font-semibold text-white transition disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400`}
+    class={`mt-3 h-[48px] ${inputWidth} rounded-[10px] bg-[#ec7c00] text-[16px] font-semibold text-[#1e2430] transition disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400`}
     disabled
   >
     Забронировать
   </button>
 
-  <!-- Trust -->
-  <p class={`mt-1 ${inputWidth} text-center text-[14px] text-[#8c8c8c]`}>
-    Лицензия и договор · Без скрытых доплат
-  </p>
+  <!-- Trust text убрана — информация дублируется в плашках Без оплаты / Договор / Трансфер -->
 
   {!isDesktop && (
-    <div class="mt-3 flex w-full justify-between text-[14px] text-[#999]">
-      <span>✓ Без оплаты</span>
-      <span>✓ Договор</span>
-      <span>✓ Трансфер — опция</span>
+    <div class="mt-3 flex w-full items-center gap-1.5">
+      <button
+        type="button"
+        data-booking-info-key="no-prepay"
+        aria-haspopup="dialog"
+        aria-label="Без оплаты — подробнее про бронь без предоплаты"
+        class="flex-1 inline-flex items-center justify-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1 text-[12px] text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50/50 active:bg-emerald-50 whitespace-nowrap"
+      >
+        <i class="bi bi-check2-circle text-emerald-600 text-[11px]" aria-hidden="true"></i>
+        Без оплаты
+      </button>
+      <button
+        type="button"
+        data-booking-info-key="contract"
+        aria-haspopup="dialog"
+        aria-label="Договор — подробнее про условия и налоговый вычет"
+        class="flex-1 inline-flex items-center justify-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1 text-[12px] text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50/50 active:bg-emerald-50 whitespace-nowrap"
+      >
+        <i class="bi bi-check2-circle text-emerald-600 text-[11px]" aria-hidden="true"></i>
+        Договор
+      </button>
+      <button
+        type="button"
+        data-booking-info-key="transfer"
+        aria-haspopup="dialog"
+        aria-label="Трансфер — подробнее про организованный трансфер"
+        class="flex-1 inline-flex items-center justify-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1 text-[12px] text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50/50 active:bg-emerald-50 whitespace-nowrap"
+      >
+        <i class="bi bi-check2-circle text-emerald-600 text-[11px]" aria-hidden="true"></i>
+        Трансфер
+      </button>
     </div>
   )}
 </form>
@@ -119,12 +143,12 @@ const inputWidth = isDesktop ? 'w-[276px]' : 'w-full';
       ageBtns.forEach((btn) => {
         btn.addEventListener('click', () => {
           ageBtns.forEach((b) => {
-            b.classList.remove('border-[#ec7c00]', 'bg-[#ec7c00]', 'text-white');
+            b.classList.remove('border-[#ec7c00]', 'bg-[#ec7c00]', 'text-[#1e2430]');
             b.classList.add('border-[#e6e6e6]', 'bg-white', 'text-[#333]');
             b.setAttribute('aria-checked', 'false');
           });
           btn.classList.remove('border-[#e6e6e6]', 'bg-white', 'text-[#333]');
-          btn.classList.add('border-[#ec7c00]', 'bg-[#ec7c00]', 'text-white');
+          btn.classList.add('border-[#ec7c00]', 'bg-[#ec7c00]', 'text-[#1e2430]');
           btn.setAttribute('aria-checked', 'true');
           if (ageInput) ageInput.value = btn.dataset.ageValue || '';
         });
@@ -169,19 +193,29 @@ const inputWidth = isDesktop ? 'w-[276px]' : 'w-full';
       }
 
       // Form submit
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!isPhoneValid() || !consent?.checked) {
           const modal = document.getElementById('bookingReminderModal') as HTMLDialogElement | null;
           modal?.showModal();
           return;
         }
-        // TODO: send form data to endpoint
-        window.acTrack?.('form_submit', {
+
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Отправляем…';
+        }
+
+        const { submitLead } = await import('../scripts/form-submit');
+        const ok = await submitLead({
+          phone: phoneInput?.value || '',
+          age: ageInput?.value || '',
           form: form.dataset.form,
-          age: ageInput?.value,
-          phone: phoneInput?.value,
         });
+
+        if (submitBtn) {
+          submitBtn.textContent = ok ? 'Заявка принята!' : 'Отправлено';
+        }
       });
     });
   }

@@ -34,6 +34,132 @@ Instagram-успешной мамы-идеала.
 
 ---
 
+## 📚 Библиотека знаний по каналам (читай перед работой с Директом/VK/SEO)
+
+Живая база правил, инцидентов и best practices. **Обязательно открывать перед любой задачей по рекламе или SEO** — в ней уже записаны грабли, чтобы не наступать повторно.
+
+- **[_notes/Библиотека знаний/](_notes/Библиотека%20знаний/README.md)** — корневой индекс
+  - [Яндекс.Директ — основные правила.md](_notes/Библиотека%20знаний/Яндекс.Директ%20—%20основные%20правила.md)
+  - [VK Ads — основные правила.md](_notes/Библиотека%20знаний/VK%20Ads%20—%20основные%20правила.md)
+  - [SEO — основные правила.md](_notes/Библиотека%20знаний/SEO%20—%20основные%20правила.md)
+
+**Правило:** любой инсайт из сессии, аудита или инцидента — фиксировать в соответствующий файл в разделе «Best practices из нашего опыта» с датой и структурой **Симптом / Причина / Решение / Правило**. Разовые ошибки агента повторяются именно потому, что выводы не записаны.
+
+---
+
+## 🎨 UI-правила (критично)
+
+### Иконки — только Bootstrap Icons, НЕ эмодзи
+
+**✅ Всегда** используй `<i class="bi bi-*">` с `aria-hidden="true"`:
+```astro
+<i class="bi bi-laptop text-[24px] text-white" aria-hidden="true"></i>
+<i class="bi bi-patch-check-fill text-[12px]" aria-hidden="true"></i>
+<i class="bi bi-telegram text-[15px]" aria-hidden="true"></i>
+```
+
+**❌ Никогда** не используй эмодзи в UI (кнопки, заголовки, карточки, плашки, badges):
+```astro
+<!-- ЗАПРЕЩЕНО -->
+<span>🖥️ Ноутбук не нужен</span>
+<span>📞 Позвонить</span>
+<span>⚡ Быстро</span>
+<span>🎯 Цель</span>
+```
+
+### Карта замены частых эмодзи → bi-иконки
+
+| Эмодзи | bi-icon | Применение |
+|---|---|---|
+| 🖥️ 💻 | `bi-laptop` | ноутбук, устройство |
+| 📞 ☎️ | `bi-telephone-fill` | звонок |
+| 💬 | `bi-chat-dots-fill` | сообщения |
+| ✈️ 📨 | `bi-send-fill` | отправить |
+| ⚡ | `bi-lightning-charge-fill` | скорость, энергия |
+| 🔄 ♻️ | `bi-arrow-repeat` | обновление, цикл |
+| ✅ ✔️ | `bi-check-lg` / `bi-check-circle-fill` | подтверждение |
+| ❌ | `bi-x-lg` | закрыть, отмена |
+| 🔒 | `bi-lock-fill` / `bi-shield-lock-fill` | закрыто, безопасность |
+| 📹 🎥 | `bi-camera-video-fill` | видео |
+| ❤️ | `bi-heart-fill` / `bi-heart-pulse-fill` | сердце, здоровье |
+| 🏆 🥇 | `bi-trophy-fill` | награда |
+| ⭐ | `bi-star-fill` | рейтинг (можно оставить `★` как typography) |
+| 🔥 | `bi-fire` | популярное |
+| 📷 | `bi-camera-fill` | фото |
+| 🛡 | `bi-shield-fill` / `bi-patch-check-fill` | защита, лицензия |
+| 💰 | `bi-cash-coin` / `bi-currency-ruble` | деньги |
+| 🎯 | `bi-bullseye` | цель |
+| 📋 | `bi-clipboard-check` | список |
+| ⚠️ | `bi-exclamation-triangle-fill` | внимание |
+| 🔔 | `bi-bell-fill` | уведомление |
+
+### Исключения (не эмодзи, допустимо как typography)
+- `★` (U+2605), `✓` (U+2713), `•` — это typography symbols, не эмодзи. Можно оставить в тексте.
+- Внутри текста статьи (blog) эмодзи как часть цитаты — допустимо.
+
+### ⚠️ ОБЯЗАТЕЛЬНО: доступные иконки
+
+**Используй ТОЛЬКО иконки из `src/data/icons-manifest.json`** (74 штуки на 2026-04-21). Если иконки там нет — добавь её через манифест.
+
+```bash
+# Быстро проверить есть ли иконка в проекте:
+node -e "const m=require('./src/data/icons-manifest.json'); console.log(m.includes('ICONNAME') ? '✓ есть' : '✗ НЕТ — добавь в manifest')"
+```
+
+Если поставишь `bi-lightning-charge-fill` а в манифесте только `bi-lightning-charge` — получишь чёрный квадрат. Это критический баг.
+
+### ⚠️ НИКОГДА не редактируй `src/styles/icons.css` вручную
+
+`icons.css` — **AUTO-GENERATED** файл. Ручные правки будут перезаписаны при следующем `npm run icons`.
+
+**Как добавить иконку:**
+1. Найди имя на https://icons.getbootstrap.com/ (~2000 иконок)
+2. Добавь имя в `src/data/icons-manifest.json` (просто строка в JSON-массиве)
+3. Если иконки нет в bootstrap-icons — положи SVG в `src/styles/custom-icons/<name>.svg`
+4. Запусти `npm run icons` — скрипт перегенерирует `icons.css`
+5. Закоммить оба файла: `icons-manifest.json` + `icons.css`
+
+**Почему так устроено:** параллельные агенты конфликтовали при ручных правках icons.css (verbose vs compact форма). JSON-манифест мерджится без конфликтов. Один агент добавляет одну строчку в JSON — конфликта нет.
+
+### Частые ловушки для агентов (из аудита 2026-04-21)
+
+| Ситуация | Неправильно | Правильно |
+|---|---|---|
+| fill-вариант иконки | `bi-lightning-charge-fill` (нет в манифесте) | `bi-lightning-charge` |
+| Галочка в кружке | `<span>✓</span>` | `<i class="bi bi-check-lg">` |
+| Toast-уведомления (nudge.ts) | `🔥 Текст` | `Текст` (plain text, bi-* недоступны) |
+| relatedPages icon | `emoji: "🔍"` | `icon: "search"` |
+| Cookie баннер | `🍪` | `<i class="bi bi-info-circle">` |
+| Документ/файл | `📄` | `<i class="bi bi-file-earmark-text">` |
+| Календарь/дата | `📅` | `<i class="bi bi-calendar-event">` |
+| Исключение | admin-страницы `/src/pages/admin/` | можно оставить символы ✓ ✗ в разметке |
+
+### Проверка перед PR
+
+Перед каждым коммитом запускай аудит эмодзи:
+```bash
+python3 -c "
+import os, re
+emoji_re = re.compile(r'[\U0001F000-\U0001FFFF\U00002600-\U000027BF]')
+for root, dirs, files in os.walk('src'):
+    dirs[:] = [d for d in dirs if 'admin' not in root]
+    for f in files:
+        if f.endswith('.astro'):
+            path = os.path.join(root, f)
+            for i, line in enumerate(open(path, errors='ignore'), 1):
+                if emoji_re.search(line) and not any(x in line for x in ['//','<!--','статьи','article']):
+                    print(f'{path}:{i}: {line.strip()[:100]}')
+"
+```
+Если нашло — замени на bi-иконки или убери.
+
+## 📝 Брендовые правила для текстов
+
+- **Дарья Афанасьева** — основатель АйДаКемп, **мама ДОЧЕРИ-подростка** (не сына!). Все цитаты от её лица должны быть согласованы по роду: «у дочери», «она сама», «я слышала от неё» — а НЕ «у сына», «он сам».
+- Общий тон цитат Дарьи — подруга, а не эксперт. Простые конкретные наблюдения мамы-к-маме.
+
+---
+
 ## 🚫 ЗАПРЕЩЁННЫЕ ЗАВИСИМОСТИ (критично — читай ДО любых правок)
 
 **Запрещено использовать в проекте:**
@@ -104,45 +230,74 @@ Instagram-успешной мамы-идеала.
 
 ---
 
-## Параллельная разработка (несколько агентов одновременно)
+## Параллельная разработка — ЖЁСТКАЯ схема веток
 
-Владелец может запускать несколько агентов параллельно. Чтобы они не перетирали работу друг друга:
+```
+main  ← КАНОН. Только через PR из dev. Прямой пуш ЗАБЛОКИРОВАН GitHub.
+  ↑ PR (мастер-агент создаёт + мёрджит)
+dev   ← Тестовая зона. Только мастер-агент пишет напрямую (MASTER_AGENT=1).
+  ↑ PR (суб-агенты создают)
+agent/<задача>  ← Зона суб-агентов. Сюда пушить свободно.
+```
 
-### Правила для каждого агента:
+### Техническая защита (не обходить!)
 
-1. **Никогда не пушить напрямую в `dev`** — это зона главного агента (Claude). Только в свою ветку
-2. **Своя ветка называется `agent/<задача>`**, например:
-   - `agent/agebar-redesign`
-   - `agent/landing-seo`
-   - `agent/shifts-refactor`
-3. **Перед стартом** — получить свежий `dev`:
-   ```bash
-   git fetch origin
-   git checkout dev
-   git pull --rebase origin dev
-   git checkout -b agent/<задача>
-   ```
-4. **После завершения работы** — сообщить владельцу, НЕ мёрджить самостоятельно в `dev`
-5. **Владелец** сам решает когда и что мёрджить в `dev` и деплоить
+- **GitHub branch protection** на `main` — требует PR, прямой пуш отклоняется сервером
+- **pre-push hook** — блокирует пуш в `main` и `dev` без флага
+- **pre-commit hook** — суб-агент НЕ может коммитить в главное рабочее дерево (`/Users/vladimirafanasev/Aidacamp-cloude/`). Если сделает — git вернёт ошибку. Только владелец с `MASTER_AGENT=1`.
+- **pre-merge-commit hook** — суб-агент НЕ может делать `git merge` в главном рабочем дереве. Только владелец с `MASTER_AGENT=1`.
+- **Lock-файл `.main-repo.lock`** (опц.) — мастер-агент создаёт перед длинной работой через `bash scripts/main-repo-guard.sh lock`. Пока lock есть — никто кроме `MASTER_AGENT=1` не может коммитить. Снять: `... unlock`.
+- **Claude Code permissions deny-rules** в `.claude/settings.json` — `git checkout/stash/merge/reset --hard/rebase` в главном репо запрещены на уровне Claude Code (агенты получат «permission denied»).
 
-### Главный агент — Claude (основная сессия с владельцем):
+### Установка хуков (один раз после clone)
+```bash
+bash scripts/setup-hooks.sh   # подложит хуки + установит core.hooksPath = scripts/git-hooks
+```
 
-- Работает напрямую на `dev`
-- Перед деплоем всегда проверяет нет ли чужих коммитов:
-  ```bash
-  git fetch origin
-  git log origin/dev..dev    # мои коммиты, которые не запушены
-  git log dev..origin/dev    # чужие коммиты, которые я не видел
-  ```
-- Если чужие коммиты есть — сначала `git pull --rebase origin dev`, потом деплой
+### Суб-агент — ОБЯЗАТЕЛЬНЫЙ алгоритм:
 
-### Что произошло если коммит появился неожиданно:
+```bash
+# 1. Старт — взять свежий dev
+git fetch origin
+git checkout dev && git pull --rebase origin dev
+
+# 2. Создать свою ветку
+git checkout -b agent/<задача>   # например: agent/seo-articles, agent/hero-redesign
+
+# 3. Работать, коммитить, пушить ТОЛЬКО в свою ветку
+git push origin agent/<задача>
+
+# 4. Открыть PR в dev
+gh pr create --base dev --title "..." --body "..."
+
+# 5. Сообщить мастер-агенту — НЕ мёрджить самому
+```
+
+❌ **НИКОГДА:** `git push origin dev` — хук заблокирует и объяснит почему
+❌ **НИКОГДА:** `git push origin main` — GitHub отклонит
+
+### Мастер-агент (основная сессия с владельцем):
+
+```bash
+# Пуш в dev (только мастер-агент, после проверки PR от суб-агентов):
+MASTER_AGENT=1 git push origin dev
+
+# Деплой в прод — через PR (не прямой merge!):
+gh pr create --base main --head dev --title "deploy: <описание>"
+gh pr merge --merge   # или одобрить в GitHub UI
+
+# Перед любым пушем — проверить нет ли новых чужих коммитов:
+git fetch origin
+git log dev..origin/dev --oneline   # чужие коммиты которых я не видел
+```
+
+### Если коммит появился неожиданно:
 
 ```bash
 git fetch origin
-git log dev..origin/dev --oneline   # показывает новые чужие коммиты
-git show <hash>                      # смотришь что там
-git pull --rebase origin dev         # принимаешь изменения
+git log dev..origin/dev --oneline   # что пришло
+git show <hash>                      # посмотреть
+git pull --rebase origin dev         # принять
 ```
 
 ---
@@ -172,9 +327,12 @@ git pull --rebase origin dev         # принимаешь изменения
 
 ### Команды выкатки в прод (полный цикл):
 ```bash
-git checkout main && git merge dev
+# Создать PR dev → main и смёрджить (main защищён, прямой пуш заблокирован)
+gh pr create --base main --head dev --title "deploy: $(date +%Y-%m-%d)" --body "Production deploy"
+gh pr merge --merge --delete-branch=false
+
+# Задеплоить прод
 ./scripts/deploy.sh prod
-git checkout dev
 ```
 
 ### Текущее состояние:
@@ -347,6 +505,33 @@ ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 \
 ./scripts/browser-agent.sh fetch <filename>
 ```
 
+### SEO-аудит всего сайта (аналог Screaming Frog — бесплатно)
+
+```bash
+# Полный аудит — обходит весь сайт, выгружает CSV
+ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 \
+  "node /opt/browser-agent/seo-audit.js https://aidacamp.ru 100 /opt/sf-output/audit.csv"
+
+# CSV доступен по адресу (если положить в /var/www/dev/screenshots/):
+# https://dev.aidacamp.ru/screenshots/audit.csv
+
+# Что выдаёт: URL, Status, Title+длина, Description+длина, H1, H1_count,
+# Canonical, Schema_types, Robots_meta, Word_count, Inlinks,
+# Internal_links_out, Images_no_alt, Redirect_to
+# + сводка проблем в консоли (title >65, desc >160, 4xx, missing H1, images no alt)
+```
+
+**Яндекс.Вебмастер API** (токен в .env: YANDEX_WEBMASTER_TOKEN):
+```bash
+# Топ поисковых запросов с позициями
+USER_ID=19303961
+HOST="https:aidacamp.ru:443"
+TOKEN=$(grep YANDEX_WEBMASTER_TOKEN .env | cut -d= -f2)
+curl -s "https://api.webmaster.yandex.net/v4/user/${USER_ID}/hosts/${HOST}/query-analytics/list" \
+  -H "Authorization: OAuth ${TOKEN}" -H "Content-Type: application/json" -X POST \
+  -d '{"filters":{"text_indicator":"QUERY"},"limit":50,"order_by":"IMPRESSIONS","date_from":"YYYY-MM-DD","date_to":"YYYY-MM-DD"}'
+```
+
 ### Скриншоты доступны по URL
 `https://dev.aidacamp.ru/screenshots/<filename>.png`
 
@@ -363,6 +548,7 @@ ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 \
 | `har.js` | Запись HAR-трейса сетевых запросов с анализом |
 | `lighthouse.js` | Аудит Lighthouse (Performance, SEO, Accessibility, Best Practices) |
 | `diff.js` | Попиксельное сравнение двух скриншотов |
+| `seo-audit.js` | **Полный SEO-краулер** (аналог Screaming Frog): обходит весь сайт, выдаёт CSV с Title/Desc/H1/Canonical/Schema/статус/inlinks/images-no-alt по каждой странице. Сводка проблем в консоли. |
 
 ### interact.js — формат скрипта
 ```json

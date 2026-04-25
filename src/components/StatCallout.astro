@@ -1,0 +1,44 @@
+---
+/**
+ * StatCallout — inline-фактоид для вставки между абзацами статьи.
+ *
+ * Горизонтальная компактная карточка: [icon+big number] | [label + source]
+ *
+ * Props:
+ *   - value: string         — большая цифра/значение, напр. "8ч 39мин"
+ *   - label: string         — что эта цифра значит (1-2 строки)
+ *   - source: string        — атрибуция
+ *   - icon?: string         — bi-icon suffix, default 'lightbulb' (bi-lightbulb)
+ *   - tone?: 'neutral' | 'warn' | 'info'  — оттенок (default neutral)
+ */
+
+interface Props {
+  value: string;
+  label: string;
+  source: string;
+  icon?: string;
+  tone?: 'neutral' | 'warn' | 'info';
+}
+
+const { value, label, source, icon = 'lightbulb', tone = 'neutral' } = Astro.props;
+
+const toneStyles = {
+  neutral: { bg: 'bg-slate-50', border: 'border-slate-100', accent: 'text-slate-500', num: 'text-slate-900' },
+  warn:    { bg: 'bg-orange-50/60', border: 'border-orange-100', accent: 'text-orange-500', num: 'text-orange-700' },
+  info:    { bg: 'bg-sky-50/60', border: 'border-sky-100', accent: 'text-sky-500', num: 'text-sky-700' },
+};
+const t = toneStyles[tone];
+---
+
+<aside class={`not-prose my-6 rounded-[14px] border ${t.bg} ${t.border} p-4 md:p-5 max-w-[720px]`}>
+  <div class="flex items-start gap-4">
+    <div class="shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-white border border-slate-100">
+      <i class={`bi bi-${icon} text-[18px] ${t.accent}`}></i>
+    </div>
+    <div class="min-w-0 flex-1">
+      <p class={`text-[22px] md:text-[24px] font-bold leading-none ${t.num}`}>{value}</p>
+      <p class="mt-1.5 text-[14px] md:text-[14.5px] leading-[1.45] text-slate-700">{label}</p>
+      <p class={`mt-1.5 text-[11.5px] ${t.accent}`}>{source}</p>
+    </div>
+  </div>
+</aside>

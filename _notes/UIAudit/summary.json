@@ -1,0 +1,211 @@
+{
+  "auditedAt": "2026-04-21",
+  "totalPages": 45,
+  "auditedPages": 30,
+  "skippedPages": ["404.astro", "admin/*", "legal.astro"],
+  "overallScore": 71,
+  "globalIssues": {
+    "critical": [
+      {
+        "id": "G-C1",
+        "title": "ShiftModal показывает '13–14' вместо '13–15'",
+        "affectedFiles": [
+          "src/components/ShiftModal.astro (строки 102, 105)",
+          "src/components/Journey.astro (строка 118, data-age-item)"
+        ],
+        "affectedPages": "Все страницы со сменами (главная, все лендинги)",
+        "description": "Кнопка выбора возраста в модалке записи показывает устаревший диапазон '13–14'. После обновления возраста на 15 этот компонент не был обновлён. Пользователь видит несоответствие.",
+        "fix": "В ShiftModal.astro: data-shift-age-btn='13–15' и текст '13–15'. В Journey.astro: data-age-item='13–15'. В scripts/main.js и shift-options-flow.js: внутренний ключ '13-14' → '13-15'.",
+        "effort": "low"
+      },
+      {
+        "id": "G-C2",
+        "title": "Страница /попробовать/ возвращает 404",
+        "affectedFiles": ["src/pages/попробовать.astro"],
+        "affectedPages": "/попробовать/ (SoftStart / пробный день)",
+        "description": "Файл использует кириллицу в имени. URL /попробовать/ в браузерах кодируется как /%D0%BF%D0%BE%D0%BF%D1%80%D0%BE%D0%B1%D0%BE%D0%B2%D0%B0%D1%82%D1%8C/ — нужно проверить соответствует ли этому Astro routing. Если на страницу есть реклама или внутренние ссылки — прямые потери.",
+        "fix": "Переименовать файл в src/pages/poprobovat.astro. Добавить 301 redirect с кириллического URL на /poprobovat/.",
+        "effort": "low"
+      },
+      {
+        "id": "G-C3",
+        "title": "Галерея не отображает фотографии (серые блоки)",
+        "affectedFiles": ["src/components/Gallery.astro"],
+        "affectedPages": "Главная страница (главный эффект), потенциально другие страницы с Gallery",
+        "description": "В Gallery секции на скриншотах (и десктоп, и мобиль) видны только серые прямоугольники вместо фотографий детей. Это один из главных конверсионных элементов — живые фото из лагеря. Если это lazy loading который не триггерится в headless browser — нужно проверить на реальном устройстве. Если реальная проблема — критично.",
+        "fix": "Проверить Gallery.astro: первые 4-6 фото загружать с loading='eager', остальные с loading='lazy'. Убедиться что IntersectionObserver корректно работает.",
+        "effort": "low"
+      }
+    ],
+    "warnings": [
+      {
+        "id": "G-W1",
+        "title": "RelatedPages — нечитаемая сетка на мобиле",
+        "affectedFiles": ["src/components/RelatedPages.astro"],
+        "affectedPages": "Все лендинги + все статьи (компонент используется везде)",
+        "description": "На мобиле 4-колоночная сетка превращается в карточки ~85px шириной с текстом 11px. Tap targets меньше 30px. Это нарушение WCAG 2.5.8 (Target Size) и плохой UX.",
+        "fix": "В RelatedPages.astro: на мобиле (<768px) 2 колонки вместо 4. Увеличить padding и font-size карточек. Или заменить на горизонтальный scroll-strip.",
+        "effort": "low"
+      },
+      {
+        "id": "G-W2",
+        "title": "Muted-текст (#6d7586) на пороге WCAG AA",
+        "affectedFiles": ["src/styles/global.css (--color-text-muted)"],
+        "affectedPages": "Все страницы",
+        "description": "#6d7586 на белом фоне = ~4.2:1. Формально проходит WCAG AA (порог 4.5:1 для мелкого текста), но для целевой аудитории 35–45 лет читается трудно особенно на дешёвых Android-экранах.",
+        "fix": "Изменить --color-text-muted: #5a6275 (контраст ~5.1:1). Одна строка в global.css, исправляет все страницы.",
+        "effort": "low"
+      },
+      {
+        "id": "G-W3",
+        "title": "Кнопки в ShiftCard < 44px высотой на мобиле",
+        "affectedFiles": ["src/components/shifts/ShiftCard.astro"],
+        "affectedPages": "Главная, все лендинги (везде где есть блок смен)",
+        "description": "Вкладки 'Описание / Календарь / Подробнее' и кнопка 'Выбрать смену' имеют высоту ~36–38px. Минимум по Apple HIG и Material — 44px. Промахи у мам с телефоном.",
+        "fix": "min-h-[44px] на все интерактивные элементы внутри ShiftCard на мобиле.",
+        "effort": "low"
+      },
+      {
+        "id": "G-W4",
+        "title": "Отсутствие звёздного рейтинга в Hero / первом экране",
+        "affectedFiles": ["src/components/Hero.astro", "src/components/LandingHero.astro"],
+        "affectedPages": "Главная + все лендинги",
+        "description": "Social proof (отзывы Яндекс.Карты, рейтинг) виден только в блоке Reviews далеко внизу. Для мамы, зашедшей первый раз, нет немедленного сигнала доверия на первом экране.",
+        "fix": "Добавить в Hero под заголовком или рядом с CTA: бейдж '★ 4.9 · 89 отзывов' со ссылкой на Яндекс.Карты.",
+        "effort": "low"
+      },
+      {
+        "id": "G-W5",
+        "title": "Отсутствие якорной навигации по длинным страницам",
+        "affectedFiles": ["src/pages/index.astro"],
+        "affectedPages": "Главная страница",
+        "description": "Главная страница ~15 800px на мобиле. Пользователь не может быстро перейти к нужному разделу. Нет jump-меню или sticky-nav с якорями.",
+        "fix": "Добавить после Hero горизонтальный scroll-strip с 4–5 ссылками-якорями: Смены / Программа / Галерея / Отзывы / Записаться.",
+        "effort": "medium"
+      },
+      {
+        "id": "G-W6",
+        "title": "Comfortaa подключается но почти не используется",
+        "affectedFiles": ["src/styles/global.css", "src/layouts/Base.astro"],
+        "affectedPages": "Все страницы",
+        "description": "Шрифт Comfortaa (--font-display) подключается глобально но применяется только в единичных местах. Лишние ~40KB сетевого запроса.",
+        "fix": "Либо активно использовать Comfortaa для h1/h2 чтобы оправдать загрузку. Либо удалить и перейти на Inter везде.",
+        "effort": "low"
+      }
+    ],
+    "info": [
+      {
+        "id": "G-I1",
+        "title": "Отсутствие финального CTA в конце статей",
+        "affectedFiles": ["src/pages/stati/*.astro"],
+        "affectedPages": "Все 16 статей",
+        "description": "Статьи заканчиваются на Related articles. Мама, дочитавшая статью — максимально тёплый лид, но нет последнего призыва к действию.",
+        "fix": "Добавить перед RelatedPages в статьях блок: заголовок + social proof + кнопка записи."
+      },
+      {
+        "id": "G-I2",
+        "title": "Калькулятор налогового вычета — таблица не адаптирована для мобиля",
+        "affectedFiles": ["src/pages/nalogovyj-vychet.astro"],
+        "affectedPages": "/nalogovyj-vychet/",
+        "description": "Таблица с данными по вычету требует горизонтального скролла на мобиле.",
+        "fix": "Заменить таблицу на карточки для мобильного viewport."
+      },
+      {
+        "id": "G-I3",
+        "title": "Страница dlya-kompaniy не адаптирована под B2B",
+        "affectedFiles": ["src/pages/dlya-kompaniy.astro"],
+        "affectedPages": "/dlya-kompaniy/",
+        "description": "Визуально идентична лендингам для мам. Нет корпоративных сигналов доверия и другого CTA.",
+        "fix": "Добавить B2B-специфичный CTA 'Запросить КП', секцию с корпоративными клиентами."
+      },
+      {
+        "id": "G-I4",
+        "title": "Видео-блок: нет poster-изображений для YouTube embed",
+        "affectedFiles": ["src/components/Videos.astro"],
+        "affectedPages": "Главная страница",
+        "description": "При медленном соединении или блокировке YouTube показываются пустые серые блоки.",
+        "fix": "Добавить статичный poster-img который заменяет iframe до клика. Паттерн 'lite YouTube embed'."
+      }
+    ]
+  },
+  "scoreByPageType": {
+    "Главная страница": 72,
+    "Лендинги (LandingLayout)": 67,
+    "Статьи (stati/)": 76,
+    "Специальные страницы": 67
+  },
+  "topPriorityByImpact": [
+    {
+      "rank": 1,
+      "id": "G-C3",
+      "action": "Починить Gallery — фото не загружаются",
+      "why": "Главный конверсионный эмоциональный блок. Живые фото детей = доверие мамы.",
+      "impact": "high",
+      "effort": "low",
+      "component": "Gallery.astro"
+    },
+    {
+      "rank": 2,
+      "id": "G-C1",
+      "action": "Исправить '13–14' → '13–15' в ShiftModal и Journey",
+      "why": "Фактическая ошибка на самом важном конверсионном элементе (форма записи).",
+      "impact": "high",
+      "effort": "low",
+      "component": "ShiftModal.astro, Journey.astro, main.js, shift-options-flow.js"
+    },
+    {
+      "rank": 3,
+      "id": "G-W4",
+      "action": "Добавить рейтинг ★ 4.9 в Hero (первый экран)",
+      "why": "Social proof на первом экране = быстрое доверие без прокрутки.",
+      "impact": "high",
+      "effort": "low",
+      "component": "Hero.astro, LandingHero.astro"
+    },
+    {
+      "rank": 4,
+      "id": "G-W1",
+      "action": "RelatedPages: 2 колонки на мобиле вместо 4",
+      "why": "Затрагивает ВСЕ лендинги и статьи. Один компонент — максимальное покрытие.",
+      "impact": "high",
+      "effort": "low",
+      "component": "RelatedPages.astro"
+    },
+    {
+      "rank": 5,
+      "id": "G-C2",
+      "action": "Переименовать /попробовать/ → /poprobovat/",
+      "why": "404 на реальной странице = потеря трафика.",
+      "impact": "high",
+      "effort": "low",
+      "component": "src/pages/попробовать.astro"
+    },
+    {
+      "rank": 6,
+      "id": "G-W2",
+      "action": "Исправить --color-text-muted на #5a6275",
+      "why": "Одна строка CSS — улучшает читабельность на всех 45 страницах.",
+      "impact": "medium",
+      "effort": "low",
+      "component": "global.css"
+    },
+    {
+      "rank": 7,
+      "id": "G-W3",
+      "action": "min-h-[44px] на кнопки в ShiftCard",
+      "why": "Мобильный UX, напрямую влияет на конверсию в форму записи.",
+      "impact": "medium",
+      "effort": "low",
+      "component": "ShiftCard.astro"
+    },
+    {
+      "rank": 8,
+      "id": "G-I1",
+      "action": "Финальный CTA-блок в конце статей",
+      "why": "Тёплый трафик из статей — конверсия почти нулевая без этого блока.",
+      "impact": "high",
+      "effort": "medium",
+      "component": "Новый компонент ArticleCta.astro"
+    }
+  ]
+}

@@ -33,11 +33,11 @@
           'Командные роли и самостоятельность',
           'Подходит для 10–12 лет'
         ],
-        '13-14': [
+        '13-15': [
           'AI-практика и проектная защита',
           'Спорт + живая лагерная среда',
           'Меньше телефонов, больше результата',
-          'Подходит для 13–14 лет'
+          'Подходит для 13–15 лет'
         ]
       };
       return summaryByAge[ageKey] || summaryByAge['7-9'];
@@ -53,23 +53,23 @@
       if(!full) return shift.desc || '';
       const compact = normalizeShiftText(full);
       const firstPart = normalizeShiftText(
-        compact.split(/Для\s+(?:7[–-]9|10[–-]12|13[–-]14)\s+лет:/i)[0] || ''
+        compact.split(/Для\s+(?:7[–-]9|10[–-]12|13[–-]15)\s+лет:/i)[0] || ''
       );
 
       const markerPatternByAge = {
         '7-9': 'Для\\s+7[–-]9\\s+лет:',
         '10-12': 'Для\\s+10[–-]12\\s+лет:',
-        '13-14': 'Для\\s+13[–-]14\\s+лет:'
+        '13-15': 'Для\\s+13[–-]15\\s+лет:'
       };
       const ageLabelByAge = {
         '7-9': 'Для 7–9 лет:',
         '10-12': 'Для 10–12 лет:',
-        '13-14': 'Для 13–14 лет:'
+        '13-15': 'Для 13–15 лет:'
       };
       const markerPattern = markerPatternByAge[ageKey] || markerPatternByAge['7-9'];
       const ageLabel = ageLabelByAge[ageKey] || ageLabelByAge['7-9'];
       const agePartMatch = compact.match(
-        new RegExp(`${markerPattern}\\s*([\\s\\S]*?)(?=\\s*Для\\s+(?:7[–-]9|10[–-]12|13[–-]14)\\s+лет:|$)`, 'i')
+        new RegExp(`${markerPattern}\\s*([\\s\\S]*?)(?=\\s*Для\\s+(?:7[–-]9|10[–-]12|13[–-]15)\\s+лет:|$)`, 'i')
       );
       const agePart = normalizeShiftText(agePartMatch?.[1] || '');
 
@@ -170,13 +170,13 @@
                 <span class="shift-option-price">${formatPrice(shift.price)}</span>
                 <span class="shift-option-inline-actions">
                   <button class="shift-option-action shift-option-action-info" type="button" data-action="toggle-shift-about" data-shift-id="${shift.id}" data-shift-view="${safeViewKey}" aria-label="Описание смены ${shift.dates}">
-                    <img class="ac-icon" src="/assets/icons/info.svg" alt="" aria-hidden="true">
+                    <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/info-circle.svg" alt="" aria-hidden="true">
                   </button>
                   <button class="shift-option-action shift-option-action-calendar" type="button" data-action="toggle-shift-calendar-inline" data-shift-id="${shift.id}" data-shift-view="${safeViewKey}" aria-label="Календарь ${shift.dates}">
-                    <img class="ac-icon" src="/assets/icons/calendar.svg" alt="" aria-hidden="true">
+                    <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/calendar3.svg" alt="" aria-hidden="true">
                   </button>
                   <button class="shift-option-select-indicator" type="button" aria-label="Выбрать смену ${shift.dates}">
-                    <img class="ac-icon" src="/assets/icons/chevron-right.svg" alt="" aria-hidden="true">
+                    <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/chevron-right.svg" alt="" aria-hidden="true">
                   </button>
                 </span>
               </span>
@@ -236,10 +236,10 @@
             <strong>${formatPrice(shift.price)}</strong>
             <span class="price-row-actions">
               <button class="shift-calendar-btn shift-about-btn" type="button" data-action="toggle-shift-about" data-shift-id="${shift.id}" aria-label="Описание смены ${shift.title}">
-                <img class="ac-icon" src="/assets/icons/info.svg" alt="" aria-hidden="true">
+                <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/info-circle.svg" alt="" aria-hidden="true">
               </button>
               <button class="shift-calendar-btn" type="button" data-action="open-calendar" data-shift-id="${shift.id}" aria-label="Календарь ${shift.title}">
-                <img class="ac-icon" src="/assets/icons/calendar.svg" alt="" aria-hidden="true">
+                <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/calendar3.svg" alt="" aria-hidden="true">
               </button>
             </span>
           </div>
@@ -265,10 +265,10 @@
               <strong>${formatPrice(shift.price)}</strong>
               <span class="price-row-actions">
                 <button class="shift-calendar-btn shift-about-btn" type="button" data-action="toggle-shift-about" data-shift-id="${shift.id}" aria-label="Описание смены ${shift.title}">
-                  <img class="ac-icon" src="/assets/icons/info.svg" alt="" aria-hidden="true">
+                  <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/info-circle.svg" alt="" aria-hidden="true">
                 </button>
                 <button class="shift-calendar-btn" type="button" data-action="open-calendar" data-shift-id="${shift.id}" aria-label="Календарь ${shift.title}">
-                  <img class="ac-icon" src="/assets/icons/calendar.svg" alt="" aria-hidden="true">
+                  <img class="ac-icon" src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/calendar3.svg" alt="" aria-hidden="true">
                 </button>
               </span>
             </div>

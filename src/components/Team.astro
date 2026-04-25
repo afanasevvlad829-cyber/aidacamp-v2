@@ -79,6 +79,16 @@ import { members } from '../data/team';
             </article>
           ))}
         </div>
+        <!-- Dots — mobile only -->
+        <div class="mt-3 flex justify-center items-center gap-2 md:hidden" data-team-dots role="group" aria-label="Навигация по команде">
+          {members.map((_, i) => (
+            <span
+              class={`h-2 rounded-full transition-all duration-200 ${i === 0 ? 'w-6 bg-[#c45f00]' : 'w-2 bg-slate-300'}`}
+              data-team-dot={i}
+              aria-current={i === 0 ? 'true' : 'false'}
+            ></span>
+          ))}
+        </div>
       </div>
     </div>
   </div>
@@ -117,6 +127,29 @@ import { members } from '../data/team';
 
 <script>
   function initTeam() {
+    // Mobile carousel dots
+    const mobileTrack = document.querySelector<HTMLElement>('[data-team-mobile-track]');
+    const teamDots = document.querySelectorAll<HTMLElement>('[data-team-dot]');
+    if (mobileTrack && teamDots.length) {
+      const mCards = Array.from(mobileTrack.children) as HTMLElement[];
+      const teamDotObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const idx = mCards.indexOf(entry.target as HTMLElement);
+            teamDots.forEach((d, di) => {
+              const isActive = di === idx;
+              d.classList.toggle('bg-[#c45f00]', isActive);
+              d.classList.toggle('w-6', isActive);
+              d.classList.toggle('bg-slate-300', !isActive);
+              d.classList.toggle('w-2', !isActive);
+              d.setAttribute('aria-current', isActive ? 'true' : 'false');
+            });
+          }
+        });
+      }, { root: mobileTrack, threshold: 0.6 });
+      mCards.forEach((card) => teamDotObserver.observe(card));
+    }
+
     // Book modal
     const modal = document.getElementById('teamBookModal') as HTMLDialogElement | null;
     document.querySelector('[data-book-open]')?.addEventListener('click', () => modal?.showModal());

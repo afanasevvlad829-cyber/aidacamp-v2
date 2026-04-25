@@ -20,16 +20,21 @@ function freeLabel(free: number) {
 }
 ---
 
-<div data-shift-occupancy>
+<!--
+  px-3 md:px-0 — даёт мобилке «дыхание» от края экрана (12 px слева/справа).
+  На desktop отключено, т.к. wrapper в index.astro + lg:grid-cols-2 уже
+  задаёт нужные отступы.
+-->
+<div data-shift-occupancy class="px-3 md:px-0">
   <!-- STATE: idle -->
   <div data-state="idle">
     <div class="py-6 text-center">
-      <i class="bi bi-bar-chart-line text-[32px] text-slate-300"></i>
-      <p class="mt-2 text-[14px] font-medium text-slate-500">Проверить свободные места</p>
-      <p class="mt-1 text-[14px] text-slate-600">Данные обновляются в реальном времени</p>
+      <i class="bi bi-bar-chart-line text-[40px] text-slate-300"></i>
+      <p class="mt-3 text-[16px] font-semibold text-slate-600">Проверить свободные места</p>
+      <p class="mt-1 text-[15px] text-slate-500">Данные обновляются в реальном времени</p>
       <button data-check-occupancy
-              class="mt-4 inline-flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-2.5 text-[14px] font-semibold text-white hover:bg-orange-600 transition">
-        <i class="bi bi-search"></i>
+              class="mt-4 inline-flex items-center gap-2 rounded-xl bg-orange-500 px-6 py-3 text-[16px] font-semibold text-white hover:bg-orange-600 transition">
+        <i class="bi bi-search text-[16px]"></i>
         Проверить
       </button>
     </div>
@@ -153,6 +158,7 @@ function freeLabel(free: number) {
 </div>
 
 <script>
+  import { trackGoal } from '../scripts/analytics';
   function initOccupancy() {
     const root = document.querySelector('[data-shift-occupancy]');
     if (!root) return;
@@ -198,9 +204,7 @@ function freeLabel(free: number) {
     }
 
     root.querySelector('[data-check-occupancy]')?.addEventListener('click', () => {
-      if (typeof window.ym !== 'undefined') window.ym(96499295, 'reachGoal', 'check_places');
-      window._tmr = window._tmr || [];
-      window._tmr.push({ type: 'reachGoal', id: 3755202, value: 100, goal: 'check_places' });
+      trackGoal('check_places');
 
       showState('loading');
       setTimeout(() => {

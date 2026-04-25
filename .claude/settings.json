@@ -1,12 +1,37 @@
 {
+  "permissions": {
+    "deny": [
+      "Bash(cd /Users/vladimirafanasev/Aidacamp-cloude && git checkout*)",
+      "Bash(cd /Users/vladimirafanasev/Aidacamp-cloude && git stash*)",
+      "Bash(cd /Users/vladimirafanasev/Aidacamp-cloude && git merge*)",
+      "Bash(cd /Users/vladimirafanasev/Aidacamp-cloude && git reset --hard*)",
+      "Bash(cd /Users/vladimirafanasev/Aidacamp-cloude && git rebase*)",
+      "Bash(cd /Users/vladimirafanasev/Aidacamp-cloude/ && git checkout*)",
+      "Bash(cd /Users/vladimirafanasev/Aidacamp-cloude/ && git stash*)",
+      "Bash(cd /Users/vladimirafanasev/Aidacamp-cloude/ && git merge*)",
+      "Bash(cd /Users/vladimirafanasev/Aidacamp-cloude/ && git reset --hard*)",
+      "Bash(cd /Users/vladimirafanasev/Aidacamp-cloude/ && git rebase*)"
+    ]
+  },
   "hooks": {
-    "PreToolUse": [
+    "SessionStart": [
       {
-        "matcher": "mcp__5967f77d.*|mcp__Kapture.*|mcp__Desktop_Commander.*|mcp__Claude_in_Chrome.*|mcp__Control_Chrome.*|mcp__Control_your_Mac.*",
         "hooks": [
           {
             "type": "command",
-            "command": "echo '{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"ЗАПРЕЩЕНО. Используй MCP-инструменты aidacamp-tools: ssh, stats, photos, browser_agent, clarity, pagespeed, image_edit, read_file, write_file, vk_campaigns, vk_manage_campaign, vk_manage_ad_group, vk_manage_ad, vk_ads_stats, direct_campaigns, direct_manage_campaign, direct_manage_adgroup, direct_manage_ad, direct_manage_keywords. Они доступны через ToolSearch запрос +aidacamp. Подробности в CLAUDE.md.\"}}'"
+            "command": "bash \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/scripts/hooks/session-start.sh\" 2>/dev/null || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/scripts/hooks/pre-compact.sh\" 2>/dev/null || true",
+            "timeout": 5
           }
         ]
       }

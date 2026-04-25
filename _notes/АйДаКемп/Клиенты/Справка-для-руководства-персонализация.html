@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Персонализация касаний по базе клиентов — AidaCamp</title>
+<style>
+  :root {
+    --orange: #f97316;
+    --orange-light: #fff2e3;
+    --orange-dark: #9c3d00;
+    --slate-50: #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --slate-400: #94a3b8;
+    --slate-600: #475569;
+    --slate-700: #334155;
+    --slate-900: #0f172a;
+    --green: #10b981;
+    --amber: #f59e0b;
+    --red: #ef4444;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(180deg, #fafafa 0%, #f1f5f9 100%);
+    color: var(--slate-900);
+    line-height: 1.5;
+    margin: 0;
+    padding: 24px 16px;
+    font-size: 15px;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+  header {
+    background: linear-gradient(135deg, var(--orange) 0%, #ea580c 100%);
+    color: white;
+    padding: 36px 40px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 10px 40px rgba(249, 115, 22, 0.25);
+  }
+  header h1 {
+    margin: 0 0 8px 0;
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  header .subtitle {
+    font-size: 16px;
+    opacity: 0.95;
+    font-weight: 500;
+  }
+  header .meta {
+    margin-top: 16px;
+    font-size: 13px;
+    opacity: 0.85;
+    font-weight: 400;
+  }
+
+  section {
+    background: white;
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 10px 20px rgba(0,0,0,0.03);
+  }
+  section h2 {
+    margin: 0 0 16px 0;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--slate-900);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  section h2 .dot {
+    width: 4px; height: 24px;
+    background: var(--orange);
+    border-radius: 4px;
+  }
+
+  /* Stats grid */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 14px;
+    margin-top: 12px;
+  }
+  .stat {
+    background: var(--slate-50);
+    border: 1px solid var(--slate-200);
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .stat .value {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--slate-900);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .stat .label {
+    font-size: 12px;
+    color: var(--slate-600);
+    margin-top: 6px;
+    font-weight: 500;
+  }
+  .stat.accent {
+    background: var(--orange-light);
+    border-color: rgba(249, 115, 22, 0.3);
+  }
+  .stat.accent .value { color: var(--orange-dark); }
+
+  /* Segments table */
+  table.segments {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 8px;
+    font-size: 14px;
+  }
+  table.segments th {
+    text-align: left;
+    padding: 10px 12px;
+    background: var(--slate-50);
+    border-bottom: 2px solid var(--slate-200);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--slate-600);
+  }
+  table.segments td {
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--slate-100);
+  }
+  table.segments td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+  table.segments tr:hover td { background: var(--slate-50); }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge.green { background: #dcfce7; color: #14532d; }
+  .badge.amber { background: #fef3c7; color: #78350f; }
+  .badge.red { background: #fee2e2; color: #7f1d1d; }
+
+  /* Examples */
+  .example {
+    background: var(--slate-50);
+    border-left: 4px solid var(--orange);
+    border-radius: 12px;
+    padding: 22px 26px;
+    margin-bottom: 18px;
+  }
+  .example-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .example-number {
+    width: 32px; height: 32px;
+    background: var(--orange);
+    color: white;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .example-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--slate-900);
+  }
+  .example-segment {
+    font-size: 12px;
+    color: var(--slate-600);
+    background: var(--slate-200);
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+
+  .bubble {
+    background: white;
+    border: 1px solid var(--slate-200);
+    padding: 16px 20px;
+    border-radius: 14px;
+    font-size: 14.5px;
+    line-height: 1.55;
+    margin: 12px 0;
+    color: var(--slate-700);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    position: relative;
+  }
+  .bubble::before {
+    content: "💬";
+    position: absolute;
+    top: -8px; left: 16px;
+    background: white;
+    padding: 2px 6px;
+    font-size: 12px;
+  }
+
+  .explanation {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 10px;
+    font-size: 13.5px;
+  }
+  .explanation-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--orange-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .explanation ul { margin: 6px 0; padding-left: 20px; }
+  .explanation li { margin: 4px 0; color: var(--slate-700); }
+
+  .forecast {
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: var(--orange-light);
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--orange-dark);
+    font-weight: 500;
+  }
+  .forecast strong { color: var(--slate-900); }
+
+  /* ROI table */
+  table.roi {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 14px;
+  }
+  table.roi th, table.roi td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--slate-100);
+    text-align: left;
+  }
+  table.roi th {
+    background: var(--slate-50);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--slate-600);
+    border-bottom: 2px solid var(--slate-200);
+  }
+  table.roi td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+  table.roi tr.total td {
+    background: var(--orange-light);
+    font-weight: 700;
+    color: var(--orange-dark);
+    border-top: 2px solid var(--orange);
+  }
+
+  .principles {
+    background: white;
+    padding: 20px 24px;
+    border-radius: 12px;
+    border: 1px solid var(--slate-200);
+    margin-top: 8px;
+  }
+  .principles ol { margin: 0; padding-left: 20px; }
+  .principles li { margin: 8px 0; line-height: 1.5; }
+  .principles li strong { color: var(--orange-dark); }
+
+  footer {
+    margin-top: 32px;
+    padding: 20px;
+    color: var(--slate-400);
+    font-size: 12px;
+    text-align: center;
+  }
+
+  @media (max-width: 640px) {
+    body { padding: 12px 8px; font-size: 14px; }
+    header { padding: 24px 20px; }
+    header h1 { font-size: 24px; }
+    section { padding: 18px 18px; }
+    .example { padding: 16px 18px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Персонализация касаний по клиентской базе</h1>
+  <div class="subtitle">Как вернуть ушедших клиентов и дожать горячих лидов — без скидок и давления</div>
+  <div class="meta">AidaCamp • Справка для руководства • 2026-04-20</div>
+</header>
+
+<!-- BASE -->
+<section>
+  <h2><span class="dot"></span>Что есть в базе</h2>
+  <div class="stats">
+    <div class="stat"><div class="value">3 474</div><div class="label">Контактов в CRM</div></div>
+    <div class="stat"><div class="value">221</div><div class="label">Платили когда-либо</div></div>
+    <div class="stat"><div class="value">217</div><div class="label">Учатся сейчас</div></div>
+    <div class="stat accent"><div class="value">~90%</div><div class="label">В WhatsApp / Telegram<br>(проверено выборкой)</div></div>
+    <div class="stat"><div class="value">~50 тыс</div><div class="label">Сообщений в архиве<br>TG + WA + CRM</div></div>
+    <div class="stat accent"><div class="value">355</div><div class="label">Безопасны для касания<br>(канал прогрет)</div></div>
+  </div>
+</section>
+
+<!-- SEGMENTS -->
+<section>
+  <h2><span class="dot"></span>Сегменты для реактивации</h2>
+  <table class="segments">
+    <thead><tr>
+      <th>Сегмент</th>
+      <th style="text-align:right">Кол-во</th>
+      <th>Суть</th>
+      <th>Можно писать</th>
+    </tr></thead>
+    <tbody>
+      <tr><td><b>LEAD_HOT</b></td><td class="num">35</td><td>«Думаем, перезвоним» — не дошли</td><td><span class="badge green">🟢 SAFE</span></td></tr>
+      <tr><td><b>LEAD_WARM</b></td><td class="num">96</td><td>Отказ: дорого / расписание / далеко</td><td><span class="badge green">🟢 SAFE/WARM</span></td></tr>
+      <tr><td><b>CHURN_UNKNOWN</b></td><td class="num">56</td><td>Ушёл 2-12 мес назад молча</td><td><span class="badge amber">🟡 WARM</span></td></tr>
+      <tr><td><b>CHURN_ARCHIVE</b></td><td class="num">346</td><td>Ушёл &gt;1 года — ребёнок вырос</td><td><span class="badge amber">🟡</span></td></tr>
+      <tr><td><b>LEAD_CAMP</b></td><td class="num">8</td><td>Спрашивали про лагерь</td><td><span class="badge green">🟢 SAFE</span></td></tr>
+      <tr><td><b>CHURN_HOT</b></td><td class="num">5</td><td>Недавно ушёл + тёплый сигнал</td><td><span class="badge green">🟢 SAFE</span></td></tr>
+      <tr><td><b>MATH_IT_TEEN</b></td><td class="num">11</td><td>Сейчас 15-17 — подросток</td><td><span class="badge amber">🟡</span></td></tr>
+      <tr><td style="color:var(--slate-400)"><b>Не трогать</b></td><td class="num" style="color:var(--slate-400)">1 358</td><td style="color:var(--slate-400)">Переезд / вырос / старый лид</td><td><span class="badge red">❌</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- EXAMPLES -->
+<section>
+  <h2><span class="dot"></span>5 примеров касаний</h2>
+  <p style="color:var(--slate-600);margin:4px 0 22px 0;font-size:14px">
+    Все сообщения пишутся <b>от имени директора</b>, через <b>WhatsApp</b> (реже TG), с учётом <b>конкретного контекста</b> из CRM-карточки. Никаких шаблонов без имени и деталей.
+  </p>
+
+  <!-- ПРИМЕР 1 -->
+  <div class="example">
+    <div class="example-header">
+      <span class="example-number">1</span>
+      <span class="example-title">«Думали, не дошли» — горячий лид с историей</span>
+      <span class="example-segment">LEAD_HOT • 35 чел</span>
+    </div>
+    <div class="bubble">
+      Здравствуйте! Это Владимир, директор АйДаКодить. В декабре вы писали про Полину — прикинуть Scratch или Python. Я тогда предложил Scratch сб. 14:00, вы сказали обсудить с мужем. Не продаю — просто напомнить: к лету у нас появилась группа по проектам для Полины — они делают собственную игру за 8 занятий. Если актуально — расскажу подробнее. Если уже идёте в другую школу — тоже нормально, ни к чему не обязываю.
+    </div>
+    <div class="explanation">
+      <div class="explanation-label">Почему так работает</div>
+      <ul>
+        <li>Называем <b>ребёнка по имени</b> и напоминаем конкретный разговор — доказательство что помним</li>
+        <li>Точная дата, курс, время → никаких «мы недавно виделись»</li>
+        <li><b>«Не продаю, ни к чему не обязываю»</b> — выход без потери лица</li>
+        <li>Упоминание мужа — уважение к семейному решению, не давление</li>
+      </ul>
+    </div>
+    <div class="forecast">
+      📊 Прогноз: <strong>25-35% ответов</strong> → из 35 → 9-12 ответов → <strong>3-5 записей на пробное</strong> (~200-400 тыс ₽)
+    </div>
+  </div>
+
+  <!-- ПРИМЕР 2 -->
+  <div class="example">
+    <div class="example-header">
+      <span class="example-number">2</span>
+      <span class="example-title">«Дорого» — новый формат + вычет</span>
+      <span class="example-segment">LEAD_WARM price • ~40 чел</span>
+    </div>
+    <div class="bubble">
+      Мария, здравствуйте! Это Владимир. Вы в октябре приходили смотреть Python для Егора — и тогда прайс не зашёл по бюджету. Хотела поделиться: у нас с сентября формат <b>2 занятия в неделю</b> вместо 3 — получается 3 200 ₽/мес вместо 5 000. Плюс теперь налоговый вычет 13% (до 5 400 ₽ обратно) и рассрочка. Не скидка — другая программа. Думаю, сейчас удобнее. Если интересно — расскажу.
+    </div>
+    <div class="explanation">
+      <div class="explanation-label">Почему так работает</div>
+      <ul>
+        <li>Цена — <b>«другой формат»</b>, не скидка (сохраняет ценность продукта)</li>
+        <li>Вычет 13% — <b>рациональный аргумент для мамы-Дарьи</b> («я хорошая мама, умею экономить легально»)</li>
+        <li>Конкретика (имя ребёнка, месяц разговора, курс) — «помним вас»</li>
+        <li>Ни одного «успейте до» — без давления</li>
+      </ul>
+    </div>
+    <div class="forecast">
+      📊 Прогноз: <strong>15-20% ответов</strong> → из 96 → 15-20 ответов → <strong>5-8 записей</strong> (~400-650 тыс ₽)
+    </div>
+  </div>
+
+  <!-- ПРИМЕР 3 -->
+  <div class="example">
+    <div class="example-header">
+      <span class="example-number">3</span>
+      <span class="example-title">Ушёл молча — natural progression</span>
+      <span class="example-segment">CHURN_UNKNOWN • 56 чел</span>
+    </div>
+    <div class="bubble">
+      Здравствуйте! Это Владимир. Миша закончил у нас Scratch в мае и после лагеря не вернулся. Я не спрашиваю почему — скорее всего, летом переключились на отдых, это нормально. Но вдруг интересно: осенью у нас стартовал трек <b>«Python для тех, кто уже прошёл Scratch»</b> — как раз под ребят Мишиного уровня. Зову на открытое занятие в субботу 26 апреля в 14:00, без обязательств. Если не актуально — тоже всё нормально, просто даю знать.
+    </div>
+    <div class="explanation">
+      <div class="explanation-label">Почему так работает</div>
+      <ul>
+        <li><b>«Не спрашиваю почему»</b> — снимает необходимость оправдываться, мама дышит спокойно</li>
+        <li>Естественный следующий шаг (Scratch → Python) — не случайное возвращение, а логика</li>
+        <li>Конкретная дата + «без обязательств» — низкая планка</li>
+        <li>Тон коллеги, не продавца</li>
+      </ul>
+    </div>
+    <div class="forecast">
+      📊 Прогноз: <strong>20-30% ответов</strong> → из 56 → 11-17 ответов → <strong>4-7 возвратов</strong> (~300-500 тыс ₽)
+    </div>
+  </div>
+
+  <!-- ПРИМЕР 4 -->
+  <div class="example">
+    <div class="example-header">
+      <span class="example-number">4</span>
+      <span class="example-title">«Ребёнок вырос» — age-up трек</span>
+      <span class="example-segment">CHURN_ARCHIVE • 346 чел</span>
+    </div>
+    <div class="bubble">
+      Здравствуйте! Это Владимир. Полине сейчас 13 — она перерастает нашу среднюю группу, но как раз под этот возраст мы запустили <b>подростковый трек</b>: веб-разработка + дизайн + мини-стартап-проект. Для ребят, которые уже прошли Scratch (как Полина в 2023) — идеальный уровень. Зову на открытое занятие 20 апреля в 15:00, или если неудобно — расскажу онлайн. Даже если сейчас не заходит — буду рад, если когда-нибудь вернётесь.
+    </div>
+    <div class="explanation">
+      <div class="explanation-label">Почему так работает</div>
+      <ul>
+        <li><b>Projected age</b>: мы посчитали текущий возраст → родитель видит, что мы следим за траекторией</li>
+        <li>«Уже прошла Scratch в 2023» — <b>помним прогресс ребёнка</b></li>
+        <li>Альтернативы формата (оффлайн/онлайн) — снимает «неудобно ехать»</li>
+        <li><b>«Даже если не заходит»</b> — даёт выход без шейминга</li>
+      </ul>
+    </div>
+    <div class="forecast">
+      📊 Прогноз: <strong>5-10% ответов</strong> → из 346 → 17-35 ответов → <strong>7-15 возвратов</strong> (~500-1 100 тыс ₽). <strong>Самая большая выручка в абсолюте.</strong>
+    </div>
+  </div>
+
+  <!-- ПРИМЕР 5 -->
+  <div class="example">
+    <div class="example-header">
+      <span class="example-number">5</span>
+      <span class="example-title">Лагерь — приоритет на «своего» вожатого</span>
+      <span class="example-segment">LEAD_CAMP • ~30 чел</span>
+    </div>
+    <div class="bubble">
+      Здравствуйте! Это Владимир. В феврале вы интересовались июньской сменой в лагере для Димы — я тогда прислал программу. Сейчас до конца апреля можно <b>зафиксировать место в отряде Саши Травкина</b> (он лагерный педагог с 2023 — моя дочь у него два года) — после 30-го это уже общая запись, и Сашин отряд обычно разбирают за неделю. Если хотите — позвоню на выходных, 10 минут про смену и ответы на вопросы. Номер у меня ваш есть.
+    </div>
+    <div class="explanation">
+      <div class="explanation-label">Почему так работает</div>
+      <ul>
+        <li>Не скидка, а <b>приоритет на конкретного педагога</b> → доверительный аргумент</li>
+        <li>«Моя дочь у него» — <b>личный endorsement</b>, не продажа</li>
+        <li>Reframing urgency через логику («после — общая запись»), не манипуляцию</li>
+        <li>Предлагает <b>звонок</b> — лучшие клиенты звонят по портрету</li>
+      </ul>
+    </div>
+    <div class="forecast">
+      📊 Прогноз: <strong>30-40% ответов</strong> (интерес уже есть) → 8-12 звонков → <strong>4-6 продаж × 75к ₽</strong> (~300-450 тыс ₽)
+    </div>
+  </div>
+</section>
+
+<!-- ROI -->
+<section>
+  <h2><span class="dot"></span>Суммарный прогноз ROI</h2>
+  <table class="roi">
+    <thead><tr>
+      <th>Шаблон</th>
+      <th style="text-align:right">Объём</th>
+      <th style="text-align:right">Ожидаемые продажи</th>
+      <th style="text-align:right">Выручка</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>LEAD_HOT + SAFE</td><td class="num">35</td><td class="num">3-5</td><td class="num">~200-400к ₽</td></tr>
+      <tr><td>LEAD_WARM «дорого»</td><td class="num">96</td><td class="num">5-8</td><td class="num">~400-650к ₽</td></tr>
+      <tr><td>CHURN_UNKNOWN</td><td class="num">56</td><td class="num">4-7</td><td class="num">~300-500к ₽</td></tr>
+      <tr><td>CHURN_ARCHIVE (age-up)</td><td class="num">346</td><td class="num">7-15</td><td class="num">~500-1 100к ₽</td></tr>
+      <tr><td>LEAD_CAMP</td><td class="num">30</td><td class="num">4-6</td><td class="num">~300-450к ₽</td></tr>
+      <tr class="total"><td>Итого одной волной</td><td class="num">565</td><td class="num">23-41</td><td class="num">1.7 – 3.1 млн ₽</td></tr>
+    </tbody>
+  </table>
+  <p style="color:var(--slate-600);font-size:13px;margin-top:16px">
+    Работа директора: 5-7 дней по 20-30 сообщений в день. Каждое — уникальное, не шаблон.
+    Если волна даёт ≥1.5 млн ₽ — через 3 мес делаем вторую с другими шаблонами (сезонные смены, возрастные апгрейды).
+  </p>
+</section>
+
+<!-- PRINCIPLES -->
+<section>
+  <h2><span class="dot"></span>6 принципов (жёсткие)</h2>
+  <div class="principles">
+    <ol>
+      <li><strong>Пишем только туда, где клиент уже писал нам</strong> (SAFE-канал) — чтобы не попасть в спам-бан WhatsApp/Meta</li>
+      <li><strong>От имени директора</strong>, не безликого «менеджера» — доверие растёт кратно</li>
+      <li><strong>Конкретика в каждом сообщении</strong>: имя ребёнка, месяц разговора, курс, педагог. Доказательство что помним.</li>
+      <li><strong>Выход без потери лица</strong>: «ни к чему не обязывает», «просто даю знать», «если неактуально — тоже нормально»</li>
+      <li><strong>Скидка — не первый аргумент.</strong> Вычет 13%, другой формат, новый педагог — всё кроме «дешевле»</li>
+      <li><strong>Темп</strong>: 20-30 сообщений в день, интервалы 5-10 минут. Не быстрее — риск попасть под фильтр</li>
+    </ol>
+  </div>
+</section>
+
+<footer>
+  Полные данные: <code>Реактивация-пул.csv</code> • Запреты и практики: <code>Реактивация-практики-и-запреты.md</code> • Классификатор: <code>/opt/etl/dossier-v3.py</code>
+</footer>
+
+</div>
+</body>
+</html>

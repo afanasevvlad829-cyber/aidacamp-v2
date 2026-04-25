@@ -13,35 +13,52 @@ const { pct, badgeBg, badgeText, btnClass } = renderCard(shift);
 const isMobile = variant === 'mobile';
 
 const articleClass = isMobile
-  ? `min-w-[calc(100vw-48px)] max-w-[calc(100vw-48px)] shrink-0 snap-start rounded-[20px] border bg-slate-50 p-4 shadow-[0_6px_18px_rgba(15,23,42,0.04)] ${shift.popular ? 'border-orange-400 ring-2 ring-orange-400' : 'border-slate-200'}`
-  : `rounded-[20px] border border-slate-200 bg-slate-50 p-5 shadow-[0_6px_18px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_32px_rgba(15,23,42,0.08)] ${shift.popular ? 'ring-2 ring-orange-400' : ''}`;
+  ? `min-w-[calc(100vw-48px)] max-w-[calc(100vw-48px)] shrink-0 snap-start rounded-[20px] border bg-slate-50 p-4 shadow-[0_6px_18px_rgba(15,23,42,0.04)] cursor-pointer select-none ${shift.popular ? 'border-orange-400 ring-2 ring-orange-400' : 'border-slate-200'}`
+  : `rounded-[20px] border border-slate-200 bg-slate-50 p-5 shadow-[0_6px_18px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_32px_rgba(15,23,42,0.08)] cursor-pointer select-none ${shift.popular ? 'ring-2 ring-orange-400' : ''}`;
 
 const descClass = isMobile ? 'text-[14px]' : 'text-[15px]';
 const priceClass = isMobile ? 'text-[20px]' : 'text-[22px]';
 const btnHover = isMobile ? '' : 'hover:-translate-y-0.5';
 ---
 
-<article class={articleClass}>
-  <div class="flex items-start justify-between">
-    <div>
+<article class={articleClass} data-shift-card>
+  <!-- Popular tag — отдельная строка сверху карточки, чтобы не конкурировать с заголовком на узких экранах -->
+  {shift.popular && (
+    <div class="mb-2 flex">
+      <span class="inline-flex items-center gap-1 rounded-full bg-orange-500 px-2.5 py-0.5 text-[13px] font-medium text-white">
+        <i class="bi bi-fire text-[13px]" aria-hidden="true"></i>
+        Популярная
+      </span>
+    </div>
+  )}
+
+  <!-- Title row: заголовок + статус. min-w-0 на левой колонке + shrink-0 на бейдже = безопасный wrap на любом узком экране. -->
+  <div class="flex items-start justify-between gap-2">
+    <div class="min-w-0 flex-1">
       <h3 class="text-[20px] font-semibold leading-[1.15] text-slate-900">{shift.name}</h3>
       <p class="mt-1 text-sm font-medium text-slate-600">{shift.dates}</p>
     </div>
-    <div class={`flex items-center gap-1.5 ${isMobile ? 'shrink-0' : ''}`}>
-      {shift.popular && <span class="rounded-full bg-orange-500 text-white text-[14px] font-medium px-2 py-0.5">🔥 Популярная</span>}
-      <span class={`rounded-full ${badgeBg} ${badgeText} px-2 py-0.5 text-[14px] font-medium`}>{shift.status}</span>
-    </div>
+    <span class={`shrink-0 rounded-full ${badgeBg} ${badgeText} px-2 py-0.5 text-[14px] font-medium`}>{shift.status}</span>
   </div>
 
-  <p class="text-[13px] text-slate-600">{shift.duration}</p>
+  <p class="mt-1 text-[13px] text-slate-600">{shift.duration}</p>
 
-  <div class="mt-2 flex gap-2">
-    <button type="button" data-shift-calendar={shift.id} data-start={shift.startDate} data-end={shift.endDate} data-shift-name={shift.name} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-[14px] text-slate-600 hover:bg-slate-100" title="Календарь">
-      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+  {/* Price transparency — вытащена наверх P1C 2026-04-20, чтобы цена была видна без клика */}
+  {isMobile && (
+    <div class="mt-2 flex items-baseline gap-2">
+      <span class="text-[18px] font-bold tracking-[-0.02em] text-orange-600">{shift.price}</span>
+      <span class="text-[12px] text-slate-500">всё включено</span>
+    </div>
+  )}
+
+  <!-- Action buttons: flex-wrap чтобы ровно переносились на отдельные строки на узких экранах -->
+  <div class="mt-2 flex flex-wrap gap-2">
+    <button type="button" data-shift-calendar={shift.id} data-start={shift.startDate} data-end={shift.endDate} data-shift-name={shift.name} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2.5 text-[14px] text-slate-700 hover:bg-slate-100 min-h-[40px]" title="Календарь">
+      <i class="bi bi-calendar-event text-[14px]" aria-hidden="true"></i>
       календарь
     </button>
-    <button type="button" data-shift-info={shift.id} data-shift-title={shift.name} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-[14px] text-slate-600 hover:bg-slate-100" title="Подробнее">
-      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0-4h.01" /></svg>
+    <button type="button" data-shift-info={shift.id} data-shift-title={shift.name} class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2.5 text-[14px] text-slate-700 hover:bg-slate-100 min-h-[40px]" title="Подробнее">
+      <i class="bi bi-lightbulb text-[14px]" aria-hidden="true"></i>
       Подробнее
     </button>
   </div>
@@ -56,8 +73,8 @@ const btnHover = isMobile ? '' : 'hover:-translate-y-0.5';
     </div>
   )}
 
-  <div class={`mt-4 ${priceClass} font-bold tracking-[-0.03em] text-slate-900`}>{shift.price}</div>
-  <p class="text-[14px] text-slate-600 mt-1">Питание, проживание, программа включены</p>
+  <div class={`mt-4 text-[18px] font-bold tracking-[-0.02em] text-orange-600 ${isMobile ? 'hidden' : ''}`}>{shift.price}</div>
+  <p class={`text-[14px] text-slate-600 mt-1 ${isMobile ? 'hidden' : ''}`}>Питание, проживание, программа включены</p>
 
   <div class="mt-3">
     <div class="h-[10px] w-full overflow-hidden rounded-[6px] bg-slate-100">
@@ -81,9 +98,30 @@ const btnHover = isMobile ? '' : 'hover:-translate-y-0.5';
     data-shift-book-price={shift.price}
     data-analytics-goal="shift_select"
     data-analytics-label={shift.name}
-    class={`mt-4 w-full rounded-xl px-4 py-2.5 text-[14px] font-semibold ${btnHover} ${btnClass}`}
+    class={`mt-4 w-full rounded-xl px-4 py-3 text-[15px] font-semibold min-h-[48px] ${btnHover} ${btnClass}`}
   >
     Выбрать
   </button>
-  <p class="text-[14px] text-slate-600 text-center mt-1.5">Не понравится в первые 3 дня — вернём 50%</p>
 </article>
+
+<script>
+  document.querySelectorAll<HTMLElement>('article[data-shift-card]').forEach(card => {
+    let startX = 0;
+    let startY = 0;
+
+    card.addEventListener('pointerdown', (e) => {
+      startX = e.clientX;
+      startY = e.clientY;
+    });
+
+    card.addEventListener('click', (e) => {
+      // Игнорируем клики внутри кнопок и ссылок
+      if ((e.target as Element).closest('button, a')) return;
+      // Игнорируем если это был свайп (смещение > 8px)
+      const dx = Math.abs(e.clientX - startX);
+      const dy = Math.abs(e.clientY - startY);
+      if (dx > 8 || dy > 8) return;
+      (card.querySelector<HTMLButtonElement>('[data-shift-book]'))?.click();
+    });
+  });
+</script>

@@ -1,262 +1,146 @@
 ---
-import LeadForm from './LeadForm.astro';
+import HeroMobile from './hero/Mobile.astro';
+import HeroDesktop from './hero/Desktop.astro';
 import HeroModals from './HeroModals.astro';
-import { STAT_YEARS, STAT_KIDS, STAT_RATING, STAT_DISTANCE, STAT_RETURN, CAMP_PRICE_FROM } from '../data/contacts';
+
+interface Props {
+  imageSrc?: string;
+  hasVariants?: boolean;
+}
+
+const { imageSrc, hasVariants = false } = Astro.props;
 ---
 
 <section id="hero" class="relative mx-auto w-full overflow-x-hidden bg-surface-warm md:max-w-[1440px]">
-  <!-- ===== MOBILE HERO ===== -->
-  <div class="relative w-full bg-dark-navy md:hidden">
-    <!-- Photo with gradient fade to dark -->
-    <div class="relative">
-      <img
-        src="/images/hero-custom-2026-04-07.avif"
-        srcset="/images/hero-custom-2026-04-07-600.avif 600w, /images/hero-custom-2026-04-07-900.avif 900w, /images/hero-custom-2026-04-07-950.avif 950w, /images/hero-custom-2026-04-07-1100.avif 1100w, /images/hero-custom-2026-04-07.avif 1536w"
-        sizes="100vw"
-        alt=""
-        aria-hidden="true"
-        class="w-full aspect-[4/3] object-cover object-[center_35%]"
-        loading="eager"
-        fetchpriority="high"
-        width="1536"
-        height="1024"
-      />
-      <!-- Side gradient -->
-      <div class="absolute inset-0 bg-[linear-gradient(92deg,rgba(6,10,18,0.72)_0%,rgba(6,10,18,0.46)_42%,rgba(6,10,18,0.2)_70%,rgba(6,10,18,0.06)_100%)]"></div>
-      <!-- Bottom fade to dark -->
-      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-dark-navy"></div>
-
-      <!-- Text over photo -->
-      <div class="absolute bottom-6 left-5 right-5">
-        <p class="text-[14px] tracking-[0.2px] text-white/80">
-          <span class="text-orange-400">★ {STAT_RATING}</span> на Яндекс Картах · {STAT_YEARS} лет работы · {STAT_KIDS} детей
-        </p>
-        <h1 id="hero-title-mobile" class="mt-1 text-[36px] font-bold leading-[1.1] tracking-[-0.03em] text-white">
-          Летний лагерь в&nbsp;Подмосковье,&nbsp;<span class="whitespace-nowrap">7–14</span>
-        </h1>
-        <p id="hero-subtitle-mobile" class="mt-2 text-[14px] text-white/60">
-          Вам — 14 дней для себя.
-        </p>
-      </div>
-    </div>
-
-    <!-- Анонс статьи про ИИ — тонкая полоска под фото, над формой -->
-    <a
-      href="/stati/ii-zamenit-programmista"
-      class="flex items-center gap-2 border-t border-white/5 px-4 py-2.5 text-[12px] leading-tight text-white/75 hover:text-white active:bg-white/5 transition-colors group"
-    >
-      <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white">?</span>
-      <span class="flex-1">«ИИ заменит программистов» — правда или реклама?</span>
-      <svg class="h-3 w-3 shrink-0 opacity-60 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-    </a>
-
-    <!-- Info bar — always visible on mobile, above collapsible form -->
-    <div class="mx-4 mt-4 flex items-center justify-between rounded-[12px] bg-white/10 px-4 py-2.5 text-[14px] text-white/80">
-      <span>от {CAMP_PRICE_FROM} за 7 дней</span>
-      <span>✓ <span data-response-time>Ответим за 10 мин</span></span>
-    </div>
-
-    <!-- Form area — hidden initially, auto-reveals after 30s or on CTA tap -->
-    <div
-      id="hero-booking-block"
-      class="bg-dark-navy px-4 overflow-hidden"
-      style="max-height:0; padding-top:0; padding-bottom:0; opacity:0; pointer-events:none; transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.4s ease;"
-    >
-      <!-- White card with form -->
-      <LeadForm variant="mobile" />
-    </div>
-  </div>
-
-  <!-- ===== DESKTOP HERO ===== -->
-  <div class="relative hidden h-[520px] overflow-hidden bg-[#0f1c2e] w-full md:block md:max-w-[1440px]">
-    <img
-      src="/images/hero-custom-2026-04-07.avif"
-      srcset="/images/hero-custom-2026-04-07-600.avif 600w, /images/hero-custom-2026-04-07-900.avif 900w, /images/hero-custom-2026-04-07-950.avif 950w, /images/hero-custom-2026-04-07-1100.avif 1100w, /images/hero-custom-2026-04-07.avif 1536w"
-      sizes="(min-width: 768px) min(100vw, 1440px), 100vw"
-      alt=""
-      aria-hidden="true"
-      class="absolute inset-0 h-full w-full object-cover object-[center_20%]"
-      loading="eager"
-      fetchpriority="high"
-      width="1536"
-      height="1024"
-    />
-
-    <!-- Desktop Overlays -->
-    <div class="absolute inset-0">
-      <div class="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,9,18,0.78)_0%,rgba(5,9,18,0.62)_26%,rgba(5,9,18,0.34)_48%,rgba(5,9,18,0.12)_66%,rgba(5,9,18,0.02)_82%,rgba(5,9,18,0)_100%)]"></div>
-      <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,10,18,0)_52%,rgba(6,10,18,0.22)_74%,rgba(6,10,18,0.42)_100%)]"></div>
-      <div class="absolute inset-0 bg-[radial-gradient(140%_120%_at_50%_50%,rgba(0,0,0,0)_58%,rgba(0,0,0,0.12)_84%,rgba(0,0,0,0.24)_100%)] mix-blend-multiply"></div>
-      <div class="absolute inset-0 bg-[linear-gradient(120deg,rgba(236,124,0,0.09)_0%,rgba(236,124,0,0.04)_30%,rgba(236,124,0,0)_62%)] mix-blend-soft-light"></div>
-      <div class="absolute inset-0 bg-gradient-to-r from-black/65 via-black/25 to-transparent pointer-events-none"></div>
-    </div>
-
-    <!-- Desktop Text Content -->
-    <div class="absolute left-16 top-[78px] z-10">
-      <!-- Location -->
-      <p class="text-[14px] text-white/50 whitespace-nowrap">
-        {STAT_DISTANCE} от Москвы · смены июнь–август
-      </p>
-      <!-- H1 -->
-      <h1
-        id="hero-title"
-        class="mt-2 w-[700px] text-[44px] font-bold leading-[52px] tracking-[-0.03em] text-white [text-shadow:0px_4px_12px_rgba(0,0,0,0.35)]"
-      >
-        Летний лагерь в&nbsp;Подмосковье,&nbsp;<span class="whitespace-nowrap">7–14</span>
-      </h1>
-      <p id="hero-subtitle" class="mt-2 text-[15px] text-white/65">
-        Каждый уедет с проектом и новыми друзьями.
-      </p>
-      <p class="mt-1 text-[15px] text-white/65">
-        Вам — 14 дней для себя.
-      </p>
-      <!-- Badges -->
-      <div id="hero-badges" class="mt-3 flex gap-2">
-        <span class="flex h-[26px] items-center rounded-full bg-white/22 px-3 text-[14px] text-white/85">Python</span>
-        <span class="flex h-[26px] items-center rounded-full bg-white/22 px-3 text-[14px] text-white/85">Minecraft</span>
-        <span class="flex h-[26px] items-center rounded-full bg-white/22 px-3 text-[14px] text-white/85">AI</span>
-        <span class="flex h-[26px] items-center rounded-full bg-white/22 px-3 text-[14px] text-white/85">Бассейн</span>
-      </div>
-      <!-- Rating -->
-      <p class="mt-3 text-[14px] text-white/50">
-        <span class="mr-1 inline-flex items-center rounded-[5px] bg-[rgba(245,166,36,0.18)] px-1.5 py-0.5 text-[14px] font-bold text-[#f5a624]">★ {STAT_RATING}</span>
-        на Яндекс Картах · {STAT_YEARS} лет работы · {STAT_KIDS} детей
-      </p>
-      <!-- CTA -->
-      <div class="mt-5 flex items-center gap-4">
-        <a
-          href="#shifts"
-          class="inline-flex items-center gap-2 rounded-[14px] bg-[#ec7c00] hover:bg-[#d46e00] px-6 py-3 text-[15px] font-semibold text-white shadow-[0_4px_16px_rgba(236,124,0,0.35)] transition-all duration-200 hover:-translate-y-[1px] hover:shadow-[0_6px_20px_rgba(236,124,0,0.45)]"
-        >
-          Смены 2026
-          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </a>
-
-        <!-- Печать: ноутбук не нужен — рядом с кнопкой -->
-        <button
-          type="button"
-          id="equipment-stamp"
-          aria-label="Почему не нужно привозить ноутбук"
-          class="select-none cursor-pointer group hover:scale-105 transition-transform duration-200 rotate-[-6deg] shrink-0"
-        >
-          <div class="relative flex h-[110px] w-[110px] items-center justify-center rounded-full border-[2.5px] border-dashed border-white/50 group-hover:border-white/80 transition-colors">
-            <div class="absolute inset-[7px] rounded-full border border-white/25 group-hover:border-white/45 transition-colors"></div>
-            <div class="flex flex-col items-center gap-0.5 px-3 text-center">
-              <span class="text-[24px] leading-none">🖥️</span>
-              <span class="mt-1 text-[9px] font-black uppercase tracking-[0.16em] text-white leading-[1.3]">Ноутбук<br/>не нужен</span>
-              <div class="mt-1 h-px w-8 bg-white/45"></div>
-              <span class="mt-1 text-[8px] font-semibold uppercase tracking-[0.1em] text-white/75 leading-[1.4]">у нас всё есть!</span>
-            </div>
-          </div>
-        </button>
-      </div>
-    </div>
-
-    <!-- Анонс статьи про ИИ — правый нижний угол, над нижней полоской -->
-    <a
-      href="/stati/ii-zamenit-programmista"
-      class="absolute right-6 bottom-[60px] z-20 inline-flex items-center gap-2 rounded-full bg-black/35 backdrop-blur-sm border border-white/20 px-3 py-1.5 text-[13px] text-white/85 hover:bg-black/55 hover:text-white transition-all duration-200 group"
-    >
-      <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white">?</span>
-      <span>«ИИ заменит программистов» — правда или реклама?</span>
-      <svg class="h-3 w-3 shrink-0 opacity-60 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-    </a>
-
-    <!-- Desktop Bottom Info Bar -->
-    <div class="absolute bottom-0 inset-x-0 z-20 border-t border-white/8 bg-black/25 backdrop-blur-sm">
-      <div class="mx-auto max-w-[1312px] px-6 py-2.5">
-        <a href="#shifts" class="block text-[14px] text-white/55 text-center leading-relaxed hover:text-white/75 transition-colors">
-          от {CAMP_PRICE_FROM} за 7 дней · {STAT_RETURN} возвращаются снова · проживание, питание, программа включены · Трансфер — опция
-        </a>
-      </div>
-    </div>
-  </div>
+  <!--
+    Два H1 в разметке — один рендерится на мобильном viewport, другой на десктопном
+    (через md:hidden / hidden md:block wrappers). Каждый crawler видит только свой
+    H1 как visible. Multiple <h1> — допустимо (John Mueller, 2020): не ранжирующий
+    штраф. Раньше был один absolute H1 с responsive классами, но он улетал из
+    потока при раскрытии мобильной формы (bottom-[80px] относительно секции). Теперь
+    оба H1 в потоке своих блоков → стабильно при любом состоянии формы.
+  -->
+  <HeroMobile {imageSrc} {hasVariants} />
+  <HeroDesktop {imageSrc} {hasVariants} />
 </section>
 
 <HeroModals />
 
 <script is:inline>
   // UTM-based title variations
+  // Приоритет: utm_h1 → utm_content (точный) → utm_content (префикс) → utm_term (ключ поиска) → utm_source
   (function() {
     var params = new URLSearchParams(window.location.search);
-    var h1Key = params.get('utm_h1');
+    var h1Key  = params.get('utm_h1');
     var content = params.get('utm_content');
-    var source = params.get('utm_source');
+    var source  = params.get('utm_source');
+    var term    = params.get('utm_term');   // поисковая фраза из Директа ({keyword})
 
-    var variants = {
-      // Search utm_h1 values
-      camp:        { title: 'Летний лагерь в Подмосковье для детей 7–14 лет', subtitle: 'IT, бассейн, проживание — всё включено. 66 км от Москвы' },
-      result:      { title: 'Уехал геймером — вернулся разработчиком', subtitle: 'Опыт сложных задач, ошибок и решений. Ребёнок уезжает с ощущением: я справляюсь сам.' },
-      it:          { title: 'IT-лагерь для детей 7–14 лет — Python, Minecraft, AI', subtitle: 'Каждый уедет с проектом и новыми друзьями' },
-      reviews:     { title: 'АйДаКемп — 40+ отзывов, рейтинг 5.0 на Яндекс Картах', subtitle: '6 лет работы · 1200+ детей · лицензия Минобра' },
-      brand:       { title: 'АйДаКемп — IT-лагерь в Подмосковье', subtitle: '66 км от Москвы, программирование, бассейн, природа' },
-      nophone:     { title: 'Телефон здесь зарабатывают', subtitle: 'Экранное время — за участие и инициативу, не выдаётся автоматически' },
-      price:       { title: 'IT-лагерь 7–14 лет от 48 000₽', subtitle: '7 дней: программирование, хакатон, бассейн — всё включено' },
-      age:         { title: 'Лагерь для детей 7–14 лет', subtitle: 'Учатся программировать и защищают свой проект' },
-      // РСЯ utm_content group values
-      keys:        { title: 'IT-лагерь в Подмосковье — вы знаете, куда отправляете ребёнка', subtitle: 'Лицензия Минобра · 6 лет работы · 1200+ детей' },
-      parents:     { title: 'Две недели без «мама, скучно»', subtitle: 'Ребёнок в IT-лагере: проекты, команда, бассейн. Без телефонов. 66 км от Москвы.' },
-      edu:         { title: 'Лето без телефона — возможно', subtitle: 'Дети создают IT-проекты и живут в реальном мире. Смены от 2 недель.' },
-      books:       { title: 'Лето с пользой — это реально', subtitle: 'Дети учатся программировать и делают настоящие проекты. Без телефонов. 66 км.' },
-      competitors: { title: 'Лучший IT-лагерь Подмосковья', subtitle: '66 км от Москвы, хакатон в финале каждой смены' },
-      // Прочие
-      // VK problem_photo — ключи совпадают с содержанием
-      telefon:     { title: 'На 3-й день дети сами забывают про телефон', subtitle: 'Потому что стало интереснее без него. IT-лагерь 66 км от Москвы' },
-      nichego:     { title: '«Ничего не хочет» — это не правда', subtitle: 'Просто вокруг скучно. В лагере это исчезает на 3-й день' },
-      leto:        { title: 'Пока другие дети скучают дома — твой делает игру', subtitle: 'IT-лагерь 66 км от Москвы · Python, Minecraft, AI · проект за смену' },
-      // VK intent_kw — те же объявления, ключи перепутаны → мэпим на правильный контент
-      lager:       { title: 'На 3-й день дети сами забывают про телефон', subtitle: 'Потому что стало интереснее без него. IT-лагерь 66 км от Москвы' },
-      it_lager:    { title: '«Ничего не хочет» — это не правда', subtitle: 'Просто вокруг скучно. В лагере это исчезает на 3-й день' },
-      chem_zanyat: { title: 'Лето может пройти иначе', subtitle: 'IT-лагерь под Москвой — проект, друзья, бассейн. 66 км от МКАД' },
-      // VK crm_school — ключи точно совпадают с объявлениями
-      next_step:   { title: 'Этим летом — не просто отдых', subtitle: 'Ребёнок знаком с IT? Свой проект за 7 дней, бассейн, друзья. 66 км от Москвы' },
-      polza:       { title: 'Лето с пользой', subtitle: 'IT-лагерь 7–14 лет: свой проект за 7 дней, бассейн, команда. 66 км от Москвы' },
-      proekt:      { title: 'За 7 дней — свой проект', subtitle: 'IT-лагерь под Москвой: бассейн, команда и настоящее лето' },
-      // Директ CRM Codims — клиенты школы Codims (utm_source=yandex&utm_content=codims)
-      // Тот же текст что и для органики с codims.ru (sourceVariants.codims), но через utm_content
-      codims:      { title: 'Попробовать IT за одно лето — и подтянуть информатику к сентябрю', subtitle: 'Берём с нуля. Опыт не нужен — за смену ребёнок создаст реальный проект и придёт в сентябрь с преимуществом', badge: 'Берём с нуля · опыт не нужен' }
-    };
+    // Load variants from API instead of hardcoded
+    fetch('/api/hero-variants.json')
+      .then(r => r.json())
+      .then(function(variants) {
+        var sourceVariants = {
+          codims: variants.codims
+        };
 
-    var sourceVariants = {
-      codims: {
-        title: 'Попробовать IT за одно лето — и подтянуть информатику к сентябрю',
-        subtitle: 'Берём с нуля. Опыт не нужен — за смену ребёнок создаст реальный проект и придёт в сентябрь с преимуществом',
-        badge: 'Берём с нуля · опыт не нужен'
-      }
-    };
+        // Префикс-маппинг
+        var prefixMap = {
+          'age_core':         variants.age,
+          'brand_core':       variants.brand,
+          'it_core_generic':  variants.it,
+          'price_core':       variants.price,
+          'nophone_v':        variants.nophone,
+          'camp_v':           variants.camp,
+          'crm_leads':        variants.crm_leads,
+          'parents':          variants.nophone,
+          'addiction':        variants.nophone,
+          'edu':              variants.it,
+          'books':            variants.it,
+          'result':           variants.camp,
+          'keys':             variants.brand,
+          'competitors':      variants.price,
+          'telefon_':         variants.telefon,
+          'nichego_':         variants.nichego,
+          'leto_':            variants.leto,
+          'lager_':           variants.lager,
+          'it_lager_':        variants.it_lager,
+          'chem_zanyat_':     variants.chem_zanyat,
+        };
 
-    var v = (h1Key && variants[h1Key])
-         || (content && variants[content])
-         || (source && sourceVariants[source])
-         || null;
+        function matchPrefix(key) {
+          if (!key) return null;
+          for (var p in prefixMap) {
+            if (key.indexOf(p) === 0) return prefixMap[p];
+          }
+          return null;
+        }
 
-    if (v) {
-      var titleEl = document.getElementById('hero-title');
-      var titleMob = document.getElementById('hero-title-mobile');
-      var subtitleEl = document.getElementById('hero-subtitle');
-      var subtitleMob = document.getElementById('hero-subtitle-mobile');
-      if (v.title) {
-        if (titleEl) titleEl.textContent = v.title;
-        if (titleMob) titleMob.textContent = v.title;
-      }
-      if (v.subtitle) {
-        if (subtitleEl) subtitleEl.textContent = v.subtitle;
-        // Mobile: replace only text node, keep agree button intact
-        if (subtitleMob) {
-          var firstNode = subtitleMob.firstChild;
-          if (firstNode && firstNode.nodeType === 3) {
-            firstNode.textContent = v.subtitle + ' ';
+        function matchTerm(t) {
+          if (!t) return null;
+          t = t.toLowerCase();
+          if (/без телефон|без гаджет|телефон.{0,15}лагер|гаджет/.test(t)) return variants.nophone;
+          if (/цен|стоимост|сколько стоит|путёвк|путевк|недорого/.test(t)) return variants.price;
+          if (/программирован|python|питон|minecraft|майнкрафт|scratch|скретч|it-лагер|айти лагер/.test(t)) return variants.it;
+          if (/для подростк|подростк|10 лет|11 лет|12 лет|13 лет/.test(t)) return variants.age;
+          if (/2026/.test(t)) return variants.camp2026;
+          if (/лагерь.{0,10}подмосков|подмосков.{0,10}лагерь/.test(t)) return variants.camp;
+          if (/зависим/.test(t)) return variants.addiction;
+          return null;
+        }
+
+        var v = (h1Key  && variants[h1Key])
+             || (content && variants[content])
+             || (content && matchPrefix(content))
+             || matchTerm(term)
+             || (source  && sourceVariants[source])
+             || null;
+
+        if (v) {
+          var titleEl = document.getElementById('hero-title');
+          var titleMob = document.getElementById('hero-title-mobile');
+          var subtitleEl = document.getElementById('hero-subtitle');
+          var subtitleMob = document.getElementById('hero-subtitle-mobile');
+          if (v.title) {
+            if (titleEl) titleEl.textContent = v.title;
+            if (titleMob) titleMob.textContent = v.title;
+          }
+          if (v.subtitle) {
+            if (subtitleEl) subtitleEl.textContent = v.subtitle;
+            if (subtitleMob) {
+              var firstNode = subtitleMob.firstChild;
+              if (firstNode && firstNode.nodeType === 3) {
+                firstNode.textContent = v.subtitle + ' ';
+              }
+            }
+          }
+          if (v.badge) {
+            var badgesEl = document.getElementById('hero-badges');
+            if (badgesEl) {
+              badgesEl.innerHTML = '<span class="flex h-[26px] items-center rounded-full bg-white/22 px-3 text-[14px] text-white/85">' + v.badge + '</span>';
+            }
           }
         }
-      }
-      if (v.badge) {
-        var badgesEl = document.getElementById('hero-badges');
-        if (badgesEl) {
-          badgesEl.innerHTML = '<span class="flex h-[26px] items-center rounded-full bg-white/22 px-3 text-[14px] text-white/85">' + v.badge + '</span>';
-        }
-      }
-    }
+      })
+      .catch(function(err) {
+        console.warn('Failed to load hero-variants:', err);
+      })
   })();
+
+  // "Ответим за 10 мин" → открывает ShiftBookModal
+  document.getElementById('hero-callback-btn')?.addEventListener('click', () => {
+    var m = document.getElementById('shiftBookModal'); if (m) m.showModal();
+  });
+
+  // Feature badges click handlers
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[data-feature]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var feature = this.getAttribute('data-feature');
+        var modalId = feature + 'Modal';
+        var modal = document.getElementById(modalId);
+        if (modal) modal.showModal();
+      });
+    });
+  });
 </script>
