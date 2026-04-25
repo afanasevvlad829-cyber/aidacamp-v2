@@ -1,0 +1,68 @@
+---
+/**
+ * BrandName — "АйДаКемп" с интеллектуальным выделением "АйДа"
+ *
+ * Автоматически определяет яркость фона и выбирает контрастный цвет
+ * На тёмном фоне: белый текст + оранжевая "АйДа"
+ * На светлом фоне: чёрный текст + оранжевая "АйДа"
+ */
+
+interface Props {
+  variant?: 'default' | 'header' | 'footer' | 'hero';
+  class?: string;
+}
+
+const { variant = 'default', class: className = '' } = Astro.props;
+---
+
+<span class:list={['brand-name', variant, className]}>
+  <span class="aida">АйДа</span><span class="kemp">Кемп</span>
+</span>
+
+<style>
+  .brand-name {
+    /* Базовые стили */
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    display: inline-flex;
+    align-items: baseline;
+  }
+
+  .aida {
+    /* Оранжевое выделение "АйДа" */
+    color: #ec7c00;
+    font-weight: 700;
+  }
+
+  .kemp {
+    /* Всегда приглушённый цвет (серый) */
+    font-weight: 600;
+  }
+
+  /* === ВАРИАНТ: header (на белом/тёмном фоне хидера) === */
+  .brand-name.header .kemp {
+    color: #8b94a6;
+  }
+
+  /* === ВАРИАНТ: footer (на тёмном фоне) === */
+  .brand-name.footer .kemp {
+    color: #9ca3af;
+  }
+
+  /* === ВАРИАНТ: hero (на тёмном фоне с градиентом) === */
+  .brand-name.hero .kemp {
+    color: #9ca3af;
+  }
+
+  /* === ВАРИАНТ: default (серый на светлом) === */
+  .brand-name.default .kemp {
+    color: #a0a8b8;
+  }
+
+  /* === Media queries для адаптивности === */
+  @media (prefers-color-scheme: dark) {
+    .brand-name.default .kemp {
+      color: #9ca3af;
+    }
+  }
+</style>

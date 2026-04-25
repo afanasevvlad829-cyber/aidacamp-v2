@@ -1,4 +1,5 @@
 ---
+import '../styles/global.css';
 import iconsCSS from '../styles/icons.css?raw';
 import '../styles/mobile-ux-p0.css';
 import AgeBar from '../components/AgeBar.astro';
@@ -46,8 +47,13 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     <link rel="preload" as="font" href="/fonts/inter-cyrillic.woff2" type="font/woff2" crossorigin />
     <link rel="preload" as="font" href="/fonts/inter-latin.woff2" type="font/woff2" crossorigin />
     <!-- Bootstrap Icons: subset of 30 icons inlined locally (no CDN, no font download) -->
-    <link rel="preconnect" href="https://mc.yandex.ru" />
+    <link rel="preconnect" href="https://mc.yandex.ru" crossorigin />
     <link rel="dns-prefetch" href="https://mc.yandex.ru" />
+    <!-- VK/Top.Mail.Ru preconnect — без этого privacy-cs.mail.ru тратит ~1s на DNS+TLS -->
+    <link rel="preconnect" href="https://top-fwz1.mail.ru" />
+    <link rel="dns-prefetch" href="https://top-fwz1.mail.ru" />
+    <link rel="preconnect" href="https://privacy-cs.mail.ru" />
+    <link rel="dns-prefetch" href="https://privacy-cs.mail.ru" />
     <script is:inline>
       if (window.location.search.includes('ym_disable=1')) {
         document.cookie = 'ym_disable96499295=true; expires=Thu, 31 Dec 2099 23:59:59 UTC; path=/';
@@ -71,7 +77,7 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
 
       if (!window.ym_disable96499295 && !window._ymInited) {
         window._ymInited = true;
-        ym(96499295, 'init', {clickmap:true, referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+        ym(96499295, 'init', {clickmap:true, referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:false});
       }
     </script>
     <noscript><div><img src="https://mc.yandex.ru/watch/96499295" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
@@ -140,12 +146,13 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         var YM_ID = 96499295;
         var _fired = new Set(JSON.parse(sessionStorage.getItem('ym_fired') || '[]'));
         function _persist() { try { sessionStorage.setItem('ym_fired', JSON.stringify([..._fired])); } catch(e){} }
-        window.trackGoal = function (id, params) {
+        var TMR_ID = 3755202;
+        window.trackGoal = function (id, params, value) {
           if (_fired.has(id)) return;
           _fired.add(id);
           _persist();
           try { if (typeof window.ym !== 'undefined') window.ym(YM_ID, 'reachGoal', id, params || {}); } catch(e){}
-          try { window.dispatchEvent(new CustomEvent(id, { detail: params || {} })); } catch(e){}
+          try { window._tmr = window._tmr || []; window._tmr.push({ type: 'reachGoal', id: TMR_ID, value: value || 100, goal: id }); } catch(e){}
         };
         window.initScrollTracking = function () {
           var goals = [{p:25,id:'scroll_25'},{p:50,id:'scroll_50'},{p:75,id:'scroll_75'},{p:90,id:'scroll_90'}];
@@ -172,10 +179,10 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
   </head>
   <body class="font-sans text-[var(--color-text)] bg-white antialiased">
     <slot />
-    <!-- Nudge toast -->
+    <!-- Nudge toast (отключён) -->
     <div
       id="nudge-toast"
-      class="fixed bottom-20 left-4 right-4 z-50 mx-auto max-w-[420px] translate-y-full opacity-0 transition-all duration-300 pointer-events-auto md:bottom-6 md:left-auto md:right-6"
+      class="hidden fixed bottom-20 left-4 right-4 z-50 mx-auto max-w-[420px] translate-y-full opacity-0 transition-all duration-300 pointer-events-none md:bottom-6 md:left-auto md:right-6"
     >
       <div class="flex items-start gap-3 rounded-[14px] bg-slate-900/95 px-4 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-sm">
         <div class="flex-1">
@@ -240,35 +247,5 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
       })();
     </script>
 
-    <!-- DEV ONLY: кнопка сброса состояния воронки -->
-    <script is:inline>
-      (function() {
-        if (location.hostname !== 'dev.aidacamp.ru') return;
-        var btn = document.createElement('button');
-        btn.textContent = '↺ сброс';
-        btn.title = 'Сбросить localStorage / sessionStorage воронки';
-        btn.style.cssText = [
-          'position:fixed', 'top:8px', 'left:8px', 'z-index:9999',
-          'background:#1e293b', 'color:#94a3b8',
-          'border:1px solid #334155', 'border-radius:6px',
-          'padding:3px 8px', 'font-size:11px', 'font-family:monospace',
-          'cursor:pointer', 'opacity:0.7', 'transition:opacity .15s'
-        ].join(';');
-        btn.onmouseenter = function() { btn.style.opacity = '1'; };
-        btn.onmouseleave = function() { btn.style.opacity = '0.7'; };
-        btn.addEventListener('click', function() {
-          // localStorage
-          ['age_onboarding_shown', 'user_age_group', 'cookieAccepted'].forEach(function(k) {
-            localStorage.removeItem(k);
-          });
-          // sessionStorage
-          ['age_bar_shown', 'selected_age', 'age_bar_dismissed'].forEach(function(k) {
-            sessionStorage.removeItem(k);
-          });
-          location.reload();
-        });
-        document.body.appendChild(btn);
-      })();
-    </script>
   </body>
 </html>

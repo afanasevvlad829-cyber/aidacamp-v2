@@ -1,6 +1,23 @@
 ---
 import BookingInfoModal from './BookingInfoModal.astro';
+import FeatureModal from './FeatureModal.astro';
+import heroFeaturesData from '../data/hero-features.json';
+
+type Feature = {
+  icon: string;
+  iconBg: string;
+  iconColor: string;
+  title: string;
+  contentBg: string;
+  whatIs: string;
+  whyMatters: Array<{ title: string; description: string }>;
+  whatWeDo: string;
+};
+
+const features = heroFeaturesData as Record<string, Feature>;
+const featureIds = Object.keys(features) as (keyof typeof features)[];
 ---
+
 <BookingInfoModal />
 
 <!-- Validation Modal -->
@@ -89,42 +106,43 @@ import BookingInfoModal from './BookingInfoModal.astro';
   </div>
 </dialog>
 
-<script>
-  function initHero() {
-    const modal = document.getElementById('bookingReminderModal') as HTMLDialogElement | null;
-    modal?.querySelector('[data-booking-reminder-close]')?.addEventListener('click', () => modal.close());
-    modal?.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
+<!-- Feature Modals (Python, Minecraft, AI, Pool) -->
+{featureIds.map((featureId) => (
+  <FeatureModal id={featureId} {...features[featureId]} />
+))}
 
-    // Equipment modal
-    const equipModal = document.getElementById('equipmentModal') as HTMLDialogElement | null;
-    const openEquip = () => equipModal?.showModal();
-    document.getElementById('equipment-stamp')?.addEventListener('click', openEquip);
-    document.getElementById('equipment-stamp-mobile')?.addEventListener('click', openEquip);
-    equipModal?.querySelector('[data-equip-close]')?.addEventListener('click', () => equipModal.close());
-    equipModal?.addEventListener('click', (e) => { if (e.target === equipModal) equipModal.close(); });
-
-    // Mobile form: auto-reveal after 30 sec
-    const bookingBlock = document.getElementById('hero-booking-block') as HTMLElement | null;
-    let revealed = false;
-
-    function revealForm() {
-      if (revealed || !bookingBlock) return;
-      revealed = true;
-      bookingBlock.style.maxHeight = '700px';
-      bookingBlock.style.paddingTop = '1rem';
-      bookingBlock.style.paddingBottom = '1.5rem';
-      bookingBlock.style.opacity = '1';
-      bookingBlock.style.pointerEvents = 'auto';
-    }
-
-    setTimeout(() => {
-      const heroEl = document.getElementById('hero');
-      if (!heroEl) return;
-      const rect = heroEl.getBoundingClientRect();
-      if (window.innerWidth < 1024 && rect.bottom > 0) revealForm();
-    }, 30000);
+<script is:inline>
+  // Equipment modal open handler
+  const equipStamp = document.getElementById('equipment-stamp');
+  const equipmentModal = document.getElementById('equipmentModal');
+  if (equipStamp && equipmentModal) {
+    equipStamp.addEventListener('click', () => { equipmentModal.showModal(); });
   }
 
-  document.addEventListener('astro:page-load', initHero);
-  initHero();
+  // Equipment modal close handler
+  const equipCloseBtn = document.querySelector('[data-equip-close]');
+
+  if (equipCloseBtn && equipmentModal) {
+    equipCloseBtn.addEventListener('click', () => {
+      equipmentModal.close();
+    });
+  }
+
+  if (equipmentModal) {
+    equipmentModal.addEventListener('click', (e) => {
+      if (e.target === equipmentModal) {
+        equipmentModal.close();
+      }
+    });
+  }
+
+  // Booking reminder close handler
+  const bookingReminderModal = document.getElementById('bookingReminderModal');
+  const bookingReminderCloseBtn = document.querySelector('[data-booking-reminder-close]');
+
+  if (bookingReminderCloseBtn && bookingReminderModal) {
+    bookingReminderCloseBtn.addEventListener('click', () => {
+      bookingReminderModal.close();
+    });
+  }
 </script>

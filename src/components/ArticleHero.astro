@@ -2,119 +2,158 @@
 /**
  * ArticleHero — hero-блок для статей /stati/*.
  *
- * v5:
- *   - max-w-[1200px] (как на главной)
- *   - Вертикальная дистрибуция: breadcrumb top → H1+Дарья центр → meta bottom
- *   - Дарья: светлая плашка (не сливается с navy)
- *   - AI-CTA убрана из hero (перенесена в тело статьи)
- *
- * Props:
- *   - title, subtitle, imageBase, imageAlt, breadcrumbsLast
- *   - date?, readTime?
- *   - daryaQuote?: string
+ * v6 (Ф2):
+ *   - Статьи с уникальным фото → фото-hero
+ *   - Статьи с общим/типовым фото → CSS-hero (эффект по slug)
+ *   - 3 CSS-эффекта: editorial (оранжевый), accent-bar (синий), split-stagger (индиго)
  */
 
 interface Props {
   title: string;
   subtitle?: string;
-  imageBase: string;
-  imageAlt: string;
+  imageBase?: string;
+  imageAlt?: string;
   date?: string;
   readTime?: string;
   breadcrumbsLast: string;
   daryaQuote?: string;
+  imagePosition?: string;
 }
 
 import { STAT_DISTANCE, CAMP_PRICE_FROM, CAMP_SEASON, YANDEX_MAPS_URL } from '../data/contacts';
+import { getArticleEffect } from '../lib/heroVariant';
+import { ARTICLE_DATES } from '../data/articleDates';
+
+// Детерминированный эффект по slug статьи
+const _slug = Astro.url.pathname.replace(/\/+$/, '').split('/').pop() ?? '';
+const _heroEffect = getArticleEffect(_slug);
 
 const {
   title,
   subtitle,
   imageBase,
-  imageAlt,
+  imageAlt = '',
   date,
   readTime,
   breadcrumbsLast,
   daryaQuote,
+  imagePosition = 'center_40%',
 } = Astro.props;
 
-const imgSrc = `/images/articles/${imageBase}-1600.jpg`;
-const avifSrcset = `/images/articles/${imageBase}-800.avif 800w, /images/articles/${imageBase}-1200.avif 1200w, /images/articles/${imageBase}-1600.avif 1600w`;
-const jpgSrcset  = `/images/articles/${imageBase}-800.jpg 800w, /images/articles/${imageBase}-1200.jpg 1200w, /images/articles/${imageBase}-1600.jpg 1600w`;
+// Все статьи — CSS-hero. Фото только на главной (Hero.astro).
+const showPhoto = false;
+
+const imgSrc = imageBase ? `/images/articles/${imageBase}-1600.jpg` : '';
+const avifSrcset = imageBase
+  ? `/images/articles/${imageBase}-800.avif 800w, /images/articles/${imageBase}-1200.avif 1200w, /images/articles/${imageBase}-1600.avif 1600w`
+  : '';
+const jpgSrcset = imageBase
+  ? `/images/articles/${imageBase}-800.jpg 800w, /images/articles/${imageBase}-1200.jpg 1200w, /images/articles/${imageBase}-1600.jpg 1600w`
+  : '';
+
+// Цвета орбов по эффекту — без базового слоя, чтобы пульс был виден
+type OrbColors = { o1: string; o2: string };
+const ORB_COLORS: Record<string, OrbColors> = {
+  'editorial': {
+    o1: 'radial-gradient(ellipse 90% 120% at 0% 50%, rgba(250,100,15,1.0) 0%, rgba(220,60,0,0.60) 35%, rgba(150,30,0,0.15) 60%, transparent 78%)',
+    o2: 'radial-gradient(ellipse 70% 90%  at 15% 95%, rgba(240,80,0,0.85) 0%, rgba(180,40,0,0.30) 50%, transparent 75%)',
+  },
+  'accent-bar': {
+    o1: 'radial-gradient(ellipse 90% 120% at 0% 50%, rgba(56,130,250,1.0) 0%, rgba(20,80,220,0.60) 35%, rgba(10,40,150,0.15) 60%, transparent 78%)',
+    o2: 'radial-gradient(ellipse 70% 90%  at 15% 95%, rgba(37,99,235,0.85) 0%, rgba(10,50,180,0.30) 50%, transparent 75%)',
+  },
+  'split-stagger': {
+    o1: 'radial-gradient(ellipse 90% 120% at 0% 50%, rgba(145,70,250,1.0) 0%, rgba(100,40,230,0.60) 35%, rgba(60,20,180,0.15) 60%, transparent 78%)',
+    o2: 'radial-gradient(ellipse 70% 90%  at 15% 95%, rgba(110,45,220,0.85) 0%, rgba(70,30,200,0.30) 50%, transparent 75%)',
+  },
+};
+const orb = ORB_COLORS[_heroEffect] ?? ORB_COLORS['editorial'];
 
 const breadcrumbJsonLd = {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
   "itemListElement": [
     { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://aidacamp.ru/" },
-    { "@type": "ListItem", "position": 2, "name": "Статьи", "item": "https://aidacamp.ru/stati/zavisimost-ot-kompyuternyh-igr" },
+    { "@type": "ListItem", "position": 2, "name": "Статьи", "item": "https://aidacamp.ru/stati/" },
     { "@type": "ListItem", "position": 3, "name": breadcrumbsLast }
   ]
 };
+
+// Дата: из пропа → из реестра по slug → null
+const _rawDate = date ?? ARTICLE_DATES[_slug] ?? null;
+const formattedDate = _rawDate
+  ? new Date(_rawDate + 'T00:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+  : null;
 ---
 
-<section class="relative overflow-hidden bg-[#0d1a2b] min-h-[420px] md:min-h-[480px] flex">
+<section
+  class="relative overflow-hidden bg-[#0d1a2b] min-h-[420px] md:min-h-[480px] flex"
+  data-hero-effect={_heroEffect}
+>
   <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
 
-  <!-- Background photo -->
-  <div class="absolute inset-0 z-0">
-    <picture>
-      <source type="image/avif" srcset={avifSrcset} sizes="100vw" />
-      <source type="image/jpeg" srcset={jpgSrcset} sizes="100vw" />
-      <img
-        src={imgSrc}
-        alt={imageAlt}
-        class="w-full h-full object-cover object-[center_60%]"
-        loading="eager"
-        decoding="async"
-        fetchpriority="high"
-        width="1600"
-        height="685"
-      />
-    </picture>
-    <!-- Soft gradient: photo stays visible -->
-    <div class="absolute inset-0 bg-gradient-to-r from-[#0d1a2b]/80 via-[#0d1a2b]/40 to-[#0d1a2b]/10"></div>
-    <div class="absolute inset-0 bg-gradient-to-t from-[#0d1a2b]/45 via-transparent to-transparent"></div>
-  </div>
+  {!showPhoto && (
+    <!-- CSS-hero: 2 пульсирующих орба (без статичного слоя — чтобы пульс был виден) -->
+    <div class="hero-orb hero-orb-1 absolute inset-0 z-0" style={`background: ${orb.o1}`}></div>
+    <div class="hero-orb hero-orb-2 absolute inset-0 z-0" style={`background: ${orb.o2}`}></div>
+  )}
 
-  <!-- Content container — vertical distribution via flex -->
+  {showPhoto && (
+    <!-- Фото-hero для статей с уникальным изображением -->
+    <div class="absolute inset-0 z-0">
+      <picture>
+        <source type="image/avif" srcset={avifSrcset} sizes="100vw" />
+        <source type="image/jpeg" srcset={jpgSrcset} sizes="100vw" />
+        <img
+          src={imgSrc}
+          alt={imageAlt}
+          class="w-full h-full object-cover"
+          style={`object-position: ${imagePosition};`}
+          loading="eager"
+          decoding="async"
+          fetchpriority="high"
+          width="1600"
+          height="685"
+        />
+      </picture>
+      <div class="absolute inset-0 bg-gradient-to-r from-[#0d1a2b]/80 via-[#0d1a2b]/40 to-[#0d1a2b]/10"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-[#0d1a2b]/45 via-transparent to-transparent"></div>
+    </div>
+  )}
+
+  <!-- Content container -->
   <div class="relative z-10 mx-auto max-w-[1200px] w-full px-5 py-8 md:px-10 md:py-10 flex flex-col justify-center">
 
     <div class="grid gap-5 md:grid-cols-[1.1fr_380px] md:gap-10 md:items-center">
 
-      <!-- LEFT: breadcrumb → H1 → subtitle → meta (tight stack) -->
+      <!-- LEFT: breadcrumb → H1 → subtitle → meta -->
       <div>
-        <!-- Breadcrumb — сразу над H1 -->
         <nav class="text-[13px] md:text-[14px] text-white/55 mb-3">
           <a href="/" class="hover:text-white/85 transition-colors">Главная</a>
           <span class="mx-1.5">&rarr;</span>
-          <a href="/stati/zavisimost-ot-kompyuternyh-igr" class="hover:text-white/85 transition-colors">Статьи</a>
+          <a href="/stati/" class="hover:text-white/85 transition-colors">Статьи</a>
           <span class="mx-1.5">&rarr;</span>
           <span class="text-white/75">{breadcrumbsLast}</span>
         </nav>
 
-        <!-- H1 -->
         <h1 class="text-[30px] md:text-[44px] font-bold leading-[1.08] tracking-[-0.03em] text-white [text-shadow:0_2px_14px_rgba(0,0,0,0.5)]">
           {title}
         </h1>
 
-        <!-- Subtitle -->
         {subtitle && (
           <p class="mt-3 text-[16px] md:text-[18px] text-white/85 leading-[1.55] max-w-[560px] [text-shadow:0_1px_8px_rgba(0,0,0,0.4)]">
             {subtitle}
           </p>
         )}
 
-        <!-- Meta: дата + время чтения -->
-        {(date || readTime) && (
+        {(formattedDate || readTime) && (
           <div class="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[12.5px] text-white/45">
-            {date && <span>{date}</span>}
-            {date && readTime && <span class="text-white/20">·</span>}
+            {formattedDate && <span>{formattedDate}</span>}
+            {formattedDate && readTime && <span class="text-white/20">·</span>}
             {readTime && <span>{readTime}</span>}
           </div>
         )}
 
-        <!-- Кликабельные чипы: карта · смены · цена -->
         <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] text-white/45">
           <a href={YANDEX_MAPS_URL} target="_blank" rel="noopener" class="flex items-center gap-1 hover:text-white/75 transition-colors">
             <i class="bi bi-geo-alt text-[12px]" aria-hidden="true"></i>
@@ -131,7 +170,7 @@ const breadcrumbJsonLd = {
         </div>
       </div>
 
-      <!-- RIGHT: Daria card — hidden on mobile, visible on md+ -->
+      <!-- RIGHT: Daria card — десктоп -->
       {daryaQuote && (
         <aside class="hidden md:block rounded-[18px] bg-white/95 shadow-[0_12px_32px_rgba(0,0,0,0.25)] p-5 md:p-6">
           <div class="flex items-start gap-4">

@@ -1,6 +1,12 @@
 ---
 import ShiftModal from './ShiftModal.astro';
 import { STAT_DISTANCE, CAMP_PRICE_FROM, CAMP_SEASON, YANDEX_MAPS_URL } from '../data/contacts';
+import { getSeoEffect, getTopicEffect } from '../lib/heroVariant';
+
+// Детерминированный эффект по slug страницы
+const _TOPIC_SLUGS = new Set(['python-lager','ai-lager','minecraft-lager','scratch-lager','roblox-lager','3d-modelirovanie-lager']);
+const _slug = Astro.url.pathname.replace(/\/+$/, '').split('/').pop() ?? '';
+const _heroEffect = _TOPIC_SLUGS.has(_slug) ? getTopicEffect(_slug) : getSeoEffect(_slug);
 
 interface Props {
   h1: string;
@@ -23,33 +29,23 @@ const breadcrumbJsonLd = {
 };
 ---
 
-<section class={`relative overflow-hidden ${image ? 'min-h-[560px] md:min-h-[620px]' : ''} bg-[#0d1a2b] px-5 pt-16 pb-12 md:px-14 md:pt-20 md:pb-16`}>
+<section data-hero-effect={_heroEffect} class="relative overflow-hidden min-h-[480px] md:min-h-[560px] bg-[#0d1a2b] px-5 pt-16 pb-12 md:px-14 md:pt-20 md:pb-16">
   <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
 
-  <!-- Фоновое изображение -->
-  {image && (
-    <div class="absolute inset-0 z-0">
-      <picture>
-        <source
-          srcset={`${image.replace('/images/hero/', '/images/hero/thumbs/')} 600w, ${image} 1200w`}
-          sizes="100vw"
-          type="image/avif"
-        />
-        <img
-          src={image.replace('/images/hero/', '/images/hero/jpg/').replace('.avif', '.jpg')}
-          alt={imageAlt}
-          class="w-full h-full object-cover"
-          loading="eager"
-          decoding="async"
-          fetchpriority="high"
-          width="1200"
-          height="620"
-        />
-      </picture>
-      <!-- Градиент: слева плотный, справа прозрачный -->
-      <div class="absolute inset-0 bg-gradient-to-r from-[#0d1a2b]/95 via-[#0d1a2b]/65 to-[#0d1a2b]/10"></div>
-      <!-- Градиент снизу -->
-      <div class="absolute inset-0 bg-gradient-to-t from-[#0d1a2b]/50 via-transparent to-transparent"></div>
+  {/* CSS backgrounds — photo removed per TZ v3.0 */}
+  {_heroEffect === 'mesh' && (
+    <div class="absolute inset-0 z-0 bg-[#0d1a2b]">
+      <div class="lp-blob lp-blob-1 absolute"></div>
+      <div class="lp-blob lp-blob-2 absolute"></div>
+      <div class="lp-blob lp-blob-3 absolute"></div>
+    </div>
+  )}
+  {_heroEffect === 'noise' && (
+    <div class="absolute inset-0 z-0 lp-noise-bg"></div>
+  )}
+  {_heroEffect === 'grid' && (
+    <div class="absolute inset-0 z-0 bg-[#070d1a] overflow-hidden">
+      <div class="lp-grid-lines"></div>
     </div>
   )}
 
@@ -139,13 +135,13 @@ const breadcrumbJsonLd = {
   </div>
 </section>
 
-<!-- Мобильная печать — тёмная, прозрачный фон, в белой зоне после хиро -->
-<div class="relative sm:hidden">
+<!-- Мобильная печать — тёмная, inline-элемент (не absolute, чтобы не перекрывать смены) -->
+<div class="sm:hidden flex px-5 pt-3 pb-1">
   <button
     type="button"
     id="equipment-stamp-landing-mobile"
     aria-label="Почему не нужно привозить ноутбук"
-    class="absolute top-[12px] left-5 z-30 rotate-[-10deg] select-none cursor-pointer group hover:scale-105 transition-transform duration-200"
+    class="rotate-[-10deg] select-none cursor-pointer group hover:scale-105 transition-transform duration-200"
   >
     <div class="relative flex h-[96px] w-[96px] items-center justify-center rounded-full border-[2.5px] border-dashed border-[#0d1a2b]/55 bg-transparent group-hover:border-[#0d1a2b]/85 transition-colors">
       <div class="absolute inset-[7px] rounded-full border border-[#0d1a2b]/18 transition-colors"></div>

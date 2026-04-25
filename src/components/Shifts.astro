@@ -123,7 +123,7 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
 <ShiftBookModal />
 
 <script>
-  const MAILRU_PIXEL_ID = 3755202;
+  import { STORAGE_KEYS } from '../lib/storage';
 
   function initShifts() {
     // === MOBILE CAROUSEL TABS ===
@@ -143,7 +143,7 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
 
       // Swipe hint: скрыть если уже свайпали раньше
       const swipeHint = document.querySelector<HTMLElement>('[data-shifts-swipe-hint]');
-      if (swipeHint && localStorage.getItem('shifts_swiped')) {
+      if (swipeHint && localStorage.getItem(STORAGE_KEYS.shiftsSwiped)) {
         swipeHint.style.display = 'none';
       }
 
@@ -167,7 +167,7 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
             });
             if (idx > 0 && swipeHint) {
               swipeHint.classList.add('opacity-0');
-              localStorage.setItem('shifts_swiped', '1');
+              localStorage.setItem(STORAGE_KEYS.shiftsSwiped, '1');
             }
           }
         });
@@ -180,6 +180,7 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
     const bookModal = document.getElementById('shiftBookModal') as HTMLDialogElement | null;
     if (!bookModal) return;
 
+    const bookShiftBlock = bookModal.querySelector<HTMLElement>('[data-book-shift-block]');
     const bookName = bookModal.querySelector('[data-book-shift-name]');
     const bookDates = bookModal.querySelector('[data-book-shift-dates]');
     const bookDuration = bookModal.querySelector('[data-book-shift-duration]');
@@ -240,15 +241,16 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
     document.querySelectorAll('[data-shift-book]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const el = btn as HTMLElement;
-        if (bookName) bookName.textContent = el.dataset.shiftBookName || '';
+        const name = el.dataset.shiftBookName || '';
+        if (bookName) bookName.textContent = name;
         if (bookDates) bookDates.textContent = el.dataset.shiftBookDates || '';
         if (bookDuration) bookDuration.textContent = el.dataset.shiftBookDuration || '';
         if (bookPrice) bookPrice.textContent = el.dataset.shiftBookPrice || '';
         if (bookError) bookError.classList.add('hidden');
+        // Показываем блок с данными о смене только если есть название
+        if (bookShiftBlock) bookShiftBlock.classList.toggle('hidden', !name);
         bookModal.showModal();
-        (window as any).trackGoal?.('shift_book_click', { shift: el.dataset.shiftBookName });
-        (window as any)._tmr = (window as any)._tmr || [];
-        (window as any)._tmr.push({ type: 'reachGoal', id: 3755202, value: 500, goal: 'shift_book_click' });
+        (window as any).trackGoal?.('shift_book_click', { shift: name }, 500);
       });
     });
 
@@ -283,8 +285,7 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
           }),
         });
         await res.json();
-        (window as any)._tmr = (window as any)._tmr || [];
-        (window as any)._tmr.push({ type: 'reachGoal', id: MAILRU_PIXEL_ID, value: 6375, goal: 'lead' });
+        (window as any).trackGoal?.('lead', {}, 6375);
       } catch {}
 
       bookModal.close();
@@ -315,7 +316,7 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
     // Fix 2026-04-20: показываем peer-count ТОЛЬКО после явного выбора в сессии
     // (не читаем из localStorage — иначе на первом заходе показывается "ровесники"
     // без реального выбора возраста, логика бьётся).
-    const sessionAge = sessionStorage.getItem('selected_age');
+    const sessionAge = sessionStorage.getItem(STORAGE_KEYS.selectedAge);
     if (sessionAge) showPeerCounts(sessionAge);
     document.addEventListener('age-personalize', (e: Event) => {
       showPeerCounts((e as CustomEvent<{ age: string }>).detail.age);

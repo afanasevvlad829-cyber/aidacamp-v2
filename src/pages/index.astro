@@ -11,6 +11,7 @@ import Videos from '../components/Videos.astro';
 import Reviews from '../components/Reviews.astro';
 import FAQ from '../components/FAQ.astro';
 import Team from '../components/Team.astro';
+import Mentors from '../components/Mentors.astro';
 import Stay from '../components/Stay.astro';
 import Journey from '../components/Journey.astro';
 import Economy from '../components/Economy.astro';
@@ -21,6 +22,7 @@ import Contacts from '../components/Contacts.astro';
 import Footer from '../components/Footer.astro';
 import StickyCta from '../components/StickyCta.astro';
 import RelatedPages from '../components/RelatedPages.astro';
+import SeoTextBlock from '../components/SeoTextBlock.astro';
 import ShiftOccupancy from '../components/ShiftOccupancy.astro';
 import SummerCta from '../components/SummerCta.astro';
 import ShiftModal from '../components/ShiftModal.astro';
@@ -30,30 +32,36 @@ import { landingPages as allLandingPages } from '../data/landing-pages';
 
 <Base
   title="Детский IT-лагерь в Подмосковье 2026 — Python, AI, Minecraft | АйДаКемп"
-  description="Детский лагерь для детей 7–15 лет в Подмосковье. Python, AI, Minecraft, бассейн. Смены июнь–август 2026 от 48 000 ₽. Питание и проживание включены."
+  description="Детский лагерь в Подмосковье: IT-программа + бассейн + спорт. Дети уезжают с готовым проектом — игрой или ботом. Лицензия Минобра. Смены с 30 мая от 48 000 ₽."
 >
   <Fragment slot="head">
-    <!-- LCP fix 2026-04-20: split mobile/desktop preload — mobile qualifies только 600w (≈35 KB вместо 1100w ≈100 KB) -->
-    <link rel="preload" as="image" media="(max-width: 768px)" href="/images/hero-custom-2026-04-07-600.avif" type="image/avif" fetchpriority="high" />
-    <link rel="preload" as="image" media="(min-width: 769px)" href="/images/hero-custom-2026-04-07-1100.avif" imagesrcset="/images/hero-custom-2026-04-07-900.avif 900w, /images/hero-custom-2026-04-07-950.avif 950w, /images/hero-custom-2026-04-07-1100.avif 1100w, /images/hero-custom-2026-04-07.avif 1536w" imagesizes="100vw" type="image/avif" fetchpriority="high" />
+    <!-- LCP preload — hero v2 (ТЗ Ф1, апрель 2026) -->
+    <link rel="preload" as="image" media="(max-width: 768px)" href="/images/hero-mobile.avif" type="image/avif" fetchpriority="high" />
+    <link rel="preload" as="image" media="(min-width: 769px)" href="/images/hero-desktop.avif" type="image/avif" fetchpriority="high" />
     <SchemaOrg />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "Что такое АйДаКемп?", "acceptedAnswer": { "@type": "Answer", "text": "АйДаКемп — загородный IT-лагерь для детей 7–15 лет в Подмосковье, 66 км от Москвы. Дети изучают Python, AI, Minecraft, 3D-моделирование и защищают реальный проект на хакатоне в финале смены. Работаем с 2019 года, более 1 500 выпускников." } },
+        { "@type": "Question", "name": "Для какого возраста детский лагерь?", "acceptedAnswer": { "@type": "Answer", "text": "АйДаКемп принимает детей от 7 до 15 лет. Группы по возрасту: 7–10 лет — Scratch и Minecraft, 10–12 лет — Python и боты, 13–15 лет — Python Advanced и AI. У каждой группы свои преподаватели." } },
+        { "@type": "Question", "name": "Сколько стоит смена в лагере АйДаКемп?", "acceptedAnswer": { "@type": "Answer", "text": "От 48 000 ₽ за 7 дней (смена 2.1) до 95 000 ₽ за 14 дней (смена 2). В стоимость включены проживание, 5-разовое питание, IT-программа и бассейн. Налоговый вычет 13% позволяет вернуть до 14 300 ₽." } },
+        { "@type": "Question", "name": "Где находится лагерь?", "acceptedAnswer": { "@type": "Answer", "text": "Санаторий «Изумруд», Наро-Фоминский район Московской области, 66 км от МКАД по Калужскому шоссе. Трансфер от метро «Солнцево» — 2 500 ₽. На машине — около часа." } },
+        { "@type": "Question", "name": "Есть ли у лагеря образовательная лицензия?", "acceptedAnswer": { "@type": "Answer", "text": "Да. Образовательная лицензия Минобрнауки Л035-01298-77/01082973 + туроператор РТО 025773. Лицензия даёт право на налоговый вычет 13% за обучение ребёнка." } }
+      ]
+    })} />
   </Fragment>
   <Header />
   <main class="pb-20 md:pb-0">
-    <Hero />
+    <Hero hasVariants={true} />
 
-    <!--
-      Мобильная печать «Ноутбук не нужен» — тёмная, прозрачный фон, слева.
-      Wrapper имеет h-[112px] чтобы абсолютная печать физически занимала место в
-      потоке и не накладывалась на следующий блок (ShiftOccupancy). Без высоты
-      wrapper схлопывался до 0, а печать z-30 перекрывала карточки смен.
-    -->
-    <div class="relative md:hidden h-[68px]">
+    <!-- Мобильная печать «Ноутбук не нужен» — inline, не absolute -->
+    <div class="md:hidden flex px-5 py-3">
       <button
         type="button"
         id="equipment-stamp-mobile"
         aria-label="Ноутбук не нужен — у нас всё есть!"
-        class="absolute top-[24px] left-5 z-30 rotate-[-10deg] select-none cursor-pointer group hover:scale-105 transition-transform duration-200"
+        class="rotate-[-10deg] select-none cursor-pointer group hover:scale-105 transition-transform duration-200"
       >
         <div class="relative flex h-[96px] w-[96px] items-center justify-center rounded-full border-[2.5px] border-dashed border-[#0d1a2b]/55 bg-transparent group-hover:border-[#0d1a2b]/85 transition-colors">
           <div class="absolute inset-[7px] rounded-full border border-[#0d1a2b]/18 transition-colors"></div>
@@ -87,8 +95,10 @@ import { landingPages as allLandingPages } from '../data/landing-pages';
     <Reviews />
     <FAQ />
     <Team />
+    <Mentors />
     <Stay />
     <Contacts />
+    <SeoTextBlock />
     <RelatedPages pages={allLandingPages} />
   </main>
   <Footer />

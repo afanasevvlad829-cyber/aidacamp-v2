@@ -54,8 +54,7 @@ const sections = [
     text: 'В путёвку не входит — но можно заказать как опцию.',
     list: [
       'Трансфер от Москвы — опция',
-      'Страховка на время смены — рекомендуем оформить отдельно. По нашему договору выгодоприобретателем является ребёнок через законных представителей; свой полис даёт родителям как выгодоприобретателям полный контроль над суммами и процедурой выплат.',
-      'Дополнительные экскурсии за территорию (редко, по желанию группы)',
+      'Страховка на время смены — рекомендуем оформить отдельно. Выгодоприобретателем по своему полису становятся родители — это даёт полный контроль над суммами и процедурой выплат.',
     ],
   },
   {
@@ -86,6 +85,39 @@ const sections = [
   canonical="https://aidacamp.ru/ceny"
   heroImage="/images/hero/kupit-putevku-v-lager.avif"
 >
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Сколько стоит путёвка в детский лагерь в 2026 году?",
+          "acceptedAnswer": { "@type": "Answer", "text": "В АйДаКемп: от 48 000 ₽ за короткую смену 7–8 дней, 74 900 ₽ за 10 дней, 95 000 ₽ за 14 дней. В стоимость включены проживание, питание, IT-программа, бассейн, страховка." }
+        },
+        {
+          "@type": "Question",
+          "name": "Можно ли оплатить лагерь частями?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Да. Оплата в два этапа: 50% при бронировании — место фиксируется. Оставшиеся 50% — за 3 недели до заезда. Принимаем банковский перевод и карту." }
+        },
+        {
+          "@type": "Question",
+          "name": "Что входит в стоимость путёвки?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Проживание (комнаты 2–4 чел. с санузлом), 5-разовое питание, IT-программа (2 занятия по 90 мин. в день), бассейн, вечерние активности, страховка. Трансфер из Москвы — 2 500 ₽ отдельно." }
+        },
+        {
+          "@type": "Question",
+          "name": "Можно ли вернуть деньги за путёвку?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Да, в соответствии с Законом о защите прав потребителей. При отказе за 30+ дней — полный возврат за вычетом расходов. Подробнее — в Политике возврата на сайте." }
+        },
+        {
+          "@type": "Question",
+          "name": "Есть ли скидки на путёвку в лагерь?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Есть ранняя бронь (при оплате в январе–феврале) и скидка за второго ребёнка. Актуальные акции — уточняйте у менеджера." }
+        }
+      ]
+    })} />
+  </Fragment>
   <LandingHero slot="hero"
     h1="Цены на лагерь для детей — лето 2026, Подмосковье"
     subtitle="Лагеря на лето 2026 от 48 000 ₽ за 7 дней до 95 000 ₽ за 14 дней. Проживание, питание, программа и бассейн — всё включено."
@@ -121,7 +153,8 @@ const sections = [
             <th class="px-4 py-3 text-left">Даты</th>
             <th class="px-4 py-3 text-left">Длительность</th>
             <th class="px-4 py-3 text-right">Стоимость</th>
-            <th class="px-4 py-3 text-center" aria-label="Подробнее"></th>
+            <th class="px-2 py-3 w-[110px]" aria-label="Метка"></th>
+            <th class="px-4 py-3 w-[160px] text-right" aria-label="Действие"></th>
           </tr>
         </thead>
         <tbody>
@@ -137,11 +170,13 @@ const sections = [
               <td class="px-4 py-3">{row.dates}</td>
               <td class="px-4 py-3 text-slate-600">{row.duration}</td>
               <td class="px-4 py-3 text-right font-bold text-[#ec7c00]">{row.price}</td>
-              <td class="px-4 py-3 text-center">
+              <td class="px-2 py-3 text-right">
                 {row.note && (
-                  <span class="inline-flex rounded-full bg-orange-50 px-2 py-0.5 text-[12px] font-medium text-orange-700 mr-2">{row.note}</span>
+                  <span class="inline-flex rounded-full bg-orange-50 px-2.5 py-0.5 text-[12px] font-medium text-orange-700">{row.note}</span>
                 )}
-                <span class="inline-flex items-center gap-1 rounded-full bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 text-[13px] font-semibold transition-colors">
+              </td>
+              <td class="px-4 py-3 text-right">
+                <span class="inline-flex items-center gap-1 rounded-full bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 text-[13px] font-semibold transition-colors whitespace-nowrap">
                   Забронировать
                   <i class="bi bi-arrow-right-short text-[15px]" aria-hidden="true"></i>
                 </span>
@@ -194,38 +229,7 @@ const sections = [
 </LandingLayout>
 
 <script>
-  // Nudge toast на /ceny — через 45 сек если не было клика по таблице
-  (function() {
-    let nudgeFired = false;
-    const DELAY = 45000;
-    const t = setTimeout(function() {
-      if (nudgeFired) return;
-      const toast = document.getElementById('nudge-toast');
-      const text = document.getElementById('nudge-text');
-      const sub = document.getElementById('nudge-sub');
-      if (!toast || !text) return;
-      text.textContent = 'Смена 2 (10–23 июня) — последние места';
-      if (sub) sub.textContent = 'Нажмите, чтобы зафиксировать место';
-      toast.style.cursor = 'pointer';
-      toast.addEventListener('click', function(e) {
-        if ((e.target as Element).closest('#nudge-close')) return;
-        document.dispatchEvent(new CustomEvent('shift-modal-open', {detail:{shiftId:'smena2',tab:'description'}}));
-        window.trackGoal?.('ceny_nudge_click');
-      });
-      toast.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
-      toast.classList.add('translate-y-0', 'opacity-100');
-      document.getElementById('nudge-close')?.addEventListener('click', function() {
-        toast.classList.add('translate-y-full', 'opacity-0');
-      });
-      nudgeFired = true;
-      window.trackGoal?.('ceny_nudge_show');
-    }, DELAY);
-    // Отменяем если пользователь уже кликнул по таблице
-    document.addEventListener('shift-modal-open', function() {
-      clearTimeout(t);
-      nudgeFired = true;
-    }, {once: true});
-  })();
+  // Nudge toast отключён
 
   // Клик по строке таблицы цен → ShiftInfoModal (возраст + описание + расписание).
   // Тот же контракт что у ShiftOccupancy row-clicks и TaxCalculator Buy-button.
