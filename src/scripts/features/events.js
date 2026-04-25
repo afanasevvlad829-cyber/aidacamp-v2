@@ -4545,6 +4545,17 @@
   function setupAuditToggleButton() {
     var existing = document.getElementById("acAuditToggle");
     if (existing) return;
+    // Показываем кнопку только если уже в audit-режиме (?audit=1) или на localhost.
+    // На dev/prod технические dev-кнопки не нужны.
+    var isAuditQuery = false;
+    try {
+      isAuditQuery = (window.location.search || "").indexOf("audit=1") !== -1;
+      var host = (window.location.hostname || "");
+      var isLocal = host === "localhost" || host === "127.0.0.1" || host.endsWith(".local");
+      if (!isAuditQuery && !isLocal) return;
+    } catch (_err) {
+      return;
+    }
 
     var button = document.createElement("button");
     button.id = "acAuditToggle";
