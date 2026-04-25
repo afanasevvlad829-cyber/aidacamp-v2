@@ -22,6 +22,7 @@ export interface LandingPage {
 
 export const landingPages: LandingPage[] = [
   // ⭐ Жирные общие ключи — первыми
+  { title: 'Официальный детский лагерь', description: 'Лицензия, РТО, проверка документов', url: '/detskiy-lager-oficialnyj', icon: 'bi-patch-check-fill' },
   { title: 'Лучшие детские лагеря Подмосковья', description: 'Рейтинг 5.0, лицензия Минобрнауки', url: '/luchshie-detskie-lagerya', icon: 'bi-trophy' },
   { title: 'Проверенный детский лагерь', description: 'Лицензия, РТО, 5.0 — всё проверяется', url: '/proverennyj-lager', icon: 'bi-patch-check-fill' },
   { title: 'Летний школьный лагерь', description: 'IT-программа для школьников 7–15 лет', url: '/letnyj-shkolnyj-lager', icon: 'bi-mortarboard' },
@@ -64,6 +65,9 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь рядом с Домодедово', description: 'IT-лагерь, ~60 км через Подольск', url: '/lager-domodedovo', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Серпуховом', description: 'IT-лагерь, ~70 км по Симферопольскому шоссе', url: '/lager-serpuhov', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Зеленоградом', description: 'IT-лагерь, ~70 км по Киевскому шоссе', url: '/lager-zelenograd', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Истрой', description: 'IT-лагерь, ~1.5 ч от Истры', url: '/lager-istra', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Клином', description: 'IT-лагерь, ~2 часа от Клина', url: '/lager-klin', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Пушкино', description: 'IT-лагерь, ~1.5 ч от Пушкино', url: '/lager-pushkino', icon: 'bi-geo-alt' },
 
   // 💰 Коммерческие
   { title: 'Цены на смены 2026', description: 'Стоимость всех смен, что входит', url: '/ceny', icon: 'bi-coin' },
