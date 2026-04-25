@@ -243,7 +243,16 @@ agent/<задача>  ← Зона суб-агентов. Сюда пушить 
 ### Техническая защита (не обходить!)
 
 - **GitHub branch protection** на `main` — требует PR, прямой пуш отклоняется сервером
-- **pre-push hook** (`scripts/hooks/pre-push`) — блокирует пуш в `main` и `dev` без флага
+- **pre-push hook** — блокирует пуш в `main` и `dev` без флага
+- **pre-commit hook** — суб-агент НЕ может коммитить в главное рабочее дерево (`/Users/vladimirafanasev/Aidacamp-cloude/`). Если сделает — git вернёт ошибку. Только владелец с `MASTER_AGENT=1`.
+- **pre-merge-commit hook** — суб-агент НЕ может делать `git merge` в главном рабочем дереве. Только владелец с `MASTER_AGENT=1`.
+- **Lock-файл `.main-repo.lock`** (опц.) — мастер-агент создаёт перед длинной работой через `bash scripts/main-repo-guard.sh lock`. Пока lock есть — никто кроме `MASTER_AGENT=1` не может коммитить. Снять: `... unlock`.
+- **Claude Code permissions deny-rules** в `.claude/settings.json` — `git checkout/stash/merge/reset --hard/rebase` в главном репо запрещены на уровне Claude Code (агенты получат «permission denied»).
+
+### Установка хуков (один раз после clone)
+```bash
+bash scripts/setup-hooks.sh   # подложит хуки + установит core.hooksPath = scripts/git-hooks
+```
 
 ### Суб-агент — ОБЯЗАТЕЛЬНЫЙ алгоритм:
 

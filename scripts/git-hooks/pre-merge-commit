@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Защита от случайных merge в главном репо.
+# Параллельные agent-сессии часто тянут чужие ветки и ломают рабочее дерево
+# главному агенту. Merge в главном репо — только владелец (MASTER_AGENT=1).
+# В worktrees merge свободно.
+
+toplevel="$(git rev-parse --show-toplevel 2>/dev/null)"
+main_worktree="$(git worktree list --porcelain 2>/dev/null | awk '/^worktree /{print $2; exit}')"
+
+if [ -n "$toplevel" ] && [ "$toplevel" = "$main_worktree" ]; then
+  if [ "${MASTER_AGENT:-}" != "1" ]; then
+    echo "✖ Merge в главном репо ($toplevel) разрешён только владельцу." >&2
+    echo "  Используй: MASTER_AGENT=1 git merge ..." >&2
+    exit 1
+  fi
+fi
+
+exit 0
