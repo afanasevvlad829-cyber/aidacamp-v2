@@ -5,28 +5,47 @@ import VideoModal from './VideoModal.astro';
 const projects = projectVideos;
 
 const SITE = 'https://aidacamp.ru';
-const videoSchema = {
+const publisher = {
+  '@type': 'Organization',
+  name: 'АйДаКемп',
+  url: SITE,
+  logo: { '@type': 'ImageObject', url: `${SITE}/images/logo-aidacamp.svg` },
+};
+
+function makeVideoObject(v: { url: string; title: string; thumb: string; description?: string; uploadDate?: string }) {
+  return {
+    '@type': 'VideoObject',
+    name: v.title,
+    description: v.description ?? v.title,
+    thumbnailUrl: `${SITE}${v.thumb}`,
+    uploadDate: v.uploadDate ?? '2025-01-01',
+    embedUrl: v.url,
+    publisher,
+  };
+}
+
+const campVideoSchema = {
   '@context': 'https://schema.org',
   '@type': 'ItemList',
-  name: 'Видео АйДаКемп — IT-лагерь для детей',
+  name: 'Видео об IT-лагере АйДаКемп',
   itemListElement: campVideos.map((v, i) => ({
     '@type': 'ListItem',
     position: i + 1,
-    item: {
-      '@type': 'VideoObject',
-      name: v.title,
-      description: v.title,
-      thumbnailUrl: `${SITE}${v.thumb}`,
-      uploadDate: '2026-01-01',
-      embedUrl: v.url,
-      publisher: {
-        '@type': 'Organization',
-        name: 'АйДаКемп',
-        logo: { '@type': 'ImageObject', url: `${SITE}/images/logo-aidacamp.svg` },
-      },
-    },
+    item: makeVideoObject(v),
   })),
 };
+
+const projectVideoSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Проекты детей из IT-лагеря АйДаКемп',
+  itemListElement: projectVideos.map((v, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    item: makeVideoObject(v),
+  })),
+};
+
 const videos = campVideos;
 
 const tabs = [
@@ -35,7 +54,8 @@ const tabs = [
 ];
 ---
 
-<script type="application/ld+json" set:html={JSON.stringify(videoSchema)} />
+<script type="application/ld+json" set:html={JSON.stringify(campVideoSchema)} />
+<script type="application/ld+json" set:html={JSON.stringify(projectVideoSchema)} />
 
 <section id="videos" class="mx-auto max-w-[1312px] px-[2px] pt-10 md:px-4" data-videos-root>
   <div class="bg-white p-[18px]">
