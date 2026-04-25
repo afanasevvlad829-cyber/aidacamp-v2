@@ -53,10 +53,12 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь для детей 12 лет', description: 'Python, AI — для 11–13 лет', url: '/lager-12-let', icon: 'bi-rocket-takeoff' },
   { title: 'Лагерь для подростков', description: 'Программа 12–14 лет', url: '/lager-dlya-podrostkov', icon: 'bi-rocket-takeoff' },
   { title: 'Лагерь для школьников', description: '1–8 класс, IT-проект', url: '/lager-dlya-shkolnikov', icon: 'bi-backpack' },
+  { title: 'Лагерь для школьников Подмосковья', description: 'IT-программа 1–9 класс, смены 2026', url: '/lager-dlya-shkolnikov-podmoskove', icon: 'bi-backpack' },
   { title: 'Лагерь для мальчиков', description: 'Minecraft, Roblox, Python, AI', url: '/lager-dlya-malchikov', icon: 'bi-rocket-takeoff' },
   { title: 'Лагерь для девочек', description: 'AI, 3D-моделирование, Python', url: '/lager-dlya-devochek', icon: 'bi-star-fill' },
 
   // 📍 Гео-LP
+  { title: 'Лагерь рядом с домом', description: 'Подмосковье, 66 км от Москвы', url: '/lager-ryadom', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Подольском', description: 'IT-лагерь, 40 км от Подольска', url: '/lager-podolsk', icon: 'bi-geo-alt' },
   { title: 'Лагерь в Наро-Фоминском районе', description: 'Санаторий Изумруд, 66 км от МКАД', url: '/lager-naro-fominsk', icon: 'bi-tree' },
   { title: 'Лагерь из Новой Москвы', description: 'По Калужскому шоссе, 40–60 км', url: '/lager-novaya-moskva', icon: 'bi-geo-alt-fill' },
