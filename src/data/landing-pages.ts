@@ -22,6 +22,8 @@ export interface LandingPage {
 
 export const landingPages: LandingPage[] = [
   // ⭐ Жирные общие ключи — первыми
+  { title: 'Лучшие детские лагеря Подмосковья', description: 'Рейтинг 5.0, лицензия Минобрнауки', url: '/luchshie-detskie-lagerya', icon: 'bi-trophy' },
+  { title: 'Загородный лагерь', description: 'Лес, бассейн, 66 км от Москвы', url: '/zagorodnyj-lager', icon: 'bi-tree' },
   { title: 'Детский лагерь', description: 'Для детей 7–15 лет в Подмосковье', url: '/detskiy-lager', icon: 'bi-house-heart' },
   { title: 'Детский лагерь в Подмосковье', description: '66 км от Москвы, проживание', url: '/detskiy-lager-podmoskove', icon: 'bi-houses' },
   { title: 'Лагерь в Подмосковье', description: 'Загородный, с бассейном', url: '/lager-v-podmoskove', icon: 'bi-tree' },
