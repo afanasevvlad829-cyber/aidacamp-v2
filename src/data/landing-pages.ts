@@ -45,6 +45,9 @@ export const landingPages: LandingPage[] = [
   { title: 'Летняя IT-школа', description: 'Загородный формат, с проживанием', url: '/letnyaya-it-shkola', icon: 'bi-mortarboard' },
 
   // 👧 Возрастные
+  { title: 'Лагерь для детей 8 лет', description: 'Scratch, Minecraft — первый код', url: '/lager-8-let', icon: 'bi-emoji-smile' },
+  { title: 'Лагерь для детей 10 лет', description: 'Python и боты для 9–11 лет', url: '/lager-10-let', icon: 'bi-laptop' },
+  { title: 'Лагерь для детей 12 лет', description: 'Python, AI — для 11–13 лет', url: '/lager-12-let', icon: 'bi-rocket-takeoff' },
   { title: 'Лагерь для подростков', description: 'Программа 12–14 лет', url: '/lager-dlya-podrostkov', icon: 'bi-rocket-takeoff' },
   { title: 'Лагерь для школьников', description: '1–8 класс, IT-проект', url: '/lager-dlya-shkolnikov', icon: 'bi-backpack' },
   { title: 'Лагерь для мальчиков', description: 'Minecraft, Roblox, Python, AI', url: '/lager-dlya-malchikov', icon: 'bi-rocket-takeoff' },
