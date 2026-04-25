@@ -44,17 +44,6 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь для подростков', description: 'Программа 12–14 лет', url: '/lager-dlya-podrostkov', icon: 'bi-rocket-takeoff' },
   { title: 'Лагерь для школьников', description: '1–8 класс, IT-проект', url: '/lager-dlya-shkolnikov', icon: 'bi-backpack' },
 
-  // 🗓 Сезонные
-  { title: 'Лагерь на июнь', description: 'Смены июня 2026, с 30 мая', url: '/lager-na-iyun', icon: 'bi-calendar-event' },
-  { title: 'Лагерь на июль', description: 'Июльские смены 2026 в Подмосковье', url: '/lager-na-iyul', icon: 'bi-sun' },
-  { title: 'Лагерь на август', description: 'Смены августа 2026 в Подмосковье', url: '/lager-na-avgust-podmoskove', icon: 'bi-sun' },
-
-  // 💰 Коммерческие
-  { title: 'Цены на смены 2026', description: 'Стоимость всех смен, что входит', url: '/ceny', icon: 'bi-coin' },
-  { title: 'Купить путёвку в лагерь', description: 'Оплата, договор, 50% сейчас + 50% за 3 нед.', url: '/kupit-putevku-v-lager', icon: 'bi-credit-card' },
-  { title: 'Налоговый вычет 13%', description: 'Калькулятор возврата с путёвки', url: '/nalogovyj-vychet', icon: 'bi-receipt' },
-  { title: 'Лагерь недорого', description: 'От 48 000 ₽ за смену, оплата частями', url: '/lager-nedorogo', icon: 'bi-tag' },
-
   // 📍 Гео-LP
   { title: 'Лагерь рядом с Подольском', description: 'IT-лагерь, 40 км от Подольска', url: '/lager-podolsk', icon: 'bi-geo-alt' },
   { title: 'Лагерь в Наро-Фоминском районе', description: 'Санаторий Изумруд, 66 км от МКАД', url: '/lager-naro-fominsk', icon: 'bi-tree' },
@@ -64,6 +53,17 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь рядом с Домодедово', description: 'IT-лагерь, ~60 км через Подольск', url: '/lager-domodedovo', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Серпуховом', description: 'IT-лагерь, ~70 км по Симферопольскому шоссе', url: '/lager-serpuhov', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Зеленоградом', description: 'IT-лагерь, ~70 км по Киевскому шоссе', url: '/lager-zelenograd', icon: 'bi-geo-alt' },
+
+  // 💰 Коммерческие
+  { title: 'Цены на смены 2026', description: 'Стоимость всех смен, что входит', url: '/ceny', icon: 'bi-coin' },
+  { title: 'Купить путёвку в лагерь', description: 'Оплата, договор, 50% сейчас + 50% за 3 нед.', url: '/kupit-putevku-v-lager', icon: 'bi-credit-card' },
+  { title: 'Налоговый вычет 13%', description: 'Калькулятор возврата с путёвки', url: '/nalogovyj-vychet', icon: 'bi-receipt' },
+  { title: 'Лагерь недорого', description: 'От 48 000 ₽ за смену, оплата частями', url: '/lager-nedorogo', icon: 'bi-tag' },
+
+  // 🗓 Сезонные
+  { title: 'Лагерь на июнь', description: 'Смены июня 2026, с 30 мая', url: '/lager-na-iyun', icon: 'bi-calendar-event' },
+  { title: 'Лагерь на июль', description: 'Июльские смены 2026 в Подмосковье', url: '/lager-na-iyul', icon: 'bi-sun' },
+  { title: 'Лагерь на август', description: 'Смены августа 2026 в Подмосковье', url: '/lager-na-avgust-podmoskove', icon: 'bi-sun' },
 
   // 🎨 Прочее
   { title: 'Лагерь без телефонов', description: 'Ребёнок без гаджетов 24/7', url: '/lager-bez-telefonov', icon: 'bi-phone-x' },
