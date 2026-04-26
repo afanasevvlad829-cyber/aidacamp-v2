@@ -8,6 +8,23 @@ const _TOPIC_SLUGS = new Set(['python-lager','ai-lager','minecraft-lager','scrat
 const _slug = Astro.url.pathname.replace(/\/+$/, '').split('/').pop() ?? '';
 const _heroEffect = _TOPIC_SLUGS.has(_slug) ? getTopicEffect(_slug) : getSeoEffect(_slug);
 
+// Анимированный hero-bg по slug — production версия эффектов с mobile fallback (см. global.css)
+const _HERO_BG_BY_SLUG: Record<string, string> = {
+  'ai-lager':              'quantum',
+  '3d-modelirovanie-lager':'fiber',
+  'roblox-lager':          'hexagons',
+  'minecraft-lager':       'interactive-stars',
+  'scratch-lager':         'particle-flow',
+  'python-lager':          'circuit',
+  'lager-dlya-podrostkov': 'neon-network',
+  'lager-programmirovaniya':'ascendant',
+  'letnyaya-it-shkola':    'ascendant',
+  'lager-na-leto-2026':    'star-genesis',
+  'o-lagere':              'glass-orbs',
+  'lager-bez-telefonov':   'fireflies',
+};
+const _heroBg = _HERO_BG_BY_SLUG[_slug];
+
 interface Props {
   h1: string;
   subtitle: string;
@@ -29,7 +46,7 @@ const breadcrumbJsonLd = {
 };
 ---
 
-<section data-hero-effect={_heroEffect} class="relative overflow-hidden min-h-[480px] md:min-h-[560px] bg-[#0d1a2b] px-5 pt-16 pb-12 md:px-14 md:pt-20 md:pb-16">
+<section data-hero-effect={_heroEffect} data-hero-bg={_heroBg} class="relative overflow-hidden min-h-[480px] md:min-h-[560px] bg-[#0d1a2b] px-5 pt-16 pb-12 md:px-14 md:pt-20 md:pb-16">
   <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
 
   {/* CSS backgrounds — photo removed per TZ v3.0 */}

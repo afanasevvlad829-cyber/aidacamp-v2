@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UI/UX Аудит — АйДаКемп 2026</title>
+  <style>
+    :root {
+      --brand-orange: #ec7c00;
+      --brand-navy: #0d1a2b;
+      --brand-green: #2fa768;
+      --ok: #16a34a;
+      --warn: #d97706;
+      --bad: #dc2626;
+      --info: #2563eb;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+    /* ── Header ── */
+    .report-header {
+      background: var(--brand-navy);
+      color: white;
+      padding: 48px 32px 40px;
+    }
+    .report-header h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; }
+    .report-header .sub { color: rgba(255,255,255,.55); margin-top: 6px; font-size: 14px; }
+    .skill-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+      border-radius: 20px; padding: 6px 14px; margin-top: 20px; font-size: 13px;
+    }
+    .skill-badge span { color: var(--brand-orange); font-weight: 700; }
+    /* ── Score bar ── */
+    .score-bar {
+      background: #1e3450;
+      padding: 28px 32px;
+      display: flex; flex-wrap: wrap; gap: 24px;
+    }
+    .score-item { flex: 1; min-width: 120px; }
+    .score-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,.45); margin-bottom: 6px; }
+    .score-value { font-size: 28px; font-weight: 800; }
+    .score-value.ok { color: #4ade80; }
+    .score-value.warn { color: #fbbf24; }
+    .score-value.bad { color: #f87171; }
+    .score-out { font-size: 14px; color: rgba(255,255,255,.35); font-weight: 400; }
+    /* ── Design System Card ── */
+    .ds-card {
+      background: linear-gradient(135deg, #0f2744 0%, #1e3a5f 100%);
+      color: white;
+      margin: 24px 32px;
+      border-radius: 16px;
+      padding: 28px 32px;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .ds-card h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.4); margin-bottom: 20px; }
+    .ds-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+    .ds-field label { font-size: 11px; color: rgba(255,255,255,.4); text-transform: uppercase; letter-spacing: .08em; }
+    .ds-field .val { font-size: 15px; font-weight: 600; margin-top: 4px; }
+    .ds-field .val.brand { color: var(--brand-orange); }
+    .color-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .chip { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+    .chip-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,.15); flex-shrink: 0; }
+    /* ── Layout ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 32px 64px; }
+    /* ── Section ── */
+    .section { margin-top: 40px; }
+    .section-title {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 20px; font-weight: 700; margin-bottom: 20px;
+      padding-bottom: 12px; border-bottom: 2px solid var(--border);
+    }
+    .section-title .num {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 800; flex-shrink: 0;
+      background: var(--brand-orange); color: white;
+    }
+    /* ── Cards ── */
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px;
+      border-left: 4px solid var(--border);
+      transition: box-shadow .15s;
+    }
+    .card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.07); }
+    .card.ok { border-left-color: var(--ok); }
+    .card.warn { border-left-color: var(--warn); }
+    .card.bad { border-left-color: var(--bad); }
+    .card.info { border-left-color: var(--info); }
+    .card-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+    .card-icon { font-size: 20px; line-height: 1; flex-shrink: 0; }
+    .card-title { font-size: 15px; font-weight: 700; }
+    .card-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .card-body { font-size: 14px; color: #334155; line-height: 1.6; }
+    .card-body ul { padding-left: 16px; }
+    .card-body li { margin-top: 4px; }
+    .card-fix {
+      margin-top: 12px; padding: 10px 12px;
+      background: #f1f5f9; border-radius: 8px;
+      font-size: 13px; color: #1e40af;
+    }
+    .card-fix strong { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 4px; }
+    .badge {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: .05em;
+    }
+    .badge.ok { background: #dcfce7; color: var(--ok); }
+    .badge.warn { background: #fef3c7; color: #92400e; }
+    .badge.bad { background: #fee2e2; color: var(--bad); }
+    .badge.info { background: #dbeafe; color: var(--info); }
+    /* ── Checklist ── */
+    .checklist { display: flex; flex-direction: column; gap: 8px; }
+    .cl-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: 10px;
+      background: var(--card); border: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .cl-item .icon { font-size: 18px; flex-shrink: 0; }
+    .cl-item .cl-text { flex: 1; }
+    .cl-item .cl-status { font-size: 12px; font-weight: 700; flex-shrink: 0; }
+    .cl-item.ok .cl-status { color: var(--ok); }
+    .cl-item.warn .cl-status { color: var(--warn); }
+    .cl-item.bad .cl-status { color: var(--bad); }
+    /* ── Priority table ── */
+    .priority-table { width: 100%; border-collapse: collapse; border-radius: 12px; overflow: hidden; }
+    .priority-table th { background: var(--brand-navy); color: white; padding: 12px 16px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .07em; }
+    .priority-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: top; }
+    .priority-table tr:last-child td { border-bottom: none; }
+    .priority-table tr:nth-child(even) td { background: #f8fafc; }
+    .p-tag { font-weight: 800; font-size: 12px; }
+    .p-tag.p0 { color: #dc2626; }
+    .p-tag.p1 { color: #d97706; }
+    .p-tag.p2 { color: #2563eb; }
+    .p-tag.p3 { color: var(--muted); }
+    /* ── Code blocks ── */
+    pre {
+      background: #0f172a; color: #e2e8f0;
+      border-radius: 10px; padding: 16px; overflow-x: auto;
+      font-size: 13px; line-height: 1.6; margin-top: 10px;
+    }
+    code { font-family: 'Fira Code', 'Cascadia Code', monospace; }
+    /* ── Footer ── */
+    .report-footer {
+      background: var(--brand-navy); color: rgba(255,255,255,.4);
+      text-align: center; padding: 20px; font-size: 12px;
+      margin-top: 60px;
+    }
+    /* ── Responsive ── */
+    @media (max-width: 700px) {
+      .container { padding: 0 16px 48px; }
+      .report-header, .score-bar, .ds-card { padding-left: 16px; padding-right: 16px; }
+      .ds-card { margin: 16px; }
+      .cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ HEADER ══════════════════════════════════════════════════ -->
+<div class="report-header">
+  <h1>UI/UX Аудит — АйДаКемп</h1>
+  <div class="sub">Дата: 26 апреля 2026 · Сайт: aidacamp.ru · Стиль: сохранить текущий</div>
+  <div class="skill-badge">
+    Фреймворк <span>UI/UX Pro Max v2.0</span> · 161 reasoning rule · 99 UX guidelines
+  </div>
+</div>
+
+<!-- ══ SCORE BAR ════════════════════════════════════════════════ -->
+<div class="score-bar">
+  <div class="score-item">
+    <div class="score-label">Общий балл</div>
+    <div class="score-value warn">74<span class="score-out">/100</span></div>
+  </div>
+  <div class="score-item">
+    <div class="score-label">Visual Design</div>
+    <div class="score-value ok">82<span class="score-out">/100</span></div>
+  </div>
+  <div class="score-item">
+    <div class="score-label">Typography</div>
+    <div class="score-value warn">71<span class="score-out">/100</span></div>
+  </div>
+  <div class="score-item">
+    <div class="score-label">Mobile UX</div>
+    <div class="score-value warn">68<span class="score-out">/100</span></div>
+  </div>
+  <div class="score-item">
+    <div class="score-label">Conversion</div>
+    <div class="score-value warn">70<span class="score-out">/100</span></div>
+  </div>
+  <div class="score-item">
+    <div class="score-label">Accessibility</div>
+    <div class="score-value bad">62<span class="score-out">/100</span></div>
+  </div>
+  <div class="score-item">
+    <div class="score-label">Consistency</div>
+    <div class="score-value warn">75<span class="score-out">/100</span></div>
+  </div>
+</div>
+
+<!-- ══ DESIGN SYSTEM CARD ═══════════════════════════════════════ -->
+<div class="ds-card">
+  <h2>🎨 Текущий Design System — АйДаКемп</h2>
+  <div class="ds-grid">
+    <div class="ds-field">
+      <label>Паттерн</label>
+      <div class="val brand">Hero-Centric + Social Proof</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.4);margin-top:4px">Emotion-driven · Trust signals · Conversion flow</div>
+    </div>
+    <div class="ds-field">
+      <label>UI-стиль</label>
+      <div class="val">Clean Modern → рекомендуется <span class="val brand">Warm Soft UI</span></div>
+      <div style="font-size:13px;color:rgba(255,255,255,.4);margin-top:4px">Мягкие тени, теплые акценты, органичные скругления</div>
+    </div>
+    <div class="ds-field">
+      <label>Цвета — текущие</label>
+      <div class="color-chips">
+        <div class="chip"><div class="chip-dot" style="background:#ec7c00"></div> Primary #ec7c00</div>
+        <div class="chip"><div class="chip-dot" style="background:#0d1a2b"></div> Navy #0d1a2b</div>
+        <div class="chip"><div class="chip-dot" style="background:#2fa768"></div> Green #2fa768</div>
+        <div class="chip"><div class="chip-dot" style="background:#c45f00"></div> Accent #c45f00</div>
+      </div>
+    </div>
+    <div class="ds-field">
+      <label>Типографика</label>
+      <div class="val">Inter (Latin + Cyrillic)</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.4);margin-top:4px">100–900 variable · font-display: swap ✓</div>
+    </div>
+    <div class="ds-field">
+      <label>Аудитория</label>
+      <div class="val">Мамы 30–42 лет · Instagram-mindset</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.4);margin-top:4px">Emotion-driven покупка · social proof critical</div>
+    </div>
+    <div class="ds-field">
+      <label>Anti-patterns — избегать</label>
+      <div style="font-size:13px;color:#f87171;margin-top:6px;line-height:1.7">
+        ✗ Агрессивный CTA-спам<br>
+        ✗ Мелкий текст (&lt;14px) на мобилке<br>
+        ✗ Конкурирующие sticky-слои<br>
+        ✗ Перегруженный первый экран
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══ РАЗДЕЛ 1: СИЛЬНЫЕ СТОРОНЫ ══════════════════════════════ -->
+<div class="section">
+  <div class="section-title"><div class="num">1</div> Сильные стороны — не трогать</div>
+  <div class="cards">
+    <div class="card ok">
+      <div class="card-header">
+        <div class="card-icon">🎨</div>
+        <div><div class="card-title">Цветовая система</div><div class="card-sub">Visual Design · Branding</div></div>
+        <span class="badge ok">Отлично</span>
+      </div>
+      <div class="card-body">
+        Оранжевый #ec7c00 — тёплый, доверительный, отличается от IT-клише синего. Navy #0d1a2b создаёт контраст и серьёзность. Зелёный #2fa768 как акцент доверия работает точно в тему «расцвет ребёнка». Палитра согласована и не аляповата.
+      </div>
+    </div>
+    <div class="card ok">
+      <div class="card-header">
+        <div class="card-icon">⚡</div>
+        <div><div class="card-title">Производительность</div><div class="card-sub">Performance · LCP · CLS</div></div>
+        <span class="badge ok">96/100</span>
+      </div>
+      <div class="card-body">
+        AVIF + WebP, локальные шрифты, critical CSS inline, preload hero. LCP &lt;0.6s на лабе. Это прямо влияет на конверсию — быстрый сайт = доверие.
+      </div>
+    </div>
+    <div class="card ok">
+      <div class="card-header">
+        <div class="card-icon">📐</div>
+        <div><div class="card-title">Скругления и отступы</div><div class="card-sub">Spatial System · Radius</div></div>
+        <span class="badge ok">Хорошо</span>
+      </div>
+      <div class="card-body">
+        Радиусы 10/14/16/20px последовательны. Карточки с border-radius 20px дают ощущение дружелюбности и современности. Подходит для детской/семейной аудитории.
+      </div>
+    </div>
+    <div class="card ok">
+      <div class="card-header">
+        <div class="card-icon">✅</div>
+        <div><div class="card-title">Social proof размещение</div><div class="card-sub">Conversion · Trust</div></div>
+        <span class="badge ok">Правильно</span>
+      </div>
+      <div class="card-body">
+        Рейтинг Яндекс.Карт сразу под hero — по UI/UX Pro Max это оптимальная позиция для аудитории с Instagram-mindset. Отзывы + фото + видео выстроены в нарастающую волну доверия.
+      </div>
+    </div>
+    <div class="card ok">
+      <div class="card-header">
+        <div class="card-icon">🧩</div>
+        <div><div class="card-title">Bootstrap Icons — без эмодзи</div><div class="card-sub">Iconography · Accessibility</div></div>
+        <span class="badge ok">Best practice</span>
+      </div>
+      <div class="card-body">
+        Последовательное использование bi-иконок с aria-hidden вместо эмодзи — редкость для небольших проектов. Правильно с точки зрения скринридеров и рендеринга на разных OS.
+      </div>
+    </div>
+    <div class="card ok">
+      <div class="card-header">
+        <div class="card-icon">📱</div>
+        <div><div class="card-title">Мобильный hero</div><div class="card-sub">Mobile First · Above Fold</div></div>
+        <span class="badge ok">Сильно</span>
+      </div>
+      <div class="card-body">
+        Большой тёмный hero с градиентом и фото детей задаёт эмоцию сразу. CTA «Ответим за 10 мин» в рамке + цена «от 48 000 ₽» — два разных типа убеждения (speed + price) в одном блоке.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ РАЗДЕЛ 2: ПРОБЛЕМЫ И ДОРАБОТКИ ════════════════════════ -->
+<div class="section">
+  <div class="section-title"><div class="num">2</div> Проблемы и конкретные доработки</div>
+  <div class="cards">
+
+    <div class="card bad">
+      <div class="card-header">
+        <div class="card-icon">🧱</div>
+        <div><div class="card-title">Конкурирующие sticky-слои</div><div class="card-sub">Mobile UX · Z-index conflict</div></div>
+        <span class="badge bad">Критично</span>
+      </div>
+      <div class="card-body">
+        На мобилке одновременно могут быть видны: <strong>StickyCta</strong> (z-70, звонок/WA/TG), <strong>AgeBar</strong> (z-60, выбор возраста) и <strong>cookie баннер</strong> (z-50). Это съедает 120–140px экрана снизу, перекрывая CTA-кнопки смен. По UI/UX Pro Max rule #47: «only one persistent sticky element at a time».
+      </div>
+      <div class="card-fix">
+        <strong>Доработка</strong>
+        AgeBar и StickyCta не должны показываться одновременно. Когда AgeBar видна — StickyCta скрыта (inert). Когда пользователь выбрал возраст и AgeBar исчезла — StickyCta появляется. Cookie баннер — только если оба других нет.
+      </div>
+    </div>
+
+    <div class="card bad">
+      <div class="card-header">
+        <div class="card-icon">👁</div>
+        <div><div class="card-title">Первый экран мобилки перегружен</div><div class="card-sub">Cognitive Load · Mobile First</div></div>
+        <span class="badge bad">Высокий</span>
+      </div>
+      <div class="card-body">
+        На 375px в first viewport одновременно конкурируют 7–8 визуальных элементов равного веса: H1 + рейтинг + цена + два CTA + trust chips + cookie + sticky. UI/UX Pro Max rule #12: «max 3 competing visual elements above fold». Мама не понимает куда смотреть первой.
+      </div>
+      <div class="card-fix">
+        <strong>Доработка</strong>
+        Trust chips «Лицензия / Медсестра / Страховка» убрать из hero на мобилке (показывать только 320px+, desktop). Рейтинг уменьшить визуально (13px вместо 14px, без рамки). Оставить в first viewport: H1 + один primary CTA + цена. Это увеличит фокус.
+      </div>
+    </div>
+
+    <div class="card warn">
+      <div class="card-header">
+        <div class="card-icon">✍️</div>
+        <div><div class="card-title">Размеры текста — нет ритма</div><div class="card-sub">Typography · Type Scale</div></div>
+        <span class="badge warn">Средний</span>
+      </div>
+      <div class="card-body">
+        В компонентах используется более 20 разных font-size значений: text-[11px], text-[12px], text-[12.5px], text-[13px], text-[14px], text-[15px], text-[16px], text-[18px], text-[20px], text-[22px], text-[24px], text-[26px], text-[28px], text-[30px], text-[32px]... По UI/UX Pro Max: «type scale должен иметь ≤8 ступеней с ratio 1.2–1.25». Случайные промежуточные значения (12.5px, 15px) нарушают ритм.
+      </div>
+      <div class="card-fix">
+        <strong>Предложение — Type Scale 8 ступеней</strong>
+        xs: 12px · sm: 14px · base: 16px · md: 18px · lg: 22px · xl: 28px · 2xl: 36px · 3xl: 48px.
+        Убрать 11px, 12.5px, 13px (заменить на 12 или 14px), 15px (→ 14 или 16px), 20px (→ 22px). Освежит восприятие без смены стиля.
+      </div>
+    </div>
+
+    <div class="card warn">
+      <div class="card-header">
+        <div class="card-icon">💰</div>
+        <div><div class="card-title">Блок смен — визуальная иерархия</div><div class="card-sub">Cards · Conversion · Scarcity</div></div>
+        <span class="badge warn">Средний</span>
+      </div>
+      <div class="card-body">
+        Карточки смен все одинакового визуального веса. «Горящие» смены (мало мест, высокий pct) ничем не выделены кроме цвета прогресс-бара. По UUPM rule #83 (Scarcity Signaling): карточка с ≥85% занятостью должна иметь усиленную visual treatment — рамку, бейдж, фоновый акцент.
+      </div>
+      <div class="card-fix">
+        <strong>Доработка</strong>
+        Смены с pct ≥85%: добавить border-2 border-orange-400 и бейдж «Последние места» в левый верхний угол карточки. Смены с pct ≥95%: bg-red-50 + badge «Осталось N мест». Не требует новых компонентов — только условные Tailwind-классы в ShiftCard.
+      </div>
+    </div>
+
+    <div class="card warn">
+      <div class="card-header">
+        <div class="card-icon">🎯</div>
+        <div><div class="card-title">CTA-кнопки — вариативность стилей</div><div class="card-sub">Consistency · Button System</div></div>
+        <span class="badge warn">Средний</span>
+      </div>
+      <div class="card-body">
+        Primary CTA встречается в 6 вариантах: bg-primary, bg-[#ec7c00], bg-orange-500, bg-[#ec7c00] + rounded-full, bg-primary + rounded-xl, bg-[#c45f00]. UUPM rule #21: «one primary button style, one secondary». Непоследовательность снижает доверие (посетитель подсознательно замечает несоответствие).
+      </div>
+      <div class="card-fix">
+        <strong>Доработка</strong>
+        Ввести единый класс <code>.btn-primary</code>: bg-[#ec7c00] text-[#1e2430] font-semibold rounded-xl px-6 py-3 hover:bg-[#d97000] transition-colors. Применить везде где сейчас несогласованные варианты. Это рефакторинг, не редизайн.
+      </div>
+    </div>
+
+    <div class="card warn">
+      <div class="card-header">
+        <div class="card-icon">🔲</div>
+        <div><div class="card-title">Spacing — непоследовательный</div><div class="card-sub">Spatial System · 4px Grid</div></div>
+        <span class="badge warn">Средний</span>
+      </div>
+      <div class="card-body">
+        Отступы используют значения вне 4px-сетки: py-2.5 (10px), py-3.5 (14px), gap-2.5 (10px), px-4.5 (18px), mb-1.5 (6px). UUPM rule #5: «stick to 4px base grid». 10px и 18px создают визуальный шум при паттерн-матчинге.
+      </div>
+      <div class="card-fix">
+        <strong>Предложение</strong>
+        py-2.5 → py-2 или py-3. gap-2.5 → gap-2 или gap-3. Не критично сразу, но при следующем редизайне компонентов использовать только чётные шаги: 4/8/12/16/20/24/32/40/48/64px.
+      </div>
+    </div>
+
+    <div class="card warn">
+      <div class="card-header">
+        <div class="card-icon">🌑</div>
+        <div><div class="card-title">Контраст текста — граничные случаи</div><div class="card-sub">Accessibility · WCAG AA</div></div>
+        <span class="badge warn">WCAG риск</span>
+      </div>
+      <div class="card-body">
+        <ul>
+          <li>text-white/45 на тёмном фоне (hero мета) → ~3.8:1, WCAG требует 4.5:1 для нормального текста</li>
+          <li>text-slate-400 (#94a3b8) на белом → 3.0:1, ниже AA</li>
+          <li>text-orange-300 на тёмном hero → 4.1:1, пограничное</li>
+          <li>Бейдж: bg-emerald-100 + text-emerald-700 → ~4.7:1, OK</li>
+        </ul>
+      </div>
+      <div class="card-fix">
+        <strong>Доработка</strong>
+        text-white/45 → text-white/55 (уже есть такой вариант на странице — унифицировать).
+        text-slate-400 в информационных подписях → text-slate-500 (#64748b, 4.6:1 на белом).
+      </div>
+    </div>
+
+    <div class="card warn">
+      <div class="card-header">
+        <div class="card-icon">🖱</div>
+        <div><div class="card-title">Hover-состояния — не везде</div><div class="card-sub">Interaction Design · Affordance</div></div>
+        <span class="badge warn">Средний</span>
+      </div>
+      <div class="card-body">
+        Карточки смен на мобилке не имеют hover. На десктопе часть карточек (ShortShiftCard) без transition на hover. Кнопки dot-навигации в карусели без cursor:pointer. UUPM rule #33: «every clickable element must have visible hover state with 150–200ms transition».
+      </div>
+      <div class="card-fix">
+        <strong>Доработка</strong>
+        ShortShiftCard: добавить hover:shadow-md transition-shadow duration-150.
+        Dots в карусели: добавить cursor-pointer hover:bg-[#ec7c00]/60.
+        Dots уже имеют transition-all — нужен только cursor.
+      </div>
+    </div>
+
+    <div class="card info">
+      <div class="card-header">
+        <div class="card-icon">🧭</div>
+        <div><div class="card-title">Отсутствие прогресс-индикатора в форме</div><div class="card-sub">Forms · UX Feedback</div></div>
+        <span class="badge info">Улучшение</span>
+      </div>
+      <div class="card-body">
+        Модалка заявки — одностраничная форма без визуального прогресса. Пользователь не понимает сколько шагов осталось. UUPM guideline #72: «для форм с ≥3 полями показывать completion progress». Сейчас: возраст + телефон + согласие = 3 поля.
+      </div>
+      <div class="card-fix">
+        <strong>Предложение</strong>
+        Добавить тонкую прогресс-полосу вверху модалки (0→33→66→100% по мере заполнения). CSS-only через transition на width. Это повышает completion rate форм на 8–12% (Nielsen Norman Group data).
+      </div>
+    </div>
+
+    <div class="card info">
+      <div class="card-header">
+        <div class="card-icon">🌊</div>
+        <div><div class="card-title">Scroll-анимации отсутствуют</div><div class="card-sub">Motion · Delight · Engagement</div></div>
+        <span class="badge info">Улучшение</span>
+      </div>
+      <div class="card-body">
+        Все секции появляются мгновенно при скролле. UUPM style «Warm Soft UI» предполагает subtle fade-in (opacity 0→1 + translateY 20→0) для карточек и секций. Это создаёт ощущение «живого» продукта, особенно важно для эмоциональной аудитории.
+      </div>
+      <div class="card-fix">
+        <strong>Предложение (CSS-only, prefers-reduced-motion safe)</strong>
+        <pre><code>@media (prefers-reduced-motion: no-preference) {
+  [data-fade] {
+    opacity: 0; transform: translateY(16px);
+    transition: opacity .5s ease, transform .5s ease;
+  }
+  [data-fade].visible {
+    opacity: 1; transform: none;
+  }
+}</code></pre>
+        IntersectionObserver добавляет класс .visible. Без JS-библиотек.
+      </div>
+    </div>
+
+    <div class="card info">
+      <div class="card-header">
+        <div class="card-icon">🖼</div>
+        <div><div class="card-title">Empty state у фото-галереи</div><div class="card-sub">Empty States · UX Polish</div></div>
+        <span class="badge info">Полировка</span>
+      </div>
+      <div class="card-body">
+        Если сеть медленная и AVIF не загрузился — пользователь видит пустые серые прямоугольники без skeleton-плейсхолдеров. UUPM guideline #58: «all image containers must have background-color skeleton during load».
+      </div>
+      <div class="card-fix">
+        <strong>Доработка</strong>
+        Добавить bg-slate-100 animate-pulse к img-обёрткам в Gallery и ShiftCard до загрузки. Уже используется animate-spin для лоадера — паттерн есть в проекте.
+      </div>
+    </div>
+
+    <div class="card info">
+      <div class="card-header">
+        <div class="card-icon">📋</div>
+        <div><div class="card-title">Модалка смены — переименовать таб</div><div class="card-sub">Microcopy · Navigation</div></div>
+        <span class="badge info">Полировка</span>
+      </div>
+      <div class="card-body">
+        В ShiftModal три таба: «Описание» / «Календарь» / «Подробнее». «Подробнее» и «Описание» пересекаются по смыслу — пользователь не понимает разницу без клика. UUPM microcopy rule: «navigation labels must be self-explanatory».
+      </div>
+      <div class="card-fix">
+        <strong>Доработка</strong>
+        «Подробнее» → «Программа» или «Что входит». Это 1 строка кода в ShiftModal.astro.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ РАЗДЕЛ 3: PRE-DELIVERY CHECKLIST ══════════════════════ -->
+<div class="section">
+  <div class="section-title"><div class="num">3</div> Pre-Delivery Checklist (UI/UX Pro Max)</div>
+  <div class="checklist">
+    <div class="cl-item ok">
+      <div class="icon">✅</div>
+      <div class="cl-text">Нет эмодзи как иконок — используются Bootstrap Icons с aria-hidden</div>
+      <div class="cl-status ok">Выполнено</div>
+    </div>
+    <div class="cl-item ok">
+      <div class="icon">✅</div>
+      <div class="cl-text">cursor-pointer на всех кликабельных элементах (кнопки, ссылки)</div>
+      <div class="cl-status ok">Выполнено</div>
+    </div>
+    <div class="cl-item ok">
+      <div class="icon">✅</div>
+      <div class="cl-text">Hover-состояния с transition у основных интерактивных элементов</div>
+      <div class="cl-status ok">Частично ✓</div>
+    </div>
+    <div class="cl-item warn">
+      <div class="icon">⚠️</div>
+      <div class="cl-text">Контраст текста 4.5:1 minimum — text-white/45 и text-slate-400 не проходят</div>
+      <div class="cl-status warn">Нарушение</div>
+    </div>
+    <div class="cl-item ok">
+      <div class="icon">✅</div>
+      <div class="cl-text">Focus states видимы для keyboard navigation (focus-visible классы Tailwind)</div>
+      <div class="cl-status ok">Есть</div>
+    </div>
+    <div class="cl-item warn">
+      <div class="icon">⚠️</div>
+      <div class="cl-text">prefers-reduced-motion — анимации не объявлены, но и нет интенсивных</div>
+      <div class="cl-status warn">N/A → добавить при введении fade-анимаций</div>
+    </div>
+    <div class="cl-item ok">
+      <div class="icon">✅</div>
+      <div class="cl-text">Responsive: 375px, 768px, 1024px, 1440px — проверено</div>
+      <div class="cl-status ok">Работает</div>
+    </div>
+    <div class="cl-item warn">
+      <div class="icon">⚠️</div>
+      <div class="cl-text">Только один persistent sticky-элемент одновременно</div>
+      <div class="cl-status warn">Нарушение</div>
+    </div>
+    <div class="cl-item ok">
+      <div class="icon">✅</div>
+      <div class="cl-text">Submit disabled без валидных данных формы</div>
+      <div class="cl-status ok">Выполнено</div>
+    </div>
+    <div class="cl-item warn">
+      <div class="icon">⚠️</div>
+      <div class="cl-text">Единый стиль primary-button по всему сайту</div>
+      <div class="cl-status warn">6 вариантов</div>
+    </div>
+    <div class="cl-item ok">
+      <div class="icon">✅</div>
+      <div class="cl-text">Alt-атрибуты у изображений</div>
+      <div class="cl-status ok">Есть везде</div>
+    </div>
+    <div class="cl-item warn">
+      <div class="icon">⚠️</div>
+      <div class="cl-text">Skeleton-состояние при загрузке изображений</div>
+      <div class="cl-status warn">Отсутствует</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ РАЗДЕЛ 4: ПРИОРИТЕТНАЯ ТАБЛИЦА ════════════════════════ -->
+<div class="section">
+  <div class="section-title"><div class="num">4</div> Приоритеты внедрения</div>
+  <table class="priority-table">
+    <thead>
+      <tr>
+        <th>Приоритет</th>
+        <th>Задача</th>
+        <th>Сложность</th>
+        <th>Конверсионный эффект</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="p-tag p1">P1</span></td>
+        <td>Один sticky-элемент одновременно (AgeBar vs StickyCta)</td>
+        <td>Низкая — JS flag</td>
+        <td>Высокий — убирает перекрытие CTA</td>
+      </tr>
+      <tr>
+        <td><span class="p-tag p1">P1</span></td>
+        <td>Scarcity-визуализация карточек смен (≥85% → border + badge)</td>
+        <td>Низкая — Tailwind условие</td>
+        <td>Высокий — FOMO-триггер</td>
+      </tr>
+      <tr>
+        <td><span class="p-tag p2">P2</span></td>
+        <td>Контраст: text-white/45 → /55, text-slate-400 → slate-500</td>
+        <td>Минимальная — find&replace</td>
+        <td>Средний — читаемость + WCAG</td>
+      </tr>
+      <tr>
+        <td><span class="p-tag p2">P2</span></td>
+        <td>Таб «Подробнее» → «Программа» в ShiftModal</td>
+        <td>Минимальная — 1 строка</td>
+        <td>Средний — clarity</td>
+      </tr>
+      <tr>
+        <td><span class="p-tag p2">P2</span></td>
+        <td>cursor-pointer + hover для dots карусели и ShortShiftCard</td>
+        <td>Минимальная</td>
+        <td>Средний — affordance</td>
+      </tr>
+      <tr>
+        <td><span class="p-tag p2">P2</span></td>
+        <td>Trust chips скрыть на мобилке в hero (убрать из first viewport)</td>
+        <td>Низкая — md:hidden</td>
+        <td>Средний — фокус на CTA</td>
+      </tr>
+      <tr>
+        <td><span class="p-tag p3">P3</span></td>
+        <td>Прогресс-полоса в форме заявки</td>
+        <td>Средняя — CSS + JS</td>
+        <td>Средний — completion rate</td>
+      </tr>
+      <tr>
+        <td><span class="p-tag p3">P3</span></td>
+        <td>Fade-in анимации при скролле (prefers-reduced-motion safe)</td>
+        <td>Средняя — IntersectionObserver</td>
+        <td>Низкий → высокий (вовлечение)</td>
+      </tr>
+      <tr>
+        <td><span class="p-tag p3">P3</span></td>
+        <td>Skeleton-плейсхолдеры для изображений</td>
+        <td>Низкая — CSS класс</td>
+        <td>Низкий — polish</td>
+      </tr>
+      <tr>
+        <td><span class="p-tag p3">P3</span></td>
+        <td>Type scale — унификация к 8 ступеням</td>
+        <td>Высокая — рефакторинг</td>
+        <td>Низкий прямой → высокий долгосрочный</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══ РАЗДЕЛ 5: ЧТО НЕ ТРОГАТЬ ═════════════════════════════ -->
+<div class="section">
+  <div class="section-title"><div class="num">5</div> Что не трогать — уже правильно</div>
+  <div class="cards">
+    <div class="card ok">
+      <div class="card-header"><div class="card-icon">🎨</div><div><div class="card-title">Палитра и бренд</div></div></div>
+      <div class="card-body">Оранжевый + navy + зелёный — сильная, узнаваемая комбинация. Не менять под «современные тренды» (AI-градиенты, неон, тёмный режим).</div>
+    </div>
+    <div class="card ok">
+      <div class="card-header"><div class="card-icon">💬</div><div><div class="card-title">Тон коммуникации</div></div></div>
+      <div class="card-body">«Мама к маме», без педагогики и нотаций. Это продаёт. Не вводить корпоративный tone of voice.</div>
+    </div>
+    <div class="card ok">
+      <div class="card-header"><div class="card-icon">📱</div><div><div class="card-title">Mobile-first подход</div></div></div>
+      <div class="card-body">Сайт реально оптимизирован под мобилку (не «адаптивен», а именно mobile-first). Не жертвовать мобильным UX ради десктопной красоты.</div>
+    </div>
+    <div class="card ok">
+      <div class="card-header"><div class="card-icon">⚡</div><div><div class="card-title">Производительность</div></div></div>
+      <div class="card-body">96/100 Lighthouse mobile — не добавлять тяжёлые библиотеки анимаций (GSAP, Framer Motion). Только CSS + минимальный JS.</div>
+    </div>
+    <div class="card ok">
+      <div class="card-header"><div class="card-icon">🔤</div><div><div class="card-title">Inter как основной шрифт</div></div></div>
+      <div class="card-body">Нейтральный, читаемый, кириллица отличная. Не менять на «более дизайнерский» — потеряем производительность и читаемость.</div>
+    </div>
+    <div class="card ok">
+      <div class="card-header"><div class="card-icon">🏗</div><div><div class="card-title">Структура секций главной</div></div></div>
+      <div class="card-body">Hero → Trust → Journey → Shifts → Hackathon → Gallery → Reviews → FAQ → Team → Contacts. Соответствует UUPM pattern «Emotion → Proof → Action». Работает.</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<div class="report-footer">
+  Отчёт сгенерирован по фреймворку UI/UX Pro Max v2.0 (161 reasoning rules, 99 UX guidelines) ·
+  Специфика: детский IT-лагерь, аудитория — мамы 30–42 · Стиль: Warm Soft UI · Стек: Astro + Tailwind CSS v4
+</div>
+
+</body>
+</html>

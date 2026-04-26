@@ -412,6 +412,287 @@
   pointer-events: none;
 }
 
+/* ============================================================
+   HERO-BG ANIMATED — production версии 18 эффектов из demo.
+   Применяются через [data-hero-bg="..."] (отдельный атрибут от data-hero-effect).
+   На mobile (≤768px) анимации ОТКЛЮЧАЮТСЯ + рендерится статический fallback.
+   ============================================================ */
+
+[data-hero-bg] {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* === aurora === (T2 / главная — но НЕ ставим на главную по требованию) */
+[data-hero-bg="aurora"] {
+  background:
+    radial-gradient(ellipse 70% 50% at 30% 30%, rgba(34,197,94,0.3) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 70% 60%, rgba(56,189,248,0.25) 0%, transparent 60%),
+    #000208;
+}
+[data-hero-bg="aurora"]::before {
+  content: ''; position: absolute; inset: -10%; z-index: 1; pointer-events: none;
+  background: inherit; filter: blur(40px);
+  animation: hb-aurora 6s ease-in-out infinite alternate;
+}
+@keyframes hb-aurora {
+  0% { transform: translate(0,0) scale(1); }
+  100% { transform: translate(3%,-2%) scale(1.05); }
+}
+
+/* === star-genesis === */
+[data-hero-bg="star-genesis"] {
+  background:
+    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(127,0,255,0.25), transparent 60%),
+    radial-gradient(circle 2px at 18% 25%, white, transparent 70%),
+    radial-gradient(circle 2px at 38% 60%, white, transparent 70%),
+    radial-gradient(circle 2px at 65% 35%, white, transparent 70%),
+    radial-gradient(circle 2px at 88% 70%, white, transparent 70%),
+    #000;
+}
+[data-hero-bg="star-genesis"]::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: inherit;
+  animation: hb-breathe 6s ease-in-out infinite alternate;
+  filter: blur(20px); opacity: 0.5;
+}
+@keyframes hb-breathe { from { transform: scale(1); } to { transform: scale(1.08) rotate(8deg); } }
+
+/* === fireflies (CSS-fallback, без canvas) === */
+[data-hero-bg="fireflies"] {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 50%, rgba(180,220,80,0.18) 0%, transparent 60%),
+    #081210;
+}
+[data-hero-bg="fireflies"]::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    radial-gradient(circle 6px at 15% 25%, rgba(255,230,100,0.95), transparent 70%),
+    radial-gradient(circle 5px at 38% 60%, rgba(255,230,100,0.85), transparent 70%),
+    radial-gradient(circle 7px at 65% 35%, rgba(255,230,100,0.9), transparent 70%),
+    radial-gradient(circle 5px at 88% 70%, rgba(255,230,100,0.8), transparent 70%);
+  filter: drop-shadow(0 0 8px rgba(255,230,100,0.5));
+  animation: hb-flicker 6s ease-in-out infinite alternate;
+}
+@keyframes hb-flicker { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+/* === hexagons === */
+[data-hero-bg="hexagons"] {
+  background:
+    radial-gradient(circle 4px at 25% 30%, #f5a624, transparent 70%),
+    radial-gradient(circle 4px at 50% 50%, #f5a624, transparent 70%),
+    radial-gradient(circle 4px at 75% 70%, #f5a624, transparent 70%),
+    radial-gradient(circle 4px at 65% 25%, #ec7c00, transparent 70%),
+    radial-gradient(circle 4px at 35% 75%, #ec7c00, transparent 70%),
+    #050510;
+}
+[data-hero-bg="hexagons"]::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: inherit;
+  animation: hb-flicker 6s ease-in-out infinite;
+}
+
+/* === neon-network === */
+[data-hero-bg="neon-network"] {
+  background:
+    radial-gradient(circle 6px at 18% 30%, hsl(280,80%,60%), transparent 70%),
+    radial-gradient(circle 6px at 50% 60%, hsl(180,80%,60%), transparent 70%),
+    radial-gradient(circle 6px at 82% 35%, hsl(60,80%,60%), transparent 70%),
+    #0d1a2b;
+}
+[data-hero-bg="neon-network"]::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    linear-gradient(33deg, transparent 49.7%, rgba(196,181,253,0.25) 49.7% 50.3%, transparent 50.3%),
+    linear-gradient(-12deg, transparent 49.7%, rgba(196,181,253,0.2) 49.7% 50.3%, transparent 50.3%);
+  animation: hb-flicker 6s ease-in-out infinite;
+}
+
+/* === synthwave === */
+[data-hero-bg="synthwave"] {
+  background: linear-gradient(to bottom, #110022 0%, #050114 60%);
+  perspective: 600px;
+}
+[data-hero-bg="synthwave"]::before {
+  content: ''; position: absolute; top: 12%; left: 50%; transform: translateX(-50%);
+  width: 200px; height: 200px;
+  background: linear-gradient(to bottom, #ffea00 0%, #ff0055 60%, transparent 100%);
+  border-radius: 50%; box-shadow: 0 0 50px #ff0055; z-index: 1;
+  mask-image: repeating-linear-gradient(180deg, #000 0 10px, transparent 10px 12px, #000 12px 22px, transparent 22px 26px, #000 26px 100%);
+}
+[data-hero-bg="synthwave"]::after {
+  content: ''; position: absolute; bottom: -50%; left: -50%;
+  width: 200%; height: 200%;
+  transform: rotateX(78deg); transform-origin: top center;
+  background-image: linear-gradient(to right, #f0f 2px, transparent 2px), linear-gradient(to bottom, #f0f 2px, transparent 2px);
+  background-size: 60px 60px;
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 60%);
+  animation: hb-grid-rush 1.6s linear infinite;
+  z-index: 1;
+}
+@keyframes hb-grid-rush { 0% { background-position: 0 0; } 100% { background-position: 0 60px; } }
+
+/* === glass-orbs === */
+[data-hero-bg="glass-orbs"] {
+  background:
+    radial-gradient(circle 120px at 25% 25%, rgba(56,189,248,0.5), transparent 70%),
+    radial-gradient(circle 140px at 75% 70%, rgba(129,140,248,0.5), transparent 70%),
+    linear-gradient(to bottom right, #0f172a, #1e1b4b);
+}
+[data-hero-bg="glass-orbs"]::before, [data-hero-bg="glass-orbs"]::after {
+  content: ''; position: absolute; border-radius: 50%; filter: blur(80px); z-index: 1; pointer-events: none;
+}
+[data-hero-bg="glass-orbs"]::before {
+  width: 320px; height: 320px; background: #38bdf8;
+  top: -80px; left: -60px;
+  animation: hb-orb 6s infinite ease-in-out alternate;
+}
+[data-hero-bg="glass-orbs"]::after {
+  width: 380px; height: 380px; background: #818cf8;
+  bottom: -100px; right: -80px;
+  animation: hb-orb 6s infinite ease-in-out alternate -3s;
+}
+@keyframes hb-orb {
+  0% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(60px,-40px) scale(1.1); }
+  100% { transform: translate(-30px,50px) scale(0.95); }
+}
+
+/* === ascendant (хакатон / try) === */
+[data-hero-bg="ascendant"] {
+  background:
+    radial-gradient(ellipse 60% 80% at 50% 100%, rgba(255,238,204,0.35) 0%, transparent 70%),
+    #1a1a2e;
+}
+[data-hero-bg="ascendant"]::before {
+  content: ''; position: absolute; top: -20%; left: 50%; width: 300%; height: 150%;
+  transform: translateX(-50%); z-index: 1; pointer-events: none;
+  background: linear-gradient(45deg, transparent 40%, rgba(255,238,204,0.25) 48%, rgba(255,238,204,0.25) 52%, transparent 60%);
+  mask-image: radial-gradient(ellipse at 50% -20%, #000 20%, transparent 70%);
+  animation: hb-pan 6s infinite linear;
+}
+@keyframes hb-pan { from { transform: translateX(-50%) rotate(-40deg); } to { transform: translateX(-50%) rotate(40deg); } }
+
+/* === cosmic === */
+[data-hero-bg="cosmic"] {
+  background:
+    radial-gradient(circle 2px at 18% 25%, white, transparent 70%),
+    radial-gradient(circle 2px at 38% 60%, white, transparent 70%),
+    radial-gradient(circle 2px at 65% 35%, white, transparent 70%),
+    radial-gradient(circle 2px at 88% 70%, white, transparent 70%),
+    radial-gradient(circle 2px at 12% 85%, white, transparent 70%),
+    radial-gradient(circle 2px at 50% 15%, white, transparent 70%),
+    radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+}
+[data-hero-bg="cosmic"]::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: inherit;
+  animation: hb-flicker 6s ease-in-out infinite;
+}
+
+/* === interactive-stars (без mouse, только звёзды) === */
+[data-hero-bg="interactive-stars"] {
+  background:
+    radial-gradient(circle 1.5px at 18% 25%, white, transparent 70%),
+    radial-gradient(circle 1.5px at 38% 60%, white, transparent 70%),
+    radial-gradient(circle 1.5px at 65% 35%, white, transparent 70%),
+    radial-gradient(circle 1.5px at 88% 70%, white, transparent 70%),
+    linear-gradient(180deg, #02021e, #08104d);
+}
+[data-hero-bg="interactive-stars"]::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    linear-gradient(33deg, transparent 49.7%, rgba(150,200,255,0.15) 49.7% 50.3%, transparent 50.3%),
+    linear-gradient(-12deg, transparent 49.7%, rgba(150,200,255,0.12) 49.7% 50.3%, transparent 50.3%);
+  animation: hb-flicker 6s ease-in-out infinite;
+}
+
+/* === quantum (CSS-fallback) === */
+[data-hero-bg="quantum"] {
+  background:
+    radial-gradient(circle 8px at 18% 30%, #ff8a00, transparent 70%),
+    radial-gradient(circle 8px at 50% 60%, #f5a624, transparent 70%),
+    radial-gradient(circle 8px at 80% 35%, #ff8a00, transparent 70%),
+    radial-gradient(circle 8px at 30% 75%, #f5a624, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 50% 50%, rgba(255,138,0,0.18) 0%, transparent 60%),
+    #0d1a2b;
+}
+[data-hero-bg="quantum"]::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    linear-gradient(33deg, transparent 49.7%, rgba(255,138,0,0.25) 49.7% 50.3%, transparent 50.3%),
+    linear-gradient(-12deg, transparent 49.7%, rgba(255,138,0,0.2) 49.7% 50.3%, transparent 50.3%);
+  animation: hb-flicker 6s ease-in-out infinite;
+}
+
+/* === circuit (CSS-fallback) === */
+[data-hero-bg="circuit"] {
+  background:
+    linear-gradient(rgba(56,189,248,0.18) 1px, transparent 1px) 0 0/40px 40px,
+    linear-gradient(90deg, rgba(56,189,248,0.18) 1px, transparent 1px) 0 0/40px 40px,
+    radial-gradient(circle 4px at 25% 30%, rgba(186,230,253,0.95), transparent 70%),
+    radial-gradient(circle 4px at 70% 60%, rgba(186,230,253,0.95), transparent 70%),
+    #050510;
+}
+
+/* === fiber (CSS-fallback — radial tunnel) === */
+[data-hero-bg="fiber"] {
+  background:
+    repeating-radial-gradient(circle at center, transparent 0 30px, rgba(255,138,0,0.18) 30px 32px),
+    radial-gradient(ellipse at center, #ff8a00 0%, #050510 70%);
+}
+
+/* === particle-flow (CSS-fallback) === */
+[data-hero-bg="particle-flow"] {
+  background:
+    radial-gradient(circle 8px at 15% 25%, #f472b6, transparent 70%),
+    radial-gradient(circle 8px at 38% 60%, #fde047, transparent 70%),
+    radial-gradient(circle 8px at 65% 35%, #22d3ee, transparent 70%),
+    radial-gradient(circle 8px at 88% 70%, #84cc16, transparent 70%),
+    radial-gradient(ellipse 80% 60%, rgba(15,5,25,0.6), transparent),
+    #1a0e2a;
+}
+[data-hero-bg="particle-flow"]::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: inherit; opacity: 0.4;
+  animation: hb-flicker 6s ease-in-out infinite;
+}
+
+/* === hex-code-wave (только Python-страницы) === */
+[data-hero-bg="hex-code-wave"] {
+  background:
+    repeating-linear-gradient(90deg, transparent 0 14px, rgba(42,60,75,0.45) 14px 16px),
+    #0d0d12;
+  color: #2a3c4b;
+}
+[data-hero-bg="hex-code-wave"]::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(90deg, transparent 0%, rgba(126,249,255,0.15) 50%, transparent 100%);
+  animation: hb-sweep 6s linear infinite;
+}
+@keyframes hb-sweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+/* === matrix-rain / crt-boot — ТОЛЬКО на /admin/ /404/ — не показываем родителям === */
+/* (опускаем — будут отдельно) */
+
+/* ============================================================
+   MOBILE FALLBACK: ≤ 768px — все hero-bg анимации выключаются
+   ============================================================ */
+@media (max-width: 768px) {
+  [data-hero-bg] *, [data-hero-bg]::before, [data-hero-bg]::after {
+    animation: none !important;
+  }
+  /* synthwave perspective тяжёлая — выключаем перспективу */
+  [data-hero-bg="synthwave"] { perspective: none; }
+  [data-hero-bg="synthwave"]::after { transform: none; mask-image: none; opacity: 0.3; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-hero-bg] *, [data-hero-bg]::before, [data-hero-bg]::after {
+    animation: none !important;
+  }
+}
+
 /* ===== T2 Лендинги: mesh (A) — 3 анимированных блоба ===== */
 .lp-blob {
   border-radius: 50%;
