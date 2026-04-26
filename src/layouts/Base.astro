@@ -55,14 +55,23 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     <link rel="preconnect" href="https://privacy-cs.mail.ru" />
     <link rel="dns-prefetch" href="https://privacy-cs.mail.ru" />
     <script is:inline>
-      if (window.location.search.includes('ym_disable=1')) {
+      // === Аналитика: отключение для тестовых страниц + ботов ===
+      // A. Внутренние страницы (demo/admin/ask-test) — Метрика и Clarity не запускаются
+      var __isInternalPath = /^\/(demo|admin|ask-test)\b/.test(location.pathname);
+      // B. Боты: webdriver (Puppeteer/Playwright/Selenium), известные UA, headless без plugins
+      var __ua = navigator.userAgent || '';
+      var __isBot = navigator.webdriver === true
+        || /bot|crawl|spider|headless|puppeteer|playwright|phantom|chrome-lighthouse|gptbot|claudebot|perplexity|ahrefs|semrush|googlebot|yandexbot|bingbot|duckduckbot|applebot|facebookexternalhit/i.test(__ua)
+        || (navigator.plugins && navigator.plugins.length === 0 && /Chrome/.test(__ua) && !/Mobile/.test(__ua));
+
+      if (window.location.search.includes('ym_disable=1') || __isInternalPath || __isBot) {
         document.cookie = 'ym_disable96499295=true; expires=Thu, 31 Dec 2099 23:59:59 UTC; path=/';
         document.cookie = 'clarity_disable=true; expires=Thu, 31 Dec 2099 23:59:59 UTC; path=/';
       }
-      if (document.cookie.indexOf('ym_disable96499295=true') !== -1) {
+      if (document.cookie.indexOf('ym_disable96499295=true') !== -1 || __isInternalPath || __isBot) {
         window.ym_disable96499295 = true;
       }
-      if (document.cookie.indexOf('clarity_disable=true') !== -1) {
+      if (document.cookie.indexOf('clarity_disable=true') !== -1 || __isInternalPath || __isBot) {
         window._clarityDisabled = true;
       }
     </script>
