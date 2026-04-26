@@ -1,0 +1,87 @@
+---
+import '../../styles/global.css';
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import { allShifts } from '../../data/shifts';
+import ShiftCard from '../../components/shifts/ShiftCard.astro';
+import ShiftCardV1Premium from '../../components/shifts/ShiftCardV1Premium.astro';
+import ShiftCardV2Booking from '../../components/shifts/ShiftCardV2Booking.astro';
+import ShiftCardV3Parent from '../../components/shifts/ShiftCardV3Parent.astro';
+
+const variants = [
+  { id: 'control', label: 'CONTROL', name: 'Текущий ShiftCard', notes: 'Что сейчас в проде. Базовая линия для A/B' },
+  { id: 'v1',      label: 'ВАРИАНТ 1', name: 'Premium Minimal', notes: 'Минимум элементов · Ясная иерархия · Много воздуха · Премиальный акцент' },
+  { id: 'v2',      label: 'ВАРИАНТ 2', name: 'Booking Style',   notes: 'Карточки как билеты · Легко сравнивать · Информация в одну строчку · Цена и CTA справа' },
+  { id: 'v3',      label: 'ВАРИАНТ 3', name: 'Parent Decision', notes: 'Фокус на пользу для ребёнка · Понятно родителю · Меньше текста — больше пользы · Сильный акцент на выборе' },
+];
+
+// Берём первые 3 смены (включая популярную и короткую) для сравнения
+const sampleShifts = allShifts.slice(0, 3);
+---
+
+<Base title="A/B Demo · 3 варианта дизайна ShiftCard">
+  <Header />
+  <div class="bg-amber-100 text-amber-900 text-center text-[13px] py-1.5 border-b border-amber-200">
+    <strong>DEMO A/B:</strong> 4 варианта карточек смен · логика идентична · prod не тронут
+  </div>
+
+  <main class="bg-slate-100 py-8">
+    {variants.map(v => (
+      <section class="mx-auto max-w-[1440px] px-6 mb-12">
+        <div class="grid grid-cols-[200px_1fr] gap-6 items-start">
+          <!-- Левая колонка: описание варианта -->
+          <div class="sticky top-6">
+            <span class={`inline-block rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${v.id === 'control' ? 'bg-slate-200 text-slate-700' : 'bg-emerald-100 text-emerald-700'}`}>
+              {v.label}
+            </span>
+            <h2 class="mt-2 text-[20px] font-bold text-slate-900">{v.name}</h2>
+            <ul class="mt-3 space-y-1.5 text-[13px] text-slate-600">
+              {v.notes.split(' · ').map(n => (
+                <li class="flex items-start gap-1.5">
+                  <i class="bi bi-check-circle-fill text-emerald-500 mt-0.5 shrink-0 text-[12px]" aria-hidden="true"></i>
+                  <span>{n}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <!-- Правая колонка: 3 карточки -->
+          <div class={`grid gap-4 ${v.id === 'v2' ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'}`}>
+            {sampleShifts.map(shift => (
+              <>
+                {v.id === 'control' && <ShiftCard shift={shift} />}
+                {v.id === 'v1' && <ShiftCardV1Premium shift={shift} />}
+                {v.id === 'v2' && <ShiftCardV2Booking shift={shift} />}
+                {v.id === 'v3' && <ShiftCardV3Parent shift={shift} />}
+              </>
+            ))}
+          </div>
+        </div>
+      </section>
+    ))}
+
+    <!-- A/B-метрики которые предлагаю мерять -->
+    <section class="mx-auto max-w-[1440px] px-6 mt-16">
+      <div class="rounded-[16px] bg-white p-6 border border-slate-200">
+        <h2 class="text-[18px] font-bold text-slate-900 mb-4">Что мерять в A/B-тесте</h2>
+        <div class="grid md:grid-cols-3 gap-4 text-[14px]">
+          <div>
+            <p class="font-semibold text-slate-800 mb-1">📊 Primary metric</p>
+            <p class="text-slate-600">Клик «Выбрать смену» → открытие ShiftBookModal (цель Метрики 545216463)</p>
+          </div>
+          <div>
+            <p class="font-semibold text-slate-800 mb-1">📊 Secondary</p>
+            <p class="text-slate-600">CTR карточки (любой клик), bounce-rate сессии после раздела Shifts</p>
+          </div>
+          <div>
+            <p class="font-semibold text-slate-800 mb-1">📊 Negative guard</p>
+            <p class="text-slate-600">% времени до первого клика (если выросло — UI стал хуже)</p>
+          </div>
+        </div>
+        <p class="mt-4 text-[13px] text-slate-500">
+          Распределение трафика: 25/25/25/25 (control + 3 варианта). Минимум 200 кликов «Выбрать смену» на вариант для значимости.
+        </p>
+      </div>
+    </section>
+  </main>
+</Base>

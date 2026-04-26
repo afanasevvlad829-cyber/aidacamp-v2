@@ -626,37 +626,62 @@
   animation: hb-flicker 6s ease-in-out infinite;
 }
 
-/* === circuit (CSS-fallback) === */
+/* === circuit — сетка + бегущие электроны === */
 [data-hero-bg="circuit"] {
   background:
     linear-gradient(rgba(56,189,248,0.18) 1px, transparent 1px) 0 0/40px 40px,
     linear-gradient(90deg, rgba(56,189,248,0.18) 1px, transparent 1px) 0 0/40px 40px,
-    radial-gradient(circle 4px at 25% 30%, rgba(186,230,253,0.95), transparent 70%),
-    radial-gradient(circle 4px at 70% 60%, rgba(186,230,253,0.95), transparent 70%),
     #050510;
 }
+[data-hero-bg="circuit"]::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    radial-gradient(circle 4px at 0% 30%, rgba(186,230,253,1), transparent 70%),
+    radial-gradient(circle 4px at 0% 60%, rgba(186,230,253,1), transparent 70%);
+  filter: drop-shadow(0 0 8px rgba(56,189,248,0.7));
+  animation: hb-electron 3s linear infinite;
+}
+@keyframes hb-electron {
+  0% { transform: translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateX(120%); opacity: 0; }
+}
 
-/* === fiber (CSS-fallback — radial tunnel) === */
+/* === fiber — пульсирующий tunnel === */
 [data-hero-bg="fiber"] {
   background:
     repeating-radial-gradient(circle at center, transparent 0 30px, rgba(255,138,0,0.18) 30px 32px),
     radial-gradient(ellipse at center, #ff8a00 0%, #050510 70%);
 }
+[data-hero-bg="fiber"]::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: radial-gradient(circle at center, rgba(255,138,0,0.5) 0%, transparent 40%);
+  animation: hb-pulse 3s ease-in-out infinite;
+}
+@keyframes hb-pulse {
+  0%,100% { opacity: 0.6; transform: scale(0.95); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
 
-/* === particle-flow (CSS-fallback) === */
+/* === particle-flow — плывущие частицы === */
 [data-hero-bg="particle-flow"] {
   background:
-    radial-gradient(circle 8px at 15% 25%, #f472b6, transparent 70%),
-    radial-gradient(circle 8px at 38% 60%, #fde047, transparent 70%),
-    radial-gradient(circle 8px at 65% 35%, #22d3ee, transparent 70%),
-    radial-gradient(circle 8px at 88% 70%, #84cc16, transparent 70%),
     radial-gradient(ellipse 80% 60%, rgba(15,5,25,0.6), transparent),
     #1a0e2a;
 }
 [data-hero-bg="particle-flow"]::before {
   content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
-  background: inherit; opacity: 0.4;
-  animation: hb-flicker 6s ease-in-out infinite;
+  background:
+    radial-gradient(circle 8px at 15% 25%, #f472b6, transparent 70%),
+    radial-gradient(circle 8px at 38% 60%, #fde047, transparent 70%),
+    radial-gradient(circle 8px at 65% 35%, #22d3ee, transparent 70%),
+    radial-gradient(circle 8px at 88% 70%, #84cc16, transparent 70%);
+  filter: drop-shadow(0 0 6px rgba(255,255,255,0.3));
+  animation: hb-drift 6s ease-in-out infinite alternate;
+}
+@keyframes hb-drift {
+  0% { transform: translate(0,0); }
+  100% { transform: translate(15px,-12px); }
 }
 
 /* === hex-code-wave (только Python-страницы) === */
