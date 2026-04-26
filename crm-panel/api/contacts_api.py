@@ -795,7 +795,7 @@ def get_conversation(customer_id):
                 for r in rows
             ]
 
-        # ── TG — look up via ai_tg_users (same as ETL dossier-v4) ──
+        # ── TG — look up via ai_tg_users (Telegram users table) ──
         if phone10:
             # normalize: try bare 10-digit and with country code 7
             cur.execute("""

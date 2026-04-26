@@ -79,7 +79,7 @@ claude -p "/seo audit https://aidacamp.ru" --no-session-persistence --max-turns 
 ### 2.3. yandex-metrika
 
 **Репо:** https://github.com/altrr2/yandex-tools-mcp
-**Назначение:** Метрика — визиты, источники, цели, конверсии через API (в дополнение к PostgreSQL ETL).
+**Назначение:** Метрика — визиты, источники, цели, конверсии через API (данные запрашиваются через API).
 **Токен:** `YANDEX_METRIKA_TOKEN` (подхватывается автоматически из существующего `/opt/mcp/.env`).
 
 ### 2.4. dataforseo

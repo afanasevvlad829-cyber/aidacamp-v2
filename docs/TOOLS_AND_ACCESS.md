@@ -243,7 +243,7 @@ clarity(report: "pages", period: "month")
 
 | Параметр | Значение |
 |---|---|
-| Скрипт | `/opt/etl/autoban.py` |
+| Скрипт | `/opt/aidacamp-tools/autoban.py` |
 | Запуск | каждые 3 минуты (cron) |
 | Правило LEVEL 2 | расход >80₽ И кликов >3 И не в whitelist |
 | Лог | `/var/log/direct-autoban.log` |
@@ -463,24 +463,21 @@ npm run preview  # превью собранного билда
 # 3. Закоммитить оба файла
 ```
 
-### ETL-скрипты на сервере (`/opt/etl/`)
+### Автоматизационные скрипты на сервере (`/opt/aidacamp-tools/`)
 
-| Скрипт | Что делает | Расписание cron |
-|---|---|---|
-| `run-etl.sh` | Полный ETL: Direct + Metrika + Clarity → PostgreSQL | каждый час 6-21 |
-| `vk-sync.py` | Статистика VK Ads → PostgreSQL | каждый час 6-21 (05 мин) |
-| `autoban.py` | Бан РСЯ площадок (>80₽, >3 кликов) | каждые 3 мин |
-| `search-autoban.py` | Бан поисковых площадок | каждые 3 мин |
-| `search-junk-digest.py` | Дайджест мусорных запросов | 9:00 ежедневно |
-| `excluded-rotator.py` | Ротация минус-площадок | 5:00 ежедневно |
-| `daily-digest.py` | Ежедневный дайджест статистики | 6:00 ежедневно |
-| `direct-status.py` | Алерты Директ (бюджет, статусы) | каждые 30 мин 6-22 |
-| `cm-v3-engine.py` | Critical Monitor v3 (AI-анализ) | каждые 30 мин |
-| `cm-v3-callback-bridge.sh` | Мост коллбэков CM v3 | каждую минуту |
-| `vk-monitor.py` | Мониторинг VK Ads | каждые 30 мин |
-| `seo-positions-snapshot.py` | Снимок SEO-позиций | 7:00 1-го и 15-го |
-| `gapi-wa-*.sh` | WhatsApp рассылки B1-реактивация | по требованию |
-| `backup-to-gdrive.sh` | Бэкап в Google Drive | hourly + daily(3:15) + weekly(4:00 вс) |
+| Скрипт | Что делает | Источник данных | Расписание cron |
+|---|---|---|---|
+| `autoban.py` | Бан РСЯ площадок (>80₽, >3 кликов) | Direct API | каждые 3 мин |
+| `search-autoban.py` | Бан поисковых площадок | Direct API | каждые 3 мин |
+| `search-junk-digest.py` | Дайджест мусорных запросов | Metrika API | 9:00 ежедневно |
+| `excluded-rotator.py` | Ротация минус-площадок | Direct API | 5:00 ежедневно |
+| `daily_intelligence.py` | Ежедневный дайджест + AI-анализ | Direct API, VK API, Metrika API | 20:55 UTC |
+| `budget_watchdog.py` | Алерты бюджета (темп, нули, исчерпание) | Direct API | каждые 10 мин |
+| `critical_monitor.py` | Мониторинг аномалий (расход, CPA, лиды) | Direct API, VK API, Metrika API | каждые 3 часа |
+| `vk-monitor.py` | Специализированный мониторинг VK | VK API | каждые 30 мин |
+| `seo-positions-snapshot.py` | Снимок SEO-позиций | DataForSEO API | 7:00 1-го и 15-го |
+| `gapi-wa-*.sh` | WhatsApp рассылки B1-реактивация | GCP API | по требованию |
+| `backup-to-gdrive.sh` | Бэкап в Google Drive | Google Drive API | hourly + daily(3:15) + weekly(4:00 вс) |
 
 ### Таблицы PostgreSQL (`aidacamp` БД)
 
@@ -551,10 +548,10 @@ EOF"
 | Google Search Console | — | браузер | ✅ рабочий | лимит ~10 URL/день |
 | Яндекс Вебмастер | — | браузер | ✅ рабочий | ручная отправка URL |
 | GitHub | afanasevvlad829-cyber | браузер / git | ✅ рабочий | repo: aidacamp-v2 |
-| Google Drive (бэкап) | — | сервис-аккаунт на сервере | ✅ рабочий | `/opt/etl/backup-to-gdrive.sh` |
+| Google Drive (бэкап) | — | сервис-аккаунт на сервере | ✅ рабочий | `/opt/aidacamp-tools/backup-to-gdrive.sh` |
 | Telegram бот (лиды) | — | `/opt/mcp/.env` (TG_BOT_TOKEN, TG_CHAT_ID) | ✅ рабочий | нотификации в lead.ts |
 | Leadfeeder | YEgkB8lbGVx4ep3Z | Base.astro скрипт | ✅ рабочий | B2B идентификация компаний |
-| WhatsApp API (B1) | — | `/opt/etl/gapi-wa*.sh` | ⚠️ уточнить | рассылки реактивации |
+| WhatsApp API (B1) | — | `/opt/aidacamp-tools/gapi-wa*.sh` | ⚠️ уточнить | рассылки реактивации |
 | Top.Mail.Ru пиксель | 3755202 | Base.astro скрипт | ✅ рабочий | VK атрибуция |
 | n8n | — | — | ❌ не развёрнут | в планах |
 

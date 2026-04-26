@@ -12,13 +12,13 @@
 
 | Источник | Что даёт | Токен | Retention в источнике | Кто читает |
 |---|---|---|---|---|
-| **Яндекс.Директ API v5** | Кампании (статус, бюджет, State), расходы, клики, CPC, площадки РСЯ, поисковые запросы | `DIRECT_TOKEN` / login `kv145` | Статистика за 3 года | `daily_intelligence`, `critical_monitor`, `etl-daily`*, `autoban`*, `search-autoban`*, MCP `direct_*` |
-| **Яндекс.Метрика API** | Визиты, уники, источники (UTM), цели (заявки), отказы, время на сайте | `METRIKA_TOKEN` / counter `96499295` | История за 3+ года | `daily_intelligence`, `critical_monitor`, `etl-daily`*, `vk-costs-to-metrika`, MCP `metrika_*` |
-| **VK Ads API** | Кампании, группы, объявления, расходы, клики, показы, аудитории | `VK_TOKEN` / `VK_ACCOUNT_ID` | История за 2 года | `daily_intelligence`, `critical_monitor`, `vk-sync`*, `vk-monitor`, MCP `vk_*` |
-| **Microsoft Clarity** | Сессии, rage-clicks, dead-clicks, карты прокрутки, страницы с проблемами | `CLARITY_TOKEN` | 30 дней в Clarity | `etl-daily`*, MCP `clarity` |
+| **Яндекс.Директ API v5** | Кампании (статус, бюджет, State), расходы, клики, CPC, площадки РСЯ, поисковые запросы | `DIRECT_TOKEN` / login `kv145` | Статистика за 3 года | `daily_intelligence`, `critical_monitor`, MCP `direct_*` |
+| **Яндекс.Метрика API** | Визиты, уники, источники (UTM), цели (заявки), отказы, время на сайте | `METRIKA_TOKEN` / counter `96499295` | История за 3+ года | `daily_intelligence`, `critical_monitor`, `vk-costs-to-metrika`, MCP `metrika_*` |
+| **VK Ads API** | Кампании, группы, объявления, расходы, клики, показы, аудитории | `VK_TOKEN` / `VK_ACCOUNT_ID` | История за 2 года | `daily_intelligence`, `critical_monitor`, `vk-monitor`, MCP `vk_*` |
+| **Microsoft Clarity** | Сессии, rage-clicks, dead-clicks, карты прокрутки, страницы с проблемами | `CLARITY_TOKEN` | 30 дней в Clarity | MCP `clarity` |
 | **Google PageSpeed** | Core Web Vitals, LCP, CLS, FID, оценка mobile/desktop | `PAGESPEED_KEY` | Нет retention (live запрос) | MCP `pagespeed` |
-| **Google Search Console** | Позиции ключевых слов, CTR, клики, показы по запросам | `GSC_CREDENTIALS_PATH` | 16 месяцев | `seo-positions-snapshot`, `gsc-sync` |
-| **Яндекс.Вебмастер** | Позиции в Яндекс.Поиске по ключевым словам | `WEBMASTER_TOKEN` | 3 месяца | `seo-positions-snapshot` |
+| **Google Search Console** | Позиции ключевых слов, CTR, клики, показы по запросам | `GSC_CREDENTIALS_PATH` | 16 месяцев | ⚠️ API-FIRST: прямые запросы (snapshot deprecated) |
+| **Яндекс.Вебмастер** | Позиции в Яндекс.Поиске по ключевым словам | `WEBMASTER_TOKEN` | 3 месяца | ⚠️ API-FIRST: прямые запросы (snapshot deprecated) |
 | **AlfaCRM API** | Клиенты (ФИО, телефон, статус, смены, уроки, оплаты) | `ALFACRM_API_KEY` / `ALFACRM_HOST` | Постоянно в AlfaCRM | `alfa_sync`, `refresh_enrolled`, MCP `direct_leads` |
 | **Green-API (WhatsApp)** | Входящие/исходящие WA-сообщения клиентов | `GREEN_API_WA_ID_INSTANCE` / `GREEN_API_WA_TOKEN` | 24 ч в Green-API | `darya_feedback`, `morning_digest` |
 | **Green-API (Telegram)** | Входящие/исходящие TG-сообщения (через WA-gateway) | `GREEN_API_TG_ID_INSTANCE` / `GREEN_API_TG_TOKEN` | 24 ч | `darya_feedback` |
@@ -31,8 +31,6 @@
 | **DataForSEO** | SEO-данные, SERP, позиции конкурентов | `DATAFORSEO_LOGIN` / `DATAFORSEO_KEY` | — | Не используется в скриптах (зарезервировано) |
 | **Kinescope** | Видеохостинг (embed, статистика просмотров) | `KINESCOPE_TOKEN` | На Kinescope | Не используется в скриптах (зарезервировано) |
 | **Google Maps** | Геолокация, адрес лагеря | `GOOGLE_MAPS_KEY` | — | Фронтенд (JS) |
-
-> *\* Отключён (ETL устранён 22.04.2026)*
 
 ---
 
@@ -56,13 +54,9 @@
 | **`ai_decisions`** | PG таблица | БД | Зафиксированные решения (14-дневный контекст для агентов) | Ручной + `darya_feedback` | `daily_intelligence` |
 | **`ai_hypotheses`** | PG таблица | БД | Активные гипотезы (testing/proposed) | Ручной | `daily_intelligence` |
 | **`ai_user_preferences`** | PG таблица | БД | Настройки: бюджеты, предпочтения, правила | `callback_listener`, ручной | `daily_intelligence`, `budget_pace` |
-| **`seo_position_snapshots`** | PG таблица | БД | Снэпшоты позиций 1-го и 15-го числа | `seo-positions-snapshot` | Аналитика (ручная) |
-| **ETL-таблицы** (устарели) | PG таблицы | БД | Рекламная статистика Direct/VK/Metrika/Clarity | `etl-daily`*, `vk-sync`* | `weekly_digest`⚠️, `daily-digest`⚠️, `budget_pace`⚠️ |
+| **`seo_position_snapshots`** | PG таблица | БД | ⚠️ DEPRECATED: снэпшоты позиций (агенты используют GSC/Webmaster API напрямую 24.04.2026) | ⚠️ `seo-positions-snapshot` (deprecated) | Только ручная аналитика |
 | **`camp_enrolled.json`** | JSON файл | `/opt/aidacamp-tools/crm-panel/api/` | ID клиентов записанных на смены | `refresh_enrolled` | `contacts_api` (фильтр "уже записан") |
 | **`contexts_cache.json`** | JSON файл | `/opt/aidacamp-tools/crm-panel/api/` | Кэш AI-контекстов клиентов | `enrich_contacts` (устаревший путь) | `contacts_api` (fallback если PG пуст) |
-| **`etl/.env`** | ENV файл | `/opt/aidacamp-tools/etl/` | Все API-токены и настройки | Ручной | Все скрипты на сервере |
-
-> *⚠️ Читают устаревшие данные — ETL отключён с 22.04.2026*
 
 ---
 
@@ -75,14 +69,14 @@
 | Яндекс.Директ | `Yandex` | `DIRECT_TOKEN` | ✅ Активен | `daily_intelligence`, `critical_monitor`, MCP `direct_*` |
 | Яндекс.Метрика (read) | `Metrika` | `METRIKA_TOKEN` | ✅ Активен | `daily_intelligence`, `critical_monitor`, MCP `metrika_*` |
 | Яндекс.Метрика (write) | `merika_write` | `METRIKA_WRITE_TOKEN` | 🟡 Зарезервирован | `vk-costs-to-metrika` |
-| Яндекс.Вебмастер | `WebMaster` | `WEBMASTER_TOKEN` | ✅ Активен | `seo-positions-snapshot` |
+| Яндекс.Вебмастер | `WebMaster` | `WEBMASTER_TOKEN` | ✅ Активен | ⚠️ API-FIRST: прямые запросы (не snapshot) |
 | Яндекс.Wordstat | `Wordstat` | `WORDSTAT_TOKEN` | 🟡 Зарезервирован | Не используется в скриптах |
 | Яндекс.Диск | `Yandex_disk` | `YADISK_TOKEN` | ✅ Активен | MCP `photos`, `yadisk.sh` |
 | VK Реклама | `VK-business` | `VK_TOKEN` / `VK_ACCOUNT_ID` | ✅ Активен | `daily_intelligence`, `critical_monitor`, MCP `vk_*` |
 | VK личный | `VK-Pers` | `VK_PERS_TOKEN` | 🟡 Зарезервирован | Не используется |
-| Google / YouTube | `Google-Youtube` | `GSC_CREDENTIALS_PATH` | ✅ Активен | `seo-positions-snapshot`, `gsc-sync` |
+| Google / YouTube | `Google-Youtube` | `GSC_CREDENTIALS_PATH` | ✅ Активен | ⚠️ API-FIRST: прямые запросы (snapshot deprecated 24.04.2026) |
 | Google Maps | `google_maps` | `GOOGLE_MAPS_KEY` | ✅ Активен | Фронтенд (JS embed) |
-| Microsoft Clarity | `clarity` | `CLARITY_TOKEN` | ✅ Активен | MCP `clarity`, `etl-daily`* |
+| Microsoft Clarity | `clarity` | `CLARITY_TOKEN` | ✅ Активен | MCP `clarity` |
 | Google PageSpeed | `PageSpeed` | `PAGESPEED_KEY` | ✅ Активен | MCP `pagespeed` |
 | OpenRouter | `OpenRouter` | `OPENROUTER_KEY` | ✅ Активен | `critical_monitor`, `daily_intelligence`, `darya_feedback` |
 | Anthropic Claude | `ANTHROPIC_API_KEY` | `ANTHROPIC_API_KEY` | ✅ Активен | `daily_intelligence`, `enrich_contacts`, `generate_next_actions` |
@@ -120,10 +114,9 @@
 | `rag_continuous.py` | Embeddings новых диалогов | PG `ai_dialogs` + OpenAI → PG `ai_dialog_rag` | Каждый час |
 | `knowledge_dialog_sync.py` | Embeddings диалогов для /ask/-бота | PG `ai_dialogs` + OpenAI → PG `knowledge_chunks` | Каждый час |
 | `knowledge_site_scraper.py` | Embeddings страниц сайта | aidacamp.ru + OpenAI → PG `knowledge_chunks` | Ежедневно 04:45 |
-| `site_scraper.py` | То же (⚠️ дубль!) | aidacamp.ru + OpenAI → PG `knowledge_chunks` | Ежедневно 04:30 |
 | `vk-monitor.py` | Мониторинг CPA VK | VK API → TG (алерт) | Каждые 30 мин |
-| `budget_pace.py` | Темп расходования бюджетов | PG (ETL ⚠️) + `ai_user_preferences` → TG | Каждые 6 часов |
-| `seo-positions-snapshot.py` | Снэпшот SEO-позиций | GSC + Вебмастер → PG `seo_position_snapshots` | 1-е и 15-е 07:00 UTC |
+| `budget_pace.py` | Темп расходования бюджетов | Direct API + VK API → TG | Каждые 6 часов |
+| ⚠️ `seo-positions-snapshot.py` | **DEPRECATED** (24.04.2026): Снэпшот SEO-позиций заменён API-first подходом | GSC + Вебмастер → PG `seo_position_snapshots` (reference only) | 1-е и 15-е 07:00 UTC |
 | `review-reminder.py` | Напоминания о сборе отзывов | PG (`ai_customers`) → TG | Ежедневно 10:00 UTC |
 | `search-junk-digest.py` | Дайджест кандидатов в минус-фразы | Direct API → TG (без автозаписи) | Ежедневно 09:00 UTC |
 | `excluded-rotator.py` | Очистка мёртвых площадок из ExcludedSites | Direct API (ExcludedSites) → Direct API (удаление) | Ежедневно 05:00 UTC |
@@ -133,19 +126,25 @@
 
 | Скрипт | Почему отключён | Дата |
 |---|---|---|
-| `etl-daily.py` | ETL упразднён — данные берутся из API напрямую | 22.04.2026 |
-| `vk-sync.py` | ETL упразднён | 22.04.2026 |
 | `autoban.py` | Заменён ручным дайджестом (`search-junk-digest`) | 21.04.2026 |
 | `search-autoban.py` | То же | 21.04.2026 |
 | `direct-status.py` | Заменён `critical_monitor` | — |
+| `site_scraper.py` | Дубль `knowledge_site_scraper.py` — оба embedывают сайт в `knowledge_chunks` | 24.04.2026 |
 
-#### ⚠️ Работают но на устаревших данных (читают ETL-таблицы)
+#### ⚠️ SNAPSHOT СКРИПТЫ — ОТКЛЮЧЕНЫ (24.04.2026)
 
-| Скрипт | Проблема | Действие |
+| Скрипт | Почему отключен | Действие | Дата |
+|---|---|---|---|
+| `ads_snapshot.py` | Deprecated: API-first подход | Архивирован в `tools/deprecated/` | 24.04.2026 |
+| `minuswords_snapshot.py` | Deprecated: API-first подход | Архивирован в `tools/deprecated/` | 24.04.2026 |
+| `seo-positions-snapshot.py` | Deprecated: API-first подход | Отключен в crontab (#DISABLED_SNAPSHOT) | 24.04.2026 |
+
+#### 🔧 СКРИПТЫ НА API-FIRST
+
+| Скрипт | Статус | Статус на сервере |
 |---|---|---|
-| `daily-digest.py` (etl/) | Читает `direct_campaign_stats`, `vk_ads_stats` — не обновляются с 22.04 | **Отключить** — дублирует `daily_intelligence.py` |
-| `weekly_digest.py` | Читает те же ETL-таблицы | **Переписать** на API-first (аналогично `daily_intelligence`) |
-| `budget_pace.py` | Читает `direct_campaign_stats` для расчёта темпа | **Переписать** на Direct Reports API |
+| `budget_pace.py` | ✅ На API-first (использует `common.direct.direct_spend`) | Работает |
+| `weekly_digest.py` | ✅ На API-first (использует `common.direct.direct_spend_and_clicks`) | Работает |
 
 #### 🗄 Инструменты (ручной запуск)
 
@@ -158,9 +157,7 @@
 | `finetune_launch.py` | Запустить файн-тюн в OpenAI |
 | `vk-costs-to-metrika.py` | Загрузить расходы VK в Метрику |
 
-#### 📦 Устаревшие (можно архивировать)
-
-Все в `/opt/aidacamp-tools/etl/archive/` или для архивирования:
+#### 📦 Устаревшие (архивированные)
 
 ```
 b1-v3b.py, b1-v3.py, b1-v4.py, b1-v5.py, b1-v6.py  — разбор WA-истории (одноразовый)
@@ -203,7 +200,6 @@ build_contexts.py (crm-panel/)                         — заменён enrich
 | Дубль | Что задублировано | Решение |
 |---|---|---|
 | `site_scraper.py` + `knowledge_site_scraper.py` | Оба скрапят aidacamp.ru → `knowledge_chunks` через OpenAI, запуск 04:30 и 04:45 | Оставить один (`knowledge_site_scraper`), удалить `site_scraper` |
-| `daily-digest.py` (etl/) + `daily_intelligence.py` | Оба шлют утренний TG-дайджест по рекламе | Отключить `daily-digest` — он на мёртвых ETL-данных |
 | `build_contexts.py` + `enrich_contacts.py` | Оба строят контекст клиентов | Удалить `build_contexts.py` |
 | Код Metrika в `daily_intelligence` + `critical_monitor` | Функция `_get_lead_goal_id` / `get_metrika_goal_ids` полностью одинакова | Вынести в `common/metrika.py` — общий модуль |
 | `rag_continuous` + `knowledge_dialog_sync` | Оба векторизуют `ai_dialogs` | Разные таблицы назначения — OK, но расписание должно не пересекаться |
@@ -248,23 +244,20 @@ contacts_api.py ─────────────→ [HTTP :6300] ──�
 
 | # | Задача | Приоритет | Почему |
 |---|---|---|---|
-| 1 | Отключить `daily-digest.py` (etl/) в cron | 🔴 Срочно | Шлёт устаревшие данные каждый день |
-| 2 | Переписать `weekly_digest.py` на API-first | 🔴 Срочно | Читает ETL-таблицы без данных |
-| 3 | Переписать `budget_pace.py` на Direct Reports API | 🟡 Важно | Темп бюджета считается по устаревшим данным |
-| 4 | Удалить дубль `site_scraper.py` | 🟡 Важно | Двойные расходы OpenAI ежедневно |
-| 5 | Вынести общий код Metrika в `common/metrika.py` | 🟢 Улучшение | DRY принцип |
-| 6 | Разобраться с `cm-v3-*.py` — что делает, нужен ли | 🟡 Важно | Запускается каждые 30с, неясное назначение |
-| 7 | Архивировать 25+ устаревших ETL-скриптов | 🟢 Улучшение | Чистота репозитория |
-| 8 | Wordstat + DataForSEO — написать первые скрипты | 🟡 Важно | Ключевые слова и SEO-конкуренты пока не мониторятся |
+| 1 | Удалить дубль `site_scraper.py` | 🟡 Важно | Двойные расходы OpenAI ежедневно |
+| 2 | Вынести общий код Metrika в `common/metrika.py` | 🟢 Улучшение | DRY принцип |
+| 3 | Разобраться с `cm-v3-*.py` — что делает, нужен ли | 🟡 Важно | Запускается каждые 30с, неясное назначение |
+| 4 | Wordstat + DataForSEO — написать первые скрипты | 🟡 Важно | Ключевые слова и SEO-конкуренты пока не мониторятся |
 
-**✅ Выполнено (23.04.2026):**
-- `daily-digest.py` отключён в cron (`#DISABLED_ETL_DEAD_DATA`)
-- `site_scraper.py` отключён в cron (`#DISABLED_DUPE`)
-- Все 13 ETL-таблиц удалены из PostgreSQL
-- `weekly_digest.py` переписан на API-first (Direct Reports + VK stats + Metrika)
-- `budget_pace.py` переписан на API-first (Direct Reports + VK stats)
-- `critical_monitor.py` переписан на API-first
-- `daily_intelligence.py` переписан на API-first (реальные активные кампании)
+**✅ Выполнено (22-25.04.2026):**
+- ✅ Архитектура: переход на API-first (Direct API, VK API, Metrika API, Clarity API)
+- ✅ `daily_intelligence.py` - дневной дайджест через API
+- ✅ `critical_monitor.py` - мониторинг аномалий через API
+- ✅ `budget_watchdog.py` - мониторинг бюджета через Direct API
+- ✅ `weekly_digest.py` - недельный дайджест через API
+- ✅ `budget_pace.py` - темп расходов через Direct API
+- ✅ `autoban.py` - автомат блокировки площадок через Direct API
+- ✅ Документация: удалены все упоминания о ETL, добавлены ссылки на API источники
 - `mem0.ai` удалён из активных инструментов (эксперимент, не прижился)
 
 ---

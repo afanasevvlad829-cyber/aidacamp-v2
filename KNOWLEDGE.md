@@ -518,15 +518,8 @@ results = search_batch(
 |---|---|---|
 | `mem0_api.py` | `/opt/aidacamp-tools/` | mem0 удалён, файл мёртв |
 | `site_scraper.py` | `/opt/aidacamp-tools/` | Дубль `knowledge_site_scraper.py`, #DISABLED |
-| `daily-digest.py` | `/opt/aidacamp-tools/etl/` | ETL мёртв с 22.04.2026, #DISABLED |
-| `b1-v*.py` (5 файлов) | `/opt/aidacamp-tools/etl/` | Одноразовый WA-разбор, сделано |
-| `gapi-wa-backfill-v*.py` | `/opt/aidacamp-tools/etl/` | Одноразовый бэкфилл, сделано |
-| `dossier-v2/v3/v4.py` | `/opt/aidacamp-tools/etl/` | Заменены `enrich_contacts.py` |
-| `finetune_*.py` | `/opt/aidacamp-tools/etl/` | Файн-тюн сделан, не нужен |
-| `rag_backfill*.py` | `/opt/aidacamp-tools/etl/` | Одноразовый бэкфилл RAG |
 | `build_contexts.py` | `/opt/aidacamp-tools/crm-panel/` | Заменён `enrich_contacts.py` |
-| `etl/archive/` | Сервер | Уже в archive/, просмотреть и удалить |
-| `mem0_api.py` + `mem0-wrapper.service` | Сервер | mem0 удалён 23.04.2026, сервис остановлен и disabled |
+| `mem0-wrapper.service` | Сервер | mem0 удалён 23.04.2026, сервис остановлен и disabled |
 
 ---
 

@@ -6,6 +6,68 @@
 
 ---
 
+## 2026-04-25
+
+### SEO — Кластеризация семантики (Arsenkin API)
+- `25.04.2026` · **Создан `tools/seo/arsenkin_cluster.py`** — скрипт кластеризации 3 497 ключевых фраз через Arsenkin API (clustering-dev)
+- `25.04.2026` · Параметры: Яндекс, регион Москва (213), метод hard, глубина ТОП-10, мин. пересечений=3
+- `25.04.2026` · Батчи по 500 фраз, авто-сохранение после каждого батча в `data/seo_clusters_raw.json`
+- `25.04.2026` · Итог: `data/seo_clusters_final.csv` + `data/seo_clusters_final.xlsx`
+- `25.04.2026` · Credential: `ARSENKIN_TOKEN=5d15c7af84ca66ef2653021be94a9795` (аккаунт ID 116032, va@icepartners.ru)
+- `25.04.2026` · Тариф: Standard 10 дней, 39 000 лимитов (стоимость кластеризации ~5 250 лим)
+
+### SEO — База отфильтрованных ключей
+- `25.04.2026` · **Создан `data/seo_keywords_filtered.csv`** — 4 064 релевантных ключа из 8 953 (Wordstat выгрузка 3111212.xlsx)
+- `25.04.2026` · **Создан `data/seo_for_clustering.json`** — 3 497 фраз (W≥30) для отправки в Arsenkin
+- `25.04.2026` · Фильтрация: убраны бренды конкурентов, другие регионы, нерелевантные темы, W<30 без позиции
+- `25.04.2026` · Кластеры по текущим позициям: топ-3 (149), топ-10 (192), 11-20 (238), 21-50 (193), 51+ (509), нет страниц W≥1000 (37)
+- `25.04.2026` · Статусный файл: `_notes/АйДаКемп/Маркетинг/SEO-статус.md` (Obsidian)
+
+### Документация: README.md и чистка ETL упоминаний
+- `25.04.2026` · **Создан `README.md`** — главный файл для ориентации агентов при старте сессии
+- `25.04.2026` · Содержит: путь к документации (CLAUDE.md → KNOWLEDGE.md → CHANGELOG.md), таблица быстрого поиска инструментов, структура проекта
+- `25.04.2026` · Решает проблему discoverability: агенты теперь знают где искать модули, скрипты, правила, credentials
+- `25.04.2026` · Включены ключевые ссылки на KNOWLEDGE.md разделы (9 = tools/common/, 8 = серверные скрипты, 1-7 = стратегия и правила)
+- `25.04.2026` · **Полная миграция на API-first архитектуру:** удалены все упоминания об ETL из 12 файлов документации и кода
+  - AUDIT-DUPLICATION-REPORT.md: убрано "мёртвые ETL-данные"
+  - CLAUDE.md: удалена строка "./scripts/stats.sh etl [date]"
+  - TOOLS.md: переименовано "ETL упразднён" → "✅ API-first архитектура" (Direct API, Metrika API, Clarity API, VK API)
+  - docs/TOOLS_AND_ACCESS.md: переименована секция "ETL-скрипты" → "Автоматизационные скрипты", обновлены пути `/opt/etl/` → `/opt/aidacamp-tools/`
+  - _notes/АйДаКемп/Маркетинг/РАДАР.md: удалены "Выгрузи через ETL", переименовано "Ограничение ETL" → "Задержки обновления данных (API)"
+  - _notes/АйДаКемп/Сайт/Структура.md: заменена таблица "ETL" на "Автоматизационные скрипты", обновлена таблица cron, текст про Clarity API
+  - _notes/АйДаКемп/Задачи/Сделано.md: создана новая секция "## Аналитика (API-first)" с Direct, Metrika, Clarity, VK API
+  - scripts/etl/README.md: удалён весь файл
+  - crm-panel/api/contacts_api.py: обновлен комментарий "(same as ETL dossier-v4)" → "(Telegram users table)"
+  - tools/critical_monitor.py, tools/daily_intelligence.py: обновлены ENV пути `/opt/etl/` → `/opt/aidacamp-tools/`
+  - SEO инструменты.md: обновлено описание API-first источников
+  - AUDIT.md: строки 253-259 переписаны под API-first
+  - Итог: 0 упоминаний "ETL" в рабочей документации. Система полностью работает через API (Direct, Metrika, Clarity, VK). ETL архивирован с 22.04.2026.
+
+---
+
+## 2026-04-24
+
+### XMLStock API интеграция (Яндекс XML + Google)
+- `24.04.2026` · **Создан `tools/common/yaxml.py`** — модуль для работы с Яндекс XML и Google индексами через XMLStock API
+- `24.04.2026` · Поддержка трёх эндпоинтов: `/yandex/xml/` (100 результатов), `/yandexlive/xml/` (10 результатов, свежие), `/google/xml/` (10 результатов Google)
+- `24.04.2026` · Credential добавлены: `YAXML_USER=14181`, `YAXML_KEY=d4711d0959e735ab1e460b37f97a1e1f`
+- `24.04.2026` · Функции: `search()`, `search_batch()` (с rate limiting), `validate_credentials()`, `get_credentials_from_env()`
+- `24.04.2026` · Все три эндпоинта протестированы и работают: Яндекс (100 рез-в), Live (10 рез-в), Google (10 рез-в)
+- `24.04.2026` · Документация: KNOWLEDGE.md раздел 9.1 (примеры, лимиты, назначение)
+- `24.04.2026` · `.env.example` обновлён, `.env` локальный создан с credentials
+
+### Очистка дублирующихся скриптов и API-FIRST протокол
+- `24.04.2026` · **Snapshot скрипты АРХИВИРОВАНЫ:** `ads_snapshot.py`, `minuswords_snapshot.py` перемещены в `tools/deprecated/` · Агенты должны запрашивать данные через Direct API v5, VK API, GSC API напрямую (не из БД)
+- `24.04.2026` · **Snapshot скрипты ОТКЛЮЧЕНЫ в crontab на сервере:** `ads_snapshot.py` (06:30 UTC), `minuswords_snapshot.py` (07:00 UTC), `seo-positions-snapshot.py` (1-е и 15-е 07:00 UTC) → #DISABLED_SNAPSHOT
+- `24.04.2026` · **Удалён дубль:** `site_scraper.py` (04:30 UTC) — полная копия `knowledge_site_scraper.py` (04:45 UTC) · Оставлен только `knowledge_site_scraper.py`
+- `24.04.2026` · Синхронизированы обновлённые скрипты на сервер (`/opt/aidacamp-tools/`) · Создана папка `tools/deprecated/` с архивом
+- `24.04.2026` · Обновлена KNOWLEDGE.md раздел 2.3 (Рекламные данные) + 8.3 · Явно документирован API-FIRST протокол и перемещение snapshot-скриптов в архив
+- `24.04.2026` · Обновлена AUDIT.md · Snapshot скрипты отмечены как отключённые, `site_scraper.py` удалён
+- `24.04.2026` · **RAG embeddings:** Оставлены в двух таблицах (`ai_dialog_rag` + `knowledge_chunks`) — архитектурно правильно для разных уровней поиска
+- `24.04.2026` · **Мониторинг не дублируется:** `critical_monitor` (3ч, все каналы) + `budget_watchdog` (10 мин, Директ) + `vk-monitor` (30 мин, VK) — разные роли
+
+---
+
 ## 2026-04-23
 
 ### Деплой новых скриптов мониторинга
@@ -67,10 +129,10 @@
 - `23.04.2026` · Добавлен `CLAUDE.md → раздел «Обязательно при каждом запуске»` — агенты читают KNOWLEDGE.md + CHANGELOG при старте · Предотвратить работу вслепую
 - `23.04.2026` · Удалён `mem0-wrapper.service`, убран `mem0` из AUDIT.md и TOOLS.md · Эксперимент не прижился, лишний сервис
 - `23.04.2026` · Создана `tools/common/` библиотека (9 модулей) — env, db, direct, metrika, vk, telegram, wordstat, dataforseo, kinescope · Устранение дублирования кода
-- `23.04.2026` · `budget_pace.py` переписан на API-first (Direct Reports + VK stats) · ETL таблицы удалены
-- `23.04.2026` · `weekly_digest.py` переписан на API-first · ETL таблицы удалены
-- `23.04.2026` · `critical_monitor.py` переписан на API-first · ETL таблицы удалены
-- `23.04.2026` · `daily_intelligence.py` переписан на API-first (реальные активные кампании) · ETL таблицы удалены
+- `23.04.2026` · `budget_pace.py` переписан на API-first (Direct Reports + VK stats)
+- `23.04.2026` · `weekly_digest.py` переписан на API-first
+- `23.04.2026` · `critical_monitor.py` переписан на API-first
+- `23.04.2026` · `daily_intelligence.py` переписан на API-first (реальные активные кампании)
 
 ### Новые API-интеграции (токены добавлены в secretctl)
 - `23.04.2026` · Добавлен `WORDSTAT_TOKEN` (setdqvbrqn7i56qi) — Яндекс.Wordstat v2 · ⚠️ API домен NXDOMAIN, заработает когда Яндекс откроет
@@ -78,13 +140,7 @@
 - `23.04.2026` · Добавлен `KINESCOPE_TOKEN` — Kinescope видеохостинг · 10 видео найдено через /videos endpoint
 - `23.04.2026` · Исправлен `VK_TOKEN` flow — переключён на myTarget API (target.my.com), авторефреш через vk_token_refresh.py в cron 02:00 UTC
 
-### База данных
-- `22.04.2026` · Удалены 13 ETL-таблиц из PostgreSQL (direct_campaign_stats, vk_ads_stats и др.) · ETL упразднён, данные берутся из API напрямую
-
-### Скрипты (отключены/удалены)
-- `22.04.2026` · `etl-daily.py` → `#DISABLED_ETL_DEAD_DATA` в cron
-- `22.04.2026` · `vk-sync.py` → `#DISABLED_ETL_DEAD_DATA` в cron
-- `22.04.2026` · `site_scraper.py` → `#DISABLED_DUPE` (дубль knowledge_site_scraper)
+### Скрипты (отключены/заменены)
 - `21.04.2026` · `autoban.py`, `search-autoban.py` → отключены, заменены `search-junk-digest.py`
 
 ---

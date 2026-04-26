@@ -19,7 +19,7 @@ import psycopg2, psycopg2.extras
 
 # ── Загрузка токенов ──────────────────────────────────────────────────────────
 def load_env():
-    for path in ["/opt/aidacamp-tools/etl/.env",
+    for path in ["/opt/aidacamp-tools/.env",
                  "/etc/systemd/system/crm-panel-api.service.d/env.conf"]:
         try:
             with open(path) as f:

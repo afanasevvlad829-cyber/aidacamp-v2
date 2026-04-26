@@ -4,22 +4,22 @@
 
 > Этот файл читается каждым агентом при старте.  
 > **Принцип:** все данные берутся из API напрямую — не из локальной БД.  
-> ETL упразднён. Исторические данные запрашиваются через API с нужными датами.
+> ✅ **API-first архитектура:** Direct API, VK API, Metrika API, Clarity API используются напрямую. Исторические данные запрашиваются через API с нужными датами.
 
 ---
 
 ## 🔐 КАК ПОЛУЧАТЬ ТОКЕНЫ
 
 ### На сервере (скрипты через SSH)
-Все токены лежат в `/opt/aidacamp-tools/etl/.env`.  
+Все токены лежат в `/opt/aidacamp-tools/.env`.  
 Скрипты читают их автоматически — агент ничего не спрашивает у пользователя.
 
 ```bash
 # В bash-скрипте:
-set -a && source /opt/aidacamp-tools/etl/.env && set +a && python3 script.py
+set -a && source /opt/aidacamp-tools/.env && set +a && python3 script.py
 
 # В python:
-with open("/opt/aidacamp-tools/etl/.env") as f:
+with open("/opt/aidacamp-tools/.env") as f:
     for line in f:
         if line.strip() and not line.startswith("#") and "=" in line:
             k, v = line.strip().split("=", 1)
@@ -1156,7 +1156,7 @@ ai_tg_users           — маппинг телефон → TG peer_id
 
 ## ⚠️ ПРАВИЛА ДЛЯ АГЕНТОВ
 
-1. **Не спрашивай токены у пользователя** — бери с сервера из `etl/.env` или через secretctl
+1. **Не спрашивай токены у пользователя** — бери с сервера из `/opt/aidacamp-tools/.env` или через secretctl
 2. **Не говори "не могу подключиться"** — если нужна информация, вызови API или SSH
 3. **Нет данных в БД** — это нормально, иди в API источника
 4. **Direct API / Metrika хранят историю за годы** — запрашивай нужный период напрямую

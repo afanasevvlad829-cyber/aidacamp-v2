@@ -687,15 +687,14 @@ from browser_use import Agent
 ```bash
 ./scripts/stats.sh summary [period]         # Сводка: Direct + Metrika + Goals
 ./scripts/stats.sh direct [period]          # Статистика кампаний Директа
-./scripts/stats.sh direct-daily [period]    # Директ по дням
-./scripts/stats.sh metrika [period]         # Трафик Метрики по источникам
-./scripts/stats.sh metrika-daily [period]   # Метрика по дням
-./scripts/stats.sh goals [period]           # Конверсии по целям
-./scripts/stats.sh utm [period]             # UTM-разметка
-./scripts/stats.sh placements [period] [N]  # Топ площадок по расходу
+./scripts/stats.sh direct-daily [period]    # Директ по дням (Direct API)
+./scripts/stats.sh metrika [period]         # Трафик Метрики по источникам (Metrika API)
+./scripts/stats.sh metrika-daily [period]   # Метрика по дням (Metrika API)
+./scripts/stats.sh goals [period]           # Конверсии по целям (Metrika API)
+./scripts/stats.sh utm [period]             # UTM-разметка (Metrika API)
+./scripts/stats.sh placements [period] [N]  # Топ площадок по расходу (Direct API)
 ./scripts/stats.sh query "SELECT ..."       # Произвольный SQL
 ./scripts/stats.sh tables                   # Список таблиц и кол-во строк
-./scripts/stats.sh etl [date] [date_to]     # Ручной запуск ETL
 ```
 
 ### Периоды

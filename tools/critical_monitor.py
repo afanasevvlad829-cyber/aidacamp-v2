@@ -24,7 +24,7 @@ except Exception:
 ENV_FILE = "/etc/systemd/system/crm-panel-api.service.d/env.conf"
 def load_env():
     # Приоритет: etl/.env (канон токенов), затем systemd env
-    for path in ["/opt/aidacamp-tools/etl/.env", ENV_FILE]:
+    for path in ["/opt/aidacamp-tools/.env", ENV_FILE]:
         try:
             with open(path) as f:
                 for line in f:
