@@ -26,5 +26,10 @@ export default defineConfig({
   devToolbar: { enabled: false },
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      // P2: убираем ненужные полифиллы (Legacy JavaScript −10KB в PageSpeed)
+      // esnext = нет транспиляции под старые браузеры, только современный синтаксис
+      target: 'esnext',
+    },
   },
 });
