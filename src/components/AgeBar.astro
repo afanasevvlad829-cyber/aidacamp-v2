@@ -136,6 +136,10 @@ const ageCountsJson = JSON.stringify({
   function showBar() {
     if (isDismissed()) return;
 
+    // Не показываем AgeBar если StickyCta (мобильная полоска) уже видна — взаимное исключение
+    const stickyBar = document.getElementById('sticky-bar');
+    if (stickyBar && !stickyBar.classList.contains('translate-y-full') && !stickyBar.hasAttribute('inert')) return;
+
     const selectedAge = currentAge();
     if (selectedAge && AGE_COUNTS[selectedAge]) {
       // Возраст уже выбран в сессии → сразу показываем нудж (фаза 2)

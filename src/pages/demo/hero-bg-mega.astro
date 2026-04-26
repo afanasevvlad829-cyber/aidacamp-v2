@@ -1,0 +1,1124 @@
+---
+import '../../styles/global.css';
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+
+// Mega demo — все эффекты из списка пользователя
+// Реализованы: 13 (полный код)
+// TODO: 12 (требуют доп. фетча с htmlhub)
+
+const ready = [
+  { id: 'aurora',        tech: 'Canvas',  weight: 'heavy',       use: 'Главная — северное сияние + 180 звёзд' },
+  { id: 'quantum',       tech: 'Canvas',  weight: 'moderate',    use: 'AI / нейросети — 60 узлов с связями' },
+  { id: 'fireflies',     tech: 'Canvas',  weight: 'lightweight', use: 'Лес / природа — 35 светлячков' },
+  { id: 'circuit',       tech: 'Canvas',  weight: 'moderate',    use: 'Python / код — электроны 90° на плате' },
+  { id: 'fiber',         tech: 'Canvas',  weight: 'heavy',       use: '3D / Try — 350 fiber optic частиц туннелем' },
+  { id: 'hexagons',      tech: 'Canvas',  weight: 'moderate',    use: 'Roblox / Minecraft — neon hexagonal grid' },
+  { id: 'neon-network',  tech: 'Canvas',  weight: 'moderate',    use: 'Подростки — HSL-cycling сеть с glow' },
+  { id: 'synthwave',     tech: 'CSS',     weight: 'lightweight', use: 'Главная — 80s outrun grid + солнце' },
+  { id: 'glass-orbs',    tech: 'CSS',     weight: 'moderate',    use: 'Документы / лицензии — glass-morphism' },
+  { id: 'star-genesis',  tech: 'CSS',     weight: 'lightweight', use: 'Лагерь + солнце-ассоциация — рождение звёзд в туманности' },
+  { id: 'cosmic',        tech: 'CSS',     weight: 'lightweight', use: 'Мечты / финал смены — 200 звёзд + падающие + астероиды' },
+  { id: 'ascendant',     tech: 'CSS',     weight: 'lightweight', use: 'Хакатон — восходящий свет + плавающие моты' },
+  { id: 'hex-code-wave', tech: 'CSS',     weight: 'lightweight', use: 'Python/код — диагональная волна по hex-сетке' },
+  { id: 'matrix-rain',   tech: 'Canvas',  weight: 'lightweight', use: 'Программирование / IT — Matrix rain (зелёные 0/1)' },
+  { id: 'particle-flow', tech: 'Canvas',  weight: 'moderate',    use: 'Подростки / творчество — 150 цветных частиц с связями' },
+  { id: 'interactive-stars', tech: 'Canvas', weight: 'moderate', use: 'AI / интерактив — 150 звёзд + созвездие к курсору' },
+  { id: 'crt-boot',      tech: 'CSS',     weight: 'lightweight', use: 'Программирование / тех-поддержка — CRT-монитор boot sequence' },
+];
+
+// Эффекты с сайта — оставлены ТОЛЬКО анимированные.
+// Остальные 18 site-эффектов (mesh/noise/grid/editorial/accent-bar/split-stagger/...)
+// — статичные CSS-градиенты без motion. На demo не показываем.
+const siteEffects = [
+  { id: 'fullscreen-cta',   tier: 'T6 Conv', use: 'Резервный — анимированный full-screen CTA (единственный animated в global.css)' },
+];
+
+const todo = [
+  'Abstract Particles, Particle Flow Field — дубли Quantum Mesh',
+  'Colorful Ribbons (WebGL — пропустил, тяжело)',
+  'Particle Swarm, Starfield Warp — heavy, оставил на потом',
+  'CRT Boot — htmlhub не вернул код, можем написать сами',
+];
+---
+
+<Base title="Hero BG · MEGA (все эффекты из списка)">
+  <Header />
+  <div class="bg-amber-100 text-amber-900 text-center text-[13px] py-1.5 border-b border-amber-200">
+    <strong>DEMO MEGA:</strong> 13 эффектов готовы · 14 в TODO ·
+    Heavy = ⚠️ Voxel Paris (Three.js, грузит CPU) · Aurora · Cyber Fiber
+  </div>
+
+  <main class="bg-slate-100">
+    {ready.map((b, i) => (
+      <section class="mega-section">
+        <div class="mega-header">
+          <span class="mega-num">{String(i+1).padStart(2,'0')} · {b.tech} · {b.weight}</span>
+          <h2 class="mega-name">{b.use}</h2>
+        </div>
+        <div class={`hero-mega hero-mega--${b.id}`} data-mega={b.id}>
+          {b.tech === 'Canvas' && <canvas class="mega-canvas"></canvas>}
+          {b.id === 'data-tunnel' && <div id="dt-scene"></div>}
+          {b.id === 'financial' && <div id="fs-scene"></div>}
+          {b.id === 'synthwave' && <><div class="sw-sun"></div><div class="sw-horizon"></div><div class="sw-plane"></div><div class="sw-scanlines"></div></>}
+          {b.id === 'hyperspace' && <><div id={`hs-${b.id}`} class="hs-stars"></div><div class="hs-overlay"></div></>}
+          {b.id === 'voxel-paris' && <div id="vp-scene"></div>}
+          {b.id === 'star-genesis' && <>
+            <div class="sg-static" id="sg-static"></div>
+            <div class="sg-nebula"></div>
+            <div class="sg-form" id="sg-form"></div>
+          </>}
+          {b.id === 'cosmic' && <div class="cm-scene" id="cm-scene"></div>}
+          {b.id === 'ascendant' && <>
+            <div class="al-light"></div>
+            <div class="al-light al-two"></div>
+            <div class="al-motes" id="al-motes"></div>
+          </>}
+          {b.id === 'hex-code-wave' && <div class="hc-grid" id="hc-grid"></div>}
+          {b.id === 'kernel-panic' && <div class="kp-container" id="kp-container"></div>}
+          {b.id === 'crt-boot' && <>
+            <div class="crt-screen" id="crt-screen"></div>
+            <div class="crt-scanlines"></div>
+            <div class="crt-vignette"></div>
+          </>}
+          <div class="hero-mega-content">
+            <h3 class="hero-mega-h">Летний IT-лагерь · 2026</h3>
+            <p class="hero-mega-sub">Каждый уезжает с готовым проектом — игрой, ботом, AI-приложением.</p>
+            <a href="#" class="hero-mega-cta">Смены 2026 →</a>
+          </div>
+        </div>
+      </section>
+    ))}
+
+    <!-- ===== РАЗДЕЛИТЕЛЬ ===== -->
+    <div class="mega-divider">
+      <div class="mega-divider-line"></div>
+      <div class="mega-divider-text">УЖЕ ЖИВЁТ НА САЙТЕ — {siteEffects.length} эффектов из global.css</div>
+      <div class="mega-divider-line"></div>
+    </div>
+
+    {siteEffects.map((b, i) => (
+      <section class="mega-section">
+        <div class="mega-header">
+          <span class="mega-num">{b.tier} · data-hero-effect="{b.id}"</span>
+          <h2 class="mega-name">{b.use}</h2>
+        </div>
+        <div class={`hero-mega site-fx-${b.id}`} data-hero-effect={b.id}>
+          <div class="hero-mega-content">
+            <h3 class="hero-mega-h">Летний IT-лагерь · 2026</h3>
+            <p class="hero-mega-sub">Каждый уезжает с готовым проектом — игрой, ботом, AI-приложением.</p>
+            <a href="#" class="hero-mega-cta">Смены 2026 →</a>
+          </div>
+        </div>
+      </section>
+    ))}
+
+    <section class="mega-section">
+      <div class="mega-header">
+        <span class="mega-num">TODO</span>
+        <h2 class="mega-name">Ещё {todo.length} эффектов из списка — требуют доп. фетча</h2>
+      </div>
+      <div class="mega-todo">
+        {todo.map(t => <div class="mega-todo-item">• {t}</div>)}
+      </div>
+    </section>
+  </main>
+
+  <style is:inline>
+    .mega-section { max-width: 1280px; margin: 28px auto; padding: 0 24px; }
+    .mega-header { padding-bottom: 10px; }
+    .mega-num { font-family: ui-monospace, monospace; font-size: 11px; color: #94a3b8; letter-spacing: 0.18em; }
+    .mega-name { margin: 4px 0 2px; font-size: 22px; font-weight: 800; color: #0f172a; }
+    .hero-mega {
+      position: relative; overflow: hidden; isolation: isolate;
+      min-height: 520px; border-radius: 20px;
+      display: flex; align-items: center; padding: 56px;
+      background: #050510; color: #fff;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+    }
+    .mega-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; display: block; }
+    #dt-scene, #fs-scene, #vp-scene { position: absolute; inset: 0; z-index: 1; overflow: hidden; }
+    #vp-scene canvas { width: 100% !important; height: 100% !important; }
+    .hero-mega-content { position: relative; z-index: 20; max-width: 560px; }
+    .hero-mega-h { font-size: clamp(30px, 4vw, 46px); font-weight: 800; letter-spacing: -0.025em; line-height: 1.05; margin: 0 0 14px; text-shadow: 0 2px 24px rgba(0,0,0,0.7), 0 0 60px rgba(0,0,0,0.3); }
+    .hero-mega-sub { font-size: 17px; color: rgba(255,255,255,0.9); line-height: 1.5; margin: 0 0 24px; max-width: 480px; text-shadow: 0 1px 8px rgba(0,0,0,0.7); }
+    .hero-mega-cta { display: inline-flex; align-items: center; gap: 8px; background: #fff; color: #0a0e1a; padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 15px; text-decoration: none; box-shadow: 0 4px 24px rgba(255,255,255,0.2); }
+    .mega-todo { padding: 24px; background: #fff; border-radius: 16px; }
+    .mega-divider { display: flex; align-items: center; gap: 16px; max-width: 1280px; margin: 60px auto 32px; padding: 0 24px; }
+    .mega-divider-line { flex: 1; height: 1px; background: #cbd5e1; }
+    .mega-divider-text { font-family: ui-monospace, monospace; font-size: 11px; color: #475569; letter-spacing: 0.18em; padding: 6px 14px; background: #fff; border: 1px solid #cbd5e1; border-radius: 999px; }
+
+    /* Симуляция «фото-героя» — site-эффекты разрабатывались как overlay поверх фото */
+    .hero-mega[class*="site-fx-"] {
+      background-image:
+        linear-gradient(135deg, rgba(13,26,43,0.85) 0%, rgba(30,41,59,0.55) 50%, rgba(13,26,43,0.85) 100%),
+        radial-gradient(ellipse 80% 60% at 30% 30%, #5b6b7e 0%, #0d1a2b 70%) !important;
+    }
+
+    /* Усилить видимость semi-transparent T2/T3/T4/T5 эффектов в demo */
+    .hero-mega[class*="site-fx-"][data-hero-effect="editorial"]::before,
+    .hero-mega[class*="site-fx-"][data-hero-effect="accent-bar"]::before {
+      width: 8px !important;
+      box-shadow: 0 0 24px currentColor;
+    }
+    .hero-mega[class*="site-fx-"][data-hero-effect="split-stagger"]::before,
+    .hero-mega[class*="site-fx-"][data-hero-effect="mesh"]::before,
+    .hero-mega[class*="site-fx-"][data-hero-effect="noise"]::before,
+    .hero-mega[class*="site-fx-"][data-hero-effect="grid"]::before,
+    .hero-mega[class*="site-fx-"][data-hero-effect="mesh-themed"]::before,
+    .hero-mega[class*="site-fx-"][data-hero-effect="mesh-urgency"]::before,
+    .hero-mega[class*="site-fx-"][data-hero-effect="minimal-mesh"]::before,
+    .hero-mega[class*="site-fx-"][data-hero-effect="noise-only"]::before {
+      filter: saturate(1.6) brightness(1.5);
+    }
+    .site-fx-editorial .hero-mega-h, .site-fx-accent-bar .hero-mega-h, .site-fx-split-stagger .hero-mega-h,
+    .site-fx-minimal-mesh .hero-mega-h, .site-fx-ultraminimal .hero-mega-h, .site-fx-noise-only .hero-mega-h {
+      color: #1c1917; text-shadow: none;
+    }
+    .site-fx-editorial .hero-mega-sub, .site-fx-accent-bar .hero-mega-sub, .site-fx-split-stagger .hero-mega-sub,
+    .site-fx-minimal-mesh .hero-mega-sub, .site-fx-ultraminimal .hero-mega-sub, .site-fx-noise-only .hero-mega-sub {
+      color: #475569; text-shadow: none;
+    }
+    .site-fx-editorial .hero-mega-cta, .site-fx-accent-bar .hero-mega-cta, .site-fx-split-stagger .hero-mega-cta,
+    .site-fx-minimal-mesh .hero-mega-cta, .site-fx-ultraminimal .hero-mega-cta, .site-fx-noise-only .hero-mega-cta {
+      background: #ec7c00; color: #fff;
+    }
+    .mega-todo-item { padding: 8px 0; font-family: ui-monospace, monospace; font-size: 13px; color: #475569; border-bottom: 1px solid #f1f5f9; }
+    @media (prefers-reduced-motion: reduce) { .hero-mega *, .hero-mega::before, .hero-mega::after { animation: none !important; } }
+
+    /* === DATA TUNNEL — финтикеры летят на тебя === */
+    .hero-mega--data-tunnel { background: radial-gradient(ellipse at 50% 50%, #1a2c3a 0%, #0a0f14 100%); }
+    #dt-scene { perspective: 200px; }
+    .dt-packet {
+      position: absolute;
+      left: calc(var(--x) * 1%); top: calc(var(--y) * 1%);
+      font-family: 'Courier New', monospace; font-size: 0.95rem;
+      padding: 4px 14px; border-radius: 4px;
+      background: linear-gradient(90deg, rgba(23,107,135,0.2), rgba(23,107,135,0.7));
+      border: 1px solid #ec7c00; color: #fff5e8;
+      text-shadow: 0 0 5px #fff5e8; white-space: nowrap;
+      animation: dt-fly 10s linear infinite; animation-delay: calc(var(--d) * -1s);
+    }
+    @keyframes dt-fly {
+      0% { transform: translateZ(-500px) translateY(-50px) scale(0.2); opacity: 0; filter: blur(4px); }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateZ(200px) translateY(0) scale(1.5); opacity: 0; filter: blur(0); }
+    }
+    .dt-up { color: #22c55e; }
+    .dt-down { color: #ef4444; }
+
+    /* === FINANCIAL STREAM === */
+    .hero-mega--financial { background: #0d1a2b; }
+    #fs-scene { filter: blur(0.4px); }
+    .fs-packet {
+      position: absolute; top: calc(var(--y) * 1%);
+      padding: 6px 12px;
+      background: linear-gradient(90deg, rgba(0,119,182,0.7), rgba(2,62,138,0.5));
+      border: 1px solid #ff8a00; border-radius: 5px;
+      color: #fff; font-family: 'Courier New', monospace; font-size: 14px;
+      white-space: nowrap; animation: fs-slide 10s linear infinite;
+      animation-delay: calc(var(--d) * -1s); box-shadow: 0 0 10px rgba(0,180,216,0.5);
+    }
+    @keyframes fs-slide {
+      0%   { transform: translateX(110vw); }
+      100% { transform: translateX(-30vw); }
+    }
+    .fs-up { color: #fbbf24; }
+    .fs-down { color: #ef4444; }
+
+    /* === SYNTHWAVE === */
+    .hero-mega--synthwave { background: linear-gradient(to bottom, #110022 0%, #050114 40%); perspective: 600px; }
+    .sw-sun { position: absolute; top: 12%; left: 50%; transform: translateX(-50%); width: 240px; height: 240px;
+      background: linear-gradient(to bottom, #ffea00 0%, #ff0055 60%, transparent 100%);
+      border-radius: 50%; box-shadow: 0 0 50px #ff0055; z-index: 1;
+      mask-image: repeating-linear-gradient(180deg, #000 0 12px, transparent 12px 14px, #000 14px 26px, transparent 26px 30px, #000 30px 100%);
+    }
+    .sw-horizon { position: absolute; top: 50%; left: 0; right: 0; height: 40px; background: #f5a624; filter: blur(20px); opacity: 0.5; z-index: 2; }
+    .sw-plane {
+      position: absolute; bottom: -50%; left: -50%; width: 200%; height: 200%;
+      transform-origin: top center; transform: rotateX(78deg); z-index: 3;
+      background-image: linear-gradient(to right, #f0f 2px, transparent 2px), linear-gradient(to bottom, #f0f 2px, transparent 2px);
+      background-size: 60px 60px;
+      mask-image: linear-gradient(to bottom, transparent 0%, #000 60%);
+      animation: sw-grid-rush 1.6s linear infinite;
+    }
+    .sw-scanlines { position: absolute; inset: 0; z-index: 15; pointer-events: none;
+      background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.18) 51%); background-size: 100% 4px; }
+    @keyframes sw-grid-rush { 0% { background-position: 0 0; } 100% { background-position: 0 60px; } }
+
+    /* === HYPERSPACE === */
+    .hero-mega--hyperspace { background: radial-gradient(circle, #1a082d 0%, #010008 70%); }
+    .hs-stars { position: absolute; top: 50%; left: 50%; width: 2px; height: 2px; z-index: 1; }
+    .hs-stars .hs-star-field { position: absolute; top: 0; left: 0; width: 2px; height: 2px; }
+    .hs-stars .hs-star { position: absolute; width: 100%; height: 100%; background: #fff; border-radius: 50%; animation: hs-travel 4s ease-in infinite; }
+    .hs-stars .hs-star::after { content: ''; position: absolute; top: 0; left: 50%; transform: translate(-50%, -100%); width: 120%; height: 1500%; background: linear-gradient(to top, rgba(255,255,255,0.5), transparent); }
+    @keyframes hs-travel {
+      0% { transform: rotate(var(--ang)) translateY(0) scale(0); opacity: 1; }
+      50% { transform: rotate(var(--ang)) translateY(20vmin) scale(1); opacity: 1; }
+      100% { transform: rotate(var(--ang)) translateY(60vmin) scale(0); opacity: 1; }
+    }
+    .hs-overlay { position: absolute; top: 50%; left: 50%; width: 70vmin; height: 70vmin;
+      transform: translate(-50%, -50%); border: 2px solid rgba(0,225,255,0.3); border-radius: 50%;
+      box-shadow: inset 0 0 20px rgba(0,225,255,0.2); animation: hs-pulse 5s ease-in-out infinite alternate; z-index: 2; }
+    @keyframes hs-pulse { from { transform: translate(-50%,-50%) scale(0.95); opacity: 0.5; } to { transform: translate(-50%,-50%) scale(1); opacity: 0.85; } }
+
+    /* === GLASS ORBS === */
+    .hero-mega--glass-orbs { background: linear-gradient(to bottom right, #0f172a, #1e1b4b); }
+    .hero-mega--glass-orbs::before, .hero-mega--glass-orbs::after { content: ''; position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.65; }
+    .hero-mega--glass-orbs::before { width: 320px; height: 320px; background: #38bdf8; top: -80px; left: -60px; animation: orb-float 6s infinite ease-in-out alternate; }
+    .hero-mega--glass-orbs::after { width: 380px; height: 380px; background: #818cf8; bottom: -100px; right: -80px; animation: orb-float 6s infinite ease-in-out alternate -3s; }
+    @keyframes orb-float { 0% { transform: translate(0,0) scale(1); } 50% { transform: translate(80px,-50px) scale(1.15); } 100% { transform: translate(-40px,60px) scale(0.95); } }
+
+    /* === VOXEL PARIS placeholder === */
+    .hero-mega--voxel-paris { background: linear-gradient(180deg, #87CEEB 0%, #4a90c2 100%); color: #1c1917; }
+    .hero-mega--voxel-paris .hero-mega-h, .hero-mega--voxel-paris .hero-mega-sub { color: #1c1917; text-shadow: 0 1px 4px rgba(255,255,255,0.5); }
+    #vp-scene { background: #87CEEB; }
+
+    /* === STAR GENESIS (htmlhub) === */
+    .hero-mega--star-genesis { background: #000; }
+    .sg-static, .sg-form, .sg-nebula { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+    .sg-static-star { position: absolute; background: white; border-radius: 50%; animation: sg-twinkle 6s infinite; }
+    @keyframes sg-twinkle { 0%,100% { opacity: 0.3; } 50% { opacity: 0.8; } }
+    .sg-nebula {
+      background: radial-gradient(ellipse at 50% 50%, rgba(127,0,255,0.18) 0%, transparent 60%),
+                  radial-gradient(ellipse at 20% 80%, rgba(0,255,221,0.12) 0%, transparent 50%),
+                  radial-gradient(ellipse at 80% 20%, rgba(255,0,149,0.12) 0%, transparent 50%);
+      animation: sg-breathe 6s ease-in-out infinite alternate;
+      filter: blur(40px);
+    }
+    @keyframes sg-breathe { from { transform: scale(1) rotate(0); opacity: 0.7; } to { transform: scale(1.1) rotate(20deg); opacity: 1; } }
+    .sg-forming-star { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff; animation: sg-birth 6s ease-out infinite; opacity: 0; }
+    @keyframes sg-birth {
+      0%,40%,100% { transform: scale(0.1); opacity: 0; box-shadow: none; }
+      50% { transform: scale(2); opacity: 1; box-shadow: 0 0 15px 3px #fff, 0 0 30px 8px #00eaff; }
+      60% { transform: scale(0.8); opacity: 0.5; box-shadow: 0 0 10px 2px #fff, 0 0 20px 5px #00eaff; }
+    }
+
+    /* === COSMIC === */
+    .hero-mega--cosmic { background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%); }
+    .cm-scene { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+    .cm-star { position: absolute; background: white; border-radius: 50%; animation: cm-twinkle var(--dur, 3s) ease-in-out infinite; animation-delay: var(--del, 0s); box-shadow: 0 0 var(--glow, 4px) rgba(255,255,255,0.9); }
+    @keyframes cm-twinkle { 0%,100% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.3); } }
+    .cm-shooting { position: absolute; width: 2px; height: 2px; background: white; border-radius: 50%; box-shadow: 0 0 8px 2px rgba(255,255,255,0.9); }
+    .cm-shooting::before { content: ''; position: absolute; top: 0; right: 0; width: 80px; height: 1px; background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.8) 100%); transform: translateX(2px); }
+    @keyframes cm-shoot {
+      0% { transform: translate(0,0) rotate(-45deg); opacity: 1; }
+      100% { transform: translate(-300px, 300px) rotate(-45deg); opacity: 0; }
+    }
+
+    /* === ASCENDANT LIGHT === */
+    .hero-mega--ascendant { background: #1a1a2e; }
+    .al-light {
+      position: absolute; top: -20%; left: 50%; width: 300%; height: 150%;
+      transform: translateX(-50%); z-index: 1;
+      background: linear-gradient(45deg, transparent 40%, rgba(255,238,204,0.25) 48%, rgba(255,238,204,0.25) 52%, transparent 60%);
+      animation: al-pan 6s infinite linear;
+      mask-image: radial-gradient(ellipse at 50% -20%, #000 20%, transparent 70%);
+    }
+    .al-two { transform: translateX(-50%) rotate(-20deg); animation-duration: 6s; }
+    @keyframes al-pan { from { transform: translateX(-50%) rotate(-40deg); } to { transform: translateX(-50%) rotate(40deg); } }
+    .al-motes { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+    .al-mote { position: absolute; width: 4px; height: 4px; background: #fff; border-radius: 50%; opacity: 0.5; box-shadow: 0 0 10px #ffeecc; animation: al-float 6s infinite linear; }
+    @keyframes al-float {
+      0% { transform: translateY(110%) translateX(0) rotate(0); opacity: 0; }
+      10% { opacity: 0.7; } 90% { opacity: 0.7; }
+      100% { transform: translateY(-10%) translateX(60px) rotate(360deg); opacity: 0; }
+    }
+
+    /* === HEX CODE WAVE === */
+    .hero-mega--hex-code-wave { background: #0d0d12; color: #2a3c4b; }
+    .hc-grid {
+      position: absolute; top: 0; right: 0; bottom: 0; width: 55%; z-index: 1;
+      display: grid; grid-template-columns: repeat(var(--cols, 40), 1fr);
+      transform: scale(1.05); font-family: ui-monospace, monospace;
+      opacity: 0.7;
+    }
+    .hc-char {
+      text-align: center; user-select: none; will-change: color, text-shadow;
+      animation: hc-wave 6s linear infinite;
+      font-size: 14px; line-height: 1.1;
+    }
+    @keyframes hc-wave {
+      0%, 15%, 100% { color: #2a3c4b; text-shadow: none; }
+      7%, 8% { color: #fff5e8; text-shadow: 0 0 10px #ff8a00, 0 0 20px #ff8a00; }
+    }
+
+    /* === CRT BOOT === */
+    .hero-mega--crt-boot {
+      background: #050d05;
+      font-family: 'VT323', ui-monospace, 'Courier New', monospace;
+      color: #18ff62;
+    }
+    .crt-screen {
+      position: absolute; top: 0; right: 0; bottom: 0; width: 50%; z-index: 1;
+      padding: 28px 36px; box-sizing: border-box;
+      font-size: 17px; line-height: 1.35;
+      text-shadow: 0 0 4px #18ff62, 0 0 10px rgba(24,255,98,0.6);
+      animation: crt-flicker 6s infinite;
+      overflow: hidden;
+      opacity: 0.85;
+    }
+    .crt-screen::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.6) 100%);
+      pointer-events: none;
+    }
+    .crt-line {
+      opacity: 0;
+      white-space: pre;
+      animation: crt-type 0.18s forwards;
+      margin: 0;
+    }
+    .crt-cursor {
+      display: inline-block;
+      width: 10px; height: 16px;
+      background: #18ff62;
+      animation: crt-blink 1s steps(2) infinite;
+      vertical-align: middle;
+      box-shadow: 0 0 8px #18ff62;
+    }
+    @keyframes crt-type { to { opacity: 1; } }
+    @keyframes crt-blink { 50% { opacity: 0; } }
+    @keyframes crt-flicker {
+      0%, 100% { opacity: 1; }
+      4% { opacity: 0.9; }
+      6% { opacity: 1; }
+      45% { opacity: 1; }
+      46% { opacity: 0.85; }
+      47% { opacity: 1; }
+    }
+    /* Scanlines overlay (горизонтальные полосы) */
+    .crt-scanlines {
+      position: absolute; inset: 0; z-index: 8; pointer-events: none;
+      background:
+        repeating-linear-gradient(180deg,
+          transparent 0 2px,
+          rgba(0,0,0,0.18) 2px 3px);
+    }
+    /* Vignette по краям + curvature illusion */
+    .crt-vignette {
+      position: absolute; inset: 0; z-index: 9; pointer-events: none;
+      box-shadow:
+        inset 0 0 80px rgba(0,0,0,0.7),
+        inset 0 0 200px rgba(0,30,0,0.4);
+      background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.45) 100%);
+    }
+
+    /* === KERNEL PANIC === */
+    .hero-mega--kernel-panic { background: #0d1a2b; color: #fff; font-family: 'VT323', ui-monospace, monospace; font-size: 17px; line-height: 1.2; }
+    .kp-container { position: absolute; top: 0; right: 0; bottom: 0; width: 50%; z-index: 1; padding: 24px 32px; box-sizing: border-box; animation: kp-glitch 6s infinite; opacity: 0.7; }
+    .kp-container h4 { color: #ef4444; text-align: center; margin: 0 0 14px; text-shadow: 0 0 5px #ef4444; font-family: 'VT323', monospace; font-size: 22px; }
+    .kp-line { opacity: 0; white-space: pre; animation: kp-type 0.1s forwards; margin: 0; font-family: ui-monospace, monospace; }
+    @keyframes kp-type { to { opacity: 1; } }
+    @keyframes kp-glitch {
+      0%,70%,100% { transform: translate(0,0); opacity: 1; }
+      75% { transform: translate(1px,-1px); }
+      80% { transform: translate(-1px,2px); }
+      85% { transform: translate(-2px,-1px); }
+      90% { transform: translate(1px,2px); }
+      95% { transform: translate(0,0); opacity: 0; }
+    }
+
+    /* ============================================================
+       MOBILE FALLBACKS (≤ 768px) — статика, без анимаций, без Canvas
+       ============================================================ */
+    @media (max-width: 768px) {
+      .hero-mega { min-height: 360px; padding: 32px 20px; }
+      .hero-mega-h { font-size: 24px; }
+      .hero-mega-sub { font-size: 14px; }
+      .mega-canvas { display: none !important; }
+
+      /* Все CSS-only эффекты: оставляем фон, выключаем все анимации */
+      .hero-mega *, .hero-mega::before, .hero-mega::after { animation: none !important; }
+
+      /* === Замена на статичные градиенты под темы === */
+      .hero-mega--aurora {
+        background:
+          radial-gradient(ellipse 70% 50% at 30% 30%, rgba(34,197,94,0.3) 0%, transparent 60%),
+          radial-gradient(ellipse 60% 50% at 70% 60%, rgba(56,189,248,0.25) 0%, transparent 60%),
+          #000208;
+      }
+      .hero-mega--quantum {
+        background:
+          radial-gradient(circle 8px at 18% 30%, #ff8a00, transparent 70%),
+          radial-gradient(circle 8px at 50% 60%, #f5a624, transparent 70%),
+          radial-gradient(circle 8px at 80% 35%, #ff8a00, transparent 70%),
+          radial-gradient(ellipse 60% 50% at 50% 50%, rgba(255,138,0,0.18) 0%, transparent 60%),
+          #0d1a2b;
+      }
+      .hero-mega--fireflies {
+        background:
+          radial-gradient(circle 4px at 15% 25%, rgba(255,230,100,0.9), transparent 70%),
+          radial-gradient(circle 5px at 38% 60%, rgba(255,230,100,0.8), transparent 70%),
+          radial-gradient(circle 4px at 65% 35%, rgba(255,230,100,0.85), transparent 70%),
+          radial-gradient(circle 5px at 88% 70%, rgba(255,230,100,0.75), transparent 70%),
+          radial-gradient(ellipse 80% 60% at 50% 50%, rgba(180,220,80,0.18) 0%, transparent 60%),
+          #081210;
+      }
+      .hero-mega--circuit {
+        background:
+          linear-gradient(rgba(56,189,248,0.18) 1px, transparent 1px) 0 0/40px 40px,
+          linear-gradient(90deg, rgba(56,189,248,0.18) 1px, transparent 1px) 0 0/40px 40px,
+          radial-gradient(circle 4px at 25% 30%, rgba(186,230,253,0.9), transparent 70%),
+          radial-gradient(circle 4px at 70% 60%, rgba(186,230,253,0.9), transparent 70%),
+          #050510;
+      }
+      .hero-mega--fiber {
+        background: radial-gradient(ellipse at center, #ff8a00 0%, #050510 70%);
+      }
+      .hero-mega--hexagons {
+        background:
+          radial-gradient(circle 3px at 25% 30%, #f5a624, transparent 70%),
+          radial-gradient(circle 3px at 50% 50%, #f5a624, transparent 70%),
+          radial-gradient(circle 3px at 75% 70%, #f5a624, transparent 70%),
+          #050510;
+      }
+      .hero-mega--neon-network {
+        background:
+          radial-gradient(circle 6px at 18% 30%, hsl(280,80%,60%), transparent 70%),
+          radial-gradient(circle 6px at 50% 60%, hsl(180,80%,60%), transparent 70%),
+          radial-gradient(circle 6px at 82% 35%, hsl(60,80%,60%), transparent 70%),
+          #0d1a2b;
+      }
+      .hero-mega--synthwave {
+        background:
+          linear-gradient(180deg, #110022 0%, #050114 60%, #f5a624 60%, #ff8a00 100%);
+        perspective: none;
+      }
+      .hero-mega--synthwave .sw-sun, .hero-mega--synthwave .sw-horizon, .hero-mega--synthwave .sw-plane, .hero-mega--synthwave .sw-scanlines { display: none; }
+      .hero-mega--glass-orbs {
+        background:
+          radial-gradient(circle 120px at 25% 25%, rgba(56,189,248,0.5), transparent 70%),
+          radial-gradient(circle 140px at 75% 70%, rgba(129,140,248,0.5), transparent 70%),
+          linear-gradient(to bottom right, #0f172a, #1e1b4b);
+      }
+      .hero-mega--glass-orbs::before, .hero-mega--glass-orbs::after { display: none !important; }
+      .hero-mega--star-genesis .sg-static, .hero-mega--star-genesis .sg-form { display: none; }
+      .hero-mega--star-genesis {
+        background:
+          radial-gradient(ellipse 50% 40% at 50% 50%, rgba(127,0,255,0.25), transparent 60%),
+          radial-gradient(circle 2px at 18% 25%, white, transparent 70%),
+          radial-gradient(circle 2px at 38% 60%, white, transparent 70%),
+          radial-gradient(circle 2px at 65% 35%, white, transparent 70%),
+          radial-gradient(circle 2px at 88% 70%, white, transparent 70%),
+          #000;
+      }
+      .hero-mega--cosmic .cm-scene { display: none; }
+      .hero-mega--cosmic {
+        background:
+          radial-gradient(circle 2px at 18% 25%, white, transparent 70%),
+          radial-gradient(circle 2px at 38% 60%, white, transparent 70%),
+          radial-gradient(circle 2px at 65% 35%, white, transparent 70%),
+          radial-gradient(circle 2px at 88% 70%, white, transparent 70%),
+          radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+      }
+      .hero-mega--ascendant .al-light, .hero-mega--ascendant .al-motes { display: none; }
+      .hero-mega--ascendant {
+        background:
+          radial-gradient(ellipse 60% 80% at 50% 100%, rgba(255,238,204,0.35) 0%, transparent 70%),
+          #1a1a2e;
+      }
+      .hero-mega--hex-code-wave .hc-grid { display: none; }
+      .hero-mega--hex-code-wave {
+        background:
+          repeating-linear-gradient(90deg, transparent 0 12px, rgba(42,60,75,0.5) 12px 14px),
+          #0d0d12;
+      }
+      .hero-mega--matrix-rain {
+        background:
+          repeating-linear-gradient(180deg, transparent 0 18px, rgba(0,255,65,0.18) 18px 20px),
+          #0d1117;
+      }
+      .hero-mega--particle-flow {
+        background:
+          radial-gradient(circle 8px at 15% 25%, #f472b6, transparent 70%),
+          radial-gradient(circle 8px at 38% 60%, #fde047, transparent 70%),
+          radial-gradient(circle 8px at 65% 35%, #22d3ee, transparent 70%),
+          radial-gradient(circle 8px at 88% 70%, #84cc16, transparent 70%),
+          radial-gradient(ellipse 80% 60%, rgba(15,5,25,0.8), transparent),
+          #1a0e2a;
+      }
+      .hero-mega--interactive-stars {
+        background:
+          radial-gradient(circle 1.5px at 18% 25%, white, transparent 70%),
+          radial-gradient(circle 1.5px at 38% 60%, white, transparent 70%),
+          radial-gradient(circle 1.5px at 65% 35%, white, transparent 70%),
+          radial-gradient(circle 1.5px at 88% 70%, white, transparent 70%),
+          linear-gradient(180deg, #02021e, #08104d);
+      }
+      .hero-mega--crt-boot .crt-screen { padding: 16px; font-size: 12px; opacity: 0.5; }
+      .hero-mega--crt-boot { background: #050d05; }
+
+      /* Site-эффекты на mobile — статика без overlay */
+      .hero-mega[class*="site-fx-"]::before, .hero-mega[class*="site-fx-"]::after { animation: none !important; }
+    }
+  </style>
+
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', () => {
+      // На mobile — все эффекты CSS-fallback из @media. JS не запускаем.
+      const isMobile = window.matchMedia('(max-width: 768px)').matches || /Mobi|Android/i.test(navigator.userAgent);
+      if (isMobile) return;
+      // === DATA TUNNEL packets ===
+      const dt = document.getElementById('dt-scene');
+      if (dt) {
+        const tickers = ['BTC/USD', 'ETH/USD', 'USD/CAD', 'MSFT', 'AMZN', 'EUR/GBP', 'SOL/USD', 'XRP/JPY', 'AAPL'];
+        for (let i = 0; i < 38; i++) {
+          const ticker = tickers[i % tickers.length];
+          const isUp = Math.random() > 0.5;
+          const value = (1 + Math.random() * 9999).toFixed(2);
+          const change = (Math.random() * 3).toFixed(2);
+          const p = document.createElement('div'); p.className = 'dt-packet';
+          p.innerHTML = `${ticker} ${value} <span class="${isUp ? 'dt-up' : 'dt-down'}">${isUp ? '▲' : '▼'}${change}%</span>`;
+          p.style.setProperty('--x', Math.random() * 80 + 10);
+          p.style.setProperty('--y', Math.random() * 80 + 10);
+          p.style.setProperty('--d', Math.random() * 10);
+          dt.appendChild(p);
+        }
+      }
+      // === FINANCIAL STREAM packets ===
+      const fs = document.getElementById('fs-scene');
+      if (fs) {
+        const tickers = ['BTC/USD', 'ETH/USD', 'EUR/USD', 'USD/JPY', 'GBP/CHF', 'AAPL', 'TSLA', 'SOL/EUR', 'XRP/USD'];
+        for (let i = 0; i < 36; i++) {
+          const ticker = tickers[i % tickers.length];
+          const isUp = Math.random() > 0.5;
+          const change = (Math.random() * 2.5).toFixed(2);
+          const p = document.createElement('div'); p.className = 'fs-packet';
+          p.innerHTML = `${ticker} <span class="${isUp ? 'fs-up' : 'fs-down'}">${isUp ? '▲' : '▼'} ${change}%</span>`;
+          p.style.setProperty('--y', Math.random() * 95);
+          p.style.setProperty('--d', Math.random() * 10);
+          p.style.animationDuration = `${Math.random() * 5 + 7}s`;
+          p.style.transform = `scale(${Math.random() * 0.4 + 0.8})`;
+          fs.appendChild(p);
+        }
+      }
+      // === HYPERSPACE stars ===
+      const hs = document.getElementById('hs-hyperspace');
+      if (hs) {
+        for (let i = 0; i < 240; i++) {
+          const sf = document.createElement('div'); sf.className = 'hs-star-field';
+          sf.style.setProperty('--ang', `${Math.random() * 360}deg`);
+          const s = document.createElement('div'); s.className = 'hs-star';
+          s.style.animationDelay = `${Math.random() * -4}s`;
+          s.style.animationDuration = `${2 + Math.random() * 2}s`;
+          sf.appendChild(s); hs.appendChild(sf);
+        }
+      }
+
+      // === STAR GENESIS ===
+      const sgStatic = document.getElementById('sg-static');
+      const sgForm = document.getElementById('sg-form');
+      if (sgStatic && sgForm) {
+        for (let i = 0; i < 120; i++) {
+          const s = document.createElement('div'); s.className = 'sg-static-star';
+          const sz = Math.random() * 1.5;
+          s.style.width = sz + 'px'; s.style.height = sz + 'px';
+          s.style.left = Math.random() * 100 + '%'; s.style.top = Math.random() * 100 + '%';
+          s.style.animationDelay = (Math.random() * -10) + 's';
+          sgStatic.appendChild(s);
+        }
+        for (let i = 0; i < 35; i++) {
+          const s = document.createElement('div'); s.className = 'sg-forming-star';
+          s.style.left = Math.random() * 100 + '%'; s.style.top = Math.random() * 100 + '%';
+          s.style.animationDelay = (Math.random() * -10) + 's';
+          sgForm.appendChild(s);
+        }
+      }
+
+      // === COSMIC stars ===
+      const cm = document.getElementById('cm-scene');
+      if (cm) {
+        for (let i = 0; i < 140; i++) {
+          const s = document.createElement('div'); s.className = 'cm-star';
+          const size = Math.random() * 2.5 + 0.5;
+          s.style.width = size + 'px'; s.style.height = size + 'px';
+          s.style.left = Math.random() * 100 + '%'; s.style.top = Math.random() * 100 + '%';
+          s.style.setProperty('--dur', (Math.random() * 4 + 2) + 's');
+          s.style.setProperty('--del', (Math.random() * 5) + 's');
+          s.style.setProperty('--glow', (size * 3) + 'px');
+          cm.appendChild(s);
+        }
+        // Periodic shooting stars
+        setInterval(() => {
+          if (Math.random() > 0.4) {
+            const ss = document.createElement('div'); ss.className = 'cm-shooting';
+            ss.style.left = (Math.random() * 90) + '%';
+            ss.style.top = (Math.random() * 50) + '%';
+            const dur = Math.random() * 1 + 0.8;
+            ss.style.animation = `cm-shoot ${dur}s linear`;
+            cm.appendChild(ss);
+            setTimeout(() => ss.remove(), dur * 1000);
+          }
+        }, 2200);
+      }
+
+      // === ASCENDANT motes ===
+      const am = document.getElementById('al-motes');
+      if (am) {
+        for (let i = 0; i < 30; i++) {
+          const m = document.createElement('div'); m.className = 'al-mote';
+          const size = Math.random() * 3 + 1;
+          m.style.width = size + 'px'; m.style.height = size + 'px';
+          m.style.left = (Math.random() * 100) + '%';
+          m.style.animationDelay = (Math.random() * -10) + 's';
+          m.style.animationDuration = (Math.random() * 5 + 8) + 's';
+          am.appendChild(m);
+        }
+      }
+
+      // === HEX CODE WAVE ===
+      const hg = document.getElementById('hc-grid');
+      if (hg) {
+        const chars = '0123456789ABCDEF'.split('');
+        const cols = Math.floor((hg.clientWidth || 1280) / 16);
+        const rows = Math.floor((hg.parentElement.clientHeight || 520) / 18);
+        hg.style.setProperty('--cols', cols);
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < cols; x++) {
+            const c = document.createElement('span'); c.className = 'hc-char';
+            c.textContent = chars[Math.floor(Math.random() * chars.length)];
+            c.style.animationDelay = ((x + y * 0.5) * 0.05) + 's';
+            hg.appendChild(c);
+          }
+        }
+      }
+
+      // === CRT BOOT ===
+      const crt = document.getElementById('crt-screen');
+      if (crt) {
+        const bootLines = [
+          'AIDA-BIOS v3.42  © 2026 АйДаКемп Systems',
+          'Memory test: 8192K OK',
+          '',
+          'Detecting hardware...',
+          '  CPU      : Intel® Core™ i7-13700K  ✓',
+          '  Memory   : 32GB DDR5-6000          ✓',
+          '  GPU      : NVIDIA RTX 4070         ✓',
+          '  Audio    : Realtek HD Audio        ✓',
+          '  Network  : 1 Gbps Ethernet         ✓',
+          '',
+          'Loading kernel modules...',
+          '  [OK] python3.12',
+          '  [OK] minecraft-server-1.20.4',
+          '  [OK] roblox-studio',
+          '  [OK] blender-4.0',
+          '  [OK] tensorflow-gpu',
+          '',
+          'Mounting /home/camper... OK',
+          'Starting AidaCamp shell...',
+          '',
+          'AidaCamp 2026 ready. Welcome, ребята.',
+          '',
+          'aidacamp@summer-2026:~$ ',
+        ];
+        function runCrt() {
+          crt.innerHTML = '';
+          bootLines.forEach((t, i) => {
+            const p = document.createElement('p'); p.className = 'crt-line';
+            p.textContent = t || ' ';
+            p.style.animationDelay = (i * 0.18) + 's';
+            crt.appendChild(p);
+          });
+          // Cursor on last line
+          setTimeout(() => {
+            const cur = document.createElement('span'); cur.className = 'crt-cursor';
+            const last = crt.lastChild;
+            if (last) last.appendChild(cur);
+          }, bootLines.length * 180 + 100);
+        }
+        runCrt();
+        setInterval(runCrt, 12000);
+      }
+
+      // === KERNEL PANIC ===
+      const kp = document.getElementById('kp-container');
+      if (kp) {
+        const lines = [
+          '*** KERNEL_PANIC - not syncing: VFS: Unable to mount root fs',
+          'CPU: 0 PID: 1 Comm: swapper/0 Not tainted 5.4.0-aidacamp',
+          'Hardware name: AidaCamp Server / IT-camp 2026',
+          'Call Trace:',
+          ' dump_stack+0x6d/0x9a',
+          ' panic+0x101/0x2e3',
+          ' kernel_init+0x13c/0x140',
+          ' return_from_camp+0x1f/0x40',
+          'Registers:',
+          ' RAX: 0000000000000000  RBX: ffffffff82040d80',
+          ' RDX: 0000000000000000  RSI: ffffffff821f5e88',
+          '---[ end Kernel panic — рестарт через 10 сек ]---',
+        ];
+        function runKp() {
+          kp.innerHTML = `<h4>!! KERNEL FAULT !!</h4>`;
+          lines.forEach((t, i) => {
+            const p = document.createElement('p'); p.className = 'kp-line';
+            p.textContent = t; p.style.animationDelay = (i * 0.1) + 's';
+            kp.appendChild(p);
+          });
+        }
+        runKp();
+        setInterval(runKp, 10000);
+      }
+
+      // === Lazy-init Canvas effects (НЕ на мобилке — там CSS-fallback) ===
+      const isMobile = window.matchMedia('(max-width: 768px)').matches || /Mobi|Android/i.test(navigator.userAgent);
+      if (isMobile) return; // на mobile все эффекты — CSS-fallback из @media block
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting && !e.target.dataset.fxInited) {
+            e.target.dataset.fxInited = '1';
+            const fx = e.target.dataset.mega;
+            const cnv = e.target.querySelector('.mega-canvas');
+            if (fx === 'aurora' && cnv)             initAurora(cnv);
+            if (fx === 'quantum' && cnv)            initQuantum(cnv);
+            if (fx === 'fireflies' && cnv)          initFireflies(cnv);
+            if (fx === 'circuit' && cnv)            initCircuit(cnv);
+            if (fx === 'fiber' && cnv)              initFiber(cnv);
+            if (fx === 'hexagons' && cnv)           initHexagons(cnv);
+            if (fx === 'neon-network' && cnv)       initNeonNetwork(cnv);
+            if (fx === 'matrix-rain' && cnv)        initMatrix(cnv);
+            if (fx === 'particle-flow' && cnv)      initParticleFlow(cnv);
+            if (fx === 'interactive-stars' && cnv)  initInteractiveStars(cnv);
+            if (fx === 'voxel-paris')               initVoxelParis(e.target.querySelector('#vp-scene'));
+          }
+        });
+      }, { rootMargin: '300px' });
+      document.querySelectorAll('[data-mega]').forEach(el => observer.observe(el));
+    });
+
+    /* ===== MATRIX RAIN ===== */
+    function initMatrix(cnv) {
+      let { ctx, w, h } = fitCanvas(cnv);
+      window.addEventListener('resize', () => { ({ ctx, w, h } = fitCanvas(cnv)); });
+      const characterSize = 16;
+      let drops = [];
+      function reset() {
+        const cols = Math.floor(w / characterSize);
+        drops = []; for (let i = 0; i < cols; i++) drops.push(Math.random() * h);
+      }
+      reset();
+      function draw() {
+        ctx.fillStyle = 'rgba(13,17,23,0.05)'; ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = '#00ff41'; ctx.font = `${characterSize}px monospace`;
+        for (let i = 0; i < drops.length; i++) {
+          const text = (Math.random() < 0.5 ? '0' : '1');
+          ctx.fillText(text, i * characterSize, drops[i]);
+          if (drops[i] > h && Math.random() > 0.975) drops[i] = 0;
+          drops[i] += characterSize;
+        }
+      }
+      setInterval(draw, 50);
+    }
+
+    /* ===== PARTICLE FLOW (150 colorful) ===== */
+    function initParticleFlow(cnv) {
+      let { ctx, w, h } = fitCanvas(cnv);
+      window.addEventListener('resize', () => { ({ ctx, w, h } = fitCanvas(cnv)); });
+      const palette = ['#a78bfa','#f472b6','#22d3ee','#fde047','#84cc16'];
+      const particles = [];
+      for (let i = 0; i < 100; i++) particles.push({
+        x: Math.random()*w, y: Math.random()*h,
+        vx: (Math.random()-0.5)*1.4, vy: (Math.random()-0.5)*1.4,
+        r: Math.random()*2 + 1.5,
+        c: palette[Math.floor(Math.random()*palette.length)],
+        op: Math.random()*0.5 + 0.5
+      });
+      function loop() {
+        ctx.fillStyle = 'rgba(15, 5, 25, 0.15)'; ctx.fillRect(0, 0, w, h);
+        ctx.lineWidth = 0.6;
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i]; p.x += p.vx; p.y += p.vy;
+          if (p.x < 0 || p.x > w) p.vx *= -1; if (p.y < 0 || p.y > h) p.vy *= -1;
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fillStyle = p.c; ctx.globalAlpha = p.op; ctx.fill();
+          for (let j = i+1; j < particles.length; j++) {
+            const dx = p.x - particles[j].x, dy = p.y - particles[j].y, d = Math.sqrt(dx*dx + dy*dy);
+            if (d < 110) {
+              ctx.globalAlpha = 1 - d/110; ctx.strokeStyle = '#ffffff66';
+              ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
+            }
+          }
+        }
+        ctx.globalAlpha = 1;
+        requestAnimationFrame(loop);
+      }
+      loop();
+    }
+
+    /* ===== INTERACTIVE STARS (constellation) ===== */
+    function initInteractiveStars(cnv) {
+      let { ctx, w, h } = fitCanvas(cnv);
+      let mouse = { x: -1000, y: -1000 };
+      cnv.addEventListener('mousemove', (e) => { const rect = cnv.getBoundingClientRect(); mouse.x = e.clientX - rect.left; mouse.y = e.clientY - rect.top; });
+      cnv.addEventListener('mouseleave', () => { mouse.x = -1000; mouse.y = -1000; });
+      window.addEventListener('resize', () => { ({ ctx, w, h } = fitCanvas(cnv)); });
+      const stars = [];
+      for (let i = 0; i < 110; i++) stars.push({ x: Math.random()*w, y: Math.random()*h, vx: (Math.random()-0.5)*0.4, vy: (Math.random()-0.5)*0.4, r: Math.random()*1.4 + 0.6 });
+      function loop() {
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, '#02021e'); grad.addColorStop(1, '#08104d');
+        ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+        for (const s of stars) {
+          s.x += s.vx; s.y += s.vy;
+          if (s.x < 0) s.x = w; if (s.x > w) s.x = 0;
+          if (s.y < 0) s.y = h; if (s.y > h) s.y = 0;
+          ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fillStyle = '#fff'; ctx.fill();
+        }
+        // Lines between close stars
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i < stars.length; i++) {
+          for (let j = i+1; j < stars.length; j++) {
+            const dx = stars[i].x - stars[j].x, dy = stars[i].y - stars[j].y, d = Math.sqrt(dx*dx + dy*dy);
+            if (d < 90) { ctx.strokeStyle = `rgba(255,255,255,${0.3 * (1 - d/90)})`; ctx.beginPath(); ctx.moveTo(stars[i].x, stars[i].y); ctx.lineTo(stars[j].x, stars[j].y); ctx.stroke(); }
+          }
+          // Lines to mouse
+          const dx = stars[i].x - mouse.x, dy = stars[i].y - mouse.y, d = Math.sqrt(dx*dx + dy*dy);
+          if (d < 130) { ctx.strokeStyle = `rgba(150,200,255,${0.7 * (1 - d/130)})`; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(stars[i].x, stars[i].y); ctx.lineTo(mouse.x, mouse.y); ctx.stroke(); }
+        }
+        requestAnimationFrame(loop);
+      }
+      loop();
+    }
+
+    function fitCanvas(cnv) {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = cnv.parentElement.getBoundingClientRect();
+      cnv.width = rect.width * dpr; cnv.height = rect.height * dpr;
+      cnv.style.width = rect.width + 'px'; cnv.style.height = rect.height + 'px';
+      const ctx = cnv.getContext('2d'); ctx.scale(dpr, dpr);
+      return { ctx, w: rect.width, h: rect.height };
+    }
+
+    function initAurora(cnv) {
+      let { ctx, w: W, h: H } = fitCanvas(cnv);
+      window.addEventListener('resize', () => { ({ ctx, w: W, h: H } = fitCanvas(cnv)); });
+      const stars = [];
+      for (let i = 0; i < 180; i++) stars.push({ x: Math.random()*W, y: Math.random()*H*0.75, size: Math.random()*1.6+0.3, twinkle: Math.random()*Math.PI*2, twinkleSpeed: Math.random()*0.025+0.008, brightness: Math.random()*0.5+0.4 });
+      const bands = [
+        { yBase: 0.20, amp: 35, fa: 0.0028, fb: 0.0065, sa: 0.007, sb: 0.011, color: [0,255,140], alpha: 0.3, thick: 0.15 },
+        { yBase: 0.32, amp: 28, fa: 0.0035, fb: 0.0080, sa: 0.010, sb: 0.015, color: [0,190,255], alpha: 0.25, thick: 0.12 },
+        { yBase: 0.45, amp: 22, fa: 0.0045, fb: 0.0055, sa: 0.006, sb: 0.009, color: [130,0,255], alpha: 0.2, thick: 0.10 },
+      ];
+      let t = 0;
+      function loop() {
+        ctx.fillStyle = '#000208'; ctx.fillRect(0, 0, W, H);
+        for (const s of stars) { s.twinkle += s.twinkleSpeed; const a = s.brightness + Math.sin(s.twinkle)*0.35; ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI*2); ctx.fillStyle = `rgba(220,240,255,${Math.max(0, Math.min(1, a))})`; ctx.fill(); }
+        for (const b of bands) {
+          t += 0.18;
+          const pts = [];
+          for (let i = 0; i <= 80; i++) { const x = (i/80)*W; const wave = Math.sin(x*b.fa + t*b.sa)*b.amp + Math.sin(x*b.fb + t*b.sb)*(b.amp*0.55); pts.push({ x, y: H*b.yBase + wave }); }
+          const bandH = H*b.thick;
+          ctx.beginPath(); ctx.moveTo(0, pts[0].y - bandH);
+          for (const p of pts) ctx.lineTo(p.x, p.y - bandH);
+          for (let i = pts.length-1; i >= 0; i--) ctx.lineTo(pts[i].x, pts[i].y);
+          ctx.closePath();
+          const grad = ctx.createLinearGradient(0, pts[0].y - bandH, 0, pts[0].y + bandH*0.5);
+          grad.addColorStop(0, `rgba(${b.color[0]},${b.color[1]},${b.color[2]},0)`);
+          grad.addColorStop(0.5, `rgba(${b.color[0]},${b.color[1]},${b.color[2]},${b.alpha})`);
+          grad.addColorStop(1, `rgba(${b.color[0]},${b.color[1]},${b.color[2]},0)`);
+          ctx.fillStyle = grad; ctx.fill();
+        }
+        requestAnimationFrame(loop);
+      }
+      loop();
+    }
+
+    function initQuantum(cnv) {
+      let { ctx, w: W, h: H } = fitCanvas(cnv);
+      window.addEventListener('resize', () => { ({ ctx, w: W, h: H } = fitCanvas(cnv)); });
+      const config = { count: 60, base: '#ff8a00', accent: '#f5a624', conn: 110 };
+      const particles = [];
+      for (let i = 0; i < config.count; i++) particles.push({ x: Math.random()*W, y: Math.random()*H, vx: (Math.random()-0.5)*1.2, vy: (Math.random()-0.5)*1.2, r: Math.random()*1.5+1, accent: Math.random() > 0.8 });
+      function loop() {
+        ctx.fillStyle = '#0d1a2b'; ctx.fillRect(0, 0, W, H); ctx.lineWidth = 0.8;
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i]; p.x += p.vx; p.y += p.vy;
+          if (p.x < 0 || p.x > W) p.vx *= -1; if (p.y < 0 || p.y > H) p.vy *= -1;
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fillStyle = p.accent ? config.accent : config.base; ctx.fill();
+          for (let j = i+1; j < particles.length; j++) {
+            const dx = p.x - particles[j].x, dy = p.y - particles[j].y, d = Math.sqrt(dx*dx + dy*dy);
+            if (d < config.conn) {
+              const a = Math.floor((1 - d/config.conn)*200).toString(16).padStart(2, '0');
+              ctx.strokeStyle = (p.accent ? config.accent : config.base) + a;
+              ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
+            }
+          }
+        }
+        requestAnimationFrame(loop);
+      }
+      loop();
+    }
+
+    function initFireflies(cnv) {
+      let { ctx, w: W, h: H } = fitCanvas(cnv);
+      window.addEventListener('resize', () => { ({ ctx, w: W, h: H } = fitCanvas(cnv)); });
+      const flies = [];
+      for (let i = 0; i < 35; i++) flies.push({ x: Math.random()*W, y: Math.random()*H, vx: (Math.random()-0.5)*0.4, vy: (Math.random()-0.5)*0.4, phase: Math.random()*Math.PI*2, phaseSpeed: 0.02 + Math.random()*0.03, r: 1 + Math.random()*1.5 });
+      function loop() {
+        ctx.fillStyle = 'rgba(8,18,12,0.18)'; ctx.fillRect(0, 0, W, H);
+        for (const f of flies) {
+          f.x += f.vx; f.y += f.vy; f.phase += f.phaseSpeed;
+          if (f.x < 0 || f.x > W) f.vx *= -1; if (f.y < 0 || f.y > H) f.vy *= -1;
+          const glow = (Math.sin(f.phase)+1)/2; const a = 0.3 + glow*0.7;
+          const grad = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r*6);
+          grad.addColorStop(0, `rgba(255,230,100,${a})`); grad.addColorStop(0.4, `rgba(180,220,80,${a*0.4})`); grad.addColorStop(1, 'transparent');
+          ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(f.x, f.y, f.r*(1+glow*0.5), 0, Math.PI*2); ctx.fill();
+        }
+        requestAnimationFrame(loop);
+      }
+      loop();
+    }
+
+    function initCircuit(cnv) {
+      let { ctx, w: W, h: H } = fitCanvas(cnv);
+      window.addEventListener('resize', () => { ({ ctx, w: W, h: H } = fitCanvas(cnv)); });
+      class T { constructor(){this.reset();} reset(){this.x=Math.random()*W; this.y=Math.random()*H; this.speed=1.5+Math.random(); this.angle=Math.floor(Math.random()*4)*(Math.PI/2); this.life=0; this.maxLife=100+Math.random()*200; this.hue=200+Math.random()*60;} update(){this.x+=Math.cos(this.angle)*this.speed; this.y+=Math.sin(this.angle)*this.speed; this.life++; if(Math.random()<0.04) this.angle += (Math.random()<0.5?1:-1)*Math.PI/2; if(this.x<0||this.x>W||this.y<0||this.y>H||this.life>this.maxLife) this.reset();} draw(){ctx.beginPath(); ctx.arc(this.x, this.y, 1.5, 0, Math.PI*2); ctx.fillStyle=`hsla(${this.hue},90%,75%,1)`; ctx.fill();} }
+      const tracers = []; for (let i = 0; i < 35; i++) tracers.push(new T());
+      function loop() { ctx.fillStyle='rgba(5,5,16,0.05)'; ctx.fillRect(0,0,W,H); for (const t of tracers){t.update(); t.draw();} requestAnimationFrame(loop); }
+      loop();
+    }
+
+    function initFiber(cnv) {
+      let { ctx, w, h } = fitCanvas(cnv); let cx = w/2, cy = h/2;
+      window.addEventListener('resize', () => { ({ ctx, w, h } = fitCanvas(cnv)); cx = w/2; cy = h/2; });
+      const particles = [];
+      const make = () => { const angle = Math.random()*Math.PI*2; const radius = Math.random()*(w/3); return { z: Math.random()*w, x: cx + Math.cos(angle)*radius, y: cy + Math.sin(angle)*radius, speed: 0.4 + Math.random()*0.9, hue: 180 + Math.random()*50 }; };
+      for (let i = 0; i < 280; i++) particles.push(make());
+      function loop() {
+        ctx.fillStyle = 'rgba(0,0,0,0.1)'; ctx.fillRect(0, 0, w, h);
+        for (const p of particles) {
+          p.z -= p.speed; if (p.z < 1) Object.assign(p, make());
+          const scale = w/p.z; const x2d = (p.x-cx)*scale + cx; const y2d = (p.y-cy)*scale + cy;
+          const ps = w/(p.z + p.speed*10); const px2 = (p.x-cx)*ps + cx; const py2 = (p.y-cy)*ps + cy;
+          ctx.beginPath(); ctx.moveTo(px2, py2); ctx.lineTo(x2d, y2d);
+          ctx.lineWidth = scale*1.5;
+          ctx.strokeStyle = `hsla(${p.hue},80%,60%,${0.1 + 0.8*(1 - p.z/w)})`; ctx.stroke();
+        }
+        requestAnimationFrame(loop);
+      }
+      loop();
+    }
+
+    function initHexagons(cnv) {
+      let { ctx, w, h } = fitCanvas(cnv);
+      const opts = { len: 18, count: 35, baseTime: 10, addedTime: 10, dieChance: 0.05, spawnChance: 1, sparkChance: 0.1, sparkDist: 10, sparkSize: 2, baseLight: 50, addedLight: 10, shadowToTimePropMult: 6, baseLightInputMultiplier: 0.01, addedLightInputMultiplier: 0.02, repaintAlpha: 0.05, hueChange: 0.1 };
+      let cx = w/2, cy = h/2; let dieX = w/2/opts.len, dieY = h/2/opts.len;
+      window.addEventListener('resize', () => { ({ ctx, w, h } = fitCanvas(cnv)); cx = w/2; cy = h/2; dieX = w/2/opts.len; dieY = h/2/opts.len; });
+      const baseRad = Math.PI*2/6; const lines = []; let tick = 0;
+      ctx.fillStyle = 'black'; ctx.fillRect(0, 0, w, h);
+      class L { constructor(){this.reset();} reset(){this.x=0;this.y=0;this.addedX=0;this.addedY=0;this.rad=0;this.lightInputMultiplier=opts.baseLightInputMultiplier+opts.addedLightInputMultiplier*Math.random();this.color=`hsl(${tick*opts.hueChange},100%,light%)`;this.cumulativeTime=0;this.beginPhase();} beginPhase(){this.x+=this.addedX;this.y+=this.addedY;this.time=0;this.targetTime=(opts.baseTime+opts.addedTime*Math.random())|0;this.rad+=baseRad*(Math.random()<0.5?1:-1);this.addedX=Math.cos(this.rad);this.addedY=Math.sin(this.rad);if(Math.random()<opts.dieChance||this.x>dieX||this.x<-dieX||this.y>dieY||this.y<-dieY) this.reset();} step(){this.time++;this.cumulativeTime++;if(this.time>=this.targetTime) this.beginPhase();const prop=this.time/this.targetTime;const wave=Math.sin(prop*Math.PI/2);const x=this.addedX*wave,y=this.addedY*wave;ctx.shadowBlur=prop*opts.shadowToTimePropMult;const light=opts.baseLight+opts.addedLight*Math.sin(this.cumulativeTime*this.lightInputMultiplier);ctx.fillStyle=ctx.shadowColor=this.color.replace('light',light);ctx.fillRect(cx+(this.x+x)*opts.len, cy+(this.y+y)*opts.len, 2, 2);if(Math.random()<opts.sparkChance){ctx.fillRect(cx+(this.x+x)*opts.len+Math.random()*opts.sparkDist*(Math.random()<0.5?1:-1)-opts.sparkSize/2, cy+(this.y+y)*opts.len+Math.random()*opts.sparkDist*(Math.random()<0.5?1:-1)-opts.sparkSize/2, opts.sparkSize, opts.sparkSize);}} }
+      function loop() { requestAnimationFrame(loop); tick++; ctx.globalCompositeOperation='source-over'; ctx.shadowBlur=0; ctx.fillStyle=`rgba(0,0,0,${opts.repaintAlpha})`; ctx.fillRect(0,0,w,h); ctx.globalCompositeOperation='lighter'; if(lines.length<opts.count && Math.random()<opts.spawnChance) lines.push(new L()); for(const line of lines) line.step(); }
+      loop();
+    }
+
+    function initNeonNetwork(cnv) {
+      let { ctx, w, h } = fitCanvas(cnv);
+      window.addEventListener('resize', () => { ({ ctx, w, h } = fitCanvas(cnv)); });
+      const particles = [];
+      for (let i = 0; i < 50; i++) particles.push({ x: Math.random()*w, y: Math.random()*h, vx: (Math.random()-0.5)*0.8, vy: (Math.random()-0.5)*0.8, r: 2, hue: Math.random()*360 });
+      let hueShift = 0;
+      function loop() {
+        ctx.fillStyle = 'rgba(10,14,26,0.15)'; ctx.fillRect(0, 0, w, h);
+        hueShift = (hueShift + 0.3) % 360;
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i]; p.x += p.vx; p.y += p.vy;
+          if (p.x < 0 || p.x > w) p.vx *= -1; if (p.y < 0 || p.y > h) p.vy *= -1;
+          const hue = (p.hue + hueShift) % 360;
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+          ctx.fillStyle = `hsl(${hue},80%,60%)`; ctx.shadowColor = `hsl(${hue},90%,60%)`; ctx.shadowBlur = 8; ctx.fill(); ctx.shadowBlur = 0;
+          for (let j = i+1; j < particles.length; j++) {
+            const dx = p.x - particles[j].x, dy = p.y - particles[j].y, d = Math.sqrt(dx*dx + dy*dy);
+            if (d < 100) { ctx.strokeStyle = `hsla(${hue},80%,60%,${1 - d/100})`; ctx.lineWidth = 0.6; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke(); }
+          }
+        }
+        requestAnimationFrame(loop);
+      }
+      loop();
+    }
+
+    /* === VOXEL PARIS — упрощённая мини-версия (минимальный город + Эйфелева башня) === */
+    function initVoxelParis(container) {
+      if (!container) return;
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+      script.onload = () => buildScene(container);
+      document.head.appendChild(script);
+    }
+
+    function buildScene(container) {
+      const W = container.clientWidth, H = container.clientHeight;
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x87CEEB);
+      scene.fog = new THREE.Fog(0x87CEEB, 80, 250);
+      const camera = new THREE.PerspectiveCamera(60, W/H, 1, 800);
+      camera.position.set(0, 60, 150);
+      const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(W, H);
+      container.appendChild(renderer.domElement);
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+      const dir = new THREE.DirectionalLight(0xffffee, 1);
+      dir.position.set(-100, 200, -200);
+      scene.add(dir);
+
+      // Sun (солнышко!)
+      const sunGeo = new THREE.SphereGeometry(20, 16, 16);
+      const sun = new THREE.Mesh(sunGeo, new THREE.MeshBasicMaterial({ color: 0xffcc00 }));
+      sun.position.set(-100, 120, -250); scene.add(sun);
+
+      // Eiffel Tower (упрощённая)
+      const towerMat = new THREE.MeshLambertMaterial({ color: 0x807060 });
+      const towerGroup = new THREE.Group();
+      for (let y = 0; y < 30; y++) {
+        const sz = Math.max(1, 10 - y * 0.3);
+        for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) {
+          if (Math.abs(dx) === 1 || Math.abs(dz) === 1) {
+            const m = new THREE.Mesh(new THREE.BoxGeometry(2,2,2), towerMat);
+            m.position.set(dx * sz, y * 2, dz * sz);
+            towerGroup.add(m);
+          }
+        }
+      }
+      towerGroup.position.y = -10; scene.add(towerGroup);
+
+      // Ground
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(400,400), new THREE.MeshLambertMaterial({ color: 0x5c8a3c }));
+      ground.rotation.x = -Math.PI/2; ground.position.y = -10; scene.add(ground);
+
+      // Buildings around (random voxel cubes)
+      for (let i = 0; i < 80; i++) {
+        const x = (Math.random()-0.5) * 200;
+        const z = (Math.random()-0.5) * 200;
+        if (Math.abs(x) < 25 && Math.abs(z) < 25) continue;
+        const h = 4 + Math.random() * 14;
+        const m = new THREE.Mesh(new THREE.BoxGeometry(6, h, 6), new THREE.MeshLambertMaterial({ color: new THREE.Color().setHSL(0.08 + Math.random()*0.05, 0.3, 0.5 + Math.random()*0.2) }));
+        m.position.set(x, h/2 - 10, z); scene.add(m);
+      }
+
+      // Clouds
+      const cloudMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
+      for (let i = 0; i < 12; i++) {
+        const c = new THREE.Mesh(new THREE.BoxGeometry(20+Math.random()*15, 6, 14+Math.random()*10), cloudMat);
+        c.position.set((Math.random()-0.5)*300, 90 + Math.random()*30, (Math.random()-0.5)*300); scene.add(c);
+      }
+
+      let t = 0;
+      function animate() {
+        requestAnimationFrame(animate);
+        t += 0.005;
+        camera.position.x = Math.sin(t) * 150;
+        camera.position.z = Math.cos(t) * 150;
+        camera.lookAt(0, 30, 0);
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      window.addEventListener('resize', () => {
+        const w = container.clientWidth, h = container.clientHeight;
+        camera.aspect = w/h; camera.updateProjectionMatrix(); renderer.setSize(w, h);
+      });
+    }
+  </script>
+</Base>

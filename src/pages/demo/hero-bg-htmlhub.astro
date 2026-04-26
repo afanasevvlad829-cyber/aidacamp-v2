@@ -1,0 +1,478 @@
+---
+import '../../styles/global.css';
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+
+// Demo: 12 blocks adapted from htmlhub.org/library
+// 3 Canvas-based (Aurora / Quantum Mesh) + 9 CSS-only
+
+const blocks = [
+  { id: 'aurora',         src: 'Canvas',  use: 'Главная / IT-лагерь',          src_url: 'aurora-borealis' },
+  { id: 'quantum',        src: 'Canvas',  use: 'AI / нейросети',                src_url: 'quantum-node-mesh' },
+  { id: 'glass-orbs',     src: 'CSS',     use: 'Документы / цены / лицензии',   src_url: 'glassmorphism-orbs' },
+  { id: 'fireflies',      src: 'Canvas',  use: 'Лес / территория / природа',    src_url: 'glowing-fireflies' },
+  { id: 'liquid',         src: 'CSS',     use: 'Scratch / младшие',             src_url: 'liquid-morphing-blobs' },
+  { id: 'beams',          src: 'CSS',     use: 'Хакатон / try-страницы',        src_url: 'ascendant-light' },
+  { id: 'meteors',        src: 'CSS',     use: 'Финал / итоги смены',           src_url: 'meteor' },
+  { id: 'skyline',        src: 'SVG',     use: 'Подмосковье / гео',             src_url: 'parallax-skyline' },
+  { id: 'dust',           src: 'CSS',     use: 'Camp Premium / закат',          src_url: 'digital-dust-motes' },
+  { id: 'gradient',       src: 'CSS',     use: 'Editorial / статьи',            src_url: 'gradients' },
+  { id: 'tunnel',         src: 'CSS',     use: '3D / Blender',                  src_url: 'data-tunnel' },
+  { id: 'neon',           src: 'Canvas',  use: 'Подростки / teen-builder',      src_url: 'neon-particle-network' },
+];
+---
+
+<Base title="Hero BG · htmlhub.org адаптация (12 блоков)">
+  <Header />
+  <div class="bg-amber-100 text-amber-900 text-center text-[13px] py-1.5 border-b border-amber-200">
+    <strong>DEMO htmlhub:</strong> 12 блоков адаптированы из htmlhub.org · scoped в контейнерах · canvas инициализируется по IntersectionObserver
+  </div>
+
+  <main class="bg-slate-100">
+    {blocks.map((b, i) => (
+      <section class="hub-section">
+        <div class="hub-header">
+          <div>
+            <span class="hub-num">{String(i+1).padStart(2,'0')} · {b.src}</span>
+            <h2 class="hub-name">{b.use}</h2>
+            <a class="hub-src" href={`https://htmlhub.org/library/backgrounds/${b.src_url}`} target="_blank" rel="noopener">→ оригинал htmlhub.org</a>
+          </div>
+        </div>
+        <div class={`hero-hub hero-hub--${b.id}`} data-effect={b.id}>
+          {b.src === 'Canvas' && <canvas class="hub-canvas"></canvas>}
+          <div class="hero-hub-content">
+            <h3 class="hero-hub-h">Летний IT-лагерь · 2026</h3>
+            <p class="hero-hub-sub">Каждый уезжает с готовым проектом. Смены июнь–август, от 48 000 ₽.</p>
+            <a href="#" class="hero-hub-cta">Смены 2026 →</a>
+          </div>
+        </div>
+      </section>
+    ))}
+  </main>
+
+  <style is:inline>
+    .hub-section { max-width: 1280px; margin: 28px auto; padding: 0 24px; }
+    .hub-header { padding-bottom: 10px; }
+    .hub-num { font-family: ui-monospace, monospace; font-size: 11px; color: #94a3b8; letter-spacing: 0.18em; }
+    .hub-name { margin: 4px 0 2px; font-size: 22px; font-weight: 800; color: #0f172a; }
+    .hub-src { font-size: 12px; color: #475569; text-decoration: underline; }
+    .hero-hub {
+      position: relative; overflow: hidden; isolation: isolate;
+      min-height: 460px; border-radius: 20px;
+      display: flex; align-items: center; padding: 48px;
+      background: #0a0e1a; color: #fff;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+    }
+    .hub-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; display: block; }
+    .hero-hub-content { position: relative; z-index: 10; max-width: 560px; }
+    .hero-hub-h { font-size: clamp(28px, 4vw, 42px); font-weight: 800; letter-spacing: -0.025em; line-height: 1.05; margin: 0 0 12px; text-shadow: 0 2px 18px rgba(0,0,0,0.5); }
+    .hero-hub-sub { font-size: 17px; color: rgba(255,255,255,0.85); line-height: 1.5; margin: 0 0 22px; max-width: 480px; }
+    .hero-hub-cta { display: inline-flex; align-items: center; gap: 8px; background: #fff; color: #0a0e1a; padding: 13px 26px; border-radius: 12px; font-weight: 700; font-size: 15px; text-decoration: none; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+
+    /* Light variants — для Glass Orbs / Gradients нужен contrasting text */
+    .hero-hub--glass-orbs .hero-hub-h, .hero-hub--gradient .hero-hub-h { color: #fff; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero-hub *, .hero-hub::before, .hero-hub::after { animation: none !important; }
+    }
+
+    /* ========== CSS-ONLY EFFECTS ========== */
+
+    /* 03 GLASSMORPHISM ORBS — adapted from htmlhub */
+    .hero-hub--glass-orbs {
+      background: linear-gradient(to bottom right, #0f172a, #1e1b4b);
+    }
+    .hero-hub--glass-orbs::before, .hero-hub--glass-orbs::after {
+      content: ''; position: absolute; border-radius: 50%; filter: blur(80px);
+      opacity: 0.65; will-change: transform; animation: orb-float 20s infinite ease-in-out alternate;
+    }
+    .hero-hub--glass-orbs::before {
+      width: 320px; height: 320px; background: #38bdf8;
+      top: -80px; left: -60px; animation-duration: 22s;
+    }
+    .hero-hub--glass-orbs::after {
+      width: 380px; height: 380px; background: #818cf8;
+      bottom: -100px; right: -80px; animation-duration: 26s; animation-delay: -7s;
+    }
+    .hero-hub--glass-orbs .hero-hub-content {
+      background: rgba(255,255,255,0.05); backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 16px;
+      padding: 28px 32px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+    }
+    @keyframes orb-float {
+      0% { transform: translate(0,0) scale(1); }
+      50% { transform: translate(80px,-50px) scale(1.15); }
+      100% { transform: translate(-40px,60px) scale(0.95); }
+    }
+
+    /* 05 LIQUID MORPHING BLOBS — colorful soft blobs */
+    .hero-hub--liquid {
+      background: radial-gradient(ellipse 70% 60% at 50% 50%, #2a1a3e 0%, #0a0e1a 100%);
+    }
+    .hero-hub--liquid::before, .hero-hub--liquid::after {
+      content: ''; position: absolute; border-radius: 50%;
+      filter: blur(60px); will-change: transform;
+    }
+    .hero-hub--liquid::before {
+      width: 360px; height: 360px;
+      background: radial-gradient(circle, rgba(244,114,182,0.7), rgba(244,114,182,0));
+      top: 5%; left: 5%; animation: blob-morph 16s ease-in-out infinite;
+    }
+    .hero-hub--liquid::after {
+      width: 320px; height: 320px;
+      background: radial-gradient(circle, rgba(251,191,36,0.65), rgba(251,191,36,0));
+      bottom: 5%; right: 8%; animation: blob-morph 19s ease-in-out infinite reverse;
+    }
+    @keyframes blob-morph {
+      0%,100% { transform: translate(0,0) scale(1); border-radius: 50%; }
+      33% { transform: translate(80px,-40px) scale(1.15); border-radius: 40% 60% 70% 30%; }
+      66% { transform: translate(-40px,80px) scale(0.85); border-radius: 70% 30% 40% 60%; }
+    }
+
+    /* 06 ASCENDANT LIGHT — vertical beams rising */
+    .hero-hub--beams {
+      background: radial-gradient(ellipse at 50% 100%, #1e0a26 0%, #0a0e1a 70%);
+    }
+    .hero-hub--beams::before {
+      content: ''; position: absolute; inset: 0; z-index: 1;
+      background:
+        linear-gradient(180deg, transparent 30%, rgba(236,124,0,0.18) 100%),
+        linear-gradient(180deg, transparent 60%, rgba(244,114,182,0.12) 100%);
+    }
+    .hero-hub--beams::after {
+      content: ''; position: absolute; inset: 0; z-index: 1;
+      background:
+        repeating-linear-gradient(180deg,
+          transparent 0 8px,
+          rgba(255,200,130,0.15) 8px 9px,
+          transparent 9px 50px);
+      mask-image: radial-gradient(ellipse 80% 100% at 50% 100%, #000 0%, transparent 80%);
+      animation: beams-rise 6s linear infinite;
+    }
+    @keyframes beams-rise {
+      0% { transform: translateY(20px); opacity: 0.4; }
+      50% { opacity: 1; }
+      100% { transform: translateY(-100%); opacity: 0; }
+    }
+
+    /* 07 METEORS — diagonal falling */
+    .hero-hub--meteors {
+      background: radial-gradient(ellipse at 50% 0%, #1a0f2e 0%, #050818 70%);
+    }
+    .hero-hub--meteors::before {
+      content: ''; position: absolute; inset: 0; z-index: 1;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'><g stroke='white' stroke-linecap='round' fill='none'><line x1='30' y1='40' x2='80' y2='90' stroke-width='1.5' opacity='0.7'/><line x1='150' y1='10' x2='200' y2='60' stroke-width='1.5' opacity='0.5'/><line x1='270' y1='80' x2='320' y2='130' stroke-width='1.2' opacity='0.6'/><line x1='90' y1='180' x2='140' y2='230' stroke-width='1.5' opacity='0.5'/><line x1='220' y1='220' x2='270' y2='270' stroke-width='1.5' opacity='0.6'/><line x1='340' y1='280' x2='390' y2='330' stroke-width='1.2' opacity='0.5'/></g><g fill='white'><circle cx='30' cy='40' r='2'/><circle cx='150' cy='10' r='2'/><circle cx='270' cy='80' r='1.5'/><circle cx='90' cy='180' r='2'/><circle cx='220' cy='220' r='2'/><circle cx='340' cy='280' r='1.5'/></g></svg>");
+      animation: meteors-fall 6s linear infinite;
+      mask-image: linear-gradient(180deg, transparent 0%, #000 20%, #000 80%, transparent 100%);
+    }
+    @keyframes meteors-fall {
+      0% { background-position: 0 -400px; }
+      100% { background-position: 0 400px; }
+    }
+    /* twinkle stars background */
+    .hero-hub--meteors::after {
+      content: ''; position: absolute; inset: 0; z-index: 0;
+      background-image:
+        radial-gradient(circle 1px at 18% 25%, white, transparent 70%),
+        radial-gradient(circle 1px at 35% 65%, white, transparent 70%),
+        radial-gradient(circle 1.5px at 60% 35%, white, transparent 70%),
+        radial-gradient(circle 1px at 75% 75%, white, transparent 70%),
+        radial-gradient(circle 1.5px at 90% 30%, white, transparent 70%);
+      opacity: 0.6;
+    }
+
+    /* 08 SKYLINE — silhouette + sunset (SVG) */
+    .hero-hub--skyline {
+      background: linear-gradient(180deg, #fbbf24 0%, #f87171 40%, #7c3aed 80%, #1e1b4b 100%);
+    }
+    .hero-hub--skyline::before {
+      content: ''; position: absolute; right: 15%; top: 22%;
+      width: 100px; height: 100px;
+      background: radial-gradient(circle, #fff 0%, #fbbf24 40%, transparent 80%);
+      border-radius: 50%; filter: blur(2px);
+      box-shadow: 0 0 80px rgba(251,191,36,0.7);
+    }
+    .hero-hub--skyline::after {
+      content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 50%;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='200' viewBox='0 0 1200 200' preserveAspectRatio='none'><path d='M0,200 L0,140 L40,140 L40,90 L80,90 L80,120 L130,120 L130,70 L170,70 L170,100 L220,100 L220,55 L280,55 L280,85 L330,85 L330,110 L390,110 L390,60 L450,60 L450,100 L520,100 L520,75 L580,75 L580,40 L640,40 L640,80 L700,80 L700,110 L760,110 L760,65 L820,65 L820,95 L890,95 L890,55 L950,55 L950,90 L1020,90 L1020,120 L1080,120 L1080,80 L1140,80 L1140,110 L1200,110 L1200,200 Z' fill='%230a0e1a'/></svg>");
+      background-size: cover; background-repeat: no-repeat;
+    }
+
+    /* 09 DIGITAL DUST — floating particles in light beam */
+    .hero-hub--dust {
+      background: radial-gradient(ellipse 80% 60% at 30% 20%, rgba(255,200,150,0.4) 0%, transparent 50%),
+                  linear-gradient(180deg, #1e1b4b 0%, #0a0e1a 100%);
+    }
+    .hero-hub--dust::before {
+      content: ''; position: absolute; inset: 0; z-index: 1;
+      background:
+        radial-gradient(circle 1.5px at 12% 18%, white, transparent),
+        radial-gradient(circle 1px at 28% 35%, white, transparent),
+        radial-gradient(circle 2px at 45% 22%, white, transparent),
+        radial-gradient(circle 1.5px at 62% 48%, white, transparent),
+        radial-gradient(circle 1px at 78% 28%, white, transparent),
+        radial-gradient(circle 2px at 92% 55%, white, transparent),
+        radial-gradient(circle 1.5px at 22% 65%, white, transparent),
+        radial-gradient(circle 1px at 55% 78%, white, transparent),
+        radial-gradient(circle 2px at 82% 88%, white, transparent),
+        radial-gradient(circle 1.5px at 38% 92%, white, transparent);
+      animation: dust-drift 20s linear infinite;
+    }
+    .hero-hub--dust::after {
+      content: ''; position: absolute; inset: 0; z-index: 1;
+      background: linear-gradient(115deg, transparent 30%, rgba(255,220,160,0.2) 45%, transparent 60%);
+      animation: dust-leak 14s ease-in-out infinite alternate;
+    }
+    @keyframes dust-drift {
+      0% { transform: translateY(0) scale(1); opacity: 0.7; }
+      50% { opacity: 1; }
+      100% { transform: translateY(-60px) scale(1.05); opacity: 0; }
+    }
+    @keyframes dust-leak {
+      0% { transform: translateX(-15%); opacity: 0.4; }
+      100% { transform: translateX(15%); opacity: 0.9; }
+    }
+
+    /* 10 GRADIENT — soft animated mesh */
+    .hero-hub--gradient {
+      background:
+        linear-gradient(45deg, #ec7c00 0%, #f472b6 25%, #818cf8 50%, #38bdf8 75%, #34d399 100%);
+      background-size: 400% 400%;
+      animation: grad-shift 15s ease infinite;
+    }
+    @keyframes grad-shift {
+      0%,100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    /* 11 DATA TUNNEL — perspective grid + receding */
+    .hero-hub--tunnel {
+      background: radial-gradient(ellipse at 50% 50%, #1e3a8a 0%, #050818 70%);
+      perspective: 700px;
+    }
+    .hero-hub--tunnel::before {
+      content: ''; position: absolute; inset: 0; z-index: 1;
+      background-image:
+        linear-gradient(rgba(96,165,250,0.4) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(96,165,250,0.4) 1px, transparent 1px);
+      background-size: 60px 60px;
+      transform: perspective(600px) rotateX(70deg) translateZ(0);
+      transform-origin: 50% 100%;
+      animation: tunnel-rush 4s linear infinite;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 100%, #000 0%, transparent 80%);
+    }
+    @keyframes tunnel-rush {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 60px; }
+    }
+
+    /* ===== Canvas-based blocks (4) — JS init below ===== */
+  </style>
+
+  <script is:inline>
+    /* ============================================================
+       CANVAS effects: scoped to .hub-canvas inside .hero-hub--<id>
+       ============================================================ */
+    document.addEventListener('DOMContentLoaded', () => {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting && !e.target.dataset.fxInited) {
+            e.target.dataset.fxInited = '1';
+            const fx = e.target.dataset.effect;
+            const cnv = e.target.querySelector('.hub-canvas');
+            if (!cnv) return;
+            if (fx === 'aurora')    initAurora(cnv);
+            if (fx === 'quantum')   initQuantum(cnv);
+            if (fx === 'fireflies') initFireflies(cnv);
+            if (fx === 'neon')      initNeon(cnv);
+          }
+        });
+      }, { rootMargin: '200px' });
+      document.querySelectorAll('[data-effect]').forEach(el => observer.observe(el));
+    });
+
+    function fitCanvas(cnv) {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = cnv.parentElement.getBoundingClientRect();
+      cnv.width = rect.width * dpr;
+      cnv.height = rect.height * dpr;
+      cnv.style.width = rect.width + 'px';
+      cnv.style.height = rect.height + 'px';
+      const ctx = cnv.getContext('2d');
+      ctx.scale(dpr, dpr);
+      return { ctx, w: rect.width, h: rect.height };
+    }
+
+    /* ===== AURORA BOREALIS (adapted from htmlhub) ===== */
+    function initAurora(cnv) {
+      let { ctx, w: W, h: H } = fitCanvas(cnv);
+      window.addEventListener('resize', () => { ({ ctx, w: W, h: H } = fitCanvas(cnv)); });
+
+      const stars = [];
+      for (let i = 0; i < 180; i++) {
+        stars.push({
+          x: Math.random() * W, y: Math.random() * H * 0.75,
+          size: Math.random() * 1.6 + 0.3, twinkle: Math.random() * Math.PI * 2,
+          twinkleSpeed: Math.random() * 0.025 + 0.008,
+          brightness: Math.random() * 0.5 + 0.4
+        });
+      }
+      const bands = [
+        { yBase: 0.20, amp: 35, fa: 0.0028, fb: 0.0065, sa: 0.007, sb: 0.011, color: [0,255,140], alpha: 0.3, thick: 0.15 },
+        { yBase: 0.32, amp: 28, fa: 0.0035, fb: 0.0080, sa: 0.010, sb: 0.015, color: [0,190,255], alpha: 0.25, thick: 0.12 },
+        { yBase: 0.45, amp: 22, fa: 0.0045, fb: 0.0055, sa: 0.006, sb: 0.009, color: [130,0,255], alpha: 0.2, thick: 0.10 },
+      ];
+      let t = 0;
+      function loop() {
+        ctx.fillStyle = '#000208'; ctx.fillRect(0, 0, W, H);
+        // stars
+        for (const s of stars) {
+          s.twinkle += s.twinkleSpeed;
+          const a = s.brightness + Math.sin(s.twinkle) * 0.35;
+          ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(220,240,255,${Math.max(0, Math.min(1, a))})`; ctx.fill();
+        }
+        // aurora bands
+        for (const b of bands) {
+          t += 0.05;
+          const pts = [];
+          for (let i = 0; i <= 80; i++) {
+            const x = (i / 80) * W;
+            const wave = Math.sin(x * b.fa + t * b.sa) * b.amp + Math.sin(x * b.fb + t * b.sb) * (b.amp * 0.55);
+            pts.push({ x, y: H * b.yBase + wave });
+          }
+          const bandH = H * b.thick;
+          ctx.beginPath();
+          ctx.moveTo(0, pts[0].y - bandH);
+          for (const p of pts) ctx.lineTo(p.x, p.y - bandH);
+          for (let i = pts.length - 1; i >= 0; i--) ctx.lineTo(pts[i].x, pts[i].y);
+          ctx.closePath();
+          const grad = ctx.createLinearGradient(0, pts[0].y - bandH, 0, pts[0].y + bandH * 0.5);
+          grad.addColorStop(0, `rgba(${b.color[0]},${b.color[1]},${b.color[2]},0)`);
+          grad.addColorStop(0.5, `rgba(${b.color[0]},${b.color[1]},${b.color[2]},${b.alpha})`);
+          grad.addColorStop(1, `rgba(${b.color[0]},${b.color[1]},${b.color[2]},0)`);
+          ctx.fillStyle = grad; ctx.fill();
+        }
+        requestAnimationFrame(loop);
+      }
+      loop();
+    }
+
+    /* ===== QUANTUM NODE MESH (adapted) ===== */
+    function initQuantum(cnv) {
+      let { ctx, w: W, h: H } = fitCanvas(cnv);
+      window.addEventListener('resize', () => { ({ ctx, w: W, h: H } = fitCanvas(cnv)); });
+
+      const config = { count: 60, base: '#00e5ff', accent: '#bd00ff', conn: 110 };
+      const particles = [];
+      for (let i = 0; i < config.count; i++) {
+        particles.push({
+          x: Math.random() * W, y: Math.random() * H,
+          vx: (Math.random() - 0.5) * 1.2, vy: (Math.random() - 0.5) * 1.2,
+          r: Math.random() * 1.5 + 1,
+          accent: Math.random() > 0.8
+        });
+      }
+      function loop() {
+        ctx.fillStyle = '#0b0f19'; ctx.fillRect(0, 0, W, H);
+        ctx.lineWidth = 0.8;
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          p.x += p.vx; p.y += p.vy;
+          if (p.x < 0 || p.x > W) p.vx *= -1;
+          if (p.y < 0 || p.y > H) p.vy *= -1;
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = p.accent ? config.accent : config.base; ctx.fill();
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = p.x - particles[j].x, dy = p.y - particles[j].y;
+            const d = Math.sqrt(dx*dx + dy*dy);
+            if (d < config.conn) {
+              const a = Math.floor((1 - d / config.conn) * 200).toString(16).padStart(2, '0');
+              ctx.strokeStyle = (p.accent ? config.accent : config.base) + a;
+              ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
+            }
+          }
+        }
+        requestAnimationFrame(loop);
+      }
+      loop();
+    }
+
+    /* ===== GLOWING FIREFLIES (organic) ===== */
+    function initFireflies(cnv) {
+      let { ctx, w: W, h: H } = fitCanvas(cnv);
+      window.addEventListener('resize', () => { ({ ctx, w: W, h: H } = fitCanvas(cnv)); });
+
+      const flies = [];
+      for (let i = 0; i < 35; i++) {
+        flies.push({
+          x: Math.random() * W, y: Math.random() * H,
+          vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4,
+          phase: Math.random() * Math.PI * 2,
+          phaseSpeed: 0.02 + Math.random() * 0.03,
+          r: 1 + Math.random() * 1.5
+        });
+      }
+      function loop() {
+        ctx.fillStyle = 'rgba(8, 18, 12, 0.18)'; ctx.fillRect(0, 0, W, H);
+        for (const f of flies) {
+          f.x += f.vx; f.y += f.vy;
+          f.phase += f.phaseSpeed;
+          if (f.x < 0 || f.x > W) f.vx *= -1;
+          if (f.y < 0 || f.y > H) f.vy *= -1;
+          const glow = (Math.sin(f.phase) + 1) / 2;
+          const a = 0.3 + glow * 0.7;
+          ctx.beginPath(); ctx.arc(f.x, f.y, f.r * (1 + glow * 0.5), 0, Math.PI * 2);
+          const grad = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r * 6);
+          grad.addColorStop(0, `rgba(255, 230, 100, ${a})`);
+          grad.addColorStop(0.4, `rgba(180, 220, 80, ${a * 0.4})`);
+          grad.addColorStop(1, 'transparent');
+          ctx.fillStyle = grad; ctx.fill();
+        }
+        requestAnimationFrame(loop);
+      }
+      loop();
+    }
+
+    /* ===== NEON PARTICLE NETWORK (HSL cycling) ===== */
+    function initNeon(cnv) {
+      let { ctx, w: W, h: H } = fitCanvas(cnv);
+      window.addEventListener('resize', () => { ({ ctx, w: W, h: H } = fitCanvas(cnv)); });
+
+      const particles = [];
+      for (let i = 0; i < 50; i++) {
+        particles.push({
+          x: Math.random() * W, y: Math.random() * H,
+          vx: (Math.random() - 0.5) * 0.8, vy: (Math.random() - 0.5) * 0.8,
+          r: 2, hue: Math.random() * 360
+        });
+      }
+      let hueShift = 0;
+      function loop() {
+        ctx.fillStyle = 'rgba(10, 14, 26, 0.15)'; ctx.fillRect(0, 0, W, H);
+        hueShift = (hueShift + 0.3) % 360;
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          p.x += p.vx; p.y += p.vy;
+          if (p.x < 0 || p.x > W) p.vx *= -1;
+          if (p.y < 0 || p.y > H) p.vy *= -1;
+          const hue = (p.hue + hueShift) % 360;
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = `hsl(${hue}, 80%, 60%)`;
+          ctx.shadowColor = `hsl(${hue}, 90%, 60%)`; ctx.shadowBlur = 8; ctx.fill(); ctx.shadowBlur = 0;
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = p.x - particles[j].x, dy = p.y - particles[j].y;
+            const d = Math.sqrt(dx*dx + dy*dy);
+            if (d < 100) {
+              ctx.strokeStyle = `hsla(${hue}, 80%, 60%, ${1 - d/100})`;
+              ctx.lineWidth = 0.6;
+              ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
+            }
+          }
+        }
+        requestAnimationFrame(loop);
+      }
+      loop();
+    }
+  </script>
+</Base>
