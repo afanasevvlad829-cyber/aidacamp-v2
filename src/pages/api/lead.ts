@@ -88,6 +88,46 @@ function buildTgText(body: Record<string, string>, crmId?: number | null): strin
   return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
+function buildCrmNote(body: Record<string, string>): string {
+  const lines: string[] = [];
+
+  if (body.shift)       lines.push(`Смена: ${body.shift}`);
+
+  // Атрибуция
+  const utmParts = [
+    body.utm_source   ? `source=${body.utm_source}` : '',
+    body.utm_medium   ? `medium=${body.utm_medium}` : '',
+    body.utm_campaign ? `campaign=${body.utm_campaign}` : '',
+    body.utm_content  ? `content=${body.utm_content}` : '',
+    body.utm_term     ? `term=${body.utm_term}` : '',
+  ].filter(Boolean);
+  if (utmParts.length) lines.push(`UTM: ${utmParts.join(' | ')}`);
+  if (body.yclid)     lines.push(`yclid: ${body.yclid}`);
+  if (body.gclid)     lines.push(`gclid: ${body.gclid}`);
+
+  // Страница
+  if (body.landing_url) lines.push(`URL: ${body.landing_url}`);
+  if (body.page_title)  lines.push(`Страница: ${body.page_title}`);
+  if (body.referrer)    lines.push(`Реферер: ${body.referrer}`);
+
+  // Время на сайте
+  if (body.session_ms) {
+    const sec = Math.round(Number(body.session_ms) / 1000);
+    lines.push(`Время на сайте: ${sec} сек`);
+  }
+
+  // Устройство
+  if (body.screen)    lines.push(`Экран: ${body.screen}`);
+  if (body.viewport)  lines.push(`Viewport: ${body.viewport}`);
+  if (body.language)  lines.push(`Язык: ${body.language}`);
+  if (body.tz)        lines.push(`Timezone: ${body.tz}`);
+
+  // Метрика clientID (для офлайн-конверсий)
+  if (body.ym_client_id) lines.push(`clientID Метрики: ${body.ym_client_id}`);
+
+  return lines.join('\n') || '';
+}
+
 async function createCrmLead(body: Record<string, string>): Promise<number | null> {
   const hostname = process.env.ALFACRM_HOSTNAME;
   const email    = process.env.ALFACRM_EMAIL;
@@ -120,11 +160,7 @@ async function createCrmLead(body: Record<string, string>): Promise<number | nul
         utm_medium: body.utm_medium || undefined,
         utm_campaign: body.utm_campaign || undefined,
         utm_term: body.utm_term || undefined,
-        note: [
-          body.shift    ? `Смена: ${body.shift}` : '',
-          body.referrer ? `Реферер: ${body.referrer}` : '',
-          body.landing_url ? `URL: ${body.landing_url}` : '',
-        ].filter(Boolean).join('\n') || undefined,
+        note: buildCrmNote(body),
       }),
     });
     const custData = await custRes.json();
