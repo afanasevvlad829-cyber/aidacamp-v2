@@ -15,6 +15,10 @@ interface Props {
   ogImageAlt?: string;
   /** Hero image path for early LCP preload — must be set for above-fold hero pages */
   heroPreload?: string;
+  /** Responsive hero preload: мобильные ≤768px (рендерится ДО аналитики) */
+  heroPreloadMobile?: string;
+  /** Responsive hero preload: десктоп ≥769px (рендерится ДО аналитики) */
+  heroPreloadDesktop?: string;
 }
 
 const {
@@ -24,6 +28,8 @@ const {
   ogImage = 'https://aidacamp.ru/images/og-default.jpg',
   ogImageAlt = 'АйДаКемп — IT-лагерь для детей в Подмосковье',
   heroPreload,
+  heroPreloadMobile,
+  heroPreloadDesktop,
 } = Astro.props;
 const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `https://aidacamp.ru${ogImage}`;
 const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
@@ -37,6 +43,9 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     <meta charset="UTF-8" />
     {/* LCP preload — самый первый тег после charset, чтобы браузер начал грузить до скриптов */}
     {heroPreload && <link rel="preload" as="image" href={heroPreload} type="image/avif" fetchpriority="high" />}
+    {/* Responsive LCP preloads (heroPreloadMobile/heroPreloadDesktop) — тоже рендерятся ДО аналитики */}
+    {heroPreloadMobile && <link rel="preload" as="image" media="(max-width: 768px)" href={heroPreloadMobile} type="image/avif" fetchpriority="high" />}
+    {heroPreloadDesktop && <link rel="preload" as="image" media="(min-width: 769px)" href={heroPreloadDesktop} type="image/avif" fetchpriority="high" />}
     <style set:html={iconsCSS}></style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
