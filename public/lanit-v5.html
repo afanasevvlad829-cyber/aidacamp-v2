@@ -936,7 +936,7 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
       <div id="calc-group-result">
         <div class="calc-results">
           <div class="calc-res">
-            <div class="calc-res-label">Цена за ребёнка</div>
+            <div class="calc-res-label">Цена за путёвку</div>
             <div class="calc-res-val orange" id="res-pp"></div>
             <div class="calc-res-sub" id="res-pp-sub"></div>
           </div>
@@ -946,19 +946,9 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
             <div class="calc-res-sub">от базовой цены</div>
           </div>
           <div class="calc-res">
-            <div class="calc-res-label">Итого за группу</div>
-            <div class="calc-res-val" id="res-total"></div>
-            <div class="calc-res-sub" id="res-kids"></div>
-          </div>
-          <div class="calc-res">
-            <div class="calc-res-label">Экономия группы</div>
-            <div class="calc-res-val green" id="res-save"></div>
-            <div class="calc-res-sub">по сравнению с базой</div>
-          </div>
-          <div class="calc-res">
             <div class="calc-res-label">Налоговый вычет</div>
             <div class="calc-res-val" id="res-tax" style="color:#28C840;"></div>
-            <div class="calc-res-sub">13% от суммы · вернёт работодатель</div>
+            <div class="calc-res-sub">13% · вернут через ФНС</div>
           </div>
         </div>
       </div>
@@ -2179,14 +2169,11 @@ function updateCalc() {
   if (plusBlock)  plusBlock.style.display  = 'none';
   const result = calcPrice(s, kids);
   if (!result) return;
-  const { disc, pricePerChild, total, savings } = result;
+  const { disc, pricePerChild } = result;
   document.getElementById('res-pp').textContent = fmt(pricePerChild);
   document.getElementById('res-pp-sub').innerHTML = '<s style="opacity:.5">' + fmt(s.basePrice) + '</s>';
   document.getElementById('res-disc').textContent = '−' + Math.round(disc * 100) + '%';
-  document.getElementById('res-total').textContent = fmt(total);
-  document.getElementById('res-kids').textContent = kids + ' ' + kidsWord(kids);
-  document.getElementById('res-save').textContent = fmt(savings);
-  document.getElementById('res-tax').textContent = fmt(Math.round(total * 0.13));
+  document.getElementById('res-tax').textContent = fmt(Math.round(pricePerChild * 0.13));
   document.getElementById('transfer-note').classList.remove('show');
 }
 function selectSmena(i, el) {
