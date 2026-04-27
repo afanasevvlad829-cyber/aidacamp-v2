@@ -84,15 +84,20 @@ const categories = [
     {categories.map((cat, i) => (
       <article data-faq-group-panel={cat.id} class={`mt-5 space-y-2 ${i === 0 ? '' : 'hidden'}`}>
         {cat.items.map((item) => (
-          <details class="group rounded-[14px] border border-slate-200 bg-slate-50">
-            <summary class="flex cursor-pointer items-center justify-between p-4 text-[15px] font-semibold text-slate-900 list-none [&::-webkit-details-marker]:hidden">
-              {item.q}
-              <span class="text-lg text-slate-400 transition group-open:rotate-45">+</span>
-            </summary>
-            <div class="px-4 pb-4 text-[16px] leading-[1.55] text-slate-600">
+          <div class="rounded-[14px] border border-slate-200 bg-slate-50" data-faq-item>
+            <button
+              type="button"
+              data-faq-toggle
+              class="flex w-full cursor-pointer items-center justify-between p-4 text-left text-[15px] font-semibold text-slate-900"
+              aria-expanded="false"
+            >
+              <span>{item.q}</span>
+              <span class="ml-3 shrink-0 text-lg text-slate-400 transition-transform duration-200" data-faq-icon aria-hidden="true">+</span>
+            </button>
+            <div class="hidden px-4 pb-4 text-[16px] leading-[1.55] text-slate-600" data-faq-answer>
               {item.a}
             </div>
-          </details>
+          </div>
         ))}
       </article>
     ))}
@@ -104,6 +109,7 @@ const categories = [
     const filterBtns = document.querySelectorAll<HTMLButtonElement>('[data-faq-filter-btn]');
     const panels = document.querySelectorAll<HTMLElement>('[data-faq-group-panel]');
 
+    // Category filter tabs
     filterBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
         filterBtns.forEach((b) => {
@@ -115,6 +121,26 @@ const categories = [
 
         const group = btn.dataset.faqGroup;
         panels.forEach((p) => p.classList.toggle('hidden', p.dataset.faqGroupPanel !== group));
+      });
+    });
+
+    // Accordion toggles
+    document.querySelectorAll<HTMLButtonElement>('[data-faq-toggle]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('[data-faq-item]') as HTMLElement;
+        const answer = item.querySelector<HTMLElement>('[data-faq-answer]')!;
+        const icon = btn.querySelector<HTMLElement>('[data-faq-icon]')!;
+        const isOpen = btn.getAttribute('aria-expanded') === 'true';
+
+        if (isOpen) {
+          answer.classList.add('hidden');
+          icon.style.transform = '';
+          btn.setAttribute('aria-expanded', 'false');
+        } else {
+          answer.classList.remove('hidden');
+          icon.style.transform = 'rotate(45deg)';
+          btn.setAttribute('aria-expanded', 'true');
+        }
       });
     });
   }
