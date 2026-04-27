@@ -56,6 +56,41 @@
   article p + ol {
     margin-top: 1.1em;
   }
+
+  /* ===== Touch targets: coarse-pointer devices (mobile, WebView, tablet) =====
+     WCAG 2.5.5 / Material Design: min 44×44px для интерактивных элементов.
+     Исключаем inline-ссылки внутри текста — там min-height сломает строку.
+     ===================================================================== */
+  @media (pointer: coarse) {
+    button,
+    [role="button"],
+    summary {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    /* Standalone links (nav, cards, CTAs) — не inline в тексте */
+    a:not(p > a):not(li > a):not(td > a):not(article a) {
+      min-height: 44px;
+    }
+  }
+}
+
+/* ===== WebView: solid fallback когда backdrop-filter не поддерживается =====
+   Mail.ru WebView, старые Android WebView и некоторые in-app браузеры не рендерят
+   backdrop-filter — элемент становится прозрачным, тачи регистрируются некорректно.
+   [data-webview="1"] ставится детектором в Base.astro.
+   ===================================================================== */
+[data-webview="1"] #age-bar .bg-white\/97 {
+  background-color: rgb(255 255 255) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Фолбэк через @supports для браузеров без поддержки (без JS-детекта) */
+@supports not (backdrop-filter: blur(1px)) {
+  #age-bar > div {
+    background-color: rgb(255 255 255) !important;
+  }
 }
 
 /* ===== Ф2: CSS-hero glow — пульсирующие орба ===== */

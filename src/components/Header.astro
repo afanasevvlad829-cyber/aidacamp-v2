@@ -57,16 +57,16 @@ const allNavItems = [...navItems, ...moreItems];
       ))}
 
       <!-- More dropdown -->
-      <details class="group relative" data-nav-more-root>
-        <summary class="flex cursor-pointer items-center gap-1 rounded-[13px] border border-white/18 bg-[rgba(43,51,61,0.58)] px-3 py-1.5 text-[14px] font-semibold leading-[15px] text-white/86 backdrop-blur-sm transition [text-shadow:0px_1px_2px_rgba(0,0,0,0.35)] list-none [&::-webkit-details-marker]:hidden">
+      <div class="group relative" data-nav-more-root>
+        <button type="button" data-nav-more-toggle aria-expanded="false" class="flex cursor-pointer items-center gap-1 rounded-[13px] border border-white/18 bg-[rgba(43,51,61,0.58)] px-3 py-1.5 text-[14px] font-semibold leading-[15px] text-white/86 backdrop-blur-sm transition [text-shadow:0px_1px_2px_rgba(0,0,0,0.35)]">
           <span>···</span>
-          <svg class="h-3 w-3 transition-transform group-open:rotate-180" width="12" height="12" fill="none" viewBox="0 0 12 12">
+          <svg class="h-3 w-3 transition-transform" id="nav-more-chevron" width="12" height="12" fill="none" viewBox="0 0 12 12">
             <path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
-        </summary>
+        </button>
         <div
           id="nav-more-menu"
-          class="invisible absolute right-0 top-[calc(100%+10px)] z-50 grid min-w-[220px] gap-1 rounded-2xl border border-white/16 bg-[rgba(7,14,26,0.92)] p-2 opacity-0 shadow-[0_20px_44px_rgba(2,8,20,0.46)] backdrop-blur-[10px] transition-all group-open:visible group-open:translate-y-0 group-open:opacity-100"
+          class="hidden absolute right-0 top-[calc(100%+10px)] z-50 grid min-w-[220px] gap-1 rounded-2xl border border-white/16 bg-[rgba(7,14,26,0.92)] p-2 shadow-[0_20px_44px_rgba(2,8,20,0.46)] backdrop-blur-[10px]"
         >
           {moreItems.map((item) => (
             <a
@@ -79,7 +79,7 @@ const allNavItems = [...navItems, ...moreItems];
             </a>
           ))}
         </div>
-      </details>
+      </div>
     </nav>
 
     <!-- Phone Dropdown (Desktop) -->
@@ -129,14 +129,37 @@ const allNavItems = [...navItems, ...moreItems];
 </header>
 
 <script>
-  // Close details on click outside
-  document.addEventListener('click', (e) => {
-    document.querySelectorAll('header details[open]').forEach((d) => {
-      if (!d.contains(e.target as Node)) {
-        d.removeAttribute('open');
-      }
+  // Nav-more dropdown toggle
+  function initNavMore() {
+    const root = document.querySelector<HTMLElement>('[data-nav-more-root]');
+    const toggle = root?.querySelector<HTMLButtonElement>('[data-nav-more-toggle]');
+    const menu = document.getElementById('nav-more-menu');
+    const chevron = document.getElementById('nav-more-chevron');
+    if (!root || !toggle || !menu) return;
+
+    function open() {
+      menu.classList.remove('hidden');
+      toggle!.setAttribute('aria-expanded', 'true');
+      if (chevron) chevron.style.transform = 'rotate(180deg)';
+    }
+    function close() {
+      menu.classList.add('hidden');
+      toggle!.setAttribute('aria-expanded', 'false');
+      if (chevron) chevron.style.transform = '';
+    }
+
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menu.classList.contains('hidden') ? open() : close();
     });
-  });
+
+    document.addEventListener('click', (e) => {
+      if (!root.contains(e.target as Node)) close();
+    });
+  }
+
+  document.addEventListener('astro:page-load', initNavMore);
+  initNavMore();
 
   // Если якоря нет на текущей странице — ведём на главную с якорем
   document.querySelectorAll<HTMLAnchorElement>('header a[href^="#"]').forEach((link) => {

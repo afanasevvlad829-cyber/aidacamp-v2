@@ -12,13 +12,13 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
     <div class="flex items-center gap-2 mb-1"><div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div><h2 class="text-[22px] font-bold leading-[1.1] tracking-[-0.02em] text-slate-900 md:text-[28px]">Смены</h2></div>
 
     <!-- Мерч за друга — компактная строка, разворачивается по клику -->
-    <details class="mt-3 group rounded-xl border border-emerald-100 bg-emerald-50 overflow-hidden">
-      <summary class="flex cursor-pointer items-center gap-2.5 px-4 py-2.5 list-none select-none">
+    <div class="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 overflow-hidden" data-toggle-root>
+      <button type="button" data-toggle aria-expanded="false" class="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 select-none">
         <i class="bi bi-people-fill text-[14px] text-emerald-600 shrink-0" aria-hidden="true"></i>
         <span class="flex-1 text-[13px] font-semibold text-slate-700">Едете с другом? Здесь скидки и мерч</span>
-        <i class="bi bi-chevron-down text-[12px] text-slate-400 transition-transform duration-200 group-open:rotate-180" aria-hidden="true"></i>
-      </summary>
-      <div class="flex items-stretch gap-0 border-t border-emerald-100">
+        <i class="bi bi-chevron-down text-[12px] text-slate-400 transition-transform duration-200" aria-hidden="true" id="shifts-friend-chevron"></i>
+      </button>
+      <div data-toggle-panel class="hidden flex items-stretch gap-0 border-t border-emerald-100">
         <button
           type="button"
           data-gallery-open
@@ -43,7 +43,7 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
           </div>
         </div>
       </div>
-    </details>
+    </div>
 
     <!-- Mobile: tab nav + horizontal carousel -->
     <div class="mt-4 md:hidden">
@@ -132,6 +132,20 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
   import { renderCalendar } from '../scripts/shift-calendar';
 
   function initShifts() {
+    // === FRIEND DISCOUNT TOGGLE ===
+    document.querySelectorAll<HTMLElement>('[data-toggle-root]').forEach((root) => {
+      const btn = root.querySelector<HTMLButtonElement>('[data-toggle]');
+      const panel = root.querySelector<HTMLElement>('[data-toggle-panel]');
+      if (!btn || !panel) return;
+      btn.addEventListener('click', () => {
+        const expanded = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+        panel.classList.toggle('hidden', expanded);
+        const chevron = btn.querySelector<HTMLElement>('i[id="shifts-friend-chevron"]') || document.getElementById('shifts-friend-chevron');
+        if (chevron) chevron.style.transform = expanded ? '' : 'rotate(180deg)';
+      });
+    });
+
     // === MOBILE CAROUSEL TABS ===
     const carousel = document.querySelector<HTMLElement>('[data-shifts-carousel]');
     const tabs = document.querySelectorAll<HTMLButtonElement>('[data-shifts-tab]');
