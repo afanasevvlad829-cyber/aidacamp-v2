@@ -510,29 +510,20 @@ footer { padding: 36px 0; border-top: 1px solid var(--bdr); background: var(--bg
   color:#aaa; font-family:inherit; font-size:11px; cursor:pointer; }
 .kp-btn:hover { border-color:#999; color:#fff; }
 
-/* SNAKE */
-#snake-wrap { position:absolute; inset:44px 0 44px 0; display:none; align-items:center; justify-content:center; }
+/* SNAKE (inside terminal window) */
+#snake-wrap { position:absolute; inset:50px 0 44px 0; display:none; flex-direction:column;
+  align-items:center; justify-content:center; background:var(--code-bg); }
 #snake-wrap.active { display:flex; }
-/* SNAKE OVERLAY */
-#snake-overlay { display:none; position:fixed; inset:0; z-index:9999; background:#0d1117;
-  flex-direction:column; align-items:center; justify-content:flex-start; padding:16px 12px 8px; box-sizing:border-box; }
-#snake-overlay.visible { display:flex; }
-.sov-header { display:flex; align-items:center; justify-content:space-between; width:100%; max-width:1000px;
-  margin-bottom:10px; flex-shrink:0; }
-.sov-meta { font-family:'SF Mono',monospace; font-size:13px; color:#8B949E; display:flex; gap:8px; align-items:center; }
-#sov-score { color:var(--or2); font-weight:700; }
-.sov-sep { color:#333; }
-#sov-level { color:#28C840; }
-.sov-food-hint { font-family:'SF Mono',monospace; font-size:11px; color:#444; flex:1; text-align:center;
-  padding:0 12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.sov-close { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#6E7681;
-  border-radius:6px; padding:5px 14px; cursor:pointer; font-size:12px; font-family:'SF Mono',monospace;
-  transition:background 0.15s; }
-.sov-close:hover { background:rgba(255,255,255,0.12); color:#C9D1DA; }
-#sov-canvas { border:1px solid rgba(255,122,61,0.15); border-radius:6px; display:block; cursor:pointer; flex-shrink:0; }
-#sov-msg { font-family:'SF Mono',monospace; font-size:13px; color:var(--or2); margin-top:10px;
-  text-align:center; min-height:20px; flex-shrink:0; }
-#snake-dpad { display:none; margin-top:16px; flex-direction:column; align-items:center; gap:4px; flex-shrink:0; }
+#sw-bar { display:flex; align-items:center; justify-content:space-between; width:100%;
+  padding:0 16px 8px; flex-shrink:0; }
+#sov-score { font-family:'SF Mono',monospace; font-size:12px; color:var(--or2); font-weight:700; }
+#sov-food  { font-family:'SF Mono',monospace; font-size:11px; color:#555; flex:1; text-align:center;
+  padding:0 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#sov-level { font-family:'SF Mono',monospace; font-size:12px; color:#28C840; }
+#sov-canvas { border:1px solid rgba(255,122,61,0.15); border-radius:6px; display:block; cursor:pointer; flex-shrink:0; max-width:100%; }
+#sov-msg { font-family:'SF Mono',monospace; font-size:12px; color:var(--or2); margin-top:8px;
+  text-align:center; min-height:18px; flex-shrink:0; }
+#snake-dpad { display:none; }
 .dpad-row { display:flex; gap:4px; justify-content:center; }
 .dpad-btn { width:60px; height:60px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12);
   color:#C9D1DA; font-size:24px; border-radius:12px; cursor:pointer; user-select:none; -webkit-user-select:none;
@@ -644,7 +635,15 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
         </div>
       </div>
       <div class="term-body" id="code-out"></div>
-      <div id="snake-wrap"></div>
+      <div id="snake-wrap">
+        <div id="sw-bar">
+          <span id="sov-score">0 commits</span>
+          <span id="sov-food">npm install ...</span>
+          <span id="sov-level">Junior Dev</span>
+        </div>
+        <canvas id="sov-canvas"></canvas>
+        <div id="sov-msg">нажми <b>пробел</b> или коснись экрана</div>
+      </div>
       <!-- Python BSOD -->
       <div id="term-bsod"></div>
       <!-- C# crash -->
@@ -1548,29 +1547,6 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
   </div>
 </footer>
 
-<!-- FULLSCREEN SNAKE OVERLAY -->
-<div id="snake-overlay">
-  <div class="sov-header">
-    <div class="sov-meta">
-      <span id="sov-score">0 commits</span>
-      <span class="sov-sep">·</span>
-      <span id="sov-level">Junior Dev</span>
-    </div>
-    <div class="sov-food-hint" id="sov-food">npm install ...</div>
-    <button class="sov-close" onclick="closeSnakeOverlay()"><i class="bi bi-x-lg"></i> ESC</button>
-  </div>
-  <canvas id="sov-canvas"></canvas>
-  <div id="sov-msg">нажми <b>пробел</b> или коснись экрана</div>
-  <div id="snake-dpad">
-    <div class="dpad-row"><button class="dpad-btn" data-d="up">↑</button></div>
-    <div class="dpad-row">
-      <button class="dpad-btn" data-d="left">←</button>
-      <div class="dpad-gap"></div>
-      <button class="dpad-btn" data-d="right">→</button>
-    </div>
-    <div class="dpad-row"><button class="dpad-btn" data-d="down">↓</button></div>
-  </div>
-</div>
 
 <script>
 /* THEME TOGGLE */
@@ -1923,21 +1899,16 @@ setInterval(() => {
   }
 
   function initSovSize() {
-    var isMobile = window.innerWidth < 600;
-    SOV_CELL = isMobile ? 18 : 22;
-    var dpadH = isMobile ? 200 : 0;
-    var headerH = 50, msgH = 36;
-    var maxW = window.innerWidth - 24;
-    var maxH = window.innerHeight - headerH - msgH - dpadH - 32;
+    SOV_CELL = 20;
+    var sw = document.getElementById('snake-wrap');
+    var maxW = sw.clientWidth  - 8;
+    var maxH = sw.clientHeight - 60; // header + msg
     SOV_COLS = Math.floor(maxW / SOV_CELL);
     SOV_ROWS = Math.floor(maxH / SOV_CELL);
-    if(SOV_COLS < 10) SOV_COLS = 10;
-    if(SOV_ROWS < 8) SOV_ROWS = 8;
+    if(SOV_COLS < 8)  SOV_COLS = 8;
+    if(SOV_ROWS < 6)  SOV_ROWS = 6;
     sovCanvas.width  = SOV_COLS * SOV_CELL;
     sovCanvas.height = SOV_ROWS * SOV_CELL;
-    // show dpad on touch
-    var dpad = document.getElementById('snake-dpad');
-    if(isMobile || navigator.maxTouchPoints > 0) dpad.style.display='flex';
   }
 
   function initSnake() {
@@ -2064,20 +2035,18 @@ setInterval(() => {
   function stopSnake() { clearInterval(gameLoop); snakeRunning=false; }
 
   window.openSnakeOverlay = function() {
+    var sw=document.getElementById('snake-wrap');
+    sw.classList.add('active');
     initSovSize();
-    var ov=document.getElementById('snake-overlay');
-    ov.classList.add('visible');
     initSnake();
   };
 
   window.closeSnakeOverlay = function() {
     stopSnake();
-    document.getElementById('snake-overlay').classList.remove('visible');
-    // switch back to python tab
+    document.getElementById('snake-wrap').classList.remove('active');
     document.querySelectorAll('.term-tab').forEach(function(b){ b.classList.remove('active'); });
     var pt=document.querySelector('.term-tab[data-mode="python"]');
     if(pt){ pt.classList.add('active'); }
-    document.getElementById('snake-wrap').classList.remove('active');
     runMode('python');
   };
 
@@ -2122,8 +2091,8 @@ setInterval(() => {
 
   // keyboard
   document.addEventListener('keydown', function(e) {
-    var ov=document.getElementById('snake-overlay');
-    if(!ov.classList.contains('visible')) return;
+    var sw=document.getElementById('snake-wrap');
+    if(!sw.classList.contains('active')) return;
     if(e.key==='Escape'){ e.preventDefault(); closeSnakeOverlay(); return; }
     var map={ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1},ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0},
              w:{x:0,y:-1},s:{x:0,y:1},a:{x:-1,y:0},d:{x:1,y:0},
