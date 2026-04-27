@@ -99,8 +99,40 @@ const relatedPages = [
           <p class="text-[14px] text-slate-600">
             <strong class="text-slate-800">Номер лицензии:</strong> Л035-01298-77/01082973.
             Проверить можно в <a href="https://islod.obrnadzor.gov.ru/rlic/" target="_blank" rel="noopener" class="text-orange-600 hover:underline font-medium">реестре лицензий Рособрнадзора</a>.
+            Ищется по ИНН <span class="font-mono font-semibold text-slate-800">693203571312</span><button
+              type="button"
+              data-copy-inn="693203571312"
+              aria-label="Скопировать ИНН в буфер обмена"
+              class="ml-1.5 inline-flex items-center justify-center w-6 h-6 rounded hover:bg-orange-100 active:bg-orange-200 transition-colors align-middle"
+            ><i class="bi bi-clipboard text-[14px] text-orange-600" aria-hidden="true"></i></button>
           </p>
         </div>
+        <script is:inline>
+          document.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-copy-inn]');
+            if (!btn) return;
+            const value = btn.getAttribute('data-copy-inn');
+            const icon = btn.querySelector('i');
+            const setIcon = (cls) => { if (icon) icon.className = cls; };
+            const ok = () => {
+              setIcon('bi bi-clipboard-check text-[14px] text-green-600');
+              setTimeout(() => setIcon('bi bi-clipboard text-[14px] text-orange-600'), 1800);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(value).then(ok).catch(() => {
+                const ta = document.createElement('textarea');
+                ta.value = value; document.body.appendChild(ta); ta.select();
+                try { document.execCommand('copy'); ok(); } catch(_){}
+                document.body.removeChild(ta);
+              });
+            } else {
+              const ta = document.createElement('textarea');
+              ta.value = value; document.body.appendChild(ta); ta.select();
+              try { document.execCommand('copy'); ok(); } catch(_){}
+              document.body.removeChild(ta);
+            }
+          });
+        </script>
       </div>
 
       <div id="nalogovyj-vychet" class="mb-10 pt-2 scroll-mt-6">
