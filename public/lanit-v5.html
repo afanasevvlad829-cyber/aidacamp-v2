@@ -928,9 +928,10 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
         <div class="slider-val" id="kids-count">7</div>
       </div>
       <input type="range" min="1" max="30" value="7" id="kids-slider" oninput="updateCalc()" style="display:block;width:100%;">
-      <div style="position:relative;height:18px;margin-top:6px;font-size:12px;color:var(--txt2);font-family:'SF Mono',monospace;padding:0 11px;box-sizing:border-box;">
-        <span style="position:absolute;left:calc(11px + 31% * (100% - 22px) / 100)">10</span>
-        <span style="position:absolute;left:calc(11px + 65.5% * (100% - 22px) / 100)">20</span>
+      <div style="position:relative;height:24px;margin-top:6px;font-size:11px;font-family:'SF Mono',monospace;padding:0 11px;box-sizing:border-box;">
+        <span style="position:absolute;left:calc(11px + 31% * (100% - 22px) / 100);color:var(--or2);font-weight:700;">10</span>
+        <span style="position:absolute;left:calc(11px + 65.5% * (100% - 22px) / 100);color:var(--txt2)">20</span>
+        <span id="slider-cutoff-label" style="position:absolute;left:calc(11px + 31% * (100% - 22px) / 100 + 10px);top:0;color:var(--txt2);white-space:nowrap;"> — дальше по согласованию</span>
       </div>
       <div id="calc-group-result">
         <div class="calc-results">
@@ -954,7 +955,18 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
             <div class="calc-res-val green" id="res-save"></div>
             <div class="calc-res-sub">по сравнению с базой</div>
           </div>
+          <div class="calc-res">
+            <div class="calc-res-label">Налоговый вычет</div>
+            <div class="calc-res-val" id="res-tax" style="color:#28C840;"></div>
+            <div class="calc-res-sub">13% от суммы · вернёт работодатель</div>
+          </div>
         </div>
+      </div>
+      <!-- 10+ block -->
+      <div id="calc-10plus" style="display:none;margin-top:4px;padding:20px 24px;border-radius:14px;border:1px solid rgba(255,90,31,0.25);background:rgba(255,90,31,0.06);text-align:center;">
+        <div style="font-size:28px;font-weight:900;color:var(--or2);letter-spacing:-0.02em;margin-bottom:4px;">от 12%</div>
+        <div style="font-size:15px;color:var(--txt);margin-bottom:16px;line-height:1.5;">Скидка для группы от 10 детей — по согласованию.<br><span style="color:var(--txt2);font-size:13px;">Обычно получается 15–20%, зависит от смены и дат.</span></div>
+        <a href="tel:+74951284429" onclick="if(window.ym)ym(96499295,'reachGoal','lanit_contact_click')" style="display:inline-flex;align-items:center;gap:10px;background:var(--or);color:#fff;font-weight:700;font-size:15px;padding:12px 24px;border-radius:10px;text-decoration:none;"><i class="bi bi-telephone-fill"></i> Позвонить — ответим за 10 минут</a>
       </div>
 
     </div>
@@ -2155,10 +2167,18 @@ function updateCalc() {
   const kids = parseInt(document.getElementById('kids-slider').value);
   document.getElementById('kids-count').textContent = kids;
   const s = smenas[curSmena];
-  const result = calcPrice(s, kids);
   const groupBlock = document.getElementById('calc-group-result');
-  if (!result) return;
+  const plusBlock  = document.getElementById('calc-10plus');
+  if (kids >= 10) {
+    if (groupBlock) groupBlock.style.display = 'none';
+    if (plusBlock)  plusBlock.style.display  = '';
+    document.getElementById('transfer-note').classList.add('show');
+    return;
+  }
   if (groupBlock) groupBlock.style.display = '';
+  if (plusBlock)  plusBlock.style.display  = 'none';
+  const result = calcPrice(s, kids);
+  if (!result) return;
   const { disc, pricePerChild, total, savings } = result;
   document.getElementById('res-pp').textContent = fmt(pricePerChild);
   document.getElementById('res-pp-sub').innerHTML = '<s style="opacity:.5">' + fmt(s.basePrice) + '</s>';
@@ -2166,6 +2186,7 @@ function updateCalc() {
   document.getElementById('res-total').textContent = fmt(total);
   document.getElementById('res-kids').textContent = kids + ' ' + kidsWord(kids);
   document.getElementById('res-save').textContent = fmt(savings);
+  document.getElementById('res-tax').textContent = fmt(Math.round(total * 0.13));
   document.getElementById('transfer-note').classList.remove('show');
 }
 function selectSmena(i, el) {
