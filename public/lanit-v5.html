@@ -926,35 +926,38 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
       </div>
       <div class="slider-row">
         <div class="slider-label">Количество детей:</div>
-        <div class="slider-val" id="kids-count">20</div>
+        <div class="slider-val" id="kids-count">7</div>
       </div>
-      <input type="range" min="1" max="30" value="20" id="kids-slider" oninput="updateCalc()" style="display:block;width:100%;">
+      <input type="range" min="1" max="30" value="7" id="kids-slider" oninput="updateCalc()" style="display:block;width:100%;">
       <div style="position:relative;height:18px;margin-top:6px;font-size:12px;color:var(--txt2);font-family:'SF Mono',monospace;padding:0 11px;box-sizing:border-box;">
         <span style="position:absolute;left:calc(11px + 31% * (100% - 22px) / 100)">10</span>
         <span style="position:absolute;left:calc(11px + 65.5% * (100% - 22px) / 100)">20</span>
       </div>
-      <div class="calc-results">
-        <div class="calc-res">
-          <div class="calc-res-label">Цена за ребёнка</div>
-          <div class="calc-res-val orange" id="res-pp"></div>
-          <div class="calc-res-sub" id="res-pp-sub"></div>
-        </div>
-        <div class="calc-res">
-          <div class="calc-res-label">Скидка ЛАНИТ</div>
-          <div class="calc-res-val orange" id="res-disc"></div>
-          <div class="calc-res-sub">от базовой цены</div>
-        </div>
-        <div class="calc-res">
-          <div class="calc-res-label">Итого за группу</div>
-          <div class="calc-res-val" id="res-total"></div>
-          <div class="calc-res-sub" id="res-kids"></div>
-        </div>
-        <div class="calc-res">
-          <div class="calc-res-label">Экономия группы</div>
-          <div class="calc-res-val green" id="res-save"></div>
-          <div class="calc-res-sub">по сравнению с базой</div>
+      <div id="calc-group-result">
+        <div class="calc-results">
+          <div class="calc-res">
+            <div class="calc-res-label">Цена за ребёнка</div>
+            <div class="calc-res-val orange" id="res-pp"></div>
+            <div class="calc-res-sub" id="res-pp-sub"></div>
+          </div>
+          <div class="calc-res">
+            <div class="calc-res-label">Скидка ЛАНИТ</div>
+            <div class="calc-res-val orange" id="res-disc"></div>
+            <div class="calc-res-sub">от базовой цены</div>
+          </div>
+          <div class="calc-res">
+            <div class="calc-res-label">Итого за группу</div>
+            <div class="calc-res-val" id="res-total"></div>
+            <div class="calc-res-sub" id="res-kids"></div>
+          </div>
+          <div class="calc-res">
+            <div class="calc-res-label">Экономия группы</div>
+            <div class="calc-res-val green" id="res-save"></div>
+            <div class="calc-res-sub">по сравнению с базой</div>
+          </div>
         </div>
       </div>
+
     </div>
     <div class="transfer-note r" id="transfer-note">
       При группе от <strong>10 детей</strong> — бесплатный трансфер автобусом от офиса ЛАНИТ до лагеря и обратно. Входит в договор.
@@ -1545,6 +1548,30 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
   </div>
 </footer>
 
+<!-- FULLSCREEN SNAKE OVERLAY -->
+<div id="snake-overlay">
+  <div class="sov-header">
+    <div class="sov-meta">
+      <span id="sov-score">0 commits</span>
+      <span class="sov-sep">·</span>
+      <span id="sov-level">Junior Dev</span>
+    </div>
+    <div class="sov-food-hint" id="sov-food">npm install ...</div>
+    <button class="sov-close" onclick="closeSnakeOverlay()"><i class="bi bi-x-lg"></i> ESC</button>
+  </div>
+  <canvas id="sov-canvas"></canvas>
+  <div id="sov-msg">нажми <b>пробел</b> или коснись экрана</div>
+  <div id="snake-dpad">
+    <div class="dpad-row"><button class="dpad-btn" data-d="up">↑</button></div>
+    <div class="dpad-row">
+      <button class="dpad-btn" data-d="left">←</button>
+      <div class="dpad-gap"></div>
+      <button class="dpad-btn" data-d="right">→</button>
+    </div>
+    <div class="dpad-row"><button class="dpad-btn" data-d="down">↓</button></div>
+  </div>
+</div>
+
 <script>
 /* THEME TOGGLE */
 const html = document.documentElement;
@@ -1623,7 +1650,7 @@ setInterval(() => {
       ],
       code: [
         '<span class="ck">class</span> <span class="cf">LanitPartner</span><span class="cw">:</span>',
-        '    <span class="cn">MAX_DISCOUNT</span> <span class="cw">= </span><span class="cn">0.25</span>  <span class="cc"># макс. скидка ЛАНИТ</span>',
+        '    <span class="cn">MAX_DISCOUNT</span> <span class="cw">= </span><span class="cn">0.12</span>  <span class="cc"># макс. скидка ЛАНИТ</span>',
         '    <span class="cn">transfer</span> <span class="cw">= </span><span class="ck">True</span>  <span class="cc"># 10+ детей</span>',
         '    <span class="cn">meals</span>    <span class="cw">= </span><span class="cn">5</span>      <span class="cc"># раз в сутки</span>',
         '    <span class="ck">def</span> <span class="cf">enroll</span><span class="cw">(self, child):</span>',
@@ -1631,7 +1658,7 @@ setInterval(() => {
       ],
       output: [
         { h:'<span style="color:#8B949E">Running...</span>', d:480 },
-        { h:'<span style="color:#28C840">&gt;</span> <span style="color:#E6EDF3">Скидка: <span style="color:var(--or2)">−25%</span> · группа 20+ детей</span>', d:340 },
+        { h:'<span style="color:#28C840">&gt;</span> <span style="color:#E6EDF3">Скидка: <span style="color:var(--or2)">−12%</span> · группа 6-9 детей</span>', d:340 },
         { h:'<span style="color:#28C840">&gt;</span> <span style="color:#E6EDF3">Трансфер от офиса ЛАНИТ: <span style="color:#28C840">включён</span></span>', d:300 },
         { h:'<span style="color:#28C840">&gt;</span> <span style="color:#E6EDF3">Питание: <span style="color:#28C840">5 раз в сутки ✓</span></span>', d:300 },
         { h:'<span style="color:#28C840">&gt;</span> <span style="color:#E6EDF3">Статус: <span style="color:var(--or2)">████████████ ГОТОВО</span></span>', d:420 },
@@ -1651,7 +1678,7 @@ setInterval(() => {
       code: [
         '<span class="ck">public class</span> <span class="cf">LanitPartner</span>',
         '<span class="cw">{</span>',
-        '    <span class="ck">private const</span> <span class="cf">decimal</span> <span class="cn">MAX_DISCOUNT</span> <span class="cw">= </span><span class="cn">0.25m</span><span class="cw">;</span>',
+        '    <span class="ck">private const</span> <span class="cf">decimal</span> <span class="cn">MAX_DISCOUNT</span> <span class="cw">= </span><span class="cn">0.12m</span><span class="cw">;</span>',
         '    <span class="ck">public</span> <span class="cf">string</span> <span class="cf">Enroll</span><span class="cw">(</span><span class="cf">Child</span> <span class="cn">child</span><span class="cw">)</span>',
         '    <span class="cw">{</span>',
         '        <span class="ck">return</span> <span class="cs">"Смена забронирована!"</span><span class="cw">;</span>',
@@ -1660,7 +1687,7 @@ setInterval(() => {
       ],
       output: [
         { h:'<span style="color:#8B949E">LanitPartner initialized</span>', d:400 },
-        { h:'<span style="color:#28C840">✓</span> <span style="color:#E6EDF3">MAX_DISCOUNT: <span style="color:var(--or2)">25%</span> applied</span>', d:320 },
+        { h:'<span style="color:#28C840">✓</span> <span style="color:#E6EDF3">MAX_DISCOUNT: <span style="color:var(--or2)">12%</span> applied</span>', d:320 },
         { h:'<span style="color:#28C840">✓</span> <span style="color:#E6EDF3">Transfer: <span style="color:#28C840">included</span></span>', d:280 },
         { h:'<span style="color:#28C840">✓</span> <span style="color:#E6EDF3">Meals: <span style="color:#28C840">5x daily</span></span>', d:280 },
         { h:'<span style="color:#8B949E">Console.WriteLine(</span><span class="cs">"Добро пожаловать!"</span><span style="color:#8B949E">)</span>', d:0, cursor:true },
@@ -1680,7 +1707,7 @@ setInterval(() => {
       code: [
         '<span style="color:#28C840">#!/bin/bash</span>',
         '<span class="cn">PARTNER</span><span class="cw">=</span><span class="cs">"LANIT"</span>',
-        '<span class="cn">MAX_DISCOUNT</span><span class="cw">=</span><span class="cn">25</span>',
+        '<span class="cn">MAX_DISCOUNT</span><span class="cw">=</span><span class="cn">12</span>',
         '<span class="ck">if</span> <span class="cw">[[</span> <span class="cn">$GROUP_SIZE</span> <span class="cw">-ge</span> <span class="cn">10</span> <span class="cw">]]</span><span class="ck">; then</span>',
         '    <span class="cn">TRANSFER</span><span class="cw">=</span><span class="cs">"included"</span>',
         '<span class="ck">fi</span>',
@@ -1688,7 +1715,7 @@ setInterval(() => {
       ],
       output: [
         { h:'<span style="color:#8B949E">Executing booking pipeline...</span>', d:460 },
-        { h:'<span style="color:#28C840">[OK]</span> <span style="color:#E6EDF3">Partner=LANIT  MAX_DISCOUNT=<span style="color:var(--or2)">25%</span></span>', d:300 },
+        { h:'<span style="color:#28C840">[OK]</span> <span style="color:#E6EDF3">Partner=LANIT  MAX_DISCOUNT=<span style="color:var(--or2)">12%</span></span>', d:300 },
         { h:'<span style="color:#28C840">[OK]</span> <span style="color:#E6EDF3">Transfer=<span style="color:#28C840">included</span>  Meals=<span style="color:#28C840">5</span></span>', d:280 },
         { h:'<span style="color:#28C840">[OK]</span> <span style="color:#E6EDF3">Booking confirmed</span>', d:300 },
         { h:'<span style="color:#8B949E">$ </span><span style="color:#E6EDF3">_</span>', d:0, cursor:true },
@@ -2113,18 +2140,24 @@ setInterval(() => {
 /* PRICING CALCULATOR */
 
 /* PRICING CALCULATOR */
+const TIERS = [
+  {min:1, max:2,  disc:0.05},
+  {min:3, max:5,  disc:0.08},
+  {min:6, max:9,  disc:0.12},
+];
+
 const smenas = [
   {
     id: 'shift_1', label: 'Смена 1', dates: '30 мая — 8 июня', days: 10,
     basePrice: 74900, tag: 'Больше всего мест',
     desc: 'Первая смена в сезоне — дети только из школы. Максимальный выбор мест, самая доступная цена по скидке. Опыт не нужен: делим по группам от нуля до продвинутых. Каждый уедет с проектом.',
-    tiers: [{min:1,max:4,disc:0.08},{min:5,max:9,disc:0.15},{min:10,max:19,disc:0.20},{min:20,max:99,disc:0.25}],
+    tiers: TIERS,
   },
   {
-    id: 'shift_2', label: 'Смена 2', dates: 'Вторая половина июня', days: 10,
+    id: 'shift_2', label: 'Смена 2', dates: '10 июня — 23 июня', days: 13,
     basePrice: 95000, tag: 'Почти заполнена',
-    desc: 'Самая популярная смена — почти заполнена. Скидка фиксированная 5% независимо от количества детей. Делим по группам от нуля до продвинутых, каждый уедет с проектом. Брать быстро.',
-    tiers: [{min:1,max:99,disc:0.05}],
+    desc: 'Самая популярная смена — почти заполнена. 13 дней, максимальное погружение. Делим по группам от нуля до продвинутых, каждый уедет с проектом. Брать быстро.',
+    tiers: TIERS,
   },
   {
     id: 'shift_3', label: 'Смена 3', dates: '3 — 15 августа', days: 13,
@@ -2134,14 +2167,15 @@ const smenas = [
   },
   {
     id: 'shift_4', label: 'Смена 4', dates: '17 — 26 августа', days: 10,
-    basePrice: 69600, tag: 'Перед школой',
+    basePrice: 74900, tag: 'Перед школой',
     desc: 'Последняя смена сезона. Традиционно едут ребята постарше — взбодриться и перезагрузиться перед школой. Атмосфера зрелая, темп интенсивный. Делим по группам от нуля до продвинутых.',
-    tiers: [{min:1,max:4,disc:0.05},{min:5,max:9,disc:0.12},{min:10,max:19,disc:0.17},{min:20,max:99,disc:0.20}],
+    tiers: TIERS,
   },
 ];
 let curSmena = 0;
 function calcPrice(s, kids) {
   const tier = s.tiers.find(t => kids >= t.min && kids <= t.max);
+  if (!tier) return null;
   const disc = tier.disc;
   const pricePerChild = Math.round(s.basePrice * (1 - disc));
   return { disc, pricePerChild, total: pricePerChild * kids, savings: (s.basePrice - pricePerChild) * kids };
@@ -2152,14 +2186,18 @@ function updateCalc() {
   const kids = parseInt(document.getElementById('kids-slider').value);
   document.getElementById('kids-count').textContent = kids;
   const s = smenas[curSmena];
-  const { disc, pricePerChild, total, savings } = calcPrice(s, kids);
+  const result = calcPrice(s, kids);
+  const groupBlock = document.getElementById('calc-group-result');
+  if (!result) return;
+  if (groupBlock) groupBlock.style.display = '';
+  const { disc, pricePerChild, total, savings } = result;
   document.getElementById('res-pp').textContent = fmt(pricePerChild);
   document.getElementById('res-pp-sub').innerHTML = '<s style="opacity:.5">' + fmt(s.basePrice) + '</s>';
   document.getElementById('res-disc').textContent = '−' + Math.round(disc * 100) + '%';
   document.getElementById('res-total').textContent = fmt(total);
   document.getElementById('res-kids').textContent = kids + ' ' + kidsWord(kids);
   document.getElementById('res-save').textContent = fmt(savings);
-  document.getElementById('transfer-note').classList.toggle('show', kids >= 10);
+  document.getElementById('transfer-note').classList.remove('show');
 }
 function selectSmena(i, el) {
   curSmena = i;
@@ -2454,29 +2492,5 @@ const obs = new IntersectionObserver(entries => {
 }, { threshold: 0.06 });
 document.querySelectorAll('.r').forEach(el => obs.observe(el));
 </script>
-
-<!-- FULLSCREEN SNAKE OVERLAY -->
-<div id="snake-overlay">
-  <div class="sov-header">
-    <div class="sov-meta">
-      <span id="sov-score">0 commits</span>
-      <span class="sov-sep">·</span>
-      <span id="sov-level">Junior Dev</span>
-    </div>
-    <div class="sov-food-hint" id="sov-food">npm install ...</div>
-    <button class="sov-close" onclick="closeSnakeOverlay()"><i class="bi bi-x-lg"></i> ESC</button>
-  </div>
-  <canvas id="sov-canvas"></canvas>
-  <div id="sov-msg">нажми <b>пробел</b> или коснись экрана</div>
-  <div id="snake-dpad">
-    <div class="dpad-row"><button class="dpad-btn" data-d="up">↑</button></div>
-    <div class="dpad-row">
-      <button class="dpad-btn" data-d="left">←</button>
-      <div class="dpad-gap"></div>
-      <button class="dpad-btn" data-d="right">→</button>
-    </div>
-    <div class="dpad-row"><button class="dpad-btn" data-d="down">↓</button></div>
-  </div>
-</div>
 </body>
 </html>
