@@ -56,30 +56,30 @@ const socials = [
   <div class="border-t border-slate-200 bg-white p-[18px] pt-5 text-sm text-slate-500 md:pt-8">
     <!-- Mobile: compact layout -->
     <div class="grid grid-cols-2 gap-4 md:hidden">
-      <details>
-        <summary class="cursor-pointer font-semibold text-slate-900 py-2 block">Документы ▾</summary>
-        <div class="mt-2 space-y-0.5">
+      <div data-toggle-root>
+        <button type="button" data-toggle aria-expanded="false" class="cursor-pointer font-semibold text-slate-900 py-2 block w-full text-left">Документы ▾</button>
+        <div data-toggle-panel class="hidden mt-2 space-y-0.5">
           {documents.map((d) => (
             <a href={d.href} class="block py-2.5 text-slate-500 hover:text-slate-700">{d.label}</a>
           ))}
         </div>
-      </details>
-      <details>
-        <summary class="cursor-pointer font-semibold text-slate-900 py-2 block">Разделы ▾</summary>
-        <div class="mt-2 space-y-0.5">
+      </div>
+      <div data-toggle-root>
+        <button type="button" data-toggle aria-expanded="false" class="cursor-pointer font-semibold text-slate-900 py-2 block w-full text-left">Разделы ▾</button>
+        <div data-toggle-panel class="hidden mt-2 space-y-0.5">
           {sections.map((s) => (
             <a href={s.href} class="block py-2.5 text-slate-500 hover:text-slate-700">{s.label}</a>
           ))}
         </div>
-      </details>
-      <details>
-        <summary class="cursor-pointer font-semibold text-slate-900 py-2 block">По городам ▾</summary>
-        <div class="mt-2 space-y-0.5">
+      </div>
+      <div data-toggle-root>
+        <button type="button" data-toggle aria-expanded="false" class="cursor-pointer font-semibold text-slate-900 py-2 block w-full text-left">По городам ▾</button>
+        <div data-toggle-panel class="hidden mt-2 space-y-0.5">
           {cities.map((c) => (
             <a href={c.href} class="block py-2.5 text-slate-500 hover:text-slate-700">{c.label}</a>
           ))}
         </div>
-      </details>
+      </div>
     </div>
 
     <!-- Desktop: full 5-col layout -->
@@ -144,6 +144,23 @@ const socials = [
       <p>Образовательная лицензия Л035-01298-77/01082973</p>
     </div>
   </div>
+
+  <script>
+    function initToggles() {
+      document.querySelectorAll<HTMLElement>('[data-toggle-root]').forEach((root) => {
+        const btn = root.querySelector<HTMLButtonElement>('[data-toggle]');
+        const panel = root.querySelector<HTMLElement>('[data-toggle-panel]');
+        if (!btn || !panel) return;
+        btn.addEventListener('click', () => {
+          const expanded = btn.getAttribute('aria-expanded') === 'true';
+          btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+          panel.classList.toggle('hidden', expanded);
+        });
+      });
+    }
+    document.addEventListener('astro:page-load', initToggles);
+    initToggles();
+  </script>
 
   <!-- Analytics pixels: только noscript-фолбэк (JS-счётчики уже в Base.astro) -->
   <noscript>
