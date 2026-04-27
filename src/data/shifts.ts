@@ -73,7 +73,7 @@ export const mainShifts: Shift[] = [
     status: 'места есть',
     statusType: 'available',
     description: 'Закрытие лета: сильный проект и уверенный результат.',
-    price: '69 600 ₽',
+    price: '74 900 ₽',
     free: 14,
     occupied: 31,
     startDate: '2026-08-17',
@@ -263,7 +263,7 @@ export const shiftInfo: Record<string, {
         'Чемпионаты лагеря (футбол, пионербол) проходят регулярно и дополняют программу.'),
   },
   'shift-4': {
-    dates: '17 августа — 26 августа', duration: '10 дней', price: '69 600 ₽',
+    dates: '17 августа — 26 августа', duration: '10 дней', price: '74 900 ₽',
     html:
       '<p class="text-[14px] leading-[1.6] text-slate-700">Смена с акцентом на аккуратность, завершённость и понимание того, что сделано.</p>' +
       section('Первые дни — вход и база',

@@ -74,7 +74,7 @@ const campData = {
       name: "Смена 4",
       dates: "17 — 26 августа",
       days: 10,
-      price: 69600,
+      price: 74900,
       available: true,
       desc: "Закрытие лета: сильный проект и уверенный результат.",
       enrolled: 31,
