@@ -15,7 +15,7 @@ export const campData = {
     { id: 'smena-3', name: 'Смена 3', dates: '3 — 15 августа', days: 13, price: 89400, available: true,
       desc: 'Проект от идеи до результата с акцентом на командную работу.',
       enrolled: 40, total: 45, enrolledByAge: { '7-9': 9, '10-12': 18, '13-16': 13 } },
-    { id: 'smena-4', name: 'Смена 4', dates: '17 — 26 августа', days: 10, price: 69600, available: true,
+    { id: 'smena-4', name: 'Смена 4', dates: '17 — 26 августа', days: 10, price: 74900, available: true,
       desc: 'Закрытие лета: сильный проект и уверенный результат.',
       enrolled: 31, total: 45, enrolledByAge: { '7-9': 7, '10-12': 14, '13-16': 10 } },
   ],
