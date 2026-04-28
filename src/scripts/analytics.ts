@@ -21,6 +21,27 @@ export function trackGoal(id: string, params?: object, value = 100) {
     (window as any)._tmr = (window as any)._tmr ?? [];
     (window as any)._tmr.push({ type: 'reachGoal', id: MAILRU_PIXEL_ID, value, goal: id });
   } catch {}
+  // Своя аналитика — сохраняем параметрированные события в PostgreSQL
+  // Отправляем только если есть params (чтобы не флудить простыми scroll_* и т.п.)
+  if (params && Object.keys(params).length > 0) {
+    try {
+      const payload = {
+        goal: id,
+        params,
+        url: location.href,
+        referrer: document.referrer || undefined,
+        client_id: (document.cookie.match(/_ym_uid=(\d+)/) ?? [])[1] ?? undefined,
+      };
+      // sendBeacon не блокирует страницу и работает при unload
+      if (navigator.sendBeacon) {
+        const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+        navigator.sendBeacon('/api/track', blob);
+      } else {
+        fetch('/api/track', { method: 'POST', body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'application/json' }, keepalive: true }).catch(() => {});
+      }
+    } catch {}
+  }
 }
 
 export function initContactTracking(scope: string) {
