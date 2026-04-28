@@ -318,11 +318,14 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     .send:hover{background:var(--ord)}
     .send:disabled{background:var(--surface-2);cursor:default}
     .send .bi{font-size:16px;color:#fff}
-    .mic{width:40px;height:44px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0;color:var(--text-muted)}
+    .mic{width:40px;height:44px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color .2s;flex-shrink:0;color:var(--text-muted);position:relative}
     .mic:hover{color:var(--text-primary)}
-    .mic.recording{color:#f87171;animation:pulse-mic .8s infinite}
+    .mic.recording{color:#ec7c00}
+    .mic.recording::before{content:'';position:absolute;inset:8px;border-radius:50%;background:rgba(236,124,0,.14);animation:mic-ring 1.8s ease-in-out infinite}
+    .mic.recording .bi{animation:mic-breathe 1.8s ease-in-out infinite;position:relative;z-index:1}
     .mic .bi{font-size:20px}
-    @keyframes pulse-mic{0%,100%{opacity:1}50%{opacity:.4}}
+    @keyframes mic-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.22)}}
+    @keyframes mic-ring{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.55);opacity:0}}
     /* Booking quick button — left of input */
     .book-quick{width:40px;height:44px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0;color:var(--accent);padding-left:8px}
     .book-quick:hover{color:var(--accent-hover);transform:scale(1.08)}
@@ -1858,18 +1861,6 @@ function addChips(items){
     else if(item.action==='link'&&item.url) b.onclick=()=>{window.open(item.url,'_blank','noopener')};
     else b.onclick=()=>{
       row.remove();
-      // Показываем тихую цитату предыдущего бота
-      const prevBot = document.querySelector('#msgs .msg-text:last-of-type');
-      if(prevBot){
-        const ctx = document.createElement('div');
-        ctx.style.cssText = 'align-self:flex-end;font-size:12px;color:var(--text-muted);max-width:85%;background:var(--surface-2);border-radius:12px;padding:6px 12px;margin-bottom:2px;animation:up .2s;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;border-left:2px solid var(--accent)';
-        ctx.textContent = '↩ ' + (prevBot.innerText.trim().slice(0,100) + (prevBot.innerText.length > 100 ? '…' : ''));
-        document.getElementById('msgs').appendChild(ctx);
-        requestAnimationFrame(()=>requestAnimationFrame(()=>{
-          const b=document.getElementById('msgs');
-          if(b)b.scrollTop=b.scrollHeight;
-        }));
-      }
       go(item.query||item.label);
     };
     row.appendChild(b);
@@ -2160,6 +2151,7 @@ function send(){
   const inp=document.getElementById('inp');
   const v=inp.value.trim();
   if(!v||busy)return;
+  if(isRecording) stopMic();
   inp.value='';
   inp.style.height='auto'; // reset textarea height
   go(v);
