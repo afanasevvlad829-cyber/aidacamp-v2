@@ -93,8 +93,8 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
 
     main.layout{position:relative;z-index:10;flex:1;display:flex;flex-direction:column;max-width:680px;margin:0 auto;width:100%;padding:0 16px;overflow:hidden}
 
-    .intro{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px 0 16px;overflow-y:auto;transition:all .3s}
-    .intro.gone{opacity:0;pointer-events:none;max-height:0;padding:0;overflow:hidden}
+    .intro{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px 0 16px;overflow-y:auto;transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1),max-height .35s ease,padding .35s ease}
+    .intro.gone{opacity:0;transform:translateY(-14px) scale(.97);pointer-events:none;max-height:0;padding:0;overflow:hidden}
     .intro-icon{width:60px;height:60px;border-radius:50%;margin:0 auto 18px;box-shadow:0 0 30px rgba(236,124,0,.3)}
     .intro-h{font-size:clamp(22px,4vw,36px);font-weight:800;line-height:1.15;letter-spacing:-.02em;margin-bottom:10px;color:var(--text-primary)}
     .intro-s{font-size:15px;color:var(--text-secondary);margin-bottom:32px;line-height:1.6}
@@ -111,6 +111,18 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     .q-pill:hover{border-color:rgba(236,124,0,.4);color:#0d1b2a;background:rgba(236,124,0,.05);transform:translateY(-1px)}
     .q-pill.q-bad{border-color:rgba(220,38,38,.2);color:#991b1b;background:rgba(220,38,38,.04)}
     .q-pill.q-bad:hover{border-color:rgba(220,38,38,.4);background:rgba(220,38,38,.08)}
+    /* Pill click → launch effect */
+    .q-pill.q-fired{background:#ec7c00!important;color:#fff!important;border-color:#ec7c00!important;box-shadow:0 0 0 4px rgba(236,124,0,.18),0 4px 20px rgba(236,124,0,.4)!important;animation:qPillFire .38s cubic-bezier(.4,0,.2,1) forwards}
+    @keyframes qPillFire{0%{transform:scale(1)}25%{transform:scale(1.1)}100%{transform:scale(.85) translateX(60px);opacity:0}}
+    .q-pill.q-dim{opacity:.25!important;pointer-events:none!important;transition:opacity .2s!important}
+    /* Auto-launch chip (from hero ?q= param) */
+    .q-launch-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:16px 0 20px;animation:qLaunchIn .4s cubic-bezier(.16,1,.3,1)}
+    .q-launch-label{font-size:13px;color:var(--text-muted);letter-spacing:.02em;text-transform:uppercase;font-weight:600}
+    .q-launch-chip{display:inline-flex;align-items:center;gap:10px;padding:14px 24px;border-radius:36px;background:var(--surface-2);border:1.5px solid rgba(236,124,0,.5);color:var(--text-primary);font-size:16px;font-weight:600;box-shadow:0 0 0 5px rgba(236,124,0,.08),0 6px 24px rgba(236,124,0,.18);cursor:default}
+    .q-launch-chip .q-launch-dot{width:8px;height:8px;border-radius:50%;background:var(--or);box-shadow:0 0 8px var(--or);animation:blink 1.2s infinite}
+    @keyframes qLaunchIn{from{opacity:0;transform:scale(.88) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+    .q-launch-chip.fire{animation:qLaunchFire .35s cubic-bezier(.4,0,.2,1) forwards}
+    @keyframes qLaunchFire{0%{transform:scale(1) translateX(0);opacity:1}30%{transform:scale(1.08) translateX(6px);background:rgba(236,124,0,.2);border-color:rgba(236,124,0,.9)}100%{transform:scale(.9) translateX(80px);opacity:0}}
     /* dark mode: q-pill */
     [data-theme="dark"] .q-pill{background:var(--surface-2);border-color:var(--border);color:var(--text-secondary)}
     [data-theme="dark"] .q-pill:hover{background:var(--surface-3);border-color:rgba(236,124,0,.4);color:var(--text-primary)}
@@ -596,15 +608,15 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     <h1 class="intro-h">Спросите всё про<br><em id="rotWord" style="color:var(--or);font-style:normal;text-shadow:0 0 32px rgba(236,124,0,.40);transition:opacity .25s;display:inline-block">лагерь</em></h1>
     <p class="intro-s">Отвечу честно. Без скриптов и впаривания.</p>
     <div class="q-pills">
-      <button class="q-pill q-bad" onclick="go('А что у вас плохо?')">А что у вас плохо?</button>
-      <button class="q-pill" onclick="go('Сколько стоит и что входит в цену?')">Сколько стоит?</button>
-      <button class="q-pill" onclick="go('Как кормят в лагере?')">Как кормят?</button>
-      <button class="q-pill" onclick="go('Телефон у ребёнка заберут?')">Телефон заберут?</button>
-      <button class="q-pill" onclick="go('Что такое хакатон?')">Что за хакатон?</button>
-      <button class="q-pill" onclick="go('Можно без опыта программирования?')">Без опыта можно?</button>
-      <button class="q-pill" onclick="go('Как добраться до лагеря?')">Как добраться?</button>
-      <button class="q-pill" onclick="go('Можно вернуть деньги если не понравится?')">Возврат денег?</button>
-      <button class="q-pill" onclick="go('Расскажи историю из лагеря')">Расскажи историю</button>
+      <button class="q-pill q-bad" onclick="firePill(this,'А что у вас плохо?')">А что у вас плохо?</button>
+      <button class="q-pill" onclick="firePill(this,'Сколько стоит и что входит в цену?')">Сколько стоит?</button>
+      <button class="q-pill" onclick="firePill(this,'Как кормят в лагере?')">Как кормят?</button>
+      <button class="q-pill" onclick="firePill(this,'Телефон у ребёнка заберут?')">Телефон заберут?</button>
+      <button class="q-pill" onclick="firePill(this,'Что такое хакатон?')">Что за хакатон?</button>
+      <button class="q-pill" onclick="firePill(this,'Можно без опыта программирования?')">Без опыта можно?</button>
+      <button class="q-pill" onclick="firePill(this,'Как добраться до лагеря?')">Как добраться?</button>
+      <button class="q-pill" onclick="firePill(this,'Можно вернуть деньги если не понравится?')">Возврат денег?</button>
+      <button class="q-pill" onclick="firePill(this,'Расскажи историю из лагеря')">Расскажи историю</button>
     </div>
     <div class="hint"><span class="hint-dot"></span>Выберите возраст — дальше всё расскажу</div>
     <div class="age-btns">
@@ -2056,6 +2068,19 @@ function renderBlock(blockType,blockData){
   return el;
 }
 
+/* ── PILL LAUNCH ANIMATION ── */
+function firePill(btn, txt) {
+  if(busy) return;
+  // Animate clicked pill: orange flash → fly right
+  btn.classList.add('q-fired');
+  // Dim sibling pills
+  btn.closest('.q-pills')?.querySelectorAll('.q-pill').forEach(p => {
+    if(p !== btn) p.classList.add('q-dim');
+  });
+  // Fire question after animation peak (pill scale-up phase)
+  setTimeout(() => go(txt), 220);
+}
+
 /* ── AI REQUEST ── */
 async function go(txt){
   if(busy)return;
@@ -2545,6 +2570,46 @@ function closeQR(){
     // Убираем ?c= из URL чтобы не мешало при шаринге
     history.replaceState({},'','/ask/');
   }catch(e){ console.warn('[ask] conv restore error:', e); }
+})();
+</script>
+
+<!-- Auto-launch from hero chip (?q= param) -->
+<script is:inline>
+(function(){
+  const sp = new URLSearchParams(location.search);
+  const autoQ = sp.get('q');
+  if(!autoQ) return;
+
+  // Clean URL immediately so it doesn't interfere with sharing
+  history.replaceState({}, '', '/ask/');
+
+  const intro = document.getElementById('intro');
+  if(!intro) return;
+
+  // Remove pills, hint, age-btns — replace with a single launch chip
+  ['q-pills','hint','age-btns'].forEach(cls => {
+    intro.querySelector('.'+cls)?.remove();
+  });
+
+  const wrap = document.createElement('div');
+  wrap.className = 'q-launch-wrap';
+
+  const label = document.createElement('div');
+  label.className = 'q-launch-label';
+  label.textContent = 'Ваш вопрос';
+
+  const chip = document.createElement('div');
+  chip.className = 'q-launch-chip';
+  chip.innerHTML = `<span class="q-launch-dot"></span>${autoQ}`;
+
+  wrap.append(label, chip);
+  intro.append(wrap);
+
+  // Brief pause so user sees what's happening, then fire
+  setTimeout(() => {
+    chip.classList.add('fire');
+    setTimeout(() => go(autoQ), 300);
+  }, 480);
 })();
 </script>
 
