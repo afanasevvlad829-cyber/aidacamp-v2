@@ -235,26 +235,37 @@ const secondaryPills = [
   </main>
 
 <script is:inline>
-// Beautiful chip click → navigate to /ask?q=
+// Chip click: save question → animate → navigate to /ask
 (function(){
-  document.querySelectorAll('a[href*="/ask?q"]').forEach(function(link) {
+  document.querySelectorAll('a[href*="/ask"]').forEach(function(link) {
+    var href = link.getAttribute('href') || '';
+    // Извлекаем текст вопроса из data-q атрибута или из ?q= параметра href
+    var q = link.getAttribute('data-q');
+    if(!q) {
+      var m = href.match(/[?&]q=([^&]+)/);
+      if(m) q = decodeURIComponent(m[1]);
+    }
+    if(!q) return;
+
     link.addEventListener('click', function(e) {
       e.preventDefault();
-      var href = this.getAttribute('href');
       var self = this;
 
-      // Orange glow on clicked chip
+      // Сохраняем вопрос в sessionStorage
+      sessionStorage.setItem('ask_autoq', q);
+
+      // Orange glow
       self.style.cssText = 'background:rgba(236,124,0,.28)!important;border-color:rgba(236,124,0,.75)!important;box-shadow:0 0 0 3px rgba(236,124,0,.18),0 6px 20px rgba(236,124,0,.35)!important;transform:scale(1.06)!important;transition:all .1s ease!important;';
 
-      // Dim all other chips
-      document.querySelectorAll('a[href*="/ask?q"]').forEach(function(other) {
-        if(other !== self) {
+      // Dim siblings
+      document.querySelectorAll('a[href*="/ask"]').forEach(function(other) {
+        if(other !== self && other.getAttribute('data-q') || (other.getAttribute('href')||'').match(/[?&]q=/)) {
           other.style.cssText = 'opacity:.3!important;transition:opacity .18s ease!important;pointer-events:none!important;';
         }
       });
 
-      // Navigate after brief animation
-      setTimeout(function() { location.href = href; }, 190);
+      // Navigate to /ask (clean URL)
+      setTimeout(function() { location.href = '/ask/'; }, 190);
     });
   });
 })();
