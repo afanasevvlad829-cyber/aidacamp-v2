@@ -180,6 +180,20 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
           _persist();
           try { if (typeof window.ym !== 'undefined') window.ym(YM_ID, 'reachGoal', id, params || {}); } catch(e){}
           try { window._tmr = window._tmr || []; window._tmr.push({ type: 'reachGoal', id: TMR_ID, value: value || 100, goal: id }); } catch(e){}
+          // Своя аналитика — параметрированные события в PostgreSQL
+          if (params && Object.keys(params).length > 0) {
+            try {
+              var payload = JSON.stringify({ goal: id, params: params, url: location.href,
+                referrer: document.referrer || undefined,
+                client_id: (document.cookie.match(/_ym_uid=(\d+)/) || [])[1] || undefined });
+              if (navigator.sendBeacon) {
+                navigator.sendBeacon('/api/track', new Blob([payload], { type: 'application/json' }));
+              } else {
+                fetch('/api/track', { method: 'POST', body: payload,
+                  headers: { 'Content-Type': 'application/json' }, keepalive: true }).catch(function(){});
+              }
+            } catch(e) {}
+          }
         };
         window.initScrollTracking = function () {
           var goals = [{p:25,id:'scroll_25'},{p:50,id:'scroll_50'},{p:75,id:'scroll_75'},{p:90,id:'scroll_90'}];
