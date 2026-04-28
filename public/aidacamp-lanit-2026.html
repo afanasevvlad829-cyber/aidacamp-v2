@@ -191,8 +191,8 @@
     .why-grid { grid-template-columns: repeat(2,1fr); padding: 0 20px 10px; gap: 8px; grid-auto-rows: 1fr; }
     .why-card { padding: 12px; gap: 4px; }
     .why-n { font-size: 26px; }
-    .why-title { font-size: 12px; }
-    .why-desc { font-size: 11px; }
+    .why-title { font-size: 13px; }
+    .why-desc { font-size: 13px; }
     .why-source { font-size: 10px; }
 
     /* WHAT (split) */
@@ -205,7 +205,7 @@
     .what-list { gap: 8px; margin-top: 12px; }
     .what-item { gap: 8px; }
     .what-item-title { font-size: 14px; }
-    .what-item-sub { font-size: 12px; }
+    .what-item-sub { font-size: 13px; }
     .what-icon { width: 28px; height: 28px; font-size: 13px; }
     .rating-row { margin-top: 16px; padding: 8px 12px; }
     .rating-text { font-size: 12px; }
@@ -216,7 +216,7 @@
     .track-card { padding: 10px 12px; }
     .track-icon { font-size: 18px; margin-bottom: 4px; }
     .track-name { font-size: 13px; }
-    .track-desc { font-size: 11px; }
+    .track-desc { font-size: 13px; }
     .prog-note { padding: 0 20px 8px; flex-wrap: wrap; gap: 6px; }
     .prog-pill { font-size: 10px; padding: 4px 10px; }
 
@@ -239,14 +239,14 @@
     .formats-grid { grid-template-columns: repeat(2,1fr); padding: 0 20px 8px; gap: 8px; grid-auto-rows: 1fr; }
     .format-card { padding: 12px 14px; gap: 10px; }
     .format-icon { width: 32px; height: 32px; font-size: 15px; border-radius: 8px; flex-shrink: 0; }
-    .format-title { font-size: 12px; }
-    .format-desc { font-size: 11px; line-height: 1.4; }
+    .format-title { font-size: 14px; }
+    .format-desc { font-size: 13px; line-height: 1.4; }
 
     /* SLIDE 7 (clients) mobile fix */
     .clients-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; padding: 0 20px 8px !important; }
     .client-card { padding: 14px 14px 12px !important; gap: 6px !important; }
     .client-card-title { font-size: 16px !important; }
-    .client-card-desc { font-size: 11px !important; line-height: 1.4 !important; }
+    .client-card-desc { font-size: 13px !important; line-height: 1.4 !important; }
 
     /* INFRA */
     .infra-head { padding: 16px 20px 6px; }
@@ -269,18 +269,20 @@
     .contacts-sub { font-size: 14px; }
     .contacts-links { gap: 12px; }
     .contact-btn { font-size: 14px; padding: 12px 20px; }
+    .contacts-bg { display: none; }
 
-    /* NAV — arrows spread to edges, dots hidden on mobile */
+    /* NAV — small buttons + dots centered at bottom on mobile */
     .nav {
       left: 0; right: 0;
       transform: none;
-      justify-content: space-between;
-      padding: 0 12px;
-      bottom: max(12px, env(safe-area-inset-bottom, 0px) + 10px);
-      gap: 0;
+      justify-content: center;
+      padding: 0 16px;
+      bottom: max(8px, env(safe-area-inset-bottom, 0px) + 6px);
+      gap: 12px;
     }
-    .nav-dots { display: none; }
-    .nav-btn { width: 48px; height: 48px; font-size: 20px; border-radius: 50%; }
+    .nav-dots { display: flex !important; gap: 5px; }
+    .nav-dot { width: 5px; height: 5px; }
+    .nav-btn { width: 32px; height: 32px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); font-size: 13px; border-radius: 50%; }
     .slide-num { bottom: calc(14px + env(safe-area-inset-bottom, 16px)); right: 14px; font-size: 11px; }
     .fs-btn { top: 12px; right: 12px; }
     .slide { padding-bottom: calc(72px + env(safe-area-inset-bottom, 16px)); }
@@ -722,13 +724,17 @@
         </a>
       </div>
       <div class="contacts-note">
-        <b>Страница для сотрудников ЛАНИТ:</b> dev.aidacamp.ru/lanit-v5.html<br>
-        Скидка применяется автоматически при открытии страницы. Промокод не нужен.
+        Скидка применяется автоматически. Промокод не нужен.
       </div>
     </div>
   </div>
 
 </div><!-- /deck -->
+
+<!-- LIGHTBOX -->
+<div id="img-lb" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;align-items:center;justify-content:center;cursor:pointer;" onclick="this.style.display='none'">
+  <img id="img-lb-src" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;">
+</div>
 
 <!-- NAVIGATION -->
 <nav class="nav">
@@ -781,6 +787,17 @@ function toggleFS() {
   if (!document.fullscreenElement) document.documentElement.requestFullscreen();
   else document.exitFullscreen();
 }
+
+// Lightbox for infra photos
+document.querySelectorAll('.infra-photo img').forEach(img => {
+  img.style.cursor = 'pointer';
+  img.addEventListener('click', e => {
+    e.stopPropagation();
+    const lb = document.getElementById('img-lb');
+    document.getElementById('img-lb-src').src = img.src;
+    lb.style.display = 'flex';
+  });
+});
 </script>
 </body>
 </html>
