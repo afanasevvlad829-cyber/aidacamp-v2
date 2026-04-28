@@ -37,7 +37,7 @@ export const landingPages: LandingPage[] = [
 
   // 🎯 Тематические IT
   { title: 'AI-лагерь для детей', description: 'Нейросети, ChatGPT API, AI-проекты', url: '/ai-lager', icon: 'bi-cpu' },
-  { title: 'Лагерь с бассейном', description: 'Открытый бассейн, всё включено', url: '/lager-s-basseynom', icon: 'bi-sun' },
+  { title: 'Лагерь с бассейном', description: 'Закрытый бассейн, всё включено', url: '/lager-s-basseynom', icon: 'bi-sun' },
   { title: 'IT лагерь', description: 'Компьютерный лагерь, Python и AI', url: '/kompyuternyy-lager', icon: 'bi-laptop' },
   { title: 'Лагерь программирования', description: 'От кода до проекта', url: '/lager-programmirovaniya', icon: 'bi-keyboard' },
   { title: 'Лагерь Майнкрафт', description: 'Minecraft Education, создание модов', url: '/minecraft-lager', icon: 'bi-controller' },
