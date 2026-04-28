@@ -400,12 +400,13 @@ input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 7px rgba(255,9
 .gal-img-hover img { transition: transform 0.4s; }
 .gal-img-hover:hover img { transform: scale(1.05); }
 /* Reviews v2 — carousel/grid */
-.rv-card { border: 1px solid var(--bdr); background: var(--bg3); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; min-width: 88%; scroll-snap-align: start; }
+.rv-card { border: 1px solid var(--bdr); background: var(--bg3); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; min-width: 88vw; max-width: 88vw; scroll-snap-align: start; }
 .rv-more { display: inline-flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 500; color: var(--or2); background: none; border: none; cursor: pointer; padding: 0; margin-top: 12px; font-family: inherit; }
 .rv-more:hover { color: var(--or); }
 @media (min-width: 768px) {
-  .rv-card { min-width: 0; }
+  .rv-card { min-width: 0; max-width: none; }
   .rv-grid { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 16px; overflow: visible !important; }
+  #rv-dots { display: none !important; }
 }
 /* Review modal — центровка на всех устройствах */
 #rv-modal { position: fixed; inset: 0; z-index: 90; display: none; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
@@ -466,6 +467,7 @@ footer { padding: 36px 0; border-top: 1px solid var(--bdr); background: var(--bg
 }
 @media (max-width: 520px) {
   .grid-3, .grid-4, .reviews-grid { grid-template-columns: 1fr; }
+  .grid-3 > *, .grid-4 > * { grid-column: span 1 !important; }
   .gallery-grid { grid-template-columns: 1fr; }
   .gallery-grid .big { grid-column: span 1; }
   .gallery-item.big { aspect-ratio: 4/3; }
@@ -546,6 +548,11 @@ footer { padding: 36px 0; border-top: 1px solid var(--bdr); background: var(--bg
 .bsod-btn { padding:7px 18px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.5); color:#fff; font-family:inherit; font-size:11px; cursor:pointer; transition:background 0.15s; }
 .bsod-btn:hover { background:rgba(255,255,255,0.3); }
 .bsod-hint { font-size:10px; opacity:0.5; margin-top:10px; min-height:14px; }
+/* Reviews & Team dots */
+.rv-dot { width:8px; height:8px; border-radius:50%; border:none; padding:0; cursor:pointer; background:var(--bdr2); transition:all 0.2s; flex-shrink:0; }
+.rv-dot.active { background:var(--or); width:22px; border-radius:4px; }
+.team-dot { width:8px; height:8px; border-radius:50%; border:none; padding:0; cursor:pointer; background:var(--bdr2); transition:all 0.2s; flex-shrink:0; }
+.team-dot.active { background:var(--or); width:22px; border-radius:4px; }
 </style>
 <!-- Yandex.Metrika counter -->
 <script type="text/javascript">
@@ -1223,11 +1230,45 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
         <button class="rv-more" data-ropen="5">Подробнее <svg style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
       </article>
 
-    
+    </div><!-- /rv-carousel -->
 
+    <!-- Reviews dots -->
+    <div id="rv-dots" style="display:flex;justify-content:center;gap:6px;margin-top:14px;" role="tablist" aria-label="Выбор отзыва">
+      <button class="rv-dot active" data-idx="0" aria-label="Отзыв 1" role="tab"></button>
+      <button class="rv-dot" data-idx="1" aria-label="Отзыв 2" role="tab"></button>
+      <button class="rv-dot" data-idx="2" aria-label="Отзыв 3" role="tab"></button>
+      <button class="rv-dot" data-idx="3" aria-label="Отзыв 4" role="tab"></button>
+      <button class="rv-dot" data-idx="4" aria-label="Отзыв 5" role="tab"></button>
+      <button class="rv-dot" data-idx="5" aria-label="Отзыв 6" role="tab"></button>
     </div>
+    <script>
+    (function(){
+      var car = document.getElementById('rv-carousel');
+      var dots = document.querySelectorAll('#rv-dots .rv-dot');
+      function updateDots(){
+        var cards = car.querySelectorAll('.rv-card');
+        if(!cards.length) return;
+        var sl = car.scrollLeft;
+        var cardW = cards[0].offsetWidth + 12;
+        var idx = Math.round(sl / cardW);
+        idx = Math.max(0, Math.min(idx, dots.length-1));
+        dots.forEach(function(d,i){ d.classList.toggle('active', i===idx); });
+      }
+      car.addEventListener('scroll', updateDots, {passive:true});
+      dots.forEach(function(d){
+        d.addEventListener('click', function(){
+          var idx = parseInt(this.dataset.idx);
+          var cards = car.querySelectorAll('.rv-card');
+          if(!cards.length) return;
+          var cardW = cards[0].offsetWidth + 12;
+          car.scrollTo({left: idx * cardW, behavior:'smooth'});
+        });
+      });
+      updateDots();
+    })();
+    </script>
 
-  </div>
+  </div><!-- /wrap -->
 </section>
 
 <!-- Review Modal v2 -->
@@ -1281,8 +1322,9 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
           </div>
         </div>
       </div>
-      <!-- Team grid — 3 col desktop -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;" class="team-members-grid">
+      <!-- Team grid — 3 col desktop / carousel mobile -->
+      <div id="team-carousel-wrap" style="position:relative;">
+      <div id="team-carousel" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;" class="team-members-grid">
         <div class="team-card">
           <img src="https://aidacamp.ru/images/team/sm/team-daria-main-01.avif" alt="Дарья Афанасьева" class="team-photo" style="object-fit:cover;object-position:top;" width="80" height="120" loading="lazy">
           <div class="team-info">
@@ -1324,6 +1366,63 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
           </div>
         </div>
       </div>
+      <!-- Team dots (visible on mobile only) -->
+      <div id="team-dots" style="display:none;justify-content:center;gap:6px;margin-top:14px;" role="tablist" aria-label="Выбор педагога">
+        <button class="team-dot active" data-tidx="0" aria-label="Педагог 1" role="tab"></button>
+        <button class="team-dot" data-tidx="1" aria-label="Педагог 2" role="tab"></button>
+        <button class="team-dot" data-tidx="2" aria-label="Педагог 3" role="tab"></button>
+        <button class="team-dot" data-tidx="3" aria-label="Педагог 4" role="tab"></button>
+        <button class="team-dot" data-tidx="4" aria-label="Педагог 5" role="tab"></button>
+      </div>
+      </div><!-- /team-carousel-wrap -->
+      <style>
+      @media(max-width:768px){
+        #team-carousel {
+          display:flex!important;
+          overflow-x:auto;
+          scroll-snap-type:x mandatory;
+          -webkit-overflow-scrolling:touch;
+          scrollbar-width:none;
+          gap:12px;
+          padding-bottom:4px;
+        }
+        #team-carousel::-webkit-scrollbar{display:none}
+        #team-carousel .team-card {
+          min-width:78vw;
+          max-width:78vw;
+          scroll-snap-align:start;
+          flex-shrink:0;
+        }
+        #team-dots { display:flex!important; }
+      }
+      </style>
+      <script>
+      (function(){
+        var tcar = document.getElementById('team-carousel');
+        var tdots = document.querySelectorAll('#team-dots .team-dot');
+        function updateTeamDots(){
+          var cards = tcar.querySelectorAll('.team-card');
+          if(!cards.length||!tcar.scrollWidth||tcar.scrollWidth<=tcar.clientWidth) return;
+          var cw = tcar.clientWidth;
+          var sl = tcar.scrollLeft;
+          var cardW = cards[0].offsetWidth + 12;
+          var idx = Math.round(sl / cardW);
+          idx = Math.max(0, Math.min(idx, tdots.length-1));
+          tdots.forEach(function(d,i){ d.classList.toggle('active', i===idx); });
+        }
+        tcar.addEventListener('scroll', updateTeamDots, {passive:true});
+        tdots.forEach(function(d){
+          d.addEventListener('click', function(){
+            var idx = parseInt(this.dataset.tidx);
+            var cards = tcar.querySelectorAll('.team-card');
+            if(!cards.length) return;
+            var cardW = cards[0].offsetWidth + 12;
+            tcar.scrollTo({left: idx * cardW, behavior:'smooth'});
+          });
+        });
+        updateTeamDots();
+      })();
+      </script>
     </div>
   </div>
 </section>
@@ -1417,18 +1516,18 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
       </div>
 
       <!-- Respectful reasons -->
-      <div style="background:var(--bg3); border:1px solid var(--bdr); border-radius:12px; padding:28px;">
+      <div style="background:rgba(34,199,106,0.15); border:2px solid rgba(34,199,106,0.60); border-radius:12px; padding:28px;">
         <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
           <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="var(--green)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
-          <div style="font-size:16px; font-weight:700; color:var(--txt);">Уважительная причина</div>
+          <div style="font-size:16px; font-weight:700; color:#22c76a;">Уважительная причина</div>
         </div>
         <div style="font-size:14px; color:var(--txt2); line-height:1.65; margin-bottom:14px;">Болезнь ребёнка или близкого родственника, форс-мажор — с подтверждающим документом.</div>
         <div style="font-size:14px; color:var(--txt2); line-height:1.65;"><strong style="color:var(--txt);">Возврат:</strong> вся сумма за вычетом фактически понесённых расходов. За 3+ недели до начала смены — 100%.</div>
       </div>
 
       <!-- Scale grid -->
-      <div style="grid-column:span 2; background:var(--bg3); border:1px solid var(--bdr); border-radius:12px; padding:28px;">
-        <div style="font-size:16px; font-weight:700; color:var(--txt); margin-bottom:14px;">Неуважительная причина — шкала</div>
+      <div style="grid-column:span 2; background:rgba(250,204,21,0.12); border:2px solid rgba(250,204,21,0.50); border-radius:12px; padding:28px;">
+        <div style="font-size:16px; font-weight:700; color:#facc15; margin-bottom:14px;">Неуважительная причина — шкала</div>
         <div class="refund-table">
           <div class="refund-row" style="background:rgba(34,199,106,0.07);">
             <div style="display:flex; align-items:center; gap:12px;">
@@ -1487,6 +1586,88 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
       <div style="display:flex; align-items:center; gap:8px; font-size:15px; color:var(--txt2);">
         <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="var(--or2)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/></svg>
         Трансфер от офиса ЛАНИТ при группе 10+ детей
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BOT BLOCK -->
+<section class="alt" id="ask-bot">
+  <div class="wrap">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;">
+      <div>
+        <div class="s-kicker">Поддержка</div>
+        <h2 style="margin-bottom:20px;">Есть вопросы —<br>спросите <em>бота</em><br><em>прямо сейчас</em></h2>
+        <p class="s-lead" style="margin-bottom:32px;">Расписание, питание, уровень ребёнка, трансфер, документы — бот отвечает в любое время. Не нужно ждать рабочих часов.</p>
+        <a href="https://aidacamp.ru/ask" target="_blank" rel="noopener" class="btn-primary" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;">
+          <i class="bi bi-chat-dots-fill" aria-hidden="true"></i>
+          Задать вопрос боту
+          <i class="bi bi-arrow-right" aria-hidden="true"></i>
+        </a>
+      </div>
+      <div style="position:relative;">
+        <!-- Chat window mockup -->
+        <div style="background:#1a2540;border:1px solid rgba(255,255,255,0.12);border-radius:16px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,0.35);">
+          <!-- Window chrome -->
+          <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);">
+            <div style="display:flex;gap:6px;">
+              <span style="width:11px;height:11px;border-radius:50%;background:#ff5f57;display:block;"></span>
+              <span style="width:11px;height:11px;border-radius:50%;background:#febc2e;display:block;"></span>
+              <span style="width:11px;height:11px;border-radius:50%;background:#28c840;display:block;"></span>
+            </div>
+            <span style="font-size:13px;color:var(--txt2);font-weight:500;margin-left:6px;">АйДаБот · aidacamp.ru/ask</span>
+          </div>
+          <!-- Messages -->
+          <div style="padding:20px 18px;display:flex;flex-direction:column;gap:12px;min-height:280px;">
+            <!-- Bot message -->
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--or);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="bi bi-robot" style="font-size:15px;color:#1e2430;" aria-hidden="true"></i>
+              </div>
+              <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:4px 14px 14px 14px;padding:12px 16px;font-size:15px;color:var(--txt);line-height:1.5;max-width:80%;">
+                Привет! Я знаю всё про АйДаКемп — спрашивайте.
+              </div>
+            </div>
+            <!-- User message -->
+            <div style="display:flex;justify-content:flex-end;">
+              <div style="background:var(--or);border-radius:14px 4px 14px 14px;padding:12px 16px;font-size:15px;color:#1e2430;font-weight:600;line-height:1.5;max-width:80%;">
+                Сыну 11 лет, пишет на Python. Какой трек?
+              </div>
+            </div>
+            <!-- Bot reply -->
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--or);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="bi bi-robot" style="font-size:15px;color:#1e2430;" aria-hidden="true"></i>
+              </div>
+              <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:4px 14px 14px 14px;padding:12px 16px;font-size:15px;color:var(--txt);line-height:1.5;max-width:80%;">
+                Для 11 лет с базовым Python — рекомендую Python Advanced. В первый день педагог оценит уровень и подберёт трек точнее.
+              </div>
+            </div>
+            <!-- User message 2 -->
+            <div style="display:flex;justify-content:flex-end;">
+              <div style="background:var(--or);border-radius:14px 4px 14px 14px;padding:12px 16px;font-size:15px;color:#1e2430;font-weight:600;line-height:1.5;max-width:80%;">
+                Питание входит в стоимость?
+              </div>
+            </div>
+            <!-- Typing indicator -->
+            <div style="display:flex;gap:10px;align-items:center;">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--or);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="bi bi-robot" style="font-size:15px;color:#1e2430;" aria-hidden="true"></i>
+              </div>
+              <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:4px 14px 14px 14px;padding:12px 18px;">
+                <span style="display:flex;gap:4px;align-items:center;">
+                  <span style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.4);animation:typing 1.2s ease-in-out infinite;"></span>
+                  <span style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.4);animation:typing 1.2s ease-in-out 0.2s infinite;"></span>
+                  <span style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.4);animation:typing 1.2s ease-in-out 0.4s infinite;"></span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <style>
+          @keyframes typing { 0%,60%,100%{opacity:0.3;transform:translateY(0)} 30%{opacity:1;transform:translateY(-3px)} }
+          @media(max-width:768px){#ask-bot .wrap > div{grid-template-columns:1fr!important;gap:32px!important;}}
+        </style>
       </div>
     </div>
   </div>

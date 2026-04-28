@@ -117,8 +117,10 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     [data-theme="dark"] .q-pill.q-bad{background:rgba(220,38,38,.08);border-color:rgba(220,38,38,.25);color:#fca5a5}
     [data-theme="dark"] .q-pill.q-bad:hover{background:rgba(220,38,38,.15);border-color:rgba(220,38,38,.4);color:#fecaca}
 
-    .messages{flex:1;overflow-y:auto;padding:8px 0 12px;display:none;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:rgba(13,27,42,.1) transparent;min-height:0}
+    .messages{flex:1;overflow-y:auto;padding:8px 0 0;display:none;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:rgba(13,27,42,.1) transparent;min-height:0}
     .messages.show{display:flex}
+    /* Flex padding-bottom bug workaround: ::after is a real flex item, always counted in scrollHeight */
+    .messages::after{content:'';display:block;height:32px;flex-shrink:0}
     .messages::-webkit-scrollbar{width:3px}
     .messages::-webkit-scrollbar-thumb{background:rgba(13,27,42,.1);border-radius:3px}
     /* Spacer pushes messages to the bottom (messenger-style) */
@@ -318,11 +320,14 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     .send:hover{background:var(--ord)}
     .send:disabled{background:var(--surface-2);cursor:default}
     .send .bi{font-size:16px;color:#fff}
-    .mic{width:40px;height:44px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0;color:var(--text-muted)}
+    .mic{width:40px;height:44px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color .2s;flex-shrink:0;color:var(--text-muted);position:relative}
     .mic:hover{color:var(--text-primary)}
-    .mic.recording{color:#f87171;animation:pulse-mic .8s infinite}
+    .mic.recording{color:#ec7c00}
+    .mic.recording::before{content:'';position:absolute;inset:8px;border-radius:50%;background:rgba(236,124,0,.14);animation:mic-ring 1.8s ease-in-out infinite}
+    .mic.recording .bi{animation:mic-breathe 1.8s ease-in-out infinite;position:relative;z-index:1}
     .mic .bi{font-size:20px}
-    @keyframes pulse-mic{0%,100%{opacity:1}50%{opacity:.4}}
+    @keyframes mic-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.22)}}
+    @keyframes mic-ring{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.55);opacity:0}}
     /* Booking quick button — left of input */
     .book-quick{width:40px;height:44px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0;color:var(--accent);padding-left:8px}
     .book-quick:hover{color:var(--accent-hover);transform:scale(1.08)}
@@ -348,6 +353,11 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     .pin{width:100%;padding:13px 16px;border:1px solid rgba(13,27,42,.12);border-radius:9px;background:#f8fafc;font-family:var(--sans);font-size:15px;color:#0d1b2a;outline:none;margin-bottom:13px;transition:.2s}
     .pin:focus{border-color:rgba(236,124,0,.5);background:#fff}
     .pin::placeholder{color:rgba(13,27,42,.3)}
+    .pconsent{display:flex;align-items:flex-start;gap:9px;font-size:13px;color:#4e6072;line-height:1.4;margin-bottom:12px;cursor:pointer}
+    .pconsent input[type=checkbox]{width:16px;height:16px;min-width:16px;accent-color:var(--or);cursor:pointer;margin-top:1px}
+    .pconsent a{color:var(--or);text-decoration:none}
+    .pconsent a:hover{text-decoration:underline}
+    .pconsent.err{color:#dc2626}
     .psub{width:100%;padding:14px;background:var(--or);color:#fff;border:none;border-radius:9px;font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;transition:.15s;margin-bottom:9px;box-shadow:0 4px 18px rgba(236,124,0,.25)}
     .psub:hover{background:var(--ord)}
     .ptr{font-size:12px;color:#4e6072;text-align:center;line-height:1.6}
@@ -417,6 +427,7 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     [data-theme="dark"] .age-btn{background:var(--surface-2);border-color:var(--border);color:var(--text-secondary)}
     [data-theme="dark"] .age-btn .n{color:var(--text-primary)}
     [data-theme="dark"] .contact-card{background:var(--surface-2);border-color:rgba(34,197,94,.25)}
+    [data-theme="dark"] .pconsent{color:var(--text-muted)}
     [data-theme="dark"] .input-box:focus-within{border-color:rgba(236,124,0,.5);background:var(--surface-1);box-shadow:0 0 0 3px rgba(236,124,0,.1)}
     [data-theme="dark"] .mic{color:var(--text-muted)}
     [data-theme="dark"] .mic:hover{color:var(--text-secondary)}
@@ -683,6 +694,7 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
       <select class="psel" id="popShift"></select>
       <label class="plbl">Телефон</label>
       <input class="pin" type="tel" id="popPhone" placeholder="+7 (___) ___-__-__">
+      <label class="pconsent" id="popConsentLabel"><input type="checkbox" id="popConsent"> <span>Согласен(-на) на обработку <a href="/privacy-policy" target="_blank">персональных данных</a></span></label>
       <button class="psub" id="popSubmit" onclick="submitBooking()">Забронировать →</button>
       <div class="ptr">Пн–Вс 11:00–20:00 МСК · Лицензия Минобра<br>Налоговый вычет 13% через ФНС</div>
     </div>
@@ -948,13 +960,40 @@ function mkEl(tag, css, html){
 }
 
 function blockSmeny(){
+  // Design-system-aware colors (WCAG AA): dark mode = white/80 on #0b1729 surface
+  const dk=isDark();
+  const C={
+    card:      dk?'#0b1729':'#fff',
+    cardBd:    dk?'rgba(255,255,255,.08)':'rgba(13,27,42,.09)',
+    headBd:    dk?'rgba(255,255,255,.08)':'rgba(13,27,42,.07)',
+    headLbl:   dk?'#8aaccc':'#4e6072',
+    scRegBg:   dk?'#0f2040':'#f8fafb',
+    scRegBd:   dk?'rgba(255,255,255,.08)':'rgba(13,27,42,.09)',
+    scPopBg:   dk?'rgba(236,124,0,.12)':'rgba(236,124,0,.06)',
+    scPopBd:   dk?'rgba(236,124,0,.45)':'rgba(236,124,0,.35)',
+    scLastBg:  dk?'rgba(220,38,38,.1)':'rgba(220,38,38,.02)',
+    scLastBd:  dk?'rgba(220,38,38,.35)':'rgba(220,38,38,.2)',
+    popBadge:  dk?'rgba(236,124,0,.2)':'rgba(236,124,0,.15)',
+    popBadgeTx:dk?'#f59332':'#b45309',
+    shortBadge:dk?'rgba(96,165,250,.15)':'rgba(29,111,224,.1)',
+    shortBadgeTx:dk?'#93c5fd':'#1d6fe0',
+    name:      dk?'#f0f4f9':'#0d1b2a',
+    dates:     dk?'#8aaccc':'#4e6072',
+    barBg:     dk?'rgba(255,255,255,.1)':'rgba(13,27,42,.08)',
+    barTaken:  dk?'rgba(255,255,255,.15)':'rgba(13,27,42,.12)',
+    occCount:  dk?'#6b8aaa':'#5c6e80',
+    occFree:   dk?'#4ade80':'#15803d',
+    occLast:   dk?'#f87171':'#dc2626',
+    foot:      dk?'#6b8aaa':'#5c6e80',
+  };
+
   const wrap=mkEl('div','width:100%;animation:blockIn .45s cubic-bezier(.16,1,.3,1) both,blockGlow .8s .2s ease-out both');
-  const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
+  const card=mkEl('div','background:'+C.card+';border:1px solid '+C.cardBd+';border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
 
   // header
-  const head=mkEl('div','padding:12px 16px;border-bottom:1px solid rgba(13,27,42,.07);display:flex;align-items:center;justify-content:space-between');
-  head.innerHTML='<span style="font-size:13px;font-weight:600;color:#4e6072;display:flex;align-items:center;gap:7px"><i class="bi bi-calendar-event" aria-hidden="true"></i>Смены лета 2026</span>'
-    +'<span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;background:rgba(236,124,0,.12);color:#c45f00">Запись открыта</span>';
+  const head=mkEl('div','padding:12px 16px;border-bottom:1px solid '+C.headBd+';display:flex;align-items:center;justify-content:space-between');
+  head.innerHTML='<span style="font-size:13px;font-weight:600;color:'+C.headLbl+';display:flex;align-items:center;gap:7px"><i class="bi bi-calendar-event" aria-hidden="true"></i>Смены лета 2026</span>'
+    +'<span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;background:rgba(236,124,0,.15);color:'+C.popBadgeTx+'">Запись открыта</span>';
   card.appendChild(head);
 
   // 2-column grid
@@ -965,9 +1004,11 @@ function blockSmeny(){
     const pct=Math.round(s.occupied/s.total*100);
     const isLast=free<=4;
 
+    const scBg=s.popular?C.scPopBg:isLast?C.scLastBg:C.scRegBg;
+    const scBd=s.popular?C.scPopBd:isLast?C.scLastBd:C.scRegBd;
     const sc=mkEl('div',
-      'border-radius:12px;border:1px solid '+(s.popular?'rgba(236,124,0,.35)':isLast?'rgba(220,38,38,.2)':'rgba(13,27,42,.09)')
-      +';background:'+(s.popular?'rgba(236,124,0,.04)':isLast?'rgba(220,38,38,.02)':'#f8fafb')
+      'border-radius:12px;border:1px solid '+scBd
+      +';background:'+scBg
       +';padding:9px 10px 8px;transition:.18s;'+(s.available?'cursor:pointer':'opacity:.4;cursor:default')
       +';animation:smena-in .3s cubic-bezier(.16,1,.3,1) '+(idx*.05)+'s both;position:relative;overflow:hidden'
     );
@@ -975,11 +1016,11 @@ function blockSmeny(){
 
     // popular/short badge
     if(s.popular){
-      const pop=mkEl('div','display:inline-flex;align-items:center;gap:3px;background:rgba(236,124,0,.15);color:#b45309;font-size:11px;font-weight:700;padding:1px 7px;border-radius:20px;margin-bottom:4px;width:fit-content');
+      const pop=mkEl('div','display:inline-flex;align-items:center;gap:3px;background:'+C.popBadge+';color:'+C.popBadgeTx+';font-size:11px;font-weight:700;padding:1px 7px;border-radius:20px;margin-bottom:4px;width:fit-content');
       pop.innerHTML='<i class="bi bi-fire" aria-hidden="true"></i> Хит';
       sc.appendChild(pop);
     } else if(s.short){
-      const sh=mkEl('div','display:inline-flex;align-items:center;gap:3px;background:rgba(29,111,224,.1);color:#1d6fe0;font-size:11px;font-weight:700;padding:1px 7px;border-radius:20px;margin-bottom:4px;width:fit-content');
+      const sh=mkEl('div','display:inline-flex;align-items:center;gap:3px;background:'+C.shortBadge+';color:'+C.shortBadgeTx+';font-size:11px;font-weight:700;padding:1px 7px;border-radius:20px;margin-bottom:4px;width:fit-content');
       sh.textContent='Короткая';
       sc.appendChild(sh);
     } else {
@@ -987,9 +1028,9 @@ function blockSmeny(){
     }
 
     // name
-    sc.appendChild(mkEl('div','font-size:16px;font-weight:800;color:#0d1b2a;line-height:1.2;margin-bottom:1px',s.n));
+    sc.appendChild(mkEl('div','font-size:16px;font-weight:800;color:'+C.name+';line-height:1.2;margin-bottom:1px',s.n));
     // dates + days
-    const datesEl=mkEl('div','font-size:14px;color:#4e6072;margin-bottom:6px;line-height:1.3');
+    const datesEl=mkEl('div','font-size:14px;color:'+C.dates+';margin-bottom:6px;line-height:1.3');
     datesEl.innerHTML=s.dates+'<br>'+s.days;
     sc.appendChild(datesEl);
 
@@ -1002,15 +1043,15 @@ function blockSmeny(){
 
     // progress bar
     if(s.available){
-      const barWrap=mkEl('div','height:3px;border-radius:2px;background:rgba(13,27,42,.08);overflow:hidden;margin-bottom:3px;display:flex');
-      const barTaken=mkEl('div','height:100%;background:rgba(13,27,42,.12);border-radius:2px 0 0 2px;width:0;transition:width 1s cubic-bezier(.16,1,.3,1)');
+      const barWrap=mkEl('div','height:3px;border-radius:2px;background:'+C.barBg+';overflow:hidden;margin-bottom:3px;display:flex');
+      const barTaken=mkEl('div','height:100%;background:'+C.barTaken+';border-radius:2px 0 0 2px;width:0;transition:width 1s cubic-bezier(.16,1,.3,1)');
       const barFree=mkEl('div','height:100%;background:linear-gradient(90deg,'+(isLast?'#ef4444,#dc2626':'#22c55e,#16a34a')+');border-radius:0 2px 2px 0;width:0;transition:width 1s cubic-bezier(.16,1,.3,1)');
       barWrap.appendChild(barTaken);barWrap.appendChild(barFree);
       sc.appendChild(barWrap);
 
       const occRow=mkEl('div','display:flex;justify-content:space-between;font-size:12px');
-      occRow.appendChild(mkEl('span','color:#5c6e80',''+s.occupied+'/'+s.total));
-      occRow.appendChild(mkEl('span',(isLast?'color:#dc2626':'color:#15803d')+';font-weight:700','свободно '+free));
+      occRow.appendChild(mkEl('span','color:'+C.occCount,''+s.occupied+'/'+s.total));
+      occRow.appendChild(mkEl('span',(isLast?'color:'+C.occLast:'color:'+C.occFree)+';font-weight:700','свободно '+free));
       sc.appendChild(occRow);
 
       setTimeout(()=>{barTaken.style.width=pct+'%';barFree.style.width=(100-pct)+'%';},100+idx*50);
@@ -1021,18 +1062,7 @@ function blockSmeny(){
 
   card.appendChild(grid);
 
-  // CTA — иконка-кнопка бронирования (без текста)
-  const ctaRow=mkEl('div','display:flex;align-items:center;gap:8px;padding:6px 8px 10px');
-  const btn=mkEl('button','flex:1;padding:10px;background:linear-gradient(135deg,#c45f00,#a34e00);border:none;border-radius:10px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 12px rgba(236,124,0,.3);transition:.18s;font-family:inherit;font-size:13px;font-weight:700');
-  btn.innerHTML='<i class="bi bi-calendar-check" aria-hidden="true" style="font-size:18px"></i>';
-  btn.title='Выбрать смену';
-  btn.onmouseenter=()=>{btn.style.background='linear-gradient(135deg,#d96a00,#b85500)';btn.style.boxShadow='0 5px 18px rgba(236,124,0,.45)';};
-  btn.onmouseleave=()=>{btn.style.background='linear-gradient(135deg,#c45f00,#a34e00)';btn.style.boxShadow='0 3px 12px rgba(236,124,0,.3)';};
-  btn.onclick=openPopup;
-  ctaRow.appendChild(btn);
-  card.appendChild(ctaRow);
-
-  const foot=mkEl('div','padding:0 14px 10px;font-size:12px;color:#5c6e80;text-align:center','Налоговый вычет 13% · Место фиксируется на 48ч · Возврат 50% за первые 3 дня');
+  const foot=mkEl('div','padding:0 14px 10px;font-size:12px;color:'+C.foot+';text-align:center','Налоговый вычет 13% · Место фиксируется на 48ч · Возврат 50% за первые 3 дня');
   card.appendChild(foot);
 
   wrap.appendChild(card);
@@ -1840,18 +1870,6 @@ function addChips(items){
     else if(item.action==='link'&&item.url) b.onclick=()=>{window.open(item.url,'_blank','noopener')};
     else b.onclick=()=>{
       row.remove();
-      // Показываем тихую цитату предыдущего бота
-      const prevBot = document.querySelector('#msgs .msg-text:last-of-type');
-      if(prevBot){
-        const ctx = document.createElement('div');
-        ctx.style.cssText = 'align-self:flex-end;font-size:12px;color:var(--text-muted);max-width:85%;background:var(--surface-2);border-radius:12px;padding:6px 12px;margin-bottom:2px;animation:up .2s;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;border-left:2px solid var(--accent)';
-        ctx.textContent = '↩ ' + (prevBot.innerText.trim().slice(0,100) + (prevBot.innerText.length > 100 ? '…' : ''));
-        document.getElementById('msgs').appendChild(ctx);
-        requestAnimationFrame(()=>requestAnimationFrame(()=>{
-          const b=document.getElementById('msgs');
-          if(b)b.scrollTop=b.scrollHeight;
-        }));
-      }
       go(item.query||item.label);
     };
     row.appendChild(b);
@@ -2142,6 +2160,7 @@ function send(){
   const inp=document.getElementById('inp');
   const v=inp.value.trim();
   if(!v||busy)return;
+  if(isRecording) stopMic();
   inp.value='';
   inp.style.height='auto'; // reset textarea height
   go(v);
@@ -2169,6 +2188,13 @@ async function submitBooking(){
   const phone=document.getElementById('popPhone').value.trim();
   if(!phone||phone.replace(/\D/g,'').length<11){
     document.getElementById('popPhone').focus();
+    return;
+  }
+  const consent=document.getElementById('popConsent');
+  if(!consent.checked){
+    const lbl=document.getElementById('popConsentLabel');
+    lbl.classList.add('err');
+    setTimeout(()=>lbl.classList.remove('err'),2000);
     return;
   }
   const shift=document.getElementById('popShift').value;
