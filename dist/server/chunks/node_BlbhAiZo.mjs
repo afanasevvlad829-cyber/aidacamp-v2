@@ -1,8 +1,8 @@
 import { joinPaths, isRemotePath, removeQueryString, isParentDirectory } from '@astrojs/internal-helpers/path';
 import { isRemoteAllowed } from '@astrojs/internal-helpers/remote';
-import { A as AstroError, aJ as NoImageMetadata, aK as FailedToFetchRemoteImageDimensions, aL as RemoteImageNotAllowed, aM as ExpectedImage, aN as LocalImageUsedWrongly, aO as MissingImageDimension, aP as UnsupportedImageFormat, aQ as IncompatibleDescriptorOptions, aR as UnsupportedImageConversion, aS as InvalidImageService, aT as ExpectedImageOptions, aU as ExpectedNotESMImage, aV as ImageMissingAlt, y as maybeRenderHead, a1 as addAttribute, L as renderTemplate, aW as FontFamilyNotFound, aX as unescapeHTML } from './sequence_C7YAHkIp.mjs';
-import { s as spreadAttributes } from './server_CG42zlcv.mjs';
-import { c as createComponent } from './astro-component_D56H0FPW.mjs';
+import { A as AstroError, aK as NoImageMetadata, aL as FailedToFetchRemoteImageDimensions, aM as RemoteImageNotAllowed, aN as ExpectedImage, aO as LocalImageUsedWrongly, aP as MissingImageDimension, aQ as UnsupportedImageFormat, aR as IncompatibleDescriptorOptions, aS as UnsupportedImageConversion, aT as InvalidImageService, aU as ExpectedImageOptions, aV as ExpectedNotESMImage, aW as ImageMissingAlt, y as maybeRenderHead, a2 as addAttribute, P as renderTemplate, aX as FontFamilyNotFound, aY as unescapeHTML } from './sequence_CTKPztmt.mjs';
+import { s as spreadAttributes } from './server_Dbo2-9pM.mjs';
+import { c as createComponent } from './astro-component_DF6GQlJq.mjs';
 import 'clsx';
 import * as mime from 'mrmime';
 import 'piccolore';
@@ -1463,7 +1463,7 @@ async function getConfiguredImageService() {
   if (!globalThis?.astroAsset?.imageService) {
     const { default: service } = await import(
       // @ts-expect-error
-      './sharp_DB0D6mxI.mjs'
+      './sharp_CQy5hH96.mjs'
     ).catch((e) => {
       const error = new AstroError(InvalidImageService);
       error.cause = e;
@@ -1835,6 +1835,24 @@ const etag = (payload, weak = false) => {
   return prefix + fnv1a52(payload).toString(36) + payload.length.toString(36) + '"';
 };
 
+const DATA_PREFIX = "data:";
+function inferSourceFormat(src) {
+  if (src.startsWith(DATA_PREFIX)) {
+    const mime = src.slice(DATA_PREFIX.length, src.indexOf(";"));
+    if (mime === "image/svg+xml") return "svg";
+    const sub = mime.split("/")[1];
+    return sub || void 0;
+  }
+  try {
+    const cleanSrc = removeQueryString(src).split("#")[0];
+    const lastDot = cleanSrc.lastIndexOf(".");
+    if (lastDot === -1) return void 0;
+    return cleanSrc.slice(lastDot + 1).toLowerCase();
+  } catch {
+    return void 0;
+  }
+}
+
 async function loadRemoteImage(src) {
   try {
     const res = await fetch(src, { redirect: "manual" });
@@ -1861,6 +1879,12 @@ const handleImageRequest = async ({
   const transform = await imageService.parseURL(url, imageConfig);
   if (!transform?.src) {
     return new Response("Invalid request", { status: 400 });
+  }
+  if (transform.format === "svg") {
+    const sourceFormat = inferSourceFormat(transform.src);
+    if (sourceFormat !== "svg") {
+      return new Response("Cannot convert non-SVG source to SVG format", { status: 403 });
+    }
   }
   let inputBuffer = void 0;
   if (isRemotePath(transform.src)) {
