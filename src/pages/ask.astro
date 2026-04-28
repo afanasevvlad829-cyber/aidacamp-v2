@@ -1487,13 +1487,19 @@ function blockVideoPlayer(blockData){
 function blockGallery(blockData){
   const photos=(blockData&&blockData.photos)||[];
   if(!photos.length)return null;
+  const dk=isDark();
   const wrap=mkEl('div','width:100%;animation:blockFade .5s ease-out both');
-  const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
-  const head=mkEl('div','padding:13px 18px;border-bottom:1px solid rgba(13,27,42,.07);display:flex;align-items:center;gap:8px');
-  head.innerHTML='<i class="bi bi-camera-fill" aria-hidden="true" style="color:#5c6e80;font-size:13px"></i>'
-    +'<span style="font-size:13px;font-weight:600;color:#4e6072">Фото из лагеря</span>';
+  const card=mkEl('div','border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
+  card.style.cssText='background:'+(dk?'#0d2037':'#fff')+';border:1px solid '+(dk?'rgba(255,255,255,.08)':'rgba(13,27,42,.09)')+';border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)';
+  const head=mkEl('div','padding:13px 18px;display:flex;align-items:center;gap:8px');
+  head.style.cssText='padding:13px 18px;border-bottom:1px solid '+(dk?'rgba(255,255,255,.07)':'rgba(13,27,42,.07)')+';display:flex;align-items:center;gap:8px';
+  head.innerHTML='<i class="bi bi-camera-fill" aria-hidden="true" style="color:'+(dk?'#8aaccc':'#5c6e80')+';font-size:13px"></i>'
+    +'<span style="font-size:13px;font-weight:600;color:'+(dk?'#a8c4df':'#4e6072')+'">Фото из лагеря</span>';
   card.appendChild(head);
-  const grid=mkEl('div','display:grid;grid-template-columns:repeat('+Math.min(photos.length,3)+',1fr);gap:2px');
+  // 4 фото → 2×2, 3 фото → 3 в ряд, иначе по числу
+  const cols = photos.length === 4 ? 2 : Math.min(photos.length, 3);
+  const grid=mkEl('div','');
+  grid.style.cssText='display:grid;grid-template-columns:repeat('+cols+',1fr);gap:2px';
   photos.forEach(p=>{
     const img=document.createElement('img');
     img.src=p.url;

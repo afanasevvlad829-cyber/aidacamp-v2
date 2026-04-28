@@ -316,7 +316,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Если бот попросил галерею — подбираем фото по запросу
     if (responseData.block_type === 'gallery') {
       const photoQuery = (responseData.block_data as any)?.query || message;
-      responseData.block_data = { photos: findPhotos(photoQuery, 3) };
+      responseData.block_data = { photos: findPhotos(photoQuery, 4) };
     }
 
     // Сначала логируем (получаем PK), потом инжектим в ответ — иначе TDZ
