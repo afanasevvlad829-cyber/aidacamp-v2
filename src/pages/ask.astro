@@ -2571,22 +2571,20 @@ function closeQR(){
     history.replaceState({},'','/ask/');
   }catch(e){ console.warn('[ask] conv restore error:', e); }
 })();
-</script>
 
-<!-- Auto-launch from hero chip (?q= param) -->
-<script is:inline>
+// ── AUTO-LAUNCH FROM HERO CHIP (?q= param) ──
 (function(){
   const sp = new URLSearchParams(location.search);
   const autoQ = sp.get('q');
   if(!autoQ) return;
 
-  // Clean URL immediately so it doesn't interfere with sharing
+  // Clean URL
   history.replaceState({}, '', '/ask/');
 
   const intro = document.getElementById('intro');
   if(!intro) return;
 
-  // Remove pills, hint, age-btns — replace with a single launch chip
+  // Replace pills/hint/age-btns with a single launch chip
   ['q-pills','hint','age-btns'].forEach(cls => {
     intro.querySelector('.'+cls)?.remove();
   });
@@ -2605,11 +2603,11 @@ function closeQR(){
   wrap.append(label, chip);
   intro.append(wrap);
 
-  // Brief pause so user sees what's happening, then fire
+  // Brief pause → chip fires → question sent
   setTimeout(() => {
     chip.classList.add('fire');
     setTimeout(() => go(autoQ), 300);
-  }, 480);
+  }, 500);
 })();
 </script>
 
