@@ -182,6 +182,12 @@ h2 em { font-style: normal; color: var(--or2); }
 .why-marker { width: 36px; height: 4px; background: var(--or); border-radius: 2px; margin-bottom: 20px; }
 .why-title { font-size: 17px; font-weight: 700; color: var(--txt); margin-bottom: 10px; line-height: 1.3; }
 .why-text { font-size: 16px; color: var(--txt2); line-height: 1.7; }
+/* WHY AGE TABS */
+.why-age-tab { background:var(--bg3); border:1px solid var(--bdr); border-radius:20px; padding:6px 16px; font-size:14px; font-weight:500; color:var(--txt2); cursor:pointer; white-space:nowrap; font-family:inherit; transition:all 0.15s; }
+.why-age-tab.active { background:var(--or); color:#1e2430; border-color:var(--or); }
+/* WHY AGE TABS */
+.why-age-tab { background:var(--bg3); border:1px solid var(--bdr); border-radius:20px; padding:6px 16px; font-size:14px; font-weight:500; color:var(--txt2); cursor:pointer; white-space:nowrap; font-family:inherit; transition:all 0.15s; }
+.why-age-tab.active { background:var(--or); color:#1e2430; border-color:var(--or); }
 
 /* TRACKS */
 .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
@@ -228,9 +234,10 @@ h2 em { font-style: normal; color: var(--or2); }
 .slider-row { display: flex; align-items: center; gap: 24px; margin-bottom: 12px; }
 .slider-label { font-size: 16px; font-weight: 600; color: var(--txt); white-space: nowrap; }
 .slider-val { font-family: 'Unbounded', sans-serif; font-size: 28px; font-weight: 900; color: var(--or2); min-width: 48px; }
-input[type=range] { flex: 1; -webkit-appearance: none; height: 4px; background: var(--bg4); border-radius: 2px; outline: none; }
-input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--or); cursor: pointer; box-shadow: 0 0 0 4px rgba(255,90,31,0.2); transition: box-shadow 0.2s; }
+input[type=range] { flex: 1; -webkit-appearance: none; appearance: none; height: 6px; background: var(--bg4); border-radius: 3px; outline: none; touch-action: pan-x; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 28px; height: 28px; border-radius: 50%; background: var(--or); cursor: pointer; box-shadow: 0 0 0 4px rgba(255,90,31,0.2); transition: box-shadow 0.2s; touch-action: none; }
 input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 7px rgba(255,90,31,0.3); }
+input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border-radius: 50%; background: var(--or); border: none; cursor: pointer; box-shadow: 0 0 0 4px rgba(255,90,31,0.2); }
 .calc-results { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-top: 32px; }
 .calc-res { background: var(--bg2); border: 1px solid var(--bdr); border-radius: 8px; padding: 20px; }
 .calc-res-label { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--txt2); margin-bottom: 8px; font-family: 'SF Mono',monospace; }
@@ -464,6 +471,35 @@ footer { padding: 36px 0; border-top: 1px solid var(--bdr); background: var(--bg
   .nav-badge { display: none; }
   .pool-img-grid img { height: 120px; }
   .pool-img-grid img:first-child { height: 160px; }
+  /* WHY carousel on mobile */
+  #why-age-tabs { display:flex !important; }
+  .why-grid {
+    display: flex !important;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 12px;
+    padding: 0 20px 8px !important;
+  }
+  .why-grid::-webkit-scrollbar { display: none; }
+  .why-grid .why-card {
+    min-width: 82vw;
+    max-width: 82vw;
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+  /* Gallery tabs — horizontal scroll on mobile */
+  #gal-tabs {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+  #gal-tabs::-webkit-scrollbar { display: none; }
+  /* Gallery carousel — hide scrollbar */
+  #gal-mobile::-webkit-scrollbar { display: none; }
 }
 @media (max-width: 520px) {
   .grid-3, .grid-4, .reviews-grid { grid-template-columns: 1fr; }
@@ -672,33 +708,39 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
     <div class="s-kicker">Для IT-специалистов</div>
     <h2>Вы знаете,<br>как это <em>работает на самом деле</em></h2>
     <p class="s-lead">Ваши дети заслуживают настоящего стека, а не имитации программирования.</p>
-    <div class="grid-3 r">
-      <div class="why-card">
+    <div id="why-age-tabs" style="display:none;gap:8px;padding:0 20px 16px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;">
+      <button class="why-age-tab active" data-age="all">Все</button>
+      <button class="why-age-tab" data-age="7-9">7–9 лет</button>
+      <button class="why-age-tab" data-age="10-12">10–12 лет</button>
+      <button class="why-age-tab" data-age="13-15">13–15 лет</button>
+    </div>
+    <div class="grid-3 r why-grid">
+      <div class="why-card" data-age="all">
         <div class="why-marker"></div>
         <div class="why-title">Настоящий стек</div>
         <div class="why-text">Python, Java, JavaScript — не упрощённые аналоги. IDE, реальные библиотеки, та же логика что и в продакшне.</div>
       </div>
-      <div class="why-card">
+      <div class="why-card" data-age="all">
         <div class="why-marker"></div>
         <div class="why-title">ИИ как инструмент</div>
         <div class="why-text">GPT и ИИ-агенты встроены в каждый трек — не тема урока, а рабочий инструмент для написания, отладки, тестирования.</div>
       </div>
-      <div class="why-card">
+      <div class="why-card" data-age="all">
         <div class="why-marker"></div>
         <div class="why-title">Проект, а не сертификат</div>
         <div class="why-text">Игра, сайт, веб-приложение, дрон-сценарий. Работающая штука, которую можно показать и доработать дома.</div>
       </div>
-      <div class="why-card">
+      <div class="why-card" data-age="all">
         <div class="why-marker"></div>
         <div class="why-title">Индивидуальный маршрут</div>
         <div class="why-text">8+ направлений. В первый день педагог оценивает уровень и интересы — нулевой и продвинутый в одной смене.</div>
       </div>
-      <div class="why-card">
+      <div class="why-card" data-age="all">
         <div class="why-marker"></div>
         <div class="why-title">Бассейн и полноценный отдых</div>
         <div class="why-text">Крытый бассейн, ежедневные заплывы. Футбол, бадминтон, лес. Санаторий «Изумруд». Медсестра 24/7.</div>
       </div>
-      <div class="why-card">
+      <div class="why-card" data-age="all">
         <div class="why-marker"></div>
         <div class="why-title">Ноутбук не нужен</div>
         <div class="why-text">Одинаковый парк машин. Сброс ОС за 15 секунд. Все IDE и библиотеки настроены и проверены заранее.</div>
@@ -937,8 +979,7 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
       </div>
       <input type="range" min="1" max="30" value="7" id="kids-slider" oninput="updateCalc()" style="display:block;width:100%;">
       <div style="position:relative;height:24px;margin-top:6px;font-size:11px;font-family:'SF Mono',monospace;padding:0 11px;box-sizing:border-box;">
-        <span style="position:absolute;left:calc(11px + 31% * (100% - 22px) / 100);color:var(--or2);font-weight:700;">10</span>
-        <span style="position:absolute;left:calc(11px + 65.5% * (100% - 22px) / 100);color:var(--txt2)">20</span>
+        <span style="position:absolute;left:calc(11px + 31% * (100% - 28px) / 100);color:var(--or2);font-weight:700;">10</span>
       </div>
       <div id="calc-group-result">
         <div class="calc-results">
@@ -1135,8 +1176,8 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
     </div>
     <!-- Desktop: big + small grid -->
     <div id="gal-desktop" class="r" style="display:flex;gap:12px;max-height:460px;overflow:hidden;"></div>
-    <!-- Mobile: 2-col grid -->
-    <div id="gal-mobile" class="r" style="display:none;grid-template-columns:1fr 1fr;gap:8px;"></div>
+    <!-- Mobile: horizontal swipe carousel -->
+    <div id="gal-mobile" class="r" style="display:none;flex-direction:row;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:12px;padding:0 20px 8px;margin:0 -20px;"></div>
   </div>
 </section>
 
@@ -2577,8 +2618,8 @@ function renderGalDesktop(imgs, label) {
 function renderGalMobile(imgs, label) {
   const el = document.getElementById('gal-mobile');
   el.innerHTML = imgs.map((img, i) => `
-    <button type="button" data-gi="${i}" style="border-radius:12px;overflow:hidden;cursor:pointer;position:relative;${i===0?'grid-column:span 2;':''}">
-      <img src="${img.src}" alt="${img.alt}" loading="lazy" style="width:100%;object-fit:cover;display:block;${i===0?'aspect-ratio:16/9':'aspect-ratio:4/3'}">
+    <button type="button" data-gi="${i}" style="flex:0 0 82vw;max-width:82vw;border-radius:14px;overflow:hidden;cursor:pointer;position:relative;aspect-ratio:4/3;scroll-snap-align:start;flex-shrink:0;">
+      <img src="${img.src}" alt="${img.alt}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">
       ${galBadge('small', label)}
     </button>`).join('');
   el.querySelectorAll('button[data-gi]').forEach(btn => {
@@ -2605,7 +2646,7 @@ function updateGalLayout() {
   var d = document.getElementById('gal-desktop'), m = document.getElementById('gal-mobile');
   if (!d || !m) return;
   if (window.innerWidth >= 768) { d.style.display='flex'; m.style.display='none'; }
-  else { d.style.display='none'; m.style.display='grid'; }
+  else { d.style.display='none'; m.style.display='flex'; }
 }
 
 window.addEventListener('resize', function() { updateGalLayout(); switchGalCat(document.querySelector('.gal-pill-active')?.dataset.gcat || 'camp'); });
@@ -2648,6 +2689,20 @@ const obs = new IntersectionObserver(entries => {
   entries.forEach((e, i) => { if (e.isIntersecting) setTimeout(() => e.target.classList.add('in'), i * 70); });
 }, { threshold: 0.06 });
 document.querySelectorAll('.r').forEach(el => obs.observe(el));
+</script>
+
+<script>
+(function(){
+  var tabs = document.querySelectorAll('.why-age-tab');
+  tabs.forEach(function(t){ t.addEventListener('click', function(){
+    tabs.forEach(function(x){ x.classList.remove('active'); });
+    this.classList.add('active');
+    var age = this.dataset.age;
+    document.querySelectorAll('.why-card').forEach(function(c){
+      c.style.display = (age==='all' || c.dataset.age===age || c.dataset.age==='all') ? '' : 'none';
+    });
+  }); });
+})();
 </script>
 </body>
 </html>
