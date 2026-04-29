@@ -1,0 +1,259 @@
+---
+import '../../styles/global.css';
+import Base from '../../layouts/Base.astro';
+import { STAT_YEARS, STAT_KIDS, STAT_RATING, CAMP_PRICE_FROM } from '../../data/contacts';
+
+const BOT_URL = 'https://t.me/AidacampBot';
+
+const pills = [
+  { q: 'Сколько стоит?',   autoq: 'Сколько стоит лагерь?',           icon: 'coin' },
+  { q: 'Телефон заберут?', autoq: 'Телефон заберут у ребёнка?',       icon: 'phone-x' },
+  { q: 'Как кормят?',      autoq: 'Как кормят в лагере?',             icon: 'cup-hot' },
+  { q: 'Без опыта можно?', autoq: 'Можно без опыта программирования?', icon: 'controller' },
+];
+
+const secondaryPills = [
+  { q: 'А что у вас плохо?', href: '/otzyvy' },
+  { q: 'Возврат денег?',     href: '/politika-vozvrata' },
+  { q: 'Как добраться?',     href: '/o-lagere' },
+];
+---
+
+<Base title="[Демо v2] Hero Bot — АйДаКемп" noindex>
+
+  <!-- Demo badge -->
+  <div class="fixed top-0 inset-x-0 z-[200] flex items-center justify-center gap-3 bg-amber-400 py-2 text-[13px] font-semibold text-amber-900">
+    <span>ДЕМО v2 — пилюли в стиле сайта</span>
+    <a href="/demo/hero-bot" class="rounded-full bg-amber-900/15 px-3 py-0.5 hover:bg-amber-900/25 transition-colors">v1 →</a>
+    <a href="/" class="rounded-full bg-amber-900/15 px-3 py-0.5 hover:bg-amber-900/25 transition-colors">Текущая →</a>
+  </div>
+  <div class="h-9"></div>
+
+  <main>
+
+    <!-- ===== MOBILE HERO (md:hidden) ===== -->
+    <div class="relative w-full bg-[#0d1a2b] md:hidden min-h-[95svh] flex flex-col">
+
+      <!-- Фото с градиентами — точно как в Mobile.astro -->
+      <div class="relative flex-1 min-h-[52vw]">
+        <picture>
+          <source type="image/avif" srcset="/images/hero-bot-kid.avif" />
+          <img
+            src="/images/hero-bot-kid.jpg"
+            alt=""
+            aria-hidden="true"
+            class="absolute inset-0 h-full w-full object-cover object-[center_22%]"
+            loading="eager"
+            fetchpriority="high"
+            width="531"
+            height="708"
+          />
+        </picture>
+        <!-- Боковой градиент -->
+        <div class="absolute inset-0 bg-[linear-gradient(92deg,rgba(6,10,18,0.72)_0%,rgba(6,10,18,0.46)_42%,rgba(6,10,18,0.2)_70%,rgba(6,10,18,0.06)_100%)]"></div>
+        <!-- Нижний переход к тёмному -->
+        <div class="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,transparent_55%,rgba(13,26,43,0.45)_78%,#0d1a2b_100%)]"></div>
+
+        <!-- H1 поверх фото — точно как в текущем героe -->
+        <div class="absolute bottom-8 left-5 right-5">
+          <h1 class="text-[36px] font-bold leading-[1.1] tracking-[-0.03em] text-white [text-shadow:0px_2px_10px_rgba(0,0,0,0.45)]">
+            Летний лагерь в&nbsp;Подмосковье,&nbsp;<span class="whitespace-nowrap">7–15</span>
+          </h1>
+          <p class="mt-2.5 text-[15px] text-white/90">Пока другие на даче, ваш вернётся с AI&#8209;проектом.</p>
+        </div>
+      </div>
+
+      <!-- Q&A пилюли 2×2 -->
+      <div class="mx-4 mt-5 grid grid-cols-2 gap-2">
+        {pills.map((p) => (
+          <a
+            href="/ask/"
+            data-q={p.autoq}
+            class="ask-chip group flex items-center gap-2.5 rounded-[12px] bg-white/8 border border-white/10 px-3 py-3.5 min-h-[52px] cursor-pointer active:bg-white/15 hover:bg-white/12 hover:border-white/20 transition-colors"
+          >
+            <i class={`bi bi-${p.icon} text-[16px] text-orange-400 shrink-0`} aria-hidden="true"></i>
+            <span class="text-[14px] font-semibold leading-tight text-white flex-1">{p.q}</span>
+            <i class="bi bi-chevron-right text-[10px] text-white/30 shrink-0 group-hover:text-white/55 transition-colors" aria-hidden="true"></i>
+          </a>
+        ))}
+      </div>
+
+      <!-- CTA + stats — как на скриншоте -->
+      <div class="mx-4 mt-4 mb-8">
+        <a
+          href={BOT_URL}
+          target="_blank"
+          rel="noopener"
+          class="flex w-full items-center justify-center gap-2.5 rounded-full bg-[#ec7c00] px-6 py-4 text-[17px] font-bold text-[#1e2430] shadow-[0_4px_20px_rgba(236,124,0,0.40)] active:bg-[#d46e00] transition-all duration-150 cursor-pointer"
+        >
+          <i class="bi bi-telegram text-[19px]" aria-hidden="true"></i>
+          Спросить бота
+        </a>
+        <!-- Stats row -->
+        <div class="mt-3 flex items-center justify-center gap-2 flex-wrap">
+          <span class="text-[13px] font-semibold text-[#fbbf24]">★ {STAT_RATING}</span>
+          <span class="text-white/25 text-[12px]">·</span>
+          <span class="text-[12px] text-white/55">{STAT_YEARS} лет</span>
+          <span class="text-white/25 text-[12px]">·</span>
+          <span class="text-[12px] text-white/55">{STAT_KIDS} детей</span>
+          <span class="text-white/25 text-[12px]">·</span>
+          <span class="text-[12px] text-white/55">ТОП&#8209;4 IT&#8209;лагерей МО</span>
+        </div>
+        <!-- Microcopy -->
+        <p class="mt-1.5 text-center text-[11px] text-white/35 leading-relaxed">
+          Наш ИИ уже заменил менеджера · Без звонка · Ответ сразу
+        </p>
+        <!-- Article link — ниже кнопки -->
+        <a
+          href="/stati/ii-zamenit-programmista"
+          class="mt-4 flex items-center gap-2.5 rounded-[12px] bg-white/5 border border-white/8 px-4 py-3 text-[13px] text-white/60 hover:text-white/80 hover:bg-white/8 transition-colors"
+        >
+          <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-orange-500/80 text-[10px] font-bold text-white">?</span>
+          <span class="flex-1 leading-tight">«ИИ заменит программистов» — правда или реклама?</span>
+          <i class="bi bi-chevron-right text-[10px] text-white/25 shrink-0" aria-hidden="true"></i>
+        </a>
+      </div>
+
+    </div>
+
+    <!-- ===== DESKTOP (hidden md:block) ===== -->
+    <section class="hidden md:flex items-center justify-center min-h-screen bg-[#060c14] py-16">
+      <div class="flex gap-12 items-start max-w-[900px] mx-auto px-8">
+
+        <!-- Phone mockup -->
+        <div class="relative w-[375px] shrink-0 rounded-[40px] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.75),0_0_0_1px_rgba(255,255,255,0.08)]" style="min-height:760px; background:#0d1a2b">
+
+          <div class="relative flex-1 min-h-[200px]" style="height:240px">
+            <picture>
+              <source type="image/avif" srcset="/images/hero-bot-kid.avif" />
+              <img src="/images/hero-bot-kid.jpg" alt="" aria-hidden="true"
+                class="absolute inset-0 h-full w-full object-cover object-[center_22%]"
+                width="531" height="708" />
+            </picture>
+            <div class="absolute inset-0 bg-[linear-gradient(92deg,rgba(6,10,18,0.72)_0%,rgba(6,10,18,0.46)_42%,rgba(6,10,18,0.2)_70%,rgba(6,10,18,0.06)_100%)]"></div>
+            <div class="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,transparent_55%,rgba(13,26,43,0.45)_78%,#0d1a2b_100%)]"></div>
+            <div class="absolute bottom-6 left-5 right-5">
+              <h1 class="text-[30px] font-bold leading-[1.1] tracking-[-0.03em] text-white [text-shadow:0px_2px_10px_rgba(0,0,0,0.45)]">
+                Летний лагерь в&nbsp;Подмосковье, <span class="whitespace-nowrap">7–15</span>
+              </h1>
+              <p class="mt-2 text-[14px] text-white/90">Пока другие на даче, ваш вернётся с AI&#8209;проектом.</p>
+            </div>
+          </div>
+
+          <div class="px-4 pb-8 bg-[#0d1a2b]">
+            <div class="mt-4 flex gap-2">
+              <div class="flex-1 min-h-[44px] rounded-[12px] bg-orange-500/20 border border-orange-400/40 px-3 py-2.5 text-[14px] font-semibold text-orange-300 text-center flex items-center justify-center">
+                от {CAMP_PRICE_FROM} за 7 дней
+              </div>
+              <a href="/stati/ii-zamenit-programmista"
+                class="flex-1 rounded-[12px] bg-white/10 border border-white/15 px-3 py-2 text-[12px] text-white/85 text-center leading-[1.25] flex flex-col justify-center">
+                <span class="flex items-center justify-center gap-1">
+                  <span class="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-orange-500 text-[8px] font-bold text-white">?</span>
+                  <span>ИИ заменит программистов?</span>
+                </span>
+                <span class="text-white/45 text-[10px]">правда или реклама →</span>
+              </a>
+            </div>
+
+            <div class="mt-4 flex items-center gap-2">
+              <div class="h-px flex-1 bg-white/10"></div>
+              <span class="text-[10px] font-bold tracking-[0.1em] uppercase text-white/35">Что вас беспокоит?</span>
+              <div class="h-px flex-1 bg-white/10"></div>
+            </div>
+
+            <div class="mt-2.5 grid grid-cols-2 gap-1.5">
+              {pills.map((p) => (
+                <a href="/ask/" data-q={p.autoq}
+                  class="ask-chip group flex items-center gap-2 rounded-[12px] bg-white/8 border border-white/10 px-3 py-3 min-h-[48px] cursor-pointer hover:bg-white/12 transition-colors">
+                  <i class={`bi bi-${p.icon} text-[14px] text-orange-400 shrink-0`} aria-hidden="true"></i>
+                  <span class="text-[13px] font-semibold leading-tight text-white flex-1">{p.q}</span>
+                  <i class="bi bi-chevron-right text-[9px] text-white/30 shrink-0" aria-hidden="true"></i>
+                </a>
+              ))}
+            </div>
+
+            <div class="mt-1.5 flex gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none]">
+              {secondaryPills.map((p) => (
+                <a href={p.href}
+                  class="shrink-0 rounded-full bg-white/6 border border-white/10 px-3 py-1.5 text-[12px] text-white/55 whitespace-nowrap hover:bg-white/10 transition-colors">
+                  {p.q}
+                </a>
+              ))}
+            </div>
+
+            <div class="mt-2.5 flex gap-1.5">
+              {[
+                {href:'/stati/dokumenty-licenziya-strahovka/#licenziya', icon:'patch-check-fill', label:'Лицензия'},
+                {href:'/stati/dokumenty-licenziya-strahovka/#medsestra', icon:'heart-pulse-fill', label:'Медсестра 24/7'},
+                {href:'/stati/dokumenty-licenziya-strahovka/#strahovka', icon:'shield-check', label:'Страховка'},
+              ].map(b => (
+                <a href={b.href}
+                  class="flex-1 flex flex-col items-center justify-center gap-0.5 text-center rounded-full bg-[#1e40af]/40 border border-[#60a5fa]/50 px-2 py-2 min-h-[40px] text-[12px] font-medium text-[#bfdbfe]">
+                  <i class={`bi bi-${b.icon} text-[13px]`} aria-hidden="true"></i>
+                  <span class="leading-tight">{b.label}</span>
+                </a>
+              ))}
+            </div>
+
+            <a href={BOT_URL} target="_blank" rel="noopener"
+              class="mt-3 flex w-full items-center justify-center gap-2 rounded-[14px] bg-[#ec7c00] px-5 py-3.5 text-[16px] font-bold text-[#1e2430] shadow-[0_4px_20px_rgba(236,124,0,0.40)] hover:bg-[#d46e00] transition-colors cursor-pointer">
+              <i class="bi bi-telegram text-[17px]" aria-hidden="true"></i>
+              Спросить бота
+            </a>
+            <p class="mt-2 text-center text-[11px] text-white/35">без регистрации · без звонка · ответ сразу</p>
+          </div>
+        </div>
+
+        <!-- Аннотации справа -->
+        <div class="flex flex-col gap-5 pt-8 max-w-[340px]">
+          <div>
+            <p class="text-[22px] font-bold text-white leading-tight">Hero с ботом вместо формы</p>
+            <p class="mt-1.5 text-[14px] text-white/50">Стиль aidacamp.ru, фото мальчика как подложка</p>
+          </div>
+          <div class="space-y-3">
+            {[
+              { icon: 'coin', label: 'Пилюли', desc: '→ /ask?q=... с предзаполненным вопросом' },
+              { icon: 'telegram', label: 'Оранжевая кнопка', desc: '→ Telegram бот напрямую' },
+              { icon: 'patch-check-fill', label: 'Trust-бейджи', desc: 'Лицензия / Медсестра / Страховка — как сейчас' },
+              { icon: 'info-circle', label: 'Статья', desc: '«ИИ заменит программистов» — популярная ссылка' },
+            ].map(a => (
+              <div class="flex gap-3 items-start">
+                <div class="w-8 h-8 rounded-[10px] bg-white/8 flex items-center justify-center shrink-0">
+                  <i class={`bi bi-${a.icon} text-[14px] text-orange-400`} aria-hidden="true"></i>
+                </div>
+                <div>
+                  <p class="text-[14px] font-semibold text-white">{a.label}</p>
+                  <p class="text-[12px] text-white/45">{a.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <a href="/" class="text-[13px] text-orange-400 hover:underline">← Сравнить с текущей главной</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+<script is:inline>
+(function(){
+  document.querySelectorAll('.ask-chip[data-q]').forEach(function(chip) {
+    chip.addEventListener('click', function(e) {
+      e.preventDefault();
+      var q = this.getAttribute('data-q');
+      sessionStorage.setItem('ask_autoq', q);
+
+      // Orange glow на нажатом
+      this.style.cssText = 'background:rgba(236,124,0,.28)!important;border-color:rgba(236,124,0,.75)!important;box-shadow:0 0 0 3px rgba(236,124,0,.18),0 6px 20px rgba(236,124,0,.35)!important;transform:scale(1.06)!important;transition:all .1s ease!important;';
+      // Dim остальных
+      document.querySelectorAll('.ask-chip').forEach(function(s) {
+        if(s !== chip) s.style.cssText = 'opacity:.3!important;transition:opacity .18s!important;';
+      });
+
+      setTimeout(function() { location.href = '/ask/'; }, 190);
+    });
+  });
+})();
+</script>
+
+</Base>
