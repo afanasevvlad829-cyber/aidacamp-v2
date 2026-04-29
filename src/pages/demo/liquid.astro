@@ -145,93 +145,102 @@ body.liq #liq-pill {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   LAYER 0 — ТЕЛО: светлый иридесцентный градиент (пастельный)
-   Референс Apple Liquid Glass — СВЕТЛЫЙ, не тёмный.
-   Пастельные цвета на почти-белой основе.
+   ФУНДАМЕНТ: референс liquid-glass-pi.vercel.app
+   Яркий насыщенный фон (macOS-wallpaper стиль) +
+   стекло с brightness(1.7) — оно СВЕТИТСЯ, а не просто мутное.
    ══════════════════════════════════════════════════════════════ */
+
+/* ── Тело: белая база, никакого своего фона ── */
 body.liq {
-  background:
-    radial-gradient(ellipse 72% 62% at 12% 16%,
-      rgba(236, 72, 153, 0.62) 0%, rgba(192, 132, 252, 0.34) 44%, transparent 70%),
-    radial-gradient(ellipse 66% 58% at 87% 82%,
-      rgba(6, 182, 212, 0.58) 0%, rgba(167, 139, 250, 0.30) 44%, transparent 70%),
-    radial-gradient(ellipse 54% 48% at 82% 12%,
-      rgba(139, 92, 246, 0.50) 0%, rgba(99, 102, 241, 0.26) 44%, transparent 68%),
-    radial-gradient(ellipse 48% 42% at 14% 88%,
-      rgba(249, 115, 22, 0.44) 0%, rgba(251, 146, 60, 0.22) 44%, transparent 68%),
-    radial-gradient(ellipse 38% 32% at 50% 46%,
-      rgba(6, 182, 212, 0.24) 0%, transparent 60%),
-    linear-gradient(155deg, #faf8ff 0%, #fff2fb 28%, #f2f8ff 62%, #fffbf2 100%);
-  background-attachment: fixed;
-  animation: liq-pulse 9s ease-in-out infinite;
-}
-@keyframes liq-pulse {
-  0%,100% { filter: saturate(1.00) brightness(1.00); }
-  35%     { filter: saturate(1.22) brightness(1.04); }
-  68%     { filter: saturate(0.92) brightness(0.98); }
+  background: #ffffff;
+  animation: liq-breathe 10s ease-in-out infinite;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   LAYER 1 — МЕМБРАНА: почти прозрачная, только тонкий specular
-   ══════════════════════════════════════════════════════════════ */
+/* ── position:fixed pseudo — viewport-закреплённый градиент ──
+   Работает и в реальном браузере И в Playwright headless.
+   z-index: -1 → за всем контентом, но поверх body background.
+   ──────────────────────────────────────────────────────────── */
+body.liq::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    /* Розовый — левый верх */
+    radial-gradient(ellipse 68% 58% at 0% 0%,
+      rgba(244,114,182,0.70) 0%, rgba(232,121,249,0.40) 38%, transparent 62%),
+    /* Бирюза — правый низ */
+    radial-gradient(ellipse 64% 55% at 100% 100%,
+      rgba(34,211,238,0.68) 0%, rgba(129,140,248,0.38) 38%, transparent 62%),
+    /* Фиолет — правый верх */
+    radial-gradient(ellipse 50% 44% at 100% 0%,
+      rgba(167,139,250,0.58) 0%, rgba(99,102,241,0.30) 40%, transparent 62%),
+    /* Оранж — левый низ */
+    radial-gradient(ellipse 46% 40% at 0% 100%,
+      rgba(251,146,60,0.58) 0%, rgba(251,191,36,0.28) 40%, transparent 62%),
+    /* Чистая белая база */
+    #ffffff;
+}
+
+@keyframes liq-breathe {
+  0%,100% { filter: saturate(1.0) brightness(1.00); }
+  40%     { filter: saturate(1.18) brightness(1.04); }
+  72%     { filter: saturate(0.94) brightness(0.97); }
+}
+
+/* ── Обёртка: полностью прозрачная, только isolate ── */
 body.liq #liq-wrap {
-  background: rgba(255, 255, 255, 0.06);
+  background: transparent;
   position: relative;
   isolation: isolate;
 }
 
 /* ══════════════════════════════════════════════════════════════
-   LAYER 2 — ЯДЕРНЫЙ СБРОС
-   Светлый фон → тёмный текст (WCAG 4.5:1 гарантирован).
+   ЯДЕРНЫЙ СБРОС: темный текст на светлом, фоны прозрачны
    ══════════════════════════════════════════════════════════════ */
-
-/* Все тексты → почти-чёрные (на светлом фоне читаемость идеальная) */
 body.liq #liq-wrap * {
-  color: rgba(15, 8, 32, 0.87) !important;
+  color: rgba(12, 6, 28, 0.88) !important;
   text-shadow: none !important;
 }
-
-/* Все фоны → прозрачные (кроме img/video) */
 body.liq #liq-wrap *:not(img):not(video):not(iframe):not(canvas):not(svg) {
   background-color: transparent !important;
 }
-
-/* Бордеры → тонкие тёмные */
 body.liq #liq-wrap *:not(img):not(video) {
-  border-color: rgba(0, 0, 0, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.55) !important;
 }
 
 /* ══════════════════════════════════════════════════════════════
-   LAYER 3 — ВОССТАНОВЛЕНИЕ
+   LIQUID GLASS MIXIN:
+   backdrop-filter: blur + saturate(240%) + brightness(160%)
+   Именно brightness(1.6) делает стекло luminous — оно светится.
    ══════════════════════════════════════════════════════════════ */
 
-/* ── Хедер: матовое белое стекло ── */
+/* ── Хедер ── */
 body.liq header {
-  background: rgba(255, 255, 255, 0.78) !important;
-  backdrop-filter: blur(40px) saturate(220%) !important;
-  -webkit-backdrop-filter: blur(40px) saturate(220%) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.90) !important;
-  box-shadow:
-    0 1px 0 rgba(0, 0, 0, 0.05),
-    0 4px 24px rgba(139, 92, 246, 0.08) !important;
+  background: rgba(255, 255, 255, 0.38) !important;
+  backdrop-filter: blur(32px) saturate(240%) brightness(150%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(240%) brightness(150%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.72) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.9), 0 4px 20px rgba(0,0,0,0.06) !important;
 }
 
-/* ── Навигация: стеклянные пилюли ── */
+/* ── Навигация: pill-кнопки ── */
 body.liq header nav a {
-  background: rgba(0, 0, 0, 0.04) !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background: rgba(255, 255, 255, 0.32) !important;
+  border: 1px solid rgba(255, 255, 255, 0.68) !important;
   border-radius: 100px !important;
-  backdrop-filter: blur(12px) !important;
+  backdrop-filter: blur(16px) brightness(130%) !important;
+  -webkit-backdrop-filter: blur(16px) brightness(130%) !important;
   padding: 6px 14px !important;
-  transition: all 200ms ease !important;
+  transition: all 180ms ease !important;
 }
 body.liq header nav a:hover {
-  background: rgba(139, 92, 246, 0.10) !important;
-  border-color: rgba(139, 92, 246, 0.22) !important;
+  background: rgba(255, 255, 255, 0.55) !important;
+  border-color: rgba(255, 255, 255, 0.88) !important;
   transform: translateY(-1px) !important;
 }
 
-/* ── Оранжевые CTA кнопки ── */
+/* ── CTA кнопки: оранжевые ── */
 body.liq .bg-orange-500,
 body.liq [class*="bg-\[#f97316\]"],
 body.liq [class*="bg-\[#ec7c00\]"],
@@ -240,131 +249,116 @@ body.liq a[class*="bg-orange"] {
   background-color: #f97316 !important;
   color: #fff !important;
   box-shadow:
-    0 6px 28px rgba(249, 115, 22, 0.38),
-    0 2px 8px rgba(249, 115, 22, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.24) !important;
+    0 6px 24px rgba(249,115,22,0.40),
+    0 2px 8px rgba(249,115,22,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.28) !important;
 }
 
-/* ── Зелёные / синие бейджи ── */
+/* ── Бейджи зелёные/синие ── */
 body.liq [class*="bg-green-"],
 body.liq [class*="bg-emerald-"] {
-  background-color: rgba(16, 185, 129, 0.14) !important;
-  border: 1px solid rgba(16, 185, 129, 0.30) !important;
-  color: #065f46 !important;
+  background-color: rgba(255,255,255,0.42) !important;
+  border: 1px solid rgba(255,255,255,0.70) !important;
+  color: #047857 !important;
 }
 body.liq [class*="bg-blue-"],
 body.liq [class*="bg-sky-"],
 body.liq [class*="bg-\[#1e40af\]"],
 body.liq [class*="bg-\[#1d4ed8\]"] {
-  background-color: rgba(59, 130, 246, 0.12) !important;
-  border: 1px solid rgba(59, 130, 246, 0.28) !important;
+  background-color: rgba(255,255,255,0.42) !important;
+  border: 1px solid rgba(255,255,255,0.70) !important;
   color: #1e40af !important;
 }
 
-/* ── Glass карточки: FROSTED WHITE — основной эффект ── */
+/* ══ ГЛАВНЫЙ ЭФФЕКТ: luminous glass cards ══
+   brightness(1.65) → стекло буквально светится
+   saturate(220%)   → цвет из-за стекла усиленный, насыщенный
+   rgba(255,255,255,0.28) → достаточно прозрачное для эффекта */
 body.liq #liq-wrap [class*="rounded-xl"],
 body.liq #liq-wrap [class*="rounded-2xl"],
 body.liq #liq-wrap [class*="rounded-3xl"] {
-  background: rgba(255, 255, 255, 0.62) !important;
-  border: 1px solid rgba(255, 255, 255, 0.90) !important;
+  background: rgba(255, 255, 255, 0.28) !important;
+  border: 1px solid rgba(255, 255, 255, 0.72) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 8px 40px rgba(139, 92, 246, 0.10),
-    0 2px 12px rgba(0, 0, 0, 0.05),
-    0 0 0 0.5px rgba(0, 0, 0, 0.04) !important;
-  backdrop-filter: blur(28px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
+    inset 0 1px 0 rgba(255, 255, 255, 0.90),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.20),
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  backdrop-filter: blur(24px) saturate(220%) brightness(165%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(220%) brightness(165%) !important;
 }
 
-/* Крупные блоки с rounded-lg тоже стекло */
 body.liq #faq     > * [class*="rounded-lg"],
 body.liq #reviews > * [class*="rounded-lg"],
 body.liq #team    > * [class*="rounded-lg"],
 body.liq #contacts > * [class*="rounded-lg"],
 body.liq #shifts  > * [class*="rounded-lg"] {
-  background: rgba(255, 255, 255, 0.55) !important;
-  border: 1px solid rgba(255, 255, 255, 0.85) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
+  background: rgba(255, 255, 255, 0.26) !important;
+  border: 1px solid rgba(255, 255, 255, 0.68) !important;
+  backdrop-filter: blur(20px) saturate(200%) brightness(158%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(200%) brightness(158%) !important;
 }
 
-/* ── Иридесцентная подсветка заголовков ── */
-body.liq h2 {
-  background: linear-gradient(135deg, #7c3aed, #ec4899, #0891b2) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-  background-clip: text !important;
-  color: transparent !important;
-  filter: none !important;
-}
-
-/* ── Футер: матовое светлое стекло ── */
+/* ── Футер ── */
 body.liq footer {
-  background: rgba(255, 255, 255, 0.70) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.90) !important;
-  backdrop-filter: blur(24px) !important;
-  -webkit-backdrop-filter: blur(24px) !important;
+  background: rgba(255, 255, 255, 0.32) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.70) !important;
+  backdrop-filter: blur(24px) saturate(200%) brightness(150%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(200%) brightness(150%) !important;
 }
 
 /* ── Booking bar ── */
 body.liq [id*="after-"] {
-  background: rgba(255, 255, 255, 0.60) !important;
-  backdrop-filter: blur(24px) !important;
-  -webkit-backdrop-filter: blur(24px) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.88) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.88) !important;
-  box-shadow: 0 2px 20px rgba(139, 92, 246, 0.07) !important;
+  background: rgba(255, 255, 255, 0.30) !important;
+  backdrop-filter: blur(24px) saturate(200%) brightness(155%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(200%) brightness(155%) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.70) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.70) !important;
 }
 
 /* ── Инпуты ── */
 body.liq input[type="tel"],
 body.liq input[type="text"],
 body.liq input[type="email"] {
-  background: rgba(255, 255, 255, 0.72) !important;
-  border: 1px solid rgba(0, 0, 0, 0.12) !important;
-  color: rgba(15, 8, 32, 0.88) !important;
+  background: rgba(255, 255, 255, 0.50) !important;
+  border: 1px solid rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(12px) brightness(140%) !important;
+  color: rgba(12, 6, 28, 0.88) !important;
 }
-body.liq input::placeholder { color: rgba(15, 8, 32, 0.35) !important; }
+body.liq input::placeholder { color: rgba(12, 6, 28, 0.35) !important; }
 
-/* ── Иконки: насыщенные цвета на светлом ── */
-body.liq [class*="bi-"],
-body.liq [class*="bi "] {
-  opacity: 0.80 !important;
-  filter: none !important;
-}
-
-/* ── FAQ аккордеон ── */
+/* ── FAQ ── */
 body.liq details,
 body.liq summary {
-  background: rgba(255, 255, 255, 0.58) !important;
-  border: 1px solid rgba(255, 255, 255, 0.88) !important;
+  background: rgba(255, 255, 255, 0.28) !important;
+  border: 1px solid rgba(255, 255, 255, 0.68) !important;
   border-radius: 12px !important;
   padding: 16px 20px !important;
-  backdrop-filter: blur(16px) !important;
+  backdrop-filter: blur(18px) brightness(152%) !important;
 }
 
-/* ── Gallery & Videos — белые секции становятся стеклом ── */
+/* ── Gallery/Videos/белые секции ── */
 body.liq #gallery > div,
 body.liq #videos  > div,
 body.liq [class*="bg-\[#f7f5f2\]"],
 body.liq [class*="bg-white"],
 body.liq [class*="bg-slate-50"],
 body.liq [class*="bg-slate-100"] {
-  background-color: rgba(255, 255, 255, 0.22) !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
 }
 
-/* ── Цветные pill-бейджи (года, места, рейтинги) ── */
+/* ── Pill-бейджи ── */
 body.liq [class*="bg-\[#fff2e3\]"],
 body.liq [class*="bg-orange-50"],
 body.liq [class*="bg-amber-50"] {
-  background-color: rgba(249, 115, 22, 0.10) !important;
-  border: 1px solid rgba(249, 115, 22, 0.20) !important;
+  background-color: rgba(255,255,255,0.38) !important;
+  border: 1px solid rgba(255,255,255,0.65) !important;
 }
 
 /* ── Micro-interactions ── */
 body.liq a, body.liq button {
   transition: transform 160ms ease, box-shadow 160ms ease,
-              background 160ms ease, border-color 160ms ease !important;
+              background 160ms ease !important;
 }
 body.liq a:not(header a):hover,
 body.liq button:not(#liq-sw button):hover {
