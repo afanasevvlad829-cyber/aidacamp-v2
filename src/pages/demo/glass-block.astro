@@ -1,0 +1,212 @@
+---
+// Liquid Glass — TypeUI Glassmorphism + feTurbulence
+---
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Liquid Glass</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      flex-wrap: wrap;
+      padding: 80px 60px;
+      font-family: "Plus Jakarta Sans", -apple-system, sans-serif;
+      background:
+        radial-gradient(ellipse 58% 50% at 78% 15%,
+          rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.28) 32%, transparent 58%),
+        radial-gradient(ellipse 44% 38% at 14% 85%,
+          rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.14) 35%, transparent 56%),
+        radial-gradient(ellipse 50% 44% at 92% 60%,
+          rgba(130,190,255,0.42) 0%, transparent 52%),
+        linear-gradient(148deg,
+          #1856FF 0%, #2563eb 24%, #1a6ac4 50%, #1050b4 74%, #0d3fa0 100%);
+    }
+
+    svg.filters { position: fixed; width: 0; height: 0; top: 0; left: 0; }
+
+    /* ══════════════════════════════════════════
+       GLASS CORE — TypeUI Glassmorphism recipe
+       • НЕТ inset white highlight (давал "пластик")
+       • Вместо него: градиентная рамка через ::before
+       • Фон: rgba 0.08–0.12 — почти прозрачный
+       • blur(12px) saturate(200%) — живое стекло
+    ══════════════════════════════════════════ */
+    .glass {
+      position: relative;
+      background: rgba(255, 255, 255, 0.09);
+      backdrop-filter: url(#glass) blur(12px) saturate(200%) brightness(1.06);
+      -webkit-backdrop-filter: url(#glass) blur(12px) saturate(200%) brightness(1.06);
+      border-radius: 20px;
+      border: 1px solid transparent;
+      box-shadow:
+        0 16px 48px rgba(0, 0, 0, 0.18),
+        0 4px 12px rgba(0, 0, 0, 0.10);
+      color: #0a1628;
+      isolation: isolate;
+    }
+
+    /* Градиентная рамка: яркая сверху-слева → прозрачная снизу */
+    .glass::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border: 1px solid transparent;
+      background:
+        linear-gradient(145deg,
+          rgba(255,255,255,0.65) 0%,
+          rgba(255,255,255,0.22) 38%,
+          rgba(255,255,255,0.04) 62%,
+          rgba(255,255,255,0.10) 100%
+        ) border-box;
+      -webkit-mask:
+        linear-gradient(#fff 0 0) padding-box,
+        linear-gradient(#fff 0 0);
+      -webkit-mask-composite: destination-out;
+      mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    .glass-pill {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 20px;
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.09);
+      backdrop-filter: url(#glass) blur(12px) saturate(200%) brightness(1.06);
+      -webkit-backdrop-filter: url(#glass) blur(12px) saturate(200%) brightness(1.06);
+      border: 1px solid transparent;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.14);
+      font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.92);
+      isolation: isolate;
+    }
+    .glass-pill::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border: 1px solid transparent;
+      background:
+        linear-gradient(145deg,
+          rgba(255,255,255,0.65) 0%,
+          rgba(255,255,255,0.18) 42%,
+          rgba(255,255,255,0.04) 68%,
+          rgba(255,255,255,0.12) 100%
+        ) border-box;
+      -webkit-mask:
+        linear-gradient(#fff 0 0) padding-box,
+        linear-gradient(#fff 0 0);
+      -webkit-mask-composite: destination-out;
+      mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    .glass-sm { padding: 20px 24px; width: 270px; }
+    .glass-lg { padding: 28px 32px; width: 320px; }
+
+    h2 { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 6px; text-shadow: 0 1px 8px rgba(0,0,0,0.18); }
+    h3 { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 5px; text-shadow: 0 1px 6px rgba(0,0,0,0.15); }
+    p  { font-size: 13px; line-height: 1.55; color: rgba(255,255,255,0.72); }
+
+    .badge {
+      display: inline-block; padding: 3px 10px;
+      border-radius: 100px;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.30);
+      font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.90); margin-bottom: 10px;
+    }
+    .price { font-size: 26px; font-weight: 800; color: #fff; margin: 14px 0 3px; text-shadow: 0 1px 8px rgba(0,0,0,0.18); }
+    .btn-cta {
+      display: inline-block; margin-top: 14px;
+      padding: 9px 18px; border-radius: 10px;
+      background: #f97316; color: white;
+      font-weight: 700; font-size: 13px; border: none; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(249,115,22,0.42);
+    }
+    .wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .label { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.45);
+             letter-spacing: 0.06em; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+
+  <!-- SVG: fractalNoise → мягкое стекло без резких волн -->
+  <svg class="filters" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="glass" color-interpolation-filters="sRGB"
+              x="-8%" y="-8%" width="116%" height="116%">
+        <feTurbulence
+          type="fractalNoise"
+          baseFrequency="0.012 0.018"
+          numOctaves="4"
+          seed="8"
+          result="noise"
+        />
+        <feDisplacementMap
+          in="SourceGraphic"
+          in2="noise"
+          scale="12"
+          xChannelSelector="R"
+          yChannelSelector="G"
+        />
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- nav pill -->
+  <div class="wrap">
+    <span class="label">nav pill</span>
+    <div class="glass-pill">Смены 2026</div>
+  </div>
+
+  <!-- small card -->
+  <div class="wrap">
+    <span class="label">small card</span>
+    <div class="glass glass-sm">
+      <div class="badge">Топ-4 в Москве</div>
+      <h3>Лучший выбор лета</h3>
+      <p>Программирование, игры, новые друзья. 7–15 лет.</p>
+    </div>
+  </div>
+
+  <!-- shift card -->
+  <div class="wrap">
+    <span class="label">shift card</span>
+    <div class="glass glass-lg">
+      <div class="badge">Популярная</div>
+      <h2>Смена 2</h2>
+      <p>12 июня — 23 июня · 12 дней</p>
+      <div class="price">85 000 ₽</div>
+      <p style="font-size:11px;margin-top:2px;">места есть</p>
+      <button class="btn-cta">Подробнее</button>
+    </div>
+  </div>
+
+  <!-- switcher -->
+  <div class="wrap">
+    <span class="label">switcher</span>
+    <div class="glass glass-sm" style="width:210px;padding:16px 20px;text-align:center;">
+      <p style="font-size:12px;font-weight:700;margin-bottom:10px;color:rgba(255,255,255,0.90);">Тема сайта</p>
+      <div style="display:flex;gap:5px;justify-content:center;">
+        <div class="glass-pill" style="padding:6px 12px;font-size:11px;">Текущий</div>
+        <div class="glass-pill" style="padding:6px 12px;font-size:11px;">✦ Liquid</div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
