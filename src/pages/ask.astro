@@ -355,15 +355,18 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     .px:hover{background:rgba(13,27,42,.1);color:#0d1b2a}
     .px .bi{font-size:16px}
     .pb{padding:22px 24px}
-    .pfree{display:inline-block;background:rgba(22,163,74,.1);color:#16a34a;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;border:1px solid rgba(22,163,74,.2);margin-bottom:18px}
+    /* contrast-safe: #157a38 on rgba(22,163,74,.1)≈#edf7f1 → ratio ~4.6:1 ✓ */
+    .pfree{display:inline-block;background:rgba(22,163,74,.1);color:#157a38;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid rgba(22,163,74,.25);margin-bottom:18px}
     .plbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#4e6072;margin-bottom:8px;display:block}
     .par{display:flex;gap:6px;margin-bottom:14px}
     .pab{flex:1;padding:10px 4px;border:1px solid rgba(13,27,42,.12);border-radius:9px;background:transparent;font-family:var(--sans);font-size:13px;font-weight:600;color:#4e6072;cursor:pointer;transition:.15s;text-align:center}
-    .pab:hover,.pab.on{border-color:var(--or);background:rgba(236,124,0,.1);color:var(--ord)}
-    .psel{width:100%;padding:12px 14px;border:1px solid rgba(13,27,42,.12);border-radius:9px;background:#f8fafc;font-family:var(--sans);font-size:16px;color:#0d1b2a;outline:none;appearance:none;cursor:pointer;margin-bottom:12px}
+    .pab:hover,.pab.on,.pab[aria-pressed="true"]{border-color:var(--or);background:rgba(236,124,0,.1);color:var(--ord)}
+    .pab:focus-visible{outline:2px solid var(--or);outline-offset:2px}
+    .psel{width:100%;padding:12px 14px;border:1px solid rgba(13,27,42,.12);border-radius:9px;background:#f8fafc;font-family:var(--sans);font-size:16px;color:#0d1b2a;appearance:none;cursor:pointer;margin-bottom:12px}
+    .psel:focus-visible{outline:2px solid var(--or);outline-offset:2px;border-color:rgba(236,124,0,.5)}
     .psel option{background:#fff}
-    .pin{width:100%;padding:13px 16px;border:1px solid rgba(13,27,42,.12);border-radius:9px;background:#f8fafc;font-family:var(--sans);font-size:15px;color:#0d1b2a;outline:none;margin-bottom:13px;transition:.2s}
-    .pin:focus{border-color:rgba(236,124,0,.5);background:#fff}
+    .pin{width:100%;padding:13px 16px;border:1px solid rgba(13,27,42,.12);border-radius:9px;background:#f8fafc;font-family:var(--sans);font-size:15px;color:#0d1b2a;margin-bottom:13px;transition:.2s}
+    .pin:focus,.pin:focus-visible{outline:2px solid var(--or);outline-offset:2px;border-color:rgba(236,124,0,.5);background:#fff}
     .pin::placeholder{color:rgba(13,27,42,.3)}
     .pconsent{display:flex;align-items:flex-start;gap:9px;font-size:13px;color:#4e6072;line-height:1.4;margin-bottom:12px;cursor:pointer}
     .pconsent input[type=checkbox]{width:16px;height:16px;min-width:16px;accent-color:var(--or);cursor:pointer;margin-top:1px}
@@ -640,8 +643,13 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     <button class="share-btn" onclick="showShareChooser()">
       <i class="bi bi-share" aria-hidden="true"></i> Отправить подруге
     </button>
+    <!-- Desktop only: QR to open on phone -->
     <button class="share-btn" id="qrBtn" style="display:none" onclick="showQR()">
       <i class="bi bi-qr-code" aria-hidden="true"></i> Открыть на телефоне
+    </button>
+    <!-- Mobile only: share link to open on PC -->
+    <button class="share-btn" id="pcLinkBtn" style="display:none" onclick="shareToPc()">
+      <i class="bi bi-laptop" aria-hidden="true"></i> Продолжить на ПК
     </button>
   </div>
 
@@ -680,33 +688,48 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
 <div class="qr-modal" id="qrModal" onclick="if(event.target===this)closeQR()">
   <div class="qr-box">
     <div class="qr-title">Открыть на телефоне</div>
-    <div class="qr-sub">Наведите камеру на код</div>
-    <img id="qrImg" src="" alt="QR-код для открытия чата на телефоне">
+    <div class="qr-sub">Наведите камеру — диалог продолжится</div>
+    <img id="qrImg" src="" alt="QR-код для открытия чата на телефоне" width="200" height="200">
     <button class="qr-close" onclick="closeQR()">Закрыть</button>
   </div>
 </div>
 
+<!-- PC-link модал "Продолжить на ПК" -->
+<div class="qr-modal" id="pcModal" onclick="if(event.target===this)closePcModal()">
+  <div class="qr-box">
+    <div class="qr-title">Продолжить на ПК</div>
+    <div class="qr-sub">Скопируйте ссылку и откройте на компьютере</div>
+    <div id="pcLinkText" style="margin:14px 0;padding:10px 14px;background:var(--surface-2);border-radius:10px;font-size:13px;color:var(--text-secondary);word-break:break-all;text-align:left;line-height:1.4"></div>
+    <button onclick="copyPcLink()" style="width:100%;padding:10px;border-radius:12px;background:var(--or);border:none;font-family:var(--sans);font-size:14px;font-weight:700;color:#1e2430;cursor:pointer;margin-bottom:8px">
+      <i class="bi bi-copy" aria-hidden="true"></i> Скопировать
+    </button>
+    <button class="qr-close" onclick="closePcModal()">Закрыть</button>
+  </div>
+</div>
+
 <div class="overlay" id="overlay" onclick="if(event.target===this)closePopup()">
-  <div class="popup">
+  <div class="popup" role="dialog" aria-modal="true" aria-labelledby="popup-dialog-title">
     <div class="ph">
-      <div class="ph-title">Забронировать смену</div>
+      <div class="ph-title" id="popup-dialog-title">Забронировать смену</div>
       <button class="px" onclick="closePopup()" aria-label="Закрыть">
         <i class="bi bi-x-lg" aria-hidden="true"></i>
       </button>
     </div>
     <div class="pb">
-      <span class="pfree">Место фиксируется на 48 часов</span>
-      <label class="plbl">Возраст</label>
-      <div class="par">
-        <button class="pab" onclick="pa(this)">7–9 лет</button>
-        <button class="pab on" onclick="pa(this)">10–12 лет</button>
-        <button class="pab" onclick="pa(this)">13–16 лет</button>
+      <span class="pfree" role="status">Место фиксируется на 48 часов</span>
+      <div role="group" aria-labelledby="age-group-lbl">
+        <span id="age-group-lbl" class="plbl">Возраст</span>
+        <div class="par">
+          <button class="pab" onclick="pa(this)" aria-pressed="false">7–9 лет</button>
+          <button class="pab on" onclick="pa(this)" aria-pressed="true">10–12 лет</button>
+          <button class="pab" onclick="pa(this)" aria-pressed="false">13–16 лет</button>
+        </div>
       </div>
-      <label class="plbl">Смена</label>
-      <select class="psel" id="popShift"></select>
-      <label class="plbl">Телефон</label>
-      <input class="pin" type="tel" id="popPhone" placeholder="+7 (___) ___-__-__">
-      <label class="pconsent" id="popConsentLabel"><input type="checkbox" id="popConsent"> <span>Согласен(-на) на обработку <a href="/privacy-policy" target="_blank">персональных данных</a></span></label>
+      <label class="plbl" for="popShift">Смена</label>
+      <select class="psel" id="popShift" required aria-required="true"></select>
+      <label class="plbl" for="popPhone">Телефон</label>
+      <input class="pin" type="tel" id="popPhone" placeholder="+7 (___) ___-__-__" autocomplete="tel" required aria-required="true">
+      <label class="pconsent" id="popConsentLabel"><input type="checkbox" id="popConsent" required aria-required="true"> <span>Согласен(-на) на обработку <a href="/privacy-policy" target="_blank">персональных данных</a></span></label>
       <button class="psub" id="popSubmit" onclick="submitBooking()">Забронировать →</button>
       <div class="ptr">Пн–Вс 11:00–20:00 МСК · Лицензия Минобра<br>Налоговый вычет 13% через ФНС</div>
     </div>
@@ -1734,7 +1757,18 @@ let busy=false,active=false;
 let aiState='idle'; // idle | think | speak
 const history=[];
 let contactOffered=false;
-const sessionId=crypto.randomUUID();
+// sessionId: persist across page loads so history survives refresh and QR/PC transfers
+const SID_KEY = 'ask_sid';
+function getOrCreateSid() {
+  try {
+    const saved = localStorage.getItem(SID_KEY);
+    if (saved && saved.length > 10) return saved;
+  } catch(e) {}
+  const fresh = crypto.randomUUID();
+  try { localStorage.setItem(SID_KEY, fresh); } catch(e) {}
+  return fresh;
+}
+const sessionId = getOrCreateSid();
 const shownBlockTypes=new Set(); // не показывать один тип блока дважды
 
 /* ── SHIFT SELECT ── */
@@ -2199,7 +2233,10 @@ function send(){
 }
 
 /* ── POPUP ── */
+let _popupTrigger = null; // элемент, с которого открыли — для возврата фокуса
+
 function openPopup(){
+  _popupTrigger = document.activeElement;
   document.getElementById('overlay').classList.add('open');
   document.body.style.overflow='hidden';
   setTimeout(()=>document.getElementById('popPhone').focus(),300);
@@ -2210,11 +2247,32 @@ function openPopup(){
 function closePopup(){
   document.getElementById('overlay').classList.remove('open');
   document.body.style.overflow='';
+  // Возвращаем фокус туда, откуда открыли (WCAG 2.4.3)
+  if(_popupTrigger && typeof _popupTrigger.focus === 'function'){
+    setTimeout(()=>{ try{ _popupTrigger.focus(); }catch(e){} }, 50);
+  }
+  _popupTrigger = null;
 }
 function pa(btn){
-  btn.closest('.par').querySelectorAll('.pab').forEach(b=>b.classList.remove('on'));
+  btn.closest('.par').querySelectorAll('.pab').forEach(b=>{
+    b.classList.remove('on');
+    b.setAttribute('aria-pressed','false');
+  });
   btn.classList.add('on');
+  btn.setAttribute('aria-pressed','true');
 }
+
+// Focus trap внутри модала (WCAG 2.1.2)
+document.addEventListener('keydown', function(e){
+  const overlay = document.getElementById('overlay');
+  if(!overlay.classList.contains('open')) return;
+  if(e.key === 'Escape'){ closePopup(); return; }
+  if(e.key !== 'Tab') return;
+  const focusable = overlay.querySelectorAll('button:not([disabled]),input,select,a[href],[tabindex]:not([tabindex="-1"])');
+  const first = focusable[0], last = focusable[focusable.length-1];
+  if(e.shiftKey){ if(document.activeElement===first){ e.preventDefault(); last.focus(); } }
+  else { if(document.activeElement===last){ e.preventDefault(); first.focus(); } }
+});
 
 async function submitBooking(){
   const phone=document.getElementById('popPhone').value.trim();
@@ -2470,6 +2528,11 @@ function updateProgress(){
   if(userMsgCount >= 3){
     const row = document.getElementById('shareRow');
     if(row) row.classList.add('show');
+    // Показываем нужную кнопку (QR на десктопе, PC-link на мобиле)
+    const qrBtn = document.getElementById('qrBtn');
+    const pcBtn = document.getElementById('pcLinkBtn');
+    if(qrBtn?._showOnShare) qrBtn.style.display='inline-flex';
+    if(pcBtn?._showOnShare) pcBtn.style.display='inline-flex';
   }
 
   // Ачивка "Хорошая мама" после 5 вопросов — один раз
@@ -2512,64 +2575,110 @@ function shareToTelegram(){
   window.open('https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text), '_blank');
 }
 
-/* ── QR "ОТКРЫТЬ НА ТЕЛЕФОНЕ" ── */
+/* ── QR "ОТКРЫТЬ НА ТЕЛЕФОНЕ" (desktop only) ── */
 function showQR(){
-  // Кодируем последние 6 сообщений диалога в URL для открытия на телефоне
-  let url = location.origin + '/ask/';
-  try{
-    const h = history.slice(-6).map(m=>({r:m.role==='user'?'u':'a',c:m.content.replace(/<[^>]+>/g,'').trim().slice(0,250)}));
-    if(h.length > 0){
-      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(h))));
-      url += '?c=' + encoded;
-    }
-  }catch(e){ /* ignore */ }
+  // Short URL with sessionId — phone picks up the same conversation
+  const url = location.origin + '/ask/?s=' + sessionId;
   document.getElementById('qrImg').src =
-    'https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=0d1b2a&data=' + encodeURIComponent(url);
+    'https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=0d1b2a&data=' + encodeURIComponent(url);
   document.getElementById('qrModal').classList.add('open');
 }
 function closeQR(){
   document.getElementById('qrModal').classList.remove('open');
 }
 
-// QR кнопка — только на десктопе
+/* ── "ПРОДОЛЖИТЬ НА ПК" (mobile only) ── */
+function shareToPc(){
+  const url = location.origin + '/ask/?s=' + sessionId;
+  document.getElementById('pcLinkText').textContent = url;
+  document.getElementById('pcModal').classList.add('open');
+}
+function closePcModal(){
+  document.getElementById('pcModal').classList.remove('open');
+}
+function copyPcLink(){
+  const url = location.origin + '/ask/?s=' + sessionId;
+  navigator.clipboard.writeText(url).then(function(){
+    const btn = document.querySelector('#pcModal button');
+    if(btn){ const orig=btn.innerHTML; btn.innerHTML='<i class="bi bi-check-lg" aria-hidden="true"></i> Скопировано'; setTimeout(()=>btn.innerHTML=orig,2000); }
+  }).catch(function(){
+    // fallback
+    const ta=document.createElement('textarea'); ta.value=url; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+  });
+}
+
+// Показываем нужную кнопку в зависимости от устройства
 (function(){
-  if(window.innerWidth > 800 && !/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)){
-    const btn = document.getElementById('qrBtn');
-    if(btn) btn.style.display = 'inline-flex';
+  const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth <= 800;
+  if (!isMobile) {
+    // Desktop: кнопка QR появляется после первых сообщений (через showShareButtons)
+    document.getElementById('qrBtn')._showOnShare = true;
+  } else {
+    // Mobile: кнопка "Продолжить на ПК" появляется после первых сообщений
+    document.getElementById('pcLinkBtn')._showOnShare = true;
   }
 })();
 
-// ── ВОССТАНОВЛЕНИЕ ДИАЛОГА С ДРУГОГО УСТРОЙСТВА (?c=...) ──
+// ── ВОССТАНОВЛЕНИЕ ДИАЛОГА ПО SESSION ID (?s=...) ──
 (function(){
   const sp = new URLSearchParams(location.search);
-  const conv = sp.get('c');
-  if(!conv) return;
-  try{
-    const items = JSON.parse(decodeURIComponent(escape(atob(conv))));
-    if(!Array.isArray(items) || items.length === 0) return;
-    // Восстанавливаем историю и рендерим сообщения
-    items.forEach(m => {
-      const role = m.r === 'u' ? 'user' : 'assistant';
-      history.push({role, content: m.c});
-      addMsg(m.r === 'u' ? 'user' : 'ai', m.c.replace(/\n/g,'<br>'));
-      if(m.r === 'u') userMsgCount++;
-    });
-    // Подсказка "продолжение диалога"
-    setTimeout(()=>{
+  const sid = sp.get('s');
+  if(!sid || sid.length < 10) return;
+
+  // Сохраняем этот session_id как свой (продолжаем тот же диалог)
+  try { localStorage.setItem(SID_KEY, sid); } catch(e){}
+
+  // Убираем ?s= из URL
+  window.history.replaceState({},'','/ask/');
+
+  // Загружаем историю с сервера
+  fetch('/api/chat-session?id=' + encodeURIComponent(sid))
+    .then(r => r.json())
+    .then(data => {
+      const msgs = data.messages || [];
+      if(msgs.length === 0) return;
+
+      // Скрываем intro
+      const intro = document.getElementById('intro');
+      if(intro){ intro.classList.add('gone'); setTimeout(()=>intro.style.display='none',400); }
+
+      // Восстанавливаем историю и рендерим
+      msgs.forEach(m => {
+        history.push({role: m.role, content: m.content});
+        if(m.role === 'user'){
+          addMsg('user', m.content.replace(/\n/g,'<br>'));
+          userMsgCount++;
+        } else {
+          // Ответы бота хранятся как JSON {"state":"ok","text":"..."}
+          let displayText = m.content;
+          try {
+            const parsed = JSON.parse(m.content);
+            if(parsed && parsed.text) displayText = parsed.text;
+          } catch(e) {}
+          addMsg('ai', displayText);
+        }
+      });
+
+      // Подсказка
       const note = document.createElement('div');
       note.style.cssText='text-align:center;font-size:12px;color:var(--text-muted);padding:12px 0 4px;opacity:.6';
-      note.textContent = '↑ диалог восстановлен · продолжайте задавать вопросы';
+      note.textContent = '↑ диалог восстановлен';
       const spacer = document.getElementById('msgs-spacer');
       if(spacer) spacer.after(note);
-      // Показать share row если нужно
-      if(userMsgCount >= 3){
+
+      // Share row
+      if(userMsgCount >= 2){
         const row = document.getElementById('shareRow');
         if(row) row.classList.add('show');
+        // Показать нужную кнопку
+        const qrBtn = document.getElementById('qrBtn');
+        const pcBtn = document.getElementById('pcLinkBtn');
+        if(qrBtn?._showOnShare) qrBtn.style.display='inline-flex';
+        if(pcBtn?._showOnShare) pcBtn.style.display='inline-flex';
       }
-    }, 200);
-    // Убираем ?c= из URL чтобы не мешало при шаринге
-    window.history.replaceState({},'','/ask/');
-  }catch(e){ console.warn('[ask] conv restore error:', e); }
+    })
+    .catch(e => console.warn('[ask] session restore error:', e));
 })();
 
 // ── AUTO-LAUNCH FROM HERO CHIP (sessionStorage) ──

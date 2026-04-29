@@ -6,10 +6,10 @@ import { STAT_YEARS, STAT_KIDS, STAT_RATING, CAMP_PRICE_FROM } from '../../data/
 const BOT_URL = 'https://t.me/AidacampBot';
 
 const pills = [
-  { q: 'Сколько стоит?',   icon: 'coin',       href: `/ask?q=${encodeURIComponent('Сколько стоит лагерь?')}&utm_source=hero_pill` },
-  { q: 'Телефон заберут?', icon: 'phone-x',    href: `/ask?q=${encodeURIComponent('Телефон заберут у ребёнка?')}&utm_source=hero_pill` },
-  { q: 'Как кормят?',      icon: 'cup-hot',    href: `/ask?q=${encodeURIComponent('Как кормят в лагере?')}&utm_source=hero_pill` },
-  { q: 'Без опыта можно?', icon: 'controller', href: `/ask?q=${encodeURIComponent('Можно без опыта программирования?')}&utm_source=hero_pill` },
+  { q: 'Сколько стоит?',   autoq: 'Сколько стоит лагерь?',           icon: 'coin' },
+  { q: 'Телефон заберут?', autoq: 'Телефон заберут у ребёнка?',       icon: 'phone-x' },
+  { q: 'Как кормят?',      autoq: 'Как кормят в лагере?',             icon: 'cup-hot' },
+  { q: 'Без опыта можно?', autoq: 'Можно без опыта программирования?', icon: 'controller' },
 ];
 
 const secondaryPills = [
@@ -67,8 +67,9 @@ const secondaryPills = [
       <div class="mx-4 mt-5 grid grid-cols-2 gap-2">
         {pills.map((p) => (
           <a
-            href={p.href}
-            class="group flex items-center gap-2.5 rounded-[12px] bg-white/8 border border-white/10 px-3 py-3.5 min-h-[52px] cursor-pointer active:bg-white/15 hover:bg-white/12 hover:border-white/20 transition-colors"
+            href="/ask/"
+            data-q={p.autoq}
+            class="ask-chip group flex items-center gap-2.5 rounded-[12px] bg-white/8 border border-white/10 px-3 py-3.5 min-h-[52px] cursor-pointer active:bg-white/15 hover:bg-white/12 hover:border-white/20 transition-colors"
           >
             <i class={`bi bi-${p.icon} text-[16px] text-orange-400 shrink-0`} aria-hidden="true"></i>
             <span class="text-[14px] font-semibold leading-tight text-white flex-1">{p.q}</span>
@@ -162,8 +163,8 @@ const secondaryPills = [
 
             <div class="mt-2.5 grid grid-cols-2 gap-1.5">
               {pills.map((p) => (
-                <a href={p.href}
-                  class="group flex items-center gap-2 rounded-[12px] bg-white/8 border border-white/10 px-3 py-3 min-h-[48px] cursor-pointer hover:bg-white/12 transition-colors">
+                <a href="/ask/" data-q={p.autoq}
+                  class="ask-chip group flex items-center gap-2 rounded-[12px] bg-white/8 border border-white/10 px-3 py-3 min-h-[48px] cursor-pointer hover:bg-white/12 transition-colors">
                   <i class={`bi bi-${p.icon} text-[14px] text-orange-400 shrink-0`} aria-hidden="true"></i>
                   <span class="text-[13px] font-semibold leading-tight text-white flex-1">{p.q}</span>
                   <i class="bi bi-chevron-right text-[9px] text-white/30 shrink-0" aria-hidden="true"></i>
@@ -235,36 +236,20 @@ const secondaryPills = [
   </main>
 
 <script is:inline>
-// Chip click: save question → animate → navigate to /ask
 (function(){
-  document.querySelectorAll('a[href*="/ask"]').forEach(function(link) {
-    var href = link.getAttribute('href') || '';
-    // Извлекаем текст вопроса из data-q атрибута или из ?q= параметра href
-    var q = link.getAttribute('data-q');
-    if(!q) {
-      var m = href.match(/[?&]q=([^&]+)/);
-      if(m) q = decodeURIComponent(m[1]);
-    }
-    if(!q) return;
-
-    link.addEventListener('click', function(e) {
+  document.querySelectorAll('.ask-chip[data-q]').forEach(function(chip) {
+    chip.addEventListener('click', function(e) {
       e.preventDefault();
-      var self = this;
-
-      // Сохраняем вопрос в sessionStorage
+      var q = this.getAttribute('data-q');
       sessionStorage.setItem('ask_autoq', q);
 
-      // Orange glow
-      self.style.cssText = 'background:rgba(236,124,0,.28)!important;border-color:rgba(236,124,0,.75)!important;box-shadow:0 0 0 3px rgba(236,124,0,.18),0 6px 20px rgba(236,124,0,.35)!important;transform:scale(1.06)!important;transition:all .1s ease!important;';
-
-      // Dim siblings
-      document.querySelectorAll('a[href*="/ask"]').forEach(function(other) {
-        if(other !== self && other.getAttribute('data-q') || (other.getAttribute('href')||'').match(/[?&]q=/)) {
-          other.style.cssText = 'opacity:.3!important;transition:opacity .18s ease!important;pointer-events:none!important;';
-        }
+      // Orange glow на нажатом
+      this.style.cssText = 'background:rgba(236,124,0,.28)!important;border-color:rgba(236,124,0,.75)!important;box-shadow:0 0 0 3px rgba(236,124,0,.18),0 6px 20px rgba(236,124,0,.35)!important;transform:scale(1.06)!important;transition:all .1s ease!important;';
+      // Dim остальных
+      document.querySelectorAll('.ask-chip').forEach(function(s) {
+        if(s !== chip) s.style.cssText = 'opacity:.3!important;transition:opacity .18s!important;';
       });
 
-      // Navigate to /ask (clean URL)
       setTimeout(function() { location.href = '/ask/'; }, 190);
     });
   });

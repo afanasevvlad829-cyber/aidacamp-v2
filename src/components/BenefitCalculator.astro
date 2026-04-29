@@ -1,0 +1,300 @@
+---
+/**
+ * BenefitCalculator — калькулятор выгоды: групповые скидки + налоговый вычет.
+ *
+ * Скидки применяются к образовательной части путёвки
+ * (total_price − residential_per_day × days), т.к. бытовые расходы — пол цены.
+ *
+ * Групповые опции:
+ *   solo     — без скидки
+ *   friend1  — −10% образовательной части (привёл 1 друга)
+ *   group5   — −50% образовательной части (группа 5 человек)
+ *   group10  — образовательная часть = 100 ₽ (группа 10+ человек)
+ *
+ * Налоговый вычет:
+ *   13% × min(discountedEdu, 110 000 ₽) — независимая опция, применяется поверх.
+ */
+
+import { mainShifts, shortShifts } from '../data/shifts';
+
+const parsePrice = (s: string) => parseInt(s.replace(/[^\d]/g, ''), 10) || 0;
+const parseDays  = (s: string) => parseInt(s, 10) || 0;
+
+const orderedShifts = [
+  mainShifts[0],
+  mainShifts[1],
+  ...shortShifts,
+  mainShifts[2],
+  mainShifts[3],
+];
+
+const shifts = orderedShifts.map((s) => ({
+  id:      s.id,
+  label:   `${s.name} — ${s.dates}, ${s.duration}`,
+  price:   parsePrice(s.price),
+  days:    parseDays(s.duration),
+  popular: s.popular ?? false,
+}));
+---
+
+<section class="mx-auto max-w-[720px] px-4 pb-10 md:pb-14">
+  <div class="rounded-[20px] border border-slate-200 bg-white p-6 md:p-8 shadow-[0_4px_24px_rgba(15,23,42,0.06)]">
+
+    <!-- Заголовок -->
+    <div class="mb-1 flex items-center gap-2">
+      <div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div>
+      <h2 class="text-[20px] md:text-[24px] font-bold text-slate-900 leading-[1.2] tracking-[-0.02em]">
+        Калькулятор выгоды
+      </h2>
+    </div>
+    <p class="mt-3 mb-6 text-[15px] text-slate-600 leading-[1.65]">
+      Сложите все скидки сразу: групповая запись и налоговый вычет от государства.
+      Посмотрите, сколько реально стоит смена.
+    </p>
+
+    <!-- 1. Выбор смены -->
+    <div class="mb-5">
+      <label for="bc-shift" class="mb-2 block text-[13px] font-semibold text-slate-700 uppercase tracking-wide">
+        Выберите смену 2026
+      </label>
+      <div class="relative">
+        <select
+          id="bc-shift"
+          class="w-full appearance-none rounded-[10px] border border-slate-300 bg-white px-4 py-3 pr-10 text-[15px] text-slate-900 focus:border-orange-500 focus:outline-none"
+        >
+          {shifts.map((s) => (
+            <option
+              value={s.id}
+              data-price={s.price}
+              data-days={s.days}
+              selected={s.popular}
+            >
+              {s.label} — {s.price.toLocaleString('ru-RU')} ₽{s.popular ? ' · популярная' : ''}
+            </option>
+          ))}
+        </select>
+        <i class="bi bi-chevron-down pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[14px] text-slate-500" aria-hidden="true"></i>
+      </div>
+    </div>
+
+    <!-- 2. Групповая скидка (radio) -->
+    <div class="mb-5">
+      <div class="mb-3 text-[13px] font-semibold text-slate-700 uppercase tracking-wide">
+        Сколько человек едет от вас
+      </div>
+      <div class="flex flex-col gap-2" id="bc-group-options">
+
+        <label class="bc-radio-label flex cursor-pointer items-center gap-3 rounded-[12px] border border-slate-200 bg-slate-50 px-4 py-3 transition-colors hover:border-orange-300 hover:bg-orange-50/40 has-[:checked]:border-orange-400 has-[:checked]:bg-orange-50">
+          <input type="radio" name="bc-group" value="solo" class="accent-orange-500" checked />
+          <span class="flex-1 text-[15px] text-slate-800">
+            Только мой ребёнок
+          </span>
+          <span class="text-[13px] font-semibold text-slate-400">без скидки</span>
+        </label>
+
+        <label class="bc-radio-label flex cursor-pointer items-center gap-3 rounded-[12px] border border-slate-200 bg-slate-50 px-4 py-3 transition-colors hover:border-orange-300 hover:bg-orange-50/40 has-[:checked]:border-orange-400 has-[:checked]:bg-orange-50">
+          <input type="radio" name="bc-group" value="friend1" class="accent-orange-500" />
+          <span class="flex-1 text-[15px] text-slate-800">
+            Позову 1 друга <span class="text-slate-500">(2 ребёнка)</span>
+          </span>
+          <span class="text-[13px] font-semibold text-orange-600">−10%</span>
+        </label>
+
+        <label class="bc-radio-label flex cursor-pointer items-center gap-3 rounded-[12px] border border-slate-200 bg-slate-50 px-4 py-3 transition-colors hover:border-orange-300 hover:bg-orange-50/40 has-[:checked]:border-orange-400 has-[:checked]:bg-orange-50">
+          <input type="radio" name="bc-group" value="group5" class="accent-orange-500" />
+          <span class="flex-1 text-[15px] text-slate-800">
+            Позову 4 человека <span class="text-slate-500">(5 детей)</span>
+          </span>
+          <span class="text-[13px] font-semibold text-orange-600">−50%</span>
+        </label>
+
+        <label class="bc-radio-label flex cursor-pointer items-center gap-3 rounded-[12px] border border-slate-200 bg-slate-50 px-4 py-3 transition-colors hover:border-orange-300 hover:bg-orange-50/40 has-[:checked]:border-orange-400 has-[:checked]:bg-orange-50">
+          <input type="radio" name="bc-group" value="group10" class="accent-orange-500" />
+          <span class="flex-1 text-[15px] text-slate-800">
+            Позову 10 человек <span class="text-slate-500">(10+ детей)</span>
+          </span>
+          <span class="text-[13px] font-semibold text-green-600">почти бесплатно</span>
+        </label>
+
+      </div>
+    </div>
+
+    <!-- 3. Налоговый вычет (checkbox) -->
+    <label class="mb-6 flex cursor-pointer items-start gap-3 rounded-[12px] border border-slate-200 bg-slate-50 px-4 py-3 transition-colors hover:border-orange-300 hover:bg-orange-50/40 has-[:checked]:border-orange-400 has-[:checked]:bg-orange-50">
+      <input type="checkbox" id="bc-tax" class="mt-0.5 accent-orange-500" checked />
+      <span class="flex-1">
+        <span class="block text-[15px] font-semibold text-slate-800">Налоговый вычет 13%</span>
+        <span class="block text-[13px] text-slate-500 mt-0.5">Вернут из ФНС в следующем году — документы даём автоматически</span>
+      </span>
+      <span id="bc-tax-badge" class="shrink-0 text-[13px] font-semibold text-green-600">−<span id="bc-tax-amount">0</span> ₽</span>
+    </label>
+
+    <!-- Результат -->
+    <div class="rounded-[14px] bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100 p-5">
+
+      <!-- Разбивка -->
+      <div class="mb-4 flex flex-col gap-2 text-[14px]">
+        <div class="flex justify-between">
+          <span class="text-slate-500">Полная стоимость</span>
+          <span id="bc-base-price" class="font-medium text-slate-700">—</span>
+        </div>
+        <div id="bc-group-row" class="flex justify-between">
+          <span class="text-slate-500" id="bc-group-label">Групповая скидка</span>
+          <span id="bc-group-saving" class="font-semibold text-orange-600">—</span>
+        </div>
+        <div id="bc-parts-row" class="flex justify-between text-[13px] text-slate-400">
+          <span>жильё + питание: <b id="bc-resid-val" class="text-slate-500">—</b></span>
+          <span>образование: <b id="bc-edu-val" class="text-slate-500">—</b></span>
+        </div>
+        <div id="bc-tax-row" class="flex justify-between">
+          <span class="text-slate-500">Налоговый вычет (13% от образов. части)</span>
+          <span id="bc-tax-saving" class="font-semibold text-green-600">—</span>
+        </div>
+        <div class="my-1 border-t border-orange-200"></div>
+        <div class="flex items-baseline justify-between">
+          <span class="text-[15px] font-bold text-slate-800">Итого</span>
+          <span id="bc-total" class="text-[28px] md:text-[32px] font-bold leading-none text-orange-600">—</span>
+        </div>
+      </div>
+
+      <!-- Итоговая выгода -->
+      <div id="bc-saving-block" class="hidden rounded-[10px] bg-white border border-orange-200 px-4 py-3 flex items-center justify-between gap-4">
+        <div>
+          <div class="text-[13px] text-slate-500 mb-0.5">Ваша выгода</div>
+          <div id="bc-saving-total" class="text-[20px] font-bold text-green-600">—</div>
+        </div>
+        <div class="text-[13px] text-slate-500 text-right leading-[1.5]" id="bc-saving-pct">
+        </div>
+      </div>
+    </div>
+
+    <!-- Дисклеймер -->
+    <p class="mt-4 text-[13px] text-slate-400 leading-[1.55]">
+      Групповая скидка считается от всей суммы, но применяется в первую очередь к бытовой части
+      (проживание + питание, 3 800 ₽/день). Образовательная часть остаётся для налогового вычета 13%.
+      Для группы 10+ человек условия уточняйте у менеджера — итого символические 100 ₽ (договор обязателен).
+    </p>
+
+    <a
+      href="/kupit-putevku-v-lager/"
+      class="mt-5 inline-flex items-center gap-2 rounded-[12px] bg-orange-500 px-6 py-3 text-[15px] font-semibold text-white transition hover:bg-orange-600 hover:-translate-y-0.5 shadow-[0_4px_16px_rgba(249,115,22,0.3)]"
+    >
+      Забронировать смену →
+    </a>
+  </div>
+</section>
+
+<script is:inline>
+(function () {
+  const RESIDENTIAL_PER_DAY = 3800;
+  const TAX_RATE = 0.13;
+  const TAX_LIMIT = 110000;
+  const EDU_FIXED_GROUP10 = 100;
+
+  const fmt = (n) => Math.round(n).toLocaleString('ru-RU');
+  const roundTo100 = (n) => Math.round(n / 100) * 100;
+
+  const shiftSel  = document.getElementById('bc-shift');
+  const taxCheck  = document.getElementById('bc-tax');
+  const groupRads = document.querySelectorAll('input[name="bc-group"]');
+
+  function getGroupValue() {
+    for (const r of groupRads) if (r.checked) return r.value;
+    return 'solo';
+  }
+
+  function recalc() {
+    const opt = shiftSel.selectedOptions[0];
+    const price = parseInt(opt?.dataset.price) || 0;
+    const days  = parseInt(opt?.dataset.days)  || 0;
+    if (!price || !days) return;
+
+    const residential = RESIDENTIAL_PER_DAY * days;
+    const edu         = Math.max(0, price - residential);
+
+    const group = getGroupValue();
+
+    // Скидка считается от ВСЕЙ суммы, но применяется сначала к жилью/питанию —
+    // чтобы образовательная часть оставалась для налогового вычета.
+    let discountedPrice, discountedResidential, discountedEdu, groupSaving;
+
+    if (group === 'group10') {
+      // 10+ человек: итого символические 100 ₽ (нужен договор)
+      discountedPrice       = EDU_FIXED_GROUP10;
+      discountedResidential = 0;
+      discountedEdu         = EDU_FIXED_GROUP10;
+      groupSaving           = price - EDU_FIXED_GROUP10;
+    } else {
+      const discountRate   = group === 'friend1' ? 0.1 : group === 'group5' ? 0.5 : 0;
+      const discountAmount = Math.round(price * discountRate);
+
+      // Скидка «съедает» жильё/питание первым
+      discountedResidential = Math.max(0, residential - discountAmount);
+      const leftoverDiscount = Math.max(0, discountAmount - residential);
+      // Остаток скидки (если превысила жильё) — уменьшает образовательную часть
+      discountedEdu   = Math.max(0, edu - leftoverDiscount);
+      discountedPrice = discountedResidential + discountedEdu;
+      groupSaving     = price - discountedPrice;
+    }
+
+    const taxBase   = Math.min(discountedEdu, TAX_LIMIT);
+    const taxReturn = taxCheck.checked ? roundTo100(taxBase * TAX_RATE) : 0;
+
+    const total   = discountedPrice - taxReturn;
+    const savings = price - total;
+
+    // Обновляем UI
+    set('bc-base-price', fmt(price) + ' ₽');
+    set('bc-resid-val', fmt(discountedResidential) + ' ₽');
+    set('bc-edu-val',   fmt(discountedEdu) + ' ₽');
+
+    const groupRow = document.getElementById('bc-group-row');
+    if (groupSaving > 0) {
+      groupRow.style.display = '';
+      let label;
+      if (group === 'friend1')  label = 'Скидка за друга (−10%)';
+      else if (group === 'group5')  label = 'Групповая скидка (−50%)';
+      else label = 'Группа 10+ человек';
+      set('bc-group-label',  label);
+      set('bc-group-saving', '−' + fmt(groupSaving) + ' ₽');
+    } else {
+      groupRow.style.display = 'none';
+    }
+
+    const taxRow = document.getElementById('bc-tax-row');
+    if (taxReturn > 0) {
+      taxRow.style.display = '';
+      set('bc-tax-saving', '−' + fmt(taxReturn) + ' ₽');
+      set('bc-tax-amount', fmt(taxReturn));
+      document.getElementById('bc-tax-badge').style.display = '';
+    } else {
+      taxRow.style.display = 'none';
+      document.getElementById('bc-tax-badge').style.display = 'none';
+    }
+
+    set('bc-total', fmt(total) + ' ₽');
+
+    const savingBlock = document.getElementById('bc-saving-block');
+    if (savings > 0) {
+      savingBlock.classList.remove('hidden');
+      savingBlock.style.display = 'flex';
+      set('bc-saving-total', '~' + fmt(savings) + ' ₽');
+      const pct = Math.round((savings / price) * 100);
+      set('bc-saving-pct', 'Это ' + pct + '% от полной стоимости путёвки');
+    } else {
+      savingBlock.classList.add('hidden');
+    }
+  }
+
+  function set(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+
+  shiftSel.addEventListener('change', recalc);
+  taxCheck.addEventListener('change', recalc);
+  groupRads.forEach((r) => r.addEventListener('change', recalc));
+
+  recalc();
+})();
+</script>
