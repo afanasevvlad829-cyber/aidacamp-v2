@@ -1,0 +1,413 @@
+<!DOCTYPE html><html lang="ru"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>АйДаКемп — 21 блок · День / Ночь</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"><style>
+    :root {
+      --pr: #ec7c00; --pr-l: #f59332; --pr-s: #fff1df;
+      --bl: #1b4fd8; --bl-s: #eff6ff;
+      --nv: #0d1a2b; --nv2: #162035;
+      --tx: #1e2430; --tx-m: #4b5263; --tx-f: #6b7280;
+      --sf: #f7f8fb; --sf-alt: #f0f4ff; --sf-warm: #f7f5f2;
+      --bd: #e5e7eb;
+    }
+    [data-theme="dark"] {
+      --tx: #f1f5f9; --tx-m: #94a3b8; --tx-f: #64748b;
+      --sf: #0f172a; --sf-alt: #1e293b; --sf-warm: #1a1a2e;
+      --bd: #1e293b;
+    }
+
+    html { box-sizing: border-box; }
+    body, div, section, article, p, h1, h2, h3, span, a, button, input, label {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
+      margin: 0;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* ── Header ── */
+    .hdr {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(15,23,42,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 12px 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .hdr-title { font-size: 15px; font-weight: 700; color: #f1f5f9; }
+    .hdr-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+    /* ── Day/Night toggle ── */
+    .toggle-wrap { display: flex; gap: 0; background: rgba(255,255,255,0.06); border-radius: 10px; padding: 3px; }
+    .toggle-btn {
+      padding: 6px 16px; border-radius: 8px; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 600; transition: all 0.2s;
+      background: transparent; color: #64748b;
+    }
+    .toggle-btn.active { background: #1b4fd8; color: white; }
+
+    /* ── Block cards ── */
+    .wrap { max-width: 1400px; margin: 0 auto; padding: 24px; }
+    .block-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      margin-bottom: 32px;
+      overflow: hidden;
+    }
+    .block-header {
+      display: grid;
+      grid-template-columns: 48px 1fr auto;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .block-num {
+      width: 40px; height: 40px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 800;
+      background: rgba(27,79,216,0.2); color: #60a5fa;
+    }
+    .block-num.tier1 { background: rgba(236,124,0,0.15); color: #f59332; }
+    .block-num.tier2 { background: rgba(16,185,129,0.12); color: #34d399; }
+    .block-name { font-size: 17px; font-weight: 700; color: #f1f5f9; }
+    .block-file { font-size: 12px; font-family: monospace; color: #64748b; margin-top: 2px; }
+    .badges { display: flex; gap: 6px; flex-wrap: wrap; }
+    .badge {
+      font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+      letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    .badge-red { background: rgba(239,68,68,0.15); color: #f87171; }
+    .badge-blue { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .badge-green { background: rgba(16,185,129,0.15); color: #34d399; }
+    .badge-orange { background: rgba(236,124,0,0.15); color: #f59332; }
+    .badge-gray { background: rgba(100,116,139,0.15); color: #94a3b8; }
+
+    /* ── Previews ── */
+    .previews {
+      display: grid;
+      grid-template-columns: 375px 1fr;
+      gap: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .preview-mobile {
+      border-right: 1px solid rgba(255,255,255,0.06);
+      padding: 20px;
+    }
+    .preview-desktop { padding: 20px; }
+    .preview-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      color: #475569; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+    }
+
+    /* ── Mobile frame ── */
+    .phone-frame {
+      width: 335px;
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    [data-theme="dark"] .phone-frame { background: #0f172a; }
+
+    /* ── Desktop frame ── */
+    .desktop-frame {
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    [data-theme="dark"] .desktop-frame { background: #0f172a; }
+
+    /* ── Notes row ── */
+    .notes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; }
+    .note-col { padding: 14px 20px; border-right: 1px solid rgba(255,255,255,0.05); }
+    .note-col:last-child { border-right: none; }
+    .note-title {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .note-title.seo { color: #60a5fa; }
+    .note-title.load { color: #34d399; }
+    .note-title.ux { color: #f59332; }
+    .note-item {
+      font-size: 12px; color: #64748b; line-height: 1.5;
+      display: flex; gap: 6px; margin-bottom: 4px;
+    }
+    .note-item::before { content: '·'; color: #334155; flex-shrink: 0; }
+
+    /* ══════════ LIGHT THEME COMPONENTS ══════════ */
+    /* Used inside phone-frame / desktop-frame when data-theme="light" */
+
+    /* Hero */
+    .hero-photo {
+      height: 220px;
+      background: linear-gradient(135deg, #1e3a5f, #0d1a2b);
+      position: relative;
+      display: flex; align-items: flex-end;
+    }
+    .hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, transparent 30%, rgba(13,26,43,0.9) 100%);
+    }
+    .hero-text { position: relative; z-index: 1; padding: 16px; width: 100%; }
+    .tagline-pill {
+      display: inline-flex; align-items: center;
+      background: rgba(236,124,0,0.15); border: 1px solid rgba(236,124,0,0.4);
+      border-radius: 100px; padding: 3px 10px; margin-bottom: 6px;
+      font-size: 10px; font-weight: 600; color: #f59332;
+    }
+    .hero-h1 { font-size: 22px; font-weight: 800; color: white; line-height: 1.1; margin: 0 0 4px; }
+    .hero-sub { font-size: 13px; color: rgba(255,255,255,0.7); margin: 0; }
+    .hero-btns { display: flex; gap: 8px; padding: 12px 16px; background: #0d1a2b; }
+    .btn-outline-or {
+      flex: 1; height: 40px; border-radius: 100px;
+      border: 1.5px solid rgba(236,124,0,0.7); background: transparent;
+      color: #f59332; font-size: 13px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
+    }
+    .btn-outline-wh {
+      flex: 1; height: 40px; border-radius: 100px;
+      border: 1.5px solid rgba(255,255,255,0.25); background: transparent;
+      color: rgba(255,255,255,0.8); font-size: 13px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer;
+    }
+    .btn-explain { font-size: 10px; color: rgba(255,255,255,0.35); text-align: center; padding: 4px 16px 8px; background: #0d1a2b; }
+    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 10px 14px; background: #0d1a2b; }
+    .metric-cell {
+      background: rgba(255,255,255,0.06); border-radius: 10px;
+      padding: 10px 12px; text-align: center;
+    }
+    .metric-num { font-size: 18px; font-weight: 800; color: white; line-height: 1; }
+    .metric-lbl { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .trust-row { display: flex; gap: 6px; padding: 10px 14px 14px; background: #0d1a2b; }
+    .trust-pill {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+      border-radius: 100px; background: rgba(30,64,175,0.4); border: 1px solid rgba(96,165,250,0.4);
+      padding: 6px 4px; font-size: 10px; font-weight: 500; color: #bfdbfe;
+    }
+
+    /* Shifts section */
+    .shifts-section { background: linear-gradient(135deg, #eff6ff, #dbeafe); padding: 14px; }
+    .sec-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #1b4fd8; margin-bottom: 4px; }
+    .sec-h2 { font-size: 17px; font-weight: 800; color: #0f172a; margin: 0 0 10px; }
+    .shift-card-glass {
+      background: rgba(255,255,255,0.72); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.8); border-radius: 14px; padding: 12px;
+      margin-bottom: 8px; box-shadow: 0 4px 16px rgba(27,79,216,0.08);
+    }
+    .shift-name { font-size: 14px; font-weight: 700; color: #0f172a; }
+    .shift-dates { font-size: 11px; color: #475569; margin: 2px 0 6px; }
+    .shift-price { font-size: 16px; font-weight: 800; color: #ec7c00; margin-bottom: 8px; }
+    .progress-bar { height: 6px; background: rgba(203,213,225,0.5); border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+    .progress-fill { height: 100%; background: #94a3b8; border-radius: 4px; }
+    .btn-select {
+      width: 100%; height: 36px; border-radius: 100px;
+      background: #ec7c00; color: white; border: none;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+    }
+
+    /* Card white */
+    .card-w { background: white; border-radius: 14px; padding: 14px; border: 1px solid #f3f4f6; margin-bottom: 8px; }
+    .card-w-dark { background: #1e293b; border-radius: 14px; padding: 14px; border: 1px solid #334155; margin-bottom: 8px; }
+
+    /* Section wrapper light */
+    .sec-light { background: #f7f8fb; padding: 14px; }
+    .sec-blue { background: #f0f4ff; padding: 14px; }
+    .sec-warm { background: #f7f5f2; padding: 14px; }
+    .sec-dark { background: #0d1a2b; padding: 14px; }
+    .sec-navy { background: #0f172a; padding: 14px; }
+
+    /* Text helpers */
+    .t-h2 { font-size: 17px; font-weight: 800; color: #0f172a; margin: 0 0 6px; }
+    .t-h2-d { font-size: 17px; font-weight: 800; color: #f1f5f9; margin: 0 0 6px; }
+    .t-p { font-size: 12px; color: #4b5263; line-height: 1.55; margin: 0 0 8px; }
+    .t-p-d { font-size: 12px; color: #94a3b8; line-height: 1.55; margin: 0 0 8px; }
+    .accent { color: #ec7c00; }
+    .t-muted { font-size: 10px; color: #9ca3af; }
+
+    /* Review card */
+    .review-card { background: white; border-radius: 12px; padding: 12px; border: 1px solid #f3f4f6; margin-bottom: 6px; }
+    .review-card-d { background: #1e293b; border-radius: 12px; padding: 12px; border: 1px solid #334155; margin-bottom: 6px; }
+    .stars { color: #f59332; font-size: 11px; margin-bottom: 4px; }
+    .review-text { font-size: 11px; color: #4b5263; line-height: 1.5; margin-bottom: 6px; }
+    .review-text-d { font-size: 11px; color: #94a3b8; line-height: 1.5; margin-bottom: 6px; }
+    .reviewer { font-size: 10px; font-weight: 600; color: #6b7280; }
+
+    /* FAQ item */
+    .faq-item { background: white; border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 5px; overflow: hidden; }
+    .faq-item-d { background: #1e293b; border: 1px solid #334155; border-radius: 10px; margin-bottom: 5px; overflow: hidden; }
+    .faq-q { padding: 10px 12px; font-size: 13px; font-weight: 600; color: #1e2430; display: flex; justify-content: space-between; align-items: center; }
+    .faq-q-d { padding: 10px 12px; font-size: 13px; font-weight: 600; color: #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+    .faq-a { padding: 0 12px 10px; font-size: 11px; color: #4b5263; line-height: 1.5; border-top: 1px solid #f3f4f6; padding-top: 8px; }
+    .faq-a-d { padding: 0 12px 10px; font-size: 11px; color: #94a3b8; line-height: 1.5; border-top: 1px solid #334155; padding-top: 8px; }
+
+    /* CTA block */
+    .cta-block { background: #1b4fd8; padding: 16px; border-radius: 14px; }
+    .cta-h { font-size: 18px; font-weight: 800; color: white; margin: 0 0 4px; line-height: 1.2; }
+    .cta-sub { font-size: 12px; color: rgba(255,255,255,0.65); margin: 0 0 12px; }
+    .cta-input { width: 100%; height: 40px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); color: white; padding: 0 14px; font-size: 13px; margin-bottom: 8px; }
+    .cta-btn { width: 100%; height: 44px; border-radius: 100px; background: #ec7c00; color: white; border: none; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+    /* Gallery grid */
+    .gallery-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .gallery-cell { background: #cbd5e1; border-radius: 6px; aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #64748b; }
+    .gallery-cell-d { background: #1e293b; border-radius: 6px; aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #475569; }
+
+    /* Mentor card */
+    .mentor-card { display: flex; gap: 10px; align-items: center; background: white; border-radius: 12px; padding: 10px 12px; border: 1px solid #f3f4f6; margin-bottom: 6px; }
+    .mentor-card-d { display: flex; gap: 10px; align-items: center; background: #1e293b; border-radius: 12px; padding: 10px 12px; border: 1px solid #334155; margin-bottom: 6px; }
+    .mentor-avatar { width: 40px; height: 40px; border-radius: 100px; background: linear-gradient(135deg, #1b4fd8, #ec7c00); flex-shrink: 0; }
+    .mentor-name { font-size: 13px; font-weight: 600; color: #1e2430; }
+    .mentor-name-d { font-size: 13px; font-weight: 600; color: #f1f5f9; }
+    .mentor-role { font-size: 11px; color: #6b7280; }
+
+    /* Journey step */
+    .journey-step { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
+    .j-time { font-size: 11px; font-weight: 700; color: #ec7c00; width: 36px; flex-shrink: 0; padding-top: 2px; }
+    .j-dot { width: 8px; height: 8px; border-radius: 50%; background: #ec7c00; flex-shrink: 0; margin-top: 4px; }
+    .j-text { font-size: 12px; color: #4b5263; }
+    .j-text-d { font-size: 12px; color: #94a3b8; }
+
+    /* Economy */
+    .economy-card { background: white; border-radius: 12px; padding: 14px; border: 1px solid #f3f4f6; }
+    .economy-card-d { background: #1e293b; border-radius: 12px; padding: 14px; border: 1px solid #334155; }
+    .economy-num { font-size: 28px; font-weight: 800; color: #ec7c00; line-height: 1; }
+    .economy-label { font-size: 12px; color: #4b5263; margin-top: 4px; }
+    .economy-label-d { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+    /* Stay */
+    .stay-item { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
+    .stay-icon { color: #ec7c00; flex-shrink: 0; }
+    .stay-text { font-size: 12px; color: #4b5263; }
+    .stay-text-d { font-size: 12px; color: #94a3b8; }
+
+    /* Contacts */
+    .contacts-map { background: #dbeafe; border-radius: 10px; height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; font-size: 11px; color: #1b4fd8; }
+    .contacts-map-d { background: #1e293b; border-radius: 10px; height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; font-size: 11px; color: #60a5fa; }
+
+    /* SEO block */
+    .seo-link-row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+    .seo-link { border: 1px solid #e5e7eb; border-radius: 100px; padding: 3px 8px; font-size: 10px; color: #374151; }
+    .seo-link-d { border: 1px solid #334155; border-radius: 100px; padding: 3px 8px; font-size: 10px; color: #94a3b8; }
+
+    /* Desktop preview inner */
+    .dsk { min-height: 160px; }
+    .dsk-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .dsk-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .dsk-grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+
+    /* Booking bar */
+    .booking-bar { background: #0d1a2b; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .booking-bar-d { background: #0f172a; border: 1px solid #1e293b; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .bb-text { font-size: 13px; font-weight: 600; color: white; }
+    .bb-btn { height: 36px; padding: 0 16px; border-radius: 100px; background: #ec7c00; color: white; border: none; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
+    /* MomStory */
+    .mom-story { background: linear-gradient(135deg, #f7f5f2, #fdf8f0); padding: 14px; border-radius: 14px; }
+    .mom-story-d { background: linear-gradient(135deg, #1a1a2e, #1e1a2e); padding: 14px; border-radius: 14px; }
+    .mom-quote { font-size: 13px; font-style: italic; color: #4b5263; line-height: 1.5; margin-bottom: 8px; }
+    .mom-quote-d { font-size: 13px; font-style: italic; color: #94a3b8; line-height: 1.5; margin-bottom: 8px; }
+    .mom-author { font-size: 11px; font-weight: 600; color: #ec7c00; }
+
+    /* Hackathon */
+    .hackathon-dark { background: linear-gradient(135deg, #0d1a2b, #162035); padding: 14px; }
+    .hackathon-accent { display: inline-block; background: rgba(236,124,0,0.15); border: 1px solid rgba(236,124,0,0.3); border-radius: 6px; padding: 2px 8px; font-size: 10px; font-weight: 700; color: #f59332; margin-bottom: 6px; }
+
+    /* SoftStart */
+    .softstart-card { background: white; border-radius: 12px; padding: 12px; border-left: 3px solid #ec7c00; margin-bottom: 6px; }
+    .softstart-card-d { background: #1e293b; border-radius: 12px; padding: 12px; border-left: 3px solid #ec7c00; margin-bottom: 6px; }
+
+    /* RelatedPages */
+    .related-link { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 10px; font-size: 11px; color: #374151; margin: 3px; }
+    .related-link-d { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #334155; border-radius: 8px; padding: 6px 10px; font-size: 11px; color: #94a3b8; margin: 3px; }
+
+    /* Footer */
+    .footer-block { background: #0d1a2b; padding: 14px; }
+    .footer-col-title { font-size: 11px; font-weight: 700; color: white; margin-bottom: 8px; }
+    .footer-link { display: block; font-size: 11px; color: rgba(255,255,255,0.45); margin-bottom: 4px; }
+    .footer-copy { font-size: 10px; color: rgba(255,255,255,0.2); margin-top: 10px; }
+
+    /* ShiftOccupancy */
+    .occupancy-bar { background: #eff6ff; border-radius: 10px; padding: 10px 12px; margin-bottom: 6px; }
+    .occupancy-bar-d { background: #1e293b; border-radius: 10px; padding: 10px 12px; margin-bottom: 6px; }
+    .occ-label { font-size: 11px; font-weight: 600; color: #1e2430; margin-bottom: 4px; }
+    .occ-label-d { font-size: 11px; font-weight: 600; color: #f1f5f9; margin-bottom: 4px; }
+    .occ-bar { height: 8px; background: #dbeafe; border-radius: 4px; overflow: hidden; }
+    .occ-fill { height: 100%; background: #1b4fd8; border-radius: 4px; }
+    .occ-status { font-size: 10px; color: #1b4fd8; margin-top: 3px; font-weight: 600; }
+
+    /* Video */
+    .video-thumb { background: #0f172a; border-radius: 12px; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; margin-bottom: 6px; }
+    .play-btn { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; }
+  </style></head> <body> <!-- ══ HEADER ══ --> <div class="hdr"> <div> <div class="hdr-title">АйДаКемп — 21 блок главной страницы</div> <div class="hdr-sub">Мобиль 375px + Десктоп · SEO · Загрузка · design/glassmorphism-v1</div> </div> <div style="display:flex; gap:12px; align-items:center;"> <div class="toggle-wrap" id="themeToggle"> <button class="toggle-btn active" data-mode="dark" onclick="setTheme('dark')"> <i class="bi bi-moon-fill"></i> Ночь
+</button> <button class="toggle-btn" data-mode="light" onclick="setTheme('light')"> <i class="bi bi-sun-fill"></i> День
+</button> </div> <a href="/demo/design-v2/" style="font-size:12px; color:#60a5fa; text-decoration:none;">← Design v2</a> </div> </div> <div class="wrap" id="root"> <!-- ══════════════════════════════════════════════════ --> <!-- BLOCK 1: HERO MOBILE                              --> <!-- ══════════════════════════════════════════════════ --> <div class="block-card"> <div class="block-header"> <div class="block-num tier1">1</div> <div> <div class="block-name">Hero — главный экран</div> <div class="block-file">hero/Mobile.astro + hero/Desktop.astro</div> </div> <div class="badges"> <span class="badge badge-red">TIER 1</span> <span class="badge badge-orange">Конверсия #1</span> <span class="badge badge-blue">LCP</span> </div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль 375px</div> <div class="phone-frame"> <!-- Photo zone --> <div class="hero-photo"> <div class="hero-overlay"></div> <div style="position:absolute; inset:0; background:linear-gradient(135deg,#1e3a5f,#0d1a2b); opacity:0.8;"></div> <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:rgba(255,255,255,0.15); font-size:11px;">фото детей · object-cover · eager</div> <div class="hero-text"> <div class="tagline-pill">Пока другие на даче — ваш сделает проект</div> <h1 class="hero-h1">Летний лагерь<br>в Подмосковье, 7–15</h1> <p class="hero-sub">Вам — 14 дней для себя.</p> </div> </div> <!-- CTAs в ряд --> <div class="hero-btns"> <div class="btn-outline-or"><i class="bi bi-telegram"></i> Написать в бот</div> <div class="btn-outline-wh">Смотреть смены <i class="bi bi-arrow-right"></i></div> </div> <div class="btn-explain">Напишем — не позвоним. Отвечаем за 15 мин.</div> <!-- Metrics --> <div class="metrics-grid"> <div class="metric-cell"><div class="metric-num">7</div><div class="metric-lbl">лет работы</div></div> <div class="metric-cell"><div class="metric-num">1200+</div><div class="metric-lbl">детей</div></div> <div class="metric-cell"><div class="metric-num" style="color:#f59332;">★ 5.0</div><div class="metric-lbl">Яндекс</div></div> <div class="metric-cell"><div class="metric-num" style="color:#fbbf24;">ТОП-4</div><div class="metric-lbl">IT-лагерей МО</div></div> </div> <!-- Trust --> <div class="trust-row"> <div class="trust-pill"><i class="bi bi-patch-check-fill" style="font-size:12px; color:#4ade80;"></i>Лицензия</div> <div class="trust-pill"><i class="bi bi-heart-pulse-fill" style="font-size:12px; color:#4ade80;"></i>Медсестра</div> <div class="trust-pill"><i class="bi bi-shield-check" style="font-size:12px; color:#4ade80;"></i>Страховка</div> </div> </div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп 1280px</div> <div class="desktop-frame dsk"> <div style="display:grid; grid-template-columns:1fr 380px; min-height:200px;"> <!-- Left: фото --> <div style="background:linear-gradient(135deg,#1e3a5f,#0d1a2b); position:relative; display:flex; align-items:flex-end; padding:24px;"> <div style="position:absolute; inset:0; background:linear-gradient(90deg,rgba(13,26,43,0.5),transparent);"></div> <div style="position:relative; z-index:1; max-width:540px;"> <div class="tagline-pill" style="margin-bottom:8px;">Пока другие на даче — ваш сделает проект</div> <h1 style="font-size:32px; font-weight:800; color:white; line-height:1.1; margin:0 0 8px;">Летний лагерь в Подмосковье<br>для детей 7–15 лет</h1> <p style="font-size:15px; color:rgba(255,255,255,0.7); margin:0 0 16px;">Вам — 14 дней для себя.</p> <div style="display:flex; gap:10px;"> <div class="btn-outline-or" style="width:auto; padding:0 20px; height:44px; font-size:14px;"><i class="bi bi-telegram"></i> Написать в бот</div> <div class="btn-outline-wh" style="width:auto; padding:0 20px; height:44px; font-size:14px;">Смотреть смены</div> </div> </div> </div> <!-- Right: form --> <div style="background:#0d1a2b; padding:20px; display:flex; flex-direction:column; justify-content:center;"> <div style="font-size:12px; font-weight:700; color:#f59332; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px;">Записать ребёнка</div> <div style="display:flex; gap:6px; margin-bottom:10px;"> <div style="flex:1; height:32px; border:1px solid rgba(255,255,255,0.15); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; color:rgba(255,255,255,0.6);">7–9</div><div style="flex:1; height:32px; border:1px solid rgba(255,255,255,0.15); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; color:rgba(255,255,255,0.6);">10–12</div><div style="flex:1; height:32px; border:1px solid rgba(255,255,255,0.15); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; color:rgba(255,255,255,0.6);">13–15</div> </div> <div style="height:38px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.05); margin-bottom:10px; display:flex; align-items:center; padding:0 12px; font-size:12px; color:rgba(255,255,255,0.3);">+7 (___) ___-__-__</div> <div style="height:40px; border-radius:100px; background:#ec7c00; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:white; gap:8px; cursor:pointer;"><i class="bi bi-telegram"></i> Записаться</div> </div> </div> <!-- Desktop metrics row --> <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; background:#162035;"> <div style="padding:12px 16px; border-right:1px solid rgba(255,255,255,0.05); text-align:center;"> <div style="font-size:18px; font-weight:800; color:white;">7</div> <div style="font-size:11px; color:rgba(255,255,255,0.4);">лет опыта</div> </div><div style="padding:12px 16px; border-right:1px solid rgba(255,255,255,0.05); text-align:center;"> <div style="font-size:18px; font-weight:800; color:white;">1200+</div> <div style="font-size:11px; color:rgba(255,255,255,0.4);">детей отдохнули</div> </div><div style="padding:12px 16px; border-right:1px solid rgba(255,255,255,0.05); text-align:center;"> <div style="font-size:18px; font-weight:800; color:white;">★ 5.0</div> <div style="font-size:11px; color:rgba(255,255,255,0.4);">Яндекс Карты</div> </div><div style="padding:12px 16px; border-right:1px solid rgba(255,255,255,0.05); text-align:center;"> <div style="font-size:18px; font-weight:800; color:white;">ТОП-4</div> <div style="font-size:11px; color:rgba(255,255,255,0.4);">IT-лагерей МО</div> </div> </div> </div> </div> </div> <div class="notes"> <div class="note-col"> <div class="note-title seo">SEO-разметка</div> <div class="note-item">&lt;h1&gt; единственный на странице</div> <div class="note-item">Ключ: «летний лагерь в Подмосковье»</div> <div class="note-item">Schema.org: LocalBusiness + EducationalOrganization</div> <div class="note-item">OG:image = hero-mobile.avif (1200×630 обрезка)</div> <div class="note-item">alt="" aria-hidden на декоративном фото</div> </div> <div class="note-col"> <div class="note-title load">Загрузка</div> <div class="note-item">fetchpriority="high" loading="eager" на фото</div> <div class="note-item">AVIF + WebP srcset (600w, 900w)</div> <div class="note-item">Шрифт Inter preload в &lt;head&gt;</div> <div class="note-item">LCP цель: &lt;2.5s на мобиле</div> <div class="note-item">Форма скрыта (max-height:0) — не блокирует</div> </div> <div class="note-col"> <div class="note-title ux">UX / Конверсия</div> <div class="note-item">Два CTA в ряд — снижает давление</div> <div class="note-item">Outline кнопки — не «тяжёлые»</div> <div class="note-item">Объяснение: «не позвоним» под кнопками</div> <div class="note-item">Метрики — клики ведут к якорям</div> <div class="note-item">Trust pills — ссылки на документы</div> </div> </div> </div> <!-- ══════════════════════════════════════════════════ --> <!-- BLOCK 2: SHIFT OCCUPANCY                          --> <!-- ══════════════════════════════════════════════════ --> <div class="block-card"> <div class="block-header"> <div class="block-num tier1">2</div> <div> <div class="block-name">ShiftOccupancy — занятость смен</div> <div class="block-file">ShiftOccupancy.astro</div> </div> <div class="badges"> <span class="badge badge-orange">Urgency</span> <span class="badge badge-green">SSR данные</span> </div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div> <div class="phone-frame"> <div class="sec-blue" id="occ-m"> <div class="sec-label">Мест на лето 2026</div> <div class="occupancy-bar" id="occ-m-item"> <div class="occ-label">IT + Творчество · июнь</div> <div class="occ-bar"><div class="occ-fill" style="width:78%"></div></div> <div class="occ-status">4 места</div> </div><div class="occupancy-bar" id="occ-m-item"> <div class="occ-label">Хакатон Pro · июль</div> <div class="occ-bar"><div class="occ-fill" style="width:92%"></div></div> <div class="occ-status">⚠ 2 места</div> </div><div class="occupancy-bar" id="occ-m-item"> <div class="occ-label">AI-разработка · август</div> <div class="occ-bar"><div class="occ-fill" style="width:55%"></div></div> <div class="occ-status">6 мест</div> </div> </div> </div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп — inline в Hero</div> <div class="desktop-frame" style="padding:16px; background:#f0f4ff;" id="occ-d"> <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;"> <div class="occupancy-bar"> <div class="occ-label">IT + Творчество · июнь</div> <div class="occ-bar"><div class="occ-fill" style="width:78%"></div></div> <div class="occ-status">4 места</div> </div><div class="occupancy-bar"> <div class="occ-label">Хакатон Pro · июль</div> <div class="occ-bar"><div class="occ-fill" style="width:92%"></div></div> <div class="occ-status">⚠ 2 места</div> </div><div class="occupancy-bar"> <div class="occ-label">AI-разработка · август</div> <div class="occ-bar"><div class="occ-fill" style="width:55%"></div></div> <div class="occ-status">6 мест</div> </div> </div> </div> </div> </div> <div class="notes"> <div class="note-col"> <div class="note-title seo">SEO-разметка</div> <div class="note-item">Нет h2 — вспомогательный блок</div> <div class="note-item">aria-label на progress bar</div> <div class="note-item">Не индексируемый контент (динамика)</div> </div> <div class="note-col"> <div class="note-title load">Загрузка</div> <div class="note-item">SSR — данные из shifts.ts</div> <div class="note-item">Без запросов к API — статика</div> <div class="note-item">Skeleton не нужен (SSR)</div> </div> <div class="note-col"> <div class="note-title ux">UX</div> <div class="note-item">⚠ красный при ≥85% — urgency</div> <div class="note-item">Клик → прокрутка к блоку Shifts</div> </div> </div> </div> <!-- ══════════════════════════════════════════════════ --> <!-- BLOCK 3: MOM STORY                                --> <!-- ══════════════════════════════════════════════════ --> <div class="block-card"> <div class="block-header"> <div class="block-num tier2">3</div> <div> <div class="block-name">MomStory — история мамы</div> <div class="block-file">MomStory.astro (compact)</div> </div> <div class="badges"> <span class="badge badge-green">Доверие</span> <span class="badge badge-gray">Social proof</span> </div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div> <div class="phone-frame"> <div class="sec-warm" id="ms-m"> <div class="mom-story"> <div class="stars">★★★★★</div> <p class="mom-quote">«Боялась, что ребёнок будет скучать без телефона. Через три дня она сама перестала его просить — так интересно было на занятиях.»</p> <div class="mom-author">Анна К. · мама Полины, 11 лет</div> </div> </div> </div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп — две колонки</div> <div class="desktop-frame" style="padding:20px; background:#f7f5f2;" id="ms-d"> <div class="dsk-grid-2"> <div class="mom-story"><div class="stars">★★★★★</div><p class="mom-quote">«Боялась, что ребёнок будет скучать без телефона. Через три дня она сама перестала его просить.»</p><div class="mom-author">Анна К. · мама Полины, 11 лет</div></div> <div style="display:flex; flex-direction:column; justify-content:center;"> <div style="font-size:22px; font-weight:800; color:#0f172a; margin-bottom:8px;">«Я хорошая мама»</div> <div style="font-size:14px; color:#4b5263; line-height:1.6;">14 дней пока ребёнок в лагере — время для себя. Без чувства вины: он развивается, учится, создаёт.</div> </div> </div> </div> </div> </div> <div class="notes"> <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">Review Schema.org (если отзыв)</div><div class="note-item">Фото автора: alt="Анна, мама Полины"</div></div> <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">Статика — без API</div><div class="note-item">Фото lazy loading</div></div> <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">Эмпатия с мамой — тон подруги</div><div class="note-item">Не «эксперт», а «я как ты»</div></div> </div> </div> <!-- ══════════════════════════════════════════════════ --> <!-- BLOCK 4: ABOUT                                    --> <!-- ══════════════════════════════════════════════════ --> <div class="block-card"> <div class="block-header"> <div class="block-num tier2">4</div> <div><div class="block-name">About — о лагере</div><div class="block-file">About.astro</div></div> <div class="badges"><span class="badge badge-green">Доверие</span><span class="badge badge-blue">SEO</span></div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div> <div class="phone-frame"> <div class="sec-warm" id="ab-m"> <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#ec7c00; margin-bottom:6px;">О лагере</div> <h2 class="t-h2">АйДаКемп с 2021 года</h2> <p class="t-p">IT-лагерь с проживанием в Подмосковье. 1200+ детей за 5 лет. Каждый уезжает с проектом — игрой, ботом, 3D-моделью.</p> <div style="display:flex; gap:6px; margin-bottom:10px;"> <div style="flex:1; background:white; border-radius:10px; padding:10px; border:1px solid #f3f4f6; text-align:center;"><div style="font-size:18px; font-weight:800; color:#ec7c00;">7</div><div style="font-size:10px; color:#6b7280;">лет</div></div> <div style="flex:1; background:white; border-radius:10px; padding:10px; border:1px solid #f3f4f6; text-align:center;"><div style="font-size:18px; font-weight:800; color:#ec7c00;">1200+</div><div style="font-size:10px; color:#6b7280;">детей</div></div> <div style="flex:1; background:white; border-radius:10px; padding:10px; border:1px solid #f3f4f6; text-align:center;"><div style="font-size:18px; font-weight:800; color:#ec7c00;">8</div><div style="font-size:10px; color:#6b7280;">чел/группа</div></div> </div> <div style="background:white; border-radius:10px; padding:10px; display:flex; gap:10px; align-items:center; border:1px solid #f3f4f6;"> <div style="width:44px; height:44px; border-radius:100px; background:linear-gradient(135deg,#ec7c00,#1b4fd8); flex-shrink:0;"></div> <div><div style="font-size:13px; font-weight:700; color:#1e2430;">Дарья Афанасьева</div><div style="font-size:11px; color:#6b7280;">Основатель · мама подростка</div></div> </div> </div> </div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп</div> <div class="desktop-frame" style="padding:20px; background:#f7f5f2;" id="ab-d"> <div class="dsk-grid-2"> <div> <h2 style="font-size:26px; font-weight:800; color:#0f172a; margin:0 0 10px;">АйДаКемп — IT-лагерь с проживанием</h2> <p style="font-size:14px; color:#4b5263; line-height:1.6;">Работаем с 2021 года. 1200+ детей. Каждый уезжает с проектом: игрой на Python, ботом в Telegram, 3D-моделью или сценой в Minecraft.</p> </div> <div style="display:flex; flex-direction:column; gap:8px;"> <div style="display:flex; gap:8px; align-items:center; font-size:13px; color:#1e2430;"><i class="bi bi-patch-check-fill" style="color:#ec7c00; flex-shrink:0;"></i>Лицензия Минобрнауки</div><div style="display:flex; gap:8px; align-items:center; font-size:13px; color:#1e2430;"><i class="bi bi-heart-pulse-fill" style="color:#ec7c00; flex-shrink:0;"></i>Медработник 24/7</div><div style="display:flex; gap:8px; align-items:center; font-size:13px; color:#1e2430;"><i class="bi bi-shield-fill" style="color:#ec7c00; flex-shrink:0;"></i>Закрытая охраняемая территория</div><div style="display:flex; gap:8px; align-items:center; font-size:13px; color:#1e2430;"><i class="bi bi-trophy-fill" style="color:#ec7c00; flex-shrink:0;"></i>Бассейн и спортплощадки</div> </div> </div> </div> </div> </div> <div class="notes"> <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">&lt;h2&gt; с ключом «IT-лагерь»</div><div class="note-item">Дарья: Person Schema</div><div class="note-item">Статистика в &lt;strong&gt;</div></div> <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">Статика. Фото Дарьи lazy</div><div class="note-item">WebP + AVIF портрет</div></div> <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">Дарья — подруга, не эксперт</div><div class="note-item">Цифры крупно — якоря доверия</div></div> </div> </div> <!-- ══════════════════════════════════════════════════ --> <!-- BLOCK 5: JOURNEY                                  --> <!-- ══════════════════════════════════════════════════ --> <div class="block-card"> <div class="block-header"> <div class="block-num">5</div> <div><div class="block-name">Journey — день в лагере</div><div class="block-file">Journey.astro</div></div> <div class="badges"><span class="badge badge-green">Доверие</span><span class="badge badge-gray">Timeline</span></div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div> <div class="phone-frame"> <div class="sec-light" id="jrn-m"> <h2 class="t-h2">Как проходит день</h2> <div class="journey-step"> <div class="j-time">09:00</div> <div class="j-dot"></div> <div class="j-text">Подъём, завтрак, спорт</div> </div><div class="journey-step"> <div class="j-time">10:00</div> <div class="j-dot"></div> <div class="j-text">IT-занятие: Python / AI / Scratch</div> </div><div class="journey-step"> <div class="j-time">13:00</div> <div class="j-dot"></div> <div class="j-text">Обед + свободное время</div> </div><div class="journey-step"> <div class="j-time">15:00</div> <div class="j-dot"></div> <div class="j-text">Проект или хакатон</div> </div><div class="journey-step"> <div class="j-time">19:00</div> <div class="j-dot"></div> <div class="j-text">Ужин · кино · настолки</div> </div><div class="journey-step"> <div class="j-time">22:00</div> <div class="j-dot"></div> <div class="j-text">Отбой</div> </div> </div> </div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп — горизонтальная шкала</div> <div class="desktop-frame" style="padding:20px; background:#f7f8fb;" id="jrn-d"> <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 16px;">Как проходит день в лагере</h2> <div style="display:flex; gap:0; overflow-x:auto;"> <div style="flex:1; text-align:center; min-width:100px;"> <div style="font-size:12px; font-weight:700; color:#ec7c00;">09:00</div> <div style="width:10px; height:10px; border-radius:50%; background:#ec7c00; margin:6px auto;"></div> <div style="height:2px; background:#fde68a; margin-top:-14px; margin-bottom:8px;"></div> <div style="font-size:12px; color:#4b5263; padding:4px;">Подъём</div> </div><div style="flex:1; text-align:center; min-width:100px;"> <div style="font-size:12px; font-weight:700; color:#ec7c00;">10:00</div> <div style="width:10px; height:10px; border-radius:50%; background:#ec7c00; margin:6px auto;"></div> <div style="height:2px; background:#fde68a; margin-top:-14px; margin-bottom:8px;"></div> <div style="font-size:12px; color:#4b5263; padding:4px;">IT-занятие</div> </div><div style="flex:1; text-align:center; min-width:100px;"> <div style="font-size:12px; font-weight:700; color:#ec7c00;">13:00</div> <div style="width:10px; height:10px; border-radius:50%; background:#ec7c00; margin:6px auto;"></div> <div style="height:2px; background:#fde68a; margin-top:-14px; margin-bottom:8px;"></div> <div style="font-size:12px; color:#4b5263; padding:4px;">Обед</div> </div><div style="flex:1; text-align:center; min-width:100px;"> <div style="font-size:12px; font-weight:700; color:#ec7c00;">15:00</div> <div style="width:10px; height:10px; border-radius:50%; background:#ec7c00; margin:6px auto;"></div> <div style="height:2px; background:#fde68a; margin-top:-14px; margin-bottom:8px;"></div> <div style="font-size:12px; color:#4b5263; padding:4px;">Проект</div> </div><div style="flex:1; text-align:center; min-width:100px;"> <div style="font-size:12px; font-weight:700; color:#ec7c00;">19:00</div> <div style="width:10px; height:10px; border-radius:50%; background:#ec7c00; margin:6px auto;"></div> <div style="height:2px; background:#fde68a; margin-top:-14px; margin-bottom:8px;"></div> <div style="font-size:12px; color:#4b5263; padding:4px;">Вечер</div> </div><div style="flex:1; text-align:center; min-width:100px;"> <div style="font-size:12px; font-weight:700; color:#ec7c00;">22:00</div> <div style="width:10px; height:10px; border-radius:50%; background:#ec7c00; margin:6px auto;"></div>  <div style="font-size:12px; color:#4b5263; padding:4px;">Отбой</div> </div> </div> </div> </div> </div> <div class="notes"> <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">&lt;h2&gt; «Как проходит день»</div><div class="note-item">ol/li — семантика списка</div></div> <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">Только CSS — нет изображений</div><div class="note-item">Мгновенно</div></div> <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">Снимает страх «чем будет занят»</div><div class="note-item">Подробности на клик (expand)</div></div> </div> </div> <!-- ══════════════════════════════════════════════════ --> <!-- BLOCK 6: ECONOMY                                  --> <!-- ══════════════════════════════════════════════════ --> <div class="block-card"> <div class="block-header"> <div class="block-num">6</div> <div><div class="block-name">Economy — налоговый вычет</div><div class="block-file">Economy.astro</div></div> <div class="badges"><span class="badge badge-blue">Рациональный аргумент</span></div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div> <div class="phone-frame"> <div class="sec-light" id="eco-m"> <h2 class="t-h2">Верните до 5 434 ₽</h2> <p class="t-p">Лагерь работает по лицензии Минобрнауки — можно получить налоговый вычет 13%.</p> <div class="dsk-grid-2" style="gap:8px; margin-bottom:10px;"> <div class="economy-card"><div class="economy-num">13%</div><div class="economy-label">возврат за обучение</div></div> <div class="economy-card"><div class="economy-num">5 200₽</div><div class="economy-label">максимум на ребёнка</div></div> </div> <div style="background:#fff1df; border-radius:10px; padding:10px; font-size:12px; color:#92400e;"> <i class="bi bi-info-circle" style="margin-right:6px;"></i>
+Подаётся раз в год через Госуслуги или у работодателя
+</div> </div> </div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп</div> <div class="desktop-frame" style="padding:20px; background:#f7f8fb;" id="eco-d"> <div class="dsk-grid-2"> <div> <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 8px;">Налоговый вычет 13%</h2> <p style="font-size:14px; color:#4b5263; line-height:1.6; margin:0 0 12px;">Лицензия Минобрнауки — основание для возврата. До 5 200 ₽ за каждого ребёнка.</p> <a href="/nalogovyj-vychet/" style="display:inline-flex; align-items:center; gap:6px; color:#1b4fd8; font-size:14px; font-weight:600; text-decoration:none;">Как получить вычет <i class="bi bi-arrow-right"></i></a> </div> <div class="dsk-grid-2" style="gap:8px;"> <div class="economy-card"><div class="economy-num">13%</div><div class="economy-label">возврат</div></div> <div class="economy-card"><div class="economy-num">5 200₽</div><div class="economy-label">максимум</div></div> <div class="economy-card" style="grid-column:span 2;"><div style="font-size:13px; color:#ec7c00; font-weight:700;">Подаётся раз в год через ФНС или работодателя</div></div> </div> </div> </div> </div> </div> <div class="notes"> <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">&lt;h2&gt; «Налоговый вычет за лагерь»</div><div class="note-item">FAQ Schema для вопросов о вычете</div><div class="note-item">Внутренняя ссылка на /nalogovyj-vychet/</div></div> <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">Только текст и CSS</div><div class="note-item">Нет lazy-зависимостей</div></div> <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">Рациональный аргумент для мужа</div><div class="note-item">Конкретные цифры — не «можно вернуть»</div></div> </div> </div> <!-- ══════════════════════════════════════════════════ --> <!-- BLOCK 7: BOOKING BAR ×2                          --> <!-- ══════════════════════════════════════════════════ --> <div class="block-card"> <div class="block-header"> <div class="block-num tier1">7</div> <div><div class="block-name">BookingBar — плашка бронирования ×2</div><div class="block-file">BookingBar.astro</div></div> <div class="badges"><span class="badge badge-red">Tier 1</span><span class="badge badge-orange">Micro CTA</span></div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div> <div class="phone-frame"> <div class="booking-bar" id="bb-m"> <div class="bb-text" style="font-size:13px;">Один звонок — ответим на всё</div> <button class="bb-btn"><i class="bi bi-telegram"></i> Написать</button> </div> </div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп — полная строка</div> <div class="desktop-frame" id="bb-d"> <div class="booking-bar"> <div class="bb-text">Один звонок — ответим на всё и не будем беспокоить</div> <div style="display:flex; gap:8px;"> <div class="btn-outline-or" style="width:auto; padding:0 16px; height:36px; font-size:12px;"><i class="bi bi-telegram"></i> Написать в бот</div> <div class="btn-outline-wh" style="width:auto; padding:0 16px; height:36px; font-size:12px;"><i class="bi bi-telephone"></i> Позвонить</div> </div> </div> </div> </div> </div> <div class="notes"> <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">aria-label на кнопках</div><div class="note-item">Не влияет на структуру документа</div></div> <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">Только HTML + CSS</div><div class="note-item">position:sticky — не блокирует</div></div> <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">Повтор CTA после длинного блока</div><div class="note-item">Outline кнопки — не кричат</div></div> </div> </div> <!-- ══════════════════════════════════════════════════ --> <!-- BLOCK 8: SOFTSTART                                --> <!-- ══════════════════════════════════════════════════ --> <div class="block-card"> <div class="block-header"> <div class="block-num">8</div> <div><div class="block-name">SoftStart — адаптация и программа</div><div class="block-file">SoftStart.astro</div></div> <div class="badges"><span class="badge badge-green">Доверие</span><span class="badge badge-gray">Возражения</span></div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div> <div class="phone-frame"> <div class="sec-light" id="ss-m"> <h2 class="t-h2">Что ждёт ребёнка</h2> <div class="softstart-card"> <div style="display:flex; gap:10px; align-items:flex-start;"> <i class="bi bi-laptop" style="color:#ec7c00; font-size:18px; flex-shrink:0;"></i> <div><div style="font-size:13px; font-weight:700; color:#1e2430;">Занятия по возрасту</div><div style="font-size:11px; color:#6b7280;">Python для 13+, Scratch для 7–9</div></div> </div> </div><div class="softstart-card"> <div style="display:flex; gap:10px; align-items:flex-start;"> <i class="bi bi-people-fill" style="color:#ec7c00; font-size:18px; flex-shrink:0;"></i> <div><div style="font-size:13px; font-weight:700; color:#1e2430;">Группы до 8 человек</div><div style="font-size:11px; color:#6b7280;">Каждый успевает</div></div> </div> </div><div class="softstart-card"> <div style="display:flex; gap:10px; align-items:flex-start;"> <i class="bi bi-trophy-fill" style="color:#ec7c00; font-size:18px; flex-shrink:0;"></i> <div><div style="font-size:13px; font-weight:700; color:#1e2430;">Финальный хакатон</div><div style="font-size:11px; color:#6b7280;">Диплом и сертификат</div></div> </div> </div> </div> </div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп — три колонки</div> <div class="desktop-frame" style="padding:20px; background:#f7f8fb;" id="ss-d"> <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 14px;">Что ждёт ребёнка в лагере</h2> <div class="dsk-grid-3"> <div class="card-w"> <i class="bi bi-laptop" style="color:#ec7c00; font-size:24px; display:block; margin-bottom:8px;"></i> <div style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:4px;">Занятия по возрасту</div> <div style="font-size:12px; color:#4b5263; line-height:1.5;">Python, AI, Scratch — программа для каждой группы</div> </div><div class="card-w"> <i class="bi bi-people-fill" style="color:#ec7c00; font-size:24px; display:block; margin-bottom:8px;"></i> <div style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:4px;">Группы до 8 человек</div> <div style="font-size:12px; color:#4b5263; line-height:1.5;">Каждый успевает, никто не теряется</div> </div><div class="card-w"> <i class="bi bi-trophy-fill" style="color:#ec7c00; font-size:24px; display:block; margin-bottom:8px;"></i> <div style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:4px;">Финальный хакатон</div> <div style="font-size:12px; color:#4b5263; line-height:1.5;">Диплом и настоящий проект в портфолио</div> </div> </div> </div> </div> </div> <div class="notes"> <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">&lt;h2&gt; «программа лагеря» / «что ждёт»</div><div class="note-item">Feature list в &lt;ul&gt;&lt;li&gt;</div></div> <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">Только CSS и иконки</div><div class="note-item">bi-icons через cdn уже загружен</div></div> <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">Закрывает страх «скучно / не поймёт»</div><div class="note-item">Иконки bi-* — не эмодзи</div></div> </div> </div> <!-- ══════════════════════════════════════════════════ --> <!-- BLOCK 9: SHIFTS (ключевой)                        --> <!-- ══════════════════════════════════════════════════ --> <div class="block-card"> <div class="block-header"> <div class="block-num tier1">9</div> <div><div class="block-name">Shifts — смены с ценами</div><div class="block-file">Shifts.astro + shifts/ShiftCard.astro</div></div> <div class="badges"><span class="badge badge-red">Tier 1</span><span class="badge badge-orange">Glass NEW</span><span class="badge badge-blue">Конверсия #2</span></div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль — горизонтальный скролл</div> <div class="phone-frame"> <div class="shifts-section" id="sh-m"> <div class="sec-label">СМЕНЫ ЛЕТА 2026</div> <div class="sec-h2">Выбери свою смену</div> <div class="shift-card-glass"> <div style="display:flex; justify-content:space-between; align-items:flex-start;"> <div class="shift-name">IT + Творчество</div> <span style="background:#dcfce7; color:#166534; border-radius:100px; padding:2px 8px; font-size:10px; font-weight:600;">Открыта</span> </div> <div class="shift-dates">27 июня — 10 июля · 14 дней</div> <div class="shift-price">59 000 ₽</div> <div class="progress-bar"><div class="progress-fill" style="width:70%;"></div></div> <div style="display:flex; justify-content:space-between; font-size:10px; color:#6b7280; margin-bottom:8px;"><span>занято 8</span><span style="color:#10b981;">свободно 4</span></div> <button class="btn-select">Выбрать</button> </div> </div> </div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп — сетка 3 колонки</div> <div class="desktop-frame" style="padding:20px; background:linear-gradient(135deg,#eff6ff,#dbeafe);" id="sh-d"> <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 14px;">Смены лета 2026</h2> <div class="dsk-grid-3"> <div class="shift-card-glass"> <div class="shift-name">IT + Творчество</div> <div class="shift-dates">27 июня — 10 июля</div> <div class="shift-price">59 000 ₽</div> <div class="progress-bar"><div class="progress-fill" style="width:70%"></div></div> <button class="btn-select">Выбрать</button> </div><div class="shift-card-glass"> <div class="shift-name">Хакатон Pro</div> <div class="shift-dates">11 — 24 июля</div> <div class="shift-price">65 000 ₽</div> <div class="progress-bar"><div class="progress-fill" style="width:90%"></div></div> <button class="btn-select">Выбрать</button> </div><div class="shift-card-glass"> <div class="shift-name">AI-разработка</div> <div class="shift-dates">25 июля — 7 авг</div> <div class="shift-price">59 000 ₽</div> <div class="progress-bar"><div class="progress-fill" style="width:55%"></div></div> <button class="btn-select">Выбрать</button> </div> </div> </div> </div> </div> <div class="notes"> <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">&lt;h2&gt; «Смены лагеря»</div><div class="note-item">Event / CourseInstance Schema</div><div class="note-item">Цены в &lt;span itemprop="price"&gt;</div><div class="note-item">Даты в &lt;time datetime&gt;</div></div> <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">SSR — данные из shifts.ts</div><div class="note-item">glass-surface: backdrop-filter только поверх #eff6ff</div><div class="note-item">Skeleton при ожидании (если динамика)</div></div> <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">Цена видна сразу — не «уточняйте»</div><div class="note-item">Progress bar — urgency без агрессии</div><div class="note-item">Glass карточки — лёгкость</div></div> </div> </div> <!-- ══════════════════════════════════════════════════ --> <!-- BLOCK 10: SUMMER CTA                              --> <!-- ══════════════════════════════════════════════════ --> <div class="block-card"> <div class="block-header"> <div class="block-num tier1">10</div> <div><div class="block-name">SummerCta — повторный призыв</div><div class="block-file">SummerCta.astro</div></div> <div class="badges"><span class="badge badge-red">Tier 1</span><span class="badge badge-orange">Glass CTA</span></div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div> <div class="phone-frame"> <div class="sec-dark" id="cta-m"> <div class="cta-block"> <div class="hackathon-accent">Осталось 4 места на июль</div> <h2 class="cta-h">Записаться на лето 2026</h2> <p class="cta-sub">Налоговый вычет 13% — до 5 434 ₽</p> <input class="cta-input" placeholder="+7 (___) ___-__-__"> <button class="cta-btn"><i class="bi bi-telegram" style="font-size:16px;"></i> Написать в бот</button> <div style="font-size:10px; color:rgba(255,255,255,0.3); text-align:center; margin-top:6px;">Напишем — не позвоним</div> </div> </div> </div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп — текст + форма</div> <div class="desktop-frame" style="background:#1b4fd8; padding:24px;" id="cta-d"> <div class="dsk-grid-2"> <div style="display:flex; flex-direction:column; justify-content:center;"> <div class="hackathon-accent">Лето 2026 · записывайтесь заранее</div> <h2 style="font-size:28px; font-weight:800; color:white; margin:6px 0 8px; line-height:1.15;">Осталось <span style="color:#f59332;">4 места</span> на июль</h2> <p style="font-size:14px; color:rgba(255,255,255,0.65);">Налоговый вычет 13% — официальная лицензия Минобрнауки.</p> </div> <div style="background:rgba(255,255,255,0.1); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.2); border-radius:16px; padding:20px;"> <input style="width:100%; height:44px; border-radius:100px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.08); color:white; padding:0 16px; font-size:14px; margin-bottom:10px;" placeholder="+7 (___) ___-__-__"> <button class="cta-btn" style="font-size:14px;"><i class="bi bi-telegram" style="font-size:16px;"></i> Записаться сейчас</button> </div> </div> </div> </div> </div> <div class="notes"> <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">&lt;h2&gt; с датой сезона</div><div class="note-item">Форма не crawlable — не критично</div></div> <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">Glass form: backdrop-filter на синем</div><div class="note-item">Кнопка disabled во время submit</div><div class="note-item">Success state: «Отправлено!»</div></div> <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">Urgency badge — «Осталось N мест»</div><div class="note-item">Outline вместо solid кнопки</div><div class="note-item">«Напишем — не позвоним»</div></div> </div> </div> <!-- ══════════════════════════════════════════════════ --> <!-- BLOCKS 11-21: СОКРАЩЁННЫЕ                         --> <!-- ══════════════════════════════════════════════════ --> <div class="block-card"> <div class="block-header"> <div class="block-num tier2">11</div> <div><div class="block-name">Hackathon — хакатон и дипломы</div><div class="block-file">Hackathon.astro</div></div> <div class="badges"><span class="badge badge-green">Доверие</span><span class="badge badge-gray">Achievement</span></div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div> <div class="phone-frame"><div class="hackathon-dark"><div class="hackathon-accent">Финальный хакатон</div><h2 class="t-h2-d">Каждый уезжает с проектом</h2><p class="t-p-d">Не «мы учили» — а реальный продукт: игра, бот или 3D-модель.</p><div style="display:flex; gap:6px;"><div style="flex:1; background:rgba(255,255,255,0.06); border-radius:10px; padding:10px; text-align:center; font-size:10px; color:rgba(255,255,255,0.6);">Диплом</div><div style="flex:1; background:rgba(255,255,255,0.06); border-radius:10px; padding:10px; text-align:center; font-size:10px; color:rgba(255,255,255,0.6);">Сертификат</div><div style="flex:1; background:rgba(255,255,255,0.06); border-radius:10px; padding:10px; text-align:center; font-size:10px; color:rgba(255,255,255,0.6);">Проект</div></div></div></div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп</div> <div class="desktop-frame dsk" style="background:#0d1a2b; padding:20px;"><div style="padding:4px 0; color:#94a3b8; font-size:12px; font-style:italic;">↑ Структура аналогична мобильному, адаптирована в сетку</div></div> </div> </div> <div class="notes"> <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">h2 с ключом «хакатон лагерь»</div></div> <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">Иконки bi-* · без изображений</div></div> <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">FOMO: «уедет с проектом» — не «научится»</div></div> </div> </div><div class="block-card"> <div class="block-header"> <div class="block-num ">12</div> <div><div class="block-name">Gallery — фотогалерея</div><div class="block-file">Gallery.astro</div></div> <div class="badges"><span class="badge badge-green">Социальное доказательство</span><span class="badge badge-gray">Lazy images</span></div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div> <div class="phone-frame"><div class="sec-light"><h2 class="t-h2">Фото из лагеря</h2><div class="gallery-grid"><div class="gallery-cell">фото 1</div><div class="gallery-cell">фото 2</div><div class="gallery-cell">фото 3</div><div class="gallery-cell">фото 4</div></div></div></div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп</div> <div class="desktop-frame dsk" style="padding:20px; background:#f7f8fb;"><div style="padding:4px 0; color:#94a3b8; font-size:12px; font-style:italic;">↑ Структура аналогична мобильному, адаптирована в сетку</div></div> </div> </div> <div class="notes"> <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">alt=&quot;Дети на IT-занятии в лагере&quot; · figcaption</div></div> <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">loading=lazy все · AVIF · Lightbox по клику</div></div> <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">Лица с улыбками · object-position:center 30%</div></div> </div> </div><div class="block-card"> <div class="block-header"> <div class="block-num ">13</div> <div><div class="block-name">Videos — видео</div><div class="block-file">Videos.astro</div></div> <div class="badges"><span class="badge badge-gray">Engagement</span></div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div> <div class="phone-frame"><div class="sec-dark"><h2 class="t-h2-d">Видео из лагеря</h2><div class="video-thumb"><div class="play-btn"><i class="bi bi-play-fill"></i></div></div><p class="t-p-d" style="font-size:11px; text-align:center;">Нажмите для просмотра · YouTube Lite</p></div></div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп</div> <div class="desktop-frame dsk" style="padding:20px; background:#0d1a2b;"><div style="padding:4px 0; color:#94a3b8; font-size:12px; font-style:italic;">↑ Структура аналогична мобильному, адаптирована в сетку</div></div> </div> </div> <div class="notes"> <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">VideoObject Schema · thumbnail meta</div></div> <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">YouTube lite (facade) — не грузим iframe до клика · экономит ~500KB</div></div> <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">Facade паттерн — клик запускает embed</div></div> </div> </div><div class="block-card"> <div class="block-header"> <div class="block-num tier2">14</div> <div><div class="block-name">Reviews — отзывы</div><div class="block-file">Reviews.astro</div></div> <div class="badges"><span class="badge badge-green">Social proof</span><span class="badge badge-blue">5.0 Яндекс</span></div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div> <div class="phone-frame"><div class="sec-warm"><div class="sec-label">ОТЗЫВЫ</div><h2 class="t-h2">Мамы уже записали</h2><div class="review-card"><div class="stars">★★★★★</div><p class="review-text">«Дочка не хотела уезжать. Сразу спросила — можно снова летом?»</p><div class="reviewer">Ольга М. · Яндекс Карты</div></div><div class="review-card"><div class="stars">★★★★★</div><p class="review-text">«Уехал мальчик — вернулся с Python-игрой. Показывал папе 40 минут.»</p><div class="reviewer">Светлана К.</div></div></div></div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп</div> <div class="desktop-frame dsk" style="padding:20px; background:#f7f5f2;"><div style="padding:4px 0; color:#94a3b8; font-size:12px; font-style:italic;">↑ Структура аналогична мобильному, адаптирована в сетку</div></div> </div> </div> <div class="notes"> <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">Review Schema · aggregateRating 5.0 · Яндекс Карты embed</div></div> <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">Карусель lazy · отзывы SSR</div></div> <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">«Мамы как я» — эмпатия · ссылка на Яндекс.Карты</div></div> </div> </div><div class="block-card"> <div class="block-header"> <div class="block-num ">15</div> <div><div class="block-name">FAQ — частые вопросы</div><div class="block-file">FAQ.astro</div></div> <div class="badges"><span class="badge badge-blue">SEO</span><span class="badge badge-gray">FAQ Schema</span></div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div> <div class="phone-frame"><div class="sec-blue"><div class="sec-label">FAQ</div><h2 class="t-h2">Часто спрашивают</h2><div class="faq-item"><div class="faq-q">Нужен ли ноутбук? <span style="color:#1b4fd8;">+</span></div><div class="faq-a">Нет. Всё оборудование предоставляем.</div></div><div class="faq-item"><div class="faq-q">Можно с нулевым опытом? <span style="color:#1b4fd8;">+</span></div></div><div class="faq-item"><div class="faq-q">Как забрать досрочно? <span style="color:#1b4fd8;">+</span></div></div></div></div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп</div> <div class="desktop-frame dsk" style="padding:20px; background:#f0f4ff;"><div style="padding:4px 0; color:#94a3b8; font-size:12px; font-style:italic;">↑ Структура аналогична мобильному, адаптирована в сетку</div></div> </div> </div> <div class="notes"> <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">FAQPage Schema · Q&amp;A в &amp;lt;details&amp;gt; · вопросы = long-tail ключи</div></div> <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">CSS only accordion · без JS · мгновенно</div></div> <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">Закрывает страхи: ноутбук / опыт / безопасность</div></div> </div> </div><div class="block-card"> <div class="block-header"> <div class="block-num tier2">16</div> <div><div class="block-name">Team — команда</div><div class="block-file">Team.astro</div></div> <div class="badges"><span class="badge badge-green">Доверие</span><span class="badge badge-gray">Person Schema</span></div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div> <div class="phone-frame"><div class="sec-light"><h2 class="t-h2">Наша команда</h2><div class="mentor-card"><div class="mentor-avatar"></div><div><div class="mentor-name">Дарья А.</div><div class="mentor-role">Основатель · 7 лет в детском IT</div></div></div><div class="mentor-card"><div class="mentor-avatar" style="background:linear-gradient(135deg,#1b4fd8,#10b981);"></div><div><div class="mentor-name">Антон К.</div><div class="mentor-role">Куратор Python · ex-Яндекс</div></div></div></div></div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп</div> <div class="desktop-frame dsk" style="padding:20px; background:#f7f8fb;"><div style="padding:4px 0; color:#94a3b8; font-size:12px; font-style:italic;">↑ Структура аналогична мобильному, адаптирована в сетку</div></div> </div> </div> <div class="notes"> <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">Person Schema · name + jobTitle + image</div></div> <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">Фото lazy · WebP</div></div> <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">Реальные люди с опытом · не «наши педагоги»</div></div> </div> </div><div class="block-card"> <div class="block-header"> <div class="block-num tier2">17</div> <div><div class="block-name">Mentors — преподаватели</div><div class="block-file">Mentors.astro</div></div> <div class="badges"><span class="badge badge-green">Экспертиза</span></div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div> <div class="phone-frame"><div class="sec-light"><h2 class="t-h2">Преподаватели-практики</h2><p class="t-p">Не вожатые — действующие разработчики и педагоги с опытом в детском обучении.</p><div class="mentor-card"><div class="mentor-avatar" style="background:linear-gradient(135deg,#6366f1,#ec7c00);"></div><div><div class="mentor-name">Михаил Т.</div><div class="mentor-role">AI / Machine Learning</div></div></div></div></div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп</div> <div class="desktop-frame dsk" style="padding:20px; background:#f7f8fb;"><div style="padding:4px 0; color:#94a3b8; font-size:12px; font-style:italic;">↑ Структура аналогична мобильному, адаптирована в сетку</div></div> </div> </div> <div class="notes"> <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">Person Schema для каждого ментора</div></div> <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">Carousel lazy на мобиле</div></div> <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">«Практики» — не академические преподаватели</div></div> </div> </div><div class="block-card"> <div class="block-header"> <div class="block-num ">18</div> <div><div class="block-name">Stay — проживание и условия</div><div class="block-file">Stay.astro</div></div> <div class="badges"><span class="badge badge-green">Доверие</span><span class="badge badge-gray">Безопасность</span></div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div> <div class="phone-frame"><div class="sec-warm"><h2 class="t-h2">Условия проживания</h2><div class="stay-item"><i class="bi bi-house-heart-fill stay-icon"></i><span class="stay-text">Комнаты по 2–4 человека · санаторий Изумруд</span></div><div class="stay-item"><i class="bi bi-cup-hot-fill stay-icon"></i><span class="stay-text">5-разовое питание включено</span></div><div class="stay-item"><i class="bi bi-water stay-icon"></i><span class="stay-text">Закрытый бассейн на территории</span></div><div class="stay-item"><i class="bi bi-shield-fill stay-icon"></i><span class="stay-text">Охрана 24/7 · медработник</span></div></div></div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп</div> <div class="desktop-frame dsk" style="padding:20px; background:#f7f5f2;"><div style="padding:4px 0; color:#94a3b8; font-size:12px; font-style:italic;">↑ Структура аналогична мобильному, адаптирована в сетку</div></div> </div> </div> <div class="notes"> <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">LodgingBusiness Schema · Amenity list</div></div> <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">Фото санатория lazy</div></div> <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">Список «что включено» — закрывает страх скрытых платежей</div></div> </div> </div><div class="block-card"> <div class="block-header"> <div class="block-num ">19</div> <div><div class="block-name">Contacts — контакты и карта</div><div class="block-file">Contacts.astro</div></div> <div class="badges"><span class="badge badge-blue">LocalSEO</span><span class="badge badge-gray">Maps</span></div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div> <div class="phone-frame"><div class="sec-light"><h2 class="t-h2">Как добраться</h2><div class="contacts-map"><i class="bi bi-geo-alt-fill" style="margin-right:6px;"></i>Наро-Фоминский р-н · 66 км от МКАД</div><div style="font-size:12px; color:#4b5263;"><div style="margin-bottom:4px;"><i class="bi bi-geo-alt" style="color:#ec7c00;"></i> Калужское шоссе</div><div style="margin-bottom:4px;"><i class="bi bi-car-front-fill" style="color:#ec7c00;"></i> Трансфер от метро по запросу</div><div><i class="bi bi-telephone-fill" style="color:#ec7c00;"></i> Позвонить или написать</div></div></div></div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп</div> <div class="desktop-frame dsk" style="padding:20px; background:#f7f8fb;"><div style="padding:4px 0; color:#94a3b8; font-size:12px; font-style:italic;">↑ Структура аналогична мобильному, адаптирована в сетку</div></div> </div> </div> <div class="notes"> <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">PostalAddress Schema · GeoCoordinates · LocalBusiness</div></div> <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">Яндекс.Карты iframe lazy · не загружаем до скролла</div></div> <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">Трансфер = снимает страх «как добраться»</div></div> </div> </div><div class="block-card"> <div class="block-header"> <div class="block-num ">20</div> <div><div class="block-name">SeoTextBlock — SEO-текст</div><div class="block-file">SeoTextBlock.astro</div></div> <div class="badges"><span class="badge badge-blue">SEO</span><span class="badge badge-gray">Internal links</span></div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div> <div class="phone-frame"><div class="sec-light"><h2 class="t-h2" style="font-size:15px;">Детский лагерь в Подмосковье 2026</h2><p class="t-p">АйДаКемп — IT-лагерь с проживанием, 66 км от МКАД...</p><div class="seo-link-row"><span class="seo-link">Детский лагерь</span><span class="seo-link">Лагерь в Подмосковье</span><span class="seo-link">IT-лагерь 2026</span><span class="seo-link">Налоговый вычет</span></div></div></div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп</div> <div class="desktop-frame dsk" style="padding:20px; background:#f7f8fb;"><div style="padding:4px 0; color:#94a3b8; font-size:12px; font-style:italic;">↑ Структура аналогична мобильному, адаптирована в сетку</div></div> </div> </div> <div class="notes"> <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">H2 + H3 с длинными ключами · внутренние ссылки hub-страниц · текст 600+ слов</div></div> <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">Статика · нет зависимостей</div></div> <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">Не должен выглядеть как SEO-вставка · подзаголовки + полезный текст</div></div> </div> </div><div class="block-card"> <div class="block-header"> <div class="block-num ">21</div> <div><div class="block-name">RelatedPages — похожие страницы</div><div class="block-file">RelatedPages.astro</div></div> <div class="badges"><span class="badge badge-blue">Internal links</span><span class="badge badge-gray">Hub</span></div> </div> <div class="previews"> <div class="preview-mobile"> <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div> <div class="phone-frame"><div class="sec-light"><h2 class="t-h2" style="font-size:14px;">Полезные разделы</h2><div style="display:flex; flex-wrap:wrap;"><span class="seo-link" style="margin:3px;">Лагерь для подростков</span><span class="seo-link" style="margin:3px;">Цены на смены</span><span class="seo-link" style="margin:3px;">Лагерь в Подмосковье</span><span class="seo-link" style="margin:3px;">Программирование</span></div></div></div> </div> <div class="preview-desktop"> <div class="preview-label"><i class="bi bi-display"></i> Десктоп</div> <div class="desktop-frame dsk" style="padding:20px; background:#f7f8fb;"><div style="padding:4px 0; color:#94a3b8; font-size:12px; font-style:italic;">↑ Структура аналогична мобильному, адаптирована в сетку</div></div> </div> </div> <div class="notes"> <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">Внутренние ссылки распределяют PageRank · анкоры = ключи страниц-назначений</div></div> <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">Статика · последний блок · нет lazy</div></div> <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">Навигация для тех кто ещё выбирает</div></div> </div> </div> </div><!-- /wrap --> <script>
+  // Day / Night theme toggle
+  function setTheme(mode) {
+    document.documentElement.setAttribute('data-theme', mode);
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+
+    // Swap component colors
+    const isDark = mode === 'dark';
+
+    // Phone frames
+    document.querySelectorAll('.phone-frame').forEach(el => {
+      el.style.background = isDark ? '#0f172a' : 'white';
+    });
+    document.querySelectorAll('.desktop-frame').forEach(el => {
+      if (!el.style.background || el.style.background === 'white') {
+        el.style.background = isDark ? '#0f172a' : 'white';
+      }
+    });
+
+    // Section backgrounds
+    document.querySelectorAll('.sec-light').forEach(el => {
+      el.style.background = isDark ? '#0f172a' : '#f7f8fb';
+    });
+    document.querySelectorAll('.sec-blue').forEach(el => {
+      el.style.background = isDark ? '#0f1729' : '#f0f4ff';
+    });
+    document.querySelectorAll('.sec-warm').forEach(el => {
+      el.style.background = isDark ? '#1a1410' : '#f7f5f2';
+    });
+
+    // Text colors
+    document.querySelectorAll('.t-h2').forEach(el => {
+      el.style.color = isDark ? '#f1f5f9' : '#0f172a';
+    });
+    document.querySelectorAll('.t-p').forEach(el => {
+      el.style.color = isDark ? '#94a3b8' : '#4b5263';
+    });
+
+    // Cards
+    document.querySelectorAll('.card-w, .review-card, .economy-card, .faq-item, .mentor-card, .shift-card-glass, .softstart-card, .mom-story').forEach(el => {
+      el.style.background = isDark ? '#1e293b' : '';
+      el.style.borderColor = isDark ? '#334155' : '';
+    });
+    document.querySelectorAll('.mentor-name, .shift-name, .faq-q, .review-card').forEach(el => {
+      el.style.color = isDark ? '#f1f5f9' : '';
+    });
+    document.querySelectorAll('.occ-label').forEach(el => {
+      el.style.color = isDark ? '#e2e8f0' : '#1e2430';
+    });
+    document.querySelectorAll('.occupancy-bar').forEach(el => {
+      el.style.background = isDark ? '#1e293b' : '#eff6ff';
+    });
+    document.querySelectorAll('.seo-link').forEach(el => {
+      el.style.borderColor = isDark ? '#334155' : '#e5e7eb';
+      el.style.color = isDark ? '#94a3b8' : '#374151';
+    });
+    document.querySelectorAll('.occ-bar').forEach(el => {
+      el.style.background = isDark ? '#1e3a5f' : '#dbeafe';
+    });
+  }
+
+  // Init dark
+  setTheme('dark');
+</script> </body> </html>
