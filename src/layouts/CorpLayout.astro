@@ -17,7 +17,7 @@ const {
 ---
 
 <!doctype html>
-<html lang="ru" data-theme="dark">
+<html lang="ru" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -31,7 +31,7 @@ const {
     <!-- Bootstrap Icons (inline) -->
     <style set:html={iconsCSS} />
 
-    <style is:global>
+    <style>
 /* ── DESIGN TOKENS — DARK (default) ─────────────────────────────────── */
 :root {
   --bg:      #0C0E11;
@@ -114,50 +114,6 @@ const {
   --nav-bg:  rgba(244,245,248,0.92);
 }
 
-/* ── CORP-* ALIASES (для дочерних компонентов) ───────────────────────── */
-:root {
-  --corp-txt:   var(--txt);
-  --corp-txt2:  var(--txt2);
-  --corp-or:    var(--or);
-  --corp-or2:   var(--or2);
-  --corp-bdr:   var(--bdr);
-  --corp-bg2:   var(--bg2);
-  --corp-bg3:   var(--bg3);
-  --corp-green: var(--green);
-}
-
-/* ── CORP UTILITY CLASSES ────────────────────────────────────────────── */
-.corp-section {
-  padding: 88px 0;
-  border-top: 1px solid var(--bdr);
-  background: var(--bg);
-}
-.corp-section-alt {
-  background: var(--bg2);
-}
-.corp-wrap {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 28px;
-}
-.corp-kicker {
-  font-size: 12px; font-weight: 700; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--or2);
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 18px;
-}
-.corp-kicker::before {
-  content: ''; display: inline-block;
-  width: 28px; height: 2px;
-  background: var(--or2); opacity: 0.5; flex-shrink: 0;
-}
-.corp-h2 {
-  font-family: 'Unbounded', sans-serif;
-  font-size: clamp(28px, 4vw, 48px);
-  font-weight: 900; line-height: 1.05;
-  letter-spacing: -0.025em; color: var(--txt);
-}
-
 /* ── BASE RESET ──────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
@@ -197,6 +153,13 @@ nav {
 .nav-right { display: flex; align-items: center; gap: var(--gap-md); }
 .nav-tel { font-size: var(--fs-base); font-weight: 700; color: var(--txt); transition: color 0.2s; }
 .nav-tel:hover { color: var(--or2); }
+.theme-toggle {
+  width: 38px; height: 38px; border-radius: var(--r-sm);
+  background: var(--bg3); border: 1px solid var(--bdr2);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s; color: var(--txt);
+}
+.theme-toggle:hover { background: var(--bg4); }
 
 /* ── HERO ────────────────────────────────────────────────────────────── */
 .hero {
@@ -384,9 +347,9 @@ section { padding: 88px 0; border-top: 1px solid var(--bdr); background: var(--b
 section.alt { background: var(--bg2); }
 .s-kicker {
   font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--or2); display: flex; align-items: center; gap: var(--gap-sm); margin-bottom: 18px;
+  color: var(--or); display: flex; align-items: center; gap: var(--gap-sm); margin-bottom: 18px;
 }
-.s-kicker::before { content: ''; display: inline-block; width: 28px; height: 2px; background: var(--or2); opacity: 0.5; flex-shrink: 0; }
+.s-kicker::after { content: ''; width: 40px; height: 2px; background: var(--or); opacity: 0.5; }
 h2 {
   font-family: 'Unbounded', sans-serif; font-size: clamp(28px, 4vw, 48px);
   font-weight: 900; line-height: 1.05; letter-spacing: -0.025em; color: var(--txt); margin-bottom: var(--gap-md);
@@ -624,9 +587,31 @@ footer { border-top: 1px solid var(--bdr); background: var(--bg); padding: 28px 
     >↑</button>
 
     <script>
-      // ── Theme: restore from localStorage (default: dark) ──────────
-      // Corp landing — всегда тёмная тема (localStorage не влияет)
-      document.documentElement.setAttribute('data-theme', 'dark');
+      // ── Theme: restore from localStorage ──────────────────────────
+      const saved = localStorage.getItem('corp-theme');
+      const html = document.documentElement;
+      if (saved === 'dark') html.setAttribute('data-theme', 'dark');
+      else html.setAttribute('data-theme', 'light');
+
+      // ── Theme toggle ───────────────────────────────────────────────
+      const themeBtn = document.getElementById('themeBtn') as HTMLElement | null;
+      const icoMoon = document.getElementById('ico-moon') as HTMLElement | null;
+      const icoSun = document.getElementById('ico-sun') as HTMLElement | null;
+
+      function syncIcons(theme: string) {
+        if (icoMoon) icoMoon.style.display = theme === 'dark' ? 'none' : 'block';
+        if (icoSun)  icoSun.style.display  = theme === 'dark' ? 'block' : 'none';
+      }
+      syncIcons(html.getAttribute('data-theme') || 'light');
+
+      if (themeBtn) {
+        themeBtn.addEventListener('click', () => {
+          const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          html.setAttribute('data-theme', next);
+          localStorage.setItem('corp-theme', next);
+          syncIcons(next);
+        });
+      }
 
       // ── Matrix rain ────────────────────────────────────────────────
       (function() {

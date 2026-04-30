@@ -1,0 +1,690 @@
+---
+import '../../styles/global.css';
+import Base from '../../layouts/Base.astro';
+import { STAT_YEARS, STAT_KIDS, STAT_RATING, CAMP_PRICE_FROM } from '../../data/contacts';
+
+const BOT_URL = 'https://t.me/AidacampBot';
+
+const pills = [
+  { q: 'Сколько стоит?',   autoq: 'Сколько стоит лагерь?',            icon: 'coin' },
+  { q: 'Телефон заберут?', autoq: 'Телефон заберут у ребёнка?',        icon: 'phone-x' },
+  { q: 'Как кормят?',      autoq: 'Как кормят в лагере?',              icon: 'cup-hot' },
+  { q: 'Без опыта можно?', autoq: 'Можно без опыта программирования?', icon: 'controller' },
+];
+---
+
+<Base title="[Демо] Hero V5/V2/V3 — АйДаКемп" noindex>
+
+<!-- ── Навигация между вариантами ── -->
+<div class="fixed top-0 inset-x-0 z-[200] flex items-center justify-center gap-1.5 bg-[#0a0a0f] border-b border-white/8 py-2 text-[11px]">
+  <a href="#v5" class="rounded-full bg-white/8 border border-white/10 px-3 py-1 text-white/60 hover:text-white hover:bg-white/14 transition-colors">V5 — Комбо</a>
+  <a href="#v2" class="rounded-full bg-white/8 border border-white/10 px-3 py-1 text-white/60 hover:text-white hover:bg-white/14 transition-colors">V2 — Glass</a>
+  <a href="#v3" class="rounded-full bg-white/8 border border-white/10 px-3 py-1 text-white/60 hover:text-white hover:bg-white/14 transition-colors">V3 — Liquid</a>
+  <div class="w-px h-4 bg-white/15 mx-1"></div>
+  <a href="/" class="text-white/30 hover:text-white/60 transition-colors px-2">← сайт</a>
+</div>
+<div class="h-9"></div>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════════════════
+     V5 — КОМБО: фото + glass nav + orange только акцентами
+     ═══════════════════════════════════════════════════════════ -->
+<div id="v5">
+
+  <!-- DESKTOP V5 -->
+  <section class="hidden md:flex relative min-h-screen bg-[#060a12] flex-col overflow-hidden">
+    <div class="absolute inset-0">
+      <img src="/images/hero-desktop.avif" class="w-full h-full object-cover object-center" alt="" aria-hidden="true"/>
+      <div class="absolute inset-0" style="background:linear-gradient(105deg,rgba(6,10,18,0.93)0%,rgba(6,10,18,0.76)45%,rgba(6,10,18,0.22)75%,rgba(6,10,18,0.06)100%)"></div>
+      <div class="absolute inset-0" style="background:linear-gradient(180deg,transparent 50%,rgba(6,10,18,0.65)85%,#060a12 100%)"></div>
+      <!-- Тонкий orange glow снизу справа -->
+      <div class="absolute bottom-[-15%] right-[0%] w-[480px] h-[480px] rounded-full blur-[140px] opacity-18 pointer-events-none" style="background:radial-gradient(circle,#f97316 0%,transparent 65%)"></div>
+    </div>
+
+    <!-- Glass nav -->
+    <header class="relative z-20 flex items-center justify-between px-8 pt-9 max-w-[1312px] mx-auto w-full">
+      <a href="/" class="flex items-center gap-2.5 shrink-0">
+        <div class="w-9 h-9 rounded-[10px] bg-orange-500 flex items-center justify-center shadow-[0_0_18px_rgba(249,115,22,0.45)]">
+          <i class="bi bi-cpu-fill text-white text-[16px]" aria-hidden="true"></i>
+        </div>
+        <span class="text-white font-bold text-[16px] tracking-[-0.01em]">АйДаКемп</span>
+      </a>
+      <nav class="flex items-center gap-0.5 px-1.5 py-1.5" style="background:rgba(255,255,255,0.07);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:1px solid rgba(255,255,255,0.14);border-radius:100px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.11),0 8px 28px rgba(0,0,0,0.28)">
+        {['О лагере','Смены','Программа','Команда','Отзывы'].map(l=>(
+          <a href="#" class="px-4 py-1.5 text-[13px] font-medium text-white/60 hover:text-white rounded-full hover:bg-white/10 transition-all">{l}</a>
+        ))}
+      </nav>
+      <a href="#shifts" class="shrink-0 flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-semibold text-white/85 transition-all hover:text-white hover:scale-105" style="background:rgba(255,255,255,0.09);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.16);box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 4px 16px rgba(249,115,22,0.08)">
+        <i class="bi bi-calendar-check text-orange-400 text-[12px]" aria-hidden="true"></i>
+        Выбрать смену
+      </a>
+    </header>
+
+    <!-- Content -->
+    <div class="relative z-10 flex-1 flex items-center px-8 max-w-[1312px] mx-auto w-full pb-14">
+      <div class="max-w-[580px]">
+        <a href="#reviews" class="mb-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-[12px] text-white/50 hover:border-white/20 hover:text-white/75 transition-colors" style="backdrop-filter:blur(10px)">
+          <span class="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0"></span>
+          ТОП-4 IT&#8209;лагерей МО · vc.ru
+          <i class="bi bi-chevron-right text-[9px] opacity-40" aria-hidden="true"></i>
+        </a>
+        <h1 class="text-[58px] xl:text-[66px] font-bold leading-[1.04] tracking-[-0.04em] text-white mb-5">
+          Летний лагерь<br/>в&nbsp;Подмосковье,<br/><span class="text-orange-400">7–15</span>&nbsp;лет
+        </h1>
+        <p class="text-[17px] text-white/55 leading-[1.65] mb-9 max-w-[490px]">
+          Ребёнок уедет с готовым AI&#8209;проектом.<br/>Программирование, бассейн, настоящие друзья.
+        </p>
+        <div class="flex items-center gap-3 flex-wrap">
+          <a href="#shifts" class="flex items-center gap-2 rounded-full px-8 py-3.5 text-[15px] font-bold text-white transition-all hover:scale-[1.03]" style="background:rgba(255,255,255,0.11);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.20);box-shadow:0 0 0 1px rgba(249,115,22,0.12),0 8px 28px rgba(249,115,22,0.10),inset 0 1px 0 rgba(255,255,255,0.16)">
+            <i class="bi bi-calendar-check text-orange-400 text-[14px]" aria-hidden="true"></i>
+            Выбрать смену →
+          </a>
+          <a href="https://t.me/AidacampBot" target="_blank" rel="noopener" class="flex items-center gap-2 rounded-full px-7 py-3.5 text-[15px] font-medium text-white/60 hover:text-white/90 transition-all" style="border:1px solid rgba(255,255,255,0.10);backdrop-filter:blur(10px)">
+            <i class="bi bi-telegram text-[15px]" aria-hidden="true"></i>
+            Спросить бота
+          </a>
+        </div>
+        <div class="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2">
+          <div class="flex items-baseline gap-1.5"><span class="text-[19px] font-bold text-amber-300">★ {STAT_RATING}</span><span class="text-[11px] text-white/35">Яндекс Карты</span></div>
+          <div class="w-px h-3.5 bg-white/15"></div>
+          <div class="flex items-baseline gap-1.5"><span class="text-[19px] font-bold text-white">{STAT_YEARS}</span><span class="text-[11px] text-white/35">лет работаем</span></div>
+          <div class="w-px h-3.5 bg-white/15"></div>
+          <div class="flex items-baseline gap-1.5"><span class="text-[19px] font-bold text-white">{STAT_KIDS}</span><span class="text-[11px] text-white/35">детей</span></div>
+          <div class="w-px h-3.5 bg-white/15"></div>
+          <div class="flex items-baseline gap-1.5"><span class="text-[19px] font-bold text-white">от {CAMP_PRICE_FROM}</span><span class="text-[11px] text-white/35">за 7 дней</span></div>
+        </div>
+      </div>
+
+      <!-- Right glass card -->
+      <div class="ml-auto shrink-0 w-[300px] xl:w-[330px] flex flex-col gap-2.5">
+        <div class="rounded-[22px] p-6" style="background:rgba(255,255,255,0.07);backdrop-filter:blur(32px) saturate(180%);-webkit-backdrop-filter:blur(32px) saturate(180%);border:1px solid rgba(255,255,255,0.13);box-shadow:inset 0 1px 0 rgba(255,255,255,0.16),0 24px 60px rgba(0,0,0,0.38)">
+          <div class="flex items-center gap-3 mb-5">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.25)">
+              <i class="bi bi-code-slash text-orange-400 text-[17px]" aria-hidden="true"></i>
+            </div>
+            <div>
+              <div class="text-[14px] font-bold text-white">Python · AI · Minecraft</div>
+              <div class="text-[11px] text-white/40">14 дней с проектом</div>
+            </div>
+          </div>
+          {[
+            {d:'30 мая – 13 июня',tag:'Старт'},
+            {d:'14 – 28 июня',tag:'Популярная'},
+            {d:'29 июня – 13 июля',tag:'Последние места'},
+          ].map((s,i)=>(
+            <div class="flex items-center justify-between py-2.5 border-b border-white/8 last:border-0">
+              <span class="text-[12px] text-white/65">{s.d}</span>
+              <span class="text-[10px] font-semibold rounded-full px-2 py-0.5" style={i===2?'background:rgba(249,115,22,0.15);color:rgba(253,186,116,0.9);border:1px solid rgba(249,115,22,0.22)':'background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.10)'}>{s.tag}</span>
+            </div>
+          ))}
+          <a href="#shifts" class="mt-5 flex w-full items-center justify-center gap-1.5 rounded-full py-2.5 text-[13px] font-semibold text-white/80 hover:text-white transition-all hover:scale-[1.02]" style="background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.16);box-shadow:inset 0 1px 0 rgba(255,255,255,0.10)">
+            <i class="bi bi-calendar-check text-orange-400 text-[11px]" aria-hidden="true"></i>
+            Смотреть все смены →
+          </a>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          {[
+            {icon:'patch-check-fill',label:'Лицензия',c:'#60a5fa'},
+            {icon:'heart-pulse-fill',label:'Медсестра',c:'#f87171'},
+            {icon:'shield-check',label:'Страховка',c:'#4ade80'},
+          ].map(b=>(
+            <div class="rounded-[14px] p-3 text-center" style="background:rgba(255,255,255,0.06);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.09);box-shadow:inset 0 1px 0 rgba(255,255,255,0.07)">
+              <i class={`bi bi-${b.icon} text-[17px] block mb-1`} style={`color:${b.c}`} aria-hidden="true"></i>
+              <div class="text-[10px] text-white/50">{b.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MOBILE V5 -->
+  <section class="md:hidden relative bg-[#060a12] min-h-[95svh] flex flex-col overflow-hidden">
+    <div class="relative" style="min-height:58vw;flex:none">
+      <img src="/images/hero-bot-kid.jpg" class="absolute inset-0 w-full h-full object-cover object-[center_18%]" alt="" aria-hidden="true"/>
+      <div class="absolute inset-0" style="background:linear-gradient(92deg,rgba(6,10,18,0.68)0%,rgba(6,10,18,0.38)55%,rgba(6,10,18,0.08)100%)"></div>
+      <div class="absolute inset-0" style="background:linear-gradient(180deg,transparent 40%,rgba(6,10,18,0.55)72%,#060a12 100%)"></div>
+
+      <!-- Nav -->
+      <div class="absolute top-4 inset-x-4 flex items-center justify-between">
+        <a href="/" class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-[9px] bg-orange-500 flex items-center justify-center shadow-[0_0_14px_rgba(249,115,22,0.45)]">
+            <i class="bi bi-cpu-fill text-white text-[13px]" aria-hidden="true"></i>
+          </div>
+          <span class="text-white font-bold text-[15px]">АйДаКемп</span>
+        </a>
+        <a href="tel:+74952151515" class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold text-white" style="background:rgba(255,255,255,0.10);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.14);box-shadow:inset 0 1px 0 rgba(255,255,255,0.10)">
+          <i class="bi bi-telephone-fill text-[11px]" aria-hidden="true"></i>
+          Звонок
+        </a>
+      </div>
+
+      <!-- H1 -->
+      <div class="absolute bottom-5 left-5 right-5">
+        <h1 class="text-[36px] font-bold leading-[1.08] tracking-[-0.03em] text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.5)]">
+          Летний лагерь<br/>в&nbsp;Подмосковье,&nbsp;<span class="whitespace-nowrap">7–15</span>
+        </h1>
+        <p class="mt-2 text-[15px] text-white/80">Ребёнок уедет с AI&#8209;проектом.</p>
+      </div>
+    </div>
+
+    <!-- Bottom -->
+    <div class="flex-1 px-4 pt-5 pb-8 bg-[#060a12]">
+
+      <!-- Primary CTA — glass с orange-подсветкой -->
+      <a href="#shifts" class="flex w-full items-center justify-center gap-2 rounded-full py-4 text-[16px] font-bold text-white transition-all active:scale-[0.98]" style="background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.28);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08),0 8px 24px rgba(249,115,22,0.12)">
+        <i class="bi bi-calendar-check text-orange-400 text-[15px]" aria-hidden="true"></i>
+        Выбрать смену
+      </a>
+
+      <!-- Secondary CTAs -->
+      <div class="mt-2 flex gap-2">
+        <a href="https://t.me/AidacampBot" target="_blank" rel="noopener" class="flex-1 flex items-center justify-center gap-1.5 rounded-full py-3 text-[14px] font-medium text-white/65 active:bg-white/8 transition-colors" style="border:1px solid rgba(255,255,255,0.11);backdrop-filter:blur(10px)">
+          <i class="bi bi-telegram text-[13px]" aria-hidden="true"></i>
+          Спросить бота
+        </a>
+        <a href="/stati/ii-zamenit-programmista" class="flex items-center justify-center gap-1.5 rounded-full px-4 py-3 text-[11px] text-white/45" style="border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(10px)">
+          <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white" style="background:rgba(249,115,22,0.6)">?</span>
+          ИИ заменит?
+        </a>
+      </div>
+
+      <!-- Stats 2×2 -->
+      <div class="mt-4 grid grid-cols-2 gap-2">
+        {[
+          {n:'★ '+STAT_RATING,l:'Яндекс Карты',c:'text-amber-300'},
+          {n:STAT_KIDS,l:'детей отдохнули',c:'text-white'},
+          {n:STAT_YEARS+' лет',l:'работаем',c:'text-white'},
+          {n:'ТОП-4',l:'IT-лагерей МО',c:'text-white'},
+        ].map(s=>(
+          <div class="rounded-[14px] px-4 py-3 text-center" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08)">
+            <div class={`text-[21px] font-bold leading-none ${s.c}`}>{s.n}</div>
+            <div class="mt-1 text-[11px] text-white/38 leading-tight">{s.l}</div>
+          </div>
+        ))}
+      </div>
+
+      <!-- Trust -->
+      <div class="mt-3 flex gap-2">
+        {[
+          {icon:'patch-check-fill',label:'Лицензия'},
+          {icon:'heart-pulse-fill',label:'Медсестра 24/7'},
+          {icon:'shield-check',label:'Страховка'},
+        ].map(b=>(
+          <a href="/stati/dokumenty-licenziya-strahovka/" class="flex-1 flex flex-col items-center gap-0.5 rounded-full py-2.5 text-[11px] font-medium text-blue-200 transition-colors" style="background:rgba(30,64,175,0.30);border:1px solid rgba(96,165,250,0.35);backdrop-filter:blur(10px)">
+            <i class={`bi bi-${b.icon} text-[13px]`} aria-hidden="true"></i>
+            <span class="leading-tight text-center">{b.label}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+</div><!-- /v5 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     V2 — GLASSMORPHISM в палитре АйДаКемп
+     Тёмно-синий фон + orange accent точечно
+     ═══════════════════════════════════════════════════════════ -->
+<div id="v2">
+
+  <!-- DESKTOP V2 -->
+  <section class="hidden md:flex relative min-h-screen flex-col overflow-hidden" style="background:#060a12">
+    <!-- Градиент — наш тёмно-синий с тонким orange glow, без радуги -->
+    <div class="absolute inset-0" style="background:linear-gradient(135deg,#060a12 0%,#0d1a2b 50%,#060e1a 100%)"></div>
+    <div class="absolute top-[-10%] right-[5%] w-[560px] h-[560px] rounded-full blur-[120px] opacity-22" style="background:radial-gradient(circle,#f97316 0%,transparent 60%)"></div>
+    <div class="absolute bottom-[-15%] left-[-5%] w-[450px] h-[450px] rounded-full blur-[140px] opacity-14" style="background:radial-gradient(circle,#0d1a2b 0%,#1e3a5f 50%,transparent 70%)"></div>
+    <!-- Photo overlay — прозрачное -->
+    <div class="absolute inset-0 opacity-20">
+      <img src="/images/hero-desktop.avif" class="w-full h-full object-cover" alt="" aria-hidden="true"/>
+      <div class="absolute inset-0" style="background:linear-gradient(135deg,#060a12 0%,rgba(6,10,18,0.5)60%,rgba(6,10,18,0.8)100%)"></div>
+    </div>
+
+    <!-- Glass nav pill -->
+    <header class="relative z-20 flex items-center justify-between px-8 pt-9 max-w-[1312px] mx-auto w-full">
+      <a href="/" class="flex items-center gap-2.5 shrink-0">
+        <div class="w-9 h-9 rounded-[10px] bg-orange-500 flex items-center justify-center shadow-[0_0_18px_rgba(249,115,22,0.45)]">
+          <i class="bi bi-cpu-fill text-white text-[16px]" aria-hidden="true"></i>
+        </div>
+        <span class="text-white font-bold text-[16px]">АйДаКемп</span>
+      </a>
+      <nav class="flex items-center gap-0.5 px-1.5 py-1.5" style="background:rgba(255,255,255,0.06);backdrop-filter:blur(28px) saturate(160%);-webkit-backdrop-filter:blur(28px) saturate(160%);border:1px solid rgba(255,255,255,0.12);border-radius:100px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.10),0 8px 28px rgba(0,0,0,0.32)">
+        {['О лагере','Смены','Программа','Команда','Отзывы'].map(l=>(
+          <a href="#" class="px-4 py-1.5 text-[13px] font-medium text-white/58 hover:text-white rounded-full hover:bg-white/9 transition-all">{l}</a>
+        ))}
+      </nav>
+      <a href="#shifts" class="shrink-0 flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-semibold text-white/80 hover:text-white transition-all hover:scale-105" style="background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.25);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08),0 4px 16px rgba(249,115,22,0.12)">
+        <i class="bi bi-calendar-check text-orange-400 text-[12px]" aria-hidden="true"></i>
+        Выбрать смену
+      </a>
+    </header>
+
+    <!-- Content -->
+    <div class="relative z-10 flex-1 flex items-center gap-10 px-8 max-w-[1312px] mx-auto w-full pb-12">
+      <!-- Left -->
+      <div class="flex-1 max-w-[560px]">
+        <div class="mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[12px] text-white/55" style="background:rgba(255,255,255,0.06);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.10)">
+          <span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
+          Лето 2026 · Подмосковье · от {CAMP_PRICE_FROM}
+        </div>
+        <h1 class="text-[54px] xl:text-[62px] font-bold leading-[1.05] tracking-[-0.04em] text-white mb-5">
+          Летний лагерь<br/>в Подмосковье,<br/><span class="text-orange-400">7–15 лет</span>
+        </h1>
+        <p class="text-[17px] text-white/55 leading-[1.65] mb-9">
+          Ребёнок уедет с AI&#8209;проектом. Программирование, бассейн, настоящие друзья.
+        </p>
+        <div class="flex gap-3">
+          <a href="#shifts" class="flex items-center gap-2 rounded-full px-8 py-3.5 text-[15px] font-bold text-white transition-all hover:scale-[1.03]" style="background:rgba(249,115,22,0.14);backdrop-filter:blur(20px);border:1px solid rgba(249,115,22,0.28);box-shadow:0 8px 28px rgba(249,115,22,0.14),inset 0 1px 0 rgba(255,255,255,0.10)">
+            <i class="bi bi-calendar-check text-orange-300 text-[14px]" aria-hidden="true"></i>
+            Выбрать смену →
+          </a>
+          <a href="https://t.me/AidacampBot" target="_blank" rel="noopener" class="flex items-center gap-2 rounded-full px-7 py-3.5 text-[15px] font-medium text-white/60 hover:text-white/90 transition-all" style="background:rgba(255,255,255,0.06);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.11)">
+            <i class="bi bi-telegram text-[15px]" aria-hidden="true"></i>
+            Спросить бота
+          </a>
+        </div>
+        <div class="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2">
+          {[
+            {n:'★ '+STAT_RATING,l:'Яндекс Карты',c:'text-amber-300'},
+            {n:STAT_YEARS+' лет',l:'работаем',c:'text-white'},
+            {n:STAT_KIDS,l:'детей',c:'text-white'},
+          ].map((s,i)=>(
+            <>
+              {i>0&&<div class="w-px h-3.5 bg-white/14"></div>}
+              <div class="flex items-baseline gap-1.5">
+                <span class={`text-[19px] font-bold ${s.c}`}>{s.n}</span>
+                <span class="text-[11px] text-white/35">{s.l}</span>
+              </div>
+            </>
+          ))}
+        </div>
+      </div>
+
+      <!-- Right: glass cards -->
+      <div class="shrink-0 w-[310px] xl:w-[340px] flex flex-col gap-3">
+        <!-- Main glass card -->
+        <div class="rounded-[22px] p-6" style="background:rgba(255,255,255,0.07);backdrop-filter:blur(32px) saturate(160%);-webkit-backdrop-filter:blur(32px) saturate(160%);border:1px solid rgba(255,255,255,0.12);box-shadow:inset 0 1px 0 rgba(255,255,255,0.14),0 20px 56px rgba(0,0,0,0.35)">
+          <div class="flex items-center gap-3 mb-5">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(249,115,22,0.14);border:1px solid rgba(249,115,22,0.22)">
+              <i class="bi bi-code-slash text-orange-400 text-[17px]" aria-hidden="true"></i>
+            </div>
+            <div>
+              <div class="text-[14px] font-bold text-white">Python · AI · Minecraft</div>
+              <div class="text-[11px] text-white/40">14 дней с проектом</div>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            {[
+              {n:'★ '+STAT_RATING,l:'рейтинг',c:'text-amber-300'},
+              {n:STAT_KIDS,l:'детей',c:'text-white'},
+              {n:STAT_YEARS+' лет',l:'опыта',c:'text-white'},
+            ].map(s=>(
+              <div class="rounded-xl py-3 text-center" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09)">
+                <div class={`text-[15px] font-bold ${s.c}`}>{s.n}</div>
+                <div class="text-[10px] text-white/40 mt-0.5">{s.l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <!-- Mini trust -->
+        <div class="grid grid-cols-3 gap-2">
+          {[
+            {icon:'patch-check-fill',label:'Лицензия',c:'#60a5fa'},
+            {icon:'heart-pulse-fill',label:'Медсестра',c:'#f87171'},
+            {icon:'shield-check',label:'Страховка',c:'#4ade80'},
+          ].map(b=>(
+            <div class="rounded-[14px] p-3 text-center" style="background:rgba(255,255,255,0.05);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.09);box-shadow:inset 0 1px 0 rgba(255,255,255,0.07)">
+              <i class={`bi bi-${b.icon} text-[17px] block mb-1`} style={`color:${b.c}`} aria-hidden="true"></i>
+              <div class="text-[10px] text-white/48">{b.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MOBILE V2 -->
+  <section class="md:hidden relative min-h-[95svh] flex flex-col overflow-hidden" style="background:#060a12">
+    <div class="absolute inset-0" style="background:linear-gradient(135deg,#060a12 0%,#0d1a2b 60%,#060a12 100%)"></div>
+    <div class="absolute top-[-5%] right-[-5%] w-[300px] h-[300px] rounded-full blur-[90px] opacity-25" style="background:radial-gradient(circle,#f97316 0%,transparent 65%)"></div>
+
+    <!-- Photo top half -->
+    <div class="relative" style="min-height:55vw;flex:none">
+      <img src="/images/hero-bot-kid.jpg" class="absolute inset-0 w-full h-full object-cover object-[center_18%] opacity-35" alt="" aria-hidden="true"/>
+      <div class="absolute inset-0" style="background:linear-gradient(180deg,rgba(6,10,18,0.3)0%,rgba(13,26,43,0.5)60%,#060a12 100%)"></div>
+
+      <div class="absolute top-4 inset-x-4 flex items-center justify-between">
+        <a href="/" class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-[9px] bg-orange-500 flex items-center justify-center shadow-[0_0_14px_rgba(249,115,22,0.45)]">
+            <i class="bi bi-cpu-fill text-white text-[13px]" aria-hidden="true"></i>
+          </div>
+          <span class="text-white font-bold text-[15px]">АйДаКемп</span>
+        </a>
+        <a href="tel:+74952151515" class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold text-white" style="background:rgba(255,255,255,0.09);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.13)">
+          <i class="bi bi-telephone-fill text-[11px]" aria-hidden="true"></i>
+          Звонок
+        </a>
+      </div>
+
+      <div class="absolute bottom-5 left-5 right-5">
+        <h1 class="text-[34px] font-bold leading-[1.08] tracking-[-0.03em] text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.6)]">
+          Летний лагерь<br/>в&nbsp;Подмосковье,&nbsp;<span class="whitespace-nowrap text-orange-400">7–15</span>
+        </h1>
+        <p class="mt-2 text-[14px] text-white/75">Ребёнок уедет с AI&#8209;проектом.</p>
+      </div>
+    </div>
+
+    <!-- Bottom — glass cards -->
+    <div class="flex-1 px-4 pt-4 pb-8">
+      <!-- Glass info card -->
+      <div class="rounded-[18px] p-4 mb-3" style="background:rgba(255,255,255,0.07);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.12);box-shadow:inset 0 1px 0 rgba(255,255,255,0.12)">
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          {[
+            {n:'★ '+STAT_RATING,l:'рейтинг',c:'text-amber-300'},
+            {n:STAT_KIDS,l:'детей',c:'text-white'},
+            {n:STAT_YEARS+' лет',l:'опыта',c:'text-white'},
+          ].map(s=>(
+            <div class="rounded-xl py-2.5 text-center" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08)">
+              <div class={`text-[15px] font-bold ${s.c}`}>{s.n}</div>
+              <div class="text-[10px] text-white/38 mt-0.5">{s.l}</div>
+            </div>
+          ))}
+        </div>
+        <a href="#shifts" class="flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-[15px] font-bold text-white" style="background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.28);box-shadow:0 4px 16px rgba(249,115,22,0.12),inset 0 1px 0 rgba(255,255,255,0.08)">
+          <i class="bi bi-calendar-check text-orange-400 text-[14px]" aria-hidden="true"></i>
+          Выбрать смену
+        </a>
+      </div>
+      <a href="https://t.me/AidacampBot" target="_blank" rel="noopener" class="flex w-full items-center justify-center gap-2 rounded-full py-3 text-[14px] text-white/60 mb-3" style="border:1px solid rgba(255,255,255,0.10);backdrop-filter:blur(10px)">
+        <i class="bi bi-telegram text-[13px]" aria-hidden="true"></i>
+        Спросить бота
+      </a>
+      <div class="flex gap-2">
+        {[
+          {icon:'patch-check-fill',label:'Лицензия'},
+          {icon:'heart-pulse-fill',label:'Медсестра 24/7'},
+          {icon:'shield-check',label:'Страховка'},
+        ].map(b=>(
+          <a href="/stati/dokumenty-licenziya-strahovka/" class="flex-1 flex flex-col items-center gap-0.5 rounded-full py-2.5 text-[11px] font-medium text-blue-200" style="background:rgba(30,64,175,0.28);border:1px solid rgba(96,165,250,0.32);backdrop-filter:blur(10px)">
+            <i class={`bi bi-${b.icon} text-[12px]`} aria-hidden="true"></i>
+            <span class="leading-tight text-center">{b.label}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+</div><!-- /v2 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     V3 — СИНИЕ ПЕРЕЛИВЫ + компоновка hero-bot-v2
+     Красивый gradient bg (blue/violet/cyan) + наша структура
+     ═══════════════════════════════════════════════════════════ -->
+<div id="v3">
+
+  <!-- DESKTOP V3 -->
+  <section class="hidden md:flex relative min-h-screen flex-col overflow-hidden" style="background:#04080f">
+    <!-- Многоцветные gradient glows — синие переливы -->
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="absolute inset-0" style="background:radial-gradient(ellipse 80% 70% at 72% 12%,rgba(59,130,246,0.32) 0%,transparent 60%)"></div>
+      <div class="absolute inset-0" style="background:radial-gradient(ellipse 60% 55% at 12% 75%,rgba(139,92,246,0.24) 0%,transparent 58%)"></div>
+      <div class="absolute inset-0" style="background:radial-gradient(ellipse 45% 40% at 88% 82%,rgba(6,182,212,0.18) 0%,transparent 52%)"></div>
+      <div class="absolute inset-0" style="background:radial-gradient(ellipse 65% 35% at 50% 115%,rgba(249,115,22,0.16) 0%,transparent 55%)"></div>
+    </div>
+
+    <!-- Nav — floating glass pill -->
+    <header class="relative z-20 flex items-center justify-between px-8 pt-9 max-w-[1312px] mx-auto w-full">
+      <a href="/" class="flex items-center gap-2.5 shrink-0">
+        <div class="w-9 h-9 rounded-[10px] bg-orange-500 flex items-center justify-center shadow-[0_0_18px_rgba(249,115,22,0.45)]">
+          <i class="bi bi-cpu text-white text-[16px]" aria-hidden="true"></i>
+        </div>
+        <span class="text-white font-bold text-[16px] tracking-[-0.01em]">АйДаКемп</span>
+      </a>
+      <nav class="flex items-center gap-0.5 px-1.5 py-1.5" style="background:rgba(255,255,255,0.07);backdrop-filter:blur(28px) saturate(200%);-webkit-backdrop-filter:blur(28px) saturate(200%);border:1px solid rgba(255,255,255,0.14);border-radius:100px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.14),0 8px 32px rgba(0,0,0,0.32)">
+        {['О лагере','Смены','Программа','Команда','Отзывы'].map(l=>(
+          <a href="#" class="px-4 py-1.5 text-[13px] font-medium text-white/60 hover:text-white rounded-full hover:bg-white/10 transition-all">{l}</a>
+        ))}
+      </nav>
+      <a href={BOT_URL} target="_blank" rel="noopener" class="shrink-0 flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-bold text-[#1a1a1a] transition-all hover:scale-105" style="background:#ec7c00;box-shadow:0 4px 18px rgba(236,124,0,0.42)">
+        <i class="bi bi-telegram text-[13px]" aria-hidden="true"></i>
+        Спросить бота
+      </a>
+    </header>
+
+    <!-- Content: phone mockup слева + text справа -->
+    <div class="relative z-10 flex-1 flex items-center gap-16 px-8 max-w-[1312px] mx-auto w-full pb-12">
+
+      <!-- Phone mockup — как в hero-bot-v2 desktop -->
+      <div class="relative w-[360px] shrink-0 rounded-[40px] overflow-hidden" style="min-height:700px;background:#0d1a2b;box-shadow:0 40px 100px rgba(0,0,0,0.65),0 0 0 1px rgba(255,255,255,0.09),0 0 80px rgba(59,130,246,0.14)">
+        <!-- Photo -->
+        <div class="relative" style="height:224px">
+          <picture>
+            <source type="image/avif" srcset="/images/hero-bot-kid.avif"/>
+            <img src="/images/hero-bot-kid.jpg" alt="" aria-hidden="true"
+              class="absolute inset-0 h-full w-full object-cover object-[center_22%]"
+              width="531" height="708"/>
+          </picture>
+          <div class="absolute inset-0" style="background:linear-gradient(92deg,rgba(6,10,18,0.72)0%,rgba(6,10,18,0.46)42%,rgba(6,10,18,0.2)70%,rgba(6,10,18,0.06)100%)"></div>
+          <div class="absolute inset-0" style="background:linear-gradient(180deg,transparent 55%,rgba(13,26,43,0.5)78%,#0d1a2b 100%)"></div>
+          <div class="absolute bottom-5 left-5 right-5">
+            <h1 class="text-[28px] font-bold leading-[1.1] tracking-[-0.03em] text-white [text-shadow:0px_2px_10px_rgba(0,0,0,0.45)]">
+              Летний лагерь в&nbsp;Подмосковье, <span class="whitespace-nowrap">7–15</span>
+            </h1>
+            <p class="mt-2 text-[13px] text-white/90">Пока другие на даче, ваш вернётся с AI&#8209;проектом.</p>
+          </div>
+        </div>
+
+        <div class="px-4 pb-6" style="background:#0d1a2b">
+          <!-- Price + article -->
+          <div class="mt-4 flex gap-2">
+            <div class="flex-1 min-h-[44px] rounded-[12px] border px-3 py-2.5 text-[14px] font-semibold text-orange-300 text-center flex items-center justify-center" style="background:rgba(249,115,22,0.14);border-color:rgba(249,115,22,0.30)">
+              от {CAMP_PRICE_FROM} за 7 дней
+            </div>
+            <a href="/stati/ii-zamenit-programmista"
+              class="flex-1 rounded-[12px] border border-white/15 px-3 py-2 text-[11px] text-white/80 text-center leading-[1.25] flex flex-col justify-center" style="background:rgba(255,255,255,0.08)">
+              <span class="flex items-center justify-center gap-1 mb-0.5">
+                <span class="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-[8px] font-bold text-white" style="background:rgba(249,115,22,0.75)">?</span>
+                <span>ИИ заменит программистов?</span>
+              </span>
+              <span class="text-white/40 text-[10px]">правда или реклама →</span>
+            </a>
+          </div>
+
+          <!-- Pills label -->
+          <div class="mt-4 flex items-center gap-2">
+            <div class="h-px flex-1 bg-white/10"></div>
+            <span class="text-[10px] font-bold tracking-[0.1em] uppercase text-white/35">Что вас беспокоит?</span>
+            <div class="h-px flex-1 bg-white/10"></div>
+          </div>
+
+          <!-- Q&A pills 2×2 -->
+          <div class="mt-2.5 grid grid-cols-2 gap-1.5">
+            {pills.map((p)=>(
+              <a href="/ask/" data-q={p.autoq}
+                class="ask-chip group flex items-center gap-2 rounded-[12px] bg-white/8 border border-white/10 px-3 py-3 min-h-[48px] cursor-pointer hover:bg-white/12 transition-colors">
+                <i class={`bi bi-${p.icon} text-[14px] text-orange-400 shrink-0`} aria-hidden="true"></i>
+                <span class="text-[13px] font-semibold leading-tight text-white flex-1">{p.q}</span>
+                <i class="bi bi-chevron-right text-[9px] text-white/30 shrink-0" aria-hidden="true"></i>
+              </a>
+            ))}
+          </div>
+
+          <!-- Trust badges (blue pills) -->
+          <div class="mt-2 flex gap-1.5">
+            {[
+              {href:'/stati/dokumenty-licenziya-strahovka/#licenziya',icon:'patch-check-fill',label:'Лицензия'},
+              {href:'/stati/dokumenty-licenziya-strahovka/#medsestra',icon:'heart-pulse-fill',label:'Медсестра 24/7'},
+              {href:'/stati/dokumenty-licenziya-strahovka/#strahovka',icon:'shield-check',label:'Страховка'},
+            ].map(b=>(
+              <a href={b.href} class="flex-1 flex flex-col items-center justify-center gap-0.5 rounded-full py-2 text-[11px] font-medium text-[#bfdbfe] text-center leading-tight" style="background:rgba(30,64,175,0.40);border:1px solid rgba(96,165,250,0.50)">
+                <i class={`bi bi-${b.icon} text-[13px]`} aria-hidden="true"></i>
+                <span>{b.label}</span>
+              </a>
+            ))}
+          </div>
+
+          <!-- Bot CTA -->
+          <a href={BOT_URL} target="_blank" rel="noopener"
+            class="mt-3 flex w-full items-center justify-center gap-2 rounded-[14px] px-5 py-3.5 text-[16px] font-bold text-[#1e2430] cursor-pointer"
+            style="background:#ec7c00;box-shadow:0 4px 20px rgba(236,124,0,0.40)">
+            <i class="bi bi-telegram text-[17px]" aria-hidden="true"></i>
+            Спросить бота
+          </a>
+
+          <!-- Stats inline -->
+          <div class="mt-3 flex items-center justify-center gap-1.5 flex-wrap">
+            <span class="text-[12px] font-semibold text-[#fbbf24]">★ {STAT_RATING}</span>
+            <span class="text-white/25">·</span>
+            <span class="text-[11px] text-white/50">{STAT_YEARS} лет</span>
+            <span class="text-white/25">·</span>
+            <span class="text-[11px] text-white/50">{STAT_KIDS} детей</span>
+            <span class="text-white/25">·</span>
+            <span class="text-[11px] text-white/50">ТОП&#8209;4 IT&#8209;лагерей МО</span>
+          </div>
+          <p class="mt-1 text-center text-[10px] text-white/28">Без звонка · Ответ сразу</p>
+        </div>
+      </div>
+
+      <!-- Right: текст на фоне градиента -->
+      <div class="flex-1 max-w-[480px]">
+        <div class="mb-5 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[13px] text-blue-300" style="background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.24);backdrop-filter:blur(12px)">
+          <span class="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0"></span>
+          Лето 2026 · Запись открыта
+        </div>
+        <h2 class="text-[44px] font-bold leading-[1.06] tracking-[-0.035em] text-white mb-5">
+          IT-лагерь<br/>с настоящими<br/>проектами
+        </h2>
+        <p class="text-[16px] leading-[1.72] text-white/55 mb-8">
+          Ваш ребёнок уедет не с поделкой, а с работающим AI&#8209;проектом — на Python, в Minecraft или в Scratch. Бассейн, команда, настоящие друзья.
+        </p>
+        <div class="space-y-3.5">
+          {[
+            {icon:'code-slash',text:'Python, AI, Scratch, Minecraft — выбор по уровню',c:'rgba(59,130,246,0.14)',bc:'rgba(59,130,246,0.24)',ic:'#93c5fd'},
+            {icon:'geo-alt-fill',text:'Подмосковье · чистый воздух · лес · бассейн',c:'rgba(139,92,246,0.12)',bc:'rgba(139,92,246,0.22)',ic:'#c4b5fd'},
+            {icon:'shield-check',text:'Лицензия Минпросвещения, медсестра 24/7, страховка',c:'rgba(6,182,212,0.12)',bc:'rgba(6,182,212,0.22)',ic:'#67e8f9'},
+            {icon:'calendar-check',text:'Смены 7–14 дней · с 30 мая по август 2026',c:'rgba(249,115,22,0.10)',bc:'rgba(249,115,22,0.20)',ic:'#fb923c'},
+          ].map(f=>(
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-[11px] flex items-center justify-center shrink-0" style={`background:${f.c};border:1px solid ${f.bc}`}>
+                <i class={`bi bi-${f.icon} text-[14px]`} style={`color:${f.ic}`} aria-hidden="true"></i>
+              </div>
+              <span class="text-[14px] text-white/60 leading-snug">{f.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MOBILE V3 -->
+  <section class="md:hidden relative min-h-[95svh] flex flex-col overflow-hidden" style="background:#04080f">
+    <!-- Gradient glows — синие переливы -->
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="absolute inset-0" style="background:radial-gradient(ellipse 110% 55% at 80% 8%,rgba(59,130,246,0.30) 0%,transparent 58%)"></div>
+      <div class="absolute inset-0" style="background:radial-gradient(ellipse 75% 50% at 5% 65%,rgba(139,92,246,0.22) 0%,transparent 55%)"></div>
+      <div class="absolute inset-0" style="background:radial-gradient(ellipse 60% 35% at 95% 88%,rgba(6,182,212,0.16) 0%,transparent 50%)"></div>
+      <div class="absolute inset-0" style="background:radial-gradient(ellipse 80% 28% at 50% 112%,rgba(249,115,22,0.14) 0%,transparent 50%)"></div>
+    </div>
+
+    <!-- Photo + nav + H1 -->
+    <div class="relative" style="min-height:56vw;flex:none">
+      <picture>
+        <source type="image/avif" srcset="/images/hero-bot-kid.avif"/>
+        <img src="/images/hero-bot-kid.jpg" alt="" aria-hidden="true"
+          class="absolute inset-0 h-full w-full object-cover object-[center_22%]"
+          loading="eager" fetchpriority="high" width="531" height="708"/>
+      </picture>
+      <div class="absolute inset-0" style="background:linear-gradient(92deg,rgba(6,10,18,0.72)0%,rgba(6,10,18,0.46)42%,rgba(6,10,18,0.2)70%,rgba(6,10,18,0.06)100%)"></div>
+      <div class="absolute inset-0" style="background:linear-gradient(180deg,transparent 55%,rgba(4,8,15,0.5)78%,#04080f 100%)"></div>
+
+      <div class="absolute top-4 inset-x-4 flex items-center justify-between">
+        <a href="/" class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-[9px] bg-orange-500 flex items-center justify-center shadow-[0_0_14px_rgba(249,115,22,0.45)]">
+            <i class="bi bi-cpu text-white text-[13px]" aria-hidden="true"></i>
+          </div>
+          <span class="text-white font-bold text-[15px]">АйДаКемп</span>
+        </a>
+        <a href="tel:+74952151515" class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold text-white" style="background:rgba(255,255,255,0.08);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.13)">
+          <i class="bi bi-telephone text-[11px]" aria-hidden="true"></i>
+          Звонок
+        </a>
+      </div>
+
+      <div class="absolute bottom-8 left-5 right-5">
+        <h1 class="text-[36px] font-bold leading-[1.1] tracking-[-0.03em] text-white [text-shadow:0px_2px_10px_rgba(0,0,0,0.45)]">
+          Летний лагерь в&nbsp;Подмосковье,&nbsp;<span class="whitespace-nowrap">7–15</span>
+        </h1>
+        <p class="mt-2.5 text-[15px] text-white/90">Пока другие на даче, ваш вернётся с AI&#8209;проектом.</p>
+      </div>
+    </div>
+
+    <!-- Content под фото — структура как hero-bot-v2 -->
+    <div class="relative mx-4 mt-5 mb-8">
+
+      <!-- Q&A pills 2×2 -->
+      <div class="grid grid-cols-2 gap-2">
+        {pills.map((p)=>(
+          <a href="/ask/" data-q={p.autoq}
+            class="ask-chip group flex items-center gap-2.5 rounded-[12px] border border-white/10 px-3 py-3.5 min-h-[52px] cursor-pointer active:bg-white/15 hover:bg-white/12 transition-colors"
+            style="background:rgba(255,255,255,0.07);backdrop-filter:blur(16px)">
+            <i class={`bi bi-${p.icon} text-[16px] text-orange-400 shrink-0`} aria-hidden="true"></i>
+            <span class="text-[14px] font-semibold leading-tight text-white flex-1">{p.q}</span>
+            <i class="bi bi-chevron-right text-[10px] text-white/30 shrink-0 group-hover:text-white/55 transition-colors" aria-hidden="true"></i>
+          </a>
+        ))}
+      </div>
+
+      <!-- Bot CTA -->
+      <div class="mt-4">
+        <a href={BOT_URL} target="_blank" rel="noopener"
+          class="flex w-full items-center justify-center gap-2.5 rounded-full px-6 py-4 text-[17px] font-bold text-[#1e2430] cursor-pointer"
+          style="background:#ec7c00;box-shadow:0 4px 20px rgba(236,124,0,0.40)">
+          <i class="bi bi-telegram text-[19px]" aria-hidden="true"></i>
+          Спросить бота
+        </a>
+
+        <!-- Stats inline -->
+        <div class="mt-3 flex items-center justify-center gap-2 flex-wrap">
+          <span class="text-[13px] font-semibold text-[#fbbf24]">★ {STAT_RATING}</span>
+          <span class="text-white/25 text-[12px]">·</span>
+          <span class="text-[12px] text-white/55">{STAT_YEARS} лет</span>
+          <span class="text-white/25 text-[12px]">·</span>
+          <span class="text-[12px] text-white/55">{STAT_KIDS} детей</span>
+          <span class="text-white/25 text-[12px]">·</span>
+          <span class="text-[12px] text-white/55">ТОП&#8209;4 IT&#8209;лагерей МО</span>
+        </div>
+        <p class="mt-1.5 text-center text-[11px] text-white/35">Наш ИИ уже заменил менеджера · Без звонка · Ответ сразу</p>
+
+        <!-- Article link -->
+        <a href="/stati/ii-zamenit-programmista"
+          class="mt-4 flex items-center gap-2.5 rounded-[12px] px-4 py-3 text-[13px] text-white/60 hover:text-white/80 transition-colors"
+          style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08)">
+          <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white" style="background:rgba(249,115,22,0.80)">?</span>
+          <span class="flex-1 leading-tight">«ИИ заменит программистов» — правда или реклама?</span>
+          <i class="bi bi-chevron-right text-[10px] text-white/25 shrink-0" aria-hidden="true"></i>
+        </a>
+
+        <!-- Trust badges (blue pills) -->
+        <div class="mt-3 flex gap-1.5">
+          {[
+            {href:'/stati/dokumenty-licenziya-strahovka/#licenziya',icon:'patch-check-fill',label:'Лицензия'},
+            {href:'/stati/dokumenty-licenziya-strahovka/#medsestra',icon:'heart-pulse-fill',label:'Медсестра 24/7'},
+            {href:'/stati/dokumenty-licenziya-strahovka/#strahovka',icon:'shield-check',label:'Страховка'},
+          ].map(b=>(
+            <a href={b.href} class="flex-1 flex flex-col items-center justify-center gap-0.5 text-center rounded-full py-2 text-[12px] font-medium text-[#bfdbfe] leading-tight" style="background:rgba(30,64,175,0.40);border:1px solid rgba(96,165,250,0.50)">
+              <i class={`bi bi-${b.icon} text-[13px]`} aria-hidden="true"></i>
+              <span>{b.label}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /v3 -->
+
+</main>
+</Base>

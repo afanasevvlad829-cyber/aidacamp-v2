@@ -1,0 +1,1133 @@
+---
+// HyperUI-based Component Library — АйДаКемп Design Document
+// Branch: design/glassmorphism-v1
+// Purpose: Визуальный словарь компонентов сайта, основанный на паттернах HyperUI
+---
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>АйДаКемп — Компонентная база (HyperUI)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            primary:     '#ec7c00',
+            'primary-h': '#d46e00',
+            'primary-l': '#f59332',
+            'primary-s': '#fff1df',
+            'primary-m': 'rgba(236,124,0,0.12)',
+            blue:        '#1b4fd8',
+            'blue-l':    '#3b82f6',
+            'blue-s':    '#eff6ff',
+            navy:        '#0d1a2b',
+            surface:     '#f7f8fb',
+            'surface-alt':'#f0f4ff',
+            'surface-warm':'#f7f5f2',
+            tx:          '#1e2430',
+            'tx-m':      '#4b5263',
+            'tx-f':      '#6b7280',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #f7f8fb; color: #1e2430; }
+
+    /* ── Glass Utilities ── */
+    .glass-surface {
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+    }
+    .glass-dark {
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(12px) saturate(200%);
+      -webkit-backdrop-filter: blur(12px) saturate(200%);
+    }
+    .glass-border::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.1) 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    /* ── Section Headers ── */
+    .section { padding: 56px 0; border-bottom: 1px solid #e5e7eb; }
+    .section-label {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: #6b7280;
+      background: #f0f4ff; border: 1px solid #dbeafe;
+      border-radius: 100px; padding: 4px 12px; margin-bottom: 16px;
+    }
+    .section-title { font-size: 28px; font-weight: 800; color: #1e2430; margin-bottom: 8px; }
+    .section-desc { font-size: 16px; color: #4b5263; margin-bottom: 40px; max-width: 640px; }
+    .component-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #9ca3af; margin-bottom: 12px;
+    }
+    .component-code {
+      font-size: 12px; font-family: monospace; background: #1e2430;
+      color: #86efac; padding: 12px 16px; border-radius: 8px;
+      margin-top: 12px; overflow-x: auto; white-space: pre;
+    }
+    .row { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+    .col { flex: 1; min-width: 280px; }
+
+    /* ── Comparison Cards ── */
+    .diff-bad  { border-left: 3px solid #ef4444; background: #fef2f2; border-radius: 0 8px 8px 0; padding: 12px 16px; }
+    .diff-good { border-left: 3px solid #10b981; background: #f0fdf4; border-radius: 0 8px 8px 0; padding: 12px 16px; }
+    .diff-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- ШАПКА                                                  -->
+<!-- ══════════════════════════════════════════════════════ -->
+<header style="background:#0d1a2b; padding: 32px 24px; margin-bottom: 0;">
+  <div style="max-width:1200px; margin:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="color:#f59332; font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:8px;">
+          АйДаКемп · design/glassmorphism-v1
+        </div>
+        <h1 style="color:white; font-size:32px; font-weight:800; margin:0 0 8px;">Компонентная база</h1>
+        <p style="color:#94a3b8; font-size:16px; margin:0;">
+          HyperUI паттерны → Astro компоненты сайта. Правила цветов, кнопок, карточек, форм.
+        </p>
+      </div>
+      <div style="text-align:right; color:#64748b; font-size:13px;">
+        <div>2026-04-29</div>
+        <div style="margin-top:4px;">65 компонентов</div>
+        <div style="margin-top:4px; color:#f59332;">Ветка: design/glassmorphism-v1</div>
+      </div>
+    </div>
+
+    <!-- Component Index -->
+    <div style="margin-top:32px; display:flex; flex-wrap:wrap; gap:8px;">
+      {['Карта компонентов','Цвета и токены','Кнопки','Типографика','Формы','Карточки (Shifts)','Badges & Pills','Навигация','Секции','Модалки','Glass-эффекты','Do / Don\'t'].map((name, i) => (
+        <a href={`#section-${i+1}`}
+           style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+                  color:#94a3b8; font-size:12px; font-weight:500; padding:6px 12px;
+                  border-radius:6px; text-decoration:none; transition:all 0.15s;">
+          {i+1}. {name}
+        </a>
+      ))}
+    </div>
+  </div>
+</header>
+
+<main style="max-width:1200px; margin:0 auto; padding: 0 24px 80px;">
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- 1. КАРТА КОМПОНЕНТОВ                                   -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="section" id="section-1">
+  <span class="section-label">01</span>
+  <h2 class="section-title">Карта компонентов сайта</h2>
+  <p class="section-desc">65 Astro компонентов, разбитых по зонам влияния на конверсию</p>
+
+  <div class="row">
+    <!-- Tier 1: Конверсионные -->
+    <div class="col" style="min-width:340px; max-width:420px;">
+      <div style="background:#fff1df; border:1.5px solid #fbbf24; border-radius:16px; padding:20px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#ec7c00;"></div>
+          <span style="font-size:12px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.08em;">Tier 1 — Конверсия (критично)</span>
+        </div>
+        {[
+          ['hero/Mobile.astro', 'Главный экран мобиль — фото + CTA + метрики'],
+          ['hero/Desktop.astro', 'Главный экран десктоп — плашка с ценой'],
+          ['hero/DesktopTrust.astro', 'Trust badges под кнопкой десктоп'],
+          ['shifts/ShiftCard.astro', 'Карточка смены с ценой и кнопкой «Выбрать»'],
+          ['Shifts.astro', 'Контейнер с горизонтальным скроллом смен'],
+          ['LeadForm.astro', 'Форма захвата лида (возраст + телефон)'],
+          ['StickyCta.astro', 'Липкая кнопка снизу мобильного экрана'],
+          ['SummerCta.astro', 'CTA-блок «Записаться» с формой'],
+          ['HeroModals.astro', 'Попапы с деталями смен'],
+        ].map(([name, desc]) => (
+          <div style="display:flex; gap:10px; margin-bottom:10px; align-items:flex-start;">
+            <div style="width:6px;height:6px;border-radius:50%;background:#ec7c00;margin-top:6px;flex-shrink:0;"></div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#1e2430;font-family:monospace;">{name}</div>
+              <div style="font-size:12px;color:#6b7280;margin-top:2px;">{desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Tier 2: Доверие -->
+    <div class="col" style="min-width:340px; max-width:420px;">
+      <div style="background:#eff6ff; border:1.5px solid #bfdbfe; border-radius:16px; padding:20px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#1b4fd8;"></div>
+          <span style="font-size:12px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:0.08em;">Tier 2 — Доверие (важно)</span>
+        </div>
+        {[
+          ['Reviews.astro', 'Отзывы с Яндекс.Карт 5.0'],
+          ['Mentors.astro', 'Преподаватели / Команда'],
+          ['Team.astro', 'Расширенная команда'],
+          ['About.astro', 'О лагере — история, Дарья'],
+          ['Hackathon.astro', 'Блок про хакатон и дипломы'],
+          ['Stay.astro', 'Условия проживания'],
+          ['Gallery.astro', 'Фотогалерея'],
+          ['Videos.astro', 'Видео'],
+          ['Economy.astro', 'Налоговый вычет / Экономика'],
+          ['Journey.astro', 'День в лагере по часам'],
+          ['MomStory.astro', 'История мамы / кейс'],
+          ['Contacts.astro', 'Контакты, карта'],
+        ].map(([name, desc]) => (
+          <div style="display:flex; gap:10px; margin-bottom:10px; align-items:flex-start;">
+            <div style="width:6px;height:6px;border-radius:50%;background:#1b4fd8;margin-top:6px;flex-shrink:0;"></div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#1e2430;font-family:monospace;">{name}</div>
+              <div style="font-size:12px;color:#6b7280;margin-top:2px;">{desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Tier 3: SEO / Утилиты -->
+    <div class="col" style="min-width:300px; max-width:380px;">
+      <div style="background:#f7f8fb; border:1.5px solid #e5e7eb; border-radius:16px; padding:20px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#6b7280;"></div>
+          <span style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.08em;">Tier 3 — SEO & Утилиты</span>
+        </div>
+        {[
+          ['SeoTextBlock.astro', 'SEO-текст с внутренними ссылками'],
+          ['FAQ.astro', 'Аккордеон часто задаваемых вопросов'],
+          ['SchemaOrg.astro', 'JSON-LD структурированные данные'],
+          ['FAQSchema.astro', 'Schema.org для FAQ'],
+          ['CourseSchema.astro', 'Schema.org для курсов'],
+          ['Header.astro', 'Хедер с навигацией'],
+          ['Footer.astro', 'Футер с ссылками'],
+          ['MobileMenu.astro', 'Мобильное меню'],
+          ['PhoneDropdown.astro', 'Дропдаун с номером телефона'],
+          ['BrandName.astro', 'Логотип / название бренда'],
+          ['BookingBar.astro', 'Полоса бронирования'],
+          ['StatCallout.astro', 'Статистика-выноска'],
+          ['AgeBar.astro', 'Возрастная шкала'],
+          ['BlogCTA.astro', 'CTA в конце статьи блога'],
+          ['RelatedArticles.astro', 'Похожие статьи'],
+        ].map(([name, desc]) => (
+          <div style="display:flex; gap:10px; margin-bottom:8px; align-items:flex-start;">
+            <div style="width:6px;height:6px;border-radius:50%;background:#9ca3af;margin-top:5px;flex-shrink:0;"></div>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:#374151;font-family:monospace;">{name}</div>
+              <div style="font-size:11px;color:#9ca3af;margin-top:1px;">{desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- 2. ЦВЕТА И ТОКЕНЫ                                      -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="section" id="section-2">
+  <span class="section-label">02</span>
+  <h2 class="section-title">Цвета и токены</h2>
+  <p class="section-desc">Единственный источник правды — <code>src/styles/global.css → @theme {}</code>. Никаких hex в компонентах.</p>
+
+  <div class="row" style="margin-bottom:32px;">
+    <!-- BRAND ORANGE -->
+    <div class="col" style="min-width:280px;">
+      <div class="component-label">Brand Orange</div>
+      {[
+        ['#ec7c00','bg-primary','Основная кнопка CTA, акценты','100%'],
+        ['#d46e00','bg-primary-hover','Hover состояние кнопок','80%'],
+        ['#f59332','bg-primary-light','Иконки, подчёркивания','60%'],
+        ['#fff1df','bg-primary-soft','Мягкий фон, бейджи','40%'],
+        ['rgba(236,124,0,0.12)','bg-primary-muted','Ghost-элементы','20%'],
+      ].map(([hex, token, use, opacity]) => (
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+          <div style={`width:48px; height:48px; border-radius:10px; background:${hex}; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.1);`}></div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:#1e2430;">{token}</div>
+            <div style="font-size:11px;color:#6b7280;margin-top:1px;">{hex}</div>
+            <div style="font-size:11px;color:#9ca3af;">{use}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <!-- BRAND BLUE -->
+    <div class="col" style="min-width:280px;">
+      <div class="component-label">Brand Blue</div>
+      {[
+        ['#1b4fd8','text-blue','Ссылки, трастовые бейджи','100%'],
+        ['#3b82f6','text-blue-l','Акценты, иконки','70%'],
+        ['#eff6ff','bg-blue-s','Фон секции Shifts, FAQ','40%'],
+        ['#0d1a2b','bg-navy','Hero фон, overlay','—'],
+      ].map(([hex, token, use]) => (
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+          <div style={`width:48px; height:48px; border-radius:10px; background:${hex}; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.1);`}></div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#1e2430;">{token}</div>
+            <div style="font-size:11px;color:#6b7280;">{hex}</div>
+            <div style="font-size:11px;color:#9ca3af;">{use}</div>
+          </div>
+        </div>
+      ))}
+
+      <div class="component-label" style="margin-top:24px;">Surfaces</div>
+      {[
+        ['#ffffff','bg-white','Карточки'],
+        ['#f7f8fb','bg-surface','Фон страницы'],
+        ['#f0f4ff','bg-surface-alt','Голубой фон (FAQ, Reviews)'],
+        ['#f7f5f2','bg-surface-warm','Тёплый (About, цитата Дарьи)'],
+      ].map(([hex, token, use]) => (
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+          <div style={`width:48px; height:48px; border-radius:10px; background:${hex}; flex-shrink:0; border:1px solid #e5e7eb;`}></div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#1e2430;">{token}</div>
+            <div style="font-size:11px;color:#6b7280;">{hex} — {use}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <!-- ПРОБЛЕМА: 7 оранжевых -->
+    <div class="col" style="min-width:280px;">
+      <div class="component-label" style="color:#ef4444;">Проблема: 7 вариантов оранжевого в коде</div>
+      <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:16px;">
+        <div style="font-size:13px; font-weight:600; color:#991b1b; margin-bottom:12px;">Найдено в компонентах сейчас:</div>
+        {[
+          ['bg-[#ec7c00]','✓ Правильный токен','#166534'],
+          ['bg-orange-500','✗ Tailwind-orange','#991b1b'],
+          ['bg-orange-600','✗ Tailwind-orange','#991b1b'],
+          ['bg-[#ea580c]','✗ Другой hex','#991b1b'],
+          ['bg-[#f97316]','✗ Другой hex','#991b1b'],
+          ['text-orange-600','✗ Text вариант','#991b1b'],
+          ['border-orange-400','✗ Border вариант','#991b1b'],
+        ].map(([cls, status, color]) => (
+          <div style={`display:flex; justify-content:space-between; padding:6px 8px; border-radius:6px; margin-bottom:4px; background:${color === '#166534' ? '#f0fdf4' : '#fff5f5'};`}>
+            <code style="font-size:12px; color:#1e2430;">{cls}</code>
+            <span style={`font-size:11px; color:${color}; font-weight:600;`}>{status}</span>
+          </div>
+        ))}
+        <div style="margin-top:12px; font-size:12px; color:#dc2626; font-weight:600;">
+          → Заменить ВСЕ на <code>bg-primary</code> / <code>text-primary</code>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- 3. КНОПКИ                                              -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="section" id="section-3">
+  <span class="section-label">03</span>
+  <h2 class="section-title">Кнопки</h2>
+  <p class="section-desc">Текущая оранжевая кнопка «тяжёлая» — слишком насыщенная, текст тёмный на ярком. Вот варианты на основе HyperUI.</p>
+
+  <!-- Текущее состояние -->
+  <div class="component-label">Текущий вариант (используется в LeadForm + StickyCta)</div>
+  <div class="diff-bad" style="margin-bottom:24px;">
+    <div class="diff-label" style="color:#ef4444;">Проблемы</div>
+    <div style="font-size:13px; color:#7f1d1d;">
+      1. Текст <code>#1e2430</code> (тёмный) на <code>#ec7c00</code> — необычно, большинство ожидают белый<br>
+      2. Нет <code>text-white</code> → контраст 4.1:1 (WCAG AA не проходит для нормального текста 16px)<br>
+      3. Разные радиусы: LeadForm <code>rounded-[10px]</code>, StickyCta <code>rounded-xl</code> (12px), ShiftCard <code>rounded-xl</code><br>
+      4. Разные размеры: h-[48px] vs py-3 — непоследовательно
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- CTA Primary -->
+    <div class="col">
+      <div class="component-label">CTA Primary — «Написать в бот» / «Выбрать смену»</div>
+
+      <!-- Вариант A — текущий (проблемный) -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">A — Текущий (темный текст)</div>
+        <button style="height:48px; padding:0 24px; background:#ec7c00; color:#1e2430; border-radius:10px; font-size:16px; font-weight:600; border:none; cursor:pointer; width:100%; box-shadow:0 4px 20px rgba(236,124,0,0.38);">
+          Выбрать смену
+        </button>
+        <div style="font-size:11px;color:#ef4444;margin-top:4px;">✗ Контраст 4.1:1 WCAG не проходит</div>
+      </div>
+
+      <!-- Вариант B — белый текст -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">B — Белый текст (HyperUI pattern)</div>
+        <button style="height:48px; padding:0 24px; background:#ec7c00; color:white; border-radius:12px; font-size:16px; font-weight:600; border:none; cursor:pointer; width:100%; box-shadow:0 4px 20px rgba(236,124,0,0.38);">
+          Выбрать смену
+        </button>
+        <div style="font-size:11px;color:#10b981;margin-top:4px;">✓ Контраст 5.2:1 WCAG AA</div>
+      </div>
+
+      <!-- Вариант C — с иконкой Telegram -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">C — CTA с иконкой (Mobile Hero)</div>
+        <button style="height:52px; padding:0 24px; background:#ec7c00; color:white; border-radius:14px; font-size:17px; font-weight:700; border:none; cursor:pointer; width:100%; box-shadow:0 6px 24px rgba(236,124,0,0.45); display:flex; align-items:center; justify-content:center; gap:10px;">
+          <i class="bi bi-telegram" style="font-size:20px;"></i>
+          Написать в бот
+        </button>
+        <div style="font-size:11px;color:#10b981;margin-top:4px;">✓ Для Mobile Hero — главный CTA</div>
+      </div>
+
+      <!-- Вариант D — Subtle / outlined -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">D — Ghost (вторичный)</div>
+        <button style="height:44px; padding:0 20px; background:transparent; color:#ec7c00; border:1.5px solid #ec7c00; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer; width:100%;">
+          Подробнее
+        </button>
+      </div>
+    </div>
+
+    <!-- Secondary buttons -->
+    <div class="col">
+      <div class="component-label">Secondary / Utility кнопки (ShiftCard)</div>
+
+      <div style="margin-bottom:16px;">
+        <div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">Текущие — border-slate-200</div>
+        <div style="display:flex; gap:8px;">
+          <button style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; height:40px; padding:0 12px; background:white; border:1px solid #e2e8f0; border-radius:8px; font-size:14px; color:#374151; cursor:pointer;">
+            <i class="bi bi-calendar-event" style="font-size:14px;"></i>
+            Календарь
+          </button>
+          <button style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; height:40px; padding:0 12px; background:white; border:1px solid #e2e8f0; border-radius:8px; font-size:14px; color:#374151; cursor:pointer;">
+            <i class="bi bi-lightbulb" style="font-size:14px;"></i>
+            Подробнее
+          </button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">Предложение — glass + синяя рамка</div>
+        <div style="display:flex; gap:8px;">
+          <button style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; height:40px; padding:0 12px; background:rgba(255,255,255,0.7); backdrop-filter:blur(8px); border:1px solid rgba(27,79,216,0.25); border-radius:10px; font-size:14px; color:#1b4fd8; cursor:pointer; font-weight:500;">
+            <i class="bi bi-calendar-event" style="font-size:14px;"></i>
+            Календарь
+          </button>
+          <button style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; height:40px; padding:0 12px; background:rgba(255,255,255,0.7); backdrop-filter:blur(8px); border:1px solid rgba(27,79,216,0.25); border-radius:10px; font-size:14px; color:#1b4fd8; cursor:pointer; font-weight:500;">
+            <i class="bi bi-lightbulb" style="font-size:14px;"></i>
+            Подробнее
+          </button>
+        </div>
+      </div>
+
+      <div class="component-label" style="margin-top:24px;">Кнопки Sticky CTA (мобиль низ экрана)</div>
+      <!-- Текущий StickyCta -->
+      <div style="background:#0d1a2b; border-radius:16px; padding:16px; margin-bottom:12px;">
+        <div style="font-size:11px;color:#94a3b8;margin-bottom:10px;">Текущий StickyCta</div>
+        <button style="width:100%; height:52px; background:#ec7c00; color:white; border-radius:12px; font-size:16px; font-weight:700; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 20px rgba(236,124,0,0.4);">
+          <i class="bi bi-telegram" style="font-size:18px;"></i>
+          Записать ребёнка
+        </button>
+      </div>
+
+      <div class="component-label">Размерная шкала кнопок</div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button style="height:52px; padding:0 24px; background:#ec7c00; color:white; border-radius:14px; font-size:17px; font-weight:700; border:none; cursor:pointer; box-shadow:0 4px 20px rgba(236,124,0,0.38);">XL — Hero CTA (52px)</button>
+        <button style="height:48px; padding:0 20px; background:#ec7c00; color:white; border-radius:12px; font-size:16px; font-weight:600; border:none; cursor:pointer;">L — Form Submit (48px)</button>
+        <button style="height:44px; padding:0 18px; background:#ec7c00; color:white; border-radius:10px; font-size:15px; font-weight:600; border:none; cursor:pointer;">M — Secondary CTA (44px)</button>
+        <button style="height:40px; padding:0 16px; background:#ec7c00; color:white; border-radius:8px; font-size:14px; font-weight:600; border:none; cursor:pointer;">S — Card Actions (40px)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- 4. ТИПОГРАФИКА                                         -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="section" id="section-4">
+  <span class="section-label">04</span>
+  <h2 class="section-title">Типографика</h2>
+  <p class="section-desc">Inter — единственный шрифт. Минимум 16px для читаемого контента. 14px только для лейблов и бейджей.</p>
+
+  <div class="row">
+    <div class="col">
+      {[
+        ['text-4xl · 44px', '44', '800', '#1e2430', 'H1 Desktop Hero', 'Лагерь для детей'],
+        ['text-3xl · 36px', '36', '800', '#1e2430', 'H1 Mobile Hero', 'Программирование + отдых'],
+        ['text-2xl · 28px', '28', '700', '#1e2430', 'H2 Mobile large', 'Выбери свою смену'],
+        ['text-xl · 24px', '24', '700', '#1e2430', 'H2 Desktop', 'Почему выбирают нас'],
+        ['text-lg · 20px', '20', '600', '#1e2430', 'H3 карточки', 'IT + Творчество'],
+        ['text-md · 18px', '18', '600', '#4b5263', 'Подзаголовки', 'Занятия каждый день'],
+        ['text-base · 16px', '16', '400', '#4b5263', 'Основной текст', 'Каждый ребёнок уезжает с проектом'],
+        ['text-sm · 14px', '14', '500', '#6b7280', 'Labels / badges', 'Открытая запись'],
+        ['text-xs · 12px', '12', '400', '#9ca3af', 'Иконки-подписи', '7 лет на рынке'],
+      ].map(([scale, size, weight, color, use, ex]) => (
+        <div style="display:flex; align-items:baseline; gap:16px; margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid #f3f4f6;">
+          <div style="width:180px; flex-shrink:0;">
+            <div style={`font-size:${size}px; font-weight:${weight}; color:${color}; line-height:1.2;`}>{ex}</div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#374151;font-family:monospace;">{scale}</div>
+            <div style="font-size:11px;color:#9ca3af;margin-top:2px;">{use}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div class="col">
+      <div class="component-label">Радиус — шкала из 6 значений</div>
+      <div style="background:white; border-radius:16px; padding:20px; border:1px solid #f3f4f6;">
+        {[
+          ['rounded-sm · 8px', '8', 'Кнопки, input, маленькие элементы'],
+          ['rounded-md · 12px', '12', 'Badges, chips, small cards'],
+          ['rounded-lg · 16px', '16', 'Карточки мобиль'],
+          ['rounded-xl · 20px', '20', 'Карточки десктоп, hero-блоки'],
+          ['rounded-2xl · 24px', '24', 'Секции, большие контейнеры'],
+          ['rounded-pill · 100px', '100', 'Теги, pills, trust badges'],
+        ].map(([label, r, use]) => (
+          <div style="display:flex; align-items:center; gap:16px; margin-bottom:12px;">
+            <div style={`width:48px; height:48px; background:#eff6ff; border:2px solid #1b4fd8; border-radius:${r}px; flex-shrink:0;`}></div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#1e2430;font-family:monospace;">{label}</div>
+              <div style="font-size:11px;color:#6b7280;">{use}</div>
+            </div>
+          </div>
+        ))}
+
+        <div style="margin-top:16px; background:#fef2f2; border-radius:8px; padding:12px; font-size:12px; color:#991b1b;">
+          <strong>Сейчас в коде:</strong> rounded-[8px], [10px], [12px], [14px], [16px], [18px], [20px], rounded-xl, rounded-2xl, rounded-lg, rounded-full — 11 разных значений.<br>
+          <strong>Нужно привести к шкале выше.</strong>
+        </div>
+      </div>
+
+      <div class="component-label" style="margin-top:24px;">Тени</div>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="background:white; border-radius:12px; padding:16px; box-shadow:0 6px 18px rgba(15,23,42,0.04);">
+          <div style="font-size:13px;font-weight:600;">Карточки обычные</div>
+          <div style="font-size:11px;color:#6b7280;font-family:monospace;">0 6px 18px rgba(15,23,42,0.04)</div>
+        </div>
+        <div style="background:white; border-radius:12px; padding:16px; box-shadow:0 14px 32px rgba(15,23,42,0.08);">
+          <div style="font-size:13px;font-weight:600;">Карточки hover</div>
+          <div style="font-size:11px;color:#6b7280;font-family:monospace;">0 14px 32px rgba(15,23,42,0.08)</div>
+        </div>
+        <div style="background:white; border-radius:12px; padding:16px; box-shadow:0 8px 24px rgba(27,79,216,0.12);">
+          <div style="font-size:13px;font-weight:600;">Glass карточки (синий тинт)</div>
+          <div style="font-size:11px;color:#6b7280;font-family:monospace;">0 8px 24px rgba(27,79,216,0.12)</div>
+        </div>
+        <div style="border-radius:12px; padding:16px; background:#ec7c00; color:white; box-shadow:0 4px 20px rgba(236,124,0,0.38);">
+          <div style="font-size:13px;font-weight:600;">CTA кнопка оранжевая</div>
+          <div style="font-size:11px;opacity:0.8;font-family:monospace;">0 4px 20px rgba(236,124,0,0.38)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- 5. ФОРМЫ (LeadForm)                                    -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="section" id="section-5">
+  <span class="section-label">05</span>
+  <h2 class="section-title">Формы</h2>
+  <p class="section-desc">LeadForm.astro — конверсионный элемент. Минимум полей, максимум доверия. Не ломать логику — только CSS-косметика.</p>
+
+  <div class="row">
+    <!-- Текущая форма -->
+    <div class="col">
+      <div class="component-label">Текущая LeadForm (воспроизведение)</div>
+      <div style="background:white; border-radius:20px; padding:24px; box-shadow:0 6px 18px rgba(15,23,42,0.06); max-width:340px;">
+        <p style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6e788a;margin:0 0 8px;">Возраст</p>
+        <div style="display:flex; gap:6px; height:34px;">
+          {['7–9', '10–12', '13–15'].map(age => (
+            <button style="flex:1; border-radius:8px; border:1.5px solid #e6e6e6; background:white; font-size:14px; font-weight:600; color:#333; cursor:pointer;">{age}</button>
+          ))}
+        </div>
+
+        <p style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6e788a;margin:12px 0 8px;">Ваш телефон</p>
+        <input type="tel" placeholder="+7 (___) ___-__-__"
+          style="width:100%; height:48px; border-radius:8px; border:1.5px solid #e6e6e6; background:white; padding:0 14px; font-size:16px; color:#111827; box-sizing:border-box;" />
+
+        <label style="display:flex; gap:8px; margin-top:12px; font-size:14px; line-height:1.35; color:#6e788a; align-items:flex-start;">
+          <input type="checkbox" style="margin-top:2px; accent-color:#ec7c00;" />
+          <span>Согласен(а) на <a href="#" style="color:#ec7c00;">обработку персональных данных</a></span>
+        </label>
+
+        <button style="margin-top:12px; width:100%; height:48px; border-radius:10px; background:#ec7c00; color:#1e2430; font-size:16px; font-weight:600; border:none; cursor:pointer;">
+          Записаться
+        </button>
+
+        <!-- Trust pills (текущие) -->
+        <div style="display:flex; gap:6px; margin-top:12px; flex-wrap:wrap;">
+          {['Лицензия Минобрнауки','Медработник','Страховка'].map(t => (
+            <span style="display:inline-flex; align-items:center; gap:4px; border-radius:100px; border:1px solid #e5e7eb; background:white; padding:4px 10px; font-size:12px; color:#374151;">
+              <i class="bi bi-check2-circle" style="color:#10b981; font-size:11px;"></i>
+              {t}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <!-- Улучшенная форма -->
+    <div class="col">
+      <div class="component-label">Предложение — токены + белый текст на кнопке</div>
+      <div style="background:white; border-radius:20px; padding:24px; box-shadow:0 8px 24px rgba(27,79,216,0.08); border:1px solid rgba(27,79,216,0.08); max-width:340px;">
+
+        <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#6b7280;margin:0 0 8px;">Возраст ребёнка</p>
+        <div style="display:flex; gap:6px; height:40px;">
+          {[['7–9', true], ['10–12', false], ['13–15', false]].map(([age, active]) => (
+            <button style={`flex:1; border-radius:10px; border:1.5px solid ${active ? '#ec7c00' : '#e5e7eb'}; background:${active ? '#fff1df' : 'white'}; font-size:14px; font-weight:600; color:${active ? '#ec7c00' : '#374151'}; cursor:pointer; transition:all 0.15s;`}>
+              {age}
+            </button>
+          ))}
+        </div>
+
+        <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#6b7280;margin:16px 0 8px;">Ваш телефон</p>
+        <input type="tel" placeholder="+7 (___) ___-__-__"
+          style="width:100%; height:48px; border-radius:10px; border:1.5px solid #e5e7eb; background:white; padding:0 14px; font-size:16px; color:#1e2430; box-sizing:border-box; outline:none;" />
+
+        <label style="display:flex; gap:8px; margin-top:12px; font-size:14px; line-height:1.4; color:#6b7280; align-items:flex-start;">
+          <input type="checkbox" style="margin-top:2px; accent-color:#ec7c00; width:16px; height:16px;" />
+          <span>Согласен(а) на <a href="#" style="color:#ec7c00; text-decoration:underline;">обработку персональных данных</a></span>
+        </label>
+
+        <!-- Исправлено: белый текст -->
+        <button style="margin-top:16px; width:100%; height:48px; border-radius:12px; background:#ec7c00; color:white; font-size:16px; font-weight:700; border:none; cursor:pointer; box-shadow:0 4px 16px rgba(236,124,0,0.35); display:flex; align-items:center; justify-content:center; gap:8px;">
+          <i class="bi bi-telegram" style="font-size:18px;"></i>
+          Получить программу
+        </button>
+
+        <div style="display:flex; gap:6px; margin-top:12px; flex-wrap:wrap;">
+          {['Лицензия Минобрнауки','Медработник 24/7','Страховка'].map(t => (
+            <span style="display:inline-flex; align-items:center; gap:4px; border-radius:100px; border:1px solid #bbf7d0; background:#f0fdf4; padding:4px 10px; font-size:12px; color:#166534;">
+              <i class="bi bi-check-lg" style="font-size:10px;"></i>
+              {t}
+            </span>
+          ))}
+        </div>
+
+        <div style="font-size:12px;color:#9ca3af;margin-top:12px;text-align:center;">
+          Отвечаем в течение 15 минут
+        </div>
+      </div>
+    </div>
+
+    <!-- Инпуты состояния -->
+    <div class="col">
+      <div class="component-label">Состояния инпута</div>
+      <div style="display:flex; flex-direction:column; gap:12px; max-width:300px;">
+        <div>
+          <div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">Default</div>
+          <input placeholder="+7 (___) ___-__-__" style="width:100%; height:48px; border-radius:10px; border:1.5px solid #e5e7eb; padding:0 14px; font-size:16px; box-sizing:border-box;" />
+        </div>
+        <div>
+          <div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">Focus</div>
+          <input value="+7 (999) 123-45-67" style="width:100%; height:48px; border-radius:10px; border:1.5px solid #ec7c00; padding:0 14px; font-size:16px; box-sizing:border-box; box-shadow:0 0 0 3px rgba(236,124,0,0.15); outline:none;" />
+        </div>
+        <div>
+          <div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">Error</div>
+          <input value="+7 (999) 1" style="width:100%; height:48px; border-radius:10px; border:1.5px solid #ef4444; padding:0 14px; font-size:16px; box-sizing:border-box; box-shadow:0 0 0 3px rgba(239,68,68,0.12); outline:none;" />
+          <div style="font-size:12px;color:#ef4444;margin-top:4px;">Введите полный номер</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">Disabled</div>
+          <input placeholder="Поле недоступно" disabled style="width:100%; height:48px; border-radius:10px; border:1.5px solid #e5e7eb; padding:0 14px; font-size:16px; box-sizing:border-box; background:#f9fafb; cursor:not-allowed; color:#9ca3af;" />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- 6. КАРТОЧКИ СМЕН (ShiftCard)                          -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="section" id="section-6">
+  <span class="section-label">06</span>
+  <h2 class="section-title">Карточки смен (ShiftCard)</h2>
+  <p class="section-desc">ShiftCard.astro — самый сложный компонент. Цена, даты, прогресс, кнопки «Выбрать». Нужно: glassmorphism поверх #eff6ff фона.</p>
+
+  <!-- Фон сравнение -->
+  <div style="margin-bottom:32px;">
+    <div style="display:flex; gap:24px; flex-wrap:wrap;">
+
+      <!-- Текущий (белый фон) -->
+      <div style="flex:1; min-width:280px;">
+        <div class="component-label">Текущий — bg-slate-50, белый фон секции</div>
+        <div style="background:#f8fafc; padding:24px; border-radius:20px; border:1px solid #e2e8f0;">
+          <article style="background:#f8fafc; border-radius:20px; border:1px solid #e2e8f0; padding:20px; box-shadow:0 6px 18px rgba(15,23,42,0.04);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+              <div>
+                <h3 style="font-size:20px;font-weight:600;color:#0f172a;line-height:1.15;">IT + Творчество</h3>
+                <p style="margin:4px 0 0;font-size:14px;font-weight:500;color:#475569;">27 июня — 10 июля</p>
+              </div>
+              <span style="border-radius:100px;background:#dcfce7;color:#166534;padding:2px 10px;font-size:14px;font-weight:500;white-space:nowrap;">Открыта</span>
+            </div>
+            <p style="margin:4px 0 0;font-size:13px;color:#475569;">14 дней</p>
+            <div style="margin-top:12px;font-size:20px;font-weight:700;color:#ea580c;letter-spacing:-0.02em;">59 000 ₽</div>
+            <p style="font-size:14px;color:#475569;margin:4px 0 0;">Питание, проживание, программа</p>
+            <div style="margin-top:12px; height:10px; background:#f1f5f9; border-radius:6px; overflow:hidden;">
+              <div style="height:100%; background:#94a3b8; border-radius:6px 0 0 6px; width:70%;"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px;">
+              <span style="font-size:14px;color:#475569;">занято 8</span>
+              <span style="font-size:14px;font-weight:500;color:#10b981;">свободно 4</span>
+            </div>
+            <button style="margin-top:16px;width:100%;height:48px;background:#ec7c00;color:#1e2430;border-radius:12px;font-size:15px;font-weight:600;border:none;cursor:pointer;">Выбрать</button>
+          </article>
+        </div>
+      </div>
+
+      <!-- Новый (glass на синем) -->
+      <div style="flex:1; min-width:280px;">
+        <div class="component-label">Предложение — glass-surface поверх #eff6ff</div>
+        <div style="background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding:24px; border-radius:20px;">
+          <article style="position:relative; background:rgba(255,255,255,0.72); backdrop-filter:blur(16px) saturate(180%); border-radius:20px; border:1px solid rgba(255,255,255,0.8); padding:20px; box-shadow:0 8px 24px rgba(27,79,216,0.10);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+              <div>
+                <h3 style="font-size:20px;font-weight:600;color:#0f172a;line-height:1.15;">IT + Творчество</h3>
+                <p style="margin:4px 0 0;font-size:14px;font-weight:500;color:#475569;">27 июня — 10 июля</p>
+              </div>
+              <span style="border-radius:100px;background:rgba(220,252,231,0.9);color:#166534;padding:2px 10px;font-size:14px;font-weight:500;white-space:nowrap;">Открыта</span>
+            </div>
+            <p style="margin:4px 0 0;font-size:13px;color:#475569;">14 дней</p>
+            <div style="margin-top:12px;font-size:20px;font-weight:700;color:#ec7c00;letter-spacing:-0.02em;">59 000 ₽</div>
+            <p style="font-size:14px;color:#475569;margin:4px 0 0;">Питание, проживание, программа</p>
+            <div style="margin-top:12px; height:10px; background:rgba(203,213,225,0.5); border-radius:6px; overflow:hidden;">
+              <div style="height:100%; background:#94a3b8; border-radius:6px 0 0 6px; width:70%;"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px;">
+              <span style="font-size:14px;color:#475569;">занято 8</span>
+              <span style="font-size:14px;font-weight:500;color:#10b981;">свободно 4</span>
+            </div>
+            <!-- Glass кнопки action -->
+            <div style="display:flex; gap:8px; margin-top:12px;">
+              <button style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; height:38px; background:rgba(255,255,255,0.6); border:1px solid rgba(27,79,216,0.2); border-radius:10px; font-size:13px; color:#1b4fd8; cursor:pointer; font-weight:500;">
+                <i class="bi bi-calendar-event"></i> Даты
+              </button>
+              <button style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; height:38px; background:rgba(255,255,255,0.6); border:1px solid rgba(27,79,216,0.2); border-radius:10px; font-size:13px; color:#1b4fd8; cursor:pointer; font-weight:500;">
+                <i class="bi bi-lightbulb"></i> Детали
+              </button>
+            </div>
+            <button style="margin-top:10px;width:100%;height:48px;background:#ec7c00;color:white;border-radius:12px;font-size:15px;font-weight:700;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(236,124,0,0.35);">
+              Выбрать
+            </button>
+          </article>
+        </div>
+      </div>
+
+      <!-- Популярная смена -->
+      <div style="flex:1; min-width:280px;">
+        <div class="component-label">Популярная смена — badge + border</div>
+        <div style="background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding:24px; border-radius:20px;">
+          <article style="position:relative; background:rgba(255,255,255,0.72); backdrop-filter:blur(16px) saturate(180%); border-radius:20px; border:2px solid #ec7c00; padding:20px; box-shadow:0 8px 24px rgba(236,124,0,0.15);">
+            <div style="margin-bottom:8px;">
+              <span style="display:inline-flex; align-items:center; gap:4px; background:#ec7c00; color:white; border-radius:100px; padding:2px 10px; font-size:13px; font-weight:600;">
+                <i class="bi bi-fire" style="font-size:12px;"></i> Популярная
+              </span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+              <div>
+                <h3 style="font-size:20px;font-weight:600;color:#0f172a;line-height:1.15;">Хакатон Pro</h3>
+                <p style="margin:4px 0 0;font-size:14px;font-weight:500;color:#475569;">11 — 24 июля</p>
+              </div>
+              <span style="border-radius:100px;background:rgba(255,237,213,0.9);color:#c2410c;padding:2px 10px;font-size:14px;font-weight:500;white-space:nowrap;">3 места</span>
+            </div>
+            <div style="margin-top:12px;font-size:20px;font-weight:700;color:#ec7c00;letter-spacing:-0.02em;">65 000 ₽</div>
+            <div style="margin-top:12px; height:10px; background:rgba(203,213,225,0.5); border-radius:6px; overflow:hidden;">
+              <div style="height:100%; background:#f97316; border-radius:6px 0 0 6px; width:90%;"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px;">
+              <span style="font-size:14px;color:#475569;">занято 9</span>
+              <span style="font-size:14px;font-weight:600;color:#f97316;">свободно 1</span>
+            </div>
+            <button style="margin-top:16px;width:100%;height:48px;background:#ec7c00;color:white;border-radius:12px;font-size:15px;font-weight:700;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(236,124,0,0.4);">
+              Выбрать место
+            </button>
+          </article>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- 7. BADGES & PILLS                                      -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="section" id="section-7">
+  <span class="section-label">07</span>
+  <h2 class="section-title">Badges, Pills, Trust-элементы</h2>
+  <p class="section-desc">Используются в Reviews, Hero, ShiftCard, LeadForm. Правило: только bi-иконки, 12–13px, min-height 28px.</p>
+
+  <div class="row">
+    <div class="col">
+      <div class="component-label">Status Badges (ShiftCard)</div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px;">
+        <span style="background:#dcfce7;color:#166534;border-radius:100px;padding:3px 12px;font-size:14px;font-weight:500;">Открыта</span>
+        <span style="background:#fef9c3;color:#854d0e;border-radius:100px;padding:3px 12px;font-size:14px;font-weight:500;">Мало мест</span>
+        <span style="background:#fee2e2;color:#991b1b;border-radius:100px;padding:3px 12px;font-size:14px;font-weight:500;">Заполнена</span>
+        <span style="background:#eff6ff;color:#1e40af;border-radius:100px;padding:3px 12px;font-size:14px;font-weight:500;">Скоро</span>
+      </div>
+
+      <div class="component-label">Trust Pills (Hero Mobile / LeadForm)</div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px;">
+        <span style="display:inline-flex; align-items:center; gap:6px; border-radius:100px; border:1px solid #bbf7d0; background:#f0fdf4; padding:6px 14px; font-size:13px; font-weight:500; color:#166534;">
+          <i class="bi bi-patch-check-fill" style="font-size:12px;"></i>
+          Лицензия Минобрнауки
+        </span>
+        <span style="display:inline-flex; align-items:center; gap:6px; border-radius:100px; border:1px solid #bbf7d0; background:#f0fdf4; padding:6px 14px; font-size:13px; font-weight:500; color:#166534;">
+          <i class="bi bi-heart-pulse-fill" style="font-size:12px;"></i>
+          Медработник 24/7
+        </span>
+        <span style="display:inline-flex; align-items:center; gap:6px; border-radius:100px; border:1px solid #bbf7d0; background:#f0fdf4; padding:6px 14px; font-size:13px; font-weight:500; color:#166534;">
+          <i class="bi bi-shield-fill-check" style="font-size:12px;"></i>
+          Страховка
+        </span>
+      </div>
+
+      <div class="component-label">Glass Trust Pills (для Hero на тёмном фоне)</div>
+      <div style="background:#0d1a2b; border-radius:16px; padding:16px; display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px;">
+        <span style="display:inline-flex; align-items:center; gap:6px; border-radius:100px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); backdrop-filter:blur(8px); padding:6px 14px; font-size:13px; font-weight:500; color:rgba(255,255,255,0.9);">
+          <i class="bi bi-patch-check-fill" style="font-size:12px; color:#4ade80;"></i>
+          Лицензия
+        </span>
+        <span style="display:inline-flex; align-items:center; gap:6px; border-radius:100px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); backdrop-filter:blur(8px); padding:6px 14px; font-size:13px; font-weight:500; color:rgba(255,255,255,0.9);">
+          <i class="bi bi-heart-pulse-fill" style="font-size:12px; color:#4ade80;"></i>
+          Медсестра
+        </span>
+        <span style="display:inline-flex; align-items:center; gap:6px; border-radius:100px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); backdrop-filter:blur(8px); padding:6px 14px; font-size:13px; font-weight:500; color:rgba(255,255,255,0.9);">
+          <i class="bi bi-shield-fill-check" style="font-size:12px; color:#4ade80;"></i>
+          Страховка
+        </span>
+      </div>
+
+      <div class="component-label">Метрики Hero 2×2 (текущие)</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; max-width:280px;">
+        {[['7', 'лет опыта'],['1200+', 'детей'],['5.0', 'Я.Карты'],['ТОП-4', 'в России']].map(([num, label]) => (
+          <div style="background:rgba(255,255,255,0.08); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.15); border-radius:14px; padding:12px 16px; background:#0d1a2b;">
+            <div style="font-size:24px; font-weight:800; color:white; line-height:1;">{num}</div>
+            <div style="font-size:12px; color:rgba(255,255,255,0.55); margin-top:2px;">{label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="component-label">Иконки — карта замен (из CLAUDE.md)</div>
+      <div style="background:white; border-radius:16px; padding:20px; border:1px solid #f3f4f6;">
+        <table style="width:100%; font-size:13px; border-collapse:collapse;">
+          <tr style="border-bottom:1px solid #f3f4f6;">
+            <th style="text-align:left; padding:6px 0; color:#6b7280; font-weight:600;">Контекст</th>
+            <th style="text-align:left; padding:6px 0; color:#ef4444; font-weight:600;">Нельзя</th>
+            <th style="text-align:left; padding:6px 0; color:#10b981; font-weight:600;">Нужно</th>
+          </tr>
+          {[
+            ['Кнопка CTA', '🚀 🎯', 'bi-telegram, bi-send-fill'],
+            ['Доверие', '✅ 🛡', 'bi-patch-check-fill, bi-shield-fill'],
+            ['Медицина', '❤️ 💊', 'bi-heart-pulse-fill'],
+            ['Лагерь', '🏕 ⛺', 'bi-house-heart-fill'],
+            ['Программирование', '💻 🖥', 'bi-laptop'],
+            ['Популярное', '🔥', 'bi-fire'],
+            ['Рейтинг', '⭐', 'bi-star-fill (или ★ typography)'],
+            ['Внимание', '⚠️', 'bi-exclamation-triangle-fill'],
+            ['Документ', '📄', 'bi-file-earmark-text'],
+            ['Телефон', '📞', 'bi-telephone-fill'],
+          ].map(([ctx, bad, good]) => (
+            <tr style="border-bottom:1px solid #f9fafb;">
+              <td style="padding:8px 0; color:#374151;">{ctx}</td>
+              <td style="padding:8px 0; color:#ef4444; font-size:16px;">{bad}</td>
+              <td style="padding:8px 4px; color:#374151; font-family:monospace; font-size:11px;">{good}</td>
+            </tr>
+          ))}
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- 8. GLASS-ЭФФЕКТЫ                                       -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="section" id="section-8">
+  <span class="section-label">08</span>
+  <h2 class="section-title">Glass-эффекты — когда и как</h2>
+  <p class="section-desc">Glass работает ТОЛЬКО на цветном/тёмном фоне. На белом — невидимо и бессмысленно.</p>
+
+  <div class="row">
+    <!-- glass-dark (Hero mobile photo) -->
+    <div class="col">
+      <div class="component-label">glass-dark — поверх тёмного фото (Hero mobile)</div>
+      <div style="background:linear-gradient(135deg, #1e3a5f, #0d1a2b); border-radius:20px; padding:32px 20px; position:relative; overflow:hidden; min-height:280px;">
+        <div style="position:absolute;inset:0;background:url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><circle cx=\"50\" cy=\"50\" r=\"40\" fill=\"%231b4fd8\" opacity=\"0.2\"/></svg>');"></div>
+        <div style="position:relative; z-index:1;">
+          <h2 style="color:white; font-size:28px; font-weight:800; margin:0 0 6px; line-height:1.1;">Программирование<br>+ живой отдых</h2>
+          <p style="color:rgba(255,255,255,0.7); font-size:16px; margin:0 0 20px;">от 48 000 ₽ · смены с 30 мая</p>
+
+          <button style="width:100%; height:52px; background:#ec7c00; color:white; border-radius:14px; font-size:17px; font-weight:700; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 6px 24px rgba(236,124,0,0.45); margin-bottom:16px;">
+            <i class="bi bi-telegram" style="font-size:20px;"></i>
+            Написать в бот
+          </button>
+
+          <!-- glass-dark метрики -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            {[['7', 'лет'],['1200+', 'детей'],['5.0', 'Яндекс'],['ТОП-4', 'Россия']].map(([n, l]) => (
+              <div style="background:rgba(255,255,255,0.08); backdrop-filter:blur(12px) saturate(200%); border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:10px 14px;">
+                <div style="font-size:22px; font-weight:800; color:white;">{n}</div>
+                <div style="font-size:11px; color:rgba(255,255,255,0.5);">{l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div class="component-code">{"background: rgba(255,255,255,0.08);\nbackdrop-filter: blur(12px) saturate(200%);\nborder: 1px solid rgba(255,255,255,0.12);"}</div>
+    </div>
+
+    <!-- glass-surface (Shifts секция) -->
+    <div class="col">
+      <div class="component-label">glass-surface — поверх голубого градиента (Shifts)</div>
+      <div style="background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #ede9fe 100%); border-radius:20px; padding:24px;">
+        <div style="background:rgba(255,255,255,0.72); backdrop-filter:blur(16px) saturate(180%); border:1px solid rgba(255,255,255,0.8); border-radius:20px; padding:20px; box-shadow:0 8px 24px rgba(27,79,216,0.10);">
+          <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1b4fd8; margin-bottom:6px;">СМЕНЫ ЛЕТА 2026</div>
+          <h3 style="font-size:20px; font-weight:700; color:#0f172a; margin:0 0 12px;">IT + Творчество</h3>
+          <div style="font-size:24px; font-weight:800; color:#ec7c00; margin-bottom:16px;">59 000 ₽</div>
+          <button style="width:100%; height:44px; background:#ec7c00; color:white; border-radius:12px; font-size:15px; font-weight:700; border:none; cursor:pointer; box-shadow:0 4px 16px rgba(236,124,0,0.35);">
+            Выбрать
+          </button>
+        </div>
+      </div>
+      <div class="component-code">{"background: rgba(255,255,255,0.72);\nbackdrop-filter: blur(16px) saturate(180%);\nborder: 1px solid rgba(255,255,255,0.8);"}</div>
+    </div>
+
+    <!-- glass CTA блок -->
+    <div class="col">
+      <div class="component-label">CTA-блок — тёмно-синий фон (SummerCta)</div>
+      <div style="background:#1b4fd8; border-radius:20px; padding:32px 24px;">
+        <div style="text-align:center; margin-bottom:24px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:rgba(255,255,255,0.5); margin-bottom:8px;">Записаться на смену</div>
+          <h2 style="font-size:24px; font-weight:800; color:white; margin:0 0 8px;">Осталось <span style="color:#f59332;">4 места</span> на июль</h2>
+          <p style="font-size:15px; color:rgba(255,255,255,0.7); margin:0;">Налоговый вычет 13% — до 5 434 ₽</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.1); backdrop-filter:blur(16px) saturate(180%); border:1px solid rgba(255,255,255,0.2); border-radius:16px; padding:20px;">
+          <input placeholder="+7 (___) ___-__-__"
+            style="width:100%; height:48px; border-radius:10px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.08); color:white; padding:0 14px; font-size:16px; box-sizing:border-box; margin-bottom:12px;" />
+          <button style="width:100%; height:52px; background:#ec7c00; color:white; border-radius:12px; font-size:16px; font-weight:700; border:none; cursor:pointer; box-shadow:0 4px 20px rgba(236,124,0,0.4); display:flex; align-items:center; justify-content:center; gap:10px;">
+            <i class="bi bi-telegram" style="font-size:18px;"></i>
+            Записаться сейчас
+          </button>
+        </div>
+      </div>
+      <div class="component-code">{"/* CTA форма поверх синего */\nbackground: rgba(255,255,255,0.10);\nbackdrop-filter: blur(16px) saturate(180%);\nborder: 1px solid rgba(255,255,255,0.20);"}</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- 9. HERO MOBILE — КОНЦЕПЦИЯ                             -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="section" id="section-9">
+  <span class="section-label">09</span>
+  <h2 class="section-title">Hero Mobile — концепция v2</h2>
+  <p class="section-desc">Структура снизу вверх: glass-метрики → кнопка бот → цена → фото. Добавлен «Пока другие на даче» (из коммита a0b554b).</p>
+
+  <div class="row">
+    <div class="col" style="max-width:375px;">
+      <!-- Имитация мобильного экрана -->
+      <div style="border:2px solid #1e2430; border-radius:40px; overflow:hidden; box-shadow:0 30px 60px rgba(0,0,0,0.3);">
+        <div style="background:linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(13,26,43,0.85) 55%, #0d1a2b 100%); min-height:680px; padding:0; position:relative;">
+
+          <!-- Фото-зона (имитация) -->
+          <div style="height:300px; background:linear-gradient(135deg, #1e3a5f, #0d1a2b, #1b4fd8); position:relative; display:flex; align-items:center; justify-content:center;">
+            <div style="position:absolute; inset:0; background:linear-gradient(180deg, transparent 40%, #0d1a2b 100%);"></div>
+            <span style="color:rgba(255,255,255,0.2); font-size:14px; position:relative; z-index:1;">[фото детей с улыбками]</span>
+          </div>
+
+          <!-- Content zone -->
+          <div style="padding:0 20px 32px;">
+            <!-- Лозунг (восстановить из a0b554b) -->
+            <div style="margin:-20px 0 12px; position:relative; z-index:2;">
+              <span style="background:rgba(236,124,0,0.15); border:1px solid rgba(236,124,0,0.3); border-radius:100px; padding:4px 12px; font-size:12px; font-weight:600; color:#f59332; display:inline-block;">
+                Пока другие на даче...
+              </span>
+            </div>
+
+            <h1 style="color:white; font-size:30px; font-weight:800; line-height:1.1; margin:0 0 8px;">
+              Программирование<br>+ живой отдых
+            </h1>
+            <p style="color:rgba(255,255,255,0.65); font-size:16px; margin:0 0 16px; line-height:1.5;">
+              от <strong style="color:#f59332;">48 000 ₽</strong> · Подмосковье, смены с 30 мая
+            </p>
+
+            <!-- CTA кнопка -->
+            <button style="width:100%; height:52px; background:#ec7c00; color:white; border-radius:14px; font-size:17px; font-weight:800; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 6px 28px rgba(236,124,0,0.5); margin-bottom:14px; letter-spacing:-0.01em;">
+              <i class="bi bi-telegram" style="font-size:20px;"></i>
+              Написать в бот
+            </button>
+
+            <a href="#shifts" style="display:block; text-align:center; color:rgba(255,255,255,0.6); font-size:14px; text-decoration:none; margin-bottom:20px;">
+              Смотреть смены ↓
+            </a>
+
+            <!-- Glass метрики 2x2 -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px;">
+              {[['7','лет опыта'],['1200+','детей'],['5.0','Я.Карты'],['ТОП-4','в России']].map(([n,l]) => (
+                <div style="background:rgba(255,255,255,0.08); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:12px 14px;">
+                  <div style="font-size:22px; font-weight:800; color:white; line-height:1;">{n}</div>
+                  <div style="font-size:11px; color:rgba(255,255,255,0.45); margin-top:2px;">{l}</div>
+                </div>
+              ))}
+            </div>
+
+            <!-- Trust pills -->
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              {['Лицензия','Медсестра','Страховка'].map(t => (
+                <span style="display:inline-flex; align-items:center; gap:5px; border-radius:100px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); backdrop-filter:blur(8px); padding:5px 10px; font-size:11px; font-weight:500; color:rgba(255,255,255,0.8);">
+                  <i class="bi bi-patch-check-fill" style="font-size:10px; color:#4ade80;"></i>
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Описание структуры -->
+    <div class="col">
+      <div style="background:white; border-radius:16px; padding:24px; border:1px solid #f3f4f6;">
+        <div style="font-size:16px; font-weight:700; color:#1e2430; margin-bottom:16px;">Структура Mobile Hero (сверху вниз)</div>
+        {[
+          ['1','Фотография детей с улыбками','Эмоция "я хочу туда" — без изменений','#ec7c00'],
+          ['2','«Пока другие на даче...»','Восстановить из коммита a0b554b — цепляет','#f59332'],
+          ['3','H1 заголовок + цена','Конкретно: «от 48 000 ₽ · с 30 мая»','#1b4fd8'],
+          ['4','CTA кнопка — Написать в бот','Добавлена в dev. Главное действие.','#10b981'],
+          ['5','Метрики 2×2 (glass-dark)','7 лет / 1200+ / 5.0 / ТОП-4','#6b7280'],
+          ['6','Trust pills (glass-dark)','Лицензия / Медсестра / Страховка','#6b7280'],
+        ].map(([num, title, desc, color]) => (
+          <div style="display:flex; gap:12px; margin-bottom:16px; align-items:flex-start;">
+            <div style={`width:28px; height:28px; border-radius:50%; background:${color}; color:white; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0;`}>{num}</div>
+            <div>
+              <div style="font-size:14px; font-weight:600; color:#1e2430;">{title}</div>
+              <div style="font-size:12px; color:#6b7280; margin-top:2px;">{desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style="margin-top:16px; background:#fff1df; border:1.5px solid #fbbf24; border-radius:14px; padding:16px;">
+        <div style="font-size:13px; font-weight:700; color:#92400e; margin-bottom:8px;">
+          <i class="bi bi-lightbulb-fill"></i> «Пока другие на даче» — восстановить?
+        </div>
+        <div style="font-size:13px; color:#78350f; line-height:1.5;">
+          Фраза была в коммите <code>a0b554b</code>, убрана при откате.<br>
+          Зацепляет целевую аудиторию (мама с телефоном, лето, FOMO).<br>
+          <strong>Предлагаю: восстановить как оранжевый тег над заголовком.</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- 10. DO / DON'T — ИТОГОВЫЕ ПРАВИЛА                     -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="section" id="section-10">
+  <span class="section-label">10</span>
+  <h2 class="section-title">Do / Don't — итоговые правила</h2>
+  <p class="section-desc">Чек-лист перед каждым PR в ветку dev.</p>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:32px;">
+    <div>
+      <div style="font-size:13px; font-weight:700; color:#10b981; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:16px;">
+        <i class="bi bi-check-circle-fill"></i> Делай
+      </div>
+      {[
+        'bg-primary / text-primary / border-primary — только токены',
+        'text-white на оранжевой кнопке (контраст 5.2:1)',
+        'min-h-[48px] для всех интерактивных элементов (touch)',
+        'glass только на цветном/тёмном фоне',
+        'Inter — единственный шрифт (не Comfortaa!)',
+        'min 16px для читаемого контента',
+        'bi-* иконки с aria-hidden="true"',
+        'Только иконки из icons-manifest.json',
+        'Отдельная ветка design/glassmorphism-v1',
+        'PR в dev, не прямой merge',
+      ].map(r => (
+        <div style="display:flex; gap:8px; margin-bottom:8px; align-items:flex-start;">
+          <i class="bi bi-check-lg" style="color:#10b981; flex-shrink:0; margin-top:2px;"></i>
+          <span style="font-size:14px; color:#1e2430;">{r}</span>
+        </div>
+      ))}
+    </div>
+    <div>
+      <div style="font-size:13px; font-weight:700; color:#ef4444; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:16px;">
+        <i class="bi bi-x-circle-fill"></i> Не делай
+      </div>
+      {[
+        '#ec7c00 хардкодом (только через токен)',
+        'Тёмный текст на оранжевой кнопке',
+        'bg-orange-500, bg-orange-600, text-orange-600',
+        'Glass на белом фоне — невидимо',
+        'Comfortaa или другие шрифты в production',
+        'Эмодзи как иконки (🚀 🎯 ⚡ 🔥)',
+        'rounded-[14px] или другие произвольные значения',
+        'Коммит в main/dev напрямую (без MASTER_AGENT=1)',
+        'Partytown (@astrojs/partytown)',
+        'Педагогические термины (soft-skills, компетенции)',
+      ].map(r => (
+        <div style="display:flex; gap:8px; margin-bottom:8px; align-items:flex-start;">
+          <i class="bi bi-x-lg" style="color:#ef4444; flex-shrink:0; margin-top:2px;"></i>
+          <span style="font-size:14px; color:#1e2430;">{r}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <!-- Приоритеты имплементации -->
+  <div style="background:white; border-radius:20px; padding:24px; border:1px solid #f3f4f6;">
+    <div style="font-size:16px; font-weight:700; color:#1e2430; margin-bottom:20px;">Приоритеты имплементации (design/glassmorphism-v1)</div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px;">
+      {[
+        ['P1 · 2 часа','Быстрые победы','bg-primary токены · радиусы · 16px везде','#ec7c00'],
+        ['P2 · 3 часа','Shifts glassmorphism','Фон #eff6ff · glass-surface карточки · glass кнопки','#1b4fd8'],
+        ['P3 · 2 часа','Hero mobile','glass-dark метрики · glass trust pills · «Пока другие...»','#10b981'],
+        ['P4 · 3 часа','Hero desktop','Нижняя плашка → glass-surface · бот-кнопка рядом','#6b7280'],
+        ['P5 · 1 час','CTA-блок','Синий фон + оранжевая кнопка + glass-форма','#9ca3af'],
+      ].map(([priority, title, tasks, color]) => (
+        <div style={`border-left:3px solid ${color}; padding:12px 16px; background:#f9fafb; border-radius:0 10px 10px 0;`}>
+          <div style={`font-size:11px; font-weight:700; color:${color}; text-transform:uppercase; letter-spacing:0.08em;`}>{priority}</div>
+          <div style="font-size:14px; font-weight:700; color:#1e2430; margin:4px 0;">{title}</div>
+          <div style="font-size:12px; color:#6b7280;">{tasks}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- Footer -->
+<footer style="background:#0d1a2b; padding:24px; text-align:center; color:#4b5563; font-size:13px;">
+  АйДаКемп · Дизайн-документ HyperUI · Ветка design/glassmorphism-v1 · 2026-04-29
+</footer>
+
+</body>
+</html>

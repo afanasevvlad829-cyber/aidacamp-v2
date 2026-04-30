@@ -73,7 +73,7 @@ export const mainShifts: Shift[] = [
     status: 'места есть',
     statusType: 'available',
     description: 'Закрытие лета: сильный проект и уверенный результат.',
-    price: '69 600 ₽',
+    price: '74 900 ₽',
     free: 14,
     occupied: 31,
     startDate: '2026-08-17',
@@ -130,8 +130,8 @@ export function renderCard(shift: Shift) {
   const badgeBg = shift.statusType === 'short' ? 'bg-amber-100' : 'bg-emerald-100';
   const badgeText = shift.statusType === 'short' ? 'text-amber-700' : 'text-emerald-700';
   const btnClass = shift.highlighted
-    ? 'bg-primary text-[#1e2430] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(249,115,22,0.35)] hover:-translate-y-[1px] active:translate-y-0'
-    : 'border border-slate-200 bg-slate-100 text-slate-700 transition-all duration-200 hover:bg-white hover:-translate-y-[1px] active:translate-y-0';
+    ? 'border border-primary/60 bg-primary/8 text-primary transition-colors duration-150 hover:bg-primary/14 hover:border-primary/80 active:translate-y-0'
+    : 'border border-border bg-surface text-body-muted transition-colors duration-150 hover:bg-card hover:border-border-light active:translate-y-0';
 
   return { total, pct, badgeBg, badgeText, btnClass };
 }
@@ -263,7 +263,7 @@ export const shiftInfo: Record<string, {
         'Чемпионаты лагеря (футбол, пионербол) проходят регулярно и дополняют программу.'),
   },
   'shift-4': {
-    dates: '17 августа — 26 августа', duration: '10 дней', price: '69 600 ₽',
+    dates: '17 августа — 26 августа', duration: '10 дней', price: '74 900 ₽',
     html:
       '<p class="text-[14px] leading-[1.6] text-slate-700">Смена с акцентом на аккуратность, завершённость и понимание того, что сделано.</p>' +
       section('Первые дни — вход и база',
