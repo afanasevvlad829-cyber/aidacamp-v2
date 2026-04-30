@@ -1,0 +1,104 @@
+---
+/**
+ * DualRatingPill — комбинированный пилл с двумя рейтингами:
+ *   ★ 5.0 Яндекс (→ Яндекс Карты) · ★ 4.8 iCamp (→ incamp.ru)
+ *
+ * Props:
+ *   yandexRating   — строка, напр. '5.0'
+ *   yandexUrl      — ссылка на профиль в Яндекс Картах
+ *   incampRating   — число, напр. 4.8
+ *   incampUid      — uid лагеря на incamp.ru (339484 для АйДаКемп)
+ *   variant        — 'hero' (default, на тёмном фоне) | 'light' (на светлом)
+ *   size           — 'sm' | 'md' (default)
+ *   yandexGoal     — data-goal для Метрики (опц.)
+ *   incampGoal     — data-goal для Метрики (опц.)
+ */
+interface Props {
+  yandexRating?:  string;
+  yandexUrl?:     string;
+  incampRating?:  number;
+  incampUid?:     string | number;
+  variant?:       'hero' | 'light';
+  size?:          'sm' | 'md';
+  yandexGoal?:    string;
+  incampGoal?:    string;
+}
+
+const {
+  yandexRating = '5.0',
+  yandexUrl    = 'https://yandex.ru/maps/?ll=36.724185,55.265643&z=15&pt=36.724185,55.265643,pm2rdm',
+  incampRating = 4.8,
+  incampUid    = 339484,
+  variant      = 'hero',
+  size         = 'md',
+  yandexGoal,
+  incampGoal,
+} = Astro.props;
+
+const incampUrl = `https://incamp.ru/camps/${incampUid}/`;
+
+// Размеры
+const px     = size === 'sm' ? 'px-2.5 py-1'   : 'px-3 py-1.5';
+const textSz = size === 'sm' ? 'text-[12px]'    : 'text-[13px]';
+const starSz = size === 'sm' ? 'text-[11px]'    : 'text-[13px]';
+const divH   = size === 'sm' ? 'h-[12px]'       : 'h-[14px]';
+
+// Варианты
+const hero  = variant === 'hero';
+const wrap  = hero
+  ? 'bg-white/8 border border-white/12 hover:border-white/25'
+  : 'bg-white border border-slate-200 hover:border-slate-300 shadow-sm';
+const divCl = hero ? 'bg-white/15' : 'bg-slate-200';
+const subCl = hero ? 'text-white/55' : 'text-slate-400';
+const hov   = hero ? 'hover:bg-white/12' : 'hover:bg-slate-50';
+---
+
+<div
+  class:list={[
+    'dual-rating-pill inline-flex items-center rounded-[8px] overflow-hidden transition-all duration-200',
+    wrap,
+  ]}
+  role="group"
+  aria-label={`Рейтинги: ${yandexRating} на Яндекс Картах и ${incampRating} на iCamp.ru`}
+>
+  <!-- ★ Яндекс -->
+  <a
+    href={yandexUrl}
+    target="_blank"
+    rel="noopener noreferrer"
+    data-goal={yandexGoal || undefined}
+    class:list={[
+      'flex items-center gap-1.5 no-underline transition-colors duration-150',
+      px, textSz, hov,
+    ]}
+    title={`Рейтинг ${yandexRating} на Яндекс Картах`}
+  >
+    <span class:list={['font-bold leading-none text-[#f5a624]', starSz]}>★ {yandexRating}</span>
+    <span class:list={['leading-none', subCl]}>Яндекс</span>
+  </a>
+
+  <!-- Разделитель -->
+  <div class:list={['w-px shrink-0', divH, divCl]}></div>
+
+  <!-- ★ iCamp -->
+  <a
+    href={incampUrl}
+    target="_blank"
+    rel="noopener noreferrer"
+    data-goal={incampGoal || undefined}
+    class:list={[
+      'flex items-center gap-1.5 no-underline transition-colors duration-150',
+      px, textSz, hov,
+    ]}
+    title={`Рейтинг ${incampRating} на iCamp.ru`}
+  >
+    <span class:list={['font-bold leading-none text-[#ec7c00]', starSz]}>★ {incampRating}</span>
+    <span class:list={['leading-none', subCl]}>iCamp</span>
+  </a>
+</div>
+
+<style>
+  .dual-rating-pill a {
+    text-decoration: none !important;
+  }
+</style>
