@@ -17,7 +17,7 @@ const {
 ---
 
 <!doctype html>
-<html lang="ru" data-theme="light">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -31,7 +31,7 @@ const {
     <!-- Bootstrap Icons (inline) -->
     <style set:html={iconsCSS} />
 
-    <style>
+    <style is:global>
 /* ── DESIGN TOKENS — DARK (default) ─────────────────────────────────── */
 :root {
   --bg:      #0C0E11;
@@ -112,6 +112,50 @@ const {
   --shadow:  0 12px 32px rgba(0,0,0,0.10);
   --code-bg: #1A1E26;
   --nav-bg:  rgba(244,245,248,0.92);
+}
+
+/* ── CORP-* ALIASES (для дочерних компонентов) ───────────────────────── */
+:root {
+  --corp-txt:   var(--txt);
+  --corp-txt2:  var(--txt2);
+  --corp-or:    var(--or);
+  --corp-or2:   var(--or2);
+  --corp-bdr:   var(--bdr);
+  --corp-bg2:   var(--bg2);
+  --corp-bg3:   var(--bg3);
+  --corp-green: var(--green);
+}
+
+/* ── CORP UTILITY CLASSES ────────────────────────────────────────────── */
+.corp-section {
+  padding: 88px 0;
+  border-top: 1px solid var(--bdr);
+  background: var(--bg);
+}
+.corp-section-alt {
+  background: var(--bg2);
+}
+.corp-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 28px;
+}
+.corp-kicker {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--or2);
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 18px;
+}
+.corp-kicker::before {
+  content: ''; display: inline-block;
+  width: 28px; height: 2px;
+  background: var(--or2); opacity: 0.5; flex-shrink: 0;
+}
+.corp-h2 {
+  font-family: 'Unbounded', sans-serif;
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 900; line-height: 1.05;
+  letter-spacing: -0.025em; color: var(--txt);
 }
 
 /* ── BASE RESET ──────────────────────────────────────────────────────── */
@@ -587,11 +631,11 @@ footer { border-top: 1px solid var(--bdr); background: var(--bg); padding: 28px 
     >↑</button>
 
     <script>
-      // ── Theme: restore from localStorage ──────────────────────────
+      // ── Theme: restore from localStorage (default: dark) ──────────
       const saved = localStorage.getItem('corp-theme');
       const html = document.documentElement;
-      if (saved === 'dark') html.setAttribute('data-theme', 'dark');
-      else html.setAttribute('data-theme', 'light');
+      if (saved === 'light') html.setAttribute('data-theme', 'light');
+      else html.setAttribute('data-theme', 'dark');
 
       // ── Theme toggle ───────────────────────────────────────────────
       const themeBtn = document.getElementById('themeBtn') as HTMLElement | null;
@@ -602,7 +646,7 @@ footer { border-top: 1px solid var(--bdr); background: var(--bg); padding: 28px 
         if (icoMoon) icoMoon.style.display = theme === 'dark' ? 'none' : 'block';
         if (icoSun)  icoSun.style.display  = theme === 'dark' ? 'block' : 'none';
       }
-      syncIcons(html.getAttribute('data-theme') || 'light');
+      syncIcons(html.getAttribute('data-theme') || 'dark');
 
       if (themeBtn) {
         themeBtn.addEventListener('click', () => {

@@ -1,5 +1,4 @@
 ---
-import DualRatingPill from '../DualRatingPill.astro';
 import { STAT_YEARS, STAT_KIDS, STAT_RATING, CAMP_PRICE_FROM, YANDEX_MAPS_URL } from '../../data/contacts';
 
 interface Props {
@@ -10,173 +9,135 @@ interface Props {
 const { imageSrc = '/images/hero-mobile-bean-v3', hasVariants = false } = Astro.props;
 ---
 
-<!-- ===== MOBILE HERO — FULL-BLEED PHOTO + GLASS CARDS ===== -->
-<div class="relative w-full md:hidden overflow-hidden bg-dark-navy" style="padding-top: env(safe-area-inset-top); min-height: 95svh;">
+<!-- ===== MOBILE HERO — Minimal Single-Column (Refactoring UI canon) ===== -->
+<div class="relative w-full md:hidden bg-dark-navy flex flex-col" style="padding-top: env(safe-area-inset-top);">
 
-  <!-- ── ФОТО на ВЕСЬ HERO как фон ── -->
-  <picture>
-    <source type="image/avif" srcset={hasVariants ? `${imageSrc}.avif 390w, ${imageSrc}-600.avif 600w, ${imageSrc}-900.avif 900w` : `${imageSrc}.avif`} sizes="100vw" />
-    <source type="image/webp" srcset={hasVariants ? `${imageSrc}.webp 390w, ${imageSrc}-600.webp 600w, ${imageSrc}-900.webp 900w` : `${imageSrc}.webp`} sizes="100vw" />
-    <img
-      src={`${imageSrc}.webp`}
-      alt="Дети на занятии в IT-лагере АйДаКемп"
-      class="absolute inset-0 h-full w-full object-cover"
-      style="filter: saturate(0.92) brightness(0.95); object-position: center 25%;"
-      loading="eager"
-      fetchpriority="high"
-      width="390"
-      height="800"
-    />
-  </picture>
+  <!-- ─── PHOTO ZONE (55vh) — фото + H1 над небом, БЕЗ карточек ─── -->
+  <div class="relative w-full" style="height: 55vh; min-height: 440px; max-height: 540px;">
+    <picture>
+      <source type="image/avif" srcset={hasVariants ? `${imageSrc}.avif 390w, ${imageSrc}-600.avif 600w, ${imageSrc}-900.avif 900w` : `${imageSrc}.avif`} sizes="100vw" />
+      <source type="image/webp" srcset={hasVariants ? `${imageSrc}.webp 390w, ${imageSrc}-600.webp 600w, ${imageSrc}-900.webp 900w` : `${imageSrc}.webp`} sizes="100vw" />
+      <img
+        src={`${imageSrc}.webp`}
+        alt="Дети на занятии в IT-лагере АйДаКемп"
+        class="absolute inset-0 h-full w-full object-cover"
+        style="filter: saturate(0.92) brightness(0.94); object-position: center 25%;"
+        loading="eager"
+        fetchpriority="high"
+        width="390"
+        height="800"
+      />
+    </picture>
 
-  <!-- ── Glass-strip за навбаром (легкий) ── -->
-  <div class="absolute top-0 inset-x-0 h-[88px] bg-[linear-gradient(180deg,rgba(6,10,18,0.50)_0%,rgba(6,10,18,0.18)_60%,transparent_100%)] backdrop-blur-[2px] z-[5] pointer-events-none"></div>
+    <!-- Top scrim под navbar (мягкий) -->
+    <div class="absolute top-0 inset-x-0 h-[120px] bg-[linear-gradient(180deg,rgba(6,10,18,0.50)_0%,rgba(6,10,18,0.15)_60%,transparent_100%)] pointer-events-none"></div>
 
-  <!-- ── Mid-fade: фото просвечивает, overlay мягкий (P5: было 0.78, стало 0.55 max) ── -->
-  <div class="absolute inset-x-0 top-[55%] bottom-0 bg-[linear-gradient(180deg,transparent_0%,rgba(13,26,43,0.25)_25%,rgba(13,26,43,0.45)_55%,rgba(13,26,43,0.55)_100%)] pointer-events-none"></div>
+    <!-- Bottom soft fade в dark-navy зону -->
+    <div class="absolute bottom-0 inset-x-0 h-32 bg-[linear-gradient(180deg,transparent_0%,rgba(13,26,43,0.55)_55%,#0d1a2b_100%)] pointer-events-none"></div>
 
-  <!-- ── ВЕСЬ КОНТЕНТ ── -->
-  <div class="relative z-10 flex flex-col min-h-[95svh]">
-
-    <!-- H1 над небом -->
-    <div class="px-5 pt-20">
+    <!-- H1 — ВВЕРХУ над небом (single safe zone) -->
+    <div class="absolute top-0 inset-x-0 px-5 pt-20">
       <h1
         id="hero-title-mobile"
-        class="text-[42px] font-extrabold leading-[1.04] tracking-[-0.04em] text-white"
-        style="text-shadow: 0 1px 2px rgba(0,0,0,0.9), 0 2px 14px rgba(0,0,0,0.7);"
+        class="text-[40px] font-extrabold leading-[1.04] tracking-[-0.04em] text-white"
+        style="text-shadow: 0 2px 4px rgba(0,0,0,0.65), 0 1px 2px rgba(0,0,0,0.85);"
       >
-        Летний IT-лагерь в&nbsp;Подмосковье <span class="text-white/95">2026</span>
+        Летний IT-лагерь в&nbsp;Подмосковье 2026
       </h1>
-      <p class="mt-2 text-[17px] font-medium text-white/85 tracking-wide" style="text-shadow: 0 1px 4px rgba(0,0,0,0.7);">
+      <p class="mt-2.5 text-[16px] font-medium text-white/90 tracking-wide" style="text-shadow: 0 1px 3px rgba(0,0,0,0.7);">
         Для детей 7–15 лет
       </p>
     </div>
+  </div>
 
-    <!-- Spacer — БОЛЬШОЙ, чтобы tagline ушёл НИЖЕ лица и бин-бэга -->
-    <div class="flex-1 min-h-[44vh]"></div>
+  <!-- ─── DARK ZONE — solid bg-dark-navy, no glass, no surface noise ─── -->
+  <div class="relative bg-dark-navy px-5 pt-2 pb-10">
 
-    <!-- Tagline — крупно, не на лице (теперь на бетоне под бин-бэгом) -->
-    <div class="px-5 mb-6 text-center">
-      <p class="text-[22px] leading-[1.35] text-white" style="text-shadow: 0 1px 4px rgba(0,0,0,0.8), 0 0 14px rgba(0,0,0,0.5);">
-        Пока другие на даче — <span class="font-bold">ваш сделает <span class="text-primary">AI-проект</span></span>.<br />
-        Вам — <span class="font-bold">14 дней для себя</span>.
+    <!-- Tagline — обычный текст, plain centered -->
+    <p class="text-[18px] leading-[1.55] text-white/90 text-center mb-7">
+      Пока другие на даче — <span class="font-semibold text-white">ваш сделает <span class="text-primary">AI-проект</span></span>.<br />
+      Вам — <span class="font-semibold text-white">14 дней для себя</span>.
+    </p>
+
+    <!-- Price + Programa — минимальная split, тонкий border, ноль фона -->
+    <div class="flex items-stretch border-t border-b border-white/12 -mx-5">
+      <button type="button" data-shift-link="shift-2-1"
+        class="flex-1 flex flex-col items-center justify-center gap-1 py-5 active:bg-white/[0.03] transition-colors">
+        <span class="text-[26px] font-extrabold text-white leading-none tabular-nums">от {CAMP_PRICE_FROM}</span>
+        <span class="text-[12px] text-white/65 leading-none uppercase tracking-wider mt-1.5">за 7 дней</span>
+      </button>
+      <div class="w-px bg-white/12 my-3"></div>
+      <a href="#journey"
+        class="flex-1 flex flex-col items-center justify-center gap-1 py-5 active:bg-white/[0.03] transition-colors">
+        <span class="text-[16px] font-semibold text-white leading-none">Программирование</span>
+        <span class="text-[12px] text-white/65 leading-none mt-1.5">AI · Бассейн</span>
+      </a>
+    </div>
+
+    <!-- БОТ — ЕДИНСТВЕННЫЙ заметный CTA на странице -->
+    <a
+      href="https://aidacamp.ru/ask"
+      data-analytics-goal="bot_click"
+      class="hero-bot-cta mt-6 flex items-center gap-3.5 rounded-2xl bg-primary py-4 px-5 active:opacity-90 transition-opacity"
+    >
+      <i class="bi bi-robot hero-bot-icon text-[32px] text-white shrink-0" aria-hidden="true"></i>
+      <div class="flex flex-col text-left flex-1 min-w-0">
+        <span class="text-[15px] font-bold text-white leading-tight">
+          Задайте вопрос про <span id="hero-bot-topic" style="font-family: 'JetBrains Mono', monospace; transition: opacity 0.2s;">лагерь</span>
+        </span>
+        <span class="mt-0.5 flex items-center gap-1.5 text-[12px] text-white/85 leading-tight">
+          <i class="bi bi-shield-lock-fill text-[11px]" aria-hidden="true"></i>
+          Анонимно, без регистрации
+        </span>
+      </div>
+      <i class="bi bi-arrow-right text-[22px] text-white shrink-0" aria-hidden="true"></i>
+    </a>
+
+    <!-- Stats — INLINE TEXT, НИКАКИХ БОКСОВ. 2 строки разделённые точкой -->
+    <div class="mt-6 text-center">
+      <p class="text-[14px] text-white/85 leading-relaxed">
+        <span class="font-semibold tabular-nums">{STAT_YEARS} лет</span>
+        <span class="text-white/30 mx-2">·</span>
+        <span class="font-semibold tabular-nums">{STAT_KIDS} детей</span>
+        <span class="text-white/30 mx-2">·</span>
+        <a href={YANDEX_MAPS_URL} target="_blank" rel="noopener" data-goal="mobile_hero_yandex_rating" class="font-semibold text-amber-300">★ {STAT_RATING}</a>
+        <span class="text-white/55 ml-1">Яндекс</span>
+      </p>
+      <p class="text-[14px] text-white/85 leading-relaxed mt-1">
+        <a href="https://incamp.ru/camps/339484/" target="_blank" rel="noopener" data-goal="mobile_hero_incamp_rating" class="font-semibold text-amber-300">★ 4.8</a>
+        <span class="text-white/55 ml-1">inCamp</span>
+        <span class="text-white/30 mx-2">·</span>
+        <a href="https://vc.ru/gdekurs/1216219-top-20-detskih-letnih-it-lagerei-v-moskve-i-podmoskove" target="_blank" rel="noopener" class="font-bold text-primary">ТОП-4</a>
+        <span class="text-white/55 ml-1">IT-лагерей МО · vc.ru</span>
       </p>
     </div>
 
-    <!-- ── ВСЕ КАРТОЧКИ — GLASS (фото просвечивает) ── -->
-    <div class="px-4 space-y-2.5">
-
-      <!-- Цена + программа: glass split -->
-      <div class="flex items-stretch rounded-2xl bg-white/[0.10] backdrop-blur-xl border border-white/20 shadow-[0_4px_24px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.15)] overflow-hidden">
-        <button type="button" data-shift-link="shift-2-1"
-          class="flex-1 flex flex-col items-center justify-center gap-1 py-5 active:bg-white/10 transition-colors">
-          <span class="text-[26px] font-extrabold text-white leading-tight tabular-nums" style="text-shadow: 0 1px 4px rgba(0,0,0,0.6);">от {CAMP_PRICE_FROM}</span>
-          <span class="text-[12px] text-white/85 leading-tight uppercase tracking-wider">за 7 дней</span>
-        </button>
-        <div class="w-px bg-white/20 my-3"></div>
-        <a href="#journey"
-          class="flex-1 flex flex-col items-center justify-center gap-1 py-5 active:bg-white/10 transition-colors">
-          <span class="text-[17px] font-semibold text-white leading-tight" style="text-shadow: 0 1px 4px rgba(0,0,0,0.6);">Программирование</span>
-          <span class="text-[13px] text-white/85 leading-tight">AI · Бассейн</span>
-        </a>
-      </div>
-
-      <!-- БОТ — упрощено: только cycling-слово + анонимно -->
-      <a
-        href="https://aidacamp.ru/ask"
-        data-analytics-goal="bot_click"
-        class="hero-bot-cta flex items-center gap-4 rounded-2xl bg-primary/95 backdrop-blur-xl border border-primary shadow-[0_6px_28px_rgba(245,166,36,0.45),inset_0_1px_0_rgba(255,255,255,0.30)] py-4 px-5 active:bg-primary transition-colors"
-      >
-        <i class="bi bi-robot hero-bot-icon text-[36px] text-white shrink-0" aria-hidden="true" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35));"></i>
-        <div class="flex flex-col text-left flex-1">
-          <span class="text-[13px] font-semibold text-white/85 uppercase tracking-wider leading-tight">Задайте вопрос про</span>
-          <span
-            id="hero-bot-topic"
-            class="text-[22px] font-extrabold text-white leading-tight mt-0.5"
-            style="font-family: 'JetBrains Mono', monospace; transition: opacity 0.2s, transform 0.2s;"
-          >лагерь</span>
-          <span class="mt-1.5 flex items-center gap-1.5 text-[12px] font-medium text-white/95 leading-tight">
-            <i class="bi bi-shield-lock-fill text-[12px]" aria-hidden="true"></i>
-            Анонимно · без регистрации
-          </span>
-        </div>
-        <i class="bi bi-arrow-right text-[24px] text-white shrink-0" aria-hidden="true"></i>
-      </a>
-
-      <!-- ОБЪЕДИНЁННЫЙ БЛОК: 7 лет + 1200 детей + ★5.0 Яндекс + ★4.8 inCamp + ТОП-4 -->
-      <div class="rounded-2xl bg-white/[0.12] backdrop-blur-xl border border-white/20 shadow-[0_4px_20px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.12)] overflow-hidden">
-        <!-- Row 1: цифры -->
-        <a href="#about" class="flex items-center justify-around py-3.5 px-3 active:bg-white/8 transition-colors">
-          <div class="flex flex-col items-center">
-            <span class="text-[24px] font-extrabold text-white leading-none tabular-nums" style="text-shadow: 0 1px 4px rgba(0,0,0,0.5);">{STAT_YEARS}</span>
-            <span class="text-[11px] text-white/75 uppercase tracking-wider mt-1">лет работы</span>
-          </div>
-          <div class="w-px h-9 bg-white/15"></div>
-          <div class="flex flex-col items-center">
-            <span class="text-[24px] font-extrabold text-white leading-none tabular-nums" style="text-shadow: 0 1px 4px rgba(0,0,0,0.5);">{STAT_KIDS}</span>
-            <span class="text-[11px] text-white/75 uppercase tracking-wider mt-1">детей</span>
-          </div>
-        </a>
-        <!-- Divider -->
-        <div class="h-px bg-white/15"></div>
-        <!-- Row 2: рейтинги Яндекс + inCamp -->
-        <div class="flex items-stretch">
-          <a href={YANDEX_MAPS_URL} target="_blank" rel="noopener noreferrer"
-             data-goal="mobile_hero_yandex_rating"
-             class="flex-1 flex items-center justify-center gap-1.5 py-3 active:bg-white/8 transition-colors">
-            <span class="text-[15px] font-bold leading-none text-[#f5a624]">★ {STAT_RATING}</span>
-            <span class="text-[12px] text-white/75 leading-none">Яндекс</span>
-          </a>
-          <div class="w-px bg-white/15 my-2"></div>
-          <a href="https://incamp.ru/camps/339484/" target="_blank" rel="noopener noreferrer"
-             data-goal="mobile_hero_incamp_rating"
-             class="flex-1 flex items-center justify-center gap-1.5 py-3 active:bg-white/8 transition-colors">
-            <span class="text-[12px] text-white/75 leading-none">inCamp</span>
-            <span class="text-[15px] font-bold leading-none text-[#ec7c00]">★ 4.8</span>
-          </a>
-        </div>
-        <!-- Divider -->
-        <div class="h-px bg-white/15"></div>
-        <!-- Row 3: ТОП-4 -->
-        <a
-          href="https://vc.ru/gdekurs/1216219-top-20-detskih-letnih-it-lagerei-v-moskve-i-podmoskove"
-          target="_blank" rel="noopener"
-          class="flex items-center justify-center gap-2 py-3.5 active:bg-white/8 transition-colors"
-        >
-          <span class="text-[20px] font-extrabold text-primary leading-none">ТОП-4</span>
-          <span class="text-[12px] text-white/80 leading-none">IT-лагерей МО · vc.ru</span>
-        </a>
-      </div>
-
-    </div>
-
-    <!-- Trust — компактнее с photo через glass -->
-    <div class="mt-5 mb-8 flex items-center justify-center gap-3 px-4">
+    <!-- Trust — INLINE -->
+    <div class="mt-5 flex items-center justify-center gap-4 text-[12px] text-white/65">
       <a href="/stati/dokumenty-licenziya-strahovka/#licenziya"
-        class="flex items-center gap-1.5 text-[13px] text-white/85 hover:text-white transition-colors" style="text-shadow: 0 1px 4px rgba(0,0,0,0.6);">
-        <i class="bi bi-patch-check-fill text-[13px]" aria-hidden="true"></i>
+        class="flex items-center gap-1 hover:text-white/90 transition-colors">
+        <i class="bi bi-patch-check-fill text-[12px]" aria-hidden="true"></i>
         <span>Лицензия</span>
       </a>
-      <span class="text-white/40">·</span>
+      <span class="text-white/25">·</span>
       <a href="/stati/dokumenty-licenziya-strahovka/#medsestra"
-        class="flex items-center gap-1.5 text-[13px] text-white/85 hover:text-white transition-colors" style="text-shadow: 0 1px 4px rgba(0,0,0,0.6);">
-        <i class="bi bi-heart-pulse-fill text-[13px]" aria-hidden="true"></i>
+        class="flex items-center gap-1 hover:text-white/90 transition-colors">
+        <i class="bi bi-heart-pulse-fill text-[12px]" aria-hidden="true"></i>
         <span>Медсестра 24/7</span>
       </a>
-      <span class="text-white/40">·</span>
+      <span class="text-white/25">·</span>
       <a href="/stati/dokumenty-licenziya-strahovka/#strahovka"
-        class="flex items-center gap-1.5 text-[13px] text-white/85 hover:text-white transition-colors" style="text-shadow: 0 1px 4px rgba(0,0,0,0.6);">
-        <i class="bi bi-shield-check text-[13px]" aria-hidden="true"></i>
+        class="flex items-center gap-1 hover:text-white/90 transition-colors">
+        <i class="bi bi-shield-check text-[12px]" aria-hidden="true"></i>
         <span>Страховка</span>
       </a>
     </div>
-
   </div>
 
   <!-- Form area -->
   <div
     id="hero-booking-block"
-    class="relative z-10 bg-dark-navy px-4 overflow-hidden"
+    class="relative bg-dark-navy px-4 overflow-hidden"
     style="max-height:0; padding-top:0; padding-bottom:0; opacity:0; pointer-events:none; transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.4s ease;"
   ></div>
 
@@ -184,8 +145,8 @@ const { imageSrc = '/images/hero-mobile-bean-v3', hasVariants = false } = Astro.
 
 <style>
   @keyframes hero-bot-pulse {
-    0%, 92%, 100% { box-shadow: 0 6px 28px rgba(245,166,36,0.45), inset 0 1px 0 rgba(255,255,255,0.30); }
-    96% { box-shadow: 0 6px 36px rgba(245,166,36,0.75), 0 0 0 4px rgba(245,166,36,0.25), inset 0 1px 0 rgba(255,255,255,0.40); }
+    0%, 92%, 100% { box-shadow: 0 4px 20px rgba(245,166,36,0.30); }
+    96% { box-shadow: 0 4px 30px rgba(245,166,36,0.55), 0 0 0 4px rgba(245,166,36,0.20); }
   }
   .hero-bot-cta { animation: hero-bot-pulse 4.5s ease-in-out infinite; }
   @keyframes hero-bot-icon-pulse {
@@ -211,13 +172,11 @@ const { imageSrc = '/images/hero-mobile-bean-v3', hasVariants = false } = Astro.
   if (!el) return;
   setInterval(function () {
     i = (i + 1) % topics.length;
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(5px)';
+    el.style.opacity = '0.3';
     setTimeout(function () {
       el.textContent = topics[i];
       el.style.opacity = '1';
-      el.style.transform = 'translateY(0)';
-    }, 180);
+    }, 200);
   }, 2200);
 })();
 </script>
