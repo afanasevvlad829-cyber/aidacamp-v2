@@ -452,6 +452,15 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     .share-btn .bi{font-size:13px}
 
     /* ── SHARE CHOOSER MODAL ── */
+    /* ── LIGHTBOX ── */
+    .lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:900;align-items:center;justify-content:center;cursor:zoom-out;animation:lbIn .18s ease-out}
+    .lb.open{display:flex}
+    @keyframes lbIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+    .lb-img{max-width:min(94vw,780px);max-height:88dvh;object-fit:contain;border-radius:6px;box-shadow:0 0 60px rgba(0,0,0,.5);cursor:default;user-select:none}
+    .lb-close{position:absolute;top:16px;right:16px;width:36px;height:36px;background:rgba(255,255,255,.12);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;transition:.15s;backdrop-filter:blur(4px)}
+    .lb-close:hover{background:rgba(255,255,255,.22)}
+    .lb-caption{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.75);font-size:13px;white-space:nowrap;pointer-events:none}
+
     .share-chooser{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:700;align-items:center;justify-content:center}
     .share-chooser.open{display:flex}
     .share-chooser-box{background:var(--surface-1);border-radius:20px;padding:24px;text-align:center;max-width:260px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,.15)}
@@ -578,6 +587,13 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     </div>
   </div>
 </main>
+
+<!-- Lightbox для просмотра фото -->
+<div class="lb" id="lb" onclick="if(event.target===this||event.target.classList.contains('lb'))closeLb()">
+  <button class="lb-close" onclick="closeLb()" aria-label="Закрыть"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+  <img class="lb-img" id="lbImg" src="" alt="">
+  <span class="lb-caption" id="lbCaption"></span>
+</div>
 
 <!-- QR-модал "Открыть на телефоне" -->
 <div class="qr-modal" id="qrModal" onclick="if(event.target===this)closeQR()">
@@ -1390,7 +1406,7 @@ function blockGallery(blockData){
     img.style.cssText='width:100%;height:130px;object-fit:cover;display:block;cursor:pointer;transition:opacity .2s';
     img.onmouseenter=()=>{img.style.opacity='.85';};
     img.onmouseleave=()=>{img.style.opacity='1';};
-    img.onclick=()=>{ window.open(p.url,'_blank'); };
+    img.onclick=()=>{ openLb(p.url, p.caption); };
     grid.appendChild(img);
   });
   card.appendChild(grid);
@@ -1625,6 +1641,22 @@ function addEl(el){
   // Double RAF: wait for layout to compute before scrolling
   requestAnimationFrame(()=>requestAnimationFrame(()=>{box.scrollTop=box.scrollHeight;}));
 }
+
+/* ── LIGHTBOX ── */
+function openLb(url, caption){
+  const lb=document.getElementById('lb');
+  const img=document.getElementById('lbImg');
+  const cap=document.getElementById('lbCaption');
+  img.src=url; img.alt=caption||'';
+  cap.textContent=caption||'';
+  lb.classList.add('open');
+  document.addEventListener('keydown',lbKey);
+}
+function closeLb(){
+  document.getElementById('lb').classList.remove('open');
+  document.removeEventListener('keydown',lbKey);
+}
+function lbKey(e){ if(e.key==='Escape') closeLb(); }
 
 function autoGrow(el){
   el.style.height='auto';
