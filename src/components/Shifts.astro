@@ -186,6 +186,7 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
     const bookDuration = bookModal.querySelector('[data-book-shift-duration]');
     const bookPrice = bookModal.querySelector('[data-book-shift-price]');
     const bookPhone = bookModal.querySelector<HTMLInputElement>('[data-book-phone]');
+    const bookConsentPolicy = bookModal.querySelector<HTMLInputElement>('[data-book-consent-policy]');
     const bookConsent = bookModal.querySelector<HTMLInputElement>('[data-book-consent]');
     const bookSubmit = bookModal.querySelector<HTMLButtonElement>('[data-book-submit]');
     const bookError = bookModal.querySelector<HTMLElement>('[data-book-error]');
@@ -229,13 +230,14 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
     }
 
     function validateBookForm() {
-      const valid = isPhoneValid() && (bookConsent?.checked ?? false);
+      const valid = isPhoneValid() && (bookConsentPolicy?.checked ?? false) && (bookConsent?.checked ?? false);
       if (bookSubmit) {
         bookSubmit.disabled = !valid;
         bookSubmit.classList.toggle('opacity-50', !valid);
       }
     }
 
+    bookConsentPolicy?.addEventListener('change', validateBookForm);
     bookConsent?.addEventListener('change', validateBookForm);
 
     document.querySelectorAll('[data-shift-book]').forEach((btn) => {
@@ -265,9 +267,9 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
         }
         return;
       }
-      if (!bookConsent?.checked) {
+      if (!bookConsentPolicy?.checked || !bookConsent?.checked) {
         if (bookError) {
-          bookError.textContent = 'Необходимо согласие на обработку данных';
+          bookError.textContent = 'Необходимо подтвердить оба согласия';
           bookError.classList.remove('hidden');
         }
         return;

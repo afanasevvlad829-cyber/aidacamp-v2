@@ -40,10 +40,16 @@ const { headline, id } = Astro.props;
             Перезвоните мне
           </button>
         </form>
-        <label class="flex cursor-pointer items-center gap-2">
-          <input type="checkbox" name="consent" data-bar-consent required class="h-3.5 w-3.5 shrink-0 rounded border border-slate-300 accent-[#ec7c00]" />
+        <label class="flex cursor-pointer items-start gap-2">
+          <input type="checkbox" name="consent-policy" data-bar-consent-policy required class="mt-[2px] h-3.5 w-3.5 shrink-0 rounded border border-slate-300 accent-[#ec7c00]" />
           <span class="text-[14px] leading-tight text-slate-500">
-            Согласен(а) на <a href="/privacy-policy/" class="text-slate-500 underline">обработку персональных данных</a>
+            Ознакомлен(а) с <a href="/privacy-policy/" class="text-slate-500 underline">Политикой обработки ПД</a>
+          </span>
+        </label>
+        <label class="flex cursor-pointer items-start gap-2">
+          <input type="checkbox" name="consent" data-bar-consent required class="mt-[2px] h-3.5 w-3.5 shrink-0 rounded border border-slate-300 accent-[#ec7c00]" />
+          <span class="text-[14px] leading-tight text-slate-500">
+            Согласен(а) на <a href="/soglasie-na-obrabotku-personalnyh-dannyh/" class="text-slate-500 underline">обработку персональных данных</a>
           </span>
         </label>
         <p class="text-[14px] leading-tight text-slate-500">Позвоним один раз. Если не дозвонимся — напишем в мессенджер.</p>
@@ -66,6 +72,7 @@ const { headline, id } = Astro.props;
       const phoneInput = form.querySelector<HTMLInputElement>('[data-phone-input]');
       const submitBtn = form.querySelector<HTMLButtonElement>('[data-submit-btn]');
       const ageInput = form.querySelector<HTMLInputElement>('[data-age-input]');
+      const consentPolicyCheck = root.querySelector<HTMLInputElement>('[data-bar-consent-policy]');
       const consentCheck = root.querySelector<HTMLInputElement>('[data-bar-consent]');
       if (!phoneInput || !submitBtn) return;
 
@@ -77,11 +84,12 @@ const { headline, id } = Astro.props;
 
       function updateSubmit() {
         const phoneOk = isPhoneValid(phoneInput!.value);
-        const consentOk = consentCheck ? consentCheck.checked : true;
+        const consentOk = (consentPolicyCheck ? consentPolicyCheck.checked : true) && (consentCheck ? consentCheck.checked : true);
         submitBtn!.disabled = !(phoneOk && consentOk);
       }
 
       phoneInput.addEventListener('input', updateSubmit);
+      consentPolicyCheck?.addEventListener('change', updateSubmit);
       consentCheck?.addEventListener('change', updateSubmit);
 
       form.addEventListener('submit', async (e) => {
