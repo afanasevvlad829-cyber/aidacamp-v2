@@ -614,11 +614,19 @@ footer { padding: 36px 0; border-top: 1px solid var(--bdr); background: var(--bg
 .bsod-btn { padding:7px 18px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.5); color:var(--c-white); font-family:inherit; font-size:var(--fs-xs); cursor:pointer; transition:background 0.15s; }
 .bsod-btn:hover { background:rgba(255,255,255,0.3); }
 .bsod-hint { font-size:10px; opacity:0.5; margin-top:10px; min-height:14px; }
-/* Reviews & Team dots */
-.rv-dot { width:8px; height:8px; border-radius:var(--r-full); border:none; padding:0; cursor:pointer; background:var(--bdr2); transition:all 0.2s; flex-shrink:0; }
-.rv-dot.active { background:var(--or); width:22px; border-radius:var(--r-xs); }
-.team-dot { width:8px; height:8px; border-radius:var(--r-full); border:none; padding:0; cursor:pointer; background:var(--bdr2); transition:all 0.2s; flex-shrink:0; }
-.team-dot.active { background:var(--or); width:22px; border-radius:var(--r-xs); }
+/* ─── ТОЧКИ КАРУСЕЛЕЙ — единый стиль ─── */
+/* Контейнер */
+.carousel-dots { display:flex; justify-content:center; gap:var(--gap-xs); margin-top:14px; flex-wrap:wrap; }
+/* Точка — базовая */
+.rv-dot, .team-dot, .why-dot {
+  width:8px; height:8px; border-radius:var(--r-full);
+  border:none; padding:0; cursor:pointer;
+  background:var(--bdr2); transition:all 0.2s; flex-shrink:0;
+}
+/* Активная точка — pill */
+.rv-dot.active, .team-dot.active, .why-dot.active {
+  background:var(--or2); width:22px; border-radius:var(--r-xs);
+}
 
 /* ══════════════════════════════════════
    МОБИЛЬНАЯ АДАПТАЦИЯ — ПРОТОКОЛ v2
@@ -1045,6 +1053,7 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
         <div class="why-text">Одинаковый парк машин. Сброс ОС за 15 секунд. Все IDE и библиотеки настроены и проверены заранее.</div>
       </div>
     </div>
+    <div class="carousel-dots" id="why-dots"></div>
   </div>
 </section>
 
@@ -3001,6 +3010,43 @@ document.querySelectorAll('.r').forEach(el => obs.observe(el));
       c.style.display = (age==='all' || c.dataset.age===age || c.dataset.age==='all') ? '' : 'none';
     });
   }); });
+})();
+
+// Why-grid carousel dots (mobile only)
+(function() {
+  function initCarouselDots(scrollEl, dotsEl, dotClass) {
+    if (!scrollEl || !dotsEl) return;
+    var items = Array.from(scrollEl.children).filter(function(el){ return el.style.display !== 'none'; });
+    var count = items.length;
+    dotsEl.innerHTML = '';
+    if (count < 2) { dotsEl.style.display = 'none'; return; }
+    dotsEl.style.display = 'flex';
+    items.forEach(function(_, idx) {
+      var dot = document.createElement('button');
+      dot.className = dotClass + (idx === 0 ? ' active' : '');
+      dot.setAttribute('aria-label', 'Карточка ' + (idx + 1));
+      dot.onclick = function() {
+        var iw = items[idx].offsetWidth + parseInt(getComputedStyle(scrollEl).gap || 10);
+        scrollEl.scrollTo({ left: idx * iw, behavior: 'smooth' });
+      };
+      dotsEl.appendChild(dot);
+    });
+    function updateDots() {
+      var sw = scrollEl.scrollLeft;
+      var iw = items[0] ? (items[0].offsetWidth + parseInt(getComputedStyle(scrollEl).gap || 10)) : 1;
+      var active = Math.round(sw / iw);
+      dotsEl.querySelectorAll('.' + dotClass).forEach(function(d, i){ d.classList.toggle('active', i === active); });
+    }
+    scrollEl.addEventListener('scroll', updateDots, { passive: true });
+  }
+
+  if (window.innerWidth <= 768) {
+    initCarouselDots(
+      document.querySelector('.why-grid'),
+      document.getElementById('why-dots'),
+      'why-dot'
+    );
+  }
 })();
 </script>
 </body>
