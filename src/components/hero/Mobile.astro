@@ -11,7 +11,7 @@ const { imageSrc = '/images/hero-mobile-bean-v3', hasVariants = false } = Astro.
 ---
 
 <!-- ===== MOBILE HERO — FULL-BLEED: фото фон на весь блок, контент поверх ===== -->
-<div class="relative w-full md:hidden min-h-[95svh] flex flex-col overflow-hidden">
+<div class="relative w-full md:hidden min-h-[95svh] flex flex-col overflow-hidden" style="padding-top: env(safe-area-inset-top);">
 
   <!-- ── Фото-подложка на ВЕСЬ hero — aspect-ratio совпадает с файлом, sizes указан явно ── -->
   <picture>
@@ -32,6 +32,9 @@ const { imageSrc = '/images/hero-mobile-bean-v3', hasVariants = false } = Astro.
 
   <!-- ── Единый overlay на весь hero — мягкий fade, темнее снизу для контента ── -->
   <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,10,18,0.20)_0%,rgba(6,10,18,0.05)_18%,transparent_35%,rgba(13,26,43,0.30)_55%,rgba(13,26,43,0.62)_72%,rgba(13,26,43,0.82)_88%,rgba(13,26,43,0.92)_100%)]"></div>
+
+  <!-- ── PREMIUM: Glass-strip за навбаром для читаемости лого ── -->
+  <div class="absolute top-0 inset-x-0 h-[88px] bg-[linear-gradient(180deg,rgba(6,10,18,0.55)_0%,rgba(6,10,18,0.25)_60%,transparent_100%)] backdrop-blur-[2px] z-[5] pointer-events-none"></div>
 
   <!-- ── Весь контент поверх (relative, чтобы был над overlay) ── -->
   <div class="relative flex flex-col flex-1 z-10">
@@ -79,13 +82,13 @@ const { imageSrc = '/images/hero-mobile-bean-v3', hasVariants = false } = Astro.
     <!-- ── PREMIUM 2×2 grid: ВСЕ cells = glass для визуальной унификации ── -->
     <div class="mx-4 mt-2.5 grid grid-cols-2 gap-2.5">
 
-      <!-- Бот CTA — теперь в glass-card с большой иконкой и glow ── -->
+      <!-- Бот CTA — premium с pulse-анимацией ── -->
       <a
         href="https://aidacamp.ru/ask"
         data-analytics-goal="bot_click"
-        class="relative flex flex-col items-center justify-center text-center gap-1 py-3 min-h-[76px] rounded-2xl bg-white/[0.14] backdrop-blur-xl border border-white/25 shadow-[0_4px_20px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.12)] active:bg-white/22 transition-all overflow-hidden"
+        class="hero-bot-cta relative flex flex-col items-center justify-center text-center gap-1 py-3 min-h-[76px] rounded-2xl bg-white/[0.14] backdrop-blur-xl border border-white/25 shadow-[0_4px_20px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.12)] active:bg-white/22 transition-all overflow-hidden"
       >
-        <i class="bi bi-telegram text-[32px] text-primary" aria-hidden="true" style="filter: drop-shadow(0 0 8px rgba(245,166,36,0.4)) drop-shadow(0 1px 3px rgba(0,0,0,0.6));"></i>
+        <i class="bi bi-telegram hero-bot-icon text-[32px] text-primary" aria-hidden="true" style="filter: drop-shadow(0 0 8px rgba(245,166,36,0.4)) drop-shadow(0 1px 3px rgba(0,0,0,0.6));"></i>
         <div class="flex flex-col items-center gap-0">
           <span class="text-[12px] font-medium text-white/90 leading-tight uppercase tracking-wider">Спросите про</span>
           <span
@@ -163,6 +166,44 @@ const { imageSrc = '/images/hero-mobile-bean-v3', hasVariants = false } = Astro.
   ></div>
 
 </div>
+
+<style>
+  /* PREMIUM: Bot pulse — лёгкий glow раз в 4 сек привлекает внимание к лидогенератору */
+  @keyframes hero-bot-pulse {
+    0%, 92%, 100% {
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.12);
+    }
+    96% {
+      box-shadow: 0 4px 28px rgba(245,166,36,0.45), 0 0 0 3px rgba(245,166,36,0.15), inset 0 1px 0 rgba(255,255,255,0.18);
+    }
+  }
+  .hero-bot-cta {
+    animation: hero-bot-pulse 4.5s ease-in-out infinite;
+  }
+  @keyframes hero-bot-icon-pulse {
+    0%, 92%, 100% { transform: scale(1); }
+    96% { transform: scale(1.08); }
+  }
+  .hero-bot-icon {
+    animation: hero-bot-icon-pulse 4.5s ease-in-out infinite;
+    transform-origin: center;
+    display: inline-block;
+  }
+
+  /* PREMIUM: subtle fade-in при загрузке */
+  @keyframes hero-fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  #hero-title-mobile {
+    animation: hero-fade-up 0.6s ease-out 0.1s both;
+  }
+
+  /* Respects reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .hero-bot-cta, .hero-bot-icon, #hero-title-mobile { animation: none !important; }
+  }
+</style>
 
 <script is:inline>
 (function () {
