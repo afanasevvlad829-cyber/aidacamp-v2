@@ -17,7 +17,7 @@ const {
 ---
 
 <!doctype html>
-<html lang="ru" class="scroll-smooth">
+<html lang="ru" class="scroll-smooth" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -33,8 +33,8 @@ const {
     <style set:html={iconsCSS} />
 
     <style>
-      /* ── Corp dark theme tokens ─────────────────────────────── */
-      :root {
+      /* ── Corp tokens — DARK (default) ──────────────────────── */
+      :root, [data-theme="dark"] {
         --corp-bg:      #0C0E11;
         --corp-bg2:     #111418;
         --corp-bg3:     #181C22;
@@ -47,6 +47,24 @@ const {
         --corp-bdr2:    rgba(255,255,255,0.12);
         --corp-surface: rgba(255,255,255,0.04);
         --corp-green:   #22C76A;
+        --corp-nav-bg:  rgba(12,14,17,0.90);
+      }
+
+      /* ── Corp tokens — LIGHT ────────────────────────────────── */
+      [data-theme="light"] {
+        --corp-bg:      #F4F5F8;
+        --corp-bg2:     #FFFFFF;
+        --corp-bg3:     #ECEEF3;
+        --corp-bg4:     #E2E5ED;
+        --corp-or:      #FF5A1F;
+        --corp-or2:     #E04A10;
+        --corp-txt:     #1A1D24;
+        --corp-txt2:    #5A6070;
+        --corp-bdr:     rgba(0,0,0,0.08);
+        --corp-bdr2:    rgba(0,0,0,0.14);
+        --corp-surface: rgba(0,0,0,0.03);
+        --corp-green:   #16A34A;
+        --corp-nav-bg:  rgba(244,245,248,0.92);
       }
 
       /* ── Base reset ─────────────────────────────────────────── */
@@ -56,6 +74,7 @@ const {
         font-family: 'Inter', system-ui, sans-serif;
         -webkit-font-smoothing: antialiased;
         overflow-x: hidden;
+        transition: background 0.25s, color 0.25s;
       }
 
       /* ── Corp headings ──────────────────────────────────────── */
@@ -130,7 +149,26 @@ const {
     <slot />
 
     <script>
-      // Reveal on scroll
+      // ── Theme: restore from localStorage ──────────────────────
+      const saved = localStorage.getItem('corp-theme');
+      if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      else document.documentElement.setAttribute('data-theme', 'light');
+
+      // ── Theme toggle ──────────────────────────────────────────
+      document.addEventListener('click', (e) => {
+        const btn = (e.target as Element).closest('#corp-theme-toggle');
+        if (!btn) return;
+        const html = document.documentElement;
+        const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('corp-theme', next);
+        const moon = document.getElementById('corp-ico-moon');
+        const sun  = document.getElementById('corp-ico-sun');
+        if (moon) moon.style.display = next === 'dark' ? 'block' : 'none';
+        if (sun)  sun.style.display  = next === 'light' ? 'block' : 'none';
+      });
+
+      // ── Reveal on scroll ──────────────────────────────────────
       const io = new IntersectionObserver(
         (entries) => entries.forEach(e => { if (e.isIntersecting) { (e.target as HTMLElement).classList.add('visible'); io.unobserve(e.target); } }),
         { threshold: 0.08 }
