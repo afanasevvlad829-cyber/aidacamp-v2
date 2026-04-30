@@ -309,7 +309,7 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     .price-item::before{content:"✓";color:var(--or);flex-shrink:0}
     .price-cashback{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:9px 12px;font-size:12px;color:#15803d;margin-top:12px;line-height:1.5}
 
-    .input-area{padding:8px 0 20px;flex-shrink:0;position:relative;z-index:10}
+    .input-area{padding:8px 0 max(20px,env(safe-area-inset-bottom,0px));flex-shrink:0;position:relative;z-index:10}
     .input-box{display:flex;align-items:flex-end;background:var(--surface-1);border:1px solid var(--border);border-radius:14px;transition:.2s;box-shadow:0 1px 6px rgba(13,27,42,.06);padding:5px 5px 5px 0;gap:2px}
     .input-box:focus-within{border-color:rgba(236,124,0,.4);background:var(--surface-1);box-shadow:0 0 0 3px rgba(236,124,0,.07)}
     .inp{flex:1;padding:10px 14px 10px 18px;background:transparent;border:none;outline:none;font-family:var(--sans);font-size:16px;color:var(--text-primary);resize:none;line-height:1.5;min-height:44px;max-height:140px;overflow-y:auto;display:block}
@@ -348,6 +348,9 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     .pin{width:100%;padding:13px 16px;border:1px solid rgba(13,27,42,.12);border-radius:9px;background:#f8fafc;font-family:var(--sans);font-size:15px;color:#0d1b2a;outline:none;margin-bottom:13px;transition:.2s}
     .pin:focus{border-color:rgba(236,124,0,.5);background:#fff}
     .pin::placeholder{color:rgba(13,27,42,.3)}
+    .pcons{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:rgba(13,27,42,.5);line-height:1.4;margin-bottom:8px;cursor:pointer}
+    .pcons input{margin-top:2px;flex-shrink:0;accent-color:var(--or)}
+    .pcons a{color:rgba(13,27,42,.5);text-decoration:underline}
     .psub{width:100%;padding:14px;background:var(--or);color:#fff;border:none;border-radius:9px;font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;transition:.15s;margin-bottom:9px;box-shadow:0 4px 18px rgba(236,124,0,.25)}
     .psub:hover{background:var(--ord)}
     .ptr{font-size:11px;color:rgba(13,27,42,.35);text-align:center;line-height:1.6}
@@ -374,6 +377,10 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
       .mic{width:46px}
       .book-quick{width:46px}
       .book-quick .bi{font-size:24px}
+      /* Share row — на мобилке скрываем текст, оставляем только иконку */
+      .share-btn span{display:none}
+      .share-row{padding:0 4px 4px;gap:4px}
+      .share-btn{padding:5px 9px}
     }
 
     /* ── COMPACT MODE: short screens (MacBook, small laptop) ── */
@@ -534,10 +541,10 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
   <!-- Кнопки шаринга — появляются после 3 обменов -->
   <div class="share-row" id="shareRow">
     <button class="share-btn" onclick="showShareChooser()">
-      <i class="bi bi-share" aria-hidden="true"></i> Отправить подруге
+      <i class="bi bi-share" aria-hidden="true"></i><span> Отправить подруге</span>
     </button>
     <button class="share-btn" id="qrBtn" style="display:none" onclick="showQR()">
-      <i class="bi bi-qr-code" aria-hidden="true"></i> Открыть на телефоне
+      <i class="bi bi-qr-code" aria-hidden="true"></i><span> Открыть на телефоне</span>
     </button>
   </div>
 
@@ -602,6 +609,8 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
       <select class="psel" id="popShift"></select>
       <label class="plbl">Телефон</label>
       <input class="pin" type="tel" id="popPhone" placeholder="+7 (___) ___-__-__">
+      <label class="pcons"><input type="checkbox" id="popConsentPolicy"> Ознакомлен(а) с <a href="/privacy-policy/" target="_blank">Политикой обработки ПД</a></label>
+      <label class="pcons"><input type="checkbox" id="popConsent"> Согласен(а) на <a href="/soglasie-na-obrabotku-personalnyh-dannyh/" target="_blank">обработку персональных данных</a></label>
       <button class="psub" id="popSubmit" onclick="submitBooking()">Забронировать →</button>
       <div class="ptr">Пн–Вс 11:00–20:00 МСК · Лицензия Минобра<br>Налоговый вычет 13% через ФНС</div>
     </div>
@@ -814,7 +823,7 @@ const SMENY=[
   {n:'Смена 2.1',dates:'10 — 16 июня',days:'7 дней',price:'48 000 ₽',available:true,short:true,occupied:29,total:40},
   {n:'Смена 2.2',dates:'16 — 23 июня',days:'8 дней',price:'65 000 ₽',available:true,short:true,occupied:37,total:45},
   {n:'Смена 3',dates:'3 — 15 августа',days:'13 дней',price:'89 400 ₽',available:true,occupied:40,total:45},
-  {n:'Смена 4',dates:'17 — 26 августа',days:'10 дней',price:'69 600 ₽',available:true,occupied:31,total:45},
+  {n:'Смена 4',dates:'17 — 26 августа',days:'10 дней',price:'74 900 ₽',available:true,occupied:31,total:45},
 ];
 const COURSES=[
   {icon:'keyboard',name:'Scratch',age:'8–10 лет',minAge:8,maxAge:10,
@@ -1159,7 +1168,7 @@ function blockTaxCalculator(){
     ['Смена 2.1 — 10–16 июн, 7 дней', 48000, 7],
     ['Смена 2.2 — 16–23 июн, 8 дней', 65000, 8],
     ['Смена 3 — 3–15 авг, 13 дней', 89400, 13],
-    ['Смена 4 — 17–26 авг, 10 дней', 69600, 10],
+    ['Смена 4 — 17–26 авг, 10 дней', 74900, 10],
   ];
   const RESIDENTIAL_PER_DAY=3800;
   const EDU_LIMIT=110000;
@@ -1620,6 +1629,9 @@ function addEl(el){
 function autoGrow(el){
   el.style.height='auto';
   el.style.height=Math.min(el.scrollHeight,140)+'px';
+  // При росте textarea прокручиваем сообщения вниз, чтобы последнее не уезжало
+  const msgs=document.getElementById('msgs');
+  if(msgs) requestAnimationFrame(()=>{ msgs.scrollTop=msgs.scrollHeight; });
 }
 
 function autoLink(html){
@@ -2011,6 +2023,12 @@ async function submitBooking(){
   const phone=document.getElementById('popPhone').value.trim();
   if(!phone||phone.replace(/\D/g,'').length<11){
     document.getElementById('popPhone').focus();
+    return;
+  }
+  const consentPolicy=document.getElementById('popConsentPolicy');
+  const consent=document.getElementById('popConsent');
+  if(!consentPolicy?.checked||!consent?.checked){
+    alert('Необходимо подтвердить оба согласия');
     return;
   }
   const shift=document.getElementById('popShift').value;
