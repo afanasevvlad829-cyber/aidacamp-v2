@@ -2197,7 +2197,7 @@
 
       dropdown.querySelectorAll('.hero-phone-item, a, button').forEach(function(item){
         item.style.background = '#ffffff';
-        item.style.color = '#0f172a';
+        item.style.color = '#0d1a2b';
         item.style.borderColor = '#cbd5e1';
       });
 

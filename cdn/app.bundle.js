@@ -7523,7 +7523,7 @@ function runOfferSearch(overrides){
       if (!isValidPhone(rawPhone)) {
         if (fixPhone) {
           fixPhone.focus();
-          fixPhone.style.borderColor = "#ef8300";
+          fixPhone.style.borderColor = "#ec7c00";
         }
         return;
       }
@@ -7549,7 +7549,7 @@ function runOfferSearch(overrides){
       if (!isValidPhone(phoneRaw)) {
         if (bookingPhone) {
           bookingPhone.focus();
-          bookingPhone.style.borderColor = "#ef8300";
+          bookingPhone.style.borderColor = "#ec7c00";
         }
         return;
       }
@@ -7745,7 +7745,7 @@ function runOfferSearch(overrides){
     if (bookingPhone) {
       bookingPhone.value = formatPhoneInput(bookingPhone.value);
       bookingPhone.style.borderColor = bookingPhone.value
-        ? (isValidPhone(bookingPhone.value) ? "" : "#ef8300")
+        ? (isValidPhone(bookingPhone.value) ? "" : "#ec7c00")
         : "";
 
       var bookingSubmit = document.querySelector('[data-action="booking-submit"]');
@@ -7781,7 +7781,7 @@ function runOfferSearch(overrides){
     if (shiftFixPhone) {
       shiftFixPhone.value = formatPhoneInput(shiftFixPhone.value);
       shiftFixPhone.style.borderColor = shiftFixPhone.value
-        ? (isValidPhone(shiftFixPhone.value) ? "" : "#ef8300")
+        ? (isValidPhone(shiftFixPhone.value) ? "" : "#ec7c00")
         : "";
       var promoState = loadShiftPromo();
       if (promoState && promoState.status === "phone_gate") {
@@ -14008,7 +14008,7 @@ function runOfferSearch(overrides){
 
       dropdown.querySelectorAll('.hero-phone-item, a, button').forEach(function(item){
         item.style.background = '#ffffff';
-        item.style.color = '#0f172a';
+        item.style.color = '#0d1a2b';
         item.style.borderColor = '#cbd5e1';
       });
 
