@@ -3302,23 +3302,35 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- Кнопка «вернуться наверх» — показывается только после перехода по якорю -->
-<button id="back-top-btn" aria-label="Наверх" onclick="window.scrollTo({top:0,behavior:'smooth'});this.style.opacity='0';setTimeout(()=>this.style.display='none',300);"
-  style="display:none;position:fixed;right:16px;bottom:80px;z-index:9999;width:44px;height:44px;border-radius:50%;border:none;cursor:pointer;
-    background:var(--or);color:#fff;font-size:20px;box-shadow:0 4px 16px rgba(0,0,0,0.4);
-    opacity:0;transition:opacity 0.25s;align-items:center;justify-content:center;">↑</button>
+<button id="back-top-btn" aria-label="Наверх"
+  style="display:flex;position:fixed;right:16px;bottom:72px;z-index:9999;width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;
+    background:var(--or);color:#fff;font-size:22px;box-shadow:0 4px 20px rgba(0,0,0,0.5);
+    align-items:center;justify-content:center;opacity:0;transform:scale(0.7);
+    transition:opacity 0.25s,transform 0.25s;pointer-events:none;">↑</button>
 <script>
 (function(){
   var btn = document.getElementById('back-top-btn');
+  function showBtn() {
+    btn.style.opacity = '1';
+    btn.style.transform = 'scale(1)';
+    btn.style.pointerEvents = 'auto';
+  }
+  function hideBtn() {
+    btn.style.opacity = '0';
+    btn.style.transform = 'scale(0.7)';
+    btn.style.pointerEvents = 'none';
+  }
+  btn.addEventListener('click', function(){
+    window.scrollTo({top:0,behavior:'smooth'});
+    hideBtn();
+  });
   document.querySelectorAll('a[href^="#"]').forEach(function(a){
     a.addEventListener('click', function(){
-      var target = document.querySelector(this.getAttribute('href'));
-      if (!target) return;
-      btn.style.display = 'flex';
-      requestAnimationFrame(function(){ btn.style.opacity = '1'; });
+      setTimeout(showBtn, 400);
     });
   });
   window.addEventListener('scroll', function(){
-    if (window.scrollY < 100) { btn.style.opacity = '0'; setTimeout(function(){ if(window.scrollY<100) btn.style.display='none'; }, 300); }
+    if (window.scrollY < 120) hideBtn();
   }, { passive: true });
 })();
 </script>
