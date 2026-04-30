@@ -538,6 +538,24 @@ footer { padding: 36px 0; border-top: 1px solid var(--bdr); background: var(--bg
 @media (max-width: 520px) {
   .grid-3, .grid-4, .reviews-grid { grid-template-columns: 1fr; }
   .grid-3 > *, .grid-4 > * { grid-column: span 1 !important; }
+  /* Треки — flex-карусель одной карточкой */
+  #v1-tracks-grid {
+    display: flex !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    gap: var(--gap-sm) !important;
+    padding: 0 20px 4px !important;
+    margin: 0 -20px !important;
+  }
+  #v1-tracks-grid::-webkit-scrollbar { display: none; }
+  #v1-tracks-grid .track-card {
+    min-width: 88vw !important;
+    max-width: 88vw !important;
+    scroll-snap-align: start !important;
+    flex-shrink: 0 !important;
+  }
   .gallery-grid { grid-template-columns: 1fr; }
   .gallery-grid .big { grid-column: span 1; }
   .gallery-item.big { aspect-ratio: 4/3; }
@@ -1576,6 +1594,7 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
     <div id="gal-desktop" class="r" style="display:flex;gap:var(--gap-sm);max-height:460px;overflow:hidden;"></div>
     <!-- Mobile: horizontal swipe carousel -->
     <div id="gal-mobile" class="r" style="display:none;flex-direction:row;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:var(--gap-sm);padding:0 20px 8px;margin:0 -20px;"></div>
+    <div class="v1-dots" id="gal-dots" style="display:none;"></div>
   </div>
 </section>
 
@@ -3120,6 +3139,8 @@ function renderGalMobile(imgs, label) {
   el.querySelectorAll('button[data-gi]').forEach(btn => {
     btn.addEventListener('click', () => openLightbox(galCurrentData[+btn.dataset.gi].src, galCurrentData[+btn.dataset.gi].alt, +btn.dataset.gi));
   });
+  el.scrollLeft = 0;
+  v1InitDots(el, document.getElementById('gal-dots'));
 }
 
 function switchGalCat(cat) {
