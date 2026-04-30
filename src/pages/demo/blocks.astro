@@ -27,6 +27,8 @@ import Mentors from '../../components/Mentors.astro';
 import SeoTextBlock from '../../components/SeoTextBlock.astro';
 import RelatedPages from '../../components/RelatedPages.astro';
 import { STAT_RATING, YANDEX_MAPS_URL } from '../../data/contacts';
+import HeroMobile from '../../components/hero/Mobile.astro';
+import HeroDesktop from '../../components/hero/Desktop.astro';
 const allDemoShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShifts[2], mainShifts[3]];
 ---
 <!DOCTYPE html>
@@ -178,6 +180,27 @@ const allDemoShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShifts[
       /* Компонент рендерится в своём естественном размере */
       width: 100%;
       overflow-x: auto;
+    }
+
+    /* ── Hero в демо: переопределяем viewport-брейкпоинты ── */
+    /* HeroMobile: скрыт на md+ через md:hidden — форсим обратно */
+    .hero-mobile-demo .md\:hidden {
+      display: flex !important;
+    }
+    /* Убираем min-h-[95svh] чтобы не растягивало phone-frame */
+    .hero-mobile-demo [class*="min-h-\[95"] {
+      min-height: 0 !important;
+    }
+    /* Скрываем авто-открывающуюся форму в превью */
+    .hero-mobile-demo #hero-booking-block {
+      display: none !important;
+    }
+    /* HeroDesktop: hidden md:block — на md+ уже виден, дополнительно снимаем max-w */
+    .hero-desktop-demo .md\:block {
+      display: block !important;
+    }
+    .hero-desktop-demo > * {
+      max-width: 100% !important;
     }
     .block-header {
       display: grid;
@@ -568,7 +591,7 @@ const allDemoShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShifts[
 <!-- ══ BLOCK NAV ══ -->
 <nav class="block-nav" id="blockNav" aria-label="Навигация по блокам">
   <div class="block-nav-inner">
-    <a href="#b1" class="bnav-link">1 Герой</a>
+    <a href="#b1" class="bnav-link bnav-live">1 Герой ✓</a>
     <a href="#b2" class="bnav-link">2 Загрузка</a>
     <a href="#b3" class="bnav-link">3 Мама</a>
     <a href="#b4" class="bnav-link">4 О лагере</a>
@@ -637,48 +660,9 @@ const allDemoShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShifts[
   <div class="previews">
     <div class="preview-mobile">
       <div class="preview-label"><i class="bi bi-phone"></i> Мобиль 375px</div>
-      <div class="phone-frame">
-        <!-- Вариант A: Фото-фон (текущий) -->
-        <div class="hero-photo">
-          <div class="hero-overlay"></div>
-          <div style="position:absolute; inset:0; background:linear-gradient(135deg,#1e3a5f,#0d1a2b); opacity:0.8;"></div>
-          <div style="position:absolute; top:38%; left:50%; transform:translate(-50%,-50%); color:rgba(255,255,255,0.2); font-size:9px; text-align:center;">фото · object-cover · eager<br>fetchpriority=high · AVIF</div>
-          <div class="hero-text">
-            <div class="tagline-pill" style="font-size:10px;">Пока другие на даче — ваш сделает проект</div>
-            <div class="fs-wrap">
-              <h1 class="hero-h1">Летний лагерь<br>в Подмосковье, 7–15</h1>
-              <span class="fs-label">22px 800</span>
-            </div>
-            <div class="fs-wrap">
-              <p class="hero-sub">Вам — 14 дней для себя.</p>
-              <span class="fs-label">13px 400</span>
-            </div>
-          </div>
-        </div>
-        <!-- CTAs в ряд -->
-        <div class="hero-btns">
-          <div class="fs-wrap" style="flex:1;">
-            <div class="btn-outline-or"><i class="bi bi-telegram"></i> Написать в бот</div>
-            <span class="fs-label">13px 600</span>
-          </div>
-          <div class="btn-outline-wh" style="flex:1;">Смотреть смены <i class="bi bi-arrow-right"></i></div>
-        </div>
-        <div class="btn-explain">Напишем — не позвоним. Отвечаем за 15 мин.</div>
-        <!-- Metrics -->
-        <div class="metrics-grid">
-          <div class="metric-cell">
-            <div class="fs-wrap"><div class="metric-num">7</div><span class="fs-label">18px 800</span></div>
-            <div class="metric-lbl">лет работы</div>
-          </div>
-          <div class="metric-cell"><div class="metric-num">1200+</div><div class="metric-lbl">детей</div></div>
-          <div class="metric-cell"><div class="metric-num" style="color:#f59332;">★ 5.0</div><div class="metric-lbl">Яндекс</div></div>
-          <div class="metric-cell"><div class="metric-num" style="color:#fbbf24;">ТОП-4</div><div class="metric-lbl">IT-лагерей МО</div></div>
-        </div>
-        <!-- Trust -->
-        <div class="trust-row">
-          <div class="trust-pill"><i class="bi bi-patch-check-fill" style="font-size:12px; color:#4ade80;"></i>Лицензия</div>
-          <div class="trust-pill"><i class="bi bi-heart-pulse-fill" style="font-size:12px; color:#4ade80;"></i>Медсестра</div>
-          <div class="trust-pill"><i class="bi bi-shield-check" style="font-size:12px; color:#4ade80;"></i>Страховка</div>
+      <div class="phone-frame" style="overflow:clip; max-height:680px;">
+        <div class="hero-mobile-demo">
+          <HeroMobile />
         </div>
       </div>
     </div>
@@ -755,41 +739,16 @@ const allDemoShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShifts[
 
     <div class="preview-desktop">
       <div class="preview-label"><i class="bi bi-display"></i> Десктоп 1280px</div>
-      <div class="desktop-frame dsk">
-        <div style="display:grid; grid-template-columns:1fr 380px; min-height:200px;">
-          <!-- Left: фото -->
-          <div style="background:linear-gradient(135deg,#1e3a5f,#0d1a2b); position:relative; display:flex; align-items:flex-end; padding:24px;">
-            <div style="position:absolute; inset:0; background:linear-gradient(90deg,rgba(13,26,43,0.5),transparent);"></div>
-            <div style="position:relative; z-index:1; max-width:540px;">
-              <div class="tagline-pill" style="margin-bottom:8px;">Пока другие на даче — ваш сделает проект</div>
-              <h1 style="font-size:32px; font-weight:800; color:white; line-height:1.1; margin:0 0 8px;">Летний лагерь в Подмосковье<br>для детей 7–15 лет</h1>
-              <p style="font-size:15px; color:rgba(255,255,255,0.7); margin:0 0 16px;">Вам — 14 дней для себя.</p>
-              <div style="display:flex; gap:10px;">
-                <div class="btn-outline-or" style="width:auto; padding:0 20px; height:44px; font-size:14px;"><i class="bi bi-telegram"></i> Написать в бот</div>
-                <div class="btn-outline-wh" style="width:auto; padding:0 20px; height:44px; font-size:14px;">Смотреть смены</div>
-              </div>
-            </div>
-          </div>
-          <!-- Right: form -->
-          <div style="background:#0d1a2b; padding:20px; display:flex; flex-direction:column; justify-content:center;">
-            <div style="font-size:12px; font-weight:700; color:#f59332; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px;">Записать ребёнка</div>
-            <div style="display:flex; gap:6px; margin-bottom:10px;">
-              {['7–9','10–12','13–15'].map(a => <div style="flex:1; height:32px; border:1px solid rgba(255,255,255,0.15); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; color:rgba(255,255,255,0.6);">{a}</div>)}
-            </div>
-            <div style="height:38px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.05); margin-bottom:10px; display:flex; align-items:center; padding:0 12px; font-size:12px; color:rgba(255,255,255,0.3);">+7 (___) ___-__-__</div>
-            <div style="height:40px; border-radius:100px; background:#ec7c00; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:white; gap:8px; cursor:pointer;"><i class="bi bi-telegram"></i> Записаться</div>
-          </div>
-        </div>
-        <!-- Desktop metrics row -->
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; background:#162035;">
-          {[['7','лет опыта'],['1200+','детей отдохнули'],['★ 5.0','Яндекс Карты'],['ТОП-4','IT-лагерей МО']].map(([n,l]) => (
-            <div style="padding:12px 16px; border-right:1px solid rgba(255,255,255,0.05); text-align:center;">
-              <div style="font-size:18px; font-weight:800; color:white;">{n}</div>
-              <div style="font-size:11px; color:rgba(255,255,255,0.4);">{l}</div>
-            </div>
-          ))}
-        </div>
+      <div class="desktop-frame dsk hero-desktop-demo">
+        <HeroDesktop />
       </div>
+    </div>
+  </div>
+
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill"></i>
+      Живой компонент — hero/Mobile.astro + hero/Desktop.astro
     </div>
   </div>
 
