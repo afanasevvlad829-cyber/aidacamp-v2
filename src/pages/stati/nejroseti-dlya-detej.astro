@@ -31,7 +31,7 @@ const faqItems = [
   },
   {
     question: "Дорого ли обучать ребёнка работе с AI?",
-    answer: "Базовые инструменты — бесплатно. ChatGPT в бесплатной версии, Kandinsky от Сбера, бесплатные тарифы Suno — всё это доступно без оплаты. Платные версии дают больше возможностей, но для начала они не нужны. Если говорить про обучение в структурированном формате — в АйДаКемп AI-трек входит в стандартную смену от 48 000 ₽, и на это можно получить налоговый вычет до 5 200 ₽."
+    answer: "Базовые инструменты — бесплатно. ChatGPT в бесплатной версии, Kandinsky от Сбера, бесплатные тарифы Suno — всё это доступно без оплаты. Платные версии дают больше возможностей, но для начала они не нужны. Если говорить про обучение в структурированном формате — в АйДаКемп AI-трек входит в стандартную смену от 48 000 ₽, и на это можно получить налоговый вычет до 5 434 ₽."
   },
   {
     question: "Нейросети для детей — опасно ли это?",
@@ -445,7 +445,7 @@ const faqItems = [
           </div>
         </div>
         <p class="text-[14px] leading-[1.6] text-slate-500">
-          Смены с июня по август 2026. Налоговый вычет до 5 200 ₽ — оформляем документы автоматически.
+          Смены с июня по август 2026. Налоговый вычет до 5 434 ₽ — оформляем документы автоматически.
         </p>
       </div>
 
@@ -460,15 +460,14 @@ const faqItems = [
 
         <div class="space-y-4">
           {faqItems.map((item, index) => (
-            <details class="border border-slate-200 rounded-xl overflow-hidden group">
-              <summary class="flex items-center justify-between gap-3 px-5 py-4 cursor-pointer list-none select-none hover:bg-slate-50 transition-colors">
-                <span class="text-[15px] font-semibold text-slate-800 leading-[1.4]">{item.question}</span>
-                <i class="bi bi-chevron-down text-slate-400 text-[14px] shrink-0 transition-transform group-open:rotate-180" aria-hidden="true"></i>
-              </summary>
-              <div class="px-5 pb-5 pt-1">
-                <p class="text-[14px] leading-[1.7] text-slate-600">{item.answer}</p>
-              </div>
-            </details>
+            <div class="rounded-[14px] border border-slate-200 bg-slate-50" data-faq-item>
+              <button type="button" data-faq-toggle class="flex w-full cursor-pointer items-center justify-between p-4 text-left text-[15px] font-semibold text-slate-900" aria-expanded="false">
+                <span>{item.question}</span>
+                <span class="ml-3 shrink-0 text-lg text-slate-400 transition-transform duration-200" data-faq-icon aria-hidden="true">+</span>
+              </button>
+              <div class="hidden px-4 pb-4 text-[16px] leading-[1.55] text-slate-600" data-faq-answer>
+                <p class="text-[14px] leading-[1.7] text-slate-600">{item.answer}</p>              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -485,4 +484,23 @@ const faqItems = [
 
   <RelatedPages title="Полезные страницы" pages={relatedPages} />
   <Footer />
+<script>
+  document.querySelectorAll('[data-faq-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = btn.closest('[data-faq-item]');
+      const answer = item.querySelector('[data-faq-answer]');
+      const icon = btn.querySelector('[data-faq-icon]');
+      const isOpen = btn.getAttribute('aria-expanded') === 'true';
+      if (isOpen) {
+        answer.classList.add('hidden');
+        if (icon) icon.style.transform = '';
+        btn.setAttribute('aria-expanded', 'false');
+      } else {
+        answer.classList.remove('hidden');
+        if (icon) icon.style.transform = 'rotate(45deg)';
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    });
+  });
+</script>
 </Base>

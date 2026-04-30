@@ -1,0 +1,180 @@
+---
+import '../styles/global.css';
+import LandingLayout from '../layouts/LandingLayout.astro';
+import LandingHero from '../components/LandingHero.astro';
+import LandingTwoCol from '../components/LandingTwoCol.astro';
+import Shifts from '../components/Shifts.astro';
+import FAQ from '../components/FAQ.astro';
+import RelatedPages from '../components/RelatedPages.astro';
+import { getRelatedPages } from '../data/landing-pages';
+import Gallery from '../components/Gallery.astro';
+import ShiftBookModal from '../components/shifts/ShiftBookModal.astro';
+import RelatedArticles from '../components/RelatedArticles.astro';
+
+const sections = [
+  {
+    h2: "Виды детского отдыха летом",
+    text: "Планируете лето — и сразу куча вопросов: дача, город, лагерь, море? Давайте разберём честно, без рекламы. Каждый формат подходит под свои задачи — главное понять, что важно именно вашей семье.",
+    list: [
+      "Дача или у бабушки — хорошо как часть лета, тяжело все три месяца",
+      "Городские курсы — 2–3 часа в день, вечером снова дома и телефон",
+      "Море — перезагрузка, но не занятость, нужна дополнительная программа",
+      "Лагерь с проживанием — полное погружение, ребёнок занят и доволен"
+    ]
+  },
+  {
+    h2: "Почему лагерь с проживанием — лучший детский отдых в Подмосковье",
+    text: "Если хочется чтобы ребёнок не просто «провёл лето», а приехал домой другим — лагерь с проживанием. За 10–14 дней происходит то, чего не добиться дома за полгода: новые друзья, самостоятельность, реальный результат.",
+    list: [
+      "Полное погружение: расписание, команда, общая цель",
+      "Самостоятельность — сам решает, сам разбирается",
+      "Новые друзья из разных школ и городов",
+      "Результат — IT-проект, который можно показать и потрогать",
+      "Родители выдыхают — 10 дней без «мама, что делать»"
+    ]
+  },
+  {
+    h2: "Что делают дети в IT-лагере АйДаКемп",
+    text: "Не сидят за компьютером весь день — это важно сказать сразу. Занятия по программированию занимают утреннюю половину дня. Остальное время — бассейн, спорт, квесты, прогулки в лесу.",
+    list: [
+      "Утро: IT-занятия в мини-группах до 8 человек",
+      "День: бассейн, спорт, свободное время",
+      "Вечер: командные квесты, кино, настолки",
+      "Финал смены: хакатон — защита своего проекта",
+      "Проект: игра на Python, Telegram-бот или сайт"
+    ]
+  },
+  {
+    h2: "Преимущества отдыха в Подмосковье",
+    text: "Море — дорого, далеко, климат нестабильный. Подмосковье — 66 км от МКАД, можно добраться за час с половиной. Если что-то случится — рядом. И природа настоящая: сосновый лес, чистый воздух, без городского смога.",
+    list: [
+      "66 км от МКАД — близко, но ощущение «уехали далеко»",
+      "Сосновый лес, свежий воздух — настоящий отдых",
+      "Бассейн на территории — не нужно ехать на пляж",
+      "Охрана 24/7 и медработник на территории",
+      "Лицензия Минобрнауки и РТО — официально и безопасно"
+    ]
+  },
+  {
+    h2: "Для детей какого возраста подходит",
+    text: "АйДаКемп принимает детей от 7 до 17 лет. Группы делятся строго по возрасту — 8-летний не попадёт в группу к 14-летним. У каждой группы своя программа, свои педагоги, своё крыло корпуса.",
+    list: [
+      "7–9 лет: Scratch, Minecraft Education, первые игры",
+      "10–12 лет: Python, Telegram-боты",
+      "13–15 лет: Python Advanced, AI-проекты",
+      "15–17 лет: реальные API, командные хакатоны"
+    ]
+  },
+  {
+    h2: "Стоимость детского отдыха в Подмосковье",
+    text: "Один из частых вопросов: почему лагерь дороже дачи. Дача бесплатная, но бабушка не обязана работать вожатым три месяца. Лагерь — это команда профессионалов, программа, безопасность и результат. Всё включено, без доплат.",
+    list: [
+      "Смена 7 дней — от 48 000 ₽ всё включено",
+      "Смена 10 дней — от 60 000 ₽",
+      "Смена 14 дней — от 78 000 ₽",
+      "Налоговый вычет 13% — до 5 434 ₽ возврата",
+      "Оплата частями: 50% сейчас, 50% за 3 недели"
+    ]
+  }
+];
+
+const faqItems = [
+  {
+    question: "Как организован детский отдых в Подмосковье?",
+    answer: "АйДаКемп — это загородный IT-лагерь в Наро-Фоминском районе, 66 км от МКАД. Дети живут в корпусах, занимаются программированием по утрам, после обеда — бассейн, спорт, активности. Вечером — квесты и командные игры. За смену каждый делает свой IT-проект."
+  },
+  {
+    question: "С какого возраста можно отправить ребёнка?",
+    answer: "С 7 лет. Группы делятся по возрасту: 7–9, 10–12, 13–15 и 15–17 лет. Для каждой группы своя программа и свои педагоги. Первоклашка не окажется рядом со старшеклассниками."
+  },
+  {
+    question: "Что входит в стоимость путёвки?",
+    answer: "Всё: проживание в корпусе, 5-разовое питание, IT-программа в мини-группах, бассейн, вечерние активности, охрана и медработник. Ноутбук брать не нужно — оборудование наше."
+  },
+  {
+    question: "Как добраться до лагеря?",
+    answer: "Лагерь в Наро-Фоминском районе, 66 км от МКАД по Киевскому шоссе. Организуем трансфер от метро в день заезда и обратно в день отъезда — расписание высылаем после бронирования."
+  }
+];
+---
+
+<LandingLayout
+  heroImage="/images/hero/detskiy-otdyh-podmoskove.avif"
+  title="Детский отдых в Подмосковье 2026 — летний IT-лагерь | АйДаКемп"
+  description="Детский отдых в Подмосковье летом 2026: IT-лагерь для детей 7–17 лет. Программирование, бассейн, природа. 66 км от МКАД. От 48 000 ₽ всё включено."
+  h1="Детский отдых в Подмосковье 2026"
+  canonical="https://aidacamp.ru/detskiy-otdyh-podmoskove"
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": faqItems.map(item => ({
+        "@type": "Question",
+        "name": item.question,
+        "acceptedAnswer": { "@type": "Answer", "text": item.answer }
+      }))
+    })} />
+  </Fragment>
+  <LandingHero slot="hero"
+    h1="Детский отдых в Подмосковье 2026"
+    subtitle="IT-лагерь для детей 7–17 лет. Программирование, бассейн, лес и настоящие друзья. 66 км от МКАД."
+    breadcrumb="Детский отдых в Подмосковье"
+    keywords={["IT-проект за смену: игра, бот или сайт", "Бассейн, лес, свежий воздух — 66 км от МКАД", "Группы по возрасту 7–9, 10–12, 13–17 лет"]}
+    image="/images/hero/detskiy-otdyh-podmoskove.avif"
+    imageAlt="Детский отдых в Подмосковье 2026 — летний IT-лагерь АйДаКемп"
+  />
+  <LandingTwoCol sections={sections} />
+  <Gallery />
+  <Shifts />
+
+  <section class="mx-auto max-w-[860px] px-4 py-10">
+    <div class="flex items-center gap-2 mb-6">
+      <div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div>
+      <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
+        Частые вопросы о детском отдыхе в Подмосковье
+      </h2>
+    </div>
+    <div class="space-y-4">
+      {faqItems.map((item) => (
+        <div class="rounded-[14px] border border-slate-200 bg-slate-50" data-faq-item>
+          <button type="button" data-faq-toggle class="flex w-full cursor-pointer items-center justify-between p-4 text-left text-[15px] font-semibold text-slate-900" aria-expanded="false">
+            <span>{item.question}</span>
+            <span class="ml-3 shrink-0 text-lg text-slate-400 transition-transform duration-200" data-faq-icon aria-hidden="true">+</span>
+          </button>
+          <div class="hidden px-4 pb-4 text-[16px] leading-[1.55] text-slate-600" data-faq-answer>
+            <p class="text-[14px] leading-[1.7] text-slate-600">{item.answer}</p>          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <FAQ />
+  <ShiftBookModal />
+  <RelatedArticles articles={[
+    { title: "Куда деть ребёнка летом — 5 вариантов", url: "/stati/kuda-det-rebenka-letom", description: "Честный разбор: дача, лагерь, море — плюсы и минусы.", icon: "lightbulb" },
+    { title: "Детский лагерь в Подмосковье", url: "/detskiy-lager-podmoskove", description: "66 км от МКАД, проживание.", icon: "houses" },
+    { title: "Лагерь с бассейном", url: "/lager-s-basseynom", description: "Закрытый бассейн, всё включено.", icon: "sun" },
+    { title: "Цены на смены 2026", url: "/ceny", description: "Полное расписание и стоимость.", icon: "calendar-week" },
+  ]} />
+  <RelatedPages pages={getRelatedPages(Astro.url.pathname)} />
+<script>
+  document.querySelectorAll('[data-faq-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = btn.closest('[data-faq-item]');
+      const answer = item.querySelector('[data-faq-answer]');
+      const icon = btn.querySelector('[data-faq-icon]');
+      const isOpen = btn.getAttribute('aria-expanded') === 'true';
+      if (isOpen) {
+        answer.classList.add('hidden');
+        if (icon) icon.style.transform = '';
+        btn.setAttribute('aria-expanded', 'false');
+      } else {
+        answer.classList.remove('hidden');
+        if (icon) icon.style.transform = 'rotate(45deg)';
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    });
+  });
+</script>
+</LandingLayout>

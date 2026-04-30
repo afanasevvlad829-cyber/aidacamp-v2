@@ -19,7 +19,7 @@ interface PhotoResult {
  * Ищет 2–4 фото по тематике запроса.
  * query — тема (например "бассейн", "занятия программированием", "еда")
  */
-export function findPhotos(query: string, count = 3): PhotoResult[] {
+export function findPhotos(query: string, count = 4): PhotoResult[] {
   const q = query.toLowerCase();
   const base = photoIndex.base;
 
@@ -31,23 +31,31 @@ export function findPhotos(query: string, count = 3): PhotoResult[] {
     return { photo, score };
   });
 
-  // Сортируем по релевантности, берём топ
-  const results = scored
-    .filter(s => s.score > 0)
-    .sort((a, b) => b.score - a.score)
+  // Сортируем по релевантности; среди равных по score — перемешиваем для разнообразия
+  const filtered = scored.filter(s => s.score > 0);
+  filtered.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return Math.random() - 0.5; // shuffle ties
+  });
+
+  const results = filtered
     .slice(0, count)
     .map(s => ({
       url: base + s.photo.file,
       caption: s.photo.caption,
     }));
 
-  // Если ничего не нашли — возвращаем общие фото атмосферы
+  // Если ничего не нашли — возвращаем разнообразные фото атмосферы лагеря
   if (!results.length) {
-    return [
-      { url: base + 'camp-smile.jpg', caption: 'Атмосфера лагеря' },
-      { url: base + 'camp-group-beanbags.jpg', caption: 'Дети в лагере' },
-      { url: base + 'study-dome-group.jpg', caption: 'Занятия' },
-    ].slice(0, count);
+    const fallback = [
+      { url: base + 'camp-smile.avif', caption: 'Атмосфера лагеря' },
+      { url: base + 'camp-group-beanbags.avif', caption: 'Дети в лагере' },
+      { url: base + 'study-dome-group.avif', caption: 'Занятия' },
+      { url: base + 'hackathon-present.avif', caption: 'Хакатон' },
+    ];
+    // shuffle fallback
+    fallback.sort(() => Math.random() - 0.5);
+    return fallback.slice(0, count);
   }
 
   return results;

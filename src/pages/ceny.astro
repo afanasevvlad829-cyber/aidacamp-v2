@@ -8,6 +8,7 @@ import RelatedPages from '../components/RelatedPages.astro';
 import Gallery from '../components/Gallery.astro';
 import ShiftBookModal from '../components/shifts/ShiftBookModal.astro';
 import TaxCalculator from '../components/TaxCalculator.astro';
+import BenefitCalculator from '../components/BenefitCalculator.astro';
 import { getRelatedPages } from '../data/landing-pages';
 import { mainShifts, shortShifts } from '../data/shifts';
 
@@ -79,8 +80,8 @@ const sections = [
 ---
 
 <LandingLayout
-  title="Сколько стоит летний лагерь 2026 — цены на смены от 48 000 ₽ | АйДаКемп"
-  description="Цены детского IT-лагеря 2026: 7 дней от 48 000 ₽, 14 дней от 95 000 ₽. Проживание, питание, IT-программа включены. Вычет 13%."
+  title="Цены на детский лагерь в Подмосковье 2026 — от 48 000 ₽, недорого | АйДаКемп"
+  description="Сколько стоит лагерь 2026: смена 7 дней от 48 000 ₽, 14 дней от 95 000 ₽ — всё включено. Детский лагерь в Подмосковье недорого с IT-программой и бассейном."
   h1="Цены на летний лагерь 2026 — сколько стоит путёвка"
   canonical="https://aidacamp.ru/ceny"
   heroImage="/images/hero/kupit-putevku-v-lager.avif"
@@ -98,7 +99,7 @@ const sections = [
         {
           "@type": "Question",
           "name": "Какова цена летнего лагеря для детей в Подмосковье?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Цена летнего лагеря АйДаКемп в Подмосковье — от 48 000 ₽ (7 дней) до 95 000 ₽ (14 дней). Налоговый вычет 13% возвращает до 5 200 ₽ от стоимости образовательной части смены." }
+          "acceptedAnswer": { "@type": "Answer", "text": "Цена летнего лагеря АйДаКемп в Подмосковье — от 48 000 ₽ (7 дней) до 95 000 ₽ (14 дней). Налоговый вычет 13% возвращает до 5 434 ₽ от стоимости образовательной части смены." }
         },
         {
           "@type": "Question",
@@ -122,6 +123,29 @@ const sections = [
         }
       ]
     })} />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": "Путёвка в детский IT-лагерь АйДаКемп 2026",
+      "description": "Летний IT-лагерь для детей 7–15 лет в Подмосковье. Программирование (Python, AI, Minecraft), бассейн, проживание — всё включено.",
+      "brand": { "@type": "Brand", "name": "АйДаКемп" },
+      "audience": {
+        "@type": "PeopleAudience",
+        "suggestedMinAge": 7,
+        "suggestedMaxAge": 15
+      },
+      "offers": priceRows.map(row => ({
+        "@type": "Offer",
+        "name": `${row.name} — ${row.dates}`,
+        "description": `${row.duration}, ${row.dates}`,
+        "price": row.price.replace(/[^\d]/g, ''),
+        "priceCurrency": "RUB",
+        "availability": "https://schema.org/InStock",
+        "url": "https://aidacamp.ru/ceny",
+        "priceValidUntil": "2026-08-31",
+        "seller": { "@type": "Organization", "name": "АйДаКемп" }
+      }))
+    })} />
   </Fragment>
   <LandingHero slot="hero"
     h1="Цены на летний лагерь 2026 — сколько стоит путёвка"
@@ -130,7 +154,7 @@ const sections = [
     keywords={[
       'Лагеря на лето 2026 — путёвки от 48 000 ₽',
       'Детский лагерь 2026 цены: без скрытых доплат',
-      'Налоговый вычет 13% — до 5 200 ₽ возврата',
+      'Налоговый вычет 13% — до 5 434 ₽ возврата',
       'Оплата 100% или частями (50% сейчас + 50% за 3 нед. до смены), банковский перевод или карта',
     ]}
     image="/images/hero/kupit-putevku-v-lager.avif"
@@ -193,7 +217,7 @@ const sections = [
     </div>
 
     <p class="mt-4 text-[14px] text-slate-500">
-      Цены на 2026 зафиксированы. Оплата в рублях, без привязки к курсу валют. Клик по строке — подробное описание смены и бронирование.
+      Цены на 2026 зафиксированы. Оплата в рублях, без привязки к курсу валют. Клик по строке — подробное описание смены и бронирование. Посмотреть все доступные смены: <a href="/#shifts" class="text-[#ec7c00] hover:underline">Выбрать смену →</a>
     </p>
 
     <!-- Mobile CTA — таблица скроллится горизонтально, кнопка «Забронировать» скрыта за экраном -->
@@ -229,7 +253,10 @@ const sections = [
 
   <LandingTwoCol sections={sections} />
 
-  <!-- Калькулятор налогового вычета (после PR #29 — кнопка «Купить смену» открывает ShiftInfoModal) -->
+  <!-- Калькулятор выгоды: групповые скидки + налоговый вычет -->
+  <BenefitCalculator />
+
+  <!-- Калькулятор налогового вычета (детальный расчёт 13%) -->
   <TaxCalculator />
 
   <!-- Карточки смен с кнопкой «Выбрать» -->

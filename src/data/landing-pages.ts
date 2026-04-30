@@ -37,7 +37,7 @@ export const landingPages: LandingPage[] = [
 
   // 🎯 Тематические IT
   { title: 'AI-лагерь для детей', description: 'Нейросети, ChatGPT API, AI-проекты', url: '/ai-lager', icon: 'bi-cpu' },
-  { title: 'Лагерь с бассейном', description: 'Открытый бассейн, всё включено', url: '/lager-s-basseynom', icon: 'bi-sun' },
+  { title: 'Лагерь с бассейном', description: 'Закрытый бассейн, всё включено', url: '/lager-s-basseynom', icon: 'bi-sun' },
   { title: 'IT лагерь', description: 'Компьютерный лагерь, Python и AI', url: '/kompyuternyy-lager', icon: 'bi-laptop' },
   { title: 'Лагерь программирования', description: 'От кода до проекта', url: '/lager-programmirovaniya', icon: 'bi-keyboard' },
   { title: 'Лагерь Майнкрафт', description: 'Minecraft Education, создание модов', url: '/minecraft-lager', icon: 'bi-controller' },
@@ -93,19 +93,44 @@ export const landingPages: LandingPage[] = [
 ];
 
 /**
+ * IT-тематические страницы — группируются вместе в блоке похожих.
+ * Когда текущая страница — IT, в related показываем прежде всего IT-кластер.
+ * Это устраняет каннибализацию (напр. /letnyaya-it-shkola/ и /lager-programmirovaniya/)
+ * и даёт Яндексу чёткий сигнал тематической близости страниц.
+ */
+const IT_URLS = new Set([
+  '/letnyaya-it-shkola',
+  '/lager-programmirovaniya',
+  '/kompyuternyy-lager',
+  '/ai-lager',
+  '/python-lager',
+  '/minecraft-lager',
+  '/scratch-lager',
+  '/roblox-lager',
+  '/3d-modelirovanie-lager',
+  '/it-camp',
+]);
+
+/**
  * Возвращает первые `count` лендингов из приоритетного списка, исключая `currentUrl`.
  * Используется для блока RelatedPages на каждом лендинге.
  *
- * Порядок в `landingPages` — по убыванию приоритета/частотности. Поэтому первые 6
- * = самые "жирные" SEO-посадки, которые получат больше внутренних ссылок.
+ * Для IT-страниц приоритет отдаётся IT-кластеру (устраняет каннибализацию).
+ * Для остальных страниц — стандартный порядок массива.
  *
  * @param currentUrl URL текущей страницы (без протокола/хоста), например "/minecraft-lager"
  * @param count Сколько ссылок вернуть (по умолчанию 6)
  */
 export function getRelatedPages(currentUrl: string, count: number = 6): LandingPage[] {
-  // Нормализуем URL — убираем хвостовой слеш, чтобы "/minecraft-lager" и "/minecraft-lager/" считались одинаковыми
   const normalized = currentUrl.replace(/\/$/, '');
-  return landingPages
-    .filter((page) => page.url.replace(/\/$/, '') !== normalized)
-    .slice(0, count);
+  const others = landingPages.filter((page) => page.url.replace(/\/$/, '') !== normalized);
+
+  // IT-страница → IT-кластер в начале списка, потом общие
+  if (IT_URLS.has(normalized)) {
+    const itPages = others.filter((p) => IT_URLS.has(p.url.replace(/\/$/, '')));
+    const rest = others.filter((p) => !IT_URLS.has(p.url.replace(/\/$/, '')));
+    return [...itPages, ...rest].slice(0, count);
+  }
+
+  return others.slice(0, count);
 }
