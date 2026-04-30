@@ -258,64 +258,6 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
     }, 3000);
   }
 
-  // --- Shift stat toast ---
-  interface ShiftStat { pct: number; h: [number,number,number,number]; name: string; text: string }
-  const SHIFT_STAT: Record<string, ShiftStat> = {
-    'Смена 1':   { pct: 41, h: [100, 68, 41, 34], name: 'Смена 1',   text: 'Уезжают первыми — до семейных отпусков' },
-    'Смена 2':   { pct: 28, h: [100, 68, 41, 34], name: 'Смена 2',   text: 'Середина лета — дети в лучшей форме' },
-    'Смена 2.1': { pct: 28, h: [100, 68, 41, 34], name: 'Смена 2.1', text: 'Середина лета — дети в лучшей форме' },
-    'Смена 2.2': { pct: 28, h: [100, 68, 41, 34], name: 'Смена 2.2', text: 'Середина лета — дети в лучшей форме' },
-    'Смена 3':   { pct: 17, h: [100, 68, 41, 34], name: 'Смена 3',   text: 'Август — собираются постарше' },
-    'Смена 4':   { pct: 14, h: [100, 68, 41, 34], name: 'Смена 4',   text: 'Финал лета — перед учёбой' },
-  };
-  // Высоты баров для каждой смены (отдельно, т.к. подсвечиваем активную)
-  // Индексы: 0=Смена1, 1=Смена2, 2=Смена3, 3=Смена4
-  const SHIFT_HEIGHTS: [number,number,number,number] = [100, 68, 41, 34]; // relative to max (Смена1=41%)
-  const SHIFT_ACCENT = '#ec7c00';
-  const SHIFT_MUTED  = '#e2e8f0';
-
-  const shiftToast = document.getElementById('shift-stat-toast');
-  const sstPct     = document.getElementById('sst-pct');
-  const sstName    = document.getElementById('sst-name');
-  const sstText    = document.getElementById('sst-text');
-  const sstBars    = [
-    document.getElementById('sst-bar-1'),
-    document.getElementById('sst-bar-2'),
-    document.getElementById('sst-bar-3'),
-    document.getElementById('sst-bar-4'),
-  ];
-  let shiftToastTimer: ReturnType<typeof setTimeout> | null = null;
-
-  function showShiftToast(shiftName: string) {
-    const d = SHIFT_STAT[shiftName];
-    if (!d || !shiftToast) return;
-    const nameToIdx: Record<string, number> = { 'Смена 1': 0, 'Смена 2': 1, 'Смена 2.1': 1, 'Смена 2.2': 1, 'Смена 3': 2, 'Смена 4': 3 };
-    const idx = nameToIdx[shiftName] ?? 0;
-    if (sstPct)  sstPct.textContent  = `${d.pct}%`;
-    if (sstName) sstName.textContent = d.name;
-    if (sstText) sstText.textContent = d.text;
-    // Сбросить бары
-    sstBars.forEach((b, i) => {
-      if (!b) return;
-      b.style.height     = '0%';
-      b.style.background = i === idx ? SHIFT_ACCENT : SHIFT_MUTED;
-    });
-    // Показать
-    shiftToast.classList.remove('translate-x-[calc(100%+20px)]', 'opacity-0');
-    shiftToast.classList.add('translate-x-0', 'opacity-100');
-    shiftToast.removeAttribute('aria-hidden');
-    // Анимировать бары
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      sstBars.forEach((b, i) => { if (b) b.style.height = `${SHIFT_HEIGHTS[i]}%`; });
-    }));
-    // Auto-dismiss 3s
-    if (shiftToastTimer) clearTimeout(shiftToastTimer);
-    shiftToastTimer = setTimeout(() => {
-      shiftToast.classList.add('translate-x-[calc(100%+20px)]', 'opacity-0');
-      shiftToast.classList.remove('translate-x-0', 'opacity-100');
-      shiftToast.setAttribute('aria-hidden', 'true');
-    }, 3000);
-  }
 
   function initShifts() {
     // === FRIEND DISCOUNT TOGGLE ===
