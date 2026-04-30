@@ -1,0 +1,1021 @@
+---
+// Design System v2 — АйДаКемп
+// Ветка: design/glassmorphism-v1 | 2026-04-29
+// Изменения vs v1: кнопки (pill/dark/outlined), spacing, z-index, motion,
+// модалки, skeleton, FAQ, breakpoints, photo rules, WCAG на glass
+---
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>АйДаКемп — Дизайн v2</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style is:inline>
+    html { box-sizing: border-box; }
+    body, div, section, article, span, button, input, a, ul, li, table, th, td, p, h1, h2, h3, h4 { box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #f7f8fb; color: #1e2430; margin: 0; }
+
+    /* ── Tokens ── */
+    :root {
+      --primary:      #ec7c00;
+      --primary-h:    #d46e00;
+      --primary-l:    #f59332;
+      --primary-s:    #fff1df;
+      --blue:         #1b4fd8;
+      --blue-s:       #eff6ff;
+      --navy:         #0d1a2b;
+      --surface:      #f7f8fb;
+      --surface-alt:  #f0f4ff;
+      --tx:           #1e2430;
+      --tx-m:         #4b5263;
+      --tx-f:         #6b7280;
+
+      /* Spacing scale */
+      --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
+      --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px;
+
+      /* Motion */
+      --dur-fast:   150ms;
+      --dur-base:   220ms;
+      --dur-slow:   350ms;
+      --ease-out:   cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in:    cubic-bezier(0.4, 0, 1, 1);
+      --ease-spring:cubic-bezier(0.34, 1.56, 0.64, 1);
+
+      /* Z-index */
+      --z-card:    10;
+      --z-sticky:  20;
+      --z-header:  30;
+      --z-modal:   50;
+      --z-toast:  100;
+    }
+
+    /* ── Glass ── */
+    .glass-surface {
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(16px) saturate(180%);
+    }
+    .glass-dark {
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(12px) saturate(200%);
+    }
+    .glass-border {
+      border: 1px solid rgba(255,255,255,0.55);
+    }
+    .glass-blue {
+      background: rgba(239,246,255,0.75);
+      backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.8);
+    }
+
+    /* ── Layout ── */
+    .wrap    { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    .section { padding: 56px 0; border-bottom: 1px solid #e5e7eb; }
+    .row     { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+    .col     { flex: 1; min-width: 280px; }
+
+    /* ── Labels ── */
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #eff6ff; border: 1px solid #bfdbfe;
+      border-radius: 100px; padding: 3px 12px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #1b4fd8;
+    }
+    .sec-title { font-size: 28px; font-weight: 800; margin: 8px 0 6px; }
+    .sec-desc  { font-size: 16px; color: #4b5263; margin: 0 0 36px; max-width: 600px; }
+    .clabel    { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #9ca3af; margin-bottom: 10px; }
+    .tag-new   { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; border-radius: 4px; font-size: 10px; font-weight: 700; padding: 1px 6px; vertical-align: middle; }
+    .tag-fix   { background: #fff7ed; border: 1px solid #fed7aa; color: #c2410c; border-radius: 4px; font-size: 10px; font-weight: 700; padding: 1px 6px; vertical-align: middle; }
+
+    /* ── Code ── */
+    .code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #0f172a; color: #7dd3fc; padding: 14px 16px; border-radius: 10px; margin-top: 10px; white-space: pre; overflow-x: auto; line-height: 1.6; }
+
+    /* ── Buttons (shared base) ── */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; cursor: pointer; border: none; transition: all var(--dur-base) var(--ease-out); user-select: none; text-decoration: none; }
+    .btn:active { transform: scale(0.975); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Размеры */
+    .btn-xl { height: 52px; padding: 0 28px; font-size: 17px; border-radius: 14px; }
+    .btn-l  { height: 48px; padding: 0 24px; font-size: 16px; border-radius: 12px; }
+    .btn-m  { height: 44px; padding: 0 20px; font-size: 15px; border-radius: 10px; }
+    .btn-s  { height: 36px; padding: 0 14px; font-size: 13px; border-radius: 8px; }
+
+    /* Pill */
+    .btn-pill-xl { height: 52px; padding: 0 30px; font-size: 17px; border-radius: 100px; }
+    .btn-pill-l  { height: 48px; padding: 0 26px; font-size: 16px; border-radius: 100px; }
+
+    /* Варианты */
+    .btn-orange { background: var(--primary); color: #fff; box-shadow: 0 4px 20px rgba(236,124,0,0.35); }
+    .btn-orange:hover { background: var(--primary-h); box-shadow: 0 6px 24px rgba(236,124,0,0.45); }
+
+    .btn-navy   { background: var(--navy); color: #fff; box-shadow: 0 4px 16px rgba(13,26,43,0.25); }
+    .btn-navy:hover { background: #162035; box-shadow: 0 6px 20px rgba(13,26,43,0.35); }
+
+    .btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+    .btn-outline:hover { background: var(--primary-s); }
+
+    .btn-ghost { background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.25); backdrop-filter: blur(8px); }
+    .btn-ghost:hover { background: rgba(255,255,255,0.2); }
+
+    .btn-glass { background: rgba(255,255,255,0.65); color: var(--blue); border: 1px solid rgba(27,79,216,0.2); backdrop-filter: blur(8px); }
+    .btn-glass:hover { background: rgba(255,255,255,0.85); }
+
+    /* full width helper */
+    .btn-full { width: 100%; }
+
+    /* ── Pulse animation for primary CTA ── */
+    @keyframes pulse-orange {
+      0%   { box-shadow: 0 0 0 0 rgba(236,124,0,0.45); }
+      70%  { box-shadow: 0 0 0 10px rgba(236,124,0,0); }
+      100% { box-shadow: 0 0 0 0 rgba(236,124,0,0); }
+    }
+    .btn-pulse { animation: pulse-orange 2.4s ease-out infinite; }
+
+    /* ── Skeleton ── */
+    @keyframes shimmer {
+      0%   { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, #f0f4ff 25%, #e8eeff 50%, #f0f4ff 75%);
+      background-size: 800px 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
+    }
+
+    /* ── FAQ accordion ── */
+    details > summary { list-style: none; cursor: pointer; }
+    details > summary::-webkit-details-marker { display: none; }
+    details[open] .faq-icon { transform: rotate(45deg); }
+    .faq-icon { transition: transform var(--dur-base) var(--ease-out); }
+  </style>
+</head>
+<body>
+
+<!-- ══ HEADER ══════════════════════════════════════════════════ -->
+<div style="background: var(--navy); padding: 28px 0;">
+  <div class="wrap" style="display:flex; justify-content:space-between; align-items:center;">
+    <div>
+      <div style="color:#f59332; font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; margin-bottom:6px;">АйДаКемп · design/glassmorphism-v1</div>
+      <h1 style="color:#fff; font-size:30px; font-weight:800; margin:0;">Дизайн-система v2</h1>
+      <p style="color:#64748b; font-size:14px; margin:6px 0 0;">Все правки собраны в одном месте: кнопки, spacing, motion, модалки, breakpoints</p>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+      <span style="background:#1e40af; color:#bfdbfe; font-size:11px; font-weight:700; padding:4px 10px; border-radius:6px;">v2 · 2026-04-29</span>
+      <span style="color:#475569; font-size:12px;">Изменения vs v1 помечены <span class="tag-new">NEW</span> <span class="tag-fix">FIX</span></span>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <div class="wrap" style="margin-top:20px; display:flex; flex-wrap:wrap; gap:6px;">
+    {[
+      ['#tokens','Токены'],['#buttons','Кнопки'],['#spacing','Spacing'],
+      ['#motion','Motion'],['#zindex','Z-index'],['#cards','Карточки'],
+      ['#forms','Формы'],['#hero','Hero mobile'],['#modals','Модалки'],
+      ['#faq','FAQ'],['#skeleton','Skeleton'],['#photos','Фото'],
+      ['#breakpoints','Breakpoints'],['#glass','Glass WCAG'],['#dont','Do/Don\'t']
+    ].map(([href, label]) => (
+      <a href={href} style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:#94a3b8; font-size:12px; padding:5px 12px; border-radius:6px; text-decoration:none;">{label}</a>
+    ))}
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ══ 1. ТОКЕНЫ ══════════════════════════════════════════════ -->
+<div class="section" id="tokens">
+  <span class="chip">01 · Токены</span>
+  <h2 class="sec-title">Цвета — единственный источник правды</h2>
+  <p class="sec-desc">Только через CSS-переменные. Никаких <code>#ec7c00</code> в компонентах.</p>
+
+  <div class="row">
+    <div class="col">
+      <div class="clabel">Brand Orange</div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        {[
+          ['--color-primary','#ec7c00','bg-primary / text-primary','Единственный CTA'],
+          ['--color-primary-hover','#d46e00','hover:bg-primary-hover','Hover кнопок'],
+          ['--color-primary-light','#f59332','text-primary-light','Иконки, акценты'],
+          ['--color-primary-soft','#fff1df','bg-primary-soft','Фон бейджей, pill'],
+          ['--color-primary-muted','rgba(236,124,0,.12)','bg-primary-muted','Ghost-элементы'],
+        ].map(([token, hex, cls, use]) => (
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style={`width:44px; height:44px; border-radius:10px; background:${hex}; flex-shrink:0;`}></div>
+            <div style="flex:1;">
+              <div style="font-size:12px; font-weight:700; font-family:monospace; color:#1e2430;">{cls}</div>
+              <div style="font-size:11px; color:#9ca3af;">{hex} · {use}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+    <div class="col">
+      <div class="clabel">Brand Blue + Surfaces</div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        {[
+          ['#1b4fd8','bg-blue','Ссылки, бейджи доверия'],
+          ['#eff6ff','bg-blue-s','Фон секции Shifts, FAQ'],
+          ['#0d1a2b','bg-navy','Hero фон, overlay'],
+          ['#f7f8fb','bg-surface','Основной фон страницы'],
+          ['#f0f4ff','bg-surface-alt','Голубой фон секций'],
+          ['#f7f5f2','bg-surface-warm','Тёплый (About, Дарья)'],
+        ].map(([hex, cls, use]) => (
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style={`width:44px; height:44px; border-radius:10px; background:${hex}; flex-shrink:0; border:1px solid #e5e7eb;`}></div>
+            <div style="flex:1;">
+              <div style="font-size:12px; font-weight:700; font-family:monospace; color:#1e2430;">{cls}</div>
+              <div style="font-size:11px; color:#9ca3af;">{hex} · {use}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+    <div class="col">
+      <div class="clabel">Типографика — шкала</div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        {[
+          ['44px','800','H1 Desktop Hero'],
+          ['36px','800','H1 Mobile Hero'],
+          ['28px','700','H2 крупный'],
+          ['24px','700','H2 стандарт'],
+          ['20px','600','H3 карточки'],
+          ['18px','600','Подзаголовки'],
+          ['16px','400','Основной текст ← минимум'],
+          ['14px','500','Labels · badges только'],
+          ['12px','400','Подписи к иконкам'],
+        ].map(([size, w, use]) => (
+          <div style="display:flex; align-items:baseline; gap:10px; border-bottom:1px solid #f3f4f6; padding-bottom:8px;">
+            <div style={`font-size:${size}; font-weight:${w}; color:#1e2430; line-height:1; flex-shrink:0; width:60px;`}>{size}</div>
+            <div style="font-size:11px; color:#6b7280;">{use}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ 2. КНОПКИ ══════════════════════════════════════════════ -->
+<div class="section" id="buttons">
+  <span class="chip">02 · Кнопки <span class="tag-fix" style="margin-left:6px;">FIX</span></span>
+  <h2 class="sec-title">Кнопки — 4 варианта вместо одного «тяжёлого»</h2>
+  <p class="sec-desc">Текущая проблема: полная ширина + тёмный текст на оранжевом → давит. Новое правило: <strong>всегда белый текст</strong> на цветном фоне.</p>
+
+  <div class="row" style="margin-bottom:40px;">
+
+    <!-- Вариант A: PILL (рекомендуемый) -->
+    <div class="col">
+      <div class="clabel">A — Pill <span class="tag-new">РЕКОМЕНДУЕМ</span></div>
+      <div style="background:var(--navy); border-radius:20px; padding:24px; display:flex; flex-direction:column; gap:12px; align-items:center;">
+        <button class="btn btn-orange btn-pill-xl btn-pulse">
+          <i class="bi bi-telegram" style="font-size:20px;"></i>
+          Написать в бот
+        </button>
+        <a href="#shifts" style="color:rgba(255,255,255,0.55); font-size:14px; text-decoration:none;">Смотреть смены ↓</a>
+      </div>
+      <div class="code">class="btn btn-orange btn-pill-xl"
+border-radius: 100px   /* не xl — pill */
+color: white           /* не #1e2430! */
+width: auto            /* не 100%! */</div>
+      <div style="margin-top:10px; font-size:13px; color:#4b5263; line-height:1.6;">
+        Pill снимает агрессию: та же оранжевая, но форма мягче. Не на всю ширину — воздух по бокам. Пульс-анимация только на главном CTA.
+      </div>
+    </div>
+
+    <!-- Вариант B: DARK NAVY -->
+    <div class="col">
+      <div class="clabel">B — Dark Navy <span class="tag-new">NEW</span></div>
+      <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe); border-radius:20px; padding:24px; display:flex; flex-direction:column; gap:12px; align-items:center;">
+        <button class="btn btn-navy btn-pill-xl">
+          <i class="bi bi-telegram" style="font-size:20px;"></i>
+          Написать в бот
+        </button>
+        <button class="btn btn-outline btn-pill-l">
+          Смотреть смены
+        </button>
+      </div>
+      <div class="code">class="btn btn-navy btn-pill-xl"
+background: #0d1a2b
+color: white
+/* оранжевый акцент — иконка */</div>
+      <div style="margin-top:10px; font-size:13px; color:#4b5263; line-height:1.6;">
+        Премиально, тихо. Оранжевый не кричит, но иконка Telegram остаётся якорем. Хорошо работает поверх светлых секций.
+      </div>
+    </div>
+
+    <!-- Вариант C: ДВЕ КНОПКИ -->
+    <div class="col">
+      <div class="clabel">C — Два действия <span class="tag-new">NEW</span></div>
+      <div style="background:var(--navy); border-radius:20px; padding:24px; display:flex; flex-direction:column; gap:10px;">
+        <button class="btn btn-orange btn-pill-xl btn-full">
+          <i class="bi bi-telegram" style="font-size:20px;"></i>
+          Написать в бот
+        </button>
+        <button class="btn btn-ghost btn-full" style="height:44px; border-radius:100px; font-size:15px;">
+          Смотреть смены →
+        </button>
+      </div>
+      <div class="code">/* Первая — главная, вся ширина */
+/* Вторая — ghost, снимает давление */</div>
+      <div style="margin-top:10px; font-size:13px; color:#4b5263; line-height:1.6;">
+        Снимает ощущение «одного правильного пути». Мама может выбрать — посмотреть смены или написать сразу.
+      </div>
+    </div>
+
+    <!-- Вариант D: OUTLINED -->
+    <div class="col">
+      <div class="clabel">D — Outlined (вторичные кнопки)</div>
+      <div style="background:#f7f8fb; border-radius:20px; padding:24px; display:flex; flex-direction:column; gap:10px; border:1px solid #e5e7eb;">
+        <div class="clabel">ShiftCard — действия</div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-glass btn-s" style="flex:1;">
+            <i class="bi bi-calendar-event"></i> Даты
+          </button>
+          <button class="btn btn-glass btn-s" style="flex:1;">
+            <i class="bi bi-lightbulb"></i> Детали
+          </button>
+        </div>
+        <button class="btn btn-orange btn-full" style="height:48px; border-radius:12px; font-size:15px; font-weight:700;">
+          Выбрать
+        </button>
+
+        <div class="clabel" style="margin-top:8px;">Contacts / Links</div>
+        <button class="btn btn-outline btn-m">
+          <i class="bi bi-telephone-fill"></i> Позвонить
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Размерная шкала -->
+  <div class="clabel">Размерная шкала — применение</div>
+  <div style="display:flex; flex-direction:column; gap:8px; max-width:500px;">
+    {[
+      ['btn-xl · 52px','Hero CTA, Sticky CTA','btn-pill-xl → border-radius:100px'],
+      ['btn-l  · 48px','Form submit, ShiftCard Выбрать','btn-pill-l или rounded-xl'],
+      ['btn-m  · 44px','Secondary CTA, Contacts','rounded-lg'],
+      ['btn-s  · 36px','Card utilities (Даты, Детали)','rounded-md'],
+    ].map(([size, use, note]) => (
+      <div style="display:grid; grid-template-columns:140px 1fr 1fr; gap:12px; padding:10px 0; border-bottom:1px solid #f3f4f6; font-size:13px;">
+        <code style="font-weight:700; color:#1e2430;">{size}</code>
+        <span style="color:#4b5263;">{use}</span>
+        <span style="color:#9ca3af; font-family:monospace; font-size:11px;">{note}</span>
+      </div>
+    ))}
+  </div>
+
+  <!-- Запрет: тёмный текст -->
+  <div style="margin-top:24px; display:flex; gap:24px; flex-wrap:wrap;">
+    <div style="flex:1; min-width:260px; background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:16px;">
+      <div style="font-size:12px; font-weight:700; color:#ef4444; margin-bottom:10px;">✗ ЗАПРЕЩЕНО — текущий вариант</div>
+      <button style="height:48px; width:100%; background:#ec7c00; color:#1e2430; border:none; border-radius:10px; font-size:16px; font-weight:600; cursor:pointer;">Записаться</button>
+      <div style="font-size:12px; color:#991b1b; margin-top:8px;">Контраст 4.1:1 — WCAG AA не проходит на 16px тексте.<br>Тёмный текст на оранжевом — непривычно, глаз ожидает белый.</div>
+    </div>
+    <div style="flex:1; min-width:260px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:16px;">
+      <div style="font-size:12px; font-weight:700; color:#10b981; margin-bottom:10px;">✓ ПРАВИЛЬНО — белый текст</div>
+      <button style="height:48px; width:100%; background:#ec7c00; color:white; border:none; border-radius:100px; font-size:16px; font-weight:700; cursor:pointer; box-shadow:0 4px 20px rgba(236,124,0,.35);">Записаться</button>
+      <div style="font-size:12px; color:#166534; margin-top:8px;">Контраст 5.2:1 — WCAG AA ✓<br>Pill форма снимает «давление», white text — привычно.</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ 3. SPACING ══════════════════════════════════════════════ -->
+<div class="section" id="spacing">
+  <span class="chip">03 · Spacing <span class="tag-new" style="margin-left:6px;">NEW</span></span>
+  <h2 class="sec-title">Шкала отступов</h2>
+  <p class="sec-desc">Сейчас в коде: mt-2, mt-3, mt-4, gap-1.5, gap-2.5 — хаос. Шкала: кратно 4px.</p>
+
+  <div style="display:flex; flex-direction:column; gap:6px; max-width:600px;">
+    {[
+      ['s1','4px ','var(--s1)','gap между иконкой и текстом внутри badge'],
+      ['s2','8px ','var(--s2)','gap между кнопками, отступ badge от края'],
+      ['s3','12px','var(--s3)','padding карточки маленькой, gap в форме'],
+      ['s4','16px','var(--s4)','padding px карточки, gap между элементами'],
+      ['s5','24px','var(--s5)','padding py секции внутри карточки, mx мобиль'],
+      ['s6','32px','var(--s6)','gap между карточками, padding крупных блоков'],
+      ['s7','48px','var(--s7)','padding py секции страницы'],
+      ['s8','64px','var(--s8)','gap между крупными секциями'],
+    ].map(([name, val, css, use]) => (
+      <div style="display:grid; grid-template-columns:40px 50px 110px 1fr; gap:12px; align-items:center; padding:8px 0; border-bottom:1px solid #f3f4f6;">
+        <div style="display:flex; align-items:center;">
+          <div style={`height:16px; background:#1b4fd8; border-radius:2px; width:${val.trim()};`}></div>
+        </div>
+        <code style="font-size:12px; font-weight:700;">{val}</code>
+        <code style="font-size:11px; color:#6b7280;">{css}</code>
+        <span style="font-size:12px; color:#4b5263;">{use}</span>
+      </div>
+    ))}
+  </div>
+
+  <div class="code" style="margin-top:20px; max-width:500px;">/* Запрещено: произвольные отступы */
+mt-[14px]  gap-[6px]  px-[18px]   ← ✗
+
+/* Правильно: шкала */
+mt-3 (12px)  gap-2 (8px)  px-4 (16px)  ← ✓</div>
+</div>
+
+
+<!-- ══ 4. MOTION ══════════════════════════════════════════════ -->
+<div class="section" id="motion">
+  <span class="chip">04 · Motion <span class="tag-new" style="margin-left:6px;">NEW</span></span>
+  <h2 class="sec-title">Анимации и переходы</h2>
+  <p class="sec-desc">Три скорости. Только transform/opacity — не width/height.</p>
+
+  <div class="row">
+    <div class="col">
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        {[
+          ['fast','150ms','ease-out','Hover кнопок, badge, иконки'],
+          ['base','220ms','cubic-bezier(0.16,1,0.3,1)','Карточки, dropdown, FAQ'],
+          ['slow','350ms','ease-out','Модалки, drawer, hero элементы'],
+          ['spring','300ms','cubic-bezier(0.34,1.56,0.64,1)','Bounce эффект, shift-карточка hover'],
+        ].map(([name, dur, ease, use]) => (
+          <div style="background:white; border:1px solid #f3f4f6; border-radius:12px; padding:14px 16px; display:grid; grid-template-columns:60px 70px 1fr; gap:8px; align-items:center;">
+            <code style="font-size:13px; font-weight:700; color:#1b4fd8;">{name}</code>
+            <span style="font-size:13px; font-weight:600; color:#1e2430;">{dur}</span>
+            <div>
+              <div style="font-size:11px; font-family:monospace; color:#6b7280;">{ease}</div>
+              <div style="font-size:12px; color:#4b5263; margin-top:2px;">{use}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+    <div class="col">
+      <div class="clabel">Правила</div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        {[
+          ['✓','Animate: transform, opacity, box-shadow'],
+          ['✓','prefers-reduced-motion: skip all transitions'],
+          ['✓','Hover: translateY(-2px) + shadow up'],
+          ['✓','Active/tap: scale(0.975) — 150ms'],
+          ['✗','Animate: width, height, top, left'],
+          ['✗','Bounce на основных CTA (только на spring-компонентах)'],
+          ['✗','Анимации >400ms в UI (тормозит ощущение)'],
+          ['✗','Spinner без disabled на кнопке'],
+        ].map(([icon, rule]) => (
+          <div style="display:flex; gap:8px; font-size:13px; color:#374151; align-items:flex-start;">
+            <span style={`font-weight:700; color:${icon==='✓'?'#10b981':'#ef4444'}; flex-shrink:0;`}>{icon}</span>
+            <span>{rule}</span>
+          </div>
+        ))}
+      </div>
+
+      <div class="clabel" style="margin-top:20px;">Reduced motion</div>
+      <div class="code">@media (prefers-reduced-motion: reduce) &#123;
+  *, *::before, *::after &#123;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  &#125;
+&#125;</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ 5. Z-INDEX ══════════════════════════════════════════════ -->
+<div class="section" id="zindex">
+  <span class="chip">05 · Z-index <span class="tag-new" style="margin-left:6px;">NEW</span></span>
+  <h2 class="sec-title">Слои — порядок перекрытия</h2>
+  <p class="sec-desc">Конфликты: StickyCta перекрывал Header на некоторых устройствах. Фиксированная шкала.</p>
+
+  <div style="max-width:500px; position:relative;">
+    {[
+      ['z-toast','100','Toast-уведомления, глобальные ошибки','#0f172a'],
+      ['z-modal','50','Модалки, drawer, backdrop','#1e3a5f'],
+      ['z-header','30','Header / Navbar — всегда поверх контента','#1b4fd8'],
+      ['z-sticky','20','StickyCta, PhoneDropdown, BookingBar','#3b82f6'],
+      ['z-card','10','Hover карточек (translateY + shadow)','#60a5fe'],
+      ['z-base','0','Обычные элементы','#dbeafe'],
+    ].map(([cls, z, use, bg], i) => (
+      <div style={`background:${bg}; color:${i<3?'white':'#1e2430'}; border-radius:10px; padding:12px 20px; margin-bottom:4px; display:grid; grid-template-columns:110px 40px 1fr; align-items:center; gap:12px;`}>
+        <code style={`font-size:13px; font-weight:700; color:${i<3?'rgba(255,255,255,0.9)':'#1e2430'};`}>{cls}</code>
+        <span style="font-size:20px; font-weight:800;">{z}</span>
+        <span style={`font-size:12px; ${i<3?'color:rgba(255,255,255,0.7)':'color:#4b5263'};`}>{use}</span>
+      </div>
+    ))}
+  </div>
+</div>
+
+
+<!-- ══ 6. КАРТОЧКИ СМЕН ═══════════════════════════════════════ -->
+<div class="section" id="cards">
+  <span class="chip">06 · ShiftCard</span>
+  <h2 class="sec-title">Карточки смен — до и после</h2>
+
+  <div class="row">
+    <!-- ДО -->
+    <div class="col" style="max-width:320px;">
+      <div class="clabel">До — bg-slate-50, белый фон секции</div>
+      <div style="background:#f8fafc; padding:20px; border-radius:20px; border:1px solid #e2e8f0;">
+        <article style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:20px; padding:20px; box-shadow:0 6px 18px rgba(15,23,42,.04);">
+          <div style="display:flex; justify-content:space-between; gap:8px;">
+            <h3 style="font-size:20px; font-weight:600; color:#0f172a; line-height:1.15; margin:0;">IT + Творчество</h3>
+            <span style="border-radius:100px; background:#dcfce7; color:#166534; padding:2px 10px; font-size:13px; font-weight:500; white-space:nowrap; height:fit-content;">Открыта</span>
+          </div>
+          <p style="font-size:14px; color:#475569; margin:4px 0 0;">27 июня — 10 июля · 14 дней</p>
+          <div style="font-size:20px; font-weight:700; color:#ea580c; margin-top:12px;">59 000 ₽</div>
+          <div style="display:flex; gap:8px; margin-top:12px;">
+            <button style="flex:1; height:38px; border:1px solid #e2e8f0; background:white; border-radius:8px; font-size:13px; color:#374151; cursor:pointer;">
+              <i class="bi bi-calendar-event"></i> Даты
+            </button>
+            <button style="flex:1; height:38px; border:1px solid #e2e8f0; background:white; border-radius:8px; font-size:13px; color:#374151; cursor:pointer;">
+              <i class="bi bi-lightbulb"></i> Детали
+            </button>
+          </div>
+          <div style="margin-top:12px; height:10px; background:#f1f5f9; border-radius:6px; overflow:hidden;">
+            <div style="height:100%; width:70%; background:#94a3b8; border-radius:6px 0 0 6px;"></div>
+          </div>
+          <button style="margin-top:14px; width:100%; height:48px; background:#ec7c00; color:#1e2430; border:none; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer;">Выбрать</button>
+        </article>
+      </div>
+      <div style="margin-top:10px; font-size:12px; color:#ef4444;">✗ Тёмный текст на кнопке · белый фон не контрастирует с glass</div>
+    </div>
+
+    <!-- ПОСЛЕ -->
+    <div class="col" style="max-width:320px;">
+      <div class="clabel">После — glass-surface на #eff6ff <span class="tag-new">NEW</span></div>
+      <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe); padding:20px; border-radius:20px;">
+        <article class="glass-surface glass-border" style="border-radius:20px; padding:20px; box-shadow:0 8px 24px rgba(27,79,216,.10);">
+          <div style="display:flex; justify-content:space-between; gap:8px;">
+            <h3 style="font-size:20px; font-weight:600; color:#0f172a; line-height:1.15; margin:0;">IT + Творчество</h3>
+            <span style="border-radius:100px; background:rgba(220,252,231,.9); color:#166534; padding:2px 10px; font-size:13px; font-weight:500; white-space:nowrap; height:fit-content;">Открыта</span>
+          </div>
+          <p style="font-size:14px; color:#475569; margin:4px 0 0;">27 июня — 10 июля · 14 дней</p>
+          <div style="font-size:20px; font-weight:700; color:#ec7c00; margin-top:12px;">59 000 ₽</div>
+          <div style="display:flex; gap:8px; margin-top:12px;">
+            <button class="btn btn-glass btn-s" style="flex:1;"><i class="bi bi-calendar-event"></i> Даты</button>
+            <button class="btn btn-glass btn-s" style="flex:1;"><i class="bi bi-lightbulb"></i> Детали</button>
+          </div>
+          <div style="margin-top:12px; height:10px; background:rgba(203,213,225,.5); border-radius:6px; overflow:hidden;">
+            <div style="height:100%; width:70%; background:#94a3b8; border-radius:6px 0 0 6px;"></div>
+          </div>
+          <button class="btn btn-orange btn-full" style="margin-top:14px; height:48px; border-radius:12px; font-size:15px; font-weight:700;">Выбрать</button>
+        </article>
+      </div>
+      <div style="margin-top:10px; font-size:12px; color:#10b981;">✓ glass-surface · белый текст на кнопке · синий тинт тени</div>
+    </div>
+
+    <!-- ПОПУЛЯРНАЯ -->
+    <div class="col" style="max-width:320px;">
+      <div class="clabel">Популярная смена — orange border</div>
+      <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe); padding:20px; border-radius:20px;">
+        <article class="glass-surface" style="border-radius:20px; border:2px solid #ec7c00; padding:20px; box-shadow:0 8px 24px rgba(236,124,0,.15);">
+          <div style="margin-bottom:10px;">
+            <span style="background:#ec7c00; color:white; border-radius:100px; padding:2px 10px; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+              <i class="bi bi-fire" style="font-size:12px;"></i> Популярная
+            </span>
+          </div>
+          <div style="display:flex; justify-content:space-between; gap:8px;">
+            <h3 style="font-size:20px; font-weight:600; color:#0f172a; line-height:1.15; margin:0;">Хакатон Pro</h3>
+            <span style="border-radius:100px; background:rgba(254,237,213,.9); color:#c2410c; padding:2px 10px; font-size:13px; font-weight:600; white-space:nowrap; height:fit-content;">3 места</span>
+          </div>
+          <p style="font-size:14px; color:#475569; margin:4px 0 0;">11 — 24 июля · 14 дней</p>
+          <div style="font-size:20px; font-weight:700; color:#ec7c00; margin-top:12px;">65 000 ₽</div>
+          <div style="margin-top:12px; height:10px; background:rgba(203,213,225,.5); border-radius:6px; overflow:hidden;">
+            <div style="height:100%; width:90%; background:#f97316; border-radius:6px 0 0 6px;"></div>
+          </div>
+          <button class="btn btn-orange btn-full" style="margin-top:14px; height:48px; border-radius:12px; font-size:15px; font-weight:700;">Занять место</button>
+        </article>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ 7. HERO MOBILE ══════════════════════════════════════════ -->
+<div class="section" id="hero">
+  <span class="chip">07 · Hero Mobile <span class="tag-fix" style="margin-left:6px;">FIX</span></span>
+  <h2 class="sec-title">Hero Mobile v2 — с тегом и pill-кнопкой</h2>
+
+  <div class="row">
+    <div style="width:375px; flex-shrink:0;">
+      <div style="border:2px solid #1e2430; border-radius:44px; overflow:hidden; box-shadow:0 30px 60px rgba(0,0,0,.25);">
+        <div style="background:linear-gradient(180deg,#1e3a5f 0%,#0d1a2b 100%); min-height:700px; position:relative; display:flex; flex-direction:column;">
+
+          <!-- Фото зона -->
+          <div style="height:320px; background:linear-gradient(135deg,#1b4fd8 0%,#0d1a2b 100%); position:relative; flex-shrink:0; display:flex; align-items:center; justify-content:center;">
+            <div style="position:absolute; inset:0; background:linear-gradient(180deg,transparent 40%,#0d1a2b 100%);"></div>
+            <span style="color:rgba(255,255,255,.15); font-size:13px;">[фото детей]</span>
+
+            <!-- Текст поверх фото -->
+            <div style="position:absolute; bottom:24px; left:20px; right:20px; z-index:2;">
+              <!-- Tagline pill -->
+              <div style="margin-bottom:10px;">
+                <span style="display:inline-flex; align-items:center; gap:6px; background:rgba(236,124,0,.15); border:1px solid rgba(236,124,0,.4); border-radius:100px; padding:4px 14px; backdrop-filter:blur(8px);">
+                  <span style="font-size:13px; font-weight:600; color:#f59332;">Пока другие на даче — ваш сделает AI-проект</span>
+                </span>
+              </div>
+              <h1 style="color:white; font-size:32px; font-weight:800; line-height:1.1; margin:0 0 6px; text-shadow:0 2px 10px rgba(0,0,0,.45);">
+                Летний лагерь<br>в Подмосковье
+              </h1>
+              <p style="color:rgba(255,255,255,.75); font-size:16px; margin:0;">
+                7–15 лет · от <strong style="color:#f59332;">48 000 ₽</strong>
+              </p>
+            </div>
+          </div>
+
+          <!-- Content -->
+          <div style="padding:16px 20px 32px; display:flex; flex-direction:column; gap:10px;">
+            <!-- Два действия -->
+            <button class="btn btn-orange btn-pill-xl btn-full btn-pulse">
+              <i class="bi bi-telegram" style="font-size:20px;"></i>
+              Написать в бот
+            </button>
+            <button class="btn btn-ghost btn-full" style="height:44px; border-radius:100px; font-size:15px;">
+              Смотреть смены →
+            </button>
+
+            <!-- Метрики glass-dark -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:4px;">
+              {[['7','лет опыта'],['1200+','детей'],['5.0★','Яндекс'],['ТОП-4','в России']].map(([n,l]) => (
+                <div class="glass-dark" style="border:1px solid rgba(255,255,255,.12); border-radius:14px; padding:12px 14px;">
+                  <div style="font-size:22px; font-weight:800; color:white; line-height:1;">{n}</div>
+                  <div style="font-size:11px; color:rgba(255,255,255,.45); margin-top:2px;">{l}</div>
+                </div>
+              ))}
+            </div>
+
+            <!-- Trust pills glass-dark -->
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              {[['bi-patch-check-fill','Лицензия'],['bi-heart-pulse-fill','Медсестра'],['bi-shield-check','Страховка']].map(([icon, label]) => (
+                <span class="glass-dark" style="display:inline-flex; align-items:center; gap:5px; border:1px solid rgba(255,255,255,.15); border-radius:100px; padding:5px 10px; font-size:11px; font-weight:500; color:rgba(255,255,255,.8);">
+                  <i class={`bi ${icon}`} style="font-size:10px; color:#4ade80;"></i>
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Изменения -->
+    <div class="col">
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        {[
+          ['tag-new','Tagline pill','«Пока другие на даче — ваш сделает AI-проект» · оранжевый тег поверх фото'],
+          ['tag-fix','Pill кнопки','Не full-width прямоугольники — pill border-radius:100px'],
+          ['tag-fix','Белый текст','color:white на всех CTA-кнопках (было #1e2430)'],
+          ['tag-new','Два действия','Основная + ghost «Смотреть смены» — снимает давление'],
+          ['tag-new','Glass-dark метрики','rgba(255,255,255,0.08) + blur(12px) поверх тёмного фона'],
+          ['tag-new','Glass trust pills','Лицензия/Медсестра/Страховка — glass вместо синих блоков'],
+        ].map(([tag, title, desc]) => (
+          <div style="display:flex; gap:12px; align-items:flex-start; background:white; border:1px solid #f3f4f6; border-radius:12px; padding:14px 16px;">
+            <span class={tag} style="flex-shrink:0; margin-top:2px;">{tag==='tag-new'?'NEW':'FIX'}</span>
+            <div>
+              <div style="font-size:14px; font-weight:700; color:#1e2430; margin-bottom:2px;">{title}</div>
+              <div style="font-size:13px; color:#6b7280;">{desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ 8. МОДАЛКИ ══════════════════════════════════════════════ -->
+<div class="section" id="modals">
+  <span class="chip">08 · Модалки <span class="tag-new" style="margin-left:6px;">NEW</span></span>
+  <h2 class="sec-title">ShiftBookModal / ShiftInfoModal</h2>
+
+  <div class="row">
+    <div class="col">
+      <!-- Backdrop + Modal -->
+      <div style="position:relative; height:420px; background:#0d1a2b; border-radius:20px; overflow:hidden;">
+        <div style="position:absolute; inset:0; background:rgba(13,26,43,.7); backdrop-filter:blur(4px); display:flex; align-items:flex-end;">
+          <!-- Bottom sheet modal -->
+          <div style="width:100%; background:white; border-radius:24px 24px 0 0; padding:24px 20px 32px;">
+            <div style="width:40px; height:4px; background:#e5e7eb; border-radius:100px; margin:0 auto 20px;"></div>
+            <div style="font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#1b4fd8; margin-bottom:4px;">IT + Творчество</div>
+            <h3 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 4px;">27 июня — 10 июля</h3>
+            <p style="font-size:15px; color:#6b7280; margin:0 0 20px;">14 дней · Подмосковье</p>
+            <div style="background:#f7f8fb; border-radius:14px; padding:16px; margin-bottom:16px;">
+              <div style="font-size:24px; font-weight:800; color:#ec7c00; margin-bottom:4px;">59 000 ₽</div>
+              <div style="font-size:13px; color:#6b7280;">Питание, проживание, программа, трансфер</div>
+            </div>
+            <button class="btn btn-orange btn-pill-l btn-full">
+              <i class="bi bi-telegram" style="font-size:18px;"></i>
+              Записать ребёнка
+            </button>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:10px; font-size:12px; color:#6b7280;">Bottom sheet — мобиль. Drag-handle, backdrop blur, border-radius 24px top.</div>
+    </div>
+
+    <div class="col">
+      <div class="clabel">Правила модалок</div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        {[
+          ['z-index: 50','z-modal — поверх header (z=30)'],
+          ['backdrop: blur(4px)','rgba(13,26,43,0.7) — не чёрный, не прозрачный'],
+          ['border-radius: 24px 24px 0 0','Bottom sheet на мобиле'],
+          ['drag-handle: 40×4px','bg-gray-200, center, margin-bottom 20px'],
+          ['close: ESC + backdrop click','Keyboard accessible'],
+          ['focus trap','Tab внутри модалки, не выходит наружу'],
+          ['scroll lock','body overflow:hidden пока модалка открыта'],
+          ['animation: slideUp','translateY(100%) → 0, duration:350ms, ease-out'],
+        ].map(([rule, desc]) => (
+          <div style="display:grid; grid-template-columns:160px 1fr; gap:8px; padding:8px 0; border-bottom:1px solid #f3f4f6; font-size:13px;">
+            <code style="color:#1b4fd8; font-weight:600;">{rule}</code>
+            <span style="color:#4b5263;">{desc}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ 9. SKELETON ════════════════════════════════════════════ -->
+<div class="section" id="skeleton">
+  <span class="chip">09 · Loading states <span class="tag-new" style="margin-left:6px;">NEW</span></span>
+  <h2 class="sec-title">Skeleton & состояния загрузки</h2>
+
+  <div class="row">
+    <!-- ShiftCard skeleton -->
+    <div class="col" style="max-width:300px;">
+      <div class="clabel">ShiftCard skeleton</div>
+      <div style="background:white; border:1px solid #e5e7eb; border-radius:20px; padding:20px;">
+        <div class="skeleton" style="height:20px; width:65%; margin-bottom:8px;"></div>
+        <div class="skeleton" style="height:14px; width:45%; margin-bottom:16px;"></div>
+        <div class="skeleton" style="height:24px; width:35%; margin-bottom:16px;"></div>
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+          <div class="skeleton" style="height:36px; flex:1;"></div>
+          <div class="skeleton" style="height:36px; flex:1;"></div>
+        </div>
+        <div class="skeleton" style="height:10px; width:100%; margin-bottom:8px;"></div>
+        <div class="skeleton" style="height:48px; width:100%; border-radius:12px;"></div>
+      </div>
+    </div>
+
+    <!-- Кнопка loading -->
+    <div class="col">
+      <div class="clabel">Кнопка — состояние загрузки</div>
+      <div style="display:flex; flex-direction:column; gap:10px; max-width:280px;">
+        <!-- Default -->
+        <button class="btn btn-orange btn-pill-l btn-full">
+          <i class="bi bi-telegram" style="font-size:18px;"></i>
+          Написать в бот
+        </button>
+        <!-- Loading -->
+        <button class="btn btn-full" disabled style="height:48px; border-radius:100px; font-size:16px; font-weight:700; background:#ec7c00; color:white; opacity:0.85;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="animation:spin 0.8s linear infinite;">
+            <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,.3)" stroke-width="3"/>
+            <path d="M12 2a10 10 0 0 1 10 10" stroke="white" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+          Отправляем...
+        </button>
+        <!-- Success -->
+        <button class="btn btn-full" style="height:48px; border-radius:100px; font-size:16px; font-weight:700; background:#10b981; color:white; border:none; cursor:default;">
+          <i class="bi bi-check-lg" style="font-size:18px;"></i>
+          Отправлено!
+        </button>
+      </div>
+      <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+    </div>
+
+    <div class="col">
+      <div class="clabel">Правила loading states</div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        {[
+          ['disabled во время запроса','pointer-events:none, opacity:0.85'],
+          ['Spinner 20×20px','stroke-width:3, white, spin 0.8s'],
+          ['Текст меняется','«Записаться» → «Отправляем...»'],
+          ['Success: зелёная','bg:#10b981, иконка check, 2с потом закрыть'],
+          ['Error: красная рамка','border-red-400, текст ошибки под кнопкой'],
+          ['Skeleton вместо пустого','всегда skeleton при загрузке данных'],
+        ].map(([rule, desc]) => (
+          <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; padding:8px 0; border-bottom:1px solid #f3f4f6; font-size:13px;">
+            <span style="font-weight:600; color:#1e2430;">{rule}</span>
+            <span style="color:#6b7280; font-family:monospace; font-size:12px;">{desc}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ 10. FAQ ════════════════════════════════════════════════ -->
+<div class="section" id="faq">
+  <span class="chip">10 · FAQ аккордеон <span class="tag-new" style="margin-left:6px;">NEW</span></span>
+  <h2 class="sec-title">FAQ.astro — паттерн</h2>
+
+  <div class="row">
+    <div class="col" style="max-width:560px;">
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        {[
+          ['Ноутбук нужен?', 'Нет. Всё оборудование предоставляем. Достаточно приехать с рюкзаком.', true],
+          ['Можно ли с нулевым опытом?', '', false],
+          ['Как забрать ребёнка досрочно?', '', false],
+        ].map(([q, a, open]) => (
+          <details open={open} style="background:white; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden;">
+            <summary style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; gap:16px; font-size:16px; font-weight:600; color:#1e2430;">
+              <span>{q}</span>
+              <span class="faq-icon" style="color:#1b4fd8; flex-shrink:0; font-size:20px; font-weight:400; line-height:1; transition:transform 220ms cubic-bezier(0.16,1,0.3,1);">+</span>
+            </summary>
+            {open && <div style="padding:0 20px 16px; font-size:15px; color:#4b5263; line-height:1.6; border-top:1px solid #f3f4f6; margin-top:0; padding-top:14px;">{a}</div>}
+          </details>
+        ))}
+      </div>
+      <div class="code" style="margin-top:16px;">/* Правила FAQ */
+details              → border-radius:14px, border:#e5e7eb
+summary              → padding:16px 20px, font-size:16px, fw:600
+open indicator       → «+» rotate(45deg) on open, color:blue
+answer               → padding:14px 20px 16px, font-size:15px
+transition           → max-height 220ms ease-out (CSS only)</div>
+    </div>
+
+    <div class="col">
+      <div class="clabel">Фон секции FAQ</div>
+      <div style="background:#f0f4ff; border-radius:20px; padding:24px;">
+        <div style="font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#1b4fd8; margin-bottom:8px;">Часто спрашивают</div>
+        <p style="font-size:15px; color:#4b5263;">Секция на bg-surface-alt (#f0f4ff). FAQ-карточки — белые на голубом. Не glass.</p>
+      </div>
+      <div style="margin-top:12px; font-size:13px; color:#6b7280; line-height:1.6;">
+        Glass на #f0f4ff даст слабый эффект — достаточно просто белых карточек на голубом фоне. Экономим backdrop-filter.
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ 11. ФОТО ════════════════════════════════════════════════ -->
+<div class="section" id="photos">
+  <span class="chip">11 · Фото <span class="tag-new" style="margin-left:6px;">NEW</span></span>
+  <h2 class="sec-title">Правила использования фотографий</h2>
+
+  <div class="row">
+    <div class="col">
+      {[
+        ['Aspect ratio Hero mobile','3:4 или 1:1. object-position: center 35% — лица не обрезаются'],
+        ['Aspect ratio карточки','16:9 или 3:2 для галереи. Не portrait в горизонтальных рядах'],
+        ['object-fit','cover везде. Никаких contain (пустые полосы)'],
+        ['Лица','Всегда в верхней 60% кадра. object-position: center 30%'],
+        ['Улыбки','Приоритет фото где дети смеются. Никаких «серьёзно работаем»'],
+        ['Градиент поверх','Всегда есть overlay для читаемости текста. Не убираем'],
+        ['Размеры','AVIF primary + WebP fallback. 390w мобиль, 800w планшет'],
+        ['Alt text','hero — alt="" (decorative). Галерея — alt="[описание сцены]"'],
+        ['Lazy loading','loading=eager только Hero. Все остальные — loading=lazy'],
+      ].map(([rule, desc]) => (
+        <div style="display:grid; grid-template-columns:200px 1fr; gap:12px; padding:10px 0; border-bottom:1px solid #f3f4f6; font-size:13px;">
+          <span style="font-weight:600; color:#1e2430;">{rule}</span>
+          <span style="color:#4b5263;">{desc}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ 12. BREAKPOINTS ════════════════════════════════════════ -->
+<div class="section" id="breakpoints">
+  <span class="chip">12 · Breakpoints <span class="tag-new" style="margin-left:6px;">NEW</span></span>
+  <h2 class="sec-title">Что меняется на каждом размере</h2>
+
+  <div style="overflow-x:auto;">
+    <table style="width:100%; border-collapse:collapse; font-size:13px; min-width:700px;">
+      <thead>
+        <tr style="background:#0d1a2b; color:white;">
+          <th style="padding:12px 16px; text-align:left; border-radius:10px 0 0 0;">Компонент</th>
+          <th style="padding:12px 16px; text-align:left;">Mobile &lt;768px</th>
+          <th style="padding:12px 16px; text-align:left;">Tablet 768–1024px</th>
+          <th style="padding:12px 16px; text-align:left; border-radius:0 10px 0 0;">Desktop &gt;1024px</th>
+        </tr>
+      </thead>
+      <tbody>
+        {[
+          ['Hero','Mobile.astro — фото+текст+pill кнопки','Скрыт (md:hidden)','Desktop.astro — две колонки'],
+          ['Shifts','Горизонтальный скролл, snap','Горизонтальный скролл','Сетка 3 колонки'],
+          ['ShiftCard','min-w-[calc(100vw-48px)]','min-w-[320px]','auto, grid-item'],
+          ['LeadForm','variant=mobile, полная ширина','полная ширина','variant=desktop, max-w-md'],
+          ['StickyCta','fixed bottom-0, z-20','fixed bottom-0','hidden (md:hidden)'],
+          ['FAQ','Карточки на всю ширину','2 колонки','2 колонки max-w-4xl'],
+          ['Reviews','1 карточка (горизонтальный скролл)','2 карточки','3 карточки'],
+          ['Header','Логотип + burger меню','Логотип + burger','Полная навигация'],
+          ['Footer','1 колонка, стек','2 колонки','4 колонки'],
+        ].map(([comp, mobile, tablet, desktop], i) => (
+          <tr style={`background:${i%2===0?'white':'#f9fafb'};`}>
+            <td style="padding:12px 16px; font-weight:600; color:#1e2430;">{comp}</td>
+            <td style="padding:12px 16px; color:#4b5263;">{mobile}</td>
+            <td style="padding:12px 16px; color:#4b5263;">{tablet}</td>
+            <td style="padding:12px 16px; color:#4b5263;">{desktop}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- ══ 13. GLASS WCAG ══════════════════════════════════════════ -->
+<div class="section" id="glass">
+  <span class="chip">13 · Glass + WCAG <span class="tag-new" style="margin-left:6px;">NEW</span></span>
+  <h2 class="sec-title">Контраст на glass-элементах</h2>
+  <p class="sec-desc">Основная проблема: backdrop-filter меняет контраст в зависимости от подложки. Решение — минимальный контраст зафиксировать через цвет текста.</p>
+
+  <div class="row">
+    <div class="col">
+      {[
+        ['glass-dark на тёмном фото (Hero)','rgba(255,255,255,0.08)','Текст white (#fff)','18px+ → WCAG AA','Контраст >7:1 на тёмном. Для маленького текста — только 14px+ bold'],
+        ['glass-surface на #eff6ff (Shifts)','rgba(255,255,255,0.72)','Текст #1e2430','16px+ → WCAG AA ✓','Практически белый фон. #1e2430 даёт 14.5:1'],
+        ['glass-dark метрики (Hero 2×2)','rgba(255,255,255,0.08)','Текст white, 22px+ bold','OK крупный текст','Мелкие подписи 11px: только rgba(255,255,255,0.45) — не WCAG, но допустимо как decorative'],
+        ['Trust pills на тёмном','rgba(255,255,255,0.08)','Текст rgba(255,255,255,0.8)','11px → НЕ WCAG','Декоративные — не основной контент. Но лучше сделать white 100%'],
+        ['Input на CTA (синий фон)','rgba(255,255,255,0.08)','Текст white, placeholder rgba(1,1,1,.5)','16px placeholder → риск','Placeholder серый на стекле — сложно. Лучше белый bg для input'],
+      ].map(([ctx, bg, txt, verdict, note]) => (
+        <div style={`background:white; border:1px solid ${verdict.includes('✓')||verdict.includes('OK')?'#bbf7d0':verdict.includes('риск')||verdict.includes('НЕ')?'#fecaca':'#e5e7eb'}; border-radius:12px; padding:14px 16px; margin-bottom:10px;`}>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:8px;">
+            <span style="font-size:13px; font-weight:700; color:#1e2430;">{ctx}</span>
+            <span style={`font-size:11px; font-weight:700; white-space:nowrap; color:${verdict.includes('✓')||verdict.includes('OK')?'#166534':verdict.includes('риск')||verdict.includes('НЕ')?'#991b1b':'#374151'};`}>{verdict}</span>
+          </div>
+          <div style="font-size:11px; color:#6b7280; line-height:1.5;">{note}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ 14. DO / DON'T ══════════════════════════════════════════ -->
+<div class="section" id="dont">
+  <span class="chip">14 · Do / Don't — чек-лист PR</span>
+  <h2 class="sec-title">Перед каждым коммитом</h2>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:32px;">
+    <div>
+      <div style="font-size:13px; font-weight:700; color:#10b981; margin-bottom:14px; display:flex; align-items:center; gap:6px;"><i class="bi bi-check-circle-fill"></i> Делай</div>
+      {[
+        ['Кнопки','pill border-radius:100px · белый текст · auto-width (не 100%)'],
+        ['Цвета','bg-primary / text-primary · никаких bg-orange-500'],
+        ['Шрифт','Inter · min 16px для контента · 14px только label/badge'],
+        ['Радиусы','8/12/16/20/24/100px · не произвольные [14px]'],
+        ['Spacing','Шкала 4/8/12/16/24/32/48px · не mt-[14px]'],
+        ['Иконки','bi-* с aria-hidden="true" · только из icons-manifest.json'],
+        ['Glass','Только на цветном/тёмном фоне · не на белом'],
+        ['Motion','transform/opacity · 150-350ms · prefers-reduced-motion'],
+        ['Z-index','Шкала 10/20/30/50/100 · не z-[99]'],
+        ['Ветка','Работаем только в design/glassmorphism-v1'],
+      ].map(([cat, rule]) => (
+        <div style="display:grid; grid-template-columns:80px 1fr; gap:8px; padding:8px 0; border-bottom:1px solid #f0fdf4; font-size:13px;">
+          <span style="font-weight:700; color:#10b981;">{cat}</span>
+          <span style="color:#1e2430;">{rule}</span>
+        </div>
+      ))}
+    </div>
+    <div>
+      <div style="font-size:13px; font-weight:700; color:#ef4444; margin-bottom:14px; display:flex; align-items:center; gap:6px;"><i class="bi bi-x-circle-fill"></i> Не делай</div>
+      {[
+        ['bg-orange-*','любые Tailwind-оранжевые · только bg-primary'],
+        ['Тёмный текст','color:#1e2430 на оранжевой кнопке → всегда white'],
+        ['Прямоугольник','full-width + large button = давит · pill или auto-width'],
+        ['Glass на белом','невидимо и бессмысленно'],
+        ['Comfortaa','не использовать шрифт в production компонентах'],
+        ['Emoji в UI','🚀 🎯 ⚡ 🔥 вместо bi-* — запрещено'],
+        ['Arbitrary values','rounded-[14px] mt-[18px] → только шкала'],
+        ['width/height animate','только transform/opacity для GPU-ускорения'],
+        ['Partytown','разбивает Яндекс.Метрику · инцидент 60К₽'],
+        ['Прямой push в dev','только через PR из design/glassmorphism-v1'],
+      ].map(([cat, rule]) => (
+        <div style="display:grid; grid-template-columns:110px 1fr; gap:8px; padding:8px 0; border-bottom:1px solid #fef2f2; font-size:13px;">
+          <code style="font-weight:700; color:#ef4444; font-size:12px;">{cat}</code>
+          <span style="color:#1e2430;">{rule}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <!-- Приоритеты -->
+  <div class="clabel">Порядок реализации</div>
+  <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px;">
+    {[
+      ['P1 · 2ч','Токены','bg-primary везде · белый текст на кнопках · радиусы','#ec7c00'],
+      ['P2 · 3ч','Shifts glass','Фон #eff6ff → glass ShiftCard · glass utility кнопки','#1b4fd8'],
+      ['P3 · 2ч','Hero mobile','Pill кнопки · tagline pill · glass метрики и trust','#10b981'],
+      ['P4 · 2ч','Hero desktop','Нижняя плашка → glass · бот-кнопка рядом','#6b7280'],
+      ['P5 · 1ч','CTA блок','Синий фон · glass форма · pill кнопка','#9ca3af'],
+    ].map(([prio, title, tasks, col]) => (
+      <div style={`border-left:3px solid ${col}; background:white; border-radius:0 12px 12px 0; padding:14px 16px;`}>
+        <div style={`font-size:11px; font-weight:700; color:${col}; text-transform:uppercase; letter-spacing:.08em;`}>{prio}</div>
+        <div style="font-size:15px; font-weight:700; color:#1e2430; margin:4px 0 6px;">{title}</div>
+        <div style="font-size:12px; color:#6b7280; line-height:1.5;">{tasks}</div>
+      </div>
+    ))}
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<footer style="background:#0d1a2b; padding:24px; text-align:center; color:#4b5563; font-size:13px; margin-top:0;">
+  АйДаКемп · Дизайн-система v2 · design/glassmorphism-v1 · 2026-04-29
+</footer>
+</body>
+</html>

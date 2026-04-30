@@ -151,6 +151,25 @@ export const POST: APIRoute = async ({ request }) => {
     // Hard-gates сняты — доверяем LLM с RAG-контекстом отвечать честно.
     // Если в RAG нет — модель сама скажет не знаю, спросите менеджера по правилу промпта.
 
+    // PHOTO FAST-PATH: «фото [тема]» или «покажи [тема]» → gallery без LLM.
+    // LLM иногда применял правило «бассейн → текст» вместо «фото → gallery».
+    const photoTopicMap: [RegExp, string, string][] = [
+      [/фото\s*(бассейн|плавани|купан)|бассейн.*фото|покажи\s*(бассейн)|как\s+выглядит\s+бассейн/i, 'бассейн', 'Вот бассейн — закрытый, через день по расписанию.'],
+      [/фото\s*(занят|программир|обучен|урок|класс|компьютер)|покажи\s*(занят|класс)/i, 'занятия программированием', 'Вот фото занятий.'],
+      [/фото\s*(ед[аы]|питани|завтрак|обед|ужин)|покажи\s*(ед[аы]|питани)/i, 'еда', 'Вот фото питания в лагере.'],
+      [/фото\s*(территори|лагер(?!я)|природ|место)|покажи\s*(территори|лагер)/i, 'территория лагеря', 'Вот фото территории.'],
+      [/фото\s*(комнат|проживан|домик|корпус)|покажи\s*(комнат|корпус)/i, 'проживание комнаты', 'Вот фото комнат.'],
+      [/фото\s*(хакатон|презентац|проект)|покажи\s*(хакатон)/i, 'хакатон', 'Вот фото хакатона.'],
+    ];
+    for (const [re, query, shortText] of photoTopicMap) {
+      if (re.test(message)) {
+        const photos = findPhotos(query, 3);
+        const fastResp = JSON.stringify({ state: 'ok', text: shortText, block_type: 'gallery', block_data: { photos }, chips: [], message_id: null });
+        logSession(sid, message, fastResp, { trustedCount: 0, isEmpty: false, hits: [], fast_photo: true });
+        return new Response(fastResp, { headers: { 'Content-Type': 'application/json' } });
+      }
+    }
+
     // ESCALATION ROUTER: проверяем 12 готовых шаблонов до LLM.
     // Если совпало — отдаём готовый ответ + контактные chips, без генерации.
     const escalation = matchEscalation(message);

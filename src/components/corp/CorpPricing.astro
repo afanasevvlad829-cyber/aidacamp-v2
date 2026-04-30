@@ -1,0 +1,129 @@
+---
+import type { CorpClient } from '../../data/corp/types';
+interface Props { client: CorpClient }
+const { client } = Astro.props;
+
+const shiftsData = [
+  { label: 'Смена 1 · 30 мая — 8 июня', tag: 'Больше всего мест', days: 10, basePrice: 74900, desc: 'Первая смена в сезоне — дети только из школы. Максимальный выбор мест, самая доступная цена по скидке. Опыт не нужен: делим по группам от нуля до продвинутых. Каждый уедет с проектом.' },
+  { label: 'Смена 2 · 10 июня — 23 июня', tag: '', days: 14, basePrice: 95000, desc: 'Самая длинная смена — 14 дней. Максимальная глубина погружения в проект. Хакатон растянут на 2 дня. Подходит детям с опытом кодинга.' },
+  { label: 'Смена 3 · 3 авг — 15 авг', tag: 'Популярная', days: 13, basePrice: 89400, desc: 'Август — пик лета. 13 дней, два полных цикла хакатона. Подходит всем уровням, максимальная насыщенность программы.' },
+  { label: 'Смена 4 · 17 авг — 26 авг', tag: '', days: 10, basePrice: 74900, desc: 'Последняя смена сезона. 10 дней, идеально если остальные уже заняты или ребёнок идёт в школу позже.' },
+];
+---
+
+<section>
+  <div class="wrap">
+    <div class="s-kicker r">Цены для сотрудников {client.clientName}</div>
+    <h2 class="r">Выберите смену — <em>посчитаем вместе</em></h2>
+    <p class="s-lead r">Скажите «я из {client.clientName}» при записи. Скидка применяется сразу — без промокодов и форм.</p>
+
+    <div class="smeny-tabs r">
+      {shiftsData.map((s, i) => (
+        <div class:list={['stab', i === 0 && 'active']} onclick={`selectSmena(${i}, this)`}>{s.label.split(' · ')[0]} · {s.label.split(' · ')[1]}</div>
+      ))}
+    </div>
+
+    <div class="calc-box r">
+      <div id="smena-card" style="margin-bottom:var(--gap-lg);padding:var(--gap-md);border-radius:var(--r-lg);background:var(--bg3) !important;border:1px solid var(--bdr);">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:var(--gap-xs);margin-bottom:var(--gap-xs);">
+          <span id="smena-label" style="font-size:var(--fs-md);font-weight:700;color:var(--txt);">{shiftsData[0].label}</span>
+          <span id="smena-tag" style="font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding:3px 8px;border-radius:var(--r-full);background:rgba(255,90,31,0.12);color:var(--or2);">{shiftsData[0].tag}</span>
+        </div>
+        <div id="smena-meta" style="font-size:var(--fs-sm);color:var(--txt2);margin-bottom:var(--gap-xs);">{shiftsData[0].days} дней · базовая цена {shiftsData[0].basePrice.toLocaleString('ru')} ₽ / ребёнок</div>
+        <div id="smena-desc" style="font-size:var(--fs-base);color:var(--txt2);line-height:1.65;">{shiftsData[0].desc}</div>
+      </div>
+      <div class="slider-row">
+        <div class="slider-label">Количество детей:</div>
+        <div class="slider-val" id="kids-count">7</div>
+      </div>
+      <input type="range" min="1" max="30" value="7" id="kids-slider" oninput="updateCalc()" style="display:block;width:100%;"/>
+      <div id="calc-group-result">
+        <div class="calc-results">
+          <div class="calc-res">
+            <div class="calc-res-label">Цена за путёвку</div>
+            <div class="calc-res-val orange" id="res-pp">—</div>
+            <div class="calc-res-sub" id="res-pp-sub"></div>
+          </div>
+          <div class="calc-res">
+            <div class="calc-res-label">Скидка {client.clientName}</div>
+            <div class="calc-res-val orange" id="res-disc">−{client.discount}%</div>
+            <div class="calc-res-sub">от базовой цены</div>
+          </div>
+          <div class="calc-res">
+            <div class="calc-res-label">Налоговый вычет</div>
+            <div class="calc-res-val green" id="res-tax">—</div>
+            <div class="calc-res-sub">13% · вернут через ФНС</div>
+          </div>
+        </div>
+      </div>
+      <div id="calc-10plus" style="display:none;margin-top:var(--gap-xs);padding:var(--gap-lg) 24px;border-radius:var(--r-lg);border:1px solid rgba(255,90,31,0.25);background:rgba(255,90,31,0.06);text-align:center;">
+        <div style="font-size:var(--fs-3xl);font-weight:900;color:var(--or2);letter-spacing:-0.02em;margin-bottom:var(--gap-xs);">от 12%</div>
+        <div style="font-size:var(--fs-base);color:var(--txt);line-height:1.5;">Скидка для группы от 10 детей — по согласованию.<br/><span style="color:var(--txt2);font-size:var(--fs-sm);">Обычно получается 15–20%, зависит от смены и дат.</span></div>
+      </div>
+    </div>
+
+    <div class="transfer-note r" id="transfer-note">
+      При группе от <strong>10 детей</strong> — бесплатный трансфер автобусом {client.transferFrom} до лагеря и обратно. Входит в договор.
+    </div>
+  </div>
+</section>
+
+<script define:vars={{ shiftsData, discount: client.discount, freeTransferMinKids: client.freeTransferMinKids }}>
+  let currentSmenaIdx = 0;
+
+  function fmt(n) { return n.toLocaleString('ru') + ' ₽'; }
+
+  function selectSmena(idx, el) {
+    currentSmenaIdx = idx;
+    document.querySelectorAll('.stab').forEach(t => t.classList.remove('active'));
+    if (el) el.classList.add('active');
+    const s = shiftsData[idx];
+    const lbl = document.getElementById('smena-label');
+    const tag = document.getElementById('smena-tag');
+    const meta = document.getElementById('smena-meta');
+    const desc = document.getElementById('smena-desc');
+    if (lbl) lbl.textContent = s.label;
+    if (tag) { tag.textContent = s.tag; tag.style.display = s.tag ? 'inline-block' : 'none'; }
+    if (meta) meta.textContent = s.days + ' дней · базовая цена ' + s.basePrice.toLocaleString('ru') + ' ₽ / ребёнок';
+    if (desc) desc.textContent = s.desc;
+    updateCalc();
+  }
+
+  function updateCalc() {
+    const s = shiftsData[currentSmenaIdx];
+    const kids = parseInt(document.getElementById('kids-slider')?.value || '7', 10);
+    const kidsEl = document.getElementById('kids-count');
+    if (kidsEl) kidsEl.textContent = kids;
+
+    const discountedPrice = Math.round(s.basePrice * (1 - discount / 100));
+    const tax = Math.round((discountedPrice - 3800 * s.days) * 0.13);
+    const taxDisplay = Math.max(tax, 0);
+
+    const pp = document.getElementById('res-pp');
+    const ppSub = document.getElementById('res-pp-sub');
+    const taxEl = document.getElementById('res-tax');
+    const plus10 = document.getElementById('calc-10plus');
+    const transfer = document.getElementById('transfer-note');
+    const group = document.getElementById('calc-group-result');
+
+    if (kids >= freeTransferMinKids) {
+      if (group) group.style.display = 'none';
+      if (plus10) plus10.style.display = 'block';
+      if (transfer) transfer.classList.add('show');
+    } else {
+      if (group) group.style.display = 'block';
+      if (plus10) plus10.style.display = 'none';
+      if (transfer) transfer.classList.remove('show');
+      if (pp) pp.textContent = fmt(discountedPrice);
+      if (ppSub) ppSub.innerHTML = '<s style="opacity:.5">' + s.basePrice.toLocaleString('ru') + ' ₽</s>';
+      if (taxEl) taxEl.textContent = '~' + taxDisplay.toLocaleString('ru') + ' ₽';
+    }
+  }
+
+  window.selectSmena = selectSmena;
+  window.updateCalc = updateCalc;
+
+  // Init
+  document.addEventListener('DOMContentLoaded', () => updateCalc());
+  updateCalc();
+</script>

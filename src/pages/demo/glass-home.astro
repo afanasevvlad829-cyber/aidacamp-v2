@@ -1,0 +1,652 @@
+---
+// АйДаКемп — TypeUI Glassmorphism v2
+// Dark navy background + subtle glass panels
+// Tokens: primary=#1856FF, orange=#f97316, font=Plus Jakarta Sans
+---
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>АйДаКемп — Лагерь программирования</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:          #060d1a;
+      --primary:     #1856FF;
+      --orange:      #f97316;
+      --orange-dim:  rgba(249,115,22,0.18);
+      --orange-glow: rgba(249,115,22,0.38);
+      --green:       #07CA6B;
+      --glass:       rgba(255,255,255,0.055);
+      --glass-hover: rgba(255,255,255,0.090);
+      --border:      rgba(255,255,255,0.10);
+      --border-top:  rgba(255,255,255,0.55);
+      --t1:          rgba(255,255,255,0.95);
+      --t2:          rgba(255,255,255,0.55);
+      --t3:          rgba(255,255,255,0.30);
+      --font:        "Plus Jakarta Sans", -apple-system, sans-serif;
+      --r-card:      20px;
+      --r-btn:       12px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      color: var(--t1);
+      background-color: var(--bg);
+      /* Тёмный фон + мягкие глубокие orbs — НЕ кричащие */
+      background-image:
+        radial-gradient(ellipse 80% 60% at 10% -10%,
+          rgba(24,86,255,0.28) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 90% 110%,
+          rgba(99,60,200,0.22) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 85% 20%,
+          rgba(24,86,255,0.14) 0%, transparent 50%),
+        radial-gradient(ellipse 40% 35% at 20% 80%,
+          rgba(99,60,200,0.12) 0%, transparent 50%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── SVG filter ── */
+    svg.filters { position: fixed; width: 0; height: 0; top: 0; left: 0; pointer-events: none; }
+
+    /* ══════════════════════════════════════
+       GLASS CARD — настоящий glassmorphism
+       Тёмный фон + rgba(white,0.055) = стекло
+       Градиентная рамка: светло сверху-слева
+    ══════════════════════════════════════ */
+    .glass {
+      position: relative;
+      background: var(--glass);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-radius: var(--r-card);
+      border: 1px solid transparent;
+      box-shadow: 0 1px 0 0 var(--border-top) inset,
+                  0 24px 64px rgba(0,0,0,0.40),
+                  0 4px 16px rgba(0,0,0,0.20);
+      isolation: isolate;
+      transition: background 0.25s ease, transform 0.2s ease;
+    }
+    .glass:hover {
+      background: var(--glass-hover);
+    }
+    /* Градиентная рамка через border-image не поддерживает border-radius —
+       используем outline-кольцо через ::after */
+    .glass::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border: 1px solid transparent;
+      background:
+        linear-gradient(140deg,
+          rgba(255,255,255,0.22) 0%,
+          rgba(255,255,255,0.06) 45%,
+          rgba(255,255,255,0.00) 70%
+        ) border-box;
+      -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: destination-out;
+      mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    /* ── PILL ── */
+    .pill {
+      position: relative;
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 7px 16px; border-radius: 100px;
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      font-size: 12px; font-weight: 600; color: var(--t2);
+      letter-spacing: 0.01em;
+    }
+    .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+    .pill-orange { color: #fdba74; background: var(--orange-dim); border-color: rgba(249,115,22,0.25); }
+    .pill-orange .pill-dot { background: var(--orange); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 26px; border-radius: var(--r-btn);
+      font-family: var(--font); font-weight: 700; font-size: 15px;
+      border: none; cursor: pointer; text-decoration: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-orange {
+      background: var(--orange); color: #fff;
+      box-shadow: 0 6px 24px var(--orange-glow);
+    }
+    .btn-orange:hover { box-shadow: 0 10px 32px var(--orange-glow); }
+    .btn-outline {
+      background: transparent; color: var(--t1);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+    .btn-outline:hover { border-color: rgba(255,255,255,0.22); background: var(--glass); }
+
+    /* ── LAYOUT ── */
+    .wrap { max-width: 1140px; margin: 0 auto; padding: 0 40px; }
+
+    /* ══ NAV ══ */
+    nav {
+      position: fixed; inset: 0 0 auto 0; z-index: 100;
+      padding: 14px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(6,13,26,0.70);
+      backdrop-filter: blur(24px) saturate(150%);
+      -webkit-backdrop-filter: blur(24px) saturate(150%);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo { font-size: 18px; font-weight: 800; color: var(--t1); letter-spacing: -0.02em; }
+    .logo em { color: var(--orange); font-style: normal; }
+    .nav-links { display: flex; align-items: center; gap: 4px; }
+    .nav-a {
+      padding: 7px 14px; border-radius: 10px;
+      font-size: 14px; font-weight: 500; color: var(--t2);
+      text-decoration: none; transition: color 0.2s, background 0.2s;
+    }
+    .nav-a:hover { color: var(--t1); background: var(--glass); }
+    .nav-btn {
+      padding: 9px 18px; border-radius: 10px;
+      background: var(--orange); color: #fff;
+      font-size: 14px; font-weight: 700; text-decoration: none;
+      box-shadow: 0 4px 14px var(--orange-glow);
+      transition: transform 0.15s;
+    }
+    .nav-btn:hover { transform: translateY(-1px); }
+
+    /* ══ HERO ══ */
+    .hero {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 56px;
+      align-items: center;
+      padding: 120px 0 80px;
+    }
+
+    .hero-eyebrow { margin-bottom: 22px; }
+
+    h1 {
+      font-size: clamp(38px, 4.8vw, 62px);
+      font-weight: 900;
+      line-height: 1.07;
+      letter-spacing: -0.035em;
+      color: #fff;
+      margin-bottom: 20px;
+    }
+    h1 .accent { color: var(--orange); }
+
+    .hero-lead {
+      font-size: 17px; font-weight: 400; line-height: 1.65;
+      color: var(--t2); max-width: 460px; margin-bottom: 34px;
+    }
+    .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .hero-stats {
+      display: flex; gap: 32px; margin-top: 48px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+    }
+    .stat-val {
+      font-size: 30px; font-weight: 900; color: #fff; line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .stat-val em { color: var(--orange); font-style: normal; }
+    .stat-label { font-size: 12px; color: var(--t3); margin-top: 4px; font-weight: 500; }
+
+    /* Hero right card */
+    .hero-card { padding: 28px; }
+    .hero-card-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 22px;
+    }
+    .hero-card h3 { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: -0.02em; }
+    .hero-card .dates { font-size: 13px; color: var(--t2); margin-top: 2px; }
+    .hero-price { font-size: 42px; font-weight: 900; color: #fff; letter-spacing: -0.03em; line-height: 1; margin-bottom: 4px; }
+    .hero-price-note { font-size: 12px; color: var(--t3); margin-bottom: 18px; }
+    .avail {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 11px; border-radius: 8px;
+      background: rgba(7,202,107,0.12);
+      border: 1px solid rgba(7,202,107,0.20);
+      font-size: 12px; font-weight: 600; color: #6ee7b7;
+      margin-bottom: 20px;
+    }
+    .avail-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
+    .sep { height: 1px; background: var(--border); margin: 20px 0; }
+    .feat-row {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; color: var(--t2); margin-bottom: 10px;
+    }
+    .feat-icon {
+      width: 30px; height: 30px; border-radius: 9px;
+      background: var(--glass-hover);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0;
+    }
+
+    /* ══ SECTIONS ══ */
+    section { padding: 96px 0; }
+    .sec-label {
+      font-size: 11px; font-weight: 700; color: var(--orange);
+      letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px;
+    }
+    h2 {
+      font-size: clamp(26px, 3.2vw, 42px);
+      font-weight: 800; letter-spacing: -0.025em;
+      color: #fff; margin-bottom: 14px; line-height: 1.12;
+    }
+    .sec-lead {
+      font-size: 16px; color: var(--t2); line-height: 1.65;
+      max-width: 500px; margin-bottom: 52px;
+    }
+
+    /* ══ SHIFTS ══ */
+    .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+
+    .shift-card { padding: 26px; cursor: pointer; }
+    .shift-card:hover { transform: translateY(-2px); }
+    .shift-num { font-size: 11px; font-weight: 700; color: var(--t3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 14px; }
+    .shift-card h3 { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 6px; letter-spacing: -0.01em; }
+    .shift-dates { font-size: 13px; color: var(--t2); margin-bottom: 18px; }
+    .shift-price { font-size: 28px; font-weight: 900; color: #fff; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .shift-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 7px;
+      font-size: 11px; font-weight: 600;
+      margin-bottom: 20px;
+    }
+    .badge-green { background: rgba(7,202,107,0.12); border: 1px solid rgba(7,202,107,0.20); color: #6ee7b7; }
+    .badge-orange { background: var(--orange-dim); border: 1px solid rgba(249,115,22,0.22); color: #fdba74; }
+    .badge-dot { width: 5px; height: 5px; border-radius: 50%; }
+    .shift-cta {
+      width: 100%; padding: 11px;
+      border-radius: 10px; border: none; cursor: pointer;
+      background: var(--orange); color: #fff;
+      font-family: var(--font); font-weight: 700; font-size: 14px;
+      box-shadow: 0 4px 14px var(--orange-glow);
+      transition: transform 0.15s;
+    }
+    .shift-cta:hover { transform: translateY(-1px); }
+    .shift-card.featured { background: rgba(249,115,22,0.07); }
+
+    /* ══ BENTO ══ */
+    .bento { display: grid; grid-template-columns: repeat(3,1fr); grid-template-rows: auto auto; gap: 16px; }
+    .bento-cell { padding: 30px; }
+    .bento-cell.wide { grid-column: span 2; }
+    .bento-icon {
+      width: 44px; height: 44px; border-radius: 13px;
+      background: var(--glass-hover);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; margin-bottom: 16px;
+    }
+    .bento-cell h3 { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 8px; letter-spacing: -0.01em; }
+    .bento-cell p { font-size: 14px; color: var(--t2); line-height: 1.65; }
+    .big-num { font-size: 60px; font-weight: 900; color: var(--orange); letter-spacing: -0.04em; line-height: 1; margin-bottom: 8px; }
+
+    /* ══ REVIEWS ══ */
+    .review-card { padding: 26px; }
+    .stars { display: flex; gap: 2px; margin-bottom: 12px; }
+    .star { color: var(--orange); font-size: 14px; }
+    .review-text { font-size: 14px; color: var(--t2); line-height: 1.70; margin-bottom: 18px; }
+    .reviewer { display: flex; align-items: center; gap: 10px; }
+    .avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--orange-dim);
+      border: 1px solid rgba(249,115,22,0.22);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #fdba74; flex-shrink: 0;
+    }
+    .reviewer-name { font-size: 13px; font-weight: 600; color: #fff; }
+    .reviewer-meta { font-size: 12px; color: var(--t3); }
+
+    /* ══ FAQ ══ */
+    .faq { display: flex; flex-direction: column; gap: 10px; max-width: 740px; margin: 0 auto; }
+    .faq-item { padding: 22px 26px; cursor: pointer; }
+    .faq-q {
+      font-size: 15px; font-weight: 600; color: #fff;
+      display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    }
+    .faq-toggle {
+      width: 26px; height: 26px; border-radius: 8px;
+      background: var(--glass-hover);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; color: var(--t2); flex-shrink: 0;
+      transition: background 0.2s, color 0.2s;
+    }
+    .faq-item.open .faq-toggle { background: var(--orange-dim); color: var(--orange); }
+    .faq-a { font-size: 14px; color: var(--t2); line-height: 1.70; margin-top: 14px; display: none; }
+    .faq-item.open .faq-a { display: block; }
+
+    /* ══ CTA ══ */
+    .cta-box { padding: 60px; text-align: center; max-width: 800px; margin: 0 auto; }
+    .cta-box h2 { margin-bottom: 14px; }
+    .cta-box p { font-size: 16px; color: var(--t2); max-width: 460px; margin: 0 auto 32px; line-height: 1.65; }
+    .cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    /* ══ FOOTER ══ */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 14px;
+    }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-a { font-size: 13px; color: var(--t3); text-decoration: none; transition: color 0.2s; }
+    .footer-a:hover { color: var(--t1); }
+    .footer-copy { font-size: 13px; color: var(--t3); }
+
+    /* ── scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+  <svg class="filters" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="glass" color-interpolation-filters="sRGB"
+              x="-8%" y="-8%" width="116%" height="116%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.010 0.016"
+          numOctaves="4" seed="12" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="10"
+          xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- ── NAV ── -->
+  <nav>
+    <div class="logo">Ай<em>Да</em>Кемп</div>
+    <div class="nav-links">
+      <a href="#smeny" class="nav-a">Смены</a>
+      <a href="#pochemu" class="nav-a">О лагере</a>
+      <a href="#faq" class="nav-a">FAQ</a>
+      <a href="#otzyvy" class="nav-a">Отзывы</a>
+      <a href="#zapis" class="nav-btn">Записать ребёнка</a>
+    </div>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <div class="wrap">
+    <div class="hero">
+
+      <!-- left -->
+      <div>
+        <div class="hero-eyebrow">
+          <div class="pill pill-orange">
+            <div class="pill-dot"></div>
+            Смены 2026 — регистрация открыта
+          </div>
+        </div>
+        <h1>Лагерь, где дети<br>влюбляются в <span class="accent">код</span></h1>
+        <p class="hero-lead">За 12 дней ребёнок создаёт настоящую игру, обретает друзей и возвращается домой с горящими глазами. 7–15 лет, Подмосковье.</p>
+        <div class="hero-actions">
+          <a href="#zapis" class="btn btn-orange">
+            Записать ребёнка
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="#smeny" class="btn btn-outline">Смотреть смены</a>
+        </div>
+        <div class="hero-stats">
+          <div>
+            <div class="stat-val">700<em>+</em></div>
+            <div class="stat-label">детей за 5 лет</div>
+          </div>
+          <div>
+            <div class="stat-val">4.9<em>★</em></div>
+            <div class="stat-label">на Яндекс.Картах</div>
+          </div>
+          <div>
+            <div class="stat-val">92<em>%</em></div>
+            <div class="stat-label">возвращаются снова</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- right — shift preview card -->
+      <div class="glass hero-card">
+        <div class="hero-card-head">
+          <div>
+            <h3>Смена 2 — Игровая</h3>
+            <div class="dates">12 июня — 23 июня · 12 дней</div>
+          </div>
+          <div class="pill pill-orange" style="font-size:11px;padding:5px 10px;">🔥 Хит</div>
+        </div>
+        <div class="hero-price">85 000 ₽</div>
+        <div class="hero-price-note">налоговый вычет — до 14 300 ₽</div>
+        <div class="avail"><div class="avail-dot"></div>Осталось 4 места</div>
+        <a href="#zapis" class="btn btn-orange" style="width:100%;justify-content:center;font-size:14px;padding:12px;">Записать сейчас</a>
+        <div class="sep"></div>
+        <div class="feat-row">
+          <div class="feat-icon">💻</div>
+          Создаём игру на Python / Unity
+        </div>
+        <div class="feat-row">
+          <div class="feat-icon">🏕</div>
+          Природа, Подмосковье, 3-разовое питание
+        </div>
+        <div class="feat-row" style="margin-bottom:0">
+          <div class="feat-icon">👨‍🏫</div>
+          Преподаватели из Яндекса и МФТИ
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── SHIFTS ── -->
+  <section id="smeny">
+    <div class="wrap">
+      <div class="sec-label">Расписание</div>
+      <h2>Выберите смену</h2>
+      <p class="sec-lead">Три потока в июне и июле — выбирайте удобные даты</p>
+      <div class="grid-3">
+
+        <div class="glass shift-card">
+          <div class="shift-num">Смена 01</div>
+          <h3>Стартовая</h3>
+          <div class="shift-dates">29 мая — 9 июня · 12 дней</div>
+          <div class="shift-price">82 000 ₽</div>
+          <div class="shift-badge badge-green">
+            <div class="badge-dot" style="background:var(--green)"></div>Места есть
+          </div>
+          <button class="shift-cta">Подробнее</button>
+        </div>
+
+        <div class="glass shift-card featured">
+          <div class="shift-badge badge-orange" style="margin-bottom:10px;">
+            <div class="badge-dot" style="background:var(--orange)"></div>🔥 Хит сезона
+          </div>
+          <div class="shift-num">Смена 02</div>
+          <h3>Игровая</h3>
+          <div class="shift-dates">12 июня — 23 июня · 12 дней</div>
+          <div class="shift-price">85 000 ₽</div>
+          <div class="shift-badge badge-green" style="margin-bottom:20px;">
+            <div class="badge-dot" style="background:var(--green)"></div>4 места
+          </div>
+          <button class="shift-cta">Подробнее</button>
+        </div>
+
+        <div class="glass shift-card">
+          <div class="shift-num">Смена 03</div>
+          <h3>Летняя</h3>
+          <div class="shift-dates">1 июля — 12 июля · 12 дней</div>
+          <div class="shift-price">85 000 ₽</div>
+          <div class="shift-badge badge-green" style="margin-bottom:20px;">
+            <div class="badge-dot" style="background:var(--green)"></div>Регистрация открыта
+          </div>
+          <button class="shift-cta">Подробнее</button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── BENTO / WHY ── -->
+  <section id="pochemu">
+    <div class="wrap">
+      <div class="sec-label">Почему АйДаКемп</div>
+      <h2>Не просто лагерь —<br>прорыв за 12 дней</h2>
+      <p class="sec-lead">Дети не сидят за учебниками. Они создают, играют и дружат</p>
+      <div class="bento">
+        <div class="glass bento-cell wide">
+          <div class="bento-icon">🚀</div>
+          <h3>Реальный проект в портфолио</h3>
+          <p>За смену ребёнок с нуля создаёт работающую игру или сайт. Не учебное задание — настоящий продукт, которым можно похвастаться друзьям.</p>
+        </div>
+        <div class="glass bento-cell">
+          <div class="big-num">92%</div>
+          <p>детей хотят вернуться на следующую смену</p>
+        </div>
+        <div class="glass bento-cell">
+          <div class="bento-icon">🧑‍🏫</div>
+          <h3>Преподаватели из IT</h3>
+          <p>Яндекс, МФТИ, Сбер. Практикующие разработчики, не репетиторы.</p>
+        </div>
+        <div class="glass bento-cell">
+          <div class="bento-icon">🌲</div>
+          <h3>Природа + технологии</h3>
+          <p>Утром — код и проекты. Вечером — спорт, костёр, настолки.</p>
+        </div>
+        <div class="glass bento-cell">
+          <div class="bento-icon">💰</div>
+          <h3>Налоговый вычет</h3>
+          <p>Верните до 14 300 ₽ через налоговую. Мы дадим все документы.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── REVIEWS ── -->
+  <section id="otzyvy">
+    <div class="wrap">
+      <div class="sec-label">Отзывы</div>
+      <h2>Мамы рекомендуют</h2>
+      <p class="sec-lead" style="margin-bottom:48px;">4.9 ★ на Яндекс.Картах — 120+ отзывов</p>
+      <div class="grid-3">
+
+        <div class="glass review-card">
+          <div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+          <p class="review-text">«Дочка вернулась с горящими глазами и уже сама установила Python дома. В чате с подругами все завидовали»</p>
+          <div class="reviewer">
+            <div class="avatar">М</div>
+            <div>
+              <div class="reviewer-name">Марина К.</div>
+              <div class="reviewer-meta">мама Вари, 11 лет · 2025</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass review-card">
+          <div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+          <p class="review-text">«Сын звонил каждый день и рассказывал что делает. Приехал — показал игру. Лучший лагерь за 7 лет»</p>
+          <div class="reviewer">
+            <div class="avatar">О</div>
+            <div>
+              <div class="reviewer-name">Ольга Д.</div>
+              <div class="reviewer-meta">мама Максима, 13 лет · 2025</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass review-card">
+          <div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+          <p class="review-text">«Организация на уровне. Питание нормальное, вожатые крутые. И ребёнок сам хочет в следующий год»</p>
+          <div class="reviewer">
+            <div class="avatar">А</div>
+            <div>
+              <div class="reviewer-name">Анна Ф.</div>
+              <div class="reviewer-meta">мама Серёжи, 10 лет · 2024</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FAQ ── -->
+  <section id="faq">
+    <div class="wrap">
+      <div style="text-align:center;margin-bottom:48px;">
+        <div class="sec-label" style="justify-content:center;display:block;">Вопросы</div>
+        <h2>Часто спрашивают</h2>
+      </div>
+      <div class="faq">
+        <div class="glass faq-item">
+          <div class="faq-q">Нужен ли ноутбук? <div class="faq-toggle">+</div></div>
+          <div class="faq-a">Нет, мы обеспечиваем всех детей ноутбуками на время смены. Привозить ничего не нужно — только зарядку для телефона.</div>
+        </div>
+        <div class="glass faq-item">
+          <div class="faq-q">Нужны ли знания программирования? <div class="faq-toggle">+</div></div>
+          <div class="faq-a">Нет. Мы делим детей по уровню в первый день. Новичков берём с нуля — к концу смены у каждого будет рабочий проект.</div>
+        </div>
+        <div class="glass faq-item">
+          <div class="faq-q">Как получить налоговый вычет? <div class="faq-toggle">+</div></div>
+          <div class="faq-a">Мы выдаём лицензию, договор и все документы. Вычет — 13% от стоимости (до 14 300 ₽). Оформляется через Госуслуги за 30 минут.</div>
+        </div>
+        <div class="glass faq-item">
+          <div class="faq-q">Можно ли рассрочку? <div class="faq-toggle">+</div></div>
+          <div class="faq-a">Да, рассрочка 0% на 3 месяца. Первый взнос 30% — место ваше, остальное платите до начала смены.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA ── -->
+  <section id="zapis" style="padding-bottom:120px;">
+    <div class="wrap">
+      <div class="glass cta-box">
+        <div class="sec-label" style="display:block;text-align:center;">Записать ребёнка</div>
+        <h2>Места разбирают быстро.<br>Успейте на лето 2026</h2>
+        <p>Оставьте заявку — перезвоним за 15 минут, расскажем о смене и зарезервируем место</p>
+        <div class="cta-actions">
+          <a href="tel:+78001234567" class="btn btn-orange">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+            Позвонить
+          </a>
+          <a href="#" class="btn btn-outline">Написать в WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer>
+    <div class="logo">Ай<em>Да</em>Кемп</div>
+    <div class="footer-links">
+      <a href="#" class="footer-a">О лагере</a>
+      <a href="#smeny" class="footer-a">Смены</a>
+      <a href="#" class="footer-a">Документы</a>
+      <a href="#" class="footer-a">Контакты</a>
+    </div>
+    <div class="footer-copy">© 2026 АйДаКемп</div>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.faq-item').forEach(el => {
+      el.addEventListener('click', () => {
+        el.classList.toggle('open');
+        el.querySelector('.faq-toggle').textContent =
+          el.classList.contains('open') ? '−' : '+';
+      });
+    });
+  </script>
+
+</body>
+</html>

@@ -99,7 +99,7 @@ const sections = [
         {
           "@type": "Question",
           "name": "Какова цена летнего лагеря для детей в Подмосковье?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Цена летнего лагеря АйДаКемп в Подмосковье — от 48 000 ₽ (7 дней) до 95 000 ₽ (14 дней). Налоговый вычет 13% возвращает до 5 200 ₽ от стоимости образовательной части смены." }
+          "acceptedAnswer": { "@type": "Answer", "text": "Цена летнего лагеря АйДаКемп в Подмосковье — от 48 000 ₽ (7 дней) до 95 000 ₽ (14 дней). Налоговый вычет 13% возвращает до 5 434 ₽ от стоимости образовательной части смены." }
         },
         {
           "@type": "Question",
@@ -127,26 +127,24 @@ const sections = [
       "@context": "https://schema.org",
       "@type": "Product",
       "name": "Путёвка в детский IT-лагерь АйДаКемп 2026",
-      "description": "Летний IT-лагерь для детей 7-17 лет в Подмосковье. IT-программирование, бассейн, проживание.",
+      "description": "Летний IT-лагерь для детей 7–15 лет в Подмосковье. Программирование (Python, AI, Minecraft), бассейн, проживание — всё включено.",
       "brand": { "@type": "Brand", "name": "АйДаКемп" },
-      "offers": [
-        {
-          "@type": "Offer",
-          "name": "Смена 7 дней",
-          "price": "48000",
-          "priceCurrency": "RUB",
-          "availability": "https://schema.org/InStock",
-          "url": "https://aidacamp.ru/ceny/"
-        },
-        {
-          "@type": "Offer",
-          "name": "Смена 14 дней",
-          "price": "95000",
-          "priceCurrency": "RUB",
-          "availability": "https://schema.org/InStock",
-          "url": "https://aidacamp.ru/ceny/"
-        }
-      ]
+      "audience": {
+        "@type": "PeopleAudience",
+        "suggestedMinAge": 7,
+        "suggestedMaxAge": 15
+      },
+      "offers": priceRows.map(row => ({
+        "@type": "Offer",
+        "name": `${row.name} — ${row.dates}`,
+        "description": `${row.duration}, ${row.dates}`,
+        "price": row.price.replace(/[^\d]/g, ''),
+        "priceCurrency": "RUB",
+        "availability": "https://schema.org/InStock",
+        "url": "https://aidacamp.ru/ceny",
+        "priceValidUntil": "2026-08-31",
+        "seller": { "@type": "Organization", "name": "АйДаКемп" }
+      }))
     })} />
   </Fragment>
   <LandingHero slot="hero"
@@ -156,7 +154,7 @@ const sections = [
     keywords={[
       'Лагеря на лето 2026 — путёвки от 48 000 ₽',
       'Детский лагерь 2026 цены: без скрытых доплат',
-      'Налоговый вычет 13% — до 5 200 ₽ возврата',
+      'Налоговый вычет 13% — до 5 434 ₽ возврата',
       'Оплата 100% или частями (50% сейчас + 50% за 3 нед. до смены), банковский перевод или карта',
     ]}
     image="/images/hero/kupit-putevku-v-lager.avif"
@@ -221,6 +219,18 @@ const sections = [
     <p class="mt-4 text-[14px] text-slate-500">
       Цены на 2026 зафиксированы. Оплата в рублях, без привязки к курсу валют. Клик по строке — подробное описание смены и бронирование. Посмотреть все доступные смены: <a href="/#shifts" class="text-[#ec7c00] hover:underline">Выбрать смену →</a>
     </p>
+
+    <!-- Mobile CTA — таблица скроллится горизонтально, кнопка «Забронировать» скрыта за экраном -->
+    <div class="mt-4 md:hidden">
+      <button
+        type="button"
+        class="w-full inline-flex items-center justify-center gap-2 rounded-[14px] bg-orange-500 hover:bg-orange-600 active:bg-orange-700 px-5 py-3.5 text-[16px] font-semibold text-white transition-colors shadow-[0_4px_16px_rgba(249,115,22,0.3)]"
+        onclick="document.dispatchEvent(new CustomEvent('shift-modal-open', {detail:{shiftId:'smena1',tab:'description'}}))"
+      >
+        <i class="bi bi-calendar-check text-[18px]" aria-hidden="true"></i>
+        Выбрать смену и забронировать
+      </button>
+    </div>
 
     <!-- Urgency strip — дефицит мест -->
     <div class="mt-4 flex flex-wrap items-center gap-3 rounded-[14px] bg-amber-50 border border-amber-200 px-4 py-3">
