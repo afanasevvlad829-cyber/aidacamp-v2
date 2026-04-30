@@ -1,0 +1,60 @@
+---
+import type { CorpClient } from '../../data/corp/types';
+import { mainShifts } from '../../data/shifts';
+interface Props { client: CorpClient }
+const { client } = Astro.props;
+
+// Смены 2026 — фильтруем только доступные
+const shifts = mainShifts;
+---
+
+<section class="corp-section">
+  <div class="corp-wrap">
+    <div class="corp-kicker r">Расписание смен 2026</div>
+    <h2 class="corp-h2 r mb-4">Выберите <em class="not-italic text-[var(--corp-or2)]">удобное время</em></h2>
+    <p class="r mb-10 text-lg text-[var(--corp-txt2)]">
+      {client.discount > 0 && (
+        <span>Скидка <strong class="text-[var(--corp-or2)]">{client.discount}%</strong> для сотрудников {client.clientName} на все смены. </span>
+      )}
+      Бесплатный трансфер при группе от {client.freeTransferMinKids} детей.
+    </p>
+
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {shifts.map((s) => (
+        <div class={`r flex flex-col rounded-xl border p-6 transition-all duration-200 hover:-translate-y-1 ${s.popular ? 'border-[var(--corp-or)] bg-[rgba(255,90,31,0.06)]' : 'border-[var(--corp-bdr)] bg-[var(--corp-bg3)]'}`}>
+          {s.popular && (
+            <div class="mb-3 inline-block self-start rounded-full bg-[var(--corp-or)] px-3 py-0.5 text-xs font-bold text-white">
+              Популярная
+            </div>
+          )}
+          <div class="mb-1 text-xs font-bold uppercase tracking-widest text-[var(--corp-or)]">{s.name}</div>
+          <div class="mb-1 text-xl font-bold text-[var(--corp-txt)]">{s.dates}</div>
+          <div class="mb-4 text-sm text-[var(--corp-txt2)]">{s.duration}</div>
+          <p class="mb-4 flex-1 text-sm leading-relaxed text-[var(--corp-txt2)]">{s.description}</p>
+          <div class="mt-auto border-t border-[var(--corp-bdr)] pt-4">
+            <div class="flex items-end justify-between">
+              <div>
+                {client.discount > 0 ? (
+                  <div>
+                    <div class="text-xs text-[var(--corp-txt2)] line-through">{s.price}</div>
+                    <div class="text-xl font-bold text-[var(--corp-or2)]">
+                      {Math.round(parseInt(s.price.replace(/\D/g, '')) * (1 - client.discount / 100)).toLocaleString('ru')} ₽
+                    </div>
+                  </div>
+                ) : (
+                  <div class="text-xl font-bold text-[var(--corp-txt)]">{s.price}</div>
+                )}
+              </div>
+              <a
+                href={`https://aidacamp.ru/?utm_source=${client.utmSource}&utm_medium=corp&utm_campaign=${s.id}#booking`}
+                class="rounded-lg bg-[var(--corp-or)] px-4 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90"
+              >
+                Записать
+              </a>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
