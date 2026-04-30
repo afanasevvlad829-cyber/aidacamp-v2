@@ -4262,7 +4262,7 @@
       if (!isValidPhone(rawPhone)) {
         if (fixPhone) {
           fixPhone.focus();
-          fixPhone.style.borderColor = "#ef8300";
+          fixPhone.style.borderColor = "#ec7c00";
         }
         return;
       }
@@ -4288,7 +4288,7 @@
       if (!isValidPhone(phoneRaw)) {
         if (bookingPhone) {
           bookingPhone.focus();
-          bookingPhone.style.borderColor = "#ef8300";
+          bookingPhone.style.borderColor = "#ec7c00";
         }
         return;
       }
@@ -4484,7 +4484,7 @@
     if (bookingPhone) {
       bookingPhone.value = formatPhoneInput(bookingPhone.value);
       bookingPhone.style.borderColor = bookingPhone.value
-        ? (isValidPhone(bookingPhone.value) ? "" : "#ef8300")
+        ? (isValidPhone(bookingPhone.value) ? "" : "#ec7c00")
         : "";
 
       var bookingSubmit = document.querySelector('[data-action="booking-submit"]');
@@ -4520,7 +4520,7 @@
     if (shiftFixPhone) {
       shiftFixPhone.value = formatPhoneInput(shiftFixPhone.value);
       shiftFixPhone.style.borderColor = shiftFixPhone.value
-        ? (isValidPhone(shiftFixPhone.value) ? "" : "#ef8300")
+        ? (isValidPhone(shiftFixPhone.value) ? "" : "#ec7c00")
         : "";
       var promoState = loadShiftPromo();
       if (promoState && promoState.status === "phone_gate") {
