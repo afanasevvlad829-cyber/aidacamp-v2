@@ -2,6 +2,8 @@
 // Wireframes всех 21 блоков главной страницы
 // Mobile (375px) + Desktop (1280px) · Day / Night tabs
 // SEO-разметка · Поведение загрузки · design/glassmorphism-v1
+import { mainShifts, shortShifts, renderCard } from '../../data/shifts';
+const allDemoShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShifts[2], mainShifts[3]];
 ---
 <!DOCTYPE html>
 <html lang="ru">
@@ -210,6 +212,65 @@
       display: flex; gap: 6px; margin-bottom: 4px;
     }
     .note-item::before { content: '·'; color: var(--note-dot); flex-shrink: 0; }
+
+    /* ── Font-size labels (показывают размер шрифта прямо в демо) ── */
+    .fs-wrap { position: relative; display: inline-block; }
+    .fs-label {
+      position: absolute; top: -1px; right: -2px; transform: translateY(-100%);
+      background: #ec7c00; color: white;
+      font-size: 9px; font-weight: 700; line-height: 1;
+      padding: 2px 5px; border-radius: 3px; white-space: nowrap;
+      pointer-events: none; z-index: 10; letter-spacing: 0.02em;
+    }
+    [data-theme="light"] .fs-label { background: #1b4fd8; }
+
+    /* ── Hero variants grid ── */
+    .hero-variants { display: grid; grid-template-columns: 335px 335px; gap: 16px; }
+
+    /* ── Pine / forest hero background ── */
+    .hero-pine {
+      height: 220px;
+      background: linear-gradient(160deg, #1a3a1f 0%, #2d5a27 40%, #0d2b10 100%);
+      position: relative; display: flex; align-items: flex-end;
+    }
+    .hero-pine::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 60px 140px at 10% 100%, rgba(30,80,20,0.6) 0%, transparent 70%),
+        radial-gradient(ellipse 50px 120px at 25% 100%, rgba(20,60,15,0.5) 0%, transparent 70%),
+        radial-gradient(ellipse 70px 150px at 45% 100%, rgba(25,70,18,0.5) 0%, transparent 70%),
+        radial-gradient(ellipse 55px 130px at 65% 100%, rgba(20,65,15,0.6) 0%, transparent 70%),
+        radial-gradient(ellipse 60px 140px at 85% 100%, rgba(30,80,20,0.5) 0%, transparent 70%),
+        linear-gradient(180deg, transparent 40%, rgba(0,15,0,0.7) 100%);
+    }
+
+    /* ── Video hero placeholder ── */
+    .hero-video-bg {
+      height: 220px;
+      background: #0d1a2b;
+      position: relative; display: flex; align-items: flex-end; overflow: hidden;
+    }
+    .hero-video-bg::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, #0a1520 0%, #162230 50%, #0d1a2b 100%);
+    }
+    .video-play-hint {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-60%);
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      color: rgba(255,255,255,0.4); font-size: 10px; text-align: center;
+    }
+    .video-play-icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.25);
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.4); font-size: 14px;
+    }
+    .video-scan-line {
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.01) 3px, rgba(255,255,255,0.01) 4px);
+    }
 
     /* ══════════ LIGHT THEME COMPONENTS ══════════ */
     /* Used inside phone-frame / desktop-frame when data-theme="light" */
@@ -461,26 +522,38 @@
     <div class="preview-mobile">
       <div class="preview-label"><i class="bi bi-phone"></i> Мобиль 375px</div>
       <div class="phone-frame">
-        <!-- Photo zone -->
+        <!-- Вариант A: Фото-фон (текущий) -->
         <div class="hero-photo">
           <div class="hero-overlay"></div>
           <div style="position:absolute; inset:0; background:linear-gradient(135deg,#1e3a5f,#0d1a2b); opacity:0.8;"></div>
-          <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:rgba(255,255,255,0.15); font-size:11px;">фото детей · object-cover · eager</div>
+          <div style="position:absolute; top:38%; left:50%; transform:translate(-50%,-50%); color:rgba(255,255,255,0.2); font-size:9px; text-align:center;">фото · object-cover · eager<br>fetchpriority=high · AVIF</div>
           <div class="hero-text">
-            <div class="tagline-pill">Пока другие на даче — ваш сделает проект</div>
-            <h1 class="hero-h1">Летний лагерь<br>в Подмосковье, 7–15</h1>
-            <p class="hero-sub">Вам — 14 дней для себя.</p>
+            <div class="tagline-pill" style="font-size:10px;">Пока другие на даче — ваш сделает проект</div>
+            <div class="fs-wrap">
+              <h1 class="hero-h1">Летний лагерь<br>в Подмосковье, 7–15</h1>
+              <span class="fs-label">22px 800</span>
+            </div>
+            <div class="fs-wrap">
+              <p class="hero-sub">Вам — 14 дней для себя.</p>
+              <span class="fs-label">13px 400</span>
+            </div>
           </div>
         </div>
         <!-- CTAs в ряд -->
         <div class="hero-btns">
-          <div class="btn-outline-or"><i class="bi bi-telegram"></i> Написать в бот</div>
-          <div class="btn-outline-wh">Смотреть смены <i class="bi bi-arrow-right"></i></div>
+          <div class="fs-wrap" style="flex:1;">
+            <div class="btn-outline-or"><i class="bi bi-telegram"></i> Написать в бот</div>
+            <span class="fs-label">13px 600</span>
+          </div>
+          <div class="btn-outline-wh" style="flex:1;">Смотреть смены <i class="bi bi-arrow-right"></i></div>
         </div>
         <div class="btn-explain">Напишем — не позвоним. Отвечаем за 15 мин.</div>
         <!-- Metrics -->
         <div class="metrics-grid">
-          <div class="metric-cell"><div class="metric-num">7</div><div class="metric-lbl">лет работы</div></div>
+          <div class="metric-cell">
+            <div class="fs-wrap"><div class="metric-num">7</div><span class="fs-label">18px 800</span></div>
+            <div class="metric-lbl">лет работы</div>
+          </div>
           <div class="metric-cell"><div class="metric-num">1200+</div><div class="metric-lbl">детей</div></div>
           <div class="metric-cell"><div class="metric-num" style="color:#f59332;">★ 5.0</div><div class="metric-lbl">Яндекс</div></div>
           <div class="metric-cell"><div class="metric-num" style="color:#fbbf24;">ТОП-4</div><div class="metric-lbl">IT-лагерей МО</div></div>
@@ -491,6 +564,76 @@
           <div class="trust-pill"><i class="bi bi-heart-pulse-fill" style="font-size:12px; color:#4ade80;"></i>Медсестра</div>
           <div class="trust-pill"><i class="bi bi-shield-check" style="font-size:12px; color:#4ade80;"></i>Страховка</div>
         </div>
+      </div>
+    </div>
+
+    <!-- Hero варианты: Видео + Сосновый лес -->
+    <div class="preview-desktop" style="grid-column: 1 / -1; padding-top:0;">
+      <div class="preview-label" style="margin-bottom:12px;"><i class="bi bi-grid-1x2"></i> Варианты Hero-фона (мобиль)</div>
+      <div class="hero-variants">
+
+        <!-- Вариант B: Видео-фон -->
+        <div>
+          <div style="font-size:10px; font-weight:600; color:var(--tx-f); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.06em;">
+            <i class="bi bi-camera-video-fill" style="color:#ec7c00;"></i> Видео-фон · &lt;video autoplay muted loop&gt;
+          </div>
+          <div class="phone-frame">
+            <div class="hero-video-bg">
+              <div class="video-scan-line"></div>
+              <div class="hero-overlay"></div>
+              <div class="video-play-hint">
+                <div class="video-play-icon"><i class="bi bi-play-fill"></i></div>
+                <div>video.mp4 · muted autoplay<br>poster = first-frame.jpg</div>
+              </div>
+              <div class="hero-text">
+                <div class="tagline-pill">Пока другие на даче — ваш сделает проект</div>
+                <h1 class="hero-h1">Летний лагерь<br>в Подмосковье, 7–15</h1>
+                <p class="hero-sub">Вам — 14 дней для себя.</p>
+              </div>
+            </div>
+            <div class="hero-btns">
+              <div class="btn-outline-or" style="flex:1;"><i class="bi bi-telegram"></i> Написать в бот</div>
+              <div class="btn-outline-wh" style="flex:1;">Смотреть смены</div>
+            </div>
+            <div class="btn-explain">Напишем — не позвоним. Отвечаем за 15 мин.</div>
+            <div class="metrics-grid">
+              <div class="metric-cell"><div class="metric-num">7</div><div class="metric-lbl">лет работы</div></div>
+              <div class="metric-cell"><div class="metric-num">1200+</div><div class="metric-lbl">детей</div></div>
+              <div class="metric-cell"><div class="metric-num" style="color:#f59332;">★ 5.0</div><div class="metric-lbl">Яндекс</div></div>
+              <div class="metric-cell"><div class="metric-num" style="color:#fbbf24;">ТОП-4</div><div class="metric-lbl">IT-лагерей МО</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Вариант C: Горно-сосновый фон (летний лес) -->
+        <div>
+          <div style="font-size:10px; font-weight:600; color:var(--tx-f); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.06em;">
+            <i class="bi bi-tree-fill" style="color:#34d399;"></i> Лесной фон · горно-сосновый стиль
+          </div>
+          <div class="phone-frame">
+            <div class="hero-pine">
+              <div style="position:absolute; inset:0; background:linear-gradient(180deg, transparent 30%, rgba(0,20,0,0.85) 100%);"></div>
+              <div style="position:absolute; top:30%; left:50%; transform:translate(-50%,-50%); color:rgba(255,255,255,0.2); font-size:9px; text-align:center;">фото: сосны, природа<br>object-cover · AVIF</div>
+              <div class="hero-text">
+                <div class="tagline-pill" style="background:rgba(52,211,153,0.15); border-color:rgba(52,211,153,0.4); color:#6ee7b7;">66 км от Москвы · лес и бассейн</div>
+                <h1 class="hero-h1">Летний лагерь<br>в Подмосковье, 7–15</h1>
+                <p class="hero-sub">Вам — 14 дней для себя.</p>
+              </div>
+            </div>
+            <div class="hero-btns" style="background:#0d2010;">
+              <div class="btn-outline-or" style="flex:1;"><i class="bi bi-telegram"></i> Написать в бот</div>
+              <div class="btn-outline-wh" style="flex:1; border-color:rgba(52,211,153,0.3);">Смотреть смены</div>
+            </div>
+            <div class="btn-explain" style="background:#0d2010;">Напишем — не позвоним. Отвечаем за 15 мин.</div>
+            <div class="metrics-grid" style="background:#0d2010;">
+              <div class="metric-cell"><div class="metric-num">7</div><div class="metric-lbl">лет работы</div></div>
+              <div class="metric-cell"><div class="metric-num">1200+</div><div class="metric-lbl">детей</div></div>
+              <div class="metric-cell"><div class="metric-num" style="color:#6ee7b7;">★ 5.0</div><div class="metric-lbl">Яндекс</div></div>
+              <div class="metric-cell"><div class="metric-num" style="color:#a7f3d0;">ТОП-4</div><div class="metric-lbl">IT-лагерей МО</div></div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -930,57 +1073,139 @@
 
 
 <!-- ══════════════════════════════════════════════════ -->
-<!-- BLOCK 9: SHIFTS (ключевой)                        -->
+<!-- BLOCK 9: SHIFTS — реальные данные из shifts.ts    -->
 <!-- ══════════════════════════════════════════════════ -->
 <div class="block-card">
   <div class="block-header">
     <div class="block-num tier1">9</div>
-    <div><div class="block-name">Shifts — смены с ценами</div><div class="block-file">Shifts.astro + shifts/ShiftCard.astro</div></div>
-    <div class="badges"><span class="badge badge-red">Tier 1</span><span class="badge badge-orange">Glass NEW</span><span class="badge badge-blue">Конверсия #2</span></div>
+    <div>
+      <div class="block-name">Shifts — смены с ценами</div>
+      <div class="block-file">Shifts.astro · данные: src/data/shifts.ts</div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-red">Tier 1</span>
+      <span class="badge badge-orange">Glass</span>
+      <span class="badge badge-blue">Конверсия #2</span>
+      <span class="badge badge-green">Реальные данные</span>
+    </div>
   </div>
+
+  <!-- МОБИЛЬ: первые 2 смены из реальных данных -->
   <div class="previews">
     <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль — горизонтальный скролл</div>
+      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль — вертикальный список</div>
       <div class="phone-frame">
         <div class="shifts-section" id="sh-m">
-          <div class="sec-label">СМЕНЫ ЛЕТА 2026</div>
-          <div class="sec-h2">Выбери свою смену</div>
-          <div class="shift-card-glass">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-              <div class="shift-name">IT + Творчество</div>
-              <span style="background:#dcfce7; color:#166534; border-radius:100px; padding:2px 8px; font-size:10px; font-weight:600;">Открыта</span>
-            </div>
-            <div class="shift-dates">27 июня — 10 июля · 14 дней</div>
-            <div class="shift-price">59 000 ₽</div>
-            <div class="progress-bar"><div class="progress-fill" style="width:70%;"></div></div>
-            <div style="display:flex; justify-content:space-between; font-size:10px; color:#6b7280; margin-bottom:8px;"><span>занято 8</span><span style="color:#10b981;">свободно 4</span></div>
-            <button class="btn-select">Выбрать</button>
+          <div class="fs-wrap">
+            <div class="sec-label">СМЕНЫ ЛЕТА 2026</div>
+            <span class="fs-label">10px 700</span>
+          </div>
+          <div class="fs-wrap">
+            <div class="sec-h2">Выбери свою смену</div>
+            <span class="fs-label">17px 800</span>
+          </div>
+          {allDemoShifts.slice(0,2).map(s => {
+            const { total, pct } = renderCard(s);
+            const isFull = s.free === 0;
+            return (
+              <div class="shift-card-glass" style={s.highlighted ? 'border-color:rgba(236,124,0,0.4);' : ''}>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:2px;">
+                  <div class="fs-wrap">
+                    <div class="shift-name">{s.name}</div>
+                    <span class="fs-label">14px 700</span>
+                  </div>
+                  {s.popular && <span style="background:#fef9c3; color:#854d0e; border-radius:100px; padding:2px 7px; font-size:9px; font-weight:700;">Хит</span>}
+                  {s.statusType === 'short' && <span style="background:#fef3c7; color:#92400e; border-radius:100px; padding:2px 7px; font-size:9px; font-weight:700;">Короткая</span>}
+                </div>
+                <div class="shift-dates">{s.dates} · {s.duration}</div>
+                <div class="fs-wrap">
+                  <div class="shift-price">{s.price}</div>
+                  <span class="fs-label">16px 800</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style={`width:${pct}%; background:${pct > 80 ? '#ef4444' : pct > 60 ? '#f59332' : '#94a3b8'};`}></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:10px; color:#6b7280; margin-bottom:8px;">
+                  <span>занято {s.occupied} из {total}</span>
+                  <span style={`color:${s.free <= 5 ? '#ef4444' : '#10b981'};`}>свободно {s.free}</span>
+                </div>
+                <button class="btn-select" style={s.highlighted ? 'background:#ec7c00;' : ''}>
+                  {isFull ? 'Лист ожидания' : 'Выбрать смену'}
+                </button>
+              </div>
+            );
+          })}
+          <div style="font-size:10px; color:#6b7280; text-align:center; padding:8px 0;">
+            + {allDemoShifts.length - 2} смены · <span style="color:#1b4fd8;">Показать все</span>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- ДЕСКТОП: все смены в сетке -->
     <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — сетка 3 колонки</div>
+      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — сетка смен</div>
       <div class="desktop-frame" style="padding:20px; background:linear-gradient(135deg,#eff6ff,#dbeafe);" id="sh-d">
-        <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 14px;">Смены лета 2026</h2>
-        <div class="dsk-grid-3">
-          {[['IT + Творчество','27 июня — 10 июля','59 000','70%'],['Хакатон Pro','11 — 24 июля','65 000','90%'],['AI-разработка','25 июля — 7 авг','59 000','55%']].map(([name, dates, price, pct]) => (
-            <div class="shift-card-glass">
-              <div class="shift-name">{name}</div>
-              <div class="shift-dates">{dates}</div>
-              <div class="shift-price">{price} ₽</div>
-              <div class="progress-bar"><div class="progress-fill" style={`width:${pct}`}></div></div>
-              <button class="btn-select">Выбрать</button>
-            </div>
-          ))}
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px;">
+          <div class="fs-wrap">
+            <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin:0;">Смены лета 2026</h2>
+            <span class="fs-label">22px 800</span>
+          </div>
+          <span style="font-size:12px; color:#475569;">{allDemoShifts.length} смены · от {allDemoShifts.map(s=>parseInt(s.price)).sort((a,b)=>a-b)[0].toLocaleString('ru')} ₽</span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
+          {allDemoShifts.slice(0,3).map(s => {
+            const { total, pct } = renderCard(s);
+            return (
+              <div class="shift-card-glass" style={s.highlighted ? 'border-color:rgba(236,124,0,0.5); box-shadow:0 0 0 2px rgba(236,124,0,0.1);' : ''}>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                  <div class="shift-name" style="font-size:13px;">{s.name}</div>
+                  {s.popular && <span style="background:#fef9c3; color:#854d0e; border-radius:100px; padding:1px 6px; font-size:9px; font-weight:700;">Хит</span>}
+                  {s.statusType === 'short' && <span style="background:#fef3c7; color:#92400e; border-radius:100px; padding:1px 6px; font-size:9px; font-weight:700;">Кор.</span>}
+                </div>
+                <div class="shift-dates" style="font-size:10px;">{s.dates} · {s.duration}</div>
+                <div class="shift-price" style="font-size:15px; margin:6px 0 4px;">{s.price}</div>
+                <div class="progress-bar" style="margin-bottom:3px;">
+                  <div class="progress-fill" style={`width:${pct}%; background:${pct > 80 ? '#ef4444' : pct > 60 ? '#f59332' : '#94a3b8'};`}></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:9px; color:#6b7280; margin-bottom:8px;">
+                  <span>{s.occupied}/{total} мест</span>
+                  <span style={`font-weight:600; color:${s.free <= 5 ? '#ef4444' : '#10b981'};`}>свободно {s.free}</span>
+                </div>
+                <button class="btn-select" style="font-size:12px; height:32px;">Выбрать</button>
+              </div>
+            );
+          })}
+        </div>
+        <div style="margin-top:10px; text-align:center; font-size:12px; color:#475569;">
+          + ещё {allDemoShifts.length - 3} смены →
         </div>
       </div>
     </div>
   </div>
+
   <div class="notes">
-    <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">&lt;h2&gt; «Смены лагеря»</div><div class="note-item">Event / CourseInstance Schema</div><div class="note-item">Цены в &lt;span itemprop="price"&gt;</div><div class="note-item">Даты в &lt;time datetime&gt;</div></div>
-    <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">SSR — данные из shifts.ts</div><div class="note-item">glass-surface: backdrop-filter только поверх #eff6ff</div><div class="note-item">Skeleton при ожидании (если динамика)</div></div>
-    <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">Цена видна сразу — не «уточняйте»</div><div class="note-item">Progress bar — urgency без агрессии</div><div class="note-item">Glass карточки — лёгкость</div></div>
+    <div class="note-col">
+      <div class="note-title seo">SEO</div>
+      <div class="note-item">&lt;h2&gt; «Смены лагеря»</div>
+      <div class="note-item">Event / CourseInstance Schema</div>
+      <div class="note-item">Цены в &lt;span itemprop="price"&gt;</div>
+      <div class="note-item">Даты в &lt;time datetime="YYYY-MM-DD"&gt;</div>
+    </div>
+    <div class="note-col">
+      <div class="note-title load">Данные</div>
+      <div class="note-item">Источник: src/data/shifts.ts</div>
+      <div class="note-item">Цены · даты · free/occupied — один файл</div>
+      <div class="note-item">SSR: renderCard() считает pct на сервере</div>
+      <div class="note-item">Цвет прогрессбара: &gt;80% → красный, &gt;60% → оранжевый</div>
+    </div>
+    <div class="note-col">
+      <div class="note-title ux">UX · Типографика</div>
+      <div class="note-item">Название смены: 14px 700</div>
+      <div class="note-item">Цена: 16px 800 · оранжевый --pr</div>
+      <div class="note-item">Даты: 11px 400 · muted</div>
+      <div class="note-item">Progress bar urgency — без давления</div>
+    </div>
   </div>
 </div>
 
