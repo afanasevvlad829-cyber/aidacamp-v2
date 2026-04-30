@@ -3,93 +3,56 @@ import type { CorpClient } from '../../data/corp/types';
 interface Props { client: CorpClient }
 const { client } = Astro.props;
 
-// Example calc for Shift 3 with client discount
-// Shift 3: 89 400 ₽, 13 days
+// Example calc for Смена 3 (13 days, 89400 base)
 const basePrice = 89400;
 const days = 13;
-const discPrice = Math.round(basePrice * (1 - client.discount / 100));
-const livingCost = 3800 * days;
-const eduPart = discPrice - livingCost;
-const refund = Math.round(eduPart * 0.13);
-const total = discPrice - refund;
+const discountedPrice = Math.round(basePrice * (1 - client.discount / 100));
+const educationalPart = discountedPrice - 3800 * days;
+const taxReturn = Math.round(educationalPart * 0.13);
 ---
 
-<section class="corp-section corp-section-alt">
-  <div class="corp-wrap">
-    <div class="corp-kicker r">Налоговый вычет</div>
-    <h2 class="corp-h2 r mb-4">Верните до <em class="not-italic text-[var(--corp-or2)]">5 400 ₽</em><br />через налоговый вычет</h2>
-
-    <div class="r grid gap-10 md:grid-cols-2">
-
-      <!-- Steps -->
+<section class="alt">
+  <div class="wrap">
+    <div class="s-kicker r">Налоговый вычет</div>
+    <h2 class="r">Верните до <em>5 300 ₽</em><br/>через налоговый вычет</h2>
+    <div class="tax-grid r">
       <div>
-        <p class="mb-8 text-lg leading-relaxed text-[var(--corp-txt2)]">
-          Расходы на образование детей подпадают под социальный налоговый вычет 13%. Лагерь с{' '}
-          <a href="https://aidacamp.ru/docs/licenziya-rospotrebnadzor.pdf" target="_blank" rel="noopener" class="text-[var(--corp-or2)] underline-offset-2 hover:underline">
-            лицензией Минобразования
-          </a>{' '}
-          — это полноценные образовательные услуги.
-        </p>
-        <ol class="flex flex-col gap-6">
-          {[
-            {
-              n: '1',
-              title: 'Оплатить лагерь',
-              text: 'Оплачиваете смену. Мы выдаём договор, акт и чек — все документы для налоговой.',
-            },
-            {
-              n: '2',
-              title: 'Подать декларацию 3-НДФЛ',
-              text: 'Через личный кабинет на сайте ФНС или через Госуслуги. Занимает 15–20 минут.',
-            },
-            {
-              n: '3',
-              title: 'Получить возврат',
-              text: 'ФНС возвращает 13% от суммы расходов на карту. Срок — до 3 месяцев.',
-            },
-          ].map(step => (
-            <li class="flex items-start gap-4">
-              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--corp-or)] text-sm font-black text-white">
-                {step.n}
-              </div>
-              <div>
-                <div class="mb-1 font-bold text-[var(--corp-txt)]">{step.title}</div>
-                <p class="text-sm leading-relaxed text-[var(--corp-txt2)]">{step.text}</p>
-              </div>
-            </li>
-          ))}
+        <p class="s-lead" style="margin-bottom:var(--gap-xl);">Расходы на образование детей подпадают под социальный налоговый вычет 13%. Лагерь с <a href="https://aidacamp.ru/docs/licenziya-rospotrebnadzor.pdf" target="_blank" rel="noopener" style="color:var(--or2);">лицензией Минобразования</a> — это полноценные образовательные услуги.</p>
+        <ol class="tax-steps">
+          <li class="tax-step">
+            <div class="tax-step-num">1</div>
+            <div>
+              <div class="tax-step-title">Оплатить лагерь</div>
+              <div class="tax-step-text">Оплачиваете смену. Мы выдаём договор, акт и чек — все документы для налоговой.</div>
+            </div>
+          </li>
+          <li class="tax-step">
+            <div class="tax-step-num">2</div>
+            <div>
+              <div class="tax-step-title">Подать декларацию 3-НДФЛ</div>
+              <div class="tax-step-text">Через личный кабинет на сайте ФНС или через Госуслуги. Занимает 15–20 минут.</div>
+            </div>
+          </li>
+          <li class="tax-step">
+            <div class="tax-step-num">3</div>
+            <div>
+              <div class="tax-step-title">Получить возврат</div>
+              <div class="tax-step-text">ФНС возвращает 13% от суммы расходов на карту. Срок — до 3 месяцев.</div>
+            </div>
+          </li>
         </ol>
       </div>
-
-      <!-- Calc box -->
-      <div class="r rounded-2xl border border-[var(--corp-bdr)] bg-[var(--corp-bg3)] p-6 md:p-7">
-        <div class="mb-5 font-mono text-xs font-bold uppercase tracking-widest text-[var(--corp-txt2)]">
-          Пример расчёта · Смена 3 · {client.clientName}
+      <div class="tax-calc-box">
+        <div style="font-size:var(--fs-xs);font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--txt2);margin-bottom:var(--gap-lg);font-family:'SF Mono',monospace;">Пример расчёта · Смена 3 · {client.clientName}</div>
+        <div class="tax-row"><span class="tax-row-label">Базовая цена</span><span class="tax-row-val">{basePrice.toLocaleString('ru')} ₽</span></div>
+        <div class="tax-row"><span class="tax-row-label">Скидка {client.clientName} (−{client.discount}%)</span><span class="tax-row-val">{discountedPrice.toLocaleString('ru')} ₽</span></div>
+        <div class="tax-row"><span class="tax-row-label">Жильё + питание (3 800 ₽ × {days} дней)</span><span class="tax-row-val">{(3800 * days).toLocaleString('ru')} ₽</span></div>
+        <div class="tax-row"><span class="tax-row-label">Образовательная часть</span><span class="tax-row-val">{educationalPart.toLocaleString('ru')} ₽</span></div>
+        <div class="tax-row highlight"><span class="tax-row-label">Возврат 13% → вы платите</span><span class="tax-row-val">~{taxReturn.toLocaleString('ru')} ₽ назад · итого {(discountedPrice - taxReturn).toLocaleString('ru')} ₽</span></div>
+        <div style="margin-top:var(--gap-lg);font-size:var(--fs-sm);color:var(--txt2);line-height:1.7;">
+          Формула: (цена − 3 800 ₽ × дней) × 13%. Лимит НК РФ — 110 000 ₽/год на ребёнка. Декларация 3-НДФЛ — в следующем году.
         </div>
-        <div class="flex flex-col gap-0.5">
-          {[
-            { label: 'Базовая цена', val: basePrice.toLocaleString('ru-RU') + ' ₽' },
-            { label: `Скидка ${client.clientName} (−${client.discount}%)`, val: discPrice.toLocaleString('ru-RU') + ' ₽' },
-            { label: `Жильё + питание (3 800 ₽ × ${days} дней)`, val: livingCost.toLocaleString('ru-RU') + ' ₽' },
-            { label: 'Образовательная часть', val: eduPart.toLocaleString('ru-RU') + ' ₽' },
-          ].map(row => (
-            <div class="flex justify-between gap-4 border-b border-[var(--corp-bdr)] py-3 text-sm">
-              <span class="text-[var(--corp-txt2)]">{row.label}</span>
-              <span class="font-semibold text-[var(--corp-txt)]">{row.val}</span>
-            </div>
-          ))}
-          <!-- Highlight row -->
-          <div class="flex justify-between gap-4 rounded-lg bg-[rgba(34,199,106,0.1)] px-3 py-3 text-sm">
-            <span class="font-semibold text-[var(--corp-green)]">Возврат 13% → вы платите</span>
-            <span class="font-bold text-[var(--corp-green)]">~{refund.toLocaleString('ru-RU')} ₽ назад · итого {total.toLocaleString('ru-RU')} ₽</span>
-          </div>
-        </div>
-        <p class="mt-5 text-xs leading-relaxed text-[var(--corp-txt2)]">
-          Формула: (цена − 3 800 ₽ × дней) × 13%. Лимит НК РФ — 110 000 ₽/год на ребёнка.
-          Декларация 3-НДФЛ — в следующем году.
-        </p>
       </div>
-
     </div>
   </div>
 </section>

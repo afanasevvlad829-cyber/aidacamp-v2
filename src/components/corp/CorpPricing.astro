@@ -1,191 +1,129 @@
 ---
 import type { CorpClient } from '../../data/corp/types';
-import { mainShifts } from '../../data/shifts';
 interface Props { client: CorpClient }
 const { client } = Astro.props;
 
-const shiftsData = mainShifts.map(s => ({
-  id: s.id,
-  name: s.name,
-  dates: s.dates,
-  duration: s.duration,
-  price: parseInt(s.price.replace(/\D/g, '')),
-  days: parseInt(s.duration),
-  tag: s.popular ? 'Популярная' : (s.free > 10 ? 'Больше всего мест' : ''),
-  desc: s.description,
-  shortDate: s.dates.split('—')[0].trim(),
-}));
-
-const discount = client.discount;
-const clientName = client.clientName;
-const freeTransferMinKids = client.freeTransferMinKids;
-const transferFrom = client.transferFrom;
+const shiftsData = [
+  { label: 'Смена 1 · 30 мая — 8 июня', tag: 'Больше всего мест', days: 10, basePrice: 74900, desc: 'Первая смена в сезоне — дети только из школы. Максимальный выбор мест, самая доступная цена по скидке. Опыт не нужен: делим по группам от нуля до продвинутых. Каждый уедет с проектом.' },
+  { label: 'Смена 2 · 10 июня — 23 июня', tag: '', days: 14, basePrice: 95000, desc: 'Самая длинная смена — 14 дней. Максимальная глубина погружения в проект. Хакатон растянут на 2 дня. Подходит детям с опытом кодинга.' },
+  { label: 'Смена 3 · 3 авг — 15 авг', tag: 'Популярная', days: 13, basePrice: 89400, desc: 'Август — пик лета. 13 дней, два полных цикла хакатона. Подходит всем уровням, максимальная насыщенность программы.' },
+  { label: 'Смена 4 · 17 авг — 26 авг', tag: '', days: 10, basePrice: 74900, desc: 'Последняя смена сезона. 10 дней, идеально если остальные уже заняты или ребёнок идёт в школу позже.' },
+];
 ---
 
-<section class="corp-section">
-  <div class="corp-wrap">
-    <div class="corp-kicker r">Цены для сотрудников {clientName}</div>
-    <h2 class="corp-h2 r mb-4">Выберите смену — <em class="not-italic text-[var(--corp-or2)]">посчитаем вместе</em></h2>
-    <p class="r mb-8 text-lg text-[var(--corp-txt2)]">
-      Скажите «я из {clientName}» при записи. Скидка применяется сразу — без промокодов и форм.
-    </p>
+<section>
+  <div class="wrap">
+    <div class="s-kicker r">Цены для сотрудников {client.clientName}</div>
+    <h2 class="r">Выберите смену — <em>посчитаем вместе</em></h2>
+    <p class="s-lead r">Скажите «я из {client.clientName}» при записи. Скидка применяется сразу — без промокодов и форм.</p>
 
-    <!-- Shift tabs -->
-    <div class="r flex flex-wrap gap-2 mb-6" id="corp-smeny-tabs">
+    <div class="smeny-tabs r">
       {shiftsData.map((s, i) => (
-        <button
-          type="button"
-          class:list={[
-            'corp-stab cursor-pointer rounded-full border px-4 py-2 text-sm font-bold transition-all duration-200',
-            i === 0
-              ? 'border-[var(--corp-or)] bg-[var(--corp-or)] text-white'
-              : 'border-[var(--corp-bdr)] text-[var(--corp-txt2)] hover:border-[var(--corp-or)] hover:text-[var(--corp-txt)]',
-          ]}
-          data-idx={i}
-        >
-          {s.name} · {s.shortDate}
-        </button>
+        <div class:list={['stab', i === 0 && 'active']} onclick={`selectSmena(${i}, this)`}>{s.label.split(' · ')[0]} · {s.label.split(' · ')[1]}</div>
       ))}
     </div>
 
-    <div class="r rounded-2xl border border-[var(--corp-bdr)] bg-[var(--corp-bg3)] p-6 md:p-8">
-      <!-- Shift info card -->
-      <div class="mb-6 rounded-xl border border-[var(--corp-bdr)] bg-[var(--corp-bg2)] p-4 md:p-5">
-        <div class="mb-1 flex flex-wrap items-center gap-2">
-          <span id="corp-smena-label" class="text-base font-bold text-[var(--corp-txt)]"></span>
-          <span id="corp-smena-tag" class="rounded-full bg-[rgba(255,90,31,0.12)] px-2 py-0.5 text-xs font-bold uppercase tracking-widest text-[var(--corp-or2)]"></span>
+    <div class="calc-box r">
+      <div id="smena-card" style="margin-bottom:var(--gap-lg);padding:var(--gap-md);border-radius:var(--r-lg);background:var(--bg3) !important;border:1px solid var(--bdr);">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:var(--gap-xs);margin-bottom:var(--gap-xs);">
+          <span id="smena-label" style="font-size:var(--fs-md);font-weight:700;color:var(--txt);">{shiftsData[0].label}</span>
+          <span id="smena-tag" style="font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding:3px 8px;border-radius:var(--r-full);background:rgba(255,90,31,0.12);color:var(--or2);">{shiftsData[0].tag}</span>
         </div>
-        <div id="corp-smena-meta" class="mb-2 text-sm text-[var(--corp-txt2)]"></div>
-        <div id="corp-smena-desc" class="text-sm leading-relaxed text-[var(--corp-txt2)]"></div>
+        <div id="smena-meta" style="font-size:var(--fs-sm);color:var(--txt2);margin-bottom:var(--gap-xs);">{shiftsData[0].days} дней · базовая цена {shiftsData[0].basePrice.toLocaleString('ru')} ₽ / ребёнок</div>
+        <div id="smena-desc" style="font-size:var(--fs-base);color:var(--txt2);line-height:1.65;">{shiftsData[0].desc}</div>
       </div>
-
-      <!-- Slider -->
-      <div class="mb-3 flex items-center justify-between">
-        <div class="text-sm font-medium text-[var(--corp-txt2)]">Количество детей:</div>
-        <div id="corp-kids-count" class="text-2xl font-black text-[var(--corp-or)]">7</div>
+      <div class="slider-row">
+        <div class="slider-label">Количество детей:</div>
+        <div class="slider-val" id="kids-count">7</div>
       </div>
-      <input
-        type="range"
-        min="1"
-        max="30"
-        value="7"
-        id="corp-kids-slider"
-        class="w-full accent-[var(--corp-or)]"
-      />
-      <div class="relative mb-6 mt-1 h-5 px-2 font-mono text-xs font-bold text-[var(--corp-or2)]">
-        <span class="absolute" style="left: calc(8px + 31% * (100% - 16px))">10</span>
-      </div>
-
-      <!-- Results -->
-      <div class="mb-4 grid grid-cols-3 gap-4">
-        <div class="text-center">
-          <div class="mb-1 text-xs text-[var(--corp-txt2)]">Цена за путёвку</div>
-          <div id="corp-res-pp" class="text-xl font-black text-[var(--corp-or2)]"></div>
-          <div id="corp-res-pp-sub" class="mt-0.5 text-xs text-[var(--corp-txt2)]"></div>
-        </div>
-        <div class="text-center">
-          <div class="mb-1 text-xs text-[var(--corp-txt2)]">Скидка</div>
-          <div id="corp-res-disc" class="text-xl font-black text-[var(--corp-or2)]"></div>
-          <div class="mt-0.5 text-xs text-[var(--corp-txt2)]">от базовой цены</div>
-        </div>
-        <div class="text-center">
-          <div class="mb-1 text-xs text-[var(--corp-txt2)]">Налоговый вычет</div>
-          <div id="corp-res-tax" class="text-xl font-black text-[var(--corp-green)]"></div>
-          <div class="mt-0.5 text-xs text-[var(--corp-txt2)]">13% · вернут через ФНС</div>
+      <input type="range" min="1" max="30" value="7" id="kids-slider" oninput="updateCalc()" style="display:block;width:100%;"/>
+      <div id="calc-group-result">
+        <div class="calc-results">
+          <div class="calc-res">
+            <div class="calc-res-label">Цена за путёвку</div>
+            <div class="calc-res-val orange" id="res-pp">—</div>
+            <div class="calc-res-sub" id="res-pp-sub"></div>
+          </div>
+          <div class="calc-res">
+            <div class="calc-res-label">Скидка {client.clientName}</div>
+            <div class="calc-res-val orange" id="res-disc">−{client.discount}%</div>
+            <div class="calc-res-sub">от базовой цены</div>
+          </div>
+          <div class="calc-res">
+            <div class="calc-res-label">Налоговый вычет</div>
+            <div class="calc-res-val green" id="res-tax">—</div>
+            <div class="calc-res-sub">13% · вернут через ФНС</div>
+          </div>
         </div>
       </div>
-
-      <!-- 10+ block -->
-      <div
-        id="corp-calc-10plus"
-        class="hidden mt-4 rounded-xl border border-[rgba(255,90,31,0.25)] bg-[rgba(255,90,31,0.06)] p-6 text-center"
-      >
-        <div class="mb-2 text-4xl font-black tracking-tight text-[var(--corp-or2)]">от 12%</div>
-        <div class="text-sm leading-relaxed text-[var(--corp-txt)]">
-          Скидка для группы от 10 детей — по согласованию.<br />
-          <span class="text-[var(--corp-txt2)]">Обычно получается 15–20%, зависит от смены и дат.</span>
-        </div>
+      <div id="calc-10plus" style="display:none;margin-top:var(--gap-xs);padding:var(--gap-lg) 24px;border-radius:var(--r-lg);border:1px solid rgba(255,90,31,0.25);background:rgba(255,90,31,0.06);text-align:center;">
+        <div style="font-size:var(--fs-3xl);font-weight:900;color:var(--or2);letter-spacing:-0.02em;margin-bottom:var(--gap-xs);">от 12%</div>
+        <div style="font-size:var(--fs-base);color:var(--txt);line-height:1.5;">Скидка для группы от 10 детей — по согласованию.<br/><span style="color:var(--txt2);font-size:var(--fs-sm);">Обычно получается 15–20%, зависит от смены и дат.</span></div>
       </div>
     </div>
 
-    <!-- Transfer note -->
-    {transferFrom && (
-      <div
-        id="corp-transfer-note"
-        class="r mt-4 hidden rounded-xl border border-[var(--corp-bdr)] bg-[var(--corp-bg3)] px-5 py-4 text-sm text-[var(--corp-txt2)]"
-      >
-        При группе от <strong class="text-[var(--corp-txt)]">{freeTransferMinKids} детей</strong> — бесплатный
-        трансфер автобусом {transferFrom} до лагеря и обратно. Входит в договор.
-      </div>
-    )}
+    <div class="transfer-note r" id="transfer-note">
+      При группе от <strong>10 детей</strong> — бесплатный трансфер автобусом {client.transferFrom} до лагеря и обратно. Входит в договор.
+    </div>
   </div>
 </section>
 
-<script define:vars={{ shiftsData, discount, freeTransferMinKids }}>
-  let currentShiftIdx = 0;
+<script define:vars={{ shiftsData, discount: client.discount, freeTransferMinKids: client.freeTransferMinKids }}>
+  let currentSmenaIdx = 0;
 
-  function fmt(n) {
-    return n.toLocaleString('ru-RU') + ' ₽';
-  }
+  function fmt(n) { return n.toLocaleString('ru') + ' ₽'; }
 
-  function updateCalc() {
-    const kids = parseInt(document.getElementById('corp-kids-slider').value);
-    document.getElementById('corp-kids-count').textContent = kids;
-
-    const shift = shiftsData[currentShiftIdx];
-    const effectiveDiscount = kids >= 10 ? Math.max(discount, 12) : discount;
-    const discountedPrice = Math.round(shift.price * (1 - effectiveDiscount / 100));
-    const eduPart = discountedPrice - 3800 * shift.days;
-    const taxRefund = Math.max(0, Math.round(eduPart * 0.13));
-
-    document.getElementById('corp-res-pp').textContent = fmt(discountedPrice);
-    document.getElementById('corp-res-pp-sub').innerHTML =
-      '<s style="opacity:.5">' + fmt(shift.price) + '</s>';
-    document.getElementById('corp-res-disc').textContent = '−' + effectiveDiscount + '%';
-    document.getElementById('corp-res-tax').textContent = fmt(taxRefund);
-
-    const block10 = document.getElementById('corp-calc-10plus');
-    const noteEl = document.getElementById('corp-transfer-note');
-
-    if (block10) block10.classList.toggle('hidden', kids < freeTransferMinKids);
-    if (noteEl) noteEl.classList.toggle('hidden', kids < freeTransferMinKids);
-  }
-
-  function selectShift(idx) {
-    currentShiftIdx = idx;
-    const shift = shiftsData[idx];
-
-    // Update tabs
-    document.querySelectorAll('.corp-stab').forEach((btn, i) => {
-      if (i === idx) {
-        btn.classList.add('bg-[var(--corp-or)]', 'text-white', 'border-[var(--corp-or)]');
-        btn.classList.remove('border-[var(--corp-bdr)]', 'text-[var(--corp-txt2)]');
-      } else {
-        btn.classList.remove('bg-[var(--corp-or)]', 'text-white', 'border-[var(--corp-or)]');
-        btn.classList.add('border-[var(--corp-bdr)]', 'text-[var(--corp-txt2)]');
-      }
-    });
-
-    // Update info card
-    document.getElementById('corp-smena-label').textContent = shift.name + ' · ' + shift.dates;
-    const tagEl = document.getElementById('corp-smena-tag');
-    tagEl.textContent = shift.tag;
-    tagEl.style.display = shift.tag ? '' : 'none';
-    document.getElementById('corp-smena-meta').textContent =
-      shift.duration + ' · базовая цена ' + fmt(shift.price) + ' / ребёнок';
-    document.getElementById('corp-smena-desc').textContent = shift.desc;
-
+  function selectSmena(idx, el) {
+    currentSmenaIdx = idx;
+    document.querySelectorAll('.stab').forEach(t => t.classList.remove('active'));
+    if (el) el.classList.add('active');
+    const s = shiftsData[idx];
+    const lbl = document.getElementById('smena-label');
+    const tag = document.getElementById('smena-tag');
+    const meta = document.getElementById('smena-meta');
+    const desc = document.getElementById('smena-desc');
+    if (lbl) lbl.textContent = s.label;
+    if (tag) { tag.textContent = s.tag; tag.style.display = s.tag ? 'inline-block' : 'none'; }
+    if (meta) meta.textContent = s.days + ' дней · базовая цена ' + s.basePrice.toLocaleString('ru') + ' ₽ / ребёнок';
+    if (desc) desc.textContent = s.desc;
     updateCalc();
   }
 
-  // Wire up tabs
-  document.querySelectorAll('.corp-stab').forEach((btn) => {
-    btn.addEventListener('click', () => selectShift(parseInt(btn.dataset.idx)));
-  });
+  function updateCalc() {
+    const s = shiftsData[currentSmenaIdx];
+    const kids = parseInt(document.getElementById('kids-slider')?.value || '7', 10);
+    const kidsEl = document.getElementById('kids-count');
+    if (kidsEl) kidsEl.textContent = kids;
 
-  // Wire up slider
-  document.getElementById('corp-kids-slider').addEventListener('input', updateCalc);
+    const discountedPrice = Math.round(s.basePrice * (1 - discount / 100));
+    const tax = Math.round((discountedPrice - 3800 * s.days) * 0.13);
+    const taxDisplay = Math.max(tax, 0);
+
+    const pp = document.getElementById('res-pp');
+    const ppSub = document.getElementById('res-pp-sub');
+    const taxEl = document.getElementById('res-tax');
+    const plus10 = document.getElementById('calc-10plus');
+    const transfer = document.getElementById('transfer-note');
+    const group = document.getElementById('calc-group-result');
+
+    if (kids >= freeTransferMinKids) {
+      if (group) group.style.display = 'none';
+      if (plus10) plus10.style.display = 'block';
+      if (transfer) transfer.classList.add('show');
+    } else {
+      if (group) group.style.display = 'block';
+      if (plus10) plus10.style.display = 'none';
+      if (transfer) transfer.classList.remove('show');
+      if (pp) pp.textContent = fmt(discountedPrice);
+      if (ppSub) ppSub.innerHTML = '<s style="opacity:.5">' + s.basePrice.toLocaleString('ru') + ' ₽</s>';
+      if (taxEl) taxEl.textContent = '~' + taxDisplay.toLocaleString('ru') + ' ₽';
+    }
+  }
+
+  window.selectSmena = selectSmena;
+  window.updateCalc = updateCalc;
 
   // Init
-  selectShift(0);
+  document.addEventListener('DOMContentLoaded', () => updateCalc());
+  updateCalc();
 </script>
