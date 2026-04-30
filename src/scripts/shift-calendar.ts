@@ -60,7 +60,7 @@ export function renderCalendar(
         if (!cell) { html += '<div></div>'; continue; }
         const isShift = cell.date >= start && cell.date <= end;
         let classes = 'text-[13px] py-1 rounded-lg ';
-        classes += isShift ? 'bg-primary text-[#1e2430] font-semibold' : 'text-slate-600';
+        classes += isShift ? 'bg-primary text-[#0d1a2b] font-semibold' : 'text-slate-600';
         html += `<div class="${classes}">${cell.day}</div>`;
       }
     }
