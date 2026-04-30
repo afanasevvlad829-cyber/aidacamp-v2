@@ -1,0 +1,147 @@
+---
+// Photo gallery with category tabs
+const cats = [
+  { id: 'camp',      label: 'Атмосфера' },
+  { id: 'pool',      label: 'Бассейн'   },
+  { id: 'sport',     label: 'Спорт'     },
+  { id: 'study',     label: 'Учёба'     },
+  { id: 'food',      label: 'Питание'   },
+  { id: 'territory', label: 'Территория'},
+];
+
+const photos: Record<string, { src: string; alt: string }[]> = {
+  camp: [
+    { src: 'https://aidacamp.ru/images/gallery/camp-01.avif', alt: 'Атмосфера лагеря' },
+    { src: 'https://aidacamp.ru/images/gallery/camp-02.avif', alt: 'Вечер в лагере' },
+    { src: 'https://aidacamp.ru/images/gallery/camp-03.avif', alt: 'Дети в лагере' },
+    { src: 'https://aidacamp.ru/images/gallery/camp-04.avif', alt: 'Общение' },
+    { src: 'https://aidacamp.ru/images/gallery/camp-05.avif', alt: 'Отдых' },
+    { src: 'https://aidacamp.ru/images/gallery/camp-06.avif', alt: 'Настроение' },
+  ],
+  pool: [
+    { src: 'https://aidacamp.ru/images/gallery/pool-01.avif', alt: 'Бассейн' },
+    { src: 'https://aidacamp.ru/images/gallery/pool-02.avif', alt: 'Дети в бассейне' },
+    { src: 'https://aidacamp.ru/images/gallery/pool-03.avif', alt: 'Бассейн снаружи' },
+    { src: 'https://aidacamp.ru/images/gallery/pool-04.avif', alt: 'Водные игры' },
+    { src: 'https://aidacamp.ru/images/gallery/pool-05.avif', alt: 'Бассейн вид' },
+    { src: 'https://aidacamp.ru/images/gallery/pool-06.avif', alt: 'Бассейн день' },
+  ],
+  sport: [
+    { src: 'https://aidacamp.ru/images/gallery/sport-01.avif', alt: 'Футбол' },
+    { src: 'https://aidacamp.ru/images/gallery/sport-02.avif', alt: 'Волейбол' },
+    { src: 'https://aidacamp.ru/images/gallery/sport-03.avif', alt: 'Спорт на свежем воздухе' },
+    { src: 'https://aidacamp.ru/images/gallery/sport-04.avif', alt: 'Подвижные игры' },
+    { src: 'https://aidacamp.ru/images/gallery/sport-05.avif', alt: 'Эстафета' },
+    { src: 'https://aidacamp.ru/images/gallery/sport-06.avif', alt: 'Командный спорт' },
+  ],
+  study: [
+    { src: 'https://aidacamp.ru/images/gallery/study-01.avif', alt: 'Занятие по программированию' },
+    { src: 'https://aidacamp.ru/images/gallery/study-02.avif', alt: 'Работа за компьютерами' },
+    { src: 'https://aidacamp.ru/images/gallery/study-03.avif', alt: 'Хакатон' },
+    { src: 'https://aidacamp.ru/images/gallery/study-04.avif', alt: 'Демонстрация проекта' },
+    { src: 'https://aidacamp.ru/images/gallery/study-05.avif', alt: 'Ментор помогает' },
+    { src: 'https://aidacamp.ru/images/gallery/study-06.avif', alt: 'Финальный проект' },
+  ],
+  food: [
+    { src: 'https://aidacamp.ru/images/gallery/food-01.avif', alt: 'Столовая' },
+    { src: 'https://aidacamp.ru/images/gallery/food-02.avif', alt: 'Завтрак' },
+    { src: 'https://aidacamp.ru/images/gallery/food-03.avif', alt: 'Обед' },
+    { src: 'https://aidacamp.ru/images/gallery/food-04.avif', alt: 'Питание' },
+    { src: 'https://aidacamp.ru/images/gallery/food-05.avif', alt: 'Полдник' },
+    { src: 'https://aidacamp.ru/images/gallery/food-06.avif', alt: 'Ужин' },
+  ],
+  territory: [
+    { src: 'https://aidacamp.ru/images/gallery/territory-01.avif', alt: 'Территория санатория' },
+    { src: 'https://aidacamp.ru/images/gallery/territory-02.avif', alt: 'Корпус' },
+    { src: 'https://aidacamp.ru/images/gallery/territory-03.avif', alt: 'Природа' },
+    { src: 'https://aidacamp.ru/images/gallery/territory-04.avif', alt: 'Лес' },
+    { src: 'https://aidacamp.ru/images/gallery/territory-05.avif', alt: 'Беседка' },
+    { src: 'https://aidacamp.ru/images/gallery/territory-06.avif', alt: 'Территория вечер' },
+  ],
+};
+---
+
+<section class="corp-section corp-section-alt" id="gallery">
+  <div class="corp-wrap">
+    <div class="r mb-2 flex items-center gap-3">
+      <div class="h-5 w-1 shrink-0 rounded-sm bg-[var(--corp-or)]"></div>
+      <h2 class="corp-h2 m-0">Фото</h2>
+    </div>
+
+    <!-- Category tabs -->
+    <div class="r mb-5 mt-4 flex flex-wrap gap-2" id="gal-tabs">
+      {cats.map((c, i) => (
+        <button
+          type="button"
+          class:list={[
+            'gal-pill cursor-pointer rounded-full border px-4 py-1.5 text-sm font-semibold transition-all duration-200',
+            i === 0
+              ? 'border-[var(--corp-or)] bg-[var(--corp-or)] text-white'
+              : 'border-[var(--corp-bdr)] text-[var(--corp-txt2)] hover:border-[var(--corp-or)] hover:text-[var(--corp-txt)]',
+          ]}
+          data-gcat={c.id}
+        >
+          {c.label}
+        </button>
+      ))}
+    </div>
+
+    <!-- Gallery grid -->
+    <div class="r grid grid-cols-2 gap-2 md:grid-cols-3" id="gal-grid">
+      {photos.camp.map((p, i) => (
+        <div
+          class={`overflow-hidden rounded-xl ${i === 0 ? 'col-span-2 row-span-2 md:col-span-1 md:row-span-1' : ''}`}
+          data-photo={p.src}
+        >
+          <img
+            src={p.src}
+            alt={p.alt}
+            loading="lazy"
+            class="h-full w-full cursor-zoom-in object-cover transition-transform duration-300 hover:scale-105"
+            style={i === 0 ? 'aspect-ratio:4/3' : 'aspect-ratio:4/3'}
+          />
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<script define:vars={{ photos }}>
+  let currentCat = 'camp';
+
+  function renderGallery(cat) {
+    const grid = document.getElementById('gal-grid');
+    if (!grid) return;
+    const items = photos[cat] || [];
+    grid.innerHTML = items
+      .map(
+        (p, i) => `
+      <div class="overflow-hidden rounded-xl">
+        <img
+          src="${p.src}"
+          alt="${p.alt}"
+          loading="lazy"
+          class="h-full w-full cursor-zoom-in object-cover transition-transform duration-300 hover:scale-105"
+          style="aspect-ratio:4/3"
+        />
+      </div>
+    `
+      )
+      .join('');
+  }
+
+  document.querySelectorAll('.gal-pill').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      currentCat = btn.dataset.gcat;
+      document.querySelectorAll('.gal-pill').forEach((b) => {
+        const isActive = b === btn;
+        b.classList.toggle('bg-[var(--corp-or)]', isActive);
+        b.classList.toggle('text-white', isActive);
+        b.classList.toggle('border-[var(--corp-or)]', isActive);
+        b.classList.toggle('border-[var(--corp-bdr)]', !isActive);
+        b.classList.toggle('text-[var(--corp-txt2)]', !isActive);
+      });
+      renderGallery(currentCat);
+    });
+  });
+</script>
