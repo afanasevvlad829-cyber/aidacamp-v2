@@ -12,6 +12,8 @@ export const EMAIL_HREF = 'mailto:hello@codims.ru';
 
 export const WHATSAPP_URL = 'https://wa.me/79688086455';
 export const TELEGRAM_URL = 'https://t.me/Progaschool';
+export const VK_URL = 'https://vk.com/aidacamp';
+export const INSTAGRAM_URL = 'https://www.instagram.com/aidacamp.ru/';
 
 export const YANDEX_MAPS_URL = 'https://yandex.ru/maps/?ll=36.724185,55.265643&z=15&pt=36.724185,55.265643,pm2rdm';
 
