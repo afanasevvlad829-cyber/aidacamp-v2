@@ -21,6 +21,7 @@ interface Props {
   variant?:       'hero' | 'light';
   size?:          'sm' | 'md';
   stacked?:       boolean;
+  reverseOrder?:  boolean;
   yandexGoal?:    string;
   incampGoal?:    string;
 }
@@ -33,6 +34,7 @@ const {
   variant      = 'hero',
   size         = 'md',
   stacked      = false,
+  reverseOrder = false,
   yandexGoal,
   incampGoal,
 } = Astro.props;
@@ -64,22 +66,32 @@ const hov   = hero ? 'hover:bg-white/12' : 'hover:bg-slate-50';
   role="group"
   aria-label={`Рейтинги: ${yandexRating} на Яндекс Картах и ${incampRating} на incamp.ru`}
 >
-  <!-- ★ Яндекс -->
-  <a
-    href={yandexUrl}
-    target="_blank"
-    rel="noopener noreferrer"
-    data-goal={yandexGoal || undefined}
-    class:list={[
-      'flex items-center gap-1.5 no-underline transition-colors duration-150',
-      stacked ? 'px-3 py-2' : px,
-      textSz, hov,
-    ]}
-    title={`Рейтинг ${yandexRating} на Яндекс Картах`}
-  >
-    <span class:list={['font-bold leading-none text-[#f5a624]', starSz]}>★ {yandexRating}</span>
-    <span class:list={['leading-none', subCl]}>Яндекс</span>
-  </a>
+  {/* Первый элемент: Яндекс (по умолчанию) или incamp (reverseOrder) */}
+  {reverseOrder ? (
+    <a
+      href={incampUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      data-goal={incampGoal || undefined}
+      class:list={['flex items-center gap-1.5 no-underline transition-colors duration-150', stacked ? 'px-3 py-2' : px, textSz, hov]}
+      title={`Рейтинг ${incampRating} на incamp.ru`}
+    >
+      <span class:list={['font-bold leading-none text-[#ec7c00]', starSz]}>★ {incampRating}</span>
+      <span class:list={['leading-none', subCl]}>incamp.ru</span>
+    </a>
+  ) : (
+    <a
+      href={yandexUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      data-goal={yandexGoal || undefined}
+      class:list={['flex items-center gap-1.5 no-underline transition-colors duration-150', stacked ? 'px-3 py-2' : px, textSz, hov]}
+      title={`Рейтинг ${yandexRating} на Яндекс Картах`}
+    >
+      <span class:list={['font-bold leading-none text-[#f5a624]', starSz]}>★ {yandexRating}</span>
+      <span class:list={['leading-none', subCl]}>Яндекс</span>
+    </a>
+  )}
 
   <!-- Разделитель -->
   {stacked
@@ -87,22 +99,32 @@ const hov   = hero ? 'hover:bg-white/12' : 'hover:bg-slate-50';
     : <div class:list={['w-px shrink-0', divH, divCl]}></div>
   }
 
-  <!-- ★ incamp.ru -->
-  <a
-    href={incampUrl}
-    target="_blank"
-    rel="noopener noreferrer"
-    data-goal={incampGoal || undefined}
-    class:list={[
-      'flex items-center gap-1.5 no-underline transition-colors duration-150',
-      stacked ? 'px-3 py-2' : px,
-      textSz, hov,
-    ]}
-    title={`Рейтинг ${incampRating} на incamp.ru`}
-  >
-    <span class:list={['font-bold leading-none text-[#ec7c00]', starSz]}>★ {incampRating}</span>
-    <span class:list={['leading-none', subCl]}>incamp.ru</span>
-  </a>
+  {/* Второй элемент: incamp (по умолчанию) или Яндекс (reverseOrder) */}
+  {reverseOrder ? (
+    <a
+      href={yandexUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      data-goal={yandexGoal || undefined}
+      class:list={['flex items-center gap-1.5 no-underline transition-colors duration-150', stacked ? 'px-3 py-2' : px, textSz, hov]}
+      title={`Рейтинг ${yandexRating} на Яндекс Картах`}
+    >
+      <span class:list={['font-bold leading-none text-[#f5a624]', starSz]}>★ {yandexRating}</span>
+      <span class:list={['leading-none', subCl]}>Яндекс</span>
+    </a>
+  ) : (
+    <a
+      href={incampUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      data-goal={incampGoal || undefined}
+      class:list={['flex items-center gap-1.5 no-underline transition-colors duration-150', stacked ? 'px-3 py-2' : px, textSz, hov]}
+      title={`Рейтинг ${incampRating} на incamp.ru`}
+    >
+      <span class:list={['font-bold leading-none text-[#ec7c00]', starSz]}>★ {incampRating}</span>
+      <span class:list={['leading-none', subCl]}>incamp.ru</span>
+    </a>
+  )}
 </div>
 
 <style>
