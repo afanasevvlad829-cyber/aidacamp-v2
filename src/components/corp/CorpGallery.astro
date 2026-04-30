@@ -1,0 +1,156 @@
+---
+// Реальные фото из aidacamp.ru/images/gallery/
+// camp, pool, sport — есть реальные фото; остальные — переиспользуем существующие
+
+const BASE = 'https://aidacamp.ru/images/gallery/';
+
+const photos: Record<string, { src: string; alt: string }[]> = {
+  camp: [
+    { src: BASE + 'camp-group-beanbags.avif', alt: 'Дети на бобах' },
+    { src: BASE + 'camp-smile.avif',          alt: 'Улыбки в лагере' },
+    { src: BASE + 'camp-two-beanbags.avif',   alt: 'Отдых на боинге' },
+    { src: BASE + 'gallery-04.avif',          alt: 'Атмосфера лагеря' },
+    { src: BASE + 'gallery-05.avif',          alt: 'Фото из лагеря' },
+  ],
+  pool: [
+    { src: BASE + 'pool-interior.avif',  alt: 'Бассейн внутри' },
+    { src: BASE + 'pool-kids-edge.avif', alt: 'Дети у бортика' },
+    { src: BASE + 'pool-noodles.avif',   alt: 'Игры в бассейне' },
+    { src: BASE + 'camp-smile.avif',     alt: 'Улыбки' },
+    { src: BASE + 'gallery-04.avif',     alt: 'Бассейн' },
+  ],
+  sport: [
+    { src: BASE + 'sport-football.avif',    alt: 'Футбол' },
+    { src: BASE + 'camp-group-beanbags.avif',alt: 'Отдых на улице' },
+    { src: BASE + 'gallery-05.avif',        alt: 'Спорт' },
+    { src: BASE + 'camp-two-beanbags.avif', alt: 'Активный отдых' },
+    { src: BASE + 'camp-smile.avif',        alt: 'Командная игра' },
+  ],
+  study: [
+    { src: BASE + 'gallery-04.avif',          alt: 'Занятие' },
+    { src: BASE + 'gallery-05.avif',          alt: 'Проект' },
+    { src: BASE + 'camp-group-beanbags.avif', alt: 'Работа в группе' },
+    { src: BASE + 'camp-smile.avif',          alt: 'Учёба' },
+    { src: BASE + 'camp-two-beanbags.avif',   alt: 'Командный проект' },
+  ],
+  food: [
+    { src: BASE + 'gallery-04.avif',          alt: 'Питание' },
+    { src: BASE + 'gallery-05.avif',          alt: 'Столовая' },
+    { src: BASE + 'camp-smile.avif',          alt: 'Обед' },
+    { src: BASE + 'camp-group-beanbags.avif', alt: 'Завтрак' },
+    { src: BASE + 'pool-interior.avif',       alt: 'Столовая' },
+  ],
+  territory: [
+    { src: BASE + 'camp-two-beanbags.avif',   alt: 'Территория' },
+    { src: BASE + 'camp-group-beanbags.avif', alt: 'Санаторий Изумруд' },
+    { src: BASE + 'pool-interior.avif',       alt: 'Корпус' },
+    { src: BASE + 'gallery-04.avif',          alt: 'Природа' },
+    { src: BASE + 'sport-football.avif',      alt: 'Спортивная площадка' },
+  ],
+};
+
+const cats = [
+  { id: 'camp',      label: 'Атмосфера'  },
+  { id: 'pool',      label: 'Бассейн'    },
+  { id: 'sport',     label: 'Спорт'      },
+  { id: 'study',     label: 'Учёба'      },
+  { id: 'food',      label: 'Питание'    },
+  { id: 'territory', label: 'Территория' },
+];
+---
+
+<section class="corp-section corp-section-alt" id="gallery">
+  <div class="corp-wrap">
+    <div class="r mb-2 flex items-center gap-3">
+      <div class="h-5 w-1 shrink-0 rounded-sm bg-[var(--corp-or)]"></div>
+      <h2 class="corp-h2 m-0">Фото</h2>
+    </div>
+
+    <!-- Tabs -->
+    <div class="r mb-5 mt-4 flex flex-wrap gap-2">
+      {cats.map((c, i) => (
+        <button
+          type="button"
+          class:list={[
+            'gal-pill cursor-pointer rounded-full border px-4 py-1.5 text-sm font-semibold transition-all duration-200',
+            i === 0
+              ? 'border-[var(--corp-or)] bg-[var(--corp-or)] text-white'
+              : 'border-[var(--corp-bdr)] text-[var(--corp-txt2)] hover:text-[var(--corp-txt)]',
+          ]}
+          data-gcat={c.id}
+        >
+          {c.label}
+        </button>
+      ))}
+    </div>
+
+    <!-- Gallery grid: большое фото слева + 2×2 справа -->
+    <div class="r" id="gal-grid">
+      <div class="flex gap-3" style="max-height:460px;overflow:hidden;">
+        <!-- Big photo -->
+        <div class="relative shrink-0 overflow-hidden rounded-2xl" style="flex:0 0 45%;">
+          <img id="gal-big" src={photos.camp[0].src} alt={photos.camp[0].alt}
+            class="h-full w-full object-cover transition-transform duration-300 hover:scale-105 cursor-zoom-in"
+            loading="lazy" />
+          <span class="absolute left-3 top-3 rounded-md bg-white/90 px-2 py-1 text-xs font-bold text-black backdrop-blur-sm">#АЙДАКЕМП</span>
+          <span id="gal-big-label" class="absolute bottom-3 right-3 rounded-md bg-black/70 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-white backdrop-blur-sm">Атмосфера</span>
+        </div>
+        <!-- 2×2 grid -->
+        <div id="gal-small" class="grid flex-1 grid-cols-2 gap-3">
+          {photos.camp.slice(1, 5).map((p, i) => (
+            <div class="relative overflow-hidden rounded-2xl" style="aspect-ratio:1">
+              <img src={p.src} alt={p.alt}
+                class="h-full w-full object-cover transition-transform duration-300 hover:scale-105 cursor-zoom-in"
+                loading="lazy" />
+              <span class="absolute left-2 top-2 rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-bold text-black backdrop-blur-sm">#АЙДАКЕМП</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script define:vars={{ photos }}>
+  let currentCat = 'camp';
+
+  const catLabels = {
+    camp: 'Атмосфера', pool: 'Бассейн', sport: 'Спорт',
+    study: 'Учёба', food: 'Питание', territory: 'Территория',
+  };
+
+  function renderGallery(cat) {
+    const items = photos[cat] || [];
+    const bigImg = document.getElementById('gal-big');
+    const bigLabel = document.getElementById('gal-big-label');
+    const small = document.getElementById('gal-small');
+    if (!bigImg || !small || !bigLabel) return;
+
+    bigImg.src = items[0]?.src || '';
+    bigImg.alt = items[0]?.alt || '';
+    bigLabel.textContent = catLabels[cat] || '';
+
+    small.innerHTML = items.slice(1, 5).map(p => `
+      <div class="relative overflow-hidden rounded-2xl" style="aspect-ratio:1">
+        <img src="${p.src}" alt="${p.alt}" loading="lazy"
+          class="h-full w-full object-cover transition-transform duration-300 hover:scale-105 cursor-zoom-in" />
+        <span class="absolute left-2 top-2 rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-bold text-black backdrop-blur-sm">#АЙДАКЕМП</span>
+      </div>
+    `).join('');
+  }
+
+  document.querySelectorAll('.gal-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentCat = btn.dataset.gcat;
+      document.querySelectorAll('.gal-pill').forEach(b => {
+        const active = b === btn;
+        b.classList.toggle('bg-[var(--corp-or)]', active);
+        b.classList.toggle('text-white', active);
+        b.classList.toggle('border-[var(--corp-or)]', active);
+        b.classList.toggle('border-[var(--corp-bdr)]', !active);
+        b.classList.toggle('text-[var(--corp-txt2)]', !active);
+      });
+      renderGallery(currentCat);
+    });
+  });
+</script>
