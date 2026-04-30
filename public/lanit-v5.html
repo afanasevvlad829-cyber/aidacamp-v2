@@ -2918,6 +2918,33 @@ function galBadge(size, label) {
           <span style="position:absolute;bottom:${s.bot};right:${s.right};background:rgba(0,0,0,0.7);border-radius:${s.r};padding:${s.pad};font-size:${s.botFs};font-weight:600;color:var(--c-white);text-transform:uppercase;letter-spacing:0.05em;backdrop-filter:blur(4px);">${label}</span>`;
 }
 
+// Carousel dots helper — defined here (Script 1) so renderGalMobile can use it
+function initCarouselDots(scrollEl, dotsEl, dotClass) {
+  if (!scrollEl || !dotsEl) return;
+  var items = Array.from(scrollEl.children).filter(function(el){ return el.style.display !== 'none'; });
+  var count = items.length;
+  dotsEl.innerHTML = '';
+  if (count < 2) { dotsEl.style.display = 'none'; return; }
+  dotsEl.style.display = 'flex';
+  items.forEach(function(_, idx) {
+    var dot = document.createElement('button');
+    dot.className = dotClass + (idx === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', 'Карточка ' + (idx + 1));
+    dot.onclick = function() {
+      var iw = items[idx].offsetWidth + parseInt(getComputedStyle(scrollEl).gap || 10);
+      scrollEl.scrollTo({ left: idx * iw, behavior: 'smooth' });
+    };
+    dotsEl.appendChild(dot);
+  });
+  function updateDots() {
+    var sw = scrollEl.scrollLeft;
+    var iw = items[0] ? (items[0].offsetWidth + parseInt(getComputedStyle(scrollEl).gap || 10)) : 1;
+    var active = Math.round(sw / iw);
+    dotsEl.querySelectorAll('.' + dotClass).forEach(function(d, i){ d.classList.toggle('active', i === active); });
+  }
+  scrollEl.addEventListener('scroll', updateDots, { passive: true });
+}
+
 function renderGalDesktop(imgs, label) {
   const el = document.getElementById('gal-desktop');
   const big = imgs[0], smalls = imgs.slice(1, 5);
@@ -3036,33 +3063,7 @@ document.querySelectorAll('.r').forEach(el => obs.observe(el));
   }); });
 })();
 
-// Carousel dots helper (global — used by why-grid, tracks, gallery)
-function initCarouselDots(scrollEl, dotsEl, dotClass) {
-  if (!scrollEl || !dotsEl) return;
-  var items = Array.from(scrollEl.children).filter(function(el){ return el.style.display !== 'none'; });
-  var count = items.length;
-  dotsEl.innerHTML = '';
-  if (count < 2) { dotsEl.style.display = 'none'; return; }
-  dotsEl.style.display = 'flex';
-  items.forEach(function(_, idx) {
-    var dot = document.createElement('button');
-    dot.className = dotClass + (idx === 0 ? ' active' : '');
-    dot.setAttribute('aria-label', 'Карточка ' + (idx + 1));
-    dot.onclick = function() {
-      var iw = items[idx].offsetWidth + parseInt(getComputedStyle(scrollEl).gap || 10);
-      scrollEl.scrollTo({ left: idx * iw, behavior: 'smooth' });
-    };
-    dotsEl.appendChild(dot);
-  });
-  function updateDots() {
-    var sw = scrollEl.scrollLeft;
-    var iw = items[0] ? (items[0].offsetWidth + parseInt(getComputedStyle(scrollEl).gap || 10)) : 1;
-    var active = Math.round(sw / iw);
-    dotsEl.querySelectorAll('.' + dotClass).forEach(function(d, i){ d.classList.toggle('active', i === active); });
-  }
-  scrollEl.addEventListener('scroll', updateDots, { passive: true });
-}
-
+// initCarouselDots is defined in Script 1 (above) — used by why-grid, tracks, and gallery
 if (window.innerWidth <= 768) {
   initCarouselDots(document.querySelector('.why-grid'), document.getElementById('why-dots'), 'why-dot');
   initCarouselDots(document.getElementById('tracks-grid'), document.getElementById('tracks-dots'), 'track-dot');
