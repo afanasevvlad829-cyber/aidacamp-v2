@@ -1,0 +1,58 @@
+---
+import type { CorpClient } from '../../data/corp/types';
+interface Props { client: CorpClient }
+const { client } = Astro.props;
+
+// Example calc for Смена 3 (13 days, 89400 base)
+const basePrice = 89400;
+const days = 13;
+const discountedPrice = Math.round(basePrice * (1 - client.discount / 100));
+const educationalPart = discountedPrice - 3800 * days;
+const taxReturn = Math.round(educationalPart * 0.13);
+---
+
+<section class="alt">
+  <div class="wrap">
+    <div class="s-kicker r">Налоговый вычет</div>
+    <h2 class="r">Верните до <em>5 300 ₽</em><br/>через налоговый вычет</h2>
+    <div class="tax-grid r">
+      <div>
+        <p class="s-lead" style="margin-bottom:var(--gap-xl);">Расходы на образование детей подпадают под социальный налоговый вычет 13%. Лагерь с <a href="https://aidacamp.ru/docs/licenziya-rospotrebnadzor.pdf" target="_blank" rel="noopener" style="color:var(--or2);">лицензией Минобразования</a> — это полноценные образовательные услуги.</p>
+        <ol class="tax-steps">
+          <li class="tax-step">
+            <div class="tax-step-num">1</div>
+            <div>
+              <div class="tax-step-title">Оплатить лагерь</div>
+              <div class="tax-step-text">Оплачиваете смену. Мы выдаём договор, акт и чек — все документы для налоговой.</div>
+            </div>
+          </li>
+          <li class="tax-step">
+            <div class="tax-step-num">2</div>
+            <div>
+              <div class="tax-step-title">Подать декларацию 3-НДФЛ</div>
+              <div class="tax-step-text">Через личный кабинет на сайте ФНС или через Госуслуги. Занимает 15–20 минут.</div>
+            </div>
+          </li>
+          <li class="tax-step">
+            <div class="tax-step-num">3</div>
+            <div>
+              <div class="tax-step-title">Получить возврат</div>
+              <div class="tax-step-text">ФНС возвращает 13% от суммы расходов на карту. Срок — до 3 месяцев.</div>
+            </div>
+          </li>
+        </ol>
+      </div>
+      <div class="tax-calc-box">
+        <div style="font-size:var(--fs-xs);font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--txt2);margin-bottom:var(--gap-lg);font-family:'SF Mono',monospace;">Пример расчёта · Смена 3 · {client.clientName}</div>
+        <div class="tax-row"><span class="tax-row-label">Базовая цена</span><span class="tax-row-val">{basePrice.toLocaleString('ru')} ₽</span></div>
+        <div class="tax-row"><span class="tax-row-label">Скидка {client.clientName} (−{client.discount}%)</span><span class="tax-row-val">{discountedPrice.toLocaleString('ru')} ₽</span></div>
+        <div class="tax-row"><span class="tax-row-label">Жильё + питание (3 800 ₽ × {days} дней)</span><span class="tax-row-val">{(3800 * days).toLocaleString('ru')} ₽</span></div>
+        <div class="tax-row"><span class="tax-row-label">Образовательная часть</span><span class="tax-row-val">{educationalPart.toLocaleString('ru')} ₽</span></div>
+        <div class="tax-row highlight"><span class="tax-row-label">Возврат 13% → вы платите</span><span class="tax-row-val">~{taxReturn.toLocaleString('ru')} ₽ назад · итого {(discountedPrice - taxReturn).toLocaleString('ru')} ₽</span></div>
+        <div style="margin-top:var(--gap-lg);font-size:var(--fs-sm);color:var(--txt2);line-height:1.7;">
+          Формула: (цена − 3 800 ₽ × дней) × 13%. Лимит НК РФ — 110 000 ₽/год на ребёнка. Декларация 3-НДФЛ — в следующем году.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

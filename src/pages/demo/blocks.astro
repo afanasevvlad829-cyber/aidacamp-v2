@@ -2,6 +2,34 @@
 // Wireframes всех 21 блоков главной страницы
 // Mobile (375px) + Desktop (1280px) · Day / Night tabs
 // SEO-разметка · Поведение загрузки · design/glassmorphism-v1
+import '../../styles/global.css';
+import { mainShifts, shortShifts, renderCard } from '../../data/shifts';
+import DualRatingPill from '../../components/DualRatingPill.astro';
+import IncampBadge from '../../components/IncampBadge.astro';
+import Shifts from '../../components/Shifts.astro';
+import FAQ from '../../components/FAQ.astro';
+import Reviews from '../../components/Reviews.astro';
+import Journey from '../../components/Journey.astro';
+import Team from '../../components/Team.astro';
+import Stay from '../../components/Stay.astro';
+import Gallery from '../../components/Gallery.astro';
+import Contacts from '../../components/Contacts.astro';
+import About from '../../components/About.astro';
+import Economy from '../../components/Economy.astro';
+import MomStory from '../../components/MomStory.astro';
+import SoftStart from '../../components/SoftStart.astro';
+import Hackathon from '../../components/Hackathon.astro';
+import Videos from '../../components/Videos.astro';
+import SummerCta from '../../components/SummerCta.astro';
+import BookingBar from '../../components/BookingBar.astro';
+import ShiftOccupancy from '../../components/ShiftOccupancy.astro';
+import Mentors from '../../components/Mentors.astro';
+import SeoTextBlock from '../../components/SeoTextBlock.astro';
+import RelatedPages from '../../components/RelatedPages.astro';
+import { STAT_RATING, YANDEX_MAPS_URL } from '../../data/contacts';
+import HeroMobile from '../../components/hero/Mobile.astro';
+import HeroDesktop from '../../components/hero/Desktop.astro';
+const allDemoShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShifts[2], mainShifts[3]];
 ---
 <!DOCTYPE html>
 <html lang="ru">
@@ -127,8 +155,52 @@
       border: 1px solid var(--card-border);
       border-radius: 20px;
       margin-bottom: 32px;
-      overflow: hidden;
+      overflow: clip; /* clip визуально, не блокирует scroll внутри */
       box-shadow: var(--card-shadow);
+    }
+
+    /* ── Обёртка реального компонента ── */
+    .component-live {
+      border-top: 1px solid var(--bd-sub);
+    }
+    .component-live-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 20px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #16a34a;
+      background: #f0fdf4;
+      border-bottom: 1px solid #dcfce7;
+      letter-spacing: 0.01em;
+    }
+    .component-live-label .bi { font-size: 12px; }
+    .component-live-wrap {
+      /* Компонент рендерится в своём естественном размере */
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    /* ── Hero в демо: переопределяем viewport-брейкпоинты ── */
+    /* HeroMobile: скрыт на md+ через md:hidden — форсим обратно */
+    .hero-mobile-demo .md\:hidden {
+      display: flex !important;
+    }
+    /* Убираем min-h-[95svh] чтобы не растягивало phone-frame */
+    .hero-mobile-demo [class*="min-h-\[95"] {
+      min-height: 0 !important;
+    }
+    /* Скрываем авто-открывающуюся форму в превью */
+    .hero-mobile-demo #hero-booking-block {
+      display: none !important;
+    }
+    /* HeroDesktop: hidden md:block — на md+ уже виден, дополнительно снимаем max-w */
+    .hero-desktop-demo .md\:block {
+      display: block !important;
+    }
+    .hero-desktop-demo > * {
+      max-width: 100% !important;
     }
     .block-header {
       display: grid;
@@ -190,7 +262,8 @@
     .desktop-frame {
       background: var(--frame-bg);
       border-radius: 10px;
-      overflow: hidden;
+      overflow-x: auto;
+      overflow-y: clip;
       box-shadow: 0 4px 20px var(--frame-shadow);
     }
 
@@ -210,6 +283,65 @@
       display: flex; gap: 6px; margin-bottom: 4px;
     }
     .note-item::before { content: '·'; color: var(--note-dot); flex-shrink: 0; }
+
+    /* ── Font-size labels (показывают размер шрифта прямо в демо) ── */
+    .fs-wrap { position: relative; display: inline-block; }
+    .fs-label {
+      position: absolute; top: -1px; right: -2px; transform: translateY(-100%);
+      background: #ec7c00; color: white;
+      font-size: 9px; font-weight: 700; line-height: 1;
+      padding: 2px 5px; border-radius: 3px; white-space: nowrap;
+      pointer-events: none; z-index: 10; letter-spacing: 0.02em;
+    }
+    [data-theme="light"] .fs-label { background: #1b4fd8; }
+
+    /* ── Hero variants grid ── */
+    .hero-variants { display: grid; grid-template-columns: 335px 335px; gap: 16px; }
+
+    /* ── Pine / forest hero background ── */
+    .hero-pine {
+      height: 220px;
+      background: linear-gradient(160deg, #1a3a1f 0%, #2d5a27 40%, #0d2b10 100%);
+      position: relative; display: flex; align-items: flex-end;
+    }
+    .hero-pine::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 60px 140px at 10% 100%, rgba(30,80,20,0.6) 0%, transparent 70%),
+        radial-gradient(ellipse 50px 120px at 25% 100%, rgba(20,60,15,0.5) 0%, transparent 70%),
+        radial-gradient(ellipse 70px 150px at 45% 100%, rgba(25,70,18,0.5) 0%, transparent 70%),
+        radial-gradient(ellipse 55px 130px at 65% 100%, rgba(20,65,15,0.6) 0%, transparent 70%),
+        radial-gradient(ellipse 60px 140px at 85% 100%, rgba(30,80,20,0.5) 0%, transparent 70%),
+        linear-gradient(180deg, transparent 40%, rgba(0,15,0,0.7) 100%);
+    }
+
+    /* ── Video hero placeholder ── */
+    .hero-video-bg {
+      height: 220px;
+      background: #0d1a2b;
+      position: relative; display: flex; align-items: flex-end; overflow: hidden;
+    }
+    .hero-video-bg::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, #0a1520 0%, #162230 50%, #0d1a2b 100%);
+    }
+    .video-play-hint {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-60%);
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      color: rgba(255,255,255,0.4); font-size: 10px; text-align: center;
+    }
+    .video-play-icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.25);
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.4); font-size: 14px;
+    }
+    .video-scan-line {
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.01) 3px, rgba(255,255,255,0.01) 4px);
+    }
 
     /* ══════════ LIGHT THEME COMPONENTS ══════════ */
     /* Used inside phone-frame / desktop-frame when data-theme="light" */
@@ -415,9 +547,77 @@
     /* Video */
     .video-thumb { background: #0f172a; border-radius: 12px; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; margin-bottom: 6px; }
     .play-btn { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; }
+
+    /* ── Block Nav ── */
+    .block-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg-header);
+      border-bottom: 1px solid var(--bg-header-border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .block-nav-inner {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 6px 20px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      white-space: nowrap;
+    }
+    .block-nav-inner::-webkit-scrollbar { display: none; }
+    .bnav-link {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--tx-m);
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+      flex-shrink: 0;
+    }
+    .bnav-link:hover { background: var(--bd-sub); color: var(--tx); }
+    .bnav-link.bnav-live { color: #16a34a; }
+    .bnav-link.bnav-data { color: var(--pr); }
+    .bnav-link.bnav-active { background: var(--pr); color: #fff; }
+    .bnav-sep { color: var(--bd); font-size: 14px; padding: 0 4px; }
   </style>
 </head>
 <body>
+
+<!-- ══ BLOCK NAV ══ -->
+<nav class="block-nav" id="blockNav" aria-label="Навигация по блокам">
+  <div class="block-nav-inner">
+    <a href="#b1" class="bnav-link bnav-live">1 Герой ✓</a>
+    <a href="#b2" class="bnav-link">2 Загрузка</a>
+    <a href="#b3" class="bnav-link">3 Мама</a>
+    <a href="#b4" class="bnav-link">4 О лагере</a>
+    <a href="#b5" class="bnav-link">5 День</a>
+    <a href="#b6" class="bnav-link">6 Вычет</a>
+    <a href="#b7" class="bnav-link">7 Бронь</a>
+    <a href="#b8" class="bnav-link">8 Адаптация</a>
+    <a href="#b9" class="bnav-link bnav-live">9 Смены ✓</a>
+    <a href="#b10" class="bnav-link">10 CTA</a>
+    <a href="#b11" class="bnav-link">11 Хакатон</a>
+    <a href="#b12" class="bnav-link">12 Галерея</a>
+    <a href="#b13" class="bnav-link">13 Видео</a>
+    <a href="#b14" class="bnav-link">14 Отзывы</a>
+    <a href="#b145" class="bnav-link">14.5 incamp.ru</a>
+    <a href="#b146" class="bnav-link">14.6 Рейтинг</a>
+    <a href="#b15" class="bnav-link bnav-live">15 FAQ ✓</a>
+    <a href="#b16" class="bnav-link">16 Команда</a>
+    <a href="#b17" class="bnav-link">17 Менторы</a>
+    <a href="#b18" class="bnav-link">18 Жильё</a>
+    <a href="#b19" class="bnav-link">19 Контакты</a>
+    <a href="#b20" class="bnav-link">20 SEO</a>
+    <a href="#b21" class="bnav-link">21 Похожие</a>
+    <span class="bnav-sep">|</span>
+    <a href="#data-ref" class="bnav-link bnav-data">Данные</a>
+  </div>
+</nav>
 
 <!-- ══ HEADER ══ -->
 <div class="hdr">
@@ -443,7 +643,7 @@
 <!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 1: HERO MOBILE                              -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b1">
   <div class="block-header">
     <div class="block-num tier1">1</div>
     <div>
@@ -460,77 +660,95 @@
   <div class="previews">
     <div class="preview-mobile">
       <div class="preview-label"><i class="bi bi-phone"></i> Мобиль 375px</div>
-      <div class="phone-frame">
-        <!-- Photo zone -->
-        <div class="hero-photo">
-          <div class="hero-overlay"></div>
-          <div style="position:absolute; inset:0; background:linear-gradient(135deg,#1e3a5f,#0d1a2b); opacity:0.8;"></div>
-          <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:rgba(255,255,255,0.15); font-size:11px;">фото детей · object-cover · eager</div>
-          <div class="hero-text">
-            <div class="tagline-pill">Пока другие на даче — ваш сделает проект</div>
-            <h1 class="hero-h1">Летний лагерь<br>в Подмосковье, 7–15</h1>
-            <p class="hero-sub">Вам — 14 дней для себя.</p>
+      <div class="phone-frame" style="overflow:clip; max-height:680px;">
+        <div class="hero-mobile-demo">
+          <HeroMobile />
+        </div>
+      </div>
+    </div>
+
+    <!-- Hero варианты: Видео + Сосновый лес -->
+    <div class="preview-desktop" style="grid-column: 1 / -1; padding-top:0;">
+      <div class="preview-label" style="margin-bottom:12px;"><i class="bi bi-grid-1x2"></i> Варианты Hero-фона (мобиль)</div>
+      <div class="hero-variants">
+
+        <!-- Вариант B: Видео-фон -->
+        <div>
+          <div style="font-size:10px; font-weight:600; color:var(--tx-f); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.06em;">
+            <i class="bi bi-camera-video-fill" style="color:#ec7c00;"></i> Видео-фон · &lt;video autoplay muted loop&gt;
+          </div>
+          <div class="phone-frame">
+            <div class="hero-video-bg">
+              <div class="video-scan-line"></div>
+              <div class="hero-overlay"></div>
+              <div class="video-play-hint">
+                <div class="video-play-icon"><i class="bi bi-play-fill"></i></div>
+                <div>video.mp4 · muted autoplay<br>poster = first-frame.jpg</div>
+              </div>
+              <div class="hero-text">
+                <div class="tagline-pill">Пока другие на даче — ваш сделает проект</div>
+                <h1 class="hero-h1">Летний лагерь<br>в Подмосковье, 7–15</h1>
+                <p class="hero-sub">Вам — 14 дней для себя.</p>
+              </div>
+            </div>
+            <div class="hero-btns">
+              <div class="btn-outline-or" style="flex:1;"><i class="bi bi-telegram"></i> Написать в бот</div>
+              <div class="btn-outline-wh" style="flex:1;">Смотреть смены</div>
+            </div>
+            <div class="btn-explain">Напишем — не позвоним. Отвечаем за 15 мин.</div>
+            <div class="metrics-grid">
+              <div class="metric-cell"><div class="metric-num">7</div><div class="metric-lbl">лет работы</div></div>
+              <div class="metric-cell"><div class="metric-num">1200+</div><div class="metric-lbl">детей</div></div>
+              <div class="metric-cell"><div class="metric-num" style="color:#f59332;">★ 5.0</div><div class="metric-lbl">Яндекс</div></div>
+              <div class="metric-cell"><div class="metric-num" style="color:#fbbf24;">ТОП-4</div><div class="metric-lbl">IT-лагерей МО</div></div>
+            </div>
           </div>
         </div>
-        <!-- CTAs в ряд -->
-        <div class="hero-btns">
-          <div class="btn-outline-or"><i class="bi bi-telegram"></i> Написать в бот</div>
-          <div class="btn-outline-wh">Смотреть смены <i class="bi bi-arrow-right"></i></div>
+
+        <!-- Вариант C: Горно-сосновый фон (летний лес) -->
+        <div>
+          <div style="font-size:10px; font-weight:600; color:var(--tx-f); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.06em;">
+            <i class="bi bi-tree-fill" style="color:#34d399;"></i> Лесной фон · горно-сосновый стиль
+          </div>
+          <div class="phone-frame">
+            <div class="hero-pine">
+              <div style="position:absolute; inset:0; background:linear-gradient(180deg, transparent 30%, rgba(0,20,0,0.85) 100%);"></div>
+              <div style="position:absolute; top:30%; left:50%; transform:translate(-50%,-50%); color:rgba(255,255,255,0.2); font-size:9px; text-align:center;">фото: сосны, природа<br>object-cover · AVIF</div>
+              <div class="hero-text">
+                <div class="tagline-pill" style="background:rgba(52,211,153,0.15); border-color:rgba(52,211,153,0.4); color:#6ee7b7;">66 км от Москвы · лес и бассейн</div>
+                <h1 class="hero-h1">Летний лагерь<br>в Подмосковье, 7–15</h1>
+                <p class="hero-sub">Вам — 14 дней для себя.</p>
+              </div>
+            </div>
+            <div class="hero-btns" style="background:#0d2010;">
+              <div class="btn-outline-or" style="flex:1;"><i class="bi bi-telegram"></i> Написать в бот</div>
+              <div class="btn-outline-wh" style="flex:1; border-color:rgba(52,211,153,0.3);">Смотреть смены</div>
+            </div>
+            <div class="btn-explain" style="background:#0d2010;">Напишем — не позвоним. Отвечаем за 15 мин.</div>
+            <div class="metrics-grid" style="background:#0d2010;">
+              <div class="metric-cell"><div class="metric-num">7</div><div class="metric-lbl">лет работы</div></div>
+              <div class="metric-cell"><div class="metric-num">1200+</div><div class="metric-lbl">детей</div></div>
+              <div class="metric-cell"><div class="metric-num" style="color:#6ee7b7;">★ 5.0</div><div class="metric-lbl">Яндекс</div></div>
+              <div class="metric-cell"><div class="metric-num" style="color:#a7f3d0;">ТОП-4</div><div class="metric-lbl">IT-лагерей МО</div></div>
+            </div>
+          </div>
         </div>
-        <div class="btn-explain">Напишем — не позвоним. Отвечаем за 15 мин.</div>
-        <!-- Metrics -->
-        <div class="metrics-grid">
-          <div class="metric-cell"><div class="metric-num">7</div><div class="metric-lbl">лет работы</div></div>
-          <div class="metric-cell"><div class="metric-num">1200+</div><div class="metric-lbl">детей</div></div>
-          <div class="metric-cell"><div class="metric-num" style="color:#f59332;">★ 5.0</div><div class="metric-lbl">Яндекс</div></div>
-          <div class="metric-cell"><div class="metric-num" style="color:#fbbf24;">ТОП-4</div><div class="metric-lbl">IT-лагерей МО</div></div>
-        </div>
-        <!-- Trust -->
-        <div class="trust-row">
-          <div class="trust-pill"><i class="bi bi-patch-check-fill" style="font-size:12px; color:#4ade80;"></i>Лицензия</div>
-          <div class="trust-pill"><i class="bi bi-heart-pulse-fill" style="font-size:12px; color:#4ade80;"></i>Медсестра</div>
-          <div class="trust-pill"><i class="bi bi-shield-check" style="font-size:12px; color:#4ade80;"></i>Страховка</div>
-        </div>
+
       </div>
     </div>
 
     <div class="preview-desktop">
       <div class="preview-label"><i class="bi bi-display"></i> Десктоп 1280px</div>
-      <div class="desktop-frame dsk">
-        <div style="display:grid; grid-template-columns:1fr 380px; min-height:200px;">
-          <!-- Left: фото -->
-          <div style="background:linear-gradient(135deg,#1e3a5f,#0d1a2b); position:relative; display:flex; align-items:flex-end; padding:24px;">
-            <div style="position:absolute; inset:0; background:linear-gradient(90deg,rgba(13,26,43,0.5),transparent);"></div>
-            <div style="position:relative; z-index:1; max-width:540px;">
-              <div class="tagline-pill" style="margin-bottom:8px;">Пока другие на даче — ваш сделает проект</div>
-              <h1 style="font-size:32px; font-weight:800; color:white; line-height:1.1; margin:0 0 8px;">Летний лагерь в Подмосковье<br>для детей 7–15 лет</h1>
-              <p style="font-size:15px; color:rgba(255,255,255,0.7); margin:0 0 16px;">Вам — 14 дней для себя.</p>
-              <div style="display:flex; gap:10px;">
-                <div class="btn-outline-or" style="width:auto; padding:0 20px; height:44px; font-size:14px;"><i class="bi bi-telegram"></i> Написать в бот</div>
-                <div class="btn-outline-wh" style="width:auto; padding:0 20px; height:44px; font-size:14px;">Смотреть смены</div>
-              </div>
-            </div>
-          </div>
-          <!-- Right: form -->
-          <div style="background:#0d1a2b; padding:20px; display:flex; flex-direction:column; justify-content:center;">
-            <div style="font-size:12px; font-weight:700; color:#f59332; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px;">Записать ребёнка</div>
-            <div style="display:flex; gap:6px; margin-bottom:10px;">
-              {['7–9','10–12','13–15'].map(a => <div style="flex:1; height:32px; border:1px solid rgba(255,255,255,0.15); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; color:rgba(255,255,255,0.6);">{a}</div>)}
-            </div>
-            <div style="height:38px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.05); margin-bottom:10px; display:flex; align-items:center; padding:0 12px; font-size:12px; color:rgba(255,255,255,0.3);">+7 (___) ___-__-__</div>
-            <div style="height:40px; border-radius:100px; background:#ec7c00; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:white; gap:8px; cursor:pointer;"><i class="bi bi-telegram"></i> Записаться</div>
-          </div>
-        </div>
-        <!-- Desktop metrics row -->
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; background:#162035;">
-          {[['7','лет опыта'],['1200+','детей отдохнули'],['★ 5.0','Яндекс Карты'],['ТОП-4','IT-лагерей МО']].map(([n,l]) => (
-            <div style="padding:12px 16px; border-right:1px solid rgba(255,255,255,0.05); text-align:center;">
-              <div style="font-size:18px; font-weight:800; color:white;">{n}</div>
-              <div style="font-size:11px; color:rgba(255,255,255,0.4);">{l}</div>
-            </div>
-          ))}
-        </div>
+      <div class="desktop-frame dsk hero-desktop-demo">
+        <HeroDesktop />
       </div>
+    </div>
+  </div>
+
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill"></i>
+      Живой компонент — hero/Mobile.astro + hero/Desktop.astro
     </div>
   </div>
 
@@ -566,7 +784,7 @@
 <!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 2: SHIFT OCCUPANCY                          -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b2">
   <div class="block-header">
     <div class="block-num tier1">2</div>
     <div>
@@ -579,35 +797,13 @@
     </div>
   </div>
 
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div>
-      <div class="phone-frame">
-        <div class="sec-blue" id="occ-m">
-          <div class="sec-label">Мест на лето 2026</div>
-          {[['IT + Творчество · июнь','78%'],['Хакатон Pro · июль','92%'],['AI-разработка · август','55%']].map(([name, pct]) => (
-            <div class="occupancy-bar" id="occ-m-item">
-              <div class="occ-label">{name}</div>
-              <div class="occ-bar"><div class="occ-fill" style={`width:${pct}`}></div></div>
-              <div class="occ-status">{pct === '92%' ? '⚠ 2 места' : pct === '78%' ? '4 места' : '6 мест'}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · ShiftOccupancy.astro
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — inline в Hero</div>
-      <div class="desktop-frame" style="padding:16px; background:#f0f4ff;" id="occ-d">
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
-          {[['IT + Творчество','июнь','78%','4 места'],['Хакатон Pro','июль','92%','⚠ 2 места'],['AI-разработка','август','55%','6 мест']].map(([name, mon, pct, free]) => (
-            <div class="occupancy-bar">
-              <div class="occ-label">{name} · {mon}</div>
-              <div class="occ-bar"><div class="occ-fill" style={`width:${pct}`}></div></div>
-              <div class="occ-status">{free}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <ShiftOccupancy />
     </div>
   </div>
 
@@ -636,7 +832,7 @@
 <!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 3: MOM STORY                                -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b3">
   <div class="block-header">
     <div class="block-num tier2">3</div>
     <div>
@@ -648,30 +844,13 @@
       <span class="badge badge-gray">Social proof</span>
     </div>
   </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div>
-      <div class="phone-frame">
-        <div class="sec-warm" id="ms-m">
-          <div class="mom-story">
-            <div class="stars">★★★★★</div>
-            <p class="mom-quote">«Боялась, что ребёнок будет скучать без телефона. Через три дня она сама перестала его просить — так интересно было на занятиях.»</p>
-            <div class="mom-author">Анна К. · мама Полины, 11 лет</div>
-          </div>
-        </div>
-      </div>
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · MomStory.astro
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — две колонки</div>
-      <div class="desktop-frame" style="padding:20px; background:#f7f5f2;" id="ms-d">
-        <div class="dsk-grid-2">
-          <div class="mom-story"><div class="stars">★★★★★</div><p class="mom-quote">«Боялась, что ребёнок будет скучать без телефона. Через три дня она сама перестала его просить.»</p><div class="mom-author">Анна К. · мама Полины, 11 лет</div></div>
-          <div style="display:flex; flex-direction:column; justify-content:center;">
-            <div style="font-size:22px; font-weight:800; color:#0f172a; margin-bottom:8px;">«Я хорошая мама»</div>
-            <div style="font-size:14px; color:#4b5263; line-height:1.6;">14 дней пока ребёнок в лагере — время для себя. Без чувства вины: он развивается, учится, создаёт.</div>
-          </div>
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <MomStory />
     </div>
   </div>
   <div class="notes">
@@ -685,47 +864,19 @@
 <!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 4: ABOUT                                    -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b4">
   <div class="block-header">
     <div class="block-num tier2">4</div>
     <div><div class="block-name">About — о лагере</div><div class="block-file">About.astro</div></div>
     <div class="badges"><span class="badge badge-green">Доверие</span><span class="badge badge-blue">SEO</span></div>
   </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div>
-      <div class="phone-frame">
-        <div class="sec-warm" id="ab-m">
-          <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#ec7c00; margin-bottom:6px;">О лагере</div>
-          <h2 class="t-h2">АйДаКемп с 2021 года</h2>
-          <p class="t-p">IT-лагерь с проживанием в Подмосковье. 1200+ детей за 5 лет. Каждый уезжает с проектом — игрой, ботом, 3D-моделью.</p>
-          <div style="display:flex; gap:6px; margin-bottom:10px;">
-            <div style="flex:1; background:white; border-radius:10px; padding:10px; border:1px solid #f3f4f6; text-align:center;"><div style="font-size:18px; font-weight:800; color:#ec7c00;">7</div><div style="font-size:10px; color:#6b7280;">лет</div></div>
-            <div style="flex:1; background:white; border-radius:10px; padding:10px; border:1px solid #f3f4f6; text-align:center;"><div style="font-size:18px; font-weight:800; color:#ec7c00;">1200+</div><div style="font-size:10px; color:#6b7280;">детей</div></div>
-            <div style="flex:1; background:white; border-radius:10px; padding:10px; border:1px solid #f3f4f6; text-align:center;"><div style="font-size:18px; font-weight:800; color:#ec7c00;">8</div><div style="font-size:10px; color:#6b7280;">чел/группа</div></div>
-          </div>
-          <div style="background:white; border-radius:10px; padding:10px; display:flex; gap:10px; align-items:center; border:1px solid #f3f4f6;">
-            <div style="width:44px; height:44px; border-radius:100px; background:linear-gradient(135deg,#ec7c00,#1b4fd8); flex-shrink:0;"></div>
-            <div><div style="font-size:13px; font-weight:700; color:#1e2430;">Дарья Афанасьева</div><div style="font-size:11px; color:#6b7280;">Основатель · мама подростка</div></div>
-          </div>
-        </div>
-      </div>
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · About.astro
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп</div>
-      <div class="desktop-frame" style="padding:20px; background:#f7f5f2;" id="ab-d">
-        <div class="dsk-grid-2">
-          <div>
-            <h2 style="font-size:26px; font-weight:800; color:#0f172a; margin:0 0 10px;">АйДаКемп — IT-лагерь с проживанием</h2>
-            <p style="font-size:14px; color:#4b5263; line-height:1.6;">Работаем с 2021 года. 1200+ детей. Каждый уезжает с проектом: игрой на Python, ботом в Telegram, 3D-моделью или сценой в Minecraft.</p>
-          </div>
-          <div style="display:flex; flex-direction:column; gap:8px;">
-            {[['Лицензия Минобрнауки','bi-patch-check-fill'],['Медработник 24/7','bi-heart-pulse-fill'],['Закрытая охраняемая территория','bi-shield-fill'],['Бассейн и спортплощадки','bi-trophy-fill']].map(([t, icon]) => (
-              <div style="display:flex; gap:8px; align-items:center; font-size:13px; color:#1e2430;"><i class={`bi ${icon}`} style="color:#ec7c00; flex-shrink:0;"></i>{t}</div>
-            ))}
-          </div>
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <About />
     </div>
   </div>
   <div class="notes">
@@ -739,43 +890,19 @@
 <!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 5: JOURNEY                                  -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b5">
   <div class="block-header">
     <div class="block-num">5</div>
     <div><div class="block-name">Journey — день в лагере</div><div class="block-file">Journey.astro</div></div>
     <div class="badges"><span class="badge badge-green">Доверие</span><span class="badge badge-gray">Timeline</span></div>
   </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div>
-      <div class="phone-frame">
-        <div class="sec-light" id="jrn-m">
-          <h2 class="t-h2">Как проходит день</h2>
-          {[['09:00','Подъём, завтрак, спорт'],['10:00','IT-занятие: Python / AI / Scratch'],['13:00','Обед + свободное время'],['15:00','Проект или хакатон'],['19:00','Ужин · кино · настолки'],['22:00','Отбой']].map(([t, e]) => (
-            <div class="journey-step">
-              <div class="j-time">{t}</div>
-              <div class="j-dot"></div>
-              <div class="j-text">{e}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · Journey.astro
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — горизонтальная шкала</div>
-      <div class="desktop-frame" style="padding:20px; background:#f7f8fb;" id="jrn-d">
-        <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 16px;">Как проходит день в лагере</h2>
-        <div style="display:flex; gap:0; overflow-x:auto;">
-          {[['09:00','Подъём'],['10:00','IT-занятие'],['13:00','Обед'],['15:00','Проект'],['19:00','Вечер'],['22:00','Отбой']].map(([t, e], i) => (
-            <div style="flex:1; text-align:center; min-width:100px;">
-              <div style="font-size:12px; font-weight:700; color:#ec7c00;">{t}</div>
-              <div style="width:10px; height:10px; border-radius:50%; background:#ec7c00; margin:6px auto;"></div>
-              {i < 5 && <div style="height:2px; background:#fde68a; margin-top:-14px; margin-bottom:8px;"></div>}
-              <div style="font-size:12px; color:#4b5263; padding:4px;">{e}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <Journey />
     </div>
   </div>
   <div class="notes">
@@ -789,46 +916,19 @@
 <!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 6: ECONOMY                                  -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b6">
   <div class="block-header">
     <div class="block-num">6</div>
     <div><div class="block-name">Economy — налоговый вычет</div><div class="block-file">Economy.astro</div></div>
     <div class="badges"><span class="badge badge-blue">Рациональный аргумент</span></div>
   </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div>
-      <div class="phone-frame">
-        <div class="sec-light" id="eco-m">
-          <h2 class="t-h2">Верните до 5 434 ₽</h2>
-          <p class="t-p">Лагерь работает по лицензии Минобрнауки — можно получить налоговый вычет 13%.</p>
-          <div class="dsk-grid-2" style="gap:8px; margin-bottom:10px;">
-            <div class="economy-card"><div class="economy-num">13%</div><div class="economy-label">возврат за обучение</div></div>
-            <div class="economy-card"><div class="economy-num">5 434₽</div><div class="economy-label">максимум за 14-дн смену</div></div>
-          </div>
-          <div style="background:#fff1df; border-radius:10px; padding:10px; font-size:12px; color:#92400e;">
-            <i class="bi bi-info-circle" style="margin-right:6px;"></i>
-            Подаётся раз в год через Госуслуги или у работодателя
-          </div>
-        </div>
-      </div>
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · Economy.astro
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп</div>
-      <div class="desktop-frame" style="padding:20px; background:#f7f8fb;" id="eco-d">
-        <div class="dsk-grid-2">
-          <div>
-            <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 8px;">Налоговый вычет 13%</h2>
-            <p style="font-size:14px; color:#4b5263; line-height:1.6; margin:0 0 12px;">Лицензия Минобрнауки — основание для возврата. До 5 434 ₽ за 14-дневную смену.</p>
-            <a href="/nalogovyj-vychet/" style="display:inline-flex; align-items:center; gap:6px; color:#1b4fd8; font-size:14px; font-weight:600; text-decoration:none;">Как получить вычет <i class="bi bi-arrow-right"></i></a>
-          </div>
-          <div class="dsk-grid-2" style="gap:8px;">
-            <div class="economy-card"><div class="economy-num">13%</div><div class="economy-label">возврат</div></div>
-            <div class="economy-card"><div class="economy-num">5 434₽</div><div class="economy-label">максимум</div></div>
-            <div class="economy-card" style="grid-column:span 2;"><div style="font-size:13px; color:#ec7c00; font-weight:700;">Подаётся раз в год через ФНС или работодателя</div></div>
-          </div>
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <Economy />
     </div>
   </div>
   <div class="notes">
@@ -842,33 +942,19 @@
 <!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 7: BOOKING BAR ×2                          -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b7">
   <div class="block-header">
     <div class="block-num tier1">7</div>
     <div><div class="block-name">BookingBar — плашка бронирования ×2</div><div class="block-file">BookingBar.astro</div></div>
     <div class="badges"><span class="badge badge-red">Tier 1</span><span class="badge badge-orange">Micro CTA</span></div>
   </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div>
-      <div class="phone-frame">
-        <div class="booking-bar" id="bb-m">
-          <div class="bb-text" style="font-size:13px;">Один звонок — ответим на всё</div>
-          <button class="bb-btn"><i class="bi bi-telegram"></i> Написать</button>
-        </div>
-      </div>
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · BookingBar.astro
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — полная строка</div>
-      <div class="desktop-frame" id="bb-d">
-        <div class="booking-bar">
-          <div class="bb-text">Один звонок — ответим на всё и не будем беспокоить</div>
-          <div style="display:flex; gap:8px;">
-            <div class="btn-outline-or" style="width:auto; padding:0 16px; height:36px; font-size:12px;"><i class="bi bi-telegram"></i> Написать в бот</div>
-            <div class="btn-outline-wh" style="width:auto; padding:0 16px; height:36px; font-size:12px;"><i class="bi bi-telephone"></i> Позвонить</div>
-          </div>
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <BookingBar headline="Один звонок — ответим на всё и не будем беспокоить" id="demo-booking-bar" />
     </div>
   </div>
   <div class="notes">
@@ -882,43 +968,19 @@
 <!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 8: SOFTSTART                                -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b8">
   <div class="block-header">
     <div class="block-num">8</div>
     <div><div class="block-name">SoftStart — адаптация и программа</div><div class="block-file">SoftStart.astro</div></div>
     <div class="badges"><span class="badge badge-green">Доверие</span><span class="badge badge-gray">Возражения</span></div>
   </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div>
-      <div class="phone-frame">
-        <div class="sec-light" id="ss-m">
-          <h2 class="t-h2">Что ждёт ребёнка</h2>
-          {[['bi-laptop','Занятия по возрасту','Python для 13+, Scratch для 7–9'],['bi-people-fill','Группы до 8 человек','Каждый успевает'],['bi-trophy-fill','Финальный хакатон','Диплом и сертификат']].map(([icon, title, desc]) => (
-            <div class="softstart-card">
-              <div style="display:flex; gap:10px; align-items:flex-start;">
-                <i class={`bi ${icon}`} style="color:#ec7c00; font-size:18px; flex-shrink:0;"></i>
-                <div><div style="font-size:13px; font-weight:700; color:#1e2430;">{title}</div><div style="font-size:11px; color:#6b7280;">{desc}</div></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · SoftStart.astro
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — три колонки</div>
-      <div class="desktop-frame" style="padding:20px; background:#f7f8fb;" id="ss-d">
-        <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 14px;">Что ждёт ребёнка в лагере</h2>
-        <div class="dsk-grid-3">
-          {[['bi-laptop','Занятия по возрасту','Python, AI, Scratch — программа для каждой группы'],['bi-people-fill','Группы до 8 человек','Каждый успевает, никто не теряется'],['bi-trophy-fill','Финальный хакатон','Диплом и настоящий проект в портфолио']].map(([icon, t, d]) => (
-            <div class="card-w">
-              <i class={`bi ${icon}`} style="color:#ec7c00; font-size:24px; display:block; margin-bottom:8px;"></i>
-              <div style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:4px;">{t}</div>
-              <div style="font-size:12px; color:#4b5263; line-height:1.5;">{d}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <SoftStart />
     </div>
   </div>
   <div class="notes">
@@ -930,57 +992,56 @@
 
 
 <!-- ══════════════════════════════════════════════════ -->
-<!-- BLOCK 9: SHIFTS (ключевой)                        -->
+<!-- BLOCK 9: SHIFTS — реальные данные из shifts.ts    -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b9">
   <div class="block-header">
     <div class="block-num tier1">9</div>
-    <div><div class="block-name">Shifts — смены с ценами</div><div class="block-file">Shifts.astro + shifts/ShiftCard.astro</div></div>
-    <div class="badges"><span class="badge badge-red">Tier 1</span><span class="badge badge-orange">Glass NEW</span><span class="badge badge-blue">Конверсия #2</span></div>
-  </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль — горизонтальный скролл</div>
-      <div class="phone-frame">
-        <div class="shifts-section" id="sh-m">
-          <div class="sec-label">СМЕНЫ ЛЕТА 2026</div>
-          <div class="sec-h2">Выбери свою смену</div>
-          <div class="shift-card-glass">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-              <div class="shift-name">IT + Творчество</div>
-              <span style="background:#dcfce7; color:#166534; border-radius:100px; padding:2px 8px; font-size:10px; font-weight:600;">Открыта</span>
-            </div>
-            <div class="shift-dates">27 июня — 10 июля · 14 дней</div>
-            <div class="shift-price">59 000 ₽</div>
-            <div class="progress-bar"><div class="progress-fill" style="width:70%;"></div></div>
-            <div style="display:flex; justify-content:space-between; font-size:10px; color:#6b7280; margin-bottom:8px;"><span>занято 8</span><span style="color:#10b981;">свободно 4</span></div>
-            <button class="btn-select">Выбрать</button>
-          </div>
-        </div>
-      </div>
+    <div>
+      <div class="block-name">Shifts — смены с ценами</div>
+      <div class="block-file">Shifts.astro · данные: src/data/shifts.ts</div>
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — сетка 3 колонки</div>
-      <div class="desktop-frame" style="padding:20px; background:linear-gradient(135deg,#eff6ff,#dbeafe);" id="sh-d">
-        <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 14px;">Смены лета 2026</h2>
-        <div class="dsk-grid-3">
-          {[['IT + Творчество','27 июня — 10 июля','59 000','70%'],['Хакатон Pro','11 — 24 июля','65 000','90%'],['AI-разработка','25 июля — 7 авг','59 000','55%']].map(([name, dates, price, pct]) => (
-            <div class="shift-card-glass">
-              <div class="shift-name">{name}</div>
-              <div class="shift-dates">{dates}</div>
-              <div class="shift-price">{price} ₽</div>
-              <div class="progress-bar"><div class="progress-fill" style={`width:${pct}`}></div></div>
-              <button class="btn-select">Выбрать</button>
-            </div>
-          ))}
-        </div>
-      </div>
+    <div class="badges">
+      <span class="badge badge-red">Tier 1</span>
+      <span class="badge badge-orange">Glass</span>
+      <span class="badge badge-blue">Конверсия #2</span>
+      <span class="badge badge-green">Реальные данные</span>
     </div>
   </div>
+
+  <!-- Реальный компонент Shifts.astro -->
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · данные из shifts.ts · интерактивность включена
+    </div>
+    <div class="component-live-wrap bg-white">
+      <Shifts />
+    </div>
+  </div>
+
   <div class="notes">
-    <div class="note-col"><div class="note-title seo">SEO</div><div class="note-item">&lt;h2&gt; «Смены лагеря»</div><div class="note-item">Event / CourseInstance Schema</div><div class="note-item">Цены в &lt;span itemprop="price"&gt;</div><div class="note-item">Даты в &lt;time datetime&gt;</div></div>
-    <div class="note-col"><div class="note-title load">Загрузка</div><div class="note-item">SSR — данные из shifts.ts</div><div class="note-item">glass-surface: backdrop-filter только поверх #eff6ff</div><div class="note-item">Skeleton при ожидании (если динамика)</div></div>
-    <div class="note-col"><div class="note-title ux">UX</div><div class="note-item">Цена видна сразу — не «уточняйте»</div><div class="note-item">Progress bar — urgency без агрессии</div><div class="note-item">Glass карточки — лёгкость</div></div>
+    <div class="note-col">
+      <div class="note-title seo">SEO</div>
+      <div class="note-item">&lt;h2&gt; «Смены лагеря»</div>
+      <div class="note-item">Event / CourseInstance Schema</div>
+      <div class="note-item">Цены в &lt;span itemprop="price"&gt;</div>
+      <div class="note-item">Даты: <code>&lt;time datetime="2026-05-30"&gt;30 мая — 8 июня&lt;/time&gt;</code></div>
+    </div>
+    <div class="note-col">
+      <div class="note-title load">Данные</div>
+      <div class="note-item">Источник: src/data/shifts.ts</div>
+      <div class="note-item">Цены · даты · free/occupied — один файл</div>
+      <div class="note-item">SSR: renderCard() считает pct на сервере</div>
+      <div class="note-item">Цвет прогрессбара: &gt;80% → красный, &gt;60% → оранжевый</div>
+    </div>
+    <div class="note-col">
+      <div class="note-title ux">UX · Типографика</div>
+      <div class="note-item">Название смены: 14px 700</div>
+      <div class="note-item">Цена: 16px 800 · оранжевый --pr</div>
+      <div class="note-item">Даты: 11px 400 · muted</div>
+      <div class="note-item">Progress bar urgency — без давления</div>
+    </div>
   </div>
 </div>
 
@@ -988,43 +1049,19 @@
 <!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 10: SUMMER CTA                              -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b10">
   <div class="block-header">
     <div class="block-num tier1">10</div>
     <div><div class="block-name">SummerCta — повторный призыв</div><div class="block-file">SummerCta.astro</div></div>
     <div class="badges"><span class="badge badge-red">Tier 1</span><span class="badge badge-orange">Glass CTA</span></div>
   </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div>
-      <div class="phone-frame">
-        <div class="sec-dark" id="cta-m">
-          <div class="cta-block">
-            <div class="hackathon-accent">Осталось 4 места на июль</div>
-            <h2 class="cta-h">Записаться на лето 2026</h2>
-            <p class="cta-sub">Налоговый вычет 13% — до 5 434 ₽</p>
-            <input class="cta-input" placeholder="+7 (___) ___-__-__" />
-            <button class="cta-btn"><i class="bi bi-telegram" style="font-size:16px;"></i> Написать в бот</button>
-            <div style="font-size:10px; color:rgba(255,255,255,0.3); text-align:center; margin-top:6px;">Напишем — не позвоним</div>
-          </div>
-        </div>
-      </div>
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · SummerCta.astro
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — текст + форма</div>
-      <div class="desktop-frame" style="background:#1b4fd8; padding:24px;" id="cta-d">
-        <div class="dsk-grid-2">
-          <div style="display:flex; flex-direction:column; justify-content:center;">
-            <div class="hackathon-accent">Лето 2026 · записывайтесь заранее</div>
-            <h2 style="font-size:28px; font-weight:800; color:white; margin:6px 0 8px; line-height:1.15;">Осталось <span style="color:#f59332;">4 места</span> на июль</h2>
-            <p style="font-size:14px; color:rgba(255,255,255,0.65);">Налоговый вычет 13% — официальная лицензия Минобрнауки.</p>
-          </div>
-          <div style="background:rgba(255,255,255,0.1); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.2); border-radius:16px; padding:20px;">
-            <input style="width:100%; height:44px; border-radius:100px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.08); color:white; padding:0 16px; font-size:14px; margin-bottom:10px;" placeholder="+7 (___) ___-__-__" />
-            <button class="cta-btn" style="font-size:14px;"><i class="bi bi-telegram" style="font-size:16px;"></i> Записаться сейчас</button>
-          </div>
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <SummerCta />
     </div>
   </div>
   <div class="notes">
@@ -1038,69 +1075,19 @@
 <!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 11: HACKATHON                               -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b11">
   <div class="block-header">
     <div class="block-num tier2">11</div>
     <div><div class="block-name">Hackathon — хакатон и дипломы</div><div class="block-file">Hackathon.astro</div></div>
     <div class="badges"><span class="badge badge-green">Доверие</span><span class="badge badge-gray">Achievement</span></div>
   </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div>
-      <div class="phone-frame">
-        <div class="hackathon-dark">
-          <div class="hackathon-accent">Финальный хакатон</div>
-          <h2 class="t-h2-d">Каждый уезжает с проектом</h2>
-          <p class="t-p-d">Не «мы учили» — а реальный продукт: игра, бот или 3D-модель.</p>
-          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:10px;">
-            {[['bi-joystick','Игра\nна Python'],['bi-robot','Telegram\nбот'],['bi-box','3D-модель\nпроект']].map(([icon, lbl]) => (
-              <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 6px; text-align:center;">
-                <i class={`bi ${icon}`} style="font-size:20px; color:#f59332; display:block; margin-bottom:6px;"></i>
-                <div style="font-size:10px; color:rgba(255,255,255,0.6); white-space:pre-line; line-height:1.3;">{lbl}</div>
-              </div>
-            ))}
-          </div>
-          <div style="margin-top:10px; background:rgba(236,124,0,0.1); border:1px solid rgba(236,124,0,0.25); border-radius:10px; padding:10px; display:flex; gap:8px; align-items:center;">
-            <i class="bi bi-patch-check-fill" style="color:#f59332; font-size:18px; flex-shrink:0;"></i>
-            <div style="font-size:11px; color:rgba(255,255,255,0.7);">Диплом + сертификат на память. Загружаем в <span style="color:#f59332;">цифровое портфолио</span></div>
-          </div>
-        </div>
-      </div>
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · Hackathon.astro
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — 2 колонки</div>
-      <div class="desktop-frame" style="background:#0d1a2b; padding:24px;">
-        <div class="dsk-grid-2" style="align-items:center;">
-          <div>
-            <div class="hackathon-accent">Финальный день смены</div>
-            <h2 style="font-size:26px; font-weight:800; color:white; margin:8px 0 10px; line-height:1.15;">Каждый уезжает<br><span style="color:#f59332;">с реальным проектом</span></h2>
-            <p style="font-size:14px; color:rgba(255,255,255,0.6); line-height:1.6; margin:0 0 16px;">Не «прослушал курс» — а сделал что-то настоящее. Игру на Python, Telegram-бота, 3D-модель или сцену в Minecraft.</p>
-            <div style="display:flex; gap:10px; align-items:center;">
-              <div style="background:rgba(236,124,0,0.15); border:1px solid rgba(236,124,0,0.3); border-radius:10px; padding:10px 14px; text-align:center;">
-                <div style="font-size:22px; font-weight:800; color:#f59332;">100%</div>
-                <div style="font-size:11px; color:rgba(255,255,255,0.5);">с дипломом</div>
-              </div>
-              <div style="background:rgba(27,79,216,0.2); border:1px solid rgba(96,165,250,0.2); border-radius:10px; padding:10px 14px; text-align:center;">
-                <div style="font-size:22px; font-weight:800; color:#60a5fa;">★ 5.0</div>
-                <div style="font-size:11px; color:rgba(255,255,255,0.5);">Яндекс</div>
-              </div>
-              <div style="background:rgba(16,185,129,0.12); border:1px solid rgba(52,211,153,0.2); border-radius:10px; padding:10px 14px; text-align:center;">
-                <div style="font-size:22px; font-weight:800; color:#34d399;">1200+</div>
-                <div style="font-size:11px; color:rgba(255,255,255,0.5);">проектов</div>
-              </div>
-            </div>
-          </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            {[['bi-joystick','Игра на Python','Pygame · 2D платформер или аркада'],['bi-robot','Telegram-бот','aiogram · команды и меню'],['bi-box','3D-модель','Blender · модель для портфолио'],['bi-grid-1x2-fill','Minecraft сцена','Redstone · архитектура']].map(([icon, t, d]) => (
-              <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px;">
-                <i class={`bi ${icon}`} style={`font-size:22px; color:#f59332; display:block; margin-bottom:8px;`}></i>
-                <div style="font-size:13px; font-weight:700; color:white; margin-bottom:3px;">{t}</div>
-                <div style="font-size:11px; color:rgba(255,255,255,0.45);">{d}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <Hackathon />
     </div>
   </div>
   <div class="notes">
@@ -1128,59 +1115,19 @@
 <!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 12: GALLERY                                 -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b12">
   <div class="block-header">
     <div class="block-num">12</div>
     <div><div class="block-name">Gallery — фотогалерея</div><div class="block-file">Gallery.astro</div></div>
     <div class="badges"><span class="badge badge-green">Социальное доказательство</span><span class="badge badge-gray">Lazy images</span></div>
   </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль — горизонтальный скролл</div>
-      <div class="phone-frame">
-        <div class="sec-light">
-          <div class="sec-label">ФОТО</div>
-          <h2 class="t-h2">Жизнь в лагере</h2>
-          <div class="gallery-grid" style="grid-template-columns:1fr 1fr; gap:4px;">
-            {[
-              ['Занятие · Python','#b7d4f5'],['Бассейн · вечер','#7dc3e8'],
-              ['Хакатон · защита','#94c9a9'],['Команда · номер','#f5c4a0']
-            ].map(([lbl, bg]) => (
-              <div style={`background:${bg}; border-radius:8px; aspect-ratio:4/3; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding:6px;`}>
-                <div style="font-size:9px; color:rgba(0,0,0,0.5); background:rgba(255,255,255,0.6); border-radius:4px; padding:2px 6px;">{lbl}</div>
-              </div>
-            ))}
-          </div>
-          <div style="text-align:center; padding:8px 0 4px; font-size:11px; color:#1b4fd8; font-weight:600;">Смотреть все фото <i class="bi bi-arrow-right"></i></div>
-        </div>
-      </div>
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · Gallery.astro
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — сетка 4+2</div>
-      <div class="desktop-frame" style="padding:20px; background:#f7f8fb;">
-        <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px;">
-          <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin:0;">Жизнь в лагере</h2>
-          <a href="#" style="font-size:13px; color:#1b4fd8; font-weight:600; text-decoration:none;">Все фото <i class="bi bi-arrow-right"></i></a>
-        </div>
-        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; grid-template-rows:120px 120px; gap:6px;">
-          <div style="grid-row:span 2; background:linear-gradient(160deg,#7dc3e8,#1b4fd8); border-radius:12px; display:flex; align-items:flex-end; padding:10px; position:relative; overflow:hidden;">
-            <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:11px; color:rgba(255,255,255,0.4);">Главное фото · 2:1 · eager</div>
-            <div style="font-size:10px; background:rgba(0,0,0,0.4); color:white; border-radius:4px; padding:2px 8px; position:relative;">IT-занятие · Python · 2026</div>
-          </div>
-          <div style="background:linear-gradient(135deg,#94c9a9,#10b981); border-radius:10px; display:flex; align-items:flex-end; padding:8px;">
-            <div style="font-size:9px; background:rgba(0,0,0,0.35); color:white; border-radius:4px; padding:2px 6px;">Бассейн</div>
-          </div>
-          <div style="background:linear-gradient(135deg,#f5c4a0,#ec7c00); border-radius:10px; display:flex; align-items:flex-end; padding:8px;">
-            <div style="font-size:9px; background:rgba(0,0,0,0.35); color:white; border-radius:4px; padding:2px 6px;">Хакатон</div>
-          </div>
-          <div style="background:linear-gradient(135deg,#c4b5f5,#6366f1); border-radius:10px; display:flex; align-items:flex-end; padding:8px;">
-            <div style="font-size:9px; background:rgba(0,0,0,0.35); color:white; border-radius:4px; padding:2px 6px;">Команда</div>
-          </div>
-          <div style="background:linear-gradient(135deg,#fde68a,#f59332); border-radius:10px; display:flex; align-items:flex-end; padding:8px;">
-            <div style="font-size:9px; background:rgba(0,0,0,0.35); color:white; border-radius:4px; padding:2px 6px;">Ужин</div>
-          </div>
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <Gallery />
     </div>
   </div>
   <div class="notes">
@@ -1209,67 +1156,19 @@
 <!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 13: VIDEOS                                  -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b13">
   <div class="block-header">
     <div class="block-num">13</div>
     <div><div class="block-name">Videos — видео из лагеря</div><div class="block-file">Videos.astro</div></div>
     <div class="badges"><span class="badge badge-gray">Engagement</span><span class="badge badge-blue">VideoObject</span></div>
   </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div>
-      <div class="phone-frame">
-        <div class="sec-dark">
-          <div class="sec-label" style="color:#60a5fa;">ВИДЕО</div>
-          <h2 class="t-h2-d">Смотри, как это выглядит</h2>
-          <div class="video-thumb" style="margin-bottom:8px;">
-            <div style="position:absolute; inset:0; background:linear-gradient(135deg,#1b4fd8,#0d1a2b); opacity:0.7;"></div>
-            <div class="play-btn" style="position:relative; z-index:1;"><i class="bi bi-play-fill"></i></div>
-            <div style="position:absolute; bottom:8px; left:10px; font-size:10px; color:rgba(255,255,255,0.7); z-index:1;">Занятие Python · 3:24</div>
-          </div>
-          <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:4px;">
-            {[['Хакатон · финал','2:47'],['Бассейн · лето','1:15']].map(([t, d]) => (
-              <div style="flex-shrink:0; width:130px; background:#1e293b; border-radius:8px; overflow:hidden;">
-                <div style="height:70px; background:linear-gradient(135deg,#0f172a,#1b4fd8); display:flex; align-items:center; justify-content:center;">
-                  <div style="width:28px; height:28px; border-radius:50%; background:rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center;"><i class="bi bi-play-fill" style="font-size:12px; color:white;"></i></div>
-                </div>
-                <div style="padding:5px 7px;"><div style="font-size:10px; color:#94a3b8;">{t}</div><div style="font-size:9px; color:#475569;">{d}</div></div>
-              </div>
-            ))}
-          </div>
-          <p class="t-p-d" style="font-size:10px; text-align:center; margin-top:6px;">Нажмите — запустим YouTube · без автозагрузки</p>
-        </div>
-      </div>
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · Videos.astro
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — главное + 2 превью</div>
-      <div class="desktop-frame" style="background:#0d1a2b; padding:24px;">
-        <h2 style="font-size:22px; font-weight:800; color:white; margin:0 0 16px;">Смотри, как это выглядит</h2>
-        <div style="display:grid; grid-template-columns:2fr 1fr; gap:12px; align-items:start;">
-          <div class="video-thumb" style="aspect-ratio:16/9; border-radius:14px; position:relative;">
-            <div style="position:absolute; inset:0; background:linear-gradient(135deg,#1b4fd8,#0d1a2b);"></div>
-            <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;">
-              <div style="width:56px; height:56px; border-radius:50%; background:rgba(255,255,255,0.18); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; border:2px solid rgba(255,255,255,0.3);">
-                <i class="bi bi-play-fill" style="font-size:22px; color:white; margin-left:3px;"></i>
-              </div>
-            </div>
-            <div style="position:absolute; bottom:12px; left:14px; right:14px; display:flex; justify-content:space-between; align-items:center;">
-              <div style="font-size:12px; color:rgba(255,255,255,0.8);">Занятие Python · 2026</div>
-              <div style="font-size:11px; background:rgba(0,0,0,0.5); color:white; border-radius:4px; padding:1px 6px;">3:24</div>
-            </div>
-          </div>
-          <div style="display:flex; flex-direction:column; gap:8px;">
-            {[['Хакатон · финальная защита','2:47','#162035'],['Бассейн и досуг','1:15','#0f172a'],['Отзыв мамы · YouTube','0:48','#1e2035']].map(([t, d, bg]) => (
-              <div style={`background:${bg}; border:1px solid rgba(255,255,255,0.06); border-radius:10px; overflow:hidden; display:flex; gap:8px; align-items:center; padding:8px;`}>
-                <div style="width:54px; height:36px; background:linear-gradient(135deg,#1b4fd8,#0d1a2b); border-radius:6px; flex-shrink:0; display:flex; align-items:center; justify-content:center;">
-                  <i class="bi bi-play-fill" style="font-size:12px; color:rgba(255,255,255,0.7);"></i>
-                </div>
-                <div><div style="font-size:12px; color:#e2e8f0; font-weight:500;">{t}</div><div style="font-size:10px; color:#475569;">{d}</div></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <Videos />
     </div>
   </div>
   <div class="notes">
@@ -1298,74 +1197,19 @@
 <!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 14: REVIEWS                                 -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b14">
   <div class="block-header">
     <div class="block-num tier2">14</div>
     <div><div class="block-name">Reviews — отзывы родителей</div><div class="block-file">Reviews.astro</div></div>
     <div class="badges"><span class="badge badge-green">Social proof</span><span class="badge badge-blue">★ 5.0 Яндекс</span></div>
   </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль — карусель</div>
-      <div class="phone-frame">
-        <div class="sec-warm">
-          <div class="sec-label">ОТЗЫВЫ</div>
-          <h2 class="t-h2">Мамы уже записали</h2>
-          <div style="background:#fff8f0; border:1px solid #fde68a; border-radius:12px; padding:10px; margin-bottom:8px; display:flex; gap:10px; align-items:center;">
-            <div style="font-size:26px; font-weight:800; color:#ec7c00; line-height:1;">5.0</div>
-            <div>
-              <div style="color:#f59332; font-size:13px; letter-spacing:1px;">★★★★★</div>
-              <div style="font-size:10px; color:#6b7280;">Яндекс Карты · 47 отзывов</div>
-            </div>
-          </div>
-          <div class="review-card">
-            <div class="stars">★★★★★</div>
-            <p class="review-text">«Дочка не хотела уезжать. Сразу спросила — можно снова летом?»</p>
-            <div class="reviewer">Ольга М. · Яндекс Карты · 2025</div>
-          </div>
-          <div class="review-card">
-            <div class="stars">★★★★★</div>
-            <p class="review-text">«Уехал мальчик — вернулся с Python-игрой. Показывал папе 40 минут.»</p>
-            <div class="reviewer">Светлана К. · 2024</div>
-          </div>
-          <div style="text-align:center; font-size:11px; color:#6b7280; margin-top:4px;">◀ ● ● ● ▶ · 3 из 12</div>
-        </div>
-      </div>
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · Reviews.astro
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — 3 колонки + агрегат</div>
-      <div class="desktop-frame" style="padding:24px; background:#f7f5f2;">
-        <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px;">
-          <div>
-            <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#ec7c00; margin-bottom:4px;">Отзывы</div>
-            <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin:0;">Мамы уже записали детей</h2>
-          </div>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <div style="background:#fff8f0; border:1px solid #fde68a; border-radius:10px; padding:8px 14px; text-align:center;">
-              <div style="font-size:24px; font-weight:800; color:#ec7c00; line-height:1;">5.0</div>
-              <div style="color:#f59332; font-size:12px;">★★★★★</div>
-              <div style="font-size:10px; color:#6b7280;">47 отзывов</div>
-            </div>
-            <a href="#" style="display:flex; align-items:center; gap:5px; border:1px solid #e5e7eb; border-radius:8px; padding:8px 12px; font-size:12px; color:#374151; text-decoration:none;"><i class="bi bi-map" style="color:#ec7c00;"></i>Яндекс Карты</a>
-          </div>
-        </div>
-        <div class="dsk-grid-3">
-          {[
-            ['Ольга М.','Дочка не хотела уезжать. Сразу спросила — можно снова?','Яндекс Карты · 2025'],
-            ['Светлана К.','Уехал мальчик — вернулся с Python-игрой. Показывал папе 40 минут.','Google · 2024'],
-            ['Анна В.','Боялась что скучно без телефона. Через 3 дня она сама перестала его просить.','Яндекс Карты · 2025'],
-          ].map(([name, text, src]) => (
-            <div class="review-card">
-              <div class="stars">★★★★★</div>
-              <p class="review-text">{`«${text}»`}</p>
-              <div style="display:flex; align-items:center; gap:6px;">
-                <div style="width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,#ec7c00,#1b4fd8); flex-shrink:0;"></div>
-                <div><div style="font-size:11px; font-weight:600; color:#1e2430;">{name}</div><div style="font-size:10px; color:#9ca3af;">{src}</div></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <Reviews />
     </div>
   </div>
   <div class="notes">
@@ -1392,70 +1236,259 @@
 
 
 <!-- ══════════════════════════════════════════════════ -->
+<!-- BLOCK 14.5: INCAMP BADGE — стикер репутации       -->
+<!-- ══════════════════════════════════════════════════ -->
+<div class="block-card" id="b145">
+  <div class="block-header">
+    <div class="block-num tier2">★</div>
+    <div>
+      <div class="block-name">IncampBadge — стикер incamp.ru</div>
+      <div class="block-file">IncampBadge.astro · uid=339484</div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-green">Репутация</span>
+      <span class="badge badge-blue">3 варианта</span>
+    </div>
+  </div>
+
+  <div style="padding:20px;">
+    <div style="font-size:11px; color:var(--tx-f); margin-bottom:16px;">
+      Стикер в трёх вариантах: <code>variant="dark"</code> (по умолчанию) · <code>variant="light"</code> · <code>variant="orange"</code><br>
+      Размеры: <code>size="sm"</code> · <code>size="md"</code> · <code>size="lg"</code>
+    </div>
+
+    <!-- Три варианта рядом -->
+    <div style="display:flex; flex-wrap:wrap; gap:24px; align-items:center; margin-bottom:24px;">
+
+      <!-- Dark (наш дефолт) -->
+      <div>
+        <div style="font-size:10px; color:var(--tx-f); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.06em;">Dark (дефолт)</div>
+        <a href="https://incamp.ru/camps/339484/"
+          target="_blank" rel="noopener noreferrer"
+          style="display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; background:#0d1a2b; border:1px solid rgba(255,255,255,0.1); text-decoration:none; transition:opacity .2s;"
+          title="Рейтинг АйДаКемп на incamp.ru">
+          <div style="display:flex; flex-direction:column; line-height:1.2;">
+            <span style="font-size:10px; color:rgba(255,255,255,0.45);">Рейтинг на</span>
+            <span style="font-size:10px; font-weight:600; color:rgba(255,255,255,0.85);">incamp.ru</span>
+          </div>
+          <i class="bi bi-star-fill" style="color:#ec7c00; font-size:18px;" aria-hidden="true"></i>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; line-height:1.2;">
+            <span style="font-size:20px; font-weight:700; color:#ec7c00; line-height:1;">4.8</span>
+            <span style="font-size:10px; color:rgba(255,255,255,0.4);">из 5 · 47 отз.</span>
+          </div>
+        </a>
+        <div style="font-size:9px; color:var(--tx-f); margin-top:6px; font-family:monospace;">variant="dark" size="md"</div>
+      </div>
+
+      <!-- Light -->
+      <div>
+        <div style="font-size:10px; color:var(--tx-f); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.06em;">Light</div>
+        <a href="https://incamp.ru/camps/339484/"
+          target="_blank" rel="noopener noreferrer"
+          style="display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; background:white; border:1px solid #e5e7eb; text-decoration:none; transition:opacity .2s;"
+          title="Рейтинг АйДаКемп на incamp.ru">
+          <div style="display:flex; flex-direction:column; line-height:1.2;">
+            <span style="font-size:10px; color:#9ca3af;">Рейтинг на</span>
+            <span style="font-size:10px; font-weight:600; color:#374151;">incamp.ru</span>
+          </div>
+          <i class="bi bi-star-fill" style="color:#ec7c00; font-size:18px;" aria-hidden="true"></i>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; line-height:1.2;">
+            <span style="font-size:20px; font-weight:700; color:#ec7c00; line-height:1;">4.8</span>
+            <span style="font-size:10px; color:#9ca3af;">из 5 · 47 отз.</span>
+          </div>
+        </a>
+        <div style="font-size:9px; color:var(--tx-f); margin-top:6px; font-family:monospace;">variant="light" size="md"</div>
+      </div>
+
+      <!-- Orange -->
+      <div>
+        <div style="font-size:10px; color:var(--tx-f); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.06em;">Orange (акцент)</div>
+        <a href="https://incamp.ru/camps/339484/"
+          target="_blank" rel="noopener noreferrer"
+          style="display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; background:#ec7c00; text-decoration:none; transition:opacity .2s;"
+          title="Рейтинг АйДаКемп на incamp.ru">
+          <div style="display:flex; flex-direction:column; line-height:1.2;">
+            <span style="font-size:10px; color:rgba(255,255,255,0.75);">Рейтинг на</span>
+            <span style="font-size:10px; font-weight:700; color:white;">incamp.ru</span>
+          </div>
+          <i class="bi bi-star-fill" style="color:white; font-size:18px;" aria-hidden="true"></i>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; line-height:1.2;">
+            <span style="font-size:20px; font-weight:700; color:white; line-height:1;">4.8</span>
+            <span style="font-size:10px; color:rgba(255,255,255,0.75);">из 5 · 47 отз.</span>
+          </div>
+        </a>
+        <div style="font-size:9px; color:var(--tx-f); margin-top:6px; font-family:monospace;">variant="orange" size="md"</div>
+      </div>
+
+      <!-- SM Dark -->
+      <div>
+        <div style="font-size:10px; color:var(--tx-f); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.06em;">Small</div>
+        <a href="https://incamp.ru/camps/339484/"
+          target="_blank" rel="noopener noreferrer"
+          style="display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:8px; background:#0d1a2b; border:1px solid rgba(255,255,255,0.1); text-decoration:none;"
+          title="Рейтинг АйДаКемп на incamp.ru">
+          <div style="display:flex; flex-direction:column; line-height:1.2;">
+            <span style="font-size:9px; color:rgba(255,255,255,0.45);">Рейтинг на</span>
+            <span style="font-size:9px; font-weight:600; color:rgba(255,255,255,0.85);">incamp.ru</span>
+          </div>
+          <i class="bi bi-star-fill" style="color:#ec7c00; font-size:14px;" aria-hidden="true"></i>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; line-height:1.2;">
+            <span style="font-size:16px; font-weight:700; color:#ec7c00; line-height:1;">4.8</span>
+            <span style="font-size:9px; color:rgba(255,255,255,0.4);">из 5</span>
+          </div>
+        </a>
+        <div style="font-size:9px; color:var(--tx-f); margin-top:6px; font-family:monospace;">variant="dark" size="sm"</div>
+      </div>
+
+    </div>
+
+    <!-- Использование в коде -->
+    <div style="background:var(--bg-card); border:1px solid var(--bd); border-radius:10px; padding:14px;">
+      <div style="font-size:10px; font-weight:700; color:var(--note-seo); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">Использование в .astro</div>
+      <pre style="margin:0; font-size:11px; color:var(--tx-m); line-height:1.7; overflow:auto;"><code>{`import IncampBadge from '@/components/IncampBadge.astro';
+
+// В разделе Trust / Reviews / Footer:
+<IncampBadge rating={4.8} reviews={47} variant="dark" />
+<IncampBadge rating={4.8} reviews={47} variant="light" size="sm" />
+<IncampBadge rating={4.8} reviews={47} variant="orange" size="lg" />`}</code></pre>
+    </div>
+
+    <div style="margin-top:12px; font-size:11px; color:var(--tx-f);">
+      <i class="bi bi-info-circle" aria-hidden="true"></i>
+      Рейтинг и число отзывов обновлять вручную в props — либо получать через API incamp.ru (если откроют).
+      Ссылка ведёт на профиль лагеря: <a href="https://incamp.ru/camps/339484/" target="_blank" style="color:var(--pr);">incamp.ru/camps/339484/</a>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- BLOCK 14.6: DualRatingPill                        -->
+<!-- ══════════════════════════════════════════════════ -->
+<div class="block-card" id="b146">
+  <div class="block-header">
+    <div class="block-name">DualRatingPill — двойной рейтинг Яндекс + incamp.ru</div>
+    <div class="block-file">DualRatingPill.astro · два рейтинга в одном пилле</div>
+  </div>
+  <div class="block-body" style="display:flex; flex-direction:column; gap:20px;">
+
+    <!-- variant="hero" (тёмный фон) -->
+    <div style="background:#0d1a2b; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:14px;">
+      <div style="font-size:10px; font-weight:700; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:0.08em;">variant="hero" · на тёмном фоне (desktop hero)</div>
+      <div style="display:flex; flex-wrap:wrap; align-items:center; gap:16px;">
+        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-start;">
+          <DualRatingPill
+            yandexRating={STAT_RATING}
+            yandexUrl={YANDEX_MAPS_URL}
+            incampRating={4.8}
+            variant="hero"
+            size="md"
+            yandexGoal="demo_yandex_md"
+            incampGoal="demo_incamp_md"
+          />
+          <div style="font-size:9px; color:rgba(255,255,255,0.3); font-family:monospace;">size="md" (default)</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-start;">
+          <DualRatingPill
+            yandexRating={STAT_RATING}
+            yandexUrl={YANDEX_MAPS_URL}
+            incampRating={4.8}
+            variant="hero"
+            size="sm"
+            yandexGoal="demo_yandex_sm"
+            incampGoal="demo_incamp_sm"
+          />
+          <div style="font-size:9px; color:rgba(255,255,255,0.3); font-family:monospace;">size="sm"</div>
+        </div>
+      </div>
+
+      <!-- Контекст использования в герое -->
+      <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:12px;">
+        <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-bottom:8px;">Контекст: строка trust-метрик под заголовком в Desktop Hero</div>
+        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:13px; color:rgba(255,255,255,0.5);">
+          <DualRatingPill yandexRating={STAT_RATING} yandexUrl={YANDEX_MAPS_URL} incampRating={4.8} variant="hero" size="sm" />
+          <span>·</span>
+          <span>7 лет работы</span>
+          <span>·</span>
+          <span>1200+ детей</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- variant="light" (светлый фон) -->
+    <div style="background:#f4f6f9; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:14px;">
+      <div style="font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.08em;">variant="light" · на светлом фоне (секции Reviews, Footer)</div>
+      <div style="display:flex; flex-wrap:wrap; align-items:center; gap:16px;">
+        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-start;">
+          <DualRatingPill
+            yandexRating={STAT_RATING}
+            yandexUrl={YANDEX_MAPS_URL}
+            incampRating={4.8}
+            variant="light"
+            size="md"
+          />
+          <div style="font-size:9px; color:#9ca3af; font-family:monospace;">size="md"</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-start;">
+          <DualRatingPill
+            yandexRating={STAT_RATING}
+            yandexUrl={YANDEX_MAPS_URL}
+            incampRating={4.8}
+            variant="light"
+            size="sm"
+          />
+          <div style="font-size:9px; color:#9ca3af; font-family:monospace;">size="sm"</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Использование в коде -->
+    <div style="background:var(--bg-card); border:1px solid var(--bd); border-radius:10px; padding:14px;">
+      <div style="font-size:10px; font-weight:700; color:var(--note-seo); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">Использование в .astro</div>
+      <pre style="margin:0; font-size:11px; color:var(--tx-m); line-height:1.7; overflow:auto;"><code>{`import DualRatingPill from '@/components/DualRatingPill.astro';
+import { STAT_RATING, YANDEX_MAPS_URL } from '@/data/contacts';
+
+// В Desktop Hero (тёмный фон):
+<DualRatingPill
+  yandexRating={STAT_RATING}
+  yandexUrl={YANDEX_MAPS_URL}
+  incampRating={4.8}
+  variant="hero"
+  size="sm"
+  yandexGoal="hero_yandex_rating"
+  incampGoal="hero_incamp_rating"
+/>
+
+// В Reviews / Footer (светлый фон):
+<DualRatingPill
+  yandexRating={STAT_RATING}
+  yandexUrl={YANDEX_MAPS_URL}
+  incampRating={4.8}
+  variant="light"
+/>`}</code></pre>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 15: FAQ                                     -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b15">
   <div class="block-header">
     <div class="block-num">15</div>
     <div><div class="block-name">FAQ — частые вопросы</div><div class="block-file">FAQ.astro</div></div>
     <div class="badges"><span class="badge badge-blue">SEO Rich Snippet</span><span class="badge badge-gray">FAQPage Schema</span></div>
   </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль — accordion</div>
-      <div class="phone-frame">
-        <div class="sec-blue">
-          <div class="sec-label">FAQ</div>
-          <h2 class="t-h2">Часто спрашивают</h2>
-          <div class="faq-item">
-            <div class="faq-q">Нужен ли ноутбук? <span style="color:#1b4fd8; font-weight:400;">−</span></div>
-            <div class="faq-a">Нет. Все ноутбуки, 3D-принтеры и оборудование предоставляем.</div>
-          </div>
-          <div class="faq-item">
-            <div class="faq-q">Можно с нулевым опытом? <span style="color:#1b4fd8;">+</span></div>
-          </div>
-          <div class="faq-item">
-            <div class="faq-q">Как забрать ребёнка досрочно? <span style="color:#1b4fd8;">+</span></div>
-          </div>
-          <div class="faq-item">
-            <div class="faq-q">Есть ли трансфер из Москвы? <span style="color:#1b4fd8;">+</span></div>
-          </div>
-          <div class="faq-item">
-            <div class="faq-q">Что если ребёнку не понравится? <span style="color:#1b4fd8;">+</span></div>
-          </div>
-        </div>
-      </div>
+  <!-- Реальный компонент FAQ.astro -->
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · фильтры по категориям · accordion с JS
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — 2 колонки</div>
-      <div class="desktop-frame" style="padding:24px; background:#f0f4ff;">
-        <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 16px;">Часто спрашивают</h2>
-        <div class="dsk-grid-2" style="gap:8px; align-items:start;">
-          <div>
-            {[
-              ['Нужен ли ноутбук?','Нет. Все устройства: ноутбуки, 3D-принтеры, оборудование — предоставляем. Ребёнок едет налегке.',true],
-              ['Можно с нулевым опытом?','Да. Программа строится с нуля, группы формируются по возрасту. Скучно не будет.',false],
-              ['Есть ли трансфер из Москвы?','Да. Организованный автобус от м. Солнцево. Бронируется вместе с путёвкой.',false],
-            ].map(([q, a, open]) => (
-              <div class="faq-item">
-                <div class="faq-q">{q} <span style={`color:#1b4fd8; font-weight:400;`}>{open ? '−' : '+'}</span></div>
-                {open && <div class="faq-a">{a}</div>}
-              </div>
-            ))}
-          </div>
-          <div>
-            {[
-              ['Что если ребёнку не понравится?','Возврат 50% если в первые 3 дня смены. Прецеденты были — возвращали без вопросов.',false],
-              ['Как забрать досрочно?','Звоните — договоримся. Нет штрафов за досрочный выезд в экстренных ситуациях.',false],
-              ['Есть ли налоговый вычет?','Да. Лицензия Минобрнауки Л035-01298-77. Документы для ФНС выдаём после оплаты.',false],
-            ].map(([q, a, open]) => (
-              <div class="faq-item">
-                <div class="faq-q">{q} <span style="color:#1b4fd8;">+</span></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <FAQ />
     </div>
   </div>
   <div class="notes">
@@ -1484,52 +1517,19 @@
 <!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 16: TEAM                                    -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b16">
   <div class="block-header">
     <div class="block-num tier2">16</div>
     <div><div class="block-name">Team — команда лагеря</div><div class="block-file">Team.astro</div></div>
     <div class="badges"><span class="badge badge-green">Доверие</span><span class="badge badge-gray">Person Schema</span></div>
   </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль — стек карточек</div>
-      <div class="phone-frame">
-        <div class="sec-light">
-          <h2 class="t-h2">Наша команда</h2>
-          <p class="t-p">Реальные люди — не «наши педагоги».</p>
-          {[
-            ['Дарья А.','Основатель · 7 лет','ec7c00','1b4fd8'],
-            ['Антон К.','Куратор Python · ex-Яндекс','1b4fd8','10b981'],
-            ['Мария С.','Психолог · адаптация','6366f1','ec7c00'],
-          ].map(([name, role, c1, c2]) => (
-            <div class="mentor-card">
-              <div class="mentor-avatar" style={`background:linear-gradient(135deg,#${c1},#${c2});`}></div>
-              <div><div class="mentor-name">{name}</div><div class="mentor-role">{role}</div></div>
-            </div>
-          ))}
-        </div>
-      </div>
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · Team.astro
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — 4 карточки</div>
-      <div class="desktop-frame" style="padding:24px; background:#f7f8fb;">
-        <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 16px;">Команда АйДаКемп</h2>
-        <div class="dsk-grid-4" style="gap:10px;">
-          {[
-            ['Дарья А.','Основатель','7 лет в детском IT. Мама подростка.','ec7c00','1b4fd8'],
-            ['Антон К.','Куратор Python','ex-Яндекс. Пишет учебники для детей.','1b4fd8','10b981'],
-            ['Мария С.','Психолог','Адаптация. Помогает первокемперам.','6366f1','ec7c00'],
-            ['Игорь Д.','AI/ML ментор','2 года преподаёт ML детям 13+.','0891d8','6366f1'],
-          ].map(([name, title, desc, c1, c2]) => (
-            <div style="background:white; border:1px solid #f3f4f6; border-radius:14px; padding:16px; text-align:center;">
-              <div style={`width:56px; height:56px; border-radius:100px; background:linear-gradient(135deg,#${c1},#${c2}); margin:0 auto 10px;`}></div>
-              <div style="font-size:14px; font-weight:700; color:#0f172a;">{name}</div>
-              <div style="font-size:11px; font-weight:600; color:#ec7c00; margin:2px 0 6px;">{title}</div>
-              <div style="font-size:11px; color:#6b7280; line-height:1.4;">{desc}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <Team />
     </div>
   </div>
   <div class="notes">
@@ -1555,61 +1555,19 @@
 <!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 17: MENTORS                                 -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b17">
   <div class="block-header">
     <div class="block-num tier2">17</div>
     <div><div class="block-name">Mentors — преподаватели-практики</div><div class="block-file">Mentors.astro</div></div>
     <div class="badges"><span class="badge badge-green">Экспертиза</span><span class="badge badge-blue">Карусель</span></div>
   </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль — горизонтальный скролл</div>
-      <div class="phone-frame">
-        <div class="sec-light">
-          <h2 class="t-h2">Преподаватели-практики</h2>
-          <p class="t-p">Не вожатые — действующие разработчики и педагоги.</p>
-          <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:4px;">
-            {[
-              ['Михаил Т.','AI & ML','bi-robot','6366f1','ec7c00'],
-              ['Елена В.','Python · Scratch','bi-code-slash','1b4fd8','10b981'],
-              ['Артём Д.','3D · Blender','bi-box','ec7c00','1b4fd8'],
-            ].map(([name, spec, icon, c1, c2]) => (
-              <div style="flex-shrink:0; width:120px; background:white; border:1px solid #f3f4f6; border-radius:12px; padding:12px 10px; text-align:center;">
-                <div style={`width:44px; height:44px; border-radius:100px; background:linear-gradient(135deg,#${c1},#${c2}); margin:0 auto 8px; display:flex; align-items:center; justify-content:center;`}>
-                  <i class={`bi ${icon}`} style="color:white; font-size:18px;"></i>
-                </div>
-                <div style="font-size:12px; font-weight:700; color:#1e2430;">{name}</div>
-                <div style="font-size:10px; color:#ec7c00; font-weight:600; margin-top:2px;">{spec}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · Mentors.astro
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — 4 карточки с bio</div>
-      <div class="desktop-frame" style="padding:24px; background:#f7f8fb;">
-        <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 4px;">Преподаватели-практики</h2>
-        <p style="font-size:14px; color:#4b5263; margin:0 0 16px;">Авторы учебников по программированию для детей (тираж 2 000 экз.)</p>
-        <div class="dsk-grid-4" style="gap:10px;">
-          {[
-            ['Михаил Т.','AI & ML','bi-robot','Nvidia · 4 года с детьми 13+','6366f1','ec7c00'],
-            ['Елена В.','Python','bi-code-slash','Автор учебника. Scratch с 7 лет.','1b4fd8','10b981'],
-            ['Артём Д.','3D · Blender','bi-box','Дизайнер. 3D-проекты в портфолио.','ec7c00','1b4fd8'],
-            ['Наташа К.','Minecraft','bi-grid-1x2-fill','Redstone · архитектура · команды.','10b981','6366f1'],
-          ].map(([name, spec, icon, bio, c1, c2]) => (
-            <div style="background:white; border:1px solid #f3f4f6; border-radius:14px; padding:16px;">
-              <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
-                <div style={`width:44px; height:44px; border-radius:100px; background:linear-gradient(135deg,#${c1},#${c2}); flex-shrink:0; display:flex; align-items:center; justify-content:center;`}>
-                  <i class={`bi ${icon}`} style="color:white; font-size:18px;"></i>
-                </div>
-                <div><div style="font-size:13px; font-weight:700; color:#0f172a;">{name}</div><div style="font-size:11px; color:#ec7c00; font-weight:600;">{spec}</div></div>
-              </div>
-              <div style="font-size:11px; color:#6b7280; line-height:1.5;">{bio}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <Mentors />
     </div>
   </div>
   <div class="notes">
@@ -1635,70 +1593,19 @@
 <!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 18: STAY                                    -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b18">
   <div class="block-header">
     <div class="block-num">18</div>
     <div><div class="block-name">Stay — проживание и условия</div><div class="block-file">Stay.astro</div></div>
     <div class="badges"><span class="badge badge-green">Доверие</span><span class="badge badge-gray">Безопасность</span></div>
   </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div>
-      <div class="phone-frame">
-        <div class="sec-warm">
-          <h2 class="t-h2">Условия проживания</h2>
-          <p class="t-p">Санаторий «Изумруд» · Наро-Фоминский район</p>
-          {[
-            ['bi-house-heart-fill','Комнаты 2–4 чел','Санузел и душ в каждой комнате'],
-            ['bi-cup-hot-fill','5-разовое питание','Завтрак, 2й, обед, полдник, ужин. Аллергии учитываем.'],
-            ['bi-water','Бассейн','Крытый, ионизированная вода. Через день.'],
-            ['bi-shield-fill','Охрана 24/7','Медработник на территории круглосуточно'],
-            ['bi-telephone-fill','Родительский канал','Фото и сообщения каждый день'],
-          ].map(([icon, title, desc]) => (
-            <div class="stay-item">
-              <i class={`bi ${icon} stay-icon`} style="font-size:16px; margin-top:1px;"></i>
-              <div><div style="font-size:12px; font-weight:600; color:#1e2430;">{title}</div><div class="stay-text" style="font-size:11px;">{desc}</div></div>
-            </div>
-          ))}
-        </div>
-      </div>
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · Stay.astro
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — 2 колонки</div>
-      <div class="desktop-frame" style="padding:24px; background:#f7f5f2;">
-        <div class="dsk-grid-2" style="align-items:start; gap:24px;">
-          <div>
-            <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 6px;">Условия проживания</h2>
-            <p style="font-size:13px; color:#6b7280; margin:0 0 16px;">Санаторий «Изумруд» · Наро-Фоминский р-н · 66 км от МКАД</p>
-            {[
-              ['bi-house-heart-fill','Комнаты по 2–4 чел','Санузел и душ. Уборка и стирка включены.'],
-              ['bi-cup-hot-fill','5-разовое питание','Аллергии, диеты — всё учитываем по заявке.'],
-              ['bi-water','Крытый бассейн','Ионизированная вода. Инструктор в воде.'],
-              ['bi-shield-fill','Медработник 24/7','Врач физически на территории весь период.'],
-              ['bi-telephone-fill','Родительский канал','Фото + видео каждый день. Геолокация базы.'],
-            ].map(([icon, title, desc]) => (
-              <div class="stay-item" style="margin-bottom:10px;">
-                <i class={`bi ${icon}`} style="color:#ec7c00; font-size:18px; flex-shrink:0; margin-top:2px;"></i>
-                <div><div style="font-size:13px; font-weight:600; color:#0f172a;">{title}</div><div style="font-size:12px; color:#4b5263; line-height:1.4;">{desc}</div></div>
-              </div>
-            ))}
-          </div>
-          <div>
-            <div style="background:#f0f4ff; border-radius:14px; padding:16px; margin-bottom:10px;">
-              <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1b4fd8; margin-bottom:8px;">Что входит в стоимость</div>
-              {['Проживание + питание','IT-программа','Бассейн и спорт','Оборудование (ноутбуки)','Охрана и медработник','Ежедневные фото'].map(item => (
-                <div style="display:flex; gap:7px; align-items:center; font-size:12px; color:#1e2430; margin-bottom:5px;">
-                  <i class="bi bi-check-lg" style="color:#10b981; flex-shrink:0;"></i>{item}
-                </div>
-              ))}
-            </div>
-            <div style="background:#fff8f0; border:1px solid #fde68a; border-radius:12px; padding:12px; font-size:12px; color:#92400e;">
-              <i class="bi bi-info-circle" style="margin-right:6px;"></i>
-              Трансфер и страховка — отдельно по запросу
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <Stay />
     </div>
   </div>
   <div class="notes">
@@ -1725,74 +1632,19 @@
 <!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 19: CONTACTS                                -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b19">
   <div class="block-header">
     <div class="block-num">19</div>
     <div><div class="block-name">Contacts — контакты и карта</div><div class="block-file">Contacts.astro</div></div>
     <div class="badges"><span class="badge badge-blue">Local SEO</span><span class="badge badge-gray">Яндекс.Карты</span></div>
   </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div>
-      <div class="phone-frame">
-        <div class="sec-light">
-          <h2 class="t-h2">Как добраться</h2>
-          <div class="contacts-map">
-            <i class="bi bi-geo-alt-fill" style="margin-right:6px; color:#1b4fd8;"></i>
-            Наро-Фоминский р-н · 66 км от МКАД
-          </div>
-          <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;">
-            {[
-              ['bi-geo-alt-fill','Калужское шоссе, санаторий Изумруд'],
-              ['bi-car-front-fill','Трансфер от м. Солнцево — по запросу'],
-              ['bi-telegram','@aidacamp_bot — написать быстро'],
-              ['bi-telephone-fill','+7 968 808 64 55'],
-            ].map(([icon, text]) => (
-              <div style="display:flex; gap:8px; align-items:center; font-size:12px; color:#374151;">
-                <i class={`bi ${icon}`} style="color:#ec7c00; flex-shrink:0; font-size:14px;"></i>
-                {text}
-              </div>
-            ))}
-          </div>
-          <button class="bb-btn" style="width:100%;"><i class="bi bi-telegram"></i> Написать в Telegram</button>
-        </div>
-      </div>
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · Contacts.astro
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — карта + контакты</div>
-      <div class="desktop-frame" style="padding:24px; background:#f7f8fb;">
-        <div class="dsk-grid-2" style="gap:20px; align-items:start;">
-          <div>
-            <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 14px;">Как добраться</h2>
-            {[
-              ['bi-geo-alt-fill','Адрес','Калужское шоссе, Наро-Фоминский р-н, санаторий «Изумруд». 66 км от МКАД.'],
-              ['bi-car-front-fill','Трансфер','Организованный автобус от м. Солнцево. Бронируется с путёвкой.'],
-              ['bi-telegram','Telegram','@aidacamp — ответим за 15 минут'],
-              ['bi-telephone-fill','Телефон','+7 968 808 64 55'],
-            ].map(([icon, label, val]) => (
-              <div style="display:flex; gap:12px; margin-bottom:14px;">
-                <div style="width:36px; height:36px; border-radius:10px; background:#fff1df; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                  <i class={`bi ${icon}`} style="color:#ec7c00; font-size:16px;"></i>
-                </div>
-                <div>
-                  <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#9ca3af; margin-bottom:2px;">{label}</div>
-                  <div style="font-size:13px; color:#1e2430; line-height:1.4;">{val}</div>
-                </div>
-              </div>
-            ))}
-            <div style="display:flex; gap:8px; margin-top:4px;">
-              <div class="btn-outline-or" style="width:auto; padding:0 16px; height:40px; font-size:13px;"><i class="bi bi-telegram"></i> Написать</div>
-              <div class="btn-outline-wh" style="width:auto; padding:0 16px; height:40px; font-size:13px; border-color:rgba(27,79,216,0.4); color:#1b4fd8;"><i class="bi bi-telephone"></i> Позвонить</div>
-            </div>
-          </div>
-          <div>
-            <div class="contacts-map" style="height:160px; border-radius:14px; background:linear-gradient(135deg,#dbeafe,#bfdbfe); font-size:13px; color:#1b4fd8; flex-direction:column; gap:6px;">
-              <i class="bi bi-geo-alt-fill" style="font-size:24px;"></i>
-              Яндекс.Карты iframe · lazy · не грузим до скролла
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <Contacts />
     </div>
   </div>
   <div class="notes">
@@ -1819,56 +1671,19 @@
 <!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 20: SEO TEXT BLOCK                          -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b20">
   <div class="block-header">
     <div class="block-num">20</div>
     <div><div class="block-name">SeoTextBlock — SEO-текст</div><div class="block-file">SeoTextBlock.astro</div></div>
     <div class="badges"><span class="badge badge-blue">SEO</span><span class="badge badge-gray">Hub внутренние ссылки</span></div>
   </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль</div>
-      <div class="phone-frame">
-        <div class="sec-light">
-          <h2 class="t-h2" style="font-size:15px;">Детский лагерь в Подмосковье 2026</h2>
-          <p class="t-p">АйДаКемп — IT-лагерь с проживанием, 66 км от МКАД по Калужскому шоссе. Работаем с 2021 года, 1200+ детей от 7 до 15 лет.</p>
-          <h3 style="font-size:13px; font-weight:700; color:#0f172a; margin:8px 0 4px;">IT-лагерь с образовательной лицензией</h3>
-          <p class="t-p" style="font-size:11px;">Лицензия Минобрнауки Л035-01298-77/01082973 — основание для налогового вычета 13%. До 5 434 ₽ за смену.</p>
-          <div class="seo-link-row">
-            {['Лагерь для подростков','Лагерь программирования','IT-лагерь 2026','Налоговый вычет'].map(l => <span class="seo-link">{l}</span>)}
-          </div>
-        </div>
-      </div>
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · SeoTextBlock.astro
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — текст + ссылки</div>
-      <div class="desktop-frame" style="padding:24px; background:#f7f8fb;">
-        <div class="dsk-grid-2" style="gap:24px; align-items:start;">
-          <div>
-            <h2 style="font-size:20px; font-weight:800; color:#0f172a; margin:0 0 8px;">Детский лагерь в Подмосковье 2026</h2>
-            <p style="font-size:13px; color:#4b5263; line-height:1.65; margin:0 0 10px;">АйДаКемп — IT-лагерь с проживанием, 66 км от МКАД по Калужскому шоссе. Принимаем детей 7–15 лет с 2021 года.</p>
-            <h3 style="font-size:14px; font-weight:700; color:#0f172a; margin:0 0 6px;">Образовательная лицензия и налоговый вычет</h3>
-            <p style="font-size:13px; color:#4b5263; line-height:1.65; margin:0;">Лицензия Минобрнауки Л035-01298-77/01082973 даёт родителям право на социальный вычет 13% по ст. 219 НК РФ. До 5 434 ₽ возврата за 14-дневную смену.</p>
-          </div>
-          <div>
-            <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#6b7280; margin-bottom:10px;">Полезные разделы сайта</div>
-            <div style="display:flex; flex-direction:column; gap:6px;">
-              {[
-                ['bi-laptop','Программирование для детей 7–15 лет','/programmirovanie/'],
-                ['bi-calendar-event','Смены лета 2026 — расписание и цены','/smeny/'],
-                ['bi-cash-coin','Налоговый вычет за лагерь — инструкция','/nalogovyj-vychet/'],
-                ['bi-geo-alt','Детский лагерь в Подмосковье','/lager-podmoskovje/'],
-                ['bi-people','Лагерь для подростков 12–15 лет','/lager-podrostkov/'],
-              ].map(([icon, label, href]) => (
-                <a href={href} style="display:flex; gap:8px; align-items:center; padding:8px 10px; background:white; border:1px solid #e5e7eb; border-radius:8px; font-size:12px; color:#374151; text-decoration:none;">
-                  <i class={`bi ${icon}`} style="color:#ec7c00; font-size:14px; flex-shrink:0;"></i>
-                  {label}
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <SeoTextBlock />
     </div>
   </div>
   <div class="notes">
@@ -1895,57 +1710,25 @@
 <!-- ══════════════════════════════════════════════════ -->
 <!-- BLOCK 21: RELATED PAGES                           -->
 <!-- ══════════════════════════════════════════════════ -->
-<div class="block-card">
+<div class="block-card" id="b21">
   <div class="block-header">
     <div class="block-num">21</div>
     <div><div class="block-name">RelatedPages — похожие страницы</div><div class="block-file">RelatedPages.astro</div></div>
     <div class="badges"><span class="badge badge-blue">Internal links</span><span class="badge badge-gray">PageRank Hub</span></div>
   </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль — горизонтальный скролл</div>
-      <div class="phone-frame">
-        <div class="sec-light">
-          <h2 class="t-h2" style="font-size:14px;">Полезные разделы</h2>
-          <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:4px;">
-            {[
-              ['bi-people','Лагерь для подростков'],
-              ['bi-cash-coin','Налоговый вычет'],
-              ['bi-geo-alt','Лагерь в Подмосковье'],
-              ['bi-laptop','Программирование'],
-              ['bi-star','Отзывы'],
-            ].map(([icon, label]) => (
-              <div style="flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:5px; background:white; border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; font-size:10px; color:#374151; text-align:center;">
-                <i class={`bi ${icon}`} style="color:#ec7c00; font-size:20px;"></i>
-                <span style="max-width:70px; line-height:1.2;">{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · RelatedPages.astro
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — сетка карточек</div>
-      <div class="desktop-frame" style="padding:24px; background:#f7f8fb;">
-        <h2 style="font-size:18px; font-weight:800; color:#0f172a; margin:0 0 14px;">Полезные разделы</h2>
-        <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:8px;">
-          {[
-            ['bi-people','Лагерь для подростков','Для детей 12–15 лет','/lager-podrostkov/'],
-            ['bi-cash-coin','Налоговый вычет','Вернуть до 5 434 ₽','/nalogovyj-vychet/'],
-            ['bi-geo-alt','В Подмосковье','66 км от МКАД','/lager-podmoskovje/'],
-            ['bi-laptop','Программирование','Курсы Python · AI','/programmirovanie/'],
-            ['bi-currency-ruble','Цены и смены','От 48 000 ₽','/smeny/'],
-          ].map(([icon, label, desc, href]) => (
-            <a href={href} style="display:flex; flex-direction:column; align-items:center; gap:6px; background:white; border:1px solid #e5e7eb; border-radius:12px; padding:14px 10px; text-align:center; text-decoration:none; transition:border-color 0.15s;">
-              <div style="width:40px; height:40px; border-radius:10px; background:#fff1df; display:flex; align-items:center; justify-content:center;">
-                <i class={`bi ${icon}`} style="color:#ec7c00; font-size:18px;"></i>
-              </div>
-              <div style="font-size:12px; font-weight:600; color:#1e2430; line-height:1.3;">{label}</div>
-              <div style="font-size:10px; color:#9ca3af;">{desc}</div>
-            </a>
-          ))}
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <RelatedPages pages={[
+        { title: 'Лагерь для подростков', description: 'Для детей 12–15 лет', url: '/lager-podrostkov/', icon: 'bi-people' },
+        { title: 'Налоговый вычет', description: 'Вернуть до 5 434 ₽', url: '/nalogovyj-vychet/', icon: 'bi-cash-coin' },
+        { title: 'В Подмосковье', description: '66 км от МКАД', url: '/lager-podmoskovje/', icon: 'bi-geo-alt' },
+        { title: 'Программирование', description: 'Курсы Python · AI', url: '/programmirovanie/', icon: 'bi-laptop' },
+        { title: 'Цены и смены', description: 'От 48 000 ₽', url: '/smeny/', icon: 'bi-currency-ruble' },
+      ]} />
     </div>
   </div>
   <div class="notes">
@@ -1966,6 +1749,131 @@
       <div class="note-item">Иконки + подпись = понятно без текста</div>
       <div class="note-item">Последний блок = «куда дальше»</div>
     </div>
+  </div>
+</div>
+
+<!-- ══ DATA REFERENCE ══ -->
+<div class="block-card" id="data-ref">
+  <div class="block-header">
+    <div class="block-num" style="background:#1b4fd8; color:white; font-size:11px;">REF</div>
+    <div>
+      <div class="block-name">Справочник данных</div>
+      <div class="block-file">shifts.ts · contacts.ts · global.css @theme</div>
+    </div>
+    <div class="badges"><span class="badge badge-blue">Единый источник</span></div>
+  </div>
+  <div class="block-body" style="padding:20px; display:flex; flex-direction:column; gap:20px;">
+
+    <!-- Токены бренда -->
+    <div>
+      <div style="font-size:12px; font-weight:700; color:var(--tx); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.08em;">CSS Design Tokens (global.css @theme)</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:8px;">
+        {[
+          ['--color-primary','#ec7c00','Кнопки, акценты'],
+          ['--color-primary-hover','#d46e00','Hover state'],
+          ['--color-primary-dark','#c45f00','Dots, pressed'],
+          ['--color-primary-light','#f59332','Иконки'],
+          ['--color-primary-soft','#fff1df','Мягкий фон'],
+          ['--color-primary-warm','#fff8f2','Очень мягкий фон'],
+          ['--color-primary-text','#9c3d00','Текст на мяг. фоне'],
+          ['--color-blue','#1b4fd8','Ссылки, badges'],
+          ['--color-text','#1e2430','Основной текст'],
+          ['--color-text-muted','#4b5263','Вторичный'],
+          ['--color-dark-navy','#0d1a2b','Hero фон'],
+          ['--color-accent-green','#2fa768','Акцент зелёный'],
+        ].map(([name, hex, desc]) => (
+          <div style={`background:${hex}; border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:3px;`}>
+            <div style={`font-size:9px; font-weight:700; font-family:monospace; color:${hex === '#fff1df' || hex === '#fff8f2' ? '#6b7280' : 'rgba(255,255,255,0.9)'};`}>{name}</div>
+            <div style={`font-size:10px; font-family:monospace; color:${hex === '#fff1df' || hex === '#fff8f2' ? '#374151' : 'rgba(255,255,255,0.7)'};`}>{hex}</div>
+            <div style={`font-size:10px; color:${hex === '#fff1df' || hex === '#fff8f2' ? '#6b7280' : 'rgba(255,255,255,0.6)'};`}>{desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Смены — данные -->
+    <div>
+      <div style="font-size:12px; font-weight:700; color:var(--tx); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.08em;">Смены — shifts.ts (единый источник)</div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:12px;">
+          <thead>
+            <tr style="background:var(--bg-card-header); border-bottom:2px solid var(--bd);">
+              <th style="padding:8px 12px; text-align:left; font-weight:700; color:var(--tx);">Смена</th>
+              <th style="padding:8px 12px; text-align:left; font-weight:700; color:var(--tx);">Даты</th>
+              <th style="padding:8px 12px; text-align:left; font-weight:700; color:var(--tx);">Дней</th>
+              <th style="padding:8px 12px; text-align:left; font-weight:700; color:var(--tx);">Цена</th>
+              <th style="padding:8px 12px; text-align:left; font-weight:700; color:var(--tx);">Свободно</th>
+              <th style="padding:8px 12px; text-align:left; font-weight:700; color:var(--tx);">Занято</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...mainShifts, ...shortShifts].map((s, i) => {
+              const total = s.free + s.occupied;
+              const pct = Math.round(s.occupied / total * 100);
+              return (
+                <tr style={`border-bottom:1px solid var(--bd-sub); background:${i % 2 === 0 ? 'transparent' : 'var(--bd-sub)'};`}>
+                  <td style="padding:8px 12px; font-weight:600; color:var(--tx);">{s.name}</td>
+                  <td style="padding:8px 12px; color:var(--tx-m);">{s.dates}</td>
+                  <td style="padding:8px 12px; color:var(--tx-m);">{s.duration}</td>
+                  <td style="padding:8px 12px; font-weight:700; color:var(--pr);">{s.price}</td>
+                  <td style={`padding:8px 12px; font-weight:600; color:${s.free <= 3 ? '#ef4444' : s.free <= 8 ? '#f59332' : '#16a34a'};`}>{s.free}</td>
+                  <td style="padding:8px 12px; color:var(--tx-m);">{s.occupied}/{total} ({pct}%)</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Контакты и константы -->
+    <div>
+      <div style="font-size:12px; font-weight:700; color:var(--tx); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.08em;">Константы — contacts.ts</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:8px; font-size:12px;">
+        {[
+          ['CAMP_PRICE_FROM', 'от 48 000 ₽', 'Стартовая цена'],
+          ['STAT_RATING', '5.0', 'Рейтинг Яндекс'],
+          ['STAT_YEARS', '7', 'Лет работы'],
+          ['STAT_KIDS', '1200+', 'Детей'],
+          ['STAT_RETURN', '73%', 'Возвращаются'],
+          ['STAT_DISTANCE', '66 км', 'От МКАД'],
+          ['CAMP_SEASON', '2026', 'Текущий сезон'],
+          ['INCAMP_RATING', '4.8', 'Рейтинг incamp.ru'],
+          ['INCAMP_UID', '339484', 'ID на incamp.ru'],
+        ].map(([key, val, desc]) => (
+          <div style="background:var(--bg-card); border:1px solid var(--bd); border-radius:8px; padding:10px;">
+            <div style="font-size:9px; font-family:monospace; font-weight:700; color:var(--pr);">{key}</div>
+            <div style="font-size:16px; font-weight:800; color:var(--tx); margin:2px 0;">{val}</div>
+            <div style="font-size:11px; color:var(--tx-f);">{desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Типографика -->
+    <div>
+      <div style="font-size:12px; font-weight:700; color:var(--tx); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.08em;">Типографика — шкала шрифтов</div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        {[
+          ['44px / 800','H1 Desktop hero','text-4xl font-black'],
+          ['36px / 800','H1 Mobile','text-3xl font-black'],
+          ['28px / 700','H2 Desktop','text-2xl font-bold'],
+          ['22px / 700','H2 Mobile','text-xl font-bold'],
+          ['20px / 700','H3 Карточки','text-lg font-bold'],
+          ['18px / 600','Подзаголовки','text-md font-semibold'],
+          ['16px / 400','Основной текст (min mobile)','text-base'],
+          ['14px / 400','Вторичный текст','text-sm'],
+          ['12px / 500','Метки, бейджи','text-xs font-medium'],
+        ].map(([size, use, cls]) => (
+          <div style="display:flex; align-items:baseline; gap:12px; padding:6px 10px; border-radius:6px; background:var(--bd-sub);">
+            <div style={`font-size:${size.split('/')[0].trim()}; font-weight:${size.split('/')[1].trim()}; color:var(--tx); width:160px; flex-shrink:0; white-space:nowrap; overflow:hidden;`}>Aa — {size}</div>
+            <div style="font-size:12px; color:var(--tx-m); flex:1;">{use}</div>
+            <div style="font-size:10px; font-family:monospace; color:var(--tx-f);">{cls}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -2033,6 +1941,21 @@
 
   // Init dark
   setTheme('dark');
+
+  // Block nav active highlight
+  (function() {
+    const links = document.querySelectorAll('.bnav-link[href^="#b"]');
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          links.forEach(l => l.classList.remove('bnav-active'));
+          const active = document.querySelector(`.bnav-link[href="#${e.target.id}"]`);
+          if (active) active.classList.add('bnav-active');
+        }
+      });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+    document.querySelectorAll('.block-card[id]').forEach(el => obs.observe(el));
+  })();
 </script>
 </body>
 </html>

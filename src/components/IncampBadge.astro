@@ -1,0 +1,101 @@
+---
+/**
+ * IncampBadge — стикер рейтинга на incamp.ru в стиле АйДаКемп.
+ *
+ * Props:
+ *   rating  — число, напр. 4.8  (обновлять вручную из кабинета incamp.ru)
+ *   reviews — число отзывов, напр. 47
+ *   variant — 'dark' (default) | 'light' | 'orange'
+ *   size    — 'sm' | 'md' (default) | 'lg'
+ *   uid     — incamp uid лагеря (339484 для АйДаКемп)
+ */
+interface Props {
+  rating?:  number;
+  reviews?: number;
+  variant?: 'dark' | 'light' | 'orange';
+  size?:    'sm' | 'md' | 'lg';
+  uid?:     string | number;
+}
+
+const {
+  rating  = 4.8,
+  reviews = 47,
+  variant = 'dark',
+  size    = 'md',
+  uid     = 339484,
+} = Astro.props;
+
+const href = `https://incamp.ru/camps/${uid}/`;
+
+// Размеры по варианту
+const szBadge = size === 'sm' ? 'gap-[6px] px-[10px] py-[6px] rounded-[8px]'
+              : size === 'lg' ? 'gap-[12px] px-[18px] py-[12px] rounded-[14px]'
+              :                 'gap-[8px]  px-[12px] py-[8px]  rounded-[10px]';
+
+const szStar  = size === 'sm' ? 'text-[14px]' : size === 'lg' ? 'text-[24px]' : 'text-[18px]';
+const szRat   = size === 'sm' ? 'text-[16px]' : size === 'lg' ? 'text-[26px]' : 'text-[20px]';
+const szLbl   = size === 'sm' ? 'text-[9px]'  : size === 'lg' ? 'text-[13px]' : 'text-[11px]';
+
+// Цветовые варианты
+const styles = {
+  dark: {
+    wrap:   'bg-[#0d1a2b] border border-white/10',
+    label:  'text-white/50',
+    brand:  'text-white/90 font-semibold',
+    star:   'text-[#ec7c00]',
+    rating: 'text-[#ec7c00]',
+    sub:    'text-white/40',
+  },
+  light: {
+    wrap:   'bg-white border border-slate-200',
+    label:  'text-slate-400',
+    brand:  'text-slate-700 font-semibold',
+    star:   'text-[#ec7c00]',
+    rating: 'text-[#ec7c00]',
+    sub:    'text-slate-400',
+  },
+  orange: {
+    wrap:   'bg-[#ec7c00]',
+    label:  'text-white/70',
+    brand:  'text-white font-bold',
+    star:   'text-white',
+    rating: 'text-white',
+    sub:    'text-white/70',
+  },
+} satisfies Record<string, Record<string, string>>;
+
+const s = styles[variant];
+---
+
+<a
+  href={href}
+  target="_blank"
+  rel="noopener noreferrer"
+  class:list={[
+    'incamp-badge inline-flex items-center no-underline transition-opacity hover:opacity-80 active:opacity-70',
+    szBadge, s.wrap,
+  ]}
+  title={`Рейтинг АйДаКемп на incamp.ru — ${rating} из 5`}
+>
+  <!-- Левая часть: лейбл + лого -->
+  <div class="flex flex-col leading-tight">
+    <span class:list={['leading-none', szLbl, s.label]}>Рейтинг на</span>
+    <span class:list={['leading-none mt-[2px]', szLbl, s.brand]}>incamp.ru</span>
+  </div>
+
+  <!-- Звезда -->
+  <i class:list={['bi bi-star-fill', szStar, s.star]} aria-hidden="true"></i>
+
+  <!-- Правая часть: число + из 5 -->
+  <div class="flex flex-col items-end leading-tight">
+    <span class:list={['font-bold leading-none tracking-tight', szRat, s.rating]}>{rating}</span>
+    <span class:list={['leading-none mt-[1px]', szLbl, s.sub]}>из 5 · {reviews} отз.</span>
+  </div>
+</a>
+
+<style>
+  .incamp-badge {
+    /* Не захватывает подчёркивание ссылки */
+    text-decoration: none !important;
+  }
+</style>
