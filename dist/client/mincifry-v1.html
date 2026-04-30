@@ -254,7 +254,7 @@ h2 em { font-style: normal; color: var(--or2); }
 .hack-step { display: flex; gap:var(--gap-lg); align-items: flex-start; padding: 24px 0; border-bottom: 1px solid var(--bdr); }
 .hack-step:first-child { padding-top: 0; }
 .hack-step:last-child { border-bottom: none; }
-.hack-num { font-family: 'Unbounded', sans-serif; font-size: 32px; font-weight: 900; color: rgba(255,90,31,0.15); line-height: 1; flex-shrink: 0; width: 48px; }
+.hack-num { font-family: 'Unbounded', sans-serif; font-size: 32px; font-weight: 900; color: rgba(255,90,31,0.55); line-height: 1; flex-shrink: 0; width: 48px; }
 .hack-title { font-size:var(--fs-md); font-weight: 700; color: var(--txt); margin-bottom:var(--gap-xs); }
 .hack-text { font-size:var(--fs-md); color: var(--txt2); line-height: 1.7; }
 .hack-visual { background: var(--bg3); border: 1px solid var(--bdr); border-radius:var(--r-md); padding: 40px 36px; text-align: center; }
@@ -538,6 +538,24 @@ footer { padding: 36px 0; border-top: 1px solid var(--bdr); background: var(--bg
 @media (max-width: 520px) {
   .grid-3, .grid-4, .reviews-grid { grid-template-columns: 1fr; }
   .grid-3 > *, .grid-4 > * { grid-column: span 1 !important; }
+  /* Треки — flex-карусель одной карточкой */
+  #v1-tracks-grid {
+    display: flex !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    gap: var(--gap-sm) !important;
+    padding: 0 20px 4px !important;
+    margin: 0 -20px !important;
+  }
+  #v1-tracks-grid::-webkit-scrollbar { display: none; }
+  #v1-tracks-grid .track-card {
+    min-width: 88vw !important;
+    max-width: 88vw !important;
+    scroll-snap-align: start !important;
+    flex-shrink: 0 !important;
+  }
   .gallery-grid { grid-template-columns: 1fr; }
   .gallery-grid .big { grid-column: span 1; }
   .gallery-item.big { aspect-ratio: 4/3; }
@@ -618,20 +636,35 @@ footer { padding: 36px 0; border-top: 1px solid var(--bdr); background: var(--bg
 .bsod-btn { padding:7px 18px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.5); color:var(--c-white); font-family:inherit; font-size:var(--fs-xs); cursor:pointer; transition:background 0.15s; }
 .bsod-btn:hover { background:rgba(255,255,255,0.3); }
 .bsod-hint { font-size:10px; opacity:0.5; margin-top:10px; min-height:14px; }
-/* Reviews & Team dots */
-.rv-dot { width:8px; height:8px; border-radius:var(--r-full); border:none; padding:0; cursor:pointer; background:var(--bdr2); transition:all 0.2s; flex-shrink:0; }
-.rv-dot.active { background:var(--or); width:22px; border-radius:var(--r-xs); }
-.team-dot { width:8px; height:8px; border-radius:var(--r-full); border:none; padding:0; cursor:pointer; background:var(--bdr2); transition:all 0.2s; flex-shrink:0; }
-.team-dot.active { background:var(--or); width:22px; border-radius:var(--r-xs); }
+/* ─── ТОЧКИ КАРУСЕЛЕЙ — единый стиль ─── */
+/* Контейнер (rv-dots / team-dots / v1-dots) */
+.v1-dots { display:flex; justify-content:center; gap:var(--gap-xs); margin-top:14px; flex-wrap:wrap; }
+/* Точка — базовая */
+.rv-dot, .team-dot, .v1-dot {
+  width:8px; height:8px; border-radius:var(--r-full);
+  border:none; padding:0; cursor:pointer;
+  background:var(--bdr2); transition:all 0.2s; flex-shrink:0;
+}
+/* Активная точка — pill */
+.rv-dot.active, .team-dot.active, .v1-dot.active {
+  background:var(--or2); width:22px; border-radius:var(--r-xs);
+}
 
 /* ─── ТРЕКИ: возраст-фильтр + карусель ─── */
 
-.v1-age-tab { background:var(--bg3); border:1px solid var(--bdr); border-radius:var(--r-xl); padding:6px 16px; font-size:var(--fs-sm); font-weight:500; color:var(--txt2); cursor:pointer; white-space:nowrap; font-family:inherit; transition:all 0.15s; }
-.v1-age-tab.active { background:var(--or2); color:#1e2430; border-color:var(--or2); }
-/* Треки точки */
+.v1-age-filter {
+  display: flex;
+  gap: var(--gap-sm);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0 0 var(--gap-sm);
+  margin-bottom: var(--gap-md);
+}
+.v1-age-filter::-webkit-scrollbar { display: none; }
 
-.v1-dot { width:8px; height:8px; border-radius:var(--r-full); background:var(--bdr2); cursor:pointer; border:none; padding:0; flex-shrink:0; transition:background 0.2s, transform 0.2s; }
-.v1-dot.active { background:var(--or2); transform:scale(1.35); }
+.v1-age-tab { background:var(--bg3); border:1px solid var(--bdr); border-radius:var(--r-xl); padding:8px 18px; font-size:var(--fs-sm); font-weight:500; color:var(--txt2); cursor:pointer; white-space:nowrap; font-family:inherit; transition:all 0.15s; flex-shrink:0; }
+.v1-age-tab.active { background:var(--or2); color:#1e2430; border-color:var(--or2); }
 @media (max-width: 768px) {
   
   
@@ -971,11 +1004,11 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
       <div class="hero-pills">
         <span class="pill">7–15 лет</span>
         <a class="pill pill-link" href="https://yandex.ru/maps/org/aydakemp/35558479035/reviews/" target="_blank" rel="noopener" onclick="if(window.ym)ym(96499295,'reachGoal','mincifry_contact_click')">★ 5.0 · Яндекс.Карты</a>
-        <a class="pill pill-link" href="#pricing">Квота — 30 мест на смену</a>
-        <a class="pill pill-link" href="#contacts">66 км от Москвы</a>
+        <a class="pill pill-link" href="#pricing">Квота Минцифры — до 30 мест</a>
+        <a class="pill pill-link" href="#directions">66 км от Москвы</a>
         <a class="pill pill-link" href="#tracks">8+ треков</a>
         <a class="pill pill-link" href="#gallery" onclick="event.preventDefault();switchGalCat('pool');setTimeout(function(){document.getElementById('gallery').scrollIntoView({behavior:'smooth'})},50)">Крытый бассейн</a>
-        <span class="pill">Лицензия Минобра № Л035-01298-77/01082973</span>
+        <a class="pill pill-link" href="https://aidacamp.ru/docs/licenziya-rospotrebnadzor.pdf" target="_blank" rel="noopener">Лицензия Минобра № Л035-01298-77/01082973</a>
       </div>
       <div class="hero-btns">
         <a href="tel:+74951284429" class="btn-primary">
@@ -1354,10 +1387,10 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
     <h2>Выберите смену — <em>посчитаем вместе</em></h2>
     <p class="s-lead">Скажите «я из Минцифры» при записи. Скидка применяется сразу — без промокодов и форм.</p>
     <div class="smeny-tabs r">
-      <div class="stab active" onclick="selectSmena(0, this)">Смена 1 · май</div>
-      <div class="stab" onclick="selectSmena(1, this)">Смена 2 · июнь</div>
-      <div class="stab" onclick="selectSmena(2, this)">Смена 3 · август</div>
-      <div class="stab" onclick="selectSmena(3, this)">Смена 4 · август</div>
+      <div class="stab active" onclick="selectSmena(0, this)">Смена 1 · 30 мая</div>
+      <div class="stab" onclick="selectSmena(1, this)">Смена 2 · 10 июня</div>
+      <div class="stab" onclick="selectSmena(2, this)">Смена 3 · 3 авг</div>
+      <div class="stab" onclick="selectSmena(3, this)">Смена 4 · 17 авг</div>
     </div>
     <div class="calc-box r">
       <!-- Smena info card -->
@@ -1414,7 +1447,7 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
     <h2>Верните до <em>5 300 ₽</em><br>через налоговый вычет</h2>
     <div class="tax-grid r">
       <div>
-        <p class="s-lead" style="margin-bottom:var(--gap-xl);">Расходы на образование детей подпадают под социальный налоговый вычет 13%. Лагерь с лицензией Минобразования — это полноценные образовательные услуги.</p>
+        <p class="s-lead" style="margin-bottom:var(--gap-xl);">Расходы на образование детей подпадают под социальный налоговый вычет 13%. Лагерь с <a href="https://aidacamp.ru/docs/licenziya-rospotrebnadzor.pdf" target="_blank" rel="noopener" style="color:var(--or2);">лицензией Минобразования</a> — это полноценные образовательные услуги.</p>
         <ol class="tax-steps">
           <li class="tax-step">
             <div class="tax-step-num">1</div>
@@ -1572,6 +1605,7 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
     <div id="gal-desktop" class="r" style="display:flex;gap:var(--gap-sm);max-height:460px;overflow:hidden;"></div>
     <!-- Mobile: horizontal swipe carousel -->
     <div id="gal-mobile" class="r" style="display:none;flex-direction:row;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:var(--gap-sm);padding:0 20px 8px;margin:0 -20px;"></div>
+    <div class="v1-dots" id="gal-dots" style="display:none;"></div>
   </div>
 </section>
 
@@ -2001,7 +2035,7 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
 </section>
 
 <!-- MAP -->
-<section>
+<section id="directions">
   <div class="wrap">
     <div class="s-kicker">Как добраться</div>
     <h2>66 км от Москвы — <em>легко доехать</em></h2>
@@ -2896,7 +2930,7 @@ function selectSmena(i, el) {
   document.getElementById('smena-label').textContent = s.label + ' · ' + s.dates;
   document.getElementById('smena-tag').textContent = s.tag;
   document.getElementById('smena-meta').textContent = s.days + ' дней · базовая цена ' + fmt(s.basePrice) + ' / ребёнок';
-  document.getElementById('smena-desc').textContent = s.desc;
+  document.getElementById('smena-desc').innerHTML = s.desc;
   updateCalc();
 }
 selectSmena(0, document.querySelector('.stab'));
@@ -3106,6 +3140,33 @@ function renderGalDesktop(imgs, label) {
   });
 }
 
+// v1InitDots — defined here (Script 1) so renderGalMobile can use it immediately
+function v1InitDots(scrollEl, dotsEl) {
+  if (!dotsEl || !scrollEl) return;
+  var items = Array.from(scrollEl.children).filter(function(el){ return el.style.display !== 'none'; });
+  var count = items.length;
+  dotsEl.innerHTML = '';
+  if (count < 2) { dotsEl.style.display = 'none'; return; }
+  dotsEl.style.display = 'flex';
+  items.forEach(function(_, idx) {
+    var dot = document.createElement('button');
+    dot.className = 'v1-dot' + (idx === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', 'Карточка ' + (idx + 1));
+    dot.onclick = function() {
+      var iw = items[idx].offsetWidth + parseInt(getComputedStyle(scrollEl).gap || 10);
+      scrollEl.scrollTo({ left: idx * iw, behavior: 'smooth' });
+    };
+    dotsEl.appendChild(dot);
+  });
+  function updateDots() {
+    var sw = scrollEl.scrollLeft;
+    var iw = items[0] ? (items[0].offsetWidth + parseInt(getComputedStyle(scrollEl).gap || 10)) : 1;
+    var active = Math.round(sw / iw);
+    dotsEl.querySelectorAll('.v1-dot').forEach(function(d, i){ d.classList.toggle('active', i === active); });
+  }
+  scrollEl.addEventListener('scroll', updateDots, { passive: true });
+}
+
 function renderGalMobile(imgs, label) {
   const el = document.getElementById('gal-mobile');
   el.innerHTML = imgs.map((img, i) => `
@@ -3116,6 +3177,8 @@ function renderGalMobile(imgs, label) {
   el.querySelectorAll('button[data-gi]').forEach(btn => {
     btn.addEventListener('click', () => openLightbox(galCurrentData[+btn.dataset.gi].src, galCurrentData[+btn.dataset.gi].alt, +btn.dataset.gi));
   });
+  el.scrollLeft = 0;
+  v1InitDots(el, document.getElementById('gal-dots'));
 }
 
 function switchGalCat(cat) {
@@ -3213,32 +3276,7 @@ function openPoolLightbox(idx) {
   document.getElementById('lb-next').onclick = function() { idx = (idx + 1) % poolLbData.length; openLightbox(poolLbData[idx].src, poolLbData[idx].alt, idx); };
 }
 
-// ─── Треки v1: карусель + точки + фильтр по возрасту ───
-function v1InitDots(scrollEl, dotsEl) {
-  if (!dotsEl || !scrollEl) return;
-  var items = Array.from(scrollEl.children).filter(function(el){ return el.style.display !== 'none'; });
-  var count = items.length;
-  dotsEl.innerHTML = '';
-  if (count < 2) { dotsEl.style.display = 'none'; return; }
-  dotsEl.style.display = '';
-  items.forEach(function(_, idx) {
-    var dot = document.createElement('button');
-    dot.className = 'v1-dot' + (idx === 0 ? ' active' : '');
-    dot.onclick = function() {
-      var iw = items[idx].offsetWidth + 12;
-      scrollEl.scrollTo({ left: idx * iw, behavior: 'smooth' });
-    };
-    dotsEl.appendChild(dot);
-  });
-  function updateDots() {
-    var sw = scrollEl.scrollLeft;
-    var iw = items[0] ? (items[0].offsetWidth + 12) : 1;
-    var active = Math.round(sw / iw);
-    dotsEl.querySelectorAll('.v1-dot').forEach(function(d, i){ d.classList.toggle('active', i === active); });
-  }
-  scrollEl.addEventListener('scroll', updateDots, { passive: true });
-}
-
+// ─── Треки v1: фильтр по возрасту (v1InitDots определён выше в Script 1) ───
 function v1AgeFilter(age, btn) {
   document.querySelectorAll('#v1-age-filter .v1-age-tab').forEach(function(b){ b.classList.remove('active'); });
   btn.classList.add('active');
@@ -3261,6 +3299,41 @@ document.addEventListener('DOMContentLoaded', function() {
     v1InitDots(document.getElementById('why-grid'), document.getElementById('v1-why-dots'));
   }
 });
+</script>
+
+<!-- Кнопка «вернуться наверх» — показывается только после перехода по якорю -->
+<button id="back-top-btn" aria-label="Наверх"
+  style="display:flex;position:fixed;right:14px;bottom:24px;z-index:9999;width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,90,31,0.35);cursor:pointer;
+    background:rgba(255,90,31,0.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:rgba(255,255,255,0.85);font-size:18px;
+    box-shadow:0 2px 12px rgba(0,0,0,0.25);
+    align-items:center;justify-content:center;opacity:0;transform:scale(0.7) translateY(8px);
+    transition:opacity 0.3s,transform 0.3s;pointer-events:none;">↑</button>
+<script>
+(function(){
+  var btn = document.getElementById('back-top-btn');
+  function showBtn() {
+    btn.style.opacity = '1';
+    btn.style.transform = 'scale(1) translateY(0)';
+    btn.style.pointerEvents = 'auto';
+  }
+  function hideBtn() {
+    btn.style.opacity = '0';
+    btn.style.transform = 'scale(0.7) translateY(8px)';
+    btn.style.pointerEvents = 'none';
+  }
+  btn.addEventListener('click', function(){
+    window.scrollTo({top:0,behavior:'smooth'});
+    hideBtn();
+  });
+  document.querySelectorAll('a[href^="#"]').forEach(function(a){
+    a.addEventListener('click', function(){
+      setTimeout(showBtn, 400);
+    });
+  });
+  window.addEventListener('scroll', function(){
+    if (window.scrollY < 120) hideBtn();
+  }, { passive: true });
+})();
 </script>
 </body>
 </html>

@@ -250,7 +250,7 @@ h2 em { font-style: normal; color: var(--or2); }
 .hack-step { display: flex; gap:var(--gap-lg); align-items: flex-start; padding: 24px 0; border-bottom: 1px solid var(--bdr); }
 .hack-step:first-child { padding-top: 0; }
 .hack-step:last-child { border-bottom: none; }
-.hack-num { font-family: 'Unbounded', sans-serif; font-size: 32px; font-weight: 900; color: rgba(255,90,31,0.15); line-height: 1; flex-shrink: 0; width: 48px; }
+.hack-num { font-family: 'Unbounded', sans-serif; font-size: 32px; font-weight: 900; color: rgba(255,90,31,0.55); line-height: 1; flex-shrink: 0; width: 48px; }
 .hack-title { font-size:var(--fs-md); font-weight: 700; color: var(--txt); margin-bottom:var(--gap-xs); }
 .hack-text { font-size:var(--fs-md); color: var(--txt2); line-height: 1.7; }
 .hack-visual { background: var(--bg3); border: 1px solid var(--bdr); border-radius:var(--r-md); padding: 40px 36px; text-align: center; }
@@ -534,6 +534,24 @@ footer { padding: 36px 0; border-top: 1px solid var(--bdr); background: var(--bg
 @media (max-width: 520px) {
   .grid-3, .grid-4, .reviews-grid { grid-template-columns: 1fr; }
   .grid-3 > *, .grid-4 > * { grid-column: span 1 !important; }
+  /* Треки — flex-карусель одной карточкой */
+  #tracks-grid {
+    display: flex !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    gap: var(--gap-sm) !important;
+    padding: 0 20px 4px !important;
+    margin: 0 -20px !important;
+  }
+  #tracks-grid::-webkit-scrollbar { display: none; }
+  #tracks-grid .track-card {
+    min-width: 88vw !important;
+    max-width: 88vw !important;
+    scroll-snap-align: start !important;
+    flex-shrink: 0 !important;
+  }
   .gallery-grid { grid-template-columns: 1fr; }
   .gallery-grid .big { grid-column: span 1; }
   .gallery-item.big { aspect-ratio: 4/3; }
@@ -614,11 +632,19 @@ footer { padding: 36px 0; border-top: 1px solid var(--bdr); background: var(--bg
 .bsod-btn { padding:7px 18px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.5); color:var(--c-white); font-family:inherit; font-size:var(--fs-xs); cursor:pointer; transition:background 0.15s; }
 .bsod-btn:hover { background:rgba(255,255,255,0.3); }
 .bsod-hint { font-size:10px; opacity:0.5; margin-top:10px; min-height:14px; }
-/* Reviews & Team dots */
-.rv-dot { width:8px; height:8px; border-radius:var(--r-full); border:none; padding:0; cursor:pointer; background:var(--bdr2); transition:all 0.2s; flex-shrink:0; }
-.rv-dot.active { background:var(--or); width:22px; border-radius:var(--r-xs); }
-.team-dot { width:8px; height:8px; border-radius:var(--r-full); border:none; padding:0; cursor:pointer; background:var(--bdr2); transition:all 0.2s; flex-shrink:0; }
-.team-dot.active { background:var(--or); width:22px; border-radius:var(--r-xs); }
+/* ─── ТОЧКИ КАРУСЕЛЕЙ — единый стиль ─── */
+/* Контейнер */
+.carousel-dots { display:flex; justify-content:center; gap:var(--gap-xs); margin-top:14px; flex-wrap:wrap; }
+/* Точка — базовая */
+.rv-dot, .team-dot, .why-dot, .gal-dot, .track-dot {
+  width:8px; height:8px; border-radius:var(--r-full);
+  border:none; padding:0; cursor:pointer;
+  background:var(--bdr2); transition:all 0.2s; flex-shrink:0;
+}
+/* Активная точка — pill */
+.rv-dot.active, .team-dot.active, .why-dot.active, .gal-dot.active, .track-dot.active {
+  background:var(--or2); width:22px; border-radius:var(--r-xs);
+}
 
 /* ══════════════════════════════════════
    МОБИЛЬНАЯ АДАПТАЦИЯ — ПРОТОКОЛ v2
@@ -948,10 +974,10 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
         <span class="pill">7–15 лет</span>
         <a class="pill pill-link" href="https://yandex.ru/maps/org/aydakemp/35558479035/reviews/" target="_blank" rel="noopener" onclick="if(window.ym)ym(96499295,'reachGoal','lanit_contact_click')">★ 5.0 · Яндекс.Карты</a>
         <a class="pill pill-link" href="#gallery" onclick="event.preventDefault();switchGalCat('pool');setTimeout(function(){document.getElementById('gallery').scrollIntoView({behavior:'smooth'})},50)">Крытый бассейн</a>
-        <a class="pill pill-link" href="#contacts">66 км от Москвы</a>
+        <a class="pill pill-link" href="#directions">66 км от Москвы</a>
         <a class="pill pill-link" href="#tracks">8+ треков</a>
         <a class="pill pill-link" href="#gallery" onclick="event.preventDefault();switchGalCat('food');setTimeout(function(){document.getElementById('gallery').scrollIntoView({behavior:'smooth'})},50)">5-разовое питание</a>
-        <span class="pill">Лицензия Минобра</span>
+        <a class="pill pill-link" href="https://aidacamp.ru/docs/licenziya-rospotrebnadzor.pdf" target="_blank" rel="noopener">Лицензия Минобра</a>
       </div>
       <div class="hero-btns">
         <a href="tel:+74951284429" class="btn-primary">
@@ -1045,6 +1071,7 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
         <div class="why-text">Одинаковый парк машин. Сброс ОС за 15 секунд. Все IDE и библиотеки настроены и проверены заранее.</div>
       </div>
     </div>
+    <div class="carousel-dots" id="why-dots"></div>
   </div>
 </section>
 
@@ -1054,7 +1081,7 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
     <div class="s-kicker">Программа обучения</div>
     <h2>8 треков для детей <em>7–15 лет</em></h2>
     <p class="s-lead">2 занятия по 90 минут каждый день. Подбор в первый день по уровню и интересам ребёнка.</p>
-    <div class="grid-4 r">
+    <div class="grid-4 r" id="tracks-grid">
       <div class="track-card">
         <div class="track-age">7–9 лет</div>
         <div class="track-name">Scratch + ИИ / GPT</div>
@@ -1104,6 +1131,7 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
         <div class="track-res">Основы ООП и алгоритмов, паттерны проектирования. Проект с реальной архитектурой</div>
       </div>
     </div>
+    <div class="carousel-dots" id="tracks-dots"></div>
   </div>
 </section>
 
@@ -1319,7 +1347,7 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
     <h2>Верните до <em>5 300 ₽</em><br>через налоговый вычет</h2>
     <div class="tax-grid r">
       <div>
-        <p class="s-lead" style="margin-bottom:var(--gap-xl);">Расходы на образование детей подпадают под социальный налоговый вычет 13%. Лагерь с лицензией Минобразования — это полноценные образовательные услуги.</p>
+        <p class="s-lead" style="margin-bottom:var(--gap-xl);">Расходы на образование детей подпадают под социальный налоговый вычет 13%. Лагерь с <a href="https://aidacamp.ru/docs/licenziya-rospotrebnadzor.pdf" target="_blank" rel="noopener" style="color:var(--or2);">лицензией Минобразования</a> — это полноценные образовательные услуги.</p>
         <ol class="tax-steps">
           <li class="tax-step">
             <div class="tax-step-num">1</div>
@@ -1477,6 +1505,7 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
     <div id="gal-desktop" class="r" style="display:flex;gap:var(--gap-sm);max-height:460px;overflow:hidden;"></div>
     <!-- Mobile: horizontal swipe carousel -->
     <div id="gal-mobile" class="r" style="display:none;flex-direction:row;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:var(--gap-sm);padding:0 20px 8px;margin:0 -20px;"></div>
+    <div class="carousel-dots" id="gal-dots" style="display:none;"></div>
   </div>
 </section>
 
@@ -1906,7 +1935,7 @@ ym(96499295, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true 
 </section>
 
 <!-- MAP -->
-<section>
+<section id="directions">
   <div class="wrap">
     <div class="s-kicker">Как добраться</div>
     <h2>66 км от Москвы — <em>легко доехать</em></h2>
@@ -2889,6 +2918,33 @@ function galBadge(size, label) {
           <span style="position:absolute;bottom:${s.bot};right:${s.right};background:rgba(0,0,0,0.7);border-radius:${s.r};padding:${s.pad};font-size:${s.botFs};font-weight:600;color:var(--c-white);text-transform:uppercase;letter-spacing:0.05em;backdrop-filter:blur(4px);">${label}</span>`;
 }
 
+// Carousel dots helper — defined here (Script 1) so renderGalMobile can use it
+function initCarouselDots(scrollEl, dotsEl, dotClass) {
+  if (!scrollEl || !dotsEl) return;
+  var items = Array.from(scrollEl.children).filter(function(el){ return el.style.display !== 'none'; });
+  var count = items.length;
+  dotsEl.innerHTML = '';
+  if (count < 2) { dotsEl.style.display = 'none'; return; }
+  dotsEl.style.display = 'flex';
+  items.forEach(function(_, idx) {
+    var dot = document.createElement('button');
+    dot.className = dotClass + (idx === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', 'Карточка ' + (idx + 1));
+    dot.onclick = function() {
+      var iw = items[idx].offsetWidth + parseInt(getComputedStyle(scrollEl).gap || 10);
+      scrollEl.scrollTo({ left: idx * iw, behavior: 'smooth' });
+    };
+    dotsEl.appendChild(dot);
+  });
+  function updateDots() {
+    var sw = scrollEl.scrollLeft;
+    var iw = items[0] ? (items[0].offsetWidth + parseInt(getComputedStyle(scrollEl).gap || 10)) : 1;
+    var active = Math.round(sw / iw);
+    dotsEl.querySelectorAll('.' + dotClass).forEach(function(d, i){ d.classList.toggle('active', i === active); });
+  }
+  scrollEl.addEventListener('scroll', updateDots, { passive: true });
+}
+
 function renderGalDesktop(imgs, label) {
   const el = document.getElementById('gal-desktop');
   const big = imgs[0], smalls = imgs.slice(1, 5);
@@ -2924,6 +2980,10 @@ function renderGalMobile(imgs, label) {
   el.querySelectorAll('button[data-gi]').forEach(btn => {
     btn.addEventListener('click', () => openLightbox(galCurrentData[+btn.dataset.gi].src, galCurrentData[+btn.dataset.gi].alt, +btn.dataset.gi));
   });
+  el.scrollLeft = 0;
+  if (window.innerWidth <= 768) {
+    initCarouselDots(el, document.getElementById('gal-dots'), 'gal-dot');
+  }
 }
 
 function switchGalCat(cat) {
@@ -3001,6 +3061,48 @@ document.querySelectorAll('.r').forEach(el => obs.observe(el));
       c.style.display = (age==='all' || c.dataset.age===age || c.dataset.age==='all') ? '' : 'none';
     });
   }); });
+})();
+
+// initCarouselDots is defined in Script 1 (above) — used by why-grid, tracks, and gallery
+if (window.innerWidth <= 768) {
+  initCarouselDots(document.querySelector('.why-grid'), document.getElementById('why-dots'), 'why-dot');
+  initCarouselDots(document.getElementById('tracks-grid'), document.getElementById('tracks-dots'), 'track-dot');
+  // Gallery dots are initialized inside renderGalMobile (called on every category switch)
+}
+</script>
+
+<!-- Кнопка «вернуться наверх» — показывается только после перехода по якорю -->
+<button id="back-top-btn" aria-label="Наверх"
+  style="display:flex;position:fixed;right:14px;bottom:24px;z-index:9999;width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,90,31,0.35);cursor:pointer;
+    background:rgba(255,90,31,0.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:rgba(255,255,255,0.85);font-size:18px;
+    box-shadow:0 2px 12px rgba(0,0,0,0.25);
+    align-items:center;justify-content:center;opacity:0;transform:scale(0.7) translateY(8px);
+    transition:opacity 0.3s,transform 0.3s;pointer-events:none;">↑</button>
+<script>
+(function(){
+  var btn = document.getElementById('back-top-btn');
+  function showBtn() {
+    btn.style.opacity = '1';
+    btn.style.transform = 'scale(1) translateY(0)';
+    btn.style.pointerEvents = 'auto';
+  }
+  function hideBtn() {
+    btn.style.opacity = '0';
+    btn.style.transform = 'scale(0.7) translateY(8px)';
+    btn.style.pointerEvents = 'none';
+  }
+  btn.addEventListener('click', function(){
+    window.scrollTo({top:0,behavior:'smooth'});
+    hideBtn();
+  });
+  document.querySelectorAll('a[href^="#"]').forEach(function(a){
+    a.addEventListener('click', function(){
+      setTimeout(showBtn, 400);
+    });
+  });
+  window.addEventListener('scroll', function(){
+    if (window.scrollY < 120) hideBtn();
+  }, { passive: true });
 })();
 </script>
 </body>

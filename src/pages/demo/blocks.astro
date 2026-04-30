@@ -2,8 +2,13 @@
 // Wireframes всех 21 блоков главной страницы
 // Mobile (375px) + Desktop (1280px) · Day / Night tabs
 // SEO-разметка · Поведение загрузки · design/glassmorphism-v1
+import '../../styles/global.css';
 import { mainShifts, shortShifts, renderCard } from '../../data/shifts';
 import DualRatingPill from '../../components/DualRatingPill.astro';
+import IncampBadge from '../../components/IncampBadge.astro';
+import Shifts from '../../components/Shifts.astro';
+import FAQ from '../../components/FAQ.astro';
+import Reviews from '../../components/Reviews.astro';
 import { STAT_RATING, YANDEX_MAPS_URL } from '../../data/contacts';
 const allDemoShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShifts[2], mainShifts[3]];
 ---
@@ -133,6 +138,29 @@ const allDemoShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShifts[
       margin-bottom: 32px;
       overflow: hidden;
       box-shadow: var(--card-shadow);
+    }
+
+    /* ── Обёртка реального компонента ── */
+    .component-live {
+      border-top: 1px solid var(--bd-sub);
+    }
+    .component-live-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 20px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #16a34a;
+      background: #f0fdf4;
+      border-bottom: 1px solid #dcfce7;
+      letter-spacing: 0.01em;
+    }
+    .component-live-label .bi { font-size: 12px; }
+    .component-live-wrap {
+      /* Компонент рендерится в своём естественном размере */
+      width: 100%;
+      overflow-x: auto;
     }
     .block-header {
       display: grid;
@@ -1092,99 +1120,14 @@ const allDemoShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShifts[
     </div>
   </div>
 
-  <!-- МОБИЛЬ: первые 2 смены из реальных данных -->
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль — вертикальный список</div>
-      <div class="phone-frame">
-        <div class="shifts-section" id="sh-m">
-          <div class="fs-wrap">
-            <div class="sec-label">СМЕНЫ ЛЕТА 2026</div>
-            <span class="fs-label">10px 700</span>
-          </div>
-          <div class="fs-wrap">
-            <div class="sec-h2">Выбери свою смену</div>
-            <span class="fs-label">17px 800</span>
-          </div>
-          {allDemoShifts.slice(0,2).map(s => {
-            const { total, pct } = renderCard(s);
-            const isFull = s.free === 0;
-            return (
-              <div class="shift-card-glass" style={s.highlighted ? 'border-color:rgba(236,124,0,0.4);' : ''}>
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:2px;">
-                  <div class="fs-wrap">
-                    <div class="shift-name">{s.name}</div>
-                    <span class="fs-label">14px 700</span>
-                  </div>
-                  {s.popular && <span style="background:#fef9c3; color:#854d0e; border-radius:100px; padding:2px 7px; font-size:9px; font-weight:700;">Хит</span>}
-                  {s.statusType === 'short' && <span style="background:#fef3c7; color:#92400e; border-radius:100px; padding:2px 7px; font-size:9px; font-weight:700;">Короткая</span>}
-                </div>
-                <div class="shift-dates">
-                  <time datetime={s.startDate}>{s.dates}</time> · {s.duration}
-                </div>
-                <div class="fs-wrap">
-                  <div class="shift-price">{s.price}</div>
-                  <span class="fs-label">16px 800</span>
-                </div>
-                <div class="progress-bar">
-                  <div class="progress-fill" style={`width:${pct}%; background:${pct > 80 ? '#ef4444' : pct > 60 ? '#f59332' : '#94a3b8'};`}></div>
-                </div>
-                <div style="display:flex; justify-content:space-between; font-size:10px; color:#6b7280; margin-bottom:8px;">
-                  <span>занято {s.occupied} из {total}</span>
-                  <span style={`color:${s.free <= 5 ? '#ef4444' : '#10b981'};`}>свободно {s.free}</span>
-                </div>
-                <button class="btn-select" style={s.highlighted ? 'background:#ec7c00;' : ''}>
-                  {isFull ? 'Лист ожидания' : 'Выбрать смену'}
-                </button>
-              </div>
-            );
-          })}
-          <div style="font-size:10px; color:#6b7280; text-align:center; padding:8px 0;">
-            + {allDemoShifts.length - 2} смены · <span style="color:#1b4fd8;">Показать все</span>
-          </div>
-        </div>
-      </div>
+  <!-- Реальный компонент Shifts.astro -->
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · данные из shifts.ts · интерактивность включена
     </div>
-
-    <!-- ДЕСКТОП: все смены в сетке -->
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — сетка смен</div>
-      <div class="desktop-frame" style="padding:20px; background:linear-gradient(135deg,#eff6ff,#dbeafe);" id="sh-d">
-        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px;">
-          <div class="fs-wrap">
-            <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin:0;">Смены лета 2026</h2>
-            <span class="fs-label">22px 800</span>
-          </div>
-          <span style="font-size:12px; color:#475569;">{allDemoShifts.length} смены · от {allDemoShifts.map(s=>parseInt(s.price)).sort((a,b)=>a-b)[0].toLocaleString('ru')} ₽</span>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
-          {allDemoShifts.slice(0,3).map(s => {
-            const { total, pct } = renderCard(s);
-            return (
-              <div class="shift-card-glass" style={s.highlighted ? 'border-color:rgba(236,124,0,0.5); box-shadow:0 0 0 2px rgba(236,124,0,0.1);' : ''}>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                  <div class="shift-name" style="font-size:13px;">{s.name}</div>
-                  {s.popular && <span style="background:#fef9c3; color:#854d0e; border-radius:100px; padding:1px 6px; font-size:9px; font-weight:700;">Хит</span>}
-                  {s.statusType === 'short' && <span style="background:#fef3c7; color:#92400e; border-radius:100px; padding:1px 6px; font-size:9px; font-weight:700;">Кор.</span>}
-                </div>
-                <div class="shift-dates" style="font-size:10px;"><time datetime={s.startDate}>{s.dates}</time> · {s.duration}</div>
-                <div class="shift-price" style="font-size:15px; margin:6px 0 4px;">{s.price}</div>
-                <div class="progress-bar" style="margin-bottom:3px;">
-                  <div class="progress-fill" style={`width:${pct}%; background:${pct > 80 ? '#ef4444' : pct > 60 ? '#f59332' : '#94a3b8'};`}></div>
-                </div>
-                <div style="display:flex; justify-content:space-between; font-size:9px; color:#6b7280; margin-bottom:8px;">
-                  <span>{s.occupied}/{total} мест</span>
-                  <span style={`font-weight:600; color:${s.free <= 5 ? '#ef4444' : '#10b981'};`}>свободно {s.free}</span>
-                </div>
-                <button class="btn-select" style="font-size:12px; height:32px;">Выбрать</button>
-              </div>
-            );
-          })}
-        </div>
-        <div style="margin-top:10px; text-align:center; font-size:12px; color:#475569;">
-          + ещё {allDemoShifts.length - 3} смены →
-        </div>
-      </div>
+    <div class="component-live-wrap bg-white">
+      <Shifts />
     </div>
   </div>
 
@@ -1866,62 +1809,14 @@ import { STAT_RATING, YANDEX_MAPS_URL } from '@/data/contacts';
     <div><div class="block-name">FAQ — частые вопросы</div><div class="block-file">FAQ.astro</div></div>
     <div class="badges"><span class="badge badge-blue">SEO Rich Snippet</span><span class="badge badge-gray">FAQPage Schema</span></div>
   </div>
-  <div class="previews">
-    <div class="preview-mobile">
-      <div class="preview-label"><i class="bi bi-phone"></i> Мобиль — accordion</div>
-      <div class="phone-frame">
-        <div class="sec-blue">
-          <div class="sec-label">FAQ</div>
-          <h2 class="t-h2">Часто спрашивают</h2>
-          <div class="faq-item">
-            <div class="faq-q">Нужен ли ноутбук? <span style="color:#1b4fd8; font-weight:400;">−</span></div>
-            <div class="faq-a">Нет. Все ноутбуки, 3D-принтеры и оборудование предоставляем.</div>
-          </div>
-          <div class="faq-item">
-            <div class="faq-q">Можно с нулевым опытом? <span style="color:#1b4fd8;">+</span></div>
-          </div>
-          <div class="faq-item">
-            <div class="faq-q">Как забрать ребёнка досрочно? <span style="color:#1b4fd8;">+</span></div>
-          </div>
-          <div class="faq-item">
-            <div class="faq-q">Есть ли трансфер из Москвы? <span style="color:#1b4fd8;">+</span></div>
-          </div>
-          <div class="faq-item">
-            <div class="faq-q">Что если ребёнку не понравится? <span style="color:#1b4fd8;">+</span></div>
-          </div>
-        </div>
-      </div>
+  <!-- Реальный компонент FAQ.astro -->
+  <div class="component-live">
+    <div class="component-live-label">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      Реальный компонент · фильтры по категориям · accordion с JS
     </div>
-    <div class="preview-desktop">
-      <div class="preview-label"><i class="bi bi-display"></i> Десктоп — 2 колонки</div>
-      <div class="desktop-frame" style="padding:24px; background:#f0f4ff;">
-        <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin:0 0 16px;">Часто спрашивают</h2>
-        <div class="dsk-grid-2" style="gap:8px; align-items:start;">
-          <div>
-            {[
-              ['Нужен ли ноутбук?','Нет. Все устройства: ноутбуки, 3D-принтеры, оборудование — предоставляем. Ребёнок едет налегке.',true],
-              ['Можно с нулевым опытом?','Да. Программа строится с нуля, группы формируются по возрасту. Скучно не будет.',false],
-              ['Есть ли трансфер из Москвы?','Да. Организованный автобус от м. Солнцево. Бронируется вместе с путёвкой.',false],
-            ].map(([q, a, open]) => (
-              <div class="faq-item">
-                <div class="faq-q">{q} <span style={`color:#1b4fd8; font-weight:400;`}>{open ? '−' : '+'}</span></div>
-                {open && <div class="faq-a">{a}</div>}
-              </div>
-            ))}
-          </div>
-          <div>
-            {[
-              ['Что если ребёнку не понравится?','Возврат 50% если в первые 3 дня смены. Прецеденты были — возвращали без вопросов.',false],
-              ['Как забрать досрочно?','Звоните — договоримся. Нет штрафов за досрочный выезд в экстренных ситуациях.',false],
-              ['Есть ли налоговый вычет?','Да. Лицензия Минобрнауки Л035-01298-77. Документы для ФНС выдаём после оплаты.',false],
-            ].map(([q, a, open]) => (
-              <div class="faq-item">
-                <div class="faq-q">{q} <span style="color:#1b4fd8;">+</span></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+    <div class="component-live-wrap">
+      <FAQ />
     </div>
   </div>
   <div class="notes">
