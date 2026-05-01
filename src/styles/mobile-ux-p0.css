@@ -137,3 +137,35 @@
     min-height: 44px;
   }
 }
+
+/* ─── Mobile keyboard handling (Q) ──────────────────────────────────────
+ * Sticky-bottom элементы (CTA, AgeBar, BackToTop) поднимаются вместе
+ * с visual viewport когда клавиатура открыта (см. src/scripts/mobile-keyboard.ts).
+ * --kbd-offset выставляется JS, дефолт 0px.
+ */
+:root {
+  --kbd-offset: 0px;
+}
+
+@media (max-width: 768px) {
+  /* Поднимаем sticky-bottom элементы */
+  [data-sticky-bottom],
+  .sticky-bottom-mobile,
+  #age-bar,
+  #back-to-top {
+    transform: translateY(calc(-1 * var(--kbd-offset)));
+    transition: transform 0.18s ease-out;
+  }
+
+  /* Когда клавиатура открыта — прячем декоративный sticky CTA, чтобы
+   * не закрывать input. Возвращаем когда закрылась.
+   */
+  html[data-kbd-open="true"] #age-bar {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* min-height для full-screen блоков — svh (small viewport height),
+   * учитывает видимую часть без учёта URL bar. */
+  body { min-height: 100svh; }
+}
