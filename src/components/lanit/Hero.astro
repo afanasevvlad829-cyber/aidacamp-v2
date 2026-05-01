@@ -1,0 +1,225 @@
+---
+import TerminalCard from './TerminalCard.astro';
+---
+
+<section class="hero">
+  <canvas id="hero-canvas"></canvas>
+
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="hero-left">
+        <h1 class="hero-h1">
+          Обучение программированию
+          <span class="or">онлайн</span>
+        </h1>
+        <p class="hero-lead">
+          Менторы ЛАНИТ — крупнейшей IT-компании России — обучают детей написанию кода. В реальном формате, с проверкой домашних заданий и выданием сертификатов.
+        </p>
+        <div class="hero-cta">
+          <button class="btn btn-primary">Записаться на смену</button>
+          <a href="tel:+79990001234" class="btn btn-secondary">Позвонить</a>
+        </div>
+      </div>
+
+      <TerminalCard />
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 80px 0 120px 0;
+    overflow: hidden;
+  }
+
+  #hero-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 500px;
+    gap: 72px;
+    align-items: center;
+  }
+
+  .hero-h1 {
+    font-size: clamp(32px, 5vw, 56px);
+    line-height: 1.2;
+    font-weight: 700;
+    margin-bottom: 24px;
+    color: var(--txt);
+  }
+
+  .or {
+    color: var(--or);
+    display: block;
+  }
+
+  .hero-lead {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--txt2);
+    margin-bottom: 40px;
+    max-width: 420px;
+  }
+
+  .hero-cta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 12px 28px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-primary {
+    background-color: var(--or);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--or2);
+    transform: translateY(-2px);
+  }
+
+  .btn-secondary {
+    border: 1px solid var(--bdr);
+    color: var(--txt);
+    background-color: transparent;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--or);
+    background-color: var(--surface);
+  }
+
+  @media (max-width: 1024px) {
+    .hero-grid {
+      grid-template-columns: 1fr;
+      gap: 48px;
+    }
+
+    .hero {
+      min-height: auto;
+      padding: 60px 0 80px 0;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .hero-h1 {
+      font-size: 28px;
+    }
+
+    .hero-lead {
+      font-size: 14px;
+      max-width: 100%;
+    }
+
+    .hero-cta {
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      font-size: 13px;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .hero {
+      padding: 40px 0 60px 0;
+    }
+
+    .hero-h1 {
+      font-size: 24px;
+    }
+
+    .hero-cta {
+      flex-direction: column;
+    }
+
+    .btn {
+      width: 100%;
+      text-align: center;
+    }
+  }
+</style>
+
+<script>
+  // Code Rain Animation
+  const canvas = document.getElementById('hero-canvas') as HTMLCanvasElement;
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      const snippets = 'def class return import for if else True False None print len range type async await yield lambda try except with as pass break continue'.split(' ');
+      const pyColors = ['#FF7B72', '#D2A8FF', '#A5D6FF', '#FFA657', '#6E7681', '#79C0FF'];
+
+      let cols = 0;
+      let drops: number[] = [];
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        cols = Math.floor(canvas.width / 22);
+        if (drops.length === 0) {
+          drops = Array.from({ length: cols }, () => Math.random() * -60);
+        } else {
+          drops = drops.slice(0, cols);
+          while (drops.length < cols) {
+            drops.push(Math.random() * -60);
+          }
+        }
+      }
+
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      const html = document.documentElement;
+
+      setInterval(() => {
+        const isDark = html.dataset.theme === 'dark';
+        ctx.fillStyle = isDark ? 'rgba(12,14,17,0.05)' : 'rgba(244,245,248,0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.font = '13px "SF Mono","Fira Code",monospace';
+        for (let i = 0; i < cols; i++) {
+          const word = snippets[Math.floor(Math.random() * snippets.length)];
+          ctx.fillStyle = pyColors[Math.floor(Math.random() * pyColors.length)];
+          ctx.globalAlpha = 0.6;
+          ctx.fillText(word[0] || ' ', i * 22, drops[i] * 22);
+          ctx.globalAlpha = 1;
+
+          if (drops[i] * 22 > canvas.height && Math.random() > 0.975) {
+            drops[i] = 0;
+          }
+          drops[i] += 0.35;
+        }
+      }, 55);
+    }
+  }
+</script>

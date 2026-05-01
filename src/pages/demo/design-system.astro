@@ -1,0 +1,1148 @@
+---
+import Base from '../../layouts/Base.astro';
+import '../../styles/global.css';
+---
+
+<Base title="АйДаКемп — Дизайн-система v3 (Soft Orange + Attention)" noindex>
+
+<style is:inline>
+  body { font-family: 'Inter', sans-serif; background: #f8f9fb; margin: 0; color: #1e2430; }
+  .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  .nav-side { position: fixed; top: 80px; left: 24px; width: 200px; padding: 16px; background: white; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); font-size: 13px; }
+  .nav-side a { display: block; padding: 6px 8px; color: #4b5263; text-decoration: none; border-radius: 6px; margin-bottom: 2px; }
+  .nav-side a:hover { background: #f3f6fb; color: #ec9b44; }
+  @media (max-width: 1280px) { .nav-side { display: none; } }
+
+  .hero { background: linear-gradient(135deg, #0d1a2b 0%, #1c2740 100%); color: white; padding: 48px 24px; text-align: center; }
+  .hero h1 { font-size: 36px; font-weight: 800; margin: 0 0 8px; letter-spacing: -0.03em; }
+  .hero .accent { color: #ec9b44; }
+  .hero p { color: rgba(255,255,255,0.7); margin: 0; font-size: 15px; }
+  .badge-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; background: rgba(236,155,68,0.15); border: 1px solid rgba(236,155,68,0.4); color: #ec9b44; font-size: 12px; font-weight: 600; margin-bottom: 12px; }
+
+  section { padding: 48px 0 24px; border-bottom: 1px solid #e5e7eb; scroll-margin-top: 24px; }
+  section h2 { font-size: 28px; font-weight: 800; color: #0d1a2b; margin: 0 0 8px; letter-spacing: -0.02em; }
+  section .subtitle { color: #6b7280; font-size: 15px; margin: 0 0 28px; }
+  section h3 { font-size: 18px; font-weight: 700; color: #1e2430; margin: 32px 0 12px; }
+
+  .palette { display: grid; grid-template-columns: repeat(11, 1fr); gap: 4px; margin: 8px 0 16px; }
+  .swatch { aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column; align-items: flex-end; justify-content: end; padding: 6px; font-size: 9px; color: white; font-weight: 600; }
+  .swatch-light { color: #1e2430; }
+  .swatch .num { font-size: 11px; font-weight: 700; }
+
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .demo-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; }
+  .demo-card h4 { margin: 0 0 12px; font-size: 13px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.04em; }
+  .demo-card .label-bad { color: #c4515c; }
+  .demo-card .label-good { color: #2fa768; }
+
+  .block-row { display: flex; gap: 16px; padding: 16px; border: 1px solid #e5e7eb; border-radius: 12px; margin-bottom: 12px; align-items: center; }
+  .block-row .num { width: 32px; height: 32px; border-radius: 50%; background: #f3f6fb; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #4b5263; font-size: 13px; flex-shrink: 0; }
+  .block-row .info { flex: 1; }
+  .block-row .info strong { display: block; color: #0d1a2b; font-size: 15px; }
+  .block-row .info span { color: #6b7280; font-size: 13px; }
+  .block-row .tag-info { background: #e3ebf6; color: #1d3b61; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .block-row .tag-conv { background: rgba(236,155,68,0.15); color: #b66d10; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .block-row .attention { font-size: 11px; color: #4b5263; max-width: 200px; }
+
+  /* Demo button styles */
+  .btn-primary-soft { background: #ec9b44; color: white; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 2px 8px rgba(236,155,68,0.25); transition: all 0.2s; }
+  .btn-primary-soft:hover { background: #d68830; }
+  .btn-primary-old { background: #ec9b44; color: white; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 14px; box-shadow: 0 4px 16px rgba(236,155,68,0.45); }
+
+  .btn-secondary { background: white; color: #1e2430; border: 1.5px solid #ec9b44; padding: 9px 18px; border-radius: 12px; font-weight: 600; font-size: 14px; }
+  .btn-ghost { background: transparent; color: #ec9b44; border: 1px solid rgba(236,155,68,0.3); padding: 9px 18px; border-radius: 12px; font-weight: 600; font-size: 14px; }
+
+  .type-row { display: flex; align-items: baseline; gap: 16px; padding: 8px 0; border-bottom: 1px solid #f3f6fb; }
+  .type-row .label { width: 80px; font-size: 12px; color: #6b7280; font-family: monospace; }
+  .type-row .demo { color: #1e2430; flex: 1; }
+  .type-row .meta { font-size: 11px; color: #9ca3af; font-family: monospace; }
+
+  .principle { background: white; border-left: 3px solid #ec9b44; padding: 16px 20px; margin: 12px 0; border-radius: 0 12px 12px 0; }
+  .principle strong { color: #0d1a2b; }
+
+  .table-clean { width: 100%; border-collapse: collapse; }
+  .table-clean th, .table-clean td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #f3f6fb; font-size: 14px; vertical-align: top; }
+  .table-clean th { background: #f8f9fb; color: #4b5263; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .table-clean td code { background: #f3f6fb; padding: 1px 6px; border-radius: 4px; font-size: 12px; color: #ec9b44; }
+
+  .anchor-target { display: block; height: 60px; margin-top: -60px; visibility: hidden; }
+</style>
+
+<!-- ═══ NAV ═══ -->
+<aside class="nav-side">
+  <a href="#philosophy"><i class="bi bi-bullseye" aria-hidden="true"></i> Философия</a>
+  <a href="#palette"><i class="bi bi-palette-fill" aria-hidden="true"></i> Палитра</a>
+  <a href="#typography"><i class="bi bi-pencil-square" aria-hidden="true"></i> Типографика</a>
+  <a href="#buttons"><i class="bi bi-circle" aria-hidden="true"></i> Кнопки</a>
+  <a href="#blocks"><i class="bi bi-box-seam" aria-hidden="true"></i> Блоки сайта</a>
+  <a href="#attention"><i class="bi bi-eye-fill" aria-hidden="true"></i> Точки внимания</a>
+  <a href="#mobile"><i class="bi bi-phone" aria-hidden="true"></i> Mobile vs Desktop</a>
+  <a href="#seo"><i class="bi bi-search" aria-hidden="true"></i> SEO / GEO / AEO</a>
+  <a href="#ordering"><i class="bi bi-bar-chart-line" aria-hidden="true"></i> Порядок блоков</a>
+  <a href="#metrika"><i class="bi bi-broadcast" aria-hidden="true"></i> Метрика-цели</a>
+  <a href="#voice"><i class="bi bi-chat-dots-fill" aria-hidden="true"></i> Brand Voice</a>
+  <a href="#a11y"><i class="bi bi-universal-access" aria-hidden="true"></i> Доступность</a>
+  <a href="#motion"><i class="bi bi-stars" aria-hidden="true"></i> Микроанимации</a>
+  <a href="#usp"><i class="bi bi-bullseye" aria-hidden="true"></i> USP подсветка</a>
+  <a href="#journey"><i class="bi bi-signpost-2" aria-hidden="true"></i> Скользкая горка</a>
+  <a href="#menu"><i class="bi bi-list" aria-hidden="true"></i> Меню</a>
+  <a href="#pages"><i class="bi bi-file-text" aria-hidden="true"></i> Отдельные страницы</a>
+  <a href="#booking"><i class="bi bi-ticket-perforated" aria-hidden="true"></i> Бронирование</a>
+  <a href="#bot"><i class="bi bi-chat-dots" aria-hidden="true"></i> Бот без «бот»</a>
+  <a href="#ux-details">UX-детали</a>
+  <a href="#dont"><i class="bi bi-slash-circle" aria-hidden="true"></i> Чего не делать</a>
+</aside>
+
+<!-- ═══ HERO ═══ -->
+<header class="hero">
+  <span class="badge-pill">v3 · 2026-05-01 · Soft Orange + Attention-driven</span>
+  <h1>Дизайн-система <span class="accent">АйДаКемп</span></h1>
+  <p>Орientируется на Дарью 35-45, soft orange (как голова робота), photo-emotion вместо эффектов</p>
+  <p style="margin-top: 8px; font-size: 12px; color: rgba(255,255,255,0.5);">Используются Bootstrap Icons (как и должно быть в production). Никаких эмодзи.</p>
+</header>
+
+<div class="container">
+
+<!-- ═══ ФИЛОСОФИЯ ═══ -->
+<section><span id="philosophy" class="anchor-target"></span>
+  <h2><i class="bi bi-bullseye" aria-hidden="true"></i> 1. Философия</h2>
+  <p class="subtitle">Не дизайнерская, а маркетинговая. Дизайн = инструмент конверсии.</p>
+
+  <div class="principle">
+    <strong>Принцип 1: Photo emotion &gt; graphic effects.</strong><br>
+    Дарья покупает «социально-одобряемое». Фото улыбающегося ребёнка работает в 10× раз сильнее, чем gradient orbs.
+  </div>
+  <div class="principle">
+    <strong>Принцип 2: Soft orange.</strong><br>
+    Brand-color <code style="color:#ec9b44">#ec9b44</code> (голова робота), не <code style="color:#ec9b44">#ec9b44</code>. Hard orange = «реклама»; soft = «премиум».
+  </div>
+  <div class="principle">
+    <strong>Принцип 3: Avoid aggressive fills.</strong><br>
+    Где можно — outline вместо fill. Например, secondary CTA: <code>border 1.5px orange</code> вместо <code>bg orange</code>.
+  </div>
+  <div class="principle">
+    <strong>Принцип 4: Один accent per screen.</strong><br>
+    На каждом экране — 1 точка внимания. Если их 3, мама уходит. Это правило важнее эстетики.
+  </div>
+  <div class="principle">
+    <strong>Принцип 5: Информационные vs Конверсионные блоки.</strong><br>
+    Info-блоки (Reviews, About, FAQ) = navy + white, без orange. Conversion-блоки (Hero, Shifts, BookingBar) = soft orange acent.
+  </div>
+  <div class="principle">
+    <strong>Принцип 6: Конверсия = звонок.</strong><br>
+    Лучшие клиенты ЗВОНЯТ, не оставляют формы. Phone в header = главный CTA, должен быть всегда виден.
+  </div>
+  <div class="principle">
+    <strong>Принцип 7: Mobile-first.</strong><br>
+    Дарья на мобиле. Desktop = upscaled mobile с большими отступами, не наоборот.
+  </div>
+</section>
+
+<!-- ═══ ПАЛИТРА ═══ -->
+<section><span id="palette" class="anchor-target"></span>
+  <h2><i class="bi bi-palette-fill" aria-hidden="true"></i> 2. Палитра</h2>
+  <p class="subtitle">Soft orange (#ec9b44 — как голова робота) + navy + neutrals + 1 success accent.</p>
+
+  <h3>Primary — soft orange (новый, светлее)</h3>
+  <div class="palette">
+    <div class="swatch swatch-light" style="background:#fdf6ec;"><span class="num">50</span></div>
+    <div class="swatch swatch-light" style="background:#faead0;"><span class="num">100</span></div>
+    <div class="swatch swatch-light" style="background:#f5d4a4;"><span class="num">200</span></div>
+    <div class="swatch swatch-light" style="background:#f0bb78;"><span class="num">300</span></div>
+    <div class="swatch swatch-light" style="background:#eba955;"><span class="num">400</span></div>
+    <div class="swatch" style="background:#ec9b44;"><span class="num">500</span> <span style="font-size:8px;">brand</span></div>
+    <div class="swatch" style="background:#d68830;"><span class="num">600</span></div>
+    <div class="swatch" style="background:#b66d10;"><span class="num">700</span></div>
+    <div class="swatch" style="background:#8c540c;"><span class="num">800</span></div>
+    <div class="swatch" style="background:#603b08;"><span class="num">900</span></div>
+    <div class="swatch" style="background:#321e04;"><span class="num">950</span></div>
+  </div>
+  <p style="font-size: 13px; color: #6b7280;"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> Текущий <code>#ec9b44</code> остаётся как алиас для совместимости, но в новых компонентах используем <code>#ec9b44</code> (50<i class="bi bi-arrow-right" aria-hidden="true"></i>950 шкала выше).</p>
+
+  <h3>Navy — фон, тёмные секции</h3>
+  <div class="palette">
+    <div class="swatch swatch-light" style="background:#f3f6fb;"><span class="num">50</span></div>
+    <div class="swatch swatch-light" style="background:#e3ebf6;"><span class="num">100</span></div>
+    <div class="swatch swatch-light" style="background:#c4d6ed;"><span class="num">200</span></div>
+    <div class="swatch swatch-light" style="background:#99b7e0;"><span class="num">300</span></div>
+    <div class="swatch" style="background:#6a97d2;"><span class="num">400</span></div>
+    <div class="swatch" style="background:#3b76c3;"><span class="num">500</span></div>
+    <div class="swatch" style="background:#3163a4;"><span class="num">600</span></div>
+    <div class="swatch" style="background:#285085;"><span class="num">700</span></div>
+    <div class="swatch" style="background:#1e3d65;"><span class="num">800</span></div>
+    <div class="swatch" style="background:#152a46;"><span class="num">900</span></div>
+    <div class="swatch" style="background:#0d1a2b;"><span class="num">950</span> <span style="font-size:8px;">hero bg</span></div>
+  </div>
+
+  <h3>Neutrals (текст, рамки) + success</h3>
+  <div style="display: flex; gap: 12px; flex-wrap: wrap; margin: 8px 0;">
+    <div class="swatch swatch-light" style="background:#ffffff; border:1px solid #e5e7eb; width: 90px; height: 70px;"><span class="num">white</span></div>
+    <div class="swatch swatch-light" style="background:#f8f9fb; border:1px solid #e5e7eb; width: 90px; height: 70px;"><span class="num">gray-50</span></div>
+    <div class="swatch swatch-light" style="background:#e5e7eb; width: 90px; height: 70px;"><span class="num">border</span></div>
+    <div class="swatch" style="background:#6b7280; width: 90px; height: 70px;"><span class="num">text-muted</span></div>
+    <div class="swatch" style="background:#1e2430; width: 90px; height: 70px;"><span class="num">text-body</span></div>
+    <div class="swatch" style="background:#0d1a2b; width: 90px; height: 70px;"><span class="num">text-strong</span></div>
+    <div class="swatch" style="background:#2fa768; width: 90px; height: 70px;"><span class="num">success</span></div>
+    <div class="swatch" style="background:#ffd86b; width: 90px; height: 70px; color:#1e2430;"><span class="num">stars-only</span></div>
+  </div>
+
+  <h3>Сравнение: Hard vs Soft Orange</h3>
+  <div class="compare-grid">
+    <div class="demo-card">
+      <h4 class="label-bad"><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Текущий (Hard #ec9b44)</h4>
+      <button class="btn-primary-old">Записаться</button>
+      <p style="margin: 12px 0 0; font-size: 13px; color: #6b7280;">«Реклама», агрессивно, крикливо</p>
+    </div>
+    <div class="demo-card">
+      <h4 class="label-good"><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Новый (Soft #ec9b44)</h4>
+      <button class="btn-primary-soft">Записаться</button>
+      <p style="margin: 12px 0 0; font-size: 13px; color: #6b7280;">«Премиум», спокойно, как у Apple/Stripe</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ТИПОГРАФИКА ═══ -->
+<section><span id="typography" class="anchor-target"></span>
+  <h2><i class="bi bi-pencil-square" aria-hidden="true"></i> 3. Типографика</h2>
+  <p class="subtitle">Mobile-first шкала. На десктопе — те же размеры × 1.2-1.5.</p>
+
+  <div class="type-row"><span class="label">Hero H1</span><span class="demo" style="font-size: 38px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05;">Летний IT-лагерь</span><span class="meta">38/44 · 800 · -0.03em</span></div>
+  <div class="type-row"><span class="label">Section H2</span><span class="demo" style="font-size: 26px; font-weight: 700; letter-spacing: -0.02em;">Как проходит смена</span><span class="meta">26/32 · 700 · -0.02em</span></div>
+  <div class="type-row"><span class="label">Card H3</span><span class="demo" style="font-size: 18px; font-weight: 700;">Программирование</span><span class="meta">18/20 · 700</span></div>
+  <div class="type-row"><span class="label">Body large</span><span class="demo" style="font-size: 18px; font-weight: 400; line-height: 1.5;">Дети уезжают с готовым проектом</span><span class="meta">18/18 · 400 · 1.5</span></div>
+  <div class="type-row"><span class="label">Body</span><span class="demo" style="font-size: 16px; font-weight: 400; line-height: 1.65;">Основной текст в статьях и описаниях смен</span><span class="meta">16/16 · 400 · 1.65</span></div>
+  <div class="type-row"><span class="label">Caption</span><span class="demo" style="font-size: 14px; font-weight: 400; color: #6b7280;">Мета, подписи, дата</span><span class="meta">14/14 · 400</span></div>
+  <div class="type-row"><span class="label">Label UC</span><span class="demo" style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #ec9b44;">ЗАПИСЬ ОТКРЫТА</span><span class="meta">12/12 · 600 · 0.06em UC</span></div>
+
+  <p style="margin-top: 16px; font-size: 13px; color: #6b7280;"><i class="bi bi-x-circle-fill" aria-hidden="true"></i> <strong>Минимум на мобилке: 16px</strong> для body. Меньше — только caption/label/disclaimer.</p>
+</section>
+
+<!-- ═══ КНОПКИ ═══ -->
+<section><span id="buttons" class="anchor-target"></span>
+  <h2><i class="bi bi-circle" aria-hidden="true"></i> 4. Кнопки</h2>
+  <p class="subtitle">3 уровня + правило: <strong>fill ТОЛЬКО для primary CTA</strong>. Остальное — outline/ghost.</p>
+
+  <div class="compare-grid">
+    <div class="demo-card">
+      <h4>Primary (1 на экран)</h4>
+      <button class="btn-primary-soft">Выбрать смену</button>
+      <p style="margin: 8px 0 0; font-size: 12px; color: #6b7280;">Soft orange fill. Только для конверсии.</p>
+    </div>
+    <div class="demo-card">
+      <h4>Secondary</h4>
+      <button class="btn-secondary">Узнать больше</button>
+      <p style="margin: 8px 0 0; font-size: 12px; color: #6b7280;">Outline orange + text dark.</p>
+    </div>
+    <div class="demo-card">
+      <h4>Ghost (link-style)</h4>
+      <button class="btn-ghost">Скачать программу</button>
+      <p style="margin: 8px 0 0; font-size: 12px; color: #6b7280;">Лёгкий border, для tertiary actions.</p>
+    </div>
+    <div class="demo-card">
+      <h4>Phone (всегда наверху)</h4>
+      <a href="tel:+74951284429" style="display:inline-flex; align-items:center; gap:6px; color: #ec9b44; font-weight: 700; text-decoration: none; font-size: 16px;">
+        <i class="bi bi-telephone-fill"></i> +7 (495) 128-44-29
+      </a>
+      <p style="margin: 8px 0 0; font-size: 12px; color: #6b7280;">Не fill. Просто текст с иконкой. Главный путь = звонок.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ БЛОКИ САЙТА ═══ -->
+<section><span id="blocks" class="anchor-target"></span>
+  <h2><i class="bi bi-box-seam" aria-hidden="true"></i> 5. Блоки сайта — Info vs Conversion</h2>
+  <p class="subtitle">Каждый блок имеет тип. <strong>Info</strong> = navy/white, без orange. <strong>Conv</strong> = soft orange accent.</p>
+
+  <h3 style="color: #1d3b61; margin-top: 24px;"><i class="bi bi-square-fill" style="color:#3163a4" aria-hidden="true"></i> INFORMATIONAL — закрывают страхи, дают доверие</h3>
+
+  <div class="block-row"><span class="num">1</span><div class="info"><strong>Hero фото</strong><span>Эмоция — улыбающийся мальчик</span></div><span class="tag-info">INFO</span><span class="attention"><i class="bi bi-eye-fill" aria-hidden="true"></i> Лицо ребёнка</span></div>
+  <div class="block-row"><span class="num">2</span><div class="info"><strong>Stats (7 лет / 1200 детей / <i class="bi bi-star-fill" aria-hidden="true"></i> 5.0)</strong><span>Социальное доказательство</span></div><span class="tag-info">INFO</span><span class="attention"><i class="bi bi-eye-fill" aria-hidden="true"></i> Цифры</span></div>
+  <div class="block-row"><span class="num">3</span><div class="info"><strong>About (что мы делаем)</strong><span>Кратко, фото, без воды</span></div><span class="tag-info">INFO</span><span class="attention"><i class="bi bi-eye-fill" aria-hidden="true"></i> Иконки + 3 факта</span></div>
+  <div class="block-row"><span class="num">4</span><div class="info"><strong>Reviews</strong><span>Отзывы реальных мам с <i class="bi bi-star-fill" aria-hidden="true"></i><i class="bi bi-star-fill" aria-hidden="true"></i><i class="bi bi-star-fill" aria-hidden="true"></i><i class="bi bi-star-fill" aria-hidden="true"></i><i class="bi bi-star-fill" aria-hidden="true"></i></span></div><span class="tag-info">INFO</span><span class="attention"><i class="bi bi-eye-fill" aria-hidden="true"></i> Лица + рейтинг</span></div>
+  <div class="block-row"><span class="num">5</span><div class="info"><strong>Mentors / Team</strong><span>Кому доверяешь ребёнка — фото и опыт</span></div><span class="tag-info">INFO</span><span class="attention"><i class="bi bi-eye-fill" aria-hidden="true"></i> Лица педагогов</span></div>
+  <div class="block-row"><span class="num">6</span><div class="info"><strong>Stay (размещение)</strong><span>Безопасность, корпуса, столовая</span></div><span class="tag-info">INFO</span><span class="attention"><i class="bi bi-eye-fill" aria-hidden="true"></i> Фото комнат</span></div>
+  <div class="block-row"><span class="num">7</span><div class="info"><strong>Trust (Лицензия / Медсестра / Страховка)</strong><span>Закрывает страх безопасности</span></div><span class="tag-info">INFO</span><span class="attention"><i class="bi bi-eye-fill" aria-hidden="true"></i> Иконки документов</span></div>
+  <div class="block-row"><span class="num">8</span><div class="info"><strong>FAQ</strong><span>Закрывает оставшиеся вопросы</span></div><span class="tag-info">INFO</span><span class="attention"><i class="bi bi-eye-fill" aria-hidden="true"></i> Вопрос/ответ</span></div>
+
+  <h3 style="color: #b66d10; margin-top: 32px;"><i class="bi bi-square-fill" style="color:#ec9b44" aria-hidden="true"></i> CONVERSION — вызывают действие</h3>
+
+  <div class="block-row"><span class="num">1</span><div class="info"><strong>Phone в Header</strong><span>Главный CTA — звонок</span></div><span class="tag-conv">CONV</span><span class="attention"><i class="bi bi-eye-fill" aria-hidden="true"></i> Phone link</span></div>
+  <div class="block-row"><span class="num">2</span><div class="info"><strong>Age picker (главная цель Метрики)</strong><span>Первое осознанное действие</span></div><span class="tag-conv">CONV</span><span class="attention"><i class="bi bi-eye-fill" aria-hidden="true"></i> 4 кнопки возраста</span></div>
+  <div class="block-row"><span class="num">3</span><div class="info"><strong>Hero CTA «Выбрать смену»</strong><span>Primary action на первом экране</span></div><span class="tag-conv">CONV</span><span class="attention"><i class="bi bi-eye-fill" aria-hidden="true"></i> Soft orange button</span></div>
+  <div class="block-row"><span class="num">4</span><div class="info"><strong>Bot CTA «Спросите анонимно»</strong><span>Снимает страх спама</span></div><span class="tag-conv">CONV</span><span class="attention"><i class="bi bi-eye-fill" aria-hidden="true"></i> Cycling word + ⛨ icon</span></div>
+  <div class="block-row"><span class="num">5</span><div class="info"><strong>Shifts (выбор смены + цены)</strong><span>Решение о покупке</span></div><span class="tag-conv">CONV</span><span class="attention"><i class="bi bi-eye-fill" aria-hidden="true"></i> Цена + «Выбрать»</span></div>
+  <div class="block-row"><span class="num">6</span><div class="info"><strong>BookingBar (звонок-форма)</strong><span>«Перезвоним за 10 мин»</span></div><span class="tag-conv">CONV</span><span class="attention"><i class="bi bi-eye-fill" aria-hidden="true"></i> Phone + Submit</span></div>
+</section>
+
+<!-- ═══ ТОЧКИ ВНИМАНИЯ ═══ -->
+<section><span id="attention" class="anchor-target"></span>
+  <h2><i class="bi bi-eye-fill" aria-hidden="true"></i> 6. Точки внимания на блок</h2>
+  <p class="subtitle">Правило: <strong>1 главная точка внимания на блок</strong>. Если 2 — глаз прыгает, конверсия падает.</p>
+
+  <table class="table-clean">
+    <thead><tr><th>Блок</th><th>Главная точка</th><th>Чем привлекаем</th><th>Что НЕ должно конкурировать</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Hero</strong></td><td>Лицо мальчика + Phone в header</td><td>Эмоция фото + soft orange phone</td><td>Никаких других orange акцентов</td></tr>
+      <tr><td><strong>Age picker</strong></td><td>4 кнопки возраста</td><td>Soft orange ring/border</td><td>Никаких баннеров рядом</td></tr>
+      <tr><td><strong>Shifts</strong></td><td>Цена + «Выбрать»</td><td>Bold price + soft orange CTA</td><td>Не выделять иконки rating ярко</td></tr>
+      <tr><td><strong>Reviews</strong></td><td><i class="bi bi-star-fill" aria-hidden="true"></i> rating + лица</td><td>Yellow stars + photo</td><td>Не делать orange CTA «Все отзывы»</td></tr>
+      <tr><td><strong>About</strong></td><td>3 ключевых факта</td><td>Bold цифры (navy, не orange)</td><td>Никаких CTA</td></tr>
+      <tr><td><strong>FAQ</strong></td><td>Список вопросов</td><td>Tight typography, читаемость</td><td>Никаких иллюстраций</td></tr>
+      <tr><td><strong>BookingBar</strong></td><td>Phone number + Submit</td><td>Phone bold + soft orange button</td><td>Не делать форму с 5 полями</td></tr>
+      <tr><td><strong>Footer</strong></td><td>Контакты</td><td>Phone, email, адрес</td><td>Не дублировать CTA</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══ MOBILE vs DESKTOP ═══ -->
+<section><span id="mobile" class="anchor-target"></span>
+  <h2><i class="bi bi-phone" aria-hidden="true"></i> 7. Mobile vs Desktop — адаптивность</h2>
+  <p class="subtitle">Mobile-first: сначала проектируем 390px, затем upscale до 1280px+.</p>
+
+  <table class="table-clean">
+    <thead><tr><th>Параметр</th><th>Mobile (≤768px)</th><th>Desktop (≥1024px)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Hero H1</strong></td><td>38px / 800 / -0.03em</td><td>56px / 800 / -0.04em</td></tr>
+      <tr><td><strong>Section H2</strong></td><td>26px</td><td>36px</td></tr>
+      <tr><td><strong>Body</strong></td><td>16px (мин!)</td><td>16px (тот же — читаемость)</td></tr>
+      <tr><td><strong>Section padding</strong></td><td>40px (py-10)</td><td>64px (py-16)</td></tr>
+      <tr><td><strong>Container max-width</strong></td><td>full width</td><td>1280px (max-w-[1280px])</td></tr>
+      <tr><td><strong>Cards в row</strong></td><td>1 col (stacked)</td><td>2-3 cols (grid)</td></tr>
+      <tr><td><strong>Header CTA</strong></td><td>Phone icon + burger</td><td>Phone full + nav-links + CTA</td></tr>
+      <tr><td><strong>Hero photo</strong></td><td>Full bleed bg, soft mask</td><td>Right column 50%, left text</td></tr>
+      <tr><td><strong>Touch target</strong></td><td>44×44 min</td><td>32×32 ok (mouse)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══ SEO/GEO/AEO ═══ -->
+<section><span id="seo" class="anchor-target"></span>
+  <h2><i class="bi bi-search" aria-hidden="true"></i> 8. SEO / GEO / AEO — обязательные элементы</h2>
+  <p class="subtitle">Каждый блок должен быть оптимизирован под Google/Yandex (SEO), AI-search (Perplexity/ChatGPT — GEO) и featured snippets (AEO).</p>
+
+  <h3><i class="bi bi-clipboard-check" aria-hidden="true"></i> Schema.org разметка по блокам</h3>
+  <table class="table-clean">
+    <thead><tr><th>Блок</th><th>Schema type</th><th>Что внутри</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Header / Footer</strong></td><td><code>Organization</code> + <code>LocalBusiness</code></td><td>name, url, logo, telephone, address, sameAs (соцсети), aggregateRating</td></tr>
+      <tr><td><strong>Hero</strong></td><td><code>WebPage</code> + <code>BreadcrumbList</code></td><td>name, description, primaryImageOfPage, breadcrumbs</td></tr>
+      <tr><td><strong>Shifts (программы)</strong></td><td><code>Course</code> + <code>Offer</code></td><td>name, description, provider, offers (price, priceCurrency, availability, validFrom/validThrough)</td></tr>
+      <tr><td><strong>Reviews</strong></td><td><code>Review</code> + <code>AggregateRating</code></td><td>author, reviewBody, reviewRating, datePublished — minimum 5 reviews для rich snippet</td></tr>
+      <tr><td><strong>FAQ</strong></td><td><code>FAQPage</code></td><td>mainEntity[] с Question/Answer — для Google FAQ rich snippet</td></tr>
+      <tr><td><strong>Mentors / Team</strong></td><td><code>Person</code></td><td>name, jobTitle, image, sameAs</td></tr>
+      <tr><td><strong>Articles (блог)</strong></td><td><code>Article</code> + <code>Person author</code></td><td>headline, datePublished, dateModified, author, image, articleSection</td></tr>
+      <tr><td><strong>Stay / Размещение</strong></td><td><code>Place</code> + <code>LodgingBusiness</code></td><td>name, address, geo, amenityFeature</td></tr>
+      <tr><td><strong>Contacts</strong></td><td><code>ContactPoint</code></td><td>telephone, email, contactType, areaServed, availableLanguage</td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-tag-fill" aria-hidden="true"></i> Meta tags — обязательны на каждой странице</h3>
+  <table class="table-clean">
+    <thead><tr><th>Tag</th><th>Правила</th><th>Пример</th></tr></thead>
+    <tbody>
+      <tr><td><strong>title</strong></td><td>50-65 chars, ключ + бренд</td><td><code>Летний IT-лагерь в Подмосковье 2026 — АйДаКемп</code></td></tr>
+      <tr><td><strong>description</strong></td><td>140-160 chars, USP + цена + CTA</td><td><code>Программирование, AI, бассейн. Смены с 30 мая. От 48 000 ₽. Налоговый вычет 13%.</code></td></tr>
+      <tr><td><strong>canonical</strong></td><td>Абсолютный URL, без trailing slash mismatch</td><td><code>&lt;link rel="canonical" href="https://aidacamp.ru/" /&gt;</code></td></tr>
+      <tr><td><strong>og:image</strong></td><td>1200×630 webp, под 100kB</td><td><code>/images/og-default.webp</code></td></tr>
+      <tr><td><strong>og:title / og:description</strong></td><td>Может отличаться от meta для соцсетей</td><td>—</td></tr>
+      <tr><td><strong>twitter:card</strong></td><td><code>summary_large_image</code></td><td>—</td></tr>
+      <tr><td><strong>robots</strong></td><td><code>index,follow</code> для всех публичных. <code>noindex</code> для /demo/, /admin/</td><td>—</td></tr>
+      <tr><td><strong>html lang</strong></td><td><code>ru</code></td><td><code>&lt;html lang="ru"&gt;</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-bullseye" aria-hidden="true"></i> Иерархия заголовков H1-H6</h3>
+  <div class="principle">
+    <strong>Правило:</strong> 1 H1 на страницу. H2 — основные секции (Shifts, Reviews, FAQ). H3 — подсекции/карточки. H4-H6 — редко.
+  </div>
+  <table class="table-clean">
+    <thead><tr><th>Тег</th><th>Сколько</th><th>Что внутри</th></tr></thead>
+    <tbody>
+      <tr><td><strong>H1</strong></td><td>1 на страницу (НЕ больше)</td><td>Главное ключевое слово + описание услуги: «Летний IT-лагерь в Подмосковье 2026»</td></tr>
+      <tr><td><strong>H2</strong></td><td>5-10 на страницу</td><td>Названия секций: «Как проходит смена», «Отзывы», «FAQ» — должны содержать LSI-ключи</td></tr>
+      <tr><td><strong>H3</strong></td><td>10-30</td><td>Подсекции, заголовки карточек смен/отзывов/FAQ-вопросов</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size: 13px; color: #6b7280;"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> Mobile + Desktop hero — оба H1 в потоке (visible по соответствующему breakpoint). НЕ скакать через уровень (H1 <i class="bi bi-arrow-right" aria-hidden="true"></i> H3 без H2).</p>
+
+  <h3><i class="bi bi-image" aria-hidden="true"></i> Изображения — alt + lazy + format</h3>
+  <table class="table-clean">
+    <thead><tr><th>Правило</th><th>Что</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Format priority</strong></td><td>AVIF <i class="bi bi-arrow-right" aria-hidden="true"></i> WebP <i class="bi bi-arrow-right" aria-hidden="true"></i> JPEG fallback (через <code>&lt;picture&gt;</code>)</td></tr>
+      <tr><td><strong>Hero LCP image</strong></td><td><code>loading="eager" fetchpriority="high"</code> + <code>&lt;link rel="preload"&gt;</code></td></tr>
+      <tr><td><strong>Below-fold images</strong></td><td><code>loading="lazy" decoding="async"</code></td></tr>
+      <tr><td><strong>Alt text</strong></td><td>Все meaningful images. Декоративные — <code>alt=""</code> + <code>aria-hidden="true"</code></td></tr>
+      <tr><td><strong>Width/height</strong></td><td>Обязательно для предотвращения CLS</td></tr>
+      <tr><td><strong>Srcset для responsive</strong></td><td>Минимум 2 размера: <code>-600w</code> и <code>-900w</code></td></tr>
+      <tr><td><strong>Alt example</strong></td><td><code>alt="Дети программируют на занятии в IT-лагере АйДаКемп, лето 2026"</code> — описание + ключи</td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-link-45deg" aria-hidden="true"></i> Internal linking</h3>
+  <div class="principle">
+    <strong>Из каждой страницы — минимум 3 внутренних ссылки</strong> на родственные landing pages (через <code>RelatedPages</code> компонент).
+  </div>
+  <table class="table-clean">
+    <thead><tr><th>Контекст</th><th>Куда вести</th></tr></thead>
+    <tbody>
+      <tr><td>Hero CTA</td><td>#shifts — выбор смены</td></tr>
+      <tr><td>В тексте «программирование»</td><td>/programmirovanie-dlya-detei/</td></tr>
+      <tr><td>В тексте «возраст 12 лет»</td><td>/it-lager-12-let/</td></tr>
+      <tr><td>FAQ ответы</td><td>На статьи /stati/ и спец. landing</td></tr>
+      <tr><td>Footer</td><td>Карта сайта, политики, документы</td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-lightning-charge-fill" aria-hidden="true"></i> Core Web Vitals — мобильные цели</h3>
+  <table class="table-clean">
+    <thead><tr><th>Метрика</th><th>Цель Google</th><th>Наш SLA</th></tr></thead>
+    <tbody>
+      <tr><td><strong>LCP</strong> (Largest Contentful Paint)</td><td>&lt; 2.5s</td><td>&lt; 2.0s — hero photo preload</td></tr>
+      <tr><td><strong>INP</strong> (Interaction to Next Paint)</td><td>&lt; 200ms</td><td>&lt; 150ms — нет тяжёлых JS</td></tr>
+      <tr><td><strong>CLS</strong> (Cumulative Layout Shift)</td><td>&lt; 0.1</td><td>&lt; 0.05 — все img с width/height</td></tr>
+      <tr><td><strong>TTFB</strong></td><td>&lt; 0.8s</td><td>SSR на VPS, nginx с brotli</td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-chat-dots" aria-hidden="true"></i> GEO — Generative Engine Optimization (для Perplexity/ChatGPT/Gemini)</h3>
+  <div class="principle">
+    <strong>Принцип GEO:</strong> AI-поисковики цитируют конкретные факты, цифры, citations. Структурируем контент так, чтобы AI мог взять короткий блок и процитировать.
+  </div>
+  <ul style="color: #4b5263; font-size: 14px; line-height: 1.8;">
+    <li><i class="bi bi-bar-chart-line" aria-hidden="true"></i> <strong>Конкретные цифры</strong> в каждом блоке: «От 48 000 ₽ за 7 дней», «66 км от МКАД», «1200+ выпускников»</li>
+    <li><i class="bi bi-clipboard-check" aria-hidden="true"></i> <strong>Bullet lists и таблицы</strong> — AI любит структурированный контент</li>
+    <li><i class="bi bi-person-fill" aria-hidden="true"></i> <strong>Author bylines</strong> — на каждой статье <code>Person author</code> в Schema.org + видимый автор в HTML</li>
+    <li>📅 <strong>Daterefreshed</strong> — <code>dateModified</code> на статьях (AI предпочитает свежие)</li>
+    <li><i class="bi bi-link-45deg" aria-hidden="true"></i> <strong>External citations</strong> — ссылки на vc.ru, incamp.ru, Яндекс.Карты как trust сигналы</li>
+    <li><i class="bi bi-pencil-square" aria-hidden="true"></i> <strong>Q&A формат</strong> в FAQ — точно такой как пользователь спросит у AI</li>
+    <li><i class="bi bi-bullseye" aria-hidden="true"></i> <strong>One-fact paragraphs</strong> — каждый абзац = 1 факт. Легко извлечь.</li>
+  </ul>
+
+  <h3><i class="bi bi-chat-dots-fill" aria-hidden="true"></i> AEO — Answer Engine Optimization (featured snippets)</h3>
+  <table class="table-clean">
+    <thead><tr><th>Тип snippet</th><th>Как попадаем</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Paragraph snippet</strong></td><td>Прямой ответ в 40-60 словах сразу под H2-вопросом</td></tr>
+      <tr><td><strong>List snippet</strong></td><td>Нумерованный/маркированный список под вопросом «Как…»</td></tr>
+      <tr><td><strong>Table snippet</strong></td><td>HTML <code>&lt;table&gt;</code> для сравнений (цены смен, возрастные группы)</td></tr>
+      <tr><td><strong>Video snippet</strong></td><td>YouTube embed + <code>VideoObject</code> Schema с transcript</td></tr>
+      <tr><td><strong>FAQ Schema rich snippet</strong></td><td>Только если &gt; 4 вопросов с реальными ответами</td></tr>
+      <tr><td><strong>People Also Ask</strong></td><td>Включаем в FAQ типичные «А правда что…», «Можно ли…», «Как…»</td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-globe" aria-hidden="true"></i> Технические SEO-правила</h3>
+  <table class="table-clean">
+    <thead><tr><th>Файл</th><th>Что должно быть</th></tr></thead>
+    <tbody>
+      <tr><td><strong>robots.txt</strong></td><td>Allow: /, Disallow: /demo/, /admin/, /api/. Sitemap: /sitemap.xml</td></tr>
+      <tr><td><strong>sitemap.xml</strong></td><td>Auto-generated через @astrojs/sitemap. Все public pages с lastmod</td></tr>
+      <tr><td><strong>404.html</strong></td><td>Custom + ссылки на главные страницы</td></tr>
+      <tr><td><strong>htaccess / nginx</strong></td><td>301 redirects старых URL, brotli/gzip compression</td></tr>
+      <tr><td><strong>hreflang</strong></td><td>Не нужен (только ru)</td></tr>
+      <tr><td><strong>IndexNow</strong></td><td>API ping в Yandex/Bing при добавлении новых страниц</td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> SEO Checklist для каждого нового блока/страницы</h3>
+  <ul style="color: #4b5263; font-size: 14px; line-height: 1.8;">
+    <li><i class="bi bi-square" aria-hidden="true"></i> H1 один, содержит главное ключевое слово</li>
+    <li><i class="bi bi-square" aria-hidden="true"></i> H2-H3 содержат LSI-ключи (semantic synonyms)</li>
+    <li><i class="bi bi-square" aria-hidden="true"></i> Meta title 50-65 chars, description 140-160 chars</li>
+    <li><i class="bi bi-square" aria-hidden="true"></i> Schema.org разметка по типу контента (см. таблицу выше)</li>
+    <li><i class="bi bi-square" aria-hidden="true"></i> Все img: alt + width + height + lazy (кроме hero LCP)</li>
+    <li><i class="bi bi-square" aria-hidden="true"></i> Минимум 3 внутренних ссылки на родственные страницы</li>
+    <li><i class="bi bi-square" aria-hidden="true"></i> Canonical URL без mismatch</li>
+    <li><i class="bi bi-square" aria-hidden="true"></i> Open Graph image 1200×630</li>
+    <li><i class="bi bi-square" aria-hidden="true"></i> Sitemap включает страницу</li>
+    <li><i class="bi bi-square" aria-hidden="true"></i> LCP &lt; 2.0s (тест в PageSpeed)</li>
+    <li><i class="bi bi-square" aria-hidden="true"></i> Один factor per paragraph (для GEO)</li>
+    <li><i class="bi bi-square" aria-hidden="true"></i> FAQ или Q&A блок где уместно (для AEO)</li>
+  </ul>
+</section>
+
+<!-- ═══ 9. ПОРЯДОК БЛОКОВ — DATA-DRIVEN ═══ -->
+<section><span id="ordering" class="anchor-target"></span>
+  <h2><i class="bi bi-bar-chart-line" aria-hidden="true"></i> 9. Порядок блоков — на данных Метрики</h2>
+  <p class="subtitle">Воронка за 30 дней: 2827 человек вошли в hero <i class="bi bi-arrow-right" aria-hidden="true"></i> 692 (24%) выбрали возраст <i class="bi bi-arrow-right" aria-hidden="true"></i> 6 (0.2%) отправили форму. Перестраиваем block order под реальное поведение.</p>
+
+  <h3><i class="bi bi-graph-up" aria-hidden="true"></i> Реальная конверсия по целям (последние 30 дней)</h3>
+  <table class="table-clean">
+    <thead><tr><th>Действие</th><th>Reaches</th><th>% от entered</th><th>Тип</th></tr></thead>
+    <tbody>
+      <tr><td>Scroll 25% (entered hero)</td><td>2827</td><td>100%</td><td>baseline</td></tr>
+      <tr><td>Scroll 90% (full view)</td><td>1445</td><td>51%</td><td>engagement</td></tr>
+      <tr><td><strong style="color:#b66d10"><i class="bi bi-star-fill" style="color:#ec9b44" aria-hidden="true"></i> Выбор возраста</strong></td><td><strong>692</strong></td><td><strong>24%</strong></td><td><i class="bi bi-square-fill" style="color:#ec9b44" aria-hidden="true"></i> conv #1 — главная цель оптимизации</td></tr>
+      <tr><td>Открыл инфо о смене</td><td>221</td><td>7%</td><td><i class="bi bi-square-fill" style="color:#ec9b44" aria-hidden="true"></i> conv #2</td></tr>
+      <tr><td>Посмотреть смены</td><td>185</td><td>6%</td><td><i class="bi bi-square-fill" style="color:#ec9b44" aria-hidden="true"></i> conv #3</td></tr>
+      <tr><td>«Выбрать смену»</td><td>115</td><td>4%</td><td><i class="bi bi-square-fill" style="color:#ec9b44" aria-hidden="true"></i> conv #4</td></tr>
+      <tr><td>Нижняя плашка возраста</td><td>76</td><td>3%</td><td><i class="bi bi-square-fill" style="color:#ec9b44" aria-hidden="true"></i> conv #5</td></tr>
+      <tr><td>FAQ открыто</td><td>74</td><td>2%</td><td><i class="bi bi-square-fill" style="color:#3163a4" aria-hidden="true"></i> info high</td></tr>
+      <tr><td>Открытие фото</td><td>60</td><td>2%</td><td><i class="bi bi-square-fill" style="color:#3163a4" aria-hidden="true"></i> info</td></tr>
+      <tr><td>Клик телефон (auto+manual)</td><td>48</td><td>1.7%</td><td><i class="bi bi-square-fill" style="color:#ec9b44" aria-hidden="true"></i> conv #6</td></tr>
+      <tr><td>Открытие видео</td><td>25</td><td>0.9%</td><td><i class="bi bi-square-fill" style="color:#3163a4" aria-hidden="true"></i> info low <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i></td></tr>
+      <tr><td><strong style="color:#c4515c"><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Отправка заявки</strong></td><td>6</td><td>0.2%</td><td><i class="bi bi-square-fill" style="color:#ec9b44" aria-hidden="true"></i> conv DEAD</td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-exclamation-octagon" aria-hidden="true"></i> Текущий order (21 блок) vs Рекомендованный</h3>
+  <div class="compare-grid">
+    <div class="demo-card">
+      <h4 class="label-bad"><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Сейчас (хаос)</h4>
+      <ol style="padding-left: 20px; font-size: 13px; line-height: 1.6; color: #4b5263;">
+        <li>Hero</li>
+        <li>ShiftOccupancy + MomStory</li>
+        <li>About</li>
+        <li>Journey</li>
+        <li>Economy (налоговый вычет)</li>
+        <li>BookingBar #1</li>
+        <li>SoftStart</li>
+        <li>Shifts <i class="bi bi-arrow-left" aria-hidden="true"></i> <strong>главная цена тут</strong></li>
+        <li>BookingBar #2</li>
+        <li>SummerCta</li>
+        <li>Hackathon</li>
+        <li>Gallery</li>
+        <li>Videos <i class="bi bi-arrow-left" aria-hidden="true"></i> <strong>мёртвый блок 0.9%</strong></li>
+        <li>Reviews <i class="bi bi-arrow-left" aria-hidden="true"></i> <strong>опаздывает</strong></li>
+        <li>FAQ <i class="bi bi-arrow-left" aria-hidden="true"></i> <strong>опаздывает</strong></li>
+        <li>Team</li>
+        <li>Mentors <i class="bi bi-arrow-left" aria-hidden="true"></i> <strong>дубль с Team</strong></li>
+        <li>Stay</li>
+        <li>Contacts</li>
+        <li>SeoTextBlock</li>
+        <li>RelatedPages</li>
+      </ol>
+    </div>
+    <div class="demo-card">
+      <h4 class="label-good"><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Предлагаю (на данных)</h4>
+      <ol style="padding-left: 20px; font-size: 13px; line-height: 1.6; color: #4b5263;">
+        <li><strong>Hero</strong> — фото + age_picker (24% conv) + phone в header</li>
+        <li><strong>ShiftOccupancy</strong> — «осталось N мест» (urgency)</li>
+        <li><strong>Shifts</strong> <i class="bi bi-arrow-left" aria-hidden="true"></i> <strong>поднимаем!</strong> Цены + «Выбрать»</li>
+        <li>Reviews + <i class="bi bi-star-fill" aria-hidden="true"></i> rating <i class="bi bi-arrow-left" aria-hidden="true"></i> <strong>поднимаем!</strong> Соц. proof</li>
+        <li>About — что мы делаем</li>
+        <li>Journey — как проходит смена</li>
+        <li>Trust block (Лицензия/медсестра/страховка) <i class="bi bi-arrow-left" aria-hidden="true"></i> <strong>новый отдельный блок</strong></li>
+        <li>MomStory — эмоция мамы</li>
+        <li>Mentors+Team (объединить!)</li>
+        <li>Stay — где живут дети (закрытие страха)</li>
+        <li>FAQ <i class="bi bi-arrow-left" aria-hidden="true"></i> <strong>поднимаем!</strong> 2% conv</li>
+        <li>Economy — налоговый вычет (рациональная мама)</li>
+        <li>BookingBar (1 шт., финальный «Перезвоним»)</li>
+        <li>Gallery — soft sell, фото впечатлений</li>
+        <li>Hackathon — что в финале (бренд)</li>
+        <li><span style="color: #c4515c;">Videos — оптально, либо удалить</span></li>
+        <li>SoftStart — мини-пример</li>
+        <li>SummerCta</li>
+        <li>Contacts — финал</li>
+        <li>SeoTextBlock — для поисковиков</li>
+        <li>RelatedPages — internal linking</li>
+      </ol>
+    </div>
+  </div>
+
+  <h3><i class="bi bi-bullseye" aria-hidden="true"></i> Принцип: 3 «волны» внимания</h3>
+  <div class="principle"><strong>Wave 1 (Hero + Shifts + Reviews):</strong> закрываем главную задачу — «куда деть ребёнка летом» через emotion + цена + соц. proof. Большинство converters в первых 3-х блоках.</div>
+  <div class="principle"><strong>Wave 2 (About <i class="bi bi-arrow-right" aria-hidden="true"></i> Trust <i class="bi bi-arrow-right" aria-hidden="true"></i> Mentors <i class="bi bi-arrow-right" aria-hidden="true"></i> Stay):</strong> закрываем страхи безопасности и доверия. Дарья «холодно» оценивает.</div>
+  <div class="principle"><strong>Wave 3 (FAQ <i class="bi bi-arrow-right" aria-hidden="true"></i> Economy <i class="bi bi-arrow-right" aria-hidden="true"></i> BookingBar):</strong> финальное снятие возражений + рациональный закрывающий аргумент (вычет 13%) + последний CTA.</div>
+
+  <h3><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> Что предлагаю удалить или сократить</h3>
+  <table class="table-clean">
+    <tbody>
+      <tr><td><strong>Videos</strong></td><td>0.9% conv. Если нет, освобождаем место для важного</td></tr>
+      <tr><td><strong>BookingBar #2 (дубль)</strong></td><td>Один достаточно. Дублирование = распределение клика 50/50</td></tr>
+      <tr><td><strong>Mentors отдельно от Team</strong></td><td>Объединить — оба про людей, экономия скролла</td></tr>
+      <tr><td><strong>SoftStart, SummerCta, Hackathon</strong></td><td>Под вопросом — измерять отдельно. Возможно объединить в 1 блок «что в смене»</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══ 10. МЕТРИКА-ЦЕЛИ ═══ -->
+<section><span id="metrika" class="anchor-target"></span>
+  <h2><i class="bi bi-broadcast" aria-hidden="true"></i> 10. Метрика-цели — обязательны для каждого CTA</h2>
+  <p class="subtitle">Каждое действие = trackable goal. Без событий — нет данных для оптимизации Директа/VK.</p>
+
+  <h3><i class="bi bi-bullseye" aria-hidden="true"></i> Текущие активные цели</h3>
+  <table class="table-clean">
+    <thead><tr><th>Цель</th><th>ID</th><th>Что отслеживает</th><th>Где навешано</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Выбор возраста-new</strong></td><td>541048270</td><td><i class="bi bi-star-fill" style="color:#ec9b44" aria-hidden="true"></i> Главная цель оптимизации Директа</td><td>Age picker (4 кнопки), Нижняя плашка</td></tr>
+      <tr><td>Открыл инфо о смене</td><td>—</td><td>Клик карточки смены</td><td>Shifts cards</td></tr>
+      <tr><td>Посмотреть смены</td><td>—</td><td>Клик «Подробнее»</td><td>Shifts</td></tr>
+      <tr><td>Кнопка «Выбрать смену»</td><td>—</td><td>Финальное действие</td><td>Shifts CTA</td></tr>
+      <tr><td>Открытие FAQ-new</td><td>—</td><td>Клик аккордеона</td><td>FAQ</td></tr>
+      <tr><td>Открытие видео-new / фото-new</td><td>—</td><td>Lightbox open</td><td>Gallery / Videos</td></tr>
+      <tr><td>Автоцель: клик по номеру телефона</td><td>auto</td><td>Любой <code>tel:</code> link</td><td>Header, Footer, BookingBar</td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-clipboard-check" aria-hidden="true"></i> Naming convention для новых целей</h3>
+  <div class="principle">
+    Формат: <code>&#123;Действие&#125;-&#123;Контекст&#125;-&#123;Версия&#125;</code>. Пример: <code>«Клик-БотCTA-v3»</code>, <code>«Открытие-AgePopup-v2»</code>. Версия меняется при изменении дизайна — старые данные сохраняются.
+  </div>
+
+  <h3><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Чек-лист: каждый новый CTA должен иметь</h3>
+  <ul style="color: #4b5263; font-size: 14px; line-height: 1.8;">
+    <li><i class="bi bi-square" aria-hidden="true"></i> <code>data-analytics-goal="goal_name"</code> атрибут</li>
+    <li><i class="bi bi-square" aria-hidden="true"></i> <code>data-analytics-label="context"</code> для сегментации</li>
+    <li><i class="bi bi-square" aria-hidden="true"></i> Цель создана в Метрика <i class="bi bi-arrow-right" aria-hidden="true"></i> Настройки <i class="bi bi-arrow-right" aria-hidden="true"></i> Цели</li>
+    <li><i class="bi bi-square" aria-hidden="true"></i> Если это conversion — добавлена в Директ как «Цель оптимизации»</li>
+    <li><i class="bi bi-square" aria-hidden="true"></i> Сохранён prev/next в воронке для измерения retention</li>
+  </ul>
+</section>
+
+<!-- ═══ 11. BRAND VOICE ═══ -->
+<section><span id="voice" class="anchor-target"></span>
+  <h2><i class="bi bi-chat-dots-fill" aria-hidden="true"></i> 11. Brand Voice — тон коммуникации</h2>
+  <p class="subtitle">Язык — главный носитель ощущения «я хорошая мама». Каждое слово работает на это.</p>
+
+  <h3><i class="bi bi-mic-fill" aria-hidden="true"></i> Тон голоса — характеристики</h3>
+  <table class="table-clean">
+    <thead><tr><th>Параметр</th><th>Уровень</th><th>Пояснение</th></tr></thead>
+    <tbody>
+      <tr><td>Формальность</td><td>Низкая</td><td>На «вы», но как подруга, не как банк</td></tr>
+      <tr><td>Эмоциональность</td><td>Средняя</td><td>Тёплая забота, без слащавости</td></tr>
+      <tr><td>Юмор</td><td>Лёгкий</td><td>Уместная ирония, никогда сарказм</td></tr>
+      <tr><td>Экспертность</td><td>Скрытая</td><td>Не говорим «эксперты», показываем фактами</td></tr>
+      <tr><td>Срочность</td><td>Точечная</td><td>«Осталось 14 мест», но не «СПЕШИТЕ!!»</td></tr>
+      <tr><td>Назидание</td><td>Запрещено</td><td>Никогда не учим маму как воспитывать</td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Работает (тон «Пивоваров»)</h3>
+  <div class="principle">
+    <strong>Подтверждение принципа:</strong> мы коммуницируем правду без провокаций любопытства. «Анонимно», «налоговый вычет 13%», «без телефонов» — это <strong>факты</strong>, а не триггеры тревоги. Не «А вы знали...?», не «Узнайте секрет...», не «Что скрывают другие лагеря...». Просто прямо — что есть.
+  </div>
+  <p style="color: #4b5263; font-size: 14px; margin-bottom: 12px;">
+    <strong>Принцип Пивоварова:</strong> «Решение всегда остаётся за вами. Мы посоветуем, расскажем, поможем — но выбор ваш. Мы вас за это ценим». Не давим, не звонят, не торопим — уважаем взрослого человека.
+  </p>
+  <ul style="color: #4b5263; font-size: 14px; line-height: 1.8;">
+    <li>«Пока другие на даче — ваш сделает AI-проект» — лёгкая зависть от подруг</li>
+    <li>«Вам — 14 дней для себя» — закрывает вторичную выгоду</li>
+    <li>«Как у нас в семье» — личная история Дарьи (наш founder)</li>
+    <li>«Спросите анонимно про минусы» — провокация любопытства, снимает barrier</li>
+    <li>«Анонимно, без регистрации» — снимает страх спама (42% россиян не оставляют контакты)</li>
+    <li>«Налоговый вычет 13%» — рациональный аргумент</li>
+    <li>«Решение остаётся за вами» — закрытие любого блока</li>
+    <li>«У нас есть философия — мы не про телефоны» — наш USP, см. раздел 14</li>
+  </ul>
+
+  <h3><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Не работает (закрывает кошелёк / запрещено)</h3>
+  <ul style="color: #4b5263; font-size: 14px; line-height: 1.8;">
+    <li><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> <strong>«Перезвоним за 10 минут»</strong> — мусорное обещание, как у всех</li>
+    <li><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> <strong>«Самые выгодные», «лучшие цены»</strong> — клише, не верят</li>
+    <li><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> <strong>«Звоните!», «Пишите!»</strong> — давление, обратное эффект (см. Пивоваров tone)</li>
+    <li><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> <strong>Слова «дети», «ребёнок»</strong> — где можно избегать. Не «ваш ребёнок будет», а «ваш сделает». Не «дети программируют», а «сделают свой проект»</li>
+    <li><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> <strong>«Бот»</strong> — никогда. У 42% россиян = «опять менеджер заберёт телефон». Использовать «спросите анонимно» вместо «спросите бота»</li>
+    <li><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> «Ваш ребёнок не получает должного внимания» — обвинение</li>
+    <li><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> «Soft skills будущего», «уникальная методика», «лидеры рынка», «эксперты», «топовые программы», «инновационный» — пустые слова</li>
+    <li><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> «Запишитесь сейчас», «Заходите, не пожалеете» — продажные клише</li>
+    <li><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> «Ребёнку нужно X» — мы решаем за маму, она этого не любит</li>
+    <li><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> «Гарантируем результат» — невозможно гарантировать</li>
+  </ul>
+
+  <h3><i class="bi bi-pencil-square" aria-hidden="true"></i> Микрокопирайтинг — конкретные правила</h3>
+  <table class="table-clean">
+    <thead><tr><th>Контекст</th><th>Шаблон</th></tr></thead>
+    <tbody>
+      <tr><td>CTA primary</td><td>«Глагол + объект» — «Выбрать смену», «Узнать цены», «Спросить про…»</td></tr>
+      <tr><td>CTA secondary</td><td>Подтверждение действия — «Узнать больше», «Посмотреть фото»</td></tr>
+      <tr><td>Form labels</td><td>Что-нужно-сделать вместо что-это-такое: «Как вас зовут?» вместо «Имя*»</td></tr>
+      <tr><td>Error messages</td><td>«Похоже, телефон не записался — проверим?» вместо «Ошибка: invalid input»</td></tr>
+      <tr><td>Empty states</td><td>«Тут пока пусто — посмотрите смены лета 2026» вместо «No data»</td></tr>
+      <tr><td>Loading</td><td>«Считаем места…» вместо «Loading…»</td></tr>
+      <tr><td>Confirmation</td><td>«Отлично! Перезвоним за 10 минут» вместо «Спасибо, заявка принята»</td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-slash-circle" aria-hidden="true"></i> Слова-маркеры что нельзя</h3>
+  <p style="font-size: 14px; color: #4b5263;">
+    «безусловно», «качественный», «настоящий», «каждый ребёнок», «современный», «инновационный», «гарантия», «эксклюзивный», «уникальный», «лидер», «топовый» — все эти слова сигнализируют о слабом продукте.
+  </p>
+</section>
+
+<!-- ═══ 12. ДОСТУПНОСТЬ (a11y) ═══ -->
+<section><span id="a11y" class="anchor-target"></span>
+  <h2><i class="bi bi-universal-access" aria-hidden="true"></i> 12. Доступность (a11y) — что это и зачем</h2>
+  <p class="subtitle"><strong>a11y = accessibility</strong> (a + 11 букв + y = «доступность»). Сайт должен работать для людей с инвалидностью: слабовидящих, слепых, моторных нарушений.</p>
+
+  <div class="principle">
+    <strong>Зачем нам:</strong><br>
+    1. <strong>SEO:</strong> Google ранжирует выше доступные сайты<br>
+    2. <strong>+5% аудитории:</strong> у мам бывают слабовидящие родители (бабушки) которые помогают выбирать лагерь<br>
+    3. <strong>Закон:</strong> ФЗ «О защите прав потребителей» обязывает делать инфо доступным<br>
+    4. <strong>Mobile UX:</strong> крупные touch targets выгодны и без инвалидности
+  </div>
+
+  <h3><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> WCAG 2.1 AA — минимум для прода</h3>
+  <table class="table-clean">
+    <thead><tr><th>Критерий</th><th>Что значит</th><th>Как проверить</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Contrast 4.5:1</strong></td><td>Обычный текст должен иметь контраст ≥4.5:1 с фоном</td><td>WebAIM Color Checker</td></tr>
+      <tr><td><strong>Contrast 3:1</strong></td><td>Большой текст (18px+ или 14px+ bold) — минимум 3:1</td><td>Тоже WebAIM</td></tr>
+      <tr><td><strong>Touch targets 44×44</strong></td><td>Кнопки на мобиле минимум 44×44px (Apple HIG)</td><td>Просто измерить</td></tr>
+      <tr><td><strong>Alt text</strong></td><td>Все meaningful images имеют alt</td><td>Lighthouse a11y audit</td></tr>
+      <tr><td><strong>Focus visible</strong></td><td>Tab по клавиатуре подсвечивает элемент</td><td>Tab в браузере</td></tr>
+      <tr><td><strong>aria-label</strong></td><td>Кнопки только с иконкой имеют aria-label</td><td>Code review</td></tr>
+      <tr><td><strong>Form labels</strong></td><td>Каждый input имеет связанный <label for></td><td>Lighthouse</td></tr>
+      <tr><td><strong>Heading hierarchy</strong></td><td>H1 <i class="bi bi-arrow-right" aria-hidden="true"></i> H2 <i class="bi bi-arrow-right" aria-hidden="true"></i> H3 без перескоков</td><td>headingsMap extension</td></tr>
+      <tr><td><strong>Lang attribute</strong></td><td><code>&lt;html lang="ru"&gt;</code></td><td>View source</td></tr>
+      <tr><td><strong>Reduced motion</strong></td><td>Уважать <code>prefers-reduced-motion</code></td><td>System preference тест</td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> Что у нас проблемно сейчас</h3>
+  <ul style="color: #4b5263; font-size: 14px; line-height: 1.8;">
+    <li><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Был <code>text-white/35</code>, <code>text-white/45</code> — контраст FAIL (исправлено в DESIGN_SYSTEM.md, но не везде в коде)</li>
+    <li><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Hero gradient text — теряет контраст на pink части</li>
+    <li><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> Cookie banner перекрывает CTA — keyboard users не могут пройти</li>
+    <li><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> Иконки в trust badges (emerald/rose/sky) — низкий контраст с тёмным фоном</li>
+  </ul>
+
+  <h3><i class="bi bi-tools" aria-hidden="true"></i> Инструменты для проверки</h3>
+  <ul style="color: #4b5263; font-size: 14px; line-height: 1.8;">
+    <li>Chrome DevTools <i class="bi bi-arrow-right" aria-hidden="true"></i> Lighthouse <i class="bi bi-arrow-right" aria-hidden="true"></i> Accessibility (бесплатно, в браузере)</li>
+    <li><a href="https://wave.webaim.org/" target="_blank" style="color:#ec9b44">WAVE</a> — детальный audit с подсветкой ошибок</li>
+    <li>WebAIM Color Contrast Checker</li>
+    <li>VoiceOver (Mac) или TalkBack (Android) — реальный тест screen reader</li>
+  </ul>
+</section>
+
+<!-- ═══ 13. МИКРОАНИМАЦИИ ═══ -->
+<section><span id="motion" class="anchor-target"></span>
+  <h2><i class="bi bi-stars" aria-hidden="true"></i> 13. Микроанимации — радуют, не отвлекают</h2>
+  <p class="subtitle">Принцип: анимация работает на UX (даёт feedback, обозначает состояние), а не на «красиво».</p>
+
+  <h3><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Можно — функциональные анимации</h3>
+  <table class="table-clean">
+    <thead><tr><th>Где</th><th>Что</th><th>Длительность</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Hover на кнопках</strong></td><td>Tailwind <code>hover:-translate-y-[1px]</code> + shadow</td><td>200ms ease-out</td></tr>
+      <tr><td><strong>Active на кнопках</strong></td><td><code>active:translate-y-0</code> + opacity 0.9</td><td>100ms</td></tr>
+      <tr><td><strong>Открытие FAQ accordion</strong></td><td>height 0 <i class="bi bi-arrow-right" aria-hidden="true"></i> auto + chevron rotate 180°</td><td>250ms ease-in-out</td></tr>
+      <tr><td><strong>Modal появление</strong></td><td>opacity 0<i class="bi bi-arrow-right" aria-hidden="true"></i>1 + scale(0.95<i class="bi bi-arrow-right" aria-hidden="true"></i>1) + backdrop fade</td><td>200ms</td></tr>
+      <tr><td><strong>Fade-in при scroll</strong></td><td>IntersectionObserver, opacity 0<i class="bi bi-arrow-right" aria-hidden="true"></i>1 + translateY 12<i class="bi bi-arrow-right" aria-hidden="true"></i>0</td><td>400ms ease-out</td></tr>
+      <tr><td><strong>Cycling text в боте</strong></td><td>opacity 0<i class="bi bi-arrow-right" aria-hidden="true"></i>1 со сменой слова</td><td>200ms, цикл 2.2s</td></tr>
+      <tr><td><strong>Pulse на «Запись открыта»</strong></td><td>opacity 0.6↔1 + scale(1↔1.3)</td><td>1.5s infinite, но ТОЛЬКО 1 элемент</td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> Можно умеренно — декоративные анимации</h3>
+  <ul style="color: #4b5263; font-size: 14px; line-height: 1.8;">
+    <li><strong>Floating orbs</strong> — макс 2 элемента, blur(60px+), opacity &lt; 0.4, animation 8-15s. Если их 5 — это уже шум.</li>
+    <li><strong>Parallax photo</strong> — НЕ на mobile (тяжело для GPU). Только desktop.</li>
+    <li><strong>Counter animation</strong> (числа считаются) — только на view, один раз.</li>
+  </ul>
+
+  <h3><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Запрещено категорически</h3>
+  <ul style="color: #4b5263; font-size: 14px; line-height: 1.8;">
+    <li><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Авто-карусели быстрее 5 секунд (раздражают)</li>
+    <li><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Bounce-effect на кнопках (несерьёзно)</li>
+    <li><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Mouseover wave/ripple везде (Material Design overkill)</li>
+    <li><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Анимация background-image, width, height — НЕ GPU-acelerated, лагает</li>
+    <li><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Pulse на 5+ элементах (визуальный хаос)</li>
+    <li><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Loop scroll-triggered animations (раздражают)</li>
+  </ul>
+
+  <h3><i class="bi bi-bullseye" aria-hidden="true"></i> Performance rules</h3>
+  <table class="table-clean">
+    <tbody>
+      <tr><td><strong>Animatable properties</strong></td><td>Только <code>transform</code> (translate/scale/rotate) и <code>opacity</code></td></tr>
+      <tr><td><strong>FPS target</strong></td><td>60 FPS на iPhone SE 1st gen (8 лет старого устройства)</td></tr>
+      <tr><td><strong>Длительность</strong></td><td>150-300ms для micro, 400-600ms для большие переходы</td></tr>
+      <tr><td><strong>Easing</strong></td><td><code>ease-out</code> для появления, <code>ease-in-out</code> для toggle</td></tr>
+      <tr><td><strong>prefers-reduced-motion</strong></td><td>Все анимации respect <code>@media (prefers-reduced-motion: reduce)</code> и отключаются для пользователей с настройкой «уменьшать движение» в системе</td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-gem" aria-hidden="true"></i> «Радуют» — где конкретно</h3>
+  <ul style="color: #4b5263; font-size: 14px; line-height: 1.8;">
+    <li><i class="bi bi-stars" aria-hidden="true"></i> Hero H1 fade-up на 0.6s ease-out — приятный entrance</li>
+    <li><i class="bi bi-stars" aria-hidden="true"></i> Cycling word в bot CTA — magnet attention без шума</li>
+    <li><i class="bi bi-stars" aria-hidden="true"></i> Stars rating «вспыхивают» по очереди (50ms delay each) — micro-detail</li>
+    <li><i class="bi bi-stars" aria-hidden="true"></i> Счётчик «1200+ детей» count-up за 1.2s — wow без отвлечения</li>
+    <li><i class="bi bi-stars" aria-hidden="true"></i> Shift card hover lift + shadow — premium feel</li>
+    <li><i class="bi bi-stars" aria-hidden="true"></i> FAQ chevron smoothly rotates 180° — приятная mechanic</li>
+  </ul>
+</section>
+
+<!-- ═══ 14. USP — ЧТО ПОДСВЕЧИВАЕМ ═══ -->
+<section><span id="usp" class="anchor-target"></span>
+  <h2><i class="bi bi-bullseye" aria-hidden="true"></i> 14. USP — что подсвечиваем (главные differentiators)</h2>
+  <p class="subtitle">3 штуки которые отличают нас от 100 других лагерей. Везде и всегда.</p>
+
+  <div class="principle">
+    <strong>1. <i class="bi bi-phone" aria-hidden="true"></i> Отрыв от телефонов — наша философия.</strong><br>
+    В отличие от других лагерей, мы НЕ про телефоны. Очень легко занять детей телефоном — поиграл-позавтракал-всех в телефоны, после ужина 2 часа английского — снова в телефоны. Мы делаем осознанно по-другому. Мы лагерь не для всех — для думающих родителей, кто хочет показать ребёнку другую сторону жизни.
+  </div>
+
+  <div class="principle">
+    <strong>2. <i class="bi bi-cash-coin" aria-hidden="true"></i> Экономика (налоговый вычет 13%).</strong><br>
+    Не «дешевле всех» (это не правда), а «можно вернуть 13% через ФНС». Это рациональный аргумент для папы, который принимает финальное решение по бюджету. Документы для вычета даём автоматически.
+  </div>
+
+  <div class="principle">
+    <strong>3. <i class="bi bi-chat-dots" aria-hidden="true"></i> Внутренняя экономика — реальный AI-проект.</strong><br>
+    «Ваш сделает AI-проект» — не курсы по «информатике», а реальный продукт за 7-14 дней. Игра, бот, сайт — что-то конкретное, что можно показать в чате с подругами / на родительском собрании.
+  </div>
+
+  <h3><i class="bi bi-bar-chart-line" aria-hidden="true"></i> Где подсвечивать каждое USP</h3>
+  <table class="table-clean">
+    <thead><tr><th>USP</th><th>Где</th><th>Как</th></tr></thead>
+    <tbody>
+      <tr><td><strong><i class="bi bi-phone" aria-hidden="true"></i> Отрыв от телефонов</strong></td><td>Hero subtitle, About, отдельный блок «Наша философия», в FAQ</td><td>Не «без телефонов» (звучит как наказание), а «другая сторона» (звучит как опыт)</td></tr>
+      <tr><td><strong><i class="bi bi-cash-coin" aria-hidden="true"></i> Налоговый вычет</strong></td><td>Hero (микро-метка), Shifts (под ценой), Economy (отдельный блок), FAQ</td><td>Конкретные суммы по сменам: ~2 800 / 4 800 / 5 434 ₽</td></tr>
+      <tr><td><strong><i class="bi bi-chat-dots" aria-hidden="true"></i> AI-проект</strong></td><td>Hero subtitle, Journey, Hackathon (что в финале)</td><td>Показывать реальные проекты прошлых смен с фото/видео</td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-mic-fill" aria-hidden="true"></i> Tone of voice для USP</h3>
+  <ul style="color: #4b5263; font-size: 14px; line-height: 1.8;">
+    <li><i class="bi bi-phone" aria-hidden="true"></i> «Мы не для всех — для тех кто хочет показать другую сторону жизни»</li>
+    <li><i class="bi bi-phone" aria-hidden="true"></i> «Не про телефоны. Не запретами. По выбору.»</li>
+    <li><i class="bi bi-cash-coin" aria-hidden="true"></i> «Государство возвращает 13% — мы готовим документы»</li>
+    <li><i class="bi bi-chat-dots" aria-hidden="true"></i> «За 14 дней — реальный AI-проект. Можно показать всем.»</li>
+  </ul>
+</section>
+
+<!-- ═══ 15. CUSTOMER JOURNEY — СКОЛЬЗКАЯ ГОРКА ═══ -->
+<section><span id="journey" class="anchor-target"></span>
+  <h2><i class="bi bi-signpost-2" aria-hidden="true"></i> 15. Customer Journey — «скользкая горка»</h2>
+  <p class="subtitle">Каждый блок заканчивается крючком — вопросом, который заставляет идти дальше. Цель: чтобы мама не остановилась, а проскользнула до конца.</p>
+
+  <div class="principle">
+    <strong>Принцип «скользкой горки» (Sugarman):</strong> Конец каждого блока должен быть таким, что хочется читать следующий. Вопрос, незавершённое утверждение, обещание ответа.
+  </div>
+
+  <h3>Простые навигационные подсказки (БЕЗ провокаций любопытства)</h3>
+  <p style="color: #4b5263; font-size: 14px; margin-bottom: 12px;"><strong>Принцип Пивоварова:</strong> просто называем что дальше. Без «Сомневаетесь?», «А вы знали?», «Хотите узнать?». Прямая коммуникация — взрослые сами решат идти или нет.</p>
+  <table class="table-clean">
+    <thead><tr><th>Блок</th><th>Заканчивается на</th><th>Ведёт к</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Hero</strong></td><td>Возраст ребёнка <i class="bi bi-arrow-down" aria-hidden="true"></i></td><td>Age picker</td></tr>
+      <tr><td><strong>Age picker</strong></td><td>Подходящие смены <i class="bi bi-arrow-down" aria-hidden="true"></i></td><td>Shifts (filtered)</td></tr>
+      <tr><td><strong>Shifts</strong></td><td>Как проходит день в смене <i class="bi bi-arrow-down" aria-hidden="true"></i></td><td>Journey</td></tr>
+      <tr><td><strong>Journey</strong></td><td>Хакатон в финале смены <i class="bi bi-arrow-down" aria-hidden="true"></i></td><td>Hackathon / About</td></tr>
+      <tr><td><strong>About</strong></td><td>Команда и менторы <i class="bi bi-arrow-down" aria-hidden="true"></i></td><td>Team+Mentors</td></tr>
+      <tr><td><strong>Team+Mentors</strong></td><td>Размещение и безопасность <i class="bi bi-arrow-down" aria-hidden="true"></i></td><td>Stay + Trust</td></tr>
+      <tr><td><strong>Stay+Trust</strong></td><td>Отзывы родителей <i class="bi bi-arrow-down" aria-hidden="true"></i></td><td>Reviews</td></tr>
+      <tr><td><strong>Reviews</strong></td><td>Стоимость и налоговый вычет <i class="bi bi-arrow-down" aria-hidden="true"></i></td><td>Economy</td></tr>
+      <tr><td><strong>Economy</strong></td><td>Частые вопросы <i class="bi bi-arrow-down" aria-hidden="true"></i></td><td>FAQ</td></tr>
+      <tr><td><strong>FAQ</strong></td><td>Не нашли ответ — спросите анонимно <i class="bi bi-arrow-down" aria-hidden="true"></i></td><td>Anon Q&A CTA</td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-signpost-2" aria-hidden="true"></i> 3 типа путей клиента (на основе Метрики)</h3>
+  <table class="table-clean">
+    <thead><tr><th>Путь</th><th>Сценарий</th><th>Длина</th></tr></thead>
+    <tbody>
+      <tr><td><strong>1. Быстрый (~24% — главный)</strong></td><td>Hero <i class="bi bi-arrow-right" aria-hidden="true"></i> Age picker <i class="bi bi-arrow-right" aria-hidden="true"></i> Shifts <i class="bi bi-arrow-right" aria-hidden="true"></i> Звонок</td><td>3-4 экрана, 1-2 минуты</td></tr>
+      <tr><td><strong>2. Глубокий (~7%)</strong></td><td>Hero <i class="bi bi-arrow-right" aria-hidden="true"></i> Age <i class="bi bi-arrow-right" aria-hidden="true"></i> Shifts <i class="bi bi-arrow-right" aria-hidden="true"></i> Journey <i class="bi bi-arrow-right" aria-hidden="true"></i> Reviews <i class="bi bi-arrow-right" aria-hidden="true"></i> FAQ <i class="bi bi-arrow-right" aria-hidden="true"></i> Звонок</td><td>10-15 минут</td></tr>
+      <tr><td><strong>3. Параноик (~3%)</strong></td><td>Hero <i class="bi bi-arrow-right" aria-hidden="true"></i> Все блоки <i class="bi bi-arrow-right" aria-hidden="true"></i> FAQ <i class="bi bi-arrow-right" aria-hidden="true"></i> Анон бот <i class="bi bi-arrow-right" aria-hidden="true"></i> Яндекс.Карты <i class="bi bi-arrow-right" aria-hidden="true"></i> Звонок мужу</td><td>2-3 сессии</td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-geo-alt-fill" aria-hidden="true"></i> Где явные сигналы навигации</h3>
+  <ul style="color: #4b5263; font-size: 14px; line-height: 1.8;">
+    <li>В конце каждого блока — иконка <i class="bi bi-arrow-down" aria-hidden="true"></i> или <i class="bi bi-arrow-right" aria-hidden="true"></i> ведущая на следующий</li>
+    <li>Sticky bottom bar с прогресс-баром (например: «Возраст <i class="bi bi-check-lg" aria-hidden="true"></i> <i class="bi bi-arrow-right" aria-hidden="true"></i> Смена <i class="bi bi-arrow-right" aria-hidden="true"></i> Цена <i class="bi bi-arrow-right" aria-hidden="true"></i> Запись»)</li>
+    <li>«Вы тут» indicator</li>
+    <li>Quick jump menu сбоку (на десктопе) для путь #2 и #3</li>
+  </ul>
+</section>
+
+<!-- ═══ 16. МЕНЮ — ЧТО ОТОБРАЖАТЬ ═══ -->
+<section><span id="menu" class="anchor-target"></span>
+  <h2><i class="bi bi-list" aria-hidden="true"></i> 16. Меню — что отображать (сейчас часть, нужно пересобрать)</h2>
+  <p class="subtitle">Сейчас в меню часть пунктов важных, часть нет, и не все блоки представлены. Пересобираем по приоритетам.</p>
+
+  <h3><i class="bi bi-clipboard-check" aria-hidden="true"></i> Текущее меню — критика</h3>
+  <table class="table-clean">
+    <thead><tr><th>Пункт</th><th>Есть в меню?</th><th>Нужен?</th></tr></thead>
+    <tbody>
+      <tr><td>О лагере</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Да</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Да</td></tr>
+      <tr><td>Смены</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Да</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Да</td></tr>
+      <tr><td>Фото</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Да</td><td><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> На отдельную страницу</td></tr>
+      <tr><td>Как проходит смена</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Да (под more)</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Да</td></tr>
+      <tr><td>Видео</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Да (под more)</td><td><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> На отдельную страницу + редко</td></tr>
+      <tr><td>Отзывы</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Да</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Да</td></tr>
+      <tr><td>FAQ</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Да</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Да</td></tr>
+      <tr><td>Команда</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Да</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Да (с менторами вместе)</td></tr>
+      <tr><td>Размещение</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Да</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Да</td></tr>
+      <tr><td>Контакты</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Да</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Да</td></tr>
+      <tr><td><strong>Цены / Налоговый вычет</strong></td><td><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> НЕТ</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Должно быть!</td></tr>
+      <tr><td><strong>Философия / Без телефонов</strong></td><td><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> НЕТ</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Должно быть! USP #1</td></tr>
+      <tr><td><strong>Документы / Лицензия</strong></td><td><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> НЕТ</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Должно быть (страх безопасности)</td></tr>
+      <tr><td><strong>Поиск по сайту</strong></td><td><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> НЕТ</td><td><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Полезно для глубокого пути</td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-clipboard-check" aria-hidden="true"></i> Предлагаю новое меню</h3>
+  <table class="table-clean">
+    <thead><tr><th>Уровень</th><th>Пункты</th></tr></thead>
+    <tbody>
+      <tr><td><strong><i class="bi bi-square-fill" style="color:#ec9b44" aria-hidden="true"></i> Top (mobile + desktop)</strong></td><td><strong>Смены</strong> · <strong>Цены</strong> · <strong>Философия</strong> · <strong>Спросить анонимно</strong></td></tr>
+      <tr><td>📂 More (dropdown)</td><td>О лагере · Как проходит смена · Команда · Размещение · Отзывы · FAQ · Документы</td></tr>
+      <tr><td>📁 Footer (sitemap)</td><td>Все основные + Фото · Видео · Контакты · Политика · Пользовательское</td></tr>
+      <tr><td><i class="bi bi-search" aria-hidden="true"></i> Search</td><td>Иконка лупа в header — поиск по статьям/FAQ/смене</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══ 17. ОТДЕЛЬНЫЕ СТРАНИЦЫ — ЧТО ВЫНОСИМ ═══ -->
+<section><span id="pages" class="anchor-target"></span>
+  <h2><i class="bi bi-file-text" aria-hidden="true"></i> 17. Отдельные страницы (что выносим с главной)</h2>
+  <p class="subtitle">Чтобы главная грузилась быстрее (LCP &lt; 2s) и была сфокусирована — выносим тяжёлый контент.</p>
+
+  <h3><i class="bi bi-upload" aria-hidden="true"></i> Кандидаты на вынос</h3>
+  <table class="table-clean">
+    <thead><tr><th>Блок</th><th>Куда</th><th>Зачем</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Gallery (фото)</strong></td><td>/foto/ или /galereya/</td><td>10-30 фото лагеря, занимает много места + load time</td></tr>
+      <tr><td><strong>Videos</strong></td><td>/video/</td><td>YouTube embed = тяжёлый load. Конверсия 0.9% — не оправдывает место на главной</td></tr>
+      <tr><td><strong>Mentors (детально)</strong></td><td>/komanda/</td><td>На главной кратко (3-4 фото), полная команда — внутри</td></tr>
+      <tr><td><strong>Документы / Лицензия</strong></td><td>/dokumenty/ (уже есть!)</td><td>Просто ссылка из trust-блока + footer</td></tr>
+      <tr><td><strong>Stay (детально)</strong></td><td>/razmeshenie/</td><td>На главной — 1 фото + ключи. Полная инфа — внутри</td></tr>
+    </tbody>
+  </table>
+
+  <p style="font-size: 13px; color: #6b7280;"><i class="bi bi-lightning-charge-fill" aria-hidden="true"></i> <strong>Эффект:</strong> главная сократится с ~21 блока до ~12. Time to interactive улучшится в 1.5-2x.</p>
+</section>
+
+<!-- ═══ 18. BOOKINGBAR + БРОНИРОВАНИЕ ВНУТРИ КАРТОЧЕК ═══ -->
+<section><span id="booking" class="anchor-target"></span>
+  <h2><i class="bi bi-ticket-perforated" aria-hidden="true"></i> 18. Бронирование — внутри карточек, не отдельный блок</h2>
+  <p class="subtitle">Убираем BookingBar (2 шт. сейчас на главной). Бронирование появляется ТОЛЬКО внутри выбранной смены, после выбора возраста.</p>
+
+  <div class="principle">
+    <strong>Принцип:</strong> «Не назойливо». Не толкаем человека «Звоните! Пишите!». Кто хочет — позвонит сам (телефон в header). Кто хочет глубже — выберет возраст <i class="bi bi-arrow-right" aria-hidden="true"></i> выберет смену <i class="bi bi-arrow-right" aria-hidden="true"></i> внутри смены увидит «Забронировать».
+  </div>
+
+  <h3><i class="bi bi-arrow-down-right-circle" aria-hidden="true"></i> Новый flow бронирования</h3>
+  <table class="table-clean">
+    <thead><tr><th>Шаг</th><th>Что показываем</th></tr></thead>
+    <tbody>
+      <tr><td>1. Hero <i class="bi bi-arrow-right" aria-hidden="true"></i> Age picker</td><td>«Подходит ли возраст?» 4 кнопки</td></tr>
+      <tr><td>2. Shifts (filtered)</td><td>Карточки смен подходящих по возрасту</td></tr>
+      <tr><td>3. Клик на смену <i class="bi bi-arrow-right" aria-hidden="true"></i> Modal</td><td>Детали + цена + что включено</td></tr>
+      <tr><td>4. Inside Modal</td><td><strong>«Забронировать»</strong> кнопка появляется ТУТ, не раньше</td></tr>
+      <tr><td>5. Booking form</td><td>Минимум полей. Имя + телефон + email опционально</td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Что убираем</h3>
+  <ul style="color: #4b5263; font-size: 14px; line-height: 1.8;">
+    <li>BookingBar #1 (после Economy) — удалить</li>
+    <li>BookingBar #2 (после Shifts) — удалить</li>
+    <li>«Перезвоним за 10 минут» — мусорное обещание</li>
+    <li>«Звоните!» вездесущее — заменить на телефон в header</li>
+  </ul>
+
+  <h3><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Что оставляем для звонящих</h3>
+  <ul style="color: #4b5263; font-size: 14px; line-height: 1.8;">
+    <li>Phone link в header (всегда виден на mobile)</li>
+    <li>Phone в Contacts блоке (один раз внизу)</li>
+    <li>Phone в Footer</li>
+    <li>Telegram / WhatsApp иконки (Telegram первым — наш основной канал) в header (для тех кто не любит звонить)</li>
+  </ul>
+</section>
+
+<!-- ═══ 19. БОТ — БЕЗ СЛОВА «БОТ» ═══ -->
+<section><span id="bot" class="anchor-target"></span>
+  <h2><i class="bi bi-chat-dots" aria-hidden="true"></i> 19. Бот — никогда не называем «бот»</h2>
+  <p class="subtitle">42% россиян не оставляют контакты на сайтах из-за страха спама. Слово «бот» = «опять менеджер заберёт телефон». Используем «спросите анонимно».</p>
+
+  <h3><i class="bi bi-pencil-square" aria-hidden="true"></i> Формулировки</h3>
+  <table class="table-clean">
+    <thead><tr><th><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Запрещено</th><th><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Нужно</th></tr></thead>
+    <tbody>
+      <tr><td>«Спросите бота»</td><td>«Спросите анонимно»</td></tr>
+      <tr><td>«Чат-бот ответит»</td><td>«Получите ответ за минуту»</td></tr>
+      <tr><td>«AI-помощник»</td><td>«Узнайте всё про лагерь»</td></tr>
+      <tr><td>«Telegram-бот»</td><td>«Через мессенджер»</td></tr>
+      <tr><td>«Напишите боту»</td><td>«Спросите про лагерь / еду / минусы»</td></tr>
+    </tbody>
+  </table>
+
+  <h3><i class="bi bi-bullseye" aria-hidden="true"></i> CTA для бота</h3>
+  <div style="background: #fff7ef; padding: 16px; border-radius: 12px; border: 1px solid rgba(236,155,68,0.3); margin: 12px 0;">
+    <p style="margin: 0 0 8px; font-size: 12px; font-weight: 600; color: #b66d10; text-transform: uppercase;">СПРОСИТЕ ПРО</p>
+    <p style="margin: 0 0 8px; font-size: 18px; font-weight: 700; color: #1e2430;">минусы</p>
+    <p style="margin: 0; font-size: 11px; color: #6b7280;"><i class="bi bi-shield-lock-fill" style="color:#ec9b44"></i> Анонимно, без регистрации</p>
+  </div>
+  <p style="font-size: 13px; color: #6b7280;">Cycling words (нейтральные, без провокаций любопытства): <strong>лагерь</strong> · <strong>еду</strong> · <strong>бассейн</strong> · <strong>размещение</strong> · <strong>стоимость</strong> · <strong>программу</strong> · <strong>безопасность</strong>. <strong>Убрали:</strong> «минусы», «косяки», «правду о ценах» — это провокация любопытства, не наш tone. Просто перечисляем темы.</p>
+</section>
+
+<!-- ═══ 21. UX-ДЕТАЛИ — из обратной связи ═══ -->
+<section><span id="ux-details" class="anchor-target"></span>
+  <h2>UX-детали — конкретные правила</h2>
+  <p class="subtitle">Список конкретных UX-улучшений из обратной связи — что важно для нашего сайта.</p>
+
+  <h3>Sticky bottom CTA на mobile</h3>
+  <div class="principle">
+    Когда mobile-юзер проскролил Hero и не выбрал возраст — снизу появляется sticky-bar с <strong>выбором возраста</strong> (главная цель Метрики, ID 541048270). НЕ «Выбрать смену» — потому что age_picker идёт первым в воронке. После выбора возраста sticky меняется на «Выбрать смену».
+  </div>
+
+  <h3>Skeleton loading — что это</h3>
+  <p style="color: #4b5263; font-size: 14px;">
+    Skeleton = серые placeholder'ы (полоски и круги) которые показываются пока контент грузится. Создаёт ощущение что страница «жива», даже если интернет медленный.
+  </p>
+  <p style="color: #4b5263; font-size: 14px; margin-top: 8px;"><strong>Где НЕ нужны:</strong></p>
+  <ul style="color: #4b5263; font-size: 14px; line-height: 1.8;">
+    <li>Static контент — он сразу в HTML, грузится мгновенно</li>
+    <li>Hero — фото с preload, не нужен skeleton</li>
+  </ul>
+  <p style="color: #4b5263; font-size: 14px;"><strong>Где нужны:</strong></p>
+  <ul style="color: #4b5263; font-size: 14px; line-height: 1.8;">
+    <li>API-driven блоки — например, ShiftOccupancy (если данные с сервера)</li>
+    <li>Bot interface при первой загрузке chat history</li>
+    <li>Lightbox при открытии большой фотки</li>
+  </ul>
+
+  <h3>Бот — error states не нужны</h3>
+  <div class="principle">
+    Если бот недоступен — бот сам скажет «Извините, я временно не отвечаю, перезвоните по ...». Не делаем UI-уведомлений на сайте.
+  </div>
+
+  <h3>Back-to-top button</h3>
+  <table class="table-clean">
+    <thead><tr><th>Параметр</th><th>Значение</th></tr></thead>
+    <tbody>
+      <tr><td>Когда появляется</td><td>После прокрутки &gt; 800px</td></tr>
+      <tr><td>Где</td><td>Sticky right bottom (mobile: bottom-right; desktop: bottom-right с margin)</td></tr>
+      <tr><td>Размер</td><td>44×44px (touch-friendly), круглая</td></tr>
+      <tr><td>Иконка</td><td><code>bi-arrow-up</code> (Bootstrap Icons)</td></tr>
+      <tr><td>Стиль</td><td>Soft white/glass, не яркая (ненавязчивая)</td></tr>
+      <tr><td>Анимация</td><td>Fade-in 200ms когда появляется. Smooth scroll-to-top при клике</td></tr>
+    </tbody>
+  </table>
+
+  <h3>404 страница — «Возможно вы искали»</h3>
+  <table class="table-clean">
+    <thead><tr><th>Что должно быть</th></tr></thead>
+    <tbody>
+      <tr><td>1. Большой H1: «Эта страница переехала или удалена»</td></tr>
+      <tr><td>2. «Возможно вы искали:» список из 5-7 популярных страниц</td></tr>
+      <tr><td>3. Поиск по сайту (input)</td></tr>
+      <tr><td>4. Кнопка «На главную»</td></tr>
+      <tr><td>5. Phone в header (если хочет позвонить)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Поиск по сайту</h3>
+  <div class="principle">
+    Иконка лупа в header (после телефона). Клик <i class="bi bi-arrow-right" aria-hidden="true"></i> открывает overlay с полем поиска. Ищет по: статьям /stati/, FAQ-вопросам, названиям смен. Используем Pagefind (open-source, статический) — не требует backend.
+  </div>
+
+  <h3>Mobile keyboard — viewport jump</h3>
+  <div class="principle">
+    Когда mobile-клавиатура поднимается, viewport сжимается <i class="bi bi-arrow-right" aria-hidden="true"></i> kнопки уезжают / контент перекрывается. Решение:<br>
+    <code>html &#123; height: 100%; &#125; body &#123; min-height: 100svh; &#125;</code> + <code>visualViewport API</code> для критичных форм.
+  </div>
+
+  <h3>Mail.ru webview — dead clicks</h3>
+  <div class="principle">
+    Mail.ru использует свой WebView, в котором <code>&lt;details/summary&gt;</code> часто не работает (dead clicks). Используем <code>&lt;button data-faq-toggle&gt;</code> + JS для accordion'ов.
+  </div>
+
+  <h3>Photo Gallery — отдельная страница, премиум</h3>
+  <table class="table-clean">
+    <tbody>
+      <tr><td>URL</td><td><code>/foto/</code></td></tr>
+      <tr><td>Layout</td><td>Masonry grid (Pinterest-style), 2 col mobile / 4 col desktop</td></tr>
+      <tr><td>Lightbox</td><td>Swipe для переключения, pinch zoom, ESC для закрытия</td></tr>
+      <tr><td>Lazy loading</td><td>Intersection Observer, грузить по мере скролла</td></tr>
+      <tr><td>Image format</td><td>AVIF + WebP fallback, multiple sizes (300w/600w/1200w)</td></tr>
+      <tr><td>Категории</td><td>Tabs: «Занятия», «Бассейн», «Природа», «Хакатон», «Команда»</td></tr>
+      <tr><td>Performance</td><td>Initial load: только превью первого экрана</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Программа смены — печать в PDF</h3>
+  <div class="principle">
+    Папа распечатает программу — должна красиво лечь на A4. Используем <code>@media print</code> stylesheet. Скрываем nav/footer/CTA, оставляем только программу с большими полями для заметок.
+  </div>
+
+  <h3>Дата формат: ВСЕГДА «30 мая»</h3>
+  <table class="table-clean">
+    <thead><tr><th><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Неправильно</th><th><i class="bi bi-check-circle-fill" style="color:#2fa768" aria-hidden="true"></i> Правильно</th></tr></thead>
+    <tbody>
+      <tr><td>30.05.2026</td><td>30 мая 2026</td></tr>
+      <tr><td>May 30</td><td>30 мая</td></tr>
+      <tr><td>30/05</td><td>30 мая</td></tr>
+      <tr><td>2026-05-30</td><td>30 мая 2026 (для людей)</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size: 13px; color: #6b7280;">В <code>&lt;time datetime="2026-05-30"&gt;30 мая 2026&lt;/time&gt;</code> — ISO в атрибуте, человеческий формат внутри.</p>
+
+  <h3>Контакты — порядок везде ОДИНАКОВЫЙ</h3>
+  <ol style="color: #4b5263; font-size: 14px; line-height: 1.8; padding-left: 20px;">
+    <li><strong>Phone</strong> +7 (495) 128-44-29 — главный канал</li>
+    <li><strong>Telegram</strong> — наш основной мессенджер для общения</li>
+    <li><strong>WhatsApp</strong> — второй мессенджер для тех кто не Telegram</li>
+    <li><strong>Email</strong> hello@codims.ru — для документов</li>
+  </ol>
+  <p style="color: #c4515c; font-size: 13px;"><strong>НЕ менять порядок!</strong> Telegram всегда перед WhatsApp.</p>
+
+  <h3>Уведомление о наполненности — уже есть</h3>
+  <p style="color: #4b5263; font-size: 14px;">
+    <code>ShiftOccupancy.astro</code> — «Осталось N мест» — компонент уже работает. Не дублируем функционал.
+  </p>
+</section>
+
+<!-- ═══ ЧЕГО НЕ ДЕЛАТЬ ═══ -->
+<section><span id="dont" class="anchor-target"></span>
+  <h2>22. Чего категорически не делать</h2>
+
+  <div class="principle" style="border-left-color: #c4515c;">
+    <strong><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Hard orange </strong><code style="color:#ec9b44">#ec9b44</code><strong> в новых компонентах.</strong> Используй <code style="color:#ec9b44">#ec9b44</code> (soft).
+  </div>
+  <div class="principle" style="border-left-color: #c4515c;">
+    <strong><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Iridescent / multi-hue gradients.</strong> Pink, violet, cyan — не наша палитра. Только soft orange + navy.
+  </div>
+  <div class="principle" style="border-left-color: #c4515c;">
+    <strong><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Несколько orange CTA на одном экране.</strong> Только 1 primary. Остальное — outline/ghost.
+  </div>
+  <div class="principle" style="border-left-color: #c4515c;">
+    <strong><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Эмодзи в UI.</strong> Только Bootstrap Icons.
+  </div>
+  <div class="principle" style="border-left-color: #c4515c;">
+    <strong><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Жёсткие края фото в hero.</strong> Soft mask или vignette.
+  </div>
+  <div class="principle" style="border-left-color: #c4515c;">
+    <strong><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Pulse-animation на множестве элементов.</strong> Только 1, и pacing 4-5с (не 1.5).
+  </div>
+  <div class="principle" style="border-left-color: #c4515c;">
+    <strong><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Текст &lt; 16px на mobile body.</strong> Safari делает auto-zoom, ломает UX.
+  </div>
+  <div class="principle" style="border-left-color: #c4515c;">
+    <strong><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Inline стили <code>style="color:..."</code>.</strong> Только Tailwind tokens.
+  </div>
+  <div class="principle" style="border-left-color: #c4515c;">
+    <strong><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Назидание / экспертный тон.</strong> Дарья закрывает кошелёк. Лёгкий тон подруги.
+  </div>
+  <div class="principle" style="border-left-color: #c4515c;">
+    <strong><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> «Перезвоним за 10 минут», «Самые выгодные цены», «Лучшее предложение».</strong> Мусорные обещания, у всех такие, не верят.
+  </div>
+  <div class="principle" style="border-left-color: #c4515c;">
+    <strong><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Слова «дети», «ребёнок» где можно избегать.</strong> Заменять на «ваш», «он/она», «подросток» — звучит более adult и менее назидательно.
+  </div>
+  <div class="principle" style="border-left-color: #c4515c;">
+    <strong><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Слово «бот» в любой форме.</strong> 42% россиян боятся, что у них заберут контакты. «Спросите анонимно» вместо «Спросите бота».
+  </div>
+  <div class="principle" style="border-left-color: #c4515c;">
+    <strong><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> Везущие призывы «Звоните!», «Пишите!», «Запишитесь!»</strong> Тон Пивоварова: «Решение остаётся за вами. Мы посоветуем, но выбор ваш».
+  </div>
+  <div class="principle" style="border-left-color: #c4515c;">
+    <strong><i class="bi bi-x-circle-fill" style="color:#c4515c" aria-hidden="true"></i> BookingBar как отдельный блок.</strong> Бронирование появляется ТОЛЬКО внутри карточки смены, после выбора возраста.
+  </div>
+</section>
+
+<section style="text-align: center; padding: 48px 0;">
+  <p style="color: #6b7280; font-size: 13px;">v3 · 2026-05-01 · Soft Orange + Attention-driven · АйДаКемп</p>
+</section>
+
+</div>
+
+</Base>
