@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# Post-Push Hook: Auto-release file locks on successful push
+# Triggered automatically after successful push
+# Releases all locks owned by current agent and cleans up expired locks
+#
+# Installation: Place in .git/hooks/post-push
+# This hook is installed by scripts/setup-hooks.sh
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+LOCK_MANAGER="$REPO_ROOT/scripts/file-lock-manager.sh"
+LOCKS_DIR="${HOME}/.claude/file-locks"
+
+if [[ ! -f "$LOCK_MANAGER" ]]; then
+  exit 0  # File lock manager not found, skip
+fi
+
+# Source variables for agent identification (same as file-lock-manager.sh)
+AGENT_ID="${AGENT_ID:-$(hostname)-$(whoami)}"
+
+# Release all locks owned by current agent
+release_agent_locks() {
+  if [[ ! -d "$LOCKS_DIR" ]]; then
+    return 0
+  fi
+
+  local released_count=0
+  for lock_file in "$LOCKS_DIR"/*.lock; do
+    [[ -f "$lock_file" ]] || continue
+
+    # Check if lock belongs to current agent
+    local lock_agent
+    lock_agent=$(grep "^AGENT_ID=" "$lock_file" 2>/dev/null | cut -d= -f2 || echo "")
+
+    if [[ "$lock_agent" == "$AGENT_ID" ]]; then
+      # Get file path for release logging
+      local file_path
+      file_path=$(grep "^FILE_PATH=" "$lock_file" | cut -d= -f2)
+
+      # Release the lock
+      rm -f "$lock_file"
+      released_count=$((released_count + 1))
+    fi
+  done
+
+  return 0
+}
+
+# Get list of files that were in the push
+# $1 = upstream URL
+# $2 = upstream branch
+if [[ $# -ge 2 ]]; then
+  local upstream_url="$1"
+  local upstream_branch="$2"
+
+  # Release locks owned by current agent
+  release_agent_locks
+
+  # Clean up expired locks from other agents
+  bash "$LOCK_MANAGER" cleanup
+
+  echo "✅ Post-push: Released locks and cleaned up after push to $upstream_branch"
+fi
+
+exit 0
