@@ -1,0 +1,189 @@
+/*
+ * Print stylesheet — для распечатки программы смены на A4.
+ * Цель: папа жмёт Cmd+P → программа на 1-2 листа без UI-мусора.
+ *
+ * Подключается в Base.astro как <link rel="stylesheet" media="print">.
+ */
+
+@media print {
+  /* Жёсткая монохромная гамма для экономии чернил */
+  @page {
+    size: A4 portrait;
+    margin: 18mm 16mm 22mm 16mm;
+  }
+
+  *,
+  *::before,
+  *::after {
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  html, body {
+    background: #fff !important;
+    font-size: 11pt;
+    line-height: 1.55;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+  }
+
+  /* ─── Скрываем интерфейсный мусор ─── */
+  header,
+  footer,
+  nav,
+  aside,
+  [data-sticky-bottom],
+  .sticky-bottom-mobile,
+  #age-bar,
+  #back-to-top,
+  #site-search-overlay,
+  #mobile-menu,
+  [data-print-hide],
+  [data-cookie-banner],
+  [data-analytics-goal][data-cta],
+  .no-print,
+  iframe,
+  video,
+  audio,
+  button,
+  [role="dialog"]:not([open]),
+  .hero-bg,
+  [data-hero-bg],
+  picture source,
+  link[rel="preload"],
+  script,
+  style[data-vite-dev] {
+    display: none !important;
+  }
+
+  /* Изображения — только узкие, чтобы не съели лист */
+  img {
+    max-width: 60mm !important;
+    max-height: 40mm !important;
+    page-break-inside: avoid;
+  }
+
+  /* Если страница помечена data-print="program" — показываем только этот блок */
+  body[data-print="program"] > *:not([data-print-keep]) {
+    display: none !important;
+  }
+  body[data-print="program"] [data-print-keep] {
+    display: block !important;
+  }
+
+  /* ─── Типографика для печати ─── */
+  h1 {
+    font-size: 22pt;
+    margin: 0 0 6pt 0;
+    page-break-after: avoid;
+  }
+  h2 {
+    font-size: 14pt;
+    margin: 14pt 0 4pt 0;
+    page-break-after: avoid;
+    border-bottom: 1pt solid #888;
+    padding-bottom: 2pt;
+  }
+  h3 {
+    font-size: 12pt;
+    margin: 10pt 0 3pt 0;
+    page-break-after: avoid;
+  }
+
+  p, li, dd, blockquote {
+    font-size: 11pt;
+    line-height: 1.5;
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Таблицы (расписание дня) */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    page-break-inside: auto;
+    margin: 8pt 0;
+  }
+  thead { display: table-header-group; }
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  th, td {
+    border: 0.5pt solid #888;
+    padding: 4pt 6pt;
+    vertical-align: top;
+    text-align: left;
+  }
+  th {
+    background: #eee !important;
+    font-weight: 700;
+  }
+
+  /* ─── Заметки на полях ─── */
+  /* Контейнер для заметок справа от программы */
+  .print-notes {
+    display: block !important;
+    margin-top: 14pt;
+    padding-top: 8pt;
+    border-top: 1pt dashed #888;
+  }
+  .print-notes::before {
+    content: "Заметки:";
+    display: block;
+    font-weight: 700;
+    margin-bottom: 6pt;
+  }
+  .print-notes::after {
+    content: "";
+    display: block;
+    /* 8 строк для рукописных заметок */
+    height: 60mm;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 7mm,
+      #ccc 7mm,
+      #ccc 7.2mm
+    );
+  }
+
+  /* ─── Footer на каждой странице — контакты ─── */
+  body::after {
+    content: "АйДаКемп · +7 (495) 128-44-29 · aidacamp.ru · hello@codims.ru";
+    display: block;
+    position: fixed;
+    bottom: 8mm;
+    left: 16mm;
+    right: 16mm;
+    text-align: center;
+    font-size: 9pt;
+    color: #666 !important;
+    border-top: 0.5pt solid #ccc;
+    padding-top: 4pt;
+  }
+
+  /* ─── Ссылки: показывать URL после текста ─── */
+  a[href^="http"]::after,
+  a[href^="mailto:"]::after,
+  a[href^="tel:"]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #666 !important;
+    word-break: break-all;
+  }
+
+  /* Внутренние якоря — без URL */
+  a[href^="#"]::after,
+  a[href^="/"]::after {
+    content: "";
+  }
+
+  /* Page breaks */
+  .page-break-before { page-break-before: always; }
+  .page-break-after { page-break-after: always; }
+  .avoid-break { page-break-inside: avoid; }
+}

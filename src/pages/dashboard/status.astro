@@ -1,0 +1,691 @@
+---
+import LanitPageLayout from '../../layouts/LanitPageLayout.astro';
+---
+
+<LanitPageLayout title="Status Dashboard — AidaCamp" description="Multi-agent coordination dashboard">
+  <section class="status-section">
+    <div class="wrap">
+      <h1 class="status-title">Multi-Agent Status Dashboard</h1>
+      <p class="status-subtitle">Real-time monitoring of file locks, branches, and deployment state</p>
+
+      <div class="summary-grid" id="summary-grid">
+        <div class="summary-card loading">
+          <div class="card-label">Active Locks</div>
+          <div class="card-value">—</div>
+        </div>
+        <div class="summary-card loading">
+          <div class="card-label">Stale Locks</div>
+          <div class="card-value">—</div>
+        </div>
+        <div class="summary-card loading">
+          <div class="card-label">Branches Ahead</div>
+          <div class="card-value">—</div>
+        </div>
+        <div class="summary-card loading">
+          <div class="card-label">Build Status</div>
+          <div class="card-value">—</div>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h2 class="card-title">File Locks</h2>
+            <span class="card-meta" id="locks-count">Loading...</span>
+          </div>
+          <div class="locks-list" id="locks-list">
+            <div class="loading-placeholder">Fetching lock status...</div>
+          </div>
+        </div>
+
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h2 class="card-title">Branch Status</h2>
+            <span class="card-meta" id="branches-count">Loading...</span>
+          </div>
+          <div class="branches-list" id="branches-list">
+            <div class="loading-placeholder">Fetching branch data...</div>
+          </div>
+        </div>
+
+        <div class="dashboard-card full-width">
+          <div class="card-header">
+            <h2 class="card-title">Deployment Status</h2>
+            <span class="card-meta" id="deploy-meta">Loading...</span>
+          </div>
+          <div class="deploy-info" id="deploy-info">
+            <div class="loading-placeholder">Fetching deployment data...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="status-footer">
+        <p class="footer-text">
+          Dashboard auto-refreshes every 10 seconds. Last updated: <span id="last-updated">—</span>
+        </p>
+        <div class="footer-actions">
+          <button id="refresh-btn" class="btn-icon" aria-label="Refresh now">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+          <button id="copy-status-btn" class="btn-icon" aria-label="Copy status JSON">
+            <i class="bi bi-clipboard"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+</LanitPageLayout>
+
+<style>
+  .status-section {
+    padding: 40px 0 120px;
+    margin-top: 64px;
+  }
+
+  .status-title {
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--txt);
+  }
+
+  .status-subtitle {
+    font-size: 16px;
+    color: var(--txt2);
+    margin-bottom: 40px;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  .summary-card {
+    padding: 20px;
+    background: var(--bg2);
+    border: 1px solid var(--bdr);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: all 0.2s ease;
+  }
+
+  .summary-card.loading {
+    opacity: 0.6;
+  }
+
+  .summary-card:hover {
+    border-color: var(--or);
+    background: var(--bg3);
+  }
+
+  .card-label {
+    font-size: 13px;
+    color: var(--txt2);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .card-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--or);
+    font-family: "SF Mono", "Fira Code", monospace;
+  }
+
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+
+  .dashboard-card {
+    background: var(--bg2);
+    border: 1px solid var(--bdr);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .dashboard-card.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .card-header {
+    padding: 16px 20px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--bdr);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--txt);
+    margin: 0;
+  }
+
+  .card-meta {
+    font-size: 12px;
+    color: var(--txt2);
+    background: var(--surface);
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+
+  .locks-list,
+  .branches-list {
+    padding: 16px;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  .lock-item {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--bdr);
+  }
+
+  .lock-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .lock-path {
+    font-family: "SF Mono", monospace;
+    font-size: 12px;
+    color: var(--cs);
+    word-break: break-all;
+    margin-bottom: 8px;
+  }
+
+  .lock-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+
+  .lock-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .lock-meta-label {
+    color: var(--txt2);
+    font-weight: 500;
+  }
+
+  .lock-meta-value {
+    color: var(--txt);
+    font-family: "SF Mono", monospace;
+    word-break: break-all;
+  }
+
+  .lock-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .lock-status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .lock-status-indicator.active {
+    background: var(--green);
+  }
+
+  .lock-status-indicator.expired {
+    background: #FF6B6B;
+  }
+
+  .lock-reason {
+    font-size: 11px;
+    color: var(--txt2);
+    font-style: italic;
+    padding: 8px;
+    background: var(--surface);
+    border-radius: 4px;
+    margin-top: 8px;
+  }
+
+  .branch-item {
+    margin-bottom: 12px;
+    padding: 12px;
+    background: var(--surface);
+    border-radius: 4px;
+    border-left: 3px solid var(--bdr);
+  }
+
+  .branch-name {
+    font-family: "SF Mono", monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--txt);
+    margin-bottom: 6px;
+  }
+
+  .branch-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+  }
+
+  .branch-stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .stat-label {
+    color: var(--txt2);
+  }
+
+  .stat-value {
+    font-weight: 600;
+    font-family: "SF Mono", monospace;
+  }
+
+  .stat-value.ahead {
+    color: var(--green);
+  }
+
+  .stat-value.behind {
+    color: var(--or);
+  }
+
+  .deploy-info {
+    padding: 20px;
+  }
+
+  .deploy-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--bdr);
+  }
+
+  .deploy-row:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .deploy-label {
+    font-weight: 600;
+    color: var(--txt2);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+
+  .deploy-value {
+    color: var(--txt);
+    font-family: "SF Mono", monospace;
+    font-size: 13px;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    background: var(--surface);
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .status-badge.clean {
+    color: var(--green);
+  }
+
+  .status-badge.dirty {
+    color: var(--or);
+  }
+
+  .status-badge.unknown {
+    color: var(--txt2);
+  }
+
+  .badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .status-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: var(--bg3);
+    border: 1px solid var(--bdr);
+    border-radius: 8px;
+  }
+
+  .footer-text {
+    font-size: 12px;
+    color: var(--txt2);
+    margin: 0;
+  }
+
+  .footer-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+    border: 1px solid var(--bdr);
+    border-radius: 4px;
+    color: var(--txt);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-icon:hover {
+    background: var(--or);
+    color: white;
+    border-color: var(--or);
+  }
+
+  .btn-icon.rotating {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .loading-placeholder {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--txt2);
+    font-size: 13px;
+  }
+
+  .error-message {
+    padding: 16px;
+    background: rgba(255, 107, 107, 0.1);
+    border: 1px solid #FF6B6B;
+    border-radius: 4px;
+    color: #FF6B6B;
+    font-size: 12px;
+  }
+
+  @media (max-width: 1024px) {
+    .dashboard-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .lock-meta {
+      grid-template-columns: 1fr;
+    }
+
+    .status-footer {
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-start;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .summary-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .status-title {
+      font-size: 24px;
+    }
+
+    .status-footer {
+      padding: 12px;
+    }
+
+    .footer-text {
+      font-size: 11px;
+    }
+  }
+</style>
+
+<script>
+  interface StatusData {
+    timestamp: string;
+    locks: Array<{
+      path: string;
+      agentId: string;
+      sessionId: string;
+      lockedAt: string;
+      expiresAt: string;
+      reason: string;
+      isExpired: boolean;
+      minutesRemaining: number;
+    }>;
+    branches: Array<{
+      name: string;
+      ahead: number;
+      behind: number;
+      lastCommitTime: string;
+      lastCommitAuthor: string;
+    }>;
+    deployStatus: {
+      lastDeployTime: string | null;
+      environment: 'dev' | 'prod' | 'unknown';
+      buildStatus: 'clean' | 'dirty' | 'unknown';
+    };
+    summary: {
+      activeLocksCount: number;
+      staleLocksCount: number;
+      branchesAheadOfDev: number;
+      buildHealthy: boolean;
+    };
+  }
+
+  let currentStatus: StatusData | null = null;
+
+  async function fetchStatus() {
+    try {
+      const response = await fetch('/api/status');
+      const data = (await response.json()) as StatusData;
+      currentStatus = data;
+      renderDashboard(data);
+    } catch (error) {
+      console.error('Failed to fetch status:', error);
+      renderError('Failed to load dashboard data');
+    }
+  }
+
+  function renderDashboard(data: StatusData) {
+    const summaryGrid = document.getElementById('summary-grid');
+    if (summaryGrid) {
+      summaryGrid.innerHTML = `
+        <div class="summary-card">
+          <div class="card-label">Active Locks</div>
+          <div class="card-value">${data.summary.activeLocksCount}</div>
+        </div>
+        <div class="summary-card">
+          <div class="card-label">Stale Locks</div>
+          <div class="card-value">${data.summary.staleLocksCount}</div>
+        </div>
+        <div class="summary-card">
+          <div class="card-label">Branches Ahead</div>
+          <div class="card-value">${data.summary.branchesAheadOfDev}</div>
+        </div>
+        <div class="summary-card">
+          <div class="card-label">Build Status</div>
+          <div class="card-value">${data.summary.buildHealthy ? '✓' : '✗'}</div>
+        </div>
+      `;
+    }
+
+    const locksList = document.getElementById('locks-list');
+    if (locksList) {
+      if (data.locks.length === 0) {
+        locksList.innerHTML = '<div class="loading-placeholder">No active locks</div>';
+      } else {
+        locksList.innerHTML = data.locks
+          .map(
+            (lock) => `
+          <div class="lock-item">
+            <div class="lock-path">${lock.path}</div>
+            <div class="lock-meta">
+              <div class="lock-meta-item">
+                <div class="lock-meta-label">Agent</div>
+                <div class="lock-meta-value">${lock.agentId}</div>
+              </div>
+              <div class="lock-meta-item">
+                <div class="lock-meta-label">Session</div>
+                <div class="lock-meta-value">${lock.sessionId}</div>
+              </div>
+              <div class="lock-meta-item">
+                <div class="lock-meta-label">Locked At</div>
+                <div class="lock-meta-value">${new Date(lock.lockedAt).toLocaleString()}</div>
+              </div>
+              <div class="lock-meta-item">
+                <div class="lock-meta-label">Expires In</div>
+                <div class="lock-meta-value">${lock.minutesRemaining} min</div>
+              </div>
+            </div>
+            <div class="lock-status">
+              <div class="lock-status-indicator ${lock.isExpired ? 'expired' : 'active'}"></div>
+              <span>${lock.isExpired ? 'EXPIRED' : 'ACTIVE'}</span>
+            </div>
+            ${lock.reason ? `<div class="lock-reason">${lock.reason}</div>` : ''}
+          </div>
+        `
+          )
+          .join('');
+      }
+    }
+
+    const locksCount = document.getElementById('locks-count');
+    if (locksCount) {
+      locksCount.textContent = `${data.locks.length} lock${data.locks.length !== 1 ? 's' : ''}`;
+    }
+
+    const branchesList = document.getElementById('branches-list');
+    if (branchesList) {
+      if (data.branches.length === 0) {
+        branchesList.innerHTML = '<div class="loading-placeholder">No branch data available</div>';
+      } else {
+        branchesList.innerHTML = data.branches
+          .map(
+            (branch) => `
+          <div class="branch-item">
+            <div class="branch-name">${branch.name}</div>
+            <div class="branch-stats">
+              <div class="branch-stat">
+                <span class="stat-label">Ahead:</span>
+                <span class="stat-value ahead">${branch.ahead}</span>
+              </div>
+              <div class="branch-stat">
+                <span class="stat-label">Behind:</span>
+                <span class="stat-value behind">${branch.behind}</span>
+              </div>
+              <div class="branch-stat">
+                <span class="stat-label">Author:</span>
+                <span class="stat-value">${branch.lastCommitAuthor}</span>
+              </div>
+            </div>
+          </div>
+        `
+          )
+          .join('');
+      }
+    }
+
+    const branchesCount = document.getElementById('branches-count');
+    if (branchesCount) {
+      branchesCount.textContent = `${data.branches.length} branch${data.branches.length !== 1 ? 'es' : ''}`;
+    }
+
+    const deployInfo = document.getElementById('deploy-info');
+    if (deployInfo) {
+      const status = data.deployStatus;
+      const lastDeployDate = status.lastDeployTime ? new Date(status.lastDeployTime).toLocaleString() : 'Never';
+
+      deployInfo.innerHTML = `
+        <div class="deploy-row">
+          <div class="deploy-label">Environment</div>
+          <div class="deploy-value">
+            <span class="status-badge ${status.environment === 'unknown' ? 'unknown' : ''}">${status.environment.toUpperCase()}</span>
+          </div>
+        </div>
+        <div class="deploy-row">
+          <div class="deploy-label">Build Status</div>
+          <div class="deploy-value">
+            <span class="status-badge ${status.buildStatus === 'clean' ? 'clean' : status.buildStatus === 'dirty' ? 'dirty' : 'unknown'}">
+              <span class="badge-dot"></span>
+              ${status.buildStatus.toUpperCase()}
+            </span>
+          </div>
+        </div>
+        <div class="deploy-row">
+          <div class="deploy-label">Last Deploy</div>
+          <div class="deploy-value">${lastDeployDate}</div>
+        </div>
+      `;
+    }
+
+    const lastUpdated = document.getElementById('last-updated');
+    if (lastUpdated) {
+      lastUpdated.textContent = new Date(data.timestamp).toLocaleTimeString();
+    }
+  }
+
+  function renderError(message: string) {
+    const locksList = document.getElementById('locks-list');
+    if (locksList) {
+      locksList.innerHTML = `<div class="error-message">${message}</div>`;
+    }
+  }
+
+  const refreshBtn = document.getElementById('refresh-btn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+      refreshBtn.classList.add('rotating');
+      fetchStatus().finally(() => refreshBtn.classList.remove('rotating'));
+    });
+  }
+
+  const copyBtn = document.getElementById('copy-status-btn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      if (currentStatus) {
+        navigator.clipboard.writeText(JSON.stringify(currentStatus, null, 2));
+        const originalLabel = copyBtn.getAttribute('aria-label');
+        copyBtn.setAttribute('aria-label', 'Copied!');
+        setTimeout(() => copyBtn.setAttribute('aria-label', originalLabel || ''), 2000);
+      }
+    });
+  }
+
+  fetchStatus();
+  setInterval(fetchStatus, 10000);
+</script>

@@ -1,0 +1,189 @@
+---
+// Site search overlay (Pagefind, statically indexed at build time).
+// Render this ONCE per page (in Base layout). Trigger is any button with
+// `data-search-trigger` attribute anywhere on the page.
+// Build hooks: `npm run pagefind` outputs to dist/client/_pagefind/
+---
+
+<div
+  id="site-search-overlay"
+  class="fixed inset-0 z-[100] hidden bg-black/70 backdrop-blur-sm"
+  data-pagefind-ignore
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="site-search-title"
+>
+  <div class="mx-auto mt-[10vh] max-w-[680px] px-4">
+    <div class="overflow-hidden rounded-2xl bg-white shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+      <div class="flex items-center gap-3 border-b border-slate-200 px-5 py-4">
+        <i class="bi bi-search text-[18px] text-slate-400" aria-hidden="true"></i>
+        <input
+          id="site-search-input"
+          type="search"
+          placeholder="Поиск: смены, FAQ, статьи…"
+          autocomplete="off"
+          class="flex-1 border-0 bg-transparent text-[16px] text-slate-900 outline-none placeholder:text-slate-400"
+        />
+        <button
+          type="button"
+          data-search-close
+          aria-label="Закрыть"
+          class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+        >
+          <i class="bi bi-x-lg text-[16px]" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div id="site-search-results" class="max-h-[60vh] overflow-y-auto px-2 py-2">
+        <div class="px-4 py-8 text-center text-[14px] text-slate-500">
+          Начните вводить запрос. <span class="text-slate-400">Ctrl/Cmd + K — открыть поиск.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let pagefindInstance: any = null;
+let initPromise: Promise<any> | null = null;
+
+async function initPagefind() {
+  if (pagefindInstance) return pagefindInstance;
+  if (initPromise) return initPromise;
+  initPromise = (async () => {
+    try {
+      // Pagefind is generated at build time AFTER vite. Obfuscate import so
+      // Rollup doesn't try to resolve it during build.
+      const pfUrl = '/_pagefind/' + 'pagefind.js';
+      // @ts-ignore
+      const pf = await import(/* @vite-ignore */ /* webpackIgnore: true */ pfUrl);
+      await pf.options({ ranking: { termFrequency: 0.8 } });
+      pagefindInstance = pf;
+      return pf;
+    } catch (e) {
+      console.error('[SiteSearch] Pagefind not available:', e);
+      return null;
+    }
+  })();
+  return initPromise;
+}
+
+function openOverlay() {
+  const overlay = document.getElementById('site-search-overlay');
+  const input = document.getElementById('site-search-input') as HTMLInputElement;
+  if (!overlay || !input) return;
+  overlay.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => input.focus(), 50);
+  initPagefind();
+}
+
+function closeOverlay() {
+  const overlay = document.getElementById('site-search-overlay');
+  if (!overlay) return;
+  overlay.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+function escapeHtml(s: string) {
+  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+}
+
+async function runSearch(query: string) {
+  const resultsEl = document.getElementById('site-search-results');
+  if (!resultsEl) return;
+  if (!query || query.length < 2) {
+    resultsEl.innerHTML = '<div class="px-4 py-8 text-center text-[14px] text-slate-500">Начните вводить запрос…</div>';
+    return;
+  }
+  const pf = await initPagefind();
+  if (!pf) {
+    resultsEl.innerHTML = '<div class="px-4 py-8 text-center text-[14px] text-red-600">Поиск временно недоступен.</div>';
+    return;
+  }
+  resultsEl.innerHTML = '<div class="px-4 py-8 text-center text-[14px] text-slate-500">Ищем…</div>';
+  try {
+    const search = await pf.search(query);
+    if (!search.results.length) {
+      resultsEl.innerHTML = `<div class="px-4 py-8 text-center text-[14px] text-slate-500">Ничего не найдено по «${escapeHtml(query)}». <a href="/ask" class="text-primary underline">Спросите анонимно</a>.</div>`;
+      return;
+    }
+    const top = search.results.slice(0, 8);
+    const data = await Promise.all(top.map((r: any) => r.data()));
+    resultsEl.innerHTML = data
+      .map((d: any) => {
+        const title = escapeHtml(d.meta?.title || d.url || 'Без названия');
+        const excerpt = d.excerpt || '';
+        return `<a href="${d.url}" class="block rounded-xl px-4 py-3 transition hover:bg-slate-50">
+          <div class="text-[15px] font-semibold text-slate-900">${title}</div>
+          <div class="mt-1 text-[13px] leading-[1.5] text-slate-600">${excerpt}</div>
+        </a>`;
+      })
+      .join('');
+  } catch (e) {
+    console.error('[SiteSearch] Search failed:', e);
+    resultsEl.innerHTML = '<div class="px-4 py-8 text-center text-[14px] text-red-600">Ошибка поиска.</div>';
+  }
+}
+
+function init() {
+  document.querySelectorAll<HTMLButtonElement>('[data-search-trigger]').forEach((btn) => {
+    btn.addEventListener('click', openOverlay);
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-search-close]').forEach((btn) => {
+    btn.addEventListener('click', closeOverlay);
+  });
+  const overlay = document.getElementById('site-search-overlay');
+  overlay?.addEventListener('click', (e) => {
+    if (e.target === overlay) closeOverlay();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeOverlay();
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      openOverlay();
+    }
+  });
+  const input = document.getElementById('site-search-input') as HTMLInputElement | null;
+  let debounce: any = null;
+  input?.addEventListener('input', () => {
+    if (debounce) clearTimeout(debounce);
+    debounce = setTimeout(() => runSearch(input.value.trim()), 200);
+  });
+}
+
+document.addEventListener('astro:page-load', init);
+init();
+
+// ─── Mobile keyboard / visual-viewport tracking (phase Q) ──────────────
+(function () {
+  if (typeof window === 'undefined') return;
+  const vv = window.visualViewport;
+  if (!vv) return;
+  const root = document.documentElement;
+
+  function syncOffset() {
+    if (!vv) return;
+    const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    root.style.setProperty('--kbd-offset', offset + 'px');
+    root.dataset.kbdOpen = offset > 80 ? 'true' : 'false';
+  }
+  vv.addEventListener('resize', syncOffset);
+  vv.addEventListener('scroll', syncOffset);
+  syncOffset();
+
+  document.addEventListener('focusin', (e) => {
+    const t = e.target as HTMLElement | null;
+    if (!t) return;
+    const tag = t.tagName;
+    if (tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') return;
+    if (t.closest('[data-pagefind-ignore]')) return;
+    setTimeout(() => {
+      const rect = t.getBoundingClientRect();
+      const visibleBottom = vv ? vv.height : window.innerHeight;
+      if (rect.bottom > visibleBottom - 20) {
+        window.scrollBy({ top: rect.bottom - visibleBottom + 24, behavior: 'smooth' });
+      }
+    }, 280);
+  });
+})();
+</script>

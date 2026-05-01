@@ -1,0 +1,432 @@
+---
+---
+
+<div class="terminal-card">
+  <div class="terminal-header">
+    <div class="terminal-dots">
+      <span class="dot red"></span>
+      <span class="dot yellow"></span>
+      <span class="dot green"></span>
+    </div>
+  </div>
+
+  <div class="terminal-tabs">
+    <button class="tab-btn active" data-mode="python">Python</button>
+    <button class="tab-btn" data-mode="csharp">C#</button>
+    <button class="tab-btn" data-mode="bash">Bash</button>
+    <button class="tab-btn" data-mode="snake">Snake</button>
+  </div>
+
+  <div class="terminal-content" id="terminal-content">
+    <!-- Mode content will be rendered here -->
+  </div>
+
+  <div class="crash-overlay" id="crash-overlay" style="display: none;">
+    <!-- Crash content will be rendered here -->
+  </div>
+</div>
+
+<style>
+  .terminal-card {
+    width: 100%;
+    max-width: 500px;
+    height: 420px;
+    background-color: var(--code-bg);
+    border: 1px solid var(--bdr);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .terminal-header {
+    padding: 12px 16px;
+    background-color: var(--bg3);
+    border-bottom: 1px solid var(--bdr);
+    display: flex;
+    align-items: center;
+  }
+
+  .terminal-dots {
+    display: flex;
+    gap: 8px;
+  }
+
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+
+  .dot.red { background-color: #FF5F57; }
+  .dot.yellow { background-color: #FFBD2E; }
+  .dot.green { background-color: #28C940; }
+
+  .terminal-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--bdr);
+    background-color: var(--bg2);
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 12px;
+    background: none;
+    border: none;
+    color: var(--txt2);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 2px solid transparent;
+  }
+
+  .tab-btn.active {
+    color: var(--or);
+    border-bottom-color: var(--or);
+  }
+
+  .tab-btn:hover {
+    color: var(--txt);
+  }
+
+  .terminal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--txt);
+  }
+
+  .terminal-line {
+    margin-bottom: 8px;
+  }
+
+  .terminal-code {
+    display: block;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .ck { color: var(--ck); }
+  .cf { color: var(--cf); }
+  .cs { color: var(--cs); }
+  .cn { color: var(--cn); }
+  .cc { color: var(--cc); }
+
+  .crash-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #0C0E11;
+    color: var(--txt);
+    font-family: "SF Mono", monospace;
+    font-size: 12px;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .crash-header {
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--or);
+  }
+
+  .crash-line {
+    margin-bottom: 4px;
+    color: var(--txt2);
+  }
+
+  .crash-recovery {
+    margin-top: 20px;
+    text-align: center;
+  }
+
+  .recovery-btn {
+    padding: 8px 16px;
+    background-color: var(--or);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .recovery-btn:hover {
+    background-color: var(--or2);
+  }
+
+  @media (max-width: 1024px) {
+    .terminal-card {
+      max-width: 100%;
+      height: 350px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .terminal-card {
+      height: 300px;
+    }
+
+    .terminal-content {
+      font-size: 10px;
+    }
+  }
+</style>
+
+<script>
+  interface TerminalState {
+    mode: string;
+    isCrashed: boolean;
+    bootProgress: number;
+  }
+
+  (function() {
+    const state: TerminalState = {
+      mode: 'python',
+      isCrashed: false,
+      bootProgress: 0,
+    };
+
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const content = document.getElementById('terminal-content');
+    const crashOverlay = document.getElementById('crash-overlay');
+
+    const modeData: Record<string, {
+      bootSeqs: string[];
+      codeLines: { text: string; class?: string }[];
+      outputLines: string[];
+      crashType: string;
+      crashLines: string[];
+    }> = {
+      python: {
+        bootSeqs: [
+          'SSH Connection from 192.168.1.1',
+          'Authenticating user...',
+          'Welcome to LANIT Python Academy',
+        ],
+        codeLines: [
+          { text: 'class', class: 'ck' },
+          { text: ' LanitPartner: ' },
+          { text: '""', class: 'cs' },
+          { text: 'LANIT discounts for camp students' },
+          { text: '""', class: 'cs' },
+          { text: '' },
+          { text: '  ' },
+          { text: 'discount', class: 'cn' },
+          { text: ' = ' },
+          { text: '500', class: 'cn' },
+          { text: ' ' },
+          { text: '# per day', class: 'cc' },
+          { text: '' },
+          { text: '  benefits = [' },
+          { text: '"mentor access"', class: 'cs' },
+          { text: ', ' },
+          { text: '"certificates"', class: 'cs' },
+          { text: ']' },
+        ],
+        outputLines: [
+          '>>> partner = LanitPartner()',
+          '>>> print(partner.discount)',
+          '500 ₽/день',
+        ],
+        crashType: 'bsod',
+        crashLines: [
+          'Kernel Panic: Page Fault Exception',
+          '  in module: lanit_api.py',
+          'Stack trace:',
+          '  at 0x7fff5fbff700',
+          'Attempting recovery...',
+        ],
+      },
+      csharp: {
+        bootSeqs: [
+          'Initializing C# runtime...',
+          'Loading LANIT.Academy assembly',
+          'Ready for execution',
+        ],
+        codeLines: [
+          { text: 'public class', class: 'ck' },
+          { text: ' LanitPartner {' },
+          { text: '' },
+          { text: '  ' },
+          { text: 'public int', class: 'ck' },
+          { text: ' Discount = ' },
+          { text: '500', class: 'cn' },
+          { text: ';' },
+          { text: '' },
+          { text: '  ' },
+          { text: 'public string[]', class: 'ck' },
+          { text: ' Benefits = ' },
+          { text: 'new', class: 'ck' },
+          { text: ' {' },
+          { text: '' },
+          { text: '    ' },
+          { text: '"mentor"', class: 'cs' },
+          { text: ', ' },
+          { text: '"cert"', class: 'cs' },
+          { text: '' },
+          { text: '  };' },
+          { text: '}' },
+        ],
+        outputLines: [
+          'StackOverflowException caught',
+          '  at LanitPartner.GetBenefits()',
+        ],
+        crashType: 'stackoverflow',
+        crashLines: [
+          'StackOverflowException Unhandled',
+          'Exception: Stack overflow.',
+          'at LanitPartner..ctor()',
+          'at LanitPartner.GetBenefits()',
+          'at (recursive)',
+        ],
+      },
+      bash: {
+        bootSeqs: [
+          'SSH auth: publickey',
+          '$ ./enroll.sh',
+          'Boot sequence started...',
+        ],
+        codeLines: [
+          { text: '#!/bin/bash' },
+          { text: '' },
+          { text: 'CAMP=', class: 'cn' },
+          { text: '"LANIT Academy"' },
+          { text: '' },
+          { text: 'register_student() {' },
+          { text: '  echo', class: 'ck' },
+          { text: ' ' },
+          { text: '"Enroll: $CAMP"', class: 'cs' },
+          { text: '' },
+          { text: '  discount=' },
+          { text: '500', class: 'cn' },
+          { text: '' },
+          { text: '}' },
+        ],
+        outputLines: [
+          '$ ./enroll.sh',
+          'Enroll: LANIT Academy',
+          '✓ Student enrolled',
+        ],
+        crashType: 'kernel_panic',
+        crashLines: [
+          'Kernel panic - not syncing: VFS: Unable to mount root fs',
+          'CPU: 0 PID: 1 Comm: swapper',
+          'Call Trace:',
+          '  dump_stack+0x6d/0x89',
+          '  panic+0xef/0x2fb',
+        ],
+      },
+      snake: {
+        bootSeqs: [
+          'Loading snake game...',
+          'Initializing canvas',
+          'Ready to play',
+        ],
+        codeLines: [{ text: 'Game started! Use arrow keys or WASD to move.' }],
+        outputLines: [
+          'Controls: Arrow Keys / WASD',
+          'Score: 0 | Level: Junior Dev',
+        ],
+        crashType: 'game_over',
+        crashLines: [
+          'Game Over!',
+          'You hit the wall!',
+          'Final Score: 5 packages consumed',
+          'Level reached: Middle Dev',
+        ],
+      },
+    };
+
+    function renderMode(mode: string) {
+      if (!content) return;
+
+      const data = modeData[mode];
+      let html = '';
+
+      // Boot sequences
+      data.bootSeqs.forEach((seq) => {
+        html += `<div class="terminal-line"><span class="cc">>> ${seq}</span></div>`;
+      });
+
+      // Code
+      html += '<div class="terminal-line"></div>';
+      data.codeLines.forEach((line) => {
+        const cls = line.class ? `<span class="${line.class}">${line.text}</span>` : line.text;
+        html += `<div class="terminal-line">${cls}</div>`;
+      });
+
+      // Output
+      html += '<div class="terminal-line"></div>';
+      data.outputLines.forEach((out) => {
+        html += `<div class="terminal-line"><span class="cc">${out}</span></div>`;
+      });
+
+      content.innerHTML = html;
+    }
+
+    function showCrash(mode: string) {
+      if (!crashOverlay) return;
+
+      const data = modeData[mode];
+      let html = `<div class="crash-header">${data.crashType === 'bsod' ? 'KERNEL PANIC' : data.crashType === 'stackoverflow' ? 'StackOverflowException' : data.crashType === 'kernel_panic' ? 'Kernel panic' : 'Game Over'}:</div>`;
+
+      data.crashLines.forEach((line) => {
+        html += `<div class="crash-line">${line}</div>`;
+      });
+
+      html += '<div class="crash-recovery"><button class="recovery-btn">← Back</button></div>';
+
+      crashOverlay.innerHTML = html;
+      crashOverlay.style.display = 'flex';
+      state.isCrashed = true;
+
+      const backBtn = crashOverlay.querySelector('.recovery-btn');
+      backBtn?.addEventListener('click', () => {
+        crashOverlay.style.display = 'none';
+        state.isCrashed = false;
+        renderMode(state.mode);
+      });
+    }
+
+    tabBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        tabBtns.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const mode = btn.getAttribute('data-mode') || 'python';
+        state.mode = mode;
+        crashOverlay!.style.display = 'none';
+        state.isCrashed = false;
+        renderMode(mode);
+
+        // Auto-crash after 3 seconds
+        setTimeout(() => {
+          if (state.mode === mode && !state.isCrashed) {
+            showCrash(mode);
+          }
+        }, 3000);
+      });
+    });
+
+    // Initial render
+    renderMode('python');
+
+    // Auto-crash Python after 3 seconds
+    setTimeout(() => {
+      if (!state.isCrashed && state.mode === 'python') {
+        showCrash('python');
+      }
+    }, 3000);
+  })();
+</script>
