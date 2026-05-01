@@ -25,3 +25,12 @@ done
 # при будущих изменениях scripts/git-hooks (без повторного запуска setup).
 git config core.hooksPath scripts/git-hooks
 echo "✓ core.hooksPath = scripts/git-hooks (хуки берутся напрямую из tracked-файлов)"
+
+# Initialize file-locks directory for distributed file locking system
+LOCKS_DIR="${HOME}/.claude/file-locks"
+if [ ! -d "$LOCKS_DIR" ]; then
+  mkdir -p "$LOCKS_DIR"
+  echo "✓ created $LOCKS_DIR (shared across all worktrees)"
+else
+  echo "✓ $LOCKS_DIR already exists"
+fi

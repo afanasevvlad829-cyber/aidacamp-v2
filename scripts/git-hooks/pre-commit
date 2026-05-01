@@ -35,4 +35,38 @@ if [ -n "$toplevel" ] && [ "$toplevel" = "$main_worktree" ]; then
   fi
 fi
 
+# Check for file-level locks before commit
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+LOCK_MANAGER="$REPO_ROOT/scripts/file-lock-manager.sh"
+
+if [[ -f "$LOCK_MANAGER" ]]; then
+  # Get list of staged files
+  staged_files=$(git diff --cached --name-only 2>/dev/null || true)
+
+  if [[ -n "$staged_files" ]]; then
+    # Check if any staged file is locked by another agent
+    locked_files=()
+    lock_errors=""
+
+    while IFS= read -r file; do
+      # Check lock status (exit code 0 = not locked, 1 = locked)
+      if ! bash "$LOCK_MANAGER" check "$file" &>/dev/null; then
+        locked_files+=("$file")
+        # Capture error output for display
+        lock_error=$(bash "$LOCK_MANAGER" check "$file" 2>&1 || true)
+        lock_errors+="
+$lock_error"
+      fi
+    done <<< "$staged_files"
+
+    if [[ ${#locked_files[@]} -gt 0 ]]; then
+      echo "❌ CANNOT COMMIT: File(s) locked by another agent" >&2
+      echo "$lock_errors" >&2
+      echo "" >&2
+      echo "Action: Wait for lock to expire, or contact the locking agent." >&2
+      exit 1
+    fi
+  fi
+fi
+
 exit 0
