@@ -1,5 +1,5 @@
 ---
-import { STAT_YEARS, STAT_KIDS, STAT_RATING, STAT_DISTANCE, STAT_RETURN, CAMP_PRICE_FROM, YANDEX_MAPS_URL, CAMP_SEASON } from '../../data/contacts';
+// imports cleaned: stats/distance/price/url убраны после Variant A declutter
 
 interface Props {
   imageSrc?: string;
@@ -35,21 +35,8 @@ const { imageSrc = '/images/hero-desktop', hasVariants = false } = Astro.props;
     <div class="absolute inset-0 bg-gradient-to-r from-black/65 via-black/25 to-transparent pointer-events-none"></div>
   </div>
 
-  <!-- Desktop Text Content -->
-  <div class="absolute left-16 top-[78px] z-30">
-    <!-- Location — кликабельные чипы -->
-    <div class="flex items-center gap-x-3 text-[14px] text-white/50 whitespace-nowrap">
-      <a href={YANDEX_MAPS_URL} target="_blank" rel="noopener" class="flex items-center gap-1 hover:text-white/80 transition-colors">
-        <i class="bi bi-geo-alt text-[12px]" aria-hidden="true"></i>
-        {STAT_DISTANCE} от Москвы
-      </a>
-      <span class="text-white/20">·</span>
-      <a href="#shifts" class="hover:text-white/80 transition-colors">смены {CAMP_SEASON}</a>
-      <span class="text-white/20">·</span>
-      <a href="#shifts" class="hover:text-white/80 transition-colors">
-        от {CAMP_PRICE_FROM}
-      </a>
-    </div>
+  <!-- Desktop Text Content (Variant A declutter — без top chips и bottom bar) -->
+  <div class="absolute left-16 top-[110px] z-30">
     <!-- H1 + subtitle (разгружено per design system) -->
     <h1
       id="hero-title"
@@ -61,26 +48,58 @@ const { imageSrc = '/images/hero-desktop', hasVariants = false } = Astro.props;
       Пока другие на даче — ваш сделает <span class="font-semibold text-primary">AI-проект</span>. Вам — 14 дней для себя.
     </p>
 
-    <!-- CTA: главный (primary) + anon (ghost) -->
-    <div class="mt-7 flex items-center gap-3">
+    <!-- CTA: primary «Выбрать смену» + большая anon-карточка как на мобиле -->
+    <div class="mt-7 flex flex-col gap-3 max-w-[560px]">
       <a
         href="#shifts"
-        class="inline-flex items-center gap-2 rounded-[14px] bg-primary px-6 py-3.5 text-[15px] font-semibold text-[#1e2430] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(236,155,68,0.45)] hover:-translate-y-[1px] no-underline"
+        class="inline-flex w-fit items-center gap-2 rounded-[14px] bg-primary px-6 py-3.5 text-[15px] font-semibold text-[#1e2430] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(236,155,68,0.45)] hover:-translate-y-[1px] no-underline"
         data-analytics-goal="hero_cta_to_shifts"
         data-analytics-label="desktop_primary"
       >
         Выбрать смену
         <i class="bi bi-arrow-right text-[14px]" aria-hidden="true"></i>
       </a>
-    </div>
-  </div>
 
-  <!-- Desktop Bottom Info Bar -->
-  <div class="absolute bottom-0 inset-x-0 z-20 border-t border-white/8 bg-black/25 backdrop-blur-sm">
-    <div class="mx-auto max-w-[1312px] px-6 py-2.5">
-      <a href="#shifts" class="block text-[14px] text-white/55 text-center leading-relaxed hover:text-white/75 transition-colors">
-        от {CAMP_PRICE_FROM} за 7 дней · {STAT_RETURN} возвращаются снова · проживание, питание, программа включены · Трансфер — опция
+      <!-- Anon CTA — карточка как на мобиле -->
+      <a
+        href="/ask"
+        data-analytics-goal="anon_qa_click"
+        data-analytics-label="hero_desktop"
+        class="hero-bot-cta-desktop flex items-center gap-3.5 rounded-2xl bg-primary py-3.5 px-5 transition-opacity hover:opacity-95 no-underline"
+      >
+        <i class="bi bi-chat-dots-fill text-[28px] text-white shrink-0" aria-hidden="true"></i>
+        <div class="flex flex-col text-left flex-1 min-w-0">
+          <span class="text-[11px] font-semibold text-white/85 uppercase tracking-wider leading-tight">Спросите про</span>
+          <span
+            id="hero-bot-topic-desktop"
+            class="text-[18px] font-bold text-white leading-tight mt-0.5"
+            style="font-family: 'JetBrains Mono', monospace; transition: opacity 0.2s;"
+          >лагерь</span>
+          <span class="mt-1 flex items-center gap-1.5 text-[11px] text-white/85 leading-tight">
+            <i class="bi bi-shield-lock-fill text-[10px]" aria-hidden="true"></i>
+            Анонимно, без регистрации
+          </span>
+        </div>
+        <i class="bi bi-arrow-right text-[20px] text-white shrink-0" aria-hidden="true"></i>
       </a>
     </div>
   </div>
 </div>
+
+<script is:inline>
+  // Cycling word для desktop hero anon-CTA (синхронно с mobile-версией)
+  (function () {
+    var topics = ['лагерь', 'еду', 'бассейн', 'размещение', 'стоимость', 'программу', 'безопасность'];
+    var i = 0;
+    var el = document.getElementById('hero-bot-topic-desktop');
+    if (!el) return;
+    setInterval(function () {
+      i = (i + 1) % topics.length;
+      el.style.opacity = '0';
+      setTimeout(function () {
+        el.textContent = topics[i];
+        el.style.opacity = '1';
+      }, 180);
+    }, 2200);
+  })();
+</script>
