@@ -15,6 +15,53 @@ async function saveLead(lead: Record<string, unknown>) {
   }
 }
 
+async function saveLeadToPg(
+  body: Record<string, string>,
+  extra: { ip: string; userAgent: string; crmId: number | null },
+) {
+  const pgDsn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
+  if (!pgDsn) return;
+  try {
+    const { default: pg } = await import('pg');
+    const client = new pg.Client({ connectionString: pgDsn });
+    await client.connect();
+    await client.query(
+      `INSERT INTO leads_log (
+        phone, age, shift, source,
+        utm_source, utm_medium, utm_campaign, utm_content, utm_term,
+        yclid, ysclid, gclid,
+        landing_url, page_title, referrer,
+        form_id, ym_client_id,
+        screen, viewport, language, tz, session_ms,
+        crm_id, ip, user_agent, raw
+      ) VALUES (
+        $1,$2,$3,$4,
+        $5,$6,$7,$8,$9,
+        $10,$11,$12,
+        $13,$14,$15,
+        $16,$17,
+        $18,$19,$20,$21,$22,
+        $23,$24,$25,$26
+      )`,
+      [
+        body.phone || null, body.age || null, body.shift || null, body.source || null,
+        body.utm_source || null, body.utm_medium || null, body.utm_campaign || null,
+        body.utm_content || null, body.utm_term || null,
+        body.yclid || null, body.ysclid || null, body.gclid || null,
+        body.landing_url || null, body.page_title || null, body.referrer || null,
+        body.form_id || null, body.ym_client_id || null,
+        body.screen || null, body.viewport || null, body.language || null,
+        body.tz || null,
+        body.session_ms ? parseInt(body.session_ms, 10) : null,
+        extra.crmId, extra.ip || null, extra.userAgent || null, JSON.stringify(body),
+      ],
+    );
+    await client.end();
+  } catch {
+    // best-effort — не блокируем ответ
+  }
+}
+
 function esc(s: unknown): string {
   return String(s ?? '')
     .replace(/&/g, '&amp;')
@@ -26,7 +73,7 @@ function buildTgText(body: Record<string, string>, crmId?: number | null): strin
   const {
     phone, age, shift, source,
     utm_source, utm_medium, utm_campaign, utm_content, utm_term,
-    yclid, gclid,
+    yclid, ysclid, gclid,
     landing_url, page_title, referrer,
     ym_client_id,
     screen, viewport, language, tz, session_ms,
@@ -45,15 +92,16 @@ function buildTgText(body: Record<string, string>, crmId?: number | null): strin
   lines.push('');
 
   // Источник
-  const hasSource = utm_source || utm_medium || utm_campaign || utm_term || yclid || gclid || referrer;
+  const hasSource = utm_source || utm_medium || utm_campaign || utm_term || yclid || ysclid || gclid || referrer;
   if (hasSource) {
     lines.push('<b>📍 Источник:</b>');
     if (utm_source)   lines.push(`  source: <code>${esc(utm_source)}</code>`);
     if (utm_medium)   lines.push(`  medium: <code>${esc(utm_medium)}</code>`);
     if (utm_campaign) lines.push(`  campaign: <code>${esc(utm_campaign)}</code>`);
     if (utm_content)  lines.push(`  content: <code>${esc(utm_content)}</code>`);
-    if (utm_term)     lines.push(`  🔑 ключ: <code>${esc(utm_term)}</code>`);
+    if (utm_term)     lines.push(`  ключ: <code>${esc(utm_term)}</code>`);
     if (yclid)        lines.push(`  yclid: <code>${esc(yclid)}</code>`);
+    if (ysclid)       lines.push(`  ysclid: <code>${esc(ysclid)}</code>`);
     if (gclid)        lines.push(`  gclid: <code>${esc(gclid)}</code>`);
     if (referrer)     lines.push(`  реферер: <code>${esc(String(referrer).slice(0, 80))}</code>`);
     lines.push('');
@@ -175,6 +223,12 @@ export const POST: APIRoute = async ({ request }) => {
     const body: Record<string, string> = await request.json();
     const { phone, age, shift, source } = body;
 
+    // Извлекаем IP и User-Agent для логирования
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip')
+      || '';
+    const userAgent = request.headers.get('user-agent') || '';
+
     // Always save to filesystem first (backup)
     await saveLead(body);
 
@@ -187,6 +241,9 @@ export const POST: APIRoute = async ({ request }) => {
 
     // CRM (best-effort, не блокирует TG)
     const crmId = await createCrmLead(body);
+
+    // PG лог (best-effort)
+    await saveLeadToPg(body, { ip, userAgent, crmId });
 
     const text = buildTgText(body, crmId);
 

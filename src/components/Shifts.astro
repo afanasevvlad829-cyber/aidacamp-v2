@@ -172,6 +172,7 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
   import { STORAGE_KEYS } from '../lib/storage';
   import { shiftInfo } from '../data/shifts';
   import { renderCalendar } from '../scripts/shift-calendar';
+  import { submitLead } from '../scripts/form-submit';
 
   // --- Shift stat toast ---
   interface ShiftStat { pct: number; h: [number,number,number,number]; name: string; text: string }
@@ -402,20 +403,12 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
         return;
       }
 
-      try {
-        const res = await fetch('/api/lead', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            phone: bookPhone?.value || '',
-            age: selectedAge,
-            shift: bookName?.textContent || '',
-            source: new URLSearchParams(window.location.search).get('utm_source') || '',
-          }),
-        });
-        await res.json();
-        (window as any).trackGoal?.('lead', {}, 6375);
-      } catch {}
+      await submitLead({
+        phone: bookPhone?.value || '',
+        age: selectedAge,
+        shift: bookName?.textContent || '',
+        form: 'shifts_book',
+      });
 
       bookModal.close();
       const referralModal = document.getElementById('referralModal') as HTMLDialogElement | null;
