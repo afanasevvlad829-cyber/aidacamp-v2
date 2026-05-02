@@ -139,7 +139,9 @@ function buildTgText(body: Record<string, string>, crmId?: number | null): strin
 function buildCrmNote(body: Record<string, string>): string {
   const lines: string[] = [];
 
-  if (body.shift)       lines.push(`Смена: ${body.shift}`);
+  if (body.age)   lines.push(`Возраст: ${body.age}`);
+  if (body.shift) lines.push(`Смена: ${body.shift}`);
+  if (body.form_id) lines.push(`Форма: ${body.form_id}`);
 
   // Атрибуция
   const utmParts = [
@@ -150,8 +152,9 @@ function buildCrmNote(body: Record<string, string>): string {
     body.utm_term     ? `term=${body.utm_term}` : '',
   ].filter(Boolean);
   if (utmParts.length) lines.push(`UTM: ${utmParts.join(' | ')}`);
-  if (body.yclid)     lines.push(`yclid: ${body.yclid}`);
-  if (body.gclid)     lines.push(`gclid: ${body.gclid}`);
+  if (body.yclid)  lines.push(`yclid: ${body.yclid}`);
+  if (body.ysclid) lines.push(`ysclid: ${body.ysclid}`);
+  if (body.gclid)  lines.push(`gclid: ${body.gclid}`);
 
   // Страница
   if (body.landing_url) lines.push(`URL: ${body.landing_url}`);
@@ -183,7 +186,7 @@ async function createCrmLead(body: Record<string, string>): Promise<number | nul
   if (!hostname || !email || !apiKey) return null;
 
   try {
-    // Auth
+    // Auth (один токен на всё)
     const authRes = await fetch(`https://${hostname}/v2api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -193,26 +196,30 @@ async function createCrmLead(body: Record<string, string>): Promise<number | nul
     const token: string = authData?.token;
     if (!token) return null;
 
-    const branchId = 1;
     const headers = { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token };
-
-    // Create customer
     const phone = body.phone?.replace(/\D/g, '') || '';
-    const custRes = await fetch(`https://${hostname}/v2api/${branchId}/customer/create`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        name: `Лид ${body.age || ''}`.trim(),
-        phone: [phone],
-        utm_source: body.utm_source || undefined,
-        utm_medium: body.utm_medium || undefined,
-        utm_campaign: body.utm_campaign || undefined,
-        utm_term: body.utm_term || undefined,
-        note: buildCrmNote(body),
-      }),
-    });
-    const custData = await custRes.json();
-    return custData?.id ?? null;
+    const payload = {
+      name: `Лид ${body.age || ''}`.trim(),
+      phone: [phone],
+      // UTM
+      utm_source:   body.utm_source   || undefined,
+      utm_medium:   body.utm_medium   || undefined,
+      utm_campaign: body.utm_campaign || undefined,
+      utm_content:  body.utm_content  || undefined,
+      utm_term:     body.utm_term     || undefined,
+      // Полная заметка: смена, URL, устройство, клики, время на сайте
+      note: buildCrmNote(body),
+    };
+
+    // Создаём в обоих филиалах параллельно
+    const [res1, res5] = await Promise.allSettled([
+      fetch(`https://${hostname}/v2api/1/customer/create`, { method: 'POST', headers, body: JSON.stringify(payload) }).then(r => r.json()),
+      fetch(`https://${hostname}/v2api/5/customer/create`, { method: 'POST', headers, body: JSON.stringify(payload) }).then(r => r.json()),
+    ]);
+
+    const id1 = res1.status === 'fulfilled' ? (res1.value?.id ?? null) : null;
+    // res5 — best-effort, не блокируем и не возвращаем
+    return id1;
   } catch {
     return null;
   }
