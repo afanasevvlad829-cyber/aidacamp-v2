@@ -1,0 +1,39 @@
+---
+/**
+ * DotPatternBackground — фиксированный SVG-слой с точками на всём фоне.
+ * Контент скроллится поверх — создаётся эффект глубины (как у magicui DotPattern).
+ *
+ * Аналог: https://magicui.design/docs/components/dot-pattern
+ *
+ * - position: fixed на весь viewport (z-index: -2 → ниже всего)
+ * - SVG <pattern> с точками 1px, gap 20px, цвет slate
+ * - radial-gradient mask — точки ярче в центре, фейдятся к краям
+ * - pointer-events: none
+ */
+---
+
+<div class="dot-pattern-bg" aria-hidden="true">
+  <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <pattern id="dot-pattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+        <circle cx="1" cy="1" r="1" fill="currentColor" />
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#dot-pattern)" />
+  </svg>
+</div>
+
+<style>
+  .dot-pattern-bg {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -2;
+    color: rgba(100, 116, 139, 0.35); /* slate-500 @ 35% */
+    /* Радиальная маска: точки ярче в центре, фейдятся к краям */
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 85%);
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 85%);
+  }
+</style>
