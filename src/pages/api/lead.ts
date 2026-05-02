@@ -211,15 +211,14 @@ async function createCrmLead(body: Record<string, string>): Promise<number | nul
       note: buildCrmNote(body),
     };
 
-    // Создаём в обоих филиалах параллельно
-    const [res1, res5] = await Promise.allSettled([
-      fetch(`https://${hostname}/v2api/1/customer/create`, { method: 'POST', headers, body: JSON.stringify(payload) }).then(r => r.json()),
-      fetch(`https://${hostname}/v2api/5/customer/create`, { method: 'POST', headers, body: JSON.stringify(payload) }).then(r => r.json()),
-    ]);
-
-    const id1 = res1.status === 'fulfilled' ? (res1.value?.id ?? null) : null;
-    // res5 — best-effort, не блокируем и не возвращаем
-    return id1;
+    // Лагерь — филиал 5
+    const custRes = await fetch(`https://${hostname}/v2api/5/customer/create`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
+    const custData = await custRes.json();
+    return custData?.id ?? null;
   } catch {
     return null;
   }
