@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEO Иерархия — АйДаКемп</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; background: #f0f2f5; color: #1a1a2e; }
+  .header { background: #1a1a2e; color: #fff; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; }
+  .header h1 { font-size: 20px; font-weight: 700; }
+  .header .meta { font-size: 12px; color: #8899bb; }
+  .legend { background: #fff; padding: 12px 24px; border-bottom: 1px solid #e0e5ef; display: flex; gap: 20px; flex-wrap: wrap; align-items: center; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #555; }
+  .badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .pos-top3 { background: #d1fae5; color: #065f46; }
+  .pos-top10 { background: #dbeafe; color: #1e40af; }
+  .pos-top20 { background: #fef3c7; color: #92400e; }
+  .pos-top50 { background: #fee2e2; color: #991b1b; }
+  .pos-beyond { background: #f3e8ff; color: #6d28d9; }
+  .pos-none { background: #f1f5f9; color: #64748b; }
+  .action-fix { background: #fee2e2; color: #991b1b; }
+  .action-grow { background: #fff7ed; color: #9a3412; }
+  .action-opt { background: #fef3c7; color: #92400e; }
+  .action-hold { background: #d1fae5; color: #065f46; }
+  .action-create { background: #e0e7ff; color: #3730a3; }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 20px 24px; }
+  .tier-block { margin-bottom: 16px; }
+  .tier-header { padding: 10px 16px; border-radius: 8px 8px 0 0; font-weight: 700; font-size: 13px; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none; }
+  .tier-header:hover { opacity: 0.9; }
+  .tier-1 .tier-header { background: #1a1a2e; color: #fff; }
+  .tier-2 .tier-header { background: #1e40af; color: #fff; }
+  .tier-3 .tier-header { background: #0f766e; color: #fff; }
+  .tier-4 .tier-header { background: #7c3aed; color: #fff; }
+  .tier-service .tier-header { background: #374151; color: #fff; }
+  .tier-header .toggle { margin-left: auto; font-size: 16px; transition: transform 0.2s; }
+  .tier-header.collapsed .toggle { transform: rotate(-90deg); }
+
+  .tier-body { background: #fff; border: 1px solid #e0e5ef; border-top: none; border-radius: 0 0 8px 8px; overflow: hidden; }
+  .tier-group-label { background: #f8fafc; padding: 7px 16px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; border-top: 1px solid #e0e5ef; }
+
+  .page-row { border-top: 1px solid #f1f5f9; cursor: pointer; }
+  .page-row:first-child { border-top: none; }
+  .page-main { display: grid; grid-template-columns: 30px 2fr 1.5fr 2fr; gap: 0; align-items: stretch; }
+  .page-main:hover { background: #f8fafc; }
+  .page-expand-btn { display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 12px; padding: 10px 8px; border-right: 1px solid #f1f5f9; }
+  .page-url { padding: 10px 12px; font-size: 13px; border-right: 1px solid #f1f5f9; }
+  .page-url a { color: #1e40af; text-decoration: none; font-family: 'SF Mono', Monaco, monospace; font-size: 12px; }
+  .page-url a:hover { text-decoration: underline; }
+  .page-url .page-title { font-size: 12px; color: #64748b; margin-top: 2px; }
+  .page-keywords { padding: 10px 12px; border-right: 1px solid #f1f5f9; }
+  .kw-inline { display: flex; flex-wrap: wrap; gap: 3px; }
+  .kw-chip { display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px; border-radius: 4px; font-size: 11px; background: #f1f5f9; color: #334155; white-space: nowrap; }
+  .kw-chip .freq { color: #94a3b8; font-size: 10px; }
+  .page-action { padding: 10px 12px; font-size: 12px; }
+  .page-action .action-title { font-weight: 600; margin-bottom: 3px; }
+  .page-action .action-desc { color: #64748b; line-height: 1.4; font-size: 11px; }
+
+  .page-detail { display: none; background: #fafbff; border-top: 1px solid #e0e5ef; padding: 12px 16px 12px 46px; }
+  .page-detail.open { display: block; }
+  .kw-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .kw-table th { text-align: left; padding: 4px 8px; color: #64748b; font-size: 11px; border-bottom: 1px solid #e0e5ef; font-weight: 600; }
+  .kw-table td { padding: 4px 8px; border-bottom: 1px solid #f1f5f9; }
+  .kw-table tr:last-child td { border-bottom: none; }
+  .delta-up { color: #059669; font-weight: 600; }
+  .delta-down { color: #dc2626; font-weight: 600; }
+  .delta-same { color: #94a3b8; }
+  .detail-tasks { margin-top: 10px; }
+  .task-item { display: flex; gap-6px; padding: 5px 0; border-top: 1px solid #f1f5f9; font-size: 12px; line-height: 1.5; }
+  .task-item:first-child { border-top: none; }
+  .task-num { color: #94a3b8; min-width: 20px; font-size: 11px; margin-right: 6px; }
+
+  .stats-bar { display: flex; gap: 24px; padding: 8px 24px; background: #fff; border-bottom: 1px solid #e0e5ef; font-size: 12px; }
+  .stat { display: flex; flex-direction: column; }
+  .stat-val { font-size: 18px; font-weight: 700; color: #1a1a2e; }
+  .stat-label { color: #94a3b8; font-size: 11px; }
+
+  details > summary { list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+
+  @media (max-width: 900px) {
+    .page-main { grid-template-columns: 24px 1fr 1fr; }
+    .page-action { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🗺 SEO Иерархия — АйДаКемп</h1>
+    <div class="meta">Позиции Яндекс · Снимок 02.05.2026 · 55 страниц · 130 ключей</div>
+  </div>
+  <div style="text-align:right">
+    <div style="font-size:13px;color:#8899bb">Топ-ключ: <span style="color:#fbbf24;font-weight:700">детский лагерь</span></div>
+    <div style="font-size:22px;font-weight:800;color:#ef4444">50 → цель: ≤10</div>
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat"><span class="stat-val" style="color:#059669">34</span><span class="stat-label">В топ-10 ключей</span></div>
+  <div class="stat"><span class="stat-val" style="color:#1e40af">28</span><span class="stat-label">В топ-20</span></div>
+  <div class="stat"><span class="stat-val" style="color:#dc2626">15</span><span class="stat-label">За топ-50</span></div>
+  <div class="stat"><span class="stat-val">55</span><span class="stat-label">Страниц</span></div>
+  <div class="stat"><span class="stat-val">130</span><span class="stat-label">Коммерческих ключей</span></div>
+  <div class="stat"><span class="stat-val" style="color:#dc2626">🔴 50</span><span class="stat-label">детский лагерь (был 11)</span></div>
+</div>
+
+<div class="legend">
+  <span style="font-size:12px;font-weight:600;color:#374151">Позиция:</span>
+  <span class="legend-item"><span class="badge pos-top3">1-3</span> Топ-3</span>
+  <span class="legend-item"><span class="badge pos-top10">4-10</span> Топ-10</span>
+  <span class="legend-item"><span class="badge pos-top20">11-20</span> Топ-20</span>
+  <span class="legend-item"><span class="badge pos-top50">21-50</span> Вне топа</span>
+  <span class="legend-item"><span class="badge pos-beyond">50+</span> Критично</span>
+  <span class="legend-item"><span class="badge pos-none">—</span> Нет данных</span>
+  <span style="margin-left:16px;font-size:12px;font-weight:600;color:#374151">Действие:</span>
+  <span class="legend-item"><span class="badge action-fix">🔴 КРИТИЧНО</span></span>
+  <span class="legend-item"><span class="badge action-grow">⬆️ ПОДНЯТЬ</span></span>
+  <span class="legend-item"><span class="badge action-opt">🟡 ОПТИМИЗИРОВАТЬ</span></span>
+  <span class="legend-item"><span class="badge action-hold">🟢 ДЕРЖАТЬ</span></span>
+  <span class="legend-item"><span class="badge action-create">➕ СОЗДАТЬ</span></span>
+</div>
+
+<div class="container">
+
+<!-- ==================== TIER 1 — ГЛАВНАЯ ==================== -->
+<div class="tier-block tier-1">
+  <div class="tier-header" onclick="toggleTier(this)">
+    <span>🏠 Tier 1 — Главная (хаб)</span>
+    <span style="font-size:11px;font-weight:400;opacity:0.7">/ · главный магнит трафика</span>
+    <span class="toggle">▼</span>
+  </div>
+  <div class="tier-body">
+
+    <!-- ГЛАВНАЯ -->
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url">
+          <a href="https://aidacamp.ru/" target="_blank">aidacamp.ru/</a>
+          <div class="page-title">Детский лагерь в Подмосковье 2026 — IT, Python, Minecraft | АйДаКемп</div>
+        </div>
+        <div class="page-keywords">
+          <div class="kw-inline">
+            <span class="kw-chip"><span class="badge pos-beyond">50</span> детский лагерь <span class="freq">106К</span></span>
+            <span class="kw-chip"><span class="badge pos-top50">25</span> летний лагерь <span class="freq">68К</span></span>
+            <span class="kw-chip"><span class="badge pos-top10">9</span> лагерь 2026 <span class="freq">35К</span></span>
+            <span class="kw-chip"><span class="badge pos-top50">27</span> лагерь для детей <span class="freq">26К</span></span>
+            <span class="kw-chip"><span class="badge pos-top3">2</span> детский лагерь на лето 2026 <span class="freq">1.4К</span></span>
+            <span class="kw-chip"><span class="badge pos-top3">1</span> летний лагерь для детей 2026 <span class="freq">947</span></span>
+            <span class="kw-chip"><span class="badge pos-top3">2</span> детский летний лагерь 2026 <span class="freq">496</span></span>
+          </div>
+        </div>
+        <div class="page-action">
+          <div class="action-title"><span class="badge action-fix">🔴 КРИТИЧНО</span></div>
+          <div class="action-desc">Главный коммерческий ключ «детский лагерь» упал с #11 до #50. Тексты H1/Title исправлены 01.05. Нужны: внутренние ссылки со всех спиц, блог-статьи, устранение каннибализации tpost-URL.</div>
+        </div>
+      </div>
+      <div class="page-detail">
+        <table class="kw-table">
+          <tr><th>Ключевое слово</th><th>Частота</th><th>Позиция 02.05</th><th>Позиция 29.04</th><th>Δ</th><th>Цель</th></tr>
+          <tr><td>детский лагерь</td><td>105 706</td><td><span class="badge pos-beyond">50</span></td><td><span class="badge pos-top50">39</span></td><td class="delta-down">↓11</td><td>≤10</td></tr>
+          <tr><td>летний лагерь</td><td>67 952</td><td><span class="badge pos-top50">25</span></td><td><span class="badge pos-top50">30</span></td><td class="delta-up">↑5</td><td>≤15</td></tr>
+          <tr><td>лагерь 2026</td><td>34 513</td><td><span class="badge pos-top10">9</span></td><td><span class="badge pos-top20">11</span></td><td class="delta-up">↑2</td><td>≤5</td></tr>
+          <tr><td>лагерь для детей</td><td>26 421</td><td><span class="badge pos-top50">27</span></td><td><span class="badge pos-top50">30</span></td><td class="delta-up">↑3</td><td>≤15</td></tr>
+          <tr><td>детский лагерь на лето</td><td>5 055</td><td><span class="badge pos-top50">22</span></td><td><span class="badge pos-top50">24</span></td><td class="delta-up">↑2</td><td>≤10</td></tr>
+          <tr><td>летний лагерь для детей</td><td>5 485</td><td><span class="badge pos-top20">16</span></td><td><span class="badge pos-top50">24</span></td><td class="delta-up">↑8</td><td>≤10</td></tr>
+          <tr><td>детский летний лагерь</td><td>1 030</td><td><span class="badge pos-top50">21</span></td><td><span class="badge pos-top50">21</span></td><td class="delta-same">→</td><td>≤10</td></tr>
+          <tr><td>детский лагерь на лето 2026</td><td>1 357</td><td><span class="badge pos-top3">2</span></td><td><span class="badge pos-top50">24</span></td><td class="delta-up">↑22</td><td>1</td></tr>
+          <tr><td>летний лагерь для детей 2026</td><td>947</td><td><span class="badge pos-top3">1</span></td><td><span class="badge pos-top50">25</span></td><td class="delta-up">↑24</td><td>1</td></tr>
+          <tr><td>детский летний лагерь 2026</td><td>496</td><td><span class="badge pos-top3">2</span></td><td><span class="badge pos-top3">2</span></td><td class="delta-same">→</td><td>1</td></tr>
+          <tr><td>лагерь для детей 2026</td><td>2 876</td><td><span class="badge pos-top50">20</span></td><td><span class="badge pos-top50">29</span></td><td class="delta-up">↑9</td><td>≤10</td></tr>
+          <tr><td>лагерь для детей на лето 2026</td><td>771</td><td><span class="badge pos-top3">3</span></td><td><span class="badge pos-top10">10</span></td><td class="delta-up">↑7</td><td>1</td></tr>
+        </table>
+        <div class="detail-tasks" style="margin-top:12px">
+          <div style="font-weight:600;font-size:12px;color:#374151;margin-bottom:6px">📋 Задачи (приоритет ↓)</div>
+          <div class="task-item"><span class="task-num">1.</span> <strong>Каннибализация:</strong> отправить старый tpost-URL на переиндексацию через Яндекс.Вебмастер → он воровал вес у главной страницы.</div>
+          <div class="task-item"><span class="task-num">2.</span> <strong>Внутренние ссылки:</strong> добавить ссылки с якорным текстом «детский лагерь» и «летний лагерь» со всех 40+ спиц на главную (раздел footer/nav или блок «Смотрите также»).</div>
+          <div class="task-item"><span class="task-num">3.</span> <strong>Контент главной:</strong> написать текстовый блок 400-600 слов с ключами «детский лагерь подмосковье», «летний лагерь для детей», «лагерь 2026». Разместить в нижней части страницы.</div>
+          <div class="task-item"><span class="task-num">4.</span> <strong>Хлебные крошки:</strong> добавить BreadcrumbList schema на все подстраницы (сейчас нет — лишаем главную веса от крошек).</div>
+          <div class="task-item"><span class="task-num">5.</span> <strong>CTR заголовок:</strong> Проверить что Title в выдаче включает год «2026» и слово «бассейн» или «от 48 000 ₽» для повышения кликабельности.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== TIER 2 — ВТОРИЧНЫЕ ХАБЫ ==================== -->
+<div class="tier-block tier-2">
+  <div class="tier-header" onclick="toggleTier(this)">
+    <span>🔵 Tier 2 — Вторичные хабы</span>
+    <span style="font-size:11px;font-weight:400;opacity:0.7">5 страниц · принимают трафик по кластерам</span>
+    <span class="toggle">▼</span>
+  </div>
+  <div class="tier-body">
+
+    <!-- detskiy-lager-podmoskove -->
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url">
+          <a href="https://aidacamp.ru/detskiy-lager-podmoskove" target="_blank">/detskiy-lager-podmoskove</a>
+          <div class="page-title">Детский лагерь в Подмосковье</div>
+        </div>
+        <div class="page-keywords">
+          <div class="kw-inline">
+            <span class="kw-chip"><span class="badge pos-top20">13</span> лагерь в подмосковье <span class="freq">31К</span></span>
+            <span class="kw-chip"><span class="badge pos-top50">23</span> детский лагерь подмосковье <span class="freq">12К</span></span>
+            <span class="kw-chip"><span class="badge pos-top10">7</span> детские лагеря подмосковья 2026 <span class="freq">4К</span></span>
+            <span class="kw-chip"><span class="badge pos-top3">5</span> детский лагерь подмосковье лето 2026 <span class="freq">3.3К</span></span>
+            <span class="kw-chip"><span class="badge pos-top3">4</span> детский летний лагерь в подмосковье <span class="freq">585</span></span>
+          </div>
+        </div>
+        <div class="page-action">
+          <div class="action-title"><span class="badge action-grow">⬆️ ПОДНЯТЬ</span></div>
+          <div class="action-desc">Сильная страница с топ-позициями по точным ключам. «Лагерь в подмосковье» (31К) на #13 — докрутить до топ-10.</div>
+        </div>
+      </div>
+      <div class="page-detail">
+        <table class="kw-table">
+          <tr><th>Ключевое слово</th><th>Частота</th><th>02.05</th><th>29.04</th><th>Δ</th><th>Цель</th></tr>
+          <tr><td>лагерь в подмосковье</td><td>30 617</td><td><span class="badge pos-top20">13</span></td><td><span class="badge pos-top50">42</span></td><td class="delta-up">↑29</td><td>≤10</td></tr>
+          <tr><td>детский лагерь подмосковье</td><td>11 747</td><td><span class="badge pos-top50">23</span></td><td><span class="badge pos-top50">31</span></td><td class="delta-up">↑8</td><td>≤10</td></tr>
+          <tr><td>лагерь подмосковье 2026</td><td>9 334</td><td><span class="badge pos-top10">7</span></td><td><span class="badge pos-top20">12</span></td><td class="delta-up">↑5</td><td>≤5</td></tr>
+          <tr><td>детские лагеря подмосковья 2026</td><td>3 953</td><td><span class="badge pos-top10">7</span></td><td><span class="badge pos-top20">18</span></td><td class="delta-up">↑11</td><td>≤5</td></tr>
+          <tr><td>летний лагерь подмосковье</td><td>3 776</td><td><span class="badge pos-top10">6</span></td><td><span class="badge pos-top10">5</span></td><td class="delta-down">↓1</td><td>≤5</td></tr>
+          <tr><td>летний лагерь в подмосковье</td><td>3 301</td><td><span class="badge pos-top10">7</span></td><td><span class="badge pos-top10">9</span></td><td class="delta-up">↑2</td><td>≤5</td></tr>
+          <tr><td>детский лагерь подмосковье лето 2026</td><td>3 293</td><td><span class="badge pos-top10">5</span></td><td><span class="badge pos-top10">6</span></td><td class="delta-up">↑1</td><td>1</td></tr>
+          <tr><td>детский лагерь в подмосковье</td><td>2 154</td><td><span class="badge pos-top20">14</span></td><td><span class="badge pos-top50">49</span></td><td class="delta-up">↑35</td><td>≤5</td></tr>
+          <tr><td>летний лагерь в подмосковье 2026</td><td>1 524</td><td><span class="badge pos-top3">4</span></td><td><span class="badge pos-top10">9</span></td><td class="delta-up">↑5</td><td>1</td></tr>
+          <tr><td>детский летний лагерь в подмосковье</td><td>585</td><td><span class="badge pos-top3">4</span></td><td><span class="badge pos-top50">35</span></td><td class="delta-up">↑31</td><td>1</td></tr>
+          <tr><td>детские летние лагеря в подмосковье 2026</td><td>211</td><td><span class="badge pos-top3">1</span></td><td><span class="badge pos-top3">3</span></td><td class="delta-up">↑2</td><td>1</td></tr>
+          <tr><td>детский лагерь в подмосковье на лето</td><td>169</td><td><span class="badge pos-top20">13</span></td><td><span class="badge pos-top beyond">45</span></td><td class="delta-up">↑32</td><td>≤5</td></tr>
+        </table>
+        <div class="detail-tasks" style="margin-top:12px">
+          <div style="font-weight:600;font-size:12px;color:#374151;margin-bottom:6px">📋 Задачи</div>
+          <div class="task-item"><span class="task-num">1.</span> Добавить ссылки с гео-страниц (/lager-odintsovo, /lager-himki и др.) с якорем «детский лагерь в Подмосковье».</div>
+          <div class="task-item"><span class="task-num">2.</span> Проверить что в тексте страницы есть «детский лагерь подмосковье» в H2 и первом абзаце.</div>
+          <div class="task-item"><span class="task-num">3.</span> Добавить FAQ-блок: «Какие лагеря в Подмосковье лучшие?», «Сколько стоит путёвка 2026?» — это дополнительные ключи в выдаче.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- lager-dlya-podrostkov -->
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url">
+          <a href="https://aidacamp.ru/lager-dlya-podrostkov" target="_blank">/lager-dlya-podrostkov</a>
+          <div class="page-title">Лагерь для подростков</div>
+        </div>
+        <div class="page-keywords">
+          <div class="kw-inline">
+            <span class="kw-chip"><span class="badge pos-top10">8</span> лагерь для подростков <span class="freq">7.3К</span></span>
+            <span class="kw-chip"><span class="badge pos-top3">1</span> летний лагерь 2026 для подростков <span class="freq">228</span></span>
+            <span class="kw-chip"><span class="badge pos-top50">30</span> летний лагерь в москве для подростков <span class="freq">173</span></span>
+            <span class="kw-chip"><span class="badge pos-none">—</span> летний лагерь для подростков <span class="freq">1.3К</span></span>
+          </div>
+        </div>
+        <div class="page-action">
+          <div class="action-title"><span class="badge action-grow">⬆️ ПОДНЯТЬ</span></div>
+          <div class="action-desc">«Лагерь для подростков» (7.3К) на #8 — рядом с топ-3. Подтянуть остальные ключи кластера.</div>
+        </div>
+      </div>
+      <div class="page-detail">
+        <table class="kw-table">
+          <tr><th>Ключевое слово</th><th>Частота</th><th>02.05</th><th>29.04</th><th>Δ</th><th>Цель</th></tr>
+          <tr><td>лагерь для подростков</td><td>7 303</td><td><span class="badge pos-top10">8</span></td><td><span class="badge pos-top50">39</span></td><td class="delta-up">↑31</td><td>≤5</td></tr>
+          <tr><td>летний лагерь для подростков</td><td>1 288</td><td><span class="badge pos-none">—</span></td><td><span class="badge pos-top20">16</span></td><td>—</td><td>≤5</td></tr>
+          <tr><td>летний лагерь 2026 для подростков</td><td>228</td><td><span class="badge pos-top3">1</span></td><td><span class="badge pos-top3">3</span></td><td class="delta-up">↑2</td><td>1</td></tr>
+          <tr><td>летний лагерь в москве для подростков</td><td>173</td><td><span class="badge pos-top50">30</span></td><td><span class="badge pos-top50">32</span></td><td class="delta-up">↑2</td><td>≤10</td></tr>
+          <tr><td>летний лагерь для подростков 14 лет</td><td>29</td><td><span class="badge pos-top50">20</span></td><td><span class="badge pos-top20">19</span></td><td class="delta-down">↓1</td><td>≤10</td></tr>
+          <tr><td>летний лагерь для подростков в подмосковье недорого</td><td>6</td><td><span class="badge pos-top10">9</span></td><td><span class="badge pos-top10">9</span></td><td class="delta-same">→</td><td>≤5</td></tr>
+        </table>
+        <div class="detail-tasks" style="margin-top:12px">
+          <div style="font-weight:600;font-size:12px;color:#374151;margin-bottom:6px">📋 Задачи</div>
+          <div class="task-item"><span class="task-num">1.</span> Почему «летний лагерь для подростков» (1.3К) не попал в мониторинг 02.05? Проверить позицию вручную, возможно выпал из топ-50.</div>
+          <div class="task-item"><span class="task-num">2.</span> Добавить H2 «Летний лагерь для подростков в Подмосковье 2026» в текст страницы.</div>
+          <div class="task-item"><span class="task-num">3.</span> Связать страницу с /lager-14-let, /lager-12-let через внутренние ссылки.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- kompyuternyy-lager -->
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url">
+          <a href="https://aidacamp.ru/kompyuternyy-lager" target="_blank">/kompyuternyy-lager</a>
+          <div class="page-title">Компьютерный лагерь</div>
+        </div>
+        <div class="page-keywords">
+          <div class="kw-inline">
+            <span class="kw-chip"><span class="badge pos-top3">1</span> компьютерный лагерь <span class="freq">361</span></span>
+            <span class="kw-chip"><span class="badge pos-top3">1</span> it лагерь <span class="freq">439</span></span>
+            <span class="kw-chip"><span class="badge pos-top3">1</span> ит лагерь <span class="freq">219</span></span>
+            <span class="kw-chip"><span class="badge pos-top3">1</span> айти лагерь <span class="freq">203</span></span>
+            <span class="kw-chip"><span class="badge pos-top3">1</span> ит лагерь для детей <span class="freq">185</span></span>
+            <span class="kw-chip"><span class="badge pos-top3">2</span> айти лагерь для детей <span class="freq">183</span></span>
+          </div>
+        </div>
+        <div class="page-action">
+          <div class="action-title"><span class="badge action-hold">🟢 ДЕРЖАТЬ</span></div>
+          <div class="action-desc">Доминирование в IT-кластере. Все ключи в топ-1-2. Поддерживать и развивать кластер.</div>
+        </div>
+      </div>
+      <div class="page-detail">
+        <table class="kw-table">
+          <tr><th>Ключевое слово</th><th>Частота</th><th>02.05</th><th>29.04</th><th>Δ</th></tr>
+          <tr><td>it лагерь</td><td>439</td><td><span class="badge pos-top3">1</span></td><td><span class="badge pos-top20">17.9</span></td><td class="delta-up">↑16.9</td></tr>
+          <tr><td>лагерь it</td><td>439</td><td><span class="badge pos-top3">1</span></td><td><span class="badge pos-top3">1</span></td><td class="delta-same">→</td></tr>
+          <tr><td>компьютерный лагерь</td><td>361</td><td><span class="badge pos-top3">1</span></td><td><span class="badge pos-top50">27</span></td><td class="delta-up">↑26</td></tr>
+          <tr><td>ит лагерь</td><td>219</td><td><span class="badge pos-top3">1</span></td><td><span class="badge pos-top20">10.4</span></td><td class="delta-up">↑9.4</td></tr>
+          <tr><td>айти лагерь</td><td>203</td><td><span class="badge pos-top3">1</span></td><td><span class="badge pos-top20">16</span></td><td class="delta-up">↑15</td></tr>
+          <tr><td>ит лагерь для детей</td><td>185</td><td><span class="badge pos-top3">1</span></td><td><span class="badge pos-top3">1</span></td><td class="delta-same">→</td></tr>
+          <tr><td>айти лагерь для детей</td><td>183</td><td><span class="badge pos-top3">2</span></td><td><span class="badge pos-top10">7</span></td><td class="delta-up">↑5</td></tr>
+          <tr><td>it лагерь для детей</td><td>89</td><td><span class="badge pos-top3">1</span></td><td><span class="badge pos-top20">16.6</span></td><td class="delta-up">↑15.6</td></tr>
+          <tr><td>летний компьютерный лагерь</td><td>84</td><td><span class="badge pos-top3">1</span></td><td><span class="badge pos-top20">16.5</span></td><td class="delta-up">↑15.5</td></tr>
+          <tr><td>компьютерный летний лагерь</td><td>84</td><td><span class="badge pos-top3">1</span></td><td><span class="badge pos-top3">1</span></td><td class="delta-same">→</td></tr>
+          <tr><td>лагерь it для детей</td><td>38</td><td><span class="badge pos-top3">1</span></td><td><span class="badge pos-top3">1</span></td><td class="delta-same">→</td></tr>
+          <tr><td>айти лагерь подмосковье</td><td>21</td><td><span class="badge pos-top3">1</span></td><td><span class="badge pos-top3">1</span></td><td class="delta-same">→</td></tr>
+          <tr><td>айти лагерь москва</td><td>12</td><td><span class="badge pos-top3">1</span></td><td><span class="badge pos-top3">3</span></td><td class="delta-up">↑2</td></tr>
+        </table>
+        <div class="detail-tasks" style="margin-top:12px">
+          <div class="task-item"><span class="task-num">1.</span> Держать страницу актуальной — обновлять год, цены, программу.</div>
+          <div class="task-item"><span class="task-num">2.</span> Ссылаться на эту страницу из /ai-lager, /lager-programmirovaniya, /python-lager с разными анкорами.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- lager-programmirovaniya -->
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url">
+          <a href="https://aidacamp.ru/lager-programmirovaniya" target="_blank">/lager-programmirovaniya</a>
+          <div class="page-title">Лагерь программирования</div>
+        </div>
+        <div class="page-keywords">
+          <div class="kw-inline">
+            <span class="kw-chip"><span class="badge pos-top3">2</span> лагерь программирования <span class="freq">382</span></span>
+            <span class="kw-chip"><span class="badge pos-top10">5</span> лагерь программирования для детей <span class="freq">42</span></span>
+            <span class="kw-chip"><span class="badge pos-top3">1</span> летний лагерь программирование <span class="freq">135</span></span>
+            <span class="kw-chip"><span class="badge pos-top3">1</span> лагерь по программированию <span class="freq">93</span></span>
+            <span class="kw-chip"><span class="badge pos-top3">3</span> лагерь программирования для подростков <span class="freq">3</span></span>
+          </div>
+        </div>
+        <div class="page-action">
+          <div class="action-title"><span class="badge action-hold">🟢 ДЕРЖАТЬ</span></div>
+          <div class="action-desc">Топ-позиции по кластеру «программирование». Поддерживать и связать с /python-lager, /ai-lager.</div>
+        </div>
+      </div>
+      <div class="page-detail">
+        <table class="kw-table">
+          <tr><th>Ключевое слово</th><th>Частота</th><th>02.05</th><th>29.04</th><th>Δ</th></tr>
+          <tr><td>лагерь программирования</td><td>382</td><td><span class="badge pos-top3">2</span></td><td><span class="badge pos-top20">17.7</span></td><td class="delta-up">↑15.7</td></tr>
+          <tr><td>летний лагерь программирование</td><td>135</td><td><span class="badge pos-top3">1</span></td><td><span class="badge pos-top20">11.7</span></td><td class="delta-up">↑10.7</td></tr>
+          <tr><td>летний лагерь летний программирование</td><td>135</td><td><span class="badge pos-top3">1</span></td><td><span class="badge pos-top3">1</span></td><td class="delta-same">→</td></tr>
+          <tr><td>летний лагерь программирование для детей</td><td>11</td><td><span class="badge pos-top3">4</span></td><td><span class="badge pos-top20">12.4</span></td><td class="delta-up">↑8.4</td></tr>
+          <tr><td>лагерь по программированию</td><td>93</td><td><span class="badge pos-top3">1</span></td><td><span class="badge pos-top20">18.5</span></td><td class="delta-up">↑17.5</td></tr>
+          <tr><td>лагерь программирования для детей</td><td>42</td><td><span class="badge pos-top10">5</span></td><td><span class="badge pos-top20">15.6</span></td><td class="delta-up">↑10.6</td></tr>
+          <tr><td>летний лагерь для программистов</td><td>6</td><td><span class="badge pos-top3">3</span></td><td><span class="badge pos-top3">2</span></td><td class="delta-down">↓1</td></tr>
+          <tr><td>лагерь программирования для подростков</td><td>3</td><td><span class="badge pos-top3">3</span></td><td><span class="badge pos-top3">2</span></td><td class="delta-down">↓1</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- ai-lager -->
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url">
+          <a href="https://aidacamp.ru/ai-lager" target="_blank">/ai-lager</a>
+          <div class="page-title">AI-лагерь для детей</div>
+        </div>
+        <div class="page-keywords">
+          <div class="kw-inline">
+            <span class="kw-chip"><span class="badge pos-none">—</span> ai лагерь</span>
+            <span class="kw-chip"><span class="badge pos-none">—</span> лагерь искусственный интеллект</span>
+            <span class="kw-chip"><span class="badge pos-none">—</span> нейросети для детей лагерь</span>
+          </div>
+        </div>
+        <div class="page-action">
+          <div class="action-title"><span class="badge action-opt">🟡 ОПТИМИЗИРОВАТЬ</span></div>
+          <div class="action-desc">Новый растущий кластер. Позиции не отслеживаются — добавить ключи в мониторинг. Оптимизировать под запросы «AI лагерь», «нейросети дети».</div>
+        </div>
+      </div>
+      <div class="page-detail">
+        <div class="detail-tasks">
+          <div class="task-item"><span class="task-num">1.</span> Добавить в seo_keywords: «ai лагерь», «лагерь нейросети», «лагерь искусственный интеллект», «ai лагерь для детей».</div>
+          <div class="task-item"><span class="task-num">2.</span> Title: «AI-лагерь для детей 2026 — нейросети, программирование, ChatGPT | АйДаКемп».</div>
+          <div class="task-item"><span class="task-num">3.</span> Указать в тексте конкретные проекты: «дети делают AI-проекты на Python», «работают с ChatGPT и Midjourney».</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== TIER 3 — ЛЕНДИНГИ ==================== -->
+<div class="tier-block tier-3">
+  <div class="tier-header" onclick="toggleTier(this)">
+    <span>🟢 Tier 3 — Лендинги (спицы)</span>
+    <span style="font-size:11px;font-weight:400;opacity:0.7">~40 страниц · гео, возраст, тематика, время</span>
+    <span class="toggle">▼</span>
+  </div>
+  <div class="tier-body">
+
+    <div class="tier-group-label">📍 Гео-страницы</div>
+
+    <!-- lager-v-podmoskove -->
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url"><a href="https://aidacamp.ru/lager-v-podmoskove" target="_blank">/lager-v-podmoskove</a><div class="page-title">Лагерь в Подмосковье</div></div>
+        <div class="page-keywords"><div class="kw-inline">
+          <span class="kw-chip"><span class="badge pos-top10">9</span> лагерь в подмосковье на лето <span class="freq">6.9К</span></span>
+          <span class="kw-chip"><span class="badge pos-top10">5</span> лагерь в подмосковье на лето 2026 <span class="freq">5.7К</span></span>
+          <span class="kw-chip"><span class="badge pos-top3">4</span> летний лагерь в подмосковье 2026 <span class="freq">1.5К</span></span>
+          <span class="kw-chip"><span class="badge pos-top3">1</span> детские летние лагеря в подмосковье 2026 <span class="freq">211</span></span>
+        </div></div>
+        <div class="page-action"><div class="action-title"><span class="badge action-hold">🟢 ДЕРЖАТЬ</span></div><div class="action-desc">Отличные позиции. Держать, обновлять год.</div></div>
+      </div>
+      <div class="page-detail">
+        <table class="kw-table">
+          <tr><th>Ключ</th><th>Частота</th><th>02.05</th><th>29.04</th><th>Δ</th></tr>
+          <tr><td>лагерь в подмосковье на лето</td><td>6 916</td><td><span class="badge pos-top10">9</span></td><td>35</td><td class="delta-up">↑26</td></tr>
+          <tr><td>лагерь в подмосковье на лето 2026</td><td>5 701</td><td><span class="badge pos-top10">5</span></td><td>8</td><td class="delta-up">↑3</td></tr>
+          <tr><td>летний лагерь в подмосковье 2026</td><td>1 524</td><td><span class="badge pos-top3">4</span></td><td>9</td><td class="delta-up">↑5</td></tr>
+          <tr><td>лагерь в подмосковье на лето 2026 цены</td><td>694</td><td><span class="badge pos-top10">8</span></td><td>12</td><td class="delta-up">↑4</td></tr>
+          <tr><td>летний лагерь в подмосковье для детей</td><td>772</td><td><span class="badge pos-top20">12</span></td><td>9</td><td class="delta-down">↓3</td></tr>
+          <tr><td>детские летние лагеря в подмосковье 2026</td><td>211</td><td><span class="badge pos-top3">1</span></td><td>3</td><td class="delta-up">↑2</td></tr>
+          <tr><td>летний лагерь в подмосковье для детей 2026</td><td>443</td><td><span class="badge pos-top20">11</span></td><td>22</td><td class="delta-up">↑11</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- lager-v-moskve -->
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url"><a href="https://aidacamp.ru/lager-v-moskve" target="_blank">/lager-v-moskve</a><div class="page-title">Лагерь в Москве</div></div>
+        <div class="page-keywords"><div class="kw-inline">
+          <span class="kw-chip"><span class="badge pos-beyond">60</span> лагерь в москве <span class="freq">13.3К</span></span>
+          <span class="kw-chip"><span class="badge pos-beyond">68</span> летний лагерь в москве <span class="freq">3.2К</span></span>
+          <span class="kw-chip"><span class="badge pos-top3">3</span> летний лагерь в москве 2026 <span class="freq">345</span></span>
+          <span class="kw-chip"><span class="badge pos-top3">4</span> детский летний лагерь в москве <span class="freq">253</span></span>
+        </div></div>
+        <div class="page-action"><div class="action-title"><span class="badge action-fix">🔴 КРИТИЧНО</span></div><div class="action-desc">«Лагерь в Москве» (13.3К) на #60. Страница слабая — конкурирует с агрегаторами. Нужна доработка контента.</div></div>
+      </div>
+      <div class="page-detail">
+        <table class="kw-table">
+          <tr><th>Ключ</th><th>Частота</th><th>02.05</th><th>29.04</th><th>Δ</th></tr>
+          <tr><td>лагерь в москве</td><td>13 250</td><td><span class="badge pos-beyond">60</span></td><td>66</td><td class="delta-up">↑6</td></tr>
+          <tr><td>летний лагерь в москве</td><td>3 167</td><td><span class="badge pos-beyond">68</span></td><td>46</td><td class="delta-down">↓22</td></tr>
+          <tr><td>летний лагерь для детей в москве</td><td>500</td><td><span class="badge pos-beyond">65</span></td><td>47</td><td class="delta-down">↓18</td></tr>
+          <tr><td>летний лагерь в москве 2026</td><td>345</td><td><span class="badge pos-top3">3</span></td><td>17</td><td class="delta-up">↑14</td></tr>
+          <tr><td>детский летний лагерь в москве</td><td>253</td><td><span class="badge pos-top3">4</span></td><td>7</td><td class="delta-up">↑3</td></tr>
+          <tr><td>лагерь в москве на лето 2026</td><td>1 087</td><td><span class="badge pos-top50">25</span></td><td>32</td><td class="delta-up">↑7</td></tr>
+        </table>
+        <div class="detail-tasks" style="margin-top:10px">
+          <div class="task-item"><span class="task-num">1.</span> Объяснить на странице почему мы «в Москве» (30 мин от МКАД, удобный выезд из Москвы). Геоконтент важен.</div>
+          <div class="task-item"><span class="task-num">2.</span> Добавить карту с маршрутом от ТТК/МКАД.</div>
+          <div class="task-item"><span class="task-num">3.</span> Title: «Летний лагерь в Москве 2026 — IT, бассейн, 30 мин от МКАД | АйДаКемп».</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Гео-города (компактно) -->
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url"><a href="https://aidacamp.ru/lager-odintsovo" target="_blank">/lager-odintsovo</a> <span style="color:#94a3b8">и ещё 10 гео</span><div class="page-title">Одинцово, Химки, Истра, Клин, Пушкино, Подольск, Серпухов, Нарофоминск, Зеленоград, Новая Москва, Домодедово</div></div>
+        <div class="page-keywords"><div class="kw-inline">
+          <span class="kw-chip"><span class="badge pos-none">—</span> лагерь одинцово</span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> детский лагерь химки</span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> … (гео ключи не в мониторинге)</span>
+        </div></div>
+        <div class="page-action"><div class="action-title"><span class="badge action-opt">🟡 ОПТИМИЗИРОВАТЬ</span></div><div class="action-desc">Добавить гео-ключи в мониторинг. Проверить уникальность контента — тонкие копии могут навредить.</div></div>
+      </div>
+      <div class="page-detail">
+        <div class="detail-tasks">
+          <div class="task-item"><span class="task-num">1.</span> Добавить в seo_keywords ключи формата «лагерь [город]», «детский лагерь [город]» для всех 11 гео-страниц.</div>
+          <div class="task-item"><span class="task-num">2.</span> Убедиться что у каждой страницы уникальный контент: расстояние от города, транспорт, время в дороге.</div>
+          <div class="task-item"><span class="task-num">3.</span> LocalBusiness Schema с городом в address.addressLocality.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tier-group-label">👦 Страницы по возрасту</div>
+
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url"><a href="https://aidacamp.ru/lager-8-let" target="_blank">/lager-8-let</a> <span style="color:#94a3b8">/lager-10-let /lager-12-let /lager-14-let</span></div>
+        <div class="page-keywords"><div class="kw-inline">
+          <span class="kw-chip"><span class="badge pos-top50">20</span> лагерь для детей 7 лет <span class="freq">505</span></span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> детский лагерь 10 лет</span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> лагерь для детей 12 лет</span>
+          <span class="kw-chip"><span class="badge pos-top50">20</span> летний лагерь для подростков 14 лет <span class="freq">29</span></span>
+        </div></div>
+        <div class="page-action"><div class="action-title"><span class="badge action-opt">🟡 ОПТИМИЗИРОВАТЬ</span></div><div class="action-desc">Добавить возрастные ключи в мониторинг. «Лагерь 7 лет» на #20 — есть потенциал.</div></div>
+      </div>
+      <div class="page-detail">
+        <div class="detail-tasks">
+          <div class="task-item"><span class="task-num">1.</span> Добавить ключи «лагерь для детей 8/9/10/11/12/14 лет» в seo_keywords.</div>
+          <div class="task-item"><span class="task-num">2.</span> Внутренние ссылки: /lager-dlya-podrostkov → /lager-12-let, /lager-14-let.</div>
+          <div class="task-item"><span class="task-num">3.</span> Добавить FAQ «С какого возраста принимают?» на каждой странице.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tier-group-label">💻 IT-специализации</div>
+
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url"><a href="https://aidacamp.ru/python-lager" target="_blank">/python-lager</a><div class="page-title">Python лагерь</div></div>
+        <div class="page-keywords"><div class="kw-inline">
+          <span class="kw-chip"><span class="badge pos-none">—</span> python лагерь</span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> лагерь python для детей</span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> летний лагерь python</span>
+        </div></div>
+        <div class="page-action"><div class="action-title"><span class="badge action-opt">🟡 ОПТИМИЗИРОВАТЬ</span></div><div class="action-desc">Добавить ключи в мониторинг. Связать с /stati/python-dlya-detej.</div></div>
+      </div>
+      <div class="page-detail">
+        <div class="detail-tasks">
+          <div class="task-item"><span class="task-num">1.</span> Добавить ключи: «python лагерь», «лагерь python для детей», «летний лагерь python 2026».</div>
+          <div class="task-item"><span class="task-num">2.</span> Связать /stati/python-dlya-detej → /python-lager (анкор «лагерь по Python»).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url">
+          <a href="https://aidacamp.ru/minecraft-lager" target="_blank">/minecraft-lager</a>
+          <span style="color:#94a3b8"> /roblox-lager /scratch-lager /3d-modelirovanie-lager /letnyaya-it-shkola</span>
+        </div>
+        <div class="page-keywords"><div class="kw-inline">
+          <span class="kw-chip"><span class="badge pos-top3">2</span> детский лагерь майнкрафт <span class="freq">30</span></span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> лагерь роблокс</span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> лагерь scratch</span>
+        </div></div>
+        <div class="page-action"><div class="action-title"><span class="badge action-opt">🟡 ОПТИМИЗИРОВАТЬ</span></div><div class="action-desc">Minecraft #2 — хорошо. Roblox, Scratch — добавить в мониторинг.</div></div>
+      </div>
+      <div class="page-detail">
+        <table class="kw-table">
+          <tr><th>Ключ</th><th>Частота</th><th>02.05</th><th>29.04</th><th>Δ</th></tr>
+          <tr><td>детский лагерь майнкрафт</td><td>30</td><td><span class="badge pos-top3">2</span></td><td>2</td><td class="delta-same">→</td></tr>
+        </table>
+        <div class="detail-tasks" style="margin-top:10px">
+          <div class="task-item"><span class="task-num">1.</span> Добавить ключи «лагерь роблокс для детей», «scratch лагерь», «3d лагерь для детей» в мониторинг.</div>
+          <div class="task-item"><span class="task-num">2.</span> Перелинковать: /roblox-lager ↔ /stati/roblox-dlya-detej и т.д.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tier-group-label">🗓 Страницы по времени / месяцу</div>
+
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url">
+          <a href="https://aidacamp.ru/lager-na-iyun" target="_blank">/lager-na-iyun</a>
+          <span style="color:#94a3b8"> /lager-na-iyul /lager-na-avgust-podmoskove /lager-na-leto-2026 /lager-na-kanikuly</span>
+        </div>
+        <div class="page-keywords"><div class="kw-inline">
+          <span class="kw-chip"><span class="badge pos-none">—</span> лагерь на июнь 2026</span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> лагерь на июль подмосковье</span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> лагерь на лето 2026</span>
+        </div></div>
+        <div class="page-action"><div class="action-title"><span class="badge action-opt">🟡 ОПТИМИЗИРОВАТЬ</span></div><div class="action-desc">Временные ключи — высокий спрос в мае-июне. Добавить в мониторинг, обновить Title с месяцем.</div></div>
+      </div>
+      <div class="page-detail">
+        <div class="detail-tasks">
+          <div class="task-item"><span class="task-num">1.</span> Добавить ключи «лагерь на июнь/июль/август 2026» в мониторинг.</div>
+          <div class="task-item"><span class="task-num">2.</span> Title для /lager-na-iyun: «Лагерь на июнь 2026 — IT, Подмосковье, с 30 мая | АйДаКемп».</div>
+          <div class="task-item"><span class="task-num">3.</span> Указать конкретные даты смен прямо в тексте страницы (сейчас, возможно, нет).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tier-group-label">💰 Транзакционные страницы</div>
+
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url"><a href="https://aidacamp.ru/kupit-putevku-v-lager" target="_blank">/kupit-putevku-v-lager</a></div>
+        <div class="page-keywords"><div class="kw-inline">
+          <span class="kw-chip"><span class="badge pos-beyond">77</span> купить путевку в лагерь <span class="freq">1.6К</span></span>
+          <span class="kw-chip"><span class="badge pos-top50">40</span> путевка в лагерь для ребенка <span class="freq">690</span></span>
+        </div></div>
+        <div class="page-action"><div class="action-title"><span class="badge action-fix">🔴 КРИТИЧНО</span></div><div class="action-desc">Самый транзакционный запрос «купить путевку» на #77. Тяжело конкурировать с агрегаторами. Нужен контент с доверием.</div></div>
+      </div>
+      <div class="page-detail">
+        <table class="kw-table">
+          <tr><th>Ключ</th><th>Частота</th><th>02.05</th><th>29.04</th><th>Δ</th></tr>
+          <tr><td>купить путевку в лагерь</td><td>1 604</td><td><span class="badge pos-beyond">77</span></td><td>48</td><td class="delta-down">↓29</td></tr>
+          <tr><td>путевка в лагерь для ребенка</td><td>690</td><td><span class="badge pos-top50">40</span></td><td>43</td><td class="delta-up">↑3</td></tr>
+        </table>
+        <div class="detail-tasks" style="margin-top:10px">
+          <div class="task-item"><span class="task-num">1.</span> Добавить на страницу форму бронирования прямо в начало + блок «Почему покупать у нас, а не через агрегаторы».</div>
+          <div class="task-item"><span class="task-num">2.</span> Добавить Product Schema с ценой и наличием.</div>
+          <div class="task-item"><span class="task-num">3.</span> Title: «Купить путёвку в лагерь 2026 — онлайн, без комиссии, гарантия места | АйДаКемп».</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url"><a href="https://aidacamp.ru/ceny" target="_blank">/ceny</a><div class="page-title">Цены на путёвки</div></div>
+        <div class="page-keywords"><div class="kw-inline">
+          <span class="kw-chip"><span class="badge pos-top20">11</span> детский лагерь подмосковье на лето 2026 цены <span class="freq">687</span></span>
+          <span class="kw-chip"><span class="badge pos-top10">8</span> лагерь в подмосковье на лето 2026 цены <span class="freq">694</span></span>
+        </div></div>
+        <div class="page-action"><div class="action-title"><span class="badge action-hold">🟢 ДЕРЖАТЬ</span></div><div class="action-desc">Хорошие позиции по ценовым запросам. Поддерживать актуальность.</div></div>
+      </div>
+      <div class="page-detail">
+        <div class="detail-tasks">
+          <div class="task-item"><span class="task-num">1.</span> Убедиться что цены 2026 обновлены и видны поисковику (не в JS, а в HTML).</div>
+          <div class="task-item"><span class="task-num">2.</span> Добавить таблицу цен с датами смен — это точное соответствие запросу «цены 2026».</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url"><a href="https://aidacamp.ru/nalogovyj-vychet" target="_blank">/nalogovyj-vychet</a><div class="page-title">Налоговый вычет за лагерь</div></div>
+        <div class="page-keywords"><div class="kw-inline">
+          <span class="kw-chip"><span class="badge pos-none">—</span> налоговый вычет за лагерь</span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> вычет 13% за детский лагерь</span>
+        </div></div>
+        <div class="page-action"><div class="action-title"><span class="badge action-opt">🟡 ОПТИМИЗИРОВАТЬ</span></div><div class="action-desc">Уникальный контент с реальными суммами. Добавить в мониторинг.</div></div>
+      </div>
+      <div class="page-detail">
+        <div class="detail-tasks">
+          <div class="task-item"><span class="task-num">1.</span> Добавить ключи «налоговый вычет за лагерь», «13% за детский лагерь», «вернуть деньги за лагерь».</div>
+          <div class="task-item"><span class="task-num">2.</span> Title: «Налоговый вычет за детский лагерь 2026 — до 5 434 ₽ возврат | АйДаКемп».</div>
+          <div class="task-item"><span class="task-num">3.</span> Добавить FAQ Schema с вопросами «Как получить вычет?», «Сколько вернут?».</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tier-group-label">🎯 Аудитория и тип</div>
+
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url">
+          <a href="https://aidacamp.ru/lager-nedorogo" target="_blank">/lager-nedorogo</a>
+        </div>
+        <div class="page-keywords"><div class="kw-inline">
+          <span class="kw-chip"><span class="badge pos-top50">24</span> лагерь в подмосковье недорого <span class="freq">815</span></span>
+          <span class="kw-chip"><span class="badge pos-top50">21</span> летний лагерь в подмосковье недорого <span class="freq">172</span></span>
+          <span class="kw-chip"><span class="badge pos-top20">17</span> летний лагерь 2026 недорого <span class="freq">133</span></span>
+        </div></div>
+        <div class="page-action"><div class="action-title"><span class="badge action-grow">⬆️ ПОДНЯТЬ</span></div><div class="action-desc">«Недорого» кластер ~25-я позиция. Указать конкретную цену в Title и H1.</div></div>
+      </div>
+      <div class="page-detail">
+        <table class="kw-table">
+          <tr><th>Ключ</th><th>Частота</th><th>02.05</th><th>29.04</th><th>Δ</th></tr>
+          <tr><td>лагерь в подмосковье недорого</td><td>815</td><td><span class="badge pos-top50">24</span></td><td>24</td><td class="delta-same">→</td></tr>
+          <tr><td>летний лагерь в подмосковье недорого</td><td>172</td><td><span class="badge pos-top50">21</span></td><td>23</td><td class="delta-up">↑2</td></tr>
+          <tr><td>летний лагерь 2026 недорого</td><td>133</td><td><span class="badge pos-top20">17</span></td><td>19</td><td class="delta-up">↑2</td></tr>
+          <tr><td>летний лагерь для подростков в подмосковье недорого</td><td>6</td><td><span class="badge pos-top10">9</span></td><td>9</td><td class="delta-same">→</td></tr>
+        </table>
+        <div class="detail-tasks" style="margin-top:10px">
+          <div class="task-item"><span class="task-num">1.</span> Title: «Детский лагерь в Подмосковье недорого 2026 — от 48 000 ₽ | АйДаКемп».</div>
+          <div class="task-item"><span class="task-num">2.</span> Разместить калькулятор с налоговым вычетом — реальная стоимость ниже.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url">
+          <a href="https://aidacamp.ru/lager-dlya-shkolnikov" target="_blank">/lager-dlya-shkolnikov</a>
+          <span style="color:#94a3b8"> /lager-s-basseynom /zagorodnyj-lager /ozdorovitelnyj-lager /lager-bez-telefonov</span>
+          <span style="color:#94a3b8"> /lager-dlya-devochek /lager-dlya-malchikov /tematicheskiy-lager /obrazovatelnyy-lager</span>
+        </div>
+        <div class="page-keywords"><div class="kw-inline">
+          <span class="kw-chip"><span class="badge pos-top3">1</span> летний лагерь для школьников 2026 <span class="freq">141</span></span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> лагерь с бассейном подмосковье</span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> загородный лагерь для детей</span>
+        </div></div>
+        <div class="page-action"><div class="action-title"><span class="badge action-opt">🟡 ОПТИМИЗИРОВАТЬ</span></div><div class="action-desc">«Школьников» в топ-1! Остальные страницы без мониторинга — добавить ключи.</div></div>
+      </div>
+      <div class="page-detail">
+        <table class="kw-table">
+          <tr><th>Ключ</th><th>Частота</th><th>02.05</th><th>29.04</th><th>Δ</th></tr>
+          <tr><td>летний лагерь для школьников 2026</td><td>141</td><td><span class="badge pos-top3">1</span></td><td>1</td><td class="delta-same">→</td></tr>
+        </table>
+        <div class="detail-tasks" style="margin-top:10px">
+          <div class="task-item"><span class="task-num">1.</span> Добавить в мониторинг: «лагерь с бассейном подмосковье», «загородный лагерь для детей», «лагерь без телефонов», «лагерь для девочек/мальчиков», «тематический лагерь».</div>
+          <div class="task-item"><span class="task-num">2.</span> Добавить ссылки с /detskiy-lager-podmoskove → /lager-s-basseynom, /lager-bez-telefonov.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url"><a href="https://aidacamp.ru/otzyvy" target="_blank">/otzyvy</a> <span style="color:#94a3b8">/o-lagere /luchshie-detskie-lagerya /pitanie /proverennyj-lager</span></div>
+        <div class="page-keywords"><div class="kw-inline">
+          <span class="kw-chip"><span class="badge pos-none">—</span> отзывы о лагере</span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> лучшие детские лагеря подмосковья</span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> проверенный лагерь</span>
+        </div></div>
+        <div class="page-action"><div class="action-title"><span class="badge action-opt">🟡 ОПТИМИЗИРОВАТЬ</span></div><div class="action-desc">Страницы доверия — важны для E-E-A-T. Добавить ключи «отзывы», «лучшие лагеря» в мониторинг.</div></div>
+      </div>
+      <div class="page-detail">
+        <div class="detail-tasks">
+          <div class="task-item"><span class="task-num">1.</span> /luchshie-detskie-lagerya: Target «лучшие детские лагеря подмосковья» (высокочастотный, конкурентный).</div>
+          <div class="task-item"><span class="task-num">2.</span> /otzyvy: Разметить отзывы через Schema.org Review + AggregateRating.</div>
+          <div class="task-item"><span class="task-num">3.</span> /proverennyj-lager: Добавить информацию о лицензии, Роспотребнадзоре, страховке.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== TIER 4 — БЛОГ ==================== -->
+<div class="tier-block tier-4">
+  <div class="tier-header" onclick="toggleTier(this)">
+    <span>🟣 Tier 4 — Блог (/stati/)</span>
+    <span style="font-size:11px;font-weight:400;opacity:0.7">27+ статей · информационный трафик + E-E-A-T</span>
+    <span class="toggle">▼</span>
+  </div>
+  <div class="tier-body">
+
+    <div class="tier-group-label">⚡ Приоритет 1 — Создать срочно (поддерживают главные ключи)</div>
+
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url"><span style="color:#7c3aed;font-weight:600">➕ СОЗДАТЬ</span> <code>/stati/kak-vybrat-detskiy-lager/</code><div class="page-title">Как выбрать детский лагерь в Подмосковье — инструкция для мам</div></div>
+        <div class="page-keywords"><div class="kw-inline">
+          <span class="kw-chip"><span class="badge pos-none">➕</span> как выбрать детский лагерь</span>
+          <span class="kw-chip"><span class="badge pos-none">➕</span> выбрать летний лагерь для ребенка</span>
+          <span class="kw-chip"><span class="badge pos-none">➕</span> детский лагерь подмосковье (поддержка)</span>
+        </div></div>
+        <div class="page-action"><div class="action-title"><span class="badge action-create">➕ СОЗДАТЬ</span></div><div class="action-desc">Информационный спрос «как выбрать лагерь» — большой объём. Линкует обратно на главную.</div></div>
+      </div>
+      <div class="page-detail">
+        <div class="detail-tasks">
+          <div class="task-item"><span class="task-num">1.</span> Объём: 1500-2000 слов. Структура: 10 критериев выбора, чек-лист, FAQ.</div>
+          <div class="task-item"><span class="task-num">2.</span> Внутренние ссылки: → / (анкор «детский лагерь в Подмосковье»), → /detskiy-lager-podmoskove, → /otzyvy.</div>
+          <div class="task-item"><span class="task-num">3.</span> FAQ Schema: «На что обратить внимание при выборе лагеря?», «Какие документы проверить?».</div>
+          <div class="task-item"><span class="task-num">4.</span> Автор: от лица Дарьи (опыт 15+ лет, мама подростка).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url"><span style="color:#7c3aed;font-weight:600">➕ СОЗДАТЬ</span> <code>/stati/kak-podgotovit-rebenka-k-lagery/</code><div class="page-title">Как подготовить ребёнка к лагерю — список вещей, советы</div></div>
+        <div class="page-keywords"><div class="kw-inline">
+          <span class="kw-chip"><span class="badge pos-none">➕</span> как подготовить ребёнка к лагерю</span>
+          <span class="kw-chip"><span class="badge pos-none">➕</span> что нужно взять в лагерь ребёнку</span>
+          <span class="kw-chip"><span class="badge pos-none">➕</span> отправить ребёнка в лагерь первый раз</span>
+        </div></div>
+        <div class="page-action"><div class="action-title"><span class="badge action-create">➕ СОЗДАТЬ</span></div><div class="action-desc">«Отправить ребёнка в лагерь» (917 запросов) на #37. Статья даст органику и поддержит главную.</div></div>
+      </div>
+      <div class="page-detail">
+        <div class="detail-tasks">
+          <div class="task-item"><span class="task-num">1.</span> Объём: 1200-1500 слов. Чек-лист вещей, эмоциональный раздел «первый раз».</div>
+          <div class="task-item"><span class="task-num">2.</span> Ссылки: → /stati/chto-vzyat-v-lager (уже есть), → /, → /lager-dlya-podrostkov.</div>
+          <div class="task-item"><span class="task-num">3.</span> HowTo Schema: «Как подготовить ребёнка к отъезду в лагерь».</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tier-group-label">✅ Существующие статьи — проверить и оптимизировать</div>
+
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url">
+          <a href="https://aidacamp.ru/stati/kak-vybrat-lager" target="_blank">/stati/kak-vybrat-lager</a>
+          <div class="page-title">Как выбрать лагерь</div>
+        </div>
+        <div class="page-keywords"><div class="kw-inline">
+          <span class="kw-chip"><span class="badge pos-top50">29</span> выбрать летний лагерь для ребенка <span class="freq">19</span></span>
+        </div></div>
+        <div class="page-action"><div class="action-title"><span class="badge action-opt">🟡 ОПТИМИЗИРОВАТЬ</span></div><div class="action-desc">Дублирует создаваемую статью? Проверить каннибализацию. Обогатить ключами.</div></div>
+      </div>
+      <div class="page-detail">
+        <div class="detail-tasks">
+          <div class="task-item"><span class="task-num">1.</span> Проверить — возможно, это та же страница, что нужно создать. Обновить и расширить до 1500 слов.</div>
+          <div class="task-item"><span class="task-num">2.</span> Добавить внутренние ссылки на ключевые страницы.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url">
+          <div style="display:flex;flex-wrap:wrap;gap:4px">
+            <a href="https://aidacamp.ru/stati/python-dlya-detej" target="_blank">/stati/python-dlya-detej</a>
+            <a href="https://aidacamp.ru/stati/roblox-dlya-detej" target="_blank">/stati/roblox-dlya-detej</a>
+            <a href="https://aidacamp.ru/stati/scratch-dlya-detej" target="_blank">/stati/scratch-dlya-detej</a>
+            <a href="https://aidacamp.ru/stati/3d-modelirovanie-dlya-detej" target="_blank">/stati/3d-modelirovanie-dlya-detej</a>
+            <a href="https://aidacamp.ru/stati/nejroseti-dlya-detej" target="_blank">/stati/nejroseti-dlya-detej</a>
+          </div>
+          <div class="page-title">IT-технологии для детей — 5 статей</div>
+        </div>
+        <div class="page-keywords"><div class="kw-inline">
+          <span class="kw-chip"><span class="badge pos-none">—</span> python для детей</span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> roblox для детей</span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> scratch для детей</span>
+        </div></div>
+        <div class="page-action"><div class="action-title"><span class="badge action-opt">🟡 ОПТИМИЗИРОВАТЬ</span></div><div class="action-desc">Добавить ключи в мониторинг. Каждая статья должна ссылаться на соответствующий лендинг.</div></div>
+      </div>
+      <div class="page-detail">
+        <div class="detail-tasks">
+          <div class="task-item"><span class="task-num">1.</span> Добавить ключи в seo_keywords: «python для детей», «roblox для детей», «scratch для начинающих», «3d моделирование для детей», «нейросети для детей».</div>
+          <div class="task-item"><span class="task-num">2.</span> Каждая статья → соответствующий лендинг (пример: /stati/python-dlya-detej → /python-lager с анкором «лагерь по Python»).</div>
+          <div class="task-item"><span class="task-num">3.</span> Добавить блок «Попробовать на практике» в конце каждой статьи.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url">
+          <div style="display:flex;flex-wrap:wrap;gap:4px;font-size:11px">
+            <a href="https://aidacamp.ru/stati/rebenok-boitsya-lagerya" target="_blank">/stati/rebenok-boitsya-lagerya</a>
+            <a href="https://aidacamp.ru/stati/chto-vzyat-v-lager" target="_blank">/stati/chto-vzyat-v-lager</a>
+            <a href="https://aidacamp.ru/stati/kuda-det-rebenka-letom" target="_blank">/stati/kuda-det-rebenka-letom</a>
+            <a href="https://aidacamp.ru/stati/dokumenty-dlya-rebenka-v-lager" target="_blank">/stati/dokumenty-dlya-rebenka-v-lager</a>
+            <a href="https://aidacamp.ru/stati/spravki-dlya-lagera" target="_blank">/stati/spravki-dlya-lagera</a>
+            <a href="https://aidacamp.ru/stati/socializaciya-rebenka-v-lagere" target="_blank">/stati/socializaciya-rebenka-v-lagere</a>
+          </div>
+          <div class="page-title">Практические статьи для родителей</div>
+        </div>
+        <div class="page-keywords"><div class="kw-inline">
+          <span class="kw-chip"><span class="badge pos-none">—</span> ребёнок боится лагеря</span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> что взять в лагерь</span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> куда деть ребёнка летом</span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> документы в лагерь</span>
+        </div></div>
+        <div class="page-action"><div class="action-title"><span class="badge action-opt">🟡 ОПТИМИЗИРОВАТЬ</span></div><div class="action-desc">«Куда деть ребёнка летом», «что взять» — высокочастотные. Добавить в мониторинг, оптимизировать Title.</div></div>
+      </div>
+      <div class="page-detail">
+        <div class="detail-tasks">
+          <div class="task-item"><span class="task-num">1.</span> Добавить ключи в мониторинг: «что взять в лагерь», «ребёнок боится лагеря», «куда деть ребёнка летом 2026», «документы в лагерь список».</div>
+          <div class="task-item"><span class="task-num">2.</span> Каждая статья должна ссылаться на главную / /detskiy-lager-podmoskove.</div>
+          <div class="task-item"><span class="task-num">3.</span> Добавить Schema FAQ на /stati/chto-vzyat-v-lager и /stati/dokumenty-dlya-rebenka-v-lager.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-row">
+      <div class="page-main" onclick="toggleDetail(this)">
+        <div class="page-expand-btn">▶</div>
+        <div class="page-url">
+          <div style="display:flex;flex-wrap:wrap;gap:4px;font-size:11px">
+            <a href="https://aidacamp.ru/stati/podrostok-ne-hochet-uchitsya" target="_blank">/stati/podrostok-ne-hochet-uchitsya</a>
+            <a href="https://aidacamp.ru/stati/nizkaya-samootsenka-u-rebenka" target="_blank">/stati/nizkaya-samootsenka-u-rebenka</a>
+            <a href="https://aidacamp.ru/stati/problemy-v-obschenii-podrostkov" target="_blank">/stati/problemy-v-obschenii-podrostkov</a>
+            <a href="https://aidacamp.ru/stati/zavisimost-ot-kompyuternyh-igr" target="_blank">/stati/zavisimost-ot-kompyuternyh-igr</a>
+            <a href="https://aidacamp.ru/stati/zavisimost-ot-telefona-u-podrostkov" target="_blank">/stati/zavisimost-ot-telefona-u-podrostkov</a>
+            <a href="https://aidacamp.ru/stati/igromaniya-u-detej" target="_blank">/stati/igromaniya-u-detej</a>
+          </div>
+          <div class="page-title">Психологические статьи про подростков</div>
+        </div>
+        <div class="page-keywords"><div class="kw-inline">
+          <span class="kw-chip"><span class="badge pos-none">—</span> подросток не хочет учиться</span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> зависимость от телефона у подростков</span>
+          <span class="kw-chip"><span class="badge pos-none">—</span> низкая самооценка у ребёнка</span>
+        </div></div>
+        <div class="page-action"><div class="action-title"><span class="badge action-opt">🟡 ОПТИМИЗИРОВАТЬ</span></div><div class="action-desc">Высокочастотные проблемные запросы мам. E-E-A-T контент. Ссылать на /lager-dlya-podrostkov.</div></div>
+      </div>
+      <div class="page-detail">
+        <div class="detail-tasks">
+          <div class="task-item"><span class="task-num">1.</span> Добавить в мониторинг: «подросток не хочет учиться», «зависимость от телефона подросток», «зависимость от компьютерных игр».</div>
+          <div class="task-item"><span class="task-num">2.</span> В каждой статье — блок CTA «Как лагерь помогает решить эту проблему» → /lager-dlya-podrostkov.</div>
+          <div class="task-item"><span class="task-num">3.</span> Author Schema с именем и credentials Дарьи (15 лет опыт в IT-образовании).</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== СТРАНИЦЫ БЕЗ СТРАТЕГИИ ==================== -->
+<div class="tier-block tier-service">
+  <div class="tier-header" onclick="toggleTier(this)">
+    <span>⚫ Сервисные / Без SEO-приоритета</span>
+    <span style="font-size:11px;font-weight:400;opacity:0.7">ask, forbloggers, partners, dlya-kompaniy, legal, docs</span>
+    <span class="toggle">▼</span>
+  </div>
+  <div class="tier-body">
+    <div style="padding:16px;font-size:13px;color:#64748b;line-height:1.6">
+      <strong>/ask</strong> — AI-бот, не индексируется (или нет смысла). Нет SEO-задач.<br>
+      <strong>/forbloggers</strong> — партнёрская страница. Следить чтобы не выводить в индекс.<br>
+      <strong>/partners</strong> — техническая. noindex.<br>
+      <strong>/dlya-kompaniy</strong> — корпоративный отдых. Если нужно — завести отдельную стратегию.<br>
+      <strong>/docs/*.pdf</strong> — PDF не индексируются Яндексом нормально. Держать ссылки на документы с /nalogovyj-vychet и /o-lagere.<br>
+      <strong>/legal, /privacy-policy, /soglasie</strong> — noindex.
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ПЛАН ПРИОРИТЕТОВ ==================== -->
+<div style="background:#fff;border:1px solid #e0e5ef;border-radius:8px;margin-bottom:16px;overflow:hidden">
+  <div style="background:#1a1a2e;color:#fff;padding:12px 16px;font-weight:700;font-size:14px;letter-spacing:0.05em;text-transform:uppercase;cursor:pointer" onclick="toggleTier(this)">
+    📋 Сводный план действий — по приоритету <span style="float:right">▼</span>
+  </div>
+  <div style="padding:16px">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <tr style="background:#f8fafc">
+        <th style="text-align:left;padding:8px;border-bottom:2px solid #e0e5ef;width:100px">Приоритет</th>
+        <th style="text-align:left;padding:8px;border-bottom:2px solid #e0e5ef">Задача</th>
+        <th style="text-align:left;padding:8px;border-bottom:2px solid #e0e5ef;width:180px">Страница</th>
+        <th style="text-align:left;padding:8px;border-bottom:2px solid #e0e5ef;width:80px">Усилие</th>
+        <th style="text-align:left;padding:8px;border-bottom:2px solid #e0e5ef;width:80px">Эффект</th>
+      </tr>
+      <tr><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9"><span class="badge action-fix">🔴 1</span></td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">Отправить старый tpost-URL на переиндексацию в Вебмастере (каннибализация)</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">/ (главная)</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">15 мин</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">🔥 Высокий</td></tr>
+      <tr style="background:#fafbff"><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9"><span class="badge action-fix">🔴 2</span></td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">Добавить внутренние ссылки со всех спиц на главную с анкором «детский лагерь» / «летний лагерь»</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">Все лендинги</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">2-3 ч</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">🔥 Высокий</td></tr>
+      <tr><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9"><span class="badge action-fix">🔴 3</span></td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">Написать текстовый блок 500+ слов на главной с ключами «детский лагерь», «летний лагерь для детей»</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">/ (главная)</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">3 ч</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">🔥 Высокий</td></tr>
+      <tr style="background:#fafbff"><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9"><span class="badge action-grow">⬆️ 4</span></td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">Создать статью «Как выбрать детский лагерь» (1500 слов + FAQ Schema)</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">/stati/kak-vybrat-detskiy-lager</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">4 ч</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">Высокий</td></tr>
+      <tr><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9"><span class="badge action-grow">⬆️ 5</span></td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">«Лагерь в Москве» #60 → доработать контент с геоданными, маршрутом, Title</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">/lager-v-moskve</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">2 ч</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">Средний</td></tr>
+      <tr style="background:#fafbff"><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9"><span class="badge action-grow">⬆️ 6</span></td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">«Купить путёвку» #77 → форма бронирования + Product Schema</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">/kupit-putevku-v-lager</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">3 ч</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">Средний</td></tr>
+      <tr><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9"><span class="badge action-opt">🟡 7</span></td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">Добавить 30+ ключей гео/возраст/тема в seo_keywords для мониторинга</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">Все спицы</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">1 ч</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">Аналитика</td></tr>
+      <tr style="background:#fafbff"><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9"><span class="badge action-opt">🟡 8</span></td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">FAQ Schema на /nalogovyj-vychet, /lager-v-podmoskove, /detskiy-lager-podmoskove</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">3 страницы</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">2 ч</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">Средний</td></tr>
+      <tr><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9"><span class="badge action-opt">🟡 9</span></td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">IT-статьи → перелинковать каждую на соответствующий лендинг (/python-lager, /roblox-lager и т.д.)</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">/stati/python-*, roblox-*, scratch-*</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">1 ч</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">Средний</td></tr>
+      <tr style="background:#fafbff"><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9"><span class="badge action-opt">🟡 10</span></td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">Создать статью «Как подготовить ребёнка к лагерю» (HowTo Schema)</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">/stati/kak-podgotovit-rebenka</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">3 ч</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">Средний</td></tr>
+      <tr><td style="padding:7px 8px"><span class="badge action-hold">🟢 11</span></td><td style="padding:7px 8px">BreadcrumbList Schema на всех подстраницах</td><td style="padding:7px 8px">Все страницы</td><td style="padding:7px 8px">2 ч</td><td style="padding:7px 8px">Низкий</td></tr>
+    </table>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+function toggleTier(header) {
+  header.classList.toggle('collapsed');
+  const body = header.nextElementSibling;
+  body.style.display = body.style.display === 'none' ? '' : 'none';
+}
+
+function toggleDetail(mainRow) {
+  const btn = mainRow.querySelector('.page-expand-btn');
+  const detail = mainRow.parentElement.querySelector('.page-detail');
+  if (!detail) return;
+  const isOpen = detail.classList.contains('open');
+  detail.classList.toggle('open', !isOpen);
+  btn.textContent = isOpen ? '▶' : '▼';
+  mainRow.style.background = isOpen ? '' : '#f0f7ff';
+}
+
+// Keyboard shortcut: press 'e' to expand/collapse all
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'e' && !e.target.matches('input,textarea')) {
+    document.querySelectorAll('.tier-body').forEach(function(b) {
+      b.style.display = b.style.display === 'none' ? '' : 'none';
+    });
+  }
+});
+</script>
+</body>
+</html>
