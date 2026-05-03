@@ -283,16 +283,11 @@ export function initShiftModal() {
       e.preventDefault();
       e.stopPropagation();
       const id = infoBtn.dataset.shiftInfo || '';
-      open(id, 'info');
+      open(id, 'description');
       return;
     }
 
-    // Клик по самой карточке (не по кнопкам) — открыть на табе "Описание"
-    const article = target.closest<HTMLElement>('article');
-    if (article && shiftsSection.contains(article)) {
-      const bookEl = article.querySelector<HTMLElement>('[data-shift-book]');
-      const id = bookEl?.dataset.shiftBook || '';
-      if (id) open(id, 'description');
-    }
+    // Клик по карточке обрабатывается локально в ShiftCard.astro (открывает BookModal).
+    // Здесь — только явные триггеры: data-shift-calendar / data-shift-info / event shift-modal-open.
   });
 }
