@@ -12,6 +12,7 @@ import Base from '../../layouts/Base.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import ShiftBookModal from '../../components/shifts/ShiftBookModal.astro';
+import ShiftTimeline from '../../components/shifts/ShiftTimeline.astro';
 import { allShifts, shiftInfo, type Shift } from '../../data/shifts';
 
 export async function getStaticPaths() {
@@ -64,8 +65,11 @@ const seoDescription = `${shift.duration} в IT-лагере под Москво
 
     <!-- ═══════ HERO — крупные даты, цена, occupancy, CTA ═══════ -->
     <section class="relative overflow-hidden bg-dark-navy text-white">
-      <!-- Background photo -->
-      <img src="/images/hero-desktop.avif" alt="" aria-hidden="true" class="absolute inset-0 h-full w-full object-cover opacity-50" loading="eager" />
+      <!-- Background photo: portrait для mobile, desktop для md+ -->
+      <picture>
+        <source media="(max-width: 768px)" srcset="/images/hero-mobile-bean-v3-600.avif" />
+        <img src="/images/hero-desktop.avif" alt="" aria-hidden="true" class="absolute inset-0 h-full w-full object-cover opacity-55" style="object-position: center 30%;" loading="eager" />
+      </picture>
       <!-- Затемняющий градиент -->
       <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,9,18,0.85)_0%,rgba(5,9,18,0.55)_50%,rgba(5,9,18,0.75)_100%)]" aria-hidden="true"></div>
       <!-- Top header overlay -->
@@ -75,7 +79,7 @@ const seoDescription = `${shift.duration} в IT-лагере под Москво
 
       <div class="relative mx-auto max-w-[1200px] px-5 pt-24 pb-10 md:px-8 md:pt-32 md:pb-16">
         <!-- Breadcrumb -->
-        <nav class="mb-5 flex items-center gap-2 text-[13px] text-white/60" aria-label="Хлебные крошки">
+        <nav class="mb-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-white/60" aria-label="Хлебные крошки">
           <a href="/" class="hover:text-white">Главная</a>
           <i class="bi bi-chevron-right text-[10px]" aria-hidden="true"></i>
           <a href="/#shifts" class="hover:text-white">Смены</a>
@@ -91,10 +95,8 @@ const seoDescription = `${shift.duration} в IT-лагере под Москво
 
         <!-- BIG DATES (как в концепте «10—23 июня») -->
         <h1 class="sr-only">{shift.name}: детский IT-лагерь в Подмосковье, {shift.dates} 2026</h1>
-        <p class="font-extrabold leading-[0.95] tracking-[-0.03em] text-white" style="font-size: clamp(56px, 11vw, 120px); text-shadow: 0 4px 16px rgba(0,0,0,0.5);">
-          {heroDateBig}{heroMonthLabel && (
-            <span class="block text-primary text-[0.45em] font-bold mt-1 tracking-[-0.01em]">{heroMonthLabel}</span>
-          )}
+        <p class="font-extrabold leading-[1.0] tracking-[-0.02em] text-white" style="font-size: clamp(40px, 7vw, 80px); text-shadow: 0 4px 16px rgba(0,0,0,0.5);">
+          {shift.dates}
         </p>
 
         <p class="mt-4 text-[16px] md:text-[18px] text-white/85 max-w-[640px]" style="text-shadow: 0 1px 3px rgba(0,0,0,0.7);">
@@ -113,9 +115,9 @@ const seoDescription = `${shift.duration} в IT-лагере под Москво
           <!-- Occupancy -->
           <div class="flex flex-col">
             <div class="flex justify-between mb-2 text-[13px]">
-              <span class="text-white/75">Занято: <strong class="text-white">{shift.occupied} из {total}</strong></span>
-              <span class={isLowAvail ? 'text-orange-300 font-semibold' : 'text-emerald-300'}>
-                {isLowAvail ? `Осталось ${shift.free}` : `Свободно ${shift.free}`}
+              <span class="text-white/75">Свободно мест</span>
+              <span class={isLowAvail ? 'text-orange-300 font-semibold' : 'text-emerald-300 font-semibold'}>
+                {isLowAvail ? `Осталось ${shift.free}` : `${shift.free}`}
               </span>
             </div>
             <div class="h-2 w-full overflow-hidden rounded-full bg-white/15">
@@ -132,7 +134,7 @@ const seoDescription = `${shift.duration} в IT-лагере под Москво
             data-shift-book-price={shift.price}
             data-analytics-goal="shift_select"
             data-analytics-label={shift.name}
-            class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover px-6 py-3.5 text-[16px] font-semibold text-white transition-colors min-h-[52px]"
+            class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover px-6 py-3.5 text-[16px] font-semibold text-white transition-colors min-h-[52px] whitespace-nowrap"
           >
             Забронировать
             <i class="bi bi-arrow-right text-[14px]" aria-hidden="true"></i>
@@ -140,6 +142,9 @@ const seoDescription = `${shift.duration} в IT-лагере под Москво
         </div>
       </div>
     </section>
+
+    <!-- ═══════ TIMELINE — фоточки + 5 этапов смены ═══════ -->
+    <ShiftTimeline />
 
     <!-- ═══════ STRIP — мета (возраст/группы/опыт/ноутбук) ═══════ -->
     <section class="border-b border-border-light">
@@ -221,19 +226,19 @@ const seoDescription = `${shift.duration} в IT-лагере под Москво
       <div class="mt-10 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-[860px] mx-auto">
         <div class="reveal">
           <p class="text-[36px] md:text-[44px] font-extrabold text-body leading-none">{shift.duration.split(' ')[0]}</p>
-          <p class="mt-1 text-[13px] text-body-muted">дней плотной практики</p>
+          <p class="mt-1 text-[14px] md:text-[13px] text-body-muted">дней плотной практики</p>
         </div>
         <div class="reveal" data-reveal-delay="80">
           <p class="text-[36px] md:text-[44px] font-extrabold text-body leading-none">1</p>
-          <p class="mt-1 text-[13px] text-body-muted">готовый проект</p>
+          <p class="mt-1 text-[14px] md:text-[13px] text-body-muted">готовый проект</p>
         </div>
         <div class="reveal" data-reveal-delay="160">
           <p class="text-[36px] md:text-[44px] font-extrabold text-body leading-none">8</p>
-          <p class="mt-1 text-[13px] text-body-muted">человек в группе максимум</p>
+          <p class="mt-1 text-[14px] md:text-[13px] text-body-muted">человек в группе максимум</p>
         </div>
         <div class="reveal" data-reveal-delay="240">
           <p class="text-[36px] md:text-[44px] font-extrabold text-body leading-none">60%</p>
-          <p class="mt-1 text-[13px] text-body-muted">детей возвращаются снова</p>
+          <p class="mt-1 text-[14px] md:text-[13px] text-body-muted">детей возвращаются снова</p>
         </div>
       </div>
     </section>
@@ -247,7 +252,7 @@ const seoDescription = `${shift.duration} в IT-лагере под Москво
 
           <div class="flex items-baseline gap-3 mb-5 pb-5 border-b border-border-light">
             <span class="text-[36px] font-extrabold tracking-[-0.02em] text-body">{shift.price}</span>
-            <span class="text-[14px] text-body-muted">всё включено · проживание, питание, программа</span>
+            <span class="text-[15px] md:text-[14px] text-body-muted">всё включено · проживание, питание, программа</span>
           </div>
 
           <ul class="space-y-2.5 mb-6">
@@ -273,7 +278,7 @@ const seoDescription = `${shift.duration} в IT-лагере под Москво
             data-shift-book-price={shift.price}
             data-analytics-goal="shift_select"
             data-analytics-label={shift.name + '_booking_block'}
-            class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover px-6 py-4 text-[17px] font-semibold text-white transition-colors min-h-[56px]"
+            class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover px-6 py-4 text-[17px] font-semibold text-white transition-colors min-h-[56px] whitespace-nowrap"
           >
             Оставить заявку
             <i class="bi bi-arrow-right text-[15px]" aria-hidden="true"></i>
@@ -292,4 +297,40 @@ const seoDescription = `${shift.duration} в IT-лагере под Москво
   </main>
   <Footer />
   <ShiftBookModal />
+
+<script>
+  // Bind все кнопки [data-shift-book] на странице к ShiftBookModal
+  function initBookButtons() {
+    const modal = document.getElementById('shiftBookModal');
+    if (!modal) return;
+    const closeBtn = modal.querySelector('[data-shift-book-close]');
+    closeBtn?.addEventListener('click', () => (modal as HTMLDialogElement).close());
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) (modal as HTMLDialogElement).close();
+    });
+
+    const nameEl = modal.querySelector('[data-book-name]');
+    const datesEl = modal.querySelector('[data-book-dates]');
+    const durationEl = modal.querySelector('[data-book-duration]');
+    const priceEl = modal.querySelector('[data-book-price]');
+    const blockEl = modal.querySelector('[data-book-shift-block]');
+
+    document.querySelectorAll('[data-shift-book]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const el = btn as HTMLElement;
+        const name = el.dataset.shiftBookName || '';
+        if (nameEl) nameEl.textContent = name;
+        if (datesEl) datesEl.textContent = el.dataset.shiftBookDates || '';
+        if (durationEl) durationEl.textContent = el.dataset.shiftBookDuration || '';
+        if (priceEl) priceEl.textContent = el.dataset.shiftBookPrice || '';
+        if (blockEl) blockEl.classList.toggle('hidden', !name);
+        (modal as HTMLDialogElement).showModal();
+        (window as any).trackGoal?.('shift_book_click', { shift: name }, 500);
+      });
+    });
+  }
+  document.addEventListener('astro:page-load', initBookButtons);
+  initBookButtons();
+</script>
 </Base>
