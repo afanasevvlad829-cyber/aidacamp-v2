@@ -1,7 +1,14 @@
 ---
-import { mainShifts, shortShifts, allShifts } from '../data/shifts';
+import { mainShifts, shortShifts } from '../data/shifts';
 import ShiftCard from './shifts/ShiftCard.astro';
-import ShortShiftCard from './shifts/ShortShiftCard.astro';
+import ShiftCardCombined from './shifts/ShiftCardCombined.astro';
+import ShortShiftsBlock from './shifts/ShortShiftsBlock.astro';
+
+// Объединяем shift-3 + shift-4 в одну августовскую карточку (концепт)
+const summerShifts = mainShifts.slice(0, 2); // shift-1 + shift-2
+const augustShifts = mainShifts.filter((s) => s.startDate?.startsWith('2026-08')) as [typeof mainShifts[0], typeof mainShifts[0]];
+const carouselShifts = [...summerShifts]; // mobile: 2 индивидуальные + 1 объединённая = 3 в карусели
+const totalCarousel = carouselShifts.length + 1; // +1 для combined August
 import ShiftBookModal from './shifts/ShiftBookModal.astro';
 import ShiftCalendarModal from './shifts/ShiftCalendarModal.astro';
 import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
@@ -9,8 +16,9 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
 
 <section id="shifts" class="mx-auto max-w-[1312px] px-[2px] pt-10 md:px-4">
   <div class="p-[18px]">
-    <div class="flex items-center gap-2 mb-1"><div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div><h2 class="text-[24px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[30px]">Смены</h2></div>
-    <p class="mt-1 text-[14px] text-body-muted">Во всех ценах: питание, проживание, программа.</p>
+    <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 mb-2">Лето 2026</p>
+    <div class="flex items-center gap-2 mb-1"><div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div><h2 class="text-[24px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[30px]">Свободные места</h2></div>
+    <p class="mt-1 text-[14px] text-body-muted">Данные обновляются в реальном времени. Во всех ценах: питание, проживание, программа.</p>
 
     <!-- «Едете с другом»: бейджи скидок 5-я/10-я + мерч в одном раскрывающемся блоке -->
     <div class="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 overflow-hidden" data-toggle-root>
@@ -59,29 +67,23 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
 
     <!-- Mobile: tab nav + horizontal carousel -->
     <div class="mt-4 md:hidden">
-      <div class="flex gap-2 pb-2" data-shifts-tabs>
-        {allShifts.map((shift, i) => {
-          const num = shift.name.replace('Смена ', '');
-          return (
-            <button
-              type="button"
-              data-shifts-tab={i}
-              class={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[14px] font-semibold transition-colors ${i === 0 ? 'bg-primary-light text-white' : 'bg-surface text-body-muted'}`}
-            >
-              {num}
-            </button>
-          );
-        })}
-      </div>
-
       <div class="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" data-shifts-carousel>
-        {allShifts.map((shift) => (
+        {summerShifts.map((shift) => (
           <ShiftCard shift={shift} variant="mobile" />
         ))}
+        {augustShifts.length === 2 && (
+          <ShiftCardCombined
+            shifts={augustShifts}
+            variant="mobile"
+            monthLabel="Август"
+            combinedDates="3 авг — 26 авг"
+            combinedDuration="Смены 3 и 4"
+          />
+        )}
       </div>
-      <!-- Dots indicator (P1 2026-04-20: 6px → 8px + active pill) -->
-      <div class="mt-4 flex justify-center items-center gap-2 md:hidden" data-shifts-dots role="group" aria-label="Навигация по сменам">
-        {allShifts.map((_, i) => (
+      <!-- Dots indicator -->
+      <div class="mt-4 flex justify-center items-center gap-2" data-shifts-dots role="group" aria-label="Навигация по сменам">
+        {[0, 1, 2].map((i) => (
           <span
             class={`h-2 rounded-full transition-all duration-200 ${i === 0 ? 'w-6 bg-primary-dark' : 'w-2 bg-border'}`}
             data-shifts-dot={i}
@@ -89,48 +91,26 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
           ></span>
         ))}
       </div>
-      <!-- Подсказка свайпа — только для первого визита -->
-      <p class="mt-2 text-center text-[12px] text-body-faint md:hidden transition-opacity duration-300" data-shifts-swipe-hint>
-        ← свайп, чтобы увидеть все {allShifts.length} смен →
-      </p>
-      <!-- July sold-out banner (mobile) -->
-      <div class="mt-4 flex items-center gap-2.5 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5">
-        <i class="bi bi-lock-fill text-[15px] text-red-500 shrink-0"></i>
-        <p class="text-[13px] font-semibold leading-[1.4] text-red-700">Июль — мест нет. Свободные места — в августе (Смена 3 и 4).</p>
-      </div>
     </div>
 
-    <!-- Desktop: 2-col grid + short shifts sidebar -->
-    <div class="mt-6 hidden md:flex md:gap-6">
-      <!-- Left: Main shifts (2 col grid) -->
-      <div class="grid flex-1 grid-cols-2 gap-4">
-        {mainShifts.slice(0, 2).map((shift) => (
-          <ShiftCard shift={shift} variant="desktop" />
-        ))}
-        <!-- July sold-out banner -->
-        <div class="col-span-2 flex items-center gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5">
-          <i class="bi bi-lock-fill text-[16px] text-red-500 shrink-0"></i>
-          <p class="text-[14px] font-semibold text-red-700">Июль — мест нет. Все июльские смены укомплектованы.</p>
-          <span class="ml-auto text-[13px] text-red-400 whitespace-nowrap">Записаться в август →</span>
-        </div>
-        {mainShifts.slice(2).map((shift) => (
-          <ShiftCard shift={shift} variant="desktop" />
-        ))}
-      </div>
-
-      <!-- Right: Short shifts -->
-      <div class="w-[320px] shrink-0">
-        <div class="">
-          <p class="text-[16px] font-semibold text-body">Короткие смены</p>
-          <p class="text-[14px] text-body-muted mt-1 mb-1">Для тех, кто сомневается ехать ли надолго.</p>
-          <div class="mt-3 grid gap-3">
-            {shortShifts.map((shift) => (
-              <ShortShiftCard shift={shift} />
-            ))}
-          </div>
-        </div>
-      </div>
+    <!-- Desktop: 3 карточки в ряд (Май-Июнь, Июнь, Август объединённый). Короткие смены — отдельный collapsible block ниже. -->
+    <div class="mt-6 hidden md:grid md:grid-cols-3 md:gap-4">
+      {summerShifts.map((shift) => (
+        <ShiftCard shift={shift} variant="desktop" />
+      ))}
+      {augustShifts.length === 2 && (
+        <ShiftCardCombined
+          shifts={augustShifts}
+          variant="desktop"
+          monthLabel="Август"
+          combinedDates="3 авг — 26 авг"
+          combinedDuration="Смены 3 и 4"
+        />
+      )}
     </div>
+
+    <!-- Короткие смены — collapsible block под карточками (концепт) -->
+    {shortShifts.length > 0 && <ShortShiftsBlock shifts={shortShifts} />}
   </div>
 </section>
 

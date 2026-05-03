@@ -4,17 +4,18 @@ interface Props {
 }
 const { compact = false } = Astro.props;
 
-// Единый layout — параметры зависят от compact (DRY-refactor per audit)
+// По прототипу aidacamp-full_9: card на ПРОЗРАЧНОМ фоне (transparent),
+// фото 80x80 / 120x120 + rounded-2xl + контент справа. Не нарушает dot-pattern фон.
 const wrapperCls = compact
-  ? 'bg-surface-warm p-4 md:p-5 rounded-[18px]'
+  ? 'p-4 md:p-6 bg-transparent'
   : 'p-[18px] md:p-8';
 const sectionCls = compact ? '' : 'mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4';
-const containerGap = compact ? 'gap-3 md:gap-5' : 'gap-4 md:gap-10';
+const containerGap = compact ? 'gap-4 md:gap-6' : 'gap-4 md:gap-10';
 const photoWrapperCls = compact ? 'shrink-0' : 'shrink-0 md:w-[40%] md:flex md:justify-center';
 const photoCls = compact
-  ? 'h-16 w-16 rounded-full object-cover object-top mx-auto md:h-24 md:w-24'
+  ? 'h-20 w-20 rounded-2xl object-cover object-top md:h-[120px] md:w-[120px]'
   : 'h-24 w-24 rounded-full object-cover object-top mx-auto mb-4 md:mb-0 md:h-48 md:w-48';
-const quoteWrapperCls = compact ? '' : 'md:w-[60%]';
+const quoteWrapperCls = compact ? 'flex-1 min-w-0' : 'md:w-[60%]';
 const quoteMarkCls = compact
   ? 'text-[40px] font-serif leading-none text-orange-400 block mb-[-10px]'
   : 'text-[56px] font-serif leading-none text-orange-400 block mb-[-14px] md:text-[72px] md:mb-[-18px]';
@@ -28,7 +29,7 @@ const photoH = compact ? 96 : 192;
 
 <section class={sectionCls}>
   <div class={wrapperCls}>
-    <div class:list={['flex flex-col items-center text-center', containerGap, 'md:flex-row md:items-start md:text-left']}>
+    <div class:list={[compact ? 'flex items-start text-left' : 'flex flex-col items-center text-center md:flex-row md:items-start md:text-left', containerGap]}>
       <!-- Photo -->
       <div class={photoWrapperCls}>
         <img
@@ -45,12 +46,29 @@ const photoH = compact ? 96 : 192;
       <!-- Quote -->
       <div class={quoteWrapperCls}>
         <span class={quoteMarkCls}>&laquo;</span>
-        <p class="text-[18px] leading-[1.65] text-body">
-          Я сама мама подростка. Объездила разные лагеря, смотрела программы, читала отзывы. Везде было одно и то же&nbsp;&mdash; всё решено заранее, программа просто &laquo;идёт по сценарию&raquo;. Тогда я решила сделать лагерь таким, каким сама хотела бы видеть обучение своей дочери.
-        </p>
+        {compact ? (
+          <p class="text-[16px] md:text-[17px] leading-[1.55] text-body">
+            Я сама мама подростка. Сделала лагерь таким, каким хотела бы видеть обучение своей дочери&nbsp;&mdash; не &laquo;по сценарию&raquo;.
+          </p>
+        ) : (
+          <p class="text-[18px] leading-[1.65] text-body">
+            Я сама мама подростка. Объездила разные лагеря, смотрела программы, читала отзывы. Везде было одно и то же&nbsp;&mdash; всё решено заранее, программа просто &laquo;идёт по сценарию&raquo;. Тогда я решила сделать лагерь таким, каким сама хотела бы видеть обучение своей дочери.
+          </p>
+        )}
         <div class={compact ? 'mt-2' : 'mt-3'}>
-          <p class="text-[16px] font-bold text-body">&mdash; Дарья Афанасьева</p>
-          <p class="text-[14px] text-body-muted">основатель АйДаКемп и мама подростка</p>
+          <p class="text-[15px] font-bold text-body">&mdash; Дарья Афанасьева</p>
+          <p class="text-[13px] text-body-muted">основатель АйДаКемп</p>
+        </div>
+
+        {/* Proof-line: социальное доказательство сразу после слов основателя */}
+        <div class={`${compact ? 'mt-3' : 'mt-4'} flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-body-muted`}>
+          <span class="inline-flex items-center gap-1"><i class="bi bi-star-fill text-primary text-[12px]" aria-hidden="true"></i> <strong class="font-bold text-body">5.0</strong> на Яндекс.Картах</span>
+          <span class="h-1 w-1 rounded-full bg-border" aria-hidden="true"></span>
+          <span><strong class="font-bold text-body">5 лет</strong> работы</span>
+          <span class="h-1 w-1 rounded-full bg-border" aria-hidden="true"></span>
+          <span><strong class="font-bold text-body">1 200+</strong> детей</span>
+          <span class="h-1 w-1 rounded-full bg-border" aria-hidden="true"></span>
+          <span><strong class="font-bold text-body">ТОП-4</strong> по МО</span>
         </div>
       </div>
     </div>
