@@ -1,0 +1,68 @@
+---
+/**
+ * ShortShiftsBlock — раскрывающийся блок коротких смен (2.1, 2.2).
+ * По концепту shift-story_2.html: внизу под основными карточками,
+ * collapsed по умолчанию.
+ */
+import type { Shift } from '../../data/shifts';
+
+interface Props {
+  shifts: Shift[];
+}
+
+const { shifts } = Astro.props;
+const minPrice = Math.min(...shifts.map((s) => parseInt(s.price.replace(/\D/g, ''))).filter(n => n > 0));
+const minPriceFmt = minPrice.toLocaleString('ru-RU') + ' ₽';
+const durations = [...new Set(shifts.map((s) => s.duration.replace(/[^\d]/g, '')))].join('–');
+---
+
+<div class="reveal mt-5 rounded-[22px] border border-border-light bg-card shadow-[0_2px_6px_rgba(15,23,42,0.06),0_20px_48px_rgba(15,23,42,0.14)] overflow-hidden" data-short-shifts>
+  <button
+    type="button"
+    data-short-toggle
+    aria-expanded="false"
+    aria-controls="short-shifts-panel"
+    class="flex w-full items-center gap-3 px-5 py-4 md:px-6 md:py-5 cursor-pointer hover:bg-surface transition-colors"
+  >
+    <div class="text-left flex-1 min-w-0">
+      <p class="text-[15px] md:text-[16px] font-bold text-body">Короткие смены · {durations} дней</p>
+      <p class="mt-0.5 text-[13px] text-body-muted">{shifts.map((s) => s.name).join(' и ')} · от {minPriceFmt}</p>
+    </div>
+    <i class="bi bi-chevron-down text-[14px] text-body-faint transition-transform duration-200" data-short-chevron aria-hidden="true"></i>
+  </button>
+
+  <div id="short-shifts-panel" data-short-panel class="hidden border-t border-border-light">
+    {shifts.map((s) => (
+      <a
+        href={`/shifts/${s.id}/`}
+        class="flex items-center justify-between gap-3 px-5 py-4 md:px-6 hover:bg-surface transition-colors no-underline border-t border-border-light first:border-t-0"
+      >
+        <div class="min-w-0 flex-1">
+          <p class="text-[14px] md:text-[15px] font-semibold text-body">{s.dates}</p>
+          <p class="mt-0.5 text-[12px] text-body-muted">{s.name} · {s.duration} · {s.free} мест</p>
+        </div>
+        <div class="flex items-center gap-3 shrink-0">
+          <span class="text-[15px] md:text-[16px] font-bold text-primary tabular-nums">{s.price}</span>
+          <i class="bi bi-arrow-right text-[14px] text-body-faint" aria-hidden="true"></i>
+        </div>
+      </a>
+    ))}
+  </div>
+</div>
+
+<script>
+  function initShortShifts() {
+    const root = document.querySelector<HTMLElement>('[data-short-shifts]');
+    const toggle = root?.querySelector<HTMLButtonElement>('[data-short-toggle]');
+    const panel = root?.querySelector<HTMLElement>('[data-short-panel]');
+    const chevron = root?.querySelector<HTMLElement>('[data-short-chevron]');
+    if (!toggle || !panel) return;
+    toggle.addEventListener('click', () => {
+      const open = panel.classList.toggle('hidden');
+      toggle.setAttribute('aria-expanded', String(!open));
+      if (chevron) chevron.style.transform = open ? '' : 'rotate(180deg)';
+    });
+  }
+  document.addEventListener('astro:page-load', initShortShifts);
+  initShortShifts();
+</script>

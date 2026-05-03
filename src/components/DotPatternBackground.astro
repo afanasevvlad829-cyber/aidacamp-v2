@@ -1,0 +1,54 @@
+---
+/**
+ * DotPatternBackground — фиксированный SVG-слой с точками на всём фоне.
+ * Контент скроллится поверх — создаётся эффект глубины (как у magicui DotPattern).
+ *
+ * Аналог: https://magicui.design/docs/components/dot-pattern
+ *
+ * - position: fixed на весь viewport (z-index: -2 → ниже всего)
+ * - SVG <pattern> с точками 1px, gap 20px, цвет slate
+ * - radial-gradient mask — точки ярче в центре, фейдятся к краям
+ * - pointer-events: none
+ */
+---
+
+<div class="dot-pattern-bg" aria-hidden="true">
+  <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <!-- Desktop: gap 20px (плотный) -->
+      <pattern id="dot-pattern-desktop" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+        <circle cx="1" cy="1" r="1" fill="currentColor" />
+      </pattern>
+      <!-- Mobile: gap 32px (разрядить — меньше пикселей рисовать на retina-мобиле) -->
+      <pattern id="dot-pattern-mobile" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
+        <circle cx="1" cy="1" r="1" fill="currentColor" />
+      </pattern>
+    </defs>
+    <rect class="dot-rect-desktop" width="100%" height="100%" fill="url(#dot-pattern-desktop)" />
+    <rect class="dot-rect-mobile" width="100%" height="100%" fill="url(#dot-pattern-mobile)" />
+  </svg>
+</div>
+
+<style>
+  .dot-pattern-bg {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -2;
+    color: rgba(100, 116, 139, 0.35);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 85%);
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 85%);
+  }
+  /* По умолчанию desktop, mobile rect скрыт */
+  .dot-rect-mobile { display: none; }
+  @media (max-width: 640px) {
+    .dot-rect-desktop { display: none; }
+    .dot-rect-mobile { display: block; }
+  }
+  /* Уважаем reduced-motion (не анимация, но снижаем визуальный шум) */
+  @media (prefers-reduced-motion: reduce) {
+    .dot-pattern-bg { opacity: 0.5; }
+  }
+</style>

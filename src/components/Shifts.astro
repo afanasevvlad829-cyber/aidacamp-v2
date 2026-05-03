@@ -1,45 +1,65 @@
 ---
-import { mainShifts, shortShifts, allShifts } from '../data/shifts';
+import { mainShifts, shortShifts } from '../data/shifts';
 import ShiftCard from './shifts/ShiftCard.astro';
-import ShortShiftCard from './shifts/ShortShiftCard.astro';
+import ShiftCardCombined from './shifts/ShiftCardCombined.astro';
+import ShortShiftsBlock from './shifts/ShortShiftsBlock.astro';
+
+// Объединяем shift-3 + shift-4 в одну августовскую карточку (концепт)
+const summerShifts = mainShifts.slice(0, 2); // shift-1 + shift-2
+const augustShifts = mainShifts.filter((s) => s.startDate?.startsWith('2026-08')) as [typeof mainShifts[0], typeof mainShifts[0]];
+const carouselShifts = [...summerShifts]; // mobile: 2 индивидуальные + 1 объединённая = 3 в карусели
+const totalCarousel = carouselShifts.length + 1; // +1 для combined August
 import ShiftBookModal from './shifts/ShiftBookModal.astro';
 import ShiftCalendarModal from './shifts/ShiftCalendarModal.astro';
 import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
 ---
 
 <section id="shifts" class="mx-auto max-w-[1312px] px-[2px] pt-10 md:px-4">
-  <div class="bg-card p-[18px]">
-    <div class="flex items-center gap-2 mb-1"><div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div><h2 class="text-[24px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[30px]">Смены</h2></div>
+  <div class="p-[18px]">
+    <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 mb-2">Лето 2026</p>
+    <div class="flex items-center gap-2 mb-1"><div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div><h2 class="text-[24px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[30px]">Свободные места</h2></div>
+    <p class="mt-1 text-[14px] text-body-muted">Данные обновляются в реальном времени. Во всех ценах: питание, проживание, программа.</p>
 
-    <!-- Мерч за друга — компактная строка, разворачивается по клику -->
+    <!-- «Едете с другом»: бейджи скидок 5-я/10-я + мерч в одном раскрывающемся блоке -->
     <div class="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 overflow-hidden" data-toggle-root>
       <button type="button" data-toggle aria-expanded="false" class="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 select-none">
         <i class="bi bi-people-fill text-[14px] text-emerald-600 shrink-0" aria-hidden="true"></i>
-        <span class="flex-1 text-[13px] font-semibold text-body-muted">Едете с другом? Здесь скидки и мерч</span>
+        <span class="flex-1 text-[14px] font-semibold text-body">Едете с другом? Здесь скидки и мерч</span>
         <i class="bi bi-chevron-down text-[12px] text-body-faint transition-transform duration-200" aria-hidden="true" id="shifts-friend-chevron"></i>
       </button>
-      <div data-toggle-panel class="hidden flex items-stretch gap-0 border-t border-emerald-100">
-        <button
-          type="button"
-          data-gallery-open
-          data-gallery-src="/images/merch-hoodie.avif"
-          data-gallery-alt="Фирменная толстовка АйДаКемп"
-          class="shrink-0 cursor-zoom-in self-stretch"
-          aria-label="Посмотреть мерч"
-        >
-          <img
-            src="/images/merch-hoodie.avif"
-            alt="Мерч АйДаКемп"
-            class="h-full w-[96px] object-cover object-top transition hover:scale-105"
-            loading="lazy"
-          />
-        </button>
-        <div class="flex-1 px-4 py-3">
-          <p class="text-[14px] font-semibold text-body">Те, кто едет в компании, адаптируются вдвое быстрее</p>
-          <p class="text-[13px] text-body-faint mt-0.5">Позовите друга — подарим фирменный мерч каждому</p>
-          <div class="mt-1.5 flex flex-wrap gap-1.5">
-            <span class="inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-[12px] font-semibold text-emerald-700">Каждая 5-я — скидка 50%</span>
-            <span class="inline-block rounded-full bg-orange-100 px-2.5 py-0.5 text-[12px] font-semibold text-orange-700">Каждая 10-я — за 100 ₽</span>
+      <div data-toggle-panel class="hidden border-t border-emerald-100">
+        <!-- Бейджи скидок (внутри раскрытого блока — про друзей и есть про скидки) -->
+        <div class="flex flex-wrap gap-1.5 px-4 pt-3">
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-[13px] font-semibold text-emerald-700">
+            <i class="bi bi-people-fill text-[12px]" aria-hidden="true"></i>
+            Каждая 5-я путёвка — скидка 50%
+          </span>
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-3 py-1 text-[13px] font-semibold text-orange-700">
+            <i class="bi bi-people-fill text-[12px]" aria-hidden="true"></i>
+            Каждая 10-я — за 100 ₽
+          </span>
+        </div>
+
+        <!-- Мерч -->
+        <div class="mt-3 flex items-stretch gap-0">
+          <button
+            type="button"
+            data-gallery-open
+            data-gallery-src="/images/merch-hoodie.avif"
+            data-gallery-alt="Фирменная толстовка АйДаКемп"
+            class="shrink-0 cursor-zoom-in self-stretch"
+            aria-label="Посмотреть мерч"
+          >
+            <img
+              src="/images/merch-hoodie.avif"
+              alt="Мерч АйДаКемп"
+              class="h-full w-[96px] object-cover object-top transition hover:scale-105"
+              loading="lazy"
+            />
+          </button>
+          <div class="flex-1 px-4 py-3">
+            <p class="text-[14px] font-semibold text-body">Те, кто едет в компании, адаптируются вдвое быстрее</p>
+            <p class="text-[13px] text-body-faint mt-0.5">Позовите друга — подарим фирменный мерч каждому.</p>
           </div>
         </div>
       </div>
@@ -47,29 +67,23 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
 
     <!-- Mobile: tab nav + horizontal carousel -->
     <div class="mt-4 md:hidden">
-      <div class="flex gap-2 pb-2" data-shifts-tabs>
-        {allShifts.map((shift, i) => {
-          const num = shift.name.replace('Смена ', '');
-          return (
-            <button
-              type="button"
-              data-shifts-tab={i}
-              class={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[14px] font-semibold transition-colors ${i === 0 ? 'bg-primary-light text-white' : 'bg-surface text-body-muted'}`}
-            >
-              {num}
-            </button>
-          );
-        })}
-      </div>
-
       <div class="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" data-shifts-carousel>
-        {allShifts.map((shift) => (
+        {summerShifts.map((shift) => (
           <ShiftCard shift={shift} variant="mobile" />
         ))}
+        {augustShifts.length === 2 && (
+          <ShiftCardCombined
+            shifts={augustShifts}
+            variant="mobile"
+            monthLabel="Август"
+            combinedDates="3 авг — 26 авг"
+            combinedDuration="Смены 3 и 4"
+          />
+        )}
       </div>
-      <!-- Dots indicator (P1 2026-04-20: 6px → 8px + active pill) -->
-      <div class="mt-4 flex justify-center items-center gap-2 md:hidden" data-shifts-dots role="group" aria-label="Навигация по сменам">
-        {allShifts.map((_, i) => (
+      <!-- Dots indicator -->
+      <div class="mt-4 flex justify-center items-center gap-2" data-shifts-dots role="group" aria-label="Навигация по сменам">
+        {[0, 1, 2].map((i) => (
           <span
             class={`h-2 rounded-full transition-all duration-200 ${i === 0 ? 'w-6 bg-primary-dark' : 'w-2 bg-border'}`}
             data-shifts-dot={i}
@@ -77,88 +91,32 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
           ></span>
         ))}
       </div>
-      <!-- Подсказка свайпа — только для первого визита -->
-      <p class="mt-2 text-center text-[12px] text-body-faint md:hidden transition-opacity duration-300" data-shifts-swipe-hint>
-        ← свайп, чтобы увидеть все {allShifts.length} смен →
-      </p>
-      <!-- July sold-out banner (mobile) -->
-      <div class="mt-4 flex items-center gap-2.5 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5">
-        <i class="bi bi-lock-fill text-[15px] text-red-500 shrink-0"></i>
-        <p class="text-[13px] font-semibold leading-[1.4] text-red-700">Июль — мест нет. Свободные места — в августе (Смена 3 и 4).</p>
-      </div>
     </div>
 
-    <!-- Desktop: 2-col grid + short shifts sidebar -->
-    <div class="mt-6 hidden md:flex md:gap-6">
-      <!-- Left: Main shifts (2 col grid) -->
-      <div class="grid flex-1 grid-cols-2 gap-4">
-        {mainShifts.slice(0, 2).map((shift) => (
-          <ShiftCard shift={shift} variant="desktop" />
-        ))}
-        <!-- July sold-out banner -->
-        <div class="col-span-2 flex items-center gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5">
-          <i class="bi bi-lock-fill text-[16px] text-red-500 shrink-0"></i>
-          <p class="text-[14px] font-semibold text-red-700">Июль — мест нет. Все июльские смены укомплектованы.</p>
-          <span class="ml-auto text-[13px] text-red-400 whitespace-nowrap">Записаться в август →</span>
-        </div>
-        {mainShifts.slice(2).map((shift) => (
-          <ShiftCard shift={shift} variant="desktop" />
-        ))}
-      </div>
-
-      <!-- Right: Short shifts -->
-      <div class="w-[320px] shrink-0">
-        <div class="rounded-[20px] border border-border bg-surface p-5">
-          <p class="text-[14px] font-semibold uppercase tracking-[0.08em] text-[#2fa768]">Короткие смены</p>
-          <p class="text-[14px] text-body-muted mt-2 mb-1">Для тех, кто сомневается ехать ли надолго</p>
-          <div class="mt-3 grid gap-3">
-            {shortShifts.map((shift) => (
-              <ShortShiftCard shift={shift} />
-            ))}
-          </div>
-        </div>
-      </div>
+    <!-- Desktop: 3 карточки в ряд (Май-Июнь, Июнь, Август объединённый). Короткие смены — отдельный collapsible block ниже. -->
+    <div class="mt-6 hidden md:grid md:grid-cols-3 md:gap-4">
+      {summerShifts.map((shift) => (
+        <ShiftCard shift={shift} variant="desktop" />
+      ))}
+      {augustShifts.length === 2 && (
+        <ShiftCardCombined
+          shifts={augustShifts}
+          variant="desktop"
+          monthLabel="Август"
+          combinedDates="3 авг — 26 авг"
+          combinedDuration="Смены 3 и 4"
+        />
+      )}
     </div>
+
+    <!-- Короткие смены — collapsible block под карточками (концепт) -->
+    {shortShifts.length > 0 && <ShortShiftsBlock shifts={shortShifts} />}
   </div>
 </section>
 
 <ShiftBookModal />
 <ShiftCalendarModal />
 <ShiftInfoModal />
-
-<!-- Toast: популярность смены (slide-in справа, auto-dismiss 3s) -->
-<div
-  id="shift-stat-toast"
-  aria-hidden="true"
-  class="fixed right-4 bottom-24 z-[61] w-[208px]
-         translate-x-[calc(100%+20px)] opacity-0 pointer-events-none
-         transition-all duration-300 ease-out"
->
-  <div class="bg-white/96 backdrop-blur-md rounded-2xl shadow-[0_8px_32px_rgba(15,23,42,0.14)] px-4 pt-3.5 pb-3 border border-slate-100/80">
-    <!-- Мини-гистограмма (4 смены) -->
-    <div class="flex items-end gap-1.5 mb-2.5" style="height:44px">
-      <div class="flex-1 flex flex-col items-center gap-1">
-        <div id="sst-bar-1" class="w-full rounded-t-sm" style="background:#e2e8f0;height:0%;transition:height 0.45s cubic-bezier(.22,.61,.36,1)"></div>
-        <span class="text-[8px] text-body-faint font-medium leading-none">С1</span>
-      </div>
-      <div class="flex-1 flex flex-col items-center gap-1">
-        <div id="sst-bar-2" class="w-full rounded-t-sm" style="background:#e2e8f0;height:0%;transition:height 0.45s cubic-bezier(.22,.61,.36,1) 0.08s"></div>
-        <span class="text-[8px] text-body-faint font-medium leading-none">С2</span>
-      </div>
-      <div class="flex-1 flex flex-col items-center gap-1">
-        <div id="sst-bar-3" class="w-full rounded-t-sm" style="background:#e2e8f0;height:0%;transition:height 0.45s cubic-bezier(.22,.61,.36,1) 0.16s"></div>
-        <span class="text-[8px] text-body-faint font-medium leading-none">С3</span>
-      </div>
-      <div class="flex-1 flex flex-col items-center gap-1">
-        <div id="sst-bar-4" class="w-full rounded-t-sm" style="background:#e2e8f0;height:0%;transition:height 0.45s cubic-bezier(.22,.61,.36,1) 0.24s"></div>
-        <span class="text-[8px] text-body-faint font-medium leading-none">С4</span>
-      </div>
-    </div>
-    <p id="sst-pct"  class="text-[18px] font-bold text-body leading-none mb-0.5"></p>
-    <p id="sst-name" class="text-[11px] font-semibold text-primary leading-none mb-0.5"></p>
-    <p id="sst-text" class="text-[11px] text-body-faint leading-[1.3]"></p>
-  </div>
-</div>
 
 <!-- Toast: популярность смены (slide-in справа, auto-dismiss 3s) -->
 <div
@@ -189,7 +147,7 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
       </div>
     </div>
     <p id="sst-pct"  class="text-[18px] font-bold text-slate-900 leading-none mb-0.5"></p>
-    <p id="sst-name" class="text-[11px] font-semibold text-[#ec7c00] leading-none mb-0.5"></p>
+    <p id="sst-name" class="text-[11px] font-semibold text-primary leading-none mb-0.5"></p>
     <p id="sst-text" class="text-[11px] text-slate-500 leading-[1.3]"></p>
   </div>
 </div>
@@ -198,6 +156,7 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
   import { STORAGE_KEYS } from '../lib/storage';
   import { shiftInfo } from '../data/shifts';
   import { renderCalendar } from '../scripts/shift-calendar';
+  import { submitLead } from '../scripts/form-submit';
 
   // --- Shift stat toast ---
   interface ShiftStat { pct: number; h: [number,number,number,number]; name: string; text: string }
@@ -345,11 +304,11 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
     ageBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
         ageBtns.forEach((b) => {
-          b.classList.remove('bg-primary', 'text-[#1e2430]', 'font-semibold');
+          b.classList.remove('bg-primary', 'text-[#0d1a2b]', 'font-semibold');
           b.classList.add('border', 'border-border', 'text-body-muted', 'font-medium');
         });
         btn.classList.remove('border', 'border-border', 'text-body-muted', 'font-medium');
-        btn.classList.add('bg-primary', 'text-[#1e2430]', 'font-semibold');
+        btn.classList.add('bg-primary', 'text-[#0d1a2b]', 'font-semibold');
         selectedAge = btn.dataset.bookAge || '10-12';
       });
     });
@@ -428,20 +387,12 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
         return;
       }
 
-      try {
-        const res = await fetch('/api/lead', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            phone: bookPhone?.value || '',
-            age: selectedAge,
-            shift: bookName?.textContent || '',
-            source: new URLSearchParams(window.location.search).get('utm_source') || '',
-          }),
-        });
-        await res.json();
-        (window as any).trackGoal?.('lead', {}, 6375);
-      } catch {}
+      await submitLead({
+        phone: bookPhone?.value || '',
+        age: selectedAge,
+        shift: bookName?.textContent || '',
+        form: 'shifts_book',
+      });
 
       bookModal.close();
       const referralModal = document.getElementById('referralModal') as HTMLDialogElement | null;

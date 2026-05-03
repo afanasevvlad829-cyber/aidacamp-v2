@@ -8,115 +8,149 @@ interface Props {
 }
 
 const { shift, variant } = Astro.props;
-const { pct, badgeBg, badgeText, btnClass } = renderCard(shift);
+const { pct, btnClass } = renderCard(shift);
 
 const isMobile = variant === 'mobile';
-
-// Scarcity signal: ≥85% occupied → urgency border + badge
 const isLowAvailability = pct >= 85;
 
-const articleClass = isMobile
-  ? `min-w-[calc(100vw-48px)] max-w-[calc(100vw-48px)] shrink-0 snap-start rounded-[20px] border bg-surface p-4 shadow-[0_6px_18px_rgba(15,23,42,0.04)] cursor-pointer select-none ${shift.popular ? 'border-orange-400 ring-2 ring-orange-400' : isLowAvailability ? 'border-orange-300 ring-1 ring-orange-300/60' : 'border-border'}`
-  : `rounded-[20px] border bg-surface p-5 shadow-[0_6px_18px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_32px_rgba(15,23,42,0.08)] cursor-pointer select-none ${shift.popular ? 'border-border ring-2 ring-orange-400' : isLowAvailability ? 'border-orange-300 ring-1 ring-orange-300/60' : 'border-border'}`;
+// Eyebrow с месяцами по диапазону дат
+const monthsRu: Record<string, string> = {
+  '01': 'Январь', '02': 'Февраль', '03': 'Март', '04': 'Апрель',
+  '05': 'Май', '06': 'Июнь', '07': 'Июль', '08': 'Август',
+  '09': 'Сентябрь', '10': 'Октябрь', '11': 'Ноябрь', '12': 'Декабрь',
+};
+const startMonthKey = shift.startDate?.split('-')[1] ?? '';
+const endMonthKey = shift.endDate?.split('-')[1] ?? '';
+const eyebrowMonths = startMonthKey === endMonthKey
+  ? monthsRu[startMonthKey] ?? ''
+  : `${monthsRu[startMonthKey] ?? ''} — ${monthsRu[endMonthKey] ?? ''}`;
 
-const descClass = isMobile ? 'text-[16px]' : 'text-[15px]';
-const priceClass = isMobile ? 'text-[20px]' : 'text-[22px]';
-const btnHover = isMobile ? '' : 'hover:-translate-y-0.5';
+// Ring/border вариант
+const ringCls = shift.popular
+  ? 'ring-2 ring-orange-400 border-transparent'
+  : isLowAvailability
+    ? 'ring-1 ring-orange-300/60 border-orange-300'
+    : 'border-border-light';
+
+// Mobile vs desktop wrapper sizing
+const sizeCls = isMobile
+  ? 'min-w-[calc(100vw-48px)] max-w-[calc(100vw-48px)] shrink-0 snap-start'
+  : '';
+
+// Total
+const total = shift.occupied + shift.free || 1;
+const occupiedLabel = `${shift.occupied} из ${total}`;
+const freeLabel = isLowAvailability
+  ? `Осталось ${shift.free}`
+  : `Свободно ${shift.free}`;
+
+// Status pill (правый верхний угол): only when много мест ИЛИ короткая
+const statusPill = shift.statusType === 'short'
+  ? { text: 'короткая', cls: 'bg-orange-100 text-orange-700' }
+  : !isLowAvailability && shift.free >= 10
+    ? { text: `${shift.free} мест`, cls: 'bg-emerald-100 text-emerald-700' }
+    : null;
+
+// CTA — primary (orange) для popular/low_avail, иначе ghost (Что внутри смены)
+const isPrimaryCta = shift.popular || isLowAvailability;
 ---
 
-<article class={articleClass} data-shift-card>
-  <!-- Popular tag — отдельная строка сверху карточки, чтобы не конкурировать с заголовком на узких экранах -->
-  {shift.popular && (
-    <div class="mb-2 flex">
-      <span class="inline-flex items-center gap-1 rounded-full bg-orange-500 px-2.5 py-0.5 text-[13px] font-medium text-white">
-        <i class="bi bi-fire text-[13px]" aria-hidden="true"></i>
-        Популярная
-      </span>
-    </div>
-  )}
-
-  <!-- Title row: заголовок + статус. min-w-0 на левой колонке + shrink-0 на бейдже = безопасный wrap на любом узком экране. -->
-  <div class="flex items-start justify-between gap-2">
+<article
+  data-shift-card
+  class:list={[
+    'reveal group relative flex flex-col rounded-[22px] border bg-card cursor-pointer select-none transition-all duration-200',
+    'shadow-[0_2px_6px_rgba(15,23,42,0.06),0_20px_48px_rgba(15,23,42,0.14)]',
+    'hover:shadow-[0_4px_10px_rgba(15,23,42,0.08),0_28px_64px_rgba(15,23,42,0.20)]',
+    !isMobile && 'hover:-translate-y-0.5',
+    'p-5 md:p-6',
+    sizeCls,
+    ringCls,
+  ]}
+>
+  <!-- TOP: eyebrow + big dates + duration / right pill -->
+  <div class="flex items-start justify-between gap-3">
     <div class="min-w-0 flex-1">
-      <h3 class="text-[20px] font-semibold leading-[1.15] text-body">{shift.name}</h3>
-      <p class="mt-1 text-sm font-medium text-body-muted">{shift.dates}</p>
+      <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-body-faint">{eyebrowMonths}</p>
+      <h3 class="mt-1.5 text-[26px] md:text-[28px] font-extrabold tracking-[-0.02em] leading-[1.05] text-body">
+        {shift.dates.replace('— ', '— ')}
+      </h3>
+      <p class="mt-1.5 text-[13px] text-body-muted">{shift.duration}</p>
     </div>
-    <span class={`shrink-0 rounded-full ${badgeBg} ${badgeText} px-2 py-0.5 text-[14px] font-medium`}>{shift.status}</span>
+    {statusPill && (
+      <span class:list={[
+        'shrink-0 inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.06em]',
+        statusPill.cls,
+      ]}>{statusPill.text}</span>
+    )}
   </div>
 
-  <p class="mt-1 text-[13px] text-body-muted">{shift.duration}</p>
-
-  {/* Price transparency — вытащена наверх P1C 2026-04-20, чтобы цена была видна без клика */}
-  {isMobile && (
-    <div class="mt-2 flex items-baseline gap-2">
-      <span class="text-[18px] font-bold tracking-[-0.02em] text-body">{shift.price}</span>
-      <span class="text-[12px] text-body-faint">всё включено</span>
+  <!-- OCCUPANCY: Занято + value + bar -->
+  <div class="mt-5">
+    <div class="flex justify-between text-[13px] mb-1.5">
+      <span class="text-body-muted">Занято</span>
+      <span class:list={[
+        'font-medium',
+        isLowAvailability ? 'text-orange-600' : 'text-emerald-700',
+      ]}>{isLowAvailability ? freeLabel : occupiedLabel}</span>
     </div>
-  )}
-
-  <!-- Action buttons: flex-wrap чтобы ровно переносились на отдельные строки на узких экранах -->
-  <div class="mt-2 flex flex-wrap gap-2">
-    <button type="button" data-shift-calendar={shift.id} data-start={shift.startDate} data-end={shift.endDate} data-shift-name={shift.name} class="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2.5 text-[14px] text-body-muted hover:bg-surface min-h-[40px]" title="Календарь">
-      <i class="bi bi-calendar-event text-[14px]" aria-hidden="true"></i>
-      календарь
-    </button>
-    <button type="button" data-shift-info={shift.id} data-shift-title={shift.name} class="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2.5 text-[14px] text-body-muted hover:bg-surface min-h-[40px]" title="Подробнее">
-      <i class="bi bi-lightbulb text-[14px]" aria-hidden="true"></i>
-      Подробнее
-    </button>
+    <div class="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
+      <div
+        class:list={[
+          'h-full rounded-full transition-all duration-500',
+          isLowAvailability ? 'bg-orange-500' : 'bg-emerald-400',
+        ]}
+        style={`width:${pct}%`}
+      ></div>
+    </div>
   </div>
 
-  <p class={`mt-3 ${descClass} leading-[1.55] text-body-muted`}>{shift.description}</p>
+  <!-- PRICE + CTA — flex justify-between -->
+  <div class="mt-5 flex items-end justify-between gap-3">
+    <div class="min-w-0">
+      <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-body-faint">Стоимость</p>
+      <p class="mt-1 text-[26px] md:text-[28px] font-extrabold tracking-[-0.02em] leading-none text-primary">{shift.price}</p>
+      <p class="mt-1 text-[12px] text-body-faint">всё включено</p>
+    </div>
+
+    {isPrimaryCta ? (
+      <button
+        type="button"
+        data-shift-book={shift.id}
+        data-shift-book-name={shift.name}
+        data-shift-book-dates={shift.dates}
+        data-shift-book-duration={shift.duration}
+        data-shift-book-price={shift.price}
+        data-analytics-goal="shift_select"
+        data-analytics-label={shift.name}
+        class="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-primary hover:bg-primary-hover px-5 py-3 text-[14px] font-semibold text-white transition-colors min-h-[44px]"
+      >
+        Выбрать
+        <i class="bi bi-arrow-right text-[13px]" aria-hidden="true"></i>
+      </button>
+    ) : (
+      <a
+        href={`/shifts/${shift.id}/`}
+        data-analytics-goal="shift_info_click"
+        data-analytics-label={shift.name}
+        class="group/cta shrink-0 inline-flex items-center gap-1.5 rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-primary/5 px-4 py-3 text-[13px] font-semibold text-body-muted hover:text-primary transition-colors min-h-[44px] no-underline"
+      >
+        Что внутри смены?
+        <i class="bi bi-arrow-right text-[12px] transition-transform group-hover/cta:translate-x-1" aria-hidden="true"></i>
+      </a>
+    )}
+  </div>
 
   {PEER_COUNTS[shift.id] && (
-    <div class="peer-count-badge mt-2 hidden items-center gap-1.5 rounded-lg bg-orange-50 px-3 py-1.5"
+    <div class="peer-count-badge mt-3 hidden items-center gap-1.5 rounded-lg bg-orange-50 px-3 py-1.5"
          data-peer-counts={JSON.stringify(PEER_COUNTS[shift.id])}>
-      <svg class="h-4 w-4 shrink-0 text-orange-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg>
+      <i class="bi bi-people-fill text-[14px] text-orange-500 shrink-0" aria-hidden="true"></i>
       <span class="peer-count-text text-[13px] font-medium text-orange-700"></span>
     </div>
   )}
-
-  <div class={`mt-4 text-[18px] font-bold tracking-[-0.02em] text-body ${isMobile ? 'hidden' : ''}`}>{shift.price}</div>
-  <p class={`text-[14px] text-body-muted mt-1 ${isMobile ? 'hidden' : ''}`}>Питание, проживание, программа включены</p>
-
-  {/* Scarcity badge — показываем только при ≥85% заполненности */}
-  {isLowAvailability && (
-    <div class="mt-3 flex items-center gap-1.5 rounded-lg bg-orange-50 border border-orange-200 px-3 py-2">
-      <i class="bi bi-exclamation-triangle-fill text-[13px] text-orange-500 shrink-0" aria-hidden="true"></i>
-      <span class="text-[13px] font-semibold text-orange-700">Осталось {shift.free} {shift.free === 1 ? 'место' : shift.free < 5 ? 'места' : 'мест'}</span>
-    </div>
-  )}
-
-  <div class="mt-3">
-    <div class="h-[10px] w-full overflow-hidden rounded-[6px] bg-surface">
-      <div class="flex h-full">
-        <div class={`${isLowAvailability ? 'bg-orange-400' : 'bg-slate-400'} rounded-l-[6px]`} style={`width:${pct}%`}></div>
-        <div class="bg-emerald-400 rounded-r-[6px]" style={`width:${100 - pct}%`}></div>
-      </div>
-    </div>
-    <div class="flex justify-between mt-1">
-      <span class="text-[14px] text-body-muted">занято {shift.occupied}</span>
-      <span class={`text-[14px] font-medium ${isLowAvailability ? 'text-body' : 'text-emerald-700'}`}>свободно {shift.free}</span>
-    </div>
-  </div>
-
-  <button
-    type="button"
-    data-shift-book={shift.id}
-    data-shift-book-name={shift.name}
-    data-shift-book-dates={shift.dates}
-    data-shift-book-duration={shift.duration}
-    data-shift-book-price={shift.price}
-    data-analytics-goal="shift_select"
-    data-analytics-label={shift.name}
-    class={`mt-4 w-full rounded-xl px-4 py-3 text-[15px] font-semibold min-h-[48px] ${btnHover} ${btnClass}`}
-  >
-    Выбрать
-  </button>
 </article>
 
 <script>
-  document.querySelectorAll<HTMLElement>('article[data-shift-card]').forEach(card => {
+  document.querySelectorAll<HTMLElement>('article[data-shift-card]').forEach((card) => {
     let startX = 0;
     let startY = 0;
 
@@ -128,11 +162,18 @@ const btnHover = isMobile ? '' : 'hover:-translate-y-0.5';
     card.addEventListener('click', (e) => {
       // Игнорируем клики внутри кнопок и ссылок
       if ((e.target as Element).closest('button, a')) return;
-      // Игнорируем если это был свайп (смещение > 8px)
+      // Игнорируем свайп
       const dx = Math.abs(e.clientX - startX);
       const dy = Math.abs(e.clientY - startY);
       if (dx > 8 || dy > 8) return;
-      (card.querySelector<HTMLButtonElement>('[data-shift-book]'))?.click();
+      // Click на карточку = открыть BookModal (если кнопка Выбрать есть) ИЛИ ведёт на shift page
+      const bookBtn = card.querySelector<HTMLButtonElement>('[data-shift-book]');
+      const infoLink = card.querySelector<HTMLAnchorElement>('a[href^="/shifts/"]');
+      if (bookBtn) {
+        bookBtn.click();
+      } else if (infoLink) {
+        window.location.href = infoLink.href;
+      }
     });
   });
 </script>
