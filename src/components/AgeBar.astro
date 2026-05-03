@@ -55,7 +55,7 @@ const ageCountsJson = JSON.stringify({
   >
     <div class="mx-auto max-w-[640px] px-4 py-4">
       <p class="text-[14px] text-slate-600 mb-2.5 font-medium">
-        <span class="text-slate-900 font-semibold">Выберите возраст</span> — покажем смену где больше ровесников
+        <span class="text-slate-900 font-semibold">Сколько лет ребёнку?</span> — покажем смену с ровесниками
       </p>
       <div class="flex items-center gap-2">
         <div class="flex gap-2 flex-1">
@@ -109,7 +109,7 @@ const ageCountsJson = JSON.stringify({
                  px-4 py-2.5 text-[14px] font-semibold text-[#0d1a2b]
                  shadow-[0_2px_8px_rgba(236,124,0,0.25)]
                  active:scale-95 transition-all whitespace-nowrap"
-        >Посмотреть →</button>
+        >Показать смену →</button>
         <button
           id="age-bar-nudge-close"
           class="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
@@ -205,7 +205,18 @@ const ageCountsJson = JSON.stringify({
   const ageBtns   = document.querySelectorAll('.age-btn');
 
   function isDismissed() {
-    return !!sessionStorage.getItem(STORAGE_KEYS.ageBarDismissed);
+    // Сессия (мгновенный dismiss) ИЛИ localStorage с TTL 7 дней
+    if (sessionStorage.getItem(STORAGE_KEYS.ageBarDismissed)) return true;
+    const longTerm = localStorage.getItem(STORAGE_KEYS.ageBarDismissed);
+    if (!longTerm) return false;
+    const ts = parseInt(longTerm, 10);
+    if (isNaN(ts)) return false;
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    if (Date.now() - ts > sevenDays) {
+      localStorage.removeItem(STORAGE_KEYS.ageBarDismissed); // expired
+      return false;
+    }
+    return true;
   }
 
   let awakenTimer = null;
@@ -260,6 +271,8 @@ const ageCountsJson = JSON.stringify({
     bar?.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
     bar?.classList.remove('translate-y-0', 'opacity-100', 'age-bar-awaken');
     sessionStorage.setItem(STORAGE_KEYS.ageBarDismissed, '1');
+    // Долгосрочный dismiss на 7 дней (если user явно закрыл)
+    localStorage.setItem(STORAGE_KEYS.ageBarDismissed, String(Date.now()));
     clearTimeout(awakenTimer);
   }
 
