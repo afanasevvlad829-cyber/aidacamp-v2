@@ -59,8 +59,8 @@ const isPrimaryCta = shift.popular || isLowAvailability;
   data-shift-card
   class:list={[
     'reveal group relative flex flex-col rounded-[22px] border bg-card cursor-pointer select-none transition-all duration-200',
-    'shadow-[0_2px_6px_rgba(15,23,42,0.06),0_20px_48px_rgba(15,23,42,0.14)]',
-    'hover:shadow-[0_4px_10px_rgba(15,23,42,0.08),0_28px_64px_rgba(15,23,42,0.20)]',
+    'shadow-[0_4px_12px_rgba(15,23,42,0.08),0_24px_56px_rgba(15,23,42,0.18)]',
+    'hover:shadow-[0_6px_16px_rgba(15,23,42,0.10),0_32px_72px_rgba(15,23,42,0.24)]',
     !isMobile && 'hover:-translate-y-0.5',
     'p-5 md:p-6',
     sizeCls,
@@ -166,11 +166,12 @@ const isPrimaryCta = shift.popular || isLowAvailability;
       const dx = Math.abs(e.clientX - startX);
       const dy = Math.abs(e.clientY - startY);
       if (dx > 8 || dy > 8) return;
-      // Click на карточку = открыть BookModal (если кнопка Выбрать есть) ИЛИ ведёт на shift page
+      // Click на карточку = всегда ведёт на страницу смены
       const bookBtn = card.querySelector<HTMLButtonElement>('[data-shift-book]');
       const infoLink = card.querySelector<HTMLAnchorElement>('a[href^="/shifts/"]');
-      if (bookBtn) {
-        bookBtn.click();
+      const shiftId = bookBtn?.dataset.shiftBook;
+      if (shiftId) {
+        window.location.href = `/shifts/${shiftId}/`;
       } else if (infoLink) {
         window.location.href = infoLink.href;
       }
