@@ -1,0 +1,137 @@
+---
+/**
+ * ShiftTimeline — sticky-photo + timeline этапов смены.
+ * Концепт: shift-story_2.html .timeline-wrapper
+ *
+ * Desktop: 2 колонки grid 1fr 1.2fr — слева sticky фото которая меняется
+ *          по мере скролла правой колонки с этапами. Photo меняется через IntersectionObserver
+ *          (когда milestone visible → swap фото).
+ * Mobile: 1 колонка — каждый milestone имеет свою маленькую фотку сверху.
+ *
+ * Этапы взяты из концепта (5 milestones для типичной смены).
+ */
+
+const milestones = [
+  {
+    day: 'День 1',
+    title: 'Приезд. Знакомство с командой и кодом',
+    text: 'Заезд утром, распределение по группам по возрасту. После обеда — первая «база»: сцена, персонаж, движение. Уже к вечеру первого дня каждый ребёнок видит результат на экране.',
+    photo: '/images/gallery/study-coding.avif',
+    photoAlt: 'Дети на занятии программированием',
+  },
+  {
+    day: 'Дни 2–4',
+    title: 'Проект обретает форму',
+    text: 'Выбор идеи: что делаем — игру, AI-приложение, чат-бота. Группа делится по интересам. Базовые механики добавляются за 2-3 дня.',
+    photo: '/images/gallery/study-pitch.avif',
+    photoAlt: 'Презентация идеи проекта',
+  },
+  {
+    day: 'Дни 5–7',
+    title: 'Уже есть что запустить',
+    text: 'К середине смены каждый проект уже работает в базовой версии. Время для бассейна, спорта, настолок — голова отдыхает, проект «дозревает» в фоне.',
+    photo: '/images/gallery/pool-interior.avif',
+    photoAlt: 'Бассейн',
+  },
+  {
+    day: 'День 8–9',
+    title: 'Один день — настоящий стартап',
+    text: 'Хакатон: за один день команды доводят проект до финальной версии. Менторы помогают, дети сами решают что важно успеть.',
+    photo: '/images/gallery/hackathon-present.avif',
+    photoAlt: 'Хакатон в лагере',
+  },
+  {
+    day: 'Финал',
+    title: 'Защита. Готовый проект. Домой',
+    text: 'Защита перед родителями и ровесниками. Каждый показывает что сделал — и что научился делать. Проект уезжает с ребёнком домой и продолжает жить там.',
+    photo: '/images/gallery/study-stage-girl.avif',
+    photoAlt: 'Защита проекта',
+  },
+];
+---
+
+<section class="mx-auto max-w-[1200px] px-5 py-12 md:px-8 md:py-20">
+  <div class="text-center mb-10 md:mb-14">
+    <p class="reveal text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">День за днём</p>
+    <h2 class="reveal text-[28px] md:text-[42px] font-bold leading-[1.15] tracking-[-0.02em] text-body">
+      Как смена выглядит<br><span class="text-primary">изнутри</span>
+    </h2>
+  </div>
+
+  <div class="shift-timeline grid gap-10 md:grid-cols-[1fr_1.2fr] md:gap-12">
+    <!-- LEFT: Sticky photo (desktop only) -->
+    <div class="hidden md:block">
+      <div class="sticky top-24">
+        <div class="relative aspect-[4/5] w-full overflow-hidden rounded-[24px] shadow-[0_2px_6px_rgba(15,23,42,0.06),0_20px_48px_rgba(15,23,42,0.14)]">
+          {milestones.map((m, i) => (
+            <img
+              src={m.photo}
+              alt={m.photoAlt}
+              data-timeline-photo={i}
+              class={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${i === 0 ? 'opacity-100' : 'opacity-0'}`}
+              loading="lazy"
+            />
+          ))}
+          <!-- Light overlay for text readability if needed -->
+          <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent p-5">
+            <p data-timeline-caption class="text-[13px] text-white/85 font-medium" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Milestones (timeline) -->
+    <div class="space-y-6 md:space-y-10">
+      {milestones.map((m, i) => (
+        <article class="reveal milestone-card" data-timeline-target={i} data-reveal-delay={i * 60}>
+          <!-- Mobile-only photo (на десктопе фото в sticky слева) -->
+          <div class="md:hidden mb-4 overflow-hidden rounded-[18px] aspect-[16/10] shadow-[0_2px_6px_rgba(15,23,42,0.06),0_20px_48px_rgba(15,23,42,0.14)]">
+            <img src={m.photo} alt={m.photoAlt} class="h-full w-full object-cover" loading="lazy" />
+          </div>
+
+          <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-primary mb-2">{m.day}</p>
+          <h3 class="text-[20px] md:text-[24px] font-bold tracking-[-0.01em] text-body leading-[1.2] mb-3">{m.title}</h3>
+          <p class="text-[16px] md:text-[17px] leading-[1.6] text-body-muted">{m.text}</p>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<script>
+  function initShiftTimeline() {
+    const photos = document.querySelectorAll<HTMLImageElement>('[data-timeline-photo]');
+    const targets = document.querySelectorAll<HTMLElement>('[data-timeline-target]');
+    const captionEl = document.querySelector<HTMLElement>('[data-timeline-caption]');
+    if (!photos.length || !targets.length) return;
+
+    // Initial caption
+    if (captionEl && photos[0]) {
+      captionEl.textContent = (photos[0] as HTMLImageElement).alt;
+    }
+
+    function showPhoto(idx: number) {
+      photos.forEach((p, i) => {
+        p.style.opacity = i === idx ? '1' : '0';
+      });
+      if (captionEl && photos[idx]) {
+        captionEl.textContent = (photos[idx] as HTMLImageElement).alt;
+      }
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const idx = Number((entry.target as HTMLElement).dataset.timelineTarget);
+            showPhoto(idx);
+          }
+        });
+      },
+      { threshold: 0.5, rootMargin: '0px 0px -40% 0px' },
+    );
+    targets.forEach((t) => observer.observe(t));
+  }
+  document.addEventListener('astro:page-load', initShiftTimeline);
+  initShiftTimeline();
+</script>
