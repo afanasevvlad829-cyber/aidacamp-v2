@@ -22,13 +22,17 @@ export default defineConfig({
         item.lastmod = new Date().toISOString().split('T')[0];
 
         // P1: главные коммерческие страницы (высокая частота, высокая конкурентность)
-        const P1_EXACT = ['/', '/ceny', '/detskiy-lager', '/it-camp',
-                          '/lager-v-podmoskove', '/lager-na-leto-2026'];
+        const P1_EXACT = [
+          '/', '/ceny', '/detskiy-lager', '/it-camp',
+          '/lager-v-podmoskove', '/lager-na-leto-2026',
+          '/kompyuternyy-lager', '/nalogovyj-vychet',
+        ];
 
-        // P2: возрастные + тематические + гео (среднечастотные кластеры)
+        // P2: возрастные + тематические + гео + регистрация (среднечастотные кластеры)
+        const P2_EXACT = ['/zapisatsya', '/lager-programmirovaniya'];
         const P2_PREFIXES = [
           '/lager-', '/it-', '/python-', '/minecraft-', '/roblox-',
-          '/ai-', '/3d-', '/kompyuternyy-', '/kupit-', '/putevka-',
+          '/scratch-', '/ai-', '/3d-', '/kompyuternyy-', '/kupit-', '/putevka-',
           '/luchshie-', '/zagorodnyj-', '/ozdorovitelnyj-', '/letnyj-',
           '/obrazovatelnyj-', '/tematicheskiy-', '/proverennyj-',
         ];
@@ -39,8 +43,11 @@ export default defineConfig({
         if (P1_EXACT.includes(path)) {
           item.priority = 0.9;
           item.changefreq = 'weekly';
-        } else if (P2_PREFIXES.some(p => path.startsWith(p))) {
+        } else if (P2_EXACT.includes(path) || P2_PREFIXES.some(p => path.startsWith(p))) {
           item.priority = 0.7;
+          item.changefreq = 'monthly';
+        } else if (path.startsWith('/stati/')) {
+          item.priority = 0.6;
           item.changefreq = 'monthly';
         } else {
           item.priority = 0.5;
