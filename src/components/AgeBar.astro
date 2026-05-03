@@ -205,7 +205,18 @@ const ageCountsJson = JSON.stringify({
   const ageBtns   = document.querySelectorAll('.age-btn');
 
   function isDismissed() {
-    return !!sessionStorage.getItem(STORAGE_KEYS.ageBarDismissed);
+    // Сессия (мгновенный dismiss) ИЛИ localStorage с TTL 7 дней
+    if (sessionStorage.getItem(STORAGE_KEYS.ageBarDismissed)) return true;
+    const longTerm = localStorage.getItem(STORAGE_KEYS.ageBarDismissed);
+    if (!longTerm) return false;
+    const ts = parseInt(longTerm, 10);
+    if (isNaN(ts)) return false;
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    if (Date.now() - ts > sevenDays) {
+      localStorage.removeItem(STORAGE_KEYS.ageBarDismissed); // expired
+      return false;
+    }
+    return true;
   }
 
   let awakenTimer = null;
@@ -260,6 +271,8 @@ const ageCountsJson = JSON.stringify({
     bar?.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
     bar?.classList.remove('translate-y-0', 'opacity-100', 'age-bar-awaken');
     sessionStorage.setItem(STORAGE_KEYS.ageBarDismissed, '1');
+    // Долгосрочный dismiss на 7 дней (если user явно закрыл)
+    localStorage.setItem(STORAGE_KEYS.ageBarDismissed, String(Date.now()));
     clearTimeout(awakenTimer);
   }
 
