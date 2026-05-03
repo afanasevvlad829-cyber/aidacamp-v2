@@ -1,0 +1,115 @@
+---
+/**
+ * ShiftCardCombined — карточка которая объединяет 2 смены под одним заголовком.
+ * Используется для Августа (Смена 3 + Смена 4) — концепт shift-story_2.html
+ *
+ * Layout: верхняя часть как обычная ShiftCard, в середине — две progress-полоски
+ * с подписями. Цена «От {min}». CTA primary (orange) если хоть одна low-avail.
+ */
+import type { Shift } from '../../data/shifts';
+
+interface Props {
+  shifts: [Shift, Shift];
+  variant: 'mobile' | 'desktop';
+  monthLabel: string; // например «Август»
+  combinedDates: string; // например «3 авг — 26 авг»
+  combinedDuration: string; // например «Смены 3 и 4»
+}
+
+const { shifts, variant, monthLabel, combinedDates, combinedDuration } = Astro.props;
+const isMobile = variant === 'mobile';
+
+// Min price среди двух смен для лейбла «От X»
+const prices = shifts.map((s) => parseInt(s.price.replace(/\D/g, ''))).filter((n) => n > 0);
+const minPrice = Math.min(...prices);
+const minPriceFmt = minPrice.toLocaleString('ru-RU') + ' ₽';
+
+// Total places
+const totalFree = shifts.reduce((sum, s) => sum + s.free, 0);
+// Low avail если хоть одна ≥85%
+const isAnyLow = shifts.some((s) => {
+  const t = s.occupied + s.free || 1;
+  return Math.round((s.occupied / t) * 100) >= 85;
+});
+
+// Status pill
+const statusPill = !isAnyLow && totalFree >= 10
+  ? { text: `${totalFree} мест`, cls: 'bg-emerald-100 text-emerald-700' }
+  : isAnyLow
+    ? { text: 'мест мало', cls: 'bg-orange-100 text-orange-700' }
+    : null;
+
+const sizeCls = isMobile
+  ? 'min-w-[calc(100vw-48px)] max-w-[calc(100vw-48px)] shrink-0 snap-start'
+  : '';
+---
+
+<article
+  data-shift-card
+  class:list={[
+    'reveal group relative flex flex-col rounded-[22px] border border-border-light bg-card cursor-pointer select-none transition-all duration-200',
+    'shadow-[0_2px_6px_rgba(15,23,42,0.06),0_20px_48px_rgba(15,23,42,0.14)]',
+    'hover:shadow-[0_4px_10px_rgba(15,23,42,0.08),0_28px_64px_rgba(15,23,42,0.20)]',
+    !isMobile && 'hover:-translate-y-0.5',
+    'p-5 md:p-6',
+    sizeCls,
+  ]}
+>
+  <!-- TOP: eyebrow + big dates + sub / right pill -->
+  <div class="flex items-start justify-between gap-3">
+    <div class="min-w-0 flex-1">
+      <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-body-faint">{monthLabel}</p>
+      <h3 class="mt-1.5 text-[26px] md:text-[28px] font-extrabold tracking-[-0.02em] leading-[1.05] text-body">{combinedDates}</h3>
+      <p class="mt-1.5 text-[13px] text-body-muted">{combinedDuration}</p>
+    </div>
+    {statusPill && (
+      <span class:list={[
+        'shrink-0 inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.06em]',
+        statusPill.cls,
+      ]}>{statusPill.text}</span>
+    )}
+  </div>
+
+  <!-- TWO progress bars: одна на каждую смену -->
+  <div class="mt-5 space-y-3">
+    {shifts.map((s) => {
+      const total = s.occupied + s.free || 1;
+      const pct = Math.round((s.occupied / total) * 100);
+      const isLow = pct >= 85;
+      const freeLabel = isLow ? `${s.free} мест` : `${s.free} мест`;
+      const freeColor = isLow ? 'text-orange-600' : 'text-emerald-700';
+      const barColor = isLow ? 'bg-orange-500' : 'bg-emerald-400';
+      return (
+        <div>
+          <div class="flex justify-between text-[13px] mb-1.5">
+            <span class="text-body-muted">{s.name} · {s.duration}</span>
+            <span class={`font-medium ${freeColor}`}>{freeLabel}</span>
+          </div>
+          <div class="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
+            <div class={`h-full rounded-full transition-all duration-500 ${barColor}`} style={`width:${pct}%`}></div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+
+  <!-- PRICE + CTA -->
+  <div class="mt-5 flex items-end justify-between gap-3">
+    <div class="min-w-0">
+      <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-body-faint">От</p>
+      <p class="mt-1 text-[26px] md:text-[28px] font-extrabold tracking-[-0.02em] leading-none text-primary">{minPriceFmt}</p>
+      <p class="mt-1 text-[12px] text-body-faint">всё включено</p>
+    </div>
+
+    <!-- Default CTA: ghost → ведёт на первую из объединённых смен -->
+    <a
+      href={`/shifts/${shifts[0].id}/`}
+      data-analytics-goal="shift_info_click"
+      data-analytics-label={`${shifts[0].name}+${shifts[1].name}`}
+      class="group/cta shrink-0 inline-flex items-center gap-1.5 rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-primary/5 px-4 py-3 text-[13px] font-semibold text-body-muted hover:text-primary transition-colors min-h-[44px] no-underline"
+    >
+      Что внутри?
+      <i class="bi bi-arrow-right text-[12px] transition-transform group-hover/cta:translate-x-1" aria-hidden="true"></i>
+    </a>
+  </div>
+</article>

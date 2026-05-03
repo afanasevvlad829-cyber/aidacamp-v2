@@ -18,23 +18,22 @@ import Journey from '../components/Journey.astro';
 import Economy from '../components/Economy.astro';
 import Hackathon from '../components/Hackathon.astro';
 // BookingBar removed — booking inside shift modal only (per design system Section 18)
-import SoftStart from '../components/SoftStart.astro';
+// SoftStart removed (дубль CTA, см. design audit 2026-05-02)
 import Contacts from '../components/Contacts.astro';
 import Footer from '../components/Footer.astro';
 import StickyCta from '../components/StickyCta.astro';
 import RelatedPages from '../components/RelatedPages.astro';
 import SeoTextBlock from '../components/SeoTextBlock.astro';
-import ShiftOccupancy from '../components/ShiftOccupancy.astro';
-import SummerCta from '../components/SummerCta.astro';
-import ShiftModal from '../components/ShiftModal.astro';
+// ShiftOccupancy removed (proof в hero proof-line)
+// SummerCta removed (дубль sticky CTA, см. design audit 2026-05-02)
 import SchemaOrg from '../components/SchemaOrg.astro';
 import { landingPages as allLandingPages } from '../data/landing-pages';
 ---
 
 <Base
-  title="Летний детский IT-лагерь в Подмосковье 2026 — Python, Minecraft | АйДаКемп"
-  description="Летний детский лагерь в Подмосковье — программирование, бассейн, спорт. Ребёнок уедет с готовым IT-проектом. Смены с 30 мая от 48 000 ₽."
-  heroPreloadMobile="/images/hero-mobile-bean-600.avif"
+  title="Детский лагерь в Подмосковье 2026 — IT, Python, Minecraft | АйДаКемп"
+  description="Летний детский лагерь в Подмосковье — IT-программирование, бассейн, спорт. Ребёнок уедет с готовым проектом. Смены с 30 мая от 48 000 ₽, возврат 13%."
+  heroPreloadMobile="/images/hero-mobile-bean-v3-600.avif"
   heroPreloadDesktop="/images/hero-desktop.avif"
 >
   <Fragment slot="head">
@@ -46,51 +45,34 @@ import { landingPages as allLandingPages } from '../data/landing-pages';
   <main class="pb-20 md:pb-0">
     <Hero hasVariants={true} />
 
-    <!-- Мобильная печать «Ноутбук не нужен» — inline, не absolute -->
-    <div class="md:hidden flex px-5 py-3">
-      <button
-        type="button"
-        id="equipment-stamp-mobile"
-        aria-label="Ноутбук не нужен — у нас всё есть!"
-        class="rotate-[-10deg] select-none cursor-pointer group hover:scale-105 transition-transform duration-200"
-      >
-        <div class="relative flex h-[96px] w-[96px] items-center justify-center rounded-full border-[2.5px] border-dashed border-[#0d1a2b]/55 bg-transparent group-hover:border-[#0d1a2b]/85 transition-colors">
-          <div class="absolute inset-[7px] rounded-full border border-[#0d1a2b]/18 transition-colors"></div>
-          <div class="flex flex-col items-center gap-0 px-2 text-center">
-            <i class="bi bi-laptop text-[20px] leading-none text-[#0d1a2b]" aria-hidden="true"></i>
-            <span class="mt-0.5 text-[7.5px] font-black uppercase tracking-[0.14em] text-[#0d1a2b] leading-[1.3]">Ноутбук<br/>не нужен</span>
-            <div class="mt-1 h-px w-7 bg-[#0d1a2b]/30"></div>
-            <span class="mt-0.5 text-[6.5px] font-semibold uppercase tracking-[0.09em] text-[#0d1a2b]/55 leading-[1.4]">у нас всё есть!</span>
-          </div>
-        </div>
-      </button>
+    {/* Печать «Ноутбук не нужен» удалена — этот факт теперь в HeroFeatures (chip «Ноутбук — не нужен»). */}
+
+    <!-- Под hero: ShiftOccupancy (CTA «Проверить свободные места») + MomStory (proof) — двухколоночно на десктопе. -->
+    <div class="mx-auto max-w-[1312px] px-[2px] pt-0 md:px-4 lg:pt-12">
+      <!-- Только Дарья compact (ShiftOccupancy удалён — proof уже в hero proof-line) -->
+      <MomStory compact />
     </div>
 
-    <div class="mx-auto max-w-[1312px] px-[2px] pt-0 md:px-4 lg:pt-12">
-      <div class="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-12 lg:items-start">
-        <ShiftOccupancy />
-        <MomStory compact />
-      </div>
-    </div>
-    <About />
+    <!-- Skolzkaya gorka:
+         Hero → MomStory(short) → Shifts → REVIEWS (поднят с поз.7 на поз.4 — proof виден 71% вместо 27%)
+         → Stay → GalleryPreview → Philosophy → Journey → Economy → About → Hackathon → Team → FAQ → Contacts -->
+    <Shifts />
+    <Reviews />
+    <Stay />
+    <GalleryPreview />
     <Philosophy />
     <Journey />
     <Economy />
-    <SoftStart />
-    <Shifts />
-    <SummerCta />
+    <About />
     <Hackathon />
-    <GalleryPreview />
-    <Reviews />
-    <FAQ />
     <Team />
-    <Stay />
+    <FAQ />
     <Contacts />
     <SeoTextBlock />
     <RelatedPages pages={allLandingPages} />
   </main>
   <Footer />
-  <ShiftModal />
+  <!-- ShiftModal mounted in Base.astro globally — НЕ дублировать здесь (вызывало 2 модала) -->
   <!-- StickyCta убран: перекрывал AgeBar (z-70 vs z-60), AgeBar — главная цель Метрики 541048270 -->
   <!-- <StickyCta /> -->
 </Base>

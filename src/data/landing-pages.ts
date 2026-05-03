@@ -59,7 +59,7 @@ export const landingPages: LandingPage[] = [
   // 📍 Гео-LP
   { title: 'Лагерь рядом с Подольском', description: 'IT-лагерь, 40 км от Подольска', url: '/lager-podolsk', icon: 'bi-geo-alt' },
   { title: 'Лагерь в Наро-Фоминском районе', description: 'Санаторий Изумруд, 66 км от МКАД', url: '/lager-naro-fominsk', icon: 'bi-tree' },
-  { title: 'Лагерь из Новой Москвы', description: 'По Калужскому шоссе, 40–60 км', url: '/lager-novaya-moskva', icon: 'bi-geo-alt-fill' },
+  { title: 'Лагерь из Новой Москвы', description: 'По Киевскому шоссе, 40–60 км', url: '/lager-novaya-moskva', icon: 'bi-geo-alt-fill' },
   { title: 'Лагерь рядом с Химками', description: 'IT-лагерь, ~1.5 часа от Химок', url: '/lager-himki', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Одинцово', description: 'IT-лагерь, 35 км по Киевскому шоссе', url: '/lager-odintsovo', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Домодедово', description: 'IT-лагерь, ~60 км через Подольск', url: '/lager-domodedovo', icon: 'bi-geo-alt' },
@@ -70,6 +70,7 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь рядом с Пушкино', description: 'IT-лагерь, ~1.5 ч от Пушкино', url: '/lager-pushkino', icon: 'bi-geo-alt' },
 
   // 💰 Коммерческие
+  { title: 'Записаться в лагерь', description: 'Как записать ребёнка в IT-лагерь', url: '/zapisatsya', icon: 'bi-calendar-check' },
   { title: 'Цены на смены 2026', description: 'Стоимость всех смен, что входит', url: '/ceny', icon: 'bi-coin' },
   { title: 'Купить путёвку в лагерь', description: 'Оплата, договор, 50% сейчас + 50% за 3 нед.', url: '/kupit-putevku-v-lager', icon: 'bi-credit-card' },
   { title: 'Налоговый вычет 13%', description: 'Калькулятор возврата с путёвки', url: '/nalogovyj-vychet', icon: 'bi-receipt' },
@@ -112,6 +113,69 @@ const IT_URLS = new Set([
 ]);
 
 /**
+ * Гео-страницы: города и районы Подмосковья.
+ * На этих страницах в RelatedPages первым идёт хаб /lager-v-podmoskove,
+ * затем соседние гео-страницы — усиливаем сигнал тематической близости.
+ */
+const GEO_URLS = new Set([
+  '/lager-v-podmoskove',
+  '/lager-v-moskve',
+  '/lager-naro-fominsk',
+  '/lager-podolsk',
+  '/lager-novaya-moskva',
+  '/lager-himki',
+  '/lager-odintsovo',
+  '/lager-domodedovo',
+  '/lager-serpuhov',
+  '/lager-zelenograd',
+  '/lager-istra',
+  '/lager-klin',
+  '/lager-pushkino',
+  '/lager-mytishchi',
+  '/lager-korolev',
+  '/lager-balashiha',
+  '/lager-lubertsy',
+  '/lager-reutov',
+  '/lager-krasnogorsk',
+  '/lager-lobnya',
+  '/lager-elektrostal',
+  '/lager-nogink',
+  '/lager-shchelkovo',
+  '/lager-ramenskoe',
+  '/lager-bronnitsy',
+  '/lager-chehov',
+  '/lager-obnisk',
+  '/lager-kolomna',
+  '/lager-stupino',
+  '/lager-fryazevo',
+  '/lager-jeleznodarozhnyj',
+  '/lager-vidnoe',
+  '/lager-zhukovskiy',
+  '/lager-ryadom',
+  '/detskiy-lager-podmoskove',
+]);
+
+/**
+ * Возрастные страницы.
+ * На этих страницах первыми идут хабы /detskiy-lager и /lager-dlya-podrostkov,
+ * затем соседние возрастные страницы.
+ */
+const AGE_URLS = new Set([
+  '/lager-7-let',
+  '/lager-8-let',
+  '/lager-9-let',
+  '/lager-10-let',
+  '/lager-12-let',
+  '/lager-14-let',
+  '/lager-dlya-podrostkov',
+  '/lager-dlya-shkolnikov',
+  '/lager-dlya-shkolnikov-na-leto',
+  '/lager-dlya-shkolnikov-podmoskove',
+  '/lager-dlya-malchikov',
+  '/lager-dlya-devochek',
+]);
+
+/**
  * Возвращает первые `count` лендингов из приоритетного списка, исключая `currentUrl`.
  * Используется для блока RelatedPages на каждом лендинге.
  *
@@ -130,6 +194,26 @@ export function getRelatedPages(currentUrl: string, count: number = 6): LandingP
     const itPages = others.filter((p) => IT_URLS.has(p.url.replace(/\/$/, '')));
     const rest = others.filter((p) => !IT_URLS.has(p.url.replace(/\/$/, '')));
     return [...itPages, ...rest].slice(0, count);
+  }
+
+  // Гео-страница → хаб /lager-v-podmoskove + /detskiy-lager первыми, потом другие гео
+  if (GEO_URLS.has(normalized)) {
+    const hub = landingPages.find((p) => p.url === '/lager-v-podmoskove');
+    const hub2 = landingPages.find((p) => p.url === '/detskiy-lager');
+    const geoPages = others.filter((p) => GEO_URLS.has(p.url.replace(/\/$/, '')) && p.url !== '/lager-v-podmoskove');
+    const rest = others.filter((p) => !GEO_URLS.has(p.url.replace(/\/$/, '')) && p.url !== '/lager-v-podmoskove' && p.url !== '/detskiy-lager');
+    const priority = [hub, hub2].filter((p): p is LandingPage => !!p);
+    return [...priority, ...geoPages, ...rest].slice(0, count);
+  }
+
+  // Возрастная страница → /detskiy-lager + /lager-dlya-podrostkov первыми, потом другие возрастные
+  if (AGE_URLS.has(normalized)) {
+    const hub1 = landingPages.find((p) => p.url === '/detskiy-lager');
+    const hub2 = landingPages.find((p) => p.url === '/lager-dlya-podrostkov');
+    const agePages = others.filter((p) => AGE_URLS.has(p.url.replace(/\/$/, '')) && p.url !== '/lager-dlya-podrostkov');
+    const rest = others.filter((p) => !AGE_URLS.has(p.url.replace(/\/$/, '')) && p.url !== '/detskiy-lager' && p.url !== '/lager-dlya-podrostkov');
+    const priority = [hub1, hub2].filter((p): p is LandingPage => !!p);
+    return [...priority, ...agePages, ...rest].slice(0, count);
   }
 
   return others.slice(0, count);
