@@ -216,6 +216,62 @@ case "$cmd" in
     run_sql "$sql"
     ;;
 
+  positions)
+    # Динамика позиций по коммерческим ключам
+    # Использование: ./stats.sh positions [keyword_filter]
+    kw_filter="${1:-}"
+    if [ -n "$kw_filter" ]; then
+      filter_clause="AND k.keyword ILIKE '%${kw_filter}%'"
+    else
+      filter_clause=""
+    fi
+    run_sql "
+      SELECT
+        k.keyword,
+        k.frequency_wide AS freq,
+        MAX(CASE WHEN s.snapshot_date = (SELECT MAX(snapshot_date) FROM seo_position_snapshots) THEN s.position END) AS today,
+        MAX(CASE WHEN s.snapshot_date = (SELECT MAX(snapshot_date) FROM seo_position_snapshots WHERE snapshot_date < (SELECT MAX(snapshot_date) FROM seo_position_snapshots)) THEN s.position END) AS prev,
+        MAX(CASE WHEN s.snapshot_date = (SELECT MIN(snapshot_date) FROM seo_position_snapshots) THEN s.position END) AS oldest,
+        (SELECT MAX(snapshot_date) FROM seo_position_snapshots) AS last_check
+      FROM seo_keywords k
+      JOIN seo_position_snapshots s ON s.keyword = k.keyword
+      WHERE k.is_commercial = true
+        AND k.is_noise = false
+        ${filter_clause}
+      GROUP BY k.keyword, k.frequency_wide
+      HAVING MAX(CASE WHEN s.snapshot_date = (SELECT MAX(snapshot_date) FROM seo_position_snapshots) THEN s.position END) IS NOT NULL
+      ORDER BY k.frequency_wide DESC
+      LIMIT 50;
+    "
+    ;;
+
+  positions-drop)
+    # Ключи у которых позиция ухудшилась
+    run_sql "
+      WITH latest AS (
+        SELECT keyword, position AS pos_now
+        FROM seo_position_snapshots
+        WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM seo_position_snapshots)
+      ),
+      prev AS (
+        SELECT keyword, position AS pos_prev
+        FROM seo_position_snapshots
+        WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM seo_position_snapshots WHERE snapshot_date < (SELECT MAX(snapshot_date) FROM seo_position_snapshots))
+      )
+      SELECT l.keyword,
+             p.pos_prev AS было,
+             l.pos_now  AS стало,
+             (l.pos_now - p.pos_prev) AS delta,
+             k.frequency_wide AS freq
+      FROM latest l
+      JOIN prev p ON p.keyword = l.keyword
+      JOIN seo_keywords k ON k.keyword = l.keyword AND k.is_commercial = true
+      WHERE l.pos_now > p.pos_prev
+      ORDER BY (l.pos_now - p.pos_prev) DESC
+      LIMIT 20;
+    "
+    ;;
+
   etl)
     date_arg="${1:-}"
     date_to="${2:-}"
@@ -244,7 +300,9 @@ case "$cmd" in
     echo "  placements [period] [N]  Top N placements by cost"
     echo "  query <SQL>              Run raw SQL query"
     echo "  tables                   List tables with row counts"
-    echo "  etl [date] [date_to]     Run ETL manually"
+    echo "  positions [keyword]      SEO position dynamics (commercial keywords)"
+  echo "  positions-drop           Keywords where position got worse"
+  echo "  etl [date] [date_to]     Run ETL manually"
     echo ""
     echo "Periods: today, yesterday, week, month, quarter, year"
     echo "         YYYY-MM-DD, YYYY-MM-DD:YYYY-MM-DD"

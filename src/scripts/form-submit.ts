@@ -27,6 +27,7 @@ function collectContext(): Record<string, string> {
     utm_content: pick('utm_content'),
     utm_term: pick('utm_term'),
     yclid: pick('yclid'),
+    ysclid: pick('ysclid'),
     gclid: pick('gclid'),
   };
   if (Object.values(currentUtm).some(Boolean)) {

@@ -17,7 +17,7 @@ export const INSTAGRAM_URL = 'https://www.instagram.com/aidacamp.ru/';
 
 export const YANDEX_MAPS_URL = 'https://yandex.ru/maps/?ll=36.724185,55.265643&z=15&pt=36.724185,55.265643,pm2rdm';
 
-export const STAT_YEARS = '7';           // лет работы
+export const STAT_YEARS = '5';           // лет работы (с 2021, синхронно с SchemaOrg foundingDate)
 export const STAT_KIDS = '1200+';        // детей
 export const STAT_RATING = '5.0';        // рейтинг
 export const STAT_DISTANCE = '66 км';    // от Москвы
