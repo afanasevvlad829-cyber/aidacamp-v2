@@ -64,8 +64,84 @@ const features = [
     right: 0;
     background: linear-gradient(to left, rgba(13,26,43,0.95), transparent);
   }
+  .hero-features-track.dragging {
+    scroll-behavior: auto; /* отключаем smooth-scroll при драгинге */
+    cursor: grabbing;
+  }
   /* На очень широких экранах содержимое центрируется и fade не нужен */
   @media (min-width: 1280px) {
     .hero-features-track { justify-content: center; }
   }
 </style>
+
+<script>
+  function initHeroFeaturesDrag() {
+    const track = document.querySelector('.hero-features-track');
+    if (!track) return;
+
+    let isDown = false;
+    let startX = 0;
+    let scrollLeft = 0;
+    let velocity = 0;
+    let lastX = 0;
+    let lastTime = 0;
+
+    const onMouseDown = (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest('a, button')) return; // не драгим если клик по ссылке/кнопке
+
+      isDown = true;
+      startX = e.pageX - track.offsetLeft;
+      scrollLeft = track.scrollLeft;
+      lastX = e.pageX;
+      lastTime = Date.now();
+      track.style.cursor = 'grabbing';
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDown) return;
+
+      e.preventDefault();
+      const x = e.pageX - track.offsetLeft;
+      const walk = (x - startX) * 1.2; // усиливаем перемещение для удобства
+
+      // считаем скорость для инерции
+      const now = Date.now();
+      const dt = now - lastTime;
+      if (dt > 0) {
+        velocity = (e.pageX - lastX) / dt;
+      }
+      lastX = e.pageX;
+      lastTime = now;
+
+      track.scrollLeft = scrollLeft - walk;
+    };
+
+    const onMouseUp = () => {
+      if (!isDown) return;
+      isDown = false;
+      track.style.cursor = 'grab';
+
+      // инерционный скролл (momentum)
+      let currentVelocity = velocity;
+      const animate = () => {
+        if (Math.abs(currentVelocity) > 0.1) {
+          track.scrollLeft -= currentVelocity * 15;
+          currentVelocity *= 0.95; // затухание
+          requestAnimationFrame(animate);
+        }
+      };
+      animate();
+    };
+
+    track.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+
+    // Чтобы текст не селектировался при драгинге
+    track.style.userSelect = 'none';
+    track.style.cursor = 'grab';
+  }
+
+  // Инициализируем при загрузке
+  initHeroFeaturesDrag();
+</script>
