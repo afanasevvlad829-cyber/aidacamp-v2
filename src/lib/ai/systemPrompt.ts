@@ -10,7 +10,8 @@ type LiveShift = {
 function buildShiftsText(shifts: LiveShift[]): string {
   return shifts.map(s => {
     const free = s.total - s.enrolled;
-    const freeStr = free <= 5 ? ` — осталось ${free} мест` : '';
+    const freeDeclension = free === 1 ? 'место' : free < 5 ? 'места' : 'мест';
+    const freeStr = free <= 5 ? ` — осталось ${free} ${freeDeclension}` : '';
     const popularStr = s.popular ? ' — самая популярная' : '';
     const shortStr = s.short ? ' (короткая)' : '';
     const availStr = !s.available ? ' — МЕСТ НЕТ' : '';

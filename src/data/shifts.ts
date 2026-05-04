@@ -29,7 +29,7 @@ export const mainShifts: Shift[] = [
     status: 'места есть',
     statusType: 'available',
     description: 'За 10 дней — от первого шага до собственного проекта с AI и понятным результатом.',
-    price: '74 900 ₽',
+    price: '74 900 ₽',
     free: 12,
     occupied: 23,
     highlighted: true,
@@ -44,7 +44,7 @@ export const mainShifts: Shift[] = [
     status: 'места есть',
     statusType: 'available',
     description: 'Полный цикл создания проекта: больше самостоятельности и более сложный результат.',
-    price: '95 000 ₽',
+    price: '95 000 ₽',
     free: 4,
     occupied: 41,
     popular: true,
@@ -59,7 +59,7 @@ export const mainShifts: Shift[] = [
     status: 'места есть',
     statusType: 'available',
     description: 'Проект от идеи до результата с акцентом на командную работу.',
-    price: '89 400 ₽',
+    price: '89 400 ₽',
     free: 5,
     occupied: 40,
     startDate: '2026-08-03',
@@ -73,7 +73,7 @@ export const mainShifts: Shift[] = [
     status: 'места есть',
     statusType: 'available',
     description: 'Закрытие лета: сильный проект и уверенный результат.',
-    price: '74 900 ₽',
+    price: '74 900 ₽',
     free: 14,
     occupied: 31,
     startDate: '2026-08-17',
@@ -90,7 +90,7 @@ export const shortShifts: Shift[] = [
     status: 'короткая',
     statusType: 'short',
     description: 'За 7 дней — быстрый вход, свой проект и понятный результат без перегруза.',
-    price: '48 000 ₽',
+    price: '48 000 ₽',
     free: 11,
     occupied: 29,
     startDate: '2026-06-10',
@@ -104,7 +104,7 @@ export const shortShifts: Shift[] = [
     status: 'короткая',
     statusType: 'short',
     description: 'Интенсивная смена: больше времени на доработку и более сильный итоговый проект.',
-    price: '65 000 ₽',
+    price: '65 000 ₽',
     free: 8,
     occupied: 37,
     startDate: '2026-06-16',
@@ -168,7 +168,7 @@ export const shiftInfo: Record<string, {
   dates: string; duration: string; price: string; html: string;
 }> = {
   'shift-1': {
-    dates: '30 мая — 8 июня', duration: '10 дней', price: '74 900 ₽',
+    dates: '30 мая — 8 июня', duration: '10 дней', price: '74 900 ₽',
     html:
       '<p class="text-[14px] leading-[1.6] text-slate-700">Смена выстроена как спокойный и понятный вход в программирование с гарантированным результатом на выходе.</p>' +
       section('Первые дни — включение в процесс',
@@ -199,7 +199,7 @@ export const shiftInfo: Record<string, {
         'Параллельно проходят чемпионаты лагеря (футбол, пионербол) — это часть общей игровой системы и смены активности.'),
   },
   'shift-2': {
-    dates: '10 июня — 23 июня', duration: '14 дней', price: '95 000 ₽',
+    dates: '10 июня — 23 июня', duration: '14 дней', price: '95 000 ₽',
     html:
       '<p class="text-[14px] leading-[1.6] text-slate-700">Смена построена с большим акцентом на самостоятельные решения и усложнение проектов.</p>' +
       section('Первые дни — быстрый вход',
@@ -230,7 +230,7 @@ export const shiftInfo: Record<string, {
         'Чемпионаты лагеря (футбол, пионербол) проходят в течение смены и встроены в общую динамику.'),
   },
   'shift-3': {
-    dates: '3 августа — 15 августа', duration: '13 дней', price: '89 400 ₽',
+    dates: '3 августа — 15 августа', duration: '13 дней', price: '89 400 ₽',
     html:
       '<p class="text-[14px] leading-[1.6] text-slate-700">Смена, в которой важна не только работа над проектом, но и взаимодействие внутри команды.</p>' +
       section('Первые дни — старт и распределение',
@@ -263,7 +263,7 @@ export const shiftInfo: Record<string, {
         'Чемпионаты лагеря (футбол, пионербол) проходят регулярно и дополняют программу.'),
   },
   'shift-4': {
-    dates: '17 августа — 26 августа', duration: '10 дней', price: '74 900 ₽',
+    dates: '17 августа — 26 августа', duration: '10 дней', price: '74 900 ₽',
     html:
       '<p class="text-[14px] leading-[1.6] text-slate-700">Смена с акцентом на аккуратность, завершённость и понимание того, что сделано.</p>' +
       section('Первые дни — вход и база',
@@ -294,7 +294,7 @@ export const shiftInfo: Record<string, {
         'Чемпионаты лагеря (футбол, пионербол) проходят в течение смены и создают смену активности.'),
   },
   'shift-2-1': {
-    dates: '10 июня — 16 июня', duration: '7 дней', price: '48 000 ₽',
+    dates: '10 июня — 16 июня', duration: '7 дней', price: '48 000 ₽',
     html:
       '<p class="text-[14px] leading-[1.6] text-slate-700">Короткая смена с акцентом на практику: минимум разгона, максимум действий и быстрый результат.</p>' +
       section('Первые дни — сразу в работу',
@@ -324,7 +324,7 @@ export const shiftInfo: Record<string, {
         'Чемпионаты лагеря (футбол, пионербол) проходят в течение смены и чередуются с занятиями.'),
   },
   'shift-2-2': {
-    dates: '16 июня — 23 июня', duration: '8 дней', price: '65 000 ₽',
+    dates: '16 июня — 23 июня', duration: '8 дней', price: '65 000 ₽',
     html:
       '<p class="text-[14px] leading-[1.6] text-slate-700">Формат, в котором достаточно времени не только собрать проект, но и довести его до уверенного результата.</p>' +
       section('Первые дни — включение и база',
