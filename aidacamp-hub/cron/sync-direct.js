@@ -2,143 +2,116 @@ const { Pool } = require('pg');
 const https = require('https');
 
 const DB_CONFIG = {
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 5432,
   user: process.env.DB_USER || 'aidacamp_app',
   password: process.env.DB_PASSWORD,
-  host: process.env.DB_HOST || 'localhost',
-  port: 5432,
-  database: 'aidacamp_hub'
+  database: process.env.DB_NAME || 'aidacamp_hub',
 };
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID   = process.env.TELEGRAM_CHAT_ID;
 
-function makeRequest(url, options = {}, body = null) {
+function directPost(token, method, params) {
   return new Promise((resolve, reject) => {
-    const protocol = url.startsWith('https') ? https : require('http');
-    const req = protocol.request(url, options, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => resolve({ status: res.statusCode, data }));
+    const body = JSON.stringify({ method: 'get', params });
+    const opts = {
+      hostname: 'api.direct.yandex.com',
+      path: `/json/v5/${method}`,
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body),
+        'Accept-Language': 'ru',
+      },
+    };
+    const req = https.request(opts, res => {
+      let raw = '';
+      res.on('data', c => raw += c);
+      res.on('end', () => { try { resolve({ status: res.statusCode, body: JSON.parse(raw) }); } catch { resolve({ status: res.statusCode, body: raw }); } });
     });
     req.on('error', reject);
-    req.setTimeout(10000, () => { req.destroy(); reject(new Error('Timeout')); });
-    if (body) req.write(body);
-    req.end();
+    req.write(body); req.end();
   });
 }
 
-async function getDirectCampaigns(token) {
-  const body = JSON.stringify({
-    method: 'get',
-    params: {
-      SelectionCriteria: { Statuses: ['ACCEPTED', 'SERVING', 'ON_MODERATION'] },
-      FieldNames: ['Id', 'Name', 'Status', 'Statistics'],
-      ReportFields: ['Clicks', 'Impressions', 'Cost', 'Conversions']
-    }
-  });
-
-  const res = await makeRequest('https://api.direct.yandex.com/json/v5/campaigns', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'Content-Length': Buffer.byteLength(body)
-    }
-  }, body);
-
-  if (res.status !== 200 && res.status !== 400) {
-    throw new Error(`Direct API error: ${res.status}`);
-  }
-
-  return JSON.parse(res.data);
+async function getToken(pool, key) {
+  const r = await pool.query("SELECT value FROM variables_vault WHERE key=$1 AND status='active' LIMIT 1", [key]);
+  return r.rows[0]?.value || null;
 }
 
-async function syncDirect() {
+const getProject = (name) => {
+  const n = (name || '').toLowerCase();
+  if (n.includes('codims') || n.includes('кодим') || n.includes('алгоритмика')) return 'codims';
+  return 'aidacamp';
+};
+
+async function main() {
+  const start = Date.now();
   console.log(`[${new Date().toISOString()}] Starting Direct sync...`);
   const pool = new Pool(DB_CONFIG);
-  const startTime = Date.now();
-
   try {
-    // Получить токен из variables_vault
-    const tokenResult = await pool.query(`
-      SELECT value FROM variables_vault 
-      WHERE key ILIKE '%DIRECT%TOKEN%' AND status = 'active'
-      LIMIT 1
-    `);
+    const token = await getToken(pool, 'DIRECT_TOKEN');
+    if (!token) { console.log('No DIRECT_TOKEN, skipping'); return; }
 
-    if (tokenResult.rows.length === 0) {
-      console.log('No Direct token found, skipping');
-      return { success: true, records: 0 };
+    // Шаг 1: список кампаний
+    const campRes = await directPost(token, 'campaigns', {
+      SelectionCriteria: { States: ['ON', 'OFF', 'SUSPENDED', 'ENDED'] },
+      FieldNames: ['Id', 'Name', 'Status', 'State'],
+      Page: { Limit: 100 },
+    });
+    if (campRes.body?.error) throw new Error(`Campaigns: ${campRes.body.error.error_string}`);
+    const campaigns = campRes.body?.result?.Campaigns || [];
+    console.log(`  Кампаний: ${campaigns.length}`);
+
+    // Шаг 2: статистика за последние 7 дней
+    const today = new Date();
+    const date2 = today.toISOString().slice(0, 10);
+    const date1 = new Date(today - 7 * 86400000).toISOString().slice(0, 10);
+
+    const statRes = await directPost(token, 'campaigns', {
+      SelectionCriteria: { States: ['ON', 'OFF', 'SUSPENDED', 'ENDED'] },
+      FieldNames: ['Id', 'Name', 'Statistics'],
+      DateRange: { From: date1, To: date2, IncludeVAT: 'YES' },
+      Page: { Limit: 100 },
+    });
+
+    const statsMap = {};
+    for (const c of statRes.body?.result?.Campaigns || []) {
+      statsMap[c.Id] = c.Statistics || {};
     }
 
-    const token = tokenResult.rows[0].value;
-    const today = new Date().toISOString().split('T')[0];
+    let synced = 0;
+    for (const camp of campaigns) {
+      const project = getProject(camp.Name);
+      const stats = statsMap[camp.Id] || {};
+      const clicks = parseInt(stats.Clicks || 0);
+      const impressions = parseInt(stats.Impressions || 0);
+      const spent = parseFloat((stats.Cost || 0) / 1000000).toFixed(2); // микрорубли → рубли
+      const ctr = impressions > 0 ? parseFloat((clicks / impressions * 100).toFixed(2)) : 0;
+      const cpc = clicks > 0 ? parseFloat((spent / clicks).toFixed(2)) : 0;
 
-    // Получить все проекты с конфигом Direct
-    const projectsResult = await pool.query(`
-      SELECT p.id as project_id
-      FROM projects p
-      JOIN project_config pc ON p.id = pc.project_id AND pc.config_key = 'direct_client_login'
-      WHERE p.status = 'active'
-    `);
+      await pool.query(`
+        INSERT INTO direct_stats (project_id, campaign_id, campaign_name, stat_date, clicks, impressions, spent, ctr, cpc)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        ON CONFLICT (project_id, campaign_id, stat_date) DO UPDATE
+          SET campaign_name=$3, clicks=$5, impressions=$6, spent=$7, ctr=$8, cpc=$9
+      `, [project, String(camp.Id), camp.Name, date2, clicks, impressions, spent, ctr, cpc]);
 
-    let totalInserted = 0;
-
-    for (const { project_id } of projectsResult.rows) {
-      try {
-        console.log(`  Syncing Direct for ${project_id}...`);
-        const data = await getDirectCampaigns(token);
-        const campaigns = data?.result?.Campaigns || [];
-
-        for (const campaign of campaigns) {
-          const stats = campaign.Statistics || {};
-          await pool.query(`
-            INSERT INTO direct_stats (project_id, campaign_id, campaign_name, stat_date, clicks, impressions, spent, conversions)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            ON CONFLICT (project_id, campaign_id, stat_date) DO UPDATE
-            SET clicks = $5, impressions = $6, spent = $7, conversions = $8
-          `, [
-            project_id,
-            String(campaign.Id),
-            campaign.Name,
-            today,
-            stats.Clicks || 0,
-            stats.Impressions || 0,
-            (stats.Cost || 0) / 1000000,  // Direct в микрорублях
-            stats.Conversions || 0
-          ]);
-          totalInserted++;
-        }
-
-        console.log(`  OK ${project_id}: ${campaigns.length} campaigns synced`);
-
-      } catch (err) {
-        console.error(`  ERR ${project_id}: ${err.message}`);
-        await pool.query(`
-          INSERT INTO sync_log (project_id, tool_name, status, error_message, duration_ms, completed_at)
-          VALUES ($1, 'direct', 'error', $2, $3, NOW())
-        `, [project_id, err.message, Date.now() - startTime]);
-      }
+      const icon = camp.State === 'ON' ? '▶' : '⏸';
+      console.log(`  ${icon} ${camp.Id} [${camp.State}] ${camp.Name.slice(0, 45)} | клики=${clicks} расход=${spent}₽`);
+      synced++;
     }
 
-    await pool.query(`
-      INSERT INTO sync_log (tool_name, status, records_processed, records_inserted, duration_ms, completed_at)
-      VALUES ('direct', 'success', $1, $2, $3, NOW())
-    `, [totalInserted, totalInserted, Date.now() - startTime]);
-
-    console.log(`[${new Date().toISOString()}] Direct sync done in ${Date.now() - startTime}ms (${totalInserted} records)\n`);
-    return { success: true, records: totalInserted };
-
-  } catch (error) {
-    console.error('Fatal error:', error.message);
-    return { success: false, error: error.message };
-  } finally {
-    await pool.end();
-  }
+    const ms = Date.now() - start;
+    console.log(`[${new Date().toISOString()}] Direct sync done in ${ms}ms (${synced} кампаний)`);
+    await pool.query(
+      "INSERT INTO sync_log (tool_name, status, records_processed, duration_ms, started_at) VALUES ('sync-direct','success',$1,$2,NOW())",
+      [synced, ms]
+    );
+  } catch (err) {
+    console.error('Fatal error:', err.message);
+    try { await pool.query("INSERT INTO sync_log (tool_name, status, error_message, started_at) VALUES ('sync-direct','error',$1,NOW())", [err.message]); } catch {}
+  } finally { await pool.end(); }
 }
-
-if (require.main === module) {
-  syncDirect().catch(error => {
-    console.error('Unhandled error:', error.message);
-    process.exit(1);
-  });
-}
-
-module.exports = { syncDirect };
+main();

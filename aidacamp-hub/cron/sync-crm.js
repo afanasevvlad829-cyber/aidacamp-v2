@@ -2,161 +2,172 @@ const { Pool } = require('pg');
 const https = require('https');
 
 const DB_CONFIG = {
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 5432,
   user: process.env.DB_USER || 'aidacamp_app',
   password: process.env.DB_PASSWORD,
-  host: process.env.DB_HOST || 'localhost',
-  port: 5432,
-  database: 'aidacamp_hub'
+  database: process.env.DB_NAME || 'aidacamp_hub',
 };
 
-function makeRequest(url, options = {}, body = null) {
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+
+function httpsPost(url, data, headers = {}) {
   return new Promise((resolve, reject) => {
-    const req = https.request(url, options, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => resolve({ status: res.statusCode, data }));
+    const urlObj = new URL(url);
+    const body = JSON.stringify(data);
+    const opts = {
+      hostname: urlObj.hostname,
+      path: urlObj.pathname + urlObj.search,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body), ...headers },
+    };
+    const req = https.request(opts, (res) => {
+      let raw = '';
+      res.on('data', (c) => raw += c);
+      res.on('end', () => {
+        try { resolve({ status: res.statusCode, body: JSON.parse(raw) }); }
+        catch { resolve({ status: res.statusCode, body: raw }); }
+      });
     });
     req.on('error', reject);
-    req.setTimeout(15000, () => { req.destroy(); reject(new Error('Timeout')); });
-    if (body) req.write(body);
+    req.write(body);
     req.end();
   });
 }
 
-async function getCRMClients(token, branchId, page = 0) {
-  const body = JSON.stringify({
-    page,
-    per_page: 50,
-    status: 1
-  });
-
-  const url = new URL(`https://n${branchId}.alfacrm.pro/api/v1/customer/`);
-  const res = await makeRequest(url.toString(), {
-    method: 'POST',
-    headers: {
-      'X-ALFACRM-TOKEN': token,
-      'Content-Type': 'application/json',
-      'Content-Length': Buffer.byteLength(body)
-    }
-  }, body);
-
-  if (res.status !== 200) {
-    throw new Error(`AlfaCRM API error: ${res.status}`);
-  }
-
-  const parsed = JSON.parse(res.data);
-  return parsed;
+async function sendTelegram(msg) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+  try {
+    await httpsPost(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      chat_id: TELEGRAM_CHAT_ID, text: msg, parse_mode: 'HTML',
+    });
+  } catch (e) { /* silent */ }
 }
 
-async function syncCRM() {
+async function getToken(pool, key) {
+  const r = await pool.query(
+    "SELECT value FROM variables_vault WHERE key = $1 AND status = 'active' LIMIT 1",
+    [key]
+  );
+  return r.rows[0]?.value || null;
+}
+
+// Получить JWT токен AlfaCRM
+async function getAlfaToken(hostname, email, apiKey) {
+  const res = await httpsPost(
+    `https://${hostname}/v2api/auth/login`,
+    { email, api_key: apiKey }
+  );
+  if (res.status !== 200 || !res.body?.token) {
+    throw new Error(`AlfaCRM auth failed: ${res.status} ${JSON.stringify(res.body)}`);
+  }
+  return res.body.token;
+}
+
+// Получить клиентов из филиала с пагинацией
+async function fetchClients(hostname, token, branchId, page = 0) {
+  const res = await httpsPost(
+    `https://${hostname}/v2api/${branchId}/customer/index`,
+    { page, per_page: 50 },
+    { 'X-ALFACRM-TOKEN': token }
+  );
+  if (res.status !== 200) throw new Error(`CRM clients ${res.status}: ${JSON.stringify(res.body)}`);
+  return res.body;
+}
+
+async function syncProject(pool, projectId, hostname, email, apiKey, branchId, token) {
+  console.log(`  Syncing CRM for ${projectId} (branch=${branchId})...`);
+  let page = 0;
+  let total = 0;
+  let inserted = 0;
+  const maxPages = 20;
+
+  while (page < maxPages) {
+    const data = await fetchClients(hostname, token, branchId, page);
+    const items = data.items || [];
+    if (items.length === 0) break;
+    total = data.total || total;
+
+    for (const client of items) {
+      await pool.query(`
+        INSERT INTO crm_clients (project_id, client_id, client_name, phone, email, status, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW())
+        ON CONFLICT (project_id, client_id) DO UPDATE
+          SET client_name = EXCLUDED.client_name,
+              phone = EXCLUDED.phone,
+              email = EXCLUDED.email,
+              status = EXCLUDED.status
+      `, [
+        projectId,
+        String(client.id),
+        client.name || '',
+        (client.phone || []).join(',').slice(0,20),
+        (client.email || '').slice(0,255),
+        client.removed == 1 ? 'archived' : (client.is_study ? 'student' : 'lead'),
+      ]);
+      inserted++;
+    }
+
+    page++;
+    if (items.length < 50) break;
+  }
+
+  console.log(`  OK ${projectId}: ${inserted} clients (total in CRM: ${total})`);
+  return inserted;
+}
+
+async function main() {
+  const start = Date.now();
   console.log(`[${new Date().toISOString()}] Starting CRM sync...`);
   const pool = new Pool(DB_CONFIG);
-  const startTime = Date.now();
 
   try {
-    // Получить токен и branch_id из variables_vault
-    const tokenResult = await pool.query(`
-      SELECT value FROM variables_vault 
-      WHERE key ILIKE '%ALFA%TOKEN%' OR key ILIKE '%CRM%TOKEN%' AND status = 'active'
-      LIMIT 1
-    `);
+    const hostname = await getToken(pool, 'ALFACRM_HOSTNAME');
+    const email    = await getToken(pool, 'ALFACRM_EMAIL');
+    const apiKey   = await getToken(pool, 'ALFACRM_API_KEY');
+    const branchCodims    = await getToken(pool, 'ALFACRM_BRANCH_CODIMS')    || '1';
+    const branchAidacamp  = await getToken(pool, 'ALFACRM_BRANCH_AIDACAMP') || '5';
 
-    const branchResult = await pool.query(`
-      SELECT value FROM variables_vault 
-      WHERE key ILIKE '%CRM%BRANCH%' OR key ILIKE '%ALFA%BRANCH%' AND status = 'active'
-      LIMIT 1
-    `);
-
-    if (tokenResult.rows.length === 0) {
+    if (!apiKey || !hostname) {
       console.log('No CRM token found, skipping');
-      return { success: true, records: 0 };
+      return;
     }
 
-    const token = tokenResult.rows[0].value;
-    const branchId = branchResult.rows[0]?.value || '1';
+    // Один токен авторизации для всех проектов
+    const jwtToken = await getAlfaToken(hostname, email, apiKey);
+    console.log(`  Auth OK, token received`);
 
-    // Получить проекты с конфигом CRM
-    const projectsResult = await pool.query(`
-      SELECT p.id as project_id
-      FROM projects p
-      WHERE p.status = 'active'
-    `);
+    let totalRecords = 0;
 
-    let totalInserted = 0;
+    // CoDims — филиал 1
+    const r1 = await syncProject(pool, 'codims', hostname, email, apiKey, branchCodims, jwtToken);
+    totalRecords += r1;
 
-    for (const { project_id } of projectsResult.rows) {
-      try {
-        console.log(`  Syncing CRM for ${project_id}...`);
-        
-        let page = 0;
-        let hasMore = true;
-        let projectInserted = 0;
+    // AidaCamp — филиал 5
+    const r2 = await syncProject(pool, 'aidacamp', hostname, email, apiKey, branchAidacamp, jwtToken);
+    totalRecords += r2;
 
-        while (hasMore) {
-          const result = await getCRMClients(token, branchId, page);
-          const clients = result.items || [];
-
-          if (clients.length === 0) {
-            hasMore = false;
-            break;
-          }
-
-          for (const client of clients) {
-            await pool.query(`
-              INSERT INTO crm_clients (project_id, client_id, client_name, phone, email, status, created_date)
-              VALUES ($1, $2, $3, $4, $5, $6, $7)
-              ON CONFLICT (project_id, client_id) DO UPDATE
-              SET client_name = $3, phone = $4, email = $5, status = $6, last_contact = NOW()
-            `, [
-              project_id,
-              String(client.id),
-              [client.name, client.patronymic, client.surname].filter(Boolean).join(' '),
-              client.phone || null,
-              client.email || null,
-              String(client.is_study || '0'),
-              client.date_from ? new Date(client.date_from).toISOString().split('T')[0] : null
-            ]);
-            projectInserted++;
-          }
-
-          page++;
-          hasMore = clients.length === 50;
-          if (page > 20) break;  // Защита от бесконечного цикла
-        }
-
-        totalInserted += projectInserted;
-        console.log(`  OK ${project_id}: ${projectInserted} clients synced`);
-
-      } catch (err) {
-        console.error(`  ERR ${project_id}: ${err.message}`);
-        await pool.query(`
-          INSERT INTO sync_log (project_id, tool_name, status, error_message, duration_ms, completed_at)
-          VALUES ($1, 'crm', 'error', $2, $3, NOW())
-        `, [project_id, err.message, Date.now() - startTime]);
-      }
-    }
+    const ms = Date.now() - start;
+    console.log(`[${new Date().toISOString()}] CRM sync done in ${ms}ms (${totalRecords} records)`);
 
     await pool.query(`
-      INSERT INTO sync_log (tool_name, status, records_processed, records_inserted, duration_ms, completed_at)
-      VALUES ('crm', 'success', $1, $2, $3, NOW())
-    `, [totalInserted, totalInserted, Date.now() - startTime]);
+      INSERT INTO sync_log (tool_name, project_id, status, records_processed, duration_ms, started_at)
+      VALUES ('sync-crm', NULL, 'success', $1, $2, NOW())
+    `, [totalRecords, ms]);
 
-    console.log(`[${new Date().toISOString()}] CRM sync done in ${Date.now() - startTime}ms (${totalInserted} clients)\n`);
-    return { success: true, records: totalInserted };
-
-  } catch (error) {
-    console.error('Fatal error:', error.message);
-    return { success: false, error: error.message };
+  } catch (err) {
+    console.error('Fatal error:', err.message);
+    await sendTelegram(`❌ <b>CRM sync failed</b>\n${err.message}`);
+    try {
+      await pool.query(
+        "INSERT INTO sync_log (tool_name, status, error_message, started_at) VALUES ('sync-crm','error',$1,NOW())",
+        [err.message]
+      );
+    } catch {}
   } finally {
     await pool.end();
   }
 }
 
-if (require.main === module) {
-  syncCRM().catch(error => {
-    console.error('Unhandled error:', error.message);
-    process.exit(1);
-  });
-}
-
-module.exports = { syncCRM };
+main();
