@@ -72,6 +72,7 @@ const inputWidth = isDesktop ? 'w-[276px]' : 'w-full';
     data-phone-input
     class={`mt-2 h-[48px] ${inputWidth} rounded-[8px] border-[1.5px] border-[#e6e6e6] bg-white px-[14px] text-[16px] text-[#0d1a2b] outline-none transition placeholder:text-[#919cab] focus:border-primary`}
   />
+  <p data-hint-phone class="mt-1.5 hidden text-[13px] text-red-500">Введите номер полностью — 11 цифр (+7 …)</p>
 
   <!-- Consent: два отдельных чекбокса по требованиям 152-ФЗ / РКН -->
   <label class={`mt-3 flex ${inputWidth} items-start gap-2 text-[15px] leading-[1.35] text-[#6e788a]`}>
@@ -82,16 +83,16 @@ const inputWidth = isDesktop ? 'w-[276px]' : 'w-full';
     <input type="checkbox" data-consent class="mt-[2px] h-4 w-4 shrink-0 rounded border border-slate-300 accent-primary" />
     <span>Согласен(а) на <a href="/soglasie-na-obrabotku-personalnyh-dannyh/" class="text-primary underline">обработку персональных данных</a></span>
   </label>
+  <p data-hint-consent class="mt-1.5 hidden text-[13px] text-red-500">Поставьте обе галочки — без них не можем принять заявку</p>
 
-  <!-- Submit -->
+  <!-- Submit — всегда активна, на клик подсветит что не заполнено -->
   <button
     type="submit"
     data-submit-btn
     data-analytics-goal="form_open"
     data-analytics-extra-goal="booking_cta_click,hero_cta_click,hero_variant_form_open_new"
     data-analytics-label={`booking_${variant}_cta`}
-    class={`mt-3 h-[48px] ${inputWidth} rounded-[10px] bg-primary text-[16px] font-semibold text-[#0d1a2b] transition disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400`}
-    disabled
+    class={`mt-3 h-[48px] ${inputWidth} rounded-[10px] bg-primary text-[16px] font-semibold text-[#0d1a2b] transition`}
   >
     Забронировать
   </button>
@@ -178,17 +179,20 @@ const inputWidth = isDesktop ? 'w-[276px]' : 'w-full';
         return out;
       }
 
+      const hintPhone = form.querySelector<HTMLElement>('[data-hint-phone]');
+      const hintConsent = form.querySelector<HTMLElement>('[data-hint-consent]');
+
       phoneInput?.addEventListener('input', () => {
         const pos = phoneInput.selectionStart || 0;
         const before = phoneInput.value.length;
         phoneInput.value = formatPhone(phoneInput.value);
         const after = phoneInput.value.length;
         phoneInput.setSelectionRange(pos + (after - before), pos + (after - before));
-        updateSubmit();
+        if (isPhoneValid()) hintPhone?.classList.add('hidden');
       });
 
-      consent?.addEventListener('change', updateSubmit);
-      consentPolicy?.addEventListener('change', updateSubmit);
+      consent?.addEventListener('change', () => { if (bothConsentsChecked()) hintConsent?.classList.add('hidden'); });
+      consentPolicy?.addEventListener('change', () => { if (bothConsentsChecked()) hintConsent?.classList.add('hidden'); });
 
       function isPhoneValid(): boolean {
         const digits = (phoneInput?.value || '').replace(/\D/g, '');
@@ -199,18 +203,16 @@ const inputWidth = isDesktop ? 'w-[276px]' : 'w-full';
         return (consent?.checked ?? false) && (consentPolicy?.checked ?? false);
       }
 
-      function updateSubmit() {
-        if (submitBtn) {
-          submitBtn.disabled = !(isPhoneValid() && bothConsentsChecked());
-        }
-      }
-
-      // Form submit
+      // Form submit — кнопка всегда активна, при невалидности показываем подсказки
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!isPhoneValid() || !bothConsentsChecked()) {
-          const modal = document.getElementById('bookingReminderModal') as HTMLDialogElement | null;
-          modal?.showModal();
+        const phoneOk = isPhoneValid();
+        const consentsOk = bothConsentsChecked();
+        if (!phoneOk || !consentsOk) {
+          hintPhone?.classList.toggle('hidden', phoneOk);
+          hintConsent?.classList.toggle('hidden', consentsOk);
+          if (!phoneOk) { phoneInput?.focus(); phoneInput?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+          else if (!consentsOk) { (consentPolicy as HTMLElement)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
           return;
         }
 

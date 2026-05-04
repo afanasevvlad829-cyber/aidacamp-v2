@@ -299,17 +299,21 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
     const bookError = bookModal.querySelector<HTMLElement>('[data-book-error]');
     const ageBtns = bookModal.querySelectorAll<HTMLButtonElement>('[data-book-age]');
 
-    let selectedAge = '10-12';
+    let selectedAge = '';
+    const hintAge = bookModal.querySelector<HTMLElement>('[data-book-hint-age]');
+    const hintPhone = bookModal.querySelector<HTMLElement>('[data-book-hint-phone]');
+    const hintConsent = bookModal.querySelector<HTMLElement>('[data-book-hint-consent]');
 
     ageBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
         ageBtns.forEach((b) => {
           b.classList.remove('bg-primary', 'text-[#0d1a2b]', 'font-semibold');
-          b.classList.add('border', 'border-border', 'text-body-muted', 'font-medium');
+          b.classList.add('border', 'border-slate-200', 'text-slate-700', 'font-medium');
         });
-        btn.classList.remove('border', 'border-border', 'text-body-muted', 'font-medium');
+        btn.classList.remove('border', 'border-slate-200', 'text-slate-700', 'font-medium');
         btn.classList.add('bg-primary', 'text-[#0d1a2b]', 'font-semibold');
-        selectedAge = btn.dataset.bookAge || '10-12';
+        selectedAge = btn.dataset.bookAge || '';
+        hintAge?.classList.add('hidden');
       });
     });
 
@@ -327,7 +331,7 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
         if (digits.length >= 9) formatted += '-' + digits.slice(9, 11);
 
         bookPhone.value = formatted;
-        validateBookForm();
+        if (digits.length === 11) hintPhone?.classList.add('hidden');
       });
     }
 
@@ -340,16 +344,10 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
       return (bookConsent?.checked ?? false) && (bookConsentPolicy?.checked ?? false);
     }
 
-    function validateBookForm() {
-      const valid = isPhoneValid() && bothConsentsChecked();
-      if (bookSubmit) {
-        bookSubmit.disabled = !valid;
-        bookSubmit.classList.toggle('opacity-50', !valid);
-      }
-    }
+    function isAgeValid() { return Boolean(selectedAge); }
 
-    bookConsent?.addEventListener('change', validateBookForm);
-    bookConsentPolicy?.addEventListener('change', validateBookForm);
+    bookConsent?.addEventListener('change', () => { if (bothConsentsChecked()) hintConsent?.classList.add('hidden'); });
+    bookConsentPolicy?.addEventListener('change', () => { if (bothConsentsChecked()) hintConsent?.classList.add('hidden'); });
 
     document.querySelectorAll('[data-shift-book]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -360,6 +358,15 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
         if (bookDuration) bookDuration.textContent = el.dataset.shiftBookDuration || '';
         if (bookPrice) bookPrice.textContent = el.dataset.shiftBookPrice || '';
         if (bookError) bookError.classList.add('hidden');
+        // сброс возраста и подсказок при каждом открытии
+        selectedAge = '';
+        ageBtns.forEach((b) => {
+          b.classList.remove('bg-primary', 'text-[#0d1a2b]', 'font-semibold');
+          b.classList.add('border', 'border-slate-200', 'text-slate-700', 'font-medium');
+        });
+        hintAge?.classList.add('hidden');
+        hintPhone?.classList.add('hidden');
+        hintConsent?.classList.add('hidden');
         // Показываем блок с данными о смене только если есть название
         if (bookShiftBlock) bookShiftBlock.classList.toggle('hidden', !name);
         showShiftToast(name);
@@ -372,18 +379,22 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
     bookModal.addEventListener('click', (e) => { if (e.target === bookModal) bookModal.close(); });
 
     bookSubmit?.addEventListener('click', async () => {
-      if (!isPhoneValid()) {
-        if (bookError) {
-          bookError.textContent = 'Похоже, не хватает цифры — проверьте номер';
-          bookError.classList.remove('hidden');
-        }
-        return;
-      }
-      if (!bothConsentsChecked()) {
-        if (bookError) {
-          bookError.textContent = 'Поставьте галочки — без них не можем принять заявку';
-          bookError.classList.remove('hidden');
-        }
+      if (bookError) bookError.classList.add('hidden');
+
+      // Показываем все подсказки сразу — пользователь видит что ещё нужно
+      let firstInvalid: HTMLElement | null = null;
+      hintAge?.classList.toggle('hidden', isAgeValid());
+      if (!isAgeValid() && !firstInvalid) firstInvalid = bookModal.querySelector<HTMLElement>('[data-book-age-group]');
+
+      hintPhone?.classList.toggle('hidden', isPhoneValid());
+      if (!isPhoneValid() && !firstInvalid) firstInvalid = bookPhone;
+
+      hintConsent?.classList.toggle('hidden', bothConsentsChecked());
+      if (!bothConsentsChecked() && !firstInvalid) firstInvalid = bookConsentPolicy;
+
+      if (!isAgeValid() || !isPhoneValid() || !bothConsentsChecked()) {
+        firstInvalid?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        (firstInvalid as HTMLInputElement | null)?.focus?.();
         return;
       }
 
