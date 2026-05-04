@@ -412,7 +412,7 @@ const description = 'Интерактивный рассказ о внутрен
   }
 
   /* EXPLAINER container */
-  .explainer{max-width:1100px;margin:0 auto 32px;height:80vh;min-height:600px;background:var(--sf);border:1px solid var(--bd);border-radius:18px;overflow:hidden;box-shadow:var(--shl);display:flex;flex-direction:column;position:relative}
+  .explainer{max-width:1100px;margin:0 auto 32px;background:var(--sf);border:1px solid var(--bd);border-radius:18px;overflow:hidden;box-shadow:var(--shl);display:flex;flex-direction:column;position:relative}
 
   #prog{height:3px;background:var(--bd);flex-shrink:0}
   #pf{height:100%;background:var(--or);width:0;transition:width .3s;box-shadow:0 0 8px rgba(236,155,68,.5)}
@@ -426,11 +426,10 @@ const description = 'Интерактивный рассказ о внутрен
   .tl{display:inline}
   @media(max-width:520px){.tl{display:none}.tab{padding:14px 12px 12px}}
 
-  #main{flex:1;position:relative;overflow:hidden}
-  .sc{position:absolute;inset:0;padding:20px 24px 16px;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s}
-  .sc.on{opacity:1;pointer-events:all;transform:none!important}
-  .sc.el{transform:translateX(-28px)}
-  .sc.er{transform:translateX(28px)}
+  #main{position:relative}
+  /* Сцены — поток, не абсолют, без внутреннего скролла. Активная видна, остальные display:none */
+  .sc{display:none;padding:24px 28px 20px;opacity:0;transition:opacity .35s ease}
+  .sc.on{display:block;opacity:1;animation:fadeUp .35s ease both}
 
   .sh{margin-bottom:18px}
   .ey{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--or);margin-bottom:6px;animation:fadeUp .4s both}
@@ -534,8 +533,8 @@ const description = 'Интерактивный рассказ о внутрен
 
   @media(max-width:720px){
     .ai-studio .hero{padding:32px 18px 18px}
-    .explainer{height:auto;min-height:0;margin:0 12px 24px;border-radius:14px}
-    #main{min-height:520px}
+    .explainer{margin:0 12px 24px;border-radius:14px}
+    .sc{padding:18px 16px 14px}
   }
 </style>
 
@@ -620,13 +619,13 @@ function pause(){
   stopAud();kill();stopT();hl([]);sub('Пауза — кликайте на блоки');
 }
 function rst(){
-  pause();el=0;updT();resetAnims();go(1,false);sub('Нажмите ▶ чтобы запустить рассказ с озвучкой');
+  pause();el=0;updT();resetAnims();go(1);sub('Нажмите ▶ чтобы запустить рассказ с озвучкой');
 }
 function nxt(){
   kill();stopAud();el=0;
   const was=pl;if(pl)pause();
   const n=sn<3?sn+1:1;
-  go(n,false);
+  go(n);
   if(was)setTimeout(()=>startPl(),320);
 }
 
@@ -683,13 +682,10 @@ function stopT(){clearInterval(tmr);}
 function updT(){const s=Math.floor(el/1000);$('td').textContent=Math.floor(s/60)+':'+(s%60).toString().padStart(2,'0');}
 function updProg(){const max=sn===1?32000:sn===2?42500:32000;$('pf').style.width=Math.min(100,el/max*100)+'%';}
 
-function go(n,anim=true){
+function go(n){
   stopAud();kill();el=0;updT();updProg();
   const prev=$('s'+sn),next=$('s'+n);
-  if(prev&&prev!==next){
-    if(anim){prev.classList.add(n>sn?'el':'er');setTimeout(()=>prev.classList.remove('on','el','er'),320);}
-    else prev.classList.remove('on');
-  }
+  if(prev&&prev!==next)prev.classList.remove('on');
   sn=n;if(next)next.classList.add('on');
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',+t.dataset.s===n));
   resetAnims();
