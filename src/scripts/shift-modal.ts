@@ -251,12 +251,6 @@ export function initShiftModal() {
     }
   });
 
-  // === Кастомное событие открытия из AgeBar (нудж) ===
-  document.addEventListener('shift-modal-open', ((e: Event) => {
-    const { shiftId, tab } = (e as CustomEvent<{ shiftId: string; tab: TabName }>).detail;
-    open(shiftId, tab || 'description');
-  }) as EventListener);
-
   // === Event delegation на секции #shifts ===
   const shiftsSection = document.getElementById('shifts');
   if (!shiftsSection) return;
