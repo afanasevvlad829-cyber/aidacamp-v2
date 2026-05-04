@@ -1,0 +1,29 @@
+[Unit]
+Description=Aidacamp Hub API Server
+Documentation=https://github.com/aidacamp/hub
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/aidacamp-hub
+EnvironmentFile=/opt/aidacamp-hub/.env
+ExecStart=/usr/bin/node api/server.js
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aidacamp-hub
+
+# Лимиты
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Безопасность
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/aidacamp-hub /var/log/aidacamp
+
+[Install]
+WantedBy=multi-user.target
