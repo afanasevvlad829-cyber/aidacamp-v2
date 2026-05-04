@@ -184,11 +184,7 @@ const shifts = orderedShifts.map((s) => ({
   </div>
 
   <!--
-    CTA «Купить смену» — открывает ShiftInfoModal для выбранной в dropdown смены
-    (возраст + описание + расписание), как клик по строке в ShiftOccupancy.
-    Flow: select смена → клик → shift-modal-open event → ShiftInfoModal → внутри него
-    есть «Выбрать смену» → открывает ShiftBookModal с формой бронирования.
-
+    CTA «Купить смену» — навигирует на страницу выбранной смены /shifts/[id]/
     Если смена = «custom» (ручной ввод) — fallback на /kupit-putevku-v-lager/.
   -->
   <button
@@ -264,14 +260,13 @@ const shifts = orderedShifts.map((s) => ({
     priceEl?.addEventListener('input', recalc);
     daysEl?.addEventListener('input', recalc);
 
-    // CTA «Купить смену» → открывает ShiftInfoModal для выбранной смены
+    // CTA «Купить смену» → навигирует на страницу смены
     // (или /kupit-putevku-v-lager/ если выбран «Другая / ввести вручную»).
     const buyBtn = document.getElementById('tc-buy-btn');
     buyBtn?.addEventListener('click', () => {
       const shiftId = sel?.value;
       // BUGFIX: если TaxCalculator открыт внутри TaxWidget модалки —
-      // её надо закрыть ДО открытия ShiftModal, иначе они стекаются по z-index
-      // и пользователь видит «модалка не работает» (ShiftModal под TaxWidget модалкой).
+      // её надо закрыть ДО навигации, иначе она останется открытой
       const taxModal = document.getElementById('tax-widget-modal');
       const taxClose = document.getElementById('tax-widget-close');
       if (taxModal && !taxModal.classList.contains('hidden')) {
@@ -281,12 +276,9 @@ const shifts = orderedShifts.map((s) => ({
         window.location.href = '/kupit-putevku-v-lager/';
         return;
       }
-      // Открываем ShiftInfoModal с небольшой задержкой, чтобы tax-widget успела закрыться
+      // Навигируем на страницу смены с небольшой задержкой, чтобы tax-widget успела закрыться
       setTimeout(() => {
-        const ev = new CustomEvent('shift-modal-open', {
-          detail: { shiftId: shiftId, tab: 'description' }
-        });
-        document.dispatchEvent(ev);
+        window.location.href = `/shifts/${shiftId}/`;
       }, 50);
       window.acTrack && window.acTrack('tc_buy_shift', { shiftId: shiftId });
     });

@@ -625,8 +625,10 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
       <select class="psel" id="popShift"></select>
       <label class="plbl">Телефон</label>
       <input class="pin" type="tel" id="popPhone" placeholder="+7 (___) ___-__-__">
+      <p id="popHintPhone" style="display:none;color:#ef4444;font-size:13px;margin-top:6px;">Введите номер полностью — 11 цифр (+7 …)</p>
       <label class="pcons"><input type="checkbox" id="popConsentPolicy"> Ознакомлен(а) с <a href="/privacy-policy/" target="_blank">Политикой обработки ПД</a></label>
       <label class="pcons"><input type="checkbox" id="popConsent"> Согласен(а) на <a href="/soglasie-na-obrabotku-personalnyh-dannyh/" target="_blank">обработку персональных данных</a></label>
+      <p id="popHintConsent" style="display:none;color:#ef4444;font-size:13px;margin-top:6px;">Поставьте обе галочки — без них не можем принять заявку</p>
       <button class="psub" id="popSubmit" onclick="submitBooking()">Забронировать →</button>
       <div class="ptr">Пн–Вс 11:00–20:00 МСК · Лицензия Минобра<br>Налоговый вычет 13% через ФНС</div>
     </div>
@@ -2052,17 +2054,18 @@ function pa(btn){
 }
 
 async function submitBooking(){
-  const phone=document.getElementById('popPhone').value.trim();
-  if(!phone||phone.replace(/\D/g,'').length<11){
-    document.getElementById('popPhone').focus();
-    return;
-  }
+  const phoneEl=document.getElementById('popPhone');
+  const phone=phoneEl.value.trim();
+  const hintPhone=document.getElementById('popHintPhone');
+  const hintConsent=document.getElementById('popHintConsent');
   const consentPolicy=document.getElementById('popConsentPolicy');
   const consent=document.getElementById('popConsent');
-  if(!consentPolicy?.checked||!consent?.checked){
-    alert('Необходимо подтвердить оба согласия');
-    return;
-  }
+  const phoneOk=phone&&phone.replace(/\D/g,'').length===11;
+  const consentsOk=consentPolicy?.checked&&consent?.checked;
+  if(hintPhone)hintPhone.style.display=phoneOk?'none':'block';
+  if(hintConsent)hintConsent.style.display=consentsOk?'none':'block';
+  if(!phoneOk){phoneEl.focus();phoneEl.scrollIntoView({behavior:'smooth',block:'center'});return;}
+  if(!consentsOk){consentPolicy.scrollIntoView({behavior:'smooth',block:'center'});return;}
   const shift=document.getElementById('popShift').value;
   const age=document.querySelector('.pab.on')?.textContent||'';
   const btn=document.getElementById('popSubmit');
@@ -2084,7 +2087,7 @@ async function submitBooking(){
   }
 }
 
-/* ── PHONE MASK ── */
+/* ── PHONE MASK + auto-hide hints ── */
 document.getElementById('popPhone').addEventListener('input',function(){
   let v=this.value.replace(/\D/g,'');
   if(v.startsWith('8')&&v.length>1)v='7'+v.slice(1);
@@ -2096,6 +2099,15 @@ document.getElementById('popPhone').addEventListener('input',function(){
   if(v.length>=7)r+='-'+v.slice(7,9);
   if(v.length>=9)r+='-'+v.slice(9,11);
   this.value=r;
+  if(v.length===11){const h=document.getElementById('popHintPhone');if(h)h.style.display='none';}
+});
+['popConsent','popConsentPolicy'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.addEventListener('change',()=>{
+    const a=document.getElementById('popConsent'),b=document.getElementById('popConsentPolicy');
+    if(a?.checked&&b?.checked){const h=document.getElementById('popHintConsent');if(h)h.style.display='none';}
+  });
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closePopup()});
 
