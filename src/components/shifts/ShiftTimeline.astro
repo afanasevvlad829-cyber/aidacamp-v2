@@ -3,56 +3,134 @@
  * ShiftTimeline — sticky-photo + timeline этапов смены.
  * Концепт: shift-story_2.html .timeline-wrapper
  *
- * Desktop: 2 колонки grid 1fr 1.2fr — слева sticky фото которая меняется
- *          по мере скролла правой колонки с этапами. Photo меняется через IntersectionObserver
- *          (когда milestone visible → swap фото).
- * Mobile: 1 колонка — каждый milestone имеет свою маленькую фотку сверху.
+ * Адаптивен под длительность смены (durationDays):
+ *   - 7 дней: День 1 / Дни 2-3 / Дни 4-5 / День 6 / День 7
+ *   - 10 дней: День 1 / Дни 2-3 / Дни 4-7 / День 8-9 / День 10
+ *   - 14 дней: День 1 / Дни 2-4 / Дни 5-9 / Дни 10-12 / День 13-14
  *
- * Этапы взяты из концепта (5 milestones для типичной смены).
+ * Desktop: 2 колонки, sticky photo слева
+ * Mobile: 1 колонка
  */
+interface Props {
+  durationDays?: number;
+}
 
-const milestones = [
-  {
-    day: 'День 1',
-    title: 'Приезд. Знакомство с командой и кодом',
-    text: 'Заезд утром, распределение по группам по возрасту. После обеда — первая «база»: сцена, персонаж, движение. Уже к вечеру первого дня каждый ребёнок видит результат на экране.',
-    photo: '/images/gallery/study-coding.avif',
-    photoAlt: 'Дети на занятии программированием',
-  },
-  {
-    day: 'Дни 2–4',
-    title: 'Проект обретает форму',
-    text: 'Выбор идеи: что делаем — игру, AI-приложение, чат-бота. Группа делится по интересам. Базовые механики добавляются за 2-3 дня.',
-    photo: '/images/gallery/study-pitch.avif',
-    photoAlt: 'Презентация идеи проекта',
-  },
-  {
-    day: 'Дни 5–7',
-    title: 'Уже есть что запустить',
-    text: 'К середине смены каждый проект уже работает в базовой версии. Время для бассейна, спорта, настолок — голова отдыхает, проект «дозревает» в фоне.',
-    photo: '/images/gallery/pool-interior.avif',
-    photoAlt: 'Бассейн',
-  },
-  {
-    day: 'День 8–9',
-    title: 'Один день — настоящий стартап',
-    text: 'Хакатон: за один день команды доводят проект до финальной версии. Менторы помогают, дети сами решают что важно успеть.',
-    photo: '/images/gallery/hackathon-present.avif',
-    photoAlt: 'Хакатон в лагере',
-  },
-  {
-    day: 'Финал',
-    title: 'Защита. Готовый проект. Домой',
-    text: 'Защита перед родителями и ровесниками. Каждый показывает что сделал — и что научился делать. Проект уезжает с ребёнком домой и продолжает жить там.',
-    photo: '/images/gallery/study-stage-girl.avif',
-    photoAlt: 'Защита проекта',
-  },
-];
+const { durationDays = 14 } = Astro.props;
+
+// Короткие смены (≤8 дней) = 4 этапа без хакатона
+// Длинные (10+) = 5 этапов с хакатоном
+const isShort = durationDays <= 8;
+
+function computeMilestoneDays(d: number, short: boolean) {
+  if (short) {
+    // 4 этапа: приезд / середина / финал-сборка / защита
+    const m1End = Math.max(2, Math.floor(d * 0.4));
+    const m2End = Math.floor(d * 0.75);
+    return [
+      { label: 'День 1' },
+      { label: `Дни 2–${m1End}` },
+      { label: `Дни ${m1End + 1}–${m2End}` },
+      { label: `День ${d}` },
+    ];
+  }
+  if (d <= 10) {
+    const m1End = Math.floor(d * 0.3);
+    const m2End = Math.floor(d * 0.7);
+    return [
+      { label: 'День 1' },
+      { label: `Дни 2–${m1End}` },
+      { label: `Дни ${m1End + 1}–${m2End}` },
+      { label: `День ${m2End + 1}–${d - 1}` },
+      { label: `День ${d}` },
+    ];
+  }
+  const m1End = Math.floor(d * 0.28);
+  const m2End = Math.floor(d * 0.65);
+  const m3End = Math.floor(d * 0.85);
+  return [
+    { label: 'День 1' },
+    { label: `Дни 2–${m1End}` },
+    { label: `Дни ${m1End + 1}–${m2End}` },
+    { label: `Дни ${m2End + 1}–${m3End}` },
+    { label: `Дни ${m3End + 1}–${d}` },
+  ];
+}
+
+const days = computeMilestoneDays(durationDays, isShort);
+
+const milestones = isShort
+  ? [
+      {
+        day: days[0].label,
+        title: 'Приезд и знакомство',
+        text: 'Заезд утром, группы по возрасту. К вечеру первого дня каждый видит результат на экране.',
+        photo: '/images/gallery/shift-timeline-1.avif',
+        photoAlt: 'Знакомство в первый вечер',
+      },
+      {
+        day: days[1].label,
+        title: 'Проект обретает форму',
+        text: 'Выбор идеи: игра, AI-приложение или чат-бот. Базовые механики добавляются за 2-3 занятия.',
+        photo: '/images/gallery/shift-timeline-4.avif',
+        photoAlt: 'Дети на занятии программированием',
+      },
+      {
+        day: days[2].label,
+        title: 'Сборка и финиш',
+        text: 'Проект собирается в готовую версию. Параллельно — бассейн, спорт, настолки.',
+        photo: '/images/gallery/shift-timeline-3.avif',
+        photoAlt: 'Бассейн',
+      },
+      {
+        day: days[3].label,
+        title: 'Защита и домой',
+        text: 'Защита перед родителями. Каждый показывает что сделал. Проект уезжает с ребёнком домой.',
+        photo: '/images/gallery/shift-timeline-2.avif',
+        photoAlt: 'Защита проекта',
+      },
+    ]
+  : [
+      {
+        day: days[0].label,
+        title: 'Приезд и знакомство',
+        text: 'Заезд утром, группы по возрасту. К вечеру первого дня каждый видит результат на экране.',
+        photo: '/images/gallery/shift-timeline-1.avif',
+        photoAlt: 'Знакомство в первый вечер',
+      },
+      {
+        day: days[1].label,
+        title: 'Проект обретает форму',
+        text: 'Выбор идеи: игра, AI-приложение или чат-бот. Базовые механики добавляются за 2-3 занятия.',
+        photo: '/images/gallery/shift-timeline-4.avif',
+        photoAlt: 'Дети на занятии программированием',
+      },
+      {
+        day: days[2].label,
+        title: 'Уже есть что запустить',
+        text: 'Проект работает в базовой версии. Параллельно — бассейн, спорт, настолки.',
+        photo: '/images/gallery/shift-timeline-3.avif',
+        photoAlt: 'Бассейн',
+      },
+      {
+        day: days[3].label,
+        title: 'Хакатон',
+        text: 'Команды доводят проект до финальной версии. Менторы помогают, дети сами решают что важно.',
+        photo: '/images/gallery/shift-timeline-2.avif',
+        photoAlt: 'Защита проекта в формате хакатона',
+      },
+      {
+        day: days[4].label,
+        title: 'Защита и домой',
+        text: 'Защита перед родителями. Каждый показывает что сделал. Проект уезжает с ребёнком домой.',
+        photo: '/images/gallery/shift-timeline-5.avif',
+        photoAlt: 'Корпуса и территория лагеря',
+      },
+    ];
 ---
 
 <section class="mx-auto max-w-[1200px] px-5 py-12 md:px-8 md:py-20">
   <div class="text-center mb-10 md:mb-14">
-    <p class="reveal text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">День за днём</p>
+    <p class="reveal text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">{durationDays} дней — день за днём</p>
     <h2 class="reveal text-[28px] md:text-[42px] font-bold leading-[1.15] tracking-[-0.02em] text-body">
       Как смена выглядит<br><span class="text-primary">изнутри</span>
     </h2>
@@ -72,7 +150,6 @@ const milestones = [
               loading="lazy"
             />
           ))}
-          <!-- Light overlay for text readability if needed -->
           <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent p-5">
             <p data-timeline-caption class="text-[13px] text-white/85 font-medium" />
           </div>
@@ -80,18 +157,17 @@ const milestones = [
       </div>
     </div>
 
-    <!-- RIGHT: Milestones (timeline) -->
+    <!-- RIGHT: Milestones -->
     <div class="space-y-6 md:space-y-10">
       {milestones.map((m, i) => (
         <article class="reveal milestone-card" data-timeline-target={i} data-reveal-delay={i * 60}>
-          <!-- Mobile-only photo (на десктопе фото в sticky слева) -->
           <div class="md:hidden mb-4 overflow-hidden rounded-[18px] aspect-[16/10] shadow-[0_4px_12px_rgba(15,23,42,0.08),0_24px_56px_rgba(15,23,42,0.18)]">
             <img src={m.photo} alt={m.photoAlt} class="h-full w-full object-cover" loading="lazy" />
           </div>
 
           <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-primary mb-2">{m.day}</p>
-          <h3 class="text-[20px] md:text-[24px] font-bold tracking-[-0.01em] text-body leading-[1.2] mb-3">{m.title}</h3>
-          <p class="text-[16px] md:text-[17px] leading-[1.6] text-body-muted">{m.text}</p>
+          <h3 class="text-[20px] md:text-[24px] font-bold tracking-[-0.01em] text-body leading-[1.2] mb-2">{m.title}</h3>
+          <p class="text-[15px] md:text-[16px] leading-[1.55] text-body-muted">{m.text}</p>
         </article>
       ))}
     </div>
@@ -104,19 +180,11 @@ const milestones = [
     const targets = document.querySelectorAll<HTMLElement>('[data-timeline-target]');
     const captionEl = document.querySelector<HTMLElement>('[data-timeline-caption]');
     if (!photos.length || !targets.length) return;
-
-    // Initial caption
-    if (captionEl && photos[0]) {
-      captionEl.textContent = (photos[0] as HTMLImageElement).alt;
-    }
+    if (captionEl && photos[0]) captionEl.textContent = (photos[0] as HTMLImageElement).alt;
 
     function showPhoto(idx: number) {
-      photos.forEach((p, i) => {
-        p.style.opacity = i === idx ? '1' : '0';
-      });
-      if (captionEl && photos[idx]) {
-        captionEl.textContent = (photos[idx] as HTMLImageElement).alt;
-      }
+      photos.forEach((p, i) => { p.style.opacity = i === idx ? '1' : '0'; });
+      if (captionEl && photos[idx]) captionEl.textContent = (photos[idx] as HTMLImageElement).alt;
     }
 
     const observer = new IntersectionObserver(
