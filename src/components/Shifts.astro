@@ -156,7 +156,7 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
   import { STORAGE_KEYS } from '../lib/storage';
   import { shiftInfo } from '../data/shifts';
   import { renderCalendar } from '../scripts/shift-calendar';
-  import { submitLead } from '../scripts/form-submit';
+  // submitLead больше не используется здесь — логика в ShiftBookModal.astro
 
   // --- Shift stat toast ---
   interface ShiftStat { pct: number; h: [number,number,number,number]; name: string; text: string }
@@ -283,71 +283,15 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
       cards.forEach((card) => observer.observe(card));
     }
 
-    // === BOOKING MODAL ===
+    // === BOOKING MODAL — лишь биндинг кнопок открытия + заполнение данных смены.
+    // Вся логика валидации/сабмита формы — внутри ShiftBookModal.astro (self-contained).
     const bookModal = document.getElementById('shiftBookModal') as HTMLDialogElement | null;
     if (!bookModal) return;
-
     const bookShiftBlock = bookModal.querySelector<HTMLElement>('[data-book-shift-block]');
     const bookName = bookModal.querySelector('[data-book-shift-name]');
     const bookDates = bookModal.querySelector('[data-book-shift-dates]');
     const bookDuration = bookModal.querySelector('[data-book-shift-duration]');
     const bookPrice = bookModal.querySelector('[data-book-shift-price]');
-    const bookPhone = bookModal.querySelector<HTMLInputElement>('[data-book-phone]');
-    const bookConsentPolicy = bookModal.querySelector<HTMLInputElement>('[data-book-consent-policy]');
-    const bookConsent = bookModal.querySelector<HTMLInputElement>('[data-book-consent]');
-    const bookSubmit = bookModal.querySelector<HTMLButtonElement>('[data-book-submit]');
-    const bookError = bookModal.querySelector<HTMLElement>('[data-book-error]');
-    const ageBtns = bookModal.querySelectorAll<HTMLButtonElement>('[data-book-age]');
-
-    let selectedAge = '';
-    const hintAge = bookModal.querySelector<HTMLElement>('[data-book-hint-age]');
-    const hintPhone = bookModal.querySelector<HTMLElement>('[data-book-hint-phone]');
-    const hintConsent = bookModal.querySelector<HTMLElement>('[data-book-hint-consent]');
-
-    ageBtns.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        ageBtns.forEach((b) => {
-          b.classList.remove('bg-primary', 'text-[#0d1a2b]', 'font-semibold');
-          b.classList.add('border', 'border-slate-200', 'text-slate-700', 'font-medium');
-        });
-        btn.classList.remove('border', 'border-slate-200', 'text-slate-700', 'font-medium');
-        btn.classList.add('bg-primary', 'text-[#0d1a2b]', 'font-semibold');
-        selectedAge = btn.dataset.bookAge || '';
-        hintAge?.classList.add('hidden');
-      });
-    });
-
-    if (bookPhone) {
-      bookPhone.addEventListener('input', () => {
-        let digits = bookPhone.value.replace(/\D/g, '');
-        if (digits.startsWith('8')) digits = '7' + digits.slice(1);
-        if (!digits.startsWith('7')) digits = '7' + digits;
-        digits = digits.slice(0, 11);
-
-        let formatted = '+7';
-        if (digits.length > 1) formatted += ' (' + digits.slice(1, 4);
-        if (digits.length >= 4) formatted += ') ' + digits.slice(4, 7);
-        if (digits.length >= 7) formatted += '-' + digits.slice(7, 9);
-        if (digits.length >= 9) formatted += '-' + digits.slice(9, 11);
-
-        bookPhone.value = formatted;
-        if (digits.length === 11) hintPhone?.classList.add('hidden');
-      });
-    }
-
-    function isPhoneValid() {
-      const digits = (bookPhone?.value || '').replace(/\D/g, '');
-      return digits.length === 11;
-    }
-
-    function bothConsentsChecked() {
-      return (bookConsent?.checked ?? false) && (bookConsentPolicy?.checked ?? false);
-    }
-
-    function isAgeValid() { return Boolean(selectedAge); }
-
-    bookConsent?.addEventListener('change', () => { if (bothConsentsChecked()) hintConsent?.classList.add('hidden'); });
-    bookConsentPolicy?.addEventListener('change', () => { if (bothConsentsChecked()) hintConsent?.classList.add('hidden'); });
 
     document.querySelectorAll('[data-shift-book]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -357,57 +301,11 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
         if (bookDates) bookDates.textContent = el.dataset.shiftBookDates || '';
         if (bookDuration) bookDuration.textContent = el.dataset.shiftBookDuration || '';
         if (bookPrice) bookPrice.textContent = el.dataset.shiftBookPrice || '';
-        if (bookError) bookError.classList.add('hidden');
-        // сброс возраста и подсказок при каждом открытии
-        selectedAge = '';
-        ageBtns.forEach((b) => {
-          b.classList.remove('bg-primary', 'text-[#0d1a2b]', 'font-semibold');
-          b.classList.add('border', 'border-slate-200', 'text-slate-700', 'font-medium');
-        });
-        hintAge?.classList.add('hidden');
-        hintPhone?.classList.add('hidden');
-        hintConsent?.classList.add('hidden');
-        // Показываем блок с данными о смене только если есть название
         if (bookShiftBlock) bookShiftBlock.classList.toggle('hidden', !name);
         showShiftToast(name);
         bookModal.showModal();
         (window as any).trackGoal?.('shift_book_click', { shift: name }, 500);
       });
-    });
-
-    bookModal.querySelector('[data-shift-book-close]')?.addEventListener('click', () => bookModal.close());
-    bookModal.addEventListener('click', (e) => { if (e.target === bookModal) bookModal.close(); });
-
-    bookSubmit?.addEventListener('click', async () => {
-      if (bookError) bookError.classList.add('hidden');
-
-      // Показываем все подсказки сразу — пользователь видит что ещё нужно
-      let firstInvalid: HTMLElement | null = null;
-      hintAge?.classList.toggle('hidden', isAgeValid());
-      if (!isAgeValid() && !firstInvalid) firstInvalid = bookModal.querySelector<HTMLElement>('[data-book-age-group]');
-
-      hintPhone?.classList.toggle('hidden', isPhoneValid());
-      if (!isPhoneValid() && !firstInvalid) firstInvalid = bookPhone;
-
-      hintConsent?.classList.toggle('hidden', bothConsentsChecked());
-      if (!bothConsentsChecked() && !firstInvalid) firstInvalid = bookConsentPolicy;
-
-      if (!isAgeValid() || !isPhoneValid() || !bothConsentsChecked()) {
-        firstInvalid?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        (firstInvalid as HTMLInputElement | null)?.focus?.();
-        return;
-      }
-
-      await submitLead({
-        phone: bookPhone?.value || '',
-        age: selectedAge,
-        shift: bookName?.textContent || '',
-        form: 'shifts_book',
-      });
-
-      bookModal.close();
-      const referralModal = document.getElementById('referralModal') as HTMLDialogElement | null;
-      referralModal?.showModal();
     });
 
     // === CALENDAR MODAL ===
