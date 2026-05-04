@@ -1,0 +1,71 @@
+---
+/**
+ * HeroFeatures — горизонтальная полоска чипов с фактами о смене.
+ * Концепт: ВОЗРАСТ / ГРУППЫ / ОТ МОСКВЫ / ОПЫТ / НОУТБУК / ГАРАНТИЯ / ЛИЦЕНЗИЯ / МЕДСЕСТРА / ПИТАНИЕ.
+ *
+ * Mobile: horizontal scroll-snap (свайп пальцем)
+ * Desktop: full row (или wrap если не поместятся)
+ *
+ * Используется в hero (Mobile.astro + Desktop.astro) под big call.
+ */
+const features = [
+  { label: 'Возраст', value: '7–15 лет' },
+  { label: 'Группы', value: 'до 8 чел.' },
+  { label: 'От Москвы', value: '1 час' },
+  { label: 'Опыт', value: 'не нужен' },
+  { label: 'Ноутбук', value: 'не нужен' },
+  { label: 'Возврат', value: '50% за 3 дня', accent: true },
+  { label: 'Лицензия', value: '✓ Минобрнауки', accent: true },
+  { label: 'Медсестра', value: '24/7', accent: true },
+  { label: 'Питание', value: '5-разовое' },
+];
+---
+
+<div class="hero-features relative" aria-label="Ключевые факты о лагере">
+  <!-- Левая тень-затухание (намёк что есть скролл) -->
+  <div class="hero-features-fade-l hidden md:block" aria-hidden="true"></div>
+  <!-- Правая тень-затухание -->
+  <div class="hero-features-fade-r" aria-hidden="true"></div>
+
+  <ul class="hero-features-track flex gap-0 overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+    {features.map((f) => (
+      <li class="hero-features-chip flex flex-col justify-center shrink-0 snap-start min-w-[160px] md:min-w-[180px] px-5 py-4 md:px-6 md:py-5 border-r border-white/10 last:border-r-0">
+        <span class="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.16em] text-white/55">{f.label}</span>
+        <span class={`mt-1.5 text-[17px] md:text-[19px] font-extrabold leading-[1.15] tracking-[-0.01em] ${f.accent ? 'text-emerald-300' : 'text-white'}`}>
+          {f.value}
+        </span>
+      </li>
+    ))}
+  </ul>
+</div>
+
+<style>
+  .hero-features {
+    background: rgba(13, 26, 43, 0.78);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .hero-features-fade-l,
+  .hero-features-fade-r {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 48px;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .hero-features-fade-l {
+    left: 0;
+    background: linear-gradient(to right, rgba(13,26,43,0.95), transparent);
+  }
+  .hero-features-fade-r {
+    right: 0;
+    background: linear-gradient(to left, rgba(13,26,43,0.95), transparent);
+  }
+  /* На очень широких экранах содержимое центрируется и fade не нужен */
+  @media (min-width: 1280px) {
+    .hero-features-track { justify-content: center; }
+  }
+</style>

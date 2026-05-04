@@ -128,7 +128,7 @@ const shifts = orderedShifts.map((s) => ({
     <div class="mb-3 flex items-baseline justify-between gap-2">
       <span class="text-[14px] text-slate-600">Ориентировочный возврат:</span>
       <span id="tc-deduction" class="text-[32px] md:text-[36px] font-bold leading-none text-orange-600">
-        ~5 400 ₽
+        5 434 ₽
       </span>
     </div>
     <div class="text-[14px] text-slate-600">
@@ -269,16 +269,25 @@ const shifts = orderedShifts.map((s) => ({
     const buyBtn = document.getElementById('tc-buy-btn');
     buyBtn?.addEventListener('click', () => {
       const shiftId = sel?.value;
+      // BUGFIX: если TaxCalculator открыт внутри TaxWidget модалки —
+      // её надо закрыть ДО открытия ShiftModal, иначе они стекаются по z-index
+      // и пользователь видит «модалка не работает» (ShiftModal под TaxWidget модалкой).
+      const taxModal = document.getElementById('tax-widget-modal');
+      const taxClose = document.getElementById('tax-widget-close');
+      if (taxModal && !taxModal.classList.contains('hidden')) {
+        taxClose?.click();
+      }
       if (!shiftId || shiftId === 'custom') {
         window.location.href = '/kupit-putevku-v-lager/';
         return;
       }
-      // Совпадает с контрактом из src/scripts/shift-modal.ts:222
-      const ev = new CustomEvent('shift-modal-open', {
-        detail: { shiftId: shiftId, tab: 'description' }
-      });
-      document.dispatchEvent(ev);
-      // Аналитика (analytics goal через acTrack, как и другие кнопки)
+      // Открываем ShiftInfoModal с небольшой задержкой, чтобы tax-widget успела закрыться
+      setTimeout(() => {
+        const ev = new CustomEvent('shift-modal-open', {
+          detail: { shiftId: shiftId, tab: 'description' }
+        });
+        document.dispatchEvent(ev);
+      }, 50);
       window.acTrack && window.acTrack('tc_buy_shift', { shiftId: shiftId });
     });
 

@@ -1,0 +1,177 @@
+---
+import Base from '../../layouts/Base.astro';
+import '../../styles/global.css';
+---
+
+<Base title="Visual Diff — PROD vs DEV (live)" noindex>
+
+<style is:inline>
+  body { font-family: 'Inter', sans-serif; background: #1a1f2e; color: white; margin: 0; }
+  .topbar {
+    background: #0d1a2b;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding: 12px 20px;
+    display: flex; align-items: center; gap: 16px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .topbar h1 { font-size: 16px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px; }
+  .topbar h1 i { color: #ec9b44; }
+  .topbar .controls { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+  .btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); padding: 6px 14px; border-radius: 8px; color: white; font-size: 13px; cursor: pointer; font-weight: 500; }
+  .btn:hover { background: rgba(255,255,255,0.15); }
+  .btn.active { background: #ec9b44; border-color: #ec9b44; }
+  .btn.live { color: #ec9b44; border-color: rgba(236,155,68,0.4); }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #2fa768; display: inline-block; margin-right: 6px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 0.5 } 50% { opacity: 1 } }
+
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    background: rgba(255,255,255,0.1);
+    height: calc(100vh - 56px);
+  }
+  .pane { background: #0d1a2b; display: flex; flex-direction: column; }
+  .pane-header {
+    padding: 10px 16px;
+    background: #1c2740;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12px;
+  }
+  .pane-header.prod { border-left: 3px solid #6b7280; }
+  .pane-header.dev { border-left: 3px solid #ec9b44; }
+  .pane-label { font-weight: 700; }
+  .pane-url { color: rgba(255,255,255,0.5); font-family: monospace; font-size: 11px; }
+  .pane-iframe-wrap { flex: 1; position: relative; overflow: hidden; background: white; }
+  .pane-iframe-wrap iframe { width: 100%; height: 100%; border: 0; transform-origin: top left; }
+
+  .device-frame {
+    margin: 0 auto;
+    background: #1c1c1e;
+    padding: 8px;
+    border-radius: 24px;
+    height: 100%;
+    box-sizing: border-box;
+  }
+  .device-mobile { max-width: 414px; }
+  .device-mobile iframe { border-radius: 16px; }
+
+  .footer-info { background: #0d1a2b; border-top: 1px solid rgba(255,255,255,0.08); padding: 10px 20px; font-size: 12px; color: rgba(255,255,255,0.6); display: flex; gap: 16px; }
+  .footer-info strong { color: white; }
+</style>
+
+<div class="topbar">
+  <h1><i class="bi bi-arrow-left-right"></i> Visual Diff — PROD vs DEV</h1>
+  <div class="controls">
+    <button class="btn active" data-device="mobile" id="btn-mobile"><i class="bi bi-phone"></i> Mobile</button>
+    <button class="btn" data-device="desktop" id="btn-desktop"><i class="bi bi-laptop"></i> Desktop</button>
+    <button class="btn" id="btn-sync" title="Синхронизация скролла"><i class="bi bi-link-45deg"></i> Sync</button>
+    <button class="btn" id="btn-reload"><i class="bi bi-arrow-clockwise"></i> Reload</button>
+    <span class="btn live" id="btn-live"><span class="live-dot"></span> Auto-refresh 30s</span>
+    <a href="/demo/design-progress/" class="btn" style="text-decoration:none"><i class="bi bi-bar-chart-line"></i> Dashboard</a>
+  </div>
+</div>
+
+<div class="compare">
+  <div class="pane">
+    <div class="pane-header prod">
+      <span class="pane-label">aidacamp.ru</span>
+      <span class="pane-url">PROD (стабильное)</span>
+    </div>
+    <div class="pane-iframe-wrap">
+      <div class="device-frame device-mobile" id="prod-frame">
+        <iframe id="prod-iframe" src="https://aidacamp.ru" loading="lazy"></iframe>
+      </div>
+    </div>
+  </div>
+  <div class="pane">
+    <div class="pane-header dev">
+      <span class="pane-label">dev.aidacamp.ru</span>
+      <span class="pane-url">DEV (новые изменения)</span>
+    </div>
+    <div class="pane-iframe-wrap">
+      <div class="device-frame device-mobile" id="dev-frame">
+        <iframe id="dev-iframe" src="https://dev.aidacamp.ru" loading="lazy"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer-info">
+  <span><strong id="last-update">—</strong> · last refresh</span>
+  <span>Sync scroll: <strong id="sync-status">OFF</strong></span>
+  <span>Device: <strong id="device-status">Mobile 414</strong></span>
+  <span style="margin-left:auto"><strong>Tip:</strong> кнопка "Sync" связывает скролл двух фреймов; "Auto-refresh" перезагружает DEV каждые 30 сек</span>
+</div>
+
+<script is:inline>
+  let syncOn = false;
+  let liveOn = true;
+  const prodIframe = document.getElementById('prod-iframe');
+  const devIframe = document.getElementById('dev-iframe');
+  const prodFrame = document.getElementById('prod-frame');
+  const devFrame = document.getElementById('dev-frame');
+  const btnSync = document.getElementById('btn-sync');
+  const btnReload = document.getElementById('btn-reload');
+  const btnLive = document.getElementById('btn-live');
+  const btnMobile = document.getElementById('btn-mobile');
+  const btnDesktop = document.getElementById('btn-desktop');
+  const lastUpdate = document.getElementById('last-update');
+  const syncStatus = document.getElementById('sync-status');
+  const deviceStatus = document.getElementById('device-status');
+
+  function updateLastRefresh() {
+    const now = new Date();
+    lastUpdate.textContent = now.toLocaleTimeString('ru-RU');
+  }
+  updateLastRefresh();
+
+  // Reload buttons
+  btnReload.addEventListener('click', () => {
+    devIframe.src = devIframe.src.split('?')[0] + '?_=' + Date.now();
+    prodIframe.src = prodIframe.src.split('?')[0] + '?_=' + Date.now();
+    updateLastRefresh();
+  });
+
+  // Live auto-refresh DEV every 30s (only DEV — PROD stable)
+  let liveTimer = setInterval(() => {
+    if (liveOn) {
+      devIframe.src = 'https://dev.aidacamp.ru?_=' + Date.now();
+      updateLastRefresh();
+    }
+  }, 30000);
+  btnLive.addEventListener('click', () => {
+    liveOn = !liveOn;
+    btnLive.style.opacity = liveOn ? '1' : '0.4';
+  });
+
+  // Sync scroll (best effort — same-origin not guaranteed)
+  btnSync.addEventListener('click', () => {
+    syncOn = !syncOn;
+    btnSync.classList.toggle('active', syncOn);
+    syncStatus.textContent = syncOn ? 'ON' : 'OFF';
+    alert(syncOn ? 'Sync включен — браузер не позволяет получать scroll из cross-origin iframe, поэтому это ограничение браузера. Используй scroll вручную в обоих окнах одновременно.' : 'Sync выключен');
+  });
+
+  // Device toggle
+  function setDevice(device) {
+    if (device === 'mobile') {
+      prodFrame.classList.add('device-mobile');
+      devFrame.classList.add('device-mobile');
+      btnMobile.classList.add('active');
+      btnDesktop.classList.remove('active');
+      deviceStatus.textContent = 'Mobile 414';
+    } else {
+      prodFrame.classList.remove('device-mobile');
+      devFrame.classList.remove('device-mobile');
+      btnDesktop.classList.add('active');
+      btnMobile.classList.remove('active');
+      deviceStatus.textContent = 'Desktop full';
+    }
+  }
+  btnMobile.addEventListener('click', () => setDevice('mobile'));
+  btnDesktop.addEventListener('click', () => setDevice('desktop'));
+</script>
+
+</Base>

@@ -55,7 +55,7 @@ const ageCountsJson = JSON.stringify({
   >
     <div class="mx-auto max-w-[640px] px-4 py-4">
       <p class="text-[14px] text-slate-600 mb-2.5 font-medium">
-        <span class="text-slate-900 font-semibold">Выберите возраст</span> — покажем смену где больше ровесников
+        <span class="text-slate-900 font-semibold">Сколько лет ребёнку?</span> — покажем смену с ровесниками
       </p>
       <div class="flex items-center gap-2">
         <div class="flex gap-2 flex-1">
@@ -64,7 +64,7 @@ const ageCountsJson = JSON.stringify({
             class="age-btn flex-1 py-2.5 rounded-[10px]
                    text-[15px] font-semibold
                    text-slate-800 bg-white border border-slate-200
-                   hover:border-[#ec7c00] hover:bg-[#fff8f2] hover:text-[#ec7c00]
+                   hover:border-primary hover:bg-[#fff8f2] hover:text-primary
                    transition-all active:scale-95"
           >7–9</button>
           <button
@@ -72,7 +72,7 @@ const ageCountsJson = JSON.stringify({
             class="age-btn flex-1 py-2.5 rounded-[10px]
                    text-[15px] font-semibold
                    text-slate-800 bg-white border border-slate-200
-                   hover:border-[#ec7c00] hover:bg-[#fff8f2] hover:text-[#ec7c00]
+                   hover:border-primary hover:bg-[#fff8f2] hover:text-primary
                    transition-all active:scale-95"
           >10–12</button>
           <button
@@ -80,7 +80,7 @@ const ageCountsJson = JSON.stringify({
             class="age-btn flex-1 py-2.5 rounded-[10px]
                    text-[15px] font-semibold
                    text-slate-800 bg-white border border-slate-200
-                   hover:border-[#ec7c00] hover:bg-[#fff8f2] hover:text-[#ec7c00]
+                   hover:border-primary hover:bg-[#fff8f2] hover:text-primary
                    transition-all active:scale-95"
           >13–15</button>
         </div>
@@ -105,11 +105,11 @@ const ageCountsJson = JSON.stringify({
         <p id="age-bar-nudge-text" class="flex-1 text-[15px] font-semibold text-slate-900 leading-[1.35]"></p>
         <button
           id="age-bar-nudge-cta"
-          class="shrink-0 rounded-[10px] bg-[#ec7c00] hover:bg-[#d67000]
+          class="shrink-0 rounded-[10px] bg-primary hover:bg-primary-hover
                  px-4 py-2.5 text-[14px] font-semibold text-[#0d1a2b]
                  shadow-[0_2px_8px_rgba(236,124,0,0.25)]
                  active:scale-95 transition-all whitespace-nowrap"
-        >Посмотреть →</button>
+        >Показать смену →</button>
         <button
           id="age-bar-nudge-close"
           class="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
@@ -152,7 +152,7 @@ const ageCountsJson = JSON.stringify({
     '10–12': { pct: 42, h: [62, 100, 76], text: 'Самый популярный возраст' },
     '13–15': { pct: 32, h: [62, 76, 100], text: 'Подросткам здесь особенно интересно' },
   };
-  const ACCENT = '#ec7c00';
+  const ACCENT = 'rgb(236, 155, 68)'; // = var(--color-primary)
   const MUTED  = '#e2e8f0';
 
   const ageToast   = document.getElementById('age-stat-toast');
@@ -205,7 +205,18 @@ const ageCountsJson = JSON.stringify({
   const ageBtns   = document.querySelectorAll('.age-btn');
 
   function isDismissed() {
-    return !!sessionStorage.getItem(STORAGE_KEYS.ageBarDismissed);
+    // Сессия (мгновенный dismiss) ИЛИ localStorage с TTL 7 дней
+    if (sessionStorage.getItem(STORAGE_KEYS.ageBarDismissed)) return true;
+    const longTerm = localStorage.getItem(STORAGE_KEYS.ageBarDismissed);
+    if (!longTerm) return false;
+    const ts = parseInt(longTerm, 10);
+    if (isNaN(ts)) return false;
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    if (Date.now() - ts > sevenDays) {
+      localStorage.removeItem(STORAGE_KEYS.ageBarDismissed); // expired
+      return false;
+    }
+    return true;
   }
 
   let awakenTimer = null;
@@ -241,7 +252,7 @@ const ageCountsJson = JSON.stringify({
         if (!currentAge() && !isDismissed()) {
           bar?.classList.add('age-bar-awaken');
         }
-      }, 4000);
+      }, 8000);
     }
   }
 
@@ -260,6 +271,8 @@ const ageCountsJson = JSON.stringify({
     bar?.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
     bar?.classList.remove('translate-y-0', 'opacity-100', 'age-bar-awaken');
     sessionStorage.setItem(STORAGE_KEYS.ageBarDismissed, '1');
+    // Долгосрочный dismiss на 7 дней (если user явно закрыл)
+    localStorage.setItem(STORAGE_KEYS.ageBarDismissed, String(Date.now()));
     clearTimeout(awakenTimer);
   }
 
@@ -276,7 +289,7 @@ const ageCountsJson = JSON.stringify({
   function onScroll() {
     const scrolled = window.scrollY;
     const total = document.documentElement.scrollHeight - window.innerHeight;
-    if (total > 0 && scrolled / total >= 0.25) {
+    if (total > 0 && scrolled / total >= 0.45) {
       showBar();
       window.removeEventListener('scroll', onScroll);
     }
@@ -290,7 +303,7 @@ const ageCountsJson = JSON.stringify({
         showBar();
         window.removeEventListener('scroll', onScroll);
       }
-    }, 10000);
+    }, 25000);
   }
 
   closeBtn?.addEventListener('click', hideBar);

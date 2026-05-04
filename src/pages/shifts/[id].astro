@@ -1,0 +1,324 @@
+---
+/**
+ * Динамическая страница смены — /shifts/[id]/
+ *
+ * Берёт данные из src/data/shifts.ts (allShifts) + src/data/shift-info.ts
+ * Layout вдохновлён shift-story_2.html: hero с большими датами →
+ * strip с мета (возраст/группы/опыт) → story timeline → milestones → result → booking.
+ *
+ * Создаётся на каждую смену: shift-1, shift-2, shift-3, shift-4, shift-2-1, shift-2-2.
+ */
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import ShiftBookModal from '../../components/shifts/ShiftBookModal.astro';
+import ShiftTimeline from '../../components/shifts/ShiftTimeline.astro';
+import { allShifts, shiftInfo, type Shift } from '../../data/shifts';
+
+export async function getStaticPaths() {
+  return allShifts.map((shift) => ({
+    params: { id: shift.id },
+    props: { shift },
+  }));
+}
+
+interface Props {
+  shift: Shift;
+}
+
+const { shift } = Astro.props;
+const info = shiftInfo[shift.id];
+
+// Total для progress bar
+const total = (shift.free || 0) + (shift.occupied || 0) || 1;
+const occupiedPct = Math.round((shift.occupied / total) * 100);
+const isLowAvail = occupiedPct >= 85;
+
+// Парсинг дат для крупного отображения «10—23 июня»
+const months: Record<string, string> = {
+  '01': 'января', '02': 'февраля', '03': 'марта', '04': 'апреля',
+  '05': 'мая', '06': 'июня', '07': 'июля', '08': 'августа',
+  '09': 'сентября', '10': 'октября', '11': 'ноября', '12': 'декабря',
+};
+const startMonth = shift.startDate.split('-')[1];
+const endMonth = shift.endDate.split('-')[1];
+const startDay = parseInt(shift.startDate.split('-')[2]);
+const endDay = parseInt(shift.endDate.split('-')[2]);
+const sameMonth = startMonth === endMonth;
+const heroDateBig = sameMonth
+  ? `${startDay}—${endDay}`
+  : `${startDay} ${months[startMonth].slice(0, 3)} — ${endDay} ${months[endMonth].slice(0, 3)}`;
+const heroMonthLabel = sameMonth ? months[startMonth] : '';
+
+// SEO
+const seoTitle = `${shift.name}: детский лагерь в Подмосковье, ${shift.dates} 2026 — АйДаКемп`;
+const seoDescription = `${shift.duration} в IT-лагере под Москвой: Python, AI, хакатон. Возраст 7–15, ${shift.price} всё включено. ${shift.dates} 2026.`;
+---
+
+<Base
+  title={seoTitle}
+  description={seoDescription}
+  heroPreloadDesktop="/images/hero-desktop.avif"
+>
+  <Header />
+  <main class="pb-20 md:pb-0">
+
+    <!-- ═══════ HERO — крупные даты, цена, occupancy, CTA ═══════ -->
+    <section class="relative overflow-hidden bg-dark-navy text-white">
+      <!-- Background photo: portrait для mobile, desktop для md+ -->
+      <picture>
+        <source media="(max-width: 768px)" srcset="/images/hero-mobile-bean-v3-600.avif" />
+        <img src="/images/hero-desktop.avif" alt="" aria-hidden="true" class="absolute inset-0 h-full w-full object-cover opacity-55" style="object-position: center 30%;" loading="eager" />
+      </picture>
+      <!-- Затемняющий градиент -->
+      <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,9,18,0.85)_0%,rgba(5,9,18,0.55)_50%,rgba(5,9,18,0.75)_100%)]" aria-hidden="true"></div>
+      <!-- Top header overlay -->
+      <div class="absolute top-0 left-0 right-0 h-[100px] bg-[linear-gradient(180deg,rgba(0,0,0,0.45)_0%,rgba(0,0,0,0)_100%)] pointer-events-none" aria-hidden="true"></div>
+      <!-- Brand orange ambient -->
+      <div class="absolute inset-0 bg-[radial-gradient(80%_60%_at_70%_30%,rgba(236,155,68,0.15)_0%,transparent_60%)] mix-blend-soft-light" aria-hidden="true"></div>
+
+      <div class="relative mx-auto max-w-[1200px] px-5 pt-24 pb-10 md:px-8 md:pt-32 md:pb-16">
+        <!-- Breadcrumb -->
+        <nav class="mb-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-white/60" aria-label="Хлебные крошки">
+          <a href="/" class="hover:text-white">Главная</a>
+          <i class="bi bi-chevron-right text-[10px]" aria-hidden="true"></i>
+          <a href="/#shifts" class="hover:text-white">Смены</a>
+          <i class="bi bi-chevron-right text-[10px]" aria-hidden="true"></i>
+          <span class="text-white/85">{shift.name}</span>
+        </nav>
+
+        <!-- Eyebrow tag -->
+        <p class="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md px-3 py-1 text-[12px] font-bold uppercase tracking-[0.14em] text-white">
+          <span class="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true"></span>
+          {shift.name} · Лето 2026{shift.popular ? ' · Популярная' : ''}
+        </p>
+
+        <!-- BIG DATES (как в концепте «10—23 июня») -->
+        <h1 class="sr-only">{shift.name}: детский IT-лагерь в Подмосковье, {shift.dates} 2026</h1>
+        <p class="font-extrabold leading-[1.0] tracking-[-0.02em] text-white" style="font-size: clamp(40px, 7vw, 80px); text-shadow: 0 4px 16px rgba(0,0,0,0.5);">
+          {shift.dates}
+        </p>
+
+        <p class="mt-4 text-[16px] md:text-[18px] text-white/85 max-w-[640px]" style="text-shadow: 0 1px 3px rgba(0,0,0,0.7);">
+          <strong class="font-bold text-white">{shift.duration}</strong> · Санаторий «Изумруд» · 66 км от Москвы
+        </p>
+
+        <!-- Meta block: price + occupancy + CTA -->
+        <div class="mt-8 grid gap-5 md:grid-cols-[auto_1fr_auto] md:items-end md:gap-8">
+          <!-- Price -->
+          <div class="flex flex-col">
+            <span class="text-[12px] font-semibold uppercase tracking-[0.14em] text-white/65">Стоимость</span>
+            <span class="text-[36px] md:text-[44px] font-extrabold tracking-[-0.02em] text-white leading-none mt-1">{shift.price}</span>
+            <span class="text-[13px] text-white/70 mt-1">всё включено</span>
+          </div>
+
+          <!-- Occupancy -->
+          <div class="flex flex-col">
+            <div class="flex justify-between mb-2 text-[13px]">
+              <span class="text-white/75">Свободно мест</span>
+              <span class={isLowAvail ? 'text-orange-300 font-semibold' : 'text-emerald-300 font-semibold'}>
+                {isLowAvail ? `Осталось ${shift.free}` : `${shift.free}`}
+              </span>
+            </div>
+            <div class="h-2 w-full overflow-hidden rounded-full bg-white/15">
+              <div class={`h-full ${isLowAvail ? 'bg-orange-400' : 'bg-emerald-400'} rounded-full`} style={`width:${occupiedPct}%`}></div>
+            </div>
+          </div>
+
+          <!-- Primary CTA -->
+          <button type="button"
+            data-shift-book={shift.id}
+            data-shift-book-name={shift.name}
+            data-shift-book-dates={shift.dates}
+            data-shift-book-duration={shift.duration}
+            data-shift-book-price={shift.price}
+            data-analytics-goal="shift_select"
+            data-analytics-label={shift.name}
+            class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover px-6 py-3.5 text-[16px] font-semibold text-white transition-colors min-h-[52px] whitespace-nowrap"
+          >
+            Забронировать
+            <i class="bi bi-arrow-right text-[14px]" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════ TIMELINE — фоточки + 5 этапов смены ═══════ -->
+    <ShiftTimeline />
+
+    <!-- ═══════ STRIP — мета (возраст/группы/опыт/ноутбук) ═══════ -->
+    <section class="border-b border-border-light">
+      <div class="mx-auto max-w-[1200px] px-5 py-6 md:px-8 md:py-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-6">
+          <div>
+            <p class="text-[12px] font-semibold uppercase tracking-[0.12em] text-body-faint">Возраст</p>
+            <p class="mt-1 text-[16px] font-bold text-body">7–15 лет</p>
+          </div>
+          <div>
+            <p class="text-[12px] font-semibold uppercase tracking-[0.12em] text-body-faint">Группы</p>
+            <p class="mt-1 text-[16px] font-bold text-body">до 8 человек</p>
+          </div>
+          <div>
+            <p class="text-[12px] font-semibold uppercase tracking-[0.12em] text-body-faint">Опыт</p>
+            <p class="mt-1 text-[16px] font-bold text-body">не нужен</p>
+          </div>
+          <div>
+            <p class="text-[12px] font-semibold uppercase tracking-[0.12em] text-body-faint">Ноутбук</p>
+            <p class="mt-1 text-[16px] font-bold text-body">не нужен</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ═══════ MILESTONES — три кита ═══════ -->
+    <section class="border-y border-border-light bg-surface">
+      <div class="mx-auto max-w-[1200px] px-5 py-12 md:px-8 md:py-20">
+        <div class="text-center mb-10 md:mb-14">
+          <p class="reveal text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 mb-3">Три кита</p>
+          <h2 class="reveal text-[28px] md:text-[42px] font-bold leading-[1.15] tracking-[-0.02em] text-body">
+            Что делает смену<br><span class="text-primary">полной</span>
+          </h2>
+        </div>
+        <div class="grid gap-5 md:grid-cols-3">
+          <article class="reveal flex flex-col rounded-[16px] border border-border-light bg-card p-6 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_24px_56px_rgba(15,23,42,0.18)]">
+            <i class="bi bi-lightning-charge-fill text-[28px] text-primary mb-3" aria-hidden="true"></i>
+            <p class="text-[12px] font-semibold uppercase tracking-[0.12em] text-body-faint mb-1">Каждый день</p>
+            <h3 class="text-[20px] font-bold text-body mb-2">Реальный прогресс</h3>
+            <p class="text-[15px] leading-[1.55] text-body-muted">Не «прошли тему», а «добавили механику и она работает». Каждый день — конкретный шаг вперёд в своём проекте.</p>
+          </article>
+          <article class="reveal flex flex-col rounded-[16px] border border-border-light bg-card p-6 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_24px_56px_rgba(15,23,42,0.18)]" data-reveal-delay="100">
+            <i class="bi bi-tree-fill text-[28px] text-primary mb-3" aria-hidden="true"></i>
+            <p class="text-[12px] font-semibold uppercase tracking-[0.12em] text-body-faint mb-1">Между занятиями</p>
+            <h3 class="text-[20px] font-bold text-body mb-2">Жизнь за экраном</h3>
+            <p class="text-[15px] leading-[1.55] text-body-muted">Бассейн, лес, настолки, мафия по вечерам. Телефон — только вечером для связи с домом.</p>
+          </article>
+          <article class="reveal flex flex-col rounded-[16px] border border-border-light bg-card p-6 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_24px_56px_rgba(15,23,42,0.18)]" data-reveal-delay="200">
+            <i class="bi bi-trophy-fill text-[28px] text-primary mb-3" aria-hidden="true"></i>
+            <p class="text-[12px] font-semibold uppercase tracking-[0.12em] text-body-faint mb-1">Финал</p>
+            <h3 class="text-[20px] font-bold text-body mb-2">Хакатон и защита</h3>
+            <p class="text-[15px] leading-[1.55] text-body-muted">Финальный рывок: проект собирается в итоговую версию, защищается перед родителями и едет домой.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════ RESULT — «Ребёнок уезжает с проектом» + цифры ═══════ -->
+    <section class="mx-auto max-w-[1200px] px-5 py-16 md:px-8 md:py-24 text-center">
+      <h2 class="reveal font-extrabold leading-[1.0] tracking-[-0.02em] text-body" style="font-size: clamp(36px, 6vw, 64px);">
+        Ребёнок уезжает<br><span class="text-primary">с проектом</span>
+      </h2>
+      <p class="reveal mt-4 text-[17px] leading-[1.6] text-body-muted max-w-[520px] mx-auto">
+        Не с сертификатом и впечатлениями. С работающей игрой или AI-приложением, которое можно показать дома и запустить.
+      </p>
+      <div class="mt-10 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-[860px] mx-auto">
+        <div class="reveal">
+          <p class="text-[36px] md:text-[44px] font-extrabold text-body leading-none">{shift.duration.split(' ')[0]}</p>
+          <p class="mt-1 text-[14px] md:text-[13px] text-body-muted">дней плотной практики</p>
+        </div>
+        <div class="reveal" data-reveal-delay="80">
+          <p class="text-[36px] md:text-[44px] font-extrabold text-body leading-none">1</p>
+          <p class="mt-1 text-[14px] md:text-[13px] text-body-muted">готовый проект</p>
+        </div>
+        <div class="reveal" data-reveal-delay="160">
+          <p class="text-[36px] md:text-[44px] font-extrabold text-body leading-none">8</p>
+          <p class="mt-1 text-[14px] md:text-[13px] text-body-muted">человек в группе максимум</p>
+        </div>
+        <div class="reveal" data-reveal-delay="240">
+          <p class="text-[36px] md:text-[44px] font-extrabold text-body leading-none">60%</p>
+          <p class="mt-1 text-[14px] md:text-[13px] text-body-muted">детей возвращаются снова</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════ BOOKING — финальная форма ═══════ -->
+    <section id="booking" class="border-t border-border-light bg-surface">
+      <div class="mx-auto max-w-[640px] px-5 py-12 md:px-8 md:py-20">
+        <div class="rounded-[20px] bg-card p-6 md:p-8 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_24px_56px_rgba(15,23,42,0.18)]">
+          <h3 class="text-[24px] md:text-[28px] font-bold text-body mb-2">Забронировать {shift.name}</h3>
+          <p class="text-[15px] text-body-muted mb-5">{shift.dates} · {shift.duration} {isLowAvail && (<span class="text-orange-700 font-semibold"> · Осталось {shift.free} мест</span>)}</p>
+
+          <div class="flex items-baseline gap-3 mb-5 pb-5 border-b border-border-light">
+            <span class="text-[36px] font-extrabold tracking-[-0.02em] text-body">{shift.price}</span>
+            <span class="text-[15px] md:text-[14px] text-body-muted">всё включено · проживание, питание, программа</span>
+          </div>
+
+          <ul class="space-y-2.5 mb-6">
+            <li class="flex items-start gap-2.5 text-[15px] text-body">
+              <i class="bi bi-check-lg text-primary text-[14px] mt-1 shrink-0" aria-hidden="true"></i>
+              Возврат 50% если не понравится за первые 3 дня
+            </li>
+            <li class="flex items-start gap-2.5 text-[15px] text-body">
+              <i class="bi bi-check-lg text-primary text-[14px] mt-1 shrink-0" aria-hidden="true"></i>
+              Договор и чек — налоговый вычет 13%
+            </li>
+            <li class="flex items-start gap-2.5 text-[15px] text-body">
+              <i class="bi bi-check-lg text-primary text-[14px] mt-1 shrink-0" aria-hidden="true"></i>
+              Лицензия Минобрнауки · медсестра 24/7
+            </li>
+          </ul>
+
+          <button type="button"
+            data-shift-book={shift.id}
+            data-shift-book-name={shift.name}
+            data-shift-book-dates={shift.dates}
+            data-shift-book-duration={shift.duration}
+            data-shift-book-price={shift.price}
+            data-analytics-goal="shift_select"
+            data-analytics-label={shift.name + '_booking_block'}
+            class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover px-6 py-4 text-[17px] font-semibold text-white transition-colors min-h-[56px] whitespace-nowrap"
+          >
+            Оставить заявку
+            <i class="bi bi-arrow-right text-[15px]" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════ Back to all shifts ═══════ -->
+    <div class="mx-auto max-w-[1200px] px-5 py-10 md:px-8 text-center">
+      <a href="/#shifts" class="group inline-flex items-center gap-2 text-[15px] font-semibold text-primary hover:text-primary-hover">
+        <i class="bi bi-arrow-left text-[14px] transition-transform group-hover:-translate-x-1" aria-hidden="true"></i>
+        Все смены
+      </a>
+    </div>
+  </main>
+  <Footer />
+  <ShiftBookModal />
+
+<script>
+  // Bind все кнопки [data-shift-book] на странице к ShiftBookModal
+  function initBookButtons() {
+    const modal = document.getElementById('shiftBookModal');
+    if (!modal) return;
+    const closeBtn = modal.querySelector('[data-shift-book-close]');
+    closeBtn?.addEventListener('click', () => (modal as HTMLDialogElement).close());
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) (modal as HTMLDialogElement).close();
+    });
+
+    const nameEl = modal.querySelector('[data-book-name]');
+    const datesEl = modal.querySelector('[data-book-dates]');
+    const durationEl = modal.querySelector('[data-book-duration]');
+    const priceEl = modal.querySelector('[data-book-price]');
+    const blockEl = modal.querySelector('[data-book-shift-block]');
+
+    document.querySelectorAll('[data-shift-book]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const el = btn as HTMLElement;
+        const name = el.dataset.shiftBookName || '';
+        if (nameEl) nameEl.textContent = name;
+        if (datesEl) datesEl.textContent = el.dataset.shiftBookDates || '';
+        if (durationEl) durationEl.textContent = el.dataset.shiftBookDuration || '';
+        if (priceEl) priceEl.textContent = el.dataset.shiftBookPrice || '';
+        if (blockEl) blockEl.classList.toggle('hidden', !name);
+        (modal as HTMLDialogElement).showModal();
+        (window as any).trackGoal?.('shift_book_click', { shift: name }, 500);
+      });
+    });
+  }
+  document.addEventListener('astro:page-load', initBookButtons);
+  initBookButtons();
+</script>
+</Base>
