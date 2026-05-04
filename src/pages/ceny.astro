@@ -183,9 +183,7 @@ const sections = [
   />
 
   <!--
-    Таблица цен — каждая строка кликабельна и открывает ShiftInfoModal (возраст +
-    описание + расписание) через custom-event shift-modal-open. Контракт тот же,
-    что у кликов по строкам ShiftOccupancy, см. src/scripts/shift-modal.ts:222.
+    Таблица цен — каждая строка кликабельна и навигирует на страницу смены /shifts/[id]/
   -->
   <section class="mx-auto max-w-[1312px] px-4 py-10 md:py-14">
     <div class="flex items-center gap-2 mb-6">
@@ -209,27 +207,29 @@ const sections = [
         </thead>
         <tbody>
           {priceRows.map((row) => (
-            <tr
-              class="price-row border-t border-slate-100 text-[15px] text-slate-700 cursor-pointer transition-colors hover:bg-orange-50/60"
-              data-price-shift={row.id}
-              role="button"
-              tabindex="0"
-              aria-label={`${row.name} — подробнее о смене`}
-            >
-              <td class="px-4 py-3 font-semibold text-slate-900">{row.name}</td>
-              <td class="px-4 py-3">{row.dates}</td>
-              <td class="px-4 py-3 text-slate-600">{row.duration}</td>
-              <td class="px-4 py-3 text-right font-bold text-primary">{row.price}</td>
+            <tr class="border-t border-slate-100 text-[15px] text-slate-700 transition-colors hover:bg-orange-50/60">
+              <td class="px-4 py-3 font-semibold text-slate-900">
+                <a href={`/shifts/${row.id}/`} class="text-slate-900 hover:text-primary">{row.name}</a>
+              </td>
+              <td class="px-4 py-3">
+                <a href={`/shifts/${row.id}/`} class="text-slate-700 hover:text-primary">{row.dates}</a>
+              </td>
+              <td class="px-4 py-3 text-slate-600">
+                <a href={`/shifts/${row.id}/`} class="text-slate-600 hover:text-primary">{row.duration}</a>
+              </td>
+              <td class="px-4 py-3 text-right font-bold text-primary">
+                <a href={`/shifts/${row.id}/`} class="text-primary hover:text-orange-600">{row.price}</a>
+              </td>
               <td class="px-2 py-3 text-right">
                 {row.note && (
                   <span class="inline-flex rounded-full bg-orange-50 px-2.5 py-0.5 text-[12px] font-medium text-orange-700">{row.note}</span>
                 )}
               </td>
               <td class="px-4 py-3 text-right">
-                <span class="inline-flex items-center gap-1 rounded-full bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 text-[13px] font-semibold transition-colors whitespace-nowrap">
+                <a href={`/shifts/${row.id}/`} class="inline-flex items-center gap-1 rounded-full bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 text-[13px] font-semibold transition-colors whitespace-nowrap" data-analytics-goal="ceny_table_book" data-analytics-label={row.id}>
                   Забронировать
                   <i class="bi bi-arrow-right-short text-[15px]" aria-hidden="true"></i>
-                </span>
+                </a>
               </td>
             </tr>
           ))}
@@ -244,16 +244,16 @@ const sections = [
       Готовы записаться? <a href="/zapisatsya" class="text-[#ec7c00] hover:underline">Как забронировать место</a> — пошаговая инструкция.
     </p>
 
-    <!-- Mobile CTA — таблица скроллится горизонтально, кнопка «Забронировать» скрыта за экраном -->
+    <!-- Mobile CTA — ссылка на первую смену для выбора -->
     <div class="mt-4 md:hidden">
-      <button
-        type="button"
-        class="w-full inline-flex items-center justify-center gap-2 rounded-[14px] bg-orange-500 hover:bg-orange-600 active:bg-orange-700 px-5 py-3.5 text-[16px] font-semibold text-white transition-colors shadow-[0_4px_16px_rgba(249,115,22,0.3)]"
-        onclick="document.dispatchEvent(new CustomEvent('shift-modal-open', {detail:{shiftId:'smena1',tab:'description'}}))"
+      <a
+        href="/shifts/"
+        class="block w-full inline-flex items-center justify-center gap-2 rounded-[14px] bg-orange-500 hover:bg-orange-600 active:bg-orange-700 px-5 py-3.5 text-[16px] font-semibold text-white transition-colors shadow-[0_4px_16px_rgba(249,115,22,0.3)]"
+        data-analytics-goal="ceny_mobile_cta"
       >
         <i class="bi bi-calendar-check text-[18px]" aria-hidden="true"></i>
         Выбрать смену и забронировать
-      </button>
+      </a>
     </div>
 
     <!-- Urgency strip — дефицит мест -->
@@ -264,14 +264,6 @@ const sections = [
       </div>
       <span class="hidden sm:block h-4 w-px bg-amber-200 shrink-0"></span>
       <span class="text-[13px] text-amber-700">Популярные смены закрываются за 2–3 месяца до старта</span>
-      <button
-        type="button"
-        class="ml-auto shrink-0 inline-flex items-center gap-1.5 rounded-full bg-orange-500 hover:bg-orange-600 px-3 py-1.5 text-[13px] font-semibold text-white transition-colors"
-        onclick="document.dispatchEvent(new CustomEvent('shift-modal-open', {detail:{shiftId:'smena2',tab:'description'}}))"
-      >
-        Зафиксировать место
-        <i class="bi bi-arrow-right-short text-[15px]" aria-hidden="true"></i>
-      </button>
     </div>
   </section>
 
@@ -296,31 +288,3 @@ const sections = [
   <RelatedPages pages={getRelatedPages(Astro.url.pathname)} />
 </LandingLayout>
 
-<script>
-  // Nudge toast отключён
-
-  // Клик по строке таблицы цен → ShiftInfoModal (возраст + описание + расписание).
-  // Тот же контракт что у ShiftOccupancy row-clicks и TaxCalculator Buy-button.
-  function initPriceTable() {
-    document.querySelectorAll<HTMLTableRowElement>('.price-row').forEach((row) => {
-      const open = () => {
-        const shiftId = row.getAttribute('data-price-shift');
-        if (!shiftId) return;
-        const ev = new CustomEvent('shift-modal-open', {
-          detail: { shiftId, tab: 'description' },
-        });
-        document.dispatchEvent(ev);
-        (window as any).acTrack?.('ceny_row_click', { shiftId });
-      };
-      row.addEventListener('click', open);
-      row.addEventListener('keydown', (e: KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          open();
-        }
-      });
-    });
-  }
-  document.addEventListener('astro:page-load', initPriceTable);
-  initPriceTable();
-</script>

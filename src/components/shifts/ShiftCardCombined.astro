@@ -70,7 +70,7 @@ const sizeCls = isMobile
     )}
   </div>
 
-  <!-- TWO progress bars: одна на каждую смену -->
+  <!-- TWO progress bars: одна на каждую смену — кликабельные ссылки на страницы смен -->
   <div class="mt-5 space-y-3">
     {shifts.map((s) => {
       const total = s.occupied + s.free || 1;
@@ -80,15 +80,20 @@ const sizeCls = isMobile
       const freeColor = isLow ? 'text-orange-600' : 'text-emerald-700';
       const barColor = isLow ? 'bg-orange-500' : 'bg-emerald-400';
       return (
-        <div>
+        <a
+          href={`/shifts/${s.id}/`}
+          data-analytics-goal="combined_shift_click"
+          data-analytics-label={s.name}
+          class="block no-underline hover:opacity-90 transition-opacity group"
+        >
           <div class="flex justify-between text-[13px] mb-1.5">
-            <span class="text-body-muted">{s.name} · {s.duration}</span>
+            <span class="text-body-muted group-hover:text-primary transition-colors">{s.name} · {s.duration}</span>
             <span class={`font-medium ${freeColor}`}>{freeLabel}</span>
           </div>
           <div class="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
             <div class={`h-full rounded-full transition-all duration-500 ${barColor}`} style={`width:${pct}%`}></div>
           </div>
-        </div>
+        </a>
       );
     })}
   </div>
