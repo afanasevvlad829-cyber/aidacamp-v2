@@ -1,152 +1,202 @@
 #!/bin/bash
 
-##############################################################################
-# SERP A/B Testing: Automated Revert on Critical Alerts
-# Runs every 30 minutes via cron: */30 * * * *
-#
-# Workflow:
-# 1. Query alerts table for action_taken = 'auto_revert_triggered'
-# 2. For each alert, execute git revert of the failed deployment
-# 3. Push reverted commit to origin/dev
-# 4. Update alert to action_taken = 'auto_revert_executed'
-# 5. Trigger deployment: ./scripts/deploy.sh dev
-# 6. Log result to revert_history table
-##############################################################################
+# SERP CTR Monitoring — Automatic Revert on Critical Alert
+# Monitors for critical alerts and auto-reverts commits if conditions met
+# Runs every 30 minutes
 
-set -e  # Exit on any error
+set -e
+
+PROJECT_ROOT="/Users/vladimirafanasev/Aidacamp-cloude"
+cd "$PROJECT_ROOT"
 
 # Configuration
-REPO_DIR="/Users/vladimirafanasev/Aidacamp-cloude"
-LOG_FILE="/var/log/aidacamp-auto-revert.log"
-DB_HOST="/var/run/postgresql"
+DB_HOST="159.194.223.55"
 DB_NAME="aidacamp"
 DB_USER="postgres"
-TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}"
-TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
 
-# Colors for output
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Logging function
-log() {
-    local level=$1
-    shift
-    local msg="$@"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    echo -e "${timestamp} [${level}] ${msg}" | tee -a "$LOG_FILE"
-}
+CURRENT_DATE=$(date +%Y-%m-%d)
+CURRENT_TIME=$(date +%H:%M:%S)
 
-# Notification function
-notify() {
-    local level=$1
-    local msg=$2
+echo "=========================================="
+echo "⏮️  SERP CTR Auto-Revert Monitor — $CURRENT_DATE $CURRENT_TIME"
+echo "=========================================="
 
-    if [[ -z "$TELEGRAM_BOT_TOKEN" ]] || [[ -z "$TELEGRAM_CHAT_ID" ]]; then
-        return
-    fi
-
-    local emoji="ℹ️"
-    [[ "$level" == "ERROR" ]] && emoji="❌"
-    [[ "$level" == "SUCCESS" ]] && emoji="✅"
-    [[ "$level" == "WARNING" ]] && emoji="⚠️"
-
-    local text="${emoji} [Auto-Revert] ${msg}"
-    curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-        -d chat_id="$TELEGRAM_CHAT_ID" \
-        -d text="$text" \
-        -d parse_mode="HTML" \
-        >/dev/null 2>&1 || true
-}
-
-# Query database
+# SSH connection helper
 query_db() {
-    local sql="$1"
-    psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -A -t -c "$sql" 2>/dev/null || echo ""
+  local sql="$1"
+  ssh -i ~/.ssh/aidacamp_prod root@$DB_HOST "psql -U postgres -d $DB_NAME -c \"$sql\""
 }
 
-# Main logic
-main() {
-    log "INFO" "🔄 Auto-revert check started"
+# Get triggered-but-not-executed revert alerts
+echo -e "\n${BLUE}1. Checking for triggered revert alerts${NC}"
 
-    cd "$REPO_DIR"
+REVERT_ALERTS=$(query_db "
+  SELECT id, metric, old_value, new_value, change_pct, alert_level, message, commit_hash, pr_number, created_at
+  FROM alerts
+  WHERE alert_level = 'critical'
+    AND action_taken = 'auto_revert_triggered'
+  ORDER BY created_at DESC
+  LIMIT 5
+" | tail -n +3)
 
-    # Fetch latest from remote
-    git fetch origin dev 2>/dev/null || true
+if [ -z "$REVERT_ALERTS" ]; then
+  echo -e "${GREEN}✅ No critical alerts requiring revert${NC}"
+  exit 0
+fi
 
-    # Query alerts with action_taken = 'auto_revert_triggered'
-    local alerts=$(query_db "
-        SELECT id, commit_hash, ctr_drop, conversions_drop
-        FROM alerts
-        WHERE action_taken = 'auto_revert_triggered'
-        ORDER BY created_at DESC
-        LIMIT 5
-    ")
+echo "Found $(echo "$REVERT_ALERTS" | wc -l) critical alerts that need revert"
 
-    if [[ -z "$alerts" ]]; then
-        log "INFO" "✅ No critical alerts requiring revert"
-        return 0
-    fi
+# Process each revert alert
+while IFS='|' read -r ALERT_ID METRIC OLD_VAL NEW_VAL CHANGE_PCT ALERT_LEVEL MESSAGE COMMIT_HASH PR_NUM CREATED_AT; do
+  # Trim whitespace
+  ALERT_ID=$(echo "$ALERT_ID" | xargs)
+  METRIC=$(echo "$METRIC" | xargs)
+  OLD_VAL=$(echo "$OLD_VAL" | xargs)
+  NEW_VAL=$(echo "$NEW_VAL" | xargs)
+  CHANGE_PCT=$(echo "$CHANGE_PCT" | xargs)
+  ALERT_LEVEL=$(echo "$ALERT_LEVEL" | xargs)
+  MESSAGE=$(echo "$MESSAGE" | xargs)
+  COMMIT_HASH=$(echo "$COMMIT_HASH" | xargs)
+  PR_NUM=$(echo "$PR_NUM" | xargs)
+  CREATED_AT=$(echo "$CREATED_AT" | xargs)
 
-    # Process each alert
-    while IFS='|' read -r alert_id commit_hash ctr_drop conversions_drop; do
-        log "INFO" "🎯 Processing alert #${alert_id}: revert commit ${commit_hash:0:8}"
+  # Skip empty lines
+  [ -z "$ALERT_ID" ] && continue
 
-        # Check if commit exists
-        if ! git rev-parse --quiet --verify "$commit_hash^{commit}" >/dev/null 2>&1; then
-            log "ERROR" "❌ Commit ${commit_hash:0:8} not found in repository"
-            query_db "UPDATE alerts SET action_taken = 'revert_failed', notes = 'Commit not found' WHERE id = $alert_id" >/dev/null
-            notify "ERROR" "Alert #${alert_id}: Commit ${commit_hash:0:8} not found"
-            continue
-        fi
+  echo -e "\n${RED}Processing revert for alert #$ALERT_ID${NC}"
+  echo "Metric: $METRIC | Change: $CHANGE_PCT% | Commit: $COMMIT_HASH"
 
-        # Execute revert
-        if git revert --no-edit "$commit_hash" 2>&1 | tee -a "$LOG_FILE"; then
-            log "SUCCESS" "✅ Git revert successful for commit ${commit_hash:0:8}"
+  # Safety check: ensure we're on dev branch
+  CURRENT_BRANCH=$(git branch --show-current)
+  if [ "$CURRENT_BRANCH" != "dev" ]; then
+    echo -e "${RED}❌ ERROR: Not on 'dev' branch (currently: $CURRENT_BRANCH)${NC}"
+    continue
+  fi
 
-            # Push reverted commit
-            if git push origin dev 2>&1 | tee -a "$LOG_FILE"; then
-                log "SUCCESS" "✅ Pushed revert to origin/dev"
+  # Fetch latest to ensure we have the commit
+  echo -e "${BLUE}Fetching latest commits from origin...${NC}"
+  git fetch origin dev
 
-                # Update alert status
-                query_db "
-                    UPDATE alerts
-                    SET action_taken = 'auto_revert_executed',
-                        executed_at = NOW()
-                    WHERE id = $alert_id
-                " >/dev/null
+  # Check if commit exists
+  if ! git log --oneline | grep -q "^$COMMIT_HASH"; then
+    echo -e "${RED}❌ ERROR: Commit $COMMIT_HASH not found in history${NC}"
 
-                # Insert into revert_history
-                query_db "
-                    INSERT INTO revert_history (alert_id, commit_hash, status, deployed_at)
-                    VALUES ($alert_id, '$commit_hash', 'success', NOW())
-                " >/dev/null
+    # Update alert as failed
+    UPDATE_ALERT=$(cat << SQL
+UPDATE alerts
+SET action_taken = 'auto_revert_failed'
+WHERE id = $ALERT_ID;
+SQL
+)
+    ssh -i ~/.ssh/aidacamp_prod root@$DB_HOST "psql -U postgres -d $DB_NAME -c \"$UPDATE_ALERT\"" > /dev/null
+    continue
+  fi
 
-                # Trigger deployment
-                log "INFO" "📦 Triggering deployment to dev..."
-                if bash "$REPO_DIR/scripts/deploy.sh" dev 2>&1 | tee -a "$LOG_FILE"; then
-                    log "SUCCESS" "✅ Deployment completed successfully"
-                    notify "SUCCESS" "Alert #${alert_id}: Revert deployed. CTR↓${ctr_drop}%, Conv↓${conversions_drop}%"
-                else
-                    log "ERROR" "❌ Deployment failed"
-                    notify "ERROR" "Alert #${alert_id}: Revert failed during deployment"
-                fi
-            else
-                log "ERROR" "❌ Failed to push revert to origin/dev"
-                notify "ERROR" "Alert #${alert_id}: Failed to push revert"
-            fi
-        else
-            log "ERROR" "❌ Git revert failed for commit ${commit_hash:0:8}"
-            query_db "UPDATE alerts SET action_taken = 'revert_failed' WHERE id = $alert_id" >/dev/null
-            notify "ERROR" "Alert #${alert_id}: Revert execution failed"
-        fi
-    done <<< "$alerts"
+  # Proceed with revert
+  echo -e "${YELLOW}Executing: git revert $COMMIT_HASH --no-edit${NC}"
 
-    log "INFO" "✅ Auto-revert check completed"
-}
+  REVERT_START=$(date +%s)
+  REVERT_OUTPUT=$(git revert "$COMMIT_HASH" --no-edit 2>&1) || {
+    REVERT_ERROR="$REVERT_OUTPUT"
+    echo -e "${RED}❌ Revert failed:${NC}"
+    echo "$REVERT_ERROR"
 
-# Execution
-main "$@"
+    # Update alert as failed
+    UPDATE_ALERT=$(cat << SQL
+UPDATE alerts
+SET action_taken = 'auto_revert_failed'
+WHERE id = $ALERT_ID;
+SQL
+)
+    ssh -i ~/.ssh/aidacamp_prod root@$DB_HOST "psql -U postgres -d $DB_NAME -c \"$UPDATE_ALERT\"" > /dev/null
+    git revert --abort 2>/dev/null || true
+    continue
+  }
+
+  echo -e "${GREEN}✅ Revert commit created${NC}"
+
+  # Get the new revert commit hash
+  REVERT_COMMIT=$(git log -1 --format="%H")
+  echo "Revert commit: $REVERT_COMMIT"
+
+  # Push to origin dev
+  echo -e "${BLUE}Pushing revert commit to origin/dev...${NC}"
+
+  PUSH_OUTPUT=$(git push origin dev 2>&1) || {
+    PUSH_ERROR="$PUSH_OUTPUT"
+    echo -e "${RED}❌ Push failed:${NC}"
+    echo "$PUSH_ERROR"
+
+    # Revert the revert locally since we can't push
+    git reset --hard HEAD~1
+    echo "Rolled back local revert commit"
+
+    # Update alert as failed
+    UPDATE_ALERT=$(cat << SQL
+UPDATE alerts
+SET action_taken = 'auto_revert_failed'
+WHERE id = $ALERT_ID;
+SQL
+)
+    ssh -i ~/.ssh/aidacamp_prod root@$DB_HOST "psql -U postgres -d $DB_NAME -c \"$UPDATE_ALERT\"" > /dev/null
+    continue
+  }
+
+  REVERT_END=$(date +%s)
+  REVERT_DURATION=$((REVERT_END - REVERT_START))
+
+  echo -e "${GREEN}✅ Revert commit pushed successfully${NC}"
+
+  # Update alert as executed
+  UPDATE_ALERT=$(cat << SQL
+UPDATE alerts
+SET
+  action_taken = 'auto_revert_executed',
+  action_timestamp = NOW(),
+  action_log = 'Revert commit: $REVERT_COMMIT'
+WHERE id = $ALERT_ID;
+SQL
+)
+  ssh -i ~/.ssh/aidacamp_prod root@$DB_HOST "psql -U postgres -d $DB_NAME -c \"$UPDATE_ALERT\"" > /dev/null
+  echo -e "${BLUE}Updated alerts table${NC}"
+
+  # Insert into revert_history
+  INSERT_REVERT=$(cat << SQL
+INSERT INTO revert_history (
+  trigger_alert_id,
+  commit_hash,
+  pr_number,
+  revert_command,
+  git_output,
+  deploy_status
+) VALUES (
+  $ALERT_ID,
+  '$COMMIT_HASH',
+  $PR_NUM,
+  'git revert $COMMIT_HASH --no-edit && git push origin dev',
+  'Revert commit: $REVERT_COMMIT',
+  'pending'
+);
+SQL
+)
+  ssh -i ~/.ssh/aidacamp_prod root@$DB_HOST "psql -U postgres -d $DB_NAME -c \"$INSERT_REVERT\"" > /dev/null
+  echo -e "${GREEN}✅ Logged revert to revert_history${NC}"
+
+  # Trigger deployment script to deploy revert
+  echo -e "${BLUE}Deploying revert to dev.aidacamp.ru...${NC}"
+  ./scripts/deploy.sh dev > /tmp/serp-revert-deploy.log 2>&1 || {
+    echo -e "${RED}⚠️  Deployment had issues (check logs)${NC}"
+  }
+
+  echo -e "${GREEN}✅ Revert execution complete${NC}"
+done <<< "$REVERT_ALERTS"
+
+echo ""
+echo -e "${GREEN}✅ Auto-revert monitor complete${NC}"

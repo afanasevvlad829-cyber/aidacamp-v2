@@ -1,152 +1,157 @@
 #!/bin/bash
 
-##############################################################################
-# SERP A/B Testing: Telegram Notifications for Alerts
-# Runs every 15 minutes via cron: */15 * * * *
-#
-# Workflow:
-# 1. Query alerts table for telegram_sent = false (unsent alerts)
-# 2. Format each alert with appropriate emoji and summary
-# 3. Send to Telegram using bot API
-# 4. Update alert to telegram_sent = true
-# 5. Keep history of sent notifications
-##############################################################################
+# SERP CTR Monitoring — Telegram Notifier
+# Reads unsent alerts from PostgreSQL, formats them, sends to Telegram
+# Runs every 15 minutes
 
-set -e  # Exit on any error
+set -e
+
+PROJECT_ROOT="/Users/vladimirafanasev/Aidacamp-cloude"
 
 # Configuration
-REPO_DIR="/Users/vladimirafanasev/Aidacamp-cloude"
-LOG_FILE="/var/log/aidacamp-telegram-notifier.log"
-DB_HOST="/var/run/postgresql"
+DB_HOST="159.194.223.55"
 DB_NAME="aidacamp"
 DB_USER="postgres"
-TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}"
-TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
 
-# Colors for output
+# Telegram (from .env or hardcode for testing)
+TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-8619240142:AAEZluPyzdCTDNEiRFSLt7I8Ka4dC8ntfHc}"
+TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-244314247}"
+TELEGRAM_API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
+
+# Colors for console output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Logging function
-log() {
-    local level=$1
-    shift
-    local msg="$@"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    echo -e "${timestamp} [${level}] ${msg}" | tee -a "$LOG_FILE"
-}
+CURRENT_DATE=$(date +%Y-%m-%d)
+CURRENT_TIME=$(date +%H:%M:%S)
 
-# Telegram send function
-send_telegram() {
-    local text="$1"
+echo "=========================================="
+echo "💬 SERP CTR Telegram Notifier — $CURRENT_DATE $CURRENT_TIME"
+echo "=========================================="
 
-    if [[ -z "$TELEGRAM_BOT_TOKEN" ]] || [[ -z "$TELEGRAM_CHAT_ID" ]]; then
-        log "WARNING" "⚠️ Telegram not configured (missing token or chat ID)"
-        return 1
-    fi
-
-    local response=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-        -H "Content-Type: application/json" \
-        -d "{
-            \"chat_id\": \"$TELEGRAM_CHAT_ID\",
-            \"text\": \"$text\",
-            \"parse_mode\": \"HTML\"
-        }" 2>/dev/null)
-
-    if echo "$response" | grep -q '"ok":true'; then
-        return 0
-    else
-        return 1
-    fi
-}
-
-# Query database
+# SSH connection helper
 query_db() {
-    local sql="$1"
-    psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -A -t -c "$sql" 2>/dev/null || echo ""
+  local sql="$1"
+  ssh -i ~/.ssh/aidacamp_prod root@$DB_HOST "psql -U postgres -d $DB_NAME -c \"$sql\""
 }
 
-# Format alert message
-format_alert() {
-    local alert_id=$1
-    local level=$2
-    local ctr_drop=$3
-    local conversions_drop=$4
-    local action_taken=$5
-    local timestamp=$6
+# Get unsent alerts from PostgreSQL
+echo -e "\n${BLUE}1. Fetching unsent alerts from PostgreSQL${NC}"
 
-    local emoji="ℹ️"
-    local severity="info"
+UNSENT_ALERTS=$(query_db "
+  SELECT id, metric, old_value, new_value, change_pct, alert_level, message, created_at
+  FROM alerts
+  WHERE telegram_sent = FALSE
+  ORDER BY created_at DESC
+  LIMIT 10
+" | tail -n +3)  # Skip header rows
 
-    if [[ "$level" == "critical" ]]; then
-        emoji="🚨"
-        severity="<b>CRITICAL</b>"
-    elif [[ "$level" == "warning" ]]; then
-        emoji="⚠️"
-        severity="<b>WARNING</b>"
-    fi
+if [ -z "$UNSENT_ALERTS" ]; then
+  echo -e "${GREEN}✅ No unsent alerts${NC}"
+  exit 0
+fi
 
-    local status_emoji="⏳"
-    if [[ "$action_taken" == "auto_revert_triggered" ]]; then
-        status_emoji="🔄"
-    elif [[ "$action_taken" == "auto_revert_executed" ]]; then
-        status_emoji="✅"
-    elif [[ "$action_taken" == "manual_review_required" ]]; then
-        status_emoji="👁️"
-    fi
+# Process each alert
+echo "Found $(echo "$UNSENT_ALERTS" | wc -l) unsent alerts"
 
-    local msg="${emoji} Alert #${alert_id} [${severity}]
-${status_emoji} Status: ${action_taken}
-📉 CTR: ${ctr_drop}%
-📉 Conversions: ${conversions_drop}%
-🕐 Time: ${timestamp}"
+while IFS='|' read -r ALERT_ID METRIC OLD_VAL NEW_VAL CHANGE_PCT ALERT_LEVEL MESSAGE CREATED_AT; do
+  # Trim whitespace
+  ALERT_ID=$(echo "$ALERT_ID" | xargs)
+  METRIC=$(echo "$METRIC" | xargs)
+  OLD_VAL=$(echo "$OLD_VAL" | xargs)
+  NEW_VAL=$(echo "$NEW_VAL" | xargs)
+  CHANGE_PCT=$(echo "$CHANGE_PCT" | xargs)
+  ALERT_LEVEL=$(echo "$ALERT_LEVEL" | xargs)
+  MESSAGE=$(echo "$MESSAGE" | xargs)
+  CREATED_AT=$(echo "$CREATED_AT" | xargs)
 
-    echo "$msg"
-}
+  # Skip empty lines
+  [ -z "$ALERT_ID" ] && continue
 
-# Main logic
-main() {
-    log "INFO" "📢 Telegram notifier check started"
+  echo -e "\n${YELLOW}Processing alert #$ALERT_ID ($ALERT_LEVEL)${NC}"
 
-    # Query unsent alerts (last 30 minutes)
-    local alerts=$(query_db "
-        SELECT id, level, ctr_drop, conversions_drop, action_taken, created_at
-        FROM alerts
-        WHERE telegram_sent = false
-          AND created_at > NOW() - INTERVAL '30 minutes'
-        ORDER BY created_at DESC
-    ")
+  # Format Telegram message
+  case "$ALERT_LEVEL" in
+    critical)
+      EMOJI="🚨"
+      HEADER="CRITICAL ALERT"
+      ;;
+    warning)
+      EMOJI="⚠️"
+      HEADER="WARNING ALERT"
+      ;;
+    *)
+      EMOJI="ℹ️"
+      HEADER="INFO"
+      ;;
+  esac
 
-    if [[ -z "$alerts" ]]; then
-        log "INFO" "✅ No unsent alerts"
-        return 0
-    fi
+  # Build message text
+  TEXT=$(cat <<EOF
+$EMOJI *SERP CTR Monitoring — $HEADER*
 
-    local count=0
-    while IFS='|' read -r alert_id level ctr_drop conversions_drop action_taken created_at; do
-        log "INFO" "📤 Preparing notification for alert #${alert_id}"
+📊 *Metric:* $METRIC
+📉 *Before:* $OLD_VAL
+📈 *After:* $NEW_VAL
+📊 *Change:* $CHANGE_PCT%
 
-        # Format message
-        local msg=$(format_alert "$alert_id" "$level" "$ctr_drop" "$conversions_drop" "$action_taken" "$created_at")
+💬 *Details:* $MESSAGE
 
-        # Send to Telegram
-        if send_telegram "$msg"; then
-            log "SUCCESS" "✅ Alert #${alert_id} sent to Telegram"
+🕐 *Time:* $CREATED_AT
+🔗 *Status:* [Dashboard](https://dev.aidacamp.ru/admin/ab-monitor)
+EOF
+)
 
-            # Mark as sent
-            query_db "UPDATE alerts SET telegram_sent = true, telegram_sent_at = NOW() WHERE id = $alert_id" >/dev/null
+  # Send to Telegram
+  echo -e "${BLUE}2. Sending to Telegram (chat_id=$TELEGRAM_CHAT_ID)${NC}"
 
-            ((count++))
-        else
-            log "ERROR" "❌ Failed to send alert #${alert_id} to Telegram"
-        fi
-    done <<< "$alerts"
+  TELEGRAM_RESPONSE=$(curl -s -X POST "$TELEGRAM_API/sendMessage" \
+    -H "Content-Type: application/json" \
+    -d "{
+      \"chat_id\": $TELEGRAM_CHAT_ID,
+      \"text\": $(echo "$TEXT" | jq -Rs .),
+      \"parse_mode\": \"Markdown\",
+      \"disable_web_page_preview\": true
+    }")
 
-    log "INFO" "✅ Telegram notifier check completed (${count} notifications sent)"
-}
+  # Extract message ID from response
+  MESSAGE_ID=$(echo "$TELEGRAM_RESPONSE" | jq -r '.result.message_id // empty' 2>/dev/null)
 
-# Execution
-main "$@"
+  if [ -z "$MESSAGE_ID" ]; then
+    # Error sending
+    ERROR_MSG=$(echo "$TELEGRAM_RESPONSE" | jq -r '.description // "Unknown error"' 2>/dev/null)
+    echo -e "${RED}❌ Failed to send: $ERROR_MSG${NC}"
+
+    # Update alert with error
+    UPDATE_ALERT=$(cat << SQL
+UPDATE alerts
+SET telegram_error = '${ERROR_MSG}'
+WHERE id = $ALERT_ID;
+SQL
+)
+    ssh -i ~/.ssh/aidacamp_prod root@$DB_HOST "psql -U postgres -d $DB_NAME -c \"$UPDATE_ALERT\"" > /dev/null
+    continue
+  fi
+
+  echo -e "${GREEN}✅ Sent! Message ID: $MESSAGE_ID${NC}"
+
+  # Update alert in PostgreSQL as sent
+  UPDATE_ALERT=$(cat << SQL
+UPDATE alerts
+SET
+  telegram_sent = TRUE,
+  telegram_message_id = $MESSAGE_ID,
+  telegram_sent_at = NOW(),
+  telegram_error = NULL
+WHERE id = $ALERT_ID;
+SQL
+)
+
+  ssh -i ~/.ssh/aidacamp_prod root@$DB_HOST "psql -U postgres -d $DB_NAME -c \"$UPDATE_ALERT\"" > /dev/null
+done <<< "$UNSENT_ALERTS"
+
+echo ""
+echo -e "${GREEN}✅ Telegram notifier complete${NC}"
