@@ -20,7 +20,7 @@ function getAudioHash(text: string, voiceId: string): string {
 }
 
 // Вызов ElevenLabs API для генерации речи
-async function generateAudioElevenLabs(text: string, voiceId: string = 'onyx'): Promise<Buffer> {
+async function generateAudioElevenLabs(text: string, voiceId: string = 'rachel'): Promise<Buffer> {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) {
     throw new Error('ELEVENLABS_API_KEY not configured');
@@ -54,7 +54,7 @@ async function generateAudioElevenLabs(text: string, voiceId: string = 'onyx'): 
 }
 
 // Альтернатива через OpenRouter если ElevenLabs недоступен
-async function generateAudioOpenRouter(text: string, voiceId: string = 'onyx'): Promise<Buffer> {
+async function generateAudioOpenRouter(text: string, voiceId: string = 'rachel'): Promise<Buffer> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     throw new Error('OPENROUTER_API_KEY not configured for fallback TTS');
@@ -93,7 +93,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Парсим запрос
     const data = await request.json();
     const text = data.text?.trim();
-    const voiceId = data.voice || 'onyx';  // Дефолтный голос
+    const voiceId = data.voice || 'rachel';  // Дефолтный голос
     const serviceId = data.serviceId || '9c17b87c14d1f7516a76dd5dbf6441fab22998b185bf5a07c55b2c9f98034f61';
 
     if (!text) {

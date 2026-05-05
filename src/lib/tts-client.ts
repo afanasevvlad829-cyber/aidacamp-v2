@@ -25,7 +25,7 @@ export interface TTSResponse {
  * Генерируем аудиофайл текста через MSAPI TTS
  */
 export async function generateTTS(options: TTSOptions): Promise<string> {
-  const { text, voice = 'onyx', serviceId = SERVICE_ID } = options;
+  const { text, voice = 'rachel', serviceId = SERVICE_ID } = options;
 
   // Проверяем локальный кеш
   const cacheKey = `${text}:${voice}`;
