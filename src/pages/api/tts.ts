@@ -53,32 +53,30 @@ async function generateAudioElevenLabs(text: string, voiceId: string = 'rachel')
   return Buffer.from(buffer);
 }
 
-// Альтернатива через OpenRouter если ElevenLabs недоступен
-async function generateAudioOpenRouter(text: string, voiceId: string = 'rachel'): Promise<Buffer> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
+// Fallback через OpenAI TTS
+async function generateAudioOpenAI(text: string): Promise<Buffer> {
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error('OPENROUTER_API_KEY not configured for fallback TTS');
+    throw new Error('OPENAI_API_KEY not configured for fallback TTS');
   }
 
-  const response = await fetch('https://openrouter.ai/api/v1/audio/speech', {
+  const response = await fetch('https://api.openai.com/v1/audio/speech', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://aidacamp.ru',
-      'X-Title': 'AidaCamp AI Studio TTS',
     },
     body: JSON.stringify({
-      text,
-      model: 'elevenlabs/text-to-speech',
-      voice: voiceId,
+      input: text,
+      model: 'tts-1',
+      voice: 'nova',
       response_format: 'mp3',
     }),
   });
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`OpenRouter TTS error: ${response.status} ${error}`);
+    throw new Error(`OpenAI TTS error: ${response.status} ${error}`);
   }
 
   const buffer = await response.arrayBuffer();
@@ -125,7 +123,7 @@ export const POST: APIRoute = async ({ request }) => {
       audioBuffer = await generateAudioElevenLabs(text, voiceId);
     } catch (elevenLabsError) {
       console.warn('ElevenLabs failed, trying OpenRouter:', elevenLabsError);
-      audioBuffer = await generateAudioOpenRouter(text, voiceId);
+      audioBuffer = await generateAudioOpenAI(text);
     }
 
     // Сохраняем в кеш
