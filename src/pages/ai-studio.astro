@@ -512,10 +512,11 @@ const description = 'Интерактивный рассказ о внутрен
   #iov.on{opacity:1;pointer-events:all}
   #ip{background:var(--sf);border-radius:18px;padding:28px 30px;max-width:560px;width:100%;max-height:85vh;overflow-y:auto;position:relative;box-shadow:var(--shl);transform:scale(.9);transition:transform .3s}
   #iov.on #ip{transform:scale(1)}
-  .icl{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;background:var(--bd);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--dm)}
+  .icl{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:var(--bd);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--dm)}
   .icl:hover{background:var(--or);color:#fff}
-  .iic{width:54px;height:54px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:14px}
-  .itl{font-size:22px;font-weight:900;letter-spacing:-.5px;line-height:1.15;margin-bottom:8px}
+  .ih{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .iic{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+  .itl{font-size:20px;font-weight:900;letter-spacing:-.5px;line-height:1.2;margin:0;flex:1}
   .itg{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.5px;padding:4px 9px;border-radius:18px;text-transform:uppercase;margin-bottom:14px}
   .ids{font-size:14px;color:var(--tx);line-height:1.55;margin-bottom:14px}
   .il{list-style:none;padding:0;margin-bottom:14px}
@@ -560,38 +561,43 @@ limits:{ic:'bi-speedometer2',co:'var(--or)',bg:'var(--orl)',tag:'Лимиты',t
 project:{ic:'bi-film',co:'var(--rd)',bg:'var(--rdl)',tag:'Финальный проект',ti:'Что учащийся приносит домой',de:'Настоящий мини-сериал — не скриншот чата. Видео с текстом, картинками и озвучкой, созданное руками с помощью нескольких нейросетей.',li:['Сценарий — написан с текстовой нейросетью','Кадры — сгенерированы через FLUX или SDXL','Озвучка — через TTS прямо в интерфейсе','Монтаж — финальный экспорт'],te:'Финальный дедлайн: последний урок\nФормат: видео 2–5 мин + портфолио'}
 };
 
+// MSAPI TTS: текст генерируется в реальном времени через /api/tts (ElevenLabs)
+// Динамичес­кая генерация озвучки вместо статических файлов
+const TTSCache=new Map();
+async function genTTS(txt){if(TTSCache.has(txt))return TTSCache.get(txt);const r=await fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:txt,voice:'onyx'})});if(!r.ok){console.error('TTS failed',r);return null;}const d=await r.json();return d.success?d.url:null;}
+
 // Нарратив. Каждый шаг — фраза с озвучкой. hi = карточки/элементы, которые «зажигаются» во время этой фразы.
 // step = массив подсветок, синхронизированных с конкретными словами (микро-таймлайн внутри фразы).
 const NAR={
 1:[
-  {t:0,    audio:'/audio/ai-studio/n1-1.mp3',dur:10200,tx:'Нейросети для текста — одни. Для картинок — другие. Для видео — третьи. Для кода — четвёртые.',
+  {t:0,    tx:'Нейросети для текста — одни. Для картинок — другие. Для видео — третьи. Для кода — четвёртые.',dur:10200,
    step:[{at:1500,hi:['c1t']},{at:4000,hi:['c1t','c1i']},{at:6500,hi:['c1t','c1i','c1v']},{at:8500,hi:['c1t','c1i','c1v','c1c']}]},
-  {t:10700,audio:'/audio/ai-studio/n1-2.mp3',dur:10700,tx:'Обычно так: дайте учащемуся кредитку, зарегистрируйтесь в восьми сервисах, разберитесь с восемью интерфейсами.',
+  {t:10700,tx:'Обычно так: дайте учащемуся кредитку, зарегистрируйтесь в восьми сервисах, разберитесь с восемью интерфейсами.',dur:10700,
    hi:['c1t','c1i','c1v','c1c']},
-  {t:21900,audio:'/audio/ai-studio/n1-3.mp3',dur:8300,tx:'Мы сделали иначе. Один адрес, один логин — и всё уже внутри.',
+  {t:21900,tx:'Мы сделали иначе. Один адрес, один логин — и всё уже внутри.',dur:8300,
    hi:['c1s']},
-  {t:30700,audio:'/audio/ai-studio/n1-4.mp3',dur:2800,tx:'Кликайте на любой блок — расскажем подробнее.',
+  {t:30700,tx:'Кликайте на любой блок — расскажем подробнее.',dur:2800,
    hi:[]},
 ],
 2:[
-  {t:0,    audio:'/audio/ai-studio/n2-1.mp3',dur:5000,tx:'Теперь про кухню. Как это вообще работает, если не вдаваться в занудство.',hi:[]},
-  {t:5500, audio:'/audio/ai-studio/n2-2.mp3',dur:9100,tx:'Учащийся открывает браузер. Логин, пароль — и наш интерфейс со всеми инструментами.',
+  {t:0,    tx:'Теперь про кухню. Как это вообще работает, если не вдаваться в занудство.',dur:5000,hi:[]},
+  {t:5500, tx:'Учащийся открывает браузер. Логин, пароль — и наш интерфейс со всеми инструментами.',dur:9100,
    step:[{at:500,hi:['c2s']},{at:5000,hi:['c2s','c2w']}]},
-  {t:15100,audio:'/audio/ai-studio/n2-3.mp3',dur:10600,tx:'Главное: нейросеть не помнит вас. Каждый запрос — первое знакомство. Open WebUI хранит историю автоматически.',
+  {t:15100,tx:'Главное: нейросеть не помнит вас. Каждый запрос — первое знакомство. Open WebUI хранит историю автоматически.',dur:10600,
    step:[{at:0,hi:['mn']},{at:5500,hi:['mn','c2w']}]},
-  {t:26200,audio:'/audio/ai-studio/n2-4.mp3',dur:9400,tx:'Все запросы через LiteLLM — строгий кассир. Redis запоминает повторяющиеся вопросы.',
+  {t:26200,tx:'Все запросы через LiteLLM — строгий кассир. Redis запоминает повторяющиеся вопросы.',dur:9400,
    step:[{at:0,hi:['c2l']},{at:5500,hi:['c2l','c2r']}]},
-  {t:36100,audio:'/audio/ai-studio/n2-5.mp3',dur:8900,tx:'Преподаватель видит всё через Langfuse. Кто работает, кто завис — очевидно.',
+  {t:36100,tx:'Преподаватель видит всё через Langfuse. Кто работает, кто завис — очевидно.',dur:8900,
    step:[{at:0,hi:['c2f']},{at:5000,hi:['c2f','c2t']}]},
 ],
 3:[
-  {t:0,    audio:'/audio/ai-studio/n3-1.mp3',dur:7500,tx:'Что получает учащийся? Реальный опыт с нейросетями — сам, своими руками.',
+  {t:0,    tx:'Что получает учащийся? Реальный опыт с нейросетями — сам, своими руками.',dur:7500,
    step:[{at:0,hi:['j1']},{at:2500,hi:['j1','j2']},{at:5000,hi:['j1','j2','j3']}]},
-  {t:8000, audio:'/audio/ai-studio/n3-2.mp3',dur:8000,tx:'Личный кабинет с историей. Любой ноутбук — всё в браузере.',
+  {t:8000, tx:'Личный кабинет с историей. Любой ноутбук — всё в браузере.',dur:8000,
    step:[{at:0,hi:['c3a']},{at:4000,hi:['c3a','c3b']}]},
-  {t:16500,audio:'/audio/ai-studio/n3-3.mp3',dur:6800,tx:'Преподаватель не ходит по рядам — видит всех одновременно.',
+  {t:16500,tx:'Преподаватель не ходит по рядам — видит всех одновременно.',dur:6800,
    hi:['c3c']},
-  {t:23800,audio:'/audio/ai-studio/n3-4.mp3',dur:9500,tx:'В конце курса — готовый проект. Мини-сериал: сценарий, картинки, озвучка. Не теория. Продукт.',
+  {t:23800,tx:'В конце курса — готовый проект. Мини-сериал: сценарий, картинки, озвучка. Не теория. Продукт.',dur:9500,
    step:[{at:0,hi:['j4']},{at:3000,hi:['j4','j5']},{at:6000,hi:['j4','j5','c3f']}]},
 ],
 };
@@ -615,11 +621,13 @@ function hl(ids){
   ids.forEach(id=>{const e=$(id);if(e)e.classList.add('nar');});
 }
 
-function speak(audioPath, txt){
+async function speak(txt){
   if(aud){aud.pause();aud=null;}
   sub(txt);
-  if(!audioPath)return;
-  aud=new Audio(audioPath);
+  if(!txt)return;
+  const url=await genTTS(txt);
+  if(!url){console.warn('TTS generation failed');return;}
+  aud=new Audio(url);
   aud.play().catch(e=>console.warn('audio play blocked',e));
 }
 
@@ -720,8 +728,7 @@ function go(n){
 function inf(k){
   const d=D[k];if(!d)return;
   $('ic').innerHTML=
-    '<div class="iic" style="background:'+d.bg+';color:'+d.co+'"><i class="bi '+d.ic+'"></i></div>'+
-    '<div class="itl" style="color:'+d.co+'">'+d.ti+'</div>'+
+    '<div class="ih"><div class="iic" style="background:'+d.bg+';color:'+d.co+'"><i class="bi '+d.ic+'"></i></div><div class="itl" style="color:'+d.co+'">'+d.ti+'</div></div>'+
     '<span class="itg" style="background:'+d.bg+';color:'+d.co+'">'+d.tag+'</span>'+
     '<div class="ids">'+d.de+'</div>'+
     '<ul class="il">'+d.li.map(l=>'<li><i class="bi bi-check2-circle"></i><span>'+l+'</span></li>').join('')+'</ul>'+
