@@ -70,25 +70,35 @@ const sizeCls = isMobile
     )}
   </div>
 
-  <!-- TWO progress bars: одна на каждую смену — кликабельные ссылки на страницы смен -->
-  <div class="mt-5 space-y-3">
-    {shifts.map((s) => {
+  <!-- TWO shift rows: каждая со своим hover-эффектом, разделены полоской и помечены индексом -->
+  <div class="mt-5 divide-y divide-border-light">
+    {shifts.map((s, idx) => {
       const total = s.occupied + s.free || 1;
       const pct = Math.round((s.occupied / total) * 100);
       const isLow = pct >= 85;
-      const freeLabel = isLow ? `${s.free} мест` : `${s.free} мест`;
       const freeColor = isLow ? 'text-orange-600' : 'text-emerald-700';
       const barColor = isLow ? 'bg-orange-500' : 'bg-emerald-400';
+      // Индексный бейдж: разный акцентный цвет, чтобы строки визуально отличались
+      const idxBadge = idx === 0
+        ? 'bg-blue-100 text-blue-700'
+        : 'bg-purple-100 text-purple-700';
       return (
         <a
           href={`/shifts/${s.id}/`}
           data-analytics-goal="combined_shift_click"
           data-analytics-label={s.name}
-          class="block no-underline hover:opacity-90 transition-opacity group"
+          class="block no-underline group/row relative -mx-2 px-2 py-3 first:pt-0 first:-mt-1 last:pb-1 rounded-lg transition-all duration-200 hover:bg-primary/5 hover:-translate-y-[1px] hover:shadow-[0_2px_8px_rgba(15,23,42,0.06)]"
         >
-          <div class="flex justify-between text-[13px] mb-1.5">
-            <span class="text-body-muted group-hover:text-primary transition-colors">{s.name} · {s.duration}</span>
-            <span class={`font-medium ${freeColor}`}>{freeLabel}</span>
+          <div class="flex items-center justify-between gap-2 text-[13px] mb-1.5">
+            <span class="flex items-center gap-2 min-w-0">
+              <span class={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] ${idxBadge}`}>
+                №{idx === 0 ? 3 : 4}
+              </span>
+              <span class="text-body group-hover/row:text-primary transition-colors font-medium truncate">
+                {s.dates} <span class="text-body-faint font-normal">· {s.duration}</span>
+              </span>
+            </span>
+            <span class={`font-semibold whitespace-nowrap ${freeColor}`}>{s.free} мест</span>
           </div>
           <div class="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
             <div class={`h-full rounded-full transition-all duration-500 ${barColor}`} style={`width:${pct}%`}></div>

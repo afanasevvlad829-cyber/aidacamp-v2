@@ -16,34 +16,40 @@ const minPriceFmt = minPrice.toLocaleString('ru-RU') + ' ₽';
 const durations = [...new Set(shifts.map((s) => s.duration.replace(/[^\d]/g, '')))].join('–');
 ---
 
-<div class="reveal mt-5" data-short-shifts>
+<div
+  class="reveal mt-6 rounded-2xl border border-border-light bg-card shadow-[0_2px_8px_rgba(15,23,42,0.06),0_12px_32px_rgba(15,23,42,0.10)] hover:shadow-[0_4px_12px_rgba(15,23,42,0.08),0_18px_44px_rgba(15,23,42,0.14)] transition-shadow duration-200"
+  data-short-shifts
+>
   <button
     type="button"
     data-short-toggle
     aria-expanded="false"
     aria-controls="short-shifts-panel"
-    class="flex w-full items-center gap-3 py-3 cursor-pointer text-left group"
+    class="flex w-full items-center gap-3 px-5 py-4 md:px-6 cursor-pointer text-left group"
   >
+    <div class="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-orange-100 text-orange-700">
+      <i class="bi bi-lightning-charge-fill text-[15px]" aria-hidden="true"></i>
+    </div>
     <div class="text-left flex-1 min-w-0">
       <p class="text-[15px] md:text-[16px] font-bold text-body">Короткие смены · {durations} дней</p>
-      <p class="mt-0.5 text-[14px] md:text-[13px] text-body-muted">{shifts.map((s) => s.name).join(' и ')} · от {minPriceFmt}</p>
+      <p class="mt-0.5 text-[13px] md:text-[13px] text-body-muted">{shifts.map((s) => s.name).join(' и ')} · от {minPriceFmt}</p>
     </div>
-    <i class="bi bi-chevron-down text-[15px] md:text-[14px] text-body-faint transition-transform duration-200" data-short-chevron aria-hidden="true"></i>
+    <i class="bi bi-chevron-down text-[16px] text-body-faint transition-transform duration-200 shrink-0" data-short-chevron aria-hidden="true"></i>
   </button>
 
-  <div id="short-shifts-panel" data-short-panel class="hidden border-t border-border-light mt-2 pt-2">
+  <div id="short-shifts-panel" data-short-panel class="hidden border-t border-border-light">
     {shifts.map((s) => (
       <a
         href={`/shifts/${s.id}/`}
-        class="flex items-center justify-between gap-3 px-5 py-4 md:px-6 hover:bg-surface transition-colors no-underline border-t border-border-light first:border-t-0"
+        class="flex items-center justify-between gap-3 px-5 py-4 md:px-6 hover:bg-primary/5 transition-colors no-underline border-t border-border-light first:border-t-0 group/row"
       >
         <div class="min-w-0 flex-1">
-          <p class="text-[14px] md:text-[15px] font-semibold text-body">{s.dates}</p>
+          <p class="text-[14px] md:text-[15px] font-semibold text-body group-hover/row:text-primary transition-colors">{s.dates}</p>
           <p class="mt-0.5 text-[12px] text-body-muted">{s.name} · {s.duration} · {s.free} мест</p>
         </div>
         <div class="flex items-center gap-3 shrink-0">
           <span class="text-[15px] md:text-[16px] font-bold text-primary tabular-nums">{s.price}</span>
-          <i class="bi bi-arrow-right text-[15px] md:text-[14px] text-body-faint" aria-hidden="true"></i>
+          <i class="bi bi-arrow-right text-[15px] md:text-[14px] text-body-faint group-hover/row:text-primary group-hover/row:translate-x-0.5 transition-all" aria-hidden="true"></i>
         </div>
       </a>
     ))}
