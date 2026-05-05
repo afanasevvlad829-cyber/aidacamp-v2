@@ -7,6 +7,7 @@
 set -e
 
 PROJECT_ROOT="/Users/vladimirafanasev/Aidacamp-cloude"
+ENV_FILE="$PROJECT_ROOT/.env"
 NOTES_FILE="$PROJECT_ROOT/_notes/SEO-проекты/SERP-CTR-optimization-2026-05.md"
 CURRENT_DATE=$(date +%Y-%m-%d)
 YESTERDAY=$(date -v-1d +%Y-%m-%d)
@@ -26,7 +27,7 @@ echo -e "\n${YELLOW}1. CTR (Yandex Webmaster)${NC}"
 
 # Get CTR for target keywords
 CTR_DATA=$(curl -s "https://api.webmaster.yandex.net/v4/user/19303961/hosts/https:aidacamp.ru:443/query-analytics/list" \
-  -H "Authorization: OAuth $(grep YANDEX_WEBMASTER_TOKEN ~/.env | cut -d= -f2)" \
+  -H "Authorization: OAuth $(grep YANDEX_WEBMASTER_TOKEN $ENV_FILE | cut -d= -f2)" \
   -H "Content-Type: application/json" \
   -X POST \
   -d "{\"filters\":{\"text_indicator\":\"CTR\"},\"date_from\":\"$YESTERDAY\",\"date_to\":\"$CURRENT_DATE\",\"limit\":50}" 2>/dev/null || echo "{}")
@@ -85,7 +86,7 @@ fi
 echo -e "\n${YELLOW}5. Ranking Positions (Webmaster API)${NC}"
 
 POSITION_DATA=$(curl -s "https://api.webmaster.yandex.net/v4/user/19303961/hosts/https:aidacamp.ru:443/query-analytics/list" \
-  -H "Authorization: OAuth $(grep YANDEX_WEBMASTER_TOKEN ~/.env | cut -d= -f2)" \
+  -H "Authorization: OAuth $(grep YANDEX_WEBMASTER_TOKEN $ENV_FILE | cut -d= -f2)" \
   -H "Content-Type: application/json" \
   -X POST \
   -d "{\"filters\":{\"text_indicator\":\"AVG_POSITION\"},\"date_from\":\"$YESTERDAY\",\"date_to\":\"$CURRENT_DATE\",\"limit\":50}" 2>/dev/null || echo "{}")
