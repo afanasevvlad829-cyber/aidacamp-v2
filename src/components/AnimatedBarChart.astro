@@ -1,0 +1,109 @@
+---
+/**
+ * AnimatedBarChart — горизонтальные полосы с анимацией fill при появлении в viewport.
+ * Полосы появляются последовательно (stagger 100ms).
+ */
+interface Props {
+  items: Array<{
+    label: string;
+    value: number;    // 0–100 (процент заполнения или реальное значение)
+    badge?: string;   // текст справа (напр. "73%")
+    color?: string;   // CSS-цвет полосы
+  }>;
+  title?: string;
+  source?: string;
+  maxValue?: number;  // если items[].value не в процентах (default: 100)
+  barHeight?: number; // px, default: 10
+}
+
+const {
+  items,
+  title,
+  source,
+  maxValue = 100,
+  barHeight = 10,
+} = Astro.props;
+
+const DEFAULT_COLORS = ['#FF6B1A', '#3B82F6', '#10B981', '#8B5CF6', '#EF4444', '#F59E0B'];
+---
+
+<div class="__barchart my-5 rounded-[16px] bg-slate-50 border border-slate-100 px-5 py-5">
+  {title && (
+    <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400 mb-4">{title}</p>
+  )}
+  <div class="__bar-group space-y-5">
+    {items.map((item, i) => {
+      const barColor = item.color ?? DEFAULT_COLORS[i % DEFAULT_COLORS.length];
+      const pct = Math.min((item.value / maxValue) * 100, 100);
+      return (
+        <div>
+          <div class="flex items-baseline justify-between mb-1.5">
+            <span class="text-[14px] font-medium text-slate-700">{item.label}</span>
+            {item.badge && (
+              <span class="text-[14px] font-bold tabular-nums" style={`color: ${barColor}`}>
+                {item.badge}
+              </span>
+            )}
+          </div>
+          <div
+            class="rounded-full overflow-hidden"
+            style={`height: ${barHeight}px; background: #E2E8F0;`}
+          >
+            <div
+              class="__bar h-full rounded-full"
+              data-target={pct}
+              style={`width: 0%; background: ${barColor};`}
+            ></div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+  {source && (
+    <p class="text-[11px] text-slate-400 mt-4 font-mono tracking-wide">{source}</p>
+  )}
+</div>
+
+<script>
+(function () {
+  if (typeof window === 'undefined') return;
+
+  const easeOut = (t: number) => 1 - Math.pow(1 - t, 2.5);
+
+  function animateGroup(group: Element) {
+    const bars = group.querySelectorAll<HTMLElement>('.__bar');
+    bars.forEach((bar, i) => {
+      const target = parseFloat(bar.dataset.target ?? '0');
+      const delay = i * 110;
+      const duration = 850;
+
+      setTimeout(() => {
+        const start = performance.now();
+        function tick(now: number) {
+          const progress = Math.min((now - start) / duration, 1);
+          bar.style.width = easeOut(progress) * target + '%';
+          if (progress < 1) requestAnimationFrame(tick);
+          else bar.style.width = target + '%';
+        }
+        requestAnimationFrame(tick);
+      }, delay);
+    });
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          animateGroup(entry.target);
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.25 }
+  );
+
+  document.querySelectorAll('.__bar-group').forEach((group) => {
+    observer.observe(group);
+  });
+})();
+</script>
