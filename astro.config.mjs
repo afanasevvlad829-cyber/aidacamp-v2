@@ -15,7 +15,13 @@ export default defineConfig({
       filter: (page) =>
         !page.includes('/admin/') &&
         !page.includes('/попробовать/') &&
-        !page.includes('/%D0%BF%D0%BE%D0%BF%D1%80%D0%BE%D0%B1%D0%BE%D0%B2%D0%B0%D1%82%D1%8C/'),
+        !page.includes('/%D0%BF%D0%BE%D0%BF%D1%80%D0%BE%D0%B1%D0%BE%D0%B2%D0%B0%D1%82%D1%8C/') &&
+        !page.includes('/demo/') &&
+        !page.includes('/dashboard/') &&
+        !page.includes('/ask-test/') &&
+        !page.includes('/ask/') &&
+        !page.includes('/ai-studio/') &&
+        !page.includes('/blog/'),
       // lastmod = дата деплоя. Даём Google понять, что страницы актуальны.
       // priority: P1=0.9, P2=0.7, P3=0.5 (на основе SEO-архитектуры 2026)
       serialize(item) {
