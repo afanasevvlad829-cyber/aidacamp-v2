@@ -1,0 +1,119 @@
+---
+/**
+ * DonutChart — SVG-пончик с анимацией stroke-dashoffset при появлении в viewport.
+ */
+interface Props {
+  percentage: number;   // 0–100
+  label: string;
+  sublabel?: string;
+  source?: string;
+  color?: string;       // CSS цвет дуги, напр. '#FF6B1A'
+  trackColor?: string;  // цвет трека (фон дуги)
+  size?: number;        // размер в px (default: 140)
+  centerText?: string;  // текст в центре (default: "XX%")
+  strokeWidth?: number; // толщина дуги (default: 14)
+}
+
+const {
+  percentage,
+  label,
+  sublabel,
+  source,
+  color = '#FF6B1A',
+  trackColor = '#E2E8F0',
+  size = 140,
+  centerText,
+  strokeWidth = 14,
+} = Astro.props;
+
+const cx = size / 2;
+const cy = size / 2;
+const r = cx - strokeWidth / 2 - 2;
+const circumference = 2 * Math.PI * r;
+const targetOffset = circumference * (1 - percentage / 100);
+const id = `donut-${Math.random().toString(36).slice(2, 9)}`;
+---
+
+<div class="__donut my-5 flex flex-col items-center gap-4">
+  <div class="relative" style={`width:${size}px;height:${size}px;flex-shrink:0`}>
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      aria-hidden="true"
+    >
+      <!-- track -->
+      <circle
+        cx={cx} cy={cy} r={r}
+        fill="none"
+        stroke={trackColor}
+        stroke-width={strokeWidth}
+      />
+      <!-- animated fill -->
+      <circle
+        id={id}
+        cx={cx} cy={cy} r={r}
+        fill="none"
+        stroke={color}
+        stroke-width={strokeWidth}
+        stroke-linecap="round"
+        stroke-dasharray={circumference}
+        stroke-dashoffset={circumference}
+        transform={`rotate(-90 ${cx} ${cy})`}
+        data-target={targetOffset}
+        data-circ={circumference}
+      />
+    </svg>
+    <!-- center label -->
+    <div class="absolute inset-0 flex items-center justify-center">
+      <span class="text-[26px] font-black text-slate-900 leading-none tabular-nums">
+        {centerText ?? `${percentage}%`}
+      </span>
+    </div>
+  </div>
+  <div class="text-center max-w-[200px]">
+    <p class="text-[15px] font-semibold text-slate-800 leading-[1.4]">{label}</p>
+    {sublabel && <p class="text-[13px] text-slate-500 mt-1 leading-[1.3]">{sublabel}</p>}
+    {source && <p class="text-[11px] text-slate-400 mt-1 font-mono">{source}</p>}
+  </div>
+</div>
+
+<script>
+(function () {
+  if (typeof window === 'undefined') return;
+
+  const easeInOut = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+
+  function animateDonut(el: SVGCircleElement) {
+    const circ = parseFloat(el.dataset.circ ?? '0');
+    const target = parseFloat(el.dataset.target ?? '0');
+    const duration = 1200;
+    const start = performance.now();
+
+    function tick(now: number) {
+      const progress = Math.min((now - start) / duration, 1);
+      const offset = circ + easeInOut(progress) * (target - circ);
+      el.style.strokeDashoffset = String(offset);
+      if (progress < 1) requestAnimationFrame(tick);
+      else el.style.strokeDashoffset = String(target);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          animateDonut(entry.target as SVGCircleElement);
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.5 }
+  );
+
+  document.querySelectorAll<SVGCircleElement>('[id^="donut-"]').forEach((el) => {
+    observer.observe(el);
+  });
+})();
+</script>
