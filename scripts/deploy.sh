@@ -77,6 +77,7 @@ rsync -az --delete --stats \
   --exclude='images/hero/' \
   --exclude='images/gallery/' \
   --exclude='images/team/' \
+  --exclude='data/' \
   -e "ssh -i $SSH_KEY" \
   dist/client/ "$SSH_HOST:$REMOTE_DIR"
 
