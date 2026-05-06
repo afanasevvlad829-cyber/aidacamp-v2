@@ -699,3 +699,18 @@ from browser_use import Agent
 Все его функции перенесены в локальный `aidacamp-tools` (см. таблицу выше).
 
 Токены API хранятся в `~/.codex/mcp-state/yandex-direct-metrica-mcp/.env`.
+
+---
+
+## 📊 Публикация отчётов в Reports Hub
+
+**Все отчёты агентов — в Reports Hub, никаких файлов в /tmp/, репо или dist/.**  
+Дашборд: **https://dev.aidacamp.ru/reports-hub/**
+
+```bash
+scp -i ~/.ssh/aidacamp_prod /tmp/report.html root@159.194.223.55:/tmp/
+ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 \
+  "/opt/reports-hub/publish.sh /tmp/report.html 'Заголовок' 'Описание' seo 'тег1,тег2'"
+```
+
+Категории: `seo` | `ux` | `analytics` | `ads` | `crm` | `other`
