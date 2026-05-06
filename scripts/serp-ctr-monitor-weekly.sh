@@ -34,7 +34,7 @@ echo -e "\n${BLUE}1. CTR Comparison${NC}"
 echo "Before optimization ($WEEK_BEFORE_START to $WEEK_BEFORE_END):"
 
 BEFORE_CTR=$(curl -s "https://api.webmaster.yandex.net/v4/user/19303961/hosts/https:aidacamp.ru:443/query-analytics/list" \
-  -H "Authorization: OAuth $(grep YANDEX_WEBMASTER_TOKEN ~/.env 2>/dev/null | cut -d= -f2)" \
+  -H "Authorization: OAuth $(grep YANDEX_WEBMASTER_TOKEN $PROJECT_ROOT/.env 2>/dev/null | cut -d= -f2)" \
   -H "Content-Type: application/json" \
   -X POST \
   -d "{\"date_from\":\"$WEEK_BEFORE_START\",\"date_to\":\"$WEEK_BEFORE_END\"}" 2>/dev/null | jq '.queries[].ctr // 0 | tonumber' | awk '{sum+=$1} END {if (NR>0) printf "%.2f", sum/NR; else print "N/A"}')
@@ -45,7 +45,7 @@ echo ""
 echo "After optimization ($WEEK_AFTER_START to $WEEK_AFTER_END):"
 
 AFTER_CTR=$(curl -s "https://api.webmaster.yandex.net/v4/user/19303961/hosts/https:aidacamp.ru:443/query-analytics/list" \
-  -H "Authorization: OAuth $(grep YANDEX_WEBMASTER_TOKEN ~/.env 2>/dev/null | cut -d= -f2)" \
+  -H "Authorization: OAuth $(grep YANDEX_WEBMASTER_TOKEN $PROJECT_ROOT/.env 2>/dev/null | cut -d= -f2)" \
   -H "Content-Type: application/json" \
   -X POST \
   -d "{\"date_from\":\"$WEEK_AFTER_START\",\"date_to\":\"$WEEK_AFTER_END\"}" 2>/dev/null | jq '.queries[].ctr // 0 | tonumber' | awk '{sum+=$1} END {if (NR>0) printf "%.2f", sum/NR; else print "N/A"}')
