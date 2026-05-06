@@ -49,13 +49,37 @@ function collectContext(): Record<string, string> {
   }
   if (!ym_client_id) ym_client_id = getYmUidCookie();
 
-  // session_ms — время с первого открытия страницы
-  if (!sessionStorage.getItem('ac_session_start')) {
-    sessionStorage.setItem('ac_session_start', String(Date.now()));
+  // session_ms — время с первого открытия любой страницы сайта в сессии.
+  // ac_session_start ставится в Base.astro inline-скриптом ПРИ ЗАГРУЗКЕ страницы,
+  // а не здесь — иначе на первом сабмите всегда будет 0 (start пишется одновременно с измерением).
+  // Резерв: если по какой-то причине отсутствует — возьмём performance.timeOrigin как минимальное приближение.
+  let startMs = parseInt(sessionStorage.getItem('ac_session_start') || '0', 10);
+  if (!startMs) {
+    startMs = Math.floor(performance.timeOrigin || Date.now());
+    sessionStorage.setItem('ac_session_start', String(startMs));
   }
-  const session_ms = String(
-    Date.now() - parseInt(sessionStorage.getItem('ac_session_start')!, 10)
-  );
+  const session_ms = String(Date.now() - startMs);
+
+  // Device detection: iPhone / iPad / Android / Desktop / Bot
+  const ua = navigator.userAgent || '';
+  const uaLow = ua.toLowerCase();
+  let device = 'Desktop';
+  if (/iphone/i.test(ua)) device = 'iPhone';
+  else if (/ipad/i.test(ua) || (/macintosh/i.test(ua) && 'ontouchend' in document)) device = 'iPad';
+  else if (/android/i.test(ua)) {
+    device = /mobile/i.test(ua) ? 'Android phone' : 'Android tablet';
+  } else if (/macintosh|mac os x/i.test(uaLow)) device = 'Mac';
+  else if (/windows/i.test(uaLow)) device = 'Windows';
+  else if (/linux/i.test(uaLow)) device = 'Linux';
+
+  // Browser
+  let browser = '';
+  if (/edg\//i.test(ua)) browser = 'Edge';
+  else if (/yabrowser/i.test(ua)) browser = 'Yandex Browser';
+  else if (/opr\/|opera/i.test(ua)) browser = 'Opera';
+  else if (/firefox/i.test(ua)) browser = 'Firefox';
+  else if (/chrome/i.test(ua)) browser = 'Chrome';
+  else if (/safari/i.test(ua)) browser = 'Safari';
 
   return {
     ...attr,
@@ -63,6 +87,8 @@ function collectContext(): Record<string, string> {
     page_title: document.title,
     referrer: document.referrer,
     ym_client_id,
+    device,
+    browser,
     screen: `${screen.width}×${screen.height}`,
     viewport: `${window.innerWidth}×${window.innerHeight}`,
     language: navigator.language,

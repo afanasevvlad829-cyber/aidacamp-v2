@@ -76,6 +76,7 @@ function buildTgText(body: Record<string, string>, crmId?: number | null): strin
     yclid, ysclid, gclid,
     landing_url, page_title, referrer,
     ym_client_id,
+    device, browser,
     screen, viewport, language, tz, session_ms,
   } = body;
 
@@ -118,8 +119,12 @@ function buildTgText(body: Record<string, string>, crmId?: number | null): strin
   lines.push('');
 
   // Устройство
-  if (screen || viewport || language || tz) {
+  if (screen || viewport || language || tz || device) {
     lines.push('<b>💻 Устройство:</b>');
+    if (device) {
+      const browserPart = browser ? ` · ${esc(browser)}` : '';
+      lines.push(`  <b>${esc(device)}</b>${browserPart}`);
+    }
     if (screen && viewport) lines.push(`  экран: ${esc(screen)} | viewport: ${esc(viewport)}`);
     if (language) lines.push(`  язык: ${esc(language)}${tz ? ` | tz: ${esc(tz)}` : ''}`);
     lines.push('');
