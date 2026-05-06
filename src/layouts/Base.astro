@@ -70,6 +70,14 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     <link rel="preconnect" href="https://privacy-cs.mail.ru" />
     <link rel="dns-prefetch" href="https://privacy-cs.mail.ru" />
     <script is:inline>
+      // === Засечь начало сессии ДО любых других скриптов — для корректного session_ms лида ===
+      try {
+        if (!sessionStorage.getItem('ac_session_start')) {
+          sessionStorage.setItem('ac_session_start', String(Date.now()));
+        }
+      } catch (_) {}
+    </script>
+    <script is:inline>
       // === Аналитика: отключение для тестовых страниц + ботов ===
       // A. Внутренние страницы (demo/admin/ask-test) — Метрика и Clarity не запускаются
       var __isInternalPath = /^\/(demo|admin|ask-test)\b/.test(location.pathname);
