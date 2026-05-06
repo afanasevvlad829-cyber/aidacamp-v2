@@ -642,6 +642,14 @@ function hl(ids){
 function speak(audioPath,txt){
   if(aud){aud.pause();aud=null;}
   sub(txt);
+  // Приоритет: предзагруженный AUD_MAP по тексту → fallback на audioPath
+  const preloaded = txt && AUD_MAP[txt];
+  if(preloaded){
+    aud=preloaded;
+    aud.currentTime=0;
+    aud.play().catch(e=>console.warn('audio preloaded blocked',e));
+    return;
+  }
   if(!audioPath)return;
   aud=new Audio(audioPath);
   aud.play().catch(e=>console.warn('audio play blocked',e));
