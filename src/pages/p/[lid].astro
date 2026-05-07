@@ -208,8 +208,7 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
 <style is:global>
   *,*::before,*::after{box-sizing:border-box}
   html,body{margin:0;padding:0;background:#f7f5f0;color:#0d1a2b;font-family:'Inter',-apple-system,'Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased}
-  html{scroll-padding-top:80px}
-  body{overflow-x:hidden;min-height:100vh}
+  body{overflow-x:hidden;min-height:100vh;padding-bottom:90px}
 
   .pm-hero{
     position:relative;background:linear-gradient(160deg,#0d1a2b 0%,#13243d 50%,#0a1322 100%);
@@ -234,16 +233,29 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
   .pm-h1 em{font-style:normal;color:#ec9b44}
   .pm-lede{font-size:17px;line-height:1.5;color:rgba(255,255,255,.82);font-weight:500;max-width:560px;position:relative;z-index:2}
 
+  /* Floating-плашка прогресса — фиксирована снизу по центру */
   .pm-progress-wrap{
-    position:sticky;top:0;z-index:50;background:rgba(247,245,240,.94);backdrop-filter:saturate(160%) blur(12px);
-    border-bottom:1px solid #e6e3d8;padding:9px 18px 10px;
-    box-shadow:0 4px 14px rgba(15,23,42,.04);
+    position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+    z-index:80;background:rgba(13,26,43,.94);color:#fff;
+    backdrop-filter:saturate(160%) blur(14px);
+    padding:12px 20px 14px;border-radius:18px;
+    box-shadow:0 12px 36px rgba(13,26,43,.35),0 2px 8px rgba(13,26,43,.2);
+    display:flex;flex-direction:column;gap:8px;
+    min-width:280px;max-width:calc(100vw - 28px);
+    transition:transform .25s ease, opacity .25s ease;
   }
-  .pm-progress-row{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:#5e6878;font-weight:600;margin-bottom:6px}
-  .pm-progress-row b{color:#0d1a2b;font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
-  .pm-progress-bar{height:7px;background:#e9e5d8;border-radius:999px;overflow:hidden}
+  .pm-progress-wrap.is-done{
+    background:linear-gradient(135deg,#ec9b44 0%,#f7b96a 100%);
+    color:#0d1a2b;box-shadow:0 12px 36px rgba(236,155,68,.5);
+  }
+  .pm-progress-row{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;opacity:.85;gap:14px}
+  .pm-progress-row b{font-weight:900;font-size:14px;font-variant-numeric:tabular-nums;letter-spacing:0;text-transform:none;opacity:1}
+  .pm-progress-row .pm-progress-pct{margin-left:auto;font-weight:900;font-size:13px;font-variant-numeric:tabular-nums;letter-spacing:0;text-transform:none}
+  .pm-progress-bar{height:8px;background:rgba(255,255,255,.16);border-radius:999px;overflow:hidden}
+  .pm-progress-wrap.is-done .pm-progress-bar{background:rgba(13,26,43,.18)}
   .pm-progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#ec9b44 0%,#f7b96a 100%);width:0%;
-    transition:width .35s cubic-bezier(.2,.7,.3,1);box-shadow:0 1px 6px rgba(236,155,68,.5)}
+    transition:width .45s cubic-bezier(.2,.7,.3,1);box-shadow:0 0 8px rgba(236,155,68,.6)}
+  .pm-progress-wrap.is-done .pm-progress-fill{background:#0d1a2b;box-shadow:none}
 
   .pm-page{max-width:560px;margin:0 auto;padding:18px 16px 80px;position:relative;z-index:3}
 
@@ -251,7 +263,6 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
     background:#fff;border-radius:22px;padding:22px 18px 8px;margin-bottom:16px;
     box-shadow:0 2px 8px rgba(15,23,42,.04),0 18px 36px rgba(15,23,42,.08);
     border:1px solid #ebe7d8;position:relative;overflow:hidden;
-    scroll-margin-top:90px;
   }
   @media (prefers-reduced-motion:no-preference){
     .pm-section{opacity:0;transform:translateY(18px);transition:opacity .5s ease, transform .5s ease}
@@ -376,8 +387,12 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
   <p class="pm-lede">{sections.length}&nbsp;разделов, {totalItems} пунктов. Тапайте, чтобы отметить — прогресс сохранится в&nbsp;этом браузере.</p>
 </header>
 
-<div class="pm-progress-wrap">
-  <div class="pm-progress-row"><span>Готовность чемодана</span><span><b id="pm-done">0</b> / {totalItems}</span></div>
+<div class="pm-progress-wrap" id="pm-progress">
+  <div class="pm-progress-row">
+    <span>Чемодан</span>
+    <span><b id="pm-done">0</b> / {totalItems}</span>
+    <span class="pm-progress-pct" id="pm-pct">0%</span>
+  </div>
   <div class="pm-progress-bar"><div class="pm-progress-fill" id="pm-fill"></div></div>
 </div>
 
@@ -475,12 +490,18 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
   const doneN = document.getElementById('pm-done');
   let done = new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
 
+  const pctEl = document.getElementById('pm-pct');
+  const wrapEl = document.getElementById('pm-progress');
+
   function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify([...done])); }
   function render(){
     items.forEach(el => el.classList.toggle('is-done', done.has(el.dataset.id)));
     const n = done.size;
     doneN.textContent = n;
-    fill.style.width = Math.round((n / total) * 100) + '%';
+    const pct = Math.round((n / total) * 100);
+    fill.style.width = pct + '%';
+    pctEl.textContent = pct + '%';
+    wrapEl.classList.toggle('is-done', n === total);
     if (n === total) burst();
   }
 
