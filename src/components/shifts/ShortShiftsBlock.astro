@@ -72,4 +72,22 @@ const durations = [...new Set(shifts.map((s) => s.duration.replace(/[^\d]/g, '')
   }
   document.addEventListener('astro:page-load', initShortShifts);
   initShortShifts();
+
+  // Auto-open when navigated via #short-shifts anchor
+  function maybeAutoOpen() {
+    if (window.location.hash === '#short-shifts') {
+      const root = document.querySelector<HTMLElement>('[data-short-shifts]');
+      const toggle = root?.querySelector<HTMLButtonElement>('[data-short-toggle]');
+      const panel = root?.querySelector<HTMLElement>('[data-short-panel]');
+      const chevron = root?.querySelector<HTMLElement>('[data-short-chevron]');
+      if (panel && panel.classList.contains('hidden')) {
+        panel.classList.remove('hidden');
+        if (toggle) toggle.setAttribute('aria-expanded', 'true');
+        if (chevron) chevron.style.transform = 'rotate(180deg)';
+      }
+    }
+  }
+  document.addEventListener('astro:page-load', maybeAutoOpen);
+  maybeAutoOpen();
+  window.addEventListener('hashchange', maybeAutoOpen);
 </script>
