@@ -6,8 +6,9 @@ import { signLid, verifyLid } from '../../lib/leadLink';
 const { lid: lidParam } = Astro.params;
 const t = Astro.url.searchParams.get('t') || '';
 
-const lidNum = Number(lidParam);
-const valid = Number.isInteger(lidNum) && lidNum > 0 && lidNum < 9999999 && verifyLid(lidNum, t);
+const isPreview = lidParam === 'test' || lidParam === 'preview';
+const lidNum = isPreview ? 0 : Number(lidParam);
+const valid = isPreview || (Number.isInteger(lidNum) && lidNum > 0 && lidNum < 9999999 && verifyLid(lidNum, t));
 
 if (!valid) {
   return new Response('Ссылка недействительна', { status: 404 });
@@ -324,7 +325,10 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
   </div>
 
   <div class="pm-footer">
-    Лагерь АйДаКемп · ваша заявка №<b>{lidNum}</b><br/>
+    {isPreview
+      ? <>Лагерь АйДаКемп · <b style="color:#ec9b44">ТЕСТОВАЯ СТРАНИЦА</b><br/></>
+      : <>Лагерь АйДаКемп · ваша заявка №<b>{lidNum}</b><br/></>
+    }
     <a href="https://aidacamp.ru" target="_blank" rel="noopener">aidacamp.ru</a>
   </div>
 </main>
@@ -332,7 +336,7 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
 <canvas id="pm-confetti"></canvas>
 <div id="pm-toast"><i class="bi bi-check-circle-fill"></i><span id="pm-toast-text">Ок</span></div>
 
-<script is:inline define:vars={{ lid: lidNum, t: t_safe, total: totalItems }}>
+<script is:inline define:vars={{ lid: lidNum, t: t_safe, total: totalItems, isPreview }}>
 (function(){
   const STORAGE_KEY = 'pm_done_' + lid;
   const items = Array.from(document.querySelectorAll('.pm-item'));
@@ -446,9 +450,11 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
       if (m && m[1]) setTimeout(()=>bindCid(m[1]), 1500);
     } catch(_) {}
   }
-  // Метрика грузится async — подождём 1.5с
-  setTimeout(tryBind, 1500);
-  setTimeout(tryBind, 4500);
+  // Метрика грузится async — подождём 1.5с. В preview-режиме не биндим.
+  if (!isPreview) {
+    setTimeout(tryBind, 1500);
+    setTimeout(tryBind, 4500);
+  }
 
   render();
 })();
