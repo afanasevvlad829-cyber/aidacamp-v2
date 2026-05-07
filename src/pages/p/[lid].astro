@@ -47,10 +47,37 @@ const sections = [
     title: 'Документы — без них не заселят',
     note: 'Кладём первыми. Заверни в файлик — не помнётся.',
     items: [
-      { id: 'doc-1', text: 'Медсправка форма 079/у', hint: 'Срок — 6 месяцев. Берётся в поликлинике.' },
-      { id: 'doc-2', text: 'Полис ОМС', hint: 'Оригинал или копия' },
-      { id: 'doc-3', text: 'Свидетельство о рождении / паспорт', hint: 'У кого что есть' },
-      { id: 'doc-4', text: 'Согласие на медицинское вмешательство', hint: 'Бланк пришлём в Telegram-канале' },
+      {
+        id: 'doc-1', text: 'Медсправка форма 079/у', hint: 'Срок — 6 месяцев. Берётся в поликлинике.',
+        info: {
+          title: 'Медицинская справка форма 079/у',
+          image: '/images/pamyatka/doc-079u.svg',
+          body: 'Берётся в детской поликлинике у участкового педиатра. Оформляется бесплатно по полису ОМС, занимает 1–3 дня. Срок действия — 6 месяцев со дня выдачи. Без неё ребёнка не примут в лагерь — это требование Роспотребнадзора, не наше.<br/><br/><a href="https://docs.cntd.ru/document/420295344" target="_blank" rel="noopener">Посмотреть приказ Минздрава №834н</a>',
+        },
+      },
+      {
+        id: 'doc-2', text: 'Полис ОМС', hint: 'Оригинал или копия',
+        info: {
+          title: 'Полис обязательного медицинского страхования',
+          image: '/images/pamyatka/doc-oms.svg',
+          body: 'Подойдёт оригинал, копия или цифровой полис из госуслуг (распечатать). Если полиса нет — оформить бесплатно в страховой компании или МФЦ по месту жительства.',
+        },
+      },
+      {
+        id: 'doc-3', text: 'Свидетельство о рождении / паспорт', hint: 'У кого что есть',
+        info: {
+          title: 'Документ удостоверяющий личность',
+          body: 'Дети до 14 лет — свидетельство о рождении (оригинал или копия). От 14 лет — паспорт. Без этого документа Роспотребнадзор не разрешает заселять.',
+        },
+      },
+      {
+        id: 'doc-4', text: 'Согласие на медицинское вмешательство', hint: 'Бланк пришлём в Telegram-канале',
+        info: {
+          title: 'Информированное согласие',
+          image: '/images/pamyatka/doc-soglasie.svg',
+          body: 'Стандартный бланк. Подписывают оба родителя (или один — с пометкой «второй родитель отсутствует/в командировке»). Бланк пришлём в TG-канале родителей за 7 дней до смены — распечатываете и привозите подписанным. Без него медсестра лагеря не имеет права оказывать помощь даже от насморка.',
+        },
+      },
     ],
   },
   {
@@ -160,6 +187,12 @@ const t_safe = signLid(lidNum);
 <title>Памятка для смены — АйДаКемп</title>
 
 <link rel="icon" href="/favicon.svg" />
+<link rel="apple-touch-icon" href="/images/pamyatka/icon-180.png" />
+<link rel="manifest" href="/manifest-pamyatka.webmanifest" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Памятка лагеря" />
+<meta name="mobile-web-app-capable" content="yes" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
 
 <!-- Yandex Metrika -->
@@ -296,13 +329,42 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
     .pm-cta-grid{grid-template-columns:1fr 1fr}
   }
 
-  /* Десктоп: 2 колонки секций */
+  /* Десктоп: masonry в 2 колонки */
   @media (min-width:900px){
-    .pm-page{max-width:1080px;padding:0 24px 100px}
-    .pm-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
-    .pm-grid .pm-section{margin-bottom:0}
-    .pm-final{grid-column:1/-1}
+    .pm-page{max-width:1080px;padding:18px 24px 100px}
+    .pm-grid{columns:2;column-gap:18px}
+    .pm-grid > .pm-section{break-inside:avoid;margin-bottom:18px;display:block}
+    .pm-grid > .pm-final{column-span:all;margin-top:6px}
   }
+
+  /* Info-кнопка возле items */
+  .pm-info-btn{
+    border:none;background:transparent;color:#5e6878;cursor:pointer;
+    padding:0;margin:6px 0 0;display:inline-flex;align-items:center;gap:5px;
+    font:inherit;font-size:13px;font-weight:700;color:#0d1a2b;
+  }
+  .pm-info-btn i{color:#ec9b44;font-size:15px}
+  .pm-info-btn:hover{text-decoration:underline}
+
+  /* Модалка */
+  #pm-modal{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+  #pm-modal.is-open{display:flex}
+  .pm-modal-bg{position:absolute;inset:0;background:rgba(13,26,43,.7);backdrop-filter:blur(6px)}
+  .pm-modal-card{
+    position:relative;background:#fff;border-radius:22px;max-width:560px;width:100%;
+    max-height:90vh;overflow-y:auto;padding:26px 24px;box-shadow:0 24px 60px rgba(0,0,0,.4);
+  }
+  .pm-modal-close{
+    position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;
+    border:none;background:#f0ece2;cursor:pointer;font-size:20px;color:#0d1a2b;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .pm-modal-close:hover{background:#e6e2d5}
+  .pm-modal-card h3{font-size:20px;font-weight:900;letter-spacing:-.3px;margin:0 0 12px;padding-right:32px}
+  .pm-modal-card img{width:100%;border-radius:12px;margin:12px 0;display:block}
+  .pm-modal-card p{font-size:15px;line-height:1.5;color:#404a5a;font-weight:500;margin:0 0 10px}
+  .pm-modal-card a{color:#ec9b44;font-weight:700;text-decoration:none}
+  .pm-modal-card a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
@@ -332,12 +394,23 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
           </div>
         </div>
         <ul class="pm-list">
-          {sec.items.map((it) => (
+          {sec.items.map((it: any) => (
             <li class="pm-item" data-id={it.id}>
               <span class="pm-check" aria-hidden="true"></span>
               <div class="pm-item-body">
                 <div class="pm-item-text">{it.text}</div>
                 {it.hint && <div class="pm-item-hint">{it.hint}</div>}
+                {it.info && (
+                  <button
+                    type="button"
+                    class="pm-info-btn"
+                    data-info-title={it.info.title}
+                    data-info-image={it.info.image || ''}
+                    data-info-body={it.info.body}
+                  >
+                    <i class="bi bi-info-circle-fill"></i> Как выглядит / подробнее
+                  </button>
+                )}
               </div>
             </li>
           ))}
@@ -383,6 +456,16 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
 
 <canvas id="pm-confetti"></canvas>
 <div id="pm-toast"><i class="bi bi-check-circle-fill"></i><span id="pm-toast-text">Ок</span></div>
+
+<div id="pm-modal" role="dialog" aria-modal="true" aria-labelledby="pm-modal-title">
+  <div class="pm-modal-bg" data-pm-close></div>
+  <div class="pm-modal-card">
+    <button type="button" class="pm-modal-close" data-pm-close aria-label="Закрыть">×</button>
+    <h3 id="pm-modal-title"></h3>
+    <img id="pm-modal-image" alt="" hidden />
+    <p id="pm-modal-body"></p>
+  </div>
+</div>
 
 <script is:inline define:vars={{ lid: lidNum, t: t_safe, total: totalItems, isPreview }}>
 (function(){
@@ -503,6 +586,31 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
     setTimeout(tryBind, 1500);
     setTimeout(tryBind, 4500);
   }
+
+  // ====== info-modal ======
+  const modal = document.getElementById('pm-modal');
+  const mTitle = document.getElementById('pm-modal-title');
+  const mImage = document.getElementById('pm-modal-image');
+  const mBody  = document.getElementById('pm-modal-body');
+  function openInfo(btn){
+    mTitle.textContent = btn.dataset.infoTitle || '';
+    const img = btn.dataset.infoImage;
+    if (img) { mImage.src = img; mImage.hidden = false; mImage.alt = btn.dataset.infoTitle || ''; }
+    else { mImage.hidden = true; mImage.removeAttribute('src'); }
+    mBody.innerHTML = btn.dataset.infoBody || '';
+    modal.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+    try { window.ym && ym(96499295,'reachGoal','pamyatka_info_open'); } catch(_){}
+  }
+  function closeInfo(){
+    modal.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+  document.querySelectorAll('.pm-info-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => { e.stopPropagation(); openInfo(btn); });
+  });
+  modal.querySelectorAll('[data-pm-close]').forEach(el => el.addEventListener('click', closeInfo));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.classList.contains('is-open')) closeInfo(); });
 
   render();
 })();
