@@ -2,6 +2,8 @@
 export const prerender = false;
 import '../../styles/global.css';
 import { signLid, verifyLid } from '../../lib/leadLink';
+import { getCustomerGroupIds } from '../../lib/alfaCrm';
+import { pickPamyatkaShift, type PamyatkaShift } from '../../data/pamyatkaShifts';
 
 const { lid: lidParam } = Astro.params;
 const t = Astro.url.searchParams.get('t') || '';
@@ -12,6 +14,19 @@ const valid = isPreview || (Number.isInteger(lidNum) && lidNum > 0 && lidNum < 9
 
 if (!valid) {
   return new Response('Ссылка недействительна', { status: 404 });
+}
+
+// SSR: подтянуть смену клиента из CRM. В preview всегда показываем пример смены 1.
+let shift: PamyatkaShift | null = null;
+if (isPreview) {
+  shift = pickPamyatkaShift([660]);
+} else {
+  try {
+    const groupIds = await getCustomerGroupIds(lidNum);
+    shift = pickPamyatkaShift(groupIds);
+  } catch {
+    shift = null;
+  }
 }
 
 const sectionTone: Record<string, string> = {
@@ -53,15 +68,18 @@ const sections = [
   },
   {
     id: 'cloth',
-    icon: 'tshirt',
+    icon: 'bag-fill',
     title: 'Одежда',
     note: 'На 10-дневную смену: 5–6 комплектов. Стирка в лагере есть.',
     items: [
       { id: 'cl-1', text: 'Футболки — 5–6 шт' },
       { id: 'cl-2', text: 'Шорты / лёгкие штаны — 3–4 шт' },
-      { id: 'cl-3', text: 'Толстовка / худи — 2 шт', hint: 'Вечером бывает прохладно' },
+      { id: 'cl-3', text: 'Толстовка / худи — 2 шт' },
+      { id: 'cl-warm', text: 'Одна тёплая вещь обязательно — свитшот или флиска', hint: 'Вы сами знаете, какая у нас летом бывает погода — переменчивая' },
+      { id: 'cl-socks', text: 'Тёплые носки — 2 пары', hint: 'Чтобы вечером в номере было уютно' },
       { id: 'cl-4', text: 'Носки и нижнее бельё — на каждый день +2' },
-      { id: 'cl-5', text: 'Кроссовки + сандалии + сланцы' },
+      { id: 'cl-5', text: 'Кроссовки + сандалии + кроксы', hint: 'Кроксы желательно с закрытым носом — пальцы скажут вам спасибо' },
+      { id: 'cl-rain', text: 'Дождевик', hint: 'На всякий случай — летом дожди приходят внезапно' },
       { id: 'cl-6', text: 'Лёгкая шапка / кепка от солнца' },
     ],
   },
@@ -74,6 +92,7 @@ const sections = [
       { id: 'sw-1', text: 'Купальник / плавки — 2 комплекта' },
       { id: 'sw-2', text: 'Резиновая шапочка для бассейна' },
       { id: 'sw-3', text: 'Полотенце для бассейна (отдельное)' },
+      { id: 'sw-fun', text: 'Можно взять водное оружие или плавающие игрушки', hint: 'Не обязательно — но детям нравится' },
     ],
   },
   {
@@ -102,13 +121,16 @@ const sections = [
     id: 'no',
     icon: 'x-octagon-fill',
     title: 'Что НЕ брать',
-    note: 'Лагерь предоставляет, либо запрещено правилами безопасности.',
+    note: 'Лагерь предоставляет, либо запрещено, либо просто не доедет.',
     items: [
-      { id: 'no-1', text: 'Ноутбук — у нас своё оборудование' },
-      { id: 'no-2', text: 'Дорогую электронику и украшения' },
-      { id: 'no-3', text: 'Постельное бельё, подушки' },
-      { id: 'no-4', text: 'Большие суммы наличных' },
-      { id: 'no-5', text: 'Энергетики, газировку про запас' },
+      { id: 'no-laptop', text: 'Ноутбук — у нас своё оборудование' },
+      { id: 'no-electro', text: 'Дорогую электронику и украшения' },
+      { id: 'no-bed', text: 'Постельное бельё, подушки' },
+      { id: 'no-cash', text: 'Большие суммы наличных' },
+      { id: 'no-energy', text: 'Энергетики, газировку' },
+      { id: 'no-perish', text: 'Скоропортящиеся продукты', hint: 'До конца смены не доедут' },
+      { id: 'no-melt', text: 'Шоколад и всё, что плавится', hint: 'Превратится в лужу в чемодане' },
+      { id: 'no-cookies', text: 'Печеньки и сладости «для своего»', hint: 'Если хотите — берите так, чтобы хватило на весь отряд. Иначе обидно' },
     ],
   },
   {
@@ -117,9 +139,9 @@ const sections = [
     title: 'За день до выезда',
     note: 'Финальный чек, чтобы спать спокойно.',
     items: [
-      { id: 'bf-1', text: 'Подписать вещи маркером / термонаклейками' },
-      { id: 'bf-2', text: 'Положить документы сверху в файлике' },
-      { id: 'bf-3', text: 'Зарядить телефон + взять зарядку' },
+      { id: 'bf-mark', text: 'Промаркировать все вещи', hint: 'Перманентным маркером, термонаклейками или малярным скотчем с надписью — иначе вещи теряются' },
+      { id: 'bf-doc', text: 'Положить документы сверху в файлике' },
+      { id: 'bf-charge', text: 'Зарядить телефон + взять зарядку и пауэрбанк' },
     ],
   },
 ];
@@ -153,6 +175,7 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
 <style is:global>
   *,*::before,*::after{box-sizing:border-box}
   html,body{margin:0;padding:0;background:#f7f5f0;color:#0d1a2b;font-family:'Inter',-apple-system,'Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased}
+  html{scroll-padding-top:80px}
   body{overflow-x:hidden;min-height:100vh}
 
   .pm-hero{
@@ -179,12 +202,13 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
   .pm-lede{font-size:17px;line-height:1.5;color:rgba(255,255,255,.82);font-weight:500;max-width:560px;position:relative;z-index:2}
 
   .pm-progress-wrap{
-    position:sticky;top:0;z-index:50;background:rgba(247,245,240,.92);backdrop-filter:saturate(140%) blur(10px);
-    border-bottom:1px solid #e6e3d8;padding:10px 18px 12px;
+    position:sticky;top:0;z-index:50;background:rgba(247,245,240,.94);backdrop-filter:saturate(160%) blur(12px);
+    border-bottom:1px solid #e6e3d8;padding:9px 18px 10px;
+    box-shadow:0 4px 14px rgba(15,23,42,.04);
   }
   .pm-progress-row{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:#5e6878;font-weight:600;margin-bottom:6px}
   .pm-progress-row b{color:#0d1a2b;font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
-  .pm-progress-bar{height:8px;background:#e9e5d8;border-radius:999px;overflow:hidden}
+  .pm-progress-bar{height:7px;background:#e9e5d8;border-radius:999px;overflow:hidden}
   .pm-progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#ec9b44 0%,#f7b96a 100%);width:0%;
     transition:width .35s cubic-bezier(.2,.7,.3,1);box-shadow:0 1px 6px rgba(236,155,68,.5)}
 
@@ -194,6 +218,7 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
     background:#fff;border-radius:22px;padding:22px 18px 8px;margin-bottom:16px;
     box-shadow:0 2px 8px rgba(15,23,42,.04),0 18px 36px rgba(15,23,42,.08);
     border:1px solid #ebe7d8;position:relative;overflow:hidden;
+    scroll-margin-top:90px;
   }
   @media (prefers-reduced-motion:no-preference){
     .pm-section{opacity:0;transform:translateY(18px);transition:opacity .5s ease, transform .5s ease}
@@ -238,6 +263,7 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
   .pm-final h3{font-size:22px;font-weight:900;letter-spacing:-.5px;margin:0 0 8px;position:relative;z-index:2}
   .pm-final h3 em{font-style:normal;color:#ec9b44}
   .pm-final p{font-size:15px;line-height:1.5;color:rgba(255,255,255,.82);margin:0 0 18px;position:relative;z-index:2}
+  .pm-shift-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(236,155,68,.18);border:1.5px solid rgba(236,155,68,.4);color:#ec9b44;font-weight:800;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;padding:6px 12px;border-radius:999px;margin-bottom:14px;position:relative;z-index:2}
   .pm-cta-grid{display:grid;grid-template-columns:1fr;gap:10px;position:relative;z-index:2}
   .pm-cta{
     display:flex;align-items:center;justify-content:center;gap:10px;
@@ -269,6 +295,14 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
     .pm-hero{padding:48px 32px 110px}
     .pm-cta-grid{grid-template-columns:1fr 1fr}
   }
+
+  /* Десктоп: 2 колонки секций */
+  @media (min-width:900px){
+    .pm-page{max-width:1080px;padding:0 24px 100px}
+    .pm-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+    .pm-grid .pm-section{margin-bottom:0}
+    .pm-final{grid-column:1/-1}
+  }
 </style>
 </head>
 <body>
@@ -277,7 +311,7 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
   <div class="pm-brand"><span class="pm-brand-dot"></span> АйДаКемп</div>
   <span class="pm-eyebrow"><i class="bi bi-bag-check-fill"></i> Личная памятка</span>
   <h1 class="pm-h1">Собираем чемодан в&nbsp;<em>лагерь</em></h1>
-  <p class="pm-lede">8&nbsp;разделов, {totalItems} пунктов. Тапайте, чтобы отметить — прогресс сохранится в&nbsp;этом браузере.</p>
+  <p class="pm-lede">{sections.length}&nbsp;разделов, {totalItems} пунктов. Тапайте, чтобы отметить — прогресс сохранится в&nbsp;этом браузере.</p>
 </header>
 
 <div class="pm-progress-wrap">
@@ -286,42 +320,48 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
 </div>
 
 <main class="pm-page">
+  <div class="pm-grid">
+    {sections.map((sec) => (
+      <section class="pm-section" data-tone style={`--tone:${sectionTone[sec.id] || '#0d1a2b'}`}>
+        <span class="pm-sec-bar"></span>
+        <div class="pm-sec-head">
+          <div class="pm-sec-icon"><i class={`bi bi-${sec.icon}`}></i></div>
+          <div>
+            <h2 class="pm-sec-title">{sec.title}</h2>
+            <div class="pm-sec-note">{sec.note}</div>
+          </div>
+        </div>
+        <ul class="pm-list">
+          {sec.items.map((it) => (
+            <li class="pm-item" data-id={it.id}>
+              <span class="pm-check" aria-hidden="true"></span>
+              <div class="pm-item-body">
+                <div class="pm-item-text">{it.text}</div>
+                {it.hint && <div class="pm-item-hint">{it.hint}</div>}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
 
-  {sections.map((sec) => (
-    <section class="pm-section" data-tone style={`--tone:${sectionTone[sec.id] || '#0d1a2b'}`}>
-      <span class="pm-sec-bar"></span>
-      <div class="pm-sec-head">
-        <div class="pm-sec-icon"><i class={`bi bi-${sec.icon}`}></i></div>
-        <div>
-          <h2 class="pm-sec-title">{sec.title}</h2>
-          <div class="pm-sec-note">{sec.note}</div>
+    {shift && shift.tg && (
+      <div class="pm-final">
+        <span class="pm-shift-tag"><i class="bi bi-calendar-event"></i> {shift.name} · {shift.dates}</span>
+        <h3>Канал родителей <em>смены</em></h3>
+        <p>Здесь вожатые публикуют расписание дня, фото с занятий и важные объявления. Подписывайтесь обязательно — это основной канал коммуникации в смене.</p>
+        <div class="pm-cta-grid">
+          <a class="pm-cta" href={shift.tg} target="_blank" rel="noopener">
+            <i class="bi bi-telegram"></i> Канал родителей
+          </a>
+          {shift.phone && (
+            <a class="pm-cta pm-cta-secondary" href={`tel:${shift.phone.replace(/[^+0-9]/g,'')}`}>
+              <i class="bi bi-telephone-fill"></i> {shift.phoneDisplay || shift.phone}
+            </a>
+          )}
         </div>
       </div>
-      <ul class="pm-list">
-        {sec.items.map((it) => (
-          <li class="pm-item" data-id={it.id}>
-            <span class="pm-check" aria-hidden="true"></span>
-            <div class="pm-item-body">
-              <div class="pm-item-text">{it.text}</div>
-              {it.hint && <div class="pm-item-hint">{it.hint}</div>}
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
-  ))}
-
-  <div class="pm-final">
-    <h3>Если вопросы&nbsp;— <em>пишите</em></h3>
-    <p>Ответим в Telegram-канале или напрямую. Приедем встречать первую ночь любого ребёнка спокойно.</p>
-    <div class="pm-cta-grid">
-      <a class="pm-cta" href="https://t.me/+xnvBGxiOu_QzZmJi" target="_blank" rel="noopener">
-        <i class="bi bi-telegram"></i> Канал родителей
-      </a>
-      <a class="pm-cta pm-cta-secondary" href="tel:+74993943663">
-        <i class="bi bi-telephone-fill"></i> +7 (499) 394-36-63
-      </a>
-    </div>
+    )}
   </div>
 
   <div class="pm-footer">
