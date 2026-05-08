@@ -181,9 +181,17 @@ function freeLabel(free: number) {
     }
 
     function animateBars() {
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       root.querySelectorAll<HTMLElement>('.occupancy-row').forEach((row, i) => {
         setTimeout(() => {
           row.style.opacity = '1';
+          if (reducedMotion) {
+            const bar = row.querySelector<HTMLElement>('.shift-bar');
+            if (bar) bar.style.width = bar.dataset.width || '0%';
+            const label = row.querySelector<HTMLElement>('.shift-label');
+            if (label) label.style.opacity = '1';
+            return;
+          }
           row.style.transition = 'opacity 0.4s ease';
           const bar = row.querySelector<HTMLElement>('.shift-bar');
           if (bar) {
