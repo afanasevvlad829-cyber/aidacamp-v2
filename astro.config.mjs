@@ -21,7 +21,8 @@ export default defineConfig({
         !page.includes('/ask-test/') &&
         !page.includes('/ask/') &&
         !page.includes('/ai-studio/') &&
-        !page.includes('/blog/'),
+        !page.includes('/blog/') &&
+        !page.includes('/staff/'),
       // lastmod = дата деплоя. Даём Google понять, что страницы актуальны.
       // priority: P1=0.9, P2=0.7, P3=0.5 (на основе SEO-архитектуры 2026)
       serialize(item) {
