@@ -11,14 +11,14 @@
  * Тут НЕТ push-handler'а — это отдельный этап.
  */
 
-const CACHE_NAME = 'pamyatka-v1';
-const STATIC_CACHE = 'pamyatka-static-v1';
+const CACHE_NAME = 'pamyatka-v2';
+const STATIC_CACHE = 'pamyatka-static-v2';
 
 // Ассеты которые имеет смысл предзагрузить при install
 const PRECACHE = [
-  '/images/pamyatka/icon-180.png',
-  '/images/pamyatka/icon-192.png',
-  '/images/pamyatka/icon-512.png',
+  '/images/pamyatka/icon-180.png?v=2',
+  '/images/pamyatka/icon-192.png?v=2',
+  '/images/pamyatka/icon-512.png?v=2',
   '/manifest-pamyatka.webmanifest',
 ];
 
