@@ -29,7 +29,7 @@
       </p>
       <p class="text-[16px] leading-[1.65] text-slate-400 mb-8">
         Если хотите быть первыми в таком случае — оставьте контакт. Пришлём сообщение,
-        как только что-то появится. <strong class="text-slate-300 font-medium">Без скидок, по той же цене, без гарантии</strong> —
+        как только что-то появится. <strong class="text-slate-300 font-medium">С небольшим дисконтом, без гарантии</strong> —
         просто приоритет в очереди.
       </p>
 
@@ -76,6 +76,17 @@
         <p id="lm-error" class="hidden text-[13px] text-red-400">
           Укажите телефон или email — чтобы мы могли написать
         </p>
+
+        <!-- Consent: 152-ФЗ — только для отправки формы, не для «Сохранить и подумать» -->
+        <label class="flex cursor-pointer items-start gap-3 mt-2">
+          <input type="checkbox" id="lm-consent-policy" class="mt-[3px] h-5 w-5 shrink-0 rounded border-white/20 bg-white/5 accent-orange-500" />
+          <span class="text-[13px] leading-[1.45] text-slate-400">Ознакомлен(а) с <a href="/privacy-policy/" target="_blank" rel="noopener" class="text-orange-300 underline hover:text-orange-200">Политикой обработки персональных данных</a></span>
+        </label>
+        <label class="flex cursor-pointer items-start gap-3 mt-1">
+          <input type="checkbox" id="lm-consent" class="mt-[3px] h-5 w-5 shrink-0 rounded border-white/20 bg-white/5 accent-orange-500" />
+          <span class="text-[13px] leading-[1.45] text-slate-400">Согласен(а) на <a href="/soglasie-na-obrabotku-personalnyh-dannyh/" target="_blank" rel="noopener" class="text-orange-300 underline hover:text-orange-200">обработку персональных данных</a></span>
+        </label>
+        <p id="lm-hint-consent" class="hidden text-[13px] text-red-400 -mt-1">Поставьте обе галочки — без них не можем принять заявку</p>
 
         <!-- Submit + secondary "remind me later" -->
         <div class="flex flex-wrap items-center gap-3 mt-2">
@@ -176,6 +187,10 @@
     form.classList.remove('hidden');
   });
 
+  const consentEl       = document.getElementById('lm-consent') as HTMLInputElement | null;
+  const consentPolicyEl = document.getElementById('lm-consent-policy') as HTMLInputElement | null;
+  const hintConsentEl   = document.getElementById('lm-hint-consent') as HTMLElement | null;
+
   function validate(): boolean {
     const phone = phoneInput.value.trim();
     const email = emailInput.value.trim();
@@ -183,6 +198,12 @@
     const emailOk = email.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     return phoneOk || emailOk;
   }
+  function consentsChecked(): boolean {
+    return !!(consentEl?.checked && consentPolicyEl?.checked);
+  }
+
+  consentEl?.addEventListener('change', () => { if (consentsChecked()) hintConsentEl?.classList.add('hidden'); });
+  consentPolicyEl?.addEventListener('change', () => { if (consentsChecked()) hintConsentEl?.classList.add('hidden'); });
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -190,11 +211,19 @@
     if (!validate()) {
       errorEl.classList.remove('hidden');
       hintEl.classList.add('hidden');
+      hintConsentEl?.classList.add('hidden');
       phoneInput.focus();
+      return;
+    }
+    if (!consentsChecked()) {
+      errorEl.classList.add('hidden');
+      hintConsentEl?.classList.remove('hidden');
+      consentPolicyEl?.focus();
       return;
     }
 
     errorEl.classList.add('hidden');
+    hintConsentEl?.classList.add('hidden');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Отправляем…';
 
