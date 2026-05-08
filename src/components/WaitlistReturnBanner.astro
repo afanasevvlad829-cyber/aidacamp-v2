@@ -1,0 +1,96 @@
+---
+/**
+ * WaitlistReturnBanner — плавающий баннер для пользователей, которые ранее
+ * нажали «Сохранить и подумать» в LastMinuteWidget (cookie aidacamp_waitlist_interested).
+ *
+ * Логика:
+ *  - Показывается ТОЛЬКО если cookie взведена И пользователь не закрывал баннер.
+ *  - Якорная кнопка ведёт к #waitlist (форма горящих мест).
+ *  - Закрыть → ставит cookie `aidacamp_waitlist_dismissed` на 7 дней.
+ */
+---
+
+<div
+  id="waitlist-return-banner"
+  class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] w-[calc(100%-32px)] max-w-[480px] rounded-2xl bg-slate-950 text-white shadow-[0_18px_48px_rgba(15,23,42,0.45),0_2px_8px_rgba(15,23,42,0.25)] border border-orange-400/30"
+  role="dialog"
+  aria-labelledby="wrb-title"
+>
+  <div class="flex items-start gap-3 px-5 py-4">
+    <div class="shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-orange-500/20">
+      <i class="bi bi-bell-fill text-orange-300 text-[18px]" aria-hidden="true"></i>
+    </div>
+    <div class="flex-1 min-w-0">
+      <p id="wrb-title" class="text-[15px] font-semibold leading-[1.3] mb-1">
+        Помните про <span class="text-orange-300">горящие места?</span>
+      </p>
+      <p class="text-[13px] text-slate-300 leading-[1.45]">
+        Оставьте контакт — пришлём первыми, если кто-то отменит бронь.
+      </p>
+      <div class="flex items-center gap-2 mt-3">
+        <a
+          href="#waitlist"
+          id="wrb-cta"
+          class="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 hover:bg-orange-400 px-4 py-2 text-[13px] font-semibold text-white transition-colors min-h-[36px]"
+        >
+          К форме
+          <i class="bi bi-arrow-right text-[12px]" aria-hidden="true"></i>
+        </a>
+        <button
+          type="button"
+          id="wrb-dismiss"
+          class="inline-flex items-center rounded-lg px-3 py-2 text-[13px] font-medium text-slate-400 hover:text-slate-200 transition-colors min-h-[36px]"
+        >
+          Не сейчас
+        </button>
+      </div>
+    </div>
+    <button
+      type="button"
+      id="wrb-close"
+      aria-label="Закрыть"
+      class="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:text-white hover:bg-white/10 transition-colors -mt-1 -mr-1"
+    >
+      <i class="bi bi-x-lg text-[14px]" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+
+<script is:inline>
+  (function(){
+    function getCookie(n){
+      const m = document.cookie.match(new RegExp('(?:^|;\\s*)' + n + '=([^;]*)'));
+      return m ? decodeURIComponent(m[1]) : null;
+    }
+    function setCookie(n, v, days){
+      const e = new Date(Date.now() + days*86400000).toUTCString();
+      document.cookie = n + '=' + encodeURIComponent(v) + '; expires=' + e + '; path=/; SameSite=Lax';
+    }
+
+    const interested = getCookie('aidacamp_waitlist_interested');
+    const dismissed  = getCookie('aidacamp_waitlist_dismissed');
+    if (!interested || dismissed) return;
+
+    // Не на самой странице с формой? Покажем через 6 секунд после загрузки.
+    const banner = document.getElementById('waitlist-return-banner');
+    if (!banner) return;
+
+    function show(){
+      banner.classList.remove('hidden');
+      try { window.ym && window.ym(88121468, 'reachGoal', 'waitlist_return_banner_shown'); } catch(e){}
+    }
+    setTimeout(show, 6000);
+
+    function hide(days){
+      banner.classList.add('hidden');
+      setCookie('aidacamp_waitlist_dismissed', '1', days);
+    }
+
+    document.getElementById('wrb-close')?.addEventListener('click', () => hide(7));
+    document.getElementById('wrb-dismiss')?.addEventListener('click', () => hide(7));
+    document.getElementById('wrb-cta')?.addEventListener('click', () => {
+      try { window.ym && window.ym(88121468, 'reachGoal', 'waitlist_return_banner_click'); } catch(e){}
+      hide(30);
+    });
+  })();
+</script>

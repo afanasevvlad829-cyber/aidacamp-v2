@@ -71,11 +71,19 @@ const sections = [
         },
       },
       {
-        id: 'doc-4', text: 'Согласие на медицинское вмешательство', hint: 'Бланк пришлём в Telegram-канале',
+        id: 'doc-4', text: 'Согласие на медицинское вмешательство', hint: 'Скачайте бланк, заполните и привезите',
         info: {
           title: 'Информированное согласие',
           image: '/images/pamyatka/doc-soglasie.png',
-          body: 'Стандартный бланк. Подписывают оба родителя (или один — с пометкой «второй родитель отсутствует/в командировке»). Бланк пришлём в TG-канале родителей за 7 дней до смены — распечатываете и привозите подписанным. Без него медсестра лагеря не имеет права оказывать помощь даже от насморка.',
+          body: '<a href="/docs/pamyatka/soglasie-med.docx" download class="pm-info-download"><i class="bi bi-download"></i> Скачать бланк (DOCX, 16 КБ)</a><br/><br/>Стандартный бланк. Подписывают оба родителя (или один — с пометкой «второй родитель отсутствует/в командировке»). Распечатываете дома, заполняете, привозите подписанным. Без него медсестра лагеря не имеет права оказывать помощь даже от насморка.',
+        },
+      },
+      {
+        id: 'doc-5', text: 'Справка об отсутствии контактов (095/у)', hint: 'Берётся за 3 дня до заезда',
+        info: {
+          title: 'Справка об отсутствии контактов с инфекционными больными',
+          image: '/images/pamyatka/doc-095u.jpg',
+          body: 'Форма 095/у — действительна <b>3 дня</b>. Берётся в районной поликлинике у педиатра в день перед выездом или за день. Делается за 15–30 минут, бесплатно по полису ОМС.<br/><br/>Это пережиток ковидных требований Роспотребнадзора, который до сих пор не отменили. Без неё нас не имеют права допустить к заезду — приходится возиться. Извините за бюрократию.',
         },
       },
     ],
@@ -321,6 +329,38 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
   .pm-footer{text-align:center;color:#7a8497;font-size:13px;line-height:1.5;padding:28px 16px 12px;font-weight:500}
   .pm-footer a{color:#0d1a2b;font-weight:700;text-decoration:none}
 
+  /* PWA-инструкция «Добавить на экран» */
+  .pm-pwa-howto{
+    margin-top:24px;border:1.5px dashed #cfcab8;border-radius:18px;padding:18px 20px;
+    background:#fafaf3;
+  }
+  .pm-pwa-howto[hidden]{display:none}
+  .pm-pwa-head{display:flex;align-items:flex-start;gap:12px}
+  .pm-pwa-head-icon{
+    width:36px;height:36px;border-radius:10px;background:#ec9b44;color:#fff;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:18px;
+  }
+  .pm-pwa-title{font-size:15px;font-weight:800;line-height:1.3;color:#0d1a2b;margin:2px 0 2px}
+  .pm-pwa-sub{font-size:13px;color:#5e6878;font-weight:500;line-height:1.4}
+  .pm-pwa-toggle{
+    margin-left:auto;flex-shrink:0;background:transparent;border:none;cursor:pointer;
+    color:#5e6878;font-size:18px;padding:4px;transition:transform .2s;
+  }
+  .pm-pwa-toggle.is-open{transform:rotate(180deg)}
+  .pm-pwa-body{margin-top:14px;display:none}
+  .pm-pwa-body.is-open{display:block}
+  .pm-pwa-platform{margin-bottom:14px}
+  .pm-pwa-platform:last-child{margin-bottom:0}
+  .pm-pwa-platform-name{font-size:12px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#ec9b44;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  .pm-pwa-platform-name i{font-size:14px}
+  .pm-pwa-steps{list-style:none;padding:0;margin:0;font-size:13.5px;line-height:1.5;color:#0d1a2b;font-weight:500}
+  .pm-pwa-steps li{padding:4px 0;display:flex;align-items:flex-start;gap:8px}
+  .pm-pwa-steps li::before{content:counter(step);counter-increment:step;flex-shrink:0;width:20px;height:20px;border-radius:50%;background:#ec9b44;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .pm-pwa-steps{counter-reset:step}
+  .pm-pwa-steps i.bi{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:#ebe7d8;font-size:13px;color:#0d1a2b;margin:0 2px;vertical-align:-4px}
+  .pm-pwa-note{margin-top:12px;padding:10px 12px;background:rgba(236,155,68,.08);border-radius:10px;font-size:12.5px;color:#5e6878;font-weight:500;line-height:1.45}
+  .pm-pwa-note b{color:#0d1a2b;font-weight:700}
+
   /* Confetti canvas */
   #pm-confetti{position:fixed;inset:0;pointer-events:none;z-index:90;display:none}
 
@@ -346,6 +386,85 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
     .pm-grid{columns:2;column-gap:18px}
     .pm-grid > .pm-section{break-inside:avoid;margin-bottom:18px;display:block}
     .pm-grid > .pm-final{column-span:all;margin-top:6px}
+    .pm-grid > .pm-docs-section{column-span:all}
+  }
+
+  /* Видео-карточка (клик → попап) */
+  .pm-video{margin:14px auto 8px;max-width:540px;padding:0 16px;position:relative;z-index:4}
+  .pm-video-card{
+    display:flex;align-items:center;gap:14px;width:100%;
+    background:linear-gradient(135deg,#0d1a2b 0%,#13243d 100%);
+    color:#fff;border:none;border-radius:18px;padding:14px 18px 14px 14px;
+    cursor:pointer;text-align:left;font-family:inherit;
+    box-shadow:0 8px 22px rgba(15,23,42,.18);transition:.15s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .pm-video-card:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(15,23,42,.28)}
+  .pm-video-card:active{transform:translateY(0)}
+  .pm-video-thumb{
+    position:relative;width:88px;height:64px;border-radius:12px;overflow:hidden;flex-shrink:0;
+    background:linear-gradient(135deg,#ec9b44 0%,#f7b96a 100%);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .pm-video-thumb::after{
+    content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 30% 30%,rgba(255,255,255,.25) 0%,transparent 60%);
+  }
+  .pm-video-play{
+    position:relative;z-index:2;width:30px;height:30px;border-radius:50%;background:#fff;
+    display:flex;align-items:center;justify-content:center;color:#0d1a2b;
+    box-shadow:0 3px 8px rgba(0,0,0,.25);
+  }
+  .pm-video-play::before{
+    content:"";display:block;width:0;height:0;
+    border-left:9px solid #0d1a2b;border-top:6px solid transparent;border-bottom:6px solid transparent;
+    margin-left:2px;
+  }
+  .pm-video-text{flex:1;min-width:0}
+  .pm-video-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#ec9b44;margin-bottom:3px}
+  .pm-video-title{font-size:15px;font-weight:700;line-height:1.25;color:#fff;margin:0}
+  .pm-video-arrow{color:rgba(255,255,255,.5);font-size:18px;flex-shrink:0;transition:.15s}
+  .pm-video-card:hover .pm-video-arrow{color:#ec9b44;transform:translateX(2px)}
+
+  /* Видео-попап */
+  #pm-video-modal{position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;padding:16px}
+  #pm-video-modal.is-open{display:flex}
+  .pm-video-bg{position:absolute;inset:0;background:rgba(13,26,43,.88);backdrop-filter:blur(8px)}
+  .pm-video-modal-inner{
+    position:relative;width:100%;max-width:960px;aspect-ratio:16/9;
+    border-radius:18px;overflow:hidden;background:#000;
+    box-shadow:0 24px 60px rgba(0,0,0,.6);
+  }
+  .pm-video-modal-inner iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+  .pm-video-close{
+    position:absolute;top:-46px;right:0;width:38px;height:38px;border-radius:50%;
+    border:none;background:rgba(255,255,255,.15);cursor:pointer;color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:18px;
+    transition:.15s;
+  }
+  .pm-video-close:hover{background:rgba(255,255,255,.28)}
+
+  /* Бланки документов — без чекбоксов, прямые ссылки на download */
+  .pm-docs-section .pm-sec-icon{background:#3a73ff!important}
+  .pm-docs-section .pm-sec-bar{background:#3a73ff!important}
+  .pm-docs-grid{display:grid;grid-template-columns:1fr;gap:10px;padding:14px 0 6px;list-style:none;margin:0}
+  .pm-doc{
+    display:flex;align-items:center;gap:14px;padding:14px 16px;
+    background:#fafaf3;border:1.5px solid #ebe7d8;border-radius:14px;
+    text-decoration:none;color:#0d1a2b;font-weight:600;font-size:15px;
+    transition:.15s ease;
+  }
+  .pm-doc:hover{border-color:#3a73ff;background:#fff;transform:translateY(-1px);box-shadow:0 6px 14px rgba(58,115,255,.15)}
+  .pm-doc-icon{
+    width:42px;height:42px;border-radius:10px;background:rgba(58,115,255,.12);
+    display:flex;align-items:center;justify-content:center;font-size:20px;color:#3a73ff;flex-shrink:0;
+  }
+  .pm-doc-text{flex:1;min-width:0}
+  .pm-doc-text .pm-doc-title{font-size:15px;font-weight:700;color:#0d1a2b;line-height:1.25}
+  .pm-doc-text .pm-doc-meta{font-size:12px;color:#7a8497;font-weight:500;margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+  .pm-doc-arrow{color:#7a8497;font-size:18px;flex-shrink:0;transition:.15s}
+  .pm-doc:hover .pm-doc-arrow{color:#3a73ff;transform:translateX(2px)}
+  @media (min-width:640px){
+    .pm-docs-grid{grid-template-columns:1fr 1fr}
   }
 
   /* Info-кнопка возле items */
@@ -376,6 +495,13 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
   .pm-modal-card p{font-size:15px;line-height:1.5;color:#404a5a;font-weight:500;margin:0 0 10px}
   .pm-modal-card a{color:#ec9b44;font-weight:700;text-decoration:none}
   .pm-modal-card a:hover{text-decoration:underline}
+  .pm-modal-card a.pm-info-download{
+    display:inline-flex;align-items:center;gap:8px;padding:10px 16px;
+    background:#ec9b44;color:#fff;border-radius:10px;text-decoration:none;font-size:14px;
+    transition:.15s;
+  }
+  .pm-modal-card a.pm-info-download:hover{background:#d88a3a;text-decoration:none;transform:translateY(-1px)}
+  .pm-modal-card a.pm-info-download i{font-size:15px}
 </style>
 </head>
 <body>
@@ -396,8 +522,75 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
   <div class="pm-progress-bar"><div class="pm-progress-fill" id="pm-fill"></div></div>
 </div>
 
+<!-- Видео-приветствие — компактная карточка, открывает попап -->
+<div class="pm-video">
+  <button type="button" class="pm-video-card" data-pm-video-open aria-label="Смотреть видео-приветствие">
+    <span class="pm-video-thumb"><span class="pm-video-play" aria-hidden="true"></span></span>
+    <span class="pm-video-text">
+      <span class="pm-video-eyebrow">Видео · 30 секунд</span>
+      <span class="pm-video-title">Что нужно взять, а что не нужно</span>
+    </span>
+    <i class="bi bi-arrow-right pm-video-arrow" aria-hidden="true"></i>
+  </button>
+</div>
+
+<div id="pm-video-modal" role="dialog" aria-modal="true" aria-label="Видео-приветствие">
+  <div class="pm-video-bg" data-pm-video-close></div>
+  <div class="pm-video-modal-inner">
+    <button type="button" class="pm-video-close" data-pm-video-close aria-label="Закрыть">×</button>
+    <iframe id="pm-video-iframe" src="" allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer; clipboard-write" allowfullscreen></iframe>
+  </div>
+</div>
+
 <main class="pm-page">
   <div class="pm-grid">
+
+    <!-- Бланки документов — без чекбоксов, скачать -->
+    <section class="pm-section pm-docs-section" data-tone style="--tone:#3a73ff">
+      <span class="pm-sec-bar"></span>
+      <div class="pm-sec-head">
+        <div class="pm-sec-icon"><i class="bi bi-file-earmark-text"></i></div>
+        <div>
+          <h2 class="pm-sec-title">Бланки документов</h2>
+          <div class="pm-sec-note">Скачайте, распечатайте, заполните и привезите в день заезда.</div>
+        </div>
+      </div>
+      <div class="pm-docs-grid">
+        <a class="pm-doc" href="/docs/pamyatka/pamyatka-2026.docx" download>
+          <div class="pm-doc-icon"><i class="bi bi-clipboard-check"></i></div>
+          <div class="pm-doc-text">
+            <div class="pm-doc-title">Памятка лагерь 2026</div>
+            <div class="pm-doc-meta">DOCX · 19 KB</div>
+          </div>
+          <i class="bi bi-download pm-doc-arrow"></i>
+        </a>
+        <a class="pm-doc" href="/docs/pamyatka/anketa.docx" download>
+          <div class="pm-doc-icon"><i class="bi bi-clipboard-check"></i></div>
+          <div class="pm-doc-text">
+            <div class="pm-doc-title">Анкета на ребёнка</div>
+            <div class="pm-doc-meta">DOCX · 16 KB</div>
+          </div>
+          <i class="bi bi-download pm-doc-arrow"></i>
+        </a>
+        <a class="pm-doc" href="/docs/pamyatka/soglasie-med.docx" download>
+          <div class="pm-doc-icon"><i class="bi bi-clipboard-check"></i></div>
+          <div class="pm-doc-text">
+            <div class="pm-doc-title">Согласие на мед. вмешательство</div>
+            <div class="pm-doc-meta">DOCX · 16 KB</div>
+          </div>
+          <i class="bi bi-download pm-doc-arrow"></i>
+        </a>
+        <a class="pm-doc" href="/docs/pamyatka/tehnika-bezopasnosti.docx" download>
+          <div class="pm-doc-icon"><i class="bi bi-clipboard-check"></i></div>
+          <div class="pm-doc-text">
+            <div class="pm-doc-title">Техника безопасности</div>
+            <div class="pm-doc-meta">DOCX · 13 KB</div>
+          </div>
+          <i class="bi bi-download pm-doc-arrow"></i>
+        </a>
+      </div>
+    </section>
+
     {sections.map((sec) => (
       <section class="pm-section" data-tone style={`--tone:${sectionTone[sec.id] || '#0d1a2b'}`}>
         <span class="pm-sec-bar"></span>
@@ -458,6 +651,42 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
         </p>
       </div>
     )}
+  </div>
+
+  <!-- PWA-инструкция «Добавить на экран» -->
+  <div class="pm-pwa-howto" id="pm-pwa-howto">
+    <div class="pm-pwa-head">
+      <div class="pm-pwa-head-icon"><i class="bi bi-phone"></i></div>
+      <div style="flex:1;min-width:0">
+        <h3 class="pm-pwa-title">Сохраните памятку на экран телефона</h3>
+        <p class="pm-pwa-sub">Открывайте одним тапом, пока готовитесь к смене. После лагеря удалите.</p>
+      </div>
+      <button type="button" class="pm-pwa-toggle" id="pm-pwa-toggle" aria-label="Развернуть инструкцию">
+        <i class="bi bi-chevron-down"></i>
+      </button>
+    </div>
+    <div class="pm-pwa-body" id="pm-pwa-body">
+      <div class="pm-pwa-platform" id="pm-pwa-ios">
+        <div class="pm-pwa-platform-name"><i class="bi bi-apple"></i> iPhone (Safari)</div>
+        <ol class="pm-pwa-steps">
+          <li>Нажмите <i class="bi bi-box-arrow-up"></i> «Поделиться» внизу экрана</li>
+          <li>Прокрутите и выберите <b>«На экран Дом»</b></li>
+          <li>Подтвердите — иконка появится на главном экране</li>
+        </ol>
+      </div>
+      <div class="pm-pwa-platform" id="pm-pwa-android">
+        <div class="pm-pwa-platform-name"><i class="bi bi-android2"></i> Android (Chrome)</div>
+        <ol class="pm-pwa-steps">
+          <li>Нажмите <i class="bi bi-three-dots-vertical"></i> в правом верхнем углу</li>
+          <li>Выберите <b>«Установить приложение»</b> или «На главный экран»</li>
+          <li>Подтвердите — иконка появится на рабочем столе</li>
+        </ol>
+      </div>
+      <p class="pm-pwa-note">
+        <b>Перед лагерем:</b> чек-листы и бланки всегда под рукой, без поиска ссылки в чатах.<br/>
+        <b>После лагеря:</b> удалите как обычное приложение — долгий тап → «Удалить».
+      </p>
+    </div>
   </div>
 
   <div class="pm-footer">
@@ -607,6 +836,54 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
     setTimeout(tryBind, 1500);
     setTimeout(tryBind, 4500);
   }
+
+  // ====== PWA-инструкция: toggle + платформа ======
+  const pwaToggle = document.getElementById('pm-pwa-toggle');
+  const pwaBody   = document.getElementById('pm-pwa-body');
+  const pwaIos    = document.getElementById('pm-pwa-ios');
+  const pwaAndroid= document.getElementById('pm-pwa-android');
+  const pwaHowto  = document.getElementById('pm-pwa-howto');
+
+  // Если уже установлено как PWA — скрываем блок целиком
+  const isStandalone = window.matchMedia?.('(display-mode: standalone)').matches
+    || (window.navigator as any).standalone === true;
+  if (isStandalone && pwaHowto) {
+    pwaHowto.setAttribute('hidden', '');
+  } else {
+    // Показываем релевантную платформу первой (другую — оставляем для общего знания)
+    const ua = navigator.userAgent;
+    const isIOS = /iPhone|iPad|iPod/.test(ua);
+    const isAndroid = /Android/.test(ua);
+    if (isIOS && pwaAndroid) pwaAndroid.style.opacity = '0.6';
+    if (isAndroid && pwaIos) pwaIos.style.opacity = '0.6';
+
+    pwaToggle?.addEventListener('click', () => {
+      const opened = pwaBody?.classList.toggle('is-open');
+      pwaToggle.classList.toggle('is-open', !!opened);
+      pwaToggle.setAttribute('aria-label', opened ? 'Свернуть инструкцию' : 'Развернуть инструкцию');
+    });
+  }
+
+  // ====== видео-попап ======
+  const VIDEO_SRC = 'https://kinescope.io/embed/wUhdcJ5RmsxpxKGu7DhtZH';
+  const videoModal = document.getElementById('pm-video-modal');
+  const videoIframe = document.getElementById('pm-video-iframe');
+  function openVideo(){
+    if (!videoModal || !videoIframe) return;
+    videoIframe.src = VIDEO_SRC + '?autoplay=1';
+    videoModal.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+    try { window.ym && ym(96499295,'reachGoal','pamyatka_video_open'); } catch(_){}
+  }
+  function closeVideo(){
+    if (!videoModal || !videoIframe) return;
+    videoModal.classList.remove('is-open');
+    videoIframe.src = ''; // остановить воспроизведение
+    document.body.style.overflow = '';
+  }
+  document.querySelectorAll('[data-pm-video-open]').forEach(b => b.addEventListener('click', openVideo));
+  document.querySelectorAll('[data-pm-video-close]').forEach(b => b.addEventListener('click', closeVideo));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && videoModal?.classList.contains('is-open')) closeVideo(); });
 
   // ====== info-modal ======
   const modal = document.getElementById('pm-modal');

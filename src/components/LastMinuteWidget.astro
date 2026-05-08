@@ -1,0 +1,271 @@
+---
+/**
+ * LastMinuteWidget — блок захвата лидов на горящие места.
+ * Позиционирование: отказы в последний момент → место по полной цене, без гарантии.
+ * Форма: email ИЛИ телефон (хотя бы одно поле).
+ */
+---
+
+<section id="waitlist" class="py-16 md:py-24 bg-slate-950 relative overflow-hidden">
+  <!-- Subtle texture -->
+  <div class="pointer-events-none absolute inset-0 opacity-[0.03]"
+       style="background-image: radial-gradient(circle at 20% 50%, #ec7c00 0%, transparent 60%), radial-gradient(circle at 80% 20%, #f59e0b 0%, transparent 50%);"></div>
+
+  <div class="mx-auto max-w-[1200px] px-5 md:px-8 relative z-10">
+    <div class="mx-auto max-w-[760px]">
+
+      <!-- Eyebrow -->
+      <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-orange-400 mb-3">Горящие места</p>
+
+      <!-- Heading -->
+      <h2 class="text-[28px] md:text-[36px] font-extrabold tracking-[-0.02em] leading-[1.1] text-white mb-4">
+        Иногда места появляются<br class="hidden md:block"> в последний момент
+      </h2>
+
+      <!-- Body copy — tone of voice: подруга, без нотаций -->
+      <p class="text-[16px] leading-[1.65] text-slate-300 mb-2">
+        Бывает, что семья бронирует — и потом что-то меняется. Ребёнок заболел,
+        планы сдвинулись. Место освобождается буквально за несколько дней до смены.
+      </p>
+      <p class="text-[16px] leading-[1.65] text-slate-400 mb-8">
+        Если хотите быть первыми в таком случае — оставьте контакт. Пришлём сообщение,
+        как только что-то появится. <strong class="text-slate-300 font-medium">С небольшим дисконтом, без гарантии</strong> —
+        просто приоритет в очереди.
+      </p>
+
+      <!-- Form -->
+      <form
+        id="last-minute-form"
+        class="flex flex-col gap-3"
+        novalidate
+      >
+        <!-- Fields row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="relative">
+            <label for="lm-phone" class="sr-only">Телефон</label>
+            <i class="bi bi-telephone-fill absolute left-4 top-1/2 -translate-y-1/2 text-[15px] text-slate-500 pointer-events-none" aria-hidden="true"></i>
+            <input
+              id="lm-phone"
+              name="phone"
+              type="tel"
+              placeholder="+7 (___) ___-__-__"
+              autocomplete="tel"
+              class="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3.5 text-[15px] text-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:border-orange-400 focus-visible:ring-1 focus-visible:ring-orange-400/40 transition-colors"
+            />
+          </div>
+          <div class="relative">
+            <label for="lm-email" class="sr-only">Email</label>
+            <i class="bi bi-envelope-fill absolute left-4 top-1/2 -translate-y-1/2 text-[15px] text-slate-500 pointer-events-none" aria-hidden="true"></i>
+            <input
+              id="lm-email"
+              name="email"
+              type="email"
+              placeholder="почта@пример.ru"
+              autocomplete="email"
+              class="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-3.5 text-[15px] text-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:border-orange-400 focus-visible:ring-1 focus-visible:ring-orange-400/40 transition-colors"
+            />
+          </div>
+        </div>
+
+        <!-- Validation hint -->
+        <p id="lm-hint" class="text-[13px] text-slate-500 -mt-1">
+          Достаточно указать одно — телефон или email
+        </p>
+
+        <!-- Error message (hidden by default) -->
+        <p id="lm-error" class="hidden text-[13px] text-red-400">
+          Укажите телефон или email — чтобы мы могли написать
+        </p>
+
+        <!-- Consent: 152-ФЗ — только для отправки формы, не для «Сохранить и подумать» -->
+        <label class="flex cursor-pointer items-start gap-3 mt-2">
+          <input type="checkbox" id="lm-consent-policy" class="mt-[3px] h-5 w-5 shrink-0 rounded border-white/20 bg-white/5 accent-orange-500" />
+          <span class="text-[13px] leading-[1.45] text-slate-400">Ознакомлен(а) с <a href="/privacy-policy/" target="_blank" rel="noopener" class="text-orange-300 underline hover:text-orange-200">Политикой обработки персональных данных</a></span>
+        </label>
+        <label class="flex cursor-pointer items-start gap-3 mt-1">
+          <input type="checkbox" id="lm-consent" class="mt-[3px] h-5 w-5 shrink-0 rounded border-white/20 bg-white/5 accent-orange-500" />
+          <span class="text-[13px] leading-[1.45] text-slate-400">Согласен(а) на <a href="/soglasie-na-obrabotku-personalnyh-dannyh/" target="_blank" rel="noopener" class="text-orange-300 underline hover:text-orange-200">обработку персональных данных</a></span>
+        </label>
+        <p id="lm-hint-consent" class="hidden text-[13px] text-red-400 -mt-1">Поставьте обе галочки — без них не можем принять заявку</p>
+
+        <!-- Submit + secondary "remind me later" -->
+        <div class="flex flex-wrap items-center gap-3 mt-2">
+          <button
+            type="submit"
+            id="lm-submit"
+            class="inline-flex items-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-400 active:scale-[0.98] px-7 py-3.5 text-[15px] font-semibold text-white transition-all duration-150 min-h-[48px] cursor-pointer"
+          >
+            <i class="bi bi-bell-fill text-[14px]" aria-hidden="true"></i>
+            Сообщите мне
+          </button>
+          <button
+            type="button"
+            id="lm-remind-later"
+            class="inline-flex items-center gap-2 rounded-xl border border-white/15 hover:border-orange-400/60 hover:bg-white/5 active:scale-[0.98] px-5 py-3.5 text-[14px] font-medium text-slate-300 hover:text-white transition-colors duration-150 min-h-[48px] cursor-pointer"
+            title="Запомним вас и покажем напоминание, когда вернётесь — без формы прямо сейчас"
+          >
+            <i class="bi bi-bookmark-heart text-[14px]" aria-hidden="true"></i>
+            Сохранить и подумать
+          </button>
+        </div>
+        <p class="text-[12px] text-slate-500 leading-[1.5] mt-2">
+          Не будем спамить. Только если появится место.
+        </p>
+      </form>
+
+      <!-- Saved-state (для «Сохранить и подумать») -->
+      <div id="lm-saved" class="hidden mt-3">
+        <div class="flex items-start gap-3 rounded-xl border border-orange-400/30 bg-orange-400/10 px-5 py-4">
+          <i class="bi bi-bookmark-heart-fill text-orange-300 text-[20px] shrink-0 mt-0.5" aria-hidden="true"></i>
+          <div>
+            <p class="text-[15px] font-semibold text-white mb-1">Запомнили</p>
+            <p class="text-[14px] text-slate-300">Когда вернётесь на сайт — покажем напоминание. Передумали? <button type="button" id="lm-saved-undo" class="text-orange-300 hover:text-orange-200 underline cursor-pointer">отменить</button></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success state (hidden) -->
+      <div id="lm-success" class="hidden mt-2">
+        <div class="flex items-start gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-4">
+          <i class="bi bi-check-circle-fill text-emerald-400 text-[20px] shrink-0 mt-0.5" aria-hidden="true"></i>
+          <div>
+            <p class="text-[15px] font-semibold text-white mb-1">Записали!</p>
+            <p class="text-[14px] text-slate-300">Как только появится свободное место — пришлём сообщение первыми.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<script>
+  import { formatPhone, isPhoneValid } from '../utils/phoneMask';
+
+  const form = document.getElementById('last-minute-form') as HTMLFormElement | null;
+  if (!form) throw new Error('last-minute-form not found');
+
+  const phoneInput = document.getElementById('lm-phone') as HTMLInputElement;
+  const emailInput = document.getElementById('lm-email') as HTMLInputElement;
+  const errorEl   = document.getElementById('lm-error') as HTMLElement;
+  const hintEl    = document.getElementById('lm-hint') as HTMLElement;
+  const successEl = document.getElementById('lm-success') as HTMLElement;
+  const submitBtn = document.getElementById('lm-submit') as HTMLButtonElement;
+
+  // Phone mask
+  phoneInput?.addEventListener('input', () => {
+    phoneInput.value = formatPhone(phoneInput.value);
+  });
+
+  // ====== «Сохранить и подумать» — cookie на 60 дней + успешное состояние ======
+  const remindBtn = document.getElementById('lm-remind-later') as HTMLButtonElement | null;
+  const savedEl   = document.getElementById('lm-saved') as HTMLElement | null;
+  const undoBtn   = document.getElementById('lm-saved-undo') as HTMLButtonElement | null;
+
+  function setCookie(name: string, value: string, days: number): void {
+    const exp = new Date(Date.now() + days * 86400_000).toUTCString();
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${exp}; path=/; SameSite=Lax`;
+  }
+  function delCookie(name: string): void {
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/; SameSite=Lax`;
+  }
+
+  remindBtn?.addEventListener('click', () => {
+    setCookie('aidacamp_waitlist_interested', String(Date.now()), 60);
+    delCookie('aidacamp_waitlist_dismissed');
+    form.classList.add('hidden');
+    successEl.classList.add('hidden');
+    savedEl?.classList.remove('hidden');
+    if (typeof window.ym === 'function') {
+      window.ym(88121468, 'reachGoal', 'waitlist_remind_later');
+    }
+  });
+
+  undoBtn?.addEventListener('click', () => {
+    delCookie('aidacamp_waitlist_interested');
+    savedEl?.classList.add('hidden');
+    form.classList.remove('hidden');
+  });
+
+  const consentEl       = document.getElementById('lm-consent') as HTMLInputElement | null;
+  const consentPolicyEl = document.getElementById('lm-consent-policy') as HTMLInputElement | null;
+  const hintConsentEl   = document.getElementById('lm-hint-consent') as HTMLElement | null;
+
+  function validate(): boolean {
+    const phone = phoneInput.value.trim();
+    const email = emailInput.value.trim();
+    const phoneOk = phone.length > 0 && isPhoneValid(phone);
+    const emailOk = email.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    return phoneOk || emailOk;
+  }
+  function consentsChecked(): boolean {
+    return !!(consentEl?.checked && consentPolicyEl?.checked);
+  }
+
+  consentEl?.addEventListener('change', () => { if (consentsChecked()) hintConsentEl?.classList.add('hidden'); });
+  consentPolicyEl?.addEventListener('change', () => { if (consentsChecked()) hintConsentEl?.classList.add('hidden'); });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    if (!validate()) {
+      errorEl.classList.remove('hidden');
+      hintEl.classList.add('hidden');
+      hintConsentEl?.classList.add('hidden');
+      phoneInput.focus();
+      return;
+    }
+    if (!consentsChecked()) {
+      errorEl.classList.add('hidden');
+      hintConsentEl?.classList.remove('hidden');
+      consentPolicyEl?.focus();
+      return;
+    }
+
+    errorEl.classList.add('hidden');
+    hintConsentEl?.classList.add('hidden');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Отправляем…';
+
+    const body: Record<string, string> = {
+      phone:       phoneInput.value.trim(),
+      email:       emailInput.value.trim(),
+      source:      'waitlist',
+      form_id:     'last-minute',
+      landing_url: window.location.href,
+      page_title:  document.title,
+      referrer:    document.referrer,
+    };
+
+    // Pass UTM params if present
+    const urlParams = new URLSearchParams(window.location.search);
+    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','yclid','ysclid'].forEach(k => {
+      const v = urlParams.get(k);
+      if (v) body[k] = v;
+    });
+
+    try {
+      const resp = await fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (resp.ok) {
+        form.classList.add('hidden');
+        successEl.classList.remove('hidden');
+        // Yandex.Metrika goal
+        if (typeof window.ym === 'function') {
+          window.ym(88121468, 'reachGoal', 'waitlist_submit');
+        }
+      } else {
+        throw new Error('server error');
+      }
+    } catch {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="bi bi-bell-fill text-[14px]" aria-hidden="true"></i> Сообщите мне';
+      errorEl.textContent = 'Не удалось отправить — попробуйте ещё раз';
+      errorEl.classList.remove('hidden');
+    }
+  });
+</script>
