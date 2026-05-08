@@ -702,15 +702,45 @@ from browser_use import Agent
 
 ---
 
-## 📊 Публикация отчётов в Reports Hub
+## 📊 ОБЯЗАТЕЛЬНО: отчёты — ТОЛЬКО в Reports Hub
 
-**Все отчёты агентов — в Reports Hub, никаких файлов в /tmp/, репо или dist/.**  
+🔴 **ЖЁСТКОЕ ПРАВИЛО, БЕЗ ИСКЛЮЧЕНИЙ:**
+
+**Любой отчёт, аудит, анализ, summary, дашборд (HTML / PDF / Markdown) ОБЯЗАН быть опубликован через `/opt/reports-hub/publish.sh`. Никаких других мест.**
+
 Дашборд: **https://dev.aidacamp.ru/reports-hub/**
 
+### 🚫 ЗАПРЕЩЕНО
+
+- ❌ Оставлять отчёт в `/tmp/` (только как промежуточный буфер ДО publish.sh)
+- ❌ Класть в корень репо или `~/Aidacamp-cloude/`
+- ❌ Класть в `dist/`, `dist/client/`, `public/`
+- ❌ Класть в `/var/www/aidacamp-dev/screenshots/` или любую серверную папку напрямую
+- ❌ Слать ссылку на `https://dev.aidacamp.ru/screenshots/<отчёт>.html` (это для debug-скриншотов, не для отчётов)
+- ❌ Давать пользователю локальный путь — он не сможет открыть с другого устройства
+
+### ✅ ОБЯЗАТЕЛЬНЫЙ ПУТЬ
+
 ```bash
+# 1. Генерируем отчёт → /tmp/report.html
+# 2. Заливаем на сервер
 scp -i ~/.ssh/aidacamp_prod /tmp/report.html root@159.194.223.55:/tmp/
+
+# 3. Публикуем через publish.sh
 ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 \
-  "/opt/reports-hub/publish.sh /tmp/report.html 'Заголовок' 'Описание' seo 'тег1,тег2'"
+  "/opt/reports-hub/publish.sh /tmp/report.html 'Заголовок' 'Описание' <category> 'тег1,тег2'"
+
+# 4. Пользователю даём URL: https://dev.aidacamp.ru/reports-hub/
 ```
 
-Категории: `seo` | `ux` | `analytics` | `ads` | `crm` | `other`
+**Категории:** `seo` | `ux` | `analytics` | `ads` | `crm` | `other`
+
+### 💡 Что НЕ является отчётом
+
+Можно класть куда удобно (обычно `/opt/browser-agent/output/` → `/screenshots/`):
+
+- **Debug-скриншоты** UI после деплоя — для самопроверки
+- **Промежуточные данные** (CSV/JSON для дальнейшей обработки)
+- **Файлы кода** — коммитятся в репо
+
+**Критерий «отчёт или нет»:** если пользователь захочет потом *найти, показать кому-то, прислать клиенту* — это отчёт → Reports Hub. Если это разовая отладка для тебя — нет.
