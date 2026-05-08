@@ -6,13 +6,13 @@
  */
 ---
 
-<section id="waitlist" class="section-pad bg-slate-950 relative overflow-hidden">
+<section id="waitlist" class="py-16 md:py-24 bg-slate-950 relative overflow-hidden">
   <!-- Subtle texture -->
   <div class="pointer-events-none absolute inset-0 opacity-[0.03]"
        style="background-image: radial-gradient(circle at 20% 50%, #ec7c00 0%, transparent 60%), radial-gradient(circle at 80% 20%, #f59e0b 0%, transparent 50%);"></div>
 
-  <div class="container-main relative z-10">
-    <div class="mx-auto max-w-[680px]">
+  <div class="mx-auto max-w-[1200px] px-5 md:px-8 relative z-10">
+    <div class="mx-auto max-w-[760px]">
 
       <!-- Eyebrow -->
       <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-orange-400 mb-3">Горящие места</p>
@@ -77,8 +77,8 @@
           Укажите телефон или email — чтобы мы могли написать
         </p>
 
-        <!-- Submit -->
-        <div class="flex items-center gap-4 mt-1">
+        <!-- Submit + secondary "remind me later" -->
+        <div class="flex flex-wrap items-center gap-3 mt-2">
           <button
             type="submit"
             id="lm-submit"
@@ -87,11 +87,31 @@
             <i class="bi bi-bell-fill text-[14px]" aria-hidden="true"></i>
             Сообщите мне
           </button>
-          <p class="text-[12px] text-slate-500 leading-[1.5] max-w-[200px]">
-            Не будем спамить. Только если появится место.
-          </p>
+          <button
+            type="button"
+            id="lm-remind-later"
+            class="inline-flex items-center gap-2 rounded-xl border border-white/15 hover:border-orange-400/60 hover:bg-white/5 active:scale-[0.98] px-5 py-3.5 text-[14px] font-medium text-slate-300 hover:text-white transition-colors duration-150 min-h-[48px] cursor-pointer"
+            title="Запомним вас и покажем напоминание, когда вернётесь — без формы прямо сейчас"
+          >
+            <i class="bi bi-bookmark-heart text-[14px]" aria-hidden="true"></i>
+            Сохранить и подумать
+          </button>
         </div>
+        <p class="text-[12px] text-slate-500 leading-[1.5] mt-2">
+          Не будем спамить. Только если появится место.
+        </p>
       </form>
+
+      <!-- Saved-state (для «Сохранить и подумать») -->
+      <div id="lm-saved" class="hidden mt-3">
+        <div class="flex items-start gap-3 rounded-xl border border-orange-400/30 bg-orange-400/10 px-5 py-4">
+          <i class="bi bi-bookmark-heart-fill text-orange-300 text-[20px] shrink-0 mt-0.5" aria-hidden="true"></i>
+          <div>
+            <p class="text-[15px] font-semibold text-white mb-1">Запомнили</p>
+            <p class="text-[14px] text-slate-300">Когда вернётесь на сайт — покажем напоминание. Передумали? <button type="button" id="lm-saved-undo" class="text-orange-300 hover:text-orange-200 underline cursor-pointer">отменить</button></p>
+          </div>
+        </div>
+      </div>
 
       <!-- Success state (hidden) -->
       <div id="lm-success" class="hidden mt-2">
@@ -124,6 +144,36 @@
   // Phone mask
   phoneInput?.addEventListener('input', () => {
     phoneInput.value = formatPhone(phoneInput.value);
+  });
+
+  // ====== «Сохранить и подумать» — cookie на 60 дней + успешное состояние ======
+  const remindBtn = document.getElementById('lm-remind-later') as HTMLButtonElement | null;
+  const savedEl   = document.getElementById('lm-saved') as HTMLElement | null;
+  const undoBtn   = document.getElementById('lm-saved-undo') as HTMLButtonElement | null;
+
+  function setCookie(name: string, value: string, days: number): void {
+    const exp = new Date(Date.now() + days * 86400_000).toUTCString();
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${exp}; path=/; SameSite=Lax`;
+  }
+  function delCookie(name: string): void {
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/; SameSite=Lax`;
+  }
+
+  remindBtn?.addEventListener('click', () => {
+    setCookie('aidacamp_waitlist_interested', String(Date.now()), 60);
+    delCookie('aidacamp_waitlist_dismissed');
+    form.classList.add('hidden');
+    successEl.classList.add('hidden');
+    savedEl?.classList.remove('hidden');
+    if (typeof window.ym === 'function') {
+      window.ym(88121468, 'reachGoal', 'waitlist_remind_later');
+    }
+  });
+
+  undoBtn?.addEventListener('click', () => {
+    delCookie('aidacamp_waitlist_interested');
+    savedEl?.classList.add('hidden');
+    form.classList.remove('hidden');
   });
 
   function validate(): boolean {
