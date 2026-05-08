@@ -14,6 +14,55 @@ SSH_KEY_PROD="$HOME/.ssh/aidacamp_prod"
 
 TARGET="${1:-dev}"
 
+# ── 0. Pre-flight git guard ───────────────────────────────────
+# Запрещаем деплой при расхождении git ↔ working tree ↔ origin.
+# Обход: SKIP_GIT_GUARD=1 (только для критических hotfix владельцем).
+cd "$PROJECT_DIR"
+if [ "${SKIP_GIT_GUARD:-0}" != "1" ]; then
+  case "$TARGET" in
+    dev)  GUARD_BRANCH="dev" ;;
+    prod) GUARD_BRANCH="main" ;;
+    *)    GUARD_BRANCH="" ;;
+  esac
+
+  if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+    echo "❌ DEPLOY BLOCKED: working tree содержит незакоммиченные изменения."
+    echo ""
+    git status --short | head -20
+    echo ""
+    echo "→ Положи изменения в git через PR:"
+    echo "   git checkout -b agent/<task> origin/dev"
+    echo "   git add -A && git commit -m '...' && git push origin agent/<task>"
+    echo "   gh pr create --base dev"
+    echo ""
+    echo "Hotfix владельцем — SKIP_GIT_GUARD=1 ./scripts/deploy.sh $TARGET"
+    exit 1
+  fi
+
+  if [ -n "$GUARD_BRANCH" ]; then
+    echo "🔍 Pre-flight: git ↔ origin/$GUARD_BRANCH..."
+    git fetch origin --quiet 2>/dev/null || true
+    LOCAL_SHA=$(git rev-parse HEAD)
+    REMOTE_SHA=$(git rev-parse "origin/$GUARD_BRANCH" 2>/dev/null || echo "")
+    if [ -z "$REMOTE_SHA" ]; then
+      echo "  ⚠️  origin/$GUARD_BRANCH не получен (сеть?)"
+    elif [ "$LOCAL_SHA" != "$REMOTE_SHA" ]; then
+      echo "❌ DEPLOY BLOCKED: HEAD не равен origin/$GUARD_BRANCH"
+      echo "    HEAD:                $LOCAL_SHA"
+      echo "    origin/$GUARD_BRANCH: $REMOTE_SHA"
+      echo "    Текущая ветка:       $(git branch --show-current 2>/dev/null || echo 'detached')"
+      echo ""
+      echo "→ Должен быть смерженный PR + checkout правильной ветки:"
+      echo "   git checkout $GUARD_BRANCH && git pull origin $GUARD_BRANCH"
+      echo "   ./scripts/deploy.sh $TARGET"
+      echo ""
+      echo "Hotfix — SKIP_GIT_GUARD=1 ./scripts/deploy.sh $TARGET"
+      exit 1
+    fi
+    echo "  ✅ git == origin/$GUARD_BRANCH ($LOCAL_SHA)"
+  fi
+fi
+
 case "$TARGET" in
   dev)
     REMOTE_DIR="/var/www/aidacamp-dev/current/"
@@ -151,6 +200,12 @@ echo "  ✅ HTML hash совпадает"
 echo "  ✅ Все hero-images на месте ($(echo "$HERO_IMAGES" | wc -l | tr -d ' ') файлов)"
 echo "  ✅ HTTP $HTTP_STATUS"
 
+
+# Запишем SHA задеплоенного коммита на сервер для drift-check (cron алертит при расхождении)
+DEPLOY_SHA=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+ssh -i "$SSH_KEY" "$SSH_HOST" "echo $DEPLOY_SHA > $REMOTE_DIR/.deployed-sha" 2>/dev/null || true
+
 echo ""
 echo "✅ Задеплоено на $LABEL"
 echo "   $HEALTH_URL"
+echo "   SHA: $DEPLOY_SHA"
