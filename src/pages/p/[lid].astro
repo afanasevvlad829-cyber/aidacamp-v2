@@ -1,0 +1,643 @@
+---
+export const prerender = false;
+import '../../styles/global.css';
+import { signLid, verifyLid } from '../../lib/leadLink';
+import { getCustomerGroupIds } from '../../lib/alfaCrm';
+import { pickPamyatkaShift, type PamyatkaShift } from '../../data/pamyatkaShifts';
+
+const { lid: lidParam } = Astro.params;
+const t = Astro.url.searchParams.get('t') || '';
+
+const isPreview = lidParam === 'test' || lidParam === 'preview';
+const lidNum = isPreview ? 0 : Number(lidParam);
+const valid = isPreview || (Number.isInteger(lidNum) && lidNum > 0 && lidNum < 9999999 && verifyLid(lidNum, t));
+
+if (!valid) {
+  return new Response('Ссылка недействительна', { status: 404 });
+}
+
+// SSR: подтянуть смену клиента из CRM. В preview всегда показываем пример смены 1.
+let shift: PamyatkaShift | null = null;
+if (isPreview) {
+  shift = pickPamyatkaShift([660]);
+} else {
+  try {
+    const groupIds = await getCustomerGroupIds(lidNum);
+    shift = pickPamyatkaShift(groupIds);
+  } catch {
+    shift = null;
+  }
+}
+
+const sectionTone: Record<string, string> = {
+  doc: '#dc2626',
+  hyg: '#0ea5e9',
+  cloth: '#16a34a',
+  swim: '#06b6d4',
+  cozy: '#a855f7',
+  med: '#e2493a',
+  no: '#64748b',
+  before: '#ec9b44',
+};
+
+const sections = [
+  {
+    id: 'doc',
+    icon: 'shield-fill-check',
+    title: 'Документы — без них не заселят',
+    note: 'Кладём первыми. Заверни в файлик — не помнётся.',
+    items: [
+      {
+        id: 'doc-1', text: 'Медсправка форма 079/у', hint: 'Срок — 6 месяцев. Берётся в поликлинике.',
+        info: {
+          title: 'Медицинская справка форма 079/у',
+          image: '/images/pamyatka/doc-079u.png',
+          body: 'Берётся в детской поликлинике у участкового педиатра. Оформляется бесплатно по полису ОМС, занимает 1–3 дня. Срок действия — 6 месяцев со дня выдачи. Без неё ребёнка не примут в лагерь — это требование Роспотребнадзора, не наше.<br/><br/><a href="https://docs.cntd.ru/document/420295344" target="_blank" rel="noopener">Посмотреть приказ Минздрава №834н</a>',
+        },
+      },
+      {
+        id: 'doc-2', text: 'Полис ОМС', hint: 'Оригинал, копия или QR из Госуслуг',
+        info: {
+          title: 'Полис обязательного медицинского страхования',
+          image: '/images/pamyatka/doc-oms.png',
+          body: 'В 2026 году полис ОМС существует в&nbsp;трёх вариантах: <b>цифровой</b> (QR-код в&nbsp;Госуслугах), <b>пластиковая карта с&nbsp;чипом</b> или <b>бумажный бланк А5</b>. Все имеют единый 16-значный номер, без серий, действуют бессрочно на&nbsp;всей территории РФ. Любой из&nbsp;вариантов подойдёт — но&nbsp;QR-код из&nbsp;Госуслуг лучше распечатать заранее или показать на&nbsp;телефоне при заселении. Если полиса нет — оформить бесплатно в&nbsp;страховой компании или МФЦ.',
+        },
+      },
+      {
+        id: 'doc-3', text: 'Свидетельство о рождении / паспорт', hint: 'У кого что есть',
+        info: {
+          title: 'Документ удостоверяющий личность',
+          body: 'Дети до 14 лет — свидетельство о рождении (оригинал или копия). От 14 лет — паспорт. Без этого документа Роспотребнадзор не разрешает заселять.',
+        },
+      },
+      {
+        id: 'doc-4', text: 'Согласие на медицинское вмешательство', hint: 'Бланк пришлём в Telegram-канале',
+        info: {
+          title: 'Информированное согласие',
+          image: '/images/pamyatka/doc-soglasie.png',
+          body: 'Стандартный бланк. Подписывают оба родителя (или один — с пометкой «второй родитель отсутствует/в командировке»). Бланк пришлём в TG-канале родителей за 7 дней до смены — распечатываете и привозите подписанным. Без него медсестра лагеря не имеет права оказывать помощь даже от насморка.',
+        },
+      },
+    ],
+  },
+  {
+    id: 'hyg',
+    icon: 'droplet-fill',
+    title: 'Гигиена',
+    note: 'Всё в одну косметичку — так не теряется.',
+    items: [
+      { id: 'hyg-1', text: 'Зубная щётка + паста' },
+      { id: 'hyg-2', text: 'Мыло, шампунь, гель для душа' },
+      { id: 'hyg-3', text: 'Расчёска, резинки (для девочек)' },
+      { id: 'hyg-4', text: 'Полотенце для душа + для лица', hint: '2 штуки минимум' },
+      { id: 'hyg-5', text: 'Влажные салфетки (упаковка)' },
+    ],
+  },
+  {
+    id: 'cloth',
+    icon: 'bag-fill',
+    title: 'Одежда',
+    note: 'На 10-дневную смену: 5–6 комплектов. Стирка в лагере есть.',
+    items: [
+      { id: 'cl-1', text: 'Футболки — 5–6 шт' },
+      { id: 'cl-2', text: 'Шорты / лёгкие штаны — 3–4 шт' },
+      { id: 'cl-3', text: 'Толстовка / худи — 2 шт' },
+      { id: 'cl-warm', text: 'Одна тёплая вещь обязательно — свитшот или флиска', hint: 'Вы сами знаете, какая у нас летом бывает погода — переменчивая' },
+      { id: 'cl-socks', text: 'Тёплые носки — 2 пары', hint: 'Чтобы вечером в номере было уютно' },
+      { id: 'cl-4', text: 'Носки и нижнее бельё — на каждый день +2' },
+      { id: 'cl-5', text: 'Кроссовки + сандалии + кроксы', hint: 'Кроксы желательно с закрытым носом — пальцы скажут вам спасибо' },
+      { id: 'cl-rain', text: 'Дождевик', hint: 'На всякий случай — летом дожди приходят внезапно' },
+      { id: 'cl-6', text: 'Лёгкая шапка / кепка от солнца' },
+    ],
+  },
+  {
+    id: 'swim',
+    icon: 'water',
+    title: 'Бассейн и спорт',
+    note: 'У нас крытый бассейн — занятия каждый день.',
+    items: [
+      { id: 'sw-1', text: 'Купальник / плавки — 2 комплекта' },
+      { id: 'sw-2', text: 'Резиновая шапочка для бассейна' },
+      { id: 'sw-3', text: 'Полотенце для бассейна (отдельное)' },
+      { id: 'sw-fun', text: 'Можно взять водное оружие или плавающие игрушки', hint: 'Не обязательно — но детям нравится' },
+    ],
+  },
+  {
+    id: 'cozy',
+    icon: 'heart-fill',
+    title: 'Любимое из дома',
+    note: 'Особенно если ребёнок едет в лагерь впервые. Снимает тревогу первой ночи.',
+    items: [
+      { id: 'cz-1', text: 'Маленькая мягкая игрушка', hint: 'У половины отряда что-то такое есть — никто не засмеёт' },
+      { id: 'cz-2', text: 'Семейная фотография' },
+      { id: 'cz-3', text: 'Скетчбук / раскраска / книга — что любит' },
+    ],
+  },
+  {
+    id: 'med',
+    icon: 'capsule',
+    title: 'Личная аптечка',
+    note: 'Передаётся вожатому при заселении — он выдаёт по графику.',
+    items: [
+      { id: 'md-1', text: 'Регулярные лекарства', hint: 'Запиши на упаковке: время приёма, дозировка' },
+      { id: 'md-2', text: 'Крем от солнца SPF 30+' },
+      { id: 'md-3', text: 'Спрей от комаров' },
+    ],
+  },
+  {
+    id: 'no',
+    icon: 'x-octagon-fill',
+    title: 'Что НЕ брать',
+    note: 'Лагерь предоставляет, либо запрещено, либо просто не доедет.',
+    items: [
+      { id: 'no-laptop', text: 'Ноутбук — у нас своё оборудование' },
+      { id: 'no-electro', text: 'Дорогую электронику и украшения' },
+      { id: 'no-bed', text: 'Постельное бельё, подушки' },
+      { id: 'no-cash', text: 'Большие суммы наличных' },
+      { id: 'no-energy', text: 'Энергетики, газировку' },
+      { id: 'no-perish', text: 'Скоропортящиеся продукты', hint: 'До конца смены не доедут' },
+      { id: 'no-melt', text: 'Шоколад и всё, что плавится', hint: 'Превратится в лужу в чемодане' },
+      { id: 'no-cookies', text: 'Печеньки и сладости «для своего»', hint: 'Если хотите — берите так, чтобы хватило на весь отряд. Иначе обидно' },
+    ],
+  },
+  {
+    id: 'before',
+    icon: 'check2-circle',
+    title: 'За день до выезда',
+    note: 'Финальный чек, чтобы спать спокойно.',
+    items: [
+      { id: 'bf-mark', text: 'Промаркировать все вещи', hint: 'Перманентным маркером, термонаклейками или малярным скотчем с надписью — иначе вещи теряются' },
+      { id: 'bf-doc', text: 'Положить документы сверху в файлике' },
+      { id: 'bf-charge', text: 'Зарядить телефон + взять зарядку и пауэрбанк' },
+    ],
+  },
+];
+
+const totalItems = sections.reduce((s, sec) => s + sec.items.length, 0);
+const t_safe = signLid(lidNum);
+---
+
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0d1a2b" />
+<meta name="robots" content="noindex,nofollow" />
+<title>Памятка для смены — АйДаКемп</title>
+
+<link rel="icon" href="/favicon.svg" />
+<link rel="apple-touch-icon" href="/images/pamyatka/icon-180.png" />
+<link rel="manifest" href="/manifest-pamyatka.webmanifest" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Памятка лагеря" />
+<meta name="mobile-web-app-capable" content="yes" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+<!-- Yandex Metrika -->
+<script is:inline>
+(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+m[i].l=1*new Date();
+for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+(window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, webvisor:true});
+</script>
+
+<style is:global>
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#f7f5f0;color:#0d1a2b;font-family:'Inter',-apple-system,'Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased}
+  body{overflow-x:hidden;min-height:100vh;padding-bottom:90px}
+
+  .pm-hero{
+    position:relative;background:linear-gradient(160deg,#0d1a2b 0%,#13243d 50%,#0a1322 100%);
+    color:#fff;padding:36px 22px 40px;overflow:hidden;
+  }
+  .pm-hero::before{
+    content:"";position:absolute;inset:-60% -20% auto auto;width:380px;height:380px;border-radius:50%;
+    background:radial-gradient(circle,rgba(236,155,68,.45) 0%,transparent 65%);filter:blur(30px);
+  }
+  .pm-hero::after{
+    content:"";position:absolute;inset:auto auto -50% -20%;width:340px;height:340px;border-radius:50%;
+    background:radial-gradient(circle,rgba(58,115,255,.35) 0%,transparent 70%);filter:blur(30px);
+  }
+  .pm-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;letter-spacing:.3px;position:relative;z-index:2}
+  .pm-brand-dot{width:11px;height:11px;border-radius:50%;background:#ec9b44;box-shadow:0 0 12px #ec9b44}
+  .pm-eyebrow{
+    display:inline-flex;align-items:center;gap:8px;margin-top:24px;
+    background:rgba(236,155,68,.16);color:#ec9b44;font-weight:800;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;
+    padding:8px 14px;border-radius:999px;border:1.5px solid rgba(236,155,68,.32);position:relative;z-index:2;
+  }
+  .pm-h1{font-size:34px;line-height:1.05;letter-spacing:-1px;font-weight:900;margin:18px 0 14px;position:relative;z-index:2}
+  .pm-h1 em{font-style:normal;color:#ec9b44}
+  .pm-lede{font-size:17px;line-height:1.5;color:rgba(255,255,255,.82);font-weight:500;max-width:560px;position:relative;z-index:2}
+
+  /* Floating-плашка прогресса — фиксирована снизу по центру */
+  .pm-progress-wrap{
+    position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+    z-index:80;background:rgba(13,26,43,.94);color:#fff;
+    backdrop-filter:saturate(160%) blur(14px);
+    padding:12px 20px 14px;border-radius:18px;
+    box-shadow:0 12px 36px rgba(13,26,43,.35),0 2px 8px rgba(13,26,43,.2);
+    display:flex;flex-direction:column;gap:8px;
+    min-width:280px;max-width:calc(100vw - 28px);
+    transition:transform .25s ease, opacity .25s ease;
+  }
+  .pm-progress-wrap.is-done{
+    background:linear-gradient(135deg,#ec9b44 0%,#f7b96a 100%);
+    color:#0d1a2b;box-shadow:0 12px 36px rgba(236,155,68,.5);
+  }
+  .pm-progress-row{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;opacity:.85;gap:14px}
+  .pm-progress-row b{font-weight:900;font-size:14px;font-variant-numeric:tabular-nums;letter-spacing:0;text-transform:none;opacity:1}
+  .pm-progress-row .pm-progress-pct{margin-left:auto;font-weight:900;font-size:13px;font-variant-numeric:tabular-nums;letter-spacing:0;text-transform:none}
+  .pm-progress-bar{height:8px;background:rgba(255,255,255,.16);border-radius:999px;overflow:hidden}
+  .pm-progress-wrap.is-done .pm-progress-bar{background:rgba(13,26,43,.18)}
+  .pm-progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#ec9b44 0%,#f7b96a 100%);width:0%;
+    transition:width .45s cubic-bezier(.2,.7,.3,1);box-shadow:0 0 8px rgba(236,155,68,.6)}
+  .pm-progress-wrap.is-done .pm-progress-fill{background:#0d1a2b;box-shadow:none}
+
+  .pm-page{max-width:560px;margin:0 auto;padding:18px 16px 80px;position:relative;z-index:3}
+
+  .pm-section{
+    background:#fff;border-radius:22px;padding:22px 18px 8px;margin-bottom:16px;
+    box-shadow:0 2px 8px rgba(15,23,42,.04),0 18px 36px rgba(15,23,42,.08);
+    border:1px solid #ebe7d8;position:relative;overflow:hidden;
+  }
+  @media (prefers-reduced-motion:no-preference){
+    .pm-section{opacity:0;transform:translateY(18px);transition:opacity .5s ease, transform .5s ease}
+    .pm-section.is-in{opacity:1;transform:none}
+  }
+  .pm-section[data-tone] .pm-sec-icon{background:var(--tone)}
+  .pm-section[data-tone] .pm-sec-bar{background:var(--tone)}
+  .pm-sec-bar{position:absolute;top:0;left:0;width:6px;height:100%;background:#0d1a2b}
+  .pm-sec-head{display:flex;gap:14px;align-items:flex-start;padding-left:6px}
+  .pm-sec-icon{
+    width:42px;height:42px;border-radius:12px;background:#0d1a2b;color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:0 6px 14px rgba(13,26,43,.25);
+  }
+  .pm-sec-title{font-size:18px;font-weight:800;line-height:1.25;letter-spacing:-.3px;color:#0d1a2b;margin:2px 0 4px}
+  .pm-sec-note{font-size:14px;color:#5e6878;line-height:1.4;font-weight:500}
+  .pm-list{list-style:none;padding:14px 0 0;margin:0}
+  .pm-item{
+    display:flex;align-items:flex-start;gap:14px;padding:12px 6px;border-top:1px solid #f0ece2;
+    cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;transition:background .15s;
+  }
+  .pm-item:active{background:#fafaf3}
+  .pm-item:first-child{border-top:none}
+  .pm-check{
+    width:26px;height:26px;border-radius:8px;border:2px solid #cfcab8;background:#fff;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;color:#fff;transition:all .2s ease;
+    font-size:14px;margin-top:1px;
+  }
+  .pm-check::before{content:"\F633";font-family:bootstrap-icons;opacity:0;transform:scale(.5);transition:all .2s}
+  .pm-item.is-done .pm-check{background:#16a34a;border-color:#16a34a;box-shadow:0 4px 10px rgba(22,163,74,.35)}
+  .pm-item.is-done .pm-check::before{opacity:1;transform:scale(1)}
+  .pm-item-body{flex:1;min-width:0}
+  .pm-item-text{font-size:16px;line-height:1.35;color:#0d1a2b;font-weight:600;transition:color .2s, text-decoration .2s}
+  .pm-item.is-done .pm-item-text{color:#7a8497;text-decoration:line-through;text-decoration-color:rgba(122,132,151,.6)}
+  .pm-item-hint{font-size:13px;color:#5e6878;font-weight:500;line-height:1.35;margin-top:3px}
+
+  .pm-final{
+    margin-top:24px;padding:24px 22px;border-radius:22px;background:linear-gradient(135deg,#0d1a2b 0%,#13243d 100%);
+    color:#fff;box-shadow:0 18px 36px rgba(13,26,43,.2);position:relative;overflow:hidden;
+  }
+  .pm-final::after{content:"";position:absolute;inset:auto -30% -50% auto;width:200px;height:200px;border-radius:50%;
+    background:radial-gradient(circle,rgba(236,155,68,.4) 0%,transparent 70%);filter:blur(20px)}
+  .pm-final h3{font-size:22px;font-weight:900;letter-spacing:-.5px;margin:0 0 8px;position:relative;z-index:2}
+  .pm-final h3 em{font-style:normal;color:#ec9b44}
+  .pm-final p{font-size:15px;line-height:1.5;color:rgba(255,255,255,.82);margin:0 0 18px;position:relative;z-index:2}
+  .pm-shift-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(236,155,68,.18);border:1.5px solid rgba(236,155,68,.4);color:#ec9b44;font-weight:800;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;padding:6px 12px;border-radius:999px;margin-bottom:14px;position:relative;z-index:2}
+  .pm-cta-grid{display:grid;grid-template-columns:1fr;gap:10px;position:relative;z-index:2}
+  .pm-cta{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    background:#ec9b44;color:#0d1a2b;font-weight:800;font-size:15px;letter-spacing:-.2px;
+    padding:14px 18px;border-radius:14px;text-decoration:none;
+    box-shadow:0 8px 20px rgba(236,155,68,.4);transition:transform .15s;
+  }
+  .pm-cta:active{transform:scale(.97)}
+  .pm-cta-secondary{background:rgba(255,255,255,.1);color:#fff;border:1.5px solid rgba(255,255,255,.22);box-shadow:none}
+
+  .pm-footer{text-align:center;color:#7a8497;font-size:13px;line-height:1.5;padding:28px 16px 12px;font-weight:500}
+  .pm-footer a{color:#0d1a2b;font-weight:700;text-decoration:none}
+
+  /* Confetti canvas */
+  #pm-confetti{position:fixed;inset:0;pointer-events:none;z-index:90;display:none}
+
+  /* Toast */
+  #pm-toast{
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(40px);
+    background:#0d1a2b;color:#fff;padding:14px 20px;border-radius:14px;font-weight:700;font-size:15px;
+    box-shadow:0 12px 32px rgba(13,26,43,.4);opacity:0;transition:all .3s cubic-bezier(.2,.7,.3,1);
+    z-index:100;display:flex;gap:10px;align-items:center;max-width:90vw;
+  }
+  #pm-toast.is-show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #pm-toast i{color:#ec9b44;font-size:18px}
+
+  @media (min-width:640px){
+    .pm-h1{font-size:42px}
+    .pm-hero{padding:48px 32px 56px}
+    .pm-cta-grid{grid-template-columns:1fr 1fr}
+  }
+
+  /* Десктоп: masonry в 2 колонки */
+  @media (min-width:900px){
+    .pm-page{max-width:1080px;padding:18px 24px 100px}
+    .pm-grid{columns:2;column-gap:18px}
+    .pm-grid > .pm-section{break-inside:avoid;margin-bottom:18px;display:block}
+    .pm-grid > .pm-final{column-span:all;margin-top:6px}
+  }
+
+  /* Info-кнопка возле items */
+  .pm-info-btn{
+    border:none;background:transparent;color:#5e6878;cursor:pointer;
+    padding:0;margin:6px 0 0;display:inline-flex;align-items:center;gap:5px;
+    font:inherit;font-size:13px;font-weight:700;color:#0d1a2b;
+  }
+  .pm-info-btn i{color:#ec9b44;font-size:15px}
+  .pm-info-btn:hover{text-decoration:underline}
+
+  /* Модалка */
+  #pm-modal{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+  #pm-modal.is-open{display:flex}
+  .pm-modal-bg{position:absolute;inset:0;background:rgba(13,26,43,.7);backdrop-filter:blur(6px)}
+  .pm-modal-card{
+    position:relative;background:#fff;border-radius:22px;max-width:560px;width:100%;
+    max-height:90vh;overflow-y:auto;padding:26px 24px;box-shadow:0 24px 60px rgba(0,0,0,.4);
+  }
+  .pm-modal-close{
+    position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;
+    border:none;background:#f0ece2;cursor:pointer;font-size:20px;color:#0d1a2b;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .pm-modal-close:hover{background:#e6e2d5}
+  .pm-modal-card h3{font-size:20px;font-weight:900;letter-spacing:-.3px;margin:0 0 12px;padding-right:32px}
+  .pm-modal-card img{width:100%;border-radius:12px;margin:12px 0;display:block}
+  .pm-modal-card p{font-size:15px;line-height:1.5;color:#404a5a;font-weight:500;margin:0 0 10px}
+  .pm-modal-card a{color:#ec9b44;font-weight:700;text-decoration:none}
+  .pm-modal-card a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+
+<header class="pm-hero">
+  <div class="pm-brand"><span class="pm-brand-dot"></span> АйДаКемп</div>
+  <span class="pm-eyebrow"><i class="bi bi-bag-check-fill"></i> Личная памятка</span>
+  <h1 class="pm-h1">Собираем чемодан в&nbsp;<em>лагерь</em></h1>
+  <p class="pm-lede">{sections.length}&nbsp;разделов, {totalItems} пунктов. Тапайте, чтобы отметить — прогресс сохранится в&nbsp;этом браузере.</p>
+</header>
+
+<div class="pm-progress-wrap" id="pm-progress">
+  <div class="pm-progress-row">
+    <span>Чемодан</span>
+    <span><b id="pm-done">0</b> / {totalItems}</span>
+    <span class="pm-progress-pct" id="pm-pct">0%</span>
+  </div>
+  <div class="pm-progress-bar"><div class="pm-progress-fill" id="pm-fill"></div></div>
+</div>
+
+<main class="pm-page">
+  <div class="pm-grid">
+    {sections.map((sec) => (
+      <section class="pm-section" data-tone style={`--tone:${sectionTone[sec.id] || '#0d1a2b'}`}>
+        <span class="pm-sec-bar"></span>
+        <div class="pm-sec-head">
+          <div class="pm-sec-icon"><i class={`bi bi-${sec.icon}`}></i></div>
+          <div>
+            <h2 class="pm-sec-title">{sec.title}</h2>
+            <div class="pm-sec-note">{sec.note}</div>
+          </div>
+        </div>
+        <ul class="pm-list">
+          {sec.items.map((it: any) => (
+            <li class="pm-item" data-id={it.id}>
+              <span class="pm-check" aria-hidden="true"></span>
+              <div class="pm-item-body">
+                <div class="pm-item-text">{it.text}</div>
+                {it.hint && <div class="pm-item-hint">{it.hint}</div>}
+                {it.info && (
+                  <button
+                    type="button"
+                    class="pm-info-btn"
+                    data-info-title={it.info.title}
+                    data-info-image={it.info.image || ''}
+                    data-info-body={it.info.body}
+                  >
+                    <i class="bi bi-info-circle-fill"></i> Как выглядит / подробнее
+                  </button>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+
+    {shift && shift.tg && (
+      <div class="pm-final">
+        <span class="pm-shift-tag"><i class="bi bi-calendar-event"></i> {shift.name} · {shift.dates}</span>
+        <h3>Канал родителей <em>смены</em></h3>
+        <p>Здесь вожатые публикуют расписание дня, фото с занятий и важные объявления. Подписывайтесь обязательно — это основной канал коммуникации в смене.</p>
+        <div class="pm-cta-grid">
+          <a class="pm-cta" href={shift.tg} target="_blank" rel="noopener">
+            <i class="bi bi-telegram"></i> Канал родителей
+          </a>
+          {shift.manager && (
+            <a class="pm-cta pm-cta-secondary" href={`https://t.me/${shift.manager}`} target="_blank" rel="noopener">
+              <i class="bi bi-chat-dots-fill"></i> @{shift.manager}
+            </a>
+          )}
+          {shift.phone && (
+            <a class="pm-cta pm-cta-secondary" href={`tel:${shift.phone.replace(/[^+0-9]/g,'')}`}>
+              <i class="bi bi-telephone-fill"></i> {shift.phoneDisplay || shift.phone}
+            </a>
+          )}
+        </div>
+        <p style="font-size:13px;color:rgba(255,255,255,.6);margin-top:14px;margin-bottom:0;position:relative;z-index:2">
+          Если будут возникать вопросы — пишите менеджеру в личные сообщения или звоните.
+        </p>
+      </div>
+    )}
+  </div>
+
+  <div class="pm-footer">
+    {isPreview
+      ? <>Лагерь АйДаКемп · <b style="color:#ec9b44">ТЕСТОВАЯ СТРАНИЦА</b><br/></>
+      : <>Лагерь АйДаКемп · ваша заявка №<b>{lidNum}</b><br/></>
+    }
+    <a href="https://aidacamp.ru" target="_blank" rel="noopener">aidacamp.ru</a>
+  </div>
+</main>
+
+<canvas id="pm-confetti"></canvas>
+<div id="pm-toast"><i class="bi bi-check-circle-fill"></i><span id="pm-toast-text">Ок</span></div>
+
+<div id="pm-modal" role="dialog" aria-modal="true" aria-labelledby="pm-modal-title">
+  <div class="pm-modal-bg" data-pm-close></div>
+  <div class="pm-modal-card">
+    <button type="button" class="pm-modal-close" data-pm-close aria-label="Закрыть">×</button>
+    <h3 id="pm-modal-title"></h3>
+    <img id="pm-modal-image" alt="" hidden />
+    <p id="pm-modal-body"></p>
+  </div>
+</div>
+
+<script is:inline define:vars={{ lid: lidNum, t: t_safe, total: totalItems, isPreview }}>
+(function(){
+  const STORAGE_KEY = 'pm_done_' + lid;
+  const items = Array.from(document.querySelectorAll('.pm-item'));
+  const fill  = document.getElementById('pm-fill');
+  const doneN = document.getElementById('pm-done');
+  let done = new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
+
+  const pctEl = document.getElementById('pm-pct');
+  const wrapEl = document.getElementById('pm-progress');
+
+  function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify([...done])); }
+  function render(){
+    items.forEach(el => el.classList.toggle('is-done', done.has(el.dataset.id)));
+    const n = done.size;
+    doneN.textContent = n;
+    const pct = Math.round((n / total) * 100);
+    fill.style.width = pct + '%';
+    pctEl.textContent = pct + '%';
+    wrapEl.classList.toggle('is-done', n === total);
+    if (n === total) burst();
+  }
+
+  items.forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.id;
+      if (done.has(id)) done.delete(id); else { done.add(id); haptic(); }
+      save(); render();
+      try { window.ym && ym(96499295,'reachGoal','pamyatka_check'); } catch(_){}
+    });
+  });
+
+  function haptic(){ try{ navigator.vibrate && navigator.vibrate(8); }catch(_){} }
+
+  // IntersectionObserver — секционная анимация появления
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+    });
+  }, { threshold: .08, rootMargin: '0px 0px -30px 0px' });
+  const sects = document.querySelectorAll('.pm-section');
+  sects.forEach(el => io.observe(el));
+  // Fallback — раскрываем все через 800мс на случай если IO запоздал (full-page screenshots, low-power)
+  setTimeout(() => sects.forEach(el => el.classList.add('is-in')), 800);
+
+  // ====== confetti ======
+  const cv = document.getElementById('pm-confetti');
+  const ctx = cv.getContext('2d');
+  function resize(){ cv.width = innerWidth; cv.height = innerHeight; }
+  addEventListener('resize', resize); resize();
+  let burstingUntil = 0;
+  let parts = [];
+  function burst(){
+    if (Date.now() < burstingUntil) return;
+    burstingUntil = Date.now() + 2500;
+    cv.style.display = 'block';
+    const colors = ['#ec9b44','#f7b96a','#16a34a','#3a73ff','#a855f7','#ffffff'];
+    for (let i=0;i<140;i++){
+      parts.push({
+        x: innerWidth/2 + (Math.random()-.5)*60,
+        y: innerHeight/2 - 40,
+        vx: (Math.random()-.5)*9,
+        vy: -Math.random()*11 - 4,
+        c: colors[i%colors.length],
+        s: 5 + Math.random()*5,
+        r: Math.random()*Math.PI*2,
+        vr:(Math.random()-.5)*.3,
+        life:1
+      });
+    }
+    toast('Чемодан собран!');
+    requestAnimationFrame(loop);
+  }
+  function loop(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    parts.forEach(p=>{
+      p.vy += .25; p.x += p.vx; p.y += p.vy; p.r += p.vr; p.life -= .008;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r);
+      ctx.fillStyle = p.c; ctx.globalAlpha = Math.max(0,p.life);
+      ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6);
+      ctx.restore();
+    });
+    parts = parts.filter(p => p.life > 0 && p.y < cv.height+40);
+    if (parts.length) requestAnimationFrame(loop);
+    else cv.style.display='none';
+  }
+
+  // ====== toast ======
+  const toastEl = document.getElementById('pm-toast');
+  const toastTx = document.getElementById('pm-toast-text');
+  let toastT;
+  function toast(msg){
+    toastTx.textContent = msg;
+    toastEl.classList.add('is-show');
+    clearTimeout(toastT);
+    toastT = setTimeout(()=>toastEl.classList.remove('is-show'), 2200);
+  }
+
+  // ====== bind ClientID к CRM ======
+  function bindCid(cid){
+    if (!cid) return;
+    if (sessionStorage.getItem('pm_bound_'+lid) === cid) return;
+    fetch('/api/bind-lead', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ lid: lid, t: t, ym_client_id: String(cid) })
+    }).then(r=>r.json()).then(j=>{
+      if (j && j.ok) sessionStorage.setItem('pm_bound_'+lid, String(cid));
+    }).catch(()=>{});
+  }
+  function tryBind(){
+    try {
+      if (window.ym) {
+        ym(96499295, 'getClientID', function(cid){ bindCid(cid); });
+      }
+      // fallback из cookie _ym_uid
+      const m = document.cookie.match(/(?:^|;\s*)_ym_uid=([^;]+)/);
+      if (m && m[1]) setTimeout(()=>bindCid(m[1]), 1500);
+    } catch(_) {}
+  }
+  // Метрика грузится async — подождём 1.5с. В preview-режиме не биндим.
+  if (!isPreview) {
+    setTimeout(tryBind, 1500);
+    setTimeout(tryBind, 4500);
+  }
+
+  // ====== info-modal ======
+  const modal = document.getElementById('pm-modal');
+  const mTitle = document.getElementById('pm-modal-title');
+  const mImage = document.getElementById('pm-modal-image');
+  const mBody  = document.getElementById('pm-modal-body');
+  function openInfo(btn){
+    mTitle.textContent = btn.dataset.infoTitle || '';
+    const img = btn.dataset.infoImage;
+    if (img) { mImage.src = img; mImage.hidden = false; mImage.alt = btn.dataset.infoTitle || ''; }
+    else { mImage.hidden = true; mImage.removeAttribute('src'); }
+    mBody.innerHTML = btn.dataset.infoBody || '';
+    modal.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+    try { window.ym && ym(96499295,'reachGoal','pamyatka_info_open'); } catch(_){}
+  }
+  function closeInfo(){
+    modal.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+  document.querySelectorAll('.pm-info-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => { e.stopPropagation(); openInfo(btn); });
+  });
+  modal.querySelectorAll('[data-pm-close]').forEach(el => el.addEventListener('click', closeInfo));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.classList.contains('is-open')) closeInfo(); });
+
+  render();
+})();
+</script>
+
+<noscript><div style="padding:20px;text-align:center;color:#5e6878">Включите JavaScript, чтобы пользоваться чек-листом.</div></noscript>
+
+</body>
+</html>

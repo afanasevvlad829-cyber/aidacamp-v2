@@ -1,0 +1,64 @@
+---
+export const prerender = false;
+import { signLid } from '../../lib/leadLink';
+
+const adminKey = process.env.ADMIN_KEY || '';
+const provided = Astro.url.searchParams.get('key') || Astro.request.headers.get('x-admin-key') || '';
+
+if (!adminKey || provided !== adminKey) {
+  return new Response('Forbidden', { status: 403 });
+}
+
+const lidQuery = Astro.url.searchParams.get('lid');
+const lidNum = lidQuery ? Number(lidQuery) : null;
+const valid = lidNum !== null && Number.isInteger(lidNum) && lidNum > 0 && lidNum < 9999999;
+const url = valid ? `https://aidacamp.ru/p/${lidNum}?t=${signLid(lidNum)}` : '';
+---
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Генерация ссылки на памятку — АйДаКемп admin</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  body{margin:0;padding:24px 16px;font-family:'Inter',-apple-system,sans-serif;background:#f7f5f0;color:#0d1a2b}
+  .wrap{max-width:560px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 18px;font-weight:900;letter-spacing:-.5px}
+  .hint{color:#5e6878;font-size:14px;margin-bottom:20px;line-height:1.5}
+  form{display:flex;gap:8px;margin-bottom:18px}
+  input{flex:1;padding:12px 14px;font-size:16px;border:1.5px solid #cfcab8;border-radius:10px;background:#fff;font-family:inherit}
+  input:focus{outline:none;border-color:#ec9b44}
+  button{padding:12px 20px;font-size:15px;font-weight:800;background:#ec9b44;color:#0d1a2b;border:none;border-radius:10px;cursor:pointer;font-family:inherit}
+  button:hover{background:#f7b96a}
+  .result{background:#fff;border:1.5px solid #ebe7d8;border-radius:14px;padding:18px;margin-bottom:14px;box-shadow:0 2px 8px rgba(15,23,42,.05)}
+  .result-lbl{font-size:12px;font-weight:700;color:#5e6878;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px}
+  .result-url{font-size:15px;font-weight:600;color:#0d1a2b;word-break:break-all;line-height:1.4;background:#f7f5f0;padding:12px;border-radius:8px;margin-bottom:10px;font-family:monospace}
+  .copy-btn{font-size:13px;background:#0d1a2b;color:#fff;padding:8px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
+  .copy-btn:hover{background:#13243d}
+  .err{color:#dc2626;font-size:14px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Ссылка на памятку для клиента</h1>
+  <div class="hint">Введите ID клиента из Альфа-CRM (число). Скопируйте ссылку и отправьте клиенту в WhatsApp / Telegram. Когда он откроет — ClientID Метрики автоматически свяжется с этим клиентом для оффлайн-конверсий.</div>
+
+  <form method="get">
+    <input type="hidden" name="key" value={provided} />
+    <input type="text" name="lid" value={lidQuery || ''} placeholder="например, 12345" inputmode="numeric" pattern="[0-9]*" autofocus />
+    <button type="submit">Сгенерировать</button>
+  </form>
+
+  {lidQuery && !valid && <div class="err">ID должен быть числом от 1 до 9999999</div>}
+
+  {url && (
+    <div class="result">
+      <div class="result-lbl">Ссылка для клиента №{lidNum}</div>
+      <div class="result-url" id="url">{url}</div>
+      <button class="copy-btn" onclick={`navigator.clipboard.writeText(${JSON.stringify(url)});this.textContent='✓ Скопировано'`}>Копировать</button>
+    </div>
+  )}
+</div>
+</body>
+</html>
