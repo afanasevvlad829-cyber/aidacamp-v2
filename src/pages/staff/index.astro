@@ -458,6 +458,37 @@ export const prerender = true;
     }
     .empty-state-icon { font-size: 36px; margin-bottom: 12px; color: var(--text3); }
     .empty-state-title { font-size: 16px; font-weight: 600; color: var(--text2); }
+
+    /* ── ONBOARDING ──────────────────────────────────────────────── */
+    #onboarding-screen { display: none; min-height: 100vh; background: var(--bg); padding: 20px; }
+    .ob-card { max-width: 520px; margin: 40px auto; background: var(--surface); border-radius: 20px; padding: 28px 28px 24px; box-shadow: var(--shadow); }
+    .ob-step-indicator { display: flex; gap: 6px; margin-bottom: 20px; }
+    .ob-dot { flex: 1; height: 4px; border-radius: 2px; background: var(--border); }
+    .ob-dot.done { background: var(--orange); }
+    .ob-dot.active { background: var(--orange); opacity: .6; }
+    .ob-role-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: var(--orange); margin-bottom: 8px; }
+    .ob-question { font-size: 17px; font-weight: 700; color: var(--text); line-height: 1.4; margin-bottom: 18px; }
+    .ob-answers { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+    .ob-answer { padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--text); cursor: pointer; transition: .15s; background: var(--bg); }
+    .ob-answer:hover { border-color: var(--orange); background: #fff8f0; }
+    .ob-answer.correct { border-color: #16a34a; background: #dcfce7; color: #166534; }
+    .ob-answer.wrong   { border-color: #dc2626; background: #fee2e2; color: #991b1b; }
+    .ob-feedback { font-size: 13px; line-height: 1.5; padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; display: none; }
+    .ob-feedback.ok  { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .ob-feedback.bad { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .ob-next-btn { width: 100%; padding: 13px; background: var(--orange); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; display: none; }
+    .ob-next-btn:hover { background: var(--orange-d); }
+    .ob-rules-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .ob-rule-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; background: var(--bg); border-radius: 10px; border: 1.5px solid var(--border); cursor: pointer; transition: .15s; }
+    .ob-rule-item.checked { border-color: var(--orange); background: #fff8f0; }
+    .ob-rule-icon { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; }
+    .ob-rule-item.checked .ob-rule-icon { background: var(--orange); border-color: var(--orange); }
+    .ob-rule-text { font-size: 13px; line-height: 1.55; color: var(--text2); }
+    .ob-role-select { display: flex; flex-direction: column; gap: 10px; }
+    .ob-role-btn { padding: 14px 18px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 15px; font-weight: 600; color: var(--text); background: var(--bg); cursor: pointer; text-align: left; display: flex; align-items: center; gap: 12px; transition: .15s; }
+    .ob-role-btn:hover { border-color: var(--orange); background: #fff8f0; }
+    .ob-role-btn i { font-size: 22px; color: var(--orange); width: 28px; flex-shrink: 0; }
+
   </style>
 </head>
 <body>
@@ -483,6 +514,14 @@ export const prerender = true;
       Запомнить меня (30 дней)
     </label>
     <div class="login-error" id="login-error">Неверный пароль</div>
+  </div>
+</div>
+
+
+<!-- ═══ ONBOARDING ═══ -->
+<div id="onboarding-screen">
+  <div class="ob-card" id="ob-card">
+    <!-- Динамически рендерится JS -->
   </div>
 </div>
 
@@ -947,6 +986,283 @@ export const prerender = true;
     }
   };
 
+
+  // ── ONBOARDING QUIZ ──────────────────────────────────────────────────────
+  const OB_KEY = 'staff_onboarding_v2';
+
+  const QUIZ = {
+    counselor: [
+      {
+        q: 'Дети пошли на занятие к преподавателю. Вожатый может пойти отдохнуть в свою комнату?',
+        answers: ['Да, можно передохнуть', 'Нет — вожатый с детьми всегда', 'Зависит от настроения', 'Можно, если директор не видит'],
+        correct: 1,
+        explanation: 'Вожатый несёт ответственность за детей весь день. Даже если дети на занятии — вожатый рядом, готов реагировать.'
+      },
+      {
+        q: 'Ребёнок говорит: "Мне скучно, хочу домой". Что делать вожатому?',
+        answers: ['Сказать: "Потерпи, скоро домой"', 'Позвонить родителям и попросить забрать', 'Найти что-то интересное, вовлечь в активность', 'Пожаловаться директору'],
+        correct: 2,
+        explanation: 'Вожатый — аниматор и психолог одновременно. Скука = сигнал активизировать ребёнка, а не звать на помощь.'
+      },
+      {
+        q: 'Уже 23:30, ты слышишь шум из комнаты детей. Правильное действие?',
+        answers: ['Сделать вид, что не слышишь', 'Зайти, спокойно попросить тишину и проверить что всё ок', 'Орать из коридора', 'Написать в чат и ждать'],
+        correct: 1,
+        explanation: 'Тихий, спокойный заход без конфликта. Дети чувствуют уважение — и успокаиваются быстрее.'
+      },
+      {
+        q: 'Двое детей поссорились и дерутся. Твои первые слова?',
+        answers: ['"Кто начал?!"', '"Немедленно прекратить!"', 'Молча разнять физически', '"Стоп. Оба сели. Дышим."'],
+        correct: 3,
+        explanation: 'Сначала деэскалация — разделить, успокоить. Разбираться кто прав — потом, когда эмоции спали.'
+      },
+      {
+        q: 'Родитель позвонил тебе напрямую в 22:00 и требует срочно передать ребёнку "привет от бабушки". Ты...',
+        answers: ['Бежишь будить ребёнка', 'Объясняешь что сейчас отбой, всё хорошо, передашь утром', 'Выключаешь телефон', 'Даёшь телефон ребёнку'],
+        correct: 1,
+        explanation: 'Вечерние звонки родителям — норма, но режим лагеря важнее. Мягко но твёрдо: ребёнок спит, всё хорошо, утром передам.'
+      }
+    ],
+    teacher: [
+      {
+        q: 'Преподаватель устал в середине дня. Можно закрыться в своей комнате и отдохнуть час?',
+        answers: ['Да, надо беречь себя', 'Нет — нахожусь с детьми или в зоне видимости', 'Можно, если тихий час', 'Зависит от расписания'],
+        correct: 1,
+        explanation: 'Преподаватель — не только учитель, но и взрослый отвечающий за безопасность. Тихий час = ты в отряде или рядом, не у себя.'
+      },
+      {
+        q: 'Ребёнок не понимает материал второй день. Что делать?',
+        answers: ['Оставить как есть, всех не научишь', 'Дать больше самостоятельных заданий', 'Поговорить индивидуально, найти другой подход', 'Сказать родителям что ребёнок "не тянет"'],
+        correct: 2,
+        explanation: 'Мы работаем с разными детьми. Индивидуальный подход — не исключение, это норма. Найди что цепляет именно этого ребёнка.'
+      },
+      {
+        q: 'Ребёнок на занятии явно в плохом настроении, молчит, не участвует. Правильная реакция?',
+        answers: ['Не обращать внимания, само пройдёт', 'Попросить вожатого разобраться', 'Тихо поговорить один на один в перерыве', 'Поставить плохую отметку за пассивность'],
+        correct: 2,
+        explanation: 'Замкнутость ребёнка — сигнал. Тихий разговор один на один даёт больше, чем публичный вопрос перед всей группой.'
+      },
+      {
+        q: 'Занятие закончилось раньше плана на 20 минут. Что делаешь?',
+        answers: ['Отпускаешь детей раньше', 'Импровизируешь: мини-проект, викторина, coding challenge', 'Ждёшь когда придут вожатые', 'Сидишь тихо'],
+        correct: 1,
+        explanation: 'Свободное время без присмотра — риск. Всегда имей в запасе мини-активность на 15-20 минут.'
+      },
+      {
+        q: 'Двое детей поспорили на занятии — кто написал лучший код. Конфликт растёт. Твои действия?',
+        answers: ['Объявить победителя', 'Прекратить разговор на эту тему, сменить тему', 'Превратить в учебную дискуссию: "расскажите оба что делает ваш код"', 'Выгнать обоих из класса'],
+        correct: 2,
+        explanation: 'Технические споры — отличный учебный момент. Кто может объяснить свой код — тот и молодец. Все выигрывают.'
+      }
+    ],
+    director: [
+      {
+        q: 'Родитель приехал и требует забрать ребёнка прямо сейчас, без документов выезда',
+        answers: ['Отдать ребёнка — родитель же', 'Следовать регламенту: документы выезда → связь с директором → отпуск', 'Позвонить в полицию', 'Сказать "приходите завтра"'],
+        correct: 1,
+        explanation: 'Мы несём юридическую ответственность за ребёнка весь период смены. Даже родителю без документов — нет. Это защита и ребёнка и лагеря.'
+      },
+      {
+        q: 'Вожатый пришёл к тебе в 14:00 и говорит что "не может больше". Что делаешь?',
+        answers: ['Говоришь: "Все устали, справляйся"', 'Отстраняешь немедленно от работы', 'Выслушиваешь, находишь причину, временно перераспределяешь нагрузку', 'Игнорируешь'],
+        correct: 2,
+        explanation: 'Выгорание вожатого = риск для детей. Быстро понять причину и дать передышку лучше, чем потерять человека совсем.'
+      },
+      {
+        q: 'На следующий день ожидается 40°C. Что делаешь заранее?',
+        answers: ['Ничего, дети закалятся', 'Меняешь расписание: все занятия в помещении, больше воды, тихий час длиннее', 'Отменяешь смену', 'Ждёшь жалоб от родителей'],
+        correct: 1,
+        explanation: 'Безопасность детей — приоритет. Жара = корректировка расписания, усиленный контроль питья, укрытие от солнца.'
+      },
+      {
+        q: 'Ребёнку стало плохо (высокая температура). Алгоритм действий:',
+        answers: ['Звонишь родителям, ждёшь', 'Медработник → родители → документация → при необходимости скорая', 'Даёшь парацетамол сам', 'Ждёшь до утра'],
+        correct: 1,
+        explanation: 'Строго по протоколу: сначала медик, потом родители, всё фиксируется. Самолечение запрещено.'
+      },
+      {
+        q: 'Сотрудник грубо разговаривал с ребёнком при свидетелях. Твои действия?',
+        answers: ['Поговоришь потом, когда будет время', 'Сделаешь замечание публично — чтобы все видели', 'Поговоришь наедине немедленно, зафиксируешь в журнале', 'Не вмешиваешься — сами разберутся'],
+        correct: 2,
+        explanation: 'Грубость с детьми = стоп. Немедленный разговор без аудитории — уважительно но твёрдо. Фиксация важна для прозрачности.'
+      }
+    ]
+  };
+
+  const RULES = {
+    counselor: [
+      'Я нахожусь с детьми весь день — это моя основная задача',
+      'Я не ухожу в свою комнату пока дети не спят',
+      'При любом конфликте — сначала деэскалация, потом разбор',
+      'Я не обсуждаю детей с другими детьми',
+      'При недомогании ребёнка — немедленно сообщаю руководителю'
+    ],
+    teacher: [
+      'Я нахожусь в зоне видимости детей в своё рабочее время',
+      'У меня есть запасная активность на случай окончания занятия раньше',
+      'Я не ставлю детей в неловкое положение перед группой',
+      'Тревожные сигналы от ребёнка — сразу сообщаю вожатому',
+      'Результат занятия — каждый ребёнок сделал что-то своё'
+    ],
+    director: [
+      'Я знаю алгоритм действий при ЧС наизусть',
+      'Документы выезда обязательны — нет исключений даже для родителей',
+      'Я готов перераспределить нагрузку при выгорании сотрудника',
+      'Все инциденты фиксируются письменно в день события',
+      'Жара, болезни, конфликты — у каждого есть протокол действий'
+    ]
+  };
+
+  const ROLE_LABELS = {
+    counselor: { label: 'Вожатый', icon: 'bi-people-fill' },
+    teacher:   { label: 'Преподаватель', icon: 'bi-laptop-fill' },
+    director:  { label: 'Руководитель смены', icon: 'bi-star-fill' }
+  };
+
+  let obRole = null;
+  let obQIdx = 0;
+  let obAnswered = false;
+
+  function showScreen(id) {
+    ['login-screen','onboarding-screen','portal'].forEach(s => {
+      const el = document.getElementById(s);
+      if (el) el.style.display = (s === id) ? (id === 'portal' ? 'block' : 'block') : 'none';
+    });
+  }
+
+  function enterPortal(role) {
+    showScreen('portal');
+    renderDays(role);
+    setActiveRole(role);
+  }
+
+  function renderObRoleSelect() {
+    const card = document.getElementById('ob-card');
+    card.innerHTML = `
+      <p class="ob-role-title"><i class="bi bi-person-badge"></i> Выберите свою роль</p>
+      <div class="ob-question">Кто вы на смене?</div>
+      <div class="ob-role-select">
+        ${Object.entries(ROLE_LABELS).map(([k,v]) => `
+          <button class="ob-role-btn" data-role="${k}">
+            <i class="bi ${v.icon}"></i>
+            ${v.label}
+          </button>
+        `).join('')}
+      </div>
+    `;
+    card.querySelectorAll('.ob-role-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        obRole = btn.dataset.role;
+        obQIdx = 0;
+        logAction({ role: obRole, action: 'onboarding_start' });
+        renderObQuestion();
+      });
+    });
+  }
+
+  function renderObQuestion() {
+    const qs = QUIZ[obRole];
+    const q  = qs[obQIdx];
+    const total = qs.length;
+    const card  = document.getElementById('ob-card');
+
+    const dots = Array.from({length: total}, (_, i) =>
+      `<div class="ob-dot ${i < obQIdx ? 'done' : i === obQIdx ? 'active' : ''}"></div>`
+    ).join('');
+
+    card.innerHTML = `
+      <div class="ob-step-indicator">${dots}</div>
+      <p class="ob-role-title">${ROLE_LABELS[obRole].label} · вопрос ${obQIdx + 1} из ${total}</p>
+      <div class="ob-question">${q.q}</div>
+      <div class="ob-answers">
+        ${q.answers.map((a, i) => `<div class="ob-answer" data-idx="${i}">${a}</div>`).join('')}
+      </div>
+      <div class="ob-feedback" id="ob-feedback"></div>
+      <button class="ob-next-btn" id="ob-next">
+        ${obQIdx < total - 1 ? 'Следующий вопрос <i class="bi bi-arrow-right"></i>' : 'Перейти к правилам <i class="bi bi-arrow-right"></i>'}
+      </button>
+    `;
+
+    obAnswered = false;
+    card.querySelectorAll('.ob-answer').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (obAnswered) return;
+        obAnswered = true;
+        const chosen = parseInt(btn.dataset.idx);
+        const isOk = chosen === q.correct;
+        const fb = document.getElementById('ob-feedback');
+
+        card.querySelectorAll('.ob-answer').forEach((b, i) => {
+          if (i === q.correct) b.classList.add('correct');
+          else if (i === chosen && !isOk) b.classList.add('wrong');
+        });
+
+        fb.textContent = (isOk ? '✓ Верно! ' : '✗ Неверно. ') + q.explanation;
+        fb.className = 'ob-feedback ' + (isOk ? 'ok' : 'bad');
+        fb.style.display = 'block';
+
+        logAction({ role: obRole, action: 'quiz_answer', question: obQIdx, correct: isOk });
+        document.getElementById('ob-next').style.display = 'block';
+      });
+    });
+
+    document.getElementById('ob-next').addEventListener('click', () => {
+      obQIdx++;
+      if (obQIdx < QUIZ[obRole].length) {
+        renderObQuestion();
+      } else {
+        renderObRules();
+      }
+    });
+  }
+
+  function renderObRules() {
+    const rules = RULES[obRole];
+    const card  = document.getElementById('ob-card');
+    const checked = new Array(rules.length).fill(false);
+
+    function updateDoneBtn() {
+      const allDone = checked.every(Boolean);
+      const btn = document.getElementById('ob-done-btn');
+      if (btn) btn.style.opacity = allDone ? '1' : '.5';
+      if (btn) btn.disabled = !allDone;
+    }
+
+    card.innerHTML = `
+      <p class="ob-role-title"><i class="bi bi-check2-circle"></i> Правила смены</p>
+      <div class="ob-question">Отметьте каждый пункт — я понимаю и принимаю:</div>
+      <div class="ob-rules-list">
+        ${rules.map((r, i) => `
+          <div class="ob-rule-item" data-i="${i}">
+            <div class="ob-rule-icon" id="rule-icon-${i}"></div>
+            <div class="ob-rule-text">${r}</div>
+          </div>
+        `).join('')}
+      </div>
+      <button class="ob-next-btn" id="ob-done-btn" style="opacity:.5" disabled>
+        Начать работу <i class="bi bi-arrow-right"></i>
+      </button>
+    `;
+
+    card.querySelectorAll('.ob-rule-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const i = parseInt(item.dataset.i);
+        checked[i] = !checked[i];
+        item.classList.toggle('checked', checked[i]);
+        const icon = document.getElementById(`rule-icon-${i}`);
+        if (icon) icon.innerHTML = checked[i] ? '<i class="bi bi-check-lg" style="color:white;font-size:12px"></i>' : '';
+        updateDoneBtn();
+      });
+    });
+
+    document.getElementById('ob-done-btn').addEventListener('click', () => {
+      const ob = { done: true, role: obRole, ts: Date.now() };
+      localStorage.setItem(OB_KEY, JSON.stringify(ob));
+      logAction({ role: obRole, action: 'onboarding_complete' });
+      enterPortal(obRole);
+    });
+  }
+
   // ── AUTH ──────────────────────────────────────────────────────────────────
   const COOKIE_NAME = 'staff_auth_2026';
   const PASSWORD    = '2026';
@@ -979,7 +1295,13 @@ export const prerender = true;
 
     if (pwd === PASSWORD) {
       setCookie(COOKIE_NAME, '1', remember ? 30 : 1);
-      showPortal();
+      const ob2 = JSON.parse(localStorage.getItem(OB_KEY) || '{}');
+      if (ob2.done) {
+        enterPortal(ob2.role || 'counselor');
+      } else {
+        showScreen('onboarding-screen');
+        renderObRoleSelect();
+      }
     } else {
       errEl.style.display = 'block';
       document.getElementById('pwd-input').value = '';
@@ -1027,7 +1349,7 @@ export const prerender = true;
       const totalCount = dayData.tasks.length;
 
       card.innerHTML = `
-        <div class="day-header${isToday ? ' open' : ''}" onclick="toggleDay(this)">
+        <div class="day-header${isToday ? ' open' : ''}">
           <div class="${numClass}">${n}</div>
           <div class="day-meta">
             <div class="day-title">День ${n} — ${dayData.title}</div>
@@ -1043,7 +1365,7 @@ export const prerender = true;
               const isWarn = task.startsWith('ВАЖНО:') || task.startsWith('ПРИЁМКА');
               return `
                 <div class="task-item${isWarn ? ' warning' : ''}" data-ti="${ti}">
-                  <div class="task-check${done ? ' done' : ''}" onclick="toggleTask(this, '${role}', '${dayNum}', '${ti}')"></div>
+                  <div class="task-check${done ? ' done' : ''}" data-role="${role}" data-day="${dayNum}" data-ti="${ti}"></div>
                   <div class="task-text">${task}</div>
                 </div>`;
             }).join('')}
@@ -1051,6 +1373,32 @@ export const prerender = true;
         </div>
       `;
       list.appendChild(card);
+
+      // Accordion — event listener (not global onclick)
+      card.querySelector('.day-header').addEventListener('click', () => {
+        card.querySelector('.day-header').classList.toggle('open');
+        card.querySelector('.day-body').classList.toggle('open');
+      });
+
+      // Task check — event delegation
+      card.querySelectorAll('.task-check').forEach(el => {
+        el.addEventListener('click', () => {
+          const r  = el.dataset.role;
+          const d  = el.dataset.day;
+          const ti = el.dataset.ti;
+          const key  = `task_${r}_${d}_${ti}`;
+          const done = el.classList.toggle('done');
+          localStorage.setItem(key, done ? '1' : '0');
+          // Update counter
+          const total     = card.querySelectorAll('.task-check').length;
+          const completed = card.querySelectorAll('.task-check.done').length;
+          card.querySelector('.day-tasks-count').textContent = `${completed}/${total}`;
+          // Server log
+          logAction({ role: r, day: parseInt(d), taskIndex: parseInt(ti),
+            task: el.nextElementSibling?.textContent?.trim() || '',
+            action: done ? 'check' : 'uncheck' });
+        });
+      });
     });
   }
 
@@ -1059,15 +1407,14 @@ export const prerender = true;
     header.nextElementSibling.classList.toggle('open');
   }
 
-  function toggleTask(el, role, day, ti) {
-    const key  = `task_${role}_${day}_${ti}`;
-    const done = el.classList.toggle('done');
-    localStorage.setItem(key, done ? '1' : '0');
-    // Update counter
-    const card = el.closest('.day-card');
-    const total = card.querySelectorAll('.task-check').length;
-    const completed = card.querySelectorAll('.task-check.done').length;
-    card.querySelector('.day-tasks-count').textContent = `${completed}/${total}`;
+  // Server logging (fire-and-forget)
+  function logAction(data) {
+    fetch('/api/staff-log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...data, timestamp: new Date().toISOString() }),
+      keepalive: true,
+    }).catch(() => {});
   }
 
   // ── SEARCH ────────────────────────────────────────────────────────────────
@@ -1139,8 +1486,14 @@ export const prerender = true;
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    if (getCookie(COOKIE_NAME) === '1') {
-      showPortal();
+    const authed = getCookie(COOKIE_NAME) === '1';
+    const ob = JSON.parse(localStorage.getItem(OB_KEY) || '{}');
+
+    if (authed && ob.done) {
+      enterPortal(ob.role || 'counselor');
+    } else if (authed) {
+      showScreen('onboarding-screen');
+      renderObRoleSelect();
     }
 
     document.getElementById('login-btn').addEventListener('click', handleLogin);
