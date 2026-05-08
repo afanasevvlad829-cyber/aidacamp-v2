@@ -349,11 +349,59 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
     .pm-grid > .pm-docs-section{column-span:all}
   }
 
-  /* Видео-блок */
-  .pm-video{margin:-60px auto 18px;max-width:760px;padding:0 16px;position:relative;z-index:4}
-  .pm-video-frame{position:relative;border-radius:18px;overflow:hidden;background:#0d1a2b;box-shadow:0 18px 36px rgba(15,23,42,.18);aspect-ratio:16/9}
-  .pm-video-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
-  .pm-video-caption{font-size:14px;color:#5e6878;text-align:center;margin-top:10px;font-weight:600}
+  /* Видео-карточка (клик → попап) */
+  .pm-video{margin:14px auto 8px;max-width:540px;padding:0 16px;position:relative;z-index:4}
+  .pm-video-card{
+    display:flex;align-items:center;gap:14px;width:100%;
+    background:linear-gradient(135deg,#0d1a2b 0%,#13243d 100%);
+    color:#fff;border:none;border-radius:18px;padding:14px 18px 14px 14px;
+    cursor:pointer;text-align:left;font-family:inherit;
+    box-shadow:0 8px 22px rgba(15,23,42,.18);transition:.15s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .pm-video-card:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(15,23,42,.28)}
+  .pm-video-card:active{transform:translateY(0)}
+  .pm-video-thumb{
+    position:relative;width:88px;height:64px;border-radius:12px;overflow:hidden;flex-shrink:0;
+    background:linear-gradient(135deg,#ec9b44 0%,#f7b96a 100%);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .pm-video-thumb::after{
+    content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 30% 30%,rgba(255,255,255,.25) 0%,transparent 60%);
+  }
+  .pm-video-play{
+    position:relative;z-index:2;width:30px;height:30px;border-radius:50%;background:#fff;
+    display:flex;align-items:center;justify-content:center;color:#0d1a2b;
+    box-shadow:0 3px 8px rgba(0,0,0,.25);
+  }
+  .pm-video-play::before{
+    content:"";display:block;width:0;height:0;
+    border-left:9px solid #0d1a2b;border-top:6px solid transparent;border-bottom:6px solid transparent;
+    margin-left:2px;
+  }
+  .pm-video-text{flex:1;min-width:0}
+  .pm-video-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#ec9b44;margin-bottom:3px}
+  .pm-video-title{font-size:15px;font-weight:700;line-height:1.25;color:#fff;margin:0}
+  .pm-video-arrow{color:rgba(255,255,255,.5);font-size:18px;flex-shrink:0;transition:.15s}
+  .pm-video-card:hover .pm-video-arrow{color:#ec9b44;transform:translateX(2px)}
+
+  /* Видео-попап */
+  #pm-video-modal{position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;padding:16px}
+  #pm-video-modal.is-open{display:flex}
+  .pm-video-bg{position:absolute;inset:0;background:rgba(13,26,43,.88);backdrop-filter:blur(8px)}
+  .pm-video-modal-inner{
+    position:relative;width:100%;max-width:960px;aspect-ratio:16/9;
+    border-radius:18px;overflow:hidden;background:#000;
+    box-shadow:0 24px 60px rgba(0,0,0,.6);
+  }
+  .pm-video-modal-inner iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+  .pm-video-close{
+    position:absolute;top:-46px;right:0;width:38px;height:38px;border-radius:50%;
+    border:none;background:rgba(255,255,255,.15);cursor:pointer;color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:18px;
+    transition:.15s;
+  }
+  .pm-video-close:hover{background:rgba(255,255,255,.28)}
 
   /* Бланки документов — без чекбоксов, прямые ссылки на download */
   .pm-docs-section .pm-sec-icon{background:#3a73ff!important}
@@ -427,18 +475,24 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
   <div class="pm-progress-bar"><div class="pm-progress-fill" id="pm-fill"></div></div>
 </div>
 
-<!-- Видео-приветствие -->
+<!-- Видео-приветствие — компактная карточка, открывает попап -->
 <div class="pm-video">
-  <div class="pm-video-frame">
-    <iframe
-      src="https://kinescope.io/embed/wUhdcJ5RmsxpxKGu7DhtZH"
-      allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer; clipboard-write"
-      allowfullscreen
-      loading="lazy"
-      title="Памятка к смене — видео-приветствие">
-    </iframe>
+  <button type="button" class="pm-video-card" data-pm-video-open aria-label="Смотреть видео-приветствие">
+    <span class="pm-video-thumb"><span class="pm-video-play" aria-hidden="true"></span></span>
+    <span class="pm-video-text">
+      <span class="pm-video-eyebrow">Видео · 3 минуты</span>
+      <span class="pm-video-title">Привет от Дарьи — что взять и что не нужно</span>
+    </span>
+    <i class="bi bi-arrow-right pm-video-arrow" aria-hidden="true"></i>
+  </button>
+</div>
+
+<div id="pm-video-modal" role="dialog" aria-modal="true" aria-label="Видео-приветствие">
+  <div class="pm-video-bg" data-pm-video-close></div>
+  <div class="pm-video-modal-inner">
+    <button type="button" class="pm-video-close" data-pm-video-close aria-label="Закрыть">×</button>
+    <iframe id="pm-video-iframe" src="" allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer; clipboard-write" allowfullscreen></iframe>
   </div>
-  <p class="pm-video-caption">3 минуты — что нужно знать перед смены</p>
 </div>
 
 <main class="pm-page">
@@ -699,6 +753,27 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
     setTimeout(tryBind, 1500);
     setTimeout(tryBind, 4500);
   }
+
+  // ====== видео-попап ======
+  const VIDEO_SRC = 'https://kinescope.io/embed/wUhdcJ5RmsxpxKGu7DhtZH';
+  const videoModal = document.getElementById('pm-video-modal');
+  const videoIframe = document.getElementById('pm-video-iframe');
+  function openVideo(){
+    if (!videoModal || !videoIframe) return;
+    videoIframe.src = VIDEO_SRC + '?autoplay=1';
+    videoModal.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+    try { window.ym && ym(96499295,'reachGoal','pamyatka_video_open'); } catch(_){}
+  }
+  function closeVideo(){
+    if (!videoModal || !videoIframe) return;
+    videoModal.classList.remove('is-open');
+    videoIframe.src = ''; // остановить воспроизведение
+    document.body.style.overflow = '';
+  }
+  document.querySelectorAll('[data-pm-video-open]').forEach(b => b.addEventListener('click', openVideo));
+  document.querySelectorAll('[data-pm-video-close]').forEach(b => b.addEventListener('click', closeVideo));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && videoModal?.classList.contains('is-open')) closeVideo(); });
 
   // ====== info-modal ======
   const modal = document.getElementById('pm-modal');
