@@ -39,6 +39,9 @@ const { imageSrc, hasVariants = false } = Astro.props;
     var source  = params.get('utm_source');
     var term    = params.get('utm_term');   // поисковая фраза из Директа ({keyword})
 
+    // Skip fetch when no UTM params — avoids unnecessary network request and LCP delay on organic/direct traffic
+    if (!h1Key && !content && !source && !term) return;
+
     // Load variants from API instead of hardcoded
     fetch('/api/hero-variants.json')
       .then(r => r.json())
