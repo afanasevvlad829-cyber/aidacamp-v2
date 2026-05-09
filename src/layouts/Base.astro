@@ -48,16 +48,16 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
 <html lang="ru" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
-    {/* LCP preload — самый первый тег после charset, чтобы браузер начал грузить до скриптов */}
+    {/* viewport ПЕРЕД preload — preload scanner'у нужен viewport для eval media queries.
+        Без этого Chrome грузит и мобильный, и десктопный вариант одновременно. */}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {/* LCP preload — после viewport, чтобы media="" в preload scanner работал корректно */}
     {heroPreload && <link rel="preload" as="image" href={heroPreload} type="image/avif" fetchpriority="high" />}
-    {/* Responsive LCP preloads (heroPreloadMobile/heroPreloadDesktop) — тоже рендерятся ДО аналитики */}
-    {/* Если передан srcset — браузер сам выберет нужный размер (DPR-aware), иначе фолбэк на href */}
     {heroPreloadMobile && heroPreloadMobileSrcset
       ? <link rel="preload" as="image" media="(max-width: 768px)" imagesrcset={heroPreloadMobileSrcset} imagesizes="100vw" fetchpriority="high" />
-      : heroPreloadMobile && <link rel="preload" as="image" media="(max-width: 768px)" href={heroPreloadMobile} type="image/avif" fetchpriority="high" />
+      : heroPreloadMobile && <link rel="preload" as="image" media="(max-width: 768px)" href={heroPreloadMobile} fetchpriority="high" />
     }
     {heroPreloadDesktop && <link rel="preload" as="image" media="(min-width: 769px)" href={heroPreloadDesktop} type="image/avif" fetchpriority="high" />}
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <meta name="robots" content="index, follow">
     <!-- Mobile address bar / Android task switcher color (бренд orange) -->
