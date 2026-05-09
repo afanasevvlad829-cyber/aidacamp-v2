@@ -3,10 +3,10 @@
  * HeroFeatures — горизонтальная полоска чипов с фактами о смене.
  * Концепт: ВОЗРАСТ / ГРУППЫ / ОТ МОСКВЫ / ОПЫТ / НОУТБУК / ГАРАНТИЯ / ЛИЦЕНЗИЯ / МЕДСЕСТРА / ПИТАНИЕ.
  *
- * Mobile: horizontal scroll-snap (свайп пальцем), тап → bottom-sheet модалка
- * Desktop: full row (или wrap если не поместятся)
- *
- * Используется в hero (Mobile.astro + Desktop.astro) под big call.
+ * Анимация: бесконечная медленная прокрутка по кругу (marquee/ticker).
+ * Пауза: при наведении мыши, при касании пальцем (touch), при перетаскивании.
+ * Мобайл: свайп пальцем работает поверх автопрокрутки.
+ * Тап → bottom-sheet модалка с подробностями.
  */
 const features = [
   { label: 'Возраст', value: '7–15 лет', key: 'age', title: 'Возраст участников: 7–15 лет', body: 'Группы формируются по возрасту: 7–9, 10–12 и 13–15 лет. Дети работают с ровесниками — это важно для комфорта и эффективности.' },
@@ -21,19 +21,24 @@ const features = [
 ];
 ---
 
-<div class="hero-features relative" aria-label="Ключевые факты о лагере">
-  <!-- Левая тень-затухание (намёк что есть скролл) -->
-  <div class="hero-features-fade-l hidden md:block" aria-hidden="true"></div>
+<div class="hero-features relative overflow-hidden" aria-label="Ключевые факты о лагере">
+  <!-- Левая тень-затухание -->
+  <div class="hero-features-fade-l" aria-hidden="true"></div>
   <!-- Правая тень-затухание -->
   <div class="hero-features-fade-r" aria-hidden="true"></div>
 
-  <ul class="hero-features-track flex gap-0 overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+  <!--
+    track = реальный скроллируемый контейнер.
+    Внутри — items × 2 (клоны добавляет JS для бесконечного цикла).
+    overflow-x hidden снаружи; здесь scrollLeft двигает JS.
+  -->
+  <ul id="hf-track" class="hero-features-track flex [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" role="list">
     {features.map((f) => (
-      <li class="hero-features-chip shrink-0 snap-start">
+      <li class="hero-features-chip shrink-0">
         <button
           type="button"
           data-hf-key={f.key}
-          class="flex flex-col justify-center w-full h-full min-w-[160px] md:min-w-[180px] px-5 py-4 md:px-6 md:py-5 border-r border-white/10 last:border-r-0 text-left cursor-pointer hover:bg-white/5 transition-colors"
+          class="flex flex-col justify-center w-full h-full min-w-[155px] md:min-w-[180px] px-5 py-4 md:px-6 md:py-5 border-r border-white/10 last:border-r-0 text-left cursor-pointer hover:bg-white/5 transition-colors"
           aria-label={`${f.label}: ${f.value}. Нажмите для подробностей`}
         >
           <span class="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.16em] text-white/55">{f.label}</span>
@@ -74,156 +79,234 @@ const features = [
     border-bottom: 1px solid rgba(255,255,255,0.08);
     will-change: transform;
   }
+
+  .hero-features-track {
+    /* overflow скрыт у родителя; track шире вьюпорта и скроллится через scrollLeft */
+    overflow: visible;
+    width: max-content;
+  }
+
   .hero-features-fade-l,
   .hero-features-fade-r {
     position: absolute;
     top: 0;
     bottom: 0;
-    width: 48px;
+    width: 72px;
     pointer-events: none;
     z-index: 2;
   }
   .hero-features-fade-l {
     left: 0;
-    background: linear-gradient(to right, rgba(13,26,43,0.95), transparent);
+    background: linear-gradient(to right, rgba(13,26,43,0.96) 0%, transparent 100%);
   }
   .hero-features-fade-r {
     right: 0;
-    background: linear-gradient(to left, rgba(13,26,43,0.95), transparent);
-  }
-  .hero-features-track.dragging {
-    scroll-behavior: auto; /* отключаем smooth-scroll при драгинге */
-    cursor: grabbing;
-  }
-  /* На очень широких экранах содержимое центрируется и fade не нужен */
-  @media (min-width: 1280px) {
-    .hero-features-track { justify-content: center; }
+    background: linear-gradient(to left, rgba(13,26,43,0.96) 0%, transparent 100%);
   }
 </style>
 
 <script>
-  function initHeroFeaturesDrag() {
-    const track = document.querySelector('.hero-features-track');
-    if (!track) return;
+(function () {
+  /* ─── данные для модалки ──────────────────────────── */
+  const FEATURES: Record<string, { title: string; body: string }> = {
+    age:        { title: 'Возраст участников: 7–15 лет', body: 'Группы формируются по возрасту: 7–9, 10–12 и 13–15 лет. Дети работают с ровесниками — это важно для комфорта и эффективности.' },
+    groups:     { title: 'Группы до 8 человек', body: 'Маленькие группы — наш принципиальный выбор. Наставник знает каждого ребёнка по имени, видит прогресс, успевает помочь каждому. В больших группах дети теряются.' },
+    distance:   { title: '1 час от Москвы', body: 'Лагерь находится в Подмосковье. Трансфер организован: отправление от м. Павелецкая. Точный адрес и схема проезда — в письме после бронирования.' },
+    experience: { title: 'Опыт программирования не нужен', body: 'Программа рассчитана на полных новичков. Начинаем с нуля: Scratch, Python, основы веб. Если ребёнок уже умеет кодить — подберём задачи сложнее.' },
+    laptop:     { title: 'Ноутбук не нужен', body: 'Все компьютеры предоставляются лагерем. Привозить своё устройство не нужно — только зарядку для телефона и хорошее настроение.' },
+    refund:     { title: 'Политика возврата', body: 'Если ребёнок заболел или возникли обстоятельства — вернём 50% стоимости при отказе за 3 и более дней до начала смены. При отказе менее чем за 3 дня — возврат не производится.' },
+    license:    { title: 'Образовательная лицензия', body: 'АйДаКемп работает по лицензии Министерства образования и науки РФ. Это позволяет оформить налоговый вычет 13% — от 2 800 до 5 434 ₽ в зависимости от смены.' },
+    medical:    { title: 'Медицинская помощь 24/7', body: 'В лагере постоянно дежурит медсестра. Медпункт оснащён всем необходимым. При поступлении просим указать хронические заболевания и аллергии в анкете участника.' },
+    food:       { title: '5-разовое питание', body: 'Завтрак, второй завтрак, обед, полдник и ужин. Меню составлено диетологом. Вегетарианское меню — по запросу. Питание включено в стоимость смены.' },
+  };
 
-    let isDown = false;
-    let startX = 0;
-    let scrollLeft = 0;
-    let velocity = 0;
-    let lastX = 0;
-    let lastTime = 0;
+  /* ─── модалка ──────────────────────────────────────── */
+  const modal    = document.getElementById('hf-modal')    as HTMLElement | null;
+  const backdrop = document.getElementById('hf-backdrop') as HTMLElement | null;
+  const sheet    = document.getElementById('hf-sheet')    as HTMLElement | null;
+  const titleEl  = document.getElementById('hf-modal-title') as HTMLElement | null;
+  const bodyEl   = document.getElementById('hf-modal-body')  as HTMLElement | null;
+  const closeBtn = document.getElementById('hf-modal-close') as HTMLElement | null;
 
-    const onMouseDown = (e: MouseEvent) => {
-      if ((e.target as HTMLElement).closest('a, button')) return; // не драгим если клик по ссылке/кнопке
-
-      isDown = true;
-      startX = e.pageX - track.offsetLeft;
-      scrollLeft = track.scrollLeft;
-      lastX = e.pageX;
-      lastTime = Date.now();
-      track.style.cursor = 'grabbing';
-    };
-
-    const onMouseMove = (e: MouseEvent) => {
-      if (!isDown) return;
-
-      e.preventDefault();
-      const x = e.pageX - track.offsetLeft;
-      const walk = (x - startX) * 1.2; // усиливаем перемещение для удобства
-
-      // считаем скорость для инерции
-      const now = Date.now();
-      const dt = now - lastTime;
-      if (dt > 0) {
-        velocity = (e.pageX - lastX) / dt;
-      }
-      lastX = e.pageX;
-      lastTime = now;
-
-      track.scrollLeft = scrollLeft - walk;
-    };
-
-    const onMouseUp = () => {
-      if (!isDown) return;
-      isDown = false;
-      track.style.cursor = 'grab';
-
-      // инерционный скролл (momentum)
-      let currentVelocity = velocity;
-      const animate = () => {
-        if (Math.abs(currentVelocity) > 0.1) {
-          track.scrollLeft -= currentVelocity * 15;
-          currentVelocity *= 0.95; // затухание
-          requestAnimationFrame(animate);
-        }
-      };
-      animate();
-    };
-
-    track.addEventListener('mousedown', onMouseDown);
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-
-    // Чтобы текст не селектировался при драгинге
-    track.style.userSelect = 'none';
-    track.style.cursor = 'grab';
+  function openModal(key: string) {
+    const data = FEATURES[key];
+    if (!data || !modal || !sheet || !titleEl || !bodyEl) return;
+    titleEl.textContent = data.title;
+    bodyEl.textContent  = data.body;
+    modal.classList.remove('pointer-events-none');
+    requestAnimationFrame(() => {
+      modal.style.background = 'rgba(0,0,0,0)';
+      modal.classList.remove('opacity-0');
+      modal.classList.add('opacity-100');
+      sheet.classList.remove('translate-y-4');
+    });
+    document.body.style.overflow = 'hidden';
   }
 
-  // Инициализируем при загрузке
-  initHeroFeaturesDrag();
+  function closeModal() {
+    if (!modal || !sheet) return;
+    modal.classList.add('opacity-0');
+    modal.classList.remove('opacity-100');
+    sheet.classList.add('translate-y-4');
+    document.body.style.overflow = '';
+    setTimeout(() => modal.classList.add('pointer-events-none'), 200);
+  }
 
-  // HeroFeatures modal
-  (function() {
-    const FEATURES: Record<string, { title: string; body: string }> = {
-      age:        { title: 'Возраст участников: 7–15 лет', body: 'Группы формируются по возрасту: 7–9, 10–12 и 13–15 лет. Дети работают с ровесниками — это важно для комфорта и эффективности.' },
-      groups:     { title: 'Группы до 8 человек', body: 'Маленькие группы — наш принципиальный выбор. Наставник знает каждого ребёнка по имени, видит прогресс, успевает помочь каждому. В больших группах дети теряются.' },
-      distance:   { title: '1 час от Москвы', body: 'Лагерь находится в Подмосковье. Трансфер организован: отправление от м. Павелецкая. Точный адрес и схема проезда — в письме после бронирования.' },
-      experience: { title: 'Опыт программирования не нужен', body: 'Программа рассчитана на полных новичков. Начинаем с нуля: Scratch, Python, основы веб. Если ребёнок уже умеет кодить — подберём задачи сложнее.' },
-      laptop:     { title: 'Ноутбук не нужен', body: 'Все компьютеры предоставляются лагерем. Привозить своё устройство не нужно — только зарядку для телефона и хорошее настроение.' },
-      refund:     { title: 'Политика возврата', body: 'Если ребёнок заболел или возникли обстоятельства — вернём 50% стоимости при отказе за 3 и более дней до начала смены. При отказе менее чем за 3 дня — возврат не производится.' },
-      license:    { title: 'Образовательная лицензия', body: 'АйДаКемп работает по лицензии Министерства образования и науки РФ. Это позволяет оформить налоговый вычет 13% — от 2 800 до 5 434 ₽ в зависимости от смены.' },
-      medical:    { title: 'Медицинская помощь 24/7', body: 'В лагере постоянно дежурит медсестра. Медпункт оснащён всем необходимым. При поступлении просим указать хронические заболевания и аллергии в анкете участника.' },
-      food:       { title: '5-разовое питание', body: 'Завтрак, второй завтрак, обед, полдник и ужин. Меню составлено диетологом. Вегетарианское меню — по запросу. Питание включено в стоимость смены.' },
-    };
+  backdrop?.addEventListener('click', closeModal);
+  closeBtn?.addEventListener('click', closeModal);
+  document.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Escape') closeModal(); });
 
-    const modal    = document.getElementById('hf-modal');
-    const backdrop = document.getElementById('hf-backdrop');
-    const sheet    = document.getElementById('hf-sheet');
-    const titleEl  = document.getElementById('hf-modal-title');
-    const bodyEl   = document.getElementById('hf-modal-body');
-    const closeBtn = document.getElementById('hf-modal-close');
+  /* ─── бесконечная прокрутка (marquee) ─────────────── */
+  const track = document.getElementById('hf-track') as HTMLUListElement | null;
+  if (!track) return;
 
-    if (!modal || !sheet || !titleEl || !bodyEl) return;
+  /* 1. Клонируем все чипы для бесшовного цикла */
+  const origItems = Array.from(track.querySelectorAll<HTMLLIElement>('li'));
+  origItems.forEach(li => {
+    const clone = li.cloneNode(true) as HTMLLIElement;
+    clone.setAttribute('aria-hidden', 'true');
+    track.appendChild(clone);
+  });
 
-    function openModal(key: string) {
-      const data = FEATURES[key];
-      if (!data) return;
-      titleEl!.textContent = data.title;
-      bodyEl!.textContent  = data.body;
-      modal!.classList.remove('pointer-events-none');
-      requestAnimationFrame(() => {
-        modal!.style.background = 'rgba(0,0,0,0)';
-        modal!.classList.remove('opacity-0');
-        modal!.classList.add('opacity-100');
-        sheet!.classList.remove('translate-y-4');
-      });
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeModal() {
-      modal!.classList.add('opacity-0');
-      modal!.classList.remove('opacity-100');
-      sheet!.classList.add('translate-y-4');
-      document.body.style.overflow = '';
-      setTimeout(() => modal!.classList.add('pointer-events-none'), 200);
-    }
-
-    document.querySelectorAll('[data-hf-key]').forEach(btn => {
-      btn.addEventListener('click', () => openModal(btn.getAttribute('data-hf-key')!));
+  /* 2. Вешаем клики на все кнопки (оригиналы + клоны) */
+  track.querySelectorAll<HTMLElement>('[data-hf-key]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      /* click срабатывает только если не было перетаскивания */
+      if (!wasDragging) openModal(btn.getAttribute('data-hf-key')!);
     });
+  });
 
-    backdrop?.addEventListener('click', closeModal);
-    closeBtn?.addEventListener('click', closeModal);
-    document.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Escape') closeModal(); });
-  })();
+  /* 3. Авто-прокрутка через rAF */
+  const SPEED = 0.35;        // px за кадр ≈ 21 px/s при 60fps — плавно и медленно
+  const RESUME_DELAY = 1200; // ms после отпускания до возобновления
+  let isPaused = false;
+  let resumeTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function getHalfWidth() {
+    /* половина ширины track — момент сброса для цикла */
+    return track.scrollWidth / 2;
+  }
+
+  function tick() {
+    if (!isPaused) {
+      const parent = track.parentElement as HTMLElement;
+      parent.scrollLeft += SPEED;
+      /* бесшовный сброс: когда прокрутили первую копию, возвращаемся на ту же позицию в начале */
+      if (parent.scrollLeft >= getHalfWidth()) {
+        parent.scrollLeft -= getHalfWidth();
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  /* Перестраиваем структуру: родитель .hero-features должен быть скроллируемым */
+  const wrapper = track.parentElement as HTMLElement;
+  wrapper.style.overflowX = 'scroll';
+  /* scrollbar скрыт через CSS */
+  wrapper.style.scrollbarWidth = 'none';
+  (wrapper.style as any).msOverflowStyle = 'none';
+
+  /* ─── пауза / возобновление ───────────────────────── */
+  function pause() {
+    isPaused = true;
+    if (resumeTimer) { clearTimeout(resumeTimer); resumeTimer = null; }
+  }
+
+  function scheduleResume() {
+    if (resumeTimer) clearTimeout(resumeTimer);
+    resumeTimer = setTimeout(() => { isPaused = false; }, RESUME_DELAY);
+  }
+
+  /* Наведение мыши */
+  wrapper.addEventListener('mouseenter', pause);
+  wrapper.addEventListener('mouseleave', scheduleResume);
+
+  /* ─── перетаскивание мышью ────────────────────────── */
+  let isDragging = false;
+  let wasDragging = false;
+  let dragStartX = 0;
+  let dragScrollLeft = 0;
+  let dragVelocity = 0;
+  let dragLastX = 0;
+  let dragLastTime = 0;
+
+  wrapper.addEventListener('mousedown', (e: MouseEvent) => {
+    isDragging = true;
+    wasDragging = false;
+    dragStartX = e.pageX - wrapper.offsetLeft;
+    dragScrollLeft = wrapper.scrollLeft;
+    dragLastX = e.pageX;
+    dragLastTime = Date.now();
+    dragVelocity = 0;
+    pause();
+    wrapper.style.cursor = 'grabbing';
+  });
+
+  document.addEventListener('mousemove', (e: MouseEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const dx = e.pageX - dragStartX - (wrapper.offsetLeft - wrapper.offsetLeft);
+    if (Math.abs(e.pageX - (dragStartX + wrapper.offsetLeft)) > 4) wasDragging = true;
+
+    const now = Date.now();
+    const dt = now - dragLastTime;
+    if (dt > 0) dragVelocity = (e.pageX - dragLastX) / dt;
+    dragLastX = e.pageX;
+    dragLastTime = now;
+
+    wrapper.scrollLeft = dragScrollLeft - (e.pageX - (dragStartX + wrapper.offsetLeft));
+
+    /* бесшовный цикл и при ручном скролле */
+    const half = getHalfWidth();
+    if (wrapper.scrollLeft >= half)       wrapper.scrollLeft -= half;
+    else if (wrapper.scrollLeft < 0)      wrapper.scrollLeft += half;
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    wrapper.style.cursor = '';
+
+    /* инерция */
+    let v = dragVelocity;
+    const momentum = () => {
+      if (Math.abs(v) > 0.05) {
+        wrapper.scrollLeft -= v * 14;
+        const half = getHalfWidth();
+        if (wrapper.scrollLeft >= half)  wrapper.scrollLeft -= half;
+        else if (wrapper.scrollLeft < 0) wrapper.scrollLeft += half;
+        v *= 0.94;
+        requestAnimationFrame(momentum);
+      }
+    };
+    momentum();
+
+    scheduleResume();
+  });
+
+  /* ─── касание пальцем (touch) ──────────────────────── */
+  let touchStartX = 0;
+  let touchScrollLeft = 0;
+
+  wrapper.addEventListener('touchstart', (e: TouchEvent) => {
+    pause();
+    touchStartX = e.touches[0].clientX;
+    touchScrollLeft = wrapper.scrollLeft;
+  }, { passive: true });
+
+  wrapper.addEventListener('touchmove', (e: TouchEvent) => {
+    const dx = e.touches[0].clientX - touchStartX;
+    wrapper.scrollLeft = touchScrollLeft - dx;
+    /* бесшовный цикл */
+    const half = getHalfWidth();
+    if (wrapper.scrollLeft >= half)  wrapper.scrollLeft -= half;
+    else if (wrapper.scrollLeft < 0) wrapper.scrollLeft += half;
+  }, { passive: true });
+
+  wrapper.addEventListener('touchend', scheduleResume, { passive: true });
+
+  /* ─── старт ────────────────────────────────────────── */
+  /* Небольшая задержка, чтобы DOM отрисовался и scrollWidth посчитался корректно */
+  setTimeout(() => requestAnimationFrame(tick), 100);
+})();
 </script>
