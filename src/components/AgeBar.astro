@@ -146,6 +146,10 @@ const ageCountsJson = JSON.stringify({
     localStorage.removeItem(STORAGE_KEYS.userAgeGroup);
   }
 
+  // AgeBar не нужен при загрузке (показывается при 45% скролла / через 25s)
+  // Откладываем init до idle чтобы не блокировать LCP main thread
+  const _initAgeBar = () => {
+
   // --- Age stat toast ---
   const AGE_STAT: Record<string, { pct: number; h: [number,number,number]; text: string }> = {
     '7–9':   { pct: 26, h: [100, 62, 76], text: 'Едут самые активные исследователи' },
@@ -343,4 +347,34 @@ const ageCountsJson = JSON.stringify({
     window.location.href = '/shifts/1/';
   });
 
+
+  // Скрываем AgeBar когда ShiftModal открыт
+  document.addEventListener('shift-modal-open', () => {
+    bar?.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+    bar?.classList.remove('translate-y-0', 'opacity-100');
+  });
+
+  // Восстанавливаем AgeBar когда ShiftModal закрыт (если не был закрыт пользователем)
+  const shiftModalEl = document.getElementById('shift-modal');
+  if (shiftModalEl) {
+    const observer = new MutationObserver(() => {
+      const isClosed = shiftModalEl.classList.contains('hidden');
+      if (isClosed && !isDismissed()) {
+        const wasVisible = bar?.classList.contains('translate-y-0');
+        // Восстановить только если был показан до открытия ShiftModal
+        if (!wasVisible) {
+          bar?.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+          bar?.classList.add('translate-y-0', 'opacity-100');
+        }
+      }
+    });
+    observer.observe(shiftModalEl, { attributes: true, attributeFilter: ['class'] });
+  }
+  }; // end _initAgeBar
+
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(_initAgeBar, { timeout: 2000 });
+  } else {
+    setTimeout(_initAgeBar, 200);
+  }
 </script>
