@@ -21,6 +21,8 @@ interface Props {
   heroPreload?: string;
   /** Responsive hero preload: мобильные ≤768px (рендерится ДО аналитики) */
   heroPreloadMobile?: string;
+  /** srcset для мобильного preload — если задан, используется imagesrcset вместо href */
+  heroPreloadMobileSrcset?: string;
   /** Responsive hero preload: десктоп ≥769px (рендерится ДО аналитики) */
   heroPreloadDesktop?: string;
 }
@@ -33,6 +35,7 @@ const {
   ogImageAlt = 'АйДаКемп — IT-лагерь для детей в Подмосковье',
   heroPreload,
   heroPreloadMobile,
+  heroPreloadMobileSrcset,
   heroPreloadDesktop,
 } = Astro.props;
 const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `https://aidacamp.ru${ogImage}`;
@@ -48,7 +51,11 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     {/* LCP preload — самый первый тег после charset, чтобы браузер начал грузить до скриптов */}
     {heroPreload && <link rel="preload" as="image" href={heroPreload} type="image/avif" fetchpriority="high" />}
     {/* Responsive LCP preloads (heroPreloadMobile/heroPreloadDesktop) — тоже рендерятся ДО аналитики */}
-    {heroPreloadMobile && <link rel="preload" as="image" media="(max-width: 768px)" href={heroPreloadMobile} type="image/avif" fetchpriority="high" />}
+    {/* Если передан srcset — браузер сам выберет нужный размер (DPR-aware), иначе фолбэк на href */}
+    {heroPreloadMobile && heroPreloadMobileSrcset
+      ? <link rel="preload" as="image" media="(max-width: 768px)" imagesrcset={heroPreloadMobileSrcset} imagesizes="100vw" fetchpriority="high" />
+      : heroPreloadMobile && <link rel="preload" as="image" media="(max-width: 768px)" href={heroPreloadMobile} type="image/avif" fetchpriority="high" />
+    }
     {heroPreloadDesktop && <link rel="preload" as="image" media="(min-width: 769px)" href={heroPreloadDesktop} type="image/avif" fetchpriority="high" />}
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
