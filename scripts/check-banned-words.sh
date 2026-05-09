@@ -3,7 +3,9 @@
 # См. CLAUDE.md → BANNED WORDS.
 #
 # Hard-fail (exit 1):
-#   единиц / баллов / игровая валюта / игровые рубли
+#   единиц / баллов
+# Разрешены (для игровой механики лагеря с дисклеймером):
+#   игровая валюта, игровые рубли, рубли (как название внутренней валюты)
 # Soft warning:
 #   > 20 упоминаний «дети» / «ребёнок» в одном файле
 #
@@ -23,7 +25,7 @@ SCAN = ['src/pages', 'src/components']
 EXTS = ('.astro', '.ts', '.tsx', '.md')
 
 # Hard ban — billing fail
-HARD = re.compile(r'\bединиц\w*\b|\bбалл(?:ов|ы|ами|ах|ам|а|у|е|ом)?\b|игровая\s+валюта|игровых?\s+рубл(?:ей|ями|ях|и|ем|ё?м)', re.IGNORECASE)
+HARD = re.compile(r'\bединиц\w*\b|\bбалл(?:ов|ы|ами|ах|ам|а|у|е|ом)?\b', re.IGNORECASE)
 # Skip patterns — JSON-LD, HTML comments, code fences
 SKIP_LINE = re.compile(r'^\s*(<!--|//|"@|"name":\s|"description":\s|"text":\s)')
 
