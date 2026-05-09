@@ -75,4 +75,8 @@ export default defineConfig({
       target: 'esnext',
     },
   },
+  build: {
+    // Инлайним небольшие CSS-файлы (<4KB) прямо в HTML — убирает лишние RTT
+    inlineStylesheets: 'auto',
+  },
 });

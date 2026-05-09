@@ -1,6 +1,6 @@
 ---
 import '../styles/global.css';
-import iconsCSS from '../styles/icons.css?raw';
+import '../styles/icons.css';
 import '../styles/mobile-ux-p0.css';
 import '../styles/print.css';
 import AgeBar from '../components/AgeBar.astro';
@@ -21,6 +21,8 @@ interface Props {
   heroPreload?: string;
   /** Responsive hero preload: мобильные ≤768px (рендерится ДО аналитики) */
   heroPreloadMobile?: string;
+  /** srcset для мобильного preload — если задан, используется imagesrcset вместо href */
+  heroPreloadMobileSrcset?: string;
   /** Responsive hero preload: десктоп ≥769px (рендерится ДО аналитики) */
   heroPreloadDesktop?: string;
 }
@@ -33,6 +35,7 @@ const {
   ogImageAlt = 'АйДаКемп — IT-лагерь для детей в Подмосковье',
   heroPreload,
   heroPreloadMobile,
+  heroPreloadMobileSrcset,
   heroPreloadDesktop,
 } = Astro.props;
 const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `https://aidacamp.ru${ogImage}`;
@@ -48,7 +51,11 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     {/* LCP preload — самый первый тег после charset, чтобы браузер начал грузить до скриптов */}
     {heroPreload && <link rel="preload" as="image" href={heroPreload} type="image/avif" fetchpriority="high" />}
     {/* Responsive LCP preloads (heroPreloadMobile/heroPreloadDesktop) — тоже рендерятся ДО аналитики */}
-    {heroPreloadMobile && <link rel="preload" as="image" media="(max-width: 768px)" href={heroPreloadMobile} type="image/avif" fetchpriority="high" />}
+    {/* Если передан srcset — браузер сам выберет нужный размер (DPR-aware), иначе фолбэк на href */}
+    {heroPreloadMobile && heroPreloadMobileSrcset
+      ? <link rel="preload" as="image" media="(max-width: 768px)" imagesrcset={heroPreloadMobileSrcset} imagesizes="100vw" fetchpriority="high" />
+      : heroPreloadMobile && <link rel="preload" as="image" media="(max-width: 768px)" href={heroPreloadMobile} type="image/avif" fetchpriority="high" />
+    }
     {heroPreloadDesktop && <link rel="preload" as="image" media="(min-width: 769px)" href={heroPreloadDesktop} type="image/avif" fetchpriority="high" />}
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
@@ -95,19 +102,30 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         window._clarityDisabled = true;
       }
     </script>
-    <!-- Yandex.Metrika counter -->
+    <!-- Yandex.Metrika — lazy load: ym() stub queues calls until tag.js is fetched -->
     <script type="text/javascript" is:inline>
-      (function(m,e,t,r,i,k,a){
+      (function(m,i){
         m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
         m[i].l=1*new Date();
-        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-      })(window, document,'script','https://mc.yandex.ru/metrika/tag.js', 'ym');
-
+      })(window,'ym');
       if (!window.ym_disable96499295 && !window._ymInited) {
         window._ymInited = true;
-        ym(96499295, 'init', {clickmap:true, referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:false});
+        ym(96499295,'init',{clickmap:true,referrer:document.referrer,url:location.href,accurateTrackBounce:true,trackLinks:false});
       }
+      (function(){
+        if(window.ym_disable96499295) return;
+        var loaded=false;
+        function loadYM(){
+          if(loaded) return; loaded=true;
+          var s=document.createElement('script'); s.async=1;
+          s.src='https://mc.yandex.ru/metrika/tag.js';
+          document.head.appendChild(s);
+        }
+        var t=setTimeout(loadYM,3000);
+        ['scroll','click','touchstart','keydown'].forEach(function(e){
+          document.addEventListener(e,function(){clearTimeout(t);loadYM();},{once:true,passive:true});
+        });
+      })();
     </script>
     <noscript><div><img src="https://mc.yandex.ru/watch/96499295" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
     <!-- /Yandex.Metrika counter -->
@@ -188,13 +206,11 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         var YM_ID = 96499295;
         var _fired = new Set(JSON.parse(sessionStorage.getItem('ym_fired') || '[]'));
         function _persist() { try { sessionStorage.setItem('ym_fired', JSON.stringify([..._fired])); } catch(e){} }
-        var TMR_ID = 3755202;
-        window.trackGoal = function (id, params, value) {
+        window.trackGoal = function (id, params) {
           if (_fired.has(id)) return;
           _fired.add(id);
           _persist();
           try { if (typeof window.ym !== 'undefined') window.ym(YM_ID, 'reachGoal', id, params || {}); } catch(e){}
-          try { window._tmr = window._tmr || []; window._tmr.push({ type: 'reachGoal', id: TMR_ID, value: value || 100, goal: id }); } catch(e){}
           // Своя аналитика — параметрированные события в PostgreSQL
           if (params && Object.keys(params).length > 0) {
             try {
@@ -288,9 +304,6 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     <ShiftModal />
     <GlobalShiftLinkHandler />
     <ReferralModal />
-    {/* P2 perf: icons CSS перенесён из <head> сюда — 72KB не блокируют FCP.
-        Иконки появляются сразу после первого рендера (~0ms задержки для пользователя). */}
-    <style set:html={iconsCSS}></style>
     <!-- Debug: ?modal=referral открывает модалку напрямую -->
     <script is:inline>
       (function () {
