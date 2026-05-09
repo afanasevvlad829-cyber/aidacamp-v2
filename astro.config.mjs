@@ -75,7 +75,6 @@ export default defineConfig({
   },
   build: {
     // Инлайним ВСЕ CSS в <style> в HTML — убирает render-blocking external stylesheet fetch (~400ms)
-    // Риск FOUC минимален: Astro гарантирует <style> в <head> до body
     inlineStylesheets: 'always',
   },
 });
