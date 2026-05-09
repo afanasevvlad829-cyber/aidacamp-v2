@@ -209,6 +209,10 @@ import Mentors from './Mentors.astro';
   }
 
   document.addEventListener('astro:page-load', initTeam);
-  initTeam();
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => { initTeam(); }, { timeout: 3000 });
+  } else {
+    setTimeout(initTeam, 200);
+  }
 </script>
 <script type="application/json" id="team-json" set:html={JSON.stringify(members)}></script>
