@@ -64,11 +64,6 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     <!-- Bootstrap Icons: subset of 30 icons inlined locally (no CDN, no font download) -->
     <link rel="preconnect" href="https://mc.yandex.ru" crossorigin />
     <link rel="dns-prefetch" href="https://mc.yandex.ru" />
-    <!-- VK/Top.Mail.Ru preconnect — без этого privacy-cs.mail.ru тратит ~1s на DNS+TLS -->
-    <link rel="preconnect" href="https://top-fwz1.mail.ru" />
-    <link rel="dns-prefetch" href="https://top-fwz1.mail.ru" />
-    <link rel="preconnect" href="https://privacy-cs.mail.ru" />
-    <link rel="dns-prefetch" href="https://privacy-cs.mail.ru" />
     <script is:inline>
       // === Аналитика: отключение для тестовых страниц + ботов ===
       // A. Внутренние страницы (demo/admin/ask-test) — Метрика и Clarity не запускаются
@@ -90,19 +85,30 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         window._clarityDisabled = true;
       }
     </script>
-    <!-- Yandex.Metrika counter -->
+    <!-- Yandex.Metrika — lazy load: ym() stub queues calls until tag.js is fetched -->
     <script type="text/javascript" is:inline>
-      (function(m,e,t,r,i,k,a){
+      (function(m,i){
         m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
         m[i].l=1*new Date();
-        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-      })(window, document,'script','https://mc.yandex.ru/metrika/tag.js', 'ym');
-
+      })(window,'ym');
       if (!window.ym_disable96499295 && !window._ymInited) {
         window._ymInited = true;
-        ym(96499295, 'init', {clickmap:true, referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:false});
+        ym(96499295,'init',{clickmap:true,referrer:document.referrer,url:location.href,accurateTrackBounce:true,trackLinks:false});
       }
+      (function(){
+        if(window.ym_disable96499295) return;
+        var loaded=false;
+        function loadYM(){
+          if(loaded) return; loaded=true;
+          var s=document.createElement('script'); s.async=1;
+          s.src='https://mc.yandex.ru/metrika/tag.js';
+          document.head.appendChild(s);
+        }
+        var t=setTimeout(loadYM,3000);
+        ['scroll','click','touchstart','keydown'].forEach(function(e){
+          document.addEventListener(e,function(){clearTimeout(t);loadYM();},{once:true,passive:true});
+        });
+      })();
     </script>
     <noscript><div><img src="https://mc.yandex.ru/watch/96499295" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
     <!-- /Yandex.Metrika counter -->
@@ -133,20 +139,6 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         }
       })();
     </script>
-    <!-- Top.Mail.Ru counter — стандартный код (без deferred), чинит attribution VK Рекламы -->
-    <script type="text/javascript">
-      var _tmr = window._tmr || (window._tmr = []);
-      _tmr.push({id: "3755202", type: "pageView", start: (new Date()).getTime()});
-      (function (d, w, id) {
-        if (d.getElementById(id)) return;
-        var ts = d.createElement("script"); ts.type = "text/javascript"; ts.async = true; ts.id = id;
-        ts.src = "https://top-fwz1.mail.ru/js/code.js";
-        var f = function () {var s = d.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ts, s);};
-        if (w.opera == "[object Opera]") { d.addEventListener("DOMContentLoaded", f, false); } else { f(); }
-      })(document, window, "tmr-code");
-    </script>
-    <noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3755202;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
-    <!-- /Top.Mail.Ru counter -->
 
     <!-- Stage 2 scripts (Clarity + Leadfeeder) — отложены до первой интеракции или +20 сек -->
     <!-- Перф P2 2026-04-20: 8s→20s, чтобы скрипты не грузились внутри 10-сек окна Lighthouse mobile теста -->
@@ -197,13 +189,11 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         var YM_ID = 96499295;
         var _fired = new Set(JSON.parse(sessionStorage.getItem('ym_fired') || '[]'));
         function _persist() { try { sessionStorage.setItem('ym_fired', JSON.stringify([..._fired])); } catch(e){} }
-        var TMR_ID = 3755202;
-        window.trackGoal = function (id, params, value) {
+        window.trackGoal = function (id, params) {
           if (_fired.has(id)) return;
           _fired.add(id);
           _persist();
           try { if (typeof window.ym !== 'undefined') window.ym(YM_ID, 'reachGoal', id, params || {}); } catch(e){}
-          try { window._tmr = window._tmr || []; window._tmr.push({ type: 'reachGoal', id: TMR_ID, value: value || 100, goal: id }); } catch(e){}
           // Своя аналитика — параметрированные события в PostgreSQL
           if (params && Object.keys(params).length > 0) {
             try {
