@@ -269,7 +269,10 @@ const milestones = isShort
     }
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll);
-    update();
+    // Defer initial layout read — #shifts has content-visibility:auto, so calling
+    // update() synchronously breaks the skip and causes forced reflow. At scroll=0
+    // the first slide is always active, so setActive(0) is sufficient here.
+    setActive(0);
   }
   document.addEventListener('astro:page-load', initShiftTimeline);
   initShiftTimeline();
