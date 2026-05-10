@@ -96,6 +96,9 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
       </div>
     </div>
 
+    <!-- Dot-индикаторы карусели (генерируются JS) -->
+    <div data-shifts-dots class="flex justify-center gap-2 mt-3" aria-hidden="true"></div>
+
     <!-- Короткие смены — collapsible block под карточками (концепт) -->
     {shortShifts.length > 0 && <ShortShiftsBlock shifts={shortShifts} />}
   </div>
@@ -105,20 +108,18 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
   /* ── MARQUEE VIEWPORT ── */
   .shifts-marquee-vp {
     overflow: hidden;
-    /* padding чтобы тени карточек не обрезались */
     padding-top: 4px;
-    padding-bottom: 12px;
+    padding-bottom: 20px;
   }
 
   /* ── TRACK ── */
   .shifts-marquee-track {
     display: flex;
-    overflow-x: auto;          /* резервный ручной скролл */
+    overflow-x: auto;
     cursor: grab;
     user-select: none;
     -webkit-overflow-scrolling: touch;
-    scroll-behavior: auto;     /* JS управляет scrollLeft напрямую */
-    /* отступы по краям — чтобы первая/последняя карточка были видны */
+    scroll-behavior: auto;
     padding-left: 18px;
     padding-right: 18px;
   }
@@ -134,11 +135,12 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
     scroll-behavior: auto;
   }
 
-  /* ── FADE EDGES ── */
+  /* ── FADE EDGES — не заходят в padding-bottom ── */
   .shifts-mq-fade-l,
   .shifts-mq-fade-r {
     position: absolute;
-    top: 0; bottom: 0;
+    top: 0;
+    bottom: 20px; /* совпадает с padding-bottom */
     width: 48px;
     pointer-events: none;
     z-index: 2;
@@ -152,8 +154,8 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
     background: linear-gradient(to left, var(--color-page, #fff), transparent);
   }
   @media (min-width: 768px) {
-    .shifts-mq-fade-l { width: 80px; }
-    .shifts-mq-fade-r { width: 80px; }
+    .shifts-mq-fade-l,
+    .shifts-mq-fade-r { display: none; }
   }
 </style>
 
@@ -446,138 +448,63 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
     const vp    = document.querySelector<HTMLElement>('[data-shifts-marquee-vp]');
     const track = document.querySelector<HTMLElement>('[data-shifts-marquee-track]');
     if (!vp || !track) return;
-    // Guard: предотвращаем двойную инициализацию (astro:page-load + requestIdleCallback оба стреляют)
     if (track.dataset.mqReady) return;
     track.dataset.mqReady = '1';
 
-    // ── 1. Клонируем контент для бесконечной петли ──────────
-    // Берём оригинальные элементы .shifts-mq-item
     const origItems = Array.from(track.querySelectorAll<HTMLElement>('.shifts-mq-item'));
     if (!origItems.length) return;
 
-    // Клонируем дважды для плавного цикла при любой ширине
-    origItems.forEach((item) => {
-      const clone = item.cloneNode(true) as HTMLElement;
-      clone.setAttribute('aria-hidden', 'true');
-      // Убираем интерактивность клонов — клики ведут на оригиналы
-      clone.querySelectorAll('a, button').forEach((el) => {
-        (el as HTMLElement).setAttribute('tabindex', '-1');
+    // ── Dot-индикаторы ───────────────────────────────────────
+    const dotsContainer = document.querySelector<HTMLElement>('[data-shifts-dots]');
+    const dotEls: HTMLElement[] = [];
+    if (dotsContainer) {
+      dotsContainer.innerHTML = '';
+      origItems.forEach((_, i) => {
+        const d = document.createElement('span');
+        d.className = 'block h-2 rounded-full transition-all duration-300 ' + (i === 0 ? 'w-6 bg-primary' : 'w-2 bg-border');
+        d.setAttribute('aria-hidden', 'true');
+        dotsContainer.appendChild(d);
+        dotEls.push(d);
       });
-      track.appendChild(clone);
-    });
-    // ещё один набор — страховка для очень широких экранов
-    origItems.forEach((item) => {
-      const clone = item.cloneNode(true) as HTMLElement;
-      clone.setAttribute('aria-hidden', 'true');
-      clone.querySelectorAll('a, button').forEach((el) => {
-        (el as HTMLElement).setAttribute('tabindex', '-1');
-      });
-      track.appendChild(clone);
-    });
 
-    // ── 2. Вычисляем ширину одного набора ────────────────────
-    // Даём DOM settle, затем измеряем
-    let setWidth = 0;
-    const computeSetWidth = () => {
-      const gap = parseFloat(getComputedStyle(track).gap) || 12;
-      const items = Array.from(track.querySelectorAll<HTMLElement>('.shifts-mq-item'));
-      const count = origItems.length;
-      setWidth = items.slice(0, count).reduce((acc, el) => acc + el.offsetWidth + gap, 0);
-    };
+      const dotObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && (entry.intersectionRatio ?? 0) > 0.5) {
+            const idx = origItems.indexOf(entry.target as HTMLElement);
+            if (idx < 0) return;
+            dotEls.forEach((d, di) => {
+              const active = di === idx;
+              d.className = 'block h-2 rounded-full transition-all duration-300 ' + (active ? 'w-6 bg-primary' : 'w-2 bg-border');
+            });
+          }
+        });
+      }, { root: vp, threshold: 0.5 });
 
-    // ── 3. Авто-скролл ───────────────────────────────────────
-    // speed: px/frame, 0.5 ≈ 30px/sec на 60fps — медленно, но видно движение
-    const SPEED = 0.5;
-    let paused  = false;
-    let rafId   = 0;
-    let lastTs  = 0;
+      origItems.forEach((item) => dotObserver.observe(item));
+    }
 
-    const tick = (ts: number) => {
-      if (!paused) {
-        const dt = Math.min(ts - lastTs, 50); // cap lag spike
-        const step = (SPEED * dt) / (1000 / 60);
-        track.scrollLeft += step;
-        // Бесконечный цикл: сбрасываем когда прошли один полный набор
-        if (setWidth > 0 && track.scrollLeft >= setWidth) {
-          track.scrollLeft -= setWidth;
-        }
-      }
-      lastTs = ts;
-      rafId = requestAnimationFrame(tick);
-    };
-    rafId = requestAnimationFrame((ts) => { lastTs = ts; rafId = requestAnimationFrame(tick); });
+    // ── Mouse drag ───────────────────────────────────────────
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragScrollL = 0;
 
-    // Пауза когда вкладка/секция невидима
-    document.addEventListener('visibilitychange', () => {
-      paused = document.hidden;
-    });
-
-    // ── 4. Пауза при ховере (только desktop) ─────────────────
-    vp.addEventListener('mouseenter', () => { paused = true; });
-    vp.addEventListener('mouseleave', () => { paused = false; });
-
-    // ── 5. Drag (mouse + touch) ───────────────────────────────
-    let isDragging   = false;
-    let dragStartX   = 0;
-    let dragScrollL  = 0;
-    let resumeTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const stopResume = () => { if (resumeTimer) { clearTimeout(resumeTimer); resumeTimer = null; } };
-    const scheduleResume = (delay = 1200) => {
-      stopResume();
-      resumeTimer = setTimeout(() => { paused = false; }, delay);
-    };
-
-    // Mouse drag
     track.addEventListener('mousedown', (e: MouseEvent) => {
       if ((e.target as HTMLElement).closest('a, button')) return;
-      isDragging   = true;
-      dragStartX   = e.pageX - track.offsetLeft;
-      dragScrollL  = track.scrollLeft;
-      paused       = true;
-      stopResume();
+      isDragging  = true;
+      dragStartX  = e.pageX - track.offsetLeft;
+      dragScrollL = track.scrollLeft;
       track.classList.add('is-dragging');
     });
     document.addEventListener('mousemove', (e: MouseEvent) => {
       if (!isDragging) return;
       e.preventDefault();
-      const x    = e.pageX - track.offsetLeft;
-      const walk = x - dragStartX;
-      track.scrollLeft = dragScrollL - walk;
-      // Бесконечный цикл при ручном скролле
-      if (setWidth > 0) {
-        if (track.scrollLeft >= setWidth) track.scrollLeft -= setWidth;
-        if (track.scrollLeft < 0)         track.scrollLeft += setWidth;
-      }
+      track.scrollLeft = dragScrollL - (e.pageX - track.offsetLeft - dragStartX);
     });
     document.addEventListener('mouseup', () => {
       if (!isDragging) return;
       isDragging = false;
       track.classList.remove('is-dragging');
-      scheduleResume();
     });
-
-    // Touch drag (нативный скролл + infinite loop reset)
-    track.addEventListener('touchstart', () => {
-      paused = true;
-      stopResume();
-    }, { passive: true });
-    track.addEventListener('touchmove', () => {
-      if (setWidth > 0) {
-        if (track.scrollLeft >= setWidth) track.scrollLeft -= setWidth;
-        if (track.scrollLeft < 0)         track.scrollLeft += setWidth;
-      }
-    }, { passive: true });
-    track.addEventListener('touchend', () => {
-      scheduleResume(1500);
-    }, { passive: true });
-
-    // ── 6. ResizeObserver — пересчёт setWidth ─────────────────
-    const ro = new ResizeObserver(() => { computeSetWidth(); });
-    ro.observe(track);
-
-    // Первичный расчёт после paint
-    requestAnimationFrame(() => { computeSetWidth(); });
   }
 
   document.addEventListener('astro:page-load', initShiftsMarquee);

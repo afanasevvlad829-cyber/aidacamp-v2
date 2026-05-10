@@ -1,0 +1,181 @@
+/*
+ * Microinteractions — синхронизированные эффекты desktop + mobile
+ * Стратегия: :active покрывает touch и click одновременно
+ * hover используется ТОЛЬКО на @media (hover: hover) — т.е. только там где есть мышь
+ */
+
+/* ─── 1. Press-эффект: все primary CTA ──────────────────────────────────────
+ * Одно правило покрывает 40+ компонентов без изменений в каждом
+ */
+a.bg-primary,
+button.bg-primary,
+a[class*="bg-orange-"],
+button[class*="bg-orange-"] {
+  transition: transform 150ms ease, background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+a.bg-primary:active,
+button.bg-primary:active,
+a[class*="bg-orange-"]:active,
+button[class*="bg-orange-"]:active {
+  transform: scale(0.96);
+  transition-duration: 80ms;
+}
+
+/* ─── 2. Вторичные кнопки (outline, ghost, surface) ─────────────────────────
+ */
+button[class*="bg-surface"]:active,
+button[class*="bg-card"]:active,
+a[class*="border-primary"]:active,
+button[class*="border-primary"]:active,
+button[class*="rounded-xl"]:not([class*="bg-primary"]):active {
+  transform: scale(0.97);
+  transition-duration: 80ms;
+}
+
+/* ─── 3. HeroFeatures chips — усиленный tap ─────────────────────────────────
+ */
+[data-hf-key] {
+  transition: transform 150ms ease, background-color 150ms ease;
+}
+[data-hf-key]:active {
+  transform: scale(0.95);
+  background-color: rgba(255,255,255,0.1) !important;
+  transition-duration: 80ms;
+}
+
+/* ─── 4. FAQ — smooth expand через max-height ───────────────────────────────
+ * Не нужна обёртка — max-height работает напрямую
+ */
+[data-faq-answer] {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  padding-bottom: 0 !important;
+  transition:
+    max-height 320ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity    240ms ease,
+    padding-bottom 320ms ease;
+}
+[data-faq-answer].is-open {
+  max-height: 800px;   /* достаточно для любого ответа */
+  opacity: 1;
+  padding-bottom: 1rem !important;
+}
+
+/* FAQ иконка — CSS rotation через aria-expanded на родителе */
+[data-faq-icon] {
+  transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+button[aria-expanded="true"] [data-faq-icon] {
+  transform: rotate(45deg);
+}
+
+/* FAQ toggle кнопка — press */
+[data-faq-toggle]:active {
+  background-color: rgba(0,0,0,0.04);
+  transition-duration: 80ms;
+}
+
+/* ─── 5. Nav / header links ──────────────────────────────────────────────────
+ */
+header a:not([class*="bg-primary"]):active {
+  opacity: 0.65;
+  transition: opacity 80ms ease;
+}
+
+/* ─── 6. Карточки смен — hover только на мышке, active на touch ──────────────
+ * @media (hover: hover) = устройства с мышью
+ * @media (hover: none)  = touch-устройства
+ */
+@media (hover: hover) and (pointer: fine) {
+  [class*="shift-card"]:hover,
+  [data-shift-id]:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.12);
+    transition: transform 200ms ease, box-shadow 200ms ease;
+  }
+}
+@media (hover: none) {
+  [class*="shift-card"]:active,
+  [data-shift-id]:active {
+    transform: scale(0.99);
+    transition-duration: 80ms;
+  }
+}
+
+/* ─── 7. Back-to-top + sticky элементы ──────────────────────────────────────
+ */
+#back-to-top:active {
+  transform: scale(0.9);
+  transition-duration: 80ms;
+}
+
+/* ─── 8. Filter-кнопки (FAQ категории, теги) ────────────────────────────────
+ */
+[data-faq-filter-btn]:active,
+[class*="filter-btn"]:active {
+  transform: scale(0.96);
+  transition-duration: 80ms;
+}
+
+/* ─── 9. Prefers-reduced-motion — обязательно ───────────────────────────────
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  [data-faq-answer],
+  [data-faq-icon] {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}
+
+/* ─── 10. Arrow slide — глобально для всех кнопок с →  ──────────────────────
+ * Не перебивает Tailwind group-hover (у них специфичность выше)
+ */
+@media (hover: hover) and (pointer: fine) {
+  a i.bi-arrow-right,
+  button i.bi-arrow-right {
+    display: inline-block;
+    transition: transform 200ms ease;
+  }
+  a:hover i.bi-arrow-right,
+  button:hover i.bi-arrow-right {
+    transform: translateX(4px);
+  }
+}
+
+/* ─── 11. Прогресс-бар смен — animate when card enters viewport ──────────────
+ * JS добавляет .bar-filled через IntersectionObserver
+ */
+[data-shift-bar] {
+  width: 0 !important;
+  transition: width 700ms cubic-bezier(0.4, 0, 0.2, 1) 150ms;
+}
+[data-shift-bar].bar-filled {
+  width: var(--bar-pct) !important;
+}
+
+/* ─── 12. Loading spinner — кнопка Submit формы ─────────────────────────────
+ */
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
+.btn-loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.8;
+}
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin-top: -8px;
+  border: 2px solid rgba(13, 26, 43, 0.2);
+  border-top-color: rgba(13, 26, 43, 0.8);
+  border-radius: 50%;
+  animation: btn-spin 600ms linear infinite;
+}

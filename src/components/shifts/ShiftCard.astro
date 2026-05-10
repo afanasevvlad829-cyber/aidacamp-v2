@@ -112,15 +112,21 @@ const daysLeft = startDate
       <span class:list={[
         'font-medium',
         isLowAvailability ? 'text-orange-600' : 'text-emerald-700',
-      ]}>{isLowAvailability ? freeLabel : occupiedLabel}</span>
+      ]}>
+        {isLowAvailability
+          ? <Fragment>Осталось <span data-count-to={shift.free}>{shift.free}</span></Fragment>
+          : <Fragment><span data-count-to={shift.occupied}>{shift.occupied}</span> из {total}</Fragment>
+        }
+      </span>
     </div>
     <div class="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
       <div
+        data-shift-bar
         class:list={[
-          'h-full rounded-full transition-all duration-500',
+          'h-full rounded-full',
           isLowAvailability ? 'bg-primary' : 'bg-emerald-400',
         ]}
-        style={`width:${pct}%`}
+        style={`--bar-pct:${pct}%`}
       ></div>
     </div>
   </div>
@@ -160,31 +166,75 @@ const daysLeft = startDate
 </article>
 
 <script>
-  document.querySelectorAll<HTMLElement>('article[data-shift-card]').forEach((card) => {
-    let startX = 0;
-    let startY = 0;
+  function initShiftCards() {
+    // ── Click navigation ──────────────────────────────────────────────────────
+    document.querySelectorAll<HTMLElement>('article[data-shift-card]').forEach((card) => {
+      if ((card as any).__clickReady) return;
+      (card as any).__clickReady = true;
 
-    card.addEventListener('pointerdown', (e) => {
-      startX = e.clientX;
-      startY = e.clientY;
+      let startX = 0;
+      let startY = 0;
+
+      card.addEventListener('pointerdown', (e) => {
+        startX = e.clientX;
+        startY = e.clientY;
+      });
+
+      card.addEventListener('click', (e) => {
+        if ((e.target as Element).closest('button, a')) return;
+        const dx = Math.abs(e.clientX - startX);
+        const dy = Math.abs(e.clientY - startY);
+        if (dx > 8 || dy > 8) return;
+        const bookBtn = card.querySelector<HTMLButtonElement>('[data-shift-book]');
+        const infoLink = card.querySelector<HTMLAnchorElement>('a[href^="/shifts/"]');
+        const shiftId = bookBtn?.dataset.shiftBook;
+        if (shiftId) {
+          window.location.href = `/shifts/${shiftId}/`;
+        } else if (infoLink) {
+          window.location.href = infoLink.href;
+        }
+      });
     });
 
-    card.addEventListener('click', (e) => {
-      // Игнорируем клики внутри кнопок и ссылок
-      if ((e.target as Element).closest('button, a')) return;
-      // Игнорируем свайп
-      const dx = Math.abs(e.clientX - startX);
-      const dy = Math.abs(e.clientY - startY);
-      if (dx > 8 || dy > 8) return;
-      // Click на карточку = всегда ведёт на страницу смены
-      const bookBtn = card.querySelector<HTMLButtonElement>('[data-shift-book]');
-      const infoLink = card.querySelector<HTMLAnchorElement>('a[href^="/shifts/"]');
-      const shiftId = bookBtn?.dataset.shiftBook;
-      if (shiftId) {
-        window.location.href = `/shifts/${shiftId}/`;
-      } else if (infoLink) {
-        window.location.href = infoLink.href;
+    // ── Progress-bar + counter animate on scroll ──────────────────────────────
+    if ((window as any).__shiftBarObserverReady) return;
+    (window as any).__shiftBarObserverReady = true;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.querySelectorAll<HTMLElement>('[data-shift-bar]').forEach(b => b.classList.add('bar-filled'));
+      return;
+    }
+
+    function animateCounter(el: HTMLElement) {
+      const target = parseInt(el.dataset.countTo || '0', 10);
+      if (!target) return;
+      const duration = 900;
+      const start = performance.now();
+      function tick(now: number) {
+        const t = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - t, 3);
+        el.textContent = String(Math.round(eased * target));
+        if (t < 1) requestAnimationFrame(tick);
       }
-    });
-  });
+      requestAnimationFrame(tick);
+    }
+
+    const barObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const card = entry.target as HTMLElement;
+          card.querySelectorAll<HTMLElement>('[data-shift-bar]').forEach(b => b.classList.add('bar-filled'));
+          card.querySelectorAll<HTMLElement>('[data-count-to]').forEach(animateCounter);
+          barObserver.unobserve(card);
+        });
+      },
+      { threshold: 0.25 }
+    );
+
+    document.querySelectorAll<HTMLElement>('article[data-shift-card]').forEach(card => barObserver.observe(card));
+  }
+
+  document.addEventListener('astro:page-load', initShiftCards);
+  if (document.readyState !== 'loading') initShiftCards();
 </script>

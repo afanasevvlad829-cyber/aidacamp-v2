@@ -1,42 +1,64 @@
 ---
 /**
  * HeroFeatures — горизонтальная полоска чипов с фактами о смене.
- * Концепт: ВОЗРАСТ / ГРУППЫ / ОТ МОСКВЫ / ОПЫТ / НОУТБУК / ГАРАНТИЯ / ЛИЦЕНЗИЯ / МЕДСЕСТРА / ПИТАНИЕ.
- *
- * Mobile: horizontal scroll-snap (свайп пальцем)
- * Desktop: full row (или wrap если не поместятся)
- *
- * Используется в hero (Mobile.astro + Desktop.astro) под big call.
+ * Авто-прокрутка (marquee/ticker). Тап → bottom-sheet с пояснением.
  */
 const features = [
-  { label: 'Возраст', value: '7–15 лет' },
-  { label: 'Группы', value: 'до 8 чел.' },
-  { label: 'От Москвы', value: '1 час' },
-  { label: 'Опыт', value: 'не нужен' },
-  { label: 'Ноутбук', value: 'не нужен' },
-  { label: 'Возврат', value: '50% за 3 дня', accent: true },
-  { label: 'Лицензия', value: '✓ Минобрнауки', accent: true },
-  { label: 'Медсестра', value: '24/7', accent: true },
-  { label: 'Питание', value: '5-разовое' },
+  { label: 'Возраст',    value: '7–15 лет',       key: 'age',        accent: false },
+  { label: 'Группы',     value: 'до 8 чел.',       key: 'groups',     accent: false },
+  { label: 'От Москвы',  value: '66 км',             key: 'distance',   accent: false },
+  { label: 'Опыт',       value: 'не нужен',         key: 'experience', accent: false },
+  { label: 'Ноутбук',    value: 'не нужен',         key: 'laptop',     accent: false },
+  { label: 'Возврат',    value: '50% за 3 дня',     key: 'refund',     accent: true  },
+  { label: 'Лицензия',   value: '✓ Минобрнауки',    key: 'license',    accent: true  },
+  { label: 'Медсестра',  value: '24/7',             key: 'medical',    accent: true  },
+  { label: 'Питание',    value: '5-разовое',        key: 'food',       accent: false },
 ];
 ---
 
-<div class="hero-features relative" aria-label="Ключевые факты о лагере">
-  <!-- Левая тень-затухание (намёк что есть скролл) -->
-  <div class="hero-features-fade-l hidden md:block" aria-hidden="true"></div>
-  <!-- Правая тень-затухание -->
+<div class="hero-features relative overflow-hidden" aria-label="Ключевые факты о лагере">
+  <!-- fade edges -->
+  <div class="hero-features-fade-l" aria-hidden="true"></div>
   <div class="hero-features-fade-r" aria-hidden="true"></div>
 
-  <ul class="hero-features-track flex gap-0 overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-    {features.map((f) => (
-      <li class="hero-features-chip flex flex-col justify-center shrink-0 snap-start min-w-[160px] md:min-w-[180px] px-5 py-4 md:px-6 md:py-5 border-r border-white/10 last:border-r-0">
-        <span class="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.16em] text-white/72">{f.label}</span>
-        <span class={`mt-1.5 text-[17px] md:text-[19px] font-extrabold leading-[1.15] tracking-[-0.01em] ${f.accent ? 'text-emerald-300' : 'text-white'}`}>
-          {f.value}
-        </span>
-      </li>
-    ))}
-  </ul>
+  <div class="hero-features-viewport">
+    <ul id="hf-track" class="hero-features-track" role="list">
+      {features.map((f) => (
+        <li class="hero-features-chip">
+          <button
+            type="button"
+            data-hf-key={f.key}
+            class="flex flex-col justify-center min-w-[155px] md:min-w-[180px] h-full px-5 py-4 md:px-6 md:py-5 text-left hover:bg-white/5 active:bg-white/8 transition-colors duration-150"
+            aria-label={`${f.label}: ${f.value}. Нажмите для подробностей`}
+          >
+            <span class="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.16em] text-white/50">{f.label}</span>
+            <span class={`mt-1.5 text-[17px] md:text-[19px] font-extrabold leading-[1.15] tracking-[-0.01em] ${f.accent ? 'text-emerald-300' : 'text-white'}`}>
+              {f.value}
+            </span>
+            <span class="mt-1 text-[9px] text-white/25 uppercase tracking-[0.1em]">подробнее</span>
+          </button>
+          <span class="hf-sep" aria-hidden="true"></span>
+        </li>
+      ))}
+    </ul>
+  </div>
+</div>
+
+<!-- Bottom-sheet модалка -->
+<div id="hf-modal" role="dialog" aria-modal="true" aria-labelledby="hf-modal-title"
+  class="fixed inset-0 z-[200] flex items-end justify-center opacity-0 pointer-events-none transition-opacity duration-200">
+  <div class="absolute inset-0 bg-black/50" id="hf-backdrop"></div>
+  <div id="hf-sheet"
+    class="relative w-full max-w-lg bg-card rounded-t-2xl shadow-[0_-8px_40px_rgba(0,0,0,0.25)] px-5 pt-4 pb-8 translate-y-4">
+    <div class="mx-auto mb-4 h-1 w-10 rounded-full bg-border"></div>
+    <h3 id="hf-modal-title" class="text-[18px] font-bold text-body leading-[1.3]"></h3>
+    <p id="hf-modal-body" class="mt-2 text-[15px] leading-[1.65] text-body-muted"></p>
+    <button id="hf-modal-close" type="button"
+      class="mt-5 w-full rounded-xl bg-surface py-3 text-[14px] font-semibold text-body-muted hover:bg-surface-alt transition-colors"
+      aria-label="Закрыть">
+      Закрыть
+    </button>
+  </div>
 </div>
 
 <style>
@@ -44,109 +66,208 @@ const features = [
     background: rgba(13, 26, 43, 0.78);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border-top: 1px solid rgba(255,255,255,0.08);
     border-bottom: 1px solid rgba(255,255,255,0.08);
   }
+
+  /* Viewport — изолированный GPU-слой, скрывает overflow */
+  .hero-features-viewport {
+    overflow: hidden;
+    width: 100%;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+
+  /* Track — ширина по контенту, анимируется через translateX */
+  .hero-features-track {
+    display: flex;
+    width: max-content;
+    will-change: transform;
+  }
+
+  /* Чип — flex-контейнер чтобы разделитель центрировался */
+  .hero-features-chip {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Разделитель — вертикальная линия 28px по центру */
+  .hf-sep {
+    display: block;
+    width: 1px;
+    height: 28px;
+    flex-shrink: 0;
+    align-self: center;
+    background: rgba(255,255,255,0.14);
+  }
+  .hero-features-chip:last-child .hf-sep { display: none; }
+
   .hero-features-fade-l,
   .hero-features-fade-r {
     position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 48px;
+    top: 0; bottom: 0;
+    width: 64px;
     pointer-events: none;
     z-index: 2;
   }
   .hero-features-fade-l {
     left: 0;
-    background: linear-gradient(to right, rgba(13,26,43,0.95), transparent);
+    background: linear-gradient(to right, rgba(13,26,43,0.96), transparent);
   }
   .hero-features-fade-r {
     right: 0;
-    background: linear-gradient(to left, rgba(13,26,43,0.95), transparent);
+    background: linear-gradient(to left, rgba(13,26,43,0.96), transparent);
   }
-  .hero-features-track.dragging {
-    scroll-behavior: auto; /* отключаем smooth-scroll при драгинге */
-    cursor: grabbing;
+
+  /* Ссылки внутри модалки */
+  .hf-link {
+    display: inline-block;
+    margin-top: 10px;
+    color: var(--color-primary, #ec7c00);
+    text-decoration: underline;
+    font-weight: 600;
+    font-size: 14px;
   }
-  /* На очень широких экранах содержимое центрируется и fade не нужен */
-  @media (min-width: 1280px) {
-    .hero-features-track { justify-content: center; }
+
+  /* Bottom-sheet: закрытие — быстрое ease-in, открытие — spring */
+  #hf-sheet {
+    transition: transform 220ms ease-in;
+  }
+  #hf-sheet.hf-opening {
+    transition: transform 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* CSS marquee animation — работает на iOS Safari */
+  @keyframes hf-marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(var(--hf-half, -50%)); }
+  }
+
+  .hero-features-track.hf-animating {
+    animation: hf-marquee var(--hf-duration, 30s) linear infinite;
+  }
+  .hero-features-track.hf-paused {
+    animation-play-state: paused;
   }
 </style>
 
 <script>
-  function initHeroFeaturesDrag() {
-    const track = document.querySelector('.hero-features-track');
-    if (!track) return;
+(function () {
+  const FEATURES: Record<string, { title: string; body: string }> = {
+    age:        { title: 'Возраст участников: 7–15 лет',  body: 'В каждой смене — мальчики и девочки разного возраста, поэтому каждый найдёт себе сверстников. Внутри смены дети распределяются по возрастным группам: 7–9, 10–12 и 13–15 лет.' },
+    groups:     { title: 'Группы до 8 человек',           body: 'Это принципиальное решение: 8 человек — оптимальное количество, при котором наставник успевает уделить внимание каждому. Мы не работаем в режиме предзаписанных уроков — всё живое, с обратной связью здесь и сейчас.' },
+    distance:   { title: '66 км от Москвы',               body: 'Лагерь расположен в 66 км по Калужскому шоссе. Трансфер — по запросу, организуем от удобного места сбора. <a href="/o-lagere#adres" class="hf-link">Точный адрес и схема проезда →</a>' },
+    experience: { title: 'Опыт программирования не нужен', body: 'Программа рассчитана на полных новичков. Начинаем с нуля: Scratch, Python, основы веб. Если ребёнок уже умеет кодить — подберём задачи сложнее.' },
+    laptop:     { title: 'Ноутбук не нужен',              body: 'Все компьютеры предоставляются лагерем. Привозить своё устройство не нужно — только зарядку для телефона и хорошее настроение.' },
+    refund:     { title: 'Возврат 50% за первые 3 дня',   body: 'Если в первые три дня смены что-то не понравилось — вернём 50% стоимости без лишних вопросов. Обратите внимание: условие не распространяется на короткие смены (7 дней и менее).' },
+    license:    { title: 'Образовательная лицензия',      body: 'АйДаКемп работает по лицензии Министерства образования и науки РФ № Л035-01298-77/01082973. Это позволяет оформить налоговый вычет 13% — от 2 800 до 5 434 ₽ в зависимости от смены. <a href="/detskiy-lager-oficialnyj" class="hf-link">Подробнее о документах →</a>' },
+    medical:    { title: 'Медицинская помощь 24/7',       body: 'В лагере круглосуточно дежурит медсестра. При поступлении просим указать хронические заболевания и аллергии в анкете. <a href="/stati/bezopasnost-v-detskom-lagere" class="hf-link">Как мы заботимся о безопасности →</a>' },
+    food:       { title: '5-разовое питание',             body: 'Завтрак, второй завтрак, обед, полдник и ужин. Вегетарианское меню — по запросу. Питание включено в стоимость смены.' },
+  };
 
-    let isDown = false;
-    let startX = 0;
-    let scrollLeft = 0;
-    let velocity = 0;
-    let lastX = 0;
-    let lastTime = 0;
+  const modal    = document.getElementById('hf-modal');
+  const backdrop = document.getElementById('hf-backdrop');
+  const sheet    = document.getElementById('hf-sheet');
+  const titleEl  = document.getElementById('hf-modal-title');
+  const bodyEl   = document.getElementById('hf-modal-body');
+  const closeBtn = document.getElementById('hf-modal-close');
 
-    const onMouseDown = (e: MouseEvent) => {
-      if ((e.target as HTMLElement).closest('a, button')) return; // не драгим если клик по ссылке/кнопке
-
-      isDown = true;
-      startX = e.pageX - track.offsetLeft;
-      scrollLeft = track.scrollLeft;
-      lastX = e.pageX;
-      lastTime = Date.now();
-      track.style.cursor = 'grabbing';
-    };
-
-    const onMouseMove = (e: MouseEvent) => {
-      if (!isDown) return;
-
-      e.preventDefault();
-      const x = e.pageX - track.offsetLeft;
-      const walk = (x - startX) * 1.2; // усиливаем перемещение для удобства
-
-      // считаем скорость для инерции
-      const now = Date.now();
-      const dt = now - lastTime;
-      if (dt > 0) {
-        velocity = (e.pageX - lastX) / dt;
-      }
-      lastX = e.pageX;
-      lastTime = now;
-
-      track.scrollLeft = scrollLeft - walk;
-    };
-
-    const onMouseUp = () => {
-      if (!isDown) return;
-      isDown = false;
-      track.style.cursor = 'grab';
-
-      // инерционный скролл (momentum)
-      let currentVelocity = velocity;
-      const animate = () => {
-        if (Math.abs(currentVelocity) > 0.1) {
-          track.scrollLeft -= currentVelocity * 15;
-          currentVelocity *= 0.95; // затухание
-          requestAnimationFrame(animate);
-        }
-      };
-      animate();
-    };
-
-    track.addEventListener('mousedown', onMouseDown);
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-
-    // Чтобы текст не селектировался при драгинге
-    track.style.userSelect = 'none';
-    track.style.cursor = 'grab';
+  function openModal(key: string) {
+    const data = FEATURES[key];
+    if (!data || !modal || !sheet || !titleEl || !bodyEl) return;
+    titleEl.textContent = data.title;
+    bodyEl.innerHTML    = data.body;
+    modal.classList.remove('pointer-events-none', 'opacity-0');
+    modal.classList.add('opacity-100');
+    sheet.classList.add('hf-opening');
+    sheet.classList.remove('translate-y-4');
+    sheet.addEventListener('transitionend', () => sheet.classList.remove('hf-opening'), { once: true });
+    document.body.style.overflow = 'hidden';
   }
 
-  // Инициализируем при загрузке — defer drag init, не блокируем LCP
-  document.addEventListener('astro:page-load', initHeroFeaturesDrag);
-  if ('requestIdleCallback' in window) {
-    requestIdleCallback(initHeroFeaturesDrag, { timeout: 1000 });
-  } else {
-    setTimeout(initHeroFeaturesDrag, 100);
+  function closeModal() {
+    if (!modal || !sheet) return;
+    sheet.classList.remove('hf-opening');
+    modal.classList.add('opacity-0');
+    modal.classList.remove('opacity-100');
+    sheet.classList.add('translate-y-4');
+    document.body.style.overflow = '';
+    setTimeout(() => modal.classList.add('pointer-events-none'), 220);
   }
+
+  backdrop?.addEventListener('click', closeModal);
+  closeBtn?.addEventListener('click', closeModal);
+  document.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Escape') closeModal(); });
+
+  // ── CSS-transform marquee (iOS Safari compatible) ──────────────
+  function initHeroFeaturesMarquee() {
+    const track = document.getElementById('hf-track') as HTMLElement | null;
+    if (!track || (track as any).__hfReady) return;
+    (track as any).__hfReady = true;
+
+    // Клонируем для бесшовного цикла
+    const origItems = Array.from(track.querySelectorAll<HTMLLIElement>('li'));
+    origItems.forEach(li => {
+      const clone = li.cloneNode(true) as HTMLLIElement;
+      clone.setAttribute('aria-hidden', 'true');
+      clone.querySelectorAll('[data-hf-key]').forEach(btn => (btn as HTMLElement).setAttribute('tabindex', '-1'));
+      track.appendChild(clone);
+    });
+
+    // Клики — делегирование на трек (работает и для клонов)
+    let touchMoved = false;
+    track.addEventListener('click', (e: MouseEvent) => {
+      if (touchMoved) return;
+      const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-hf-key]');
+      if (btn) openModal(btn.getAttribute('data-hf-key')!);
+    });
+
+    // Ширина одной половины (оригиналы) в px
+    function getHalfPx() {
+      return track.scrollWidth / 2;
+    }
+
+    // Длительность: px / скорость (px/s = 60)
+    const SPEED_PX_S = 60;
+    function updateDuration() {
+      const half = getHalfPx();
+      const dur = half / SPEED_PX_S;
+      track.style.setProperty('--hf-duration', `${dur}s`);
+      track.style.setProperty('--hf-half', `-${half}px`);
+    }
+
+    updateDuration();
+    track.classList.add('hf-animating');
+
+    // Пауза на hover / touch
+    const vp = track.parentElement as HTMLElement;
+    vp.addEventListener('mouseenter', () => track.classList.add('hf-paused'));
+    vp.addEventListener('mouseleave', () => track.classList.remove('hf-paused'));
+
+    // Touch: пауза при касании, возобновление при отпускании
+    vp.addEventListener('touchstart', () => {
+      touchMoved = false;
+      track.classList.add('hf-paused');
+    }, { passive: true });
+    vp.addEventListener('touchmove', () => { touchMoved = true; }, { passive: true });
+    vp.addEventListener('touchend', () => {
+      setTimeout(() => {
+        track.classList.remove('hf-paused');
+        touchMoved = false;
+      }, 800);
+    }, { passive: true });
+
+    // Пересчёт при resize
+    window.addEventListener('resize', () => {
+      track.classList.remove('hf-animating');
+      updateDuration();
+      // Форс reflow
+      void track.offsetWidth;
+      track.classList.add('hf-animating');
+    });
+  }
+
+  document.addEventListener('astro:page-load', initHeroFeaturesMarquee);
+  if (document.readyState !== 'loading') setTimeout(initHeroFeaturesMarquee, 100);
+})();
 </script>
