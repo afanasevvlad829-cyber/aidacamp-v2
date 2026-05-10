@@ -74,7 +74,9 @@ export default defineConfig({
     },
   },
   build: {
-    // Инлайним ВСЕ CSS в <style> в HTML — убирает render-blocking external stylesheet fetch (~400ms)
-    inlineStylesheets: 'always',
+    // CSS вынесен в отдельный файл (auto threshold 4KB): HTML сжимается с 139KB до ~70KB gzip.
+    // Это освобождает H2-соединение на ~450ms раньше → image first byte 2737ms→~2267ms → LCP 2.9s→~2.4s.
+    // С H2+preload CSS грузится параллельно с HTML — штрафа в 400ms нет.
+    inlineStylesheets: 'auto',
   },
 });
