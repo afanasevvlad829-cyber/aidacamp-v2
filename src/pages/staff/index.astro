@@ -1155,7 +1155,7 @@ export const prerender = true;
         obRole = btn.dataset.role;
         obQIdx = 0;
         logAction({ role: obRole, action: 'onboarding_start' });
-        renderObQuestion();
+        renderObRules();
       });
     });
   }
@@ -1172,14 +1172,14 @@ export const prerender = true;
 
     card.innerHTML = `
       <div class="ob-step-indicator">${dots}</div>
-      <p class="ob-role-title">${ROLE_LABELS[obRole].label} · вопрос ${obQIdx + 1} из ${total}</p>
+      <p class="ob-role-title">${ROLE_LABELS[obRole].label} · проверка · вопрос ${obQIdx + 1} из ${total}</p>
       <div class="ob-question">${q.q}</div>
       <div class="ob-answers">
         ${q.answers.map((a, i) => `<div class="ob-answer" data-idx="${i}">${a}</div>`).join('')}
       </div>
       <div class="ob-feedback" id="ob-feedback"></div>
       <button class="ob-next-btn" id="ob-next">
-        ${obQIdx < total - 1 ? 'Следующий вопрос <i class="bi bi-arrow-right"></i>' : 'Перейти к правилам <i class="bi bi-arrow-right"></i>'}
+        ${obQIdx < total - 1 ? 'Следующий вопрос <i class="bi bi-arrow-right"></i>' : 'К документам <i class="bi bi-arrow-right"></i>'}
       </button>
     `;
 
@@ -1211,7 +1211,10 @@ export const prerender = true;
       if (obQIdx < QUIZ[obRole].length) {
         renderObQuestion();
       } else {
-        renderObRules();
+        const ob = { done: true, role: obRole, ts: Date.now() };
+        localStorage.setItem(OB_KEY, JSON.stringify(ob));
+        logAction({ role: obRole, action: 'onboarding_complete' });
+        enterPortal(obRole);
       }
     });
   }
@@ -1229,8 +1232,8 @@ export const prerender = true;
     }
 
     card.innerHTML = `
-      <p class="ob-role-title"><i class="bi bi-check2-circle"></i> Правила смены</p>
-      <div class="ob-question">Отметьте каждый пункт — я понимаю и принимаю:</div>
+      <p class="ob-role-title"><i class="bi bi-info-circle"></i> Основные моменты — интро</p>
+      <div class="ob-question">Прочитайте и отметьте каждый пункт. Дальше — короткий тест на эти моменты:</div>
       <div class="ob-rules-list">
         ${rules.map((r, i) => `
           <div class="ob-rule-item" data-i="${i}">
@@ -1240,7 +1243,7 @@ export const prerender = true;
         `).join('')}
       </div>
       <button class="ob-next-btn" id="ob-done-btn" style="opacity:.5" disabled>
-        Начать работу <i class="bi bi-arrow-right"></i>
+        К тесту <i class="bi bi-arrow-right"></i>
       </button>
     `;
 
@@ -1256,10 +1259,9 @@ export const prerender = true;
     });
 
     document.getElementById('ob-done-btn').addEventListener('click', () => {
-      const ob = { done: true, role: obRole, ts: Date.now() };
-      localStorage.setItem(OB_KEY, JSON.stringify(ob));
-      logAction({ role: obRole, action: 'onboarding_complete' });
-      enterPortal(obRole);
+      logAction({ role: obRole, action: 'intro_complete' });
+      obQIdx = 0;
+      renderObQuestion();
     });
   }
 
