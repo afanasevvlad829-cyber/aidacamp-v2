@@ -358,7 +358,12 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
   }
 
   document.addEventListener('astro:page-load', initShifts);
-  initShifts();
+  // Defer — Shifts ниже fold, не блокируем LCP
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(initShifts, { timeout: 2000 });
+  } else {
+    setTimeout(initShifts, 200);
+  }
 
   // === AGE PERSONALIZATION: показываем счётчик ровесников ===
   function showPeerCounts(age: string) {
