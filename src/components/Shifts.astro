@@ -17,7 +17,7 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
 <section id="shifts" class="mx-auto max-w-[1312px] px-[2px] pt-10 md:px-4">
   <div class="p-[18px]">
     <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 mb-2">Лето 2026</p>
-    <div class="flex items-center gap-2 mb-1"><div class="w-1 h-5 rounded-full bg-orange-500 shrink-0"></div><h2 class="text-[24px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[30px]">Свободные места</h2></div>
+    <div class="flex items-center gap-2 mb-1"><div class="w-1 h-5 rounded-full bg-primary shrink-0"></div><h2 class="text-[24px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[30px]">Свободные места</h2></div>
     <p class="mt-1 text-[15px] md:text-[14px] text-body-muted">Данные обновляются в реальном времени. Во всех ценах: питание, проживание, программа.</p>
 
     <!-- «Едете с другом»: бейджи скидок 5-я/10-я + мерч в одном раскрывающемся блоке -->
@@ -65,54 +65,97 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
       </div>
     </div>
 
-    <!-- Mobile: tab nav + horizontal carousel -->
-    <div class="mt-4 md:hidden">
-      <div class="-mx-[2px] px-[2px] mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" data-shifts-carousel>
+    <!-- ═══ INFINITE MARQUEE — mobile + desktop ═══ -->
+    <!-- Viewport: overflow hidden + fade edges -->
+    <div class="shifts-marquee-vp mt-4 -mx-[18px] relative" data-shifts-marquee-vp aria-label="Карусель смен">
+      <!-- fade left / right -->
+      <div class="shifts-mq-fade-l" aria-hidden="true"></div>
+      <div class="shifts-mq-fade-r" aria-hidden="true"></div>
+
+      <!-- Track: карточки в ряд, JS дублирует для бесконечной петли -->
+      <div
+        class="shifts-marquee-track flex gap-3 md:gap-4 py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        data-shifts-marquee-track
+      >
         {summerShifts.map((shift) => (
-          <ShiftCard shift={shift} variant="mobile" />
+          <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-[380px]">
+            <ShiftCard shift={shift} variant="desktop" />
+          </div>
         ))}
         {augustShifts.length === 2 && (
-          <ShiftCardCombined
-            shifts={augustShifts}
-            variant="mobile"
-            monthLabel="Август"
-            combinedDates="3 авг — 26 авг"
-            combinedDuration="Смены 3 и 4"
-          />
+          <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-[460px]">
+            <ShiftCardCombined
+              shifts={augustShifts}
+              variant="desktop"
+              monthLabel="Август"
+              combinedDates="3 авг — 26 авг"
+              combinedDuration="Смены 3 и 4"
+            />
+          </div>
         )}
       </div>
-      <!-- Dots indicator -->
-      <div class="mt-4 flex justify-center items-center gap-2" data-shifts-dots role="group" aria-label="Навигация по сменам">
-        {[0, 1, 2].map((i) => (
-          <span
-            class={`h-2 rounded-full transition-all duration-200 ${i === 0 ? 'w-6 bg-primary-dark' : 'w-2 bg-border'}`}
-            data-shifts-dot={i}
-            aria-current={i === 0 ? 'true' : 'false'}
-          ></span>
-        ))}
-      </div>
-    </div>
-
-    <!-- Desktop: 3 карточки в ряд (Май-Июнь, Июнь, Август объединённый). Короткие смены — отдельный collapsible block ниже. -->
-    <div class="mt-6 hidden md:grid md:grid-cols-3 md:gap-4">
-      {summerShifts.map((shift) => (
-        <ShiftCard shift={shift} variant="desktop" />
-      ))}
-      {augustShifts.length === 2 && (
-        <ShiftCardCombined
-          shifts={augustShifts}
-          variant="desktop"
-          monthLabel="Август"
-          combinedDates="3 авг — 26 авг"
-          combinedDuration="Смены 3 и 4"
-        />
-      )}
     </div>
 
     <!-- Короткие смены — collapsible block под карточками (концепт) -->
     {shortShifts.length > 0 && <ShortShiftsBlock shifts={shortShifts} />}
   </div>
 </section>
+
+<style>
+  /* ── MARQUEE VIEWPORT ── */
+  .shifts-marquee-vp {
+    overflow: hidden;
+    /* padding чтобы тени карточек не обрезались */
+    padding-top: 4px;
+    padding-bottom: 12px;
+  }
+
+  /* ── TRACK ── */
+  .shifts-marquee-track {
+    display: flex;
+    overflow-x: auto;          /* резервный ручной скролл */
+    cursor: grab;
+    user-select: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: auto;     /* JS управляет scrollLeft напрямую */
+    /* отступы по краям — чтобы первая/последняя карточка были видны */
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  @media (min-width: 768px) {
+    .shifts-marquee-track {
+      padding-left: 0;
+      padding-right: 0;
+    }
+  }
+
+  .shifts-marquee-track.is-dragging {
+    cursor: grabbing;
+    scroll-behavior: auto;
+  }
+
+  /* ── FADE EDGES ── */
+  .shifts-mq-fade-l,
+  .shifts-mq-fade-r {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 48px;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .shifts-mq-fade-l {
+    left: 0;
+    background: linear-gradient(to right, var(--color-page, #fff), transparent);
+  }
+  .shifts-mq-fade-r {
+    right: 0;
+    background: linear-gradient(to left, var(--color-page, #fff), transparent);
+  }
+  @media (min-width: 768px) {
+    .shifts-mq-fade-l { width: 80px; }
+    .shifts-mq-fade-r { width: 80px; }
+  }
+</style>
 
 <ShiftBookModal />
 <ShiftCalendarModal />
@@ -394,5 +437,150 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
     requestIdleCallback(initShiftAgePersonalization, { timeout: 2000 });
   } else {
     setTimeout(initShiftAgePersonalization, 200);
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // INFINITE MARQUEE
+  // ═══════════════════════════════════════════════════════════
+  function initShiftsMarquee() {
+    const vp    = document.querySelector<HTMLElement>('[data-shifts-marquee-vp]');
+    const track = document.querySelector<HTMLElement>('[data-shifts-marquee-track]');
+    if (!vp || !track) return;
+
+    // ── 1. Клонируем контент для бесконечной петли ──────────
+    // Берём оригинальные элементы .shifts-mq-item
+    const origItems = Array.from(track.querySelectorAll<HTMLElement>('.shifts-mq-item'));
+    if (!origItems.length) return;
+
+    // Клонируем дважды для плавного цикла при любой ширине
+    origItems.forEach((item) => {
+      const clone = item.cloneNode(true) as HTMLElement;
+      clone.setAttribute('aria-hidden', 'true');
+      // Убираем интерактивность клонов — клики ведут на оригиналы
+      clone.querySelectorAll('a, button').forEach((el) => {
+        (el as HTMLElement).setAttribute('tabindex', '-1');
+      });
+      track.appendChild(clone);
+    });
+    // ещё один набор — страховка для очень широких экранов
+    origItems.forEach((item) => {
+      const clone = item.cloneNode(true) as HTMLElement;
+      clone.setAttribute('aria-hidden', 'true');
+      clone.querySelectorAll('a, button').forEach((el) => {
+        (el as HTMLElement).setAttribute('tabindex', '-1');
+      });
+      track.appendChild(clone);
+    });
+
+    // ── 2. Вычисляем ширину одного набора ────────────────────
+    // Даём DOM settle, затем измеряем
+    let setWidth = 0;
+    const computeSetWidth = () => {
+      const gap = parseFloat(getComputedStyle(track).gap) || 12;
+      const items = Array.from(track.querySelectorAll<HTMLElement>('.shifts-mq-item'));
+      const count = origItems.length;
+      setWidth = items.slice(0, count).reduce((acc, el) => acc + el.offsetWidth + gap, 0);
+    };
+
+    // ── 3. Авто-скролл ───────────────────────────────────────
+    // speed: px/frame, 0.5 ≈ 30px/sec на 60fps — медленно, но видно движение
+    const SPEED = 0.5;
+    let paused  = false;
+    let rafId   = 0;
+    let lastTs  = 0;
+
+    const tick = (ts: number) => {
+      if (!paused) {
+        const dt = Math.min(ts - lastTs, 50); // cap lag spike
+        const step = (SPEED * dt) / (1000 / 60);
+        track.scrollLeft += step;
+        // Бесконечный цикл: сбрасываем когда прошли один полный набор
+        if (setWidth > 0 && track.scrollLeft >= setWidth) {
+          track.scrollLeft -= setWidth;
+        }
+      }
+      lastTs = ts;
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame((ts) => { lastTs = ts; rafId = requestAnimationFrame(tick); });
+
+    // Пауза когда вкладка/секция невидима
+    document.addEventListener('visibilitychange', () => {
+      paused = document.hidden;
+    });
+
+    // ── 4. Пауза при ховере (только desktop) ─────────────────
+    vp.addEventListener('mouseenter', () => { paused = true; });
+    vp.addEventListener('mouseleave', () => { paused = false; });
+
+    // ── 5. Drag (mouse + touch) ───────────────────────────────
+    let isDragging   = false;
+    let dragStartX   = 0;
+    let dragScrollL  = 0;
+    let resumeTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const stopResume = () => { if (resumeTimer) { clearTimeout(resumeTimer); resumeTimer = null; } };
+    const scheduleResume = (delay = 1200) => {
+      stopResume();
+      resumeTimer = setTimeout(() => { paused = false; }, delay);
+    };
+
+    // Mouse drag
+    track.addEventListener('mousedown', (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest('a, button')) return;
+      isDragging   = true;
+      dragStartX   = e.pageX - track.offsetLeft;
+      dragScrollL  = track.scrollLeft;
+      paused       = true;
+      stopResume();
+      track.classList.add('is-dragging');
+    });
+    document.addEventListener('mousemove', (e: MouseEvent) => {
+      if (!isDragging) return;
+      e.preventDefault();
+      const x    = e.pageX - track.offsetLeft;
+      const walk = x - dragStartX;
+      track.scrollLeft = dragScrollL - walk;
+      // Бесконечный цикл при ручном скролле
+      if (setWidth > 0) {
+        if (track.scrollLeft >= setWidth) track.scrollLeft -= setWidth;
+        if (track.scrollLeft < 0)         track.scrollLeft += setWidth;
+      }
+    });
+    document.addEventListener('mouseup', () => {
+      if (!isDragging) return;
+      isDragging = false;
+      track.classList.remove('is-dragging');
+      scheduleResume();
+    });
+
+    // Touch drag (нативный скролл + infinite loop reset)
+    track.addEventListener('touchstart', () => {
+      paused = true;
+      stopResume();
+    }, { passive: true });
+    track.addEventListener('touchmove', () => {
+      if (setWidth > 0) {
+        if (track.scrollLeft >= setWidth) track.scrollLeft -= setWidth;
+        if (track.scrollLeft < 0)         track.scrollLeft += setWidth;
+      }
+    }, { passive: true });
+    track.addEventListener('touchend', () => {
+      scheduleResume(1500);
+    }, { passive: true });
+
+    // ── 6. ResizeObserver — пересчёт setWidth ─────────────────
+    const ro = new ResizeObserver(() => { computeSetWidth(); });
+    ro.observe(track);
+
+    // Первичный расчёт после paint
+    requestAnimationFrame(() => { computeSetWidth(); });
+  }
+
+  document.addEventListener('astro:page-load', initShiftsMarquee);
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(initShiftsMarquee, { timeout: 1500 });
+  } else {
+    setTimeout(initShiftsMarquee, 150);
   }
 </script>
