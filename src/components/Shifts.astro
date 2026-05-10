@@ -446,6 +446,9 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
     const vp    = document.querySelector<HTMLElement>('[data-shifts-marquee-vp]');
     const track = document.querySelector<HTMLElement>('[data-shifts-marquee-track]');
     if (!vp || !track) return;
+    // Guard: предотвращаем двойную инициализацию (astro:page-load + requestIdleCallback оба стреляют)
+    if (track.dataset.mqReady) return;
+    track.dataset.mqReady = '1';
 
     // ── 1. Клонируем контент для бесконечной петли ──────────
     // Берём оригинальные элементы .shifts-mq-item
