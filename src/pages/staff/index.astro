@@ -1,0 +1,1526 @@
+---
+// Staff Portal — внутренняя вики АйДаКемп
+// Доступ: пароль "2026", cookie на 30 дней
+// noindex — не для поисковиков
+export const prerender = true;
+---
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Портал сотрудников — АйДаКемп</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <style is:global>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #f1f5f9;
+      --surface:  #ffffff;
+      --surface2: #f8fafc;
+      --border:   #e2e8f0;
+      --border2:  #cbd5e1;
+      --orange:   #f97316;
+      --orange-bg: rgba(249,115,22,0.08);
+      --orange-border: rgba(249,115,22,0.3);
+      --text:     #0f172a;
+      --text2:    #334155;
+      --text3:    #64748b;
+      --green:    #16a34a;
+      --green-bg: rgba(22,163,74,0.08);
+      --red:      #dc2626;
+      --red-bg:   rgba(220,38,38,0.08);
+      --blue:     #2563eb;
+      --radius:   12px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ── LOGIN ── */
+    #login-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+      background: linear-gradient(135deg, #eff6ff 0%, #fdf2f8 100%);
+    }
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 44px 36px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(15,23,42,0.08);
+    }
+    .login-logo {
+      width: 60px; height: 60px;
+      background: var(--orange);
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      font-size: 28px;
+      color: white;
+    }
+    .login-card h1 { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .login-card p  { color: var(--text3); font-size: 14px; margin-bottom: 28px; }
+    .login-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 16px;
+      padding: 12px 14px;
+      outline: none;
+      margin-bottom: 12px;
+      transition: border-color 0.2s;
+      text-align: center;
+      letter-spacing: 4px;
+    }
+    .login-input:focus { border-color: var(--orange); }
+    .login-input::placeholder { letter-spacing: 0; color: var(--text3); }
+    .login-btn {
+      width: 100%;
+      background: var(--orange);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 13px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .login-btn:hover { opacity: 0.9; }
+    .login-btn:active { transform: scale(0.99); }
+    .login-remember {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 16px;
+      color: var(--text3);
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .login-remember input { accent-color: var(--orange); cursor: pointer; }
+    .login-error { color: var(--red); font-size: 13px; margin-top: 10px; display: none; }
+
+    /* ── PORTAL ── */
+    #portal { display: none; }
+
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 1px 4px rgba(15,23,42,0.06);
+    }
+    .topbar-logo {
+      font-weight: 800;
+      font-size: 15px;
+      color: var(--orange);
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .topbar-search {
+      flex: 1;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      padding: 7px 12px;
+      outline: none;
+      transition: border-color 0.2s;
+      max-width: 340px;
+    }
+    .topbar-search:focus { border-color: var(--orange); }
+    .topbar-search::placeholder { color: var(--text3); }
+    .topbar-right { margin-left: auto; }
+    .logout-btn {
+      background: transparent;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      color: var(--text3);
+      font-size: 13px;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+    .main-layout {
+      display: flex;
+      min-height: calc(100vh - 56px);
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 200px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 16px 0;
+      position: sticky;
+      top: 56px;
+      height: calc(100vh - 56px);
+      overflow-y: auto;
+    }
+    .sidebar-section {
+      padding: 8px 16px 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text3);
+    }
+    .role-btn {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      width: 100%;
+      padding: 9px 16px;
+      background: transparent;
+      border: none;
+      color: var(--text2);
+      font-size: 14px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s;
+      border-left: 3px solid transparent;
+    }
+    .role-btn:hover { background: var(--bg); color: var(--text); }
+    .role-btn.active {
+      background: var(--orange-bg);
+      border-left-color: var(--orange);
+      color: var(--orange);
+      font-weight: 600;
+    }
+    .role-icon { font-size: 16px; color: inherit; }
+
+    .sidebar-divider { height: 1px; background: var(--border); margin: 12px 0; }
+
+    .doc-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      color: var(--text3);
+      font-size: 12px;
+      text-decoration: none;
+      transition: color 0.15s;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .doc-link:hover { color: var(--blue); }
+    .doc-link i { flex-shrink: 0; }
+
+    /* ── CONTENT ── */
+    .content {
+      flex: 1;
+      padding: 24px 28px;
+      overflow: hidden;
+    }
+    .content-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .content-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .content-subtitle {
+      font-size: 13px;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+    .search-count {
+      font-size: 12px;
+      color: var(--text3);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+    }
+
+    /* ── DAY CARDS ── */
+    .days-grid { display: flex; flex-direction: column; gap: 8px; }
+
+    .day-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .day-card:hover { border-color: var(--border2); box-shadow: 0 2px 8px rgba(15,23,42,0.06); }
+    .day-card.highlight { border-color: var(--orange); box-shadow: 0 2px 8px var(--orange-border); }
+    .day-card.hidden { display: none; }
+
+    .day-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .day-header:hover { background: var(--surface2); }
+    .day-header.open { background: var(--surface2); }
+
+    .day-num {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      width: 36px; height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text3);
+      flex-shrink: 0;
+    }
+    .day-num.warning { background: var(--red-bg); border-color: rgba(220,38,38,0.3); color: var(--red); }
+    .day-num.today   { background: var(--orange-bg); border-color: var(--orange-border); color: var(--orange); }
+
+    .day-meta { flex: 1; min-width: 0; }
+    .day-title    { font-size: 14px; font-weight: 600; color: var(--text); }
+    .day-date     { font-size: 12px; color: var(--text3); margin-top: 1px; }
+    .day-tasks-count {
+      font-size: 12px;
+      color: var(--text3);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 2px 8px;
+      flex-shrink: 0;
+    }
+    .day-chevron {
+      color: var(--text3);
+      font-size: 14px;
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+    .day-header.open .day-chevron { transform: rotate(180deg); }
+
+    .day-body {
+      display: none;
+      padding: 0 18px 18px;
+      border-top: 1px solid var(--border);
+    }
+    .day-body.open { display: block; }
+
+    .tasks-list { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+    .task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: var(--surface2);
+      border: 1.5px solid transparent;
+      transition: border-color 0.15s;
+    }
+    .task-item:hover { border-color: var(--border); }
+    .task-item.match { border-color: var(--orange); background: var(--orange-bg); }
+    .task-check {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--border2);
+      flex-shrink: 0;
+      margin-top: 2px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .task-check:hover { border-color: var(--orange); }
+    .task-check.done {
+      background: var(--green);
+      border-color: var(--green);
+    }
+    .task-check.done::after {
+      content: '';
+      display: block;
+      width: 5px;
+      height: 9px;
+      border: 2px solid white;
+      border-top: none;
+      border-left: none;
+      transform: rotate(45deg) translate(-1px, -1px);
+    }
+    .task-item.warning { background: var(--red-bg); border-color: rgba(220,38,38,0.25); }
+    .task-item.warning .task-text { color: var(--red); font-weight: 600; }
+    .task-text { font-size: 14px; color: var(--text2); flex: 1; line-height: 1.5; }
+
+    /* ── SEARCH RESULTS ── */
+    #search-results { display: none; flex-direction: column; gap: 6px; }
+    .search-result-item {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .search-result-item:hover { border-color: var(--orange); }
+    .search-result-meta {
+      font-size: 11px;
+      color: var(--text3);
+      margin-bottom: 6px;
+      display: flex;
+      gap: 8px;
+    }
+    .search-badge {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+    }
+    .search-result-text { font-size: 14px; color: var(--text); }
+    mark {
+      background: rgba(249,115,22,0.2);
+      color: #c2410c;
+      border-radius: 3px;
+      padding: 0 2px;
+    }
+
+    /* ── DOCS PAGE ── */
+    #docs-view { display: none; }
+    .docs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .doc-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .doc-card:hover { border-color: var(--blue); box-shadow: 0 2px 8px rgba(37,99,235,0.1); }
+    .doc-card-icon { font-size: 26px; color: var(--blue); }
+    .doc-card-title { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.4; }
+    .doc-card-hint  { font-size: 12px; color: var(--text3); }
+    .doc-card-dl    { margin-top: 4px; font-size: 12px; color: var(--blue); font-weight: 600; display: flex; align-items: center; gap: 5px; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .content { padding: 16px; }
+      .topbar-search { max-width: none; }
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text3);
+    }
+    .empty-state-icon { font-size: 36px; margin-bottom: 12px; color: var(--text3); }
+    .empty-state-title { font-size: 16px; font-weight: 600; color: var(--text2); }
+
+    /* ── ONBOARDING ──────────────────────────────────────────────── */
+    #onboarding-screen { display: none; min-height: 100vh; background: var(--bg); padding: 20px; }
+    .ob-card { max-width: 520px; margin: 40px auto; background: var(--surface); border-radius: 20px; padding: 28px 28px 24px; box-shadow: var(--shadow); }
+    .ob-step-indicator { display: flex; gap: 6px; margin-bottom: 20px; }
+    .ob-dot { flex: 1; height: 4px; border-radius: 2px; background: var(--border); }
+    .ob-dot.done { background: var(--orange); }
+    .ob-dot.active { background: var(--orange); opacity: .6; }
+    .ob-role-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: var(--orange); margin-bottom: 8px; }
+    .ob-question { font-size: 17px; font-weight: 700; color: var(--text); line-height: 1.4; margin-bottom: 18px; }
+    .ob-answers { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+    .ob-answer { padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--text); cursor: pointer; transition: .15s; background: var(--bg); }
+    .ob-answer:hover { border-color: var(--orange); background: #fff8f0; }
+    .ob-answer.correct { border-color: #16a34a; background: #dcfce7; color: #166534; }
+    .ob-answer.wrong   { border-color: #dc2626; background: #fee2e2; color: #991b1b; }
+    .ob-feedback { font-size: 13px; line-height: 1.5; padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; display: none; }
+    .ob-feedback.ok  { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .ob-feedback.bad { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .ob-next-btn { width: 100%; padding: 13px; background: var(--orange); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; display: none; }
+    .ob-next-btn:hover { background: var(--orange-d); }
+    .ob-rules-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .ob-rule-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; background: var(--bg); border-radius: 10px; border: 1.5px solid var(--border); cursor: pointer; transition: .15s; }
+    .ob-rule-item.checked { border-color: var(--orange); background: #fff8f0; }
+    .ob-rule-icon { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; }
+    .ob-rule-item.checked .ob-rule-icon { background: var(--orange); border-color: var(--orange); }
+    .ob-rule-text { font-size: 13px; line-height: 1.55; color: var(--text2); }
+    .ob-role-select { display: flex; flex-direction: column; gap: 10px; }
+    .ob-role-btn { padding: 14px 18px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 15px; font-weight: 600; color: var(--text); background: var(--bg); cursor: pointer; text-align: left; display: flex; align-items: center; gap: 12px; transition: .15s; }
+    .ob-role-btn:hover { border-color: var(--orange); background: #fff8f0; }
+    .ob-role-btn i { font-size: 22px; color: var(--orange); width: 28px; flex-shrink: 0; }
+
+  </style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <i class="bi bi-houses-fill" style="font-size:26px"></i>
+    </div>
+    <h1>Портал сотрудников</h1>
+    <p>АйДаКемп · Смена 1 (30 мая — 8 июня)</p>
+    <input
+      type="password"
+      id="pwd-input"
+      class="login-input"
+      placeholder="Введите пароль"
+      autocomplete="current-password"
+    />
+    <button class="login-btn" id="login-btn">Войти</button>
+    <label class="login-remember">
+      <input type="checkbox" id="remember-me" checked />
+      Запомнить меня (30 дней)
+    </label>
+    <div class="login-error" id="login-error">Неверный пароль</div>
+  </div>
+</div>
+
+
+<!-- ═══ ONBOARDING ═══ -->
+<div id="onboarding-screen">
+  <div class="ob-card" id="ob-card">
+    <!-- Динамически рендерится JS -->
+  </div>
+</div>
+
+<!-- ═══ PORTAL ═══ -->
+<div id="portal">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-logo">
+      <i class="bi bi-houses-fill"></i>
+      АйДаКемп
+    </div>
+    <input
+      type="search"
+      id="search-input"
+      class="topbar-search"
+      placeholder="Поиск по задачам..."
+      autocomplete="off"
+    />
+    <div class="topbar-right">
+      <button class="logout-btn" id="logout-btn">
+        <i class="bi bi-box-arrow-right" style="margin-right:5px"></i>Выйти
+      </button>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-section">Роль</div>
+
+      <button class="role-btn active" data-role="counselor">
+        <i class="bi bi-person-arms-up role-icon"></i> Вожатый
+      </button>
+      <button class="role-btn" data-role="teacher">
+        <i class="bi bi-laptop role-icon"></i> Преподаватель
+      </button>
+      <button class="role-btn" data-role="director">
+        <i class="bi bi-clipboard-check role-icon"></i> Руководитель
+      </button>
+
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section">Разделы</div>
+
+      <button class="role-btn" data-role="docs">
+        <i class="bi bi-file-earmark-text role-icon"></i> Документы
+      </button>
+
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section">Скачать</div>
+
+      <div>
+        <a class="doc-link" href="/staff/docs/01-rukovoditel-smeny.docx" download>
+          <i class="bi bi-download"></i> Рук. смены
+        </a>
+        <a class="doc-link" href="/staff/docs/02-prepodavatel.docx" download>
+          <i class="bi bi-download"></i> Преподаватель
+        </a>
+        <a class="doc-link" href="/staff/docs/03-vozhatiy.docx" download>
+          <i class="bi bi-download"></i> Вожатый
+        </a>
+        <a class="doc-link" href="/staff/docs/04-vozhatiy-rasshirennaya.docx" download>
+          <i class="bi bi-download"></i> Вожатый (расш.)
+        </a>
+        <a class="doc-link" href="/staff/docs/05-instruktsiya-chs.docx" download>
+          <i class="bi bi-download"></i> Инструкция ЧС
+        </a>
+        <a class="doc-link" href="/staff/docs/06-cheklistpriemki.docx" download>
+          <i class="bi bi-download"></i> Чеклист приёмки
+        </a>
+        <a class="doc-link" href="/staff/docs/07-igrovaya-mehanika.docx" download>
+          <i class="bi bi-download"></i> Игровая механика
+        </a>
+      </div>
+    </aside>
+
+    <!-- Content -->
+    <main class="content">
+      <!-- Days view -->
+      <div id="days-view">
+        <div class="content-header">
+          <div>
+            <div class="content-title" id="content-title">Вожатый</div>
+            <div class="content-subtitle">Смена 1 · 30 мая — 8 июня · 10 дней</div>
+          </div>
+          <div class="search-count" id="search-count" style="display:none"></div>
+        </div>
+        <div class="days-grid" id="days-list"></div>
+        <div id="search-results"></div>
+        <div class="empty-state" id="empty-state" style="display:none">
+          <div class="empty-state-icon"><i class="bi bi-search"></i></div>
+          <div class="empty-state-title">Ничего не найдено</div>
+          <div style="margin-top:6px;font-size:13px;color:var(--text3)">Попробуйте другой запрос</div>
+        </div>
+      </div>
+
+      <!-- Docs view -->
+      <div id="docs-view">
+        <div class="content-header">
+          <div>
+            <div class="content-title">Документы</div>
+            <div class="content-subtitle">Должностные инструкции и чеклисты</div>
+          </div>
+        </div>
+        <div class="docs-grid">
+          <a class="doc-card" href="/staff/docs/01-rukovoditel-smeny.docx" download>
+            <i class="bi bi-person-check doc-card-icon"></i>
+            <div class="doc-card-title">Должностная инструкция<br/>Руководитель смены</div>
+            <div class="doc-card-hint">Права, обязанности, ежедневные задачи</div>
+            <div class="doc-card-dl"><i class="bi bi-download"></i> Скачать .docx</div>
+          </a>
+          <a class="doc-card" href="/staff/docs/02-prepodavatel.docx" download>
+            <i class="bi bi-laptop doc-card-icon"></i>
+            <div class="doc-card-title">Должностная инструкция<br/>Преподаватель</div>
+            <div class="doc-card-hint">Программа обучения, расписание, требования</div>
+            <div class="doc-card-dl"><i class="bi bi-download"></i> Скачать .docx</div>
+          </a>
+          <a class="doc-card" href="/staff/docs/03-vozhatiy.docx" download>
+            <i class="bi bi-person-arms-up doc-card-icon"></i>
+            <div class="doc-card-title">Должностная инструкция<br/>Вожатый (базовая)</div>
+            <div class="doc-card-hint">Базовые обязанности и правила</div>
+            <div class="doc-card-dl"><i class="bi bi-download"></i> Скачать .docx</div>
+          </a>
+          <a class="doc-card" href="/staff/docs/04-vozhatiy-rasshirennaya.docx" download>
+            <i class="bi bi-book doc-card-icon"></i>
+            <div class="doc-card-title">Должностная инструкция<br/>Вожатый (расширенная)</div>
+            <div class="doc-card-hint">Полный список с условиями и штрафами</div>
+            <div class="doc-card-dl"><i class="bi bi-download"></i> Скачать .docx</div>
+          </a>
+          <a class="doc-card" href="/staff/docs/05-instruktsiya-chs.docx" download>
+            <i class="bi bi-exclamation-triangle-fill doc-card-icon" style="color:var(--red)"></i>
+            <div class="doc-card-title">Инструкция по ЧС</div>
+            <div class="doc-card-hint">Что делать при нештатной ситуации</div>
+            <div class="doc-card-dl"><i class="bi bi-download"></i> Скачать .docx</div>
+          </a>
+          <a class="doc-card" href="/staff/docs/06-cheklistpriemki.docx" download>
+            <i class="bi bi-clipboard-check doc-card-icon" style="color:var(--green)"></i>
+            <div class="doc-card-title">Чеклист приёмки помещений</div>
+            <div class="doc-card-hint">Что проверить при заезде и выезде</div>
+            <div class="doc-card-dl"><i class="bi bi-download"></i> Скачать .docx</div>
+          </a>
+          <a class="doc-card" href="/staff/docs/07-igrovaya-mehanika.docx" download>
+            <i class="bi bi-controller doc-card-icon"></i>
+            <div class="doc-card-title">Система игровой механики</div>
+            <div class="doc-card-hint">Правила экономики, рубли (игровая валюта), штрафы/награды</div>
+            <div class="doc-card-dl"><i class="bi bi-download"></i> Скачать .docx</div>
+          </a>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  // ── DATA ──────────────────────────────────────────────────────────────────
+  // Смена 1: 30 мая — 8 июня 2026 (10 дней)
+  const SHIFT_DATES = [
+    'пт, 30 мая','сб, 31 мая','вс, 1 июня','пн, 2 июня','вт, 3 июня',
+    'ср, 4 июня','чт, 5 июня','пт, 6 июня','сб, 7 июня','вс, 8 июня',
+  ];
+
+  const ROLES = {
+    counselor: {
+      label: 'Вожатый',
+      days: {
+        1:  { title: 'День заезда и знакомства', tasks: [
+          'Встреча детей и родителей на входе — улыбаемся, помогаем',
+          'Помощь с размещением по комнатам',
+          'Первый инструктаж: режим дня, правила, распорядок',
+          'Знакомство отряда — игра на имена',
+          'Экскурсия по территории лагеря',
+          'Ужин и организованный отбой (дети устают с дороги)',
+          'Собрать все телефоны в конце дня',
+          'Общее фото отряда — отправить родителям',
+        ]},
+        2:  { title: 'Запуск программы', tasks: [
+          'Подъём за 20 минут до детей',
+          'Организовать утреннюю зарядку',
+          'Завтрак и первая линейка',
+          'Объяснить игровую механику (деньги, правила, штрафы)',
+          'Проводить детей на первые занятия к преподавателям',
+          'Организовать досуг между занятиями',
+          'Бассейн: собрать желающих, соблюдать безопасность',
+          'Фото занятий и бассейна — в родительский чат',
+          'Отбой с проверкой комнат',
+        ]},
+        3:  { title: 'Режим входит в норму', tasks: [
+          'Чёткий контроль подъёма и зарядки',
+          'Выдать первые игровые деньги за хорошее поведение',
+          'Проследить дисциплину на занятиях',
+          'Организовать досуг: настольные игры, спорт',
+          'Контроль гигиены и уборки в комнатах',
+          'Бассейн',
+          'Заполнить дневник отряда (первая запись)',
+          'Видео-интервью с 2–3 детьми для родителей',
+          'Отбой с проверкой',
+        ]},
+        4:  { title: 'Активность и дисциплина', tasks: [
+          'Утренняя мотивация на линейке',
+          'Применить штрафы/награды если были нарушения',
+          'Занятия — контроль присутствия и внимания',
+          'Инициировать спортивный турнир',
+          'Бассейн',
+          'Контроль использования телефонов',
+          'Отбой и обход комнат',
+        ]},
+        5:  { title: 'Середина смены', tasks: [
+          'Психологический чек-ин: как дети себя чувствуют?',
+          'Отметить тех, кто отстаёт или грустит — поговорить лично',
+          'Занятия и досуг в штатном режиме',
+          'Бассейн',
+          'Укрепление дружбы в отряде (командные игры)',
+          'Вечерний сбор отряда: рассказ о дне',
+          'Отбой, проверка дневника отряда',
+        ]},
+        6:  { title: 'Интенсив', tasks: [
+          'Запросить обратную связь у преподавателей о детях',
+          'Мотивировать на вторую половину смены',
+          'Занятия и творческий досуг',
+          'Бассейн',
+          'Вечерний костёр или общелагерное мероприятие',
+          'Фото вечернего мероприятия для архива',
+          'Отбой и отчёт руководителю',
+        ]},
+        7:  { title: 'Большое мероприятие', tasks: [
+          'Подготовить отряд к общелагерному мероприятию',
+          'Раздать награды за прошедшие дни',
+          'Много фото и видео для родителей',
+          'Свободный досуг по выбору детей',
+          'Праздничный ужин',
+          'Конкурсы или танцы',
+          'Поздний отбой допускается',
+          'Собрать обратную связь у детей',
+        ]},
+        8:  { title: 'После праздника, восстановление', tasks: [
+          'Контроль режима — дети могут быть сонными',
+          'Занятия в нормальном темпе',
+          'Досуг с выбором',
+          'Проверить здоровье (кто пожаловался вчера)',
+          'Бассейн',
+          'Начало финальных проектов (если есть)',
+          'Отбой',
+        ]},
+        9:  { title: 'Предфинальный день', tasks: [
+          'Сбор работ и проектов для выставки',
+          'Фотографировать проекты детей',
+          'Занятия: финальное закрепление',
+          'Бассейн',
+          'Объявить родителям о времени и формате выезда',
+          'Вечерняя дискотека или концерт',
+          'Итоговый сбор отряда — поблагодарить каждого',
+        ]},
+        10: { title: 'ДЕНЬ ОТЪЕЗДА', warning: true, tasks: [
+          'ВАЖНО: ранний подъём, предупредить с вечера',
+          'Быстрый завтрак',
+          'Сбор вещей — проверить каждую комнату',
+          'Прощальный сбор: слова благодарности каждому ребёнку',
+          'Выдача сувениров и грамот',
+          'Уборка комнат (до приёмки руководителем)',
+          'Координация выдачи детей родителям — по спискам',
+          'Финальная чистка, отчёт руководителю смены',
+        ]},
+      }
+    },
+
+    teacher: {
+      label: 'Преподаватель',
+      days: {
+        1:  { title: 'Знакомство и диагностика', tasks: [
+          'Подъём за 20 минут до детей',
+          'Первое знакомство с группой — представиться, рассказать о курсе',
+          'Диагностика уровня: простые вопросы, без стресса',
+          'Первое занятие лёгкое — создаём интерес, не пугаем',
+          'Помочь вожатому с размещением если нужно',
+          'Передать вожатому впечатления о детях (кто активный, кто тихий)',
+          'Ужин и отбой вместе с отрядом',
+        ]},
+        2:  { title: 'Программа стартует', tasks: [
+          'Занятие 1: базовый материал, простые примеры',
+          'Делать перерывы каждые 25–30 минут',
+          'Занятие 2: закрепление первого дня',
+          'Следить за концентрацией — переключать форматы',
+          'Отметить детей с трудностями — сообщить вожатому',
+          'Досуг: поддержать инициативу детей',
+          'Ночное дежурство (свой блок)',
+        ]},
+        3:  { title: 'Программа развивается', tasks: [
+          'Занятие 1: новый материал',
+          'Занятие 2: добавить сложности, первые практические задачи',
+          'Индивидуальная помощь отстающим',
+          'Обед, свободное время',
+          'Опциональное занятие для желающих (углублённое)',
+          'Вечерний досуг',
+          'Ночное дежурство',
+        ]},
+        4:  { title: 'Первые проекты', tasks: [
+          'Занятие 1: повтор и углубление',
+          'Занятие 2: запуск первого мини-проекта',
+          'Помощь в работе над проектом во второй половине дня',
+          'Обед',
+          'Вечерняя игра или спорт с отрядом',
+          'Отбой',
+        ]},
+        5:  { title: 'Середина курса', tasks: [
+          'Занятие 1: закрепление пройденного (половина курса)',
+          'Занятие 2: новый блок материала',
+          'Практика и работа над проектами',
+          'Обед и досуг',
+          'Общелагерное мероприятие если есть',
+          'Отбой',
+        ]},
+        6:  { title: 'Интенсив и мастерство', tasks: [
+          'Занятие 1: углублённый материал',
+          'Занятие 2: разбор сложных задач',
+          'Работа над проектами',
+          'Обед',
+          'Дополнительная помощь тем, кто отстаёт',
+          'Вечернее мероприятие лагеря',
+          'Отбой',
+        ]},
+        7:  { title: 'Праздничный день', tasks: [
+          'Занятий меньше или нет — зависит от расписания',
+          'Участие в общелагерном мероприятии',
+          'Награды за прогресс в обучении',
+          'Свободное время, игры',
+          'Вечер: концерт или танцы',
+          'Поздний отбой допускается',
+        ]},
+        8:  { title: 'Вторая половина курса', tasks: [
+          'Занятие 1: новый блок (финальный)',
+          'Занятие 2: практика и проекты',
+          'Обед и досуг',
+          'Работа над финальными проектами',
+          'Вечер',
+          'Отбой',
+        ]},
+        9:  { title: 'Завершение курса', tasks: [
+          'Занятие 1: обзор всего курса',
+          'Занятие 2: финальная практика, дорабатываем проекты',
+          'Собрать и сфотографировать все работы',
+          'Обед',
+          'Подготовка финальной демонстрации',
+          'Вечер: концерт или дискотека',
+          'Отбой',
+        ]},
+        10: { title: 'ФИНАЛЬНЫЙ ДЕНЬ', warning: true, tasks: [
+          'ВАЖНО: короткое финальное занятие или его нет',
+          'Финальная демонстрация проектов',
+          'Дать обратную связь каждому ребёнку — позитивно',
+          'Грамоты и сертификаты',
+          'Обед',
+          'Помочь с уборкой и сбором вещей',
+          'Проводить детей',
+        ]},
+      }
+    },
+
+    director: {
+      label: 'Руководитель смены',
+      days: {
+        1:  { title: 'Организация заезда', tasks: [
+          'Инструктаж всего персонала до приезда детей',
+          'Встреча детей и родителей на входе',
+          'Контроль распределения по комнатам',
+          'Проверка безопасности: электричество, вода, пожарные выходы',
+          'Встреча с медицинским работником: кто болеет, какие лекарства',
+          'Линейка открытия смены',
+          'Контроль ужина и отбоя',
+          'Вечерний сбор персонала: итоги дня, вопросы',
+        ]},
+        2:  { title: 'Запуск программы', tasks: [
+          'Контроль подъёма и зарядки',
+          'Общее собрание: объяснение режима и правил всем детям',
+          'Запуск игровой механики — объяснить вожатым алгоритм',
+          'Контроль первых занятий: заглянуть в каждую группу',
+          'Обеденный контроль (качество питания, очереди)',
+          'Проверить здоровье всех детей с медиком',
+          'Вечерний сбор персонала: проблемы? что улучшить?',
+          'Ночное дежурство согласно графику',
+        ]},
+        3:  { title: 'Стабилизация', tasks: [
+          'Утренний сбор персонала (10 минут, стоя)',
+          'Контроль соблюдения расписания',
+          'Контроль занятий и досуга',
+          'Бассейн: организация и безопасность (требовать нарукавники)',
+          'Опрос медика: жалобы на здоровье',
+          'Проверить корпус: чистота, порядок, освещение',
+          'Ужин, отбой',
+          'Разбор: что нужно улучшить',
+        ]},
+        4:  { title: 'Развитие активности', tasks: [
+          'Утренний сбор',
+          'Контроль режима и занятий',
+          'Организовать первое соревнование / турнир',
+          'Проверка санузлов и уборных (чистота)',
+          'Проверить правильность начисления игровых денег',
+          'Персональные беседы с проблемными детьми если есть',
+          'Отбой',
+        ]},
+        5:  { title: 'Середина смены', tasks: [
+          'Утренний сбор',
+          'Проверить чеклист чистоты помещений',
+          'Контроль занятий',
+          'Позвонить родителям если есть проблемы с детьми',
+          'Фото и видео дня для отчёта',
+          'Контроль питьевого режима в жару',
+          'Проверить оборудование: кровати, окна, лампы',
+          'Вечерний сбор персонала',
+          'Отбой',
+        ]},
+        6:  { title: 'Интенсив', tasks: [
+          'Утренний сбор',
+          'Помочь преподавателям с организацией занятий',
+          'Организация большого вечернего мероприятия',
+          'Промежуточный финансовый контроль',
+          'Контроль здоровья: травмы, ссадины — в журнал',
+          'Безопасность мероприятия: проверить территорию',
+          'Фото и видео события',
+          'Отбой и ночное дежурство',
+        ]},
+        7:  { title: 'Большое мероприятие', tasks: [
+          'Утренний сбор',
+          'Координация большого мероприятия / праздника',
+          'Награды по итогам прошедших дней',
+          'Много фото и видео',
+          'Контроль здоровья (усталость, перегрев)',
+          'Вечерняя линейка или общий сбор',
+          'Поздний отбой допускается',
+          'Анализ итогов первой половины смены',
+        ]},
+        8:  { title: 'Вторая половина, восстановление', tasks: [
+          'Контроль режима',
+          'Занятия и досуг в штатном темпе',
+          'Никто не заболел? Опрос медика',
+          'Контроль финансов',
+          'Фото и видео',
+          'Вечерний сбор персонала',
+          'Отбой',
+        ]},
+        9:  { title: 'Подготовка к закрытию', tasks: [
+          'Утренний сбор',
+          'Занятия: финальные проекты',
+          'Сбор всех фото и видео материалов смены',
+          'Контроль сбора вещей (объявить родителям расписание выезда)',
+          'Организация финального мероприятия — список задач',
+          'Проверить дневники вожатых',
+          'Подготовить грамоты и сертификаты',
+          'Отбой',
+        ]},
+        10: { title: 'ЗАКРЫТИЕ СМЕНЫ — ДЕНЬ ОТЪЕЗДА', warning: true, tasks: [
+          'ВАЖНО: ранний подъём, контроль сбора вещей',
+          'Финальное мероприятие и демонстрация проектов',
+          'Раздача наград и грамот',
+          'Контроль сбора вещей во всех комнатах',
+          'Быстрый обед',
+          'Отправка детей: координация с родителями, по спискам',
+          'ПРИЁМКА всех помещений: чеклист + фото каждой комнаты',
+          'Финальный расчёт финансов смены',
+          'Отчёт: итоги смены письменно',
+          'Встреча с персоналом: что было хорошо, что улучшить',
+        ]},
+      }
+    }
+  };
+
+
+  // ── ONBOARDING QUIZ ──────────────────────────────────────────────────────
+  const OB_KEY = 'staff_onboarding_v2';
+
+  const QUIZ = {
+    counselor: [
+      {
+        q: 'Дети пошли на занятие к преподавателю. Вожатый может пойти отдохнуть в свою комнату?',
+        answers: ['Да, можно передохнуть', 'Нет — вожатый с детьми всегда', 'Зависит от настроения', 'Можно, если директор не видит'],
+        correct: 1,
+        explanation: 'Вожатый несёт ответственность за детей весь день. Даже если дети на занятии — вожатый рядом, готов реагировать.'
+      },
+      {
+        q: 'Ребёнок говорит: "Мне скучно, хочу домой". Что делать вожатому?',
+        answers: ['Сказать: "Потерпи, скоро домой"', 'Позвонить родителям и попросить забрать', 'Найти что-то интересное, вовлечь в активность', 'Пожаловаться директору'],
+        correct: 2,
+        explanation: 'Вожатый — аниматор и психолог одновременно. Скука = сигнал активизировать ребёнка, а не звать на помощь.'
+      },
+      {
+        q: 'Уже 23:30, ты слышишь шум из комнаты детей. Правильное действие?',
+        answers: ['Сделать вид, что не слышишь', 'Зайти, спокойно попросить тишину и проверить что всё ок', 'Орать из коридора', 'Написать в чат и ждать'],
+        correct: 1,
+        explanation: 'Тихий, спокойный заход без конфликта. Дети чувствуют уважение — и успокаиваются быстрее.'
+      },
+      {
+        q: 'Двое детей поссорились и дерутся. Твои первые слова?',
+        answers: ['"Кто начал?!"', '"Немедленно прекратить!"', 'Молча разнять физически', '"Стоп. Оба сели. Дышим."'],
+        correct: 3,
+        explanation: 'Сначала деэскалация — разделить, успокоить. Разбираться кто прав — потом, когда эмоции спали.'
+      },
+      {
+        q: 'Родитель позвонил тебе напрямую в 22:00 и требует срочно передать ребёнку "привет от бабушки". Ты...',
+        answers: ['Бежишь будить ребёнка', 'Объясняешь что сейчас отбой, всё хорошо, передашь утром', 'Выключаешь телефон', 'Даёшь телефон ребёнку'],
+        correct: 1,
+        explanation: 'Вечерние звонки родителям — норма, но режим лагеря важнее. Мягко но твёрдо: ребёнок спит, всё хорошо, утром передам.'
+      }
+    ],
+    teacher: [
+      {
+        q: 'Преподаватель устал в середине дня. Можно закрыться в своей комнате и отдохнуть час?',
+        answers: ['Да, надо беречь себя', 'Нет — нахожусь с детьми или в зоне видимости', 'Можно, если тихий час', 'Зависит от расписания'],
+        correct: 1,
+        explanation: 'Преподаватель — не только учитель, но и взрослый отвечающий за безопасность. Тихий час = ты в отряде или рядом, не у себя.'
+      },
+      {
+        q: 'Ребёнок не понимает материал второй день. Что делать?',
+        answers: ['Оставить как есть, всех не научишь', 'Дать больше самостоятельных заданий', 'Поговорить индивидуально, найти другой подход', 'Сказать родителям что ребёнок "не тянет"'],
+        correct: 2,
+        explanation: 'Мы работаем с разными детьми. Индивидуальный подход — не исключение, это норма. Найди что цепляет именно этого ребёнка.'
+      },
+      {
+        q: 'Ребёнок на занятии явно в плохом настроении, молчит, не участвует. Правильная реакция?',
+        answers: ['Не обращать внимания, само пройдёт', 'Попросить вожатого разобраться', 'Тихо поговорить один на один в перерыве', 'Поставить плохую отметку за пассивность'],
+        correct: 2,
+        explanation: 'Замкнутость ребёнка — сигнал. Тихий разговор один на один даёт больше, чем публичный вопрос перед всей группой.'
+      },
+      {
+        q: 'Занятие закончилось раньше плана на 20 минут. Что делаешь?',
+        answers: ['Отпускаешь детей раньше', 'Импровизируешь: мини-проект, викторина, coding challenge', 'Ждёшь когда придут вожатые', 'Сидишь тихо'],
+        correct: 1,
+        explanation: 'Свободное время без присмотра — риск. Всегда имей в запасе мини-активность на 15-20 минут.'
+      },
+      {
+        q: 'Двое детей поспорили на занятии — кто написал лучший код. Конфликт растёт. Твои действия?',
+        answers: ['Объявить победителя', 'Прекратить разговор на эту тему, сменить тему', 'Превратить в учебную дискуссию: "расскажите оба что делает ваш код"', 'Выгнать обоих из класса'],
+        correct: 2,
+        explanation: 'Технические споры — отличный учебный момент. Кто может объяснить свой код — тот и молодец. Все выигрывают.'
+      }
+    ],
+    director: [
+      {
+        q: 'Родитель приехал и требует забрать ребёнка прямо сейчас, без документов выезда',
+        answers: ['Отдать ребёнка — родитель же', 'Следовать регламенту: документы выезда → связь с директором → отпуск', 'Позвонить в полицию', 'Сказать "приходите завтра"'],
+        correct: 1,
+        explanation: 'Мы несём юридическую ответственность за ребёнка весь период смены. Даже родителю без документов — нет. Это защита и ребёнка и лагеря.'
+      },
+      {
+        q: 'Вожатый пришёл к тебе в 14:00 и говорит что "не может больше". Что делаешь?',
+        answers: ['Говоришь: "Все устали, справляйся"', 'Отстраняешь немедленно от работы', 'Выслушиваешь, находишь причину, временно перераспределяешь нагрузку', 'Игнорируешь'],
+        correct: 2,
+        explanation: 'Выгорание вожатого = риск для детей. Быстро понять причину и дать передышку лучше, чем потерять человека совсем.'
+      },
+      {
+        q: 'На следующий день ожидается 40°C. Что делаешь заранее?',
+        answers: ['Ничего, дети закалятся', 'Меняешь расписание: все занятия в помещении, больше воды, тихий час длиннее', 'Отменяешь смену', 'Ждёшь жалоб от родителей'],
+        correct: 1,
+        explanation: 'Безопасность детей — приоритет. Жара = корректировка расписания, усиленный контроль питья, укрытие от солнца.'
+      },
+      {
+        q: 'Ребёнку стало плохо (высокая температура). Алгоритм действий:',
+        answers: ['Звонишь родителям, ждёшь', 'Медработник → родители → документация → при необходимости скорая', 'Даёшь парацетамол сам', 'Ждёшь до утра'],
+        correct: 1,
+        explanation: 'Строго по протоколу: сначала медик, потом родители, всё фиксируется. Самолечение запрещено.'
+      },
+      {
+        q: 'Сотрудник грубо разговаривал с ребёнком при свидетелях. Твои действия?',
+        answers: ['Поговоришь потом, когда будет время', 'Сделаешь замечание публично — чтобы все видели', 'Поговоришь наедине немедленно, зафиксируешь в журнале', 'Не вмешиваешься — сами разберутся'],
+        correct: 2,
+        explanation: 'Грубость с детьми = стоп. Немедленный разговор без аудитории — уважительно но твёрдо. Фиксация важна для прозрачности.'
+      }
+    ]
+  };
+
+  const RULES = {
+    counselor: [
+      'Я нахожусь с детьми весь день — это моя основная задача',
+      'Я не ухожу в свою комнату пока дети не спят',
+      'При любом конфликте — сначала деэскалация, потом разбор',
+      'Я не обсуждаю детей с другими детьми',
+      'При недомогании ребёнка — немедленно сообщаю руководителю'
+    ],
+    teacher: [
+      'Я нахожусь в зоне видимости детей в своё рабочее время',
+      'У меня есть запасная активность на случай окончания занятия раньше',
+      'Я не ставлю детей в неловкое положение перед группой',
+      'Тревожные сигналы от ребёнка — сразу сообщаю вожатому',
+      'Результат занятия — каждый ребёнок сделал что-то своё'
+    ],
+    director: [
+      'Я знаю алгоритм действий при ЧС наизусть',
+      'Документы выезда обязательны — нет исключений даже для родителей',
+      'Я готов перераспределить нагрузку при выгорании сотрудника',
+      'Все инциденты фиксируются письменно в день события',
+      'Жара, болезни, конфликты — у каждого есть протокол действий'
+    ]
+  };
+
+  const ROLE_LABELS = {
+    counselor: { label: 'Вожатый', icon: 'bi-people-fill' },
+    teacher:   { label: 'Преподаватель', icon: 'bi-laptop-fill' },
+    director:  { label: 'Руководитель смены', icon: 'bi-star-fill' }
+  };
+
+  let obRole = null;
+  let obQIdx = 0;
+  let obAnswered = false;
+
+  function showScreen(id) {
+    ['login-screen','onboarding-screen','portal'].forEach(s => {
+      const el = document.getElementById(s);
+      if (el) el.style.display = (s === id) ? (id === 'portal' ? 'block' : 'block') : 'none';
+    });
+  }
+
+  function enterPortal(role) {
+    showScreen('portal');
+    renderDays(role);
+    setActiveRole(role);
+  }
+
+  function renderObRoleSelect() {
+    const card = document.getElementById('ob-card');
+    card.innerHTML = `
+      <p class="ob-role-title"><i class="bi bi-person-badge"></i> Выберите свою роль</p>
+      <div class="ob-question">Кто вы на смене?</div>
+      <div class="ob-role-select">
+        ${Object.entries(ROLE_LABELS).map(([k,v]) => `
+          <button class="ob-role-btn" data-role="${k}">
+            <i class="bi ${v.icon}"></i>
+            ${v.label}
+          </button>
+        `).join('')}
+      </div>
+    `;
+    card.querySelectorAll('.ob-role-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        obRole = btn.dataset.role;
+        obQIdx = 0;
+        logAction({ role: obRole, action: 'onboarding_start' });
+        renderObQuestion();
+      });
+    });
+  }
+
+  function renderObQuestion() {
+    const qs = QUIZ[obRole];
+    const q  = qs[obQIdx];
+    const total = qs.length;
+    const card  = document.getElementById('ob-card');
+
+    const dots = Array.from({length: total}, (_, i) =>
+      `<div class="ob-dot ${i < obQIdx ? 'done' : i === obQIdx ? 'active' : ''}"></div>`
+    ).join('');
+
+    card.innerHTML = `
+      <div class="ob-step-indicator">${dots}</div>
+      <p class="ob-role-title">${ROLE_LABELS[obRole].label} · вопрос ${obQIdx + 1} из ${total}</p>
+      <div class="ob-question">${q.q}</div>
+      <div class="ob-answers">
+        ${q.answers.map((a, i) => `<div class="ob-answer" data-idx="${i}">${a}</div>`).join('')}
+      </div>
+      <div class="ob-feedback" id="ob-feedback"></div>
+      <button class="ob-next-btn" id="ob-next">
+        ${obQIdx < total - 1 ? 'Следующий вопрос <i class="bi bi-arrow-right"></i>' : 'Перейти к правилам <i class="bi bi-arrow-right"></i>'}
+      </button>
+    `;
+
+    obAnswered = false;
+    card.querySelectorAll('.ob-answer').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (obAnswered) return;
+        obAnswered = true;
+        const chosen = parseInt(btn.dataset.idx);
+        const isOk = chosen === q.correct;
+        const fb = document.getElementById('ob-feedback');
+
+        card.querySelectorAll('.ob-answer').forEach((b, i) => {
+          if (i === q.correct) b.classList.add('correct');
+          else if (i === chosen && !isOk) b.classList.add('wrong');
+        });
+
+        fb.textContent = (isOk ? '✓ Верно! ' : '✗ Неверно. ') + q.explanation;
+        fb.className = 'ob-feedback ' + (isOk ? 'ok' : 'bad');
+        fb.style.display = 'block';
+
+        logAction({ role: obRole, action: 'quiz_answer', question: obQIdx, correct: isOk });
+        document.getElementById('ob-next').style.display = 'block';
+      });
+    });
+
+    document.getElementById('ob-next').addEventListener('click', () => {
+      obQIdx++;
+      if (obQIdx < QUIZ[obRole].length) {
+        renderObQuestion();
+      } else {
+        renderObRules();
+      }
+    });
+  }
+
+  function renderObRules() {
+    const rules = RULES[obRole];
+    const card  = document.getElementById('ob-card');
+    const checked = new Array(rules.length).fill(false);
+
+    function updateDoneBtn() {
+      const allDone = checked.every(Boolean);
+      const btn = document.getElementById('ob-done-btn');
+      if (btn) btn.style.opacity = allDone ? '1' : '.5';
+      if (btn) btn.disabled = !allDone;
+    }
+
+    card.innerHTML = `
+      <p class="ob-role-title"><i class="bi bi-check2-circle"></i> Правила смены</p>
+      <div class="ob-question">Отметьте каждый пункт — я понимаю и принимаю:</div>
+      <div class="ob-rules-list">
+        ${rules.map((r, i) => `
+          <div class="ob-rule-item" data-i="${i}">
+            <div class="ob-rule-icon" id="rule-icon-${i}"></div>
+            <div class="ob-rule-text">${r}</div>
+          </div>
+        `).join('')}
+      </div>
+      <button class="ob-next-btn" id="ob-done-btn" style="opacity:.5" disabled>
+        Начать работу <i class="bi bi-arrow-right"></i>
+      </button>
+    `;
+
+    card.querySelectorAll('.ob-rule-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const i = parseInt(item.dataset.i);
+        checked[i] = !checked[i];
+        item.classList.toggle('checked', checked[i]);
+        const icon = document.getElementById(`rule-icon-${i}`);
+        if (icon) icon.innerHTML = checked[i] ? '<i class="bi bi-check-lg" style="color:white;font-size:12px"></i>' : '';
+        updateDoneBtn();
+      });
+    });
+
+    document.getElementById('ob-done-btn').addEventListener('click', () => {
+      const ob = { done: true, role: obRole, ts: Date.now() };
+      localStorage.setItem(OB_KEY, JSON.stringify(ob));
+      logAction({ role: obRole, action: 'onboarding_complete' });
+      enterPortal(obRole);
+    });
+  }
+
+  // ── AUTH ──────────────────────────────────────────────────────────────────
+  const COOKIE_NAME = 'staff_auth_2026';
+  const PASSWORD    = '2026';
+
+  function getCookie(name) {
+    return document.cookie.split('; ').reduce((r, v) => {
+      const [k, ...val] = v.split('=');
+      return k === name ? decodeURIComponent(val.join('=')) : r;
+    }, null);
+  }
+  function setCookie(name, value, days) {
+    const d = new Date();
+    d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
+    document.cookie = `${name}=${encodeURIComponent(value)};expires=${d.toUTCString()};path=/;SameSite=Lax`;
+  }
+  function removeCookie(name) {
+    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+  }
+
+  function showPortal() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('portal').style.display = 'block';
+    renderDays('counselor');
+  }
+
+  function handleLogin() {
+    const pwd      = document.getElementById('pwd-input').value.trim();
+    const remember = document.getElementById('remember-me').checked;
+    const errEl    = document.getElementById('login-error');
+
+    if (pwd === PASSWORD) {
+      setCookie(COOKIE_NAME, '1', remember ? 30 : 1);
+      const ob2 = JSON.parse(localStorage.getItem(OB_KEY) || '{}');
+      if (ob2.done) {
+        enterPortal(ob2.role || 'counselor');
+      } else {
+        showScreen('onboarding-screen');
+        renderObRoleSelect();
+      }
+    } else {
+      errEl.style.display = 'block';
+      document.getElementById('pwd-input').value = '';
+    }
+  }
+
+  // ── RENDER ────────────────────────────────────────────────────────────────
+  let currentRole = 'counselor';
+
+  function renderDays(role) {
+    currentRole = role;
+    const data = ROLES[role];
+    if (!data) return;
+
+    document.getElementById('content-title').textContent = data.label;
+    document.getElementById('days-view').style.display   = 'block';
+    document.getElementById('docs-view').style.display   = 'none';
+    document.getElementById('search-results').style.display = 'none';
+    document.getElementById('days-list').style.display   = '';
+    document.getElementById('empty-state').style.display = 'none';
+    document.getElementById('search-count').style.display = 'none';
+    document.getElementById('search-input').value = '';
+
+    const list = document.getElementById('days-list');
+    list.innerHTML = '';
+
+    const today = new Date();
+    const shiftStart = new Date('2026-05-30');
+    const dayOfShift = Math.floor((today - shiftStart) / 86400000) + 1;
+
+    Object.entries(data.days).forEach(([dayNum, dayData]) => {
+      const n       = parseInt(dayNum);
+      const isToday = n === dayOfShift;
+      const dateStr = SHIFT_DATES[n - 1] || '';
+      const isWarning = dayData.warning;
+
+      const card = document.createElement('div');
+      card.className = 'day-card';
+      card.dataset.day = dayNum;
+
+      const numClass = isWarning ? 'day-num warning' : isToday ? 'day-num today' : 'day-num';
+      const completedCount = dayData.tasks.filter((_, ti) =>
+        localStorage.getItem(`task_${role}_${dayNum}_${ti}`) === '1'
+      ).length;
+      const totalCount = dayData.tasks.length;
+
+      card.innerHTML = `
+        <div class="day-header${isToday ? ' open' : ''}">
+          <div class="${numClass}">${n}</div>
+          <div class="day-meta">
+            <div class="day-title">День ${n} — ${dayData.title}</div>
+            <div class="day-date">${dateStr}${isToday ? ' · <strong style="color:var(--orange)">Сегодня</strong>' : ''}</div>
+          </div>
+          <div class="day-tasks-count">${completedCount}/${totalCount}</div>
+          <i class="bi bi-chevron-down day-chevron"></i>
+        </div>
+        <div class="day-body${isToday ? ' open' : ''}">
+          <div class="tasks-list">
+            ${dayData.tasks.map((task, ti) => {
+              const done = localStorage.getItem(`task_${role}_${dayNum}_${ti}`) === '1';
+              const isWarn = task.startsWith('ВАЖНО:') || task.startsWith('ПРИЁМКА');
+              return `
+                <div class="task-item${isWarn ? ' warning' : ''}" data-ti="${ti}">
+                  <div class="task-check${done ? ' done' : ''}" data-role="${role}" data-day="${dayNum}" data-ti="${ti}"></div>
+                  <div class="task-text">${task}</div>
+                </div>`;
+            }).join('')}
+          </div>
+        </div>
+      `;
+      list.appendChild(card);
+
+      // Accordion — event listener (not global onclick)
+      card.querySelector('.day-header').addEventListener('click', () => {
+        card.querySelector('.day-header').classList.toggle('open');
+        card.querySelector('.day-body').classList.toggle('open');
+      });
+
+      // Task check — event delegation
+      card.querySelectorAll('.task-check').forEach(el => {
+        el.addEventListener('click', () => {
+          const r  = el.dataset.role;
+          const d  = el.dataset.day;
+          const ti = el.dataset.ti;
+          const key  = `task_${r}_${d}_${ti}`;
+          const done = el.classList.toggle('done');
+          localStorage.setItem(key, done ? '1' : '0');
+          // Update counter
+          const total     = card.querySelectorAll('.task-check').length;
+          const completed = card.querySelectorAll('.task-check.done').length;
+          card.querySelector('.day-tasks-count').textContent = `${completed}/${total}`;
+          // Server log
+          logAction({ role: r, day: parseInt(d), taskIndex: parseInt(ti),
+            task: el.nextElementSibling?.textContent?.trim() || '',
+            action: done ? 'check' : 'uncheck' });
+        });
+      });
+    });
+  }
+
+  function toggleDay(header) {
+    header.classList.toggle('open');
+    header.nextElementSibling.classList.toggle('open');
+  }
+
+  // Server logging (fire-and-forget)
+  function logAction(data) {
+    fetch('/api/staff-log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...data, timestamp: new Date().toISOString() }),
+      keepalive: true,
+    }).catch(() => {});
+  }
+
+  // ── SEARCH ────────────────────────────────────────────────────────────────
+  function handleSearch(query) {
+    const q = query.trim().toLowerCase();
+
+    if (!q) {
+      document.getElementById('search-results').style.display = 'none';
+      document.getElementById('days-list').style.display = '';
+      document.getElementById('search-count').style.display = 'none';
+      document.getElementById('empty-state').style.display = 'none';
+      return;
+    }
+
+    document.getElementById('days-list').style.display = 'none';
+    const resultsEl = document.getElementById('search-results');
+    resultsEl.style.display = 'flex';
+    resultsEl.innerHTML = '';
+
+    let matches = [];
+    Object.entries(ROLES).forEach(([roleKey, roleData]) => {
+      Object.entries(roleData.days).forEach(([dayNum, dayData]) => {
+        dayData.tasks.forEach((task, ti) => {
+          if (task.toLowerCase().includes(q)) {
+            matches.push({ roleKey, roleLabel: roleData.label, dayNum, dayTitle: dayData.title, task, ti });
+          }
+        });
+      });
+    });
+
+    document.getElementById('search-count').style.display = matches.length ? 'block' : 'none';
+    document.getElementById('search-count').textContent = `Найдено: ${matches.length}`;
+    document.getElementById('empty-state').style.display = matches.length ? 'none' : 'block';
+
+    const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+    matches.forEach(m => {
+      const el = document.createElement('div');
+      el.className = 'search-result-item';
+      el.innerHTML = `
+        <div class="search-result-meta">
+          <span class="search-badge">${m.roleLabel}</span>
+          <span class="search-badge">День ${m.dayNum} — ${m.dayTitle}</span>
+        </div>
+        <div class="search-result-text">${m.task.replace(re, '<mark>$1</mark>')}</div>
+      `;
+      el.onclick = () => {
+        document.getElementById('search-input').value = '';
+        handleSearch('');
+        setActiveRole(m.roleKey);
+        renderDays(m.roleKey);
+        setTimeout(() => {
+          const card = document.querySelector(`[data-day="${m.dayNum}"]`);
+          if (card) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            const h = card.querySelector('.day-header');
+            if (!h.classList.contains('open')) toggleDay(h);
+          }
+        }, 100);
+      };
+      resultsEl.appendChild(el);
+    });
+  }
+
+  // ── INIT ──────────────────────────────────────────────────────────────────
+  function setActiveRole(role) {
+    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector(`[data-role="${role}"]`);
+    if (btn) btn.classList.add('active');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const authed = getCookie(COOKIE_NAME) === '1';
+    const ob = JSON.parse(localStorage.getItem(OB_KEY) || '{}');
+
+    if (authed && ob.done) {
+      enterPortal(ob.role || 'counselor');
+    } else if (authed) {
+      showScreen('onboarding-screen');
+      renderObRoleSelect();
+    }
+
+    document.getElementById('login-btn').addEventListener('click', handleLogin);
+    document.getElementById('pwd-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleLogin();
+    });
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      removeCookie(COOKIE_NAME);
+      location.reload();
+    });
+
+    document.querySelectorAll('.role-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const role = btn.dataset.role;
+        setActiveRole(role);
+        if (role === 'docs') {
+          document.getElementById('days-view').style.display = 'none';
+          document.getElementById('docs-view').style.display = 'block';
+        } else {
+          renderDays(role);
+        }
+      });
+    });
+
+    document.getElementById('search-input').addEventListener('input', e => {
+      handleSearch(e.target.value);
+    });
+  });
+</script>
+</html>
