@@ -69,7 +69,7 @@ import { reviews } from '../data/reviews';
       </div>
       <div class="flex flex-wrap gap-2 shrink-0">
         <a href="https://yandex.ru/maps/org/aydakemp/35558479035/reviews/?add-review=true" target="_blank" rel="noopener"
-          class="inline-flex items-center gap-1.5 rounded-full border border-primary/55 bg-primary/8 px-3 py-1.5 text-[13px] font-semibold text-primary transition-colors hover:bg-primary/14 hover:border-primary/75"
+          class="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-transparent px-3 py-1.5 text-[13px] font-semibold text-primary-dark transition-colors hover:bg-primary/8 hover:border-primary/60"
           onclick="window.trackGoal?.('review_cta_click')">
           <i class="bi bi-star-fill text-[12px]" aria-hidden="true"></i>
           Яндекс.Карты
@@ -219,5 +219,9 @@ import { reviews } from '../data/reviews';
   }
 
   document.addEventListener('astro:page-load', initReviews);
-  initReviews();
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => { initReviews(); }, { timeout: 3000 });
+  } else {
+    setTimeout(initReviews, 200);
+  }
 </script>

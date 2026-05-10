@@ -183,7 +183,11 @@ const ageCards = [
   }
 
   document.addEventListener('astro:page-load', initJourneyTabs);
-  initJourneyTabs();
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(initJourneyTabs, { timeout: 2000 });
+  } else {
+    setTimeout(initJourneyTabs, 200);
+  }
 
   // === AGE PERSONALIZATION (mobile only) ===
   function applyJourneyAge(age: string) {
@@ -227,5 +231,10 @@ const ageCards = [
   }
 
   document.addEventListener('astro:page-load', initJourneyAge);
-  initJourneyAge();
+  // Defer — Journey ниже fold, не блокируем LCP
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(initJourneyAge, { timeout: 2000 });
+  } else {
+    setTimeout(initJourneyAge, 200);
+  }
 </script>

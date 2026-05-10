@@ -127,55 +127,64 @@ const outcomes = [
 </section>
 
 <script>
-  const roles = [
-    { name: 'Разработчик',         desc: 'Пишет код и собирает прототип. Отвечает за техническую часть — без него нечего показывать инвесторам.' },
-    { name: 'Дизайнер',            desc: 'Делает интерфейс и логотип с помощью AI. Отвечает за то, как продукт выглядит.' },
-    { name: 'Маркетолог',          desc: 'Придумывает название, слоган, готовит питч. Знает кому и зачем это нужно.' },
-    { name: 'Финансовый директор', desc: 'Управляет бюджетом команды — покупает ресурсы, следит чтобы деньги не кончились раньше защиты.' },
-    { name: 'Стратег',             desc: 'Определяет что делаем, для кого и чем отличаемся от других команд.' },
-    { name: 'Тестировщик',         desc: 'Ищет баги и слабые места до питча. Задаёт неудобные вопросы своей же команде.' },
-  ];
+  function initHackathon() {
+    const roles = [
+      { name: 'Разработчик',         desc: 'Пишет код и собирает прототип. Отвечает за техническую часть — без него нечего показывать инвесторам.' },
+      { name: 'Дизайнер',            desc: 'Делает интерфейс и логотип с помощью AI. Отвечает за то, как продукт выглядит.' },
+      { name: 'Маркетолог',          desc: 'Придумывает название, слоган, готовит питч. Знает кому и зачем это нужно.' },
+      { name: 'Финансовый директор', desc: 'Управляет бюджетом команды — покупает ресурсы, следит чтобы деньги не кончились раньше защиты.' },
+      { name: 'Стратег',             desc: 'Определяет что делаем, для кого и чем отличаемся от других команд.' },
+      { name: 'Тестировщик',         desc: 'Ищет баги и слабые места до питча. Задаёт неудобные вопросы своей же команде.' },
+    ];
 
-  const popup   = document.getElementById('role-popup')!;
-  const popName = document.getElementById('role-popup-name')!;
-  const popDesc = document.getElementById('role-popup-desc')!;
-  let activeIdx: number | null = null;
+    const popup   = document.getElementById('role-popup')!;
+    const popName = document.getElementById('role-popup-name')!;
+    const popDesc = document.getElementById('role-popup-desc')!;
+    let activeIdx: number | null = null;
 
-  document.querySelectorAll<HTMLElement>('.role-badge').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const idx = Number(btn.dataset.roleIdx);
+    document.querySelectorAll<HTMLElement>('.role-badge').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.dataset.roleIdx);
 
-      // Тот же — закрыть
-      if (activeIdx === idx) {
+        // Тот же — закрыть
+        if (activeIdx === idx) {
+          activeIdx = null;
+          popup.classList.add('hidden');
+          btn.classList.remove('border-orange-400', 'bg-orange-50', 'text-orange-700');
+          return;
+        }
+
+        // Снять выделение с предыдущего
+        document.querySelectorAll<HTMLElement>('.role-badge').forEach(b =>
+          b.classList.remove('!border-orange-400', '!bg-orange-50', '!text-orange-700')
+        );
+
+        activeIdx = idx;
+        popName.textContent = roles[idx].name;
+        popDesc.textContent = roles[idx].desc;
+        popup.classList.remove('hidden');
+
+        // Выделить активный
+        btn.classList.add('!border-orange-400', '!bg-orange-50', '!text-orange-700');
+      });
+    });
+
+    // Клик вне — закрыть
+    document.addEventListener('click', (e) => {
+      if (!(e.target as HTMLElement).closest('#hackathon-roles') && activeIdx !== null) {
         activeIdx = null;
         popup.classList.add('hidden');
-        btn.classList.remove('border-orange-400', 'bg-orange-50', 'text-orange-700');
-        return;
+        document.querySelectorAll<HTMLElement>('.role-badge').forEach(b =>
+          b.classList.remove('!border-orange-400', '!bg-orange-50', '!text-orange-700')
+        );
       }
-
-      // Снять выделение с предыдущего
-      document.querySelectorAll<HTMLElement>('.role-badge').forEach(b =>
-        b.classList.remove('!border-orange-400', '!bg-orange-50', '!text-orange-700')
-      );
-
-      activeIdx = idx;
-      popName.textContent = roles[idx].name;
-      popDesc.textContent = roles[idx].desc;
-      popup.classList.remove('hidden');
-
-      // Выделить активный
-      btn.classList.add('!border-orange-400', '!bg-orange-50', '!text-orange-700');
     });
-  });
+  }
 
-  // Клик вне — закрыть
-  document.addEventListener('click', (e) => {
-    if (!(e.target as HTMLElement).closest('#hackathon-roles') && activeIdx !== null) {
-      activeIdx = null;
-      popup.classList.add('hidden');
-      document.querySelectorAll<HTMLElement>('.role-badge').forEach(b =>
-        b.classList.remove('!border-orange-400', '!bg-orange-50', '!text-orange-700')
-      );
-    }
-  });
+  document.addEventListener('astro:page-load', initHackathon);
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => { initHackathon(); }, { timeout: 3000 });
+  } else {
+    setTimeout(initHackathon, 200);
+  }
 </script>

@@ -10,7 +10,7 @@
  * NEVER edit icons.css manually — it is AUTO-GENERATED.
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -96,5 +96,9 @@ ${lines.join('\n')}
 
 writeFileSync(effectiveOutput, css, 'utf8');
 if (!outPath) {
-  console.log(`[build-icons-css] wrote ${manifest.length} icons → src/styles/icons.css (${(css.length / 1024).toFixed(1)} KB)`);
+  // Также копируем в public/styles/icons.css — там файл грузится async (не инлайнится в HTML)
+  const publicStylesDir = join(ROOT, 'public/styles');
+  mkdirSync(publicStylesDir, { recursive: true });
+  writeFileSync(join(publicStylesDir, 'icons.css'), css, 'utf8');
+  console.log(`[build-icons-css] wrote ${manifest.length} icons → src/styles/icons.css + public/styles/icons.css (${(css.length / 1024).toFixed(1)} KB)`);
 }

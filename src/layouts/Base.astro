@@ -48,16 +48,16 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
 <html lang="ru" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
-    {/* LCP preload — самый первый тег после charset, чтобы браузер начал грузить до скриптов */}
+    {/* viewport ПЕРЕД preload — preload scanner'у нужен viewport для eval media queries.
+        Без этого Chrome грузит и мобильный, и десктопный вариант одновременно. */}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {/* LCP preload — после viewport, чтобы media="" в preload scanner работал корректно */}
     {heroPreload && <link rel="preload" as="image" href={heroPreload} type="image/avif" fetchpriority="high" />}
-    {/* Responsive LCP preloads (heroPreloadMobile/heroPreloadDesktop) — тоже рендерятся ДО аналитики */}
-    {/* Если передан srcset — браузер сам выберет нужный размер (DPR-aware), иначе фолбэк на href */}
     {heroPreloadMobile && heroPreloadMobileSrcset
       ? <link rel="preload" as="image" media="(max-width: 768px)" imagesrcset={heroPreloadMobileSrcset} imagesizes="100vw" fetchpriority="high" />
-      : heroPreloadMobile && <link rel="preload" as="image" media="(max-width: 768px)" href={heroPreloadMobile} type="image/avif" fetchpriority="high" />
+      : heroPreloadMobile && <link rel="preload" as="image" media="(max-width: 768px)" href={heroPreloadMobile} fetchpriority="high" />
     }
     {heroPreloadDesktop && <link rel="preload" as="image" media="(min-width: 769px)" href={heroPreloadDesktop} type="image/avif" fetchpriority="high" />}
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <meta name="robots" content="index, follow">
     <!-- Mobile address bar / Android task switcher color (бренд orange) -->
@@ -71,6 +71,7 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     <!-- Bootstrap Icons: subset of 30 icons inlined locally (no CDN, no font download) -->
     <link rel="preconnect" href="https://mc.yandex.ru" crossorigin />
     <link rel="dns-prefetch" href="https://mc.yandex.ru" />
+    <link rel="dns-prefetch" href="https://top-fwz1.mail.ru" />
     <script is:inline>
       // === Засечь начало сессии ДО любых других скриптов — для корректного session_ms лида ===
       try {
@@ -129,6 +130,15 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     </script>
     <noscript><div><img src="https://mc.yandex.ru/watch/96499295" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
     <!-- /Yandex.Metrika counter -->
+    <!-- Mail.ru Top.Mail.Ru — _tmr queue init (нет сетевых запросов; pageView ставится в очередь;
+         сам скрипт загружается лениво в Stage 2 вместе с Clarity) -->
+    <script is:inline type="text/javascript">
+      (function(){
+        var t = window._tmr = window._tmr || [];
+        t.push({id:'3755202', type:'pageView', start:+new Date()});
+      })();
+    </script>
+    <!-- /Mail.ru _tmr init -->
     <!-- WebView detection: tags visit in Metrika + adds data-webview attr for CSS fallbacks -->
     <script is:inline>
       (function(){
@@ -157,7 +167,7 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
       })();
     </script>
 
-    <!-- Stage 2 scripts (Clarity + Leadfeeder) — отложены до первой интеракции или +20 сек -->
+    <!-- Stage 2 scripts (Clarity + Leadfeeder + Mail.ru + Andata) — отложены до первой интеракции или +20 сек -->
     <!-- Перф P2 2026-04-20: 8s→20s, чтобы скрипты не грузились внутри 10-сек окна Lighthouse mobile теста -->
     <script is:inline type="text/javascript">
       (function(){
@@ -178,6 +188,20 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
             (function(d,s){var fs=d.getElementsByTagName(s)[0];function ce(src){var cs=d.createElement(s);cs.src=src;cs.async=1;fs.parentNode.insertBefore(cs,fs);}
             ce('https://sc.lfeeder.com/lftracker_v1_'+ss+(ex?'_'+ex:'')+'.js');})(document,'script');
           })('YEgkB8lbGVx4ep3Z');
+          // Mail.ru Top.Mail.Ru — скрипт загружается лениво; _tmr очередь уже заполнена pageView + reachGoal
+          (function(d,id){
+            if(d.getElementById(id)) return;
+            var s=d.createElement('script'); s.id=id; s.async=1;
+            s.src='https://top-fwz1.mail.ru/js/code.js';
+            var f=d.getElementsByTagName('script')[0]; f.parentNode.insertBefore(s,f);
+          })(document,'topmailru-code');
+          // Andata Tag Manager — лениво, не блокирует LCP/TBT
+          (function(d,id){
+            if(d.getElementById(id)) return;
+            var s=d.createElement('script'); s.id=id; s.async=1;
+            s.src='https://tagmanager.andata.ru/api/v1/container/9c0aaeb2-3b5c-4f86-aebd-786c79f7314b/published/code.js';
+            var f=d.getElementsByTagName('script')[0]; f.parentNode.insertBefore(s,f);
+          })(document,'andata-tm');
         }
         var t = setTimeout(loadStage2, 20000);
         ['scroll','click','touchstart','keydown'].forEach(function(e){
@@ -329,8 +353,6 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     </script>
     <SiteSearch />
 
-    <!-- Andata Tag Manager -->
-    <script type="application/javascript" src="//tagmanager.andata.ru/api/v1/container/9c0aaeb2-3b5c-4f86-aebd-786c79f7314b/published/code.js" async></script>
-    <!-- End Andata Tag Manager -->
+    <!-- Andata Tag Manager — загружается лениво в Stage 2 вместе с Clarity/Mail.ru -->
   </body>
 </html>
