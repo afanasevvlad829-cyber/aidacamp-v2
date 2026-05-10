@@ -167,7 +167,7 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
       })();
     </script>
 
-    <!-- Stage 2 scripts (Clarity + Leadfeeder + Mail.ru) — отложены до первой интеракции или +20 сек -->
+    <!-- Stage 2 scripts (Clarity + Leadfeeder + Mail.ru + Andata) — отложены до первой интеракции или +20 сек -->
     <!-- Перф P2 2026-04-20: 8s→20s, чтобы скрипты не грузились внутри 10-сек окна Lighthouse mobile теста -->
     <script is:inline type="text/javascript">
       (function(){
@@ -195,6 +195,13 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
             s.src='https://top-fwz1.mail.ru/js/code.js';
             var f=d.getElementsByTagName('script')[0]; f.parentNode.insertBefore(s,f);
           })(document,'topmailru-code');
+          // Andata Tag Manager — лениво, не блокирует LCP/TBT
+          (function(d,id){
+            if(d.getElementById(id)) return;
+            var s=d.createElement('script'); s.id=id; s.async=1;
+            s.src='https://tagmanager.andata.ru/api/v1/container/9c0aaeb2-3b5c-4f86-aebd-786c79f7314b/published/code.js';
+            var f=d.getElementsByTagName('script')[0]; f.parentNode.insertBefore(s,f);
+          })(document,'andata-tm');
         }
         var t = setTimeout(loadStage2, 20000);
         ['scroll','click','touchstart','keydown'].forEach(function(e){
@@ -346,8 +353,6 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     </script>
     <SiteSearch />
 
-    <!-- Andata Tag Manager -->
-    <script type="application/javascript" src="//tagmanager.andata.ru/api/v1/container/9c0aaeb2-3b5c-4f86-aebd-786c79f7314b/published/code.js" async></script>
-    <!-- End Andata Tag Manager -->
+    <!-- Andata Tag Manager — загружается лениво в Stage 2 вместе с Clarity/Mail.ru -->
   </body>
 </html>
