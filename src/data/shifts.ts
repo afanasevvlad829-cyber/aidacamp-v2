@@ -15,6 +15,7 @@ export interface Shift {
   free: number;
   occupied: number;
   highlighted?: boolean;
+  nearest?: boolean;   // ближайшая смена — особый акцент
   popular?: boolean;
   startDate: string; // YYYY-MM-DD for calendar
   endDate: string;
@@ -33,6 +34,8 @@ export const mainShifts: Shift[] = [
     free: 12,
     occupied: 23,
     highlighted: true,
+    nearest: true,
+    popular: true,
     startDate: '2026-05-30',
     endDate: '2026-06-08',
   },
@@ -47,7 +50,6 @@ export const mainShifts: Shift[] = [
     price: '95 000 ₽',
     free: 4,
     occupied: 41,
-    popular: true,
     startDate: '2026-06-10',
     endDate: '2026-06-23',
   },

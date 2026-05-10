@@ -9,26 +9,26 @@ interface Props {
 const { imageSrc = '/images/hero-mobile-bean-v3', hasVariants = false } = Astro.props;
 ---
 
-<!-- ===== MOBILE HERO — static img (LCP element) + preload hint ===== -->
-<!-- JS-инжект убран: opacity:0 на injected img → LCP не регистрируется до fade-in;
-     статический <img> виден preload scanner'у → качается с первого байта HTML -->
+<!-- ===== MOBILE HERO — SINGLE-PHOTO continuous (no hard edge) ===== -->
 <div class="relative w-full md:hidden overflow-hidden bg-dark-navy" style="padding-top: env(safe-area-inset-top); min-height: 95svh;">
 
-  <!-- ─── HERO PHOTO — LCP element. WebP only: decode ~100ms vs AVIF ~2000ms при 4× CPU throttle ─── -->
-  <!-- AVIF убран как source: при Lighthouse 4× CPU throttle AVIF decode ≈ 2000ms vs WebP 100ms.
-       PageSpeed будет показывать "Improve image delivery" но реальный LCP с WebP значительно лучше. -->
-  <img
-    src={`${imageSrc}.webp`}
-    alt="Дети на занятии в IT-лагере АйДаКемп"
-    class="absolute inset-0 h-full w-full object-cover"
-    style="object-position:center 30%;"
-    loading="eager"
-    fetchpriority="high"
-    width="390"
-    height="800"
-    sizes="100vw"
-    srcset={hasVariants ? `${imageSrc}.webp 390w, ${imageSrc}-600.webp 600w, ${imageSrc}-900.webp 900w` : `${imageSrc}.webp`}
-  />
+  <!-- ─── ОДНА фото-подложка на ВЕСЬ hero ─── -->
+  <picture>
+    <source type="image/avif" media="(max-width: 768px)" srcset={hasVariants ? `${imageSrc}.avif 390w, ${imageSrc}-600.avif 600w, ${imageSrc}-900.avif 900w` : `${imageSrc}.avif`} sizes="100vw" />
+    <source type="image/webp" media="(max-width: 768px)" srcset={hasVariants ? `${imageSrc}.webp 390w, ${imageSrc}-600.webp 600w, ${imageSrc}-900.webp 900w` : `${imageSrc}.webp`} sizes="100vw" />
+    {/* Fallback img: 1×1 transparent png — на desktop parent с md:hidden, а <source> теперь имеют media,
+        поэтому браузер падает на этот placeholder и НЕ грузит mobile hero на desktop. */}
+    <img
+      src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+      alt="Дети на занятии в IT-лагере АйДаКемп"
+      class="absolute inset-0 h-full w-full object-cover"
+      style="filter: saturate(0.92) brightness(0.95); object-position: center 30%;"
+      loading="eager"
+      fetchpriority="high"
+      width="390"
+      height="800"
+    />
+  </picture>
 
   <!-- ─── ЕДИНЫЙ continuous overlay — overlay усилен в зоне tagline для читаемости ─── -->
   <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(180deg,
@@ -113,12 +113,35 @@ const { imageSrc = '/images/hero-mobile-bean-v3', hasVariants = false } = Astro.
 </div>
 
 <style>
+  /* Pulse contained — НЕ blow на photo: только icon scale, без box-shadow */
+  @keyframes hero-bot-icon-pulse {
+    0%, 92%, 100% { transform: scale(1); }
+    96% { transform: scale(1.12); }
+  }
+  .hero-bot-icon { animation: hero-bot-icon-pulse 4.5s ease-in-out infinite; transform-origin: center; display: inline-block; }
   @keyframes hero-fade-up {
     from { opacity: 0.01; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }
   }
   #hero-title-mobile { animation: hero-fade-up 0.6s ease-out 0.1s both; }
   @media (prefers-reduced-motion: reduce) {
-    #hero-title-mobile { animation: none !important; }
+    .hero-bot-cta, .hero-bot-icon, #hero-title-mobile { animation: none !important; }
   }
 </style>
+
+<script is:inline>
+(function () {
+  var topics = ['лагерь', 'еду', 'бассейн', 'размещение', 'стоимость', 'минусы', 'косяки'];
+  var i = 0;
+  var el = document.getElementById('hero-bot-topic');
+  if (!el) return;
+  setInterval(function () {
+    i = (i + 1) % topics.length;
+    el.style.opacity = '0.3';
+    setTimeout(function () {
+      el.textContent = topics[i];
+      el.style.opacity = '1';
+    }, 200);
+  }, 2200);
+})();
+</script>

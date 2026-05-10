@@ -29,7 +29,7 @@ const DEFAULT_COLORS = ['#FF6B1A', '#3B82F6', '#10B981', '#8B5CF6', '#EF4444', '
 
 <div class="__barchart my-5 rounded-[16px] bg-slate-50 border border-slate-100 px-5 py-5">
   {title && (
-    <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400 mb-4">{title}</p>
+    <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-body-faint mb-4">{title}</p>
   )}
   <div class="__bar-group space-y-5">
     {items.map((item, i) => {
@@ -38,7 +38,7 @@ const DEFAULT_COLORS = ['#FF6B1A', '#3B82F6', '#10B981', '#8B5CF6', '#EF4444', '
       return (
         <div>
           <div class="flex items-baseline justify-between mb-1.5">
-            <span class="text-[14px] font-medium text-slate-700">{item.label}</span>
+            <span class="text-[14px] font-medium text-body-muted">{item.label}</span>
             {item.badge && (
               <span class="text-[14px] font-bold tabular-nums" style={`color: ${barColor}`}>
                 {item.badge}
@@ -60,7 +60,7 @@ const DEFAULT_COLORS = ['#FF6B1A', '#3B82F6', '#10B981', '#8B5CF6', '#EF4444', '
     })}
   </div>
   {source && (
-    <p class="text-[11px] text-slate-400 mt-4 font-mono tracking-wide">{source}</p>
+    <p class="text-[11px] text-body-faint mt-4 font-mono tracking-wide">{source}</p>
   )}
 </div>
 
@@ -72,6 +72,10 @@ const DEFAULT_COLORS = ['#FF6B1A', '#3B82F6', '#10B981', '#8B5CF6', '#EF4444', '
 
   function animateGroup(group: Element) {
     const bars = group.querySelectorAll<HTMLElement>('.__bar');
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      bars.forEach(bar => { bar.style.width = (bar.dataset.target ?? '0') + '%'; });
+      return;
+    }
     bars.forEach((bar, i) => {
       const target = parseFloat(bar.dataset.target ?? '0');
       const delay = i * 110;
