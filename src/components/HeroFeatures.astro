@@ -30,7 +30,7 @@ const features = [
   <ul class="hero-features-track flex gap-0 overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
     {features.map((f) => (
       <li class="hero-features-chip flex flex-col justify-center shrink-0 snap-start min-w-[160px] md:min-w-[180px] px-5 py-4 md:px-6 md:py-5 border-r border-white/10 last:border-r-0">
-        <span class="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.16em] text-white/55">{f.label}</span>
+        <span class="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.16em] text-white/72">{f.label}</span>
         <span class={`mt-1.5 text-[17px] md:text-[19px] font-extrabold leading-[1.15] tracking-[-0.01em] ${f.accent ? 'text-emerald-300' : 'text-white'}`}>
           {f.value}
         </span>
@@ -142,6 +142,11 @@ const features = [
     track.style.cursor = 'grab';
   }
 
-  // Инициализируем при загрузке
-  initHeroFeaturesDrag();
+  // Инициализируем при загрузке — defer drag init, не блокируем LCP
+  document.addEventListener('astro:page-load', initHeroFeaturesDrag);
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(initHeroFeaturesDrag, { timeout: 1000 });
+  } else {
+    setTimeout(initHeroFeaturesDrag, 100);
+  }
 </script>
