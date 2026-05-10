@@ -23,13 +23,13 @@ const features = [
 
 <div class="hero-features relative" aria-label="Ключевые факты о лагере">
   <!-- Левая тень-затухание (намёк что есть скролл) -->
-  <div class="hero-features-fade-l hidden md:block" aria-hidden="true"></div>
+  <div class="hero-features-fade-l" aria-hidden="true"></div>
   <!-- Правая тень-затухание -->
   <div class="hero-features-fade-r" aria-hidden="true"></div>
 
-  <ul class="hero-features-track flex gap-0 overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+  <ul class="hero-features-track flex gap-0 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
     {features.map((f) => (
-      <li class="hero-features-chip flex flex-col justify-center shrink-0 snap-start min-w-[160px] md:min-w-[180px] px-5 py-4 md:px-6 md:py-5 border-r border-white/10 last:border-r-0">
+      <li class="hero-features-chip flex flex-col justify-center shrink-0 min-w-[152px] md:min-w-[176px] px-5 py-4 md:px-6 md:py-5 border-r border-white/10 last:border-r-0">
         <span class="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.16em] text-white/72">{f.label}</span>
         <span class={`mt-1.5 text-[17px] md:text-[19px] font-extrabold leading-[1.15] tracking-[-0.01em] ${f.accent ? 'text-emerald-300' : 'text-white'}`}>
           {f.value}
@@ -76,43 +76,40 @@ const features = [
 
 <script>
   function initHeroFeaturesDrag() {
-    const track = document.querySelector('.hero-features-track');
+    const track = document.querySelector<HTMLElement>('.hero-features-track');
     if (!track) return;
 
+    // ─── Mouse drag ───────────────────────────────────────────────
     let isDown = false;
     let startX = 0;
     let scrollLeft = 0;
     let velocity = 0;
     let lastX = 0;
     let lastTime = 0;
+    let rafId = 0;
 
     const onMouseDown = (e: MouseEvent) => {
-      if ((e.target as HTMLElement).closest('a, button')) return; // не драгим если клик по ссылке/кнопке
-
+      if ((e.target as HTMLElement).closest('a, button')) return;
       isDown = true;
       startX = e.pageX - track.offsetLeft;
       scrollLeft = track.scrollLeft;
       lastX = e.pageX;
       lastTime = Date.now();
+      velocity = 0;
+      cancelAnimationFrame(rafId);
       track.style.cursor = 'grabbing';
     };
 
     const onMouseMove = (e: MouseEvent) => {
       if (!isDown) return;
-
       e.preventDefault();
       const x = e.pageX - track.offsetLeft;
-      const walk = (x - startX) * 1.2; // усиливаем перемещение для удобства
-
-      // считаем скорость для инерции
+      const walk = (x - startX) * 1.6; // чуть легче — 1.6 вместо 1.2
       const now = Date.now();
       const dt = now - lastTime;
-      if (dt > 0) {
-        velocity = (e.pageX - lastX) / dt;
-      }
+      if (dt > 0) velocity = (e.pageX - lastX) / dt;
       lastX = e.pageX;
       lastTime = now;
-
       track.scrollLeft = scrollLeft - walk;
     };
 
@@ -120,26 +117,64 @@ const features = [
       if (!isDown) return;
       isDown = false;
       track.style.cursor = 'grab';
-
-      // инерционный скролл (momentum)
-      let currentVelocity = velocity;
+      // momentum
+      let v = velocity;
       const animate = () => {
-        if (Math.abs(currentVelocity) > 0.1) {
-          track.scrollLeft -= currentVelocity * 15;
-          currentVelocity *= 0.95; // затухание
-          requestAnimationFrame(animate);
+        if (Math.abs(v) > 0.08) {
+          track.scrollLeft -= v * 18;
+          v *= 0.92;
+          rafId = requestAnimationFrame(animate);
         }
       };
-      animate();
+      rafId = requestAnimationFrame(animate);
     };
 
     track.addEventListener('mousedown', onMouseDown);
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
-
-    // Чтобы текст не селектировался при драгинге
     track.style.userSelect = 'none';
     track.style.cursor = 'grab';
+
+    // ─── Touch momentum (дополнение к нативному скроллу) ─────────
+    // На iOS нативный скролл уже с инерцией. На Android — нет.
+    // Добавляем momentum для Android и десктопных тач-экранов.
+    let touchStartX = 0;
+    let touchScrollLeft = 0;
+    let touchLastX = 0;
+    let touchLastTime = 0;
+    let touchVelocity = 0;
+
+    track.addEventListener('touchstart', (e: TouchEvent) => {
+      cancelAnimationFrame(rafId);
+      const t = e.touches[0];
+      touchStartX = t.clientX;
+      touchScrollLeft = track.scrollLeft;
+      touchLastX = t.clientX;
+      touchLastTime = Date.now();
+      touchVelocity = 0;
+    }, { passive: true });
+
+    track.addEventListener('touchmove', (e: TouchEvent) => {
+      const t = e.touches[0];
+      const now = Date.now();
+      const dt = now - touchLastTime;
+      if (dt > 0) touchVelocity = (t.clientX - touchLastX) / dt;
+      touchLastX = t.clientX;
+      touchLastTime = now;
+      track.scrollLeft = touchScrollLeft - (t.clientX - touchStartX);
+    }, { passive: true });
+
+    track.addEventListener('touchend', () => {
+      let v = touchVelocity;
+      const animate = () => {
+        if (Math.abs(v) > 0.05) {
+          track.scrollLeft -= v * 20;
+          v *= 0.90;
+          rafId = requestAnimationFrame(animate);
+        }
+      };
+      rafId = requestAnimationFrame(animate);
+    }, { passive: true });
   }
 
   // Инициализируем при загрузке — defer drag init, не блокируем LCP
