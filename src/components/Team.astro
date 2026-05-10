@@ -17,7 +17,7 @@ import Mentors from './Mentors.astro';
     <div class="mt-5 flex flex-col gap-5 md:flex-row md:gap-6">
       <!-- Left: Book card -->
       <div class="w-full shrink-0 md:w-[35%]">
-        <div class="flex h-full flex-col p-5">
+        <div class="flex h-full flex-col p-5 bg-white rounded-[20px]">
           <button type="button" data-gallery-open data-gallery-src="/images/team/team-book-main-01.webp" data-gallery-alt="Книга по Python для детей" class="group mx-auto block">
             <img src="/images/team/team-book-main-01.webp" alt="Книга по Python" class="h-auto w-full max-w-[200px] rounded-lg object-cover shadow-[0_2px_8px_rgba(15,23,42,0.08)] transition group-hover:scale-105" loading="lazy" width="200" height="280" />
           </button>
@@ -209,6 +209,10 @@ import Mentors from './Mentors.astro';
   }
 
   document.addEventListener('astro:page-load', initTeam);
-  initTeam();
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => { initTeam(); }, { timeout: 3000 });
+  } else {
+    setTimeout(initTeam, 200);
+  }
 </script>
 <script type="application/json" id="team-json" set:html={JSON.stringify(members)}></script>

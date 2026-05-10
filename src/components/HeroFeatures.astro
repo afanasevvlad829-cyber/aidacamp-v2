@@ -1,114 +1,42 @@
 ---
 /**
  * HeroFeatures — горизонтальная полоска чипов с фактами о смене.
- * Анимация: бесконечная медленная прокрутка по кругу (marquee).
- * Тап/клик → центральная модалка с подробностями и ссылкой на страницу (если есть).
+ * Концепт: ВОЗРАСТ / ГРУППЫ / ОТ МОСКВЫ / ОПЫТ / НОУТБУК / ГАРАНТИЯ / ЛИЦЕНЗИЯ / МЕДСЕСТРА / ПИТАНИЕ.
+ *
+ * Mobile: horizontal scroll-snap (свайп пальцем)
+ * Desktop: full row (или wrap если не поместятся)
+ *
+ * Используется в hero (Mobile.astro + Desktop.astro) под big call.
  */
 const features = [
-  {
-    label: 'Возраст', value: '7–16 лет', key: 'age',
-    title: 'Возраст участников: 7–16 лет',
-    body: 'Группы формируются по возрасту: 7–9, 10–12 и 13–16 лет. Ребята работают с ровесниками — это важно для комфорта и эффективности.',
-  },
-  {
-    label: 'Группы', value: 'до 8 чел.', key: 'groups',
-    title: 'Группы до 8 человек',
-    body: 'Маленькие группы — наш принципиальный выбор. Наставник знает каждого по имени, видит прогресс и успевает помочь каждому. В больших группах ребята теряются.',
-  },
-  {
-    label: 'От Москвы', value: '1 час', key: 'distance',
-    title: '1 час от Москвы',
-    body: 'Лагерь находится в Подмосковье, 66 км от МКАД по Киевскому шоссе. Трансфер от м. Солнцево (2 000 ₽ в одну сторону). Точное время и адрес сбора — в письме после бронирования.',
-  },
-  {
-    label: 'Опыт', value: 'не нужен', key: 'experience',
-    title: 'Опыт программирования не нужен',
-    body: 'Программа рассчитана на полных новичков. Начинаем с нуля: Scratch, Python, основы веб. Если ребёнок уже умеет кодить — подберём задачи сложнее.',
-  },
-  {
-    label: 'Ноутбук', value: 'не нужен', key: 'laptop',
-    title: 'Ноутбук не нужен',
-    body: 'Все компьютеры предоставляются лагерем. Привозить своё устройство не нужно — только зарядку для телефона и хорошее настроение.',
-  },
-  {
-    label: 'Возврат', value: '50% за 3 дня', key: 'refund',
-    title: 'Политика возврата',
-    body: 'Если в первые 3 дня смены не подошло — вернём 50% стоимости, без лишних вопросов. Гарантия действует для смен от 10 дней. До заезда: за 15+ дней — возврат 100%, за 7–14 дней — частично.',
-    accent: true,
-    link: { href: '/politika-vozvrata', text: 'Читать политику возврата' },
-  },
-  {
-    label: 'Лицензия', value: '✓ Минобрнауки', key: 'license',
-    title: 'Образовательная лицензия',
-    body: 'АйДаКемп работает по лицензии Министерства образования и науки РФ. Это позволяет оформить налоговый вычет 13% — от 2 800 до 5 434 ₽ в зависимости от смены.',
-    accent: true,
-    link: { href: '/nalogovyj-vychet', text: 'Как получить налоговый вычет' },
-  },
-  {
-    label: 'Медсестра', value: '24/7', key: 'medical',
-    title: 'Медицинская помощь 24/7',
-    body: 'В лагере постоянно дежурит медсестра. Медпункт оснащён всем необходимым. При поступлении просим указать хронические заболевания и аллергии в анкете.',
-    accent: true,
-  },
-  {
-    label: 'Питание', value: '5-разовое', key: 'food',
-    title: '5-разовое питание',
-    body: 'Завтрак, второй завтрак, обед, полдник и ужин. Готовится на собственной кухне — без фастфуда и полуфабрикатов. При аллергиях — сообщите заранее. Питание включено в стоимость.',
-    link: { href: '/pitanie', text: 'Меню и питание в лагере' },
-  },
+  { label: 'Возраст', value: '7–15 лет' },
+  { label: 'Группы', value: 'до 8 чел.' },
+  { label: 'От Москвы', value: '1 час' },
+  { label: 'Опыт', value: 'не нужен' },
+  { label: 'Ноутбук', value: 'не нужен' },
+  { label: 'Возврат', value: '50% за 3 дня', accent: true },
+  { label: 'Лицензия', value: '✓ Минобрнауки', accent: true },
+  { label: 'Медсестра', value: '24/7', accent: true },
+  { label: 'Питание', value: '5-разовое' },
 ];
 ---
 
-<div class="hero-features relative overflow-hidden" aria-label="Ключевые факты о лагере">
-  <div class="hero-features-fade-l" aria-hidden="true"></div>
+<div class="hero-features relative" aria-label="Ключевые факты о лагере">
+  <!-- Левая тень-затухание (намёк что есть скролл) -->
+  <div class="hero-features-fade-l hidden md:block" aria-hidden="true"></div>
+  <!-- Правая тень-затухание -->
   <div class="hero-features-fade-r" aria-hidden="true"></div>
 
-  <ul id="hf-track" class="hero-features-track flex [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" role="list">
+  <ul class="hero-features-track flex gap-0 overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
     {features.map((f) => (
-      <li class="hero-features-chip shrink-0">
-        <button
-          type="button"
-          data-hf-key={f.key}
-          class="flex flex-col justify-center w-full h-full min-w-[155px] md:min-w-[180px] px-5 py-4 md:px-6 md:py-5 border-r border-white/10 last:border-r-0 text-left cursor-pointer hover:bg-white/5 transition-colors"
-          aria-label={`${f.label}: ${f.value}. Нажмите для подробностей`}
-        >
-          <span class="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.16em] text-white/55">{f.label}</span>
-          <span class={`mt-1.5 text-[17px] md:text-[19px] font-extrabold leading-[1.15] tracking-[-0.01em] ${f.accent ? 'text-emerald-300' : 'text-white'}`}>
-            {f.value}
-          </span>
-          <span class="mt-1 text-[9px] text-white/30 uppercase tracking-[0.1em]">подробнее</span>
-        </button>
+      <li class="hero-features-chip flex flex-col justify-center shrink-0 snap-start min-w-[160px] md:min-w-[180px] px-5 py-4 md:px-6 md:py-5 border-r border-white/10 last:border-r-0">
+        <span class="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.16em] text-white/72">{f.label}</span>
+        <span class={`mt-1.5 text-[17px] md:text-[19px] font-extrabold leading-[1.15] tracking-[-0.01em] ${f.accent ? 'text-emerald-300' : 'text-white'}`}>
+          {f.value}
+        </span>
       </li>
     ))}
   </ul>
-</div>
-
-<!-- HeroFeatures modal — центральная -->
-<div id="hf-modal" role="dialog" aria-modal="true" aria-labelledby="hf-modal-title"
-  class="fixed inset-0 z-[200] flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200"
-  style="background:rgba(0,0,0,0)">
-  <div class="absolute inset-0 bg-black/60" id="hf-backdrop"></div>
-  <div id="hf-sheet"
-    class="relative w-full max-w-md bg-card rounded-2xl shadow-[0_24px_64px_rgba(0,0,0,0.35)] px-6 pt-6 pb-6 scale-95 transition-transform duration-200">
-    <!-- Закрыть -->
-    <button id="hf-modal-close-x" type="button"
-      class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-surface hover:bg-surface-alt transition-colors text-body-muted"
-      aria-label="Закрыть">
-      <i class="bi bi-x-lg text-[14px]" aria-hidden="true"></i>
-    </button>
-    <h3 id="hf-modal-title" class="text-[18px] font-bold text-body leading-[1.3] pr-8"></h3>
-    <p id="hf-modal-body" class="mt-3 text-[15px] leading-[1.65] text-body-muted"></p>
-    <a id="hf-modal-link" href="#"
-      class="mt-4 flex items-center gap-1.5 text-[14px] font-semibold text-brand hover:underline hidden">
-      <span id="hf-modal-link-text"></span>
-      <i class="bi bi-arrow-right text-[13px]" aria-hidden="true"></i>
-    </a>
-    <button id="hf-modal-close" type="button"
-      class="mt-4 w-full rounded-xl bg-surface py-3 text-[14px] font-semibold text-body-muted hover:bg-surface-alt transition-colors"
-      aria-label="Закрыть">
-      Закрыть
-    </button>
-  </div>
 </div>
 
 <style>
@@ -118,229 +46,107 @@ const features = [
     -webkit-backdrop-filter: blur(8px);
     border-top: 1px solid rgba(255,255,255,0.08);
     border-bottom: 1px solid rgba(255,255,255,0.08);
-    will-change: transform;
   }
-
-  .hero-features-track {
-    overflow: visible;
-    width: max-content;
-  }
-
   .hero-features-fade-l,
   .hero-features-fade-r {
     position: absolute;
     top: 0;
     bottom: 0;
-    width: 72px;
+    width: 48px;
     pointer-events: none;
     z-index: 2;
   }
   .hero-features-fade-l {
     left: 0;
-    background: linear-gradient(to right, rgba(13,26,43,0.96) 0%, transparent 100%);
+    background: linear-gradient(to right, rgba(13,26,43,0.95), transparent);
   }
   .hero-features-fade-r {
     right: 0;
-    background: linear-gradient(to left, rgba(13,26,43,0.96) 0%, transparent 100%);
+    background: linear-gradient(to left, rgba(13,26,43,0.95), transparent);
+  }
+  .hero-features-track.dragging {
+    scroll-behavior: auto; /* отключаем smooth-scroll при драгинге */
+    cursor: grabbing;
+  }
+  /* На очень широких экранах содержимое центрируется и fade не нужен */
+  @media (min-width: 1280px) {
+    .hero-features-track { justify-content: center; }
   }
 </style>
 
 <script>
-(function () {
-  /* ─── данные для модалки ──────────────────────────── */
-  const FEATURES: Record<string, { title: string; body: string; link?: { href: string; text: string } }> = {
-    age:        { title: 'Возраст участников: 7–16 лет', body: 'Группы формируются по возрасту: 7–9, 10–12 и 13–16 лет. Ребята работают с ровесниками — это важно для комфорта и эффективности.' },
-    groups:     { title: 'Группы до 8 человек', body: 'Маленькие группы — наш принципиальный выбор. Наставник знает каждого по имени, видит прогресс и успевает помочь каждому. В больших группах ребята теряются.' },
-    distance:   { title: '1 час от Москвы', body: 'Лагерь находится в Подмосковье, 66 км от МКАД по Киевскому шоссе. Трансфер от м. Солнцево (2 000 ₽ в одну сторону). Точное время и адрес сбора — в письме после бронирования.' },
-    experience: { title: 'Опыт программирования не нужен', body: 'Программа рассчитана на полных новичков. Начинаем с нуля: Scratch, Python, основы веб. Если ребёнок уже умеет кодить — подберём задачи сложнее.' },
-    laptop:     { title: 'Ноутбук не нужен', body: 'Все компьютеры предоставляются лагерем. Привозить своё устройство не нужно — только зарядку для телефона и хорошее настроение.' },
-    refund:     { title: 'Политика возврата', body: 'Если в первые 3 дня смены не подошло — вернём 50% стоимости, без лишних вопросов. Гарантия действует для смен от 10 дней. До заезда: за 15+ дней — возврат 100%, за 7–14 дней — частично.', link: { href: '/politika-vozvrata', text: 'Читать политику возврата' } },
-    license:    { title: 'Образовательная лицензия', body: 'АйДаКемп работает по лицензии Министерства образования и науки РФ. Это позволяет оформить налоговый вычет 13% — от 2 800 до 5 434 ₽ в зависимости от смены.', link: { href: '/nalogovyj-vychet', text: 'Как получить налоговый вычет' } },
-    medical:    { title: 'Медицинская помощь 24/7', body: 'В лагере постоянно дежурит медсестра. Медпункт оснащён всем необходимым. При поступлении просим указать хронические заболевания и аллергии в анкете.' },
-    food:       { title: '5-разовое питание', body: 'Завтрак, второй завтрак, обед, полдник и ужин. Готовится на собственной кухне — без фастфуда и полуфабрикатов. При аллергиях — сообщите заранее. Питание включено в стоимость.', link: { href: '/pitanie', text: 'Меню и питание в лагере' } },
-  };
+  function initHeroFeaturesDrag() {
+    const track = document.querySelector('.hero-features-track');
+    if (!track) return;
 
-  /* ─── модалка ──────────────────────────────────────── */
-  const modal    = document.getElementById('hf-modal')       as HTMLElement | null;
-  const backdrop = document.getElementById('hf-backdrop')    as HTMLElement | null;
-  const sheet    = document.getElementById('hf-sheet')       as HTMLElement | null;
-  const titleEl  = document.getElementById('hf-modal-title') as HTMLElement | null;
-  const bodyEl   = document.getElementById('hf-modal-body')  as HTMLElement | null;
-  const linkEl   = document.getElementById('hf-modal-link')  as HTMLAnchorElement | null;
-  const linkText = document.getElementById('hf-modal-link-text') as HTMLElement | null;
-  const closeBtn = document.getElementById('hf-modal-close') as HTMLElement | null;
-  const closeX   = document.getElementById('hf-modal-close-x') as HTMLElement | null;
+    let isDown = false;
+    let startX = 0;
+    let scrollLeft = 0;
+    let velocity = 0;
+    let lastX = 0;
+    let lastTime = 0;
 
-  function openModal(key: string) {
-    const data = FEATURES[key];
-    if (!data || !modal || !sheet || !titleEl || !bodyEl) return;
-    titleEl.textContent = data.title;
-    bodyEl.textContent  = data.body;
-    if (linkEl && linkText) {
-      if (data.link) {
-        linkEl.href = data.link.href;
-        linkText.textContent = data.link.text;
-        linkEl.classList.remove('hidden');
-      } else {
-        linkEl.classList.add('hidden');
-      }
-    }
-    modal.classList.remove('pointer-events-none');
-    requestAnimationFrame(() => {
-      modal.style.background = 'rgba(0,0,0,0)';
-      modal.classList.remove('opacity-0');
-      modal.classList.add('opacity-100');
-      sheet.classList.remove('scale-95');
-      sheet.classList.add('scale-100');
-    });
-    document.body.style.overflow = 'hidden';
-  }
+    const onMouseDown = (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest('a, button')) return; // не драгим если клик по ссылке/кнопке
 
-  function closeModal() {
-    if (!modal || !sheet) return;
-    modal.classList.add('opacity-0');
-    modal.classList.remove('opacity-100');
-    sheet.classList.remove('scale-100');
-    sheet.classList.add('scale-95');
-    document.body.style.overflow = '';
-    setTimeout(() => modal.classList.add('pointer-events-none'), 200);
-  }
-
-  backdrop?.addEventListener('click', closeModal);
-  closeBtn?.addEventListener('click', closeModal);
-  closeX?.addEventListener('click', closeModal);
-  document.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Escape') closeModal(); });
-
-  /* ─── бесконечная прокрутка (marquee) ─────────────── */
-  const track = document.getElementById('hf-track') as HTMLUListElement | null;
-  if (!track) return;
-
-  /* Клонируем все чипы для бесшовного цикла */
-  const origItems = Array.from(track.querySelectorAll<HTMLLIElement>('li'));
-  origItems.forEach(li => {
-    const clone = li.cloneNode(true) as HTMLLIElement;
-    clone.setAttribute('aria-hidden', 'true');
-    track.appendChild(clone);
-  });
-
-  /* Клики на все кнопки (оригиналы + клоны) */
-  track.querySelectorAll<HTMLElement>('[data-hf-key]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (!wasDragging) openModal(btn.getAttribute('data-hf-key')!);
-    });
-  });
-
-  /* Авто-прокрутка */
-  const SPEED = 0.35;
-  const RESUME_DELAY = 1200;
-  let isPaused = false;
-  let resumeTimer: ReturnType<typeof setTimeout> | null = null;
-
-  function getHalfWidth() { return track.scrollWidth / 2; }
-
-  function tick() {
-    if (!isPaused) {
-      const parent = track.parentElement as HTMLElement;
-      parent.scrollLeft += SPEED;
-      if (parent.scrollLeft >= getHalfWidth()) {
-        parent.scrollLeft -= getHalfWidth();
-      }
-    }
-    requestAnimationFrame(tick);
-  }
-
-  const wrapper = track.parentElement as HTMLElement;
-  wrapper.style.overflowX = 'scroll';
-  wrapper.style.scrollbarWidth = 'none';
-  (wrapper.style as any).msOverflowStyle = 'none';
-
-  function pause() {
-    isPaused = true;
-    if (resumeTimer) { clearTimeout(resumeTimer); resumeTimer = null; }
-  }
-  function scheduleResume() {
-    if (resumeTimer) clearTimeout(resumeTimer);
-    resumeTimer = setTimeout(() => { isPaused = false; }, RESUME_DELAY);
-  }
-
-  wrapper.addEventListener('mouseenter', pause);
-  wrapper.addEventListener('mouseleave', scheduleResume);
-
-  /* Перетаскивание мышью */
-  let isDragging = false;
-  let wasDragging = false;
-  let dragStartX = 0;
-  let dragScrollLeft = 0;
-  let dragVelocity = 0;
-  let dragLastX = 0;
-  let dragLastTime = 0;
-
-  wrapper.addEventListener('mousedown', (e: MouseEvent) => {
-    isDragging = true;
-    wasDragging = false;
-    dragStartX = e.pageX;
-    dragScrollLeft = wrapper.scrollLeft;
-    dragLastX = e.pageX;
-    dragLastTime = Date.now();
-    dragVelocity = 0;
-    pause();
-    wrapper.style.cursor = 'grabbing';
-  });
-
-  document.addEventListener('mousemove', (e: MouseEvent) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    if (Math.abs(e.pageX - dragStartX) > 4) wasDragging = true;
-    const now = Date.now();
-    const dt = now - dragLastTime;
-    if (dt > 0) dragVelocity = (e.pageX - dragLastX) / dt;
-    dragLastX = e.pageX;
-    dragLastTime = now;
-    wrapper.scrollLeft = dragScrollLeft - (e.pageX - dragStartX);
-    const half = getHalfWidth();
-    if (wrapper.scrollLeft >= half)  wrapper.scrollLeft -= half;
-    else if (wrapper.scrollLeft < 0) wrapper.scrollLeft += half;
-  });
-
-  document.addEventListener('mouseup', () => {
-    if (!isDragging) return;
-    isDragging = false;
-    wrapper.style.cursor = '';
-    let v = dragVelocity;
-    const momentum = () => {
-      if (Math.abs(v) > 0.05) {
-        wrapper.scrollLeft -= v * 14;
-        const half = getHalfWidth();
-        if (wrapper.scrollLeft >= half)  wrapper.scrollLeft -= half;
-        else if (wrapper.scrollLeft < 0) wrapper.scrollLeft += half;
-        v *= 0.94;
-        requestAnimationFrame(momentum);
-      }
+      isDown = true;
+      startX = e.pageX - track.offsetLeft;
+      scrollLeft = track.scrollLeft;
+      lastX = e.pageX;
+      lastTime = Date.now();
+      track.style.cursor = 'grabbing';
     };
-    momentum();
-    scheduleResume();
-  });
 
-  /* Touch */
-  let touchStartX = 0;
-  let touchScrollLeft = 0;
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDown) return;
 
-  wrapper.addEventListener('touchstart', (e: TouchEvent) => {
-    pause();
-    touchStartX = e.touches[0].clientX;
-    touchScrollLeft = wrapper.scrollLeft;
-  }, { passive: true });
+      e.preventDefault();
+      const x = e.pageX - track.offsetLeft;
+      const walk = (x - startX) * 1.2; // усиливаем перемещение для удобства
 
-  wrapper.addEventListener('touchmove', (e: TouchEvent) => {
-    const dx = e.touches[0].clientX - touchStartX;
-    wrapper.scrollLeft = touchScrollLeft - dx;
-    const half = getHalfWidth();
-    if (wrapper.scrollLeft >= half)  wrapper.scrollLeft -= half;
-    else if (wrapper.scrollLeft < 0) wrapper.scrollLeft += half;
-  }, { passive: true });
+      // считаем скорость для инерции
+      const now = Date.now();
+      const dt = now - lastTime;
+      if (dt > 0) {
+        velocity = (e.pageX - lastX) / dt;
+      }
+      lastX = e.pageX;
+      lastTime = now;
 
-  wrapper.addEventListener('touchend', scheduleResume, { passive: true });
+      track.scrollLeft = scrollLeft - walk;
+    };
 
-  setTimeout(() => requestAnimationFrame(tick), 100);
-})();
+    const onMouseUp = () => {
+      if (!isDown) return;
+      isDown = false;
+      track.style.cursor = 'grab';
+
+      // инерционный скролл (momentum)
+      let currentVelocity = velocity;
+      const animate = () => {
+        if (Math.abs(currentVelocity) > 0.1) {
+          track.scrollLeft -= currentVelocity * 15;
+          currentVelocity *= 0.95; // затухание
+          requestAnimationFrame(animate);
+        }
+      };
+      animate();
+    };
+
+    track.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+
+    // Чтобы текст не селектировался при драгинге
+    track.style.userSelect = 'none';
+    track.style.cursor = 'grab';
+  }
+
+  // Инициализируем при загрузке — defer drag init, не блокируем LCP
+  document.addEventListener('astro:page-load', initHeroFeaturesDrag);
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(initHeroFeaturesDrag, { timeout: 1000 });
+  } else {
+    setTimeout(initHeroFeaturesDrag, 100);
+  }
 </script>
