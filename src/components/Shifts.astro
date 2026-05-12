@@ -74,7 +74,7 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
 
       <!-- Track: карточки в ряд, JS дублирует для бесконечной петли -->
       <div
-        class="shifts-marquee-track flex gap-3 md:gap-4 py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        class="shifts-marquee-track flex gap-3 md:gap-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         data-shifts-marquee-track
       >
         {summerShifts.map((shift) => (
@@ -108,25 +108,33 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
   /* ── MARQUEE VIEWPORT ── */
   .shifts-marquee-vp {
     overflow: hidden;
-    padding-top: 4px;
-    padding-bottom: 20px;
+    /* Padding = shadow clearance for card-shadow:
+       mobile  → 0 2px 6px / 0 4px 14px: needs 10px top, 18px bottom
+       desktop → 0 2px 8px / 0 8px 28px: needs 20px top, 36px bottom */
+    padding-top: 20px;
+    padding-bottom: 36px;
   }
 
   /* ── TRACK ── */
   .shifts-marquee-track {
     display: flex;
     overflow-x: auto;
+    /* overflow-x:auto forces overflow-y:auto (CSS spec) → clips child shadows.
+       Vertical padding here must cover the full shadow extent so nothing is cut. */
     cursor: grab;
     user-select: none;
     -webkit-overflow-scrolling: touch;
     scroll-behavior: auto;
+    padding-top: 20px;
+    padding-bottom: 36px;
     padding-left: 18px;
     padding-right: 18px;
   }
   @media (min-width: 768px) {
     .shifts-marquee-track {
-      padding-left: 0;
-      padding-right: 0;
+      /* desktop shadow: 0 X offset + 8px blur → 8px horizontal clearance needed */
+      padding-left: 8px;
+      padding-right: 8px;
     }
   }
 
@@ -140,7 +148,7 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
   .shifts-mq-fade-r {
     position: absolute;
     top: 0;
-    bottom: 20px; /* совпадает с padding-bottom */
+    bottom: 36px; /* совпадает с padding-bottom viewport */
     width: 48px;
     pointer-events: none;
     z-index: 2;
