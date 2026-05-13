@@ -1,32 +1,17 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, readFile } from 'fs/promises';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { join, extname } from 'path';
 
 const execFileAsync = promisify(execFile);
 
-// Все допустимые имена (без расширения)
-const ALLOWED = new Set([
-  'IMG_7209','IMG_7212','IMG_7219',
-  'camp-group-beanbags','camp-smile','camp-two-beanbags',
-  'food-buffet','food-kids-peace','food-tray',
-  'gallery-01','gallery-03','gallery-04','gallery-05','gallery-06',
-  'gallery-08','gallery-10','gallery-11','gallery-12',
-  'hackathon-present',
-  'pool-interior','pool-kids-edge','pool-noodles',
-  'sport-ball','sport-field','sport-football','sport-goal','sport-volleyball',
-  'study-coding','study-dome-group','study-dome-row','study-pitch','study-stage-girl',
-  'territory-admin','territory-alley','territory-korpus',
-]);
-
-// HDR-фильтр: насыщенность +30%, S-контраст, поднять тени, sharpening
-const HDR_ARGS = [
-  '-modulate', '103,130,100',
-  '-sigmoidal-contrast', '4,50%',
-  '-level', '3%,97%',
-  '-unsharp', '0x0.5+0.8+0.02',
+// No filters. Strip ICC profile, force sRGB — just clean format conversion.
+const CONVERT_ARGS = [
+  '-strip',
+  '-colorspace', 'sRGB',
+  '-colorspace', 'sRGB',  // re-apply after strip
 ];
 
 export const GET: APIRoute = () => json({ status: 'gallery-upload API ready' });
@@ -35,18 +20,23 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
-    const name = (formData.get('name') as string | null)?.trim();
+    let name = (formData.get('name') as string | null)?.trim() ?? '';
+    const section = (formData.get('section') as string | null)?.trim() ?? '';
 
-    if (!file || !name) {
-      return json({ error: 'Нет файла или имени' }, 400);
+    if (!file) {
+      return json({ error: 'Нет файла' }, 400);
     }
-    if (!ALLOWED.has(name)) {
-      return json({ error: `Неизвестное имя: ${name}` }, 400);
+
+    // Sanitize / auto-generate name
+    if (name) {
+      name = name.replace(/[^a-z0-9_-]/gi, '-').replace(/-+/g, '-').toLowerCase();
+    }
+    if (!name) {
+      if (!section) return json({ error: 'Нужно имя файла или раздел' }, 400);
+      name = `${section}-${Date.now().toString(36)}`;
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-
-    // Определяем расширение оригинала
     const origExt = extname(file.name || '.jpg') || '.jpg';
     const tmp = `/tmp/gallery-up-${Date.now()}-${name}${origExt}`;
     await writeFile(tmp, buffer);
@@ -61,30 +51,45 @@ export const POST: APIRoute = async ({ request }) => {
     await mkdir(thumbsDir,    { recursive: true });
     await mkdir(jpgDir,       { recursive: true });
 
-    // 1. Сохраняем оригинал (нетронутый)
+    // 1. Save original (untouched)
     const origOut = join(originalsDir, `${name}${origExt}`);
     await writeFile(origOut, buffer);
 
-    // HEIC/HEIF с iPhone содержит depth-map и другие слои — берём только [0]
+    // HEIC/HEIF from iPhone has depth layers — take only [0]
     const isHeic = /\.(heic|heif)$/i.test(origExt);
     const tmpIn = isHeic ? `${tmp}[0]` : tmp;
 
-    // 2. HDR → AVIF (основной формат)
+    // 2. HDR → AVIF (main format)
     const outAvif  = join(galleryDir, `${name}.avif`);
-    await execFileAsync('convert', [tmpIn, ...HDR_ARGS, outAvif]);
+    await execFileAsync('convert', [tmpIn, ...CONVERT_ARGS, outAvif]);
 
-    // 3. HDR → JPEG (фоллбэк)
+    // 3. HDR → JPEG (fallback for browsers)
     const outJpg = join(jpgDir, `${name}.jpg`);
-    await execFileAsync('convert', [tmpIn, ...HDR_ARGS, '-quality', '90', outJpg]);
+    await execFileAsync('convert', [tmpIn, ...CONVERT_ARGS, '-quality', '90', outJpg]);
 
-    // 4. Thumb из готового AVIF (400px)
+    // 4. Thumb from AVIF (400px wide)
     const outThumb = join(thumbsDir, `${name}.avif`);
     await execFileAsync('convert', [outAvif, '-resize', '400x', '-quality', '75', outThumb]);
 
-    // Удаляем temp
+    // Cleanup temp
     await execFileAsync('rm', ['-f', tmp]);
 
-    return json({ ok: true, name, avif: outAvif, jpg: outJpg, original: origOut });
+    // If this is a NEW photo (section provided) — persist to gallery-additions.json
+    if (section) {
+      const additionsPath = join(galleryDir, 'gallery-additions.json');
+      let additions: Record<string, { file: string; alt: string }[]> = {};
+      try {
+        additions = JSON.parse(await readFile(additionsPath, 'utf-8'));
+      } catch {}
+      if (!additions[section]) additions[section] = [];
+      // Avoid duplicates
+      if (!additions[section].some(e => e.file === `${name}.avif`)) {
+        additions[section].push({ file: `${name}.avif`, alt: '' });
+      }
+      await writeFile(additionsPath, JSON.stringify(additions, null, 2));
+    }
+
+    return json({ ok: true, name, file: `${name}.avif`, avif: outAvif, jpg: outJpg });
   } catch (err: any) {
     console.error('gallery-upload error:', err);
     return json({ error: String(err?.message ?? err) }, 500);

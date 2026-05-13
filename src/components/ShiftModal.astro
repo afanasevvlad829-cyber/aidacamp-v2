@@ -2,6 +2,7 @@
 // ShiftModal.astro — единая модалка смены с 3 табами:
 // Описание / Календарь / Подробнее
 // Открывается по клику на карточку смены или по data-shift-calendar / data-shift-info
+import { TELEGRAM_URL } from '../data/contacts';
 ---
 
 <div id="shift-modal"
@@ -122,14 +123,20 @@
     <div class="shrink-0 border-t border-slate-100 px-5 py-4 bg-white md:rounded-b-2xl">
       <div class="flex items-center justify-between gap-3 mb-3">
         <div>
-          <div data-shift-modal-price class="text-[22px] font-bold tracking-[-0.03em] text-slate-900"></div>
-          <p class="text-[14px] text-slate-400">Питание, проживание, программа включены</p>
+          <div data-shift-modal-price class="text-[22px] font-bold tracking-[-0.03em] text-slate-900 leading-tight"></div>
+          <p class="text-[13px] text-slate-400 mt-0.5">Питание, проживание, программа включены</p>
         </div>
       </div>
       <button type="button" data-shift-modal-book
         class="w-full rounded-xl bg-primary hover:bg-primary/90 text-[#0d1a2b] px-4 py-3 text-[15px] font-semibold transition active:scale-[0.98]">
         Выбрать смену
       </button>
+      <a href={TELEGRAM_URL} target="_blank" rel="noopener"
+         class="mt-2.5 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-[14px] font-semibold text-slate-600 transition hover:border-[#27A7E5]/60 hover:text-[#229ED9] active:scale-[0.98] no-underline"
+         data-analytics-goal="telegram_click">
+        <i class="bi bi-telegram text-[16px]" aria-hidden="true"></i>
+        Написать в Telegram
+      </a>
     </div>
 
   </div>
@@ -137,10 +144,14 @@
 
 <script>
   import { initShiftModal } from '../scripts/shift-modal';
-  document.addEventListener('astro:page-load', initShiftModal);
+  import { initDiscountTimer } from '../scripts/discount-timer';
+  document.addEventListener('astro:page-load', () => {
+    initShiftModal();
+    initDiscountTimer();
+  });
   if ('requestIdleCallback' in window) {
-    requestIdleCallback(initShiftModal, { timeout: 2000 });
+    requestIdleCallback(() => { initShiftModal(); initDiscountTimer(); }, { timeout: 2000 });
   } else {
-    setTimeout(initShiftModal, 200);
+    setTimeout(() => { initShiftModal(); initDiscountTimer(); }, 200);
   }
 </script>

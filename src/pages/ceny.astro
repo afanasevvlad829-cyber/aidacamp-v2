@@ -11,6 +11,18 @@ import TaxCalculator from '../components/TaxCalculator.astro';
 import BenefitCalculator from '../components/BenefitCalculator.astro';
 import { getRelatedPages } from '../data/landing-pages';
 import { mainShifts, shortShifts } from '../data/shifts';
+import AskCta from '../components/AskCta.astro';
+
+function freeLabel(free: number): string {
+  if (free === 0) return 'Мест нет';
+  const word = free === 1 ? 'место' : free >= 2 && free <= 4 ? 'места' : 'мест';
+  return `Осталось ${free} ${word}`;
+}
+function freeBadgeClass(free: number): string {
+  if (free === 0) return 'inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-[12px] font-medium text-red-700';
+  if (free <= 5) return 'inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-0.5 text-[12px] font-medium text-orange-700';
+  return 'inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[12px] font-medium text-emerald-700';
+}
 
 // Таблица цен — формируем из data/shifts.ts, чтобы источник правды был один.
 const priceRows = [
@@ -20,6 +32,9 @@ const priceRows = [
     dates: s.dates,
     duration: s.duration,
     price: s.price,
+    free: s.free,
+    freeLabel: freeLabel(s.free),
+    freeBadgeClass: freeBadgeClass(s.free),
     note: s.popular ? 'популярная' : '',
   })),
   ...shortShifts.map((s) => ({
@@ -28,6 +43,9 @@ const priceRows = [
     dates: s.dates,
     duration: s.duration,
     price: s.price,
+    free: s.free,
+    freeLabel: freeLabel(s.free),
+    freeBadgeClass: freeBadgeClass(s.free),
     note: 'короткая',
   })),
 ];
@@ -227,9 +245,15 @@ const sections = [
                 {row.price}
               </td>
               <td class="px-2 py-3 text-right">
-                {row.note && (
-                  <span class="inline-flex rounded-full bg-[var(--color-primary-50)] px-2.5 py-0.5 text-[12px] font-medium text-[var(--color-primary-700)]">{row.note}</span>
-                )}
+                <div class="flex flex-col items-end gap-1">
+                  {row.note && (
+                    <span class="inline-flex rounded-full bg-[var(--color-primary-50)] px-2.5 py-0.5 text-[12px] font-medium text-[var(--color-primary-700)]">{row.note}</span>
+                  )}
+                  <span class={row.freeBadgeClass}>
+                    <i class="bi bi-people-fill text-[11px]" aria-hidden="true"></i>
+                    {row.freeLabel}
+                  </span>
+                </div>
               </td>
               <td class="px-4 py-3 text-right">
                 <a
@@ -268,20 +292,6 @@ const sections = [
       </a>
     </div>
 
-    <!-- Urgency strip — дефицит мест -->
-    <a
-      href="/shifts/shift-2/"
-      class="mt-4 flex flex-wrap items-center gap-3 rounded-[14px] bg-amber-50 border border-amber-200 px-4 py-3 hover:bg-amber-100 transition-colors no-underline"
-      data-analytics-goal="ceny_urgency_click"
-      data-analytics-label="shift-2"
-    >
-      <div class="flex items-center gap-2 text-amber-800">
-        <i class="bi bi-fire text-[16px] text-primary shrink-0" aria-hidden="true"></i>
-        <span class="text-[14px] font-semibold">Смена 2 (10–23 июня) — осталось ~20% мест</span>
-      </div>
-      <span class="hidden sm:block h-4 w-px bg-amber-200 shrink-0"></span>
-      <span class="text-[13px] text-amber-700">Популярные смены закрываются за 2–3 месяца до старта →</span>
-    </a>
   </section>
 
   <LandingTwoCol sections={sections} />
@@ -299,6 +309,9 @@ const sections = [
   <Gallery />
 
   <FAQ />
+
+  <!-- CTA → /ask для возвратных пользователей -->
+  <AskCta />
 
   <ShiftBookModal />
 

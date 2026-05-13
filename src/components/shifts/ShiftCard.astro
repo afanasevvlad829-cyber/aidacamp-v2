@@ -47,12 +47,14 @@ const freeLabel = isLowAvailability
   ? `Осталось ${shift.free}`
   : `Свободно ${shift.free}`;
 
-// Status pill (правый верхний угол): only when много мест ИЛИ короткая
+// Status pill (правый верхний угол)
 const statusPill = shift.statusType === 'short'
   ? { text: 'короткая', cls: 'bg-[var(--color-primary-100)] text-[var(--color-primary-700)]' }
-  : !isLowAvailability && shift.free >= 10
-    ? { text: `${shift.free} мест`, cls: 'bg-emerald-100 text-emerald-700' }
-    : null;
+  : isLowAvailability
+    ? { text: `Осталось ${shift.free}`, cls: 'bg-orange-100 text-orange-700 font-bold' }
+    : shift.free >= 10
+      ? { text: `${shift.free} мест`, cls: 'bg-emerald-100 text-emerald-700' }
+      : null;
 
 // CTA — primary (orange) для nearest/popular/low_avail, иначе ghost (Что внутри смены)
 const isPrimaryCta = shift.nearest || shift.popular || isLowAvailability;
@@ -67,6 +69,7 @@ const daysLeft = startDate
 
 <article
   data-shift-card
+  data-shift-id={shift.id}
   class:list={[
     'reveal group relative flex flex-col rounded-[22px] border bg-card cursor-pointer select-none transition-all duration-200',
     'card-shadow',
@@ -96,6 +99,12 @@ const daysLeft = startDate
         {shift.dates.replace('— ', '— ')}
       </h3>
       <p class="mt-1.5 text-[14px] md:text-[13px] text-body-muted">{shift.duration}</p>
+      {shift.id === 'shift-1' && (
+        <span class="mt-2 inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-0.5 text-[12px] font-semibold text-orange-700">
+          <i class="bi bi-clock text-[11px]" aria-hidden="true"></i>
+          через <span id="shift1-days">17</span> дн
+        </span>
+      )}
     </div>
     {statusPill && (
       <span class:list={[
@@ -237,4 +246,15 @@ const daysLeft = startDate
 
   document.addEventListener('astro:page-load', initShiftCards);
   if (document.readyState !== 'loading') initShiftCards();
+
+  // Обновляем счётчик дней до Смены 1 динамически
+  function updateShift1Days() {
+    var el = document.getElementById('shift1-days');
+    if (el) {
+      var d = Math.ceil((new Date('2026-05-30').getTime() - new Date().getTime()) / 86400000);
+      el.textContent = String(Math.max(0, d));
+    }
+  }
+  document.addEventListener('astro:page-load', updateShift1Days);
+  updateShift1Days();
 </script>

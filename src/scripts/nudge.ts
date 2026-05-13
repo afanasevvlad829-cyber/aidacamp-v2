@@ -93,7 +93,7 @@ export function initNudges() {
       ticking = true;
       requestAnimationFrame(() => {
         const scrollPct = Math.round(
-          (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100
+          (window.scrollY / (document.documentElement.scrollHeight - (window.visualViewport?.height ?? window.innerHeight))) * 100
         );
         for (const flow of scrollFlows) {
           if (scrollPct >= flow.value && !getShown().has(flow.id)) {

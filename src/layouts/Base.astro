@@ -11,6 +11,7 @@ import GlobalShiftLinkHandler from '../components/GlobalShiftLinkHandler.astro';
 import BackToTop from '../components/BackToTop.astro';
 import DotPatternBackground from '../components/DotPatternBackground.astro';
 import SiteSearch from '../components/SiteSearch.astro';
+import ReturnBanner from '../components/ReturnBanner.astro';
 
 interface Props {
   title: string;
@@ -254,7 +255,7 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         window.initScrollTracking = function () {
           var goals = [{p:25,id:'scroll_25'},{p:50,id:'scroll_50'},{p:75,id:'scroll_75'},{p:90,id:'scroll_90'}];
           window.addEventListener('scroll', function () {
-            var h = document.documentElement.scrollHeight - window.innerHeight;
+            var h = document.documentElement.scrollHeight - (window.visualViewport ? window.visualViewport.height : window.innerHeight);
             if (!h) return;
             var pct = Math.round(window.scrollY / h * 100);
             goals.forEach(function (g) { if (pct >= g.p) window.trackGoal(g.id); });
@@ -353,6 +354,28 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
       initReveal();
     </script>
     <SiteSearch />
+    <ReturnBanner />
+
+    <!-- Неизвестные якоря и ретаргет-трафик → #shifts -->
+    <script is:inline>
+      (function () {
+        var KNOWN = ['shifts','about','gallery','gallery-preview','faq','booking','price','smeny','program','tracks','philosophy','economy','journey','team','stay','reviews','contacts','videos','hackathon','mentors','hero','waitlist'];
+        var hash = (location.hash || '').replace('#','');
+        var isRetarget = location.search.indexOf('ybaip=1') !== -1;
+        var isUnknownHash = hash && KNOWN.indexOf(hash) === -1;
+        if (isRetarget || isUnknownHash) {
+          function scrollToShifts() {
+            var el = document.getElementById('shifts');
+            if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
+          }
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', scrollToShifts);
+          } else {
+            scrollToShifts();
+          }
+        }
+      })();
+    </script>
 
     <!-- Andata Tag Manager — загружается лениво в Stage 2 вместе с Clarity/Mail.ru -->
   </body>

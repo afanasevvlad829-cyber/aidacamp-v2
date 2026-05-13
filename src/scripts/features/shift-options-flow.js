@@ -12,6 +12,7 @@
     const selectShift = typeof ctx.selectShift === 'function' ? ctx.selectShift : (() => {});
     const closeTransientModals = typeof ctx.closeTransientModals === 'function' ? ctx.closeTransientModals : (() => {});
     const applyCompactSectionModalLayout = typeof ctx.applyCompactSectionModalLayout === 'function' ? ctx.applyCompactSectionModalLayout : (() => {});
+    const track = typeof ctx.track === 'function' ? ctx.track : (() => {});
     const resolveViewKey = typeof ctx.resolveViewKey === 'function' ? ctx.resolveViewKey : ((viewKey) => viewKey === 'mobile' ? 'mobile' : 'desktop');
     const resolveShiftOptionsTargetId = typeof ctx.resolveShiftOptionsTargetId === 'function' ? ctx.resolveShiftOptionsTargetId : (() => '');
     const getShiftOptionPanels = typeof ctx.getShiftOptionPanels === 'function' ? ctx.getShiftOptionPanels : (() => ({
@@ -134,6 +135,7 @@
 
       modal.classList.remove('hidden');
       applyCompactSectionModalLayout();
+      track('open_shift_info', { shift_id: shiftId, shift_label: shift.label || shift.title });
       return true;
     }
 

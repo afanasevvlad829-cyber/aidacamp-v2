@@ -923,7 +923,8 @@
         applyCompactSectionModalLayout: runtimeInvoke.applyCompactSectionModalLayout,
         resolveViewKey,
         resolveShiftOptionsTargetId,
-        getShiftOptionPanels: () => shiftOptionPanels
+        getShiftOptionPanels: () => shiftOptionPanels,
+        track
       }))) || null;
     }
 

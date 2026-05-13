@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Структуры страницы</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #111; color: #fff; font-family: Arial, sans-serif; padding: 24px; }
+  h2 { font-size: 18px; font-weight: 900; margin-bottom: 6px; letter-spacing: 1px; }
+  .subtitle { font-size: 12px; color: #555; margin-bottom: 28px; }
+
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  .col { display: flex; flex-direction: column; gap: 0; cursor: pointer; border: 2px solid transparent; border-radius: 4px; overflow: hidden; transition: border-color .2s; }
+  .col:hover { border-color: #333; }
+  .col.selected { border-color: #c8102e; }
+
+  .col-label { background: #1a1a1a; padding: 10px 12px; font-size: 10px; font-weight: 900; letter-spacing: 2px; color: #888; text-transform: uppercase; border-bottom: 1px solid #222; }
+  .col-label span { color: #c8102e; }
+
+  .block { padding: 10px 12px; font-size: 10px; line-height: 1.5; border-bottom: 1px solid #1e1e1e; position: relative; }
+  .block-label { font-size: 8px; letter-spacing: 2px; color: #444; text-transform: uppercase; margin-bottom: 4px; }
+  .block-text { color: #777; }
+  .block-text b { color: #bbb; }
+  .block-text s { color: #333; }
+  .block-text .red { color: #c8102e; }
+
+  /* типы блоков — цвет левой полоски */
+  .b-hero  { border-left: 3px solid #fff; background: #0d0d0d; }
+  .b-pain  { border-left: 3px solid #c8102e; background: #0d0808; }
+  .b-no    { border-left: 3px solid #c8102e; background: #0d0808; }
+  .b-anti  { border-left: 3px solid #555; background: #0a0a0a; }
+  .b-price { border-left: 3px solid #888; background: #0a0a0a; }
+  .b-book  { border-left: 3px solid #444; background: #080808; }
+  .b-photo { border-left: 3px solid #c8102e; background: #0d0000; min-height: 70px; display: flex; flex-direction: column; justify-content: flex-end; }
+  .b-who   { border-left: 3px solid #555; background: #0a0a0a; }
+  .b-cta   { border-left: 3px solid #fff; background: #111; text-align: center; }
+
+  .ticker { background: #c8102e; padding: 5px 12px; font-size: 8px; letter-spacing: 2px; color: #fff; font-weight: 900; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #555; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+  /* click to select */
+  .col { user-select: none; }
+</style>
+<script>
+function toggleCol(el) {
+  el.classList.toggle('selected');
+  const idx = el.dataset.choice;
+  const sel = Array.from(document.querySelectorAll('.col.selected')).map(c => c.dataset.choice);
+  document.getElementById('status').textContent = sel.length ? 'Выбрано: ' + sel.map(s => 'Вариант ' + s).join(', ') : 'Кликни на вариант';
+  // post to server
+  try {
+    fetch('/event', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({type:'click', choice: idx, text: 'Вариант ' + idx, timestamp: Date.now()})});
+  } catch(e) {}
+}
+</script>
+</head>
+<body>
+
+<h2>4 структуры страницы vlad-a.ru</h2>
+<p class="subtitle">Кликни на вариант(ы) — скажи что нравится или комбинируй блоки</p>
+
+<div id="status" style="font-size:11px;color:#c8102e;margin-bottom:16px;min-height:18px;">Кликни на вариант</div>
+
+<div class="grid">
+
+  <!-- ВАРИАНТ A: Диагноз -->
+  <div class="col" data-choice="A" onclick="toggleCol(this)">
+    <div class="col-label">Вариант <span>A</span><br>«Диагноз»</div>
+
+    <div class="block b-hero">
+      <div class="block-label">Hero</div>
+      <div class="block-text"><b>99% бизнеса валится из одного.</b><br>Нет продаж — нет бизнеса.</div>
+    </div>
+
+    <div class="ticker">НЕТ ТАБЛЕТОК · НЕТ ГАРАНТИЙ · НЕТ СХЕМ ·</div>
+
+    <div class="block b-pain">
+      <div class="block-label">Боль — диагноз</div>
+      <div class="block-text">
+        <s>Трафик есть — заявок нет</s><br>
+        <s>Команда есть — результата нет</s><br>
+        <s>Продукт есть — денег нет</s><br>
+        <span class="red">Это не кризис. Это симптом.</span>
+      </div>
+    </div>
+
+    <div class="block b-no">
+      <div class="block-label">Чего нет</div>
+      <div class="block-text">
+        <s>Волшебная таблетка</s><br>
+        <s>Готовая схема</s><br>
+        <s>Гарантия результата</s><br>
+        <s>Методология</s><br>
+        <s>Красивая презентация</s>
+      </div>
+    </div>
+
+    <div class="block b-anti">
+      <div class="block-label">Что есть</div>
+      <div class="block-text"><b>Работа. 15 000 ₽/час.</b><br>Скажу что не работает и почему.</div>
+    </div>
+
+    <div class="block b-price">
+      <div class="block-label">Ставки</div>
+      <div class="block-text">15 000 / 95 000 / 240 000</div>
+    </div>
+
+    <div class="block b-book">
+      <div class="block-label">Книга</div>
+      <div class="block-text">Факап №18 — 490 ₽<br>Не готов платить — начни здесь.</div>
+    </div>
+
+    <div class="block b-photo">
+      <div class="block-label" style="color:#4a1a1a">Фото финиш</div>
+      <div class="block-text"><span class="red" style="font-size:13px;font-weight:900;line-height:1.2;display:block">Не обманывайте себя.<br>Вы ещё не устали.</span></div>
+    </div>
+  </div>
+
+  <!-- ВАРИАНТ B: Зеркало -->
+  <div class="col" data-choice="B" onclick="toggleCol(this)">
+    <div class="col-label">Вариант <span>B</span><br>«Зеркало»</div>
+
+    <div class="block b-pain">
+      <div class="block-label">Hero — боль сразу</div>
+      <div class="block-text">
+        <b>Ты уже был везде.</b><br>
+        ✓ Маркетолог 30к<br>
+        ✓ Курс «Миллиард за 100 дней»<br>
+        ✓ Бизнес-коуч<br>
+        <span class="red" style="font-size:13px;font-weight:900">И всё равно что-то не так.</span>
+      </div>
+    </div>
+
+    <div class="ticker">НЕТ ТАБЛЕТОК · НЕТ ГАРАНТИЙ · НЕТ СХЕМ ·</div>
+
+    <div class="block b-anti">
+      <div class="block-label">Манифест</div>
+      <div class="block-text">Буду <b>дорог.</b><br>Ничего не обещаю.<br>Возможно бросишь проект.<br>Возможно — <b>взлетит.</b></div>
+    </div>
+
+    <div class="block b-no">
+      <div class="block-label">Анти-прайс</div>
+      <div class="block-text">
+        <b style="font-size:16px;color:#fff">15 000 ₽</b> за час<br><br>
+        Что входит:<br>
+        — Скажу что не работает<br>
+        <s>— Волшебная таблетка</s><br>
+        <s>— Готовая схема</s><br>
+        <s>— Гарантия</s>
+      </div>
+    </div>
+
+    <div class="block b-price">
+      <div class="block-label">Ставки</div>
+      <div class="block-text">15 000 / 95 000 / 240 000</div>
+    </div>
+
+    <div class="block b-book">
+      <div class="block-label">Книга</div>
+      <div class="block-text">Факап №18 — 490 ₽</div>
+    </div>
+
+    <div class="block b-photo">
+      <div class="block-label" style="color:#4a1a1a">Фото финиш</div>
+      <div class="block-text"><span class="red" style="font-size:13px;font-weight:900;line-height:1.2;display:block">Не обманывайте себя.<br>Вы ещё не устали.</span></div>
+    </div>
+  </div>
+
+  <!-- ВАРИАНТ C: Анти-продажа -->
+  <div class="col" data-choice="C" onclick="toggleCol(this)">
+    <div class="col-label">Вариант <span>C</span><br>«Анти-продажа»</div>
+
+    <div class="block b-hero">
+      <div class="block-label">Hero — типографика</div>
+      <div class="block-text">
+        <b style="font-size:16px">НЕТ</b><br>
+        <span style="color:#333;font-size:16px;font-weight:900">ГАРАНТИЙ</span><br>
+        <span class="red" style="font-size:16px;font-weight:900;text-decoration:line-through">ТАБЛЕТОК</span>
+      </div>
+    </div>
+
+    <div class="ticker">НЕТ ТАБЛЕТОК · НЕТ ГАРАНТИЙ · НЕТ СХЕМ ·</div>
+
+    <div class="block b-who">
+      <div class="block-label">Кому не нужен</div>
+      <div class="block-text">
+        <s>Хочешь гарантии</s><br>
+        <s>Ищешь готовую схему</s><br>
+        <s>Нет денег на консультацию</s><br>
+        <s>Хочешь «разобраться в себе»</s>
+      </div>
+    </div>
+
+    <div class="block b-anti">
+      <div class="block-label">Кому нужен</div>
+      <div class="block-text">
+        <b>Есть бизнес.</b> Что-то не работает.<br>Уже пробовал — не помогло.<br>Готов работать, не ждать чуда.
+      </div>
+    </div>
+
+    <div class="block b-price">
+      <div class="block-label">Ставки + зачёркнутое</div>
+      <div class="block-text">
+        <b>15 000</b> ₽/час<br>
+        <b>95 000</b> ₽ / месяц<br>
+        <b>240 000</b> ₽ / квартал<br><br>
+        <s>Гарантия возврата</s><br>
+        <s>Бесплатная диагностика</s>
+      </div>
+    </div>
+
+    <div class="block b-book">
+      <div class="block-label">Книга</div>
+      <div class="block-text">Факап №18 — 490 ₽</div>
+    </div>
+
+    <div class="block b-photo">
+      <div class="block-label" style="color:#4a1a1a">Фото финиш</div>
+      <div class="block-text"><span class="red" style="font-size:13px;font-weight:900;line-height:1.2;display:block">Не обманывайте себя.<br>Вы ещё не устали.</span></div>
+    </div>
+  </div>
+
+  <!-- ВАРИАНТ D: Число -->
+  <div class="col" data-choice="D" onclick="toggleCol(this)">
+    <div class="col-label">Вариант <span>D</span><br>«Одно число»</div>
+
+    <div class="block b-hero">
+      <div class="block-label">Hero — одна мысль</div>
+      <div class="block-text">
+        <span style="font-size:36px;font-weight:900;color:#fff;line-height:1">99%</span><br>
+        <b>бизнеса валится из-за одного.</b><br>
+        <span style="color:#555">Нет продаж.</span>
+      </div>
+    </div>
+
+    <div class="ticker">НЕТ ТАБЛЕТОК · НЕТ ГАРАНТИЙ · НЕТ СХЕМ ·</div>
+
+    <div class="block b-pain">
+      <div class="block-label">Боль — список</div>
+      <div class="block-text">
+        <s>Маркетолог за 30к — не помог</s><br>
+        <s>Таргетолог — слил бюджет</s><br>
+        <s>Коуч — дал «инсайты»</s><br>
+        <s>Агентство — красивый отчёт</s><br>
+        <span class="red">Продаж больше не стало.</span>
+      </div>
+    </div>
+
+    <div class="block b-anti">
+      <div class="block-label">Перед тем как платить</div>
+      <div class="block-text">Буду дорог. Ничего не обещаю.<br>Но ты отнесёшь деньги следующему,<br>кто пообещает чудо.</div>
+    </div>
+
+    <div class="block b-price">
+      <div class="block-label">Ставки</div>
+      <div class="block-text">15 000 / 95 000 / 240 000</div>
+    </div>
+
+    <div class="block b-book">
+      <div class="block-label">Книга</div>
+      <div class="block-text">Факап №18 — 490 ₽</div>
+    </div>
+
+    <div class="block b-photo">
+      <div class="block-label" style="color:#4a1a1a">Фото финиш</div>
+      <div class="block-text"><span class="red" style="font-size:13px;font-weight:900;line-height:1.2;display:block">Не обманывайте себя.<br>Вы ещё не устали.</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Легенда -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#fff"></div> Hero</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#c8102e"></div> Боль / Чего нет</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#555"></div> Нейтральный</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#888"></div> Ставки</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#444"></div> Книга</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#c8102e;opacity:.5"></div> Фото финал</div>
+</div>
+
+<p style="font-size:11px;color:#555;margin-top:24px;text-align:center">Кликни на вариант(ы) и скажи что берём — или скомбинируй блоки из разных</p>
+
+</body>
+</html>
