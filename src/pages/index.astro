@@ -50,10 +50,20 @@ import { landingPages as allLandingPages } from '../data/landing-pages';
     {/* Печать «Ноутбук не нужен» удалена — этот факт теперь в HeroFeatures (chip «Ноутбук — не нужен»). */}
 
     <!-- Под hero: ShiftOccupancy (CTA «Проверить свободные места») + MomStory (proof) — двухколоночно на десктопе. -->
-    <div class="mx-auto max-w-[1312px] px-[2px] pt-0 md:px-4 lg:pt-12">
-      <!-- Только Дарья compact (ShiftOccupancy удалён — proof уже в hero proof-line) -->
+    <!-- MomStory: скрывается для возвратников (ac:viewed_shifts в localStorage или _ym_uid cookie) -->
+    <div id="mom-story-wrap" class="mx-auto max-w-[1312px] px-[2px] pt-0 md:px-4 lg:pt-12">
       <MomStory compact />
     </div>
+    <script is:inline>
+    (function () {
+      var hasViewed = !!localStorage.getItem('ac:viewed_shifts');
+      var hasYmUid  = /(?:^|[; ])_ym_uid=/.test(document.cookie);
+      if (hasViewed || hasYmUid) {
+        var el = document.getElementById('mom-story-wrap');
+        if (el) el.style.display = 'none';
+      }
+    })();
+    </script>
 
     <!-- Skolzkaya gorka:
          Hero → MomStory(short) → Shifts → REVIEWS (поднят с поз.7 на поз.4 — proof виден 71% вместо 27%)
