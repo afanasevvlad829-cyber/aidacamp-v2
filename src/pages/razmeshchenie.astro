@@ -1,0 +1,330 @@
+---
+import LandingLayout from '../layouts/LandingLayout.astro';
+import RelatedArticles from '../components/RelatedArticles.astro';
+import RelatedPages from '../components/RelatedPages.astro';
+import { images } from '../data/gallery';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+const title = "Размещение в лагере АйДаКемп — корпуса, комнаты, условия";
+const description = "Условия проживания в детском IT-лагере АйДаКемп: уютные корпуса санатория «Изумруд», комнаты на 2–4 человека, раздельное размещение, круглосуточная охрана.";
+const h1 = "Размещение в лагере";
+const canonical = "https://aidacamp.ru/razmeshchenie";
+
+// Load room photos from gallery
+const galleryDir = join(process.cwd(), 'images', 'gallery');
+type Addition = { file: string; alt: string };
+let additions: Record<string, Addition[]> = {};
+try {
+  additions = JSON.parse(readFileSync(join(galleryDir, 'gallery-additions.json'), 'utf-8'));
+} catch {}
+
+const roomPhotos: { src: string; alt: string }[] = [
+  ...(images['rooms'] ?? []),
+  ...(additions['rooms'] ?? []).map(e => ({
+    src: `/images/gallery/${e.file}`,
+    alt: e.alt || 'Размещение в лагере АйДаКемп',
+  })),
+];
+
+function jpgSrc(src: string) {
+  return src.replace('/images/gallery/', '/images/gallery/jpg/').replace('.avif', '.jpg');
+}
+
+const features = [
+  { icon: 'bi-house-door-fill',     title: 'Корпуса санатория',         text: 'Капитальные корпуса санатория «Изумруд» — с ремонтом, мебелью и чистотой. Не палатки, не армейские казармы.' },
+  { icon: 'bi-people-fill',          title: 'Комнаты на 2–4 человека',   text: 'Личная кровать, тумбочка и место для вещей у каждого. Без переполненных залов.' },
+  { icon: 'bi-shield-lock-fill',     title: 'Раздельное размещение',     text: 'Мальчики и девочки живут в отдельных комнатах на разных этажах или крыльях корпуса.' },
+  { icon: 'bi-thermometer-half',     title: 'Тепло и комфортно',         text: 'Горячая вода, чистое постельное бельё и полотенца — меняются по расписанию.' },
+  { icon: 'bi-camera-fill',          title: 'Круглосуточная охрана',     text: 'Закрытая территория, охрана и видеонаблюдение. На объект не может зайти посторонний.' },
+  { icon: 'bi-wifi',                  title: 'Wi-Fi в корпусах',          text: 'Интернет нужен для учебных проектов. Гаджеты не конфискуются, но режим дня соблюдается.' },
+];
+
+const faqs = [
+  {
+    q: 'Сколько детей живёт в одной комнате?',
+    a: 'От 2 до 4 человек. Ровесники или ребята из одного отряда оказываются вместе — легче сдружиться с первого дня.',
+  },
+  {
+    q: 'Мальчики и девочки живут отдельно?',
+    a: 'Да. Всегда раздельное размещение: разные комнаты, как правило — разные этажи или крылья.',
+  },
+  {
+    q: 'Нужно привозить постельное бельё?',
+    a: 'Нет. Постельное бельё, подушки, одеяла и полотенца предоставляются и меняются по расписанию.',
+  },
+  {
+    q: 'Есть ли место для хранения ценных вещей?',
+    a: 'В корпусах есть места для хранения. Дорогостоящую технику лучше не брать — лагерь не несёт материальной ответственности за личные вещи.',
+  },
+  {
+    q: 'Во сколько отбой?',
+    a: 'В 22:30. Подъём в 8:00. Режим обязателен: детям нужно высыпаться для учёбы и активного дня.',
+  },
+];
+
+const articles = [
+  { title: 'Куда отправить ребёнка летом: разбор всех вариантов',         url: '/stati/kuda-det-rebenka-letom',             description: 'Бабушка, лагерь, кружки — плюсы и минусы каждого варианта.',                   icon: 'sun' },
+  { title: 'Детский лагерь без телефонов — что это и зачем',              url: '/stati/detskiy-lager-bez-telefonov',        description: 'Как работает формат с экранным временем как внутренней валютой.',             icon: 'phone-vibrate' },
+  { title: 'Как выбрать детский лагерь: на что смотреть',                 url: '/stati/kak-vybrat-detskiy-lager',          description: 'Чек-лист для родителей: инфраструктура, питание, безопасность, отзывы.',     icon: 'check2-circle' },
+];
+
+const relatedPages = [
+  { title: 'Питание',      description: '5-разовое питание по СанПиН',  url: '/pitanie',      icon: 'bi-cup-hot-fill' },
+  { title: 'Территория',   description: 'Бассейн, спорт, природа',      url: '/foto',         icon: 'bi-tree-fill' },
+  { title: 'Программа',    description: 'Python, AI, хакатон, проект',  url: '/o-lagere',     icon: 'bi-laptop' },
+  { title: 'Цены и смены', description: 'Стоимость и даты 2026',        url: '/ceny',         icon: 'bi-calendar-check' },
+];
+---
+
+<LandingLayout
+  title={title}
+  description={description}
+  h1={h1}
+  canonical={canonical}
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": faqs.map(f => ({
+        "@type": "Question",
+        "name": f.q,
+        "acceptedAnswer": { "@type": "Answer", "text": f.a }
+      }))
+    })} />
+  </Fragment>
+
+  <!-- HERO -->
+  <Fragment slot="hero">
+    <section class="relative bg-[#0d1a2b] text-white overflow-hidden">
+      <img
+        src="/images/gallery/territory-korpus.avif"
+        alt="Корпуса лагеря АйДаКемп"
+        class="absolute inset-0 h-full w-full object-cover opacity-45"
+        loading="eager"
+      />
+      <div class="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,9,18,0.85)_0%,rgba(5,9,18,0.5)_50%,rgba(5,9,18,0.2)_100%)]"></div>
+      <div class="absolute top-0 left-0 right-0 h-[120px] bg-[linear-gradient(180deg,rgba(0,0,0,0.5)_0%,transparent_100%)] pointer-events-none"></div>
+      <div class="relative mx-auto max-w-[1312px] px-4 pt-20 pb-14 md:pt-28 md:pb-20">
+        <nav class="mb-4 flex items-center gap-2 text-[13px] text-white/60" aria-label="Хлебные крошки">
+          <a href="/" class="hover:text-white">Главная</a>
+          <i class="bi bi-chevron-right text-[10px]" aria-hidden="true"></i>
+          <span class="text-white/85">Размещение</span>
+        </nav>
+        <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Условия проживания</p>
+        <h1 class="mt-3 text-[34px] md:text-[52px] font-extrabold leading-[1.05] tracking-[-0.03em] text-white max-w-[680px]">
+          Комфортные корпуса<br />санатория «Изумруд»
+        </h1>
+        <p class="mt-4 max-w-[560px] text-[17px] md:text-[18px] leading-[1.55] text-white/80">
+          Уютные комнаты на 2–4 человека, горячая вода, чистота и круглосуточная охрана. Как в детском санатории — не в палатках.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href="/#shifts" class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-[15px] font-bold text-white hover:bg-[#d68830] transition-colors">
+            Записать ребёнка
+            <i class="bi bi-arrow-right text-[13px]" aria-hidden="true"></i>
+          </a>
+          <a href="#gallery-rooms" class="inline-flex items-center gap-2 rounded-full border border-white/30 px-6 py-3 text-[15px] font-medium text-white hover:bg-white/10 transition-colors">
+            <i class="bi bi-images text-[13px]" aria-hidden="true"></i>
+            Фото корпусов
+          </a>
+        </div>
+      </div>
+    </section>
+  </Fragment>
+
+  <!-- FEATURES -->
+  <section class="mx-auto max-w-[1312px] px-4 py-12 md:py-16">
+    <div class="flex items-center gap-2 mb-2">
+      <div class="w-1 h-5 rounded-full bg-primary shrink-0"></div>
+      <h2 class="text-[20px] md:text-[26px] font-extrabold tracking-[-0.02em] text-body">Что ждёт ребёнка</h2>
+    </div>
+    <p class="text-body-muted text-[15px] mb-8 mt-1 max-w-[560px]">Санаторий «Изумруд» выбран именно за инфраструктуру: дети живут в комфорте, а не выживают в полевых условиях.</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      {features.map(f => (
+        <div class="rounded-[16px] bg-white border border-[#e8eef4] p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div class="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+            <i class={`${f.icon} text-[18px] text-primary`} aria-hidden="true"></i>
+          </div>
+          <h3 class="text-[15px] font-bold text-body mb-1">{f.title}</h3>
+          <p class="text-[14px] text-body-muted leading-[1.55]">{f.text}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- PHOTO GALLERY -->
+  <section id="gallery-rooms" class="mx-auto max-w-[1312px] px-4 pb-12 md:pb-16">
+    <div class="flex items-center gap-2 mb-6">
+      <div class="w-1 h-5 rounded-full bg-primary shrink-0"></div>
+      <h2 class="text-[20px] md:text-[26px] font-extrabold tracking-[-0.02em] text-body">Фото корпусов и комнат</h2>
+    </div>
+
+    {roomPhotos.length === 0 ? (
+      <div class="rounded-[16px] border-2 border-dashed border-[#cbd5e1] bg-[#f8fafc] p-12 text-center">
+        <i class="bi bi-camera-fill text-[36px] text-[#94a3b8] block mb-3" aria-hidden="true"></i>
+        <p class="text-[15px] font-semibold text-[#64748b]">Фото появятся здесь после загрузки</p>
+        <p class="text-[13px] text-[#94a3b8] mt-1">
+          Добавьте через <a href="/admin/gallery" class="text-primary hover:underline">Управление фото</a> → раздел «Размещение»
+        </p>
+      </div>
+    ) : (
+      <div class="columns-2 md:columns-3 lg:columns-4 gap-3 space-y-3">
+        {roomPhotos.map((img, i) => (
+          <button
+            type="button"
+            data-lightbox-src={img.src}
+            data-lightbox-alt={img.alt}
+            class="cursor-zoom-in group relative block w-full overflow-hidden rounded-[12px] break-inside-avoid"
+          >
+            <picture>
+              <source srcset={img.src} type="image/avif" />
+              <img
+                src={jpgSrc(img.src)}
+                alt={img.alt}
+                loading={i < 4 ? 'eager' : 'lazy'}
+                class="w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+              />
+            </picture>
+            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-[12px] flex items-center justify-center">
+              <i class="bi bi-zoom-in text-white text-[20px] opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" aria-hidden="true"></i>
+            </div>
+          </button>
+        ))}
+      </div>
+    )}
+  </section>
+
+  <!-- САНАТОРИЙ ИЗУМРУД -->
+  <section class="bg-[#f0f6ff] py-12 md:py-16">
+    <div class="mx-auto max-w-[1312px] px-4">
+      <div class="grid md:grid-cols-2 gap-8 items-center">
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-1 h-5 rounded-full bg-primary shrink-0"></div>
+            <h2 class="text-[20px] md:text-[26px] font-extrabold tracking-[-0.02em] text-body">Санаторий «Изумруд»</h2>
+          </div>
+          <p class="text-[15px] text-body-muted leading-[1.65] mb-4">
+            Лагерь АйДаКемп базируется в Наро-Фоминском районе Подмосковья — 66 км от МКАД. Капитальные корпуса, бассейн, спортивные поля, столовая и медпункт.
+          </p>
+          <p class="text-[15px] text-body-muted leading-[1.65] mb-6">
+            Санаторий работает круглый год — инфраструктура всегда в отличном состоянии. Полный доступ ко всем объектам в течение смены.
+          </p>
+          <div class="flex flex-wrap gap-4">
+            <div class="flex items-center gap-2 text-[14px] font-medium text-body">
+              <i class="bi bi-geo-alt-fill text-primary text-[16px]" aria-hidden="true"></i>
+              66 км от МКАД, Наро-Фоминский р-н
+            </div>
+            <div class="flex items-center gap-2 text-[14px] font-medium text-body">
+              <i class="bi bi-building text-primary text-[16px]" aria-hidden="true"></i>
+              Капитальные корпуса
+            </div>
+          </div>
+        </div>
+        <div class="rounded-[16px] overflow-hidden shadow-lg aspect-[4/3]">
+          <picture>
+            <source srcset="/images/gallery/territory-korpus.avif" type="image/avif" />
+            <img
+              src="/images/gallery/jpg/territory-korpus.jpg"
+              alt="Жилой корпус санатория Изумруд"
+              class="w-full h-full object-cover"
+              loading="lazy"
+            />
+          </picture>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="mx-auto max-w-[1312px] px-4 py-12 md:py-16">
+    <div class="flex items-center gap-2 mb-7">
+      <div class="w-1 h-5 rounded-full bg-primary shrink-0"></div>
+      <h2 class="text-[20px] md:text-[26px] font-extrabold tracking-[-0.02em] text-body">Вопросы о проживании</h2>
+    </div>
+    <div class="max-w-[720px] space-y-3">
+      {faqs.map(item => (
+        <details class="group rounded-[14px] border border-[#e2e8f0] bg-white overflow-hidden">
+          <summary class="flex cursor-pointer items-center justify-between gap-3 px-5 py-4 font-semibold text-[15px] text-body list-none select-none hover:bg-[#fafbfc] transition-colors">
+            {item.q}
+            <i class="bi bi-chevron-down text-[12px] text-body-muted shrink-0 transition-transform group-open:rotate-180" aria-hidden="true"></i>
+          </summary>
+          <div class="px-5 pb-5 pt-1 text-[14px] text-body-muted leading-[1.65]">
+            {item.a}
+          </div>
+        </details>
+      ))}
+    </div>
+  </section>
+
+  <!-- RELATED ARTICLES -->
+  <RelatedArticles title="Читать по теме" articles={articles} />
+
+  <!-- RELATED PAGES -->
+  <RelatedPages title="Всё о лагере" pages={relatedPages} />
+
+  <!-- CTA -->
+  <section class="bg-[#0d1a2b] py-14">
+    <div class="mx-auto max-w-[1312px] px-4 text-center">
+      <h2 class="text-[28px] md:text-[36px] font-extrabold text-white mb-3 tracking-[-0.02em]">Записать ребёнка в лагерь</h2>
+      <p class="text-white/70 text-[16px] mb-8 max-w-[480px] mx-auto">Смены на лето 2026. Осталось мало мест — бронируйте сейчас.</p>
+      <div class="flex flex-wrap gap-3 justify-center">
+        <a href="/#shifts" class="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3.5 text-[16px] font-bold text-white hover:bg-[#d68830] transition-colors">
+          Выбрать смену
+          <i class="bi bi-arrow-right text-[14px]" aria-hidden="true"></i>
+        </a>
+        <a href="/ceny" class="inline-flex items-center gap-2 rounded-full border border-white/30 px-8 py-3.5 text-[16px] font-medium text-white hover:bg-white/10 transition-colors">
+          Посмотреть цены
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIGHTBOX -->
+  <div id="lightbox" class="fixed inset-0 bg-black/90 z-[200] hidden items-center justify-center p-4" role="dialog" aria-modal="true">
+    <button id="lightbox-close" class="absolute top-4 right-4 text-white/70 hover:text-white z-10" aria-label="Закрыть">
+      <i class="bi bi-x-lg text-[24px]" aria-hidden="true"></i>
+    </button>
+    <button id="lightbox-prev" class="absolute left-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white z-10 hidden md:block" aria-label="Назад">
+      <i class="bi bi-chevron-left text-[32px]" aria-hidden="true"></i>
+    </button>
+    <button id="lightbox-next" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white z-10 hidden md:block" aria-label="Вперёд">
+      <i class="bi bi-chevron-right text-[32px]" aria-hidden="true"></i>
+    </button>
+    <img id="lightbox-img" src="" alt="" class="max-h-[90vh] max-w-[90vw] rounded-[12px] object-contain" />
+  </div>
+</LandingLayout>
+
+<script>
+  const lb = document.getElementById('lightbox')!;
+  const lbImg = document.getElementById('lightbox-img') as HTMLImageElement;
+  const lbClose = document.getElementById('lightbox-close')!;
+  const lbPrev = document.getElementById('lightbox-prev')!;
+  const lbNext = document.getElementById('lightbox-next')!;
+  const btns = Array.from(document.querySelectorAll<HTMLElement>('[data-lightbox-src]'));
+  let current = 0;
+
+  function open(idx: number) {
+    current = idx;
+    lbImg.src = btns[idx].dataset.lightboxSrc!;
+    lbImg.alt = btns[idx].dataset.lightboxAlt || '';
+    lb.classList.remove('hidden'); lb.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+  }
+  function close() {
+    lb.classList.add('hidden'); lb.classList.remove('flex');
+    document.body.style.overflow = ''; lbImg.src = '';
+  }
+
+  btns.forEach((btn, i) => btn.addEventListener('click', () => open(i)));
+  lbClose.addEventListener('click', close);
+  lb.addEventListener('click', e => { if (e.target === lb) close(); });
+  lbPrev.addEventListener('click', e => { e.stopPropagation(); open((current - 1 + btns.length) % btns.length); });
+  lbNext.addEventListener('click', e => { e.stopPropagation(); open((current + 1) % btns.length); });
+  document.addEventListener('keydown', e => {
+    if (lb.classList.contains('hidden')) return;
+    if (e.key === 'Escape') close();
+    if (e.key === 'ArrowLeft') open((current - 1 + btns.length) % btns.length);
+    if (e.key === 'ArrowRight') open((current + 1) % btns.length);
+  });
+</script>
