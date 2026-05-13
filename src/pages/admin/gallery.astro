@@ -215,6 +215,39 @@ const totalDisk = diskFiles.length;
     .add-card.error .add-icon,
     .add-card.error .add-text { display: none; }
 
+    /* Newly uploaded photo card */
+    .new-photo-card {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #e2e8f0;
+      aspect-ratio: 4/3;
+    }
+    .new-photo-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .new-badge {
+      position: absolute; top: 6px; left: 6px;
+      background: #ec7c00; color: #fff;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 7px; border-radius: 99px;
+      letter-spacing: .03em;
+    }
+    .new-photo-label {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+      padding: 18px 6px 5px;
+      font-size: 10px; color: rgba(255,255,255,0.85);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    /* Add-card counter badge */
+    .add-count-badge {
+      position: absolute; top: -8px; right: -8px;
+      background: #ec7c00; color: #fff;
+      font-size: 11px; font-weight: 800;
+      width: 22px; height: 22px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
     /* Unassigned section */
     .unassigned-section {
       background: #fff;
@@ -439,7 +472,19 @@ const totalDisk = diskFiles.length;
     document.querySelectorAll<HTMLElement>('[data-add-new]').forEach(card => {
       const input = card.querySelector<HTMLInputElement>('input[type=file]')!;
       const statusEl = card.querySelector<HTMLElement>('[data-status]')!;
+      const grid = card.closest<HTMLElement>('.photo-grid')!;
       const section = card.dataset.section!;
+      let totalAdded = 0;
+      let countBadge: HTMLElement | null = null;
+
+      function setCountBadge(n: number) {
+        if (!countBadge) {
+          countBadge = document.createElement('div');
+          countBadge.className = 'add-count-badge';
+          card.appendChild(countBadge);
+        }
+        countBadge.textContent = String(n);
+      }
 
       function setState(state: string, msg: string) {
         card.classList.remove('drag-over', 'uploading', 'success', 'error');
@@ -447,24 +492,39 @@ const totalDisk = diskFiles.length;
         statusEl.textContent = msg;
       }
 
+      function insertNewCard(fileName: string) {
+        const newCard = document.createElement('div');
+        newCard.className = 'new-photo-card';
+        newCard.innerHTML = `
+          <img src="/images/gallery/thumbs/${fileName}?t=${Date.now()}"
+               alt="${fileName}"
+               onerror="this.src='/images/gallery/${fileName}?t=${Date.now()}'" />
+          <div class="new-badge">новое</div>
+          <div class="new-photo-label">${fileName}</div>`;
+        // Insert before the add-card
+        grid.insertBefore(newCard, card);
+      }
+
       async function doUpload(files: FileList) {
-        const total = files.length;
+        const batch = files.length;
         let done = 0;
-        setState('uploading', `⏳ 0 / ${total}`);
+        setState('uploading', `⏳ ${done} / ${batch}`);
         for (const file of Array.from(files)) {
-          // Auto-generate name: section-TIMESTAMP-index
           const autoName = `${section}-${Date.now().toString(36)}-${done}`;
           const res = await uploadPhoto(file, autoName, section);
           done++;
           if (res.ok) {
-            setState('uploading', `⏳ ${done} / ${total}`);
+            totalAdded++;
+            setCountBadge(totalAdded);
+            insertNewCard(res.file!);
+            setState('uploading', `⏳ ${done} / ${batch}`);
             showToast(`✓ Добавлено: ${res.file}`, 'ok');
           } else {
             showToast(`✗ ${res.error ?? 'Ошибка'}`, 'err');
           }
         }
-        setState('success', `✓ Загружено ${done}/${total}!`);
-        setTimeout(() => setState('', ''), 3000);
+        // Keep persistent count — don't reset
+        setState('', '');
       }
 
       card.addEventListener('dragover', e => { e.preventDefault(); setState('drag-over', ''); });
