@@ -224,6 +224,24 @@ const totalDisk = diskFiles.length;
     .add-card.error .add-icon,
     .add-card.error .add-text { display: none; }
 
+    /* Delete button */
+    .delete-btn {
+      position: absolute; top: 6px; right: 6px;
+      width: 24px; height: 24px;
+      background: rgba(220,38,38,0.85);
+      color: #fff;
+      border: none; border-radius: 50%;
+      font-size: 14px; line-height: 1;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transition: opacity .15s, background .15s;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .photo-card:hover .delete-btn { opacity: 1; pointer-events: auto; }
+    .delete-btn:hover { background: #b91c1c; }
+
     /* "новое" badge on server-persisted cards */
     .new-server-badge {
       position: absolute; top: 6px; left: 6px;
@@ -349,6 +367,7 @@ const totalDisk = diskFiles.length;
                       <div class="card-status" data-status></div>
                     </div>
                     <div class="photo-card-label">{filename}</div>
+                    <button class="delete-btn" data-delete title="Удалить фото">✕</button>
                     <input type="file" accept="image/*" tabindex="-1" />
                   </div>
                 );
@@ -370,6 +389,7 @@ const totalDisk = diskFiles.length;
                   </div>
                   <div class="photo-card-label">{entry.file}</div>
                   <div class="new-server-badge">новое</div>
+                  <button class="delete-btn" data-delete title="Удалить фото">✕</button>
                   <input type="file" accept="image/*" tabindex="-1" />
                 </div>
               ))}
@@ -385,6 +405,48 @@ const totalDisk = diskFiles.length;
         </div>
       );
     })}
+  </div>
+
+  <!-- ── Раздел РАЗМЕЩЕНИЕ (отдельная галерея, не входит в /foto/) ── -->
+  <div class="section" id="section-rooms" style="border: 2px solid #ec7c00;">
+    <div class="section-header" data-toggle="rooms">
+      <div class="section-title">
+        <span>Размещение</span>
+        <span class="section-count">{(additions['rooms']?.length ?? 0)} фото</span>
+        <span style="font-size:11px;color:#ec7c00;font-weight:600;background:#fff7ed;padding:2px 8px;border-radius:99px;">для страницы /razmeshchenie/</span>
+      </div>
+      <span class="section-chevron">▼</span>
+    </div>
+    <div class="section-body">
+      <div class="photo-grid">
+        {(additions['rooms'] ?? []).map(entry => (
+          <div class="photo-card photo-card--new" data-name={entry.file.replace('.avif','')} data-replace title={`Заменить ${entry.file}`}>
+            <img
+              src={`/images/gallery/thumbs/${entry.file}`}
+              alt={entry.alt || entry.file}
+              loading="lazy"
+              data-fallback={`/images/gallery/${entry.file}`}
+              onerror="this.src=this.dataset.fallback"
+            />
+            <div class="photo-card-overlay">
+              <div class="overlay-icon">📷</div>
+              <div class="overlay-text">Заменить</div>
+              <div class="card-status" data-status></div>
+            </div>
+            <div class="photo-card-label">{entry.file}</div>
+            <div class="new-server-badge">интерьер</div>
+            <button class="delete-btn" data-delete title="Удалить фото">✕</button>
+            <input type="file" accept="image/*" tabindex="-1" />
+          </div>
+        ))}
+        <div class="add-card" data-section="rooms" data-add-new data-added-count={(additions['rooms']?.length ?? 0).toString()}>
+          <input type="file" accept="image/*" tabindex="-1" multiple />
+          <div class="add-icon">＋</div>
+          <div class="add-text">Добавить<br />фото комнат</div>
+          <div class="add-status" data-status></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   {unassigned.length > 0 && (
@@ -415,6 +477,7 @@ const totalDisk = diskFiles.length;
                   <div class="card-status" data-status></div>
                 </div>
                 <div class="photo-card-label">{fname}</div>
+                <button class="delete-btn" data-delete title="Удалить фото">✕</button>
                 <input type="file" accept="image/*" tabindex="-1" />
               </div>
             );
@@ -542,10 +605,13 @@ const totalDisk = diskFiles.length;
       }
 
       function insertNewCard(fileName: string) {
+        const name = fileName.replace('.avif', '');
         const newCard = document.createElement('div');
+        newCard.dataset.name = name;
+        newCard.dataset.replace = '';
         newCard.style.cssText = `
           position:relative; border-radius:10px; overflow:hidden;
-          background:#e2e8f0; aspect-ratio:4/3;
+          background:#e2e8f0; aspect-ratio:4/3; cursor:pointer;
         `;
         const t = Date.now();
         newCard.innerHTML = `
@@ -559,8 +625,25 @@ const totalDisk = diskFiles.length;
                       background:linear-gradient(to top,rgba(0,0,0,.7),transparent);
                       padding:18px 6px 5px;font-size:10px;color:rgba(255,255,255,.85);
                       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-                      font-family:system-ui,sans-serif;">${fileName}</div>`;
+                      font-family:system-ui,sans-serif;">${fileName}</div>
+          <button data-delete title="Удалить фото"
+            style="position:absolute;top:6px;right:6px;width:24px;height:24px;
+                   background:rgba(220,38,38,0.85);color:#fff;border:none;border-radius:50%;
+                   font-size:14px;line-height:1;cursor:pointer;
+                   display:flex;align-items:center;justify-content:center;
+                   opacity:0;transition:opacity .15s;z-index:10;">✕</button>`;
+        // Show/hide delete btn on hover
+        newCard.addEventListener('mouseenter', () => {
+          const btn = newCard.querySelector<HTMLButtonElement>('[data-delete]');
+          if (btn) btn.style.opacity = '1';
+        });
+        newCard.addEventListener('mouseleave', () => {
+          const btn = newCard.querySelector<HTMLButtonElement>('[data-delete]');
+          if (btn) btn.style.opacity = '0';
+        });
         grid.insertBefore(newCard, card);
+        // Attach delete handler
+        (window as any).__attachDeleteBtn?.(newCard);
       }
 
       async function doUpload(files: FileList) {
@@ -600,6 +683,50 @@ const totalDisk = diskFiles.length;
         }
       });
     });
+
+    // ── Delete photo ──────────────────────────────────────────
+    function attachDeleteBtn(card: HTMLElement) {
+      const btn = card.querySelector<HTMLButtonElement>('[data-delete]');
+      if (!btn) return;
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const name = card.dataset.name;
+        if (!name) return;
+        if (!confirm(`Удалить «${name}.avif» без возможности восстановления?`)) return;
+        btn.textContent = '…';
+        btn.style.pointerEvents = 'none';
+        try {
+          const res = await fetch('/api/admin/gallery-delete', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name }),
+          });
+          const data = await res.json();
+          if (data.ok) {
+            card.style.transition = 'opacity .25s, transform .25s';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.85)';
+            setTimeout(() => card.remove(), 260);
+            showToast(`✓ Удалено: ${name}.avif`, 'ok');
+          } else {
+            btn.textContent = '✕';
+            btn.style.pointerEvents = '';
+            showToast(`✗ ${data.error ?? 'Ошибка'}`, 'err');
+          }
+        } catch {
+          btn.textContent = '✕';
+          btn.style.pointerEvents = '';
+          showToast('✗ Нет связи', 'err');
+        }
+      });
+    }
+
+    // Attach to all existing cards
+    document.querySelectorAll<HTMLElement>('[data-replace]').forEach(attachDeleteBtn);
+
+    // Expose for dynamically added cards
+    (window as any).__attachDeleteBtn = attachDeleteBtn;
   </script>
 </body>
 </html>

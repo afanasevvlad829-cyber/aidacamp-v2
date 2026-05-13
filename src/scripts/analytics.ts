@@ -65,7 +65,7 @@ export function initScrollTracking() {
   ];
   window.addEventListener('scroll', () => {
     const pct = Math.round(
-      (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100
+      (window.scrollY / (document.documentElement.scrollHeight - (window.visualViewport?.height ?? window.innerHeight))) * 100
     );
     goals.forEach((g) => {
       if (pct >= g.p && !fired.has(g.id)) {

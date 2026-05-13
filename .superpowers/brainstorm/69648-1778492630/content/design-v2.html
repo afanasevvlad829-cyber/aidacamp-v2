@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design v2 — критика и улучшения</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #111; color: #fff; font-family: Arial, sans-serif; padding: 24px; }
+
+h1 { font-size: 18px; font-weight: 900; margin-bottom: 6px; }
+.sub { font-size: 11px; color: #555; margin-bottom: 32px; line-height: 1.6; }
+
+/* ─── СРАВНЕНИЕ ─── */
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 40px; }
+.col-label { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; padding: 10px 16px; margin-bottom: 0; }
+.col-label.bad { background: #1a1a1a; color: #555; }
+.col-label.good { background: #F5A200; color: #000; font-weight: 900; }
+
+/* ─── КРИТИКА ─── */
+.critique { margin-bottom: 40px; }
+.critique h2 { font-size: 13px; font-weight: 900; letter-spacing: 2px; color: #c8102e; text-transform: uppercase; margin-bottom: 16px; }
+.issue { display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid #1a1a1a; align-items: flex-start; }
+.issue-num { font-size: 24px; font-weight: 900; color: #1a1a1a; font-family: 'Arial Black', Arial; flex-shrink: 0; width: 32px; }
+.issue-text h3 { font-size: 13px; font-weight: 900; color: #fff; margin-bottom: 4px; }
+.issue-text p { font-size: 11px; color: #555; line-height: 1.6; }
+.issue-text .fix { color: #F5A200; margin-top: 4px; font-size: 11px; }
+
+/* ─── НОВЫЙ HERO ─── */
+.hero-demo {
+  border: 1px solid #222;
+  overflow: hidden;
+  margin-bottom: 40px;
+}
+.hero-demo-label { background: #F5A200; color: #000; font-size: 9px; letter-spacing: 3px; font-weight: 900; padding: 8px 16px; text-transform: uppercase; }
+
+/* Новый hero: тёмно-серый (#111), желтый акцент */
+.new-hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 560px;
+  background: #111;
+}
+.new-hero-left {
+  padding: 64px 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-right: 1px solid #1e1e1e;
+}
+.new-eyebrow { font-size: 9px; letter-spacing: 4px; color: #444; text-transform: uppercase; margin-bottom: 36px; }
+.new-type { line-height: 0.85; margin-bottom: 40px; }
+.new-type .n1 { display: block; font-size: 72px; font-weight: 900; color: #fff; letter-spacing: -3px; font-family: 'Arial Black', Arial; }
+.new-type .n2 { display: block; font-size: 72px; font-weight: 900; color: transparent; -webkit-text-stroke: 2px #2a2a2a; letter-spacing: -3px; font-family: 'Arial Black', Arial; }
+.new-type .n3 { display: block; font-size: 72px; font-weight: 900; color: #c8102e; letter-spacing: -3px; text-decoration: line-through; font-family: 'Arial Black', Arial; }
+.new-sub { font-size: 14px; color: #555; line-height: 1.9; margin-bottom: 40px; }
+.new-sub strong { color: #888; }
+.new-actions { display: flex; align-items: center; gap: 20px; }
+/* Кнопка — ЖЕЛТАЯ, как книга */
+.btn-yellow {
+  background: #F5A200;
+  color: #000;
+  padding: 14px 32px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-family: 'Arial Black', Arial;
+  border: none;
+  cursor: pointer;
+}
+.btn-ghost-new { font-size: 11px; color: #444; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid #222; padding-bottom: 2px; }
+
+/* Правая колонка — книга */
+.new-hero-right {
+  position: relative;
+  overflow: hidden;
+  background: #0a0a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Книга в B&W с легким желтым свечением */
+.book-real {
+  width: 220px;
+  height: 310px;
+  background: linear-gradient(135deg, #1e1a00 0%, #0a0800 100%);
+  border: 2px solid #1e1a00;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 60px rgba(245, 162, 0, 0.15), 20px 20px 60px rgba(0,0,0,.8);
+  transform: rotate(-2deg);
+  flex-shrink: 0;
+}
+/* Имитация желтой обложки, desaturated */
+.book-real-bg {
+  position: absolute;
+  inset: 0;
+  background: #1c1800;
+  filter: saturate(0.15) brightness(0.4);
+}
+.book-real-title { position: absolute; top: 20px; left: 0; right: 0; text-align: center; font-size: 28px; font-weight: 900; color: rgba(200,16,46,.6); letter-spacing: 1px; font-family: 'Arial Black', Arial; line-height: 1.1; }
+.book-real-subtitle { position: absolute; top: 110px; left: 12px; right: 12px; text-align: center; font-size: 10px; font-weight: 900; color: rgba(255,255,255,.5); letter-spacing: 1px; line-height: 1.4; }
+.book-real-finger { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -20%); font-size: 80px; filter: grayscale(100%) brightness(0.5); }
+.book-real-censored {
+  position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%);
+  background: #000; border: 1px solid #333;
+  padding: 4px 12px; font-size: 10px; font-weight: 900; color: #fff; letter-spacing: 2px;
+}
+.book-real-author { position: absolute; bottom: 16px; left: 0; right: 0; text-align: center; font-size: 9px; color: rgba(255,255,255,.3); letter-spacing: 2px; }
+/* Желтое свечение вокруг книги */
+.book-glow {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(245,162,0,.06) 0%, transparent 70%);
+}
+
+/* ─── TICKER НОВЫЙ ─── */
+.new-ticker {
+  background: #F5A200;
+  padding: 12px 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.new-ticker-inner {
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: #000;
+  font-weight: 900;
+  text-transform: uppercase;
+  animation: tick 25s linear infinite;
+}
+@keyframes tick { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+/* ─── СЕКЦИЯ МАНИФЕСТ ─── */
+.new-section {
+  background: #111;
+  padding: 80px 56px;
+  border-bottom: 1px solid #1a1a1a;
+}
+.new-manifesto { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; }
+.manifesto-big { font-size: 28px; color: #777; line-height: 1.8; }
+.manifesto-big strong { color: #fff; }
+.manifesto-big blockquote {
+  margin-top: 28px; padding: 24px 28px;
+  border-left: 3px solid #F5A200;
+  background: #0d0d0d;
+  font-size: 14px; color: #555; line-height: 1.9; font-style: italic;
+}
+
+/* ─── СРАВНЕНИЕ ЦВЕТОВ ─── */
+.palette-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 40px; }
+.palette-card { padding: 24px; border: 1px solid #222; }
+.palette-card h3 { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px; }
+.swatch-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.swatch { height: 40px; flex: 1; min-width: 60px; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+
+<h1>Дизайн-аудит + обновлённый вариант</h1>
+<p class="sub">Честная критика текущего дизайна и предложения по улучшению.</p>
+
+<!-- КРИТИКА -->
+<div class="critique">
+  <h2>Что не так прямо сейчас</h2>
+
+  <div class="issue">
+    <div class="issue-num">1</div>
+    <div class="issue-text">
+      <h3>Слишком мрачно — энергия книги потеряна</h3>
+      <p>Сайт — #0a0a0a, всё тёмно-серое. Но книга — ЖЁЛТАЯ, агрессивная, весёлая. Сайт не соответствует личности автора. Выглядит как похоронное бюро, а не провокатор.</p>
+      <div class="fix">→ Добавить жёлтый #F5A200 из обложки книги как акцентный цвет</div>
+    </div>
+  </div>
+
+  <div class="issue">
+    <div class="issue-num">2</div>
+    <div class="issue-text">
+      <h3>Обложка книги — главный визуальный актив, используется плохо</h3>
+      <p>Мы рисовали её с помощью эмодзи и CSS. А тут реальная обложка: желтая, дерзкая, с CENSORED. Она должна быть настоящим фоном hero, а не симуляцией.</p>
+      <div class="fix">→ Реальное фото обложки в B&W / desaturated с желтым свечением на фоне hero</div>
+    </div>
+  </div>
+
+  <div class="issue">
+    <div class="issue-num">3</div>
+    <div class="issue-text">
+      <h3>Кнопки белые — нет характера</h3>
+      <p>Белая CTA кнопка — дефолт любого тёмного сайта. Скучно. Это сайт человека, который написал «Факап №18».</p>
+      <div class="fix">→ CTA кнопки — жёлтые #F5A200, как обложка книги. Агрессивно и узнаваемо.</div>
+    </div>
+  </div>
+
+  <div class="issue">
+    <div class="issue-num">4</div>
+    <div class="issue-text">
+      <h3>Ticker — красный текст на красном читается плохо</h3>
+      <p>Сейчас белый текст на красном фоне. Нормально, но упускает возможность — жёлтая строка с чёрным текстом была бы агрессивнее и ближе к энергии книги.</p>
+      <div class="fix">→ Ticker жёлтый, текст чёрный. Hazard tape визуал.</div>
+    </div>
+  </div>
+
+  <div class="issue">
+    <div class="issue-num">5</div>
+    <div class="issue-text">
+      <h3>Шрифт — Arial слишком «офисный»</h3>
+      <p>Для такого контента нужен шрифт с характером. Обложка книги использует мощный вытянутый гротеск. Inter + черный weight дал бы другую энергию.</p>
+      <div class="fix">→ Подключить Inter 900 из Google Fonts, заголовки — Inter Black</div>
+    </div>
+  </div>
+
+  <div class="issue">
+    <div class="issue-num">6</div>
+    <div class="issue-text">
+      <h3>Финальный блок — пустой плейсхолдер</h3>
+      <p>Текст «Не обманывайте себя» — главный удар страницы, но под ним просто тёмный градиент. Нужно реальное фото финиша Айронмен.</p>
+      <div class="fix">→ Дай фото — поставлю. Дальше тянуть нельзя, это 30% эмоции всей страницы.</div>
+    </div>
+  </div>
+</div>
+
+<!-- СРАВНЕНИЕ ПАЛИТРЫ -->
+<div class="palette-compare">
+  <div class="palette-card">
+    <h3 style="color:#555">Сейчас (мрачно)</h3>
+    <div class="swatch-row">
+      <div class="swatch" style="background:#0a0a0a;border:1px solid #222;color:#444">#0a0a0a</div>
+      <div class="swatch" style="background:#c8102e;color:#fff">#c8102e</div>
+      <div class="swatch" style="background:#fff;color:#000">#fff</div>
+    </div>
+  </div>
+  <div class="palette-card" style="border-color:#F5A200">
+    <h3 style="color:#F5A200">Предлагаю (энергия)</h3>
+    <div class="swatch-row">
+      <div class="swatch" style="background:#111;border:1px solid #222;color:#444">#111</div>
+      <div class="swatch" style="background:#c8102e;color:#fff">#c8102e</div>
+      <div class="swatch" style="background:#F5A200;color:#000;font-weight:900">#F5A200</div>
+    </div>
+  </div>
+</div>
+
+<!-- НОВЫЙ HERO PREVIEW -->
+<div class="hero-demo">
+  <div class="hero-demo-label">★ Обновлённый вариант — жёлтый акцент + книга B&W</div>
+
+  <div class="new-hero">
+    <div class="new-hero-left">
+      <div class="new-eyebrow">Бизнес-трекер · Владимир Афанасьев</div>
+      <div class="new-type">
+        <span class="n1">НЕТ</span>
+        <span class="n2">ГАРАНТИЙ</span>
+        <span class="n3">ТАБЛЕТОК</span>
+      </div>
+      <p class="new-sub">
+        20 лет. 3 бизнеса.<br>
+        <strong>Работа — 15 000 ₽/час.</strong>
+      </p>
+      <div class="new-actions">
+        <button class="btn-yellow">Записаться</button>
+        <a class="btn-ghost-new">Читать дальше ↓</a>
+      </div>
+    </div>
+
+    <div class="new-hero-right">
+      <div class="book-glow"></div>
+      <!-- Книга B&W с желтым свечением -->
+      <div class="book-real">
+        <div class="book-real-bg"></div>
+        <div class="book-real-title">ФАКАП<br>№18</div>
+        <div class="book-real-subtitle">ПЛОХАЯ КНИГА О ТОМ,<br>КАК ДЕЛАТЬ БИЗНЕС</div>
+        <div class="book-real-finger">🖕</div>
+        <div class="book-real-censored">CENSORED</div>
+        <div class="book-real-author">ВЛАДИМИР АФАНАСЬЕВ</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Жёлтый ticker -->
+  <div class="new-ticker">
+    <div class="new-ticker-inner">
+      НЕТ ВОЛШЕБНЫХ ТАБЛЕТОК &nbsp;·&nbsp; НЕТ ГАРАНТИЙ &nbsp;·&nbsp; НЕТ ГОТОВЫХ СХЕМ &nbsp;·&nbsp; НЕТ МЕТОДОЛОГИЙ &nbsp;·&nbsp; ЕСТЬ РАБОТА &nbsp;·&nbsp;
+      НЕТ ВОЛШЕБНЫХ ТАБЛЕТОК &nbsp;·&nbsp; НЕТ ГАРАНТИЙ &nbsp;·&nbsp; НЕТ ГОТОВЫХ СХЕМ &nbsp;·&nbsp; НЕТ МЕТОДОЛОГИЙ &nbsp;·&nbsp; ЕСТЬ РАБОТА &nbsp;·&nbsp;
+    </div>
+  </div>
+
+  <!-- Манифест preview -->
+  <div class="new-section">
+    <div class="new-manifesto">
+      <div>
+        <div style="font-size:9px;letter-spacing:4px;color:#444;text-transform:uppercase;margin-bottom:12px">Перед тем как платить</div>
+        <div class="manifesto-big">
+          Буду <strong>дорог.</strong><br>
+          Ничего не обещаю.<br>
+          Возможно, бросишь проект.<br>
+          Возможно — <strong>взлетит.</strong>
+          <blockquote>«Но ты всё равно отнесёшь деньги следующему, кто пообещает чудо за поворотом.»</blockquote>
+        </div>
+      </div>
+      <div>
+        <div style="padding:28px 0;border-bottom:1px solid #1a1a1a">
+          <div style="font-size:8px;letter-spacing:3px;color:#444;text-transform:uppercase;margin-bottom:10px">Что я делаю</div>
+          <div style="font-size:15px;color:#666;line-height:2">Говорю что не работает и почему.</div>
+        </div>
+        <div style="padding:28px 0">
+          <div style="font-size:8px;letter-spacing:3px;color:#444;text-transform:uppercase;margin-bottom:10px">Чего не будет</div>
+          <div style="font-size:15px;color:#333;line-height:2.2">
+            <s>Волшебная таблетка</s><br>
+            <s>Готовая схема</s><br>
+            <s>Гарантия результата</s>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="font-size:11px;color:#555;text-align:center;margin-top:16px">
+  Нравится направление? Скажи «да» — внедрю на сайт.<br>
+  + нужно фото финиша Айронмен для последнего блока.
+</p>
+
+</body>
+</html>

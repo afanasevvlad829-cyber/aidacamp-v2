@@ -24,18 +24,22 @@ const shiftsJson = JSON.stringify(
   <div class="bg-primary px-4 py-2.5 shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
     <div class="mx-auto flex max-w-2xl items-center justify-between gap-3">
       <!-- нормальный вид -->
-      <div id="return-top-default" class="flex min-w-0 flex-1 items-center gap-2.5">
+      <div id="return-top-default" class="flex min-w-0 flex-1 items-center gap-2.5 flex-wrap">
         <i class="bi bi-fire text-white text-[16px] shrink-0" aria-hidden="true"></i>
         <span id="return-top-text" class="text-[14px] font-semibold text-white leading-[1.35] truncate"></span>
+        <!-- badge "3 места" — показывается только для shift-1 -->
+        <span id="return-top-badge" class="hidden shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-bold text-white"></span>
+        <!-- подзаголовок "Старт 30 мая — через N дней" — только для shift-1 -->
+        <span id="return-top-sub" class="hidden text-[12px] text-white/80 whitespace-nowrap"></span>
         <button id="return-top-cta" type="button"
           class="shrink-0 inline-flex items-center gap-1 text-[13px] font-bold text-white/90 whitespace-nowrap hover:text-white transition-colors">
           Узнать подробности <i class="bi bi-arrow-right text-[12px]" aria-hidden="true"></i>
         </button>
       </div>
-      <!-- CTA → /ask -->
+      <!-- CTA → /shifts/shift-1/ (для shift-1) или /ask (для остальных) -->
       <a id="return-top-ask" href="/ask"
         class="hidden shrink-0 items-center gap-1.5 rounded-lg bg-white px-4 py-1.5 text-[13px] font-bold text-primary hover:bg-white/90 transition-colors">
-        Всё объясним <i class="bi bi-arrow-right text-[11px]" aria-hidden="true"></i>
+        Забронировать <i class="bi bi-arrow-right text-[11px]" aria-hidden="true"></i>
       </a>
       <button id="return-top-close" type="button"
         class="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full text-white/70 hover:text-white hover:bg-white/15 transition-colors"
@@ -60,8 +64,13 @@ const shiftsJson = JSON.stringify(
         <p id="return-banner-text" class="text-[14px] md:text-[15px] text-white/90 leading-[1.4] min-w-0"></p>
       </div>
       <div class="flex items-center gap-2 shrink-0">
+        <!-- Смена-specific CTA: показывается для возврата, текст ставится в JS -->
+        <a id="return-banner-shift-btn" href="/#shifts"
+          class="hidden items-center gap-1.5 rounded-lg bg-primary hover:bg-orange-400 px-3 py-1.5 text-[13px] font-semibold text-white transition-colors whitespace-nowrap">
+          <i class="bi bi-arrow-right text-[11px]" aria-hidden="true"></i>
+        </a>
         <a id="return-banner-cta" href="/ask"
-          class="inline-flex items-center gap-1.5 rounded-lg bg-primary hover:bg-orange-400 px-3 py-1.5 text-[13px] font-semibold text-white transition-colors whitespace-nowrap">
+          class="inline-flex items-center gap-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 border border-white/10 px-3 py-1.5 text-[13px] font-semibold text-white/80 hover:text-white transition-colors whitespace-nowrap">
           Всё объясним
           <i class="bi bi-arrow-right text-[11px]" aria-hidden="true"></i>
         </a>
@@ -124,24 +133,59 @@ const shiftsJson = JSON.stringify(
       const bar      = document.getElementById('return-top-bar');
       const textEl   = document.getElementById('return-top-text');
       const ctaBtn   = document.getElementById('return-top-cta');
-      const askLink  = document.getElementById('return-top-ask');
+      const askLink  = document.getElementById('return-top-ask') as HTMLAnchorElement | null;
       const closeBtn = document.getElementById('return-top-close');
       const defaultEl = document.getElementById('return-top-default');
+      const badgeEl  = document.getElementById('return-top-badge');
+      const subEl    = document.getElementById('return-top-sub');
       if (!bar || !textEl) return;
 
-      textEl.textContent = `${shift.name} — осталось ${freeLabel(shift.free)}`;
+      const isShift1 = shift.id === 'shift-1';
+
+      if (isShift1) {
+        // Специальный оффер для Смены 1: конкретный заголовок + подзаголовок + бейдж
+        textEl.textContent = 'Смена 1 — осталось 3 места';
+        if (badgeEl) {
+          badgeEl.textContent = '3 места';
+          badgeEl.classList.remove('hidden');
+        }
+        if (subEl) {
+          const daysLeft = Math.ceil((new Date('2026-05-30').getTime() - new Date().getTime()) / 86400000);
+          subEl.textContent = `Старт 30 мая — через ${Math.max(0, daysLeft)} дн`;
+          subEl.classList.remove('hidden');
+        }
+        // CTA кнопка сразу ведёт на страницу смены
+        if (ctaBtn) ctaBtn.textContent = '';
+        if (askLink) {
+          askLink.href = '/shifts/shift-1/';
+          askLink.innerHTML = 'Забронировать <i class="bi bi-arrow-right text-[11px]" aria-hidden="true"></i>';
+          askLink.classList.remove('hidden');
+          askLink.classList.add('flex');
+        }
+        // Скрываем исходную кнопку "Узнать подробности"
+        if (ctaBtn) ctaBtn.classList.add('hidden');
+      } else {
+        textEl.textContent = `${shift.name} — осталось ${freeLabel(shift.free)}`;
+      }
+
       bar.classList.remove('hidden');
       requestAnimationFrame(() => {
         bar.classList.remove('-translate-y-full');
         bar.classList.add('translate-y-0');
       });
 
-      ctaBtn?.addEventListener('click', () => {
-        defaultEl?.classList.add('hidden');
-        askLink?.classList.remove('hidden');
-        askLink?.classList.add('flex');
-        try { window.ym && window.ym(96499295, 'reachGoal', 'return_banner_cta_click'); } catch {}
-      });
+      if (!isShift1) {
+        ctaBtn?.addEventListener('click', () => {
+          defaultEl?.classList.add('hidden');
+          askLink?.classList.remove('hidden');
+          askLink?.classList.add('flex');
+          try { window.ym && window.ym(96499295, 'reachGoal', 'return_banner_cta_click'); } catch {}
+        });
+      } else {
+        askLink?.addEventListener('click', () => {
+          try { window.ym && window.ym(96499295, 'reachGoal', 'return_banner_cta_click'); } catch {}
+        });
+      }
 
       closeBtn?.addEventListener('click', () => {
         bar.classList.remove('translate-y-0');
@@ -155,12 +199,25 @@ const shiftsJson = JSON.stringify(
       const hasViewed = !!localStorage.getItem('ac:viewed_shifts');
       if (!hasYmUid && !hasViewed) return;
 
-      const banner   = document.getElementById('return-banner');
-      const textEl   = document.getElementById('return-banner-text');
-      const closeBtn = document.getElementById('return-banner-close');
+      const banner      = document.getElementById('return-banner');
+      const textEl      = document.getElementById('return-banner-text');
+      const closeBtn    = document.getElementById('return-banner-close');
+      const shiftBtn    = document.getElementById('return-banner-shift-btn') as HTMLAnchorElement | null;
       if (!banner || !textEl) return;
 
       textEl.textContent = `«${shift.name}» — осталось ${freeLabel(shift.free)}`;
+
+      // Кнопка «К смене»: показываем с именем смены
+      if (shiftBtn) {
+        shiftBtn.innerHTML =
+          `«${shift.name}» — специальные условия <i class="bi bi-arrow-right text-[11px]" aria-hidden="true"></i>`;
+        shiftBtn.href = `/shifts/${shift.id}/`;
+        shiftBtn.classList.remove('hidden');
+        shiftBtn.classList.add('inline-flex');
+        shiftBtn.addEventListener('click', () => {
+          try { window.ym && window.ym(96499295, 'reachGoal', 'return_banner_shift_click'); } catch {}
+        });
+      }
 
       setTimeout(() => {
         banner.classList.remove('hidden');
