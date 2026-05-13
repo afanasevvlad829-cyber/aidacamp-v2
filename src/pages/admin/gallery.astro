@@ -1,51 +1,39 @@
 ---
 export const prerender = false;
-import { execSync } from 'child_process';
+import { filters, images } from '../../data/gallery';
 import { readdirSync } from 'fs';
 import { join } from 'path';
 
-// Читаем все avif из папки (на сервере — /var/www/aidacamp-dev/current/images/gallery)
-// На локальной машине — public/images/gallery
+// Find gallery directory (server vs local dev)
 const galleryDirs = [
-  join(process.cwd(), 'images', 'gallery'),          // сервер (SSR cwd = current/)
-  join(process.cwd(), 'public', 'images', 'gallery'), // локальная разработка
+  join(process.cwd(), 'images', 'gallery'),
+  join(process.cwd(), 'public', 'images', 'gallery'),
 ];
-
 const galleryDir = galleryDirs.find(d => {
   try { readdirSync(d); return true; } catch { return false; }
 }) ?? galleryDirs[0];
 
-let files: string[] = [];
+// All avif files on disk
+let diskFiles: string[] = [];
 try {
-  files = readdirSync(galleryDir)
+  diskFiles = readdirSync(galleryDir)
     .filter(f => f.endsWith('.avif') && !f.startsWith('.'))
     .sort();
 } catch {}
 
-interface ImageInfo {
-  name: string;
-  file: string;
-  width: number;
-  height: number;
-  quality: 'good' | 'ok' | 'bad';
-}
+// Files referenced in gallery.ts
+const referencedFiles = new Set<string>();
+Object.values(images).flat().forEach(img => {
+  const fname = img.src.split('/').pop() || '';
+  if (fname) referencedFiles.add(fname);
+});
 
-function getInfo(file: string): ImageInfo {
-  const name = file.replace('.avif', '');
-  let width = 0, height = 0;
-  try {
-    const out = execSync(`identify -format "%wx%h" "${join(galleryDir, file)}" 2>/dev/null`, { timeout: 5000 }).toString().trim();
-    const m = out.match(/^(\d+)x(\d+)/);
-    if (m) { width = +m[1]; height = +m[2]; }
-  } catch {}
-  const max = Math.max(width, height);
-  const quality: ImageInfo['quality'] = max >= 1100 ? 'good' : max >= 800 ? 'ok' : 'bad';
-  return { name, file, width, height, quality };
-}
+// Files on disk but not assigned to any section
+const unassigned = diskFiles.filter(f => !referencedFiles.has(f));
 
-const images: ImageInfo[] = files.map(getInfo);
-const goodCount = images.filter(i => i.quality === 'good').length;
-const badCount  = images.filter(i => i.quality !== 'good').length;
+// Total counts
+const totalInGallery = referencedFiles.size;
+const totalDisk = diskFiles.length;
 ---
 
 <!DOCTYPE html>
@@ -53,177 +41,445 @@ const badCount  = images.filter(i => i.quality !== 'good').length;
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Загрузка фото галереи — АйДаКемп</title>
+  <title>Управление фото — АйДаКемп</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #152a46; padding: 24px; }
-    h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
-    .subtitle { font-size: 14px; color: #64748b; margin-bottom: 24px; }
-    .subtitle span { font-weight: 600; }
-    .grid { display: flex; flex-direction: column; gap: 8px; }
-    .row {
-      display: grid;
-      grid-template-columns: 96px 1fr 180px;
-      gap: 12px;
-      align-items: center;
-      background: #fff;
-      border-radius: 12px;
-      padding: 10px 14px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f0f4f8;
+      color: #152a46;
+      padding: 24px 16px 48px;
+      min-height: 100vh;
     }
-    .thumb-wrap {
-      width: 96px; height: 64px;
-      border-radius: 6px;
+
+    .page-header {
+      max-width: 1100px;
+      margin: 0 auto 28px;
+    }
+    h1 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+    .subtitle {
+      font-size: 14px; color: #64748b;
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .stat { display: flex; align-items: center; gap: 4px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-green { background: #22c55e; }
+    .dot-blue  { background: #3b82f6; }
+    .dot-amber { background: #f59e0b; }
+
+    .rebuild-notice {
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #92400e;
+      max-width: 1100px;
+      margin: 0 auto 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+
+    /* Section blocks */
+    .sections { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+    .section {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      overflow: hidden;
+    }
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid #f1f5f9;
+      cursor: pointer;
+      user-select: none;
+    }
+    .section-title {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 15px; font-weight: 700;
+    }
+    .section-count {
+      background: #e2e8f0; color: #475569;
+      border-radius: 99px; padding: 2px 8px; font-size: 12px; font-weight: 600;
+    }
+    .section-chevron { font-size: 12px; color: #94a3b8; transition: transform .2s; }
+    .section.collapsed .section-chevron { transform: rotate(-90deg); }
+    .section.collapsed .section-body { display: none; }
+
+    .section-body { padding: 16px 18px 20px; }
+
+    /* Photo grid */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .photo-card {
+      position: relative;
+      border-radius: 10px;
       overflow: hidden;
       background: #e2e8f0;
-      flex-shrink: 0;
-    }
-    .thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .info { min-width: 0; }
-    .fname { font-size: 13px; font-weight: 600; color: #0d1a2b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .res { font-size: 12px; color: #64748b; margin-top: 2px; }
-    .badge {
-      display: inline-block; padding: 2px 8px; border-radius: 99px;
-      font-size: 11px; font-weight: 600; margin-top: 4px;
-    }
-    .badge-good  { background: #dcfce7; color: #15803d; }
-    .badge-ok    { background: #fef9c3; color: #92400e; }
-    .badge-bad   { background: #fee2e2; color: #b91c1c; }
-
-    /* Dropzone */
-    .dropzone {
-      border: 2px dashed #cbd5e1;
-      border-radius: 10px;
-      padding: 10px 12px;
-      text-align: center;
+      aspect-ratio: 4/3;
       cursor: pointer;
-      transition: border-color .15s, background .15s;
-      position: relative;
-      min-height: 60px;
+    }
+    .photo-card img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: opacity .2s;
+    }
+    .photo-card-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       gap: 4px;
+      transition: background .2s;
+      padding: 8px;
     }
-    .dropzone:hover, .dropzone.drag-over { border-color: #ec7c00; background: #fff7ed; }
-    .dropzone.success { border-color: #22c55e; background: #f0fdf4; }
-    .dropzone.error   { border-color: #ef4444; background: #fef2f2; }
-    .dropzone input[type=file] {
+    .photo-card:hover .photo-card-overlay { background: rgba(0,0,0,0.55); }
+    .overlay-icon {
+      font-size: 22px; opacity: 0; transition: opacity .2s; color: #fff;
+      transform: translateY(4px); transition: opacity .2s, transform .2s;
+    }
+    .overlay-text {
+      font-size: 11px; color: #fff; opacity: 0; transition: opacity .2s;
+      text-align: center; font-weight: 600;
+    }
+    .photo-card:hover .overlay-icon { opacity: 1; transform: translateY(0); }
+    .photo-card:hover .overlay-text { opacity: 1; }
+    .photo-card-label {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+      padding: 18px 6px 5px;
+      font-size: 10px; color: rgba(255,255,255,0.85);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      transition: opacity .2s;
+    }
+    .photo-card:hover .photo-card-label { opacity: 0; }
+
+    /* Drop state */
+    .photo-card.drag-over img { opacity: 0.4; }
+    .photo-card.drag-over .photo-card-overlay { background: rgba(236,124,0,0.6); }
+    .photo-card.uploading img { opacity: 0.4; }
+    .photo-card.uploading .photo-card-overlay { background: rgba(0,0,0,0.5); }
+    .photo-card.success .photo-card-overlay { background: rgba(22,163,74,0.7); }
+    .photo-card.error .photo-card-overlay { background: rgba(220,38,38,0.7); }
+    .photo-card input[type=file] {
       position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
     }
-    .dz-icon { font-size: 20px; line-height: 1; }
-    .dz-text { font-size: 11px; color: #64748b; line-height: 1.3; }
-    .dz-status { font-size: 12px; font-weight: 600; display: none; }
-    .dropzone.loading .dz-status { display: block; color: #ec7c00; }
-    .dropzone.success .dz-status { display: block; color: #16a34a; }
-    .dropzone.error   .dz-status { display: block; color: #dc2626; }
-    .dropzone.loading .dz-text,
-    .dropzone.success .dz-text,
-    .dropzone.error   .dz-text { display: none; }
-    .dropzone.loading .dz-icon,
-    .dropzone.success .dz-icon,
-    .dropzone.error   .dz-icon { display: none; }
-    progress { width: 100%; height: 4px; border-radius: 2px; accent-color: #ec7c00; display: none; }
-    .dropzone.loading progress { display: block; }
+    .card-status {
+      display: none; font-size: 12px; font-weight: 700; color: #fff; text-align: center;
+    }
+    .photo-card.uploading .card-status,
+    .photo-card.success .card-status,
+    .photo-card.error .card-status { display: block; }
+    .photo-card.uploading .overlay-icon,
+    .photo-card.success .overlay-icon,
+    .photo-card.error .overlay-icon { opacity: 0 !important; }
+
+    /* Add new photo card */
+    .add-card {
+      position: relative;
+      border-radius: 10px;
+      border: 2px dashed #cbd5e1;
+      aspect-ratio: 4/3;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      background: #f8fafc;
+      padding: 12px;
+    }
+    .add-card:hover { border-color: #ec7c00; background: #fff7ed; }
+    .add-card.drag-over { border-color: #ec7c00; background: #fff7ed; }
+    .add-card.uploading { border-color: #f59e0b; background: #fffbeb; }
+    .add-card.success { border-color: #22c55e; background: #f0fdf4; }
+    .add-card.error { border-color: #ef4444; background: #fef2f2; }
+    .add-card input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .add-icon { font-size: 22px; color: #94a3b8; transition: color .15s; }
+    .add-card:hover .add-icon { color: #ec7c00; }
+    .add-text { font-size: 11px; color: #94a3b8; font-weight: 600; text-align: center; line-height: 1.4; }
+    .add-card:hover .add-text { color: #ec7c00; }
+    .add-status { font-size: 12px; font-weight: 700; display: none; text-align: center; }
+    .add-card.uploading .add-status { display: block; color: #d97706; }
+    .add-card.success .add-status { display: block; color: #16a34a; }
+    .add-card.error .add-status { display: block; color: #dc2626; }
+    .add-card.uploading .add-icon,
+    .add-card.uploading .add-text,
+    .add-card.success .add-icon,
+    .add-card.success .add-text,
+    .add-card.error .add-icon,
+    .add-card.error .add-text { display: none; }
+
+    /* Unassigned section */
+    .unassigned-section {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      max-width: 1100px;
+      margin: 20px auto 0;
+      overflow: hidden;
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #1e293b; color: #fff;
+      border-radius: 10px; padding: 12px 18px;
+      font-size: 14px; font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      transform: translateY(80px); opacity: 0;
+      transition: transform .3s, opacity .3s;
+      z-index: 100; max-width: 320px;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.toast-ok { background: #15803d; }
+    #toast.toast-err { background: #b91c1c; }
   </style>
 </head>
 <body>
-  <h1>Галерея — загрузка фото</h1>
-  <p class="subtitle">
-    <span style="color:#16a34a">{goodCount} фото в норме</span> ·
-    <span style="color:#dc2626">{badCount} нужна замена</span> ·
-    Перетащи новое фото напротив нужного — оно сразу заменится на сервере
-  </p>
 
-  <div class="grid">
-    {images.map(img => (
-      <div class="row">
-        <div class="thumb-wrap">
-          <img
-            src={`/images/gallery/thumbs/${img.file}`}
-            alt={img.name}
-            loading="lazy"
-            onerror="this.src='/images/gallery/'+this.dataset.file"
-            data-file={img.file}
-          />
-        </div>
-        <div class="info">
-          <div class="fname">{img.name}.avif</div>
-          <div class="res">{img.width > 0 ? `${img.width}×${img.height}` : '—'}</div>
-          <span class={`badge badge-${img.quality}`}>
-            {img.quality === 'good' ? '✓ хорошее' : img.quality === 'ok' ? '≈ сойдёт' : '✗ нужна замена'}
-          </span>
-        </div>
-        <div class="dropzone" data-name={img.name} id={`dz-${img.name}`}>
-          <input type="file" accept="image/*" />
-          <div class="dz-icon">📷</div>
-          <div class="dz-text">Перетащи или кликни</div>
-          <div class="dz-status" data-status></div>
-          <progress max="100" value="0"></progress>
-        </div>
-      </div>
-    ))}
+  <div class="page-header">
+    <h1>Управление фото галереи</h1>
+    <div class="subtitle">
+      <span class="stat"><span class="dot dot-green"></span>{totalInGallery} фото в галерее</span>
+      <span class="stat"><span class="dot dot-blue"></span>{totalDisk} файлов на диске</span>
+      {unassigned.length > 0 && (
+        <span class="stat"><span class="dot dot-amber"></span>{unassigned.length} не назначено</span>
+      )}
+      <span>Перетащи фото на нужную карточку — автозамена с оптимизацией</span>
+    </div>
   </div>
 
+  <div class="rebuild-notice">
+    <span>⚡</span>
+    <span>Замена фото работает мгновенно. Добавление новых фото в раздел требует пересборки сайта: <code>npm run build && ./scripts/deploy.sh dev</code></span>
+  </div>
+
+  <div class="sections">
+    {filters.map((f, fi) => {
+      const sectionImgs = images[f.value] || [];
+      return (
+        <div class="section" id={`section-${f.value}`}>
+          <div class="section-header" data-toggle={f.value}>
+            <div class="section-title">
+              <span>{f.label}</span>
+              <span class="section-count">{sectionImgs.length} фото</span>
+            </div>
+            <span class="section-chevron">▼</span>
+          </div>
+          <div class="section-body">
+            <div class="photo-grid">
+              {sectionImgs.map((img) => {
+                const filename = img.src.split('/').pop() || '';
+                const name = filename.replace('.avif', '');
+                const thumbSrc = img.src.replace('/images/gallery/', '/images/gallery/thumbs/');
+                return (
+                  <div
+                    class="photo-card"
+                    data-name={name}
+                    data-replace
+                    title={`Перетащи новое фото чтобы заменить ${filename}`}
+                  >
+                    <img
+                      src={thumbSrc}
+                      alt={img.alt}
+                      loading="lazy"
+                      data-fallback={img.src}
+                      onerror="this.src=this.dataset.fallback"
+                    />
+                    <div class="photo-card-overlay">
+                      <div class="overlay-icon">📷</div>
+                      <div class="overlay-text">Заменить</div>
+                      <div class="card-status" data-status></div>
+                    </div>
+                    <div class="photo-card-label">{filename}</div>
+                    <input type="file" accept="image/*" tabindex="-1" />
+                  </div>
+                );
+              })}
+              {/* Add new photo card */}
+              <div class="add-card" data-section={f.value} data-add-new>
+                <input type="file" accept="image/*" tabindex="-1" multiple />
+                <div class="add-icon">＋</div>
+                <div class="add-text">Добавить в<br />{f.label}</div>
+                <div class="add-status" data-status></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+
+  {unassigned.length > 0 && (
+    <div class="unassigned-section">
+      <div class="section-header" data-toggle="unassigned">
+        <div class="section-title">
+          <span>Файлы не в галерее</span>
+          <span class="section-count">{unassigned.length}</span>
+        </div>
+        <span class="section-chevron">▼</span>
+      </div>
+      <div class="section-body" id="body-unassigned">
+        <div class="photo-grid">
+          {unassigned.map(fname => {
+            const name = fname.replace('.avif', '');
+            return (
+              <div class="photo-card" data-name={name} data-replace title={fname}>
+                <img
+                  src={`/images/gallery/thumbs/${fname}`}
+                  alt={name}
+                  loading="lazy"
+                  data-fallback={`/images/gallery/${fname}`}
+                  onerror="this.src=this.dataset.fallback"
+                />
+                <div class="photo-card-overlay">
+                  <div class="overlay-icon">📷</div>
+                  <div class="overlay-text">Заменить</div>
+                  <div class="card-status" data-status></div>
+                </div>
+                <div class="photo-card-label">{fname}</div>
+                <input type="file" accept="image/*" tabindex="-1" />
+              </div>
+            );
+          })}
+        </div>
+        <p style="margin-top:12px; font-size:12px; color:#94a3b8;">Эти файлы есть на диске, но не добавлены ни в один раздел gallery.ts</p>
+      </div>
+    </div>
+  )}
+
+  <div id="toast"></div>
+
   <script>
-    document.querySelectorAll<HTMLElement>('.dropzone').forEach(dz => {
-      const input = dz.querySelector<HTMLInputElement>('input[type=file]')!;
-      const status = dz.querySelector<HTMLElement>('[data-status]')!;
-      const prog   = dz.querySelector<HTMLProgressElement>('progress')!;
-      const name   = dz.dataset.name!;
+    // ── Section collapse ──────────────────────────────────────
+    document.querySelectorAll<HTMLElement>('[data-toggle]').forEach(header => {
+      header.addEventListener('click', () => {
+        const section = header.closest('.section, .unassigned-section');
+        section?.classList.toggle('collapsed');
+      });
+    });
 
-      function upload(file: File) {
-        setState('loading', '⏳ Загрузка...');
-        prog.value = 0;
+    // ── Toast helper ──────────────────────────────────────────
+    const toastEl = document.getElementById('toast')!;
+    let toastTimer: ReturnType<typeof setTimeout>;
+    function showToast(msg: string, type: 'ok' | 'err') {
+      clearTimeout(toastTimer);
+      toastEl.textContent = msg;
+      toastEl.className = `show toast-${type}`;
+      toastTimer = setTimeout(() => { toastEl.className = ''; }, 3000);
+    }
 
-        const fd = new FormData();
-        fd.append('file', file);
-        fd.append('name', name);
+    // ── Upload helper ─────────────────────────────────────────
+    async function uploadPhoto(file: File, name: string, section?: string): Promise<{ ok: boolean; file?: string; error?: string }> {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('name', name);
+      if (section) fd.append('section', section);
+      try {
+        const res = await fetch('/api/admin/gallery-upload', { method: 'POST', body: fd });
+        return await res.json();
+      } catch {
+        return { ok: false, error: 'Нет связи' };
+      }
+    }
 
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/admin/gallery-upload');
-        xhr.upload.onprogress = e => {
-          if (e.lengthComputable) prog.value = (e.loaded / e.total) * 100;
-        };
-        xhr.onload = () => {
-          try {
-            const res = JSON.parse(xhr.responseText);
-            if (res.ok) {
-              setState('success', '✓ Готово!');
-              // Обновляем превью
-              const rowImg = dz.closest('.row')?.querySelector<HTMLImageElement>('img');
-              if (rowImg) {
-                rowImg.src = `/images/gallery/thumbs/${name}.avif?t=${Date.now()}`;
-              }
-            } else {
-              setState('error', '✗ ' + (res.error ?? 'Ошибка'));
-            }
-          } catch {
-            setState('error', '✗ Ошибка сервера');
-          }
-        };
-        xhr.onerror = () => setState('error', '✗ Нет связи');
-        xhr.send(fd);
+    // ── Replace existing photos ───────────────────────────────
+    document.querySelectorAll<HTMLElement>('[data-replace]').forEach(card => {
+      const input = card.querySelector<HTMLInputElement>('input[type=file]')!;
+      const statusEl = card.querySelector<HTMLElement>('[data-status]')!;
+      const img = card.querySelector<HTMLImageElement>('img')!;
+      const name = card.dataset.name!;
+
+      function setState(state: string, msg: string) {
+        card.classList.remove('drag-over', 'uploading', 'success', 'error');
+        if (state) card.classList.add(state);
+        statusEl.textContent = msg;
       }
 
-      function setState(s: string, msg: string) {
-        dz.classList.remove('loading','success','error');
-        if (s) dz.classList.add(s);
-        status.textContent = msg;
+      async function doUpload(file: File) {
+        setState('uploading', '⏳ Загрузка...');
+        const res = await uploadPhoto(file, name);
+        if (res.ok) {
+          setState('success', '✓ Заменено!');
+          // Refresh thumbnail
+          const base = img.src.split('?')[0];
+          img.src = base + '?t=' + Date.now();
+          showToast(`✓ ${name}.avif заменён`, 'ok');
+          setTimeout(() => setState('', ''), 2500);
+        } else {
+          setState('error', '✗ ' + (res.error ?? 'Ошибка'));
+          showToast(`✗ ${res.error ?? 'Ошибка'}`, 'err');
+          setTimeout(() => setState('', ''), 4000);
+        }
       }
 
-      // Drag & Drop
-      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
-      dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
-      dz.addEventListener('drop', e => {
+      // Drag & drop
+      card.addEventListener('dragover', e => { e.preventDefault(); setState('drag-over', ''); });
+      card.addEventListener('dragleave', () => setState('', ''));
+      card.addEventListener('drop', e => {
         e.preventDefault();
-        dz.classList.remove('drag-over');
         const file = e.dataTransfer?.files[0];
-        if (file) upload(file);
+        if (file) doUpload(file);
       });
 
       // Click / file picker
       input.addEventListener('change', () => {
         const file = input.files?.[0];
-        if (file) { upload(file); input.value = ''; }
+        if (file) { doUpload(file); input.value = ''; }
+      });
+    });
+
+    // ── Add new photos ────────────────────────────────────────
+    document.querySelectorAll<HTMLElement>('[data-add-new]').forEach(card => {
+      const input = card.querySelector<HTMLInputElement>('input[type=file]')!;
+      const statusEl = card.querySelector<HTMLElement>('[data-status]')!;
+      const section = card.dataset.section!;
+
+      function setState(state: string, msg: string) {
+        card.classList.remove('drag-over', 'uploading', 'success', 'error');
+        if (state) card.classList.add(state);
+        statusEl.textContent = msg;
+      }
+
+      async function doUpload(files: FileList) {
+        const total = files.length;
+        let done = 0;
+        setState('uploading', `⏳ 0 / ${total}`);
+        for (const file of Array.from(files)) {
+          // Auto-generate name: section-TIMESTAMP-index
+          const autoName = `${section}-${Date.now().toString(36)}-${done}`;
+          const res = await uploadPhoto(file, autoName, section);
+          done++;
+          if (res.ok) {
+            setState('uploading', `⏳ ${done} / ${total}`);
+            showToast(`✓ Добавлено: ${res.file}`, 'ok');
+          } else {
+            showToast(`✗ ${res.error ?? 'Ошибка'}`, 'err');
+          }
+        }
+        setState('success', `✓ Загружено ${done}/${total}!`);
+        setTimeout(() => setState('', ''), 3000);
+      }
+
+      card.addEventListener('dragover', e => { e.preventDefault(); setState('drag-over', ''); });
+      card.addEventListener('dragleave', () => setState('', ''));
+      card.addEventListener('drop', e => {
+        e.preventDefault();
+        const files = e.dataTransfer?.files;
+        if (files && files.length > 0) doUpload(files);
+      });
+
+      input.addEventListener('change', () => {
+        if (input.files && input.files.length > 0) {
+          doUpload(input.files);
+          input.value = '';
+        }
       });
     });
   </script>
