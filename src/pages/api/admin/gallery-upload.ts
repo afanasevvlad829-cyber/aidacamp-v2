@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, readFile } from 'fs/promises';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { join, extname } from 'path';
@@ -80,6 +80,21 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Cleanup temp
     await execFileAsync('rm', ['-f', tmp]);
+
+    // If this is a NEW photo (section provided) — persist to gallery-additions.json
+    if (section) {
+      const additionsPath = join(galleryDir, 'gallery-additions.json');
+      let additions: Record<string, { file: string; alt: string }[]> = {};
+      try {
+        additions = JSON.parse(await readFile(additionsPath, 'utf-8'));
+      } catch {}
+      if (!additions[section]) additions[section] = [];
+      // Avoid duplicates
+      if (!additions[section].some(e => e.file === `${name}.avif`)) {
+        additions[section].push({ file: `${name}.avif`, alt: '' });
+      }
+      await writeFile(additionsPath, JSON.stringify(additions, null, 2));
+    }
 
     return json({ ok: true, name, file: `${name}.avif`, avif: outAvif, jpg: outJpg });
   } catch (err: any) {

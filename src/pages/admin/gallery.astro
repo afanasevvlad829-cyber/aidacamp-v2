@@ -1,7 +1,7 @@
 ---
 export const prerender = false;
 import { filters, images } from '../../data/gallery';
-import { readdirSync } from 'fs';
+import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 // Find gallery directory (server vs local dev)
@@ -27,6 +27,15 @@ Object.values(images).flat().forEach(img => {
   const fname = img.src.split('/').pop() || '';
   if (fname) referencedFiles.add(fname);
 });
+
+// Persisted additions (uploaded via "＋ Добавить", survive page reload)
+type Addition = { file: string; alt: string };
+let additions: Record<string, Addition[]> = {};
+try {
+  additions = JSON.parse(readFileSync(join(galleryDir, 'gallery-additions.json'), 'utf-8'));
+  // Mark addition files as referenced so they don't show in "unassigned"
+  Object.values(additions).flat().forEach(e => referencedFiles.add(e.file));
+} catch {}
 
 // Files on disk but not assigned to any section
 const unassigned = diskFiles.filter(f => !referencedFiles.has(f));
@@ -215,6 +224,15 @@ const totalDisk = diskFiles.length;
     .add-card.error .add-icon,
     .add-card.error .add-text { display: none; }
 
+    /* "новое" badge on server-persisted cards */
+    .new-server-badge {
+      position: absolute; top: 6px; left: 6px;
+      background: #ec7c00; color: #fff;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 7px; border-radius: 99px;
+      letter-spacing: .03em; pointer-events: none;
+    }
+
     /* Newly uploaded photo card */
     .new-photo-card {
       position: relative;
@@ -335,8 +353,28 @@ const totalDisk = diskFiles.length;
                   </div>
                 );
               })}
+              {/* Persisted additions (survive page reload) */}
+              {(additions[f.value] ?? []).map(entry => (
+                <div class="photo-card photo-card--new" data-name={entry.file.replace('.avif','')} data-replace title={`Заменить ${entry.file}`}>
+                  <img
+                    src={`/images/gallery/thumbs/${entry.file}`}
+                    alt={entry.alt || entry.file}
+                    loading="lazy"
+                    data-fallback={`/images/gallery/${entry.file}`}
+                    onerror="this.src=this.dataset.fallback"
+                  />
+                  <div class="photo-card-overlay">
+                    <div class="overlay-icon">📷</div>
+                    <div class="overlay-text">Заменить</div>
+                    <div class="card-status" data-status></div>
+                  </div>
+                  <div class="photo-card-label">{entry.file}</div>
+                  <div class="new-server-badge">новое</div>
+                  <input type="file" accept="image/*" tabindex="-1" />
+                </div>
+              ))}
               {/* Add new photo card */}
-              <div class="add-card" data-section={f.value} data-add-new>
+              <div class="add-card" data-section={f.value} data-add-new data-added-count={(additions[f.value]?.length ?? 0).toString()}>
                 <input type="file" accept="image/*" tabindex="-1" multiple />
                 <div class="add-icon">＋</div>
                 <div class="add-text">Добавить в<br />{f.label}</div>
@@ -474,8 +512,11 @@ const totalDisk = diskFiles.length;
       const statusEl = card.querySelector<HTMLElement>('[data-status]')!;
       const grid = card.closest<HTMLElement>('.photo-grid')!;
       const section = card.dataset.section!;
-      let totalAdded = 0;
+      // Start counter from already-persisted additions count
+      let totalAdded = parseInt(card.dataset.addedCount ?? '0', 10);
       let countBadge: HTMLElement | null = null;
+      // Show badge immediately if there are already saved additions
+      if (totalAdded > 0) setCountBadge(totalAdded);
 
       function setCountBadge(n: number) {
         if (!countBadge) {
