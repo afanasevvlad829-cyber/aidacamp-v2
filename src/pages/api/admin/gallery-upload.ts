@@ -7,17 +7,12 @@ import { join, extname } from 'path';
 
 const execFileAsync = promisify(execFile);
 
-// Colorspace fix: strip conflicting ICC profiles, force sRGB throughout.
-// Without this ImageMagick's AVIF encoder shifts colors red (YCbCr mismatch).
-const COLOR_FIX = ['-strip', '-colorspace', 'sRGB'];
-
-// HDR filter: saturation +30%, S-contrast, lift shadows, sharpen
+// Clean conversion: strip ICC profiles, force sRGB, mild sharpening only.
+// No saturation boost — it destroys skin tones.
 const HDR_ARGS = [
-  ...COLOR_FIX,
-  '-modulate', '103,130,100',
-  '-sigmoidal-contrast', '4,50%',
-  '-level', '3%,97%',
-  '-unsharp', '0x0.5+0.8+0.02',
+  '-strip',
+  '-colorspace', 'sRGB',
+  '-unsharp', '0x0.4+0.5+0.02',
   '-colorspace', 'sRGB',
 ];
 
