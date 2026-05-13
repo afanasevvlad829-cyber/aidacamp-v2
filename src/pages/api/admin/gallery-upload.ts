@@ -7,13 +7,11 @@ import { join, extname } from 'path';
 
 const execFileAsync = promisify(execFile);
 
-// Clean conversion: strip ICC profiles, force sRGB, mild sharpening only.
-// No saturation boost — it destroys skin tones.
-const HDR_ARGS = [
+// No filters. Strip ICC profile, force sRGB — just clean format conversion.
+const CONVERT_ARGS = [
   '-strip',
   '-colorspace', 'sRGB',
-  '-unsharp', '0x0.4+0.5+0.02',
-  '-colorspace', 'sRGB',
+  '-colorspace', 'sRGB',  // re-apply after strip
 ];
 
 export const GET: APIRoute = () => json({ status: 'gallery-upload API ready' });
@@ -63,11 +61,11 @@ export const POST: APIRoute = async ({ request }) => {
 
     // 2. HDR → AVIF (main format)
     const outAvif  = join(galleryDir, `${name}.avif`);
-    await execFileAsync('convert', [tmpIn, ...HDR_ARGS, outAvif]);
+    await execFileAsync('convert', [tmpIn, ...CONVERT_ARGS, outAvif]);
 
     // 3. HDR → JPEG (fallback for browsers)
     const outJpg = join(jpgDir, `${name}.jpg`);
-    await execFileAsync('convert', [tmpIn, ...HDR_ARGS, '-quality', '90', outJpg]);
+    await execFileAsync('convert', [tmpIn, ...CONVERT_ARGS, '-quality', '90', outJpg]);
 
     // 4. Thumb from AVIF (400px wide)
     const outThumb = join(thumbsDir, `${name}.avif`);
