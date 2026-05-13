@@ -1,0 +1,330 @@
+---
+/**
+ * /r/ — персонализированная страница для возвратников.
+ * Структура: Hero → TrustBlock → ShiftTimeline → Reviews → FAQ → Contacts
+ */
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import ShiftBookModal from '../components/shifts/ShiftBookModal.astro';
+import TrustBlock from '../components/TrustBlock.astro';
+import ShiftTimeline from '../components/shifts/ShiftTimeline.astro';
+import Reviews from '../components/Reviews.astro';
+import FAQ from '../components/FAQ.astro';
+import Contacts from '../components/Contacts.astro';
+import { TELEGRAM_URL } from '../data/contacts';
+import { mainShifts, shortShifts } from '../data/shifts';
+
+const allShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShifts[2], mainShifts[3]];
+
+const shiftsJson = JSON.stringify(allShifts.map(s => ({
+  id: s.id,
+  name: s.name,
+  dates: s.dates,
+  duration: s.duration,
+  price: s.price,
+  free: s.free,
+  startDate: s.startDate,
+  endDate: s.endDate,
+  description: s.description,
+})));
+---
+
+<Base
+  title="Для вас — АйДаКемп"
+  description="Персонализированная страница смены АйДаКемп. Программа, условия, запись."
+  noindex={true}
+>
+  <Header />
+  <main>
+
+    <!-- ═══ HERO ═══ -->
+    <section class="relative overflow-hidden bg-[#0d1a2b] pt-16 pb-12 md:pt-20 md:pb-16">
+      <div class="mx-auto max-w-[860px] px-5 md:px-8">
+
+        <!-- Eyebrow -->
+        <p id="r-eyebrow" class="text-[12px] font-bold uppercase tracking-[0.18em] text-primary mb-3 opacity-0 transition-opacity duration-500">
+          Вы это смотрели
+        </p>
+
+        <!-- Shift name -->
+        <h1 id="r-title" class="text-[32px] md:text-[50px] font-extrabold leading-[1.05] tracking-[-0.02em] text-white opacity-0 transition-opacity duration-500">
+          &nbsp;
+        </h1>
+
+        <!-- Dates + duration + старт через N дней -->
+        <p id="r-dates" class="mt-3 text-[16px] md:text-[18px] font-medium text-white/85 opacity-0 transition-opacity duration-500">
+          &nbsp;
+        </p>
+
+
+        <!-- Seats badge -->
+        <div id="r-seats-wrap" class="mt-4 opacity-0 transition-opacity duration-500">
+          <span id="r-seats" class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-[14px] font-semibold text-white/90">
+            <i class="bi bi-people-fill text-[13px] text-primary" aria-hidden="true"></i>
+            <span id="r-seats-text"></span>
+          </span>
+        </div>
+
+        <!-- CTA row: таймер + кнопки -->
+        <div id="r-cta-row" class="mt-6 opacity-0 transition-opacity duration-500">
+
+          <!-- Лесенка цен -->
+          <div class="mb-4 flex flex-col gap-1">
+            <div class="flex flex-wrap items-baseline gap-2.5">
+              <span id="r-price-original" class="text-[17px] font-medium text-white/35 line-through"></span>
+              <span id="r-price-discounted" class="text-[24px] font-extrabold text-primary"></span>
+              <span class="text-[13px] text-white/40">всё включено</span>
+            </div>
+            <div id="r-vychet-row" class="hidden flex-wrap items-baseline gap-2">
+              <span class="text-[13px] text-white/45">с образовательным вычетом</span>
+              <span id="r-price-vychet" class="text-[18px] font-bold text-white/70"></span>
+              <a href="/nalogovyj-vychet/" class="text-[12px] text-primary/80 hover:text-primary no-underline">подробнее →</a>
+            </div>
+          </div>
+
+          <!-- Кнопки + таймер в одну строку на md+ -->
+          <div class="flex flex-col gap-3 md:flex-row md:items-center md:gap-3">
+
+            <!-- Таймер: только отсчёт -->
+            <div id="r-discount-wrap" class="inline-flex items-center gap-2 shrink-0">
+              <span class="text-[13px] text-white/60 whitespace-nowrap">Цена действует</span>
+              <span id="r-countdown" class="font-mono text-[20px] font-extrabold text-primary tabular-nums tracking-tight">30:00</span>
+            </div>
+
+            <!-- Забронировать — белая кнопка -->
+            <button
+              id="r-book-btn"
+              type="button"
+              class="inline-flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-white/90 px-6 py-3 text-[15px] font-bold text-[#0d1a2b] transition active:scale-[0.98] min-h-[48px]"
+            >
+              <i class="bi bi-calendar-check text-[14px]" aria-hidden="true"></i>
+              Забронировать
+            </button>
+
+            <!-- Telegram — мягкий -->
+            <a href={TELEGRAM_URL} target="_blank" rel="noopener"
+               data-analytics-goal="telegram_click" data-analytics-label="r_hero"
+               class="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 hover:bg-white/18 hover:border-white/40 px-5 py-3 text-[14px] font-semibold text-white transition no-underline min-h-[48px]">
+              <i class="bi bi-telegram text-[14px]" aria-hidden="true"></i>
+              Написать в Telegram
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ═══ TRUST ═══ -->
+    <TrustBlock hideInsurance />
+
+    <!-- ═══ SHIFT TIMELINES ═══ -->
+    <div class="pt-10 md:pt-14"></div>
+
+    {allShifts.map(s => {
+      const days = parseInt(s.duration.replace(/[^\d]/g, ''), 10) || 14;
+      return (
+        <div data-timeline-shift={s.id} class="hidden">
+          <ShiftTimeline durationDays={days} />
+        </div>
+      );
+    })}
+
+    <!-- Economy link -->
+    <div class="mx-auto max-w-[1200px] px-5 pb-10 md:px-8">
+      <a href="/stati/ai-economy/"
+         class="inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-5 py-3 text-[14px] font-semibold text-body-muted hover:border-primary/40 hover:text-primary transition no-underline">
+        <i class="bi bi-currency-ruble text-[15px]" aria-hidden="true"></i>
+        Внутренняя экономика лагеря — как дети зарабатывают и тратят игровые рубли
+        <i class="bi bi-arrow-right text-[12px]" aria-hidden="true"></i>
+      </a>
+    </div>
+
+    <!-- ═══ REVIEWS ═══ -->
+    <Reviews />
+
+    <!-- ═══ FAQ + CONTACTS ═══ -->
+    <FAQ />
+    <Contacts />
+
+  </main>
+  <Footer />
+
+  <ShiftBookModal />
+</Base>
+
+<script define:vars={{ shiftsJson }}>
+const SHIFTS = JSON.parse(shiftsJson);
+
+const VYCHET = {
+  'shift-1':   { price: 74900, days: 10 },
+  'shift-2':   { price: 95000, days: 14 },
+  'shift-3':   { price: 89400, days: 13 },
+  'shift-4':   { price: 74900, days: 10 },
+  'shift-2-1': { price: 48000, days: 7  },
+  'shift-2-2': { price: 65000, days: 8  },
+};
+
+function freeLabel(n) {
+  if (n <= 0) return 'мест нет';
+  if (n === 1) return 'последнее место';
+  if (n <= 4) return `осталось ${n} места`;
+  return `${n} свободных мест`;
+}
+
+function getTargetShift() {
+  try {
+    const viewed = JSON.parse(localStorage.getItem('ac:viewed_shifts') || '[]');
+    if (viewed.length > 0) {
+      const ids = viewed.map(v => v.id);
+      const match = SHIFTS.filter(s => ids.includes(s.id) && s.free > 0);
+      if (match.length) return match.sort((a, b) => a.free - b.free)[0];
+    }
+  } catch {}
+  return SHIFTS.filter(s => s.free > 0).sort((a, b) =>
+    new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+  )[0] || SHIFTS[0];
+}
+
+function getAgeGroupKey() {
+  try {
+    const age = parseInt(localStorage.getItem('ac:age') || '', 10);
+    if (!age) return null;
+    if (age >= 7 && age <= 9) return '7-10';
+    if (age >= 10 && age <= 12) return '10-12';
+    if (age >= 13 && age <= 15) return '13-15';
+  } catch {}
+  return null;
+}
+
+function parsePriceNum(priceStr) {
+  return parseInt((priceStr || '').replace(/\D/g, ''), 10) || 0;
+}
+
+function formatPrice(num) {
+  return num.toLocaleString('ru-RU') + ' ₽';
+}
+
+function show(id, value) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (value !== undefined) el.textContent = value;
+  el.style.opacity = '1';
+}
+
+let countdownInterval = null;
+
+function startCountdown() {
+  const KEY = 'ac:r_discount_end';
+  let endTs = parseInt(sessionStorage.getItem(KEY) || '0', 10);
+  if (!endTs || endTs < Date.now()) {
+    endTs = Date.now() + 30 * 60 * 1000;
+    sessionStorage.setItem(KEY, String(endTs));
+  }
+
+  const el = document.getElementById('r-countdown');
+  if (!el) return;
+
+  if (countdownInterval) clearInterval(countdownInterval);
+
+  function tick() {
+    const rem = Math.max(0, endTs - Date.now());
+    const m = Math.floor(rem / 60000);
+    const s = Math.floor((rem % 60000) / 1000);
+    el.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    if (rem <= 0) {
+      clearInterval(countdownInterval);
+      const wrap = document.getElementById('r-discount-wrap');
+      if (wrap) wrap.style.display = 'none';
+    }
+  }
+
+  tick();
+  countdownInterval = setInterval(tick, 1000);
+}
+
+function openBookingModal(shift) {
+  const modal = document.getElementById('shiftBookModal');
+  if (!modal) return;
+
+  const block = modal.querySelector('[data-book-shift-block]');
+  const nameEl = modal.querySelector('[data-book-shift-name]');
+  const datesEl = modal.querySelector('[data-book-shift-dates]');
+  const durEl = modal.querySelector('[data-book-shift-duration]');
+  const priceEl = modal.querySelector('[data-book-shift-price]');
+
+  if (nameEl) nameEl.textContent = shift.name;
+  if (datesEl) datesEl.textContent = shift.dates;
+  if (durEl) durEl.textContent = shift.duration;
+  if (priceEl) priceEl.textContent = shift.price;
+  if (block) block.classList.remove('hidden');
+
+  const ageKey = getAgeGroupKey();
+  if (ageKey) {
+    const ageBtn = modal.querySelector(`[data-book-age="${ageKey}"]`);
+    if (ageBtn) ageBtn.click();
+  }
+
+  modal.showModal();
+}
+
+function init() {
+  const shift = getTargetShift();
+  if (!shift) return;
+
+  const daysLeft = shift.startDate
+    ? Math.max(0, Math.ceil((new Date(shift.startDate + 'T00:00:00').getTime() - Date.now()) / 86400000))
+    : null;
+
+  const datesText = daysLeft !== null && daysLeft > 0
+    ? `${shift.dates} · ${shift.duration} · старт через ${daysLeft} дн.`
+    : `${shift.dates} · ${shift.duration}`;
+
+  show('r-eyebrow');
+  show('r-title', shift.name);
+  show('r-dates', datesText);
+  show('r-seats-text', freeLabel(shift.free));
+  show('r-seats-wrap');
+  document.getElementById('r-cta-row').style.opacity = '1';
+
+  if (shift.free <= 3) {
+    const badge = document.getElementById('r-seats');
+    if (badge) badge.classList.replace('bg-white/10', 'bg-orange-500/20');
+  }
+
+  const fullNum = parsePriceNum(shift.price);
+  const discNum = Math.round(fullNum * 0.95 / 100) * 100;
+  const origEl = document.getElementById('r-price-original');
+  const discEl = document.getElementById('r-price-discounted');
+  if (origEl) origEl.textContent = formatPrice(fullNum);
+  if (discEl) discEl.textContent = formatPrice(discNum);
+
+  // Лесенка: цена с вычетом
+  const v = VYCHET[shift.id];
+  if (v) {
+    const vychetAmt = Math.round((v.price - 3800 * v.days) * 0.13);
+    const netPrice = fullNum - vychetAmt;
+    const vychetRow = document.getElementById('r-vychet-row');
+    const vychetEl = document.getElementById('r-price-vychet');
+    if (vychetEl) vychetEl.textContent = `~${formatPrice(netPrice)}`;
+    if (vychetRow) vychetRow.classList.replace('hidden', 'flex');
+  }
+
+  startCountdown();
+
+  // Показываем нужный timeline
+  document.querySelectorAll('[data-timeline-shift]').forEach(el => {
+    el.classList.toggle('hidden', el.dataset.timelineShift !== shift.id);
+  });
+
+  document.getElementById('r-book-btn')?.addEventListener('click', () => {
+    openBookingModal(shift);
+    try { window.ym && window.ym(96499295, 'reachGoal', 'return_page_book_click'); } catch {}
+  });
+
+  try { window.ym && window.ym(96499295, 'reachGoal', 'return_page_view', { shift: shift.id }); } catch {}
+}
+
+document.addEventListener('astro:page-load', init);
+init();
+</script>

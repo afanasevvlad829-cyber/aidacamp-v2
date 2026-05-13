@@ -61,14 +61,15 @@ const freeLabel = isLowAvailability
   ? `Осталось ${shift.free}`
   : `Свободно ${shift.free}`;
 
-// Status pill (правый верхний угол)
-const statusPill = shift.statusType === 'short'
-  ? { text: 'короткая', cls: 'bg-[var(--color-primary-100)] text-[var(--color-primary-700)]' }
-  : isLowAvailability
-    ? { text: `Осталось ${shift.free}`, cls: 'bg-orange-100 text-orange-700 font-bold' }
-    : shift.free >= 10
-      ? { text: `${shift.free} мест`, cls: 'bg-emerald-100 text-emerald-700' }
-      : null;
+// Status pill (правый верхний угол) — не показываем для nearest (info уже в баннере)
+const statusPill = shift.nearest ? null
+  : shift.statusType === 'short'
+    ? { text: 'короткая', cls: 'bg-[var(--color-primary-100)] text-[var(--color-primary-700)]' }
+    : isLowAvailability
+      ? { text: `Осталось ${shift.free}`, cls: 'bg-orange-100 text-orange-700 font-bold' }
+      : shift.free >= 10
+        ? { text: `${shift.free} мест`, cls: 'bg-emerald-100 text-emerald-700' }
+        : null;
 
 // CTA — primary (orange) для nearest/popular/low_avail, иначе ghost (Что внутри смены)
 const isPrimaryCta = shift.nearest || shift.popular || isLowAvailability;
@@ -96,11 +97,20 @@ const daysLeft = startDate
 >
   <!-- NEAREST: banner ближайшей смены -->
   {shift.nearest && (
-    <div class="-mx-5 -mt-5 mb-4 md:-mx-6 md:-mt-6 flex items-center gap-2 rounded-t-[20px] bg-primary px-5 py-2.5 md:px-6">
-      <i class="bi bi-lightning-charge-fill text-[13px] text-white" aria-hidden="true"></i>
-      <span class="text-[12px] font-bold uppercase tracking-[0.12em] text-white">Ближайшая смена</span>
+    <div class="-mx-5 -mt-5 mb-4 md:-mx-6 md:-mt-6 flex items-center gap-3 rounded-t-[20px] bg-primary px-5 py-3 md:px-6">
+      <!-- Название смены — контурный (hollow) шрифт -->
+      <span
+        class="text-[18px] font-extrabold leading-none shrink-0 select-none"
+        style="color: transparent; -webkit-text-stroke: 1.8px #fff; text-stroke: 1.8px #fff;"
+      >{shift.name}</span>
+      <!-- Кол-во мест — белый жирный -->
+      {shift.free > 0 && shift.free <= 5 && (
+        <span class="text-[15px] font-bold text-white leading-none shrink-0">
+          Осталось {shift.free === 1 ? '1 место' : `${shift.free} места`}
+        </span>
+      )}
       {daysLeft !== null && daysLeft > 0 && (
-        <span class="ml-auto text-[12px] font-semibold text-white/80">через {daysLeft}&nbsp;{pluralDays(daysLeft)}</span>
+        <span class="ml-auto text-[12px] font-semibold text-white/75 whitespace-nowrap">через {daysLeft}&nbsp;{pluralDays(daysLeft)}</span>
       )}
     </div>
   )}
