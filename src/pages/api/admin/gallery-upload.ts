@@ -7,12 +7,18 @@ import { join, extname } from 'path';
 
 const execFileAsync = promisify(execFile);
 
+// Colorspace fix: strip conflicting ICC profiles, force sRGB throughout.
+// Without this ImageMagick's AVIF encoder shifts colors red (YCbCr mismatch).
+const COLOR_FIX = ['-strip', '-colorspace', 'sRGB'];
+
 // HDR filter: saturation +30%, S-contrast, lift shadows, sharpen
 const HDR_ARGS = [
+  ...COLOR_FIX,
   '-modulate', '103,130,100',
   '-sigmoidal-contrast', '4,50%',
   '-level', '3%,97%',
   '-unsharp', '0x0.5+0.8+0.02',
+  '-colorspace', 'sRGB',
 ];
 
 export const GET: APIRoute = () => json({ status: 'gallery-upload API ready' });
