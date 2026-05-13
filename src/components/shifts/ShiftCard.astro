@@ -47,12 +47,14 @@ const freeLabel = isLowAvailability
   ? `Осталось ${shift.free}`
   : `Свободно ${shift.free}`;
 
-// Status pill (правый верхний угол): only when много мест ИЛИ короткая
+// Status pill (правый верхний угол)
 const statusPill = shift.statusType === 'short'
   ? { text: 'короткая', cls: 'bg-[var(--color-primary-100)] text-[var(--color-primary-700)]' }
-  : !isLowAvailability && shift.free >= 10
-    ? { text: `${shift.free} мест`, cls: 'bg-emerald-100 text-emerald-700' }
-    : null;
+  : isLowAvailability
+    ? { text: `Осталось ${shift.free}`, cls: 'bg-orange-100 text-orange-700 font-bold' }
+    : shift.free >= 10
+      ? { text: `${shift.free} мест`, cls: 'bg-emerald-100 text-emerald-700' }
+      : null;
 
 // CTA — primary (orange) для nearest/popular/low_avail, иначе ghost (Что внутри смены)
 const isPrimaryCta = shift.nearest || shift.popular || isLowAvailability;
@@ -67,6 +69,7 @@ const daysLeft = startDate
 
 <article
   data-shift-card
+  data-shift-id={shift.id}
   class:list={[
     'reveal group relative flex flex-col rounded-[22px] border bg-card cursor-pointer select-none transition-all duration-200',
     'card-shadow',
