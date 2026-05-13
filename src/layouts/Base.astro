@@ -364,11 +364,14 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         var isRetarget = location.search.indexOf('ybaip=1') !== -1;
         var isUnknownHash = hash && KNOWN.indexOf(hash) === -1;
         if (isRetarget || isUnknownHash) {
-          var el = document.getElementById('shifts');
-          if (el) {
-            setTimeout(function () {
-              el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 300);
+          function scrollToShifts() {
+            var el = document.getElementById('shifts');
+            if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
+          }
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', scrollToShifts);
+          } else {
+            scrollToShifts();
           }
         }
       })();
