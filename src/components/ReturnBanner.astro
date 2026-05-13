@@ -1,11 +1,10 @@
 ---
 /**
- * ReturnBanner — нижняя плашка для повторных визитов.
- * Показывается через 10 сек если:
- *   1) есть кука _ym_uid (Метрика — был на сайте раньше), ИЛИ
- *   2) есть localStorage ac:viewed_shifts (смотрел смены)
- * Текст: «В Смене X, которую вы смотрели, осталось N мест»
- * Закрывается крестиком, не показывается повторно в рамках сессии.
+ * ReturnBanner — два режима в зависимости от gap (дней с последнего просмотра смены):
+ *   gap 1–3 дня  → TOP BAR: немедленно, под хедером, оранжевый, заметный
+ *   gap 0 или 4+ → BOTTOM BAR: через 10 сек, маленький снизу (текущее поведение)
+ *
+ * Gap считается по ts в localStorage ac:viewed_shifts.
  */
 import { mainShifts, shortShifts } from '../data/shifts';
 
@@ -15,7 +14,32 @@ const shiftsJson = JSON.stringify(
 );
 ---
 
-<!-- ReturnBanner -->
+<!-- TOP BAR: горячее окно 1–3 дня -->
+<div
+  id="return-top-bar"
+  class="hidden fixed top-0 left-0 right-0 z-[55] -translate-y-full transition-transform duration-300 ease-out"
+  aria-live="polite"
+>
+  <div class="bg-primary px-4 py-2.5 shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
+    <div class="mx-auto flex max-w-2xl items-center justify-between gap-3">
+      <button id="return-top-cta" type="button"
+        class="flex min-w-0 flex-1 items-center gap-2.5 text-left hover:opacity-90 transition-opacity">
+        <i class="bi bi-fire text-white text-[16px] shrink-0" aria-hidden="true"></i>
+        <span id="return-top-text" class="text-[14px] font-semibold text-white leading-[1.35] truncate"></span>
+        <span class="shrink-0 inline-flex items-center gap-1 text-[13px] font-bold text-white/90 whitespace-nowrap">
+          Перейти <i class="bi bi-arrow-right text-[12px]" aria-hidden="true"></i>
+        </span>
+      </button>
+      <button id="return-top-close" type="button"
+        class="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full text-white/70 hover:text-white hover:bg-white/15 transition-colors"
+        aria-label="Закрыть">
+        <i class="bi bi-x-lg text-[13px]" aria-hidden="true"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM BAR: для всех остальных (same-day / gap 4+) -->
 <div
   id="return-banner"
   class="hidden fixed bottom-0 left-0 right-0 z-50 translate-y-full transition-transform duration-400 ease-out"
@@ -24,15 +48,14 @@ const shiftsJson = JSON.stringify(
 >
   <div class="bg-slate-900 border-t border-slate-700 px-4 py-3 md:py-3.5 shadow-[0_-4px_24px_rgba(0,0,0,0.18)]">
     <div class="mx-auto flex max-w-2xl items-center justify-between gap-4">
-      <button id="return-banner-cta" type="button" class="flex items-center gap-3 min-w-0 text-left cursor-pointer hover:opacity-90 transition-opacity">
+      <button id="return-banner-cta" type="button"
+        class="flex items-center gap-3 min-w-0 text-left cursor-pointer hover:opacity-90 transition-opacity">
         <i class="bi bi-fire text-orange-400 text-[18px] shrink-0" aria-hidden="true"></i>
         <p id="return-banner-text" class="text-[14px] md:text-[15px] text-white/90 leading-[1.4]"></p>
       </button>
-      <button
-        id="return-banner-close"
+      <button id="return-banner-close" type="button"
         class="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full text-white/50 hover:text-white/90 hover:bg-white/10 transition-colors"
-        aria-label="Закрыть"
-      >
+        aria-label="Закрыть">
         <i class="bi bi-x-lg text-[14px]" aria-hidden="true"></i>
       </button>
     </div>
@@ -43,26 +66,31 @@ const shiftsJson = JSON.stringify(
   const SHIFTS = JSON.parse(shiftsJson);
   const SESSION_KEY = 'ac:return_banner_shown';
 
-  function isReturnVisitor() {
-    const hasYmUid = /(?:^|[; ])_ym_uid=/.test(document.cookie);
-    const hasViewedShift = !!localStorage.getItem('ac:viewed_shifts');
-    return hasYmUid || hasViewedShift;
-  }
-
   function getTargetShift() {
-    // Берём смену с наименьшим кол-вом свободных мест из тех что смотрел
     try {
       const viewed = JSON.parse(localStorage.getItem('ac:viewed_shifts') || '[]');
       if (viewed.length > 0) {
         const viewedIds = viewed.map(v => v.id);
         const candidates = SHIFTS.filter(s => viewedIds.includes(s.id) && s.free > 0);
-        if (candidates.length > 0) {
-          return candidates.sort((a, b) => a.free - b.free)[0];
-        }
+        if (candidates.length > 0) return candidates.sort((a, b) => a.free - b.free)[0];
       }
     } catch {}
-    // Fallback — самая дефицитная из всех
     return SHIFTS.filter(s => s.free > 0).sort((a, b) => a.free - b.free)[0];
+  }
+
+  // Считаем gap: сколько дней прошло с первого просмотра смены
+  function getGapDays() {
+    try {
+      const viewed = JSON.parse(localStorage.getItem('ac:viewed_shifts') || '[]');
+      if (viewed.length > 0) {
+        const oldest = Math.min(...viewed.map(v => v.ts || Date.now()));
+        return (Date.now() - oldest) / 86400000;
+      }
+    } catch {}
+    // Fallback: _ym_uid содержит timestamp первого визита (Unix секунды)
+    const ymMatch = document.cookie.match(/(?:^|[; ])_ym_uid=(\d{10})/);
+    if (ymMatch) return (Date.now() / 1000 - parseInt(ymMatch[1])) / 86400;
+    return null;
   }
 
   function freeLabel(n) {
@@ -72,45 +100,76 @@ const shiftsJson = JSON.stringify(
   }
 
   function initReturnBanner() {
-    const banner = document.getElementById('return-banner');
-    const textEl = document.getElementById('return-banner-text');
-    const closeBtn = document.getElementById('return-banner-close');
-    if (!banner || !textEl || !closeBtn) return;
-
-    // Не показываем повторно в рамках сессии
     if (sessionStorage.getItem(SESSION_KEY)) return;
-    if (!isReturnVisitor()) return;
 
     const shift = getTargetShift();
     if (!shift) return;
 
-    textEl.textContent = `В ${shift.name}, которую вы смотрели, осталось ${freeLabel(shift.free)}`;
-
-    const ctaEl = document.getElementById('return-banner-cta');
-    if (ctaEl) ctaEl.dataset.shiftHref = `/shifts/${shift.id}/`;
-
-    setTimeout(() => {
-      banner.classList.remove('hidden');
-      requestAnimationFrame(() => {
-        banner.classList.remove('translate-y-full');
-        banner.classList.add('translate-y-0');
-      });
-    }, 10000);
-
-    const ctaBtn = document.getElementById('return-banner-cta');
-    ctaBtn?.addEventListener('click', () => {
-      const href = (ctaBtn as HTMLElement).dataset.shiftHref;
-      if (href) window.location.href = href;
-    });
-
-    closeBtn.addEventListener('click', () => {
-      banner.classList.remove('translate-y-0');
-      banner.classList.add('translate-y-full');
-      sessionStorage.setItem(SESSION_KEY, '1');
-      setTimeout(() => banner.classList.add('hidden'), 400);
-    });
+    const gap = getGapDays();
+    const isHot = gap !== null && gap >= 1 && gap <= 3;
+    const href = `/shifts/${shift.id}/`;
+    const text = `${shift.name} — осталось ${freeLabel(shift.free)}`;
 
     sessionStorage.setItem(SESSION_KEY, '1');
+
+    if (isHot) {
+      // ── TOP BAR: сразу ────────────────────────────────────────
+      const bar    = document.getElementById('return-top-bar');
+      const textEl = document.getElementById('return-top-text');
+      const ctaBtn = document.getElementById('return-top-cta');
+      const closeBtn = document.getElementById('return-top-close');
+      if (!bar || !textEl) return;
+
+      textEl.textContent = text;
+
+      bar.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        bar.classList.remove('-translate-y-full');
+        bar.classList.add('translate-y-0');
+      });
+
+      ctaBtn?.addEventListener('click', () => { window.location.href = href; });
+
+      closeBtn?.addEventListener('click', () => {
+        bar.classList.remove('translate-y-0');
+        bar.classList.add('-translate-y-full');
+        setTimeout(() => bar.classList.add('hidden'), 300);
+      });
+
+    } else {
+      // ── BOTTOM BAR: через 10 сек ──────────────────────────────
+      const hasYmUid = /(?:^|[; ])_ym_uid=/.test(document.cookie);
+      const hasViewed = !!localStorage.getItem('ac:viewed_shifts');
+      if (!hasYmUid && !hasViewed) return;
+
+      const banner  = document.getElementById('return-banner');
+      const textEl  = document.getElementById('return-banner-text');
+      const ctaBtn  = document.getElementById('return-banner-cta');
+      const closeBtn = document.getElementById('return-banner-close');
+      if (!banner || !textEl) return;
+
+      textEl.textContent = `В ${shift.name}, которую вы смотрели, осталось ${freeLabel(shift.free)}`;
+      if (ctaBtn) ctaBtn.dataset.shiftHref = href;
+
+      setTimeout(() => {
+        banner.classList.remove('hidden');
+        requestAnimationFrame(() => {
+          banner.classList.remove('translate-y-full');
+          banner.classList.add('translate-y-0');
+        });
+      }, 10000);
+
+      ctaBtn?.addEventListener('click', () => {
+        const h = ctaBtn.dataset.shiftHref;
+        if (h) window.location.href = h;
+      });
+
+      closeBtn?.addEventListener('click', () => {
+        banner.classList.remove('translate-y-0');
+        banner.classList.add('translate-y-full');
+        setTimeout(() => banner.classList.add('hidden'), 400);
+      });
+    }
   }
 
   document.addEventListener('astro:page-load', initReturnBanner);
