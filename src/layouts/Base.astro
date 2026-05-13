@@ -255,7 +255,7 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         window.initScrollTracking = function () {
           var goals = [{p:25,id:'scroll_25'},{p:50,id:'scroll_50'},{p:75,id:'scroll_75'},{p:90,id:'scroll_90'}];
           window.addEventListener('scroll', function () {
-            var h = document.documentElement.scrollHeight - window.innerHeight;
+            var h = document.documentElement.scrollHeight - (window.visualViewport ? window.visualViewport.height : window.innerHeight);
             if (!h) return;
             var pct = Math.round(window.scrollY / h * 100);
             goals.forEach(function (g) { if (pct >= g.p) window.trackGoal(g.id); });
@@ -355,6 +355,24 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     </script>
     <SiteSearch />
     <ReturnBanner />
+
+    <!-- Неизвестные якоря и ретаргет-трафик → #shifts -->
+    <script is:inline>
+      (function () {
+        var KNOWN = ['shifts','about','gallery','faq','booking','price','smeny','program','tracks'];
+        var hash = (location.hash || '').replace('#','');
+        var isRetarget = location.search.indexOf('ybaip=1') !== -1;
+        var isUnknownHash = hash && KNOWN.indexOf(hash) === -1;
+        if (isRetarget || isUnknownHash) {
+          var el = document.getElementById('shifts');
+          if (el) {
+            setTimeout(function () {
+              el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 300);
+          }
+        }
+      })();
+    </script>
 
     <!-- Andata Tag Manager — загружается лениво в Stage 2 вместе с Clarity/Mail.ru -->
   </body>
