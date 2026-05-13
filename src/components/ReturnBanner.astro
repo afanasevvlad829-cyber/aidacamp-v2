@@ -2,9 +2,10 @@
 /**
  * ReturnBanner — два режима в зависимости от gap (дней с последнего просмотра смены):
  *   gap 1–3 дня  → TOP BAR: немедленно, под хедером, оранжевый, заметный
- *   gap 0 или 4+ → BOTTOM BAR: через 10 сек, маленький снизу (текущее поведение)
+ *   gap 0 или 4+ → BOTTOM BAR: через 10 сек, маленький снизу
  *
  * Gap считается по ts в localStorage ac:viewed_shifts.
+ * CTA раскрывает инлайн-форму с телефоном → /api/lead (source=return_banner).
  */
 import { mainShifts, shortShifts } from '../data/shifts';
 
@@ -22,14 +23,34 @@ const shiftsJson = JSON.stringify(
 >
   <div class="bg-primary px-4 py-2.5 shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
     <div class="mx-auto flex max-w-2xl items-center justify-between gap-3">
-      <button id="return-top-cta" type="button"
-        class="flex min-w-0 flex-1 items-center gap-2.5 text-left hover:opacity-90 transition-opacity">
+      <!-- нормальный вид -->
+      <div id="return-top-default" class="flex min-w-0 flex-1 items-center gap-2.5">
         <i class="bi bi-fire text-white text-[16px] shrink-0" aria-hidden="true"></i>
         <span id="return-top-text" class="text-[14px] font-semibold text-white leading-[1.35] truncate"></span>
-        <span class="shrink-0 inline-flex items-center gap-1 text-[13px] font-bold text-white/90 whitespace-nowrap">
-          Перейти <i class="bi bi-arrow-right text-[12px]" aria-hidden="true"></i>
-        </span>
-      </button>
+        <button id="return-top-cta" type="button"
+          class="shrink-0 inline-flex items-center gap-1 text-[13px] font-bold text-white/90 whitespace-nowrap hover:text-white transition-colors">
+          Узнать подробности <i class="bi bi-arrow-right text-[12px]" aria-hidden="true"></i>
+        </button>
+      </div>
+      <!-- форма (скрыта по умолчанию) -->
+      <form id="return-top-form" class="hidden min-w-0 flex-1 items-center gap-2" novalidate>
+        <input
+          type="tel"
+          id="return-top-phone"
+          placeholder="Ваш телефон"
+          autocomplete="tel"
+          inputmode="tel"
+          class="min-w-0 flex-1 rounded-lg bg-white/15 border border-white/30 px-3 py-1.5 text-[14px] text-white placeholder-white/60 focus:outline-none focus:border-white/70"
+        />
+        <button type="submit"
+          class="shrink-0 rounded-lg bg-white px-4 py-1.5 text-[13px] font-bold text-primary hover:bg-white/90 transition-colors">
+          Перезвоним
+        </button>
+      </form>
+      <!-- успех -->
+      <p id="return-top-success" class="hidden text-[14px] font-semibold text-white">
+        <i class="bi bi-check-lg mr-1" aria-hidden="true"></i>Перезвоним!
+      </p>
       <button id="return-top-close" type="button"
         class="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full text-white/70 hover:text-white hover:bg-white/15 transition-colors"
         aria-label="Закрыть">
@@ -47,17 +68,46 @@ const shiftsJson = JSON.stringify(
   role="status"
 >
   <div class="bg-slate-900 border-t border-slate-700 px-4 py-3 md:py-3.5 shadow-[0_-4px_24px_rgba(0,0,0,0.18)]">
-    <div class="mx-auto flex max-w-2xl items-center justify-between gap-4">
-      <button id="return-banner-cta" type="button"
-        class="flex items-center gap-3 min-w-0 text-left cursor-pointer hover:opacity-90 transition-opacity">
+    <div class="mx-auto max-w-2xl">
+      <!-- нормальный вид -->
+      <div id="return-banner-default" class="flex items-center justify-between gap-4">
+        <button id="return-banner-cta" type="button"
+          class="flex items-center gap-3 min-w-0 text-left cursor-pointer hover:opacity-90 transition-opacity">
+          <i class="bi bi-fire text-orange-400 text-[18px] shrink-0" aria-hidden="true"></i>
+          <p id="return-banner-text" class="text-[14px] md:text-[15px] text-white/90 leading-[1.4]"></p>
+        </button>
+        <button id="return-banner-close" type="button"
+          class="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full text-white/50 hover:text-white/90 hover:bg-white/10 transition-colors"
+          aria-label="Закрыть">
+          <i class="bi bi-x-lg text-[14px]" aria-hidden="true"></i>
+        </button>
+      </div>
+      <!-- форма (скрыта по умолчанию) -->
+      <form id="return-banner-form" class="hidden items-center gap-3" novalidate>
         <i class="bi bi-fire text-orange-400 text-[18px] shrink-0" aria-hidden="true"></i>
-        <p id="return-banner-text" class="text-[14px] md:text-[15px] text-white/90 leading-[1.4]"></p>
-      </button>
-      <button id="return-banner-close" type="button"
-        class="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full text-white/50 hover:text-white/90 hover:bg-white/10 transition-colors"
-        aria-label="Закрыть">
-        <i class="bi bi-x-lg text-[14px]" aria-hidden="true"></i>
-      </button>
+        <input
+          type="tel"
+          id="return-banner-phone"
+          placeholder="Ваш телефон"
+          autocomplete="tel"
+          inputmode="tel"
+          class="min-w-0 flex-1 rounded-lg bg-white/10 border border-slate-600 px-3 py-2 text-[14px] text-white placeholder-slate-400 focus:outline-none focus:border-orange-400"
+        />
+        <button type="submit"
+          class="shrink-0 rounded-lg bg-primary hover:bg-orange-400 px-4 py-2 text-[13px] font-bold text-white transition-colors min-h-[36px]">
+          Перезвоним
+        </button>
+        <button type="button" id="return-banner-form-cancel"
+          class="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:text-white/90 hover:bg-white/10 transition-colors"
+          aria-label="Закрыть">
+          <i class="bi bi-x-lg text-[14px]" aria-hidden="true"></i>
+        </button>
+      </form>
+      <!-- успех -->
+      <div id="return-banner-success" class="hidden items-center gap-3 py-1">
+        <i class="bi bi-check-circle-fill text-emerald-400 text-[18px] shrink-0" aria-hidden="true"></i>
+        <p class="text-[14px] text-white/90">Перезвоним в ближайшее время!</p>
+      </div>
     </div>
   </div>
 </div>
@@ -78,7 +128,6 @@ const shiftsJson = JSON.stringify(
     return SHIFTS.filter(s => s.free > 0).sort((a, b) => a.free - b.free)[0];
   }
 
-  // Считаем gap: сколько дней прошло с первого просмотра смены
   function getGapDays() {
     try {
       const viewed = JSON.parse(localStorage.getItem('ac:viewed_shifts') || '[]');
@@ -87,7 +136,6 @@ const shiftsJson = JSON.stringify(
         return (Date.now() - oldest) / 86400000;
       }
     } catch {}
-    // Fallback: _ym_uid содержит timestamp первого визита (Unix секунды)
     const ymMatch = document.cookie.match(/(?:^|[; ])_ym_uid=(\d{10})/);
     if (ymMatch) return (Date.now() / 1000 - parseInt(ymMatch[1])) / 86400;
     return null;
@@ -99,6 +147,36 @@ const shiftsJson = JSON.stringify(
     return `${n} мест`;
   }
 
+  function getAge() {
+    try { return JSON.parse(localStorage.getItem('ac:state') || '{}').age || ''; } catch { return ''; }
+  }
+
+  function getShift(shift) {
+    try {
+      const viewed = JSON.parse(localStorage.getItem('ac:viewed_shifts') || '[]');
+      if (viewed.length > 0) return viewed.sort((a, b) => (b.ts || 0) - (a.ts || 0))[0].id || shift.id;
+    } catch {}
+    return shift.id;
+  }
+
+  async function submitPhone(phone, shift) {
+    try {
+      await fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone,
+          age: getAge(),
+          shift: getShift(shift),
+          source: 'return_banner',
+          form: 'return_banner',
+          tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
+      });
+    } catch {}
+    try { window.ym && window.ym(96499295, 'reachGoal', 'submit', { form: 'return_banner' }); } catch {}
+  }
+
   function initReturnBanner() {
     if (sessionStorage.getItem(SESSION_KEY)) return;
 
@@ -107,28 +185,47 @@ const shiftsJson = JSON.stringify(
 
     const gap = getGapDays();
     const isHot = gap !== null && gap >= 1 && gap <= 3;
-    const href = `/shifts/${shift.id}/`;
     const text = `${shift.name} — осталось ${freeLabel(shift.free)}`;
+    const bannerText = `В смене «${shift.name}», которую вы смотрели, осталось ${freeLabel(shift.free)}`;
 
     sessionStorage.setItem(SESSION_KEY, '1');
 
     if (isHot) {
-      // ── TOP BAR: сразу ────────────────────────────────────────
-      const bar    = document.getElementById('return-top-bar');
-      const textEl = document.getElementById('return-top-text');
-      const ctaBtn = document.getElementById('return-top-cta');
-      const closeBtn = document.getElementById('return-top-close');
+      // ── TOP BAR: сразу ─────────────────────────────────────────────
+      const bar         = document.getElementById('return-top-bar');
+      const textEl      = document.getElementById('return-top-text');
+      const ctaBtn      = document.getElementById('return-top-cta');
+      const closeBtn    = document.getElementById('return-top-close');
+      const defaultEl   = document.getElementById('return-top-default');
+      const formEl      = document.getElementById('return-top-form');
+      const phoneEl     = document.getElementById('return-top-phone');
+      const successEl   = document.getElementById('return-top-success');
       if (!bar || !textEl) return;
 
       textEl.textContent = text;
-
       bar.classList.remove('hidden');
       requestAnimationFrame(() => {
         bar.classList.remove('-translate-y-full');
         bar.classList.add('translate-y-0');
       });
 
-      ctaBtn?.addEventListener('click', () => { window.location.href = href; });
+      ctaBtn?.addEventListener('click', () => {
+        defaultEl?.classList.add('hidden');
+        formEl?.classList.remove('hidden');
+        formEl?.classList.add('flex');
+        phoneEl?.focus();
+        try { window.ym && window.ym(96499295, 'reachGoal', 'return_banner_cta_click'); } catch {}
+      });
+
+      formEl?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const phone = phoneEl?.value?.trim();
+        if (!phone) return;
+        await submitPhone(phone, shift);
+        formEl.classList.add('hidden');
+        formEl.classList.remove('flex');
+        successEl?.classList.remove('hidden');
+      });
 
       closeBtn?.addEventListener('click', () => {
         bar.classList.remove('translate-y-0');
@@ -137,19 +234,23 @@ const shiftsJson = JSON.stringify(
       });
 
     } else {
-      // ── BOTTOM BAR: через 10 сек ──────────────────────────────
-      const hasYmUid = /(?:^|[; ])_ym_uid=/.test(document.cookie);
+      // ── BOTTOM BAR: через 10 сек ───────────────────────────────────
+      const hasYmUid  = /(?:^|[; ])_ym_uid=/.test(document.cookie);
       const hasViewed = !!localStorage.getItem('ac:viewed_shifts');
       if (!hasYmUid && !hasViewed) return;
 
-      const banner  = document.getElementById('return-banner');
-      const textEl  = document.getElementById('return-banner-text');
-      const ctaBtn  = document.getElementById('return-banner-cta');
-      const closeBtn = document.getElementById('return-banner-close');
+      const banner      = document.getElementById('return-banner');
+      const textEl      = document.getElementById('return-banner-text');
+      const ctaBtn      = document.getElementById('return-banner-cta');
+      const closeBtn    = document.getElementById('return-banner-close');
+      const defaultEl   = document.getElementById('return-banner-default');
+      const formEl      = document.getElementById('return-banner-form');
+      const phoneEl     = document.getElementById('return-banner-phone');
+      const successEl   = document.getElementById('return-banner-success');
+      const cancelBtn   = document.getElementById('return-banner-form-cancel');
       if (!banner || !textEl) return;
 
-      textEl.textContent = `В ${shift.name}, которую вы смотрели, осталось ${freeLabel(shift.free)}`;
-      if (ctaBtn) ctaBtn.dataset.shiftHref = href;
+      textEl.textContent = bannerText;
 
       setTimeout(() => {
         banner.classList.remove('hidden');
@@ -160,15 +261,32 @@ const shiftsJson = JSON.stringify(
       }, 10000);
 
       ctaBtn?.addEventListener('click', () => {
-        const h = ctaBtn.dataset.shiftHref;
-        if (h) window.location.href = h;
+        defaultEl?.classList.add('hidden');
+        formEl?.classList.remove('hidden');
+        formEl?.classList.add('flex');
+        phoneEl?.focus();
+        try { window.ym && window.ym(96499295, 'reachGoal', 'return_banner_cta_click'); } catch {}
       });
 
-      closeBtn?.addEventListener('click', () => {
+      formEl?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const phone = phoneEl?.value?.trim();
+        if (!phone) return;
+        await submitPhone(phone, shift);
+        formEl.classList.add('hidden');
+        formEl.classList.remove('flex');
+        successEl?.classList.remove('hidden');
+        successEl?.classList.add('flex');
+      });
+
+      const hideBanner = () => {
         banner.classList.remove('translate-y-0');
         banner.classList.add('translate-y-full');
         setTimeout(() => banner.classList.add('hidden'), 400);
-      });
+      };
+
+      closeBtn?.addEventListener('click', hideBanner);
+      cancelBtn?.addEventListener('click', hideBanner);
     }
   }
 
