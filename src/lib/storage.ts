@@ -19,6 +19,8 @@ export const STORAGE_KEYS = {
   ymFired:            'ym_fired',
   /** sessionStorage — UTM-атрибуция для обогащения лида */
   attribution:        'ac_attribution',
+  /** localStorage — список просмотренных смен [{id, ts}], для детекции второго визита */
+  viewedShifts:       'ac:viewed_shifts',
 } as const;
 
 export type StorageKey = typeof STORAGE_KEYS[keyof typeof STORAGE_KEYS];

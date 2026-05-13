@@ -141,9 +141,21 @@ export function initShiftModal() {
     });
   });
 
+  function markShiftViewed(shiftId: string) {
+    try {
+      const key = 'ac:viewed_shifts';
+      const existing: Array<{id: string; ts: number}> = JSON.parse(localStorage.getItem(key) || '[]');
+      if (!existing.find((e) => e.id === shiftId)) {
+        existing.push({ id: shiftId, ts: Date.now() });
+        localStorage.setItem(key, JSON.stringify(existing));
+      }
+    } catch {}
+  }
+
   function open(shiftId: string, tab: TabName) {
     const shift = allShifts.find((s) => s.id === shiftId);
     if (!shift) return;
+    markShiftViewed(shiftId);
     populate(shift);
     setTab(tab);
 

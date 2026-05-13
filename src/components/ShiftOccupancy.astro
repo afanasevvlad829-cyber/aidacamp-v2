@@ -54,14 +54,14 @@ function freeLabel(free: number) {
         const color = getColor(pct);
         const icon = getIcon(pct);
         return (
-          <div class="occupancy-row cursor-pointer rounded-lg -mx-1 px-1 py-1 hover:bg-surface transition-colors" style="opacity: 0" data-occupancy-shift={s.id} role="button" tabindex="0">
+          <div class="occupancy-row cursor-pointer rounded-lg -mx-1 px-1 py-1 hover:bg-surface transition-colors" style="opacity: 0" data-occupancy-shift={s.id} data-free={s.free} data-occupied={s.occupied} role="button" tabindex="0">
             <div class="flex items-center justify-between mb-1">
               <div class="flex items-center gap-2">
                 <span class="text-[14px] text-body-muted">{s.name}</span>
                 <span class="text-[14px] text-body-faint">{s.dates} · {s.duration}</span>
               </div>
               <span class="shift-label text-[18px] font-bold tabular-nums" style={`color: ${color}; opacity: 0`}>
-                <i class={`bi ${icon}`}></i> {freeLabel(free)}
+                <i class={`bi ${icon}`}></i> <span class="shift-free-count">{freeLabel(free)}</span>
               </span>
             </div>
             <div class="h-[8px] w-full rounded-full bg-surface overflow-hidden">
@@ -89,14 +89,14 @@ function freeLabel(free: number) {
         const color = getColor(pct);
         const icon = getIcon(pct);
         return (
-          <div class="occupancy-row cursor-pointer rounded-lg -mx-1 px-1 py-1 hover:bg-surface transition-colors" style="opacity: 0" data-occupancy-shift={s.id} role="button" tabindex="0">
+          <div class="occupancy-row cursor-pointer rounded-lg -mx-1 px-1 py-1 hover:bg-surface transition-colors" style="opacity: 0" data-occupancy-shift={s.id} data-free={s.free} data-occupied={s.occupied} role="button" tabindex="0">
             <div class="flex items-center justify-between mb-1">
               <div class="flex items-center gap-2">
                 <span class="text-[14px] text-body-muted">{s.name}</span>
                 <span class="text-[14px] text-body-faint">{s.dates} · {s.duration}</span>
               </div>
               <span class="shift-label text-[18px] font-bold tabular-nums" style={`color: ${color}; opacity: 0`}>
-                <i class={`bi ${icon}`}></i> {freeLabel(free)}
+                <i class={`bi ${icon}`}></i> <span class="shift-free-count">{freeLabel(free)}</span>
               </span>
             </div>
             <div class="h-[8px] w-full rounded-full bg-surface overflow-hidden">
@@ -124,14 +124,14 @@ function freeLabel(free: number) {
         const color = getColor(pct);
         const icon = getIcon(pct);
         return (
-          <div class="occupancy-row cursor-pointer rounded-lg -mx-1 px-1 py-1 hover:bg-surface transition-colors" style="opacity: 0" data-occupancy-shift={s.id} role="button" tabindex="0">
+          <div class="occupancy-row cursor-pointer rounded-lg -mx-1 px-1 py-1 hover:bg-surface transition-colors" style="opacity: 0" data-occupancy-shift={s.id} data-free={s.free} data-occupied={s.occupied} role="button" tabindex="0">
             <div class="flex items-center justify-between mb-1">
               <div class="flex items-center gap-2">
                 <span class="text-[14px] text-body-muted">{s.name}</span>
                 <span class="text-[14px] text-body-faint">{s.dates} · {s.duration}</span>
               </div>
               <span class="shift-label text-[18px] font-bold tabular-nums" style={`color: ${color}; opacity: 0`}>
-                <i class={`bi ${icon}`}></i> {freeLabel(free)}
+                <i class={`bi ${icon}`}></i> <span class="shift-free-count">{freeLabel(free)}</span>
               </span>
             </div>
             <div class="h-[8px] w-full rounded-full bg-surface overflow-hidden">
@@ -209,11 +209,46 @@ function freeLabel(free: number) {
       });
     }
 
+    function freeLabel(n: number): string {
+      if (n === 1) return '1 место';
+      if (n < 5) return `${n} места`;
+      return `${n} мест`;
+    }
+
+    function isReturnVisitor(): boolean {
+      // Путь 1: кука Метрики _ym_uid — был на сайте раньше (накоплена историческими визитами)
+      const hasYmUid = /[;, ]?_ym_uid=/.test('; ' + document.cookie);
+      // Путь 2: наша метка — открывал модал смены в прошлый визит
+      const hasViewedShift = !!localStorage.getItem('ac:viewed_shifts');
+      return hasYmUid || hasViewedShift;
+    }
+
+    function applySecondVisit() {
+      if (!isReturnVisitor()) return;
+
+      root.querySelectorAll<HTMLElement>('.occupancy-row').forEach((row) => {
+        const rawFree = parseInt(row.dataset.free || '0', 10);
+        const rawOccupied = parseInt(row.dataset.occupied || '0', 10);
+        const displayFree = Math.max(1, rawFree - 1);
+        if (displayFree === rawFree) return;
+
+        const total = rawFree + rawOccupied;
+        const newPct = Math.round(((total - displayFree) / total) * 100);
+
+        const label = row.querySelector<HTMLElement>('.shift-free-count');
+        if (label) label.textContent = freeLabel(displayFree);
+
+        const bar = row.querySelector<HTMLElement>('.shift-bar');
+        if (bar) bar.dataset.width = `${newPct}%`;
+      });
+    }
+
     root.querySelector('[data-check-occupancy]')?.addEventListener('click', () => {
       trackGoal('check_places');
 
       showState('loading');
       setTimeout(() => {
+        applySecondVisit();
         showState('loaded');
         animateBars();
       }, 900);
