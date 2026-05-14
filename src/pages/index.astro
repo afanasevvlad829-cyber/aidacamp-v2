@@ -45,17 +45,24 @@ import { landingPages as allLandingPages } from '../data/landing-pages';
   </Fragment>
   <script is:inline>
   (function () {
-    // Редирект возвратников на спеццену — только если уже смотрели смену
-    // и не возвращаемся с /r/ (флаг сессии предотвращает цикл)
+    // Редирект возвратников — 2-й визит со скидкой, 3-й+ без скидки
     try {
       if (sessionStorage.getItem('r_redirected')) return;
       var raw = localStorage.getItem('ac:viewed_shifts');
       if (!raw) return;
       var viewed = JSON.parse(raw);
       if (!Array.isArray(viewed) || !viewed.length) return;
-      // Берём последнюю просмотренную смену
       var last = viewed.sort(function(a, b) { return b.ts - a.ts; })[0];
       if (!last || !last.id) return;
+      // Считаем визиты на главную (с просмотренными сменами)
+      var visits = parseInt(localStorage.getItem('ac:homepage_visits') || '0') + 1;
+      localStorage.setItem('ac:homepage_visits', String(visits));
+      // 3-й визит и далее — без скидки
+      if (visits >= 3) {
+        localStorage.setItem('ac:r_no_discount', '1');
+      } else {
+        localStorage.removeItem('ac:r_no_discount');
+      }
       sessionStorage.setItem('r_redirected', '1');
       window.location.replace('/r/?shift=' + last.id);
     } catch (e) {}
