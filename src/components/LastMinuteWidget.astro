@@ -4,6 +4,7 @@
  * Позиционирование: отказы в последний момент → место по полной цене, без гарантии.
  * Форма: email ИЛИ телефон (хотя бы одно поле).
  */
+import CallTimeSelector from './CallTimeSelector.astro';
 ---
 
 <section id="waitlist" class="py-16 md:py-24 bg-slate-950 relative overflow-hidden">
@@ -71,6 +72,8 @@
         <p id="lm-hint" class="text-[13px] text-slate-500 -mt-1">
           Достаточно указать одно — телефон или email
         </p>
+
+        <CallTimeSelector dark />
 
         <!-- Error message (hidden by default) -->
         <p id="lm-error" class="hidden text-[13px] text-red-400">
@@ -227,11 +230,13 @@
     submitBtn.disabled = true;
     submitBtn.textContent = 'Отправляем…';
 
+    const callTimeInput = form.querySelector<HTMLInputElement>('[data-call-time-value]');
     const body: Record<string, string> = {
       phone:       phoneInput.value.trim(),
       email:       emailInput.value.trim(),
       source:      'waitlist',
       form_id:     'last-minute',
+      call_time:   callTimeInput?.value || '',
       landing_url: window.location.href,
       page_title:  document.title,
       referrer:    document.referrer,

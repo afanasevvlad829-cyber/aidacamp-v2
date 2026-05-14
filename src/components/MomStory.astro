@@ -1,4 +1,6 @@
 ---
+import CallTimeSelector from './CallTimeSelector.astro';
+
 interface Props {
   compact?: boolean;
 }
@@ -73,6 +75,16 @@ const photoH = compact ? 96 : 192;
           <p class="text-[14px] md:text-[13px] text-body-muted">основатель АйДаКемп</p>
         </div>
 
+        {/* Callback CTA от Дарьи */}
+        <button
+          id="daria-callback-btn"
+          type="button"
+          class="mt-3 inline-flex items-center gap-1.5 text-[14px] font-semibold text-primary hover:text-primary-hover transition-colors"
+        >
+          Перезвоню и расскажу всё
+          <i class="bi bi-arrow-right text-[13px] transition-transform group-hover:translate-x-1" aria-hidden="true"></i>
+        </button>
+
         {/* Proof-line: социальное доказательство сразу после слов основателя */}
         <div class={`${compact ? 'mt-3' : 'mt-4'} flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[14px] md:text-[13px] text-body-muted`}>
           <a href="https://yandex.ru/maps/org/aydakemp/35558479035/reviews/" target="_blank" rel="noopener" class="inline-flex items-center gap-1 hover:text-primary transition-colors no-underline">
@@ -92,6 +104,64 @@ const photoH = compact ? 96 : 192;
     </div>
   </div>
 </section>
+
+<!-- Модалка: Дарья перезвонит -->
+<dialog id="dariaCallbackModal" class="m-0 h-full w-full max-w-none border-0 bg-black/50 p-0 backdrop:bg-black/50 outline-none">
+  <div class="flex min-h-full items-end justify-center sm:items-center sm:p-4">
+    <div class="relative w-full max-w-[420px] rounded-t-[20px] sm:rounded-[20px] bg-white px-6 pb-8 pt-6 shadow-xl">
+      <!-- Close -->
+      <button type="button" id="dariaCallbackClose" class="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors" aria-label="Закрыть">
+        <i class="bi bi-x-lg text-[14px]" aria-hidden="true"></i>
+      </button>
+
+      <!-- Header -->
+      <div class="flex items-center gap-3 mb-4">
+        <img src="/images/daria.webp" alt="Дарья Афанасьева" width="48" height="48" class="h-12 w-12 rounded-full object-cover shrink-0" loading="lazy" />
+        <div>
+          <p class="text-[15px] font-bold text-body">Дарья Афанасьева</p>
+          <p class="text-[13px] text-body-muted">перезвонит и расскажет всё</p>
+        </div>
+      </div>
+
+      <!-- Phone -->
+      <p class="text-[14px] font-semibold text-[#6e788a] mb-2">Ваш номер</p>
+      <input
+        id="daria-callback-phone"
+        type="tel"
+        inputmode="tel"
+        autocomplete="tel"
+        maxlength="18"
+        placeholder="+7 (___) ___-__-__"
+        class="h-[48px] w-full rounded-[10px] border-[1.5px] border-[#e6e6e6] bg-white px-[14px] text-[16px] text-body outline-none transition placeholder:text-[#919cab] focus:border-primary"
+      />
+      <p id="daria-callback-hint-phone" class="mt-1.5 hidden text-[13px] text-red-500">Введите номер полностью — 11 цифр (+7 …)</p>
+
+      <CallTimeSelector />
+
+      <!-- Consent -->
+      <label class="mt-4 flex items-start gap-2 text-[13px] leading-[1.4] text-body-muted">
+        <input type="checkbox" id="daria-callback-consent" class="mt-[2px] h-4 w-4 shrink-0 rounded border border-slate-300 accent-primary" />
+        <span>Согласен(а) на <a href="/soglasie-na-obrabotku-personalnyh-dannyh/" class="text-primary underline">обработку персональных данных</a></span>
+      </label>
+      <p id="daria-callback-hint-consent" class="mt-1 hidden text-[13px] text-red-500">Поставьте галочку — без неё не можем принять заявку</p>
+
+      <button
+        id="daria-callback-submit"
+        type="button"
+        class="mt-4 h-[48px] w-full rounded-[10px] bg-primary text-[16px] font-semibold text-[#0d1a2b] transition hover:bg-primary-hover"
+      >
+        Жду звонка
+      </button>
+
+      <!-- Success state (hidden) -->
+      <div id="daria-callback-success" class="hidden text-center py-4">
+        <i class="bi bi-check-circle-fill text-emerald-500 text-[32px]" aria-hidden="true"></i>
+        <p class="mt-2 text-[16px] font-semibold text-body">Дарья перезвонит вам!</p>
+        <p class="mt-1 text-[14px] text-body-muted">Обычно в течение нескольких часов</p>
+      </div>
+    </div>
+  </div>
+</dialog>
 
 <style>
   .daria-hover-wrap {
@@ -147,5 +217,79 @@ const photoH = compact ? 96 : 192;
         wrap.classList.add('playing');
       }
     });
+  });
+</script>
+
+<script>
+  const modal = document.getElementById('dariaCallbackModal') as HTMLDialogElement;
+  const openBtn = document.getElementById('daria-callback-btn');
+  const closeBtn = document.getElementById('dariaCallbackClose');
+  const phoneInput = document.getElementById('daria-callback-phone') as HTMLInputElement;
+  const hintPhone = document.getElementById('daria-callback-hint-phone');
+  const consent = document.getElementById('daria-callback-consent') as HTMLInputElement;
+  const hintConsent = document.getElementById('daria-callback-hint-consent');
+  const submitBtn = document.getElementById('daria-callback-submit');
+  const successEl = document.getElementById('daria-callback-success');
+
+  openBtn?.addEventListener('click', () => {
+    modal?.showModal();
+    (window as any).trackGoal?.('daria_callback_open');
+  });
+
+  closeBtn?.addEventListener('click', () => modal?.close());
+  modal?.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
+
+  // Phone formatting
+  phoneInput?.addEventListener('input', () => {
+    let d = phoneInput.value.replace(/\D/g, '');
+    if (d.startsWith('8') && d.length > 1) d = '7' + d.slice(1);
+    if (d.length > 0 && !d.startsWith('7')) d = '7' + d;
+    d = d.slice(0, 11);
+    let f = '+7';
+    if (d.length > 1) f += ' (' + d.slice(1, 4);
+    if (d.length > 4) f += ') ' + d.slice(4, 7);
+    if (d.length > 7) f += '-' + d.slice(7, 9);
+    if (d.length > 9) f += '-' + d.slice(9, 11);
+    phoneInput.value = f;
+    hintPhone?.classList.toggle('hidden', d.length === 11 || d.length === 0);
+  });
+
+  submitBtn?.addEventListener('click', async () => {
+    const digits = phoneInput?.value.replace(/\D/g, '') || '';
+    const phoneOk = digits.length === 11;
+    const consentOk = consent?.checked;
+
+    hintPhone?.classList.toggle('hidden', phoneOk || digits.length === 0);
+    hintConsent?.classList.toggle('hidden', !!consentOk);
+
+    if (!phoneOk || !consentOk) {
+      if (!phoneOk) phoneInput?.focus();
+      else consent?.focus();
+      return;
+    }
+
+    const callTimeInput = modal?.querySelector<HTMLInputElement>('[data-call-time-value]');
+    submitBtn.textContent = 'Отправляем…';
+    (submitBtn as HTMLButtonElement).disabled = true;
+
+    try {
+      const { submitLead } = await import('../scripts/form-submit');
+      await submitLead({
+        phone: phoneInput.value,
+        age: '',
+        form: 'daria_callback',
+        call_time: callTimeInput?.value || '',
+      });
+      modal?.querySelector<HTMLElement>('.relative > *:not(#daria-callback-success):not(button[id="dariaCallbackClose"])')
+      // Show success
+      const formEls = modal?.querySelectorAll<HTMLElement>('p, input, label, button[id="daria-callback-submit"]');
+      formEls?.forEach(el => el.classList.add('hidden'));
+      successEl?.classList.remove('hidden');
+      (window as any).trackGoal?.('daria_callback_submit');
+      setTimeout(() => modal?.close(), 3000);
+    } catch {
+      submitBtn.textContent = 'Жду звонка';
+      (submitBtn as HTMLButtonElement).disabled = false;
+    }
   });
 </script>

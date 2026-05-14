@@ -104,6 +104,7 @@ export async function submitLead(data: {
   shift?: string;
   source?: string;
   form?: string;
+  call_time?: string;
 }): Promise<boolean> {
   (window as any).trackGoal?.('form_submit', { form: data.form || 'booking', age: data.age });
 
@@ -118,6 +119,7 @@ export async function submitLead(data: {
         age: data.age,
         shift: data.shift || '',
         source: data.source || ctx.utm_source || '',
+        call_time: data.call_time || '',
         ...ctx,
       }),
     });

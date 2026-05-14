@@ -1,0 +1,98 @@
+---
+/**
+ * CallTimeSelector — выбор удобного времени для звонка.
+ * Два ряда чипов: день (Сегодня/Завтра/Послезавтра) + время (4 слота).
+ * Результат пишется в hidden input data-call-time-value.
+ * Использование: <CallTimeSelector /> или <CallTimeSelector dark />
+ */
+interface Props { dark?: boolean; }
+const { dark = false } = Astro.props;
+
+const labelClass = dark
+  ? 'text-[14px] font-semibold text-slate-300 mb-2'
+  : 'text-[14px] font-semibold text-[#6e788a] mb-2';
+const mutedClass = dark ? 'font-normal text-slate-500' : 'font-normal text-[#aab3be]';
+const chipClass = dark
+  ? 'call-chip rounded-[8px] border border-white/15 bg-white/5 px-3 py-[7px] text-[13px] font-medium text-slate-300 transition-all duration-150 hover:border-primary/60'
+  : 'call-chip rounded-[8px] border border-[#e6e6e6] bg-white px-3 py-[7px] text-[13px] font-medium text-[#333] transition-all duration-150 hover:border-primary/50';
+---
+
+<div class="call-time-selector mt-4">
+  <p class={`${labelClass}`}>Когда позвонить? <span class={mutedClass}>(необязательно)</span></p>
+
+  <!-- День -->
+  <div class="flex flex-wrap gap-2 mb-2" data-call-day>
+    <button type="button" data-day="Сегодня" class={chipClass}>Сегодня</button>
+    <button type="button" data-day="Завтра" class={chipClass}>Завтра</button>
+    <button type="button" data-day="Послезавтра" class={chipClass}>Послезавтра</button>
+  </div>
+
+  <!-- Время -->
+  <div class="flex flex-wrap gap-2" data-call-time>
+    <button type="button" data-time="9–12" class={chipClass}>Утром 9–12</button>
+    <button type="button" data-time="12–17" class={chipClass}>Днём 12–17</button>
+    <button type="button" data-time="17–20" class={chipClass}>Вечером 17–20</button>
+    <button type="button" data-time="после 20" class={chipClass}>После 20:00</button>
+  </div>
+
+  <!-- Hidden value -->
+  <input type="hidden" data-call-time-value name="call_time" value="" />
+</div>
+
+<style>
+  .call-chip.is-active {
+    border-color: #ec7c00;
+    background-color: #fff8f2;
+    color: #9c3d00;
+    font-weight: 600;
+  }
+  /* dark variant active state */
+  .call-chip[class*="bg-white/5"].is-active {
+    background-color: rgba(236,124,0,0.15);
+    border-color: #ec7c00;
+    color: #ffa33d;
+    font-weight: 600;
+  }
+</style>
+
+<script>
+  function initCallTimeSelector(root: Element) {
+    const dayBtns = root.querySelectorAll<HTMLButtonElement>('[data-day]');
+    const timeBtns = root.querySelectorAll<HTMLButtonElement>('[data-time]');
+    const hidden = root.querySelector<HTMLInputElement>('[data-call-time-value]');
+    if (!hidden) return;
+
+    let selectedDay = '';
+    let selectedTime = '';
+
+    function update() {
+      hidden.value = [selectedDay, selectedTime].filter(Boolean).join(', ');
+    }
+
+    function toggle(btns: NodeListOf<HTMLButtonElement>, key: 'day' | 'time', value: string) {
+      btns.forEach(b => b.classList.remove('is-active'));
+      if (key === 'day') {
+        if (selectedDay === value) { selectedDay = ''; }
+        else { selectedDay = value; btns.forEach(b => { if (b.dataset.day === value) b.classList.add('is-active'); }); }
+      } else {
+        if (selectedTime === value) { selectedTime = ''; }
+        else { selectedTime = value; btns.forEach(b => { if (b.dataset.time === value) b.classList.add('is-active'); }); }
+      }
+      update();
+    }
+
+    dayBtns.forEach(b => b.addEventListener('click', () => toggle(dayBtns, 'day', b.dataset.day!)));
+    timeBtns.forEach(b => b.addEventListener('click', () => toggle(timeBtns, 'time', b.dataset.time!)));
+  }
+
+  // Инициализируем все селекторы на странице (могут быть в modal + main form)
+  document.querySelectorAll('.call-time-selector').forEach(initCallTimeSelector);
+
+  // Поддержка динамически добавленных (modal open)
+  const obs = new MutationObserver(muts => {
+    muts.forEach(m => m.addedNodes.forEach(n => {
+      if (n instanceof Element) n.querySelectorAll('.call-time-selector').forEach(initCallTimeSelector);
+    }));
+  });
+  obs.observe(document.body, { childList: true, subtree: true });
+</script>
