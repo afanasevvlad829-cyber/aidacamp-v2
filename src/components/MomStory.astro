@@ -138,12 +138,16 @@ const photoH = compact ? 96 : 192;
 
       <CallTimeSelector />
 
-      <!-- Consent -->
+      <!-- Consent: два чекбокса по требованиям 152-ФЗ / РКН -->
       <label class="mt-4 flex items-start gap-2 text-[13px] leading-[1.4] text-body-muted">
+        <input type="checkbox" id="daria-callback-consent-policy" class="mt-[2px] h-4 w-4 shrink-0 rounded border border-slate-300 accent-primary" />
+        <span>Ознакомлен(а) с <a href="/privacy-policy/" class="text-primary underline">Политикой обработки персональных данных</a></span>
+      </label>
+      <label class="mt-2 flex items-start gap-2 text-[13px] leading-[1.4] text-body-muted">
         <input type="checkbox" id="daria-callback-consent" class="mt-[2px] h-4 w-4 shrink-0 rounded border border-slate-300 accent-primary" />
         <span>Согласен(а) на <a href="/soglasie-na-obrabotku-personalnyh-dannyh/" class="text-primary underline">обработку персональных данных</a></span>
       </label>
-      <p id="daria-callback-hint-consent" class="mt-1 hidden text-[13px] text-red-500">Поставьте галочку — без неё не можем принять заявку</p>
+      <p id="daria-callback-hint-consent" class="mt-1 hidden text-[13px] text-red-500">Поставьте обе галочки — без них не можем принять заявку</p>
 
       <button
         id="daria-callback-submit"
@@ -226,6 +230,7 @@ const photoH = compact ? 96 : 192;
   const closeBtn = document.getElementById('dariaCallbackClose');
   const phoneInput = document.getElementById('daria-callback-phone') as HTMLInputElement;
   const hintPhone = document.getElementById('daria-callback-hint-phone');
+  const consentPolicy = document.getElementById('daria-callback-consent-policy') as HTMLInputElement;
   const consent = document.getElementById('daria-callback-consent') as HTMLInputElement;
   const hintConsent = document.getElementById('daria-callback-hint-consent');
   const submitBtn = document.getElementById('daria-callback-submit');
@@ -257,14 +262,14 @@ const photoH = compact ? 96 : 192;
   submitBtn?.addEventListener('click', async () => {
     const digits = phoneInput?.value.replace(/\D/g, '') || '';
     const phoneOk = digits.length === 11;
-    const consentOk = consent?.checked;
+    const consentOk = consentPolicy?.checked && consent?.checked;
 
     hintPhone?.classList.toggle('hidden', phoneOk || digits.length === 0);
     hintConsent?.classList.toggle('hidden', !!consentOk);
 
     if (!phoneOk || !consentOk) {
       if (!phoneOk) phoneInput?.focus();
-      else consent?.focus();
+      else consentPolicy?.focus();
       return;
     }
 
