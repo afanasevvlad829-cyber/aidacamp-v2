@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>АйДаКемп — MC Day/Night</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:100%; height:100%; overflow:hidden; background:#1a1a1a; }
+
+.scene {
+  position: absolute;
+  left: 0; right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  aspect-ratio: 16/7;
+  overflow: hidden;
+}
+
+#bg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: 50% 15%;
+  display: block;
+  transition: filter 2s ease;
+}
+#clouds { position:absolute;inset:0;z-index:1;pointer-events:none; }
+#mood   { position:absolute;inset:0;z-index:2;pointer-events:none;mix-blend-mode:multiply; }
+#dirlight { position:absolute;inset:0;z-index:3;pointer-events:none;mix-blend-mode:overlay; }
+#sky    { position:absolute;inset:0;z-index:4;pointer-events:none;mix-blend-mode:screen; }
+#windows{ position:absolute;inset:0;z-index:5;pointer-events:none;mix-blend-mode:screen; }
+#rays   { position:absolute;inset:0;z-index:6;pointer-events:none;opacity:0; }
+.sl     { position:absolute;inset:0;z-index:7;pointer-events:none;
+          background:repeating-linear-gradient(to bottom,transparent 0,transparent 2px,rgba(0,0,0,0.04) 2px,rgba(0,0,0,0.04) 3px); }
+
+#tl {
+  position:absolute;bottom:12px;right:14px;z-index:20;
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.6);background:rgba(0,0,0,.4);padding:3px 9px;border-radius:6px;
+}
+</style>
+</head>
+<body>
+<div class="scene" id="scene">
+  <img id="bg" src="/images/hero-mc.webp"
+       onerror="this.style.background='linear-gradient(180deg,#4a8fd4 0%,#6db3f2 38%,#5aa040 62%,#3d7a2a 100%)';this.removeAttribute('src')"
+       alt="">
+  <canvas id="clouds"></canvas>
+  <div id="mood"></div>
+  <canvas id="dirlight"></canvas>
+  <canvas id="sky"></canvas>
+  <canvas id="windows"></canvas>
+  <div id="rays"></div>
+  <div class="sl"></div>
+  <div id="tl">День</div>
+
+</div>
+
+<script>
+const CYCLE = 60000;
+
+const LIGHT = [
+  { t:0.00, br:0.55, sat:0.80, hue:330, sep:0.12, label:'Рассвет'     },
+  { t:0.10, br:0.88, sat:1.05, hue:8,   sep:0.06, label:'Утро'        },
+  { t:0.28, br:1.08, sat:1.18, hue:0,   sep:0.00, label:'День'        },
+  { t:0.48, br:0.78, sat:1.32, hue:18,  sep:0.34, label:'Закат'       },
+  { t:0.60, br:0.28, sat:0.75, hue:200, sep:0.22, label:'Сумерки'     },
+  { t:0.72, br:0.38, sat:0.42, hue:210, sep:0.18, label:'Ночь'        },
+  { t:0.88, br:0.42, sat:0.72, hue:342, sep:0.14, label:'Предрассвет' },
+  { t:1.00, br:0.55, sat:0.80, hue:330, sep:0.12, label:'Рассвет'     },
+];
+const MOOD = [
+  { t:0.00, r:200, g:100, b:160, a:0.55 },
+  { t:0.10, r:255, g:220, b:180, a:0.08 },
+  { t:0.28, r:255, g:255, b:255, a:0.00 },
+  { t:0.48, r:220, g:100, b: 30, a:0.45 },
+  { t:0.60, r: 60, g: 20, b: 90, a:0.65 },
+  { t:0.72, r:  8, g: 12, b: 50, a:0.52 },
+  { t:0.88, r:140, g: 45, b:100, a:0.55 },
+  { t:1.00, r:200, g:100, b:160, a:0.55 },
+];
+const DIRLIGHT = [
+  { t:0.00, r:255, g:140, b: 80, a:0.38 },
+  { t:0.10, r:255, g:215, b:130, a:0.26 },
+  { t:0.28, r:255, g:250, b:210, a:0.16 },
+  { t:0.48, r:255, g:110, b: 30, a:0.55 },
+  { t:0.60, r:120, g: 50, b:160, a:0.26 },
+  { t:0.72, r: 55, g: 75, b:210, a:0.22 },
+  { t:0.88, r:180, g: 70, b:130, a:0.32 },
+  { t:1.00, r:255, g:140, b: 80, a:0.38 },
+];
+
+// ── Позиции окон (откалиброваны) ──
+const WIN_POSITIONS = [
+  { x:0.765, y:0.566 }, { x:0.795, y:0.555 },
+  { x:0.736, y:0.574 }, { x:0.769, y:0.776 },
+  { x:0.796, y:0.495 }, { x:0.766, y:0.511 },
+  { x:0.735, y:0.517 }, { x:0.796, y:0.712 },
+  { x:0.768, y:0.718 }, { x:0.802, y:0.767 },
+];
+const WIN_W = 0.018, WIN_H = 0.030;
+
+const STARS = Array.from({length:100}, () => ({
+  x: Math.random(), y: Math.random() * 0.42,
+  r: Math.random() < 0.18 ? 2.5 : 1.5,
+  ph: Math.random() * Math.PI * 2,
+  sp: 1.0 + Math.random() * 2.2,
+}));
+
+const bg     = document.getElementById('bg');
+const moodEl = document.getElementById('mood');
+const tlEl   = document.getElementById('tl');
+const raysEl = document.getElementById('rays');
+const scene  = document.getElementById('scene');
+const clC    = document.getElementById('clouds');  const clX  = clC.getContext('2d');
+const skyC   = document.getElementById('sky');     const skyX = skyC.getContext('2d');
+const dlC    = document.getElementById('dirlight'); const dlX  = dlC.getContext('2d');
+const winC   = document.getElementById('windows'); const winX  = winC.getContext('2d');
+
+let W = 1, H = 1;
+
+function lerp(a, b, f) { return a + (b-a)*f; }
+function clamp(v,lo,hi){ return v<lo?lo:v>hi?hi:v; }
+function interpKey(arr, t) {
+  let k0=arr[arr.length-2], k1=arr[arr.length-1];
+  for(let i=0;i<arr.length-1;i++){
+    if(t>=arr[i].t&&t<=arr[i+1].t){k0=arr[i];k1=arr[i+1];break;}
+  }
+  const f=clamp((t-k0.t)/(k1.t-k0.t),0,1);
+  const res={};
+  for(const key of Object.keys(k0)){
+    if(key==='t'||key==='label')continue;
+    res[key]=lerp(k0[key],k1[key],f);
+  }
+  res.label=(f<0.5?k0:k1).label||'';
+  return res;
+}
+
+
+// ── Ночные облака + предрассветный туман ─────────────────
+const CLOUDS = [
+  { x:0.05, y:0.08, sc:1.10, spd:0.0000052 },
+  { x:0.38, y:0.14, sc:0.75, spd:0.0000068 },
+  { x:0.65, y:0.07, sc:0.95, spd:0.0000045 },
+  { x:0.82, y:0.18, sc:0.62, spd:0.0000078 },
+  { x:1.15, y:0.11, sc:0.85, spd:0.0000058 },
+];
+
+function drawCloudShape(cx, cy, sc, alpha) {
+  const puffs = [
+    [0, 0, 1.0], [-0.9,0.35,0.72], [0.9,0.30,0.78],
+    [-1.7,0.65,0.55], [1.7,0.60,0.60], [0,0.55,0.82],
+  ];
+  const base = sc * W * 0.036;
+  for (const [dx, dy, sr] of puffs) {
+    const px = cx + dx*base, py = cy + dy*base, r = base*sr;
+    const g = clX.createRadialGradient(px, py, 0, px, py, r);
+    g.addColorStop(0,   `rgba(200,215,255,${(alpha*0.55).toFixed(3)})`);
+    g.addColorStop(0.55,`rgba(180,200,255,${(alpha*0.20).toFixed(3)})`);
+    g.addColorStop(1,   'rgba(160,190,255,0)');
+    clX.fillStyle = g;
+    clX.fillRect(px-r, py-r, r*2, r*2);
+  }
+}
+
+function drawCloudsAndFog(t, now) {
+  clX.clearRect(0, 0, W, H);
+
+  // Облака: только ночью (t 0.58..0.92)
+  let ca = 0;
+  if (t >= 0.58 && t <= 0.92) {
+    ca = t < 0.66 ? (t-0.58)/0.08 : t > 0.86 ? (0.92-t)/0.06 : 1;
+    ca = clamp(ca, 0, 1) * 0.75;
+  }
+  if (ca > 0) {
+    for (const c of CLOUDS) {
+      const x = ((c.x + now * c.spd) % 1.4) - 0.15;
+      drawCloudShape(x * W, c.y * H, c.sc, ca);
+    }
+  }
+
+  // Туман у земли: предрассвет (t 0.82..0.06 через 0)
+  let fa = 0;
+  if (t >= 0.84)       fa = (t-0.84)/0.08;   // нарастает
+  else if (t <= 0.07)  fa = 1 - t/0.07;      // рассеивается с рассветом
+  fa = clamp(fa, 0, 1);
+
+  if (fa > 0) {
+    const fogH = H * 0.28; // высота тумана (от низа)
+    const fg = clX.createLinearGradient(0, H - fogH, 0, H);
+    fg.addColorStop(0,   `rgba(200,215,230,0)`);
+    fg.addColorStop(0.35,`rgba(210,220,235,${(fa*0.38).toFixed(3)})`);
+    fg.addColorStop(0.75,`rgba(220,228,240,${(fa*0.55).toFixed(3)})`);
+    fg.addColorStop(1,   `rgba(225,232,242,${(fa*0.65).toFixed(3)})`);
+    clX.fillStyle = fg;
+    clX.fillRect(0, H - fogH, W, fogH);
+
+    const patches = [0.15, 0.42, 0.68, 0.88];
+    for (const px of patches) {
+      const gr = clX.createRadialGradient(px*W, H, 0, px*W, H, W*0.22);
+      gr.addColorStop(0,   `rgba(215,225,238,${(fa*0.30).toFixed(3)})`);
+      gr.addColorStop(1,   'rgba(215,225,238,0)');
+      clX.fillStyle = gr;
+      clX.fillRect(px*W - W*0.22, H - W*0.22, W*0.44, W*0.22);
+    }
+  }
+}
+
+// ── Падающие звёзды ───────────────────────────────────────
+let shooters = [];
+let lastShooter = 0;
+
+function spawnShooter(now) {
+  shooters.push({
+    x:  0.45 + Math.random() * 0.45,
+    y:  0.01 + Math.random() * 0.15,
+    ang: Math.PI/5 + Math.random() * Math.PI/8,
+    len: 0.09 + Math.random() * 0.10,
+    dur: 550 + Math.random() * 350,
+    born: now,
+  });
+}
+
+function drawShooters(t, now) {
+  if (t < 0.63 || t > 0.89) { shooters = []; return; }
+
+  if (now - lastShooter > 4000 + Math.random()*5000) {
+    spawnShooter(now);
+    lastShooter = now;
+  }
+
+  shooters = shooters.filter(s => {
+    const age = (now - s.born) / s.dur;
+    if (age >= 1) return false;
+
+    const alpha = age < 0.25 ? age/0.25 : 1 - (age-0.25)/0.75;
+
+    const headX = (s.x + Math.cos(s.ang)*s.len*age) * W;
+    const headY = (s.y + Math.sin(s.ang)*s.len*age) * H;
+    const tailX  = headX - Math.cos(s.ang)*s.len*0.28*W;
+    const tailY  = headY - Math.sin(s.ang)*s.len*0.28*H;
+
+    const grd = skyX.createLinearGradient(tailX, tailY, headX, headY);
+    grd.addColorStop(0, 'rgba(255,255,255,0)');
+    grd.addColorStop(1, `rgba(255,255,255,${(alpha*0.95).toFixed(3)})`);
+
+    skyX.save();
+    skyX.strokeStyle = grd;
+    skyX.lineWidth = 1.8;
+    skyX.shadowBlur = 4;
+    skyX.shadowColor = 'rgba(200,220,255,0.6)';
+    skyX.beginPath();
+    skyX.moveTo(tailX, tailY);
+    skyX.lineTo(headX, headY);
+    skyX.stroke();
+    skyX.restore();
+    return true;
+  });
+}
+
+// ── Фиксированные позиции светил в небе ──
+const SUN_POS  = { rx: 0.62, ry: 0.14 };
+const MOON_POS = { rx: 0.62, ry: 0.14 };
+
+// ── Солнце ──
+function drawSun(x, y, t) {
+  const golden = t < 0.10 || (t > 0.44 && t < 0.58);
+
+  const haloR = golden ? 120 : 80;
+  const halo = skyX.createRadialGradient(x, y, 0, x, y, haloR);
+  halo.addColorStop(0,   golden ? 'rgba(255,160,50,0.28)' : 'rgba(255,240,130,0.12)');
+  halo.addColorStop(0.4, golden ? 'rgba(255,120,20,0.10)' : 'rgba(255,230,100,0.04)');
+  halo.addColorStop(1,   'rgba(255,100,0,0)');
+  skyX.fillStyle = halo;
+  skyX.fillRect(x-haloR, y-haloR, haloR*2, haloR*2);
+
+  const coronaR = 46;
+  const corona = skyX.createRadialGradient(x, y, 14, x, y, coronaR);
+  corona.addColorStop(0,   golden ? 'rgba(255,200,60,0.70)' : 'rgba(255,240,150,0.45)');
+  corona.addColorStop(1,   'rgba(255,180,30,0)');
+  skyX.fillStyle = corona;
+  skyX.fillRect(x-coronaR, y-coronaR, coronaR*2, coronaR*2);
+
+  const R = 18;
+  const disc = skyX.createRadialGradient(x, y, 0, x, y, R);
+  disc.addColorStop(0,    'rgba(255,255,230,1.0)');
+  disc.addColorStop(0.55, golden ? 'rgba(255,220,60,0.95)' : 'rgba(255,255,180,0.9)');
+  disc.addColorStop(1,    golden ? 'rgba(255,140,20,0.0)'  : 'rgba(255,240,100,0.0)');
+  skyX.fillStyle = disc;
+  skyX.fillRect(x-R, y-R, R*2, R*2);
+}
+
+// ── Луна ──
+function drawMoon(x, y) {
+  const haloR = 70;
+  const halo = skyX.createRadialGradient(x, y, 0, x, y, haloR);
+  halo.addColorStop(0,   'rgba(180,200,255,0.14)');
+  halo.addColorStop(0.5, 'rgba(150,180,255,0.05)');
+  halo.addColorStop(1,   'rgba(100,140,255,0)');
+  skyX.fillStyle = halo;
+  skyX.fillRect(x-haloR, y-haloR, haloR*2, haloR*2);
+
+  const R = 16;
+  const disc = skyX.createRadialGradient(x, y, 0, x, y, R);
+  disc.addColorStop(0,   'rgba(235,242,255,0.98)');
+  disc.addColorStop(0.6, 'rgba(200,218,255,0.80)');
+  disc.addColorStop(1,   'rgba(160,190,255,0.0)');
+  skyX.fillStyle = disc;
+  skyX.fillRect(x-R, y-R, R*2, R*2);
+
+  skyX.globalAlpha = 0.35;
+  skyX.fillStyle = 'rgba(140,160,220,1)';
+  skyX.beginPath(); skyX.arc(x-4, y+3, 3, 0, Math.PI*2); skyX.fill();
+  skyX.beginPath(); skyX.arc(x+5, y-2, 2, 0, Math.PI*2); skyX.fill();
+  skyX.beginPath(); skyX.arc(x-1, y-5, 1.5, 0, Math.PI*2); skyX.fill();
+  skyX.globalAlpha = 1;
+}
+
+// ── Звёзды ──
+function drawStars(t, now) {
+  let a = 0;
+  if (t > 0.62 && t < 0.90)
+    a = clamp(Math.min((t-0.62)/0.06,(0.90-t)/0.06),0,1);
+  if (a <= 0) return;
+  for (const s of STARS) {
+    const tw = 0.45 + 0.55*Math.abs(Math.sin(now/1000*s.sp+s.ph));
+    skyX.fillStyle = `rgba(255,255,255,${(a*tw*0.9).toFixed(3)})`;
+    skyX.fillRect(Math.round(s.x*W), Math.round(s.y*H), s.r, s.r);
+  }
+}
+
+// ── Направленный свет ──
+function drawDirLight(t, sx, sy, mx, my, sa, ma) {
+  dlX.clearRect(0, 0, W, H);
+  const dl = interpKey(DIRLIGHT, t);
+  const {r,g,b} = dl;
+
+  if (sa > 0) {
+    const alpha = dl.a * sa;
+    const R = Math.hypot(W, H) * 1.1;
+    const grd = dlX.createRadialGradient(sx, sy, 0, sx, sy, R);
+    grd.addColorStop(0,    `rgba(${r|0},${g|0},${b|0},${alpha.toFixed(3)})`);
+    grd.addColorStop(0.25, `rgba(${r|0},${g|0},${b|0},${(alpha*0.35).toFixed(3)})`);
+    grd.addColorStop(0.60, `rgba(${r|0},${g|0},${b|0},${(alpha*0.08).toFixed(3)})`);
+    grd.addColorStop(1,    `rgba(${r|0},${g|0},${b|0},0)`);
+    dlX.fillStyle = grd;
+    dlX.fillRect(0, 0, W, H);
+
+    const colW = W * 0.35;
+    const lg = dlX.createLinearGradient(sx, sy, sx, H);
+    lg.addColorStop(0,   `rgba(${r|0},${g|0},${b|0},${(alpha*0.28).toFixed(3)})`);
+    lg.addColorStop(0.5, `rgba(${r|0},${g|0},${b|0},${(alpha*0.12).toFixed(3)})`);
+    lg.addColorStop(1,   `rgba(${r|0},${g|0},${b|0},0)`);
+    dlX.fillStyle = lg;
+    dlX.fillRect(sx - colW/2, sy, colW, H - sy);
+  }
+
+  if (ma > 0) {
+    const alpha = 0.20 * ma;
+    const mR = Math.hypot(W, H) * 0.85;
+    const grd = dlX.createRadialGradient(mx, my, 0, mx, my, mR);
+    grd.addColorStop(0,   `rgba(80,100,225,${alpha.toFixed(3)})`);
+    grd.addColorStop(0.4, `rgba(60,80,200,${(alpha*0.25).toFixed(3)})`);
+    grd.addColorStop(1,   'rgba(60,80,200,0)');
+    dlX.fillStyle = grd;
+    dlX.fillRect(0, 0, W, H);
+  }
+}
+
+// ── Окна ──
+function drawWindows(t) {
+  winX.clearRect(0, 0, W, H);
+  let a = 0;
+  if (t >= 0.55 && t <= 0.68)      a = (t-0.55)/0.13;
+  else if (t > 0.68 && t < 0.84)   a = 1;
+  else if (t >= 0.84 && t <= 0.93) a = 1-(t-0.84)/0.09;
+  a = clamp(a, 0, 1);
+  if (a <= 0) return;
+
+  const R = W * 0.016;
+  for (const win of WIN_POSITIONS) {
+    const wx = win.x * W, wy = win.y * H;
+
+    const g1 = winX.createRadialGradient(wx, wy, 0, wx, wy, R * 2.8);
+    g1.addColorStop(0,   `rgba(255,195,60,${(a * 0.30).toFixed(3)})`);
+    g1.addColorStop(0.5, `rgba(255,160,30,${(a * 0.10).toFixed(3)})`);
+    g1.addColorStop(1,    'rgba(255,130,10,0)');
+    winX.fillStyle = g1;
+    winX.fillRect(wx - R*2.8, wy - R*2.8, R*5.6, R*5.6);
+
+    const g2 = winX.createRadialGradient(wx, wy, 0, wx, wy, R);
+    g2.addColorStop(0,   `rgba(255,230,120,${(a * 0.55).toFixed(3)})`);
+    g2.addColorStop(0.6, `rgba(255,200,70,${(a * 0.28).toFixed(3)})`);
+    g2.addColorStop(1,    'rgba(255,160,20,0)');
+    winX.fillStyle = g2;
+    winX.fillRect(wx - R, wy - R, R*2, R*2);
+  }
+}
+
+// ── Рассветные / закатные лучи ──
+function updateRays(t) {
+  let a = 0;
+  if (t > 0.44 && t < 0.62) a = clamp(Math.min((t-0.44)/0.05,(0.62-t)/0.05),0,1)*0.42;
+  if (t < 0.08) a = (t/0.08)*0.28;
+  if (t > 0.90) a = ((t-0.90)/0.10)*0.24;
+  if (a > 0) {
+    const isSet = t > 0.44 && t < 0.62;
+    const col = isSet ? '255,110,30' : '255,185,100';
+    raysEl.style.opacity = a;
+    raysEl.style.background = `radial-gradient(ellipse 80% 38% at ${isSet?'62%':'40%'} 12%,rgba(${col},0.38) 0%,transparent 68%)`;
+  } else {
+    raysEl.style.opacity = 0;
+  }
+}
+
+
+// ── Ресайз и главный цикл ──
+let start = null;
+function resize() {
+  W = scene.clientWidth; H = scene.clientHeight;
+  [clC, skyC, dlC, winC].forEach(c => { c.width=W; c.height=H; });
+}
+
+function frame(ts) {
+  if (!start) start = ts;
+  const t = ((ts - start) % CYCLE) / CYCLE;
+  if (skyC.width !== scene.clientWidth) resize();
+
+  const l = interpKey(LIGHT, t);
+  const m = interpKey(MOOD, t);
+  bg.style.filter = `brightness(${l.br.toFixed(3)}) saturate(${l.sat.toFixed(3)}) hue-rotate(${l.hue.toFixed(1)}deg) sepia(${l.sep.toFixed(3)})`;
+  moodEl.style.background = `rgba(${m.r|0},${m.g|0},${m.b|0},${m.a.toFixed(3)})`;
+  tlEl.textContent = l.label;
+  updateRays(t);
+
+  skyX.clearRect(0, 0, W, H);
+
+  const sp = { x: SUN_POS.rx * W,  y: SUN_POS.ry * H };
+  const mp = { x: MOON_POS.rx * W, y: MOON_POS.ry * H };
+
+  let sa = 0;
+  if (t < 0.58) {
+    sa = t < 0.06 ? t/0.06 : t > 0.52 ? (0.58-t)/0.06 : 1;
+    sa = clamp(sa, 0, 1);
+    skyX.globalAlpha = sa;
+    drawSun(sp.x, sp.y, t);
+    skyX.globalAlpha = 1;
+  }
+
+  let ma = 0;
+  if (t >= 0.60) {
+    ma = t < 0.68 ? (t-0.60)/0.08 : t > 0.92 ? (1.0-t)/0.08 : 1;
+    ma = clamp(ma, 0, 1);
+    skyX.globalAlpha = ma * 0.92;
+    drawMoon(mp.x, mp.y);
+    skyX.globalAlpha = 1;
+  }
+
+  drawCloudsAndFog(t, ts);
+  drawStars(t, ts);
+  drawShooters(t, ts);
+  drawDirLight(t, sp.x, sp.y, mp.x, mp.y, sa, ma);
+  drawWindows(t);
+
+  requestAnimationFrame(frame);
+}
+
+resize();
+requestAnimationFrame(frame);
+window.addEventListener('resize', resize);
+</script>
+</body>
+</html>
