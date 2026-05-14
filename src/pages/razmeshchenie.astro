@@ -153,7 +153,7 @@ const relatedPages = [
     </div>
   </section>
 
-  <!-- PHOTO GALLERY — в стиле GalleryPreview главной -->
+  <!-- PHOTO GALLERY — раскладка «1 большое + 2×2» как на /foto/ -->
   <section id="gallery-rooms" class="mx-auto max-w-[1312px] px-[2px] pb-10 md:px-4 md:pb-14">
     <div class="p-[18px]">
       <div class="flex items-center justify-between gap-3 mb-4">
@@ -171,42 +171,81 @@ const relatedPages = [
       </div>
 
       {(() => {
-        // Показываем до 3 загруженных фото, иначе — дефолтные stay-* фото
-        const preview = roomPhotos.length > 0
-          ? roomPhotos.slice(0, 3)
-          : [
-              { src: '/images/gallery/stay-room-01.avif',     alt: 'Жилая комната в лагере АйДаКемп' },
-              { src: '/images/gallery/stay-bathroom-01.avif', alt: 'Санузел в корпусе лагеря АйДаКемп' },
-              { src: '/images/gallery/stay-lounge-01.avif',   alt: 'Общий холл в корпусе лагеря АйДаКемп' },
-            ];
-        const extra = roomPhotos.length > 3 ? roomPhotos.length - 3 : 0;
+        // Дефолтные фото корпусов (показываются пока нет загруженных)
+        const defaults = [
+          { src: '/images/gallery/territory-korpus.avif', alt: 'Корпус лагеря АйДаКемп — санаторий Изумруд' },
+          { src: '/images/gallery/stay-room-01.avif',     alt: 'Жилая комната в лагере АйДаКемп' },
+          { src: '/images/gallery/stay-bathroom-01.avif', alt: 'Санузел в корпусе лагеря АйДаКемп' },
+          { src: '/images/gallery/stay-lounge-01.avif',   alt: 'Общий холл в корпусе лагеря АйДаКемп' },
+          { src: '/images/gallery/territory-alley.avif',  alt: 'Территория лагеря АйДаКемп — аллея' },
+        ];
+        const photos = roomPhotos.length >= 5
+          ? roomPhotos.slice(0, 5)
+          : roomPhotos.length > 0
+            ? [...roomPhotos, ...defaults].slice(0, 5)
+            : defaults;
+        const [big, ...smalls] = photos;
+        const extra = roomPhotos.length > 5 ? roomPhotos.length - 5 : 0;
         return (
-          <div class="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
-            {preview.map((p, i) => (
+          <>
+            {/* Desktop: большое слева + 2×2 справа */}
+            <div class="hidden md:flex gap-3 h-[440px]">
+              {/* Большое фото */}
               <a href="/foto/"
-                class="group relative block overflow-hidden rounded-[12px] bg-slate-100 aspect-square active:scale-[0.97] transition-transform duration-150">
+                class="group relative w-[45%] shrink-0 overflow-hidden rounded-[18px] bg-slate-100">
                 <picture>
-                  <source srcset={p.src} type="image/avif" />
-                  <img
-                    src={jpgSrc(p.src)}
-                    alt={p.alt}
+                  <source srcset={big.src} type="image/avif" />
+                  <img src={jpgSrc(big.src)} alt={big.alt}
                     class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    loading={i === 0 ? 'eager' : 'lazy'}
-                    width="400"
-                    height="400"
-                  />
+                    loading="eager" />
                 </picture>
-                {i === 2 && (
-                  <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <span class="text-white text-[14px] font-semibold flex items-center gap-1">
-                      <i class="bi bi-images text-[18px]" aria-hidden="true"></i>
-                      {extra > 0 ? `Ещё ${extra}+` : 'Все фото'}
-                    </span>
-                  </div>
-                )}
+                <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                <span class="absolute left-3 top-3 rounded-md bg-white/90 px-2.5 py-1 text-[14px] font-bold tracking-wide text-body backdrop-blur-sm">#АЙДАКЕМП</span>
+                <span class="absolute bottom-3 right-3 rounded-md bg-black/70 px-2.5 py-1 text-[14px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">РАЗМЕЩЕНИЕ</span>
               </a>
-            ))}
-          </div>
+              {/* Сетка 2×2 */}
+              <div class="grid flex-1 grid-cols-2 gap-3">
+                {smalls.map((p, i) => (
+                  <a href="/foto/"
+                    class="group relative overflow-hidden rounded-[18px] bg-slate-100">
+                    <picture>
+                      <source srcset={p.src} type="image/avif" />
+                      <img src={jpgSrc(p.src)} alt={p.alt}
+                        class="aspect-square w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy" />
+                    </picture>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                    <span class="absolute left-3 top-3 rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-bold tracking-wide text-body backdrop-blur-sm">#АЙДАКЕМП</span>
+                    <span class="absolute bottom-2 right-2 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">РАЗМЕЩЕНИЕ</span>
+                    {i === 3 && extra > 0 && (
+                      <div class="absolute inset-0 bg-black/45 flex items-center justify-center">
+                        <span class="text-white text-[15px] font-semibold flex items-center gap-1.5">
+                          <i class="bi bi-images text-[20px]" aria-hidden="true"></i>
+                          Ещё {extra}+
+                        </span>
+                      </div>
+                    )}
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Mobile: 2-col grid, первое фото на всю ширину */}
+            <div class="grid grid-cols-2 gap-2 md:hidden">
+              {photos.slice(0, 5).map((p, i) => (
+                <a href="/foto/"
+                  class={`group relative overflow-hidden rounded-[12px] bg-slate-100 ${i === 0 ? 'col-span-2' : ''}`}>
+                  <picture>
+                    <source srcset={p.src} type="image/avif" />
+                    <img src={jpgSrc(p.src)} alt={p.alt}
+                      class={`w-full object-cover transition-transform duration-300 group-hover:scale-105 ${i === 0 ? 'aspect-[2/1]' : 'aspect-square'}`}
+                      loading={i === 0 ? 'eager' : 'lazy'} />
+                  </picture>
+                  <span class="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-bold tracking-wide text-body backdrop-blur-sm">#АЙДАКЕМП</span>
+                </a>
+              ))}
+            </div>
+          </>
         );
       })()}
     </div>

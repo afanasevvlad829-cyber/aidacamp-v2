@@ -43,6 +43,24 @@ import { landingPages as allLandingPages } from '../data/landing-pages';
         (рендерятся первыми после charset, ДО аналитики — было в slot="head" ПОСЛЕ скриптов) */}
     <SchemaOrg />
   </Fragment>
+  <script is:inline>
+  (function () {
+    // Редирект возвратников на спеццену — только если уже смотрели смену
+    // и не возвращаемся с /r/ (флаг сессии предотвращает цикл)
+    try {
+      if (sessionStorage.getItem('r_redirected')) return;
+      var raw = localStorage.getItem('ac:viewed_shifts');
+      if (!raw) return;
+      var viewed = JSON.parse(raw);
+      if (!Array.isArray(viewed) || !viewed.length) return;
+      // Берём последнюю просмотренную смену
+      var last = viewed.sort(function(a, b) { return b.ts - a.ts; })[0];
+      if (!last || !last.id) return;
+      sessionStorage.setItem('r_redirected', '1');
+      window.location.replace('/r/?shift=' + last.id);
+    } catch (e) {}
+  })();
+  </script>
   <Header />
   <main class="pb-20 md:pb-0">
     <Hero hasVariants={true} />
