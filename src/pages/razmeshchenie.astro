@@ -184,8 +184,6 @@ const relatedPages = [
           : defaults;
         const photos = allPhotos.slice(0, 5);
         const [big, ...smalls] = photos;
-        const stripPhotos = allPhotos.length > 5 ? allPhotos : [];
-        const extra = 0; // strip replaces "Ещё N+" overlay
         return (
           <>
             {/* Desktop: большое слева + 2×2 справа */}
@@ -217,14 +215,6 @@ const relatedPages = [
                     <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
                     <span class="absolute left-3 top-3 rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-bold tracking-wide text-body backdrop-blur-sm">#АЙДАКЕМП</span>
                     <span class="absolute bottom-2 right-2 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">РАЗМЕЩЕНИЕ</span>
-                    {i === 3 && extra > 0 && (
-                      <div class="absolute inset-0 bg-black/45 flex items-center justify-center">
-                        <span class="text-white text-[15px] font-semibold flex items-center gap-1.5">
-                          <i class="bi bi-images text-[20px]" aria-hidden="true"></i>
-                          Ещё {extra}+
-                        </span>
-                      </div>
-                    )}
                   </a>
                 ))}
               </div>
@@ -246,36 +236,23 @@ const relatedPages = [
               ))}
             </div>
 
-            {/* Горизонтальная полоса — все фото при наличии больше 5 */}
-            {stripPhotos.length > 0 && (
-              <div class="relative mt-3" id="room-strip-wrap">
-                {/* Стрелки (desktop) */}
-                <button id="strip-prev" type="button" aria-label="Назад"
-                  class="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 h-9 w-9 items-center justify-center rounded-full bg-white shadow-md border border-slate-200 text-slate-600 hover:text-primary transition-colors">
-                  <i class="bi bi-chevron-left text-[14px]" aria-hidden="true"></i>
-                </button>
-                <button id="strip-next" type="button" aria-label="Вперёд"
-                  class="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 h-9 w-9 items-center justify-center rounded-full bg-white shadow-md border border-slate-200 text-slate-600 hover:text-primary transition-colors">
-                  <i class="bi bi-chevron-right text-[14px]" aria-hidden="true"></i>
-                </button>
-                {/* Полоса */}
-                <div id="room-strip"
-                  class="flex gap-2.5 overflow-x-auto scroll-smooth pb-2"
-                  style="scrollbar-width:none;-ms-overflow-style:none">
-                  {stripPhotos.map((p, i) => (
-                    <a href="/foto/"
-                      class="group relative shrink-0 w-[140px] h-[140px] md:w-[160px] md:h-[160px] overflow-hidden rounded-[14px] bg-slate-100">
-                      <picture>
-                        <source srcset={p.src} type="image/avif" />
-                        <img src={jpgSrc(p.src)} alt={p.alt}
-                          class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          loading="lazy" />
-                      </picture>
-                    </a>
-                  ))}
-                </div>
+            {/* Горизонтальная полоса — клиентская подгрузка через /api/gallery-photos */}
+            <div class="relative mt-3 hidden" id="room-strip-wrap">
+              {/* Стрелки (desktop) */}
+              <button id="strip-prev" type="button" aria-label="Назад"
+                class="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 h-9 w-9 items-center justify-center rounded-full bg-white shadow-md border border-slate-200 text-slate-600 hover:text-primary transition-colors">
+                <i class="bi bi-chevron-left text-[14px]" aria-hidden="true"></i>
+              </button>
+              <button id="strip-next" type="button" aria-label="Вперёд"
+                class="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 h-9 w-9 items-center justify-center rounded-full bg-white shadow-md border border-slate-200 text-slate-600 hover:text-primary transition-colors">
+                <i class="bi bi-chevron-right text-[14px]" aria-hidden="true"></i>
+              </button>
+              {/* Полоса — заполняется JS */}
+              <div id="room-strip"
+                class="flex gap-2.5 overflow-x-auto scroll-smooth pb-2"
+                style="scrollbar-width:none;-ms-overflow-style:none">
               </div>
-            )}
+            </div>
           </>
         );
       })()}
@@ -415,7 +392,33 @@ const relatedPages = [
     if (e.key === 'ArrowRight') open((current + 1) % btns.length);
   });
 
-  // Strip arrow buttons
+  // Горизонтальная полоса — клиентская подгрузка
+  (async () => {
+    const wrap  = document.getElementById('room-strip-wrap') as HTMLElement | null;
+    const strip = document.getElementById('room-strip') as HTMLElement | null;
+    if (!wrap || !strip) return;
+    try {
+      const res   = await fetch('/api/gallery-photos?section=rooms');
+      const photos: { src: string; alt: string }[] = await res.json();
+      if (!Array.isArray(photos) || photos.length <= 5) return;
+      for (const p of photos) {
+        const jpgSrc = p.src.replace('/images/gallery/', '/images/gallery/jpg/').replace('.avif', '.jpg');
+        const a = document.createElement('a');
+        a.href = '/foto/';
+        a.className = 'group relative shrink-0 w-[140px] h-[140px] md:w-[160px] md:h-[160px] overflow-hidden rounded-[14px] bg-slate-100';
+        a.innerHTML = `
+          <picture>
+            <source srcset="${p.src}" type="image/avif">
+            <img src="${jpgSrc}" alt="${p.alt}" loading="lazy"
+              class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+          </picture>`;
+        strip.appendChild(a);
+      }
+      wrap.classList.remove('hidden');
+    } catch {}
+  })();
+
+  // Стрелки полосы
   const strip = document.getElementById('room-strip') as HTMLElement | null;
   document.getElementById('strip-prev')?.addEventListener('click', () => {
     strip?.scrollBy({ left: -340, behavior: 'smooth' });
