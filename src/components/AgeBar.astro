@@ -94,30 +94,69 @@ const ageCountsJson = JSON.stringify({
     </div>
   </div>
 
-  <!-- Фаза 2: нудж после выбора возраста — светлая тема -->
+  <!-- Фаза 2: рекомендации смен после выбора возраста -->
   <div
     id="age-bar-phase2"
     class="hidden bg-white/97 backdrop-blur-md border-t border-slate-200
            shadow-[0_-6px_24px_rgba(15,23,42,0.08)]"
   >
-    <div class="mx-auto max-w-[640px] px-4 py-4">
-      <div class="flex items-center gap-3">
-        <p id="age-bar-nudge-text" class="flex-1 text-[15px] font-semibold text-body leading-[1.35]"></p>
-        <button
-          id="age-bar-nudge-cta"
-          class="shrink-0 rounded-[10px] bg-primary hover:bg-primary-hover
-                 px-4 py-2.5 text-[14px] font-semibold text-[#0d1a2b]
-                 shadow-[0_2px_8px_rgba(236,124,0,0.25)]
-                 active:scale-95 transition-all whitespace-nowrap"
-        >Показать смену →</button>
+    <div class="mx-auto max-w-[640px] px-4 pt-3 pb-4">
+      <!-- Заголовок -->
+      <div class="flex items-center justify-between mb-2.5">
+        <p class="text-[13px] font-semibold text-body-muted">Подходящие смены для вас</p>
         <button
           id="age-bar-nudge-close"
-          class="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full text-body-faint hover:bg-surface-alt hover:text-body-muted transition-colors"
+          class="inline-flex h-7 w-7 items-center justify-center rounded-full text-body-faint hover:bg-surface-alt hover:text-body-muted transition-colors"
           aria-label="Закрыть"
         >
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
+
+      <!-- Смена 1 — основная (primary) -->
+      <a
+        href="/shifts/shift-1/"
+        data-age-shift-link="shift-1"
+        class="flex items-center justify-between gap-3
+               rounded-[12px] bg-[#fff8f2] border border-primary/30
+               px-3.5 py-3 mb-2 active:scale-[0.98] transition-transform"
+      >
+        <div class="min-w-0">
+          <p class="text-[14px] font-bold text-body leading-tight">
+            Смена 1
+            <span class="ml-1.5 text-[11px] font-semibold text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">30 мая — 8 июня</span>
+          </p>
+          <p class="text-[12px] text-body-muted mt-0.5 leading-snug">
+            <i class="bi bi-people-fill text-primary mr-1" aria-hidden="true"></i>12 ребят вашего возраста уже едут
+          </p>
+        </div>
+        <span class="shrink-0 text-[13px] font-bold text-primary whitespace-nowrap">74 900 ₽ →</span>
+      </a>
+
+      <!-- Смена 2 — альтернатива -->
+      <a
+        href="/shifts/shift-2/"
+        data-age-shift-link="shift-2"
+        class="flex items-center justify-between gap-3
+               rounded-[12px] bg-surface border border-border
+               px-3.5 py-2.5 mb-2.5 active:scale-[0.98] transition-transform"
+      >
+        <div class="min-w-0">
+          <p class="text-[13px] font-semibold text-body leading-tight">
+            Смена 2
+            <span class="ml-1.5 text-[11px] font-medium text-body-faint">10 — 23 июня</span>
+          </p>
+          <p class="text-[12px] text-body-muted mt-0.5 leading-snug">
+            <i class="bi bi-people-fill text-body-faint mr-1" aria-hidden="true"></i>7 ребят вашего возраста уже едут
+          </p>
+        </div>
+        <span class="shrink-0 text-[13px] font-semibold text-body-muted whitespace-nowrap">95 000 ₽ →</span>
+      </a>
+
+      <!-- Гарантия -->
+      <p class="text-[11.5px] text-body-faint text-center leading-snug">
+        <i class="bi bi-shield-check text-emerald-500 mr-1" aria-hidden="true"></i>Не понравится в первые 3 дня — вернём 50% без вопросов
+      </p>
     </div>
   </div>
 </div>
@@ -203,8 +242,6 @@ const ageCountsJson = JSON.stringify({
   const phase1    = document.getElementById('age-bar-phase1');
   const phase2    = document.getElementById('age-bar-phase2');
   const closeBtn  = document.getElementById('age-bar-close');
-  const nudgeText = document.getElementById('age-bar-nudge-text');
-  const nudgeCta  = document.getElementById('age-bar-nudge-cta');
   const nudgeClose= document.getElementById('age-bar-nudge-close');
   const ageBtns   = document.querySelectorAll('.age-btn');
 
@@ -280,11 +317,7 @@ const ageCountsJson = JSON.stringify({
     clearTimeout(awakenTimer);
   }
 
-  function showNudge(age) {
-    const counts = AGE_COUNTS[age] || AGE_COUNTS['10–12'];
-    if (nudgeText) {
-      nudgeText.textContent = `Идеально подойдёт Смена 1 — туда уже едет ${counts['shift-1']} ребят вашего возраста`;
-    }
+  function showNudge(_age?: string) {
     phase1?.classList.add('hidden');
     phase2?.classList.remove('hidden');
   }
@@ -339,12 +372,13 @@ const ageCountsJson = JSON.stringify({
     });
   });
 
-  // Тап на нудж → перейти на страницу Смены 1
-  nudgeCta?.addEventListener('click', () => {
-    trackGoal('check_places');
-    trackGoal('age_bar_nudge_click');
-    hideBar();
-    window.location.href = '/shifts/shift-1/';
+  // Клик по карточке смены → трекинг + переход
+  document.querySelectorAll<HTMLAnchorElement>('[data-age-shift-link]').forEach((link) => {
+    link.addEventListener('click', () => {
+      const shiftId = link.dataset.ageShiftLink || '';
+      trackGoal('age_bar_shift_click', { shift: shiftId });
+      trackGoal('check_places');
+    });
   });
 
 

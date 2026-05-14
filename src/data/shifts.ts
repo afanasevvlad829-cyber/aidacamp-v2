@@ -118,7 +118,7 @@ export const allShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShif
 
 // Единый источник: сколько ровесников едет в каждую смену по возрасту
 export const PEER_COUNTS: Record<string, Record<string, number>> = {
-  'shift-1':   { '7–9': 8,  '10–12': 12, '13–15': 9 },
+  'shift-1':   { '7–9': 12, '10–12': 12, '13–15': 12 },
   'shift-2':   { '7–9': 5,  '10–12': 8,  '13–15': 7 },
   'shift-2-1': { '7–9': 4,  '10–12': 7,  '13–15': 5 },
   'shift-2-2': { '7–9': 3,  '10–12': 6,  '13–15': 4 },
