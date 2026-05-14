@@ -179,13 +179,13 @@ const relatedPages = [
           { src: '/images/gallery/stay-lounge-01.avif',   alt: 'Общий холл в корпусе лагеря АйДаКемп' },
           { src: '/images/gallery/territory-alley.avif',  alt: 'Территория лагеря АйДаКемп — аллея' },
         ];
-        const photos = roomPhotos.length >= 5
-          ? roomPhotos.slice(0, 5)
-          : roomPhotos.length > 0
-            ? [...roomPhotos, ...defaults].slice(0, 5)
-            : defaults;
+        const allPhotos = roomPhotos.length > 0
+          ? roomPhotos
+          : defaults;
+        const photos = allPhotos.slice(0, 5);
         const [big, ...smalls] = photos;
-        const extra = roomPhotos.length > 5 ? roomPhotos.length - 5 : 0;
+        const stripPhotos = allPhotos.length > 5 ? allPhotos : [];
+        const extra = 0; // strip replaces "Ещё N+" overlay
         return (
           <>
             {/* Desktop: большое слева + 2×2 справа */}
@@ -245,6 +245,37 @@ const relatedPages = [
                 </a>
               ))}
             </div>
+
+            {/* Горизонтальная полоса — все фото при наличии больше 5 */}
+            {stripPhotos.length > 0 && (
+              <div class="relative mt-3" id="room-strip-wrap">
+                {/* Стрелки (desktop) */}
+                <button id="strip-prev" type="button" aria-label="Назад"
+                  class="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 h-9 w-9 items-center justify-center rounded-full bg-white shadow-md border border-slate-200 text-slate-600 hover:text-primary transition-colors">
+                  <i class="bi bi-chevron-left text-[14px]" aria-hidden="true"></i>
+                </button>
+                <button id="strip-next" type="button" aria-label="Вперёд"
+                  class="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 h-9 w-9 items-center justify-center rounded-full bg-white shadow-md border border-slate-200 text-slate-600 hover:text-primary transition-colors">
+                  <i class="bi bi-chevron-right text-[14px]" aria-hidden="true"></i>
+                </button>
+                {/* Полоса */}
+                <div id="room-strip"
+                  class="flex gap-2.5 overflow-x-auto scroll-smooth pb-2"
+                  style="scrollbar-width:none;-ms-overflow-style:none">
+                  {stripPhotos.map((p, i) => (
+                    <a href="/foto/"
+                      class="group relative shrink-0 w-[140px] h-[140px] md:w-[160px] md:h-[160px] overflow-hidden rounded-[14px] bg-slate-100">
+                      <picture>
+                        <source srcset={p.src} type="image/avif" />
+                        <img src={jpgSrc(p.src)} alt={p.alt}
+                          class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          loading="lazy" />
+                      </picture>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         );
       })()}
@@ -382,5 +413,14 @@ const relatedPages = [
     if (e.key === 'Escape') close();
     if (e.key === 'ArrowLeft') open((current - 1 + btns.length) % btns.length);
     if (e.key === 'ArrowRight') open((current + 1) % btns.length);
+  });
+
+  // Strip arrow buttons
+  const strip = document.getElementById('room-strip') as HTMLElement | null;
+  document.getElementById('strip-prev')?.addEventListener('click', () => {
+    strip?.scrollBy({ left: -340, behavior: 'smooth' });
+  });
+  document.getElementById('strip-next')?.addEventListener('click', () => {
+    strip?.scrollBy({ left: 340, behavior: 'smooth' });
   });
 </script>
