@@ -242,6 +242,15 @@ function freeLabel(n) {
 }
 
 function getTargetShift() {
+  // 1. URL-параметр ?shift=X имеет приоритет (редирект из index.astro / прямая ссылка)
+  try {
+    const urlId = new URLSearchParams(window.location.search).get('shift');
+    if (urlId) {
+      const byUrl = SHIFTS.find(s => s.id === urlId);
+      if (byUrl) return byUrl;
+    }
+  } catch {}
+  // 2. Иначе — последняя просмотренная смена из localStorage
   try {
     const viewed = JSON.parse(localStorage.getItem('ac:viewed_shifts') || '[]');
     if (viewed.length > 0) {
@@ -250,6 +259,7 @@ function getTargetShift() {
       if (match.length) return match.sort((a, b) => a.free - b.free)[0];
     }
   } catch {}
+  // 3. Fallback — ближайшая свободная смена
   return SHIFTS.filter(s => s.free > 0).sort((a, b) =>
     new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
   )[0] || SHIFTS[0];
