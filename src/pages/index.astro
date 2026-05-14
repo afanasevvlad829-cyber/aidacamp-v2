@@ -6,7 +6,7 @@ import Hero from '../components/Hero.astro';
 import MomStory from '../components/MomStory.astro';
 import About from '../components/About.astro';
 import Philosophy from '../components/Philosophy.astro';
-import Shifts from '../components/Shifts.astro';
+// Shifts moved to /r (retargeting) — returning visitors redirected there
 import GalleryPreview from '../components/GalleryPreview.astro';
 // Videos moved to /video/ page (Phase G)
 import Reviews from '../components/Reviews.astro';
@@ -27,7 +27,7 @@ import SeoTextBlock from '../components/SeoTextBlock.astro';
 // ShiftOccupancy removed (proof в hero proof-line)
 // SummerCta removed (дубль sticky CTA, см. design audit 2026-05-02)
 import SchemaOrg from '../components/SchemaOrg.astro';
-import TrustBlock from '../components/TrustBlock.astro';
+// TrustBlock moved to /r (retargeting) — returning visitors redirected there
 import { landingPages as allLandingPages } from '../data/landing-pages';
 ---
 
@@ -74,25 +74,12 @@ import { landingPages as allLandingPages } from '../data/landing-pages';
 
     {/* Печать «Ноутбук не нужен» удалена — этот факт теперь в HeroFeatures (chip «Ноутбук — не нужен»). */}
 
-    <!-- Под hero: ShiftOccupancy (CTA «Проверить свободные места») + MomStory (proof) — двухколоночно на десктопе. -->
-    <!-- MomStory: скрывается для возвратников (ac:viewed_shifts в localStorage или _ym_uid cookie) -->
-    <div id="mom-story-wrap" class="mx-auto max-w-[1312px] px-[2px] pt-0 md:px-4 lg:pt-12">
+    <!-- MomStory: цитата Дарьи — всегда видна (без скрытия для возвратников) -->
+    <div class="mx-auto max-w-[1312px] px-[2px] pt-0 md:px-4 lg:pt-12">
       <MomStory compact />
     </div>
-    <script is:inline>
-    (function () {
-      var hasViewed = !!localStorage.getItem('ac:viewed_shifts');
-      var hasYmUid  = /(?:^|[; ])_ym_uid=/.test(document.cookie);
-      if (hasViewed || hasYmUid) {
-        var el = document.getElementById('mom-story-wrap');
-        if (el) el.style.display = 'none';
-      }
-    })();
-    </script>
 
-    <!-- Порядок: Hero → TrustBlock → Shifts → Reviews → Stay → GalleryPreview → … -->
-    <TrustBlock />
-    <Shifts />
+    <!-- Порядок: Hero → MomStory → Reviews → Stay → GalleryPreview → … (Shifts/TrustBlock — только на /r для возвратников) -->
     <Reviews />
     <Stay />
     <GalleryPreview />
