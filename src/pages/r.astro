@@ -40,7 +40,19 @@ const shiftsJson = JSON.stringify(allShifts.map(s => ({
 
     <!-- ═══ HERO ═══ -->
     <section class="relative overflow-hidden bg-[#0d1a2b] pt-16 pb-12 md:pt-20 md:pb-16">
-      <div class="mx-auto max-w-[860px] px-5 md:px-8">
+      <!-- Анимированный фон (Minecraft-сцена) -->
+      <iframe
+        src="/r-bg.html"
+        class="absolute inset-0 w-full h-full border-0 pointer-events-none"
+        tabindex="-1"
+        aria-hidden="true"
+        title=""
+      ></iframe>
+      <!-- Затемнение под текст -->
+      <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(90deg, rgba(13,26,43,0.90) 0%, rgba(13,26,43,0.75) 35%, rgba(13,26,43,0.40) 65%, rgba(13,26,43,0.15) 100%)"></div>
+      <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(180deg, rgba(13,26,43,0.50) 0%, rgba(13,26,43,0.10) 30%, rgba(13,26,43,0.10) 70%, rgba(13,26,43,0.60) 100%)"></div>
+      <div class="relative z-10 mx-auto max-w-[1312px] px-5 md:px-8">
+      <div class="max-w-[580px]">
 
         <!-- Eyebrow -->
         <p id="r-eyebrow" class="text-[12px] font-bold uppercase tracking-[0.18em] text-primary mb-3 opacity-0 transition-opacity duration-500">
@@ -119,6 +131,7 @@ const shiftsJson = JSON.stringify(allShifts.map(s => ({
           </div>
         </div>
 
+      </div>
       </div>
     </section>
 
@@ -310,13 +323,15 @@ function openBookingModal(shift) {
   const priceEl = modal.querySelector('[data-book-shift-price]');
   const specialEl = modal.querySelector('[data-book-shift-special]');
 
-  const discNum = Math.round(parsePriceNum(shift.price) * 0.95 / 100) * 100;
+  const noDiscount = !!localStorage.getItem('ac:r_no_discount');
+  const fullNum2 = parsePriceNum(shift.price);
+  const modalPrice = noDiscount ? fullNum2 : Math.round(fullNum2 * 0.95 / 100) * 100;
 
   if (nameEl) nameEl.textContent = shift.name;
   if (datesEl) datesEl.textContent = shift.dates;
   if (durEl) durEl.textContent = shift.duration;
-  if (priceEl) priceEl.textContent = formatPrice(discNum);
-  if (specialEl) specialEl.classList.replace('hidden', 'inline-flex');
+  if (priceEl) priceEl.textContent = formatPrice(modalPrice);
+  if (specialEl && !noDiscount) specialEl.classList.replace('hidden', 'inline-flex');
   if (block) block.classList.remove('hidden');
 
   const ageKey = getAgeGroupKey();
@@ -347,15 +362,27 @@ function init() {
   show('r-seats-inline', freeLabel(shift.free));
   document.getElementById('r-cta-row').style.opacity = '1';
 
+  const noDiscount = !!localStorage.getItem('ac:r_no_discount');
   const fullNum = parsePriceNum(shift.price);
-  const discNum = Math.round(fullNum * 0.95 / 100) * 100;
-  const savingsNum = fullNum - discNum;
-  const origEl = document.getElementById('r-price-original');
-  const discEl = document.getElementById('r-price-discounted');
-  const savingsEl = document.getElementById('r-price-savings');
-  if (origEl) origEl.textContent = formatPrice(fullNum);
-  if (discEl) discEl.textContent = formatPrice(discNum);
-  if (savingsEl) savingsEl.textContent = formatPrice(savingsNum);
+
+  if (noDiscount) {
+    // 3-й+ визит: обычная цена, без скидки и таймера
+    const discEl = document.getElementById('r-price-discounted');
+    if (discEl) discEl.textContent = formatPrice(fullNum);
+    const offerRow = document.querySelector('#r-cta-row .flex.flex-wrap.items-center.gap-2');
+    if (offerRow) offerRow.style.display = 'none';
+  } else {
+    // 2-й визит: цена со скидкой −5% и таймером
+    const discNum = Math.round(fullNum * 0.95 / 100) * 100;
+    const savingsNum = fullNum - discNum;
+    const origEl = document.getElementById('r-price-original');
+    const discEl = document.getElementById('r-price-discounted');
+    const savingsEl = document.getElementById('r-price-savings');
+    if (origEl) origEl.textContent = formatPrice(fullNum);
+    if (discEl) discEl.textContent = formatPrice(discNum);
+    if (savingsEl) savingsEl.textContent = formatPrice(savingsNum);
+    startCountdown();
+  }
 
   // Вычет: показываем сумму возврата, не итоговую цену
   const v = VYCHET[shift.id];
@@ -366,8 +393,6 @@ function init() {
     if (vychetEl) vychetEl.textContent = formatPrice(vychetAmt);
     if (vychetRow) vychetRow.classList.replace('hidden', 'flex');
   }
-
-  startCountdown();
 
   // Показываем нужный timeline
   document.querySelectorAll('[data-timeline-shift]').forEach(el => {

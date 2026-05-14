@@ -1,17 +1,13 @@
 ---
-import { filters, images } from '../data/gallery';
-
-function thumbSrc(src: string) {
-  return src.replace('/images/gallery/', '/images/gallery/thumbs/');
-}
-function jpgSrc(src: string) {
-  return src.replace('/images/gallery/', '/images/gallery/jpg/').replace('.avif', '.jpg');
-}
+import { filters } from '../data/gallery';
 ---
 
 <section id="gallery" class="mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4" data-gallery-root data-default-filter="camp">
   <div class="p-[18px]">
-    <div class="flex items-center gap-2 mb-1"><div class="w-1 h-5 rounded-full bg-primary shrink-0"></div><h2 class="text-[20px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[24px]">Фото</h2></div>
+    <div class="flex items-center gap-2 mb-1">
+      <div class="w-1 h-5 rounded-full bg-primary shrink-0"></div>
+      <h2 class="text-[20px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[24px]">Фото</h2>
+    </div>
 
     <!-- Filter tabs -->
     <div class="mt-4 flex flex-wrap gap-1.5 md:gap-2" data-gallery-filters>
@@ -27,89 +23,54 @@ function jpgSrc(src: string) {
       ))}
     </div>
 
-    <!-- Image layouts per category -->
-    {filters.map((f, fi) => {
-      const imgs = images[f.value] || [];
-      const big = imgs[0];
-      const smalls = imgs.slice(1);
-
-      return (
-        <div
-          data-gallery-category={f.value}
-          data-gallery-label={f.label}
-          class={`mt-5 ${fi === 0 ? '' : 'hidden'}`}
-        >
-          {/* Desktop: 1 big left + smalls right */}
-          <div class="hidden gap-3 md:flex md:max-h-[460px]">
-            {/* Big image */}
-            {big && (
-              <button
-                type="button"
-                data-gallery-open
-                data-gallery-src={big.src}
-                data-gallery-alt={big.alt}
-                class="cursor-pointer group relative w-[45%] shrink-0 self-stretch overflow-hidden rounded-[18px]"
-              >
-                <picture>
-                  <source srcset={big.src} type="image/avif" />
-                  <img src={jpgSrc(big.src)} alt={big.alt} class="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
-                </picture>
-                <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
-                <span class="absolute left-3 top-3 rounded-md bg-white/90 px-2.5 py-1 text-[14px] font-bold tracking-wide text-body backdrop-blur-sm">#АЙДАКЕМП</span>
-                <span class="absolute bottom-3 right-3 rounded-md bg-black/70 px-2.5 py-1 text-[14px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">{f.label}</span>
-              </button>
-            )}
-            {/* Small images */}
-            <div class="grid flex-1 grid-cols-2 gap-3">
-              {smalls.map((img) => (
-                <button
-                  type="button"
-                  data-gallery-open
-                  data-gallery-src={img.src}
-                  data-gallery-alt={img.alt}
-                  class="cursor-pointer group relative overflow-hidden rounded-[18px]"
-                >
-                  <picture>
-                    <source srcset={thumbSrc(img.src)} type="image/avif" />
-                    <img src={jpgSrc(img.src)} alt={img.alt} class="aspect-square w-full object-cover transition group-hover:scale-105" loading="lazy" />
-                  </picture>
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
-                  <span class="absolute left-3 top-3 rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-bold tracking-wide text-body backdrop-blur-sm">#АЙДАКЕМП</span>
-                  <span class="absolute bottom-2 right-2 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">{f.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Mobile: 2-col grid */}
-          <div class="grid grid-cols-2 gap-2 md:hidden">
-            {imgs.map((img, idx) => (
-              <button
-                type="button"
-                data-gallery-open
-                data-gallery-src={img.src}
-                data-gallery-alt={img.alt}
-                class={`cursor-pointer group relative overflow-hidden rounded-[12px] ${idx === 0 ? 'col-span-2' : ''}`}
-              >
-                <picture>
-                  <source srcset={thumbSrc(img.src)} type="image/avif" />
-                  <img src={jpgSrc(img.src)} alt={img.alt} class={`w-full object-cover transition group-hover:scale-105 ${idx === 0 ? 'aspect-[16/9]' : 'aspect-[4/3]'}`} loading="lazy" />
-                </picture>
-                <span class="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-bold tracking-wide text-body">#АЙДАКЕМП</span>
-                <span class="absolute bottom-2 right-2 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">{f.label}</span>
-              </button>
-            ))}
+    <!-- Контейнеры секций — заполняются JS -->
+    {filters.map((f, fi) => (
+      <div
+        data-gallery-category={f.value}
+        data-gallery-label={f.label}
+        class={`mt-5 ${fi === 0 ? '' : 'hidden'}`}
+      >
+        <!-- Скелетон загрузки -->
+        <div data-gallery-skeleton class="hidden md:flex gap-3 h-[460px]">
+          <div class="w-[45%] shrink-0 rounded-[18px] bg-slate-100 animate-pulse"></div>
+          <div class="grid flex-1 grid-cols-2 gap-3">
+            {[0,1,2,3].map(() => <div class="rounded-[18px] bg-slate-100 animate-pulse"></div>)}
           </div>
         </div>
-      );
-    })}
+        <div data-gallery-skeleton class="grid grid-cols-2 gap-2 md:hidden">
+          <div class="col-span-2 aspect-[16/9] rounded-[12px] bg-slate-100 animate-pulse"></div>
+          {[0,1,2,3].map(() => <div class="aspect-[4/3] rounded-[12px] bg-slate-100 animate-pulse"></div>)}
+        </div>
+
+        <!-- Desktop сетка (заполняется JS) -->
+        <div data-desktop-grid class="hidden gap-3 md:flex md:max-h-[460px]"></div>
+        <!-- Mobile сетка (заполняется JS) -->
+        <div data-mobile-grid class="hidden grid-cols-2 gap-2 md:hidden"></div>
+
+        <!-- Горизонтальная полоса -->
+        <div class="relative mt-3 hidden" id={`strip-wrap-${f.value}`}>
+          <button type="button" data-strip-prev={f.value} aria-label="Назад"
+            class="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 h-9 w-9 items-center justify-center rounded-full bg-white shadow-md border border-slate-200 text-slate-600 hover:text-primary transition-colors">
+            <i class="bi bi-chevron-left text-[14px]" aria-hidden="true"></i>
+          </button>
+          <button type="button" data-strip-next={f.value} aria-label="Вперёд"
+            class="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 h-9 w-9 items-center justify-center rounded-full bg-white shadow-md border border-slate-200 text-slate-600 hover:text-primary transition-colors">
+            <i class="bi bi-chevron-right text-[14px]" aria-hidden="true"></i>
+          </button>
+          <div id={`strip-${f.value}`}
+            class="flex gap-2.5 overflow-x-auto scroll-smooth pb-2"
+            style="scrollbar-width:none;-ms-overflow-style:none">
+          </div>
+        </div>
+      </div>
+    ))}
   </div>
 </section>
 
 <!-- Lightbox -->
 <dialog id="galleryLightbox" class="m-0 h-full w-full max-w-none border-0 bg-black/90 p-4 backdrop:bg-black/90 outline-none focus:outline-none">
   <div class="flex h-full items-center justify-center">
-    <button type="button" data-gallery-lightbox-close aria-label="Закрыть" style="outline:none;box-shadow:none;-webkit-tap-highlight-color:transparent" class="cursor-pointer absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white outline-none focus:outline-none focus:ring-0 focus-visible:outline-none">
+    <button type="button" data-gallery-lightbox-close aria-label="Закрыть" style="outline:none;box-shadow:none;-webkit-tap-highlight-color:transparent" class="cursor-pointer absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white">
       <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
     </button>
     <button type="button" data-gallery-prev aria-label="Назад" class="cursor-pointer absolute left-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white">
@@ -131,77 +92,214 @@ function jpgSrc(src: string) {
     if (!root) return;
 
     const filterBtns = root.querySelectorAll<HTMLButtonElement>('[data-gallery-filter]');
-    const categories = root.querySelectorAll<HTMLElement>('[data-gallery-category]');
+    const categories  = root.querySelectorAll<HTMLElement>('[data-gallery-category]');
 
-    // Tab switching
-    filterBtns.forEach((btn) => {
+    const lightbox  = document.getElementById('galleryLightbox') as HTMLDialogElement | null;
+    const lbImg     = lightbox?.querySelector<HTMLImageElement>('[data-gallery-lightbox-img]');
+    const counterEl = lightbox?.querySelector<HTMLElement>('[data-gallery-counter]');
+    if (!lightbox || !lbImg) return;
+
+    type Photo = { src: string; alt: string };
+    let lbPhotos: Photo[] = [];
+    let current = 0;
+
+    function show(index: number) {
+      current = ((index % lbPhotos.length) + lbPhotos.length) % lbPhotos.length;
+      lbImg!.src = lbPhotos[current].src;
+      lbImg!.alt = lbPhotos[current].alt;
+      if (counterEl) counterEl.textContent = `${current + 1} / ${lbPhotos.length}`;
+    }
+
+    function openLb(photos: Photo[], startSrc: string) {
+      lbPhotos = photos;
+      const idx = photos.findIndex(p => p.src === startSrc);
+      show(idx >= 0 ? idx : 0);
+      lightbox.showModal();
+    }
+
+    function jpgFallback(src: string) {
+      return src.replace('/images/gallery/', '/images/gallery/jpg/').replace('.avif', '.jpg');
+    }
+
+    function makePhotoBtn(p: Photo, className: string, imgClass: string): HTMLButtonElement {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `cursor-pointer group relative overflow-hidden ${className}`;
+      btn.dataset.gallerySrc = p.src;
+      btn.innerHTML = `
+        <picture>
+          <source srcset="${p.src}" type="image/avif">
+          <img src="${jpgFallback(p.src)}" alt="${p.alt}" loading="lazy"
+            class="${imgClass} transition group-hover:scale-105">
+        </picture>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+        <span class="absolute left-3 top-3 rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-bold tracking-wide text-body backdrop-blur-sm">#АЙДАКЕМП</span>`;
+      return btn;
+    }
+
+    function renderSection(catEl: Element, label: string, photos: Photo[]) {
+      // Скрываем скелетон
+      catEl.querySelectorAll('[data-gallery-skeleton]').forEach(el => (el as HTMLElement).style.display = 'none');
+
+      const desktopGrid = catEl.querySelector<HTMLElement>('[data-desktop-grid]');
+      const mobileGrid  = catEl.querySelector<HTMLElement>('[data-mobile-grid]');
+      if (!desktopGrid || !mobileGrid) return;
+
+      desktopGrid.innerHTML = '';
+      mobileGrid.innerHTML  = '';
+
+      if (!photos.length) {
+        desktopGrid.classList.add('hidden');
+        mobileGrid.classList.add('hidden');
+        return;
+      }
+
+      const gridPhotos = photos.slice(0, 5);
+      const [big, ...smalls] = gridPhotos;
+
+      // ── Desktop ──────────────────────────────────────────────────────────
+      desktopGrid.classList.remove('hidden');
+
+      const bigBtn = makePhotoBtn(big,
+        'w-[45%] shrink-0 self-stretch rounded-[18px]',
+        'h-full w-full object-cover'
+      );
+      bigBtn.innerHTML += `<span class="absolute bottom-3 right-3 rounded-md bg-black/70 px-2.5 py-1 text-[14px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">${label}</span>`;
+      bigBtn.querySelector('span.left-3')!.textContent = '#АЙДАКЕМП';
+      (bigBtn.querySelector('span.left-3') as HTMLElement).classList.replace('text-[10px]', 'text-[14px]');
+      (bigBtn.querySelector('span.left-3') as HTMLElement).classList.replace('px-2', 'px-2.5');
+      (bigBtn.querySelector('span.left-3') as HTMLElement).classList.replace('py-0.5', 'py-1');
+      desktopGrid.appendChild(bigBtn);
+
+      const smallGrid = document.createElement('div');
+      smallGrid.className = 'grid flex-1 grid-cols-2 gap-3';
+      smalls.forEach(p => {
+        const btn = makePhotoBtn(p, 'rounded-[18px]', 'aspect-square w-full object-cover');
+        btn.innerHTML += `<span class="absolute bottom-2 right-2 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">${label}</span>`;
+        smallGrid.appendChild(btn);
+      });
+      desktopGrid.appendChild(smallGrid);
+
+      // ── Mobile ───────────────────────────────────────────────────────────
+      mobileGrid.classList.remove('hidden');
+      mobileGrid.classList.add('grid');
+
+      gridPhotos.forEach((p, idx) => {
+        const btn = makePhotoBtn(
+          p,
+          `rounded-[12px] ${idx === 0 ? 'col-span-2' : ''}`,
+          `w-full object-cover ${idx === 0 ? 'aspect-[16/9]' : 'aspect-[4/3]'}`
+        );
+        mobileGrid.appendChild(btn);
+      });
+
+      // ── Клики → лайтбокс ────────────────────────────────────────────────
+      const allBtns = [...desktopGrid.querySelectorAll<HTMLButtonElement>('[data-gallery-src]'),
+                       ...mobileGrid.querySelectorAll<HTMLButtonElement>('[data-gallery-src]')];
+      allBtns.forEach(btn =>
+        btn.addEventListener('click', () => openLb(photos, btn.dataset.gallerySrc || ''))
+      );
+
+      // ── Полоса ────────────────────────────────────────────────────────────
+      const section  = (catEl as HTMLElement).dataset.galleryCategory!;
+      const wrap     = document.getElementById(`strip-wrap-${section}`);
+      const stripEl  = document.getElementById(`strip-${section}`);
+      if (!wrap || !stripEl) return;
+
+      const extras = photos.slice(5);
+      if (!extras.length) { wrap.classList.add('hidden'); return; }
+
+      stripEl.innerHTML = '';
+      extras.forEach(p => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'group relative shrink-0 w-[140px] h-[140px] md:w-[160px] md:h-[160px] overflow-hidden rounded-[14px] bg-slate-100 cursor-pointer';
+        btn.innerHTML = `
+          <picture>
+            <source srcset="${p.src}" type="image/avif">
+            <img src="${jpgFallback(p.src)}" alt="${p.alt}" loading="lazy"
+              class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+          </picture>`;
+        btn.addEventListener('click', () => openLb(photos, p.src));
+        stripEl.appendChild(btn);
+      });
+      wrap.classList.remove('hidden');
+    }
+
+    // ── Загрузка данных секции ────────────────────────────────────────────────
+    const cache = new Map<string, Photo[]>();
+
+    async function loadSection(section: string) {
+      if (cache.has(section)) return cache.get(section)!;
+      try {
+        const res    = await fetch(`/api/gallery-photos?section=${section}`);
+        const photos: Photo[] = await res.json();
+        cache.set(section, Array.isArray(photos) ? photos : []);
+      } catch { cache.set(section, []); }
+      return cache.get(section)!;
+    }
+
+    async function showSection(section: string) {
+      const catEl = document.querySelector(`[data-gallery-category="${section}"]`);
+      if (!catEl) return;
+      const label = (catEl as HTMLElement).dataset.galleryLabel || '';
+      const photos = await loadSection(section);
+      renderSection(catEl, label, photos);
+    }
+
+    // ── Стрелки полос ─────────────────────────────────────────────────────────
+    root.querySelectorAll<HTMLButtonElement>('[data-strip-prev]').forEach(btn =>
+      btn.addEventListener('click', () =>
+        document.getElementById(`strip-${btn.dataset.stripPrev}`)
+          ?.scrollBy({ left: -340, behavior: 'smooth' })
+      )
+    );
+    root.querySelectorAll<HTMLButtonElement>('[data-strip-next]').forEach(btn =>
+      btn.addEventListener('click', () =>
+        document.getElementById(`strip-${btn.dataset.stripNext}`)
+          ?.scrollBy({ left: 340, behavior: 'smooth' })
+      )
+    );
+
+    // ── Переключение фильтров ─────────────────────────────────────────────────
+    filterBtns.forEach(btn => {
       btn.addEventListener('click', () => {
-        filterBtns.forEach((b) => {
+        filterBtns.forEach(b => {
           b.classList.remove('bg-primary-soft', 'text-primary-text');
           b.classList.add('bg-surface', 'text-body-muted');
         });
         btn.classList.remove('bg-surface', 'text-body-muted');
         btn.classList.add('bg-primary-soft', 'text-primary-text');
 
-        const filter = btn.dataset.galleryFilter;
-        categories.forEach((cat) => {
-          cat.classList.toggle('hidden', cat.dataset.galleryCategory !== filter);
-        });
+        const filter = btn.dataset.galleryFilter!;
+        categories.forEach(cat =>
+          cat.classList.toggle('hidden', cat.dataset.galleryCategory !== filter)
+        );
+        showSection(filter);
       });
     });
 
-    // Collect all photos
-    const allPhotos = Array.from(
-      document.querySelectorAll('[data-gallery-open]')
-    ).map((btn) => ({
-      src: (btn as HTMLElement).dataset.gallerySrc || '',
-      alt: (btn as HTMLElement).dataset.galleryAlt || '',
-    }));
+    // ── Инициализация ─────────────────────────────────────────────────────────
+    const defaultFilter = (root as HTMLElement).dataset.defaultFilter || 'camp';
+    showSection(defaultFilter);
 
-    const lightbox = document.getElementById('galleryLightbox') as HTMLDialogElement | null;
-    const lbImg = lightbox?.querySelector<HTMLImageElement>('[data-gallery-lightbox-img]');
-    const counterEl = lightbox?.querySelector<HTMLElement>('[data-gallery-counter]');
-    if (!lightbox || !lbImg) return;
+    // ── Lightbox управление ───────────────────────────────────────────────────
+    function closeLb() { lbImg!.src = ''; lightbox.close(); }
 
-    let current = 0;
-
-    function show(index: number) {
-      current = ((index % allPhotos.length) + allPhotos.length) % allPhotos.length;
-      lbImg!.src = allPhotos[current].src;
-      lbImg!.alt = allPhotos[current].alt;
-      if (counterEl) counterEl.textContent = `${current + 1} / ${allPhotos.length}`;
-    }
-
-    document.querySelectorAll('[data-gallery-open]').forEach((btn, i) => {
-      btn.addEventListener('click', () => {
-        show(i);
-        lightbox.showModal();
-      });
-    });
-
-    function closeLightbox() {
-      lbImg!.src = '';
-      lightbox.close();
-    }
-
-    lightbox.querySelector('[data-gallery-lightbox-close]')?.addEventListener('click', closeLightbox);
-    lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
-
+    lightbox.querySelector('[data-gallery-lightbox-close]')?.addEventListener('click', closeLb);
+    lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLb(); });
     lightbox.querySelector('[data-gallery-prev]')?.addEventListener('click', () => show(current - 1));
     lightbox.querySelector('[data-gallery-next]')?.addEventListener('click', () => show(current + 1));
-
-    lightbox.addEventListener('keydown', (e) => {
+    lightbox.addEventListener('keydown', e => {
       if (e.key === 'ArrowLeft') show(current - 1);
       if (e.key === 'ArrowRight') show(current + 1);
     });
 
     let touchStartX = 0;
-    lightbox.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
-    lightbox.addEventListener('touchend', (e) => {
+    lightbox.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    lightbox.addEventListener('touchend', e => {
       const diff = touchStartX - e.changedTouches[0].clientX;
-      if (Math.abs(diff) > 50) {
-        show(diff > 0 ? current + 1 : current - 1);
-      }
+      if (Math.abs(diff) > 50) show(diff > 0 ? current + 1 : current - 1);
     });
   }
 
