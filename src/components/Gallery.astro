@@ -31,7 +31,7 @@ function jpgSrc(src: string) {
     {filters.map((f, fi) => {
       const imgs = images[f.value] || [];
       const big = imgs[0];
-      const smalls = imgs.slice(1);
+      const smalls = imgs.slice(1, 5);
 
       return (
         <div
@@ -39,9 +39,7 @@ function jpgSrc(src: string) {
           data-gallery-label={f.label}
           class={`mt-5 ${fi === 0 ? '' : 'hidden'}`}
         >
-          {/* Desktop: 1 big left + smalls right */}
           <div class="hidden gap-3 md:flex md:max-h-[460px]">
-            {/* Big image */}
             {big && (
               <button
                 type="button"
@@ -59,7 +57,6 @@ function jpgSrc(src: string) {
                 <span class="absolute bottom-3 right-3 rounded-md bg-black/70 px-2.5 py-1 text-[14px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">{f.label}</span>
               </button>
             )}
-            {/* Small images */}
             <div class="grid flex-1 grid-cols-2 gap-3">
               {smalls.map((img) => (
                 <button
@@ -81,9 +78,8 @@ function jpgSrc(src: string) {
             </div>
           </div>
 
-          {/* Mobile: 2-col grid */}
           <div class="grid grid-cols-2 gap-2 md:hidden">
-            {imgs.map((img, idx) => (
+            {imgs.slice(0, 5).map((img, idx) => (
               <button
                 type="button"
                 data-gallery-open
@@ -99,6 +95,21 @@ function jpgSrc(src: string) {
                 <span class="absolute bottom-2 right-2 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">{f.label}</span>
               </button>
             ))}
+          </div>
+
+          <div class="relative mt-3 hidden" id={`strip-wrap-${f.value}`}>
+            <button type="button" data-strip-prev={f.value} aria-label="Назад"
+              class="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 h-9 w-9 items-center justify-center rounded-full bg-white shadow-md border border-slate-200 text-slate-600 hover:text-primary transition-colors">
+              <i class="bi bi-chevron-left text-[14px]" aria-hidden="true"></i>
+            </button>
+            <button type="button" data-strip-next={f.value} aria-label="Вперёд"
+              class="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 h-9 w-9 items-center justify-center rounded-full bg-white shadow-md border border-slate-200 text-slate-600 hover:text-primary transition-colors">
+              <i class="bi bi-chevron-right text-[14px]" aria-hidden="true"></i>
+            </button>
+            <div id={`strip-${f.value}`}
+              class="flex gap-2.5 overflow-x-auto scroll-smooth pb-2"
+              style="scrollbar-width:none;-ms-overflow-style:none">
+            </div>
           </div>
         </div>
       );
@@ -131,77 +142,146 @@ function jpgSrc(src: string) {
     if (!root) return;
 
     const filterBtns = root.querySelectorAll<HTMLButtonElement>('[data-gallery-filter]');
-    const categories = root.querySelectorAll<HTMLElement>('[data-gallery-category]');
+    const categories  = root.querySelectorAll<HTMLElement>('[data-gallery-category]');
 
-    // Tab switching
-    filterBtns.forEach((btn) => {
+    const lightbox  = document.getElementById('galleryLightbox') as HTMLDialogElement | null;
+    const lbImg     = lightbox?.querySelector<HTMLImageElement>('[data-gallery-lightbox-img]');
+    const counterEl = lightbox?.querySelector<HTMLElement>('[data-gallery-counter]');
+    if (!lightbox || !lbImg) return;
+
+    let lbPhotos: { src: string; alt: string }[] = [];
+    let current = 0;
+
+    function collectPhotos(catEl: Element) {
+      lbPhotos = Array.from(
+        catEl.querySelectorAll<HTMLElement>('[data-gallery-open], [data-strip-item]')
+      ).map(b => ({
+        src: b.dataset.gallerySrc || b.dataset.stripSrc || '',
+        alt: b.dataset.galleryAlt || b.dataset.stripAlt || '',
+      })).filter(p => p.src);
+    }
+
+    function show(index: number) {
+      current = ((index % lbPhotos.length) + lbPhotos.length) % lbPhotos.length;
+      lbImg!.src = lbPhotos[current].src;
+      lbImg!.alt = lbPhotos[current].alt;
+      if (counterEl) counterEl.textContent = `${current + 1} / ${lbPhotos.length}`;
+    }
+
+    function openLb(src: string, catEl: Element) {
+      collectPhotos(catEl);
+      const idx = lbPhotos.findIndex(p => p.src === src);
+      show(idx >= 0 ? idx : 0);
+      lightbox.showModal();
+    }
+
+    function wireGrid(catEl: Element) {
+      catEl.querySelectorAll<HTMLElement>('[data-gallery-open]').forEach(btn => {
+        const clone = btn.cloneNode(true) as HTMLElement;
+        btn.parentNode?.replaceChild(clone, btn);
+        clone.addEventListener('click', () => openLb(clone.dataset.gallerySrc || '', catEl));
+      });
+    }
+
+    const stripsLoaded = new Set<string>();
+
+    async function loadStrip(section: string) {
+      if (stripsLoaded.has(section)) return;
+      stripsLoaded.add(section);
+
+      const wrap  = document.getElementById(`strip-wrap-${section}`);
+      const strip = document.getElementById(`strip-${section}`);
+      if (!wrap || !strip) return;
+
+      try {
+        const res    = await fetch(`/api/gallery-photos?section=${section}`);
+        const photos: { src: string; alt: string }[] = await res.json();
+        if (!Array.isArray(photos) || photos.length <= 5) return;
+
+        const catEl = document.querySelector(`[data-gallery-category="${section}"]`)!;
+
+        for (const p of photos.slice(5)) {
+          const fallback = p.src
+            .replace('/images/gallery/', '/images/gallery/jpg/')
+            .replace('.avif', '.jpg');
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'group relative shrink-0 w-[140px] h-[140px] md:w-[160px] md:h-[160px] overflow-hidden rounded-[14px] bg-slate-100 cursor-pointer';
+          btn.dataset.stripItem = '1';
+          btn.dataset.stripSrc  = p.src;
+          btn.dataset.stripAlt  = p.alt;
+          btn.innerHTML = `
+            <picture>
+              <source srcset="${p.src}" type="image/avif">
+              <img src="${fallback}" alt="${p.alt}" loading="lazy"
+                class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+            </picture>`;
+          btn.addEventListener('click', () => openLb(p.src, catEl));
+          strip.appendChild(btn);
+        }
+
+        wrap.classList.remove('hidden');
+
+        const isActive = !document.querySelector(`[data-gallery-category="${section}"]`)?.classList.contains('hidden');
+        if (isActive) collectPhotos(catEl);
+      } catch {}
+    }
+
+    root.querySelectorAll<HTMLButtonElement>('[data-strip-prev]').forEach(btn =>
+      btn.addEventListener('click', () =>
+        document.getElementById(`strip-${btn.dataset.stripPrev}`)
+          ?.scrollBy({ left: -340, behavior: 'smooth' })
+      )
+    );
+    root.querySelectorAll<HTMLButtonElement>('[data-strip-next]').forEach(btn =>
+      btn.addEventListener('click', () =>
+        document.getElementById(`strip-${btn.dataset.stripNext}`)
+          ?.scrollBy({ left: 340, behavior: 'smooth' })
+      )
+    );
+
+    filterBtns.forEach(btn => {
       btn.addEventListener('click', () => {
-        filterBtns.forEach((b) => {
+        filterBtns.forEach(b => {
           b.classList.remove('bg-primary-soft', 'text-primary-text');
           b.classList.add('bg-surface', 'text-body-muted');
         });
         btn.classList.remove('bg-surface', 'text-body-muted');
         btn.classList.add('bg-primary-soft', 'text-primary-text');
 
-        const filter = btn.dataset.galleryFilter;
-        categories.forEach((cat) => {
-          cat.classList.toggle('hidden', cat.dataset.galleryCategory !== filter);
-        });
+        const filter = btn.dataset.galleryFilter!;
+        categories.forEach(cat =>
+          cat.classList.toggle('hidden', cat.dataset.galleryCategory !== filter)
+        );
+
+        const catEl = document.querySelector(`[data-gallery-category="${filter}"]`)!;
+        wireGrid(catEl);
+        collectPhotos(catEl);
+        loadStrip(filter);
       });
     });
 
-    // Collect all photos
-    const allPhotos = Array.from(
-      document.querySelectorAll('[data-gallery-open]')
-    ).map((btn) => ({
-      src: (btn as HTMLElement).dataset.gallerySrc || '',
-      alt: (btn as HTMLElement).dataset.galleryAlt || '',
-    }));
+    const defaultFilter = (root as HTMLElement).dataset.defaultFilter || 'camp';
+    const firstCat = document.querySelector(`[data-gallery-category="${defaultFilter}"]`);
+    if (firstCat) { wireGrid(firstCat); collectPhotos(firstCat); }
+    loadStrip(defaultFilter);
 
-    const lightbox = document.getElementById('galleryLightbox') as HTMLDialogElement | null;
-    const lbImg = lightbox?.querySelector<HTMLImageElement>('[data-gallery-lightbox-img]');
-    const counterEl = lightbox?.querySelector<HTMLElement>('[data-gallery-counter]');
-    if (!lightbox || !lbImg) return;
+    function closeLb() { lbImg!.src = ''; lightbox.close(); }
 
-    let current = 0;
-
-    function show(index: number) {
-      current = ((index % allPhotos.length) + allPhotos.length) % allPhotos.length;
-      lbImg!.src = allPhotos[current].src;
-      lbImg!.alt = allPhotos[current].alt;
-      if (counterEl) counterEl.textContent = `${current + 1} / ${allPhotos.length}`;
-    }
-
-    document.querySelectorAll('[data-gallery-open]').forEach((btn, i) => {
-      btn.addEventListener('click', () => {
-        show(i);
-        lightbox.showModal();
-      });
-    });
-
-    function closeLightbox() {
-      lbImg!.src = '';
-      lightbox.close();
-    }
-
-    lightbox.querySelector('[data-gallery-lightbox-close]')?.addEventListener('click', closeLightbox);
-    lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
-
+    lightbox.querySelector('[data-gallery-lightbox-close]')?.addEventListener('click', closeLb);
+    lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLb(); });
     lightbox.querySelector('[data-gallery-prev]')?.addEventListener('click', () => show(current - 1));
     lightbox.querySelector('[data-gallery-next]')?.addEventListener('click', () => show(current + 1));
-
-    lightbox.addEventListener('keydown', (e) => {
+    lightbox.addEventListener('keydown', e => {
       if (e.key === 'ArrowLeft') show(current - 1);
       if (e.key === 'ArrowRight') show(current + 1);
     });
 
     let touchStartX = 0;
-    lightbox.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
-    lightbox.addEventListener('touchend', (e) => {
+    lightbox.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    lightbox.addEventListener('touchend', e => {
       const diff = touchStartX - e.changedTouches[0].clientX;
-      if (Math.abs(diff) > 50) {
-        show(diff > 0 ? current + 1 : current - 1);
-      }
+      if (Math.abs(diff) > 50) show(diff > 0 ? current + 1 : current - 1);
     });
   }
 
