@@ -146,6 +146,7 @@ function buildCrmNote(body: Record<string, string>): string {
 
   if (body.age)   lines.push(`Возраст: ${body.age}`);
   if (body.shift) lines.push(`Смена: ${body.shift}`);
+  if (body.call_time) lines.push(`✅ Позвонить: ${body.call_time}`);
   if (body.form_id) lines.push(`Форма: ${body.form_id}`);
 
   // Атрибуция
