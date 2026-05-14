@@ -43,6 +43,24 @@ import { landingPages as allLandingPages } from '../data/landing-pages';
         (рендерятся первыми после charset, ДО аналитики — было в slot="head" ПОСЛЕ скриптов) */}
     <SchemaOrg />
   </Fragment>
+  <script is:inline>
+  (function () {
+    // Редирект возвратников на спеццену — только если уже смотрели смену
+    // и не возвращаемся с /r/ (флаг сессии предотвращает цикл)
+    try {
+      if (sessionStorage.getItem('r_redirected')) return;
+      var raw = localStorage.getItem('ac:viewed_shifts');
+      if (!raw) return;
+      var viewed = JSON.parse(raw);
+      if (!Array.isArray(viewed) || !viewed.length) return;
+      // Берём последнюю просмотренную смену
+      var last = viewed.sort(function(a, b) { return b.ts - a.ts; })[0];
+      if (!last || !last.id) return;
+      sessionStorage.setItem('r_redirected', '1');
+      window.location.replace('/r/?shift=' + last.id);
+    } catch (e) {}
+  })();
+  </script>
   <Header />
   <main class="pb-20 md:pb-0">
     <Hero hasVariants={true} />
@@ -50,23 +68,42 @@ import { landingPages as allLandingPages } from '../data/landing-pages';
     {/* Печать «Ноутбук не нужен» удалена — этот факт теперь в HeroFeatures (chip «Ноутбук — не нужен»). */}
 
     <!-- Под hero: ShiftOccupancy (CTA «Проверить свободные места») + MomStory (proof) — двухколоночно на десктопе. -->
-    <div class="mx-auto max-w-[1312px] px-[2px] pt-0 md:px-4 lg:pt-12">
-      <!-- Только Дарья compact (ShiftOccupancy удалён — proof уже в hero proof-line) -->
+    <!-- MomStory: скрывается для возвратников (ac:viewed_shifts в localStorage или _ym_uid cookie) -->
+    <div id="mom-story-wrap" class="mx-auto max-w-[1312px] px-[2px] pt-0 md:px-4 lg:pt-12">
       <MomStory compact />
     </div>
+    <script is:inline>
+    (function () {
+      var hasViewed = !!localStorage.getItem('ac:viewed_shifts');
+      var hasYmUid  = /(?:^|[; ])_ym_uid=/.test(document.cookie);
+      if (hasViewed || hasYmUid) {
+        var el = document.getElementById('mom-story-wrap');
+        if (el) el.style.display = 'none';
+      }
+    })();
+    </script>
 
-    <!-- Skolzkaya gorka:
-         Hero → MomStory(short) → Shifts → REVIEWS (поднят с поз.7 на поз.4 — proof виден 71% вместо 27%)
-         → Stay → GalleryPreview → Philosophy → Journey → Economy → About → Hackathon → Team → FAQ → Contacts -->
+    <!-- Порядок: Hero → TrustBlock → Shifts → Reviews → Stay → GalleryPreview → … -->
     <TrustBlock />
     <Shifts />
     <Reviews />
     <Stay />
     <GalleryPreview />
-    <Philosophy />
-    <Journey />
+    <div class="returning-hide"><Philosophy /></div>
+    <div class="returning-hide"><Journey /></div>
     <Economy />
-    <About />
+    <div class="returning-hide"><About /></div>
+    <script is:inline>
+    (function() {
+      var hasViewed = !!localStorage.getItem('ac:viewed_shifts');
+      var hasYmUid  = /(?:^|[; ])_ym_uid=/.test(document.cookie);
+      if (hasViewed || hasYmUid) {
+        document.querySelectorAll('.returning-hide').forEach(function(el) {
+          el.style.display = 'none';
+        });
+      }
+    })();
+    </script>
     <Hackathon />
     <Team />
     <FAQ />

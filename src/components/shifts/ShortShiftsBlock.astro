@@ -12,6 +12,16 @@ interface Props {
 
 const { shifts } = Astro.props;
 const minPrice = Math.min(...shifts.map((s) => parseInt(s.price.replace(/\D/g, ''))).filter(n => n > 0));
+
+// Налоговый вычет для коротких смен
+const VYCHET_DATA: Record<string, { price: number; days: number }> = {
+  'shift-2-1': { price: 48000, days: 7 },
+  'shift-2-2': { price: 65000, days: 8 },
+};
+function getVychet(id: string) {
+  const v = VYCHET_DATA[id];
+  return v ? Math.round((v.price - 3800 * v.days) * 0.13) : 0;
+}
 const minPriceFmt = minPrice.toLocaleString('ru-RU') + ' ₽';
 const durations = [...new Set(shifts.map((s) => s.duration.replace(/[^\d]/g, '')))].join('–');
 ---
@@ -48,7 +58,15 @@ const durations = [...new Set(shifts.map((s) => s.duration.replace(/[^\d]/g, '')
           <p class="mt-0.5 text-[12px] text-body-muted">{s.name} · {s.duration} · {s.free} мест</p>
         </div>
         <div class="flex items-center gap-3 shrink-0">
-          <span class="text-[15px] md:text-[16px] font-bold text-primary tabular-nums">{s.price}</span>
+          <div class="text-right">
+            <span class="text-[15px] md:text-[16px] font-bold text-primary tabular-nums">{s.price}</span>
+            {getVychet(s.id) > 0 && (
+              <p class="mt-0 text-[10px] text-slate-400 leading-[1.2]">
+                <i class="bi bi-arrow-counterclockwise text-[9px]" aria-hidden="true"></i>
+                {' '}вернёте ~<a href="/nalogovyj-vychet/" class="underline" onclick="event.stopPropagation()">{getVychet(s.id).toLocaleString('ru-RU')} ₽</a>
+              </p>
+            )}
+          </div>
           <i class="bi bi-arrow-right text-[15px] md:text-[14px] text-body-faint group-hover/row:text-primary group-hover/row:translate-x-0.5 transition-all" aria-hidden="true"></i>
         </div>
       </a>

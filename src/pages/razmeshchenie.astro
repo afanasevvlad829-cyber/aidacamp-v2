@@ -144,7 +144,7 @@ const relatedPages = [
       {features.map(f => (
         <div class="rounded-[16px] bg-white border border-[#e8eef4] p-5 shadow-sm hover:shadow-md transition-shadow">
           <div class="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-            <i class={`${f.icon} text-[18px] text-primary`} aria-hidden="true"></i>
+            <i class={`bi ${f.icon} text-[18px] text-primary`} aria-hidden="true"></i>
           </div>
           <h3 class="text-[15px] font-bold text-body mb-1">{f.title}</h3>
           <p class="text-[14px] text-body-muted leading-[1.55]">{f.text}</p>
@@ -153,46 +153,102 @@ const relatedPages = [
     </div>
   </section>
 
-  <!-- PHOTO GALLERY -->
-  <section id="gallery-rooms" class="mx-auto max-w-[1312px] px-4 pb-12 md:pb-16">
-    <div class="flex items-center gap-2 mb-6">
-      <div class="w-1 h-5 rounded-full bg-primary shrink-0"></div>
-      <h2 class="text-[20px] md:text-[26px] font-extrabold tracking-[-0.02em] text-body">Фото корпусов и комнат</h2>
-    </div>
+  <!-- PHOTO GALLERY — раскладка «1 большое + 2×2» как на /foto/ -->
+  <section id="gallery-rooms" class="mx-auto max-w-[1312px] px-[2px] pb-10 md:px-4 md:pb-14">
+    <div class="p-[18px]">
+      <div class="flex items-center justify-between gap-3 mb-4">
+        <div class="flex items-center gap-2">
+          <div class="w-1 h-5 rounded-full bg-primary shrink-0"></div>
+          <h2 class="text-[24px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[30px]">
+            Фото корпусов и комнат
+          </h2>
+        </div>
+        <a href="/foto/"
+          class="group inline-flex items-center gap-1.5 text-[15px] font-semibold text-primary hover:text-primary-hover">
+          Все фото лагеря
+          <i class="bi bi-arrow-right text-[14px] transition-transform group-hover:translate-x-1" aria-hidden="true"></i>
+        </a>
+      </div>
 
-    {roomPhotos.length === 0 ? (
-      <div class="rounded-[16px] border-2 border-dashed border-[#cbd5e1] bg-[#f8fafc] p-12 text-center">
-        <i class="bi bi-camera-fill text-[36px] text-[#94a3b8] block mb-3" aria-hidden="true"></i>
-        <p class="text-[15px] font-semibold text-[#64748b]">Фото появятся здесь после загрузки</p>
-        <p class="text-[13px] text-[#94a3b8] mt-1">
-          Добавьте через <a href="/admin/gallery" class="text-primary hover:underline">Управление фото</a> → раздел «Размещение»
-        </p>
-      </div>
-    ) : (
-      <div class="columns-2 md:columns-3 lg:columns-4 gap-3 space-y-3">
-        {roomPhotos.map((img, i) => (
-          <button
-            type="button"
-            data-lightbox-src={img.src}
-            data-lightbox-alt={img.alt}
-            class="cursor-zoom-in group relative block w-full overflow-hidden rounded-[12px] break-inside-avoid"
-          >
-            <picture>
-              <source srcset={img.src} type="image/avif" />
-              <img
-                src={jpgSrc(img.src)}
-                alt={img.alt}
-                loading={i < 4 ? 'eager' : 'lazy'}
-                class="w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-              />
-            </picture>
-            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-[12px] flex items-center justify-center">
-              <i class="bi bi-zoom-in text-white text-[20px] opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" aria-hidden="true"></i>
+      {(() => {
+        // Дефолтные фото корпусов (показываются пока нет загруженных)
+        const defaults = [
+          { src: '/images/gallery/territory-korpus.avif', alt: 'Корпус лагеря АйДаКемп — санаторий Изумруд' },
+          { src: '/images/gallery/stay-room-01.avif',     alt: 'Жилая комната в лагере АйДаКемп' },
+          { src: '/images/gallery/stay-bathroom-01.avif', alt: 'Санузел в корпусе лагеря АйДаКемп' },
+          { src: '/images/gallery/stay-lounge-01.avif',   alt: 'Общий холл в корпусе лагеря АйДаКемп' },
+          { src: '/images/gallery/territory-alley.avif',  alt: 'Территория лагеря АйДаКемп — аллея' },
+        ];
+        const photos = roomPhotos.length >= 5
+          ? roomPhotos.slice(0, 5)
+          : roomPhotos.length > 0
+            ? [...roomPhotos, ...defaults].slice(0, 5)
+            : defaults;
+        const [big, ...smalls] = photos;
+        const extra = roomPhotos.length > 5 ? roomPhotos.length - 5 : 0;
+        return (
+          <>
+            {/* Desktop: большое слева + 2×2 справа */}
+            <div class="hidden md:flex gap-3 h-[440px]">
+              {/* Большое фото */}
+              <a href="/foto/"
+                class="group relative w-[45%] shrink-0 overflow-hidden rounded-[18px] bg-slate-100">
+                <picture>
+                  <source srcset={big.src} type="image/avif" />
+                  <img src={jpgSrc(big.src)} alt={big.alt}
+                    class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="eager" />
+                </picture>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                <span class="absolute left-3 top-3 rounded-md bg-white/90 px-2.5 py-1 text-[14px] font-bold tracking-wide text-body backdrop-blur-sm">#АЙДАКЕМП</span>
+                <span class="absolute bottom-3 right-3 rounded-md bg-black/70 px-2.5 py-1 text-[14px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">РАЗМЕЩЕНИЕ</span>
+              </a>
+              {/* Сетка 2×2 */}
+              <div class="grid flex-1 grid-cols-2 gap-3">
+                {smalls.map((p, i) => (
+                  <a href="/foto/"
+                    class="group relative overflow-hidden rounded-[18px] bg-slate-100">
+                    <picture>
+                      <source srcset={p.src} type="image/avif" />
+                      <img src={jpgSrc(p.src)} alt={p.alt}
+                        class="aspect-square w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy" />
+                    </picture>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                    <span class="absolute left-3 top-3 rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-bold tracking-wide text-body backdrop-blur-sm">#АЙДАКЕМП</span>
+                    <span class="absolute bottom-2 right-2 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">РАЗМЕЩЕНИЕ</span>
+                    {i === 3 && extra > 0 && (
+                      <div class="absolute inset-0 bg-black/45 flex items-center justify-center">
+                        <span class="text-white text-[15px] font-semibold flex items-center gap-1.5">
+                          <i class="bi bi-images text-[20px]" aria-hidden="true"></i>
+                          Ещё {extra}+
+                        </span>
+                      </div>
+                    )}
+                  </a>
+                ))}
+              </div>
             </div>
-          </button>
-        ))}
-      </div>
-    )}
+
+            {/* Mobile: 2-col grid, первое фото на всю ширину */}
+            <div class="grid grid-cols-2 gap-2 md:hidden">
+              {photos.slice(0, 5).map((p, i) => (
+                <a href="/foto/"
+                  class={`group relative overflow-hidden rounded-[12px] bg-slate-100 ${i === 0 ? 'col-span-2' : ''}`}>
+                  <picture>
+                    <source srcset={p.src} type="image/avif" />
+                    <img src={jpgSrc(p.src)} alt={p.alt}
+                      class={`w-full object-cover transition-transform duration-300 group-hover:scale-105 ${i === 0 ? 'aspect-[2/1]' : 'aspect-square'}`}
+                      loading={i === 0 ? 'eager' : 'lazy'} />
+                  </picture>
+                  <span class="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-bold tracking-wide text-body backdrop-blur-sm">#АЙДАКЕМП</span>
+                </a>
+              ))}
+            </div>
+          </>
+        );
+      })()}
+    </div>
   </section>
 
   <!-- САНАТОРИЙ ИЗУМРУД -->

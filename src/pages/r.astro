@@ -1,0 +1,396 @@
+---
+/**
+ * /r/ — персонализированная страница для возвратников.
+ * Структура: Hero → TrustBlock → ShiftTimeline → Reviews → FAQ → Contacts
+ */
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import ShiftBookModal from '../components/shifts/ShiftBookModal.astro';
+import TrustBlock from '../components/TrustBlock.astro';
+import ShiftTimeline from '../components/shifts/ShiftTimeline.astro';
+import Reviews from '../components/Reviews.astro';
+import FAQ from '../components/FAQ.astro';
+import Contacts from '../components/Contacts.astro';
+import { TELEGRAM_URL } from '../data/contacts';
+import { mainShifts, shortShifts } from '../data/shifts';
+
+const allShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShifts[2], mainShifts[3]];
+
+const shiftsJson = JSON.stringify(allShifts.map(s => ({
+  id: s.id,
+  name: s.name,
+  dates: s.dates,
+  duration: s.duration,
+  price: s.price,
+  free: s.free,
+  startDate: s.startDate,
+  endDate: s.endDate,
+  description: s.description,
+})));
+---
+
+<Base
+  title="Для вас — АйДаКемп"
+  description="Персонализированная страница смены АйДаКемп. Программа, условия, запись."
+  noindex={true}
+>
+  <Header />
+  <main>
+
+    <!-- ═══ HERO ═══ -->
+    <section class="relative overflow-hidden bg-[#0d1a2b] pt-16 pb-12 md:pt-20 md:pb-16">
+      <div class="mx-auto max-w-[860px] px-5 md:px-8">
+
+        <!-- Eyebrow -->
+        <p id="r-eyebrow" class="text-[12px] font-bold uppercase tracking-[0.18em] text-primary mb-3 opacity-0 transition-opacity duration-500">
+          Вы это смотрели
+        </p>
+
+        <!-- Shift name -->
+        <h1 id="r-title" class="text-[32px] md:text-[50px] font-extrabold leading-[1.05] tracking-[-0.02em] text-transparent opacity-0 transition-opacity duration-500" style="-webkit-text-stroke: 2px white;">
+          &nbsp;
+        </h1>
+
+        <!-- Dates — отдельная строка под заголовком -->
+        <p id="r-dates" class="mt-1.5 text-[13px] md:text-[14px] font-medium text-white/50 opacity-0 transition-opacity duration-500">
+          &nbsp;
+        </p>
+
+
+
+        <!-- CTA row: таймер + кнопки -->
+        <div id="r-cta-row" class="mt-6 opacity-0 transition-opacity duration-500">
+
+          <!-- Цена -->
+          <div class="mb-5 flex flex-col gap-2">
+
+            <!-- Главная цена -->
+            <div class="flex flex-wrap items-baseline gap-2.5">
+              <span id="r-price-original" class="text-[14px] font-medium text-white/25 line-through"></span>
+              <span id="r-price-discounted" class="text-[36px] md:text-[40px] font-extrabold text-primary leading-none"></span>
+              <span class="text-[13px] text-white/35">всё включено</span>
+            </div>
+
+            <!-- Оффер: −5% + таймер -->
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-[12px] font-bold text-primary">
+                <i class="bi bi-lightning-charge text-[11px]" aria-hidden="true"></i>
+                −5% · экономия <span id="r-price-savings"></span>
+              </span>
+              <span class="text-[12px] text-white/35">ещё</span>
+              <span id="r-countdown" class="font-mono text-[14px] font-extrabold text-primary tabular-nums tracking-tight">30:00</span>
+            </div>
+
+            <!-- Вычет: пассивная сноска -->
+            <div id="r-vychet-row" class="hidden items-center gap-1.5">
+              <i class="bi bi-arrow-counterclockwise text-[11px] text-white/30" aria-hidden="true"></i>
+              <span class="text-[12px] text-white/35">+ ~<span id="r-price-vychet"></span> вернёт государство через год</span>
+              <a href="/nalogovyj-vychet/" class="text-[11px] text-primary/50 hover:text-primary no-underline ml-1">подробнее →</a>
+            </div>
+          </div>
+
+          <!-- Кнопки -->
+          <div class="flex flex-col gap-3 md:flex-row md:items-center md:gap-3">
+
+            <!-- Дефицит -->
+            <div id="r-discount-wrap" class="inline-flex items-center gap-1.5 shrink-0">
+              <span id="r-seats-sep" class="text-white/25 opacity-0 transition-opacity duration-500 text-[13px]">·</span>
+              <span id="r-seats-inline" class="text-[13px] font-semibold text-primary whitespace-nowrap opacity-0 transition-opacity duration-500"></span>
+            </div>
+
+            <!-- Забронировать — белая кнопка -->
+            <button
+              id="r-book-btn"
+              type="button"
+              class="inline-flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-white/90 px-6 py-3 text-[15px] font-bold text-[#0d1a2b] transition active:scale-[0.98] min-h-[48px]"
+            >
+              <i class="bi bi-calendar-check text-[14px]" aria-hidden="true"></i>
+              Забронировать
+            </button>
+
+            <!-- Telegram — мягкий -->
+            <a href={TELEGRAM_URL} target="_blank" rel="noopener"
+               data-analytics-goal="telegram_click" data-analytics-label="r_hero"
+               class="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 hover:bg-white/18 hover:border-white/40 px-5 py-3 text-[14px] font-semibold text-white transition no-underline min-h-[48px]">
+              <i class="bi bi-telegram text-[14px]" aria-hidden="true"></i>
+              Написать в Telegram
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ═══ TRUST ═══ -->
+    <TrustBlock hideInsurance />
+
+    <!-- ═══ ECONOMY + ONBOARDING ═══ -->
+    <div class="bg-[#f7f4ee] py-10 md:py-12">
+      <div class="mx-auto max-w-[860px] px-5 md:px-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Внутренняя экономика -->
+        <a href="/stati/vnutrennyaya-ekonomika-v-lagere/"
+           class="flex items-start gap-5 no-underline group">
+          <div class="shrink-0 flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 group-hover:bg-primary/20 transition">
+            <i class="bi bi-currency-ruble text-[26px] text-primary" aria-hidden="true"></i>
+          </div>
+          <div>
+            <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-primary mb-1">Внутренняя экономика</p>
+            <h2 class="text-[18px] md:text-[20px] font-bold text-[#1a2535] leading-snug mb-1.5 group-hover:text-primary transition">
+              Как дети зарабатывают и тратят игровые рубли
+            </h2>
+            <p class="text-[14px] text-[#1a2535]/55 leading-relaxed">
+              В лагере своя валюта, свой рынок и свои правила — ребята учатся управлять деньгами в безопасной среде.
+            </p>
+            <span class="mt-3 inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary">
+              Читать статью
+              <i class="bi bi-arrow-right text-[12px]" aria-hidden="true"></i>
+            </span>
+          </div>
+        </a>
+
+        <!-- AI-платформа / онбординг -->
+        <a href="/onboarding/"
+           class="flex items-start gap-5 no-underline group">
+          <div class="shrink-0 flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 group-hover:bg-primary/20 transition">
+            <i class="bi bi-cpu text-[26px] text-primary" aria-hidden="true"></i>
+          </div>
+          <div>
+            <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-primary mb-1">AI-платформа</p>
+            <h2 class="text-[18px] md:text-[20px] font-bold text-[#1a2535] leading-snug mb-1.5 group-hover:text-primary transition">
+              Единый кабинет ученика и преподавателя
+            </h2>
+            <p class="text-[14px] text-[#1a2535]/55 leading-relaxed">
+              Все модели без доплат, никаких подписок. Пока никто не повторил.
+            </p>
+            <span class="mt-3 inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary">
+              Смотреть видео
+              <i class="bi bi-arrow-right text-[12px]" aria-hidden="true"></i>
+            </span>
+          </div>
+        </a>
+
+      </div>
+    </div>
+
+    <!-- ═══ SHIFT TIMELINES ═══ -->
+    <div class="pt-2 md:pt-4"></div>
+
+    {allShifts.map(s => {
+      const days = parseInt(s.duration.replace(/[^\d]/g, ''), 10) || 14;
+      return (
+        <div data-timeline-shift={s.id} class="hidden">
+          <ShiftTimeline durationDays={days} />
+        </div>
+      );
+    })}
+
+    <!-- Economy link (removed, moved above) -->
+    <div class="mx-auto max-w-[1200px] px-5 pb-10 md:px-8">
+      <a href="/stati/vnutrennyaya-ekonomika-v-lagere/"
+         class="hidden items-center gap-2 rounded-xl border border-border bg-surface px-5 py-3 text-[14px] font-semibold text-body-muted hover:border-primary/40 hover:text-primary transition no-underline">
+        <i class="bi bi-currency-ruble text-[15px]" aria-hidden="true"></i>
+        Внутренняя экономика лагеря — как дети зарабатывают и тратят игровые рубли
+        <i class="bi bi-arrow-right text-[12px]" aria-hidden="true"></i>
+      </a>
+    </div>
+
+    <!-- ═══ REVIEWS ═══ -->
+    <Reviews />
+
+    <!-- ═══ FAQ + CONTACTS ═══ -->
+    <FAQ />
+    <Contacts />
+
+  </main>
+  <Footer />
+
+  <ShiftBookModal />
+</Base>
+
+<script define:vars={{ shiftsJson }}>
+const SHIFTS = JSON.parse(shiftsJson);
+
+const VYCHET = {
+  'shift-1':   { price: 74900, days: 10 },
+  'shift-2':   { price: 95000, days: 14 },
+  'shift-3':   { price: 89400, days: 13 },
+  'shift-4':   { price: 74900, days: 10 },
+  'shift-2-1': { price: 48000, days: 7  },
+  'shift-2-2': { price: 65000, days: 8  },
+};
+
+function freeLabel(n) {
+  if (n <= 0) return 'мест нет';
+  if (n === 1) return 'последнее место';
+  if (n <= 4) return `осталось ${n} места`;
+  return `${n} свободных мест`;
+}
+
+function getTargetShift() {
+  try {
+    const viewed = JSON.parse(localStorage.getItem('ac:viewed_shifts') || '[]');
+    if (viewed.length > 0) {
+      const ids = viewed.map(v => v.id);
+      const match = SHIFTS.filter(s => ids.includes(s.id) && s.free > 0);
+      if (match.length) return match.sort((a, b) => a.free - b.free)[0];
+    }
+  } catch {}
+  return SHIFTS.filter(s => s.free > 0).sort((a, b) =>
+    new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+  )[0] || SHIFTS[0];
+}
+
+function getAgeGroupKey() {
+  try {
+    const age = parseInt(localStorage.getItem('ac:age') || '', 10);
+    if (!age) return null;
+    if (age >= 7 && age <= 9) return '7-10';
+    if (age >= 10 && age <= 12) return '10-12';
+    if (age >= 13 && age <= 15) return '13-15';
+  } catch {}
+  return null;
+}
+
+function parsePriceNum(priceStr) {
+  return parseInt((priceStr || '').replace(/\D/g, ''), 10) || 0;
+}
+
+function formatPrice(num) {
+  return num.toLocaleString('ru-RU') + ' ₽';
+}
+
+function show(id, value) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (value !== undefined) el.textContent = value;
+  el.style.opacity = '1';
+}
+
+let countdownInterval = null;
+
+function startCountdown() {
+  const KEY = 'ac:r_discount_end';
+  let endTs = parseInt(sessionStorage.getItem(KEY) || '0', 10);
+  if (!endTs || endTs < Date.now()) {
+    endTs = Date.now() + 30 * 60 * 1000;
+    sessionStorage.setItem(KEY, String(endTs));
+  }
+
+  const el = document.getElementById('r-countdown');
+  if (!el) return;
+
+  if (countdownInterval) clearInterval(countdownInterval);
+
+  function tick() {
+    const rem = Math.max(0, endTs - Date.now());
+    const m = Math.floor(rem / 60000);
+    const s = Math.floor((rem % 60000) / 1000);
+    el.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    if (rem <= 0) {
+      clearInterval(countdownInterval);
+      const wrap = document.getElementById('r-discount-wrap');
+      if (wrap) wrap.style.display = 'none';
+    }
+  }
+
+  tick();
+  countdownInterval = setInterval(tick, 1000);
+}
+
+function openBookingModal(shift) {
+  const modal = document.getElementById('shiftBookModal');
+  if (!modal) return;
+
+  const block = modal.querySelector('[data-book-shift-block]');
+  const nameEl = modal.querySelector('[data-book-shift-name]');
+  const datesEl = modal.querySelector('[data-book-shift-dates]');
+  const durEl = modal.querySelector('[data-book-shift-duration]');
+  const priceEl = modal.querySelector('[data-book-shift-price]');
+  const specialEl = modal.querySelector('[data-book-shift-special]');
+
+  const discNum = Math.round(parsePriceNum(shift.price) * 0.95 / 100) * 100;
+
+  if (nameEl) nameEl.textContent = shift.name;
+  if (datesEl) datesEl.textContent = shift.dates;
+  if (durEl) durEl.textContent = shift.duration;
+  if (priceEl) priceEl.textContent = formatPrice(discNum);
+  if (specialEl) specialEl.classList.replace('hidden', 'inline-flex');
+  if (block) block.classList.remove('hidden');
+
+  const ageKey = getAgeGroupKey();
+  if (ageKey) {
+    const ageBtn = modal.querySelector(`[data-book-age="${ageKey}"]`);
+    if (ageBtn) ageBtn.click();
+  }
+
+  modal.showModal();
+}
+
+function init() {
+  const shift = getTargetShift();
+  if (!shift) return;
+
+  const daysLeft = shift.startDate
+    ? Math.max(0, Math.ceil((new Date(shift.startDate + 'T00:00:00').getTime() - Date.now()) / 86400000))
+    : null;
+
+  const datesText = daysLeft !== null && daysLeft > 0
+    ? `${shift.dates} · ${shift.duration} · старт через ${daysLeft} дн.`
+    : `${shift.dates} · ${shift.duration}`;
+
+  show('r-eyebrow');
+  show('r-title', shift.name);
+  show('r-dates', datesText);
+  show('r-seats-sep');
+  show('r-seats-inline', freeLabel(shift.free));
+  document.getElementById('r-cta-row').style.opacity = '1';
+
+  const fullNum = parsePriceNum(shift.price);
+  const discNum = Math.round(fullNum * 0.95 / 100) * 100;
+  const savingsNum = fullNum - discNum;
+  const origEl = document.getElementById('r-price-original');
+  const discEl = document.getElementById('r-price-discounted');
+  const savingsEl = document.getElementById('r-price-savings');
+  if (origEl) origEl.textContent = formatPrice(fullNum);
+  if (discEl) discEl.textContent = formatPrice(discNum);
+  if (savingsEl) savingsEl.textContent = formatPrice(savingsNum);
+
+  // Вычет: показываем сумму возврата, не итоговую цену
+  const v = VYCHET[shift.id];
+  if (v) {
+    const vychetAmt = Math.round((v.price - 3800 * v.days) * 0.13);
+    const vychetRow = document.getElementById('r-vychet-row');
+    const vychetEl = document.getElementById('r-price-vychet');
+    if (vychetEl) vychetEl.textContent = formatPrice(vychetAmt);
+    if (vychetRow) vychetRow.classList.replace('hidden', 'flex');
+  }
+
+  startCountdown();
+
+  // Показываем нужный timeline
+  document.querySelectorAll('[data-timeline-shift]').forEach(el => {
+    el.classList.toggle('hidden', el.dataset.timelineShift !== shift.id);
+  });
+
+  document.getElementById('r-book-btn')?.addEventListener('click', () => {
+    openBookingModal(shift);
+    try { window.ym && window.ym(96499295, 'reachGoal', 'return_page_book_click'); } catch {}
+  });
+
+  document.querySelector('a[data-analytics-label="r_hero"]')?.addEventListener('click', () => {
+    try { window.ym && window.ym(96499295, 'reachGoal', 'return_page_telegram_click', { shift: shift.id }); } catch {}
+    fetch('/api/r-telegram-notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shift: shift.name || shift.id }),
+    }).catch(() => {});
+  });
+
+  try { window.ym && window.ym(96499295, 'reachGoal', 'return_page_view', { shift: shift.id }); } catch {}
+}
+
+document.addEventListener('astro:page-load', init);
+init();
+</script>

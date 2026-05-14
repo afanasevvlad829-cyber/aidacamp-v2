@@ -32,6 +32,45 @@ const { imageSrc, hasVariants = false } = Astro.props;
 
 <HeroModals />
 
+<!-- ── Персонализированный баннер для возвратников ── -->
+<div id="returning-hero-hint" class="hidden mx-auto max-w-[1312px] px-4 py-3">
+  <a id="returning-hero-link" href="/shifts/shift-1/"
+     class="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-[14px] hover:bg-primary/10 transition-colors no-underline">
+    <i class="bi bi-arrow-left-circle-fill text-[20px] text-primary shrink-0" aria-hidden="true"></i>
+    <span id="returning-hero-text" class="text-slate-700 font-medium"></span>
+    <i class="bi bi-arrow-right text-[14px] text-primary ml-auto shrink-0" aria-hidden="true"></i>
+  </a>
+</div>
+<script is:inline>
+(function() {
+  var SHIFTS = {
+    'shift-1':   { name: 'Смену 1',   dates: '30 мая — 8 июня',       free: 3  },
+    'shift-2':   { name: 'Смену 2',   dates: '10–23 июня',             free: 2  },
+    'shift-3':   { name: 'Смену 3',   dates: '3–15 августа',           free: 4  },
+    'shift-4':   { name: 'Смену 4',   dates: '17–26 августа',          free: 8  },
+    'shift-2-1': { name: 'Смену 2.1', dates: '10–16 июня',             free: 7  },
+    'shift-2-2': { name: 'Смену 2.2', dates: '16–23 июня',             free: 5  },
+  };
+  try {
+    var viewed = JSON.parse(localStorage.getItem('ac:viewed_shifts') || '[]');
+    if (!viewed.length) return;
+    var last = viewed[viewed.length - 1];
+    // Support both {id, ts} objects and plain string IDs
+    if (last && typeof last === 'object') last = last.id;
+    var s = SHIFTS[last];
+    if (!s) return;
+    var hint = document.getElementById('returning-hero-hint');
+    var text = document.getElementById('returning-hero-text');
+    var link = document.getElementById('returning-hero-link');
+    if (!hint || !text || !link) return;
+    var freePlural = s.free === 1 ? 'место' : s.free < 5 ? 'места' : 'мест';
+    text.textContent = 'Вы смотрели ' + s.name + ' · ' + s.free + ' ' + freePlural + ' · ' + s.dates;
+    link.href = '/shifts/' + last + '/';
+    hint.classList.remove('hidden');
+  } catch(e) {}
+})();
+</script>
+
 <script is:inline>
   // UTM-based title variations
   // Приоритет: utm_h1 → utm_content (точный) → utm_content (префикс) → utm_term (ключ поиска) → utm_source
