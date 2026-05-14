@@ -139,6 +139,17 @@ rsync -az --stats \
   -e "ssh -i $SSH_KEY" \
   dist/client/images/ "$SSH_HOST:${REMOTE_DIR}images/"
 
+# ── 2b. Галерея (admin-uploaded photos) ───────────────────────
+# Фото загружаются через админку в /var/www/aidacamp-dev/current/images/gallery/
+# и не входят в сборку. На prod синхронизируем с dev вручную.
+if [ "$TARGET" = "prod" ]; then
+  echo ""
+  echo "🖼️  Синхронизация галереи dev → prod..."
+  ssh -i "$SSH_KEY" "$SSH_HOST" \
+    "rsync -a /var/www/aidacamp-dev/current/images/gallery/ /var/www/aidacamp/current/images/gallery/"
+  echo "  ✅ Галерея синхронизирована"
+fi
+
 # ── 3. SSR ────────────────────────────────────────────────────
 echo ""
 echo "🔄 Деплой SSR-сервера..."
