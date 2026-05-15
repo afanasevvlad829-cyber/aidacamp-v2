@@ -77,6 +77,7 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь недорого', description: 'От 48 000 ₽ за смену, оплата частями', url: '/lager-nedorogo', icon: 'bi-tag' },
 
   // 🗓 Сезонные
+  { title: 'Лагерь летом', description: 'IT-лагерь летом 2026 для детей 7–15 лет', url: '/lager-letom', icon: 'bi-sun-fill' },
   { title: 'Лагерь на каникулы', description: 'Июнь, июль, август 2026', url: '/lager-na-kanikuly', icon: 'bi-sun' },
   { title: 'Лагерь на июнь', description: 'Смены июня 2026, с 30 мая', url: '/lager-na-iyun', icon: 'bi-calendar-event' },
   { title: 'Лагерь на июль', description: 'Июльские смены 2026 в Подмосковье', url: '/lager-na-iyul', icon: 'bi-sun' },
@@ -176,11 +177,69 @@ const AGE_URLS = new Set([
 ]);
 
 /**
+ * Статьи-блог, которые нужно показывать в блоке RelatedPages на конкретных лендингах.
+ * Ключ — нормализованный URL лендинга, значение — список статей (до 2 штук).
+ * Статьи вставляются в конец результата getRelatedPages и дают им хотя бы 1 inbound link.
+ */
+const ARTICLE_MAP: Record<string, LandingPage[]> = {
+  '/lager-naro-fominsk': [
+    { title: 'Лагерь в Наро-Фоминском районе', description: 'Маршруты, как добраться, инфраструктура', url: '/stati/lager-naro-fominsk', icon: 'file-earmark-text' },
+  ],
+  '/detskiy-lager-podmoskove': [
+    { title: 'Лагерь в Наро-Фоминском районе', description: 'Маршруты, как добраться, инфраструктура', url: '/stati/lager-naro-fominsk', icon: 'file-earmark-text' },
+  ],
+  '/nalogovyj-vychet': [
+    { title: 'Как оплатить лагерь', description: 'Рассрочка 50/50, способы, документы', url: '/stati/oplata-detskogo-lagerya', icon: 'cash-coin' },
+    { title: 'Вычет за лагерь: пошаговая инструкция', description: 'Через Госуслуги за 15 минут', url: '/stati/nalogovyj-vychet-za-lager-poshagovaya-instrukciya', icon: 'clipboard-check' },
+  ],
+  '/ceny': [
+    { title: 'Как оплатить лагерь', description: 'Рассрочка 50/50, способы, документы', url: '/stati/oplata-detskogo-lagerya', icon: 'cash-coin' },
+  ],
+  '/kupit-putevku-v-lager': [
+    { title: 'Как оплатить лагерь', description: 'Рассрочка 50/50, способы, документы', url: '/stati/oplata-detskogo-lagerya', icon: 'cash-coin' },
+  ],
+  '/lager-dlya-podrostkov': [
+    { title: 'Ребёнок не хочет в лагерь', description: 'Разбираемся без скандалов', url: '/stati/rebenok-ne-hochet-v-lager', icon: 'chat-dots' },
+  ],
+  '/lager-dlya-devochek': [
+    { title: 'Ребёнок первый раз в лагере', description: 'Как подготовить и не переживать', url: '/stati/pervyj-raz-v-lagere', icon: 'file-earmark-text' },
+  ],
+  '/razmeshchenie': [
+    { title: 'Ребёнок заболел в лагере', description: 'Что делать, медпункт, родителям', url: '/stati/rebenok-zabolel-v-lagere', icon: 'heart-pulse-fill' },
+  ],
+  '/o-lagere': [
+    { title: 'Ребёнок заболел в лагере', description: 'Что делать, медпункт, родителям', url: '/stati/rebenok-zabolel-v-lagere', icon: 'heart-pulse-fill' },
+  ],
+  '/lager-bez-telefonov': [
+    { title: 'Зависимость от компьютерных игр', description: 'Признаки, причины, что поможет', url: '/stati/zavisimost-ot-kompyuternyh-igr', icon: 'phone-x' },
+  ],
+  '/scratch-lager': [
+    { title: 'Scratch для детей', description: 'Что такое, с чего начать, возраст', url: '/stati/scratch-dlya-detej', icon: 'code-slash' },
+  ],
+  '/python-lager': [
+    { title: '3D-моделирование для детей', description: 'Blender, первые шаги, возраст', url: '/stati/3d-modelirovanie-dlya-detej', icon: 'box' },
+  ],
+  '/ai-lager': [
+    { title: 'ИИ заменит программистов?', description: 'Разбираем реальные данные', url: '/stati/ii-zamenit-programmista', icon: 'cpu' },
+  ],
+  '/luchshie-detskie-lagerya': [
+    { title: 'Как выбрать IT-лагерь', description: 'Чек-лист и на что смотреть', url: '/stati/kak-vybrat-it-lager', icon: 'list-check' },
+  ],
+  '/detskiy-lager': [
+    { title: 'Документы для ребёнка в лагерь', description: 'Полный чек-лист 2026', url: '/stati/dokumenty-dlya-rebenka-v-lager', icon: 'file-earmark-text' },
+  ],
+  '/lager-v-podmoskove': [
+    { title: 'Документы для ребёнка в лагерь', description: 'Полный чек-лист 2026', url: '/stati/dokumenty-dlya-rebenka-v-lager', icon: 'file-earmark-text' },
+  ],
+};
+
+/**
  * Возвращает первые `count` лендингов из приоритетного списка, исключая `currentUrl`.
  * Используется для блока RelatedPages на каждом лендинге.
  *
  * Для IT-страниц приоритет отдаётся IT-кластеру (устраняет каннибализацию).
  * Для остальных страниц — стандартный порядок массива.
+ * В конец результата автоматически добавляются релевантные статьи из ARTICLE_MAP.
  *
  * @param currentUrl URL текущей страницы (без протокола/хоста), например "/minecraft-lager"
  * @param count Сколько ссылок вернуть (по умолчанию 6)
@@ -189,32 +248,39 @@ export function getRelatedPages(currentUrl: string, count: number = 6): LandingP
   const normalized = currentUrl.replace(/\/$/, '');
   const others = landingPages.filter((page) => page.url.replace(/\/$/, '') !== normalized);
 
+  // Статьи для этой страницы (вставляем в конец, уменьшая count на их количество)
+  const articles = ARTICLE_MAP[normalized] ?? [];
+  const landingCount = Math.max(count - articles.length, 0);
+
+  let base: LandingPage[];
+
   // IT-страница → IT-кластер в начале списка, потом общие
   if (IT_URLS.has(normalized)) {
     const itPages = others.filter((p) => IT_URLS.has(p.url.replace(/\/$/, '')));
     const rest = others.filter((p) => !IT_URLS.has(p.url.replace(/\/$/, '')));
-    return [...itPages, ...rest].slice(0, count);
+    base = [...itPages, ...rest].slice(0, landingCount);
   }
-
   // Гео-страница → хаб /lager-v-podmoskove + /detskiy-lager первыми, потом другие гео
-  if (GEO_URLS.has(normalized)) {
+  else if (GEO_URLS.has(normalized)) {
     const hub = landingPages.find((p) => p.url === '/lager-v-podmoskove');
     const hub2 = landingPages.find((p) => p.url === '/detskiy-lager');
     const geoPages = others.filter((p) => GEO_URLS.has(p.url.replace(/\/$/, '')) && p.url !== '/lager-v-podmoskove');
     const rest = others.filter((p) => !GEO_URLS.has(p.url.replace(/\/$/, '')) && p.url !== '/lager-v-podmoskove' && p.url !== '/detskiy-lager');
     const priority = [hub, hub2].filter((p): p is LandingPage => !!p);
-    return [...priority, ...geoPages, ...rest].slice(0, count);
+    base = [...priority, ...geoPages, ...rest].slice(0, landingCount);
   }
-
   // Возрастная страница → /detskiy-lager + /lager-dlya-podrostkov первыми, потом другие возрастные
-  if (AGE_URLS.has(normalized)) {
+  else if (AGE_URLS.has(normalized)) {
     const hub1 = landingPages.find((p) => p.url === '/detskiy-lager');
     const hub2 = landingPages.find((p) => p.url === '/lager-dlya-podrostkov');
     const agePages = others.filter((p) => AGE_URLS.has(p.url.replace(/\/$/, '')) && p.url !== '/lager-dlya-podrostkov');
     const rest = others.filter((p) => !AGE_URLS.has(p.url.replace(/\/$/, '')) && p.url !== '/detskiy-lager' && p.url !== '/lager-dlya-podrostkov');
     const priority = [hub1, hub2].filter((p): p is LandingPage => !!p);
-    return [...priority, ...agePages, ...rest].slice(0, count);
+    base = [...priority, ...agePages, ...rest].slice(0, landingCount);
+  }
+  else {
+    base = others.slice(0, landingCount);
   }
 
-  return others.slice(0, count);
+  return [...base, ...articles];
 }
