@@ -423,6 +423,28 @@ const clusters: { label: string; id: string; color: string; articles: Article[] 
 
 const allArticles = clusters.flatMap(c => c.articles);
 const totalCount = allArticles.length;
+
+// Category filter mapping: returns filter key based on article URL slug
+function getArticleCategory(url: string): string {
+  const slug = url.replace(/^\/stati\//, '').replace(/\/$/, '');
+
+  // Зависимость — gadget/phone addiction
+  if (/zavisimost|telefon|kompyuter|igr|ekrannoe|gadget/.test(slug)) return 'zavisimost';
+
+  // Финансы — tax returns, costs
+  if (/nalog|ceny|vychet|finansov/.test(slug)) return 'finansy';
+
+  // IT и образование — programming, AI, tech
+  if (/\bit\b|python|nejroseti|programmirovan|scratch|roblox|3d|game-dev|meta-skills|future-skills|ai-economy|ai-studio|hakaton|navyki|vnutrennyaya|ii-zamenit|programmirovanie|detskiy-lager-bez-telefonov/.test(slug)) return 'it';
+
+  // Выбор лагеря — choosing camps
+  if (/kak-vybrat|mify|reiting|otzyvy/.test(slug)) return 'vybor';
+
+  // Жизнь в лагере — daily life, health, safety
+  if (/pitanie|zabolel|vzyat|pervyj-raz|bezopasnost|obshhenie|obshchenie|socializaciya|spravki|strakhovka|dokumenty|kak-dobratsya|kuda-det|letom|lager-podolsk|lager-naro|lager-novaya|rebenok-ne-hochet|podrostok|nizkaya|problemy|nichego-ne-hochet/.test(slug)) return 'lager';
+
+  return 'lager'; // fallback
+}
 ---
 
 <Base
@@ -475,29 +497,21 @@ const totalCount = allArticles.length;
 
   <main class="mx-auto max-w-[1120px] px-4 py-8 pb-20">
 
-    <!-- Быстрые фильтры -->
+    <!-- Фильтры по категориям -->
     <div class="mb-10">
-      <div class="flex flex-wrap gap-2">
-        {clusters.map(c => (
-          <a
-            href={`#${c.id}`}
-            class={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[13px] font-semibold transition-colors
-              ${c.color === 'emerald' ? 'border-emerald-200 text-emerald-700 hover:bg-emerald-50' :
-                c.color === 'orange' ? 'border-orange-200 text-orange-700 hover:bg-orange-50' :
-                c.color === 'red' ? 'border-red-200 text-red-700 hover:bg-red-50' :
-                c.color === 'sky' ? 'border-sky-200 text-sky-700 hover:bg-sky-50' :
-                'border-purple-200 text-purple-700 hover:bg-purple-50'}`}
-          >
-            {c.label}
-            <span class="text-[11px] opacity-60">{c.articles.length}</span>
-          </a>
-        ))}
+      <div id="category-filters" class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width:none;-ms-overflow-style:none;">
+        <button data-filter="all"     class="filter-btn shrink-0 rounded-full px-4 py-1.5 text-[13px] font-semibold bg-primary text-[#0d1a2b] transition-colors">Все</button>
+        <button data-filter="zavisimost" class="filter-btn shrink-0 rounded-full px-4 py-1.5 text-[13px] bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">Зависимость</button>
+        <button data-filter="vybor"   class="filter-btn shrink-0 rounded-full px-4 py-1.5 text-[13px] bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">Выбор лагеря</button>
+        <button data-filter="it"      class="filter-btn shrink-0 rounded-full px-4 py-1.5 text-[13px] bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">IT и образование</button>
+        <button data-filter="finansy" class="filter-btn shrink-0 rounded-full px-4 py-1.5 text-[13px] bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">Финансы</button>
+        <button data-filter="lager"   class="filter-btn shrink-0 rounded-full px-4 py-1.5 text-[13px] bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">Жизнь в лагере</button>
       </div>
     </div>
 
     <!-- Кластеры -->
     {clusters.map(cluster => (
-      <section id={cluster.id} class="mb-14 scroll-mt-6">
+      <section id={cluster.id} data-cluster class="mb-14 scroll-mt-6">
         <div class="flex items-center gap-3 mb-6">
           <div class={`w-1 h-6 rounded-full shrink-0
             ${cluster.color === 'emerald' ? 'bg-emerald-500' :
@@ -515,7 +529,8 @@ const totalCount = allArticles.length;
           {cluster.articles.map(article => (
             <a
               href={article.url}
-              class="group flex flex-col rounded-[22px] border border-border bg-card p-5 card-shadow card-shadow-hover hover:border-slate-300 transition-all duration-200"
+              data-category={getArticleCategory(article.url)}
+              class="article-card group flex flex-col rounded-[22px] border border-border bg-card p-5 card-shadow card-shadow-hover hover:border-slate-300 transition-all duration-200"
             >
               <div class="flex items-start justify-between gap-2 mb-3">
                 <span class={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${article.tagColor}`}>
@@ -562,4 +577,52 @@ const totalCount = allArticles.length;
   </main>
 
   <Footer />
+
+  <script>
+    (function () {
+      const buttons = document.querySelectorAll<HTMLButtonElement>('#category-filters .filter-btn');
+      const cards = document.querySelectorAll<HTMLElement>('.article-card');
+      const clusters = document.querySelectorAll<HTMLElement>('[data-cluster]');
+
+      const ACTIVE = ['bg-primary', 'text-[#0d1a2b]', 'font-semibold'];
+      const INACTIVE = ['bg-slate-100', 'text-slate-600', 'hover:bg-slate-200'];
+
+      function setActive(btn: HTMLButtonElement) {
+        buttons.forEach(b => {
+          ACTIVE.forEach(c => b.classList.remove(c));
+          INACTIVE.forEach(c => b.classList.add(c));
+        });
+        INACTIVE.forEach(c => btn.classList.remove(c));
+        ACTIVE.forEach(c => btn.classList.add(c));
+      }
+
+      function filter(value: string) {
+        cards.forEach(card => {
+          if (value === 'all' || card.dataset.category === value) {
+            card.classList.remove('hidden');
+          } else {
+            card.classList.add('hidden');
+          }
+        });
+
+        // Hide cluster section when all its cards are hidden
+        clusters.forEach(section => {
+          const visible = section.querySelectorAll('.article-card:not(.hidden)');
+          if (visible.length === 0) {
+            section.classList.add('hidden');
+          } else {
+            section.classList.remove('hidden');
+          }
+        });
+      }
+
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const value = btn.dataset.filter ?? 'all';
+          setActive(btn);
+          filter(value);
+        });
+      });
+    })();
+  </script>
 </Base>
