@@ -8,6 +8,29 @@ import ArticleBottomCta from '../../components/ArticleBottomCta.astro';
 import ArticleHero from '../../components/ArticleHero.astro';
 import BlogCTA from '../../components/BlogCTA.astro';
 
+const faqItems = [
+  {
+    question: "Какие документы нужны при выборе детского лагеря?",
+    answer: "Лицензия Минобрнауки (обязательна для образовательного лагеря), свидетельство туроператора в реестре РТО, страховка от несчастного случая. Проверяйте наличие договора с условиями возврата."
+  },
+  {
+    question: "Зачем лагерю образовательная лицензия?",
+    answer: "Без лицензии нельзя официально давать образовательные услуги и оформить налоговый вычет 13% от стоимости. АйДаКемп — лицензия Л035-01298-77/01082973 Минобрнауки."
+  },
+  {
+    question: "Как проверить, что лагерь — реальный туроператор?",
+    answer: "Через реестр tourinfo.ru — введите ИНН или название. АйДаКемп — РТО 025773, ООО «ВОИП КОННЕКТ», ИНН 7729713637."
+  },
+  {
+    question: "Как проверить лицензию лагеря самостоятельно?",
+    answer: "Зайдите на сайт Рособрнадзора (obrnadzor.gov.ru) в раздел «Реестр лицензий» и введите ИНН организации. Для АйДаКемп — ИНН 693203571312. Там увидите статус лицензии, дату выдачи и перечень образовательных программ. Это занимает 2 минуты и снимает все вопросы."
+  },
+  {
+    question: "Можно ли получить налоговый вычет за лагерь с иностранным гражданством ребёнка?",
+    answer: "Налоговый вычет получает родитель, который платит НДФЛ в России. Гражданство ребёнка значения не имеет — важен статус налогового резидента родителя. Если вы работаете в России и платите НДФЛ — вычет доступен."
+  }
+];
+
 const relatedPages = [
   { title: "Налоговый вычет за лагерь", url: "/nalogovyj-vychet/", icon: "cash-coin", description: "Калькулятор возврата 13%" },
   { title: "Документы и договор", url: "/legal/", icon: "file-text", description: "Все юридические документы лагеря" },
@@ -280,6 +303,27 @@ const relatedPages = [
       </div>
 
 
+      <!-- FAQ аккордеон -->
+      <section class="mt-12 mb-8">
+        <h2 class="text-[22px] md:text-[26px] font-bold text-slate-900 mb-6 flex items-center gap-3">
+          <span class="w-[4px] h-[28px] bg-primary rounded-full flex-shrink-0"></span>
+          Частые вопросы
+        </h2>
+        <div class="space-y-3">
+          {faqItems.map(item => (
+            <div class="rounded-[14px] border border-slate-200 bg-slate-50" data-faq-item>
+              <button type="button" data-faq-toggle class="flex w-full cursor-pointer items-center justify-between p-4 text-left text-[15px] font-semibold text-slate-900" aria-expanded="false">
+                <span>{item.question}</span>
+                <span class="ml-3 shrink-0 text-lg text-slate-400 transition-transform duration-200" data-faq-icon aria-hidden="true">+</span>
+              </button>
+              <div class="px-4 pb-4 text-[16px] leading-[1.55] text-slate-600" data-faq-answer>
+                <p>{item.answer}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <BlogCTA />
     </article>
   </main>
@@ -291,4 +335,23 @@ const relatedPages = [
 
   <RelatedPages title="Полезные ссылки" pages={relatedPages} />
   <Footer />
+<script>
+  document.querySelectorAll('[data-faq-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = btn.closest('[data-faq-item]');
+      const answer = item.querySelector('[data-faq-answer]');
+      const icon = btn.querySelector('[data-faq-icon]');
+      const isOpen = btn.getAttribute('aria-expanded') === 'true';
+      if (isOpen) {
+        answer.classList.remove('is-open');
+        if (icon) icon.style.transform = '';
+        btn.setAttribute('aria-expanded', 'false');
+      } else {
+        answer.classList.add('is-open');
+        if (icon) icon.style.transform = 'rotate(45deg)';
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    });
+  });
+</script>
 </Base>
