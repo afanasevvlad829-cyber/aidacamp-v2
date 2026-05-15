@@ -82,6 +82,8 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь на июнь', description: 'Смены июня 2026, с 30 мая', url: '/lager-na-iyun', icon: 'bi-calendar-event' },
   { title: 'Лагерь на июль', description: 'Июльские смены 2026 в Подмосковье', url: '/lager-na-iyul', icon: 'bi-sun' },
   { title: 'Лагерь на август', description: 'Смены августа 2026 в Подмосковье', url: '/lager-na-avgust-podmoskove', icon: 'bi-sun' },
+  { title: 'Лагерь на осенние каникулы', description: 'IT-смена в октябре 2026', url: '/lager-na-osenie-kanikuly', icon: 'bi-cloud-sun' },
+  { title: 'Лагерь на зимние каникулы', description: 'IT-смена в декабре 2026 — январе 2027', url: '/lager-na-zimnie-kanikuly', icon: 'bi-snow' },
 
   // 🎨 Прочее
   { title: 'Лагерь без телефонов', description: 'Ребёнок без гаджетов 24/7', url: '/lager-bez-telefonov', icon: 'bi-phone-x' },
