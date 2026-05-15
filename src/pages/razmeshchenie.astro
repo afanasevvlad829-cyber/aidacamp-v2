@@ -195,8 +195,9 @@ const relatedPages = [
             {/* Desktop: большое слева + 2×2 справа */}
             <div class="hidden md:flex gap-3 h-[440px]">
               {/* Большое фото */}
-              <a href="/foto/"
-                class="group relative w-[45%] shrink-0 overflow-hidden rounded-[18px] bg-slate-100">
+              <button type="button"
+                data-lightbox-src={jpgSrc(big.src)} data-lightbox-alt={big.alt}
+                class="group relative w-[45%] shrink-0 overflow-hidden rounded-[18px] bg-slate-100 cursor-zoom-in">
                 <picture>
                   <source srcset={big.src} type="image/avif" />
                   <img src={jpgSrc(big.src)} alt={big.alt}
@@ -206,12 +207,13 @@ const relatedPages = [
                 <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
                 <span class="absolute left-3 top-3 rounded-md bg-white/90 px-2.5 py-1 text-[14px] font-bold tracking-wide text-body backdrop-blur-sm">#АЙДАКЕМП</span>
                 <span class="absolute bottom-3 right-3 rounded-md bg-black/70 px-2.5 py-1 text-[14px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">РАЗМЕЩЕНИЕ</span>
-              </a>
+              </button>
               {/* Сетка 2×2 */}
               <div class="grid flex-1 grid-cols-2 gap-3">
                 {smalls.map((p, i) => (
-                  <a href="/foto/"
-                    class="group relative overflow-hidden rounded-[18px] bg-slate-100">
+                  <button type="button"
+                    data-lightbox-src={jpgSrc(p.src)} data-lightbox-alt={p.alt}
+                    class="group relative overflow-hidden rounded-[18px] bg-slate-100 cursor-zoom-in">
                     <picture>
                       <source srcset={p.src} type="image/avif" />
                       <img src={jpgSrc(p.src)} alt={p.alt}
@@ -221,7 +223,7 @@ const relatedPages = [
                     <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
                     <span class="absolute left-3 top-3 rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-bold tracking-wide text-body backdrop-blur-sm">#АЙДАКЕМП</span>
                     <span class="absolute bottom-2 right-2 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">РАЗМЕЩЕНИЕ</span>
-                  </a>
+                  </button>
                 ))}
               </div>
             </div>
@@ -229,8 +231,9 @@ const relatedPages = [
             {/* Mobile: 2-col grid, первое фото на всю ширину */}
             <div class="grid grid-cols-2 gap-2 md:hidden">
               {photos.slice(0, 5).map((p, i) => (
-                <a href="/foto/"
-                  class={`group relative overflow-hidden rounded-[12px] bg-slate-100 ${i === 0 ? 'col-span-2' : ''}`}>
+                <button type="button"
+                  data-lightbox-src={jpgSrc(p.src)} data-lightbox-alt={p.alt}
+                  class={`group relative overflow-hidden rounded-[12px] bg-slate-100 cursor-zoom-in ${i === 0 ? 'col-span-2' : ''}`}>
                   <picture>
                     <source srcset={p.src} type="image/avif" />
                     <img src={jpgSrc(p.src)} alt={p.alt}
@@ -238,7 +241,7 @@ const relatedPages = [
                       loading={i === 0 ? 'eager' : 'lazy'} />
                   </picture>
                   <span class="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-bold tracking-wide text-body backdrop-blur-sm">#АЙДАКЕМП</span>
-                </a>
+                </button>
               ))}
             </div>
 
@@ -371,13 +374,19 @@ const relatedPages = [
   const lbClose = document.getElementById('lightbox-close')!;
   const lbPrev = document.getElementById('lightbox-prev')!;
   const lbNext = document.getElementById('lightbox-next')!;
-  const btns = Array.from(document.querySelectorAll<HTMLElement>('[data-lightbox-src]'));
   let current = 0;
+  let gallery: HTMLElement[] = [];
+
+  function visibleItems() {
+    return Array.from(document.querySelectorAll<HTMLElement>('[data-lightbox-src]'))
+      .filter(el => el.offsetParent !== null);
+  }
 
   function open(idx: number) {
-    current = idx;
-    lbImg.src = btns[idx].dataset.lightboxSrc!;
-    lbImg.alt = btns[idx].dataset.lightboxAlt || '';
+    gallery = visibleItems();
+    current = Math.max(0, Math.min(idx, gallery.length - 1));
+    lbImg.src = gallery[current].dataset.lightboxSrc!;
+    lbImg.alt = gallery[current].dataset.lightboxAlt || '';
     lb.classList.remove('hidden'); lb.classList.add('flex');
     document.body.style.overflow = 'hidden';
   }
@@ -386,16 +395,22 @@ const relatedPages = [
     document.body.style.overflow = ''; lbImg.src = '';
   }
 
-  btns.forEach((btn, i) => btn.addEventListener('click', () => open(i)));
+  document.addEventListener('click', (e) => {
+    const el = (e.target as Element).closest<HTMLElement>('[data-lightbox-src]');
+    if (!el) return;
+    const items = visibleItems();
+    const idx = items.indexOf(el);
+    if (idx !== -1) open(idx);
+  });
   lbClose.addEventListener('click', close);
   lb.addEventListener('click', e => { if (e.target === lb) close(); });
-  lbPrev.addEventListener('click', e => { e.stopPropagation(); open((current - 1 + btns.length) % btns.length); });
-  lbNext.addEventListener('click', e => { e.stopPropagation(); open((current + 1) % btns.length); });
+  lbPrev.addEventListener('click', e => { e.stopPropagation(); open((current - 1 + gallery.length) % gallery.length); });
+  lbNext.addEventListener('click', e => { e.stopPropagation(); open((current + 1) % gallery.length); });
   document.addEventListener('keydown', e => {
     if (lb.classList.contains('hidden')) return;
     if (e.key === 'Escape') close();
-    if (e.key === 'ArrowLeft') open((current - 1 + btns.length) % btns.length);
-    if (e.key === 'ArrowRight') open((current + 1) % btns.length);
+    if (e.key === 'ArrowLeft') open((current - 1 + gallery.length) % gallery.length);
+    if (e.key === 'ArrowRight') open((current + 1) % gallery.length);
   });
 
   // Горизонтальная полоса — клиентская подгрузка
@@ -409,9 +424,11 @@ const relatedPages = [
       if (!Array.isArray(photos) || photos.length <= 5) return;
       for (const p of photos) {
         const jpgSrc = p.src.replace('/images/gallery/', '/images/gallery/jpg/').replace('.avif', '.jpg');
-        const a = document.createElement('a');
-        a.href = '/foto/';
-        a.className = 'group relative shrink-0 w-[140px] h-[140px] md:w-[160px] md:h-[160px] overflow-hidden rounded-[14px] bg-slate-100';
+        const a = document.createElement('button');
+        a.type = 'button';
+        a.dataset.lightboxSrc = jpgSrc;
+        a.dataset.lightboxAlt = p.alt;
+        a.className = 'group relative shrink-0 w-[140px] h-[140px] md:w-[160px] md:h-[160px] overflow-hidden rounded-[14px] bg-slate-100 cursor-zoom-in';
         a.innerHTML = `
           <picture>
             <source srcset="${p.src}" type="image/avif">

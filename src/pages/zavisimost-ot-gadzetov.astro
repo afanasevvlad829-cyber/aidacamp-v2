@@ -1,0 +1,165 @@
+---
+import '../styles/global.css';
+import LandingLayout from '../layouts/LandingLayout.astro';
+import LandingHero from '../components/LandingHero.astro';
+import Shifts from '../components/Shifts.astro';
+import RelatedPages from '../components/RelatedPages.astro';
+import { getRelatedPages } from '../data/landing-pages';
+import ShiftBookModal from '../components/shifts/ShiftBookModal.astro';
+
+const articles = [
+  {
+    title: "Зависимость от компьютерных игр",
+    url: "/stati/zavisimost-ot-kompyuternyh-igr/",
+    desc: "Как отличить увлечение от зависимости: 5 признаков + 4 шага которые реально возвращают ребёнка в жизнь.",
+    icon: "controller",
+    time: "7 мин",
+  },
+  {
+    title: "Зависимость от телефона у подростков",
+    url: "/stati/zavisimost-ot-telefona-u-podrostkov/",
+    desc: "Почему подросток не выпускает телефон из рук — и что реально работает вместо запретов.",
+    icon: "phone",
+    time: "6 мин",
+  },
+  {
+    title: "Признаки компьютерной зависимости",
+    url: "/stati/priznaki-kompyuternoj-zavisimosti/",
+    desc: "6 конкретных признаков — когда это уже не увлечение. Чек-лист для родителей.",
+    icon: "search",
+    time: "5 мин",
+  },
+  {
+    title: "Игромания у детей",
+    url: "/stati/igromaniya-u-detej/",
+    desc: "Официальный диагноз ВОЗ (МКБ-11), стадии развития зависимости и группы риска.",
+    icon: "bar-chart-fill",
+    time: "6 мин",
+  },
+  {
+    title: "Экранное время детей: норма",
+    url: "/stati/ekrannoe-vremya-detej-norma/",
+    desc: "Сколько часов в день — уже много? Рекомендации ВОЗ и педиатров по возрастам.",
+    icon: "clock",
+    time: "5 мин",
+  },
+  {
+    title: "Как избавиться от игровой зависимости",
+    url: "/stati/kak-izbavitsya-ot-zavisimosti-ot-igr/",
+    desc: "5-шаговый план без запретов и скандалов. Что делать прямо сейчас.",
+    icon: "arrow-repeat",
+    time: "8 мин",
+  },
+  {
+    title: "Лечение компьютерной зависимости",
+    url: "/stati/lechenie-kompyuternoj-zavisimosti/",
+    desc: "Без клиники и без таблеток — что реально работает. Методы с доказательной базой.",
+    icon: "heart-pulse-fill",
+    time: "7 мин",
+  },
+  {
+    title: "Профилактика компьютерной зависимости",
+    url: "/stati/profilaktika-kompyuternoj-zavisimosti/",
+    desc: "7 правил здоровой семьи. Как предотвратить зависимость, пока её ещё нет.",
+    icon: "shield-check",
+    time: "6 мин",
+  },
+];
+---
+
+<LandingLayout
+  title="Зависимость от гаджетов у детей — гид для родителей | АйДаКемп"
+  description="8 статей о детской гаджет-зависимости: признаки, лечение, профилактика, нормы экранного времени. Практические советы без запретов и скандалов."
+  canonical="https://aidacamp.ru/zavisimost-ot-gadzetov/"
+  ogImage="/images/hero/lager-bez-telefonov.avif"
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://aidacamp.ru/" },
+        { "@type": "ListItem", "position": 2, "name": "Зависимость от гаджетов у детей", "item": "https://aidacamp.ru/zavisimost-ot-gadzetov/" }
+      ]
+    })} />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "name": "Зависимость от гаджетов у детей — статьи",
+      "description": "Полный гид по детской гаджет-зависимости для родителей",
+      "numberOfItems": articles.length,
+      "itemListElement": articles.map((a, i) => ({
+        "@type": "ListItem",
+        "position": i + 1,
+        "name": a.title,
+        "url": `https://aidacamp.ru${a.url}`
+      }))
+    })} />
+  </Fragment>
+
+  <LandingHero slot="hero"
+    h1="Зависимость от гаджетов у детей — полный гид для родителей"
+    subtitle="8 статей с признаками, методами лечения и профилактикой. Без запретов и скандалов — с опорой на исследования."
+    breadcrumb="Зависимость от гаджетов"
+    keywords={["Признаки, стадии и группы риска — что это уже зависимость", "Методы без клиники: что реально работает в семье", "Как IT-лагерь помогает переключить интерес с экрана на создание"]}
+    image="/images/hero/lager-bez-telefonov.avif"
+    imageAlt="Зависимость от гаджетов у детей — АйДаКемп"
+  />
+
+  <!-- Статьи кластера -->
+  <section class="mx-auto max-w-[1312px] px-4 py-10">
+    <div class="mb-8 flex items-center gap-2">
+      <div class="w-1 h-6 rounded-full bg-primary shrink-0"></div>
+      <h2 class="text-[22px] md:text-[28px] font-bold leading-[1.1] tracking-[-0.02em] text-slate-900">
+        Статьи по теме
+      </h2>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {articles.map((a) => (
+        <a href={a.url} class="group flex flex-col rounded-[16px] border border-slate-200 bg-white p-5 shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition hover:border-orange-300 hover:shadow-[0_4px_16px_rgba(0,0,0,0.1)]">
+          <div class="mb-3 flex h-9 w-9 items-center justify-center rounded-[10px] bg-orange-50 text-orange-600">
+            <i class={`bi bi-${a.icon} text-[18px]`} aria-hidden="true"></i>
+          </div>
+          <p class="mb-1 text-[12px] font-semibold uppercase tracking-[0.1em] text-slate-400">{a.time} чтения</p>
+          <h3 class="mb-2 text-[15px] font-bold leading-[1.3] text-slate-900 group-hover:text-primary transition">{a.title}</h3>
+          <p class="mt-auto text-[13px] leading-[1.6] text-slate-500">{a.desc}</p>
+        </a>
+      ))}
+    </div>
+
+    <!-- CTA к лагерю -->
+    <div class="mt-10 rounded-[20px] bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-100 p-6 md:p-8">
+      <div class="flex flex-col md:flex-row md:items-center md:gap-8">
+        <div class="flex-1 mb-4 md:mb-0">
+          <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-orange-600 mb-2">Практическое решение</p>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] text-slate-900 mb-2">
+            Лагерь без телефонов — смена среды, которая работает
+          </h2>
+          <p class="text-[15px] leading-[1.6] text-slate-600">
+            В АйДаКемп ребята не «запрещают» экраны — они заменяют бесконтрольный скроллинг на создание собственного IT-проекта. 60% приходят из геймеров и уходят с готовым ботом или игрой.
+          </p>
+        </div>
+        <div class="flex flex-col gap-2 shrink-0">
+          <a href="/lager-bez-telefonov/" class="inline-flex items-center justify-center gap-2 rounded-[12px] bg-primary px-6 py-3 text-[15px] font-bold text-white hover:bg-orange-600 transition">
+            <i class="bi bi-phone-x" aria-hidden="true"></i>
+            Лагерь без телефонов
+          </a>
+          <a href="/zapisatsya/" class="inline-flex items-center justify-center gap-2 rounded-[12px] border border-slate-200 bg-white px-6 py-3 text-[15px] font-semibold text-slate-700 hover:border-orange-300 transition">
+            Подобрать смену
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Shifts />
+  <ShiftBookModal />
+
+  <div class="mx-auto max-w-[720px] px-4 py-6 text-center">
+    <p class="text-[14px] text-slate-500">
+      Подробнее: <a href="/stati/zavisimost-u-detej/" class="text-primary hover:underline">все статьи о зависимостях</a> — <a href="/lager-bez-telefonov/" class="text-primary hover:underline">лагерь без телефонов</a>
+    </p>
+  </div>
+
+  <RelatedPages pages={getRelatedPages(Astro.url.pathname)} />
+</LandingLayout>

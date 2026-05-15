@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>АйДаКемп CRM — Финальный дизайн</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'Inter', sans-serif; background: #0f172a; color: #e2e8f0; }
+
+  .page-header {
+    padding: 24px 32px 16px;
+    border-bottom: 1px solid #1e293b;
+  }
+  .page-header h1 { font-size: 18px; font-weight: 600; color: #f1f5f9; }
+  .page-header p { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+  .design-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    padding: 32px;
+  }
+
+  .design-card {
+    background: #1e293b;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #334155;
+  }
+  .design-card-header {
+    padding: 14px 18px;
+    background: #0f172a;
+    border-bottom: 1px solid #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .design-card-header h2 { font-size: 13px; font-weight: 600; color: #94a3b8; }
+  .badge {
+    background: #4f46e5;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.04em;
+  }
+  .badge.light { background: #e0e7ff; color: #4f46e5; }
+
+  /* ── DARK THEME PREVIEW ── */
+  .crm-dark {
+    display: flex;
+    height: 460px;
+    background: #f1f5f9;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 220px;
+    background: #0f172a;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    transition: width 0.2s;
+  }
+  .sidebar.collapsed { width: 54px; }
+
+  .sidebar-logo {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    border-bottom: 1px solid #1e293b;
+    gap: 10px;
+    overflow: hidden;
+  }
+  .sidebar-logo .logo-icon {
+    width: 26px; height: 26px;
+    background: #4f46e5;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .sidebar-logo .logo-icon svg { width: 14px; height: 14px; color: #fff; }
+  .sidebar-logo span { font-size: 13px; font-weight: 600; color: #f1f5f9; white-space: nowrap; }
+
+  .sidebar-nav { flex: 1; padding: 8px; overflow: hidden; }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: #94a3b8;
+    cursor: pointer;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .nav-item:hover { background: #1e293b; color: #e2e8f0; }
+  .nav-item.active { background: #4f46e5; color: #fff; }
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .nav-item span { flex: 1; }
+  .nav-badge {
+    background: #ef4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-footer {
+    padding: 8px;
+    border-top: 1px solid #1e293b;
+  }
+  .collapse-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: #475569;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .collapse-btn:hover { background: #1e293b; color: #94a3b8; }
+  .collapse-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  /* Main area */
+  .main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* Topbar */
+  .topbar {
+    height: 48px;
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .topbar-dark {
+    background: #1e293b;
+    border-bottom-color: #0f172a;
+  }
+
+  /* Branch tabs */
+  .branch-tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 0;
+  }
+  .branch-tab {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .branch-tab.active-dark {
+    background: #4f46e5;
+    color: #fff;
+  }
+  .branch-tab.inactive-dark {
+    background: #0f172a;
+    color: #64748b;
+  }
+  .branch-tab.active-light {
+    background: #4f46e5;
+    color: #fff;
+  }
+  .branch-tab.inactive-light {
+    background: #f1f5f9;
+    color: #64748b;
+  }
+
+  .topbar-spacer { flex: 1; }
+  .topbar-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .topbar-icon.dark { color: #64748b; }
+  .topbar-icon.dark:hover { background: #1e293b; color: #94a3b8; }
+  .topbar-icon.light { color: #94a3b8; }
+  .topbar-icon.light:hover { background: #f1f5f9; color: #475569; }
+  .topbar-icon svg { width: 16px; height: 16px; }
+
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid;
+  }
+  .theme-toggle.dark {
+    background: #0f172a;
+    border-color: #334155;
+    color: #64748b;
+  }
+  .theme-toggle.light {
+    background: #fff;
+    border-color: #e2e8f0;
+    color: #64748b;
+  }
+  .theme-toggle svg { width: 13px; height: 13px; }
+
+  /* Content */
+  .content-area {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Action toolbar */
+  .action-bar {
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .action-bar.dark {
+    background: #1e293b;
+    border-bottom-color: #0f172a;
+  }
+
+  .btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    white-space: nowrap;
+  }
+  .btn svg { width: 13px; height: 13px; }
+  .btn-primary-dark { background: #4f46e5; color: #fff; }
+  .btn-danger-dark { background: rgba(239,68,68,.15); color: #f87171; }
+  .btn-ghost-dark { background: transparent; color: #475569; border: 1px solid #334155; }
+  .btn-primary-light { background: #4f46e5; color: #fff; }
+  .btn-danger-light { background: #fee2e2; color: #ef4444; }
+  .btn-ghost-light { background: #f1f5f9; color: #475569; }
+
+  .bar-spacer { flex: 1; }
+  .filter-tag {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .filter-tag.dark { background: #312e81; color: #a5b4fc; }
+  .filter-tag.light { background: #ede9fe; color: #4f46e5; }
+  .filter-tag svg { width: 11px; height: 11px; }
+
+  /* Table */
+  .data-table {
+    background: #fff;
+    flex: 1;
+    overflow: hidden;
+  }
+  .data-table.dark { background: #1e293b; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 8px 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid;
+    white-space: nowrap;
+  }
+  th.dark { background: #0f172a; color: #475569; border-color: #1e293b; }
+  th.light { background: #f8fafc; color: #94a3b8; border-color: #e2e8f0; }
+
+  tbody td {
+    padding: 8px 12px;
+    font-size: 11.5px;
+    border-bottom: 1px solid;
+    vertical-align: middle;
+  }
+  td.dark { color: #94a3b8; border-color: #0f172a; }
+  td.light { color: #334155; border-color: #f1f5f9; }
+  tr.selected-dark td { background: #1e1b4b !important; }
+  tr.selected-light td { background: #ede9fe !important; }
+
+  .avatar {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+  }
+  .pill-green-dark { background: rgba(16,185,129,.15); color: #34d399; }
+  .pill-yellow-dark { background: rgba(245,158,11,.15); color: #fbbf24; }
+  .pill-green-light { background: #dcfce7; color: #16a34a; }
+  .pill-yellow-light { background: #fef9c3; color: #a16207; }
+
+  .cb {
+    width: 12px; height: 12px;
+    border-radius: 3px;
+    border: 1.5px solid;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .cb.dark { border-color: #334155; }
+  .cb.light { border-color: #cbd5e1; }
+  .cb.checked { background: #4f46e5; border-color: #4f46e5; }
+
+  /* ── COLLAPSED SIDEBAR PREVIEW ── */
+  .sidebar-compare {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    background: #0a0f1e;
+    border-top: 1px solid #1e293b;
+  }
+  .mini-sidebar {
+    width: 54px;
+    background: #0f172a;
+    border-radius: 10px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .mini-icon {
+    width: 38px; height: 38px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .mini-icon:hover { background: #1e293b; }
+  .mini-icon.active { background: #4f46e5; }
+  .mini-icon svg { width: 17px; height: 17px; color: #64748b; }
+  .mini-icon.active svg { color: #fff; }
+
+  .compare-label {
+    font-size: 11px;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .compare-label svg { width: 12px; height: 12px; }
+
+  /* ── LIGHT PREVIEW ── */
+  .crm-light {
+    background: #f1f5f9;
+    display: flex;
+    height: 460px;
+  }
+  .sidebar-light {
+    width: 220px;
+    background: #fff;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .sidebar-logo-light {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    border-bottom: 1px solid #f1f5f9;
+    gap: 10px;
+  }
+  .sidebar-logo-light span { font-size: 13px; font-weight: 600; color: #1e293b; }
+  .nav-item-light {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: #64748b;
+    cursor: pointer;
+    margin-bottom: 2px;
+  }
+  .nav-item-light:hover { background: #f8fafc; color: #1e293b; }
+  .nav-item-light.active { background: #ede9fe; color: #4f46e5; font-weight: 500; }
+  .nav-item-light svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  .section-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 12px 10px 4px;
+  }
+  .section-title.dark { color: #1e293b; }
+  .section-title.light { color: #cbd5e1; }
+
+  /* Pagination */
+  .pagination {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    border-top: 1px solid;
+    flex-shrink: 0;
+    justify-content: flex-end;
+  }
+  .pagination.dark { border-color: #0f172a; background: #1e293b; }
+  .pagination.light { border-color: #e2e8f0; background: #fff; }
+  .page-btn {
+    width: 26px; height: 26px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid;
+  }
+  .page-btn.dark { border-color: #334155; color: #64748b; background: transparent; }
+  .page-btn.dark.active { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+  .page-btn.light { border-color: #e2e8f0; color: #64748b; background: #fff; }
+  .page-btn.light.active { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+
+  /* Annotation */
+  .annotations {
+    padding: 20px 32px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    border-top: 1px solid #1e293b;
+  }
+  .anno {
+    background: #1e293b;
+    border-radius: 10px;
+    padding: 14px;
+    border: 1px solid #334155;
+  }
+  .anno-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: #312e81;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+  .anno-icon svg { width: 16px; height: 16px; color: #a5b4fc; }
+  .anno h3 { font-size: 12px; font-weight: 600; color: #f1f5f9; margin-bottom: 4px; }
+  .anno p { font-size: 11px; color: #64748b; line-height: 1.5; }
+
+  /* Lucide SVGs inline */
+  svg { display: inline-block; vertical-align: middle; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>АйДаКемп CRM — Финальный дизайн</h1>
+  <p>Lucide icons · Сворачиваемый сайдбар · Accent: Indigo #4F46E5 · Тёмная и светлая темы</p>
+</div>
+
+<div class="design-grid">
+
+  <!-- DARK THEME -->
+  <div class="design-card">
+    <div class="design-card-header">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      <h2>Тёмная тема</h2>
+      <span class="badge">РЕКОМЕНДУЕТСЯ ПО УМОЛЧАНИЮ</span>
+    </div>
+    <div class="crm-dark">
+      <!-- Sidebar dark -->
+      <div class="sidebar">
+        <div class="sidebar-logo">
+          <div class="logo-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          </div>
+          <span>АйДаКемп</span>
+        </div>
+        <div class="sidebar-nav">
+          <div class="section-title dark">Обучение</div>
+          <div class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Клиенты</span>
+            <span class="nav-badge">12</span>
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            <span>Занятия</span>
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+            <span>Расписание</span>
+          </div>
+          <div class="section-title dark" style="margin-top:8px">Финансы</div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span>Платежи</span>
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <span>Отчёты</span>
+          </div>
+        </div>
+        <div class="sidebar-footer">
+          <div class="collapse-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3H3v18h12"/><path d="M10 18l-7-6 7-6"/></svg>
+            <span>Свернуть</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main dark -->
+      <div class="main-area">
+        <div class="topbar topbar-dark">
+          <div class="branch-tabs">
+            <div class="branch-tab active-dark">Москва</div>
+            <div class="branch-tab inactive-dark">АйДаКемп</div>
+          </div>
+          <div class="topbar-spacer"></div>
+          <div class="theme-toggle dark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+            Светлая
+          </div>
+          <div class="topbar-icon dark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+          <div style="width:28px;height:28px;border-radius:50%;background:#4f46e5;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;">АИ</div>
+        </div>
+
+        <div class="content-area">
+          <div class="action-bar dark">
+            <div class="btn btn-primary-dark">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Добавить
+            </div>
+            <div class="btn btn-danger-dark">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              Удалить
+            </div>
+            <div class="btn btn-ghost-dark">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              Отчёт
+            </div>
+            <div class="bar-spacer"></div>
+            <div class="filter-tag dark">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              Активные
+            </div>
+            <div class="btn btn-ghost-dark" style="padding:5px 10px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Поиск
+            </div>
+          </div>
+
+          <div class="data-table dark">
+            <table>
+              <thead>
+                <tr>
+                  <th class="dark" style="width:30px"><span class="cb dark"></span></th>
+                  <th class="dark">Клиент</th>
+                  <th class="dark">Группа</th>
+                  <th class="dark">Статус</th>
+                  <th class="dark">Баланс</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="selected-dark">
+                  <td class="dark"><span class="cb checked"></span></td>
+                  <td class="dark">
+                    <div style="display:flex;align-items:center;gap:7px">
+                      <span class="avatar" style="background:#4f46e5">АП</span>
+                      <div>
+                        <div style="font-size:12px;color:#e2e8f0;font-weight:500">Алина Петрова</div>
+                        <div style="font-size:10px;color:#475569">+7 999 123 45 67</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="dark" style="color:#e2e8f0">Программирование 1</td>
+                  <td class="dark"><span class="pill pill-green-dark">● Активен</span></td>
+                  <td class="dark" style="color:#e2e8f0">12 500 ₽</td>
+                </tr>
+                <tr>
+                  <td class="dark"><span class="cb dark"></span></td>
+                  <td class="dark">
+                    <div style="display:flex;align-items:center;gap:7px">
+                      <span class="avatar" style="background:#0891b2">МК</span>
+                      <div>
+                        <div style="font-size:12px;color:#94a3b8">Максим Козлов</div>
+                        <div style="font-size:10px;color:#475569">+7 926 765 43 21</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="dark">Python Pro</td>
+                  <td class="dark"><span class="pill pill-yellow-dark">● Пробный</span></td>
+                  <td class="dark" style="color:#64748b;font-style:italic;font-size:11px">не задано</td>
+                </tr>
+                <tr>
+                  <td class="dark"><span class="cb dark"></span></td>
+                  <td class="dark">
+                    <div style="display:flex;align-items:center;gap:7px">
+                      <span class="avatar" style="background:#059669">СВ</span>
+                      <div>
+                        <div style="font-size:12px;color:#94a3b8">София Волкова</div>
+                        <div style="font-size:10px;color:#475569">+7 916 234 56 78</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="dark">Дизайн UI/UX</td>
+                  <td class="dark"><span class="pill pill-green-dark">● Активен</span></td>
+                  <td class="dark" style="color:#94a3b8">8 000 ₽</td>
+                </tr>
+                <tr>
+                  <td class="dark"><span class="cb dark"></span></td>
+                  <td class="dark">
+                    <div style="display:flex;align-items:center;gap:7px">
+                      <span class="avatar" style="background:#7c3aed">ДН</span>
+                      <div>
+                        <div style="font-size:12px;color:#94a3b8">Дмитрий Новиков</div>
+                        <div style="font-size:10px;color:#475569">+7 903 345 67 89</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="dark">Программирование 1</td>
+                  <td class="dark"><span class="pill pill-yellow-dark">● Заморожен</span></td>
+                  <td class="dark" style="color:#94a3b8">3 200 ₽</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination dark">
+            <div class="page-btn dark">‹</div>
+            <div class="page-btn dark active">1</div>
+            <div class="page-btn dark">2</div>
+            <div class="page-btn dark">3</div>
+            <div class="page-btn dark">›</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Collapsed sidebar comparison -->
+    <div class="sidebar-compare">
+      <div>
+        <div class="compare-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3H3v18h12"/><path d="M10 18l-7-6 7-6"/></svg>
+          Свёрнутый (54px)
+        </div>
+        <div class="mini-sidebar">
+          <div class="mini-icon active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="mini-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          </div>
+          <div class="mini-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+          </div>
+          <div class="mini-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <div class="mini-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;align-items:center;padding-left:12px">
+        <div>
+          <div style="font-size:12px;color:#94a3b8;font-weight:500;margin-bottom:8px">Поведение</div>
+          <div style="font-size:11px;color:#475569;line-height:1.7">
+            • Клик на кнопку → анимация 200ms<br>
+            • Tooltip с названием при hover<br>
+            • Состояние в localStorage<br>
+            • Значок "→" меняется на "←"<br>
+            • Плавная анимация иконок
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIGHT THEME -->
+  <div class="design-card">
+    <div class="design-card-header">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      <h2>Светлая тема</h2>
+      <span class="badge light">STRIPE STYLE</span>
+    </div>
+    <div class="crm-light">
+      <!-- Sidebar light -->
+      <div class="sidebar-light">
+        <div class="sidebar-logo-light">
+          <div class="logo-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          </div>
+          <span>АйДаКемп</span>
+        </div>
+        <div class="sidebar-nav">
+          <div class="section-title light">ОБУЧЕНИЕ</div>
+          <div class="nav-item-light active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Клиенты
+          </div>
+          <div class="nav-item-light">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            Занятия
+          </div>
+          <div class="nav-item-light">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+            Расписание
+          </div>
+          <div class="section-title light" style="margin-top:8px">ФИНАНСЫ</div>
+          <div class="nav-item-light">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            Платежи
+          </div>
+          <div class="nav-item-light">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Отчёты
+          </div>
+        </div>
+        <div style="padding:8px;border-top:1px solid #f1f5f9">
+          <div class="nav-item-light" style="color:#94a3b8">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3H3v18h12"/><path d="M10 18l-7-6 7-6"/></svg>
+            Свернуть
+          </div>
+        </div>
+      </div>
+
+      <!-- Main light -->
+      <div class="main-area" style="background:#f1f5f9">
+        <div class="topbar" style="background:#fff;border-bottom:1px solid #f1f5f9;box-shadow:0 1px 3px rgba(0,0,0,.05)">
+          <div class="branch-tabs">
+            <div class="branch-tab active-light">Москва</div>
+            <div class="branch-tab inactive-light">АйДаКемп</div>
+          </div>
+          <div class="topbar-spacer"></div>
+          <div class="theme-toggle light">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            Тёмная
+          </div>
+          <div class="topbar-icon light">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+          <div style="width:28px;height:28px;border-radius:50%;background:#4f46e5;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;">АИ</div>
+        </div>
+
+        <div class="content-area">
+          <div class="action-bar" style="background:#fff;border-bottom:1px solid #e2e8f0">
+            <div class="btn btn-primary-light">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Добавить
+            </div>
+            <div class="btn btn-danger-light">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              Удалить
+            </div>
+            <div class="btn btn-ghost-light">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              Отчёт
+            </div>
+            <div class="bar-spacer"></div>
+            <div class="filter-tag light">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              Активные
+            </div>
+            <div class="btn btn-ghost-light" style="padding:5px 10px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Поиск
+            </div>
+          </div>
+
+          <div class="data-table" style="background:#fff">
+            <table>
+              <thead>
+                <tr>
+                  <th class="light" style="width:30px"><span class="cb light"></span></th>
+                  <th class="light">Клиент</th>
+                  <th class="light">Группа</th>
+                  <th class="light">Статус</th>
+                  <th class="light">Баланс</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="selected-light">
+                  <td class="light"><span class="cb checked"></span></td>
+                  <td class="light">
+                    <div style="display:flex;align-items:center;gap:7px">
+                      <span class="avatar" style="background:#4f46e5">АП</span>
+                      <div>
+                        <div style="font-size:12px;color:#1e293b;font-weight:500">Алина Петрова</div>
+                        <div style="font-size:10px;color:#94a3b8">+7 999 123 45 67</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="light">Программирование 1</td>
+                  <td class="light"><span class="pill pill-green-light">● Активен</span></td>
+                  <td class="light" style="font-weight:500;color:#1e293b">12 500 ₽</td>
+                </tr>
+                <tr>
+                  <td class="light"><span class="cb light"></span></td>
+                  <td class="light">
+                    <div style="display:flex;align-items:center;gap:7px">
+                      <span class="avatar" style="background:#0891b2">МК</span>
+                      <div>
+                        <div style="font-size:12px;color:#334155">Максим Козлов</div>
+                        <div style="font-size:10px;color:#94a3b8">+7 926 765 43 21</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="light">Python Pro</td>
+                  <td class="light"><span class="pill pill-yellow-light">● Пробный</span></td>
+                  <td class="light" style="color:#94a3b8;font-style:italic;font-size:11px">не задано</td>
+                </tr>
+                <tr>
+                  <td class="light"><span class="cb light"></span></td>
+                  <td class="light">
+                    <div style="display:flex;align-items:center;gap:7px">
+                      <span class="avatar" style="background:#059669">СВ</span>
+                      <div>
+                        <div style="font-size:12px;color:#334155">София Волкова</div>
+                        <div style="font-size:10px;color:#94a3b8">+7 916 234 56 78</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="light">Дизайн UI/UX</td>
+                  <td class="light"><span class="pill pill-green-light">● Активен</span></td>
+                  <td class="light">8 000 ₽</td>
+                </tr>
+                <tr>
+                  <td class="light"><span class="cb light"></span></td>
+                  <td class="light">
+                    <div style="display:flex;align-items:center;gap:7px">
+                      <span class="avatar" style="background:#7c3aed">ДН</span>
+                      <div>
+                        <div style="font-size:12px;color:#334155">Дмитрий Новиков</div>
+                        <div style="font-size:10px;color:#94a3b8">+7 903 345 67 89</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="light">Программирование 1</td>
+                  <td class="light"><span class="pill pill-yellow-light">● Заморожен</span></td>
+                  <td class="light">3 200 ₽</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination light">
+            <div class="page-btn light">‹</div>
+            <div class="page-btn light active">1</div>
+            <div class="page-btn light">2</div>
+            <div class="page-btn light">3</div>
+            <div class="page-btn light">›</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Collapsed light compare -->
+    <div class="sidebar-compare" style="background:#f8fafc;border-top:1px solid #e2e8f0">
+      <div>
+        <div class="compare-label" style="color:#94a3b8">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3H3v18h12"/><path d="M10 18l-7-6 7-6"/></svg>
+          Свёрнутый (54px)
+        </div>
+        <div class="mini-sidebar" style="background:#fff;border:1px solid #e2e8f0">
+          <div class="mini-icon active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="mini-icon" style="background:transparent">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          </div>
+          <div class="mini-icon" style="background:transparent">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+          </div>
+          <div class="mini-icon" style="background:transparent">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <div class="mini-icon" style="background:transparent">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;align-items:center;padding-left:12px">
+        <div>
+          <div style="font-size:12px;color:#1e293b;font-weight:500;margin-bottom:8px">Переключение темы</div>
+          <div style="font-size:11px;color:#64748b;line-height:1.7">
+            • Кнопка в topbar + сайдпанель экстеншена<br>
+            • Сохраняется в chrome.storage.sync<br>
+            • Синхронизируется между вкладками<br>
+            • CSS-переменные без FOUC<br>
+            • Иконка луна/солнце с анимацией
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Annotations -->
+<div class="annotations">
+  <div class="anno">
+    <div class="anno-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+    </div>
+    <h3>Lucide Icons</h3>
+    <p>Inline SVG — нет зависимостей, нет CDN. Иконки заменяют ion-* через JS DOM-манипуляцию.</p>
+  </div>
+  <div class="anno">
+    <div class="anno-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3H3v18h12"/><polyline points="10 9 7 12 10 15"/></svg>
+    </div>
+    <h3>Сворачиваемый сайдбар</h3>
+    <p>220px ↔ 54px, анимация 200ms ease. Состояние в localStorage. Tooltip при collapsed.</p>
+  </div>
+  <div class="anno">
+    <div class="anno-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+    </div>
+    <h3>Тёмная / Светлая тема</h3>
+    <p>CSS-переменные на :root. Кнопка в topbar + переключатель в сайдпанели экстеншена.</p>
+  </div>
+  <div class="anno">
+    <div class="anno-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
+    </div>
+    <h3>Branch Tabs</h3>
+    <p>Dropdown заменён горизонтальными вкладками. Active-состояние по opacity иконки.</p>
+  </div>
+</div>
+
+</body>
+</html>

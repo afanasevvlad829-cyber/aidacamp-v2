@@ -1,6 +1,7 @@
 // content.js — runs on codim.s20.online
 // 1) Detects current customer ID from URL
 // 2) Handles microphone recording for side panel (Speech API works here)
+// 3) UI modernization (ui-modern.js injected below)
 
 let lastCustomerId = null;
 
