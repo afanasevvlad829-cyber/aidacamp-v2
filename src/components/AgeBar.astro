@@ -48,8 +48,10 @@ const ageCountsJson = JSON.stringify({
          transition-all duration-500 ease-out"
 >
   <!-- Фаза 1: выбор возраста — светлая тема, согласована с сайтом -->
+  <!-- data-bg-dismiss: клик по фону (мимо кнопок) = "Позже", устраняет dead clicks -->
   <div
     id="age-bar-phase1"
+    data-bg-dismiss="true"
     class="bg-white/97 backdrop-blur-md border-t border-slate-200
            shadow-[0_-6px_24px_rgba(15,23,42,0.08)]"
   >
@@ -104,9 +106,10 @@ const ageCountsJson = JSON.stringify({
       <!-- Заголовок -->
       <div class="flex items-center justify-between mb-2.5">
         <p class="text-[13px] font-semibold text-body-muted">Подходящие смены для вас</p>
+        <!-- h-11 w-11 = 44px — минимальный тач-таргет, был h-7 w-7 = 28px (dead clicks) -->
         <button
           id="age-bar-nudge-close"
-          class="inline-flex h-7 w-7 items-center justify-center rounded-full text-body-faint hover:bg-surface-alt hover:text-body-muted transition-colors"
+          class="inline-flex h-11 w-11 items-center justify-center rounded-full text-body-faint hover:bg-surface-alt hover:text-body-muted transition-colors"
           aria-label="Закрыть"
         >
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -126,8 +129,9 @@ const ageCountsJson = JSON.stringify({
             Смена 1
             <span class="ml-1.5 text-[11px] font-semibold text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">30 мая — 8 июня</span>
           </p>
-          <p class="text-[12px] text-body-muted mt-0.5 leading-snug">
-            <i class="bi bi-people-fill text-primary mr-1" aria-hidden="true"></i>12 ребят вашего возраста уже едут
+          <!-- id для динамического обновления счётчика по возрасту -->
+          <p id="ab-shift1-count" class="text-[12px] text-body-muted mt-0.5 leading-snug">
+            <i class="bi bi-people-fill text-primary mr-1" aria-hidden="true"></i>уже едут ровесники
           </p>
         </div>
         <span class="shrink-0 text-[13px] font-bold text-primary whitespace-nowrap">74 900 ₽ →</span>
@@ -146,8 +150,9 @@ const ageCountsJson = JSON.stringify({
             Смена 2
             <span class="ml-1.5 text-[11px] font-medium text-body-faint">10 — 23 июня</span>
           </p>
-          <p class="text-[12px] text-body-muted mt-0.5 leading-snug">
-            <i class="bi bi-people-fill text-body-faint mr-1" aria-hidden="true"></i>7 ребят вашего возраста уже едут
+          <!-- id для динамического обновления счётчика по возрасту -->
+          <p id="ab-shift2-count" class="text-[12px] text-body-muted mt-0.5 leading-snug">
+            <i class="bi bi-people-fill text-body-faint mr-1" aria-hidden="true"></i>уже едут ровесники
           </p>
         </div>
         <span class="shrink-0 text-[13px] font-semibold text-body-muted whitespace-nowrap">95 000 ₽ →</span>
@@ -317,9 +322,18 @@ const ageCountsJson = JSON.stringify({
     clearTimeout(awakenTimer);
   }
 
-  function showNudge(_age?: string) {
+  function showNudge(age?: string) {
     phase1?.classList.add('hidden');
     phase2?.classList.remove('hidden');
+    // Обновляем счётчики ровесников по выбранному возрасту (были захардкожены — dead clicks)
+    if (age && AGE_COUNTS[age]) {
+      const c1 = AGE_COUNTS[age]['shift-1'] ?? 0;
+      const c2 = AGE_COUNTS[age]['shift-2'] ?? 0;
+      const s1 = document.getElementById('ab-shift1-count');
+      const s2 = document.getElementById('ab-shift2-count');
+      if (s1) s1.innerHTML = `<i class="bi bi-people-fill text-primary mr-1" aria-hidden="true"></i>${c1} ребят вашего возраста уже едут`;
+      if (s2) s2.innerHTML = `<i class="bi bi-people-fill text-body-faint mr-1" aria-hidden="true"></i>${c2} ребят вашего возраста уже едут`;
+    }
   }
 
   // Триггер: 25% скролла (без таймера)
@@ -345,6 +359,12 @@ const ageCountsJson = JSON.stringify({
 
   closeBtn?.addEventListener('click', hideBar);
   nudgeClose?.addEventListener('click', hideBar);
+
+  // Клик по фону Phase 1 (мимо кнопок) → Позже. Устраняет dead clicks на белой подложке.
+  phase1?.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest('button')) hideBar();
+  });
 
   ageBtns.forEach(btn => {
     btn.addEventListener('click', () => {
