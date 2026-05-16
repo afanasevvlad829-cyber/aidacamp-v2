@@ -1,0 +1,191 @@
+---
+/**
+ * ExitIntentPopup — попап при попытке уйти со страницы.
+ * Показывается один раз за сессию (desktop only, mouseout e.clientY <= 0).
+ * НЕ продаёт — Дарья как основатель лично ответит на вопросы.
+ */
+---
+
+<dialog
+  id="exitIntentDialog"
+  class="exit-intent-dialog m-auto max-w-[420px] w-full rounded-[24px] bg-white p-0 shadow-[0_32px_80px_rgba(2,8,20,0.30),0_8px_20px_rgba(15,23,42,0.12)] backdrop:bg-slate-900/50 backdrop:backdrop-blur-sm"
+  aria-labelledby="exitIntentTitle"
+>
+  <div class="relative p-7">
+    <!-- Закрыть -->
+    <button
+      id="exitIntentClose"
+      type="button"
+      aria-label="Закрыть"
+      class="absolute right-5 top-5 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+    >
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+
+    <!-- Дарья -->
+    <div class="flex items-center gap-4 mb-5">
+      <div class="relative shrink-0">
+        <img
+          src="/images/team/team-daria-main-01.avif"
+          alt="Дарья Афанасьева — основатель АйДаКемп"
+          width="64"
+          height="64"
+          class="h-16 w-16 rounded-full object-cover object-top shadow-sm"
+          loading="lazy"
+        />
+        <!-- Онлайн-индикатор -->
+        <span class="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500"></span>
+      </div>
+      <div>
+        <p class="text-[15px] font-bold text-slate-900 leading-tight">Дарья Афанасьева</p>
+        <p class="text-[13px] text-slate-500 leading-snug mt-0.5">основатель АйДаКемп</p>
+      </div>
+    </div>
+
+    <!-- Текст -->
+    <p id="exitIntentTitle" class="text-[18px] font-bold leading-[1.3] text-slate-900 mb-2">
+      Остались вопросы?
+    </p>
+    <p class="text-[15px] leading-[1.55] text-slate-600 mb-5">
+      Оставьте номер — я перезвоню лично и отвечу на всё. Токсичное впаривание не входит в наши ценности.
+    </p>
+
+    <!-- Форма -->
+    <form id="exitIntentForm" novalidate>
+      <div class="flex gap-2">
+        <input
+          id="exitIntentPhone"
+          name="phone"
+          type="tel"
+          inputmode="tel"
+          autocomplete="tel"
+          maxlength="18"
+          placeholder="+7 (___) ___-__-__"
+          class="flex-1 h-[48px] rounded-[10px] border-[1.5px] border-[#e6e6e6] bg-white px-[14px] text-[16px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary"
+          aria-label="Ваш номер телефона"
+        />
+        <button
+          type="submit"
+          id="exitIntentSubmit"
+          class="h-[48px] shrink-0 rounded-[10px] bg-primary px-5 text-[15px] font-bold text-slate-900 transition hover:brightness-105 active:scale-[0.98]"
+        >
+          Перезвоню
+        </button>
+      </div>
+      <p id="exitIntentHint" class="mt-1.5 hidden text-[13px] text-red-500">
+        Введите номер полностью — 11 цифр (+7 …)
+      </p>
+
+      <!-- Согласие -->
+      <label class="mt-3 flex items-start gap-2 text-[13px] leading-[1.4] text-slate-500 cursor-pointer">
+        <input
+          type="checkbox"
+          id="exitIntentConsent"
+          class="mt-[2px] h-4 w-4 shrink-0 rounded border border-slate-300 accent-primary"
+        />
+        <span>
+          Согласен(а) на
+          <a href="/soglasie-na-obrabotku-personalnyh-dannyh/" class="text-primary underline hover:opacity-80" target="_blank" rel="noopener">
+            обработку персональных данных
+          </a>
+        </span>
+      </label>
+      <p id="exitIntentConsentHint" class="mt-1 hidden text-[13px] text-red-500">
+        Нужно согласие на обработку данных
+      </p>
+    </form>
+
+    <!-- Успех (скрыт до отправки) -->
+    <div id="exitIntentSuccess" class="hidden text-center py-4">
+      <p class="text-[17px] font-bold text-slate-900 mb-1">Спасибо, перезвоню!</p>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  function formatPhone(raw: string): string {
+    let digits = raw.replace(/\D/g, '');
+    if (digits.startsWith('8') && digits.length > 1) digits = '7' + digits.slice(1);
+    if (!digits.startsWith('7') && digits.length > 0) digits = '7' + digits;
+    digits = digits.slice(0, 11);
+    if (digits.length === 0) return '';
+    let out = '+7';
+    if (digits.length > 1) out += ' (' + digits.slice(1, 4);
+    if (digits.length >= 4) out += ') ' + digits.slice(4, 7);
+    if (digits.length >= 7) out += '-' + digits.slice(7, 9);
+    if (digits.length >= 9) out += '-' + digits.slice(9, 11);
+    return out;
+  }
+
+  function initExitIntent() {
+    const dialog = document.getElementById('exitIntentDialog') as HTMLDialogElement | null;
+    const closeBtn = document.getElementById('exitIntentClose');
+    const form = document.getElementById('exitIntentForm') as HTMLFormElement | null;
+    const phoneInput = document.getElementById('exitIntentPhone') as HTMLInputElement | null;
+    const consentInput = document.getElementById('exitIntentConsent') as HTMLInputElement | null;
+    const submitBtn = document.getElementById('exitIntentSubmit') as HTMLButtonElement | null;
+    const hint = document.getElementById('exitIntentHint');
+    const consentHint = document.getElementById('exitIntentConsentHint');
+    const successEl = document.getElementById('exitIntentSuccess');
+    if (!dialog) return;
+
+    // Phone format
+    phoneInput?.addEventListener('input', () => {
+      const pos = phoneInput.selectionStart || 0;
+      const before = phoneInput.value.length;
+      phoneInput.value = formatPhone(phoneInput.value);
+      const after = phoneInput.value.length;
+      phoneInput.setSelectionRange(pos + (after - before), pos + (after - before));
+    });
+
+    // Close
+    closeBtn?.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+
+    // Submit
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const digits = (phoneInput?.value || '').replace(/\D/g, '');
+      const phoneOk = digits.length === 11 && digits.startsWith('7');
+      const consentOk = consentInput?.checked ?? false;
+
+      hint?.classList.toggle('hidden', phoneOk);
+      consentHint?.classList.toggle('hidden', consentOk);
+      if (!phoneOk || !consentOk) return;
+
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '…'; }
+
+      try {
+        const { submitLead } = await import('../scripts/form-submit');
+        await submitLead({
+          phone: phoneInput?.value || '',
+          age: '',
+          form: 'exit_intent',
+          call_time: '',
+        });
+      } catch (_) {}
+
+      // Трекинг
+      (window as any).ym?.(96499295, 'reachGoal', 'form_submit');
+      (window as any).trackGoal?.('form_submit', { source: 'exit_intent' });
+
+      // Показываем успех
+      form.classList.add('hidden');
+      successEl?.classList.remove('hidden');
+      setTimeout(() => dialog.close(), 3000);
+    });
+
+    // Открытие через событие от nudge.ts
+    document.addEventListener('exit-intent:show', () => {
+      if (!dialog.open) dialog.showModal();
+    });
+  }
+
+  document.addEventListener('astro:page-load', initExitIntent);
+  if (document.readyState !== 'loading') initExitIntent();
+  else document.addEventListener('DOMContentLoaded', initExitIntent);
+</script>

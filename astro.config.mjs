@@ -74,9 +74,13 @@ export default defineConfig({
     },
   },
   build: {
-    // CSS вынесен в отдельный файл (auto threshold 4KB): HTML сжимается с 139KB до ~70KB gzip.
-    // Это освобождает H2-соединение на ~450ms раньше → image first byte 2737ms→~2267ms → LCP 2.9s→~2.4s.
-    // С H2+preload CSS грузится параллельно с HTML — штрафа в 400ms нет.
-    inlineStylesheets: 'auto',
+    // CSS инлайнится полностью в HTML — нет блокирующих запросов к CDN за CSS.
+    // Было: 'auto' (threshold 4KB) → Base.css 37KB уходил на CDN → блокировал рендер 1350мс.
+    // Теперь: 'always' → CSS в <style> в HTML → рендер начинается сразу.
+    // Минус: HTML тяжелее на ~70KB, но это компенсируется gzip и отсутствием round-trip к CDN.
+    inlineStylesheets: 'always',
+    // CDN: статика раздаётся с Beget CDN (70 точек присутствия).
+    // После настройки CNAME cdn.aidacamp.ru — заменить на https://cdn.aidacamp.ru
+    assetsPrefix: 'https://huhodirekeka.begetcdn.cloud',
   },
 });
