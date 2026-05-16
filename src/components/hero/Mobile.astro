@@ -140,6 +140,7 @@ const { imageSrc = '/images/hero-mobile-bean-v3', hasVariants = false } = Astro.
     img.className = 'absolute inset-0 h-full w-full object-cover';
     /* opacity:0 inline — Astro-scoped CSS [data-astro-cid-*] не применится к JS-элементу */
     img.style.cssText = 'object-position:center 30%;opacity:0;';
+    img.setAttribute('fetchpriority', 'high'); /* E.65: LCP-подсказка браузеру */
     img.width = 390;
     img.height = 800;
     img.sizes = '100vw';
@@ -166,8 +167,10 @@ const { imageSrc = '/images/hero-mobile-bean-v3', hasVariants = false } = Astro.
     /* Вставляем перед первым дочерним элементом — под overlay и текст */
     root.insertBefore(img, root.firstChild);
 
-    /* Если картинка уже в кеше preload — сработает сразу */
-    if (img.complete && img.naturalHeight > 0) fadeIn();
+    /* Если картинка уже в кеше preload — показываем сразу без fade (LCP-оптимизация E.65) */
+    if (img.complete && img.naturalHeight > 0) {
+      img.style.opacity = '1';
+    }
   }
 
   if (document.readyState !== 'loading') {

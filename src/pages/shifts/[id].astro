@@ -322,6 +322,23 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
   <ShiftBookModal />
 
 <script>
+  // Записываем просмотр смены — чтобы редирект на /r/ сработал при следующем визите
+  (function markViewed() {
+    try {
+      const id = window.location.pathname.replace(/^\/shifts\//, '').replace(/\/$/, '');
+      if (!id) return;
+      const KEY = 'ac:viewed_shifts';
+      const existing: Array<{id: string; ts: number}> = JSON.parse(localStorage.getItem(KEY) || '[]');
+      const found = existing.find((e) => e.id === id);
+      if (found) {
+        found.ts = Date.now(); // обновляем timestamp при повторном просмотре
+      } else {
+        existing.push({ id, ts: Date.now() });
+      }
+      localStorage.setItem(KEY, JSON.stringify(existing));
+    } catch {}
+  })();
+
   // Bind все кнопки [data-shift-book] на странице к ShiftBookModal
   function initBookButtons() {
     const modal = document.getElementById('shiftBookModal');

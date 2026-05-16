@@ -27,6 +27,11 @@ interface Props {
   heroPreloadMobileSrcset?: string;
   /** Responsive hero preload: десктоп ≥769px (рендерится ДО аналитики) */
   heroPreloadDesktop?: string;
+  /** Загружать tag.js Метрики немедленно (без задержки 8 сек / интеракции).
+   *  Используй для страниц с коротким визитом — /r/, /akciya/ и т.п. */
+  eagerMetrika?: boolean;
+  /** Запрет индексации страницы поисковиками (robots: noindex, nofollow) */
+  noindex?: boolean;
 }
 
 const {
@@ -39,6 +44,8 @@ const {
   heroPreloadMobile,
   heroPreloadMobileSrcset,
   heroPreloadDesktop,
+  eagerMetrika = false,
+  noindex = false,
 } = Astro.props;
 const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `https://aidacamp.ru${ogImage}`;
 const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
@@ -61,7 +68,7 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     }
     {heroPreloadDesktop && <link rel="preload" as="image" media="(min-width: 768px)" href={heroPreloadDesktop} type="image/avif" fetchpriority="high" />}
     <meta name="description" content={description} />
-    <meta name="robots" content="index, follow">
+    <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
     <!-- Mobile address bar / Android task switcher color (бренд orange) -->
     <meta name="theme-color" content="#ec9b44" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#0d1a2b" media="(prefers-color-scheme: dark)">
@@ -105,6 +112,8 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         window._clarityDisabled = true;
       }
     </script>
+    {/* eagerMetrika: устанавливает глобальный флаг ДО инлайн-скрипта Метрики */}
+    {eagerMetrika && <script is:inline>window.__ymEager=true;</script>}
     <!-- Yandex.Metrika — lazy load: ym() stub queues calls until tag.js is fetched -->
     <script type="text/javascript" is:inline>
       (function(m,i){
@@ -124,10 +133,15 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
           s.src='https://mc.yandex.ru/metrika/tag.js';
           document.head.appendChild(s);
         }
-        var t=setTimeout(loadYM,8000);
-        ['scroll','click','touchstart','keydown'].forEach(function(e){
-          document.addEventListener(e,function(){clearTimeout(t);loadYM();},{once:true,passive:true});
-        });
+        if(window.__ymEager){
+          // Страница с коротким визитом — tag.js грузится немедленно (см. eagerMetrika prop)
+          loadYM();
+        } else {
+          var t=setTimeout(loadYM,8000);
+          ['scroll','click','touchstart','keydown'].forEach(function(e){
+            document.addEventListener(e,function(){clearTimeout(t);loadYM();},{once:true,passive:true});
+          });
+        }
       })();
     </script>
     <noscript><div><img src="https://mc.yandex.ru/watch/96499295" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
