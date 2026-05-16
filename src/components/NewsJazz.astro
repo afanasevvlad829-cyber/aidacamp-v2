@@ -164,9 +164,17 @@
   /* ── Загрузка данных ── */
   function start() { tick(); setInterval(tick, 8000); }
 
-  fetch('/data/news-jazz.json')
-    .then(function(r) { return r.json(); })
-    .then(function(d) { news = d.items || []; start(); })
-    .catch(function()  { start(); });
+  /* ── Загрузка данных — отложена на 2с чтобы не конкурировать с LCP ── */
+  function loadData() {
+    fetch('/data/news-jazz.json')
+      .then(function(r) { return r.json(); })
+      .then(function(d) { news = d.items || []; start(); })
+      .catch(function()  { start(); });
+  }
+  if (document.readyState === 'complete') {
+    setTimeout(loadData, 2000);
+  } else {
+    window.addEventListener('load', function() { setTimeout(loadData, 2000); }, { once: true });
+  }
 })();
 </script>

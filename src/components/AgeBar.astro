@@ -360,6 +360,9 @@ const ageCountsJson = JSON.stringify({
   closeBtn?.addEventListener('click', hideBar);
   nudgeClose?.addEventListener('click', hideBar);
 
+  // Экспорт showBar для внешних триггеров (напр. sticky CTA)
+  (window as any)._acShowAgeBar = showBar;
+
   // Клик по фону Phase 1 (мимо кнопок) → Позже. Устраняет dead clicks на белой подложке.
   phase1?.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
@@ -431,4 +434,16 @@ const ageCountsJson = JSON.stringify({
   } else {
     setTimeout(_initAgeBar, 200);
   }
+
+  // agebar:open — внешний триггер (например, sticky CTA десктоп)
+  // showBar выставляется в window._acShowAgeBar изнутри _initAgeBar
+  document.addEventListener('agebar:open', () => {
+    if (typeof (window as any)._acShowAgeBar === 'function') {
+      (window as any)._acShowAgeBar();
+    } else {
+      // Фолбэк: скролл к форме
+      const form = document.querySelector<HTMLElement>('[data-form="booking_mobile"]');
+      form?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
 </script>

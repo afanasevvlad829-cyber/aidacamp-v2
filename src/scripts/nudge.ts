@@ -118,13 +118,13 @@ export function initNudges() {
     }, flow.value);
   }
 
-  // Exit intent (desktop only)
+  // Exit intent (desktop only) — открывает попап ExitIntentPopup, не тост
   const exitFlow = flows.find(f => f.trigger === 'exit' && !shown.has(f.id));
   if (exitFlow && window.matchMedia('(min-width: 1024px)').matches) {
     document.addEventListener('mouseout', (e: MouseEvent) => {
       if (e.clientY <= 0 && !getShown().has(exitFlow.id)) {
         markShown(exitFlow.id);
-        showNudge(exitFlow.message);
+        document.dispatchEvent(new CustomEvent('exit-intent:show'));
       }
     });
   }
