@@ -446,8 +446,32 @@ export const prerender = true;
     /* ── RESPONSIVE ── */
     @media (max-width: 768px) {
       .sidebar { display: none; }
-      .content { padding: 16px; }
+      .content { padding: 16px; padding-bottom: 80px; }
       .topbar-search { max-width: none; }
+    }
+
+    /* ── MOBILE BOTTOM NAV ── */
+    .mobile-nav {
+      display: none;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--surface); border-top: 1px solid var(--border);
+      padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+      z-index: 200;
+    }
+    .mobile-nav-inner {
+      display: flex; align-items: stretch; justify-content: space-around;
+    }
+    .mobile-nav-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 3px; padding: 4px 2px; background: none; border: none; cursor: pointer;
+      color: var(--text3); font-size: 10px; font-weight: 600;
+      transition: color .15s;
+    }
+    .mobile-nav-btn i { font-size: 20px; }
+    .mobile-nav-btn.active { color: var(--orange); }
+    .mobile-nav-btn:hover { color: var(--orange); }
+    @media (max-width: 768px) {
+      .mobile-nav { display: block; }
     }
 
     /* ── EMPTY STATE ── */
@@ -488,6 +512,126 @@ export const prerender = true;
     .ob-role-btn { padding: 14px 18px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 15px; font-weight: 600; color: var(--text); background: var(--bg); cursor: pointer; text-align: left; display: flex; align-items: center; gap: 12px; transition: .15s; }
     .ob-role-btn:hover { border-color: var(--orange); background: #fff8f0; }
     .ob-role-btn i { font-size: 22px; color: var(--orange); width: 28px; flex-shrink: 0; }
+
+/* ── SCHEDULE / ШАХМАТКА ── */
+.sched-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+.sched-tab {
+  padding:8px 16px; border-radius:8px; border:1px solid var(--border);
+  background:var(--surface); color:var(--text2); font-size:13px; font-weight:600;
+  cursor:pointer; transition:all .15s;
+}
+.sched-tab.active { background:var(--orange); color:#fff; border-color:var(--orange); }
+
+.sched-grid-wrap { overflow-x:auto; padding-bottom:8px; }
+.sched-grid {
+  display:grid;
+  gap:8px;
+  min-width:max-content;
+}
+.sched-day-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:12px 14px; cursor:pointer; min-width:160px; max-width:200px;
+  transition:box-shadow .15s, border-color .15s;
+}
+.sched-day-card:hover { border-color:var(--orange); box-shadow:0 2px 12px rgba(249,115,22,.12); }
+.sched-day-card.today { border-color:var(--orange); background:var(--orange-bg); }
+.sched-day-card.done { border-color:#16a34a; }
+.sched-day-num { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text3); margin-bottom:4px; }
+.sched-day-date { font-size:12px; color:var(--text3); margin-bottom:6px; }
+.sched-day-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:6px; line-height:1.3; }
+.sched-day-events { display:flex; flex-direction:column; gap:2px; }
+.sched-day-event { font-size:11px; color:var(--text3); line-height:1.35; }
+.sched-day-event.highlight { color:var(--orange); font-weight:600; }
+.sched-progress { height:3px; border-radius:2px; background:var(--border); margin-top:8px; overflow:hidden; }
+.sched-progress-fill { height:100%; background:var(--orange); border-radius:2px; transition:width .3s; }
+.sched-day-card.today .sched-day-num::after { content:' — СЕГОДНЯ'; color:var(--orange); }
+
+.sched-detail-header { display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+.sched-back-btn {
+  display:inline-flex; align-items:center; gap:6px; padding:8px 14px;
+  border:1px solid var(--border); border-radius:8px; background:var(--surface);
+  color:var(--text2); font-size:13px; font-weight:600; cursor:pointer; transition:all .15s;
+}
+.sched-back-btn:hover { border-color:var(--orange); color:var(--orange); }
+.sched-detail-title { font-size:18px; font-weight:700; color:var(--text); }
+
+/* Day schedule events block */
+.day-events-list { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
+.day-event-item { display:flex; align-items:baseline; gap:8px; font-size:14px; color:var(--text2); line-height:1.45; }
+.day-event-item.evening { color:var(--text); font-weight:600; }
+
+/* Role checklist sections */
+.role-checklists-wrap { display:flex; flex-direction:column; gap:0; }
+.role-cl-section { border:1px solid var(--border); border-radius:14px; padding:14px 16px; margin-bottom:10px; background:var(--surface); }
+.role-cl-section .checklist-section-title { margin:0 0 10px; color:var(--text); }
+
+.checklist-section-title {
+  display:flex; align-items:center; gap:8px;
+  font-size:14px; font-weight:700; color:var(--text); margin:16px 0 10px;
+}
+.checklist-badge {
+  margin-left:auto; background:var(--orange-bg); color:var(--orange);
+  border:1px solid var(--orange-border); border-radius:20px;
+  padding:2px 10px; font-size:12px; font-weight:700;
+}
+.checklist-hint { font-size:13px; color:var(--text3); margin-bottom:12px; line-height:1.5; }
+
+.checklist-item {
+  display:flex; align-items:flex-start; gap:10px;
+  padding:10px 12px; background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; margin-bottom:6px; cursor:pointer; transition:all .15s;
+}
+.checklist-item:hover { border-color:var(--orange); }
+.checklist-item.checked { background:var(--green-bg); border-color:#16a34a; }
+.checklist-item input[type=checkbox] { margin-top:2px; accent-color:var(--orange); width:16px; height:16px; flex-shrink:0; }
+.checklist-item-label { font-size:14px; color:var(--text); line-height:1.5; }
+.checklist-item.checked .checklist-item-label { text-decoration:line-through; color:var(--text3); }
+
+/* Room inspection toggle */
+.room-inspection-toggle {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 16px; background:var(--surface); border:1px solid var(--border);
+  border-radius:12px; cursor:pointer; font-size:14px; font-weight:600;
+  transition:border-color .15s;
+}
+.room-inspection-toggle:hover { border-color:var(--orange); }
+
+/* Room inspection */
+.room-block { background:var(--surface2); border:1px solid var(--border); border-radius:12px; margin-bottom:12px; overflow:hidden; }
+.room-block-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px; font-size:13px; font-weight:700; cursor:pointer;
+  background:var(--surface);
+}
+.room-block-header .room-num { color:var(--orange); margin-right:6px; }
+.room-block-body { padding:4px 14px 10px; }
+.room-block-progress { font-size:12px; color:var(--text3); }
+
+.defects-block { margin-top:16px; }
+.defects-label { display:block; font-size:13px; font-weight:600; color:var(--text2); margin-bottom:6px; }
+#defects-text {
+  width:100%; border:1px solid var(--border); border-radius:8px; padding:10px 12px;
+  font-size:13px; color:var(--text); background:var(--surface); resize:vertical; font-family:inherit;
+}
+.copy-defects-btn {
+  margin-top:8px; display:inline-flex; align-items:center; gap:6px;
+  padding:8px 14px; border:1px solid var(--border); border-radius:8px;
+  background:var(--surface); color:var(--text2); font-size:13px; font-weight:600;
+  cursor:pointer; transition:all .15s;
+}
+.copy-defects-btn:hover { border-color:var(--orange); color:var(--orange); }
+
+/* Photo tasks */
+.photo-item {
+  display:flex; align-items:flex-start; gap:10px;
+  padding:10px 12px; background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; margin-bottom:6px; cursor:pointer; transition:all .15s;
+}
+.photo-item:hover { border-color:#2563eb; }
+.photo-item.checked { background:rgba(37,99,235,0.06); border-color:#2563eb; }
+.photo-item input[type=checkbox] { margin-top:2px; accent-color:#2563eb; width:16px; height:16px; flex-shrink:0; }
+.photo-item-label { font-size:14px; color:var(--text); line-height:1.5; }
+.photo-item.checked .photo-item-label { text-decoration:line-through; color:var(--text3); }
 
   </style>
 </head>
@@ -573,6 +717,9 @@ export const prerender = true;
       </button>
       <button class="role-btn" data-role="quiz">
         <i class="bi bi-patch-question role-icon"></i> Тест
+      </button>
+      <button class="role-btn" data-role="schedule">
+        <i class="bi bi-calendar3 role-icon"></i> Расписание
       </button>
 
       <div class="sidebar-divider"></div>
@@ -698,11 +845,123 @@ export const prerender = true;
           </a>
         </div>
       </div>
+
+      <!-- Schedule view -->
+      <div id="schedule-view" style="display:none">
+        <div class="content-header">
+          <div>
+            <div class="content-title">Расписание смены</div>
+            <div class="content-subtitle">Шахматка · чеклисты · приёмка помещений</div>
+          </div>
+        </div>
+
+        <!-- Tab switcher -->
+        <div class="sched-tabs">
+          <button class="sched-tab active" data-shift="1">Смена 1 · 30 мая–8 июня (10 дн.)</button>
+          <button class="sched-tab" data-shift="2">Смена 2 · 10–23 июня (14 дн.)</button>
+        </div>
+
+        <!-- Шахматка — горизонтальный скролл -->
+        <div class="sched-grid-wrap">
+          <div class="sched-grid" id="sched-grid"></div>
+        </div>
+
+        <!-- Чеклист дня + приёмка (показывается при клике на день) -->
+        <div class="sched-detail" id="sched-detail" style="display:none">
+          <div class="sched-detail-header">
+            <button class="sched-back-btn" id="sched-back">
+              <i class="bi bi-arrow-left"></i> Назад к шахматке
+            </button>
+            <div class="sched-detail-title" id="sched-detail-title"></div>
+          </div>
+
+          <!-- Расписание дня -->
+          <div id="day-sched-section" style="display:none; margin-bottom:20px"></div>
+
+          <!-- Чеклисты по ролям -->
+          <div id="role-checklists-wrap">
+            <div class="role-cl-section">
+              <div class="checklist-section-title">
+                <i class="bi bi-person-fill" aria-hidden="true"></i> Вожатый
+                <span class="checklist-badge" id="cl-badge-counselor">0/0</span>
+              </div>
+              <div id="cl-body-counselor"></div>
+            </div>
+            <div class="role-cl-section">
+              <div class="checklist-section-title">
+                <i class="bi bi-laptop" aria-hidden="true"></i> Преподаватель
+                <span class="checklist-badge" id="cl-badge-teacher">0/0</span>
+              </div>
+              <div id="cl-body-teacher"></div>
+            </div>
+            <div class="role-cl-section">
+              <div class="checklist-section-title">
+                <i class="bi bi-clipboard-check" aria-hidden="true"></i> Руководитель смены
+                <span class="checklist-badge" id="cl-badge-director">0/0</span>
+              </div>
+              <div id="cl-body-director"></div>
+            </div>
+          </div>
+
+          <!-- Итоги дня для родителей -->
+          <div class="checklist-section-title" style="margin-top:24px">
+            <i class="bi bi-camera-video-fill" aria-hidden="true"></i> Итоги для родителей
+            <span class="checklist-badge" id="photo-badge">0/0</span>
+          </div>
+          <p class="checklist-hint">Фото и видео — в родительский чат; отчёт — краткий текст о дне.</p>
+          <div id="photo-checklist"></div>
+
+          <!-- День 1: приёмка помещений (показывается только для дня 1, свёрнута по умолчанию) -->
+          <div id="room-inspection" style="display:none; margin-top:24px">
+            <div class="room-inspection-toggle" id="room-inspection-toggle" onclick="toggleRoomInspection()">
+              <div style="display:flex;align-items:center;gap:8px">
+                <i class="bi bi-camera-fill" style="color:var(--orange)"></i>
+                <span>Приёмка помещений — День 1</span>
+                <span class="checklist-badge" id="room-badge">0/0</span>
+              </div>
+              <i class="bi bi-chevron-down" id="room-insp-chevron" style="color:var(--text3);transition:transform .2s"></i>
+            </div>
+            <div id="room-inspection-body" style="display:none">
+              <p class="checklist-hint" style="margin:8px 0 10px">После каждой комнаты — фото в рабочий чат. Неисправности — записать ниже.</p>
+              <div id="room-checklist"></div>
+              <div class="defects-block">
+                <label class="defects-label">Недостатки / замечания (для чата)</label>
+                <textarea id="defects-text" placeholder="Комната 101: не работает лампа в туалете. Комната 203: сломан карниз занавески..." rows="4"></textarea>
+                <button class="copy-defects-btn" id="copy-defects">
+                  <i class="bi bi-clipboard"></i> Скопировать для чата
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
+
+  <!-- Мобильная навигация (показывается только на мобилках) -->
+  <nav class="mobile-nav" id="mobile-nav">
+    <div class="mobile-nav-inner">
+      <button class="mobile-nav-btn active" id="mnav-schedule" onclick="mobileNav('schedule')">
+        <i class="bi bi-calendar3"></i>Расписание
+      </button>
+      <button class="mobile-nav-btn" id="mnav-counselor" onclick="mobileNav('counselor')">
+        <i class="bi bi-person-arms-up"></i>Вожатый
+      </button>
+      <button class="mobile-nav-btn" id="mnav-teacher" onclick="mobileNav('teacher')">
+        <i class="bi bi-laptop"></i>Преподаватель
+      </button>
+      <button class="mobile-nav-btn" id="mnav-director" onclick="mobileNav('director')">
+        <i class="bi bi-clipboard-check"></i>Рук.смены
+      </button>
+      <button class="mobile-nav-btn" id="mnav-docs" onclick="mobileNav('docs')">
+        <i class="bi bi-file-earmark-text"></i>Документы
+      </button>
+    </div>
+  </nav>
 </div>
 
-<script>
+<script is:inline>
   // ── DATA ──────────────────────────────────────────────────────────────────
   // Смена 1: 30 мая — 8 июня 2026 (10 дней)
   const SHIFT_DATES = [
@@ -1162,6 +1421,10 @@ export const prerender = true;
     showScreen('portal');
     renderDays(role);
     setActiveRole(role);
+    // Синхронизировать мобильную навигацию с ролью
+    document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+    const mBtn = document.getElementById('mnav-' + role);
+    if (mBtn) mBtn.classList.add('active');
   }
 
   function renderObRoleSelect() {
@@ -1510,6 +1773,16 @@ export const prerender = true;
     if (btn) btn.classList.add('active');
   }
 
+  function mobileNav(role) {
+    // Обновить активную кнопку мобильной навигации
+    document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+    const mBtn = document.getElementById('mnav-' + role);
+    if (mBtn) mBtn.classList.add('active');
+    // Эмулировать клик по sidebar-кнопке
+    const sideBtn = document.querySelector('[data-role="' + role + '"]');
+    if (sideBtn) sideBtn.click();
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     const authed = getCookie(COOKIE_NAME) === '1';
     const ob = JSON.parse(localStorage.getItem(OB_KEY) || '{}');
@@ -1531,7 +1804,14 @@ export const prerender = true;
       btn.addEventListener('click', () => {
         const role = btn.dataset.role;
         setActiveRole(role);
-        const views = ['days-view','docs-view','intro-view','quiz-view'];
+        // Синхронизировать мобильную навигацию
+        const mobileIds = ['counselor','teacher','director','docs','schedule'];
+        document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+        if (mobileIds.includes(role)) {
+          const mBtn = document.getElementById('mnav-' + role);
+          if (mBtn) mBtn.classList.add('active');
+        }
+        const views = ['days-view','docs-view','intro-view','quiz-view','schedule-view'];
         views.forEach(v => { document.getElementById(v).style.display = 'none'; });
         if (role === 'docs') {
           document.getElementById('docs-view').style.display = 'block';
@@ -1539,6 +1819,9 @@ export const prerender = true;
           renderIntroStandalone();
         } else if (role === 'quiz') {
           renderQuizStandalone();
+        } else if (role === 'schedule') {
+          document.getElementById('schedule-view').style.display = 'block';
+          initScheduleView();
         } else {
           renderDays(role);
         }
@@ -1643,5 +1926,527 @@ export const prerender = true;
       handleSearch(e.target.value);
     });
   });
+
+// ── SCHEDULE ──────────────────────────────────────────────────────────────
+
+const SCHEDULES = {
+  1: {
+    label: 'Смена 1',
+    startDate: new Date(2026, 4, 30), // 30 мая 2026
+    days: [
+      { num:1,  date:'пт, 30 мая',    title:'День заезда',         special:'arrival',
+        events:['до 12:00 — Заезд','12:30 — Обед','14:30 — Игры-знакомство','16:00 — Интервью','20:00 — Мои интересы'],
+        evening:'Вечернее мероприятие: мои интересы',
+      },
+      { num:2,  date:'сб, 31 мая',    title:'Программа стартует',
+        events:['08:00 — Подъём','09:30 — 1-й блок занятий','11:00 — Активные игры + знакомство','14:30 — Бассейн','16:00 — 2-й блок занятий'],
+        evening:'Огонёк знакомств',
+      },
+      { num:3,  date:'вс, 1 июня',    title:'Командный квест',
+        events:['09:30 — 1-й блок занятий','11:00 — Квест "моя команда"','14:30 — Бассейн','16:00 — 2-й блок занятий'],
+        evening:'Мой цвет настроения дня',
+      },
+      { num:4,  date:'пн, 2 июня',    title:'Фильм и спорт',
+        events:['09:30 — 1-й блок занятий','11:00 — Игры + короткометражка','14:30 — Бассейн','16:00 — 2-й блок занятий'],
+        evening:'Кинопоказ «Звезда АйДаКемп»',
+      },
+      { num:5,  date:'вт, 3 июня',    title:'Экватор смены',
+        events:['09:30 — 1-й блок занятий','11:00 — Активные игры','14:30 — Бассейн','16:00 — 2-й блок занятий'],
+        evening:'Огонёк-экватор',
+      },
+      { num:6,  date:'ср, 4 июня',    title:'Активный день',
+        events:['09:30 — 1-й блок занятий','11:00 — Активные игры','14:30 — Бассейн','16:00 — 2-й блок занятий'],
+        evening:'Я сегодня молодец, потому что…',
+      },
+      { num:7,  date:'чт, 5 июня',    title:'Фотокросс',
+        events:['09:30 — 1-й блок занятий','11:00 — Активные игры + фотокросс','14:30 — Бассейн','16:00 — 2-й блок занятий'],
+        evening:'Итоги фотокросса · мой день …/10',
+      },
+      { num:8,  date:'пт, 6 июня',    title:'Финишная прямая',
+        events:['09:30 — 1-й блок занятий','11:00 — Активные игры','14:30 — Бассейн','16:00 — 2-й блок занятий'],
+        evening:'Огонёк завершения смены',
+      },
+      { num:9,  date:'сб, 7 июня',    title:'Подготовка к защите',
+        events:['09:30 — 1-й блок занятий','11:00 — Подготовка к защите','18:00 — Сборка вещей'],
+        evening:'Вечер у костра',
+      },
+      { num:10, date:'вс, 8 июня',    title:'ДЕНЬ ОТЪЕЗДА',        special:'departure',
+        events:['09:30 — Сборка вещей + "нас здесь не было"','12:30 — Обед','13:00 — ОТЪЕЗД'],
+        evening:'',
+      },
+    ]
+  },
+  2: {
+    label: 'Смена 2',
+    startDate: new Date(2026, 5, 10), // 10 июня 2026
+    days: [
+      { num:1,  date:'ср, 10 июня',   title:'День заезда',         special:'arrival',
+        events:['до 12:00 — Заезд','12:30 — Обед','14:30 — Игры-знакомство','16:00 — Интервью','20:00 — Мои интересы'],
+        evening:'Вечернее мероприятие: мои интересы',
+      },
+      { num:2,  date:'чт, 11 июня',   title:'Программа стартует',
+        events:['09:30 — 1-й блок занятий','11:00 — Игры + знакомство','14:30 — Бассейн','16:00 — 2-й блок занятий'],
+        evening:'Я сегодня молодец, потому что…',
+      },
+      { num:3,  date:'пт, 12 июня',   title:'Квест на сплочение',
+        events:['09:30 — 1-й блок занятий','11:00 — Квест на сплочение','14:30 — Бассейн','16:00 — 2-й блок занятий'],
+        evening:'Огонёк знакомств',
+      },
+      { num:4,  date:'сб, 13 июня',   title:'Активный день',
+        events:['09:30 — 1-й блок занятий','11:00 — Активные игры','14:30 — Бассейн','16:00 — 2-й блок занятий'],
+        evening:'Мой цвет настроения дня',
+      },
+      { num:5,  date:'вс, 14 июня',   title:'АйДаЯрмарка',
+        events:['09:30 — 1-й блок занятий','11:00 — Активные игры','14:30 — Бассейн','16:00 — 2-й блок занятий','18:00 — Подготовка к ярмарке'],
+        evening:'АйДаЯрмарка',
+      },
+      { num:6,  date:'пн, 15 июня',   title:'Середина курса',
+        events:['09:30 — 1-й блок занятий','11:00 — Активные игры','14:30 — Бассейн','16:00 — 2-й блок занятий'],
+        evening:'Я сегодня молодец, потому что…',
+      },
+      { num:7,  date:'вт, 16 июня',   title:'Экватор смены',
+        events:['09:30 — 1-й блок занятий','11:00 — Активные игры','14:30 — Бассейн','16:00 — 2-й блок занятий'],
+        evening:'Огонёк-экватор',
+      },
+      { num:8,  date:'ср, 17 июня',   title:'Интенсив',
+        events:['09:30 — 1-й блок занятий','11:00 — Активные игры','14:30 — Бассейн','16:00 — 2-й блок занятий'],
+        evening:'Вечернее мероприятие',
+      },
+      { num:9,  date:'чт, 18 июня',   title:'Интеллектуальная игра',
+        events:['09:30 — 1-й блок занятий','11:00 — Активные игры','14:30 — Бассейн','16:00 — 2-й блок занятий'],
+        evening:'Интеллектуальная игра',
+      },
+      { num:10, date:'пт, 19 июня',   title:'Фотокросс',
+        events:['09:30 — 1-й блок занятий','11:00 — Активные игры + фотокросс','14:30 — Бассейн','16:00 — 2-й блок занятий'],
+        evening:'Итоги фотокросса · мой день …/10',
+      },
+      { num:11, date:'сб, 20 июня',   title:'Детектив по корпусу',
+        events:['09:30 — 1-й блок занятий','11:00 — Активные игры','14:30 — Бассейн','16:00 — 2-й блок занятий'],
+        evening:'Детективная игра по корпусу',
+      },
+      { num:12, date:'вс, 21 июня',   title:'Финишная прямая',
+        events:['09:30 — 1-й блок занятий','11:00 — Активные игры','14:30 — Бассейн','16:00 — 2-й блок занятий'],
+        evening:'Огонёк завершения смены',
+      },
+      { num:13, date:'пн, 22 июня',   title:'Защита проектов',
+        events:['09:30 — 1-й блок занятий','11:00 — Подготовка к защите','13:00 — Защита проектов','18:00 — Сборка вещей'],
+        evening:'Вечер у костра',
+      },
+      { num:14, date:'вт, 23 июня',   title:'ДЕНЬ ОТЪЕЗДА',        special:'departure',
+        events:['09:30 — Сборка вещей + "нас здесь не было"','12:30 — Обед','13:00 — ОТЪЕЗД'],
+        evening:'',
+      },
+    ]
+  }
+};
+
+const DAY_TASKS = {
+  arrival: [
+    'Инструктаж всего персонала до заезда детей',
+    'Встреча детей и родителей на входе — улыбаемся, помогаем',
+    'Контроль размещения по комнатам',
+    'ПРИЁМКА помещений: чеклист + фото каждой комнаты → рабочий чат',
+    'Встреча с медработником: кто болеет, какие лекарства',
+    'Первый инструктаж для детей: режим, правила, телефоны',
+    'Знакомство отряда — игры на имена',
+    'Обед, тихий час, распаковка',
+    'Интервью детей для распределения на занятия',
+    'Вечерняя программа: мои интересы',
+    'Собрать телефоны, организованный отбой',
+    'Вечерний сбор персонала: итоги дня',
+    'Общее фото отряда → отправить родителям',
+  ],
+  regular: [
+    'Подъём + зарядка (08:00–08:30)',
+    'Завтрак и контроль явки (08:30–09:00)',
+    'Уборка комнат (09:00–09:30)',
+    'Первый блок занятий (09:30–11:00)',
+    'Активные игры / спорт (11:00–12:30)',
+    'Обед (12:30–13:00)',
+    'Тихий час / настольные игры (13:00–14:30)',
+    'Бассейн — соблюдать безопасность (14:30–15:30)',
+    'Полдник (15:35)',
+    'Второй блок занятий (16:00–18:00)',
+    'Игры на свежем воздухе (18:00–19:30)',
+    'Ужин (19:30–20:00)',
+    'Вечернее мероприятие (20:00–21:00)',
+    'Время на телефоны (21:00–21:30)',
+    'Подготовка ко сну (21:30–22:00)',
+    'Отбой + обход комнат (22:00)',
+  ],
+  departure: [
+    'Ранний подъём — предупредить с вечера',
+    'Сборка вещей по комнатам (09:30–12:30)',
+    'Мероприятие "нас здесь не было"',
+    'Прощальный сбор отряда: слова благодарности каждому',
+    'Проверить каждую комнату — ничего не забыто',
+    'Быстрый обед (12:30–13:00)',
+    'Выдача детей родителям строго по спискам',
+    'ПРИЁМКА всех помещений после отъезда: чеклист + фото',
+    'Уборка корпуса',
+    'Финальный отчёт руководителю',
+  ],
+};
+
+const PHOTO_TASKS = {
+  arrival: [
+    'Фото встречи детей на входе',
+    'Групповое фото отряда в 1-й день',
+    'Видео-интро детей (30 сек): "меня зовут ____, я из ____"',
+    'Фото комнат (все убраны, готовы к заезду)',
+    'Фото первого обеда',
+  ],
+  regular: [
+    'Фото занятия (ребята за компьютерами)',
+    'Фото активных игр на улице',
+    'Фото бассейна (без крупных планов)',
+    'Видео вечернего мероприятия (30–60 сек)',
+  ],
+  departure: [
+    'Фото финальной демонстрации проектов',
+    'Фото вручения грамот/сертификатов',
+    'Видео прощального сбора',
+    'Фото "до свидания" — ребята с вожатыми',
+  ],
+};
+
+const ROOM_CHECKLIST_ITEMS = [
+  'Свет: все лампочки горят',
+  'Туалет: смыв работает',
+  'Душ: есть горячая вода',
+  'Душ: есть холодная вода',
+  'Раковина: вода течёт, нет течи',
+  'Кровати: поднять матрасы — каркасы целы',
+  'Матрасы: нет дыр, пятен, запаха',
+  'Подушки и одеяла: есть, чистые',
+  'Занавески: висят, карниз цел',
+  'Окна: открываются и закрываются',
+  'Замок/ручка двери: работает',
+  'Пол: чистый, нет битого стекла',
+  'Стены: нет дыр, трещин',
+];
+
+const ROOMS = ['101', '102', '103', '104', '105', '106', '107', '108', '109', '110', '201', '202', '203', '204', '205', '206', '207', '208'];
+
+let currentShift = 1;
+let currentDay = null;
+
+function getCheckKey(shiftNum, dayNum, type, idx) {
+  return 'sched_s' + shiftNum + '_d' + dayNum + '_' + type + '_' + idx;
+}
+function isChecked(key) { return localStorage.getItem(key) === '1'; }
+function setChecked(key, val) { localStorage.setItem(key, val ? '1' : '0'); }
+
+function getTodayDayNum(shiftNum) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const shift = SCHEDULES[shiftNum];
+  const diffMs = today - shift.startDate;
+  const diffDays = Math.floor(diffMs / 86400000) + 1;
+  if (diffDays >= 1 && diffDays <= shift.days.length) return diffDays;
+  return null;
+}
+
+function getDayProgress(shiftNum, dayNum, dayData) {
+  const type = dayData.special || 'regular';
+  const tasks = DAY_TASKS[type] || DAY_TASKS.regular;
+  const total = tasks.length;
+  let done = 0;
+  tasks.forEach(function(_, i) { if (isChecked(getCheckKey(shiftNum, dayNum, 'task', i))) done++; });
+  return { done: done, total: total };
+}
+
+function renderSchedGrid() {
+  const shift = SCHEDULES[currentShift];
+  const todayNum = getTodayDayNum(currentShift);
+  const grid = document.getElementById('sched-grid');
+  const cols = Math.min(5, shift.days.length);
+  grid.style.gridTemplateColumns = 'repeat(' + cols + ', 160px)';
+
+  grid.innerHTML = shift.days.map(function(day) {
+    const isToday = day.num === todayNum;
+    const prog = getDayProgress(currentShift, day.num, day);
+    const isDone = prog.done === prog.total && prog.total > 0;
+    const pct = prog.total ? Math.round(prog.done / prog.total * 100) : 0;
+    const isSpecial = day.special === 'arrival' || day.special === 'departure';
+    return '<div class="sched-day-card ' + (isToday ? 'today' : '') + ' ' + (isDone ? 'done' : '') + '"' +
+      ' data-day="' + day.num + '" onclick="openDayDetail(' + day.num + ')">' +
+      '<div class="sched-day-num">День ' + day.num + '</div>' +
+      '<div class="sched-day-date">' + day.date + '</div>' +
+      '<div class="sched-day-title">' + (isSpecial ? '<i class="bi bi-lightning-charge" aria-hidden="true"></i> ' : '') + day.title + '</div>' +
+      '<div class="sched-day-events">' +
+        day.events.slice(0, 3).map(function(e) {
+          return '<div class="sched-day-event ' + (e.includes('Заезд') || e.includes('ОТЪЕЗД') ? 'highlight' : '') + '">' + e + '</div>';
+        }).join('') +
+        (day.events.length > 3 ? '<div class="sched-day-event">+' + (day.events.length - 3) + ' ещё</div>' : '') +
+      '</div>' +
+      (day.evening ? '<div class="sched-day-event highlight" style="margin-top:4px"><i class="bi bi-fire" aria-hidden="true"></i> ' + day.evening + '</div>' : '') +
+      '<div class="sched-progress"><div class="sched-progress-fill" style="width:' + pct + '%"></div></div>' +
+      '</div>';
+  }).join('');
+}
+
+function openDayDetail(dayNum) {
+  currentDay = dayNum;
+  const shift = SCHEDULES[currentShift];
+  const day = shift.days.find(function(d) { return d.num === dayNum; });
+  if (!day) return;
+
+  document.getElementById('sched-grid').closest('.sched-grid-wrap').style.display = 'none';
+  document.querySelector('.sched-tabs').style.display = 'none';
+  const detail = document.getElementById('sched-detail');
+  detail.style.display = 'block';
+  document.getElementById('sched-detail-title').textContent = 'День ' + day.num + ' · ' + day.date + ' · ' + day.title;
+  // Прокрутить контентную область к верху при открытии дня
+  var mainEl = document.querySelector('main') || detail;
+  mainEl.scrollTop = 0;
+  window.scrollTo(0, 0);
+
+  // 1. Расписание дня
+  renderDayScheduleBlock(day);
+
+  // 2. Приёмка помещений (только день 1, свёрнута по умолчанию)
+  const roomInsp = document.getElementById('room-inspection');
+  roomInsp.style.display = day.num === 1 ? 'block' : 'none';
+  if (day.num === 1) {
+    // Сбросить состояние аккордеона — всегда закрыт при открытии дня
+    var roomBody = document.getElementById('room-inspection-body');
+    var chevron = document.getElementById('room-insp-chevron');
+    if (roomBody) roomBody.style.display = 'none';
+    if (chevron) chevron.style.transform = '';
+    renderRoomInspection();
+  }
+
+  // 3. Чеклисты по ролям — Вожатый / Преподаватель / Руководитель
+  ['counselor', 'teacher', 'director'].forEach(function(role) {
+    var roleDay = getRoleDayData(role, dayNum);
+    renderRoleChecklist(role, roleDay, currentShift, dayNum);
+  });
+
+  // 4. Итоги для родителей — динамически из событий дня
+  var parentTasks = buildParentReport(day);
+  renderChecklist('photo-checklist', 'photo-badge', parentTasks, currentShift, dayNum, 'photo', 'photo-item');
+
+  const saved = localStorage.getItem('defects_s' + currentShift);
+  const defEl = document.getElementById('defects-text');
+  if (saved && defEl) defEl.value = saved;
+}
+
+function renderDayScheduleBlock(day) {
+  var el = document.getElementById('day-sched-section');
+  if (!el) return;
+  var events = day.events || [];
+  if (!events.length && !day.evening) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  var html = '<div class="checklist-section-title" style="margin-top:0;margin-bottom:10px">' +
+    '<i class="bi bi-calendar3" aria-hidden="true"></i> Расписание дня</div>' +
+    '<div class="day-events-list">';
+  events.forEach(function(e) {
+    html += '<div class="day-event-item"><i class="bi bi-clock" style="font-size:12px;color:var(--orange)" aria-hidden="true"></i><span>' + e + '</span></div>';
+  });
+  if (day.evening) {
+    html += '<div class="day-event-item evening"><i class="bi bi-moon-stars" style="font-size:12px;color:var(--orange)" aria-hidden="true"></i><span>Вечер: ' + day.evening + '</span></div>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function getRoleDayData(role, dayNum) {
+  var roleData = ROLES[role];
+  if (!roleData) return null;
+  var days = roleData.days;
+  if (days[dayNum]) return days[dayNum];
+  // Смена 2 — дни 11-13: берём похожий день из 10-дневного шаблона
+  if (dayNum >= 11 && dayNum <= 13) return days[Math.min(dayNum - 3, 9)] || days[9] || null;
+  if (dayNum >= 14) return days[10] || null; // день отъезда
+  return null;
+}
+
+function renderRoleChecklist(role, roleDay, shiftNum, dayNum) {
+  var bodyEl = document.getElementById('cl-body-' + role);
+  var badgeEl = document.getElementById('cl-badge-' + role);
+  if (!bodyEl) return;
+  var tasks = (roleDay && roleDay.tasks) ? roleDay.tasks : [];
+  if (!tasks.length) {
+    bodyEl.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:6px 0">Данные не заполнены</div>';
+    if (badgeEl) badgeEl.textContent = '—';
+    return;
+  }
+  var done = 0;
+  bodyEl.innerHTML = tasks.map(function(task, i) {
+    var key = getCheckKey(shiftNum, dayNum, 'role_' + role, i);
+    var checked = isChecked(key);
+    if (checked) done++;
+    var isWarn = task.startsWith('ВАЖНО:') || task.startsWith('ПРИЁМКА');
+    return '<label class="checklist-item ' + (checked ? 'checked' : '') + (isWarn ? ' warning' : '') + '" data-key="' + key + '">' +
+      '<input type="checkbox" ' + (checked ? 'checked' : '') + ' onchange="toggleRoleCheck(this,\'' + key + '\',\'' + role + '\')">' +
+      '<span class="checklist-item-label">' + task + '</span>' +
+      '</label>';
+  }).join('');
+  if (badgeEl) badgeEl.textContent = done + '/' + tasks.length;
+}
+
+function toggleRoleCheck(cb, key, role) {
+  setChecked(key, cb.checked);
+  cb.closest('label').classList.toggle('checked', cb.checked);
+  var body = document.getElementById('cl-body-' + role);
+  var total = body.querySelectorAll('input[type=checkbox]').length;
+  var done = body.querySelectorAll('input[type=checkbox]:checked').length;
+  var badge = document.getElementById('cl-badge-' + role);
+  if (badge) badge.textContent = done + '/' + total;
+  renderSchedGrid();
+}
+
+function buildParentReport(day) {
+  var type = day.special || 'regular';
+  var base = (PHOTO_TASKS[type] || PHOTO_TASKS.regular).slice();
+  var extras = [];
+  var seen = {};
+  function addExtra(t) { if (!seen[t]) { seen[t] = 1; extras.push(t); } }
+
+  (day.events || []).forEach(function(e) {
+    var el = e.toLowerCase();
+    if (el.indexOf('бассейн') >= 0) addExtra('Фото/видео бассейна → родительский чат');
+    if (el.indexOf('футбол') >= 0 || el.indexOf('спорт') >= 0 || el.indexOf('игры') >= 0) addExtra('Фото активных игр/спорта → родительский чат');
+    if (el.indexOf('хакатон') >= 0 || el.indexOf('защита') >= 0) addExtra('🎬 Видео защиты проектов — приоритет!');
+    if (el.indexOf('квест') >= 0) addExtra('Фото квеста → родительский чат');
+    if (el.indexOf('ярмарка') >= 0) addExtra('Фото АйДаЯрмарки → родительский чат');
+    if (el.indexOf('занятий') >= 0 || el.indexOf('блок') >= 0) addExtra('Фото занятия (дети за компьютерами) → родительский чат');
+  });
+  if (day.evening) {
+    var ev = day.evening.toLowerCase();
+    if (ev.indexOf('огонёк') >= 0) addExtra('Фото/видео огонька → родительский чат');
+    if (ev.indexOf('дискотека') >= 0) addExtra('Видео дискотеки → родительский чат');
+    if (ev.indexOf('костёр') >= 0) addExtra('Видео вечера у костра → родительский чат');
+    if (ev.indexOf('ярмарка') >= 0) addExtra('Фото/видео АйДаЯрмарки → родительский чат');
+    if (ev.indexOf('концерт') >= 0) addExtra('Видео концерта → родительский чат');
+    if (ev.indexOf('детектив') >= 0 || ev.indexOf('игра') >= 0) addExtra('Фото вечерней игры → родительский чат');
+  }
+
+  // Стандартные итоговые задачи
+  base = base.concat(extras);
+  base.push('Написать краткий текст о дне в родительский чат (2–4 предложения)');
+  base.push('Ответить на вопросы родителей (не позднее 22:00)');
+  return base;
+}
+
+function renderChecklist(containerId, badgeId, items, shiftNum, dayNum, type, cls) {
+  const container = document.getElementById(containerId);
+  let done = 0;
+  container.innerHTML = items.map(function(item, i) {
+    const key = getCheckKey(shiftNum, dayNum, type, i);
+    const checked = isChecked(key);
+    if (checked) done++;
+    return '<label class="' + cls + ' ' + (checked ? 'checked' : '') + '" data-key="' + key + '">' +
+      '<input type="checkbox" ' + (checked ? 'checked' : '') + ' onchange="toggleCheck(this,\'' + key + '\',\'' + cls + '\')">' +
+      '<span class="' + cls + '-label">' + item + '</span>' +
+      '</label>';
+  }).join('');
+  document.getElementById(badgeId).textContent = done + '/' + items.length;
+}
+
+function toggleCheck(cb, key, cls) {
+  setChecked(key, cb.checked);
+  const label = cb.closest('label');
+  label.classList.toggle('checked', cb.checked);
+  const container = label.parentElement;
+  const total = container.querySelectorAll('input[type=checkbox]').length;
+  const done = container.querySelectorAll('input[type=checkbox]:checked').length;
+  const titleEl = container.previousElementSibling;
+  if (titleEl) {
+    const badge = titleEl.querySelector('.checklist-badge');
+    if (badge) badge.textContent = done + '/' + total;
+  }
+  renderSchedGrid();
+}
+
+function renderRoomInspection() {
+  const container = document.getElementById('room-checklist');
+  let totalDone = 0, totalAll = 0;
+  container.innerHTML = ROOMS.map(function(roomId) {
+    const items = ROOM_CHECKLIST_ITEMS;
+    let roomDone = 0;
+    const itemsHtml = items.map(function(item, i) {
+      const key = getCheckKey(currentShift, 1, 'room_' + roomId, i);
+      const checked = isChecked(key);
+      if (checked) { roomDone++; totalDone++; }
+      totalAll++;
+      return '<label class="checklist-item ' + (checked ? 'checked' : '') + '" data-key="' + key + '">' +
+        '<input type="checkbox" ' + (checked ? 'checked' : '') + ' onchange="toggleRoomCheck(this,\'' + key + '\',\'' + roomId + '\')">' +
+        '<span class="checklist-item-label">' + item + '</span>' +
+        '</label>';
+    }).join('');
+    const statusIcon = roomDone === items.length ? '<i class="bi bi-check-circle-fill" style="color:#16a34a" aria-hidden="true"></i>' :
+      roomDone > 0 ? '<i class="bi bi-arrow-repeat" aria-hidden="true"></i>' : '<i class="bi bi-square" aria-hidden="true"></i>';
+    return '<div class="room-block" id="room-block-' + roomId + '">' +
+      '<div class="room-block-header" onclick="toggleRoom(\'' + roomId + '\')">' +
+        '<span><span class="room-num">Комн. ' + roomId + '</span>' + statusIcon + '</span>' +
+        '<span class="room-block-progress">' + roomDone + '/' + items.length + '</span>' +
+      '</div>' +
+      '<div class="room-block-body" id="room-body-' + roomId + '" style="display:none">' + itemsHtml + '</div>' +
+      '</div>';
+  }).join('');
+  document.getElementById('room-badge').textContent = totalDone + '/' + totalAll;
+}
+
+function toggleRoom(roomId) {
+  const body = document.getElementById('room-body-' + roomId);
+  body.style.display = body.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleRoomCheck(cb, key, roomId) {
+  setChecked(key, cb.checked);
+  cb.closest('label').classList.toggle('checked', cb.checked);
+  const block = document.getElementById('room-block-' + roomId);
+  const total = block.querySelectorAll('input[type=checkbox]').length;
+  const done = block.querySelectorAll('input[type=checkbox]:checked').length;
+  block.querySelector('.room-block-progress').textContent = done + '/' + total;
+  const allInputs = document.querySelectorAll('#room-checklist input[type=checkbox]');
+  const allDone = Array.from(allInputs).filter(function(i) { return i.checked; }).length;
+  document.getElementById('room-badge').textContent = allDone + '/' + allInputs.length;
+}
+
+function toggleRoomInspection() {
+  var body = document.getElementById('room-inspection-body');
+  var chevron = document.getElementById('room-insp-chevron');
+  var open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (chevron) chevron.style.transform = open ? '' : 'rotate(180deg)';
+}
+
+document.querySelectorAll('.sched-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.sched-tab').forEach(function(t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    currentShift = parseInt(tab.dataset.shift);
+    renderSchedGrid();
+  });
+});
+
+document.getElementById('sched-back').addEventListener('click', function() {
+  document.getElementById('sched-detail').style.display = 'none';
+  document.getElementById('sched-grid').closest('.sched-grid-wrap').style.display = 'block';
+  document.querySelector('.sched-tabs').style.display = 'flex';
+  currentDay = null;
+  renderSchedGrid();
+});
+
+document.getElementById('copy-defects').addEventListener('click', function() {
+  const text = document.getElementById('defects-text').value;
+  if (!text.trim()) { alert('Нет замечаний для копирования'); return; }
+  navigator.clipboard.writeText(text).then(function() {
+    const btn = document.getElementById('copy-defects');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check-lg"></i> Скопировано!';
+    setTimeout(function() { btn.innerHTML = orig; }, 2000);
+  });
+});
+
+document.getElementById('defects-text').addEventListener('input', function() {
+  localStorage.setItem('defects_s' + currentShift, this.value);
+});
+
+function initScheduleView() {
+  renderSchedGrid();
+}
 </script>
 </html>

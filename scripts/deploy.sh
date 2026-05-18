@@ -103,7 +103,9 @@ cd "$PROJECT_DIR"
 # ── 0. Сборка ─────────────────────────────────────────────────
 echo ""
 echo "🔨 Сборка..."
-npm run build --silent
+# DEPLOY_ENV=dev → assetsPrefix отключён, JS/CSS грузятся с того же хоста
+# DEPLOY_ENV=prod → assetsPrefix=https://huhodirekeka.begetcdn.cloud (CDN)
+DEPLOY_ENV="$TARGET" npm run build --silent
 
 if [ ! -f "dist/client/index.html" ]; then
   echo "❌ dist/client/index.html не найден. Сборка не удалась."
