@@ -531,6 +531,16 @@ export const prerender = true;
 .sched-back-btn:hover { border-color:var(--orange); color:var(--orange); }
 .sched-detail-title { font-size:18px; font-weight:700; color:var(--text); }
 
+/* Day schedule events block */
+.day-events-list { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
+.day-event-item { display:flex; align-items:baseline; gap:8px; font-size:14px; color:var(--text2); line-height:1.45; }
+.day-event-item.evening { color:var(--text); font-weight:600; }
+
+/* Role checklist sections */
+.role-checklists-wrap { display:flex; flex-direction:column; gap:0; }
+.role-cl-section { border:1px solid var(--border); border-radius:14px; padding:14px 16px; margin-bottom:10px; background:var(--surface); }
+.role-cl-section .checklist-section-title { margin:0 0 10px; color:var(--text); }
+
 .checklist-section-title {
   display:flex; align-items:center; gap:8px;
   font-size:14px; font-weight:700; color:var(--text); margin:16px 0 10px;
@@ -849,18 +859,40 @@ export const prerender = true;
             </div>
           </div>
 
-          <!-- Задачи дня -->
-          <div class="checklist-section-title">
-            <i class="bi bi-check2-circle"></i> Задачи дня
-            <span class="checklist-badge" id="day-tasks-badge">0/0</span>
-          </div>
-          <div id="day-tasks-checklist"></div>
+          <!-- Расписание дня -->
+          <div id="day-sched-section" style="display:none; margin-bottom:20px"></div>
 
-          <!-- Фото/видео для родительского чата -->
-          <div class="checklist-section-title" style="margin-top:20px">
-            <i class="bi bi-camera-video-fill"></i> Фото/видео для родительского чата
+          <!-- Чеклисты по ролям -->
+          <div id="role-checklists-wrap">
+            <div class="role-cl-section">
+              <div class="checklist-section-title">
+                <i class="bi bi-person-fill" aria-hidden="true"></i> Вожатый
+                <span class="checklist-badge" id="cl-badge-counselor">0/0</span>
+              </div>
+              <div id="cl-body-counselor"></div>
+            </div>
+            <div class="role-cl-section">
+              <div class="checklist-section-title">
+                <i class="bi bi-laptop" aria-hidden="true"></i> Преподаватель
+                <span class="checklist-badge" id="cl-badge-teacher">0/0</span>
+              </div>
+              <div id="cl-body-teacher"></div>
+            </div>
+            <div class="role-cl-section">
+              <div class="checklist-section-title">
+                <i class="bi bi-clipboard-check" aria-hidden="true"></i> Руководитель смены
+                <span class="checklist-badge" id="cl-badge-director">0/0</span>
+              </div>
+              <div id="cl-body-director"></div>
+            </div>
+          </div>
+
+          <!-- Итоги дня для родителей -->
+          <div class="checklist-section-title" style="margin-top:24px">
+            <i class="bi bi-camera-video-fill" aria-hidden="true"></i> Итоги для родителей
             <span class="checklist-badge" id="photo-badge">0/0</span>
           </div>
+          <p class="checklist-hint">Фото и видео — в родительский чат; отчёт — краткий текст о дне.</p>
           <div id="photo-checklist"></div>
         </div>
       </div>
@@ -2084,20 +2116,125 @@ function openDayDetail(dayNum) {
   detail.style.display = 'block';
   document.getElementById('sched-detail-title').textContent = 'День ' + day.num + ' · ' + day.date + ' · ' + day.title;
 
+  // 1. Расписание дня
+  renderDayScheduleBlock(day);
+
+  // 2. Приёмка помещений (только день 1)
   const roomInsp = document.getElementById('room-inspection');
   roomInsp.style.display = day.num === 1 ? 'block' : 'none';
   if (day.num === 1) renderRoomInspection();
 
-  const type = day.special || 'regular';
-  const tasks = DAY_TASKS[type] || DAY_TASKS.regular;
-  renderChecklist('day-tasks-checklist', 'day-tasks-badge', tasks, currentShift, dayNum, 'task', 'checklist-item');
+  // 3. Чеклисты по ролям — Вожатый / Преподаватель / Руководитель
+  ['counselor', 'teacher', 'director'].forEach(function(role) {
+    var roleDay = getRoleDayData(role, dayNum);
+    renderRoleChecklist(role, roleDay, currentShift, dayNum);
+  });
 
-  const photoTasks = PHOTO_TASKS[type] || PHOTO_TASKS.regular;
-  renderChecklist('photo-checklist', 'photo-badge', photoTasks, currentShift, dayNum, 'photo', 'photo-item');
+  // 4. Итоги для родителей — динамически из событий дня
+  var parentTasks = buildParentReport(day);
+  renderChecklist('photo-checklist', 'photo-badge', parentTasks, currentShift, dayNum, 'photo', 'photo-item');
 
   const saved = localStorage.getItem('defects_s' + currentShift);
   const defEl = document.getElementById('defects-text');
   if (saved && defEl) defEl.value = saved;
+}
+
+function renderDayScheduleBlock(day) {
+  var el = document.getElementById('day-sched-section');
+  if (!el) return;
+  var events = day.events || [];
+  if (!events.length && !day.evening) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  var html = '<div class="checklist-section-title" style="margin-top:0;margin-bottom:10px">' +
+    '<i class="bi bi-calendar3" aria-hidden="true"></i> Расписание дня</div>' +
+    '<div class="day-events-list">';
+  events.forEach(function(e) {
+    html += '<div class="day-event-item"><i class="bi bi-clock" style="font-size:12px;color:var(--orange)" aria-hidden="true"></i><span>' + e + '</span></div>';
+  });
+  if (day.evening) {
+    html += '<div class="day-event-item evening"><i class="bi bi-moon-stars" style="font-size:12px;color:var(--orange)" aria-hidden="true"></i><span>Вечер: ' + day.evening + '</span></div>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function getRoleDayData(role, dayNum) {
+  var roleData = ROLES[role];
+  if (!roleData) return null;
+  var days = roleData.days;
+  if (days[dayNum]) return days[dayNum];
+  // Смена 2 — дни 11-13: берём похожий день из 10-дневного шаблона
+  if (dayNum >= 11 && dayNum <= 13) return days[Math.min(dayNum - 3, 9)] || days[9] || null;
+  if (dayNum >= 14) return days[10] || null; // день отъезда
+  return null;
+}
+
+function renderRoleChecklist(role, roleDay, shiftNum, dayNum) {
+  var bodyEl = document.getElementById('cl-body-' + role);
+  var badgeEl = document.getElementById('cl-badge-' + role);
+  if (!bodyEl) return;
+  var tasks = (roleDay && roleDay.tasks) ? roleDay.tasks : [];
+  if (!tasks.length) {
+    bodyEl.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:6px 0">Данные не заполнены</div>';
+    if (badgeEl) badgeEl.textContent = '—';
+    return;
+  }
+  var done = 0;
+  bodyEl.innerHTML = tasks.map(function(task, i) {
+    var key = getCheckKey(shiftNum, dayNum, 'role_' + role, i);
+    var checked = isChecked(key);
+    if (checked) done++;
+    var isWarn = task.startsWith('ВАЖНО:') || task.startsWith('ПРИЁМКА');
+    return '<label class="checklist-item ' + (checked ? 'checked' : '') + (isWarn ? ' warning' : '') + '" data-key="' + key + '">' +
+      '<input type="checkbox" ' + (checked ? 'checked' : '') + ' onchange="toggleRoleCheck(this,\'' + key + '\',\'' + role + '\')">' +
+      '<span class="checklist-item-label">' + task + '</span>' +
+      '</label>';
+  }).join('');
+  if (badgeEl) badgeEl.textContent = done + '/' + tasks.length;
+}
+
+function toggleRoleCheck(cb, key, role) {
+  setChecked(key, cb.checked);
+  cb.closest('label').classList.toggle('checked', cb.checked);
+  var body = document.getElementById('cl-body-' + role);
+  var total = body.querySelectorAll('input[type=checkbox]').length;
+  var done = body.querySelectorAll('input[type=checkbox]:checked').length;
+  var badge = document.getElementById('cl-badge-' + role);
+  if (badge) badge.textContent = done + '/' + total;
+  renderSchedGrid();
+}
+
+function buildParentReport(day) {
+  var type = day.special || 'regular';
+  var base = (PHOTO_TASKS[type] || PHOTO_TASKS.regular).slice();
+  var extras = [];
+  var seen = {};
+  function addExtra(t) { if (!seen[t]) { seen[t] = 1; extras.push(t); } }
+
+  (day.events || []).forEach(function(e) {
+    var el = e.toLowerCase();
+    if (el.indexOf('бассейн') >= 0) addExtra('Фото/видео бассейна → родительский чат');
+    if (el.indexOf('футбол') >= 0 || el.indexOf('спорт') >= 0 || el.indexOf('игры') >= 0) addExtra('Фото активных игр/спорта → родительский чат');
+    if (el.indexOf('хакатон') >= 0 || el.indexOf('защита') >= 0) addExtra('🎬 Видео защиты проектов — приоритет!');
+    if (el.indexOf('квест') >= 0) addExtra('Фото квеста → родительский чат');
+    if (el.indexOf('ярмарка') >= 0) addExtra('Фото АйДаЯрмарки → родительский чат');
+    if (el.indexOf('занятий') >= 0 || el.indexOf('блок') >= 0) addExtra('Фото занятия (дети за компьютерами) → родительский чат');
+  });
+  if (day.evening) {
+    var ev = day.evening.toLowerCase();
+    if (ev.indexOf('огонёк') >= 0) addExtra('Фото/видео огонька → родительский чат');
+    if (ev.indexOf('дискотека') >= 0) addExtra('Видео дискотеки → родительский чат');
+    if (ev.indexOf('костёр') >= 0) addExtra('Видео вечера у костра → родительский чат');
+    if (ev.indexOf('ярмарка') >= 0) addExtra('Фото/видео АйДаЯрмарки → родительский чат');
+    if (ev.indexOf('концерт') >= 0) addExtra('Видео концерта → родительский чат');
+    if (ev.indexOf('детектив') >= 0 || ev.indexOf('игра') >= 0) addExtra('Фото вечерней игры → родительский чат');
+  }
+
+  // Стандартные итоговые задачи
+  base = base.concat(extras);
+  base.push('Написать краткий текст о дне в родительский чат (2–4 предложения)');
+  base.push('Ответить на вопросы родителей (не позднее 22:00)');
+  return base;
 }
 
 function renderChecklist(containerId, badgeId, items, shiftNum, dayNum, type, cls) {
