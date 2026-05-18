@@ -496,6 +496,7 @@ curl -X POST https://dev.aidacamp.ru/api/photo \
 - **Человек (интерактивно):** `mosh root@159.194.223.55` — стандарт вместо SSH, устойчив к обрывам
 - **Агент (команды):** `mcp__aidacamp-tools__ssh` или `ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "команда"`
 - **UDP 60000-61000** открыт в UFW для mosh
+- **fail2ban ignoreip:** `37.113.209.255` (Mac) — агенты никогда не будут забанены
 
 ## Deploy
 See memory for full deploy commands. Short version:
