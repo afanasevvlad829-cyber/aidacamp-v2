@@ -62,10 +62,26 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
   heroPreloadDesktop="/images/hero-desktop.avif"
 >
   {shift.id === 'shift-1' && (
-    <div class="bg-primary text-white text-center py-2 px-4 text-[14px] font-semibold sticky top-0 z-[60]">
-      <i class="bi bi-lightning-charge text-[14px]" aria-hidden="true"></i>
-      {' '}Осталось {shift.free} {shift.free === 1 ? 'место' : shift.free < 5 ? 'места' : 'мест'} · Старт 30 мая ·{' '}
-      <a href="#booking" class="underline underline-offset-2 hover:text-white/90 transition-colors">Забронировать →</a>
+    <div
+      id="shift-top-bar"
+      class="bg-primary text-white px-4 text-[14px] font-semibold sticky top-0 z-[60]"
+      style="padding-top: calc(env(safe-area-inset-top, 0px) + 8px); padding-bottom: 8px;"
+    >
+      <div class="mx-auto flex max-w-4xl items-center justify-between gap-2">
+        <div class="flex min-w-0 flex-1 items-center justify-center gap-1.5 flex-wrap">
+          <i class="bi bi-lightning-charge text-[14px] shrink-0" aria-hidden="true"></i>
+          <span>Осталось {shift.free} {shift.free === 1 ? 'место' : shift.free < 5 ? 'места' : 'мест'} · Старт 30 мая ·</span>
+          <a href="#booking" class="underline underline-offset-2 hover:text-white/90 transition-colors whitespace-nowrap">Забронировать →</a>
+        </div>
+        <button
+          id="shift-top-bar-close"
+          type="button"
+          class="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full text-white/70 hover:text-white hover:bg-white/20 transition-colors"
+          aria-label="Закрыть"
+        >
+          <i class="bi bi-x-lg text-[13px]" aria-hidden="true"></i>
+        </button>
+      </div>
     </div>
   )}
   <Header />
@@ -372,5 +388,14 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
   }
   document.addEventListener('astro:page-load', initBookButtons);
   initBookButtons();
+
+  // Top bar close button
+  var closeBtn = document.getElementById('shift-top-bar-close');
+  var topBar = document.getElementById('shift-top-bar');
+  if (closeBtn && topBar) {
+    closeBtn.addEventListener('click', function() {
+      topBar.style.display = 'none';
+    });
+  }
 </script>
 </Base>
