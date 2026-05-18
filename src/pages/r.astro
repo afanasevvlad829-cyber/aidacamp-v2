@@ -59,6 +59,10 @@ const shiftsJson = JSON.stringify(allShifts.map(s => ({
         <p id="r-eyebrow" class="text-[12px] font-bold uppercase tracking-[0.18em] text-primary mb-3 opacity-0 transition-opacity duration-500">
           Вы это смотрели
         </p>
+        <p id="r-from-badge" class="hidden mb-3 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-[12px] font-bold text-primary">
+          <i class="bi bi-mortarboard-fill text-[11px]" aria-hidden="true"></i>
+          Для учеников школы кодим
+        </p>
 
         <!-- Shift name -->
         <h1 id="r-title" class="text-[32px] md:text-[50px] font-extrabold leading-[1.05] tracking-[-0.02em] text-transparent opacity-0 transition-opacity duration-500" style="-webkit-text-stroke: 2px white;">
@@ -89,7 +93,7 @@ const shiftsJson = JSON.stringify(allShifts.map(s => ({
             <div class="flex flex-wrap items-center gap-2">
               <span class="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-[12px] font-bold text-primary">
                 <i class="bi bi-lightning-charge text-[11px]" aria-hidden="true"></i>
-                −5% · экономия <span id="r-price-savings"></span>
+                <span id="r-discount-label">−5% · экономия <span id="r-price-savings"></span></span>
               </span>
               <span class="text-[12px] text-white/35">ещё</span>
               <span id="r-countdown" class="font-mono text-[14px] font-extrabold text-primary tabular-nums tracking-tight">30:00</span>
@@ -354,8 +358,36 @@ function openBookingModal(shift) {
   modal.showModal();
 }
 
+function getFromSource() {
+  try {
+    const param = new URLSearchParams(window.location.search).get('from');
+    if (param) {
+      sessionStorage.setItem('ac:r_from', param);
+      return param;
+    }
+    return sessionStorage.getItem('ac:r_from') || null;
+  } catch { return null; }
+}
+
+function getTargetShiftForCodims() {
+  return SHIFTS.find(s => s.id === 'shift-1') || SHIFTS[0];
+}
+
 function init() {
-  const shift = getTargetShift();
+  const fromSource = getFromSource();
+  const isCodims = fromSource === 'codims';
+
+  // Для codims — всегда смена 1, считаем визиты
+  let shift;
+  if (isCodims) {
+    shift = getTargetShiftForCodims();
+    try {
+      const cv = parseInt(localStorage.getItem('ac:codims_visits') || '0') + 1;
+      localStorage.setItem('ac:codims_visits', String(cv));
+    } catch {}
+  } else {
+    shift = getTargetShift();
+  }
   if (!shift) return;
 
   const daysLeft = shift.startDate
@@ -366,24 +398,36 @@ function init() {
     ? `${shift.dates} · ${shift.duration} · старт через ${daysLeft} дн.`
     : `${shift.dates} · ${shift.duration}`;
 
-  show('r-eyebrow');
+  // Бейдж и eyebrow — персонализация под источник
+  if (isCodims) {
+    const badge = document.getElementById('r-from-badge');
+    if (badge) badge.classList.replace('hidden', 'inline-flex');
+    show('r-eyebrow', 'Специально для вас');
+  } else {
+    show('r-eyebrow');
+  }
   show('r-title', shift.name);
   show('r-dates', datesText);
   show('r-seats-sep');
   show('r-seats-inline', freeLabel(shift.free));
   document.getElementById('r-cta-row').style.opacity = '1';
 
-  const noDiscount = !!localStorage.getItem('ac:r_no_discount');
+  const codimsVisits = parseInt(localStorage.getItem('ac:codims_visits') || '1', 10);
+  const noDiscount = isCodims
+    ? codimsVisits > 1  // codims: скидка только при первом визите
+    : !!localStorage.getItem('ac:r_no_discount');
+  const showTimer = isCodims
+    ? codimsVisits === 1  // codims: таймер только при первом визите
+    : !noDiscount;
+
   const fullNum = parsePriceNum(shift.price);
 
   if (noDiscount) {
-    // 3-й+ визит: обычная цена, без скидки и таймера
     const discEl = document.getElementById('r-price-discounted');
     if (discEl) discEl.textContent = formatPrice(fullNum);
     const offerRow = document.querySelector('#r-cta-row .flex.flex-wrap.items-center.gap-2');
     if (offerRow) offerRow.style.display = 'none';
   } else {
-    // 2-й визит: цена со скидкой −5% и таймером
     const discNum = Math.round(fullNum * 0.95 / 100) * 100;
     const savingsNum = fullNum - discNum;
     const origEl = document.getElementById('r-price-original');
@@ -392,7 +436,17 @@ function init() {
     if (origEl) origEl.textContent = formatPrice(fullNum);
     if (discEl) discEl.textContent = formatPrice(discNum);
     if (savingsEl) savingsEl.textContent = formatPrice(savingsNum);
-    startCountdown();
+    const labelEl = document.getElementById('r-discount-label');
+    if (labelEl && isCodims) {
+      labelEl.textContent = `−5% для учеников школы кодим · экономия ${formatPrice(savingsNum)}`;
+    }
+    if (showTimer) startCountdown();
+    else {
+      // Скидка есть, таймер скрыт
+      const timerEl = document.getElementById('r-countdown');
+      const timerLabel = timerEl?.parentElement;
+      if (timerLabel) timerLabel.style.display = 'none';
+    }
   }
 
   // Вычет: показываем сумму возврата, не итоговую цену
@@ -424,7 +478,10 @@ function init() {
     }).catch(() => {});
   });
 
-  try { window.ym && window.ym(96499295, 'reachGoal', 'return_page_view', { shift: shift.id }); } catch {}
+  try { window.ym && window.ym(96499295, 'reachGoal', 'return_page_view', { shift: shift.id, from: fromSource || 'direct' }); } catch {}
+  if (isCodims) {
+    try { window.ym && window.ym(96499295, 'reachGoal', 'codims_r_page_view', { shift: shift.id }); } catch {}
+  }
 }
 
 document.addEventListener('astro:page-load', init);
