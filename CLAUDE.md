@@ -489,6 +489,14 @@ curl -X POST https://dev.aidacamp.ru/api/photo \
 - @astrojs/node adapter (SSR for /api/ routes, static for pages)
 - Communication language: Russian
 
+## Подключение к серверу
+
+**Сервер:** 159.194.223.55 (Beget VPS)
+
+- **Человек (интерактивно):** `mosh root@159.194.223.55` — стандарт вместо SSH, устойчив к обрывам
+- **Агент (команды):** `mcp__aidacamp-tools__ssh` или `ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "команда"`
+- **UDP 60000-61000** открыт в UFW для mosh
+
 ## Deploy
 See memory for full deploy commands. Short version:
 - **Always deploy to dev first** (`dev.aidacamp.ru`), never overwrite prod without explicit confirmation
