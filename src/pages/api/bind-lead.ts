@@ -4,6 +4,8 @@ import { verifyLid } from '../../lib/leadLink';
 
 const BRANCH = 5;
 
+// ── Альфа-CRM ────────────────────────────────────────────────────────────────
+
 async function alfaAuth(): Promise<{ host: string; token: string } | null> {
   const host = process.env.ALFACRM_HOSTNAME;
   const email = process.env.ALFACRM_EMAIL;
@@ -30,8 +32,7 @@ async function getCustomerNote(host: string, token: string, lid: number): Promis
       body: JSON.stringify({ id: lid }),
     });
     const j = await r.json();
-    const item = j?.items?.[0] ?? j?.item ?? null;
-    return item?.note ?? '';
+    return j?.items?.[0]?.note ?? '';
   } catch {
     return '';
   }
@@ -51,21 +52,19 @@ async function updateCustomerNote(host: string, token: string, lid: number, note
   }
 }
 
-/** Простой парсинг UA без зависимостей */
+// ── UA-парсер ─────────────────────────────────────────────────────────────────
+
 function parseUA(ua: string): { device: string; browser: string; os: string } {
   const s = ua.toLowerCase();
-  // Device
   let device = 'Desktop';
   if (/ipad|tablet|kindle|playbook/.test(s)) device = 'Tablet';
   else if (/iphone|android(?!.*tablet)|mobile|windows phone/.test(s)) device = 'Mobile';
-  // OS
   let os = 'Other';
   if (/iphone|ipad|ios/.test(s)) os = 'iOS';
   else if (/android/.test(s)) os = 'Android';
   else if (/windows/.test(s)) os = 'Windows';
   else if (/mac os/.test(s)) os = 'macOS';
   else if (/linux/.test(s)) os = 'Linux';
-  // Browser
   let browser = 'Other';
   if (/yabrowser|yaapp/.test(s)) browser = 'Яндекс';
   else if (/vkshare|vk\//.test(s)) browser = 'VK';
@@ -79,14 +78,39 @@ function parseUA(ua: string): { device: string; browser: string; os: string } {
   return { device, browser, os };
 }
 
+// ── PostgreSQL ────────────────────────────────────────────────────────────────
+
 type ExtraData = {
-  referrer?: string; screenW?: number; screenH?: number; lang?: string; tz?: string;
-  ymFirstVisit?: string; vkVid?: string; utm?: Record<string, string>;
+  referrer?: string; screenW?: number; screenH?: number;
+  lang?: string; tz?: string; ymFirstVisit?: string;
+  vkVid?: string; utm?: Record<string, string>;
 };
 
+/** Авто-детект менеджера: тот же ymCid или IP открывал другие лиды за 2 часа */
+async function detectManagerInDB(ymCid: string, ip: string, lid: number): Promise<boolean> {
+  const dsn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
+  if (!dsn) return false;
+  try {
+    const { default: pg } = await import('pg');
+    const c = new pg.Client({ connectionString: dsn });
+    await c.connect();
+    const res = await c.query<{ cnt: string }>(
+      `SELECT COUNT(DISTINCT crm_id)::text AS cnt FROM pamyatka_bindings
+       WHERE crm_id != $3
+         AND created_at > NOW() - INTERVAL '2 hours'
+         AND (ym_client_id = $1 OR (LENGTH($2) > 4 AND ip = $2))`,
+      [ymCid, ip, lid],
+    );
+    await c.end();
+    return parseInt(res.rows[0]?.cnt ?? '0', 10) >= 1;
+  } catch {
+    return false;
+  }
+}
+
 async function logBinding(
-  lid: number, ymCid: string, ip: string, ua: string, isManager: boolean,
-  extra: ExtraData = {},
+  lid: number, ymCid: string, ip: string, ua: string,
+  isManager: boolean, extra: ExtraData = {},
 ) {
   const dsn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
   if (!dsn) return;
@@ -94,26 +118,20 @@ async function logBinding(
     const { default: pg } = await import('pg');
     const c = new pg.Client({ connectionString: dsn });
     await c.connect();
-    await c.query(
-      `CREATE TABLE IF NOT EXISTS pamyatka_bindings(
-         id serial primary key,
-         crm_id int not null,
-         ym_client_id text not null,
-         ip text, user_agent text,
-         is_manager boolean default false,
-         crm_updated boolean default false,
-         referrer text,
-         screen_w int, screen_h int,
-         lang text, tz text,
-         ym_first_visit date,
-         vk_vid text,
-         utm jsonb,
-         created_at timestamptz default now()
-       )`,
-    );
-    // Миграции для старой таблицы
+    await c.query(`CREATE TABLE IF NOT EXISTS pamyatka_bindings(
+      id serial primary key,
+      crm_id int not null,
+      ym_client_id text not null,
+      ip text, user_agent text,
+      is_manager boolean default false,
+      crm_updated boolean default false,
+      referrer text, screen_w int, screen_h int,
+      lang text, tz text,
+      ym_first_visit date, vk_vid text, utm jsonb,
+      created_at timestamptz default now()
+    )`);
     for (const col of [
-      'is_manager boolean default false',
+      'is_manager boolean default false', 'crm_updated boolean default false',
       'referrer text', 'screen_w int', 'screen_h int',
       'lang text', 'tz text', 'ym_first_visit date', 'vk_vid text', 'utm jsonb',
     ]) {
@@ -125,7 +143,7 @@ async function logBinding(
          referrer, screen_w, screen_h, lang, tz, ym_first_visit, vk_vid, utm
        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
       [
-        lid, ymCid, ip || null, ua || null, isManager, !isManager,
+        lid, ymCid, ip || null, ua || null, isManager, true,
         extra.referrer || null,
         extra.screenW || null, extra.screenH || null,
         extra.lang || null, extra.tz || null,
@@ -135,21 +153,20 @@ async function logBinding(
       ],
     );
     await c.end();
-  } catch {
-    /* best-effort */
-  }
+  } catch { /* best-effort */ }
 }
+
+// ── Основной хендлер ──────────────────────────────────────────────────────────
 
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json().catch(() => ({})) as Record<string, unknown>;
-    const lidRaw = body.lid;
-    const token = body.t;
-    const ymCid = body.ym_client_id;
-    const isManager = body.is_manager === true;
+    const lidRaw  = body.lid;
+    const token   = body.t;
+    const ymCid   = body.ym_client_id;
 
     const lid = Number(lidRaw);
-    if (!Number.isInteger(lid) || lid <= 0 || lid > 9999999) {
+    if (!Number.isInteger(lid) || lid <= 0 || lid > 9_999_999) {
       return new Response(JSON.stringify({ ok: false, error: 'bad_lid' }), { status: 400 });
     }
     if (typeof token !== 'string' || !verifyLid(lid, token)) {
@@ -159,60 +176,68 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ ok: false, error: 'bad_cid' }), { status: 400 });
     }
 
-    const referrer = typeof body.referrer === 'string' ? body.referrer.slice(0, 200) : undefined;
-    const screenW = typeof body.screen_w === 'number' ? body.screen_w : undefined;
-    const screenH = typeof body.screen_h === 'number' ? body.screen_h : undefined;
-    const lang = typeof body.lang === 'string' ? body.lang.slice(0, 20) : undefined;
-    const tz = typeof body.tz === 'string' ? body.tz.slice(0, 50) : undefined;
-    const ymFirstVisit = typeof body.ym_first_visit === 'string' ? body.ym_first_visit.slice(0, 10) : undefined;
-    const vkVid = typeof body.vk_vid === 'string' ? body.vk_vid.slice(0, 50) : undefined;
-    const utm = body.utm && typeof body.utm === 'object' ? body.utm as Record<string, string> : undefined;
+    // Собираем все данные от клиента
+    const extra: ExtraData = {
+      referrer:     typeof body.referrer      === 'string' ? body.referrer.slice(0, 300)     : undefined,
+      screenW:      typeof body.screen_w      === 'number' ? body.screen_w                   : undefined,
+      screenH:      typeof body.screen_h      === 'number' ? body.screen_h                   : undefined,
+      lang:         typeof body.lang          === 'string' ? body.lang.slice(0, 20)          : undefined,
+      tz:           typeof body.tz            === 'string' ? body.tz.slice(0, 50)            : undefined,
+      ymFirstVisit: typeof body.ym_first_visit === 'string' ? body.ym_first_visit.slice(0, 10) : undefined,
+      vkVid:        typeof body.vk_vid        === 'string' ? body.vk_vid.slice(0, 50)        : undefined,
+      utm:          (body.utm && typeof body.utm === 'object') ? body.utm as Record<string, string> : undefined,
+    };
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-      || request.headers.get('x-real-ip') || '';
+             || request.headers.get('x-real-ip') || '';
     const ua = request.headers.get('user-agent') || '';
     const { device, browser, os } = parseUA(ua);
 
-    const extraData = { referrer, screenW, screenH, lang, tz, ymFirstVisit, vkVid, utm };
+    // Явный флаг менеджера из localStorage (менеджер открыл ссылку из /admin/p-link)
+    const explicitManager = body.is_manager === true;
 
+    // Авто-детект менеджера: тот же профиль открывал другие лиды за 2 часа
+    const autoManager = !explicitManager
+      ? await detectManagerInDB(ymCid, ip, lid)
+      : false;
+
+    const isManager = explicitManager || autoManager;
+
+    // ── Логируем в БД всегда ──────────────────────────────────────────────────
+    await logBinding(lid, ymCid, ip, ua, isManager, extra);
+
+    // ── Строим строку для CRM (все данные в одну строку) ─────────────────────
+    const stamp = new Date().toISOString().replace('T', ' ').slice(0, 16);
+    const parts: string[] = [];
+
+    if (isManager)           parts.push(explicitManager ? '[МГР]' : '[МГР-авто]');
+    parts.push(`ymCid:${ymCid}`);
+    parts.push(`${device}/${os}`);
+    parts.push(browser);
+    if (ip)                  parts.push(`IP:${ip}`);
+    if (extra.referrer) {
+      try { parts.push(`ref:${new URL(extra.referrer).hostname}`); } catch { parts.push(`ref:${extra.referrer.slice(0, 40)}`); }
+    }
+    if (extra.utm?.utm_source) parts.push(`utm:${extra.utm.utm_source}/${extra.utm.utm_medium ?? '?'}${extra.utm.utm_campaign ? '/' + extra.utm.utm_campaign : ''}`);
+    if (extra.ymFirstVisit)  parts.push(`на сайте с ${extra.ymFirstVisit}`);
+    if (extra.vkVid)         parts.push(`vk:${extra.vkVid.slice(0, 16)}`);
+    if (extra.screenW && extra.screenH) parts.push(`${extra.screenW}×${extra.screenH}`);
+    if (extra.lang)          parts.push(extra.lang);
+    if (extra.tz)            parts.push(extra.tz);
+
+    const newLine = `\n[${stamp}] ${parts.join(' | ')}`;
+
+    // ── Пишем в CRM: ВСЕГДА APPEND, ничего не перетираем ────────────────────
     const auth = await alfaAuth();
     if (!auth) {
-      await logBinding(lid, ymCid, ip, ua, isManager, extraData);
       return new Response(JSON.stringify({ ok: true, crm: false }), { status: 200 });
     }
 
-    // Менеджер — только логируем, CRM не трогаем
-    if (isManager) {
-      await logBinding(lid, ymCid, ip, ua, true, extraData);
-      return new Response(JSON.stringify({ ok: true, crm: false, manager: true }), { status: 200 });
-    }
-
-    // Клиент — перезаписываем предыдущую запись ymCid в CRM (last-wins)
     const currentNote = await getCustomerNote(auth.host, auth.token, lid);
-
-    // Удаляем старые ymCid/памятка-записи, пишем только актуальный
-    const noteWithoutOldCid = currentNote
-      .replace(/\n?\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}\] ymCid:[^\n]+/g, '')
-      .trim();
-    const stamp = new Date().toISOString().replace('T', ' ').slice(0, 16);
-
-    // Строим строку с максимумом данных о клиенте
-    const parts: string[] = [`ymCid:${ymCid}`, `${device}/${os}`, browser];
-    if (referrer) {
-      try { parts.push(`ref:${new URL(referrer).hostname}`); } catch { /* skip */ }
-    }
-    if (utm?.utm_source) parts.push(`utm:${utm.utm_source}/${utm.utm_medium || '?'}`);
-    if (ymFirstVisit) parts.push(`на сайте с ${ymFirstVisit}`);
-    if (ip) parts.push(`IP:${ip}`);
-    if (vkVid) parts.push(`vk:${vkVid.slice(0, 12)}`);
-    if (tz) parts.push(tz);
-
-    const newNote = noteWithoutOldCid + `\n[${stamp}] ${parts.join(' | ')}`;
+    const newNote = currentNote + newLine;
 
     const ok = await updateCustomerNote(auth.host, auth.token, lid, newNote);
-    await logBinding(lid, ymCid, ip, ua, false, extraData);
-
-    return new Response(JSON.stringify({ ok: true, crm: ok }), { status: 200 });
+    return new Response(JSON.stringify({ ok: true, crm: ok, manager: isManager }), { status: 200 });
   } catch (e) {
     return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
   }
