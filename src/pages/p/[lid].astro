@@ -842,18 +842,58 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
   // Менеджер помечается через localStorage из /admin/p-link — его визит не пишется в CRM.
   // Клиент открывает ссылку без этого флага → его CID перезаписывает предыдущий (last-wins).
   const isManagerBrowser = (()=>{ try { return localStorage.getItem('aidacamp_is_manager')==='1'; } catch { return false; } })();
+
+  /** Собираем максимум данных о браузере клиента */
+  function collectClientData() {
+    const data = {};
+    try {
+      // Реферер и UTM из текущего URL
+      data.referrer = document.referrer || '';
+      const sp = new URLSearchParams(location.search);
+      const utm = {};
+      for (const k of ['utm_source','utm_medium','utm_campaign','utm_content','utm_term']) {
+        if (sp.has(k)) utm[k] = sp.get(k);
+      }
+      if (Object.keys(utm).length) data.utm = utm;
+
+      // Экран
+      if (window.screen) {
+        data.screen_w = window.screen.width;
+        data.screen_h = window.screen.height;
+      }
+      data.lang = navigator.language || '';
+
+      // Часовой пояс
+      try { data.tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch(_) {}
+
+      // Яндекс cookies — _ym_uid (clientId) и _ym_d (дата первого визита на сайт)
+      const ymUidMatch = document.cookie.match(/(?:^|;\s*)_ym_uid=([^;]+)/);
+      if (ymUidMatch) data.ym_uid_cookie = ymUidMatch[1];
+      const ymDMatch = document.cookie.match(/(?:^|;\s*)_ym_d=([^;]+)/);
+      if (ymDMatch) {
+        // _ym_d — unix timestamp первого визита
+        const ts = parseInt(ymDMatch[1], 10);
+        if (ts > 1000000000) data.ym_first_visit = new Date(ts * 1000).toISOString().slice(0,10);
+      }
+
+      // VK pixel cookie (vk_top_vid)
+      const vkMatch = document.cookie.match(/(?:^|;\s*)vk_top_vid=([^;]+)/);
+      if (vkMatch) data.vk_vid = vkMatch[1];
+    } catch(_) {}
+    return data;
+  }
+
   function bindCid(cid){
     if (!cid) return;
     // Менеджерские визиты: логируем на сервере, но в sessionStorage не сохраняем
-    // чтобы при следующем открытии клиентом тоже пробовалось
     if (!isManagerBrowser && sessionStorage.getItem('pm_bound_'+lid) === cid) return;
+    const extra = collectClientData();
     fetch('/api/bind-lead', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         lid: lid, t: t, ym_client_id: String(cid), is_manager: isManagerBrowser,
-        referrer: document.referrer || '',
-        screen_w: window.screen ? window.screen.width : undefined,
+        ...extra,
       })
     }).then(r=>r.json()).then(j=>{
       if (j && j.ok && !isManagerBrowser) sessionStorage.setItem('pm_bound_'+lid, String(cid));

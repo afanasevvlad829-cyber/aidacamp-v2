@@ -79,9 +79,14 @@ function parseUA(ua: string): { device: string; browser: string; os: string } {
   return { device, browser, os };
 }
 
+type ExtraData = {
+  referrer?: string; screenW?: number; screenH?: number; lang?: string; tz?: string;
+  ymFirstVisit?: string; vkVid?: string; utm?: Record<string, string>;
+};
+
 async function logBinding(
   lid: number, ymCid: string, ip: string, ua: string, isManager: boolean,
-  referrer?: string, screenW?: number,
+  extra: ExtraData = {},
 ) {
   const dsn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
   if (!dsn) return;
@@ -98,17 +103,36 @@ async function logBinding(
          is_manager boolean default false,
          crm_updated boolean default false,
          referrer text,
-         screen_w int,
+         screen_w int, screen_h int,
+         lang text, tz text,
+         ym_first_visit date,
+         vk_vid text,
+         utm jsonb,
          created_at timestamptz default now()
        )`,
     );
-    await c.query(`ALTER TABLE pamyatka_bindings ADD COLUMN IF NOT EXISTS is_manager boolean default false`).catch(() => {});
-    await c.query(`ALTER TABLE pamyatka_bindings ADD COLUMN IF NOT EXISTS referrer text`).catch(() => {});
-    await c.query(`ALTER TABLE pamyatka_bindings ADD COLUMN IF NOT EXISTS screen_w int`).catch(() => {});
+    // Миграции для старой таблицы
+    for (const col of [
+      'is_manager boolean default false',
+      'referrer text', 'screen_w int', 'screen_h int',
+      'lang text', 'tz text', 'ym_first_visit date', 'vk_vid text', 'utm jsonb',
+    ]) {
+      await c.query(`ALTER TABLE pamyatka_bindings ADD COLUMN IF NOT EXISTS ${col}`).catch(() => {});
+    }
     await c.query(
-      `INSERT INTO pamyatka_bindings(crm_id, ym_client_id, ip, user_agent, is_manager, crm_updated, referrer, screen_w)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-      [lid, ymCid, ip || null, ua || null, isManager, !isManager, referrer || null, screenW || null],
+      `INSERT INTO pamyatka_bindings(
+         crm_id, ym_client_id, ip, user_agent, is_manager, crm_updated,
+         referrer, screen_w, screen_h, lang, tz, ym_first_visit, vk_vid, utm
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+      [
+        lid, ymCid, ip || null, ua || null, isManager, !isManager,
+        extra.referrer || null,
+        extra.screenW || null, extra.screenH || null,
+        extra.lang || null, extra.tz || null,
+        extra.ymFirstVisit || null,
+        extra.vkVid || null,
+        extra.utm ? JSON.stringify(extra.utm) : null,
+      ],
     );
     await c.end();
   } catch {
@@ -137,21 +161,29 @@ export const POST: APIRoute = async ({ request }) => {
 
     const referrer = typeof body.referrer === 'string' ? body.referrer.slice(0, 200) : undefined;
     const screenW = typeof body.screen_w === 'number' ? body.screen_w : undefined;
+    const screenH = typeof body.screen_h === 'number' ? body.screen_h : undefined;
+    const lang = typeof body.lang === 'string' ? body.lang.slice(0, 20) : undefined;
+    const tz = typeof body.tz === 'string' ? body.tz.slice(0, 50) : undefined;
+    const ymFirstVisit = typeof body.ym_first_visit === 'string' ? body.ym_first_visit.slice(0, 10) : undefined;
+    const vkVid = typeof body.vk_vid === 'string' ? body.vk_vid.slice(0, 50) : undefined;
+    const utm = body.utm && typeof body.utm === 'object' ? body.utm as Record<string, string> : undefined;
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
       || request.headers.get('x-real-ip') || '';
     const ua = request.headers.get('user-agent') || '';
     const { device, browser, os } = parseUA(ua);
 
+    const extraData = { referrer, screenW, screenH, lang, tz, ymFirstVisit, vkVid, utm };
+
     const auth = await alfaAuth();
     if (!auth) {
-      await logBinding(lid, ymCid, ip, ua, isManager, referrer, screenW);
+      await logBinding(lid, ymCid, ip, ua, isManager, extraData);
       return new Response(JSON.stringify({ ok: true, crm: false }), { status: 200 });
     }
 
     // Менеджер — только логируем, CRM не трогаем
     if (isManager) {
-      await logBinding(lid, ymCid, ip, ua, true, referrer, screenW);
+      await logBinding(lid, ymCid, ip, ua, true, extraData);
       return new Response(JSON.stringify({ ok: true, crm: false, manager: true }), { status: 200 });
     }
 
@@ -163,17 +195,22 @@ export const POST: APIRoute = async ({ request }) => {
       .replace(/\n?\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}\] ymCid:[^\n]+/g, '')
       .trim();
     const stamp = new Date().toISOString().replace('T', ' ').slice(0, 16);
+
     // Строим строку с максимумом данных о клиенте
-    const parts = [`ymCid:${ymCid}`, `${device}/${os}`, browser];
-    if (ip) parts.push(`IP:${ip}`);
+    const parts: string[] = [`ymCid:${ymCid}`, `${device}/${os}`, browser];
     if (referrer) {
       try { parts.push(`ref:${new URL(referrer).hostname}`); } catch { /* skip */ }
     }
-    if (screenW) parts.push(`${screenW}px`);
+    if (utm?.utm_source) parts.push(`utm:${utm.utm_source}/${utm.utm_medium || '?'}`);
+    if (ymFirstVisit) parts.push(`на сайте с ${ymFirstVisit}`);
+    if (ip) parts.push(`IP:${ip}`);
+    if (vkVid) parts.push(`vk:${vkVid.slice(0, 12)}`);
+    if (tz) parts.push(tz);
+
     const newNote = noteWithoutOldCid + `\n[${stamp}] ${parts.join(' | ')}`;
 
     const ok = await updateCustomerNote(auth.host, auth.token, lid, newNote);
-    await logBinding(lid, ymCid, ip, ua, false, referrer, screenW);
+    await logBinding(lid, ymCid, ip, ua, false, extraData);
 
     return new Response(JSON.stringify({ ok: true, crm: ok }), { status: 200 });
   } catch (e) {
