@@ -9,12 +9,12 @@ import BrandName from './BrandName.astro';
 const navItems = [
   { label: 'Смены', href: '/#shifts' },
   { label: 'Цены', href: '/#shifts' },
-  { label: 'Философия', href: '/#philosophy' },
+  { label: 'Философия', href: '/#philosophy', returningHide: true },
 ];
 
 const moreItems = [
-  { label: 'О лагере', href: '/#about' },
-  { label: 'Как проходит смена', href: '/#journey' },
+  { label: 'О лагере', href: '/#about', returningHide: true },
+  { label: 'Как проходит смена', href: '/#journey', returningHide: true },
   { label: 'Команда', href: '/#team' },
   { label: 'Размещение', href: '/#stay' },
   { label: 'Отзывы', href: '/#reviews' },
@@ -59,6 +59,7 @@ const allNavItems = [...navItems, ...moreItems];
           style="text-shadow: 0 1px 3px rgba(0,0,0,0.95), 0 0 12px rgba(0,0,0,0.85), 0 0 22px rgba(0,0,0,0.55);"
           data-analytics-goal={item.highlight ? "anon_qa_click" : "nav_click"}
           data-analytics-label={item.label}
+          data-returning-hide={item.returningHide ? "true" : undefined}
         >
           {item.label}
         </a>
@@ -80,6 +81,7 @@ const allNavItems = [...navItems, ...moreItems];
               class="rounded-xl px-3 py-2 text-[14px] font-medium text-white/90 transition hover:-translate-y-0.5 hover:bg-white/10"
               data-analytics-goal="nav_click"
               data-analytics-label={item.label}
+              data-returning-hide={item.returningHide ? "true" : undefined}
             >
               {item.label}
             </a>
@@ -176,6 +178,19 @@ const allNavItems = [...navItems, ...moreItems];
 
   document.addEventListener('astro:page-load', initNavMore);
   initNavMore();
+
+  // Скрываем пункты меню на скрытые для возвратников секции
+  (function () {
+    try {
+      const hasViewed = !!localStorage.getItem('ac:viewed_shifts');
+      const hasYmUid  = /(?:^|[; ])_ym_uid=/.test(document.cookie);
+      if (hasViewed || hasYmUid) {
+        document.querySelectorAll<HTMLElement>('[data-returning-hide="true"]').forEach((el) => {
+          el.style.display = 'none';
+        });
+      }
+    } catch {}
+  })();
 
   // Якорные ссылки: если на главной — smooth scroll, иначе полный переход /#X
   // Для не-главных страниц (в т.ч. /r/) ставим r_redirected='1' чтобы

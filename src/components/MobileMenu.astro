@@ -33,7 +33,7 @@ const { items } = Astro.props;
       <p class="px-4 mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/40">Главное</p>
       <div class="flex flex-col gap-0.5">
         {items.filter(i => ['Смены', 'Цены', 'Философия'].includes(i.label)).map((item) => (
-          <a href={item.href} class="mobile-nav-link rounded-xl px-4 py-3 text-base font-medium text-white/90 transition hover:bg-white/10" data-analytics-goal="nav_click" data-analytics-label={item.label}>
+          <a href={item.href} class="mobile-nav-link rounded-xl px-4 py-3 text-base font-medium text-white/90 transition hover:bg-white/10" data-analytics-goal="nav_click" data-analytics-label={item.label} data-returning-hide={item.returningHide ? "true" : undefined}>
             {item.label}
           </a>
         ))}
@@ -45,7 +45,7 @@ const { items } = Astro.props;
       <p class="px-4 mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/40">О лагере</p>
       <div class="flex flex-col gap-0.5">
         {items.filter(i => ['О лагере', 'Как проходит смена', 'Команда', 'Размещение', 'Отзывы', 'FAQ'].includes(i.label)).map((item) => (
-          <a href={item.href} class="mobile-nav-link rounded-xl px-4 py-3 text-base font-medium text-white/90 transition hover:bg-white/10" data-analytics-goal="nav_click" data-analytics-label={item.label}>
+          <a href={item.href} class="mobile-nav-link rounded-xl px-4 py-3 text-base font-medium text-white/90 transition hover:bg-white/10" data-analytics-goal="nav_click" data-analytics-label={item.label} data-returning-hide={item.returningHide ? "true" : undefined}>
             {item.label}
           </a>
         ))}
@@ -57,7 +57,7 @@ const { items } = Astro.props;
       <p class="px-4 mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/40">Документы и медиа</p>
       <div class="flex flex-col gap-0.5">
         {items.filter(i => ['Документы', 'Фото', 'Видео', 'Контакты'].includes(i.label)).map((item) => (
-          <a href={item.href} class="mobile-nav-link rounded-xl px-4 py-3 text-base font-medium text-white/90 transition hover:bg-white/10" data-analytics-goal="nav_click" data-analytics-label={item.label}>
+          <a href={item.href} class="mobile-nav-link rounded-xl px-4 py-3 text-base font-medium text-white/90 transition hover:bg-white/10" data-analytics-goal="nav_click" data-analytics-label={item.label} data-returning-hide={item.returningHide ? "true" : undefined}>
             {item.label}
           </a>
         ))}
@@ -129,4 +129,17 @@ const { items } = Astro.props;
 
   document.addEventListener('astro:page-load', initMobileMenu);
   initMobileMenu();
+
+  // Скрываем пункты мобильного меню для скрытых для возвратников секций
+  (function () {
+    try {
+      const hasViewed = !!localStorage.getItem('ac:viewed_shifts');
+      const hasYmUid  = /(?:^|[; ])_ym_uid=/.test(document.cookie);
+      if (hasViewed || hasYmUid) {
+        document.querySelectorAll<HTMLElement>('#mobile-menu [data-returning-hide="true"]').forEach((el) => {
+          el.style.display = 'none';
+        });
+      }
+    } catch {}
+  })();
 </script>
