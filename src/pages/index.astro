@@ -49,6 +49,14 @@ import { landingPages as allLandingPages } from '../data/landing-pages';
     // Редирект возвратников — 2-й визит со скидкой, 3-й+ без скидки
     try {
       if (sessionStorage.getItem('r_redirected')) return;
+      // Codims: любой визит с utm_source=codims → сразу на /r/
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('utm_source') === 'codims') {
+        sessionStorage.setItem('ac:r_from', 'codims');
+        sessionStorage.setItem('r_redirected', '1');
+        window.location.replace('/r/?shift=shift-1');
+        return;
+      }
       var raw = localStorage.getItem('ac:viewed_shifts');
       if (!raw) return;
       var viewed = JSON.parse(raw);
