@@ -829,15 +829,20 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
   }
 
   // ====== bind ClientID к CRM ======
+  // Менеджер помечается через localStorage из /admin/p-link — его визит не пишется в CRM.
+  // Клиент открывает ссылку без этого флага → его CID перезаписывает предыдущий (last-wins).
+  const isManagerBrowser = (()=>{ try { return localStorage.getItem('aidacamp_is_manager')==='1'; } catch { return false; } })();
   function bindCid(cid){
     if (!cid) return;
-    if (sessionStorage.getItem('pm_bound_'+lid) === cid) return;
+    // Менеджерские визиты: логируем на сервере, но в sessionStorage не сохраняем
+    // чтобы при следующем открытии клиентом тоже пробовалось
+    if (!isManagerBrowser && sessionStorage.getItem('pm_bound_'+lid) === cid) return;
     fetch('/api/bind-lead', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ lid: lid, t: t, ym_client_id: String(cid) })
+      body: JSON.stringify({ lid: lid, t: t, ym_client_id: String(cid), is_manager: isManagerBrowser })
     }).then(r=>r.json()).then(j=>{
-      if (j && j.ok) sessionStorage.setItem('pm_bound_'+lid, String(cid));
+      if (j && j.ok && !isManagerBrowser) sessionStorage.setItem('pm_bound_'+lid, String(cid));
     }).catch(()=>{});
   }
   function tryBind(){
