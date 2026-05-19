@@ -7,22 +7,22 @@ import BrandName from './BrandName.astro';
 // Menu per Design System v3 (Section 16):
 // Top: главные конверсионные + философия. More: вспомогательные.
 const navItems = [
-  { label: 'Смены', href: '#shifts' },
-  { label: 'Цены', href: '#economy' },
-  { label: 'Философия', href: '#philosophy' },
+  { label: 'Смены', href: '/#shifts' },
+  { label: 'Цены', href: '/#shifts' },
+  { label: 'Философия', href: '/#philosophy', returningHide: true },
 ];
 
 const moreItems = [
-  { label: 'О лагере', href: '#about' },
-  { label: 'Как проходит смена', href: '#journey' },
-  { label: 'Команда', href: '#team' },
-  { label: 'Размещение', href: '#stay' },
-  { label: 'Отзывы', href: '#reviews' },
-  { label: 'FAQ', href: '#faq' },
+  { label: 'О лагере', href: '/#about', returningHide: true },
+  { label: 'Как проходит смена', href: '/#journey', returningHide: true },
+  { label: 'Команда', href: '/#team' },
+  { label: 'Размещение', href: '/#stay' },
+  { label: 'Отзывы', href: '/#reviews' },
+  { label: 'FAQ', href: '/#faq' },
   { label: 'Документы', href: '/stati/dokumenty-licenziya-strahovka/' },
   { label: 'Фото', href: '/foto/' },
   { label: 'Видео', href: '/video/' },
-  { label: 'Контакты', href: '#contacts' },
+  { label: 'Контакты', href: '/#contacts' },
 ];
 
 const allNavItems = [...navItems, ...moreItems];
@@ -59,6 +59,7 @@ const allNavItems = [...navItems, ...moreItems];
           style="text-shadow: 0 1px 3px rgba(0,0,0,0.95), 0 0 12px rgba(0,0,0,0.85), 0 0 22px rgba(0,0,0,0.55);"
           data-analytics-goal={item.highlight ? "anon_qa_click" : "nav_click"}
           data-analytics-label={item.label}
+          data-returning-hide={item.returningHide ? "true" : undefined}
         >
           {item.label}
         </a>
@@ -80,6 +81,7 @@ const allNavItems = [...navItems, ...moreItems];
               class="rounded-xl px-3 py-2 text-[14px] font-medium text-white/90 transition hover:-translate-y-0.5 hover:bg-white/10"
               data-analytics-goal="nav_click"
               data-analytics-label={item.label}
+              data-returning-hide={item.returningHide ? "true" : undefined}
             >
               {item.label}
             </a>
@@ -177,11 +179,36 @@ const allNavItems = [...navItems, ...moreItems];
   document.addEventListener('astro:page-load', initNavMore);
   initNavMore();
 
-  // Если якоря нет на текущей странице — ведём на главную с якорем
-  document.querySelectorAll<HTMLAnchorElement>('header a[href^="#"]').forEach((link) => {
-    const id = link.getAttribute('href')?.slice(1);
-    if (id && id !== 'hero' && !document.getElementById(id)) {
-      link.setAttribute('href', '/' + link.getAttribute('href'));
-    }
+  // Скрываем пункты меню на скрытые для возвратников секции
+  (function () {
+    try {
+      const hasViewed = !!localStorage.getItem('ac:viewed_shifts');
+      const hasYmUid  = /(?:^|[; ])_ym_uid=/.test(document.cookie);
+      if (hasViewed || hasYmUid) {
+        document.querySelectorAll<HTMLElement>('[data-returning-hide="true"]').forEach((el) => {
+          el.style.display = 'none';
+        });
+      }
+    } catch {}
+  })();
+
+  // Якорные ссылки: если на главной — smooth scroll, иначе полный переход /#X
+  // Для не-главных страниц (в т.ч. /r/) ставим r_redirected='1' чтобы
+  // redirect-скрипт на / не редиректил повторно на /r/
+  document.querySelectorAll<HTMLAnchorElement>('header a[href^="/#"]').forEach((link) => {
+    link.addEventListener('click', (e) => {
+      const hash = link.getAttribute('href')!.slice(1); // '#shifts'
+      const target = document.getElementById(hash.slice(1)); // 'shifts'
+      if (target && window.location.pathname === '/') {
+        // На главной — smooth scroll без перезагрузки
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        history.pushState(null, '', hash);
+      } else {
+        // На другой странице (/r/, /stati/ и т.д.) — помечаем что уже были перенаправлены,
+        // чтобы при приходе на / не сработал повторный редирект на /r/
+        try { sessionStorage.setItem('r_redirected', '1'); } catch {}
+      }
+    });
   });
 </script>
