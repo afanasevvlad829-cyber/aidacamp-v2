@@ -29,6 +29,33 @@ async function authToken(): Promise<string | null> {
   }
 }
 
+/** Достаёт TG и Max ссылки из поля note группы (формат: "https://t.me/... / https://max.ru/...") */
+export async function getGroupLinks(groupId: number): Promise<{ tg?: string; max?: string }> {
+  const host = process.env.ALFACRM_HOSTNAME;
+  const token = await authToken();
+  if (!host || !token) return {};
+
+  try {
+    const r = await fetch(`https://${host}/v2api/${BRANCH}/group/index`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
+      body: JSON.stringify({ id: groupId, page: 0 }),
+    });
+    const j: any = await r.json();
+    const note: string = j?.items?.[0]?.note ?? '';
+    if (!note) return {};
+
+    const tgMatch = note.match(/https?:\/\/t\.me\/[^\s/]+/);
+    const maxMatch = note.match(/https?:\/\/max\.ru\/[^\s]+/);
+    return {
+      tg: tgMatch?.[0],
+      max: maxMatch?.[0],
+    };
+  } catch {
+    return {};
+  }
+}
+
 export async function getCustomerGroupIds(customerId: number): Promise<number[]> {
   const host = process.env.ALFACRM_HOSTNAME;
   const token = await authToken();

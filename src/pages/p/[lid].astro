@@ -2,7 +2,7 @@
 export const prerender = false;
 import '../../styles/global.css';
 import { signLid, verifyLid } from '../../lib/leadLink';
-import { getCustomerGroupIds } from '../../lib/alfaCrm';
+import { getCustomerGroupIds, getGroupLinks } from '../../lib/alfaCrm';
 import { pickPamyatkaShift, type PamyatkaShift } from '../../data/pamyatkaShifts';
 
 const { lid: lidParam } = Astro.params;
@@ -20,10 +20,20 @@ if (!valid) {
 let shift: PamyatkaShift | null = null;
 if (isPreview) {
   shift = pickPamyatkaShift([660]);
+  // В preview показываем тестовые ссылки из CRM группы смены 1
+  if (shift) {
+    const links = await getGroupLinks(660).catch(() => ({}));
+    shift = { ...shift, ...links };
+  }
 } else {
   try {
     const groupIds = await getCustomerGroupIds(lidNum);
     shift = pickPamyatkaShift(groupIds);
+    // Подгружаем TG и Max из поля note группы в CRM
+    if (shift) {
+      const links = await getGroupLinks(shift.groupId).catch(() => ({}));
+      shift = { ...shift, ...links };
+    }
   } catch {
     shift = null;
   }
