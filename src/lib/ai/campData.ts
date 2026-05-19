@@ -9,7 +9,7 @@ export const campData = {
     { id: 'smena-2-1', name: 'Смена 2.1', dates: '10 — 16 июня', days: 7, price: 48000, available: true, short: true,
       desc: 'За 7 дней — быстрый вход, свой проект и понятный результат без перегруза.',
       enrolled: 29, total: 40, enrolledByAge: { '7-9': 4, '10-12': 7, '13-16': 5 } },
-    { id: 'smena-2-2', name: 'Смена 2.2', dates: '16 — 23 июня', days: 8, price: 65000, available: true, short: true,
+    { id: 'smena-2-2', name: 'Смена 2.2', dates: '16 — 23 июня', days: 8, price: 75000, available: true, short: true,
       desc: 'Интенсивная смена: больше времени на доработку и более сильный итоговый проект.',
       enrolled: 37, total: 45, enrolledByAge: { '7-9': 3, '10-12': 6, '13-16': 4 } },
     { id: 'smena-3', name: 'Смена 3', dates: '3 — 15 августа', days: 13, price: 89400, available: true,
