@@ -108,14 +108,19 @@ const { items } = Astro.props;
       link.addEventListener('click', (e) => {
         closeMenu();
         const href = link.getAttribute('href') || '';
-        if (href.startsWith('/#') && window.location.pathname === '/') {
-          const target = document.getElementById(href.slice(2));
-          if (target) {
-            e.preventDefault();
-            setTimeout(() => {
-              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              history.pushState(null, '', href.slice(1));
-            }, 200); // ждём закрытия меню
+        if (href.startsWith('/#')) {
+          if (window.location.pathname === '/') {
+            const target = document.getElementById(href.slice(2));
+            if (target) {
+              e.preventDefault();
+              setTimeout(() => {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                history.pushState(null, '', href.slice(1));
+              }, 200);
+            }
+          } else {
+            // Не на главной (/r/ и др.) — предотвратить повторный редирект
+            try { sessionStorage.setItem('r_redirected', '1'); } catch {}
           }
         }
       });

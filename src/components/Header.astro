@@ -178,14 +178,21 @@ const allNavItems = [...navItems, ...moreItems];
   initNavMore();
 
   // Якорные ссылки: если на главной — smooth scroll, иначе полный переход /#X
+  // Для не-главных страниц (в т.ч. /r/) ставим r_redirected='1' чтобы
+  // redirect-скрипт на / не редиректил повторно на /r/
   document.querySelectorAll<HTMLAnchorElement>('header a[href^="/#"]').forEach((link) => {
     link.addEventListener('click', (e) => {
       const hash = link.getAttribute('href')!.slice(1); // '#shifts'
       const target = document.getElementById(hash.slice(1)); // 'shifts'
       if (target && window.location.pathname === '/') {
+        // На главной — smooth scroll без перезагрузки
         e.preventDefault();
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         history.pushState(null, '', hash);
+      } else {
+        // На другой странице (/r/, /stati/ и т.д.) — помечаем что уже были перенаправлены,
+        // чтобы при приходе на / не сработал повторный редирект на /r/
+        try { sessionStorage.setItem('r_redirected', '1'); } catch {}
       }
     });
   });
