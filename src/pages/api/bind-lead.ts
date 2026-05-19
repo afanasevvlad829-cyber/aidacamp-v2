@@ -51,7 +51,7 @@ async function updateCustomerNote(host: string, token: string, lid: number, note
   }
 }
 
-async function logBinding(lid: number, ymCid: string, ip: string, ua: string) {
+async function logBinding(lid: number, ymCid: string, ip: string, ua: string, isManager: boolean) {
   const dsn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
   if (!dsn) return;
   try {
@@ -64,14 +64,19 @@ async function logBinding(lid: number, ymCid: string, ip: string, ua: string) {
          crm_id int not null,
          ym_client_id text not null,
          ip text, user_agent text,
+         is_manager boolean default false,
          crm_updated boolean default false,
          created_at timestamptz default now()
        )`,
     );
+    // Добавляем колонку если таблица старая (без is_manager)
     await c.query(
-      `INSERT INTO pamyatka_bindings(crm_id, ym_client_id, ip, user_agent, crm_updated)
-       VALUES ($1,$2,$3,$4,$5)`,
-      [lid, ymCid, ip || null, ua || null, true],
+      `ALTER TABLE pamyatka_bindings ADD COLUMN IF NOT EXISTS is_manager boolean default false`,
+    ).catch(() => {});
+    await c.query(
+      `INSERT INTO pamyatka_bindings(crm_id, ym_client_id, ip, user_agent, is_manager, crm_updated)
+       VALUES ($1,$2,$3,$4,$5,$6)`,
+      [lid, ymCid, ip || null, ua || null, isManager, !isManager],
     );
     await c.end();
   } catch {
@@ -85,6 +90,7 @@ export const POST: APIRoute = async ({ request }) => {
     const lidRaw = body.lid;
     const token = body.t;
     const ymCid = body.ym_client_id;
+    const isManager = body.is_manager === true;
 
     const lid = Number(lidRaw);
     if (!Number.isInteger(lid) || lid <= 0 || lid > 9999999) {
@@ -103,21 +109,26 @@ export const POST: APIRoute = async ({ request }) => {
 
     const auth = await alfaAuth();
     if (!auth) {
-      await logBinding(lid, ymCid, ip, ua);
+      await logBinding(lid, ymCid, ip, ua, isManager);
       return new Response(JSON.stringify({ ok: true, crm: false }), { status: 200 });
     }
 
-    const currentNote = await getCustomerNote(auth.host, auth.token, lid);
-    if (currentNote.includes(`ymCid:${ymCid}`)) {
-      return new Response(JSON.stringify({ ok: true, crm: true, dup: true }), { status: 200 });
+    // Менеджер — только логируем, CRM не трогаем
+    if (isManager) {
+      await logBinding(lid, ymCid, ip, ua, true);
+      return new Response(JSON.stringify({ ok: true, crm: false, manager: true }), { status: 200 });
     }
 
+    // Клиент — перезаписываем предыдущую запись ymCid в CRM (last-wins)
+    const currentNote = await getCustomerNote(auth.host, auth.token, lid);
+
+    // Удаляем старые ymCid-записи, пишем только актуальный
+    const noteWithoutOldCid = currentNote.replace(/\n?\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}\] ymCid:[0-9]+/g, '').trim();
     const stamp = new Date().toISOString().replace('T', ' ').slice(0, 16);
-    const append = `\n[${stamp}] ymCid:${ymCid}`;
-    const newNote = (currentNote || '').trim() + append;
+    const newNote = noteWithoutOldCid + `\n[${stamp}] ymCid:${ymCid}`;
 
     const ok = await updateCustomerNote(auth.host, auth.token, lid, newNote);
-    await logBinding(lid, ymCid, ip, ua);
+    await logBinding(lid, ymCid, ip, ua, false);
 
     return new Response(JSON.stringify({ ok: true, crm: ok }), { status: 200 });
   } catch (e) {
