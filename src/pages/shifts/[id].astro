@@ -51,7 +51,7 @@ const heroDateBig = sameMonth
 const heroMonthLabel = sameMonth ? months[startMonth] : '';
 
 // SEO
-const seoTitle = `${shift.name}: детский лагерь в Подмосковье, ${shift.dates} 2026 — АйДаКемп`;
+const seoTitle = `${shift.name} — IT-лагерь АйДаКемп, ${shift.dates} 2026`;
 const seoDescription = `${shift.duration} в IT-лагере под Москвой: Python, AI, хакатон. Возраст 7–15, ${shift.price} всё включено. ${shift.dates} 2026.`;
 const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
 ---
@@ -61,6 +61,62 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
   description={seoDescription}
   heroPreloadDesktop="/images/hero-desktop.avif"
 >
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": ["EducationEvent", "ChildrensEvent"],
+          "@id": `https://aidacamp.ru/shifts/${shift.id}/`,
+          "name": `${shift.name} — АйДаКемп ${shift.dates} 2026`,
+          "description": shift.description,
+          "startDate": shift.startDate,
+          "endDate": shift.endDate,
+          "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+          "eventStatus": "https://schema.org/EventScheduled",
+          "url": `https://aidacamp.ru/shifts/${shift.id}/`,
+          "image": "https://aidacamp.ru/images/hero-desktop.avif",
+          "location": {
+            "@type": "Place",
+            "name": "Санаторий Изумруд",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Наро-Фоминский городской округ",
+              "addressRegion": "Московская область",
+              "addressCountry": "RU",
+              "postalCode": "143381"
+            }
+          },
+          "organizer": {
+            "@type": "Organization",
+            "name": "АйДаКемп",
+            "url": "https://aidacamp.ru"
+          },
+          "offers": {
+            "@type": "Offer",
+            "price": shift.price.replace(/[^\d]/g, ''),
+            "priceCurrency": "RUB",
+            "availability": shift.free > 0 ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
+            "url": `https://aidacamp.ru/shifts/${shift.id}/`,
+            "validFrom": "2026-01-01"
+          },
+          "audience": {
+            "@type": "PeopleAudience",
+            "suggestedMinAge": 7,
+            "suggestedMaxAge": 15
+          }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://aidacamp.ru/" },
+            { "@type": "ListItem", "position": 2, "name": "Смены", "item": "https://aidacamp.ru/shifts/" },
+            { "@type": "ListItem", "position": 3, "name": shift.name, "item": `https://aidacamp.ru/shifts/${shift.id}/` }
+          ]
+        }
+      ]
+    })} />
+  </Fragment>
   {shift.id === 'shift-1' && (
     <div
       id="shift-top-bar"
