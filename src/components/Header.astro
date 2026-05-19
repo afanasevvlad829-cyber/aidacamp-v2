@@ -7,22 +7,22 @@ import BrandName from './BrandName.astro';
 // Menu per Design System v3 (Section 16):
 // Top: главные конверсионные + философия. More: вспомогательные.
 const navItems = [
-  { label: 'Смены', href: '#shifts' },
-  { label: 'Цены', href: '#economy' },
-  { label: 'Философия', href: '#philosophy' },
+  { label: 'Смены', href: '/#shifts' },
+  { label: 'Цены', href: '/#economy' },
+  { label: 'Философия', href: '/#philosophy' },
 ];
 
 const moreItems = [
-  { label: 'О лагере', href: '#about' },
-  { label: 'Как проходит смена', href: '#journey' },
-  { label: 'Команда', href: '#team' },
-  { label: 'Размещение', href: '#stay' },
-  { label: 'Отзывы', href: '#reviews' },
-  { label: 'FAQ', href: '#faq' },
+  { label: 'О лагере', href: '/#about' },
+  { label: 'Как проходит смена', href: '/#journey' },
+  { label: 'Команда', href: '/#team' },
+  { label: 'Размещение', href: '/#stay' },
+  { label: 'Отзывы', href: '/#reviews' },
+  { label: 'FAQ', href: '/#faq' },
   { label: 'Документы', href: '/stati/dokumenty-licenziya-strahovka/' },
   { label: 'Фото', href: '/foto/' },
   { label: 'Видео', href: '/video/' },
-  { label: 'Контакты', href: '#contacts' },
+  { label: 'Контакты', href: '/#contacts' },
 ];
 
 const allNavItems = [...navItems, ...moreItems];
@@ -177,11 +177,16 @@ const allNavItems = [...navItems, ...moreItems];
   document.addEventListener('astro:page-load', initNavMore);
   initNavMore();
 
-  // Если якоря нет на текущей странице — ведём на главную с якорем
-  document.querySelectorAll<HTMLAnchorElement>('header a[href^="#"]').forEach((link) => {
-    const id = link.getAttribute('href')?.slice(1);
-    if (id && id !== 'hero' && !document.getElementById(id)) {
-      link.setAttribute('href', '/' + link.getAttribute('href'));
-    }
+  // Якорные ссылки: если на главной — smooth scroll, иначе полный переход /#X
+  document.querySelectorAll<HTMLAnchorElement>('header a[href^="/#"]').forEach((link) => {
+    link.addEventListener('click', (e) => {
+      const hash = link.getAttribute('href')!.slice(1); // '#shifts'
+      const target = document.getElementById(hash.slice(1)); // 'shifts'
+      if (target && window.location.pathname === '/') {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        history.pushState(null, '', hash);
+      }
+    });
   });
 </script>

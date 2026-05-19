@@ -103,9 +103,22 @@ const { items } = Astro.props;
     menuBtn?.addEventListener('click', openMenu);
     menuClose?.addEventListener('click', closeMenu);
 
-    // Close on nav link click
-    menu?.querySelectorAll('.mobile-nav-link').forEach((link) => {
-      link.addEventListener('click', closeMenu);
+    // Close on nav link click + smooth scroll для якорных ссылок на главной
+    menu?.querySelectorAll<HTMLAnchorElement>('.mobile-nav-link').forEach((link) => {
+      link.addEventListener('click', (e) => {
+        closeMenu();
+        const href = link.getAttribute('href') || '';
+        if (href.startsWith('/#') && window.location.pathname === '/') {
+          const target = document.getElementById(href.slice(2));
+          if (target) {
+            e.preventDefault();
+            setTimeout(() => {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              history.pushState(null, '', href.slice(1));
+            }, 200); // ждём закрытия меню
+          }
+        }
+      });
     });
   }
 
