@@ -64,6 +64,12 @@ const shiftsJson = JSON.stringify(allShifts.map(s => ({
           Вы с сайта нашей школы — −5%
         </p>
 
+        <!-- Codims badge (скрыт по умолчанию, показывается JS) -->
+        <p id="r-from-badge" class="hidden mb-3 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-[12px] font-bold text-primary">
+          <i class="bi bi-mortarboard-fill text-[11px]" aria-hidden="true"></i>
+          Вы с сайта нашей школы — −5%
+        </p>
+
         <!-- Shift name -->
         <h1 id="r-title" class="text-[32px] md:text-[50px] font-extrabold leading-[1.05] tracking-[-0.02em] text-transparent opacity-0 transition-opacity duration-500" style="-webkit-text-stroke: 2px white;">
           &nbsp;
@@ -270,6 +276,14 @@ function getTargetShift() {
   )[0] || SHIFTS[0];
 }
 
+function getFromSource() {
+  try {
+    const param = new URLSearchParams(window.location.search).get('from');
+    if (param) { sessionStorage.setItem('ac:r_from', param); return param; }
+    return sessionStorage.getItem('ac:r_from') || null;
+  } catch { return null; }
+}
+
 function getAgeGroupKey() {
   try {
     const age = parseInt(localStorage.getItem('ac:age') || '', 10);
@@ -338,7 +352,9 @@ function openBookingModal(shift) {
   const priceEl = modal.querySelector('[data-book-shift-price]');
   const specialEl = modal.querySelector('[data-book-shift-special]');
 
-  const noDiscount = !!localStorage.getItem('ac:r_no_discount');
+  const isCodims2 = getFromSource() === 'codims';
+  const codimsVisits2 = parseInt(localStorage.getItem('ac:codims_visits') || '1', 10);
+  const noDiscount = isCodims2 ? codimsVisits2 > 1 : !!localStorage.getItem('ac:r_no_discount');
   const fullNum2 = parsePriceNum(shift.price);
   const modalPrice = noDiscount ? fullNum2 : Math.round(fullNum2 * 0.95 / 100) * 100;
 
@@ -377,17 +393,16 @@ function init() {
   const fromSource = getFromSource();
   const isCodims = fromSource === 'codims';
 
-  // Для codims — всегда смена 1, считаем визиты
-  let shift;
+  // Считаем визит кодимс-пользователя
+  let codimsVisits = 1;
   if (isCodims) {
-    shift = getTargetShiftForCodims();
     try {
-      const cv = parseInt(localStorage.getItem('ac:codims_visits') || '0') + 1;
-      localStorage.setItem('ac:codims_visits', String(cv));
+      codimsVisits = parseInt(localStorage.getItem('ac:codims_visits') || '0') + 1;
+      localStorage.setItem('ac:codims_visits', String(codimsVisits));
     } catch {}
-  } else {
-    shift = getTargetShift();
   }
+
+  const shift = getTargetShift();
   if (!shift) return;
 
   const daysLeft = shift.startDate
@@ -412,22 +427,23 @@ function init() {
   show('r-seats-inline', freeLabel(shift.free));
   document.getElementById('r-cta-row').style.opacity = '1';
 
-  const codimsVisits = parseInt(localStorage.getItem('ac:codims_visits') || '1', 10);
   const noDiscount = isCodims
-    ? codimsVisits > 1  // codims: скидка только при первом визите
+    ? codimsVisits > 1
     : !!localStorage.getItem('ac:r_no_discount');
   const showTimer = isCodims
-    ? codimsVisits === 1  // codims: таймер только при первом визите
+    ? codimsVisits === 1
     : !noDiscount;
 
   const fullNum = parsePriceNum(shift.price);
 
   if (noDiscount) {
+    // Повторный визит или codims 2+: обычная цена, без скидки и таймера
     const discEl = document.getElementById('r-price-discounted');
     if (discEl) discEl.textContent = formatPrice(fullNum);
     const offerRow = document.querySelector('#r-cta-row .flex.flex-wrap.items-center.gap-2');
     if (offerRow) offerRow.style.display = 'none';
   } else {
+    // Первый визит: цена со скидкой −5% и таймером
     const discNum = Math.round(fullNum * 0.95 / 100) * 100;
     const savingsNum = fullNum - discNum;
     const origEl = document.getElementById('r-price-original');
@@ -447,6 +463,11 @@ function init() {
       const timerLabel = timerEl?.parentElement;
       if (timerLabel) timerLabel.style.display = 'none';
     }
+  }
+
+  // Метрика: фиксируем визит с codims
+  if (isCodims) {
+    try { window.ym && window.ym(96499295, 'reachGoal', 'codims_r_page_view', { visit: codimsVisits }); } catch {}
   }
 
   // Вычет: показываем сумму возврата, не итоговую цену
