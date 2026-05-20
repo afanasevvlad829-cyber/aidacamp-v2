@@ -32,8 +32,7 @@ deploy_to() {
   local DIR="$1"
   local LABEL="$2"
 
-  # Статика — БЕЗ --delete чтобы не снести server/ и node_modules/
-  # Используем --delete-excluded=no (или просто убираем --delete)
+  # Статика
   rsync -a \
     --exclude='.env' \
     --exclude='server/' \
@@ -41,8 +40,8 @@ deploy_to() {
     --exclude='backup-*' \
     "$REPO/dist/client/" "$DIR/" && echo "  ✅ client → $LABEL"
 
-  # SSR — отдельно, с --delete только внутри server/
-  rsync -a --delete \
+  # SSR
+  rsync -a \
     "$REPO/dist/server/" "$DIR/server/" && echo "  ✅ server → $LABEL"
 
   # node_modules — симлинк
