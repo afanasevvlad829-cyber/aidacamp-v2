@@ -175,8 +175,8 @@ rsync -az --delete --stats \
 # ── 4. node_modules — гарантируем наличие и создаём симлинк ──
 echo ""
 echo "📦 node_modules..."
-REPO_DIR="/var/www/aidacamp-dev/repo"
-[ "$TARGET" = "prod" ] && REPO_DIR="/var/www/aidacamp/repo"
+# Единый каталог с node_modules — репо на сервере
+REPO_DIR="/opt/aidacamp-site"
 REPO_MODULES="$REPO_DIR/node_modules"
 
 # Проверяем наличие @astrojs/node (маркер корректной установки)
@@ -185,17 +185,14 @@ MODULES_OK=$(ssh -i "$SSH_KEY" "$SSH_HOST" \
 
 if [ "$MODULES_OK" = "missing" ]; then
   echo "  ⚠️  node_modules отсутствуют → npm install на сервере..."
-  # Копируем package.json если его нет или он устарел
-  rsync -az -e "ssh -i $SSH_KEY" package.json package-lock.json "$SSH_HOST:$REPO_DIR/" 2>/dev/null || \
-    rsync -az -e "ssh -i $SSH_KEY" package.json "$SSH_HOST:$REPO_DIR/"
   ssh -i "$SSH_KEY" "$SSH_HOST" \
     "cd '$REPO_DIR' && npm install --omit=dev --prefer-offline 2>&1 | tail -3"
   echo "  ✅ node_modules установлены"
 else
-  echo "  ✅ node_modules актуальны"
+  echo "  ✅ node_modules актуальны ($REPO_MODULES)"
 fi
 
-# Создаём симлинк
+# Симлинк node_modules → deploy-директория (не сносится rsync, т.к. exclude выше)
 ssh -i "$SSH_KEY" "$SSH_HOST" "ln -sfn $REPO_MODULES ${REMOTE_DIR%/}/node_modules" || true
 
 # ── 5. Restart SSR ────────────────────────────────────────────
