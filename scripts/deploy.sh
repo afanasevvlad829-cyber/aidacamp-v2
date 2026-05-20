@@ -14,6 +14,19 @@ SSH_KEY_PROD="$HOME/.ssh/aidacamp_prod"
 
 TARGET="${1:-dev}"
 
+# ── GUARD: прод-деплой только с MASTER_AGENT=1 ───────────────
+# Защита от прямого запуска агентами/скриптами без явного разрешения.
+if [ "$TARGET" = "prod" ] && [ "${MASTER_AGENT:-0}" != "1" ] && [ "${SKIP_GIT_GUARD:-0}" != "1" ]; then
+  echo "❌ PROD DEPLOY BLOCKED"
+  echo ""
+  echo "   Прод-деплой требует явного разрешения владельца."
+  echo "   Запускай только так:"
+  echo "     MASTER_AGENT=1 ./scripts/deploy.sh prod"
+  echo ""
+  echo "   Агентам запрещено деплоить в прод напрямую."
+  exit 1
+fi
+
 # ── 0. Pre-flight git guard ───────────────────────────────────
 # Запрещаем деплой при расхождении git ↔ working tree ↔ origin.
 # Обход: SKIP_GIT_GUARD=1 (только для критических hotfix владельцем).
@@ -119,7 +132,7 @@ HERO_IMAGES=$(grep -oE '/images/hero-mobile-bean[a-z0-9-]*\.(webp|avif)' dist/cl
 # ── 1. Статика (HTML, CSS, JS, _astro) ────────────────────────
 echo ""
 echo "🚀 Деплой статики на $LABEL..."
-rsync -az --delete --stats \
+rsync -az --stats \
   --exclude='.env' \
   --exclude='server/' \
   --exclude='node_modules/' \
@@ -159,9 +172,27 @@ rsync -az --delete --stats \
   -e "ssh -i $SSH_KEY" \
   dist/server/ "$SSH_HOST:$SSR_DIR"
 
-# ── 4. node_modules symlink ───────────────────────────────────
-REPO_MODULES="/var/www/aidacamp-dev/repo/node_modules"
-[ "$TARGET" = "prod" ] && REPO_MODULES="/var/www/aidacamp/repo/node_modules"
+# ── 4. node_modules — гарантируем наличие и создаём симлинк ──
+echo ""
+echo "📦 node_modules..."
+# Единый каталог с node_modules — репо на сервере
+REPO_DIR="/opt/aidacamp-site"
+REPO_MODULES="$REPO_DIR/node_modules"
+
+# Проверяем наличие @astrojs/node (маркер корректной установки)
+MODULES_OK=$(ssh -i "$SSH_KEY" "$SSH_HOST" \
+  "test -d '$REPO_MODULES/@astrojs/node' && echo ok || echo missing")
+
+if [ "$MODULES_OK" = "missing" ]; then
+  echo "  ⚠️  node_modules отсутствуют → npm install на сервере..."
+  ssh -i "$SSH_KEY" "$SSH_HOST" \
+    "cd '$REPO_DIR' && npm install --omit=dev --prefer-offline 2>&1 | tail -3"
+  echo "  ✅ node_modules установлены"
+else
+  echo "  ✅ node_modules актуальны ($REPO_MODULES)"
+fi
+
+# Симлинк node_modules → deploy-директория (не сносится rsync, т.к. exclude выше)
 ssh -i "$SSH_KEY" "$SSH_HOST" "ln -sfn $REPO_MODULES ${REMOTE_DIR%/}/node_modules" || true
 
 # ── 5. Restart SSR ────────────────────────────────────────────

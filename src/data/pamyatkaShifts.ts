@@ -1,12 +1,14 @@
 // Конфиг смен для памятки: group_id из Альфа-CRM → CTA-данные.
-// Если для смены нет TG-канала — CTA-блок не показывается совсем.
-// Добавляй новые смены сюда; group_id берётся из CRM → Группы → URL содержит ?id=XXX.
+// TG и Max ссылки берутся динамически из поля note группы в CRM (getGroupLinks).
+// Здесь только статика: даты, телефон менеджера.
+// group_id берётся из CRM → Группы → URL содержит ?id=XXX.
 
 export type PamyatkaShift = {
   groupId: number;
   num: string;
   name: string;
   dates: string;
+  // tg и max подгружаются динамически из поля note группы в Альфа-CRM (getGroupLinks)
   tg?: string;
   max?: string;
   manager?: string;
@@ -20,7 +22,6 @@ export const PAMYATKA_SHIFTS: Record<number, PamyatkaShift> = {
     num: '1',
     name: '1 смена',
     dates: '30 мая – 8 июня 2026',
-    tg: 'https://t.me/+lHP-2IyCPSI5NDcy',
     manager: 'Progaschool',
     phone: '+79688086455',
     phoneDisplay: '+7 (968) 808-64-55',
@@ -30,20 +31,15 @@ export const PAMYATKA_SHIFTS: Record<number, PamyatkaShift> = {
     num: '2',
     name: '2 смена',
     dates: '10 июня – 16 июня 2026',
-    tg: 'https://t.me/+oM_4iFtAjDFhMzdi',
-    max: 'https://max.ru/join/YJdMcpP7WoOzLCE_SdYf1mg9V4t',
     manager: 'Progaschool',
     phone: '+79688086455',
     phoneDisplay: '+7 (968) 808-64-55',
   },
-  // 661 done
   662: {
     groupId: 662,
     num: '3',
     name: '3 смена',
     dates: '16 июня – 23 июня 2026',
-    tg: 'https://t.me/+oM_4iFtAjDFhMzdi',
-    max: 'https://max.ru/join/YJdMcpP7WoOzLCE_SdYf1mg9V4t',
     manager: 'Progaschool',
     phone: '+79688086455',
     phoneDisplay: '+7 (968) 808-64-55',
@@ -53,8 +49,6 @@ export const PAMYATKA_SHIFTS: Record<number, PamyatkaShift> = {
     num: '4',
     name: '4 смена',
     dates: '10 июня – 23 июня 2026',
-    tg: 'https://t.me/+oM_4iFtAjDFhMzdi',
-    max: 'https://max.ru/join/YJdMcpP7WoOzLCE_SdYf1mg9V4t',
     manager: 'Progaschool',
     phone: '+79688086455',
     phoneDisplay: '+7 (968) 808-64-55',
