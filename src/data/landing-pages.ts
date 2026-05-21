@@ -86,6 +86,7 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь на зимние каникулы', description: 'IT-смена в декабре 2026 — январе 2027', url: '/lager-na-zimnie-kanikuly', icon: 'bi-snow' },
 
   // 🎨 Прочее
+  { title: 'Пионерский лагерь', description: 'Современный аналог — IT-смены 2026', url: '/pionerskiy-lager', icon: 'bi-flag-fill' },
   { title: 'Лагерь без телефонов', description: 'Ребёнок без гаджетов 24/7', url: '/lager-bez-telefonov', icon: 'bi-phone-x' },
   { title: 'Тематический лагерь', description: 'Каждая смена — своя тема', url: '/tematicheskiy-lager', icon: 'bi-bullseye' },
   { title: 'Образовательный лагерь', description: 'Учёба + результат за смену', url: '/obrazovatelnyy-lager', icon: 'bi-book' },
