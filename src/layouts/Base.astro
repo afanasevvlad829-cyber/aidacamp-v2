@@ -4,7 +4,6 @@ import '../styles/icons.css';
 import '../styles/mobile-ux-p0.css';
 import '../styles/microinteractions.css';
 import '../styles/print.css';
-import { CDN } from '../data/cdn';
 import AgeBar from '../components/AgeBar.astro';
 import ReferralModal from '../components/hero/ReferralModal.astro';
 import ShiftModal from '../components/ShiftModal.astro';
@@ -63,12 +62,12 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         Без этого Chrome грузит и мобильный, и десктопный вариант одновременно. */}
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     {/* LCP preload — после viewport, чтобы media="" в preload scanner работал корректно */}
-    {heroPreload && <link rel="preload" as="image" href={`${CDN}${heroPreload}`} type="image/avif" fetchpriority="high" />}
+    {heroPreload && <link rel="preload" as="image" href={heroPreload} type="image/avif" fetchpriority="high" />}
     {heroPreloadMobile && heroPreloadMobileSrcset
-      ? <link rel="preload" as="image" media="(max-width: 768px)" imagesrcset={heroPreloadMobileSrcset.split(',').map(s => { const [url, w] = s.trim().split(' '); return `${CDN}${url} ${w}`; }).join(', ')} imagesizes="(max-width: 480px) 390px, (max-width: 700px) 600px, 900px" fetchpriority="high" />
-      : heroPreloadMobile && <link rel="preload" as="image" media="(max-width: 768px)" href={`${CDN}${heroPreloadMobile}`} fetchpriority="high" />
+      ? <link rel="preload" as="image" media="(max-width: 768px)" imagesrcset={heroPreloadMobileSrcset} imagesizes="(max-width: 480px) 390px, (max-width: 700px) 600px, 900px" fetchpriority="high" />
+      : heroPreloadMobile && <link rel="preload" as="image" media="(max-width: 768px)" href={heroPreloadMobile} fetchpriority="high" />
     }
-    {heroPreloadDesktop && <link rel="preload" as="image" media="(min-width: 768px)" href={`${CDN}${heroPreloadDesktop}`} type="image/avif" fetchpriority="high" />}
+    {heroPreloadDesktop && <link rel="preload" as="image" media="(min-width: 768px)" href={heroPreloadDesktop} type="image/avif" fetchpriority="high" />}
     <meta name="description" content={description} />
     <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
     <!-- Mobile address bar / Android task switcher color (бренд orange) -->
@@ -77,8 +76,8 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     <title>{title}</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
-    <link rel="preload" as="font" href={`${CDN}/fonts/inter-cyrillic.woff2`} type="font/woff2" crossorigin />
-    <link rel="preload" as="font" href={`${CDN}/fonts/inter-latin.woff2`} type="font/woff2" crossorigin />
+    <link rel="preload" as="font" href="/fonts/inter-cyrillic.woff2" type="font/woff2" crossorigin />
+    <link rel="preload" as="font" href="/fonts/inter-latin.woff2" type="font/woff2" crossorigin />
     <!-- Bootstrap Icons: subset of 30 icons inlined locally (no CDN, no font download) -->
     <link rel="preconnect" href="https://mc.yandex.ru" crossorigin />
     <link rel="dns-prefetch" href="https://mc.yandex.ru" />
