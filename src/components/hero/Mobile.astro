@@ -1,19 +1,39 @@
 ---
 import { STAT_YEARS, STAT_KIDS, STAT_RATING, CAMP_PRICE_FROM, YANDEX_MAPS_URL } from '../../data/contacts';
+import { CDN } from '../../data/cdn';
 
 interface Props {
   imageSrc?: string;
   hasVariants?: boolean;
 }
 
-const { imageSrc = '/images/hero-mobile-bean-v3', hasVariants = false } = Astro.props;
+const { imageSrc = `${CDN}/images/hero-mobile-bean-v3`, hasVariants = false } = Astro.props;
 ---
 
-<!-- ===== MOBILE HERO — CSS placeholder → async photo crossfade ===== -->
-<!-- LCP = heading text (instant), hero-фото грузится в фоне через preload + JS-инжект -->
+<!-- ===== MOBILE HERO — static <picture> → CSS fade → LCP-оптимизация ===== -->
+<!-- LCP = hero photo (браузер находит <picture> при парсинге HTML, до JS) -->
 <div id="hero-mobile-root" class="relative w-full md:hidden overflow-hidden bg-dark-navy" style="padding-top: env(safe-area-inset-top); min-height: 95svh;">
 
-  <!-- ─── PHOTO: инжектируется JS-ом после DOMContentLoaded с opacity crossfade ─── -->
+  <!-- ─── PHOTO: статический <picture> — браузер обнаруживает при парсинге HTML ─── -->
+  <!-- fetchpriority=high + preload в <head> = максимально ранняя загрузка -->
+  <picture>
+    {hasVariants
+      ? <source type="image/webp" srcset={`${imageSrc}.webp 390w, ${imageSrc}-600.webp 600w, ${imageSrc}-900.webp 900w`} sizes="(max-width: 480px) 390px, (max-width: 700px) 600px, 900px" />
+      : <source type="image/webp" srcset={`${imageSrc}.webp`} />
+    }
+    <img
+      id="hero-mobile-photo"
+      src={`${imageSrc}.webp`}
+      alt="Дети на занятии в IT-лагере АйДаКемп"
+      width="390"
+      height="800"
+      fetchpriority="high"
+      loading="eager"
+      decoding="async"
+      class="absolute inset-0 h-full w-full object-cover"
+      style="object-position:center 30%;"
+    />
+  </picture>
   <!-- bg-dark-navy (#060a12) — CSS-плейсхолдер, виден пока грузится фото -->
 
   <!-- ─── ЕДИНЫЙ continuous overlay — overlay усилен в зоне tagline для читаемости ─── -->
@@ -94,16 +114,16 @@ const { imageSrc = '/images/hero-mobile-bean-v3', hasVariants = false } = Astro.
     .hero-bot-cta, .hero-bot-icon, #hero-title-mobile { animation: none !important; }
   }
 
-  /* Hero async photo — JS-инжект с crossfade */
+  /* Hero photo — CSS fade-in (не JS: браузер видит элемент сразу при парсинге → LCP) */
   #hero-mobile-photo {
-    opacity: 0;
+    animation: hero-photo-fade 0.9s ease-out both;
   }
-  #hero-mobile-photo.hero-loaded {
-    opacity: 1;
-    transition: opacity 1.4s ease;
+  @keyframes hero-photo-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
   @media (prefers-reduced-motion: reduce) {
-    #hero-mobile-photo.hero-loaded { transition: none; }
+    #hero-mobile-photo { animation: none; }
   }
 </style>
 
@@ -124,59 +144,4 @@ const { imageSrc = '/images/hero-mobile-bean-v3', hasVariants = false } = Astro.
 })();
 </script>
 
-<script define:vars={{ imageSrc, hasVariants }} is:inline>
-/* Hero photo async inject — LCP = heading text, фото грузится через preload + crossfade */
-(function () {
-  function mountHeroPhoto() {
-    var root = document.getElementById('hero-mobile-root');
-    if (!root || document.getElementById('hero-mobile-photo')) return;
-
-    /* Используем WebP (не AVIF): WebP декодируется в ~20× быстрее AVIF при 4× CPU throttling.
-       AVIF (270KB) → ~2400ms decode; WebP (293KB) → ~100ms decode → LCP ≈ 2s вместо 4.4s.
-       Preload в <head> также изменён на WebP srcset → browser hit-ует кэш. */
-    var img = document.createElement('img');
-    img.id = 'hero-mobile-photo';
-    img.alt = 'Дети на занятии в IT-лагере АйДаКемп';
-    img.className = 'absolute inset-0 h-full w-full object-cover';
-    /* opacity:0 inline — Astro-scoped CSS [data-astro-cid-*] не применится к JS-элементу */
-    img.style.cssText = 'object-position:center 30%;opacity:0;';
-    img.setAttribute('fetchpriority', 'high'); /* E.65: LCP-подсказка браузеру */
-    img.width = 390;
-    img.height = 800;
-    img.sizes = '(max-width: 480px) 390px, (max-width: 700px) 600px, 900px';
-    img.srcset = hasVariants
-      ? (imageSrc + '.webp 390w, ' + imageSrc + '-600.webp 600w, ' + imageSrc + '-900.webp 900w')
-      : (imageSrc + '.webp');
-    img.src = imageSrc + '.webp'; /* fallback + preload cache match */
-
-    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-
-    function fadeIn() {
-      if (prefersReducedMotion) {
-        img.style.opacity = '1';
-      } else {
-        /* double-rAF: первый фрейм — transition, второй — opacity:1 → плавная анимация */
-        requestAnimationFrame(function () {
-          img.style.transition = 'opacity 1.4s ease';
-          requestAnimationFrame(function () { img.style.opacity = '1'; });
-        });
-      }
-    }
-    img.addEventListener('load', fadeIn, { once: true });
-
-    /* Вставляем перед первым дочерним элементом — под overlay и текст */
-    root.insertBefore(img, root.firstChild);
-
-    /* Если картинка уже в кеше preload — показываем сразу без fade (LCP-оптимизация E.65) */
-    if (img.complete && img.naturalHeight > 0) {
-      img.style.opacity = '1';
-    }
-  }
-
-  if (document.readyState !== 'loading') {
-    mountHeroPhoto();
-  } else {
-    document.addEventListener('DOMContentLoaded', mountHeroPhoto, { once: true });
-  }
-})();
-</script>
+<!-- JS-инжект photo удалён: статический <picture> быстрее (LCP-fix 2026-05-21) -->

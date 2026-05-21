@@ -82,6 +82,6 @@ export default defineConfig({
     // CDN: статика раздаётся с Beget CDN (70 точек присутствия).
     // После настройки CNAME cdn.aidacamp.ru — заменить на https://cdn.aidacamp.ru
     // DEPLOY_ENV=dev → относительные пути (CDN не обслуживает dev.aidacamp.ru)
-    assetsPrefix: process.env.DEPLOY_ENV === 'dev' ? undefined : 'https://huhodirekeka.begetcdn.cloud',
+    assetsPrefix: process.env.DEPLOY_ENV === 'dev' ? undefined : 'https://huhodireleka.begetcdn.cloud',
   },
 });
