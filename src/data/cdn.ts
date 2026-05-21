@@ -9,7 +9,6 @@
  * В dev-режиме (DEPLOY_ENV=dev) CDN не применяется — возвращается пустая строка,
  * что даёт относительные пути (/images/...).
  */
-export const CDN =
-  import.meta.env.DEV || process.env.DEPLOY_ENV === 'dev'
-    ? ''
-    : 'https://huhodireleka.begetcdn.cloud';
+// CDN disabled — begetcdn.cloud не отдаёт изображения с правильными заголовками (hotfix 2026-05-21)
+// Re-enable when CDN is properly configured with CORS + correct mime-types
+export const CDN = '';
