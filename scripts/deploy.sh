@@ -130,10 +130,17 @@ CRITICAL_ASSETS=$(grep -oE '/(assets|images|_astro)/[a-zA-Z0-9._/-]+\.(js|css|we
 HERO_IMAGES=$(grep -oE '/images/hero-mobile-bean[a-z0-9-]*\.(webp|avif)' dist/client/index.html | sort -u)
 
 # ── 1. Статика (HTML, CSS, JS, _astro) ────────────────────────
+# ВАЖНО: эти --exclude защищают runtime-данные, если веб-корень и SSR-дерево
+# лежат рядом (current/ + .env + node_modules в одной папке). НИКОГДА не
+# добавляй сюда --delete и не указывай REMOTE_DIR на «плоский» веб-корень:
+# `rsync --delete` по такому корню сносит current/, .env и node_modules
+# целиком. Инцидент 2026-05-22: ручной `rsync --delete` в /var/www/aidacamp-dev/
+# (живой nginx-root dev) удалил весь current/ + .env — dev упал бы при рестарте.
 echo ""
 echo "🚀 Деплой статики на $LABEL..."
 rsync -az --stats \
   --exclude='.env' \
+  --exclude='current/' \
   --exclude='server/' \
   --exclude='node_modules/' \
   --exclude='backup-*' \
