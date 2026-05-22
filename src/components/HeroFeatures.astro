@@ -188,9 +188,19 @@ const features = [
     sheet.classList.add('hf-opening');
     sheet.classList.remove('translate-y-4');
     sheet.addEventListener('transitionend', () => sheet.classList.remove('hf-opening'), { once: true });
-    document.body.style.overflow = 'hidden';
+    _lockScroll();
   }
 
+  // iOS Safari: overflow:hidden alone doesn't prevent scroll — use position:fixed
+  let _savedScrollY = 0;
+  function _lockScroll() {
+    _savedScrollY = window.scrollY;
+    Object.assign(document.body.style, { position: 'fixed', top: `-${_savedScrollY}px`, width: '100%', overflow: 'hidden' });
+  }
+  function _unlockScroll() {
+    Object.assign(document.body.style, { position: '', top: '', width: '', overflow: '' });
+    window.scrollTo(0, _savedScrollY);
+  }
   function closeModal() {
     if (!modal || !sheet) return;
     sheet.classList.remove('hf-opening');
@@ -198,7 +208,7 @@ const features = [
     modal.classList.remove('opacity-100');
     modal.setAttribute('aria-hidden', 'true');
     sheet.classList.add('translate-y-4');
-    document.body.style.overflow = '';
+    _unlockScroll();
     setTimeout(() => modal.classList.add('pointer-events-none'), 220);
   }
 

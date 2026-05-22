@@ -79,13 +79,31 @@ const { items } = Astro.props;
     const burgerIcon = document.getElementById('burger-icon');
     const closeIcon = document.getElementById('close-icon');
 
+    // iOS Safari fix: overflow:hidden alone doesn't prevent background scroll.
+    // Use position:fixed + scroll restoration instead.
+    let savedScrollY = 0;
+    function lockScroll() {
+      savedScrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${savedScrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+    }
+    function unlockScroll() {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, savedScrollY);
+    }
+
     function openMenu() {
       menu?.classList.remove('hidden');
       menu?.classList.add('flex');
       burgerIcon?.classList.add('hidden');
       closeIcon?.classList.remove('hidden');
       if (closeIcon) (closeIcon as HTMLElement).style.display = '';
-      document.body.style.overflow = 'hidden';
+      lockScroll();
       menuBtn?.setAttribute('aria-expanded', 'true');
       menuBtn?.setAttribute('aria-label', 'Закрыть меню');
     }
@@ -95,7 +113,7 @@ const { items } = Astro.props;
       menu?.classList.remove('flex');
       burgerIcon?.classList.remove('hidden');
       closeIcon?.classList.add('hidden');
-      document.body.style.overflow = '';
+      unlockScroll();
       menuBtn?.setAttribute('aria-expanded', 'false');
       menuBtn?.setAttribute('aria-label', 'Открыть меню');
     }
