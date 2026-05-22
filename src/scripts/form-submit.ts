@@ -11,6 +11,40 @@ function getYmUidCookie(): string {
   }
 }
 
+/** ubtcuid — идентификатор трекинга Andata (cookie ubtcuid) */
+function getUbtcuid(): string {
+  try {
+    const c = document.cookie.split(';').find((s) => s.trim().startsWith('ubtcuid='));
+    return c ? decodeURIComponent(c.trim().slice('ubtcuid='.length)) : '';
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * domain_userid Snowplow (Andata): сначала API трекера,
+ * иначе из cookie _sp_id.<hash> — первый сегмент до точки.
+ */
+function getDomainUserId(): string {
+  try {
+    const sp = (window as any).Snowplow;
+    const id = sp?.getTrackerCf?.()?.getDomainUserId?.();
+    if (id) return String(id);
+  } catch {
+    /* ignore */
+  }
+  try {
+    const c = document.cookie
+      .split(';')
+      .map((s) => s.trim())
+      .find((s) => s.startsWith('_sp_id.'));
+    if (c) return c.slice(c.indexOf('=') + 1).split('.')[0] || '';
+  } catch {
+    /* ignore */
+  }
+  return '';
+}
+
 /** Собирает контекст атрибуции и устройства */
 function collectContext(): Record<string, string> {
   const qs = new URLSearchParams(window.location.search);
@@ -87,6 +121,8 @@ function collectContext(): Record<string, string> {
     page_title: document.title,
     referrer: document.referrer,
     ym_client_id,
+    ubtcuid: getUbtcuid(),
+    domain_userid: getDomainUserId(),
     device,
     browser,
     screen: `${screen.width}×${screen.height}`,
