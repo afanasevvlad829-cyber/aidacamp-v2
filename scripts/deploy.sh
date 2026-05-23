@@ -165,6 +165,33 @@ if [ "$TARGET" = "prod" ]; then
   echo "  ✅ Галерея синхронизирована"
 fi
 
+# ── 2c. DEV: статика → плоский корень nginx (/var/www/aidacamp-dev/) ───────
+# На dev nginx отдаёт статику из ПЛОСКОГО корня, а не из current/ (см. инцидент
+# flat-root). Дублируем статику туда БЕЗ --delete — ничего не удаляем,
+# .env / data/ / images/gallery/ остаются нетронутыми.
+if [ "$TARGET" = "dev" ]; then
+  FLAT_DIR="/var/www/aidacamp-dev/"
+  echo ""
+  echo "🚀 [dev] Статика → плоский корень nginx ($FLAT_DIR)..."
+  rsync -az --stats \
+    --exclude='.env' \
+    --exclude='server/' \
+    --exclude='node_modules/' \
+    --exclude='backup-*' \
+    --exclude='current/' \
+    --exclude='client/' \
+    --exclude='images/gallery/' \
+    --exclude='data/' \
+    -e "ssh -i $SSH_KEY" \
+    dist/client/ "$SSH_HOST:$FLAT_DIR"
+  echo "🖼️  [dev] Картинки root → плоский корень..."
+  rsync -az \
+    --include='*.webp' --include='*.avif' --include='*.svg' --include='*.png' --include='*.jpg' --include='*.jpeg' --include='*.gif' \
+    --include='*/' --exclude='*' \
+    -e "ssh -i $SSH_KEY" \
+    dist/client/images/ "$SSH_HOST:${FLAT_DIR}images/"
+fi
+
 # ── 3. SSR ────────────────────────────────────────────────────
 echo ""
 echo "🔄 Деплой SSR-сервера..."
