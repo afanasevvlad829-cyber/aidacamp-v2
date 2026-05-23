@@ -52,6 +52,55 @@ async function updateCustomerNote(host: string, token: string, lid: number, note
   }
 }
 
+/** Полная карточка клиента (для чтения кастомных полей) */
+async function getCustomer(host: string, token: string, lid: number): Promise<Record<string, unknown> | null> {
+  try {
+    const r = await fetch(`https://${host}/v2api/${BRANCH}/customer/index?id=${lid}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
+      body: JSON.stringify({ id: lid }),
+    });
+    const j = await r.json();
+    return j?.items?.[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Дописывает id визита (ubtcuid / domain_userid / ym) в кастомные поля AlfaCRM
+ * по принципу fill-if-empty — НЕ перетирая значение, записанное с формы
+ * (та же сессия, что рекламный визит = более точный сигнал). Коды полей — из .env.
+ */
+async function bindAndataFields(
+  host: string,
+  token: string,
+  lid: number,
+  vals: { ubtcuid?: string; domainid?: string; ymuid?: string },
+): Promise<void> {
+  const fUbt = process.env.ALFACRM_FIELD_UBTCUID;
+  const fDom = process.env.ALFACRM_FIELD_DOMAINID;
+  const fYm = process.env.ALFACRM_FIELD_YMUID;
+  if (!fUbt && !fDom && !fYm) return;
+  if (!vals.ubtcuid && !vals.domainid && !vals.ymuid) return;
+  try {
+    const cust = await getCustomer(host, token, lid);
+    if (!cust) return;
+    const upd: Record<string, string> = {};
+    if (fUbt && vals.ubtcuid && !cust[fUbt]) upd[fUbt] = vals.ubtcuid;
+    if (fDom && vals.domainid && !cust[fDom]) upd[fDom] = vals.domainid;
+    if (fYm && vals.ymuid && !cust[fYm]) upd[fYm] = vals.ymuid;
+    if (!Object.keys(upd).length) return;
+    await fetch(`https://${host}/v2api/${BRANCH}/customer/update?id=${lid}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
+      body: JSON.stringify({ id: lid, ...upd }),
+    });
+  } catch {
+    /* best-effort */
+  }
+}
+
 // ── UA-парсер ─────────────────────────────────────────────────────────────────
 
 function parseUA(ua: string): { device: string; browser: string; os: string } {
@@ -237,6 +286,15 @@ export const POST: APIRoute = async ({ request }) => {
     const newNote = currentNote + newLine;
 
     const ok = await updateCustomerNote(auth.host, auth.token, lid, newNote);
+
+    // Andata: матчинг визита постфактум — дописываем id в кастомные поля (fill-if-empty).
+    // Не для менеджера, чтобы его устройство не привязалось к чужому заказу.
+    if (!isManager) {
+      const ubt = typeof body.ubtcuid === 'string' ? body.ubtcuid.slice(0, 100) : undefined;
+      const dom = typeof body.domain_userid === 'string' ? body.domain_userid.slice(0, 100) : undefined;
+      await bindAndataFields(auth.host, auth.token, lid, { ubtcuid: ubt, domainid: dom, ymuid: ymCid });
+    }
+
     return new Response(JSON.stringify({ ok: true, crm: ok, manager: isManager }), { status: 200 });
   } catch (e) {
     return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });

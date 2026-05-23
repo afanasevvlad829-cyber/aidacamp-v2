@@ -2,6 +2,20 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { appendFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import { sendAndataEvent, andataDatetime, andataPhone } from '../../lib/andata';
+import { allShifts } from '../../data/shifts';
+
+/** Цена выбранной смены в рублях по её названию (для Andata order_value) */
+function shiftPrice(shift: string): number | undefined {
+  const s = (shift || '').trim().toLowerCase();
+  if (!s) return undefined;
+  const found =
+    allShifts.find((x) => x.name.trim().toLowerCase() === s) ||
+    allShifts.find((x) => s.includes(x.name.trim().toLowerCase()));
+  if (!found) return undefined;
+  const n = parseInt(String(found.price).replace(/\D/g, ''), 10);
+  return Number.isNaN(n) ? undefined : n;
+}
 
 const LEADS_DIR = '/var/www/aidacamp-dev/leads';
 
@@ -205,6 +219,18 @@ async function createCrmLead(body: Record<string, string>): Promise<number | nul
 
     const headers = { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token };
     const phone = body.phone?.replace(/\D/g, '') || '';
+
+    // Кастомные поля для связки с Andata. Сами поля создаются в админке AlfaCRM,
+    // а их коды задаются в .env (ALFACRM_FIELD_UBTCUID / _DOMAINID / _YMUID).
+    // Пока коды не заданы — поля не пишем (order_new работает и без них).
+    const cf: Record<string, string> = {};
+    const fUbt = process.env.ALFACRM_FIELD_UBTCUID;
+    const fDom = process.env.ALFACRM_FIELD_DOMAINID;
+    const fYm  = process.env.ALFACRM_FIELD_YMUID;
+    if (fUbt && body.ubtcuid)        cf[fUbt] = body.ubtcuid;
+    if (fDom && body.domain_userid)  cf[fDom] = body.domain_userid;
+    if (fYm  && body.ym_client_id)   cf[fYm]  = body.ym_client_id;
+
     const payload = {
       name: `Лид ${body.age || ''}`.trim(),
       phone: [phone],
@@ -216,6 +242,8 @@ async function createCrmLead(body: Record<string, string>): Promise<number | nul
       utm_term:     body.utm_term     || undefined,
       // Полная заметка: смена, URL, устройство, клики, время на сайте
       note: buildCrmNote(body),
+      // Идентификаторы визита для Andata (если поля настроены)
+      ...cf,
     };
 
     // Лагерь — филиал 5
@@ -235,6 +263,12 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const body: Record<string, string> = await request.json();
     const { phone, age, shift, source } = body;
+
+    // Валидация телефона — минимум 10 цифр
+    const digits = (phone || '').replace(/\D/g, '');
+    if (digits.length < 10) {
+      return new Response(JSON.stringify({ ok: false, error: 'invalid_phone' }), { status: 400 });
+    }
 
     // Извлекаем IP и User-Agent для логирования
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -257,6 +291,28 @@ export const POST: APIRoute = async ({ request }) => {
 
     // PG лог (best-effort)
     await saveLeadToPg(body, { ip, userAgent, crmId });
+
+    // Andata — событие order_new. Fire-and-forget: НЕ ждём ответ и НЕ блокируем
+    // путь заявки (у sendAndataEvent есть свой таймаут и он не бросает исключений).
+    // Шлём только если CRM создал заказ — чтобы order_id == customer_id
+    // и cron смог связать будущую оплату (order_paid) с этим визитом.
+    if (crmId) {
+      void sendAndataEvent({
+        eventName: 'order_new',
+        source: 'aidacamp-site',
+        ubtcuid: body.ubtcuid,
+        domainid: body.domain_userid,
+        data: {
+          order_id: crmId,
+          order_date_create: andataDatetime(),
+          age_child: body.age || undefined,
+          order_value: shiftPrice(body.shift || ''),
+          input_phone: andataPhone(body.phone),
+          input_email: body.email || undefined,
+          ym_uid: body.ym_client_id || undefined,
+        },
+      });
+    }
 
     const text = buildTgText(body, crmId);
 

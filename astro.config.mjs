@@ -78,7 +78,7 @@ export default defineConfig({
     // Было: 'auto' (threshold 4KB) → Base.css 37KB уходил на CDN → блокировал рендер 1350мс.
     // Теперь: 'always' → CSS в <style> в HTML → рендер начинается сразу.
     // Минус: HTML тяжелее на ~70KB, но это компенсируется gzip и отсутствием round-trip к CDN.
-    inlineStylesheets: 'always',
+    inlineStylesheets: 'auto',
     // CDN: статика раздаётся с Beget CDN (70 точек присутствия).
     // После настройки CNAME cdn.aidacamp.ru — заменить на https://cdn.aidacamp.ru
     // DEPLOY_ENV=dev → относительные пути (CDN не обслуживает dev.aidacamp.ru)
