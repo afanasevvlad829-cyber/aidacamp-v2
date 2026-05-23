@@ -11,7 +11,7 @@ export const prerender = true;
 <meta name="robots" content="noindex,nofollow">
 <title>Конструктор смены · АйДаКемп</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-<style>
+<style is:global>
   :root{
     --bg:#f1f5f9;--surface:#fff;--surface2:#f8fafc;--border:#e2e8f0;--border2:#cbd5e1;
     --orange:#f97316;--orange-bg:rgba(236,124,0,.08);--orange-border:rgba(236,124,0,.3);
@@ -279,12 +279,10 @@ export const prerender = true;
 </div>
 
 <script is:inline>
-  // Гейт доступа: пускаем только при cookie staff_auth_2026=1, иначе — на /staff
   (function(){
     var ok = document.cookie.split('; ').reduce(function(r,v){var p=v.split('=');return p[0]==='staff_auth_2026'?decodeURIComponent(p.slice(1).join('=')):r;}, null);
     if (ok !== '1') { location.replace('/staff'); }
   })();
-  // Живое общее хранилище через /api/shift-plan
   window.PERSIST = {
     mode: 'live',
     load: async function(){ try { var r = await fetch('/api/shift-plan', {cache:'no-store'}); var j = await r.json(); return j && j.plan; } catch(e){ return null; } },
