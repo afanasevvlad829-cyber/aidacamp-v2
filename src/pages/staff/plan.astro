@@ -241,6 +241,7 @@ export const prerender = true;
     <button class="nav-btn" data-view="reports" onclick="setView('reports')"><i class="bi bi-megaphone-fill"></i> Отчёт родителям</button>
     <button class="nav-btn" data-view="checklists" onclick="setView('checklists')"><i class="bi bi-check2-square"></i> Чек-листы роли</button>
     <button class="nav-btn" data-view="team" onclick="setView('team')"><i class="bi bi-people-fill"></i> Команда смены</button>
+    <button class="nav-btn" data-view="settings" onclick="setView('settings')"><i class="bi bi-sliders"></i> Параметры смены</button>
     <div class="sb-divider"></div>
     <div class="sb-section">Смена</div>
     <div class="sb-meta" id="shiftMeta"></div>
@@ -316,6 +317,7 @@ const ROLES={
 const EDITOR_ROLES=['counselor','teacher','manager'];
 const ALL_ROLES=['counselor','teacher','manager','assistant','medic','chief'];
 const AV_COLORS=['#f97316','#2563eb','#16a34a','#9333ea','#0891b2','#db2777','#ca8a04','#0d9488'];
+const TYPE_LABEL={arrival:'День заезда',study:'Учебный день',defense:'Показ / защита',departure:'День выезда'};
 
 /* ============== SEED: реальный план из «боевого документа» ============== */
 function defaultPlan(){
@@ -493,9 +495,9 @@ function render(){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
   document.getElementById('roleSelect').value=currentRole;
   document.getElementById('modeBadge').textContent=PERSIST.mode==='live'?'рабочая':'превью';
-  document.getElementById('shiftMeta').innerHTML=`<b>${esc(plan.shift.name)}</b><br>${esc(plan.shift.place)}<br>${esc(plan.shift.kids)} · ${esc(plan.shift.duration)}`;
+  document.getElementById('shiftMeta').innerHTML=`<b>${esc(plan.shift.name)}</b><br>${esc(plan.shift.place)}<br>${esc(plan.shift.kids)} · ${plan.days.length} дней`;
   const c=document.getElementById('content');
-  c.innerHTML = view==='overview'?renderOverview() : view==='editor'?renderEditor() : view==='groups'?renderGroups() : view==='reports'?renderReports() : view==='checklists'?renderChecklists() : renderTeam();
+  c.innerHTML = view==='overview'?renderOverview() : view==='editor'?renderEditor() : view==='groups'?renderGroups() : view==='reports'?renderReports() : view==='checklists'?renderChecklists() : view==='settings'?renderSettings() : renderTeam();
 }
 function setView(v){ view=v; render(); }
 function setRole(r){ currentRole=r; render(); }
@@ -538,6 +540,7 @@ function openDay(i){ editorDay=i; view='editor'; render(); }
 
 /* ============== EDITOR ============== */
 function renderEditor(){
+  if(editorDay>=plan.days.length) editorDay=plan.days.length-1; if(editorDay<0) editorDay=0;
   let chips=`<div class="day-chips">`;
   plan.days.forEach((d,i)=>{ chips+=`<div class="chip${i===editorDay?' active':''}" onclick="selDay(${i})"><span class="chip-n">День ${d.n}</span><span class="chip-d">${d.date}</span></div>`; });
   chips+=`</div>`;
@@ -736,6 +739,52 @@ function renderTeam(){
 function plural(n,a,b,c){ const m=n%100,d=n%10; if(m>=11&&m<=14)return c; if(d===1)return a; if(d>=2&&d<=4)return b; return c; }
 function renamePerson(id,v){ const p=person(id); if(v.trim()){p.name=v.trim(); commit(); render();} }
 function addPerson(){ const n=document.getElementById('np-name').value.trim(); const r=document.getElementById('np-role').value; if(!n)return; plan.team.push({id:'p'+Date.now(),name:n,role:r,group:''}); commit(); render(); }
+
+/* ============== ПАРАМЕТРЫ СМЕНЫ (длительность / дни) ============== */
+function renderSettings(){
+  const s=plan.shift;
+  const metaCard=`<div class="ck-card" style="margin-bottom:18px">
+    <h4><i class="bi bi-info-circle"></i> Параметры смены</h4>
+    <div class="row2">
+      <div class="cb-section"><div class="cb-label">Название</div><input class="fld" value="${esc(s.name)}" onchange="setShiftField('name',this.value)"></div>
+      <div class="cb-section"><div class="cb-label">Место</div><input class="fld" value="${esc(s.place)}" onchange="setShiftField('place',this.value)"></div>
+    </div>
+    <div class="row2">
+      <div class="cb-section"><div class="cb-label">Участники</div><input class="fld" value="${esc(s.kids)}" onchange="setShiftField('kids',this.value)"></div>
+      <div class="cb-section"><div class="cb-label">Длительность</div><div class="cb-desc"><b>${plan.days.length}</b> дней — регулируется списком ниже</div></div>
+    </div>
+  </div>`;
+  const dayRows=plan.days.map((d,i)=>`<div class="person-card" style="gap:10px;flex-wrap:wrap">
+    <span class="avatar" style="background:var(--orange)">${d.n}</span>
+    <input class="fld" style="flex:1;min-width:110px" value="${esc(d.date)}" placeholder="напр. пт, 30 мая" onchange="setDayField(${i},'date',this.value)">
+    <select class="fld" style="width:auto" onchange="setDayField(${i},'type',this.value)">${Object.keys(TYPE_LABEL).map(t=>`<option value="${t}" ${d.type===t?'selected':''}>${TYPE_LABEL[t]}</option>`).join('')}</select>
+    <input class="fld" style="flex:2;min-width:150px" value="${esc(d.title)}" placeholder="Название дня" onchange="setDayField(${i},'title',this.value)">
+    <button class="link-btn" onclick="deleteDay(${i})" title="Удалить день"><i class="bi bi-trash3"></i></button>
+  </div>`).join('');
+  return `<div class="c-head"><div><div class="c-title">Параметры смены</div><div class="c-sub">Длительность регулируется списком дней. Тип дня задаёт обязательное расписание (заезд / учебный / показ / выезд). Удаление дня убирает его активности; последующие дни сдвигаются.</div></div></div>
+    ${metaCard}
+    <div class="cb-label">Дни смены · ${plan.days.length}</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">${dayRows}</div>
+    <button class="btn-primary" onclick="addDay()"><i class="bi bi-plus-lg"></i> Добавить день</button>`;
+}
+function setShiftField(f,v){ plan.shift[f]=v; commit(); render(); }
+function setDayField(i,f,v){ plan.days[i][f]=v; commit(); render(); }
+function addDay(){
+  plan.days.push({n:plan.days.length+1, date:'', type:'study', title:'Учебный день'});
+  plan.parentReports=plan.parentReports||[];
+  plan.parentReports.push({day:plan.days.length-1, time:'20:30', photos:'10', video:'видео', textTarget:'Итоги дня', draft:'', status:'draft', shots:['Уроки в процессе','Активности']});
+  commit(); render();
+}
+function deleteDay(i){
+  if(plan.days.length<=1){ alert('Должен остаться хотя бы один день'); return; }
+  const cnt=plan.activities.filter(a=>a.day===i).length;
+  if(!confirm(`Удалить День ${plan.days[i].n}? Активностей будет удалено: ${cnt}. Последующие дни сдвинутся.`)) return;
+  plan.activities=plan.activities.filter(a=>a.day!==i); plan.activities.forEach(a=>{ if(a.day>i)a.day-=1; });
+  plan.parentReports=(plan.parentReports||[]).filter(r=>r.day!==i); plan.parentReports.forEach(r=>{ if(r.day>i)r.day-=1; });
+  plan.days.splice(i,1); plan.days.forEach((d,idx)=>d.n=idx+1);
+  if(editorDay>=plan.days.length) editorDay=plan.days.length-1;
+  commit(); render();
+}
 
 /* ============== MODAL ============== */
 function openModal(){
