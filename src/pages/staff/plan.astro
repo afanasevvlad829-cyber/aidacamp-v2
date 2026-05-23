@@ -212,6 +212,30 @@ export const prerender = true;
   .btn-primary{background:var(--orange);border:none;border-radius:9px;padding:9px 18px;font-size:14px;font-weight:600;color:#fff;cursor:pointer}
   .btn-primary:hover{background:#ea6a08}
 
+  /* ── классическое расписание (день-таблица) ── */
+  .sched-wrap{overflow-x:auto;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface)}
+  .sched-table{width:100%;border-collapse:collapse;min-width:760px}
+  .sched-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);font-weight:700;padding:11px 14px;background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap}
+  .sched-table td{padding:9px 14px;border-bottom:1px solid var(--border);font-size:13.5px;vertical-align:middle}
+  .sched-table tbody tr:last-child td{border-bottom:none}
+  .sched-table td.t{font-weight:700;color:var(--text2);white-space:nowrap;font-size:12.5px;width:78px}
+  .sched-table tr.t-mandatory td.t{border-left:3px solid var(--blue)}
+  .sched-table tr.t-extra td.t{border-left:3px solid var(--green)}
+  .sched-table tr.row-anchor td{background:var(--surface2);color:var(--text3)}
+  .sched-table tr.row-anchor td.t{border-left:3px solid var(--text3)}
+  .sched-table tr:hover td{background:var(--surface2)}
+  .sched-table tr.row-anchor:hover td{background:var(--surface2)}
+  .sched-name{color:var(--text);cursor:pointer;font-weight:600}
+  .sched-name:hover{color:var(--orange);text-decoration:underline}
+  .sched-meta{color:var(--text3);font-size:11.5px}
+  .role-ic{color:var(--text3);font-size:12px;margin-right:4px}
+  .p-sel{border:1.5px solid var(--border);border-radius:7px;padding:5px 7px;font-size:12.5px;outline:none;background:var(--surface);cursor:pointer;max-width:160px}
+  .p-sel:focus{border-color:var(--orange)}
+  .p-sel.unset{color:var(--red);border-color:rgba(220,38,38,.3)}
+  .st-sel{border:1.5px solid var(--border);border-radius:7px;padding:5px 7px;font-size:12.5px;outline:none;cursor:pointer;background:var(--surface)}
+  .st-sel.st-progress{color:var(--orange);font-weight:600;background:var(--orange-bg);border-color:var(--orange-border)}
+  .st-sel.st-done{color:var(--green);font-weight:600;background:var(--green-bg)}
+
   @media(max-width:760px){.sidebar{display:none}.content{padding:16px}}
 </style>
 </head>
@@ -238,7 +262,8 @@ export const prerender = true;
 <div class="layout">
   <aside class="sidebar">
     <div class="sb-section">Конструктор</div>
-    <button class="nav-btn" data-view="overview" onclick="setView('overview')"><i class="bi bi-grid-3x3-gap-fill"></i> Вся смена</button>
+    <button class="nav-btn" data-view="schedule" onclick="setView('schedule')"><i class="bi bi-calendar3"></i> Расписание</button>
+    <button class="nav-btn" data-view="overview" onclick="setView('overview')"><i class="bi bi-grid-3x3-gap-fill"></i> Вся смена (по ролям)</button>
     <button class="nav-btn" data-view="editor" onclick="setView('editor')"><i class="bi bi-calendar2-week"></i> Моё расписание</button>
     <button class="nav-btn" data-view="groups" onclick="setView('groups')"><i class="bi bi-mortarboard-fill"></i> По группам</button>
     <button class="nav-btn" data-view="reports" onclick="setView('reports')"><i class="bi bi-megaphone-fill"></i> Отчёт родителям</button>
@@ -272,7 +297,10 @@ export const prerender = true;
         <div class="field"><label>Место</label><input type="text" id="f-place" placeholder="Класс A / Поляна / Корпуса"></div>
         <div class="field"><label>Группа</label><select id="f-group"></select></div>
       </div>
-      <div class="field"><label>Ответственный</label><select id="f-resp"></select></div>
+      <div class="field-row">
+        <div class="field"><label>Ответственный</label><select id="f-resp"></select></div>
+        <div class="field"><label>Исполнитель</label><select id="f-exec"></select></div>
+      </div>
       <div class="field"><label>Тип</label>
         <div class="type-radio">
           <label><input type="radio" name="f-type" value="mandatory" checked><i class="bi bi-pin-angle-fill"></i> Обязательная</label>
@@ -462,7 +490,7 @@ function defaultPlan(){
 }
 
 /* ============== STATE ============== */
-let plan=null, store=null, view='overview', currentRole='counselor', editorDay=0, filter='all', groupFilter='all', groupsScope='teacher', modalChk=[], saveTimer=null, _dragId=null;
+let plan=null, store=null, view='schedule', currentRole='counselor', editorDay=0, filter='all', groupFilter='all', groupsScope='teacher', modalChk=[], saveTimer=null, _dragId=null;
 function nid(p){ return p+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function activeShift(){ return store.shifts.find(s=>s.id===store.activeId) || store.shifts[0]; }
 function clonePlan(pl){ return JSON.parse(JSON.stringify(pl, (k,v)=> k.charAt(0)==='_'?undefined:v)); }
@@ -506,7 +534,7 @@ function render(){
   document.getElementById('modeBadge').textContent=PERSIST.mode==='live'?'рабочая':'превью';
   document.getElementById('shiftMeta').innerHTML=`<b>${esc(plan.shift.name)}</b><br>${esc(plan.shift.place)}<br>${esc(plan.shift.kids)} · ${plan.days.length} дней`;
   const c=document.getElementById('content');
-  c.innerHTML = view==='overview'?renderOverview() : view==='editor'?renderEditor() : view==='groups'?renderGroups() : view==='reports'?renderReports() : view==='checklists'?renderChecklists() : view==='settings'?renderSettings() : renderTeam();
+  c.innerHTML = view==='schedule'?renderSchedule() : view==='overview'?renderOverview() : view==='editor'?renderEditor() : view==='groups'?renderGroups() : view==='reports'?renderReports() : view==='checklists'?renderChecklists() : view==='settings'?renderSettings() : renderTeam();
 }
 function setView(v){ view=v; render(); }
 function setRole(r){ currentRole=r; render(); }
@@ -517,6 +545,44 @@ function newShift(){ const p=defaultPlan(); p.shift.name='Смена '+(store.sh
 function duplicateShift(id){ const src=store.shifts.find(s=>s.id===id)||activeShift(); const p=clonePlan(src.plan); p.shift.name=(src.plan.shift.name||'Смена')+' (копия)'; const v=nid('s'); store.shifts.push({id:v,plan:p}); store.activeId=v; editorDay=0; view='settings'; commit(); render(); }
 function deleteShift(id){ if(store.shifts.length<=1){ alert('Должна остаться хотя бы одна смена'); return; } const s=store.shifts.find(x=>x.id===id); if(!confirm('Удалить смену «'+(s.plan.shift.name||'')+'»? Необратимо.')) return; store.shifts=store.shifts.filter(x=>x.id!==id); if(store.activeId===id) store.activeId=store.shifts[0].id; plan=activeShift().plan; editorDay=0; commit(); render(); }
 function renameShift(id,v){ const s=store.shifts.find(x=>x.id===id); if(s&&v.trim()){ s.plan.shift.name=v.trim(); commit(); render(); } }
+
+/* ============== РАСПИСАНИЕ (классическая день-таблица) ============== */
+function personSelect(id,field,val){
+  return `<select class="p-sel${val?'':' unset'}" onchange="setPersonField('${id}','${field}',this.value)"><option value="">${field==='resp'?'— ответственный —':'— исполнитель —'}</option>`
+    + plan.team.map(p=>`<option value="${p.id}" ${val===p.id?'selected':''}>${esc(p.name)}</option>`).join('') + `</select>`;
+}
+function setPersonField(id,f,v){ const a=plan.activities.find(x=>x.id===id); if(a){a[f]=v; commit(); render();} }
+function gotoEdit(role,day){ currentRole=role; editorDay=day; view='editor'; render(); }
+
+function renderSchedule(){
+  if(editorDay>=plan.days.length) editorDay=plan.days.length-1; if(editorDay<0) editorDay=0;
+  let chips=`<div class="day-chips">`;
+  plan.days.forEach((d,i)=>{ chips+=`<div class="chip${i===editorDay?' active':''}" onclick="selDay(${i})"><span class="chip-n">День ${d.n}</span><span class="chip-d">${d.date}</span></div>`; });
+  chips+=`</div>`;
+  const d=plan.days[editorDay];
+  let rows=[];
+  (plan.anchors[d.type]||[]).forEach(a=>rows.push({anchor:true,start:a[0],end:a[1],title:a[2]}));
+  plan.activities.filter(a=>a.day===editorDay).forEach(a=>rows.push({anchor:false,...a}));
+  rows.sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+  let body='';
+  if(!rows.length) body=`<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">Пусто — добавьте активности в «Моём расписании»</td></tr>`;
+  rows.forEach(r=>{
+    if(r.anchor){
+      body+=`<tr class="row-anchor"><td class="t">${r.start}${r.end?'–'+r.end:''}</td><td><i class="bi bi-lock-fill"></i> ${esc(r.title)} <span class="sched-meta">· шаблон</span></td><td>—</td><td>—</td><td>—</td></tr>`;
+    } else {
+      const meta=[]; if(r.place)meta.push(esc(r.place)); if(r.group&&r.group!=='Все')meta.push(esc(r.group));
+      const st={planned:'Запланировано',progress:'В работе',done:'Выполнено'};
+      const statusSel=`<select class="st-sel st-${r.status}" onchange="setStatus('${r.id}',this.value)">${Object.keys(st).map(k=>`<option value="${k}" ${r.status===k?'selected':''}>${st[k]}</option>`).join('')}</select>`;
+      body+=`<tr class="t-${r.type}"><td class="t">${r.start}${r.end?'–'+r.end:''}</td>
+        <td><i class="bi ${ROLES[r.role].icon} role-ic"></i><a class="sched-name" onclick="gotoEdit('${r.role}',${editorDay})">${esc(r.title)}</a>${meta.length?` <span class="sched-meta">· ${meta.join(' · ')}</span>`:''}</td>
+        <td>${personSelect(r.id,'resp',r.resp)}</td>
+        <td>${personSelect(r.id,'exec',r.exec||'')}</td>
+        <td>${statusSel}</td></tr>`;
+    }
+  });
+  const table=`<div class="sched-wrap"><table class="sched-table"><thead><tr><th>Время</th><th>Активность</th><th>Ответственный</th><th>Исполнитель</th><th>Статус</th></tr></thead><tbody>${body}</tbody></table></div>`;
+  return `<div class="c-head"><div><div class="c-title">Расписание · День ${d.n} · ${d.date}</div><div class="c-sub">${esc(d.title)}. Весь день по времени, все роли вместе. Назначайте ответственного и исполнителя прямо в строке. Клик по названию — полное редактирование (чек-лист, описание).</div></div></div>${chips}${table}`;
+}
 
 /* ============== OVERVIEW ============== */
 function renderOverview(){
@@ -679,6 +745,7 @@ function renderActCard(a){
   const meta=[]; if(a.place) meta.push(`<span><i class="bi bi-geo-alt"></i> ${esc(a.place)}</span>`); if(a.group&&a.group!=='Все') meta.push(`<span><i class="bi bi-people"></i> ${esc(a.group)}</span>`);
   const chkRows=a.checklist.map((c,i)=>`<div class="chk-row${c.done?' done':''}" onclick="toggleChk('${a.id}',${i})"><input type="checkbox" ${c.done?'checked':''} onclick="event.stopPropagation()"><span>${esc(c.text)}</span></div>`).join('');
   const respOpts=plan.team.map(p=>`<option value="${p.id}" ${a.resp===p.id?'selected':''}>${esc(p.name)} · ${ROLES[p.role].label}</option>`).join('');
+  const execOpts=plan.team.map(p=>`<option value="${p.id}" ${a.exec===p.id?'selected':''}>${esc(p.name)} · ${ROLES[p.role].label}</option>`).join('');
   const grpOpts=plan.groups.map(gg=>`<option value="${gg}" ${a.group===gg?'selected':''}>${gg}</option>`).join('');
   return `<div class="tl-item t-${a.type}"><div class="tl-time">${a.start}<small>${a.end||''}</small></div><div class="tl-line"></div>
     <div class="tl-card${open}">
@@ -693,7 +760,11 @@ function renderActCard(a){
         ${a.desc?`<div class="cb-section"><div class="cb-label">Содержание</div><div class="cb-desc">${esc(a.desc)}</div></div>`:''}
         <div class="row2">
           <div class="cb-section"><div class="cb-label">Ответственный</div><select class="fld" onchange="setResp('${a.id}',this.value)"><option value="">— не назначен —</option>${respOpts}</select></div>
+          <div class="cb-section"><div class="cb-label">Исполнитель</div><select class="fld" onchange="setField('${a.id}','exec',this.value)"><option value="">— не назначен —</option>${execOpts}</select></div>
+        </div>
+        <div class="row2">
           <div class="cb-section"><div class="cb-label">Время</div><span style="display:flex;gap:6px"><input class="fld" type="time" value="${a.start}" onchange="setField('${a.id}','start',this.value)"><input class="fld" type="time" value="${a.end||''}" onchange="setField('${a.id}','end',this.value)"></span></div>
+          <div class="cb-section"><div class="cb-label">Тип</div><select class="fld" onchange="setField('${a.id}','type',this.value)"><option value="mandatory" ${a.type==='mandatory'?'selected':''}>Обязательная</option><option value="extra" ${a.type==='extra'?'selected':''}>Доп. активность</option></select></div>
         </div>
         <div class="row2">
           <div class="cb-section"><div class="cb-label">Место</div><input class="fld" type="text" value="${esc(a.place)}" placeholder="Класс A / Поляна" onchange="setField('${a.id}','place',this.value)"></div>
@@ -836,7 +907,9 @@ function openModal(){
   document.getElementById('f-start').value='14:00'; document.getElementById('f-end').value='15:00';
   document.querySelector('input[name="f-type"][value="mandatory"]').checked=true;
   document.getElementById('f-group').innerHTML=plan.groups.map(g=>`<option value="${g}">${g}</option>`).join('');
-  document.getElementById('f-resp').innerHTML='<option value="">— не назначен —</option>'+plan.team.map(p=>`<option value="${p.id}">${esc(p.name)} · ${ROLES[p.role].label}</option>`).join('');
+  const teamOpts='<option value="">— не назначен —</option>'+plan.team.map(p=>`<option value="${p.id}">${esc(p.name)} · ${ROLES[p.role].label}</option>`).join('');
+  document.getElementById('f-resp').innerHTML=teamOpts;
+  document.getElementById('f-exec').innerHTML=teamOpts;
   renderModalChk(); document.getElementById('overlay').classList.add('open');
 }
 function closeModal(){ document.getElementById('overlay').classList.remove('open'); }
@@ -846,8 +919,8 @@ function saveActivity(){
   const title=document.getElementById('f-title').value.trim(); if(!title){alert('Введите название');return;}
   const type=document.querySelector('input[name="f-type"]:checked').value;
   const chk=modalChk.filter(c=>c.trim()).map(c=>({text:c.trim(),done:false}));
-  plan.activities.push({id:'a'+Date.now(),day:editorDay,role:currentRole,start:document.getElementById('f-start').value||'12:00',end:document.getElementById('f-end').value||'',title,
-    place:document.getElementById('f-place').value,group:document.getElementById('f-group').value,resp:document.getElementById('f-resp').value,type,desc:document.getElementById('f-desc').value,checklist:chk,status:'planned',result:'',_open:true});
+  plan.activities.push({id:nid('a'),day:editorDay,role:currentRole,start:document.getElementById('f-start').value||'12:00',end:document.getElementById('f-end').value||'',title,
+    place:document.getElementById('f-place').value,group:document.getElementById('f-group').value,resp:document.getElementById('f-resp').value,exec:document.getElementById('f-exec').value,type,desc:document.getElementById('f-desc').value,checklist:chk,status:'planned',result:'',_open:true});
   commit(); closeModal(); render();
 }
 
