@@ -132,7 +132,7 @@ HERO_IMAGES=$(grep -oE '/images/hero-mobile-bean[a-z0-9-]*\.(webp|avif)' dist/cl
 # ── 1. Статика (HTML, CSS, JS, _astro) ────────────────────────
 echo ""
 echo "🚀 Деплой статики на $LABEL..."
-rsync -az --stats \
+rsync -az --checksum --stats \
   --exclude='.env' \
   --exclude='server/' \
   --exclude='node_modules/' \
