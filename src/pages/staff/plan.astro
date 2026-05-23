@@ -267,6 +267,39 @@ export const prerender = true;
   .rg-block.t-extra{border-left-color:var(--green);background:var(--green-bg)}
   .rg-block.rg-conf{border:1.5px solid var(--red);border-left:3px solid var(--red);background:var(--red-bg)}
   .rg-block b{font-weight:700}
+  /* ── расселение ── */
+  .rooms-layout{display:flex;gap:16px;align-items:flex-start}
+  .rooms-grid{flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px;min-width:0}
+  .rooms-pool{width:252px;flex:none;position:sticky;top:14px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:12px;max-height:calc(100vh - 90px);display:flex;flex-direction:column}
+  .rooms-pool.over{border-color:var(--orange);background:var(--orange-bg)}
+  .pool-head{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:8px}
+  .pool-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;min-height:50px}
+  .pool-empty{color:var(--text3);font-size:13px;text-align:center;padding:18px 0}
+  .pool-actions{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+  .kid{display:flex;align-items:center;gap:7px;background:var(--surface);border:1.5px solid var(--border);border-left:3px solid var(--border2);border-radius:8px;padding:5px 8px;font-size:12.5px;cursor:grab}
+  .kid:active{cursor:grabbing}
+  .kid.m{border-left-color:#2563eb}.kid.f{border-left-color:#db2777}
+  .kid-g{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;background:var(--text3);flex-shrink:0;cursor:pointer}
+  .kid.m .kid-g{background:#2563eb}.kid.f .kid-g{background:#db2777}
+  .kid-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .kid-age{color:var(--text3);font-size:11px;flex-shrink:0}
+  .room-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:11px;display:flex;flex-direction:column}
+  .room-head{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+  .room-name{flex:1;min-width:0;border:none;font-weight:700;font-size:13.5px;outline:none;background:transparent;color:var(--text)}
+  .room-name:focus{border-bottom:1.5px solid var(--orange)}
+  .room-occ{font-size:12px;font-weight:700;color:var(--text3)}.room-occ.over{color:var(--red)}
+  .rtag{font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px}
+  .rtag.m{background:var(--blue-bg);color:#2563eb}.rtag.f{background:rgba(219,39,119,.1);color:#db2777}.rtag.mix{background:var(--red-bg);color:var(--red)}
+  .beds{display:flex;flex-direction:column;gap:6px}
+  .bed{min-height:34px;border:1.5px dashed var(--border);border-radius:8px;display:flex;align-items:center;padding:3px;transition:all .12s}
+  .bed.over{border-color:var(--orange);background:var(--orange-bg)}
+  .bed.filled{border-style:solid}
+  .bed .kid{flex:1}
+  .bed-empty{color:var(--text3);font-size:11.5px;padding-left:8px}
+  .room-foot{margin-top:8px;display:flex;gap:4px}
+  .add-room{border:1.5px dashed var(--border2);border-radius:var(--radius);background:var(--surface2);color:var(--text2);padding:14px;cursor:pointer;font-size:13.5px;display:flex;align-items:center;justify-content:center;gap:7px;min-height:90px}
+  .add-room:hover{border-color:var(--orange);color:var(--orange)}
+  @media(max-width:760px){.rooms-layout{flex-direction:column-reverse}.rooms-pool{width:100%;position:static;max-height:none}}
 
   @media(max-width:760px){
     .sidebar{display:none}.content{padding:14px}
@@ -334,6 +367,7 @@ export const prerender = true;
     <button class="nav-btn" data-view="overview" onclick="setView('overview')"><i class="bi bi-grid-3x3-gap-fill"></i> Вся смена (по ролям)</button>
     <button class="nav-btn" data-view="load" onclick="setView('load')"><i class="bi bi-bar-chart-steps"></i> Загрузка</button>
     <button class="nav-btn" data-view="dgrid" onclick="setView('dgrid')"><i class="bi bi-calendar-range"></i> Сетка дня</button>
+    <button class="nav-btn" data-view="rooms" onclick="setView('rooms')"><i class="bi bi-house-door-fill"></i> Расселение</button>
     <button class="nav-btn" data-view="editor" onclick="setView('editor')"><i class="bi bi-calendar2-week"></i> Моё расписание</button>
     <button class="nav-btn" data-view="groups" onclick="setView('groups')"><i class="bi bi-mortarboard-fill"></i> По группам</button>
     <button class="nav-btn" data-view="reports" onclick="setView('reports')"><i class="bi bi-megaphone-fill"></i> Отчёт родителям</button>
@@ -556,6 +590,15 @@ function defaultPlan(){
       {id:'Senior',age:'13-16',count:10,course:'AI & Computer Vision'},
     ],
     team, groups, days, anchors, activities:acts, roleChecklists, parentReports,
+    rooms:defaultRooms(),
+    roster:[
+      {id:'k1',name:'Иванов Пётр (пример)',gender:1,age:11,alfaId:null},
+      {id:'k2',name:'Петров Илья (пример)',gender:1,age:12,alfaId:null},
+      {id:'k3',name:'Сидорова Аня (пример)',gender:0,age:10,alfaId:null},
+      {id:'k4',name:'Кузнецова Маша (пример)',gender:0,age:11,alfaId:null},
+      {id:'k5',name:'Орлов Дима (пример)',gender:1,age:9,alfaId:null},
+      {id:'k6',name:'Смирнова Лиза (пример)',gender:0,age:12,alfaId:null},
+    ],
     _seedTitleId:_id,
   };
 }
@@ -565,6 +608,14 @@ let plan=null, store=null, view='schedule', currentRole='counselor', editorDay=0
 function nid(p){ return p+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function activeShift(){ return store.shifts.find(s=>s.id===store.activeId) || store.shifts[0]; }
 function clonePlan(pl){ return JSON.parse(JSON.stringify(pl, (k,v)=> k.charAt(0)==='_'?undefined:v)); }
+function defaultRooms(){ return [
+  {id:'r1',name:'Корпус 1 · 101',cap:4,beds:[null,null,null,null]},
+  {id:'r2',name:'Корпус 1 · 102',cap:4,beds:[null,null,null,null]},
+  {id:'r3',name:'Корпус 1 · 103',cap:3,beds:[null,null,null]},
+  {id:'r4',name:'Корпус 2 · 201',cap:4,beds:[null,null,null,null]},
+  {id:'r5',name:'Корпус 2 · 202',cap:4,beds:[null,null,null,null]},
+]; }
+let dragKid=null;
 
 // ── время: helpers для drag-and-drop ──
 function toMin(t){ if(!t)return null; const [h,m]=t.split(':').map(Number); return h*60+m; }
@@ -605,7 +656,7 @@ function render(){
   document.getElementById('modeBadge').textContent=PERSIST.mode==='live'?'рабочая':'превью';
   document.getElementById('shiftMeta').innerHTML=`<b>${esc(plan.shift.name)}</b><br>${esc(plan.shift.place)}<br>${esc(plan.shift.kids)} · ${plan.days.length} дней`;
   const c=document.getElementById('content');
-  c.innerHTML = view==='schedule'?renderSchedule() : view==='overview'?renderOverview() : view==='load'?renderLoad() : view==='dgrid'?renderGridDay() : view==='editor'?renderEditor() : view==='groups'?renderGroups() : view==='reports'?renderReports() : view==='checklists'?renderChecklists() : view==='settings'?renderSettings() : renderTeam();
+  c.innerHTML = view==='schedule'?renderSchedule() : view==='overview'?renderOverview() : view==='load'?renderLoad() : view==='dgrid'?renderGridDay() : view==='rooms'?renderRooms() : view==='editor'?renderEditor() : view==='groups'?renderGroups() : view==='reports'?renderReports() : view==='checklists'?renderChecklists() : view==='settings'?renderSettings() : renderTeam();
 }
 function setView(v){ view=v; render(); }
 function setRole(r){ currentRole=r; render(); }
@@ -770,6 +821,68 @@ function renderGridDay(){
     cols+=`<div class="rg-col rg-pcol"><div class="rg-head">${avatar(p.id)} ${esc(p.name.split('·')[0].trim())}</div><div class="rg-track" style="height:${H}px">${blocks}</div></div>`;
   });
   return head+chips+`<div class="rg-scroll"><div class="rg-grid">${cols}</div></div>`;
+}
+
+/* ============== РАССЕЛЕНИЕ (комнаты × койки) ============== */
+function kid(id){ return (plan.roster||[]).find(k=>k.id===id); }
+function assignedKidSet(){ const s=new Set(); (plan.rooms||[]).forEach(r=>r.beds.forEach(b=>{if(b)s.add(b);})); return s; }
+function roomGender(r){ const gs=new Set(r.beds.filter(Boolean).map(b=>{const k=kid(b);return k?k.gender:null;}).filter(g=>g===0||g===1)); return gs.size>1?'mix':(gs.size===1?[...gs][0]:''); }
+function kidCard(k){ const g=k.gender===1?'m':k.gender===0?'f':''; return `<div class="kid ${g}" draggable="true" ondragstart="kidDragStart(event,'${k.id}')" ondragend="kidDragEnd(event)"><span class="kid-g" onclick="event.stopPropagation();toggleKidGender('${k.id}')" title="Пол — клик чтобы исправить">${k.gender===1?'М':k.gender===0?'Ж':'?'}</span><span class="kid-name">${esc(k.name)}</span><span class="kid-age">${k.age||'?'}</span></div>`; }
+function renderRooms(){
+  plan.rooms=plan.rooms||defaultRooms(); plan.roster=plan.roster||[];
+  const asg=assignedKidSet();
+  const unassigned=plan.roster.filter(k=>!asg.has(k.id));
+  const total=plan.roster.length, placed=total-unassigned.length;
+  const conflicts=plan.rooms.filter(r=>roomGender(r)==='mix').length;
+  const pool=`<div class="rooms-pool" ondragover="poolOver(event)" ondragleave="poolLeave(event)" ondrop="poolDrop(event)">
+    <div class="pool-head">Не расселены · ${unassigned.length}</div>
+    <div class="pool-list">${unassigned.length?unassigned.map(k=>kidCard(k)).join(''):'<div class="pool-empty">Все расселены</div>'}</div>
+    <div class="pool-actions"><button class="btn-primary" style="width:100%" onclick="loadRoster()"><i class="bi bi-cloud-download"></i> Загрузить из AlfaCRM</button><button class="btn-secondary" style="width:100%;margin-top:6px" onclick="addKid()"><i class="bi bi-person-plus"></i> Добавить вручную</button></div>
+  </div>`;
+  let cards='';
+  plan.rooms.forEach(r=>{
+    const occ=r.beds.filter(Boolean).length, rg=roomGender(r);
+    const gtag=rg==='mix'?'<span class="rtag mix">⚠ смешан</span>':rg==='m'?'<span class="rtag m">М</span>':rg===0?'<span class="rtag f">Ж</span>':(rg===1?'<span class="rtag m">М</span>':'');
+    let beds='';
+    r.beds.forEach((b,i)=>{ const k=b?kid(b):null; beds+=`<div class="bed${k?' filled':''}" ondragover="bedOver(event)" ondragleave="bedLeave(event)" ondrop="bedDrop(event,'${r.id}',${i})">${k?kidCard(k):`<span class="bed-empty">койка ${i+1}</span>`}</div>`; });
+    cards+=`<div class="room-card">
+      <div class="room-head"><input class="room-name" value="${esc(r.name)}" onchange="setRoomField('${r.id}','name',this.value)"><span class="room-occ${occ>r.cap?' over':''}">${occ}/${r.cap}</span>${gtag}<button class="link-btn" onclick="delRoom('${r.id}')" title="Удалить комнату"><i class="bi bi-trash3"></i></button></div>
+      <div class="beds">${beds}</div>
+      <div class="room-foot"><button class="link-btn" onclick="setRoomCap('${r.id}',1)"><i class="bi bi-plus-lg"></i> койка</button>${r.cap>1?`<button class="link-btn" onclick="setRoomCap('${r.id}',-1)"><i class="bi bi-dash-lg"></i> койка</button>`:''}</div>
+    </div>`;
+  });
+  const grid=`<div class="rooms-layout"><div class="rooms-grid">${cards}<button class="add-room" onclick="addRoom()"><i class="bi bi-plus-lg"></i> Добавить комнату</button></div>${pool}</div>`;
+  return `<div class="c-head"><div><div class="c-title">Расселение · ${esc(plan.shift.name)}</div><div class="c-sub">Перетащите детей в койки. Цвет/буква — пол (М синий / Ж розовый), клик по «М/Ж» в карточке исправляет пол (данные AlfaCRM бывают неточны). ⚠ — смешанная по полу комната. Расселено ${placed}/${total}${conflicts?` · смешанных комнат: ${conflicts}`:''}.</div></div></div>${grid}`;
+}
+function kidDragStart(e,id){ dragKid=id; try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',id);}catch(_){} }
+function kidDragEnd(e){ document.querySelectorAll('.bed.over,.rooms-pool.over').forEach(x=>x.classList.remove('over')); }
+function bedOver(e){ e.preventDefault(); e.currentTarget.classList.add('over'); }
+function bedLeave(e){ e.currentTarget.classList.remove('over'); }
+function bedDrop(e,rid,bi){ e.preventDefault(); e.currentTarget.classList.remove('over'); if(!dragKid)return; placeKid(rid,bi,dragKid); dragKid=null; }
+function poolOver(e){ e.preventDefault(); e.currentTarget.classList.add('over'); }
+function poolLeave(e){ e.currentTarget.classList.remove('over'); }
+function poolDrop(e){ e.preventDefault(); e.currentTarget.classList.remove('over'); if(!dragKid)return; unassignKid(dragKid); dragKid=null; }
+function clearKid(id){ plan.rooms.forEach(r=>{ r.beds=r.beds.map(b=>b===id?null:b); }); }
+function placeKid(rid,bi,id){ clearKid(id); const r=plan.rooms.find(x=>x.id===rid); if(!r)return; r.beds[bi]=id; commit(); render(); }
+function unassignKid(id){ clearKid(id); commit(); render(); }
+function toggleKidGender(id){ const k=kid(id); if(k){ k.gender = k.gender===1?0:(k.gender===0?1:1); commit(); render(); } }
+function setRoomField(id,f,v){ const r=plan.rooms.find(x=>x.id===id); if(r){r[f]=v; commit(); render();} }
+function setRoomCap(id,d){ const r=plan.rooms.find(x=>x.id===id); if(!r)return; if(d<0){ if(r.beds.length<=1)return; if(r.beds[r.beds.length-1]){alert('Сначала освободите последнюю койку');return;} r.beds.pop(); } else r.beds.push(null); r.cap=r.beds.length; commit(); render(); }
+function addRoom(){ plan.rooms.push({id:nid('r'),name:'Новая комната',cap:4,beds:[null,null,null,null]}); commit(); render(); }
+function delRoom(id){ const r=plan.rooms.find(x=>x.id===id); if(r&&r.beds.some(Boolean)&&!confirm('В комнате есть дети — удалить? Они станут не расселены.'))return; plan.rooms=plan.rooms.filter(x=>x.id!==id); commit(); render(); }
+function addKid(){ const n=prompt('Имя ребёнка:'); if(!n||!n.trim())return; plan.roster.push({id:nid('k'),name:n.trim(),gender:null,age:null,alfaId:null}); commit(); render(); }
+async function loadRoster(){
+  const idx=store.shifts.findIndex(s=>s.id===store.activeId)+1;
+  try{
+    const r=await fetch('/api/shift-roster?shift='+idx,{cache:'no-store'}); const j=await r.json();
+    if(!j.ok||!Array.isArray(j.kids)){ alert('AlfaCRM: '+(j.error||'нет данных')); return; }
+    const newRoster=j.kids.map(c=>({id:'k'+c.alfaId,name:c.name,gender:c.gender,age:c.age,alfaId:c.alfaId}));
+    plan.roster=newRoster;
+    const ids=new Set(newRoster.map(k=>k.id));
+    plan.rooms.forEach(r2=>r2.beds=r2.beds.map(b=> b&&ids.has(b)?b:null));
+    commit(); render();
+    alert('Загружено детей смены: '+newRoster.length);
+  }catch(e){ alert('Не удалось загрузить из AlfaCRM (доступно на рабочей странице /staff/plan): '+e); }
 }
 
 /* ============== OVERVIEW ============== */
