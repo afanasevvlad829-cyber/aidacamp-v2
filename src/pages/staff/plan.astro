@@ -110,6 +110,12 @@ export const prerender = true;
   .btn-add:hover{background:#ea6a08}
 
   .timeline{position:relative}
+  .drag-handle{cursor:grab;color:var(--border2);padding:0 4px 0 0;font-size:15px;flex-shrink:0;touch-action:none}
+  .drag-handle:hover{color:var(--orange)}
+  .drag-handle:active{cursor:grabbing}
+  .drop-zone{height:6px;margin:-6px 0 0;border-radius:5px;transition:all .12s;margin-left:78px}
+  .drop-zone.over{height:30px;background:var(--orange-bg);border:1.5px dashed var(--orange);margin-bottom:8px}
+  .tl-card.dragging{opacity:.45}
   .tl-item{display:flex;gap:14px;align-items:flex-start;padding-bottom:14px}
   .tl-time{width:64px;flex-shrink:0;text-align:right;font-size:12px;font-weight:700;color:var(--text2);padding-top:13px}
   .tl-time small{display:block;font-weight:500;color:var(--text3)}
@@ -231,7 +237,7 @@ export const prerender = true;
     <div class="sb-section">Конструктор</div>
     <button class="nav-btn" data-view="overview" onclick="setView('overview')"><i class="bi bi-grid-3x3-gap-fill"></i> Вся смена</button>
     <button class="nav-btn" data-view="editor" onclick="setView('editor')"><i class="bi bi-calendar2-week"></i> Моё расписание</button>
-    <button class="nav-btn" data-view="groups" onclick="setView('groups')"><i class="bi bi-mortarboard-fill"></i> Уроки по группам</button>
+    <button class="nav-btn" data-view="groups" onclick="setView('groups')"><i class="bi bi-mortarboard-fill"></i> По группам</button>
     <button class="nav-btn" data-view="reports" onclick="setView('reports')"><i class="bi bi-megaphone-fill"></i> Отчёт родителям</button>
     <button class="nav-btn" data-view="checklists" onclick="setView('checklists')"><i class="bi bi-check2-square"></i> Чек-листы роли</button>
     <button class="nav-btn" data-view="team" onclick="setView('team')"><i class="bi bi-people-fill"></i> Команда смены</button>
@@ -451,7 +457,12 @@ function defaultPlan(){
 }
 
 /* ============== STATE ============== */
-let plan=null, view='overview', currentRole='counselor', editorDay=0, filter='all', groupFilter='all', modalChk=[], saveTimer=null;
+let plan=null, view='overview', currentRole='counselor', editorDay=0, filter='all', groupFilter='all', groupsScope='teacher', modalChk=[], saveTimer=null, _dragId=null;
+
+// ── время: helpers для drag-and-drop ──
+function toMin(t){ if(!t)return null; const [h,m]=t.split(':').map(Number); return h*60+m; }
+function toHHMM(min){ min=Math.max(0,Math.min(1439,Math.round(min))); const h=Math.floor(min/60), m=min%60; return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
+function round5(min){ return Math.round(min/5)*5; }
 
 // Какие уроки (по полю group активности) попадают в реальную группу
 const GROUP_MEMBERSHIP={
@@ -541,11 +552,17 @@ function renderEditor(){
   if(filter!=='extra') (plan.anchors[d.type]||[]).forEach(a=>items.push({anchor:true,start:a[0],end:a[1],title:a[2]}));
   actsFor(editorDay,currentRole).forEach(a=>{ if((filter==='all'||filter===a.type) && (groupFilter==='all'||groupMatch(a.group,groupFilter))) items.push({anchor:false,...a}); });
   items.sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+  const anchorHtml=it=>`<div class="tl-item anchor"><div class="tl-time">${it.start}<small>${it.end||''}</small></div><div class="tl-line"></div><div class="tl-card anchor"><div class="card-top" style="cursor:default"><span class="card-tag tag-locked"><i class="bi bi-lock-fill"></i> шаблон</span><span class="card-name">${esc(it.title)}</span></div></div></div>`;
   let tl=`<div class="timeline">`;
   if(!items.length) tl+=`<div style="text-align:center;color:var(--text3);padding:40px 0"><i class="bi bi-calendar-x" style="font-size:28px"></i><div style="margin-top:8px">Пусто — добавьте первую активность</div></div>`;
-  items.forEach(it=>{ tl+= it.anchor
-    ? `<div class="tl-item anchor"><div class="tl-time">${it.start}<small>${it.end||''}</small></div><div class="tl-line"></div><div class="tl-card anchor"><div class="card-top" style="cursor:default"><span class="card-tag tag-locked"><i class="bi bi-lock-fill"></i> шаблон</span><span class="card-name">${esc(it.title)}</span></div></div></div>`
-    : renderActCard(it); });
+  else {
+    const eos=it=>toMin(it.end||it.start);
+    for(let i=0;i<=items.length;i++){
+      const lo=i>0?eos(items[i-1]):'', hi=i<items.length?toMin(items[i].start):'';
+      tl+=`<div class="drop-zone" data-lo="${lo===null?'':lo}" data-hi="${hi===null?'':hi}" ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event)"></div>`;
+      if(i<items.length) tl+= items[i].anchor ? anchorHtml(items[i]) : renderActCard(items[i]);
+    }
+  }
   tl+=`</div>`;
   return `<div class="c-head"><div><div class="c-title">День ${d.n} · ${d.date}</div><div class="c-sub">${esc(d.title)} · обязательное расписание подтянуто из шаблона (замок). Параллельные уроки по группам идут одним временем — это нормально.</div></div></div>${chips}${bar}${tl}`;
 }
@@ -553,9 +570,30 @@ function selDay(i){ editorDay=i; render(); }
 function setFilter(f){ filter=f; render(); }
 function setGroupFilter(g){ groupFilter=g; render(); }
 
+/* ── drag-and-drop по времени ── */
+function dragStart(e,id){ _dragId=id; try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',id);}catch(_){} const c=e.target.closest('.tl-card'); if(c)c.classList.add('dragging'); }
+function dragEnd(e){ document.querySelectorAll('.tl-card.dragging').forEach(c=>c.classList.remove('dragging')); document.querySelectorAll('.drop-zone.over').forEach(z=>z.classList.remove('over')); }
+function dzOver(e){ e.preventDefault(); try{e.dataTransfer.dropEffect='move';}catch(_){} e.currentTarget.classList.add('over'); }
+function dzLeave(e){ e.currentTarget.classList.remove('over'); }
+function dzDrop(e){ e.preventDefault(); e.currentTarget.classList.remove('over'); if(!_dragId)return;
+  const lo=e.currentTarget.dataset.lo, hi=e.currentTarget.dataset.hi;
+  moveActTime(_dragId, lo===''?null:+lo, hi===''?null:+hi); _dragId=null; }
+function moveActTime(id,lo,hi){
+  const a=plan.activities.find(x=>x.id===id); if(!a)return;
+  const oldS=toMin(a.start), oldE=a.end?toMin(a.end):null; const dur=(oldE!=null&&oldE>oldS)?oldE-oldS:60;
+  let ns;
+  if(lo!=null&&hi!=null) ns = lo>=hi ? lo : round5((lo+hi)/2);
+  else if(lo==null&&hi!=null) ns = Math.max(0, hi-dur);
+  else if(lo!=null&&hi==null) ns = lo+15;
+  else ns = 720;
+  ns=round5(Math.max(0,ns));
+  a.start=toHHMM(ns); a.end = a.end ? toHHMM(ns+dur) : '';
+  commit(); render();
+}
+
 /* ============== УРОКИ ПО ГРУППАМ ============== */
 function renderGroups(){
-  const lessons=plan.activities.filter(a=>a.role==='teacher');
+  const items=plan.activities.filter(a=> groupsScope==='all' ? (a.role==='teacher'||a.role==='counselor') : a.role===groupsScope);
   const cols=`170px repeat(${plan.days.length}, 200px)`;
   let g=`<div class="grid-wrap"><div class="ov-grid" style="grid-template-columns:${cols}">`;
   g+=`<div class="ov-cell corner"></div>`;
@@ -563,18 +601,26 @@ function renderGroups(){
   plan.groupsInfo.forEach(gi=>{
     g+=`<div class="ov-cell lane-head"><div><div style="display:flex;align-items:center;gap:7px"><i class="bi bi-mortarboard-fill"></i> ${gi.id}</div><div style="font-size:11px;color:var(--text3);font-weight:400;margin-top:2px">${gi.age} · ${esc(gi.course)}</div></div></div>`;
     plan.days.forEach((d,di)=>{
-      const cell=lessons.filter(a=>a.day===di && groupMatch(a.group,gi.id)).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
-      let html=`<div class="ov-cell editable" onclick="gotoTeacherDay(${di})">`;
+      const cell=items.filter(a=>a.day===di && groupMatch(a.group,gi.id)).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+      let html=`<div class="ov-cell editable" onclick="gotoGroupDay(${di})">`;
       if(!cell.length) html+=`<div class="ov-empty">—</div>`;
       else cell.forEach(a=>{ const cp=chkProgress(a);
-        html+=`<div class="mini t-${a.type}"><div class="mini-time">${a.start}${a.end?'–'+a.end:''}</div><div class="mini-title">${esc(a.title)}</div><div class="mini-foot">${a.resp?avatar(a.resp):'<span class="chk-badge" style="color:var(--red)"><i class="bi bi-exclamation-circle"></i></span>'}${cp.t?`<span class="chk-badge${cp.d===cp.t?' done':''}"><i class="bi bi-check2-square"></i> ${cp.d}/${cp.t}</span>`:''}</div></div>`; });
+        html+=`<div class="mini t-${a.type}"><div class="mini-time">${a.start}${a.end?'–'+a.end:''}</div><div class="mini-title">${groupsScope==='all'?`<i class="bi ${ROLES[a.role].icon}" style="font-size:10px;color:var(--text3)"></i> `:''}${esc(a.title)}</div><div class="mini-foot">${a.resp?avatar(a.resp):'<span class="chk-badge" style="color:var(--red)"><i class="bi bi-exclamation-circle"></i></span>'}${cp.t?`<span class="chk-badge${cp.d===cp.t?' done':''}"><i class="bi bi-check2-square"></i> ${cp.d}/${cp.t}</span>`:''}</div></div>`; });
       g+=html+`</div>`;
     });
   });
   g+=`</div></div>`;
-  return `<div class="c-head"><div><div class="c-title">Уроки по группам</div><div class="c-sub">Параллельные уроки преподавателей, разнесённые по 5 группам. Урок с группой «Junior»/«Все» виден в обеих подгруппах. Клик — в редактор дня (роль Преподаватель).</div></div></div>${g}`;
+  const scopeBar=`<div class="ed-bar" style="margin-bottom:14px"><span class="ed-lane">Показать:</span><span class="seg">
+    <button class="${groupsScope==='teacher'?'active':''}" onclick="setGroupsScope('teacher')">Уроки (преп.)</button>
+    <button class="${groupsScope==='counselor'?'active':''}" onclick="setGroupsScope('counselor')">Вожатские</button>
+    <button class="${groupsScope==='all'?'active':''}" onclick="setGroupsScope('all')">Все</button></span></div>`;
+  const desc=groupsScope==='teacher'?'Уроки преподавателей по 5 группам. Урок «Все»/«Junior» виден в соответствующих подгруппах.'
+    :groupsScope==='counselor'?'Вожатские активности по группам. Активность «Все» видна во всех подгруппах — поставьте конкретную группу в карточке, чтобы закрепить за подгруппой.'
+    :'Уроки и вожатские активности вместе, разнесённые по 5 группам.';
+  return `<div class="c-head"><div><div class="c-title">По группам</div><div class="c-sub">${desc} Клик по ячейке — в редактор дня.</div></div></div>${scopeBar}${g}`;
 }
-function gotoTeacherDay(i){ currentRole='teacher'; editorDay=i; view='editor'; render(); }
+function setGroupsScope(s){ groupsScope=s; render(); }
+function gotoGroupDay(i){ currentRole = groupsScope==='counselor'?'counselor':'teacher'; editorDay=i; view='editor'; render(); }
 
 /* ============== ОТЧЁТ РОДИТЕЛЯМ ============== */
 function renderReports(){
@@ -618,6 +664,7 @@ function renderActCard(a){
   return `<div class="tl-item t-${a.type}"><div class="tl-time">${a.start}<small>${a.end||''}</small></div><div class="tl-line"></div>
     <div class="tl-card${open}">
       <div class="card-top" onclick="toggleCard('${a.id}')">
+        <span class="drag-handle" draggable="true" ondragstart="dragStart(event,'${a.id}')" ondragend="dragEnd(event)" onclick="event.stopPropagation()" title="Перетащить по времени"><i class="bi bi-grip-vertical"></i></span>
         <span class="card-tag tag-${a.type}">${a.type==='mandatory'?'<i class="bi bi-pin-angle-fill"></i> обяз.':'<i class="bi bi-stars"></i> доп.'}</span>
         <div style="flex:1;min-width:0"><div class="card-name">${esc(a.title)}</div>${meta.length?`<div class="card-meta">${meta.join('')}</div>`:''}</div>
         ${respHtml}${cp.t?`<span class="chk-badge${cp.d===cp.t?' done':''}"><i class="bi bi-check2-square"></i> ${cp.d}/${cp.t}</span>`:''}
