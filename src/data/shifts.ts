@@ -30,7 +30,7 @@ export const mainShifts: Shift[] = [
     status: 'места есть',
     statusType: 'available',
     description: 'За 10 дней — от первого шага до собственного проекта с AI и понятным результатом.',
-    price: '74 900 ₽',
+    price: '79 900 ₽',
     free: 3,
     occupied: 32,
     highlighted: true,
@@ -170,7 +170,7 @@ export const shiftInfo: Record<string, {
   dates: string; duration: string; price: string; html: string;
 }> = {
   'shift-1': {
-    dates: '30 мая — 8 июня', duration: '10 дней', price: '74 900 ₽',
+    dates: '30 мая — 8 июня', duration: '10 дней', price: '79 900 ₽',
     html:
       '<p class="text-[14px] leading-[1.6] text-slate-700">Смена выстроена как спокойный и понятный вход в программирование с гарантированным результатом на выходе.</p>' +
       section('Первые дни — включение в процесс',

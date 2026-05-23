@@ -165,7 +165,7 @@ export function buildSystemPrompt(liveShifts?: LiveShift[]): string {
 "block_type": "day_schedule"
 
 ❌ Плохо (дублирование):
-"text": "Смена 1 — 30 мая, 74 900₽. Смена 2 — 10 июня, 95 000₽...",
+"text": "Смена 1 — 30 мая, 79 900₽. Смена 2 — 10 июня, 95 000₽...",
 "block_type": "smeny"
 
 ✅ Хорошо:

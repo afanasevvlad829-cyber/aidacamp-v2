@@ -27,7 +27,7 @@
     holdHours: 72
   };
   var SHIFT_PRICE_META = [
-    { title: "1 смена", date: "30 мая — 8 июня", days: 10, seats: 12, finalPrice: 74900, oldPrice: 85000, badge: "ХИТ", monthLabel: "Май–Июнь 2026", monthIndex: 4, year: 2026, startDay: 30, endDay: 8 },
+    { title: "1 смена", date: "30 мая — 8 июня", days: 10, seats: 12, finalPrice: 79900, oldPrice: 85000, badge: "ХИТ", monthLabel: "Май–Июнь 2026", monthIndex: 4, year: 2026, startDay: 30, endDay: 8 },
     { title: "2 смена (7 дней)", date: "10 июня — 16 июня", days: 7, seats: 11, finalPrice: 48000, oldPrice: 58000, badge: "", monthLabel: "Июнь 2026", monthIndex: 5, year: 2026, startDay: 10, endDay: 16 },
     { title: "2 смена (8 дней)", date: "16 июня — 23 июня", days: 8, seats: 8, finalPrice: 65000, oldPrice: 69000, badge: "", monthLabel: "Июнь 2026", monthIndex: 5, year: 2026, startDay: 16, endDay: 23 },
     { title: "2 смена (14 дней)", date: "10 июня — 23 июня", days: 14, seats: 4, finalPrice: 95000, oldPrice: 111000, badge: "", monthLabel: "Июнь 2026", monthIndex: 5, year: 2026, startDay: 10, endDay: 23 },
