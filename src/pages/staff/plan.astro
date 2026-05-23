@@ -251,8 +251,43 @@ export const prerender = true;
   .ov-cell.load-cell .lc-h{display:block;font-size:10.5px;color:var(--text3);font-weight:500}
   .ov-cell.load-cell .lc-empty{color:var(--border2)}
   .ov-cell.load-total{text-align:center;font-size:13px;background:var(--surface2)}
+  /* ── сетка дня (люди × время) ── */
+  .rg-scroll{overflow:auto;max-height:calc(100vh - 240px);border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface)}
+  .rg-grid{display:flex;min-width:max-content}
+  .rg-col{display:flex;flex-direction:column;border-right:1px solid var(--border);min-width:150px;flex:1}
+  .rg-col:last-child{border-right:none}
+  .rg-timecol{min-width:60px;width:60px;flex:none;position:sticky;left:0;z-index:3;background:var(--surface)}
+  .rg-head{height:42px;display:flex;align-items:center;gap:6px;padding:0 9px;font-size:12.5px;font-weight:600;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0;z-index:2;white-space:nowrap;overflow:hidden}
+  .rg-timecol .rg-head{z-index:4}
+  .rg-track{position:relative}
+  .rg-pcol .rg-track{background:repeating-linear-gradient(to bottom,transparent 0,transparent 53px,var(--border) 53px,var(--border) 54px)}
+  .rg-hour{position:absolute;left:0;font-size:10.5px;color:var(--text2);font-weight:600;transform:translateY(-50%);padding-left:7px}
+  .rg-amark{position:absolute;left:0;width:100%;font-size:9px;color:var(--text3);padding-left:7px;transform:translateY(-50%);white-space:nowrap;overflow:hidden}
+  .rg-block{position:absolute;border-radius:6px;padding:3px 5px;font-size:11px;line-height:1.25;overflow:hidden;cursor:pointer;border-left:3px solid var(--blue);background:var(--blue-bg);color:var(--text)}
+  .rg-block.t-extra{border-left-color:var(--green);background:var(--green-bg)}
+  .rg-block.rg-conf{border:1.5px solid var(--red);border-left:3px solid var(--red);background:var(--red-bg)}
+  .rg-block b{font-weight:700}
 
-  @media(max-width:760px){.sidebar{display:none}.content{padding:16px}}
+  @media(max-width:760px){
+    .sidebar{display:none}.content{padding:14px}
+    .topbar{flex-wrap:wrap;height:auto;min-height:56px;padding:8px 12px;gap:8px}
+    .topbar-title{display:none}
+    .shift-select{max-width:150px}
+    .day-chips{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+    .chip{flex:none}
+    /* расписание → агенда-карточки */
+    .sched-wrap{max-height:none;overflow:visible;border:none;background:transparent;border-radius:0}
+    .sched-table{min-width:0;width:100%}
+    .sched-table thead{display:none}
+    .sched-table tbody tr{display:block;background:var(--surface);border:1.5px solid var(--border);border-radius:11px;margin-bottom:9px;padding:7px 3px;border-left-width:3px}
+    .sched-table tbody tr.sched-section{display:block;background:transparent;border:none;padding:0;margin:12px 0 5px}
+    .sched-table tbody tr.row-anchor{background:var(--surface2)}
+    .sched-table td{display:flex;border:none!important;padding:5px 13px;font-size:13.5px;align-items:center;gap:10px}
+    .sched-table td.t{font-size:15px;font-weight:700}
+    .sched-table td[data-label]::before{content:attr(data-label);font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.03em;min-width:92px;flex-shrink:0;font-weight:700}
+    .sched-table tr.row-anchor .muted-cell{display:none}
+    .p-sel,.st-sel{flex:1;max-width:none}
+  }
 
   /* ── печать / PDF ── */
   #printArea{display:none}
@@ -298,6 +333,7 @@ export const prerender = true;
     <button class="nav-btn" data-view="schedule" onclick="setView('schedule')"><i class="bi bi-calendar3"></i> Расписание</button>
     <button class="nav-btn" data-view="overview" onclick="setView('overview')"><i class="bi bi-grid-3x3-gap-fill"></i> Вся смена (по ролям)</button>
     <button class="nav-btn" data-view="load" onclick="setView('load')"><i class="bi bi-bar-chart-steps"></i> Загрузка</button>
+    <button class="nav-btn" data-view="dgrid" onclick="setView('dgrid')"><i class="bi bi-calendar-range"></i> Сетка дня</button>
     <button class="nav-btn" data-view="editor" onclick="setView('editor')"><i class="bi bi-calendar2-week"></i> Моё расписание</button>
     <button class="nav-btn" data-view="groups" onclick="setView('groups')"><i class="bi bi-mortarboard-fill"></i> По группам</button>
     <button class="nav-btn" data-view="reports" onclick="setView('reports')"><i class="bi bi-megaphone-fill"></i> Отчёт родителям</button>
@@ -569,7 +605,7 @@ function render(){
   document.getElementById('modeBadge').textContent=PERSIST.mode==='live'?'рабочая':'превью';
   document.getElementById('shiftMeta').innerHTML=`<b>${esc(plan.shift.name)}</b><br>${esc(plan.shift.place)}<br>${esc(plan.shift.kids)} · ${plan.days.length} дней`;
   const c=document.getElementById('content');
-  c.innerHTML = view==='schedule'?renderSchedule() : view==='overview'?renderOverview() : view==='load'?renderLoad() : view==='editor'?renderEditor() : view==='groups'?renderGroups() : view==='reports'?renderReports() : view==='checklists'?renderChecklists() : view==='settings'?renderSettings() : renderTeam();
+  c.innerHTML = view==='schedule'?renderSchedule() : view==='overview'?renderOverview() : view==='load'?renderLoad() : view==='dgrid'?renderGridDay() : view==='editor'?renderEditor() : view==='groups'?renderGroups() : view==='reports'?renderReports() : view==='checklists'?renderChecklists() : view==='settings'?renderSettings() : renderTeam();
 }
 function setView(v){ view=v; render(); }
 function setRole(r){ currentRole=r; render(); }
@@ -627,7 +663,7 @@ function renderSchedule(){
     const bk=bucketOf(toMin(r.start)||0);
     if(bk!==lastBucket){ body+=`<tr class="sched-section"><td colspan="5">▸ ${bk}</td></tr>`; lastBucket=bk; }
     if(r.anchor){
-      body+=`<tr class="row-anchor"><td class="t">${r.start}${r.end?'–'+r.end:''}</td><td><i class="bi bi-lock-fill"></i> ${esc(r.title)} <span class="sched-meta">· шаблон</span></td><td>—</td><td>—</td><td>—</td></tr>`;
+      body+=`<tr class="row-anchor"><td class="t">${r.start}${r.end?'–'+r.end:''}</td><td><i class="bi bi-lock-fill"></i> ${esc(r.title)} <span class="sched-meta">· шаблон</span></td><td class="muted-cell">—</td><td class="muted-cell">—</td><td class="muted-cell">—</td></tr>`;
     } else {
       const meta=[]; if(r.place)meta.push(esc(r.place)); if(r.group&&r.group!=='Все')meta.push(esc(r.group));
       const st={planned:'Запланировано',progress:'В работе',done:'Выполнено'};
@@ -640,9 +676,9 @@ function renderSchedule(){
       const typeDot=`<span class="type-dot" style="background:${r.type==='mandatory'?'var(--blue)':'var(--green)'}" title="${r.type==='mandatory'?'обязательная':'доп.'}"></span>`;
       body+=`<tr><td class="t" style="border-left:3px solid ${acc}">${r.start}${r.end?'–'+r.end:''}</td>
         <td>${flags}${typeDot}<i class="bi ${ROLES[r.role].icon} role-ic"></i><a class="sched-name" onclick="gotoEdit('${r.role}',${editorDay})">${esc(r.title)}</a>${meta.length?` <span class="sched-meta">· ${meta.join(' · ')}</span>`:''}</td>
-        <td>${personSelect(r.id,'resp',r.resp)}</td>
-        <td>${personSelect(r.id,'exec',r.exec||'')}</td>
-        <td>${statusSel}</td></tr>`;
+        <td data-label="Ответственный">${personSelect(r.id,'resp',r.resp)}</td>
+        <td data-label="Исполнитель">${personSelect(r.id,'exec',r.exec||'')}</td>
+        <td data-label="Статус">${statusSel}</td></tr>`;
     }
   });
   const table=`<div class="sched-wrap"><table class="sched-table"><thead><tr><th>Время</th><th>Активность</th><th>Ответственный</th><th>Исполнитель</th><th>Статус</th></tr></thead><tbody>${body}</tbody></table></div>`;
@@ -702,6 +738,38 @@ function printShift(){
   });
   document.getElementById('printArea').innerHTML=html;
   window.print();
+}
+
+/* ============== СЕТКА ДНЯ (люди × время, блоки) ============== */
+function renderGridDay(){
+  if(editorDay>=plan.days.length)editorDay=plan.days.length-1; if(editorDay<0)editorDay=0;
+  let chips=`<div class="day-chips">`;
+  plan.days.forEach((d,i)=>{ chips+=`<div class="chip${i===editorDay?' active':''}" onclick="selDay(${i})"><span class="chip-n">День ${d.n}</span><span class="chip-d">${d.date}</span></div>`; });
+  chips+=`</div>`;
+  const d=plan.days[editorDay], dayActs=plan.activities.filter(a=>a.day===editorDay), conf=dayConflicts(editorDay);
+  const people=plan.team.filter(p=>dayActs.some(a=>a.resp===p.id||a.exec===p.id));
+  const head=`<div class="c-head"><div><div class="c-title">Сетка дня · День ${d.n} · ${d.date}</div><div class="c-sub">Кто чем занят по времени. Колонка — человек, блок — активность (показан и у ответственного, и у исполнителя). Пересечения — рядом/красным. Клик по блоку — редактирование.</div></div></div>`;
+  if(!people.length) return head+chips+`<div style="text-align:center;color:var(--text3);padding:40px"><i class="bi bi-people" style="font-size:28px"></i><div style="margin-top:8px">На этот день никто не назначен</div></div>`;
+  const anchors=plan.anchors[d.type]||[];
+  let mins=[]; dayActs.forEach(a=>{const[s,e]=actInterval(a);mins.push(s,e);}); anchors.forEach(a=>{mins.push(toMin(a[0])); if(a[1])mins.push(toMin(a[1]));});
+  let lo=mins.length?Math.min(...mins):480, hi=mins.length?Math.max(...mins):1320;
+  lo=Math.floor(lo/60)*60; hi=Math.ceil(hi/60)*60; if(hi<=lo)hi=lo+60;
+  const ppm=0.9, H=(hi-lo)*ppm;
+  let hours=''; for(let m=lo;m<=hi;m+=60) hours+=`<div class="rg-hour" style="top:${(m-lo)*ppm}px">${toHHMM(m)}</div>`;
+  let amarks=''; anchors.forEach(a=>{ const s=toMin(a[0]); amarks+=`<div class="rg-amark" style="top:${(s-lo)*ppm}px" title="${esc(a[2])}">${esc(a[2].split(',')[0])}</div>`; });
+  let cols=`<div class="rg-col rg-timecol"><div class="rg-head"></div><div class="rg-track" style="height:${H}px">${hours}${amarks}</div></div>`;
+  people.forEach(p=>{
+    const acts=dayActs.filter(a=>a.resp===p.id||a.exec===p.id).slice().sort((a,b)=>toMin(a.start)-toMin(b.start));
+    const lanes=[], lane={};
+    acts.forEach(a=>{ const[s,e]=actInterval(a); let li=lanes.findIndex(end=>end<=s); if(li<0)li=lanes.length; lanes[li]=e; lane[a.id]=li; });
+    const nL=Math.max(lanes.length,1);
+    let blocks=''; acts.forEach(a=>{ const[s,e]=actInterval(a); const top=(s-lo)*ppm, h=Math.max((e-s)*ppm,20), w=100/nL, left=lane[a.id]*w, isExec=a.exec===p.id;
+      const cls=conf[a.id]?'rg-conf':('t-'+a.type);
+      blocks+=`<div class="rg-block ${cls}" style="top:${top}px;height:${h}px;left:calc(${left}% + 2px);width:calc(${w}% - 4px)" title="${esc(a.title)} · ${a.start}–${a.end||''} · ${isExec?'исполнитель':'ответственный'}${conf[a.id]?' · ⚠ '+esc(conf[a.id].join('; ')):''}" onclick="gotoEdit('${a.role}',${editorDay})"><b>${a.start}</b> ${esc(a.title)}</div>`;
+    });
+    cols+=`<div class="rg-col rg-pcol"><div class="rg-head">${avatar(p.id)} ${esc(p.name.split('·')[0].trim())}</div><div class="rg-track" style="height:${H}px">${blocks}</div></div>`;
+  });
+  return head+chips+`<div class="rg-scroll"><div class="rg-grid">${cols}</div></div>`;
 }
 
 /* ============== OVERVIEW ============== */
