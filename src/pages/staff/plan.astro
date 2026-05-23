@@ -704,6 +704,7 @@ function logChange(action){
   if(store.log.length>300) store.log.length=300;
 }
 function commit(action){ logChange(action); markSaving(); clearTimeout(saveTimer); saveTimer=setTimeout(async()=>{ await PERSIST.save(store); markSaved(); },400); }
+async function commitNow(action){ logChange(action); clearTimeout(saveTimer); markSaving(); try{ await PERSIST.save(store); }catch(e){} markSaved(); }
 
 /* ============== ROOT ============== */
 function render(){
@@ -963,12 +964,14 @@ async function loadRoster(){
   try{
     const r=await fetch('/api/shift-roster?shift='+idx,{cache:'no-store'}); const j=await r.json();
     if(!j.ok||!Array.isArray(j.kids)){ alert('AlfaCRM: '+(j.error||'нет данных')); return; }
-    const newRoster=j.kids.map(c=>({id:'k'+c.alfaId,name:c.name,gender:c.gender,age:c.age,alfaId:c.alfaId}));
-    plan.roster=newRoster;
-    const ids=new Set(newRoster.map(k=>k.id));
-    plan.rooms.forEach(r2=>r2.beds=r2.beds.map(b=> b&&ids.has(b)?b:null));
-    commit('Загрузил(а) детей из AlfaCRM: '+newRoster.length); render();
-    alert('Загружено детей смены: '+newRoster.length);
+    plan.roster=plan.roster||[];
+    // Аддитивно: добавляем только новых по alfaId, не трогая внесённых вручную и правок (пол/пожелания)
+    const have=new Set(plan.roster.filter(k=>k.alfaId!=null).map(k=>k.alfaId));
+    let added=0;
+    j.kids.forEach(c=>{ if(have.has(c.alfaId))return; plan.roster.push({id:'k'+c.alfaId,name:c.name,gender:c.gender,age:c.age,alfaId:c.alfaId}); added++; });
+    render();
+    await commitNow('Загрузил(а) детей из AlfaCRM: +'+added+' (всего '+plan.roster.length+')'); // немедленное сохранение, без гонки с обновлением
+    alert(added?('Добавлено детей: '+added+' (всего в смене: '+plan.roster.length+')'):('Новых нет — все '+plan.roster.length+' уже в списке'));
   }catch(e){ alert('Не удалось загрузить из AlfaCRM (доступно на рабочей странице /staff/plan): '+e); }
 }
 function roomOf(kidId){ for(const r of plan.rooms){ if(r.beds.includes(kidId)) return r; } return null; }
@@ -1333,6 +1336,7 @@ function renderSettings(){
   return `<div class="c-head"><div><div class="c-title">Параметры смены</div><div class="c-sub">Длительность регулируется списком дней. Тип дня задаёт обязательное расписание (заезд / учебный / показ / выезд). Удаление дня убирает его активности; последующие дни сдвигаются.</div></div></div>
     ${shiftsCard}
     ${metaCard}
+    <div class="ck-card" style="margin-bottom:18px"><h4><i class="bi bi-people-fill"></i> Дети смены · ${(plan.roster||[]).length}</h4><div class="ck-sub">Единый список детей смены (из AlfaCRM) — используется в расселении и перекличке. Загрузка добавляет только новых, не трогая уже внесённых и правок.</div><button class="btn-primary" onclick="loadRoster()"><i class="bi bi-cloud-download"></i> Загрузить детей из AlfaCRM</button></div>
     <div class="cb-label">Дни смены · ${plan.days.length}</div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">${dayRows}</div>
     <button class="btn-primary" onclick="addDay()"><i class="bi bi-plus-lg"></i> Добавить день</button>`;
