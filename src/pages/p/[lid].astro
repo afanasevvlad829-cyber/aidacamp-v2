@@ -895,6 +895,19 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
       // VK pixel cookie (vk_top_vid)
       const vkMatch = document.cookie.match(/(?:^|;\s*)vk_top_vid=([^;]+)/);
       if (vkMatch) data.vk_vid = vkMatch[1];
+
+      // Andata: ubtcuid (трекинг) и domain_userid (Snowplow) — для матчинга визита постфактум
+      const ubtMatch = document.cookie.match(/(?:^|;\s*)ubtcuid=([^;]+)/);
+      if (ubtMatch) data.ubtcuid = decodeURIComponent(ubtMatch[1]);
+      try {
+        const _sp = window.Snowplow;
+        const _did = _sp && _sp.getTrackerCf && _sp.getTrackerCf().getDomainUserId && _sp.getTrackerCf().getDomainUserId();
+        if (_did) data.domain_userid = String(_did);
+      } catch(_) {}
+      if (!data.domain_userid) {
+        const spId = document.cookie.split(';').map(function(s){return s.trim();}).find(function(s){return s.indexOf('_sp_id.')===0;});
+        if (spId) data.domain_userid = (spId.slice(spId.indexOf('=')+1).split('.')[0] || '');
+      }
     } catch(_) {}
     return data;
   }
