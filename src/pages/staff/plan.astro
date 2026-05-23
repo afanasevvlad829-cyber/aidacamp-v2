@@ -314,6 +314,17 @@ export const prerender = true;
   .km-wish-list{display:flex;flex-direction:column;gap:2px;max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:9px;padding:8px}
   .km-wish-item{display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;padding:3px 0}
   .km-wish-item input{accent-color:var(--orange);width:16px;height:16px}
+  .who-btn{background:var(--orange-bg);border:1px solid var(--orange-border);color:var(--orange);font-weight:600;font-size:12.5px;border-radius:7px;padding:3px 9px;cursor:pointer;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .id-role{display:flex;gap:8px;flex-wrap:wrap}
+  .id-r{flex:1;min-width:90px;border:1.5px solid var(--border);border-radius:9px;padding:9px;font-size:13px;font-weight:600;cursor:pointer;background:var(--surface);color:var(--text2)}
+  .id-r.on{border-color:var(--orange);background:var(--orange-bg);color:var(--orange)}
+  .log-list{display:flex;flex-direction:column;border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
+  .log-row{display:flex;gap:12px;align-items:baseline;padding:9px 14px;border-bottom:1px solid var(--border);font-size:13.5px}
+  .log-row:last-child{border-bottom:none}
+  .log-time{color:var(--text3);font-size:12px;white-space:nowrap;width:96px;flex-shrink:0}
+  .log-user{font-weight:600;width:150px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .log-text{color:var(--text2);flex:1;min-width:0}
+  @media(max-width:760px){.log-row{flex-wrap:wrap;gap:2px 10px}.log-user{width:auto}.log-text{flex-basis:100%}}
   @media(max-width:760px){.rooms-layout{flex-direction:column-reverse}.rooms-pool{width:100%;position:static;max-height:none}.vp-list{grid-template-columns:1fr}}
 
   @media(max-width:760px){
@@ -366,6 +377,7 @@ export const prerender = true;
   <div class="topbar-right">
     <div class="role-switch">
       <i class="bi bi-person-badge" style="color:var(--text3)"></i><span>Вы:</span>
+      <button class="who-btn" id="whoBtn" onclick="openIdentity()" title="Кто вы (для журнала)">—</button>
       <select id="roleSelect" onchange="setRole(this.value)">
         <option value="counselor">Вожатый</option>
         <option value="teacher">Преподаватель</option>
@@ -389,6 +401,7 @@ export const prerender = true;
     <button class="nav-btn" data-view="checklists" onclick="setView('checklists')"><i class="bi bi-check2-square"></i> Чек-листы роли</button>
     <button class="nav-btn" data-view="team" onclick="setView('team')"><i class="bi bi-people-fill"></i> Команда смены</button>
     <button class="nav-btn" data-view="settings" onclick="setView('settings')"><i class="bi bi-sliders"></i> Параметры смены</button>
+    <button class="nav-btn" data-view="log" onclick="setView('log')"><i class="bi bi-clock-history"></i> Журнал</button>
     <div class="sb-divider"></div>
     <div class="sb-section">Смена</div>
     <div class="sb-meta" id="shiftMeta"></div>
@@ -412,6 +425,17 @@ export const prerender = true;
       <div class="field"><label>Хочет жить с (пожелания по соседям)</label><div id="km-wish" class="km-wish-list"></div></div>
     </div>
     <div class="modal-foot"><button class="btn-primary" onclick="closeKidModal()">Готово</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="idOverlay" onclick="if(event.target===this)closeIdentity()">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-head"><h2>Кто вы?</h2></div>
+    <div class="modal-body">
+      <div class="field"><label>Имя и фамилия <small style="font-weight:400;color:var(--text3)">(подписывает ваши правки в журнале)</small></label><input type="text" id="id-name" placeholder="Напр. Дарья Афанасьева" onkeydown="if(event.key==='Enter')saveIdentity()"></div>
+      <div class="field"><label>Ваша роль</label><div id="id-role" class="id-role"><button class="id-r" data-r="counselor" onclick="idPickRole('counselor')">Вожатый</button><button class="id-r" data-r="teacher" onclick="idPickRole('teacher')">Преподаватель</button><button class="id-r" data-r="manager" onclick="idPickRole('manager')">Руководитель</button></div></div>
+    </div>
+    <div class="modal-foot"><button class="btn-primary" onclick="saveIdentity()">Войти</button></div>
   </div>
 </div>
 
@@ -630,7 +654,7 @@ function defaultPlan(){
 }
 
 /* ============== STATE ============== */
-let plan=null, store=null, view='schedule', currentRole='counselor', editorDay=0, filter='all', groupFilter='all', groupsScope='teacher', modalChk=[], saveTimer=null, _dragId=null;
+let plan=null, store=null, currentUser=null, view='schedule', currentRole='counselor', editorDay=0, filter='all', groupFilter='all', groupsScope='teacher', modalChk=[], saveTimer=null, _dragId=null;
 function nid(p){ return p+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function activeShift(){ return store.shifts.find(s=>s.id===store.activeId) || store.shifts[0]; }
 function clonePlan(pl){ return JSON.parse(JSON.stringify(pl, (k,v)=> k.charAt(0)==='_'?undefined:v)); }
@@ -671,7 +695,18 @@ function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').repla
 /* ============== SAVE ============== */
 function markSaving(){ const el=document.getElementById('savePill'); el.className='save-pill'; el.innerHTML='<i class="bi bi-arrow-repeat"></i> сохранение…'; }
 function markSaved(){ const el=document.getElementById('savePill'); el.className='save-pill saved'; el.innerHTML='<i class="bi bi-check-circle-fill"></i> сохранено'; }
-function commit(){ markSaving(); clearTimeout(saveTimer); saveTimer=setTimeout(async()=>{ await PERSIST.save(store); markSaved(); },400); }
+const VIEW_LABEL={schedule:'Расписание',overview:'Вся смена',load:'Загрузка',dgrid:'Сетка дня',rooms:'Расселение',editor:'Моё расписание',groups:'По группам',reports:'Отчёт родителям',checklists:'Чек-листы',settings:'Параметры',team:'Команда',log:'Журнал'};
+function logChange(action){
+  if(!store) return;
+  store.log=store.log||[];
+  const user=(currentUser&&currentUser.name)||'—';
+  const text=action||('правка · '+(VIEW_LABEL[view]||view));
+  const last=store.log[0];
+  if(last && last.user===user && last.text===text && (Date.now()-last.ts)<90000){ last.ts=Date.now(); return; } // дедуп серии
+  store.log.unshift({ts:Date.now(), user, text});
+  if(store.log.length>300) store.log.length=300;
+}
+function commit(action){ logChange(action); markSaving(); clearTimeout(saveTimer); saveTimer=setTimeout(async()=>{ await PERSIST.save(store); markSaved(); },400); }
 
 /* ============== ROOT ============== */
 function render(){
@@ -680,13 +715,30 @@ function render(){
   if(ss&&store) ss.innerHTML=store.shifts.map(s=>`<option value="${s.id}" ${s.id===store.activeId?'selected':''}>${esc(s.plan.shift.name)}</option>`).join('');
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
   document.getElementById('roleSelect').value=currentRole;
+  const wb=document.getElementById('whoBtn'); if(wb) wb.textContent=(currentUser&&currentUser.name)||'представьтесь';
   document.getElementById('modeBadge').textContent=PERSIST.mode==='live'?'рабочая':'превью';
   document.getElementById('shiftMeta').innerHTML=`<b>${esc(plan.shift.name)}</b><br>${esc(plan.shift.place)}<br>${esc(plan.shift.kids)} · ${plan.days.length} дней`;
   const c=document.getElementById('content');
-  c.innerHTML = view==='schedule'?renderSchedule() : view==='overview'?renderOverview() : view==='load'?renderLoad() : view==='dgrid'?renderGridDay() : view==='rooms'?renderRooms() : view==='editor'?renderEditor() : view==='groups'?renderGroups() : view==='reports'?renderReports() : view==='checklists'?renderChecklists() : view==='settings'?renderSettings() : renderTeam();
+  c.innerHTML = view==='schedule'?renderSchedule() : view==='overview'?renderOverview() : view==='load'?renderLoad() : view==='dgrid'?renderGridDay() : view==='rooms'?renderRooms() : view==='editor'?renderEditor() : view==='groups'?renderGroups() : view==='reports'?renderReports() : view==='checklists'?renderChecklists() : view==='settings'?renderSettings() : view==='log'?renderLog() : renderTeam();
 }
 function setView(v){ view=v; render(); }
 function setRole(r){ currentRole=r; render(); }
+
+/* ── личность (для журнала) ── */
+let _idRole='counselor';
+function renderIdRoles(){ document.querySelectorAll('#id-role .id-r').forEach(b=>b.classList.toggle('on',b.dataset.r===_idRole)); }
+function openIdentity(){ _idRole=(currentUser&&currentUser.role)||currentRole||'counselor'; document.getElementById('id-name').value=(currentUser&&currentUser.name)||''; renderIdRoles(); document.getElementById('idOverlay').classList.add('open'); setTimeout(()=>{try{document.getElementById('id-name').focus();}catch(e){}},50); }
+function idPickRole(r){ _idRole=r; renderIdRoles(); }
+function closeIdentity(){ document.getElementById('idOverlay').classList.remove('open'); }
+function saveIdentity(){ const n=document.getElementById('id-name').value.trim(); if(!n){alert('Введите имя');return;} currentUser={name:n,role:_idRole}; try{localStorage.setItem('ac_staff_user',JSON.stringify(currentUser));}catch(e){} currentRole=_idRole; closeIdentity(); render(); }
+
+/* ── журнал изменений ── */
+function renderLog(){
+  const log=(store&&store.log)||[];
+  const fmt=ts=>new Date(ts).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+  const rows=log.length?log.map(e=>`<div class="log-row"><span class="log-time">${fmt(e.ts)}</span><span class="log-user">${esc(e.user)}</span><span class="log-text">${esc(e.text)}</span></div>`).join(''):'<div style="color:var(--text3);padding:26px;text-align:center">Журнал пуст — записи появятся при изменениях плана</div>';
+  return `<div class="c-head"><div><div class="c-title">Журнал изменений</div><div class="c-sub">Кто и что менял в плане смены — автоматически по действиям. Всего записей: ${log.length}.</div></div></div><div class="log-list">${rows}</div>`;
+}
 
 /* ── смены: переключение / создание / дублирование / удаление ── */
 function switchShift(id){ store.activeId=id; plan=activeShift().plan; editorDay=0; render(); commit(); }
@@ -901,8 +953,8 @@ function poolOver(e){ e.preventDefault(); e.currentTarget.classList.add('over');
 function poolLeave(e){ e.currentTarget.classList.remove('over'); }
 function poolDrop(e){ e.preventDefault(); e.currentTarget.classList.remove('over'); if(!dragKid)return; unassignKid(dragKid); dragKid=null; }
 function clearKid(id){ plan.rooms.forEach(r=>{ r.beds=r.beds.map(b=>b===id?null:b); }); }
-function placeKid(rid,bi,id){ clearKid(id); const r=plan.rooms.find(x=>x.id===rid); if(!r)return; r.beds[bi]=id; commit(); render(); }
-function unassignKid(id){ clearKid(id); commit(); render(); }
+function placeKid(rid,bi,id){ clearKid(id); const r=plan.rooms.find(x=>x.id===rid); if(!r)return; r.beds[bi]=id; commit('Расселил(а): '+((kid(id)||{}).name||'?')+' → '+r.name); render(); }
+function unassignKid(id){ const nm=(kid(id)||{}).name||'?'; clearKid(id); commit('Выселил(а): '+nm); render(); }
 function toggleKidGender(id){ const k=kid(id); if(k){ k.gender = k.gender===1?0:(k.gender===0?1:1); commit(); render(); } }
 function setRoomField(id,f,v){ const r=plan.rooms.find(x=>x.id===id); if(r){r[f]=v; commit(); render();} }
 function setRoomCap(id,d){ const r=plan.rooms.find(x=>x.id===id); if(!r)return; if(d<0){ if(r.beds.length<=1)return; if(r.beds[r.beds.length-1]){alert('Сначала освободите последнюю койку');return;} r.beds.pop(); } else r.beds.push(null); r.cap=r.beds.length; commit(); render(); }
@@ -918,7 +970,7 @@ async function loadRoster(){
     plan.roster=newRoster;
     const ids=new Set(newRoster.map(k=>k.id));
     plan.rooms.forEach(r2=>r2.beds=r2.beds.map(b=> b&&ids.has(b)?b:null));
-    commit(); render();
+    commit('Загрузил(а) детей из AlfaCRM: '+newRoster.length); render();
     alert('Загружено детей смены: '+newRoster.length);
   }catch(e){ alert('Не удалось загрузить из AlfaCRM (доступно на рабочей странице /staff/plan): '+e); }
 }
@@ -964,7 +1016,7 @@ function autoAssign(){
     }
     if(best){ const fb=freeBeds(best); best.beds[fb[0]]=k.id; }
   }
-  commit(); render();
+  commit('Авто-расстановка расселения'); render();
 }
 function printRooming(){
   let html=`<h1>Расселение · ${esc(plan.shift.name)}</h1><div class="p-sub">${esc(plan.shift.place)} · детей: ${plan.roster.length}</div>`;
@@ -1195,7 +1247,7 @@ function toggleCard(id){ const a=plan.activities.find(x=>x.id===id); a._open=!a.
 function toggleChk(id,i){ const a=plan.activities.find(x=>x.id===id); a.checklist[i].done=!a.checklist[i].done; a._open=true; commit(); render(); }
 function addChk(id){ const inp=document.getElementById('nc-'+id); const v=inp.value.trim(); if(!v)return; const a=plan.activities.find(x=>x.id===id); a.checklist.push({text:v,done:false}); a._open=true; commit(); render(); }
 function setResp(id,v){ plan.activities.find(x=>x.id===id).resp=v; commit(); render(); }
-function setStatus(id,s){ const a=plan.activities.find(x=>x.id===id); a.status=s; a._open=true; commit(); render(); }
+function setStatus(id,s){ const a=plan.activities.find(x=>x.id===id); a.status=s; a._open=true; commit('Статус: «'+a.title+'» → '+({planned:'запланировано',progress:'в работе',done:'выполнено'}[s]||s)); render(); }
 function setField(id,f,v){ plan.activities.find(x=>x.id===id)[f]=v; commit(); if(f==='start'||f==='end'||f==='group') render(); }
 function delAct(id){ if(!confirm('Удалить активность?'))return; plan.activities=plan.activities.filter(x=>x.id!==id); commit(); render(); }
 function copyActivity(id){ const a=plan.activities.find(x=>x.id===id); if(!a)return; const c=clonePlan(a); c.id=nid('a'); c.title=a.title+' (копия)'; c.status='planned'; c.result=''; c.checklist=(c.checklist||[]).map(x=>({text:x.text,done:false})); c._open=true; plan.activities.push(c); commit(); render(); }
@@ -1347,8 +1399,11 @@ function saveActivity(){
   else store={shifts:[{id:'s1',plan:defaultPlan()}],activeId:'s1'};
   if(!store.activeId || !store.shifts.find(s=>s.id===store.activeId)) store.activeId=store.shifts[0].id;
   plan=activeShift().plan;
+  try{ currentUser=JSON.parse(localStorage.getItem('ac_staff_user')||'null'); }catch(e){ currentUser=null; }
+  if(currentUser&&currentUser.role) currentRole=currentUser.role;
   if(PERSIST.mode==='live') markSaved();
   render();
+  if(!currentUser) setTimeout(openIdentity,400);
 })();
 </script>
 </body>
