@@ -172,7 +172,7 @@ export const prerender = true;
   .team-group{margin-bottom:22px}
   .team-group h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:8px}
   .team-group h3 i{color:var(--orange)}
-  .team-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+  .team-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:10px}
   .person-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:11px 13px;display:flex;align-items:center;gap:11px}
   .person-card input.pname{border:none;font-size:14px;font-weight:600;outline:none;width:100%;background:transparent;color:var(--text)}
   .person-card input.pname:focus{border-bottom:1.5px solid var(--orange)}
@@ -213,7 +213,8 @@ export const prerender = true;
   .btn-primary:hover{background:#ea6a08}
 
   /* ── классическое расписание (день-таблица) ── */
-  .sched-wrap{overflow-x:auto;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface)}
+  .sched-wrap{overflow:auto;max-height:calc(100vh - 240px);border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface)}
+  .sched-table thead th{position:sticky;top:0;z-index:5;box-shadow:inset 0 -1px 0 var(--border)}
   .sched-table{width:100%;border-collapse:collapse;min-width:760px}
   .sched-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);font-weight:700;padding:11px 14px;background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap}
   .sched-table td{padding:9px 14px;border-bottom:1px solid var(--border);font-size:13.5px;vertical-align:middle}
@@ -245,8 +246,30 @@ export const prerender = true;
   .load-chip.over{border-color:rgba(220,38,38,.4);background:var(--red-bg);color:var(--red)}
   .load-chip .ld{color:var(--text3);font-size:11px}
   .load-chip.over .ld{color:var(--red)}
+  .ov-cell.load-cell{text-align:center;font-size:14px}
+  .ov-cell.load-cell b{font-size:15px}
+  .ov-cell.load-cell .lc-h{display:block;font-size:10.5px;color:var(--text3);font-weight:500}
+  .ov-cell.load-cell .lc-empty{color:var(--border2)}
+  .ov-cell.load-total{text-align:center;font-size:13px;background:var(--surface2)}
 
   @media(max-width:760px){.sidebar{display:none}.content{padding:16px}}
+
+  /* ── печать / PDF ── */
+  #printArea{display:none}
+  @media print{
+    .topbar,.layout,#overlay{display:none!important}
+    #printArea{display:block!important}
+    body{background:#fff;color:#000}
+    #printArea h1{font-size:18px;margin:0 0 2px}
+    #printArea .p-sub{font-size:12px;color:#444;margin-bottom:14px}
+    #printArea h2{font-size:13px;margin:14px 0 5px;page-break-after:avoid}
+    #printArea table{width:100%;border-collapse:collapse;margin-bottom:6px}
+    #printArea th,#printArea td{border:1px solid #bbb;padding:4px 7px;font-size:10.5px;text-align:left;vertical-align:top}
+    #printArea th{background:#eee}
+    #printArea tr{page-break-inside:avoid}
+    #printArea .p-anchor td{color:#777;background:#f7f7f7}
+    @page{margin:14mm}
+  }
 </style>
 </head>
 <body>
@@ -274,6 +297,7 @@ export const prerender = true;
     <div class="sb-section">Конструктор</div>
     <button class="nav-btn" data-view="schedule" onclick="setView('schedule')"><i class="bi bi-calendar3"></i> Расписание</button>
     <button class="nav-btn" data-view="overview" onclick="setView('overview')"><i class="bi bi-grid-3x3-gap-fill"></i> Вся смена (по ролям)</button>
+    <button class="nav-btn" data-view="load" onclick="setView('load')"><i class="bi bi-bar-chart-steps"></i> Загрузка</button>
     <button class="nav-btn" data-view="editor" onclick="setView('editor')"><i class="bi bi-calendar2-week"></i> Моё расписание</button>
     <button class="nav-btn" data-view="groups" onclick="setView('groups')"><i class="bi bi-mortarboard-fill"></i> По группам</button>
     <button class="nav-btn" data-view="reports" onclick="setView('reports')"><i class="bi bi-megaphone-fill"></i> Отчёт родителям</button>
@@ -293,6 +317,7 @@ export const prerender = true;
   </aside>
   <main class="content" id="content"></main>
 </div>
+<div id="printArea"></div>
 
 <div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
   <div class="modal">
@@ -544,7 +569,7 @@ function render(){
   document.getElementById('modeBadge').textContent=PERSIST.mode==='live'?'рабочая':'превью';
   document.getElementById('shiftMeta').innerHTML=`<b>${esc(plan.shift.name)}</b><br>${esc(plan.shift.place)}<br>${esc(plan.shift.kids)} · ${plan.days.length} дней`;
   const c=document.getElementById('content');
-  c.innerHTML = view==='schedule'?renderSchedule() : view==='overview'?renderOverview() : view==='editor'?renderEditor() : view==='groups'?renderGroups() : view==='reports'?renderReports() : view==='checklists'?renderChecklists() : view==='settings'?renderSettings() : renderTeam();
+  c.innerHTML = view==='schedule'?renderSchedule() : view==='overview'?renderOverview() : view==='load'?renderLoad() : view==='editor'?renderEditor() : view==='groups'?renderGroups() : view==='reports'?renderReports() : view==='checklists'?renderChecklists() : view==='settings'?renderSettings() : renderTeam();
 }
 function setView(v){ view=v; render(); }
 function setRole(r){ currentRole=r; render(); }
@@ -621,7 +646,62 @@ function renderSchedule(){
     }
   });
   const table=`<div class="sched-wrap"><table class="sched-table"><thead><tr><th>Время</th><th>Активность</th><th>Ответственный</th><th>Исполнитель</th><th>Статус</th></tr></thead><tbody>${body}</tbody></table></div>`;
-  return `<div class="c-head"><div><div class="c-title">Расписание · День ${d.n} · ${d.date}</div><div class="c-sub">${esc(d.title)}. <i class="bi bi-exclamation-circle-fill" style="color:var(--red)"></i> никто не назначен · <i class="bi bi-exclamation-triangle-fill" style="color:var(--orange)"></i> пересечение по времени · цвет слева = роль исполнителя. Клик по названию — полное редактирование.</div></div></div>${chips}${strip}${table}`;
+  return `<div class="c-head"><div><div class="c-title">Расписание · День ${d.n} · ${d.date}</div><div class="c-sub">${esc(d.title)}. <i class="bi bi-exclamation-circle-fill" style="color:var(--red)"></i> никто не назначен · <i class="bi bi-exclamation-triangle-fill" style="color:var(--orange)"></i> пересечение по времени · цвет слева = роль исполнителя. Клик по названию — полное редактирование.</div></div><button class="btn-secondary" onclick="printShift()" style="white-space:nowrap"><i class="bi bi-printer"></i> Печать / PDF</button></div>${chips}${strip}${table}`;
+}
+
+function fmtH(min){ const h=min/60; return h>=1?(Math.round(h*10)/10+' ч'):(min+' мин'); }
+function renderLoad(){
+  const people=plan.team.filter(p=>plan.activities.some(a=>a.resp===p.id||a.exec===p.id));
+  const confByDay=plan.days.map((_,i)=>dayConflicts(i));
+  const cols=`190px repeat(${plan.days.length}, minmax(86px,1fr)) 110px`;
+  let g=`<div class="grid-wrap"><div class="ov-grid" style="grid-template-columns:${cols}">`;
+  g+=`<div class="ov-cell corner"></div>`;
+  plan.days.forEach(d=>g+=`<div class="ov-cell day-head"><div class="ov-day-n">День ${d.n}</div><div class="ov-day-date">${d.date}</div></div>`);
+  g+=`<div class="ov-cell day-head"><div class="ov-day-n">Итого</div></div>`;
+  if(!people.length){
+    g+=`<div class="ov-cell" style="grid-column:1/-1;text-align:center;color:var(--text3);padding:24px">Никто пока не назначен — назначьте людей в «Расписании»</div>`;
+  }
+  people.forEach(p=>{
+    g+=`<div class="ov-cell lane-head"><i class="bi ${ROLES[p.role].icon}"></i> ${esc(p.name)}</div>`;
+    let totN=0, totMin=0;
+    plan.days.forEach((d,di)=>{
+      const acts=plan.activities.filter(a=>a.day===di&&(a.resp===p.id||a.exec===p.id));
+      const mins=acts.reduce((s,a)=>{const [x,y]=actInterval(a);return s+(y-x);},0);
+      totN+=acts.length; totMin+=mins;
+      const hasConf=acts.some(a=>confByDay[di][a.id]);
+      const lvl=Math.min(acts.length,4);
+      const bg=acts.length?`background:rgba(249,115,22,${(0.06+lvl*0.07).toFixed(2)})`:'';
+      const cur=di===editorDay?';outline:2px solid var(--orange-border);outline-offset:-2px':'';
+      g+=`<div class="ov-cell load-cell" style="${bg}${cur};cursor:pointer" onclick="openSchedDay(${di})">${acts.length?`<b>${acts.length}</b>${hasConf?' <span style="color:var(--red)">⚠️</span>':''}<span class="lc-h">${fmtH(mins)}</span>`:'<span class="lc-empty">·</span>'}</div>`;
+    });
+    g+=`<div class="ov-cell load-total"><b>${totN}</b><div class="lc-h" style="color:var(--text3);font-size:11px">${fmtH(totMin)}</div></div>`;
+  });
+  g+=`</div></div>`;
+  return `<div class="c-head"><div><div class="c-title">Загрузка по людям</div><div class="c-sub">Сколько активностей и часов у каждого по дням (ответственный + исполнитель). Темнее = больше нагрузка, ⚠️ = пересечение в этот день. Клик по ячейке — расписание дня.</div></div></div>${g}`;
+}
+function openSchedDay(i){ editorDay=i; view='schedule'; render(); }
+
+/* ── печать / PDF всей смены ── */
+function printShift(){
+  const s=plan.shift;
+  let html=`<h1>${esc(s.name)}</h1><div class="p-sub">${esc(s.place)} · ${esc(s.kids)} · ${plan.days.length} дней</div>`;
+  plan.days.forEach((d,di)=>{
+    html+=`<h2>День ${d.n} · ${esc(d.date)} — ${esc(d.title)}</h2>`;
+    let rows=[];
+    (plan.anchors[d.type]||[]).forEach(a=>rows.push({anchor:true,start:a[0],end:a[1],title:a[2]}));
+    plan.activities.filter(a=>a.day===di).forEach(a=>rows.push({anchor:false,...a}));
+    rows.sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+    html+=`<table><thead><tr><th style="width:70px">Время</th><th>Активность</th><th style="width:130px">Ответственный</th><th style="width:130px">Исполнитель</th></tr></thead><tbody>`;
+    rows.forEach(r=>{
+      if(r.anchor){ html+=`<tr class="p-anchor"><td>${r.start}${r.end?'–'+r.end:''}</td><td>${esc(r.title)} (шаблон)</td><td>—</td><td>—</td></tr>`; }
+      else{ const rn=r.resp&&person(r.resp)?esc(person(r.resp).name):'—'; const en=r.exec&&person(r.exec)?esc(person(r.exec).name):'—';
+        const pl=[r.place,(r.group&&r.group!=='Все')?r.group:''].filter(Boolean).join(', ');
+        html+=`<tr><td>${r.start}${r.end?'–'+r.end:''}</td><td><b>${esc(r.title)}</b>${pl?' · '+esc(pl):''}</td><td>${rn}</td><td>${en}</td></tr>`; }
+    });
+    html+=`</tbody></table>`;
+  });
+  document.getElementById('printArea').innerHTML=html;
+  window.print();
 }
 
 /* ============== OVERVIEW ============== */
@@ -858,7 +938,14 @@ function renderTeam(){
     const list=plan.team.filter(p=>p.role===r); if(!list.length)return;
     html+=`<div class="team-group"><h3><i class="bi ${ROLES[r].icon}"></i> ${ROLES[r].plural} · ${list.length}</h3><div class="team-cards">`;
     list.forEach(p=>{ const load=plan.activities.filter(a=>a.resp===p.id).length;
-      html+=`<div class="person-card">${avatar(p.id,true)}<div style="flex:1;min-width:0"><input class="pname" value="${esc(p.name)}" onchange="renamePerson('${p.id}',this.value)"><div class="person-load">${p.group?esc(p.group)+' · ':''}${load} ${plural(load,'активность','активности','активностей')}</div></div></div>`; });
+      html+=`<div class="person-card" style="flex-wrap:wrap;align-items:center;gap:8px">
+        ${avatar(p.id,true)}
+        <input class="pname" style="flex:1;min-width:90px" value="${esc(p.name)}" onchange="renamePerson('${p.id}',this.value)" placeholder="Имя и фамилия">
+        <button class="link-btn" onclick="delPerson('${p.id}')" title="Удалить из команды"><i class="bi bi-trash3"></i></button>
+        <div style="flex-basis:100%;display:flex;align-items:center;gap:8px;padding-left:49px">
+          <span class="person-load">${load} ${plural(load,'активность','активности','активностей')}</span>
+          <select class="p-sel" style="max-width:135px;margin-left:auto" onchange="setPersonGroup('${p.id}',this.value)" title="Группа"><option value="">— группа —</option>${plan.groups.filter(g=>g!=='Все').map(g=>`<option value="${g}" ${p.group===g?'selected':''}>${g}</option>`).join('')}</select>
+        </div></div>`; });
     html+=`</div></div>`;
   });
   html+=`<div class="cb-label">Добавить человека</div><div class="add-person"><input type="text" id="np-name" placeholder="Имя и фамилия"><select id="np-role">${ALL_ROLES.map(r=>`<option value="${r}">${ROLES[r].label}</option>`).join('')}</select><button class="btn-primary" onclick="addPerson()"><i class="bi bi-person-plus"></i> Добавить</button></div>`;
@@ -866,6 +953,8 @@ function renderTeam(){
 }
 function plural(n,a,b,c){ const m=n%100,d=n%10; if(m>=11&&m<=14)return c; if(d===1)return a; if(d>=2&&d<=4)return b; return c; }
 function renamePerson(id,v){ const p=person(id); if(v.trim()){p.name=v.trim(); commit(); render();} }
+function setPersonGroup(id,v){ const p=person(id); if(p){p.group=v; commit(); render();} }
+function delPerson(id){ if(!confirm('Удалить из команды? Назначения этого человека снимутся.'))return; plan.team=plan.team.filter(x=>x.id!==id); plan.activities.forEach(a=>{ if(a.resp===id)a.resp=''; if(a.exec===id)a.exec=''; }); commit(); render(); }
 function addPerson(){ const n=document.getElementById('np-name').value.trim(); const r=document.getElementById('np-role').value; if(!n)return; plan.team.push({id:'p'+Date.now(),name:n,role:r,group:''}); commit(); render(); }
 
 /* ============== ПАРАМЕТРЫ СМЕНЫ (длительность / дни) ============== */
