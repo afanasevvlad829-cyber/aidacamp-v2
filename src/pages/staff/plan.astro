@@ -231,6 +231,8 @@ export const prerender = true;
     <div class="sb-section">Конструктор</div>
     <button class="nav-btn" data-view="overview" onclick="setView('overview')"><i class="bi bi-grid-3x3-gap-fill"></i> Вся смена</button>
     <button class="nav-btn" data-view="editor" onclick="setView('editor')"><i class="bi bi-calendar2-week"></i> Моё расписание</button>
+    <button class="nav-btn" data-view="groups" onclick="setView('groups')"><i class="bi bi-mortarboard-fill"></i> Уроки по группам</button>
+    <button class="nav-btn" data-view="reports" onclick="setView('reports')"><i class="bi bi-megaphone-fill"></i> Отчёт родителям</button>
     <button class="nav-btn" data-view="checklists" onclick="setView('checklists')"><i class="bi bi-check2-square"></i> Чек-листы роли</button>
     <button class="nav-btn" data-view="team" onclick="setView('team')"><i class="bi bi-people-fill"></i> Команда смены</button>
     <div class="sb-divider"></div>
@@ -427,6 +429,15 @@ function defaultPlan(){
       daily:['08:30 — проверка завтрака','08:45 — звонки преподавателям («готово к 09:00?»)','10:30 — проверка хода уроков','13:00 — проверка обеда','15:00 — проверка активностей вожатых','19:00 — стендап (15 мин)','20:00 — сборка отчёта','20:30 — публикация','21:00 — контроль отбоя'],
     },
   };
+  const parentReports=[
+    {day:0,time:'21:30',photos:'8-10',video:'видео 20-30 сек (огонёк/эстафета)',textTarget:'Текст-анонс: ребята прибыли, познакомились, проверили лагерь, первая игра',draft:'',status:'draft',shots:['Встреча на входе','Завоз вещей','Ледокол','Общелагерная игра','Огонёк знакомства']},
+    {day:1,time:'20:30',photos:'10',video:'видео 30 сек с огонька',textTarget:'~250 слов: что прошли (Junior — первый код, Middle — сайты, Senior — ИИ), спорт, огонёк',draft:'',status:'draft',shots:['По фото на каждый класс','Спортивная игра','Огонёк отзывов']},
+    {day:2,time:'20:30',photos:'12',video:'видео 45 сек (проекты + дискотека)',textTarget:'Освоились, создают реальные проекты, вечером дискотека',draft:'',status:'draft',shots:['2 фото на урок','Спорт','Дискотека']},
+    {day:3,time:'20:30',photos:'10',video:'видео',textTarget:'Закрепление и проектная работа',draft:'',status:'draft',shots:['Уроки в процессе','Вожатская активность']},
+    {day:4,time:'20:30',photos:'10',video:'нарезка показа',textTarget:'Промежуточный показ — каждая группа выступила',draft:'',status:'draft',shots:['Выступления групп','Зрители','Лучшие проекты']},
+    {day:5,time:'20:30',photos:'12',video:'видео',textTarget:'Конкурс проектов, награждение, праздничный ужин',draft:'',status:'draft',shots:['Конкурс','Награждение','Праздничный ужин']},
+    {day:6,time:'14:00',photos:'15',video:'финальный ролик 2-3 мин (лучшие моменты недели)',textTarget:'Смена закончилась, благодарность родителям. Публикация сразу после отправления',draft:'',status:'draft',shots:['Сборы','Прощальный огонёк','Групповые фото','Отправление']},
+  ];
   return {
     shift:{name:'Смена «АйДаКемп» 2026',place:'Санаторий Изумруд, Волоколамский р-н',kids:'60+ детей (7-16 лет)',duration:'7 дней / 6 ночей'},
     groupsInfo:[
@@ -436,13 +447,23 @@ function defaultPlan(){
       {id:'Middle-2',age:'10-12',count:15,course:'Веб-разработка'},
       {id:'Senior',age:'13-16',count:10,course:'AI & Computer Vision'},
     ],
-    team, groups, days, anchors, activities:acts, roleChecklists,
+    team, groups, days, anchors, activities:acts, roleChecklists, parentReports,
     _seedTitleId:_id,
   };
 }
 
 /* ============== STATE ============== */
-let plan=null, view='overview', currentRole='counselor', editorDay=0, filter='all', modalChk=[], saveTimer=null;
+let plan=null, view='overview', currentRole='counselor', editorDay=0, filter='all', groupFilter='all', modalChk=[], saveTimer=null;
+
+// Какие уроки (по полю group активности) попадают в реальную группу
+const GROUP_MEMBERSHIP={
+  'Junior-1':['Junior-1','Junior','Все'],
+  'Junior-2':['Junior-2','Junior','Все'],
+  'Middle-1':['Middle-1','Middle','Middle/Senior','Все'],
+  'Middle-2':['Middle-2','Middle','Middle/Senior','Все'],
+  'Senior':['Senior','Middle/Senior','Все'],
+};
+function groupMatch(actGroup,row){ return (GROUP_MEMBERSHIP[row]||[row]).includes(actGroup); }
 
 function initials(name){ const p=name.replace(/[·•]/g,' ').split(/\s+/).filter(Boolean); return ((p[0]?.[0]||'')+(p[1]?.[0]||'')).toUpperCase(); }
 function avColor(id){ const i=plan.team.findIndex(p=>p.id===id); return AV_COLORS[(i<0?0:i)%AV_COLORS.length]; }
@@ -465,7 +486,7 @@ function render(){
   document.getElementById('modeBadge').textContent=PERSIST.mode==='live'?'рабочая':'превью';
   document.getElementById('shiftMeta').innerHTML=`<b>${esc(plan.shift.name)}</b><br>${esc(plan.shift.place)}<br>${esc(plan.shift.kids)} · ${esc(plan.shift.duration)}`;
   const c=document.getElementById('content');
-  c.innerHTML = view==='overview'?renderOverview() : view==='editor'?renderEditor() : view==='checklists'?renderChecklists() : renderTeam();
+  c.innerHTML = view==='overview'?renderOverview() : view==='editor'?renderEditor() : view==='groups'?renderGroups() : view==='reports'?renderReports() : view==='checklists'?renderChecklists() : renderTeam();
 }
 function setView(v){ view=v; render(); }
 function setRole(r){ currentRole=r; render(); }
@@ -515,11 +536,12 @@ function renderEditor(){
   const bar=`<div class="ed-bar">
     <span class="ed-lane">Дорожка: <b><i class="bi ${ROLES[currentRole].icon}"></i> ${ROLES[currentRole].label}</b></span>
     <span class="seg"><button class="${filter==='all'?'active':''}" onclick="setFilter('all')">Всё</button><button class="${filter==='mandatory'?'active':''}" onclick="setFilter('mandatory')">Обязательное</button><button class="${filter==='extra'?'active':''}" onclick="setFilter('extra')">Доп.</button></span>
+    ${currentRole==='teacher'?`<select class="fld" style="width:auto" onchange="setGroupFilter(this.value)"><option value="all"${groupFilter==='all'?' selected':''}>Все группы</option>${plan.groupsInfo.map(gi=>`<option value="${gi.id}"${groupFilter===gi.id?' selected':''}>${gi.id} (${gi.age})</option>`).join('')}</select>`:''}
     <button class="btn-add" onclick="openModal()"><i class="bi bi-plus-lg"></i> Добавить активность</button>
   </div>`;
   let items=[];
   if(filter!=='extra') (plan.anchors[d.type]||[]).forEach(a=>items.push({anchor:true,start:a[0],end:a[1],title:a[2]}));
-  actsFor(editorDay,currentRole).forEach(a=>{ if(filter==='all'||filter===a.type) items.push({anchor:false,...a}); });
+  actsFor(editorDay,currentRole).forEach(a=>{ if((filter==='all'||filter===a.type) && (groupFilter==='all'||groupMatch(a.group,groupFilter))) items.push({anchor:false,...a}); });
   items.sort((a,b)=>(a.start||'').localeCompare(b.start||''));
   let tl=`<div class="timeline">`;
   if(!items.length) tl+=`<div style="text-align:center;color:var(--text3);padding:40px 0"><i class="bi bi-calendar-x" style="font-size:28px"></i><div style="margin-top:8px">Пусто — добавьте первую активность</div></div>`;
@@ -531,6 +553,62 @@ function renderEditor(){
 }
 function selDay(i){ editorDay=i; render(); }
 function setFilter(f){ filter=f; render(); }
+function setGroupFilter(g){ groupFilter=g; render(); }
+
+/* ============== УРОКИ ПО ГРУППАМ ============== */
+function renderGroups(){
+  const lessons=plan.activities.filter(a=>a.role==='teacher');
+  const cols=`170px repeat(${plan.days.length}, 200px)`;
+  let g=`<div class="grid-wrap"><div class="ov-grid" style="grid-template-columns:${cols}">`;
+  g+=`<div class="ov-cell corner"></div>`;
+  plan.days.forEach(d=>{ g+=`<div class="ov-cell day-head"><div class="ov-day-n">День ${d.n}</div><div class="ov-day-date">${d.date}</div></div>`; });
+  plan.groupsInfo.forEach(gi=>{
+    g+=`<div class="ov-cell lane-head"><div><div style="display:flex;align-items:center;gap:7px"><i class="bi bi-mortarboard-fill"></i> ${gi.id}</div><div style="font-size:11px;color:var(--text3);font-weight:400;margin-top:2px">${gi.age} · ${esc(gi.course)}</div></div></div>`;
+    plan.days.forEach((d,di)=>{
+      const cell=lessons.filter(a=>a.day===di && groupMatch(a.group,gi.id)).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+      let html=`<div class="ov-cell editable" onclick="gotoTeacherDay(${di})">`;
+      if(!cell.length) html+=`<div class="ov-empty">—</div>`;
+      else cell.forEach(a=>{ const cp=chkProgress(a);
+        html+=`<div class="mini t-${a.type}"><div class="mini-time">${a.start}${a.end?'–'+a.end:''}</div><div class="mini-title">${esc(a.title)}</div><div class="mini-foot">${a.resp?avatar(a.resp):'<span class="chk-badge" style="color:var(--red)"><i class="bi bi-exclamation-circle"></i></span>'}${cp.t?`<span class="chk-badge${cp.d===cp.t?' done':''}"><i class="bi bi-check2-square"></i> ${cp.d}/${cp.t}</span>`:''}</div></div>`; });
+      g+=html+`</div>`;
+    });
+  });
+  g+=`</div></div>`;
+  return `<div class="c-head"><div><div class="c-title">Уроки по группам</div><div class="c-sub">Параллельные уроки преподавателей, разнесённые по 5 группам. Урок с группой «Junior»/«Все» виден в обеих подгруппах. Клик — в редактор дня (роль Преподаватель).</div></div></div>${g}`;
+}
+function gotoTeacherDay(i){ currentRole='teacher'; editorDay=i; view='editor'; render(); }
+
+/* ============== ОТЧЁТ РОДИТЕЛЯМ ============== */
+function renderReports(){
+  plan.parentReports=plan.parentReports||[];
+  const RST={draft:{l:'Черновик',c:'var(--text3)',bg:'var(--bg)'},ready:{l:'Готов',c:'var(--orange)',bg:'var(--orange-bg)'},published:{l:'Опубликован',c:'var(--green)',bg:'var(--green-bg)'}};
+  let cards='';
+  plan.parentReports.forEach(r=>{
+    const d=plan.days[r.day]; if(!d)return;
+    const st=RST[r.status]||RST.draft;
+    const shotsDone=(r.shots||[]).filter((_,i)=>r.shotsDone&&r.shotsDone[i]).length;
+    const shotRows=(r.shots||[]).map((s,i)=>`<div class="chk-row${r.shotsDone&&r.shotsDone[i]?' done':''}" onclick="toggleShot(${r.day},${i})"><input type="checkbox" ${r.shotsDone&&r.shotsDone[i]?'checked':''} onclick="event.stopPropagation()"><span>${esc(s)}</span></div>`).join('');
+    cards+=`<div class="ck-card" style="margin-bottom:14px">
+      <h4><i class="bi bi-megaphone-fill"></i> День ${d.n} · ${d.date}
+        <span class="ck-prog" style="background:${st.bg};color:${st.c};padding:3px 10px;border-radius:20px;font-size:11.5px"><i class="bi bi-clock"></i> ${r.time} · ${st.l}</span></h4>
+      <div class="row2">
+        <div class="cb-section"><div class="cb-label">Цель по контенту</div><div class="cb-desc"><b>Фото:</b> ${esc(r.photos)} · <b>Видео:</b> ${esc(r.video)}</div></div>
+      </div>
+      <div class="cb-section"><div class="cb-label">Что снять (чек-лист)</div>${shotRows||'<div style="font-size:13px;color:var(--text3)">—</div>'}<div style="font-size:11.5px;color:var(--text3);margin-top:4px">${shotsDone}/${(r.shots||[]).length} кадров отмечено</div></div>
+      <div class="cb-section"><div class="cb-label">Текст поста <span style="font-weight:400;text-transform:none;color:var(--text3)">(ориентир: ${esc(r.textTarget)})</span></div><textarea class="result-area" placeholder="Черновик поста для родительского чата..." onchange="setReportField(${r.day},'draft',this.value)">${esc(r.draft)}</textarea></div>
+      <div class="cb-section"><div class="cb-label">Статус</div><div class="status-seg">
+        <button class="s-planned ${r.status==='draft'?'active':''}" onclick="setReportStatus(${r.day},'draft')"><i class="bi bi-pencil"></i> Черновик</button>
+        <button class="s-progress ${r.status==='ready'?'active':''}" onclick="setReportStatus(${r.day},'ready')"><i class="bi bi-check2"></i> Готов</button>
+        <button class="s-done ${r.status==='published'?'active':''}" onclick="setReportStatus(${r.day},'published')"><i class="bi bi-send-fill"></i> Опубликован</button>
+      </div></div>
+    </div>`;
+  });
+  const pub=plan.parentReports.filter(r=>r.status==='published').length;
+  return `<div class="c-head"><div><div class="c-title">Отчёт родителям</div><div class="c-sub">Ежедневный пост в родительский чат (обычно 20:30, после отбоя). Цель, чек-лист кадров и черновик текста по каждому дню. Опубликовано: ${pub}/${plan.parentReports.length}.</div></div></div>${cards}`;
+}
+function toggleShot(day,i){ const r=plan.parentReports.find(x=>x.day===day); r.shotsDone=r.shotsDone||[]; r.shotsDone[i]=!r.shotsDone[i]; commit(); render(); }
+function setReportField(day,f,v){ plan.parentReports.find(x=>x.day===day)[f]=v; commit(); }
+function setReportStatus(day,s){ plan.parentReports.find(x=>x.day===day).status=s; commit(); render(); }
 
 function renderActCard(a){
   const cp=chkProgress(a), open=a._open?' open':'';
