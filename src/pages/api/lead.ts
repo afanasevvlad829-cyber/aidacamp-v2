@@ -264,6 +264,12 @@ export const POST: APIRoute = async ({ request }) => {
     const body: Record<string, string> = await request.json();
     const { phone, age, shift, source } = body;
 
+    // Валидация телефона — минимум 10 цифр
+    const digits = (phone || '').replace(/\D/g, '');
+    if (digits.length < 10) {
+      return new Response(JSON.stringify({ ok: false, error: 'invalid_phone' }), { status: 400 });
+    }
+
     // Извлекаем IP и User-Agent для логирования
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
       || request.headers.get('x-real-ip')
