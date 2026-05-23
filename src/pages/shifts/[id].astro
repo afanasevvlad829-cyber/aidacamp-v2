@@ -459,8 +459,14 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
 <script is:inline>
 (function () {
   var DYNAMIC = {
-    'shift-1': { base: 85900, increment: 1000, baseDate: '2026-05-23', endDate: '2026-05-29' },
-    'shift-2': { base: 99000, increment: 500,  baseDate: '2026-05-23', endDate: '2026-06-10' },
+    'shift-1': {
+      baseDate: '2026-05-23',
+      prices: [85900, 86900, 87900, 89900, 91900, 93900],
+    },
+    'shift-2': {
+      baseDate: '2026-05-23',
+      base: 99000, increment: 500, endDate: '2026-06-10',
+    },
   };
   function fmt(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
   function daysDiff(a, b) {
@@ -477,11 +483,20 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
     var cfg = DYNAMIC[id];
     var elapsed = daysDiff(cfg.baseDate, today);
     if (elapsed < 0) return;
-    var maxDays = daysDiff(cfg.baseDate, cfg.endDate);
-    var price = cfg.base + Math.min(elapsed, maxDays) * cfg.increment;
-    document.querySelectorAll('[data-dynamic-price="' + id + '"]').forEach(function(el) { el.textContent = fmt(price); });
-    if (elapsed < maxDays) {
-      var msg = 'Завтра дороже на ' + cfg.increment.toLocaleString('ru-RU') + ' ₽';
+    var cur, next;
+    if (cfg.prices) {
+      var idx = Math.min(elapsed, cfg.prices.length - 1);
+      cur = cfg.prices[idx];
+      next = elapsed < cfg.prices.length - 1 ? cfg.prices[idx + 1] : null;
+    } else {
+      var maxDays = daysDiff(cfg.baseDate, cfg.endDate);
+      var days = Math.min(elapsed, maxDays);
+      cur = cfg.base + days * cfg.increment;
+      next = elapsed < maxDays ? cur + cfg.increment : null;
+    }
+    document.querySelectorAll('[data-dynamic-price="' + id + '"]').forEach(function(el) { el.textContent = fmt(cur); });
+    if (next !== null) {
+      var msg = 'Завтра дороже на ' + (next - cur).toLocaleString('ru-RU') + ' ₽';
       document.querySelectorAll('[data-price-urgency="' + id + '"]').forEach(function(el) {
         el.textContent = msg; el.classList.remove('hidden');
       });

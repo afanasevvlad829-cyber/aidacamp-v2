@@ -578,53 +578,57 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
 
 <script is:inline>
 (function () {
-  // Динамические цены: +X₽ в день до определённой даты
+  // Смена 1: нелинейный график. Смена 2: равномерный +500/день.
   var DYNAMIC = {
-    'shift-1': { base: 85900, increment: 1000, baseDate: '2026-05-23', endDate: '2026-05-29' },
-    'shift-2': { base: 99000, increment: 500,  baseDate: '2026-05-23', endDate: '2026-06-10' },
+    'shift-1': {
+      baseDate: '2026-05-23',
+      // цены по дням: 0=23мая 1=24 2=25 3=26 4=27 5=28 и далее
+      prices: [85900, 86900, 87900, 89900, 91900, 93900],
+    },
+    'shift-2': {
+      baseDate: '2026-05-23',
+      base: 99000, increment: 500, endDate: '2026-06-10',
+    },
   };
 
-  function fmt(n) {
-    return n.toLocaleString('ru-RU') + ' ₽';
+  function fmt(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
+  function daysDiff(a, b) {
+    var da = new Date(a); da.setHours(0,0,0,0);
+    var db = new Date(b); db.setHours(0,0,0,0);
+    return Math.floor((db - da) / 86400000);
   }
-
-  function daysDiff(fromStr, toStr) {
-    var a = new Date(fromStr); a.setHours(0,0,0,0);
-    var b = new Date(toStr);   b.setHours(0,0,0,0);
-    return Math.floor((b - a) / 86400000);
-  }
-
   function todayStr() {
     var d = new Date();
-    var mm = String(d.getMonth() + 1).padStart(2, '0');
-    var dd = String(d.getDate()).padStart(2, '0');
-    return d.getFullYear() + '-' + mm + '-' + dd;
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
   }
 
   var today = todayStr();
 
   Object.keys(DYNAMIC).forEach(function (id) {
     var cfg = DYNAMIC[id];
-    var daysElapsed = daysDiff(cfg.baseDate, today);
-    if (daysElapsed < 0) return; // before campaign start
+    var elapsed = daysDiff(cfg.baseDate, today);
+    if (elapsed < 0) return;
 
-    var maxDays = daysDiff(cfg.baseDate, cfg.endDate);
-    var clampedDays = Math.min(daysElapsed, maxDays);
-    var currentPrice = cfg.base + clampedDays * cfg.increment;
+    var cur, next;
+    if (cfg.prices) {
+      var idx = Math.min(elapsed, cfg.prices.length - 1);
+      cur = cfg.prices[idx];
+      next = elapsed < cfg.prices.length - 1 ? cfg.prices[idx + 1] : null;
+    } else {
+      var maxDays = daysDiff(cfg.baseDate, cfg.endDate);
+      var days = Math.min(elapsed, maxDays);
+      cur = cfg.base + days * cfg.increment;
+      next = elapsed < maxDays ? cur + cfg.increment : null;
+    }
 
-    // Update all price elements for this shift
     document.querySelectorAll('[data-dynamic-price="' + id + '"]').forEach(function (el) {
-      el.textContent = fmt(currentPrice);
+      el.textContent = fmt(cur);
     });
 
-    // Show urgency chip if price still rising (today < endDate)
-    if (daysElapsed < maxDays) {
-      var tomorrow = cfg.base + (clampedDays + 1) * cfg.increment;
-      var diff = tomorrow - currentPrice;
-      var msg = 'Завтра дороже на ' + diff.toLocaleString('ru-RU') + ' ₽';
+    if (next !== null) {
+      var msg = 'Завтра дороже на ' + (next - cur).toLocaleString('ru-RU') + ' ₽';
       document.querySelectorAll('[data-price-urgency="' + id + '"]').forEach(function (el) {
-        el.textContent = msg;
-        el.classList.remove('hidden');
+        el.textContent = msg; el.classList.remove('hidden');
       });
     }
   });
