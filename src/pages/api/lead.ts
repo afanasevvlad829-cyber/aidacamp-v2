@@ -286,11 +286,12 @@ export const POST: APIRoute = async ({ request }) => {
     // PG лог (best-effort)
     await saveLeadToPg(body, { ip, userAgent, crmId });
 
-    // Andata — событие order_new (best-effort, не блокирует ответ).
+    // Andata — событие order_new. Fire-and-forget: НЕ ждём ответ и НЕ блокируем
+    // путь заявки (у sendAndataEvent есть свой таймаут и он не бросает исключений).
     // Шлём только если CRM создал заказ — чтобы order_id == customer_id
     // и cron смог связать будущую оплату (order_paid) с этим визитом.
     if (crmId) {
-      await sendAndataEvent({
+      void sendAndataEvent({
         eventName: 'order_new',
         source: 'aidacamp-site',
         ubtcuid: body.ubtcuid,

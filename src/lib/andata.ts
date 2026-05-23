@@ -9,6 +9,7 @@
 
 const ANDATA_ENDPOINT = 'https://mdeploy.andata.ru/api2.php';
 const ANDATA_CONTAINER_ID = '9c0aaeb2-3b5c-4f86-aebd-786c79f7314b';
+const ANDATA_TIMEOUT_MS = 3000;
 
 /** tag_id событий из Andata Tag Manager (см. ТЗ) */
 export const ANDATA_TAGS = {
@@ -85,13 +86,22 @@ export async function sendAndataEvent(opts: SendAndataEventOptions): Promise<boo
       event_data: eventData,
     };
 
-    const res = await fetch(ANDATA_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-      body: JSON.stringify(payload),
-    });
-    const out = (await res.json().catch(() => null)) as { status?: string } | null;
-    return !!out && out.status === 'success';
+    // Жёсткий таймаут: Andata НИКОГДА не должна тормозить вызывающий код
+    // (например, путь заявки /api/lead). При зависании — тихо выходим.
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), ANDATA_TIMEOUT_MS);
+    try {
+      const res = await fetch(ANDATA_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+        body: JSON.stringify(payload),
+        signal: ctrl.signal,
+      });
+      const out = (await res.json().catch(() => null)) as { status?: string } | null;
+      return !!out && out.status === 'success';
+    } finally {
+      clearTimeout(timer);
+    }
   } catch {
     return false;
   }
