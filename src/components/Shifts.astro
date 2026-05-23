@@ -575,3 +575,58 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
   document.addEventListener('astro:page-load', initViewedShiftScroll);
   initViewedShiftScroll();
 </script>
+
+<script is:inline>
+(function () {
+  // Динамические цены: +X₽ в день до определённой даты
+  var DYNAMIC = {
+    'shift-1': { base: 85900, increment: 1000, baseDate: '2026-05-23', endDate: '2026-05-29' },
+    'shift-2': { base: 99000, increment: 500,  baseDate: '2026-05-23', endDate: '2026-06-10' },
+  };
+
+  function fmt(n) {
+    return n.toLocaleString('ru-RU') + ' ₽';
+  }
+
+  function daysDiff(fromStr, toStr) {
+    var a = new Date(fromStr); a.setHours(0,0,0,0);
+    var b = new Date(toStr);   b.setHours(0,0,0,0);
+    return Math.floor((b - a) / 86400000);
+  }
+
+  function todayStr() {
+    var d = new Date();
+    var mm = String(d.getMonth() + 1).padStart(2, '0');
+    var dd = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + mm + '-' + dd;
+  }
+
+  var today = todayStr();
+
+  Object.keys(DYNAMIC).forEach(function (id) {
+    var cfg = DYNAMIC[id];
+    var daysElapsed = daysDiff(cfg.baseDate, today);
+    if (daysElapsed < 0) return; // before campaign start
+
+    var maxDays = daysDiff(cfg.baseDate, cfg.endDate);
+    var clampedDays = Math.min(daysElapsed, maxDays);
+    var currentPrice = cfg.base + clampedDays * cfg.increment;
+
+    // Update all price elements for this shift
+    document.querySelectorAll('[data-dynamic-price="' + id + '"]').forEach(function (el) {
+      el.textContent = fmt(currentPrice);
+    });
+
+    // Show urgency chip if price still rising (today < endDate)
+    if (daysElapsed < maxDays) {
+      var tomorrow = cfg.base + (clampedDays + 1) * cfg.increment;
+      var diff = tomorrow - currentPrice;
+      var msg = 'Завтра дороже на ' + diff.toLocaleString('ru-RU') + ' ₽';
+      document.querySelectorAll('[data-price-urgency="' + id + '"]').forEach(function (el) {
+        el.textContent = msg;
+        el.classList.remove('hidden');
+      });
+    }
+  });
+})();
+</script>
