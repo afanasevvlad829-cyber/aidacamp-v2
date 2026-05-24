@@ -47,9 +47,10 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
       );
       if (!role) {
         if (path.startsWith('/api/')) return new Response('Unauthorized', { status: 401 });
-        const to = new URL('/portal/login', url);
-        to.searchParams.set('next', path);
-        return Response.redirect(to, 302);
+        // Относительный Location: за reverse-proxy абсолютный URL берёт
+        // внутренний origin адаптера (localhost:4181) и ломает редирект в браузере.
+        const location = `/portal/login?next=${encodeURIComponent(path)}`;
+        return new Response(null, { status: 302, headers: { Location: location } });
       }
       locals.portalRole = role;
     }
