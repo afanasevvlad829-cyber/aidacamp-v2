@@ -1,0 +1,99 @@
+---
+export const prerender = false;
+
+import PortalLayout from '../../layouts/PortalLayout.astro';
+import type { PortalRole } from '../../lib/portalSession';
+
+const role = Astro.locals.portalRole!;
+
+const BASE = 'https://ai.aidacamp.ru';
+
+interface CatalogItem {
+  title: string;
+  href: string;
+  desc: string;
+  icon: string;
+}
+interface CatalogGroup {
+  group: string;
+  roles: PortalRole[];
+  items: CatalogItem[];
+}
+
+const catalog: CatalogGroup[] = [
+  {
+    group: 'Танковый полигон',
+    roles: ['admin', 'teacher', 'student'],
+    items: [
+      { title: 'Танковый бой', href: `${BASE}/docs/tank-battle.html`, desc: 'Командное сражение на полигоне', icon: 'bullseye' },
+      { title: 'Арена', href: `${BASE}/docs/arena.html`, desc: 'Турнирная площадка', icon: 'grid-3x3-gap' },
+      { title: 'Тренировка', href: `${BASE}/docs/train.html`, desc: 'Отработка манёвров перед боем', icon: 'clipboard-check' },
+      { title: 'Игра', href: `${BASE}/docs/play.html`, desc: 'Запуск игрового режима', icon: 'controller' },
+    ],
+  },
+  {
+    group: 'Учителю',
+    roles: ['admin', 'teacher'],
+    items: [
+      { title: 'Онбординг преподавателя', href: `${BASE}/docs/onboarding-teacher.html`, desc: 'Первые шаги в роли преподавателя', icon: 'signpost-2' },
+      { title: 'Преподавателю', href: `${BASE}/docs/teacher.html`, desc: 'Рабочее пространство преподавателя', icon: 'person-workspace' },
+      { title: 'Хендбук', href: `${BASE}/docs/handbook.html`, desc: 'Справочник и методики', icon: 'journal-text' },
+      { title: 'Дашборд', href: `${BASE}/docs/dashboard.html`, desc: 'Метрики и прогресс группы', icon: 'speedometer2' },
+    ],
+  },
+  {
+    group: 'Ученику',
+    roles: ['admin', 'teacher', 'student'],
+    items: [
+      { title: 'Онбординг ученика', href: `${BASE}/docs/onboarding-student.html`, desc: 'С чего начать обучение', icon: 'signpost' },
+      { title: 'Ученику', href: `${BASE}/docs/student.html`, desc: 'Личное пространство ученика', icon: 'person' },
+      { title: 'Квесты', href: `${BASE}/docs/quests.html`, desc: 'Задания и испытания', icon: 'list-check' },
+      { title: 'Каталог', href: `${BASE}/docs/catalog.html`, desc: 'Все доступные материалы', icon: 'collection' },
+      { title: 'Тур', href: `${BASE}/docs/tour.html`, desc: 'Знакомство с порталом', icon: 'map' },
+    ],
+  },
+];
+
+const visibleGroups = catalog.filter((g) => g.roles.includes(role));
+---
+
+<PortalLayout title="Портал — АйДаКэмп">
+  <div class="mb-10">
+    <h1 class="text-[28px] font-bold tracking-[-0.02em] text-navy-950 md:text-[36px]">
+      Портал АйДаКэмп
+    </h1>
+    <p class="mt-2 text-[16px] text-body-muted">Выберите раздел, чтобы открыть его.</p>
+  </div>
+
+  <div class="space-y-12">
+    {visibleGroups.map((g) => (
+      <section>
+        <h2 class="mb-4 text-[20px] font-bold tracking-[-0.01em] text-navy-950 md:text-[24px]">
+          {g.group}
+        </h2>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {g.items.map((item) => (
+            <a
+              href={item.href}
+              target="_blank"
+              rel="noopener"
+              class="group flex items-start gap-4 rounded-[16px] border border-border bg-white p-5 card-shadow transition hover:border-primary"
+            >
+              <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] bg-primary-soft text-primary">
+                <i class={`bi bi-${item.icon} text-[24px]`} aria-hidden="true"></i>
+              </span>
+              <span class="min-w-0">
+                <span class="block text-[18px] font-semibold text-navy-950 group-hover:text-primary">
+                  {item.title}
+                </span>
+                <span class="mt-1 block text-[16px] leading-[1.5] text-body-muted">
+                  {item.desc}
+                </span>
+              </span>
+            </a>
+          ))}
+        </div>
+      </section>
+    ))}
+  </div>
+</PortalLayout>
