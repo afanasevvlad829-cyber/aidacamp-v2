@@ -215,8 +215,9 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
           <!-- Price -->
           <div class="flex flex-col">
             <span class="text-[12px] font-semibold uppercase tracking-[0.14em] text-white/65">Стоимость</span>
-            <span class="text-[36px] md:text-[44px] font-extrabold tracking-[-0.02em] text-white leading-none mt-1">{shift.price}</span>
+            <span class="text-[36px] md:text-[44px] font-extrabold tracking-[-0.02em] text-white leading-none mt-1" data-dynamic-price={shift.id}>{shift.price}</span>
             <span class="text-[13px] text-white/70 mt-1">всё включено</span>
+            <span class="hidden text-[11px] font-semibold text-orange-300 mt-0.5" data-price-urgency={shift.id}></span>
           </div>
 
           <!-- Occupancy -->
@@ -346,7 +347,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
           <p class="text-[15px] text-body-muted mb-5">{shift.dates} · {shift.duration} {isLowAvail && (<span class="text-orange-700 font-semibold"> · Осталось {shift.free} {shift.free === 1 ? 'место' : shift.free < 5 ? 'места' : 'мест'}</span>)}</p>
 
           <div class="flex items-baseline gap-3 mb-5 pb-5 border-b border-border-light">
-            <span class="text-[36px] font-extrabold tracking-[-0.02em] text-body">{shift.price}</span>
+            <span class="text-[36px] font-extrabold tracking-[-0.02em] text-body" data-dynamic-price={shift.id}>{shift.price}</span>
             <span class="text-[15px] md:text-[14px] text-body-muted">всё включено · проживание, питание, программа</span>
           </div>
 
@@ -453,5 +454,54 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
       topBar.style.display = 'none';
     });
   }
+</script>
+
+<script is:inline>
+(function () {
+  var DYNAMIC = {
+    'shift-1': {
+      baseDate: '2026-05-23',
+      prices: [85900, 86900, 87900, 89900, 91900, 93900],
+    },
+    'shift-2': {
+      baseDate: '2026-05-23',
+      base: 99000, increment: 500, endDate: '2026-06-10',
+    },
+  };
+  function fmt(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
+  function daysDiff(a, b) {
+    var da = new Date(a); da.setHours(0,0,0,0);
+    var db = new Date(b); db.setHours(0,0,0,0);
+    return Math.floor((db - da) / 86400000);
+  }
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  var today = todayStr();
+  Object.keys(DYNAMIC).forEach(function(id) {
+    var cfg = DYNAMIC[id];
+    var elapsed = daysDiff(cfg.baseDate, today);
+    if (elapsed < 0) return;
+    var cur, next;
+    if (cfg.prices) {
+      var idx = Math.min(elapsed, cfg.prices.length - 1);
+      cur = cfg.prices[idx];
+      next = elapsed < cfg.prices.length - 1 ? cfg.prices[idx + 1] : null;
+    } else {
+      var maxDays = daysDiff(cfg.baseDate, cfg.endDate);
+      var days = Math.min(elapsed, maxDays);
+      cur = cfg.base + days * cfg.increment;
+      next = elapsed < maxDays ? cur + cfg.increment : null;
+    }
+    document.querySelectorAll('[data-dynamic-price="' + id + '"]').forEach(function(el) { el.textContent = fmt(cur); });
+    if (next !== null) {
+      var msg = 'Завтра будет ' + next.toLocaleString('ru-RU') + ' ₽';
+      document.querySelectorAll('[data-price-urgency="' + id + '"]').forEach(function(el) {
+        el.textContent = msg; el.classList.remove('hidden');
+      });
+    }
+  });
+})();
 </script>
 </Base>

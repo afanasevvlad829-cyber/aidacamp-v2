@@ -80,8 +80,10 @@ export default defineConfig({
     // Минус: HTML тяжелее на ~70KB, но это компенсируется gzip и отсутствием round-trip к CDN.
     inlineStylesheets: 'auto',
     // CDN: статика раздаётся с Beget CDN (70 точек присутствия).
-    // После настройки CNAME cdn.aidacamp.ru — заменить на https://cdn.aidacamp.ru
+    // huhodirekeka.begetcdn.cloud — технический домен, HTTPS работает (проверено 2026-05-24).
+    // cdn.aidacamp.ru → HTTPS пока не настроен (порт 443 refused), добавить в Beget CDN панели.
+    // После добавления cdn.aidacamp.ru → заменить ниже на https://cdn.aidacamp.ru
     // DEPLOY_ENV=dev → относительные пути (CDN не обслуживает dev.aidacamp.ru)
-    // assetsPrefix: disabled — CDN не отдаёт JS-бандлы, TBT 1200ms (hotfix 2026-05-21)
+    assetsPrefix: process.env.DEPLOY_ENV === 'dev' ? '' : 'https://huhodirekeka.begetcdn.cloud',
   },
 });

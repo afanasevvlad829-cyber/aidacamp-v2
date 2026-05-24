@@ -36,47 +36,14 @@ import { landingPages as allLandingPages } from '../data/landing-pages';
   title="Летний лагерь 2026 для детей в Подмосковье | АйДаКемп — IT"
   description="Детский лагерь с проживанием в Подмосковье. 7–14 дней, Python, AI, бассейн. 2026 смены с 30 мая. Трансфер от метро. От 48 000 ₽."
   heroPreloadMobile="/images/hero-mobile-bean-v3-600.avif"
-  heroPreloadMobileSrcset="/images/hero-mobile-bean-v3.avif 390w, /images/hero-mobile-bean-v3-600.avif 600w, /images/hero-mobile-bean-v3-900.avif 900w"
+  heroPreloadMobileSrcset="/images/hero-mobile-bean-v3.avif 390w, /images/hero-mobile-bean-v3-600.avif 600w"
   heroPreloadDesktop="/images/hero-desktop.avif"
 >
   <Fragment slot="head">
     {/* P2 LCP: preloads перенесены в heroPreloadMobile/heroPreloadDesktop props Base.astro
         (рендерятся первыми после charset, ДО аналитики — было в slot="head" ПОСЛЕ скриптов) */}
-    <SchemaOrg />
+
   </Fragment>
-  <script is:inline>
-  (function () {
-    // Редирект возвратников — 2-й визит со скидкой, 3-й+ без скидки
-    try {
-      if (sessionStorage.getItem('r_redirected')) return;
-      // Codims: utm_source=codims → сразу на /r/ со сменой 1
-      var params = new URLSearchParams(window.location.search);
-      if (params.get('utm_source') === 'codims') {
-        sessionStorage.setItem('ac:r_from', 'codims');
-        sessionStorage.setItem('r_redirected', '1');
-        window.location.replace('/r/?shift=shift-1');
-        return;
-      }
-      var raw = localStorage.getItem('ac:viewed_shifts');
-      if (!raw) return;
-      var viewed = JSON.parse(raw);
-      if (!Array.isArray(viewed) || !viewed.length) return;
-      var last = viewed.sort(function(a, b) { return b.ts - a.ts; })[0];
-      if (!last || !last.id) return;
-      // Считаем визиты на главную (с просмотренными сменами)
-      var visits = parseInt(localStorage.getItem('ac:homepage_visits') || '0') + 1;
-      localStorage.setItem('ac:homepage_visits', String(visits));
-      // 3-й визит и далее — без скидки
-      if (visits >= 3) {
-        localStorage.setItem('ac:r_no_discount', '1');
-      } else {
-        localStorage.removeItem('ac:r_no_discount');
-      }
-      sessionStorage.setItem('r_redirected', '1');
-      window.location.replace('/r/?shift=' + last.id);
-    } catch (e) {}
-  })();
-  </script>
   <Header />
   <main class="pb-20 md:pb-0">
     <Hero hasVariants={true} />
@@ -120,4 +87,6 @@ import { landingPages as allLandingPages } from '../data/landing-pages';
   <!-- ShiftModal mounted in Base.astro globally — НЕ дублировать здесь (вызывало 2 модала) -->
   <!-- StickyCta убран: перекрывал AgeBar (z-70 vs z-60), AgeBar — главная цель Метрики 541048270 -->
   <!-- <StickyCta /> -->
+  <!-- JSON-LD вынесен из <head> в конец body — не блокирует критический путь; Google/Яндекс находят в любом месте документа -->
+  <SchemaOrg />
 </Base>

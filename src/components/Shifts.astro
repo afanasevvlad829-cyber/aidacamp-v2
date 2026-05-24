@@ -575,3 +575,62 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
   document.addEventListener('astro:page-load', initViewedShiftScroll);
   initViewedShiftScroll();
 </script>
+
+<script is:inline>
+(function () {
+  // Смена 1: нелинейный график. Смена 2: равномерный +500/день.
+  var DYNAMIC = {
+    'shift-1': {
+      baseDate: '2026-05-23',
+      // цены по дням: 0=23мая 1=24 2=25 3=26 4=27 5=28 и далее
+      prices: [85900, 86900, 87900, 89900, 91900, 93900],
+    },
+    'shift-2': {
+      baseDate: '2026-05-23',
+      base: 99000, increment: 500, endDate: '2026-06-10',
+    },
+  };
+
+  function fmt(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
+  function daysDiff(a, b) {
+    var da = new Date(a); da.setHours(0,0,0,0);
+    var db = new Date(b); db.setHours(0,0,0,0);
+    return Math.floor((db - da) / 86400000);
+  }
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  var today = todayStr();
+
+  Object.keys(DYNAMIC).forEach(function (id) {
+    var cfg = DYNAMIC[id];
+    var elapsed = daysDiff(cfg.baseDate, today);
+    if (elapsed < 0) return;
+
+    var cur, next;
+    if (cfg.prices) {
+      var idx = Math.min(elapsed, cfg.prices.length - 1);
+      cur = cfg.prices[idx];
+      next = elapsed < cfg.prices.length - 1 ? cfg.prices[idx + 1] : null;
+    } else {
+      var maxDays = daysDiff(cfg.baseDate, cfg.endDate);
+      var days = Math.min(elapsed, maxDays);
+      cur = cfg.base + days * cfg.increment;
+      next = elapsed < maxDays ? cur + cfg.increment : null;
+    }
+
+    document.querySelectorAll('[data-dynamic-price="' + id + '"]').forEach(function (el) {
+      el.textContent = fmt(cur);
+    });
+
+    if (next !== null) {
+      var msg = 'Завтра будет ' + next.toLocaleString('ru-RU') + ' ₽';
+      document.querySelectorAll('[data-price-urgency="' + id + '"]').forEach(function (el) {
+        el.textContent = msg; el.classList.remove('hidden');
+      });
+    }
+  });
+})();
+</script>
