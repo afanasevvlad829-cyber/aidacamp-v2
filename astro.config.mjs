@@ -79,11 +79,8 @@ export default defineConfig({
     // Теперь: 'always' → CSS в <style> в HTML → рендер начинается сразу.
     // Минус: HTML тяжелее на ~70KB, но это компенсируется gzip и отсутствием round-trip к CDN.
     inlineStylesheets: 'auto',
-    // CDN: статика раздаётся с Beget CDN (70 точек присутствия).
-    // huhodirekeka.begetcdn.cloud — технический домен, HTTPS работает (проверено 2026-05-24).
-    // cdn.aidacamp.ru → HTTPS пока не настроен (порт 443 refused), добавить в Beget CDN панели.
-    // После добавления cdn.aidacamp.ru → заменить ниже на https://cdn.aidacamp.ru
-    // DEPLOY_ENV=dev → относительные пути (CDN не обслуживает dev.aidacamp.ru)
-    assetsPrefix: process.env.DEPLOY_ENV === 'dev' ? '' : 'https://huhodirekeka.begetcdn.cloud',
+    // CDN отключён: cross-origin overhead (DNS+TCP+TLS к huhodirekeka.begetcdn.cloud)
+    // замедляет LCP с 1.6s до 3.7s на мобильном тесте. Сервер в России → CDN не даёт
+    // выигрыша в latency, только overhead. Откат 2026-05-24.
   },
 });
