@@ -156,3 +156,28 @@
   проксировании с нового домена.
 - Объём контента (handbook 88KB, catalog 106KB, tank-battle 144KB) — перекраска
   «всё сразу» трудоёмка; в плане разбить на отдельные задачи по страницам.
+
+## Поправка (2026-05-24): хаб-лончер вместо переноса
+
+Решение владельца: **контент НЕ переносим и не перекрашиваем**. Цель —
+собрать ссылки в единый портал под общим входом и в едином стиле.
+
+- Все материалы уже живут на `https://ai.aidacamp.ru/docs/*.html` (проверено,
+  все отдают 200): полигон (`tank-battle`, `arena`, `train`, `play`),
+  `handbook`, `onboarding-teacher`, `teacher`, `dashboard`,
+  `onboarding-student`, `student`, `quests`, `catalog`, `tour`, `welcome`.
+- Хаб `/portal/` = брендовая сетка карточек-ссылок на эти URL, видимость по ролям.
+- **Отменены** задачи переноса 9–12 и проксирование движка (`/portal/robocode-ws`,
+  `/portal/teacher-api/`, `/portal/api/bot/`) с `auth_request`.
+- Task 13 упрощается: только `location ^~ /portal/ → 4181` + env-секреты.
+- Авторизация (Tasks 1–5) остаётся без изменений — вход гейтит сам хаб.
+
+Каталог ссылок (роль → карточки):
+- **Полигон** (admin/teacher/student): Танковый бой `/docs/tank-battle.html`,
+  Арена `/docs/arena.html`, Тренировка `/docs/train.html`, Игра `/docs/play.html`.
+- **Учителю** (admin/teacher): Онбординг преподавателя `/docs/onboarding-teacher.html`,
+  Преподавателю `/docs/teacher.html`, Хендбук `/docs/handbook.html`,
+  Дашборд `/docs/dashboard.html`.
+- **Ученику** (admin/teacher/student): Онбординг ученика `/docs/onboarding-student.html`,
+  Ученику `/docs/student.html`, Квесты `/docs/quests.html`,
+  Каталог `/docs/catalog.html`, Тур `/docs/tour.html`.
