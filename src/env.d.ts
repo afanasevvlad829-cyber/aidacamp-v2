@@ -3,6 +3,6 @@
 
 declare namespace App {
   interface Locals {
-    portalRole?: 'admin' | 'teacher' | 'student';
+    portalRole?: 'admin' | 'teacher' | 'student' | 'vozhaty' | 'rukovoditel';
   }
 }
