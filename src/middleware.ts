@@ -1,4 +1,7 @@
 import type { MiddlewareHandler } from 'astro';
+import { verifySession } from './lib/portalSession';
+
+const PORTAL_PUBLIC = new Set(['/portal/login', '/portal/login/', '/api/portal/login', '/api/portal/check']);
 
 // ─── 301 Redirects ──────────────────────────────────────────────────────────
 
@@ -29,8 +32,28 @@ const TILDA_REDIRECTS: Record<string, string> = {
 
 const ipCounts = new Map<string, { count: number; reset: number }>();
 
-export const onRequest: MiddlewareHandler = async ({ request, url }, next) => {
+export const onRequest: MiddlewareHandler = async (context, next) => {
+  const { request, url, cookies, locals } = context;
   const path = url.pathname;
+
+  // ── Гейт портала ───────────────────────────────────────────────
+  if (path.startsWith('/portal') || path.startsWith('/api/portal')) {
+    const cleanPortal = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
+    const isPublic = PORTAL_PUBLIC.has(path) || PORTAL_PUBLIC.has(cleanPortal);
+    if (!isPublic) {
+      const role = verifySession(
+        cookies.get('portal_session')?.value,
+        process.env.PORTAL_SESSION_SECRET ?? '',
+      );
+      if (!role) {
+        if (path.startsWith('/api/')) return new Response('Unauthorized', { status: 401 });
+        const to = new URL('/portal/login', url);
+        to.searchParams.set('next', path);
+        return Response.redirect(to, 302);
+      }
+      locals.portalRole = role;
+    }
+  }
 
   // /blog/* → /stati/* (301)
   if (path === '/blog/' || path === '/blog') {
