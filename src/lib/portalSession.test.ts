@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { createHmac } from 'node:crypto';
 import { signSession, verifySession } from './portalSession';
 
 const SECRET = 'test-secret-please-change';
@@ -31,9 +32,17 @@ describe('portalSession', () => {
     expect(verifySession(signSession('admin', SECRET), '')).toBeNull();
   });
 
-  it('отклоняет неизвестную роль', () => {
-    // payload с ролью "hacker" не должен пройти даже при валидной подписи
-    const token = signSession('admin', SECRET);
-    expect(verifySession(token, SECRET)).toBe('admin');
+  it('отклоняет валидно подписанный токен с неизвестной ролью', () => {
+    const payload = Buffer.from(JSON.stringify({ role: 'hacker', exp: Date.now() + 1000 })).toString('base64url');
+    const sig = createHmac('sha256', SECRET).update(payload).digest('base64url');
+    const forged = `${payload}.${sig}`;
+    expect(verifySession(forged, SECRET)).toBeNull();
+  });
+
+  it('отклоняет подменённый payload со старой подписью', () => {
+    const token = signSession('student', SECRET);
+    const oldSig = token.slice(token.indexOf('.') + 1);
+    const newPayload = Buffer.from(JSON.stringify({ role: 'admin', exp: Date.now() + 1_000_000 })).toString('base64url');
+    expect(verifySession(`${newPayload}.${oldSig}`, SECRET)).toBeNull();
   });
 });
