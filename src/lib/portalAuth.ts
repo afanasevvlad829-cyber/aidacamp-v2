@@ -15,6 +15,8 @@ export function resolveRole(password: string): PortalRole | null {
     ['admin', process.env.PORTAL_PWD_ADMIN],
     ['teacher', process.env.PORTAL_PWD_TEACHER],
     ['student', process.env.PORTAL_PWD_STUDENT],
+    ['vozhaty', process.env.PORTAL_PWD_VOZHATY],
+    ['rukovoditel', process.env.PORTAL_PWD_RUKOVODITEL],
   ];
   for (const [role, pwd] of map) {
     if (pwd && safeEqual(password, pwd)) return role;
