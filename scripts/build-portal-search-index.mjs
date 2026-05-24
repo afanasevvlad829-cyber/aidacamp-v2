@@ -71,10 +71,10 @@ async function main() {
       const html = await fetchPage(url);
       const text = htmlToText(html).slice(0, MAX_TEXT_CHARS);
       entries.push({ title: item.title, url, group: item.group, roles: item.roles, text });
-      console.log(`✓ ${item.title} — ${text.length} chars (${url})`);
+      console.log(`[ok] ${item.title} — ${text.length} chars (${url})`);
     } catch (err) {
       failed += 1;
-      console.warn(`! пропущено: ${item.title} (${url}) — ${err.message}`);
+      console.warn(`[skip] пропущено: ${item.title} (${url}) — ${err.message}`);
     }
   }
 

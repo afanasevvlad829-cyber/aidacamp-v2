@@ -3,8 +3,22 @@ export const prerender = false;
 
 import PortalLayout from '../../layouts/PortalLayout.astro';
 import type { PortalRole } from '../../lib/portalSession';
+import searchIndex from '../../data/portalSearchIndex.json';
 
 const role = Astro.locals.portalRole!;
+
+interface SearchEntry {
+  title: string;
+  url: string;
+  group: string;
+  roles: PortalRole[];
+  text: string;
+}
+
+// Только материалы, доступные текущей роли — чужие записи не утекают в клиент.
+const searchEntries = (searchIndex as SearchEntry[]).filter((e) =>
+  e.roles.includes(role),
+);
 
 const BASE = 'https://ai.aidacamp.ru';
 
@@ -65,7 +79,36 @@ const visibleGroups = catalog.filter((g) => g.roles.includes(role));
     <p class="mt-2 text-[16px] text-body-muted">Выберите раздел, чтобы открыть его.</p>
   </div>
 
-  <div class="space-y-12">
+  <div class="mb-10">
+    <label for="portal-search" class="sr-only">Поиск по материалам</label>
+    <div class="relative">
+      <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-body-muted">
+        <i class="bi bi-search text-[18px]" aria-hidden="true"></i>
+      </span>
+      <input
+        id="portal-search"
+        type="search"
+        autocomplete="off"
+        placeholder="Поиск по материалам…"
+        class="w-full rounded-[12px] border border-border bg-white py-3 pl-11 pr-4 text-[16px] text-navy-950 outline-none transition placeholder:text-body-muted focus:border-primary"
+      />
+    </div>
+    <ul
+      id="portal-search-results"
+      class="mt-4 hidden space-y-3"
+      aria-live="polite"
+    ></ul>
+    <p
+      id="portal-search-empty"
+      class="mt-4 hidden text-[16px] text-body-muted"
+    >
+      Ничего не найдено.
+    </p>
+  </div>
+
+  <script type="application/json" id="portal-search-data" set:html={JSON.stringify(searchEntries)} />
+
+  <div id="portal-cards" class="space-y-12">
     {visibleGroups.map((g) => (
       <section>
         <h2 class="mb-4 text-[20px] font-bold tracking-[-0.01em] text-navy-950 md:text-[24px]">
@@ -96,4 +139,105 @@ const visibleGroups = catalog.filter((g) => g.roles.includes(role));
       </section>
     ))}
   </div>
+
+  <script is:inline>
+    (() => {
+      const dataTag = document.getElementById('portal-search-data');
+      const input = document.getElementById('portal-search');
+      const results = document.getElementById('portal-search-results');
+      const empty = document.getElementById('portal-search-empty');
+      const cards = document.getElementById('portal-cards');
+      if (!dataTag || !input || !results || !empty || !cards) return;
+
+      let entries = [];
+      try {
+        entries = JSON.parse(dataTag.textContent || '[]');
+      } catch {
+        entries = [];
+      }
+
+      const SNIPPET = 160;
+      const MAX_RESULTS = 15;
+
+      const escapeHtml = (s) =>
+        s
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+
+      function snippet(text, q) {
+        if (!text) return '';
+        const idx = text.toLowerCase().indexOf(q);
+        if (idx < 0) return text.slice(0, SNIPPET).trim() + (text.length > SNIPPET ? '…' : '');
+        const half = Math.floor((SNIPPET - q.length) / 2);
+        const start = Math.max(0, idx - half);
+        const end = Math.min(text.length, start + SNIPPET);
+        let s = text.slice(start, end).trim();
+        if (start > 0) s = '…' + s;
+        if (end < text.length) s = s + '…';
+        return s;
+      }
+
+      function search(q) {
+        const needle = q.toLowerCase();
+        const matched = [];
+        for (const e of entries) {
+          const inTitle = e.title.toLowerCase().includes(needle);
+          const inText = (e.text || '').toLowerCase().includes(needle);
+          if (inTitle || inText) matched.push({ e, rank: inTitle ? 0 : 1 });
+        }
+        matched.sort((a, b) => a.rank - b.rank);
+        return matched.slice(0, MAX_RESULTS).map((m) => m.e);
+      }
+
+      function render(q) {
+        const found = search(q);
+        results.innerHTML = '';
+        if (found.length === 0) {
+          results.classList.add('hidden');
+          empty.classList.remove('hidden');
+          return;
+        }
+        empty.classList.add('hidden');
+        results.classList.remove('hidden');
+        for (const e of found) {
+          const li = document.createElement('li');
+          li.innerHTML =
+            '<a href="' +
+            escapeHtml(e.url) +
+            '" target="_blank" rel="noopener" class="block rounded-[16px] border border-border bg-white p-4 card-shadow transition hover:border-primary">' +
+            '<span class="block text-[18px] font-semibold text-navy-950">' +
+            escapeHtml(e.title) +
+            '</span>' +
+            '<span class="mt-1 block text-[14px] font-medium text-primary">' +
+            escapeHtml(e.group) +
+            '</span>' +
+            '<span class="mt-1 block text-[16px] leading-[1.5] text-body-muted">' +
+            escapeHtml(snippet(e.text || '', q.toLowerCase())) +
+            '</span>' +
+            '</a>';
+          results.appendChild(li);
+        }
+      }
+
+      let timer;
+      input.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          const q = input.value.trim();
+          if (!q) {
+            results.classList.add('hidden');
+            empty.classList.add('hidden');
+            results.innerHTML = '';
+            cards.classList.remove('hidden');
+            return;
+          }
+          cards.classList.add('hidden');
+          render(q);
+        }, 150);
+      });
+    })();
+  </script>
 </PortalLayout>
