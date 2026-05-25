@@ -1,6 +1,8 @@
 ---
 // News Jazz — живые AI-новости в Hero
 // Данные: /data/news-jazz.json (обновляется каждый час кроном на сервере)
+// Архитектура: главная страница — статика (pre-rendered), поэтому читаем данные
+// через клиентский fetch с localStorage-кэшем (stale-while-revalidate, TTL 30 мин).
 ---
 
 <!-- ── Модалка ── -->
@@ -184,15 +186,12 @@
     try {
       var cached = JSON.parse(localStorage.getItem(NJ_KEY) || 'null');
       if (cached && cached.items && cached.items.length && (Date.now() - cached.ts) < NJ_TTL) {
-        /* Кэш свежий — показываем сразу */
         news = cached.items;
         start();
-        /* Фоновое обновление кэша без блокировки */
-        fetchAndCache(null);
+        fetchAndCache(null); /* фоновое обновление */
         return;
       }
     } catch(e) {}
-    /* Нет кэша или устарел — загружаем (с задержкой 2с чтобы не конкурировать с LCP) */
     fetchAndCache(function(items) { news = items; start(); });
   }
 
