@@ -19,7 +19,7 @@ git pull origin dev 2>&1 | tail -3
 # 2. npm install если нужно
 if ! node -e "require('$REPO/node_modules/@astrojs/node')" 2>/dev/null; then
   echo "→ npm install..."
-  npm install --omit=dev --silent
+  npm install --silent
 fi
 
 # 3. build
