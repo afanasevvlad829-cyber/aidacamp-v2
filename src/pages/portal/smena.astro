@@ -4,7 +4,7 @@ export const prerender = false;
 import PortalLayout from '../../layouts/PortalLayout.astro';
 import { verifySessionPayload } from '../../lib/portalSession';
 import { roleAllowed } from '../../lib/portalShiftRoles';
-import { getActiveShift, getEvents, getDone, type ShiftEvent } from '../../lib/portalShift';
+import { getActiveShift, getEvents, getDone, listShifts, type ShiftEvent } from '../../lib/portalShift';
 
 const role = Astro.locals.portalRole!;
 const sub = verifySessionPayload(
@@ -12,7 +12,10 @@ const sub = verifySessionPayload(
   process.env.PORTAL_SESSION_SECRET ?? '',
 )?.sub;
 
-const shift = await getActiveShift();
+const allShifts = (await listShifts()) ?? [];
+const reqShiftId = Number(Astro.url.searchParams.get('shift') || 0);
+const shift =
+  allShifts.find((sh) => sh.id === reqShiftId) ?? (await getActiveShift()) ?? allShifts[0] ?? null;
 
 // Виды и подписи табов.
 type View = 'role' | 'day' | 'activity' | 'matrix';
@@ -98,15 +101,20 @@ function cellEvents(date: string, r: string): ShiftEvent[] {
 // Хелпер построения ссылки таба/даты.
 function viewHref(v: View): string {
   const p = new URLSearchParams();
+  if (shift) p.set('shift', String(shift.id));
   p.set('view', v);
   if (selectedDate) p.set('date', selectedDate);
   return `/portal/smena?${p.toString()}`;
 }
 function dateHref(d: string): string {
   const p = new URLSearchParams();
+  if (shift) p.set('shift', String(shift.id));
   p.set('view', view);
   p.set('date', d);
   return `/portal/smena?${p.toString()}`;
+}
+function shiftHref(id: number): string {
+  return `/portal/smena?shift=${id}&view=${view}`;
 }
 
 const showDateNav = view === 'role' || view === 'day';
@@ -155,6 +163,24 @@ const isAdminLike = role === 'admin' || role === 'rukovoditel';
             </a>
           )}
         </div>
+
+        {allShifts.length > 1 && (
+          <nav class="mt-4 flex flex-wrap gap-2" aria-label="Выбор смены">
+            {allShifts.map((sh) => (
+              <a
+                href={shiftHref(sh.id)}
+                class={`inline-flex items-center gap-2 rounded-[12px] border px-4 py-2 text-[15px] font-medium transition ${
+                  shift && sh.id === shift.id
+                    ? 'border-primary bg-primary text-white'
+                    : 'border-border bg-white text-body-muted hover:border-primary hover:text-primary'
+                }`}
+              >
+                <i class="bi bi-calendar-week text-[16px]" aria-hidden="true"></i>
+                {sh.name}
+              </a>
+            ))}
+          </nav>
+        )}
 
         {/* Табы видов */}
         <nav class="mt-5 flex flex-wrap gap-2" aria-label="Виды расписания">
