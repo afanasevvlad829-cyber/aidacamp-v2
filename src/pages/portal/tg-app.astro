@@ -1,0 +1,111 @@
+---
+export const prerender = false;
+
+import PortalLayout from '../../layouts/PortalLayout.astro';
+---
+
+<PortalLayout title="Вход — АйДаКэмп" showHeader={false}>
+  {/* noindex задаётся в PortalLayout (<meta name="robots" content="noindex, nofollow">) */}
+  <script is:inline src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <div class="flex min-h-[70vh] items-center justify-center">
+    <div class="w-full max-w-[420px] text-center">
+      <div class="mb-8">
+        <div class="text-[26px] font-extrabold tracking-[-0.02em] text-navy-950">
+          АйДаКэмп
+        </div>
+        <p class="mt-2 text-[16px] text-body-muted">Портал сотрудника</p>
+      </div>
+
+      <div class="rounded-[20px] border border-border bg-white p-6 card-shadow md:p-8">
+        {/* Загрузка */}
+        <div id="tg-loading" class="flex flex-col items-center gap-3 py-4">
+          <i
+            class="bi bi-arrow-repeat animate-spin text-[28px] text-primary"
+            aria-hidden="true"
+          ></i>
+          <span class="text-[16px] text-body-muted">Загрузка…</span>
+        </div>
+
+        {/* Сообщение (ошибка / статус) — скрыто по умолчанию */}
+        <div
+          id="tg-message"
+          class="hidden items-start gap-2 rounded-[12px] border px-4 py-3 text-left text-[16px]"
+          role="status"
+        >
+          <i
+            id="tg-message-icon"
+            class="bi bi-info-circle-fill mt-[2px] text-[18px]"
+            aria-hidden="true"
+          ></i>
+          <span id="tg-message-text"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</PortalLayout>
+
+<script is:inline>
+  (function () {
+    var loading = document.getElementById('tg-loading');
+    var box = document.getElementById('tg-message');
+    var icon = document.getElementById('tg-message-icon');
+    var text = document.getElementById('tg-message-text');
+
+    function show(message, tone) {
+      if (loading) loading.classList.add('hidden');
+      if (!box) return;
+      box.classList.remove('hidden');
+      box.classList.add('flex');
+      var styles = {
+        warn: { cls: 'border-amber-200 bg-amber-50 text-amber-800', icon: 'bi-info-circle-fill' },
+        error: { cls: 'border-red-200 bg-red-50 text-red-700', icon: 'bi-exclamation-triangle-fill' },
+      };
+      var s = styles[tone] || styles.warn;
+      box.className =
+        'flex items-start gap-2 rounded-[12px] border px-4 py-3 text-left text-[16px] ' + s.cls;
+      if (icon) icon.className = 'bi ' + s.icon + ' mt-[2px] text-[18px]';
+      if (text) text.textContent = message;
+    }
+
+    var tg = window.Telegram && window.Telegram.WebApp;
+    if (tg) {
+      try { tg.ready(); } catch (e) {}
+      try { tg.expand(); } catch (e) {}
+    }
+
+    var initData = tg && tg.initData;
+    if (!initData) {
+      show('Откройте через Telegram-бота.', 'warn');
+      return;
+    }
+
+    fetch('/api/portal/tg', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: initData }),
+    })
+      .then(function (r) {
+        return r.json().catch(function () {
+          return { ok: false, error: 'invalid' };
+        });
+      })
+      .then(function (data) {
+        if (data && data.ok) {
+          window.location.replace('/portal/smena?view=role');
+          return;
+        }
+        var err = data && data.error;
+        if (err === 'pending') {
+          show('Заявка отправлена — ждите подтверждения администратором.', 'warn');
+        } else if (err === 'revoked') {
+          show('Доступ отозван.', 'error');
+        } else {
+          show('Не удалось войти. Откройте Mini App заново.', 'error');
+        }
+      })
+      .catch(function () {
+        show('Не удалось войти. Откройте Mini App заново.', 'error');
+      });
+  })();
+</script>
