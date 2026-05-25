@@ -1,0 +1,269 @@
+---
+export const prerender = false;
+
+import PortalLayout from '../../../layouts/PortalLayout.astro';
+import { getActiveShift, getEvents, listShifts, getChecklists, type ShiftEvent } from '../../../lib/portalShift';
+
+const role = Astro.locals.portalRole;
+if (role !== 'admin' && role !== 'rukovoditel') return Astro.redirect('/portal/');
+
+const shifts = await listShifts();
+const activeShift = await getActiveShift();
+const events: ShiftEvent[] = activeShift ? await getEvents(activeShift.id) : [];
+const checklists = await getChecklists();
+
+const ROLE_OPTIONS = [
+  { value: 'teacher', label: 'Учитель' },
+  { value: 'vozhaty', label: 'Вожатый' },
+  { value: 'rukovoditel', label: 'Руководитель' },
+  { value: 'student', label: 'Ученик' },
+];
+
+function fmtTime(t: string | null): string { return t ? t.slice(0, 5) : ''; }
+
+const inputCls = 'w-full rounded-[10px] border border-border px-3 py-2 text-[16px] text-body outline-none focus:border-primary';
+const labelCls = 'mb-1 block text-[14px] font-medium text-body-muted';
+const btnCls = 'inline-flex items-center gap-2 rounded-[12px] bg-primary px-5 py-2.5 text-[16px] font-semibold text-white transition hover:bg-primary-hover';
+const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
+---
+
+<PortalLayout title="Управление сеткой — АйДаКэмп">
+  <div class="mb-8 flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-[28px] font-bold tracking-[-0.02em] text-navy-950 md:text-[36px]">
+      Управление сеткой
+    </h1>
+    <a
+      href="/portal/smena"
+      class="inline-flex items-center gap-2 rounded-[12px] border border-border bg-white px-4 py-2 text-[16px] font-medium text-body-muted transition hover:border-primary hover:text-primary"
+    >
+      <i class="bi bi-arrow-left text-[18px]" aria-hidden="true"></i>
+      К расписанию
+    </a>
+  </div>
+
+  <div class="space-y-10">
+    {/* ===== СМЕНЫ ===== */}
+    <section>
+      <h2 class="mb-4 text-[20px] font-bold text-navy-950 md:text-[24px]">Смены</h2>
+      <div class="grid gap-4 lg:grid-cols-2">
+        <form method="POST" action="/api/portal/shift/admin" class={cardCls}>
+          <input type="hidden" name="action" value="createShift" />
+          <h3 class="mb-3 text-[16px] font-semibold text-navy-950">Создать смену</h3>
+          <div class="space-y-3">
+            <div>
+              <label class={labelCls} for="cs-name">Название</label>
+              <input id="cs-name" class={inputCls} name="name" required placeholder="Смена 1" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class={labelCls} for="cs-start">Начало</label>
+                <input id="cs-start" class={inputCls} type="date" name="start" required />
+              </div>
+              <div>
+                <label class={labelCls} for="cs-end">Конец</label>
+                <input id="cs-end" class={inputCls} type="date" name="end" required />
+              </div>
+            </div>
+            <button class={btnCls}><i class="bi bi-plus-lg text-[18px]" aria-hidden="true"></i>Создать</button>
+          </div>
+        </form>
+
+        <div class={cardCls}>
+          <h3 class="mb-3 text-[16px] font-semibold text-navy-950">Все смены ({shifts.length})</h3>
+          {shifts.length === 0 ? (
+            <p class="text-[16px] text-body-muted">Смен пока нет.</p>
+          ) : (
+            <ul class="space-y-2">
+              {shifts.map((s) => (
+                <li class="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-border px-3 py-2">
+                  <span class="text-[16px] text-navy-950">
+                    {s.name} <span class="text-body-muted">{s.start_date}—{s.end_date}</span>
+                    {s.status === 'active'
+                      ? <span class="ml-1 rounded-[6px] bg-primary-soft px-1.5 py-0.5 text-[13px] font-medium text-primary">активна</span>
+                      : <span class="ml-1 rounded-[6px] bg-page px-1.5 py-0.5 text-[13px] text-body-muted">архив</span>}
+                  </span>
+                  {s.status === 'active' && (
+                    <form method="POST" action="/api/portal/shift/admin">
+                      <input type="hidden" name="action" value="archiveShift" />
+                      <input type="hidden" name="id" value={s.id} />
+                      <button class="inline-flex items-center gap-1 rounded-[10px] border border-border px-3 py-1.5 text-[15px] font-medium text-body-muted transition hover:border-primary hover:text-primary">
+                        <i class="bi bi-archive text-[15px]" aria-hidden="true"></i>В архив
+                      </button>
+                    </form>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </section>
+
+    {/* ===== СОБЫТИЯ ===== */}
+    <section>
+      <h2 class="mb-4 text-[20px] font-bold text-navy-950 md:text-[24px]">События</h2>
+      {!activeShift ? (
+        <p class={cardCls + ' text-[16px] text-body-muted'}>Создайте и активируйте смену, чтобы добавлять события.</p>
+      ) : (
+        <div class="grid gap-4 lg:grid-cols-2">
+          <form method="POST" action="/api/portal/shift/admin" class={cardCls}>
+            <input type="hidden" name="action" value="upsertEvent" />
+            <input type="hidden" name="shiftId" value={activeShift.id} />
+            <h3 class="mb-3 text-[16px] font-semibold text-navy-950">Добавить событие в «{activeShift.name}»</h3>
+            <div class="space-y-3">
+              <div>
+                <label class={labelCls} for="ev-title">Название</label>
+                <input id="ev-title" class={inputCls} name="title" required placeholder="Заезд" />
+              </div>
+              <div class="grid grid-cols-3 gap-3">
+                <div>
+                  <label class={labelCls} for="ev-date">Дата</label>
+                  <input id="ev-date" class={inputCls} type="date" name="date" required value={activeShift.start_date} />
+                </div>
+                <div>
+                  <label class={labelCls} for="ev-start">С</label>
+                  <input id="ev-start" class={inputCls} type="time" name="start_time" />
+                </div>
+                <div>
+                  <label class={labelCls} for="ev-end">До</label>
+                  <input id="ev-end" class={inputCls} type="time" name="end_time" />
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class={labelCls} for="ev-type">Тип активности</label>
+                  <input id="ev-type" class={inputCls} name="activity_type" placeholder="Логистика" />
+                </div>
+                <div>
+                  <label class={labelCls} for="ev-sort">Порядок</label>
+                  <input id="ev-sort" class={inputCls} type="number" name="sort" value="0" />
+                </div>
+              </div>
+              <div>
+                <span class={labelCls}>Роли</span>
+                <div class="flex flex-wrap gap-3">
+                  {ROLE_OPTIONS.map((r) => (
+                    <label class="flex items-center gap-2 text-[16px] text-body">
+                      <input type="checkbox" name="roles" value={r.value} class="h-5 w-5 rounded border-border text-primary focus:ring-primary" />
+                      {r.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <button class={btnCls}><i class="bi bi-plus-lg text-[18px]" aria-hidden="true"></i>Сохранить событие</button>
+            </div>
+          </form>
+
+          <div class={cardCls}>
+            <h3 class="mb-3 text-[16px] font-semibold text-navy-950">События смены ({events.length})</h3>
+            {events.length === 0 ? (
+              <p class="text-[16px] text-body-muted">Событий пока нет.</p>
+            ) : (
+              <ul class="space-y-2 max-h-[420px] overflow-auto">
+                {events.map((e) => (
+                  <li class="rounded-[10px] border border-border px-3 py-2">
+                    <span class="text-[16px] text-navy-950">
+                      <span class="text-body-muted">{e.date.slice(5)} {fmtTime(e.start_time)}</span> {e.title}
+                    </span>
+                    <span class="ml-1 text-[14px] text-body-muted">#{e.id}{e.activity_type ? ` · ${e.activity_type}` : ''}</span>
+                    {e.roles.length > 0 && (
+                      <span class="ml-1 text-[14px] text-primary">{e.roles.join(', ')}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
+
+    {/* ===== ЧЕК-ЛИСТЫ ===== */}
+    <section>
+      <h2 class="mb-4 text-[20px] font-bold text-navy-950 md:text-[24px]">Чек-листы</h2>
+      <div class="grid gap-4 lg:grid-cols-2">
+        <form method="POST" action="/api/portal/shift/admin" class={cardCls}>
+          <input type="hidden" name="action" value="upsertChecklist" />
+          <h3 class="mb-3 text-[16px] font-semibold text-navy-950">Создать шаблон чек-листа</h3>
+          <div class="space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class={labelCls} for="cl-key">Ключ</label>
+                <input id="cl-key" class={inputCls} name="key" placeholder="zaezd" />
+              </div>
+              <div>
+                <label class={labelCls} for="cl-title">Название</label>
+                <input id="cl-title" class={inputCls} name="title" required placeholder="Приёмка детей" />
+              </div>
+            </div>
+            <div>
+              <label class={labelCls} for="cl-items">Пункты (по одному в строке)</label>
+              <textarea id="cl-items" class={inputCls + ' min-h-[120px]'} name="items" placeholder="Встретить группу
+Проверить документы
+Заселить"></textarea>
+            </div>
+            <button class={btnCls}><i class="bi bi-plus-lg text-[18px]" aria-hidden="true"></i>Сохранить шаблон</button>
+          </div>
+        </form>
+
+        <div class={cardCls}>
+          <h3 class="mb-3 text-[16px] font-semibold text-navy-950">Шаблоны ({checklists.length})</h3>
+          {checklists.length === 0 ? (
+            <p class="text-[16px] text-body-muted">Шаблонов пока нет.</p>
+          ) : (
+            <ul class="space-y-2 max-h-[420px] overflow-auto">
+              {checklists.map((cl) => (
+                <li class="rounded-[10px] border border-border px-3 py-2">
+                  <span class="text-[16px] text-navy-950">{cl.title}</span>
+                  <span class="ml-1 text-[14px] text-body-muted">#{cl.id}{cl.key ? ` · ${cl.key}` : ''} · {cl.items.length} пунктов</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </section>
+
+    {/* ===== ПРИВЯЗКА ЧЕК-ЛИСТА К СОБЫТИЮ ===== */}
+    <section>
+      <h2 class="mb-4 text-[20px] font-bold text-navy-950 md:text-[24px]">Привязать чек-лист к событию</h2>
+      {(!activeShift || events.length === 0 || checklists.length === 0) ? (
+        <p class={cardCls + ' text-[16px] text-body-muted'}>Нужны как минимум одно событие и один шаблон чек-листа.</p>
+      ) : (
+        <form method="POST" action="/api/portal/shift/admin" class={cardCls}>
+          <input type="hidden" name="action" value="attachChecklist" />
+          <div class="grid gap-3 lg:grid-cols-2">
+            <div>
+              <label class={labelCls} for="at-event">Событие</label>
+              <select id="at-event" class={inputCls} name="event_id" required>
+                {events.map((e) => (
+                  <option value={e.id}>{e.date.slice(5)} {fmtTime(e.start_time)} — {e.title} (#{e.id})</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label class={labelCls} for="at-checklist">Чек-лист</label>
+              <select id="at-checklist" class={inputCls} name="checklist_id" required>
+                {checklists.map((cl) => (
+                  <option value={cl.id}>{cl.title} (#{cl.id})</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div class="mt-3">
+            <span class={labelCls}>Кому виден чек-лист (роли)</span>
+            <div class="flex flex-wrap gap-3">
+              {ROLE_OPTIONS.map((r) => (
+                <label class="flex items-center gap-2 text-[16px] text-body">
+                  <input type="checkbox" name="roles" value={r.value} class="h-5 w-5 rounded border-border text-primary focus:ring-primary" />
+                  {r.label}
+                </label>
+              ))}
+            </div>
+          </div>
+          <button class={btnCls + ' mt-4'}><i class="bi bi-list-task text-[18px]" aria-hidden="true"></i>Привязать</button>
+        </form>
+      )}
+    </section>
+  </div>
+</PortalLayout>
