@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import node from '@astrojs/node';
 import sitemap from '@astrojs/sitemap';
+import compress from '@playform/compress';
 
 export default defineConfig({
   site: 'https://aidacamp.ru',
@@ -62,6 +63,13 @@ export default defineConfig({
 
         return item;
       },
+    }),
+    compress({
+      CSS: true,
+      HTML: true,
+      JavaScript: true,
+      Image: false,
+      SVG: false,
     }),
   ],
   devToolbar: { enabled: false },
