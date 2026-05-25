@@ -24,10 +24,23 @@ export async function getActiveShift(): Promise<Shift | null> {
   })) ?? null;
 }
 
-export async function getEvents(shiftId: number): Promise<ShiftEvent[]> {
+/** Отсортированный список дат смены (для навигации/шахматки) — без загрузки событий. */
+export async function getEventDates(shiftId: number): Promise<string[]> {
   return (await withClient(async (c) => {
-    const ev = await c.query(
-      "SELECT id,to_char(date,'YYYY-MM-DD') date,start_time::text,end_time::text,title,activity_type,roles,sort FROM shift_event WHERE shift_id=$1 ORDER BY date,sort,start_time", [shiftId]);
+    const r = await c.query(
+      "SELECT DISTINCT to_char(date,'YYYY-MM-DD') date FROM shift_event WHERE shift_id=$1 ORDER BY date", [shiftId]);
+    return r.rows.map((x: any) => x.date as string);
+  })) ?? [];
+}
+
+/** События смены. Если передана дата — только за этот день (легче для role/day видов). */
+export async function getEvents(shiftId: number, date?: string): Promise<ShiftEvent[]> {
+  return (await withClient(async (c) => {
+    const ev = date
+      ? await c.query(
+          "SELECT id,to_char(date,'YYYY-MM-DD') date,start_time::text,end_time::text,title,activity_type,roles,sort FROM shift_event WHERE shift_id=$1 AND date=$2 ORDER BY date,sort,start_time", [shiftId, date])
+      : await c.query(
+          "SELECT id,to_char(date,'YYYY-MM-DD') date,start_time::text,end_time::text,title,activity_type,roles,sort FROM shift_event WHERE shift_id=$1 ORDER BY date,sort,start_time", [shiftId]);
     const ecl = await c.query(
       "SELECT ec.id event_checklist_id, ec.event_id, ec.checklist_id, ec.roles, cl.title, cl.items FROM event_checklist ec JOIN checklist cl ON cl.id=ec.checklist_id WHERE ec.event_id = ANY($1)",
       [ev.rows.map((e: any) => e.id)]);

@@ -4,7 +4,7 @@ export const prerender = false;
 import PortalLayout from '../../layouts/PortalLayout.astro';
 import { verifySessionPayload } from '../../lib/portalSession';
 import { roleAllowed } from '../../lib/portalShiftRoles';
-import { getActiveShift, getEvents, getDone, listShifts, type ShiftEvent } from '../../lib/portalShift';
+import { getActiveShift, getEvents, getEventDates, getDone, listShifts, type ShiftEvent } from '../../lib/portalShift';
 
 const role = Astro.locals.portalRole!;
 const sub = verifySessionPayload(
@@ -28,23 +28,30 @@ const VIEWS: { key: View; label: string; icon: string }[] = [
 const rawView = Astro.url.searchParams.get('view');
 const view: View = (VIEWS.some((v) => v.key === rawView) ? rawView : 'role') as View;
 
-// Доступные данные (если смены нет — пустые).
-const events: ShiftEvent[] = shift ? await getEvents(shift.id) : [];
-const done = shift && sub ? await getDone(sub, shift.id) : new Set<string>();
-
 // Выбор даты: ?date=, иначе сегодня (если в пределах смены), иначе старт смены.
 function isoToday(): string {
   return new Date().toISOString().slice(0, 10);
 }
 const today = isoToday();
 let selectedDate = Astro.url.searchParams.get('date') ?? '';
-const dates = [...new Set(events.map((e) => e.date))].sort();
 if (shift) {
   const inShift = today >= shift.start_date && today <= shift.end_date;
   if (!selectedDate || !/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) {
     selectedDate = inShift ? today : shift.start_date;
   }
 }
+
+// Список дат смены — нужен навигации по дням и шахматке (дёшево, без загрузки событий).
+const dates = shift ? await getEventDates(shift.id) : [];
+
+// События грузим под выбранный вид:
+//  - role/day работают по одной дате → грузим только её события;
+//  - activity/matrix — обзор всей смены → грузим все.
+const fullShiftView = view === 'activity' || view === 'matrix';
+const events: ShiftEvent[] = shift
+  ? await getEvents(shift.id, fullShiftView ? undefined : selectedDate)
+  : [];
+const done = shift && sub ? await getDone(sub, shift.id) : new Set<string>();
 
 function fmtTime(t: string | null): string {
   return t ? t.slice(0, 5) : '';
