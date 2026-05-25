@@ -6,7 +6,7 @@
 #   2. коммитит любые локальные изменения (вкл. новые файлы)
 #   3. подтягивает origin/dev (rebase) — твои коммиты встают поверх
 #   4. пушит в origin/dev (MASTER_AGENT=1)
-#   5. деплоит dev (./scripts/deploy.sh dev)
+#   5. деплоит dev (NODE_OPTIONS=--max-old-space-size=8192 ./scripts/deploy.sh dev)
 #
 # Использование:
 #   bash scripts/dev-sync.sh ["сообщение коммита"]
@@ -67,6 +67,6 @@ ok "Запушено"
 
 # 5. Деплой
 step "Деплою dev"
-./scripts/deploy.sh dev
+NODE_OPTIONS=--max-old-space-size=8192 ./scripts/deploy.sh dev
 
 ok "Готово: dev синхронизирован и задеплоен → https://dev.aidacamp.ru"
