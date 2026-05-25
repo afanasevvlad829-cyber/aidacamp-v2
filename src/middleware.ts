@@ -1,7 +1,11 @@
 import type { MiddlewareHandler } from 'astro';
-import { verifySession } from './lib/portalSession';
+import { verifySessionPayload } from './lib/portalSession';
+import { getStaff } from './lib/portalStaff';
 
-const PORTAL_PUBLIC = new Set(['/portal/login', '/portal/login/', '/api/portal/login', '/api/portal/check']);
+const PORTAL_PUBLIC = new Set(['/portal/login', '/portal/login/', '/api/portal/login', '/api/portal/check', '/api/portal/tg']);
+
+const staffActiveCache = new Map<number, { ok: boolean; role: string | null; exp: number }>();
+const STAFF_CACHE_MS = 60_000;
 
 // ─── 301 Redirects ──────────────────────────────────────────────────────────
 
@@ -41,10 +45,22 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     const cleanPortal = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
     const isPublic = PORTAL_PUBLIC.has(path) || PORTAL_PUBLIC.has(cleanPortal);
     if (!isPublic) {
-      const role = verifySession(
+      const payload = verifySessionPayload(
         cookies.get('portal_session')?.value,
         process.env.PORTAL_SESSION_SECRET ?? '',
       );
+      let role = payload?.role ?? null;
+      // Для сотрудничьих сессий (есть sub) — проверяем active/role в БД (кэш 60с)
+      if (role && payload?.sub) {
+        const now = Date.now();
+        let c = staffActiveCache.get(payload.sub);
+        if (!c || c.exp < now) {
+          const staff = await getStaff(payload.sub);
+          c = { ok: !!staff?.active && !!staff?.role, role: staff?.role ?? null, exp: now + STAFF_CACHE_MS };
+          staffActiveCache.set(payload.sub, c);
+        }
+        if (!c.ok || c.role !== role) role = null;
+      }
       if (!role) {
         if (path.startsWith('/api/')) return new Response('Unauthorized', { status: 401 });
         // Относительный Location: за reverse-proxy абсолютный URL берёт

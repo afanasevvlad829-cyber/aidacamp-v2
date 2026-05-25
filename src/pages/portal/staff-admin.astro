@@ -1,0 +1,99 @@
+---
+export const prerender = false;
+
+import PortalLayout from '../../layouts/PortalLayout.astro';
+import { listStaff } from '../../lib/portalStaff';
+
+if (Astro.locals.portalRole !== 'admin') return Astro.redirect('/portal/');
+
+const staff = await listStaff();
+const pending = staff.filter((s) => !s.role);
+const active = staff.filter((s) => s.role && s.active);
+const inactive = staff.filter((s) => s.role && !s.active);
+const ROLES = ['teacher', 'vozhaty', 'rukovoditel', 'admin'];
+---
+
+<PortalLayout title="Сотрудники — АйДаКэмп">
+  <h1 class="mb-6 text-[28px] font-bold tracking-[-0.02em] text-navy-950 md:text-[36px]">
+    Сотрудники
+  </h1>
+
+  <section class="mb-10">
+    <h2 class="mb-3 text-[20px] font-bold tracking-[-0.01em] text-navy-950 md:text-[24px]">
+      Заявки ({pending.length})
+    </h2>
+    {pending.length === 0 && <p class="text-[16px] text-body-muted">Нет заявок.</p>}
+    {pending.map((s) => (
+      <form
+        method="POST"
+        action="/api/portal/staff"
+        class="mb-2 flex flex-wrap items-center gap-2 rounded-[16px] border border-border bg-white p-4 card-shadow"
+      >
+        <input type="hidden" name="telegram_id" value={s.telegram_id} />
+        <input type="hidden" name="action" value="setRole" />
+        <span class="min-w-0 flex-1 text-[16px] text-navy-950">
+          {s.full_name ?? '—'} {s.tg_username ? `@${s.tg_username}` : ''}
+          <span class="text-body-muted">#{s.telegram_id}</span>
+        </span>
+        <select
+          name="role"
+          class="rounded-[10px] border border-border px-3 py-2 text-[16px] text-body outline-none focus:border-primary"
+        >
+          {ROLES.map((r) => <option value={r}>{r}</option>)}
+        </select>
+        <button
+          class="rounded-[12px] bg-primary px-4 py-2 text-[16px] font-semibold text-white transition hover:bg-primary-hover"
+        >
+          Назначить
+        </button>
+      </form>
+    ))}
+  </section>
+
+  <section class="mb-10">
+    <h2 class="mb-3 text-[20px] font-bold tracking-[-0.01em] text-navy-950 md:text-[24px]">
+      Активные ({active.length})
+    </h2>
+    {active.length === 0 && <p class="text-[16px] text-body-muted">Нет активных сотрудников.</p>}
+    {active.map((s) => (
+      <div class="mb-2 flex flex-wrap items-center gap-2 rounded-[16px] border border-border bg-white p-4 card-shadow">
+        <span class="min-w-0 flex-1 text-[16px] text-navy-950">
+          {s.full_name ?? '—'} {s.tg_username ? `@${s.tg_username}` : ''} —
+          <b>{s.role}</b>
+        </span>
+        <form method="POST" action="/api/portal/staff">
+          <input type="hidden" name="telegram_id" value={s.telegram_id} />
+          <input type="hidden" name="action" value="deactivate" />
+          <button
+            class="rounded-[12px] border border-red-300 px-4 py-2 text-[16px] font-medium text-red-700 transition hover:bg-red-50"
+          >
+            Отключить
+          </button>
+        </form>
+      </div>
+    ))}
+  </section>
+
+  <section>
+    <h2 class="mb-3 text-[20px] font-bold tracking-[-0.01em] text-navy-950 md:text-[24px]">
+      Отключённые ({inactive.length})
+    </h2>
+    {inactive.length === 0 && <p class="text-[16px] text-body-muted">Нет отключённых сотрудников.</p>}
+    {inactive.map((s) => (
+      <div class="mb-2 flex flex-wrap items-center gap-2 rounded-[16px] border border-border bg-white p-4 card-shadow opacity-70">
+        <span class="min-w-0 flex-1 text-[16px] text-navy-950">
+          {s.full_name ?? '—'} — {s.role}
+        </span>
+        <form method="POST" action="/api/portal/staff">
+          <input type="hidden" name="telegram_id" value={s.telegram_id} />
+          <input type="hidden" name="action" value="reactivate" />
+          <button
+            class="rounded-[12px] border border-border px-4 py-2 text-[16px] font-medium text-body transition hover:border-primary"
+          >
+            Включить
+          </button>
+        </form>
+      </div>
+    ))}
+  </section>
+</PortalLayout>
