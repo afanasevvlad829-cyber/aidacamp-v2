@@ -5,7 +5,19 @@ import PortalLayout from '../../layouts/PortalLayout.astro';
 
 const params = Astro.url.searchParams;
 const error = params.get('error');
+const tg = params.get('tg');
 const next = params.get('next') ?? '/portal/';
+const botUser =
+  import.meta.env.PORTAL_BOT_USERNAME || process.env.PORTAL_BOT_USERNAME || '';
+
+const tgMsg =
+  tg === 'pending'
+    ? 'Заявка отправлена — ждите подтверждения администратором.'
+    : tg === 'revoked'
+      ? 'Доступ отозван. Обратитесь к администратору.'
+      : tg === 'invalid'
+        ? 'Не удалось проверить вход через Telegram. Попробуйте ещё раз.'
+        : '';
 ---
 
 <PortalLayout title="Вход в портал — АйДаКэмп" showHeader={false}>
@@ -19,45 +31,93 @@ const next = params.get('next') ?? '/portal/';
       </div>
 
       <div class="rounded-[20px] border border-border bg-white p-6 card-shadow md:p-8">
-        {error && (
+        {tgMsg && (
           <div
-            class="mb-5 flex items-start gap-2 rounded-[12px] border border-red-200 bg-red-50 px-4 py-3 text-[16px] text-red-700"
+            class="mb-5 flex items-start gap-2 rounded-[12px] border border-amber-200 bg-amber-50 px-4 py-3 text-[16px] text-amber-800"
+            role="status"
+          >
+            <i
+              class="bi bi-info-circle-fill mt-[2px] text-[18px]"
+              aria-hidden="true"
+            ></i>
+            <span>{tgMsg}</span>
+          </div>
+        )}
+
+        {/* Сотрудники — вход через Telegram */}
+        <p class="mb-3 text-[16px] font-medium text-body">
+          Сотрудники — войдите через Telegram:
+        </p>
+        {botUser ? (
+          <div class="flex justify-center">
+            <script
+              async
+              src="https://telegram.org/js/telegram-widget.js?22"
+              data-telegram-login={botUser}
+              data-size="large"
+              data-userpic="false"
+              data-auth-url="/api/portal/tg"
+              data-request-access="write"
+            ></script>
+          </div>
+        ) : (
+          <div
+            class="flex items-start gap-2 rounded-[12px] border border-red-200 bg-red-50 px-4 py-3 text-[16px] text-red-700"
             role="alert"
           >
             <i
               class="bi bi-exclamation-triangle-fill mt-[2px] text-[18px]"
               aria-hidden="true"
             ></i>
-            <span>Неверный пароль. Попробуйте ещё раз.</span>
+            <span>Бот не настроен (PORTAL_BOT_USERNAME).</span>
           </div>
         )}
 
-        <form method="POST" action="/api/portal/login" class="space-y-4">
-          <input type="hidden" name="next" value={next} />
-          <div>
-            <label
-              for="password"
-              class="mb-2 block text-[16px] font-medium text-body"
+        {/* Ученики — вход по коду */}
+        <details class="mt-8 border-t border-border pt-6">
+          <summary class="cursor-pointer text-[16px] font-medium text-primary">
+            Я ученик — войти по коду
+          </summary>
+
+          {error && (
+            <div
+              class="mt-4 flex items-start gap-2 rounded-[12px] border border-red-200 bg-red-50 px-4 py-3 text-[16px] text-red-700"
+              role="alert"
             >
-              Пароль
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              autofocus
-              autocomplete="current-password"
-              class="w-full rounded-[12px] border border-border bg-white px-4 py-3 text-[16px] text-body outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-          <button
-            type="submit"
-            class="w-full rounded-[14px] bg-primary px-5 py-3 text-[16px] font-semibold text-white transition hover:bg-primary-hover"
-          >
-            Войти
-          </button>
-        </form>
+              <i
+                class="bi bi-exclamation-triangle-fill mt-[2px] text-[18px]"
+                aria-hidden="true"
+              ></i>
+              <span>Неверный код. Попробуйте ещё раз.</span>
+            </div>
+          )}
+
+          <form method="POST" action="/api/portal/login" class="mt-4 space-y-4">
+            <input type="hidden" name="next" value={next} />
+            <div>
+              <label
+                for="password"
+                class="mb-2 block text-[16px] font-medium text-body"
+              >
+                Код
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                autocomplete="current-password"
+                class="w-full rounded-[12px] border border-border bg-white px-4 py-3 text-[16px] text-body outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <button
+              type="submit"
+              class="w-full rounded-[14px] bg-primary px-5 py-3 text-[16px] font-semibold text-white transition hover:bg-primary-hover"
+            >
+              Войти
+            </button>
+          </form>
+        </details>
       </div>
     </div>
   </div>
