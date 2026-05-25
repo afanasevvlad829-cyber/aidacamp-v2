@@ -86,7 +86,7 @@ export default defineConfig({
     // Было: 'auto' (threshold 4KB) → Base.css 37KB уходил на CDN → блокировал рендер 1350мс.
     // Теперь: 'always' → CSS в <style> в HTML → рендер начинается сразу.
     // Минус: HTML тяжелее на ~70KB, но это компенсируется gzip и отсутствием round-trip к CDN.
-    inlineStylesheets: 'auto',
+    inlineStylesheets: 'always',
     // CDN отключён: cross-origin overhead (DNS+TCP+TLS к huhodirekeka.begetcdn.cloud)
     // замедляет LCP с 1.6s до 3.7s на мобильном тесте. Сервер в России → CDN не даёт
     // выигрыша в latency, только overhead. Откат 2026-05-24.
