@@ -48,3 +48,7 @@ CREATE TABLE IF NOT EXISTS checklist_done (
   done_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (event_id, checklist_id, item_id, telegram_id)
 );
+
+-- Права для роли приложения (node-сервис ходит под ней). Идемпотентно.
+GRANT SELECT,INSERT,UPDATE,DELETE ON shift,shift_day,shift_event,checklist,event_checklist,checklist_done TO aidacamp_app;
+GRANT USAGE,SELECT ON SEQUENCE shift_id_seq,shift_day_id_seq,shift_event_id_seq,checklist_id_seq,event_checklist_id_seq,checklist_done_id_seq TO aidacamp_app;
