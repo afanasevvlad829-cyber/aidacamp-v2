@@ -69,3 +69,80 @@ export async function eventChecklistRoles(eventId: number, checklistId: number):
     return (r.rows[0]?.roles as string[]) ?? [];
   })) ?? [];
 }
+
+// ===== Admin helpers =====
+export interface ChecklistTemplate { id: number; key: string | null; title: string; items: { id: string; text: string }[] }
+
+/** Все смены (для админки). */
+export async function listShifts(): Promise<Shift[]> {
+  return (await withClient(async (c) => {
+    const r = await c.query("SELECT id,name,to_char(start_date,'YYYY-MM-DD') start_date,to_char(end_date,'YYYY-MM-DD') end_date,status FROM shift ORDER BY start_date DESC");
+    return r.rows as Shift[];
+  })) ?? [];
+}
+
+/** Шаблоны чек-листов (для админки). */
+export async function getChecklists(): Promise<ChecklistTemplate[]> {
+  return (await withClient(async (c) => {
+    const r = await c.query("SELECT id,key,title,items FROM checklist ORDER BY title");
+    return r.rows as ChecklistTemplate[];
+  })) ?? [];
+}
+
+/** Создать смену; возвращает id. */
+export async function createShift(name: string, start: string, end: string): Promise<number | null> {
+  return await withClient(async (c) => {
+    const r = await c.query("INSERT INTO shift(name,start_date,end_date) VALUES($1,$2,$3) RETURNING id", [name, start, end]);
+    return r.rows[0].id as number;
+  });
+}
+
+/** Архивировать смену. */
+export async function archiveShift(id: number): Promise<void> {
+  await withClient(async (c) => { await c.query("UPDATE shift SET status='archived' WHERE id=$1", [id]); });
+}
+
+/** Создать/обновить событие; возвращает id. */
+export async function upsertEvent(e: {
+  id?: number; shiftId: number; date: string; start_time: string | null; end_time: string | null;
+  title: string; activity_type: string | null; roles: string[]; sort: number;
+}): Promise<number | null> {
+  return await withClient(async (c) => {
+    if (e.id) {
+      await c.query(
+        "UPDATE shift_event SET date=$2,start_time=$3,end_time=$4,title=$5,activity_type=$6,roles=$7,sort=$8 WHERE id=$1",
+        [e.id, e.date, e.start_time, e.end_time, e.title, e.activity_type, e.roles, e.sort]);
+      return e.id;
+    }
+    const r = await c.query(
+      "INSERT INTO shift_event(shift_id,date,start_time,end_time,title,activity_type,roles,sort) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id",
+      [e.shiftId, e.date, e.start_time, e.end_time, e.title, e.activity_type, e.roles, e.sort]);
+    return r.rows[0].id as number;
+  });
+}
+
+/** Создать/обновить шаблон чек-листа; возвращает id. */
+export async function upsertChecklist(cl: {
+  id?: number; key: string | null; title: string; items: { id: string; text: string }[];
+}): Promise<number | null> {
+  return await withClient(async (c) => {
+    if (cl.id) {
+      await c.query("UPDATE checklist SET key=$2,title=$3,items=$4 WHERE id=$1", [cl.id, cl.key, cl.title, JSON.stringify(cl.items)]);
+      return cl.id;
+    }
+    const r = await c.query("INSERT INTO checklist(key,title,items) VALUES($1,$2,$3) RETURNING id", [cl.key, cl.title, JSON.stringify(cl.items)]);
+    return r.rows[0].id as number;
+  });
+}
+
+/** Привязать чек-лист к событию для ролей (или обновить роли существующей привязки). */
+export async function attachChecklist(eventId: number, checklistId: number, roles: string[]): Promise<void> {
+  await withClient(async (c) => {
+    const ex = await c.query("SELECT id FROM event_checklist WHERE event_id=$1 AND checklist_id=$2 LIMIT 1", [eventId, checklistId]);
+    if (ex.rows[0]) {
+      await c.query("UPDATE event_checklist SET roles=$2 WHERE id=$1", [ex.rows[0].id, roles]);
+    } else {
+      await c.query("INSERT INTO event_checklist(event_id,checklist_id,roles) VALUES($1,$2,$3)", [eventId, checklistId, roles]);
+    }
+  });
+}
