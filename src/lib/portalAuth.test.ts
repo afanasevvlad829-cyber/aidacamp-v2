@@ -4,27 +4,24 @@ import { resolveRole } from './portalAuth';
 describe('resolveRole', () => {
   beforeEach(() => {
     process.env.PORTAL_PWD_ADMIN = 'admin-pw';
-    process.env.PORTAL_PWD_TEACHER = 'teacher-pw';
     process.env.PORTAL_PWD_STUDENT = 'student-pw';
-    process.env.PORTAL_PWD_VOZHATY = 'vozhaty-pw';
-    process.env.PORTAL_PWD_RUKOVODITEL = 'rukovoditel-pw';
+    delete process.env.PORTAL_PWD_TEACHER;
+    delete process.env.PORTAL_PWD_VOZHATY;
+    delete process.env.PORTAL_PWD_RUKOVODITEL;
   });
 
-  it('сопоставляет пароль роли', () => {
+  it('сопоставляет код ученика и break-glass admin', () => {
     expect(resolveRole('admin-pw')).toBe('admin');
-    expect(resolveRole('teacher-pw')).toBe('teacher');
     expect(resolveRole('student-pw')).toBe('student');
-    expect(resolveRole('vozhaty-pw')).toBe('vozhaty');
-    expect(resolveRole('rukovoditel-pw')).toBe('rukovoditel');
   });
 
-  it('возвращает null на неверный пароль', () => {
+  it('пароли сотрудников больше не работают', () => {
+    process.env.PORTAL_PWD_TEACHER = 'teacher-pw';
+    expect(resolveRole('teacher-pw')).toBeNull();
+  });
+
+  it('возвращает null на неверный/пустой', () => {
     expect(resolveRole('nope')).toBeNull();
-    expect(resolveRole('')).toBeNull();
-  });
-
-  it('игнорирует роль с незаданным паролем', () => {
-    delete process.env.PORTAL_PWD_ADMIN;
     expect(resolveRole('')).toBeNull();
   });
 });
