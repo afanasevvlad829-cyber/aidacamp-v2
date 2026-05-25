@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from 'astro';
 import { verifySession } from './lib/portalSession';
 
-const PORTAL_PUBLIC = new Set(['/portal/login', '/portal/login/', '/api/portal/login', '/api/portal/check']);
+const PORTAL_PUBLIC = new Set(['/portal/login', '/portal/login/', '/api/portal/login', '/api/portal/check', '/api/portal/tg']);
 
 // ─── 301 Redirects ──────────────────────────────────────────────────────────
 
