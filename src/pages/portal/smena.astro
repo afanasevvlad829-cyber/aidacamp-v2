@@ -117,6 +117,8 @@ function shiftHref(id: number): string {
   return `/portal/smena?shift=${id}&view=${view}`;
 }
 
+const MONTHS_RU=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+function fmtDate(iso){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso); return m? Number(m[3])+' '+MONTHS_RU[Number(m[2])-1] : iso; }
 const showDateNav = view === 'role' || view === 'day';
 const isAdminLike = role === 'admin' || role === 'rukovoditel';
 ---
@@ -150,7 +152,7 @@ const isAdminLike = role === 'admin' || role === 'rukovoditel';
               {shift.name}
             </h1>
             <p class="mt-1 text-[16px] text-body-muted">
-              {shift.start_date} — {shift.end_date}
+              {fmtDate(shift.start_date)} — {fmtDate(shift.end_date)}
             </p>
           </div>
           {isAdminLike && (
@@ -211,7 +213,7 @@ const isAdminLike = role === 'admin' || role === 'rukovoditel';
                     : 'border-border bg-white text-body-muted hover:border-primary'
                 }`}
               >
-                {d.slice(5)}
+                {fmtDate(d)}
               </a>
             ))}
           </div>
@@ -342,7 +344,7 @@ const isAdminLike = role === 'admin' || role === 'rukovoditel';
                   <article class="flex flex-wrap items-baseline justify-between gap-2 rounded-[14px] border border-border bg-white p-4 card-shadow">
                     <span class="text-[16px] font-semibold text-navy-950">{e.title}</span>
                     <span class="text-[16px] text-body-muted">
-                      {e.date.slice(5)}{timeRange(e) ? ` · ${timeRange(e)}` : ''}
+                      {fmtDate(e.date)}{timeRange(e) ? ` · ${timeRange(e)}` : ''}
                     </span>
                   </article>
                 ))}
@@ -375,7 +377,7 @@ const isAdminLike = role === 'admin' || role === 'rukovoditel';
                 {dates.map((d) => (
                   <tr>
                     <td class="border-b border-border px-4 py-3 align-top font-medium text-navy-950 whitespace-nowrap">
-                      {d.slice(5)}
+                      {fmtDate(d)}
                     </td>
                     {MATRIX_ROLES.map((r) => {
                       const cells = cellEvents(d, r);
