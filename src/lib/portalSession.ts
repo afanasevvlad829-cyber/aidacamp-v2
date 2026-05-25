@@ -9,6 +9,7 @@ export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 interface SessionPayload {
   role: PortalRole;
   exp: number;
+  sub?: number; // telegram_id для сотрудников
 }
 
 function hmac(payload: string, secret: string): string {
@@ -16,18 +17,19 @@ function hmac(payload: string, secret: string): string {
 }
 
 /** Возвращает токен вида `<base64url(payload)>.<base64url(hmac)>`. */
-export function signSession(role: PortalRole, secret: string, now = Date.now()): string {
+export function signSession(role: PortalRole, secret: string, now = Date.now(), sub?: number): string {
   const payload: SessionPayload = { role, exp: now + SESSION_TTL_MS };
+  if (typeof sub === 'number') payload.sub = sub;
   const p = Buffer.from(JSON.stringify(payload)).toString('base64url');
   return `${p}.${hmac(p, secret)}`;
 }
 
-/** Возвращает роль, если токен валиден и не просрочен; иначе null. */
-export function verifySession(
+/** Возвращает {role, sub} при валидном токене; иначе null. */
+export function verifySessionPayload(
   token: string | undefined,
   secret: string,
   now = Date.now(),
-): PortalRole | null {
+): { role: PortalRole; sub?: number } | null {
   if (!token || !secret) return null;
   const dot = token.indexOf('.');
   if (dot < 0) return null;
@@ -46,5 +48,14 @@ export function verifySession(
   }
   if (!PORTAL_ROLES.includes(payload.role)) return null;
   if (typeof payload.exp !== 'number' || payload.exp < now) return null;
-  return payload.role;
+  return { role: payload.role, sub: typeof payload.sub === 'number' ? payload.sub : undefined };
+}
+
+/** Возвращает роль, если токен валиден и не просрочен; иначе null. */
+export function verifySession(
+  token: string | undefined,
+  secret: string,
+  now = Date.now(),
+): PortalRole | null {
+  return verifySessionPayload(token, secret, now)?.role ?? null;
 }

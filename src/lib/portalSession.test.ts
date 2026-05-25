@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createHmac } from 'node:crypto';
-import { signSession, verifySession } from './portalSession';
+import { signSession, verifySession, verifySessionPayload } from './portalSession';
 
 const SECRET = 'test-secret-please-change';
 
@@ -44,5 +44,16 @@ describe('portalSession', () => {
     const oldSig = token.slice(token.indexOf('.') + 1);
     const newPayload = Buffer.from(JSON.stringify({ role: 'admin', exp: Date.now() + 1_000_000 })).toString('base64url');
     expect(verifySession(`${newPayload}.${oldSig}`, SECRET)).toBeNull();
+  });
+
+  it('хранит и возвращает sub (telegram_id) для сотрудника', () => {
+    const token = signSession('vozhaty', SECRET, Date.now(), 777);
+    expect(verifySession(token, SECRET)).toBe('vozhaty');
+    expect(verifySessionPayload(token, SECRET)).toEqual({ role: 'vozhaty', sub: 777 });
+  });
+
+  it('payload без sub для парольных ролей', () => {
+    const token = signSession('student', SECRET);
+    expect(verifySessionPayload(token, SECRET)).toEqual({ role: 'student', sub: undefined });
   });
 });
