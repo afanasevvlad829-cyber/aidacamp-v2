@@ -4,7 +4,7 @@ export const prerender = false;
 import PortalLayout from '../../layouts/PortalLayout.astro';
 import { verifySessionPayload } from '../../lib/portalSession';
 import { roleAllowed } from '../../lib/portalShiftRoles';
-import { getActiveShift, getEvents, getEventDates, getDone, listShifts, type ShiftEvent } from '../../lib/portalShift';
+import { getActiveShift, getEvents, getEventDates, getDone, listShifts, EVENT_TYPE_LABELS, type ShiftEvent } from '../../lib/portalShift';
 
 const role = Astro.locals.portalRole!;
 const sub = verifySessionPayload(
@@ -85,18 +85,22 @@ const roleEvents = events
 // --- day view: все события даты ---
 const dayEvents = events.filter((e) => e.date === selectedDate).sort(byTime);
 
-// --- activity view: группировка по activity_type ---
+// --- activity view: группировка по event_type ---
 const activityGroups = (() => {
   const map = new Map<string, ShiftEvent[]>();
   for (const e of events) {
-    const k = e.activity_type ?? 'Прочее';
+    const k = (e.event_type ?? e.activity_type ?? 'other') as string;
     const arr = map.get(k) ?? [];
     arr.push(e);
     map.set(k, arr);
   }
   return [...map.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([type, evs]) => ({ type, events: [...evs].sort((a, b) => a.date.localeCompare(b.date) || byTime(a, b)) }));
+    .sort((a, b) => (EVENT_TYPE_LABELS[a[0]] ?? a[0]).localeCompare(EVENT_TYPE_LABELS[b[0]] ?? b[0]))
+    .map(([type, evs]) => ({
+      type,
+      label: EVENT_TYPE_LABELS[type] ?? type,
+      events: [...evs].sort((a, b) => a.date.localeCompare(b.date) || byTime(a, b)),
+    }));
 })();
 
 // --- matrix view: дни × роли ---
@@ -248,9 +252,9 @@ const isAdminLike = role === 'admin' || role === 'rukovoditel';
                     </span>
                   )}
                 </div>
-                {e.activity_type && (
+                {(e.event_type || e.activity_type) && (
                   <span class="mt-1 inline-block rounded-[8px] bg-primary-soft px-2 py-0.5 text-[14px] font-medium text-primary">
-                    {e.activity_type}
+                    {EVENT_TYPE_LABELS[(e.event_type ?? e.activity_type) as string] ?? (e.event_type ?? e.activity_type)}
                   </span>
                 )}
                 {myChecklists.length === 0 ? (
@@ -345,7 +349,7 @@ const isAdminLike = role === 'admin' || role === 'rukovoditel';
           )}
           {activityGroups.map((g) => (
             <div>
-              <h2 class="mb-3 text-[20px] font-bold tracking-[-0.01em] text-navy-950">{g.type}</h2>
+              <h2 class="mb-3 text-[20px] font-bold tracking-[-0.01em] text-navy-950">{g.label}</h2>
               <div class="space-y-2">
                 {g.events.map((e) => (
                   <article class="flex flex-wrap items-baseline justify-between gap-2 rounded-[14px] border border-border bg-white p-4 card-shadow">

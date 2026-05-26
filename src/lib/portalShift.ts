@@ -1,12 +1,45 @@
 import type { PortalRole } from './portalSession';
 
 export interface ShiftEvent {
-  id: number; date: string; start_time: string | null; end_time: string | null;
-  title: string; activity_type: string | null; roles: string[]; sort: number;
+  id: number;
+  external_id: string | null;
+  date: string;
+  start_time: string | null;
+  end_time: string | null;
+  title: string;
+  /** @deprecated дублирует event_type для совместимости. Используй event_type. */
+  activity_type: string | null;
+  event_type: string | null;
+  activity_slug: string | null;
+  content_task_template_id: string | null;
+  group_color_id: number | null;
+  staff_keys: string[];
+  roles: string[];
+  notes: string | null;
+  sort: number;
   checklists: { event_checklist_id: number; checklist_id: number; title: string;
     roles: string[]; items: { id: string; text: string }[] }[];
 }
 export interface Shift { id: number; name: string; start_date: string; end_date: string; status: string; }
+
+/** Русские лейблы для event_type — для UI «По активностям». */
+export const EVENT_TYPE_LABELS: Record<string, string> = {
+  meal: 'Приёмы пищи',
+  lesson: 'Уроки',
+  pool: 'Бассейн',
+  pool_or_alt: 'Бассейн / альтернатива',
+  free_time: 'Свободное время',
+  evening_event: 'Вечернее мероприятие',
+  transit: 'Транспорт',
+  housing: 'Расселение',
+  ceremony: 'Церемонии',
+  departure: 'Отъезд',
+  medical: 'Медицина',
+  report: 'Отчёт',
+  routine: 'Распорядок',
+  bedtime: 'Отбой',
+  admin: 'Администрирование',
+};
 
 function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
 async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
@@ -36,11 +69,12 @@ export async function getEventDates(shiftId: number): Promise<string[]> {
 /** События смены. Если передана дата — только за этот день (легче для role/day видов). */
 export async function getEvents(shiftId: number, date?: string): Promise<ShiftEvent[]> {
   return (await withClient(async (c) => {
+    const COLS = "id,external_id,to_char(date,'YYYY-MM-DD') date,start_time::text,end_time::text,title,activity_type,event_type::text,activity_slug,content_task_template_id,group_color_id,staff_keys,roles,notes,sort";
     const ev = date
       ? await c.query(
-          "SELECT id,to_char(date,'YYYY-MM-DD') date,start_time::text,end_time::text,title,activity_type,roles,sort FROM shift_event WHERE shift_id=$1 AND date=$2 ORDER BY date,sort,start_time", [shiftId, date])
+          `SELECT ${COLS} FROM shift_event WHERE shift_id=$1 AND date=$2 ORDER BY date,sort,start_time`, [shiftId, date])
       : await c.query(
-          "SELECT id,to_char(date,'YYYY-MM-DD') date,start_time::text,end_time::text,title,activity_type,roles,sort FROM shift_event WHERE shift_id=$1 ORDER BY date,sort,start_time", [shiftId]);
+          `SELECT ${COLS} FROM shift_event WHERE shift_id=$1 ORDER BY date,sort,start_time`, [shiftId]);
     const ecl = await c.query(
       "SELECT ec.id event_checklist_id, ec.event_id, ec.checklist_id, ec.roles, cl.title, cl.items FROM event_checklist ec JOIN checklist cl ON cl.id=ec.checklist_id WHERE ec.event_id = ANY($1)",
       [ev.rows.map((e: any) => e.id)]);
