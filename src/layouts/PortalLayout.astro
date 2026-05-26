@@ -147,8 +147,9 @@ const ROLE_LABEL_MAP: Record<string, string> = {
               if (!r.ok || !data.ok) {
                 showStatus(status, 'Ошибка: ' + (data.error || r.status), true);
               } else {
-                showStatus(status, '✓ Загружено: ' + (data.file_url || 'OK'), false);
+                showStatus(status, '✓ Загружено', false);
                 input.value = '';
+                document.dispatchEvent(new CustomEvent('portal-media:refresh', { detail: { eventId: root.dataset.eventId } }));
               }
             } catch (e) {
               showStatus(status, 'Сетевая ошибка: ' + (e && e.message ? e.message : e), true);
@@ -165,6 +166,83 @@ const ROLE_LABEL_MAP: Record<string, string> = {
           el.classList.toggle('text-body-muted', !isError);
         }
         document.querySelectorAll('.portal-uploader').forEach(bind);
+      })();
+    </script>
+
+    <!-- Лента загруженных фото/видео по событию. -->
+    <script is:inline>
+      (() => {
+        const escapeHtml = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        function fmtTime(iso) {
+          if (!iso) return '';
+          try {
+            const d = new Date(iso);
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mi = String(d.getMinutes()).padStart(2, '0');
+            return dd + '.' + mm + ' ' + hh + ':' + mi;
+          } catch { return ''; }
+        }
+        async function load(root) {
+          const eventId = root.dataset.eventId;
+          const canDelete = root.dataset.canDelete === 'true';
+          if (!eventId) return;
+          const list = root.querySelector('.portal-media__list');
+          const header = root.querySelector('.portal-media__header');
+          if (!list || !header) return;
+          try {
+            const r = await fetch('/api/portal/photo?event_id=' + encodeURIComponent(eventId), { credentials: 'include' });
+            if (!r.ok) return;
+            const data = await r.json().catch(() => ({}));
+            const photos = (data && data.photos) || [];
+            if (photos.length === 0) {
+              header.classList.add('hidden');
+              list.innerHTML = '';
+              return;
+            }
+            header.classList.remove('hidden');
+            const iconAttach = '<i class="bi bi-paperclip text-[14px]" aria-hidden="true"></i>';
+            header.innerHTML = iconAttach + ' Загружено: ' + photos.length;
+            list.innerHTML = photos.map(function(p) {
+              const url = p.file_url || '';
+              const author = escapeHtml(p.author_name || '');
+              const when = fmtTime(p.uploaded_at);
+              const isVideo = p.file_type === 'video';
+              const icon = isVideo
+                ? '<i class="bi bi-camera-video text-[13px] text-body-muted" aria-hidden="true"></i>'
+                : '<i class="bi bi-image text-[13px] text-body-muted" aria-hidden="true"></i>';
+              const open = url
+                ? '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener" class="text-primary hover:underline">Открыть</a>'
+                : '<span class="text-body-muted">нет ссылки</span>';
+              const del = canDelete
+                ? ' &nbsp; <button type="button" class="portal-media__del text-[13px] text-red-600 hover:underline" data-photo-id="' + p.id + '"><i class="bi bi-x-lg text-[11px]" aria-hidden="true"></i> удалить</button>'
+                : '';
+              return '<li class="flex items-center gap-2 text-body">' +
+                icon +
+                '<span class="min-w-0 truncate"><span class="text-body-muted">' + author + ', ' + when + '</span></span>' +
+                '<span class="ml-auto whitespace-nowrap">' + open + del + '</span>' +
+                '</li>';
+            }).join('');
+            list.querySelectorAll('.portal-media__del').forEach(function(b) {
+              b.addEventListener('click', async function() {
+                if (!confirm('Удалить файл? Это необратимо.')) return;
+                const pid = b.dataset.photoId;
+                const dr = await fetch('/api/portal/photo/' + encodeURIComponent(pid), { method: 'DELETE', credentials: 'include' });
+                if (dr.ok) load(root);
+                else alert('Не получилось удалить (' + dr.status + ')');
+              });
+            });
+          } catch (e) { /* silent */ }
+        }
+        const all = Array.from(document.querySelectorAll('.portal-media'));
+        all.forEach(load);
+        document.addEventListener('portal-media:refresh', (ev) => {
+          const wanted = String(ev.detail && ev.detail.eventId || '');
+          all.forEach((root) => {
+            if (!wanted || String(root.dataset.eventId) === wanted) load(root);
+          });
+        });
       })();
     </script>
 

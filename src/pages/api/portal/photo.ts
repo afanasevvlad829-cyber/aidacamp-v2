@@ -6,7 +6,7 @@ import { join, extname } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { verifySessionPayload } from '../../../lib/portalSession';
-import { insertPhoto, listPhotosByEvent, setContentTaskCompleted } from '../../../lib/portalPhoto';
+import { insertPhoto, listPhotosByEvent, setContentTaskCompleted, lookupAuthorNames } from '../../../lib/portalPhoto';
 
 const execFileAsync = promisify(execFile);
 
@@ -223,7 +223,9 @@ export const GET: APIRoute = async ({ url, cookies }) => {
   if (!eventId || isNaN(eventId)) return jsonError('event_id required', 400);
 
   const photos = await listPhotosByEvent(eventId);
-  return new Response(JSON.stringify({ ok: true, photos }), {
+  const names = await lookupAuthorNames(photos.map((p) => p.author_telegram_id));
+  const enriched = photos.map((p) => ({ ...p, author_name: names.get(p.author_telegram_id) ?? String(p.author_telegram_id) }));
+  return new Response(JSON.stringify({ ok: true, photos: enriched }), {
     headers: { 'Content-Type': 'application/json' },
   });
 };

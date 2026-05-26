@@ -137,6 +137,44 @@ export async function setContentTaskCompleted(
   });
 }
 
+/** Получить фото по id. */
+export async function getPhotoById(id: number): Promise<ArchivePhoto | null> {
+  return (await withClient(async (c) => {
+    const r = await c.query(
+      `SELECT id, event_id, content_task_id, author_telegram_id, storage_kind,
+              file_path, file_url, file_type, mime, width, height, duration_ms,
+              size_bytes, caption, to_char(uploaded_at,'YYYY-MM-DD"T"HH24:MI:SS"Z"') uploaded_at
+       FROM archive_photo WHERE id=$1`,
+      [id],
+    );
+    return (r.rows[0] as ArchivePhoto) ?? null;
+  })) ?? null;
+}
+
+/** Удалить запись фото из БД (файл — отдельно в endpoint). */
+export async function deletePhotoRow(id: number): Promise<boolean> {
+  const ok = await withClient(async (c) => {
+    const r = await c.query('DELETE FROM archive_photo WHERE id=$1', [id]);
+    return (r.rowCount ?? 0) > 0;
+  });
+  return ok ?? false;
+}
+
+/** Имена авторов по telegram_id — для ленты. */
+export async function lookupAuthorNames(telegramIds: number[]): Promise<Map<number, string>> {
+  if (telegramIds.length === 0) return new Map();
+  return (await withClient(async (c) => {
+    const r = await c.query(
+      `SELECT telegram_id, COALESCE(NULLIF(full_name,''), tg_username, telegram_id::text) AS name
+       FROM portal_staff WHERE telegram_id = ANY($1)`,
+      [telegramIds],
+    );
+    const m = new Map<number, string>();
+    for (const row of r.rows) m.set(Number(row.telegram_id), String(row.name));
+    return m;
+  })) ?? new Map();
+}
+
 /**
  * Список задач контента для нескольких событий, с данными из content_task_template.
  */
