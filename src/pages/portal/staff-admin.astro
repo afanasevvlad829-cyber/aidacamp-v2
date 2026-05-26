@@ -92,12 +92,33 @@ const ROLES = ['teacher', 'vozhaty', 'rukovoditel', 'admin'];
       Активные ({active.length})
     </h2>
     {active.length === 0 && <p class="text-[16px] text-body-muted">Нет активных сотрудников.</p>}
-    {active.map((s) => (
-      <div class="mb-2 flex flex-wrap items-center gap-2 rounded-[16px] border border-border bg-white p-4 card-shadow">
-        <span class="min-w-0 flex-1 text-[16px] text-navy-950">
-          {s.full_name ?? '—'} {s.tg_username ? `@${s.tg_username}` : ''} —
-          <b>{s.role}</b>
-        </span>
+    {active.map((s) => {
+      const userRoles = Array.isArray((s as any).roles) && (s as any).roles.length > 0
+        ? ((s as any).roles as string[])
+        : (s.role ? [s.role] : []);
+      return (
+      <div class="mb-3 flex flex-wrap items-start gap-3 rounded-[16px] border border-border bg-white p-4 card-shadow">
+        <div class="min-w-0 flex-1">
+          <div class="text-[16px] text-navy-950">
+            {s.full_name ?? '—'} {s.tg_username ? `@${s.tg_username}` : ''}
+          </div>
+          <div class="mt-1 text-[14px] text-body-muted">
+            Роли: <b class="text-navy-950">{userRoles.join(' + ') || 'нет'}</b>
+            {s.staff_key && <span> · staff_key: <code>{s.staff_key}</code></span>}
+          </div>
+          <form method="POST" action="/api/portal/staff/roles" class="mt-2 flex flex-wrap items-center gap-3">
+            <input type="hidden" name="telegram_id" value={s.telegram_id!} />
+            {ROLES.map((r) => (
+              <label class="inline-flex items-center gap-1 text-[14px]">
+                <input type="checkbox" name="roles" value={r} checked={userRoles.includes(r)} class="h-4 w-4 rounded border-border text-primary" />
+                {r}
+              </label>
+            ))}
+            <button class="rounded-[10px] bg-primary px-3 py-1 text-[14px] font-medium text-white transition hover:opacity-90">
+              Обновить роли
+            </button>
+          </form>
+        </div>
         <form method="POST" action="/api/portal/staff">
           <input type="hidden" name="telegram_id" value={s.telegram_id!} />
           <input type="hidden" name="action" value="deactivate" />
@@ -108,7 +129,8 @@ const ROLES = ['teacher', 'vozhaty', 'rukovoditel', 'admin'];
           </button>
         </form>
       </div>
-    ))}
+      );
+    })}
   </section>
 
   <!-- INACTIVE -->

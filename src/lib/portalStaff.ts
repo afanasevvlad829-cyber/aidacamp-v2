@@ -4,7 +4,10 @@ export interface StaffRow {
   telegram_id: number | null;
   full_name: string | null;
   tg_username: string | null;
+  /** Активная (выбранная) роль — для текущей сессии. */
   role: PortalRole | null;
+  /** Полный набор ролей сотрудника. На неё опирается middleware при проверке доступа. */
+  roles: PortalRole[];
   active: boolean;
 }
 
@@ -34,7 +37,7 @@ async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promis
 export async function getStaff(telegramId: number): Promise<StaffRow | null> {
   return (await withClient(async (c) => {
     const r = await c.query(
-      'SELECT telegram_id, full_name, tg_username, role, active FROM portal_staff WHERE telegram_id=$1',
+      'SELECT telegram_id, full_name, tg_username, role, COALESCE(roles, ARRAY[]::TEXT[]) AS roles, active FROM portal_staff WHERE telegram_id=$1',
       [telegramId],
     );
     return (r.rows[0] as StaffRow) ?? null;
@@ -57,7 +60,7 @@ export async function ensurePending(
       [telegramId, fullName, username],
     );
     const r = await c.query(
-      'SELECT telegram_id, full_name, tg_username, role, active FROM portal_staff WHERE telegram_id=$1',
+      'SELECT telegram_id, full_name, tg_username, role, COALESCE(roles, ARRAY[]::TEXT[]) AS roles, active FROM portal_staff WHERE telegram_id=$1',
       [telegramId],
     );
     return r.rows[0] as StaffRow;
@@ -67,7 +70,7 @@ export async function ensurePending(
 export async function listStaff(): Promise<StaffRowFull[]> {
   return (await withClient(async (c) => {
     const r = await c.query(
-      'SELECT id, telegram_id, full_name, tg_username, role, active, staff_key FROM portal_staff ORDER BY active DESC, role NULLS FIRST, created_at',
+      'SELECT id, telegram_id, full_name, tg_username, role, COALESCE(roles, ARRAY[]::TEXT[]) AS roles, active, staff_key FROM portal_staff ORDER BY active DESC, role NULLS FIRST, created_at',
     );
     return r.rows as StaffRowFull[];
   })) ?? [];
@@ -152,8 +155,24 @@ export async function mergePendingIntoPlaceholder(
 export async function setRole(telegramId: number, role: PortalRole, approvedBy: number): Promise<void> {
   await withClient(async (c) => {
     await c.query(
-      'UPDATE portal_staff SET role=$2, approved_by=$3, approved_at=now() WHERE telegram_id=$1',
+      `UPDATE portal_staff
+          SET role=$2,
+              roles = CASE WHEN $2 = ANY(COALESCE(roles, ARRAY[]::TEXT[])) THEN roles ELSE COALESCE(roles, ARRAY[]::TEXT[]) || $2 END,
+              approved_by=$3,
+              approved_at=now()
+        WHERE telegram_id=$1`,
       [telegramId, role, approvedBy],
+    );
+  });
+}
+
+/** Полный список ролей (заменяет существующий). Активная роль = первая из списка. */
+export async function setRoles(telegramId: number, roles: PortalRole[], approvedBy: number): Promise<void> {
+  await withClient(async (c) => {
+    const active = roles[0] ?? null;
+    await c.query(
+      `UPDATE portal_staff SET roles=$2, role=$3, approved_by=$4, approved_at=now() WHERE telegram_id=$1`,
+      [telegramId, roles, active, approvedBy],
     );
   });
 }
