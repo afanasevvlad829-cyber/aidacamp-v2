@@ -68,7 +68,20 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
         const location = `/portal/login?next=${encodeURIComponent(path)}`;
         return new Response(null, { status: 302, headers: { Location: location } });
       }
-      locals.portalRole = role;
+      // «Смотреть как»: admin может стать любой ролью, rukovoditel — vozhaty/teacher/student.
+      // Настоящая роль остаётся в locals.portalRealRole для UI и проверок безопасности.
+      const VIEW_AS_ALLOWED: Record<string, string[]> = {
+        admin: ['admin', 'rukovoditel', 'teacher', 'vozhaty', 'student'],
+        rukovoditel: ['rukovoditel', 'vozhaty', 'teacher', 'student'],
+      };
+      const viewAs = cookies.get('portal_view_as')?.value || '';
+      let effectiveRole: any = role;
+      if (viewAs && VIEW_AS_ALLOWED[role] && VIEW_AS_ALLOWED[role].includes(viewAs)) {
+        effectiveRole = viewAs;
+      }
+      locals.portalRole = effectiveRole;
+      locals.portalRealRole = role as any;
+      locals.portalViewAs = effectiveRole !== role ? effectiveRole : null;
     }
   }
 
