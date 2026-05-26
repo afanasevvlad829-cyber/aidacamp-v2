@@ -1,0 +1,103 @@
+---
+export const prerender = false;
+import PortalLayout from '../../layouts/PortalLayout.astro';
+
+const role = Astro.locals.portalRole!;
+// Методички — для тех, кто проводит активности
+if (!['admin', 'teacher', 'vozhaty', 'rukovoditel'].includes(role)) {
+  return Astro.redirect('/portal/');
+}
+
+interface Activity {
+  slug: string;
+  title: string;
+  desc: string;
+}
+// Активности Александра Ташкина (источник: архив АЙДАКЕМП3).
+// Картинки/архивы — реальные; планы/чек-листы пока пустые (ожидаются от методиста).
+const activities: Activity[] = [
+  { slug: 'ohotnik-na-monstrov', title: 'Охотник на монстров', desc: 'ИИ-активность' },
+  { slug: 'ai-secret-agent', title: 'AI Secret Agent', desc: 'ИИ-активность' },
+  { slug: 'ai-art-battle', title: 'AI Art Battle', desc: 'Батл по генерации изображений' },
+  { slug: 'pobeg-iz-laboratorii', title: 'Побег из лаборатории', desc: 'Финальный хакатон' },
+  { slug: 'ii-vidit-predmety', title: 'ИИ видит предметы', desc: 'Распознавание объектов' },
+];
+const BASE = '/metodichki';
+const PARTS = [
+  { key: 'plan', label: 'План' },
+  { key: 'planb', label: 'План Б' },
+  { key: 'checklist', label: 'Чек-лист' },
+];
+---
+<PortalLayout title="Методические материалы — АйДаКэмп">
+  <div class="mb-8">
+    <h1 class="text-[28px] font-bold tracking-[-0.02em] text-navy-950 md:text-[36px]">
+      Методические материалы
+    </h1>
+    <p class="mt-2 text-[16px] text-body-muted">Активности · Александр Ташкин</p>
+  </div>
+
+  <a
+    href={`${BASE}/prezentaciya-igry.pptx`}
+    class="mb-6 flex items-center gap-3 rounded-[16px] border border-primary bg-primary-soft p-5 transition hover:opacity-90"
+  >
+    <i class="bi bi-play-circle text-[28px] text-primary" aria-hidden="true"></i>
+    <span>
+      <span class="block text-[18px] font-semibold text-navy-950">Презентация игры</span>
+      <span class="mt-0.5 block text-[15px] text-body-muted">Показать в начале — рассказать об игре и настроить ребят (.pptx)</span>
+    </span>
+  </a>
+
+  <div class="space-y-6">
+    {activities.map((a) => (
+      <section class="rounded-[16px] border border-border bg-white p-5 card-shadow">
+        <div class="flex flex-col gap-4 sm:flex-row">
+          <a href={`${BASE}/${a.slug}/preview.png`} target="_blank" rel="noopener" class="shrink-0">
+            <img
+              src={`${BASE}/${a.slug}/preview-thumb.webp`}
+              alt={`Превью активности «${a.title}»`}
+              width="220" height="140" loading="lazy"
+              class="h-[140px] w-full rounded-[12px] border border-border object-cover sm:w-[220px]"
+            />
+          </a>
+          <div class="min-w-0 flex-1">
+            <h2 class="text-[20px] font-bold text-navy-950">{a.title}</h2>
+            <p class="mt-1 text-[15px] text-body-muted">{a.desc}</p>
+
+            <div class="mt-3 flex flex-wrap gap-2">
+              {PARTS.map((p) => (
+                <span class="inline-flex items-center gap-2 rounded-[10px] border border-dashed border-border px-3 py-1.5 text-[14px] text-body-muted">
+                  <i class="bi bi-hourglass-split" aria-hidden="true"></i>
+                  {p.label} — ожидается
+                </span>
+              ))}
+            </div>
+
+            <div class="mt-3 flex flex-wrap gap-3">
+              <a
+                href={`${BASE}/${a.slug}/images.zip`}
+                class="inline-flex items-center gap-2 rounded-[12px] border border-border bg-white px-4 py-2 text-[15px] font-medium text-navy-950 transition hover:border-primary hover:text-primary"
+              >
+                <i class="bi bi-file-earmark-zip" aria-hidden="true"></i>
+                Картинки (архив)
+              </a>
+              <a
+                href={`${BASE}/${a.slug}/preview.png`}
+                target="_blank" rel="noopener"
+                class="inline-flex items-center gap-2 rounded-[12px] border border-border bg-white px-4 py-2 text-[15px] font-medium text-navy-950 transition hover:border-primary hover:text-primary"
+              >
+                <i class="bi bi-image" aria-hidden="true"></i>
+                Открыть превью
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    ))}
+  </div>
+
+  <p class="mt-8 rounded-[12px] bg-amber-50 px-4 py-3 text-[15px] text-amber-800">
+    <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
+    Планы и чек-листы по активностям пока не заполнены — будут добавлены, как только методист пришлёт тексты.
+  </p>
+</PortalLayout>

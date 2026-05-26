@@ -1,6 +1,8 @@
 ---
 // News Jazz — живые AI-новости в Hero
 // Данные: /data/news-jazz.json (обновляется каждый час кроном на сервере)
+// Архитектура: главная страница — статика (pre-rendered), поэтому читаем данные
+// через клиентский fetch с localStorage-кэшем (stale-while-revalidate, TTL 30 мин).
 ---
 
 <!-- ── Модалка ── -->
@@ -161,16 +163,38 @@
     });
   });
 
-  /* ── Загрузка данных ── */
+  /* ── Данные ── */
   function start() { tick(); setInterval(tick, 8000); }
 
-  /* ── Загрузка данных — отложена на 2с чтобы не конкурировать с LCP ── */
-  function loadData() {
+  var NJ_KEY = 'nj:cache';
+  var NJ_TTL = 30 * 60 * 1000; /* 30 минут */
+
+  function fetchAndCache(callback) {
     fetch('/data/news-jazz.json')
       .then(function(r) { return r.json(); })
-      .then(function(d) { news = d.items || []; start(); })
-      .catch(function()  { start(); });
+      .then(function(d) {
+        var items = d.items || [];
+        if (items.length) {
+          try { localStorage.setItem(NJ_KEY, JSON.stringify({ ts: Date.now(), items: items })); } catch(e) {}
+        }
+        if (callback) callback(items);
+      })
+      .catch(function() { if (callback) callback([]); });
   }
+
+  function loadData() {
+    try {
+      var cached = JSON.parse(localStorage.getItem(NJ_KEY) || 'null');
+      if (cached && cached.items && cached.items.length && (Date.now() - cached.ts) < NJ_TTL) {
+        news = cached.items;
+        start();
+        fetchAndCache(null); /* фоновое обновление */
+        return;
+      }
+    } catch(e) {}
+    fetchAndCache(function(items) { news = items; start(); });
+  }
+
   if (document.readyState === 'complete') {
     setTimeout(loadData, 2000);
   } else {
