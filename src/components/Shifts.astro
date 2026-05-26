@@ -631,6 +631,15 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
         el.textContent = msg; el.classList.remove('hidden');
       });
     }
+
+    // Пересчитываем вычет под актуальную цену
+    document.querySelectorAll('[data-vychet-link="' + id + '"]').forEach(function (el) {
+      var card = el.closest('[data-shift-days]');
+      var days = card ? parseInt(card.getAttribute('data-shift-days') || '0', 10) : 0;
+      if (!days) return;
+      var vychet = Math.round((cur - 3800 * days) * 0.13);
+      if (vychet > 0) el.textContent = vychet.toLocaleString('ru-RU') + ' ₽ налогового вычета';
+    });
   });
 })();
 </script>
