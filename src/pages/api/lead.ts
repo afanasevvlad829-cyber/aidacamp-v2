@@ -257,7 +257,7 @@ async function createCrmLead(body: Record<string, string>): Promise<number | nul
       body: JSON.stringify(payload),
     });
     const custData = await custRes.json();
-    return custData?.id ?? null;
+    return custData?.model?.id ?? null;
   } catch {
     return null;
   }
