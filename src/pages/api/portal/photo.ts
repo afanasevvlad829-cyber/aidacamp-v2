@@ -11,7 +11,7 @@ import { insertPhoto, listPhotosByEvent, setContentTaskCompleted } from '../../.
 const execFileAsync = promisify(execFile);
 
 const ALLOWED_ROLES = new Set(['admin', 'teacher', 'vozhaty', 'rukovoditel']);
-const MAX_FILE_BYTES = 30 * 1024 * 1024; // 30 МБ
+const MAX_FILE_BYTES = 500 * 1024 * 1024; // 500 МБ
 const UPLOADS_ROOT = '/var/www/aidacamp-dev/uploads/portal';
 const URL_PREFIX = '/portal/uploads';
 
@@ -86,7 +86,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (!fileType) return jsonError('unsupported mime type', 400);
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  if (buffer.byteLength > MAX_FILE_BYTES) return jsonError('file too large (max 30MB)', 413);
+  if (buffer.byteLength > MAX_FILE_BYTES) return jsonError('file too large (max 500MB)', 413);
 
   // Resolve event date and shift_id for path
   let eventDate = 'unknown';
