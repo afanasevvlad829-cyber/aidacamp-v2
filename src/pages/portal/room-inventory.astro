@@ -1,0 +1,311 @@
+---
+export const prerender = false;
+import PortalLayout from '../../layouts/PortalLayout.astro';
+import { ROOMS, INVENTORY_CHECKLIST, roomsByFloor, type RoomDef } from '../../lib/portalRooms';
+import { getActiveShift } from '../../lib/portalShift';
+import { listInventoryByShift } from '../../lib/portalRoomInventory';
+
+// id события «Приёмка номеров» (день -1) — к нему привязываем видео обхода через photo API.
+let roomCheckEventId = 0;
+async function lookupRoomCheckEventId(): Promise<number> {
+  if (!process.env.AIDAPLUS_PG_DSN && !process.env.PG_DSN) return 0;
+  const { default: pg } = await import('pg');
+  const client = new pg.Client({ connectionString: process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN });
+  await client.connect();
+  try {
+    const r = await client.query("SELECT id FROM shift_event WHERE external_id='ev-dm1-room-check' LIMIT 1");
+    return (r.rows[0]?.id as number) ?? 0;
+  } finally { await client.end(); }
+}
+
+const role = Astro.locals.portalRole;
+if (!role || role === 'student') return Astro.redirect('/portal/');
+
+const shift = await getActiveShift();
+const inventory = shift ? await listInventoryByShift(shift.id) : [];
+roomCheckEventId = shift ? await lookupRoomCheckEventId().catch(() => 0) : 0;
+const statusByRoom = new Map<number, string>();
+for (const r of inventory) statusByRoom.set(r.room_number, r.status);
+
+const counts = {
+  pending: ROOMS.filter((r) => r.type !== 'staff' && (statusByRoom.get(r.number) ?? 'pending') === 'pending').length,
+  ok:      inventory.filter((r) => r.status === 'ok').length,
+  defects: inventory.filter((r) => r.status === 'defects').length,
+};
+const floor1 = roomsByFloor(1);
+const floor2 = roomsByFloor(2);
+function statusOf(n: number): 'pending' | 'ok' | 'defects' {
+  return (statusByRoom.get(n) ?? 'pending') as any;
+}
+function colorCls(s: string, type: string): string {
+  if (type === 'staff') return 'bg-slate-100 text-slate-400 border-slate-200';
+  if (s === 'ok')      return 'bg-emerald-50 border-emerald-300 text-emerald-900';
+  if (s === 'defects') return 'bg-amber-50 border-amber-300 text-amber-900';
+  return 'bg-white border-border text-navy-950';
+}
+function typeBadge(type: string): string {
+  return type === 'lux' ? 'ЛЮКС' : type === 'standard_2_3' ? '2-3-х' : type === 'staff' ? '' : '2-х';
+}
+---
+<PortalLayout title="Инвентаризация комнат — АйДаКэмп">
+  <div class="mb-8">
+    <a href="/portal/" class="mb-3 inline-flex items-center gap-2 text-[14px] text-body-muted hover:text-primary">
+      <i class="bi bi-arrow-left text-[14px]" aria-hidden="true"></i> Назад
+    </a>
+    <h1 class="text-[28px] font-bold tracking-[-0.02em] text-navy-950 md:text-[36px]">
+      Инвентаризация 3-го корпуса
+    </h1>
+    <p class="mt-2 text-[16px] text-body-muted">
+      Шахматка 45 комнат. Клик по комнате — чек-лист + видео обхода.
+    </p>
+  </div>
+
+  {/* Сводка статусов */}
+  <div class="mb-6 grid grid-cols-3 gap-3">
+    <div class="rounded-[12px] border border-border bg-white p-4 card-shadow">
+      <p class="text-[12px] font-medium uppercase tracking-wide text-body-muted">Не принято</p>
+      <p class="mt-1 text-[24px] font-bold text-navy-950">{counts.pending}</p>
+    </div>
+    <div class="rounded-[12px] border border-emerald-200 bg-emerald-50 p-4">
+      <p class="text-[12px] font-medium uppercase tracking-wide text-emerald-700">Принято без замечаний</p>
+      <p class="mt-1 text-[24px] font-bold text-emerald-900">{counts.ok}</p>
+    </div>
+    <div class="rounded-[12px] border border-amber-200 bg-amber-50 p-4">
+      <p class="text-[12px] font-medium uppercase tracking-wide text-amber-700">С замечаниями</p>
+      <p class="mt-1 text-[24px] font-bold text-amber-900">{counts.defects}</p>
+    </div>
+  </div>
+
+  {/* Этаж 1 */}
+  <section class="mb-8">
+    <h2 class="mb-3 text-[20px] font-bold text-navy-950">Этаж 1 · 22 места</h2>
+    <div class="grid gap-3" style="grid-template-columns: repeat(9, minmax(80px, 1fr));">
+      {floor1.map((r: RoomDef) => {
+        const s = statusOf(r.number);
+        const isStaff = r.type === 'staff';
+        return (
+          <button type="button"
+            class={`room-tile rounded-[12px] border-2 p-3 text-left transition ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed' : 'hover:shadow-md'}`}
+            style={`grid-column: ${r.col}; grid-row: ${r.row};`}
+            data-room={r.number}
+            disabled={isStaff}
+          >
+            <div class="text-[16px] font-bold">№{r.number}</div>
+            <div class="mt-0.5 text-[11px] text-body-muted">{r.label}</div>
+            {!isStaff && (
+              <div class="mt-1 text-[11px] font-semibold">
+                {s === 'ok' && '✓ принято'}
+                {s === 'defects' && '⚠ замечания'}
+                {s === 'pending' && '○ не принято'}
+              </div>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  </section>
+
+  {/* Этаж 2 */}
+  <section class="mb-8">
+    <h2 class="mb-3 text-[20px] font-bold text-navy-950">Этаж 2 · 24 места</h2>
+    <div class="grid gap-3" style="grid-template-columns: repeat(8, minmax(80px, 1fr));">
+      {floor2.map((r: RoomDef) => {
+        const s = statusOf(r.number);
+        return (
+          <button type="button"
+            class={`room-tile rounded-[12px] border-2 p-3 text-left transition ${colorCls(s, r.type)} hover:shadow-md`}
+            style={`grid-column: ${r.col}; grid-row: ${r.row};`}
+            data-room={r.number}
+          >
+            <div class="text-[16px] font-bold">№{r.number}</div>
+            <div class="mt-0.5 text-[11px] text-body-muted">{r.label}</div>
+            <div class="mt-1 text-[11px] font-semibold">
+              {s === 'ok' && '✓ принято'}
+              {s === 'defects' && '⚠ замечания'}
+              {s === 'pending' && '○ не принято'}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  </section>
+
+  {/* Модалка инвентаризации */}
+  <div id="room-modal" class="fixed inset-0 z-50 hidden bg-black/50">
+    <div class="absolute inset-0 flex items-start justify-center overflow-y-auto p-4">
+      <div class="w-full max-w-2xl rounded-[16px] bg-white p-6 shadow-xl">
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="text-[22px] font-bold text-navy-950">
+            Комната №<span id="room-modal-num">—</span>
+          </h2>
+          <button type="button" id="room-modal-close" class="rounded-[8px] border border-border p-2 hover:border-primary hover:text-primary">
+            <i class="bi bi-x-lg text-[16px]" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <div class="mb-4 portal-uploader" id="room-walkthrough-uploader" data-event-id={String(roomCheckEventId)} data-content-task-id="">
+          <p class="mb-2 text-[14px] font-semibold text-navy-950">Видео обхода комнаты (обязательно)</p>
+          <input type="file" accept="video/*,image/*" capture="environment" class="portal-uploader__input hidden" />
+          <button type="button" class="portal-uploader__btn inline-flex items-center gap-2 rounded-[10px] bg-primary px-4 py-2 text-[15px] font-medium text-white transition hover:opacity-90">
+            <i class="bi bi-camera-video-fill text-[16px]" aria-hidden="true"></i>
+            Снять видео обхода
+          </button>
+          <p class="portal-uploader__status mt-2 text-[14px] text-body-muted hidden" aria-live="polite"></p>
+          <p id="room-walkthrough-status" class="mt-1 text-[13px] text-body-muted">Видео ещё не загружено.</p>
+        </div>
+
+        <div class="mb-4">
+          <p class="mb-2 text-[14px] font-semibold text-navy-950">Чек-лист (6 пунктов)</p>
+          <ul class="space-y-3" id="room-checklist">
+            {INVENTORY_CHECKLIST.map((it) => (
+              <li class="rounded-[10px] border border-border p-3">
+                <label class="flex cursor-pointer items-start gap-3">
+                  <input type="checkbox" class="room-check mt-0.5 h-5 w-5 rounded border-border text-primary focus:ring-primary" data-item={it.id} />
+                  <span class="flex-1">
+                    <span class="text-[15px] text-body">{it.text}</span>
+                    <textarea class="room-comment mt-2 hidden w-full rounded-[6px] border border-border px-2 py-1 text-[13px]" rows="2" placeholder="Комментарий (если что-то не так)" data-item={it.id}></textarea>
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <button type="button" id="room-mark-ok" class="rounded-[10px] bg-emerald-600 px-4 py-2 text-[14px] font-semibold text-white hover:bg-emerald-700">
+            ✓ Принять без замечаний
+          </button>
+          <button type="button" id="room-mark-defects" class="rounded-[10px] bg-amber-600 px-4 py-2 text-[14px] font-semibold text-white hover:bg-amber-700">
+            ⚠ Принять с замечаниями
+          </button>
+          <span id="room-modal-status" class="ml-auto self-center text-[13px] text-body-muted"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {shift && (
+    <script is:inline define:vars={{ shiftId: shift.id, checklist: INVENTORY_CHECKLIST }}>
+      (() => {
+        const modal = document.getElementById('room-modal');
+        const numEl = document.getElementById('room-modal-num');
+        const closeBtn = document.getElementById('room-modal-close');
+        const wtStatus = document.getElementById('room-walkthrough-status');
+        const wtBlock = document.getElementById('room-walkthrough-uploader');
+        const status = document.getElementById('room-modal-status');
+        const okBtn = document.getElementById('room-mark-ok');
+        const defBtn = document.getElementById('room-mark-defects');
+        let currentRoom = null;
+
+        function open(room) {
+          currentRoom = room;
+          numEl.textContent = String(room);
+          modal.classList.remove('hidden');
+          // reset checks/comments
+          modal.querySelectorAll('.room-check').forEach((c) => { c.checked = false; });
+          modal.querySelectorAll('.room-comment').forEach((t) => { t.value = ''; t.classList.add('hidden'); });
+          wtStatus.textContent = 'Загружаю состояние…';
+          status.textContent = '';
+          fetch('/api/portal/room-inventory?shift_id=' + shiftId + '&room=' + room, { credentials: 'include' })
+            .then((r) => r.json()).then((d) => {
+              if (!d.ok) { wtStatus.textContent = 'Ошибка: ' + (d.error || ''); return; }
+              const row = d.row;
+              const checks = d.checks || [];
+              checks.forEach((c) => {
+                const cb = modal.querySelector('.room-check[data-item="' + c.item_id + '"]');
+                const ta = modal.querySelector('.room-comment[data-item="' + c.item_id + '"]');
+                if (cb) cb.checked = !!c.done;
+                if (ta && c.comment) { ta.value = c.comment; ta.classList.remove('hidden'); }
+              });
+              wtStatus.textContent = row && row.walkthrough_photo_id
+                ? '✓ Видео обхода загружено (id ' + row.walkthrough_photo_id + ')'
+                : 'Видео ещё не загружено.';
+            }).catch(() => { wtStatus.textContent = 'Не удалось загрузить.'; });
+        }
+        function close() { modal.classList.add('hidden'); currentRoom = null; }
+
+        document.querySelectorAll('.room-tile').forEach((b) => {
+          if (b.disabled) return;
+          b.addEventListener('click', () => open(Number(b.dataset.room)));
+        });
+        closeBtn.addEventListener('click', close);
+        modal.addEventListener('click', (e) => { if (e.target === modal.firstElementChild) close(); });
+
+        // Toggle textarea on check change
+        modal.querySelectorAll('.room-check').forEach((cb) => {
+          cb.addEventListener('change', () => {
+            const item = cb.dataset.item;
+            const ta = modal.querySelector('.room-comment[data-item="' + item + '"]');
+            if (cb.checked) ta.classList.add('hidden'); else ta.classList.remove('hidden');
+            saveCheck(item, cb.checked, ta.value || null);
+          });
+        });
+        modal.querySelectorAll('.room-comment').forEach((ta) => {
+          let t;
+          ta.addEventListener('input', () => {
+            clearTimeout(t);
+            t = setTimeout(() => {
+              const item = ta.dataset.item;
+              const cb = modal.querySelector('.room-check[data-item="' + item + '"]');
+              saveCheck(item, cb.checked, ta.value || null);
+            }, 600);
+          });
+        });
+
+        async function saveCheck(item, done, comment) {
+          if (!currentRoom) return;
+          status.textContent = 'Сохраняю…';
+          try {
+            const r = await fetch('/api/portal/room-inventory', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ shift_id: shiftId, room: currentRoom, item_id: item, done, comment }),
+              credentials: 'include',
+            });
+            const d = await r.json();
+            if (d.ok) status.textContent = '✓'; else status.textContent = 'Ошибка';
+          } catch { status.textContent = 'Сетевая ошибка'; }
+        }
+
+        async function setStatus(st) {
+          if (!currentRoom) return;
+          status.textContent = 'Сохраняю…';
+          try {
+            const r = await fetch('/api/portal/room-inventory', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ shift_id: shiftId, room: currentRoom, status: st }),
+              credentials: 'include',
+            });
+            const d = await r.json();
+            if (d.ok) { status.textContent = '✓ Сохранено'; setTimeout(() => window.location.reload(), 500); }
+            else status.textContent = 'Ошибка: ' + (d.error || '');
+          } catch { status.textContent = 'Сетевая ошибка'; }
+        }
+        okBtn.addEventListener('click', () => setStatus('ok'));
+        defBtn.addEventListener('click', () => setStatus('defects'));
+
+        // После загрузки видео обхода — привязать к комнате.
+        document.addEventListener('portal-media:uploaded', (ev) => {
+          const d = ev.detail || {};
+          if (d.uploaderId !== 'room-walkthrough-uploader' || !currentRoom || !d.photoId) return;
+          fetch('/api/portal/room-inventory', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ shift_id: shiftId, room: currentRoom, walkthrough_photo_id: d.photoId }),
+            credentials: 'include',
+          }).then((r) => r.json()).then((res) => {
+            if (res.ok) {
+              wtStatus.textContent = '✓ Видео обхода привязано (id ' + d.photoId + ')';
+              // Автогалочка пункта «Видео обхода…»
+              const cb = modal.querySelector('.room-check[data-item="video"]');
+              if (cb && !cb.checked) { cb.checked = true; saveCheck('video', true, null); }
+            } else {
+              wtStatus.textContent = 'Ошибка привязки видео: ' + (res.error || '');
+            }
+          }).catch(() => { wtStatus.textContent = 'Сетевая ошибка при привязке видео'; });
+        });
+      })();
+    </script>
+  )}
+</PortalLayout>
