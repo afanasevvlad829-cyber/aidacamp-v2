@@ -322,6 +322,28 @@ async function main() {
     }
     console.log(`[seed] ✓ event_checklist: ${attached} привязок`);
 
+    // ---- 10. event_content_task (UPSERT по event_id+template_id) ----
+    // Создаём задачи контента для событий, у которых задан content_task_template_id.
+    // UPSERT сохраняет status/completed_at при повторном сидинге.
+    let ctInserted = 0, ctSkipped = 0;
+    for (const ev of allEvents) {
+      if (!ev.content_task_template) continue;
+      const evRow = await client.query("SELECT id FROM shift_event WHERE external_id=$1", [ev.id]);
+      if (!evRow.rows[0]) continue;
+      const evId = evRow.rows[0].id as number;
+      await client.query(
+        `INSERT INTO event_content_task(event_id, template_id, assigned_role)
+         VALUES($1, $2, $3)
+         ON CONFLICT (event_id, template_id) DO NOTHING`,
+        [evId, ev.content_task_template, ev.resolved_roles[0] ?? null]
+      );
+      // Check if actually inserted or was a no-op
+      const check = await client.query(
+        "SELECT id FROM event_content_task WHERE event_id=$1 AND template_id=$2", [evId, ev.content_task_template]);
+      if (check.rows[0]) ctInserted++; else ctSkipped++;
+    }
+    console.log(`[seed] ✓ event_content_task: ${ctInserted} записей (ON CONFLICT DO NOTHING сохраняет status)`);
+
     await client.query('COMMIT');
     console.log(`[seed] DONE.`);
   } catch (e) {
