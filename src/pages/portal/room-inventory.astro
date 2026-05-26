@@ -193,6 +193,9 @@ function typeBadge(type: string): string {
           <button type="button" id="room-mark-defects" class="rounded-[10px] bg-amber-600 px-4 py-2 text-[14px] font-semibold text-white hover:bg-amber-700">
             ⚠ Принять с замечаниями
           </button>
+          <button type="button" id="room-mark-reset" class="rounded-[10px] border border-border bg-white px-4 py-2 text-[14px] font-medium text-body-muted hover:border-primary hover:text-primary">
+            ↺ Сбросить статус
+          </button>
           <span id="room-modal-status" class="ml-auto self-center text-[13px] text-body-muted"></span>
         </div>
       </div>
@@ -299,6 +302,14 @@ function typeBadge(type: string): string {
         }
         okBtn.addEventListener('click', () => setStatus('ok'));
         defBtn.addEventListener('click', () => setStatus('defects'));
+        const resetBtn = document.getElementById('room-mark-reset');
+        if (resetBtn) {
+          resetBtn.addEventListener('click', () => {
+            if (confirm('Сбросить статус комнаты в «не принято»? Чек-листы и видео сохранятся.')) {
+              setStatus('pending');
+            }
+          });
+        }
 
         // После загрузки видео обхода — привязать к комнате.
         document.addEventListener('portal-media:uploaded', (ev) => {
