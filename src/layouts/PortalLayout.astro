@@ -167,5 +167,50 @@ const ROLE_LABEL_MAP: Record<string, string> = {
         document.querySelectorAll('.portal-uploader').forEach(bind);
       })();
     </script>
+
+    <!-- Inline-edit события (teacher/vozhaty правят свои события). -->
+    <script is:inline>
+      (() => {
+        document.querySelectorAll('.portal-edit').forEach((root) => {
+          const toggle = root.querySelector('.portal-edit__toggle');
+          const form = root.querySelector('.portal-edit__form');
+          const cancel = root.querySelector('.portal-edit__cancel');
+          const status = root.querySelector('.portal-edit__status');
+          const eventId = root.dataset.eventId;
+          if (!toggle || !form || !cancel) return;
+
+          toggle.addEventListener('click', () => {
+            form.classList.toggle('hidden');
+          });
+          cancel.addEventListener('click', () => {
+            form.classList.add('hidden');
+          });
+          form.addEventListener('submit', async (ev) => {
+            ev.preventDefault();
+            const fd = new FormData(form);
+            const body = { event_id: eventId };
+            for (const [k, v] of fd.entries()) body[k] = v;
+            if (status) { status.textContent = 'Сохраняю…'; status.classList.remove('hidden'); }
+            try {
+              const r = await fetch('/api/portal/shift/event-edit', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(body),
+                credentials: 'include',
+              });
+              const d = await r.json().catch(() => ({}));
+              if (r.ok && d.ok) {
+                if (status) status.textContent = '✓ Сохранено, обновляю…';
+                setTimeout(() => window.location.reload(), 300);
+              } else {
+                if (status) { status.textContent = 'Ошибка: ' + (d.error || r.status); status.classList.add('text-red-600'); }
+              }
+            } catch (e) {
+              if (status) { status.textContent = 'Сетевая ошибка'; status.classList.add('text-red-600'); }
+            }
+          });
+        });
+      })();
+    </script>
   </body>
 </html>
