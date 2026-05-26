@@ -5,7 +5,9 @@ import PortalLayout from '../../../layouts/PortalLayout.astro';
 import { getActiveShift, getEvents, listShifts, getChecklists, type ShiftEvent } from '../../../lib/portalShift';
 
 const role = Astro.locals.portalRole;
-if (role !== 'admin' && role !== 'rukovoditel') return Astro.redirect('/portal/');
+// Все сотрудники видят страницу управления сеткой; правка ограничена ниже по ролям.
+if (!role || role === 'student') return Astro.redirect('/portal/');
+const canEdit = role === 'admin' || role === 'rukovoditel';
 
 const shifts = await listShifts();
 const activeShift = await getActiveShift();
@@ -28,6 +30,12 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
 ---
 
 <PortalLayout title="Управление сеткой — АйДаКэмп">
+  {!canEdit && (
+    <div class="mb-6 rounded-[12px] border border-amber-200 bg-amber-50 px-4 py-3 text-[15px] text-amber-900">
+      <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
+      Просмотр сетки. Правка событий — у руководителя смены и админа. Скоро добавим частичный edit для своих событий.
+    </div>
+  )}
   <div class="mb-8 flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-[28px] font-bold tracking-[-0.02em] text-navy-950 md:text-[36px]">
       Управление сеткой
