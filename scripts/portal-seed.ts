@@ -235,6 +235,19 @@ async function main() {
     }
 
     // 7b. клонирование regular template на дни type=regular (включая 9 буферный)
+    // day_overrides позволяет перекрывать title определённых id_suffix на конкретный день.
+    // Поддерживаемые override-ключи: evening_title (для evening-event), outdoor_title (для outdoor-games),
+    //                                quiet_title (для quiet-time), и произвольные `${id_suffix}_title`.
+    const dayOverrides = (manifest as any).day_overrides ?? {};
+    function overrideTitle(daySuffix: string, idSuffix: string): string | null {
+      const o = dayOverrides[String(daySuffix)];
+      if (!o) return null;
+      if (idSuffix === 'evening-event' && o.evening_title) return o.evening_title;
+      if (idSuffix === 'outdoor-games' && o.outdoor_title) return o.outdoor_title;
+      if (idSuffix === 'quiet-time' && o.quiet_title) return o.quiet_title;
+      const generic = o[`${idSuffix}_title`];
+      return generic ?? null;
+    }
     const regularDays = manifest.days.filter((d) => d.type === 'regular');
     for (const day of regularDays) {
       for (const t of tmplEvents) {
@@ -247,12 +260,13 @@ async function main() {
         const contentTask = t.event_type === 'pool_or_alt'
           ? (isPool ? (t.content_task_template_if_pool ?? null) : null)
           : (t.content_task_template ?? null);
+        const titleOverride = overrideTitle(String(day.day_number), t.id_suffix);
         allEvents.push({
           id: `ev-d${day.day_number}-${t.id_suffix}`,
           day_number: day.day_number,
           start_time: t.start_time, end_time: t.end_time,
           event_type: t.event_type,
-          title: t.title,
+          title: titleOverride ?? t.title,
           responsible: t.responsible,
           checklists,
           content_task_template: contentTask ?? undefined,

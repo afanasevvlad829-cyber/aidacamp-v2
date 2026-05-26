@@ -7,9 +7,16 @@ import { listStaff } from '../../lib/portalStaff';
 if (Astro.locals.portalRole !== 'admin') return Astro.redirect('/portal/');
 
 const staff = await listStaff();
-const pending = staff.filter((s) => !s.role);
-const active = staff.filter((s) => s.role && s.active);
-const inactive = staff.filter((s) => s.role && !s.active);
+
+// Pending: telegram_id есть, role нет, staff_key нет
+const pending = staff.filter((s) => s.telegram_id != null && s.role == null && s.staff_key == null);
+// Placeholder: telegram_id нет, staff_key есть
+const placeholders = staff.filter((s) => s.telegram_id == null && s.staff_key != null);
+// Linked: telegram_id есть, role есть
+const linked = staff.filter((s) => s.telegram_id != null && s.role != null);
+const active = linked.filter((s) => s.active);
+const inactive = linked.filter((s) => !s.active);
+
 const ROLES = ['teacher', 'vozhaty', 'rukovoditel', 'admin'];
 ---
 
@@ -18,38 +25,68 @@ const ROLES = ['teacher', 'vozhaty', 'rukovoditel', 'admin'];
     Сотрудники
   </h1>
 
+  <!-- PENDING: ожидают привязки к placeholder -->
   <section class="mb-10">
     <h2 class="mb-3 text-[20px] font-bold tracking-[-0.01em] text-navy-950 md:text-[24px]">
-      Заявки ({pending.length})
+      <i class="bi bi-hourglass-split mr-1" aria-hidden="true"></i>
+      Ожидают привязки ({pending.length})
     </h2>
-    {pending.length === 0 && <p class="text-[16px] text-body-muted">Нет заявок.</p>}
+    <p class="mb-3 text-[14px] text-body-muted">
+      Эти люди вошли через Telegram, но не связаны с именованной должностью. Выбери placeholder и нажми «Объединить».
+    </p>
+    {pending.length === 0 && <p class="text-[16px] text-body-muted">Нет ожидающих привязки.</p>}
     {pending.map((s) => (
-      <form
-        method="POST"
-        action="/api/portal/staff"
+      <div
         class="mb-2 flex flex-wrap items-center gap-2 rounded-[16px] border border-border bg-white p-4 card-shadow"
+        data-pending-id={s.id}
       >
-        <input type="hidden" name="telegram_id" value={s.telegram_id} />
-        <input type="hidden" name="action" value="setRole" />
+        <i class="bi bi-person-fill text-[18px] text-body-muted" aria-hidden="true"></i>
         <span class="min-w-0 flex-1 text-[16px] text-navy-950">
-          {s.full_name ?? '—'} {s.tg_username ? `@${s.tg_username}` : ''}
-          <span class="text-body-muted">#{s.telegram_id}</span>
+          {s.full_name ?? '—'}{s.tg_username ? ` @${s.tg_username}` : ''}
+          <span class="ml-1 text-body-muted">#{s.telegram_id}</span>
         </span>
         <select
-          name="role"
-          class="rounded-[10px] border border-border px-3 py-2 text-[16px] text-body outline-none focus:border-primary"
+          class="merge-select rounded-[10px] border border-border px-3 py-2 text-[16px] text-body outline-none focus:border-primary"
+          aria-label="Привязать к placeholder"
         >
-          {ROLES.map((r) => <option value={r}>{r}</option>)}
+          <option value="">— выбери должность —</option>
+          {placeholders.map((ph) => (
+            <option value={ph.id}>
+              {ph.full_name ?? ph.staff_key} ({ph.role ?? 'без роли'}, key: {ph.staff_key})
+            </option>
+          ))}
         </select>
         <button
-          class="rounded-[12px] bg-primary px-4 py-2 text-[16px] font-semibold text-white transition hover:bg-primary-hover"
+          class="merge-btn rounded-[12px] bg-primary px-4 py-2 text-[16px] font-semibold text-white transition hover:bg-primary-hover disabled:opacity-50"
+          disabled
         >
-          Назначить
+          <i class="bi bi-link-45deg mr-1" aria-hidden="true"></i>
+          Объединить
         </button>
-      </form>
+      </div>
     ))}
   </section>
 
+  <!-- PLACEHOLDERS: ждут первого входа -->
+  <section class="mb-10">
+    <h2 class="mb-3 text-[20px] font-bold tracking-[-0.01em] text-navy-950 md:text-[24px]">
+      <i class="bi bi-shield-fill-check mr-1" aria-hidden="true"></i>
+      Placeholder-ы (без Telegram) ({placeholders.length})
+    </h2>
+    {placeholders.length === 0 && <p class="text-[16px] text-body-muted">Нет placeholder-ов.</p>}
+    {placeholders.map((ph) => (
+      <div class="mb-2 flex flex-wrap items-center gap-2 rounded-[16px] border border-border bg-white p-4 card-shadow opacity-75">
+        <i class="bi bi-person-fill text-[18px] text-body-muted" aria-hidden="true"></i>
+        <span class="min-w-0 flex-1 text-[16px] text-navy-950">
+          {ph.full_name ?? '—'} — <b>{ph.role ?? 'без роли'}</b>
+          <span class="ml-2 text-[13px] text-body-muted">key: {ph.staff_key}</span>
+        </span>
+        <span class="text-[14px] text-body-muted">Ждёт первого входа через TG</span>
+      </div>
+    ))}
+  </section>
+
+  <!-- ACTIVE: привязаны и активны -->
   <section class="mb-10">
     <h2 class="mb-3 text-[20px] font-bold tracking-[-0.01em] text-navy-950 md:text-[24px]">
       Активные ({active.length})
@@ -62,7 +99,7 @@ const ROLES = ['teacher', 'vozhaty', 'rukovoditel', 'admin'];
           <b>{s.role}</b>
         </span>
         <form method="POST" action="/api/portal/staff">
-          <input type="hidden" name="telegram_id" value={s.telegram_id} />
+          <input type="hidden" name="telegram_id" value={s.telegram_id!} />
           <input type="hidden" name="action" value="deactivate" />
           <button
             class="rounded-[12px] border border-red-300 px-4 py-2 text-[16px] font-medium text-red-700 transition hover:bg-red-50"
@@ -74,6 +111,7 @@ const ROLES = ['teacher', 'vozhaty', 'rukovoditel', 'admin'];
     ))}
   </section>
 
+  <!-- INACTIVE -->
   <section>
     <h2 class="mb-3 text-[20px] font-bold tracking-[-0.01em] text-navy-950 md:text-[24px]">
       Отключённые ({inactive.length})
@@ -85,7 +123,7 @@ const ROLES = ['teacher', 'vozhaty', 'rukovoditel', 'admin'];
           {s.full_name ?? '—'} — {s.role}
         </span>
         <form method="POST" action="/api/portal/staff">
-          <input type="hidden" name="telegram_id" value={s.telegram_id} />
+          <input type="hidden" name="telegram_id" value={s.telegram_id!} />
           <input type="hidden" name="action" value="reactivate" />
           <button
             class="rounded-[12px] border border-border px-4 py-2 text-[16px] font-medium text-body transition hover:border-primary"
@@ -97,3 +135,42 @@ const ROLES = ['teacher', 'vozhaty', 'rukovoditel', 'admin'];
     ))}
   </section>
 </PortalLayout>
+
+<script>
+  // Enable merge button only when a placeholder is selected
+  document.querySelectorAll<HTMLDivElement>('[data-pending-id]').forEach((row) => {
+    const sel = row.querySelector<HTMLSelectElement>('.merge-select')!;
+    const btn = row.querySelector<HTMLButtonElement>('.merge-btn')!;
+    const pendingId = Number(row.dataset.pendingId);
+
+    sel.addEventListener('change', () => {
+      btn.disabled = !sel.value;
+    });
+
+    btn.addEventListener('click', async () => {
+      const placeholderId = Number(sel.value);
+      if (!placeholderId) return;
+      btn.disabled = true;
+      btn.textContent = 'Объединяю…';
+      try {
+        const res = await fetch('/api/portal/staff/merge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pending_id: pendingId, placeholder_id: placeholderId }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          window.location.reload();
+        } else {
+          alert(`Ошибка: ${data.error ?? 'неизвестно'}`);
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-link-45deg" aria-hidden="true"></i> Объединить';
+        }
+      } catch {
+        alert('Сетевая ошибка');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-link-45deg" aria-hidden="true"></i> Объединить';
+      }
+    });
+  });
+</script>
