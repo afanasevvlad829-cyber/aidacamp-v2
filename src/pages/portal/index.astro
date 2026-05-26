@@ -266,20 +266,25 @@ const shiftStatusMsg = isStaff && !isShiftDay ? shiftStatus() : '';
       </a>
     </div>
 
-    <!-- Shift inactive banner + быстрая навигация (всегда видна, особенно когда смена не активна) -->
+    <!-- Shift inactive banner — кликабельный (ведёт на сетку смены на дату старта). -->
     {shiftStatusMsg && (
-      <div class="rounded-[16px] border border-border bg-white p-5 card-shadow">
+      <a href={shift ? `/portal/smena?shift=${shift.id}&view=role&date=${shift.start_date}` : '/portal/smena'}
+         class="block rounded-[16px] border border-border bg-white p-5 card-shadow transition hover:border-primary">
         <div class="flex items-center gap-3">
           <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-primary-soft text-primary">
             <i class="bi bi-calendar-event text-[20px]" aria-hidden="true"></i>
           </span>
-          <p class="text-[17px] text-navy-950">{shiftStatusMsg}</p>
+          <div class="flex-1">
+            <p class="text-[17px] font-semibold text-navy-950">{shiftStatusMsg}</p>
+            <p class="text-[14px] text-body-muted">Нажми, чтобы открыть сетку смены на дату старта</p>
+          </div>
+          <i class="bi bi-arrow-right text-[18px] text-body-muted" aria-hidden="true"></i>
         </div>
-      </div>
+      </a>
     )}
 
     {/* Быстрые ссылки для admin/rukovoditel — доступны всегда, не зависят от активности смены */}
-    {(role === 'admin' || role === 'rukovoditel') && (
+    {(role !== 'student') && (
       <nav aria-label="Разделы портала" class="grid grid-cols-2 gap-3 md:grid-cols-4">
         <a href={`/portal/smena${shift ? `?shift=${shift.id}&view=role&date=${shift.start_date}` : ''}`}
            class="flex items-start gap-3 rounded-[14px] border border-border bg-white p-4 card-shadow transition hover:border-primary">
@@ -291,16 +296,18 @@ const shiftStatusMsg = isStaff && !isShiftDay ? shiftStatus() : '';
             <span class="mt-0.5 block text-[13px] text-body-muted">События, чек-листы</span>
           </span>
         </a>
-        <a href="/portal/smena/admin"
-           class="flex items-start gap-3 rounded-[14px] border border-border bg-white p-4 card-shadow transition hover:border-primary">
-          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
-            <i class="bi bi-kanban text-[20px]" aria-hidden="true"></i>
-          </span>
-          <span class="min-w-0">
-            <span class="block text-[16px] font-semibold text-navy-950">Управление сеткой</span>
-            <span class="mt-0.5 block text-[13px] text-body-muted">Дни и события</span>
-          </span>
-        </a>
+        {(role === 'admin' || role === 'rukovoditel') && (
+          <a href="/portal/smena/admin"
+             class="flex items-start gap-3 rounded-[14px] border border-border bg-white p-4 card-shadow transition hover:border-primary">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
+              <i class="bi bi-kanban text-[20px]" aria-hidden="true"></i>
+            </span>
+            <span class="min-w-0">
+              <span class="block text-[16px] font-semibold text-navy-950">Управление сеткой</span>
+              <span class="mt-0.5 block text-[13px] text-body-muted">Дни и события</span>
+            </span>
+          </a>
+        )}
         <a href="/portal/room-inventory"
            class="flex items-start gap-3 rounded-[14px] border border-border bg-white p-4 card-shadow transition hover:border-primary">
           <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
@@ -346,8 +353,8 @@ const shiftStatusMsg = isStaff && !isShiftDay ? shiftStatus() : '';
       </nav>
     )}
 
-    {/* Превью смены даже если она ещё не началась — показываем первый день для admin/rukovoditel */}
-    {(role === 'admin' || role === 'rukovoditel') && shift && !isShiftDay && (
+    {/* Превью смены даже если она ещё не началась — показываем первый день для всех staff */}
+    {(role !== 'student') && shift && !isShiftDay && (
       <div class="rounded-[16px] border border-dashed border-border bg-amber-50/40 p-5">
         <p class="text-[15px] text-navy-950">
           Чтобы посмотреть, как «Сейчас» и карточки событий будут выглядеть в реальный день смены,

@@ -49,9 +49,6 @@ function typeBadge(type: string): string {
 ---
 <PortalLayout title="Инвентаризация комнат — АйДаКэмп">
   <div class="mb-8">
-    <a href="/portal/" class="mb-3 inline-flex items-center gap-2 text-[14px] text-body-muted hover:text-primary">
-      <i class="bi bi-arrow-left text-[14px]" aria-hidden="true"></i> Назад
-    </a>
     <h1 class="text-[28px] font-bold tracking-[-0.02em] text-navy-950 md:text-[36px]">
       Инвентаризация 3-го корпуса
     </h1>
@@ -76,57 +73,75 @@ function typeBadge(type: string): string {
     </div>
   </div>
 
-  {/* Этаж 1 */}
+  {/* Этаж 1 — слева левое крыло (20-17 / 21-22), справа правое (11-14 / 16-15), в середине коридор */}
   <section class="mb-8">
     <h2 class="mb-3 text-[20px] font-bold text-navy-950">Этаж 1 · 22 места</h2>
-    <div class="grid gap-3" style="grid-template-columns: repeat(9, minmax(80px, 1fr));">
-      {floor1.map((r: RoomDef) => {
-        const s = statusOf(r.number);
-        const isStaff = r.type === 'staff';
-        return (
-          <button type="button"
-            class={`room-tile rounded-[12px] border-2 p-3 text-left transition ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed' : 'hover:shadow-md'}`}
-            style={`grid-column: ${r.col}; grid-row: ${r.row};`}
-            data-room={r.number}
-            disabled={isStaff}
-          >
-            <div class="text-[16px] font-bold">№{r.number}</div>
-            <div class="mt-0.5 text-[11px] text-body-muted">{r.label}</div>
-            {!isStaff && (
-              <div class="mt-1 text-[11px] font-semibold">
-                {s === 'ok' && '✓ принято'}
-                {s === 'defects' && '⚠ замечания'}
-                {s === 'pending' && '○ не принято'}
-              </div>
-            )}
-          </button>
-        );
-      })}
+    <div class="rounded-[16px] border-2 border-slate-300 bg-slate-50 p-4">
+      <div class="grid gap-3" style="grid-template-columns: repeat(9, minmax(70px, 1fr)); grid-template-rows: minmax(86px, auto) minmax(86px, auto);">
+        {floor1.map((r: RoomDef) => {
+          const s = statusOf(r.number);
+          const isStaff = r.type === 'staff';
+          return (
+            <button type="button"
+              class={`room-tile rounded-[12px] border-2 p-3 text-left shadow-sm transition ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
+              style={`grid-column: ${r.col}; grid-row: ${r.row};`}
+              data-room={r.number}
+              disabled={isStaff}
+            >
+              <div class="text-[16px] font-bold">№{r.number}</div>
+              <div class="mt-0.5 text-[11px] text-body-muted">{r.label}</div>
+              {!isStaff && (
+                <div class="mt-1 text-[11px] font-semibold">
+                  {s === 'ok' && '✓ принято'}
+                  {s === 'defects' && '⚠ замечания'}
+                  {s === 'pending' && '○ не принято'}
+                </div>
+              )}
+            </button>
+          );
+        })}
+        {/* Коридор посередине */}
+        <div class="pointer-events-none flex items-center justify-center rounded-[8px] border border-dashed border-slate-300 bg-white text-[11px] text-slate-400"
+             style="grid-column: 5; grid-row: 1 / span 2;">
+          коридор
+        </div>
+      </div>
     </div>
   </section>
 
   {/* Этаж 2 */}
   <section class="mb-8">
     <h2 class="mb-3 text-[20px] font-bold text-navy-950">Этаж 2 · 24 места</h2>
-    <div class="grid gap-3" style="grid-template-columns: repeat(8, minmax(80px, 1fr));">
-      {floor2.map((r: RoomDef) => {
-        const s = statusOf(r.number);
-        return (
-          <button type="button"
-            class={`room-tile rounded-[12px] border-2 p-3 text-left transition ${colorCls(s, r.type)} hover:shadow-md`}
-            style={`grid-column: ${r.col}; grid-row: ${r.row};`}
-            data-room={r.number}
-          >
-            <div class="text-[16px] font-bold">№{r.number}</div>
-            <div class="mt-0.5 text-[11px] text-body-muted">{r.label}</div>
-            <div class="mt-1 text-[11px] font-semibold">
-              {s === 'ok' && '✓ принято'}
-              {s === 'defects' && '⚠ замечания'}
-              {s === 'pending' && '○ не принято'}
-            </div>
-          </button>
-        );
-      })}
+    <div class="rounded-[16px] border-2 border-slate-300 bg-slate-50 p-4">
+      <div class="grid gap-3" style="grid-template-columns: repeat(8, minmax(70px, 1fr)); grid-template-rows: minmax(96px, auto) minmax(86px, auto);">
+        {floor2.map((r: RoomDef) => {
+          const s = statusOf(r.number);
+          return (
+            <button type="button"
+              class={`room-tile rounded-[12px] border-2 p-3 text-left shadow-sm transition ${colorCls(s, r.type)} hover:shadow-md`}
+              style={`grid-column: ${r.col}; grid-row: ${r.row};`}
+              data-room={r.number}
+            >
+              <div class="text-[16px] font-bold">№{r.number}</div>
+              <div class="mt-0.5 text-[11px] text-body-muted">{r.label}</div>
+              <div class="mt-1 text-[11px] font-semibold">
+                {s === 'ok' && '✓ принято'}
+                {s === 'defects' && '⚠ замечания'}
+                {s === 'pending' && '○ не принято'}
+              </div>
+            </button>
+          );
+        })}
+        {/* Коридор посередине */}
+        <div class="pointer-events-none flex items-center justify-center rounded-[8px] border border-dashed border-slate-300 bg-white text-[11px] text-slate-400"
+             style="grid-column: 3 / span 4; grid-row: 1;">
+          коридор
+        </div>
+        <div class="pointer-events-none flex items-center justify-center rounded-[8px] border border-dashed border-slate-300 bg-white text-[11px] text-slate-400"
+             style="grid-column: 4 / span 3; grid-row: 2;">
+          коридор
+        </div>
+      </div>
     </div>
   </section>
 

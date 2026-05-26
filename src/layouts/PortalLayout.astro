@@ -10,6 +10,10 @@ interface Props {
 
 const { title, showHeader = true } = Astro.props;
 
+// Показываем «← Назад» когда мы НЕ на главной портала.
+const pathNow = Astro.url.pathname.replace(/\/+$/, '') || '/';
+const showBack = pathNow !== '/portal' && pathNow !== '';
+
 const realRole = Astro.locals.portalRealRole ?? Astro.locals.portalRole ?? null;
 const viewAs = Astro.locals.portalViewAs ?? null;
 const canSwitchRoles = realRole === 'admin' || realRole === 'rukovoditel';
@@ -46,12 +50,20 @@ const ROLE_LABEL_MAP: Record<string, string> = {
     {showHeader && (
       <header class="border-b border-border bg-white">
         <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
-          <a
-            href="/portal/"
-            class="text-[20px] font-extrabold tracking-[-0.02em] text-navy-950"
-          >
-            АйДаКэмп
-          </a>
+          <div class="flex items-center gap-3">
+            {showBack && (
+              <a href="/portal/" class="inline-flex items-center gap-1 rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] font-medium text-body-muted transition hover:border-primary hover:text-primary" aria-label="Назад">
+                <i class="bi bi-arrow-left text-[14px]" aria-hidden="true"></i>
+                Назад
+              </a>
+            )}
+            <a
+              href="/portal/"
+              class="text-[20px] font-extrabold tracking-[-0.02em] text-navy-950"
+            >
+              АйДаКэмп
+            </a>
+          </div>
           <div class="flex flex-wrap items-center gap-2">
             {canSwitchRoles && (
               <form method="POST" action="/api/portal/view-as" class="flex items-center gap-2">
