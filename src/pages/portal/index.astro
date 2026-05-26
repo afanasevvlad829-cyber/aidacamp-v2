@@ -266,7 +266,7 @@ const shiftStatusMsg = isStaff && !isShiftDay ? shiftStatus() : '';
       </a>
     </div>
 
-    <!-- Shift inactive banner -->
+    <!-- Shift inactive banner + быстрая навигация (всегда видна, особенно когда смена не активна) -->
     {shiftStatusMsg && (
       <div class="rounded-[16px] border border-border bg-white p-5 card-shadow">
         <div class="flex items-center gap-3">
@@ -275,6 +275,76 @@ const shiftStatusMsg = isStaff && !isShiftDay ? shiftStatus() : '';
           </span>
           <p class="text-[17px] text-navy-950">{shiftStatusMsg}</p>
         </div>
+      </div>
+    )}
+
+    {/* Быстрые ссылки для admin/rukovoditel — доступны всегда, не зависят от активности смены */}
+    {(role === 'admin' || role === 'rukovoditel') && (
+      <nav aria-label="Разделы портала" class="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <a href={`/portal/smena${shift ? `?shift=${shift.id}&view=role&date=${shift.start_date}` : ''}`}
+           class="flex items-start gap-3 rounded-[14px] border border-border bg-white p-4 card-shadow transition hover:border-primary">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
+            <i class="bi bi-calendar-week text-[20px]" aria-hidden="true"></i>
+          </span>
+          <span class="min-w-0">
+            <span class="block text-[16px] font-semibold text-navy-950">Сетка смены</span>
+            <span class="mt-0.5 block text-[13px] text-body-muted">События, чек-листы</span>
+          </span>
+        </a>
+        <a href="/portal/smena/admin"
+           class="flex items-start gap-3 rounded-[14px] border border-border bg-white p-4 card-shadow transition hover:border-primary">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
+            <i class="bi bi-kanban text-[20px]" aria-hidden="true"></i>
+          </span>
+          <span class="min-w-0">
+            <span class="block text-[16px] font-semibold text-navy-950">Управление сеткой</span>
+            <span class="mt-0.5 block text-[13px] text-body-muted">Дни и события</span>
+          </span>
+        </a>
+        <a href="/portal/metodichki"
+           class="flex items-start gap-3 rounded-[14px] border border-border bg-white p-4 card-shadow transition hover:border-primary">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
+            <i class="bi bi-book-half text-[20px]" aria-hidden="true"></i>
+          </span>
+          <span class="min-w-0">
+            <span class="block text-[16px] font-semibold text-navy-950">Методички</span>
+            <span class="mt-0.5 block text-[13px] text-body-muted">Активности Ташкина</span>
+          </span>
+        </a>
+        {role === 'admin' && (
+          <a href="/portal/staff-admin"
+             class="flex items-start gap-3 rounded-[14px] border border-border bg-white p-4 card-shadow transition hover:border-primary">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
+              <i class="bi bi-people-fill text-[20px]" aria-hidden="true"></i>
+            </span>
+            <span class="min-w-0">
+              <span class="block text-[16px] font-semibold text-navy-950">Сотрудники</span>
+              <span class="mt-0.5 block text-[13px] text-body-muted">Доступы и роли</span>
+            </span>
+          </a>
+        )}
+        <a href="/portal/all"
+           class="flex items-start gap-3 rounded-[14px] border border-border bg-white p-4 card-shadow transition hover:border-primary">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
+            <i class="bi bi-grid text-[20px]" aria-hidden="true"></i>
+          </span>
+          <span class="min-w-0">
+            <span class="block text-[16px] font-semibold text-navy-950">Все разделы</span>
+            <span class="mt-0.5 block text-[13px] text-body-muted">Хаб целиком</span>
+          </span>
+        </a>
+      </nav>
+    )}
+
+    {/* Превью смены даже если она ещё не началась — показываем первый день для admin/rukovoditel */}
+    {(role === 'admin' || role === 'rukovoditel') && shift && !isShiftDay && (
+      <div class="rounded-[16px] border border-dashed border-border bg-amber-50/40 p-5">
+        <p class="text-[15px] text-navy-950">
+          Чтобы посмотреть, как «Сейчас» и карточки событий будут выглядеть в реальный день смены,
+          открой <a href={`/portal/smena?shift=${shift.id}&view=role&date=${shift.start_date}`}
+                    class="font-semibold text-primary hover:underline">Сетку смены</a> на нужную дату
+          (старт {shift.start_date}).
+        </p>
       </div>
     )}
 
