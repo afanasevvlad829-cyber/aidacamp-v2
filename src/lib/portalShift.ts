@@ -1,5 +1,12 @@
 import type { PortalRole } from './portalSession';
 
+export interface ContentTask {
+  id: number;
+  title: string;
+  brief: string | null;
+  content_type: string | null;
+}
+
 export interface ShiftEvent {
   id: number;
   external_id: string | null;
@@ -12,6 +19,7 @@ export interface ShiftEvent {
   event_type: string | null;
   activity_slug: string | null;
   content_task_template_id: string | null;
+  content_task: ContentTask | null;
   group_color_id: number | null;
   staff_keys: string[];
   roles: string[];
@@ -69,12 +77,12 @@ export async function getEventDates(shiftId: number): Promise<string[]> {
 /** События смены. Если передана дата — только за этот день (легче для role/day видов). */
 export async function getEvents(shiftId: number, date?: string): Promise<ShiftEvent[]> {
   return (await withClient(async (c) => {
-    const COLS = "id,external_id,to_char(date,'YYYY-MM-DD') date,start_time::text,end_time::text,title,activity_type,event_type::text,activity_slug,content_task_template_id,group_color_id,staff_keys,roles,notes,sort";
+    const COLS = "e.id,e.external_id,to_char(e.date,'YYYY-MM-DD') date,e.start_time::text,e.end_time::text,e.title,e.activity_type,e.event_type::text,e.activity_slug,e.content_task_template_id,e.group_color_id,e.staff_keys,e.roles,e.notes,e.sort,ct.id ct_id,ct.title ct_title,ct.brief ct_brief,ct.content_type ct_content_type";
     const ev = date
       ? await c.query(
-          `SELECT ${COLS} FROM shift_event WHERE shift_id=$1 AND date=$2 ORDER BY date,sort,start_time`, [shiftId, date])
+          `SELECT ${COLS} FROM shift_event e LEFT JOIN content_task_template ct ON ct.id::text=e.content_task_template_id WHERE e.shift_id=$1 AND e.date=$2 ORDER BY e.date,e.sort,e.start_time`, [shiftId, date])
       : await c.query(
-          `SELECT ${COLS} FROM shift_event WHERE shift_id=$1 ORDER BY date,sort,start_time`, [shiftId]);
+          `SELECT ${COLS} FROM shift_event e LEFT JOIN content_task_template ct ON ct.id::text=e.content_task_template_id WHERE e.shift_id=$1 ORDER BY e.date,e.sort,e.start_time`, [shiftId]);
     const ecl = await c.query(
       "SELECT ec.id event_checklist_id, ec.event_id, ec.checklist_id, ec.roles, cl.title, cl.items FROM event_checklist ec JOIN checklist cl ON cl.id=ec.checklist_id WHERE ec.event_id = ANY($1)",
       [ev.rows.map((e: any) => e.id)]);
@@ -82,8 +90,12 @@ export async function getEvents(shiftId: number, date?: string): Promise<ShiftEv
     for (const row of ecl.rows) {
       const arr = byEvent.get(row.event_id) ?? []; arr.push(row); byEvent.set(row.event_id, arr);
     }
-    return ev.rows.map((e: any) => ({ ...e, checklists: (byEvent.get(e.id) ?? []).map((r: any) => ({
-      event_checklist_id: r.event_checklist_id, checklist_id: r.checklist_id, title: r.title, roles: r.roles, items: r.items })) }));
+    return ev.rows.map((e: any) => ({
+      ...e,
+      content_task: e.ct_id != null ? { id: e.ct_id, title: e.ct_title, brief: e.ct_brief, content_type: e.ct_content_type } : null,
+      checklists: (byEvent.get(e.id) ?? []).map((r: any) => ({
+        event_checklist_id: r.event_checklist_id, checklist_id: r.checklist_id, title: r.title, roles: r.roles, items: r.items })),
+    }));
   })) ?? [];
 }
 
