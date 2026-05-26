@@ -39,16 +39,18 @@ export const ROOMS: RoomDef[] = [
   { number: 15, floor: 1, type: 'standard',     capacity: 2, label: '2-х местная',   col: 8, row: 2 },
 
   // ───────── Floor 2 (24 places) ─────────
+  // Грид 8 колонок: 3 левых + коридор (col 4) + 4 правых
+  // Люксы (верх) каждый шире 2-местных (низ): 30 spans 1-1, 31 spans 2-3; 23 spans 5-6, 24 spans 7-8
   { number: 30, floor: 2, type: 'lux',          capacity: 2, label: 'ЛЮКС 2-х местная', col: 1, row: 1 },
   { number: 31, floor: 2, type: 'lux',          capacity: 4, label: 'ЛЮКС 4-х местная', col: 2, row: 1 },
-  { number: 23, floor: 2, type: 'lux',          capacity: 4, label: 'ЛЮКС 4-х местная', col: 6, row: 1 },
+  { number: 23, floor: 2, type: 'lux',          capacity: 4, label: 'ЛЮКС 4-х местная', col: 5, row: 1 },
   { number: 24, floor: 2, type: 'lux',          capacity: 4, label: 'ЛЮКС 4-х местная', col: 7, row: 1 },
 
   { number: 29, floor: 2, type: 'standard',     capacity: 2, label: '2-х местная',     col: 1, row: 2 },
   { number: 28, floor: 2, type: 'standard',     capacity: 2, label: '2-х местная',     col: 2, row: 2 },
   { number: 27, floor: 2, type: 'standard',     capacity: 2, label: '2-х местная',     col: 3, row: 2 },
-  { number: 26, floor: 2, type: 'standard',     capacity: 2, label: '2-х местная',     col: 7, row: 2 },
-  { number: 25, floor: 2, type: 'standard',     capacity: 2, label: '2-х местная',     col: 8, row: 2 },
+  { number: 26, floor: 2, type: 'standard',     capacity: 2, label: '2-х местная',     col: 5, row: 2 },
+  { number: 25, floor: 2, type: 'standard',     capacity: 2, label: '2-х местная',     col: 7, row: 2 },
 ];
 
 /** Чек-лист инвентаризации (6 пунктов). */

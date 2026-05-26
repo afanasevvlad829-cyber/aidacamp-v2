@@ -73,17 +73,20 @@ function typeBadge(type: string): string {
     </div>
   </div>
 
-  {/* Этаж 1 — слева левое крыло (20-17 / 21-22), справа правое (11-14 / 16-15), в середине коридор */}
+  {/* Этаж 1 — план: верхний ряд маленькие (4+коридор+4), нижний ряд крупные (2+коридор+2). */}
   <section class="mb-8">
     <h2 class="mb-3 text-[20px] font-bold text-navy-950">Этаж 1 · 22 места</h2>
-    <div class="rounded-[16px] border-2 border-slate-300 bg-slate-50 p-4">
-      <div class="grid gap-3" style="grid-template-columns: repeat(9, minmax(70px, 1fr)); grid-template-rows: minmax(86px, auto) minmax(86px, auto);">
+    <div class="rounded-[16px] border-2 border-slate-300 bg-slate-100 p-5">
+      <div
+        class="grid gap-4"
+        style="grid-template-columns: repeat(4, minmax(80px, 1fr)) minmax(60px, 0.4fr) repeat(4, minmax(80px, 1fr)); grid-template-rows: 96px 140px;"
+      >
         {floor1.map((r: RoomDef) => {
           const s = statusOf(r.number);
           const isStaff = r.type === 'staff';
           return (
             <button type="button"
-              class={`room-tile rounded-[12px] border-2 p-3 text-left shadow-sm transition ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
+              class={`room-tile rounded-[12px] border-2 bg-white p-3 text-left shadow-sm transition ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
               style={`grid-column: ${r.col}; grid-row: ${r.row};`}
               data-room={r.number}
               disabled={isStaff}
@@ -100,26 +103,26 @@ function typeBadge(type: string): string {
             </button>
           );
         })}
-        {/* Коридор посередине */}
-        <div class="pointer-events-none flex items-center justify-center rounded-[8px] border border-dashed border-slate-300 bg-white text-[11px] text-slate-400"
-             style="grid-column: 5; grid-row: 1 / span 2;">
-          коридор
-        </div>
       </div>
     </div>
   </section>
 
-  {/* Этаж 2 */}
+  {/* Этаж 2 — план: верхний ряд крупные ЛЮКСы (2+коридор+2), нижний ряд маленькие (3+коридор+2). */}
   <section class="mb-8">
     <h2 class="mb-3 text-[20px] font-bold text-navy-950">Этаж 2 · 24 места</h2>
-    <div class="rounded-[16px] border-2 border-slate-300 bg-slate-50 p-4">
-      <div class="grid gap-3" style="grid-template-columns: repeat(8, minmax(70px, 1fr)); grid-template-rows: minmax(96px, auto) minmax(86px, auto);">
+    <div class="rounded-[16px] border-2 border-slate-300 bg-slate-100 p-5">
+      <div
+        class="grid gap-4"
+        style="grid-template-columns: repeat(3, minmax(80px, 1fr)) minmax(60px, 0.4fr) repeat(4, minmax(80px, 1fr)); grid-template-rows: 150px 110px;"
+      >
         {floor2.map((r: RoomDef) => {
           const s = statusOf(r.number);
+          // На верхнем ряду этажа 2 (ЛЮКСы) — каждый занимает 2 колонки чтобы быть крупнее
+          const span = r.row === 1 && r.type === 'lux' ? 2 : 1;
           return (
             <button type="button"
-              class={`room-tile rounded-[12px] border-2 p-3 text-left shadow-sm transition ${colorCls(s, r.type)} hover:shadow-md`}
-              style={`grid-column: ${r.col}; grid-row: ${r.row};`}
+              class={`room-tile rounded-[12px] border-2 bg-white p-3 text-left shadow-sm transition ${colorCls(s, r.type)} hover:shadow-md`}
+              style={`grid-column: ${r.col} / span ${span}; grid-row: ${r.row};`}
               data-room={r.number}
             >
               <div class="text-[16px] font-bold">№{r.number}</div>
@@ -132,15 +135,6 @@ function typeBadge(type: string): string {
             </button>
           );
         })}
-        {/* Коридор посередине */}
-        <div class="pointer-events-none flex items-center justify-center rounded-[8px] border border-dashed border-slate-300 bg-white text-[11px] text-slate-400"
-             style="grid-column: 3 / span 4; grid-row: 1;">
-          коридор
-        </div>
-        <div class="pointer-events-none flex items-center justify-center rounded-[8px] border border-dashed border-slate-300 bg-white text-[11px] text-slate-400"
-             style="grid-column: 4 / span 3; grid-row: 2;">
-          коридор
-        </div>
       </div>
     </div>
   </section>
