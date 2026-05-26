@@ -248,6 +248,12 @@ async function main() {
       const generic = o[`${idSuffix}_title`];
       return generic ?? null;
     }
+    function overrideContentTask(daySuffix: string, idSuffix: string): string | null {
+      const o = dayOverrides[String(daySuffix)];
+      if (!o) return null;
+      const key = `${idSuffix}_content_task`;
+      return (o[key] as string) ?? null;
+    }
     const regularDays = manifest.days.filter((d) => d.type === 'regular');
     for (const day of regularDays) {
       for (const t of tmplEvents) {
@@ -261,6 +267,7 @@ async function main() {
           ? (isPool ? (t.content_task_template_if_pool ?? null) : null)
           : (t.content_task_template ?? null);
         const titleOverride = overrideTitle(String(day.day_number), t.id_suffix);
+        const taskOverride = overrideContentTask(String(day.day_number), t.id_suffix);
         allEvents.push({
           id: `ev-d${day.day_number}-${t.id_suffix}`,
           day_number: day.day_number,
@@ -269,7 +276,7 @@ async function main() {
           title: titleOverride ?? t.title,
           responsible: t.responsible,
           checklists,
-          content_task_template: contentTask ?? undefined,
+          content_task_template: taskOverride ?? contentTask ?? undefined,
           resolved_responsible: responsibleResolved,
           resolved_roles: roles,
         });
