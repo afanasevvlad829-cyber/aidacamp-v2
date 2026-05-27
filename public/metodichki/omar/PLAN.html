@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Лагерь программирования</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#7C3AED;--p2:#9B59F5;--p-soft:#EDE9FE;
+  --g:#059669;--g-soft:#D1FAE5;
+  --o:#D97706;--o-soft:#FEF3C7;
+  --r:#DC2626;--r-soft:#FEE2E2;
+  --b:#2563EB;--b-soft:#DBEAFE;
+  --pk:#DB2777;--pk-soft:#FCE7F3;
+  --bg:#0F0F13;--bg2:#17171D;--bg3:#1E1E27;--bg4:#25252F;
+  --txt:#F0EFF8;--muted:#8B8AA3;--muted2:#5C5B72;
+  --brd:#2A2A38;--brd2:#343448;
+  --rad:14px;--radm:10px;--rads:6px;
+  --font:'Manrope',sans-serif;--mono:'JetBrains Mono',monospace;
+  --glow:0 0 40px rgba(124,58,237,.15);
+}
+body{font-family:var(--font);color:var(--txt);background:var(--bg);min-height:100vh;padding:1.5rem 1rem}
+@media(max-width:600px){body{padding:1rem .75rem}}
+
+/* ── HERO ── */
+.hero{background:var(--bg2);border:1px solid var(--brd2);border-radius:20px;padding:2.5rem 2rem 2rem;margin-bottom:1.25rem;position:relative;overflow:hidden;text-align:center}
+.hero::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#7C3AED,#2563EB,#059669,#D97706,#DB2777)}
+.hero::after{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.18) 0%,transparent 70%);pointer-events:none}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--p2);background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.25);padding:4px 12px;border-radius:20px;margin-bottom:1rem}
+.hero-title{font-size:clamp(22px,5vw,34px);font-weight:800;letter-spacing:-.02em;line-height:1.15;margin-bottom:.5rem}
+.hero-title span{background:linear-gradient(135deg,#9B59F5,#2563EB);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:13px;color:var(--muted);margin-bottom:1.5rem;line-height:1.6}
+.hero-badges{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.hbadge{font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;border:1px solid var(--brd2);color:var(--muted);background:var(--bg3);display:inline-flex;align-items:center;gap:5px;transition:border-color .2s}
+.hbadge:hover{border-color:var(--p)}
+
+/* ── NAV ── */
+.nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.25rem;padding:8px;background:var(--bg2);border-radius:var(--rad);border:1px solid var(--brd)}
+.nbtn{padding:9px 16px;font-size:12px;font-weight:600;cursor:pointer;border-radius:var(--radm);border:1px solid transparent;background:transparent;color:var(--muted);font-family:var(--font);transition:all .18s;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;letter-spacing:.01em}
+.nbtn:hover:not(.on){background:var(--bg3);color:var(--txt);border-color:var(--brd)}
+.nbtn.on{background:linear-gradient(135deg,var(--p),var(--b));color:#fff;box-shadow:0 4px 16px rgba(124,58,237,.35)}
+.nbtn .ni{font-size:15px}
+
+/* ── PAGES ── */
+.page{display:none}.page.on{display:block;animation:fadeUp .28s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── STATS ── */
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:10px;margin-bottom:1.25rem}
+.stat{background:var(--bg2);border:1px solid var(--brd);border-radius:var(--rad);padding:1rem .75rem;text-align:center;position:relative;overflow:hidden;transition:border-color .2s,transform .2s}
+.stat:hover{border-color:var(--p);transform:translateY(-2px)}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--p),var(--b))}
+.stat-n{font-size:28px;font-weight:800;background:linear-gradient(135deg,#9B59F5,#60A5FA);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-l{font-size:10px;font-weight:600;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.06em}
+
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--brd);border-radius:var(--rad);padding:1.25rem;margin-bottom:1rem;transition:border-color .2s}
+.card:hover{border-color:var(--brd2)}
+.card-title{font-size:14px;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:8px;color:var(--txt)}
+.card-title .cico{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+
+/* ── GROUP CARDS ── */
+.group-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:500px){.group-grid{grid-template-columns:1fr}}
+.group-card{border-radius:var(--radm);padding:1rem;border:1px solid}
+.group-a{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.3)}
+.group-b{background:rgba(5,150,105,.08);border-color:rgba(5,150,105,.3)}
+.group-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.4rem}
+.group-a .group-label{color:#60A5FA}
+.group-b .group-label{color:#34D399}
+.group-desc{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* ── JOURNEY BARS ── */
+.journey-item{display:flex;gap:12px;align-items:center;padding:10px 12px;background:var(--bg3);border-radius:var(--radm);margin-bottom:6px;border:1px solid var(--brd)}
+.j-days{min-width:58px;font-size:10px;font-weight:700;font-family:var(--mono);letter-spacing:.04em}
+.j-bar{flex:1;height:7px;border-radius:4px;overflow:hidden;background:var(--bg4)}
+.j-bar-fill{height:100%;border-radius:4px}
+.j-label{font-size:12px;font-weight:600;color:var(--txt);min-width:140px;text-align:right}
+
+/* ── AI TIP ── */
+.ai-box{background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.25);border-radius:var(--rad);padding:1rem;margin-top:.75rem}
+.ai-box-t{font-size:12px;font-weight:700;color:#A78BFA;margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.ai-box p{font-size:12px;color:#C4B5FD;line-height:1.65}
+
+/* ── DAY TIMELINE ── */
+.day-timeline{position:relative;padding-left:30px;margin-bottom:1.25rem}
+.day-timeline::before{content:'';position:absolute;left:11px;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--p),var(--b),var(--g))}
+.day-node{position:relative;margin-bottom:8px}
+.day-node::before{content:'';position:absolute;left:-23px;top:14px;width:13px;height:13px;border-radius:50%;border:2px solid var(--brd2);background:var(--bg2);transition:all .18s}
+.day-node.open::before{border-color:var(--p);background:var(--p);box-shadow:0 0 12px rgba(124,58,237,.5)}
+.day-header{background:var(--bg2);border:1px solid var(--brd);border-radius:var(--radm);padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:all .18s;user-select:none}
+.day-header:hover,.day-node.open .day-header{background:var(--bg3);border-color:var(--brd2)}
+.day-node.open .day-header{border-color:var(--p);box-shadow:0 0 0 1px rgba(124,58,237,.2)}
+.day-hl{display:flex;align-items:center;gap:10px}
+.day-num{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0;font-family:var(--mono)}
+.day-ht{font-size:13px;font-weight:700;margin-bottom:2px}
+.day-hs{font-size:11px;color:var(--muted);font-family:var(--mono)}
+.day-chev{font-size:18px;color:var(--muted);transition:transform .22s;line-height:1}
+.day-node.open .day-chev{transform:rotate(180deg);color:var(--p2)}
+.day-body{display:none;padding:8px 0 2px}
+.day-node.open .day-body{display:block}
+.day-body-inner{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:480px){.day-body-inner{grid-template-columns:1fr}}
+.day-group{background:var(--bg);border:1px solid var(--brd);border-radius:var(--radm);padding:10px 12px}
+.day-g-lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;padding:3px 8px;border-radius:20px;display:inline-block}
+.lbl-a{background:rgba(37,99,235,.15);color:#60A5FA}
+.lbl-b{background:rgba(5,150,105,.15);color:#34D399}
+.day-g-text{font-size:12px;color:var(--muted);line-height:1.65}
+
+/* ── PROJECT CARDS ── */
+.proj-section-title{font-size:14px;font-weight:700;margin:1.25rem 0 .75rem;display:flex;align-items:center;gap:8px}
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;margin-bottom:.75rem}
+.proj-card{background:var(--bg2);border:1px solid var(--brd);border-radius:var(--rad);padding:1.1rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.proj-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--p),var(--b));opacity:0;transition:opacity .2s}
+.proj-card:hover{border-color:var(--p);transform:translateY(-3px);box-shadow:0 8px 30px rgba(124,58,237,.2)}
+.proj-card:hover::before{opacity:1}
+.proj-card.sel{border-color:var(--p);box-shadow:0 0 0 2px rgba(124,58,237,.3)}
+.proj-card.sel::before{opacity:1}
+.proj-ico{font-size:32px;margin-bottom:10px}
+.proj-name{font-size:13px;font-weight:700;margin-bottom:5px;color:var(--txt)}
+.proj-desc{font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6}
+.proj-tags{display:flex;flex-wrap:wrap;gap:4px}
+.ptag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--bg3);color:var(--muted);border:1px solid var(--brd)}
+
+/* ── PROJECT DETAIL ── */
+.detail-box{background:var(--bg2);border:1px solid var(--brd);border-radius:var(--rad);padding:1.5rem;margin-top:.75rem;animation:fadeUp .22s ease}
+.detail-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:1.25rem}
+.detail-ico{font-size:40px}
+.detail-name{font-size:17px;font-weight:800;margin-bottom:4px}
+.detail-desc{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:1rem}
+.detail-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1.25rem}
+.detail-meta .ptag{padding:4px 10px;font-size:11px}
+.steps-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.75rem}
+.steps-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.steps-list li{display:flex;gap:10px;align-items:flex-start;font-size:12px;color:var(--muted);line-height:1.6}
+.step-num{min-width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--b));color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:1.25rem}
+@media(max-width:500px){.detail-grid{grid-template-columns:1fr}}
+.detail-section{background:var(--bg3);border:1px solid var(--brd);border-radius:var(--radm);padding:1rem}
+.ds-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.6rem}
+.skill-pill{display:inline-flex;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;margin:2px;background:var(--bg4);color:var(--muted);border:1px solid var(--brd)}
+.difficulty-bar{display:flex;align-items:center;gap:8px;margin-top:.5rem}
+.diff-dots{display:flex;gap:4px}
+.diff-dot{width:10px;height:10px;border-radius:50%;background:var(--bg4);border:1px solid var(--brd)}
+.diff-dot.on{background:var(--p)}
+
+/* ── SCHEDULE ── */
+.sched-day-tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
+.sched-tab{padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;border-radius:var(--radm);border:1px solid var(--brd);background:var(--bg2);color:var(--muted);font-family:var(--font);transition:all .18s}
+.sched-tab.on{background:linear-gradient(135deg,var(--p),var(--b));color:#fff;border-color:transparent;box-shadow:0 4px 14px rgba(124,58,237,.3)}
+.sched-tab:hover:not(.on){border-color:var(--brd2);color:var(--txt)}
+.sched-block{display:flex;gap:14px;padding:14px;margin-bottom:8px;background:var(--bg2);border-radius:var(--radm);border:1px solid var(--brd);transition:border-color .18s;align-items:flex-start}
+.sched-block:hover{border-color:var(--brd2)}
+.sched-time-col{min-width:70px;text-align:right}
+.sched-time{font-size:10px;font-weight:700;font-family:var(--mono);letter-spacing:.04em;padding:3px 7px;border-radius:20px;display:inline-block;margin-bottom:4px}
+.sched-dur{font-size:9px;color:var(--muted);font-family:var(--mono)}
+.sched-divider{width:2px;border-radius:2px;background:var(--brd2);align-self:stretch;flex-shrink:0}
+.sched-content{flex:1}
+.sched-name{font-size:13px;font-weight:700;margin-bottom:4px}
+.sched-desc{font-size:12px;color:var(--muted);line-height:1.6}
+.sched-tips{margin-top:1rem;background:rgba(217,119,6,.08);border:1px solid rgba(217,119,6,.25);border-radius:var(--rad);padding:1rem}
+.sched-tips-t{font-size:12px;font-weight:700;color:#FCD34D;margin-bottom:6px}
+.sched-tips p{font-size:12px;color:#FDE68A;line-height:1.65}
+
+/* ── PARENTS ── */
+.parent-feature{display:flex;gap:14px;align-items:flex-start;padding:1rem 0;border-bottom:1px solid var(--brd)}
+.parent-feature:last-child{border:none;padding-bottom:0}
+.pf-ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.pf-t{font-size:13px;font-weight:700;margin-bottom:4px}
+.pf-d{font-size:12px;color:var(--muted);line-height:1.6}
+.timeline-events{position:relative;padding-left:26px}
+.timeline-events::before{content:'';position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:linear-gradient(180deg,var(--p),var(--b),var(--g),var(--o))}
+.tev{position:relative;margin-bottom:14px}
+.tev::before{content:'';position:absolute;left:-22px;top:7px;width:12px;height:12px;border-radius:50%;background:var(--p);box-shadow:0 0 8px rgba(124,58,237,.5)}
+.tev-day{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:var(--mono);color:var(--p2);margin-bottom:3px}
+.tev-t{font-size:13px;font-weight:700;margin-bottom:3px}
+.tev-d{font-size:12px;color:var(--muted);line-height:1.6}
+.tev:nth-child(4)::before{background:var(--o);box-shadow:0 0 8px rgba(217,119,6,.5)}
+.tev:nth-child(4) .tev-day{color:#FCD34D}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:1rem}
+@media(max-width:500px){.info-grid{grid-template-columns:1fr}}
+.info-card{background:var(--bg3);border:1px solid var(--brd);border-radius:var(--radm);padding:1rem}
+.info-card-t{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.6rem}
+.info-card ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+.info-card li{font-size:12px;color:var(--txt);display:flex;align-items:flex-start;gap:7px;line-height:1.5}
+.info-card li::before{content:'→';color:var(--p2);font-size:11px;font-weight:700;margin-top:1px;flex-shrink:0}
+.faq-item{background:var(--bg3);border:1px solid var(--brd);border-radius:var(--radm);padding:1rem;margin-bottom:8px;cursor:pointer;transition:border-color .18s}
+.faq-item:hover{border-color:var(--brd2)}
+.faq-item.open{border-color:var(--p)}
+.faq-q{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600}
+.faq-chev{font-size:18px;color:var(--muted);transition:transform .2s;line-height:1}
+.faq-item.open .faq-chev{transform:rotate(180deg);color:var(--p2)}
+.faq-a{display:none;font-size:12px;color:var(--muted);margin-top:.75rem;line-height:1.7;padding-top:.75rem;border-top:1px solid var(--brd)}
+.faq-item.open .faq-a{display:block}
+
+/* ── SECTION HEADER ── */
+.section-header{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
+.sec-icon{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.sec-title{font-size:16px;font-weight:800}
+.sec-sub{font-size:12px;color:var(--muted)}
+
+/* ── CHIP ── */
+.chip{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.04em}
+.chip-a{background:rgba(37,99,235,.15);color:#60A5FA}
+.chip-b{background:rgba(5,150,105,.15);color:#34D399}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">🚀 Образовательная программа</div>
+  <div class="hero-title">Лагерь <span>Программирования</span></div>
+  <div class="hero-sub">8 дней · Возраст 10–18 лет · Python · Java · JavaScript · Проекты с ИИ</div>
+  <div class="hero-badges">
+    <span class="hbadge">📅 8 дней</span>
+    <span class="hbadge">👥 2 группы</span>
+    <span class="hbadge">⏱ 90 мин × 2/день</span>
+    <span class="hbadge">🤖 ИИ-проекты</span>
+    <span class="hbadge">🏆 30+ проектов</span>
+    <span class="hbadge">🎓 Сертификаты</span>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="nbtn on" onclick="goPage('overview')"><span class="ni">🗂</span> Обзор</button>
+  <button class="nbtn" onclick="goPage('python')"><span class="ni">🐍</span> Python</button>
+  <button class="nbtn" onclick="goPage('java')"><span class="ni">☕</span> Java</button>
+  <button class="nbtn" onclick="goPage('js')"><span class="ni">⚡</span> JavaScript</button>
+
+</div>
+
+<!-- ══ OVERVIEW ══ -->
+<div id="page-overview" class="page on">
+  <div class="stat-row">
+    <div class="stat"><div class="stat-n">8</div><div class="stat-l">Дней</div></div>
+    <div class="stat"><div class="stat-n">2</div><div class="stat-l">Урока/день</div></div>
+    <div class="stat"><div class="stat-n">90м</div><div class="stat-l">За урок</div></div>
+    <div class="stat"><div class="stat-n">3</div><div class="stat-l">Языка</div></div>
+    <div class="stat"><div class="stat-n">30+</div><div class="stat-l">Проектов</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><div class="cico" style="background:rgba(124,58,237,.15)">👥</div>Структура групп</div>
+    <div class="group-grid">
+      <div class="group-card group-a">
+        <div class="group-label">Группа А — Новички</div>
+        <div class="group-desc">Без опыта программирования. Начинаем с нуля — переменные, циклы, логика. Пошаговое уверенное обучение. Никакого стресса!</div>
+      </div>
+      <div class="group-card group-b">
+        <div class="group-label">Группа Б — Опытные</div>
+        <div class="group-desc">Есть базовые знания. Быстрый темп — алгоритмы, ООП, API и сложные проекты. Глубокое погружение в архитектуру кода.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><div class="cico" style="background:rgba(37,99,235,.15)">🗺</div>8-дневный путь обучения</div>
+    <div class="journey-item">
+      <div class="j-days" style="color:#9B59F5">Дни 1–2</div>
+      <div class="j-bar"><div class="j-bar-fill" style="width:25%;background:linear-gradient(90deg,#7C3AED,#9B59F5)"></div></div>
+      <div class="j-label">Основы программирования</div>
+    </div>
+    <div class="journey-item">
+      <div class="j-days" style="color:#34D399">Дни 3–4</div>
+      <div class="j-bar"><div class="j-bar-fill" style="width:50%;background:linear-gradient(90deg,#059669,#34D399)"></div></div>
+      <div class="j-label">Управление потоком & данные</div>
+    </div>
+    <div class="journey-item">
+      <div class="j-days" style="color:#F97316">Дни 5–6</div>
+      <div class="j-bar"><div class="j-bar-fill" style="width:75%;background:linear-gradient(90deg,#D97706,#F97316)"></div></div>
+      <div class="j-label">ИИ-инструменты & запуск проекта</div>
+    </div>
+    <div class="journey-item">
+      <div class="j-days" style="color:#FB923C">Дни 7–8</div>
+      <div class="j-bar"><div class="j-bar-fill" style="width:100%;background:linear-gradient(90deg,#DB2777,#F97316)"></div></div>
+      <div class="j-label">Финальный проект & демо 🎉</div>
+    </div>
+  </div>
+
+  <div class="ai-box">
+    <div class="ai-box-t">🤖 Интеграция ИИ — с 5-го дня</div>
+    <p>Ученики используют ChatGPT, GitHub Copilot и Claude для проектирования, отладки и улучшения проектов. Они учатся писать эффективные промпты, критически оценивать предложения ИИ и сочетать свой код с помощью ИИ — ключевой навык профессионала будущего.</p>
+  </div>
+</div>
+
+<!-- ══ PYTHON ══ -->
+<div id="page-python" class="page">
+  <div class="section-header">
+    <div class="sec-icon" style="background:rgba(37,99,235,.15)">🐍</div>
+    <div><div class="sec-title">Python — 8-дневный план</div><div class="sec-sub">Простой · Универсальный · Идеален для ИИ и анализа данных</div></div>
+  </div>
+  <div id="py-days-ru" class="day-timeline"></div>
+  <div class="proj-section-title">🎯 Выберите финальный проект</div>
+  <div class="proj-grid" id="py-proj-ru"></div>
+  <div id="py-det-ru"></div>
+</div>
+
+<!-- ══ JAVA ══ -->
+<div id="page-java" class="page">
+  <div class="section-header">
+    <div class="sec-icon" style="background:rgba(217,119,6,.15)">☕</div>
+    <div><div class="sec-title">Java — 8-дневный план</div><div class="sec-sub">Объектно-ориентированный · Структурированный · Отраслевой стандарт</div></div>
+  </div>
+  <div id="java-days-ru" class="day-timeline"></div>
+  <div class="proj-section-title">🎯 Выберите финальный проект</div>
+  <div class="proj-grid" id="java-proj-ru"></div>
+  <div id="java-det-ru"></div>
+</div>
+
+<!-- ══ JS ══ -->
+<div id="page-js" class="page">
+  <div class="section-header">
+    <div class="sec-icon" style="background:rgba(250,204,21,.1)">⚡</div>
+    <div><div class="sec-title">JavaScript — 8-дневный план</div><div class="sec-sub">Визуальный · Интерактивный · Работает прямо в браузере!</div></div>
+  </div>
+  <div id="js-days-ru" class="day-timeline"></div>
+  <div class="proj-section-title">🎯 Выберите финальный проект</div>
+  <div class="proj-grid" id="js-proj-ru"></div>
+  <div id="js-det-ru"></div>
+</div>
+
+  <div class="card">
+    <div class="card-title"><div class="cico" style="background:rgba(37,99,235,.15)">📆</div>Ключевые события</div>
+    <div class="timeline-events">
+      <div class="tev">
+        <div class="tev-day">День 1</div>
+        <div class="tev-t">Приветствие и определение уровня</div>
+        <div class="tev-d">Ученики проходят быстрое знакомство и определяются в Группу А (новички) или Б (опытные). Знакомство с преподавателем и участниками. Первые строчки кода!</div>
+      </div>
+      <div class="tev">
+        <div class="tev-day">День 4</div>
+        <div class="tev-t">Промежуточный показ</div>
+        <div class="tev-d">Посмотрите, чему научились за первые дни. Дети показывают первые мини-проекты и объясняют, как они работают.</div>
+      </div>
+      <div class="tev">
+        <div class="tev-day">День 7</div>
+        <div class="tev-t">День создания финального проекта</div>
+        <div class="tev-d">Дети полностью погружены в создание — головы опущены, код летит. Работа с ИИ-инструментами на максимуме. Пожалуйста, не отвлекайте — это их хакатон!</div>
+      </div>
+      <div class="tev">
+        <div class="tev-day">День 8 🎉</div>
+        <div class="tev-t">Финальный день демо !</div>
+        <div class="tev-d">Каждый ученик представляет свой проект перед всеми. Вручение сертификатов. Фото на память.</div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="card" style="margin-top:1rem">
+    <div class="card-title"><div class="cico" style="background:rgba(124,58,237,.15)">❓</div>Часто задаваемые вопросы</div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q">Мой ребёнок никогда не программировал — это нормально? <span class="faq-chev">▾</span></div>
+      <div class="faq-a">Абсолютно! Именно для этого существует Группа А. Мы начинаем с полного нуля — что такое переменная, как работает компьютер. К концу первого дня ребёнок напишет первые строчки рабочего кода и почувствует гордость от результата.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q">Как определяется группа A или Б? <span class="faq-chev">▾</span></div>
+      <div class="faq-a">В первый день преподаватель проводит короткую беседу-знакомство и смотрит на базовые знания. Группа определяется гибко — если ребёнок прогрессирует быстрее, его можно перевести в Группу Б. Главное — правильный темп обучения.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q">Безопасно ли использовать ИИ для детей? <span class="faq-chev">▾</span></div>
+      <div class="faq-a">Да, и это одна из главных ценностей лагеря. Мы учим детей понимать ИИ, а не просто копировать его ответы. Они узнают, где ИИ ошибается, как проверять его код и почему важно думать самостоятельно. Это цифровая грамотность для XXI века.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q">Какой язык программирования выбрать? <span class="faq-chev">▾</span></div>
+      <div class="faq-a">Python — лучший выбор для начинающих и тех, кто интересуется ИИ/данными. Java — для тех, кто хочет структурированный язык промышленного уровня. JavaScript — для тех, кто хочет сразу видеть результат в браузере и делать интерактивные сайты. Преподаватель поможет определиться в первый день.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── PAGE NAVIGATION ──
+function goPage(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.nbtn').forEach(x=>x.classList.remove('on'));
+  const pg=document.getElementById('page-'+p);
+  if(pg){pg.classList.add('on');}
+  const btns=document.querySelectorAll('.nbtn');
+  const map={overview:0,python:1,java:2,js:3,schedule:4,parents:5};
+  if(map[p]!==undefined)btns[map[p]].classList.add('on');
+}
+
+// ── COLORS ──
+const dayColors=['#7C3AED','#2563EB','#059669','#D97706','#DB2777','#0891B2','#16A34A','#EA580C'];
+
+// ── DAY DATA ──
+const DAYS={
+  python:[
+    {t:'Привет, Python!',s:'Переменные, print, input',a:'Напечатай имя, возраст, любимую игру. Пусть компьютер поздоровается с тобой по имени!',b:'Переменные + типы данных + преобразование типов. Мини-калькулятор с вводом пользователя.'},
+    {t:'Решения и магия',s:'If/else, операторы сравнения',a:'Программа «Я достаточно взрослый?». Простые программы да/нет с весёлыми ответами!',b:'Вложенные условия, цепочки elif. Калькулятор оценок с буквенными оценками.'},
+    {t:'Циклы и списки',s:'for, while, списки',a:'Таймер обратного отсчёта, список любимых блюд. Рисуем крутые узоры с циклами!',b:'Генераторы списков, enumerate. Мини-сортировщик данных с sort().'},
+    {t:'Функции и мощь',s:'def, return, параметры',a:'Функция «предсказатель судьбы» с модулем random! Волшебный 8-шар.',b:'Введение в рекурсию, множественные возвраты. Игра «угадай число» с подсказками.'},
+    {t:'Файлы и данные',s:'Файловый ввод/вывод, словари',a:'Сохрани имя в файл, прочитай обратно. Личный дневник программиста!',b:'Обработка JSON, операции со словарями. Полноценная телефонная книга.'},
+    {t:'Знакомство с ИИ-помощником',s:'ИИ-инструменты + начало проекта',a:'Используй ChatGPT для объяснения ошибок простым языком. Начни простой проект с ИИ!',b:'Введение в GitHub Copilot. ИИ добавляет функции. Отладка с помощью ИИ.'},
+    {t:'День создания проекта',s:'Полный проект + ИИ',a:'Управляемая разработка с преподавателем + ИИ. Парное программирование — двое, один проект!',b:'Самостоятельная разработка, расширенные цели, интеграция ИИ-функций.'},
+    {t:'День демо! 🎉',s:'Представляй, отмечай, вдохновляй',a:'Демо проекта! Объясни, что он делает. 2-минутная презентация — все аплодируют!',b:'Полное демо с рассказом об ИИ-коллаборации. Разбор кода перед группой!'},
+  ],
+  java:[
+    {t:'Запуск Java',s:'Установка, Hello World, переменные',a:'Установи IntelliJ, напечатай имя + возраст. Основы синтаксиса Java!',b:'Примитивные и ссылочные типы, приведение типов, соглашения Java.'},
+    {t:'Логические машины',s:'Условия, switch, Scanner',a:'Симулятор светофора! Красный, жёлтый или зелёный? Программа реагирует!',b:'Switch, тернарные операторы. Генератор отчёта об оценках.'},
+    {t:'Циклы и массивы',s:'for/while/do-while, массивы',a:'Таблица умножения. Хранение оценок класса в массиве.',b:'Многомерные массивы, расширенный for. Введение в алгоритмы сортировки.'},
+    {t:'Мир ООП',s:'Классы, объекты, методы',a:'Создай класс Animal. Объекты Dog, Cat. Пусть говорят разными голосами!',b:'Наследование, полиморфизм, абстрактные классы. Полная иерархия животных.'},
+    {t:'Коллекции и данные',s:'ArrayList, HashMap',a:'Список покупок с ArrayList. Добавляй, удаляй, отображай.',b:'HashMap со счетами. Вычисляй статистику. Основы файлового ввода/вывода.'},
+    {t:'ИИ-инструменты и запуск',s:'ИИ-программирование + дизайн',a:'Используй ИИ для написания класса. Пойми и измени код.',b:'Copilot для шаблонного кода. Проектируй архитектуру с помощью ИИ.'},
+    {t:'Спринт создания проекта',s:'Полная разработка с ИИ',a:'Управляемое создание. Преподаватель + парное программирование с ИИ.',b:'Самостоятельная разработка. Введение в JUnit-тестирование.'},
+    {t:'День демо Java! 🎉',s:'Представляй и отмечай',a:'Покажи проект! Объясни один созданный класс.',b:'Полное демо с выбором дизайна ООП. Разбор кода!'},
+  ],
+  js:[
+    {t:'Начало браузерной магии',s:'Консоль, переменные, основы DOM',a:'Открой консоль браузера. Изменяй цвета страницы! alert() и prompt().',b:'Манипуляции с DOM, querySelector, события. Кнопки меняют текст.'},
+    {t:'Интерактивные элементы',s:'События, обработчики, изменения CSS',a:'Счётчик кликов. Изменение цвета фона по клику!',b:'Слушатели событий, множественные события, переключение CSS-классов.'},
+    {t:'Массивы и циклы в DOM',s:'Циклы for, массивы, динамический HTML',a:'Список дел. Добавляй пункты, показывай на странице. Циклы в деле!',b:'Методы массивов: map, filter, reduce. Динамический DOM.'},
+    {t:'Функции и формы',s:'Функции, обработка форм, валидация',a:'Форма с именем, которая говорит привет! Простая валидация.',b:'События форм, preventDefault, сложная валидация, local storage.'},
+    {t:'API и Fetch',s:'Fetch API, JSON, async/await',a:'Получи анекдот из API. Отобрази на странице!',b:'async/await, обработка ошибок, множественные API, состояния загрузки.'},
+    {t:'ИИ-инструменты и запуск',s:'ИИ-программирование + дизайн',a:'ИИ создаёт CSS-анимацию. Пойми, что сгенерировано, измени под себя.',b:'ИИ генерирует компонент. Проверяй, изменяй, интегрируй в проект.'},
+    {t:'День создания проекта',s:'Полный JS-проект + ИИ',a:'Управляемая разработка с готовыми функциями. Настраивай по своему вкусу!',b:'Полная самостоятельная разработка. Адаптивный дизайн, несколько представлений.'},
+    {t:'Веб-день демо! 🎉',s:'Поделись своим сайтом',a:'Открой проект в браузере. Покажи всем! Объясни одну функцию.',b:'Полное демо на проекторе. Мобильный вид, обзор всех функций.'},
+  ]
+};
+
+// ── PROJECT DATA ──
+const PROJECTS={
+  python:[
+    {ico:'🌦️',name:'ИИ-помощник по погоде',desc:'Введи город — получи факты о погоде и прогноз с эмодзи через API. Используй ИИ для написания весёлых описаний!',tags:['API','JSON','ИИ-промпты'],difficulty:2,duration:'3–4 часа',skills:['requests','json','OpenWeatherMap API','f-строки','циклы'],steps:['Подключись к OpenWeatherMap API через библиотеку requests','Разбери JSON: температура, влажность, описание погоды','Создай функцию weather_emoji() — жарко 🔥, холодно ❄️, дождь 🌧️','Используй ChatGPT API для генерации весёлых описаний погоды','Добавь прогноз на 5 дней с циклом по JSON-массиву','Бонус: сохраняй историю запросов в файл'],ai:'ИИ помогает писать промпты для описаний, объясняет структуру JSON и предлагает новые функции.'},
+    {ico:'🎮',name:'Текстовая приключенческая игра',desc:'Игра-история, где твой выбор меняет всё. Исследуй, сражайся, находи сокровища!',tags:['Словари','Функции','Сторителлинг'],difficulty:1,duration:'2–3 часа',skills:['словари','функции','random','if/else','циклы'],steps:['Создай карту как словарь комнат: {name, description, exits, items}','Напиши функции для каждой комнаты и действия','Добавь систему инвентаря (список предметов)','Создай случайные события и врагов с random','ИИ генерирует описания комнат и диалоги персонажей','Добавь систему HP и сражений'],ai:'ИИ пишет описания комнат, придумывает сюжетные повороты и NPC-диалоги.'},
+    {ico:'🤖',name:'Личный ИИ-ассистент',desc:'Чат-бот, который помнит твоё имя, рассказывает анекдоты и помогает с домашними заданиями.',tags:['ИИ API','Чат-бот','Файлы'],difficulty:3,duration:'4–5 часов',skills:['API-запросы','JSON','файлы','функции','словари'],steps:['Построй цикл разговора: ввод → обработка → ответ','Добавь команды: /joke, /fact, /math, /help','Сохраняй имя и предпочтения пользователя в JSON-файл','Интегрируй ChatGPT API для умных ответов на любые вопросы','Добавь личность: имя ассистента, стиль общения','Бонус: история разговора сохраняется между сессиями'],ai:'Центральный инструмент проекта — ChatGPT API обрабатывает сложные вопросы.'},
+    {ico:'📊',name:'Исследователь данных',desc:'Загрузи CSV-датасет (фильмы, спорт, игры) и создай красивую визуализацию с анализом!',tags:['CSV','matplotlib','ИИ-анализ'],difficulty:3,duration:'4–5 часов',skills:['csv','matplotlib','функции','списки','словари'],steps:['Считай CSV с помощью встроенного модуля csv','Вычисли средние значения, минимум, максимум','Построй столбчатую диаграмму с matplotlib','Добавь интерактивное меню для выбора анализа','Попроси ИИ: «Какие закономерности ты видишь в этих данных?»','Бонус: экспортируй отчёт в текстовый файл'],ai:'ИИ интерпретирует данные, находит тренды и предлагает дополнительные вопросы.'},
+    {ico:'🌍',name:'Приложение-переводчик',desc:'Введи по-русски — получи на 5 языках. Свой мини Google Переводчик с голосом!',tags:['API','Словари','UI'],difficulty:2,duration:'3–4 часа',skills:['googletrans','словари','функции','файлы','циклы'],steps:['Подключи googletrans или DeepL API','Создай словарь языков: {код: название}','Цикл для ввода и перевода на несколько языков','Добавь функцию «слово дня» из случайного источника','ИИ объясняет грамматические правила выбранного языка','Бонус: сохраняй историю переводов'],ai:'ИИ объясняет грамматику, даёт примеры использования слов в контексте.'},
+  ],
+  java:[
+    {ico:'🏦',name:'Умная банковская система',desc:'Полноценное банковское приложение со счетами, депозитами, снятием средств и историей транзакций!',tags:['ООП','Коллекции','Файлы'],difficulty:3,duration:'4–5 часов',skills:['Классы','ArrayList','File I/O','Исключения','Форматирование'],steps:['Создай класс Account: номер, баланс, тип счёта','Реализуй методы deposit(), withdraw(), getBalance()','Храни счета в ArrayList с поиском по номеру','Сохраняй историю транзакций в файл','Добавь класс Bank для управления всеми счетами','ИИ добавляет логику обнаружения мошенничества'],ai:'ИИ предлагает логику проверки аномальных транзакций и улучшения архитектуры.'},
+    {ico:'📚',name:'Менеджер оценок школы',desc:'Отслеживай учеников, предметы, оценки. Автоматические отчёты и поиск лучших учеников!',tags:['HashMap','Сортировка','Отчёты'],difficulty:2,duration:'3–4 часа',skills:['HashMap','ArrayList','Сортировка','Форматирование','Файлы'],steps:['Класс Student: имя, ID, HashMap оценок по предметам','Добавление/обновление оценок через текстовое меню','Вычисление GPA с алгоритмом среднего','Сортировка учеников по GPA (Collections.sort)','Генерация текстового отчёта в файл','ИИ предлагает советы по улучшению оценок'],ai:'ИИ анализирует успеваемость и генерирует персональные рекомендации для учеников.'},
+    {ico:'🎲',name:'Игра-викторина на Java',desc:'Многопользовательская викторина с категориями, очками, таймером и таблицей лидеров!',tags:['Массивы','ООП','Игровая логика'],difficulty:2,duration:'3–4 часа',skills:['Классы','Массивы','Scanner','Random','Коллекции'],steps:['Класс Question: вопрос, варианты, правильный ответ, сложность','QuizEngine: случайный выбор вопросов, управление игрой','Класс Player с отслеживанием очков и статистики','Таблица лидеров с сортировкой (TreeMap)','Таймер через System.currentTimeMillis()','ИИ генерирует новые вопросы по любой теме'],ai:'ИИ создаёт неограниченные наборы вопросов по любой теме на заданном уровне сложности.'},
+    {ico:'🏪',name:'Управление запасами',desc:'Система для магазина: продукты, цены, запасы. Оповещения о низком запасе и автоотчёты!',tags:['Коллекции','Файлы','Бизнес-логика'],difficulty:3,duration:'4–5 часов',skills:['Классы','ArrayList','HashMap','File I/O','Форматирование'],steps:['Класс Product: название, цена, количество, категория','Добавление/удаление/обновление запасов через меню','Вычисление общей стоимости всего инвентаря','Оповещение при запасе ниже порогового значения','Генерация отчётов о продажах в файл','ИИ прогнозирует потребности в пополнении запасов'],ai:'ИИ анализирует тренды продаж и предлагает оптимальные уровни запасов.'},
+    {ico:'🌐',name:'Карточки для изучения языка',desc:'Цифровая система флэш-карточек с словарём, баллами и интервальным повторением!',tags:['Структуры данных','Обучение','ИИ'],difficulty:2,duration:'3–4 часа',skills:['Классы','LinkedList','Random','File I/O','Алгоритмы'],steps:['Класс Flashcard: слово, перевод, уровень, дата повторения','Режим изучения со случайным выбором карточек','Отслеживание баллов и полос успеха','Алгоритм интервального повторения (SM-2)','Импорт/экспорт карточек из CSV','ИИ генерирует примеры предложений для каждого слова'],ai:'ИИ создаёт контекстные примеры предложений и объясняет тонкости использования слов.'},
+  ],
+  js:[
+    {ico:'🎨',name:'Создатель пиксельного арта',desc:'Рисуй пиксельный арт в браузере с выбором цвета, инструментами и возможностью сохранения!',tags:['Canvas','События','CSS Grid'],difficulty:2,duration:'3–4 часа',skills:['DOM','Events','CSS Grid','Canvas API','localStorage'],steps:['Создай CSS-сетку 20×20 ячеек через JavaScript','Обработчик клика для окраски ячеек выбранным цветом','Цветовая палитра + пипетка для выбора цвета','Инструменты: карандаш, заливка, ластик','Сохрани шедевр как PNG (canvas.toDataURL)','ИИ предлагает цветовые схемы для твоих идей'],ai:'ИИ предлагает цветовые палитры, помогает с CSS-анимациями и идеями для рисунков.'},
+    {ico:'🎵',name:'Музыкальный плеер',desc:'Веб-плеер с плейлистом, аудио-визуализатором и рекомендациями по настроению!',tags:['Web Audio API','Fetch','UI'],difficulty:3,duration:'4–5 часов',skills:['Web Audio API','Fetch API','DOM','Canvas','CSS анимации'],steps:['HTML5 audio с кастомным UI вместо стандартного','Плейлист из массива объектов с метаданными','Прогресс-бар с обновлением в реальном времени','Аудио-визуализатор через Web Audio API и Canvas','Получи информацию о треках из MusicBrainz API','ИИ предлагает треки по введённому настроению'],ai:'ИИ анализирует настроение и предлагает подборку треков, пишет описания к плейлистам.'},
+    {ico:'🌤️',name:'Панель погоды',desc:'Красивая панель погоды с прогнозом на 5 дней, поиском городов и анимированными иконками!',tags:['Fetch API','JSON','CSS анимации'],difficulty:2,duration:'3–4 часа',skills:['Fetch API','JSON','async/await','CSS анимации','DOM'],steps:['Получи данные из OpenWeatherMap API с async/await','Отобрази текущую температуру, влажность, ветер','Карточки прогноза на 5 дней из JSON-массива','Анимированные CSS-иконки: солнце вращается, облака плывут','Сохранение последнего города в localStorage','ИИ пишет весёлые описания погоды'],ai:'ИИ создаёт юмористические описания погоды и предлагает советы что надеть.'},
+    {ico:'📝',name:'Умное приложение для заметок',desc:'Заметки с тегами, поиском в реальном времени, автосохранением и ИИ-резюмированием!',tags:['localStorage','ИИ API','Поиск'],difficulty:2,duration:'3–4 часа',skills:['localStorage','DOM','Events','Fetch API','CSS'],steps:['CRUD операции: создание, редактирование, удаление заметок','Автосохранение в localStorage каждые 2 секунды','Система тегов с цветовой фильтрацией','Поиск по заголовку и содержимому в реальном времени','Кнопка ИИ: «Создать краткое резюме этой заметки»','Экспорт заметок в текстовый файл'],ai:'ИИ суммирует длинные заметки, предлагает теги и помогает структурировать мысли.'},
+    {ico:'🎯',name:'Создатель викторин',desc:'Создай И сыграй в свою викторину! Делись с друзьями, отслеживай рекорды и используй ИИ!',tags:['Массивы','Таймер','localStorage'],difficulty:2,duration:'3–4 часа',skills:['Массивы','setInterval','localStorage','DOM','JSON'],steps:['Конструктор викторин: добавляй вопросы и варианты ответов','Перемешивание вопросов алгоритмом Fisher-Yates','Обратный отсчёт 30 секунд на каждый вопрос','Таблица рекордов в localStorage с сортировкой','Экспорт/импорт викторин через JSON','ИИ генерирует вопросы по любой теме'],ai:'ИИ создаёт полные наборы вопросов по любой теме за секунды.'},
+  ]
+};
+
+function buildDays(days, containerId) {
+  const c = document.getElementById(containerId);
+  if(!c) return;
+  let h = '';
+  days.forEach((d, i) => {
+    h += `<div class="day-node" id="dn-${containerId}-${i}">
+      <div class="day-header" onclick="toggleDay('${containerId}',${i})">
+        <div class="day-hl">
+          <div class="day-num" style="background:${dayColors[i]}">D${i+1}</div>
+          <div><div class="day-ht">${d.t}</div><div class="day-hs">${d.s}</div></div>
+        </div>
+        <span class="day-chev">▾</span>
+      </div>
+      <div class="day-body">
+        <div class="day-body-inner">
+          <div class="day-group">
+            <div class="day-g-lbl lbl-a">Группа А — Новички</div>
+            <div class="day-g-text">${d.a}</div>
+          </div>
+          <div class="day-group">
+            <div class="day-g-lbl lbl-b">Группа Б — Опытные</div>
+            <div class="day-g-text">${d.b}</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  });
+  c.innerHTML = h;
+}
+
+function toggleDay(cid, i) {
+  document.getElementById(`dn-${cid}-${i}`).classList.toggle('open');
+}
+
+function buildProjects(projects, gridId, detId) {
+  const c = document.getElementById(gridId);
+  if(!c) return;
+  let h = '';
+  projects.forEach((p,i)=>{
+    const tags = p.tags.map(t=>`<span class="ptag">${t}</span>`).join('');
+    h+=`<div class="proj-card" id="pc-${gridId}-${i}" onclick="showProj('${gridId}','${detId}',${i})">
+      <div class="proj-ico">${p.ico}</div>
+      <div class="proj-name">${p.name}</div>
+      <div class="proj-desc">${p.desc}</div>
+      <div class="proj-tags">${tags}</div>
+    </div>`;
+  });
+  c.innerHTML = h;
+}
+
+
+// ── FAQ ──
+function toggleFaq(el){el.classList.toggle('open')}
+
+// ── INIT ──
+buildDays(DAYS.python,'py-days-ru');
+buildDays(DAYS.java,'java-days-ru');
+buildDays(DAYS.js,'js-days-ru');
+buildProjects(PROJECTS.python,'py-proj-ru','py-det-ru');
+buildProjects(PROJECTS.java,'java-proj-ru','java-det-ru');
+buildProjects(PROJECTS.js,'js-proj-ru','js-det-ru');
+</script>
+</body>
+</html>
