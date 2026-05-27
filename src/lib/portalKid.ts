@@ -26,6 +26,17 @@ async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promis
   try { return await fn(client); } finally { await client.end(); }
 }
 
+// PostgreSQL BIGSERIAL/BIGINT возвращается из node-pg как строка (для сохранности
+// 64-битной точности). Для наших ID (< 2^53) безопасно сразу кастовать к number,
+// иначе в signSession `typeof sub === 'number'` не срабатывает и sub не попадает в JWT.
+function normaliseKidRow(r: any): Kid {
+  return {
+    ...r,
+    id: r.id == null ? r.id : Number(r.id),
+    alfa_id: r.alfa_id == null ? null : Number(r.alfa_id),
+  };
+}
+
 /** Все ученики (active + неактивные). */
 export async function listKids(includeArchived = false): Promise<Kid[]> {
   const r = await withClient(async (c) => {
@@ -38,7 +49,7 @@ export async function listKids(includeArchived = false): Promise<Kid[]> {
          ORDER BY room_number NULLS LAST, name`,
       [includeArchived]
     );
-    return q.rows as Kid[];
+    return q.rows.map(normaliseKidRow);
   });
   return r ?? [];
 }
@@ -53,7 +64,7 @@ export async function findKidByCode(code: string): Promise<Kid | null> {
          FROM portal_kid WHERE code = $1 AND active = TRUE`,
       [code]
     );
-    return (q.rows[0] as Kid) ?? null;
+    return q.rows[0] ? normaliseKidRow(q.rows[0]) : null;
   });
   return r ?? null;
 }
