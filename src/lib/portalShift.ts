@@ -186,18 +186,18 @@ export async function archiveShift(id: number): Promise<void> {
 /** Создать/обновить событие; возвращает id. */
 export async function upsertEvent(e: {
   id?: number; shiftId: number; date: string; start_time: string | null; end_time: string | null;
-  title: string; activity_type: string | null; roles: string[]; sort: number;
+  title: string; activity_type: string | null; roles: string[]; sort: number; notes?: string | null;
 }): Promise<number | null> {
   return await withClient(async (c) => {
     if (e.id) {
       await c.query(
-        "UPDATE shift_event SET date=$2,start_time=$3,end_time=$4,title=$5,activity_type=$6,roles=$7,sort=$8 WHERE id=$1",
-        [e.id, e.date, e.start_time, e.end_time, e.title, e.activity_type, e.roles, e.sort]);
+        "UPDATE shift_event SET date=$2,start_time=$3,end_time=$4,title=$5,activity_type=$6,roles=$7,sort=$8,notes=$9 WHERE id=$1",
+        [e.id, e.date, e.start_time, e.end_time, e.title, e.activity_type, e.roles, e.sort, e.notes ?? null]);
       return e.id;
     }
     const r = await c.query(
-      "INSERT INTO shift_event(shift_id,date,start_time,end_time,title,activity_type,roles,sort) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id",
-      [e.shiftId, e.date, e.start_time, e.end_time, e.title, e.activity_type, e.roles, e.sort]);
+      "INSERT INTO shift_event(shift_id,date,start_time,end_time,title,activity_type,roles,sort,notes) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id",
+      [e.shiftId, e.date, e.start_time, e.end_time, e.title, e.activity_type, e.roles, e.sort, e.notes ?? null]);
     return r.rows[0].id as number;
   });
 }
@@ -213,6 +213,13 @@ export async function upsertChecklist(cl: {
     }
     const r = await c.query("INSERT INTO checklist(key,title,items) VALUES($1,$2,$3) RETURNING id", [cl.key, cl.title, JSON.stringify(cl.items)]);
     return r.rows[0].id as number;
+  });
+}
+
+/** Удалить событие (каскадно — все привязки чек-листов и отметки). */
+export async function deleteEvent(id: number): Promise<void> {
+  await withClient(async (c) => {
+    await c.query("DELETE FROM shift_event WHERE id=$1", [id]);
   });
 }
 
