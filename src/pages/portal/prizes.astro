@@ -88,11 +88,34 @@ const CAT_LABELS: Record<string, string> = {
       </label>
     </div>
 
-    <div class="mt-3 grid gap-3 sm:grid-cols-2">
-      <label class="block">
-        <span class="block text-[13px] font-medium text-body-muted">Наценка × для призов из Ozon</span>
+    <div class="mt-3">
+      <div class="mb-2 text-[13px] font-semibold uppercase tracking-wide text-body-muted">
+        Цены физических призов (Ozon → игр. ₽)
+      </div>
+      <div class="grid gap-3 sm:grid-cols-3">
+        <label class="block">
+          <span class="block text-[13px] font-medium text-body-muted">Мин. дней копления (дешёвый)</span>
+          <input id="set-min-days" type="number" min="1" max="14" step="1" value="3"
+                 class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
+        </label>
+        <label class="block">
+          <span class="block text-[13px] font-medium text-body-muted">Макс. дней копления (премиум)</span>
+          <input id="set-max-days" type="number" min="1" max="14" step="1" value="8"
+                 class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
+        </label>
+        <label class="block">
+          <span class="block text-[13px] font-medium text-body-muted">Порог «коллективного» приза, ₽ Ozon</span>
+          <input id="set-mega-threshold" type="number" min="500" step="500" value="5000"
+                 class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
+          <span class="mt-1 block text-[12px] text-body-muted">Выше — лот для всего лагеря</span>
+        </label>
+      </div>
+      <label class="mt-2 inline-flex items-center gap-2 text-[13px] text-body-muted">
+        <input id="set-use-markup" type="checkbox"
+               class="rounded border-border focus:ring-primary" />
+        Или использовать простую наценку ×
         <input id="set-markup" type="number" min="1" step="0.1" value="3"
-               class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
+               class="ml-2 w-[80px] rounded-[8px] border border-border bg-white px-2 py-1 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
       </label>
     </div>
 
@@ -456,14 +479,18 @@ const CAT_LABELS: Record<string, string> = {
       }
       const set = Object.assign({
         kids: 35, days: 10, phoneMin: 10, markup: 3, round: 50, daily: 600, targetExtract: 75,
+        minDays: 3, maxDays: 8, megaThreshold: 5000, useMarkup: false,
       }, loadSettings());
       const idMap = {
         'set-kids':'kids','set-days':'days','set-phone-min':'phoneMin','set-markup':'markup','set-round':'round','set-daily':'daily','set-target-extract':'targetExtract',
+        'set-min-days':'minDays','set-max-days':'maxDays','set-mega-threshold':'megaThreshold',
       };
       for (const id of Object.keys(idMap)) {
         const el = document.getElementById(id);
         if (el) el.value = String(set[idMap[id]] ?? '');
       }
+      const useMarkupEl = document.getElementById('set-use-markup');
+      if (useMarkupEl) useMarkupEl.checked = !!set.useMarkup;
 
       function readSettings() {
         const num = (id, min) => Math.max(min, Number(document.getElementById(id).value) || min);
@@ -475,6 +502,10 @@ const CAT_LABELS: Record<string, string> = {
           round: num('set-round', 1),
           daily: Math.max(0, Number(document.getElementById('set-daily').value) || 0),
           targetExtract: Math.max(0, Math.min(100, Number(document.getElementById('set-target-extract').value) || 75)),
+          minDays: num('set-min-days', 1),
+          maxDays: num('set-max-days', 1),
+          megaThreshold: Math.max(0, Number(document.getElementById('set-mega-threshold').value) || 0),
+          useMarkup: !!(document.getElementById('set-use-markup') && document.getElementById('set-use-markup').checked),
         };
       }
       function dailyPotential(s) { return s.daily; }
@@ -506,9 +537,44 @@ const CAT_LABELS: Record<string, string> = {
       const prizeRows = Array.from(document.querySelectorAll('[data-prize-row]'));
       let showHidden = false;
 
+      // Диапазон Ozon-цен по видимым позициям — для log-интерполяции дней копления.
+      function ozonRange() {
+        let lo = Infinity, hi = 0;
+        prizeRows.forEach((r) => {
+          if (r.dataset.hidden === '1') return;
+          const p = Number(r.dataset.price || 0);
+          if (p <= 0) return;
+          if (p < lo) lo = p;
+          if (p > hi) hi = p;
+        });
+        if (!isFinite(lo)) lo = 1;
+        return { lo, hi };
+      }
+      // Подсказка цены приза в игровых ₽: либо наценкой ×, либо «копить N дней»
+      // с log-интерполяцией от minDays до maxDays между min/max Ozon-цен.
+      function recommendedBongere(ozonPrice, s, range) {
+        if (s.useMarkup) return roundTo(ozonPrice * s.markup, s.round);
+        // коллективный приз — для дорогой штуки используем формулу группового лота
+        if (ozonPrice >= s.megaThreshold) {
+          // лот для всей смены: цена = N × выдача × дней_копления × 80% (премиум)
+          const days = Math.min(s.maxDays * 2, s.days); // дорогие копят до 2× maxDays или всю смену
+          return roundTo(s.kids * s.daily * days * 0.8, s.round);
+        }
+        // обычный приз — N дней копления, лог-распределение по диапазону цен
+        const { lo, hi } = range;
+        let ratio = 0.5;
+        if (hi > lo) {
+          ratio = (Math.log(Math.max(ozonPrice, lo)) - Math.log(lo)) / (Math.log(hi) - Math.log(lo));
+          ratio = Math.max(0, Math.min(1, ratio));
+        }
+        const days = s.minDays + (s.maxDays - s.minDays) * ratio;
+        return roundTo(s.daily * days, s.round);
+      }
+
       function recalcPrizes() {
         const s = readSettings();
         const dp = dailyPotential(s);
+        const range = ozonRange();
         let active = 0, sumBongere = 0, sumRec = 0, sumOzonVisible = 0;
         prizeRows.forEach((r) => {
           const isHidden = r.dataset.hidden === '1';
@@ -519,8 +585,13 @@ const CAT_LABELS: Record<string, string> = {
           const price = Number(r.dataset.price || 0);
           const qty = Number(r.dataset.qty || 0);
           if (!isHidden) sumOzonVisible += price * qty;
-          const rec = roundTo(price * s.markup, s.round);
-          r.querySelector('[data-recommended]').textContent = fmt(rec) + ' / шт';
+          const rec = recommendedBongere(price, s, range);
+          const isMega = !s.useMarkup && price >= s.megaThreshold;
+          const recCell = r.querySelector('[data-recommended]');
+          if (recCell) {
+            recCell.innerHTML = fmt(rec) + ' / шт' +
+              (isMega ? '<div class="text-[11px] text-amber-700 font-semibold">коллективный</div>' : '');
+          }
           const inp = r.querySelector('[data-bongere-input]');
           const v = inp.value === '' ? null : Number(inp.value);
           if (!isHidden && v != null && !isNaN(v)) sumBongere += v * qty;
@@ -564,7 +635,7 @@ const CAT_LABELS: Record<string, string> = {
         recalcActivities();
       }
 
-      ['set-kids','set-days','set-phone-min','set-markup','set-round','set-daily','set-target-extract'].forEach((id) => {
+      ['set-kids','set-days','set-phone-min','set-markup','set-round','set-daily','set-target-extract','set-min-days','set-max-days','set-mega-threshold','set-use-markup'].forEach((id) => {
         const el = document.getElementById(id);
         el.addEventListener('input', () => {
           const s = readSettings();
