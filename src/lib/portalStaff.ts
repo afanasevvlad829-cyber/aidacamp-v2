@@ -169,10 +169,18 @@ export async function setRole(telegramId: number, role: PortalRole, approvedBy: 
 /** Полный список ролей (заменяет существующий). Активная роль = первая из списка. */
 export async function setRoles(telegramId: number, roles: PortalRole[], approvedBy: number): Promise<void> {
   await withClient(async (c) => {
-    const active = roles[0] ?? null;
+    const activeRole = roles[0] ?? null;
+    // Если выдаём хотя бы одну роль — также активируем учётку (одобряем pending).
+    const willActivate = roles.length > 0;
     await c.query(
-      `UPDATE portal_staff SET roles=$2, role=$3, approved_by=$4, approved_at=now() WHERE telegram_id=$1`,
-      [telegramId, roles, active, approvedBy],
+      `UPDATE portal_staff
+          SET roles=$2,
+              role=$3,
+              active = CASE WHEN $5 THEN TRUE ELSE active END,
+              approved_by=$4,
+              approved_at=now()
+        WHERE telegram_id=$1`,
+      [telegramId, roles, activeRole, approvedBy, willActivate],
     );
   });
 }

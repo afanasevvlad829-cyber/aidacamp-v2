@@ -45,32 +45,63 @@ const roleLabel = (r: string | null | undefined): string => (r ? ROLE_LABELS[r] 
     {pending.length === 0 && <p class="text-[16px] text-body-muted">Нет ожидающих привязки.</p>}
     {pending.map((s) => (
       <div
-        class="mb-2 flex flex-wrap items-center gap-2 rounded-[16px] border border-border bg-white p-4 card-shadow"
+        class="mb-3 rounded-[16px] border border-border bg-white p-4 card-shadow"
         data-pending-id={s.id}
       >
-        <i class="bi bi-person-fill text-[18px] text-body-muted" aria-hidden="true"></i>
-        <span class="min-w-0 flex-1 text-[16px] text-navy-950">
-          {s.full_name ?? '—'}{s.tg_username ? ` @${s.tg_username}` : ''}
-          <span class="ml-1 text-body-muted">#{s.telegram_id}</span>
-        </span>
-        <select
-          class="merge-select rounded-[10px] border border-border px-3 py-2 text-[16px] text-body outline-none focus:border-primary"
-          aria-label="Привязать к placeholder"
-        >
-          <option value="">— выбери должность —</option>
-          {placeholders.map((ph) => (
-            <option value={ph.id}>
-              {ph.full_name ?? ph.staff_key} ({roleLabel(ph.role) || 'без роли'}, key: {ph.staff_key})
-            </option>
-          ))}
-        </select>
-        <button
-          class="merge-btn rounded-[12px] bg-primary px-4 py-2 text-[16px] font-semibold text-white transition hover:bg-primary-hover disabled:opacity-50"
-          disabled
-        >
-          <i class="bi bi-link-45deg mr-1" aria-hidden="true"></i>
-          Объединить
-        </button>
+        <div class="flex flex-wrap items-center gap-2">
+          <i class="bi bi-person-fill text-[18px] text-body-muted" aria-hidden="true"></i>
+          <span class="min-w-0 flex-1 text-[16px] text-navy-950">
+            {s.full_name ?? '—'}{s.tg_username ? ` @${s.tg_username}` : ''}
+            <span class="ml-1 text-body-muted">#{s.telegram_id}</span>
+          </span>
+        </div>
+
+        {/* Вариант 1: объединить с существующим placeholder (Варвара, Ташкин и т.п.) */}
+        {placeholders.length > 0 && (
+          <div class="mt-3 border-t border-border pt-3">
+            <p class="mb-2 text-[14px] font-medium text-body-muted">
+              <i class="bi bi-link-45deg mr-1" aria-hidden="true"></i>
+              Привязать к существующей должности:
+            </p>
+            <div class="flex flex-wrap items-center gap-2">
+              <select
+                class="merge-select rounded-[10px] border border-border px-3 py-2 text-[15px] text-body outline-none focus:border-primary"
+                aria-label="Привязать к placeholder"
+              >
+                <option value="">— выбери должность —</option>
+                {placeholders.map((ph) => (
+                  <option value={ph.id}>
+                    {ph.full_name ?? ph.staff_key} ({roleLabel(ph.role) || 'без роли'})
+                  </option>
+                ))}
+              </select>
+              <button class="merge-btn rounded-[10px] bg-primary px-4 py-2 text-[15px] font-semibold text-white transition hover:bg-primary-hover disabled:opacity-50" disabled>
+                Объединить
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Вариант 2: назначить роль напрямую (без привязки к placeholder — для доп. руководителя, доп. админа и т.п.) */}
+        <form method="POST" action="/api/portal/staff/roles" class="mt-3 border-t border-border pt-3">
+          <input type="hidden" name="telegram_id" value={s.telegram_id!} />
+          <p class="mb-2 text-[14px] font-medium text-body-muted">
+            <i class="bi bi-plus-circle mr-1" aria-hidden="true"></i>
+            Или назначить роли напрямую (новый сотрудник):
+          </p>
+          <div class="flex flex-wrap items-center gap-3">
+            {ROLES.map((r) => (
+              <label class="inline-flex items-center gap-1 text-[14px]">
+                <input type="checkbox" name="roles" value={r} class="h-4 w-4 rounded border-border text-primary" />
+                {roleLabel(r)}
+              </label>
+            ))}
+            <button class="rounded-[10px] bg-emerald-600 px-4 py-2 text-[15px] font-semibold text-white transition hover:bg-emerald-700">
+              <i class="bi bi-check-lg mr-1" aria-hidden="true"></i>
+              Одобрить
+            </button>
+          </div>
+        </form>
       </div>
     ))}
   </section>
