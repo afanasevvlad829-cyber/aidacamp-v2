@@ -118,31 +118,23 @@ function typeBadge(type: string): string {
       </div>
 
       <div class="grid gap-4 lg:grid-cols-[1fr_280px]">
-        {/* Левая колонка — комнаты по плану корпуса */}
+        {/* Левая колонка — комнаты по плану корпуса (CSS Grid с явными координатами) */}
         <div class="space-y-4">
           {(() => {
-            // Жёсткая раскладка крыльев — соответствует плану корпуса (как в Инвентаризации)
-            const layout = {
-              floor1: {
-                row1: { left: [20, 19, 18, 17], right: [11, 12, 13, 14] },
-                row2: { left: [21], right: [16, 15] }, // 22 — горничная, не показываем
-              },
-              floor2: {
-                row1: { left: [30, 31], right: [23, 24] },
-                row2: { left: [29, 28, 27], right: [26, 25] },
-              },
-            };
+            // Координаты из portalRooms.ts соответствуют плану корпуса
             function roomCard(roomNum: number) {
               const r = ROOMS.find((x) => x.number === roomNum);
               if (!r) return null;
               const occ = Array.from({ length: r.capacity }).map((_, i) => assignedByBed.get(`${r.number}:${i}`)).filter(Boolean).length;
               return (
-                <div class="rasselenie-room flex flex-1 flex-col rounded-[12px] border border-border bg-page p-3" data-room-number={r.number}>
+                <div class="rasselenie-room flex flex-col rounded-[12px] border border-border bg-page p-3"
+                     data-room-number={r.number}
+                     style={`grid-column: ${r.col}; grid-row: ${r.row};`}>
                   <div class="mb-2 flex items-center justify-between">
                     <div class="font-bold text-[15px] text-navy-950">№{r.number}</div>
                     <div class="text-[12px] text-body-muted">{occ}/{r.capacity}</div>
                   </div>
-                  <div class="space-y-1.5">
+                  <div class="flex-1 space-y-1.5">
                     {Array.from({ length: r.capacity }).map((_, i) => {
                       const kid = assignedByBed.get(`${r.number}:${i}`);
                       return (
@@ -153,7 +145,7 @@ function typeBadge(type: string): string {
                           data-kid-id={kid?.kid_id ?? ''}
                         >
                           {kid ? (
-                            <div class="kid-card flex flex-1 cursor-grab items-center gap-1.5 active:cursor-grabbing"
+                            <div class="kid-card flex min-w-0 flex-1 cursor-grab items-center gap-1.5 active:cursor-grabbing"
                                  draggable="true"
                                  data-kid-id={kid.kid_id}
                                  data-kid-name={kid.kid_name}>
@@ -161,7 +153,7 @@ function typeBadge(type: string): string {
                                 kid.kid_gender === 'F' ? 'bg-pink-500' : kid.kid_gender === 'M' ? 'bg-sky-500' : 'bg-slate-400'
                               }`}>{kid.kid_gender === 'F' ? 'Ж' : kid.kid_gender === 'M' ? 'М' : '?'}</span>
                               <span class="min-w-0 flex-1 truncate text-navy-950">{kid.kid_name}{kid.kid_age ? ` · ${kid.kid_age}` : ''}</span>
-                              <button type="button" class="kid-remove text-[11px] text-red-600 hover:underline" data-kid-id={kid.kid_id} title="Снять с койки">×</button>
+                              <button type="button" class="kid-remove shrink-0 text-[11px] text-red-600 hover:underline" data-kid-id={kid.kid_id} title="Снять с койки">×</button>
                             </div>
                           ) : (
                             <span class="text-body-muted">койка {i + 1}</span>
@@ -173,33 +165,28 @@ function typeBadge(type: string): string {
                 </div>
               );
             }
-            function rowEl(leftNums: number[], rightNums: number[]) {
-              return (
-                <div class="flex items-stretch gap-3">
-                  <div class="flex flex-1 gap-3">
-                    {leftNums.map((n) => roomCard(n))}
-                  </div>
-                  <div class="w-6 shrink-0 self-stretch border-x border-dashed border-slate-300"></div>
-                  <div class="flex flex-1 gap-3">
-                    {rightNums.map((n) => roomCard(n))}
-                  </div>
-                </div>
-              );
-            }
+            // Этаж 1: 9 колонок (4 левых + коридор col 5 + 4 правых)
+            const floor1 = ROOMS.filter((r) => r.floor === 1 && r.type !== 'staff');
+            // Этаж 2: 8 колонок (3 левых + коридор col 4 + 4 правых)
+            const floor2 = ROOMS.filter((r) => r.floor === 2);
             return (
               <>
                 <div class="rounded-[14px] border border-border bg-white p-4 card-shadow">
                   <h3 class="mb-3 text-[16px] font-bold text-navy-950">Этаж 1 · 22 места</h3>
-                  <div class="flex flex-col gap-3">
-                    {rowEl(layout.floor1.row1.left, layout.floor1.row1.right)}
-                    {rowEl(layout.floor1.row2.left, layout.floor1.row2.right)}
+                  <div class="grid gap-3"
+                       style="grid-template-columns: repeat(4, minmax(0, 1fr)) 24px repeat(4, minmax(0, 1fr)); grid-auto-rows: minmax(140px, auto);">
+                    {floor1.map((r) => roomCard(r.number))}
+                    <div class="pointer-events-none border-x border-dashed border-slate-300"
+                         style="grid-column: 5; grid-row: 1 / span 2;"></div>
                   </div>
                 </div>
                 <div class="rounded-[14px] border border-border bg-white p-4 card-shadow">
                   <h3 class="mb-3 text-[16px] font-bold text-navy-950">Этаж 2 · 24 места</h3>
-                  <div class="flex flex-col gap-3">
-                    {rowEl(layout.floor2.row1.left, layout.floor2.row1.right)}
-                    {rowEl(layout.floor2.row2.left, layout.floor2.row2.right)}
+                  <div class="grid gap-3"
+                       style="grid-template-columns: repeat(3, minmax(0, 1fr)) 24px repeat(4, minmax(0, 1fr)); grid-auto-rows: minmax(180px, auto);">
+                    {floor2.map((r) => roomCard(r.number))}
+                    <div class="pointer-events-none border-x border-dashed border-slate-300"
+                         style="grid-column: 4; grid-row: 1 / span 2;"></div>
                   </div>
                 </div>
               </>
