@@ -216,6 +216,13 @@ export async function upsertChecklist(cl: {
   });
 }
 
+/** Удалить шаблон чек-листа (и каскадно — все его привязки и отметки). */
+export async function deleteChecklist(id: number): Promise<void> {
+  await withClient(async (c) => {
+    await c.query("DELETE FROM checklist WHERE id=$1", [id]);
+  });
+}
+
 /** Привязать чек-лист к событию для ролей (или обновить роли существующей привязки). */
 export async function attachChecklist(eventId: number, checklistId: number, roles: string[]): Promise<void> {
   await withClient(async (c) => {

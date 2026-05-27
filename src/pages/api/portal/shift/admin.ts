@@ -2,7 +2,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { verifySessionPayload } from '../../../../lib/portalSession';
 import {
-  createShift, archiveShift, upsertEvent, upsertChecklist, attachChecklist,
+  createShift, archiveShift, upsertEvent, upsertChecklist, attachChecklist, deleteChecklist,
 } from '../../../../lib/portalShift';
 
 const ALLOWED_ROLES = ['admin', 'rukovoditel'] as const;
@@ -112,6 +112,13 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
         items: parseItems(body.items),
       });
       return ok({ id });
+    }
+
+    if (action === 'deleteChecklist') {
+      const id = asNum(body.id);
+      if (!id) return bad('id required');
+      await deleteChecklist(id);
+      return ok();
     }
 
     if (action === 'attachChecklist') {

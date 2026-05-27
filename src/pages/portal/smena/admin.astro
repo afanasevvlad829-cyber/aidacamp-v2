@@ -190,9 +190,15 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
     <section>
       <h2 class="mb-4 text-[20px] font-bold text-navy-950 md:text-[24px]">Чек-листы</h2>
       <div class="grid gap-4 lg:grid-cols-2">
-        <form method="POST" action="/api/portal/shift/admin" class={cardCls}>
+        <form id="checklist-form" method="POST" action="/api/portal/shift/admin" class={cardCls}>
           <input type="hidden" name="action" value="upsertChecklist" />
-          <h3 class="mb-3 text-[16px] font-semibold text-navy-950">Создать шаблон чек-листа</h3>
+          <input type="hidden" name="id" id="cl-id" value="" />
+          <div class="mb-3 flex items-center justify-between">
+            <h3 id="cl-form-title" class="text-[16px] font-semibold text-navy-950">Создать шаблон чек-листа</h3>
+            <button type="button" id="cl-reset" class="hidden text-[14px] text-body-muted hover:text-primary">
+              <i class="bi bi-x-lg text-[12px]" aria-hidden="true"></i> Отмена правки
+            </button>
+          </div>
           <div class="space-y-3">
             <div class="grid grid-cols-2 gap-3">
               <div>
@@ -206,11 +212,11 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
             </div>
             <div>
               <label class={labelCls} for="cl-items">Пункты (по одному в строке)</label>
-              <textarea id="cl-items" class={inputCls + ' min-h-[120px]'} name="items" placeholder="Встретить группу
+              <textarea id="cl-items" class={inputCls + ' min-h-[140px]'} name="items" placeholder="Встретить группу
 Проверить документы
 Заселить"></textarea>
             </div>
-            <button class={btnCls}><i class="bi bi-plus-lg text-[18px]" aria-hidden="true"></i>Сохранить шаблон</button>
+            <button id="cl-submit" class={btnCls}><i class="bi bi-plus-lg text-[18px]" aria-hidden="true"></i>Сохранить шаблон</button>
           </div>
         </form>
 
@@ -219,16 +225,68 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
           {checklists.length === 0 ? (
             <p class="text-[16px] text-body-muted">Шаблонов пока нет.</p>
           ) : (
-            <ul class="space-y-2 max-h-[420px] overflow-auto">
+            <ul class="space-y-2 max-h-[480px] overflow-auto">
               {checklists.map((cl) => (
-                <li class="rounded-[10px] border border-border px-3 py-2">
-                  <span class="text-[16px] text-navy-950">{cl.title}</span>
-                  <span class="ml-1 text-[14px] text-body-muted">#{cl.id}{cl.key ? ` · ${cl.key}` : ''} · {cl.items.length} пунктов</span>
+                <li class="flex flex-wrap items-center gap-2 rounded-[10px] border border-border px-3 py-2">
+                  <div class="min-w-0 flex-1">
+                    <div class="text-[15px] text-navy-950">{cl.title}</div>
+                    <div class="text-[12px] text-body-muted">#{cl.id}{cl.key ? ` · ${cl.key}` : ''} · {cl.items.length} пунктов</div>
+                  </div>
+                  <button type="button"
+                          class="cl-edit rounded-[8px] border border-border px-2.5 py-1 text-[12px] font-medium text-body-muted transition hover:border-primary hover:text-primary"
+                          data-id={cl.id}
+                          data-key={cl.key ?? ''}
+                          data-title={cl.title}
+                          data-items={cl.items.map((i) => i.text).join('\n')}>
+                    <i class="bi bi-pencil text-[12px]" aria-hidden="true"></i> Править
+                  </button>
+                  <form method="POST" action="/api/portal/shift/admin" onsubmit={`return confirm('Удалить шаблон «${cl.title}»? Это удалит все привязки и отметки.')`}>
+                    <input type="hidden" name="action" value="deleteChecklist" />
+                    <input type="hidden" name="id" value={cl.id} />
+                    <button type="submit" class="rounded-[8px] border border-red-300 px-2.5 py-1 text-[12px] font-medium text-red-700 transition hover:bg-red-50">
+                      <i class="bi bi-trash3 text-[12px]" aria-hidden="true"></i>
+                    </button>
+                  </form>
                 </li>
               ))}
             </ul>
           )}
         </div>
+        <script is:inline>
+          (() => {
+            const form = document.getElementById('checklist-form');
+            const idF = document.getElementById('cl-id');
+            const keyF = document.getElementById('cl-key');
+            const titleF = document.getElementById('cl-title');
+            const itemsF = document.getElementById('cl-items');
+            const reset = document.getElementById('cl-reset');
+            const formTitle = document.getElementById('cl-form-title');
+            const submit = document.getElementById('cl-submit');
+            function resetForm() {
+              idF.value = '';
+              keyF.value = '';
+              titleF.value = '';
+              itemsF.value = '';
+              formTitle.textContent = 'Создать шаблон чек-листа';
+              submit.innerHTML = '<i class="bi bi-plus-lg text-[18px]" aria-hidden="true"></i>Сохранить шаблон';
+              reset.classList.add('hidden');
+            }
+            reset.addEventListener('click', resetForm);
+            document.querySelectorAll('.cl-edit').forEach((b) => {
+              b.addEventListener('click', () => {
+                idF.value = b.dataset.id || '';
+                keyF.value = b.dataset.key || '';
+                titleF.value = b.dataset.title || '';
+                itemsF.value = b.dataset.items || '';
+                formTitle.textContent = 'Править шаблон #' + b.dataset.id;
+                submit.innerHTML = '<i class="bi bi-check-lg text-[18px]" aria-hidden="true"></i>Обновить шаблон';
+                reset.classList.remove('hidden');
+                form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                titleF.focus();
+              });
+            });
+          })();
+        </script>
       </div>
     </section>
 
