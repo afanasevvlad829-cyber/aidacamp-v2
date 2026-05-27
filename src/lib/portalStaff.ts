@@ -192,6 +192,13 @@ export async function setActiveById(id: number, active: boolean): Promise<void> 
   });
 }
 
+/** Переименовать сотрудника (full_name) по PK id. */
+export async function setNameById(id: number, fullName: string): Promise<void> {
+  await withClient(async (c) => {
+    await c.query('UPDATE portal_staff SET full_name=$2 WHERE id=$1', [id, fullName]);
+  });
+}
+
 /** Удалить запись сотрудника (для placeholder который больше не нужен, либо отклонения pending). */
 export async function deleteStaffById(id: number): Promise<void> {
   await withClient(async (c) => {

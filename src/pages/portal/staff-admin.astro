@@ -125,14 +125,26 @@ const roleLabel = (r: string | null | undefined): string => (r ? ROLE_LABELS[r] 
     </h2>
     {placeholders.length === 0 && <p class="text-[16px] text-body-muted">Нет placeholder-ов.</p>}
     {placeholders.map((ph) => (
-      <div class={`mb-2 flex flex-wrap items-center gap-2 rounded-[16px] border border-border bg-white p-4 card-shadow ${ph.active ? '' : 'opacity-50'}`}>
+      <div class={`mb-2 flex flex-wrap items-center gap-2 rounded-[16px] border border-border bg-white p-4 card-shadow ${ph.active ? '' : 'opacity-60'}`}>
         <i class="bi bi-person-fill text-[18px] text-body-muted" aria-hidden="true"></i>
-        <span class="min-w-0 flex-1 text-[16px] text-navy-950">
-          {ph.full_name ?? '—'} — <b>{roleLabel(ph.role) || 'без роли'}</b>
-          <span class="ml-2 text-[13px] text-body-muted">key: {ph.staff_key}</span>
-          {!ph.active && <span class="ml-2 text-[13px] font-semibold text-red-600">отключён</span>}
-        </span>
-        <span class="text-[14px] text-body-muted">Ждёт первого входа через TG</span>
+        <form method="POST" action="/api/portal/staff/by-id" class="flex min-w-0 flex-1 items-center gap-2">
+          <input type="hidden" name="id" value={ph.id} />
+          <input type="hidden" name="action" value="rename" />
+          <input
+            type="text"
+            name="full_name"
+            value={ph.full_name ?? ''}
+            placeholder="Имя"
+            class="min-w-0 flex-1 rounded-[8px] border border-transparent bg-transparent px-2 py-1 text-[16px] text-navy-950 outline-none transition hover:border-border focus:border-primary focus:bg-white"
+          />
+          <button type="submit" class="rounded-[8px] border border-border px-2 py-1 text-[12px] font-medium text-body-muted transition hover:border-primary hover:text-primary" title="Сохранить имя">
+            <i class="bi bi-check-lg text-[14px]" aria-hidden="true"></i>
+          </button>
+          <span class="whitespace-nowrap text-[14px] text-body">— <b>{roleLabel(ph.role) || 'без роли'}</b></span>
+          <span class="hidden text-[13px] text-body-muted md:inline">key: {ph.staff_key}</span>
+          {!ph.active && <span class="text-[13px] font-semibold text-red-600">отключён</span>}
+        </form>
+        <span class="hidden text-[14px] text-body-muted lg:inline">Ждёт TG</span>
         <form method="POST" action="/api/portal/staff/by-id">
           <input type="hidden" name="id" value={ph.id} />
           <input type="hidden" name="action" value={ph.active ? 'deactivate' : 'activate'} />
@@ -144,7 +156,7 @@ const roleLabel = (r: string | null | undefined): string => (r ? ROLE_LABELS[r] 
           <input type="hidden" name="id" value={ph.id} />
           <input type="hidden" name="action" value="delete" />
           <button class="rounded-[10px] border border-red-300 px-3 py-1.5 text-[13px] font-medium text-red-700 transition hover:bg-red-50"
-                  onclick="return confirm('Удалить placeholder ' + (this.closest('div').querySelector('b').textContent || '') + '?')">
+                  onclick="return confirm('Удалить placeholder?')">
             <i class="bi bi-trash3 text-[12px]" aria-hidden="true"></i>
           </button>
         </form>
@@ -165,9 +177,21 @@ const roleLabel = (r: string | null | undefined): string => (r ? ROLE_LABELS[r] 
       return (
       <div class="mb-3 flex flex-wrap items-start gap-3 rounded-[16px] border border-border bg-white p-4 card-shadow">
         <div class="min-w-0 flex-1">
-          <div class="text-[16px] text-navy-950">
-            {s.full_name ?? '—'} {s.tg_username ? `@${s.tg_username}` : ''}
-          </div>
+          <form method="POST" action="/api/portal/staff/by-id" class="flex items-center gap-2">
+            <input type="hidden" name="id" value={s.id} />
+            <input type="hidden" name="action" value="rename" />
+            <input
+              type="text"
+              name="full_name"
+              value={s.full_name ?? ''}
+              placeholder="Имя"
+              class="min-w-0 flex-1 rounded-[8px] border border-transparent bg-transparent px-2 py-1 text-[16px] text-navy-950 outline-none transition hover:border-border focus:border-primary focus:bg-white"
+            />
+            <button type="submit" class="rounded-[8px] border border-border px-2 py-1 text-[12px] font-medium text-body-muted transition hover:border-primary hover:text-primary" title="Сохранить имя">
+              <i class="bi bi-check-lg text-[14px]" aria-hidden="true"></i>
+            </button>
+            {s.tg_username && <span class="whitespace-nowrap text-[14px] text-body-muted">@{s.tg_username}</span>}
+          </form>
           <div class="mt-1 text-[14px] text-body-muted">
             Роли: <b class="text-navy-950">{userRoles.map(roleLabel).join(' + ') || 'нет'}</b>
             {s.staff_key && <span> · staff_key: <code>{s.staff_key}</code></span>}

@@ -1,7 +1,7 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { verifySessionPayload } from '../../../../lib/portalSession';
-import { setActiveById, deleteStaffById } from '../../../../lib/portalStaff';
+import { setActiveById, deleteStaffById, setNameById } from '../../../../lib/portalStaff';
 
 /**
  * POST /api/portal/staff/by-id
@@ -23,6 +23,11 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   if (action === 'activate') await setActiveById(id, true);
   else if (action === 'deactivate') await setActiveById(id, false);
   else if (action === 'delete') await deleteStaffById(id);
+  else if (action === 'rename') {
+    const name = String(form.get('full_name') ?? '').trim();
+    if (!name) return new Response('empty name', { status: 400 });
+    await setNameById(id, name);
+  }
   else return new Response('bad action', { status: 400 });
 
   return redirect('/portal/staff-admin');
