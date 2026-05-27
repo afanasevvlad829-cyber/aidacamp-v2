@@ -117,8 +117,38 @@ function typeBadge(type: string): string {
         </div>
       </div>
 
-      <div class="grid gap-4 lg:grid-cols-[1fr_280px]">
-        {/* Левая колонка — комнаты по плану корпуса (CSS Grid с явными координатами) */}
+      {/* Лента «Не расселены» — поверх плана, видна когда есть кого расселять */}
+      {unassignedKids.length > 0 && (
+        <div class="rasselenie-pool mb-4 rounded-[14px] border border-amber-200 bg-amber-50/60 p-3 card-shadow">
+          <div class="mb-2 flex items-center justify-between">
+            <div class="flex items-center gap-2 text-[14px] font-semibold text-navy-950">
+              <i class="bi bi-people-fill text-amber-600" aria-hidden="true"></i>
+              Не расселены ({unassignedKids.length}) — перетащите в койку
+            </div>
+            <button id="toggle-pool-btn" type="button"
+              class="rounded-[8px] border border-border bg-white px-2 py-1 text-[12px] text-body-muted hover:border-primary hover:text-primary">
+              Свернуть
+            </button>
+          </div>
+          <div id="pool-list" class="flex flex-nowrap gap-2 overflow-x-auto pb-1">
+            {unassignedKids.map((kid) => (
+              <div class="kid-card flex shrink-0 cursor-grab items-center gap-1.5 rounded-[10px] border border-border bg-white px-2.5 py-1.5 text-[13px] active:cursor-grabbing"
+                   draggable="true"
+                   data-kid-id={kid.kid_id}
+                   data-kid-name={kid.kid_name}>
+                <span class={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white ${
+                  kid.kid_gender === 'F' ? 'bg-pink-500' : kid.kid_gender === 'M' ? 'bg-sky-500' : 'bg-slate-400'
+                }`}>{kid.kid_gender === 'F' ? 'Ж' : kid.kid_gender === 'M' ? 'М' : '?'}</span>
+                <span class="whitespace-nowrap text-navy-950">{kid.kid_name}{kid.kid_age ? ` · ${kid.kid_age}` : ''}</span>
+                <button type="button" class="kid-remove text-[11px] text-red-600 hover:underline" data-kid-id={kid.kid_id} title="Удалить из списка">×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div class="space-y-4">
+        {/* Комнаты по плану корпуса — на всю ширину */}
         <div class="space-y-4">
           {(() => {
             // Координаты из portalRooms.ts соответствуют плану корпуса
@@ -174,7 +204,7 @@ function typeBadge(type: string): string {
                 <div class="rounded-[14px] border border-border bg-white p-4 card-shadow">
                   <h3 class="mb-3 text-[16px] font-bold text-navy-950">Этаж 1 · 22 места</h3>
                   <div class="grid gap-3"
-                       style="grid-template-columns: repeat(4, minmax(0, 1fr)) 24px repeat(4, minmax(0, 1fr)); grid-auto-rows: minmax(140px, auto);">
+                       style="grid-template-columns: repeat(4, minmax(150px, 1fr)) 24px repeat(4, minmax(150px, 1fr)); grid-auto-rows: minmax(140px, auto);">
                     {floor1.map((r) => roomCard(r.number))}
                     <div class="pointer-events-none border-x border-dashed border-slate-300"
                          style="grid-column: 5; grid-row: 1 / span 2;"></div>
@@ -183,7 +213,7 @@ function typeBadge(type: string): string {
                 <div class="rounded-[14px] border border-border bg-white p-4 card-shadow">
                   <h3 class="mb-3 text-[16px] font-bold text-navy-950">Этаж 2 · 24 места</h3>
                   <div class="grid gap-3"
-                       style="grid-template-columns: repeat(3, minmax(0, 1fr)) 24px repeat(4, minmax(0, 1fr)); grid-auto-rows: minmax(180px, auto);">
+                       style="grid-template-columns: repeat(3, minmax(150px, 1fr)) 24px repeat(4, minmax(150px, 1fr)); grid-auto-rows: minmax(180px, auto);">
                     {floor2.map((r) => roomCard(r.number))}
                     <div class="pointer-events-none border-x border-dashed border-slate-300"
                          style="grid-column: 4; grid-row: 1 / span 2;"></div>
@@ -194,28 +224,6 @@ function typeBadge(type: string): string {
           })()}
         </div>
 
-        {/* Правая колонка — нерасселённые */}
-        <div class="rasselenie-pool rounded-[14px] border border-border bg-white p-4 card-shadow lg:sticky lg:top-4 lg:max-h-[calc(100vh-120px)] lg:overflow-auto">
-          <h3 class="mb-3 text-[16px] font-bold text-navy-950">Не расселены ({unassignedKids.length})</h3>
-          {unassignedKids.length === 0 ? (
-            <p class="text-[14px] text-body-muted">Все расселены ✓</p>
-          ) : (
-            <ul class="space-y-1.5">
-              {unassignedKids.map((kid) => (
-                <li class="kid-card flex cursor-grab items-center gap-1.5 rounded-[8px] border border-border bg-page px-2 py-1.5 text-[13px] active:cursor-grabbing"
-                    draggable="true"
-                    data-kid-id={kid.kid_id}
-                    data-kid-name={kid.kid_name}>
-                  <span class={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white ${
-                    kid.kid_gender === 'F' ? 'bg-pink-500' : kid.kid_gender === 'M' ? 'bg-sky-500' : 'bg-slate-400'
-                  }`}>{kid.kid_gender === 'F' ? 'Ж' : kid.kid_gender === 'M' ? 'М' : '?'}</span>
-                  <span class="min-w-0 flex-1 truncate text-navy-950">{kid.kid_name}{kid.kid_age ? ` · ${kid.kid_age}` : ''}</span>
-                  <button type="button" class="kid-remove text-[11px] text-red-600 hover:underline" data-kid-id={kid.kid_id} title="Удалить из списка">×</button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
       </div>
 
       {/* Модалка добавления ребёнка */}
@@ -435,6 +443,17 @@ function typeBadge(type: string): string {
                 if (d.ok) window.location.reload();
                 else alert('Ошибка: ' + (d.error || ''));
               } catch (err) { alert('Сетевая ошибка'); }
+            }
+
+            // Pool toggle
+            const toggleBtn = document.getElementById('toggle-pool-btn');
+            const poolList = document.getElementById('pool-list');
+            if (toggleBtn && poolList) {
+              toggleBtn.addEventListener('click', () => {
+                const collapsed = poolList.style.display === 'none';
+                poolList.style.display = collapsed ? '' : 'none';
+                toggleBtn.textContent = collapsed ? 'Свернуть' : 'Развернуть';
+              });
             }
 
             // Remove kid
