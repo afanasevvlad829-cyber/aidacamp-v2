@@ -113,6 +113,104 @@ export async function resetAssignmentsForShift(shiftId: number): Promise<number>
   return n ?? 0;
 }
 
+/**
+ * Авто-расстановка:
+ *  — Свободные дети сортируются по полу+возрасту.
+ *  — Для каждого выбирается лучшая комната: тот же пол (или пустая), близкий возраст (±3 года),
+ *    не нарушаем capacity. Score: совпадение пола +5, есть соседи +2, пожелания не учитываем (нет пока).
+ *  — Уже расселённых не трогаем.
+ */
+const AGE_SPREAD = 3;
+export interface AutoAssignRoomDef { number: number; capacity: number; }
+export async function autoAssign(shiftId: number, rooms: AutoAssignRoomDef[]): Promise<{ assigned: number; skipped: number }> {
+  const items = await listAssignments(shiftId);
+  // Карта занятости коек и текущие жильцы по комнате
+  const occByRoom = new Map<number, RoomAssignment[]>();
+  const occBed = new Set<string>(); // "room:bed"
+  const unassigned: RoomAssignment[] = [];
+  for (const a of items) {
+    if (a.room_number != null && a.bed_index != null) {
+      occBed.add(`${a.room_number}:${a.bed_index}`);
+      const arr = occByRoom.get(a.room_number) ?? [];
+      arr.push(a);
+      occByRoom.set(a.room_number, arr);
+    } else {
+      unassigned.push(a);
+    }
+  }
+
+  // Сортируем нерасселённых по полу (девочки→мальчики) + возрасту
+  unassigned.sort((a, b) => {
+    const ga = a.kid_gender === 'F' ? 0 : a.kid_gender === 'M' ? 1 : 2;
+    const gb = b.kid_gender === 'F' ? 0 : b.kid_gender === 'M' ? 1 : 2;
+    return ga - gb || (a.kid_age ?? 99) - (b.kid_age ?? 99);
+  });
+
+  let assigned = 0, skipped = 0;
+
+  for (const kid of unassigned) {
+    let bestRoom: number | null = null;
+    let bestBed = -1;
+    let bestScore = -1;
+
+    for (const room of rooms) {
+      const occ = occByRoom.get(room.number) ?? [];
+      // Найти первую свободную койку
+      let freeBed = -1;
+      for (let i = 0; i < room.capacity; i++) {
+        if (!occBed.has(`${room.number}:${i}`)) { freeBed = i; break; }
+      }
+      if (freeBed < 0) continue;
+
+      // Пол: если в комнате уже есть жильцы другого пола — пропускаем
+      const genders = new Set(occ.map((o) => o.kid_gender).filter((g) => g === 'M' || g === 'F'));
+      if (kid.kid_gender && genders.size > 0 && !genders.has(kid.kid_gender)) continue;
+      // Если в комнате уже смешано — пропускаем тоже
+      if (genders.size > 1) continue;
+
+      // Возраст: проверяем общий разброс
+      const ages = occ.map((o) => o.kid_age).filter((x): x is number => x != null);
+      if (kid.kid_age != null && ages.length > 0) {
+        const minA = Math.min(...ages, kid.kid_age);
+        const maxA = Math.max(...ages, kid.kid_age);
+        if (maxA - minA > AGE_SPREAD) continue;
+      }
+
+      // Score: совпадение пола +5, компактность (есть соседи) +2, иначе базовый 10
+      let score = 10;
+      if (kid.kid_gender && genders.has(kid.kid_gender)) score += 5;
+      if (occ.length > 0) score += 2;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestRoom = room.number;
+        bestBed = freeBed;
+      }
+    }
+
+    if (bestRoom != null && bestBed >= 0) {
+      await upsertKid({
+        shift_id: shiftId,
+        kid_id: kid.kid_id,
+        kid_name: kid.kid_name,
+        kid_gender: kid.kid_gender,
+        kid_age: kid.kid_age,
+        room_number: bestRoom,
+        bed_index: bestBed,
+      });
+      occBed.add(`${bestRoom}:${bestBed}`);
+      const arr = occByRoom.get(bestRoom) ?? [];
+      arr.push({ ...kid, room_number: bestRoom, bed_index: bestBed });
+      occByRoom.set(bestRoom, arr);
+      assigned++;
+    } else {
+      skipped++;
+    }
+  }
+
+  return { assigned, skipped };
+}
+
 /** Полная очистка списка детей смены (удаляем все записи). */
 export async function wipeKidsForShift(shiftId: number): Promise<number> {
   const n = await withClient(async (c) => {

@@ -1,7 +1,8 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { verifySessionPayload } from '../../../lib/portalSession';
-import { listAssignments, upsertKid, deleteKid } from '../../../lib/portalRasselenie';
+import { listAssignments, upsertKid, deleteKid, autoAssign } from '../../../lib/portalRasselenie';
+import { ROOMS } from '../../../lib/portalRooms';
 
 const STAFF_ROLES = new Set(['admin', 'rukovoditel', 'teacher', 'vozhaty']);
 
@@ -33,10 +34,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (!STAFF_ROLES.has(p.role)) return json({ ok: false, error: 'forbidden' }, 403);
   const b = await readBody(request);
   const shift_id = Number(b.shift_id);
+  if (!Number.isFinite(shift_id)) return json({ ok: false, error: 'shift_id required' }, 400);
+
+  // Авто-расстановка (action=auto_assign)
+  if (b.action === 'auto_assign') {
+    const eligibleRooms = ROOMS.filter((r) => r.type !== 'staff').map((r) => ({ number: r.number, capacity: r.capacity }));
+    const r = await autoAssign(shift_id, eligibleRooms);
+    return json({ ok: true, ...r });
+  }
+
   const kid_id = String(b.kid_id ?? '').trim();
   const kid_name = String(b.kid_name ?? '').trim();
-  if (!Number.isFinite(shift_id) || !kid_id || !kid_name) {
-    return json({ ok: false, error: 'shift_id, kid_id, kid_name required' }, 400);
+  if (!kid_id || !kid_name) {
+    return json({ ok: false, error: 'kid_id, kid_name required' }, 400);
   }
   const room_number = b.room_number != null && b.room_number !== '' ? Number(b.room_number) : null;
   const bed_index = b.bed_index != null && b.bed_index !== '' ? Number(b.bed_index) : null;

@@ -105,6 +105,9 @@ function typeBadge(type: string): string {
           <button id="load-crm-btn" type="button" class="rounded-[12px] border border-border bg-white px-4 py-2 text-[15px] font-medium text-navy-950 transition hover:border-primary hover:text-primary">
             <i class="bi bi-cloud-download mr-1" aria-hidden="true"></i> Загрузить из AlfaCRM
           </button>
+          <button id="auto-assign-btn" type="button" class="rounded-[12px] border border-emerald-300 bg-emerald-50 px-4 py-2 text-[15px] font-medium text-emerald-800 transition hover:bg-emerald-100">
+            <i class="bi bi-magic mr-1" aria-hidden="true"></i> Авто-расстановка
+          </button>
           <button id="add-kid-btn" type="button" class="rounded-[12px] bg-primary px-4 py-2 text-[15px] font-semibold text-white transition hover:opacity-90">
             <i class="bi bi-person-plus mr-1" aria-hidden="true"></i> Добавить вручную
           </button>
@@ -269,6 +272,36 @@ function typeBadge(type: string): string {
               } finally {
                 crmBtn.disabled = false;
                 crmBtn.innerHTML = old;
+              }
+            });
+
+            // ── Авто-расстановка ──
+            const autoBtn = document.getElementById('auto-assign-btn');
+            autoBtn?.addEventListener('click', async () => {
+              if (!confirm('Авто-расстановка заполнит свободные койки с учётом пола (без смешанных) и близкого возраста (разброс ≤3 лет). Уже расселённых не трогаем. Продолжить?')) return;
+              autoBtn.disabled = true;
+              const old = autoBtn.innerHTML;
+              autoBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Расставляю…';
+              try {
+                const r = await fetch('/api/portal/rasselenie', {
+                  method: 'POST',
+                  headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify({ action: 'auto_assign', shift_id: shiftId }),
+                  credentials: 'include',
+                });
+                const d = await r.json();
+                if (d.ok) {
+                  alert('Расселено: ' + d.assigned + '. Не удалось разместить: ' + d.skipped + ' (возможно — нет подходящих коек или пол/возраст не сходятся).');
+                  window.location.reload();
+                } else {
+                  alert('Ошибка: ' + (d.error || ''));
+                  autoBtn.disabled = false;
+                  autoBtn.innerHTML = old;
+                }
+              } catch (e) {
+                alert('Сетевая ошибка');
+                autoBtn.disabled = false;
+                autoBtn.innerHTML = old;
               }
             });
 
