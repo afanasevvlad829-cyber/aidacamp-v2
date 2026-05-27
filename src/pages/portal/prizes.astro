@@ -1,0 +1,282 @@
+---
+export const prerender = false;
+import PortalLayout from '../../layouts/PortalLayout.astro';
+import { PRIZES } from '../../lib/portalPrizes';
+
+const role = Astro.locals.portalRole!;
+if (!['admin', 'rukovoditel'].includes(role)) {
+  return Astro.redirect('/portal/');
+}
+
+const totalAll = PRIZES.reduce((s, p) => s + p.price * p.qty, 0);
+const fmtRub = (n: number) => new Intl.NumberFormat('ru-RU').format(n) + ' ₽';
+
+// Сгруппируем по заказу для удобства
+const byOrder = PRIZES.reduce<Record<string, typeof PRIZES>>((acc, p) => {
+  const k = p.order ?? '—';
+  (acc[k] ??= []).push(p);
+  return acc;
+}, {});
+---
+<PortalLayout title="Призы и подарки — АйДаКемп">
+  <div class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <h1 class="text-[28px] font-bold tracking-[-0.02em] text-navy-950 md:text-[36px]">
+        Призы и подарки
+      </h1>
+      <p class="mt-2 text-[16px] text-body-muted">
+        Каталог закупленных позиций по счетам Ozon. Удалённые позиции и цены в Бонжере сохраняются в этом браузере (localStorage).
+      </p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <span id="prizes-summary" class="rounded-[10px] border border-border bg-page px-3 py-1.5 text-[14px] text-navy-950">
+        Активных: <b id="cnt-active">{PRIZES.length}</b> · Сумма Ozon: <b id="sum-ozon">{fmtRub(totalAll)}</b> · Сумма Бонжер: <b id="sum-bongere">—</b>
+      </span>
+      <button id="btn-reset" type="button"
+        class="rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] text-navy-950 hover:border-primary hover:text-primary">
+        <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+        Восстановить удалённые
+      </button>
+    </div>
+  </div>
+
+  {Object.entries(byOrder).map(([order, items]) => (
+    <section class="mb-8">
+      <h2 class="mb-3 flex items-center gap-2 text-[18px] font-semibold text-navy-950">
+        <i class="bi bi-receipt text-primary" aria-hidden="true"></i>
+        Счёт Ozon № {order}
+        <span class="text-[14px] font-normal text-body-muted">· {items.length} поз. · {fmtRub(items.reduce((s, p) => s + p.price * p.qty, 0))}</span>
+      </h2>
+
+      <div class="overflow-x-auto rounded-[14px] border border-border bg-white card-shadow">
+        <table class="w-full text-[14px]">
+          <thead class="bg-page text-left text-[13px] uppercase tracking-wide text-body-muted">
+            <tr>
+              <th class="w-[80px] p-2"></th>
+              <th class="p-2">Наименование</th>
+              <th class="w-[100px] p-2 text-right">Цена&nbsp;Ozon</th>
+              <th class="w-[60px] p-2 text-right">Кол-во</th>
+              <th class="w-[110px] p-2 text-right">Сумма</th>
+              <th class="w-[150px] p-2 text-right">Цена&nbsp;в&nbsp;Бонжере</th>
+              <th class="w-[110px] p-2 text-right">Сумма&nbsp;Бонжер</th>
+              <th class="w-[40px] p-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((p) => (
+              <tr data-prize-row data-id={p.id} data-price={p.price} data-qty={p.qty}
+                  class="border-t border-border align-middle">
+                <td class="p-2">
+                  <label class="block cursor-pointer">
+                    <input type="file" accept="image/*" class="hidden" data-photo-input data-id={p.id} />
+                    <div data-photo-slot data-id={p.id}
+                         class="flex h-[64px] w-[64px] items-center justify-center rounded-[8px] border border-dashed border-border bg-page text-body-muted">
+                      <i class="bi bi-image text-[22px]" aria-hidden="true"></i>
+                    </div>
+                  </label>
+                </td>
+                <td class="p-2 align-middle">
+                  <div class="font-medium text-navy-950">{p.name}</div>
+                  <div class="mt-0.5 flex flex-wrap items-center gap-2 text-[12px] text-body-muted">
+                    {p.category && <span class="rounded-full bg-primary-soft px-2 py-0.5 text-primary">{p.category}</span>}
+                    <a href={`https://www.ozon.ru/search/?text=${encodeURIComponent(p.name)}`} target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-1 hover:text-primary">
+                      <i class="bi bi-search" aria-hidden="true"></i>
+                      Найти на Ozon
+                    </a>
+                  </div>
+                </td>
+                <td class="p-2 text-right font-mono tabular-nums">{fmtRub(p.price)}</td>
+                <td class="p-2 text-right font-mono tabular-nums">{p.qty}</td>
+                <td class="p-2 text-right font-mono tabular-nums font-semibold">{fmtRub(p.price * p.qty)}</td>
+                <td class="p-2 text-right">
+                  <div class="flex items-center justify-end gap-1">
+                    <input type="number" min="0" step="1" data-bongere-input data-id={p.id}
+                           class="w-[90px] rounded-[8px] border border-border bg-white px-2 py-1 text-right font-mono tabular-nums focus:border-primary focus:outline-none"
+                           placeholder="—" />
+                    <span class="text-body-muted">₽</span>
+                  </div>
+                </td>
+                <td class="p-2 text-right font-mono tabular-nums text-navy-950" data-bongere-sum data-id={p.id}>—</td>
+                <td class="p-2 text-right">
+                  <button type="button" data-delete data-id={p.id}
+                          class="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-body-muted transition hover:bg-red-50 hover:text-red-600"
+                          title="Удалить позицию">
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  ))}
+
+  <script is:inline>
+    (function () {
+      const LS_KEY = 'aidacamp.portal.prizes.v1';
+      const fmt = (n) => new Intl.NumberFormat('ru-RU').format(n) + ' ₽';
+
+      function load() {
+        try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}') || {}; } catch { return {}; }
+      }
+      function save(state) {
+        try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { console.error('localStorage save failed', e); }
+      }
+      const state = Object.assign({ deleted: [], bongere: {}, photos: {} }, load());
+      // нормализация — если приехало старое
+      state.deleted = Array.isArray(state.deleted) ? state.deleted : [];
+      state.bongere = state.bongere && typeof state.bongere === 'object' ? state.bongere : {};
+      state.photos = state.photos && typeof state.photos === 'object' ? state.photos : {};
+
+      const rows = Array.from(document.querySelectorAll('[data-prize-row]'));
+
+      function applyDeleted() {
+        const del = new Set(state.deleted);
+        rows.forEach((r) => {
+          const id = r.dataset.id;
+          if (del.has(id)) r.style.display = 'none';
+          else r.style.display = '';
+        });
+      }
+      function applyPhotos() {
+        rows.forEach((r) => {
+          const id = r.dataset.id;
+          const url = state.photos[id];
+          const slot = document.querySelector('[data-photo-slot][data-id="' + CSS.escape(id) + '"]');
+          if (!slot) return;
+          if (url) {
+            slot.innerHTML = '';
+            slot.style.borderStyle = 'solid';
+            slot.style.background = '#fff';
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = '';
+            img.style.cssText = 'width:64px;height:64px;object-fit:cover;border-radius:6px;';
+            slot.appendChild(img);
+          } else {
+            slot.style.borderStyle = '';
+            slot.style.background = '';
+            slot.innerHTML = '<i class="bi bi-image" style="font-size:22px;" aria-hidden="true"></i>';
+          }
+        });
+      }
+      function applyBongere() {
+        rows.forEach((r) => {
+          const id = r.dataset.id;
+          const v = state.bongere[id];
+          const inp = document.querySelector('[data-bongere-input][data-id="' + CSS.escape(id) + '"]');
+          const sumCell = document.querySelector('[data-bongere-sum][data-id="' + CSS.escape(id) + '"]');
+          const qty = Number(r.dataset.qty || 0);
+          if (inp && v != null) inp.value = String(v);
+          if (sumCell) sumCell.textContent = (v == null || v === '' || isNaN(Number(v))) ? '—' : fmt(Number(v) * qty);
+        });
+      }
+      function recalcSummary() {
+        const del = new Set(state.deleted);
+        let cnt = 0, ozon = 0, bong = 0, hasBong = false;
+        rows.forEach((r) => {
+          const id = r.dataset.id;
+          if (del.has(id)) return;
+          cnt++;
+          const price = Number(r.dataset.price || 0);
+          const qty = Number(r.dataset.qty || 0);
+          ozon += price * qty;
+          const v = state.bongere[id];
+          if (v != null && v !== '' && !isNaN(Number(v))) {
+            bong += Number(v) * qty;
+            hasBong = true;
+          }
+        });
+        document.getElementById('cnt-active').textContent = String(cnt);
+        document.getElementById('sum-ozon').textContent = fmt(ozon);
+        document.getElementById('sum-bongere').textContent = hasBong ? fmt(bong) : '—';
+      }
+
+      // Удаление
+      document.querySelectorAll('[data-delete]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          if (!confirm('Удалить эту позицию из списка? (можно восстановить кнопкой сверху)')) return;
+          if (!state.deleted.includes(id)) state.deleted.push(id);
+          save(state);
+          applyDeleted();
+          recalcSummary();
+        });
+      });
+
+      // Восстановить удалённые
+      document.getElementById('btn-reset').addEventListener('click', () => {
+        if (!confirm('Восстановить все удалённые позиции?')) return;
+        state.deleted = [];
+        save(state);
+        applyDeleted();
+        recalcSummary();
+      });
+
+      // Цена в Бонжере
+      document.querySelectorAll('[data-bongere-input]').forEach((inp) => {
+        inp.addEventListener('input', () => {
+          const id = inp.dataset.id;
+          const v = inp.value.trim();
+          if (v === '' || isNaN(Number(v))) delete state.bongere[id];
+          else state.bongere[id] = Number(v);
+          save(state);
+          // обновим только эту строку + общую сумму
+          const r = inp.closest('[data-prize-row]');
+          const sumCell = document.querySelector('[data-bongere-sum][data-id="' + CSS.escape(id) + '"]');
+          const qty = Number(r.dataset.qty || 0);
+          if (sumCell) sumCell.textContent = (state.bongere[id] == null) ? '—' : fmt(state.bongere[id] * qty);
+          recalcSummary();
+        });
+      });
+
+      // Загрузка фото — сжимаем до ≤ 512px, base64 в localStorage
+      document.querySelectorAll('[data-photo-input]').forEach((inp) => {
+        inp.addEventListener('change', async () => {
+          const id = inp.dataset.id;
+          const f = inp.files && inp.files[0];
+          if (!f) return;
+          try {
+            const dataUrl = await compressImage(f, 320);
+            state.photos[id] = dataUrl;
+            save(state);
+            applyPhotos();
+          } catch (e) {
+            alert('Не удалось загрузить фото: ' + (e && e.message || e));
+          }
+        });
+      });
+
+      function compressImage(file, maxSize) {
+        return new Promise((resolve, reject) => {
+          const fr = new FileReader();
+          fr.onload = () => {
+            const img = new Image();
+            img.onload = () => {
+              const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+              const w = Math.round(img.width * scale);
+              const h = Math.round(img.height * scale);
+              const c = document.createElement('canvas');
+              c.width = w; c.height = h;
+              const ctx = c.getContext('2d');
+              ctx.drawImage(img, 0, 0, w, h);
+              resolve(c.toDataURL('image/jpeg', 0.78));
+            };
+            img.onerror = () => reject(new Error('image decode failed'));
+            img.src = fr.result;
+          };
+          fr.onerror = () => reject(new Error('file read failed'));
+          fr.readAsDataURL(file);
+        });
+      }
+
+      // первая отрисовка
+      applyDeleted();
+      applyPhotos();
+      applyBongere();
+      recalcSummary();
+    })();
+  </script>
+</PortalLayout>
