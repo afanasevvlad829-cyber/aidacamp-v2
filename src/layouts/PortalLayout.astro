@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import '../styles/icons.css';
+import UploadQueueIndicator from '../components/UploadQueueIndicator.astro';
 
 interface Props {
   title: string;
@@ -8,6 +9,33 @@ interface Props {
 }
 
 const { title, showHeader = true } = Astro.props;
+
+// Показываем «← Назад» когда мы НЕ на главной портала.
+const pathNow = Astro.url.pathname.replace(/\/+$/, '') || '/';
+const showBack = pathNow !== '/portal' && pathNow !== '';
+
+const realRole = Astro.locals.portalRealRole ?? Astro.locals.portalRole ?? null;
+const viewAs = Astro.locals.portalViewAs ?? null;
+const canSwitchRoles = realRole === 'admin' || realRole === 'rukovoditel';
+const SWITCH_OPTIONS_ADMIN = [
+  { value: 'admin', label: 'Админ' },
+  { value: 'rukovoditel', label: 'Руководитель' },
+  { value: 'teacher', label: 'Преподаватель' },
+  { value: 'vozhaty', label: 'Вожатый' },
+  { value: 'student', label: 'Ученик' },
+];
+const SWITCH_OPTIONS_RUK = [
+  { value: 'rukovoditel', label: 'Руководитель' },
+  { value: 'teacher', label: 'Преподаватель' },
+  { value: 'vozhaty', label: 'Вожатый' },
+  { value: 'student', label: 'Ученик' },
+];
+const switchOptions = realRole === 'admin' ? SWITCH_OPTIONS_ADMIN : SWITCH_OPTIONS_RUK;
+const currentSelectValue = viewAs ?? realRole;
+const ROLE_LABEL_MAP: Record<string, string> = {
+  admin: 'Админ', rukovoditel: 'Руководитель', teacher: 'Преподаватель',
+  vozhaty: 'Вожатый', student: 'Ученик',
+};
 ---
 
 <!doctype html>
@@ -21,27 +49,198 @@ const { title, showHeader = true } = Astro.props;
   <body class="min-h-screen bg-page text-body antialiased">
     {showHeader && (
       <header class="border-b border-border bg-white">
-        <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <a
-            href="/portal/"
-            class="text-[20px] font-extrabold tracking-[-0.02em] text-navy-950"
-          >
-            АйДаКэмп
-          </a>
-          <form method="POST" action="/api/portal/logout">
-            <button
-              type="submit"
-              class="inline-flex items-center gap-2 rounded-[12px] border border-border bg-white px-4 py-2 text-[16px] font-medium text-body-muted transition hover:border-primary hover:text-primary"
+        <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
+          <div class="flex items-center gap-3">
+            {showBack && (
+              <a href="/portal/" class="inline-flex items-center gap-1 rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] font-medium text-body-muted transition hover:border-primary hover:text-primary" aria-label="Назад">
+                <i class="bi bi-arrow-left text-[14px]" aria-hidden="true"></i>
+                Назад
+              </a>
+            )}
+            <a
+              href="/portal/"
+              class="text-[20px] font-extrabold tracking-[-0.02em] text-navy-950"
             >
-              <i class="bi bi-box-arrow-right text-[18px]" aria-hidden="true"></i>
-              Выйти
-            </button>
-          </form>
+              АйДаКэмп
+            </a>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            {canSwitchRoles && (
+              <form method="POST" action="/api/portal/view-as" class="flex items-center gap-2">
+                <label for="view-as-select" class="text-[14px] text-body-muted">
+                  <i class="bi bi-eye text-[16px]" aria-hidden="true"></i>
+                  Смотреть как:
+                </label>
+                <select
+                  id="view-as-select"
+                  name="role"
+                  onchange="this.form.submit()"
+                  class="rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] font-medium text-navy-950 outline-none focus:border-primary"
+                >
+                  {switchOptions.map((o) => (
+                    <option value={o.value} selected={o.value === currentSelectValue}>{o.label}</option>
+                  ))}
+                </select>
+                {viewAs && (
+                  <button
+                    type="submit"
+                    name="clear" value="true"
+                    formaction="/api/portal/view-as"
+                    class="inline-flex items-center gap-1 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-1.5 text-[13px] font-medium text-amber-800 transition hover:bg-amber-100"
+                    title="Вернуться в свою роль"
+                  >
+                    <i class="bi bi-x-lg text-[12px]" aria-hidden="true"></i>
+                    Сбросить
+                  </button>
+                )}
+              </form>
+            )}
+            <UploadQueueIndicator />
+            <form method="POST" action="/api/portal/logout">
+              <button
+                type="submit"
+                class="inline-flex items-center gap-2 rounded-[12px] border border-border bg-white px-4 py-2 text-[16px] font-medium text-body-muted transition hover:border-primary hover:text-primary"
+              >
+                <i class="bi bi-box-arrow-right text-[18px]" aria-hidden="true"></i>
+                Выйти
+              </button>
+            </form>
+          </div>
         </div>
+        {viewAs && (
+          <div class="border-t border-amber-200 bg-amber-50">
+            <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-4 py-2 text-[14px] text-amber-900">
+              <i class="bi bi-eye-fill text-[16px]" aria-hidden="true"></i>
+              <span>Просмотр от лица: <strong>{ROLE_LABEL_MAP[viewAs] ?? viewAs}</strong>. Настоящая роль: {ROLE_LABEL_MAP[realRole as string] ?? realRole}.</span>
+            </div>
+          </div>
+        )}
       </header>
     )}
     <main class="mx-auto max-w-6xl px-4 py-10 md:py-16">
       <slot />
     </main>
+
+    <!-- Лента загруженных фото/видео по событию. -->
+    <script is:inline>
+      (() => {
+        const escapeHtml = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        function fmtTime(iso) {
+          if (!iso) return '';
+          try {
+            const d = new Date(iso);
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mi = String(d.getMinutes()).padStart(2, '0');
+            return dd + '.' + mm + ' ' + hh + ':' + mi;
+          } catch { return ''; }
+        }
+        async function load(root) {
+          const eventId = root.dataset.eventId;
+          const canDelete = root.dataset.canDelete === 'true';
+          if (!eventId) return;
+          const list = root.querySelector('.portal-media__list');
+          const header = root.querySelector('.portal-media__header');
+          if (!list || !header) return;
+          try {
+            const r = await fetch('/api/portal/photo?event_id=' + encodeURIComponent(eventId), { credentials: 'include' });
+            if (!r.ok) return;
+            const data = await r.json().catch(() => ({}));
+            const photos = (data && data.photos) || [];
+            if (photos.length === 0) {
+              header.classList.add('hidden');
+              list.innerHTML = '';
+              return;
+            }
+            header.classList.remove('hidden');
+            const iconAttach = '<i class="bi bi-paperclip text-[14px]" aria-hidden="true"></i>';
+            header.innerHTML = iconAttach + ' Загружено: ' + photos.length;
+            list.innerHTML = photos.map(function(p) {
+              const url = p.file_url || '';
+              const author = escapeHtml(p.author_name || '');
+              const when = fmtTime(p.uploaded_at);
+              const isVideo = p.file_type === 'video';
+              const icon = isVideo
+                ? '<i class="bi bi-camera-video text-[13px] text-body-muted" aria-hidden="true"></i>'
+                : '<i class="bi bi-image text-[13px] text-body-muted" aria-hidden="true"></i>';
+              const open = url
+                ? '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener" class="text-primary hover:underline">Открыть</a>'
+                : '<span class="text-body-muted">нет ссылки</span>';
+              const del = canDelete
+                ? ' &nbsp; <button type="button" class="portal-media__del text-[13px] text-red-600 hover:underline" data-photo-id="' + p.id + '"><i class="bi bi-x-lg text-[11px]" aria-hidden="true"></i> удалить</button>'
+                : '';
+              return '<li class="flex items-center gap-2 text-body">' +
+                icon +
+                '<span class="min-w-0 truncate"><span class="text-body-muted">' + author + ', ' + when + '</span></span>' +
+                '<span class="ml-auto whitespace-nowrap">' + open + del + '</span>' +
+                '</li>';
+            }).join('');
+            list.querySelectorAll('.portal-media__del').forEach(function(b) {
+              b.addEventListener('click', async function() {
+                if (!confirm('Удалить файл? Это необратимо.')) return;
+                const pid = b.dataset.photoId;
+                const dr = await fetch('/api/portal/photo/' + encodeURIComponent(pid), { method: 'DELETE', credentials: 'include' });
+                if (dr.ok) load(root);
+                else alert('Не получилось удалить (' + dr.status + ')');
+              });
+            });
+          } catch (e) { /* silent */ }
+        }
+        const all = Array.from(document.querySelectorAll('.portal-media'));
+        all.forEach(load);
+        document.addEventListener('portal-media:refresh', (ev) => {
+          const wanted = String(ev.detail && ev.detail.eventId || '');
+          all.forEach((root) => {
+            if (!wanted || String(root.dataset.eventId) === wanted) load(root);
+          });
+        });
+      })();
+    </script>
+
+    <!-- Inline-edit события (teacher/vozhaty правят свои события). -->
+    <script is:inline>
+      (() => {
+        document.querySelectorAll('.portal-edit').forEach((root) => {
+          const toggle = root.querySelector('.portal-edit__toggle');
+          const form = root.querySelector('.portal-edit__form');
+          const cancel = root.querySelector('.portal-edit__cancel');
+          const status = root.querySelector('.portal-edit__status');
+          const eventId = root.dataset.eventId;
+          if (!toggle || !form || !cancel) return;
+
+          toggle.addEventListener('click', () => {
+            form.classList.toggle('hidden');
+          });
+          cancel.addEventListener('click', () => {
+            form.classList.add('hidden');
+          });
+          form.addEventListener('submit', async (ev) => {
+            ev.preventDefault();
+            const fd = new FormData(form);
+            const body = { event_id: eventId };
+            for (const [k, v] of fd.entries()) body[k] = v;
+            if (status) { status.textContent = 'Сохраняю…'; status.classList.remove('hidden'); }
+            try {
+              const r = await fetch('/api/portal/shift/event-edit', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(body),
+                credentials: 'include',
+              });
+              const d = await r.json().catch(() => ({}));
+              if (r.ok && d.ok) {
+                if (status) status.textContent = '✓ Сохранено, обновляю…';
+                setTimeout(() => window.location.reload(), 300);
+              } else {
+                if (status) { status.textContent = 'Ошибка: ' + (d.error || r.status); status.classList.add('text-red-600'); }
+              }
+            } catch (e) {
+              if (status) { status.textContent = 'Сетевая ошибка'; status.classList.add('text-red-600'); }
+            }
+          });
+        });
+      })();
+    </script>
   </body>
 </html>

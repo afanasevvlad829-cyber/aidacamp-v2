@@ -2,9 +2,9 @@ import type { MiddlewareHandler } from 'astro';
 import { verifySessionPayload } from './lib/portalSession';
 import { getStaff } from './lib/portalStaff';
 
-const PORTAL_PUBLIC = new Set(['/portal/login', '/portal/login/', '/api/portal/login', '/api/portal/check', '/api/portal/tg']);
+const PORTAL_PUBLIC = new Set(['/portal/login', '/portal/login/', '/portal/tg-app', '/api/portal/login', '/api/portal/check', '/api/portal/tg']);
 
-const staffActiveCache = new Map<number, { ok: boolean; role: string | null; exp: number }>();
+const staffActiveCache = new Map<number, { ok: boolean; role: string | null; roles: string[]; exp: number }>();
 const STAFF_CACHE_MS = 60_000;
 
 // ─── 301 Redirects ──────────────────────────────────────────────────────────
@@ -51,15 +51,26 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
       );
       let role = payload?.role ?? null;
       // Для сотрудничьих сессий (есть sub) — проверяем active/role в БД (кэш 60с)
+      let staffRoles: string[] = [];
       if (role && payload?.sub) {
         const now = Date.now();
         let c = staffActiveCache.get(payload.sub);
         if (!c || c.exp < now) {
           const staff = await getStaff(payload.sub);
-          c = { ok: !!staff?.active && !!staff?.role, role: staff?.role ?? null, exp: now + STAFF_CACHE_MS };
+          const allRoles: string[] = Array.isArray(staff?.roles) && staff!.roles.length > 0
+            ? (staff!.roles as string[])
+            : (staff?.role ? [staff.role as string] : []);
+          c = {
+            ok: !!staff?.active && allRoles.length > 0,
+            role: staff?.role ?? null,
+            roles: allRoles,
+            exp: now + STAFF_CACHE_MS,
+          };
           staffActiveCache.set(payload.sub, c);
         }
-        if (!c.ok || c.role !== role) role = null;
+        // Сессия валидна, если её роль входит в полный список ролей сотрудника.
+        if (!c.ok || !c.roles.includes(role)) role = null;
+        staffRoles = c.roles;
       }
       if (!role) {
         if (path.startsWith('/api/')) return new Response('Unauthorized', { status: 401 });
@@ -68,7 +79,25 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
         const location = `/portal/login?next=${encodeURIComponent(path)}`;
         return new Response(null, { status: 302, headers: { Location: location } });
       }
-      locals.portalRole = role;
+      // «Смотреть как»: admin может стать любой ролью, rukovoditel — vozhaty/teacher/student.
+      // Если у сотрудника несколько ролей, он может переключаться между ними.
+      const VIEW_AS_ALLOWED: Record<string, string[]> = {
+        admin: ['admin', 'rukovoditel', 'teacher', 'vozhaty', 'student'],
+        rukovoditel: ['rukovoditel', 'vozhaty', 'teacher', 'student'],
+      };
+      const viewAs = cookies.get('portal_view_as')?.value || '';
+      let effectiveRole: any = role;
+      const canViewAs =
+        (VIEW_AS_ALLOWED[role] && VIEW_AS_ALLOWED[role].includes(viewAs)) ||
+        // Любой пользователь с несколькими ролями может переключаться между своими.
+        (staffRoles.length > 1 && staffRoles.includes(viewAs));
+      if (viewAs && canViewAs) {
+        effectiveRole = viewAs;
+      }
+      locals.portalRole = effectiveRole;
+      locals.portalRealRole = role as any;
+      locals.portalViewAs = effectiveRole !== role ? effectiveRole : null;
+      locals.portalRoles = staffRoles as any;
     }
   }
 

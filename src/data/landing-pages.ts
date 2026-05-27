@@ -34,6 +34,7 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь в Подмосковье', description: 'Загородный, с бассейном', url: '/lager-v-podmoskove', icon: 'bi-tree' },
   { title: 'Лагерь на лето 2026', description: 'Смены июнь–август, календарь', url: '/lager-na-leto-2026', icon: 'bi-calendar-heart' },
   { title: 'Лагерь в Москве', description: 'Ближнее Подмосковье, 66 км от МКАД', url: '/lager-v-moskve', icon: 'bi-geo-alt' },
+  { title: 'Московские летние лагеря', description: 'IT-лагерь в 66 км от Москвы, трансфер', url: '/moskovskie-letnie-lagerya', icon: 'bi-geo-alt' },
 
   // 🎯 Тематические IT
   { title: 'AI-лагерь для детей', description: 'Нейросети, ChatGPT API, AI-проекты', url: '/ai-lager', icon: 'bi-cpu' },

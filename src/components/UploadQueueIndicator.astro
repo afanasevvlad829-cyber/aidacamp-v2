@@ -1,0 +1,155 @@
+---
+/**
+ * Индикатор очереди загрузок в шапке портала + биндинг .portal-uploader на очередь.
+ * Загружается как ES-модуль (Astro бандлит из src/lib).
+ */
+---
+<div class="upload-queue inline-flex items-center gap-1">
+  <button type="button" class="upload-queue__btn relative rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] font-medium text-body-muted transition hover:border-primary hover:text-primary" aria-label="Очередь загрузок">
+    <i class="bi bi-cloud-upload text-[16px]" aria-hidden="true"></i>
+    <span class="upload-queue__count ml-1 hidden tabular-nums">0</span>
+  </button>
+  <div class="upload-queue__panel absolute right-4 top-16 z-40 hidden w-[360px] max-w-[calc(100vw-2rem)] rounded-[12px] border border-border bg-white p-3 shadow-xl">
+    <div class="mb-2 flex items-center justify-between">
+      <p class="text-[14px] font-semibold text-navy-950">Очередь загрузок</p>
+      <button type="button" class="upload-queue__close rounded-[6px] p-1 text-body-muted hover:text-primary" aria-label="Закрыть">
+        <i class="bi bi-x-lg text-[14px]" aria-hidden="true"></i>
+      </button>
+    </div>
+    <p class="upload-queue__empty text-[13px] text-body-muted">Очередь пуста.</p>
+    <ul class="upload-queue__list space-y-2 max-h-[60vh] overflow-auto"></ul>
+    <div class="mt-2 flex gap-2">
+      <button type="button" class="upload-queue__flush rounded-[8px] bg-primary px-3 py-1.5 text-[13px] font-medium text-white hover:opacity-90">Отправить</button>
+      <button type="button" class="upload-queue__clear-failed rounded-[8px] border border-border bg-white px-3 py-1.5 text-[13px] font-medium text-body-muted hover:border-primary hover:text-primary">Удалить failed</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { enqueue, listAll, retry, remove, flush, subscribe, startAutoFlush, type QueueItem } from '../lib/portalUploadQueue';
+
+  // ── Индикатор в шапке ──
+  const root = document.querySelector('.upload-queue');
+  if (root) {
+    const btn = root.querySelector('.upload-queue__btn') as HTMLButtonElement | null;
+    const count = root.querySelector('.upload-queue__count') as HTMLSpanElement | null;
+    const panel = root.querySelector('.upload-queue__panel') as HTMLDivElement | null;
+    const list = root.querySelector('.upload-queue__list') as HTMLUListElement | null;
+    const empty = root.querySelector('.upload-queue__empty') as HTMLParagraphElement | null;
+    const closeBtn = root.querySelector('.upload-queue__close') as HTMLButtonElement | null;
+    const flushBtn = root.querySelector('.upload-queue__flush') as HTMLButtonElement | null;
+    const clearFailed = root.querySelector('.upload-queue__clear-failed') as HTMLButtonElement | null;
+
+    function fmtSize(n: number): string {
+      if (n < 1024) return n + ' B';
+      if (n < 1024 * 1024) return (n / 1024).toFixed(0) + ' KB';
+      return (n / 1024 / 1024).toFixed(1) + ' MB';
+    }
+    function statusLabel(s: string): string {
+      if (s === 'uploading') return '↑ отправляется';
+      if (s === 'failed') return '✗ ошибка';
+      return '⌛ в очереди';
+    }
+    function render(items: QueueItem[]) {
+      if (!btn || !count || !list || !empty) return;
+      const pending = items.filter((i) => i.status !== 'failed').length;
+      const failed = items.filter((i) => i.status === 'failed').length;
+      if (items.length > 0) {
+        count.classList.remove('hidden');
+        count.textContent = String(items.length);
+        btn.classList.remove('text-body-muted');
+        btn.classList.toggle('text-red-600', failed > 0 && pending === 0);
+        btn.classList.toggle('text-primary', pending > 0);
+      } else {
+        count.classList.add('hidden');
+        btn.classList.add('text-body-muted');
+        btn.classList.remove('text-red-600', 'text-primary');
+      }
+      if (items.length === 0) {
+        empty.classList.remove('hidden');
+        list.innerHTML = '';
+      } else {
+        empty.classList.add('hidden');
+        list.innerHTML = items.map((it) => {
+          const err = it.last_error ? `<span class="text-[11px] text-red-600">${escapeHtml(it.last_error)}</span>` : '';
+          const retryBtn = it.status === 'failed'
+            ? `<button type="button" class="qi-retry rounded-[6px] border border-border px-2 py-0.5 text-[11px]" data-id="${it.id}">Повторить</button>` : '';
+          return `<li class="rounded-[8px] border border-border p-2 text-[12px]">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="truncate font-medium text-navy-950">${escapeHtml(it.name)}</div>
+                <div class="text-body-muted">${fmtSize(it.size)} · ${escapeHtml(statusLabel(it.status))} · попытки ${it.attempts}</div>
+                ${err}
+              </div>
+              <div class="flex shrink-0 gap-1">
+                ${retryBtn}
+                <button type="button" class="qi-del rounded-[6px] border border-border px-2 py-0.5 text-[11px] text-red-600" data-id="${it.id}">Удалить</button>
+              </div>
+            </div>
+          </li>`;
+        }).join('');
+        list.querySelectorAll<HTMLButtonElement>('.qi-retry').forEach((b) => {
+          b.addEventListener('click', () => { retry(b.dataset.id!).catch(() => {}); });
+        });
+        list.querySelectorAll<HTMLButtonElement>('.qi-del').forEach((b) => {
+          b.addEventListener('click', () => { remove(b.dataset.id!).catch(() => {}); });
+        });
+      }
+    }
+    function escapeHtml(s: string): string {
+      return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+    }
+
+    btn?.addEventListener('click', () => { panel?.classList.toggle('hidden'); });
+    closeBtn?.addEventListener('click', () => { panel?.classList.add('hidden'); });
+    flushBtn?.addEventListener('click', () => { flush().catch(() => {}); });
+    clearFailed?.addEventListener('click', async () => {
+      const items = await listAll();
+      for (const it of items) if (it.status === 'failed') await remove(it.id);
+    });
+
+    subscribe(render);
+    startAutoFlush(60000);
+  }
+
+  // ── Биндинг .portal-uploader на очередь ──
+  document.querySelectorAll<HTMLDivElement>('.portal-uploader').forEach((r) => {
+    if (r.dataset.queueBound === '1') return;
+    r.dataset.queueBound = '1';
+    const input = r.querySelector<HTMLInputElement>('.portal-uploader__input');
+    const btn = r.querySelector<HTMLButtonElement>('.portal-uploader__btn');
+    const status = r.querySelector<HTMLParagraphElement>('.portal-uploader__status');
+    if (!input || !btn || !status) return;
+
+    btn.addEventListener('click', () => input.click());
+    input.addEventListener('change', async () => {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const eventId = r.dataset.eventId;
+      const ctId = r.dataset.contentTaskId || null;
+      if (!eventId || eventId === '0') {
+        showStatus(status, 'Ошибка: нет event_id', true);
+        return;
+      }
+      if (file.size > 500 * 1024 * 1024) {
+        showStatus(status, 'Файл больше 500 МБ', true);
+        input.value = '';
+        return;
+      }
+      try {
+        await enqueue(file, { event_id: eventId, content_task_id: ctId, uploader_id: r.id || null });
+        showStatus(status, '✓ В очереди (' + (file.size / 1024 / 1024).toFixed(1) + ' MB), отправляю…', false);
+        input.value = '';
+      } catch (e: any) {
+        showStatus(status, 'Ошибка: ' + (e && e.message ? e.message : e), true);
+      }
+    });
+  });
+
+  function showStatus(el: HTMLElement, text: string, isError: boolean) {
+    el.textContent = text;
+    el.classList.remove('hidden');
+    el.classList.toggle('text-red-600', isError);
+    el.classList.toggle('text-body-muted', !isError);
+  }
+</script>

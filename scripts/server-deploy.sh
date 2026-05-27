@@ -19,7 +19,7 @@ git pull origin dev 2>&1 | tail -3
 # 2. npm install если нужно
 if ! node -e "require('$REPO/node_modules/@astrojs/node')" 2>/dev/null; then
   echo "→ npm install..."
-  npm install --omit=dev --silent
+  npm install --silent
 fi
 
 # 3. build
@@ -32,7 +32,12 @@ deploy_to() {
   local DIR="$1"
   local LABEL="$2"
 
+<<<<<<< HEAD
   # Статика
+=======
+  # Статика — БЕЗ --delete чтобы не снести server/ и node_modules/
+  # Используем --delete-excluded=no (или просто убираем --delete)
+>>>>>>> 81cf09fe (kaizen(faq_add + schema_add + internal_link): /stati/lager-naro-fominsk — лагерь наро-фоминск)
   rsync -a \
     --exclude='.env' \
     --exclude='server/' \
@@ -40,8 +45,13 @@ deploy_to() {
     --exclude='backup-*' \
     "$REPO/dist/client/" "$DIR/" && echo "  ✅ client → $LABEL"
 
+<<<<<<< HEAD
   # SSR
   rsync -a \
+=======
+  # SSR — отдельно, с --delete только внутри server/
+  rsync -a --delete \
+>>>>>>> 81cf09fe (kaizen(faq_add + schema_add + internal_link): /stati/lager-naro-fominsk — лагерь наро-фоминск)
     "$REPO/dist/server/" "$DIR/server/" && echo "  ✅ server → $LABEL"
 
   # node_modules — симлинк

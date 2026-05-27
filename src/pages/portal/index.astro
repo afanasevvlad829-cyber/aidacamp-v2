@@ -3,90 +3,111 @@ export const prerender = false;
 
 import PortalLayout from '../../layouts/PortalLayout.astro';
 import type { PortalRole } from '../../lib/portalSession';
+import { getActiveShift, getEvents, getDone, EVENT_TYPE_LABELS } from '../../lib/portalShift';
+import { pickNowAndNext, relativeTime, checklistProgress } from '../../lib/portalNow';
 import searchIndex from '../../data/portalSearchIndex.json';
 
-const role = Astro.locals.portalRole!;
+const role = Astro.locals.portalRole! as PortalRole;
+const telegramId = Astro.locals.portalSub;
 
+// ─── Student: keep hub-launcher ─────────────────────────────────────────────
 interface SearchEntry {
-  title: string;
-  url: string;
-  group: string;
-  roles: PortalRole[];
-  text: string;
+  title: string; url: string; group: string; roles: PortalRole[]; text: string;
 }
-
-// Только материалы, доступные текущей роли — чужие записи не утекают в клиент.
-const searchEntries = (searchIndex as SearchEntry[]).filter((e) =>
-  e.roles.includes(role),
-);
+const searchEntries = role === 'student'
+  ? (searchIndex as SearchEntry[]).filter((e) => e.roles.includes(role))
+  : [];
 
 const BASE = 'https://ai.aidacamp.ru';
 
-interface CatalogItem {
-  title: string;
-  href: string;
-  desc: string;
-  icon: string;
-}
-interface CatalogGroup {
-  group: string;
-  roles: PortalRole[];
-  items: CatalogItem[];
+// ─── Staff: load today's events only ─────────────────────────────────────────
+const isStaff = role !== 'student';
+const today = new Date().toISOString().slice(0, 10);
+
+let shift = isStaff ? await getActiveShift() : null;
+let events = (isStaff && shift) ? await getEvents(shift.id, today) : [];
+let doneSet: Set<string> = new Set();
+if (isStaff && shift && telegramId) {
+  doneSet = await getDone(telegramId, shift.id);
 }
 
-const catalog: CatalogGroup[] = [
-  {
-    group: 'Танковый полигон',
-    roles: ['admin', 'teacher', 'student'],
-    items: [
-      { title: 'Танковый бой', href: `${BASE}/docs/tank-battle.html`, desc: 'Командное сражение на полигоне', icon: 'bullseye' },
-      { title: 'Арена', href: `${BASE}/docs/arena.html`, desc: 'Турнирная площадка', icon: 'grid-3x3-gap' },
-      { title: 'Тренировка', href: `${BASE}/docs/train.html`, desc: 'Отработка манёвров перед боем', icon: 'clipboard-check' },
-      { title: 'Игра', href: `${BASE}/docs/play.html`, desc: 'Запуск игрового режима', icon: 'controller' },
-    ],
-  },
-  {
-    group: 'Учителю',
-    roles: ['admin', 'teacher'],
-    items: [
-      { title: 'Онбординг преподавателя', href: `${BASE}/docs/onboarding-teacher.html`, desc: 'Первые шаги в роли преподавателя', icon: 'signpost-2' },
-      { title: 'Преподавателю', href: `${BASE}/docs/teacher.html`, desc: 'Рабочее пространство преподавателя', icon: 'person-workspace' },
-      { title: 'Хендбук', href: `${BASE}/docs/handbook.html`, desc: 'Справочник и методики', icon: 'journal-text' },
-      { title: 'Дашборд', href: `${BASE}/docs/dashboard.html`, desc: 'Метрики и прогресс группы', icon: 'speedometer2' },
-    ],
-  },
-  {
-    group: 'Ученику',
-    roles: ['admin', 'teacher', 'student'],
-    items: [
-      { title: 'Онбординг ученика', href: `${BASE}/docs/onboarding-student.html`, desc: 'С чего начать обучение', icon: 'signpost' },
-      { title: 'Ученику', href: `${BASE}/docs/student.html`, desc: 'Личное пространство ученика', icon: 'person' },
-      { title: 'Квесты', href: `${BASE}/docs/quests.html`, desc: 'Задания и испытания', icon: 'list-check' },
-      { title: 'Каталог', href: `${BASE}/docs/catalog.html`, desc: 'Все доступные материалы', icon: 'collection' },
-      { title: 'Тур', href: `${BASE}/docs/tour.html`, desc: 'Знакомство с порталом', icon: 'map' },
-    ],
-  },
-  {
-    group: 'Сотрудникам смены',
-    roles: ['admin', 'rukovoditel', 'vozhaty'],
-    items: [
-      { title: 'Портал сотрудников', href: '/staff/', desc: 'Вожатый и руководитель смены: инструкции, самопроверка', icon: 'people-fill' },
-      { title: 'Конструктор смены', href: '/staff/plan/', desc: 'План смены и расселение по комнатам', icon: 'calendar-event' },
-    ],
-  },
-  {
-    group: 'Управление',
-    roles: ['admin'],
-    items: [
-      { title: 'Управление сотрудниками', href: '/portal/staff-admin', desc: 'Заявки, роли, отзыв доступа', icon: 'people-fill' },
-    ],
-  },
-];
+// Determine if shift is active today
+function shiftActive(sh: typeof shift, d: string): boolean {
+  if (!sh) return false;
+  return sh.start_date <= d && d <= sh.end_date;
+}
+const isShiftDay = shiftActive(shift, today);
 
-const visibleGroups = catalog.filter((g) => g.roles.includes(role));
+// Pick now/next for current role
+const { current: nowEvent, next: nextEvent } = isShiftDay
+  ? pickNowAndNext(events, new Date().toISOString(), role)
+  : { current: null, next: null };
+
+// Today's events for this role (for day timeline)
+import { roleAllowed } from '../../lib/portalShiftRoles';
+const myEvents = isShiftDay
+  ? events.filter((e) => roleAllowed(role, e.roles))
+  : [];
+
+// ─── Manager/Admin metrics ───────────────────────────────────────────────────
+function computeMetrics() {
+  const totalEvents = events.length;
+  // An event is "closed" when ALL checklist items across ALL its checklists have a done entry
+  let closedEvents = 0;
+  let unclosedItems = 0;
+  let contentTasks = 0;
+  for (const e of events) {
+    const allItems: string[] = [];
+    for (const cl of e.checklists) {
+      for (const item of cl.items) {
+        allItems.push(`${e.id}:${cl.checklist_id}:${item.id}`);
+      }
+    }
+    if (allItems.length > 0 && allItems.every((k) => doneSet.has(k))) {
+      closedEvents++;
+    }
+    // unclosed items for events my role can see
+    if (roleAllowed(role, e.roles)) {
+      for (const cl of e.checklists) {
+        for (const item of cl.items) {
+          if (!doneSet.has(`${e.id}:${cl.checklist_id}:${item.id}`)) unclosedItems++;
+        }
+      }
+    }
+    if (e.content_task_template_id) contentTasks++;
+  }
+  return { totalEvents, closedEvents, unclosedItems, contentTasksTotal: contentTasks };
+}
+
+const metrics = (role === 'rukovoditel' || role === 'admin') ? computeMetrics() : null;
+
+// Checklist progress for nowEvent
+const nowProgress = nowEvent
+  ? checklistProgress(nowEvent, doneSet, role)
+  : null;
+
+// Time display helper
+function formatTime(t: string | null) {
+  if (!t) return '';
+  return t.slice(0, 5);
+}
+
+// Shift status label
+function shiftStatus(): string {
+  if (!shift) return 'Смена не активна';
+  if (today < shift.start_date) return `Стартует ${shift.start_date}`;
+  if (today > shift.end_date) return `Завершилась ${shift.end_date}`;
+  return '';
+}
+const shiftStatusMsg = isStaff && !isShiftDay ? shiftStatus() : '';
 ---
 
 <PortalLayout title="Портал — АйДаКэмп">
+
+{role === 'student' && (
+  <!-- ══════════════════════════════════════════════
+       STUDENT: hub-launcher (unchanged)
+  ══════════════════════════════════════════════ -->
   <div class="mb-10">
     <h1 class="text-[28px] font-bold tracking-[-0.02em] text-navy-950 md:text-[36px]">
       Портал АйДаКэмп
@@ -108,45 +129,45 @@ const visibleGroups = catalog.filter((g) => g.roles.includes(role));
         class="w-full rounded-[12px] border border-border bg-white py-3 pl-11 pr-4 text-[16px] text-navy-950 outline-none transition placeholder:text-body-muted focus:border-primary"
       />
     </div>
-    <ul
-      id="portal-search-results"
-      class="mt-4 hidden space-y-3"
-      aria-live="polite"
-    ></ul>
-    <p
-      id="portal-search-empty"
-      class="mt-4 hidden text-[16px] text-body-muted"
-    >
-      Ничего не найдено.
-    </p>
+    <ul id="portal-search-results" class="mt-4 hidden space-y-3" aria-live="polite"></ul>
+    <p id="portal-search-empty" class="mt-4 hidden text-[16px] text-body-muted">Ничего не найдено.</p>
   </div>
 
   <script type="application/json" id="portal-search-data" set:html={JSON.stringify(searchEntries)} />
 
   <div id="portal-cards" class="space-y-12">
-    {visibleGroups.map((g) => (
+    {[
+      {
+        group: 'Танковый полигон',
+        items: [
+          { title: 'Танковый бой', href: `${BASE}/docs/tank-battle.html`, desc: 'Командное сражение на полигоне', icon: 'bullseye' },
+          { title: 'Арена', href: `${BASE}/docs/arena.html`, desc: 'Турнирная площадка', icon: 'grid-3x3-gap' },
+          { title: 'Тренировка', href: `${BASE}/docs/train.html`, desc: 'Отработка манёвров перед боем', icon: 'clipboard-check' },
+          { title: 'Игра', href: `${BASE}/docs/play.html`, desc: 'Запуск игрового режима', icon: 'controller' },
+        ],
+      },
+      {
+        group: 'Ученику',
+        items: [
+          { title: 'Онбординг ученика', href: `${BASE}/docs/onboarding-student.html`, desc: 'С чего начать обучение', icon: 'signpost' },
+          { title: 'Ученику', href: `${BASE}/docs/student.html`, desc: 'Личное пространство ученика', icon: 'person' },
+          { title: 'Квесты', href: `${BASE}/docs/quests.html`, desc: 'Задания и испытания', icon: 'list-check' },
+          { title: 'Каталог', href: `${BASE}/docs/catalog.html`, desc: 'Все доступные материалы', icon: 'collection' },
+          { title: 'Тур', href: `${BASE}/docs/tour.html`, desc: 'Знакомство с порталом', icon: 'map' },
+        ],
+      },
+    ].map((g) => (
       <section>
-        <h2 class="mb-4 text-[20px] font-bold tracking-[-0.01em] text-navy-950 md:text-[24px]">
-          {g.group}
-        </h2>
+        <h2 class="mb-4 text-[20px] font-bold tracking-[-0.01em] text-navy-950 md:text-[24px]">{g.group}</h2>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {g.items.map((item) => (
-            <a
-              href={item.href}
-              target="_blank"
-              rel="noopener"
-              class="group flex items-start gap-4 rounded-[16px] border border-border bg-white p-5 card-shadow transition hover:border-primary"
-            >
+            <a href={item.href} target="_blank" rel="noopener" class="group flex items-start gap-4 rounded-[16px] border border-border bg-white p-5 card-shadow transition hover:border-primary">
               <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] bg-primary-soft text-primary">
                 <i class={`bi bi-${item.icon} text-[24px]`} aria-hidden="true"></i>
               </span>
               <span class="min-w-0">
-                <span class="block text-[18px] font-semibold text-navy-950 group-hover:text-primary">
-                  {item.title}
-                </span>
-                <span class="mt-1 block text-[16px] leading-[1.5] text-body-muted">
-                  {item.desc}
-                </span>
+                <span class="block text-[18px] font-semibold text-navy-950 group-hover:text-primary">{item.title}</span>
+                <span class="mt-1 block text-[16px] leading-[1.5] text-body-muted">{item.desc}</span>
               </span>
             </a>
           ))}
@@ -163,41 +184,21 @@ const visibleGroups = catalog.filter((g) => g.roles.includes(role));
       const empty = document.getElementById('portal-search-empty');
       const cards = document.getElementById('portal-cards');
       if (!dataTag || !input || !results || !empty || !cards) return;
-
       let entries = [];
-      try {
-        entries = JSON.parse(dataTag.textContent || '[]');
-      } catch {
-        entries = [];
-      }
-
-      const SNIPPET = 160;
-      const MAX_RESULTS = 15;
-
-      const escapeHtml = (s) =>
-        s
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
-
+      try { entries = JSON.parse(dataTag.textContent || '[]'); } catch { entries = []; }
+      const SNIPPET = 160; const MAX_RESULTS = 15;
+      const escapeHtml = (s) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
       function snippet(text, q) {
         if (!text) return '';
         const idx = text.toLowerCase().indexOf(q);
         if (idx < 0) return text.slice(0, SNIPPET).trim() + (text.length > SNIPPET ? '…' : '');
         const half = Math.floor((SNIPPET - q.length) / 2);
-        const start = Math.max(0, idx - half);
-        const end = Math.min(text.length, start + SNIPPET);
+        const start = Math.max(0, idx - half); const end = Math.min(text.length, start + SNIPPET);
         let s = text.slice(start, end).trim();
-        if (start > 0) s = '…' + s;
-        if (end < text.length) s = s + '…';
-        return s;
+        if (start > 0) s = '…' + s; if (end < text.length) s = s + '…'; return s;
       }
-
       function search(q) {
-        const needle = q.toLowerCase();
-        const matched = [];
+        const needle = q.toLowerCase(); const matched = [];
         for (const e of entries) {
           const inTitle = e.title.toLowerCase().includes(needle);
           const inText = (e.text || '').toLowerCase().includes(needle);
@@ -206,53 +207,404 @@ const visibleGroups = catalog.filter((g) => g.roles.includes(role));
         matched.sort((a, b) => a.rank - b.rank);
         return matched.slice(0, MAX_RESULTS).map((m) => m.e);
       }
-
       function render(q) {
-        const found = search(q);
-        results.innerHTML = '';
-        if (found.length === 0) {
-          results.classList.add('hidden');
-          empty.classList.remove('hidden');
-          return;
-        }
-        empty.classList.add('hidden');
-        results.classList.remove('hidden');
+        const found = search(q); results.innerHTML = '';
+        if (found.length === 0) { results.classList.add('hidden'); empty.classList.remove('hidden'); return; }
+        empty.classList.add('hidden'); results.classList.remove('hidden');
         for (const e of found) {
           const li = document.createElement('li');
-          li.innerHTML =
-            '<a href="' +
-            escapeHtml(e.url) +
-            '" target="_blank" rel="noopener" class="block rounded-[16px] border border-border bg-white p-4 card-shadow transition hover:border-primary">' +
-            '<span class="block text-[18px] font-semibold text-navy-950">' +
-            escapeHtml(e.title) +
-            '</span>' +
-            '<span class="mt-1 block text-[14px] font-medium text-primary">' +
-            escapeHtml(e.group) +
-            '</span>' +
-            '<span class="mt-1 block text-[16px] leading-[1.5] text-body-muted">' +
-            escapeHtml(snippet(e.text || '', q.toLowerCase())) +
-            '</span>' +
-            '</a>';
+          li.innerHTML = '<a href="' + escapeHtml(e.url) + '" target="_blank" rel="noopener" class="block rounded-[16px] border border-border bg-white p-4 card-shadow transition hover:border-primary">' +
+            '<span class="block text-[18px] font-semibold text-navy-950">' + escapeHtml(e.title) + '</span>' +
+            '<span class="mt-1 block text-[14px] font-medium text-primary">' + escapeHtml(e.group) + '</span>' +
+            '<span class="mt-1 block text-[16px] leading-[1.5] text-body-muted">' + escapeHtml(snippet(e.text || '', q.toLowerCase())) + '</span></a>';
           results.appendChild(li);
         }
       }
-
       let timer;
       input.addEventListener('input', () => {
         clearTimeout(timer);
         timer = setTimeout(() => {
           const q = input.value.trim();
-          if (!q) {
-            results.classList.add('hidden');
-            empty.classList.add('hidden');
-            results.innerHTML = '';
-            cards.classList.remove('hidden');
-            return;
-          }
-          cards.classList.add('hidden');
-          render(q);
+          if (!q) { results.classList.add('hidden'); empty.classList.add('hidden'); results.innerHTML = ''; cards.classList.remove('hidden'); return; }
+          cards.classList.add('hidden'); render(q);
         }, 150);
       });
     })();
   </script>
+)}
+
+{role !== 'student' && (
+  <!-- ══════════════════════════════════════════════
+       STAFF: "Сейчас" panel
+  ══════════════════════════════════════════════ -->
+  <div class="space-y-6">
+
+    <!-- Header row -->
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <h1 class="text-[28px] font-bold tracking-[-0.02em] text-navy-950">
+          {role === 'vozhaty' && 'Сейчас'}
+          {role === 'teacher' && 'Сейчас'}
+          {role === 'rukovoditel' && 'Обзор дня'}
+          {role === 'admin' && 'Обзор дня'}
+        </h1>
+        {shift && (
+          <p class="mt-1 text-[16px] text-body-muted">
+            {shift.name} &mdash; {today}
+          </p>
+        )}
+        {!shift && (
+          <p class="mt-1 text-[16px] text-body-muted">Активная смена не найдена</p>
+        )}
+      </div>
+      <a
+        href="/portal/all"
+        class="inline-flex items-center gap-2 rounded-[12px] border border-border bg-white px-4 py-2 text-[16px] font-medium text-body-muted transition hover:border-primary hover:text-primary"
+      >
+        <i class="bi bi-grid text-[18px]" aria-hidden="true"></i>
+        Все разделы
+      </a>
+    </div>
+
+    <!-- Shift inactive banner — кликабельный (ведёт на сетку смены на дату старта). -->
+    {shiftStatusMsg && (
+      <a href={shift ? `/portal/smena?shift=${shift.id}&view=role&date=${shift.start_date}` : '/portal/smena'}
+         class="block rounded-[16px] border border-border bg-white p-5 card-shadow transition hover:border-primary">
+        <div class="flex items-center gap-3">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-primary-soft text-primary">
+            <i class="bi bi-calendar-event text-[20px]" aria-hidden="true"></i>
+          </span>
+          <div class="flex-1">
+            <p class="text-[17px] font-semibold text-navy-950">{shiftStatusMsg}</p>
+            <p class="text-[14px] text-body-muted">Нажми, чтобы открыть сетку смены на дату старта</p>
+          </div>
+          <i class="bi bi-arrow-right text-[18px] text-body-muted" aria-hidden="true"></i>
+        </div>
+      </a>
+    )}
+
+    {/* Быстрые ссылки для admin/rukovoditel — доступны всегда, не зависят от активности смены */}
+    {(role !== 'student') && (
+      <nav aria-label="Разделы портала" class="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <a href={`/portal/smena${shift ? `?shift=${shift.id}&view=role&date=${shift.start_date}` : ''}`}
+           class="flex items-start gap-3 rounded-[14px] border border-border bg-white p-4 card-shadow transition hover:border-primary">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
+            <i class="bi bi-calendar-week text-[20px]" aria-hidden="true"></i>
+          </span>
+          <span class="min-w-0">
+            <span class="block text-[16px] font-semibold text-navy-950">Сетка смены</span>
+            <span class="mt-0.5 block text-[13px] text-body-muted">События, чек-листы</span>
+          </span>
+        </a>
+        {(role === 'admin' || role === 'rukovoditel') && (
+          <a href="/portal/smena/admin"
+             class="flex items-start gap-3 rounded-[14px] border border-border bg-white p-4 card-shadow transition hover:border-primary">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
+              <i class="bi bi-kanban text-[20px]" aria-hidden="true"></i>
+            </span>
+            <span class="min-w-0">
+              <span class="block text-[16px] font-semibold text-navy-950">Управление сеткой</span>
+              <span class="mt-0.5 block text-[13px] text-body-muted">Дни и события</span>
+            </span>
+          </a>
+        )}
+        <a href="/portal/rooms"
+           class="flex items-start gap-3 rounded-[14px] border border-border bg-white p-4 card-shadow transition hover:border-primary">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
+            <i class="bi bi-house-door-fill text-[20px]" aria-hidden="true"></i>
+          </span>
+          <span class="min-w-0">
+            <span class="block text-[16px] font-semibold text-navy-950">Комнаты</span>
+            <span class="mt-0.5 block text-[13px] text-body-muted">Расселение + инвентаризация · 3 корпус</span>
+          </span>
+        </a>
+        <a href="/portal/metodichki"
+           class="flex items-start gap-3 rounded-[14px] border border-border bg-white p-4 card-shadow transition hover:border-primary">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
+            <i class="bi bi-book-half text-[20px]" aria-hidden="true"></i>
+          </span>
+          <span class="min-w-0">
+            <span class="block text-[16px] font-semibold text-navy-950">Методички</span>
+            <span class="mt-0.5 block text-[13px] text-body-muted">Активности Ташкина</span>
+          </span>
+        </a>
+        {role === 'admin' && (
+          <a href="/portal/staff-admin"
+             class="flex items-start gap-3 rounded-[14px] border border-border bg-white p-4 card-shadow transition hover:border-primary">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
+              <i class="bi bi-people-fill text-[20px]" aria-hidden="true"></i>
+            </span>
+            <span class="min-w-0">
+              <span class="block text-[16px] font-semibold text-navy-950">Сотрудники</span>
+              <span class="mt-0.5 block text-[13px] text-body-muted">Доступы и роли</span>
+            </span>
+          </a>
+        )}
+        <a href="/portal/all"
+           class="flex items-start gap-3 rounded-[14px] border border-border bg-white p-4 card-shadow transition hover:border-primary">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
+            <i class="bi bi-grid text-[20px]" aria-hidden="true"></i>
+          </span>
+          <span class="min-w-0">
+            <span class="block text-[16px] font-semibold text-navy-950">Все разделы</span>
+            <span class="mt-0.5 block text-[13px] text-body-muted">Хаб целиком</span>
+          </span>
+        </a>
+      </nav>
+    )}
+
+    {/* Превью смены даже если она ещё не началась — показываем первый день для всех staff */}
+    {(role !== 'student') && shift && !isShiftDay && (
+      <div class="rounded-[16px] border border-dashed border-border bg-amber-50/40 p-5">
+        <p class="text-[15px] text-navy-950">
+          Чтобы посмотреть, как «Сейчас» и карточки событий будут выглядеть в реальный день смены,
+          открой <a href={`/portal/smena?shift=${shift.id}&view=role&date=${shift.start_date}`}
+                    class="font-semibold text-primary hover:underline">Сетку смены</a> на нужную дату
+          (старт {shift.start_date}).
+        </p>
+      </div>
+    )}
+
+    {/* ── Manager / Admin: 2×2 metrics grid ── */}
+    {(role === 'rukovoditel' || role === 'admin') && isShiftDay && metrics && (
+      <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div class="rounded-[16px] border border-border bg-white p-5 card-shadow">
+          <p class="text-[13px] font-medium uppercase tracking-wide text-body-muted">События закрыты</p>
+          <p class="mt-2 text-[28px] font-bold text-navy-950">
+            {metrics.closedEvents}<span class="text-[18px] font-normal text-body-muted"> / {metrics.totalEvents}</span>
+          </p>
+        </div>
+        <div class="rounded-[16px] border border-border bg-white p-5 card-shadow">
+          <p class="text-[13px] font-medium uppercase tracking-wide text-body-muted">Фото в архиве</p>
+          <p class="mt-2 text-[28px] font-bold text-navy-950">0</p>
+          <p class="mt-1 text-[13px] text-body-muted">пайплайн в работе</p>
+        </div>
+        <div class="rounded-[16px] border border-border bg-white p-5 card-shadow">
+          <p class="text-[13px] font-medium uppercase tracking-wide text-body-muted">Контент-задачи</p>
+          <p class="mt-2 text-[28px] font-bold text-navy-950">
+            0<span class="text-[18px] font-normal text-body-muted"> / {metrics.contentTasksTotal}</span>
+          </p>
+        </div>
+        <div class="rounded-[16px] border border-border bg-white p-5 card-shadow">
+          <p class="text-[13px] font-medium uppercase tracking-wide text-body-muted">Незакрытых пунктов</p>
+          <p class="mt-2 text-[28px] font-bold text-navy-950">{metrics.unclosedItems}</p>
+        </div>
+      </div>
+    )}
+
+    {/* ── Manager / Admin: placeholder report button ── */}
+    {(role === 'rukovoditel' || role === 'admin') && isShiftDay && (
+      <div class="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          disabled
+          title="Отчёт по дню будет доступен позже"
+          class="inline-flex cursor-not-allowed items-center gap-2 rounded-[12px] border border-border bg-white px-4 py-2 text-[16px] font-medium text-body-muted opacity-60"
+        >
+          <i class="bi bi-file-earmark-text text-[18px]" aria-hidden="true"></i>
+          Отчёт по дню
+        </button>
+        {role === 'admin' && (
+          <a
+            href="/portal/staff-admin"
+            class="inline-flex items-center gap-2 rounded-[12px] border border-border bg-white px-4 py-2 text-[16px] font-medium text-navy-950 transition hover:border-primary hover:text-primary"
+          >
+            <i class="bi bi-people-fill text-[18px]" aria-hidden="true"></i>
+            Управление сотрудниками
+          </a>
+        )}
+      </div>
+    )}
+
+    {/* ── "Сейчас" card (all staff roles) ── */}
+    {isShiftDay && (
+      <div class="rounded-[16px] border border-border bg-white p-5 card-shadow">
+        {nowEvent ? (
+          <div>
+            <!-- event header -->
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="inline-flex items-center rounded-[8px] bg-primary-soft px-2.5 py-1 text-[13px] font-semibold text-primary">
+                    {nowEvent.event_type ? (EVENT_TYPE_LABELS[nowEvent.event_type] ?? nowEvent.event_type) : 'Событие'}
+                  </span>
+                  <span class="text-[15px] text-body-muted">
+                    {formatTime(nowEvent.start_time)}
+                    {nowEvent.end_time ? ` — ${formatTime(nowEvent.end_time)}` : ''}
+                  </span>
+                </div>
+                <h2 class="mt-2 text-[20px] font-bold text-navy-950">{nowEvent.title}</h2>
+              </div>
+              <a
+                href={`/portal/smena?view=role&date=${today}`}
+                class="inline-flex shrink-0 items-center gap-2 rounded-[12px] bg-primary px-4 py-2 text-[16px] font-semibold text-white transition hover:opacity-90"
+              >
+                <i class="bi bi-arrow-right text-[16px]" aria-hidden="true"></i>
+                Открыть
+              </a>
+            </div>
+
+            <!-- Чек-лист progress -->
+            {nowProgress && nowProgress.total > 0 && (
+              <div class="mt-4">
+                <div class="mb-2 flex items-center justify-between">
+                  <span class="text-[15px] font-medium text-navy-950">Чек-лист</span>
+                  <span class="text-[15px] text-body-muted">{nowProgress.done} / {nowProgress.total} готово</span>
+                </div>
+                <div class="h-2 w-full overflow-hidden rounded-full bg-primary-soft">
+                  <div
+                    class="h-2 rounded-full bg-primary transition-all"
+                    style={`width: ${nowProgress.total > 0 ? Math.round((nowProgress.done / nowProgress.total) * 100) : 0}%`}
+                  ></div>
+                </div>
+              </div>
+            )}
+
+            <!-- teacher: lesson link -->
+            {role === 'teacher' && nowEvent.event_type === 'lesson' && (
+              <div class="mt-4">
+                {nowEvent.activity_slug ? (
+                  <a
+                    href={`/portal/metodichki/${nowEvent.activity_slug}`}
+                    class="inline-flex items-center gap-2 rounded-[12px] border border-primary px-4 py-2 text-[16px] font-medium text-primary transition hover:bg-primary-soft"
+                  >
+                    <i class="bi bi-journal-text text-[18px]" aria-hidden="true"></i>
+                    Открыть методичку
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    title="Методичка пока не привязана к этому уроку"
+                    class="inline-flex cursor-not-allowed items-center gap-2 rounded-[12px] border border-border px-4 py-2 text-[16px] font-medium text-body-muted opacity-60"
+                  >
+                    <i class="bi bi-journal-text text-[18px]" aria-hidden="true"></i>
+                    Методичка пока не привязана
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* content_task — кнопка загрузки фото */}
+            {nowEvent.content_task_template_id && (
+              <div class="mt-3 portal-uploader" data-event-id={nowEvent.id} data-content-task-id={nowEvent.content_task_template_id}>
+                <input type="file" accept="image/*,video/*" capture="environment" class="portal-uploader__input hidden" />
+                <button type="button" class="portal-uploader__btn inline-flex items-center gap-2 rounded-[12px] bg-primary px-4 py-2 text-[16px] font-medium text-white transition hover:opacity-90">
+                  <i class="bi bi-camera-fill text-[18px]" aria-hidden="true"></i>
+                  Снять и загрузить
+                </button>
+                <p class="portal-uploader__status mt-2 text-[14px] text-body-muted hidden" aria-live="polite"></p>
+              </div>
+            )}
+
+            {/* Лента загруженных фото/видео по текущему событию */}
+            <div class="portal-media mt-3"
+                 data-event-id={nowEvent.id}
+                 data-can-delete={role === 'admin' || role === 'rukovoditel' ? 'true' : 'false'}>
+              <div class="portal-media__header hidden text-[13px] font-semibold text-body-muted"></div>
+              <ul class="portal-media__list mt-1 space-y-1 text-[14px]"></ul>
+            </div>
+          </div>
+        ) : (
+          <div class="flex items-center gap-3">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-primary-soft text-primary">
+              <i class="bi bi-sun text-[20px]" aria-hidden="true"></i>
+            </span>
+            <div>
+              <p class="text-[17px] font-semibold text-navy-950">Сегодня свободно</p>
+              <p class="text-[15px] text-body-muted">Нет событий для вашей роли прямо сейчас</p>
+            </div>
+          </div>
+        )}
+      </div>
+    )}
+
+    {/* ── "Дальше" card ── */}
+    {isShiftDay && nextEvent && (
+      <div class="rounded-[16px] border border-border bg-white p-5 card-shadow">
+        <p class="mb-2 text-[13px] font-medium uppercase tracking-wide text-body-muted">Дальше</p>
+        <div class="flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <p class="text-[17px] font-semibold text-navy-950">{nextEvent.title}</p>
+            <p class="mt-1 text-[15px] text-body-muted">
+              {relativeTime(nextEvent.start_time)}
+              {nextEvent.event_type && ` · ${EVENT_TYPE_LABELS[nextEvent.event_type] ?? nextEvent.event_type}`}
+            </p>
+          </div>
+          <a
+            href={`/portal/smena?view=role&date=${today}`}
+            class="inline-flex shrink-0 items-center gap-2 rounded-[12px] border border-border bg-white px-4 py-2 text-[16px] font-medium text-navy-950 transition hover:border-primary hover:text-primary"
+          >
+            <i class="bi bi-calendar-week text-[18px]" aria-hidden="true"></i>
+            К расписанию
+          </a>
+        </div>
+      </div>
+    )}
+
+    {/* ── Today's timeline ── */}
+    {isShiftDay && myEvents.length > 0 && (
+      <div class="rounded-[16px] border border-border bg-white p-5 card-shadow">
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="text-[17px] font-bold text-navy-950">Сегодня</h2>
+          <a
+            href={`/portal/smena?view=role&date=${today}`}
+            class="text-[15px] text-primary transition hover:underline"
+          >
+            Все события
+          </a>
+        </div>
+        <ul class="divide-y divide-border">
+          {myEvents.map((e) => {
+            const isCurrent = e.id === nowEvent?.id;
+            const prog = checklistProgress(e, doneSet, role);
+            return (
+              <li class={`flex items-center gap-3 py-3 ${isCurrent ? 'rounded-[8px] bg-primary-soft px-2' : ''}`}>
+                <span class="w-[52px] shrink-0 text-[14px] font-medium tabular-nums text-body-muted">
+                  {formatTime(e.start_time)}
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class={`block text-[16px] font-medium ${isCurrent ? 'text-primary' : 'text-navy-950'}`}>{e.title}</span>
+                  {prog.total > 0 && (
+                    <span class="text-[13px] text-body-muted">{prog.done}/{prog.total} чек-лист</span>
+                  )}
+                </span>
+                {isCurrent && (
+                  <span class="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[12px] font-semibold text-white">Сейчас</span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        {role === 'teacher' && (
+          <div class="mt-4 border-t border-border pt-4">
+            <a
+              href="/portal/metodichki/"
+              class="inline-flex items-center gap-2 text-[15px] text-primary transition hover:underline"
+            >
+              <i class="bi bi-journal-text text-[16px]" aria-hidden="true"></i>
+              Все методички
+            </a>
+          </div>
+        )}
+      </div>
+    )}
+
+    {/* ── No events today ── */}
+    {isShiftDay && myEvents.length === 0 && !shiftStatusMsg && (
+      <div class="rounded-[16px] border border-border bg-white p-5 card-shadow">
+        <p class="text-[16px] text-body-muted">На сегодня событий для вашей роли не запланировано.</p>
+        <a
+          href={`/portal/smena?view=role&date=${today}`}
+          class="mt-3 inline-flex items-center gap-2 text-[15px] text-primary transition hover:underline"
+        >
+          <i class="bi bi-calendar-week text-[16px]" aria-hidden="true"></i>
+          Открыть расписание смены
+        </a>
+      </div>
+    )}
+
+  </div>
+)}
+
 </PortalLayout>

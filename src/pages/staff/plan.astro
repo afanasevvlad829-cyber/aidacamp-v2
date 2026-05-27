@@ -24,6 +24,10 @@ export const prerender = true;
   button{font-family:inherit}
 
   .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;box-shadow:0 1px 4px rgba(15,23,42,.06)}
+  /* Embed-режим: страница встроена с портала, скрываем шапку и сайдбар. */
+  body.embed-mode .topbar{display:none}
+  body.embed-mode .sidebar{display:none}
+  body.embed-mode .layout{padding-top:0}
   .topbar-logo{font-weight:800;font-size:15px;color:var(--orange);display:flex;align-items:center;gap:8px;white-space:nowrap}
   .topbar-title{font-size:14px;font-weight:600;color:var(--text2);border-left:1px solid var(--border);padding-left:12px}
   .proto-badge{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-border);padding:3px 8px;border-radius:20px}
@@ -654,7 +658,13 @@ function defaultPlan(){
 }
 
 /* ============== STATE ============== */
-let plan=null, store=null, currentUser=null, view='schedule', currentRole='counselor', editorDay=0, filter='all', groupFilter='all', groupsScope='teacher', modalChk=[], saveTimer=null, _dragId=null;
+// Инициализация view и embed-режима из URL (?view=rooms&embed=1 — без sidebar/topbar).
+const _qsp = new URLSearchParams(location.search);
+const _vp = _qsp.get('view') || '';
+const _vmap = ['rooms','schedule','overview','load','dgrid','editor','groups','reports','checklists','settings','team','log'];
+const _initView = _vmap.includes(_vp) ? _vp : 'schedule';
+if (_qsp.get('embed') === '1') document.body.classList.add('embed-mode');
+let plan=null, store=null, currentUser=null, view=_initView, currentRole='counselor', editorDay=0, filter='all', groupFilter='all', groupsScope='teacher', modalChk=[], saveTimer=null, _dragId=null;
 function nid(p){ return p+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function activeShift(){ return store.shifts.find(s=>s.id===store.activeId) || store.shifts[0]; }
 function clonePlan(pl){ return JSON.parse(JSON.stringify(pl, (k,v)=> k.charAt(0)==='_'?undefined:v)); }

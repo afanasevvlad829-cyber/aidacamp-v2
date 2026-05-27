@@ -1,0 +1,551 @@
+---
+export const prerender = false;
+
+import PortalLayout from '../../layouts/PortalLayout.astro';
+import { verifySessionPayload } from '../../lib/portalSession';
+import { roleAllowed } from '../../lib/portalShiftRoles';
+import { getActiveShift, getEvents, getEventDates, getDone, listShifts, EVENT_TYPE_LABELS, type ShiftEvent } from '../../lib/portalShift';
+import { getActivity } from '../../lib/portalActivities';
+import { canEditEvent } from '../../lib/portalShiftPerms';
+
+const role = Astro.locals.portalRole!;
+const sub = verifySessionPayload(
+  Astro.cookies.get('portal_session')?.value,
+  process.env.PORTAL_SESSION_SECRET ?? '',
+)?.sub;
+
+const allShifts = (await listShifts()) ?? [];
+const reqShiftId = Number(Astro.url.searchParams.get('shift') || 0);
+const shift =
+  allShifts.find((sh) => sh.id === reqShiftId) ?? (await getActiveShift()) ?? allShifts[0] ?? null;
+
+// Виды и подписи табов.
+type View = 'role' | 'day' | 'activity' | 'matrix';
+const VIEWS: { key: View; label: string; icon: string }[] = [
+  { key: 'role', label: 'Мой день', icon: 'person' },
+  { key: 'day', label: 'Все события дня', icon: 'calendar-week' },
+  { key: 'activity', label: 'По активностям', icon: 'tag' },
+  { key: 'matrix', label: 'Шахматка', icon: 'kanban' },
+];
+const rawView = Astro.url.searchParams.get('view');
+const view: View = (VIEWS.some((v) => v.key === rawView) ? rawView : 'role') as View;
+
+// Выбор даты: ?date=, иначе сегодня (если в пределах смены), иначе старт смены.
+function isoToday(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+const today = isoToday();
+let selectedDate = Astro.url.searchParams.get('date') ?? '';
+if (shift) {
+  const inShift = today >= shift.start_date && today <= shift.end_date;
+  if (!selectedDate || !/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) {
+    selectedDate = inShift ? today : shift.start_date;
+  }
+}
+
+// Список дат смены — нужен навигации по дням и шахматке (дёшево, без загрузки событий).
+const dates = shift ? await getEventDates(shift.id) : [];
+
+// События грузим под выбранный вид:
+//  - role/day работают по одной дате → грузим только её события;
+//  - activity/matrix — обзор всей смены → грузим все.
+const fullShiftView = view === 'activity' || view === 'matrix';
+const events: ShiftEvent[] = shift
+  ? await getEvents(shift.id, fullShiftView ? undefined : selectedDate)
+  : [];
+const done = shift && sub ? await getDone(sub, shift.id) : new Set<string>();
+
+function fmtTime(t: string | null): string {
+  return t ? t.slice(0, 5) : '';
+}
+function timeRange(e: ShiftEvent): string {
+  const a = fmtTime(e.start_time);
+  const b = fmtTime(e.end_time);
+  if (a && b) return `${a}–${b}`;
+  return a || b || '';
+}
+function byTime(a: ShiftEvent, b: ShiftEvent): number {
+  return (a.start_time ?? '99').localeCompare(b.start_time ?? '99') || a.sort - b.sort;
+}
+
+const ROLE_LABEL: Record<string, string> = {
+  teacher: 'Учитель',
+  vozhaty: 'Вожатый',
+  rukovoditel: 'Руководитель',
+  student: 'Ученик',
+  admin: 'Админ',
+};
+function roleLabel(r: string): string {
+  return ROLE_LABEL[r] ?? r;
+}
+
+// --- role view: события роли на дату + чек-листы роли ---
+const roleEvents = events
+  .filter((e) => e.date === selectedDate && roleAllowed(role, e.roles))
+  .sort(byTime);
+
+// --- day view: все события даты ---
+const dayEvents = events.filter((e) => e.date === selectedDate).sort(byTime);
+
+// --- activity view: группировка по event_type ---
+const activityGroups = (() => {
+  const map = new Map<string, ShiftEvent[]>();
+  for (const e of events) {
+    const k = (e.event_type ?? e.activity_type ?? 'other') as string;
+    const arr = map.get(k) ?? [];
+    arr.push(e);
+    map.set(k, arr);
+  }
+  return [...map.entries()]
+    .sort((a, b) => (EVENT_TYPE_LABELS[a[0]] ?? a[0]).localeCompare(EVENT_TYPE_LABELS[b[0]] ?? b[0]))
+    .map(([type, evs]) => ({
+      type,
+      label: EVENT_TYPE_LABELS[type] ?? type,
+      events: [...evs].sort((a, b) => a.date.localeCompare(b.date) || byTime(a, b)),
+    }));
+})();
+
+// --- matrix view: дни × роли ---
+const MATRIX_ROLES = ['teacher', 'vozhaty', 'rukovoditel'];
+function cellEvents(date: string, r: string): ShiftEvent[] {
+  return events.filter((e) => e.date === date && e.roles.includes(r)).sort(byTime);
+}
+
+// Хелпер построения ссылки таба/даты.
+function viewHref(v: View): string {
+  const p = new URLSearchParams();
+  if (shift) p.set('shift', String(shift.id));
+  p.set('view', v);
+  if (selectedDate) p.set('date', selectedDate);
+  return `/portal/smena?${p.toString()}`;
+}
+function dateHref(d: string): string {
+  const p = new URLSearchParams();
+  if (shift) p.set('shift', String(shift.id));
+  p.set('view', view);
+  p.set('date', d);
+  return `/portal/smena?${p.toString()}`;
+}
+function shiftHref(id: number): string {
+  return `/portal/smena?shift=${id}&view=${view}`;
+}
+
+const MONTHS_RU=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+function fmtDate(iso){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso); return m? Number(m[3])+' '+MONTHS_RU[Number(m[2])-1] : iso; }
+const showDateNav = view === 'role' || view === 'day';
+const isAdminLike = role === 'admin' || role === 'rukovoditel';
+
+const CONTENT_TYPE_LABELS: Record<string, string> = {
+  photo: 'Фото',
+  video: 'Видео',
+  interview: 'Интервью',
+  group_photo: 'Групповое',
+  timelapse: 'Таймлапс',
+};
+---
+
+<PortalLayout title="Сетка смены — АйДаКэмп">
+  {!shift ? (
+    <div class="rounded-[16px] border border-border bg-white p-8 text-center card-shadow">
+      <span class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[14px] bg-primary-soft text-primary">
+        <i class="bi bi-calendar-week text-[28px]" aria-hidden="true"></i>
+      </span>
+      <h1 class="text-[24px] font-bold text-navy-950">Смена ещё не создана</h1>
+      <p class="mt-2 text-[16px] text-body-muted">
+        Активной смены пока нет. Расписание появится, когда смена будет создана.
+      </p>
+      {isAdminLike && (
+        <a
+          href="/portal/smena/admin"
+          class="mt-5 inline-flex items-center gap-2 rounded-[12px] bg-primary px-5 py-3 text-[16px] font-semibold text-white transition hover:bg-primary-hover"
+        >
+          <i class="bi bi-kanban text-[18px]" aria-hidden="true"></i>
+          Управление сеткой
+        </a>
+      )}
+    </div>
+  ) : (
+    <>
+      <div class="mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 class="text-[28px] font-bold tracking-[-0.02em] text-navy-950 md:text-[36px]">
+              {shift.name}
+            </h1>
+            <p class="mt-1 text-[16px] text-body-muted">
+              {fmtDate(shift.start_date)} — {fmtDate(shift.end_date)}
+            </p>
+          </div>
+          {isAdminLike && (
+            <a
+              href="/portal/smena/admin"
+              class="inline-flex items-center gap-2 rounded-[12px] border border-border bg-white px-4 py-2 text-[16px] font-medium text-body-muted transition hover:border-primary hover:text-primary"
+            >
+              <i class="bi bi-kanban text-[18px]" aria-hidden="true"></i>
+              Управление
+            </a>
+          )}
+        </div>
+
+        {allShifts.length > 1 && (
+          <nav class="mt-4 flex flex-wrap gap-2" aria-label="Выбор смены">
+            {allShifts.map((sh) => (
+              <a
+                href={shiftHref(sh.id)}
+                class={`inline-flex items-center gap-2 rounded-[12px] border px-4 py-2 text-[15px] font-medium transition ${
+                  shift && sh.id === shift.id
+                    ? 'border-primary bg-primary text-white'
+                    : 'border-border bg-white text-body-muted hover:border-primary hover:text-primary'
+                }`}
+              >
+                <i class="bi bi-calendar-week text-[16px]" aria-hidden="true"></i>
+                {sh.name}
+              </a>
+            ))}
+          </nav>
+        )}
+
+        {/* Табы видов */}
+        <nav class="mt-5 flex flex-wrap gap-2" aria-label="Виды расписания">
+          {VIEWS.map((v) => (
+            <a
+              href={viewHref(v.key)}
+              class={`inline-flex items-center gap-2 rounded-[12px] border px-4 py-2 text-[16px] font-medium transition ${
+                v.key === view
+                  ? 'border-primary bg-primary text-white'
+                  : 'border-border bg-white text-body-muted hover:border-primary hover:text-primary'
+              }`}
+            >
+              <i class={`bi bi-${v.icon} text-[18px]`} aria-hidden="true"></i>
+              {v.label}
+            </a>
+          ))}
+        </nav>
+
+        {/* Навигация по датам (для role/day) */}
+        {showDateNav && dates.length > 0 && (
+          <div class="mt-4 flex flex-wrap gap-2" aria-label="Дни смены">
+            {dates.map((d) => (
+              <a
+                href={dateHref(d)}
+                class={`rounded-[10px] border px-3 py-1.5 text-[16px] font-medium transition ${
+                  d === selectedDate
+                    ? 'border-primary bg-primary-soft text-primary'
+                    : 'border-border bg-white text-body-muted hover:border-primary'
+                }`}
+              >
+                {fmtDate(d)}
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ===== ROLE VIEW ===== */}
+      {view === 'role' && (
+        <section class="space-y-4">
+          {roleEvents.length === 0 && (
+            <p class="rounded-[16px] border border-border bg-white p-6 text-[16px] text-body-muted card-shadow">
+              На этот день для вашей роли событий нет.
+            </p>
+          )}
+          {roleEvents.map((e) => {
+            const myChecklists = e.checklists.filter((cl) => roleAllowed(role, cl.roles));
+            return (
+              <article class="rounded-[16px] border border-border bg-white p-5 card-shadow">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                  <h2 class="text-[18px] font-semibold text-navy-950">{e.title}</h2>
+                  {timeRange(e) && (
+                    <span class="inline-flex items-center gap-1 text-[16px] text-body-muted">
+                      <i class="bi bi-clock text-[15px]" aria-hidden="true"></i>
+                      {timeRange(e)}
+                    </span>
+                  )}
+                </div>
+                {(e.event_type || e.activity_type) && (
+                  <span class="mt-1 inline-block rounded-[8px] bg-primary-soft px-2 py-0.5 text-[14px] font-medium text-primary">
+                    {EVENT_TYPE_LABELS[(e.event_type ?? e.activity_type) as string] ?? (e.event_type ?? e.activity_type)}
+                  </span>
+                )}
+
+                {/* Блок «Методичка» */}
+                {e.event_type === 'lesson' && e.activity_slug && getActivity(e.activity_slug) ? (
+                  <div class="mt-3">
+                    <a
+                      href={`/portal/metodichki/${e.activity_slug}/`}
+                      class="inline-flex items-center gap-2 rounded-[10px] border border-primary bg-primary-soft px-3 py-2 text-[15px] font-medium text-primary transition hover:opacity-90"
+                    >
+                      <i class="bi bi-book-half" aria-hidden="true"></i>
+                      Методичка: {getActivity(e.activity_slug)!.title}
+                    </a>
+                  </div>
+                ) : e.event_type === 'lesson' ? (
+                  <div class="mt-3">
+                    <span class="inline-flex items-center gap-2 rounded-[10px] border border-border bg-page px-3 py-2 text-[15px] text-body-muted">
+                      <i class="bi bi-book-half" aria-hidden="true"></i>
+                      Методичка пока не привязана
+                    </span>
+                  </div>
+                ) : null}
+
+                {/* Блок «Контент-задание» */}
+                {e.content_task && (
+                  <div class="mt-3 rounded-[12px] border border-dashed border-border bg-amber-50/40 p-3">
+                    <div class="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wide text-amber-700">
+                      <i class="bi bi-camera" aria-hidden="true"></i>
+                      Контент-задание{e.content_task.content_type ? ` · ${CONTENT_TYPE_LABELS[e.content_task.content_type] ?? e.content_task.content_type}` : ''}
+                    </div>
+                    {e.content_task.brief && (
+                      <div class="mt-1 text-[16px] text-navy-950">{e.content_task.brief}</div>
+                    )}
+                    <div class="mt-3 portal-uploader" data-event-id={e.id} data-content-task-id={e.content_task_template_id ?? ''}>
+                      <input type="file" accept="image/*,video/*" capture="environment" class="portal-uploader__input hidden" />
+                      <button type="button" class="portal-uploader__btn inline-flex items-center gap-2 rounded-[10px] bg-primary px-4 py-2 text-[15px] font-medium text-white transition hover:opacity-90">
+                        <i class="bi bi-camera-fill" aria-hidden="true"></i>
+                        Снять и загрузить
+                      </button>
+                      <p class="portal-uploader__status mt-2 text-[14px] text-body-muted hidden" aria-live="polite"></p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Лента загруженных фото/видео по событию (рендерится на клиенте). */}
+                <div class="portal-media mt-3"
+                     data-event-id={e.id}
+                     data-can-delete={role === 'admin' || role === 'rukovoditel' ? 'true' : 'false'}>
+                  <div class="portal-media__header hidden text-[13px] font-semibold text-body-muted"></div>
+                  <ul class="portal-media__list mt-1 space-y-1 text-[14px]"></ul>
+                </div>
+
+                {canEditEvent(role, e.roles) && (
+                  <div class="mt-3 portal-edit" data-event-id={e.id}>
+                    <button type="button" class="portal-edit__toggle inline-flex items-center gap-2 rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] font-medium text-body-muted transition hover:border-primary hover:text-primary">
+                      <i class="bi bi-pencil text-[14px]" aria-hidden="true"></i>
+                      Править
+                    </button>
+                    <form class="portal-edit__form mt-3 hidden space-y-3 rounded-[12px] border border-border bg-white p-4">
+                      <div>
+                        <label class="block text-[13px] font-medium text-body-muted">Название</label>
+                        <input type="text" name="title" value={e.title} class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[15px] outline-none focus:border-primary" />
+                      </div>
+                      <div class="flex gap-3">
+                        <div class="flex-1">
+                          <label class="block text-[13px] font-medium text-body-muted">Начало</label>
+                          <input type="time" name="start_time" value={e.start_time?.slice(0, 5) ?? ''} class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[15px] outline-none focus:border-primary" />
+                        </div>
+                        <div class="flex-1">
+                          <label class="block text-[13px] font-medium text-body-muted">Конец</label>
+                          <input type="time" name="end_time" value={e.end_time?.slice(0, 5) ?? ''} class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[15px] outline-none focus:border-primary" />
+                        </div>
+                      </div>
+                      <div>
+                        <label class="block text-[13px] font-medium text-body-muted">Заметки</label>
+                        <textarea name="notes" rows="2" class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[15px] outline-none focus:border-primary">{e.notes ?? ''}</textarea>
+                      </div>
+                      <div class="flex gap-2">
+                        <button type="submit" class="rounded-[10px] bg-primary px-4 py-2 text-[14px] font-semibold text-white transition hover:opacity-90">Сохранить</button>
+                        <button type="button" class="portal-edit__cancel rounded-[10px] border border-border bg-white px-4 py-2 text-[14px] font-medium text-body-muted transition hover:border-primary hover:text-primary">Отмена</button>
+                        <span class="portal-edit__status ml-auto self-center text-[13px] text-body-muted hidden"></span>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                {myChecklists.length === 0 ? (
+                  <p class="mt-3 text-[16px] text-body-muted">Чек-листов для вашей роли нет.</p>
+                ) : (
+                  <div class="mt-4 space-y-4">
+                    {myChecklists.map((cl) => (
+                      <div>
+                        <h3 class="mb-2 flex items-center gap-2 text-[16px] font-semibold text-navy-950">
+                          <i class="bi bi-list-task text-[18px] text-primary" aria-hidden="true"></i>
+                          {cl.title}
+                        </h3>
+                        <ul class="space-y-2">
+                          {cl.items.map((it) => {
+                            const key = `${e.id}:${cl.checklist_id}:${it.id}`;
+                            const checked = done.has(key);
+                            return (
+                              <li>
+                                <label class="flex cursor-pointer items-start gap-3 text-[16px] text-body">
+                                  <input
+                                    type="checkbox"
+                                    class="smena-check mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded border-border text-primary focus:ring-primary"
+                                    checked={checked}
+                                    data-event={e.id}
+                                    data-checklist={cl.checklist_id}
+                                    data-item={it.id}
+                                  />
+                                  <span>{it.text}</span>
+                                </label>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </section>
+      )}
+
+      {/* ===== DAY VIEW ===== */}
+      {view === 'day' && (
+        <section class="space-y-3">
+          {dayEvents.length === 0 && (
+            <p class="rounded-[16px] border border-border bg-white p-6 text-[16px] text-body-muted card-shadow">
+              На этот день событий нет.
+            </p>
+          )}
+          {dayEvents.map((e) => (
+            <article class="rounded-[16px] border border-border bg-white p-5 card-shadow">
+              <div class="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 class="text-[18px] font-semibold text-navy-950">{e.title}</h2>
+                {timeRange(e) && (
+                  <span class="inline-flex items-center gap-1 text-[16px] text-body-muted">
+                    <i class="bi bi-clock text-[15px]" aria-hidden="true"></i>
+                    {timeRange(e)}
+                  </span>
+                )}
+              </div>
+              <div class="mt-2 flex flex-wrap gap-1.5">
+                {e.roles.map((r) => (
+                  <span class="rounded-[8px] bg-page px-2 py-0.5 text-[14px] font-medium text-body-muted">
+                    {roleLabel(r)}
+                  </span>
+                ))}
+              </div>
+              {e.checklists.length > 0 && (
+                <ul class="mt-3 space-y-1 text-[16px] text-body-muted">
+                  {e.checklists.map((cl) => (
+                    <li class="flex items-center gap-2">
+                      <i class="bi bi-list-task text-[15px] text-primary" aria-hidden="true"></i>
+                      {cl.title}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </article>
+          ))}
+        </section>
+      )}
+
+      {/* ===== ACTIVITY VIEW ===== */}
+      {view === 'activity' && (
+        <section class="space-y-8">
+          {activityGroups.length === 0 && (
+            <p class="rounded-[16px] border border-border bg-white p-6 text-[16px] text-body-muted card-shadow">
+              Событий пока нет.
+            </p>
+          )}
+          {activityGroups.map((g) => (
+            <div>
+              <h2 class="mb-3 text-[20px] font-bold tracking-[-0.01em] text-navy-950">{g.label}</h2>
+              <div class="space-y-2">
+                {g.events.map((e) => (
+                  <article class="flex flex-wrap items-baseline justify-between gap-2 rounded-[14px] border border-border bg-white p-4 card-shadow">
+                    <span class="text-[16px] font-semibold text-navy-950">{e.title}</span>
+                    <span class="text-[16px] text-body-muted">
+                      {fmtDate(e.date)}{timeRange(e) ? ` · ${timeRange(e)}` : ''}
+                    </span>
+                  </article>
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {/* ===== MATRIX VIEW ===== */}
+      {view === 'matrix' && (
+        <section class="overflow-auto rounded-[16px] border border-border bg-white card-shadow">
+          {dates.length === 0 ? (
+            <p class="p-6 text-[16px] text-body-muted">Событий пока нет.</p>
+          ) : (
+            <table class="w-full min-w-[640px] border-collapse text-[16px]">
+              <thead>
+                <tr>
+                  <th class="border-b border-border bg-page px-4 py-3 text-left font-semibold text-navy-950">
+                    День
+                  </th>
+                  {MATRIX_ROLES.map((r) => (
+                    <th class="border-b border-l border-border bg-page px-4 py-3 text-left font-semibold text-navy-950">
+                      {roleLabel(r)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {dates.map((d) => (
+                  <tr>
+                    <td class="border-b border-border px-4 py-3 align-top font-medium text-navy-950 whitespace-nowrap">
+                      {fmtDate(d)}
+                    </td>
+                    {MATRIX_ROLES.map((r) => {
+                      const cells = cellEvents(d, r);
+                      return (
+                        <td class="border-b border-l border-border px-4 py-3 align-top text-body">
+                          {cells.length === 0 ? (
+                            <span class="text-body-muted">—</span>
+                          ) : (
+                            <ul class="space-y-1">
+                              {cells.map((e) => (
+                                <li>
+                                  {timeRange(e) && (
+                                    <span class="text-body-muted">{fmtTime(e.start_time)} </span>
+                                  )}
+                                  {e.title}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+      )}
+    </>
+  )}
+
+  <script is:inline>
+    (() => {
+      const boxes = document.querySelectorAll('.smena-check');
+      boxes.forEach((box) => {
+        box.addEventListener('change', async () => {
+          const eventId = Number(box.dataset.event);
+          const checklistId = Number(box.dataset.checklist);
+          const itemId = box.dataset.item;
+          const intended = box.checked;
+          box.disabled = true;
+          try {
+            const res = await fetch('/api/portal/shift/check', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ eventId, checklistId, itemId }),
+            });
+            const data = await res.json();
+            if (!res.ok || !data.ok) {
+              box.checked = !intended;
+              alert('Не удалось сохранить отметку. Попробуйте ещё раз.');
+            } else {
+              box.checked = data.done;
+            }
+          } catch {
+            box.checked = !intended;
+            alert('Нет связи с сервером. Отметка не сохранена.');
+          } finally {
+            box.disabled = false;
+          }
+        });
+      });
+    })();
+  </script>
+</PortalLayout>

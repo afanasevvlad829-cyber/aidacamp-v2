@@ -234,6 +234,10 @@ async function createCrmLead(body: Record<string, string>): Promise<number | nul
     const payload = {
       name: `Лид ${body.age || ''}`.trim(),
       phone: [phone],
+      // Обязательные поля AlfaCRM
+      branch_ids: [5],
+      is_study: 0,
+      legal_type: 1,
       // UTM
       utm_source:   body.utm_source   || undefined,
       utm_medium:   body.utm_medium   || undefined,
@@ -253,7 +257,7 @@ async function createCrmLead(body: Record<string, string>): Promise<number | nul
       body: JSON.stringify(payload),
     });
     const custData = await custRes.json();
-    return custData?.id ?? null;
+    return custData?.model?.id ?? null;
   } catch {
     return null;
   }
