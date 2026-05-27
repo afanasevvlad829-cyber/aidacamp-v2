@@ -169,11 +169,40 @@ export async function setRole(telegramId: number, role: PortalRole, approvedBy: 
 /** Полный список ролей (заменяет существующий). Активная роль = первая из списка. */
 export async function setRoles(telegramId: number, roles: PortalRole[], approvedBy: number): Promise<void> {
   await withClient(async (c) => {
-    const active = roles[0] ?? null;
+    const activeRole = roles[0] ?? null;
+    // Если выдаём хотя бы одну роль — также активируем учётку (одобряем pending).
+    const willActivate = roles.length > 0;
     await c.query(
-      `UPDATE portal_staff SET roles=$2, role=$3, approved_by=$4, approved_at=now() WHERE telegram_id=$1`,
-      [telegramId, roles, active, approvedBy],
+      `UPDATE portal_staff
+          SET roles=$2,
+              role=$3,
+              active = CASE WHEN $5 THEN TRUE ELSE active END,
+              approved_by=$4,
+              approved_at=now()
+        WHERE telegram_id=$1`,
+      [telegramId, roles, activeRole, approvedBy, willActivate],
     );
+  });
+}
+
+/** Включить/выключить сотрудника по PK id (работает и для placeholder без telegram_id). */
+export async function setActiveById(id: number, active: boolean): Promise<void> {
+  await withClient(async (c) => {
+    await c.query('UPDATE portal_staff SET active=$2 WHERE id=$1', [id, active]);
+  });
+}
+
+/** Переименовать сотрудника (full_name) по PK id. */
+export async function setNameById(id: number, fullName: string): Promise<void> {
+  await withClient(async (c) => {
+    await c.query('UPDATE portal_staff SET full_name=$2 WHERE id=$1', [id, fullName]);
+  });
+}
+
+/** Удалить запись сотрудника (для placeholder который больше не нужен, либо отклонения pending). */
+export async function deleteStaffById(id: number): Promise<void> {
+  await withClient(async (c) => {
+    await c.query('DELETE FROM portal_staff WHERE id=$1', [id]);
   });
 }
 

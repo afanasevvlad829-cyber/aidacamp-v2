@@ -25,7 +25,15 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
   let realRole: string | null = payload.role;
   if (payload.sub) {
     const staff = await getStaff(payload.sub);
-    if (!staff?.active || staff.role !== payload.role) realRole = null;
+    if (!staff?.active) {
+      realRole = null;
+    } else {
+      // Допускаем сессию, если её роль ∈ staff.roles[] (мульти-роль), либо равна primary staff.role.
+      const allRoles = Array.isArray(staff.roles) && staff.roles.length > 0 ? staff.roles : (staff.role ? [staff.role] : []);
+      if (!allRoles.includes(payload.role)) {
+        realRole = null;
+      }
+    }
   }
   if (!realRole) return new Response('Unauthorized', { status: 401 });
   if (!ALLOWED[realRole]) return new Response('Forbidden', { status: 403 });

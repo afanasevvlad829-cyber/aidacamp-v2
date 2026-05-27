@@ -20,12 +20,12 @@ const tgMsg =
         : '';
 ---
 
-<PortalLayout title="Вход в портал — АйДаКэмп" showHeader={false}>
+<PortalLayout title="Вход в портал — АйДаКемп" showHeader={false}>
   <div class="flex min-h-[70vh] items-center justify-center">
     <div class="w-full max-w-[420px]">
       <div class="mb-8 text-center">
         <div class="text-[26px] font-extrabold tracking-[-0.02em] text-navy-950">
-          АйДаКэмп
+          <span class="text-primary">Aida</span><span class="text-navy-950">Camp</span>
         </div>
         <p class="mt-2 text-[16px] text-body-muted">Вход в портал</p>
       </div>
@@ -49,16 +49,42 @@ const tgMsg =
           Сотрудники — войдите через Telegram:
         </p>
         {botUser ? (
-          <div class="flex justify-center">
+          <div class="flex flex-col items-center gap-3">
             <script
               async
               src="https://telegram.org/js/telegram-widget.js?22"
               data-telegram-login={botUser}
               data-size="large"
               data-userpic="false"
-              data-auth-url="/api/portal/tg"
+              data-onauth="onTelegramAuth(user)"
               data-request-access="write"
             ></script>
+            <p id="tg-status" class="hidden text-[14px] text-body-muted" aria-live="polite"></p>
+            <script is:inline>
+              window.onTelegramAuth = function (user) {
+                const status = document.getElementById('tg-status');
+                if (status) { status.textContent = 'Вход…'; status.classList.remove('hidden'); }
+                const body = new URLSearchParams();
+                Object.keys(user).forEach((k) => body.append(k, String(user[k])));
+                fetch('/api/portal/tg', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                  body: body.toString(),
+                  credentials: 'include',
+                  redirect: 'manual',
+                }).then((r) => {
+                  // Сервер делает 303 redirect — браузер не следует ему в fetch с redirect:manual.
+                  // Считаем: если статус opaqueredirect / 0 / 303 / 200 — успех.
+                  if (r.type === 'opaqueredirect' || r.status === 0 || r.status === 303 || (r.status >= 200 && r.status < 400)) {
+                    window.location.href = '/portal/';
+                  } else {
+                    if (status) status.textContent = 'Не удалось войти (HTTP ' + r.status + ').';
+                  }
+                }).catch((e) => {
+                  if (status) status.textContent = 'Сетевая ошибка: ' + (e && e.message ? e.message : e);
+                });
+              };
+            </script>
           </div>
         ) : (
           <div
@@ -73,11 +99,14 @@ const tgMsg =
           </div>
         )}
 
-        {/* Ученики — вход по коду */}
-        <details class="mt-8 border-t border-border pt-6">
+        {/* Вход по коду — для ученика или для admin (аварийный код) */}
+        <details class="mt-8 border-t border-border pt-6" open={error}>
           <summary class="cursor-pointer text-[16px] font-medium text-primary">
-            Я ученик — войти по коду
+            Войти по коду <span class="text-body-muted">(ученик или admin)</span>
           </summary>
+          <p class="mt-2 text-[14px] text-body-muted">
+            Ученики — школьный код от преподавателя. Админ — аварийный код (если TG-вход недоступен).
+          </p>
 
           {error && (
             <div

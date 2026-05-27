@@ -1,93 +1,394 @@
 ---
 export const prerender = false;
 import PortalLayout from '../../layouts/PortalLayout.astro';
-import { ACTIVITIES } from '../../lib/portalActivities';
+import { activitiesByAuthor } from '../../lib/portalActivities';
+import { listComments } from '../../lib/portalMethodichkaComments';
 
 const role = Astro.locals.portalRole!;
-// Методички — для тех, кто проводит активности
 if (!['admin', 'teacher', 'vozhaty', 'rukovoditel'].includes(role)) {
   return Astro.redirect('/portal/');
 }
 
-// Активности Александра Ташкина (источник: архив АЙДАКЕМП3).
-// Картинки/архивы — реальные; планы/чек-листы пока пустые (ожидаются от методиста).
-const activities = ACTIVITIES;
+const groups = activitiesByAuthor();
 const BASE = '/metodichki';
-const PARTS = [
-  { key: 'plan', label: 'План' },
-  { key: 'planb', label: 'План Б' },
-  { key: 'checklist', label: 'Чек-лист' },
-];
+
+// Подтянем комментарии для всех slug'ов (один проход)
+const allSlugs = groups.flatMap((g) => g.items.map((a) => a.slug));
+const commentsBySlug: Record<string, Awaited<ReturnType<typeof listComments>>> = {};
+for (const s of allSlugs) commentsBySlug[s] = await listComments(s);
+
+function fmtDate(s: string): string {
+  try { return new Date(s).toLocaleString('ru-RU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); }
+  catch { return s; }
+}
 ---
-<PortalLayout title="Методические материалы — АйДаКэмп">
-  <div class="mb-8">
+<PortalLayout title="Методические материалы — АйДаКемп">
+  <div class="mb-6">
     <h1 class="text-[28px] font-bold tracking-[-0.02em] text-navy-950 md:text-[36px]">
       Методические материалы
     </h1>
-    <p class="mt-2 text-[16px] text-body-muted">Активности · Александр Ташкин</p>
+    <p class="mt-2 text-[16px] text-body-muted">
+      Преподавательские активности — по авторам. Кликни по заголовку, чтобы раскрыть детали.
+      Комментарии можно надиктовать или дополнять — каждая правка сохраняется как новая версия.
+    </p>
   </div>
 
+  {/* Общая презентация */}
   <a
     href={`${BASE}/prezentaciya-igry.pptx`}
     class="mb-6 flex items-center gap-3 rounded-[16px] border border-primary bg-primary-soft p-5 transition hover:opacity-90"
   >
     <i class="bi bi-play-circle text-[28px] text-primary" aria-hidden="true"></i>
     <span>
-      <span class="block text-[18px] font-semibold text-navy-950">Презентация игры</span>
+      <span class="block text-[18px] font-semibold text-navy-950">Презентация игры (общая)</span>
       <span class="mt-0.5 block text-[15px] text-body-muted">Показать в начале — рассказать об игре и настроить ребят (.pptx)</span>
     </span>
   </a>
 
-  <div class="space-y-6">
-    {activities.map((a) => (
-      <section class="rounded-[16px] border border-border bg-white p-5 card-shadow">
-        <div class="flex flex-col gap-4 sm:flex-row">
-          <a href={`${BASE}/${a.slug}/preview.png`} target="_blank" rel="noopener" class="shrink-0">
-            <img
-              src={`${BASE}/${a.slug}/preview-thumb.webp`}
-              alt={`Превью активности «${a.title}»`}
-              width="220" height="140" loading="lazy"
-              class="h-[140px] w-full rounded-[12px] border border-border object-cover sm:w-[220px]"
-            />
-          </a>
-          <div class="min-w-0 flex-1">
-            <h2 class="text-[20px] font-bold text-navy-950">{a.title}</h2>
-            <p class="mt-1 text-[15px] text-body-muted">{a.desc}</p>
+  {groups.map((g) => (
+    <section class="mb-10">
+      <h2 class="mb-4 flex items-center gap-2 text-[22px] font-bold tracking-[-0.01em] text-navy-950">
+        <i class="bi bi-person-badge text-[22px] text-primary" aria-hidden="true"></i>
+        {g.author}
+        <span class="text-[15px] font-normal text-body-muted">· {g.items.length}</span>
+      </h2>
 
-            <div class="mt-3 flex flex-wrap gap-2">
-              {PARTS.map((p) => (
-                <span class="inline-flex items-center gap-2 rounded-[10px] border border-dashed border-border px-3 py-1.5 text-[14px] text-body-muted">
-                  <i class="bi bi-hourglass-split" aria-hidden="true"></i>
-                  {p.label} — ожидается
+      <div class="space-y-3">
+        {g.items.map((a) => (
+          <details id={a.slug} class="group overflow-hidden rounded-[16px] border border-border bg-white card-shadow"
+                   open={false} data-slug={a.slug}>
+            <summary class="flex cursor-pointer list-none items-center gap-3 border-b border-border bg-page p-4 transition group-open:border-primary group-open:bg-white">
+              {a.hasPreview ? (
+                <img src={`${BASE}/${a.slug}/preview-thumb.webp`} alt=""
+                     loading="lazy" width="64" height="42"
+                     class="h-[42px] w-[64px] shrink-0 rounded-[6px] border border-border object-cover" />
+              ) : (
+                <span class="flex h-[42px] w-[64px] shrink-0 items-center justify-center rounded-[6px] border border-border bg-page text-body-muted">
+                  <i class="bi bi-book" aria-hidden="true"></i>
                 </span>
-              ))}
-            </div>
-
-            <div class="mt-3 flex flex-wrap gap-3">
-              <a
-                href={`${BASE}/${a.slug}/images.zip`}
-                class="inline-flex items-center gap-2 rounded-[12px] border border-border bg-white px-4 py-2 text-[15px] font-medium text-navy-950 transition hover:border-primary hover:text-primary"
-              >
-                <i class="bi bi-file-earmark-zip" aria-hidden="true"></i>
-                Картинки (архив)
+              )}
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="text-[18px] font-bold text-navy-950">{a.title}</h3>
+                  {a.duration && (
+                    <span class="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2 py-0.5 text-[12px] font-medium text-primary">
+                      <i class="bi bi-clock" aria-hidden="true"></i>{a.duration}
+                    </span>
+                  )}
+                  {a.ages && (
+                    <span class="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2 py-0.5 text-[12px] font-medium text-primary">
+                      <i class="bi bi-people" aria-hidden="true"></i>{a.ages} лет
+                    </span>
+                  )}
+                  {commentsBySlug[a.slug]?.length > 0 && (
+                    <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[12px] font-medium text-amber-800">
+                      <i class="bi bi-chat-text" aria-hidden="true"></i>{commentsBySlug[a.slug].length}
+                    </span>
+                  )}
+                </div>
+                <p class="mt-0.5 text-[14px] text-body-muted">{a.desc}</p>
+              </div>
+              <a href={`#${a.slug}`} class="hidden shrink-0 rounded-[8px] border border-border bg-white px-2 py-1 text-[12px] text-body-muted transition hover:border-primary hover:text-primary sm:block"
+                 title="Прямая ссылка на эту активность"
+                 onclick="event.stopPropagation();">
+                <i class="bi bi-link-45deg" aria-hidden="true"></i> ссылка
               </a>
-              <a
-                href={`${BASE}/${a.slug}/preview.png`}
-                target="_blank" rel="noopener"
-                class="inline-flex items-center gap-2 rounded-[12px] border border-border bg-white px-4 py-2 text-[15px] font-medium text-navy-950 transition hover:border-primary hover:text-primary"
-              >
-                <i class="bi bi-image" aria-hidden="true"></i>
-                Открыть превью
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-    ))}
-  </div>
+              <span class="ml-1 shrink-0 text-body-muted transition group-open:rotate-180">
+                <i class="bi bi-chevron-down" aria-hidden="true"></i>
+              </span>
+            </summary>
 
-  <p class="mt-8 rounded-[12px] bg-amber-50 px-4 py-3 text-[15px] text-amber-800">
-    <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
-    Планы и чек-листы по активностям пока не заполнены — будут добавлены, как только методист пришлёт тексты.
-  </p>
+            <div class="space-y-5 p-5">
+              {a.goal && (
+                <div>
+                  <div class="mb-1 flex items-center gap-2 text-[14px] font-semibold uppercase tracking-wide text-primary">
+                    <i class="bi bi-bullseye" aria-hidden="true"></i>Цель
+                  </div>
+                  <p class="text-[15px] text-navy-950">{a.goal}</p>
+                </div>
+              )}
+              {a.doing && a.doing.length > 0 && (
+                <div>
+                  <div class="mb-1 flex items-center gap-2 text-[14px] font-semibold uppercase tracking-wide text-primary">
+                    <i class="bi bi-list-check" aria-hidden="true"></i>Что делаем
+                  </div>
+                  <ol class="ml-5 list-decimal space-y-1 text-[15px] text-navy-950">
+                    {a.doing.map((d) => <li>{d}</li>)}
+                  </ol>
+                </div>
+              )}
+              {a.result && (
+                <div>
+                  <div class="mb-1 flex items-center gap-2 text-[14px] font-semibold uppercase tracking-wide text-primary">
+                    <i class="bi bi-trophy" aria-hidden="true"></i>Какой результат
+                  </div>
+                  <p class="text-[15px] text-navy-950">{a.result}</p>
+                </div>
+              )}
+              {a.materials && a.materials.length > 0 && (
+                <div>
+                  <div class="mb-1 flex items-center gap-2 text-[14px] font-semibold uppercase tracking-wide text-primary">
+                    <i class="bi bi-box-seam" aria-hidden="true"></i>Приборы и материалы
+                  </div>
+                  <ul class="ml-5 list-disc space-y-1 text-[15px] text-navy-950">
+                    {a.materials.map((m) => <li>{m}</li>)}
+                  </ul>
+                </div>
+              )}
+              {a.requirements && a.requirements.length > 0 && (
+                <div>
+                  <div class="mb-1 flex items-center gap-2 text-[14px] font-semibold uppercase tracking-wide text-primary">
+                    <i class="bi bi-check2-square" aria-hidden="true"></i>Что требуется
+                  </div>
+                  <ul class="ml-5 list-disc space-y-1 text-[15px] text-navy-950">
+                    {a.requirements.map((r) => <li>{r}</li>)}
+                  </ul>
+                </div>
+              )}
+              {a.stages && a.stages.length > 0 && (
+                <div>
+                  <div class="mb-2 flex items-center gap-2 text-[14px] font-semibold uppercase tracking-wide text-primary">
+                    <i class="bi bi-signpost-split" aria-hidden="true"></i>Этапы
+                  </div>
+                  <div class="space-y-2">
+                    {a.stages.map((s) => (
+                      <div class="rounded-[10px] border border-border bg-page p-3">
+                        <div class="text-[15px] font-semibold text-navy-950">{s.title}</div>
+                        <div class="mt-0.5 text-[14px] text-body-muted">{s.text}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {a.files && a.files.length > 0 && (
+                <div>
+                  <div class="mb-2 flex items-center gap-2 text-[14px] font-semibold uppercase tracking-wide text-primary">
+                    <i class="bi bi-paperclip" aria-hidden="true"></i>Файлы
+                  </div>
+                  <div class="grid gap-2 sm:grid-cols-2">
+                    {a.files.map((f) => (
+                      <a href={f.href} target="_blank" rel="noopener"
+                         class="flex items-start gap-3 rounded-[10px] border border-border bg-page p-3 transition hover:border-primary">
+                        <i class={`bi bi-${f.icon ?? 'file-earmark'} text-[22px] text-primary`} aria-hidden="true"></i>
+                        <span class="min-w-0">
+                          <span class="block text-[15px] font-semibold text-navy-950">{f.name}</span>
+                          {f.desc && <span class="mt-0.5 block text-[13px] text-body-muted">{f.desc}</span>}
+                        </span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {a.links && a.links.length > 0 && (
+                <div>
+                  <div class="mb-2 flex items-center gap-2 text-[14px] font-semibold uppercase tracking-wide text-primary">
+                    <i class="bi bi-link-45deg" aria-hidden="true"></i>Учебные модули и ссылки
+                  </div>
+                  {a.author === 'Омар' && (
+                    <p class="mb-2 text-[13px] text-amber-800">
+                      <i class="bi bi-info-circle" aria-hidden="true"></i>
+                      Учебные академии (Python/Java/JS и др.) — это статические HTML-страницы, работают офлайн прямо в браузере.
+                      ИИ-инструменты (ChatGPT/Claude/Copilot) из РФ нужны через VPN — это нормально.
+                    </p>
+                  )}
+                  <div class="grid gap-2 sm:grid-cols-2">
+                    {a.links.map((l) => (
+                      <a href={l.href} target="_blank" rel="noopener"
+                         class="flex items-start gap-3 rounded-[10px] border border-border bg-page p-3 transition hover:border-primary">
+                        <i class={`bi bi-${l.icon ?? 'link-45deg'} text-[22px] text-primary`} aria-hidden="true"></i>
+                        <span class="min-w-0">
+                          <span class="block text-[15px] font-semibold text-navy-950">{l.name}</span>
+                          {l.desc && <span class="mt-0.5 block text-[13px] text-body-muted">{l.desc}</span>}
+                        </span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {a.hasImagesZip && (
+                <div class="flex flex-wrap gap-3">
+                  <a href={`${BASE}/${a.slug}/images.zip`}
+                     class="inline-flex items-center gap-2 rounded-[12px] border border-border bg-white px-4 py-2 text-[15px] font-medium text-navy-950 transition hover:border-primary hover:text-primary">
+                    <i class="bi bi-file-earmark-zip" aria-hidden="true"></i>
+                    Скачать картинки (архив)
+                  </a>
+                  {a.hasPreview && (
+                    <a href={`${BASE}/${a.slug}/preview.png`} target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-2 rounded-[12px] border border-border bg-white px-4 py-2 text-[15px] font-medium text-navy-950 transition hover:border-primary hover:text-primary">
+                      <i class="bi bi-image" aria-hidden="true"></i>
+                      Открыть превью
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {/* ── Комментарии преподавателей ───────────────────────────── */}
+              <div class="mt-6 border-t border-border pt-5" data-comments data-slug={a.slug}>
+                <div class="mb-3 flex items-center justify-between">
+                  <div class="flex items-center gap-2 text-[14px] font-semibold uppercase tracking-wide text-primary">
+                    <i class="bi bi-chat-square-text" aria-hidden="true"></i>
+                    Комментарии преподавателей
+                    <span class="text-body-muted" data-comments-count>· {commentsBySlug[a.slug]?.length ?? 0}</span>
+                  </div>
+                </div>
+
+                <div class="space-y-2" data-comments-list>
+                  {commentsBySlug[a.slug]?.length === 0 ? (
+                    <p class="text-[14px] text-body-muted">Комментариев пока нет — оставьте первый.</p>
+                  ) : commentsBySlug[a.slug].map((c) => (
+                    <article class="rounded-[10px] border border-border bg-page p-3" data-comment data-id={c.id} data-version={c.version}>
+                      <div class="flex flex-wrap items-center justify-between gap-2 text-[13px] text-body-muted">
+                        <div class="flex items-center gap-2">
+                          <i class={`bi ${c.source === 'voice' ? 'bi-mic' : 'bi-pencil-square'} text-primary`} aria-hidden="true"></i>
+                          <b class="text-navy-950">{c.author_name || c.author || 'аноним'}</b>
+                          <span>· {fmtDate(c.created_at)}</span>
+                          {c.version > 1 && (
+                            <span class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-800">v{c.version}</span>
+                          )}
+                        </div>
+                        <div class="flex gap-1">
+                          <button type="button" data-edit-comment data-id={c.id}
+                            class="rounded-[6px] border border-transparent px-2 py-0.5 text-[12px] hover:border-primary hover:text-primary">
+                            <i class="bi bi-pencil" aria-hidden="true"></i> Дополнить
+                          </button>
+                          {c.version > 1 && (
+                            <button type="button" data-show-history data-id={c.id}
+                              class="rounded-[6px] border border-transparent px-2 py-0.5 text-[12px] hover:border-primary hover:text-primary">
+                              <i class="bi bi-clock-history" aria-hidden="true"></i> История
+                            </button>
+                          )}
+                          <button type="button" data-archive-comment data-id={c.id}
+                            class="rounded-[6px] border border-transparent px-2 py-0.5 text-[12px] hover:bg-red-50 hover:text-red-600">
+                            <i class="bi bi-trash" aria-hidden="true"></i>
+                          </button>
+                        </div>
+                      </div>
+                      <p class="mt-1.5 whitespace-pre-wrap text-[15px] text-navy-950" data-body>{c.body}</p>
+                    </article>
+                  ))}
+                </div>
+
+                <form class="mt-4 space-y-2" data-comment-form data-slug={a.slug}>
+                  <textarea data-body-input rows="2" data-voice data-voice-append
+                            class="w-full rounded-[10px] border border-border bg-white px-3 py-2 text-[15px] focus:border-primary focus:outline-none"
+                            placeholder="Напишите комментарий или нажмите микрофон в углу поля, чтобы надиктовать…"></textarea>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <button type="submit"
+                      class="inline-flex items-center gap-1.5 rounded-[10px] border border-primary bg-primary px-3 py-1.5 text-[14px] font-medium text-white hover:opacity-90">
+                      <i class="bi bi-send" aria-hidden="true"></i> Отправить
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </details>
+        ))}
+      </div>
+    </section>
+  ))}
+
+  <script is:inline>
+    (function () {
+      // Раскрыть аккордеон по якорю #slug
+      const hash = decodeURIComponent(location.hash.replace(/^#/, ''));
+      if (hash) {
+        const el = document.getElementById(hash);
+        if (el && el.tagName === 'DETAILS') {
+          el.open = true;
+          setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+        }
+      }
+      // Кнопка «ссылка» в шапке — копируем в буфер
+      document.querySelectorAll('a[href^="#"]').forEach((a) => {
+        a.addEventListener('click', (e) => {
+          if (!a.textContent.includes('ссылка')) return;
+          e.preventDefault();
+          const url = location.origin + location.pathname + a.getAttribute('href');
+          navigator.clipboard?.writeText(url).catch(() => {});
+          a.textContent = '✓ скопировано';
+          setTimeout(() => { a.innerHTML = '<i class="bi bi-link-45deg"></i> ссылка'; }, 1400);
+        });
+      });
+
+      // Комментарии: отправка, голос (через общий /portal/voice-input.js), история, архив, редактирование
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      }
+      function fmtDate(s) {
+        try { return new Date(s).toLocaleString('ru-RU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); }
+        catch { return s; }
+      }
+
+      async function postComment(body) {
+        const r = await fetch('/api/portal/methodichka-comments', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body), credentials: 'include',
+        });
+        const jr = await r.json().catch(() => ({}));
+        if (!jr.ok) throw new Error(jr.error || 'API error');
+        return jr;
+      }
+
+      document.querySelectorAll('[data-comment-form]').forEach((form) => {
+        const slug = form.dataset.slug;
+        const input = form.querySelector('[data-body-input]');
+        let parentId = null; // если редактируем — добавляется как новая версия
+
+        // Submit
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const text = (input.value || '').trim();
+          if (!text) return;
+          try {
+            await postComment({ action: 'create', slug, body: text, parent_id: parentId, source: 'text' });
+            location.reload();
+          } catch (err) {
+            alert('Ошибка: ' + err.message);
+          }
+        });
+
+        // Edit & archive — делегированно
+        const list = form.previousElementSibling; // contains data-comments-list
+        document.querySelectorAll('[data-comments-list]').forEach((wrap) => {
+          if (wrap.closest('[data-comments]')?.dataset?.slug !== slug) return;
+          wrap.querySelectorAll('[data-edit-comment]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              const id = Number(btn.dataset.id);
+              const art = btn.closest('[data-comment]');
+              const cur = art.querySelector('[data-body]').textContent;
+              input.value = cur;
+              parentId = id;
+              input.focus();
+              const placeholder = 'Редактируем — отправка создаст новую версию (v' + (Number(art.dataset.version) + 1) + ')';
+              input.placeholder = placeholder;
+            });
+          });
+          wrap.querySelectorAll('[data-archive-comment]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+              if (!confirm('Удалить комментарий? (его не будет в списке, но история сохранится в БД)')) return;
+              try {
+                await postComment({ action: 'archive', id: Number(btn.dataset.id) });
+                location.reload();
+              } catch (err) { alert('Ошибка: ' + err.message); }
+            });
+          });
+          wrap.querySelectorAll('[data-show-history]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+              const id = Number(btn.dataset.id);
+              const r = await fetch('/api/portal/methodichka-comments?history=' + id, { credentials: 'include' });
+              const jr = await r.json().catch(() => ({}));
+              if (!jr.ok) { alert('Не удалось загрузить историю'); return; }
+              const lines = jr.items.map((it) =>
+                '── v' + it.version + ' · ' + fmtDate(it.created_at) + ' · ' + (it.author_name || it.author || 'аноним') + ' ──\n' + it.body
+              ).join('\n\n');
+              alert(lines || 'История пуста');
+            });
+          });
+        });
+      });
+    })();
+  </script>
 </PortalLayout>

@@ -29,7 +29,7 @@ const btnCls = 'inline-flex items-center gap-2 rounded-[12px] bg-primary px-5 py
 const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
 ---
 
-<PortalLayout title="Управление сеткой — АйДаКэмп">
+<PortalLayout title="Управление сеткой — АйДаКемп">
   {!canEdit && (
     <div class="mb-6 rounded-[12px] border border-amber-200 bg-amber-50 px-4 py-3 text-[15px] text-amber-900">
       <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
@@ -114,10 +114,16 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
         <p class={cardCls + ' text-[16px] text-body-muted'}>Создайте и активируйте смену, чтобы добавлять события.</p>
       ) : (
         <div class="grid gap-4 lg:grid-cols-2">
-          <form method="POST" action="/api/portal/shift/admin" class={cardCls}>
+          <form id="event-form" method="POST" action="/api/portal/shift/admin" class={cardCls}>
             <input type="hidden" name="action" value="upsertEvent" />
             <input type="hidden" name="shiftId" value={activeShift.id} />
-            <h3 class="mb-3 text-[16px] font-semibold text-navy-950">Добавить событие в «{activeShift.name}»</h3>
+            <input type="hidden" name="id" id="ev-id" value="" />
+            <div class="mb-3 flex items-center justify-between">
+              <h3 id="ev-form-title" class="text-[16px] font-semibold text-navy-950">Добавить событие в «{activeShift.name}»</h3>
+              <button type="button" id="ev-reset" class="hidden text-[14px] text-body-muted hover:text-primary">
+                <i class="bi bi-x-lg text-[12px]" aria-hidden="true"></i> Отмена правки
+              </button>
+            </div>
             <div class="space-y-3">
               <div>
                 <label class={labelCls} for="ev-title">Название</label>
@@ -140,7 +146,7 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class={labelCls} for="ev-type">Тип активности</label>
-                  <input id="ev-type" class={inputCls} name="activity_type" placeholder="Логистика" />
+                  <input id="ev-type" class={inputCls} name="activity_type" placeholder="meal / lesson / pool / …" />
                 </div>
                 <div>
                   <label class={labelCls} for="ev-sort">Порядок</label>
@@ -149,7 +155,7 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
               </div>
               <div>
                 <span class={labelCls}>Роли</span>
-                <div class="flex flex-wrap gap-3">
+                <div class="flex flex-wrap gap-3" id="ev-roles-wrap">
                   {ROLE_OPTIONS.map((r) => (
                     <label class="flex items-center gap-2 text-[16px] text-body">
                       <input type="checkbox" name="roles" value={r.value} class="h-5 w-5 rounded border-border text-primary focus:ring-primary" />
@@ -158,7 +164,11 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
                   ))}
                 </div>
               </div>
-              <button class={btnCls}><i class="bi bi-plus-lg text-[18px]" aria-hidden="true"></i>Сохранить событие</button>
+              <div>
+                <label class={labelCls} for="ev-notes">Заметки и материалы</label>
+                <textarea id="ev-notes" data-voice data-voice-append class={inputCls + ' min-h-[60px]'} name="notes" placeholder="Доп. инфа, ссылки на материалы…"></textarea>
+              </div>
+              <button id="ev-submit" class={btnCls}><i class="bi bi-plus-lg text-[18px]" aria-hidden="true"></i>Сохранить событие</button>
             </div>
           </form>
 
@@ -167,21 +177,91 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
             {events.length === 0 ? (
               <p class="text-[16px] text-body-muted">Событий пока нет.</p>
             ) : (
-              <ul class="space-y-2 max-h-[420px] overflow-auto">
+              <ul class="space-y-2 max-h-[520px] overflow-auto">
                 {events.map((e) => (
-                  <li class="rounded-[10px] border border-border px-3 py-2">
-                    <span class="text-[16px] text-navy-950">
-                      <span class="text-body-muted">{e.date.slice(5)} {fmtTime(e.start_time)}</span> {e.title}
-                    </span>
-                    <span class="ml-1 text-[14px] text-body-muted">#{e.id}{e.activity_type ? ` · ${e.activity_type}` : ''}</span>
-                    {e.roles.length > 0 && (
-                      <span class="ml-1 text-[14px] text-primary">{e.roles.join(', ')}</span>
-                    )}
+                  <li class="flex flex-wrap items-center gap-2 rounded-[10px] border border-border px-3 py-2">
+                    <div class="min-w-0 flex-1">
+                      <div class="text-[15px] text-navy-950">
+                        <span class="text-body-muted">{e.date.slice(5)} {fmtTime(e.start_time)}</span> {e.title}
+                      </div>
+                      <div class="text-[12px] text-body-muted">
+                        #{e.id}{e.activity_type ? ` · ${e.activity_type}` : ''}
+                        {e.roles.length > 0 && <span class="ml-1 text-primary">· {e.roles.join(', ')}</span>}
+                      </div>
+                    </div>
+                    <button type="button"
+                            class="ev-edit rounded-[8px] border border-border px-2.5 py-1 text-[12px] font-medium text-body-muted transition hover:border-primary hover:text-primary"
+                            data-id={e.id}
+                            data-title={e.title}
+                            data-date={e.date}
+                            data-start={e.start_time ?? ''}
+                            data-end={e.end_time ?? ''}
+                            data-actype={e.activity_type ?? ''}
+                            data-sort={e.sort}
+                            data-roles={e.roles.join(',')}
+                            data-notes={e.notes ?? ''}>
+                      <i class="bi bi-pencil text-[12px]" aria-hidden="true"></i> Править
+                    </button>
+                    <form method="POST" action="/api/portal/shift/admin" onsubmit={`return confirm('Удалить событие «${e.title}» (${e.date})? Также удалятся все привязки чек-листов и галочки.')`}>
+                      <input type="hidden" name="action" value="deleteEvent" />
+                      <input type="hidden" name="id" value={e.id} />
+                      <button type="submit" class="rounded-[8px] border border-red-300 px-2.5 py-1 text-[12px] font-medium text-red-700 transition hover:bg-red-50">
+                        <i class="bi bi-trash3 text-[12px]" aria-hidden="true"></i>
+                      </button>
+                    </form>
                   </li>
                 ))}
               </ul>
             )}
           </div>
+          <script is:inline>
+            (() => {
+              const form = document.getElementById('event-form');
+              const idF = document.getElementById('ev-id');
+              const titleF = document.getElementById('ev-title');
+              const dateF = document.getElementById('ev-date');
+              const startF = document.getElementById('ev-start');
+              const endF = document.getElementById('ev-end');
+              const typeF = document.getElementById('ev-type');
+              const sortF = document.getElementById('ev-sort');
+              const notesF = document.getElementById('ev-notes');
+              const rolesWrap = document.getElementById('ev-roles-wrap');
+              const formTitle = document.getElementById('ev-form-title');
+              const submit = document.getElementById('ev-submit');
+              const reset = document.getElementById('ev-reset');
+              function resetForm() {
+                idF.value = '';
+                titleF.value = '';
+                startF.value = ''; endF.value = '';
+                typeF.value = ''; sortF.value = '0';
+                if (notesF) notesF.value = '';
+                rolesWrap?.querySelectorAll('input[name=roles]').forEach((cb) => { cb.checked = false; });
+                formTitle.textContent = 'Добавить событие';
+                submit.innerHTML = '<i class="bi bi-plus-lg text-[18px]" aria-hidden="true"></i>Сохранить событие';
+                reset.classList.add('hidden');
+              }
+              reset?.addEventListener('click', resetForm);
+              document.querySelectorAll('.ev-edit').forEach((b) => {
+                b.addEventListener('click', () => {
+                  idF.value = b.dataset.id || '';
+                  titleF.value = b.dataset.title || '';
+                  dateF.value = b.dataset.date || '';
+                  startF.value = (b.dataset.start || '').slice(0, 5);
+                  endF.value = (b.dataset.end || '').slice(0, 5);
+                  typeF.value = b.dataset.actype || '';
+                  sortF.value = b.dataset.sort || '0';
+                  if (notesF) notesF.value = b.dataset.notes || '';
+                  const roles = (b.dataset.roles || '').split(',').filter(Boolean);
+                  rolesWrap?.querySelectorAll('input[name=roles]').forEach((cb) => { cb.checked = roles.includes(cb.value); });
+                  formTitle.textContent = 'Править событие #' + b.dataset.id;
+                  submit.innerHTML = '<i class="bi bi-check-lg text-[18px]" aria-hidden="true"></i>Обновить событие';
+                  reset.classList.remove('hidden');
+                  form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  titleF.focus();
+                });
+              });
+            })();
+          </script>
         </div>
       )}
     </section>
@@ -190,9 +270,15 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
     <section>
       <h2 class="mb-4 text-[20px] font-bold text-navy-950 md:text-[24px]">Чек-листы</h2>
       <div class="grid gap-4 lg:grid-cols-2">
-        <form method="POST" action="/api/portal/shift/admin" class={cardCls}>
+        <form id="checklist-form" method="POST" action="/api/portal/shift/admin" class={cardCls}>
           <input type="hidden" name="action" value="upsertChecklist" />
-          <h3 class="mb-3 text-[16px] font-semibold text-navy-950">Создать шаблон чек-листа</h3>
+          <input type="hidden" name="id" id="cl-id" value="" />
+          <div class="mb-3 flex items-center justify-between">
+            <h3 id="cl-form-title" class="text-[16px] font-semibold text-navy-950">Создать шаблон чек-листа</h3>
+            <button type="button" id="cl-reset" class="hidden text-[14px] text-body-muted hover:text-primary">
+              <i class="bi bi-x-lg text-[12px]" aria-hidden="true"></i> Отмена правки
+            </button>
+          </div>
           <div class="space-y-3">
             <div class="grid grid-cols-2 gap-3">
               <div>
@@ -206,11 +292,11 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
             </div>
             <div>
               <label class={labelCls} for="cl-items">Пункты (по одному в строке)</label>
-              <textarea id="cl-items" class={inputCls + ' min-h-[120px]'} name="items" placeholder="Встретить группу
+              <textarea id="cl-items" class={inputCls + ' min-h-[140px]'} name="items" placeholder="Встретить группу
 Проверить документы
 Заселить"></textarea>
             </div>
-            <button class={btnCls}><i class="bi bi-plus-lg text-[18px]" aria-hidden="true"></i>Сохранить шаблон</button>
+            <button id="cl-submit" class={btnCls}><i class="bi bi-plus-lg text-[18px]" aria-hidden="true"></i>Сохранить шаблон</button>
           </div>
         </form>
 
@@ -219,16 +305,68 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
           {checklists.length === 0 ? (
             <p class="text-[16px] text-body-muted">Шаблонов пока нет.</p>
           ) : (
-            <ul class="space-y-2 max-h-[420px] overflow-auto">
+            <ul class="space-y-2 max-h-[480px] overflow-auto">
               {checklists.map((cl) => (
-                <li class="rounded-[10px] border border-border px-3 py-2">
-                  <span class="text-[16px] text-navy-950">{cl.title}</span>
-                  <span class="ml-1 text-[14px] text-body-muted">#{cl.id}{cl.key ? ` · ${cl.key}` : ''} · {cl.items.length} пунктов</span>
+                <li class="flex flex-wrap items-center gap-2 rounded-[10px] border border-border px-3 py-2">
+                  <div class="min-w-0 flex-1">
+                    <div class="text-[15px] text-navy-950">{cl.title}</div>
+                    <div class="text-[12px] text-body-muted">#{cl.id}{cl.key ? ` · ${cl.key}` : ''} · {cl.items.length} пунктов</div>
+                  </div>
+                  <button type="button"
+                          class="cl-edit rounded-[8px] border border-border px-2.5 py-1 text-[12px] font-medium text-body-muted transition hover:border-primary hover:text-primary"
+                          data-id={cl.id}
+                          data-key={cl.key ?? ''}
+                          data-title={cl.title}
+                          data-items={cl.items.map((i) => i.text).join('\n')}>
+                    <i class="bi bi-pencil text-[12px]" aria-hidden="true"></i> Править
+                  </button>
+                  <form method="POST" action="/api/portal/shift/admin" onsubmit={`return confirm('Удалить шаблон «${cl.title}»? Это удалит все привязки и отметки.')`}>
+                    <input type="hidden" name="action" value="deleteChecklist" />
+                    <input type="hidden" name="id" value={cl.id} />
+                    <button type="submit" class="rounded-[8px] border border-red-300 px-2.5 py-1 text-[12px] font-medium text-red-700 transition hover:bg-red-50">
+                      <i class="bi bi-trash3 text-[12px]" aria-hidden="true"></i>
+                    </button>
+                  </form>
                 </li>
               ))}
             </ul>
           )}
         </div>
+        <script is:inline>
+          (() => {
+            const form = document.getElementById('checklist-form');
+            const idF = document.getElementById('cl-id');
+            const keyF = document.getElementById('cl-key');
+            const titleF = document.getElementById('cl-title');
+            const itemsF = document.getElementById('cl-items');
+            const reset = document.getElementById('cl-reset');
+            const formTitle = document.getElementById('cl-form-title');
+            const submit = document.getElementById('cl-submit');
+            function resetForm() {
+              idF.value = '';
+              keyF.value = '';
+              titleF.value = '';
+              itemsF.value = '';
+              formTitle.textContent = 'Создать шаблон чек-листа';
+              submit.innerHTML = '<i class="bi bi-plus-lg text-[18px]" aria-hidden="true"></i>Сохранить шаблон';
+              reset.classList.add('hidden');
+            }
+            reset.addEventListener('click', resetForm);
+            document.querySelectorAll('.cl-edit').forEach((b) => {
+              b.addEventListener('click', () => {
+                idF.value = b.dataset.id || '';
+                keyF.value = b.dataset.key || '';
+                titleF.value = b.dataset.title || '';
+                itemsF.value = b.dataset.items || '';
+                formTitle.textContent = 'Править шаблон #' + b.dataset.id;
+                submit.innerHTML = '<i class="bi bi-check-lg text-[18px]" aria-hidden="true"></i>Обновить шаблон';
+                reset.classList.remove('hidden');
+                form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                titleF.focus();
+              });
+            });
+          })();
+        </script>
       </div>
     </section>
 

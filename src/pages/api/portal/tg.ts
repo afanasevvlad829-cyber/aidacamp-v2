@@ -3,6 +3,7 @@ import type { APIRoute } from 'astro';
 import { verifyLoginWidget, verifyInitData, type TgUser } from '../../../lib/telegramAuth';
 import { getStaff, ensurePending } from '../../../lib/portalStaff';
 import { signSession } from '../../../lib/portalSession';
+import { portalCookieOptions } from '../../../lib/portalCookie';
 
 function botToken(): string {
   return process.env.PORTAL_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || '';
@@ -47,9 +48,7 @@ async function loginResult(
 }
 
 function setSessionCookie(cookies: Parameters<APIRoute>[0]['cookies'], token: string): void {
-  cookies.set('portal_session', token, {
-    httpOnly: true, secure: true, sameSite: 'lax', path: '/', maxAge: 30 * 24 * 60 * 60,
-  });
+  cookies.set('portal_session', token, portalCookieOptions());
 }
 
 // Telegram Login Widget (data-auth-url) редиректит сюда методом GET с параметрами в query.

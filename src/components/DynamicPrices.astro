@@ -1,0 +1,103 @@
+---
+/**
+ * DynamicPrices — глобальный скрипт динамических цен.
+ * Подключается один раз в Base.astro и обновляет ВСЕ [data-dynamic-price] на странице.
+ *
+ * Атрибуты которые поддерживаются:
+ *   data-dynamic-price="shift-1"   → span с ценой (обновляется текст)
+ *   data-price-urgency="shift-1"   → строка "Завтра будет X ₽"
+ *   data-vychet-link="shift-1"     → ссылка налогового вычета (ищет data-shift-days на родителе)
+ *   data-option-price="shift-1"    → <option data-price> в калькуляторе (обновляет data-price + text)
+ */
+import { DYNAMIC_PRICE_CONFIG } from '../data/dynamicPrices';
+---
+
+<script id="aida-prices-config" type="application/json" set:html={JSON.stringify(DYNAMIC_PRICE_CONFIG)} />
+
+<script is:inline>
+(function () {
+  var cfg = {};
+  try {
+    var el = document.getElementById('aida-prices-config');
+    if (el) cfg = JSON.parse(el.textContent || '{}');
+  } catch (e) {}
+
+  function fmt(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
+
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  function daysDiff(a, b) {
+    var da = new Date(a); da.setHours(0,0,0,0);
+    var db = new Date(b); db.setHours(0,0,0,0);
+    return Math.floor((db - da) / 86400000);
+  }
+
+  function calcPrice(c, today) {
+    var elapsed = daysDiff(c.baseDate, today);
+    if (elapsed < 0) return null;
+    if (c.prices) {
+      return c.prices[Math.min(elapsed, c.prices.length - 1)];
+    }
+    var maxDays = daysDiff(c.baseDate, c.endDate);
+    return c.base + Math.min(elapsed, maxDays) * c.increment;
+  }
+
+  function calcNext(c, today) {
+    var elapsed = daysDiff(c.baseDate, today);
+    if (elapsed < 0) return null;
+    if (c.prices) {
+      return elapsed < c.prices.length - 1 ? c.prices[Math.min(elapsed, c.prices.length - 1) + 1] : null;
+    }
+    var maxDays = daysDiff(c.baseDate, c.endDate);
+    return elapsed < maxDays ? c.base + (Math.min(elapsed, maxDays) + 1) * c.increment : null;
+  }
+
+  function applyPrices() {
+    var today = todayStr();
+    Object.keys(cfg).forEach(function (id) {
+      var c = cfg[id];
+      var cur = calcPrice(c, today);
+      if (cur === null) return;
+      var next = calcNext(c, today);
+
+      // Цена (все элементы с атрибутом)
+      document.querySelectorAll('[data-dynamic-price="' + id + '"]').forEach(function (el) {
+        el.textContent = fmt(cur);
+      });
+
+      // "Завтра будет X ₽"
+      if (next !== null) {
+        var msg = 'Завтра будет ' + next.toLocaleString('ru-RU') + ' ₽';
+        document.querySelectorAll('[data-price-urgency="' + id + '"]').forEach(function (el) {
+          el.textContent = msg; el.classList.remove('hidden');
+        });
+      }
+
+      // Вычет — пересчёт на основе актуальной цены
+      document.querySelectorAll('[data-vychet-link="' + id + '"]').forEach(function (el) {
+        var card = el.closest('[data-shift-days]');
+        var days = card ? parseInt(card.getAttribute('data-shift-days') || '0', 10) : 0;
+        if (!days) return;
+        var vychet = Math.round((cur - 3800 * days) * 0.13);
+        if (vychet > 0) el.textContent = vychet.toLocaleString('ru-RU') + ' ₽ налогового вычета';
+      });
+
+      // <option data-option-price="shift-X"> в калькуляторе
+      document.querySelectorAll('[data-option-price="' + id + '"]').forEach(function (el) {
+        el.setAttribute('data-price', String(cur));
+        var label = el.getAttribute('data-option-label') || '';
+        var popular = el.getAttribute('data-option-popular') === 'true';
+        el.textContent = label + ' — ' + cur.toLocaleString('ru-RU') + ' ₽' + (popular ? ' · популярная' : '');
+      });
+    });
+  }
+
+  // Запускаем после загрузки DOM и при Astro-навигации
+  document.addEventListener('astro:page-load', applyPrices);
+  if (document.readyState !== 'loading') applyPrices();
+  else document.addEventListener('DOMContentLoaded', applyPrices);
+})();
+</script>
