@@ -15,7 +15,7 @@ BEGIN
     SELECT * FROM (VALUES
       ('Варвара',          'rukovoditel', 'director'),
       ('Александр Ташкин', 'teacher',     'teacher_1'),
-      ('Амар',             'teacher',     'teacher_2'),
+      ('Омар',             'teacher',     'teacher_2'),
       ('Вожатый 1',        'vozhaty',     'counselor_1'),
       ('Вожатый 2',        'vozhaty',     'counselor_2')
     ) AS t(full_name, role, staff_key)
