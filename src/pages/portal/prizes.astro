@@ -65,13 +65,19 @@ const byOrder = PRIZES.reduce<Record<string, typeof PRIZES>>((acc, p) => {
           <tbody>
             {items.map((p) => (
               <tr data-prize-row data-id={p.id} data-price={p.price} data-qty={p.qty}
+                  data-default-img={p.img ?? ''}
                   class="border-t border-border align-middle">
                 <td class="p-2">
-                  <label class="block cursor-pointer">
+                  <label class="block cursor-pointer" title="Кликни — чтобы заменить фото">
                     <input type="file" accept="image/*" class="hidden" data-photo-input data-id={p.id} />
                     <div data-photo-slot data-id={p.id}
-                         class="flex h-[64px] w-[64px] items-center justify-center rounded-[8px] border border-dashed border-border bg-page text-body-muted">
-                      <i class="bi bi-image text-[22px]" aria-hidden="true"></i>
+                         class="flex h-[64px] w-[64px] items-center justify-center overflow-hidden rounded-[8px] border border-border bg-white text-body-muted">
+                      {p.img ? (
+                        <img src={p.img} alt="" loading="lazy" referrerpolicy="no-referrer"
+                             style="width:64px;height:64px;object-fit:cover;border-radius:6px;" />
+                      ) : (
+                        <i class="bi bi-image text-[22px]" aria-hidden="true"></i>
+                      )}
                     </div>
                   </label>
                 </td>
@@ -79,11 +85,19 @@ const byOrder = PRIZES.reduce<Record<string, typeof PRIZES>>((acc, p) => {
                   <div class="font-medium text-navy-950">{p.name}</div>
                   <div class="mt-0.5 flex flex-wrap items-center gap-2 text-[12px] text-body-muted">
                     {p.category && <span class="rounded-full bg-primary-soft px-2 py-0.5 text-primary">{p.category}</span>}
-                    <a href={`https://www.ozon.ru/search/?text=${encodeURIComponent(p.name)}`} target="_blank" rel="noopener"
-                       class="inline-flex items-center gap-1 hover:text-primary">
-                      <i class="bi bi-search" aria-hidden="true"></i>
-                      Найти на Ozon
-                    </a>
+                    {p.url ? (
+                      <a href={p.url} target="_blank" rel="noopener"
+                         class="inline-flex items-center gap-1 hover:text-primary">
+                        <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+                        Карточка Ozon
+                      </a>
+                    ) : (
+                      <a href={`https://www.ozon.ru/search/?text=${encodeURIComponent(p.name)}`} target="_blank" rel="noopener"
+                         class="inline-flex items-center gap-1 hover:text-primary">
+                        <i class="bi bi-search" aria-hidden="true"></i>
+                        Найти на Ozon
+                      </a>
+                    )}
                   </div>
                 </td>
                 <td class="p-2 text-right font-mono tabular-nums">{fmtRub(p.price)}</td>
@@ -143,7 +157,9 @@ const byOrder = PRIZES.reduce<Record<string, typeof PRIZES>>((acc, p) => {
       function applyPhotos() {
         rows.forEach((r) => {
           const id = r.dataset.id;
-          const url = state.photos[id];
+          const userUrl = state.photos[id];
+          const defaultUrl = r.dataset.defaultImg || '';
+          const url = userUrl || defaultUrl;
           const slot = document.querySelector('[data-photo-slot][data-id="' + CSS.escape(id) + '"]');
           if (!slot) return;
           if (url) {
@@ -153,10 +169,11 @@ const byOrder = PRIZES.reduce<Record<string, typeof PRIZES>>((acc, p) => {
             const img = document.createElement('img');
             img.src = url;
             img.alt = '';
+            img.referrerPolicy = 'no-referrer';
             img.style.cssText = 'width:64px;height:64px;object-fit:cover;border-radius:6px;';
             slot.appendChild(img);
           } else {
-            slot.style.borderStyle = '';
+            slot.style.borderStyle = 'dashed';
             slot.style.background = '';
             slot.innerHTML = '<i class="bi bi-image" style="font-size:22px;" aria-hidden="true"></i>';
           }
