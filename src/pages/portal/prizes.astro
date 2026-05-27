@@ -23,22 +23,37 @@ const byOrder = PRIZES.reduce<Record<string, typeof PRIZES>>((acc, p) => {
 }, {});
 
 const CAT_LABELS: Record<string, string> = {
-  food: 'Еда',
-  comfort: 'Комфорт',
+  phone: 'Телефон',
   fun: 'Развлечения',
+  food: 'Еда',
+  prize: 'Физ. приз',
   privilege: 'Привилегии',
+  comfort: 'Комфорт',
   service: 'Услуги',
   other: 'Прочее',
 };
 ---
 <PortalLayout title="Экономика смены — АйДаКемп">
-  <div class="mb-5">
+  <div class="mb-4">
     <h1 class="text-[28px] font-bold tracking-[-0.02em] text-navy-950 md:text-[36px]">
       Экономика смены
     </h1>
     <p class="mt-2 text-[16px] text-body-muted">
-      Расчёт стоимости призов и активностей в Бонжерах исходя из числа детей и дневного бюджета.
+      Внутренняя экономика «выкупа внимания»: ребёнок сам решает — телефон, кино, костёр или физический приз.
     </p>
+  </div>
+
+  {/* Философия — короткая шпаргалка для админа */}
+  <div class="mb-4 rounded-[14px] border border-amber-200 bg-amber-50/60 p-4 text-[14px] text-navy-950">
+    <div class="mb-1 flex items-center gap-2 font-semibold text-amber-800">
+      <i class="bi bi-info-circle" aria-hidden="true"></i> Как устроена экономика
+    </div>
+    <ul class="ml-5 list-disc space-y-1">
+      <li><b>Якорь</b> — 1 минута телефона = 10 ₽. От этого считается всё остальное.</li>
+      <li><b>Доход ребёнка:</b> базовая выдача «прошёл день» 200 ₽, бонус «без телефона» +500 ₽, «уборка комнаты» +100 ₽ → до <b>800 ₽/день</b>.</li>
+      <li><b>Расход — выбор:</b> минуты телефона (×10 ₽) ↔ копить на коллективный лот (кино, прощальный костёр, <b>телефон на всю ночь — 12 000 ₽ на 25 чел</b>) ↔ физический приз (эксперимент 1 500–2 000 ₽).</li>
+      <li>Мы <b>не запрещаем телефон</b> — делаем альтернативу интереснее. Цены не должны быть «дёшево»: лот должен быть желанным и требовать кооперации.</li>
+    </ul>
   </div>
 
   {/* Шапка-настройки — общий калькулятор */}
@@ -47,15 +62,10 @@ const CAT_LABELS: Record<string, string> = {
       <i class="bi bi-sliders" aria-hidden="true"></i>
       Параметры смены
     </div>
-    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <label class="block">
         <span class="block text-[13px] font-medium text-body-muted">Детей на смене</span>
         <input id="set-kids" type="number" min="1" max="200" value="35"
-               class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
-      </label>
-      <label class="block">
-        <span class="block text-[13px] font-medium text-body-muted">Выдача в день, ₽</span>
-        <input id="set-daily" type="number" min="0" step="50" value="600"
                class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
       </label>
       <label class="block">
@@ -64,37 +74,72 @@ const CAT_LABELS: Record<string, string> = {
                class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
       </label>
       <label class="block">
-        <span class="block text-[13px] font-medium text-body-muted">Наценка ×</span>
+        <span class="block text-[13px] font-medium text-body-muted">1 минута телефона, ₽ <span class="text-amber-700">(якорь)</span></span>
+        <input id="set-phone-min" type="number" min="1" step="1" value="10"
+               class="mt-1 w-full rounded-[10px] border border-amber-300 bg-amber-50/40 px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
+      </label>
+      <label class="block">
+        <span class="block text-[13px] font-medium text-body-muted">Наценка × для призов из Ozon</span>
         <input id="set-markup" type="number" min="1" step="0.1" value="3"
                class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
       </label>
-      <div class="block">
-        <span class="block text-[13px] font-medium text-body-muted">Округление до</span>
-        <select id="set-round"
-                class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 font-mono tabular-nums focus:border-primary focus:outline-none">
-          <option value="10">10 ₽</option>
-          <option value="50" selected>50 ₽</option>
-          <option value="100">100 ₽</option>
-        </select>
+    </div>
+
+    <div class="mt-4">
+      <div class="mb-2 text-[13px] font-semibold uppercase tracking-wide text-body-muted">
+        Источники дохода ребёнка (₽ / день)
+      </div>
+      <div class="grid gap-3 sm:grid-cols-4">
+        <label class="block">
+          <span class="block text-[13px] font-medium text-body-muted">Базовая «прошёл день»</span>
+          <input id="set-base-daily" type="number" min="0" step="50" value="200"
+                 class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
+        </label>
+        <label class="block">
+          <span class="block text-[13px] font-medium text-body-muted">Бонус «без телефона»</span>
+          <input id="set-bonus-nophone" type="number" min="0" step="50" value="500"
+                 class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
+        </label>
+        <label class="block">
+          <span class="block text-[13px] font-medium text-body-muted">Бонус «уборка комнаты»</span>
+          <input id="set-bonus-clean" type="number" min="0" step="50" value="100"
+                 class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
+        </label>
+        <div class="block">
+          <span class="block text-[13px] font-medium text-body-muted">Округление до</span>
+          <select id="set-round"
+                  class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 font-mono tabular-nums focus:border-primary focus:outline-none">
+            <option value="10">10 ₽</option>
+            <option value="50" selected>50 ₽</option>
+            <option value="100">100 ₽</option>
+          </select>
+        </div>
       </div>
     </div>
-    <div class="mt-4 grid gap-2 sm:grid-cols-3">
+
+    <div class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
       <div class="rounded-[10px] border border-border bg-page p-3">
-        <div class="text-[13px] text-body-muted">Бюджет одного ребёнка</div>
+        <div class="text-[13px] text-body-muted">Потенциал ребёнка / день</div>
+        <div class="mt-0.5 font-mono tabular-nums text-[18px] font-semibold text-navy-950">
+          <span id="kpi-potential">—</span>
+        </div>
+      </div>
+      <div class="rounded-[10px] border border-border bg-page p-3">
+        <div class="text-[13px] text-body-muted">За всю смену с ребёнка</div>
         <div class="mt-0.5 font-mono tabular-nums text-[18px] font-semibold text-navy-950">
           <span id="kpi-per-kid">—</span>
+        </div>
+      </div>
+      <div class="rounded-[10px] border border-border bg-page p-3">
+        <div class="text-[13px] text-body-muted">Эквивалент <i class="bi bi-telephone-fill text-[12px] text-primary" aria-hidden="true"></i> минут / день</div>
+        <div class="mt-0.5 font-mono tabular-nums text-[18px] font-semibold text-navy-950">
+          <span id="kpi-phone-equiv">—</span>
         </div>
       </div>
       <div class="rounded-[10px] border border-border bg-page p-3">
         <div class="text-[13px] text-body-muted">Всего в обороте за смену</div>
         <div class="mt-0.5 font-mono tabular-nums text-[18px] font-semibold text-navy-950">
           <span id="kpi-total">—</span>
-        </div>
-      </div>
-      <div class="rounded-[10px] border border-border bg-page p-3">
-        <div class="text-[13px] text-body-muted">Закуплено призов (Ozon)</div>
-        <div class="mt-0.5 font-mono tabular-nums text-[18px] font-semibold text-navy-950">
-          {fmtRub(totalAll)}
         </div>
       </div>
     </div>
@@ -153,11 +198,12 @@ const CAT_LABELS: Record<string, string> = {
               <tr>
                 <th class="w-[60px] p-2"></th>
                 <th class="p-2">Наименование</th>
-                <th class="w-[90px] p-2 text-right">Цена&nbsp;Ozon</th>
-                <th class="w-[60px] p-2 text-right">Кол-во</th>
-                <th class="w-[100px] p-2 text-right">Сумма</th>
-                <th class="w-[110px] p-2 text-right">Рекоменд.</th>
-                <th class="w-[140px] p-2 text-right">Цена&nbsp;Бонжер</th>
+                <th class="w-[80px] p-2 text-right">Цена&nbsp;Ozon</th>
+                <th class="w-[50px] p-2 text-right">Кол-во</th>
+                <th class="w-[90px] p-2 text-right">Сумма</th>
+                <th class="w-[100px] p-2 text-right">Рекоменд.</th>
+                <th class="w-[130px] p-2 text-right">Цена&nbsp;Бонжер</th>
+                <th class="w-[90px] p-2 text-right" title="Сколько дней ребёнку нужно копить, если откажется от телефона">Копить</th>
                 <th class="w-[40px] p-2"></th>
               </tr>
             </thead>
@@ -202,11 +248,12 @@ const CAT_LABELS: Record<string, string> = {
                     <td class="p-2 text-right">
                       <div class="flex items-center justify-end gap-1">
                         <input type="number" min="0" step="50" data-bongere-input
-                               class="w-[100px] rounded-[8px] border border-border bg-white px-2 py-1 text-right font-mono tabular-nums focus:border-primary focus:outline-none"
+                               class="w-[90px] rounded-[8px] border border-border bg-white px-2 py-1 text-right font-mono tabular-nums focus:border-primary focus:outline-none"
                                placeholder="—" value={st?.bongere_price ?? ''} />
                         <span class="text-body-muted">₽</span>
                       </div>
                     </td>
+                    <td class="p-2 text-right font-mono tabular-nums" data-save-days></td>
                     <td class="p-2 text-right">
                       <button type="button" data-toggle-hidden
                               class="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-body-muted transition hover:bg-red-50 hover:text-red-600"
@@ -243,18 +290,18 @@ const CAT_LABELS: Record<string, string> = {
         <thead class="bg-page text-left text-[12px] uppercase tracking-wide text-body-muted">
           <tr>
             <th class="p-2">Название</th>
-            <th class="w-[120px] p-2">Категория</th>
-            <th class="w-[110px] p-2 text-right">Себест-сть, ₽</th>
-            <th class="w-[100px] p-2 text-right">Скидыв. чел.</th>
-            <th class="w-[120px] p-2 text-right">С человека</th>
-            <th class="w-[120px] p-2 text-right">Итого Бонжер</th>
+            <th class="w-[110px] p-2">Категория</th>
+            <th class="w-[110px] p-2 text-right">Цена в&nbsp;Бонжерах</th>
+            <th class="w-[90px] p-2 text-right">Скидыв.&nbsp;чел.</th>
+            <th class="w-[110px] p-2 text-right">С человека</th>
+            <th class="w-[110px] p-2 text-right" title="Сколько дней копить одному ребёнку (при максимальном потенциале)">Копить</th>
             <th class="w-[80px] p-2"></th>
           </tr>
         </thead>
         <tbody id="activities-tbody">
           {activities.map((a) => (
             <tr data-activity-row data-id={a.id}
-                data-base={a.base_price ?? 0}
+                data-bongere={a.base_price ?? 0}
                 data-participants={a.participants_hint ?? ''}
                 class="border-t border-border align-middle">
               <td class="p-2">
@@ -262,10 +309,10 @@ const CAT_LABELS: Record<string, string> = {
                 {a.description && <div class="mt-0.5 text-[12px] text-body-muted">{a.description}</div>}
               </td>
               <td class="p-2"><span class="rounded-full bg-primary-soft px-2 py-0.5 text-[12px] text-primary">{CAT_LABELS[a.category ?? 'other'] ?? a.category ?? '—'}</span></td>
-              <td class="p-2 text-right font-mono tabular-nums">{a.base_price != null ? fmtRub(a.base_price) : '—'}</td>
+              <td class="p-2 text-right font-mono tabular-nums font-semibold">{a.base_price != null ? fmtRub(a.base_price) : '—'}</td>
               <td class="p-2 text-right font-mono tabular-nums">{a.participants_hint ?? '—'}</td>
               <td class="p-2 text-right font-mono tabular-nums text-primary" data-per-person>—</td>
-              <td class="p-2 text-right font-mono tabular-nums font-semibold" data-total-bongere>—</td>
+              <td class="p-2 text-right font-mono tabular-nums" data-save-days>—</td>
               <td class="p-2 text-right">
                 <button type="button" data-edit-activity data-id={a.id}
                         class="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-body-muted hover:bg-primary-soft hover:text-primary"
@@ -304,16 +351,18 @@ const CAT_LABELS: Record<string, string> = {
             <label class="block">
               <span class="block text-[13px] font-medium text-body-muted">Категория</span>
               <select id="act-cat" class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 focus:border-primary focus:outline-none">
-                <option value="food">Еда</option>
-                <option value="comfort">Комфорт</option>
+                <option value="phone">Телефон</option>
                 <option value="fun">Развлечения</option>
+                <option value="food">Еда</option>
+                <option value="prize">Физ. приз</option>
                 <option value="privilege">Привилегии</option>
+                <option value="comfort">Комфорт</option>
                 <option value="service">Услуги</option>
                 <option value="other">Прочее</option>
               </select>
             </label>
             <label class="block">
-              <span class="block text-[13px] font-medium text-body-muted">Себестоимость, ₽</span>
+              <span class="block text-[13px] font-medium text-body-muted">Цена в Бонжерах, ₽</span>
               <input id="act-price" type="number" min="0" step="100"
                      class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono focus:border-primary focus:outline-none" />
             </label>
@@ -374,21 +423,37 @@ const CAT_LABELS: Record<string, string> = {
       function saveSettings(s) {
         try { localStorage.setItem(LS_SETTINGS, JSON.stringify(s)); } catch {}
       }
-      const set = Object.assign({ kids: 35, daily: 600, days: 10, markup: 3, round: 50 }, loadSettings());
-      document.getElementById('set-kids').value = set.kids;
-      document.getElementById('set-daily').value = set.daily;
-      document.getElementById('set-days').value = set.days;
-      document.getElementById('set-markup').value = set.markup;
-      document.getElementById('set-round').value = String(set.round);
+      const set = Object.assign({
+        kids: 35, days: 10, phoneMin: 10, markup: 3, round: 50,
+        baseDaily: 200, bonusNoPhone: 500, bonusClean: 100,
+      }, loadSettings());
+      const ids = ['set-kids','set-days','set-phone-min','set-markup','set-round','set-base-daily','set-bonus-nophone','set-bonus-clean'];
+      const idMap = {
+        'set-kids':'kids','set-days':'days','set-phone-min':'phoneMin','set-markup':'markup','set-round':'round',
+        'set-base-daily':'baseDaily','set-bonus-nophone':'bonusNoPhone','set-bonus-clean':'bonusClean',
+      };
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (el) el.value = String(set[idMap[id]] ?? '');
+      }
 
       function readSettings() {
+        const num = (id, min) => Math.max(min, Number(document.getElementById(id).value) || min);
         return {
-          kids: Math.max(1, Number(document.getElementById('set-kids').value) || 1),
-          daily: Math.max(0, Number(document.getElementById('set-daily').value) || 0),
-          days: Math.max(1, Number(document.getElementById('set-days').value) || 1),
-          markup: Math.max(1, Number(document.getElementById('set-markup').value) || 1),
-          round: Math.max(1, Number(document.getElementById('set-round').value) || 1),
+          kids: num('set-kids', 1),
+          days: num('set-days', 1),
+          phoneMin: num('set-phone-min', 1),
+          markup: num('set-markup', 1),
+          round: num('set-round', 1),
+          baseDaily: Math.max(0, Number(document.getElementById('set-base-daily').value) || 0),
+          bonusNoPhone: Math.max(0, Number(document.getElementById('set-bonus-nophone').value) || 0),
+          bonusClean: Math.max(0, Number(document.getElementById('set-bonus-clean').value) || 0),
         };
+      }
+      function dailyPotential(s) { return s.baseDaily + s.bonusNoPhone + s.bonusClean; }
+      function saveDays(price, potential) {
+        if (!price || price <= 0 || potential <= 0) return 0;
+        return Math.ceil(price / potential);
       }
       function roundTo(n, step) { return Math.round(n / step) * step; }
 
@@ -416,6 +481,7 @@ const CAT_LABELS: Record<string, string> = {
 
       function recalcPrizes() {
         const s = readSettings();
+        const dp = dailyPotential(s);
         let active = 0, sumBongere = 0, sumRec = 0, sumOzonVisible = 0;
         prizeRows.forEach((r) => {
           const isHidden = r.dataset.hidden === '1';
@@ -432,27 +498,42 @@ const CAT_LABELS: Record<string, string> = {
           const v = inp.value === '' ? null : Number(inp.value);
           if (!isHidden && v != null && !isNaN(v)) sumBongere += v * qty;
           if (!isHidden) sumRec += rec * qty;
+          // Копить N дней — берём установленную цену, иначе рекомендованную
+          const targetPrice = (v != null && !isNaN(v)) ? v : rec;
+          const days = saveDays(targetPrice, dp);
+          const cell = r.querySelector('[data-save-days]');
+          if (cell) {
+            if (days <= 0) { cell.textContent = '—'; }
+            else if (days > s.days) {
+              cell.innerHTML = '<span class="text-red-600">' + days + ' дн</span><div class="text-[11px] text-body-muted">> смены</div>';
+            } else {
+              cell.innerHTML = days + ' <span class="text-[11px] text-body-muted">дн</span>';
+            }
+          }
         });
         document.getElementById('cnt-active').textContent = String(active);
         document.getElementById('sum-bongere').textContent = fmt(sumBongere);
-        // Summary
-        const total = s.kids * s.daily * s.days;
-        document.getElementById('kpi-per-kid').textContent = fmt(s.daily * s.days);
+        // KPI шапки
+        const total = s.kids * dp * s.days;
+        document.getElementById('kpi-potential').textContent = fmt(dp);
+        document.getElementById('kpi-per-kid').textContent = fmt(dp * s.days);
+        document.getElementById('kpi-phone-equiv').textContent = (s.phoneMin > 0 ? Math.floor(dp / s.phoneMin) : 0) + ' мин';
         document.getElementById('kpi-total').textContent = fmt(total);
-        document.getElementById('sum-recommended').textContent = fmt(sumRec);
-        document.getElementById('sum-bongere-2').textContent = fmt(sumBongere);
-        document.getElementById('sum-total-money').textContent = fmt(total);
+        // Сводка
+        const sumRecEl = document.getElementById('sum-recommended'); if (sumRecEl) sumRecEl.textContent = fmt(sumRec);
+        const sumBon2 = document.getElementById('sum-bongere-2'); if (sumBon2) sumBon2.textContent = fmt(sumBongere);
+        const sumTot = document.getElementById('sum-total-money'); if (sumTot) sumTot.textContent = fmt(total);
         const usedForPrizes = sumBongere || sumRec;
-        document.getElementById('sum-balance-prizes').textContent = fmt(total - usedForPrizes);
-        document.getElementById('sum-balance-acts').textContent = fmt(total - usedForPrizes); // равно — активности из тех же денег
-        // Средняя наценка
+        const balPr = document.getElementById('sum-balance-prizes'); if (balPr) balPr.textContent = fmt(total - usedForPrizes);
+        const balAc = document.getElementById('sum-balance-acts'); if (balAc) balAc.textContent = fmt(total - usedForPrizes);
         const avg = sumOzonVisible > 0 && sumBongere > 0 ? (sumBongere / sumOzonVisible) : null;
-        document.getElementById('sum-markup-avg').textContent = avg != null ? '×' + avg.toFixed(2) : '×' + s.markup.toFixed(1);
-        // Активности тоже пересчитать
+        const ma = document.getElementById('sum-markup-avg');
+        if (ma) ma.textContent = avg != null ? '×' + avg.toFixed(2) : '×' + s.markup.toFixed(1);
+        // Активности
         recalcActivities();
       }
 
-      ['set-kids','set-daily','set-days','set-markup','set-round'].forEach((id) => {
+      ['set-kids','set-days','set-phone-min','set-markup','set-round','set-base-daily','set-bonus-nophone','set-bonus-clean'].forEach((id) => {
         const el = document.getElementById(id);
         el.addEventListener('input', () => {
           const s = readSettings();
@@ -547,15 +628,21 @@ const CAT_LABELS: Record<string, string> = {
       const actRows = Array.from(document.querySelectorAll('[data-activity-row]'));
       function recalcActivities() {
         const s = readSettings();
+        const dp = dailyPotential(s);
         actRows.forEach((r) => {
-          const base = Number(r.dataset.base || 0);
+          const total = Number(r.dataset.bongere || 0);
           const partRaw = r.dataset.participants;
           const part = partRaw === '' ? null : Number(partRaw);
-          // Logic: total Bongere = base × markup (rounded). Per-person = total / participants (or = total if individual).
-          const total = roundTo(base * s.markup, s.round);
           const perPerson = part && part > 0 ? roundTo(total / part, s.round) : total;
-          r.querySelector('[data-total-bongere]').textContent = fmt(total);
-          r.querySelector('[data-per-person]').textContent = part ? fmt(perPerson) + ' × ' + part : fmt(perPerson);
+          const ppCell = r.querySelector('[data-per-person]');
+          if (ppCell) ppCell.textContent = part && part > 1 ? fmt(perPerson) + ' × ' + part : fmt(perPerson);
+          const days = saveDays(perPerson, dp);
+          const cell = r.querySelector('[data-save-days]');
+          if (cell) {
+            if (days <= 0) cell.textContent = '—';
+            else if (days > s.days) cell.innerHTML = '<span class="text-red-600">' + days + ' дн</span>';
+            else cell.innerHTML = days + ' <span class="text-[11px] text-body-muted">дн</span>';
+          }
         });
       }
 
@@ -602,7 +689,7 @@ const CAT_LABELS: Record<string, string> = {
             name: r.querySelector('td .font-medium').textContent,
             description: r.querySelector('td .text-body-muted')?.textContent || '',
             category: '', // не критично, переустановится из формы
-            base_price: Number(r.dataset.base || 0),
+            base_price: Number(r.dataset.bongere || 0),
             participants_hint: r.dataset.participants === '' ? null : Number(r.dataset.participants),
           });
         });
