@@ -15,13 +15,6 @@ const stateById = new Map(prizeStates.map((s) => [s.prize_id, s]));
 const totalAll = PRIZES.reduce((s, p) => s + p.price * p.qty, 0);
 const fmtRub = (n: number) => new Intl.NumberFormat('ru-RU').format(Math.round(n)) + ' ₽';
 
-// Группировка по заказам
-const byOrder = PRIZES.reduce<Record<string, typeof PRIZES>>((acc, p) => {
-  const k = p.order ?? '—';
-  (acc[k] ??= []).push(p);
-  return acc;
-}, {});
-
 const CAT_LABELS: Record<string, string> = {
   phone: 'Телефон',
   fun: 'Развлечения',
@@ -212,15 +205,14 @@ const CAT_LABELS: Record<string, string> = {
       </div>
     </div>
 
-    {Object.entries(byOrder).map(([order, items]) => (
-      <div class="mb-6">
-        <h2 class="mb-2 flex items-center gap-2 text-[16px] font-semibold text-navy-950">
-          <i class="bi bi-receipt text-primary" aria-hidden="true"></i>
-          Счёт Ozon № {order}
-          <span class="text-[13px] font-normal text-body-muted">· {items.length} поз. · {fmtRub(items.reduce((s, p) => s + p.price * p.qty, 0))}</span>
-        </h2>
+    <div class="mb-6">
+      <h2 class="mb-2 flex items-center gap-2 text-[16px] font-semibold text-navy-950">
+        <i class="bi bi-receipt text-primary" aria-hidden="true"></i>
+        Каталог призов
+        <span class="text-[13px] font-normal text-body-muted">· {PRIZES.length} позиций · {PRIZES.reduce((s, p) => s + p.qty, 0)} шт · {fmtRub(totalAll)}</span>
+      </h2>
 
-        <div class="overflow-x-auto rounded-[14px] border border-border bg-white card-shadow">
+      <div class="overflow-x-auto rounded-[14px] border border-border bg-white card-shadow">
           <table class="w-full text-[14px]">
             <thead class="bg-page text-left text-[12px] uppercase tracking-wide text-body-muted">
               <tr>
@@ -236,7 +228,7 @@ const CAT_LABELS: Record<string, string> = {
               </tr>
             </thead>
             <tbody>
-              {items.map((p) => {
+              {PRIZES.map((p) => {
                 const st = stateById.get(p.id);
                 return (
                   <tr data-prize-row data-id={p.id} data-price={p.price} data-qty={p.qty}
@@ -296,7 +288,6 @@ const CAT_LABELS: Record<string, string> = {
           </table>
         </div>
       </div>
-    ))}
   </section>
 
   {/* ── Tab: Activities ──────────────────────────────────────────────────── */}
