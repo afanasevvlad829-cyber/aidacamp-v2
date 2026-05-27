@@ -185,6 +185,20 @@ export async function setRoles(telegramId: number, roles: PortalRole[], approved
   });
 }
 
+/** Включить/выключить сотрудника по PK id (работает и для placeholder без telegram_id). */
+export async function setActiveById(id: number, active: boolean): Promise<void> {
+  await withClient(async (c) => {
+    await c.query('UPDATE portal_staff SET active=$2 WHERE id=$1', [id, active]);
+  });
+}
+
+/** Удалить запись сотрудника (для placeholder который больше не нужен, либо отклонения pending). */
+export async function deleteStaffById(id: number): Promise<void> {
+  await withClient(async (c) => {
+    await c.query('DELETE FROM portal_staff WHERE id=$1', [id]);
+  });
+}
+
 export async function setActive(telegramId: number, active: boolean): Promise<void> {
   await withClient(async (c) => {
     await c.query('UPDATE portal_staff SET active=$2 WHERE telegram_id=$1', [telegramId, active]);
