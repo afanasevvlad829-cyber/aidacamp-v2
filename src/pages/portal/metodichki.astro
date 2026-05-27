@@ -272,19 +272,14 @@ function fmtDate(s: string): string {
                 </div>
 
                 <form class="mt-4 space-y-2" data-comment-form data-slug={a.slug}>
-                  <textarea data-body-input rows="2"
+                  <textarea data-body-input rows="2" data-voice data-voice-append
                             class="w-full rounded-[10px] border border-border bg-white px-3 py-2 text-[15px] focus:border-primary focus:outline-none"
-                            placeholder="Напишите комментарий или нажмите «Надиктовать»…"></textarea>
+                            placeholder="Напишите комментарий или нажмите микрофон в углу поля, чтобы надиктовать…"></textarea>
                   <div class="flex flex-wrap items-center gap-2">
-                    <button type="button" data-voice-btn
-                      class="inline-flex items-center gap-1.5 rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] text-navy-950 hover:border-primary hover:text-primary">
-                      <i class="bi bi-mic" aria-hidden="true"></i> Надиктовать
-                    </button>
                     <button type="submit"
                       class="inline-flex items-center gap-1.5 rounded-[10px] border border-primary bg-primary px-3 py-1.5 text-[14px] font-medium text-white hover:opacity-90">
                       <i class="bi bi-send" aria-hidden="true"></i> Отправить
                     </button>
-                    <span data-voice-status class="text-[13px] text-body-muted"></span>
                   </div>
                 </form>
               </div>
@@ -318,9 +313,7 @@ function fmtDate(s: string): string {
         });
       });
 
-      // Комментарии: отправка, голос, история, архив, редактирование
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-
+      // Комментарии: отправка, голос (через общий /portal/voice-input.js), история, архив, редактирование
       function escapeHtml(s) {
         return String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
       }
@@ -342,10 +335,7 @@ function fmtDate(s: string): string {
       document.querySelectorAll('[data-comment-form]').forEach((form) => {
         const slug = form.dataset.slug;
         const input = form.querySelector('[data-body-input]');
-        const voiceBtn = form.querySelector('[data-voice-btn]');
-        const status = form.querySelector('[data-voice-status]');
         let parentId = null; // если редактируем — добавляется как новая версия
-        let voiceMode = false;
 
         // Submit
         form.addEventListener('submit', async (e) => {
@@ -353,53 +343,12 @@ function fmtDate(s: string): string {
           const text = (input.value || '').trim();
           if (!text) return;
           try {
-            await postComment({ action: 'create', slug, body: text, parent_id: parentId, source: voiceMode ? 'voice' : 'text' });
+            await postComment({ action: 'create', slug, body: text, parent_id: parentId, source: 'text' });
             location.reload();
           } catch (err) {
             alert('Ошибка: ' + err.message);
           }
         });
-
-        // Voice
-        if (voiceBtn) {
-          if (!SR) {
-            voiceBtn.disabled = true;
-            voiceBtn.title = 'Голосовой ввод не поддерживается в этом браузере (нужен Chrome / Edge / Safari)';
-            voiceBtn.classList.add('opacity-50', 'cursor-not-allowed');
-          } else {
-            let rec = null;
-            voiceBtn.addEventListener('click', () => {
-              if (rec) { rec.stop(); rec = null; return; }
-              rec = new SR();
-              rec.lang = 'ru-RU';
-              rec.interimResults = true;
-              rec.continuous = true;
-              const startText = input.value || '';
-              voiceBtn.classList.add('bg-red-50', 'text-red-700', 'border-red-300');
-              voiceBtn.innerHTML = '<i class="bi bi-stop-circle"></i> Остановить';
-              status.textContent = 'Слушаю…';
-              voiceMode = true;
-              rec.onresult = (ev) => {
-                let interim = '', final = '';
-                for (let i = ev.resultIndex; i < ev.results.length; i++) {
-                  const t = ev.results[i][0].transcript;
-                  if (ev.results[i].isFinal) final += t; else interim += t;
-                }
-                input.value = (startText + ' ' + (input.dataset.final || '') + final + ' ' + interim).replace(/\s+/g, ' ').trim();
-                if (final) input.dataset.final = (input.dataset.final || '') + final + ' ';
-              };
-              rec.onend = () => {
-                voiceBtn.classList.remove('bg-red-50', 'text-red-700', 'border-red-300');
-                voiceBtn.innerHTML = '<i class="bi bi-mic"></i> Надиктовать';
-                status.textContent = '';
-                input.dataset.final = '';
-                rec = null;
-              };
-              rec.onerror = (e) => { status.textContent = 'Ошибка: ' + e.error; };
-              rec.start();
-            });
-          }
-        }
 
         // Edit & archive — делегированно
         const list = form.previousElementSibling; // contains data-comments-list
@@ -413,7 +362,8 @@ function fmtDate(s: string): string {
               input.value = cur;
               parentId = id;
               input.focus();
-              status.textContent = 'Редактируем — отправка создаст новую версию (v' + (Number(art.dataset.version) + 1) + ')';
+              const placeholder = 'Редактируем — отправка создаст новую версию (v' + (Number(art.dataset.version) + 1) + ')';
+              input.placeholder = placeholder;
             });
           });
           wrap.querySelectorAll('[data-archive-comment]').forEach((btn) => {
