@@ -55,8 +55,24 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
   if (!p?.role || !STAFF_ROLES.has(p.role)) return json({ ok: false, error: 'forbidden' }, 403);
   const b = await readBody(request);
   const shift_id = Number(b.shift_id);
+  if (!Number.isFinite(shift_id)) return json({ ok: false, error: 'shift_id required' }, 400);
+
+  // Сброс всего расселения смены (action=reset_all): обнуляем room_number и bed_index, дети остаются в списке.
+  if (b.action === 'reset_all') {
+    const { resetAssignmentsForShift } = await import('../../../lib/portalRasselenie');
+    const cleared = await resetAssignmentsForShift(shift_id);
+    return json({ ok: true, cleared });
+  }
+
+  // Полная очистка списка (action=wipe_all): удаляем всех детей вообще
+  if (b.action === 'wipe_all') {
+    const { wipeKidsForShift } = await import('../../../lib/portalRasselenie');
+    const removed = await wipeKidsForShift(shift_id);
+    return json({ ok: true, removed });
+  }
+
   const kid_id = String(b.kid_id ?? '').trim();
-  if (!Number.isFinite(shift_id) || !kid_id) return json({ ok: false, error: 'shift_id, kid_id required' }, 400);
+  if (!kid_id) return json({ ok: false, error: 'kid_id required' }, 400);
   await deleteKid(shift_id, kid_id);
   return json({ ok: true });
 };

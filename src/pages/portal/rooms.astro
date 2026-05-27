@@ -101,9 +101,17 @@ function typeBadge(type: string): string {
             Не расселены: {unassignedKids.length}.
           </p>
         </div>
-        <button id="add-kid-btn" type="button" class="rounded-[12px] bg-primary px-4 py-2 text-[15px] font-semibold text-white transition hover:opacity-90">
-          <i class="bi bi-person-plus mr-1" aria-hidden="true"></i> Добавить ребёнка
-        </button>
+        <div class="flex flex-wrap gap-2">
+          <button id="load-crm-btn" type="button" class="rounded-[12px] border border-border bg-white px-4 py-2 text-[15px] font-medium text-navy-950 transition hover:border-primary hover:text-primary">
+            <i class="bi bi-cloud-download mr-1" aria-hidden="true"></i> Загрузить из AlfaCRM
+          </button>
+          <button id="add-kid-btn" type="button" class="rounded-[12px] bg-primary px-4 py-2 text-[15px] font-semibold text-white transition hover:opacity-90">
+            <i class="bi bi-person-plus mr-1" aria-hidden="true"></i> Добавить вручную
+          </button>
+          <button id="reset-btn" type="button" class="rounded-[12px] border border-red-300 bg-white px-4 py-2 text-[15px] font-medium text-red-700 transition hover:bg-red-50">
+            <i class="bi bi-arrow-counterclockwise mr-1" aria-hidden="true"></i> Сбросить
+          </button>
+        </div>
       </div>
 
       <div class="grid gap-4 lg:grid-cols-[1fr_280px]">
@@ -223,7 +231,70 @@ function typeBadge(type: string): string {
       {shift && (
         <script is:inline define:vars={{ shiftId: shift.id }}>
           (() => {
-            // Add-kid modal
+            // ── CRM-загрузка ──
+            const crmBtn = document.getElementById('load-crm-btn');
+            crmBtn?.addEventListener('click', async () => {
+              if (!confirm('Загрузить детей из AlfaCRM (группа 660 = смена 1)? Существующие записи останутся, дубли по alfaId игнорируются.')) return;
+              crmBtn.disabled = true;
+              const old = crmBtn.innerHTML;
+              crmBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Загружаю…';
+              try {
+                const r = await fetch('/api/shift-roster?shift=1', { credentials: 'include' });
+                const d = await r.json();
+                if (!d.ok || !Array.isArray(d.kids)) {
+                  alert('Ошибка AlfaCRM: ' + (d.error || r.status));
+                  return;
+                }
+                let added = 0;
+                for (const k of d.kids) {
+                  const gender = k.gender === 1 ? 'M' : (k.gender === 0 ? 'F' : null);
+                  await fetch('/api/portal/rasselenie', {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({
+                      shift_id: shiftId,
+                      kid_id: 'alfa-' + k.alfaId,
+                      kid_name: k.name,
+                      kid_gender: gender,
+                      kid_age: k.age || null,
+                    }),
+                    credentials: 'include',
+                  });
+                  added++;
+                }
+                alert('Загружено: ' + added + ' детей');
+                window.location.reload();
+              } catch (e) {
+                alert('Сетевая ошибка: ' + (e && e.message ? e.message : e));
+              } finally {
+                crmBtn.disabled = false;
+                crmBtn.innerHTML = old;
+              }
+            });
+
+            // ── Сброс расселения ──
+            const resetBtn = document.getElementById('reset-btn');
+            resetBtn?.addEventListener('click', async () => {
+              const choice = prompt('Выбери режим сброса:\n  1 — снять всех с коек (список детей сохранится)\n  2 — удалить ВСЕХ детей полностью\n\nВведи 1 или 2 (или Cancel):', '1');
+              if (choice !== '1' && choice !== '2') return;
+              const action = choice === '2' ? 'wipe_all' : 'reset_all';
+              if (action === 'wipe_all' && !confirm('Точно удалить ВСЕХ детей из списка? Это необратимо.')) return;
+              try {
+                const r = await fetch('/api/portal/rasselenie', {
+                  method: 'DELETE',
+                  headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify({ shift_id: shiftId, action }),
+                  credentials: 'include',
+                });
+                const d = await r.json();
+                if (d.ok) window.location.reload();
+                else alert('Ошибка: ' + (d.error || ''));
+              } catch (e) {
+                alert('Сетевая ошибка');
+              }
+            });
+
+            // ── Add-kid modal ──
             const modal = document.getElementById('add-kid-modal');
             const openBtn = document.getElementById('add-kid-btn');
             const cancelBtn = document.getElementById('add-kid-cancel');

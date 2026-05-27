@@ -100,6 +100,28 @@ export async function upsertKid(input: {
   });
 }
 
+/** Снять всех детей с коек (комнаты обнуляются, дети остаются в реестре). */
+export async function resetAssignmentsForShift(shiftId: number): Promise<number> {
+  const n = await withClient(async (c) => {
+    const r = await c.query(
+      `UPDATE room_assignment SET room_number=NULL, bed_index=NULL, updated_at=now()
+       WHERE shift_id=$1 AND (room_number IS NOT NULL OR bed_index IS NOT NULL)`,
+      [shiftId],
+    );
+    return r.rowCount ?? 0;
+  });
+  return n ?? 0;
+}
+
+/** Полная очистка списка детей смены (удаляем все записи). */
+export async function wipeKidsForShift(shiftId: number): Promise<number> {
+  const n = await withClient(async (c) => {
+    const r = await c.query('DELETE FROM room_assignment WHERE shift_id=$1', [shiftId]);
+    return r.rowCount ?? 0;
+  });
+  return n ?? 0;
+}
+
 /** Удалить ребёнка полностью из реестра расселения. */
 export async function deleteKid(shiftId: number, kidId: string): Promise<boolean> {
   const ok = await withClient(async (c) => {
