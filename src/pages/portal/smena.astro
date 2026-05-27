@@ -65,6 +65,22 @@ for (const s of staffList) {
     staffNameByKey.set(s.staff_key, s.full_name.split(/\s+/)[0]);
   }
 }
+/** Превратить URL в строке в кликабельные ссылки (escape XSS, target=_blank). */
+function linkifyNotes(text: string): string {
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  const re = /(https?:\/\/[^\s)<>]+)/g;
+  let out = '';
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    out += esc(text.slice(last, m.index));
+    const url = m[0];
+    out += `<a href="${esc(url)}" target="_blank" rel="noopener" class="text-primary underline hover:opacity-80">${esc(url)}</a>`;
+    last = m.index + url.length;
+  }
+  out += esc(text.slice(last));
+  return out;
+}
 function eventActor(e: ShiftEvent): string {
   if (!e.staff_keys || e.staff_keys.length === 0) return '';
   const names = e.staff_keys.map((k) => staffNameByKey.get(k)).filter(Boolean) as string[];
@@ -284,16 +300,16 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                   </span>
                 )}
 
-                {/* Заметки руководителя/преподавателя/вожатого */}
+                {/* Заметки и материалы — с авто-ссылками */}
                 {e.notes && (
                   <div class="mt-3 rounded-[10px] border border-amber-200 bg-amber-50 px-3 py-2 text-[14px] text-amber-900">
                     <i class="bi bi-sticky text-[13px]" aria-hidden="true"></i>
-                    <span class="ml-1 whitespace-pre-wrap">{e.notes}</span>
+                    <span class="ml-1 whitespace-pre-wrap" set:html={linkifyNotes(e.notes)}></span>
                   </div>
                 )}
 
-                {/* Блок «Методичка» */}
-                {e.event_type === 'lesson' && e.activity_slug && getActivity(e.activity_slug) ? (
+                {/* Блок «Методичка» — показываем только если реально привязана */}
+                {e.event_type === 'lesson' && e.activity_slug && getActivity(e.activity_slug) && (
                   <div class="mt-3">
                     <a
                       href={`/portal/metodichki/${e.activity_slug}/`}
@@ -303,14 +319,7 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                       Методичка: {getActivity(e.activity_slug)!.title}
                     </a>
                   </div>
-                ) : e.event_type === 'lesson' ? (
-                  <div class="mt-3">
-                    <span class="inline-flex items-center gap-2 rounded-[10px] border border-border bg-page px-3 py-2 text-[15px] text-body-muted">
-                      <i class="bi bi-book-half" aria-hidden="true"></i>
-                      Методичка пока не привязана
-                    </span>
-                  </div>
-                ) : null}
+                )}
 
                 {/* Блок «Контент-задание» */}
                 {e.content_task && (
@@ -363,8 +372,9 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                         </div>
                       </div>
                       <div>
-                        <label class="block text-[13px] font-medium text-body-muted">Заметки</label>
-                        <textarea name="notes" rows="2" class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[15px] outline-none focus:border-primary">{e.notes ?? ''}</textarea>
+                        <label class="block text-[13px] font-medium text-body-muted">Заметки и материалы</label>
+                        <p class="mt-0.5 text-[12px] text-body-muted">Можно вставлять ссылки — они автоматически станут кликабельными.</p>
+                        <textarea name="notes" rows="3" class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[15px] outline-none focus:border-primary" placeholder="План занятия, ссылки на материалы, пометки для смены…">{e.notes ?? ''}</textarea>
                       </div>
                       <div class="flex gap-2">
                         <button type="submit" class="rounded-[10px] bg-primary px-4 py-2 text-[14px] font-semibold text-white transition hover:opacity-90">Сохранить</button>

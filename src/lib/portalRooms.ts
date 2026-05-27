@@ -24,7 +24,7 @@ export interface RoomDef {
  */
 export const ROOMS: RoomDef[] = [
   // ───────── Floor 1 (22 places, включая горничную №22) ─────────
-  { number: 20, floor: 1, type: 'standard_2_3', capacity: 3, label: '2-3-х местная', col: 1, row: 1 },
+  { number: 20, floor: 1, type: 'standard_2_3', capacity: 2, label: '2-3-х местная', col: 1, row: 1 },
   { number: 19, floor: 1, type: 'standard',     capacity: 2, label: '2-х местная',   col: 2, row: 1 },
   { number: 18, floor: 1, type: 'standard',     capacity: 2, label: '2-х местная',   col: 3, row: 1 },
   { number: 17, floor: 1, type: 'standard',     capacity: 2, label: '2-х местная',   col: 4, row: 1 },
