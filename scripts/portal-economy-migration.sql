@@ -32,4 +32,9 @@ CREATE TABLE IF NOT EXISTS portal_activity_offer (
 
 CREATE INDEX IF NOT EXISTS idx_portal_activity_offer_sort ON portal_activity_offer(archived, sort);
 
+-- SSR подключается под aidacamp_app — обязательно даём права (иначе 500 «permission denied»).
+GRANT SELECT, INSERT, UPDATE, DELETE ON portal_prize_state TO aidacamp_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON portal_activity_offer TO aidacamp_app;
+GRANT USAGE, SELECT ON SEQUENCE portal_activity_offer_id_seq TO aidacamp_app;
+
 COMMIT;

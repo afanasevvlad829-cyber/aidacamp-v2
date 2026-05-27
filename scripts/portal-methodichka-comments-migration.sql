@@ -18,4 +18,9 @@ CREATE TABLE IF NOT EXISTS portal_methodichka_comment (
 
 CREATE INDEX IF NOT EXISTS idx_methodichka_comment_slug ON portal_methodichka_comment(activity_slug, archived, created_at);
 
+-- SSR подключается под ролью aidacamp_app — обязательно даём ей права,
+-- иначе SSR падает с 500 «permission denied for table» (инцидент 27.05.2026).
+GRANT SELECT, INSERT, UPDATE, DELETE ON portal_methodichka_comment TO aidacamp_app;
+GRANT USAGE, SELECT ON SEQUENCE portal_methodichka_comment_id_seq TO aidacamp_app;
+
 COMMIT;
