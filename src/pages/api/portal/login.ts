@@ -2,6 +2,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { resolveRole } from '../../../lib/portalAuth';
 import { signSession } from '../../../lib/portalSession';
+import { portalCookieOptions } from '../../../lib/portalCookie';
 
 const attempts = new Map<string, { n: number; reset: number }>();
 
@@ -17,22 +18,29 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
 
   const form = await request.formData();
   const password = String(form.get('password') ?? '');
-  const rawNext = String(form.get('next') ?? '/portal/');
-  // защита от open-redirect: пускаем только внутрь /portal
-  const next = rawNext.startsWith('/portal') ? rawNext : '/portal/';
+  const rawNext = String(form.get('next') ?? '');
 
   const role = resolveRole(password);
   if (!role) {
-    return redirect(`/portal/login?error=1&next=${encodeURIComponent(next)}`, 303);
+    // если пришли с ai.aidacamp.ru — вернёмся туда после ошибки
+    const safeNext = rawNext.startsWith('https://ai.aidacamp.ru') || rawNext.startsWith('/portal') ? rawNext : '/portal/';
+    return redirect(`/portal/login?error=1&next=${encodeURIComponent(safeNext)}`, 303);
   }
 
   const token = signSession(role, process.env.PORTAL_SESSION_SECRET ?? '');
-  cookies.set('portal_session', token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 30 * 24 * 60 * 60,
-  });
-  return redirect(next, 303);
+  cookies.set('portal_session', token, portalCookieOptions());
+
+  // Куда отправлять после логина:
+  //  - явный next (если safe: /portal/* или https://ai.aidacamp.ru/*) → туда
+  //  - иначе student → ai.aidacamp.ru (его учебная среда)
+  //  - иначе staff → /portal/ (управление сменой)
+  let dest: string;
+  if (rawNext.startsWith('/portal') || rawNext.startsWith('https://ai.aidacamp.ru')) {
+    dest = rawNext;
+  } else if (role === 'student') {
+    dest = 'https://ai.aidacamp.ru/';
+  } else {
+    dest = '/portal/';
+  }
+  return redirect(dest, 303);
 };
