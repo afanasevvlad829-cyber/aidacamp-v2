@@ -19,6 +19,7 @@ async function lookupRoomCheckEventId(): Promise<number> {
 }
 
 const role = Astro.locals.portalRole;
+const tab = (Astro.url.searchParams.get('tab') || 'inventory') as 'inventory' | 'rasselenie';
 if (!role || role === 'student') return Astro.redirect('/portal/');
 
 const shift = await getActiveShift();
@@ -59,22 +60,45 @@ function typeBadge(type: string): string {
 
   {/* Табы */}
   <nav class="mb-6 flex flex-wrap gap-2" aria-label="Разделы комнат">
-    <span class="inline-flex items-center gap-2 rounded-[12px] border border-primary bg-primary px-4 py-2 text-[15px] font-medium text-white">
+    <a href="/portal/rooms"
+       class={`inline-flex items-center gap-2 rounded-[12px] border px-4 py-2 text-[15px] font-medium transition ${
+         tab === 'inventory'
+           ? 'border-primary bg-primary text-white'
+           : 'border-border bg-white text-body-muted hover:border-primary hover:text-primary'
+       }`}>
       <i class="bi bi-clipboard-check text-[16px]" aria-hidden="true"></i>
       Инвентаризация
-    </span>
-    <a href="/staff/plan?view=rooms&embed=1"
-       class="inline-flex items-center gap-2 rounded-[12px] border border-border bg-white px-4 py-2 text-[15px] font-medium text-body-muted transition hover:border-primary hover:text-primary">
+    </a>
+    <a href="/portal/rooms?tab=rasselenie"
+       class={`inline-flex items-center gap-2 rounded-[12px] border px-4 py-2 text-[15px] font-medium transition ${
+         tab === 'rasselenie'
+           ? 'border-primary bg-primary text-white'
+           : 'border-border bg-white text-body-muted hover:border-primary hover:text-primary'
+       }`}>
       <i class="bi bi-house-door-fill text-[16px]" aria-hidden="true"></i>
       Расселение
     </a>
   </nav>
 
-  <div class="mb-6">
-    <h2 class="text-[22px] font-bold text-navy-950">Инвентаризация</h2>
-    <p class="mt-1 text-[15px] text-body-muted">Клик по комнате — чек-лист + видео обхода.</p>
-  </div>
+  {tab === 'rasselenie' ? (
+    <div class="mb-6">
+      <h2 class="text-[22px] font-bold text-navy-950">Расселение</h2>
+      <p class="mt-1 text-[15px] text-body-muted">Перетащите детей в койки. Цвет/буква — пол (М синий / Ж розовый).</p>
+      <iframe
+        src="/staff/plan?view=rooms&embed=1"
+        title="Расселение"
+        class="mt-4 block w-full rounded-[16px] border border-border bg-white"
+        style="height: calc(100vh - 280px); min-height: 600px;"
+      ></iframe>
+    </div>
+  ) : (
+    <div class="mb-6">
+      <h2 class="text-[22px] font-bold text-navy-950">Инвентаризация</h2>
+      <p class="mt-1 text-[15px] text-body-muted">Клик по комнате — чек-лист + видео обхода.</p>
+    </div>
+  )}
 
+  {tab === 'inventory' && (<>
   {/* Сводка статусов */}
   <div class="mb-6 grid grid-cols-3 gap-3">
     <div class="rounded-[12px] border border-border bg-white p-4 card-shadow">
@@ -355,4 +379,5 @@ function typeBadge(type: string): string {
       })();
     </script>
   )}
+  </>)}
 </PortalLayout>
