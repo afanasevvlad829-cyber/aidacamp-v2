@@ -2,298 +2,626 @@
 export const prerender = false;
 import PortalLayout from '../../layouts/PortalLayout.astro';
 import { PRIZES } from '../../lib/portalPrizes';
+import { listPrizeStates, listActivities } from '../../lib/portalEconomy';
 
 const role = Astro.locals.portalRole!;
 if (!['admin', 'rukovoditel'].includes(role)) {
   return Astro.redirect('/portal/');
 }
 
-const totalAll = PRIZES.reduce((s, p) => s + p.price * p.qty, 0);
-const fmtRub = (n: number) => new Intl.NumberFormat('ru-RU').format(n) + ' ₽';
+const [prizeStates, activities] = await Promise.all([listPrizeStates(), listActivities()]);
+const stateById = new Map(prizeStates.map((s) => [s.prize_id, s]));
 
-// Сгруппируем по заказу для удобства
+const totalAll = PRIZES.reduce((s, p) => s + p.price * p.qty, 0);
+const fmtRub = (n: number) => new Intl.NumberFormat('ru-RU').format(Math.round(n)) + ' ₽';
+
+// Группировка по заказам
 const byOrder = PRIZES.reduce<Record<string, typeof PRIZES>>((acc, p) => {
   const k = p.order ?? '—';
   (acc[k] ??= []).push(p);
   return acc;
 }, {});
+
+const CAT_LABELS: Record<string, string> = {
+  food: 'Еда',
+  comfort: 'Комфорт',
+  fun: 'Развлечения',
+  privilege: 'Привилегии',
+  service: 'Услуги',
+  other: 'Прочее',
+};
 ---
-<PortalLayout title="Призы и подарки — АйДаКемп">
-  <div class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-    <div>
-      <h1 class="text-[28px] font-bold tracking-[-0.02em] text-navy-950 md:text-[36px]">
-        Призы и подарки
-      </h1>
-      <p class="mt-2 text-[16px] text-body-muted">
-        Каталог закупленных позиций по счетам Ozon. Удалённые позиции и цены в Бонжере сохраняются в этом браузере (localStorage).
-      </p>
+<PortalLayout title="Экономика смены — АйДаКемп">
+  <div class="mb-5">
+    <h1 class="text-[28px] font-bold tracking-[-0.02em] text-navy-950 md:text-[36px]">
+      Экономика смены
+    </h1>
+    <p class="mt-2 text-[16px] text-body-muted">
+      Расчёт стоимости призов и активностей в Бонжерах исходя из числа детей и дневного бюджета.
+    </p>
+  </div>
+
+  {/* Шапка-настройки — общий калькулятор */}
+  <div class="mb-6 rounded-[16px] border border-border bg-white p-5 card-shadow">
+    <div class="mb-3 flex items-center gap-2 text-[14px] font-semibold uppercase tracking-wide text-primary">
+      <i class="bi bi-sliders" aria-hidden="true"></i>
+      Параметры смены
     </div>
-    <div class="flex flex-wrap items-center gap-2">
-      <span id="prizes-summary" class="rounded-[10px] border border-border bg-page px-3 py-1.5 text-[14px] text-navy-950">
-        Активных: <b id="cnt-active">{PRIZES.length}</b> · Сумма Ozon: <b id="sum-ozon">{fmtRub(totalAll)}</b> · Сумма Бонжер: <b id="sum-bongere">—</b>
-      </span>
-      <button id="btn-reset" type="button"
-        class="rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] text-navy-950 hover:border-primary hover:text-primary">
-        <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
-        Восстановить удалённые
-      </button>
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <label class="block">
+        <span class="block text-[13px] font-medium text-body-muted">Детей на смене</span>
+        <input id="set-kids" type="number" min="1" max="200" value="35"
+               class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
+      </label>
+      <label class="block">
+        <span class="block text-[13px] font-medium text-body-muted">Выдача в день, ₽</span>
+        <input id="set-daily" type="number" min="0" step="50" value="600"
+               class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
+      </label>
+      <label class="block">
+        <span class="block text-[13px] font-medium text-body-muted">Дней в смене</span>
+        <input id="set-days" type="number" min="1" max="30" value="10"
+               class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
+      </label>
+      <label class="block">
+        <span class="block text-[13px] font-medium text-body-muted">Наценка ×</span>
+        <input id="set-markup" type="number" min="1" step="0.1" value="3"
+               class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
+      </label>
+      <div class="block">
+        <span class="block text-[13px] font-medium text-body-muted">Округление до</span>
+        <select id="set-round"
+                class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 font-mono tabular-nums focus:border-primary focus:outline-none">
+          <option value="10">10 ₽</option>
+          <option value="50" selected>50 ₽</option>
+          <option value="100">100 ₽</option>
+        </select>
+      </div>
+    </div>
+    <div class="mt-4 grid gap-2 sm:grid-cols-3">
+      <div class="rounded-[10px] border border-border bg-page p-3">
+        <div class="text-[13px] text-body-muted">Бюджет одного ребёнка</div>
+        <div class="mt-0.5 font-mono tabular-nums text-[18px] font-semibold text-navy-950">
+          <span id="kpi-per-kid">—</span>
+        </div>
+      </div>
+      <div class="rounded-[10px] border border-border bg-page p-3">
+        <div class="text-[13px] text-body-muted">Всего в обороте за смену</div>
+        <div class="mt-0.5 font-mono tabular-nums text-[18px] font-semibold text-navy-950">
+          <span id="kpi-total">—</span>
+        </div>
+      </div>
+      <div class="rounded-[10px] border border-border bg-page p-3">
+        <div class="text-[13px] text-body-muted">Закуплено призов (Ozon)</div>
+        <div class="mt-0.5 font-mono tabular-nums text-[18px] font-semibold text-navy-950">
+          {fmtRub(totalAll)}
+        </div>
+      </div>
     </div>
   </div>
 
-  {Object.entries(byOrder).map(([order, items]) => (
-    <section class="mb-8">
-      <h2 class="mb-3 flex items-center gap-2 text-[18px] font-semibold text-navy-950">
-        <i class="bi bi-receipt text-primary" aria-hidden="true"></i>
-        Счёт Ozon № {order}
-        <span class="text-[14px] font-normal text-body-muted">· {items.length} поз. · {fmtRub(items.reduce((s, p) => s + p.price * p.qty, 0))}</span>
-      </h2>
+  {/* Tabs */}
+  <div class="mb-4 flex flex-wrap gap-2 border-b border-border">
+    <button data-tab="prizes" class="tab-btn -mb-px rounded-t-[10px] border border-b-0 border-border bg-white px-4 py-2 text-[15px] font-medium">
+      <i class="bi bi-gift-fill" aria-hidden="true"></i> Призы
+    </button>
+    <button data-tab="activities" class="tab-btn -mb-px rounded-t-[10px] border border-b-0 border-transparent bg-page px-4 py-2 text-[15px] font-medium text-body-muted">
+      <i class="bi bi-star-fill" aria-hidden="true"></i> Активности
+    </button>
+    <button data-tab="summary" class="tab-btn -mb-px rounded-t-[10px] border border-b-0 border-transparent bg-page px-4 py-2 text-[15px] font-medium text-body-muted">
+      <i class="bi bi-bar-chart-line" aria-hidden="true"></i> Сводка
+    </button>
+  </div>
 
-      <div class="overflow-x-auto rounded-[14px] border border-border bg-white card-shadow">
-        <table class="w-full text-[14px]">
-          <thead class="bg-page text-left text-[13px] uppercase tracking-wide text-body-muted">
-            <tr>
-              <th class="w-[80px] p-2"></th>
-              <th class="p-2">Наименование</th>
-              <th class="w-[100px] p-2 text-right">Цена&nbsp;Ozon</th>
-              <th class="w-[60px] p-2 text-right">Кол-во</th>
-              <th class="w-[110px] p-2 text-right">Сумма</th>
-              <th class="w-[150px] p-2 text-right">Цена&nbsp;в&nbsp;Бонжере</th>
-              <th class="w-[110px] p-2 text-right">Сумма&nbsp;Бонжер</th>
-              <th class="w-[40px] p-2"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((p) => (
-              <tr data-prize-row data-id={p.id} data-price={p.price} data-qty={p.qty}
-                  data-default-img={p.img ?? ''}
-                  class="border-t border-border align-middle">
-                <td class="p-2">
-                  <label class="block cursor-pointer" title="Кликни — чтобы заменить фото">
-                    <input type="file" accept="image/*" class="hidden" data-photo-input data-id={p.id} />
-                    <div data-photo-slot data-id={p.id}
-                         class="flex h-[64px] w-[64px] items-center justify-center overflow-hidden rounded-[8px] border border-border bg-white text-body-muted">
-                      {p.img ? (
-                        <img src={p.img} alt="" loading="lazy" referrerpolicy="no-referrer"
-                             style="width:64px;height:64px;object-fit:cover;border-radius:6px;" />
-                      ) : (
-                        <i class="bi bi-image text-[22px]" aria-hidden="true"></i>
-                      )}
-                    </div>
-                  </label>
-                </td>
-                <td class="p-2 align-middle">
-                  <div class="font-medium text-navy-950">{p.name}</div>
-                  <div class="mt-0.5 flex flex-wrap items-center gap-2 text-[12px] text-body-muted">
-                    {p.category && <span class="rounded-full bg-primary-soft px-2 py-0.5 text-primary">{p.category}</span>}
-                    {p.url ? (
-                      <a href={p.url} target="_blank" rel="noopener"
-                         class="inline-flex items-center gap-1 hover:text-primary">
-                        <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
-                        Карточка Ozon
-                      </a>
-                    ) : (
-                      <a href={`https://www.ozon.ru/search/?text=${encodeURIComponent(p.name)}`} target="_blank" rel="noopener"
-                         class="inline-flex items-center gap-1 hover:text-primary">
-                        <i class="bi bi-search" aria-hidden="true"></i>
-                        Найти на Ozon
-                      </a>
-                    )}
-                  </div>
-                </td>
-                <td class="p-2 text-right font-mono tabular-nums">{fmtRub(p.price)}</td>
-                <td class="p-2 text-right font-mono tabular-nums">{p.qty}</td>
-                <td class="p-2 text-right font-mono tabular-nums font-semibold">{fmtRub(p.price * p.qty)}</td>
-                <td class="p-2 text-right">
-                  <div class="flex items-center justify-end gap-1">
-                    <input type="number" min="0" step="1" data-bongere-input data-id={p.id}
-                           class="w-[90px] rounded-[8px] border border-border bg-white px-2 py-1 text-right font-mono tabular-nums focus:border-primary focus:outline-none"
-                           placeholder="—" />
-                    <span class="text-body-muted">₽</span>
-                  </div>
-                </td>
-                <td class="p-2 text-right font-mono tabular-nums text-navy-950" data-bongere-sum data-id={p.id}>—</td>
-                <td class="p-2 text-right">
-                  <button type="button" data-delete data-id={p.id}
-                          class="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-body-muted transition hover:bg-red-50 hover:text-red-600"
-                          title="Удалить позицию">
-                    <i class="bi bi-x-lg" aria-hidden="true"></i>
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+  {/* ── Tab: Prizes ───────────────────────────────────────────────────────── */}
+  <section data-tab-pane="prizes">
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <div class="text-[14px] text-body-muted">
+        Активных: <b id="cnt-active">—</b> · Сумма в Бонжерах: <b id="sum-bongere">—</b>
       </div>
-    </section>
-  ))}
+      <div class="flex flex-wrap gap-2">
+        <button id="btn-apply-markup" type="button"
+          class="rounded-[10px] border border-primary bg-primary text-white px-3 py-1.5 text-[14px] hover:opacity-90">
+          <i class="bi bi-magic" aria-hidden="true"></i>
+          Применить наценку ко всем
+        </button>
+        <button id="btn-import-local" type="button"
+          class="rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] text-navy-950 hover:border-primary hover:text-primary"
+          title="Берёт удалённые позиции и цены из localStorage этого браузера и сохраняет на сервер">
+          <i class="bi bi-cloud-upload" aria-hidden="true"></i>
+          Загрузить локальные правки на сервер
+        </button>
+        <button id="btn-show-hidden" type="button"
+          class="rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] text-navy-950 hover:border-primary hover:text-primary">
+          <i class="bi bi-eye" aria-hidden="true"></i>
+          Показать скрытые
+        </button>
+      </div>
+    </div>
+
+    {Object.entries(byOrder).map(([order, items]) => (
+      <div class="mb-6">
+        <h2 class="mb-2 flex items-center gap-2 text-[16px] font-semibold text-navy-950">
+          <i class="bi bi-receipt text-primary" aria-hidden="true"></i>
+          Счёт Ozon № {order}
+          <span class="text-[13px] font-normal text-body-muted">· {items.length} поз. · {fmtRub(items.reduce((s, p) => s + p.price * p.qty, 0))}</span>
+        </h2>
+
+        <div class="overflow-x-auto rounded-[14px] border border-border bg-white card-shadow">
+          <table class="w-full text-[14px]">
+            <thead class="bg-page text-left text-[12px] uppercase tracking-wide text-body-muted">
+              <tr>
+                <th class="w-[60px] p-2"></th>
+                <th class="p-2">Наименование</th>
+                <th class="w-[90px] p-2 text-right">Цена&nbsp;Ozon</th>
+                <th class="w-[60px] p-2 text-right">Кол-во</th>
+                <th class="w-[100px] p-2 text-right">Сумма</th>
+                <th class="w-[110px] p-2 text-right">Рекоменд.</th>
+                <th class="w-[140px] p-2 text-right">Цена&nbsp;Бонжер</th>
+                <th class="w-[40px] p-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((p) => {
+                const st = stateById.get(p.id);
+                return (
+                  <tr data-prize-row data-id={p.id} data-price={p.price} data-qty={p.qty}
+                      data-default-img={p.img ?? ''}
+                      data-hidden={st?.hidden ? '1' : '0'}
+                      data-bongere={st?.bongere_price ?? ''}
+                      class="border-t border-border align-middle">
+                    <td class="p-2">
+                      <div class="flex h-[48px] w-[48px] items-center justify-center overflow-hidden rounded-[6px] border border-border bg-white">
+                        {(st?.custom_photo || p.img) ? (
+                          <img src={st?.custom_photo || p.img} alt="" loading="lazy" referrerpolicy="no-referrer"
+                               style="width:48px;height:48px;object-fit:cover;border-radius:4px;" />
+                        ) : (
+                          <i class="bi bi-image text-body-muted" aria-hidden="true"></i>
+                        )}
+                      </div>
+                    </td>
+                    <td class="p-2">
+                      <div class="font-medium text-navy-950">{p.name}</div>
+                      <div class="mt-0.5 flex flex-wrap items-center gap-2 text-[12px] text-body-muted">
+                        {p.category && <span class="rounded-full bg-primary-soft px-2 py-0.5 text-primary">{p.category}</span>}
+                        {p.url ? (
+                          <a href={p.url} target="_blank" rel="noopener" class="inline-flex items-center gap-1 hover:text-primary">
+                            <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> Карточка Ozon
+                          </a>
+                        ) : (
+                          <a href={`https://www.ozon.ru/search/?text=${encodeURIComponent(p.name)}`} target="_blank" rel="noopener" class="inline-flex items-center gap-1 hover:text-primary">
+                            <i class="bi bi-search" aria-hidden="true"></i> Найти на Ozon
+                          </a>
+                        )}
+                      </div>
+                    </td>
+                    <td class="p-2 text-right font-mono tabular-nums">{fmtRub(p.price)}</td>
+                    <td class="p-2 text-right font-mono tabular-nums">{p.qty}</td>
+                    <td class="p-2 text-right font-mono tabular-nums font-semibold">{fmtRub(p.price * p.qty)}</td>
+                    <td class="p-2 text-right font-mono tabular-nums text-primary" data-recommended></td>
+                    <td class="p-2 text-right">
+                      <div class="flex items-center justify-end gap-1">
+                        <input type="number" min="0" step="50" data-bongere-input
+                               class="w-[100px] rounded-[8px] border border-border bg-white px-2 py-1 text-right font-mono tabular-nums focus:border-primary focus:outline-none"
+                               placeholder="—" value={st?.bongere_price ?? ''} />
+                        <span class="text-body-muted">₽</span>
+                      </div>
+                    </td>
+                    <td class="p-2 text-right">
+                      <button type="button" data-toggle-hidden
+                              class="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-body-muted transition hover:bg-red-50 hover:text-red-600"
+                              title={st?.hidden ? 'Показать (вернуть в список)' : 'Скрыть'}>
+                        <i class={`bi ${st?.hidden ? 'bi-eye-slash' : 'bi-x-lg'}`} aria-hidden="true"></i>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    ))}
+  </section>
+
+  {/* ── Tab: Activities ──────────────────────────────────────────────────── */}
+  <section data-tab-pane="activities" hidden>
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <div class="text-[14px] text-body-muted">
+        Каталог нестандартных «подарков»-привилегий, которые ребята могут выкупить за Бонжеры.
+        Цена считается из <b>себестоимости × наценку</b> или прицеливается на <b>~30 человек скидываются</b>.
+      </div>
+      <button id="btn-add-activity" type="button"
+        class="rounded-[10px] border border-primary bg-primary text-white px-3 py-1.5 text-[14px] hover:opacity-90">
+        <i class="bi bi-plus-lg" aria-hidden="true"></i>
+        Добавить активность
+      </button>
+    </div>
+
+    <div class="overflow-x-auto rounded-[14px] border border-border bg-white card-shadow">
+      <table class="w-full text-[14px]">
+        <thead class="bg-page text-left text-[12px] uppercase tracking-wide text-body-muted">
+          <tr>
+            <th class="p-2">Название</th>
+            <th class="w-[120px] p-2">Категория</th>
+            <th class="w-[110px] p-2 text-right">Себест-сть, ₽</th>
+            <th class="w-[100px] p-2 text-right">Скидыв. чел.</th>
+            <th class="w-[120px] p-2 text-right">С человека</th>
+            <th class="w-[120px] p-2 text-right">Итого Бонжер</th>
+            <th class="w-[80px] p-2"></th>
+          </tr>
+        </thead>
+        <tbody id="activities-tbody">
+          {activities.map((a) => (
+            <tr data-activity-row data-id={a.id}
+                data-base={a.base_price ?? 0}
+                data-participants={a.participants_hint ?? ''}
+                class="border-t border-border align-middle">
+              <td class="p-2">
+                <div class="font-medium text-navy-950">{a.name}</div>
+                {a.description && <div class="mt-0.5 text-[12px] text-body-muted">{a.description}</div>}
+              </td>
+              <td class="p-2"><span class="rounded-full bg-primary-soft px-2 py-0.5 text-[12px] text-primary">{CAT_LABELS[a.category ?? 'other'] ?? a.category ?? '—'}</span></td>
+              <td class="p-2 text-right font-mono tabular-nums">{a.base_price != null ? fmtRub(a.base_price) : '—'}</td>
+              <td class="p-2 text-right font-mono tabular-nums">{a.participants_hint ?? '—'}</td>
+              <td class="p-2 text-right font-mono tabular-nums text-primary" data-per-person>—</td>
+              <td class="p-2 text-right font-mono tabular-nums font-semibold" data-total-bongere>—</td>
+              <td class="p-2 text-right">
+                <button type="button" data-edit-activity data-id={a.id}
+                        class="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-body-muted hover:bg-primary-soft hover:text-primary"
+                        title="Редактировать">
+                  <i class="bi bi-pencil" aria-hidden="true"></i>
+                </button>
+                <button type="button" data-delete-activity data-id={a.id}
+                        class="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-body-muted hover:bg-red-50 hover:text-red-600"
+                        title="Удалить">
+                  <i class="bi bi-trash" aria-hidden="true"></i>
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    {/* Модалка добавления / редактирования */}
+    <dialog id="activity-dialog" class="rounded-[16px] border border-border p-0 backdrop:bg-black/30">
+      <form method="dialog" class="w-[min(560px,95vw)] p-5">
+        <h3 class="text-[18px] font-semibold text-navy-950">Активность</h3>
+        <input type="hidden" id="act-id" />
+        <div class="mt-4 grid gap-3">
+          <label class="block">
+            <span class="block text-[13px] font-medium text-body-muted">Название</span>
+            <input id="act-name" type="text" required
+                   class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 focus:border-primary focus:outline-none" />
+          </label>
+          <label class="block">
+            <span class="block text-[13px] font-medium text-body-muted">Описание</span>
+            <textarea id="act-desc" rows="2"
+                      class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 focus:border-primary focus:outline-none"></textarea>
+          </label>
+          <div class="grid gap-3 sm:grid-cols-3">
+            <label class="block">
+              <span class="block text-[13px] font-medium text-body-muted">Категория</span>
+              <select id="act-cat" class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 focus:border-primary focus:outline-none">
+                <option value="food">Еда</option>
+                <option value="comfort">Комфорт</option>
+                <option value="fun">Развлечения</option>
+                <option value="privilege">Привилегии</option>
+                <option value="service">Услуги</option>
+                <option value="other">Прочее</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="block text-[13px] font-medium text-body-muted">Себестоимость, ₽</span>
+              <input id="act-price" type="number" min="0" step="100"
+                     class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono focus:border-primary focus:outline-none" />
+            </label>
+            <label class="block">
+              <span class="block text-[13px] font-medium text-body-muted">Скидываются чел.</span>
+              <input id="act-participants" type="number" min="1"
+                     class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono focus:border-primary focus:outline-none" />
+            </label>
+          </div>
+        </div>
+        <div class="mt-5 flex justify-end gap-2">
+          <button type="button" id="act-cancel"
+                  class="rounded-[10px] border border-border bg-white px-4 py-2 text-[14px] text-navy-950 hover:border-primary">Отмена</button>
+          <button type="button" id="act-save"
+                  class="rounded-[10px] border border-primary bg-primary px-4 py-2 text-[14px] text-white hover:opacity-90">Сохранить</button>
+        </div>
+      </form>
+    </dialog>
+  </section>
+
+  {/* ── Tab: Summary ─────────────────────────────────────────────────────── */}
+  <section data-tab-pane="summary" hidden>
+    <div class="grid gap-4 lg:grid-cols-2">
+      <div class="rounded-[14px] border border-border bg-white p-5 card-shadow">
+        <div class="mb-3 text-[14px] font-semibold uppercase tracking-wide text-primary">
+          <i class="bi bi-gift-fill" aria-hidden="true"></i> Призы — общая экономика
+        </div>
+        <div class="space-y-2 text-[15px]">
+          <div class="flex justify-between"><span class="text-body-muted">Закуплено (Ozon)</span><b class="font-mono tabular-nums">{fmtRub(totalAll)}</b></div>
+          <div class="flex justify-between"><span class="text-body-muted">В Бонжерах (рекоменд.)</span><b class="font-mono tabular-nums" id="sum-recommended">—</b></div>
+          <div class="flex justify-between"><span class="text-body-muted">В Бонжерах (заданные)</span><b class="font-mono tabular-nums" id="sum-bongere-2">—</b></div>
+          <div class="flex justify-between text-[14px] text-body-muted"><span>Средняя наценка</span><span id="sum-markup-avg">—</span></div>
+        </div>
+      </div>
+      <div class="rounded-[14px] border border-border bg-white p-5 card-shadow">
+        <div class="mb-3 text-[14px] font-semibold uppercase tracking-wide text-primary">
+          <i class="bi bi-coin" aria-hidden="true"></i> Денежный поток
+        </div>
+        <div class="space-y-2 text-[15px]">
+          <div class="flex justify-between"><span class="text-body-muted">Всего в обороте</span><b class="font-mono tabular-nums" id="sum-total-money">—</b></div>
+          <div class="flex justify-between"><span class="text-body-muted">Если потратить на призы</span><b class="font-mono tabular-nums" id="sum-balance-prizes">—</b></div>
+          <div class="flex justify-between"><span class="text-body-muted">Остаток на активности</span><b class="font-mono tabular-nums" id="sum-balance-acts">—</b></div>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <script is:inline>
     (function () {
-      const LS_KEY = 'aidacamp.portal.prizes.v1';
-      const fmt = (n) => new Intl.NumberFormat('ru-RU').format(n) + ' ₽';
+      const LS_KEY = 'aidacamp.portal.prizes.v1';        // старое хранение
+      const LS_SETTINGS = 'aidacamp.portal.economy.settings.v1';
+      const fmt = (n) => new Intl.NumberFormat('ru-RU').format(Math.round(n)) + ' ₽';
 
-      function load() {
-        try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}') || {}; } catch { return {}; }
+      // Settings
+      function loadSettings() {
+        try { return JSON.parse(localStorage.getItem(LS_SETTINGS) || '{}') || {}; } catch { return {}; }
       }
-      function save(state) {
-        try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { console.error('localStorage save failed', e); }
+      function saveSettings(s) {
+        try { localStorage.setItem(LS_SETTINGS, JSON.stringify(s)); } catch {}
       }
-      const state = Object.assign({ deleted: [], bongere: {}, photos: {} }, load());
-      // нормализация — если приехало старое
-      state.deleted = Array.isArray(state.deleted) ? state.deleted : [];
-      state.bongere = state.bongere && typeof state.bongere === 'object' ? state.bongere : {};
-      state.photos = state.photos && typeof state.photos === 'object' ? state.photos : {};
+      const set = Object.assign({ kids: 35, daily: 600, days: 10, markup: 3, round: 50 }, loadSettings());
+      document.getElementById('set-kids').value = set.kids;
+      document.getElementById('set-daily').value = set.daily;
+      document.getElementById('set-days').value = set.days;
+      document.getElementById('set-markup').value = set.markup;
+      document.getElementById('set-round').value = String(set.round);
 
-      const rows = Array.from(document.querySelectorAll('[data-prize-row]'));
+      function readSettings() {
+        return {
+          kids: Math.max(1, Number(document.getElementById('set-kids').value) || 1),
+          daily: Math.max(0, Number(document.getElementById('set-daily').value) || 0),
+          days: Math.max(1, Number(document.getElementById('set-days').value) || 1),
+          markup: Math.max(1, Number(document.getElementById('set-markup').value) || 1),
+          round: Math.max(1, Number(document.getElementById('set-round').value) || 1),
+        };
+      }
+      function roundTo(n, step) { return Math.round(n / step) * step; }
 
-      function applyDeleted() {
-        const del = new Set(state.deleted);
-        rows.forEach((r) => {
-          const id = r.dataset.id;
-          if (del.has(id)) r.style.display = 'none';
-          else r.style.display = '';
+      // Tabs
+      document.querySelectorAll('[data-tab]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const tab = btn.dataset.tab;
+          document.querySelectorAll('[data-tab]').forEach((b) => {
+            const active = b.dataset.tab === tab;
+            b.classList.toggle('bg-white', active);
+            b.classList.toggle('border-border', active);
+            b.classList.toggle('bg-page', !active);
+            b.classList.toggle('border-transparent', !active);
+            b.classList.toggle('text-body-muted', !active);
+          });
+          document.querySelectorAll('[data-tab-pane]').forEach((p) => {
+            p.hidden = p.dataset.tabPane !== tab;
+          });
         });
-      }
-      function applyPhotos() {
-        rows.forEach((r) => {
-          const id = r.dataset.id;
-          const userUrl = state.photos[id];
-          const defaultUrl = r.dataset.defaultImg || '';
-          const url = userUrl || defaultUrl;
-          const slot = document.querySelector('[data-photo-slot][data-id="' + CSS.escape(id) + '"]');
-          if (!slot) return;
-          if (url) {
-            slot.innerHTML = '';
-            slot.style.borderStyle = 'solid';
-            slot.style.background = '#fff';
-            const img = document.createElement('img');
-            img.src = url;
-            img.alt = '';
-            img.referrerPolicy = 'no-referrer';
-            img.style.cssText = 'width:64px;height:64px;object-fit:cover;border-radius:6px;';
-            slot.appendChild(img);
-          } else {
-            slot.style.borderStyle = 'dashed';
-            slot.style.background = '';
-            slot.innerHTML = '<i class="bi bi-image" style="font-size:22px;" aria-hidden="true"></i>';
-          }
-        });
-      }
-      function applyBongere() {
-        rows.forEach((r) => {
-          const id = r.dataset.id;
-          const v = state.bongere[id];
-          const inp = document.querySelector('[data-bongere-input][data-id="' + CSS.escape(id) + '"]');
-          const sumCell = document.querySelector('[data-bongere-sum][data-id="' + CSS.escape(id) + '"]');
-          const qty = Number(r.dataset.qty || 0);
-          if (inp && v != null) inp.value = String(v);
-          if (sumCell) sumCell.textContent = (v == null || v === '' || isNaN(Number(v))) ? '—' : fmt(Number(v) * qty);
-        });
-      }
-      function recalcSummary() {
-        const del = new Set(state.deleted);
-        let cnt = 0, ozon = 0, bong = 0, hasBong = false;
-        rows.forEach((r) => {
-          const id = r.dataset.id;
-          if (del.has(id)) return;
-          cnt++;
+      });
+
+      // ── Prizes ────────────────────────────────────────
+      const prizeRows = Array.from(document.querySelectorAll('[data-prize-row]'));
+      let showHidden = false;
+
+      function recalcPrizes() {
+        const s = readSettings();
+        let active = 0, sumBongere = 0, sumRec = 0, sumOzonVisible = 0;
+        prizeRows.forEach((r) => {
+          const isHidden = r.dataset.hidden === '1';
+          if (isHidden && !showHidden) { r.style.display = 'none'; return; }
+          if (isHidden && showHidden)  { r.style.display = ''; r.style.opacity = '0.45'; }
+          else { r.style.display = ''; r.style.opacity = ''; }
+          if (!isHidden) active++;
           const price = Number(r.dataset.price || 0);
           const qty = Number(r.dataset.qty || 0);
-          ozon += price * qty;
-          const v = state.bongere[id];
-          if (v != null && v !== '' && !isNaN(Number(v))) {
-            bong += Number(v) * qty;
-            hasBong = true;
-          }
+          if (!isHidden) sumOzonVisible += price * qty;
+          const rec = roundTo(price * s.markup, s.round);
+          r.querySelector('[data-recommended]').textContent = fmt(rec) + ' / шт';
+          const inp = r.querySelector('[data-bongere-input]');
+          const v = inp.value === '' ? null : Number(inp.value);
+          if (!isHidden && v != null && !isNaN(v)) sumBongere += v * qty;
+          if (!isHidden) sumRec += rec * qty;
         });
-        document.getElementById('cnt-active').textContent = String(cnt);
-        document.getElementById('sum-ozon').textContent = fmt(ozon);
-        document.getElementById('sum-bongere').textContent = hasBong ? fmt(bong) : '—';
+        document.getElementById('cnt-active').textContent = String(active);
+        document.getElementById('sum-bongere').textContent = fmt(sumBongere);
+        // Summary
+        const total = s.kids * s.daily * s.days;
+        document.getElementById('kpi-per-kid').textContent = fmt(s.daily * s.days);
+        document.getElementById('kpi-total').textContent = fmt(total);
+        document.getElementById('sum-recommended').textContent = fmt(sumRec);
+        document.getElementById('sum-bongere-2').textContent = fmt(sumBongere);
+        document.getElementById('sum-total-money').textContent = fmt(total);
+        const usedForPrizes = sumBongere || sumRec;
+        document.getElementById('sum-balance-prizes').textContent = fmt(total - usedForPrizes);
+        document.getElementById('sum-balance-acts').textContent = fmt(total - usedForPrizes); // равно — активности из тех же денег
+        // Средняя наценка
+        const avg = sumOzonVisible > 0 && sumBongere > 0 ? (sumBongere / sumOzonVisible) : null;
+        document.getElementById('sum-markup-avg').textContent = avg != null ? '×' + avg.toFixed(2) : '×' + s.markup.toFixed(1);
+        // Активности тоже пересчитать
+        recalcActivities();
       }
 
-      // Удаление
-      document.querySelectorAll('[data-delete]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const id = btn.dataset.id;
-          if (!confirm('Удалить эту позицию из списка? (можно восстановить кнопкой сверху)')) return;
-          if (!state.deleted.includes(id)) state.deleted.push(id);
-          save(state);
-          applyDeleted();
-          recalcSummary();
+      ['set-kids','set-daily','set-days','set-markup','set-round'].forEach((id) => {
+        const el = document.getElementById(id);
+        el.addEventListener('input', () => {
+          const s = readSettings();
+          saveSettings(s);
+          recalcPrizes();
         });
       });
 
-      // Восстановить удалённые
-      document.getElementById('btn-reset').addEventListener('click', () => {
-        if (!confirm('Восстановить все удалённые позиции?')) return;
-        state.deleted = [];
-        save(state);
-        applyDeleted();
-        recalcSummary();
+      document.getElementById('btn-show-hidden').addEventListener('click', (ev) => {
+        showHidden = !showHidden;
+        ev.currentTarget.innerHTML = showHidden
+          ? '<i class="bi bi-eye-slash"></i> Скрыть скрытые'
+          : '<i class="bi bi-eye"></i> Показать скрытые';
+        recalcPrizes();
       });
 
-      // Цена в Бонжере
-      document.querySelectorAll('[data-bongere-input]').forEach((inp) => {
+      // Save prize state to server
+      async function savePrizeState(id, patch) {
+        try {
+          const r = await fetch('/api/portal/economy', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'set_prize', prize_id: id, ...patch }),
+          });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+        } catch (e) { console.error('save prize state failed', e); }
+      }
+
+      // Bongere input — debounced save
+      prizeRows.forEach((r) => {
+        const id = r.dataset.id;
+        const inp = r.querySelector('[data-bongere-input]');
+        let t;
         inp.addEventListener('input', () => {
-          const id = inp.dataset.id;
-          const v = inp.value.trim();
-          if (v === '' || isNaN(Number(v))) delete state.bongere[id];
-          else state.bongere[id] = Number(v);
-          save(state);
-          // обновим только эту строку + общую сумму
-          const r = inp.closest('[data-prize-row]');
-          const sumCell = document.querySelector('[data-bongere-sum][data-id="' + CSS.escape(id) + '"]');
-          const qty = Number(r.dataset.qty || 0);
-          if (sumCell) sumCell.textContent = (state.bongere[id] == null) ? '—' : fmt(state.bongere[id] * qty);
-          recalcSummary();
+          clearTimeout(t);
+          t = setTimeout(() => {
+            const v = inp.value === '' ? null : Number(inp.value);
+            r.dataset.bongere = v == null ? '' : String(v);
+            savePrizeState(id, { bongere_price: v });
+            recalcPrizes();
+          }, 350);
+        });
+        // Hide / show
+        r.querySelector('[data-toggle-hidden]').addEventListener('click', async () => {
+          const wasHidden = r.dataset.hidden === '1';
+          if (!wasHidden && !confirm('Скрыть эту позицию? Она пропадёт из активного списка, можно вернуть кнопкой «Показать скрытые».')) return;
+          r.dataset.hidden = wasHidden ? '0' : '1';
+          await savePrizeState(id, { hidden: !wasHidden });
+          // Refresh icon
+          r.querySelector('[data-toggle-hidden] i').className = wasHidden ? 'bi bi-x-lg' : 'bi bi-eye-slash';
+          recalcPrizes();
         });
       });
 
-      // Загрузка фото — сжимаем до ≤ 512px, base64 в localStorage
-      document.querySelectorAll('[data-photo-input]').forEach((inp) => {
-        inp.addEventListener('change', async () => {
-          const id = inp.dataset.id;
-          const f = inp.files && inp.files[0];
-          if (!f) return;
-          try {
-            const dataUrl = await compressImage(f, 320);
-            state.photos[id] = dataUrl;
-            save(state);
-            applyPhotos();
-          } catch (e) {
-            alert('Не удалось загрузить фото: ' + (e && e.message || e));
-          }
-        });
+      // Apply markup to all visible
+      document.getElementById('btn-apply-markup').addEventListener('click', async () => {
+        const s = readSettings();
+        if (!confirm('Записать «Цена × ' + s.markup + ', округление до ' + s.round + ' ₽» в поле «Цена Бонжер» для всех видимых позиций?')) return;
+        for (const r of prizeRows) {
+          if (r.dataset.hidden === '1') continue;
+          const price = Number(r.dataset.price || 0);
+          const rec = roundTo(price * s.markup, s.round);
+          r.querySelector('[data-bongere-input]').value = rec;
+          r.dataset.bongere = String(rec);
+          await savePrizeState(r.dataset.id, { bongere_price: rec });
+        }
+        recalcPrizes();
       });
 
-      function compressImage(file, maxSize) {
-        return new Promise((resolve, reject) => {
-          const fr = new FileReader();
-          fr.onload = () => {
-            const img = new Image();
-            img.onload = () => {
-              const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
-              const w = Math.round(img.width * scale);
-              const h = Math.round(img.height * scale);
-              const c = document.createElement('canvas');
-              c.width = w; c.height = h;
-              const ctx = c.getContext('2d');
-              ctx.drawImage(img, 0, 0, w, h);
-              resolve(c.toDataURL('image/jpeg', 0.78));
-            };
-            img.onerror = () => reject(new Error('image decode failed'));
-            img.src = fr.result;
-          };
-          fr.onerror = () => reject(new Error('file read failed'));
-          fr.readAsDataURL(file);
+      // Import from localStorage
+      document.getElementById('btn-import-local').addEventListener('click', async () => {
+        let local;
+        try { local = JSON.parse(localStorage.getItem(LS_KEY) || '{}') || {}; } catch { local = {}; }
+        const deleted = Array.isArray(local.deleted) ? local.deleted : [];
+        const bongere = local.bongere && typeof local.bongere === 'object' ? local.bongere : {};
+        const photos  = local.photos  && typeof local.photos  === 'object' ? local.photos  : {};
+        const cnt = deleted.length + Object.keys(bongere).length + Object.keys(photos).length;
+        if (cnt === 0) { alert('В localStorage этого браузера ничего нет.'); return; }
+        if (!confirm('Загрузить на сервер: ' + deleted.length + ' скрытых, ' + Object.keys(bongere).length + ' цен, ' + Object.keys(photos).length + ' фото?')) return;
+        const r = await fetch('/api/portal/economy', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'import_localstorage', deleted, bongere, photos }),
+        });
+        const jr = await r.json().catch(() => ({}));
+        if (jr.ok) {
+          alert('Загружено: ' + jr.imported + ' записей. Перезагрузи страницу — увидишь актуальное состояние.');
+        } else {
+          alert('Ошибка: ' + (jr.error || 'unknown'));
+        }
+      });
+
+      // ── Activities ────────────────────────────────────
+      const actRows = Array.from(document.querySelectorAll('[data-activity-row]'));
+      function recalcActivities() {
+        const s = readSettings();
+        actRows.forEach((r) => {
+          const base = Number(r.dataset.base || 0);
+          const partRaw = r.dataset.participants;
+          const part = partRaw === '' ? null : Number(partRaw);
+          // Logic: total Bongere = base × markup (rounded). Per-person = total / participants (or = total if individual).
+          const total = roundTo(base * s.markup, s.round);
+          const perPerson = part && part > 0 ? roundTo(total / part, s.round) : total;
+          r.querySelector('[data-total-bongere]').textContent = fmt(total);
+          r.querySelector('[data-per-person]').textContent = part ? fmt(perPerson) + ' × ' + part : fmt(perPerson);
         });
       }
 
-      // первая отрисовка
-      applyDeleted();
-      applyPhotos();
-      applyBongere();
-      recalcSummary();
+      // Activity dialog
+      const dlg = document.getElementById('activity-dialog');
+      function openDialog(act) {
+        document.getElementById('act-id').value = act?.id || '';
+        document.getElementById('act-name').value = act?.name || '';
+        document.getElementById('act-desc').value = act?.description || '';
+        document.getElementById('act-cat').value = act?.category || 'fun';
+        document.getElementById('act-price').value = act?.base_price ?? '';
+        document.getElementById('act-participants').value = act?.participants_hint ?? '';
+        dlg.showModal();
+      }
+      document.getElementById('btn-add-activity').addEventListener('click', () => openDialog(null));
+      document.getElementById('act-cancel').addEventListener('click', () => dlg.close());
+
+      document.getElementById('act-save').addEventListener('click', async () => {
+        const id = document.getElementById('act-id').value;
+        const body = {
+          action: 'upsert_activity',
+          id: id ? Number(id) : undefined,
+          name: document.getElementById('act-name').value.trim(),
+          description: document.getElementById('act-desc').value.trim() || null,
+          category: document.getElementById('act-cat').value,
+          base_price: document.getElementById('act-price').value || null,
+          participants_hint: document.getElementById('act-participants').value || null,
+        };
+        if (!body.name) { alert('Введите название'); return; }
+        const r = await fetch('/api/portal/economy', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const jr = await r.json().catch(() => ({}));
+        if (jr.ok) { dlg.close(); location.reload(); }
+        else alert('Ошибка: ' + (jr.error || 'unknown'));
+      });
+
+      document.querySelectorAll('[data-edit-activity]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const r = btn.closest('[data-activity-row]');
+          openDialog({
+            id: r.dataset.id,
+            name: r.querySelector('td .font-medium').textContent,
+            description: r.querySelector('td .text-body-muted')?.textContent || '',
+            category: '', // не критично, переустановится из формы
+            base_price: Number(r.dataset.base || 0),
+            participants_hint: r.dataset.participants === '' ? null : Number(r.dataset.participants),
+          });
+        });
+      });
+      document.querySelectorAll('[data-delete-activity]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Удалить эту активность?')) return;
+          const id = btn.dataset.id;
+          const r = await fetch('/api/portal/economy', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete_activity', id: Number(id) }),
+          });
+          const jr = await r.json().catch(() => ({}));
+          if (jr.ok) location.reload(); else alert('Ошибка: ' + (jr.error || 'unknown'));
+        });
+      });
+
+      // First render
+      recalcPrizes();
     })();
   </script>
 </PortalLayout>
