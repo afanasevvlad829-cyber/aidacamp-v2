@@ -16,9 +16,12 @@ export interface ActivityOffer {
   id: number;
   name: string;
   description: string | null;
-  category: string | null;     // food | comfort | fun | privilege | service | other
-  base_price: number | null;   // ₽ — факт. себестоимость для лагеря
-  participants_hint: number | null;
+  category: string | null;     // phone | fun | food | prize | privilege | service | other
+  base_price: number | null;   // ₽ — фикс. цена в игровых рублях (если не используется формула)
+  participants_hint: number | null;  // сколько человек скидывается; NULL = вся смена (N)
+  target_days: number | null;        // сколько дней группа копит на лот (для формулы)
+  target_share_pct: number | null;   // какая доля дневного дохода идёт на лот (для формулы, 30-50%)
+  repeat_multiplier: number | null;  // множитель повторной покупки (default 1.5 для премиум-лотов)
   sort: number;
   archived: boolean;
 }
@@ -100,7 +103,9 @@ export async function replacePrizeState(
 export async function listActivities(includeArchived = false): Promise<ActivityOffer[]> {
   const r = await withClient(async (c) => {
     const q = await c.query(
-      `SELECT id, name, description, category, base_price, participants_hint, sort, archived
+      `SELECT id, name, description, category, base_price, participants_hint,
+              target_days, target_share_pct, repeat_multiplier::float8 AS repeat_multiplier,
+              sort, archived
          FROM portal_activity_offer
          WHERE archived = FALSE OR $1::boolean = TRUE
          ORDER BY sort, id`,
@@ -117,19 +122,26 @@ export async function upsertActivity(p: Partial<ActivityOffer> & { name: string 
       await c.query(
         `UPDATE portal_activity_offer
             SET name=$2, description=$3, category=$4, base_price=$5,
-                participants_hint=$6, sort=$7, archived=COALESCE($8, archived),
+                participants_hint=$6, target_days=$7, target_share_pct=$8, repeat_multiplier=$9,
+                sort=$10, archived=COALESCE($11, archived),
                 updated_at=NOW()
           WHERE id=$1`,
         [p.id, p.name, p.description ?? null, p.category ?? null, p.base_price ?? null,
-         p.participants_hint ?? null, p.sort ?? 0, p.archived ?? null]
+         p.participants_hint ?? null,
+         p.target_days ?? null, p.target_share_pct ?? null, p.repeat_multiplier ?? null,
+         p.sort ?? 0, p.archived ?? null]
       );
       return p.id!;
     }
     const ins = await c.query(
-      `INSERT INTO portal_activity_offer (name, description, category, base_price, participants_hint, sort)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      `INSERT INTO portal_activity_offer
+         (name, description, category, base_price, participants_hint,
+          target_days, target_share_pct, repeat_multiplier, sort)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
       [p.name, p.description ?? null, p.category ?? null, p.base_price ?? null,
-       p.participants_hint ?? null, p.sort ?? 0]
+       p.participants_hint ?? null,
+       p.target_days ?? null, p.target_share_pct ?? null, p.repeat_multiplier ?? null,
+       p.sort ?? 0]
     );
     return Number(ins.rows[0].id);
   });

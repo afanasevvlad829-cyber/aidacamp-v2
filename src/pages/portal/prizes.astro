@@ -49,10 +49,11 @@ const CAT_LABELS: Record<string, string> = {
       <i class="bi bi-info-circle" aria-hidden="true"></i> Как устроена экономика
     </div>
     <ul class="ml-5 list-disc space-y-1">
-      <li><b>Валюта</b> — игровой рубль (₽). Якорь: 1 минута телефона = 10 ₽. Инфляции нет.</li>
-      <li><b>Доход:</b> ребёнок получает <b>600 ₽/день</b> просто за участие — это ровно час телефона. Без условий.</li>
-      <li><b>Расход — выбор:</b> минуты телефона (×10 ₽) ↔ копить на коллективный лот (кино 3 000, костёр 5 000, отбой позже 4 000, отмена урока 5 000, <b>телефон на ночь — 8 000</b>) ↔ физический приз (1 500–2 000).</li>
-      <li>Коллективные лоты — это <b>учить договариваться:</b> «не ныть, а договариваться. Не просить, а организовывать». Покупки одному не потянуть — нужен консилиум.</li>
+      <li><b>Валюта</b> — игровой рубль. Якорь: 1 минута телефона = 10 ₽. Выдача — 600 ₽/день (= час телефона). Без условий.</li>
+      <li><b>Цель цен на лоты:</b> изъять <b>70-80%</b> игровой валюты из оборота через групповые покупки и индивидуальные призы.</li>
+      <li><b>Формула лота</b> = <code>группа × выдача × дней копления × доля дохода (30-50%)</code>. Для смены 35×600 — лот ≈ 20 000 ₽ за 2-3 дня скидывания.</li>
+      <li><b>Индивидуальный приз</b> — 3-8 дней сбережений = 1 800–4 800 ₽.</li>
+      <li><b>Повторная покупка</b> того же лота дорожает <b>×1.5</b> (вторая «Ночь с телефонами» уже не 20 000, а 30 000).</li>
       <li>Эффект из канона: <b>«На третий день телефон почти никто не покупает — жизнь выигрывает конкуренцию у экрана».</b></li>
     </ul>
   </div>
@@ -80,6 +81,15 @@ const CAT_LABELS: Record<string, string> = {
                class="mt-1 w-full rounded-[10px] border border-amber-300 bg-amber-50/40 px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
       </label>
       <label class="block">
+        <span class="block text-[13px] font-medium text-body-muted">Цель изъятия, %</span>
+        <input id="set-target-extract" type="number" min="50" max="100" step="5" value="75"
+               class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
+        <span class="mt-1 block text-[12px] text-body-muted">сколько денег вытащить из оборота лотами</span>
+      </label>
+    </div>
+
+    <div class="mt-3 grid gap-3 sm:grid-cols-2">
+      <label class="block">
         <span class="block text-[13px] font-medium text-body-muted">Наценка × для призов из Ozon</span>
         <input id="set-markup" type="number" min="1" step="0.1" value="3"
                class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
@@ -104,29 +114,37 @@ const CAT_LABELS: Record<string, string> = {
       </label>
     </div>
 
-    <div class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
       <div class="rounded-[10px] border border-border bg-page p-3">
-        <div class="text-[13px] text-body-muted">Потенциал ребёнка / день</div>
+        <div class="text-[13px] text-body-muted">Выдача / ребёнок / день</div>
         <div class="mt-0.5 font-mono tabular-nums text-[18px] font-semibold text-navy-950">
           <span id="kpi-potential">—</span>
         </div>
+        <div class="text-[12px] text-body-muted">= <span id="kpi-phone-equiv">—</span> мин</div>
+      </div>
+      <div class="rounded-[10px] border border-border bg-page p-3">
+        <div class="text-[13px] text-body-muted">Дневной фонд лагеря</div>
+        <div class="mt-0.5 font-mono tabular-nums text-[18px] font-semibold text-navy-950">
+          <span id="kpi-daily-fund">—</span>
+        </div>
+      </div>
+      <div class="rounded-[10px] border border-border bg-page p-3">
+        <div class="text-[13px] text-body-muted">Полный фонд смены</div>
+        <div class="mt-0.5 font-mono tabular-nums text-[18px] font-semibold text-navy-950">
+          <span id="kpi-total">—</span>
+        </div>
+      </div>
+      <div class="rounded-[10px] border border-primary bg-primary-soft p-3">
+        <div class="text-[13px] font-medium text-primary">Цель изъятия</div>
+        <div class="mt-0.5 font-mono tabular-nums text-[18px] font-semibold text-primary">
+          <span id="kpi-target-extract">—</span>
+        </div>
+        <div class="text-[12px] text-primary/80">через лоты + призы</div>
       </div>
       <div class="rounded-[10px] border border-border bg-page p-3">
         <div class="text-[13px] text-body-muted">За всю смену с ребёнка</div>
         <div class="mt-0.5 font-mono tabular-nums text-[18px] font-semibold text-navy-950">
           <span id="kpi-per-kid">—</span>
-        </div>
-      </div>
-      <div class="rounded-[10px] border border-border bg-page p-3">
-        <div class="text-[13px] text-body-muted">Эквивалент <i class="bi bi-telephone-fill text-[12px] text-primary" aria-hidden="true"></i> минут / день</div>
-        <div class="mt-0.5 font-mono tabular-nums text-[18px] font-semibold text-navy-950">
-          <span id="kpi-phone-equiv">—</span>
-        </div>
-      </div>
-      <div class="rounded-[10px] border border-border bg-page p-3">
-        <div class="text-[13px] text-body-muted">Всего в обороте за смену</div>
-        <div class="mt-0.5 font-mono tabular-nums text-[18px] font-semibold text-navy-950">
-          <span id="kpi-total">—</span>
         </div>
       </div>
     </div>
@@ -277,29 +295,32 @@ const CAT_LABELS: Record<string, string> = {
         <thead class="bg-page text-left text-[12px] uppercase tracking-wide text-body-muted">
           <tr>
             <th class="p-2">Название</th>
-            <th class="w-[110px] p-2">Категория</th>
-            <th class="w-[110px] p-2 text-right">Цена,&nbsp;игр.&nbsp;₽</th>
-            <th class="w-[90px] p-2 text-right">Скидыв.&nbsp;чел.</th>
-            <th class="w-[110px] p-2 text-right">С человека</th>
-            <th class="w-[110px] p-2 text-right" title="Сколько дней копить одному ребёнку (при максимальном потенциале)">Копить</th>
+            <th class="w-[90px] p-2">Категория</th>
+            <th class="w-[160px] p-2 text-right" title="Формула: группа × выдача × дней × % дохода">Формула</th>
+            <th class="w-[100px] p-2 text-right">Цена,&nbsp;игр.&nbsp;₽</th>
+            <th class="w-[90px] p-2 text-right">С человека</th>
+            <th class="w-[80px] p-2 text-right" title="Изъятие % от полного фонда смены">Изъятие</th>
             <th class="w-[80px] p-2"></th>
           </tr>
         </thead>
         <tbody id="activities-tbody">
           {activities.map((a) => (
             <tr data-activity-row data-id={a.id}
-                data-bongere={a.base_price ?? 0}
+                data-bongere={a.base_price ?? ''}
                 data-participants={a.participants_hint ?? ''}
+                data-target-days={a.target_days ?? ''}
+                data-target-share={a.target_share_pct ?? ''}
+                data-repeat={a.repeat_multiplier ?? ''}
                 class="border-t border-border align-middle">
               <td class="p-2">
                 <div class="font-medium text-navy-950">{a.name}</div>
                 {a.description && <div class="mt-0.5 text-[12px] text-body-muted">{a.description}</div>}
               </td>
               <td class="p-2"><span class="rounded-full bg-primary-soft px-2 py-0.5 text-[12px] text-primary">{CAT_LABELS[a.category ?? 'other'] ?? a.category ?? '—'}</span></td>
-              <td class="p-2 text-right font-mono tabular-nums font-semibold">{a.base_price != null ? fmtRub(a.base_price) : '—'}</td>
-              <td class="p-2 text-right font-mono tabular-nums">{a.participants_hint ?? '—'}</td>
+              <td class="p-2 text-right font-mono tabular-nums text-[12px] text-body-muted" data-formula>—</td>
+              <td class="p-2 text-right font-mono tabular-nums font-semibold" data-total-price>—</td>
               <td class="p-2 text-right font-mono tabular-nums text-primary" data-per-person>—</td>
-              <td class="p-2 text-right font-mono tabular-nums" data-save-days>—</td>
+              <td class="p-2 text-right font-mono tabular-nums" data-extract-pct>—</td>
               <td class="p-2 text-right">
                 <button type="button" data-edit-activity data-id={a.id}
                         class="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-body-muted hover:bg-primary-soft hover:text-primary"
@@ -349,15 +370,38 @@ const CAT_LABELS: Record<string, string> = {
               </select>
             </label>
             <label class="block">
-              <span class="block text-[13px] font-medium text-body-muted">Цена в игровых рублях</span>
+              <span class="block text-[13px] font-medium text-body-muted">Цена, ₽ <span class="text-body-muted text-[11px]">(если без формулы)</span></span>
               <input id="act-price" type="number" min="0" step="100"
                      class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono focus:border-primary focus:outline-none" />
             </label>
             <label class="block">
-              <span class="block text-[13px] font-medium text-body-muted">Скидываются чел.</span>
+              <span class="block text-[13px] font-medium text-body-muted">Группа N <span class="text-body-muted text-[11px]">(пусто = вся смена)</span></span>
               <input id="act-participants" type="number" min="1"
                      class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono focus:border-primary focus:outline-none" />
             </label>
+          </div>
+          <div>
+            <div class="text-[13px] font-semibold uppercase tracking-wide text-body-muted">
+              Формула цены (опционально)
+            </div>
+            <p class="text-[12px] text-body-muted">Если заданы оба — цена = группа × выдача × дней × доля%. Иначе берётся «Цена» сверху.</p>
+            <div class="mt-2 grid gap-3 sm:grid-cols-3">
+              <label class="block">
+                <span class="block text-[13px] font-medium text-body-muted">Дней копления</span>
+                <input id="act-target-days" type="number" min="1" max="14" step="1"
+                       class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono focus:border-primary focus:outline-none" />
+              </label>
+              <label class="block">
+                <span class="block text-[13px] font-medium text-body-muted">% дохода / день</span>
+                <input id="act-target-share" type="number" min="10" max="100" step="5"
+                       class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono focus:border-primary focus:outline-none" />
+              </label>
+              <label class="block">
+                <span class="block text-[13px] font-medium text-body-muted">Множитель повтора ×</span>
+                <input id="act-repeat" type="number" min="1" max="5" step="0.1"
+                       class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono focus:border-primary focus:outline-none" />
+              </label>
+            </div>
           </div>
         </div>
         <div class="mt-5 flex justify-end gap-2">
@@ -411,10 +455,10 @@ const CAT_LABELS: Record<string, string> = {
         try { localStorage.setItem(LS_SETTINGS, JSON.stringify(s)); } catch {}
       }
       const set = Object.assign({
-        kids: 35, days: 10, phoneMin: 10, markup: 3, round: 50, daily: 600,
+        kids: 35, days: 10, phoneMin: 10, markup: 3, round: 50, daily: 600, targetExtract: 75,
       }, loadSettings());
       const idMap = {
-        'set-kids':'kids','set-days':'days','set-phone-min':'phoneMin','set-markup':'markup','set-round':'round','set-daily':'daily',
+        'set-kids':'kids','set-days':'days','set-phone-min':'phoneMin','set-markup':'markup','set-round':'round','set-daily':'daily','set-target-extract':'targetExtract',
       };
       for (const id of Object.keys(idMap)) {
         const el = document.getElementById(id);
@@ -430,6 +474,7 @@ const CAT_LABELS: Record<string, string> = {
           markup: num('set-markup', 1),
           round: num('set-round', 1),
           daily: Math.max(0, Number(document.getElementById('set-daily').value) || 0),
+          targetExtract: Math.max(0, Math.min(100, Number(document.getElementById('set-target-extract').value) || 75)),
         };
       }
       function dailyPotential(s) { return s.daily; }
@@ -496,11 +541,15 @@ const CAT_LABELS: Record<string, string> = {
         document.getElementById('cnt-active').textContent = String(active);
         document.getElementById('sum-bongere').textContent = fmt(sumBongere);
         // KPI шапки
-        const total = s.kids * dp * s.days;
+        const dailyFund = s.kids * dp;
+        const total = dailyFund * s.days;
+        const targetExtract = total * (s.targetExtract / 100);
         document.getElementById('kpi-potential').textContent = fmt(dp);
+        document.getElementById('kpi-daily-fund').textContent = fmt(dailyFund);
         document.getElementById('kpi-per-kid').textContent = fmt(dp * s.days);
-        document.getElementById('kpi-phone-equiv').textContent = (s.phoneMin > 0 ? Math.floor(dp / s.phoneMin) : 0) + ' мин';
+        document.getElementById('kpi-phone-equiv').textContent = (s.phoneMin > 0 ? Math.floor(dp / s.phoneMin) : 0);
         document.getElementById('kpi-total').textContent = fmt(total);
+        const ext = document.getElementById('kpi-target-extract'); if (ext) ext.textContent = fmt(targetExtract);
         // Сводка
         const sumRecEl = document.getElementById('sum-recommended'); if (sumRecEl) sumRecEl.textContent = fmt(sumRec);
         const sumBon2 = document.getElementById('sum-bongere-2'); if (sumBon2) sumBon2.textContent = fmt(sumBongere);
@@ -515,7 +564,7 @@ const CAT_LABELS: Record<string, string> = {
         recalcActivities();
       }
 
-      ['set-kids','set-days','set-phone-min','set-markup','set-round','set-daily'].forEach((id) => {
+      ['set-kids','set-days','set-phone-min','set-markup','set-round','set-daily','set-target-extract'].forEach((id) => {
         const el = document.getElementById(id);
         el.addEventListener('input', () => {
           const s = readSettings();
@@ -611,19 +660,39 @@ const CAT_LABELS: Record<string, string> = {
       function recalcActivities() {
         const s = readSettings();
         const dp = dailyPotential(s);
+        const totalShiftFund = s.kids * dp * s.days;
         actRows.forEach((r) => {
-          const total = Number(r.dataset.bongere || 0);
+          const baseRaw = r.dataset.bongere;
           const partRaw = r.dataset.participants;
-          const part = partRaw === '' ? null : Number(partRaw);
-          const perPerson = part && part > 0 ? roundTo(total / part, s.round) : total;
-          const ppCell = r.querySelector('[data-per-person]');
-          if (ppCell) ppCell.textContent = part && part > 1 ? fmt(perPerson) + ' × ' + part : fmt(perPerson);
-          const days = saveDays(perPerson, dp);
-          const cell = r.querySelector('[data-save-days]');
-          if (cell) {
-            if (days <= 0) cell.textContent = '—';
-            else if (days > s.days) cell.innerHTML = '<span class="text-red-600">' + days + ' дн</span>';
-            else cell.innerHTML = days + ' <span class="text-[11px] text-body-muted">дн</span>';
+          const tdRaw = r.dataset.targetDays;
+          const tsRaw = r.dataset.targetShare;
+          // participants: пусто => вся смена N
+          const participants = (partRaw === '' || partRaw == null) ? s.kids : Number(partRaw);
+          const targetDays = tdRaw === '' || tdRaw == null ? null : Number(tdRaw);
+          const targetShare = tsRaw === '' || tsRaw == null ? null : Number(tsRaw);
+
+          let price;
+          let formulaText = '—';
+          if (targetDays && targetShare) {
+            // Цена по формуле
+            const raw = participants * dp * targetDays * (targetShare / 100);
+            price = roundTo(raw, s.round);
+            formulaText = participants + ' × ' + dp + ' × ' + targetDays + 'д × ' + targetShare + '%';
+          } else if (baseRaw !== '' && baseRaw != null) {
+            price = Number(baseRaw);
+            formulaText = 'фикс.';
+          } else {
+            price = 0;
+          }
+          r.querySelector('[data-formula]').textContent = formulaText;
+          r.querySelector('[data-total-price]').textContent = price > 0 ? fmt(price) : '—';
+          const perPerson = participants > 0 ? roundTo(price / participants, s.round) : price;
+          r.querySelector('[data-per-person]').textContent = price <= 0 ? '—' :
+            (participants > 1 ? fmt(perPerson) + ' × ' + participants : fmt(perPerson));
+          const extractPctEl = r.querySelector('[data-extract-pct]');
+          if (extractPctEl) {
+            const pct = totalShiftFund > 0 ? (price / totalShiftFund * 100) : 0;
+            extractPctEl.textContent = pct > 0 ? pct.toFixed(1) + '%' : '—';
           }
         });
       }
@@ -637,6 +706,9 @@ const CAT_LABELS: Record<string, string> = {
         document.getElementById('act-cat').value = act?.category || 'fun';
         document.getElementById('act-price').value = act?.base_price ?? '';
         document.getElementById('act-participants').value = act?.participants_hint ?? '';
+        document.getElementById('act-target-days').value = act?.target_days ?? '';
+        document.getElementById('act-target-share').value = act?.target_share_pct ?? '';
+        document.getElementById('act-repeat').value = act?.repeat_multiplier ?? '';
         dlg.showModal();
       }
       document.getElementById('btn-add-activity').addEventListener('click', () => openDialog(null));
@@ -652,6 +724,9 @@ const CAT_LABELS: Record<string, string> = {
           category: document.getElementById('act-cat').value,
           base_price: document.getElementById('act-price').value || null,
           participants_hint: document.getElementById('act-participants').value || null,
+          target_days: document.getElementById('act-target-days').value || null,
+          target_share_pct: document.getElementById('act-target-share').value || null,
+          repeat_multiplier: document.getElementById('act-repeat').value || null,
         };
         if (!body.name) { alert('Введите название'); return; }
         const r = await fetch('/api/portal/economy', {
@@ -670,9 +745,12 @@ const CAT_LABELS: Record<string, string> = {
             id: r.dataset.id,
             name: r.querySelector('td .font-medium').textContent,
             description: r.querySelector('td .text-body-muted')?.textContent || '',
-            category: '', // не критично, переустановится из формы
-            base_price: Number(r.dataset.bongere || 0),
+            category: '',
+            base_price: r.dataset.bongere === '' ? null : Number(r.dataset.bongere),
             participants_hint: r.dataset.participants === '' ? null : Number(r.dataset.participants),
+            target_days: r.dataset.targetDays === '' ? null : Number(r.dataset.targetDays),
+            target_share_pct: r.dataset.targetShare === '' ? null : Number(r.dataset.targetShare),
+            repeat_multiplier: r.dataset.repeat === '' ? null : Number(r.dataset.repeat),
           });
         });
       });

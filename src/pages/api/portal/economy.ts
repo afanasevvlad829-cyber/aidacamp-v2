@@ -60,13 +60,17 @@ export const POST: APIRoute = async ({ cookies, request }) => {
     }
 
     if (action === 'upsert_activity') {
+      const num = (v: any) => (v != null && v !== '' && !isNaN(Number(v))) ? Number(v) : null;
       const id = await upsertActivity({
         id: body.id ? Number(body.id) : undefined,
         name: String(body.name || '').trim(),
         description: body.description != null ? String(body.description) : null,
         category: body.category != null ? String(body.category) : null,
-        base_price: body.base_price != null && body.base_price !== '' ? Number(body.base_price) : null,
-        participants_hint: body.participants_hint != null && body.participants_hint !== '' ? Number(body.participants_hint) : null,
+        base_price: num(body.base_price),
+        participants_hint: num(body.participants_hint),
+        target_days: num(body.target_days),
+        target_share_pct: num(body.target_share_pct),
+        repeat_multiplier: num(body.repeat_multiplier),
         sort: body.sort != null ? Number(body.sort) : 0,
         archived: typeof body.archived === 'boolean' ? body.archived : undefined,
       });
