@@ -50,9 +50,11 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
         process.env.PORTAL_SESSION_SECRET ?? '',
       );
       let role = payload?.role ?? null;
-      // Для сотрудничьих сессий (есть sub) — проверяем active/role в БД (кэш 60с)
+      // Для сотрудничьих сессий (есть sub) — проверяем active/role в БД (кэш 60с).
+      // Student-сессии тоже имеют sub (это portal_kid.id), но к portal_staff отношения не имеют —
+      // их валидировать через getStaff() нельзя (всегда вернёт null → 401). Пропускаем.
       let staffRoles: string[] = [];
-      if (role && payload?.sub) {
+      if (role && role !== 'student' && payload?.sub) {
         const now = Date.now();
         let c = staffActiveCache.get(payload.sub);
         if (!c || c.exp < now) {
