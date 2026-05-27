@@ -68,8 +68,14 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
           };
           staffActiveCache.set(payload.sub, c);
         }
-        // Сессия валидна, если её роль входит в полный список ролей сотрудника.
-        if (!c.ok || !c.roles.includes(role)) role = null;
+        if (!c.ok) {
+          role = null;
+        } else if (!c.roles.includes(role)) {
+          // Роль в сессии больше не входит в актуальный список ролей сотрудника
+          // (например, admin изменил свои роли через UI). Понижаем до первой доступной
+          // вместо выброса 401 — это безопаснее (фактическое право проверяется в endpoints).
+          role = c.roles[0] as any;
+        }
         staffRoles = c.roles;
       }
       if (!role) {
