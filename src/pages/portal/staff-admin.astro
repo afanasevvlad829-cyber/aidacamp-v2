@@ -18,6 +18,14 @@ const active = linked.filter((s) => s.active);
 const inactive = linked.filter((s) => !s.active);
 
 const ROLES = ['teacher', 'vozhaty', 'rukovoditel', 'admin'];
+const ROLE_LABELS: Record<string, string> = {
+  admin: 'Админ',
+  rukovoditel: 'Руководитель',
+  teacher: 'Преподаватель',
+  vozhaty: 'Вожатый',
+  student: 'Ученик',
+};
+const roleLabel = (r: string | null | undefined): string => (r ? ROLE_LABELS[r] ?? r : '');
 ---
 
 <PortalLayout title="Сотрудники — АйДаКэмп">
@@ -52,7 +60,7 @@ const ROLES = ['teacher', 'vozhaty', 'rukovoditel', 'admin'];
           <option value="">— выбери должность —</option>
           {placeholders.map((ph) => (
             <option value={ph.id}>
-              {ph.full_name ?? ph.staff_key} ({ph.role ?? 'без роли'}, key: {ph.staff_key})
+              {ph.full_name ?? ph.staff_key} ({roleLabel(ph.role) || 'без роли'}, key: {ph.staff_key})
             </option>
           ))}
         </select>
@@ -78,7 +86,7 @@ const ROLES = ['teacher', 'vozhaty', 'rukovoditel', 'admin'];
       <div class="mb-2 flex flex-wrap items-center gap-2 rounded-[16px] border border-border bg-white p-4 card-shadow opacity-75">
         <i class="bi bi-person-fill text-[18px] text-body-muted" aria-hidden="true"></i>
         <span class="min-w-0 flex-1 text-[16px] text-navy-950">
-          {ph.full_name ?? '—'} — <b>{ph.role ?? 'без роли'}</b>
+          {ph.full_name ?? '—'} — <b>{roleLabel(ph.role) || 'без роли'}</b>
           <span class="ml-2 text-[13px] text-body-muted">key: {ph.staff_key}</span>
         </span>
         <span class="text-[14px] text-body-muted">Ждёт первого входа через TG</span>
@@ -103,7 +111,7 @@ const ROLES = ['teacher', 'vozhaty', 'rukovoditel', 'admin'];
             {s.full_name ?? '—'} {s.tg_username ? `@${s.tg_username}` : ''}
           </div>
           <div class="mt-1 text-[14px] text-body-muted">
-            Роли: <b class="text-navy-950">{userRoles.join(' + ') || 'нет'}</b>
+            Роли: <b class="text-navy-950">{userRoles.map(roleLabel).join(' + ') || 'нет'}</b>
             {s.staff_key && <span> · staff_key: <code>{s.staff_key}</code></span>}
           </div>
           <form method="POST" action="/api/portal/staff/roles" class="mt-2 flex flex-wrap items-center gap-3">
@@ -111,7 +119,7 @@ const ROLES = ['teacher', 'vozhaty', 'rukovoditel', 'admin'];
             {ROLES.map((r) => (
               <label class="inline-flex items-center gap-1 text-[14px]">
                 <input type="checkbox" name="roles" value={r} checked={userRoles.includes(r)} class="h-4 w-4 rounded border-border text-primary" />
-                {r}
+                {roleLabel(r)}
               </label>
             ))}
             <button class="rounded-[10px] bg-primary px-3 py-1 text-[14px] font-medium text-white transition hover:opacity-90">
@@ -142,7 +150,7 @@ const ROLES = ['teacher', 'vozhaty', 'rukovoditel', 'admin'];
     {inactive.map((s) => (
       <div class="mb-2 flex flex-wrap items-center gap-2 rounded-[16px] border border-border bg-white p-4 card-shadow opacity-70">
         <span class="min-w-0 flex-1 text-[16px] text-navy-950">
-          {s.full_name ?? '—'} — {s.role}
+          {s.full_name ?? '—'} — {roleLabel(s.role)}
         </span>
         <form method="POST" action="/api/portal/staff">
           <input type="hidden" name="telegram_id" value={s.telegram_id!} />

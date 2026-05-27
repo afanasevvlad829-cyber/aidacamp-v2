@@ -49,6 +49,28 @@ export const EVENT_TYPE_LABELS: Record<string, string> = {
   admin: 'Администрирование',
 };
 
+/** Tailwind-классы для цветной плашки event_type (bg + text + border). */
+export const EVENT_TYPE_COLORS: Record<string, string> = {
+  meal:          'bg-amber-50 text-amber-800 border-amber-200',
+  lesson:        'bg-blue-50 text-blue-800 border-blue-200',
+  pool:          'bg-cyan-50 text-cyan-800 border-cyan-200',
+  pool_or_alt:   'bg-cyan-50 text-cyan-800 border-cyan-200',
+  free_time:     'bg-emerald-50 text-emerald-800 border-emerald-200',
+  evening_event: 'bg-purple-50 text-purple-800 border-purple-200',
+  transit:       'bg-sky-50 text-sky-800 border-sky-200',
+  housing:       'bg-indigo-50 text-indigo-800 border-indigo-200',
+  ceremony:      'bg-pink-50 text-pink-800 border-pink-200',
+  departure:     'bg-rose-50 text-rose-800 border-rose-200',
+  medical:       'bg-red-50 text-red-800 border-red-200',
+  report:        'bg-orange-50 text-orange-800 border-orange-200',
+  routine:       'bg-slate-50 text-slate-700 border-slate-200',
+  bedtime:       'bg-slate-100 text-slate-600 border-slate-300',
+  admin:         'bg-zinc-50 text-zinc-700 border-zinc-200',
+};
+export function eventColorClass(eventType: string | null | undefined): string {
+  return (eventType && EVENT_TYPE_COLORS[eventType]) || 'bg-slate-50 text-slate-700 border-slate-200';
+}
+
 function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
 async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
   const conn = dsn(); if (!conn) return null;
