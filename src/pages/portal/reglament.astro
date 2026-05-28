@@ -1,0 +1,131 @@
+---
+export const prerender = false;
+import PortalLayout from '../../layouts/PortalLayout.astro';
+import { marked } from 'marked';
+import reg00 from '../../../_notes/АйДаКемп/Регламенты-портала/00 - Общий регламент.md?raw';
+import reg01 from '../../../_notes/АйДаКемп/Регламенты-портала/01 - Руководитель смены.md?raw';
+import reg02 from '../../../_notes/АйДаКемп/Регламенты-портала/02 - Вожатый.md?raw';
+import reg03 from '../../../_notes/АйДаКемп/Регламенты-портала/03 - Преподаватель.md?raw';
+import reg04 from '../../../_notes/АйДаКемп/Регламенты-портала/04 - Админ.md?raw';
+
+const role = Astro.locals.portalRole!;
+if (!['admin', 'rukovoditel', 'teacher', 'vozhaty'].includes(role)) {
+  return Astro.redirect('/portal/');
+}
+
+marked.setOptions({ gfm: true, breaks: false });
+
+type Doc = { id: string; tab: string; title: string; icon: string; html: string; forRole?: string };
+const docs: Doc[] = [
+  { id: 'common',  tab: 'Общий',         title: 'Общий регламент',          icon: 'bi-people',            html: marked.parse(reg00) as string },
+  { id: 'rukov',   tab: 'Руководитель',  title: 'Руководитель смены',       icon: 'bi-star-fill',         html: marked.parse(reg01) as string, forRole: 'rukovoditel' },
+  { id: 'vozh',    tab: 'Вожатый',       title: 'Вожатый',                  icon: 'bi-person-badge',      html: marked.parse(reg02) as string, forRole: 'vozhaty' },
+  { id: 'teach',   tab: 'Преподаватель', title: 'Преподаватель',            icon: 'bi-mortarboard-fill',  html: marked.parse(reg03) as string, forRole: 'teacher' },
+  { id: 'admin',   tab: 'Админ',         title: 'Админ',                    icon: 'bi-shield-lock-fill',  html: marked.parse(reg04) as string, forRole: 'admin' },
+];
+
+// Активный таб по умолчанию: общий, либо роль пользователя если есть
+const myDoc = docs.find((d) => d.forRole === role);
+const initial = myDoc?.id ?? 'common';
+---
+<PortalLayout title="Регламенты — Портал АйДаКемп">
+  <div class="mb-6">
+    <h1 class="text-[28px] font-bold tracking-[-0.02em] text-navy-950 md:text-[36px]">
+      Регламенты работы с порталом
+    </h1>
+    <p class="mt-2 text-[16px] text-body-muted">
+      Правила, которые должен знать каждый сотрудник. Открой свою роль — там зона ответственности, штрафы и что делать если что-то не работает.
+    </p>
+  </div>
+
+  {/* Табы */}
+  <div class="mb-6 -mx-2 overflow-x-auto px-2">
+    <div class="flex gap-2" role="tablist">
+      {docs.map((d) => (
+        <button
+          type="button"
+          role="tab"
+          data-tab={d.id}
+          class:list={[
+            'reg-tab flex shrink-0 items-center gap-2 rounded-[12px] border px-4 py-2.5 text-[14px] font-semibold transition',
+            d.id === initial
+              ? 'border-primary bg-primary text-white'
+              : 'border-border bg-white text-navy-950 hover:border-primary',
+          ]}
+        >
+          <i class={`bi ${d.icon} text-[16px]`} aria-hidden="true"></i>
+          <span>{d.tab}</span>
+          {d.forRole === role && (
+            <span class="ml-1 rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] uppercase tracking-wider">ты</span>
+          )}
+        </button>
+      ))}
+    </div>
+  </div>
+
+  {/* Контент */}
+  {docs.map((d) => (
+    <article
+      data-pane={d.id}
+      class:list={[
+        'reg-pane rounded-[16px] border border-border bg-white p-6 card-shadow md:p-8',
+        d.id === initial ? '' : 'hidden',
+      ]}
+    >
+      <div class="reg-content prose">
+        <Fragment set:html={d.html} />
+      </div>
+    </article>
+  ))}
+
+  <style is:global>
+    .reg-content h1 { font-size: 24px; line-height: 1.25; margin: 0 0 14px; letter-spacing: -0.01em; color: #0e1c33; font-weight: 700; }
+    .reg-content h2 { font-size: 20px; margin: 26px 0 10px; padding-top: 14px; border-top: 1px solid #e6e6e3; color: #0e1c33; font-weight: 700; }
+    .reg-content h2:first-of-type { border-top: none; padding-top: 0; }
+    .reg-content h3 { font-size: 17px; margin: 20px 0 8px; color: #1f2937; font-weight: 600; }
+    .reg-content p { margin: 8px 0 12px; color: #1a1a1a; }
+    .reg-content ul, .reg-content ol { padding-left: 22px; margin: 8px 0 12px; }
+    .reg-content li { margin: 4px 0; }
+    .reg-content blockquote { margin: 12px 0; padding: 12px 16px; background: var(--color-primary-soft, #fde8e6); border-left: 3px solid var(--color-primary, #d63b2f); border-radius: 8px; color: #4a1410; }
+    .reg-content blockquote p { margin: 0; }
+    .reg-content code { background: #f3f2ee; padding: 1px 6px; border-radius: 4px; font: 13.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    .reg-content pre { background: #f3f2ee; padding: 14px 16px; border-radius: 8px; overflow-x: auto; }
+    .reg-content pre code { padding: 0; background: transparent; }
+    .reg-content table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14.5px; }
+    .reg-content th, .reg-content td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e6e6e3; vertical-align: top; }
+    .reg-content th { background: #faf9f6; font-weight: 600; color: #333; }
+    .reg-content hr { border: none; border-top: 1px solid #e6e6e3; margin: 24px 0; }
+    .reg-content a { color: var(--color-primary, #d63b2f); }
+    .reg-content strong { color: #0e1c33; }
+  </style>
+
+  <script>
+    const buttons = document.querySelectorAll<HTMLButtonElement>('.reg-tab');
+    const panes = document.querySelectorAll<HTMLElement>('.reg-pane');
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.tab;
+        buttons.forEach((b) => {
+          const active = b.dataset.tab === id;
+          b.classList.toggle('border-primary', active);
+          b.classList.toggle('bg-primary', active);
+          b.classList.toggle('text-white', active);
+          b.classList.toggle('border-border', !active);
+          b.classList.toggle('bg-white', !active);
+          b.classList.toggle('text-navy-950', !active);
+        });
+        panes.forEach((p) => {
+          p.classList.toggle('hidden', p.dataset.pane !== id);
+        });
+        history.replaceState(null, '', `#${id}`);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    });
+    // Поддержка #anchor при входе
+    const hash = location.hash.replace('#', '');
+    if (hash) {
+      const btn = document.querySelector<HTMLButtonElement>(`.reg-tab[data-tab="${hash}"]`);
+      btn?.click();
+    }
+  </script>
+</PortalLayout>
