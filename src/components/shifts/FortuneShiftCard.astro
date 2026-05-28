@@ -37,11 +37,14 @@ const segData = SEGMENTS.map((seg, i) => {
   const y2 = (CY + R * Math.sin(a2)).toFixed(1);
   const path = `M ${CX} ${CY} L ${x1} ${y1} A ${R} ${R} 0 0 1 ${x2} ${y2} Z`;
   const ta = toRad((i + 0.5) * 36 - 90);
-  const tr = R * 0.65;
+  const tr = R * 0.66;
   const tx = (CX + tr * Math.cos(ta)).toFixed(1);
   const ty = (CY + tr * Math.sin(ta)).toFixed(1);
-  const textRot = ((i + 0.5) * 36).toFixed(1);
-  return { ...seg, path, tx, ty, textRot };
+  // For bottom-half segments (center > 180°) flip text so it's not upside-down
+  const centerDeg = (i + 0.5) * 36;
+  const textRot = (centerDeg > 180 ? centerDeg - 180 : centerDeg).toFixed(1);
+  const textFlip = centerDeg > 180;
+  return { ...seg, path, tx, ty, textRot, textFlip };
 });
 ---
 
@@ -108,14 +111,28 @@ const segData = SEGMENTS.map((seg, i) => {
             <text
               x={seg.tx}
               y={seg.ty}
-              transform={`rotate(${seg.textRot}, ${CX}, ${CY})`}
+              transform={seg.textFlip
+                ? `rotate(${seg.textRot}, ${CX}, ${CY}) rotate(180, ${seg.tx}, ${seg.ty})`
+                : `rotate(${seg.textRot}, ${CX}, ${CY})`}
               text-anchor="middle"
               dominant-baseline="middle"
-              font-size="11"
-              font-weight="800"
-              fill="white"
-              style="font-family:system-ui,sans-serif;paint-order:stroke;stroke:rgba(0,0,0,0.25);stroke-width:3px"
-            >{seg.label}</text>
+              font-family="system-ui,sans-serif"
+              paint-order="stroke"
+              stroke="rgba(0,0,0,0.3)"
+              stroke-width="3"
+              stroke-linejoin="round"
+            >
+              <tspan
+                font-size="15"
+                font-weight="900"
+                fill="white"
+              >{seg.label.replace('%','')}</tspan><tspan
+                font-size="10"
+                font-weight="800"
+                fill="rgba(255,255,255,0.85)"
+                dy="-3"
+              >%</tspan>
+            </text>
           </g>
         ))}
         <!-- Center hub -->

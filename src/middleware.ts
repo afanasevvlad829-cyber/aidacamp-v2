@@ -72,11 +72,14 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
         }
         if (!c.ok) {
           role = null;
-        } else if (!c.roles.includes(role)) {
-          // Роль в сессии больше не входит в актуальный список ролей сотрудника
-          // (например, admin изменил свои роли через UI). Понижаем до первой доступной
-          // вместо выброса 401 — это безопаснее (фактическое право проверяется в endpoints).
-          role = c.roles[0] as any;
+        } else {
+          // У сотрудника может быть несколько ролей в roles[]. Чтобы admin/руководитель
+          // не оказался под teacher-сессией и не терял доступ к admin-страницам, берём
+          // НАИВЫСШУЮ доступную роль как реальную. View-as даёт ручной даунгрейд.
+          const PRIORITY = ['admin', 'rukovoditel', 'teacher', 'vozhaty', 'student'] as const;
+          const highest = PRIORITY.find((r) => c.roles.includes(r as any)) as any;
+          if (highest) role = highest;
+          else if (!c.roles.includes(role)) role = c.roles[0] as any;
         }
         staffRoles = c.roles;
       }

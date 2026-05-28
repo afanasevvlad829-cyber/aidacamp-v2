@@ -4,9 +4,9 @@ import { createHash } from 'node:crypto';
 import { getCurrentPrice } from '../../../data/dynamicPrices';
 
 // ── env ──────────────────────────────────────────────────────────────────────
-const TERMINAL  = import.meta.env.TINKOFF_TERMINAL_KEY as string | undefined;
-const PASSWORD  = import.meta.env.TINKOFF_PASSWORD     as string | undefined;
-const SITE_URL  = (import.meta.env.SITE_URL || 'https://dev.aidacamp.ru') as string;
+const TERMINAL  = process.env.TINKOFF_TERMINAL_KEY;
+const PASSWORD  = process.env.TINKOFF_PASSWORD;
+const SITE_URL  = process.env.SITE_URL || 'https://dev.aidacamp.ru';
 
 // ── Tinkoff token ─────────────────────────────────────────────────────────────
 function tinkoffToken(
