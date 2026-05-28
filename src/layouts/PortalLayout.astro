@@ -258,5 +258,37 @@ const ROLE_LABEL_MAP: Record<string, string> = {
       })();
     </script>
     <script src="/portal/voice-input.js" defer></script>
+
+    {/* Telegram WebApp — фикс сжатия при свайпе вниз внутри Telegram Mini App.
+        Грузим официальный SDK + сразу expand() + блок свайп-вниз (>=Bot API 7.7).
+        Вне Telegram скрипт не делает ничего вредного — window.Telegram?.WebApp = undefined. */}
+    <script src="https://telegram.org/js/telegram-web-app.js?56" defer></script>
+    <script is:inline>
+      (function () {
+        function init() {
+          var tg = (window.Telegram && window.Telegram.WebApp) || null;
+          if (!tg) return;
+          try { tg.ready(); } catch (e) {}
+          try { tg.expand(); } catch (e) {}
+          // Bot API 7.7+ — выключает вертикальные свайпы для сворачивания
+          try { if (typeof tg.disableVerticalSwipes === 'function') tg.disableVerticalSwipes(); } catch (e) {}
+          // Bot API 8.0+ — режим fullscreen на мобильном
+          try { if (typeof tg.requestFullscreen === 'function') tg.requestFullscreen(); } catch (e) {}
+          // Закрепить viewport — на iOS Telegram WebApp иногда нужен повторный expand при resize
+          try {
+            tg.onEvent && tg.onEvent('viewportChanged', function (ev) {
+              if (ev && ev.isStateStable === false) return;
+              try { tg.expand(); } catch (e) {}
+            });
+          } catch (e) {}
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', init);
+          window.addEventListener('load', init);
+        } else {
+          init();
+        }
+      })();
+    </script>
   </body>
 </html>
