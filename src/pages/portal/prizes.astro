@@ -233,7 +233,6 @@ const CAT_LABELS: Record<string, string> = {
                 <th class="w-[90px] p-2 text-right">Сумма</th>
                 <th class="w-[100px] p-2 text-right">Рекоменд.</th>
                 <th class="w-[150px] p-2 text-right">Цена,&nbsp;игр.&nbsp;₽<div class="text-[10px] font-normal text-body-muted">(заданная или рекоменд.)</div></th>
-                <th class="w-[110px] p-2 text-right">Сумма&nbsp;игр.&nbsp;₽</th>
                 <th class="w-[80px] p-2 text-right" title="Сколько дней ребёнку нужно копить, если откажется от телефона">Копить</th>
                 <th class="w-[80px] p-2 text-center" title="Сколько раз приз уже выдан">Выдано</th>
                 <th class="w-[90px] p-2"></th>
@@ -345,13 +344,29 @@ const CAT_LABELS: Record<string, string> = {
       </div>
 
     {/* ── Modal: Выдать приз ребёнку ─────────────────────────────────── */}
-    <dialog id="give-dialog" class="rounded-[16px] border border-border p-0 backdrop:bg-black/40">
-      <form method="dialog" enctype="multipart/form-data" class="w-[min(540px,95vw)] p-5">
+    <dialog id="give-dialog"
+            class="aida-modal-center rounded-[16px] border border-border p-0 backdrop:bg-black/50">
+      <form method="dialog" enctype="multipart/form-data" class="aida-modal-form">
         <h3 class="text-[18px] font-semibold text-navy-950">
           Выдать приз: <span id="give-prize-name" class="text-primary"></span>
         </h3>
         <input type="hidden" id="give-prize-id" />
         <input type="hidden" id="give-prize-name-hidden" />
+
+        {/* Памятка с вопросами для видео — для вожатого/руководителя */}
+        <div class="mt-3 rounded-[10px] border border-amber-300 bg-amber-50 p-3 text-[13px]">
+          <div class="mb-1 flex items-center gap-1.5 font-semibold text-amber-900">
+            <i class="bi bi-camera-video-fill" aria-hidden="true"></i> Спроси на видео:
+          </div>
+          <ol class="ml-5 list-decimal space-y-0.5 text-amber-900">
+            <li>Почему ты копил именно на этот приз?</li>
+            <li>Что для тебя значит этот приз?</li>
+            <li>Как будешь использовать / с кем поделишься?</li>
+            <li>Сколько дней копил, от чего отказался?</li>
+            <li>Что посоветуешь другим ребятам?</li>
+          </ol>
+        </div>
+
         <div class="mt-4 space-y-3">
           <label class="block">
             <span class="block text-[13px] font-medium text-body-muted">Кому выдаём</span>
@@ -372,30 +387,30 @@ const CAT_LABELS: Record<string, string> = {
             <span class="block text-[13px] font-medium text-body-muted">Фото или видео вручения (обязательно)</span>
             <input id="give-file" type="file" accept="image/*,video/*" capture="environment"
                    class="mt-1 block w-full rounded-[10px] border border-dashed border-border bg-page p-2 text-[13px]" />
-            <span class="mt-1 block text-[12px] text-body-muted">Можно сразу с камеры телефона</span>
+            <span class="mt-1 block text-[12px] text-body-muted">На телефоне сразу откроется камера. Снимай горизонтально, задай 1-2 вопроса из списка выше.</span>
           </label>
           <label class="block">
             <span class="block text-[13px] font-medium text-body-muted">Заметка (необязательно)</span>
             <textarea id="give-note" rows="2" data-voice data-voice-append
                       class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-[14px] focus:border-primary focus:outline-none"
-                      placeholder="За что выдан, контекст…"></textarea>
+                      placeholder="За что выдан, контекст, ответы ребёнка…"></textarea>
           </label>
         </div>
-        <div class="mt-5 flex items-center justify-end gap-2">
+        <div class="mt-5 flex flex-wrap items-center justify-end gap-2">
           <span id="give-status" class="mr-auto text-[13px] text-body-muted"></span>
           <button type="button" id="give-cancel"
                   class="rounded-[10px] border border-border bg-white px-4 py-2 text-[14px] text-navy-950 hover:border-primary">Отмена</button>
           <button type="button" id="give-save"
                   class="rounded-[10px] border border-primary bg-primary px-4 py-2 text-[14px] text-white hover:opacity-90">
-            <i class="bi bi-gift-fill" aria-hidden="true"></i> Выдать и сохранить фото
+            <i class="bi bi-gift-fill" aria-hidden="true"></i> Выдать и сохранить
           </button>
         </div>
       </form>
     </dialog>
 
     {/* ── Modal: Добавить кастомный приз ──────────────────────────────── */}
-    <dialog id="custom-dialog" class="rounded-[16px] border border-border p-0 backdrop:bg-black/40">
-      <form method="dialog" enctype="multipart/form-data" class="w-[min(540px,95vw)] p-5">
+    <dialog id="custom-dialog" class="aida-modal-center rounded-[16px] border border-border p-0 backdrop:bg-black/50">
+      <form method="dialog" enctype="multipart/form-data" class="aida-modal-form">
         <h3 class="text-[18px] font-semibold text-navy-950">Новый приз в каталог</h3>
         <div class="mt-4 space-y-3">
           <label class="block">
@@ -508,8 +523,8 @@ const CAT_LABELS: Record<string, string> = {
     </div>
 
     {/* Модалка добавления / редактирования */}
-    <dialog id="activity-dialog" class="rounded-[16px] border border-border p-0 backdrop:bg-black/30">
-      <form method="dialog" class="w-[min(560px,95vw)] p-5">
+    <dialog id="activity-dialog" class="aida-modal-center rounded-[16px] border border-border p-0 backdrop:bg-black/50">
+      <form method="dialog" class="aida-modal-form">
         <h3 class="text-[18px] font-semibold text-navy-950">Активность</h3>
         <input type="hidden" id="act-id" />
         <div class="mt-4 grid gap-3">
@@ -610,6 +625,42 @@ const CAT_LABELS: Record<string, string> = {
     </div>
   </section>
 
+  <style is:global>
+    /* Универсальное центрирование модальных <dialog> и адаптив под мобилу. */
+    dialog.aida-modal-center {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      margin: 0;
+      max-width: min(560px, 95vw);
+      max-height: 92vh;
+      overflow: hidden; /* скролл будет внутри form */
+    }
+    dialog.aida-modal-center .aida-modal-form {
+      width: 100%;
+      max-height: 92vh;
+      overflow-y: auto;
+      padding: 20px;
+      -webkit-overflow-scrolling: touch;
+    }
+    @media (max-width: 480px) {
+      dialog.aida-modal-center {
+        max-width: 100vw;
+        max-height: 100vh;
+        width: 100vw;
+        height: auto;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        transform: none;
+        border-radius: 16px 16px 0 0;
+      }
+      dialog.aida-modal-center .aida-modal-form {
+        max-height: 88vh;
+      }
+    }
+  </style>
   <script is:inline>
     (function () {
       const LS_KEY = 'aidacamp.portal.prizes.v1';        // старое хранение
