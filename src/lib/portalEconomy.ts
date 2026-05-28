@@ -8,6 +8,7 @@ export interface PrizeState {
   hidden: boolean;
   bongere_price: number | null;
   custom_photo: string | null;
+  remaining_qty: number | null;
   updated_at: string;
   updated_by: string | null;
 }
@@ -40,13 +41,37 @@ async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promis
 export async function listPrizeStates(): Promise<PrizeState[]> {
   const r = await withClient(async (c) => {
     const q = await c.query(
-      `SELECT prize_id, hidden, bongere_price, custom_photo,
+      `SELECT prize_id, hidden, bongere_price, custom_photo, remaining_qty,
               to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SSOF') AS updated_at, updated_by
          FROM portal_prize_state`
     );
-    return q.rows as PrizeState[];
+    return q.rows.map((r: any) => ({
+      ...r,
+      bongere_price: r.bongere_price == null ? null : Number(r.bongere_price),
+      remaining_qty: r.remaining_qty == null ? null : Number(r.remaining_qty),
+    })) as PrizeState[];
   });
   return r ?? [];
+}
+
+/** Уменьшает оставшееся количество приза на 1 (для hardcoded — в portal_prize_state.remaining_qty). */
+export async function decrementPrizeRemaining(prizeId: string, initialQty: number): Promise<number> {
+  const r = await withClient(async (c) => {
+    // Если строки ещё нет, создаём с remaining_qty = initialQty - 1
+    // Если есть и remaining_qty NULL, ставим initialQty - 1
+    // Если есть число, уменьшаем на 1 (не ниже 0)
+    const q = await c.query(
+      `INSERT INTO portal_prize_state (prize_id, hidden, remaining_qty, updated_at)
+       VALUES ($1, FALSE, GREATEST($2::int - 1, 0), NOW())
+       ON CONFLICT (prize_id) DO UPDATE SET
+         remaining_qty = GREATEST(COALESCE(portal_prize_state.remaining_qty, $2::int) - 1, 0),
+         updated_at = NOW()
+       RETURNING remaining_qty`,
+      [prizeId, initialQty]
+    );
+    return Number(q.rows[0]?.remaining_qty ?? 0);
+  });
+  return r ?? 0;
 }
 
 export async function upsertPrizeState(

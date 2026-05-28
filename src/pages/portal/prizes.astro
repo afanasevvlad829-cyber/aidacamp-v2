@@ -3,16 +3,41 @@ export const prerender = false;
 import PortalLayout from '../../layouts/PortalLayout.astro';
 import { PRIZES } from '../../lib/portalPrizes';
 import { listPrizeStates, listActivities } from '../../lib/portalEconomy';
+import { listCustomPrizes, countIssuancesByPrize } from '../../lib/portalPrizeOps';
+import { listKids } from '../../lib/portalKid';
 
 const role = Astro.locals.portalRole!;
 if (!['admin', 'rukovoditel'].includes(role)) {
   return Astro.redirect('/portal/');
 }
 
-const [prizeStates, activities] = await Promise.all([listPrizeStates(), listActivities()]);
+const [prizeStates, activities, customPrizes, issuanceCounts, kids] = await Promise.all([
+  listPrizeStates(),
+  listActivities(),
+  listCustomPrizes(),
+  countIssuancesByPrize(),
+  listKids(false),
+]);
 const stateById = new Map(prizeStates.map((s) => [s.prize_id, s]));
 
-const totalAll = PRIZES.reduce((s, p) => s + p.price * p.qty, 0);
+// Объединяем hardcoded + кастомные призы в одном списке.
+const ALL_PRIZES = [
+  ...PRIZES,
+  ...customPrizes.map((c) => ({
+    id: c.slug,
+    name: c.name,
+    price: c.ozon_price ?? 0,
+    qty: c.qty,
+    category: c.category ?? 'Кастом',
+    img: c.img_url ?? undefined,
+    url: undefined as string | undefined,
+    sources: undefined as string[] | undefined,
+    isCustom: true,
+    customId: c.id,
+  })),
+];
+
+const totalAll = ALL_PRIZES.reduce((s, p) => s + p.price * p.qty, 0);
 const fmtRub = (n: number) => new Intl.NumberFormat('ru-RU').format(Math.round(n)) + ' ₽';
 
 const CAT_LABELS: Record<string, string> = {
@@ -43,10 +68,10 @@ const CAT_LABELS: Record<string, string> = {
     </div>
     <ul class="ml-5 list-disc space-y-1">
       <li><b>Валюта</b> — игровой рубль. Якорь: 1 минута телефона = 10 ₽. Выдача — 600 ₽/день (= час телефона). Без условий.</li>
-      <li><b>Цель цен на лоты:</b> изъять <b>70-80%</b> игровой валюты из оборота через групповые покупки и индивидуальные призы.</li>
-      <li><b>Формула лота</b> = <code>группа × выдача × дней копления × доля дохода (30-50%)</code>. Для смены 35×600 — лот ≈ 20 000 ₽ за 2-3 дня скидывания.</li>
+      <li><b>Цель цен:</b> изъять <b>70-80%</b> игровой валюты из оборота через призы и активности.</li>
+      <li><b>Формула активности</b> = <code>группа × выдача × дней копления × доля дохода (30-50%)</code>. Для смены 35×600 — активность ≈ 20 000 ₽ за 2-3 дня скидывания.</li>
       <li><b>Индивидуальный приз</b> — 3-8 дней сбережений = 1 800–4 800 ₽.</li>
-      <li><b>Повторная покупка</b> того же лота дорожает <b>×1.5</b> (вторая «Ночь с телефонами» уже не 20 000, а 30 000).</li>
+      <li><b>Повторная покупка</b> той же активности дорожает <b>×1.5</b> (вторая «Ночь с телефонами» уже не 20 000, а 30 000).</li>
       <li>Эффект из канона: <b>«На третий день телефон почти никто не покупает — жизнь выигрывает конкуренцию у экрана».</b></li>
     </ul>
   </div>
@@ -77,38 +102,16 @@ const CAT_LABELS: Record<string, string> = {
         <span class="block text-[13px] font-medium text-body-muted">Цель изъятия, %</span>
         <input id="set-target-extract" type="number" min="50" max="100" step="5" value="75"
                class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
-        <span class="mt-1 block text-[12px] text-body-muted">сколько денег вытащить из оборота лотами</span>
+        <span class="mt-1 block text-[12px] text-body-muted">сколько денег вытащить через призы и активности</span>
       </label>
     </div>
 
-    <div class="mt-3">
-      <div class="mb-2 text-[13px] font-semibold uppercase tracking-wide text-body-muted">
-        Цены физических призов (Ozon → игр. ₽)
-      </div>
-      <div class="grid gap-3 sm:grid-cols-3">
-        <label class="block">
-          <span class="block text-[13px] font-medium text-body-muted">Мин. дней копления (дешёвый)</span>
-          <input id="set-min-days" type="number" min="1" max="14" step="1" value="3"
-                 class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
-        </label>
-        <label class="block">
-          <span class="block text-[13px] font-medium text-body-muted">Макс. дней копления (премиум)</span>
-          <input id="set-max-days" type="number" min="1" max="14" step="1" value="8"
-                 class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
-        </label>
-        <label class="block">
-          <span class="block text-[13px] font-medium text-body-muted">Порог «коллективного» приза, ₽ Ozon</span>
-          <input id="set-mega-threshold" type="number" min="500" step="500" value="5000"
-                 class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
-          <span class="mt-1 block text-[12px] text-body-muted">Выше — лот для всего лагеря</span>
-        </label>
-      </div>
-      <label class="mt-2 inline-flex items-center gap-2 text-[13px] text-body-muted">
-        <input id="set-use-markup" type="checkbox"
-               class="rounded border-border focus:ring-primary" />
-        Или использовать простую наценку ×
+    <div class="mt-3 grid gap-3 sm:grid-cols-2">
+      <label class="block">
+        <span class="block text-[13px] font-medium text-body-muted">Наценка для физических призов, ×</span>
         <input id="set-markup" type="number" min="1" step="0.1" value="3"
-               class="ml-2 w-[80px] rounded-[8px] border border-border bg-white px-2 py-1 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
+               class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
+        <span class="mt-1 block text-[12px] text-body-muted">Рекомендованная цена = Ozon × наценка, за 1 шт.</span>
       </label>
     </div>
 
@@ -155,7 +158,7 @@ const CAT_LABELS: Record<string, string> = {
         <div class="mt-0.5 font-mono tabular-nums text-[18px] font-semibold text-primary">
           <span id="kpi-target-extract">—</span>
         </div>
-        <div class="text-[12px] text-primary/80">через лоты + призы</div>
+        <div class="text-[12px] text-primary/80">через призы + активности</div>
       </div>
       <div class="rounded-[10px] border border-border bg-page p-3">
         <div class="text-[13px] text-body-muted">За всю смену с ребёнка</div>
@@ -206,11 +209,18 @@ const CAT_LABELS: Record<string, string> = {
     </div>
 
     <div class="mb-6">
-      <h2 class="mb-2 flex items-center gap-2 text-[16px] font-semibold text-navy-950">
-        <i class="bi bi-receipt text-primary" aria-hidden="true"></i>
-        Каталог призов
-        <span class="text-[13px] font-normal text-body-muted">· {PRIZES.length} позиций · {PRIZES.reduce((s, p) => s + p.qty, 0)} шт · {fmtRub(totalAll)}</span>
-      </h2>
+      <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h2 class="flex items-center gap-2 text-[16px] font-semibold text-navy-950">
+          <i class="bi bi-receipt text-primary" aria-hidden="true"></i>
+          Каталог призов
+          <span class="text-[13px] font-normal text-body-muted">· {ALL_PRIZES.length} позиций · {ALL_PRIZES.reduce((s, p) => s + p.qty, 0)} шт · {fmtRub(totalAll)}</span>
+        </h2>
+        <button id="btn-add-custom" type="button"
+          class="rounded-[10px] border border-primary bg-primary text-white px-3 py-1.5 text-[14px] hover:opacity-90">
+          <i class="bi bi-plus-lg" aria-hidden="true"></i>
+          Добавить свой приз
+        </button>
+      </div>
 
       <div class="overflow-x-auto rounded-[14px] border border-border bg-white card-shadow">
           <table class="w-full text-[14px]">
@@ -219,19 +229,21 @@ const CAT_LABELS: Record<string, string> = {
                 <th class="w-[60px] p-2"></th>
                 <th class="p-2">Наименование</th>
                 <th class="w-[80px] p-2 text-right">Цена&nbsp;Ozon</th>
-                <th class="w-[50px] p-2 text-right">Кол-во</th>
+                <th class="w-[70px] p-2 text-right" title="Остаток / закуплено">Кол-во</th>
                 <th class="w-[90px] p-2 text-right">Сумма</th>
                 <th class="w-[100px] p-2 text-right">Рекоменд.</th>
-                <th class="w-[130px] p-2 text-right">Цена,&nbsp;игр.&nbsp;₽</th>
-                <th class="w-[90px] p-2 text-right" title="Сколько дней ребёнку нужно копить, если откажется от телефона">Копить</th>
-                <th class="w-[40px] p-2"></th>
+                <th class="w-[150px] p-2 text-right">Цена,&nbsp;игр.&nbsp;₽<div class="text-[10px] font-normal text-body-muted">(заданная или рекоменд.)</div></th>
+                <th class="w-[80px] p-2 text-right" title="Сколько дней ребёнку нужно копить, если откажется от телефона">Копить</th>
+                <th class="w-[80px] p-2 text-center" title="Сколько раз приз уже выдан">Выдано</th>
+                <th class="w-[90px] p-2"></th>
               </tr>
             </thead>
             <tbody>
-              {PRIZES.map((p) => {
+              {ALL_PRIZES.map((p) => {
                 const st = stateById.get(p.id);
                 return (
                   <tr data-prize-row data-id={p.id} data-price={p.price} data-qty={p.qty}
+                      data-remaining={st?.remaining_qty ?? p.qty}
                       data-default-img={p.img ?? ''}
                       data-hidden={st?.hidden ? '1' : '0'}
                       data-bongere={st?.bongere_price ?? ''}
@@ -262,19 +274,61 @@ const CAT_LABELS: Record<string, string> = {
                       </div>
                     </td>
                     <td class="p-2 text-right font-mono tabular-nums">{fmtRub(p.price)}</td>
-                    <td class="p-2 text-right font-mono tabular-nums">{p.qty}</td>
+                    <td class="p-2 text-right font-mono tabular-nums" data-qty-cell>
+                      <span data-remaining-text class={(st?.remaining_qty ?? p.qty) === 0 ? 'text-red-600 font-bold' : ''}>{st?.remaining_qty ?? p.qty}</span>
+                      <span class="text-body-muted">/{p.qty}</span>
+                    </td>
                     <td class="p-2 text-right font-mono tabular-nums font-semibold">{fmtRub(p.price * p.qty)}</td>
                     <td class="p-2 text-right font-mono tabular-nums text-primary" data-recommended></td>
                     <td class="p-2 text-right">
                       <div class="flex items-center justify-end gap-1">
                         <input type="number" min="0" step="50" data-bongere-input
-                               class="w-[90px] rounded-[8px] border border-border bg-white px-2 py-1 text-right font-mono tabular-nums focus:border-primary focus:outline-none"
+                               class="w-[80px] rounded-[8px] border border-border bg-white px-2 py-1 text-right font-mono tabular-nums focus:border-primary focus:outline-none"
                                placeholder="—" value={st?.bongere_price ?? ''} />
                         <span class="text-body-muted">₽</span>
+                        <span data-save-flag class="inline-flex h-5 w-5 items-center justify-center text-emerald-600 opacity-0 transition-opacity" title="Сохранено">
+                          <i class="bi bi-check-circle-fill text-[14px]" aria-hidden="true"></i>
+                        </span>
+                        <button type="button" data-reset-price
+                                class="ml-0.5 inline-flex h-6 w-6 items-center justify-center rounded-[6px] text-body-muted hover:bg-primary-soft hover:text-primary"
+                                title="Сбросить к рекомендованной">
+                          <i class="bi bi-arrow-counterclockwise text-[12px]" aria-hidden="true"></i>
+                        </button>
                       </div>
                     </td>
+                    <td class="p-2 text-right font-mono tabular-nums font-semibold text-navy-950" data-sum-game></td>
                     <td class="p-2 text-right font-mono tabular-nums" data-save-days></td>
+                    <td class="p-2 text-center">
+                      {issuanceCounts[p.id] > 0 ? (
+                        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[12px] font-semibold text-emerald-800">
+                          <i class="bi bi-check-circle-fill" aria-hidden="true"></i>{issuanceCounts[p.id]}
+                        </span>
+                      ) : (
+                        <span class="text-[12px] text-body-muted">—</span>
+                      )}
+                    </td>
                     <td class="p-2 text-right">
+                      {(st?.remaining_qty ?? p.qty) > 0 ? (
+                        <button type="button" data-give
+                                data-prize-id={p.id}
+                                data-prize-name={p.name}
+                                class="mr-1 inline-flex items-center gap-1 rounded-[8px] border border-primary bg-primary text-white px-2 py-1 text-[12px] hover:opacity-90"
+                                title="Выдать ребёнку">
+                          <i class="bi bi-gift-fill" aria-hidden="true"></i> выдать
+                        </button>
+                      ) : (
+                        <span class="mr-1 inline-flex items-center gap-1 rounded-[8px] border border-border bg-page px-2 py-1 text-[12px] text-body-muted"
+                              title="Призов больше нет на складе">
+                          <i class="bi bi-x-circle" aria-hidden="true"></i> закончились
+                        </span>
+                      )}
+                      {(p as any).isCustom && (
+                        <button type="button" data-archive-custom data-custom-id={(p as any).customId}
+                                class="inline-flex h-7 w-7 items-center justify-center rounded-[8px] text-body-muted hover:bg-red-50 hover:text-red-600"
+                                title="Удалить кастомный приз">
+                          <i class="bi bi-trash" aria-hidden="true"></i>
+                        </button>
+                      )}
                       <button type="button" data-toggle-hidden
                               class="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-body-muted transition hover:bg-red-50 hover:text-red-600"
                               title={st?.hidden ? 'Показать (вернуть в список)' : 'Скрыть'}>
@@ -288,6 +342,121 @@ const CAT_LABELS: Record<string, string> = {
           </table>
         </div>
       </div>
+
+    {/* ── Modal: Выдать приз ребёнку ─────────────────────────────────── */}
+    <dialog id="give-dialog"
+            class="aida-modal-center rounded-[16px] border border-border p-0 backdrop:bg-black/50">
+      <form method="dialog" enctype="multipart/form-data" class="aida-modal-form">
+        <h3 class="text-[18px] font-semibold text-navy-950">
+          Выдать приз: <span id="give-prize-name" class="text-primary"></span>
+        </h3>
+        <input type="hidden" id="give-prize-id" />
+        <input type="hidden" id="give-prize-name-hidden" />
+
+        {/* Памятка с вопросами для видео — для вожатого/руководителя */}
+        <div class="mt-3 rounded-[10px] border border-amber-300 bg-amber-50 p-3 text-[13px]">
+          <div class="mb-1 flex items-center gap-1.5 font-semibold text-amber-900">
+            <i class="bi bi-camera-video-fill" aria-hidden="true"></i> Спроси на видео:
+          </div>
+          <ol class="ml-5 list-decimal space-y-0.5 text-amber-900">
+            <li>Почему ты копил именно на этот приз?</li>
+            <li>Что для тебя значит этот приз?</li>
+            <li>Как будешь использовать / с кем поделишься?</li>
+            <li>Сколько дней копил, от чего отказался?</li>
+            <li>Что посоветуешь другим ребятам?</li>
+          </ol>
+        </div>
+
+        <div class="mt-4 space-y-3">
+          <label class="block">
+            <span class="block text-[13px] font-medium text-body-muted">Кому выдаём</span>
+            <select id="give-kid" required
+                    class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 focus:border-primary focus:outline-none">
+              <option value="">— выбери ребёнка —</option>
+              {kids.map((k) => (
+                <option value={k.id} data-name={k.name}>{k.name}{k.room_number ? ` · к.${k.room_number}` : ''}{k.age ? ` · ${k.age} лет` : ''}</option>
+              ))}
+            </select>
+          </label>
+          <label class="block">
+            <span class="block text-[13px] font-medium text-body-muted">Цена в игровых ₽ (сколько отдал ребёнок)</span>
+            <input id="give-price" type="number" min="0" step="50"
+                   class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono focus:border-primary focus:outline-none" />
+          </label>
+          <label class="block">
+            <span class="block text-[13px] font-medium text-body-muted">Фото или видео вручения (обязательно)</span>
+            <input id="give-file" type="file" accept="image/*,video/*" capture="environment"
+                   class="mt-1 block w-full rounded-[10px] border border-dashed border-border bg-page p-2 text-[13px]" />
+            <span class="mt-1 block text-[12px] text-body-muted">На телефоне сразу откроется камера. Снимай горизонтально, задай 1-2 вопроса из списка выше.</span>
+          </label>
+          <label class="block">
+            <span class="block text-[13px] font-medium text-body-muted">Заметка (необязательно)</span>
+            <textarea id="give-note" rows="2" data-voice data-voice-append
+                      class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-[14px] focus:border-primary focus:outline-none"
+                      placeholder="За что выдан, контекст, ответы ребёнка…"></textarea>
+          </label>
+        </div>
+        <div class="mt-5 flex flex-wrap items-center justify-end gap-2">
+          <span id="give-status" class="mr-auto text-[13px] text-body-muted"></span>
+          <button type="button" id="give-cancel"
+                  class="rounded-[10px] border border-border bg-white px-4 py-2 text-[14px] text-navy-950 hover:border-primary">Отмена</button>
+          <button type="button" id="give-save"
+                  class="rounded-[10px] border border-primary bg-primary px-4 py-2 text-[14px] text-white hover:opacity-90">
+            <i class="bi bi-gift-fill" aria-hidden="true"></i> Выдать и сохранить
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    {/* ── Modal: Добавить кастомный приз ──────────────────────────────── */}
+    <dialog id="custom-dialog" class="aida-modal-center rounded-[16px] border border-border p-0 backdrop:bg-black/50">
+      <form method="dialog" enctype="multipart/form-data" class="aida-modal-form">
+        <h3 class="text-[18px] font-semibold text-navy-950">Новый приз в каталог</h3>
+        <div class="mt-4 space-y-3">
+          <label class="block">
+            <span class="block text-[13px] font-medium text-body-muted">Название</span>
+            <input id="cust-name" type="text" required
+                   class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 focus:border-primary focus:outline-none" />
+          </label>
+          <label class="block">
+            <span class="block text-[13px] font-medium text-body-muted">Описание</span>
+            <textarea id="cust-desc" rows="2" data-voice data-voice-append
+                      class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-[14px] focus:border-primary focus:outline-none"></textarea>
+          </label>
+          <div class="grid gap-3 sm:grid-cols-3">
+            <label class="block">
+              <span class="block text-[13px] font-medium text-body-muted">Категория</span>
+              <input id="cust-cat" type="text" placeholder="напр. Опыты / Сувенир"
+                     class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 focus:border-primary focus:outline-none" />
+            </label>
+            <label class="block">
+              <span class="block text-[13px] font-medium text-body-muted">Цена Ozon, ₽</span>
+              <input id="cust-price" type="number" min="0" step="10"
+                     class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono focus:border-primary focus:outline-none" />
+            </label>
+            <label class="block">
+              <span class="block text-[13px] font-medium text-body-muted">Количество</span>
+              <input id="cust-qty" type="number" min="1" step="1" value="1"
+                     class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono focus:border-primary focus:outline-none" />
+            </label>
+          </div>
+          <label class="block">
+            <span class="block text-[13px] font-medium text-body-muted">Фотография приза</span>
+            <input id="cust-file" type="file" accept="image/*"
+                   class="mt-1 block w-full rounded-[10px] border border-dashed border-border bg-page p-2 text-[13px]" />
+          </label>
+        </div>
+        <div class="mt-5 flex items-center justify-end gap-2">
+          <span id="cust-status" class="mr-auto text-[13px] text-body-muted"></span>
+          <button type="button" id="cust-cancel"
+                  class="rounded-[10px] border border-border bg-white px-4 py-2 text-[14px] text-navy-950 hover:border-primary">Отмена</button>
+          <button type="button" id="cust-save"
+                  class="rounded-[10px] border border-primary bg-primary px-4 py-2 text-[14px] text-white hover:opacity-90">
+            <i class="bi bi-plus-lg" aria-hidden="true"></i> Сохранить приз
+          </button>
+        </div>
+      </form>
+    </dialog>
   </section>
 
   {/* ── Tab: Activities ──────────────────────────────────────────────────── */}
@@ -354,8 +523,8 @@ const CAT_LABELS: Record<string, string> = {
     </div>
 
     {/* Модалка добавления / редактирования */}
-    <dialog id="activity-dialog" class="rounded-[16px] border border-border p-0 backdrop:bg-black/30">
-      <form method="dialog" class="w-[min(560px,95vw)] p-5">
+    <dialog id="activity-dialog" class="aida-modal-center rounded-[16px] border border-border p-0 backdrop:bg-black/50">
+      <form method="dialog" class="aida-modal-form">
         <h3 class="text-[18px] font-semibold text-navy-950">Активность</h3>
         <input type="hidden" id="act-id" />
         <div class="mt-4 grid gap-3">
@@ -456,6 +625,42 @@ const CAT_LABELS: Record<string, string> = {
     </div>
   </section>
 
+  <style is:global>
+    /* Универсальное центрирование модальных <dialog> и адаптив под мобилу. */
+    dialog.aida-modal-center {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      margin: 0;
+      max-width: min(560px, 95vw);
+      max-height: 92vh;
+      overflow: hidden; /* скролл будет внутри form */
+    }
+    dialog.aida-modal-center .aida-modal-form {
+      width: 100%;
+      max-height: 92vh;
+      overflow-y: auto;
+      padding: 20px;
+      -webkit-overflow-scrolling: touch;
+    }
+    @media (max-width: 480px) {
+      dialog.aida-modal-center {
+        max-width: 100vw;
+        max-height: 100vh;
+        width: 100vw;
+        height: auto;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        transform: none;
+        border-radius: 16px 16px 0 0;
+      }
+      dialog.aida-modal-center .aida-modal-form {
+        max-height: 88vh;
+      }
+    }
+  </style>
   <script is:inline>
     (function () {
       const LS_KEY = 'aidacamp.portal.prizes.v1';        // старое хранение
@@ -471,18 +676,14 @@ const CAT_LABELS: Record<string, string> = {
       }
       const set = Object.assign({
         kids: 35, days: 10, phoneMin: 10, markup: 3, round: 50, daily: 600, targetExtract: 75,
-        minDays: 3, maxDays: 8, megaThreshold: 5000, useMarkup: false,
       }, loadSettings());
       const idMap = {
         'set-kids':'kids','set-days':'days','set-phone-min':'phoneMin','set-markup':'markup','set-round':'round','set-daily':'daily','set-target-extract':'targetExtract',
-        'set-min-days':'minDays','set-max-days':'maxDays','set-mega-threshold':'megaThreshold',
       };
       for (const id of Object.keys(idMap)) {
         const el = document.getElementById(id);
         if (el) el.value = String(set[idMap[id]] ?? '');
       }
-      const useMarkupEl = document.getElementById('set-use-markup');
-      if (useMarkupEl) useMarkupEl.checked = !!set.useMarkup;
 
       function readSettings() {
         const num = (id, min) => Math.max(min, Number(document.getElementById(id).value) || min);
@@ -494,10 +695,6 @@ const CAT_LABELS: Record<string, string> = {
           round: num('set-round', 1),
           daily: Math.max(0, Number(document.getElementById('set-daily').value) || 0),
           targetExtract: Math.max(0, Math.min(100, Number(document.getElementById('set-target-extract').value) || 75)),
-          minDays: num('set-min-days', 1),
-          maxDays: num('set-max-days', 1),
-          megaThreshold: Math.max(0, Number(document.getElementById('set-mega-threshold').value) || 0),
-          useMarkup: !!(document.getElementById('set-use-markup') && document.getElementById('set-use-markup').checked),
         };
       }
       function dailyPotential(s) { return s.daily; }
@@ -529,44 +726,14 @@ const CAT_LABELS: Record<string, string> = {
       const prizeRows = Array.from(document.querySelectorAll('[data-prize-row]'));
       let showHidden = false;
 
-      // Диапазон Ozon-цен по видимым позициям — для log-интерполяции дней копления.
-      function ozonRange() {
-        let lo = Infinity, hi = 0;
-        prizeRows.forEach((r) => {
-          if (r.dataset.hidden === '1') return;
-          const p = Number(r.dataset.price || 0);
-          if (p <= 0) return;
-          if (p < lo) lo = p;
-          if (p > hi) hi = p;
-        });
-        if (!isFinite(lo)) lo = 1;
-        return { lo, hi };
-      }
-      // Подсказка цены приза в игровых ₽: либо наценкой ×, либо «копить N дней»
-      // с log-интерполяцией от minDays до maxDays между min/max Ozon-цен.
-      function recommendedBongere(ozonPrice, s, range) {
-        if (s.useMarkup) return roundTo(ozonPrice * s.markup, s.round);
-        // коллективный приз — для дорогой штуки используем формулу группового лота
-        if (ozonPrice >= s.megaThreshold) {
-          // лот для всей смены: цена = N × выдача × дней_копления × 80% (премиум)
-          const days = Math.min(s.maxDays * 2, s.days); // дорогие копят до 2× maxDays или всю смену
-          return roundTo(s.kids * s.daily * days * 0.8, s.round);
-        }
-        // обычный приз — N дней копления, лог-распределение по диапазону цен
-        const { lo, hi } = range;
-        let ratio = 0.5;
-        if (hi > lo) {
-          ratio = (Math.log(Math.max(ozonPrice, lo)) - Math.log(lo)) / (Math.log(hi) - Math.log(lo));
-          ratio = Math.max(0, Math.min(1, ratio));
-        }
-        const days = s.minDays + (s.maxDays - s.minDays) * ratio;
-        return roundTo(s.daily * days, s.round);
+      // Простая формула: рекомендованная цена за 1 шт = Цена Ozon × Наценка
+      function recommendedBongere(ozonPrice, s) {
+        return roundTo(ozonPrice * s.markup, s.round);
       }
 
       function recalcPrizes() {
         const s = readSettings();
         const dp = dailyPotential(s);
-        const range = ozonRange();
         let active = 0, sumBongere = 0, sumRec = 0, sumOzonVisible = 0;
         prizeRows.forEach((r) => {
           const isHidden = r.dataset.hidden === '1';
@@ -577,19 +744,28 @@ const CAT_LABELS: Record<string, string> = {
           const price = Number(r.dataset.price || 0);
           const qty = Number(r.dataset.qty || 0);
           if (!isHidden) sumOzonVisible += price * qty;
-          const rec = recommendedBongere(price, s, range);
-          const isMega = !s.useMarkup && price >= s.megaThreshold;
+          // Рекомендованная цена за 1 шт = Цена Ozon × Наценка
+          const rec = recommendedBongere(price, s);
           const recCell = r.querySelector('[data-recommended]');
-          if (recCell) {
-            recCell.innerHTML = fmt(rec) + ' / шт' +
-              (isMega ? '<div class="text-[11px] text-amber-700 font-semibold">коллективный</div>' : '');
-          }
+          if (recCell) recCell.innerHTML = fmt(rec) + ' / шт';
+          // Цена игровая: либо заданная вручную (input), либо рекомендованная.
+          // Если input пуст — показываем рекомендованную как placeholder.
           const inp = r.querySelector('[data-bongere-input]');
+          if (inp) {
+            inp.placeholder = String(rec);
+            if (inp.dataset.recDefault !== String(rec)) inp.dataset.recDefault = String(rec);
+          }
           const v = inp.value === '' ? null : Number(inp.value);
-          if (!isHidden && v != null && !isNaN(v)) sumBongere += v * qty;
+          // Эффективная цена = ввели → её; иначе → рекомендованная.
+          const effective = (v != null && !isNaN(v)) ? v : rec;
+          if (!isHidden) sumBongere += effective * qty;
           if (!isHidden) sumRec += rec * qty;
-          // Копить N дней — берём установленную цену, иначе рекомендованную
-          const targetPrice = (v != null && !isNaN(v)) ? v : rec;
+          // Подсветим row-сумму игровая
+          const sumGameCell = r.querySelector('[data-sum-game]');
+          if (sumGameCell) sumGameCell.innerHTML = fmt(effective * qty) +
+            (v == null ? '<span class="ml-1 text-[11px] text-body-muted">(авто)</span>' : '');
+          // Копить N дней — от эффективной цены
+          const targetPrice = effective;
           const days = saveDays(targetPrice, dp);
           const cell = r.querySelector('[data-save-days]');
           if (cell) {
@@ -628,7 +804,7 @@ const CAT_LABELS: Record<string, string> = {
         recalcActivities();
       }
 
-      ['set-kids','set-days','set-phone-min','set-markup','set-round','set-daily','set-target-extract','set-min-days','set-max-days','set-mega-threshold','set-use-markup'].forEach((id) => {
+      ['set-kids','set-days','set-phone-min','set-markup','set-round','set-daily','set-target-extract'].forEach((id) => {
         const el = document.getElementById(id);
         el.addEventListener('input', () => {
           const s = readSettings();
@@ -661,14 +837,29 @@ const CAT_LABELS: Record<string, string> = {
         const id = r.dataset.id;
         const inp = r.querySelector('[data-bongere-input]');
         let t;
+        const saveFlag = r.querySelector('[data-save-flag]');
         inp.addEventListener('input', () => {
           clearTimeout(t);
-          t = setTimeout(() => {
+          t = setTimeout(async () => {
             const v = inp.value === '' ? null : Number(inp.value);
             r.dataset.bongere = v == null ? '' : String(v);
-            savePrizeState(id, { bongere_price: v });
+            try {
+              await savePrizeState(id, { bongere_price: v });
+              if (saveFlag) {
+                saveFlag.style.opacity = '1';
+                setTimeout(() => { saveFlag.style.opacity = '0'; }, 1200);
+              }
+            } catch (e) { /* error already logged */ }
             recalcPrizes();
           }, 350);
+        });
+        // Сбросить к рекомендованной → удаляем ручную цену из БД
+        const resetBtn = r.querySelector('[data-reset-price]');
+        if (resetBtn) resetBtn.addEventListener('click', async () => {
+          inp.value = '';
+          r.dataset.bongere = '';
+          await savePrizeState(id, { bongere_price: null });
+          recalcPrizes();
         });
         // Hide / show
         r.querySelector('[data-toggle-hidden]').addEventListener('click', async () => {
@@ -828,6 +1019,108 @@ const CAT_LABELS: Record<string, string> = {
           });
           const jr = await r.json().catch(() => ({}));
           if (jr.ok) location.reload(); else alert('Ошибка: ' + (jr.error || 'unknown'));
+        });
+      });
+
+      // ── Issue prize modal ──
+      const giveDlg = document.getElementById('give-dialog');
+      const giveCancel = document.getElementById('give-cancel');
+      const giveSave = document.getElementById('give-save');
+      const giveStatus = document.getElementById('give-status');
+      document.querySelectorAll('[data-give]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.getElementById('give-prize-id').value = btn.dataset.prizeId;
+          document.getElementById('give-prize-name-hidden').value = btn.dataset.prizeName;
+          document.getElementById('give-prize-name').textContent = btn.dataset.prizeName;
+          document.getElementById('give-kid').value = '';
+          document.getElementById('give-price').value = '';
+          document.getElementById('give-file').value = '';
+          document.getElementById('give-note').value = '';
+          giveStatus.textContent = '';
+          giveDlg.showModal();
+        });
+      });
+      if (giveCancel) giveCancel.addEventListener('click', () => giveDlg.close());
+      if (giveSave) giveSave.addEventListener('click', async () => {
+        const kidSel = document.getElementById('give-kid');
+        const kidId = kidSel.value;
+        if (!kidId) { giveStatus.textContent = 'Выбери ребёнка'; return; }
+        const file = document.getElementById('give-file').files[0];
+        if (!file) { giveStatus.textContent = 'Прикрепи фото или видео'; return; }
+        const kidName = kidSel.options[kidSel.selectedIndex]?.dataset?.name || '';
+        const fd = new FormData();
+        fd.append('action', 'issue');
+        fd.append('prize_id', document.getElementById('give-prize-id').value);
+        fd.append('prize_name', document.getElementById('give-prize-name-hidden').value);
+        fd.append('kid_id', kidId);
+        fd.append('kid_name', kidName);
+        const price = document.getElementById('give-price').value;
+        if (price) fd.append('bongere_price', price);
+        const note = document.getElementById('give-note').value;
+        if (note) fd.append('note', note);
+        fd.append('file', file);
+        giveStatus.textContent = 'Загружаем…';
+        try {
+          const r = await fetch('/api/portal/prize-ops', { method: 'POST', body: fd, credentials: 'include' });
+          const jr = await r.json();
+          if (jr.ok) {
+            giveStatus.textContent = '✓ выдано';
+            setTimeout(() => { giveDlg.close(); location.reload(); }, 600);
+          } else giveStatus.textContent = 'Ошибка: ' + (jr.error || 'unknown');
+        } catch (e) { giveStatus.textContent = 'Сетевая ошибка'; }
+      });
+
+      // ── Custom prize modal ──
+      const custDlg = document.getElementById('custom-dialog');
+      const custCancel = document.getElementById('cust-cancel');
+      const custSave = document.getElementById('cust-save');
+      const custStatus = document.getElementById('cust-status');
+      document.getElementById('btn-add-custom')?.addEventListener('click', () => {
+        ['cust-name','cust-desc','cust-cat','cust-price','cust-file'].forEach((id) => {
+          const el = document.getElementById(id); if (el) el.value = id === 'cust-qty' ? 1 : '';
+        });
+        document.getElementById('cust-qty').value = 1;
+        custStatus.textContent = '';
+        custDlg.showModal();
+      });
+      if (custCancel) custCancel.addEventListener('click', () => custDlg.close());
+      if (custSave) custSave.addEventListener('click', async () => {
+        const name = document.getElementById('cust-name').value.trim();
+        if (!name) { custStatus.textContent = 'Название обязательно'; return; }
+        const fd = new FormData();
+        fd.append('action', 'create_custom');
+        fd.append('name', name);
+        fd.append('description', document.getElementById('cust-desc').value);
+        fd.append('category', document.getElementById('cust-cat').value);
+        const price = document.getElementById('cust-price').value;
+        if (price) fd.append('ozon_price', price);
+        fd.append('qty', document.getElementById('cust-qty').value || '1');
+        const file = document.getElementById('cust-file').files[0];
+        if (file) fd.append('file', file);
+        custStatus.textContent = 'Сохраняем…';
+        try {
+          const r = await fetch('/api/portal/prize-ops', { method: 'POST', body: fd, credentials: 'include' });
+          const jr = await r.json();
+          if (jr.ok) {
+            custStatus.textContent = '✓ добавлен';
+            setTimeout(() => { custDlg.close(); location.reload(); }, 600);
+          } else custStatus.textContent = 'Ошибка: ' + (jr.error || 'unknown');
+        } catch (e) { custStatus.textContent = 'Сетевая ошибка'; }
+      });
+
+      // Archive custom prize
+      document.querySelectorAll('[data-archive-custom]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = Number(btn.dataset.customId);
+          if (!confirm('Удалить этот кастомный приз? (записи о выдачах останутся в журнале)')) return;
+          try {
+            const r = await fetch('/api/portal/prize-ops', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'archive_custom', id }), credentials: 'include',
+            });
+            const jr = await r.json();
+            if (jr.ok) location.reload(); else alert('Ошибка: ' + (jr.error || ''));
+          } catch (e) { alert('Сетевая ошибка'); }
         });
       });
 
