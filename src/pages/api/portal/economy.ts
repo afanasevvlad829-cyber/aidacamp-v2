@@ -34,11 +34,39 @@ export const POST: APIRoute = async ({ cookies, request }) => {
     if (action === 'set_prize') {
       const id = String(body.prize_id || '');
       if (!id) return j({ ok: false, error: 'prize_id required' }, { status: 400 });
-      await upsertPrizeState(id, {
-        hidden: typeof body.hidden === 'boolean' ? body.hidden : undefined,
-        bongere_price: body.bongere_price === null ? null : (body.bongere_price != null ? Number(body.bongere_price) : undefined),
-        custom_photo: typeof body.custom_photo === 'string' ? body.custom_photo : undefined,
-      }, userId);
+      // Различаем три случая для bongere_price:
+      //   - null (явно)  → стереть значение в БД
+      //   - number       → установить
+      //   - undefined    → не трогать
+      const hasPrice = 'bongere_price' in body;
+      const priceVal = hasPrice
+        ? (body.bongere_price === null ? null : Number(body.bongere_price))
+        : undefined;
+      if (hasPrice) {
+        // Используем raw SQL чтобы можно было записать NULL
+        const { default: pg } = await import('pg');
+        const conn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
+        const c = new pg.Client({ connectionString: conn });
+        await c.connect();
+        try {
+          await c.query(
+            `INSERT INTO portal_prize_state (prize_id, hidden, bongere_price, updated_at, updated_by)
+             VALUES ($1, FALSE, $2, NOW(), $3)
+             ON CONFLICT (prize_id) DO UPDATE SET
+               bongere_price = $2,
+               updated_at = NOW(),
+               updated_by = $3`,
+            [id, priceVal, userId]
+          );
+        } finally { await c.end(); }
+      }
+      // Прочие поля (hidden, custom_photo) — через upsertPrizeState с COALESCE
+      if (typeof body.hidden === 'boolean' || typeof body.custom_photo === 'string') {
+        await upsertPrizeState(id, {
+          hidden: typeof body.hidden === 'boolean' ? body.hidden : undefined,
+          custom_photo: typeof body.custom_photo === 'string' ? body.custom_photo : undefined,
+        }, userId);
+      }
       return j({ ok: true });
     }
 

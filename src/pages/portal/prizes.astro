@@ -106,34 +106,12 @@ const CAT_LABELS: Record<string, string> = {
       </label>
     </div>
 
-    <div class="mt-3">
-      <div class="mb-2 text-[13px] font-semibold uppercase tracking-wide text-body-muted">
-        Цены физических призов (Ozon → игр. ₽)
-      </div>
-      <div class="grid gap-3 sm:grid-cols-3">
-        <label class="block">
-          <span class="block text-[13px] font-medium text-body-muted">Мин. дней копления (дешёвый)</span>
-          <input id="set-min-days" type="number" min="1" max="14" step="1" value="3"
-                 class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
-        </label>
-        <label class="block">
-          <span class="block text-[13px] font-medium text-body-muted">Макс. дней копления (премиум)</span>
-          <input id="set-max-days" type="number" min="1" max="14" step="1" value="8"
-                 class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
-        </label>
-        <label class="block">
-          <span class="block text-[13px] font-medium text-body-muted">Порог «коллективного» приза, ₽ Ozon</span>
-          <input id="set-mega-threshold" type="number" min="500" step="500" value="5000"
-                 class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
-          <span class="mt-1 block text-[12px] text-body-muted">Выше — лот для всего лагеря</span>
-        </label>
-      </div>
-      <label class="mt-2 inline-flex items-center gap-2 text-[13px] text-body-muted">
-        <input id="set-use-markup" type="checkbox"
-               class="rounded border-border focus:ring-primary" />
-        Или использовать простую наценку ×
+    <div class="mt-3 grid gap-3 sm:grid-cols-2">
+      <label class="block">
+        <span class="block text-[13px] font-medium text-body-muted">Наценка для физических призов, ×</span>
         <input id="set-markup" type="number" min="1" step="0.1" value="3"
-               class="ml-2 w-[80px] rounded-[8px] border border-border bg-white px-2 py-1 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
+               class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono tabular-nums focus:border-primary focus:outline-none" />
+        <span class="mt-1 block text-[12px] text-body-muted">Рекомендованная цена = Ozon × наценка, за 1 шт.</span>
       </label>
     </div>
 
@@ -254,9 +232,10 @@ const CAT_LABELS: Record<string, string> = {
                 <th class="w-[50px] p-2 text-right">Кол-во</th>
                 <th class="w-[90px] p-2 text-right">Сумма</th>
                 <th class="w-[100px] p-2 text-right">Рекоменд.</th>
-                <th class="w-[130px] p-2 text-right">Цена,&nbsp;игр.&nbsp;₽</th>
+                <th class="w-[150px] p-2 text-right">Цена,&nbsp;игр.&nbsp;₽<div class="text-[10px] font-normal text-body-muted">(заданная или рекоменд.)</div></th>
+                <th class="w-[110px] p-2 text-right">Сумма&nbsp;игр.&nbsp;₽</th>
                 <th class="w-[80px] p-2 text-right" title="Сколько дней ребёнку нужно копить, если откажется от телефона">Копить</th>
-                <th class="w-[90px] p-2 text-center" title="Сколько раз приз уже выдан">Выдано</th>
+                <th class="w-[80px] p-2 text-center" title="Сколько раз приз уже выдан">Выдано</th>
                 <th class="w-[90px] p-2"></th>
               </tr>
             </thead>
@@ -301,11 +280,17 @@ const CAT_LABELS: Record<string, string> = {
                     <td class="p-2 text-right">
                       <div class="flex items-center justify-end gap-1">
                         <input type="number" min="0" step="50" data-bongere-input
-                               class="w-[90px] rounded-[8px] border border-border bg-white px-2 py-1 text-right font-mono tabular-nums focus:border-primary focus:outline-none"
+                               class="w-[80px] rounded-[8px] border border-border bg-white px-2 py-1 text-right font-mono tabular-nums focus:border-primary focus:outline-none"
                                placeholder="—" value={st?.bongere_price ?? ''} />
                         <span class="text-body-muted">₽</span>
+                        <button type="button" data-reset-price
+                                class="ml-0.5 inline-flex h-6 w-6 items-center justify-center rounded-[6px] text-body-muted hover:bg-primary-soft hover:text-primary"
+                                title="Сбросить к рекомендованной">
+                          <i class="bi bi-arrow-counterclockwise text-[12px]" aria-hidden="true"></i>
+                        </button>
                       </div>
                     </td>
+                    <td class="p-2 text-right font-mono tabular-nums font-semibold text-navy-950" data-sum-game></td>
                     <td class="p-2 text-right font-mono tabular-nums" data-save-days></td>
                     <td class="p-2 text-center">
                       {issuanceCounts[p.id] > 0 ? (
@@ -626,18 +611,14 @@ const CAT_LABELS: Record<string, string> = {
       }
       const set = Object.assign({
         kids: 35, days: 10, phoneMin: 10, markup: 3, round: 50, daily: 600, targetExtract: 75,
-        minDays: 3, maxDays: 8, megaThreshold: 5000, useMarkup: false,
       }, loadSettings());
       const idMap = {
         'set-kids':'kids','set-days':'days','set-phone-min':'phoneMin','set-markup':'markup','set-round':'round','set-daily':'daily','set-target-extract':'targetExtract',
-        'set-min-days':'minDays','set-max-days':'maxDays','set-mega-threshold':'megaThreshold',
       };
       for (const id of Object.keys(idMap)) {
         const el = document.getElementById(id);
         if (el) el.value = String(set[idMap[id]] ?? '');
       }
-      const useMarkupEl = document.getElementById('set-use-markup');
-      if (useMarkupEl) useMarkupEl.checked = !!set.useMarkup;
 
       function readSettings() {
         const num = (id, min) => Math.max(min, Number(document.getElementById(id).value) || min);
@@ -649,10 +630,6 @@ const CAT_LABELS: Record<string, string> = {
           round: num('set-round', 1),
           daily: Math.max(0, Number(document.getElementById('set-daily').value) || 0),
           targetExtract: Math.max(0, Math.min(100, Number(document.getElementById('set-target-extract').value) || 75)),
-          minDays: num('set-min-days', 1),
-          maxDays: num('set-max-days', 1),
-          megaThreshold: Math.max(0, Number(document.getElementById('set-mega-threshold').value) || 0),
-          useMarkup: !!(document.getElementById('set-use-markup') && document.getElementById('set-use-markup').checked),
         };
       }
       function dailyPotential(s) { return s.daily; }
@@ -684,44 +661,14 @@ const CAT_LABELS: Record<string, string> = {
       const prizeRows = Array.from(document.querySelectorAll('[data-prize-row]'));
       let showHidden = false;
 
-      // Диапазон Ozon-цен по видимым позициям — для log-интерполяции дней копления.
-      function ozonRange() {
-        let lo = Infinity, hi = 0;
-        prizeRows.forEach((r) => {
-          if (r.dataset.hidden === '1') return;
-          const p = Number(r.dataset.price || 0);
-          if (p <= 0) return;
-          if (p < lo) lo = p;
-          if (p > hi) hi = p;
-        });
-        if (!isFinite(lo)) lo = 1;
-        return { lo, hi };
-      }
-      // Подсказка цены приза в игровых ₽: либо наценкой ×, либо «копить N дней»
-      // с log-интерполяцией от minDays до maxDays между min/max Ozon-цен.
-      function recommendedBongere(ozonPrice, s, range) {
-        if (s.useMarkup) return roundTo(ozonPrice * s.markup, s.round);
-        // коллективный приз — для дорогой штуки используем формулу группового лота
-        if (ozonPrice >= s.megaThreshold) {
-          // лот для всей смены: цена = N × выдача × дней_копления × 80% (премиум)
-          const days = Math.min(s.maxDays * 2, s.days); // дорогие копят до 2× maxDays или всю смену
-          return roundTo(s.kids * s.daily * days * 0.8, s.round);
-        }
-        // обычный приз — N дней копления, лог-распределение по диапазону цен
-        const { lo, hi } = range;
-        let ratio = 0.5;
-        if (hi > lo) {
-          ratio = (Math.log(Math.max(ozonPrice, lo)) - Math.log(lo)) / (Math.log(hi) - Math.log(lo));
-          ratio = Math.max(0, Math.min(1, ratio));
-        }
-        const days = s.minDays + (s.maxDays - s.minDays) * ratio;
-        return roundTo(s.daily * days, s.round);
+      // Простая формула: рекомендованная цена за 1 шт = Цена Ozon × Наценка
+      function recommendedBongere(ozonPrice, s) {
+        return roundTo(ozonPrice * s.markup, s.round);
       }
 
       function recalcPrizes() {
         const s = readSettings();
         const dp = dailyPotential(s);
-        const range = ozonRange();
         let active = 0, sumBongere = 0, sumRec = 0, sumOzonVisible = 0;
         prizeRows.forEach((r) => {
           const isHidden = r.dataset.hidden === '1';
@@ -732,19 +679,28 @@ const CAT_LABELS: Record<string, string> = {
           const price = Number(r.dataset.price || 0);
           const qty = Number(r.dataset.qty || 0);
           if (!isHidden) sumOzonVisible += price * qty;
-          const rec = recommendedBongere(price, s, range);
-          const isMega = !s.useMarkup && price >= s.megaThreshold;
+          // Рекомендованная цена за 1 шт = Цена Ozon × Наценка
+          const rec = recommendedBongere(price, s);
           const recCell = r.querySelector('[data-recommended]');
-          if (recCell) {
-            recCell.innerHTML = fmt(rec) + ' / шт' +
-              (isMega ? '<div class="text-[11px] text-amber-700 font-semibold">коллективный</div>' : '');
-          }
+          if (recCell) recCell.innerHTML = fmt(rec) + ' / шт';
+          // Цена игровая: либо заданная вручную (input), либо рекомендованная.
+          // Если input пуст — показываем рекомендованную как placeholder.
           const inp = r.querySelector('[data-bongere-input]');
+          if (inp) {
+            inp.placeholder = String(rec);
+            if (inp.dataset.recDefault !== String(rec)) inp.dataset.recDefault = String(rec);
+          }
           const v = inp.value === '' ? null : Number(inp.value);
-          if (!isHidden && v != null && !isNaN(v)) sumBongere += v * qty;
+          // Эффективная цена = ввели → её; иначе → рекомендованная.
+          const effective = (v != null && !isNaN(v)) ? v : rec;
+          if (!isHidden) sumBongere += effective * qty;
           if (!isHidden) sumRec += rec * qty;
-          // Копить N дней — берём установленную цену, иначе рекомендованную
-          const targetPrice = (v != null && !isNaN(v)) ? v : rec;
+          // Подсветим row-сумму игровая
+          const sumGameCell = r.querySelector('[data-sum-game]');
+          if (sumGameCell) sumGameCell.innerHTML = fmt(effective * qty) +
+            (v == null ? '<span class="ml-1 text-[11px] text-body-muted">(авто)</span>' : '');
+          // Копить N дней — от эффективной цены
+          const targetPrice = effective;
           const days = saveDays(targetPrice, dp);
           const cell = r.querySelector('[data-save-days]');
           if (cell) {
@@ -783,7 +739,7 @@ const CAT_LABELS: Record<string, string> = {
         recalcActivities();
       }
 
-      ['set-kids','set-days','set-phone-min','set-markup','set-round','set-daily','set-target-extract','set-min-days','set-max-days','set-mega-threshold','set-use-markup'].forEach((id) => {
+      ['set-kids','set-days','set-phone-min','set-markup','set-round','set-daily','set-target-extract'].forEach((id) => {
         const el = document.getElementById(id);
         el.addEventListener('input', () => {
           const s = readSettings();
@@ -824,6 +780,14 @@ const CAT_LABELS: Record<string, string> = {
             savePrizeState(id, { bongere_price: v });
             recalcPrizes();
           }, 350);
+        });
+        // Сбросить к рекомендованной → удаляем ручную цену из БД
+        const resetBtn = r.querySelector('[data-reset-price]');
+        if (resetBtn) resetBtn.addEventListener('click', async () => {
+          inp.value = '';
+          r.dataset.bongere = '';
+          await savePrizeState(id, { bongere_price: null });
+          recalcPrizes();
         });
         // Hide / show
         r.querySelector('[data-toggle-hidden]').addEventListener('click', async () => {
