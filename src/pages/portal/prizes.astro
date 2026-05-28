@@ -3,16 +3,41 @@ export const prerender = false;
 import PortalLayout from '../../layouts/PortalLayout.astro';
 import { PRIZES } from '../../lib/portalPrizes';
 import { listPrizeStates, listActivities } from '../../lib/portalEconomy';
+import { listCustomPrizes, countIssuancesByPrize } from '../../lib/portalPrizeOps';
+import { listKids } from '../../lib/portalKid';
 
 const role = Astro.locals.portalRole!;
 if (!['admin', 'rukovoditel'].includes(role)) {
   return Astro.redirect('/portal/');
 }
 
-const [prizeStates, activities] = await Promise.all([listPrizeStates(), listActivities()]);
+const [prizeStates, activities, customPrizes, issuanceCounts, kids] = await Promise.all([
+  listPrizeStates(),
+  listActivities(),
+  listCustomPrizes(),
+  countIssuancesByPrize(),
+  listKids(false),
+]);
 const stateById = new Map(prizeStates.map((s) => [s.prize_id, s]));
 
-const totalAll = PRIZES.reduce((s, p) => s + p.price * p.qty, 0);
+// Объединяем hardcoded + кастомные призы в одном списке.
+const ALL_PRIZES = [
+  ...PRIZES,
+  ...customPrizes.map((c) => ({
+    id: c.slug,
+    name: c.name,
+    price: c.ozon_price ?? 0,
+    qty: c.qty,
+    category: c.category ?? 'Кастом',
+    img: c.img_url ?? undefined,
+    url: undefined as string | undefined,
+    sources: undefined as string[] | undefined,
+    isCustom: true,
+    customId: c.id,
+  })),
+];
+
+const totalAll = ALL_PRIZES.reduce((s, p) => s + p.price * p.qty, 0);
 const fmtRub = (n: number) => new Intl.NumberFormat('ru-RU').format(Math.round(n)) + ' ₽';
 
 const CAT_LABELS: Record<string, string> = {
@@ -206,11 +231,18 @@ const CAT_LABELS: Record<string, string> = {
     </div>
 
     <div class="mb-6">
-      <h2 class="mb-2 flex items-center gap-2 text-[16px] font-semibold text-navy-950">
-        <i class="bi bi-receipt text-primary" aria-hidden="true"></i>
-        Каталог призов
-        <span class="text-[13px] font-normal text-body-muted">· {PRIZES.length} позиций · {PRIZES.reduce((s, p) => s + p.qty, 0)} шт · {fmtRub(totalAll)}</span>
-      </h2>
+      <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h2 class="flex items-center gap-2 text-[16px] font-semibold text-navy-950">
+          <i class="bi bi-receipt text-primary" aria-hidden="true"></i>
+          Каталог призов
+          <span class="text-[13px] font-normal text-body-muted">· {ALL_PRIZES.length} позиций · {ALL_PRIZES.reduce((s, p) => s + p.qty, 0)} шт · {fmtRub(totalAll)}</span>
+        </h2>
+        <button id="btn-add-custom" type="button"
+          class="rounded-[10px] border border-primary bg-primary text-white px-3 py-1.5 text-[14px] hover:opacity-90">
+          <i class="bi bi-plus-lg" aria-hidden="true"></i>
+          Добавить свой приз
+        </button>
+      </div>
 
       <div class="overflow-x-auto rounded-[14px] border border-border bg-white card-shadow">
           <table class="w-full text-[14px]">
@@ -223,12 +255,13 @@ const CAT_LABELS: Record<string, string> = {
                 <th class="w-[90px] p-2 text-right">Сумма</th>
                 <th class="w-[100px] p-2 text-right">Рекоменд.</th>
                 <th class="w-[130px] p-2 text-right">Цена,&nbsp;игр.&nbsp;₽</th>
-                <th class="w-[90px] p-2 text-right" title="Сколько дней ребёнку нужно копить, если откажется от телефона">Копить</th>
-                <th class="w-[40px] p-2"></th>
+                <th class="w-[80px] p-2 text-right" title="Сколько дней ребёнку нужно копить, если откажется от телефона">Копить</th>
+                <th class="w-[90px] p-2 text-center" title="Сколько раз приз уже выдан">Выдано</th>
+                <th class="w-[90px] p-2"></th>
               </tr>
             </thead>
             <tbody>
-              {PRIZES.map((p) => {
+              {ALL_PRIZES.map((p) => {
                 const st = stateById.get(p.id);
                 return (
                   <tr data-prize-row data-id={p.id} data-price={p.price} data-qty={p.qty}
@@ -274,7 +307,30 @@ const CAT_LABELS: Record<string, string> = {
                       </div>
                     </td>
                     <td class="p-2 text-right font-mono tabular-nums" data-save-days></td>
+                    <td class="p-2 text-center">
+                      {issuanceCounts[p.id] > 0 ? (
+                        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[12px] font-semibold text-emerald-800">
+                          <i class="bi bi-check-circle-fill" aria-hidden="true"></i>{issuanceCounts[p.id]}
+                        </span>
+                      ) : (
+                        <span class="text-[12px] text-body-muted">—</span>
+                      )}
+                    </td>
                     <td class="p-2 text-right">
+                      <button type="button" data-give
+                              data-prize-id={p.id}
+                              data-prize-name={p.name}
+                              class="mr-1 inline-flex items-center gap-1 rounded-[8px] border border-primary bg-primary text-white px-2 py-1 text-[12px] hover:opacity-90"
+                              title="Выдать ребёнку">
+                        <i class="bi bi-gift-fill" aria-hidden="true"></i> выдать
+                      </button>
+                      {(p as any).isCustom && (
+                        <button type="button" data-archive-custom data-custom-id={(p as any).customId}
+                                class="inline-flex h-7 w-7 items-center justify-center rounded-[8px] text-body-muted hover:bg-red-50 hover:text-red-600"
+                                title="Удалить кастомный приз">
+                          <i class="bi bi-trash" aria-hidden="true"></i>
+                        </button>
+                      )}
                       <button type="button" data-toggle-hidden
                               class="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-body-muted transition hover:bg-red-50 hover:text-red-600"
                               title={st?.hidden ? 'Показать (вернуть в список)' : 'Скрыть'}>
@@ -288,6 +344,105 @@ const CAT_LABELS: Record<string, string> = {
           </table>
         </div>
       </div>
+
+    {/* ── Modal: Выдать приз ребёнку ─────────────────────────────────── */}
+    <dialog id="give-dialog" class="rounded-[16px] border border-border p-0 backdrop:bg-black/40">
+      <form method="dialog" enctype="multipart/form-data" class="w-[min(540px,95vw)] p-5">
+        <h3 class="text-[18px] font-semibold text-navy-950">
+          Выдать приз: <span id="give-prize-name" class="text-primary"></span>
+        </h3>
+        <input type="hidden" id="give-prize-id" />
+        <input type="hidden" id="give-prize-name-hidden" />
+        <div class="mt-4 space-y-3">
+          <label class="block">
+            <span class="block text-[13px] font-medium text-body-muted">Кому выдаём</span>
+            <select id="give-kid" required
+                    class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 focus:border-primary focus:outline-none">
+              <option value="">— выбери ребёнка —</option>
+              {kids.map((k) => (
+                <option value={k.id} data-name={k.name}>{k.name}{k.room_number ? ` · к.${k.room_number}` : ''}{k.age ? ` · ${k.age} лет` : ''}</option>
+              ))}
+            </select>
+          </label>
+          <label class="block">
+            <span class="block text-[13px] font-medium text-body-muted">Цена в игровых ₽ (сколько отдал ребёнок)</span>
+            <input id="give-price" type="number" min="0" step="50"
+                   class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono focus:border-primary focus:outline-none" />
+          </label>
+          <label class="block">
+            <span class="block text-[13px] font-medium text-body-muted">Фото или видео вручения (обязательно)</span>
+            <input id="give-file" type="file" accept="image/*,video/*" capture="environment"
+                   class="mt-1 block w-full rounded-[10px] border border-dashed border-border bg-page p-2 text-[13px]" />
+            <span class="mt-1 block text-[12px] text-body-muted">Можно сразу с камеры телефона</span>
+          </label>
+          <label class="block">
+            <span class="block text-[13px] font-medium text-body-muted">Заметка (необязательно)</span>
+            <textarea id="give-note" rows="2" data-voice data-voice-append
+                      class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-[14px] focus:border-primary focus:outline-none"
+                      placeholder="За что выдан, контекст…"></textarea>
+          </label>
+        </div>
+        <div class="mt-5 flex items-center justify-end gap-2">
+          <span id="give-status" class="mr-auto text-[13px] text-body-muted"></span>
+          <button type="button" id="give-cancel"
+                  class="rounded-[10px] border border-border bg-white px-4 py-2 text-[14px] text-navy-950 hover:border-primary">Отмена</button>
+          <button type="button" id="give-save"
+                  class="rounded-[10px] border border-primary bg-primary px-4 py-2 text-[14px] text-white hover:opacity-90">
+            <i class="bi bi-gift-fill" aria-hidden="true"></i> Выдать и сохранить фото
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    {/* ── Modal: Добавить кастомный приз ──────────────────────────────── */}
+    <dialog id="custom-dialog" class="rounded-[16px] border border-border p-0 backdrop:bg-black/40">
+      <form method="dialog" enctype="multipart/form-data" class="w-[min(540px,95vw)] p-5">
+        <h3 class="text-[18px] font-semibold text-navy-950">Новый приз в каталог</h3>
+        <div class="mt-4 space-y-3">
+          <label class="block">
+            <span class="block text-[13px] font-medium text-body-muted">Название</span>
+            <input id="cust-name" type="text" required
+                   class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 focus:border-primary focus:outline-none" />
+          </label>
+          <label class="block">
+            <span class="block text-[13px] font-medium text-body-muted">Описание</span>
+            <textarea id="cust-desc" rows="2" data-voice data-voice-append
+                      class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-[14px] focus:border-primary focus:outline-none"></textarea>
+          </label>
+          <div class="grid gap-3 sm:grid-cols-3">
+            <label class="block">
+              <span class="block text-[13px] font-medium text-body-muted">Категория</span>
+              <input id="cust-cat" type="text" placeholder="напр. Опыты / Сувенир"
+                     class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 focus:border-primary focus:outline-none" />
+            </label>
+            <label class="block">
+              <span class="block text-[13px] font-medium text-body-muted">Цена Ozon, ₽</span>
+              <input id="cust-price" type="number" min="0" step="10"
+                     class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono focus:border-primary focus:outline-none" />
+            </label>
+            <label class="block">
+              <span class="block text-[13px] font-medium text-body-muted">Количество</span>
+              <input id="cust-qty" type="number" min="1" step="1" value="1"
+                     class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono focus:border-primary focus:outline-none" />
+            </label>
+          </div>
+          <label class="block">
+            <span class="block text-[13px] font-medium text-body-muted">Фотография приза</span>
+            <input id="cust-file" type="file" accept="image/*"
+                   class="mt-1 block w-full rounded-[10px] border border-dashed border-border bg-page p-2 text-[13px]" />
+          </label>
+        </div>
+        <div class="mt-5 flex items-center justify-end gap-2">
+          <span id="cust-status" class="mr-auto text-[13px] text-body-muted"></span>
+          <button type="button" id="cust-cancel"
+                  class="rounded-[10px] border border-border bg-white px-4 py-2 text-[14px] text-navy-950 hover:border-primary">Отмена</button>
+          <button type="button" id="cust-save"
+                  class="rounded-[10px] border border-primary bg-primary px-4 py-2 text-[14px] text-white hover:opacity-90">
+            <i class="bi bi-plus-lg" aria-hidden="true"></i> Сохранить приз
+          </button>
+        </div>
+      </form>
+    </dialog>
   </section>
 
   {/* ── Tab: Activities ──────────────────────────────────────────────────── */}
@@ -828,6 +983,108 @@ const CAT_LABELS: Record<string, string> = {
           });
           const jr = await r.json().catch(() => ({}));
           if (jr.ok) location.reload(); else alert('Ошибка: ' + (jr.error || 'unknown'));
+        });
+      });
+
+      // ── Issue prize modal ──
+      const giveDlg = document.getElementById('give-dialog');
+      const giveCancel = document.getElementById('give-cancel');
+      const giveSave = document.getElementById('give-save');
+      const giveStatus = document.getElementById('give-status');
+      document.querySelectorAll('[data-give]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.getElementById('give-prize-id').value = btn.dataset.prizeId;
+          document.getElementById('give-prize-name-hidden').value = btn.dataset.prizeName;
+          document.getElementById('give-prize-name').textContent = btn.dataset.prizeName;
+          document.getElementById('give-kid').value = '';
+          document.getElementById('give-price').value = '';
+          document.getElementById('give-file').value = '';
+          document.getElementById('give-note').value = '';
+          giveStatus.textContent = '';
+          giveDlg.showModal();
+        });
+      });
+      if (giveCancel) giveCancel.addEventListener('click', () => giveDlg.close());
+      if (giveSave) giveSave.addEventListener('click', async () => {
+        const kidSel = document.getElementById('give-kid');
+        const kidId = kidSel.value;
+        if (!kidId) { giveStatus.textContent = 'Выбери ребёнка'; return; }
+        const file = document.getElementById('give-file').files[0];
+        if (!file) { giveStatus.textContent = 'Прикрепи фото или видео'; return; }
+        const kidName = kidSel.options[kidSel.selectedIndex]?.dataset?.name || '';
+        const fd = new FormData();
+        fd.append('action', 'issue');
+        fd.append('prize_id', document.getElementById('give-prize-id').value);
+        fd.append('prize_name', document.getElementById('give-prize-name-hidden').value);
+        fd.append('kid_id', kidId);
+        fd.append('kid_name', kidName);
+        const price = document.getElementById('give-price').value;
+        if (price) fd.append('bongere_price', price);
+        const note = document.getElementById('give-note').value;
+        if (note) fd.append('note', note);
+        fd.append('file', file);
+        giveStatus.textContent = 'Загружаем…';
+        try {
+          const r = await fetch('/api/portal/prize-ops', { method: 'POST', body: fd, credentials: 'include' });
+          const jr = await r.json();
+          if (jr.ok) {
+            giveStatus.textContent = '✓ выдано';
+            setTimeout(() => { giveDlg.close(); location.reload(); }, 600);
+          } else giveStatus.textContent = 'Ошибка: ' + (jr.error || 'unknown');
+        } catch (e) { giveStatus.textContent = 'Сетевая ошибка'; }
+      });
+
+      // ── Custom prize modal ──
+      const custDlg = document.getElementById('custom-dialog');
+      const custCancel = document.getElementById('cust-cancel');
+      const custSave = document.getElementById('cust-save');
+      const custStatus = document.getElementById('cust-status');
+      document.getElementById('btn-add-custom')?.addEventListener('click', () => {
+        ['cust-name','cust-desc','cust-cat','cust-price','cust-file'].forEach((id) => {
+          const el = document.getElementById(id); if (el) el.value = id === 'cust-qty' ? 1 : '';
+        });
+        document.getElementById('cust-qty').value = 1;
+        custStatus.textContent = '';
+        custDlg.showModal();
+      });
+      if (custCancel) custCancel.addEventListener('click', () => custDlg.close());
+      if (custSave) custSave.addEventListener('click', async () => {
+        const name = document.getElementById('cust-name').value.trim();
+        if (!name) { custStatus.textContent = 'Название обязательно'; return; }
+        const fd = new FormData();
+        fd.append('action', 'create_custom');
+        fd.append('name', name);
+        fd.append('description', document.getElementById('cust-desc').value);
+        fd.append('category', document.getElementById('cust-cat').value);
+        const price = document.getElementById('cust-price').value;
+        if (price) fd.append('ozon_price', price);
+        fd.append('qty', document.getElementById('cust-qty').value || '1');
+        const file = document.getElementById('cust-file').files[0];
+        if (file) fd.append('file', file);
+        custStatus.textContent = 'Сохраняем…';
+        try {
+          const r = await fetch('/api/portal/prize-ops', { method: 'POST', body: fd, credentials: 'include' });
+          const jr = await r.json();
+          if (jr.ok) {
+            custStatus.textContent = '✓ добавлен';
+            setTimeout(() => { custDlg.close(); location.reload(); }, 600);
+          } else custStatus.textContent = 'Ошибка: ' + (jr.error || 'unknown');
+        } catch (e) { custStatus.textContent = 'Сетевая ошибка'; }
+      });
+
+      // Archive custom prize
+      document.querySelectorAll('[data-archive-custom]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = Number(btn.dataset.customId);
+          if (!confirm('Удалить этот кастомный приз? (записи о выдачах останутся в журнале)')) return;
+          try {
+            const r = await fetch('/api/portal/prize-ops', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'archive_custom', id }), credentials: 'include',
+            });
+            const jr = await r.json();
+            if (jr.ok) location.reload(); else alert('Ошибка: ' + (jr.error || ''));
+          } catch (e) { alert('Сетевая ошибка'); }
         });
       });
 
