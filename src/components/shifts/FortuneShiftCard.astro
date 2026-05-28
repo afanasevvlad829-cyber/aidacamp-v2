@@ -396,6 +396,18 @@ const segData = SEGMENTS.map((seg, i) => {
 
     if (!wheel || !spinBtn || !modal) return; // guard
 
+    // ── Аналитика: колесо появилось на экране ──────────────────────────────
+    var _wheelViewed = false;
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function(entries, obs) {
+        if (entries[0].isIntersecting && !_wheelViewed) {
+          _wheelViewed = true;
+          try { window.ym && window.ym(96499295, 'reachGoal', 'fortune_wheel_view'); } catch(_e) {}
+          obs.disconnect();
+        }
+      }, { threshold: 0.4 }).observe(wheelArea || wheel);
+    }
+
     // Restore UI from saved session state
     if (saved) {
       updateDots();
@@ -485,6 +497,16 @@ const segData = SEGMENTS.map((seg, i) => {
         .then(function(r) { return r.json(); })
         .then(function(data) { wonToken = data.token || ''; saveState(); })
         .catch(function() { wonToken = ''; });
+
+      // Metrika: выиграл скидку
+      try {
+        window.ym && window.ym(96499295, 'reachGoal', 'fortune_win', {
+          discount:    d,
+          price_full:  PRICE,
+          price_final: Math.round(PRICE * (1 - d / 100)),
+          attempts_left: attempts,
+        });
+      } catch(_e) {}
 
       // Re-enable spin button if attempts remain
       if (attempts > 0) {
@@ -581,6 +603,7 @@ const segData = SEGMENTS.map((seg, i) => {
       modal.classList.add('hidden');
       modal.classList.remove('flex');
       clearInterval(timerInterval);
+      try { window.ym && window.ym(96499295, 'reachGoal', 'fortune_modal_close', { discount: wonDiscount }); } catch(_e) {}
     }
 
     modalClose.addEventListener('click', closeModal);
@@ -645,6 +668,14 @@ const segData = SEGMENTS.map((seg, i) => {
         .then(function (data) {
           if (data.paymentUrl) {
             clearInterval(timerInterval);
+            try {
+              window.ym && window.ym(96499295, 'reachGoal', 'fortune_payment_start', {
+                discount:   wonDiscount,
+                deposit:    data.deposit,
+                order_id:   data.orderId,
+                payment_id: data.paymentId,
+              });
+            } catch(_e) {}
             window.location.href = data.paymentUrl;
           } else {
             formError.textContent = data.error || 'Ошибка оплаты. Попробуйте ещё раз.';

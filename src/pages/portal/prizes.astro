@@ -215,7 +215,13 @@ const CAT_LABELS: Record<string, string> = {
           Каталог призов
           <span class="text-[13px] font-normal text-body-muted">· {ALL_PRIZES.length} позиций · {ALL_PRIZES.reduce((s, p) => s + p.qty, 0)} шт · {fmtRub(totalAll)}</span>
         </h2>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
+          <button id="btn-recalc-prices" type="button"
+            class="rounded-[10px] border border-amber-400 bg-amber-50 text-amber-900 px-3 py-1.5 text-[14px] hover:bg-amber-100"
+            title="Пересчитать цены по текущим параметрам (наценка, выдача, N детей)">
+            <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+            Пересчитать цены
+          </button>
           <button id="btn-print-prizes" type="button"
             class="rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] hover:border-primary hover:text-primary">
             <i class="bi bi-printer" aria-hidden="true"></i>
@@ -303,7 +309,6 @@ const CAT_LABELS: Record<string, string> = {
                         </button>
                       </div>
                     </td>
-                    <td class="p-2 text-right font-mono tabular-nums font-semibold text-navy-950" data-sum-game></td>
                     <td class="p-2 text-right font-mono tabular-nums" data-save-days></td>
                     <td class="p-2 text-center">
                       {issuanceCounts[p.id] > 0 ? (
@@ -828,10 +833,6 @@ const CAT_LABELS: Record<string, string> = {
           const effective = (v != null && !isNaN(v)) ? v : rec;
           if (!isHidden) sumBongere += effective * qty;
           if (!isHidden) sumRec += rec * qty;
-          // Подсветим row-сумму игровая
-          const sumGameCell = r.querySelector('[data-sum-game]');
-          if (sumGameCell) sumGameCell.innerHTML = fmt(effective * qty) +
-            (v == null ? '<span class="ml-1 text-[11px] text-body-muted">(авто)</span>' : '');
           // Копить N дней — от эффективной цены
           const targetPrice = effective;
           const days = saveDays(targetPrice, dp);
@@ -872,12 +873,34 @@ const CAT_LABELS: Record<string, string> = {
         recalcActivities();
       }
 
+      // KPI шапки (фонды) пересчитывается на лету, но цены в таблицах — нет.
+      // Цены меняются только по явному нажатию «Пересчитать цены».
+      function recalcKPIOnly() {
+        const s = readSettings();
+        const dp = dailyPotential(s);
+        const dailyFund = s.kids * dp;
+        const total = dailyFund * s.days;
+        const targetExtract = total * (s.targetExtract / 100);
+        document.getElementById('kpi-potential').textContent = fmt(dp);
+        document.getElementById('kpi-daily-fund').textContent = fmt(dailyFund);
+        document.getElementById('kpi-per-kid').textContent = fmt(dp * s.days);
+        document.getElementById('kpi-phone-equiv').textContent = (s.phoneMin > 0 ? Math.floor(dp / s.phoneMin) : 0);
+        document.getElementById('kpi-total').textContent = fmt(total);
+        const ext = document.getElementById('kpi-target-extract'); if (ext) ext.textContent = fmt(targetExtract);
+      }
+
       ['set-kids','set-days','set-phone-min','set-markup','set-round','set-daily','set-target-extract'].forEach((id) => {
         const el = document.getElementById(id);
         el.addEventListener('input', () => {
           const s = readSettings();
           saveSettings(s);
-          recalcPrizes();
+          recalcKPIOnly();
+          // Подсветим кнопку «Пересчитать», чтобы было заметно что параметры изменились
+          const btn = document.getElementById('btn-recalc-prices');
+          if (btn) {
+            btn.classList.add('animate-pulse');
+            btn.title = 'Параметры изменились — нажмите чтобы пересчитать цены';
+          }
         });
       });
 
@@ -1197,6 +1220,14 @@ const CAT_LABELS: Record<string, string> = {
       const custCancel = document.getElementById('cust-cancel');
       const custSave = document.getElementById('cust-save');
       const custStatus = document.getElementById('cust-status');
+      // ── Пересчитать цены по текущим параметрам (Призы + Активности разом) ──
+      document.getElementById('btn-recalc-prices')?.addEventListener('click', () => {
+        recalcPrizes();
+        recalcActivities();
+        const btn = document.getElementById('btn-recalc-prices');
+        if (btn) { btn.classList.remove('animate-pulse'); btn.title = 'Цены актуальны на текущие параметры'; }
+      });
+
       // ── Кнопки печати: только текущая вкладка ──
       document.getElementById('btn-print-prizes')?.addEventListener('click', () => {
         document.body.classList.add('printing-prizes');
