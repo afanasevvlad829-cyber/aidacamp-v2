@@ -2,6 +2,10 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { createHash } from 'node:crypto';
 import { getCurrentPrice } from '../../../data/dynamicPrices';
+import { signDiscount } from './token';
+
+// Допустимые скидки (белый список)
+const VALID_DISCOUNTS = new Set([10, 20, 30, 40, 50, 70]);
 
 // ── env ──────────────────────────────────────────────────────────────────────
 const TERMINAL  = process.env.TINKOFF_TERMINAL_KEY;
@@ -34,17 +38,26 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ error: 'Платёжный шлюз не настроен' }, 503);
   }
 
-  let body: { shiftId?: string; discount?: number; name?: string; phone?: string; test?: boolean };
+  let body: { shiftId?: string; discount?: number; token?: string; name?: string; phone?: string; test?: boolean };
   try {
     body = await request.json();
   } catch {
     return json({ error: 'Invalid JSON' }, 400);
   }
 
-  const { shiftId = 'shift-1', discount, name = '', phone = '', test = false } = body;
+  const { shiftId = 'shift-1', discount, token, name = '', phone = '', test = false } = body;
 
-  if (typeof discount !== 'number' || discount < 0 || discount > 100) {
+  // Белый список скидок
+  if (typeof discount !== 'number' || !VALID_DISCOUNTS.has(discount)) {
     return json({ error: 'Неверный discount' }, 400);
+  }
+
+  // Проверка HMAC-токена (текущий час + предыдущий для near-boundary)
+  const hourSlot = Math.floor(Date.now() / 3_600_000);
+  const validTokens = [signDiscount(discount, hourSlot), signDiscount(discount, hourSlot - 1)];
+  if (!token || !validTokens.includes(token)) {
+    console.warn(`[fortune/init] Invalid token for discount=${discount} token=${token}`);
+    return json({ error: 'Недействительный токен скидки' }, 403);
   }
 
   // Динамическая цена (актуальная на момент запроса)
@@ -76,7 +89,7 @@ export const POST: APIRoute = async ({ request }) => {
     FailURL:     `${SITE_URL}/fortune-fail/`,
   };
 
-  const token = tinkoffToken(params, PASSWORD);
+  const tinkoffSig = tinkoffToken(params, PASSWORD);
 
   // ── Чек для онлайн-кассы (ФФД 1.2) ──────────────────────────────────────────
   // Параметры соответствуют настройкам терминала:
@@ -113,7 +126,7 @@ export const POST: APIRoute = async ({ request }) => {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({
         ...params,
-        Token:   token,
+        Token:   tinkoffSig,
         Receipt: receipt,
         ...(Object.keys(extraData).length > 0 ? { DATA: extraData } : {}),
       }),
