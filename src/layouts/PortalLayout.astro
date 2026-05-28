@@ -66,6 +66,7 @@ const ROLE_LABEL_MAP: Record<string, string> = {
           <div class="flex items-center gap-3">
             {showBack && (
               <a href="/portal/"
+                 data-portal-back
                  onclick="if (document.referrer && new URL(document.referrer).origin === location.origin && document.referrer !== location.href) { event.preventDefault(); history.back(); }"
                  class="inline-flex items-center gap-1 rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] font-medium text-body-muted transition hover:border-primary hover:text-primary"
                  aria-label="Назад">
@@ -299,6 +300,28 @@ const ROLE_LABEL_MAP: Record<string, string> = {
             } catch (e) {}
           }
           applySafeArea();
+          // Прячем нашу кнопку «Назад» внутри TG WebApp — используем нативную BackButton,
+          // иначе она перекрывается пилюлей «Закрыть» от Telegram.
+          try {
+            var ourBack = document.querySelector('[data-portal-back]');
+            if (ourBack) ourBack.style.display = 'none';
+            if (tg.BackButton) {
+              var pathNow = (location.pathname.replace(/\/+$/, '') || '/');
+              var isPortalRoot = (pathNow === '/portal' || pathNow === '');
+              if (isPortalRoot) {
+                tg.BackButton.hide();
+              } else {
+                tg.BackButton.show();
+                tg.BackButton.onClick(function () {
+                  if (document.referrer && new URL(document.referrer).origin === location.origin && document.referrer !== location.href) {
+                    history.back();
+                  } else {
+                    location.href = '/portal/';
+                  }
+                });
+              }
+            }
+          } catch (e) {}
           // Закрепить viewport — на iOS Telegram WebApp иногда нужен повторный expand при resize
           try {
             tg.onEvent && tg.onEvent('viewportChanged', function (ev) {
