@@ -166,11 +166,13 @@ export async function setRole(telegramId: number, role: PortalRole, approvedBy: 
   });
 }
 
-/** Полный список ролей (заменяет существующий). Активная роль = первая из списка. */
+/** Полный список ролей (заменяет существующий). Активная роль = НАИВЫСШАЯ из выданных. */
 export async function setRoles(telegramId: number, roles: PortalRole[], approvedBy: number): Promise<void> {
   await withClient(async (c) => {
-    const activeRole = roles[0] ?? null;
-    // Если выдаём хотя бы одну роль — также активируем учётку (одобряем pending).
+    // Primary role должен быть НАИВЫСШИМ из доступных (admin > rukovoditel > teacher > vozhaty > student),
+    // иначе session.role = первая из чекбоксов и сотрудник теряет доступ к admin-страницам.
+    const PRIORITY: PortalRole[] = ['admin', 'rukovoditel', 'teacher', 'vozhaty', 'student'];
+    const activeRole = PRIORITY.find((r) => roles.includes(r)) ?? roles[0] ?? null;
     const willActivate = roles.length > 0;
     await c.query(
       `UPDATE portal_staff

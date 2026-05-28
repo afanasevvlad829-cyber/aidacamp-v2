@@ -72,6 +72,9 @@ async function loginResult(
 
 function setSessionCookie(cookies: Parameters<APIRoute>[0]['cookies'], token: string): void {
   cookies.set('portal_session', token, portalCookieOptions());
+  // Сбрасываем view-as чтобы не залип старый downgrade
+  const dom = process.env.PORTAL_COOKIE_DOMAIN?.trim();
+  cookies.delete('portal_view_as', dom ? { path: '/', domain: dom } : { path: '/' });
 }
 
 // Telegram Login Widget (data-auth-url) редиректит сюда методом GET с параметрами в query.

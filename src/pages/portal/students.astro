@@ -11,12 +11,19 @@ if (!['admin', 'rukovoditel'].includes(role)) {
 const kids = await listKids(true);
 const total = kids.length;
 const active = kids.filter((k) => k.active).length;
-const loggedIn = kids.filter((k) => k.last_login_at).length;
+const loggedIn = kids.filter((k) => k.last_login_at && !isNaN(new Date(k.last_login_at).getTime())).length;
 
 function genderEmoji(g: string | null): string {
   return g === 'M' ? 'М' : g === 'F' ? 'Ж' : '?';
 }
-function fmtDate(s: string | null): string {
+function fmtDate(s: string | null | undefined): string {
+  if (!s || typeof s !== 'string') return '—';
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return '—';
+  try { return d.toLocaleString('ru-RU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); }
+  catch { return '—'; }
+}
+function fmtDateOld(s: string | null): string {
   if (!s) return '—';
   try { return new Date(s).toLocaleString('ru-RU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); }
   catch { return s; }

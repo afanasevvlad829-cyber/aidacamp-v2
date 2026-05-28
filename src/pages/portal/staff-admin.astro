@@ -178,8 +178,25 @@ const roleLabel = (r: string | null | undefined): string => (r ? ROLE_LABELS[r] 
             body: JSON.stringify(body), credentials: 'include',
           });
           const jr = await r.json();
-          if (jr.ok) { dlg.close(); location.reload(); }
-          else status.textContent = 'Ошибка: ' + (jr.error || 'unknown');
+          if (jr.ok && jr.invite && jr.invite.token) {
+            const link = location.origin + '/i/' + jr.invite.token;
+            // Сразу копируем в буфер и показываем ссылку в модалке + кнопки
+            try { await navigator.clipboard.writeText(link); } catch {}
+            status.innerHTML = '✓ скопировано в буфер';
+            // Заменяем содержимое модалки на «Готово» с ссылкой
+            const form = createBtn.closest('form');
+            form.innerHTML =
+              '<h3 class="text-[18px] font-semibold text-emerald-700">Приглашение создано ✓</h3>' +
+              '<p class="mt-3 text-[14px] text-body-muted">Ссылка скопирована в буфер. Можешь сразу вставить в чат:</p>' +
+              '<div class="mt-3 break-all rounded-[10px] border border-emerald-300 bg-emerald-50 px-3 py-3 font-mono text-[14px] text-navy-950 select-all">' + link + '</div>' +
+              '<div class="mt-4 flex flex-wrap gap-2">' +
+                '<a href="https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent('Приглашение в АйДаКемп') + '" target="_blank" rel="noopener" class="rounded-[10px] border border-emerald-600 bg-emerald-600 text-white px-4 py-2 text-[14px]">📨 Отправить в Telegram</a>' +
+                '<button type="button" onclick="navigator.clipboard.writeText(' + JSON.stringify(link) + '); this.textContent=\'✓ скопировано\';" class="rounded-[10px] border border-border bg-white px-4 py-2 text-[14px]">📋 Скопировать ещё раз</button>' +
+                '<button type="button" onclick="window.location.reload()" class="rounded-[10px] border border-border bg-white px-4 py-2 text-[14px]">Закрыть</button>' +
+              '</div>';
+          } else {
+            status.textContent = 'Ошибка: ' + (jr.error || 'unknown');
+          }
         } catch (e) { status.textContent = 'Сетевая ошибка'; }
       });
 
