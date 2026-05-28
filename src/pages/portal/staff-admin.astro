@@ -3,10 +3,19 @@ export const prerender = false;
 
 import PortalLayout from '../../layouts/PortalLayout.astro';
 import { listStaff } from '../../lib/portalStaff';
+import { listInvites } from '../../lib/portalInvite';
 
 if (Astro.locals.portalRole !== 'admin') return Astro.redirect('/portal/');
 
 const staff = await listStaff();
+const invites = await listInvites();
+const activeInvites = invites.filter((i) => !i.revoked && !i.used_at && new Date(i.expires_at) > new Date());
+const usedInvites = invites.filter((i) => i.used_at);
+const baseUrl = Astro.url.origin;
+const ROLE_LABEL: Record<string, string> = {
+  admin: 'Админ', rukovoditel: 'Руководитель',
+  teacher: 'Преподаватель', vozhaty: 'Вожатый', student: 'Ученик',
+};
 
 // Pending: telegram_id есть, role нет, staff_key нет
 const pending = staff.filter((s) => s.telegram_id != null && s.role == null && s.staff_key == null);
@@ -34,6 +43,172 @@ const roleLabel = (r: string | null | undefined): string => (r ? ROLE_LABELS[r] 
   <h1 class="mb-6 text-[28px] font-bold tracking-[-0.02em] text-navy-950 md:text-[36px]">
     Сотрудники
   </h1>
+
+  <!-- INVITES: сразу после h1 -->
+  <section class="mb-8 rounded-[16px] border border-emerald-200 bg-emerald-50/40 p-5 card-shadow">
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <h2 class="flex items-center gap-2 text-[18px] font-semibold text-navy-950">
+        <i class="bi bi-send text-emerald-700" aria-hidden="true"></i>
+        Приглашения
+        <span class="text-[14px] font-normal text-body-muted">· активных: {activeInvites.length}</span>
+      </h2>
+      <button id="btn-new-invite" type="button"
+        class="rounded-[10px] border border-emerald-600 bg-emerald-600 text-white px-3 py-1.5 text-[14px] hover:opacity-90">
+        <i class="bi bi-plus-lg" aria-hidden="true"></i>
+        Новое приглашение
+      </button>
+    </div>
+    <p class="mb-3 text-[13px] text-body-muted">
+      Создаёшь приглашение — получаешь ссылку. Отправляешь сотруднику в Telegram. Он переходит, авторизуется через TG, и его аккаунт сразу активен с теми ролями, что ты указал.
+    </p>
+
+    {activeInvites.length > 0 && (
+      <div class="space-y-2">
+        {activeInvites.map((inv) => (
+          <div class="flex flex-wrap items-center gap-2 rounded-[10px] border border-border bg-white p-3" data-invite-row data-id={inv.id}>
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-2">
+                {inv.name && <span class="font-medium text-navy-950">{inv.name}</span>}
+                {inv.roles.map((r) => (
+                  <span class="rounded-full bg-primary-soft px-2 py-0.5 text-[12px] font-medium text-primary">{ROLE_LABEL[r] ?? r}</span>
+                ))}
+                <span class="text-[12px] text-body-muted">истекает {new Date(inv.expires_at).toLocaleDateString('ru-RU')}</span>
+              </div>
+              <div class="mt-1 flex flex-wrap items-center gap-2">
+                <code class="select-all rounded bg-page px-2 py-1 font-mono text-[13px] text-navy-950">{baseUrl}/i/{inv.token}</code>
+                <button type="button" data-copy-link data-link={`${baseUrl}/i/${inv.token}`}
+                        class="rounded-[6px] border border-border bg-white px-2 py-1 text-[12px] hover:border-primary hover:text-primary">
+                  <i class="bi bi-clipboard" aria-hidden="true"></i> скопировать
+                </button>
+                <a href={`https://t.me/share/url?url=${encodeURIComponent(`${baseUrl}/i/${inv.token}`)}&text=${encodeURIComponent('Приглашение в АйДаКемп')}`}
+                   target="_blank" rel="noopener"
+                   class="rounded-[6px] border border-emerald-300 bg-emerald-50 px-2 py-1 text-[12px] text-emerald-800 hover:bg-emerald-100">
+                  <i class="bi bi-telegram" aria-hidden="true"></i> в Telegram
+                </a>
+              </div>
+              {inv.comment && <div class="mt-1 text-[12px] text-body-muted">«{inv.comment}»</div>}
+            </div>
+            <button type="button" data-revoke-invite data-id={inv.id}
+                    class="rounded-[8px] border border-transparent px-2 py-1 text-[12px] text-body-muted hover:bg-red-50 hover:text-red-700">
+              <i class="bi bi-x-circle" aria-hidden="true"></i> отозвать
+            </button>
+          </div>
+        ))}
+      </div>
+    )}
+
+    {usedInvites.length > 0 && (
+      <details class="mt-4">
+        <summary class="cursor-pointer text-[14px] text-body-muted">Использованные ({usedInvites.length})</summary>
+        <ul class="mt-2 space-y-1 text-[13px] text-body-muted">
+          {usedInvites.slice(0, 20).map((inv) => (
+            <li>
+              {inv.name ?? '—'} · {inv.roles.map((r) => ROLE_LABEL[r] ?? r).join(', ')} ·
+              TG #{inv.used_by_tg} · {new Date(inv.used_at!).toLocaleString('ru-RU')}
+            </li>
+          ))}
+        </ul>
+      </details>
+    )}
+  </section>
+
+  {/* Модалка нового приглашения */}
+  <dialog id="invite-dialog" class="rounded-[16px] border border-border p-0 backdrop:bg-black/40"
+          style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); max-width:min(480px,95vw);">
+    <form method="dialog" class="p-5">
+      <h3 class="text-[18px] font-semibold text-navy-950">Новое приглашение</h3>
+      <div class="mt-4 space-y-3">
+        <label class="block">
+          <span class="block text-[13px] font-medium text-body-muted">Имя (для контекста, чтобы не забыть кому ссылка)</span>
+          <input id="inv-name" type="text" placeholder="например: Маша Иванова"
+                 class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 focus:border-primary focus:outline-none" />
+        </label>
+        <div>
+          <span class="block text-[13px] font-medium text-body-muted">Роли</span>
+          <div class="mt-1 grid grid-cols-2 gap-2 text-[14px]">
+            <label class="inline-flex items-center gap-2"><input type="checkbox" name="inv-role" value="teacher" class="rounded border-border"> Преподаватель</label>
+            <label class="inline-flex items-center gap-2"><input type="checkbox" name="inv-role" value="vozhaty" class="rounded border-border"> Вожатый</label>
+            <label class="inline-flex items-center gap-2"><input type="checkbox" name="inv-role" value="rukovoditel" class="rounded border-border"> Руководитель</label>
+            <label class="inline-flex items-center gap-2"><input type="checkbox" name="inv-role" value="admin" class="rounded border-border"> Админ</label>
+          </div>
+        </div>
+        <label class="block">
+          <span class="block text-[13px] font-medium text-body-muted">Заметка (необязательно)</span>
+          <textarea id="inv-comment" rows="2" class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-[14px] focus:border-primary focus:outline-none"></textarea>
+        </label>
+      </div>
+      <div class="mt-5 flex items-center justify-end gap-2">
+        <span id="inv-status" class="mr-auto text-[13px] text-body-muted"></span>
+        <button type="button" id="inv-cancel" class="rounded-[10px] border border-border bg-white px-4 py-2 text-[14px] hover:border-primary">Отмена</button>
+        <button type="button" id="inv-create" class="rounded-[10px] border border-emerald-600 bg-emerald-600 text-white px-4 py-2 text-[14px] hover:opacity-90">
+          <i class="bi bi-send" aria-hidden="true"></i> Создать ссылку
+        </button>
+      </div>
+    </form>
+  </dialog>
+
+  <script is:inline>
+    (function () {
+      const dlg = document.getElementById('invite-dialog');
+      const openBtn = document.getElementById('btn-new-invite');
+      const closeBtn = document.getElementById('inv-cancel');
+      const createBtn = document.getElementById('inv-create');
+      const status = document.getElementById('inv-status');
+      if (openBtn) openBtn.addEventListener('click', () => {
+        document.getElementById('inv-name').value = '';
+        document.getElementById('inv-comment').value = '';
+        document.querySelectorAll('input[name="inv-role"]').forEach((c) => c.checked = false);
+        if (status) status.textContent = '';
+        dlg.showModal();
+      });
+      if (closeBtn) closeBtn.addEventListener('click', () => dlg.close());
+      if (createBtn) createBtn.addEventListener('click', async () => {
+        const roles = Array.from(document.querySelectorAll('input[name="inv-role"]:checked')).map((i) => i.value);
+        if (roles.length === 0) { status.textContent = 'Отметь хотя бы одну роль'; return; }
+        const body = {
+          action: 'create',
+          name: document.getElementById('inv-name').value.trim(),
+          comment: document.getElementById('inv-comment').value.trim(),
+          roles,
+        };
+        status.textContent = 'Создаём…';
+        try {
+          const r = await fetch('/api/portal/invite', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body), credentials: 'include',
+          });
+          const jr = await r.json();
+          if (jr.ok) { dlg.close(); location.reload(); }
+          else status.textContent = 'Ошибка: ' + (jr.error || 'unknown');
+        } catch (e) { status.textContent = 'Сетевая ошибка'; }
+      });
+
+      // Копирование ссылок
+      document.querySelectorAll('[data-copy-link]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          navigator.clipboard?.writeText(btn.dataset.link).then(() => {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check-lg"></i> скопировано';
+            setTimeout(() => { btn.innerHTML = orig; }, 1400);
+          });
+        });
+      });
+
+      // Отзыв
+      document.querySelectorAll('[data-revoke-invite]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Отозвать приглашение? Ссылка перестанет работать.')) return;
+          const id = Number(btn.dataset.id);
+          const r = await fetch('/api/portal/invite', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'revoke', id }), credentials: 'include',
+          });
+          const jr = await r.json();
+          if (jr.ok) location.reload(); else alert('Ошибка: ' + (jr.error || ''));
+        });
+      });
+    })();
+  </script>
 
   <!-- ADD MANUAL: создать сотрудника без TG -->
   <section class="mb-10 rounded-[16px] border border-border bg-white p-5 card-shadow">

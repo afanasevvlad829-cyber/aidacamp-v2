@@ -211,3 +211,35 @@ export async function setActive(telegramId: number, active: boolean): Promise<vo
     await c.query('UPDATE portal_staff SET active=$2 WHERE telegram_id=$1', [telegramId, active]);
   });
 }
+
+/**
+ * Применить invite — авто-апрув сотрудника. Создаёт portal_staff (если нет) с предзаданными ролями
+ * и active=true. Возвращает результирующий StaffRow.
+ */
+export async function applyInviteForTelegram(
+  telegramId: number,
+  fullName: string | null,
+  username: string | null,
+  inviteRoles: string[],
+): Promise<StaffRow | null> {
+  if (!Array.isArray(inviteRoles) || inviteRoles.length === 0) return null;
+  return await withClient(async (c) => {
+    const primary = inviteRoles[0];
+    await c.query(
+      `INSERT INTO portal_staff (telegram_id, full_name, tg_username, role, roles, active)
+       VALUES ($1, $2, $3, $4, $5::text[], TRUE)
+       ON CONFLICT (telegram_id) DO UPDATE SET
+         full_name   = COALESCE(portal_staff.full_name, EXCLUDED.full_name),
+         tg_username = COALESCE(EXCLUDED.tg_username, portal_staff.tg_username),
+         role        = EXCLUDED.role,
+         roles       = EXCLUDED.roles,
+         active      = TRUE`,
+      [telegramId, fullName, username, primary, inviteRoles],
+    );
+    const r = await c.query(
+      'SELECT telegram_id, full_name, tg_username, role, COALESCE(roles, ARRAY[]::TEXT[]) AS roles, active FROM portal_staff WHERE telegram_id=$1',
+      [telegramId],
+    );
+    return r.rows[0] as StaffRow;
+  });
+}

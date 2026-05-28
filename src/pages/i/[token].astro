@@ -1,0 +1,57 @@
+---
+export const prerender = false;
+import { findUsableInviteByToken } from '../../lib/portalInvite';
+
+const token = String(Astro.params.token || '').trim();
+const inv = token ? await findUsableInviteByToken(token) : null;
+const roleLabels: Record<string, string> = {
+  admin: 'Админ', rukovoditel: 'Руководитель',
+  teacher: 'Преподаватель', vozhaty: 'Вожатый', student: 'Ученик',
+};
+const rolesText = inv?.roles.map((r) => roleLabels[r] ?? r).join(', ') ?? '';
+---
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Приглашение в АйДаКемп</title>
+  <link rel="stylesheet" href="/styles/icons.css" />
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #f8f9fb; margin: 0; padding: 24px; color: #0f172a; }
+    .card { max-width: 460px; margin: 40px auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 28px; box-shadow: 0 4px 16px rgba(15,23,42,.08); }
+    h1 { font-size: 24px; margin: 0 0 8px; letter-spacing: -.01em; }
+    .sub { color: #64748b; font-size: 15px; margin: 0 0 20px; }
+    .roles { display: inline-block; padding: 4px 10px; background: rgba(249,115,22,.12); color: #ea580c; border-radius: 999px; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+    .name { font-weight: 600; }
+    .err { background: #fef2f2; border-left: 4px solid #ef4444; padding: 14px 16px; border-radius: 8px; color: #991b1b; font-size: 14px; }
+    .btn { display: inline-block; background: #f97316; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 10px; font-weight: 600; margin-top: 16px; }
+    .btn:hover { opacity: .9; }
+    .muted { color: #64748b; font-size: 13px; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    {inv ? (
+      <>
+        <h1>Добро пожаловать в АйДаКемп</h1>
+        <p class="sub">Тебя пригласили в портал лагеря.</p>
+        {inv.name && <p class="name">Имя в приглашении: {inv.name}</p>}
+        <div class="roles">Роль: {rolesText}</div>
+        <p>Нажми кнопку ниже и подтверди вход через Telegram. После этого у тебя сразу будет доступ к порталу.</p>
+        <a class="btn" href={`/portal/login?invite=${inv.token}`}>Войти через Telegram</a>
+        <p class="muted">Приглашение действительно до {new Date(inv.expires_at).toLocaleDateString('ru-RU')}.</p>
+      </>
+    ) : (
+      <>
+        <h1>Приглашение недоступно</h1>
+        <div class="err">
+          Эта ссылка истекла, отозвана или уже была использована.
+          Попроси администратора выписать новую.
+        </div>
+        <a class="btn" href="/">На главную</a>
+      </>
+    )}
+  </div>
+</body>
+</html>
