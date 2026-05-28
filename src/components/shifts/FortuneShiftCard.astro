@@ -40,11 +40,10 @@ const segData = SEGMENTS.map((seg, i) => {
   const tr = R * 0.66;
   const tx = (CX + tr * Math.cos(ta)).toFixed(1);
   const ty = (CY + tr * Math.sin(ta)).toFixed(1);
-  // For bottom-half segments (center > 180°) flip text so it's not upside-down
-  const centerDeg = (i + 0.5) * 36;
-  const textRot = (centerDeg > 180 ? centerDeg - 180 : centerDeg).toFixed(1);
-  const textFlip = centerDeg > 180;
-  return { ...seg, path, tx, ty, textRot, textFlip };
+  // Rotate text in-place so it reads from rim toward center, readable from outside
+  const ta_deg = (i + 0.5) * 36 - 90;  // angle from horizontal to sector center
+  const textAngle = (ta_deg > 90 ? ta_deg - 180 : ta_deg).toFixed(1);
+  return { ...seg, path, tx, ty, textAngle };
 });
 ---
 
@@ -113,9 +112,7 @@ const segData = SEGMENTS.map((seg, i) => {
             <text
               x={seg.tx}
               y={seg.ty}
-              transform={seg.textFlip
-                ? `rotate(${seg.textRot}, ${CX}, ${CY}) rotate(180, ${seg.tx}, ${seg.ty})`
-                : `rotate(${seg.textRot}, ${CX}, ${CY})`}
+              transform={`rotate(${seg.textAngle}, ${seg.tx}, ${seg.ty})`}
               text-anchor="middle"
               dominant-baseline="middle"
               font-size="13"
