@@ -229,7 +229,7 @@ const CAT_LABELS: Record<string, string> = {
                 <th class="w-[60px] p-2"></th>
                 <th class="p-2">Наименование</th>
                 <th class="w-[80px] p-2 text-right">Цена&nbsp;Ozon</th>
-                <th class="w-[50px] p-2 text-right">Кол-во</th>
+                <th class="w-[70px] p-2 text-right" title="Остаток / закуплено">Кол-во</th>
                 <th class="w-[90px] p-2 text-right">Сумма</th>
                 <th class="w-[100px] p-2 text-right">Рекоменд.</th>
                 <th class="w-[150px] p-2 text-right">Цена,&nbsp;игр.&nbsp;₽<div class="text-[10px] font-normal text-body-muted">(заданная или рекоменд.)</div></th>
@@ -244,6 +244,7 @@ const CAT_LABELS: Record<string, string> = {
                 const st = stateById.get(p.id);
                 return (
                   <tr data-prize-row data-id={p.id} data-price={p.price} data-qty={p.qty}
+                      data-remaining={st?.remaining_qty ?? p.qty}
                       data-default-img={p.img ?? ''}
                       data-hidden={st?.hidden ? '1' : '0'}
                       data-bongere={st?.bongere_price ?? ''}
@@ -274,7 +275,10 @@ const CAT_LABELS: Record<string, string> = {
                       </div>
                     </td>
                     <td class="p-2 text-right font-mono tabular-nums">{fmtRub(p.price)}</td>
-                    <td class="p-2 text-right font-mono tabular-nums">{p.qty}</td>
+                    <td class="p-2 text-right font-mono tabular-nums" data-qty-cell>
+                      <span data-remaining-text class={(st?.remaining_qty ?? p.qty) === 0 ? 'text-red-600 font-bold' : ''}>{st?.remaining_qty ?? p.qty}</span>
+                      <span class="text-body-muted">/{p.qty}</span>
+                    </td>
                     <td class="p-2 text-right font-mono tabular-nums font-semibold">{fmtRub(p.price * p.qty)}</td>
                     <td class="p-2 text-right font-mono tabular-nums text-primary" data-recommended></td>
                     <td class="p-2 text-right">
@@ -283,6 +287,9 @@ const CAT_LABELS: Record<string, string> = {
                                class="w-[80px] rounded-[8px] border border-border bg-white px-2 py-1 text-right font-mono tabular-nums focus:border-primary focus:outline-none"
                                placeholder="—" value={st?.bongere_price ?? ''} />
                         <span class="text-body-muted">₽</span>
+                        <span data-save-flag class="inline-flex h-5 w-5 items-center justify-center text-emerald-600 opacity-0 transition-opacity" title="Сохранено">
+                          <i class="bi bi-check-circle-fill text-[14px]" aria-hidden="true"></i>
+                        </span>
                         <button type="button" data-reset-price
                                 class="ml-0.5 inline-flex h-6 w-6 items-center justify-center rounded-[6px] text-body-muted hover:bg-primary-soft hover:text-primary"
                                 title="Сбросить к рекомендованной">
@@ -302,13 +309,20 @@ const CAT_LABELS: Record<string, string> = {
                       )}
                     </td>
                     <td class="p-2 text-right">
-                      <button type="button" data-give
-                              data-prize-id={p.id}
-                              data-prize-name={p.name}
-                              class="mr-1 inline-flex items-center gap-1 rounded-[8px] border border-primary bg-primary text-white px-2 py-1 text-[12px] hover:opacity-90"
-                              title="Выдать ребёнку">
-                        <i class="bi bi-gift-fill" aria-hidden="true"></i> выдать
-                      </button>
+                      {(st?.remaining_qty ?? p.qty) > 0 ? (
+                        <button type="button" data-give
+                                data-prize-id={p.id}
+                                data-prize-name={p.name}
+                                class="mr-1 inline-flex items-center gap-1 rounded-[8px] border border-primary bg-primary text-white px-2 py-1 text-[12px] hover:opacity-90"
+                                title="Выдать ребёнку">
+                          <i class="bi bi-gift-fill" aria-hidden="true"></i> выдать
+                        </button>
+                      ) : (
+                        <span class="mr-1 inline-flex items-center gap-1 rounded-[8px] border border-border bg-page px-2 py-1 text-[12px] text-body-muted"
+                              title="Призов больше нет на складе">
+                          <i class="bi bi-x-circle" aria-hidden="true"></i> закончились
+                        </span>
+                      )}
                       {(p as any).isCustom && (
                         <button type="button" data-archive-custom data-custom-id={(p as any).customId}
                                 class="inline-flex h-7 w-7 items-center justify-center rounded-[8px] text-body-muted hover:bg-red-50 hover:text-red-600"
@@ -772,12 +786,19 @@ const CAT_LABELS: Record<string, string> = {
         const id = r.dataset.id;
         const inp = r.querySelector('[data-bongere-input]');
         let t;
+        const saveFlag = r.querySelector('[data-save-flag]');
         inp.addEventListener('input', () => {
           clearTimeout(t);
-          t = setTimeout(() => {
+          t = setTimeout(async () => {
             const v = inp.value === '' ? null : Number(inp.value);
             r.dataset.bongere = v == null ? '' : String(v);
-            savePrizeState(id, { bongere_price: v });
+            try {
+              await savePrizeState(id, { bongere_price: v });
+              if (saveFlag) {
+                saveFlag.style.opacity = '1';
+                setTimeout(() => { saveFlag.style.opacity = '0'; }, 1200);
+              }
+            } catch (e) { /* error already logged */ }
             recalcPrizes();
           }, 350);
         });

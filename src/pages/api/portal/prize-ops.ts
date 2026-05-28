@@ -8,6 +8,8 @@ import {
   listIssuances, createIssuance, deleteIssuance, countIssuancesByPrize,
   listCustomPrizes, createCustomPrize, archiveCustomPrize,
 } from '../../../lib/portalPrizeOps';
+import { decrementPrizeRemaining } from '../../../lib/portalEconomy';
+import { PRIZES } from '../../../lib/portalPrizes';
 
 const ALLOWED = new Set(['admin', 'rukovoditel', 'vozhaty']);
 const UPLOADS_ROOT = process.env.PORTAL_UPLOADS_ROOT || '/var/www/aidacamp-dev/uploads/portal';
@@ -91,7 +93,30 @@ export const POST: APIRoute = async ({ cookies, request }) => {
           note: form.get('note')?.toString() || null,
           bongere_price: form.get('bongere_price') ? Number(form.get('bongere_price')) : null,
         });
-        return j({ ok: true, id, photo_url, video_url });
+        // Декремент остатка: для hardcoded prize → portal_prize_state.remaining_qty,
+        // для custom (slug начинается с 'custom-') → клиент пусть отдельно архивирует когда нужно.
+        let remaining: number | null = null;
+        const hardcoded = PRIZES.find((pp) => pp.id === prizeId);
+        if (hardcoded) {
+          remaining = await decrementPrizeRemaining(prizeId, hardcoded.qty);
+        } else if (prizeId.startsWith('custom-')) {
+          // Для custom уменьшаем portal_prize_custom.qty напрямую
+          const { default: pg } = await import('pg');
+          const conn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
+          if (conn) {
+            const c = new pg.Client({ connectionString: conn });
+            await c.connect();
+            try {
+              const u = await c.query(
+                `UPDATE portal_prize_custom SET qty = GREATEST(qty - 1, 0), updated_at = NOW()
+                 WHERE slug = $1 RETURNING qty`,
+                [prizeId]
+              );
+              remaining = Number(u.rows[0]?.qty ?? 0);
+            } finally { await c.end(); }
+          }
+        }
+        return j({ ok: true, id, photo_url, video_url, remaining });
       }
 
       if (action === 'create_custom') {
