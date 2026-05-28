@@ -1,0 +1,355 @@
+---
+// FortuneSpinner.astro — Prototype lottery wheel for Shift-1 last 3 spots
+// Pure Astro + vanilla JS, no React, no external deps
+---
+
+<div class="fortune-widget mt-5 rounded-2xl overflow-hidden border-2 border-orange-200 shadow-lg">
+
+  <!-- Header banner -->
+  <div class="bg-orange-500 px-4 py-2.5 flex items-center gap-2.5">
+    <i class="bi bi-trophy-fill text-white text-[20px]" aria-hidden="true"></i>
+    <div>
+      <p class="text-white font-extrabold text-[14px] leading-tight">Последние 3 места</p>
+      <p class="text-orange-100 text-[11px] font-medium">крути колесо — получи скидку!</p>
+    </div>
+  </div>
+
+  <div class="bg-gradient-to-b from-orange-50 to-white px-4 pt-4 pb-5">
+
+    <!-- Attempt indicators -->
+    <div class="flex gap-2 justify-center mb-4">
+      <div class="fortune-dot w-9 h-9 rounded-full bg-orange-400 text-white text-[13px] font-bold flex items-center justify-center shadow-sm">1</div>
+      <div class="fortune-dot w-9 h-9 rounded-full bg-orange-400 text-white text-[13px] font-bold flex items-center justify-center shadow-sm">2</div>
+      <div class="fortune-dot w-9 h-9 rounded-full bg-orange-400 text-white text-[13px] font-bold flex items-center justify-center shadow-sm">3</div>
+    </div>
+
+    <!-- Wheel container (176×176 with border-4 = 168px inner) -->
+    <div class="relative mx-auto mb-4" style="width:176px;height:176px">
+      <!-- Red pointer arrow at top -->
+      <div class="absolute left-1/2 -translate-x-1/2 z-20"
+           style="top:-4px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:14px solid #dc2626"></div>
+      <!-- Spinning wheel (SVG injected by JS) -->
+      <div class="fortune-wheel-el w-full h-full rounded-full border-4 border-orange-300 shadow-xl overflow-hidden"
+           style="transform-origin:50% 50%"></div>
+      <!-- Center pin -->
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-5 h-5 rounded-full bg-white border-2 border-gray-300 shadow"></div>
+    </div>
+
+    <!-- Spin button area -->
+    <div class="fortune-spin-area mb-1">
+      <button class="fortune-spin-btn w-full py-3 rounded-xl font-bold text-white text-[15px] flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform select-none"
+              style="background:linear-gradient(135deg,#f97316,#dc2626)">
+        <i class="bi bi-arrow-repeat text-[16px]" aria-hidden="true"></i>
+        КРУТИТЬ
+      </button>
+    </div>
+
+    <!-- Result block (hidden until spin) -->
+    <div class="fortune-result hidden mt-3">
+
+      <!-- Win card -->
+      <div class="rounded-xl bg-green-50 border-2 border-green-400 p-3 text-center mb-2">
+        <p class="text-[11px] font-semibold uppercase tracking-widest text-gray-500 mb-0.5">Ваша скидка</p>
+        <div class="fortune-disc text-5xl font-extrabold text-green-600 leading-none mb-1.5">—</div>
+        <p class="text-[13px] text-gray-600 tabular-nums">
+          <span class="fortune-orig line-through text-red-400 mr-1"></span>&rarr;
+          <span class="fortune-final font-bold text-green-700 text-[16px] ml-1"></span>
+        </p>
+      </div>
+
+      <!-- Payment terms -->
+      <div class="rounded-xl bg-amber-50 border border-amber-200 p-3 space-y-1.5 mb-3">
+        <div class="flex items-center gap-2 text-[12px] text-amber-800">
+          <i class="bi bi-clock text-amber-500 text-[13px] shrink-0" aria-hidden="true"></i>
+          <span>Предоплата <strong>50%&nbsp;= <span class="fortune-deposit-amt">—</span></strong> — оплатить в течение <strong>30&nbsp;мин</strong></span>
+        </div>
+        <div class="flex items-center gap-2 text-[12px] text-amber-800">
+          <i class="bi bi-calendar-check text-amber-500 text-[13px] shrink-0" aria-hidden="true"></i>
+          <span>Остаток — до конца дня</span>
+        </div>
+        <div class="flex items-center gap-2 text-[12px] text-amber-800">
+          <i class="bi bi-lock-fill text-amber-500 text-[13px] shrink-0" aria-hidden="true"></i>
+          <span>Место бронируется только за вами</span>
+        </div>
+      </div>
+
+      <!-- Pay CTA -->
+      <button class="fortune-pay-btn w-full flex items-center justify-center gap-2 rounded-xl bg-green-500 hover:bg-green-600 py-3 font-bold text-white text-[14px] transition-colors active:scale-95">
+        <i class="bi bi-credit-card fortune-pay-icon" aria-hidden="true"></i>
+        <span class="fortune-pay-label">Оплатить предоплату — <span class="fortune-pay-amt">—</span></span>
+      </button>
+      <p class="fortune-pay-error hidden text-center text-[11px] text-red-500 mt-1.5"></p>
+
+      <!-- Try again (if attempts remain) -->
+      <div class="fortune-retry hidden mt-2">
+        <button class="fortune-retry-btn w-full py-2 rounded-xl text-[13px] font-semibold text-orange-600 border-2 border-orange-300 hover:bg-orange-50 transition-colors">
+          Попробовать ещё (<span class="fortune-attempts-left">2</span>)
+        </button>
+      </div>
+
+    </div>
+
+    <p class="text-center text-[10px] text-gray-400 mt-4">
+      Прототип &middot; скидка фиксируется на 30&nbsp;минут после выигрыша
+    </p>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // 10 wheel segments (36° each). Duplicated set of 5 for visual variety.
+  var SEGS = [
+    { d: 70, fill: '#fde047', text: '#92400e' },
+    { d:  5, fill: '#bfdbfe', text: '#1e40af' },
+    { d: 50, fill: '#fed7aa', text: '#9a3412' },
+    { d: 15, fill: '#e9d5ff', text: '#6b21a8' },
+    { d: 30, fill: '#fca5a5', text: '#991b1b' },
+    { d: 70, fill: '#fde047', text: '#92400e' },
+    { d:  5, fill: '#bfdbfe', text: '#1e40af' },
+    { d: 50, fill: '#fed7aa', text: '#9a3412' },
+    { d: 15, fill: '#e9d5ff', text: '#6b21a8' },
+    { d: 30, fill: '#fca5a5', text: '#991b1b' },
+  ];
+
+  // Weighted probability: 70%=5%, 50%=10%, 30%=25%, 15%=40%, 5%=20%
+  var WEIGHTS = [
+    { d: 70, w:  5 },
+    { d: 50, w: 10 },
+    { d: 30, w: 25 },
+    { d: 15, w: 40 },
+    { d:  5, w: 20 },
+  ];
+
+  // Build SVG wheel with pie segments + radially-oriented text labels.
+  // When the wheel stops, the winning segment's text is ~horizontal (readable).
+  function makeSVG(sz) {
+    var cx = sz / 2, cy = sz / 2, r = sz / 2 - 1;
+    var n = SEGS.length;
+    var dA = 360 / n; // degrees per segment
+    var buf = [];
+
+    for (var i = 0; i < n; i++) {
+      var s = SEGS[i];
+      // Segment arc (0° = 12 o'clock, clockwise)
+      var a0 = (i * dA - 90) * Math.PI / 180;
+      var a1 = ((i + 1) * dA - 90) * Math.PI / 180;
+      var x0 = (cx + r * Math.cos(a0)).toFixed(2);
+      var y0 = (cy + r * Math.sin(a0)).toFixed(2);
+      var x1 = (cx + r * Math.cos(a1)).toFixed(2);
+      var y1 = (cy + r * Math.sin(a1)).toFixed(2);
+
+      buf.push(
+        '<path d="M' + cx + ',' + cy +
+        'L' + x0 + ',' + y0 +
+        'A' + r + ',' + r + ' 0 0,1 ' + x1 + ',' + y1 +
+        'Z" fill="' + s.fill + '" stroke="white" stroke-width="2"/>'
+      );
+
+      // Text label — radially oriented so it reads left-to-right when at top.
+      // rotate(midDeg, tx, ty) rotates the text glyph around its own center.
+      // When the wheel rotates by (360 - midDeg) to bring segment to top,
+      // total text rotation = midDeg + (360 - midDeg) = 360° ≡ 0° → horizontal. ✓
+      var mA = ((i + 0.5) * dA - 90) * Math.PI / 180;
+      var tr = r * 0.62;
+      var tx = (cx + tr * Math.cos(mA)).toFixed(2);
+      var ty = (cy + tr * Math.sin(mA)).toFixed(2);
+      var rot = ((i + 0.5) * dA).toFixed(1);
+
+      buf.push(
+        '<text x="' + tx + '" y="' + ty + '"' +
+        ' text-anchor="middle" dominant-baseline="central"' +
+        ' font-size="10" font-weight="900" fill="' + s.text + '"' +
+        ' transform="rotate(' + rot + ' ' + tx + ' ' + ty + ')">' +
+        s.d + '%' +
+        '</text>'
+      );
+    }
+
+    return (
+      '<svg xmlns="http://www.w3.org/2000/svg"' +
+      ' viewBox="0 0 ' + sz + ' ' + sz + '" style="display:block">' +
+      buf.join('') +
+      '</svg>'
+    );
+  }
+
+  function pickDiscount() {
+    var rand = Math.random() * 100;
+    var cum = 0;
+    for (var i = 0; i < WEIGHTS.length; i++) {
+      cum += WEIGHTS[i].w;
+      if (rand <= cum) return WEIGHTS[i].d;
+    }
+    return 5;
+  }
+
+  function rub(n) {
+    return n.toLocaleString('ru-RU') + ' ₽'; // thin-space + ₽
+  }
+
+  function initWidget(widget) {
+    if (widget._fortuneInit) return;
+    widget._fortuneInit = true;
+
+    var wheelEl  = widget.querySelector('.fortune-wheel-el');
+    var spinBtn  = widget.querySelector('.fortune-spin-btn');
+    var spinArea = widget.querySelector('.fortune-spin-area');
+    var resEl    = widget.querySelector('.fortune-result');
+    var retryEl  = widget.querySelector('.fortune-retry');
+    var retryBtn = widget.querySelector('.fortune-retry-btn');
+    var aleftEl  = widget.querySelector('.fortune-attempts-left');
+    var discEl      = widget.querySelector('.fortune-disc');
+    var origEl      = widget.querySelector('.fortune-orig');
+    var finEl       = widget.querySelector('.fortune-final');
+    var depositAmtEl = widget.querySelector('.fortune-deposit-amt');
+    var payAmtEl    = widget.querySelector('.fortune-pay-amt');
+    var payBtn      = widget.querySelector('.fortune-pay-btn');
+    var payErrEl    = widget.querySelector('.fortune-pay-error');
+    var dots        = widget.querySelectorAll('.fortune-dot');
+
+    if (!wheelEl || !spinBtn) return;
+
+    var PRICE      = 85900;
+    var rot        = 0;
+    var tries      = 3;
+    var busy       = false;
+    var wonDiscount = 0;  // запоминаем выигранную скидку для оплаты
+
+    // Inject SVG (168px = 176px container minus 2×4px border)
+    wheelEl.innerHTML = makeSVG(168);
+    var svgEl = wheelEl.querySelector('svg');
+    if (svgEl) { svgEl.style.width = '100%'; svgEl.style.height = '100%'; }
+
+    function refreshDots() {
+      var used = 3 - tries;
+      dots.forEach(function (dot, i) {
+        if (i < used) {
+          dot.style.background = '#e5e7eb';
+          dot.style.color = '#9ca3af';
+        }
+      });
+    }
+
+    function showWin(d) {
+      wonDiscount = d;
+      var fp  = Math.round(PRICE * (1 - d / 100));
+      var dep = Math.round(fp * 0.5);
+
+      discEl.textContent = d + '%';
+      origEl.textContent = rub(PRICE);
+      finEl.textContent  = rub(fp);
+      if (depositAmtEl) depositAmtEl.textContent = rub(dep);
+      if (payAmtEl)     payAmtEl.textContent     = rub(dep);
+      if (payErrEl)     payErrEl.classList.add('hidden');
+
+      resEl.classList.remove('hidden');
+      spinArea.classList.add('hidden');
+
+      if (tries > 0 && retryEl) {
+        if (aleftEl) aleftEl.textContent = tries + (tries === 1 ? ' попытка' : ' попытки');
+        retryEl.classList.remove('hidden');
+      } else if (retryEl) {
+        retryEl.classList.add('hidden');
+      }
+    }
+
+    // ── Tinkoff payment ──────────────────────────────────────────────────────
+    if (payBtn) {
+      payBtn.addEventListener('click', function () {
+        if (payBtn.disabled) return;
+        payBtn.disabled = true;
+
+        var icon  = payBtn.querySelector('.fortune-pay-icon');
+        var label = payBtn.querySelector('.fortune-pay-label');
+        if (icon)  icon.className  = 'bi bi-arrow-repeat fortune-pay-icon';
+        if (label) label.textContent = 'Соединяемся с банком…';
+        if (payErrEl) payErrEl.classList.add('hidden');
+
+        fetch('/api/fortune/init', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ shiftId: 'shift-1', discount: wonDiscount }),
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (data.paymentUrl) {
+              window.location.href = data.paymentUrl;
+            } else {
+              throw new Error(data.error || 'Ошибка банка');
+            }
+          })
+          .catch(function (err) {
+            payBtn.disabled = false;
+            if (icon)  icon.className  = 'bi bi-credit-card fortune-pay-icon';
+            if (label) label.textContent = 'Оплатить предоплату';
+            if (payErrEl) {
+              payErrEl.textContent = err.message || 'Ошибка соединения с банком';
+              payErrEl.classList.remove('hidden');
+            }
+          });
+      });
+    }
+
+    function doSpin() {
+      if (busy || tries <= 0) return;
+      busy = true;
+      tries--;
+      refreshDots();
+
+      // Reset UI state for new spin
+      resEl.classList.add('hidden');
+      if (retryEl) retryEl.classList.add('hidden');
+      spinArea.classList.remove('hidden');
+      spinBtn.disabled = true;
+
+      var d = pickDiscount();
+
+      // Find first segment with this discount value
+      var idx = 0;
+      for (var k = 0; k < SEGS.length; k++) {
+        if (SEGS[k].d === d) { idx = k; break; }
+      }
+
+      // Center angle of winning segment (degrees from top, clockwise)
+      var segCtr = (idx + 0.5) * 36;
+
+      // Random jitter within ±10° to avoid always landing dead-center
+      var jitter = (Math.random() - 0.5) * 20;
+
+      // To bring segCtr to the top (pointer), rotate by (360 - segCtr)
+      var land = ((360 - segCtr + jitter) % 360 + 360) % 360;
+
+      // 5 full spins + landing position
+      rot += 5 * 360 + land;
+
+      wheelEl.style.transition = 'transform 3s cubic-bezier(0.25,0.46,0.45,0.94)';
+      wheelEl.style.transform  = 'rotate(' + rot + 'deg)';
+
+      setTimeout(function () {
+        wheelEl.style.transition = 'none';
+        busy = false;
+        spinBtn.disabled = false;
+        showWin(d);
+      }, 3300);
+    }
+
+    spinBtn.addEventListener('click', doSpin);
+    if (retryBtn) {
+      retryBtn.addEventListener('click', function () {
+        if (tries > 0) doSpin();
+      });
+    }
+  }
+
+  function bootAll() {
+    document.querySelectorAll('.fortune-widget').forEach(initWidget);
+  }
+
+  document.addEventListener('astro:page-load', bootAll);
+  if (document.readyState !== 'loading') bootAll();
+  else document.addEventListener('DOMContentLoaded', bootAll);
+})();
+</script>

@@ -1,0 +1,538 @@
+---
+import { getCurrentPrice } from '../../data/dynamicPrices';
+
+const today = new Date();
+const currentPrice = getCurrentPrice('shift-1', today) ?? 93900;
+
+// Days until shift starts (May 30, 2026)
+const startDate = new Date('2026-05-30T00:00:00');
+const daysLeft = Math.max(0, Math.ceil((startDate.getTime() - today.getTime()) / 86_400_000));
+const daysLeftLabel = daysLeft === 0 ? 'сегодня' : daysLeft === 1 ? 'через 1 день' : `через ${daysLeft} дн`;
+
+// SVG wheel segments (shared server+client via define:vars)
+// Все секторы с реальными скидками 10–70%, 0% убраны
+interface Seg { label: string; d: number; w: number; color: string }
+const SEGMENTS: Seg[] = [
+  { label: '10%', d: 10, w: 25, color: '#fdba74' },
+  { label: '15%', d: 15, w: 20, color: '#fb923c' },
+  { label: '20%', d: 20, w: 18, color: '#f97316' },
+  { label: '25%', d: 25, w: 14, color: '#ea580c' },
+  { label: '30%', d: 30, w: 10, color: '#dc4106' },
+  { label: '35%', d: 35, w: 6,  color: '#c2410c' },
+  { label: '40%', d: 40, w: 4,  color: '#9a3412' },
+  { label: '50%', d: 50, w: 2,  color: '#7c2d12' },
+  { label: '60%', d: 60, w: 1,  color: '#6b1e0a' },
+  { label: '70%', d: 70, w: 1,  color: '#431407' },
+];
+
+// Pre-compute SVG paths server-side
+const R = 108, CX = 120, CY = 120;
+function toRad(deg: number) { return deg * Math.PI / 180; }
+const segData = SEGMENTS.map((seg, i) => {
+  const a1 = toRad(i * 36 - 90);
+  const a2 = toRad((i + 1) * 36 - 90);
+  const x1 = (CX + R * Math.cos(a1)).toFixed(1);
+  const y1 = (CY + R * Math.sin(a1)).toFixed(1);
+  const x2 = (CX + R * Math.cos(a2)).toFixed(1);
+  const y2 = (CY + R * Math.sin(a2)).toFixed(1);
+  const path = `M ${CX} ${CY} L ${x1} ${y1} A ${R} ${R} 0 0 1 ${x2} ${y2} Z`;
+  const ta = toRad((i + 0.5) * 36 - 90);
+  const tr = R * 0.65;
+  const tx = (CX + tr * Math.cos(ta)).toFixed(1);
+  const ty = (CY + tr * Math.sin(ta)).toFixed(1);
+  const textRot = ((i + 0.5) * 36).toFixed(1);
+  return { ...seg, path, tx, ty, textRot };
+});
+---
+
+<!-- ── Card ── -->
+<article
+  data-fortune-card
+  data-shift-id="shift-1"
+  class="relative flex flex-col rounded-[22px] border border-transparent bg-card card-shadow ring-2 ring-primary shadow-[0_0_0_4px_rgba(236,124,0,0.12)] p-5"
+>
+
+  <!-- Orange header banner -->
+  <div class="-mx-5 -mt-5 mb-4 flex items-center gap-2 rounded-t-[20px] bg-primary px-5 py-3">
+    <span class="text-[16px] font-extrabold text-white leading-none">Смена 1 · 30 мая — 8 июня</span>
+    <span class="ml-auto flex items-center gap-1.5 whitespace-nowrap text-[12px] font-semibold text-white/80">
+      <i class="bi bi-clock text-[11px]" aria-hidden="true"></i>
+      {daysLeftLabel}
+    </span>
+  </div>
+
+  <!-- Tags row: duration + spots + price -->
+  <div class="flex items-center gap-1.5 mb-4 flex-wrap">
+    <span class="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-1 text-[12px] font-semibold text-orange-700">
+      <i class="bi bi-calendar-event text-[10px]" aria-hidden="true"></i>
+      10 дней
+    </span>
+    <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-[12px] font-bold text-red-700">
+      <i class="bi bi-fire text-[10px]" aria-hidden="true"></i>
+      Последние 3 места
+    </span>
+    <span class="ml-auto text-right">
+      <span class="block text-[10px] font-semibold uppercase tracking-[0.12em] text-body-faint">Стоимость</span>
+      <span class="block text-[20px] font-extrabold text-primary leading-none" data-dynamic-price="shift-1">{currentPrice.toLocaleString('ru-RU')} ₽</span>
+    </span>
+  </div>
+
+  <!-- Wheel tagline -->
+  <p class="text-center text-[13px] font-semibold text-body-muted mb-2">
+    <i class="bi bi-trophy-fill text-orange-400 text-[12px] mr-1" aria-hidden="true"></i>
+    Крутите колесо — разыгрываем скидку до 70%
+  </p>
+
+  <!-- SVG Fortune Wheel -->
+  <div class="flex justify-center mb-3 relative">
+    <!-- Pointer triangle at top -->
+    <div
+      class="absolute z-10 pointer-events-none"
+      style="top:-4px; left:50%; transform:translateX(-50%)"
+      aria-hidden="true"
+    >
+      <svg width="20" height="14" viewBox="0 0 20 14">
+        <polygon points="10,14 0,0 20,0" fill="#1e293b"/>
+      </svg>
+    </div>
+
+    <div class="w-[220px] max-w-full relative" style="aspect-ratio:1">
+      <svg
+        id="fsc-wheel"
+        viewBox="0 0 240 240"
+        style="width:100%;height:100%;transform-origin:50% 50%"
+      >
+        {segData.map((seg, i) => (
+          <g>
+            <path d={seg.path} fill={seg.color} stroke="white" stroke-width="1.5"/>
+            <text
+              x={seg.tx}
+              y={seg.ty}
+              transform={`rotate(${seg.textRot}, ${CX}, ${CY})`}
+              text-anchor="middle"
+              dominant-baseline="middle"
+              font-size="11"
+              font-weight="800"
+              fill="white"
+              style="font-family:system-ui,sans-serif;paint-order:stroke;stroke:rgba(0,0,0,0.25);stroke-width:3px"
+            >{seg.label}</text>
+          </g>
+        ))}
+        <!-- Center hub -->
+        <circle cx={CX} cy={CY} r="24" fill="white" stroke="#fed7aa" stroke-width="2.5"/>
+        <circle cx={CX} cy={CY} r="18" fill="#fff7ed"/>
+        <text
+          x={CX} y={CY - 3}
+          text-anchor="middle" dominant-baseline="middle"
+          font-size="7" font-weight="800" fill="#ea580c"
+          style="font-family:system-ui,sans-serif;letter-spacing:0.05em"
+        >УДАЧА</text>
+        <text
+          x={CX} y={CY + 7}
+          text-anchor="middle" dominant-baseline="middle"
+          font-size="13" fill="#ea580c"
+          style="font-family:system-ui,sans-serif"
+        >★</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Attempts dots + spin button -->
+  <div class="flex flex-col items-center gap-2.5 mb-4">
+    <div id="fsc-attempts" class="flex items-center gap-1.5" aria-label="Оставшиеся попытки">
+      <span class="w-2.5 h-2.5 rounded-full transition-colors" data-dot="0" style="background:var(--color-primary,#f97316)"></span>
+      <span class="w-2.5 h-2.5 rounded-full transition-colors" data-dot="1" style="background:var(--color-primary,#f97316)"></span>
+      <span class="w-2.5 h-2.5 rounded-full transition-colors" data-dot="2" style="background:var(--color-primary,#f97316)"></span>
+    </div>
+    <button
+      id="fsc-spin-btn"
+      type="button"
+      class="flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-[14px] px-10 py-3 min-h-[44px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <i id="fsc-spin-icon" class="bi bi-arrow-repeat text-[16px]" aria-hidden="true"></i>
+      <span id="fsc-spin-label">Крутить!</span>
+    </button>
+  </div>
+
+  <!-- Win result block (hidden until first spin resolves) -->
+  <div id="fsc-win-block" class="hidden flex-col items-center gap-2.5 mb-4">
+    <div class="w-full rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-center">
+      <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-green-600 mb-0.5">Ваша скидка</p>
+      <p class="text-[34px] font-extrabold text-green-700 leading-none" id="fsc-disc-pct">—</p>
+      <p class="text-[13px] text-green-600 mt-1.5 space-x-2">
+        <span>Итого: <strong id="fsc-final-price">—</strong></span>
+        <span class="text-green-400">·</span>
+        <span>Предоплата: <strong id="fsc-dep-price">—</strong></span>
+      </p>
+    </div>
+    <button
+      id="fsc-book-btn"
+      type="button"
+      class="w-full flex items-center justify-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-[15px] py-3.5 min-h-[48px] transition-colors"
+    >
+      <i class="bi bi-calendar-check text-[16px]" aria-hidden="true"></i>
+      Забронировать место
+    </button>
+  </div>
+
+  <!-- Bottom conditions -->
+  <div class="mt-auto border-t border-border-light pt-3 space-y-0.5 text-[11px] text-body-faint">
+    <p>
+      <i class="bi bi-shield-check text-[10px] mr-1" aria-hidden="true"></i>
+      Предоплата 50% · оставшиеся 50% до конца дня оплаты
+    </p>
+    <p>
+      <i class="bi bi-calendar-event text-[10px] mr-1" aria-hidden="true"></i>
+      Заехать можно до 1 июня · успейте собрать справки
+    </p>
+  </div>
+</article>
+
+<!-- ── Booking Modal (fixed overlay, position:fixed → not clipped by carousel) ── -->
+<div
+  id="fsc-modal"
+  class="fixed inset-0 z-[100] hidden items-center justify-center p-4"
+  style="background:rgba(0,0,0,0.55);backdrop-filter:blur(4px)"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="fsc-modal-title"
+>
+  <div class="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden">
+
+    <!-- Modal header: green -->
+    <div class="bg-green-600 px-6 py-4">
+      <p class="text-[11px] font-bold uppercase tracking-[0.15em] text-green-100 mb-0.5">Место забронировано</p>
+      <h2 id="fsc-modal-title" class="text-[22px] font-extrabold text-white leading-none">
+        Скидка <span id="fsc-modal-disc">—</span> зафиксирована
+      </h2>
+    </div>
+
+    <!-- Countdown -->
+    <div class="flex items-center gap-3 bg-orange-50 border-b border-orange-100 px-6 py-3">
+      <i class="bi bi-clock text-orange-500 text-[20px] shrink-0" aria-hidden="true"></i>
+      <div>
+        <p class="text-[12px] font-semibold text-orange-600">Место удерживается</p>
+        <p id="fsc-timer" class="text-[24px] font-extrabold text-orange-700 leading-none tabular-nums">30:00</p>
+      </div>
+    </div>
+
+    <!-- Payment summary -->
+    <div class="px-6 py-3 border-b border-gray-100 space-y-1.5">
+      <div class="flex justify-between text-[14px]">
+        <span class="text-gray-500">Цена со скидкой</span>
+        <span id="fsc-modal-final" class="font-bold text-gray-800">—</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-[14px] text-gray-500">Предоплата сейчас (50%)</span>
+        <span id="fsc-modal-dep" class="text-[18px] font-extrabold text-primary leading-none">—</span>
+      </div>
+    </div>
+
+    <!-- What happens next -->
+    <div class="px-6 py-3 border-b border-gray-100 space-y-1.5 text-[12px] text-gray-500">
+      <p class="font-semibold text-gray-700 text-[13px] mb-2">Что будет после оплаты:</p>
+      <p><span class="inline-block w-4 text-orange-500 font-bold">1.</span> В течение 30 минут с вами свяжется представитель</p>
+      <p><span class="inline-block w-4 text-orange-500 font-bold">2.</span> Договор подготовим до конца рабочего дня</p>
+      <p><span class="inline-block w-4 text-orange-500 font-bold">3.</span> Окончательная оплата — до конца дня заезда (30 мая)</p>
+      <p><span class="inline-block w-4 text-orange-500 font-bold">4.</span> Заехать можно до 1 июня — время собрать справки</p>
+      <p class="text-gray-400 pt-1">Трансфер оплачивается отдельно.</p>
+    </div>
+
+    <!-- Form -->
+    <div class="px-6 py-4 space-y-3">
+      <div>
+        <label for="fsc-name" class="block text-[13px] font-semibold text-gray-700 mb-1.5">Ваши ФИО *</label>
+        <input
+          id="fsc-name"
+          type="text"
+          placeholder="Иванов Иван Иванович"
+          required
+          autocomplete="name"
+          class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[15px] outline-none focus:border-primary focus:ring-2 focus:ring-orange-100 transition"
+        />
+      </div>
+      <div>
+        <label for="fsc-phone" class="block text-[13px] font-semibold text-gray-700 mb-1.5">Ваш телефон *</label>
+        <input
+          id="fsc-phone"
+          type="tel"
+          placeholder="+7 (999) 000-00-00"
+          required
+          autocomplete="tel"
+          inputmode="tel"
+          class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[15px] outline-none focus:border-primary focus:ring-2 focus:ring-orange-100 transition"
+        />
+      </div>
+      <p id="fsc-form-error" class="hidden text-[12px] text-red-600 font-medium"></p>
+    </div>
+
+    <!-- Pay button -->
+    <div class="px-6 pb-4">
+      <button
+        id="fsc-pay-btn"
+        type="button"
+        class="w-full flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-[15px] py-3.5 min-h-[52px] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        <i class="bi bi-credit-card text-[16px]" aria-hidden="true"></i>
+        <span id="fsc-pay-label">Оплатить через Т-банк</span>
+      </button>
+    </div>
+
+    <!-- Fine print + close -->
+    <div class="px-6 pb-5 text-center space-y-2">
+      <p class="text-[11px] leading-[1.45] text-gray-400">
+        Оплата подтверждает предварительное бронирование. Договор оферты подготовим до конца дня.
+      </p>
+      <button
+        id="fsc-modal-close"
+        type="button"
+        class="text-[13px] text-gray-400 hover:text-gray-600 underline underline-offset-2 transition"
+      >
+        Закрыть
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script define:vars={{ SEGMENTS, currentPrice }}>
+  (function () {
+    var PRICE = currentPrice;
+    var segs  = SEGMENTS;
+    var attempts   = 3;
+    var wonDiscount = 0;
+    var isSpinning  = false;
+    var currentRot  = 0;
+    var timerInterval = null;
+
+    var wheel      = document.getElementById('fsc-wheel');
+    var spinBtn    = document.getElementById('fsc-spin-btn');
+    var spinLabel  = document.getElementById('fsc-spin-label');
+    var attemptsEl = document.getElementById('fsc-attempts');
+    var winBlock   = document.getElementById('fsc-win-block');
+    var discPctEl  = document.getElementById('fsc-disc-pct');
+    var finalPriceEl = document.getElementById('fsc-final-price');
+    var depPriceEl   = document.getElementById('fsc-dep-price');
+    var bookBtn    = document.getElementById('fsc-book-btn');
+    var modal      = document.getElementById('fsc-modal');
+    var modalDisc  = document.getElementById('fsc-modal-disc');
+    var modalFinal = document.getElementById('fsc-modal-final');
+    var modalDep   = document.getElementById('fsc-modal-dep');
+    var timerEl    = document.getElementById('fsc-timer');
+    var nameInput  = document.getElementById('fsc-name');
+    var phoneInput = document.getElementById('fsc-phone');
+    var formError  = document.getElementById('fsc-form-error');
+    var payBtn     = document.getElementById('fsc-pay-btn');
+    var payLabel   = document.getElementById('fsc-pay-label');
+    var modalClose = document.getElementById('fsc-modal-close');
+
+    if (!wheel || !spinBtn || !modal) return; // guard
+
+    function rub(n) {
+      return n.toLocaleString('ru-RU') + ' ₽';
+    }
+
+    // Weighted random segment index
+    function pickWinner() {
+      var total = 0;
+      for (var i = 0; i < segs.length; i++) total += segs[i].w;
+      var r = Math.random() * total;
+      var cum = 0;
+      for (var j = 0; j < segs.length; j++) {
+        cum += segs[j].w;
+        if (r < cum) return j;
+      }
+      return segs.length - 1;
+    }
+
+    // Target rotation so segment i lands at top pointer (0° position)
+    function targetRotation(segIdx) {
+      var segCenterDeg = (segIdx + 0.5) * 36; // 0° = top
+      var naturalStop  = (360 - segCenterDeg + 360) % 360;
+      var jitter = (Math.random() - 0.5) * 18; // ±9°
+      // 5+ full spins from current position
+      var base = Math.ceil(currentRot / 360) * 360;
+      return base + 5 * 360 + naturalStop + jitter;
+    }
+
+    function updateDots() {
+      var dots = attemptsEl.querySelectorAll('[data-dot]');
+      dots.forEach(function (dot, i) {
+        dot.style.background = i < attempts
+          ? 'var(--color-primary, #f97316)'
+          : '#e2e8f0';
+      });
+    }
+
+    function showWin(segIdx) {
+      var d  = segs[segIdx].d;
+      wonDiscount = d;
+      var fp  = Math.round(PRICE * (1 - d / 100));
+      var dep = Math.round(fp * 0.5);
+
+      discPctEl.textContent   = d + '%';
+      finalPriceEl.textContent = rub(fp);
+      depPriceEl.textContent   = rub(dep);
+
+      winBlock.classList.remove('hidden');
+      winBlock.classList.add('flex');
+
+      // Re-enable spin button if attempts remain
+      if (attempts > 0) {
+        spinBtn.disabled = false;
+        spinLabel.textContent = 'Попробовать ещё раз';
+      } else {
+        spinBtn.disabled = true;
+        spinLabel.textContent = 'Попытки исчерпаны';
+      }
+    }
+
+    // ── Spin ──
+    spinBtn.addEventListener('click', function () {
+      if (isSpinning || attempts <= 0) return;
+      isSpinning = true;
+      attempts--;
+      updateDots();
+      spinBtn.disabled = true;
+      spinLabel.textContent = 'Крутим...';
+
+      // Hide previous win block while spinning
+      winBlock.classList.add('hidden');
+      winBlock.classList.remove('flex');
+
+      var winner = pickWinner();
+      var target = targetRotation(winner);
+
+      wheel.style.transition = 'transform 3s cubic-bezier(0.17, 0.67, 0.12, 1.0)';
+      wheel.style.transform  = 'rotate(' + target + 'deg)';
+      currentRot = target;
+
+      setTimeout(function () {
+        isSpinning = false;
+        showWin(winner);
+      }, 3150);
+    });
+
+    // ── Open booking modal ──
+    bookBtn.addEventListener('click', function () {
+      var d   = wonDiscount;
+      var fp  = Math.round(PRICE * (1 - d / 100));
+      var dep = Math.round(fp * 0.5);
+
+      modalDisc.textContent  = d + '%';
+      modalFinal.textContent = rub(fp);
+      modalDep.textContent   = rub(dep);
+      payLabel.textContent   = 'Оплатить ' + rub(dep) + ' через Т-банк';
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      startTimer();
+      setTimeout(function () { nameInput.focus(); }, 50);
+    });
+
+    // ── Timer ──
+    function startTimer() {
+      clearInterval(timerInterval);
+      var secs = 30 * 60;
+      function tick() {
+        var m = Math.floor(secs / 60);
+        var s = secs % 60;
+        timerEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+        if (secs <= 0) {
+          clearInterval(timerInterval);
+          timerEl.style.color = '#dc2626';
+        }
+        secs--;
+      }
+      tick();
+      timerInterval = setInterval(tick, 1000);
+    }
+
+    function closeModal() {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      clearInterval(timerInterval);
+    }
+
+    modalClose.addEventListener('click', closeModal);
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+    });
+
+    // ── Pay button ──
+    payBtn.addEventListener('click', function () {
+      if (formError) {
+        formError.classList.add('hidden');
+        formError.textContent = '';
+      }
+
+      var name  = nameInput.value.trim();
+      var phone = phoneInput.value.replace(/\D/g, '');
+
+      if (!name || name.split(' ').length < 2) {
+        formError.textContent = 'Введите фамилию и имя ребёнка';
+        formError.classList.remove('hidden');
+        nameInput.focus();
+        return;
+      }
+      if (phone.length < 10) {
+        formError.textContent = 'Введите корректный номер телефона';
+        formError.classList.remove('hidden');
+        phoneInput.focus();
+        return;
+      }
+
+      payBtn.disabled = true;
+      payLabel.textContent = 'Переходим в банк…';
+
+      var isTest = new URLSearchParams(window.location.search).get('ft') === '1';
+
+      fetch('/api/fortune/init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shiftId:  'shift-1',
+          discount: wonDiscount,
+          name:     name,
+          phone:    phoneInput.value.trim(),
+          test:     isTest,
+        }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.paymentUrl) {
+            clearInterval(timerInterval);
+            window.location.href = data.paymentUrl;
+          } else {
+            formError.textContent = data.error || 'Ошибка оплаты. Попробуйте ещё раз.';
+            formError.classList.remove('hidden');
+            payBtn.disabled = false;
+            payLabel.textContent = 'Оплатить через Т-банк';
+          }
+        })
+        .catch(function () {
+          formError.textContent = 'Ошибка соединения. Проверьте интернет и попробуйте снова.';
+          formError.classList.remove('hidden');
+          payBtn.disabled = false;
+          payLabel.textContent = 'Оплатить через Т-банк';
+        });
+    });
+
+    // ── Phone mask ──
+    phoneInput.addEventListener('input', function () {
+      var raw = phoneInput.value.replace(/\D/g, '');
+      if (!raw.length) return;
+      if (raw[0] === '8') raw = '7' + raw.slice(1);
+      var out = '+' + raw[0];
+      if (raw.length > 1) out += ' (' + raw.slice(1, 4);
+      if (raw.length >= 4) out += ') ' + raw.slice(4, 7);
+      if (raw.length >= 7) out += '-' + raw.slice(7, 9);
+      if (raw.length >= 9) out += '-' + raw.slice(9, 11);
+      phoneInput.value = out;
+    });
+
+  })();
+</script>
