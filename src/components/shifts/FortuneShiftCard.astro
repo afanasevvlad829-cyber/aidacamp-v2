@@ -13,35 +13,32 @@ const daysLeftLabel = daysLeft === 0 ? 'сегодня' : daysLeft === 1 ? 'че
 // Все секторы с реальными скидками 10–70%, 0% убраны
 interface Seg { label: string; d: number; w: number; color: string }
 const SEGMENTS: Seg[] = [
-  { label: '10%', d: 10, w: 25, color: '#fdba74' },
-  { label: '15%', d: 15, w: 20, color: '#fb923c' },
-  { label: '20%', d: 20, w: 18, color: '#f97316' },
-  { label: '25%', d: 25, w: 14, color: '#ea580c' },
-  { label: '30%', d: 30, w: 10, color: '#dc4106' },
-  { label: '35%', d: 35, w: 6,  color: '#c2410c' },
-  { label: '40%', d: 40, w: 4,  color: '#9a3412' },
-  { label: '50%', d: 50, w: 2,  color: '#7c2d12' },
-  { label: '60%', d: 60, w: 1,  color: '#6b1e0a' },
-  { label: '70%', d: 70, w: 1,  color: '#431407' },
+  { label: '10%', d: 10, w: 30, color: '#fdba74' },
+  { label: '20%', d: 20, w: 25, color: '#fb923c' },
+  { label: '30%', d: 30, w: 20, color: '#f97316' },
+  { label: '40%', d: 40, w: 14, color: '#ea580c' },
+  { label: '50%', d: 50, w: 8,  color: '#c2410c' },
+  { label: '70%', d: 70, w: 3,  color: '#7c2d12' },
 ];
 
 // Pre-compute SVG paths server-side
 const R = 108, CX = 120, CY = 120;
 function toRad(deg: number) { return deg * Math.PI / 180; }
+const SEG_DEG = 60; // 6 segments × 60° each
 const segData = SEGMENTS.map((seg, i) => {
-  const a1 = toRad(i * 36 - 90);
-  const a2 = toRad((i + 1) * 36 - 90);
+  const a1 = toRad(i * SEG_DEG - 90);
+  const a2 = toRad((i + 1) * SEG_DEG - 90);
   const x1 = (CX + R * Math.cos(a1)).toFixed(1);
   const y1 = (CY + R * Math.sin(a1)).toFixed(1);
   const x2 = (CX + R * Math.cos(a2)).toFixed(1);
   const y2 = (CY + R * Math.sin(a2)).toFixed(1);
   const path = `M ${CX} ${CY} L ${x1} ${y1} A ${R} ${R} 0 0 1 ${x2} ${y2} Z`;
-  const ta = toRad((i + 0.5) * 36 - 90);
-  const tr = R * 0.66;
+  const ta = toRad((i + 0.5) * SEG_DEG - 90);
+  const tr = R * 0.62;
   const tx = (CX + tr * Math.cos(ta)).toFixed(1);
   const ty = (CY + tr * Math.sin(ta)).toFixed(1);
-  // Rotate text in-place so it reads from rim toward center, readable from outside
-  const ta_deg = (i + 0.5) * 36 - 90;  // angle from horizontal to sector center
+  // Rotate text along sector radius, readable from outside
+  const ta_deg = (i + 0.5) * SEG_DEG - 90;
   const textAngle = (ta_deg > 90 ? ta_deg - 180 : ta_deg).toFixed(1);
   return { ...seg, path, tx, ty, textAngle };
 });
@@ -115,13 +112,13 @@ const segData = SEGMENTS.map((seg, i) => {
               transform={`rotate(${seg.textAngle}, ${seg.tx}, ${seg.ty})`}
               text-anchor="middle"
               dominant-baseline="middle"
-              font-size="13"
+              font-size="17"
               font-weight="900"
               fill="white"
               font-family="system-ui,sans-serif"
               paint-order="stroke"
-              stroke="rgba(0,0,0,0.4)"
-              stroke-width="4"
+              stroke="rgba(0,0,0,0.55)"
+              stroke-width="5"
               stroke-linejoin="round"
             >{seg.label}</text>
           </g>
@@ -223,6 +220,12 @@ const segData = SEGMENTS.map((seg, i) => {
     <p>
       <i class="bi bi-calendar-event text-[10px] mr-1" aria-hidden="true"></i>
       Заехать можно до 1 июня · успейте собрать справки
+    </p>
+    <p class="pt-1">
+      <i class="bi bi-telegram text-[10px] mr-1" aria-hidden="true"></i>
+      Что-то пошло не так? Сделайте скриншот и
+      <a href="https://t.me/Progaschool" target="_blank" rel="noopener"
+         class="underline underline-offset-2 hover:text-primary transition-colors">напишите нам в Telegram</a>
     </p>
   </div>
 </article>
@@ -349,11 +352,21 @@ const segData = SEGMENTS.map((seg, i) => {
   (function () {
     var PRICE = currentPrice;
     var segs  = SEGMENTS;
-    var attempts   = 3;
-    var wonDiscount = 0;
     var isSpinning  = false;
     var currentRot  = 0;
     var timerInterval = null;
+
+    // Restore state from sessionStorage so page refresh doesn't reset spins
+    var SS_KEY = 'fortune_s1_2026';
+    var saved = (function() {
+      try { return JSON.parse(sessionStorage.getItem(SS_KEY) || 'null'); } catch(_) { return null; }
+    })();
+    var attempts    = saved ? saved.attempts    : 3;
+    var wonDiscount = saved ? saved.wonDiscount : 0;
+
+    function saveState() {
+      try { sessionStorage.setItem(SS_KEY, JSON.stringify({ attempts: attempts, wonDiscount: wonDiscount })); } catch(_) {}
+    }
 
     var wheel      = document.getElementById('fsc-wheel');
     var spinBtn    = document.getElementById('fsc-spin-btn');
@@ -380,6 +393,28 @@ const segData = SEGMENTS.map((seg, i) => {
 
     if (!wheel || !spinBtn || !modal) return; // guard
 
+    // Restore UI from saved session state
+    if (saved) {
+      updateDots();
+      if (saved.wonDiscount > 0) {
+        // Show win block with saved discount
+        var _fp = Math.round(PRICE * (1 - saved.wonDiscount / 100));
+        var _dep = Math.round(_fp * 0.5);
+        if (discPctEl)   discPctEl.textContent    = saved.wonDiscount + '%';
+        if (finalPriceEl) finalPriceEl.textContent = _fp.toLocaleString('ru-RU') + ' ₽';
+        if (depPriceEl)   depPriceEl.textContent   = _dep.toLocaleString('ru-RU') + ' ₽';
+        winBlock.classList.remove('hidden');
+        winBlock.classList.add('flex');
+        if (saved.attempts <= 0) {
+          spinBtn.disabled = true;
+          spinLabel.textContent = 'Попытки исчерпаны';
+        }
+      } else if (saved.attempts <= 0) {
+        // Used all spins, no discount — show fallback
+        showFallback();
+      }
+    }
+
     function rub(n) {
       return n.toLocaleString('ru-RU') + ' ₽';
     }
@@ -397,20 +432,20 @@ const segData = SEGMENTS.map((seg, i) => {
       return indices[indices.length - 1];
     }
 
-    // Spin 1: ≤30%  (indices 0–4: 10/15/20/25/30)
-    // Spin 2: full random
-    // Spin 3: ≥20%  (indices 2–9: 20/25/30/35/40/50/60/70)
+    // Spin 1: ≤30%  (indices 0–2: 10/20/30%)
+    // Spin 2: full random (6 segments)
+    // Spin 3: ≥20%  (indices 1–5: 20/30/40/50/70%)
     function pickWinner(spinNumber) {
-      if (spinNumber === 1) return pickFrom([0, 1, 2, 3, 4]);
-      if (spinNumber === 3) return pickFrom([2, 3, 4, 5, 6, 7, 8, 9]);
-      return pickFrom([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      if (spinNumber === 1) return pickFrom([0, 1, 2]);
+      if (spinNumber === 3) return pickFrom([1, 2, 3, 4, 5]);
+      return pickFrom([0, 1, 2, 3, 4, 5]);
     }
 
     // Target rotation so segment i lands at top pointer (0° position)
     function targetRotation(segIdx) {
-      var segCenterDeg = (segIdx + 0.5) * 36; // 0° = top
+      var segCenterDeg = (segIdx + 0.5) * 60; // 0° = top, 6 segments × 60°
       var naturalStop  = (360 - segCenterDeg + 360) % 360;
-      var jitter = (Math.random() - 0.5) * 18; // ±9°
+      var jitter = (Math.random() - 0.5) * 30; // ±15°
       // 5+ full spins from current position
       var base = Math.ceil(currentRot / 360) * 360;
       return base + 5 * 360 + naturalStop + jitter;
@@ -486,6 +521,7 @@ const segData = SEGMENTS.map((seg, i) => {
 
       setTimeout(function () {
         isSpinning = false;
+        saveState();
         showWin(winner);
       }, 3150);
     });
