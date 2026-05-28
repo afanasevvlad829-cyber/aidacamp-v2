@@ -233,13 +233,14 @@ const segData = SEGMENTS.map((seg, i) => {
 <!-- ── Booking Modal (fixed overlay, position:fixed → not clipped by carousel) ── -->
 <div
   id="fsc-modal"
-  class="fixed inset-0 z-[100] hidden items-start sm:items-center justify-center overflow-y-auto"
+  class="fixed inset-0 z-[100] hidden overflow-y-auto"
   style="background:rgba(0,0,0,0.55);backdrop-filter:blur(4px)"
   role="dialog"
   aria-modal="true"
   aria-labelledby="fsc-modal-title"
 >
-  <div class="relative w-full max-w-sm mx-auto my-4 sm:my-8 bg-white rounded-2xl shadow-2xl">
+  <div class="flex min-h-full items-center justify-center p-4 sm:py-8">
+  <div class="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl">
 
     <!-- Modal header: green -->
     <div class="bg-green-600 px-6 py-4 rounded-t-2xl">
@@ -346,6 +347,7 @@ const segData = SEGMENTS.map((seg, i) => {
     </div>
 
   </div>
+  </div><!-- /flex wrapper -->
 </div>
 
 <script define:vars={{ SEGMENTS, currentPrice }}>
@@ -363,9 +365,10 @@ const segData = SEGMENTS.map((seg, i) => {
     })();
     var attempts    = saved ? saved.attempts    : 3;
     var wonDiscount = saved ? saved.wonDiscount : 0;
+    var wonToken    = saved ? saved.wonToken    : '';
 
     function saveState() {
-      try { sessionStorage.setItem(SS_KEY, JSON.stringify({ attempts: attempts, wonDiscount: wonDiscount })); } catch(_) {}
+      try { sessionStorage.setItem(SS_KEY, JSON.stringify({ attempts: attempts, wonDiscount: wonDiscount, wonToken: wonToken })); } catch(_) {}
     }
 
     var wheel      = document.getElementById('fsc-wheel');
@@ -473,6 +476,16 @@ const segData = SEGMENTS.map((seg, i) => {
       winBlock.classList.remove('hidden');
       winBlock.classList.add('flex');
 
+      // Получаем подписанный токен для этой скидки с сервера
+      fetch('/api/fortune/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ discount: d }),
+      })
+        .then(function(r) { return r.json(); })
+        .then(function(data) { wonToken = data.token || ''; saveState(); })
+        .catch(function() { wonToken = ''; });
+
       // Re-enable spin button if attempts remain
       if (attempts > 0) {
         spinBtn.disabled = false;
@@ -573,7 +586,7 @@ const segData = SEGMENTS.map((seg, i) => {
     modalClose.addEventListener('click', closeModal);
     modal.addEventListener('click', function (e) {
       // закрыть если клик по подложке, но не по карточке
-      if (e.target === modal || (e.target instanceof Element && !e.target.closest('.bg-white'))) closeModal();
+      if (e.target === modal || (e.target instanceof Element && e.target.closest(`[id="fsc-modal"]`) && !e.target.closest('[role="dialog"] .bg-white'))) closeModal();
     });
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
@@ -622,6 +635,7 @@ const segData = SEGMENTS.map((seg, i) => {
         body: JSON.stringify({
           shiftId:  'shift-1',
           discount: wonDiscount,
+          token:    wonToken,
           name:     name,
           phone:    phoneInput.value.trim(),
           test:     isTest,
