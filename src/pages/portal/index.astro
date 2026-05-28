@@ -306,20 +306,10 @@ const shiftStatusMsg = isStaff && !isShiftDay ? shiftStatus() : '';
     <!-- Header row -->
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-[28px] font-bold tracking-[-0.02em] text-navy-950">
-          {role === 'vozhaty' && 'Сейчас'}
-          {role === 'teacher' && 'Сейчас'}
-          {role === 'rukovoditel' && 'Обзор дня'}
-          {role === 'admin' && 'Обзор дня'}
+        <h1 class="text-[28px] font-bold tracking-[-0.02em] text-navy-950 md:text-[36px]">
+          Портал АйДаКемп
         </h1>
-        {shift && (
-          <p class="mt-1 text-[16px] text-body-muted">
-            {shift.name} &mdash; {today}
-          </p>
-        )}
-        {!shift && (
-          <p class="mt-1 text-[16px] text-body-muted">Активная смена не найдена</p>
-        )}
+        <p class="mt-1 text-[16px] text-body-muted">Общий дашборд — выбери раздел ниже.</p>
       </div>
       <a
         href="/portal/all"
@@ -330,22 +320,7 @@ const shiftStatusMsg = isStaff && !isShiftDay ? shiftStatus() : '';
       </a>
     </div>
 
-    <!-- Shift inactive banner — кликабельный (ведёт на сетку смены на дату старта). -->
-    {shiftStatusMsg && (
-      <a href={shift ? `/portal/smena?shift=${shift.id}&view=role&date=${shift.start_date}` : '/portal/smena'}
-         class="block rounded-[16px] border border-border bg-white p-5 card-shadow transition hover:border-primary">
-        <div class="flex items-center gap-3">
-          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-primary-soft text-primary">
-            <i class="bi bi-calendar-event text-[20px]" aria-hidden="true"></i>
-          </span>
-          <div class="flex-1">
-            <p class="text-[17px] font-semibold text-navy-950">{shiftStatusMsg}</p>
-            <p class="text-[14px] text-body-muted">Нажми, чтобы открыть сетку смены на дату старта</p>
-          </div>
-          <i class="bi bi-arrow-right text-[18px] text-body-muted" aria-hidden="true"></i>
-        </div>
-      </a>
-    )}
+    {/* Shift inactive banner — скрыт на общем дашборде, переход в смену — через плитку «Сетка смены». */}
 
     {/* AI-инструменты — общий ChatGPT через корпоративный Google-аккаунт */}
     {(role !== 'student') && (
@@ -472,17 +447,7 @@ const shiftStatusMsg = isStaff && !isShiftDay ? shiftStatus() : '';
       </nav>
     )}
 
-    {/* Превью смены даже если она ещё не началась — показываем первый день для всех staff */}
-    {(role !== 'student') && shift && !isShiftDay && (
-      <div class="rounded-[16px] border border-dashed border-border bg-amber-50/40 p-5">
-        <p class="text-[15px] text-navy-950">
-          Чтобы посмотреть, как «Сейчас» и карточки событий будут выглядеть в реальный день смены,
-          открой <a href={`/portal/smena?shift=${shift.id}&view=role&date=${shift.start_date}`}
-                    class="font-semibold text-primary hover:underline">Сетку смены</a> на нужную дату
-          (старт {shift.start_date}).
-        </p>
-      </div>
-    )}
+    {/* Превью смены — скрыто на общем дашборде, переход — через плитку «Сетка смены». */}
 
     {/* ── Manager / Admin: 2×2 metrics grid ── */}
     {(role === 'rukovoditel' || role === 'admin') && isShiftDay && metrics && (
