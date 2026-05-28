@@ -23,6 +23,7 @@ export interface ActivityOffer {
   target_days: number | null;        // сколько дней группа копит на лот (для формулы)
   target_share_pct: number | null;   // какая доля дневного дохода идёт на лот (для формулы, 30-50%)
   repeat_multiplier: number | null;  // множитель повторной покупки (default 1.5 для премиум-лотов)
+  custom_price: number | null;       // ручная цена админа — приоритет над формулой/base_price
   sort: number;
   archived: boolean;
 }
@@ -130,13 +131,17 @@ export async function listActivities(includeArchived = false): Promise<ActivityO
     const q = await c.query(
       `SELECT id, name, description, category, base_price, participants_hint,
               target_days, target_share_pct, repeat_multiplier::float8 AS repeat_multiplier,
-              sort, archived
+              custom_price, sort, archived
          FROM portal_activity_offer
          WHERE archived = FALSE OR $1::boolean = TRUE
          ORDER BY sort, id`,
       [includeArchived]
     );
-    return q.rows as ActivityOffer[];
+    return q.rows.map((r: any) => ({
+      ...r,
+      base_price: r.base_price == null ? null : Number(r.base_price),
+      custom_price: r.custom_price == null ? null : Number(r.custom_price),
+    })) as ActivityOffer[];
   });
   return r ?? [];
 }
@@ -144,29 +149,33 @@ export async function listActivities(includeArchived = false): Promise<ActivityO
 export async function upsertActivity(p: Partial<ActivityOffer> & { name: string }): Promise<number> {
   const r = await withClient(async (c) => {
     if (p.id) {
+      // Поддерживаем set custom_price = NULL для «сброса к рекомендованной»
+      const hasCustom = 'custom_price' in p;
       await c.query(
         `UPDATE portal_activity_offer
             SET name=$2, description=$3, category=$4, base_price=$5,
                 participants_hint=$6, target_days=$7, target_share_pct=$8, repeat_multiplier=$9,
                 sort=$10, archived=COALESCE($11, archived),
+                custom_price = CASE WHEN $13::boolean THEN $12 ELSE custom_price END,
                 updated_at=NOW()
           WHERE id=$1`,
         [p.id, p.name, p.description ?? null, p.category ?? null, p.base_price ?? null,
          p.participants_hint ?? null,
          p.target_days ?? null, p.target_share_pct ?? null, p.repeat_multiplier ?? null,
-         p.sort ?? 0, p.archived ?? null]
+         p.sort ?? 0, p.archived ?? null,
+         p.custom_price ?? null, hasCustom]
       );
       return p.id!;
     }
     const ins = await c.query(
       `INSERT INTO portal_activity_offer
          (name, description, category, base_price, participants_hint,
-          target_days, target_share_pct, repeat_multiplier, sort)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+          target_days, target_share_pct, repeat_multiplier, custom_price, sort)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
       [p.name, p.description ?? null, p.category ?? null, p.base_price ?? null,
        p.participants_hint ?? null,
        p.target_days ?? null, p.target_share_pct ?? null, p.repeat_multiplier ?? null,
-       p.sort ?? 0]
+       p.custom_price ?? null, p.sort ?? 0]
     );
     return Number(ins.rows[0].id);
   });

@@ -233,13 +233,14 @@ const segData = SEGMENTS.map((seg, i) => {
 <!-- ── Booking Modal (fixed overlay, position:fixed → not clipped by carousel) ── -->
 <div
   id="fsc-modal"
-  class="fixed inset-0 z-[100] hidden items-start sm:items-center justify-center overflow-y-auto"
+  class="fixed inset-0 z-[100] hidden overflow-y-auto"
   style="background:rgba(0,0,0,0.55);backdrop-filter:blur(4px)"
   role="dialog"
   aria-modal="true"
   aria-labelledby="fsc-modal-title"
 >
-  <div class="relative w-full max-w-sm mx-auto my-4 sm:my-8 bg-white rounded-2xl shadow-2xl">
+  <div class="flex min-h-full items-center justify-center p-4 sm:py-8">
+  <div class="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl">
 
     <!-- Modal header: green -->
     <div class="bg-green-600 px-6 py-4 rounded-t-2xl">
@@ -346,6 +347,7 @@ const segData = SEGMENTS.map((seg, i) => {
     </div>
 
   </div>
+  </div><!-- /flex wrapper -->
 </div>
 
 <script define:vars={{ SEGMENTS, currentPrice }}>
@@ -363,9 +365,10 @@ const segData = SEGMENTS.map((seg, i) => {
     })();
     var attempts    = saved ? saved.attempts    : 3;
     var wonDiscount = saved ? saved.wonDiscount : 0;
+    var wonToken    = saved ? saved.wonToken    : '';
 
     function saveState() {
-      try { sessionStorage.setItem(SS_KEY, JSON.stringify({ attempts: attempts, wonDiscount: wonDiscount })); } catch(_) {}
+      try { sessionStorage.setItem(SS_KEY, JSON.stringify({ attempts: attempts, wonDiscount: wonDiscount, wonToken: wonToken })); } catch(_) {}
     }
 
     var wheel      = document.getElementById('fsc-wheel');
@@ -392,6 +395,18 @@ const segData = SEGMENTS.map((seg, i) => {
     var modalClose = document.getElementById('fsc-modal-close');
 
     if (!wheel || !spinBtn || !modal) return; // guard
+
+    // ── Аналитика: колесо появилось на экране ──────────────────────────────
+    var _wheelViewed = false;
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function(entries, obs) {
+        if (entries[0].isIntersecting && !_wheelViewed) {
+          _wheelViewed = true;
+          try { window.ym && window.ym(96499295, 'reachGoal', 'fortune_wheel_view'); } catch(_e) {}
+          obs.disconnect();
+        }
+      }, { threshold: 0.4 }).observe(wheelArea || wheel);
+    }
 
     // Restore UI from saved session state
     if (saved) {
@@ -472,6 +487,26 @@ const segData = SEGMENTS.map((seg, i) => {
 
       winBlock.classList.remove('hidden');
       winBlock.classList.add('flex');
+
+      // Получаем подписанный токен для этой скидки с сервера
+      fetch('/api/fortune/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ discount: d }),
+      })
+        .then(function(r) { return r.json(); })
+        .then(function(data) { wonToken = data.token || ''; saveState(); })
+        .catch(function() { wonToken = ''; });
+
+      // Metrika: выиграл скидку
+      try {
+        window.ym && window.ym(96499295, 'reachGoal', 'fortune_win', {
+          discount:    d,
+          price_full:  PRICE,
+          price_final: Math.round(PRICE * (1 - d / 100)),
+          attempts_left: attempts,
+        });
+      } catch(_e) {}
 
       // Re-enable spin button if attempts remain
       if (attempts > 0) {
@@ -568,12 +603,13 @@ const segData = SEGMENTS.map((seg, i) => {
       modal.classList.add('hidden');
       modal.classList.remove('flex');
       clearInterval(timerInterval);
+      try { window.ym && window.ym(96499295, 'reachGoal', 'fortune_modal_close', { discount: wonDiscount }); } catch(_e) {}
     }
 
     modalClose.addEventListener('click', closeModal);
     modal.addEventListener('click', function (e) {
       // закрыть если клик по подложке, но не по карточке
-      if (e.target === modal || (e.target instanceof Element && !e.target.closest('.bg-white'))) closeModal();
+      if (e.target === modal || (e.target instanceof Element && e.target.closest(`[id="fsc-modal"]`) && !e.target.closest('[role="dialog"] .bg-white'))) closeModal();
     });
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
@@ -622,6 +658,7 @@ const segData = SEGMENTS.map((seg, i) => {
         body: JSON.stringify({
           shiftId:  'shift-1',
           discount: wonDiscount,
+          token:    wonToken,
           name:     name,
           phone:    phoneInput.value.trim(),
           test:     isTest,
@@ -631,6 +668,14 @@ const segData = SEGMENTS.map((seg, i) => {
         .then(function (data) {
           if (data.paymentUrl) {
             clearInterval(timerInterval);
+            try {
+              window.ym && window.ym(96499295, 'reachGoal', 'fortune_payment_start', {
+                discount:   wonDiscount,
+                deposit:    data.deposit,
+                order_id:   data.orderId,
+                payment_id: data.paymentId,
+              });
+            } catch(_e) {}
             window.location.href = data.paymentUrl;
           } else {
             formError.textContent = data.error || 'Ошибка оплаты. Попробуйте ещё раз.';

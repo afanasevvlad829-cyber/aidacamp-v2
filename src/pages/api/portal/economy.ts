@@ -99,10 +99,31 @@ export const POST: APIRoute = async ({ cookies, request }) => {
         target_days: num(body.target_days),
         target_share_pct: num(body.target_share_pct),
         repeat_multiplier: num(body.repeat_multiplier),
+        ...(('custom_price' in body) ? { custom_price: body.custom_price === null ? null : num(body.custom_price) } : {}),
         sort: body.sort != null ? Number(body.sort) : 0,
         archived: typeof body.archived === 'boolean' ? body.archived : undefined,
       });
       return j({ ok: true, id });
+    }
+
+    if (action === 'set_activity_custom_price') {
+      // Узкий эндпоинт: «вписал цену вручную» / «сбросил к рекомендованной» (custom_price = null)
+      const id = Number(body.id || 0);
+      if (!id) return j({ ok: false, error: 'id required' }, { status: 400 });
+      const v = body.custom_price === null
+        ? null
+        : (body.custom_price != null && body.custom_price !== '' && !isNaN(Number(body.custom_price))
+            ? Number(body.custom_price) : null);
+      const { default: pg } = await import('pg');
+      const conn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
+      if (conn) {
+        const c = new pg.Client({ connectionString: conn });
+        await c.connect();
+        try {
+          await c.query(`UPDATE portal_activity_offer SET custom_price = $2, updated_at = NOW() WHERE id = $1`, [id, v]);
+        } finally { await c.end(); }
+      }
+      return j({ ok: true });
     }
 
     if (action === 'delete_activity') {

@@ -215,11 +215,24 @@ const CAT_LABELS: Record<string, string> = {
           Каталог призов
           <span class="text-[13px] font-normal text-body-muted">· {ALL_PRIZES.length} позиций · {ALL_PRIZES.reduce((s, p) => s + p.qty, 0)} шт · {fmtRub(totalAll)}</span>
         </h2>
-        <button id="btn-add-custom" type="button"
-          class="rounded-[10px] border border-primary bg-primary text-white px-3 py-1.5 text-[14px] hover:opacity-90">
-          <i class="bi bi-plus-lg" aria-hidden="true"></i>
-          Добавить свой приз
-        </button>
+        <div class="flex flex-wrap gap-2">
+          <button id="btn-recalc-prices" type="button"
+            class="rounded-[10px] border border-amber-400 bg-amber-50 text-amber-900 px-3 py-1.5 text-[14px] hover:bg-amber-100"
+            title="Пересчитать цены по текущим параметрам (наценка, выдача, N детей)">
+            <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+            Пересчитать цены
+          </button>
+          <button id="btn-print-prizes" type="button"
+            class="rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] hover:border-primary hover:text-primary">
+            <i class="bi bi-printer" aria-hidden="true"></i>
+            Распечатать призы
+          </button>
+          <button id="btn-add-custom" type="button"
+            class="rounded-[10px] border border-primary bg-primary text-white px-3 py-1.5 text-[14px] hover:opacity-90">
+            <i class="bi bi-plus-lg" aria-hidden="true"></i>
+            Добавить свой приз
+          </button>
+        </div>
       </div>
 
       <div class="overflow-x-auto rounded-[14px] border border-border bg-white card-shadow">
@@ -296,7 +309,6 @@ const CAT_LABELS: Record<string, string> = {
                         </button>
                       </div>
                     </td>
-                    <td class="p-2 text-right font-mono tabular-nums font-semibold text-navy-950" data-sum-game></td>
                     <td class="p-2 text-right font-mono tabular-nums" data-save-days></td>
                     <td class="p-2 text-center">
                       {issuanceCounts[p.id] > 0 ? (
@@ -466,11 +478,18 @@ const CAT_LABELS: Record<string, string> = {
         Каталог нестандартных «подарков»-привилегий, которые ребята могут выкупить за игровые рубли.
         Цена считается из <b>себестоимости × наценку</b> или прицеливается на <b>~30 человек скидываются</b>.
       </div>
-      <button id="btn-add-activity" type="button"
-        class="rounded-[10px] border border-primary bg-primary text-white px-3 py-1.5 text-[14px] hover:opacity-90">
-        <i class="bi bi-plus-lg" aria-hidden="true"></i>
-        Добавить активность
-      </button>
+      <div class="flex gap-2">
+        <button id="btn-print-activities" type="button"
+          class="rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] hover:border-primary hover:text-primary">
+          <i class="bi bi-printer" aria-hidden="true"></i>
+          Распечатать активности
+        </button>
+        <button id="btn-add-activity" type="button"
+          class="rounded-[10px] border border-primary bg-primary text-white px-3 py-1.5 text-[14px] hover:opacity-90">
+          <i class="bi bi-plus-lg" aria-hidden="true"></i>
+          Добавить активность
+        </button>
+      </div>
     </div>
 
     <div class="overflow-x-auto rounded-[14px] border border-border bg-white card-shadow">
@@ -480,7 +499,9 @@ const CAT_LABELS: Record<string, string> = {
             <th class="p-2">Название</th>
             <th class="w-[90px] p-2">Категория</th>
             <th class="w-[160px] p-2 text-right" title="Формула: группа × выдача × дней × % дохода">Формула</th>
-            <th class="w-[100px] p-2 text-right">Цена,&nbsp;игр.&nbsp;₽</th>
+            <th class="w-[100px] p-2 text-right" title="Рекомендованная по формуле или fix">Рекоменд.</th>
+            <th class="w-[140px] p-2 text-right">Цена&nbsp;вручную<div class="text-[10px] font-normal text-body-muted">(пусто = рекоменд.)</div></th>
+            <th class="w-[100px] p-2 text-right">Итого&nbsp;игр.&nbsp;₽</th>
             <th class="w-[90px] p-2 text-right">С человека</th>
             <th class="w-[80px] p-2 text-right" title="Изъятие % от полного фонда смены">Изъятие</th>
             <th class="w-[80px] p-2"></th>
@@ -494,6 +515,7 @@ const CAT_LABELS: Record<string, string> = {
                 data-target-days={a.target_days ?? ''}
                 data-target-share={a.target_share_pct ?? ''}
                 data-repeat={a.repeat_multiplier ?? ''}
+                data-custom-price={a.custom_price ?? ''}
                 class="border-t border-border align-middle">
               <td class="p-2">
                 <div class="font-medium text-navy-950">{a.name}</div>
@@ -501,6 +523,23 @@ const CAT_LABELS: Record<string, string> = {
               </td>
               <td class="p-2"><span class="rounded-full bg-primary-soft px-2 py-0.5 text-[12px] text-primary">{CAT_LABELS[a.category ?? 'other'] ?? a.category ?? '—'}</span></td>
               <td class="p-2 text-right font-mono tabular-nums text-[12px] text-body-muted" data-formula>—</td>
+              <td class="p-2 text-right font-mono tabular-nums text-primary" data-recommended-price>—</td>
+              <td class="p-2 text-right">
+                <div class="flex items-center justify-end gap-1">
+                  <input type="number" min="0" step="50" data-custom-price-input
+                         class="w-[80px] rounded-[8px] border border-border bg-white px-2 py-1 text-right font-mono tabular-nums focus:border-primary focus:outline-none"
+                         placeholder="—" value={a.custom_price ?? ''} />
+                  <span class="text-body-muted">₽</span>
+                  <span data-act-save-flag class="inline-flex h-5 w-5 items-center justify-center text-emerald-600 opacity-0 transition-opacity" title="Сохранено">
+                    <i class="bi bi-check-circle-fill text-[14px]" aria-hidden="true"></i>
+                  </span>
+                  <button type="button" data-reset-custom-price
+                          class="ml-0.5 inline-flex h-6 w-6 items-center justify-center rounded-[6px] text-body-muted hover:bg-primary-soft hover:text-primary"
+                          title="Сбросить к рекомендованной">
+                    <i class="bi bi-arrow-counterclockwise text-[12px]" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </td>
               <td class="p-2 text-right font-mono tabular-nums font-semibold" data-total-price>—</td>
               <td class="p-2 text-right font-mono tabular-nums text-primary" data-per-person>—</td>
               <td class="p-2 text-right font-mono tabular-nums" data-extract-pct>—</td>
@@ -626,6 +665,40 @@ const CAT_LABELS: Record<string, string> = {
   </section>
 
   <style is:global>
+    /* Печать — показываем только текущую активную вкладку (Призы или Активности) */
+    @media print {
+      header, nav, [data-tab], .tab-btn,
+      [id^="btn-"], [data-give], [data-toggle-hidden], [data-reset-price],
+      [data-archive-custom], [data-edit-activity], [data-delete-activity],
+      [data-reset-custom-price], [data-save-flag], [data-act-save-flag],
+      dialog, .card-shadow { box-shadow: none !important; }
+      .tab-btn, dialog { display: none !important; }
+      [data-tab-pane][hidden] { display: none !important; }
+      body.printing-prizes [data-tab-pane="activities"],
+      body.printing-prizes [data-tab-pane="summary"],
+      body.printing-activities [data-tab-pane="prizes"],
+      body.printing-activities [data-tab-pane="summary"] { display: none !important; }
+      body.printing-prizes #btn-add-custom,
+      body.printing-prizes #btn-print-prizes,
+      body.printing-prizes [data-give],
+      body.printing-prizes [data-toggle-hidden],
+      body.printing-prizes [data-bongere-input],
+      body.printing-prizes [data-archive-custom],
+      body.printing-activities [data-custom-price-input],
+      body.printing-activities [data-reset-custom-price],
+      body.printing-activities [data-edit-activity],
+      body.printing-activities [data-delete-activity],
+      body.printing-activities #btn-add-activity,
+      body.printing-activities #btn-print-activities { display: none !important; }
+      /* В печатной версии input-ы заменяем на их значение */
+      input[data-bongere-input], input[data-custom-price-input] {
+        border: none !important; padding: 0 !important; background: transparent !important;
+      }
+      table { font-size: 12px; }
+      .bg-page, .bg-amber-50, .bg-amber-50\/60 { background: transparent !important; }
+      /* Скрываем шапку настроек на печати — оставляем только таблицу */
+      .card-shadow { border: 1px solid #ccc !important; }
+    }
     /* Универсальное центрирование модальных <dialog> и адаптив под мобилу. */
     dialog.aida-modal-center {
       position: fixed;
@@ -760,10 +833,6 @@ const CAT_LABELS: Record<string, string> = {
           const effective = (v != null && !isNaN(v)) ? v : rec;
           if (!isHidden) sumBongere += effective * qty;
           if (!isHidden) sumRec += rec * qty;
-          // Подсветим row-сумму игровая
-          const sumGameCell = r.querySelector('[data-sum-game]');
-          if (sumGameCell) sumGameCell.innerHTML = fmt(effective * qty) +
-            (v == null ? '<span class="ml-1 text-[11px] text-body-muted">(авто)</span>' : '');
           // Копить N дней — от эффективной цены
           const targetPrice = effective;
           const days = saveDays(targetPrice, dp);
@@ -804,12 +873,34 @@ const CAT_LABELS: Record<string, string> = {
         recalcActivities();
       }
 
+      // KPI шапки (фонды) пересчитывается на лету, но цены в таблицах — нет.
+      // Цены меняются только по явному нажатию «Пересчитать цены».
+      function recalcKPIOnly() {
+        const s = readSettings();
+        const dp = dailyPotential(s);
+        const dailyFund = s.kids * dp;
+        const total = dailyFund * s.days;
+        const targetExtract = total * (s.targetExtract / 100);
+        document.getElementById('kpi-potential').textContent = fmt(dp);
+        document.getElementById('kpi-daily-fund').textContent = fmt(dailyFund);
+        document.getElementById('kpi-per-kid').textContent = fmt(dp * s.days);
+        document.getElementById('kpi-phone-equiv').textContent = (s.phoneMin > 0 ? Math.floor(dp / s.phoneMin) : 0);
+        document.getElementById('kpi-total').textContent = fmt(total);
+        const ext = document.getElementById('kpi-target-extract'); if (ext) ext.textContent = fmt(targetExtract);
+      }
+
       ['set-kids','set-days','set-phone-min','set-markup','set-round','set-daily','set-target-extract'].forEach((id) => {
         const el = document.getElementById(id);
         el.addEventListener('input', () => {
           const s = readSettings();
           saveSettings(s);
-          recalcPrizes();
+          recalcKPIOnly();
+          // Подсветим кнопку «Пересчитать», чтобы было заметно что параметры изменились
+          const btn = document.getElementById('btn-recalc-prices');
+          if (btn) {
+            btn.classList.add('animate-pulse');
+            btn.title = 'Параметры изменились — нажмите чтобы пересчитать цены';
+          }
         });
       });
 
@@ -912,6 +1003,44 @@ const CAT_LABELS: Record<string, string> = {
 
       // ── Activities ────────────────────────────────────
       const actRows = Array.from(document.querySelectorAll('[data-activity-row]'));
+
+      // Сохранение Цены вручную в активности
+      async function saveActivityCustom(id, val) {
+        try {
+          const r = await fetch('/api/portal/economy', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'set_activity_custom_price', id, custom_price: val }),
+            credentials: 'include',
+          });
+          return r.ok;
+        } catch { return false; }
+      }
+      actRows.forEach((r) => {
+        const id = Number(r.dataset.id);
+        const inp = r.querySelector('[data-custom-price-input]');
+        const flag = r.querySelector('[data-act-save-flag]');
+        let t;
+        if (inp) inp.addEventListener('input', () => {
+          clearTimeout(t);
+          t = setTimeout(async () => {
+            const v = inp.value === '' ? null : Number(inp.value);
+            r.dataset.customPrice = v == null ? '' : String(v);
+            const ok = await saveActivityCustom(id, v);
+            if (ok && flag) {
+              flag.style.opacity = '1';
+              setTimeout(() => { flag.style.opacity = '0'; }, 1200);
+            }
+            recalcActivities();
+          }, 350);
+        });
+        const reset = r.querySelector('[data-reset-custom-price]');
+        if (reset) reset.addEventListener('click', async () => {
+          if (inp) inp.value = '';
+          r.dataset.customPrice = '';
+          await saveActivityCustom(id, null);
+          recalcActivities();
+        });
+      });
       function recalcActivities() {
         const s = readSettings();
         const dp = dailyPotential(s);
@@ -926,21 +1055,37 @@ const CAT_LABELS: Record<string, string> = {
           const targetDays = tdRaw === '' || tdRaw == null ? null : Number(tdRaw);
           const targetShare = tsRaw === '' || tsRaw == null ? null : Number(tsRaw);
 
-          let price;
+          // Рекомендованная цена (по формуле или фикс)
+          let recommended;
           let formulaText = '—';
           if (targetDays && targetShare) {
-            // Цена по формуле
             const raw = participants * dp * targetDays * (targetShare / 100);
-            price = roundTo(raw, s.round);
+            recommended = roundTo(raw, s.round);
             formulaText = participants + ' × ' + dp + ' × ' + targetDays + 'д × ' + targetShare + '%';
           } else if (baseRaw !== '' && baseRaw != null) {
-            price = Number(baseRaw);
+            recommended = Number(baseRaw);
             formulaText = 'фикс.';
           } else {
-            price = 0;
+            recommended = 0;
           }
+
+          // Цена вручную из input или из data-атрибута (был загружен с сервера)
+          const customInp = r.querySelector('[data-custom-price-input]');
+          const customRaw = customInp ? customInp.value : (r.dataset.customPrice || '');
+          const custom = customRaw === '' || customRaw == null ? null : Number(customRaw);
+
+          // Итоговая цена: custom если задан, иначе recommended
+          const price = (custom != null && !isNaN(custom)) ? custom : recommended;
+
+          // Placeholder для input — показываем recommended
+          if (customInp) customInp.placeholder = recommended > 0 ? String(recommended) : '';
+
           r.querySelector('[data-formula]').textContent = formulaText;
-          r.querySelector('[data-total-price]').textContent = price > 0 ? fmt(price) : '—';
+          const recCell = r.querySelector('[data-recommended-price]');
+          if (recCell) recCell.textContent = recommended > 0 ? fmt(recommended) : '—';
+          r.querySelector('[data-total-price]').textContent = price > 0
+            ? fmt(price) + (custom != null ? '' : '')
+            : '—';
           const perPerson = participants > 0 ? roundTo(price / participants, s.round) : price;
           r.querySelector('[data-per-person]').textContent = price <= 0 ? '—' :
             (participants > 1 ? fmt(perPerson) + ' × ' + participants : fmt(perPerson));
@@ -1075,6 +1220,26 @@ const CAT_LABELS: Record<string, string> = {
       const custCancel = document.getElementById('cust-cancel');
       const custSave = document.getElementById('cust-save');
       const custStatus = document.getElementById('cust-status');
+      // ── Пересчитать цены по текущим параметрам (Призы + Активности разом) ──
+      document.getElementById('btn-recalc-prices')?.addEventListener('click', () => {
+        recalcPrizes();
+        recalcActivities();
+        const btn = document.getElementById('btn-recalc-prices');
+        if (btn) { btn.classList.remove('animate-pulse'); btn.title = 'Цены актуальны на текущие параметры'; }
+      });
+
+      // ── Кнопки печати: только текущая вкладка ──
+      document.getElementById('btn-print-prizes')?.addEventListener('click', () => {
+        document.body.classList.add('printing-prizes');
+        window.print();
+        setTimeout(() => document.body.classList.remove('printing-prizes'), 100);
+      });
+      document.getElementById('btn-print-activities')?.addEventListener('click', () => {
+        document.body.classList.add('printing-activities');
+        window.print();
+        setTimeout(() => document.body.classList.remove('printing-activities'), 100);
+      });
+
       document.getElementById('btn-add-custom')?.addEventListener('click', () => {
         ['cust-name','cust-desc','cust-cat','cust-price','cust-file'].forEach((id) => {
           const el = document.getElementById(id); if (el) el.value = id === 'cust-qty' ? 1 : '';
