@@ -92,6 +92,8 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
       const VIEW_AS_ALLOWED: Record<string, string[]> = {
         admin: ['admin', 'rukovoditel', 'teacher', 'vozhaty', 'student'],
         rukovoditel: ['rukovoditel', 'vozhaty', 'teacher', 'student'],
+        teacher: ['teacher', 'student'],
+        vozhaty: ['vozhaty', 'student'],
       };
       const viewAs = cookies.get('portal_view_as')?.value || '';
       let effectiveRole: any = role;
