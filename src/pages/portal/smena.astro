@@ -22,19 +22,16 @@ const shift =
   allShifts.find((sh) => sh.id === reqShiftId) ?? (await getActiveShift()) ?? allShifts[0] ?? null;
 
 // Виды и подписи табов.
-type View = 'role' | 'day' | 'activity' | 'matrix';
+type View = 'day' | 'activity' | 'matrix';
 const VIEWS: { key: View; label: string; icon: string }[] = [
-  { key: 'role', label: 'Мой день', icon: 'person' },
   { key: 'day', label: 'Все события дня', icon: 'calendar-week' },
   { key: 'activity', label: 'По активностям', icon: 'tag' },
   { key: 'matrix', label: 'Шахматка', icon: 'kanban' },
 ];
 const rawView = Astro.url.searchParams.get('view');
-// Дефолтный вид: для админа/руководителя — все события дня (им нужна полная картина),
-// остальным — «Мой день» как раньше.
+// «Мой день» убрали — все видят всё, ответственного назначает руководитель смены.
 const isManagerView = role === 'admin' || role === 'rukovoditel';
-const defaultView: View = isManagerView ? 'day' : 'role';
-const view: View = (VIEWS.some((v) => v.key === rawView) ? rawView : defaultView) as View;
+const view: View = (VIEWS.some((v) => v.key === rawView) ? rawView : 'day') as View;
 
 // Выбор даты: ?date=, иначе сегодня (если в пределах смены), иначе старт смены.
 function isoToday(): string {
@@ -122,8 +119,10 @@ function roleLabel(r: string): string {
 
 // --- role view: события роли на дату + чек-листы роли ---
 // Админ/руководитель видит ВСЕ события дня даже в «Моём дне», т.к. отвечает за всю смену.
+// «Мой день» убрали: лента дня — все события без фильтра по роли. Все видят всё,
+// чек-листы и галочки доступны каждому, ответственного назначает руководитель.
 const roleEvents = events
-  .filter((e) => e.date === selectedDate && (isManagerView || roleAllowed(role, e.roles)))
+  .filter((e) => e.date === selectedDate)
   .sort(byTime);
 
 // --- day view: все события даты ---
@@ -174,7 +173,7 @@ function shiftHref(id: number): string {
 
 const MONTHS_RU=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 function fmtDate(iso){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso); return m? Number(m[3])+' '+MONTHS_RU[Number(m[2])-1] : iso; }
-const showDateNav = view === 'role' || view === 'day';
+const showDateNav = view === 'day';
 const isAdminLike = role === 'admin' || role === 'rukovoditel';
 
 const CONTENT_TYPE_LABELS: Record<string, string> = {
@@ -284,7 +283,7 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
       </div>
 
       {/* ===== ROLE VIEW ===== */}
-      {view === 'role' && (
+      {view === 'day' && (
         <section class="space-y-4">
           {roleEvents.length === 0 && (
             <p class="rounded-[16px] border border-border bg-white p-6 text-[16px] text-body-muted card-shadow">
@@ -464,47 +463,6 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
               </article>
             );
           })}
-        </section>
-      )}
-
-      {/* ===== DAY VIEW ===== */}
-      {view === 'day' && (
-        <section class="space-y-3">
-          {dayEvents.length === 0 && (
-            <p class="rounded-[16px] border border-border bg-white p-6 text-[16px] text-body-muted card-shadow">
-              На этот день событий нет.
-            </p>
-          )}
-          {dayEvents.map((e) => (
-            <article class="rounded-[16px] border border-border bg-white p-5 card-shadow">
-              <div class="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 class="text-[18px] font-semibold text-navy-950">{e.title}</h2>
-                {timeRange(e) && (
-                  <span class="inline-flex items-center gap-1 text-[16px] text-body-muted">
-                    <i class="bi bi-clock text-[15px]" aria-hidden="true"></i>
-                    {timeRange(e)}
-                  </span>
-                )}
-              </div>
-              <div class="mt-2 flex flex-wrap gap-1.5">
-                {e.roles.map((r) => (
-                  <span class="rounded-[8px] bg-page px-2 py-0.5 text-[14px] font-medium text-body-muted">
-                    {roleLabel(r)}
-                  </span>
-                ))}
-              </div>
-              {e.checklists.length > 0 && (
-                <ul class="mt-3 space-y-1 text-[16px] text-body-muted">
-                  {e.checklists.map((cl) => (
-                    <li class="flex items-center gap-2">
-                      <i class="bi bi-list-task text-[15px] text-primary" aria-hidden="true"></i>
-                      {cl.title}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </article>
-          ))}
         </section>
       )}
 
