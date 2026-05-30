@@ -748,9 +748,13 @@ const CAT_LABELS: Record<string, string> = {
       }
     }
   </style>
-  <script is:inline>
-    (function () {
-      // Реактивная подпись «выбран файл X» под label-кнопкой загрузки в обоих модалках.
+  <script>
+    import { roundTo, recommendedBongere, saveDays, dailyPotential, shiftFunds,
+             activityRecommended, effectivePrice, perPerson, extractPct,
+             DEFAULT_ECONOMY_SETTINGS } from '../../lib/economyMath';
+    import { postJson, postForm } from '../../lib/portalApi';
+    import { confirmDialog, alertDialog, haptic } from '../../scripts/portal/tg';
+    // Реактивная подпись «выбран файл X» под label-кнопкой загрузки в обоих модалках.
       function bindFileLabel(inputId, labelId, fallback) {
         const inp = document.getElementById(inputId);
         const lbl = document.getElementById(labelId);
@@ -797,13 +801,6 @@ const CAT_LABELS: Record<string, string> = {
           targetExtract: Math.max(0, Math.min(100, Number(document.getElementById('set-target-extract').value) || 75)),
         };
       }
-      function dailyPotential(s) { return s.daily; }
-      function saveDays(price, potential) {
-        if (!price || price <= 0 || potential <= 0) return 0;
-        return Math.ceil(price / potential);
-      }
-      function roundTo(n, step) { return Math.round(n / step) * step; }
-
       // Tabs
       document.querySelectorAll('[data-tab]').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -825,11 +822,6 @@ const CAT_LABELS: Record<string, string> = {
       // ── Prizes ────────────────────────────────────────
       const prizeRows = Array.from(document.querySelectorAll('[data-prize-row]'));
       let showHidden = false;
-
-      // Простая формула: рекомендованная цена за 1 шт = Цена Ozon × Наценка
-      function recommendedBongere(ozonPrice, s) {
-        return roundTo(ozonPrice * s.markup, s.round);
-      }
 
       function recalcPrizes() {
         const s = readSettings();
@@ -876,23 +868,21 @@ const CAT_LABELS: Record<string, string> = {
         document.getElementById('cnt-active').textContent = String(active);
         document.getElementById('sum-bongere').textContent = fmt(sumBongere);
         // KPI шапки
-        const dailyFund = s.kids * dp;
-        const total = dailyFund * s.days;
-        const targetExtract = total * (s.targetExtract / 100);
-        document.getElementById('kpi-potential').textContent = fmt(dp);
-        document.getElementById('kpi-daily-fund').textContent = fmt(dailyFund);
-        document.getElementById('kpi-per-kid').textContent = fmt(dp * s.days);
-        document.getElementById('kpi-phone-equiv').textContent = (s.phoneMin > 0 ? Math.floor(dp / s.phoneMin) : 0);
-        document.getElementById('kpi-total').textContent = fmt(total);
-        const ext = document.getElementById('kpi-target-extract'); if (ext) ext.textContent = fmt(targetExtract);
+        const sf = shiftFunds(s);
+        document.getElementById('kpi-potential').textContent = fmt(sf.dp);
+        document.getElementById('kpi-daily-fund').textContent = fmt(sf.dailyFund);
+        document.getElementById('kpi-per-kid').textContent = fmt(sf.perKid);
+        document.getElementById('kpi-phone-equiv').textContent = sf.phoneEquiv;
+        document.getElementById('kpi-total').textContent = fmt(sf.total);
+        const ext = document.getElementById('kpi-target-extract'); if (ext) ext.textContent = fmt(sf.targetExtract);
         // Сводка
         const sumOzVis = document.getElementById('sum-ozon-visible'); if (sumOzVis) sumOzVis.textContent = fmt(sumOzonVisible);
         const sumRecEl = document.getElementById('sum-recommended'); if (sumRecEl) sumRecEl.textContent = fmt(sumRec);
         const sumBon2 = document.getElementById('sum-bongere-2'); if (sumBon2) sumBon2.textContent = fmt(sumBongere);
-        const sumTot = document.getElementById('sum-total-money'); if (sumTot) sumTot.textContent = fmt(total);
+        const sumTot = document.getElementById('sum-total-money'); if (sumTot) sumTot.textContent = fmt(sf.total);
         const usedForPrizes = sumBongere || sumRec;
-        const balPr = document.getElementById('sum-balance-prizes'); if (balPr) balPr.textContent = fmt(total - usedForPrizes);
-        const balAc = document.getElementById('sum-balance-acts'); if (balAc) balAc.textContent = fmt(total - usedForPrizes);
+        const balPr = document.getElementById('sum-balance-prizes'); if (balPr) balPr.textContent = fmt(sf.total - usedForPrizes);
+        const balAc = document.getElementById('sum-balance-acts'); if (balAc) balAc.textContent = fmt(sf.total - usedForPrizes);
         const avg = sumOzonVisible > 0 && sumBongere > 0 ? (sumBongere / sumOzonVisible) : null;
         const ma = document.getElementById('sum-markup-avg');
         if (ma) ma.textContent = avg != null ? '×' + avg.toFixed(2) : '×' + s.markup.toFixed(1);
@@ -904,16 +894,13 @@ const CAT_LABELS: Record<string, string> = {
       // Цены меняются только по явному нажатию «Пересчитать цены».
       function recalcKPIOnly() {
         const s = readSettings();
-        const dp = dailyPotential(s);
-        const dailyFund = s.kids * dp;
-        const total = dailyFund * s.days;
-        const targetExtract = total * (s.targetExtract / 100);
-        document.getElementById('kpi-potential').textContent = fmt(dp);
-        document.getElementById('kpi-daily-fund').textContent = fmt(dailyFund);
-        document.getElementById('kpi-per-kid').textContent = fmt(dp * s.days);
-        document.getElementById('kpi-phone-equiv').textContent = (s.phoneMin > 0 ? Math.floor(dp / s.phoneMin) : 0);
-        document.getElementById('kpi-total').textContent = fmt(total);
-        const ext = document.getElementById('kpi-target-extract'); if (ext) ext.textContent = fmt(targetExtract);
+        const sf = shiftFunds(s);
+        document.getElementById('kpi-potential').textContent = fmt(sf.dp);
+        document.getElementById('kpi-daily-fund').textContent = fmt(sf.dailyFund);
+        document.getElementById('kpi-per-kid').textContent = fmt(sf.perKid);
+        document.getElementById('kpi-phone-equiv').textContent = sf.phoneEquiv;
+        document.getElementById('kpi-total').textContent = fmt(sf.total);
+        const ext = document.getElementById('kpi-target-extract'); if (ext) ext.textContent = fmt(sf.targetExtract);
       }
 
       ['set-kids','set-days','set-phone-min','set-markup','set-round','set-daily','set-target-extract'].forEach((id) => {
@@ -934,21 +921,16 @@ const CAT_LABELS: Record<string, string> = {
       const resetBtn = document.getElementById('btn-reset-issuances');
       if (resetBtn) {
         resetBtn.addEventListener('click', async () => {
-          if (!confirm('Удалить ВСЕ выдачи призов?\n\nЭто действие необратимо. История очистится полностью.\nИспользуй только для очистки тестовых данных перед началом смены.')) return;
-          if (!confirm('Точно? Это последнее предупреждение.')) return;
+          if (!await confirmDialog('Удалить ВСЕ выдачи призов?\n\nЭто действие необратимо. История очистится полностью.\nИспользуй только для очистки тестовых данных перед началом смены.')) return;
+          if (!await confirmDialog('Точно? Это последнее предупреждение.')) return;
           resetBtn.disabled = true;
           try {
-            const r = await fetch('/api/portal/prize-ops', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'reset_all_issuances' }),
-            });
-            const j = await r.json();
+            const j = await postJson('/api/portal/prize-ops', { action: 'reset_all_issuances' });
             if (!j.ok) throw new Error(j.error || 'error');
-            alert('Удалено выдач: ' + j.deleted);
+            await alertDialog('Удалено выдач: ' + j.deleted);
             location.reload();
           } catch (e) {
-            alert('Ошибка: ' + (e && e.message ? e.message : e));
+            await alertDialog('Ошибка: ' + (e && e.message ? e.message : e));
             resetBtn.disabled = false;
           }
         });
@@ -964,11 +946,8 @@ const CAT_LABELS: Record<string, string> = {
       // Save prize state to server
       async function savePrizeState(id, patch) {
         try {
-          const r = await fetch('/api/portal/economy', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'set_prize', prize_id: id, ...patch }),
-          });
-          if (!r.ok) throw new Error('HTTP ' + r.status);
+          const result = await postJson('/api/portal/economy', { action: 'set_prize', prize_id: id, ...patch });
+          if (!result.ok) throw new Error(result.error || 'error');
         } catch (e) { console.error('save prize state failed', e); }
       }
 
@@ -985,6 +964,7 @@ const CAT_LABELS: Record<string, string> = {
             r.dataset.bongere = v == null ? '' : String(v);
             try {
               await savePrizeState(id, { bongere_price: v });
+              haptic('success');
               if (saveFlag) {
                 saveFlag.style.opacity = '1';
                 setTimeout(() => { saveFlag.style.opacity = '0'; }, 1200);
@@ -1004,7 +984,7 @@ const CAT_LABELS: Record<string, string> = {
         // Hide / show
         r.querySelector('[data-toggle-hidden]').addEventListener('click', async () => {
           const wasHidden = r.dataset.hidden === '1';
-          if (!wasHidden && !confirm('Скрыть эту позицию? Она пропадёт из активного списка, можно вернуть кнопкой «Показать скрытые».')) return;
+          if (!wasHidden && !await confirmDialog('Скрыть эту позицию? Она пропадёт из активного списка, можно вернуть кнопкой «Показать скрытые».')) return;
           r.dataset.hidden = wasHidden ? '0' : '1';
           await savePrizeState(id, { hidden: !wasHidden });
           // Refresh icon
@@ -1016,7 +996,7 @@ const CAT_LABELS: Record<string, string> = {
       // Apply markup to all visible
       document.getElementById('btn-apply-markup').addEventListener('click', async () => {
         const s = readSettings();
-        if (!confirm('Записать «Цена × ' + s.markup + ', округление до ' + s.round + ' ₽» в поле «Цена, игр. ₽» для всех видимых позиций?')) return;
+        if (!await confirmDialog('Записать «Цена × ' + s.markup + ', округление до ' + s.round + ' ₽» в поле «Цена, игр. ₽» для всех видимых позиций?')) return;
         for (const r of prizeRows) {
           if (r.dataset.hidden === '1') continue;
           const price = Number(r.dataset.price || 0);
@@ -1036,17 +1016,13 @@ const CAT_LABELS: Record<string, string> = {
         const bongere = local.bongere && typeof local.bongere === 'object' ? local.bongere : {};
         const photos  = local.photos  && typeof local.photos  === 'object' ? local.photos  : {};
         const cnt = deleted.length + Object.keys(bongere).length + Object.keys(photos).length;
-        if (cnt === 0) { alert('В localStorage этого браузера ничего нет.'); return; }
-        if (!confirm('Загрузить на сервер: ' + deleted.length + ' скрытых, ' + Object.keys(bongere).length + ' цен, ' + Object.keys(photos).length + ' фото?')) return;
-        const r = await fetch('/api/portal/economy', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'import_localstorage', deleted, bongere, photos }),
-        });
-        const jr = await r.json().catch(() => ({}));
+        if (cnt === 0) { await alertDialog('В localStorage этого браузера ничего нет.'); return; }
+        if (!await confirmDialog('Загрузить на сервер: ' + deleted.length + ' скрытых, ' + Object.keys(bongere).length + ' цен, ' + Object.keys(photos).length + ' фото?')) return;
+        const jr = await postJson('/api/portal/economy', { action: 'import_localstorage', deleted, bongere, photos });
         if (jr.ok) {
-          alert('Загружено: ' + jr.imported + ' записей. Перезагрузи страницу — увидишь актуальное состояние.');
+          await alertDialog('Загружено: ' + jr.imported + ' записей. Перезагрузи страницу — увидишь актуальное состояние.');
         } else {
-          alert('Ошибка: ' + (jr.error || 'unknown'));
+          await alertDialog('Ошибка: ' + (jr.error || 'unknown'));
         }
       });
 
@@ -1056,12 +1032,8 @@ const CAT_LABELS: Record<string, string> = {
       // Сохранение Цены вручную в активности
       async function saveActivityCustom(id, val) {
         try {
-          const r = await fetch('/api/portal/economy', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'set_activity_custom_price', id, custom_price: val }),
-            credentials: 'include',
-          });
-          return r.ok;
+          const result = await postJson('/api/portal/economy', { action: 'set_activity_custom_price', id, custom_price: val });
+          return result.ok;
         } catch { return false; }
       }
       actRows.forEach((r) => {
@@ -1092,8 +1064,7 @@ const CAT_LABELS: Record<string, string> = {
       });
       function recalcActivities() {
         const s = readSettings();
-        const dp = dailyPotential(s);
-        const totalShiftFund = s.kids * dp * s.days;
+        const sf = shiftFunds(s);
         actRows.forEach((r) => {
           const baseRaw = r.dataset.bongere;
           const partRaw = r.dataset.participants;
@@ -1103,20 +1074,11 @@ const CAT_LABELS: Record<string, string> = {
           const participants = (partRaw === '' || partRaw == null) ? s.kids : Number(partRaw);
           const targetDays = tdRaw === '' || tdRaw == null ? null : Number(tdRaw);
           const targetShare = tsRaw === '' || tsRaw == null ? null : Number(tsRaw);
+          const basePrice = (baseRaw === '' || baseRaw == null) ? null : Number(baseRaw);
 
-          // Рекомендованная цена (по формуле или фикс)
-          let recommended;
-          let formulaText = '—';
-          if (targetDays && targetShare) {
-            const raw = participants * dp * targetDays * (targetShare / 100);
-            recommended = roundTo(raw, s.round);
-            formulaText = participants + ' × ' + dp + ' × ' + targetDays + 'д × ' + targetShare + '%';
-          } else if (baseRaw !== '' && baseRaw != null) {
-            recommended = Number(baseRaw);
-            formulaText = 'фикс.';
-          } else {
-            recommended = 0;
-          }
+          const { value: recommended, formula: formulaText } = activityRecommended(
+            { participants, dp: sf.dp, targetDays, targetShare, basePrice }, s.round
+          );
 
           // Цена вручную из input или из data-атрибута (был загружен с сервера)
           const customInp = r.querySelector('[data-custom-price-input]');
@@ -1124,7 +1086,7 @@ const CAT_LABELS: Record<string, string> = {
           const custom = customRaw === '' || customRaw == null ? null : Number(customRaw);
 
           // Итоговая цена: custom если задан, иначе recommended
-          const price = (custom != null && !isNaN(custom)) ? custom : recommended;
+          const price = effectivePrice(custom != null && !isNaN(custom) ? custom : null, recommended);
 
           // Placeholder для input — показываем recommended
           if (customInp) customInp.placeholder = recommended > 0 ? String(recommended) : '';
@@ -1135,12 +1097,12 @@ const CAT_LABELS: Record<string, string> = {
           r.querySelector('[data-total-price]').textContent = price > 0
             ? fmt(price) + (custom != null ? '' : '')
             : '—';
-          const perPerson = participants > 0 ? roundTo(price / participants, s.round) : price;
+          const pp = perPerson(price, participants, s.round);
           r.querySelector('[data-per-person]').textContent = price <= 0 ? '—' :
-            (participants > 1 ? fmt(perPerson) + ' × ' + participants : fmt(perPerson));
+            (participants > 1 ? fmt(pp) + ' × ' + participants : fmt(pp));
           const extractPctEl = r.querySelector('[data-extract-pct]');
           if (extractPctEl) {
-            const pct = totalShiftFund > 0 ? (price / totalShiftFund * 100) : 0;
+            const pct = extractPct(price, sf.total);
             extractPctEl.textContent = pct > 0 ? pct.toFixed(1) + '%' : '—';
           }
         });
@@ -1177,14 +1139,10 @@ const CAT_LABELS: Record<string, string> = {
           target_share_pct: document.getElementById('act-target-share').value || null,
           repeat_multiplier: document.getElementById('act-repeat').value || null,
         };
-        if (!body.name) { alert('Введите название'); return; }
-        const r = await fetch('/api/portal/economy', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-        const jr = await r.json().catch(() => ({}));
+        if (!body.name) { await alertDialog('Введите название'); return; }
+        const jr = await postJson('/api/portal/economy', body);
         if (jr.ok) { dlg.close(); location.reload(); }
-        else alert('Ошибка: ' + (jr.error || 'unknown'));
+        else await alertDialog('Ошибка: ' + (jr.error || 'unknown'));
       });
 
       document.querySelectorAll('[data-edit-activity]').forEach((btn) => {
@@ -1205,14 +1163,10 @@ const CAT_LABELS: Record<string, string> = {
       });
       document.querySelectorAll('[data-delete-activity]').forEach((btn) => {
         btn.addEventListener('click', async () => {
-          if (!confirm('Удалить эту активность?')) return;
+          if (!await confirmDialog('Удалить эту активность?')) return;
           const id = btn.dataset.id;
-          const r = await fetch('/api/portal/economy', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'delete_activity', id: Number(id) }),
-          });
-          const jr = await r.json().catch(() => ({}));
-          if (jr.ok) location.reload(); else alert('Ошибка: ' + (jr.error || 'unknown'));
+          const jr = await postJson('/api/portal/economy', { action: 'delete_activity', id: Number(id) });
+          if (jr.ok) location.reload(); else await alertDialog('Ошибка: ' + (jr.error || 'unknown'));
         });
       });
 
@@ -1255,9 +1209,9 @@ const CAT_LABELS: Record<string, string> = {
         fd.append('file', file);
         giveStatus.textContent = 'Загружаем…';
         try {
-          const r = await fetch('/api/portal/prize-ops', { method: 'POST', body: fd, credentials: 'include' });
-          const jr = await r.json();
+          const jr = await postForm('/api/portal/prize-ops', fd);
           if (jr.ok) {
+            haptic('success');
             giveStatus.textContent = '✓ выдано';
             setTimeout(() => { giveDlg.close(); location.reload(); }, 600);
           } else giveStatus.textContent = 'Ошибка: ' + (jr.error || 'unknown');
@@ -1313,8 +1267,7 @@ const CAT_LABELS: Record<string, string> = {
         if (file) fd.append('file', file);
         custStatus.textContent = 'Сохраняем…';
         try {
-          const r = await fetch('/api/portal/prize-ops', { method: 'POST', body: fd, credentials: 'include' });
-          const jr = await r.json();
+          const jr = await postForm('/api/portal/prize-ops', fd);
           if (jr.ok) {
             custStatus.textContent = '✓ добавлен';
             setTimeout(() => { custDlg.close(); location.reload(); }, 600);
@@ -1326,20 +1279,15 @@ const CAT_LABELS: Record<string, string> = {
       document.querySelectorAll('[data-archive-custom]').forEach((btn) => {
         btn.addEventListener('click', async () => {
           const id = Number(btn.dataset.customId);
-          if (!confirm('Удалить этот кастомный приз? (записи о выдачах останутся в журнале)')) return;
+          if (!await confirmDialog('Удалить этот кастомный приз? (записи о выдачах останутся в журнале)')) return;
           try {
-            const r = await fetch('/api/portal/prize-ops', {
-              method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'archive_custom', id }), credentials: 'include',
-            });
-            const jr = await r.json();
-            if (jr.ok) location.reload(); else alert('Ошибка: ' + (jr.error || ''));
-          } catch (e) { alert('Сетевая ошибка'); }
+            const jr = await postJson('/api/portal/prize-ops', { action: 'archive_custom', id });
+            if (jr.ok) location.reload(); else await alertDialog('Ошибка: ' + (jr.error || ''));
+          } catch (e) { await alertDialog('Сетевая ошибка'); }
         });
       });
 
       // First render
       recalcPrizes();
-    })();
   </script>
 </PortalLayout>
