@@ -206,6 +206,33 @@ export async function upsertEvent(e: {
   });
 }
 
+/** Дублировать событие в том же слоте, с новым ответственным. Копирует и привязки чек-листов. */
+export async function duplicateEvent(eventId: number, newResponsibleId: number | null): Promise<number | null> {
+  return await withClient(async (c) => {
+    const r = await c.query(
+      `INSERT INTO shift_event
+        (shift_id, date, start_time, end_time, title, event_type, activity_type, roles,
+         staff_keys, content_task_template_id, activity_slug, group_color_id, notes, sort,
+         responsible_staff_id)
+       SELECT shift_id, date, start_time, end_time, title, event_type, activity_type, roles,
+              staff_keys, content_task_template_id, activity_slug, group_color_id, notes, sort,
+              $2
+         FROM shift_event WHERE id=$1
+       RETURNING id`,
+      [eventId, newResponsibleId],
+    );
+    const newId = r.rows[0]?.id as number | undefined;
+    if (!newId) return null;
+    // Скопировать привязки чек-листов
+    await c.query(
+      `INSERT INTO event_checklist (event_id, checklist_id, roles)
+       SELECT $2, checklist_id, roles FROM event_checklist WHERE event_id=$1`,
+      [eventId, newId],
+    );
+    return newId;
+  });
+}
+
 /** Создать/обновить шаблон чек-листа; возвращает id. */
 export async function upsertChecklist(cl: {
   id?: number; key: string | null; title: string; items: { id: string; text: string }[];
