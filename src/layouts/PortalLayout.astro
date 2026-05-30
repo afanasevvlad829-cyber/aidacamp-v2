@@ -17,38 +17,9 @@ const { title, showHeader = true } = Astro.props;
 const pathNow = Astro.url.pathname.replace(/\/+$/, '') || '/';
 const showBack = pathNow !== '/portal' && pathNow !== '';
 
-const realRole = Astro.locals.portalRealRole ?? Astro.locals.portalRole ?? null;
-const viewAs = Astro.locals.portalViewAs ?? null;
-// «Смотреть как» доступно любому staff (admin/rukovoditel/teacher/vozhaty),
-// в т.ч. чтобы можно было быстро посмотреть как ученик. Ученикам — нельзя.
-const canSwitchRoles = realRole === 'admin' || realRole === 'rukovoditel' || realRole === 'teacher' || realRole === 'vozhaty';
-const SWITCH_OPTIONS_ADMIN = [
-  { value: 'admin', label: 'Админ' },
-  { value: 'rukovoditel', label: 'Руководитель' },
-  { value: 'teacher', label: 'Преподаватель' },
-  { value: 'vozhaty', label: 'Вожатый' },
-  { value: 'student', label: 'Ученик' },
-];
-const SWITCH_OPTIONS_RUK = [
-  { value: 'rukovoditel', label: 'Руководитель' },
-  { value: 'teacher', label: 'Преподаватель' },
-  { value: 'vozhaty', label: 'Вожатый' },
-  { value: 'student', label: 'Ученик' },
-];
-const SWITCH_OPTIONS_STAFF = [
-  { value: realRole as string, label: realRole === 'teacher' ? 'Преподаватель' : 'Вожатый' },
-  { value: 'student', label: 'Ученик' },
-];
-const switchOptions = realRole === 'admin'
-  ? SWITCH_OPTIONS_ADMIN
-  : realRole === 'rukovoditel'
-    ? SWITCH_OPTIONS_RUK
-    : SWITCH_OPTIONS_STAFF;
-const currentSelectValue = viewAs ?? realRole;
-const ROLE_LABEL_MAP: Record<string, string> = {
-  admin: 'Админ', rukovoditel: 'Руководитель', teacher: 'Преподаватель',
-  vozhaty: 'Вожатый', student: 'Ученик',
-};
+import { ROLE_LABELS } from '../lib/portalPerms';
+
+const realRole = Astro.locals.portalRole ?? null;
 ---
 
 <!doctype html>
@@ -75,7 +46,7 @@ const ROLE_LABEL_MAP: Record<string, string> = {
               <span class="text-primary">Aida</span><span>Camp</span>
             </a>
           </div>
-          {/* Иконки + view-as + Назад — отдельный нижний ряд */}
+          {/* Иконки + Назад — отдельный нижний ряд */}
           <div class="mt-2 flex items-center justify-between gap-2 md:mt-0">
             <div class="flex items-center gap-2">
               {showBack && (
@@ -96,36 +67,6 @@ const ROLE_LABEL_MAP: Record<string, string> = {
               </a>
             </div>
             <div class="flex items-center gap-1.5">
-            {canSwitchRoles && (
-              <form method="POST" action="/api/portal/view-as" class="flex items-center gap-2">
-                <label for="view-as-select" class="text-[14px] text-body-muted" title="Смотреть как">
-                  <i class="bi bi-eye text-[16px]" aria-hidden="true"></i>
-                  <span class="hidden md:inline">Смотреть как:</span>
-                </label>
-                <select
-                  id="view-as-select"
-                  name="role"
-                  onchange="this.form.submit()"
-                  class="rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] font-medium text-navy-950 outline-none focus:border-primary"
-                >
-                  {switchOptions.map((o) => (
-                    <option value={o.value} selected={o.value === currentSelectValue}>{o.label}</option>
-                  ))}
-                </select>
-                {viewAs && (
-                  <button
-                    type="submit"
-                    name="clear" value="true"
-                    formaction="/api/portal/view-as"
-                    class="inline-flex items-center gap-1 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-1.5 text-[13px] font-medium text-amber-800 transition hover:bg-amber-100"
-                    title="Вернуться в свою роль"
-                  >
-                    <i class="bi bi-x-lg text-[12px]" aria-hidden="true"></i>
-                    Сбросить
-                  </button>
-                )}
-              </form>
-            )}
             <UploadQueueIndicator />
             <ToastInit />
             <MediaLightbox />
@@ -154,14 +95,6 @@ const ROLE_LABEL_MAP: Record<string, string> = {
           </div>
           </div>
         </div>
-        {viewAs && (
-          <div class="border-t border-amber-200 bg-amber-50">
-            <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-4 py-2 text-[14px] text-amber-900">
-              <i class="bi bi-eye-fill text-[16px]" aria-hidden="true"></i>
-              <span>Просмотр от лица: <strong>{ROLE_LABEL_MAP[viewAs] ?? viewAs}</strong>. Настоящая роль: {ROLE_LABEL_MAP[realRole as string] ?? realRole}.</span>
-            </div>
-          </div>
-        )}
       </header>
     )}
     <main class="mx-auto max-w-6xl px-4 py-10 md:py-16">
