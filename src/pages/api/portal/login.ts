@@ -49,13 +49,11 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   cookies.delete('portal_view_as', dom ? { path: '/', domain: dom } : { path: '/' });
 
   // Куда отправлять после логина:
-  //  - явный next (если safe: /portal/* или https://ai.aidacamp.ru/*) → туда
-  //  - иначе student → ai.aidacamp.ru (его учебная среда)
-  //  - иначе staff → /portal/ (управление сменой)
+  //  - student → ai.aidacamp.ru (учебная среда)
+  //  - staff   → ВСЕГДА на главную /portal/ (никаких next-параметров — иначе попадают
+  //              на /portal/smena, /portal/rooms и т.д., а пользователь хочет хаб)
   let dest: string;
-  if (rawNext.startsWith('/portal') || rawNext.startsWith('https://ai.aidacamp.ru')) {
-    dest = rawNext;
-  } else if (role === 'student') {
+  if (role === 'student') {
     dest = 'https://ai.aidacamp.ru/';
   } else {
     dest = '/portal/';

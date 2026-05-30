@@ -10,7 +10,8 @@ import { insertPhoto, listPhotosByEvent, setContentTaskCompleted, lookupAuthorNa
 
 const execFileAsync = promisify(execFile);
 
-const ALLOWED_ROLES = new Set(['admin', 'teacher', 'vozhaty', 'rukovoditel']);
+// Все авторизованные роли (включая student) могут загружать фото/видео в смене.
+const ALLOWED_ROLES = new Set(['admin', 'teacher', 'vozhaty', 'rukovoditel', 'student']);
 const MAX_FILE_BYTES = 500 * 1024 * 1024; // 500 МБ
 const UPLOADS_ROOT = '/var/www/aidacamp-dev/uploads/portal';
 const URL_PREFIX = '/portal/uploads';
