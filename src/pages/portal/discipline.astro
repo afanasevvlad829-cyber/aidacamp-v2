@@ -13,6 +13,8 @@ const sub  = Astro.locals.portalSub;
 if (!role) return Astro.redirect('/portal/login');
 
 const isManager = role === 'admin' || role === 'rukovoditel';
+// Отменять штрафы — только Владимир Афанасьев (telegram_id=244314247)
+const canCancel = String(sub) === '244314247';
 
 const url = new URL(Astro.request.url);
 // Если sub нет в сессии (старый токен) — менеджер по умолчанию идёт во вкладку «Все»,
@@ -199,10 +201,12 @@ const STATUS_COLOR: Record<string, string> = {
                           class="rounded-[8px] border border-red-200 bg-red-50 px-3 py-1 text-[12px] font-medium text-red-800 hover:bg-red-100">
                     Подтвердить
                   </button>
-                  <button type="button" data-action="cancel" data-id={p.id}
-                          class="rounded-[8px] border border-border bg-white px-3 py-1 text-[12px] font-medium text-body-muted hover:border-slate-400">
-                    Отменить
-                  </button>
+                  {canCancel && (
+                    <button type="button" data-action="cancel" data-id={p.id}
+                            class="rounded-[8px] border border-border bg-white px-3 py-1 text-[12px] font-medium text-body-muted hover:border-slate-400">
+                      Отменить
+                    </button>
+                  )}
                 </div>
               )}
               {isManager && p.status === 'confirmed' && (
