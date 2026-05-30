@@ -1,0 +1,127 @@
+---
+export const prerender = false;
+import PortalLayout from '../../../layouts/PortalLayout.astro';
+import { getLesson, listProgress, type LessonProgressRow } from '../../../lib/portalLesson';
+import { listKids } from '../../../lib/portalKid';
+import dayjs from 'dayjs';
+import 'dayjs/locale/ru';
+dayjs.locale('ru');
+
+const role = Astro.locals.portalRole;
+if (!role || role === 'student') return Astro.redirect('/portal/');
+
+const id = Number(Astro.params.id);
+if (!id) return Astro.redirect('/portal/lessons');
+const lesson = await getLesson(id);
+if (!lesson) return Astro.redirect('/portal/lessons');
+
+const isManager = role === 'admin' || role === 'rukovoditel';
+const canEdit = isManager || role === 'teacher';
+
+// Все активные дети + их прогресс по этому уроку
+const allKids = await listKids(false);
+const progress: LessonProgressRow[] = await listProgress(id);
+const byKid = new Map(progress.map((p) => [p.kid_id, p]));
+
+const STATUS_LABEL: Record<string, string> = {
+  not_started: 'Не начал',
+  attended: 'Присутствовал',
+  completed: 'Прошёл / сделал',
+  absent: 'Прогул',
+  excused: 'Уважительно',
+};
+const STATUS_COLOR: Record<string, string> = {
+  not_started: 'bg-slate-50 text-slate-600',
+  attended:    'bg-blue-50 text-blue-700',
+  completed:   'bg-emerald-50 text-emerald-800',
+  absent:      'bg-red-50 text-red-700',
+  excused:     'bg-amber-50 text-amber-800',
+};
+---
+<PortalLayout title={`Урок «${lesson.topic}» — прогресс`}>
+  <div class="mb-6 flex flex-wrap items-start justify-between gap-3">
+    <div class="min-w-0">
+      <a href="/portal/lessons" class="text-[13px] text-body-muted hover:text-primary">
+        <i class="bi bi-arrow-left" aria-hidden="true"></i> К урокам
+      </a>
+      <h1 class="mt-1 text-[24px] font-bold tracking-[-0.02em] text-navy-950 md:text-[30px]">{lesson.topic}</h1>
+      <div class="mt-1 flex flex-wrap gap-x-3 text-[14px] text-body-muted">
+        <span><i class="bi bi-calendar-event" aria-hidden="true"></i> {dayjs(lesson.date).format('D MMM, dddd')}</span>
+        {lesson.start_time && (
+          <span><i class="bi bi-clock" aria-hidden="true"></i> {lesson.start_time.slice(0, 5)}{lesson.end_time ? `–${lesson.end_time.slice(0, 5)}` : ''}</span>
+        )}
+        {lesson.teacher_name && <span><i class="bi bi-person-badge" aria-hidden="true"></i> {lesson.teacher_name}</span>}
+        {lesson.group_color_name && <span class="rounded-full bg-primary-soft px-2 text-primary">{lesson.group_color_name}</span>}
+      </div>
+      {lesson.expected_outcome && (
+        <p class="mt-3 max-w-prose text-[14px] text-navy-900">
+          <b>Что унесут:</b> {lesson.expected_outcome}
+        </p>
+      )}
+    </div>
+  </div>
+
+  <h2 class="mb-3 text-[18px] font-semibold text-navy-950">Прогресс детей</h2>
+
+  <div class="space-y-1.5">
+    {allKids.length === 0 && (
+      <div class="rounded-[12px] border border-dashed border-border bg-page p-6 text-center text-body-muted">
+        Учеников в системе нет.
+      </div>
+    )}
+    {allKids.map((k) => {
+      const p = byKid.get(k.id);
+      const st = p?.status ?? 'not_started';
+      return (
+        <div class="flex flex-wrap items-center gap-2 rounded-[10px] border border-border bg-white px-3 py-2"
+             data-kid-id={k.id}>
+          <span class="min-w-0 flex-1 truncate font-medium text-navy-950">
+            {k.full_name}
+          </span>
+          {canEdit ? (
+            <select class="rounded-[8px] border border-border bg-white px-2 py-1 text-[13px]"
+                    data-status data-kid-id={k.id}>
+              {Object.entries(STATUS_LABEL).map(([v, l]) => (
+                <option value={v} selected={v === st}>{l}</option>
+              ))}
+            </select>
+          ) : (
+            <span class:list={[
+              'rounded-full px-2 py-0.5 text-[12px]',
+              STATUS_COLOR[st] ?? 'bg-slate-50 text-slate-600',
+            ]}>{STATUS_LABEL[st] ?? st}</span>
+          )}
+          {p?.outcome_note && (
+            <span class="basis-full pl-1 text-[12px] text-body-muted">{p.outcome_note}</span>
+          )}
+        </div>
+      );
+    })}
+  </div>
+
+  {canEdit && (
+    <script define:vars={{ lessonId: id }}>
+      document.querySelectorAll('[data-status]').forEach((sel) => {
+        sel.addEventListener('change', async () => {
+          const kidId = Number(sel.dataset.kidId);
+          const status = sel.value;
+          sel.disabled = true;
+          try {
+            const r = await fetch('/api/portal/lesson', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'progress', lesson_id: lessonId, kid_id: kidId, status }),
+            });
+            const j = await r.json();
+            if (!j.ok) throw new Error(j.error || 'error');
+            (window.toast?.success || (() => {}))('Сохранено');
+          } catch (e) {
+            (window.toast?.error || window.alert)('Ошибка: ' + (e.message || e));
+          } finally {
+            sel.disabled = false;
+          }
+        });
+      });
+    </script>
+  )}
+</PortalLayout>

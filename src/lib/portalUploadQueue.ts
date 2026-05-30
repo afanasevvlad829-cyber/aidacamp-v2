@@ -180,9 +180,13 @@ export async function flush(): Promise<{ sent: number; failed: number; remaining
             document.dispatchEvent(new CustomEvent('portal-media:uploaded', {
               detail: { eventId: it.event_id, photoId: data.id, fileUrl: data.file_url, uploaderId: it.uploader_id },
             }));
+            const toast = (window as any).toast;
+            if (toast) toast.success(`Загружено · id=${data.id}`);
             continue;
           }
           it.last_error = (data && data.error) || ('http ' + r.status);
+          const toast = (window as any).toast;
+          if (toast) toast.error(`Ответ сервера: ${it.last_error}`);
         } else if (r.status >= 400 && r.status < 500) {
           it.status = 'failed';
           it.last_error = 'http ' + r.status;

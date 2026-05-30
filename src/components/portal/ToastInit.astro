@@ -1,0 +1,49 @@
+---
+/**
+ * Глобальные тосты на базе Notyf — заменяют браузерный alert().
+ * Подключить ОДИН РАЗ в PortalLayout, и любая страница может звать:
+ *   window.toast.error('Ошибка')
+ *   window.toast.success('Готово')
+ *   window.toast('Сообщение')        — info-тост
+ * А также сам alert() переопределён на toast.error — обратной совместимости ради.
+ */
+---
+<script>
+  import { Notyf } from 'notyf';
+  import 'notyf/notyf.min.css';
+
+  const notyf = new Notyf({
+    duration: 4000,
+    position: { x: 'center', y: 'top' },
+    dismissible: true,
+    ripple: false,
+    types: [
+      { type: 'success', background: '#10b981', icon: false },
+      { type: 'error',   background: '#dc2626', icon: false, duration: 6000 },
+      { type: 'info',    background: '#0e1c33', icon: false },
+    ],
+  });
+
+  function open(opts: { type?: 'success' | 'error' | 'info'; message: string }) {
+    notyf.open({ type: opts.type ?? 'info', message: opts.message });
+  }
+
+  const toast = Object.assign(
+    (msg: string) => open({ type: 'info', message: msg }),
+    {
+      success: (msg: string) => open({ type: 'success', message: msg }),
+      error:   (msg: string) => open({ type: 'error',   message: msg }),
+      info:    (msg: string) => open({ type: 'info',    message: msg }),
+    },
+  );
+
+  (window as any).toast = toast;
+
+  // Аккуратно подменяем alert() — это нативное окно в TG WebApp иногда блокирует UI.
+  // Сохраним оригинал на случай если кому-то нужен модальный диалог.
+  (window as any).nativeAlert = window.alert.bind(window);
+  window.alert = (msg?: any) => {
+    const text = msg == null ? '' : String(msg);
+    toast.error(text || 'Ошибка');
+  };
+</script>

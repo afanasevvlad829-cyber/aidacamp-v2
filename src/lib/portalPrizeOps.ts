@@ -155,3 +155,11 @@ export async function deleteIssuance(id: number): Promise<void> {
     await c.query(`DELETE FROM portal_prize_issuance WHERE id = $1`, [id]);
   });
 }
+
+/** Удалить ВСЕ выдачи (для админского сброса тестовых данных). */
+export async function deleteAllIssuances(): Promise<number> {
+  return (await withClient(async (c) => {
+    const r = await c.query(`DELETE FROM portal_prize_issuance`);
+    return r.rowCount ?? 0;
+  })) ?? 0;
+}

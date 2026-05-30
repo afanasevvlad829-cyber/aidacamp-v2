@@ -1,0 +1,36 @@
+---
+/**
+ * Инициализация PhotoSwipe для всех portal-media лент.
+ * Слушает portal-media:lightbox-rebind и создаёт/обновляет лайтбокс на корне.
+ */
+---
+<script>
+  import PhotoSwipeLightbox from 'photoswipe/lightbox';
+  import 'photoswipe/style.css';
+
+  const instances = new WeakMap<HTMLElement, any>();
+
+  function ensure(root: HTMLElement) {
+    if (instances.has(root)) return;
+    const lb = new PhotoSwipeLightbox({
+      gallery: root,
+      children: 'a.pswp-thumb',
+      pswpModule: () => import('photoswipe'),
+      // Размеры из data-pswp-width/height — PhotoSwipe сам подгонит после load
+    });
+    lb.init();
+    instances.set(root, lb);
+  }
+
+  function bindAll() {
+    document.querySelectorAll<HTMLElement>('.portal-media__list').forEach((root) => ensure(root));
+  }
+
+  document.addEventListener('portal-media:lightbox-rebind', () => bindAll());
+  // На случай если сетка уже отрисована (старые фото в lighbox не рисуем, но если есть)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindAll);
+  } else {
+    bindAll();
+  }
+</script>

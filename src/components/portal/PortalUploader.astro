@@ -1,0 +1,65 @@
+---
+/**
+ * Унифицированный загрузчик фото/видео для портала.
+ * Связан с глобальной IndexedDB-очередью через CSS-класс `.portal-uploader`
+ * (биндинг в src/components/UploadQueueIndicator.astro).
+ *
+ * Использование:
+ *   <PortalUploader eventId={e.id} contentTaskId={e.content_task_template_id} />
+ *   <PortalUploader eventId={42} label="Записать видео-обход" accept="video/*" />
+ *
+ * Все DOM-классы те же что были inline — никакой regression для JS-биндинга.
+ */
+interface Props {
+  /** ID события в shift_event. Обязательно. */
+  eventId: number | string;
+  /** content_task_template_id, если файл — выполнение конкретного контент-задания. */
+  contentTaskId?: string | number | null;
+  /** Уникальный id корня — нужен для адресации портов обновления статуса в очереди. */
+  id?: string | null;
+  /** Что принимать (по умолчанию — image+video). */
+  accept?: string;
+  /** Текст кнопки (по умолчанию «Снять и загрузить»). */
+  label?: string;
+  /** Класс кнопки (для нестандартных размеров). */
+  buttonClass?: string;
+  /** Отступ сверху (по умолчанию mt-3, можно "" для без отступа). */
+  marginTop?: string;
+  /** Bootstrap-иконка слева от текста (по умолчанию bi-camera-fill). */
+  icon?: string;
+  /**
+   * Принудительно открывать камеру (capture="environment"|"user") или дать выбор.
+   * undefined / null = БЕЗ атрибута → iOS/Android покажет диалог «Камера или из библиотеки».
+   * 'environment' = задняя камера сразу.
+   */
+  capture?: 'environment' | 'user' | null;
+}
+
+const {
+  eventId,
+  contentTaskId = '',
+  id = null,
+  accept = 'image/*,video/*',
+  label = 'Снять и загрузить',
+  buttonClass = 'inline-flex items-center gap-2 rounded-[10px] bg-primary px-4 py-2 text-[15px] font-medium text-white transition hover:opacity-90',
+  marginTop = 'mt-3',
+  icon = 'bi-camera-fill',
+  capture = null,
+} = Astro.props;
+---
+<div class={`${marginTop} portal-uploader`}
+     id={id ?? undefined}
+     data-event-id={String(eventId)}
+     data-content-task-id={contentTaskId == null ? '' : String(contentTaskId)}>
+  {/* Нативный <label> обёртка вокруг скрытого <input> — работает в Android Telegram WebView,
+      где programmatic input.click() игнорируется. */}
+  <label class={`portal-uploader__btn cursor-pointer ${buttonClass}`}>
+    <i class={`bi ${icon}`} aria-hidden="true"></i>
+    {label}
+    <input type="file"
+           accept={accept}
+           capture={capture ?? undefined}
+           class="portal-uploader__input sr-only" />
+  </label>
+  <p class="portal-uploader__status mt-2 text-[14px] text-body-muted hidden" aria-live="polite"></p>
+</div>
