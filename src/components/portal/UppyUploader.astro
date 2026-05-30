@@ -1,52 +1,54 @@
 ---
 /**
- * Uppy-based loader. Заменяет PortalUploader.
+ * Полноценный Uppy-загрузчик с собственным picker'ом (Dashboard, compact-mode).
  *
- * UX: одна кнопка → нативный диалог выбора (label > input) → Uppy качает по XHR.
+ * Заменяет любые наши предыдущие реализации. UI:
+ *  - одна большая кнопка «выбрать файл»
+ *  - JS-инициированный диалог Uppy: «Камера / Из библиотеки / Файл»
+ *  - прогресс-бар, отмена, retry, offline-восстановление
+ *
  * Совместимость: после успешной загрузки диспатчит portal-media:uploaded и
- * portal-media:refresh с тем же payload что и старый portalUploadQueue,
- * чтобы /portal/rooms и др. могли продолжать слушать без изменений.
+ * portal-media:refresh с тем же payload что раньше — listener'ы в smena/rooms
+ * продолжают работать.
  */
 interface Props {
   eventId: number | string;
   contentTaskId?: string | number | null;
   id?: string | null;
+  /** MIME-фильтры. По умолчанию любые. */
   accept?: string;
-  label?: string;
-  icon?: string;
-  buttonClass?: string;
-  marginTop?: string;
+  /** Подсказка в drag-зоне. */
+  note?: string;
 }
 const {
   eventId,
   contentTaskId = '',
   id = null,
   accept = 'image/*,video/*',
-  label = 'Снять и загрузить',
-  icon = 'bi-camera-fill',
-  buttonClass = 'inline-flex items-center gap-2 rounded-[10px] bg-primary px-4 py-2 text-[15px] font-medium text-white transition hover:opacity-90',
-  marginTop = 'mt-3',
+  note = 'Камера, библиотека или файл — выбор в окне Uppy',
 } = Astro.props;
+
+// Уникальный id корня — нужен и для адресации portal-media:uploaded,
+// и для крепления Dashboard к контейнеру.
+const rootId = id ?? `uppy-${Math.random().toString(36).slice(2)}`;
 ---
-<div class={`${marginTop} uppy-uploader portal-uploader`}
-     id={id ?? undefined}
+<div class="uppy-uploader portal-uploader mt-3"
+     id={rootId}
      data-event-id={String(eventId)}
-     data-content-task-id={contentTaskId == null ? '' : String(contentTaskId)}>
-  <label class={`uppy-uploader__btn cursor-pointer ${buttonClass}`}>
-    <i class={`bi ${icon}`} aria-hidden="true"></i>
-    {label}
-    <input type="file"
-           accept={accept}
-           class="uppy-uploader__input sr-only" />
-  </label>
+     data-content-task-id={contentTaskId == null ? '' : String(contentTaskId)}
+     data-accept={accept}
+     data-note={note}>
+  <div class="uppy-uploader__mount"></div>
   <p class="uppy-uploader__status mt-2 text-[14px] text-body-muted hidden" aria-live="polite"></p>
 </div>
 
 <script>
   import Uppy from '@uppy/core';
+  import Dashboard from '@uppy/dashboard';
   import XHRUpload from '@uppy/xhr-upload';
   import GoldenRetriever from '@uppy/golden-retriever';
   import '@uppy/core/css/style.min.css';
+  import '@uppy/dashboard/css/style.min.css';
 
   const initialised = new WeakSet<HTMLElement>();
 
@@ -61,23 +63,50 @@ const {
   function attachOne(root: HTMLElement) {
     if (initialised.has(root)) return;
     initialised.add(root);
-    const input = root.querySelector<HTMLInputElement>('.uppy-uploader__input');
+
+    const mount = root.querySelector<HTMLElement>('.uppy-uploader__mount');
     const status = root.querySelector<HTMLParagraphElement>('.uppy-uploader__status');
-    if (!input) return;
+    if (!mount) return;
 
     const eventId = root.dataset.eventId || '';
     const ctId = root.dataset.contentTaskId || '';
     const uploaderId = root.id || '';
+    const accept = root.dataset.accept || 'image/*,video/*';
+    const note = root.dataset.note || '';
     const toast = (window as any).toast;
 
     const uppy = new Uppy({
-      id: 'uppy-' + (uploaderId || Math.random().toString(36).slice(2)),
+      id: 'uppy-' + uploaderId,
       autoProceed: true,
       restrictions: {
         maxFileSize: 500 * 1024 * 1024,
-        maxNumberOfFiles: 1,
+        maxNumberOfFiles: 5,
+        allowedFileTypes: accept.split(',').map((s) => s.trim()).filter(Boolean),
       },
     });
+
+    uppy.use(Dashboard, {
+      target: mount,
+      inline: true,
+      width: '100%',
+      height: 240,
+      proudlyDisplayPoweredByUppy: false,
+      showProgressDetails: true,
+      hideUploadButton: false,
+      note,
+      locale: {
+        strings: {
+          dropPasteFiles: 'Перетащи файл сюда или %{browseFiles}',
+          browseFiles: 'выбери файл',
+          dropPasteImportFiles: 'Перетащи файл сюда, %{browseFiles} или импортируй из %{importFrom}',
+          uploadComplete: 'Загружено',
+          uploadPaused: 'Пауза',
+          uploadingXFiles: { 0: 'Загружаю %{smart_count} файл', 1: 'Загружаю %{smart_count} файла', 2: 'Загружаю %{smart_count} файлов' },
+          processingXFiles: { 0: 'Обработка %{smart_count} файла', 1: 'Обработка %{smart_count} файлов', 2: 'Обработка %{smart_count} файлов' },
+        },
+      },
+    });
+
     uppy.use(XHRUpload, {
       endpoint: '/api/portal/photo',
       method: 'POST',
@@ -86,33 +115,9 @@ const {
       withCredentials: true,
       timeout: 0,
     });
-    // Подгружаем event_id/content_task_id в каждую отправку
     uppy.setMeta({ event_id: eventId, content_task_id: ctId });
 
-    // Восстанавливать незавершённые после рефреша
     try { uppy.use(GoldenRetriever, { serviceWorker: false }); } catch {}
-
-    input.addEventListener('change', () => {
-      const file = input.files && input.files[0];
-      if (!file) {
-        if (toast) toast.error('Файл не выбран');
-        return;
-      }
-      const sizeMb = (file.size / 1024 / 1024).toFixed(1);
-      if (toast) toast.info(`Выбран: ${file.name || 'без имени'} · ${sizeMb} MB`);
-      showStatus(status, `✓ В очереди (${sizeMb} MB), отправляю…`);
-      try {
-        uppy.addFile({
-          name: file.name || 'file',
-          type: file.type,
-          data: file,
-        });
-      } catch (e: any) {
-        showStatus(status, 'Ошибка: ' + (e?.message || e), true);
-        if (toast) toast.error('Ошибка очереди: ' + (e?.message || e));
-      }
-      input.value = '';
-    });
 
     uppy.on('upload-success', (_file, response) => {
       const body = (response as any)?.body ?? {};
@@ -124,19 +129,12 @@ const {
       document.dispatchEvent(new CustomEvent('portal-media:uploaded', {
         detail: { eventId, photoId, fileUrl, uploaderId },
       }));
-      // Через 4 сек скрыть статус
-      setTimeout(() => {
-        if (status && status.textContent === '✓ Загружено') {
-          status.textContent = '';
-          status.classList.add('hidden');
-        }
-      }, 4000);
     });
 
     uppy.on('upload-error', (_file, error, response) => {
       const code = (response as any)?.status ?? '';
       const msg = (error as any)?.message || 'unknown error';
-      showStatus(status, `Ошибка загрузки${code ? ' (HTTP ' + code + ')' : ''}: ${msg}`, true);
+      showStatus(status, `Ошибка${code ? ' (HTTP ' + code + ')' : ''}: ${msg}`, true);
       if (toast) toast.error('Не загрузилось: ' + msg);
     });
 

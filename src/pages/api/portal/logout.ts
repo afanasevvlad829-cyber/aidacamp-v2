@@ -1,8 +1,13 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 
-export const POST: APIRoute = ({ cookies, redirect }) => {
+function doLogout({ cookies, url, redirect }: any) {
   const domain = process.env.PORTAL_COOKIE_DOMAIN?.trim();
-  cookies.delete('portal_session', domain ? { path: '/', domain } : { path: '/' });
-  return redirect('/portal/login', 303);
-};
+  cookies.delete('portal_session',  domain ? { path: '/', domain } : { path: '/' });
+  cookies.delete('portal_view_as',  domain ? { path: '/', domain } : { path: '/' });
+  const next = url?.searchParams?.get?.('next') || '/portal/login';
+  return redirect(next, 303);
+}
+
+export const POST: APIRoute = (ctx) => doLogout(ctx);
+export const GET:  APIRoute = (ctx) => doLogout(ctx);

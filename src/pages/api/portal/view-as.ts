@@ -6,6 +6,8 @@ import { getStaff } from '../../../lib/portalStaff';
 const ALLOWED: Record<string, Set<string>> = {
   admin: new Set(['admin', 'rukovoditel', 'teacher', 'vozhaty', 'student']),
   rukovoditel: new Set(['rukovoditel', 'vozhaty', 'teacher', 'student']),
+  teacher: new Set(['teacher', 'student']),
+  vozhaty: new Set(['vozhaty', 'student']),
 };
 
 /**
@@ -51,13 +53,23 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
     clear = String(form.get('clear') ?? '') === 'true' || role === '';
   }
 
+  const dom = process.env.PORTAL_COOKIE_DOMAIN?.trim();
+  const cookieOpts: any = { path: '/', httpOnly: false, sameSite: 'lax', secure: true, maxAge: 60 * 60 * 24 };
+  if (dom) cookieOpts.domain = dom;
+
   if (clear) {
-    cookies.delete('portal_view_as', { path: '/' });
+    cookies.delete('portal_view_as', dom ? { path: '/', domain: dom } : { path: '/' });
   } else {
-    if (!ALLOWED[realRole].has(role)) return new Response('Bad role', { status: 400 });
-    cookies.set('portal_view_as', role, {
-      path: '/', httpOnly: false, sameSite: 'lax', secure: true, maxAge: 60 * 60 * 24, // 24h
-    });
+    const allowedForRole = ALLOWED[realRole];
+    // Если у пользователя несколько ролей в staff.roles[] — разрешаем переключаться между ними.
+    let canSwitch = allowedForRole?.has(role);
+    if (!canSwitch && payload.sub) {
+      const staff = await getStaff(payload.sub);
+      const roles = Array.isArray(staff?.roles) ? staff!.roles : [];
+      if (roles.length > 1 && roles.includes(role as any)) canSwitch = true;
+    }
+    if (!canSwitch) return new Response('Bad role', { status: 400 });
+    cookies.set('portal_view_as', role, cookieOpts);
   }
 
   const next = url.searchParams.get('next') || '/portal/';

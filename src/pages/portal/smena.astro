@@ -9,6 +9,7 @@ import { listStaff } from '../../lib/portalStaff';
 import { getActivity } from '../../lib/portalActivities';
 import { canEditEvent } from '../../lib/portalShiftPerms';
 import PortalUploader from '../../components/portal/UppyUploader.astro';
+import MediaManager from '../../components/portal/MediaManager.astro';
 
 const role = Astro.locals.portalRole!;
 const sub = verifySessionPayload(
@@ -102,6 +103,28 @@ function timeRange(e: ShiftEvent): string {
   if (a && b) return `${a}–${b}`;
   return a || b || '';
 }
+// Двух-буквенные инициалы из имени: «Варвара Мухортова» → «ВМ», «Омар» → «ОМ»
+function initials(name: string | null | undefined): string {
+  if (!name) return '??';
+  const parts = String(name).trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return parts[0].slice(0, 2).toUpperCase();
+}
+const BADGE_PALETTE = [
+  'bg-amber-100 text-amber-900 border-amber-300',
+  'bg-blue-100 text-blue-900 border-blue-300',
+  'bg-emerald-100 text-emerald-900 border-emerald-300',
+  'bg-pink-100 text-pink-900 border-pink-300',
+  'bg-purple-100 text-purple-900 border-purple-300',
+  'bg-cyan-100 text-cyan-900 border-cyan-300',
+  'bg-orange-100 text-orange-900 border-orange-300',
+  'bg-indigo-100 text-indigo-900 border-indigo-300',
+];
+function badgeColor(id: number | null | undefined): string {
+  if (id == null) return 'bg-slate-100 text-slate-700 border-slate-300';
+  return BADGE_PALETTE[Math.abs(id) % BADGE_PALETTE.length];
+}
+
 function byTime(a: ShiftEvent, b: ShiftEvent): number {
   return (a.start_time ?? '99').localeCompare(b.start_time ?? '99') || a.sort - b.sort;
 }
@@ -121,9 +144,64 @@ function roleLabel(r: string): string {
 // Админ/руководитель видит ВСЕ события дня даже в «Моём дне», т.к. отвечает за всю смену.
 // «Мой день» убрали: лента дня — все события без фильтра по роли. Все видят всё,
 // чек-листы и галочки доступны каждому, ответственного назначает руководитель.
-const roleEvents = events
-  .filter((e) => e.date === selectedDate)
-  .sort(byTime);
+const allDayEvents = events.filter((e) => e.date === selectedDate).sort(byTime);
+
+// Уникальные «ответственные» на сегодня — для вкладок по человеку
+const ownerMap = new Map<number, string>();
+for (const e of allDayEvents) {
+  if (e.responsible_staff_id && e.responsible_name) {
+    ownerMap.set(e.responsible_staff_id, e.responsible_name);
+  }
+}
+const owners = Array.from(ownerMap.entries()).map(([id, name]) => ({ id, name }));
+
+// Найти свой staff_id (для дефолта вкладки преподавателя/вожатого)
+async function staffIdByTg(tg: number | null | undefined): Promise<number | null> {
+  if (tg == null) return null;
+  const conn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
+  if (!conn) return null;
+  const { default: pg } = await import('pg');
+  const c = new pg.Client({ connectionString: conn });
+  await c.connect();
+  try {
+    const r = await c.query('SELECT id FROM portal_staff WHERE telegram_id=$1', [tg]);
+    return r.rows[0] ? Number(r.rows[0].id) : null;
+  } finally { await c.end(); }
+}
+const mySid = await staffIdByTg((Astro.locals as any).portalSub);
+
+// Парам ?owner=<id>; для teacher/vozhaty дефолт — свой id, если он есть в owners.
+// Для admin/rukovoditel дефолт — все.
+const rawOwner = Astro.url.searchParams.get('owner');
+let activeOwner: number | 'all' = 'all';
+if (rawOwner === 'all') activeOwner = 'all';
+else if (rawOwner) activeOwner = Number(rawOwner) || 'all';
+else if (!isManagerView && mySid && ownerMap.has(mySid)) activeOwner = mySid;
+
+const roleEvents = activeOwner === 'all'
+  ? allDayEvents
+  : allDayEvents.filter((e) => e.responsible_staff_id === activeOwner);
+
+// Группируем по слоту (start_time + end_time). Слот = «уникальное время на таймлайне».
+// Если в слоте несколько событий — будем рендерить карточку с табами параллельных.
+function slotKey(e: any): string { return `${e.start_time ?? ''}|${e.end_time ?? ''}`; }
+const slots: Array<{ key: string; events: any[] }> = (() => {
+  const m = new Map<string, any[]>();
+  for (const e of roleEvents) {
+    const k = slotKey(e);
+    const arr = m.get(k) ?? [];
+    arr.push(e);
+    m.set(k, arr);
+  }
+  return Array.from(m.entries()).map(([key, events]) => ({ key, events }));
+})();
+
+function ownerHref(o: number | 'all'): string {
+  const params = new URLSearchParams(Astro.url.searchParams);
+  if (o === 'all') params.delete('owner');
+  else params.set('owner', String(o));
+  return Astro.url.pathname + '?' + params.toString();
+}
 
 // --- day view: все события даты ---
 const dayEvents = events.filter((e) => e.date === selectedDate).sort(byTime);
@@ -207,23 +285,20 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
     </div>
   ) : (
     <>
-      <div class="mb-6">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 class="text-[28px] font-bold tracking-[-0.02em] text-navy-950 md:text-[36px]">
-              {shift.name}
-            </h1>
-            <p class="mt-1 text-[16px] text-body-muted">
-              {fmtDate(shift.start_date)} — {fmtDate(shift.end_date)}
-            </p>
-          </div>
+      <div class="mb-4">
+        <div class="flex items-center justify-between gap-2">
+          <h1 class="truncate text-[18px] font-bold tracking-[-0.02em] text-navy-950 md:text-[28px]">
+            {shift.name}
+          </h1>
           {isAdminLike && (
             <a
               href="/portal/smena/admin"
-              class="inline-flex items-center gap-2 rounded-[12px] border border-border bg-white px-4 py-2 text-[16px] font-medium text-body-muted transition hover:border-primary hover:text-primary"
+              title="Управление сеткой"
+              aria-label="Управление сеткой"
+              class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border bg-white text-body-muted transition hover:border-primary hover:text-primary md:h-auto md:w-auto md:gap-2 md:px-4 md:py-2"
             >
-              <i class="bi bi-kanban text-[18px]" aria-hidden="true"></i>
-              Управление
+              <i class="bi bi-kanban text-[16px]" aria-hidden="true"></i>
+              <span class="hidden md:inline">Управление</span>
             </a>
           )}
         </div>
@@ -246,57 +321,276 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
           </nav>
         )}
 
-        {/* Табы видов */}
-        <nav class="mt-5 flex flex-wrap gap-2" aria-label="Виды расписания">
+        {/* Табы видов — на мобилке только иконки, на десктопе с подписями */}
+        <nav class="mt-3 flex flex-wrap gap-2" aria-label="Виды расписания">
           {VIEWS.map((v) => (
             <a
               href={viewHref(v.key)}
-              class={`inline-flex items-center gap-2 rounded-[12px] border px-4 py-2 text-[16px] font-medium transition ${
+              title={v.label}
+              aria-label={v.label}
+              class:list={[
+                'inline-flex h-9 w-9 items-center justify-center rounded-[10px] border font-medium transition md:h-auto md:w-auto md:gap-2 md:px-4 md:py-2 md:text-[16px]',
                 v.key === view
                   ? 'border-primary bg-primary text-white'
-                  : 'border-border bg-white text-body-muted hover:border-primary hover:text-primary'
-              }`}
+                  : 'border-border bg-white text-body-muted hover:border-primary hover:text-primary',
+              ]}
             >
-              <i class={`bi bi-${v.icon} text-[18px]`} aria-hidden="true"></i>
-              {v.label}
+              <i class={`bi bi-${v.icon} text-[16px] md:text-[18px]`} aria-hidden="true"></i>
+              <span class="hidden md:inline">{v.label}</span>
             </a>
           ))}
         </nav>
 
-        {/* Навигация по датам (для role/day) */}
+        {/* Навигация по датам — показываем сегодня + 3 будущих, остальные раскрываем кнопкой */}
         {showDateNav && dates.length > 0 && (
-          <div class="mt-4 flex flex-wrap gap-2" aria-label="Дни смены">
-            {dates.map((d) => (
-              <a
-                href={dateHref(d)}
-                class={`rounded-[10px] border px-3 py-1.5 text-[16px] font-medium transition ${
-                  d === selectedDate
-                    ? 'border-primary bg-primary-soft text-primary'
-                    : 'border-border bg-white text-body-muted hover:border-primary'
-                }`}
-              >
-                {fmtDate(d)}
-              </a>
-            ))}
+          <div class="mt-3" aria-label="Дни смены">
+            {(() => {
+              const today = new Date().toISOString().slice(0, 10);
+              // Найдём индекс «опорной» даты: либо selectedDate, либо ближайшая к сегодня
+              const refIdx = (() => {
+                const i = dates.indexOf(selectedDate);
+                if (i >= 0) return i;
+                const j = dates.findIndex((d) => d >= today);
+                return j >= 0 ? j : 0;
+              })();
+              const startIdx = Math.max(0, refIdx);
+              const visibleEnd = Math.min(dates.length, startIdx + 4);
+              const visible = dates.slice(startIdx, visibleEnd);
+              const past = dates.slice(0, startIdx);
+              const future = dates.slice(visibleEnd);
+              const hidden = past.length + future.length;
+              return (
+                <>
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    {visible.map((d) => (
+                      <a
+                        href={dateHref(d)}
+                        class:list={[
+                          'rounded-[10px] border px-2.5 py-1.5 text-[13px] font-medium transition md:text-[14px]',
+                          d === selectedDate
+                            ? 'border-primary bg-primary-soft text-primary'
+                            : 'border-border bg-white text-body-muted hover:border-primary',
+                        ]}
+                      >
+                        {fmtDate(d)}
+                      </a>
+                    ))}
+                    {hidden > 0 && (
+                      <button
+                        type="button"
+                        id="dates-toggle"
+                        title="Показать все"
+                        aria-label="Показать все даты"
+                        class="inline-flex h-7 w-7 items-center justify-center rounded-[10px] border border-border bg-white text-body-muted hover:border-primary"
+                      >
+                        <i class="bi bi-three-dots" aria-hidden="true"></i>
+                      </button>
+                    )}
+                  </div>
+                  {hidden > 0 && (
+                    <div id="dates-extra" class="mt-1.5 hidden flex-wrap gap-1.5">
+                      {[...past, ...future].map((d) => (
+                        <a
+                          href={dateHref(d)}
+                          class:list={[
+                            'rounded-[10px] border px-2.5 py-1.5 text-[13px] font-medium transition md:text-[14px]',
+                            d === selectedDate
+                              ? 'border-primary bg-primary-soft text-primary'
+                              : 'border-border bg-white text-body-muted opacity-70 hover:border-primary hover:opacity-100',
+                          ]}
+                        >
+                          {fmtDate(d)}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
+
+        <script is:inline>
+          (() => {
+            const btn = document.getElementById('dates-toggle');
+            const extra = document.getElementById('dates-extra');
+            if (!btn || !extra) return;
+            btn.addEventListener('click', () => {
+              extra.classList.toggle('hidden');
+              extra.classList.toggle('flex');
+            });
+          })();
+        </script>
       </div>
+
+      {/* Вкладки по ответственным (показываем когда есть 2+ разных). */}
+      {view === 'day' && owners.length >= 2 && (
+        <nav class="mb-4 -mx-1 overflow-x-auto px-1" aria-label="Ответственные">
+          <div class="flex gap-1.5">
+            <a href={ownerHref('all')}
+               class:list={[
+                 'shrink-0 rounded-[10px] border px-3 py-1.5 text-[13px] font-medium transition md:text-[14px]',
+                 activeOwner === 'all'
+                   ? 'border-primary bg-primary text-white'
+                   : 'border-border bg-white text-body-muted hover:border-primary',
+               ]}>
+              <i class="bi bi-people mr-1" aria-hidden="true"></i>
+              Все ({allDayEvents.length})
+            </a>
+            {owners.map((o) => {
+              const cnt = allDayEvents.filter((e) => e.responsible_staff_id === o.id).length;
+              return (
+                <a href={ownerHref(o.id)}
+                   class:list={[
+                     'shrink-0 rounded-[10px] border px-3 py-1.5 text-[13px] font-medium transition md:text-[14px]',
+                     activeOwner === o.id
+                       ? 'border-primary bg-primary text-white'
+                       : 'border-border bg-white text-body-muted hover:border-primary',
+                   ]}>
+                  {o.name} <span class="opacity-70">({cnt})</span>
+                </a>
+              );
+            })}
+          </div>
+        </nav>
+      )}
 
       {/* ===== ROLE VIEW ===== */}
       {view === 'day' && (
         <section class="space-y-4">
           {roleEvents.length === 0 && (
             <p class="rounded-[16px] border border-border bg-white p-6 text-[16px] text-body-muted card-shadow">
-              На этот день для вашей роли событий нет.
+              {activeOwner === 'all'
+                ? 'На этот день событий нет.'
+                : 'У этого ответственного на сегодня событий нет.'}
             </p>
           )}
-          {roleEvents.map((e) => {
+          {slots.map((slot) => {
+            const isParallel = slot.events.length > 1;
+            const slotId = 'slot-' + slot.events[0].id;
+            return isParallel ? (
+              <div class="parallel-slot rounded-[16px] border border-primary/30 bg-primary-soft/30 p-2 card-shadow" data-slot-id={slotId}>
+                <div class="mb-2 flex items-center justify-between gap-2 px-2 pt-1">
+                  <span class="inline-flex items-center gap-1 text-[14px] font-semibold text-primary">
+                    <i class="bi bi-stack" aria-hidden="true"></i>
+                    Параллельные: {slot.events.length}
+                  </span>
+                  <div class="flex items-center gap-1.5">
+                    {slot.events.map((e) => e.responsible_staff_id && (
+                      <span class={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-[11px] font-bold ${badgeColor(e.responsible_staff_id)}`}
+                            title={e.responsible_name ?? ''}>
+                        {initials(e.responsible_name)}
+                      </span>
+                    ))}
+                    <span class="ml-1 text-[13px] text-body-muted">{timeRange(slot.events[0])}</span>
+                  </div>
+                </div>
+                <nav class="parallel-slot__tabs mb-2 -mx-1 flex gap-1 overflow-x-auto px-1" aria-label="Параллельные события">
+                  {slot.events.map((e, idx) => (
+                    <button type="button"
+                            data-slot-tab={slotId}
+                            data-target={'panel-' + e.id}
+                            class:list={[
+                              'shrink-0 rounded-[10px] border px-3 py-1.5 text-[13px] font-medium transition',
+                              idx === 0 ? 'border-primary bg-primary text-white' : 'border-border bg-white text-body-muted',
+                            ]}>
+                      {e.responsible_name ?? e.title}
+                    </button>
+                  ))}
+                </nav>
+                {slot.events.map((e, idx) => {
+                  const myChecklists = isManagerView ? e.checklists : e.checklists.filter((cl) => roleAllowed(role, cl.roles));
+                  return (
+                    <div data-slot-panel={slotId} id={'panel-' + e.id} class:list={['parallel-slot__panel', idx === 0 ? '' : 'hidden']}>
+                      <Fragment set:html={''} />
+                      {/* Используем общий рендер из основной map ниже — но нам нужен компактный inline. */}
+                      <article class="rounded-[14px] border border-border bg-white p-4">
+                        <div class="flex items-baseline gap-2">
+                          <h2 class="text-[16px] font-semibold text-navy-950 flex-1 truncate">{e.title}</h2>
+                          {canEditEvent(role, e.roles) && (
+                            <button type="button" data-edit-title-for={e.id} title="Править"
+                                    class="inline-flex h-7 w-7 items-center justify-center rounded-[8px] border border-border text-body-muted">
+                              <i class="bi bi-pencil text-[12px]"></i>
+                            </button>
+                          )}
+                        </div>
+                        <div class="mt-1 text-[13px]">
+                          <span class="text-body-muted">Отв:</span>{' '}
+                          {e.responsible_name
+                            ? <span class="font-medium text-emerald-700">{e.responsible_name}</span>
+                            : <span class="font-medium text-amber-700">не назначен</span>}
+                        </div>
+                        {e.notes && (
+                          <div class="mt-2 rounded-[8px] border border-amber-200 bg-amber-50 px-2 py-1 text-[13px] text-amber-900">
+                            <span set:html={linkifyNotes(e.notes)}></span>
+                          </div>
+                        )}
+                        {e.event_type === 'lesson' && e.activity_slug && getActivity(e.activity_slug) && (
+                          <a href={`/portal/metodichki/${e.activity_slug}/`}
+                             class="mt-2 inline-flex items-center gap-1 rounded-[8px] border border-primary bg-primary-soft px-2 py-1 text-[13px] font-medium text-primary">
+                            <i class="bi bi-book-half"></i>
+                            {getActivity(e.activity_slug)!.title}
+                          </a>
+                        )}
+                        <details class="mt-2 rounded-[10px] border border-border bg-amber-50/30">
+                          <summary class="cursor-pointer px-2 py-1.5 text-[13px] font-semibold text-amber-800">
+                            <i class="bi bi-camera-fill mr-1"></i>Фото / видео
+                          </summary>
+                          <div class="px-2 pb-2">
+                            <MediaManager entityType="event" entityId={e.id} accept="image/*,video/*" note="Снять или выбрать" />
+                          </div>
+                        </details>
+                        {myChecklists.length > 0 && (
+                          <ul class="mt-2 space-y-1">
+                            {myChecklists.flatMap((cl) =>
+                              (cl.items as any[]).map((it) => {
+                                const key = `${e.id}:${cl.checklist_id}:${it.id}`;
+                                const done = doneSet.has(key);
+                                return (
+                                  <li class="flex items-start gap-2 rounded-[8px] border border-border bg-white px-2 py-1.5 text-[13px]">
+                                    <input type="checkbox"
+                                           class="smena-check mt-0.5 h-4 w-4"
+                                           data-event={e.id}
+                                           data-checklist={cl.checklist_id}
+                                           data-item={it.id}
+                                           checked={done} />
+                                    <span class={done ? 'line-through text-body-muted' : ''}>{it.text}</span>
+                                  </li>
+                                );
+                              })
+                            )}
+                          </ul>
+                        )}
+                      </article>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (() => {
+            const e = slot.events[0];
             // Админ/руководитель видит ВСЕ чек-листы события, остальные — только свои по роли.
             const myChecklists = isManagerView ? e.checklists : e.checklists.filter((cl) => roleAllowed(role, cl.roles));
             return (
               <article class="rounded-[16px] border border-border bg-white p-5 card-shadow">
                 <div class="flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 class="text-[18px] font-semibold text-navy-950">{e.title}</h2>
+                  <h2 class="flex items-baseline gap-2 text-[18px] font-semibold text-navy-950">
+                    {e.title}
+                    {canEditEvent(role, e.roles) && !['routine', 'bedtime'].includes(e.event_type ?? '') && (
+                      <button type="button"
+                              data-edit-title-for={e.id}
+                              title="Править"
+                              aria-label="Править"
+                              class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] border border-border bg-white text-body-muted transition hover:border-primary hover:text-primary">
+                        <i class="bi bi-pencil text-[12px]" aria-hidden="true"></i>
+                      </button>
+                    )}
+                    {e.responsible_staff_id && (
+                      <span class={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold ${badgeColor(e.responsible_staff_id)}`}
+                            title={e.responsible_name ?? ''}>
+                        {initials(e.responsible_name)}
+                      </span>
+                    )}
+                  </h2>
                   {timeRange(e) && (
                     <span class="inline-flex items-center gap-1 text-[16px] text-body-muted">
                       <i class="bi bi-clock text-[15px]" aria-hidden="true"></i>
@@ -310,13 +604,12 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                   </span>
                 )}
 
-                {/* Главный ответственный */}
-                <div class="mt-1.5 text-[14px]">
-                  <span class="text-body-muted">Ответственный:</span>{' '}
-                  {e.responsible_name
-                    ? <span class="font-medium text-emerald-700">{e.responsible_name}</span>
-                    : <span class="font-medium text-amber-700">не назначен</span>}
-                </div>
+                {/* Главный ответственный — бейдж в заголовке. Если не назначен, покажем подсказку */}
+                {!e.responsible_staff_id && (
+                  <div class="mt-1.5 text-[13px] text-amber-700">
+                    <i class="bi bi-exclamation-circle" aria-hidden="true"></i> Ответственный не назначен
+                  </div>
+                )}
 
                 {/* Self-check для подъёма */}
                 {e.event_type === 'wakeup' && (
@@ -352,7 +645,7 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                   </div>
                 )}
 
-                {/* Блок «Контент-задание» */}
+                {/* Блок «Контент-задание» (если есть — показываем подсказку «что снимать») */}
                 {e.content_task && (
                   <div class="mt-3 rounded-[12px] border border-dashed border-border bg-amber-50/40 p-3">
                     <div class="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wide text-amber-700">
@@ -362,12 +655,26 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                     {e.content_task.brief && (
                       <div class="mt-1 text-[16px] text-navy-950">{e.content_task.brief}</div>
                     )}
-                    <PortalUploader eventId={e.id} contentTaskId={e.content_task_template_id} />
                   </div>
                 )}
 
-                {/* Лента загруженных фото/видео по событию (рендерится на клиенте). */}
-                <div class="portal-media mt-3"
+                {/* Универсальный загрузчик + галерея для КАЖДОГО события */}
+                <details class="mt-3 rounded-[12px] border border-border bg-amber-50/30">
+                  <summary class="cursor-pointer rounded-[12px] px-3 py-2 text-[14px] font-semibold text-amber-800 hover:bg-amber-100/50">
+                    <i class="bi bi-camera-fill mr-1" aria-hidden="true"></i>
+                    Фото / видео с активности
+                  </summary>
+                  <div class="px-3 pb-3 pt-1">
+                    <MediaManager entityType="event"
+                                  entityId={e.id}
+                                  accept="image/*,video/*"
+                                  title=""
+                                  note="Снять с камеры или выбрать из медиатеки" />
+                  </div>
+                </details>
+
+                {/* СТАРАЯ лента — скрыта, MediaManager сам отрисует список */}
+                <div class="portal-media mt-3 hidden"
                      data-event-id={e.id}
                      data-can-delete={role === 'admin' || role === 'rukovoditel' ? 'true' : 'false'}>
                   <div class="portal-media__header hidden text-[13px] font-semibold text-body-muted"></div>
@@ -376,7 +683,7 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
 
                 {canEditEvent(role, e.roles) && !['routine', 'bedtime'].includes(e.event_type ?? '') && (
                   <div class="mt-3 portal-edit" data-event-id={e.id}>
-                    <button type="button" class="portal-edit__toggle inline-flex items-center gap-2 rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] font-medium text-body-muted transition hover:border-primary hover:text-primary">
+                    <button type="button" class="portal-edit__toggle hidden">
                       <i class="bi bi-pencil text-[14px]" aria-hidden="true"></i>
                       Править
                     </button>
@@ -462,6 +769,7 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                 )}
               </article>
             );
+          })();
           })}
         </section>
       )}

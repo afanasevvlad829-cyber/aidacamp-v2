@@ -219,7 +219,7 @@ MODULES_OK=$(ssh -i "$SSH_KEY" "$SSH_HOST" \
 if [ "$MODULES_OK" = "missing" ] || [ "$LOCAL_LOCK_HASH" != "$REMOTE_LOCK_HASH" ]; then
   echo "  ⚙️  package-lock изменился (или модули отсутствуют) → npm ci..."
   ssh -i "$SSH_KEY" "$SSH_HOST" \
-    "cd '$REPO_DIR' && npm ci --omit=dev --prefer-offline 2>&1 | tail -3 && echo '$LOCAL_LOCK_HASH' > '$REPO_DIR/.lock-sha256'"
+    "cd '$REPO_DIR' && npm ci --omit=dev --prefer-offline --legacy-peer-deps 2>&1 | tail -3 && echo '$LOCAL_LOCK_HASH' > '$REPO_DIR/.lock-sha256'"
   echo "  ✅ node_modules обновлены (hash=${LOCAL_LOCK_HASH:0:8}…)"
 else
   echo "  ✅ node_modules актуальны (hash=${LOCAL_LOCK_HASH:0:8}…)"

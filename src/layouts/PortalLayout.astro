@@ -64,28 +64,26 @@ const ROLE_LABEL_MAP: Record<string, string> = {
         class="border-b border-border bg-white"
         style="padding-top: var(--tg-safe-top, 0px); padding-right: var(--tg-safe-right, 0px);"
       >
-        <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
-          <div class="flex items-center gap-3">
-            {showBack && (
-              <a href="/portal/"
-                 data-portal-back
-                 onclick="if (document.referrer && new URL(document.referrer).origin === location.origin && document.referrer !== location.href) { event.preventDefault(); history.back(); }"
-                 class="inline-flex items-center gap-1 rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] font-medium text-body-muted transition hover:border-primary hover:text-primary"
-                 aria-label="Назад">
-                <i class="bi bi-arrow-left text-[14px]" aria-hidden="true"></i>
-                Назад
-              </a>
-            )}
-            <a
-              href="/portal/"
-              class="text-[20px] font-extrabold tracking-[-0.02em] text-navy-950"
-              aria-label="АйДаКемп"
-            >
-              <span class="text-primary">Aida</span><span>Camp</span>
-              <span class="ml-1 text-[14px] font-semibold text-body-muted">/ АйДаКемп</span>
+        <div class="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-3 md:px-4 md:py-4">
+          {showBack && (
+            <a href="/portal/"
+               data-portal-back
+               onclick="if (document.referrer && new URL(document.referrer).origin === location.origin && document.referrer !== location.href) { event.preventDefault(); history.back(); }"
+               class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border bg-white text-body-muted transition hover:border-primary hover:text-primary md:h-auto md:w-auto md:gap-1 md:px-3 md:py-1.5"
+               title="Назад"
+               aria-label="Назад">
+              <i class="bi bi-arrow-left text-[14px]" aria-hidden="true"></i>
+              <span class="hidden md:inline">Назад</span>
             </a>
-          </div>
-          <div class="flex flex-wrap items-center gap-2">
+          )}
+          <a
+            href="/portal/"
+            class="shrink-0 text-[18px] font-extrabold tracking-[-0.02em] text-navy-950 md:text-[20px]"
+            aria-label="AidaCamp"
+          >
+            <span class="text-primary">Aida</span><span>Camp</span>
+          </a>
+          <div class="flex items-center gap-1.5">
             {canSwitchRoles && (
               <form method="POST" action="/api/portal/view-as" class="flex items-center gap-2">
                 <label for="view-as-select" class="text-[14px] text-body-muted" title="Смотреть как">
@@ -119,13 +117,20 @@ const ROLE_LABEL_MAP: Record<string, string> = {
             <UploadQueueIndicator />
             <ToastInit />
             <MediaLightbox />
-            <form method="POST" action="/api/portal/logout">
+            <a href="/api/portal/logout?next=/portal/login"
+               title="Обновить сессию"
+               class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-amber-300 bg-amber-50 text-amber-800 transition hover:bg-amber-100 md:h-auto md:w-auto md:gap-1 md:px-3 md:py-2"
+               aria-label="Обновить сессию">
+              <i class="bi bi-arrow-clockwise text-[16px]" aria-hidden="true"></i>
+              <span class="hidden md:inline">Обновить</span>
+            </a>
+            <form method="POST" action="/api/portal/logout" class="shrink-0">
               <button
                 type="submit"
                 title="Выйти"
-                class="inline-flex items-center gap-2 rounded-[12px] border border-border bg-white px-3 py-2 text-[16px] font-medium text-body-muted transition hover:border-primary hover:text-primary md:px-4"
+                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border bg-white text-body-muted transition hover:border-primary hover:text-primary md:h-auto md:w-auto md:gap-2 md:px-3 md:py-2"
               >
-                <i class="bi bi-box-arrow-right text-[18px]" aria-hidden="true"></i>
+                <i class="bi bi-box-arrow-right text-[16px]" aria-hidden="true"></i>
                 <span class="hidden md:inline">Выйти</span>
               </button>
             </form>
@@ -240,6 +245,12 @@ const ROLE_LABEL_MAP: Record<string, string> = {
 
           toggle.addEventListener('click', () => {
             form.classList.toggle('hidden');
+          });
+          // Карандашик у заголовка события — открывает ту же форму.
+          const titleBtn = document.querySelector('[data-edit-title-for="' + eventId + '"]');
+          if (titleBtn) titleBtn.addEventListener('click', () => {
+            form.classList.toggle('hidden');
+            if (!form.classList.contains('hidden')) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
           });
           cancel.addEventListener('click', () => {
             form.classList.add('hidden');
