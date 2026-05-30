@@ -1,5 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
+import { isStaff } from '../../../lib/portalPerms';
 import {
   listPenalties, createPenalty, confirmPenalty, cancelPenalty, markPaid, getReasons,
   type PenaltyStatus,
@@ -76,7 +77,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const role = locals.portalRole ?? null;
   const sub  = locals.portalSub ?? null;
   if (!role || sub == null) return unauthorized();
-  if (!isManager(role)) return forbidden('only admin/rukovoditel can issue penalties');
+  if (!isStaff(role ?? '')) return forbidden('only staff can issue penalties');
 
   let body: any;
   try { body = await request.json(); } catch { return bad('invalid json'); }

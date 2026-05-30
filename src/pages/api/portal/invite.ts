@@ -1,15 +1,15 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { verifySessionPayload } from '../../../lib/portalSession';
+import { can } from '../../../lib/portalPerms';
 import { createInvite, revokeInvite } from '../../../lib/portalInvite';
 
 const ALLOWED_ROLES = ['admin', 'rukovoditel', 'teacher', 'vozhaty', 'student'];
-const ADMIN_OK = new Set(['admin', 'rukovoditel']);
 
 function auth(cookies: Parameters<APIRoute>[0]['cookies']) {
   const p = verifySessionPayload(cookies.get('portal_session')?.value, process.env.PORTAL_SESSION_SECRET ?? '');
   if (!p) return null;
-  if (!ADMIN_OK.has(p.role)) return null;
+  if (!can(p.role, 'MANAGE_USERS')) return null;
   return p as any;
 }
 
