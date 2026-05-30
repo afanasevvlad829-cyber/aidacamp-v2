@@ -1,8 +1,9 @@
 // Дисциплина сотрудников: штрафы, причины, авто-детекторы.
 // Изолирован от детской игровой экономики (portal_prize_*).
 
-// Telegram: уведомление сотруднику + копия владельцу (tg=244314247)
-const OWNER_TG_ID = 244314247;
+// Telegram: уведомление сотруднику + копия Дарье и Владимиру
+const DARYA_TG_ID  = 2040464481;   // Дарья Афанасьева
+const OWNER_TG_ID  = 244314247;    // Владимир Афанасьев
 
 async function sendTg(chatId: number, text: string): Promise<void> {
   const token = process.env.PORTAL_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || '';
@@ -21,31 +22,49 @@ async function notifyPenalty(opts: {
   staffName: string | null;
   eventTitle: string | null;
   eventDate: string | null;
-  reasonTitle: string;
+  eventStartTime: string | null;
+  eventEndTime: string | null;
+  reasonCode: string;
   amount: number;
   source: string;
   slot?: number;
 }): Promise<void> {
-  const slotInfo = opts.slot && opts.slot > 1
-    ? ` (просрочка ${opts.slot * 30} мин)`
-    : '';
-  const staffText =
-    `⚠️ <b>Штраф начислен${slotInfo}</b>\n` +
-    `📋 Событие: ${opts.eventTitle ?? '—'} (${opts.eventDate ?? '—'})\n` +
-    `💰 Сумма: <b>${opts.amount} ₽</b>\n` +
-    `Причина: ${opts.reasonTitle}\n` +
-    `Источник: ${opts.source === 'auto' ? 'автоматически' : 'вручную'}`;
+  const timeRange = opts.eventStartTime && opts.eventEndTime
+    ? `${opts.eventStartTime.slice(0, 5)}–${opts.eventEndTime.slice(0, 5)}`
+    : opts.eventStartTime?.slice(0, 5) ?? '—';
 
-  const ownerText =
-    `⚠️ Штраф → <b>${opts.staffName ?? 'сотрудник'}</b>${slotInfo}\n` +
-    `📋 ${opts.eventTitle ?? '—'} (${opts.eventDate ?? '—'})\n` +
-    `💰 ${opts.amount} ₽ — ${opts.reasonTitle}`;
+  const expectedAction = opts.reasonCode === 'missing_photo'
+    ? 'загружены фото/видеоматериалы'
+    : 'заполнен чек-лист';
+
+  const overdueMins = (opts.slot ?? 1) * 30;
+
+  // Сообщение сотруднику — детальное объяснение
+  const staffText =
+    `⚠️ <b>Штраф начислен — ${opts.amount} ₽</b>\n\n` +
+    `В ${timeRange} у вас было назначено событие/активность:\n` +
+    `📋 <b>«${opts.eventTitle ?? '—'}»</b>\n\n` +
+    `По итогам этого события должны быть ${expectedAction}.\n\n` +
+    `В течение ${overdueMins} мин после завершения вы не отчитались.\n\n` +
+    `Назначен штраф: <b>${opts.amount} ₽</b>\n` +
+    `Будьте внимательны на будущее.`;
+
+  // Краткая копия для Дарьи и Владимира
+  const managerText =
+    `⚠️ Штраф → <b>${opts.staffName ?? 'сотрудник'}</b>\n` +
+    `📋 «${opts.eventTitle ?? '—'}» (${timeRange})\n` +
+    `Не ${expectedAction} в течение ${overdueMins} мин\n` +
+    `💰 ${opts.amount} ₽`;
 
   const tasks: Promise<void>[] = [];
-  if (opts.staffTgId && opts.staffTgId !== OWNER_TG_ID) {
+  // Сотруднику (если это не сами Дарья/Владимир — им придёт отдельная копия)
+  if (opts.staffTgId && opts.staffTgId !== OWNER_TG_ID && opts.staffTgId !== DARYA_TG_ID) {
     tasks.push(sendTg(opts.staffTgId, staffText));
   }
-  tasks.push(sendTg(OWNER_TG_ID, ownerText));
+  // Копия Дарье
+  tasks.push(sendTg(DARYA_TG_ID, managerText));
+  // Копия Владимиру
+  tasks.push(sendTg(OWNER_TG_ID, managerText));
   await Promise.all(tasks);
 }
 
@@ -185,13 +204,16 @@ export async function createPenalty(inp: CreateInput): Promise<number | null> {
          VALUES ($1,$2,'created',$3::jsonb)`,
         [id, inp.created_by ?? null, JSON.stringify({ source: inp.source ?? 'manual', amount })],
       );
-      // Уведомление в Telegram — сотруднику + копия владельцу
+      // Уведомление в Telegram — сотруднику + копии Дарье и Владимиру
       const staffRow = await c.query(
         'SELECT telegram_id, full_name FROM portal_staff WHERE id=$1 LIMIT 1',
         [inp.staff_id],
       );
       const eventRow = inp.event_id
-        ? await c.query('SELECT title, date::text FROM shift_event WHERE id=$1 LIMIT 1', [inp.event_id])
+        ? await c.query(
+            'SELECT title, date::text, start_time::text, end_time::text FROM shift_event WHERE id=$1 LIMIT 1',
+            [inp.event_id],
+          )
         : null;
       // slot из dedup_key (формат reason:event=X:slot=N)
       const slotMatch = inp.dedup_key?.match(/:slot=(\d+)$/);
@@ -201,7 +223,9 @@ export async function createPenalty(inp: CreateInput): Promise<number | null> {
         staffName: staffRow.rows[0]?.full_name ?? null,
         eventTitle: eventRow?.rows[0]?.title ?? null,
         eventDate: eventRow?.rows[0]?.date ?? null,
-        reasonTitle,
+        eventStartTime: eventRow?.rows[0]?.start_time ?? null,
+        eventEndTime: eventRow?.rows[0]?.end_time ?? null,
+        reasonCode: inp.reason_code,
         amount,
         source: inp.source ?? 'manual',
         slot,
