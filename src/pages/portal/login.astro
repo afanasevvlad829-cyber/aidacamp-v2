@@ -7,6 +7,7 @@ const params = Astro.url.searchParams;
 const error = params.get('error');
 const tg = params.get('tg');
 const next = params.get('next') ?? '/portal/';
+const inviteToken = (params.get('invite') ?? '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 32);
 const botUser =
   import.meta.env.PORTAL_BOT_USERNAME || process.env.PORTAL_BOT_USERNAME || '';
 
@@ -66,6 +67,9 @@ const tgMsg =
                 if (status) { status.textContent = 'Вход…'; status.classList.remove('hidden'); }
                 const body = new URLSearchParams();
                 Object.keys(user).forEach((k) => body.append(k, String(user[k])));
+                // Прокидываем invite токен если есть в query — auto-approve на стороне сервера
+                var qsInv = new URLSearchParams(location.search).get('invite');
+                if (qsInv) body.append('invite', qsInv);
                 fetch('/api/portal/tg', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

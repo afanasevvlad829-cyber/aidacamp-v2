@@ -44,6 +44,9 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
 
   const token = signSession(role as any, process.env.PORTAL_SESSION_SECRET ?? '', Date.now(), sub);
   cookies.set('portal_session', token, portalCookieOptions());
+  // Сбрасываем view-as чтобы не застрять в старой роли при смене аккаунта
+  const dom = process.env.PORTAL_COOKIE_DOMAIN?.trim();
+  cookies.delete('portal_view_as', dom ? { path: '/', domain: dom } : { path: '/' });
 
   // Куда отправлять после логина:
   //  - явный next (если safe: /portal/* или https://ai.aidacamp.ru/*) → туда
