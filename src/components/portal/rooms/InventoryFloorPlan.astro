@@ -1,0 +1,256 @@
+---
+import { ROOMS, type RoomDef } from '../../../lib/portalRooms';
+
+interface Props {
+  statusByRoom: Map<number, string>;
+}
+const { statusByRoom } = Astro.props;
+
+function statusOf(n: number): 'pending' | 'ok' | 'defects' {
+  return (statusByRoom.get(n) ?? 'pending') as any;
+}
+function colorCls(s: string, type: string): string {
+  if (type === 'staff') return 'bg-slate-100 text-slate-400 border-slate-200';
+  if (s === 'ok')      return 'bg-emerald-50 border-emerald-300 text-emerald-900';
+  if (s === 'defects') return 'bg-amber-50 border-amber-300 text-amber-900';
+  return 'bg-white border-border text-navy-950';
+}
+
+// Жёсткая раскладка крыльев по номерам (соответствует исходному плану)
+const layout = {
+  floor1: {
+    row1: { left: [20, 19, 18, 17], right: [11, 12, 13, 14] },
+    row2: { left: [21, 22], right: [16, 15] },
+  },
+  floor2: {
+    row1: { left: [30, 31], right: [23, 24] },
+    row2: { left: [29, 28, 27], right: [26, 25] },
+  },
+};
+---
+
+{/* Этаж 1 */}
+<section class="mb-8">
+  <h2 class="mb-3 text-[20px] font-bold text-navy-950">Этаж 1 · 22 места</h2>
+  <div class="rounded-[16px] border-2 border-slate-300 bg-slate-100 p-5">
+    <div class="flex flex-col gap-3">
+      {/* Row 1 */}
+      <div class="flex items-stretch gap-3">
+        <div class="flex flex-1 gap-3">
+          {layout.floor1.row1.left.map((num) => {
+            const r = ROOMS.find((x) => x.number === num)!;
+            const s = statusOf(num);
+            const isStaff = r.type === 'staff';
+            return (
+              <button type="button"
+                class={`room-tile flex-1 rounded-[12px] border-2 bg-white p-3 text-left shadow-sm transition h-[100px] ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
+                data-room={num}
+                disabled={isStaff}
+              >
+                <div class="text-[16px] font-bold">№{num}</div>
+                <div class="mt-0.5 text-[11px] text-body-muted">{r.label}</div>
+                {!isStaff && (
+                  <div class="mt-1 text-[11px] font-semibold">
+                    {s === 'ok' && '✓ принято'}
+                    {s === 'defects' && '⚠ замечания'}
+                    {s === 'pending' && '○ не принято'}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <div class="w-10 shrink-0"></div>
+        <div class="flex flex-1 gap-3">
+          {layout.floor1.row1.right.map((num) => {
+            const r = ROOMS.find((x) => x.number === num)!;
+            const s = statusOf(num);
+            const isStaff = r.type === 'staff';
+            return (
+              <button type="button"
+                class={`room-tile flex-1 rounded-[12px] border-2 bg-white p-3 text-left shadow-sm transition h-[100px] ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
+                data-room={num}
+                disabled={isStaff}
+              >
+                <div class="text-[16px] font-bold">№{num}</div>
+                <div class="mt-0.5 text-[11px] text-body-muted">{r.label}</div>
+                {!isStaff && (
+                  <div class="mt-1 text-[11px] font-semibold">
+                    {s === 'ok' && '✓ принято'}
+                    {s === 'defects' && '⚠ замечания'}
+                    {s === 'pending' && '○ не принято'}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      {/* Row 2 */}
+      <div class="flex items-stretch gap-3">
+        <div class="flex flex-1 gap-3">
+          {layout.floor1.row2.left.map((num) => {
+            const r = ROOMS.find((x) => x.number === num)!;
+            const s = statusOf(num);
+            const isStaff = r.type === 'staff';
+            return (
+              <button type="button"
+                class={`room-tile flex-1 rounded-[12px] border-2 bg-white p-3 text-left shadow-sm transition h-[140px] ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
+                data-room={num}
+                disabled={isStaff}
+              >
+                <div class="text-[16px] font-bold">№{num}</div>
+                <div class="mt-0.5 text-[11px] text-body-muted">{r.label}</div>
+                {!isStaff && (
+                  <div class="mt-1 text-[11px] font-semibold">
+                    {s === 'ok' && '✓ принято'}
+                    {s === 'defects' && '⚠ замечания'}
+                    {s === 'pending' && '○ не принято'}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <div class="w-10 shrink-0"></div>
+        <div class="flex flex-1 gap-3">
+          {layout.floor1.row2.right.map((num) => {
+            const r = ROOMS.find((x) => x.number === num)!;
+            const s = statusOf(num);
+            const isStaff = r.type === 'staff';
+            return (
+              <button type="button"
+                class={`room-tile flex-1 rounded-[12px] border-2 bg-white p-3 text-left shadow-sm transition h-[140px] ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
+                data-room={num}
+                disabled={isStaff}
+              >
+                <div class="text-[16px] font-bold">№{num}</div>
+                <div class="mt-0.5 text-[11px] text-body-muted">{r.label}</div>
+                {!isStaff && (
+                  <div class="mt-1 text-[11px] font-semibold">
+                    {s === 'ok' && '✓ принято'}
+                    {s === 'defects' && '⚠ замечания'}
+                    {s === 'pending' && '○ не принято'}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{/* Этаж 2 */}
+<section class="mb-8">
+  <h2 class="mb-3 text-[20px] font-bold text-navy-950">Этаж 2 · 24 места</h2>
+  <div class="rounded-[16px] border-2 border-slate-300 bg-slate-100 p-5">
+    <div class="flex flex-col gap-3">
+      {/* Row 1 */}
+      <div class="flex items-stretch gap-3">
+        <div class="flex flex-1 gap-3">
+          {layout.floor2.row1.left.map((num) => {
+            const r = ROOMS.find((x) => x.number === num)!;
+            const s = statusOf(num);
+            const isStaff = r.type === 'staff';
+            return (
+              <button type="button"
+                class={`room-tile flex-1 rounded-[12px] border-2 bg-white p-3 text-left shadow-sm transition h-[150px] ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
+                data-room={num}
+                disabled={isStaff}
+              >
+                <div class="text-[16px] font-bold">№{num}</div>
+                <div class="mt-0.5 text-[11px] text-body-muted">{r.label}</div>
+                {!isStaff && (
+                  <div class="mt-1 text-[11px] font-semibold">
+                    {s === 'ok' && '✓ принято'}
+                    {s === 'defects' && '⚠ замечания'}
+                    {s === 'pending' && '○ не принято'}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <div class="w-10 shrink-0"></div>
+        <div class="flex flex-1 gap-3">
+          {layout.floor2.row1.right.map((num) => {
+            const r = ROOMS.find((x) => x.number === num)!;
+            const s = statusOf(num);
+            const isStaff = r.type === 'staff';
+            return (
+              <button type="button"
+                class={`room-tile flex-1 rounded-[12px] border-2 bg-white p-3 text-left shadow-sm transition h-[150px] ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
+                data-room={num}
+                disabled={isStaff}
+              >
+                <div class="text-[16px] font-bold">№{num}</div>
+                <div class="mt-0.5 text-[11px] text-body-muted">{r.label}</div>
+                {!isStaff && (
+                  <div class="mt-1 text-[11px] font-semibold">
+                    {s === 'ok' && '✓ принято'}
+                    {s === 'defects' && '⚠ замечания'}
+                    {s === 'pending' && '○ не принято'}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      {/* Row 2 */}
+      <div class="flex items-stretch gap-3">
+        <div class="flex flex-1 gap-3">
+          {layout.floor2.row2.left.map((num) => {
+            const r = ROOMS.find((x) => x.number === num)!;
+            const s = statusOf(num);
+            const isStaff = r.type === 'staff';
+            return (
+              <button type="button"
+                class={`room-tile flex-1 rounded-[12px] border-2 bg-white p-3 text-left shadow-sm transition h-[110px] ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
+                data-room={num}
+                disabled={isStaff}
+              >
+                <div class="text-[16px] font-bold">№{num}</div>
+                <div class="mt-0.5 text-[11px] text-body-muted">{r.label}</div>
+                {!isStaff && (
+                  <div class="mt-1 text-[11px] font-semibold">
+                    {s === 'ok' && '✓ принято'}
+                    {s === 'defects' && '⚠ замечания'}
+                    {s === 'pending' && '○ не принято'}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <div class="w-10 shrink-0"></div>
+        <div class="flex flex-1 gap-3">
+          {layout.floor2.row2.right.map((num) => {
+            const r = ROOMS.find((x) => x.number === num)!;
+            const s = statusOf(num);
+            const isStaff = r.type === 'staff';
+            return (
+              <button type="button"
+                class={`room-tile flex-1 rounded-[12px] border-2 bg-white p-3 text-left shadow-sm transition h-[110px] ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
+                data-room={num}
+                disabled={isStaff}
+              >
+                <div class="text-[16px] font-bold">№{num}</div>
+                <div class="mt-0.5 text-[11px] text-body-muted">{r.label}</div>
+                {!isStaff && (
+                  <div class="mt-1 text-[11px] font-semibold">
+                    {s === 'ok' && '✓ принято'}
+                    {s === 'defects' && '⚠ замечания'}
+                    {s === 'pending' && '○ не принято'}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
