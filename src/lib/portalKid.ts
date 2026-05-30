@@ -4,6 +4,8 @@
  *             role=student, sub=portal_kid.id → Open WebUI получает kid<id>@students.
  */
 
+import { query } from './db';
+
 export interface Kid {
   id: number;
   code: string;
@@ -39,43 +41,35 @@ function normaliseKidRow(r: any): Kid {
 
 /** Все ученики (active + неактивные). */
 export async function listKids(includeArchived = false): Promise<Kid[]> {
-  const r = await withClient(async (c) => {
-    const q = await c.query(
-      `SELECT id, code, name, gender, age, alfa_id, room_number, active,
-              to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SSOF') AS created_at,
-              to_char(last_login_at, 'YYYY-MM-DD"T"HH24:MI:SSOF') AS last_login_at
-         FROM portal_kid
-         WHERE active = TRUE OR $1::boolean = TRUE
-         ORDER BY room_number NULLS LAST, name`,
-      [includeArchived]
-    );
-    return q.rows.map(normaliseKidRow);
-  });
-  return r ?? [];
+  const rows = await query(
+    `SELECT id, code, name, gender, age, alfa_id, room_number, active,
+            to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SSOF') AS created_at,
+            to_char(last_login_at, 'YYYY-MM-DD"T"HH24:MI:SSOF') AS last_login_at
+       FROM portal_kid
+       WHERE active = TRUE OR $1::boolean = TRUE
+       ORDER BY room_number NULLS LAST, name`,
+    [includeArchived],
+  );
+  return (rows ?? []).map(normaliseKidRow);
 }
 
 /** Поиск по коду — для логина. */
 export async function findKidByCode(code: string): Promise<Kid | null> {
-  const r = await withClient(async (c) => {
-    const q = await c.query(
-      `SELECT id, code, name, gender, age, alfa_id, room_number, active,
-              to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SSOF') AS created_at,
-              to_char(last_login_at, 'YYYY-MM-DD"T"HH24:MI:SSOF') AS last_login_at
-         FROM portal_kid WHERE code = $1 AND active = TRUE`,
-      [code]
-    );
-    return q.rows[0] ? normaliseKidRow(q.rows[0]) : null;
-  });
-  return r ?? null;
+  const rows = await query(
+    `SELECT id, code, name, gender, age, alfa_id, room_number, active,
+            to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SSOF') AS created_at,
+            to_char(last_login_at, 'YYYY-MM-DD"T"HH24:MI:SSOF') AS last_login_at
+       FROM portal_kid WHERE code = $1 AND active = TRUE`,
+    [code],
+  );
+  return rows?.[0] ? normaliseKidRow(rows[0]) : null;
 }
 
 export async function markKidLoggedIn(id: number): Promise<void> {
-  await withClient(async (c) => {
-    await c.query(`UPDATE portal_kid SET last_login_at = NOW(), updated_at = NOW() WHERE id = $1`, [id]);
-  });
+  await query(`UPDATE portal_kid SET last_login_at = NOW(), updated_at = NOW() WHERE id = $1`, [id]);
 }
 
-/** Регенерировать код. */
+/** Регенерировать код. Требует одного соединения из-за retry-loop с unique violation. */
 export async function regenerateCode(id: number): Promise<string | null> {
   const r = await withClient(async (c) => {
     for (let i = 0; i < 10; i++) {
@@ -97,7 +91,5 @@ export async function regenerateCode(id: number): Promise<string | null> {
 }
 
 export async function setKidActive(id: number, active: boolean): Promise<void> {
-  await withClient(async (c) => {
-    await c.query(`UPDATE portal_kid SET active = $2, updated_at = NOW() WHERE id = $1`, [id, active]);
-  });
+  await query(`UPDATE portal_kid SET active = $2, updated_at = NOW() WHERE id = $1`, [id, active]);
 }
