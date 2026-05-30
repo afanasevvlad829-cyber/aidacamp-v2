@@ -454,29 +454,22 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                   <div class="flex items-center gap-2">
                     <span class="text-[13px] text-body-muted">{timeRange(slot.events[0])}</span>
                     <div class={`grid gap-1.5 ${slot.events.length > 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                      {slot.events.map((e) => e.responsible_staff_id && (
-                        <a href={ownerHref(e.responsible_staff_id)}
-                           title={`Фильтр по: ${e.responsible_name ?? ''}`}
-                           class={`inline-flex h-9 w-9 items-center justify-center rounded-full border-2 text-[12px] font-bold transition hover:scale-105 ${badgeColor(e.responsible_staff_id)}`}>
-                          {initials(e.responsible_name)}
-                        </a>
+                      {slot.events.map((e, idx) => (
+                        <button type="button"
+                                data-slot-tab={slotId}
+                                data-target={'panel-' + e.id}
+                                title={`Открыть: ${e.responsible_name ?? e.title}`}
+                                class:list={[
+                                  'parallel-slot__badge inline-flex h-9 w-9 items-center justify-center rounded-full border-2 text-[12px] font-bold transition hover:scale-105',
+                                  e.responsible_staff_id ? badgeColor(e.responsible_staff_id) : 'border-border bg-white text-body-muted',
+                                  idx === 0 ? 'ring-2 ring-primary ring-offset-2' : 'opacity-60',
+                                ]}>
+                          {e.responsible_name ? initials(e.responsible_name) : '?'}
+                        </button>
                       ))}
                     </div>
                   </div>
                 </div>
-                <nav class="parallel-slot__tabs mb-2 -mx-1 flex gap-1 overflow-x-auto px-1" aria-label="Параллельные события">
-                  {slot.events.map((e, idx) => (
-                    <button type="button"
-                            data-slot-tab={slotId}
-                            data-target={'panel-' + e.id}
-                            class:list={[
-                              'shrink-0 rounded-[10px] border px-3 py-1.5 text-[13px] font-medium transition',
-                              idx === 0 ? 'border-primary bg-primary text-white' : 'border-border bg-white text-body-muted',
-                            ]}>
-                      {e.responsible_name ?? e.title}
-                    </button>
-                  ))}
-                </nav>
                 {slot.events.map((e, idx) => {
                   const myChecklists = isManagerView ? e.checklists : e.checklists.filter((cl) => roleAllowed(role, cl.roles));
                   return (
@@ -493,12 +486,11 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                             </button>
                           )}
                         </div>
-                        <div class="mt-1 text-[13px]">
-                          <span class="text-body-muted">Отв:</span>{' '}
-                          {e.responsible_name
-                            ? <span class="font-medium text-emerald-700">{e.responsible_name}</span>
-                            : <span class="font-medium text-amber-700">не назначен</span>}
-                        </div>
+                        {!e.responsible_name && (
+                          <div class="mt-1 text-[13px]">
+                            <span class="font-medium text-amber-700">Отв: не назначен</span>
+                          </div>
+                        )}
                         {e.notes && (
                           <div class="mt-2 rounded-[8px] border border-amber-200 bg-amber-50 px-2 py-1 text-[13px] text-amber-900">
                             <span set:html={linkifyNotes(e.notes)}></span>
@@ -580,11 +572,10 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                       </span>
                     )}
                     {e.responsible_staff_id && (
-                      <a href={ownerHref(e.responsible_staff_id)}
-                         title={`Фильтр по: ${e.responsible_name ?? ''}`}
-                         class={`${(mediaCounts.get(Number(e.id)) ?? 0) > 0 ? '' : 'ml-auto'} inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-[13px] font-bold transition hover:scale-105 ${badgeColor(e.responsible_staff_id)}`}>
+                      <span title={e.responsible_name ?? ''}
+                            class={`${(mediaCounts.get(Number(e.id)) ?? 0) > 0 ? '' : 'ml-auto'} inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-[13px] font-bold ${badgeColor(e.responsible_staff_id)}`}>
                         {initials(e.responsible_name)}
-                      </a>
+                      </span>
                     )}
                   </h2>
                   {timeRange(e) && (
@@ -889,6 +880,33 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
           } finally {
             box.disabled = false;
           }
+        });
+      });
+    })();
+  </script>
+
+  {/* Параллельные слоты — переключение панели по клику на бейдж ответственного. */}
+  <script is:inline>
+    (() => {
+      function activate(slotId, panelId) {
+        // Панели
+        document.querySelectorAll('[data-slot-panel="' + slotId + '"]').forEach((p) => {
+          p.classList.toggle('hidden', p.id !== panelId);
+        });
+        // Бейджи
+        document.querySelectorAll('[data-slot-tab="' + slotId + '"]').forEach((b) => {
+          const on = b.getAttribute('data-target') === panelId;
+          b.classList.toggle('ring-2', on);
+          b.classList.toggle('ring-primary', on);
+          b.classList.toggle('ring-offset-2', on);
+          b.classList.toggle('opacity-60', !on);
+        });
+      }
+      document.querySelectorAll('button[data-slot-tab]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const slotId = btn.getAttribute('data-slot-tab');
+          const target = btn.getAttribute('data-target');
+          if (slotId && target) activate(slotId, target);
         });
       });
     })();
