@@ -233,6 +233,7 @@ function initInventory() {
   const statusEl = document.getElementById('room-modal-status');
   const okBtn = document.getElementById('room-mark-ok');
   const defBtn = document.getElementById('room-mark-defects');
+  const notesEl = document.getElementById('room-notes') as HTMLTextAreaElement | null;
   let currentRoom: number | null = null;
 
   function openModal(room: number) {
@@ -240,9 +241,9 @@ function initInventory() {
     if (numEl) numEl.textContent = String(room);
     if (typeof modal.showModal === 'function') modal.showModal();
     else modal.setAttribute('open', '');
-    // reset checks/comments
+    // reset checks/comment
     modal.querySelectorAll<HTMLInputElement>('.room-check').forEach((c) => { c.checked = false; });
-    modal.querySelectorAll<HTMLTextAreaElement>('.room-comment').forEach((t) => { t.value = ''; t.classList.add('hidden'); });
+    if (notesEl) notesEl.value = '';
     if (wtStatus) wtStatus.textContent = 'Загружаю состояние…';
     if (statusEl) statusEl.textContent = '';
     fetch('/api/portal/room-inventory?shift_id=' + shiftId + '&room=' + room, { credentials: 'include' })
@@ -252,10 +253,9 @@ function initInventory() {
         const checks = d.checks || [];
         checks.forEach((c: any) => {
           const cb = modal.querySelector<HTMLInputElement>('.room-check[data-item="' + c.item_id + '"]');
-          const ta = modal.querySelector<HTMLTextAreaElement>('.room-comment[data-item="' + c.item_id + '"]');
           if (cb) cb.checked = !!c.done;
-          if (ta && c.comment) { ta.value = c.comment; ta.classList.remove('hidden'); }
         });
+        if (notesEl) notesEl.value = (row && row.notes) || '';
         if (wtStatus) {
           wtStatus.textContent = row && row.walkthrough_photo_id
             ? '✓ Видео обхода загружено (id ' + row.walkthrough_photo_id + ')'
@@ -279,35 +279,34 @@ function initInventory() {
   modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
   modal.addEventListener('cancel', (e) => { e.preventDefault(); closeModal(); });
 
-  // Toggle textarea on check change
+  // Сохраняем галочку при изменении чекбокса
   modal.querySelectorAll<HTMLInputElement>('.room-check').forEach((cb) => {
-    cb.addEventListener('change', () => {
-      const item = cb.dataset.item!;
-      const ta = modal.querySelector<HTMLTextAreaElement>('.room-comment[data-item="' + item + '"]');
-      if (ta) {
-        if (cb.checked) ta.classList.add('hidden'); else ta.classList.remove('hidden');
-        saveCheck(item, cb.checked, ta.value || null);
-      }
-    });
+    cb.addEventListener('change', () => saveCheck(cb.dataset.item!, cb.checked));
   });
 
-  modal.querySelectorAll<HTMLTextAreaElement>('.room-comment').forEach((ta) => {
+  // Один комментарий на комнату (debounce)
+  if (notesEl) {
     let t: ReturnType<typeof setTimeout>;
-    ta.addEventListener('input', () => {
+    notesEl.addEventListener('input', () => {
       clearTimeout(t);
-      t = setTimeout(() => {
-        const item = ta.dataset.item!;
-        const cb = modal.querySelector<HTMLInputElement>('.room-check[data-item="' + item + '"]');
-        saveCheck(item, cb ? cb.checked : false, ta.value || null);
-      }, 600);
+      t = setTimeout(() => saveNotes(notesEl.value), 600);
     });
-  });
+  }
 
-  async function saveCheck(item: string, done: boolean, comment: string | null) {
+  async function saveCheck(item: string, done: boolean) {
     if (!currentRoom) return;
     if (statusEl) statusEl.textContent = 'Сохраняю…';
     const d = await postJson('/api/portal/room-inventory', {
-      shift_id: shiftId, room: currentRoom, item_id: item, done, comment,
+      shift_id: shiftId, room: currentRoom, item_id: item, done,
+    });
+    if (statusEl) statusEl.textContent = d.ok ? '✓' : 'Ошибка';
+  }
+
+  async function saveNotes(notes: string) {
+    if (!currentRoom) return;
+    if (statusEl) statusEl.textContent = 'Сохраняю…';
+    const d = await postJson('/api/portal/room-inventory', {
+      shift_id: shiftId, room: currentRoom, notes,
     });
     if (statusEl) statusEl.textContent = d.ok ? '✓' : 'Ошибка';
   }
@@ -348,7 +347,7 @@ function initInventory() {
       if (res.ok) {
         if (wtStatus) wtStatus.textContent = '✓ Видео обхода привязано (id ' + d.photoId + ')';
         const cb = modal.querySelector<HTMLInputElement>('.room-check[data-item="video"]');
-        if (cb && !cb.checked) { cb.checked = true; saveCheck('video', true, null); }
+        if (cb && !cb.checked) { cb.checked = true; saveCheck('video', true); }
       } else {
         if (wtStatus) wtStatus.textContent = 'Ошибка привязки видео: ' + (res.error || '');
       }
