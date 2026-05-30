@@ -1,6 +1,54 @@
 // Дисциплина сотрудников: штрафы, причины, авто-детекторы.
 // Изолирован от детской игровой экономики (portal_prize_*).
 
+// Telegram: уведомление сотруднику + копия владельцу (tg=244314247)
+const OWNER_TG_ID = 244314247;
+
+async function sendTg(chatId: number, text: string): Promise<void> {
+  const token = process.env.PORTAL_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || '';
+  if (!token || !chatId) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
+    });
+  } catch { /* не блокируем основной поток */ }
+}
+
+async function notifyPenalty(opts: {
+  staffTgId: number | null;
+  staffName: string | null;
+  eventTitle: string | null;
+  eventDate: string | null;
+  reasonTitle: string;
+  amount: number;
+  source: string;
+  slot?: number;
+}): Promise<void> {
+  const slotInfo = opts.slot && opts.slot > 1
+    ? ` (просрочка ${opts.slot * 30} мин)`
+    : '';
+  const staffText =
+    `⚠️ <b>Штраф начислен${slotInfo}</b>\n` +
+    `📋 Событие: ${opts.eventTitle ?? '—'} (${opts.eventDate ?? '—'})\n` +
+    `💰 Сумма: <b>${opts.amount} ₽</b>\n` +
+    `Причина: ${opts.reasonTitle}\n` +
+    `Источник: ${opts.source === 'auto' ? 'автоматически' : 'вручную'}`;
+
+  const ownerText =
+    `⚠️ Штраф → <b>${opts.staffName ?? 'сотрудник'}</b>${slotInfo}\n` +
+    `📋 ${opts.eventTitle ?? '—'} (${opts.eventDate ?? '—'})\n` +
+    `💰 ${opts.amount} ₽ — ${opts.reasonTitle}`;
+
+  const tasks: Promise<void>[] = [];
+  if (opts.staffTgId && opts.staffTgId !== OWNER_TG_ID) {
+    tasks.push(sendTg(opts.staffTgId, staffText));
+  }
+  tasks.push(sendTg(OWNER_TG_ID, ownerText));
+  await Promise.all(tasks);
+}
+
 export type PenaltyStatus = 'proposed' | 'confirmed' | 'contested' | 'cancelled' | 'paid';
 export type PenaltySource = 'auto' | 'manual';
 
@@ -114,11 +162,12 @@ export interface CreateInput {
 export async function createPenalty(inp: CreateInput): Promise<number | null> {
   return await withClient(async (c) => {
     const reason = await c.query(
-      'SELECT default_rub FROM portal_penalty_reason WHERE code=$1 AND active=TRUE',
+      'SELECT default_rub, title FROM portal_penalty_reason WHERE code=$1 AND active=TRUE',
       [inp.reason_code],
     );
     if (reason.rowCount === 0) throw new Error(`unknown reason: ${inp.reason_code}`);
     const amount = inp.amount_rub ?? reason.rows[0].default_rub;
+    const reasonTitle: string = reason.rows[0].title;
     try {
       const r = await c.query(
         `INSERT INTO portal_penalty (staff_id, shift_id, event_id, reason_code, reason_text,
@@ -136,6 +185,27 @@ export async function createPenalty(inp: CreateInput): Promise<number | null> {
          VALUES ($1,$2,'created',$3::jsonb)`,
         [id, inp.created_by ?? null, JSON.stringify({ source: inp.source ?? 'manual', amount })],
       );
+      // Уведомление в Telegram — сотруднику + копия владельцу
+      const staffRow = await c.query(
+        'SELECT telegram_id, full_name FROM portal_staff WHERE id=$1 LIMIT 1',
+        [inp.staff_id],
+      );
+      const eventRow = inp.event_id
+        ? await c.query('SELECT title, date::text FROM shift_event WHERE id=$1 LIMIT 1', [inp.event_id])
+        : null;
+      // slot из dedup_key (формат reason:event=X:slot=N)
+      const slotMatch = inp.dedup_key?.match(/:slot=(\d+)$/);
+      const slot = slotMatch ? Number(slotMatch[1]) : undefined;
+      notifyPenalty({
+        staffTgId: staffRow.rows[0]?.telegram_id ?? null,
+        staffName: staffRow.rows[0]?.full_name ?? null,
+        eventTitle: eventRow?.rows[0]?.title ?? null,
+        eventDate: eventRow?.rows[0]?.date ?? null,
+        reasonTitle,
+        amount,
+        source: inp.source ?? 'manual',
+        slot,
+      }).catch(() => {});   // fire-and-forget, не ломаем основной поток
       return id;
     } catch (e: unknown) {
       // unique dedup_key — игнорируем (детектор уже сработал)
