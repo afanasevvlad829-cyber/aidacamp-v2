@@ -90,26 +90,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
         const location = `/portal/login?next=${encodeURIComponent(path)}`;
         return new Response(null, { status: 302, headers: { Location: location } });
       }
-      // «Смотреть как»: admin может стать любой ролью, rukovoditel — vozhaty/teacher/student.
-      // Если у сотрудника несколько ролей, он может переключаться между ними.
-      const VIEW_AS_ALLOWED: Record<string, string[]> = {
-        admin: ['admin', 'rukovoditel', 'teacher', 'vozhaty', 'student'],
-        rukovoditel: ['rukovoditel', 'vozhaty', 'teacher', 'student'],
-        teacher: ['teacher', 'student'],
-        vozhaty: ['vozhaty', 'student'],
-      };
-      const viewAs = cookies.get('portal_view_as')?.value || '';
-      let effectiveRole: any = role;
-      const canViewAs =
-        (VIEW_AS_ALLOWED[role] && VIEW_AS_ALLOWED[role].includes(viewAs)) ||
-        // Любой пользователь с несколькими ролями может переключаться между своими.
-        (staffRoles.length > 1 && staffRoles.includes(viewAs));
-      if (viewAs && canViewAs) {
-        effectiveRole = viewAs;
-      }
-      locals.portalRole = effectiveRole;
-      locals.portalRealRole = role as any;
-      locals.portalViewAs = effectiveRole !== role ? effectiveRole : null;
+      locals.portalRole = role as any;
       locals.portalRoles = staffRoles as any;
     }
   }
@@ -154,7 +135,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'SAMEORIGIN');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  response.headers.set('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=()');
   response.headers.set('X-XSS-Protection', '1; mode=block');
   return response;
 };

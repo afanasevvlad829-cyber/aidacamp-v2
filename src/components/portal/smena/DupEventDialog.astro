@@ -1,0 +1,49 @@
+---
+interface StaffOption {
+  id: number;
+  full_name: string | null;
+  role?: string | null;
+  active?: boolean;
+}
+
+interface Props {
+  responsibleOptions: StaffOption[];
+}
+
+const { responsibleOptions } = Astro.props;
+---
+
+<!-- Диалог: создание параллельного события.
+     mx-4 + max-h-[90dvh] + overflow-y-auto — чтобы влезал на маленьких экранах. -->
+<dialog id="dup-dlg"
+        class="mx-4 w-full max-w-[420px] max-h-[90dvh] overflow-y-auto rounded-[16px] p-0 backdrop:bg-black/40"
+        style="margin-top: max(env(safe-area-inset-top,0px), 5dvh)">
+  <div class="p-5">
+    <div class="mb-4 flex items-center justify-between gap-3">
+      <h3 class="text-[18px] font-bold text-navy-950">Параллельное событие</h3>
+      <button type="button" id="dup-cancel-x" aria-label="Закрыть"
+              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border text-body-muted hover:border-primary hover:text-primary">
+        <i class="bi bi-x-lg text-[14px]" aria-hidden="true"></i>
+      </button>
+    </div>
+    <p class="mb-3 text-[14px] text-body-muted">
+      Создастся копия события в то же время с новым ответственным. Чек-листы сохранятся, фото — нет.
+    </p>
+    <label class="block text-[13px] font-medium text-body-muted" for="dup-resp">Новый ответственный</label>
+    <select id="dup-resp" class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[15px]">
+      <option value="">— выбрать —</option>
+      {responsibleOptions.map((s) => (
+        <option value={s.id}>{s.full_name ?? `id=${s.id}`}{s.role ? ` · ${s.role}` : ''}</option>
+      ))}
+    </select>
+    <input type="hidden" id="dup-source-id" />
+    <div id="dup-error" class="mt-2 hidden rounded-[8px] border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-700"></div>
+    <div class="mt-4 flex justify-end gap-2">
+      <button type="button" id="dup-cancel" class="rounded-[8px] border border-border bg-white px-4 py-2 text-[14px]">Отмена</button>
+      <button type="button" id="dup-save"
+              class="inline-flex items-center gap-2 rounded-[8px] border border-primary bg-primary px-4 py-2 text-[14px] font-semibold text-white hover:opacity-90 disabled:opacity-50">
+        <i class="bi bi-plus-lg text-[13px]" aria-hidden="true"></i>Создать
+      </button>
+    </div>
+  </div>
+</dialog>

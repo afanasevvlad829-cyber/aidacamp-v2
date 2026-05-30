@@ -104,6 +104,10 @@ case "$TARGET" in
     echo "📦 Бэкап прода → /var/www/aidacamp/$BACKUP/"
     ssh -i "$SSH_KEY" "$SSH_HOST" "cp -a $REMOTE_DIR /var/www/aidacamp/$BACKUP/"
     echo "✅ Бэкап создан"
+    # Ротация: храним только 3 последних бэкапа (каждый ~575 МБ — иначе диск забивается)
+    echo "🧹 Ротация бэкапов (оставляю 3 последних)..."
+    ssh -i "$SSH_KEY" "$SSH_HOST" "ls -dt /var/www/aidacamp/backup-* 2>/dev/null | tail -n +4 | xargs -r rm -rf"
+    echo "✅ Старые бэкапы удалены"
     ;;
   *)
     echo "Использование: $0 [dev|prod]"

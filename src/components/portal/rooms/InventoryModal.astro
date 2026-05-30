@@ -1,0 +1,63 @@
+---
+import { INVENTORY_CHECKLIST } from '../../../lib/portalRooms';
+import MediaManager from '../MediaManager.astro';
+
+interface Props {
+  roomCheckEventId: number;
+}
+const { roomCheckEventId } = Astro.props;
+---
+<dialog id="room-modal" class="aida-modal-center rounded-[16px] bg-white p-0 shadow-xl backdrop:bg-black/50">
+  <div class="aida-modal-form">
+    <div class="mb-4 flex items-center justify-between">
+      <h2 class="text-[22px] font-bold text-navy-950">
+        Комната №<span id="room-modal-num">—</span>
+      </h2>
+      <button type="button" id="room-modal-close" class="rounded-[8px] border border-border p-2 hover:border-primary hover:text-primary">
+        <i class="bi bi-x-lg text-[16px]" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div class="mb-4">
+      <p class="mb-2 text-[14px] font-semibold text-navy-950">Видео обхода комнаты (обязательно)</p>
+      <MediaManager entityType="event"
+                    entityId={roomCheckEventId}
+                    accept="video/*,image/*"
+                    title=""
+                    note="Снять с камеры или выбрать из медиатеки" />
+      <p id="room-walkthrough-status" class="mt-1 text-[13px] text-body-muted">Видео ещё не загружено.</p>
+    </div>
+
+    <div class="mb-4">
+      <p class="mb-2 text-[14px] font-semibold text-navy-950">Чек-лист (6 пунктов)</p>
+      <ul class="space-y-3" id="room-checklist">
+        {INVENTORY_CHECKLIST.map((it) => (
+          <li class="rounded-[10px] border border-border p-3">
+            <label class="flex cursor-pointer items-center gap-3">
+              <input type="checkbox" class="room-check h-5 w-5 rounded border-border text-primary focus:ring-primary" data-item={it.id} />
+              <span class="flex-1 text-[15px] text-body">{it.text}</span>
+            </label>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <div class="mb-4">
+      <p class="mb-2 text-[14px] font-semibold text-navy-950">Комментарий по приёмке комнаты</p>
+      <textarea id="room-notes" class="w-full rounded-[8px] border border-border px-3 py-2 text-[14px]" rows="3" data-voice data-voice-append placeholder="Что не так с комнатой (опционально)"></textarea>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+      <button type="button" id="room-mark-ok" class="rounded-[10px] bg-emerald-600 px-4 py-2 text-[14px] font-semibold text-white hover:bg-emerald-700">
+        <i class="bi bi-check-lg mr-1" aria-hidden="true"></i>Принять без замечаний
+      </button>
+      <button type="button" id="room-mark-defects" class="rounded-[10px] bg-amber-600 px-4 py-2 text-[14px] font-semibold text-white hover:bg-amber-700">
+        <i class="bi bi-exclamation-triangle-fill mr-1" aria-hidden="true"></i>Принять с замечаниями
+      </button>
+      <button type="button" id="room-mark-reset" class="rounded-[10px] border border-border bg-white px-4 py-2 text-[14px] font-medium text-body-muted hover:border-primary hover:text-primary">
+        <i class="bi bi-arrow-counterclockwise mr-1" aria-hidden="true"></i>Сбросить статус
+      </button>
+      <span id="room-modal-status" class="ml-auto self-center text-[13px] text-body-muted"></span>
+    </div>
+  </div>
+</dialog>

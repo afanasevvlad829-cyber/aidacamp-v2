@@ -115,6 +115,13 @@ export async function setStatus(
   });
 }
 
+/** Сохранить общий комментарий по приёмке комнаты (одно поле на комнату). */
+export async function setNotes(invId: number, notes: string | null): Promise<void> {
+  await withClient(async (c) => {
+    await c.query(`UPDATE room_inventory SET notes=$2 WHERE id=$1`, [invId, notes]);
+  });
+}
+
 /** Привязать видео обхода (archive_photo.id). */
 export async function attachWalkthrough(invId: number, photoId: number): Promise<void> {
   await withClient(async (c) => {

@@ -1,11 +1,10 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { verifySessionPayload } from '../../../lib/portalSession';
+import { isStaff } from '../../../lib/portalPerms';
 import {
-  ensureInventory, toggleCheck, setStatus, attachWalkthrough, getInventory,
+  ensureInventory, toggleCheck, setStatus, attachWalkthrough, getInventory, setNotes,
 } from '../../../lib/portalRoomInventory';
-
-const STAFF_ROLES = new Set(['admin', 'rukovoditel', 'teacher', 'vozhaty']);
 
 function json(body: object, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -47,7 +46,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     process.env.PORTAL_SESSION_SECRET ?? '',
   );
   if (!payload?.role) return json({ ok: false, error: 'unauthorized' }, 401);
-  if (!STAFF_ROLES.has(payload.role)) return json({ ok: false, error: 'forbidden' }, 403);
+  if (!isStaff(payload.role)) return json({ ok: false, error: 'forbidden' }, 403);
 
   const body = await readBody(request);
   const shiftId = Number(body.shift_id);
@@ -63,6 +62,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const done = Boolean(body.done);
     const comment = body.comment != null && String(body.comment) !== '' ? String(body.comment) : null;
     await toggleCheck(invId, itemId, done, comment);
+  }
+
+  // Общий комментарий по комнате (одно поле на комнату)
+  if (body.notes != null) {
+    const notes = String(body.notes).trim() !== '' ? String(body.notes) : null;
+    await setNotes(invId, notes);
   }
 
   // Статус комнаты
