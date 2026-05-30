@@ -1,0 +1,53 @@
+---
+import type { ShiftEvent } from '../../../lib/portalShift';
+
+interface ActivityGroup {
+  type: string;
+  label: string;
+  events: ShiftEvent[];
+}
+
+interface Props {
+  activityGroups: ActivityGroup[];
+}
+
+const { activityGroups } = Astro.props;
+
+const MONTHS_RU = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+function fmtDate(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  return m ? Number(m[3]) + ' ' + MONTHS_RU[Number(m[2]) - 1] : iso;
+}
+function fmtTime(t: string | null): string {
+  return t ? t.slice(0, 5) : '';
+}
+function timeRange(e: ShiftEvent): string {
+  const a = fmtTime(e.start_time);
+  const b = fmtTime(e.end_time);
+  if (a && b) return `${a}–${b}`;
+  return a || b || '';
+}
+---
+
+<section class="space-y-8">
+  {activityGroups.length === 0 && (
+    <p class="rounded-[16px] border border-border bg-white p-6 text-[16px] text-body-muted card-shadow">
+      Событий пока нет.
+    </p>
+  )}
+  {activityGroups.map((g) => (
+    <div>
+      <h2 class="mb-3 text-[20px] font-bold tracking-[-0.01em] text-navy-950">{g.label}</h2>
+      <div class="space-y-2">
+        {g.events.map((e) => (
+          <article class="flex flex-wrap items-baseline justify-between gap-2 rounded-[14px] border border-border bg-white p-4 card-shadow">
+            <span class="text-[16px] font-semibold text-navy-950">{e.title}</span>
+            <span class="text-[16px] text-body-muted">
+              {fmtDate(e.date)}{timeRange(e) ? ` · ${timeRange(e)}` : ''}
+            </span>
+          </article>
+        ))}
+      </div>
+    </div>
+  ))}
+</section>
