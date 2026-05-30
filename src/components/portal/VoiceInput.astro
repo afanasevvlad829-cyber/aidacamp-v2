@@ -1,0 +1,221 @@
+---
+/**
+ * Голосовой ввод для портал-форм.
+ *
+ * Режимы использования:
+ *   1. Автоматический (рекомендуется) — поставить <VoiceInput /> один раз в PortalLayout.
+ *      Скрипт сам сканит DOM и подвешивает кнопку микрофона рядом с любым
+ *      <textarea data-voice> и <input type="text" data-voice>.
+ *      Также сканит при добавлении узлов (MutationObserver) — работает для модалок.
+ *
+ *   2. Явный — <VoiceInput target="#my-field" /> — рендерит ОДНУ кнопку для конкретного селектора.
+ *
+ * Аудио: MediaRecorder → POST /api/portal/transcribe (Groq Whisper-large-v3-turbo, OpenAI fallback).
+ * Лимит — 60 секунд.
+ */
+interface Props {
+  /** Если передан — рендерит одну кнопку для конкретного селектора. Иначе только глобальный скрипт. */
+  target?: string;
+  buttonClass?: string;
+}
+const {
+  target,
+  buttonClass = 'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-primary bg-primary-soft text-primary transition hover:bg-primary hover:text-white disabled:opacity-50',
+} = Astro.props;
+---
+{target && (
+  <button type="button"
+          class={`portal-voice ${buttonClass}`}
+          data-voice-target={target}
+          title="Голосовой ввод"
+          aria-label="Голосовой ввод">
+    <i class="bi bi-mic-fill text-[14px]" aria-hidden="true"></i>
+  </button>
+)}
+
+<script is:inline>
+  (function() {
+    if (window.__portalVoiceInit) return;
+    window.__portalVoiceInit = true;
+
+    var BTN_CLASS = 'portal-voice-auto inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-primary bg-primary-soft text-primary transition hover:bg-primary hover:text-white disabled:opacity-50';
+
+    function makeButton() {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = BTN_CLASS;
+      btn.title = 'Голосовой ввод';
+      btn.setAttribute('aria-label', 'Голосовой ввод');
+      btn.innerHTML = '<i class="bi bi-mic-fill text-[12px]" aria-hidden="true"></i>';
+      return btn;
+    }
+
+    function appendText(field, text) {
+      var cur = field.value || '';
+      var sep = cur && !/[\s.,;:!?]$/.test(cur) ? ' ' : '';
+      field.value = (cur + sep + text).trim();
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function setRec(btn, on) {
+      if (on) {
+        btn.classList.add('animate-pulse');
+        btn.classList.remove('bg-primary-soft', 'text-primary');
+        btn.classList.add('bg-red-500', 'text-white', 'border-red-500');
+      } else {
+        btn.classList.remove('animate-pulse', 'bg-red-500', 'text-white', 'border-red-500');
+        btn.classList.add('bg-primary-soft', 'text-primary');
+      }
+    }
+
+    function notify(kind, msg) {
+      try {
+        var t = window.toast;
+        if (t && typeof t[kind] === 'function') { t[kind](msg); return; }
+      } catch (e) {}
+      // тихий fallback — не спамим alert'ами
+      if (kind === 'error') console.warn('[voice]', msg);
+    }
+
+    function bindButton(btn, getTarget) {
+      if (btn.__voiceBound) return;
+      btn.__voiceBound = true;
+      var state = { rec: null, stream: null, chunks: [], timer: null, countdown: 0 };
+
+      async function start(target) {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          notify('error', 'Микрофон недоступен в этом браузере');
+          return;
+        }
+        try {
+          var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          state.stream = stream;
+          var mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
+                   : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4'
+                   : '';
+          var rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+          state.rec = rec;
+          state.chunks = [];
+          state.target = target;
+          rec.ondataavailable = function(e) { if (e.data && e.data.size > 0) state.chunks.push(e.data); };
+          rec.onstop = function() { stop(); };
+          rec.start();
+          setRec(btn, true);
+          state.countdown = 60;
+          btn.title = 'Запись… (60с) — нажми чтобы остановить';
+          state.timer = setInterval(function() {
+            state.countdown -= 1;
+            btn.title = 'Запись… (' + state.countdown + 'с) — нажми чтобы остановить';
+            if (state.countdown <= 0) {
+              clearInterval(state.timer); state.timer = null;
+              try { rec.stop(); } catch (e) {}
+            }
+          }, 1000);
+          notify('info', 'Запись… говори');
+        } catch (e) {
+          notify('error', 'Нет доступа к микрофону: ' + (e && e.message || 'unknown'));
+        }
+      }
+
+      async function stop() {
+        setRec(btn, false);
+        btn.title = 'Голосовой ввод';
+        if (state.timer) { clearInterval(state.timer); state.timer = null; }
+        if (state.stream) { state.stream.getTracks().forEach(function(t){ t.stop(); }); state.stream = null; }
+        var chunks = state.chunks;
+        var target = state.target;
+        state.chunks = []; state.rec = null;
+        if (!chunks.length || !target) return;
+        var type = chunks[0].type || 'audio/webm';
+        var blob = new Blob(chunks, { type: type });
+        var ext = type.indexOf('mp4') >= 0 ? 'mp4' : type.indexOf('ogg') >= 0 ? 'ogg' : 'webm';
+        var fd = new FormData();
+        fd.append('file', blob, 'voice.' + ext);
+        btn.disabled = true;
+        notify('info', 'Распознаю…');
+        try {
+          var r = await fetch('/api/portal/transcribe', { method: 'POST', body: fd, credentials: 'include' });
+          var j = await r.json();
+          if (!j.ok) throw new Error(j.error || 'transcribe failed');
+          var text = (j.text || '').trim();
+          if (!text) { notify('error', 'Не распознано'); return; }
+          appendText(target, text);
+          target.focus();
+          notify('success', 'Готово');
+        } catch (e) {
+          notify('error', 'Ошибка: ' + (e && e.message || 'unknown'));
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      btn.addEventListener('click', function() {
+        if (state.rec && state.rec.state === 'recording') { try { state.rec.stop(); } catch (e) {} return; }
+        var t = getTarget();
+        if (!t) { notify('error', 'Поле для текста не найдено'); return; }
+        start(t);
+      });
+    }
+
+    function attachAuto(field) {
+      if (field.__voiceAttached) return;
+      // Тип поля
+      if (field.tagName === 'INPUT' && field.type && field.type !== 'text' && field.type !== 'search') return;
+      field.__voiceAttached = true;
+      var btn = makeButton();
+      btn.classList.add('portal-voice-auto-btn');
+      // Ставим кнопку ВНУТРЬ обёртки рядом с полем. Если родитель — label/div, просто appendChild.
+      var parent = field.parentElement;
+      if (!parent) return;
+      // Обёртка для позиционирования абсолютно в правом верхнем углу поля
+      btn.style.position = 'absolute';
+      btn.style.top = '6px';
+      btn.style.right = '6px';
+      btn.style.zIndex = '5';
+      // Делаем parent relative если ещё нет
+      var cs = window.getComputedStyle(parent);
+      if (cs.position === 'static') parent.style.position = 'relative';
+      // Чтобы текст не залезал под кнопку
+      var pad = field.style.paddingRight;
+      if (!pad) field.style.paddingRight = '40px';
+      parent.appendChild(btn);
+      bindButton(btn, function() { return field; });
+    }
+
+    function attachExplicit(btn) {
+      if (btn.__voiceAttached) return;
+      btn.__voiceAttached = true;
+      var sel = btn.getAttribute('data-voice-target');
+      bindButton(btn, function() { return sel ? document.querySelector(sel) : null; });
+    }
+
+    function scan(root) {
+      root = root || document;
+      // 1. Автоматические поля
+      var fields = root.querySelectorAll('textarea[data-voice], input[type="text"][data-voice], input[type="search"][data-voice]');
+      fields.forEach(attachAuto);
+      // 2. Явные кнопки
+      var btns = root.querySelectorAll('button.portal-voice');
+      btns.forEach(attachExplicit);
+    }
+
+    function init() {
+      scan(document);
+      // MutationObserver — модалки и динамически вставленный контент
+      var mo = new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+          m.addedNodes.forEach(function(n) {
+            if (n.nodeType === 1) scan(n);
+          });
+        });
+      });
+      mo.observe(document.body, { childList: true, subtree: true });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+</script>
