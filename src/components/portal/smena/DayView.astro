@@ -1,0 +1,468 @@
+---
+import type { ShiftEvent } from '../../../lib/portalShift';
+import { EVENT_TYPE_LABELS, eventColorClass } from '../../../lib/portalShift';
+import { roleAllowed } from '../../../lib/portalShiftRoles';
+import { canEditEvent } from '../../../lib/portalShiftPerms';
+import { getActivity } from '../../../lib/portalActivities';
+import MediaManager from '../MediaManager.astro';
+
+interface StaffOption {
+  id: number;
+  full_name: string | null;
+  role?: string | null;
+  active?: boolean;
+}
+
+interface Props {
+  role: string;
+  isManagerView: boolean;
+  isManager: boolean;
+  isAdminLike: boolean;
+  activeOwner: number | 'all';
+  ownerMap: Map<number, string>;
+  ownerHref: (o: number | 'all') => string;
+  roleEvents: ShiftEvent[];
+  slots: Array<{ key: string; events: ShiftEvent[] }>;
+  doneSet: Set<string>;
+  mediaCounts: Map<number, number>;
+  responsibleOptions: StaffOption[];
+  CONTENT_TYPE_LABELS: Record<string, string>;
+}
+
+const {
+  role,
+  isManagerView,
+  isManager,
+  isAdminLike,
+  activeOwner,
+  ownerMap,
+  ownerHref,
+  roleEvents,
+  slots,
+  doneSet,
+  mediaCounts,
+  responsibleOptions,
+  CONTENT_TYPE_LABELS,
+} = Astro.props;
+
+function fmtTime(t: string | null): string {
+  return t ? t.slice(0, 5) : '';
+}
+function timeRange(e: ShiftEvent): string {
+  const a = fmtTime(e.start_time);
+  const b = fmtTime(e.end_time);
+  if (a && b) return `${a}–${b}`;
+  return a || b || '';
+}
+
+function initials(name: string | null | undefined): string {
+  if (!name) return '??';
+  const parts = String(name).trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return parts[0].slice(0, 2).toUpperCase();
+}
+
+const BADGE_PALETTE = [
+  'bg-amber-100 text-amber-900 border-amber-300',
+  'bg-blue-100 text-blue-900 border-blue-300',
+  'bg-emerald-100 text-emerald-900 border-emerald-300',
+  'bg-pink-100 text-pink-900 border-pink-300',
+  'bg-purple-100 text-purple-900 border-purple-300',
+  'bg-cyan-100 text-cyan-900 border-cyan-300',
+  'bg-orange-100 text-orange-900 border-orange-300',
+  'bg-indigo-100 text-indigo-900 border-indigo-300',
+];
+function badgeColor(id: number | null | undefined): string {
+  if (id == null) return 'bg-slate-100 text-slate-700 border-slate-300';
+  return BADGE_PALETTE[Math.abs(id) % BADGE_PALETTE.length];
+}
+
+/** Превратить URL в строке в кликабельные ссылки (escape XSS, target=_blank). */
+function linkifyNotes(text: string): string {
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  const re = /(https?:\/\/[^\s)<>]+)/g;
+  let out = '';
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    out += esc(text.slice(last, m.index));
+    const url = m[0];
+    out += `<a href="${esc(url)}" target="_blank" rel="noopener" class="text-primary underline hover:opacity-80">${esc(url)}</a>`;
+    last = m.index + url.length;
+  }
+  out += esc(text.slice(last));
+  return out;
+}
+---
+
+{/* Active owner filter banner */}
+{activeOwner !== 'all' && (
+  <div class="mb-3 flex items-center gap-2 rounded-[10px] border border-primary bg-primary-soft px-3 py-2 text-[13px]">
+    <span class="font-medium text-primary">Фильтр: {ownerMap.get(activeOwner as number)}</span>
+    <a href={ownerHref('all')} class="ml-auto text-primary hover:underline" title="Сбросить">
+      <i class="bi bi-x-lg" aria-hidden="true"></i> сбросить
+    </a>
+  </div>
+)}
+
+<section class="space-y-4">
+  {roleEvents.length === 0 && (
+    <p class="rounded-[16px] border border-border bg-white p-6 text-[16px] text-body-muted card-shadow">
+      {activeOwner === 'all'
+        ? 'На этот день событий нет.'
+        : 'У этого ответственного на сегодня событий нет.'}
+    </p>
+  )}
+  {slots.map((slot) => {
+    const isParallel = slot.events.length > 1;
+    const slotId = 'slot-' + slot.events[0].id;
+    return isParallel ? (
+      <div class="parallel-slot rounded-[16px] border border-primary/30 bg-primary-soft/30 p-2 card-shadow" data-slot-id={slotId}>
+        <div class="mb-2 flex items-center justify-between gap-2 px-2 pt-1">
+          <span class="inline-flex items-center gap-1 text-[14px] font-semibold text-primary">
+            <i class="bi bi-stack" aria-hidden="true"></i>
+            Параллельные: {slot.events.length}
+          </span>
+          <div class="flex items-center gap-2">
+            <span class="text-[13px] text-body-muted">{timeRange(slot.events[0])}</span>
+            <div class={`grid gap-1.5 ${slot.events.length > 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              {slot.events.map((e, idx) => (
+                <button type="button"
+                        data-slot-tab={slotId}
+                        data-target={'panel-' + e.id}
+                        title={`Открыть: ${e.responsible_name ?? e.title}`}
+                        class:list={[
+                          'parallel-slot__badge inline-flex h-10 w-10 items-center justify-center rounded-full border-2 text-[13px] font-bold transition hover:scale-110',
+                          e.responsible_staff_id ? badgeColor(e.responsible_staff_id) : 'border-border bg-white text-body-muted',
+                          idx === 0 ? 'ring-4 ring-primary ring-offset-2 scale-110 shadow-lg' : 'opacity-50 grayscale',
+                        ]}>
+                  {e.responsible_name ? initials(e.responsible_name) : '?'}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        {slot.events.map((e, idx) => {
+          const myChecklists = isManagerView ? e.checklists : e.checklists.filter((cl) => roleAllowed(role, cl.roles));
+          return (
+            <div data-slot-panel={slotId} id={'panel-' + e.id} class:list={['parallel-slot__panel', idx === 0 ? '' : 'hidden']}>
+              <article class="rounded-[14px] border border-border bg-white p-4">
+                <div class="flex items-baseline gap-2">
+                  <h2 class="text-[16px] font-semibold text-navy-950 flex-1 truncate">{e.title}</h2>
+                  {canEditEvent(role, e.roles) && (
+                    <button type="button" data-edit-title-for={e.id} title="Править"
+                            class="inline-flex h-7 w-7 items-center justify-center rounded-[8px] border border-border text-body-muted">
+                      <i class="bi bi-pencil text-[12px]"></i>
+                    </button>
+                  )}
+                </div>
+                {!e.responsible_name && (
+                  <div class="mt-1 text-[13px]">
+                    <span class="font-medium text-amber-700">Отв: не назначен</span>
+                  </div>
+                )}
+                {e.notes && (
+                  <div class="mt-2 rounded-[8px] border border-amber-200 bg-amber-50 px-2 py-1 text-[13px] text-amber-900">
+                    <span set:html={linkifyNotes(e.notes)}></span>
+                  </div>
+                )}
+                {e.event_type === 'lesson' && e.activity_slug && getActivity(e.activity_slug) && (
+                  <a href={`/portal/metodichki/${e.activity_slug}/`}
+                     class="mt-2 inline-flex items-center gap-1 rounded-[8px] border border-primary bg-primary-soft px-2 py-1 text-[13px] font-medium text-primary">
+                    <i class="bi bi-book-half"></i>
+                    {getActivity(e.activity_slug)!.title}
+                  </a>
+                )}
+                <details class="mt-2 rounded-[10px] border border-border bg-amber-50/30">
+                  <summary class="cursor-pointer px-2 py-1.5 text-[13px] font-semibold text-amber-800">
+                    <i class="bi bi-camera-fill mr-1"></i>Фото / видео
+                  </summary>
+                  <div class="px-2 pb-2">
+                    <MediaManager entityType="event" entityId={e.id} accept="image/*,video/*" note="Снять или выбрать" />
+                  </div>
+                </details>
+                {myChecklists.length > 0 && (
+                  <ul class="mt-2 space-y-1">
+                    {myChecklists.flatMap((cl) =>
+                      (cl.items as any[]).map((it) => {
+                        const key = `${e.id}:${cl.checklist_id}:${it.id}`;
+                        const isChecked = doneSet.has(key);
+                        return (
+                          <li class="flex items-start gap-2 rounded-[8px] border border-border bg-white px-2 py-1.5 text-[13px]">
+                            <input type="checkbox"
+                                   class="smena-check mt-0.5 h-4 w-4"
+                                   data-event={e.id}
+                                   data-checklist={cl.checklist_id}
+                                   data-item={it.id}
+                                   checked={isChecked} />
+                            <span class={isChecked ? 'line-through text-body-muted' : ''}>{it.text}</span>
+                          </li>
+                        );
+                      })
+                    )}
+                  </ul>
+                )}
+                {canEditEvent(role, e.roles) && !['routine', 'bedtime'].includes(e.event_type ?? '') && (
+                  <div class="mt-3 portal-edit" data-event-id={e.id}>
+                    <button type="button" class="portal-edit__toggle hidden">Править</button>
+                    <form class="portal-edit__form mt-3 hidden space-y-3 rounded-[12px] border border-border bg-white p-3">
+                      <div>
+                        <label class="block text-[12px] font-medium text-body-muted">Название</label>
+                        <input type="text" name="title" value={e.title} class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[14px] outline-none focus:border-primary" />
+                      </div>
+                      <div class="flex gap-2">
+                        <div class="flex-1">
+                          <label class="block text-[12px] font-medium text-body-muted">Начало</label>
+                          <input type="time" name="start_time" value={e.start_time?.slice(0, 5) ?? ''} class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[14px] outline-none focus:border-primary" />
+                        </div>
+                        <div class="flex-1">
+                          <label class="block text-[12px] font-medium text-body-muted">Конец</label>
+                          <input type="time" name="end_time" value={e.end_time?.slice(0, 5) ?? ''} class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[14px] outline-none focus:border-primary" />
+                        </div>
+                      </div>
+                      {isManager && (
+                        <div>
+                          <label class="block text-[12px] font-medium text-body-muted">Ответственный</label>
+                          <select name="responsible_staff_id" class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[14px] outline-none focus:border-primary">
+                            <option value="">— не назначен —</option>
+                            {responsibleOptions.map((s) => (
+                              <option value={s.id} selected={e.responsible_staff_id === s.id}>
+                                {s.full_name ?? `id=${s.id}`}{s.role ? ` · ${s.role}` : ''}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      <div>
+                        <label class="block text-[12px] font-medium text-body-muted">Заметки</label>
+                        <textarea name="notes" rows="3" data-voice class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[14px] outline-none focus:border-primary">{e.notes ?? ''}</textarea>
+                      </div>
+                      <div class="flex gap-2">
+                        <button type="submit" class="rounded-[10px] bg-primary px-3 py-1.5 text-[13px] font-semibold text-white transition hover:opacity-90">Сохранить</button>
+                        <button type="button" class="portal-edit__cancel rounded-[10px] border border-border bg-white px-3 py-1.5 text-[13px] font-medium text-body-muted">Отмена</button>
+                        <span class="portal-edit__status ml-auto self-center text-[12px] text-body-muted hidden"></span>
+                      </div>
+                    </form>
+                  </div>
+                )}
+              </article>
+            </div>
+          );
+        })}
+      </div>
+    ) : (() => {
+      const e = slot.events[0];
+      const myChecklists = isManagerView ? e.checklists : e.checklists.filter((cl) => roleAllowed(role, cl.roles));
+      return (
+        <article class="rounded-[16px] border border-border bg-white p-5 card-shadow">
+          <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 class="flex items-baseline gap-2 text-[18px] font-semibold text-navy-950">
+              {e.title}
+              {canEditEvent(role, e.roles) && !['routine', 'bedtime'].includes(e.event_type ?? '') && (
+                <button type="button"
+                        data-edit-title-for={e.id}
+                        title="Править"
+                        aria-label="Править"
+                        class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] border border-border bg-white text-body-muted transition hover:border-primary hover:text-primary">
+                  <i class="bi bi-pencil text-[12px]" aria-hidden="true"></i>
+                </button>
+              )}
+              {isAdminLike && !['routine', 'bedtime'].includes(e.event_type ?? '') && (
+                <button type="button"
+                        data-dup-event={e.id}
+                        title="Сделать параллельное событие (другой ответственный)"
+                        aria-label="Дублировать"
+                        class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] border border-primary bg-primary-soft text-primary transition hover:bg-primary hover:text-white">
+                  <i class="bi bi-plus-lg text-[14px]" aria-hidden="true"></i>
+                </button>
+              )}
+              {(mediaCounts.get(Number(e.id)) ?? 0) > 0 && (
+                <span class="ml-auto inline-flex h-7 min-w-[28px] items-center justify-center rounded-full bg-emerald-500 px-2 text-[12px] font-bold text-white"
+                      title={`${mediaCounts.get(Number(e.id))} фото/видео`}>
+                  <i class="bi bi-camera-fill mr-1 text-[11px]" aria-hidden="true"></i>
+                  {mediaCounts.get(Number(e.id))}
+                </span>
+              )}
+              {e.responsible_staff_id && (
+                <span title={e.responsible_name ?? ''}
+                      class={`${(mediaCounts.get(Number(e.id)) ?? 0) > 0 ? '' : 'ml-auto'} inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-[13px] font-bold ${badgeColor(e.responsible_staff_id)}`}>
+                  {initials(e.responsible_name)}
+                </span>
+              )}
+            </h2>
+            {timeRange(e) && (
+              <span class="inline-flex items-center gap-1 text-[16px] text-body-muted">
+                <i class="bi bi-clock text-[15px]" aria-hidden="true"></i>
+                {timeRange(e)}
+              </span>
+            )}
+          </div>
+          {(e.event_type || e.activity_type) && (
+            <span class={`mt-1 inline-block rounded-[8px] border px-2 py-0.5 text-[14px] font-medium ${eventColorClass(e.event_type ?? e.activity_type)}`}>
+              {EVENT_TYPE_LABELS[(e.event_type ?? e.activity_type) as string] ?? (e.event_type ?? e.activity_type)}
+            </span>
+          )}
+
+          {!e.responsible_staff_id && (
+            <div class="mt-1.5 text-[13px] text-amber-700">
+              <i class="bi bi-exclamation-circle" aria-hidden="true"></i> Ответственный не назначен
+            </div>
+          )}
+
+          {/* Self-check для подъёма */}
+          {e.event_type === 'wakeup' && (
+            <div class="mt-3 portal-wakeup rounded-[12px] border border-dashed border-amber-200 bg-amber-50/50 p-3"
+                 data-event-id={e.id}>
+              <div class="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wide text-amber-800">
+                <i class="bi bi-sun" aria-hidden="true"></i>
+                Кто встал — каждый отмечает себя
+              </div>
+              <ul class="portal-wakeup__list mt-2 space-y-1 text-[15px]"></ul>
+              <p class="portal-wakeup__loading text-[13px] text-body-muted">загружаю…</p>
+            </div>
+          )}
+
+          {e.notes && (
+            <div class="mt-3 rounded-[10px] border border-amber-200 bg-amber-50 px-3 py-2 text-[14px] text-amber-900">
+              <i class="bi bi-sticky text-[13px]" aria-hidden="true"></i>
+              <span class="ml-1 whitespace-pre-wrap" set:html={linkifyNotes(e.notes)}></span>
+            </div>
+          )}
+
+          {e.event_type === 'lesson' && e.activity_slug && getActivity(e.activity_slug) && (
+            <div class="mt-3">
+              <a
+                href={`/portal/metodichki/${e.activity_slug}/`}
+                class="inline-flex items-center gap-2 rounded-[10px] border border-primary bg-primary-soft px-3 py-2 text-[15px] font-medium text-primary transition hover:opacity-90"
+              >
+                <i class="bi bi-book-half" aria-hidden="true"></i>
+                Методичка: {getActivity(e.activity_slug)!.title}
+              </a>
+            </div>
+          )}
+
+          {e.content_task && (
+            <div class="mt-3 rounded-[12px] border border-dashed border-border bg-amber-50/40 p-3">
+              <div class="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wide text-amber-700">
+                <i class="bi bi-camera" aria-hidden="true"></i>
+                Контент-задание{e.content_task.content_type ? ` · ${CONTENT_TYPE_LABELS[e.content_task.content_type] ?? e.content_task.content_type}` : ''}
+              </div>
+              {e.content_task.brief && (
+                <div class="mt-1 text-[16px] text-navy-950">{e.content_task.brief}</div>
+              )}
+            </div>
+          )}
+
+          <details class="mt-3 rounded-[12px] border border-border bg-amber-50/30">
+            <summary class="cursor-pointer rounded-[12px] px-3 py-2 text-[14px] font-semibold text-amber-800 hover:bg-amber-100/50">
+              <i class="bi bi-camera-fill mr-1" aria-hidden="true"></i>
+              Фото / видео с активности
+            </summary>
+            <div class="px-3 pb-3 pt-1">
+              <MediaManager entityType="event"
+                            entityId={e.id}
+                            accept="image/*,video/*"
+                            title=""
+                            note="Снять с камеры или выбрать из медиатеки" />
+            </div>
+          </details>
+
+          {/* СТАРАЯ лента — скрыта, MediaManager сам отрисует список */}
+          <div class="portal-media mt-3 hidden"
+               data-event-id={e.id}
+               data-can-delete={role === 'admin' || role === 'rukovoditel' ? 'true' : 'false'}>
+            <div class="portal-media__header hidden text-[13px] font-semibold text-body-muted"></div>
+            <ul class="portal-media__list mt-1 space-y-1 text-[14px]"></ul>
+          </div>
+
+          {canEditEvent(role, e.roles) && !['routine', 'bedtime'].includes(e.event_type ?? '') && (
+            <div class="mt-3 portal-edit" data-event-id={e.id}>
+              <button type="button" class="portal-edit__toggle hidden">
+                <i class="bi bi-pencil text-[14px]" aria-hidden="true"></i>
+                Править
+              </button>
+              <form class="portal-edit__form mt-3 hidden space-y-3 rounded-[12px] border border-border bg-white p-4">
+                <div>
+                  <label class="block text-[13px] font-medium text-body-muted">Название</label>
+                  <input type="text" name="title" value={e.title} class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[15px] outline-none focus:border-primary" />
+                </div>
+                <div class="flex gap-3">
+                  <div class="flex-1">
+                    <label class="block text-[13px] font-medium text-body-muted">Начало</label>
+                    <input type="time" name="start_time" value={e.start_time?.slice(0, 5) ?? ''} class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[15px] outline-none focus:border-primary" />
+                  </div>
+                  <div class="flex-1">
+                    <label class="block text-[13px] font-medium text-body-muted">Конец</label>
+                    <input type="time" name="end_time" value={e.end_time?.slice(0, 5) ?? ''} class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[15px] outline-none focus:border-primary" />
+                  </div>
+                </div>
+                {isManager && (
+                  <div>
+                    <label class="block text-[13px] font-medium text-body-muted">Главный ответственный</label>
+                    <select name="responsible_staff_id" class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[15px] outline-none focus:border-primary">
+                      <option value="">— не назначен (штрафы пойдут руководителю смены) —</option>
+                      {responsibleOptions.map((s) => (
+                        <option value={s.id} selected={e.responsible_staff_id === s.id}>
+                          {s.full_name ?? `id=${s.id}`}{s.role ? ` · ${s.role}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <p class="mt-1 text-[12px] text-body-muted">
+                      На этого человека пойдут автоштрафы за невыполненные чек-листы и пропущенные фото.
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <label class="block text-[13px] font-medium text-body-muted">Заметки и материалы</label>
+                  <p class="mt-0.5 text-[12px] text-body-muted">Можно вставлять ссылки — они автоматически станут кликабельными.</p>
+                  <textarea name="notes" rows="3" data-voice data-voice-append class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[15px] outline-none focus:border-primary" placeholder="План занятия, ссылки на материалы, пометки для смены…">{e.notes ?? ''}</textarea>
+                </div>
+                <div class="flex gap-2">
+                  <button type="submit" class="rounded-[10px] bg-primary px-4 py-2 text-[14px] font-semibold text-white transition hover:opacity-90">Сохранить</button>
+                  <button type="button" class="portal-edit__cancel rounded-[10px] border border-border bg-white px-4 py-2 text-[14px] font-medium text-body-muted transition hover:border-primary hover:text-primary">Отмена</button>
+                  <span class="portal-edit__status ml-auto self-center text-[13px] text-body-muted hidden"></span>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {myChecklists.length === 0 ? (
+            <p class="mt-3 text-[16px] text-body-muted">Чек-листов для вашей роли нет.</p>
+          ) : (
+            <div class="mt-4 space-y-4">
+              {myChecklists.map((cl) => (
+                <div>
+                  <h3 class="mb-2 flex items-center gap-2 text-[16px] font-semibold text-navy-950">
+                    <i class="bi bi-list-task text-[18px] text-primary" aria-hidden="true"></i>
+                    {cl.title}
+                  </h3>
+                  <ul class="space-y-2">
+                    {cl.items.map((it) => {
+                      const key = `${e.id}:${cl.checklist_id}:${it.id}`;
+                      const checked = doneSet.has(key);
+                      return (
+                        <li>
+                          <label class="flex cursor-pointer items-start gap-3 text-[16px] text-body">
+                            <input
+                              type="checkbox"
+                              class="smena-check mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded border-border text-primary focus:ring-primary"
+                              checked={checked}
+                              data-event={e.id}
+                              data-checklist={cl.checklist_id}
+                              data-item={it.id}
+                            />
+                            <span>{it.text}</span>
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+        </article>
+      );
+    })();
+  })}
+</section>
