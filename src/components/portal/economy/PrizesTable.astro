@@ -1,0 +1,192 @@
+---
+import { PRIZES } from '../../../lib/portalPrizes';
+import { listCustomPrizes } from '../../../lib/portalPrizeOps';
+
+interface Props {
+  prizes: typeof PRIZES & { isCustom?: boolean; customId?: number }[];
+  stateById: Map<string, any>;
+  issuanceCounts: Record<string, number>;
+  role: string;
+  fmtRub: (n: number) => string;
+}
+const { prizes, stateById, issuanceCounts, role, fmtRub } = Astro.props;
+const totalAll = prizes.reduce((s: number, p: any) => s + p.price * p.qty, 0);
+---
+<div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+  <div class="text-[14px] text-body-muted">
+    Активных: <b id="cnt-active">—</b> · Сумма в игровых ₽: <b id="sum-bongere">—</b>
+  </div>
+  <div class="flex flex-wrap gap-2">
+    <button id="btn-apply-markup" type="button"
+      class="rounded-[10px] border border-primary bg-primary text-white px-3 py-1.5 text-[14px] hover:opacity-90">
+      <i class="bi bi-magic" aria-hidden="true"></i>
+      Применить наценку ко всем
+    </button>
+    <button id="btn-import-local" type="button"
+      class="rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] text-navy-950 hover:border-primary hover:text-primary"
+      title="Берёт удалённые позиции и цены из localStorage этого браузера и сохраняет на сервер">
+      <i class="bi bi-cloud-upload" aria-hidden="true"></i>
+      Загрузить локальные правки на сервер
+    </button>
+    <button id="btn-show-hidden" type="button"
+      class="rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] text-navy-950 hover:border-primary hover:text-primary">
+      <i class="bi bi-eye" aria-hidden="true"></i>
+      Показать скрытые
+    </button>
+    {role === 'admin' && (
+      <button id="btn-reset-issuances" type="button"
+        class="rounded-[10px] border border-red-300 bg-red-50 px-3 py-1.5 text-[14px] font-medium text-red-700 hover:bg-red-100"
+        title="Удалить все выдачи призов (тестовые данные). История полностью обнулится.">
+        <i class="bi bi-trash3" aria-hidden="true"></i>
+        Сбросить все выдачи (admin)
+      </button>
+    )}
+  </div>
+</div>
+
+<div class="mb-6">
+  <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+    <h2 class="flex items-center gap-2 text-[16px] font-semibold text-navy-950">
+      <i class="bi bi-receipt text-primary" aria-hidden="true"></i>
+      Каталог призов
+      <span class="text-[13px] font-normal text-body-muted">· {prizes.length} позиций · {prizes.reduce((s: number, p: any) => s + p.qty, 0)} шт · {fmtRub(totalAll)}</span>
+    </h2>
+    <div class="flex flex-wrap gap-2">
+      <button id="btn-recalc-prices" type="button"
+        class="rounded-[10px] border border-amber-400 bg-amber-50 text-amber-900 px-3 py-1.5 text-[14px] hover:bg-amber-100"
+        title="Пересчитать цены по текущим параметрам (наценка, выдача, N детей)">
+        <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+        Пересчитать цены
+      </button>
+      <button id="btn-print-prizes" type="button"
+        class="rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] hover:border-primary hover:text-primary">
+        <i class="bi bi-printer" aria-hidden="true"></i>
+        Распечатать призы
+      </button>
+      <button id="btn-add-custom" type="button"
+        class="rounded-[10px] border border-primary bg-primary text-white px-3 py-1.5 text-[14px] hover:opacity-90">
+        <i class="bi bi-plus-lg" aria-hidden="true"></i>
+        Добавить свой приз
+      </button>
+    </div>
+  </div>
+
+  <div class="overflow-x-auto rounded-[14px] border border-border bg-white card-shadow">
+      <table class="w-full text-[14px]">
+        <thead class="bg-page text-left text-[12px] uppercase tracking-wide text-body-muted">
+          <tr>
+            <th class="w-[60px] p-2"></th>
+            <th class="p-2">Наименование</th>
+            <th class="w-[80px] p-2 text-right">Цена&nbsp;Ozon</th>
+            <th class="w-[70px] p-2 text-right" title="Остаток / закуплено">Кол-во</th>
+            <th class="w-[90px] p-2 text-right">Сумма</th>
+            <th class="w-[100px] p-2 text-right">Рекоменд.</th>
+            <th class="w-[150px] p-2 text-right">Цена,&nbsp;игр.&nbsp;₽<div class="text-[10px] font-normal text-body-muted">(заданная или рекоменд.)</div></th>
+            <th class="w-[80px] p-2 text-right" title="Сколько дней ребёнку нужно копить, если откажется от телефона">Копить</th>
+            <th class="w-[80px] p-2 text-center" title="Сколько раз приз уже выдан">Выдано</th>
+            <th class="w-[90px] p-2"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {prizes.map((p: any) => {
+            const st = stateById.get(p.id);
+            return (
+              <tr data-prize-row data-id={p.id} data-price={p.price} data-qty={p.qty}
+                  data-remaining={st?.remaining_qty ?? p.qty}
+                  data-default-img={p.img ?? ''}
+                  data-hidden={st?.hidden ? '1' : '0'}
+                  data-bongere={st?.bongere_price ?? ''}
+                  class="border-t border-border align-middle">
+                <td class="p-2">
+                  <div class="flex h-[48px] w-[48px] items-center justify-center overflow-hidden rounded-[6px] border border-border bg-white">
+                    {(st?.custom_photo || p.img) ? (
+                      <img src={st?.custom_photo || p.img} alt="" loading="lazy" referrerpolicy="no-referrer"
+                           style="width:48px;height:48px;object-fit:cover;border-radius:4px;" />
+                    ) : (
+                      <i class="bi bi-image text-body-muted" aria-hidden="true"></i>
+                    )}
+                  </div>
+                </td>
+                <td class="p-2">
+                  <div class="font-medium text-navy-950">{p.name}</div>
+                  <div class="mt-0.5 flex flex-wrap items-center gap-2 text-[12px] text-body-muted">
+                    {p.category && <span class="rounded-full bg-primary-soft px-2 py-0.5 text-primary">{p.category}</span>}
+                    {p.url ? (
+                      <a href={p.url} target="_blank" rel="noopener" class="inline-flex items-center gap-1 hover:text-primary">
+                        <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> Карточка Ozon
+                      </a>
+                    ) : (
+                      <a href={`https://www.ozon.ru/search/?text=${encodeURIComponent(p.name)}`} target="_blank" rel="noopener" class="inline-flex items-center gap-1 hover:text-primary">
+                        <i class="bi bi-search" aria-hidden="true"></i> Найти на Ozon
+                      </a>
+                    )}
+                  </div>
+                </td>
+                <td class="p-2 text-right font-mono tabular-nums">{fmtRub(p.price)}</td>
+                <td class="p-2 text-right font-mono tabular-nums" data-qty-cell>
+                  <span data-remaining-text class={(st?.remaining_qty ?? p.qty) === 0 ? 'text-red-600 font-bold' : ''}>{st?.remaining_qty ?? p.qty}</span>
+                  <span class="text-body-muted">/{p.qty}</span>
+                </td>
+                <td class="p-2 text-right font-mono tabular-nums font-semibold">{fmtRub(p.price * p.qty)}</td>
+                <td class="p-2 text-right font-mono tabular-nums text-primary" data-recommended></td>
+                <td class="p-2 text-right">
+                  <div class="flex items-center justify-end gap-1">
+                    <input type="number" min="0" step="50" data-bongere-input
+                           class="w-[80px] rounded-[8px] border border-border bg-white px-2 py-1 text-right font-mono tabular-nums focus:border-primary focus:outline-none"
+                           placeholder="—" value={st?.bongere_price ?? ''} />
+                    <span class="text-body-muted">₽</span>
+                    <span data-save-flag class="inline-flex h-5 w-5 items-center justify-center text-emerald-600 opacity-0 transition-opacity" title="Сохранено">
+                      <i class="bi bi-check-circle-fill text-[14px]" aria-hidden="true"></i>
+                    </span>
+                    <button type="button" data-reset-price
+                            class="ml-0.5 inline-flex h-6 w-6 items-center justify-center rounded-[6px] text-body-muted hover:bg-primary-soft hover:text-primary"
+                            title="Сбросить к рекомендованной">
+                      <i class="bi bi-arrow-counterclockwise text-[12px]" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                </td>
+                <td class="p-2 text-right font-mono tabular-nums" data-save-days></td>
+                <td class="p-2 text-center">
+                  {issuanceCounts[p.id] > 0 ? (
+                    <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[12px] font-semibold text-emerald-800">
+                      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>{issuanceCounts[p.id]}
+                    </span>
+                  ) : (
+                    <span class="text-[12px] text-body-muted">—</span>
+                  )}
+                </td>
+                <td class="p-2 text-right">
+                  {(st?.remaining_qty ?? p.qty) > 0 ? (
+                    <button type="button" data-give
+                            data-prize-id={p.id}
+                            data-prize-name={p.name}
+                            class="mr-1 inline-flex items-center gap-1 rounded-[8px] border border-primary bg-primary text-white px-2 py-1 text-[12px] hover:opacity-90"
+                            title="Выдать ребёнку">
+                      <i class="bi bi-gift-fill" aria-hidden="true"></i> выдать
+                    </button>
+                  ) : (
+                    <span class="mr-1 inline-flex items-center gap-1 rounded-[8px] border border-border bg-page px-2 py-1 text-[12px] text-body-muted"
+                          title="Призов больше нет на складе">
+                      <i class="bi bi-x-circle" aria-hidden="true"></i> закончились
+                    </span>
+                  )}
+                  {p.isCustom && (
+                    <button type="button" data-archive-custom data-custom-id={p.customId}
+                            class="inline-flex h-7 w-7 items-center justify-center rounded-[8px] text-body-muted hover:bg-red-50 hover:text-red-600"
+                            title="Удалить кастомный приз">
+                      <i class="bi bi-trash" aria-hidden="true"></i>
+                    </button>
+                  )}
+                  <button type="button" data-toggle-hidden
+                          class="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-body-muted transition hover:bg-red-50 hover:text-red-600"
+                          title={st?.hidden ? 'Показать (вернуть в список)' : 'Скрыть'}>
+                    <i class={`bi ${st?.hidden ? 'bi-eye-slash' : 'bi-x-lg'}`} aria-hidden="true"></i>
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  </div>

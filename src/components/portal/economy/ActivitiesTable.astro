@@ -1,0 +1,105 @@
+---
+interface Props {
+  activities: {
+    id: number;
+    name: string;
+    description?: string | null;
+    category?: string | null;
+    base_price?: number | null;
+    participants_hint?: number | null;
+    target_days?: number | null;
+    target_share_pct?: number | null;
+    repeat_multiplier?: number | null;
+    custom_price?: number | null;
+  }[];
+  catLabels: Record<string, string>;
+}
+const { activities, catLabels } = Astro.props;
+---
+<div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+  <div class="text-[14px] text-body-muted">
+    Каталог нестандартных «подарков»-привилегий, которые ребята могут выкупить за игровые рубли.
+    Цена считается из <b>себестоимости × наценку</b> или прицеливается на <b>~30 человек скидываются</b>.
+  </div>
+  <div class="flex gap-2">
+    <button id="btn-print-activities" type="button"
+      class="rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] hover:border-primary hover:text-primary">
+      <i class="bi bi-printer" aria-hidden="true"></i>
+      Распечатать активности
+    </button>
+    <button id="btn-add-activity" type="button"
+      class="rounded-[10px] border border-primary bg-primary text-white px-3 py-1.5 text-[14px] hover:opacity-90">
+      <i class="bi bi-plus-lg" aria-hidden="true"></i>
+      Добавить активность
+    </button>
+  </div>
+</div>
+
+<div class="overflow-x-auto rounded-[14px] border border-border bg-white card-shadow">
+  <table class="w-full text-[14px]">
+    <thead class="bg-page text-left text-[12px] uppercase tracking-wide text-body-muted">
+      <tr>
+        <th class="p-2">Название</th>
+        <th class="w-[90px] p-2">Категория</th>
+        <th class="w-[160px] p-2 text-right" title="Формула: группа × выдача × дней × % дохода">Формула</th>
+        <th class="w-[100px] p-2 text-right" title="Рекомендованная по формуле или fix">Рекоменд.</th>
+        <th class="w-[140px] p-2 text-right">Цена&nbsp;вручную<div class="text-[10px] font-normal text-body-muted">(пусто = рекоменд.)</div></th>
+        <th class="w-[100px] p-2 text-right">Итого&nbsp;игр.&nbsp;₽</th>
+        <th class="w-[90px] p-2 text-right">С человека</th>
+        <th class="w-[80px] p-2 text-right" title="Изъятие % от полного фонда смены">Изъятие</th>
+        <th class="w-[80px] p-2"></th>
+      </tr>
+    </thead>
+    <tbody id="activities-tbody">
+      {activities.map((a) => (
+        <tr data-activity-row data-id={a.id}
+            data-bongere={a.base_price ?? ''}
+            data-participants={a.participants_hint ?? ''}
+            data-target-days={a.target_days ?? ''}
+            data-target-share={a.target_share_pct ?? ''}
+            data-repeat={a.repeat_multiplier ?? ''}
+            data-custom-price={a.custom_price ?? ''}
+            class="border-t border-border align-middle">
+          <td class="p-2">
+            <div class="font-medium text-navy-950">{a.name}</div>
+            {a.description && <div class="mt-0.5 text-[12px] text-body-muted">{a.description}</div>}
+          </td>
+          <td class="p-2"><span class="rounded-full bg-primary-soft px-2 py-0.5 text-[12px] text-primary">{catLabels[a.category ?? 'other'] ?? a.category ?? '—'}</span></td>
+          <td class="p-2 text-right font-mono tabular-nums text-[12px] text-body-muted" data-formula>—</td>
+          <td class="p-2 text-right font-mono tabular-nums text-primary" data-recommended-price>—</td>
+          <td class="p-2 text-right">
+            <div class="flex items-center justify-end gap-1">
+              <input type="number" min="0" step="50" data-custom-price-input
+                     class="w-[80px] rounded-[8px] border border-border bg-white px-2 py-1 text-right font-mono tabular-nums focus:border-primary focus:outline-none"
+                     placeholder="—" value={a.custom_price ?? ''} />
+              <span class="text-body-muted">₽</span>
+              <span data-act-save-flag class="inline-flex h-5 w-5 items-center justify-center text-emerald-600 opacity-0 transition-opacity" title="Сохранено">
+                <i class="bi bi-check-circle-fill text-[14px]" aria-hidden="true"></i>
+              </span>
+              <button type="button" data-reset-custom-price
+                      class="ml-0.5 inline-flex h-6 w-6 items-center justify-center rounded-[6px] text-body-muted hover:bg-primary-soft hover:text-primary"
+                      title="Сбросить к рекомендованной">
+                <i class="bi bi-arrow-counterclockwise text-[12px]" aria-hidden="true"></i>
+              </button>
+            </div>
+          </td>
+          <td class="p-2 text-right font-mono tabular-nums font-semibold" data-total-price>—</td>
+          <td class="p-2 text-right font-mono tabular-nums text-primary" data-per-person>—</td>
+          <td class="p-2 text-right font-mono tabular-nums" data-extract-pct>—</td>
+          <td class="p-2 text-right">
+            <button type="button" data-edit-activity data-id={a.id}
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-body-muted hover:bg-primary-soft hover:text-primary"
+                    title="Редактировать">
+              <i class="bi bi-pencil" aria-hidden="true"></i>
+            </button>
+            <button type="button" data-delete-activity data-id={a.id}
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-body-muted hover:bg-red-50 hover:text-red-600"
+                    title="Удалить">
+              <i class="bi bi-trash" aria-hidden="true"></i>
+            </button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
