@@ -5,6 +5,7 @@ import { ROOMS, INVENTORY_CHECKLIST, roomsByFloor, type RoomDef } from '../../li
 import { getActiveShift } from '../../lib/portalShift';
 import { listInventoryByShift } from '../../lib/portalRoomInventory';
 import { listAssignments } from '../../lib/portalRasselenie';
+import PortalUploader from '../../components/portal/UppyUploader.astro';
 
 // id события «Приёмка номеров» (день -1) — к нему привязываем видео обхода через photo API.
 let roomCheckEventId = 0;
@@ -277,6 +278,15 @@ function typeBadge(type: string): string {
       </div>
 
       {shift && (
+        <>
+        <script>
+          // Sortable.js — модульный импорт через Astro/Vite bundling.
+          // Экспортируем в window, чтобы inline-скрипт ниже (которому нужен define:vars shiftId)
+          // мог использовать его. Шлём событие, если inline уже отработал.
+          import Sortable from 'sortablejs';
+          window.Sortable = Sortable;
+          window.dispatchEvent(new Event('sortable-ready'));
+        </script>
         <script is:inline define:vars={{ shiftId: shift.id }}>
           (() => {
             // ── CRM-загрузка ──
@@ -406,38 +416,59 @@ function typeBadge(type: string): string {
               } catch { status.textContent = 'Сетевая ошибка'; }
             });
 
-            // Drag and drop
-            let dragKidId = null;
-            let dragKidName = null;
-            document.querySelectorAll('.kid-card').forEach((card) => {
-              card.addEventListener('dragstart', (e) => {
-                dragKidId = card.dataset.kidId;
-                dragKidName = card.dataset.kidName;
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/plain', dragKidId);
-                card.style.opacity = '0.5';
+            // ── Drag-n-drop через Sortable.js ──
+            // Каждая койка (.bed) и пул (#pool-list) — Sortable-контейнер с group="kids".
+            // При onEnd → POST /api/portal/rasselenie с {kid_id, room_number, bed_index}.
+            const poolEl = document.getElementById('pool-list');
+
+            function initSortable() {
+              const S = window.Sortable;
+              if (!S) return;
+
+              // Снимаем нативный draggable, чтобы не конфликтовал с Sortable.
+              document.querySelectorAll('.kid-card[draggable="true"]').forEach((c) => c.removeAttribute('draggable'));
+
+              const commonOpts = {
+                group: { name: 'kids', pull: true, put: true },
+                animation: 150,
+                ghostClass: 'opacity-50',
+                draggable: '.kid-card',
+                forceFallback: false,
+              };
+
+              if (poolEl) {
+                S.create(poolEl, {
+                  ...commonOpts,
+                  onAdd: async (evt) => {
+                    const item = evt.item;
+                    const kidId = item.dataset.kidId;
+                    const kidName = item.dataset.kidName;
+                    if (!kidId) return;
+                    await moveKid(kidId, kidName, null, null);
+                  },
+                });
+              }
+
+              document.querySelectorAll('.bed').forEach((bed) => {
+                S.create(bed, {
+                  ...commonOpts,
+                  // Запрет класть второго ребёнка на занятую койку (capacity=1):
+                  // если уже есть .kid-card — не принимаем новый.
+                  onAdd: async (evt) => {
+                    const item = evt.item;
+                    const kidId = item.dataset.kidId;
+                    const kidName = item.dataset.kidName;
+                    if (!kidId) return;
+                    const roomNumber = Number(bed.dataset.roomNumber);
+                    const bedIndex = Number(bed.dataset.bedIndex);
+                    await moveKid(kidId, kidName, roomNumber, bedIndex);
+                  },
+                });
               });
-              card.addEventListener('dragend', () => { card.style.opacity = ''; });
-            });
-            const pool = document.querySelector('.rasselenie-pool');
-            document.querySelectorAll('.bed').forEach((bed) => {
-              bed.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; bed.classList.add('ring-2', 'ring-primary'); });
-              bed.addEventListener('dragleave', () => bed.classList.remove('ring-2', 'ring-primary'));
-              bed.addEventListener('drop', async (e) => {
-                e.preventDefault();
-                bed.classList.remove('ring-2', 'ring-primary');
-                if (!dragKidId) return;
-                await moveKid(dragKidId, dragKidName, Number(bed.dataset.roomNumber), Number(bed.dataset.bedIndex));
-              });
-            });
-            pool?.addEventListener('dragover', (e) => { e.preventDefault(); pool.classList.add('ring-2', 'ring-primary'); });
-            pool?.addEventListener('dragleave', () => pool.classList.remove('ring-2', 'ring-primary'));
-            pool?.addEventListener('drop', async (e) => {
-              e.preventDefault();
-              pool.classList.remove('ring-2', 'ring-primary');
-              if (!dragKidId) return;
-              await moveKid(dragKidId, dragKidName, null, null);
-            });
+            }
+
+            if (window.Sortable) initSortable();
+            else window.addEventListener('sortable-ready', initSortable, { once: true });
 
             async function moveKid(kidId, kidName, roomNumber, bedIndex) {
               try {
@@ -484,6 +515,7 @@ function typeBadge(type: string): string {
             });
           })();
         </script>
+        </>
       )}
     </div>
   ) : (
@@ -586,26 +618,25 @@ function typeBadge(type: string): string {
   })()}
 
   {/* Модалка инвентаризации */}
-  <div id="room-modal" class="fixed inset-0 z-50 hidden bg-black/50">
-    <div class="absolute inset-0 flex items-start justify-center overflow-y-auto p-4">
-      <div class="w-full max-w-2xl rounded-[16px] bg-white p-6 shadow-xl">
-        <div class="mb-4 flex items-center justify-between">
-          <h2 class="text-[22px] font-bold text-navy-950">
-            Комната №<span id="room-modal-num">—</span>
-          </h2>
-          <button type="button" id="room-modal-close" class="rounded-[8px] border border-border p-2 hover:border-primary hover:text-primary">
-            <i class="bi bi-x-lg text-[16px]" aria-hidden="true"></i>
-          </button>
-        </div>
+  <dialog id="room-modal" class="w-full max-w-2xl rounded-[16px] bg-white p-0 shadow-xl backdrop:bg-black/50">
+    <div class="p-6">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-[22px] font-bold text-navy-950">
+          Комната №<span id="room-modal-num">—</span>
+        </h2>
+        <button type="button" id="room-modal-close" class="rounded-[8px] border border-border p-2 hover:border-primary hover:text-primary">
+          <i class="bi bi-x-lg text-[16px]" aria-hidden="true"></i>
+        </button>
+      </div>
 
-        <div class="mb-4 portal-uploader" id="room-walkthrough-uploader" data-event-id={String(roomCheckEventId)} data-content-task-id="">
+        <div class="mb-4">
           <p class="mb-2 text-[14px] font-semibold text-navy-950">Видео обхода комнаты (обязательно)</p>
-          <input type="file" accept="video/*,image/*" capture="environment" class="portal-uploader__input hidden" />
-          <button type="button" class="portal-uploader__btn inline-flex items-center gap-2 rounded-[10px] bg-primary px-4 py-2 text-[15px] font-medium text-white transition hover:opacity-90">
-            <i class="bi bi-camera-video-fill text-[16px]" aria-hidden="true"></i>
-            Снять видео обхода
-          </button>
-          <p class="portal-uploader__status mt-2 text-[14px] text-body-muted hidden" aria-live="polite"></p>
+          <PortalUploader eventId={String(roomCheckEventId)}
+                          id="room-walkthrough-uploader"
+                          accept="video/*,image/*"
+                          label="Снять видео обхода"
+                          icon="bi-camera-video-fill"
+                          marginTop="" />
           <p id="room-walkthrough-status" class="mt-1 text-[13px] text-body-muted">Видео ещё не загружено.</p>
         </div>
 
@@ -639,8 +670,7 @@ function typeBadge(type: string): string {
           <span id="room-modal-status" class="ml-auto self-center text-[13px] text-body-muted"></span>
         </div>
       </div>
-    </div>
-  </div>
+  </dialog>
 
   {shift && (
     <script is:inline define:vars={{ shiftId: shift.id, checklist: INVENTORY_CHECKLIST }}>
@@ -658,7 +688,7 @@ function typeBadge(type: string): string {
         function open(room) {
           currentRoom = room;
           numEl.textContent = String(room);
-          modal.classList.remove('hidden');
+          if (typeof modal.showModal === 'function') modal.showModal(); else modal.setAttribute('open', '');
           // reset checks/comments
           modal.querySelectorAll('.room-check').forEach((c) => { c.checked = false; });
           modal.querySelectorAll('.room-comment').forEach((t) => { t.value = ''; t.classList.add('hidden'); });
@@ -680,14 +710,22 @@ function typeBadge(type: string): string {
                 : 'Видео ещё не загружено.';
             }).catch(() => { wtStatus.textContent = 'Не удалось загрузить.'; });
         }
-        function close() { modal.classList.add('hidden'); currentRoom = null; }
+        function close() {
+          if (typeof modal.close === 'function') modal.close(); else modal.removeAttribute('open');
+          currentRoom = null;
+        }
 
         document.querySelectorAll('.room-tile').forEach((b) => {
           if (b.disabled) return;
           b.addEventListener('click', () => open(Number(b.dataset.room)));
         });
         closeBtn.addEventListener('click', close);
-        modal.addEventListener('click', (e) => { if (e.target === modal.firstElementChild) close(); });
+        // Click on backdrop (outside the modal box) — closes
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) close();
+        });
+        // Esc key — native <dialog> cancel
+        modal.addEventListener('cancel', (e) => { e.preventDefault(); close(); });
 
         // Toggle textarea on check change
         modal.querySelectorAll('.room-check').forEach((cb) => {

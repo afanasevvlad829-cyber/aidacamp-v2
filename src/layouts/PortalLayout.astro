@@ -2,6 +2,8 @@
 import '../styles/global.css';
 import '../styles/icons.css';
 import UploadQueueIndicator from '../components/UploadQueueIndicator.astro';
+import ToastInit from '../components/portal/ToastInit.astro';
+import MediaLightbox from '../components/portal/MediaLightbox.astro';
 
 interface Props {
   title: string;
@@ -58,11 +60,15 @@ const ROLE_LABEL_MAP: Record<string, string> = {
   </head>
   <body class="min-h-screen bg-page text-body antialiased">
     {showHeader && (
-      <header class="border-b border-border bg-white">
+      <header
+        class="border-b border-border bg-white"
+        style="padding-top: var(--tg-safe-top, 0px); padding-right: var(--tg-safe-right, 0px);"
+      >
         <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div class="flex items-center gap-3">
             {showBack && (
               <a href="/portal/"
+                 data-portal-back
                  onclick="if (document.referrer && new URL(document.referrer).origin === location.origin && document.referrer !== location.href) { event.preventDefault(); history.back(); }"
                  class="inline-flex items-center gap-1 rounded-[10px] border border-border bg-white px-3 py-1.5 text-[14px] font-medium text-body-muted transition hover:border-primary hover:text-primary"
                  aria-label="Назад">
@@ -82,9 +88,9 @@ const ROLE_LABEL_MAP: Record<string, string> = {
           <div class="flex flex-wrap items-center gap-2">
             {canSwitchRoles && (
               <form method="POST" action="/api/portal/view-as" class="flex items-center gap-2">
-                <label for="view-as-select" class="text-[14px] text-body-muted">
+                <label for="view-as-select" class="text-[14px] text-body-muted" title="Смотреть как">
                   <i class="bi bi-eye text-[16px]" aria-hidden="true"></i>
-                  Смотреть как:
+                  <span class="hidden md:inline">Смотреть как:</span>
                 </label>
                 <select
                   id="view-as-select"
@@ -111,13 +117,16 @@ const ROLE_LABEL_MAP: Record<string, string> = {
               </form>
             )}
             <UploadQueueIndicator />
+            <ToastInit />
+            <MediaLightbox />
             <form method="POST" action="/api/portal/logout">
               <button
                 type="submit"
-                class="inline-flex items-center gap-2 rounded-[12px] border border-border bg-white px-4 py-2 text-[16px] font-medium text-body-muted transition hover:border-primary hover:text-primary"
+                title="Выйти"
+                class="inline-flex items-center gap-2 rounded-[12px] border border-border bg-white px-3 py-2 text-[16px] font-medium text-body-muted transition hover:border-primary hover:text-primary md:px-4"
               >
                 <i class="bi bi-box-arrow-right text-[18px]" aria-hidden="true"></i>
-                Выйти
+                <span class="hidden md:inline">Выйти</span>
               </button>
             </form>
           </div>
@@ -176,21 +185,26 @@ const ROLE_LABEL_MAP: Record<string, string> = {
               const author = escapeHtml(p.author_name || '');
               const when = fmtTime(p.uploaded_at);
               const isVideo = p.file_type === 'video';
-              const icon = isVideo
-                ? '<i class="bi bi-camera-video text-[13px] text-body-muted" aria-hidden="true"></i>'
-                : '<i class="bi bi-image text-[13px] text-body-muted" aria-hidden="true"></i>';
-              const open = url
-                ? '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener" class="text-primary hover:underline">Открыть</a>'
-                : '<span class="text-body-muted">нет ссылки</span>';
+              // Thumbnail: для фото — клик открывает PhotoSwipe-лайтбокс,
+              // для видео — нативное «Открыть» в новом табе (PhotoSwipe видео не показывает inline).
+              const thumb = url && !isVideo
+                ? '<a href="' + escapeHtml(url) + '" class="pswp-thumb shrink-0" data-pswp-width="1600" data-pswp-height="1200" target="_blank" rel="noopener">' +
+                    '<img src="' + escapeHtml(url) + '" alt="" loading="lazy" class="h-10 w-10 rounded-[6px] border border-border object-cover" />' +
+                  '</a>'
+                : (url && isVideo
+                    ? '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[6px] border border-border bg-page text-body-muted"><i class="bi bi-camera-video" aria-hidden="true"></i></a>'
+                    : '<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[6px] border border-border bg-page text-body-muted"><i class="bi bi-image" aria-hidden="true"></i></span>');
               const del = canDelete
-                ? ' &nbsp; <button type="button" class="portal-media__del text-[13px] text-red-600 hover:underline" data-photo-id="' + p.id + '"><i class="bi bi-x-lg text-[11px]" aria-hidden="true"></i> удалить</button>'
+                ? '<button type="button" class="portal-media__del shrink-0 text-[13px] text-red-600 hover:underline" data-photo-id="' + p.id + '" title="Удалить"><i class="bi bi-x-lg text-[12px]" aria-hidden="true"></i></button>'
                 : '';
               return '<li class="flex items-center gap-2 text-body">' +
-                icon +
-                '<span class="min-w-0 truncate"><span class="text-body-muted">' + author + ', ' + when + '</span></span>' +
-                '<span class="ml-auto whitespace-nowrap">' + open + del + '</span>' +
+                thumb +
+                '<span class="min-w-0 truncate text-[13px] text-body-muted">' + author + ', ' + when + '</span>' +
+                '<span class="ml-auto">' + del + '</span>' +
                 '</li>';
             }).join('');
+            // Сообщаем lightbox-инициализатору, что в этом root есть новые ссылки
+            document.dispatchEvent(new CustomEvent('portal-media:lightbox-rebind', { detail: { eventId: eventId } }));
             list.querySelectorAll('.portal-media__del').forEach(function(b) {
               b.addEventListener('click', async function() {
                 if (!confirm('Удалить файл? Это необратимо.')) return;
@@ -274,12 +288,60 @@ const ROLE_LABEL_MAP: Record<string, string> = {
           try { if (typeof tg.disableVerticalSwipes === 'function') tg.disableVerticalSwipes(); } catch (e) {}
           // Bot API 8.0+ — режим fullscreen на мобильном
           try { if (typeof tg.requestFullscreen === 'function') tg.requestFullscreen(); } catch (e) {}
+          // Safe area — иначе пилюли Telegram (Назад/Закрыть/⋯/▾) перекрывают шапку
+          function applySafeArea() {
+            try {
+              var sa = tg.safeAreaInset || {};
+              var csa = tg.contentSafeAreaInset || {};
+              var top = Math.max(sa.top || 0, csa.top || 0);
+              var right = Math.max(sa.right || 0, csa.right || 0);
+              // На fullscreen-режиме SDK не всегда заполняет contentSafeAreaInset.top;
+              // дополнительный страховочный минимум, чтобы пилюли никогда не накладывались.
+              if (tg.isFullscreen) {
+                top = Math.max(top, 100);
+                right = Math.max(right, 56);
+              } else if (window.innerWidth < 640) {
+                // На мобильном даже не-fullscreen WebApp кладёт «Закрыть»/«⋯» поверх контента
+                top = Math.max(top, 56);
+              }
+              var root = document.documentElement;
+              root.style.setProperty('--tg-safe-top', top + 'px');
+              root.style.setProperty('--tg-safe-right', right + 'px');
+            } catch (e) {}
+          }
+          applySafeArea();
+          // Прячем нашу кнопку «Назад» внутри TG WebApp — используем нативную BackButton,
+          // иначе она перекрывается пилюлей «Закрыть» от Telegram.
+          try {
+            var ourBack = document.querySelector('[data-portal-back]');
+            if (ourBack) ourBack.style.display = 'none';
+            if (tg.BackButton) {
+              var pathNow = (location.pathname.replace(/\/+$/, '') || '/');
+              var isPortalRoot = (pathNow === '/portal' || pathNow === '');
+              if (isPortalRoot) {
+                tg.BackButton.hide();
+              } else {
+                tg.BackButton.show();
+                tg.BackButton.onClick(function () {
+                  if (document.referrer && new URL(document.referrer).origin === location.origin && document.referrer !== location.href) {
+                    history.back();
+                  } else {
+                    location.href = '/portal/';
+                  }
+                });
+              }
+            }
+          } catch (e) {}
           // Закрепить viewport — на iOS Telegram WebApp иногда нужен повторный expand при resize
           try {
             tg.onEvent && tg.onEvent('viewportChanged', function (ev) {
               if (ev && ev.isStateStable === false) return;
               try { tg.expand(); } catch (e) {}
+              applySafeArea();
             });
+            tg.onEvent && tg.onEvent('safeAreaChanged', applySafeArea);
+            tg.onEvent && tg.onEvent('contentSafeAreaChanged', applySafeArea);
+            tg.onEvent && tg.onEvent('fullscreenChanged', applySafeArea);
           } catch (e) {}
         }
         if (document.readyState === 'loading') {

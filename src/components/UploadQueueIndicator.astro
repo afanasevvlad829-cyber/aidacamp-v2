@@ -19,8 +19,8 @@
     <p class="upload-queue__empty text-[13px] text-body-muted">Очередь пуста.</p>
     <ul class="upload-queue__list space-y-2 max-h-[60vh] overflow-auto"></ul>
     <div class="mt-2 flex gap-2">
-      <button type="button" class="upload-queue__flush rounded-[8px] bg-primary px-3 py-1.5 text-[13px] font-medium text-white hover:opacity-90">Отправить</button>
-      <button type="button" class="upload-queue__clear-failed rounded-[8px] border border-border bg-white px-3 py-1.5 text-[13px] font-medium text-body-muted hover:border-primary hover:text-primary">Удалить failed</button>
+      <button type="button" class="upload-queue__flush rounded-[8px] bg-primary px-3 py-1.5 text-[13px] font-medium text-white hover:opacity-90">Отправить сейчас</button>
+      <button type="button" class="upload-queue__clear-failed hidden rounded-[8px] border border-border bg-white px-3 py-1.5 text-[13px] font-medium text-body-muted hover:border-primary hover:text-primary">Удалить упавшие</button>
     </div>
   </div>
 </div>
@@ -54,6 +54,8 @@
       if (!btn || !count || !list || !empty) return;
       const pending = items.filter((i) => i.status !== 'failed').length;
       const failed = items.filter((i) => i.status === 'failed').length;
+      if (clearFailed) clearFailed.classList.toggle('hidden', failed === 0);
+      if (flushBtn)    flushBtn.classList.toggle('hidden', pending === 0);
       if (items.length > 0) {
         count.classList.remove('hidden');
         count.textContent = String(items.length);
@@ -117,33 +119,66 @@
     if (r.dataset.queueBound === '1') return;
     r.dataset.queueBound = '1';
     const input = r.querySelector<HTMLInputElement>('.portal-uploader__input');
-    const btn = r.querySelector<HTMLButtonElement>('.portal-uploader__btn');
     const status = r.querySelector<HTMLParagraphElement>('.portal-uploader__status');
-    if (!input || !btn || !status) return;
-
-    btn.addEventListener('click', () => input.click());
+    if (!input || !status) return;
+    // Открытие файлового диалога теперь идёт через нативный <label> (см. PortalUploader.astro).
+    // Если страница ещё использует старую разметку с <button class="portal-uploader__btn">, поддерживаем
+    // обратную совместимость через programmatic click — но это хуже работает в Android Telegram WebView.
+    const legacyBtn = r.querySelector<HTMLButtonElement>('button.portal-uploader__btn');
+    if (legacyBtn) legacyBtn.addEventListener('click', () => input.click());
     input.addEventListener('change', async () => {
       const file = input.files && input.files[0];
-      if (!file) return;
+      const toast = (window as any).toast;
+      if (!file) {
+        if (toast) toast.error('Файл не выбран (input.files пуст). Перезагрузи Telegram-вебвью.');
+        return;
+      }
+      const sizeMb = (file.size / 1024 / 1024).toFixed(1);
+      if (toast) toast.info(`Файл выбран: ${file.name || 'без имени'} · ${sizeMb} MB`);
       const eventId = r.dataset.eventId;
       const ctId = r.dataset.contentTaskId || null;
       if (!eventId || eventId === '0') {
         showStatus(status, 'Ошибка: нет event_id', true);
+        if (toast) toast.error('Нет event_id у компонента — баг разметки');
         return;
       }
       if (file.size > 500 * 1024 * 1024) {
         showStatus(status, 'Файл больше 500 МБ', true);
+        if (toast) toast.error('Файл больше 500 МБ — отказ');
         input.value = '';
         return;
       }
       try {
         await enqueue(file, { event_id: eventId, content_task_id: ctId, uploader_id: r.id || null });
-        showStatus(status, '✓ В очереди (' + (file.size / 1024 / 1024).toFixed(1) + ' MB), отправляю…', false);
+        showStatus(status, '✓ В очереди (' + sizeMb + ' MB), отправляю…', false);
+        if (toast) toast.success(`В очереди (${sizeMb} MB), отправляю…`);
         input.value = '';
       } catch (e: any) {
-        showStatus(status, 'Ошибка: ' + (e && e.message ? e.message : e), true);
+        const msg = (e && e.message ? e.message : String(e));
+        showStatus(status, 'Ошибка: ' + msg, true);
+        if (toast) toast.error('Ошибка очереди: ' + msg);
       }
     });
+  });
+
+  // ── Подписка на события очереди: обновление статуса в карточке после успешной загрузки.
+  // Drain в portalUploadQueue.ts уже шлёт 'portal-media:uploaded' с detail.uploaderId — слушаем.
+  document.addEventListener('portal-media:uploaded', (ev: Event) => {
+    const detail = (ev as CustomEvent).detail || {};
+    const uploaderId = detail.uploaderId as string | null;
+    if (!uploaderId) return;
+    const root = document.getElementById(uploaderId);
+    if (!root) return;
+    const status = root.querySelector<HTMLParagraphElement>('.portal-uploader__status');
+    if (!status) return;
+    showStatus(status, '✓ Загружено', false);
+    // Через 4 сек убираем строку — следующая загрузка покажет новый статус
+    setTimeout(() => {
+      if (status.textContent === '✓ Загружено') {
+        status.textContent = '';
+        status.classList.add('hidden');
+      }
+    }, 4000);
   });
 
   function showStatus(el: HTMLElement, text: string, isError: boolean) {

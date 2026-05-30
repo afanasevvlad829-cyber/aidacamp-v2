@@ -25,6 +25,8 @@ export interface ShiftEvent {
   roles: string[];
   notes: string | null;
   sort: number;
+  responsible_staff_id: number | null;
+  responsible_name: string | null;
   checklists: { event_checklist_id: number; checklist_id: number; title: string;
     roles: string[]; items: { id: string; text: string }[] }[];
 }
@@ -99,12 +101,13 @@ export async function getEventDates(shiftId: number): Promise<string[]> {
 /** События смены. Если передана дата — только за этот день (легче для role/day видов). */
 export async function getEvents(shiftId: number, date?: string): Promise<ShiftEvent[]> {
   return (await withClient(async (c) => {
-    const COLS = "e.id,e.external_id,to_char(e.date,'YYYY-MM-DD') date,e.start_time::text,e.end_time::text,e.title,e.activity_type,e.event_type::text,e.activity_slug,e.content_task_template_id,e.group_color_id,e.staff_keys,e.roles,e.notes,e.sort,ct.id ct_id,ct.title ct_title,ct.brief ct_brief,ct.content_type ct_content_type";
+    const COLS = "e.id,e.external_id,to_char(e.date,'YYYY-MM-DD') date,e.start_time::text,e.end_time::text,e.title,e.activity_type,e.event_type::text,e.activity_slug,e.content_task_template_id,e.group_color_id,e.staff_keys,e.roles,e.notes,e.sort,e.responsible_staff_id,ps.full_name AS responsible_name,ct.id ct_id,ct.title ct_title,ct.brief ct_brief,ct.content_type ct_content_type";
+    const JOINS = "LEFT JOIN content_task_template ct ON ct.id::text=e.content_task_template_id LEFT JOIN portal_staff ps ON ps.id=e.responsible_staff_id";
     const ev = date
       ? await c.query(
-          `SELECT ${COLS} FROM shift_event e LEFT JOIN content_task_template ct ON ct.id::text=e.content_task_template_id WHERE e.shift_id=$1 AND e.date=$2 ORDER BY e.date,e.sort,e.start_time`, [shiftId, date])
+          `SELECT ${COLS} FROM shift_event e ${JOINS} WHERE e.shift_id=$1 AND e.date=$2 ORDER BY e.date,e.sort,e.start_time`, [shiftId, date])
       : await c.query(
-          `SELECT ${COLS} FROM shift_event e LEFT JOIN content_task_template ct ON ct.id::text=e.content_task_template_id WHERE e.shift_id=$1 ORDER BY e.date,e.sort,e.start_time`, [shiftId]);
+          `SELECT ${COLS} FROM shift_event e ${JOINS} WHERE e.shift_id=$1 ORDER BY e.date,e.sort,e.start_time`, [shiftId]);
     const ecl = await c.query(
       "SELECT ec.id event_checklist_id, ec.event_id, ec.checklist_id, ec.roles, cl.title, cl.items FROM event_checklist ec JOIN checklist cl ON cl.id=ec.checklist_id WHERE ec.event_id = ANY($1)",
       [ev.rows.map((e: any) => e.id)]);
@@ -187,17 +190,18 @@ export async function archiveShift(id: number): Promise<void> {
 export async function upsertEvent(e: {
   id?: number; shiftId: number; date: string; start_time: string | null; end_time: string | null;
   title: string; activity_type: string | null; roles: string[]; sort: number; notes?: string | null;
+  responsible_staff_id?: number | null;
 }): Promise<number | null> {
   return await withClient(async (c) => {
     if (e.id) {
       await c.query(
-        "UPDATE shift_event SET date=$2,start_time=$3,end_time=$4,title=$5,activity_type=$6,roles=$7,sort=$8,notes=$9 WHERE id=$1",
-        [e.id, e.date, e.start_time, e.end_time, e.title, e.activity_type, e.roles, e.sort, e.notes ?? null]);
+        "UPDATE shift_event SET date=$2,start_time=$3,end_time=$4,title=$5,activity_type=$6,roles=$7,sort=$8,notes=$9,responsible_staff_id=$10 WHERE id=$1",
+        [e.id, e.date, e.start_time, e.end_time, e.title, e.activity_type, e.roles, e.sort, e.notes ?? null, e.responsible_staff_id ?? null]);
       return e.id;
     }
     const r = await c.query(
-      "INSERT INTO shift_event(shift_id,date,start_time,end_time,title,activity_type,roles,sort,notes) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id",
-      [e.shiftId, e.date, e.start_time, e.end_time, e.title, e.activity_type, e.roles, e.sort, e.notes ?? null]);
+      "INSERT INTO shift_event(shift_id,date,start_time,end_time,title,activity_type,roles,sort,notes,responsible_staff_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id",
+      [e.shiftId, e.date, e.start_time, e.end_time, e.title, e.activity_type, e.roles, e.sort, e.notes ?? null, e.responsible_staff_id ?? null]);
     return r.rows[0].id as number;
   });
 }

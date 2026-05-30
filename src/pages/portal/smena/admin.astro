@@ -3,6 +3,7 @@ export const prerender = false;
 
 import PortalLayout from '../../../layouts/PortalLayout.astro';
 import { getActiveShift, getEvents, listShifts, getChecklists, type ShiftEvent } from '../../../lib/portalShift';
+import { listStaff } from '../../../lib/portalStaff';
 
 const role = Astro.locals.portalRole;
 // Все сотрудники видят страницу управления сеткой; правка ограничена ниже по ролям.
@@ -13,6 +14,8 @@ const shifts = await listShifts();
 const activeShift = await getActiveShift();
 const events: ShiftEvent[] = activeShift ? await getEvents(activeShift.id) : [];
 const checklists = await getChecklists();
+const allStaff = await listStaff();
+const activeStaff = allStaff.filter((s) => s.active);
 
 const ROLE_OPTIONS = [
   { value: 'teacher', label: 'Учитель' },
@@ -165,6 +168,20 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
                 </div>
               </div>
               <div>
+                <label class={labelCls} for="ev-responsible">Главный ответственный (один сотрудник)</label>
+                <select id="ev-responsible" name="responsible_staff_id" class={inputCls}>
+                  <option value="">— не назначен (события будут штрафовать руководителя смены) —</option>
+                  {activeStaff.map((s) => (
+                    <option value={s.id}>
+                      {s.full_name ?? `id=${s.id}`}{s.role ? ` · ${s.role}` : ''}
+                    </option>
+                  ))}
+                </select>
+                <p class="mt-1 text-[13px] text-body-muted">
+                  Автодетектор штрафов поставит штраф этому человеку, если событие закончилось и нет фото/закрытого чек-листа.
+                </p>
+              </div>
+              <div>
                 <label class={labelCls} for="ev-notes">Заметки и материалы</label>
                 <textarea id="ev-notes" data-voice data-voice-append class={inputCls + ' min-h-[60px]'} name="notes" placeholder="Доп. инфа, ссылки на материалы…"></textarea>
               </div>
@@ -187,6 +204,9 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
                       <div class="text-[12px] text-body-muted">
                         #{e.id}{e.activity_type ? ` · ${e.activity_type}` : ''}
                         {e.roles.length > 0 && <span class="ml-1 text-primary">· {e.roles.join(', ')}</span>}
+                        {e.responsible_name
+                          ? <span class="ml-1 text-emerald-700">· отв: {e.responsible_name}</span>
+                          : <span class="ml-1 text-amber-700">· отв: не назначен</span>}
                       </div>
                     </div>
                     <button type="button"
@@ -199,7 +219,8 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
                             data-actype={e.activity_type ?? ''}
                             data-sort={e.sort}
                             data-roles={e.roles.join(',')}
-                            data-notes={e.notes ?? ''}>
+                            data-notes={e.notes ?? ''}
+                            data-resp-id={(e as any).responsible_staff_id ?? ''}>
                       <i class="bi bi-pencil text-[12px]" aria-hidden="true"></i> Править
                     </button>
                     <form method="POST" action="/api/portal/shift/admin" onsubmit={`return confirm('Удалить событие «${e.title}» (${e.date})? Также удалятся все привязки чек-листов и галочки.')`}>
@@ -226,6 +247,7 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
               const sortF = document.getElementById('ev-sort');
               const notesF = document.getElementById('ev-notes');
               const rolesWrap = document.getElementById('ev-roles-wrap');
+              const respF = document.getElementById('ev-responsible');
               const formTitle = document.getElementById('ev-form-title');
               const submit = document.getElementById('ev-submit');
               const reset = document.getElementById('ev-reset');
@@ -236,6 +258,7 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
                 typeF.value = ''; sortF.value = '0';
                 if (notesF) notesF.value = '';
                 rolesWrap?.querySelectorAll('input[name=roles]').forEach((cb) => { cb.checked = false; });
+                if (respF) respF.value = '';
                 formTitle.textContent = 'Добавить событие';
                 submit.innerHTML = '<i class="bi bi-plus-lg text-[18px]" aria-hidden="true"></i>Сохранить событие';
                 reset.classList.add('hidden');
@@ -253,6 +276,7 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
                   if (notesF) notesF.value = b.dataset.notes || '';
                   const roles = (b.dataset.roles || '').split(',').filter(Boolean);
                   rolesWrap?.querySelectorAll('input[name=roles]').forEach((cb) => { cb.checked = roles.includes(cb.value); });
+                  if (respF) respF.value = b.dataset.respId || '';
                   formTitle.textContent = 'Править событие #' + b.dataset.id;
                   submit.innerHTML = '<i class="bi bi-check-lg text-[18px]" aria-hidden="true"></i>Обновить событие';
                   reset.classList.remove('hidden');

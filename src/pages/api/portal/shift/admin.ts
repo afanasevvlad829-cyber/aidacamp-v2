@@ -88,6 +88,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       const date = asStr(body.date);
       const title = asStr(body.title).trim();
       if (!shiftId || !date || !title) return bad('shiftId/date/title required');
+      const respRaw = body.responsible_staff_id;
+      const respId = respRaw != null && respRaw !== '' && asNum(respRaw) > 0 ? asNum(respRaw) : null;
       const id = await upsertEvent({
         id: body.id ? asNum(body.id) : undefined,
         shiftId,
@@ -99,6 +101,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
         roles: asArr(body.roles),
         sort: Number.isFinite(asNum(body.sort)) ? asNum(body.sort) : 0,
         notes: body.notes != null && asStr(body.notes) !== '' ? asStr(body.notes) : null,
+        responsible_staff_id: respId,
       });
       return ok({ id });
     }

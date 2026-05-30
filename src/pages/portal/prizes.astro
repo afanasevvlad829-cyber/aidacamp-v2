@@ -205,6 +205,14 @@ const CAT_LABELS: Record<string, string> = {
           <i class="bi bi-eye" aria-hidden="true"></i>
           Показать скрытые
         </button>
+        {role === 'admin' && (
+          <button id="btn-reset-issuances" type="button"
+            class="rounded-[10px] border border-red-300 bg-red-50 px-3 py-1.5 text-[14px] font-medium text-red-700 hover:bg-red-100"
+            title="Удалить все выдачи призов (тестовые данные). История полностью обнулится.">
+            <i class="bi bi-trash3" aria-hidden="true"></i>
+            Сбросить все выдачи (admin)
+          </button>
+        )}
       </div>
     </div>
 
@@ -395,12 +403,15 @@ const CAT_LABELS: Record<string, string> = {
             <input id="give-price" type="number" min="0" step="50"
                    class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono focus:border-primary focus:outline-none" />
           </label>
-          <label class="block">
+          <div>
             <span class="block text-[13px] font-medium text-body-muted">Фото или видео вручения (обязательно)</span>
-            <input id="give-file" type="file" accept="image/*,video/*" capture="environment"
-                   class="mt-1 block w-full rounded-[10px] border border-dashed border-border bg-page p-2 text-[13px]" />
-            <span class="mt-1 block text-[12px] text-body-muted">На телефоне сразу откроется камера. Снимай горизонтально, задай 1-2 вопроса из списка выше.</span>
-          </label>
+            <label class="mt-1 inline-flex cursor-pointer items-center gap-2 rounded-[10px] bg-primary px-4 py-2 text-[15px] font-medium text-white transition hover:opacity-90">
+              <i class="bi bi-camera-fill" aria-hidden="true"></i>
+              <span id="give-file-label">Снять или выбрать файл</span>
+              <input id="give-file" type="file" accept="image/*,video/*" class="sr-only" />
+            </label>
+            <span class="mt-1 block text-[12px] text-body-muted">Можешь снять сразу или выбрать готовый файл из библиотеки. Если снимаешь — горизонтально, задай 1-2 вопроса из списка выше.</span>
+          </div>
           <label class="block">
             <span class="block text-[13px] font-medium text-body-muted">Заметка (необязательно)</span>
             <textarea id="give-note" rows="2" data-voice data-voice-append
@@ -452,11 +463,14 @@ const CAT_LABELS: Record<string, string> = {
                      class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono focus:border-primary focus:outline-none" />
             </label>
           </div>
-          <label class="block">
+<div>
             <span class="block text-[13px] font-medium text-body-muted">Фотография приза</span>
-            <input id="cust-file" type="file" accept="image/*"
-                   class="mt-1 block w-full rounded-[10px] border border-dashed border-border bg-page p-2 text-[13px]" />
-          </label>
+            <label class="mt-1 inline-flex cursor-pointer items-center gap-2 rounded-[10px] bg-primary px-4 py-2 text-[15px] font-medium text-white transition hover:opacity-90">
+              <i class="bi bi-camera-fill" aria-hidden="true"></i>
+              <span id="cust-file-label">Снять или выбрать фото</span>
+              <input id="cust-file" type="file" accept="image/*" class="sr-only" />
+            </label>
+          </div>
         </div>
         <div class="mt-5 flex items-center justify-end gap-2">
           <span id="cust-status" class="mr-auto text-[13px] text-body-muted"></span>
@@ -736,6 +750,19 @@ const CAT_LABELS: Record<string, string> = {
   </style>
   <script is:inline>
     (function () {
+      // Реактивная подпись «выбран файл X» под label-кнопкой загрузки в обоих модалках.
+      function bindFileLabel(inputId, labelId, fallback) {
+        const inp = document.getElementById(inputId);
+        const lbl = document.getElementById(labelId);
+        if (!inp || !lbl) return;
+        inp.addEventListener('change', () => {
+          const f = inp.files && inp.files[0];
+          lbl.textContent = f ? ('✓ ' + (f.name || 'файл выбран')) : fallback;
+        });
+      }
+      bindFileLabel('give-file', 'give-file-label', 'Снять или выбрать файл');
+      bindFileLabel('cust-file', 'cust-file-label', 'Снять или выбрать фото');
+
       const LS_KEY = 'aidacamp.portal.prizes.v1';        // старое хранение
       const LS_SETTINGS = 'aidacamp.portal.economy.settings.v1';
       const fmt = (n) => new Intl.NumberFormat('ru-RU').format(Math.round(n)) + ' ₽';
@@ -904,6 +931,28 @@ const CAT_LABELS: Record<string, string> = {
         });
       });
 
+      const resetBtn = document.getElementById('btn-reset-issuances');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', async () => {
+          if (!confirm('Удалить ВСЕ выдачи призов?\n\nЭто действие необратимо. История очистится полностью.\nИспользуй только для очистки тестовых данных перед началом смены.')) return;
+          if (!confirm('Точно? Это последнее предупреждение.')) return;
+          resetBtn.disabled = true;
+          try {
+            const r = await fetch('/api/portal/prize-ops', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'reset_all_issuances' }),
+            });
+            const j = await r.json();
+            if (!j.ok) throw new Error(j.error || 'error');
+            alert('Удалено выдач: ' + j.deleted);
+            location.reload();
+          } catch (e) {
+            alert('Ошибка: ' + (e && e.message ? e.message : e));
+            resetBtn.disabled = false;
+          }
+        });
+      }
       document.getElementById('btn-show-hidden').addEventListener('click', (ev) => {
         showHidden = !showHidden;
         ev.currentTarget.innerHTML = showHidden

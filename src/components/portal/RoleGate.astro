@@ -1,0 +1,37 @@
+---
+/**
+ * Условный рендер по роли в портале. Заменяет россыпь `{role === 'admin' && ...}`.
+ *
+ * Использование:
+ *   <RoleGate role={role} allow={['admin','rukovoditel']}>
+ *     <button>Только для менеджеров</button>
+ *   </RoleGate>
+ *
+ * Или через одну роль:
+ *   <RoleGate role={role} allow="admin">…</RoleGate>
+ *
+ * Если allow не указан — рендерит всегда (no-op).
+ */
+import type { PortalRole } from '../../lib/portalSession';
+
+interface Props {
+  /** Текущая активная роль из Astro.locals.portalRole */
+  role: PortalRole | string | null | undefined;
+  /** Кому показывать */
+  allow?: PortalRole | string | (PortalRole | string)[];
+  /** Что показать тем, кто не подходит. По умолчанию — ничего. */
+  fallback?: 'hide' | 'show';
+}
+
+const { role, allow, fallback = 'hide' } = Astro.props;
+
+function isAllowed(r: typeof role): boolean {
+  if (!allow) return true;
+  if (!r) return false;
+  if (Array.isArray(allow)) return allow.includes(r);
+  return allow === r;
+}
+
+const visible = isAllowed(role) || fallback === 'show';
+---
+{visible && <slot />}
