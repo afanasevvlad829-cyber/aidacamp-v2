@@ -127,6 +127,16 @@ const SHIFT2_DAYS = 14;
   (function () {
     const triggers = document.querySelectorAll('#tax-widget-trigger');
     const modal = document.getElementById('tax-widget-modal');
+  // iOS Safari: overflow:hidden alone doesn't prevent scroll — use position:fixed
+  let _savedScrollY = 0;
+  function _lockScroll() {
+    _savedScrollY = window.scrollY;
+    Object.assign(document.body.style, { position: 'fixed', top: `-${_savedScrollY}px`, width: '100%', overflow: 'hidden' });
+  }
+  function _unlockScroll() {
+    Object.assign(document.body.style, { position: '', top: '', width: '', overflow: '' });
+    window.scrollTo(0, _savedScrollY);
+  }
     const closeBtn = document.getElementById('tax-widget-close');
     if (!modal) return;
 
@@ -135,7 +145,7 @@ const SHIFT2_DAYS = 14;
     function openModal() {
       modal.classList.remove('hidden');
       modal.classList.add('flex');
-      document.body.style.overflow = 'hidden';
+      _lockScroll();
       sendMetrika('tax_widget_click');
       sendMetrika('tax_widget_modal_open');
       // Триггер пересчёта TaxCalculator при открытии (на случай если селект ещё не проинициализирован)
@@ -146,7 +156,7 @@ const SHIFT2_DAYS = 14;
     function closeModal() {
       modal.classList.add('hidden');
       modal.classList.remove('flex');
-      document.body.style.overflow = '';
+      _unlockScroll();
       sendMetrika('tax_widget_modal_close');
     }
 
