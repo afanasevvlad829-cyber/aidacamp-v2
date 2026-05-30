@@ -118,6 +118,7 @@
     team: 0
   };
 
+  // ══ STORAGE ══════════════════════════════════
   function getInitialMode() {
     try {
       var mode = localStorage.getItem(MODE_KEY) === "full" ? "full" : "compact";
@@ -310,6 +311,7 @@
     });
   }
 
+  // ══ UTILS ══════════════════════════════════
   function clamp(value, min, max) {
     if (typeof coreActions.clamp === "function") {
       return coreActions.clamp(value, min, max);
@@ -324,6 +326,7 @@
     return Object.prototype.hasOwnProperty.call(obj, key);
   }
 
+  // ══ AGE-SHIFT ══════════════════════════════════
   function isAgeGateLocked() {
     return !ageSelectionConfirmed;
   }
@@ -397,6 +400,7 @@
     return SHIFTS[safeStep];
   }
 
+  // ══ HERO ══════════════════════════════════
   function getHeroBenefits() {
     var baseProfile = AGE_PROFILES[0] || findProfileByAge(state.age);
     if (baseProfile && baseProfile.benefits && baseProfile.benefits.length) {
@@ -688,6 +692,7 @@
     }
   }
 
+  // ══ PROMO ══════════════════════════════════
   function getShiftPriceMeta(shift, idx) {
     var fallback = SHIFT_PRICE_META[idx] || SHIFT_PRICE_META[0];
     var finalPrice = fallback.finalPrice;
@@ -2039,6 +2044,7 @@
     renderInfoCard();
   }
 
+  // ══ RENDER ══════════════════════════════════
   function renderLayout() {
     var body = document.body;
     var toggle = document.getElementById("acViewToggle");
