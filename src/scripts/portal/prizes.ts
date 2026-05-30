@@ -39,15 +39,15 @@ import { confirmDialog, alertDialog, haptic } from './tg';
   }
 
   function readSettings() {
-    const num = (id, min) => Math.max(min, Number(document.getElementById(id).value) || min);
+    const num = (id: string, min: number) => Math.max(min, Number((document.getElementById(id) as HTMLInputElement | null)?.value) || min);
     return {
       kids: num('set-kids', 1),
       days: num('set-days', 1),
       phoneMin: num('set-phone-min', 1),
       markup: num('set-markup', 1),
       round: num('set-round', 1),
-      daily: Math.max(0, Number(document.getElementById('set-daily').value) || 0),
-      targetExtract: Math.max(0, Math.min(100, Number(document.getElementById('set-target-extract').value) || 75)),
+      daily: Math.max(0, Number((document.getElementById('set-daily') as HTMLInputElement | null)?.value) || 0),
+      targetExtract: Math.max(0, Math.min(100, Number((document.getElementById('set-target-extract') as HTMLInputElement | null)?.value) || 75)),
     };
   }
   // Tabs
