@@ -2,22 +2,21 @@
 // Один разделяемый pg.Pool для всего SSR-процесса.
 // Astro Node.js adapter запускается как единый long-running процесс,
 // поэтому Pool живёт всё время работы сервера.
+import pg from 'pg';
 
-let pool: import('pg').Pool | null = null;
+let pool: pg.Pool | null = null;
 
-export function getPool(): import('pg').Pool | null {
+export function getPool(): pg.Pool | null {
   const dsn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN;
   if (!dsn) return null;
   if (!pool) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { Pool } = require('pg');
-    pool = new Pool({
+    pool = new pg.Pool({
       connectionString: dsn,
-      max: 10,              // максимум 10 соединений
+      max: 10,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 5_000,
     });
-    pool!.on('error', (err) => console.error('[pg pool] idle client error', err));
+    pool.on('error', (err) => console.error('[pg pool] idle client error', err));
   }
   return pool;
 }
