@@ -2,7 +2,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { verifySessionPayload } from '../../../../lib/portalSession';
 import {
-  createShift, archiveShift, upsertEvent, deleteEvent, upsertChecklist, attachChecklist, deleteChecklist,
+  createShift, archiveShift, upsertEvent, duplicateEvent, deleteEvent, upsertChecklist, attachChecklist, deleteChecklist,
 } from '../../../../lib/portalShift';
 
 const ALLOWED_ROLES = ['admin', 'rukovoditel'] as const;
@@ -104,6 +104,16 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
         responsible_staff_id: respId,
       });
       return ok({ id });
+    }
+
+    if (action === 'duplicateEvent') {
+      const srcId = asNum(body.id);
+      if (!srcId) return bad('id required');
+      const respRaw = body.responsible_staff_id;
+      const respId = respRaw != null && respRaw !== '' && asNum(respRaw) > 0 ? asNum(respRaw) : null;
+      const newId = await duplicateEvent(srcId, respId);
+      if (!newId) return bad('Исходное событие не найдено или не удалось создать копию');
+      return ok({ id: newId });
     }
 
     if (action === 'deleteEvent') {

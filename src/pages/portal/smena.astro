@@ -57,7 +57,7 @@ const fullShiftView = view === 'activity' || view === 'matrix';
 const events: ShiftEvent[] = shift
   ? await getEvents(shift.id, fullShiftView ? undefined : selectedDate)
   : [];
-const done = shift && sub ? await getDone(sub, shift.id) : new Set<string>();
+const doneSet = shift && sub ? await getDone(sub, shift.id) : new Set<string>();
 
 // Карта staff_key → краткое имя для подписей в шахматке.
 const staffList = view === 'matrix' ? await listStaff() : [];
@@ -145,6 +145,30 @@ function roleLabel(r: string): string {
 // «Мой день» убрали: лента дня — все события без фильтра по роли. Все видят всё,
 // чек-листы и галочки доступны каждому, ответственного назначает руководитель.
 const allDayEvents = events.filter((e) => e.date === selectedDate).sort(byTime);
+
+// Подсчёт медиа (фото+видео) по каждому event_id на текущую дату.
+async function loadMediaCounts(eventIds: number[]): Promise<Map<number, number>> {
+  if (eventIds.length === 0) return new Map();
+  const conn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
+  if (!conn) return new Map();
+  const { default: pg } = await import('pg');
+  const c = new pg.Client({ connectionString: conn });
+  await c.connect();
+  try {
+    const r = await c.query(
+      `SELECT COALESCE(entity_id, event_id) AS eid, COUNT(*)::int AS n
+         FROM archive_photo
+        WHERE (entity_type='event' AND entity_id = ANY($1::bigint[]))
+           OR (entity_type IS NULL AND event_id = ANY($1::bigint[]))
+        GROUP BY 1`,
+      [eventIds],
+    );
+    const m = new Map<number, number>();
+    for (const row of r.rows) m.set(Number(row.eid), Number(row.n));
+    return m;
+  } finally { await c.end(); }
+}
+const mediaCounts = await loadMediaCounts(allDayEvents.map((e) => Number(e.id)));
 
 // Уникальные «ответственные» на сегодня — для вкладок по человеку
 const ownerMap = new Map<number, string>();
@@ -290,17 +314,7 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
           <h1 class="truncate text-[18px] font-bold tracking-[-0.02em] text-navy-950 md:text-[28px]">
             {shift.name}
           </h1>
-          {isAdminLike && (
-            <a
-              href="/portal/smena/admin"
-              title="Управление сеткой"
-              aria-label="Управление сеткой"
-              class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border bg-white text-body-muted transition hover:border-primary hover:text-primary md:h-auto md:w-auto md:gap-2 md:px-4 md:py-2"
-            >
-              <i class="bi bi-kanban text-[16px]" aria-hidden="true"></i>
-              <span class="hidden md:inline">Управление</span>
-            </a>
-          )}
+          {/* Кнопка «Управление сеткой» убрана с этой страницы — доступ через главную /portal/ */}
         </div>
 
         {allShifts.length > 1 && (
@@ -321,25 +335,7 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
           </nav>
         )}
 
-        {/* Табы видов — на мобилке только иконки, на десктопе с подписями */}
-        <nav class="mt-3 flex flex-wrap gap-2" aria-label="Виды расписания">
-          {VIEWS.map((v) => (
-            <a
-              href={viewHref(v.key)}
-              title={v.label}
-              aria-label={v.label}
-              class:list={[
-                'inline-flex h-9 w-9 items-center justify-center rounded-[10px] border font-medium transition md:h-auto md:w-auto md:gap-2 md:px-4 md:py-2 md:text-[16px]',
-                v.key === view
-                  ? 'border-primary bg-primary text-white'
-                  : 'border-border bg-white text-body-muted hover:border-primary hover:text-primary',
-              ]}
-            >
-              <i class={`bi bi-${v.icon} text-[16px] md:text-[18px]`} aria-hidden="true"></i>
-              <span class="hidden md:inline">{v.label}</span>
-            </a>
-          ))}
-        </nav>
+        {/* Табы видов убраны — единственный вид это «Все события дня». Активности и шахматка остались доступны через прямые URL. */}
 
         {/* Навигация по датам — показываем сегодня + 3 будущих, остальные раскрываем кнопкой */}
         {showDateNav && dates.length > 0 && (
@@ -424,35 +420,15 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
       </div>
 
       {/* Вкладки по ответственным (показываем когда есть 2+ разных). */}
-      {view === 'day' && owners.length >= 2 && (
-        <nav class="mb-4 -mx-1 overflow-x-auto px-1" aria-label="Ответственные">
-          <div class="flex gap-1.5">
-            <a href={ownerHref('all')}
-               class:list={[
-                 'shrink-0 rounded-[10px] border px-3 py-1.5 text-[13px] font-medium transition md:text-[14px]',
-                 activeOwner === 'all'
-                   ? 'border-primary bg-primary text-white'
-                   : 'border-border bg-white text-body-muted hover:border-primary',
-               ]}>
-              <i class="bi bi-people mr-1" aria-hidden="true"></i>
-              Все ({allDayEvents.length})
-            </a>
-            {owners.map((o) => {
-              const cnt = allDayEvents.filter((e) => e.responsible_staff_id === o.id).length;
-              return (
-                <a href={ownerHref(o.id)}
-                   class:list={[
-                     'shrink-0 rounded-[10px] border px-3 py-1.5 text-[13px] font-medium transition md:text-[14px]',
-                     activeOwner === o.id
-                       ? 'border-primary bg-primary text-white'
-                       : 'border-border bg-white text-body-muted hover:border-primary',
-                   ]}>
-                  {o.name} <span class="opacity-70">({cnt})</span>
-                </a>
-              );
-            })}
-          </div>
-        </nav>
+      {/* Owner-tabs убраны — фильтрация по ответственному теперь через клик по бейджу в карточке.
+          Активный фильтр (activeOwner) показывается через "✕ Сбросить фильтр" если он не all. */}
+      {view === 'day' && activeOwner !== 'all' && (
+        <div class="mb-3 flex items-center gap-2 rounded-[10px] border border-primary bg-primary-soft px-3 py-2 text-[13px]">
+          <span class="font-medium text-primary">Фильтр: {ownerMap.get(activeOwner as number)}</span>
+          <a href={ownerHref('all')} class="ml-auto text-primary hover:underline" title="Сбросить">
+            <i class="bi bi-x-lg" aria-hidden="true"></i> сбросить
+          </a>
+        </div>
       )}
 
       {/* ===== ROLE VIEW ===== */}
@@ -475,14 +451,17 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                     <i class="bi bi-stack" aria-hidden="true"></i>
                     Параллельные: {slot.events.length}
                   </span>
-                  <div class="flex items-center gap-1.5">
-                    {slot.events.map((e) => e.responsible_staff_id && (
-                      <span class={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-[11px] font-bold ${badgeColor(e.responsible_staff_id)}`}
-                            title={e.responsible_name ?? ''}>
-                        {initials(e.responsible_name)}
-                      </span>
-                    ))}
-                    <span class="ml-1 text-[13px] text-body-muted">{timeRange(slot.events[0])}</span>
+                  <div class="flex items-center gap-2">
+                    <span class="text-[13px] text-body-muted">{timeRange(slot.events[0])}</span>
+                    <div class={`grid gap-1.5 ${slot.events.length > 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                      {slot.events.map((e) => e.responsible_staff_id && (
+                        <a href={ownerHref(e.responsible_staff_id)}
+                           title={`Фильтр по: ${e.responsible_name ?? ''}`}
+                           class={`inline-flex h-9 w-9 items-center justify-center rounded-full border-2 text-[12px] font-bold transition hover:scale-105 ${badgeColor(e.responsible_staff_id)}`}>
+                          {initials(e.responsible_name)}
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 <nav class="parallel-slot__tabs mb-2 -mx-1 flex gap-1 overflow-x-auto px-1" aria-label="Параллельные события">
@@ -545,7 +524,7 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                             {myChecklists.flatMap((cl) =>
                               (cl.items as any[]).map((it) => {
                                 const key = `${e.id}:${cl.checklist_id}:${it.id}`;
-                                const done = doneSet.has(key);
+                                const isChecked = doneSet.has(key);
                                 return (
                                   <li class="flex items-start gap-2 rounded-[8px] border border-border bg-white px-2 py-1.5 text-[13px]">
                                     <input type="checkbox"
@@ -553,8 +532,8 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                                            data-event={e.id}
                                            data-checklist={cl.checklist_id}
                                            data-item={it.id}
-                                           checked={done} />
-                                    <span class={done ? 'line-through text-body-muted' : ''}>{it.text}</span>
+                                           checked={isChecked} />
+                                    <span class={isChecked ? 'line-through text-body-muted' : ''}>{it.text}</span>
                                   </li>
                                 );
                               })
@@ -584,11 +563,28 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                         <i class="bi bi-pencil text-[12px]" aria-hidden="true"></i>
                       </button>
                     )}
-                    {e.responsible_staff_id && (
-                      <span class={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold ${badgeColor(e.responsible_staff_id)}`}
-                            title={e.responsible_name ?? ''}>
-                        {initials(e.responsible_name)}
+                    {isAdminLike && !['routine', 'bedtime'].includes(e.event_type ?? '') && (
+                      <button type="button"
+                              data-dup-event={e.id}
+                              title="Сделать параллельное событие (другой ответственный)"
+                              aria-label="Дублировать"
+                              class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] border border-primary bg-primary-soft text-primary transition hover:bg-primary hover:text-white">
+                        <i class="bi bi-plus-lg text-[14px]" aria-hidden="true"></i>
+                      </button>
+                    )}
+                    {(mediaCounts.get(Number(e.id)) ?? 0) > 0 && (
+                      <span class="ml-auto inline-flex h-7 min-w-[28px] items-center justify-center rounded-full bg-emerald-500 px-2 text-[12px] font-bold text-white"
+                            title={`${mediaCounts.get(Number(e.id))} фото/видео`}>
+                        <i class="bi bi-camera-fill mr-1 text-[11px]" aria-hidden="true"></i>
+                        {mediaCounts.get(Number(e.id))}
                       </span>
+                    )}
+                    {e.responsible_staff_id && (
+                      <a href={ownerHref(e.responsible_staff_id)}
+                         title={`Фильтр по: ${e.responsible_name ?? ''}`}
+                         class={`${(mediaCounts.get(Number(e.id)) ?? 0) > 0 ? '' : 'ml-auto'} inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-[13px] font-bold transition hover:scale-105 ${badgeColor(e.responsible_staff_id)}`}>
+                        {initials(e.responsible_name)}
+                      </a>
                     )}
                   </h2>
                   {timeRange(e) && (
@@ -745,7 +741,7 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                         <ul class="space-y-2">
                           {cl.items.map((it) => {
                             const key = `${e.id}:${cl.checklist_id}:${it.id}`;
-                            const checked = done.has(key);
+                            const checked = doneSet.has(key);
                             return (
                               <li>
                                 <label class="flex cursor-pointer items-start gap-3 text-[16px] text-body">
@@ -1004,4 +1000,101 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
       });
     })();
   </script>
+
+  {/* Модалка дублирования события для админа: выбрать нового ответственного */}
+  {isAdminLike && responsibleOptions.length > 0 && (
+    <!-- Диалог: создание параллельного события.
+         mx-4 + max-h-[90dvh] + overflow-y-auto — чтобы влезал на маленьких экранах. -->
+    <dialog id="dup-dlg"
+            class="mx-4 w-full max-w-[420px] max-h-[90dvh] overflow-y-auto rounded-[16px] p-0 backdrop:bg-black/40"
+            style="margin-top: max(env(safe-area-inset-top,0px), 5dvh)">
+      <div class="p-5">
+        <div class="mb-4 flex items-center justify-between gap-3">
+          <h3 class="text-[18px] font-bold text-navy-950">Параллельное событие</h3>
+          <button type="button" id="dup-cancel-x" aria-label="Закрыть"
+                  class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border text-body-muted hover:border-primary hover:text-primary">
+            <i class="bi bi-x-lg text-[14px]" aria-hidden="true"></i>
+          </button>
+        </div>
+        <p class="mb-3 text-[14px] text-body-muted">
+          Создастся копия события в то же время с новым ответственным. Чек-листы сохранятся, фото — нет.
+        </p>
+        <label class="block text-[13px] font-medium text-body-muted" for="dup-resp">Новый ответственный</label>
+        <select id="dup-resp" class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[15px]">
+          <option value="">— выбрать —</option>
+          {responsibleOptions.map((s) => (
+            <option value={s.id}>{s.full_name ?? `id=${s.id}`}{s.role ? ` · ${s.role}` : ''}</option>
+          ))}
+        </select>
+        <input type="hidden" id="dup-source-id" />
+        <div id="dup-error" class="mt-2 hidden rounded-[8px] border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-700"></div>
+        <div class="mt-4 flex justify-end gap-2">
+          <button type="button" id="dup-cancel" class="rounded-[8px] border border-border bg-white px-4 py-2 text-[14px]">Отмена</button>
+          <button type="button" id="dup-save"
+                  class="inline-flex items-center gap-2 rounded-[8px] border border-primary bg-primary px-4 py-2 text-[14px] font-semibold text-white hover:opacity-90 disabled:opacity-50">
+            <i class="bi bi-plus-lg text-[13px]" aria-hidden="true"></i>Создать
+          </button>
+        </div>
+      </div>
+    </dialog>
+
+    <script is:inline>
+      (() => {
+        const dlg = document.getElementById('dup-dlg');
+        const sourceInp = document.getElementById('dup-source-id');
+        const respSel = document.getElementById('dup-resp');
+        const errBox = document.getElementById('dup-error');
+        const saveBtn = document.getElementById('dup-save');
+        if (!dlg) return;
+
+        function showErr(msg) {
+          if (!errBox) return;
+          errBox.textContent = msg;
+          errBox.classList.remove('hidden');
+        }
+        function hideErr() { errBox && errBox.classList.add('hidden'); }
+        function closeDlg() { hideErr(); dlg.close(); }
+
+        document.querySelectorAll('[data-dup-event]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            sourceInp.value = btn.dataset.dupEvent || '';
+            respSel.value = '';
+            hideErr();
+            dlg.showModal();
+          });
+        });
+
+        document.getElementById('dup-cancel')?.addEventListener('click', closeDlg);
+        document.getElementById('dup-cancel-x')?.addEventListener('click', closeDlg);
+        // Закрытие по клику на backdrop (::backdrop не перехватывает click, но dialog сам получает click)
+        dlg.addEventListener('click', (ev) => { if (ev.target === dlg) closeDlg(); });
+
+        saveBtn?.addEventListener('click', async () => {
+          const srcId = sourceInp.value;
+          const respId = respSel.value;
+          if (!srcId) return;
+          if (!respId) { showErr('Выбери ответственного'); return; }
+          hideErr();
+          saveBtn.disabled = true;
+          try {
+            const r = await fetch('/api/portal/shift/admin', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ action: 'duplicateEvent', id: Number(srcId), responsible_staff_id: Number(respId) }),
+            });
+            const j = await r.json().catch(() => ({}));
+            if (!r.ok || !j.ok) throw new Error(j.error || ('HTTP ' + r.status));
+            if (!j.id) throw new Error('Событие не создалось — попробуй ещё раз');
+            dlg.close();
+            location.reload();
+          } catch (e) {
+            showErr('Ошибка: ' + (e?.message || String(e)));
+          } finally {
+            saveBtn.disabled = false;
+          }
+        });
+      })();
+    </script>
+  )}
 </PortalLayout>

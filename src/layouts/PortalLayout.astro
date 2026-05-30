@@ -64,26 +64,37 @@ const ROLE_LABEL_MAP: Record<string, string> = {
         class="border-b border-border bg-white"
         style="padding-top: var(--tg-safe-top, 0px); padding-right: var(--tg-safe-right, 0px);"
       >
-        <div class="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-3 md:px-4 md:py-4">
-          {showBack && (
+        <div class="mx-auto max-w-6xl px-3 py-2 md:px-4 md:py-3">
+          {/* Логотип AidaCamp — отдельный верхний ряд, чтобы попасть в свободную зону
+              между «Закрыть» и «⌄⋯» от Telegram WebApp */}
+          <div class="flex justify-center md:hidden">
             <a href="/portal/"
-               data-portal-back
-               onclick="if (document.referrer && new URL(document.referrer).origin === location.origin && document.referrer !== location.href) { event.preventDefault(); history.back(); }"
-               class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border bg-white text-body-muted transition hover:border-primary hover:text-primary md:h-auto md:w-auto md:gap-1 md:px-3 md:py-1.5"
-               title="Назад"
-               aria-label="Назад">
-              <i class="bi bi-arrow-left text-[14px]" aria-hidden="true"></i>
-              <span class="hidden md:inline">Назад</span>
+               class="text-[18px] font-extrabold tracking-[-0.02em] text-navy-950"
+               aria-label="AidaCamp">
+              <span class="text-primary">Aida</span><span>Camp</span>
             </a>
-          )}
-          <a
-            href="/portal/"
-            class="shrink-0 text-[18px] font-extrabold tracking-[-0.02em] text-navy-950 md:text-[20px]"
-            aria-label="AidaCamp"
-          >
-            <span class="text-primary">Aida</span><span>Camp</span>
-          </a>
-          <div class="flex items-center gap-1.5">
+          </div>
+          {/* Иконки + view-as + Назад — отдельный нижний ряд */}
+          <div class="mt-2 flex items-center justify-between gap-2 md:mt-0">
+            <div class="flex items-center gap-2">
+              {showBack && (
+                <a href="/portal/"
+                   data-portal-back
+                   onclick="if (document.referrer && new URL(document.referrer).origin === location.origin && document.referrer !== location.href) { event.preventDefault(); history.back(); }"
+                   class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border bg-white text-body-muted transition hover:border-primary hover:text-primary md:h-auto md:w-auto md:gap-1 md:px-3 md:py-1.5"
+                   title="Назад"
+                   aria-label="Назад">
+                  <i class="bi bi-arrow-left text-[14px]" aria-hidden="true"></i>
+                  <span class="hidden md:inline">Назад</span>
+                </a>
+              )}
+              <a href="/portal/"
+                 class="hidden shrink-0 text-[20px] font-extrabold tracking-[-0.02em] text-navy-950 md:inline"
+                 aria-label="AidaCamp">
+                <span class="text-primary">Aida</span><span>Camp</span>
+              </a>
+            </div>
+            <div class="flex items-center gap-1.5">
             {canSwitchRoles && (
               <form method="POST" action="/api/portal/view-as" class="flex items-center gap-2">
                 <label for="view-as-select" class="text-[14px] text-body-muted" title="Смотреть как">
@@ -117,23 +128,28 @@ const ROLE_LABEL_MAP: Record<string, string> = {
             <UploadQueueIndicator />
             <ToastInit />
             <MediaLightbox />
-            <a href="/api/portal/logout?next=/portal/login"
-               title="Обновить сессию"
-               class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-amber-300 bg-amber-50 text-amber-800 transition hover:bg-amber-100 md:h-auto md:w-auto md:gap-1 md:px-3 md:py-2"
-               aria-label="Обновить сессию">
+            {/* Кнопка обновления страницы (reload) */}
+            <button
+              type="button"
+              onclick="location.reload()"
+              title="Обновить страницу"
+              aria-label="Обновить страницу"
+              class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border bg-white text-body-muted transition hover:border-primary hover:text-primary"
+            >
               <i class="bi bi-arrow-clockwise text-[16px]" aria-hidden="true"></i>
-              <span class="hidden md:inline">Обновить</span>
-            </a>
+            </button>
+            {/* Сброс сессии — менее заметная кнопка */}
             <form method="POST" action="/api/portal/logout" class="shrink-0">
               <button
                 type="submit"
-                title="Выйти"
-                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border bg-white text-body-muted transition hover:border-primary hover:text-primary md:h-auto md:w-auto md:gap-2 md:px-3 md:py-2"
+                title="Сбросить сессию и войти заново"
+                aria-label="Выйти"
+                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border bg-white text-body-muted/50 transition hover:border-red-300 hover:text-red-500"
               >
-                <i class="bi bi-box-arrow-right text-[16px]" aria-hidden="true"></i>
-                <span class="hidden md:inline">Выйти</span>
+                <i class="bi bi-door-open text-[15px]" aria-hidden="true"></i>
               </button>
             </form>
+          </div>
           </div>
         </div>
         {viewAs && (
@@ -306,14 +322,14 @@ const ROLE_LABEL_MAP: Record<string, string> = {
               var csa = tg.contentSafeAreaInset || {};
               var top = Math.max(sa.top || 0, csa.top || 0);
               var right = Math.max(sa.right || 0, csa.right || 0);
-              // На fullscreen-режиме SDK не всегда заполняет contentSafeAreaInset.top;
-              // дополнительный страховочный минимум, чтобы пилюли никогда не накладывались.
+              // Fullscreen: пилюли «Назад»/«Закрыть»/«▼⋯» занимают ~100px сверху и ~56px справа
               if (tg.isFullscreen) {
                 top = Math.max(top, 100);
-                right = Math.max(right, 56);
+                right = Math.max(right, 60);
               } else if (window.innerWidth < 640) {
-                // На мобильном даже не-fullscreen WebApp кладёт «Закрыть»/«⋯» поверх контента
-                top = Math.max(top, 56);
+                // Обычный mini-app на мобилке: «Назад» и «⋯» в шапке TG ≈ 52–60px
+                top = Math.max(top, 60);
+                right = Math.max(right, 48);
               }
               var root = document.documentElement;
               root.style.setProperty('--tg-safe-top', top + 'px');
@@ -321,6 +337,11 @@ const ROLE_LABEL_MAP: Record<string, string> = {
             } catch (e) {}
           }
           applySafeArea();
+          // Пересчитываем при изменении safe area (смена ориентации, разворот)
+          try {
+            tg.onEvent && tg.onEvent('safeAreaChanged', applySafeArea);
+            tg.onEvent && tg.onEvent('contentSafeAreaChanged', applySafeArea);
+          } catch(e) {}
           // Прячем нашу кнопку «Назад» внутри TG WebApp — используем нативную BackButton,
           // иначе она перекрывается пилюлей «Закрыть» от Telegram.
           try {
