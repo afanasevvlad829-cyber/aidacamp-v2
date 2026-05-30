@@ -136,15 +136,25 @@
     document.getElementById('nj-modal-link').href           = item.url;
     var bd = document.getElementById('nj-modal-backdrop');
     bd.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
+    _lockScroll();
 
     // Метрика-цель
     if (typeof ym !== 'undefined') { ym(96499295, 'reachGoal', 'news_jazz_click'); }
   }
 
-  function closeModal() {
+    // iOS Safari: overflow:hidden alone doesn't prevent scroll — use position:fixed
+  let _savedScrollY = 0;
+  function _lockScroll() {
+    _savedScrollY = window.scrollY;
+    Object.assign(document.body.style, { position: 'fixed', top: `-${_savedScrollY}px`, width: '100%', overflow: 'hidden' });
+  }
+  function _unlockScroll() {
+    Object.assign(document.body.style, { position: '', top: '', width: '', overflow: '' });
+    window.scrollTo(0, _savedScrollY);
+  }
+function closeModal() {
     document.getElementById('nj-modal-backdrop').style.display = 'none';
-    document.body.style.overflow = '';
+    _unlockScroll();
   }
 
   document.getElementById('nj-modal-close').addEventListener('click', closeModal);
