@@ -1,10 +1,9 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { verifySessionPayload } from '../../../lib/portalSession';
+import { isStaff } from '../../../lib/portalPerms';
 import { listAssignments, upsertKid, deleteKid, autoAssign } from '../../../lib/portalRasselenie';
 import { ROOMS } from '../../../lib/portalRooms';
-
-const STAFF_ROLES = new Set(['admin', 'rukovoditel', 'teacher', 'vozhaty']);
 
 function json(body: object, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
@@ -31,7 +30,7 @@ export const GET: APIRoute = async ({ url, cookies }) => {
 export const POST: APIRoute = async ({ request, cookies }) => {
   const p = verifySessionPayload(cookies.get('portal_session')?.value, process.env.PORTAL_SESSION_SECRET ?? '');
   if (!p?.role) return json({ ok: false, error: 'unauthorized' }, 401);
-  if (!STAFF_ROLES.has(p.role)) return json({ ok: false, error: 'forbidden' }, 403);
+  if (!isStaff(p.role)) return json({ ok: false, error: 'forbidden' }, 403);
   const b = await readBody(request);
   const shift_id = Number(b.shift_id);
   if (!Number.isFinite(shift_id)) return json({ ok: false, error: 'shift_id required' }, 400);
@@ -62,7 +61,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
 export const DELETE: APIRoute = async ({ request, cookies }) => {
   const p = verifySessionPayload(cookies.get('portal_session')?.value, process.env.PORTAL_SESSION_SECRET ?? '');
-  if (!p?.role || !STAFF_ROLES.has(p.role)) return json({ ok: false, error: 'forbidden' }, 403);
+  if (!p?.role || !isStaff(p.role)) return json({ ok: false, error: 'forbidden' }, 403);
   const b = await readBody(request);
   const shift_id = Number(b.shift_id);
   if (!Number.isFinite(shift_id)) return json({ ok: false, error: 'shift_id required' }, 400);

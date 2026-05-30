@@ -1,11 +1,10 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { verifySessionPayload } from '../../../lib/portalSession';
+import { isStaff } from '../../../lib/portalPerms';
 import {
   ensureInventory, toggleCheck, setStatus, attachWalkthrough, getInventory,
 } from '../../../lib/portalRoomInventory';
-
-const STAFF_ROLES = new Set(['admin', 'rukovoditel', 'teacher', 'vozhaty']);
 
 function json(body: object, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -47,7 +46,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     process.env.PORTAL_SESSION_SECRET ?? '',
   );
   if (!payload?.role) return json({ ok: false, error: 'unauthorized' }, 401);
-  if (!STAFF_ROLES.has(payload.role)) return json({ ok: false, error: 'forbidden' }, 403);
+  if (!isStaff(payload.role)) return json({ ok: false, error: 'forbidden' }, 403);
 
   const body = await readBody(request);
   const shiftId = Number(body.shift_id);

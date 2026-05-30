@@ -4,14 +4,13 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { verifySessionPayload } from '../../../lib/portalSession';
+import { isStaff } from '../../../lib/portalPerms';
 import {
   listIssuances, createIssuance, deleteIssuance, countIssuancesByPrize,
   listCustomPrizes, createCustomPrize, archiveCustomPrize,
 } from '../../../lib/portalPrizeOps';
 import { decrementPrizeRemaining } from '../../../lib/portalEconomy';
 import { PRIZES } from '../../../lib/portalPrizes';
-
-const ALLOWED = new Set(['admin', 'rukovoditel', 'vozhaty']);
 const UPLOADS_ROOT = process.env.PORTAL_UPLOADS_ROOT || '/var/www/aidacamp-dev/uploads/portal';
 const URL_PREFIX = '/portal/uploads';
 const MAX_FILE_BYTES = 200 * 1024 * 1024; // 200 МБ — фото/видео
@@ -22,7 +21,7 @@ function j(x: unknown, init?: ResponseInit) {
 function auth(cookies: Parameters<APIRoute>[0]['cookies']) {
   const p = verifySessionPayload(cookies.get('portal_session')?.value, process.env.PORTAL_SESSION_SECRET ?? '');
   if (!p) return null;
-  if (!ALLOWED.has(p.role)) return null;
+  if (!isStaff(p.role)) return null;
   return p as any;
 }
 
