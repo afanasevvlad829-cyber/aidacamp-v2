@@ -12,6 +12,7 @@ import CustomPrizeDialog from '../../components/portal/economy/CustomPrizeDialog
 import ActivitiesTable from '../../components/portal/economy/ActivitiesTable.astro';
 import ActivityDialog from '../../components/portal/economy/ActivityDialog.astro';
 import SummaryTab from '../../components/portal/economy/SummaryTab.astro';
+import '../../styles/portal-modal.css';
 
 const role = Astro.locals.portalRole!;
 if (!['admin', 'rukovoditel'].includes(role)) {
@@ -117,73 +118,26 @@ const CAT_LABELS: Record<string, string> = {
   </section>
 
   <style is:global>
-    /* Печать — показываем только текущую активную вкладку (Призы или Активности) */
+    /* Печать — только активная вкладка */
     @media print {
-      header, nav, [data-tab], .tab-btn,
-      [id^="btn-"], [data-give], [data-toggle-hidden], [data-reset-price],
-      [data-archive-custom], [data-edit-activity], [data-delete-activity],
+      header, nav, [data-tab], .tab-btn, [id^="btn-"], [data-give], [data-toggle-hidden],
+      [data-reset-price], [data-archive-custom], [data-edit-activity], [data-delete-activity],
       [data-reset-custom-price], [data-save-flag], [data-act-save-flag],
       dialog, .card-shadow { box-shadow: none !important; }
       .tab-btn, dialog { display: none !important; }
       [data-tab-pane][hidden] { display: none !important; }
-      body.printing-prizes [data-tab-pane="activities"],
-      body.printing-prizes [data-tab-pane="summary"],
-      body.printing-activities [data-tab-pane="prizes"],
-      body.printing-activities [data-tab-pane="summary"] { display: none !important; }
-      body.printing-prizes #btn-add-custom,
-      body.printing-prizes #btn-print-prizes,
-      body.printing-prizes [data-give],
-      body.printing-prizes [data-toggle-hidden],
-      body.printing-prizes [data-bongere-input],
-      body.printing-prizes [data-archive-custom],
-      body.printing-activities [data-custom-price-input],
-      body.printing-activities [data-reset-custom-price],
-      body.printing-activities [data-edit-activity],
-      body.printing-activities [data-delete-activity],
-      body.printing-activities #btn-add-activity,
-      body.printing-activities #btn-print-activities { display: none !important; }
-      /* В печатной версии input-ы заменяем на их значение */
-      input[data-bongere-input], input[data-custom-price-input] {
-        border: none !important; padding: 0 !important; background: transparent !important;
-      }
+      body.printing-prizes [data-tab-pane="activities"], body.printing-prizes [data-tab-pane="summary"],
+      body.printing-activities [data-tab-pane="prizes"], body.printing-activities [data-tab-pane="summary"] { display: none !important; }
+      body.printing-prizes #btn-add-custom, body.printing-prizes #btn-print-prizes,
+      body.printing-prizes [data-give], body.printing-prizes [data-toggle-hidden],
+      body.printing-prizes [data-bongere-input], body.printing-prizes [data-archive-custom],
+      body.printing-activities [data-custom-price-input], body.printing-activities [data-reset-custom-price],
+      body.printing-activities [data-edit-activity], body.printing-activities [data-delete-activity],
+      body.printing-activities #btn-add-activity, body.printing-activities #btn-print-activities { display: none !important; }
+      input[data-bongere-input], input[data-custom-price-input] { border: none !important; padding: 0 !important; background: transparent !important; }
       table { font-size: 12px; }
       .bg-page, .bg-amber-50, .bg-amber-50\/60 { background: transparent !important; }
-      /* Скрываем шапку настроек на печати — оставляем только таблицу */
       .card-shadow { border: 1px solid #ccc !important; }
-    }
-    /* Универсальное центрирование модальных <dialog> и адаптив под мобилу. */
-    dialog.aida-modal-center {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      margin: 0;
-      max-width: min(560px, 95vw);
-      max-height: 92vh;
-      overflow: hidden; /* скролл будет внутри form */
-    }
-    dialog.aida-modal-center .aida-modal-form {
-      width: 100%;
-      max-height: 92vh;
-      overflow-y: auto;
-      padding: 20px;
-      -webkit-overflow-scrolling: touch;
-    }
-    @media (max-width: 480px) {
-      dialog.aida-modal-center {
-        max-width: 100vw;
-        max-height: 100vh;
-        width: 100vw;
-        height: auto;
-        top: auto;
-        bottom: 0;
-        left: 0;
-        transform: none;
-        border-radius: 16px 16px 0 0;
-      }
-      dialog.aida-modal-center .aida-modal-form {
-        max-height: 88vh;
-      }
     }
   </style>
   <script src="../../scripts/portal/prizes.ts"></script>
