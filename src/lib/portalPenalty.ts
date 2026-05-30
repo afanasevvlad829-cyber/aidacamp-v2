@@ -201,26 +201,31 @@ export interface ScanResult {
 }
 
 /**
- * Сканер «событие закончилось + 30 мин, но осталось pending».
- * Срабатывает на:
- *   - незакрытые event_content_task (status='pending')
- *   - незакрытые элементы event_checklist (нет соответствующей записи в checklist_done)
- * Штрафует ответственного (shift_event.responsible_staff_id).
- * Использует dedup_key = `<reason>:event=<id>` — повторно не создаётся.
+ * Сканер «событие закончилось + 30 мин, нет фото/не закрыт чеклист».
+ * Начисляет 500 ₽ за каждые 30 минут просрочки — отдельно за фото и за чеклист.
+ * dedup_key = `<reason>:event=<id>:slot=<N>` — один штраф на слот, не дублируется.
+ * Слот 1 = первые 30 мин просрочки, слот 2 = следующие 30 мин, и т.д.
  */
 export async function scanOverdueEvents(graceMinutes = 30): Promise<ScanResult> {
   const out: ScanResult = { scanned: 0, created: 0, reasons: {} };
   await withClient(async (c) => {
     const r = await c.query(
       `WITH due_events AS (
-         SELECT e.id, e.shift_id, e.responsible_staff_id, e.title, e.date
+         SELECT e.id, e.shift_id, e.responsible_staff_id, e.title, e.date,
+           GREATEST(0,
+             EXTRACT(EPOCH FROM (
+               now() - (e.date::timestamp + e.end_time + ($1::int || ' minutes')::interval)
+             )) / 60
+           )::int AS overdue_minutes
            FROM shift_event e
           WHERE e.responsible_staff_id IS NOT NULL
             AND e.end_time IS NOT NULL
             AND (e.date::timestamp + e.end_time + ($1::int || ' minutes')::interval) < now()
-            AND e.date >= (CURRENT_DATE - INTERVAL '14 days')   -- не сканируем глубокое прошлое
+            AND e.date >= (CURRENT_DATE - INTERVAL '14 days')
        )
        SELECT de.*,
+              -- сколько 30-минутных слотов уже накопилось (минимум 1)
+              GREATEST(1, FLOOR(de.overdue_minutes / 30))::int AS max_slot,
               EXISTS(
                 SELECT 1 FROM event_content_task t
                  WHERE t.event_id = de.id AND t.status = 'pending'
@@ -239,24 +244,30 @@ export async function scanOverdueEvents(graceMinutes = 30): Promise<ScanResult> 
     );
     out.scanned = r.rowCount ?? 0;
     for (const row of r.rows) {
-      // missing_photo приоритетнее checklist_overdue: если оба горят, ставим один штраф
-      const reason = row.has_pending_task ? 'missing_photo'
-                  : row.has_open_checklist ? 'checklist_overdue'
-                  : null;
-      if (!reason) continue;
-      const dedup = `${reason}:event=${row.id}`;
-      const created = await createPenalty({
-        staff_id: row.responsible_staff_id,
-        shift_id: row.shift_id,
-        event_id: row.id,
-        reason_code: reason,
-        source: 'auto',
-        status: 'proposed',
-        dedup_key: dedup,
-      });
-      if (created != null) {
-        out.created++;
-        out.reasons[reason] = (out.reasons[reason] ?? 0) + 1;
+      const maxSlot = Number(row.max_slot);
+      // Штрафуем независимо за фото и за чеклист — каждый по 500 ₽ за слот
+      const reasons: string[] = [];
+      if (row.has_pending_task)   reasons.push('missing_photo');
+      if (row.has_open_checklist) reasons.push('checklist_overdue');
+      for (const reason of reasons) {
+        for (let slot = 1; slot <= maxSlot; slot++) {
+          const dedup = `${reason}:event=${row.id}:slot=${slot}`;
+          const created = await createPenalty({
+            staff_id: row.responsible_staff_id,
+            shift_id: row.shift_id,
+            event_id: row.id,
+            reason_code: reason,
+            reason_text: `Просрочка ${slot * 30} мин`,
+            amount_rub: 500,
+            source: 'auto',
+            status: 'proposed',
+            dedup_key: dedup,
+          });
+          if (created != null) {
+            out.created++;
+            out.reasons[reason] = (out.reasons[reason] ?? 0) + 1;
+          }
+        }
       }
     }
   });

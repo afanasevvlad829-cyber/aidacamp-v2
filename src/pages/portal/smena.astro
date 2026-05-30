@@ -460,9 +460,9 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                                 data-target={'panel-' + e.id}
                                 title={`Открыть: ${e.responsible_name ?? e.title}`}
                                 class:list={[
-                                  'parallel-slot__badge inline-flex h-9 w-9 items-center justify-center rounded-full border-2 text-[12px] font-bold transition hover:scale-105',
+                                  'parallel-slot__badge inline-flex h-10 w-10 items-center justify-center rounded-full border-2 text-[13px] font-bold transition hover:scale-110',
                                   e.responsible_staff_id ? badgeColor(e.responsible_staff_id) : 'border-border bg-white text-body-muted',
-                                  idx === 0 ? 'ring-2 ring-primary ring-offset-2' : 'opacity-60',
+                                  idx === 0 ? 'ring-4 ring-primary ring-offset-2 scale-110 shadow-lg' : 'opacity-50 grayscale',
                                 ]}>
                           {e.responsible_name ? initials(e.responsible_name) : '?'}
                         </button>
@@ -531,6 +531,49 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                               })
                             )}
                           </ul>
+                        )}
+                        {canEditEvent(role, e.roles) && !['routine', 'bedtime'].includes(e.event_type ?? '') && (
+                          <div class="mt-3 portal-edit" data-event-id={e.id}>
+                            <button type="button" class="portal-edit__toggle hidden">Править</button>
+                            <form class="portal-edit__form mt-3 hidden space-y-3 rounded-[12px] border border-border bg-white p-3">
+                              <div>
+                                <label class="block text-[12px] font-medium text-body-muted">Название</label>
+                                <input type="text" name="title" value={e.title} class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[14px] outline-none focus:border-primary" />
+                              </div>
+                              <div class="flex gap-2">
+                                <div class="flex-1">
+                                  <label class="block text-[12px] font-medium text-body-muted">Начало</label>
+                                  <input type="time" name="start_time" value={e.start_time?.slice(0, 5) ?? ''} class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[14px] outline-none focus:border-primary" />
+                                </div>
+                                <div class="flex-1">
+                                  <label class="block text-[12px] font-medium text-body-muted">Конец</label>
+                                  <input type="time" name="end_time" value={e.end_time?.slice(0, 5) ?? ''} class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[14px] outline-none focus:border-primary" />
+                                </div>
+                              </div>
+                              {isManager && (
+                                <div>
+                                  <label class="block text-[12px] font-medium text-body-muted">Ответственный</label>
+                                  <select name="responsible_staff_id" class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[14px] outline-none focus:border-primary">
+                                    <option value="">— не назначен —</option>
+                                    {responsibleOptions.map((s) => (
+                                      <option value={s.id} selected={e.responsible_staff_id === s.id}>
+                                        {s.full_name ?? `id=${s.id}`}{s.role ? ` · ${s.role}` : ''}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              )}
+                              <div>
+                                <label class="block text-[12px] font-medium text-body-muted">Заметки</label>
+                                <textarea name="notes" rows="3" data-voice class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[14px] outline-none focus:border-primary">{e.notes ?? ''}</textarea>
+                              </div>
+                              <div class="flex gap-2">
+                                <button type="submit" class="rounded-[10px] bg-primary px-3 py-1.5 text-[13px] font-semibold text-white transition hover:opacity-90">Сохранить</button>
+                                <button type="button" class="portal-edit__cancel rounded-[10px] border border-border bg-white px-3 py-1.5 text-[13px] font-medium text-body-muted">Отмена</button>
+                                <span class="portal-edit__status ml-auto self-center text-[12px] text-body-muted hidden"></span>
+                              </div>
+                            </form>
+                          </div>
                         )}
                       </article>
                     </div>
@@ -893,13 +936,16 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
         document.querySelectorAll('[data-slot-panel="' + slotId + '"]').forEach((p) => {
           p.classList.toggle('hidden', p.id !== panelId);
         });
-        // Бейджи
+        // Бейджи: активный — крупный с обводкой, остальные — приглушены
         document.querySelectorAll('[data-slot-tab="' + slotId + '"]').forEach((b) => {
           const on = b.getAttribute('data-target') === panelId;
-          b.classList.toggle('ring-2', on);
+          b.classList.toggle('ring-4', on);
           b.classList.toggle('ring-primary', on);
           b.classList.toggle('ring-offset-2', on);
-          b.classList.toggle('opacity-60', !on);
+          b.classList.toggle('scale-110', on);
+          b.classList.toggle('shadow-lg', on);
+          b.classList.toggle('opacity-50', !on);
+          b.classList.toggle('grayscale', !on);
         });
       }
       document.querySelectorAll('button[data-slot-tab]').forEach((btn) => {
