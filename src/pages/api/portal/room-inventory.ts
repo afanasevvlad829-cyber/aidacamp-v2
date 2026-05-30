@@ -3,7 +3,7 @@ import type { APIRoute } from 'astro';
 import { verifySessionPayload } from '../../../lib/portalSession';
 import { isStaff } from '../../../lib/portalPerms';
 import {
-  ensureInventory, toggleCheck, setStatus, attachWalkthrough, getInventory,
+  ensureInventory, toggleCheck, setStatus, attachWalkthrough, getInventory, setNotes,
 } from '../../../lib/portalRoomInventory';
 
 function json(body: object, status = 200): Response {
@@ -62,6 +62,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const done = Boolean(body.done);
     const comment = body.comment != null && String(body.comment) !== '' ? String(body.comment) : null;
     await toggleCheck(invId, itemId, done, comment);
+  }
+
+  // Общий комментарий по комнате (одно поле на комнату)
+  if (body.notes != null) {
+    const notes = String(body.notes).trim() !== '' ? String(body.notes) : null;
+    await setNotes(invId, notes);
   }
 
   // Статус комнаты
