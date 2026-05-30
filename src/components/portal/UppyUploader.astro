@@ -1,0 +1,158 @@
+---
+/**
+ * Uppy-based loader. Заменяет PortalUploader.
+ *
+ * UX: одна кнопка → нативный диалог выбора (label > input) → Uppy качает по XHR.
+ * Совместимость: после успешной загрузки диспатчит portal-media:uploaded и
+ * portal-media:refresh с тем же payload что и старый portalUploadQueue,
+ * чтобы /portal/rooms и др. могли продолжать слушать без изменений.
+ */
+interface Props {
+  eventId: number | string;
+  contentTaskId?: string | number | null;
+  id?: string | null;
+  accept?: string;
+  label?: string;
+  icon?: string;
+  buttonClass?: string;
+  marginTop?: string;
+}
+const {
+  eventId,
+  contentTaskId = '',
+  id = null,
+  accept = 'image/*,video/*',
+  label = 'Снять и загрузить',
+  icon = 'bi-camera-fill',
+  buttonClass = 'inline-flex items-center gap-2 rounded-[10px] bg-primary px-4 py-2 text-[15px] font-medium text-white transition hover:opacity-90',
+  marginTop = 'mt-3',
+} = Astro.props;
+---
+<div class={`${marginTop} uppy-uploader portal-uploader`}
+     id={id ?? undefined}
+     data-event-id={String(eventId)}
+     data-content-task-id={contentTaskId == null ? '' : String(contentTaskId)}>
+  <label class={`uppy-uploader__btn cursor-pointer ${buttonClass}`}>
+    <i class={`bi ${icon}`} aria-hidden="true"></i>
+    {label}
+    <input type="file"
+           accept={accept}
+           class="uppy-uploader__input sr-only" />
+  </label>
+  <p class="uppy-uploader__status mt-2 text-[14px] text-body-muted hidden" aria-live="polite"></p>
+</div>
+
+<script>
+  import Uppy from '@uppy/core';
+  import XHRUpload from '@uppy/xhr-upload';
+  import GoldenRetriever from '@uppy/golden-retriever';
+  import '@uppy/core/css/style.min.css';
+
+  const initialised = new WeakSet<HTMLElement>();
+
+  function showStatus(el: HTMLElement | null, text: string, isError = false) {
+    if (!el) return;
+    el.textContent = text;
+    el.classList.remove('hidden');
+    el.classList.toggle('text-red-600', isError);
+    el.classList.toggle('text-body-muted', !isError);
+  }
+
+  function attachOne(root: HTMLElement) {
+    if (initialised.has(root)) return;
+    initialised.add(root);
+    const input = root.querySelector<HTMLInputElement>('.uppy-uploader__input');
+    const status = root.querySelector<HTMLParagraphElement>('.uppy-uploader__status');
+    if (!input) return;
+
+    const eventId = root.dataset.eventId || '';
+    const ctId = root.dataset.contentTaskId || '';
+    const uploaderId = root.id || '';
+    const toast = (window as any).toast;
+
+    const uppy = new Uppy({
+      id: 'uppy-' + (uploaderId || Math.random().toString(36).slice(2)),
+      autoProceed: true,
+      restrictions: {
+        maxFileSize: 500 * 1024 * 1024,
+        maxNumberOfFiles: 1,
+      },
+    });
+    uppy.use(XHRUpload, {
+      endpoint: '/api/portal/photo',
+      method: 'POST',
+      formData: true,
+      fieldName: 'file',
+      withCredentials: true,
+      timeout: 0,
+    });
+    // Подгружаем event_id/content_task_id в каждую отправку
+    uppy.setMeta({ event_id: eventId, content_task_id: ctId });
+
+    // Восстанавливать незавершённые после рефреша
+    try { uppy.use(GoldenRetriever, { serviceWorker: false }); } catch {}
+
+    input.addEventListener('change', () => {
+      const file = input.files && input.files[0];
+      if (!file) {
+        if (toast) toast.error('Файл не выбран');
+        return;
+      }
+      const sizeMb = (file.size / 1024 / 1024).toFixed(1);
+      if (toast) toast.info(`Выбран: ${file.name || 'без имени'} · ${sizeMb} MB`);
+      showStatus(status, `✓ В очереди (${sizeMb} MB), отправляю…`);
+      try {
+        uppy.addFile({
+          name: file.name || 'file',
+          type: file.type,
+          data: file,
+        });
+      } catch (e: any) {
+        showStatus(status, 'Ошибка: ' + (e?.message || e), true);
+        if (toast) toast.error('Ошибка очереди: ' + (e?.message || e));
+      }
+      input.value = '';
+    });
+
+    uppy.on('upload-success', (_file, response) => {
+      const body = (response as any)?.body ?? {};
+      const photoId = body?.id ?? null;
+      const fileUrl = body?.file_url ?? null;
+      showStatus(status, '✓ Загружено');
+      if (toast) toast.success(`Загружено${photoId ? ' · id=' + photoId : ''}`);
+      document.dispatchEvent(new CustomEvent('portal-media:refresh', { detail: { eventId } }));
+      document.dispatchEvent(new CustomEvent('portal-media:uploaded', {
+        detail: { eventId, photoId, fileUrl, uploaderId },
+      }));
+      // Через 4 сек скрыть статус
+      setTimeout(() => {
+        if (status && status.textContent === '✓ Загружено') {
+          status.textContent = '';
+          status.classList.add('hidden');
+        }
+      }, 4000);
+    });
+
+    uppy.on('upload-error', (_file, error, response) => {
+      const code = (response as any)?.status ?? '';
+      const msg = (error as any)?.message || 'unknown error';
+      showStatus(status, `Ошибка загрузки${code ? ' (HTTP ' + code + ')' : ''}: ${msg}`, true);
+      if (toast) toast.error('Не загрузилось: ' + msg);
+    });
+
+    uppy.on('restriction-failed', (_file, error) => {
+      const msg = (error as any)?.message || 'restriction';
+      showStatus(status, 'Отказ: ' + msg, true);
+      if (toast) toast.error(msg);
+    });
+  }
+
+  function bindAll() {
+    document.querySelectorAll<HTMLElement>('.uppy-uploader').forEach(attachOne);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindAll);
+  } else {
+    bindAll();
+  }
+</script>

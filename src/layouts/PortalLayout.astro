@@ -2,6 +2,8 @@
 import '../styles/global.css';
 import '../styles/icons.css';
 import UploadQueueIndicator from '../components/UploadQueueIndicator.astro';
+import ToastInit from '../components/portal/ToastInit.astro';
+import MediaLightbox from '../components/portal/MediaLightbox.astro';
 
 interface Props {
   title: string;
@@ -115,6 +117,8 @@ const ROLE_LABEL_MAP: Record<string, string> = {
               </form>
             )}
             <UploadQueueIndicator />
+            <ToastInit />
+            <MediaLightbox />
             <form method="POST" action="/api/portal/logout">
               <button
                 type="submit"
@@ -180,21 +184,26 @@ const ROLE_LABEL_MAP: Record<string, string> = {
               const author = escapeHtml(p.author_name || '');
               const when = fmtTime(p.uploaded_at);
               const isVideo = p.file_type === 'video';
-              const icon = isVideo
-                ? '<i class="bi bi-camera-video text-[13px] text-body-muted" aria-hidden="true"></i>'
-                : '<i class="bi bi-image text-[13px] text-body-muted" aria-hidden="true"></i>';
-              const open = url
-                ? '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener" class="text-primary hover:underline">Открыть</a>'
-                : '<span class="text-body-muted">нет ссылки</span>';
+              // Thumbnail: для фото — клик открывает PhotoSwipe-лайтбокс,
+              // для видео — нативное «Открыть» в новом табе (PhotoSwipe видео не показывает inline).
+              const thumb = url && !isVideo
+                ? '<a href="' + escapeHtml(url) + '" class="pswp-thumb shrink-0" data-pswp-width="1600" data-pswp-height="1200" target="_blank" rel="noopener">' +
+                    '<img src="' + escapeHtml(url) + '" alt="" loading="lazy" class="h-10 w-10 rounded-[6px] border border-border object-cover" />' +
+                  '</a>'
+                : (url && isVideo
+                    ? '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[6px] border border-border bg-page text-body-muted"><i class="bi bi-camera-video" aria-hidden="true"></i></a>'
+                    : '<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[6px] border border-border bg-page text-body-muted"><i class="bi bi-image" aria-hidden="true"></i></span>');
               const del = canDelete
-                ? ' &nbsp; <button type="button" class="portal-media__del text-[13px] text-red-600 hover:underline" data-photo-id="' + p.id + '"><i class="bi bi-x-lg text-[11px]" aria-hidden="true"></i> удалить</button>'
+                ? '<button type="button" class="portal-media__del shrink-0 text-[13px] text-red-600 hover:underline" data-photo-id="' + p.id + '" title="Удалить"><i class="bi bi-x-lg text-[12px]" aria-hidden="true"></i></button>'
                 : '';
               return '<li class="flex items-center gap-2 text-body">' +
-                icon +
-                '<span class="min-w-0 truncate"><span class="text-body-muted">' + author + ', ' + when + '</span></span>' +
-                '<span class="ml-auto whitespace-nowrap">' + open + del + '</span>' +
+                thumb +
+                '<span class="min-w-0 truncate text-[13px] text-body-muted">' + author + ', ' + when + '</span>' +
+                '<span class="ml-auto">' + del + '</span>' +
                 '</li>';
             }).join('');
+            // Сообщаем lightbox-инициализатору, что в этом root есть новые ссылки
+            document.dispatchEvent(new CustomEvent('portal-media:lightbox-rebind', { detail: { eventId: eventId } }));
             list.querySelectorAll('.portal-media__del').forEach(function(b) {
               b.addEventListener('click', async function() {
                 if (!confirm('Удалить файл? Это необратимо.')) return;

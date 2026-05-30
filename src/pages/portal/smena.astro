@@ -8,6 +8,7 @@ import { getActiveShift, getEvents, getEventDates, getDone, listShifts, EVENT_TY
 import { listStaff } from '../../lib/portalStaff';
 import { getActivity } from '../../lib/portalActivities';
 import { canEditEvent } from '../../lib/portalShiftPerms';
+import PortalUploader from '../../components/portal/UppyUploader.astro';
 
 const role = Astro.locals.portalRole!;
 const sub = verifySessionPayload(
@@ -29,7 +30,11 @@ const VIEWS: { key: View; label: string; icon: string }[] = [
   { key: 'matrix', label: 'Шахматка', icon: 'kanban' },
 ];
 const rawView = Astro.url.searchParams.get('view');
-const view: View = (VIEWS.some((v) => v.key === rawView) ? rawView : 'role') as View;
+// Дефолтный вид: для админа/руководителя — все события дня (им нужна полная картина),
+// остальным — «Мой день» как раньше.
+const isManagerView = role === 'admin' || role === 'rukovoditel';
+const defaultView: View = isManagerView ? 'day' : 'role';
+const view: View = (VIEWS.some((v) => v.key === rawView) ? rawView : defaultView) as View;
 
 // Выбор даты: ?date=, иначе сегодня (если в пределах смены), иначе старт смены.
 function isoToday(): string {
@@ -58,6 +63,10 @@ const done = shift && sub ? await getDone(sub, shift.id) : new Set<string>();
 
 // Карта staff_key → краткое имя для подписей в шахматке.
 const staffList = view === 'matrix' ? await listStaff() : [];
+// Для inline-формы «Править событие» — список активных staff (нужен админу/руководителю
+// чтобы назначать «Главного ответственного»).
+const isManager = role === 'admin' || role === 'rukovoditel';
+const responsibleOptions = isManager ? (await listStaff()).filter((s) => s.active) : [];
 const staffNameByKey = new Map<string, string>();
 for (const s of staffList) {
   if (s.staff_key && s.full_name) {
@@ -112,8 +121,9 @@ function roleLabel(r: string): string {
 }
 
 // --- role view: события роли на дату + чек-листы роли ---
+// Админ/руководитель видит ВСЕ события дня даже в «Моём дне», т.к. отвечает за всю смену.
 const roleEvents = events
-  .filter((e) => e.date === selectedDate && roleAllowed(role, e.roles))
+  .filter((e) => e.date === selectedDate && (isManagerView || roleAllowed(role, e.roles)))
   .sort(byTime);
 
 // --- day view: все события даты ---
@@ -282,7 +292,8 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
             </p>
           )}
           {roleEvents.map((e) => {
-            const myChecklists = e.checklists.filter((cl) => roleAllowed(role, cl.roles));
+            // Админ/руководитель видит ВСЕ чек-листы события, остальные — только свои по роли.
+            const myChecklists = isManagerView ? e.checklists : e.checklists.filter((cl) => roleAllowed(role, cl.roles));
             return (
               <article class="rounded-[16px] border border-border bg-white p-5 card-shadow">
                 <div class="flex flex-wrap items-baseline justify-between gap-2">
@@ -298,6 +309,27 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                   <span class={`mt-1 inline-block rounded-[8px] border px-2 py-0.5 text-[14px] font-medium ${eventColorClass(e.event_type ?? e.activity_type)}`}>
                     {EVENT_TYPE_LABELS[(e.event_type ?? e.activity_type) as string] ?? (e.event_type ?? e.activity_type)}
                   </span>
+                )}
+
+                {/* Главный ответственный */}
+                <div class="mt-1.5 text-[14px]">
+                  <span class="text-body-muted">Ответственный:</span>{' '}
+                  {e.responsible_name
+                    ? <span class="font-medium text-emerald-700">{e.responsible_name}</span>
+                    : <span class="font-medium text-amber-700">не назначен</span>}
+                </div>
+
+                {/* Self-check для подъёма */}
+                {e.event_type === 'wakeup' && (
+                  <div class="mt-3 portal-wakeup rounded-[12px] border border-dashed border-amber-200 bg-amber-50/50 p-3"
+                       data-event-id={e.id}>
+                    <div class="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wide text-amber-800">
+                      <i class="bi bi-sun" aria-hidden="true"></i>
+                      Кто встал — каждый отмечает себя
+                    </div>
+                    <ul class="portal-wakeup__list mt-2 space-y-1 text-[15px]"></ul>
+                    <p class="portal-wakeup__loading text-[13px] text-body-muted">загружаю…</p>
+                  </div>
                 )}
 
                 {/* Заметки и материалы — с авто-ссылками */}
@@ -331,14 +363,7 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                     {e.content_task.brief && (
                       <div class="mt-1 text-[16px] text-navy-950">{e.content_task.brief}</div>
                     )}
-                    <div class="mt-3 portal-uploader" data-event-id={e.id} data-content-task-id={e.content_task_template_id ?? ''}>
-                      <input type="file" accept="image/*,video/*" capture="environment" class="portal-uploader__input hidden" />
-                      <button type="button" class="portal-uploader__btn inline-flex items-center gap-2 rounded-[10px] bg-primary px-4 py-2 text-[15px] font-medium text-white transition hover:opacity-90">
-                        <i class="bi bi-camera-fill" aria-hidden="true"></i>
-                        Снять и загрузить
-                      </button>
-                      <p class="portal-uploader__status mt-2 text-[14px] text-body-muted hidden" aria-live="polite"></p>
-                    </div>
+                    <PortalUploader eventId={e.id} contentTaskId={e.content_task_template_id} />
                   </div>
                 )}
 
@@ -371,6 +396,22 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
                           <input type="time" name="end_time" value={e.end_time?.slice(0, 5) ?? ''} class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[15px] outline-none focus:border-primary" />
                         </div>
                       </div>
+                      {isManager && (
+                        <div>
+                          <label class="block text-[13px] font-medium text-body-muted">Главный ответственный</label>
+                          <select name="responsible_staff_id" class="mt-1 w-full rounded-[8px] border border-border px-3 py-2 text-[15px] outline-none focus:border-primary">
+                            <option value="">— не назначен (штрафы пойдут руководителю смены) —</option>
+                            {responsibleOptions.map((s) => (
+                              <option value={s.id} selected={e.responsible_staff_id === s.id}>
+                                {s.full_name ?? `id=${s.id}`}{s.role ? ` · ${s.role}` : ''}
+                              </option>
+                            ))}
+                          </select>
+                          <p class="mt-1 text-[12px] text-body-muted">
+                            На этого человека пойдут автоштрафы за невыполненные чек-листы и пропущенные фото.
+                          </p>
+                        </div>
+                      )}
                       <div>
                         <label class="block text-[13px] font-medium text-body-muted">Заметки и материалы</label>
                         <p class="mt-0.5 text-[12px] text-body-muted">Можно вставлять ссылки — они автоматически станут кликабельными.</p>
@@ -587,6 +628,113 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
             box.disabled = false;
           }
         });
+      });
+    })();
+  </script>
+
+  {/* Self-check для подъёма — клиентский рендер списка staff и кнопки «я встал». */}
+  <script is:inline src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+  <script is:inline src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/locale/ru.js"></script>
+  <script is:inline>
+    (() => {
+      if (window.dayjs && window.dayjs.locale) window.dayjs.locale('ru');
+      function fmtTime(iso) {
+        try {
+          const d = window.dayjs ? window.dayjs(iso) : null;
+          if (d && d.isValid()) return d.format('HH:mm');
+          return typeof iso === 'string' ? iso : '';
+        } catch { return typeof iso === 'string' ? iso : ''; }
+      }
+      const wraps = document.querySelectorAll('.portal-wakeup');
+      wraps.forEach(async (wrap) => {
+        const eventId = wrap.dataset.eventId;
+        if (!eventId) return;
+        const list = wrap.querySelector('.portal-wakeup__list');
+        const loading = wrap.querySelector('.portal-wakeup__loading');
+        try {
+          const r = await fetch('/api/portal/self-check?event_id=' + encodeURIComponent(eventId), { credentials: 'include' });
+          const j = await r.json();
+          loading && (loading.style.display = 'none');
+          if (!j.ok) { list.innerHTML = '<li class="text-body-muted">не удалось загрузить</li>'; return; }
+          const me = j.me_staff_id;
+          const rows = (j.rows || []);
+          if (rows.length === 0) {
+            list.innerHTML = '<li class="text-body-muted">нет активных сотрудников</li>';
+            return;
+          }
+          list.innerHTML = rows.map((r) => {
+            const isMe = me != null && Number(r.staff_id) === Number(me);
+            const checked = !!r.checked_at;
+            const name = (r.full_name || ('id=' + r.staff_id));
+            const role = r.role ? (' · ' + r.role) : '';
+            const status = checked
+              ? '<span class="text-emerald-700"><i class="bi bi-check-circle-fill"></i> встал в ' + fmtTime(r.checked_at) + '</span>'
+              : '<span class="text-amber-700"><i class="bi bi-hourglass"></i> ещё нет</span>';
+            const myBtn = isMe && !checked
+              ? '<button type="button" data-mark="' + eventId + '" class="ml-2 rounded-[8px] bg-primary px-3 py-1 text-[13px] font-medium text-white hover:opacity-90">Я встал</button>'
+              : (isMe && checked
+                ? '<button type="button" data-unmark="' + eventId + '" class="ml-2 rounded-[8px] border border-border bg-white px-3 py-1 text-[12px] font-medium text-body-muted hover:border-primary">Снять</button>'
+                : '');
+            return '<li class="flex flex-wrap items-center justify-between gap-2 rounded-[8px] border border-border bg-white px-3 py-1.5">'
+              + '<span><b>' + name + '</b>' + role + '</span>'
+              + '<span class="flex items-center gap-1.5">' + status + myBtn + '</span>'
+              + '</li>';
+          }).join('');
+        } catch (e) {
+          loading && (loading.textContent = 'ошибка: ' + (e && e.message ? e.message : e));
+        }
+      });
+
+      document.addEventListener('click', async (ev) => {
+        const target = ev.target;
+        const btn = target && target.closest && target.closest('button[data-mark],button[data-unmark]');
+        if (!btn) return;
+        const eventId = btn.dataset.mark || btn.dataset.unmark;
+        const action = btn.dataset.mark ? 'mark' : 'unmark';
+        btn.disabled = true;
+        try {
+          const r = await fetch('/api/portal/self-check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ action, event_id: Number(eventId) }),
+          });
+          const j = await r.json();
+          if (!j.ok) throw new Error(j.error || 'error');
+          // Перерисуем список этой карточки
+          const wrap = document.querySelector('.portal-wakeup[data-event-id="' + eventId + '"]');
+          if (wrap) wrap.querySelector('.portal-wakeup__list').innerHTML = '';
+          // Простейший способ — повторно дернуть GET вручную
+          const gr = await fetch('/api/portal/self-check?event_id=' + encodeURIComponent(eventId), { credentials: 'include' });
+          const gj = await gr.json();
+          if (gj.ok && wrap) {
+            // Рендер инлайн без выноса в функцию, чтобы не плодить код
+            const me = gj.me_staff_id;
+            const list = wrap.querySelector('.portal-wakeup__list');
+            list.innerHTML = (gj.rows || []).map((r) => {
+              const isMe = me != null && Number(r.staff_id) === Number(me);
+              const checked = !!r.checked_at;
+              const name = (r.full_name || ('id=' + r.staff_id));
+              const role = r.role ? (' · ' + r.role) : '';
+              const status = checked
+                ? '<span class="text-emerald-700"><i class="bi bi-check-circle-fill"></i> встал в ' + ((window.dayjs && window.dayjs(r.checked_at).isValid()) ? window.dayjs(r.checked_at).format('HH:mm') : (r.checked_at || '')) + '</span>'
+                : '<span class="text-amber-700"><i class="bi bi-hourglass"></i> ещё нет</span>';
+              const myBtn = isMe && !checked
+                ? '<button type="button" data-mark="' + eventId + '" class="ml-2 rounded-[8px] bg-primary px-3 py-1 text-[13px] font-medium text-white hover:opacity-90">Я встал</button>'
+                : (isMe && checked
+                  ? '<button type="button" data-unmark="' + eventId + '" class="ml-2 rounded-[8px] border border-border bg-white px-3 py-1 text-[12px] font-medium text-body-muted hover:border-primary">Снять</button>'
+                  : '');
+              return '<li class="flex flex-wrap items-center justify-between gap-2 rounded-[8px] border border-border bg-white px-3 py-1.5">'
+                + '<span><b>' + name + '</b>' + role + '</span>'
+                + '<span class="flex items-center gap-1.5">' + status + myBtn + '</span>'
+                + '</li>';
+            }).join('');
+          }
+        } catch (e) {
+          alert('Ошибка: ' + (e && e.message ? e.message : e));
+        } finally {
+          btn.disabled = false;
+        }
       });
     })();
   </script>

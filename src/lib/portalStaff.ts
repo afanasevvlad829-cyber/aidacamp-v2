@@ -1,4 +1,5 @@
 import type { PortalRole } from './portalSession';
+import { highestRole } from './portalRoles';
 
 export interface StaffRow {
   telegram_id: number | null;
@@ -169,10 +170,7 @@ export async function setRole(telegramId: number, role: PortalRole, approvedBy: 
 /** Полный список ролей (заменяет существующий). Активная роль = НАИВЫСШАЯ из выданных. */
 export async function setRoles(telegramId: number, roles: PortalRole[], approvedBy: number): Promise<void> {
   await withClient(async (c) => {
-    // Primary role должен быть НАИВЫСШИМ из доступных (admin > rukovoditel > teacher > vozhaty > student),
-    // иначе session.role = первая из чекбоксов и сотрудник теряет доступ к admin-страницам.
-    const PRIORITY: PortalRole[] = ['admin', 'rukovoditel', 'teacher', 'vozhaty', 'student'];
-    const activeRole = PRIORITY.find((r) => roles.includes(r)) ?? roles[0] ?? null;
+    const activeRole = highestRole(roles);
     const willActivate = roles.length > 0;
     await c.query(
       `UPDATE portal_staff
@@ -226,7 +224,7 @@ export async function applyInviteForTelegram(
 ): Promise<StaffRow | null> {
   if (!Array.isArray(inviteRoles) || inviteRoles.length === 0) return null;
   return await withClient(async (c) => {
-    const primary = inviteRoles[0];
+    const primary = highestRole(inviteRoles) ?? inviteRoles[0];
     await c.query(
       `INSERT INTO portal_staff (telegram_id, full_name, tg_username, role, roles, active)
        VALUES ($1, $2, $3, $4, $5::text[], TRUE)

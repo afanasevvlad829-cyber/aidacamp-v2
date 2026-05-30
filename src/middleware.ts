@@ -2,7 +2,7 @@ import type { MiddlewareHandler } from 'astro';
 import { verifySessionPayload } from './lib/portalSession';
 import { getStaff } from './lib/portalStaff';
 
-const PORTAL_PUBLIC = new Set(['/portal/login', '/portal/login/', '/portal/tg-app', '/api/portal/login', '/api/portal/check', '/api/portal/tg']);
+const PORTAL_PUBLIC = new Set(['/portal/login', '/portal/login/', '/portal/tg-app', '/api/portal/login', '/api/portal/check', '/api/portal/tg', '/api/portal/penalty/scan']);
 
 const staffActiveCache = new Map<number, { ok: boolean; role: string | null; roles: string[]; exp: number }>();
 const STAFF_CACHE_MS = 60_000;

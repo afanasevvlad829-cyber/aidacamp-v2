@@ -199,24 +199,30 @@ rsync -az --delete --stats \
   -e "ssh -i $SSH_KEY" \
   dist/server/ "$SSH_HOST:$SSR_DIR"
 
-# ── 4. node_modules — гарантируем наличие и создаём симлинк ──
+# ── 4. node_modules — синк package.json и переустановка при изменении ──
 echo ""
 echo "📦 node_modules..."
 # Единый каталог с node_modules — репо на сервере
 REPO_DIR="/opt/aidacamp-site"
 REPO_MODULES="$REPO_DIR/node_modules"
 
-# Проверяем наличие @astrojs/node (маркер корректной установки)
+# 4a. Синкаем package.json + package-lock.json на сервер
+rsync -az -e "ssh -i $SSH_KEY" package.json package-lock.json "$SSH_HOST:$REPO_DIR/"
+
+# 4b. Сверяем хеш package-lock.json с сохранённым. Если изменился → npm ci.
+LOCAL_LOCK_HASH=$(shasum -a 256 package-lock.json | awk '{print $1}')
+REMOTE_LOCK_HASH=$(ssh -i "$SSH_KEY" "$SSH_HOST" \
+  "cat '$REPO_DIR/.lock-sha256' 2>/dev/null || echo none")
 MODULES_OK=$(ssh -i "$SSH_KEY" "$SSH_HOST" \
   "test -d '$REPO_MODULES/@astrojs/node' && echo ok || echo missing")
 
-if [ "$MODULES_OK" = "missing" ]; then
-  echo "  ⚠️  node_modules отсутствуют → npm install на сервере..."
+if [ "$MODULES_OK" = "missing" ] || [ "$LOCAL_LOCK_HASH" != "$REMOTE_LOCK_HASH" ]; then
+  echo "  ⚙️  package-lock изменился (или модули отсутствуют) → npm ci..."
   ssh -i "$SSH_KEY" "$SSH_HOST" \
-    "cd '$REPO_DIR' && npm install --omit=dev --prefer-offline 2>&1 | tail -3"
-  echo "  ✅ node_modules установлены"
+    "cd '$REPO_DIR' && npm ci --omit=dev --prefer-offline 2>&1 | tail -3 && echo '$LOCAL_LOCK_HASH' > '$REPO_DIR/.lock-sha256'"
+  echo "  ✅ node_modules обновлены (hash=${LOCAL_LOCK_HASH:0:8}…)"
 else
-  echo "  ✅ node_modules актуальны ($REPO_MODULES)"
+  echo "  ✅ node_modules актуальны (hash=${LOCAL_LOCK_HASH:0:8}…)"
 fi
 
 # Симлинк node_modules → deploy-директория (не сносится rsync, т.к. exclude выше)
