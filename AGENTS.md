@@ -55,6 +55,43 @@ Only replace icon symbols.
 2. Never run `git diff --no-index` for large binary files.
 3. Before any `git add`, first print exact file list and wait for explicit user confirmation.
 
+## Destructive Operations — NEVER without explicit user confirmation
+
+These commands can permanently destroy work and are NOT caught by git hooks.
+An agent must STOP and ask the user in plain text before running ANY of them.
+"The task seems to require it" is NOT confirmation. Only an explicit user "yes" is.
+
+1. History / commit destruction:
+   - `git reset --hard` (any ref)
+   - `git rebase` on shared branches (`dev`, `main`, `site-prod`)
+   - `git commit --amend` on already-pushed commits
+   - `git reflog expire` / `git gc --prune=now`
+2. Working-tree destruction:
+   - `git clean -f` / `git clean -fd` / `git clean -fdx`
+   - `git checkout -- .` / `git restore .` that discards uncommitted changes
+   - `git stash drop` / `git stash clear`
+3. Branch / remote destruction:
+   - `git branch -D` (force-delete unmerged branch)
+   - `git push --delete` / `git push :branch`
+   - `git push --force` / `--force-with-lease` (also blocked by hook on protected branches)
+4. Bypassing safety:
+   - NEVER use `--no-verify` to skip pre-commit / pre-push / commit-msg hooks.
+   - NEVER set `PIPELINE_BYPASS=1` or `MASTER_AGENT=1` on the user's behalf.
+   - NEVER edit `scripts/git-hooks/**`, branch protection, or `core.hooksPath` to weaken protection.
+5. Filesystem / deploy destruction:
+   - NEVER run `rm -rf` on anything outside a clearly scoped build/temp dir.
+   - Deploy ONLY via `./scripts/deploy.sh [dev|prod]`. NEVER call `rsync` to the server
+     by hand. The script is already hardened: it deploys static WITHOUT `--delete` and
+     excludes `.env`, `current/`, `node_modules/`, `data/`, `images/gallery/`.
+   - Manual `rsync --delete` against a live web-root wipes `current/`, `.env` and
+     `node_modules` (incident 2026-05-22 — dev root was destroyed this way).
+   - NEVER deploy `prod` on the user's behalf: it requires `MASTER_AGENT=1` and an
+     interactive `yes`. Prod deploy is the owner's action, not the agent's.
+
+If unsure whether an operation is destructive: treat it as destructive and ask first.
+Prefer non-destructive alternatives: `git revert` over `reset --hard`,
+`git stash` over `clean`, a new branch over force-push.
+
 ## UI Architecture Rules (Desktop/Mobile)
 
 1. Desktop is the single source-of-truth for structure and data flow.
