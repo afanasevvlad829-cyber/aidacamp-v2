@@ -66,13 +66,14 @@ import PortalLayout from '../../layouts/PortalLayout.astro';
       if (text) text.textContent = message;
     }
 
-    // SDK уже загружен и инициализирован в PortalLayout (ready/expand там)
-    var tg = window.Telegram && window.Telegram.WebApp;
-    var initData = tg && tg.initData;
-    if (!initData) {
-      show('Откройте через Telegram-бота.', 'warn');
-      return;
-    }
+    // SDK грузится с defer — ждём его готовности перед проверкой initData
+    function tryAuth() {
+      var tg = window.Telegram && window.Telegram.WebApp;
+      var initData = tg && tg.initData;
+      if (!initData) {
+        show('Откройте через Telegram-бота.', 'warn');
+        return;
+      }
 
     fetch('/api/portal/tg', {
       method: 'POST',
@@ -101,5 +102,13 @@ import PortalLayout from '../../layouts/PortalLayout.astro';
       .catch(function () {
         show('Не удалось войти. Откройте Mini App заново.', 'error');
       });
+    }
+
+    // Если SDK уже готов — сразу, иначе ждём DOMContentLoaded
+    if (window.Telegram && window.Telegram.WebApp) {
+      tryAuth();
+    } else {
+      document.addEventListener('DOMContentLoaded', tryAuth);
+    }
   })();
 </script>

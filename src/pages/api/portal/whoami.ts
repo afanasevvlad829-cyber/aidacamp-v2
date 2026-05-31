@@ -1,6 +1,7 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { verifySessionPayload } from '../../../lib/portalSession';
+import { query } from '../../../lib/db';
 
 /**
  * Идентификационный эндпойнт для nginx `auth_request` и для overlay-страниц.
@@ -35,7 +36,7 @@ function authEmail(role: string, sub?: number | string): string {
   return `tg${sub}@staff.aidacamp.local`;
 }
 
-export const GET: APIRoute = ({ cookies }) => {
+export const GET: APIRoute = async ({ cookies }) => {
   const p = verifySessionPayload(
     cookies.get('portal_session')?.value,
     process.env.PORTAL_SESSION_SECRET ?? '',
@@ -48,12 +49,28 @@ export const GET: APIRoute = ({ cookies }) => {
   }
   const email = authEmail(p.role, p.sub);
   const subStr = p.sub != null ? String(p.sub) : 'shared';
+
+  // Реальное ФИО для отображения в Open WebUI: для ученика берём из portal_kid.
+  // Open WebUI создаёт аккаунт с этим именем при первом входе (X-Auth-Name).
+  let displayName = ROLE_LABEL[p.role] || p.role;
+  if (p.role === 'student' && p.sub != null) {
+    try {
+      const rows = await query<{ name: string }>(
+        'SELECT name FROM portal_kid WHERE id = $1',
+        [p.sub],
+      );
+      if (rows && rows[0]?.name) displayName = rows[0].name;
+    } catch {
+      // при сбое БД — оставляем метку роли, не ломаем авторизацию
+    }
+  }
+
   return new Response(JSON.stringify({
     ok: true,
     role: p.role,
     label: ROLE_LABEL[p.role] || p.role,
     sub: p.sub ?? null,
-    name: ROLE_LABEL[p.role] || p.role,
+    name: displayName,
     email,
   }), {
     headers: {
@@ -61,6 +78,9 @@ export const GET: APIRoute = ({ cookies }) => {
       'X-Auth-Role': p.role,
       'X-Auth-Sub': subStr,
       'X-Auth-Email': email,
+      // ФИО для trusted-header Open WebUI. Percent-encoded (UTF-8) —
+      // Open WebUI делает urllib.parse.unquote(name). Заголовки HTTP только ASCII.
+      'X-Auth-Name': encodeURIComponent(displayName),
       // Open WebUI принимает только определённые символы в e-mail; наш формат — стандартный.
       'Cache-Control': 'no-store',
     },
