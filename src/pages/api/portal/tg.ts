@@ -5,6 +5,7 @@ import { getStaff, ensurePending, applyInviteForTelegram } from '../../../lib/po
 import { findUsableInviteByToken, markInviteUsed } from '../../../lib/portalInvite';
 import { signSession } from '../../../lib/portalSession';
 import { portalCookieOptions } from '../../../lib/portalCookie';
+import { logAuth, clientIp } from '../../../lib/portalLog';
 
 function botToken(): string {
   return process.env.PORTAL_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || '';
@@ -75,12 +76,19 @@ function setSessionCookie(cookies: Parameters<APIRoute>[0]['cookies'], token: st
 }
 
 // Telegram Login Widget (data-auth-url) редиректит сюда методом GET с параметрами в query.
-export const GET: APIRoute = async ({ url, cookies, redirect }) => {
+export const GET: APIRoute = async ({ url, cookies, redirect, request }) => {
   const params: Record<string, string> = {};
   for (const [k, v] of url.searchParams.entries()) params[k] = v;
   const user = verifyLoginWidget(params, botToken());
   const inviteToken = String(params.invite || '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 32) || null;
   const res = await loginResult(user, (t) => setSessionCookie(cookies, t), inviteToken);
+  logAuth({
+    method: 'tg-widget',
+    outcome: res.ok ? 'success' : res.status,
+    telegramId: user?.telegram_id ?? null,
+    role: res.ok ? res.role : null,
+    ip: clientIp(request),
+  });
   if (res.ok) return redirect('/portal/', 303);
   return redirect(`/portal/login?tg=${res.status}`, 303);
 };
@@ -89,6 +97,13 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const { user, isMiniApp, inviteToken } = await resolveTgUser(request);
   const res = await loginResult(user, (t) => setSessionCookie(cookies, t), inviteToken);
+  logAuth({
+    method: isMiniApp ? 'tg-miniapp' : 'tg-widget',
+    outcome: res.ok ? 'success' : res.status,
+    telegramId: user?.telegram_id ?? null,
+    role: res.ok ? res.role : null,
+    ip: clientIp(request),
+  });
   if (isMiniApp) {
     return res.ok
       ? new Response(JSON.stringify({ ok: true, role: res.role }), { headers: { 'Content-Type': 'application/json' } })
