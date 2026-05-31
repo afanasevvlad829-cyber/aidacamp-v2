@@ -4,6 +4,7 @@ import { resolveRole } from '../../../lib/portalAuth';
 import { signSession } from '../../../lib/portalSession';
 import { portalCookieOptions } from '../../../lib/portalCookie';
 import { findKidByCode, markKidLoggedIn } from '../../../lib/portalKid';
+import { logAuth } from '../../../lib/portalLog';
 
 const attempts = new Map<string, { n: number; reset: number }>();
 
@@ -38,9 +39,14 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     role = resolveRole(password);
   }
   if (!role) {
+    logAuth({ method: 'code', outcome: 'bad-code', ip });
     const safeNext = rawNext.startsWith('https://ai.aidacamp.ru') || rawNext.startsWith('/portal') ? rawNext : '/portal/';
     return redirect(`/portal/login?error=1&next=${encodeURIComponent(safeNext)}`, 303);
   }
+
+  // Для code-входа sub — это portal_kid.id (ученик) либо undefined (staff по паролю),
+  // НЕ telegram_id, поэтому telegramId здесь не передаём.
+  logAuth({ method: 'code', outcome: 'success', role, ip });
 
   const token = signSession(role as any, process.env.PORTAL_SESSION_SECRET ?? '', Date.now(), sub);
   cookies.set('portal_session', token, portalCookieOptions());
