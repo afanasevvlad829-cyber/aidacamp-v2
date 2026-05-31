@@ -11,7 +11,26 @@ function botToken(): string {
   return process.env.PORTAL_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || '';
 }
 
-async function resolveTgUser(request: Request): Promise<{ user: TgUser | null; isMiniApp: boolean; inviteToken: string | null }> {
+/** Диагностика для отладки входа — отдаётся клиенту в поле `debug`. */
+interface AuthDebug {
+  method: 'tg-miniapp' | 'tg-widget';
+  contentType: string;
+  initDataPresent: boolean;
+  initDataLength: number;
+  botTokenPresent: boolean;
+  signatureValid: boolean; // прошла ли проверка подписи Telegram
+  telegramId: number | null;
+  username: string | null;
+  name: string | null;
+  inviteToken: string | null;
+  staffFound: boolean | null; // найден ли в portal_staff (null = не дошли до проверки)
+  staffActive: boolean | null;
+  staffRole: string | null;
+  status: string; // итог: success/invalid/pending/revoked
+  ip?: string;
+}
+
+async function resolveTgUser(request: Request): Promise<{ user: TgUser | null; isMiniApp: boolean; inviteToken: string | null; debug: AuthDebug }> {
   const ct = request.headers.get('content-type') ?? '';
   let initData = '';
   let params: Record<string, string> = {};
@@ -26,8 +45,27 @@ async function resolveTgUser(request: Request): Promise<{ user: TgUser | null; i
   }
   const rawInv = String(params.invite || '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 32);
   const inviteToken = rawInv || null;
-  if (initData) return { user: verifyInitData(initData, botToken()), isMiniApp: true, inviteToken };
-  return { user: verifyLoginWidget(params, botToken()), isMiniApp: false, inviteToken };
+  const isMiniApp = !!initData;
+  const user = isMiniApp
+    ? verifyInitData(initData, botToken())
+    : verifyLoginWidget(params, botToken());
+  const debug: AuthDebug = {
+    method: isMiniApp ? 'tg-miniapp' : 'tg-widget',
+    contentType: ct || '(none)',
+    initDataPresent: isMiniApp,
+    initDataLength: initData.length,
+    botTokenPresent: !!botToken(),
+    signatureValid: !!user,
+    telegramId: user?.telegram_id ?? null,
+    username: user?.username ?? null,
+    name: user?.name ?? null,
+    inviteToken,
+    staffFound: null,
+    staffActive: null,
+    staffRole: null,
+    status: '',
+  };
+  return { user, isMiniApp, inviteToken, debug };
 }
 
 /**
@@ -38,8 +76,12 @@ async function loginResult(
   user: TgUser | null,
   cookieSet: (token: string) => void,
   inviteToken: string | null = null,
+  debug?: AuthDebug,
 ): Promise<{ ok: true; role: string } | { ok: false; status: 'invalid' | 'pending' | 'revoked' }> {
-  if (!user) return { ok: false, status: 'invalid' };
+  if (!user) {
+    if (debug) debug.status = 'invalid';
+    return { ok: false, status: 'invalid' };
+  }
 
   // 1) Если пришёл invite — пробуем применить ДО ensurePending,
   // чтобы сразу активировать аккаунт с предзаданными ролями.
@@ -53,6 +95,7 @@ async function loginResult(
         await markInviteUsed(inv.id, user.telegram_id);
         const token = signSession(applied.role as any, process.env.PORTAL_SESSION_SECRET ?? '', Date.now(), user.telegram_id);
         cookieSet(token);
+        if (debug) { debug.staffFound = true; debug.staffActive = true; debug.staffRole = applied.role; debug.status = 'success'; }
         return { ok: true, role: applied.role };
       }
     }
@@ -60,14 +103,27 @@ async function loginResult(
   }
 
   const staff = await getStaff(user.telegram_id);
+  if (debug) {
+    debug.staffFound = !!staff;
+    debug.staffActive = staff?.active ?? null;
+    debug.staffRole = staff?.role ?? null;
+  }
   if (!staff) {
     await ensurePending(user.telegram_id, user.name ?? null, user.username ?? null);
+    if (debug) debug.status = 'pending';
     return { ok: false, status: 'pending' };
   }
-  if (!staff.active) return { ok: false, status: 'revoked' };
-  if (!staff.role) return { ok: false, status: 'pending' };
+  if (!staff.active) {
+    if (debug) debug.status = 'revoked';
+    return { ok: false, status: 'revoked' };
+  }
+  if (!staff.role) {
+    if (debug) debug.status = 'pending';
+    return { ok: false, status: 'pending' };
+  }
   const token = signSession(staff.role, process.env.PORTAL_SESSION_SECRET ?? '', Date.now(), user.telegram_id);
   cookieSet(token);
+  if (debug) debug.status = 'success';
   return { ok: true, role: staff.role };
 }
 
@@ -95,8 +151,9 @@ export const GET: APIRoute = async ({ url, cookies, redirect, request }) => {
 
 // POST: Login Widget callback-режим (form/JSON) или Mini App initData (JSON).
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
-  const { user, isMiniApp, inviteToken } = await resolveTgUser(request);
-  const res = await loginResult(user, (t) => setSessionCookie(cookies, t), inviteToken);
+  const { user, isMiniApp, inviteToken, debug } = await resolveTgUser(request);
+  debug.ip = clientIp(request);
+  const res = await loginResult(user, (t) => setSessionCookie(cookies, t), inviteToken, debug);
   logAuth({
     method: isMiniApp ? 'tg-miniapp' : 'tg-widget',
     outcome: res.ok ? 'success' : res.status,
@@ -105,9 +162,11 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     ip: clientIp(request),
   });
   if (isMiniApp) {
+    // Диагностику (debug) отдаём ВСЕГДА — и при успехе, и при ошибке,
+    // чтобы Mini App мог показать максимум информации на экране.
     return res.ok
-      ? new Response(JSON.stringify({ ok: true, role: res.role }), { headers: { 'Content-Type': 'application/json' } })
-      : new Response(JSON.stringify({ ok: false, error: res.status }), {
+      ? new Response(JSON.stringify({ ok: true, role: res.role, debug }), { headers: { 'Content-Type': 'application/json' } })
+      : new Response(JSON.stringify({ ok: false, error: res.status, debug }), {
           status: res.status === 'invalid' ? 401 : 403,
           headers: { 'Content-Type': 'application/json' },
         });
