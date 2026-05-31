@@ -5,11 +5,11 @@ import ShiftCardCombined from './shifts/ShiftCardCombined.astro';
 import ShortShiftsBlock from './shifts/ShortShiftsBlock.astro';
 import FortuneShiftCard from './shifts/FortuneShiftCard.astro';
 
-// Объединяем shift-3 + shift-4 в одну августовскую карточку (концепт)
+// shift-1 + shift-2 + shift-3 + shift-4 — все как отдельные карточки
 const summerShifts = mainShifts.slice(0, 2); // shift-1 + shift-2
-const augustShifts = mainShifts.filter((s) => s.startDate?.startsWith('2026-08')) as [typeof mainShifts[0], typeof mainShifts[0]];
-const carouselShifts = [...summerShifts]; // mobile: 2 индивидуальные + 1 объединённая = 3 в карусели
-const totalCarousel = carouselShifts.length + 1; // +1 для combined August
+const augustShifts = mainShifts.filter((s) => s.startDate?.startsWith('2026-08'));
+const allCarouselShifts = [...summerShifts, ...augustShifts];
+const totalCarousel = allCarouselShifts.length;
 import ShiftBookModal from './shifts/ShiftBookModal.astro';
 import ShiftCalendarModal from './shifts/ShiftCalendarModal.astro';
 import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
@@ -86,7 +86,7 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
         class="shifts-marquee-track flex gap-3 md:gap-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         data-shifts-marquee-track
       >
-        {summerShifts.map((shift) => (
+        {allCarouselShifts.map((shift) => (
           <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-[380px]" data-shift-id={shift.id}>
             {shift.id === 'shift-1'
               ? <FortuneShiftCard />
@@ -94,25 +94,14 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
             }
           </div>
         ))}
-        {augustShifts.length === 2 && (
-          <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-[460px]">
-            <ShiftCardCombined
-              shifts={augustShifts}
-              variant="desktop"
-              monthLabel="Август"
-              combinedDates="3 авг — 26 авг"
-              combinedDuration="Смены 3 и 4"
-            />
-          </div>
-        )}
       </div>
     </div>
 
     <!-- Dot-индикаторы карусели (генерируются JS) -->
     <div data-shifts-dots class="flex justify-center gap-2 mt-3" aria-hidden="true"></div>
 
-    <!-- Короткие смены — collapsible block под карточками (концепт) -->
-    {shortShifts.length > 0 && <ShortShiftsBlock shifts={shortShifts} />}
+    <!-- Короткие смены — временно скрыты -->
+    {/* shortShifts.length > 0 && <ShortShiftsBlock shifts={shortShifts} /> */}
   </div>
 </section>
 
