@@ -510,7 +510,7 @@ import { confirmDialog, alertDialog, haptic } from './tg';
 
   function fmtDate(iso: string) {
     try {
-      return new Date(iso).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      const normalized = iso.replace(/([+-]\d{2})$/, '$1:00'); return new Date(normalized).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     } catch { return iso; }
   }
 
