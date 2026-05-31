@@ -10,6 +10,7 @@ import InventoryStats from '../../components/portal/rooms/InventoryStats.astro';
 import InventoryFloorPlan from '../../components/portal/rooms/InventoryFloorPlan.astro';
 import InventoryModal from '../../components/portal/rooms/InventoryModal.astro';
 import RasseleniePlan from '../../components/portal/rooms/RasseleniePlan.astro';
+import RasselenieList from '../../components/portal/rooms/RasselenieList.astro';
 import RasseleniKidPool from '../../components/portal/rooms/RasseleniKidPool.astro';
 import AddKidModal from '../../components/portal/rooms/AddKidModal.astro';
 import '../../styles/portal-modal.css';
@@ -94,11 +95,27 @@ const counts = {
         </div>
       </div>
 
-      <RasseleniKidPool unassignedKids={unassignedKids} />
-
-      <div class="space-y-4">
-        <RasseleniePlan assignedByBed={assignedByBed} />
+      <div class="mb-4 flex flex-wrap gap-2 no-print">
+        <button id="view-plan-btn" type="button" class="rounded-[10px] border-2 border-primary bg-primary px-4 py-2 text-[14px] font-semibold text-white transition">
+          <i class="bi bi-grid-3x3-gap mr-1" aria-hidden="true"></i> План (перетаскивание)
+        </button>
+        <button id="view-list-btn" type="button" class="rounded-[10px] border-2 border-border bg-white px-4 py-2 text-[14px] font-medium text-navy-950 transition hover:border-primary">
+          <i class="bi bi-list-task mr-1" aria-hidden="true"></i> Список
+        </button>
+        <button id="print-rasselenie-btn" type="button" class="rounded-[10px] border-2 border-border bg-white px-4 py-2 text-[14px] font-medium text-navy-950 transition hover:border-primary">
+          <i class="bi bi-printer mr-1" aria-hidden="true"></i> Печать
+        </button>
       </div>
+
+      <div id="rasselenie-plan-view">
+        <RasseleniKidPool unassignedKids={unassignedKids} />
+
+        <div class="space-y-4">
+          <RasseleniePlan assignedByBed={assignedByBed} />
+        </div>
+      </div>
+
+      <RasselenieList assignedByBed={assignedByBed} unassignedKids={unassignedKids} />
 
       <AddKidModal shiftId={shift?.id ?? 0} />
 
@@ -126,4 +143,19 @@ const counts = {
   </>)}
 
   <script src="../../scripts/portal/rooms.ts"></script>
+
+  <style is:global>
+    @media print {
+      body * { visibility: hidden !important; }
+      #rasselenie-list-view, #rasselenie-list-view * { visibility: visible !important; }
+      #rasselenie-list-view {
+        display: block !important;
+        position: absolute !important;
+        left: 0; top: 0; width: 100%;
+        padding: 0; margin: 0;
+      }
+      #rasselenie-list-view .card-shadow { box-shadow: none !important; }
+      .no-print { display: none !important; }
+    }
+  </style>
 </PortalLayout>

@@ -134,6 +134,33 @@ function initRasselenie() {
     else if (statusEl) statusEl.textContent = 'Ошибка: ' + (d.error || '');
   });
 
+  // ── Переключатель видов: План / Список + Печать ──
+  const planView = document.getElementById('rasselenie-plan-view');
+  const listView = document.getElementById('rasselenie-list-view');
+  const planBtn = document.getElementById('view-plan-btn');
+  const listBtn = document.getElementById('view-list-btn');
+  const printBtn = document.getElementById('print-rasselenie-btn');
+
+  function setView(view: 'plan' | 'list') {
+    const isList = view === 'list';
+    planView?.classList.toggle('hidden', isList);
+    listView?.classList.toggle('hidden', !isList);
+    // активная кнопка — заливка primary, неактивная — белая
+    planBtn?.classList.toggle('bg-primary', !isList);
+    planBtn?.classList.toggle('text-white', !isList);
+    planBtn?.classList.toggle('border-primary', !isList);
+    planBtn?.classList.toggle('bg-white', isList);
+    planBtn?.classList.toggle('border-border', isList);
+    listBtn?.classList.toggle('bg-primary', isList);
+    listBtn?.classList.toggle('text-white', isList);
+    listBtn?.classList.toggle('border-primary', isList);
+    listBtn?.classList.toggle('bg-white', !isList);
+    listBtn?.classList.toggle('border-border', !isList);
+  }
+  planBtn?.addEventListener('click', () => setView('plan'));
+  listBtn?.addEventListener('click', () => setView('list'));
+  printBtn?.addEventListener('click', () => window.print());
+
   // ── Drag-n-drop через Sortable.js ──
   const poolEl = document.getElementById('pool-list');
 
