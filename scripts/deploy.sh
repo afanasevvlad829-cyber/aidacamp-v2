@@ -88,7 +88,7 @@ case "$TARGET" in
   prod)
     REMOTE_DIR="/var/www/aidacamp/current/"
     SSR_DIR="/var/www/aidacamp/current/server/"
-    SERVICE="aidacamp"
+    SERVICE="aidacamp-prod"
     LABEL="PROD (aidacamp.ru)"
     HEALTH_URL="https://aidacamp.ru"
     SSH_KEY="$SSH_KEY_PROD"
@@ -242,11 +242,21 @@ ssh -i "$SSH_KEY" "$SSH_HOST" "ln -sfn $REPO_MODULES ${REMOTE_DIR%/}/node_module
 # ── 5. Restart SSR ────────────────────────────────────────────
 echo ""
 echo "♻️  Рестарт $SERVICE..."
-if ssh -i "$SSH_KEY" "$SSH_HOST" "systemctl restart $SERVICE 2>&1" 2>&1 | grep -q "not found"; then
-  echo "⚠️  systemd-сервис не найден ($SERVICE) — пропускаю restart"
-else
-  ssh -i "$SSH_KEY" "$SSH_HOST" "sleep 2 && systemctl is-active $SERVICE" || echo "⚠️  Сервис не active"
+RESTART_OUT=$(ssh -i "$SSH_KEY" "$SSH_HOST" "systemctl restart $SERVICE 2>&1" 2>&1)
+if echo "$RESTART_OUT" | grep -q "not found"; then
+  echo "❌ systemd-сервис не найден ($SERVICE)."
+  echo "   Файлы залиты, но SSR НЕ перезапущен — сайт отдаёт старый код."
+  echo "   Проверь имя: ssh $SSH_HOST 'systemctl list-units | grep aidacamp'"
+  exit 1
 fi
+sleep 2
+SVC_STATE=$(ssh -i "$SSH_KEY" "$SSH_HOST" "systemctl is-active $SERVICE" 2>&1)
+if [ "$SVC_STATE" != "active" ]; then
+  echo "❌ Сервис $SERVICE не active после рестарта (статус: $SVC_STATE)."
+  echo "   Логи: ssh $SSH_HOST 'journalctl -u $SERVICE -n 30 --no-pager'"
+  exit 1
+fi
+echo "  ✅ $SERVICE active"
 
 # ── 6. ВЕРИФИКАЦИЯ — критичные файлы реально есть на сервере ──
 echo ""
