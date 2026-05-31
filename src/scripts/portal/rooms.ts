@@ -159,7 +159,16 @@ function initRasselenie() {
   }
   planBtn?.addEventListener('click', () => setView('plan'));
   listBtn?.addEventListener('click', () => setView('list'));
-  printBtn?.addEventListener('click', () => window.print());
+  printBtn?.addEventListener('click', () => {
+    setView('list');
+    // window.print() недоступен в Telegram WebView — даём понятный фидбэк вместо тишины
+    if (typeof window.print === 'function') {
+      try { window.print(); }
+      catch { alertDialog('Печать недоступна здесь. Откройте портал в обычном браузере (Chrome/Safari) и нажмите «Печать».'); }
+    } else {
+      alertDialog('Печать недоступна в этом приложении. Откройте aidacamp.ru/portal/rooms в браузере на компьютере и нажмите «Печать».');
+    }
+  });
 
   // ── Drag-n-drop через Sortable.js ──
   const poolEl = document.getElementById('pool-list');
