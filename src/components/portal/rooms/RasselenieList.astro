@@ -1,0 +1,91 @@
+---
+import { ROOMS } from '../../../lib/portalRooms';
+
+interface KidAssignment {
+  kid_id: string;
+  kid_name: string;
+  kid_age: number | null;
+  kid_gender: string | null;
+  room_number: number | null;
+  bed_index: number | null;
+}
+
+interface Props {
+  assignedByBed: Map<string, KidAssignment>;
+  unassignedKids: KidAssignment[];
+}
+const { assignedByBed, unassignedKids } = Astro.props;
+
+// Жилые комнаты по порядку номеров.
+const livingRooms = ROOMS.filter((r) => r.type !== 'staff').sort((a, b) => a.number - b.number);
+
+function genderShort(g: string | null): string {
+  return g === 'F' ? 'Ж' : g === 'M' ? 'М' : '?';
+}
+
+const totalBeds = livingRooms.reduce((s, r) => s + r.capacity, 0);
+let occupied = 0;
+for (const r of livingRooms) {
+  for (let i = 0; i < r.capacity; i++) if (assignedByBed.get(`${r.number}:${i}`)) occupied++;
+}
+---
+<div id="rasselenie-list-view" class="hidden">
+  {/* Шапка — видна и на экране, и в печати */}
+  <div class="mb-4 rounded-[14px] border border-border bg-white p-4 card-shadow">
+    <h3 class="text-[18px] font-bold text-navy-950">Расселение · список комнат</h3>
+    <p class="mt-1 text-[14px] text-body-muted">
+      Занято {occupied} из {totalBeds} мест. Не расселены: {unassignedKids.length}.
+    </p>
+  </div>
+
+  <div class="overflow-hidden rounded-[14px] border border-border bg-white card-shadow">
+    {livingRooms.map((r) => {
+      const beds = Array.from({ length: r.capacity }).map((_, i) => assignedByBed.get(`${r.number}:${i}`) ?? null);
+      const occ = beds.filter(Boolean).length;
+      return (
+        <div class="border-b border-border last:border-b-0">
+          <div class="flex items-baseline justify-between bg-page px-4 py-2">
+            <span class="text-[15px] font-bold text-navy-950">№{r.number} · {r.label}</span>
+            <span class="text-[13px] text-body-muted">{occ}/{r.capacity}</span>
+          </div>
+          <ol class="divide-y divide-border">
+            {beds.map((kid, i) => (
+              <li class="flex items-center gap-3 px-4 py-2 text-[14px]">
+                <span class="w-5 shrink-0 text-right text-[12px] text-body-muted">{i + 1}.</span>
+                {kid ? (
+                  <>
+                    <span class={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white ${
+                      kid.kid_gender === 'F' ? 'bg-pink-500' : kid.kid_gender === 'M' ? 'bg-sky-500' : 'bg-slate-400'
+                    }`}>{genderShort(kid.kid_gender)}</span>
+                    <span class="flex-1 text-navy-950">{kid.kid_name}</span>
+                    <span class="shrink-0 text-[13px] text-body-muted">{kid.kid_age ? `${kid.kid_age} лет` : ''}</span>
+                  </>
+                ) : (
+                  <span class="flex-1 text-body-muted">— свободно</span>
+                )}
+              </li>
+            ))}
+          </ol>
+        </div>
+      );
+    })}
+  </div>
+
+  {unassignedKids.length > 0 && (
+    <div class="mt-4 rounded-[14px] border border-amber-300 bg-amber-50 p-4">
+      <h4 class="mb-2 text-[15px] font-bold text-amber-900">Не расселены ({unassignedKids.length})</h4>
+      <ol class="divide-y divide-amber-200">
+        {unassignedKids.map((kid, i) => (
+          <li class="flex items-center gap-3 py-2 text-[14px]">
+            <span class="w-5 shrink-0 text-right text-[12px] text-amber-700">{i + 1}.</span>
+            <span class={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white ${
+              kid.kid_gender === 'F' ? 'bg-pink-500' : kid.kid_gender === 'M' ? 'bg-sky-500' : 'bg-slate-400'
+            }`}>{genderShort(kid.kid_gender)}</span>
+            <span class="flex-1 text-navy-950">{kid.kid_name}</span>
+            <span class="shrink-0 text-[13px] text-body-muted">{kid.kid_age ? `${kid.kid_age} лет` : ''}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )}
+</div>
