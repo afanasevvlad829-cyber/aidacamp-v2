@@ -1,7 +1,6 @@
 ---
 import type { ShiftEvent } from '../../../lib/portalShift';
 import { EVENT_TYPE_LABELS, eventColorClass } from '../../../lib/portalShift';
-import { roleAllowed } from '../../../lib/portalShiftRoles';
 import { canEditEvent } from '../../../lib/portalShiftPerms';
 import { getActivity } from '../../../lib/portalActivities';
 import MediaManager from '../MediaManager.astro';
@@ -143,7 +142,7 @@ function linkifyNotes(text: string): string {
           </div>
         </div>
         {slot.events.map((e, idx) => {
-          const myChecklists = isManagerView ? e.checklists : e.checklists.filter((cl) => roleAllowed(role, cl.roles));
+          const myChecklists = e.checklists;
           return (
             <div data-slot-panel={slotId} id={'panel-' + e.id} class:list={['parallel-slot__panel', idx === 0 ? '' : 'hidden']}>
               <article class="rounded-[14px] border border-border bg-white p-4">
@@ -202,7 +201,7 @@ function linkifyNotes(text: string): string {
                     )}
                   </ul>
                 )}
-                {canEditEvent(role, e.roles) && !['routine', 'bedtime'].includes(e.event_type ?? '') && (
+                {canEditEvent(role, e.roles) && (
                   <div class="mt-3 portal-edit" data-event-id={e.id}>
                     <button type="button" class="portal-edit__toggle hidden">Править</button>
                     <form class="portal-edit__form mt-3 hidden space-y-3 rounded-[12px] border border-border bg-white p-3">
@@ -240,6 +239,7 @@ function linkifyNotes(text: string): string {
                       <div class="flex gap-2">
                         <button type="submit" class="rounded-[10px] bg-primary px-3 py-1.5 text-[13px] font-semibold text-white transition hover:opacity-90">Сохранить</button>
                         <button type="button" class="portal-edit__cancel rounded-[10px] border border-border bg-white px-3 py-1.5 text-[13px] font-medium text-body-muted">Отмена</button>
+                        <button type="button" class="portal-edit__delete rounded-[10px] border border-red-300 bg-white px-3 py-1.5 text-[13px] font-medium text-red-700 transition hover:bg-red-50">Удалить</button>
                         <span class="portal-edit__status ml-auto self-center text-[12px] text-body-muted hidden"></span>
                       </div>
                     </form>
@@ -252,13 +252,13 @@ function linkifyNotes(text: string): string {
       </div>
     ) : (() => {
       const e = slot.events[0];
-      const myChecklists = isManagerView ? e.checklists : e.checklists.filter((cl) => roleAllowed(role, cl.roles));
+      const myChecklists = e.checklists;
       return (
         <article class="rounded-[16px] border border-border bg-white p-5 card-shadow">
           <div class="flex flex-wrap items-baseline justify-between gap-2">
             <h2 class="flex items-baseline gap-2 text-[18px] font-semibold text-navy-950">
               {e.title}
-              {canEditEvent(role, e.roles) && !['routine', 'bedtime'].includes(e.event_type ?? '') && (
+              {canEditEvent(role, e.roles) && (
                 <button type="button"
                         data-edit-title-for={e.id}
                         title="Править"
@@ -375,7 +375,7 @@ function linkifyNotes(text: string): string {
             <ul class="portal-media__list mt-1 space-y-1 text-[14px]"></ul>
           </div>
 
-          {canEditEvent(role, e.roles) && !['routine', 'bedtime'].includes(e.event_type ?? '') && (
+          {canEditEvent(role, e.roles) && (
             <div class="mt-3 portal-edit" data-event-id={e.id}>
               <button type="button" class="portal-edit__toggle hidden">
                 <i class="bi bi-pencil text-[14px]" aria-hidden="true"></i>
@@ -420,6 +420,7 @@ function linkifyNotes(text: string): string {
                 <div class="flex gap-2">
                   <button type="submit" class="rounded-[10px] bg-primary px-4 py-2 text-[14px] font-semibold text-white transition hover:opacity-90">Сохранить</button>
                   <button type="button" class="portal-edit__cancel rounded-[10px] border border-border bg-white px-4 py-2 text-[14px] font-medium text-body-muted transition hover:border-primary hover:text-primary">Отмена</button>
+                  <button type="button" class="portal-edit__delete rounded-[10px] border border-red-300 bg-white px-4 py-2 text-[14px] font-medium text-red-700 transition hover:bg-red-50">Удалить</button>
                   <span class="portal-edit__status ml-auto self-center text-[13px] text-body-muted hidden"></span>
                 </div>
               </form>
@@ -427,7 +428,7 @@ function linkifyNotes(text: string): string {
           )}
 
           {myChecklists.length === 0 ? (
-            <p class="mt-3 text-[16px] text-body-muted">Чек-листов для вашей роли нет.</p>
+            <p class="mt-3 text-[16px] text-body-muted">Чек-листов нет.</p>
           ) : (
             <div class="mt-4 space-y-4">
               {myChecklists.map((cl) => (

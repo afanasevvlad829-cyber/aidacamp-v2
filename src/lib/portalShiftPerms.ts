@@ -2,17 +2,12 @@ import type { PortalRole } from './portalSession';
 
 /**
  * Может ли пользователь редактировать событие.
- *  - admin, rukovoditel: всегда.
- *  - teacher, vozhaty: только если их роль присутствует в event.roles.
- *  - student/null: нет.
+ * Ограничения по ролям сняты: править может любой авторизованный сотрудник
+ * (admin, rukovoditel, teacher, vozhaty), кроме ученика. Роли остаются только
+ * как визуальные ярлыки, а не как ограничение доступа. eventRoles больше не влияет.
  */
-export function canEditEvent(role: PortalRole | null | undefined, eventRoles: string[] | null | undefined): boolean {
-  if (!role) return false;
-  if (role === 'admin' || role === 'rukovoditel') return true;
-  if (role === 'teacher' || role === 'vozhaty') {
-    return Array.isArray(eventRoles) && eventRoles.includes(role);
-  }
-  return false;
+export function canEditEvent(role: PortalRole | null | undefined, _eventRoles?: string[] | null | undefined): boolean {
+  return !!role && role !== 'student';
 }
 
 /** Поля, которые teacher/vozhaty МОГУТ менять (полный edit от admin/ruk идёт через старый /shift/admin). */
