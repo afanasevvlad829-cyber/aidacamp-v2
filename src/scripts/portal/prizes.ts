@@ -487,7 +487,7 @@ import { confirmDialog, alertDialog, haptic } from './tg';
         if (giveStatus) giveStatus.textContent = isEdit ? '✓ обновлено' : '✓ выдано';
         if (isEdit) {
           // Обновляем карточку выдачи в открытом журнале, если он открыт
-          const card = document.querySelector(`[data-iss-id="${editId}"]`);
+          const card = document.querySelector(`[data-iss-card="${editId}"]`);
           if (card) {
             card.querySelector('[data-iss-kid]')!.textContent = kidName;
             card.querySelector('[data-iss-note]')!.textContent = note || '';
@@ -538,7 +538,7 @@ import { confirmDialog, alertDialog, haptic } from './tg';
                   : `<div class="flex h-[56px] w-[56px] items-center justify-center rounded-[8px] bg-navy-50 border border-border text-primary"><i class="bi bi-camera-video-fill text-[22px]"></i></div>`}
                </a>`
             : `<div class="flex h-[56px] w-[56px] flex-shrink-0 items-center justify-center rounded-[8px] bg-page border border-border text-body-muted"><i class="bi bi-image text-[22px]"></i></div>`;
-          return `<div class="flex items-start gap-3 rounded-[12px] border border-border bg-white p-3" data-iss-id="${it.id}">
+          return `<div class="flex items-start gap-3 rounded-[12px] border border-border bg-white p-3" data-iss-card="${it.id}">
             ${thumb}
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2 flex-wrap">
@@ -557,7 +557,7 @@ import { confirmDialog, alertDialog, haptic } from './tg';
                 <i class="bi bi-pencil text-[13px]" aria-hidden="true"></i>
               </button>
               <button type="button" class="iss-delete flex h-8 w-8 items-center justify-center rounded-[8px] text-body-muted hover:bg-red-50 hover:text-red-600 transition"
-                      title="Удалить выдачу" data-iss-id="${it.id}">
+                      title="Удалить выдачу" data-del-id="${it.id}">
                 <i class="bi bi-trash text-[13px]" aria-hidden="true"></i>
               </button>
             </div>
@@ -569,17 +569,17 @@ import { confirmDialog, alertDialog, haptic } from './tg';
             if (!await confirmDialog('Удалить эту запись о выдаче?')) return;
             btn.disabled = true;
             try {
-              const jr = await postJson('/api/portal/prize-ops', { action: 'delete_issuance', id: Number(btn.dataset.issId) });
+              const jr = await postJson('/api/portal/prize-ops', { action: 'delete_issuance', id: Number(btn.dataset.delId) });
               if (jr.ok) {
-                btn.closest('[data-iss-id]')?.remove();
-                if (!issListEl.querySelector('[data-iss-id]')) {
+                btn.closest('[data-iss-card]')?.remove();
+                if (!issListEl.querySelector('[data-iss-card]')) {
                   issListEl.hidden = true;
                   if (issEmpty) issEmpty.hidden = false;
                 }
                 // Обновить счётчик в таблице
                 const badge = document.querySelector(`[data-view-issuances][data-prize-id="${prizeId}"]`);
                 if (badge) {
-                  const cnt = issListEl.querySelectorAll('[data-iss-id]').length;
+                  const cnt = issListEl.querySelectorAll('[data-iss-card]').length;
                   if (cnt === 0) { badge.remove(); }
                   else { badge.textContent = ''; badge.innerHTML = `<i class="bi bi-check-circle-fill" aria-hidden="true"></i>${cnt}`; }
                 }
