@@ -462,7 +462,8 @@ import { confirmDialog, alertDialog, haptic } from './tg';
     const editId = (document.getElementById('give-edit-id') as HTMLInputElement).value;
     const isEdit = !!editId;
     const file = (document.getElementById('give-file') as HTMLInputElement).files?.[0];
-    // Для новой выдачи файл рекомендуется, но не блокирует
+    // Для новой выдачи фото/видео обязательно
+    if (!isEdit && !file) { if (giveStatus) giveStatus.textContent = 'Прикрепи фото или видео — обязательно'; return; }
     const kidName = kidSel.options[kidSel.selectedIndex]?.dataset?.name || '';
     const fd = new FormData();
     fd.append('action', isEdit ? 'update_issuance' : 'issue');
@@ -667,6 +668,36 @@ import { confirmDialog, alertDialog, haptic } from './tg';
     document.body.classList.add('printing-activities');
     window.print();
     setTimeout(() => document.body.classList.remove('printing-activities'), 100);
+  });
+
+  // ── Экспорт активностей в Excel: список с ценами (HTML-таблица .xls) ──
+  document.getElementById('btn-export-activities')?.addEventListener('click', () => {
+    const clean = (s: string | null | undefined) =>
+      (s ?? '').replace(/ /g, ' ').replace(/₽/g, '').trim();
+    const rows = Array.from(document.querySelectorAll<HTMLElement>('#activities-tbody [data-activity-row]'));
+    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const trs = rows.map((row) => {
+      const name = clean(row.querySelector<HTMLElement>('.font-medium')?.textContent);
+      const cat = clean(row.querySelector<HTMLElement>('td:nth-child(2)')?.textContent);
+      const total = clean(row.querySelector<HTMLElement>('[data-total-price]')?.textContent);
+      const per = clean(row.querySelector<HTMLElement>('[data-per-person]')?.textContent);
+      return `<tr><td>${esc(name)}</td><td>${esc(cat)}</td><td>${esc(total)}</td><td>${esc(per)}</td></tr>`;
+    }).join('');
+    const html =
+      '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">' +
+      '<head><meta charset="utf-8"></head><body><table border="1">' +
+      '<thead><tr><th>Активность</th><th>Категория</th><th>Цена (игр. ₽)</th><th>С человека (игр. ₽)</th></tr></thead>' +
+      `<tbody>${trs}</tbody></table></body></html>`;
+    const blob = new Blob(['﻿' + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const d = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `aktivnosti-${d}.xls`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
 
   document.getElementById('btn-add-custom')?.addEventListener('click', () => {

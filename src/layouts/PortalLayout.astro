@@ -19,6 +19,8 @@ const pathNow = Astro.url.pathname.replace(/\/+$/, '') || '/';
 const showBack = pathNow !== '/portal' && pathNow !== '';
 
 const realRole = Astro.locals.portalRole ?? null;
+const portalName = Astro.locals.portalName ?? null;
+const roleLabel = realRole ? (ROLE_LABELS[realRole] ?? realRole) : null;
 ---
 
 <!doctype html>
@@ -64,6 +66,18 @@ const realRole = Astro.locals.portalRole ?? null;
                  aria-label="AidaCamp">
                 <span class="text-primary">Aida</span><span>Camp</span>
               </a>
+              {realRole && (
+                <span
+                  class="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-border bg-page px-2.5 py-1 text-[13px]"
+                  title={`Вы вошли как ${portalName ? portalName + ' — ' : ''}${roleLabel}`}
+                >
+                  <i class="bi bi-person-circle text-[15px] text-primary" aria-hidden="true"></i>
+                  {portalName && (
+                    <span class="max-w-[110px] truncate font-medium text-navy-950 md:max-w-[220px]">{portalName}</span>
+                  )}
+                  <span class="shrink-0 text-body-muted">{roleLabel}</span>
+                </span>
+              )}
             </div>
             <div class="flex items-center gap-1.5">
             <UploadQueueIndicator />
