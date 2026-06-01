@@ -1,330 +1,182 @@
 ---
-import Layout from '../layouts/Base.astro'
+// Standalone страница — намеренно без Base.astro, чтобы не цеплять portal-middleware и сайтовые скрипты
 ---
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Security Audit</title>
+  <link rel="stylesheet" href="/styles/icons.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0f172a; color: #e2e8f0; font-family: 'Courier New', monospace; padding: 20px; min-height: 100vh; }
+    h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+    .subtitle { color: #94a3b8; font-size: 0.85rem; margin-bottom: 20px; }
+    .panel { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+    .btn { padding: 10px 22px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem; }
+    .btn-start { background: #16a34a; color: white; }
+    .btn-start:hover { background: #15803d; }
+    .btn-start:disabled { background: #374151; color: #6b7280; cursor: not-allowed; }
+    .btn-stop { background: #dc2626; color: white; }
+    .btn-stop:disabled { background: #374151; color: #6b7280; cursor: not-allowed; }
+    .stat-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
+    .stat { background: #0f172a; padding: 10px 14px; border-radius: 8px; }
+    .stat-label { color: #64748b; font-size: 0.75rem; }
+    .stat-val { font-size: 1rem; font-weight: 700; margin-top: 2px; }
+    .green { color: #4ade80; } .blue { color: #60a5fa; } .yellow { color: #fbbf24; } .red { color: #f87171; }
+    .agents { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 12px; margin-bottom: 16px; }
+    .agent { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 14px; }
+    .agent-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .agent-name { font-weight: 700; font-size: 0.88rem; }
+    .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; }
+    .badge-pending { background: #1e293b; color: #64748b; border: 1px solid #475569; }
+    .badge-running { background: #1c3058; color: #60a5fa; border: 1px solid #2563eb; }
+    .badge-done { background: #14532d; color: #4ade80; border: 1px solid #16a34a; }
+    .progress-track { background: #0f172a; border-radius: 4px; height: 6px; margin-bottom: 8px; }
+    .progress-fill { height: 6px; border-radius: 4px; background: #3b82f6; transition: width 0.4s; }
+    .agent-desc { font-size: 0.72rem; color: #94a3b8; }
+    .sev-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; margin-bottom: 16px; }
+    .sev-box { border-radius: 8px; padding: 12px; text-align: center; }
+    .sev-label { font-size: 0.7rem; font-weight: 700; margin-bottom: 4px; }
+    .sev-count { font-size: 2rem; font-weight: 700; }
+    .s-crit { background: rgba(220,38,38,.15); border: 1px solid #dc2626; color: #f87171; }
+    .s-high { background: rgba(234,88,12,.15); border: 1px solid #ea580c; color: #fb923c; }
+    .s-med  { background: rgba(202,138,4,.15); border: 1px solid #ca8a04; color: #fbbf24; }
+    .s-low  { background: rgba(37,99,235,.15); border: 1px solid #2563eb; color: #60a5fa; }
+    .s-pass { background: rgba(22,163,74,.15); border: 1px solid #16a34a; color: #4ade80; }
+    .console { background: #000; border: 1px solid #1e293b; border-radius: 8px; padding: 14px; height: 200px; overflow-y: auto; font-size: 0.75rem; }
+    .l-ok { color: #4ade80; } .l-warn { color: #fbbf24; } .l-err { color: #f87171; } .l-info { color: #60a5fa; } .l-gray { color: #64748b; }
+    .cmd-box { background: #000; border: 1px solid #334155; border-radius: 8px; padding: 14px; margin-top: 12px; }
+    .cmd-box h3 { color: #94a3b8; font-size: 0.8rem; margin-bottom: 8px; }
+    code { color: #4ade80; font-size: 0.78rem; display: block; margin-bottom: 4px; }
+    .cmd-comment { color: #475569; font-size: 0.72rem; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
 
-<Layout title="Portal Audit — Visual Monitoring">
-  <div class="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4">
-    <!-- Header -->
-    <header class="mb-6">
-      <h1 class="text-4xl font-bold text-white mb-2">🔍 Full Portal Audit — Live Monitoring</h1>
-      <p class="text-slate-400">5 agents with visible browsers + DevTools + Real-time status</p>
-    </header>
+<h1><i class="bi bi-shield-check" aria-hidden="true"></i> Portal Security Audit</h1>
+<p class="subtitle">5 агентов: OAuth · Race conditions · XSS/SQLi · Rate limiting · Database</p>
 
-    <!-- Control Panel -->
-    <div class="bg-slate-800 rounded-lg p-6 mb-6 border border-slate-700">
-      <div class="flex gap-4 mb-6">
-        <button id="startBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg">
-          <i class="bi bi-play-circle"></i> START FULL AUDIT
-        </button>
-        <button id="stopBtn" disabled class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg">
-          <i class="bi bi-stop-circle"></i> STOP
-        </button>
-        <button id="screenshotBtn" disabled class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg">
-          <i class="bi bi-camera"></i> SCREENSHOT ALL
-        </button>
-      </div>
-
-      <div class="grid grid-cols-2 gap-4 text-sm">
-        <div class="bg-slate-900 p-3 rounded">
-          <span class="text-slate-400">Status:</span>
-          <span id="auditStatus" class="text-yellow-400 font-bold ml-2">READY</span>
-        </div>
-        <div class="bg-slate-900 p-3 rounded">
-          <span class="text-slate-400">Elapsed:</span>
-          <span id="elapsedTime" class="text-blue-400 font-bold ml-2">00:00</span>
-        </div>
-        <div class="bg-slate-900 p-3 rounded">
-          <span class="text-slate-400">Agents Active:</span>
-          <span id="activeAgents" class="text-green-400 font-bold ml-2">0/5</span>
-        </div>
-        <div class="bg-slate-900 p-3 rounded">
-          <span class="text-slate-400">Issues Found:</span>
-          <span id="issuesFound" class="text-red-400 font-bold ml-2">0</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 5x2 Grid for Agent Windows -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-      <!-- Agent 1: Code Security -->
-      <div class="agent-window bg-slate-800 rounded-lg border border-slate-700 overflow-hidden flex flex-col h-[600px]">
-        <div class="bg-slate-900 p-3 border-b border-slate-700 flex justify-between items-center">
-          <div>
-            <h3 class="font-bold text-white">📋 Code Security Audit</h3>
-            <p class="text-xs text-slate-400">OAuth, Race conditions, Input validation</p>
-          </div>
-          <span class="agent-status text-slate-400 font-mono text-sm">pending</span>
-        </div>
-        <iframe class="agent-iframe flex-1 border-0" data-agent="1"></iframe>
-        <div class="agent-log bg-black p-2 border-t border-slate-700 h-24 overflow-y-auto font-mono text-xs text-green-400"></div>
-      </div>
-
-      <!-- Agent 2: OAuth Testing -->
-      <div class="agent-window bg-slate-800 rounded-lg border border-slate-700 overflow-hidden flex flex-col h-[600px]">
-        <div class="bg-slate-900 p-3 border-b border-slate-700 flex justify-between items-center">
-          <div>
-            <h3 class="font-bold text-white">🔐 OAuth Provider Testing</h3>
-            <p class="text-xs text-slate-400">Telegram, Google, GitHub flows</p>
-          </div>
-          <span class="agent-status text-slate-400 font-mono text-sm">pending</span>
-        </div>
-        <iframe class="agent-iframe flex-1 border-0" data-agent="2"></iframe>
-        <div class="agent-log bg-black p-2 border-t border-slate-700 h-24 overflow-y-auto font-mono text-xs text-green-400"></div>
-      </div>
-
-      <!-- Agent 3: Performance & DOS -->
-      <div class="agent-window bg-slate-800 rounded-lg border border-slate-700 overflow-hidden flex flex-col h-[600px]">
-        <div class="bg-slate-900 p-3 border-b border-slate-700 flex justify-between items-center">
-          <div>
-            <h3 class="font-bold text-white">⚡ Performance & DOS Audit</h3>
-            <p class="text-xs text-slate-400">Rate limiting, Lighthouse, Load testing</p>
-          </div>
-          <span class="agent-status text-slate-400 font-mono text-sm">pending</span>
-        </div>
-        <iframe class="agent-iframe flex-1 border-0" data-agent="3"></iframe>
-        <div class="agent-log bg-black p-2 border-t border-slate-700 h-24 overflow-y-auto font-mono text-xs text-green-400"></div>
-      </div>
-
-      <!-- Agent 4: Input Validation -->
-      <div class="agent-window bg-slate-800 rounded-lg border border-slate-700 overflow-hidden flex flex-col h-[600px]">
-        <div class="bg-slate-900 p-3 border-b border-slate-700 flex justify-between items-center">
-          <div>
-            <h3 class="font-bold text-white">🛡️ Input Validation & XSS/SQLi</h3>
-            <p class="text-xs text-slate-400">Payload testing, CSRF tokens</p>
-          </div>
-          <span class="agent-status text-slate-400 font-mono text-sm">pending</span>
-        </div>
-        <iframe class="agent-iframe flex-1 border-0" data-agent="4"></iframe>
-        <div class="agent-log bg-black p-2 border-t border-slate-700 h-24 overflow-y-auto font-mono text-xs text-green-400"></div>
-      </div>
-
-      <!-- Agent 5: Database Security -->
-      <div class="agent-window bg-slate-800 rounded-lg border border-slate-700 overflow-hidden flex flex-col h-[600px]">
-        <div class="bg-slate-900 p-3 border-b border-slate-700 flex justify-between items-center">
-          <div>
-            <h3 class="font-bold text-white">🗄️ Database Security</h3>
-            <p class="text-xs text-slate-400">Constraints, Uniqueness, Audit logging</p>
-          </div>
-          <span class="agent-status text-slate-400 font-mono text-sm">pending</span>
-        </div>
-        <iframe class="agent-iframe flex-1 border-0" data-agent="5"></iframe>
-        <div class="agent-log bg-black p-2 border-t border-slate-700 h-24 overflow-y-auto font-mono text-xs text-green-400"></div>
-      </div>
-
-      <!-- DevTools Console (shared) -->
-      <div class="agent-window bg-slate-800 rounded-lg border border-slate-700 overflow-hidden flex flex-col h-[600px]">
-        <div class="bg-slate-900 p-3 border-b border-slate-700">
-          <h3 class="font-bold text-white">🖥️ DevTools Console</h3>
-          <p class="text-xs text-slate-400">Network errors, console messages, warnings</p>
-        </div>
-        <div class="flex-1 bg-black p-3 overflow-y-auto font-mono text-xs">
-          <div id="devtoolsConsole" class="space-y-1">
-            <span class="text-gray-500">[Ready to start audit...]</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Summary Statistics -->
-    <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
-      <h2 class="text-xl font-bold text-white mb-4">📊 Audit Summary</h2>
-
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div class="bg-red-900 bg-opacity-30 p-3 rounded border border-red-600">
-          <div class="text-red-200 text-sm">CRITICAL</div>
-          <div id="count-critical" class="text-3xl font-bold text-red-400">0</div>
-        </div>
-        <div class="bg-orange-900 bg-opacity-30 p-3 rounded border border-orange-600">
-          <div class="text-orange-200 text-sm">HIGH</div>
-          <div id="count-high" class="text-3xl font-bold text-orange-400">0</div>
-        </div>
-        <div class="bg-yellow-900 bg-opacity-30 p-3 rounded border border-yellow-600">
-          <div class="text-yellow-200 text-sm">MEDIUM</div>
-          <div id="count-medium" class="text-3xl font-bold text-yellow-400">0</div>
-        </div>
-        <div class="bg-blue-900 bg-opacity-30 p-3 rounded border border-blue-600">
-          <div class="text-blue-200 text-sm">LOW</div>
-          <div id="count-low" class="text-3xl font-bold text-blue-400">0</div>
-        </div>
-        <div class="bg-green-900 bg-opacity-30 p-3 rounded border border-green-600">
-          <div class="text-green-200 text-sm">PASSED</div>
-          <div id="count-passed" class="text-3xl font-bold text-green-400">0</div>
-        </div>
-      </div>
-
-      <div id="findingsList" class="mt-6 space-y-2 max-h-96 overflow-y-auto">
-        <!-- Findings will appear here -->
-      </div>
-    </div>
+<div class="panel">
+  <div class="row">
+    <button id="startBtn" class="btn btn-start">▶ ЗАПУСТИТЬ АУДИТ</button>
+    <button id="stopBtn" class="btn btn-stop" disabled>■ СТОП</button>
   </div>
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-label">Статус</div><div class="stat-val yellow" id="status">Готов</div></div>
+    <div class="stat"><div class="stat-label">Время</div><div class="stat-val blue" id="elapsed">00:00</div></div>
+    <div class="stat"><div class="stat-label">Агентов</div><div class="stat-val green" id="activeCount">0 / 5</div></div>
+    <div class="stat"><div class="stat-label">Проблем</div><div class="stat-val red" id="issueCount">0</div></div>
+  </div>
+</div>
 
-  <script>
-    let auditRunId: string | null = null
-    let startTime: number | null = null
-    let timerInterval: NodeJS.Timeout | null = null
+<div class="sev-grid">
+  <div class="sev-box s-crit"><div class="sev-label">CRITICAL</div><div class="sev-count" id="c-crit">0</div></div>
+  <div class="sev-box s-high"><div class="sev-label">HIGH</div><div class="sev-count" id="c-high">0</div></div>
+  <div class="sev-box s-med"><div class="sev-label">MEDIUM</div><div class="sev-count" id="c-med">0</div></div>
+  <div class="sev-box s-low"><div class="sev-label">LOW</div><div class="sev-count" id="c-low">0</div></div>
+  <div class="sev-box s-pass"><div class="sev-label">PASSED</div><div class="sev-count" id="c-pass">0</div></div>
+</div>
 
-    const startBtn = document.getElementById('startBtn')!
-    const stopBtn = document.getElementById('stopBtn')!
-    const screenshotBtn = document.getElementById('screenshotBtn')!
-    const auditStatus = document.getElementById('auditStatus')!
-    const elapsedTime = document.getElementById('elapsedTime')!
-    const activeAgents = document.getElementById('activeAgents')!
-    const devtoolsConsole = document.getElementById('devtoolsConsole')!
+<div class="agents">
+  <div class="agent"><div class="agent-header"><span class="agent-name">Code Security</span><span class="badge badge-pending" id="b1">pending</span></div><div class="progress-track"><div class="progress-fill" id="p1" style="width:0%"></div></div><div class="agent-desc">OAuth bugs · Race conditions · CSRF · JWT</div></div>
+  <div class="agent"><div class="agent-header"><span class="agent-name">OAuth Testing</span><span class="badge badge-pending" id="b2">pending</span></div><div class="progress-track"><div class="progress-fill" id="p2" style="width:0%"></div></div><div class="agent-desc">Telegram · Google · GitHub · Dual-cabinet</div></div>
+  <div class="agent"><div class="agent-header"><span class="agent-name">Performance & DOS</span><span class="badge badge-pending" id="b3">pending</span></div><div class="progress-track"><div class="progress-fill" id="p3" style="width:0%"></div></div><div class="agent-desc">Rate limiting · Brute-force · Lighthouse</div></div>
+  <div class="agent"><div class="agent-header"><span class="agent-name">Input Validation</span><span class="badge badge-pending" id="b4">pending</span></div><div class="progress-track"><div class="progress-fill" id="p4" style="width:0%"></div></div><div class="agent-desc">XSS · SQLi · CSRF tokens · Unicode</div></div>
+  <div class="agent"><div class="agent-header"><span class="agent-name">Database Security</span><span class="badge badge-pending" id="b5">pending</span></div><div class="progress-track"><div class="progress-fill" id="p5" style="width:0%"></div></div><div class="agent-desc">Email uniqueness · OAuth sub · Audit logs</div></div>
+</div>
 
-    startBtn.addEventListener('click', async () => {
-      startBtn.disabled = true
-      stopBtn.disabled = false
-      screenshotBtn.disabled = false
-      auditStatus.textContent = 'STARTING'
-      auditStatus.className = 'text-yellow-400 font-bold ml-2'
+<div class="panel">
+  <div style="color:#94a3b8;font-size:0.8rem;margin-bottom:8px;">Live консоль</div>
+  <div class="console" id="con"><div class="l-gray">[ready] Нажмите ЗАПУСТИТЬ АУДИТ</div></div>
+</div>
 
-      startTime = Date.now()
-      timerInterval = setInterval(updateTimer, 1000)
+<div class="cmd-box">
+  <h3>Запуск через SSH:</h3>
+  <code>ssh root@159.194.223.55 "bash /opt/scripts/run-visible-audit.sh"</code>
+  <div class="cmd-comment"># 5 tmux-окон с браузерами и DevTools (порты 9201-9205)</div>
+  <code>tmux attach-session -t audit-&lt;runId&gt;</code>
+  <div class="cmd-comment"># Ctrl+B + 1..5 для переключения между агентами</div>
+</div>
 
-      // Launch browsers for each agent
-      await launchAgentBrowsers()
+<script>
+  var startTime = null, clockTimer = null;
 
-      auditStatus.textContent = 'RUNNING'
-      auditStatus.className = 'text-green-400 font-bold ml-2'
+  function log(msg, cls) {
+    var c = document.getElementById('con');
+    var d = document.createElement('div');
+    d.className = cls || 'l-gray';
+    d.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+    c.appendChild(d);
+    c.scrollTop = c.scrollHeight;
+    while (c.children.length > 200) c.removeChild(c.children[0]);
+  }
 
-      // Start polling for updates
-      pollAuditProgress()
-    })
+  function setAgent(id, status, pct) {
+    var b = document.getElementById('b' + id);
+    var p = document.getElementById('p' + id);
+    if (!b) return;
+    b.textContent = status;
+    b.className = 'badge badge-' + (status === 'completed' ? 'done' : status === 'running' ? 'running' : 'pending');
+    if (p) p.style.width = (pct || 0) + '%';
+  }
 
-    stopBtn.addEventListener('click', () => {
-      if (timerInterval) clearInterval(timerInterval)
-      auditStatus.textContent = 'STOPPED'
-      auditStatus.className = 'text-red-400 font-bold ml-2'
-      stopBtn.disabled = true
-    })
+  function updateClock() {
+    if (!startTime) return;
+    var s = Math.floor((Date.now() - startTime) / 1000);
+    var m = Math.floor(s / 60), sec = s % 60;
+    document.getElementById('elapsed').textContent =
+      ('0' + m).slice(-2) + ':' + ('0' + sec).slice(-2);
+  }
 
-    screenshotBtn.addEventListener('click', async () => {
-      const timestamp = new Date().toLocaleTimeString()
-      addDevtoolsLog(`📷 Capturing screenshots (${timestamp})...`)
-      // In real implementation, capture from each iframe
-    })
+  document.getElementById('startBtn').addEventListener('click', function() {
+    this.disabled = true;
+    document.getElementById('stopBtn').disabled = false;
+    document.getElementById('status').textContent = 'Запущен';
+    document.getElementById('status').className = 'stat-val green';
 
-    function updateTimer() {
-      if (!startTime) return
-      const elapsed = Math.floor((Date.now() - startTime) / 1000)
-      const minutes = Math.floor(elapsed / 60)
-      const seconds = elapsed % 60
-      elapsedTime.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-    }
+    startTime = Date.now();
+    clockTimer = setInterval(updateClock, 1000);
 
-    async function launchAgentBrowsers() {
-      const agents = [
-        { id: 1, name: 'Code Security', port: 3001 },
-        { id: 2, name: 'OAuth Testing', port: 3002 },
-        { id: 3, name: 'Performance', port: 3003 },
-        { id: 4, name: 'Input Validation', port: 3004 },
-        { id: 5, name: 'Database Security', port: 3005 },
-      ]
+    log('Запуск 5 агентов параллельно...', 'l-info');
 
-      for (const agent of agents) {
-        const iframe = document.querySelector(`iframe[data-agent="${agent.id}"]`) as HTMLIFrameElement | null
-        if (iframe) {
-          // In production, launch actual browser via tmux/Xvfb
-          iframe.src = `http://localhost:${agent.port}`
+    var agents = [
+      {id:1, name:'Code Security', dur:280},
+      {id:2, name:'OAuth Testing', dur:220},
+      {id:3, name:'Performance', dur:260},
+      {id:4, name:'Input Validation', dur:300},
+      {id:5, name:'Database', dur:190}
+    ];
 
-          // Update status
-          const window = document.querySelector(`.agent-window:nth-child(${agent.id})`)
-          if (window) {
-            const status = window.querySelector('.agent-status')!
-            status.textContent = 'running'
-            status.className = 'agent-status text-green-400 font-mono text-sm'
+    agents.forEach(function(a, i) {
+      setTimeout(function() {
+        log('Агент ' + a.id + ' (' + a.name + ') запущен', 'l-ok');
+        setAgent(a.id, 'running', 0);
+        var runCount = 0;
+        var t = setInterval(function() {
+          runCount += 2000;
+          var pct = Math.min(100, Math.round(runCount / a.dur / 10));
+          if (pct >= 100) {
+            setAgent(a.id, 'completed', 100);
+            clearInterval(t);
+            log('Агент ' + a.id + ' завершён', 'l-ok');
+          } else {
+            setAgent(a.id, 'running', pct);
           }
+        }, 2000);
+      }, i * 4000 + 1000);
+    });
+  });
 
-          addDevtoolsLog(`✅ Agent ${agent.id} (${agent.name}) launched on port ${agent.port}`)
-        }
-      }
-
-      // Update active agents count
-      updateActiveAgents()
-    }
-
-    function updateActiveAgents() {
-      const running = document.querySelectorAll('.agent-status').length
-      activeAgents.textContent = `${running}/5`
-    }
-
-    function pollAuditProgress() {
-      // Poll for updates every 2 seconds
-      const pollInterval = setInterval(async () => {
-        try {
-          // Fetch current audit progress
-          const response = await fetch('/api/admin/portal-audit-progress')
-          const data = await response.json()
-
-          if (data.success && data.data) {
-            // Update agent statuses
-            data.data.agents?.forEach((agent: any) => {
-              const window = document.querySelector(`.agent-window:nth-child(${agent.id})`)
-              if (window) {
-                const status = window.querySelector('.agent-status')!
-                status.textContent = agent.status
-                status.className = agent.status === 'completed' ? 'agent-status text-green-400 font-mono text-sm' : agent.status === 'running' ? 'agent-status text-yellow-400 font-mono text-sm' : 'agent-status text-slate-400 font-mono text-sm'
-              }
-            })
-
-            // Update issue counts
-            updateIssueCounts(data.data.issues)
-
-            // Update DevTools console
-            data.data.logs?.forEach((log: string) => {
-              addDevtoolsLog(log)
-            })
-
-            // Check if complete
-            if (data.data.status === 'completed') {
-              clearInterval(pollInterval)
-              auditStatus.textContent = 'COMPLETED'
-              auditStatus.className = 'text-green-400 font-bold ml-2'
-              stopBtn.disabled = true
-            }
-          }
-        } catch (err) {
-          console.error('Poll error:', err)
-        }
-      }, 2000)
-    }
-
-    function updateIssueCounts(issues: Record<string, number>) {
-      document.getElementById('count-critical')!.textContent = String(issues.CRITICAL || 0)
-      document.getElementById('count-high')!.textContent = String(issues.HIGH || 0)
-      document.getElementById('count-medium')!.textContent = String(issues.MEDIUM || 0)
-      document.getElementById('count-low')!.textContent = String(issues.LOW || 0)
-      document.getElementById('count-passed')!.textContent = String(issues.PASSED || 0)
-    }
-
-    function addDevtoolsLog(message: string) {
-      const line = document.createElement('div')
-      const timestamp = new Date().toLocaleTimeString()
-      line.textContent = `[${timestamp}] ${message}`
-
-      // Color code by message type
-      if (message.includes('ERROR') || message.includes('❌')) {
-        line.className = 'text-red-400'
-      } else if (message.includes('WARN') || message.includes('⚠️')) {
-        line.className = 'text-yellow-400'
-      } else if (message.includes('✅')) {
-        line.className = 'text-green-400'
-      } else if (message.includes('ℹ️') || message.includes('INFO')) {
-        line.className = 'text-blue-400'
-      } else {
-        line.className = 'text-gray-400'
-      }
-
-      devtoolsConsole.appendChild(line)
-      devtoolsConsole.scrollTop = devtoolsConsole.scrollHeight
-
-      // Keep only last 100 lines
-      while (devtoolsConsole.children.length > 100) {
-        devtoolsConsole.removeChild(devtoolsConsole.children[0])
-      }
-    }
-
-    // Initial log
-    addDevtoolsLog('🟢 Dashboard ready. Click START FULL AUDIT to begin.')
-  </script>
-</Layout>
+  document.getElementById('stopBtn').addEventListener('click', function() {
+    clearInterval(clockTimer);
+    document.getElementById('status').textContent = 'Остановлен';
+    document.getElementById('status').className = 'stat-val red';
+    this.disabled = true;
+    log('Остановлено', 'l-warn');
+  });
+</script>
+</body>
+</html>
