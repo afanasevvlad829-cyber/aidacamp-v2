@@ -563,11 +563,31 @@ import { confirmDialog, alertDialog, haptic } from './tg';
             </div>
           </div>`;
         }).join('');
-        // Delete handlers
+        // Delete handlers — двойной клик: сначала «подтвердить?», потом удалить
         issListEl.querySelectorAll('.iss-delete').forEach((btn: any) => {
+          let armed = false;
+          let armTimer: ReturnType<typeof setTimeout>;
           btn.addEventListener('click', async () => {
-            if (!await confirmDialog('Удалить эту запись о выдаче?')) return;
+            if (!armed) {
+              // Первый клик — «взводим» кнопку
+              armed = true;
+              btn.title = 'Нажми ещё раз для удаления';
+              btn.style.background = '#fee2e2';
+              btn.style.color = '#dc2626';
+              btn.innerHTML = '<i class="bi bi-trash-fill text-[13px]" aria-hidden="true"></i>';
+              armTimer = setTimeout(() => {
+                armed = false;
+                btn.title = 'Удалить выдачу';
+                btn.style.background = '';
+                btn.style.color = '';
+                btn.innerHTML = '<i class="bi bi-trash text-[13px]" aria-hidden="true"></i>';
+              }, 3000);
+              return;
+            }
+            // Второй клик — удаляем
+            clearTimeout(armTimer);
             btn.disabled = true;
+            btn.style.opacity = '0.5';
             try {
               const jr = await postJson('/api/portal/prize-ops', { action: 'delete_issuance', id: Number(btn.dataset.delId) });
               if (jr.ok) {
@@ -576,15 +596,24 @@ import { confirmDialog, alertDialog, haptic } from './tg';
                   issListEl.hidden = true;
                   if (issEmpty) issEmpty.hidden = false;
                 }
-                // Обновить счётчик в таблице
                 const badge = document.querySelector(`[data-view-issuances][data-prize-id="${prizeId}"]`);
                 if (badge) {
                   const cnt = issListEl.querySelectorAll('[data-iss-card]').length;
                   if (cnt === 0) { badge.remove(); }
-                  else { badge.textContent = ''; badge.innerHTML = `<i class="bi bi-check-circle-fill" aria-hidden="true"></i>${cnt}`; }
+                  else { badge.innerHTML = `<i class="bi bi-check-circle-fill" aria-hidden="true"></i>${cnt}`; }
                 }
-              } else { await alertDialog('Ошибка: ' + (jr.error || 'unknown')); btn.disabled = false; }
-            } catch { await alertDialog('Сетевая ошибка'); btn.disabled = false; }
+              } else {
+                btn.disabled = false;
+                btn.style.opacity = '';
+                const errEl = issDlg?.querySelector('#iss-error') as HTMLElement | null;
+                if (errEl) { errEl.textContent = 'Ошибка: ' + (jr.error || 'unknown'); errEl.hidden = false; }
+              }
+            } catch {
+              btn.disabled = false;
+              btn.style.opacity = '';
+              const errEl = issDlg?.querySelector('#iss-error') as HTMLElement | null;
+              if (errEl) { errEl.textContent = 'Сетевая ошибка при удалении'; errEl.hidden = false; }
+            }
           });
         });
         // Edit handlers
