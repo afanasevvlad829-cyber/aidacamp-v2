@@ -57,6 +57,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return { code: 403, error: 'не ваше событие' };
     }
 
+    // Удаление события (ограничения по ролям сняты — может любой, кто проходит canEditEvent).
+    if (body.delete === true || body.delete === 'true' || body.delete === 1 || body.delete === '1') {
+      await c.query('DELETE FROM event_checklist WHERE event_id=$1', [eventId]);
+      await c.query('DELETE FROM shift_event WHERE id=$1', [eventId]);
+      return { code: 200, deleted: true };
+    }
+
     // Сборка UPDATE-полей (только разрешённые)
     const sets: string[] = [];
     const vals: any[] = [];
