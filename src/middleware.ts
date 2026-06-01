@@ -1,10 +1,10 @@
 import type { MiddlewareHandler } from 'astro';
 import { verifySessionPayload } from './lib/portalSession';
-import { getStaff } from './lib/portalStaff';
+import { getStaff, getStaffById } from './lib/portalStaff';
 
 const PORTAL_PUBLIC = new Set(['/portal/login', '/portal/login/', '/portal/tg-app', '/api/portal/login', '/api/portal/check', '/api/portal/tg', '/api/portal/penalty/scan']);
 
-const staffActiveCache = new Map<number, { ok: boolean; role: string | null; roles: string[]; exp: number }>();
+const staffActiveCache = new Map<string, { ok: boolean; role: string | null; roles: string[]; exp: number }>();
 const STAFF_CACHE_MS = 60_000;
 
 // ─── 301 Redirects ──────────────────────────────────────────────────────────
@@ -53,12 +53,14 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
       // Для сотрудничьих сессий (есть sub) — проверяем active/role в БД (кэш 60с).
       // Student-сессии тоже имеют sub (это portal_kid.id), но к portal_staff отношения не имеют —
       // их валидировать через getStaff() нельзя (всегда вернёт null → 401). Пропускаем.
+      // Ключ сотрудника: sid (код-вход, portal_staff.id) либо sub (TG-вход, telegram_id).
       let staffRoles: string[] = [];
-      if (role && role !== 'student' && payload?.sub) {
+      const staffKey = payload?.sid ? `sid:${payload.sid}` : (payload?.sub ? `tg:${payload.sub}` : null);
+      if (role && role !== 'student' && staffKey) {
         const now = Date.now();
-        let c = staffActiveCache.get(payload.sub);
+        let c = staffActiveCache.get(staffKey);
         if (!c || c.exp < now) {
-          const staff = await getStaff(payload.sub);
+          const staff = payload!.sid ? await getStaffById(payload!.sid) : await getStaff(payload!.sub!);
           const allRoles: string[] = Array.isArray(staff?.roles) && staff!.roles.length > 0
             ? (staff!.roles as string[])
             : (staff?.role ? [staff.role as string] : []);
@@ -68,7 +70,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
             roles: allRoles,
             exp: now + STAFF_CACHE_MS,
           };
-          staffActiveCache.set(payload.sub, c);
+          staffActiveCache.set(staffKey, c);
         }
         if (!c.ok) {
           role = null;

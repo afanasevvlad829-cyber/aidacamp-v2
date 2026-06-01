@@ -205,6 +205,29 @@ const realRole = Astro.locals.portalRole ?? null;
           cancel.addEventListener('click', () => {
             form.classList.add('hidden');
           });
+          // Удаление события (доступно всем, кто видит форму правки — ограничения сняты).
+          const delBtn = root.querySelector('.portal-edit__delete');
+          if (delBtn) delBtn.addEventListener('click', async () => {
+            if (!confirm('Удалить это событие? Действие необратимо.')) return;
+            if (status) { status.textContent = 'Удаляю…'; status.classList.remove('hidden'); }
+            try {
+              const r = await fetch('/api/portal/shift/event-edit', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ event_id: eventId, delete: true }),
+                credentials: 'include',
+              });
+              const d = await r.json().catch(() => ({}));
+              if (r.ok && d.ok) {
+                if (status) status.textContent = '✓ Удалено, обновляю…';
+                setTimeout(() => window.location.reload(), 300);
+              } else if (status) {
+                status.textContent = 'Ошибка: ' + (d.error || r.status); status.classList.add('text-red-600');
+              }
+            } catch (e) {
+              if (status) { status.textContent = 'Сетевая ошибка'; status.classList.add('text-red-600'); }
+            }
+          });
           form.addEventListener('submit', async (ev) => {
             ev.preventDefault();
             const fd = new FormData(form);
