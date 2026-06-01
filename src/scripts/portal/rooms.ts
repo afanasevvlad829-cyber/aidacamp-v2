@@ -175,6 +175,11 @@ function initRasselenie() {
       animation: 150,
       ghostClass: 'opacity-50',
       draggable: '.kid-card',
+      // Кнопка «×» (снять с койки) внутри перетаскиваемой карточки: без filter
+      // Sortable перехватывает нажатие как старт drag и клик не срабатывает.
+      // preventOnFilter:false — пропускаем нативный click к обработчику .kid-remove.
+      filter: '.kid-remove',
+      preventOnFilter: false,
       forceFallback: false,
     };
 
@@ -243,7 +248,13 @@ function initRasselenie() {
         body: JSON.stringify({ shift_id: shiftId, kid_id: kidId }),
         credentials: 'include',
       });
-      if (r.ok) { haptic('success'); window.location.reload(); }
+      if (r.ok) {
+        haptic('success');
+        window.location.reload();
+      } else {
+        const d = await r.json().catch(() => ({}));
+        await alertDialog('Не удалось снять с койки: ' + (d.error || ('HTTP ' + r.status)));
+      }
     });
   });
 }
