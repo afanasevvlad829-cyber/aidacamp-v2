@@ -44,6 +44,32 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const role = payload.role;
 
   const body = await readBody(request);
+
+  // ── action=create: создать новый блок дня ──────────────────────────────
+  if (body.action === 'create') {
+    if (canEditEvent(role, null) !== true) return json({ ok: false, error: 'forbidden' }, 403);
+    const shiftId = Number(body.shift_id);
+    const date = String(body.date ?? '').trim();
+    const title = String(body.title ?? '').trim();
+    if (!Number.isFinite(shiftId) || shiftId <= 0) return json({ ok: false, error: 'shift_id required' }, 400);
+    if (!date) return json({ ok: false, error: 'date required' }, 400);
+    if (!title) return json({ ok: false, error: 'title required' }, 400);
+    const created = await withClient(async (c) => {
+      const r = await c.query(
+        `INSERT INTO shift_event(shift_id, date, title, start_time, end_time, notes, sort)
+         VALUES($1,$2,$3,$4,$5,$6,COALESCE($7,0)) RETURNING id`,
+        [shiftId, date, title,
+         body.start_time ? String(body.start_time) : null,
+         body.end_time ? String(body.end_time) : null,
+         body.notes ? String(body.notes) : null,
+         body.sort != null && body.sort !== '' ? Number(body.sort) : null],
+      );
+      return r.rows[0]?.id ?? null;
+    });
+    if (created == null) return json({ ok: false, error: 'db unavailable' }, 503);
+    return json({ ok: true, id: Number(created) });
+  }
+
   const eventId = Number(body.event_id);
   if (!Number.isFinite(eventId) || eventId <= 0) return json({ ok: false, error: 'event_id required' }, 400);
 
@@ -77,6 +103,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     maybe('start_time', body.start_time, (v) => (v === '' ? null : String(v)));
     maybe('end_time', body.end_time, (v) => (v === '' ? null : String(v)));
     maybe('notes', body.notes, (v) => (v === '' ? null : String(v)));
+    // Привязка/отвязка контент-задания из библиотеки (id текстовый или null)
+    maybe('content_task_template_id', body.content_task_template_id, (v) => (v === '' ? null : String(v)));
+    // Назначение ответственного (id числовой или null)
+    maybe('responsible_staff_id', body.responsible_staff_id, (v) => (v === '' || v === null ? null : Number(v)));
 
     if (sets.length > 0) {
       vals.push(eventId);
