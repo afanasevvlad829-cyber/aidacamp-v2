@@ -163,3 +163,28 @@ export async function deleteAllIssuances(): Promise<number> {
     return r.rowCount ?? 0;
   })) ?? 0;
 }
+
+/** Обновить данные выдачи (kid, цена, заметка; фото/видео заменяются только если переданы). */
+export async function updateIssuance(id: number, p: {
+  kid_id?: number | null;
+  kid_name?: string | null;
+  bongere_price?: number | null;
+  note?: string | null;
+  photo_url?: string | null;
+  video_url?: string | null;
+}): Promise<void> {
+  await withClient(async (c) => {
+    const sets: string[] = [];
+    const vals: any[] = [];
+    const push = (col: string, val: any) => { vals.push(val); sets.push(`${col} = $${vals.length}`); };
+    if ('kid_id'       in p) push('kid_id',       p.kid_id ?? null);
+    if ('kid_name'     in p) push('kid_name',     p.kid_name ?? null);
+    if ('bongere_price' in p) push('bongere_price', p.bongere_price ?? null);
+    if ('note'         in p) push('note',         p.note ?? null);
+    if ('photo_url'    in p && p.photo_url !== undefined) push('photo_url', p.photo_url);
+    if ('video_url'    in p && p.video_url !== undefined) push('video_url', p.video_url);
+    if (!sets.length) return;
+    vals.push(id);
+    await c.query(`UPDATE portal_prize_issuance SET ${sets.join(', ')} WHERE id = $${vals.length}`, vals);
+  });
+}

@@ -23,7 +23,7 @@ import { alertDialog } from './tg';
       const intended = box.checked;
       box.disabled = true;
       try {
-        const data = await postJson('/api/portal/shift/check', { eventId, checklistId, itemId });
+        const data = await postJson('/api/portal/shift/check', { eventId, checklistId, itemId, done: intended });
         if (!data.ok) {
           box.checked = !intended;
           await alertDialog('Не удалось сохранить отметку. Попробуйте ещё раз.');
@@ -67,60 +67,10 @@ import { alertDialog } from './tg';
 })();
 
 // ── Portal edit forms (inline event editing) ─────────────────────────────
-(() => {
-  document.querySelectorAll<HTMLElement>('.portal-edit').forEach((wrap) => {
-    const eventId = wrap.dataset.eventId;
-    const toggle = wrap.querySelector<HTMLButtonElement>('.portal-edit__toggle');
-    const form = wrap.querySelector<HTMLFormElement>('.portal-edit__form');
-    const cancel = wrap.querySelector<HTMLButtonElement>('.portal-edit__cancel');
-    const status = wrap.querySelector<HTMLElement>('.portal-edit__status');
-
-    // Open via pencil button in card title
-    const titleBtn = eventId
-      ? document.querySelector<HTMLButtonElement>(`[data-edit-title-for="${eventId}"]`)
-      : null;
-
-    function openForm() {
-      form?.classList.remove('hidden');
-      toggle?.classList.add('hidden');
-    }
-    function closeForm() {
-      form?.classList.add('hidden');
-      toggle?.classList.remove('hidden');
-      if (status) { status.textContent = ''; status.classList.add('hidden'); }
-    }
-
-    titleBtn?.addEventListener('click', openForm);
-    toggle?.addEventListener('click', openForm);
-    cancel?.addEventListener('click', closeForm);
-
-    form?.addEventListener('submit', async (ev) => {
-      ev.preventDefault();
-      if (!eventId) return;
-      const fd = new FormData(form);
-      const body: Record<string, unknown> = { id: Number(eventId) };
-      fd.forEach((v, k) => { body[k] = v === '' ? null : v; });
-      if (status) { status.textContent = 'Сохраняю…'; status.classList.remove('hidden'); }
-      const submitBtn = form.querySelector<HTMLButtonElement>('[type="submit"]');
-      if (submitBtn) submitBtn.disabled = true;
-      try {
-        const data = await postJson('/api/portal/shift/event', body);
-        if (data.ok) {
-          if (status) status.textContent = 'Сохранено';
-          setTimeout(closeForm, 800);
-        } else {
-          if (status) status.textContent = 'Ошибка: ' + (data.error ?? 'неизвестно');
-          await alertDialog('Ошибка сохранения: ' + (data.error ?? 'неизвестно'));
-        }
-      } catch (e: any) {
-        if (status) status.textContent = 'Ошибка';
-        await alertDialog('Ошибка: ' + (e?.message ?? e));
-      } finally {
-        if (submitBtn) submitBtn.disabled = false;
-      }
-    });
-  });
-})();
+// Канонический обработчик инлайн-правки события живёт в PortalLayout.astro
+// (POST /api/portal/shift/event-edit с полем event_id). Здесь раньше был
+// дубль с битым путём /api/portal/shift/event + полем id — он конфликтовал
+// (двойной submit, ложная ошибка). Удалён, чтобы остался один источник правды.
 
 // ── Self-check (wakeup) ──────────────────────────────────────────────────
 (() => {

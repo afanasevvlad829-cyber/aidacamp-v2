@@ -150,6 +150,24 @@ export async function toggleDone(telegramId: number, eventId: number, checklistI
   });
 }
 
+/**
+ * Идемпотентно ставит/снимает отметку в желаемое состояние (в отличие от toggleDone).
+ * Нужно для надёжного UI: если событие change прилетает дважды (Safari, двойной тап),
+ * toggle давал бы откат, а set всегда приводит к одному и тому же состоянию.
+ */
+export async function setDone(telegramId: number, eventId: number, checklistId: number, itemId: string, done: boolean): Promise<{ done: boolean } | null> {
+  return await withClient(async (c) => {
+    if (done) {
+      await c.query("INSERT INTO checklist_done(event_id,checklist_id,item_id,telegram_id) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING",
+        [eventId, checklistId, itemId, telegramId]);
+    } else {
+      await c.query("DELETE FROM checklist_done WHERE event_id=$1 AND checklist_id=$2 AND item_id=$3 AND telegram_id=$4",
+        [eventId, checklistId, itemId, telegramId]);
+    }
+    return { done };
+  });
+}
+
 /** Роли event_checklist (для проверки доступа в API). */
 export async function eventChecklistRoles(eventId: number, checklistId: number): Promise<string[]> {
   const rows = await query(

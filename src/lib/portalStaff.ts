@@ -16,6 +16,8 @@ export interface StaffRow {
 export interface StaffRowFull extends StaffRow {
   id: number;
   staff_key: string | null;
+  /** Персональный код-вход (альтернатива TG). NULL — кода нет. */
+  code?: string | null;
 }
 
 function dsn(): string {
@@ -69,7 +71,7 @@ export async function ensurePending(
 
 export async function listStaff(): Promise<StaffRowFull[]> {
   const rows = await query<StaffRowFull>(
-    'SELECT id, telegram_id, full_name, tg_username, role, COALESCE(roles, ARRAY[]::TEXT[]) AS roles, active, staff_key FROM portal_staff ORDER BY active DESC, role NULLS FIRST, created_at',
+    'SELECT id, telegram_id, full_name, tg_username, role, COALESCE(roles, ARRAY[]::TEXT[]) AS roles, active, staff_key, code FROM portal_staff ORDER BY active DESC, role NULLS FIRST, created_at',
   );
   return rows ?? [];
 }
@@ -227,4 +229,62 @@ export async function applyInviteForTelegram(
     );
     return r.rows[0] as StaffRow;
   });
+}
+
+// ─── Код-вход сотрудников (альтернатива Telegram) ────────────────────────────
+
+/** Запись сотрудника по PK id (для код-входа: sid = portal_staff.id). */
+export async function getStaffById(id: number): Promise<StaffRow | null> {
+  const rows = await query<StaffRow>(
+    'SELECT telegram_id, full_name, tg_username, role, COALESCE(roles, ARRAY[]::TEXT[]) AS roles, active FROM portal_staff WHERE id=$1',
+    [id],
+  );
+  return rows?.[0] ?? null;
+}
+
+/** Поиск сотрудника по персональному коду — для код-входа. Только активные. */
+export async function findStaffByCode(code: string): Promise<StaffRowFull | null> {
+  const rows = await query<StaffRowFull>(
+    `SELECT id, telegram_id, full_name, tg_username, role,
+            COALESCE(roles, ARRAY[]::TEXT[]) AS roles, active, staff_key, code
+       FROM portal_staff WHERE code=$1 AND active=TRUE`,
+    [code],
+  );
+  return rows?.[0] ?? null;
+}
+
+/** Зафиксировать факт код-входа сотрудника (не критично если упадёт). */
+export async function markStaffCodeLogin(id: number): Promise<void> {
+  await query('UPDATE portal_staff SET code_login_at=NOW() WHERE id=$1', [id]);
+}
+
+/**
+ * Сгенерировать (перевыпустить) персональный 6-значный код сотрудника.
+ * Код уникален и среди сотрудников, и среди учеников — иначе при логине он
+ * сматчился бы как ученический (role=student). Возвращает новый код или null.
+ */
+export async function regenerateStaffCode(id: number): Promise<string | null> {
+  return await withClient(async (c) => {
+    for (let i = 0; i < 12; i++) {
+      const code = String(Math.floor(Math.random() * 900000) + 100000);
+      const kid = await c.query('SELECT 1 FROM portal_kid WHERE code=$1', [code]);
+      if (kid.rowCount && kid.rowCount > 0) continue; // занят учеником — пробуем ещё
+      try {
+        const q = await c.query(
+          'UPDATE portal_staff SET code=$2 WHERE id=$1 RETURNING code',
+          [id, code],
+        );
+        return (q.rows[0]?.code as string) ?? null;
+      } catch (e: any) {
+        if (e?.code === '23505') continue; // занят другим сотрудником — пробуем ещё
+        throw e;
+      }
+    }
+    return null;
+  });
+}
+
+/** Убрать код-вход у сотрудника (останется только вход через TG). */
+export async function clearStaffCode(id: number): Promise<void> {
+  await query('UPDATE portal_staff SET code=NULL, code_login_at=NULL WHERE id=$1', [id]);
 }

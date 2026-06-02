@@ -6,8 +6,8 @@ import { randomUUID } from 'node:crypto';
 import { verifySessionPayload } from '../../../lib/portalSession';
 import { isStaff } from '../../../lib/portalPerms';
 import {
-  listIssuances, createIssuance, deleteIssuance, countIssuancesByPrize,
-  listCustomPrizes, createCustomPrize, archiveCustomPrize,
+  listIssuances, createIssuance, deleteIssuance, updateIssuance, countIssuancesByPrize,
+  listCustomPrizes, createCustomPrize, archiveCustomPrize, deleteAllIssuances,
 } from '../../../lib/portalPrizeOps';
 import { decrementPrizeRemaining } from '../../../lib/portalEconomy';
 import { PRIZES } from '../../../lib/portalPrizes';
@@ -118,6 +118,25 @@ export const POST: APIRoute = async ({ cookies, request }) => {
         return j({ ok: true, id, photo_url, video_url, remaining });
       }
 
+      if (action === 'update_issuance') {
+        const id = Number(form.get('id'));
+        if (!id) return j({ ok: false, error: 'id required' }, { status: 400 });
+        const patch: Parameters<typeof updateIssuance>[1] = {};
+        if (form.has('kid_id')) patch.kid_id = form.get('kid_id') ? Number(form.get('kid_id')) : null;
+        if (form.has('kid_name')) patch.kid_name = form.get('kid_name')?.toString() || null;
+        if (form.has('bongere_price')) patch.bongere_price = form.get('bongere_price') ? Number(form.get('bongere_price')) : null;
+        if (form.has('note')) patch.note = form.get('note')?.toString() || null;
+        const fileEntry = form.get('file') as File | null;
+        if (fileEntry && fileEntry.size > 0) {
+          const uploadUrl = await saveUpload(fileEntry, 'issuances');
+          const mime = fileEntry.type || '';
+          if (mime.startsWith('video/')) patch.video_url = uploadUrl;
+          else patch.photo_url = uploadUrl;
+        }
+        await updateIssuance(id, patch);
+        return j({ ok: true });
+      }
+
       if (action === 'create_custom') {
         const name = String(form.get('name') || '').trim();
         if (!name) return j({ ok: false, error: 'name required' }, { status: 400 });
@@ -152,6 +171,10 @@ export const POST: APIRoute = async ({ cookies, request }) => {
       if (!id) return j({ ok: false, error: 'id required' }, { status: 400 });
       await deleteIssuance(id);
       return j({ ok: true });
+    }
+    if (action === 'reset_all_issuances') {
+      const deleted = await deleteAllIssuances();
+      return j({ ok: true, deleted });
     }
     return j({ ok: false, error: 'unknown action' }, { status: 400 });
   } catch (e: any) {

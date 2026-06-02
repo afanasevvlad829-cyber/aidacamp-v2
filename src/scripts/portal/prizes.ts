@@ -420,51 +420,229 @@ import { confirmDialog, alertDialog, haptic } from './tg';
   });
 
   // ── Issue prize modal ──
-  const giveDlg = document.getElementById('give-dialog');
+  const giveDlg = document.getElementById('give-dialog') as HTMLDialogElement | null;
   const giveCancel = document.getElementById('give-cancel');
   const giveSave = document.getElementById('give-save');
   const giveStatus = document.getElementById('give-status');
-  document.querySelectorAll('[data-give]').forEach((btn) => {
+
+  function openGiveDialog(opts: {
+    prizeId?: string; prizeName?: string;
+    editId?: number; kidId?: number; kidName?: string;
+    price?: number | null; note?: string;
+  }) {
+    const isEdit = !!opts.editId;
+    (document.getElementById('give-prize-id') as HTMLInputElement).value = opts.prizeId || '';
+    (document.getElementById('give-prize-name-hidden') as HTMLInputElement).value = opts.prizeName || '';
+    (document.getElementById('give-prize-name') as HTMLElement).textContent = opts.prizeName || (isEdit ? '(редактировать)' : '');
+    (document.getElementById('give-edit-id') as HTMLInputElement).value = opts.editId ? String(opts.editId) : '';
+    (document.getElementById('give-kid') as HTMLSelectElement).value = opts.kidId ? String(opts.kidId) : '';
+    (document.getElementById('give-price') as HTMLInputElement).value = opts.price != null ? String(opts.price) : '';
+    (document.getElementById('give-file') as HTMLInputElement).value = '';
+    (document.getElementById('give-note') as HTMLTextAreaElement).value = opts.note || '';
+    const label = document.getElementById('give-file-label');
+    if (label) label.textContent = isEdit ? 'Заменить фото / видео (необязательно)' : 'Снять или выбрать файл';
+    const saveLabel = document.getElementById('give-save-label');
+    if (saveLabel) saveLabel.textContent = isEdit ? 'Сохранить изменения' : 'Выдать и сохранить';
+    if (giveStatus) giveStatus.textContent = '';
+    giveDlg?.showModal();
+  }
+
+  document.querySelectorAll('[data-give]').forEach((btn: any) => {
     btn.addEventListener('click', () => {
-      document.getElementById('give-prize-id').value = btn.dataset.prizeId;
-      document.getElementById('give-prize-name-hidden').value = btn.dataset.prizeName;
-      document.getElementById('give-prize-name').textContent = btn.dataset.prizeName;
-      document.getElementById('give-kid').value = '';
-      document.getElementById('give-price').value = '';
-      document.getElementById('give-file').value = '';
-      document.getElementById('give-note').value = '';
-      giveStatus.textContent = '';
-      giveDlg.showModal();
+      openGiveDialog({ prizeId: btn.dataset.prizeId, prizeName: btn.dataset.prizeName });
     });
   });
-  if (giveCancel) giveCancel.addEventListener('click', () => giveDlg.close());
+
+  if (giveCancel) giveCancel.addEventListener('click', () => giveDlg?.close());
+
   if (giveSave) giveSave.addEventListener('click', async () => {
-    const kidSel = document.getElementById('give-kid');
+    const kidSel = document.getElementById('give-kid') as HTMLSelectElement;
     const kidId = kidSel.value;
-    if (!kidId) { giveStatus.textContent = 'Выбери ребёнка'; return; }
-    const file = document.getElementById('give-file').files[0];
-    if (!file) { giveStatus.textContent = 'Прикрепи фото или видео'; return; }
+    if (!kidId) { if (giveStatus) giveStatus.textContent = 'Выбери ребёнка'; return; }
+    const editId = (document.getElementById('give-edit-id') as HTMLInputElement).value;
+    const isEdit = !!editId;
+    const file = (document.getElementById('give-file') as HTMLInputElement).files?.[0];
+    // Для новой выдачи фото/видео обязательно
+    if (!isEdit && !file) { if (giveStatus) giveStatus.textContent = 'Прикрепи фото или видео — обязательно'; return; }
     const kidName = kidSel.options[kidSel.selectedIndex]?.dataset?.name || '';
     const fd = new FormData();
-    fd.append('action', 'issue');
-    fd.append('prize_id', document.getElementById('give-prize-id').value);
-    fd.append('prize_name', document.getElementById('give-prize-name-hidden').value);
+    fd.append('action', isEdit ? 'update_issuance' : 'issue');
+    if (isEdit) {
+      fd.append('id', editId);
+    } else {
+      fd.append('prize_id', (document.getElementById('give-prize-id') as HTMLInputElement).value);
+      fd.append('prize_name', (document.getElementById('give-prize-name-hidden') as HTMLInputElement).value);
+    }
     fd.append('kid_id', kidId);
     fd.append('kid_name', kidName);
-    const price = document.getElementById('give-price').value;
+    const price = (document.getElementById('give-price') as HTMLInputElement).value;
     if (price) fd.append('bongere_price', price);
-    const note = document.getElementById('give-note').value;
+    const note = (document.getElementById('give-note') as HTMLTextAreaElement).value;
     if (note) fd.append('note', note);
-    fd.append('file', file);
-    giveStatus.textContent = 'Загружаем…';
+    if (file) fd.append('file', file);
+    if (giveStatus) giveStatus.textContent = 'Сохраняем…';
     try {
       const jr = await postForm('/api/portal/prize-ops', fd);
       if (jr.ok) {
         haptic('success');
-        giveStatus.textContent = '✓ выдано';
-        setTimeout(() => { giveDlg.close(); location.reload(); }, 600);
-      } else giveStatus.textContent = 'Ошибка: ' + (jr.error || 'unknown');
-    } catch (e) { giveStatus.textContent = 'Сетевая ошибка'; }
+        if (giveStatus) giveStatus.textContent = isEdit ? '✓ обновлено' : '✓ выдано';
+        if (isEdit) {
+          // Обновляем карточку выдачи в открытом журнале, если он открыт
+          const card = document.querySelector(`[data-iss-card="${editId}"]`);
+          if (card) {
+            card.querySelector('[data-iss-kid]')!.textContent = kidName;
+            card.querySelector('[data-iss-note]')!.textContent = note || '';
+            const priceEl = card.querySelector('[data-iss-price]');
+            if (priceEl) priceEl.textContent = price ? price + ' ₽' : '';
+          }
+          setTimeout(() => giveDlg?.close(), 600);
+        } else {
+          setTimeout(() => { giveDlg?.close(); location.reload(); }, 600);
+        }
+      } else { if (giveStatus) giveStatus.textContent = 'Ошибка: ' + (jr.error || 'unknown'); }
+    } catch { if (giveStatus) giveStatus.textContent = 'Сетевая ошибка'; }
+  });
+
+  // ── Issuances journal modal ──
+  const issDlg = document.getElementById('issuances-dialog') as HTMLDialogElement | null;
+  const issLoading = document.getElementById('iss-loading');
+  const issEmpty = document.getElementById('iss-empty');
+  const issListEl = document.getElementById('iss-list');
+
+  function fmtDate(iso: string) {
+    try {
+      const normalized = iso.replace(/([+-]\d{2})$/, '$1:00'); return new Date(normalized).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    } catch { return iso; }
+  }
+
+  async function openIssuancesModal(prizeId: string, prizeName: string) {
+    if (!issDlg) return;
+    document.getElementById('iss-prize-name')!.textContent = prizeName;
+    if (issLoading) issLoading.hidden = false;
+    if (issEmpty) issEmpty.hidden = true;
+    if (issListEl) { issListEl.hidden = true; issListEl.innerHTML = ''; }
+    issDlg.showModal();
+
+    try {
+      const res = await fetch(`/api/portal/prize-ops?action=list_issuances&prize_id=${encodeURIComponent(prizeId)}&limit=200`);
+      const jr = await res.json();
+      if (issLoading) issLoading.hidden = true;
+      const items = jr.items || [];
+      if (!items.length) { if (issEmpty) issEmpty.hidden = false; return; }
+      if (issListEl) {
+        issListEl.hidden = false;
+        issListEl.innerHTML = items.map((it: any) => {
+          const thumb = it.photo_url || it.video_url
+            ? `<a href="${it.photo_url || it.video_url}" target="_blank" rel="noopener" class="flex-shrink-0">
+                ${it.photo_url
+                  ? `<img src="${it.photo_url}" alt="" class="h-[56px] w-[56px] rounded-[8px] object-cover border border-border" />`
+                  : `<div class="flex h-[56px] w-[56px] items-center justify-center rounded-[8px] bg-navy-50 border border-border text-primary"><i class="bi bi-camera-video-fill text-[22px]"></i></div>`}
+               </a>`
+            : `<div class="flex h-[56px] w-[56px] flex-shrink-0 items-center justify-center rounded-[8px] bg-page border border-border text-body-muted"><i class="bi bi-image text-[22px]"></i></div>`;
+          return `<div class="flex items-start gap-3 rounded-[12px] border border-border bg-white p-3" data-iss-card="${it.id}">
+            ${thumb}
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-semibold text-navy-950 text-[15px]" data-iss-kid>${it.kid_name || '—'}</span>
+                <span class="text-[12px] text-body-muted">${fmtDate(it.issued_at)}</span>
+                ${it.bongere_price ? `<span class="rounded-full bg-primary-soft px-2 py-0.5 text-[11px] text-primary" data-iss-price>${it.bongere_price} ₽</span>` : `<span data-iss-price></span>`}
+              </div>
+              ${it.note ? `<div class="mt-0.5 text-[13px] text-body-muted line-clamp-2" data-iss-note>${it.note}</div>` : `<div data-iss-note></div>`}
+            </div>
+            <div class="flex flex-shrink-0 gap-1 ml-1">
+              <button type="button" class="iss-edit flex h-8 w-8 items-center justify-center rounded-[8px] text-body-muted hover:bg-primary-soft hover:text-primary transition"
+                      title="Редактировать"
+                      data-iss-id="${it.id}" data-iss-prize-id="${prizeId}" data-iss-prize-name="${prizeName}"
+                      data-iss-kid-id="${it.kid_id || ''}" data-iss-kid-name="${it.kid_name || ''}"
+                      data-iss-price="${it.bongere_price || ''}" data-iss-note="${(it.note || '').replace(/"/g, '&quot;')}">
+                <i class="bi bi-pencil text-[13px]" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="iss-delete flex h-8 w-8 items-center justify-center rounded-[8px] text-body-muted hover:bg-red-50 hover:text-red-600 transition"
+                      title="Удалить выдачу" data-del-id="${it.id}">
+                <i class="bi bi-trash text-[13px]" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>`;
+        }).join('');
+        // Delete handlers — двойной клик: сначала «подтвердить?», потом удалить
+        issListEl.querySelectorAll('.iss-delete').forEach((btn: any) => {
+          let armed = false;
+          let armTimer: ReturnType<typeof setTimeout>;
+          btn.addEventListener('click', async () => {
+            if (!armed) {
+              // Первый клик — «взводим» кнопку
+              armed = true;
+              btn.title = 'Нажми ещё раз для удаления';
+              btn.style.background = '#fee2e2';
+              btn.style.color = '#dc2626';
+              btn.innerHTML = '<i class="bi bi-trash-fill text-[13px]" aria-hidden="true"></i>';
+              armTimer = setTimeout(() => {
+                armed = false;
+                btn.title = 'Удалить выдачу';
+                btn.style.background = '';
+                btn.style.color = '';
+                btn.innerHTML = '<i class="bi bi-trash text-[13px]" aria-hidden="true"></i>';
+              }, 3000);
+              return;
+            }
+            // Второй клик — удаляем
+            clearTimeout(armTimer);
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            try {
+              const jr = await postJson('/api/portal/prize-ops', { action: 'delete_issuance', id: Number(btn.dataset.delId) });
+              if (jr.ok) {
+                btn.closest('[data-iss-card]')?.remove();
+                if (!issListEl.querySelector('[data-iss-card]')) {
+                  issListEl.hidden = true;
+                  if (issEmpty) issEmpty.hidden = false;
+                }
+                const badge = document.querySelector(`[data-view-issuances][data-prize-id="${prizeId}"]`);
+                if (badge) {
+                  const cnt = issListEl.querySelectorAll('[data-iss-card]').length;
+                  if (cnt === 0) { badge.remove(); }
+                  else { badge.innerHTML = `<i class="bi bi-check-circle-fill" aria-hidden="true"></i>${cnt}`; }
+                }
+              } else {
+                btn.disabled = false;
+                btn.style.opacity = '';
+                const errEl = issDlg?.querySelector('#iss-error') as HTMLElement | null;
+                if (errEl) { errEl.textContent = 'Ошибка: ' + (jr.error || 'unknown'); errEl.hidden = false; }
+              }
+            } catch {
+              btn.disabled = false;
+              btn.style.opacity = '';
+              const errEl = issDlg?.querySelector('#iss-error') as HTMLElement | null;
+              if (errEl) { errEl.textContent = 'Сетевая ошибка при удалении'; errEl.hidden = false; }
+            }
+          });
+        });
+        // Edit handlers
+        issListEl.querySelectorAll('.iss-edit').forEach((btn: any) => {
+          btn.addEventListener('click', () => {
+            issDlg?.close();
+            openGiveDialog({
+              prizeId: btn.dataset.issPrizeId,
+              prizeName: btn.dataset.issPrizeName,
+              editId: Number(btn.dataset.issId),
+              kidId: btn.dataset.issKidId ? Number(btn.dataset.issKidId) : undefined,
+              kidName: btn.dataset.issKidName,
+              price: btn.dataset.issPrice ? Number(btn.dataset.issPrice) : null,
+              note: btn.dataset.issNote,
+            });
+          });
+        });
+      }
+    } catch {
+      if (issLoading) { issLoading.hidden = false; issLoading.textContent = 'Ошибка загрузки'; }
+    }
+  }
+
+  document.getElementById('iss-close')?.addEventListener('click', () => issDlg?.close());
+  document.getElementById('iss-close2')?.addEventListener('click', () => issDlg?.close());
+
+  document.querySelectorAll('[data-view-issuances]').forEach((btn: any) => {
+    btn.addEventListener('click', () => openIssuancesModal(btn.dataset.prizeId, btn.dataset.prizeName));
   });
 
   // ── Custom prize modal ──
@@ -490,6 +668,36 @@ import { confirmDialog, alertDialog, haptic } from './tg';
     document.body.classList.add('printing-activities');
     window.print();
     setTimeout(() => document.body.classList.remove('printing-activities'), 100);
+  });
+
+  // ── Экспорт активностей в Excel: список с ценами (HTML-таблица .xls) ──
+  document.getElementById('btn-export-activities')?.addEventListener('click', () => {
+    const clean = (s: string | null | undefined) =>
+      (s ?? '').replace(/ /g, ' ').replace(/₽/g, '').trim();
+    const rows = Array.from(document.querySelectorAll<HTMLElement>('#activities-tbody [data-activity-row]'));
+    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const trs = rows.map((row) => {
+      const name = clean(row.querySelector<HTMLElement>('.font-medium')?.textContent);
+      const cat = clean(row.querySelector<HTMLElement>('td:nth-child(2)')?.textContent);
+      const total = clean(row.querySelector<HTMLElement>('[data-total-price]')?.textContent);
+      const per = clean(row.querySelector<HTMLElement>('[data-per-person]')?.textContent);
+      return `<tr><td>${esc(name)}</td><td>${esc(cat)}</td><td>${esc(total)}</td><td>${esc(per)}</td></tr>`;
+    }).join('');
+    const html =
+      '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">' +
+      '<head><meta charset="utf-8"></head><body><table border="1">' +
+      '<thead><tr><th>Активность</th><th>Категория</th><th>Цена (игр. ₽)</th><th>С человека (игр. ₽)</th></tr></thead>' +
+      `<tbody>${trs}</tbody></table></body></html>`;
+    const blob = new Blob(['﻿' + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const d = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `aktivnosti-${d}.xls`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
 
   document.getElementById('btn-add-custom')?.addEventListener('click', () => {

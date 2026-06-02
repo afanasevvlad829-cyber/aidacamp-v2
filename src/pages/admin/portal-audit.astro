@@ -1,0 +1,337 @@
+---
+import Layout from '@/layouts/Base.astro'
+
+// This page requires authentication - typically behind admin auth middleware
+---
+
+<Layout title="Portal Audit Dashboard">
+  <div class="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-8">
+    <div class="max-w-6xl mx-auto">
+      <header class="mb-8">
+        <h1 class="text-4xl font-bold text-white mb-2">🔍 Portal Security Audit</h1>
+        <p class="text-slate-400">Run comprehensive security and performance checks with parallel agents</p>
+      </header>
+
+      <!-- Main Controls -->
+      <div class="bg-slate-800 rounded-lg p-6 mb-8 border border-slate-700">
+        <button
+          id="startAuditBtn"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition flex items-center gap-2"
+        >
+          <i class="bi bi-play-circle text-xl"></i>
+          Start Parallel Audit (5 Agents)
+        </button>
+      </div>
+
+      <!-- Active Audit Section -->
+      <div id="activeAudit" class="hidden bg-slate-800 rounded-lg p-6 mb-8 border border-slate-700">
+        <h2 class="text-2xl font-bold text-white mb-4">🚀 Running Audit</h2>
+
+        <div id="auditProgress" class="space-y-3 mb-6">
+          <!-- Agent status cards will be inserted here -->
+        </div>
+
+        <div class="bg-slate-900 rounded p-4 text-slate-300 font-mono text-sm max-h-64 overflow-y-auto">
+          <div id="auditLog">Initializing agents...</div>
+        </div>
+      </div>
+
+      <!-- Results Section -->
+      <div id="resultsSection" class="hidden bg-slate-800 rounded-lg p-6 border border-slate-700">
+        <h2 class="text-2xl font-bold text-white mb-4">📊 Audit Results</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div class="bg-red-900 bg-opacity-50 rounded p-4 border border-red-700">
+            <div class="text-red-200 text-sm">CRITICAL</div>
+            <div id="criticalCount" class="text-4xl font-bold text-red-400">0</div>
+          </div>
+          <div class="bg-yellow-900 bg-opacity-50 rounded p-4 border border-yellow-700">
+            <div class="text-yellow-200 text-sm">HIGH</div>
+            <div id="highCount" class="text-4xl font-bold text-yellow-400">0</div>
+          </div>
+          <div class="bg-blue-900 bg-opacity-50 rounded p-4 border border-blue-700">
+            <div class="text-blue-200 text-sm">MEDIUM</div>
+            <div id="mediumCount" class="text-4xl font-bold text-blue-400">0</div>
+          </div>
+        </div>
+
+        <div id="findingsList" class="space-y-3">
+          <!-- Findings will be inserted here -->
+        </div>
+
+        <div class="mt-6 flex gap-3">
+          <button
+            id="downloadJsonBtn"
+            class="bg-slate-700 hover:bg-slate-600 text-white py-2 px-4 rounded text-sm transition"
+          >
+            <i class="bi bi-download"></i> Download JSON
+          </button>
+          <button
+            id="newAuditBtn"
+            class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded text-sm transition"
+          >
+            <i class="bi bi-arrow-repeat"></i> New Audit
+          </button>
+        </div>
+      </div>
+
+      <!-- Previous Audits -->
+      <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+        <h2 class="text-xl font-bold text-white mb-4">📜 Audit History</h2>
+        <div id="auditHistory" class="space-y-2 max-h-64 overflow-y-auto">
+          <div class="text-slate-400 text-sm">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    interface AuditStatus {
+      runId: string
+      status: string
+      startTime: string
+      agents: Array<{ name: string; status: string }>
+    }
+
+    const activeAuditDiv = document.getElementById('activeAudit')!
+    const resultsSection = document.getElementById('resultsSection')!
+    const auditProgress = document.getElementById('auditProgress')!
+    const auditLog = document.getElementById('auditLog')!
+    const startAuditBtn = document.getElementById('startAuditBtn')!
+    const newAuditBtn = document.getElementById('newAuditBtn')!
+
+    let currentRunId: string | null = null
+
+    startAuditBtn.addEventListener('click', async () => {
+      startAuditBtn.disabled = true
+      startAuditBtn.textContent = '⏳ Starting audit...'
+
+      try {
+        const res = await fetch('/api/admin/portal-audit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'start' }),
+        })
+
+        const data = await res.json()
+        if (data.success && data.data?.runId) {
+          currentRunId = data.data.runId
+          activeAuditDiv.classList.remove('hidden')
+          resultsSection.classList.add('hidden')
+          startAuditBtn.style.display = 'none'
+
+          // Start polling for status
+          pollAuditStatus()
+        }
+      } catch (err) {
+        console.error('Failed to start audit:', err)
+        alert('Failed to start audit')
+        startAuditBtn.disabled = false
+        startAuditBtn.textContent = '🔍 Start Parallel Audit (5 Agents)'
+      }
+    })
+
+    newAuditBtn.addEventListener('click', () => {
+      currentRunId = null
+      resultsSection.classList.add('hidden')
+      activeAuditDiv.classList.add('hidden')
+      startAuditBtn.style.display = 'flex'
+      startAuditBtn.disabled = false
+      startAuditBtn.textContent = '🔍 Start Parallel Audit (5 Agents)'
+      loadAuditHistory()
+    })
+
+    async function pollAuditStatus() {
+      if (!currentRunId) return
+
+      try {
+        const res = await fetch('/api/admin/portal-audit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'status', runId: currentRunId }),
+        })
+
+        const data = await res.json()
+        if (data.success && data.data) {
+          const status = data.data as AuditStatus
+          updateAuditUI(status)
+
+          if (status.status === 'completed') {
+            // Fetch and display results
+            await displayResults()
+          } else if (status.status === 'running' || status.status === 'starting') {
+            // Continue polling
+            setTimeout(pollAuditStatus, 2000)
+          }
+        }
+      } catch (err) {
+        console.error('Poll error:', err)
+        setTimeout(pollAuditStatus, 5000)
+      }
+    }
+
+    function updateAuditUI(status: AuditStatus) {
+      auditProgress.innerHTML = status.agents
+        .map((agent) => {
+          const statusColor =
+            agent.status === 'completed'
+              ? 'text-green-400'
+              : agent.status === 'running'
+                ? 'text-blue-400'
+                : 'text-slate-400'
+          const icon =
+            agent.status === 'completed'
+              ? '✅'
+              : agent.status === 'running'
+                ? '⏳'
+                : '⏸️'
+
+          return `
+            <div class="flex items-center gap-3 p-3 bg-slate-900 rounded">
+              <span class="text-xl">${icon}</span>
+              <span class="flex-1">${agent.name}</span>
+              <span class="${statusColor} text-sm font-mono">${agent.status}</span>
+            </div>
+          `
+        })
+        .join('')
+
+      // Update log
+      const elapsed = Math.round((Date.now() - new Date(status.startTime).getTime()) / 1000)
+      auditLog.textContent = `[${new Date().toLocaleTimeString()}] Running audit: ${elapsed}s elapsed\n`
+    }
+
+    async function displayResults() {
+      if (!currentRunId) return
+
+      try {
+        const res = await fetch('/api/admin/portal-audit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'results', runId: currentRunId }),
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success && data.data) {
+            const results = data.data as Record<string, unknown>
+
+            // Count findings by severity
+            const bugs = (results.bugs as Array<{ severity: string }>) || []
+            const counts = {
+              CRITICAL: bugs.filter((b) => b.severity === 'CRITICAL').length,
+              HIGH: bugs.filter((b) => b.severity === 'HIGH').length,
+              MEDIUM: bugs.filter((b) => b.severity === 'MEDIUM').length,
+            }
+
+            document.getElementById('criticalCount')!.textContent = String(counts.CRITICAL)
+            document.getElementById('highCount')!.textContent = String(counts.HIGH)
+            document.getElementById('mediumCount')!.textContent = String(counts.MEDIUM)
+
+            // Display findings
+            const findingsList = document.getElementById('findingsList')!
+            findingsList.innerHTML = bugs
+              .map((bug: Record<string, unknown>) => {
+                const severityColor =
+                  bug.severity === 'CRITICAL'
+                    ? 'border-red-600 bg-red-900 bg-opacity-20'
+                    : bug.severity === 'HIGH'
+                      ? 'border-yellow-600 bg-yellow-900 bg-opacity-20'
+                      : 'border-blue-600 bg-blue-900 bg-opacity-20'
+
+                return `
+                  <div class="border rounded p-4 ${severityColor}">
+                    <div class="flex items-start justify-between mb-2">
+                      <h3 class="font-bold text-white">${bug.title}</h3>
+                      <span class="text-xs font-mono text-slate-400">${bug.location}</span>
+                    </div>
+                    <p class="text-slate-300 text-sm mb-2">${bug.description}</p>
+                    <div class="bg-slate-900 bg-opacity-50 p-2 rounded text-sm text-green-400 font-mono mb-2">
+                      Fix: ${bug.fix}
+                    </div>
+                    <span class="inline-block px-2 py-1 rounded bg-slate-800 text-xs text-slate-300">
+                      ${bug.severity}
+                    </span>
+                  </div>
+                `
+              })
+              .join('')
+
+            // Update buttons
+            activeAuditDiv.classList.add('hidden')
+            resultsSection.classList.remove('hidden')
+            startAuditBtn.style.display = 'none'
+
+            // Store results for download
+            window.currentResults = data.data
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch results:', err)
+      }
+    }
+
+    // Download JSON handler
+    document.getElementById('downloadJsonBtn')?.addEventListener('click', () => {
+      if (window.currentResults) {
+        const json = JSON.stringify(window.currentResults, null, 2)
+        const blob = new Blob([json], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `portal-audit-${currentRunId}.json`
+        a.click()
+      }
+    })
+
+    // Load audit history
+    async function loadAuditHistory() {
+      try {
+        const res = await fetch('/api/admin/portal-audit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'list' }),
+        })
+
+        const data = await res.json()
+        if (data.success && data.data) {
+          const auditHistory = document.getElementById('auditHistory')!
+          auditHistory.innerHTML = (data.data as AuditStatus[])
+            .map((audit) => {
+              const time = new Date(audit.startTime).toLocaleString()
+              return `
+                <div class="bg-slate-700 p-3 rounded cursor-pointer hover:bg-slate-600 transition">
+                  <div class="flex justify-between items-center">
+                    <div>
+                      <div class="font-mono text-sm text-slate-300">${audit.runId}</div>
+                      <div class="text-xs text-slate-400">${time}</div>
+                    </div>
+                    <span class="text-sm font-bold ${
+                      audit.status === 'completed'
+                        ? 'text-green-400'
+                        : 'text-yellow-400'
+                    }">
+                      ${audit.status.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+              `
+            })
+            .join('')
+        }
+      } catch (err) {
+        console.error('Failed to load history:', err)
+      }
+    }
+
+    // Initial load
+    loadAuditHistory()
+
+    // TypeScript augmentation
+    declare global {
+      interface Window {
+        currentResults?: Record<string, unknown>
+      }
+    }
+  </script>
+</Layout>

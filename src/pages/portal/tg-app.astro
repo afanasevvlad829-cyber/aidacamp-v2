@@ -38,6 +38,25 @@ import PortalLayout from '../../layouts/PortalLayout.astro';
           ></i>
           <span id="tg-message-text"></span>
         </div>
+
+        {/* Диагностика входа — показывается при ошибке. Моноширинный дамп всех полей. */}
+        <details id="tg-debug" class="mt-4 hidden text-left">
+          <summary class="cursor-pointer text-[14px] font-medium text-body-muted">
+            Диагностика входа (показать администратору)
+          </summary>
+          <pre
+            id="tg-debug-pre"
+            class="mt-2 max-h-[50vh] overflow-auto whitespace-pre-wrap break-all rounded-[10px] bg-navy-950 p-3 text-left text-[12px] leading-[1.5] text-white"
+          ></pre>
+          <button
+            id="tg-debug-copy"
+            type="button"
+            class="mt-2 inline-flex items-center gap-1 rounded-[8px] border border-border px-3 py-1.5 text-[13px] font-medium text-body"
+          >
+            <i class="bi bi-clipboard" aria-hidden="true"></i>
+            Скопировать
+          </button>
+        </details>
       </div>
     </div>
   </div>
@@ -49,6 +68,9 @@ import PortalLayout from '../../layouts/PortalLayout.astro';
     var box = document.getElementById('tg-message');
     var icon = document.getElementById('tg-message-icon');
     var text = document.getElementById('tg-message-text');
+    var debugBox = document.getElementById('tg-debug');
+    var debugPre = document.getElementById('tg-debug-pre');
+    var debugCopy = document.getElementById('tg-debug-copy');
 
     function show(message, tone) {
       if (loading) loading.classList.add('hidden');
@@ -66,40 +88,117 @@ import PortalLayout from '../../layouts/PortalLayout.astro';
       if (text) text.textContent = message;
     }
 
-    // SDK уже загружен и инициализирован в PortalLayout (ready/expand там)
-    var tg = window.Telegram && window.Telegram.WebApp;
-    var initData = tg && tg.initData;
-    if (!initData) {
-      show('Откройте через Telegram-бота.', 'warn');
-      return;
+    // Вывод максимума диагностики на экран. info — объект с произвольными полями.
+    function showDebug(info) {
+      if (!debugBox || !debugPre) return;
+      var lines = [];
+      try {
+        Object.keys(info).forEach(function (k) {
+          var v = info[k];
+          if (v && typeof v === 'object') v = JSON.stringify(v);
+          lines.push(k + ': ' + v);
+        });
+      } catch (e) {
+        lines.push('debug serialize error: ' + (e && e.message));
+      }
+      debugPre.textContent = lines.join('\n');
+      debugBox.classList.remove('hidden');
+      debugBox.setAttribute('open', 'open');
     }
 
-    fetch('/api/portal/tg', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData: initData }),
-    })
-      .then(function (r) {
-        return r.json().catch(function () {
-          return { ok: false, error: 'invalid' };
-        });
-      })
-      .then(function (data) {
-        if (data && data.ok) {
-          window.location.replace('/portal/smena?view=role');
-          return;
+    if (debugCopy) {
+      debugCopy.addEventListener('click', function () {
+        var t = debugPre ? debugPre.textContent : '';
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(t).then(function () {
+            debugCopy.innerHTML = '<i class="bi bi-check-lg"></i> Скопировано';
+          });
         }
-        var err = data && data.error;
-        if (err === 'pending') {
-          show('Заявка отправлена — ждите подтверждения администратором.', 'warn');
-        } else if (err === 'revoked') {
-          show('Доступ отозван.', 'error');
-        } else {
-          show('Не удалось войти. Откройте Mini App заново.', 'error');
-        }
-      })
-      .catch(function () {
-        show('Не удалось войти. Откройте Mini App заново.', 'error');
       });
+    }
+
+    // Собираем всё, что доступно на стороне клиента — даже если сервер недоступен.
+    function clientInfo(tg) {
+      var u = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null;
+      return {
+        platform: (tg && tg.platform) || '(нет Telegram.WebApp)',
+        version: (tg && tg.version) || '-',
+        initDataPresent: !!(tg && tg.initData),
+        initDataLength: (tg && tg.initData && tg.initData.length) || 0,
+        client_tg_id: u ? u.id : null,
+        client_username: u ? (u.username || null) : null,
+        client_name: u ? [u.first_name, u.last_name].filter(Boolean).join(' ') : null,
+        userAgent: navigator.userAgent,
+        url: location.href,
+        time: new Date().toISOString(),
+      };
+    }
+
+    // SDK грузится с defer — ждём его готовности перед проверкой initData
+    function tryAuth() {
+      var tg = window.Telegram && window.Telegram.WebApp;
+      var initData = tg && tg.initData;
+      var ci = clientInfo(tg);
+
+      if (!initData) {
+        show('Не удалось получить данные Telegram. Откройте портал через кнопку бота.', 'error');
+        showDebug(Object.assign({ stage: 'нет initData (открыто вне Telegram?)' }, ci));
+        return;
+      }
+
+      fetch('/api/portal/tg', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: initData }),
+      })
+        .then(function (r) {
+          var httpStatus = r.status;
+          return r.json().catch(function () {
+            return { ok: false, error: 'invalid', _parseError: true };
+          }).then(function (data) {
+            data._httpStatus = httpStatus;
+            return data;
+          });
+        })
+        .then(function (data) {
+          if (data && data.ok) {
+            window.location.replace('/portal/smena?view=role');
+            return;
+          }
+          var err = data && data.error;
+          if (err === 'pending') {
+            show('Заявка отправлена — ждите подтверждения администратором.', 'warn');
+          } else if (err === 'revoked') {
+            show('Доступ отозван. Обратитесь к администратору.', 'error');
+          } else if (err === 'invalid') {
+            show('Telegram не подтвердил вход (подпись не прошла). Подробности ниже.', 'error');
+          } else {
+            show('Не удалось войти. Подробности ниже.', 'error');
+          }
+          // Полный дамп: клиентская инфа + всё, что вернул сервер (включая server.debug)
+          var merged = Object.assign({ stage: 'ответ сервера' }, ci, {
+            http_status: data && data._httpStatus,
+            server_error: err || null,
+            json_parse_failed: !!(data && data._parseError),
+          });
+          if (data && data.debug) {
+            Object.keys(data.debug).forEach(function (k) {
+              merged['srv_' + k] = data.debug[k];
+            });
+          }
+          showDebug(merged);
+        })
+        .catch(function (e) {
+          show('Сетевая ошибка при входе. Подробности ниже.', 'error');
+          showDebug(Object.assign({ stage: 'сетевая ошибка fetch', network_error: (e && e.message) || String(e) }, ci));
+        });
+    }
+
+    // Если SDK уже готов — сразу, иначе ждём DOMContentLoaded
+    if (window.Telegram && window.Telegram.WebApp) {
+      tryAuth();
+    } else {
+      document.addEventListener('DOMContentLoaded', tryAuth);
+    }
   })();
 </script>

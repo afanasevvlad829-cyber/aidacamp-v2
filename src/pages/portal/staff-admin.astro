@@ -377,6 +377,12 @@ const roleLabel = (r: string | null | undefined): string => (r ? ROLE_LABELS[r] 
           {!ph.active && <span class="text-[13px] font-semibold text-red-600">отключён</span>}
         </form>
         <span class="hidden text-[14px] text-body-muted lg:inline">Ждёт TG</span>
+        <div class="basis-full mt-2 flex flex-wrap items-center gap-2 text-[13px]" data-staff-code data-id={ph.id}>
+          <span class="text-body-muted"><i class="bi bi-key" aria-hidden="true"></i> Код-вход:</span>
+          <code class="staff-code-val rounded bg-page px-2 py-0.5 font-mono text-[14px] text-navy-950">{ph.code ?? '— нет —'}</code>
+          <button type="button" class="staff-code-gen rounded-[8px] border border-primary px-2 py-1 text-[12px] text-primary transition hover:bg-primary-soft">{ph.code ? 'Обновить код' : 'Выдать код'}</button>
+          <button type="button" class={`staff-code-revoke rounded-[8px] border border-border px-2 py-1 text-[12px] text-body-muted transition hover:text-red-700 ${ph.code ? '' : 'hidden'}`}>Убрать</button>
+        </div>
         <form method="POST" action="/api/portal/staff/by-id">
           <input type="hidden" name="id" value={ph.id} />
           <input type="hidden" name="action" value={ph.active ? 'deactivate' : 'activate'} />
@@ -440,6 +446,12 @@ const roleLabel = (r: string | null | undefined): string => (r ? ROLE_LABELS[r] 
               Обновить роли
             </button>
           </form>
+          <div class="mt-2 flex flex-wrap items-center gap-2 text-[13px]" data-staff-code data-id={s.id}>
+            <span class="text-body-muted"><i class="bi bi-key" aria-hidden="true"></i> Код-вход:</span>
+            <code class="staff-code-val rounded bg-page px-2 py-0.5 font-mono text-[14px] text-navy-950">{s.code ?? '— нет —'}</code>
+            <button type="button" class="staff-code-gen rounded-[8px] border border-primary px-2 py-1 text-[12px] text-primary transition hover:bg-primary-soft">{s.code ? 'Обновить код' : 'Выдать код'}</button>
+            <button type="button" class={`staff-code-revoke rounded-[8px] border border-border px-2 py-1 text-[12px] text-body-muted transition hover:text-red-700 ${s.code ? '' : 'hidden'}`}>Убрать</button>
+          </div>
         </div>
         <form method="POST" action="/api/portal/staff">
           <input type="hidden" name="telegram_id" value={s.telegram_id!} />
@@ -478,6 +490,27 @@ const roleLabel = (r: string | null | undefined): string => (r ? ROLE_LABELS[r] 
       </div>
     ))}
   </section>
+
+  <section class="mb-10 mt-10">
+    <h2 class="mb-3 text-[20px] font-bold tracking-[-0.01em] text-navy-950 md:text-[24px]">
+      Документы
+    </h2>
+    <a
+      href="https://ai.aidacamp.ru/docs/server-access.html"
+      target="_blank"
+      rel="noopener"
+      class="mb-2 flex items-center gap-4 rounded-[16px] border border-border bg-white p-4 card-shadow transition hover:border-primary hover:shadow-md"
+    >
+      <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[10px] bg-primary/10">
+        <i class="bi bi-file-earmark-text text-[20px] text-primary" aria-hidden="true"></i>
+      </div>
+      <div class="min-w-0 flex-1">
+        <div class="text-[16px] font-semibold text-navy-950">Подключение к внутреннему серверу</div>
+        <div class="text-[14px] text-body-muted">SSH, RDP, аварийный доступ — все способы подключения к server1</div>
+      </div>
+      <i class="bi bi-box-arrow-right text-[18px] text-body-muted" aria-hidden="true"></i>
+    </a>
+  </section>
 </PortalLayout>
 
 <script>
@@ -514,6 +547,63 @@ const roleLabel = (r: string | null | undefined): string => (r ? ROLE_LABELS[r] 
         alert('Сетевая ошибка');
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-link-45deg" aria-hidden="true"></i> Объединить';
+      }
+    });
+  });
+</script>
+
+<script>
+  // Код-вход сотрудников: выдать/обновить/убрать персональный код (альтернатива TG).
+  document.querySelectorAll<HTMLElement>('[data-staff-code]').forEach((row) => {
+    const id = Number(row.dataset.id);
+    const val = row.querySelector<HTMLElement>('.staff-code-val')!;
+    const gen = row.querySelector<HTMLButtonElement>('.staff-code-gen')!;
+    const rev = row.querySelector<HTMLButtonElement>('.staff-code-revoke');
+
+    gen.addEventListener('click', async () => {
+      const orig = gen.textContent;
+      gen.disabled = true;
+      gen.textContent = '…';
+      try {
+        const r = await fetch('/api/portal/staff/code', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, action: 'generate' }), credentials: 'include',
+        });
+        const d = await r.json();
+        if (d.ok && d.code) {
+          val.textContent = d.code;
+          gen.textContent = 'Обновить код';
+          rev?.classList.remove('hidden');
+          try { await navigator.clipboard.writeText(d.code); } catch {}
+        } else {
+          gen.textContent = orig;
+          alert('Ошибка: ' + (d.error || 'неизвестно'));
+        }
+      } catch {
+        gen.textContent = orig;
+        alert('Сетевая ошибка');
+      } finally {
+        gen.disabled = false;
+      }
+    });
+
+    rev?.addEventListener('click', async () => {
+      if (!confirm('Убрать код-вход у сотрудника? Останется только вход через Telegram.')) return;
+      try {
+        const r = await fetch('/api/portal/staff/code', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, action: 'revoke' }), credentials: 'include',
+        });
+        const d = await r.json();
+        if (d.ok) {
+          val.textContent = '— нет —';
+          gen.textContent = 'Выдать код';
+          rev.classList.add('hidden');
+        } else {
+          alert('Ошибка: ' + (d.error || 'неизвестно'));
+        }
+      } catch {
+        alert('Сетевая ошибка');
       }
     });
   });
