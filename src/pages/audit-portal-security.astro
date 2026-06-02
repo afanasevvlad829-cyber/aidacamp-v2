@@ -1,0 +1,182 @@
+---
+// Standalone страница — намеренно без Base.astro, чтобы не цеплять portal-middleware и сайтовые скрипты
+---
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Security Audit</title>
+  <link rel="stylesheet" href="/styles/icons.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0f172a; color: #e2e8f0; font-family: 'Courier New', monospace; padding: 20px; min-height: 100vh; }
+    h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+    .subtitle { color: #94a3b8; font-size: 0.85rem; margin-bottom: 20px; }
+    .panel { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+    .btn { padding: 10px 22px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem; }
+    .btn-start { background: #16a34a; color: white; }
+    .btn-start:hover { background: #15803d; }
+    .btn-start:disabled { background: #374151; color: #6b7280; cursor: not-allowed; }
+    .btn-stop { background: #dc2626; color: white; }
+    .btn-stop:disabled { background: #374151; color: #6b7280; cursor: not-allowed; }
+    .stat-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
+    .stat { background: #0f172a; padding: 10px 14px; border-radius: 8px; }
+    .stat-label { color: #64748b; font-size: 0.75rem; }
+    .stat-val { font-size: 1rem; font-weight: 700; margin-top: 2px; }
+    .green { color: #4ade80; } .blue { color: #60a5fa; } .yellow { color: #fbbf24; } .red { color: #f87171; }
+    .agents { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 12px; margin-bottom: 16px; }
+    .agent { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 14px; }
+    .agent-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .agent-name { font-weight: 700; font-size: 0.88rem; }
+    .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; }
+    .badge-pending { background: #1e293b; color: #64748b; border: 1px solid #475569; }
+    .badge-running { background: #1c3058; color: #60a5fa; border: 1px solid #2563eb; }
+    .badge-done { background: #14532d; color: #4ade80; border: 1px solid #16a34a; }
+    .progress-track { background: #0f172a; border-radius: 4px; height: 6px; margin-bottom: 8px; }
+    .progress-fill { height: 6px; border-radius: 4px; background: #3b82f6; transition: width 0.4s; }
+    .agent-desc { font-size: 0.72rem; color: #94a3b8; }
+    .sev-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; margin-bottom: 16px; }
+    .sev-box { border-radius: 8px; padding: 12px; text-align: center; }
+    .sev-label { font-size: 0.7rem; font-weight: 700; margin-bottom: 4px; }
+    .sev-count { font-size: 2rem; font-weight: 700; }
+    .s-crit { background: rgba(220,38,38,.15); border: 1px solid #dc2626; color: #f87171; }
+    .s-high { background: rgba(234,88,12,.15); border: 1px solid #ea580c; color: #fb923c; }
+    .s-med  { background: rgba(202,138,4,.15); border: 1px solid #ca8a04; color: #fbbf24; }
+    .s-low  { background: rgba(37,99,235,.15); border: 1px solid #2563eb; color: #60a5fa; }
+    .s-pass { background: rgba(22,163,74,.15); border: 1px solid #16a34a; color: #4ade80; }
+    .console { background: #000; border: 1px solid #1e293b; border-radius: 8px; padding: 14px; height: 200px; overflow-y: auto; font-size: 0.75rem; }
+    .l-ok { color: #4ade80; } .l-warn { color: #fbbf24; } .l-err { color: #f87171; } .l-info { color: #60a5fa; } .l-gray { color: #64748b; }
+    .cmd-box { background: #000; border: 1px solid #334155; border-radius: 8px; padding: 14px; margin-top: 12px; }
+    .cmd-box h3 { color: #94a3b8; font-size: 0.8rem; margin-bottom: 8px; }
+    code { color: #4ade80; font-size: 0.78rem; display: block; margin-bottom: 4px; }
+    .cmd-comment { color: #475569; font-size: 0.72rem; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+
+<h1><i class="bi bi-shield-check" aria-hidden="true"></i> Portal Security Audit</h1>
+<p class="subtitle">5 агентов: OAuth · Race conditions · XSS/SQLi · Rate limiting · Database</p>
+
+<div class="panel">
+  <div class="row">
+    <button id="startBtn" class="btn btn-start">▶ ЗАПУСТИТЬ АУДИТ</button>
+    <button id="stopBtn" class="btn btn-stop" disabled>■ СТОП</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-label">Статус</div><div class="stat-val yellow" id="status">Готов</div></div>
+    <div class="stat"><div class="stat-label">Время</div><div class="stat-val blue" id="elapsed">00:00</div></div>
+    <div class="stat"><div class="stat-label">Агентов</div><div class="stat-val green" id="activeCount">0 / 5</div></div>
+    <div class="stat"><div class="stat-label">Проблем</div><div class="stat-val red" id="issueCount">0</div></div>
+  </div>
+</div>
+
+<div class="sev-grid">
+  <div class="sev-box s-crit"><div class="sev-label">CRITICAL</div><div class="sev-count" id="c-crit">0</div></div>
+  <div class="sev-box s-high"><div class="sev-label">HIGH</div><div class="sev-count" id="c-high">0</div></div>
+  <div class="sev-box s-med"><div class="sev-label">MEDIUM</div><div class="sev-count" id="c-med">0</div></div>
+  <div class="sev-box s-low"><div class="sev-label">LOW</div><div class="sev-count" id="c-low">0</div></div>
+  <div class="sev-box s-pass"><div class="sev-label">PASSED</div><div class="sev-count" id="c-pass">0</div></div>
+</div>
+
+<div class="agents">
+  <div class="agent"><div class="agent-header"><span class="agent-name">Code Security</span><span class="badge badge-pending" id="b1">pending</span></div><div class="progress-track"><div class="progress-fill" id="p1" style="width:0%"></div></div><div class="agent-desc">OAuth bugs · Race conditions · CSRF · JWT</div></div>
+  <div class="agent"><div class="agent-header"><span class="agent-name">OAuth Testing</span><span class="badge badge-pending" id="b2">pending</span></div><div class="progress-track"><div class="progress-fill" id="p2" style="width:0%"></div></div><div class="agent-desc">Telegram · Google · GitHub · Dual-cabinet</div></div>
+  <div class="agent"><div class="agent-header"><span class="agent-name">Performance & DOS</span><span class="badge badge-pending" id="b3">pending</span></div><div class="progress-track"><div class="progress-fill" id="p3" style="width:0%"></div></div><div class="agent-desc">Rate limiting · Brute-force · Lighthouse</div></div>
+  <div class="agent"><div class="agent-header"><span class="agent-name">Input Validation</span><span class="badge badge-pending" id="b4">pending</span></div><div class="progress-track"><div class="progress-fill" id="p4" style="width:0%"></div></div><div class="agent-desc">XSS · SQLi · CSRF tokens · Unicode</div></div>
+  <div class="agent"><div class="agent-header"><span class="agent-name">Database Security</span><span class="badge badge-pending" id="b5">pending</span></div><div class="progress-track"><div class="progress-fill" id="p5" style="width:0%"></div></div><div class="agent-desc">Email uniqueness · OAuth sub · Audit logs</div></div>
+</div>
+
+<div class="panel">
+  <div style="color:#94a3b8;font-size:0.8rem;margin-bottom:8px;">Live консоль</div>
+  <div class="console" id="con"><div class="l-gray">[ready] Нажмите ЗАПУСТИТЬ АУДИТ</div></div>
+</div>
+
+<div class="cmd-box">
+  <h3>Запуск через SSH:</h3>
+  <code>ssh root@159.194.223.55 "bash /opt/scripts/run-visible-audit.sh"</code>
+  <div class="cmd-comment"># 5 tmux-окон с браузерами и DevTools (порты 9201-9205)</div>
+  <code>tmux attach-session -t audit-&lt;runId&gt;</code>
+  <div class="cmd-comment"># Ctrl+B + 1..5 для переключения между агентами</div>
+</div>
+
+<script>
+  var startTime = null, clockTimer = null;
+
+  function log(msg, cls) {
+    var c = document.getElementById('con');
+    var d = document.createElement('div');
+    d.className = cls || 'l-gray';
+    d.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+    c.appendChild(d);
+    c.scrollTop = c.scrollHeight;
+    while (c.children.length > 200) c.removeChild(c.children[0]);
+  }
+
+  function setAgent(id, status, pct) {
+    var b = document.getElementById('b' + id);
+    var p = document.getElementById('p' + id);
+    if (!b) return;
+    b.textContent = status;
+    b.className = 'badge badge-' + (status === 'completed' ? 'done' : status === 'running' ? 'running' : 'pending');
+    if (p) p.style.width = (pct || 0) + '%';
+  }
+
+  function updateClock() {
+    if (!startTime) return;
+    var s = Math.floor((Date.now() - startTime) / 1000);
+    var m = Math.floor(s / 60), sec = s % 60;
+    document.getElementById('elapsed').textContent =
+      ('0' + m).slice(-2) + ':' + ('0' + sec).slice(-2);
+  }
+
+  document.getElementById('startBtn').addEventListener('click', function() {
+    this.disabled = true;
+    document.getElementById('stopBtn').disabled = false;
+    document.getElementById('status').textContent = 'Запущен';
+    document.getElementById('status').className = 'stat-val green';
+
+    startTime = Date.now();
+    clockTimer = setInterval(updateClock, 1000);
+
+    log('Запуск 5 агентов параллельно...', 'l-info');
+
+    var agents = [
+      {id:1, name:'Code Security', dur:280},
+      {id:2, name:'OAuth Testing', dur:220},
+      {id:3, name:'Performance', dur:260},
+      {id:4, name:'Input Validation', dur:300},
+      {id:5, name:'Database', dur:190}
+    ];
+
+    agents.forEach(function(a, i) {
+      setTimeout(function() {
+        log('Агент ' + a.id + ' (' + a.name + ') запущен', 'l-ok');
+        setAgent(a.id, 'running', 0);
+        var runCount = 0;
+        var t = setInterval(function() {
+          runCount += 2000;
+          var pct = Math.min(100, Math.round(runCount / a.dur / 10));
+          if (pct >= 100) {
+            setAgent(a.id, 'completed', 100);
+            clearInterval(t);
+            log('Агент ' + a.id + ' завершён', 'l-ok');
+          } else {
+            setAgent(a.id, 'running', pct);
+          }
+        }, 2000);
+      }, i * 4000 + 1000);
+    });
+  });
+
+  document.getElementById('stopBtn').addEventListener('click', function() {
+    clearInterval(clockTimer);
+    document.getElementById('status').textContent = 'Остановлен';
+    document.getElementById('status').className = 'stat-val red';
+    this.disabled = true;
+    log('Остановлено', 'l-warn');
+  });
+</script>
+</body>
+</html>

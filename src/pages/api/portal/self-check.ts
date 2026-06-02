@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { listForEvent, markChecked, unmark } from '../../../lib/portalSelfCheck';
+import { listForEvent, markChecked, unmark, markCheckedByStaffId, unmarkByStaffId } from '../../../lib/portalSelfCheck';
 
 function bad(msg: string, status = 400) {
   return new Response(JSON.stringify({ ok: false, error: msg }), { status, headers: { 'Content-Type': 'application/json' } });

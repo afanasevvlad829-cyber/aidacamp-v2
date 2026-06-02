@@ -69,3 +69,28 @@ export async function unmark(eventId: number, telegramId: number): Promise<{ ok:
   });
   return res ?? { ok: false };
 }
+
+/** Отметить по staff_id напрямую (для код-входа без telegram_id). */
+export async function markCheckedByStaffId(eventId: number, staffId: number): Promise<{ ok: true; checked_at: string } | { ok: false; error: string }> {
+  const res = await withClient(async (c) => {
+    const s = await c.query('SELECT id, active FROM portal_staff WHERE id=$1', [staffId]);
+    if (s.rowCount === 0 || !s.rows[0].active) return { ok: false as const, error: 'сотрудник не найден или неактивен' };
+    const r = await c.query(
+      `INSERT INTO event_self_check(event_id, staff_id)
+       VALUES($1,$2)
+       ON CONFLICT (event_id, staff_id) DO UPDATE SET checked_at = event_self_check.checked_at
+       RETURNING to_char(checked_at AT TIME ZONE 'Europe/Moscow','HH24:MI') checked_at`,
+      [eventId, staffId]);
+    return { ok: true as const, checked_at: r.rows[0]?.checked_at ?? '' };
+  });
+  return res ?? { ok: false, error: 'db error' };
+}
+
+/** Снять отметку по staff_id напрямую (для код-входа без telegram_id). */
+export async function unmarkByStaffId(eventId: number, staffId: number): Promise<{ ok: boolean }> {
+  const res = await withClient(async (c) => {
+    await c.query('DELETE FROM event_self_check WHERE event_id=$1 AND staff_id=$2', [eventId, staffId]);
+    return { ok: true };
+  });
+  return res ?? { ok: false };
+}
