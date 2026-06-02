@@ -4,7 +4,7 @@ import { getStaff, getStaffById } from './lib/portalStaff';
 
 const PORTAL_PUBLIC = new Set(['/portal/login', '/portal/login/', '/portal/tg-app', '/api/portal/login', '/api/portal/check', '/api/portal/tg', '/api/portal/penalty/scan']);
 
-const staffActiveCache = new Map<string, { ok: boolean; role: string | null; roles: string[]; name: string | null; exp: number }>();
+const staffActiveCache = new Map<string, { ok: boolean; role: string | null; roles: string[]; name: string | null; telegramId: number | null; exp: number }>();
 const STAFF_CACHE_MS = 60_000;
 
 // ─── 301 Redirects ──────────────────────────────────────────────────────────
@@ -70,6 +70,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
             role: staff?.role ?? null,
             roles: allRoles,
             name: staff?.full_name ?? null,
+            telegramId: staff?.telegram_id ?? null,
             exp: now + STAFF_CACHE_MS,
           };
           staffActiveCache.set(staffKey, c);
@@ -98,6 +99,10 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
       locals.portalRole = role as any;
       locals.portalRoles = staffRoles as any;
       locals.portalName = staffName ?? undefined;
+      // portalSub = telegram_id (TG-вход: payload.sub; код-вход: берём из кэша staff)
+      const cachedTg = staffKey ? staffActiveCache.get(staffKey)?.telegramId : null;
+      locals.portalSub = payload?.sub ?? (typeof cachedTg === 'number' ? cachedTg : undefined);
+      locals.portalSid = payload?.sid;
     }
   }
 
