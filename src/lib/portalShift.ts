@@ -6,6 +6,16 @@ export interface ContentTask {
   title: string;
   brief: string | null;
   content_type: string | null;
+  tags?: string[];
+}
+
+/** Запись библиотеки контент-заданий (для выбора при сборке дня). */
+export interface ContentTaskTemplate {
+  id: string;
+  content_type: string;
+  title: string;
+  brief: string;
+  tags: string[];
 }
 
 export interface ShiftEvent {
@@ -101,7 +111,7 @@ export async function getEventDates(shiftId: number): Promise<string[]> {
 
 /** События смены. Если передана дата — только за этот день (легче для role/day видов). */
 export async function getEvents(shiftId: number, date?: string): Promise<ShiftEvent[]> {
-  const COLS = "e.id,e.external_id,to_char(e.date,'YYYY-MM-DD') date,e.start_time::text,e.end_time::text,e.title,e.activity_type,e.event_type::text,e.activity_slug,e.content_task_template_id,e.group_color_id,e.staff_keys,e.roles,e.notes,e.sort,e.responsible_staff_id,ps.full_name AS responsible_name,ct.id ct_id,ct.title ct_title,ct.brief ct_brief,ct.content_type ct_content_type";
+  const COLS = "e.id,e.external_id,to_char(e.date,'YYYY-MM-DD') date,e.start_time::text,e.end_time::text,e.title,e.activity_type,e.event_type::text,e.activity_slug,e.content_task_template_id,e.group_color_id,e.staff_keys,e.roles,e.notes,e.sort,e.responsible_staff_id,ps.full_name AS responsible_name,ct.id ct_id,ct.title ct_title,ct.brief ct_brief,ct.content_type ct_content_type,ct.tags ct_tags";
   const JOINS = "LEFT JOIN content_task_template ct ON ct.id::text=e.content_task_template_id LEFT JOIN portal_staff ps ON ps.id=e.responsible_staff_id";
   const evRows = date
     ? await query(
@@ -123,7 +133,7 @@ export async function getEvents(shiftId: number, date?: string): Promise<ShiftEv
   }
   return evRows.map((e: any) => ({
     ...e,
-    content_task: e.ct_id != null ? { id: e.ct_id, title: e.ct_title, brief: e.ct_brief, content_type: e.ct_content_type } : null,
+    content_task: e.ct_id != null ? { id: e.ct_id, title: e.ct_title, brief: e.ct_brief, content_type: e.ct_content_type, tags: e.ct_tags ?? [] } : null,
     checklists: (byEvent.get(e.id) ?? []).map((r: any) => ({
       event_checklist_id: r.event_checklist_id, checklist_id: r.checklist_id, title: r.title, roles: r.roles, items: r.items })),
   }));
@@ -289,4 +299,31 @@ export async function attachChecklist(eventId: number, checklistId: number, role
       await c.query("INSERT INTO event_checklist(event_id,checklist_id,roles) VALUES($1,$2,$3)", [eventId, checklistId, roles]);
     }
   });
+}
+
+/** Вся библиотека контент-заданий (для выбора при сборке дня). */
+export async function listContentTaskTemplates(): Promise<ContentTaskTemplate[]> {
+  const rows = await query(
+    "SELECT id, content_type, title, brief, COALESCE(tags,'{}') tags FROM content_task_template ORDER BY content_type, title",
+  );
+  return (rows ?? []).map((r: any) => ({
+    id: String(r.id), content_type: r.content_type, title: r.title,
+    brief: r.brief, tags: r.tags ?? [],
+  }));
+}
+
+/**
+ * Подсказки контент-заданий по контексту блока.
+ * Простой матчинг: совпадение тега с любым словом в названии блока (без учёта регистра).
+ * Возвращает задания, отсортированные по числу совпавших тегов (больше — выше).
+ */
+export async function suggestContentTasks(blockTitle: string, limit = 5): Promise<ContentTaskTemplate[]> {
+  const all = await listContentTaskTemplates();
+  const words = (blockTitle || '').toLowerCase().split(/[^a-zа-яё0-9]+/i).filter(Boolean);
+  if (!words.length) return [];
+  const scored = all
+    .map((t) => ({ t, score: t.tags.filter((tag) => words.some((w) => w.includes(tag) || tag.includes(w))).length }))
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit).map((x) => x.t);
 }
