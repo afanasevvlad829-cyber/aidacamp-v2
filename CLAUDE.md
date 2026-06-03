@@ -1,5 +1,22 @@
 # АйДаКемп — Project Rules
 
+## 📂 Карта документов (читай первым)
+
+| Файл | За что отвечает |
+|---|---|
+| **`CLAUDE.md`** (этот файл) | Позиционирование, бренд, инциденты, правила контента, MCP |
+| **`DEV_PROTOCOL.md`** | Стек, git workflow, deploy, тестирование — всё по разработке сайта |
+| **`AGENTS.md`** | Git safety rules, деструктивные операции, UI architecture |
+| **`DESIGN_SYSTEM.md`** | Единственный источник правды по UI: цвета, типографика, иконки, компоненты |
+| **`INFRA.md`** | Карта инфраструктуры: домены → nginx → сервисы → порты |
+| **`TOOLS.md`** | MCP-инструменты, Browser Agent, stats.sh — полная документация |
+| **`PHOTOS.md`** | Фотоархив 9200 фото: поиск, скачивание, сцены |
+| **`_notes/Библиотека знаний/`** | Правила по Директу, VK, SEO, налоговому вычету |
+
+**Правило:** перед задачей открывай нужный файл, не держи всё в памяти.
+
+---
+
 ## 🎯 Позиционирование бренда — читай ПЕРЕД любой коммуникацией с клиентом
 
 **Любой текст для сайта, креативов, рассылок, постов, скриптов звонков — ДОЛЖЕН
@@ -8,25 +25,22 @@
 - **`_notes/АйДаКемп/Маркетинг/Позиционирование бренда.md`** — образ Дарьи, tone of voice, красные линии
 - **`_notes/АйДаКемп/Клиенты/Портрет клиента.md`** — глубинная мотивация, страхи
 
-**Главный принцип (кратко):** Мы продаём маме ощущение "я хорошая", а не
-пользу для детей. Продукт = социально-одобряемая вещь, которой можно
-похвастаться подругам + закрыть чувство вины за недостаток времени с ребёнком.
+**Главный принцип:** Мы продаём маме ощущение "я хорошая", а не пользу для детей.
+Продукт = социально-одобряемая вещь, которой можно похвастаться подругам + закрыть чувство вины.
 
 **🚫 Запрещено в коммуникации:**
 - Нотации родителям ("вы не уделяете внимание")
-- Конфронтация с амбициями ("ваши психотравмы через детей")
 - Педагогические термины ("soft-skills", "формирование фундамента")
 - Серьёзный тон "эксперта в очках"
 - Шок-контент, сравнение с конкурентами в лоб
 
 **✅ Работает:** лёгкий тон подруги, красивые фото с улыбками, социальное
-подтверждение (отзывы/Яндекс.Карты), налоговый вычет, образ Дарьи как
-Instagram-успешной мамы-идеала.
+подтверждение (отзывы/Яндекс.Карты), налоговый вычет, образ Дарьи как мамы-идеала.
 
-**Перед любым текстом задать 5 вопросов (из `Позиционирование бренда.md`):**
+**Перед любым текстом — 5 вопросов:**
 1. Смогла бы мама похвастаться этим в чате с подругами?
 2. Не обвиняю ли я её в этой фразе?
-3. Понятны ли слова на уровне Instagram, не преподаёт ли текст?
+3. Понятны ли слова на уровне Instagram?
 4. Виден ли лёгкий путь наверх к Дарье?
 5. Фото — захотела бы она показать это в своём профиле?
 
@@ -34,9 +48,9 @@ Instagram-успешной мамы-идеала.
 
 ---
 
-## 📚 Библиотека знаний по каналам (читай перед работой с Директом/VK/SEO)
+## 📚 Библиотека знаний (читай перед работой с Директом/VK/SEO)
 
-Живая база правил, инцидентов и best practices. **Обязательно открывать перед любой задачей по рекламе или SEO** — в ней уже записаны грабли, чтобы не наступать повторно.
+Живая база правил, инцидентов и best practices. Грабли уже записаны — не наступай повторно.
 
 - **[_notes/Библиотека знаний/](_notes/Библиотека%20знаний/README.md)** — корневой индекс
   - [Яндекс.Директ — основные правила.md](_notes/Библиотека%20знаний/Яндекс.Директ%20—%20основные%20правила.md)
@@ -44,146 +58,38 @@ Instagram-успешной мамы-идеала.
   - [SEO — основные правила.md](_notes/Библиотека%20знаний/SEO%20—%20основные%20правила.md)
   - [Налоговый вычет — правила и данные.md](_notes/Библиотека%20знаний/Налоговый%20вычет%20—%20правила%20и%20данные.md)
 
-**Правило:** любой инсайт из сессии, аудита или инцидента — фиксировать в соответствующий файл в разделе «Best practices из нашего опыта» с датой и структурой **Симптом / Причина / Решение / Правило**. Разовые ошибки агента повторяются именно потому, что выводы не записаны.
+**Правило:** любой инсайт из сессии → фиксировать в нужный файл. Структура: **Симптом / Причина / Решение / Правило** + дата.
 
 ---
 
-## 🎨 UI-правила (критично)
+## 🎨 UI-правила (краткий чек)
 
-**📐 Перед любой работой над компонентами/стилями — открой [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)**
+**Полная документация — только в [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).** Здесь только критичные запреты:
 
-Единый источник правды: цвета, типографика, отступы, радиусы, кнопки, карточки, контраст WCAG AA, мин-шрифт 16px на мобилке, hero-эффекты, чек-лист на новый компонент.
+- **Иконки** — только Bootstrap Icons из `src/data/icons-manifest.json`. Никаких эмодзи в UI.
+- **Иконка не в манифесте** → добавить в JSON → `npm run icons`. Никогда не редактировать `icons.css` вручную.
+- **Эталонные компоненты:** `src/components/Shifts.astro`, `src/components/FAQ.astro`.
 
-**Эталонные компоненты:** `src/components/Shifts.astro`, `src/components/FAQ.astro`. Копируй паттерны оттуда.
-
-### Иконки — только Bootstrap Icons, НЕ эмодзи
-
-**✅ Всегда** используй `<i class="bi bi-*">` с `aria-hidden="true"`:
-```astro
-<i class="bi bi-laptop text-[24px] text-white" aria-hidden="true"></i>
-<i class="bi bi-patch-check-fill text-[12px]" aria-hidden="true"></i>
-<i class="bi bi-telegram text-[15px]" aria-hidden="true"></i>
-```
-
-**❌ Никогда** не используй эмодзи в UI (кнопки, заголовки, карточки, плашки, badges):
-```astro
-<!-- ЗАПРЕЩЕНО -->
-<span>🖥️ Ноутбук не нужен</span>
-<span>📞 Позвонить</span>
-<span>⚡ Быстро</span>
-<span>🎯 Цель</span>
-```
-
-### Карта замены частых эмодзи → bi-иконки
-
-| Эмодзи | bi-icon | Применение |
-|---|---|---|
-| 🖥️ 💻 | `bi-laptop` | ноутбук, устройство |
-| 📞 ☎️ | `bi-telephone-fill` | звонок |
-| 💬 | `bi-chat-dots-fill` | сообщения |
-| ✈️ 📨 | `bi-send-fill` | отправить |
-| ⚡ | `bi-lightning-charge-fill` | скорость, энергия |
-| 🔄 ♻️ | `bi-arrow-repeat` | обновление, цикл |
-| ✅ ✔️ | `bi-check-lg` / `bi-check-circle-fill` | подтверждение |
-| ❌ | `bi-x-lg` | закрыть, отмена |
-| 🔒 | `bi-lock-fill` / `bi-shield-lock-fill` | закрыто, безопасность |
-| 📹 🎥 | `bi-camera-video-fill` | видео |
-| ❤️ | `bi-heart-fill` / `bi-heart-pulse-fill` | сердце, здоровье |
-| 🏆 🥇 | `bi-trophy-fill` | награда |
-| ⭐ | `bi-star-fill` | рейтинг (можно оставить `★` как typography) |
-| 🔥 | `bi-fire` | популярное |
-| 📷 | `bi-camera-fill` | фото |
-| 🛡 | `bi-shield-fill` / `bi-patch-check-fill` | защита, лицензия |
-| 💰 | `bi-cash-coin` / `bi-currency-ruble` | деньги |
-| 🎯 | `bi-bullseye` | цель |
-| 📋 | `bi-clipboard-check` | список |
-| ⚠️ | `bi-exclamation-triangle-fill` | внимание |
-| 🔔 | `bi-bell-fill` | уведомление |
-
-### Исключения (не эмодзи, допустимо как typography)
-- `★` (U+2605), `✓` (U+2713), `•` — это typography symbols, не эмодзи. Можно оставить в тексте.
-- Внутри текста статьи (blog) эмодзи как часть цитаты — допустимо.
-
-### ⚠️ ОБЯЗАТЕЛЬНО: доступные иконки
-
-**Используй ТОЛЬКО иконки из `src/data/icons-manifest.json`** (74 штуки на 2026-04-21). Если иконки там нет — добавь её через манифест.
-
-```bash
-# Быстро проверить есть ли иконка в проекте:
-node -e "const m=require('./src/data/icons-manifest.json'); console.log(m.includes('ICONNAME') ? '✓ есть' : '✗ НЕТ — добавь в manifest')"
-```
-
-Если поставишь `bi-lightning-charge-fill` а в манифесте только `bi-lightning-charge` — получишь чёрный квадрат. Это критический баг.
-
-### ⚠️ НИКОГДА не редактируй `src/styles/icons.css` вручную
-
-`icons.css` — **AUTO-GENERATED** файл. Ручные правки будут перезаписаны при следующем `npm run icons`.
-
-**Как добавить иконку:**
-1. Найди имя на https://icons.getbootstrap.com/ (~2000 иконок)
-2. Добавь имя в `src/data/icons-manifest.json` (просто строка в JSON-массиве)
-3. Если иконки нет в bootstrap-icons — положи SVG в `src/styles/custom-icons/<name>.svg`
-4. Запусти `npm run icons` — скрипт перегенерирует `icons.css`
-5. Закоммить оба файла: `icons-manifest.json` + `icons.css`
-
-**Почему так устроено:** параллельные агенты конфликтовали при ручных правках icons.css (verbose vs compact форма). JSON-манифест мерджится без конфликтов. Один агент добавляет одну строчку в JSON — конфликта нет.
-
-### Частые ловушки для агентов (из аудита 2026-04-21)
-
-| Ситуация | Неправильно | Правильно |
-|---|---|---|
-| fill-вариант иконки | `bi-lightning-charge-fill` (нет в манифесте) | `bi-lightning-charge` |
-| Галочка в кружке | `<span>✓</span>` | `<i class="bi bi-check-lg">` |
-| Toast-уведомления (nudge.ts) | `🔥 Текст` | `Текст` (plain text, bi-* недоступны) |
-| relatedPages icon | `emoji: "🔍"` | `icon: "search"` |
-| Cookie баннер | `🍪` | `<i class="bi bi-info-circle">` |
-| Документ/файл | `📄` | `<i class="bi bi-file-earmark-text">` |
-| Календарь/дата | `📅` | `<i class="bi bi-calendar-event">` |
-| Исключение | admin-страницы `/src/pages/admin/` | можно оставить символы ✓ ✗ в разметке |
-
-### Проверка перед PR
-
-Перед каждым коммитом запускай аудит эмодзи:
-```bash
-python3 -c "
-import os, re
-emoji_re = re.compile(r'[\U0001F000-\U0001FFFF\U00002600-\U000027BF]')
-for root, dirs, files in os.walk('src'):
-    dirs[:] = [d for d in dirs if 'admin' not in root]
-    for f in files:
-        if f.endswith('.astro'):
-            path = os.path.join(root, f)
-            for i, line in enumerate(open(path, errors='ignore'), 1):
-                if emoji_re.search(line) and not any(x in line for x in ['//','<!--','статьи','article']):
-                    print(f'{path}:{i}: {line.strip()[:100]}')
-"
-```
-Если нашло — замени на bi-иконки или убери.
+---
 
 ## 📝 Брендовые правила для текстов
 
-- **Дарья Афанасьева** — основатель АйДаКемп, **мама ДОЧЕРИ-подростка** (не сына!). Все цитаты от её лица должны быть согласованы по роду: «у дочери», «она сама», «я слышала от неё» — а НЕ «у сына», «он сам».
-- Общий тон цитат Дарьи — подруга, а не эксперт. Простые конкретные наблюдения мамы-к-маме.
+- **Дарья Афанасьева** — мама **дочери**-подростка (не сына!). Цитаты: «у дочери», «она сама» — НЕ «у сына».
+- Тон Дарьи — подруга, не эксперт. Конкретные наблюдения мамы-к-маме.
 
-### 🚫 BANNED WORDS — глобальный запрет в любых текстах сайта/креативов/постов
+### 🚫 BANNED WORDS — глобальный запрет
 
-**Эти слова и обороты ЗАПРЕЩЕНЫ. Перед публикацией прогонять `npm run check:banned`.**
+| Запрещено | Чем заменить |
+|---|---|
+| `единиц` / `единицы` / `единицами` | `рубл-` (игровая валюта лагеря) |
+| `баллов` / `баллы` / `балла` / `балл` | `рубл-` |
+| массовое `дети` / `ребёнок` (>20 раз в статье) | `ребята`, `школьники`, `подростки`, `он/она` |
 
-| Запрещено | Почему | Чем заменить |
-|---|---|---|
-| `единиц` / `единицы` / `единицами` | дешёвый игровой жаргон, ломает премиум-позицию | `рубл-` (внутренняя игровая валюта лагеря) |
-| `баллов` / `баллы` / `балла` / `балл` | школьный оценочный жаргон, обесценивает игру | `рубл-` |
-| **массовое использование `дети` / `ребёнок`** | в одной статье > 20 упоминаний — звучит как методичка для воспитателей, а не текст для родителя | разнообразить: `ребята`, `школьники`, `подростки`, `мальчик/девочка`, `сын/дочь`, `он/она`, `ваш ребёнок` (1-2 раза за статью допустимо) |
+Контроль: `npm run check:banned` — встроен в `npm run build`, при нарушении билд падает.
 
-**Внутренняя валюта лагеря — называется «рубли» (игровые).** Допустимы синонимы: «игровая валюта», «игровые рубли», «внутренняя валюта». Аналогия с Монополией («прошёл круг — получи 200 рублей») — основной якорь. **При первом упоминании в статье — обязательный дисклеймер**: «далее под рублями имеется в виду игровая валюта лагеря».
+### 💰 Налоговый вычет — НЕЛЬЗЯ хардкодить одну цифру
 
-**Контроль:** скрипт `scripts/check-banned-words.sh` (вызывается из `npm run build` через guard). Найдено `единиц`/`баллов` — билд падает.
-
-### 💰 Налоговый вычет — НЕЛЬЗЯ хардкодить одну цифру для всех смен
-
-**Перед любым упоминанием суммы вычета** — читай [`_notes/Библиотека знаний/Налоговый вычет — правила и данные.md`](_notes/Библиотека%20знаний/Налоговый%20вычет%20—%20правила%20и%20данные.md).
-
-Формула: `возврат = 13% × (цена смены − 3 800 ₽ × кол-во дней)`
+Перед любым упоминанием — читай [`_notes/Библиотека знаний/Налоговый вычет — правила и данные.md`](_notes/Библиотека%20знаний/Налоговый%20вычет%20—%20правила%20и%20данные.md).
 
 Суммы по сменам 2026:
 - Смена 2.1 (7 дн., 48 000 ₽) → **~2 800 ₽**
@@ -192,37 +98,28 @@ for root, dirs, files in os.walk('src'):
 - Смена 3 (13 дн., 89 400 ₽) → **~5 200 ₽**
 - Смена 2 (14 дн., 95 000 ₽) → **~5 434 ₽** ← максимум
 
-**❌ ЗАПРЕЩЕНО:** писать "до 5 200 ₽" как универсальную сумму, "до 14 300 ₽" (это 13% от лимита 110к — у нас образовательная часть всегда < 42к), любое число без привязки к конкретной смене.
-
-**✅ Если нужна одна цифра:** "до 5 434 ₽ (максимум, 14-дневная смена)" или "от ~2 800 до ~5 434 ₽ в зависимости от смены".
-
----
-
-## 🚫 ЗАПРЕЩЁННЫЕ ЗАВИСИМОСТИ (критично — читай ДО любых правок)
-
-**Запрещено использовать в проекте:**
-
-### `@astrojs/partytown` — НИКОГДА не возвращайте
-Не добавляйте в `package.json`, не импортируйте в `astro.config.mjs`, не используйте `<script type="text/partytown">` в компонентах. Билд упадёт на `scripts/guard-no-partytown.sh` (вызывается автоматически через `npm run build`).
-
-**Почему запрет:** Partytown переносит Метрика-скрипт в Web Worker и подменяет `window.ym` на proxy. Proxy падает с `TypeError: Cannot read properties of undefined (reading 'apply')` в `blob:https://...` при любом `ym('reachGoal', ...)`. Из-за этого:
-- Метрика-цель `541048270` age_select перестаёт писать reaches
-- Яндекс.Директ с PAY_FOR_CONVERSION стратегией и `GoalId=541048270` видит 0 конверсий
-- Алгоритм Direct снижает ставки до нуля → показов 0
-
-**Инцидент 16-18 апреля 2026:** Partytown два дня блокировал пайплайн конверсий, все три активные Direct-кампании (пакет 707632923 + Search 708664426) встали, потеря = ~3 дня × ~20К₽/день = ~60К₽. Повторился 18.04 вечером из-за merge-конфликта.
-
-**Если Метрика нужна в worker** — используйте **обычный асинхронный тег Яндекса** (стандартный код из Метрика-справки). Partytown-аналоги в Web Worker не использовать ни для одного из:
-- Yandex.Metrika
-- VK Top.Mail.Ru pixel
-- Clarity (хотя на неё влияние минимальное)
-
-### Также ЗАПРЕЩЕНО
-- Скрипт с флагом `permanently=true` на Яндекс.Диск API (использовать только `permanently=false` — удаление через корзину). Причина: инцидент удаления папок `/Медиа/2020-2026` коллегой через `flatten_archive.py` — 9000+ фото утеряны навсегда.
+❌ ЗАПРЕЩЕНО: писать "до 5 200 ₽" как универсальную сумму для всех смен.
+✅ Если нужна одна цифра: "до 5 434 ₽ (максимум, 14-дневная смена)".
 
 ---
 
-## СТАРТ КАЖДОЙ СЕССИИ (проверить первым делом)
+## 🚫 ЗАПРЕЩЁННЫЕ ЗАВИСИМОСТИ
+
+### `@astrojs/partytown` — НИКОГДА не возвращать
+
+Не добавлять в `package.json`, не импортировать. Билд упадёт на `scripts/guard-no-partytown.sh`.
+
+**Почему:** Partytown ломает Метрика-цели через Web Worker proxy → `TypeError` → 0 конверсий в Директ.
+
+**Инцидент 16-18 апреля 2026:** ~60К₽ потерь за 2 дня, все кампании встали.
+
+### `permanently=true` в Яндекс.Диск API
+
+Только `permanently=false`. Причина: инцидент — 9000+ фото утеряны навсегда.
+
+---
+
+## СТАРТ КАЖДОЙ СЕССИИ
 
 **Два отдельных репозитория — не путать:**
 
@@ -231,158 +128,35 @@ for root, dirs, files in os.walk('src'):
 | Сайт (вёрстка, компоненты, деплой) | `~/Aidacamp-cloude` | `dev` |
 | MCP-сервер (инструменты, API) | `~/MCP` | `main` |
 
-**Алгоритм старта:**
+**Алгоритм:**
 1. Понять о чём задача — сайт или MCP?
 2. Перейти в нужную папку
-3. Проверить `git branch` — убедиться что на правильной ветке
-4. Если не так — переключиться до начала работы
-5. **Всегда делать `git fetch origin && git pull --rebase origin dev`** перед началом работы
-
-**Если не ясно** — спросить: "это задача по сайту или по MCP-серверу?"
+3. `git branch` — убедиться что на правильной ветке
+4. `git fetch origin && git pull --rebase origin dev`
+5. **Агент**: запустить `./scripts/agent-start.sh "<задача>"` — получишь изолированный worktree
 
 ---
 
-## Факты vs гипотезы vs «не найдено» (жёсткое правило)
+## Факты vs гипотезы (жёсткое правило)
 
-Работаем с деньгами и рекламными алгоритмами → **нельзя додумывать**.
-
-1. **Факт** — только то, что подтверждено:
-   - Официальной документацией (ссылка обязательна)
-   - Эмпирической проверкой на наших данных (с показом запроса/результата)
-
-2. **Гипотеза** — явно помечать словом «гипотеза» или 🤔. Без пометки не писать.
-
-3. **API/документационные вопросы** (поля, endpoint'ы, параметры, значения):
-   - **Первое действие** — идти в официальную документацию (target.vk.ru, yandex.ru/support, ads.vk.com, и т.д.)
-   - Если в доступной документации нет ответа — прямо писать: **«в документации не найдено»**
-   - **Не гадать**. Не пробовать 5 вариантов запроса, надеясь угадать.
-   - Если WebFetch блокирован / страница JS-рендерит пусто — это тоже «не найдено», пометить отдельно
-
-4. **Ошибки моей интерпретации** (если были):
-   - Признавать явно и быстро
-   - Фиксировать в протоколе (РАДАР / ВК-2.0 / здесь), чтобы не повторить
-   - Пример 17.04: я ошибочно интерпретировал `learning_progress=1.0` как «обучается», на деле = ОБУЧЕНА. Исправлено эмпирически.
-
-5. **Правило «5500₽» (урок 17.04.2026):**
-   При CPC ниже обычной нормы в 2-3 раза → алгоритм ушёл в сетевой мусор (Сеть VK / DSP). Проверять атрибуцию клики→визиты в Метрике **до** уверенности, что трафик реальный.
+1. **Факт** — только подтверждённое данными или документацией (ссылка обязательна)
+2. **Гипотеза** — явно помечать: «гипотеза» или 🤔
+3. **Не найдено** — честный ответ, лучше чем додумать
+4. API-вопросы: сначала документация, потом тест. Не гадать.
 
 ---
 
-## Параллельная разработка — ЖЁСТКАЯ схема веток
+## Используй только aidacamp-tools MCP
 
-```
-main  ← КАНОН. Только через PR из dev. Прямой пуш ЗАБЛОКИРОВАН GitHub.
-  ↑ PR (мастер-агент создаёт + мёрджит)
-dev   ← Тестовая зона. Только мастер-агент пишет напрямую (MASTER_AGENT=1).
-  ↑ PR (суб-агенты создают)
-agent/<задача>  ← Зона суб-агентов. Сюда пушить свободно.
-```
+**НЕ используй:** Kapture, Desktop Commander, Chrome MCP, Claude in Chrome, удалённый MCP `5967f77d`.
 
-### Техническая защита (не обходить!)
+**Все инструменты — через `aidacamp-tools`.** Полная документация: [`TOOLS.md`](TOOLS.md).
 
-- **GitHub branch protection** на `main` — требует PR, прямой пуш отклоняется сервером
-- **pre-push hook** — блокирует пуш в `main` и `dev` без флага
-- **pre-commit hook** — суб-агент НЕ может коммитить в главное рабочее дерево (`/Users/vladimirafanasev/Aidacamp-cloude/`). Если сделает — git вернёт ошибку. Только владелец с `MASTER_AGENT=1`.
-- **pre-merge-commit hook** — суб-агент НЕ может делать `git merge` в главном рабочем дереве. Только владелец с `MASTER_AGENT=1`.
-- **Lock-файл `.main-repo.lock`** (опц.) — мастер-агент создаёт перед длинной работой через `bash scripts/main-repo-guard.sh lock`. Пока lock есть — никто кроме `MASTER_AGENT=1` не может коммитить. Снять: `... unlock`.
-- **Claude Code permissions deny-rules** в `.claude/settings.json` — `git checkout/stash/merge/reset --hard/rebase` в главном репо запрещены на уровне Claude Code (агенты получат «permission denied»).
-
-### Установка хуков (один раз после clone)
-```bash
-bash scripts/setup-hooks.sh   # подложит хуки + установит core.hooksPath = scripts/git-hooks
-```
-
-### Суб-агент — ОБЯЗАТЕЛЬНЫЙ алгоритм:
-
-```bash
-# 1. Старт — взять свежий dev
-git fetch origin
-git checkout dev && git pull --rebase origin dev
-
-# 2. Создать свою ветку
-git checkout -b agent/<задача>   # например: agent/seo-articles, agent/hero-redesign
-
-# 3. Работать, коммитить, пушить ТОЛЬКО в свою ветку
-git push origin agent/<задача>
-
-# 4. Открыть PR в dev
-gh pr create --base dev --title "..." --body "..."
-
-# 5. Сообщить мастер-агенту — НЕ мёрджить самому
-```
-
-❌ **НИКОГДА:** `git push origin dev` — хук заблокирует и объяснит почему
-❌ **НИКОГДА:** `git push origin main` — GitHub отклонит
-
-### Мастер-агент (основная сессия с владельцем):
-
-```bash
-# Пуш в dev (только мастер-агент, после проверки PR от суб-агентов):
-MASTER_AGENT=1 git push origin dev
-
-# Деплой в прод — через PR (не прямой merge!):
-gh pr create --base main --head dev --title "deploy: <описание>"
-gh pr merge --merge   # или одобрить в GitHub UI
-
-# Перед любым пушем — проверить нет ли новых чужих коммитов:
-git fetch origin
-git log dev..origin/dev --oneline   # чужие коммиты которых я не видел
-```
-
-### Если коммит появился неожиданно:
-
-```bash
-git fetch origin
-git log dev..origin/dev --oneline   # что пришло
-git show <hash>                      # посмотреть
-git pull --rebase origin dev         # принять
-```
+Известные кампании Директ: `708664426` (Поиск), `708698819` (РСЯ).
 
 ---
 
-## Git-воркфлоу (ОБЯЗАТЕЛЬНО соблюдать)
-
-### Схема (единственно правильная):
-
-```
-Разработка на local dev
-        ↓  ./scripts/deploy.sh dev
-   dev.aidacamp.ru  ← тестовая зона, показываем владельцу
-        ↓  владелец утверждает ✅
-   git checkout main && git merge dev
-        ↓  ./scripts/deploy.sh prod
-   aidacamp.ru  ← КАНОН (прод)
-        ↓
-   git checkout dev  ← возвращаемся работать
-```
-
-### Правила:
-1. **Всегда начинай на `dev`** — проверяй `git branch` в начале сессии
-2. **Никогда не коммить в `main` напрямую** — только через merge из dev
-3. **Никогда не деплоить прод без явного "выкатываем" от владельца**
-4. **После выкатки** — `dev` и `main` должны быть равны
-5. **Feature-ветки** (`button-system`, `refactor/*` и т.д.) — только если явно просят, потом мёрджить в dev и удалять
-
-### Команды выкатки в прод (полный цикл):
-```bash
-# Создать PR dev → main и смёрджить (main защищён, прямой пуш заблокирован)
-gh pr create --base main --head dev --title "deploy: $(date +%Y-%m-%d)" --body "Production deploy"
-gh pr merge --merge --delete-branch=false
-
-# Задеплоить прод
-./scripts/deploy.sh prod
-```
-
-### Текущее состояние:
-- `dev` == `main` (синхронизированы, 2026-04-16)
-- GitHub `origin/dev` — актуальный бэкап
-- GitHub `origin/main` — не используется для деплоя, только rsync
-
----
-
-## Фоновые агенты (headless) — без MCP
-
-MCP-серверы теряют соединение в длинных сессиях. Для фоновой автоматизации запускай **Claude Code headless**:
+## Фоновые агенты (headless)
 
 ```bash
 claude -p "задача" \
@@ -393,377 +167,28 @@ claude -p "задача" \
   --permission-mode bypassPermissions
 ```
 
-**Обязательные флаги для фона:** `--no-session-persistence` (не засоряет сессии), `--no-chrome` (не открывает браузер), `--max-turns N` (защита от зацикливания).
-
-**НЕ используй `--bare`** — отключает OAuth, агент не авторизуется.
-
-Для браузерных задач: Playwright headless отдельно (`headless=True`), затем Claude анализирует результат.
+**НЕ используй `--bare`** — отключает OAuth.
 
 Полная инструкция: `~/MCP/AGENT_INSTRUCTIONS.md` → раздел 0.
 
 ---
 
-## ВАЖНО: Используй только aidacamp-tools MCP
+## 📊 Отчёты — ТОЛЬКО в Reports Hub
 
-**НЕ используй** Kapture, Desktop Commander, Chrome MCP, Claude in Chrome, удалённый MCP `5967f77d` (yandex-direct-metrica-mcp). Они либо зависают, либо отключены.
-
-**Все инструменты доступны через единый MCP-сервер `aidacamp-tools`.**
-Загрузи схемы: `ToolSearch` с запросом `+aidacamp`.
-
-### Полный список инструментов aidacamp-tools (21 шт.)
-
-| Инструмент | Что делает | Пример вызова |
-|---|---|---|
-| `ssh` | Команды на сервере 159.194.223.55 | `ssh(host: "aidacamp", command: "ls /var/www")` |
-| `stats` | Аналитика Директ/Метрика из PostgreSQL | `stats(command: "summary", period: "week")` |
-| `photos` | Поиск фото на Яндекс.Диске (9200 фото) | `photos(command: "search", query: "дети код")` |
-| `browser_agent` | Headless браузер: скриншоты, скрапинг, Lighthouse | `browser_agent(action: "screenshot", url: "https://aidacamp.ru")` |
-| `clarity` | Microsoft Clarity: поведение на сайте | `clarity(report: "summary", period: "week")` |
-| `pagespeed` | Google PageSpeed: аудит скорости, SEO, доступности | `pagespeed(url: "https://aidacamp.ru")` |
-| `image_edit` | Обработка фото: яркость, контраст, насыщенность, cinematic | `image_edit(input: "photo.avif", cinematic: true)` |
-| `read_file` | Чтение локальных файлов | `read_file(path: "/Users/.../file.txt")` |
-| `write_file` | Запись в файлы | `write_file(path: "...", content: "...")` |
-| `list_directory` | Список файлов в папке | `list_directory(path: "/Users/...")` |
-| `create_directory` | Создание папок | `create_directory(path: "/Users/.../new")` |
-| `vk_campaigns` | Список кампаний VK Ads | `vk_campaigns(status: "active")` |
-| `vk_manage_campaign` | CRUD кампаний VK | `vk_manage_campaign(action: "create", name: "...")` |
-| `vk_manage_ad_group` | CRUD групп объявлений VK | `vk_manage_ad_group(action: "list", campaign_id: 123)` |
-| `vk_manage_ad` | CRUD объявлений VK | `vk_manage_ad(action: "create", ad_group_id: 456, ...)` |
-| `vk_ads_stats` | Статистика VK Ads | `vk_ads_stats(period: "week", level: "campaign")` |
-| `direct_campaigns` | Список кампаний Яндекс Директ | `direct_campaigns(status: "active")` |
-| `direct_manage_campaign` | CRUD кампаний Директ | `direct_manage_campaign(action: "create", name: "...")` |
-| `direct_manage_adgroup` | CRUD групп Директ | `direct_manage_adgroup(action: "list", campaign_id: 708664426)` |
-| `direct_manage_ad` | CRUD объявлений Директ | `direct_manage_ad(action: "create", ad_group_id: ..., title: "...")` |
-| `direct_manage_keywords` | CRUD ключевых слов Директ | `direct_manage_keywords(action: "add", ad_group_id: ..., keyword: "...")` |
-
-### Известные кампании
-- **Яндекс Директ:** 708664426 (Поиск), 708698819 (РСЯ)
-
-## Фотоархив AidaCamp
-
-Проиндексированный каталог ~9200 фотографий с AI-описаниями (Gemini Vision). Подробная документация: **[PHOTOS.md](PHOTOS.md)**
-
-Быстрый доступ через скрипт или MCP:
-
-```bash
-# Поиск по описанию/тегам
-./scripts/yadisk.sh search "дети программирование"
-
-# Лучшие фото по сцене (сортировка: сайт → соцсети → архив)
-./scripts/yadisk.sh best занятие 5
-
-# Список сцен с количеством
-./scripts/yadisk.sh scenes
-```
-
-MCP-инструмент `photos`: `photos(command: "search", query: "...")`, `photos(command: "best", query: "занятие", count: 5)`
-
-### Скачивание фото без токена — `/api/photo`
-
-Агентам **не нужен YADISK_TOKEN**. Токен хранится на сервере, фото отдаются через прокси:
-
-```bash
-# Одно фото — редирект на временную ссылку Яндекс.Диска
-curl -L "https://dev.aidacamp.ru/api/photo?path=disk:/Медиа/2024/Фото/Прочее/IMG_1234.jpg"
-
-# Превью (уменьшенное)
-curl -L "https://dev.aidacamp.ru/api/photo?path=disk:/...&preview=1"
-
-# Проксирование через сервер (без редиректа)
-curl "https://dev.aidacamp.ru/api/photo?path=disk:/...&mode=proxy"
-
-# Пакетно (до 20 фото) — POST, возвращает JSON с URL
-curl -X POST https://dev.aidacamp.ru/api/photo \
-  -H "Content-Type: application/json" \
-  -d '{"paths": ["disk:/Медиа/2024/Фото/...", "disk:/Медиа/2023/Фото/..."]}'
-```
-
-Данные: `scripts/photo_catalog.json`, `scripts/photo_catalog_summary.json`, `scripts/disk_index.json`
-
-## Полная инструкция для агентов по всем каналам аналитики
-
-Подробное описание ВСЕХ таблиц, полей, SQL-запросов и MCP-инструментов для работы с данными Яндекс.Директ, Яндекс.Метрика, VK Реклама, Microsoft Clarity и A/B-тестов: **[AGENT_INSTRUCTIONS.md](/Users/vladimirafanasev/MCP/AGENT_INSTRUCTIONS.md)**
-
-## Stack
-- Astro 6.x + Tailwind CSS v4 (utility classes only, no custom CSS)
-- @astrojs/node adapter (SSR for /api/ routes, static for pages)
-- Communication language: Russian
-
-## Подключение к серверу
-
-**Сервер:** 159.194.223.55 (Beget VPS)
-
-- **Человек (интерактивно):** `mosh root@159.194.223.55` — стандарт вместо SSH, устойчив к обрывам
-- **Агент (команды):** `mcp__aidacamp-tools__ssh` или `ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "команда"`
-- **UDP 60000-61000** открыт в UFW для mosh
-- **fail2ban ignoreip:** `37.113.209.255` (Mac) — агенты никогда не будут забанены
-
-## Deploy
-See memory for full deploy commands. Short version:
-- **Always deploy to dev first** (`dev.aidacamp.ru`), never overwrite prod without explicit confirmation
-- Build: `npm run build`
-- Deploy static: `dist/client/` (NOT `dist/`!)
-
-## Browser Agent (remote headless Chromium)
-
-Headless Chromium + Playwright установлен на сервере 159.194.223.55 в `/opt/browser-agent/`.
-Используй для скриншотов, скрапинга, краулинга сайтов **вместо локального браузера**.
-
-### Быстрый вызов через SSH
-
-```bash
-# Скриншот (desktop)
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 \
-  "cd /opt/browser-agent && node screenshot.js 'https://URL' '/opt/browser-agent/output/NAME.png' --full"
-
-# Скриншот (mobile)
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 \
-  "cd /opt/browser-agent && node screenshot.js 'https://URL' '/opt/browser-agent/output/NAME.png' --mobile --full"
-
-# Скрапинг текста / мета / ссылок
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 \
-  "cd /opt/browser-agent && node scrape.js 'https://URL' meta"
-
-# Краулинг сайта (до N страниц)
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 \
-  "cd /opt/browser-agent && node crawl.js 'https://URL' 20 json"
-
-# Извлечение читабельного текста статьи
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 \
-  "cd /opt/browser-agent && node readpage.js 'https://URL' readable"
-
-# Многошаговая автоматизация (загрузить JSON-скрипт и выполнить)
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 \
-  "cd /opt/browser-agent && node interact.js /tmp/script.json"
-```
-
-### Обёртка (wrapper)
-```bash
-./scripts/browser-agent.sh screenshot <url> [filename] [--full] [--mobile]
-./scripts/browser-agent.sh scrape <url> [text|html|links|meta]
-./scripts/browser-agent.sh crawl <url> [max_pages] [json|urls]
-./scripts/browser-agent.sh readpage <url> [readable|save]
-./scripts/browser-agent.sh interact <script.json>
-./scripts/browser-agent.sh pdf <url> [filename] [--landscape]
-./scripts/browser-agent.sh har <url> [filename] [--summary]
-./scripts/browser-agent.sh lighthouse <url> [--mobile] [--html --output file]
-./scripts/browser-agent.sh diff <img1> <img2> [output]
-./scripts/browser-agent.sh list
-./scripts/browser-agent.sh fetch <filename>
-```
-
-### SEO-аудит всего сайта (аналог Screaming Frog — бесплатно)
-
-```bash
-# Полный аудит — обходит весь сайт, выгружает CSV
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 \
-  "node /opt/browser-agent/seo-audit.js https://aidacamp.ru 100 /opt/sf-output/audit.csv"
-
-# CSV доступен по адресу (если положить в /var/www/dev/screenshots/):
-# https://dev.aidacamp.ru/screenshots/audit.csv
-
-# Что выдаёт: URL, Status, Title+длина, Description+длина, H1, H1_count,
-# Canonical, Schema_types, Robots_meta, Word_count, Inlinks,
-# Internal_links_out, Images_no_alt, Redirect_to
-# + сводка проблем в консоли (title >65, desc >160, 4xx, missing H1, images no alt)
-```
-
-**Яндекс.Вебмастер API** (токен в .env: YANDEX_WEBMASTER_TOKEN):
-```bash
-# Топ поисковых запросов с позициями
-USER_ID=19303961
-HOST="https:aidacamp.ru:443"
-TOKEN=$(grep YANDEX_WEBMASTER_TOKEN .env | cut -d= -f2)
-curl -s "https://api.webmaster.yandex.net/v4/user/${USER_ID}/hosts/${HOST}/query-analytics/list" \
-  -H "Authorization: OAuth ${TOKEN}" -H "Content-Type: application/json" -X POST \
-  -d '{"filters":{"text_indicator":"QUERY"},"limit":50,"order_by":"IMPRESSIONS","date_from":"YYYY-MM-DD","date_to":"YYYY-MM-DD"}'
-```
-
-### Скриншоты доступны по URL
-`https://dev.aidacamp.ru/screenshots/<filename>.png`
-
-### Доступные скрипты на сервере
-
-| Скрипт | Назначение |
-|---|---|
-| `screenshot.js` | Скриншот URL (desktop/mobile, full page) |
-| `scrape.js` | Извлечение текста, HTML, ссылок, мета-тегов |
-| `crawl.js` | Краулинг сайта — обход всех внутренних ссылок |
-| `readpage.js` | Извлечение читабельного текста статьи (Mozilla Readability) |
-| `interact.js` | Многошаговая автоматизация: goto → click → fill → screenshot |
-| `pdf.js` | Сохранение страницы в PDF (A4/landscape) |
-| `har.js` | Запись HAR-трейса сетевых запросов с анализом |
-| `lighthouse.js` | Аудит Lighthouse (Performance, SEO, Accessibility, Best Practices) |
-| `diff.js` | Попиксельное сравнение двух скриншотов |
-| `seo-audit.js` | **Полный SEO-краулер** (аналог Screaming Frog): обходит весь сайт, выдаёт CSV с Title/Desc/H1/Canonical/Schema/статус/inlinks/images-no-alt по каждой странице. Сводка проблем в консоли. |
-
-### interact.js — формат скрипта
-```json
-[
-  { "action": "goto", "url": "https://example.com" },
-  { "action": "wait", "ms": 2000 },
-  { "action": "click", "selector": "#login-btn" },
-  { "action": "fill", "selector": "input[name=email]", "value": "test@test.com" },
-  { "action": "screenshot", "path": "/opt/browser-agent/output/result.png" },
-  { "action": "text", "selector": ".result" },
-  { "action": "evaluate", "code": "document.title" }
-]
-```
-
-### Когда использовать
-- **Скриншоты сайтов** — screenshot.js (вместо локального Chrome)
-- **SEO-аудит** — scrape.js meta + crawl.js
-- **Анализ конкурентов** — readpage.js + scrape.js
-- **Проверка деплоя** — screenshot.js до/после + diff.js для сравнения
-- **Автоматизация веб-форм** — interact.js
-- **PageSpeed аудит** — lighthouse.js (без сторонних сервисов)
-- **Анализ загрузки** — har.js --summary (медленные запросы, размеры по типам)
-- **Сохранение страниц** — pdf.js для PDF, readpage.js save для HTML
-
-## Дополнительные браузерные агенты на сервере
-
-Помимо /opt/browser-agent/ (наш Playwright), на сервере установлены ещё 3 браузерных инструмента. Агент может использовать их через SSH — экран и GUI не нужны, всё работает headless.
-
-### agent-browser (Vercel Labs) — быстрый Rust CLI
-```bash
-# Accessibility tree (оптимально для AI-анализа страницы)
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "agent-browser snapshot 'https://URL'"
-
-# Скриншот
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "agent-browser screenshot 'https://URL' '/tmp/shot.png'"
-
-# Клик, заполнение форм
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "agent-browser open 'https://URL'"
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "agent-browser click '#submit-btn'"
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "agent-browser fill 'input[name=email]' 'test@test.com'"
-```
-
-### dev-browser (SawyerHood) — Playwright API в sandbox
-```bash
-# Полный Playwright API в изолированном QuickJS
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "dev-browser --headless <<'EOF'
-const page = await browser.newPage();
-await page.goto('https://URL');
-console.log(await page.title());
-const buf = await page.screenshot();
-await saveScreenshot(buf, 'result.png');
-EOF"
-
-# AI-снимок страницы (структура DOM для анализа)
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "dev-browser --headless <<'EOF'
-const page = await browser.newPage();
-await page.goto('https://URL');
-const snap = await page.snapshotForAI();
-console.log(snap.full);
-EOF"
-```
-
-### browser-use (Python AI-агент)
-```bash
-# AI-агент, который сам решает что кликать/вводить
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "/opt/browser-use-env/bin/python3 -c \"
-from browser_use import Agent
-# Требует API-ключ LLM (ANTHROPIC_API_KEY или OPENAI_API_KEY)
-\""
-```
-
-### Когда что использовать
-- **Простые задачи** (скриншот, скрапинг, lighthouse) → `/opt/browser-agent/` (наш Playwright)
-- **Accessibility tree для AI** → `agent-browser snapshot`
-- **Сложная автоматизация с Playwright API** → `dev-browser --headless`
-- **AI-управляемая навигация** → `browser-use` (Python, нужен API-ключ)
-
-## Аналитика: stats.sh (основной способ)
-
-Статистика по рекламе и трафику хранится в PostgreSQL на сервере. Данные обновляются ежедневно cron-скриптом в 6:15.
-**Используй `./scripts/stats.sh` как основной способ получения статистики.** Не нужен MCP, не нужны API-токены — просто bash.
-
-### Команды stats.sh
-
-```bash
-./scripts/stats.sh summary [period]         # Сводка: Direct + Metrika + Goals
-./scripts/stats.sh direct [period]          # Статистика кампаний Директа
-./scripts/stats.sh direct-daily [period]    # Директ по дням
-./scripts/stats.sh metrika [period]         # Трафик Метрики по источникам
-./scripts/stats.sh metrika-daily [period]   # Метрика по дням
-./scripts/stats.sh goals [period]           # Конверсии по целям
-./scripts/stats.sh utm [period]             # UTM-разметка
-./scripts/stats.sh placements [period] [N]  # Топ площадок по расходу
-./scripts/stats.sh query "SELECT ..."       # Произвольный SQL
-./scripts/stats.sh tables                   # Список таблиц и кол-во строк
-./scripts/stats.sh etl [date] [date_to]     # Ручной запуск ETL
-```
-
-### Периоды
-
-`today`, `yesterday`, `week`, `month`, `quarter`, `year`, `YYYY-MM-DD`, `YYYY-MM-DD:YYYY-MM-DD`
-
-### Таблицы в БД (aidacamp)
-
-| Таблица | Что хранит |
-|---|---|
-| `direct_campaign_stats` | Клики, показы, CTR, расход, конверсии по кампаниям/дням |
-| `direct_placements` | Площадки показа (РСЯ) по кампаниям/дням |
-| `metrika_traffic` | Визиты, пользователи, отказы по источникам/дням |
-| `metrika_goals` | Конверсии по целям и источникам |
-| `metrika_utm` | Статистика по UTM-меткам |
-| `vk_ads_stats` | Статистика VK рекламы |
-| `clarity_daily` | Данные Microsoft Clarity (агрегат за день) |
-| `clarity_pages` | Clarity: метрики по URL (сессии, scroll depth, dead/rage clicks) |
-
-### Когда использовать stats.sh vs MCP
-
-- **stats.sh** — для любых отчётов, сводок, анализа. Работает всегда, быстро, не зависает.
-- **MCP** — только если нужно что-то, чего нет в БД (управление кампаниями, создание объявлений).
-
-## ЗАПРЕЩЕНО: удалённый MCP yandex-direct-metrica-mcp (5967f77d)
-
-**НЕ используй** инструменты с префиксом `mcp__5967f77d`. Этот удалённый MCP-сервер отключён.
-Все его функции перенесены в локальный `aidacamp-tools` (см. таблицу выше).
-
-Токены API хранятся в `~/.codex/mcp-state/yandex-direct-metrica-mcp/.env`.
-
----
-
-## 📊 ОБЯЗАТЕЛЬНО: отчёты — ТОЛЬКО в Reports Hub
-
-🔴 **ЖЁСТКОЕ ПРАВИЛО, БЕЗ ИСКЛЮЧЕНИЙ:**
-
-**Любой отчёт, аудит, анализ, summary, дашборд (HTML / PDF / Markdown) ОБЯЗАН быть опубликован через `/opt/reports-hub/publish.sh`. Никаких других мест.**
+🔴 **Любой отчёт, аудит, дашборд → публиковать через `/opt/reports-hub/publish.sh`.**
 
 Дашборд: **https://dev.aidacamp.ru/reports-hub/**
 
-### 🚫 ЗАПРЕЩЕНО
-
-- ❌ Оставлять отчёт в `/tmp/` (только как промежуточный буфер ДО publish.sh)
-- ❌ Класть в корень репо или `~/Aidacamp-cloude/`
-- ❌ Класть в `dist/`, `dist/client/`, `public/`
-- ❌ Класть в `/var/www/aidacamp-dev/screenshots/` или любую серверную папку напрямую
-- ❌ Слать ссылку на `https://dev.aidacamp.ru/screenshots/<отчёт>.html` (это для debug-скриншотов, не для отчётов)
-- ❌ Давать пользователю локальный путь — он не сможет открыть с другого устройства
-
-### ✅ ОБЯЗАТЕЛЬНЫЙ ПУТЬ
-
 ```bash
-# 1. Генерируем отчёт → /tmp/report.html
-# 2. Заливаем на сервер
 scp -i ~/.ssh/aidacamp_prod /tmp/report.html root@159.194.223.55:/tmp/
-
-# 3. Публикуем через publish.sh
 ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 \
   "/opt/reports-hub/publish.sh /tmp/report.html 'Заголовок' 'Описание' <category> 'тег1,тег2'"
-
-# 4. Пользователю даём URL: https://dev.aidacamp.ru/reports-hub/
 ```
 
-**Категории:** `seo` | `ux` | `analytics` | `ads` | `crm` | `other`
+Категории: `seo` | `ux` | `analytics` | `ads` | `crm` | `other`
 
-### 💡 Что НЕ является отчётом
+❌ Не класть в `/tmp/` (финально), корень репо, `dist/`, `public/`, серверные папки напрямую.
 
-Можно класть куда удобно (обычно `/opt/browser-agent/output/` → `/screenshots/`):
+---
 
-- **Debug-скриншоты** UI после деплоя — для самопроверки
-- **Промежуточные данные** (CSV/JSON для дальнейшей обработки)
-- **Файлы кода** — коммитятся в репо
-
-**Критерий «отчёт или нет»:** если пользователь захочет потом *найти, показать кому-то, прислать клиенту* — это отчёт → Reports Hub. Если это разовая отладка для тебя — нет.
+*v2 · 2026-06-03 · Очищен от дублей, добавлен индекс документов*
