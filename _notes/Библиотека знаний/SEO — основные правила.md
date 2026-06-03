@@ -329,3 +329,19 @@ rewrite ^/legal\.html$ /legal/ permanent;
 - Google Search Quality Rater Guidelines (PDF) — [static.googleusercontent.com/media/guidelines.raterhub.com/en//searchqualityevaluatorguidelines.pdf](https://static.googleusercontent.com/media/guidelines.raterhub.com/en//searchqualityevaluatorguidelines.pdf)
 - Sitemap limits (Google) — [developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap)
 - Clean-param (Яндекс) — [yandex.ru/support/webmaster/robot-workings/clean-param.html](https://yandex.ru/support/webmaster/robot-workings/clean-param.html)
+
+---
+
+## Инцидент / Грабля: нулевые клики при позиции 6–8 (2026-06)
+
+**Симптом:** 27 000+ показов/мес по широким запросам ("летний детский лагерь", "лагерь подмосковье") с позициями 6–9, но ноль кликов на сайт.
+
+**Причина:** Яндекс классифицирует aidacamp.ru как **онлайн-сервис** (не локальный бизнес), потому что юридический адрес офиса совпадает с адресом АйДаКодить (codims.ru). Из-за этого:
+- Карточка организации в Яндекс.Картах работает некорректно
+- LocalBusiness schema и Яндекс.Бизнес не дают эффекта
+- Показы считаются, но клики идут не на сайт
+
+**Решение:** Только регистрация отдельного физического адреса (адрес лагеря в Наро-Фоминском районе) для Яндекс.Бизнеса. Пока не сделано — принять как данность.
+
+**Правило:** Не тратить время на оптимизацию LocalBusiness schema или Яндекс.Бизнес карточки до решения проблемы с адресом.
+
