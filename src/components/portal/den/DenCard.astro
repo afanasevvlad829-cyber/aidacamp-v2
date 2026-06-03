@@ -1,0 +1,112 @@
+---
+import type { ShiftEvent } from '../../../lib/portalShift';
+
+interface Props {
+  event: ShiftEvent;
+  staff: { id: number; name: string }[];
+  library: { id: string; content_type: string; title: string }[];
+  checklistLib: { id: number; title: string }[];
+  doneSet: string[];
+}
+const { event: e, staff, library, checklistLib, doneSet } = Astro.props;
+
+const fmt = (t: string | null) => (t ? t.slice(0, 5) : '');
+const total = e.checklists.reduce((n, cl) => n + cl.items.length, 0);
+const done = e.checklists.reduce(
+  (n, cl) => n + cl.items.filter((it) => doneSet.includes(`${e.id}:${cl.checklist_id}:${it.id}`)).length, 0);
+---
+<article class="den-card" data-event={e.id}>
+  <div class="den-card-main" data-toggle>
+    <div class="den-card-title">{e.title}</div>
+    <div class="den-card-meta">
+      {e.content_task && <span class="den-badge tk"><i class="bi bi-camera-reels"></i> {e.content_task.title}</span>}
+      {e.responsible_name && <span class="den-badge resp"><i class="bi bi-person"></i> {e.responsible_name}</span>}
+      {total > 0 && <span class="den-badge chk"><i class="bi bi-check2-square"></i> {done}/{total}</span>}
+    </div>
+  </div>
+
+  <div class="den-card-body" hidden>
+    <label class="den-field">
+      <span>Время</span>
+      <input type="time" value={fmt(e.start_time)} data-field="start_time">
+    </label>
+    <label class="den-field">
+      <span>Название</span>
+      <input type="text" value={e.title} data-field="title">
+    </label>
+    <label class="den-field">
+      <span>Ответственный</span>
+      <select data-field="responsible_staff_id">
+        <option value="">— не назначен —</option>
+        {staff.map((s) => (
+          <option value={s.id} selected={s.id === e.responsible_staff_id}>{s.name}</option>
+        ))}
+      </select>
+    </label>
+    <label class="den-field">
+      <span>Комментарий</span>
+      <textarea rows="2" data-field="notes">{e.notes ?? ''}</textarea>
+    </label>
+
+    <div class="den-field">
+      <span>Контент-задание</span>
+      <select data-field="content_task_template_id" data-lib>
+        <option value="">— нет —</option>
+        {library.map((t) => (
+          <option value={t.id} selected={e.content_task_template_id === t.id}>
+            [{t.content_type}] {t.title}
+          </option>
+        ))}
+      </select>
+      <button type="button" class="den-suggest" data-suggest={e.title}>Подсказать по блоку</button>
+    </div>
+
+    {e.checklists.length > 0 && (
+      <div class="den-checklists">
+        {e.checklists.map((cl) => (
+          <div class="den-cl">
+            <div class="den-cl-head">
+              <span class="den-cl-title">{cl.title}</span>
+              <span class="den-cl-tools">
+                <button type="button" class="den-cl-btn" data-cl-edit
+                  data-cl-id={cl.checklist_id} data-cl-name={cl.title}
+                  data-cl-items={cl.items.map((x) => x.text).join('\n')}
+                  title="Редактировать">✎</button>
+                <button type="button" class="den-cl-btn del" data-cl-detach
+                  data-ec-id={cl.event_checklist_id} title="Отвязать от блока">✕</button>
+              </span>
+            </div>
+            {cl.items.map((it) => (
+              <label class="den-cl-item">
+                <input type="checkbox" checked={doneSet.includes(`${e.id}:${cl.checklist_id}:${it.id}`)}
+                  data-check data-cl={cl.checklist_id} data-item={it.id}>
+                <span>{it.text}</span>
+              </label>
+            ))}
+          </div>
+        ))}
+      </div>
+    )}
+
+    <div class="den-cl-manage">
+      <span class="den-field-label">Чек-листы</span>
+      <div class="den-cl-add">
+        <select data-cl-pick>
+          <option value="">+ привязать чек-лист…</option>
+          {checklistLib.map((cl) => (
+            <option value={cl.id}>{cl.title}</option>
+          ))}
+        </select>
+        <button type="button" class="den-mini" data-cl-attach>Привязать</button>
+      </div>
+      <button type="button" class="den-mini ghost" data-cl-new>+ Создать новый чек-лист</button>
+    </div>
+
+    <div class="den-actions">
+      <button type="button" class="den-save" data-save>Сохранить</button>
+      <button type="button" class="den-dup" data-dup>+ Параллельно</button>
+      <button type="button" class="den-del" data-del>Удалить блок</button>
+      <span class="den-status" data-status></span>
+    </div>
+  </div>
+</article>
