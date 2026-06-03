@@ -8,6 +8,7 @@ import {
   listContentTaskTemplates, getChecklists, type ShiftEvent, type ContentTaskTemplate,
 } from '../../lib/portalShift';
 import { listStaff } from '../../lib/portalStaff';
+import { listPhotosByDay } from '../../lib/portalPhoto';
 
 // Доступ гейтит middleware: /portal/* доступен только сотрудникам (не ученикам).
 const role = Astro.locals.portalRole!;
@@ -40,8 +41,17 @@ if (shift) {
 }
 
 const selectedDate = Astro.url.searchParams.get('date') || dates[0] || '';
+
+// Итоговый блок «Материалы дня» — служебное событие-контейнер для общих фото/видео дня.
+const DAY_SUMMARY_TITLE = '📦 Материалы дня';
+let dayPhotos: Awaited<ReturnType<typeof listPhotosByDay>> = [];
+let summaryEvent: ShiftEvent | undefined;
+if (shift && selectedDate) {
+  summaryEvent = events.find((e) => e.date === selectedDate && e.title === DAY_SUMMARY_TITLE);
+  dayPhotos = await listPhotosByDay(shift.id, selectedDate);
+}
 const dayEvents = events
-  .filter((e) => e.date === selectedDate)
+  .filter((e) => e.date === selectedDate && e.title !== DAY_SUMMARY_TITLE)
   .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '') || a.sort - b.sort);
 
 // Группировка по времени — параллельные блоки (одинаковое start_time) рядом.
@@ -209,6 +219,30 @@ const checklistProgress = (e: ShiftEvent) => {
           </div>
           <button type="button" id="copy-day" class="den-copy">📋 Скопировать этот день на другую дату</button>
         </div>
+
+        <section class="den-summary" data-summary-event={summaryEvent?.id ?? ''}>
+          <h3>📦 Материалы дня</h3>
+          <p class="den-summary-hint">Общие фото и видео за день — не привязанные к конкретной активности. Загружайте сюда итог дня.</p>
+
+          {dayPhotos.length > 0 && (
+            <div class="den-gallery">
+              {dayPhotos.map((ph) => (
+                <a href={ph.file_url ?? '#'} target="_blank" class="den-thumb">
+                  {ph.file_type === 'video'
+                    ? <span class="den-thumb-vid"><i class="bi bi-play-circle"></i></span>
+                    : <img src={ph.file_url ?? ''} alt={ph.caption ?? ''} loading="lazy">}
+                </a>
+              ))}
+            </div>
+          )}
+          {dayPhotos.length === 0 && <p class="den-summary-empty">Пока ничего не загружено.</p>}
+
+          <div class="den-summary-actions">
+            <input type="file" id="day-file" accept="image/*,video/*" multiple hidden>
+            <button type="button" id="day-upload" class="den-save">⬆ Загрузить фото / видео</button>
+            <span class="den-status" id="day-status"></span>
+          </div>
+        </section>
       </div>
     )}
   </div>
@@ -263,6 +297,15 @@ const checklistProgress = (e: ShiftEvent) => {
     .den-mini{background:#eef2ff;color:#4338ca;border:none;border-radius:7px;padding:6px 12px;font-size:13px;cursor:pointer;white-space:nowrap}
     .den-mini.ghost{background:#f8fafc;color:#475569;border:1px solid #e2e8f0}
     .den-dup{background:#fff;color:#2563eb;border:1.5px solid #bfdbfe;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer}
+    .den-summary{margin-top:22px;background:#fff7ed;border:1px solid #ffe1c2;border-radius:14px;padding:16px}
+    .den-summary h3{margin:0 0 4px;font-size:16px}
+    .den-summary-hint{font-size:13px;color:#9a6b3f;margin:0 0 12px}
+    .den-summary-empty{font-size:13px;color:#b08968;margin:0 0 12px}
+    .den-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-bottom:12px}
+    .den-thumb{display:block;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#fde9d8;border:1px solid #ffe1c2}
+    .den-thumb img{width:100%;height:100%;object-fit:cover}
+    .den-thumb-vid{display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:28px;color:#c2410c}
+    .den-summary-actions{display:flex;align-items:center;gap:10px}
   </style>
 
   <script>
@@ -419,5 +462,43 @@ const checklistProgress = (e: ShiftEvent) => {
         else alert('Ошибка: ' + (res.error || 'copy-day не готов'));
       });
     });
+
+    // ── Материалы дня: загрузка общих фото/видео ──
+    (function () {
+      const sec = document.querySelector('.den-summary');
+      if (!sec) return;
+      const fileInput = document.getElementById('day-file');
+      const status = document.getElementById('day-status');
+      document.getElementById('day-upload')?.addEventListener('click', () => fileInput.click());
+
+      async function ensureSummaryEvent() {
+        let id = sec.getAttribute('data-summary-event');
+        if (id) return Number(id);
+        // Служебного блока ещё нет — создаём
+        const res = await post({ action: 'create', shift_id: Number(shiftId), date, title: '📦 Материалы дня', start_time: '23:59' });
+        if (res.ok && res.id) { sec.setAttribute('data-summary-event', res.id); return res.id; }
+        return null;
+      }
+
+      fileInput?.addEventListener('change', async () => {
+        const files = Array.from(fileInput.files || []);
+        if (!files.length) return;
+        if (status) status.textContent = 'Создаю контейнер…';
+        const eventId = await ensureSummaryEvent();
+        if (!eventId) { if (status) status.textContent = 'Ошибка: не создан блок материалов'; return; }
+        let done = 0;
+        for (const f of files) {
+          if (status) status.textContent = `Загрузка ${done + 1}/${files.length}…`;
+          const fd = new FormData();
+          fd.append('event_id', String(eventId));
+          fd.append('file', f);
+          const r = await fetch('/api/portal/photo', { method: 'POST', credentials: 'include', body: fd });
+          const j = await r.json().catch(() => ({ ok: false }));
+          if (j.ok) done++;
+        }
+        if (status) status.textContent = `Готово: ${done}/${files.length}`;
+        setTimeout(() => location.reload(), 700);
+      });
+    })();
   </script>
 </PortalLayout>
