@@ -5,7 +5,7 @@ import PortalLayout from '../../layouts/PortalLayout.astro';
 import { verifySessionPayload } from '../../lib/portalSession';
 import {
   getActiveShift, getEvents, getEventDates, getDone, listShifts,
-  listContentTaskTemplates, getChecklists, type ShiftEvent, type ContentTaskTemplate,
+  listContentTaskTemplates, getChecklists, upsertEvent, type ShiftEvent, type ContentTaskTemplate,
 } from '../../lib/portalShift';
 import { listStaff } from '../../lib/portalStaff';
 import { listPhotosByDay } from '../../lib/portalPhoto';
@@ -49,8 +49,18 @@ const selectedDate = Astro.url.searchParams.get('date') || dates[0] || '';
 const DAY_SUMMARY_TITLE = '📦 Материалы дня';
 let dayPhotos: Awaited<ReturnType<typeof listPhotosByDay>> = [];
 let summaryEvent: ShiftEvent | undefined;
+let summaryEventId: number | null = null;
 if (shift && selectedDate) {
   summaryEvent = events.find((e) => e.date === selectedDate && e.title === DAY_SUMMARY_TITLE);
+  if (summaryEvent) {
+    summaryEventId = summaryEvent.id;
+  } else {
+    // Создаём служебный блок-контейнер для общих материалов дня (скрыт из таймлайна).
+    summaryEventId = await upsertEvent({
+      shiftId: shift.id, date: selectedDate, start_time: '23:59', end_time: null,
+      title: DAY_SUMMARY_TITLE, activity_type: null, roles: [], sort: 9999,
+    });
+  }
   dayPhotos = await listPhotosByDay(shift.id, selectedDate);
 }
 const dayEvents = events
@@ -125,7 +135,7 @@ for (const e of dayEvents) {
           <button type="button" id="copy-day" class="den-copy">📋 Скопировать этот день на другую дату</button>
         </div>
 
-        <DaySummary summaryEventId={summaryEvent?.id ?? ''} photos={dayPhotos} />
+        <DaySummary summaryEventId={summaryEventId ?? ''} photos={dayPhotos} />
       </div>
     )}
   </div>
