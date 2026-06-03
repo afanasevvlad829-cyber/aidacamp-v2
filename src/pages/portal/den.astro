@@ -166,7 +166,17 @@ const checklistProgress = (e: ShiftEvent) => {
                         <div class="den-checklists">
                           {e.checklists.map((cl) => (
                             <div class="den-cl">
-                              <div class="den-cl-title">{cl.title}</div>
+                              <div class="den-cl-head">
+                                <span class="den-cl-title">{cl.title}</span>
+                                <span class="den-cl-tools">
+                                  <button type="button" class="den-cl-btn" data-cl-edit
+                                    data-cl-id={cl.checklist_id} data-cl-name={cl.title}
+                                    data-cl-items={cl.items.map((x) => x.text).join('\n')}
+                                    title="Редактировать">✎</button>
+                                  <button type="button" class="den-cl-btn del" data-cl-detach
+                                    data-ec-id={cl.event_checklist_id} title="Отвязать от блока">✕</button>
+                                </span>
+                              </div>
                               {cl.items.map((it) => {
                                 const isDone = doneSet.includes(`${e.id}:${cl.checklist_id}:${it.id}`);
                                 return (
@@ -327,6 +337,10 @@ const checklistProgress = (e: ShiftEvent) => {
     .den-thumb img{width:100%;height:100%;object-fit:cover}
     .den-thumb-vid{display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:28px;color:#c2410c}
     .den-summary-actions{display:flex;align-items:center;gap:10px}
+    .den-cl-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+    .den-cl-tools{display:flex;gap:4px;flex:none}
+    .den-cl-btn{background:#f1f5f9;border:none;border-radius:6px;width:26px;height:26px;font-size:13px;cursor:pointer;color:#475569;line-height:1}
+    .den-cl-btn.del{background:#fef2f2;color:#dc2626}
     .cl-modal{position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
     .cl-modal-box{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:440px;max-height:85vh;overflow-y:auto}
     .cl-modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
@@ -344,6 +358,32 @@ const checklistProgress = (e: ShiftEvent) => {
     const shiftId = root?.getAttribute('data-shift');
     const date = root?.getAttribute('data-date');
     const API = '/api/portal/shift/event-edit';
+
+    // Перезагрузка с сохранением места: запоминаем открытую карточку и скролл.
+    function reloadKeepingPlace(eventId) {
+      try {
+        const card = eventId ? document.querySelector(`.den-card[data-event="${eventId}"]`) : null;
+        const openId = eventId || (document.querySelector('.den-card-body:not([hidden])')?.closest('.den-card')?.getAttribute('data-event'));
+        sessionStorage.setItem('den-open', openId || '');
+        sessionStorage.setItem('den-scroll', String(window.scrollY));
+      } catch {}
+      location.reload();
+    }
+    // Восстановление после reload
+    window.addEventListener('DOMContentLoaded', () => {
+      const openId = sessionStorage.getItem('den-open');
+      const scroll = sessionStorage.getItem('den-scroll');
+      if (openId) {
+        const card = document.querySelector(`.den-card[data-event="${openId}"]`);
+        const body = card?.querySelector('.den-card-body');
+        if (body) body.hidden = false;
+        sessionStorage.removeItem('den-open');
+      }
+      if (scroll) {
+        window.scrollTo(0, Number(scroll));
+        sessionStorage.removeItem('den-scroll');
+      }
+    });
 
     // Единый разбор ответа: всегда возвращает {ok, error?, ...} с понятным текстом.
     async function parseResp(r) {
@@ -393,7 +433,7 @@ const checklistProgress = (e: ShiftEvent) => {
           content_task_template_id: get('content_task_template_id'),
         });
         if (status) status.textContent = res.ok ? 'Сохранено ✓' : ('Ошибка: ' + (res.error || ''));
-        if (res.ok) setTimeout(() => location.reload(), 500);
+        if (res.ok) setTimeout(() => reloadKeepingPlace(Number(eventId)), 400);
       });
     });
 
@@ -403,7 +443,7 @@ const checklistProgress = (e: ShiftEvent) => {
         if (!confirm('Удалить блок?')) return;
         const card = btn.closest('.den-card');
         const res = await post({ event_id: Number(card.getAttribute('data-event')), delete: true });
-        if (res.ok) location.reload();
+        if (res.ok) reloadKeepingPlace();
       });
     });
 
@@ -468,7 +508,7 @@ const checklistProgress = (e: ShiftEvent) => {
       btn.addEventListener('click', async () => {
         const card = btn.closest('.den-card');
         const res = await postForm({ action: 'duplicateEvent', id: Number(card.getAttribute('data-event')) });
-        if (res.ok) location.reload();
+        if (res.ok) reloadKeepingPlace(Number(card.getAttribute('data-event')));
         else alert('Не удалось создать параллельный блок: ' + (res.error || ''));
       });
     });
@@ -481,7 +521,7 @@ const checklistProgress = (e: ShiftEvent) => {
         const checklistId = pick && pick.value;
         if (!checklistId) { alert('Выбери чек-лист из списка'); return; }
         const res = await postForm({ action: 'attachChecklist', event_id: Number(card.getAttribute('data-event')), checklist_id: Number(checklistId) });
-        if (res.ok) location.reload();
+        if (res.ok) reloadKeepingPlace(Number(card.getAttribute('data-event')));
         else alert('Ошибка: ' + (res.error || ''));
       });
     });
@@ -506,11 +546,20 @@ const checklistProgress = (e: ShiftEvent) => {
       clItems.appendChild(row);
       return inp;
     }
-    function clOpen(eventId) {
+    let clEditId = null;
+    const clModalTitle = clModal?.querySelector('h3');
+    const clCreateBtn = document.getElementById('cl-create');
+    function clOpen(eventId, edit) {
       clTargetEvent = eventId;
-      clTitle.value = '';
+      clEditId = edit?.id || null;
+      clTitle.value = edit?.title || '';
       clItems.innerHTML = '';
-      clAddItemRow(''); clAddItemRow('');
+      if (edit?.items) {
+        edit.items.split('\n').filter(Boolean).forEach((t) => clAddItemRow(t));
+        if (!edit.items) { clAddItemRow(''); clAddItemRow(''); }
+      } else { clAddItemRow(''); clAddItemRow(''); }
+      if (clModalTitle) clModalTitle.textContent = clEditId ? 'Редактировать чек-лист' : 'Новый чек-лист';
+      if (clCreateBtn) clCreateBtn.textContent = clEditId ? 'Сохранить' : 'Создать и привязать';
       clStatus.textContent = '';
       clModal.hidden = false;
       clTitle.focus();
@@ -523,6 +572,29 @@ const checklistProgress = (e: ShiftEvent) => {
         clOpen(Number(card.getAttribute('data-event')));
       });
     });
+
+    // Редактировать существующий чек-лист
+    document.querySelectorAll('[data-cl-edit]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const card = btn.closest('.den-card');
+        clOpen(Number(card.getAttribute('data-event')), {
+          id: Number(btn.getAttribute('data-cl-id')),
+          title: btn.getAttribute('data-cl-name') || '',
+          items: btn.getAttribute('data-cl-items') || '',
+        });
+      });
+    });
+
+    // Отвязать чек-лист от блока (сам шаблон остаётся в библиотеке)
+    document.querySelectorAll('[data-cl-detach]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Отвязать чек-лист от этого блока?')) return;
+        const card = btn.closest('.den-card');
+        const res = await post({ event_id: Number(card.getAttribute('data-event')), detach_event_checklist_id: Number(btn.getAttribute('data-ec-id')) });
+        if (res.ok) reloadKeepingPlace(Number(card.getAttribute('data-event')));
+        else alert('Ошибка: ' + (res.error || ''));
+      });
+    });
     document.getElementById('cl-close')?.addEventListener('click', clClose);
     clModal?.addEventListener('click', (ev) => { if (ev.target === clModal) clClose(); });
     document.getElementById('cl-add-item')?.addEventListener('click', () => clAddItemRow(''));
@@ -533,11 +605,12 @@ const checklistProgress = (e: ShiftEvent) => {
       const items = Array.from(clItems.querySelectorAll('input'))
         .map((i) => i.value.trim()).filter(Boolean).join('\n');
       if (!items) { clStatus.textContent = 'Добавьте хотя бы один пункт'; return; }
-      clStatus.textContent = 'Создаю…';
-      const created = await postForm({ action: 'upsertChecklist', title, items });
+      clStatus.textContent = clEditId ? 'Сохраняю…' : 'Создаю…';
+      const created = await postForm(clEditId ? { action: 'upsertChecklist', id: clEditId, title, items } : { action: 'upsertChecklist', title, items });
       if (!created.ok || !created.id) { clStatus.textContent = 'Ошибка: ' + (created.error || ''); return; }
+      if (clEditId) { reloadKeepingPlace(clTargetEvent); return; }
       const att = await postForm({ action: 'attachChecklist', event_id: clTargetEvent, checklist_id: Number(created.id) });
-      if (att.ok) location.reload();
+      if (att.ok) reloadKeepingPlace(clTargetEvent);
       else clStatus.textContent = 'Создан, но не привязан: ' + (att.error || '');
     });
 
