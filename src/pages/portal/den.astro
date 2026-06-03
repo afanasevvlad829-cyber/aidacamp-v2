@@ -1,0 +1,573 @@
+---
+export const prerender = false;
+
+import PortalLayout from '../../layouts/PortalLayout.astro';
+import { verifySessionPayload } from '../../lib/portalSession';
+import {
+  getActiveShift, getEvents, getEventDates, getDone, listShifts,
+  listContentTaskTemplates, getChecklists, type ShiftEvent, type ContentTaskTemplate,
+} from '../../lib/portalShift';
+import { listStaff } from '../../lib/portalStaff';
+import { listPhotosByDay } from '../../lib/portalPhoto';
+
+// Доступ гейтит middleware: /portal/* доступен только сотрудникам (не ученикам).
+const role = Astro.locals.portalRole!;
+const sub = verifySessionPayload(
+  Astro.cookies.get('portal_session')?.value,
+  process.env.PORTAL_SESSION_SECRET ?? '',
+)?.sub;
+
+const allShifts = (await listShifts()) ?? [];
+const reqShiftId = Number(Astro.url.searchParams.get('shift') || 0);
+const shift = reqShiftId
+  ? (allShifts.find((s) => s.id === reqShiftId) ?? (await getActiveShift()))
+  : await getActiveShift();
+
+let events: ShiftEvent[] = [];
+let dates: string[] = [];
+let doneSet: string[] = [];
+let staff: { id: number; name: string }[] = [];
+let library: ContentTaskTemplate[] = [];
+let checklistLib: { id: number; title: string; items: { id: string; text: string }[] }[] = [];
+
+if (shift) {
+  events = await getEvents(shift.id);
+  dates = await getEventDates(shift.id);
+  doneSet = sub ? [...(await getDone(sub, shift.id))] : [];
+  const st = (await listStaff()) ?? [];
+  staff = st.filter((s) => s.active && s.full_name).map((s) => ({ id: s.id, name: s.full_name! }));
+  library = await listContentTaskTemplates();
+  checklistLib = (await getChecklists()) ?? [];
+}
+
+const selectedDate = Astro.url.searchParams.get('date') || dates[0] || '';
+
+// Итоговый блок «Материалы дня» — служебное событие-контейнер для общих фото/видео дня.
+const DAY_SUMMARY_TITLE = '📦 Материалы дня';
+let dayPhotos: Awaited<ReturnType<typeof listPhotosByDay>> = [];
+let summaryEvent: ShiftEvent | undefined;
+if (shift && selectedDate) {
+  summaryEvent = events.find((e) => e.date === selectedDate && e.title === DAY_SUMMARY_TITLE);
+  dayPhotos = await listPhotosByDay(shift.id, selectedDate);
+}
+const dayEvents = events
+  .filter((e) => e.date === selectedDate && e.title !== DAY_SUMMARY_TITLE)
+  .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '') || a.sort - b.sort);
+
+// Группировка по времени — параллельные блоки (одинаковое start_time) рядом.
+const groups: { time: string; items: ShiftEvent[] }[] = [];
+for (const e of dayEvents) {
+  const t = (e.start_time || '').slice(0, 5);
+  const g = groups.find((x) => x.time === t);
+  if (g) g.items.push(e);
+  else groups.push({ time: t, items: [e] });
+}
+
+const fmt = (t: string | null) => (t ? t.slice(0, 5) : '');
+const responsibleName = (e: ShiftEvent) => e.responsible_name || '';
+const checklistProgress = (e: ShiftEvent) => {
+  const total = e.checklists.reduce((n, cl) => n + cl.items.length, 0);
+  const done = e.checklists.reduce(
+    (n, cl) => n + cl.items.filter((it) => doneSet.includes(`${e.id}:${cl.checklist_id}:${it.id}`)).length, 0);
+  return { done, total };
+};
+---
+
+<PortalLayout title="Конструктор дня · АйДаКемп">
+  <div class="den" data-shift={shift?.id ?? ''} data-date={selectedDate}>
+    <header class="den-head">
+      <div>
+        <h1 class="den-title">Конструктор дня</h1>
+        <p class="den-sub">{shift ? shift.name : 'Нет активной смены'}</p>
+      </div>
+      {allShifts.length > 1 && (
+        <form method="get" class="den-controls">
+          <select name="shift" class="den-input" onchange="this.form.submit()">
+            {allShifts.map((s) => (
+              <option value={s.id} selected={s.id === shift?.id}>{s.name}</option>
+            ))}
+          </select>
+        </form>
+      )}
+    </header>
+
+    {shift && dates.length > 0 && (
+      <nav class="den-days">
+        {dates.map((d, i) => (
+          <a href={`/portal/den?shift=${shift.id}&date=${d}`}
+             class={`den-day${d === selectedDate ? ' active' : ''}`}>
+            <span class="den-day-n">День {i + 1}</span>
+            <span class="den-day-d">{d.slice(8, 10)}.{d.slice(5, 7)}</span>
+          </a>
+        ))}
+      </nav>
+    )}
+
+    {!shift && <div class="den-empty">Создайте смену в конструкторе, чтобы собрать день.</div>}
+
+    {shift && (
+      <div class="den-timeline">
+        {groups.length === 0 && <div class="den-empty">На этот день пока нет блоков. Добавьте первый ниже.</div>}
+
+        {groups.map((g) => (
+          <div class="den-row">
+            <div class="den-time">{g.time || '—'}</div>
+            <div class="den-cards">
+              {g.items.map((e) => {
+                const pr = checklistProgress(e);
+                return (
+                  <article class="den-card" data-event={e.id}>
+                    <div class="den-card-main" data-toggle>
+                      <div class="den-card-title">{e.title}</div>
+                      <div class="den-card-meta">
+                        {e.content_task && <span class="den-badge tk"><i class="bi bi-camera-reels"></i> {e.content_task.title}</span>}
+                        {responsibleName(e) && <span class="den-badge resp"><i class="bi bi-person"></i> {responsibleName(e)}</span>}
+                        {pr.total > 0 && <span class="den-badge chk"><i class="bi bi-check2-square"></i> {pr.done}/{pr.total}</span>}
+                      </div>
+                    </div>
+
+                    <div class="den-card-body" hidden>
+                      <label class="den-field">
+                        <span>Время</span>
+                        <input type="time" value={fmt(e.start_time)} data-field="start_time">
+                      </label>
+                      <label class="den-field">
+                        <span>Название</span>
+                        <input type="text" value={e.title} data-field="title">
+                      </label>
+                      <label class="den-field">
+                        <span>Ответственный</span>
+                        <select data-field="responsible_staff_id">
+                          <option value="">— не назначен —</option>
+                          {staff.map((s) => (
+                            <option value={s.id} selected={s.id === e.responsible_staff_id}>{s.name}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label class="den-field">
+                        <span>Комментарий</span>
+                        <textarea rows="2" data-field="notes">{e.notes ?? ''}</textarea>
+                      </label>
+
+                      <div class="den-field">
+                        <span>Контент-задание</span>
+                        <select data-field="content_task_template_id" data-lib>
+                          <option value="">— нет —</option>
+                          {library.map((t) => (
+                            <option value={t.id} selected={e.content_task_template_id === t.id}>
+                              [{t.content_type}] {t.title}
+                            </option>
+                          ))}
+                        </select>
+                        <button type="button" class="den-suggest" data-suggest={e.title}>Подсказать по блоку</button>
+                      </div>
+
+                      {e.checklists.length > 0 && (
+                        <div class="den-checklists">
+                          {e.checklists.map((cl) => (
+                            <div class="den-cl">
+                              <div class="den-cl-title">{cl.title}</div>
+                              {cl.items.map((it) => {
+                                const isDone = doneSet.includes(`${e.id}:${cl.checklist_id}:${it.id}`);
+                                return (
+                                  <label class="den-cl-item">
+                                    <input type="checkbox" checked={isDone}
+                                      data-check data-cl={cl.checklist_id} data-item={it.id}>
+                                    <span>{it.text}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div class="den-cl-manage">
+                        <span class="den-field-label">Чек-листы</span>
+                        <div class="den-cl-add">
+                          <select data-cl-pick>
+                            <option value="">+ привязать чек-лист…</option>
+                            {checklistLib.map((cl) => (
+                              <option value={cl.id}>{cl.title}</option>
+                            ))}
+                          </select>
+                          <button type="button" class="den-mini" data-cl-attach>Привязать</button>
+                        </div>
+                        <button type="button" class="den-mini ghost" data-cl-new>+ Создать новый чек-лист</button>
+                      </div>
+
+                      <div class="den-actions">
+                        <button type="button" class="den-save" data-save>Сохранить</button>
+                        <button type="button" class="den-dup" data-dup>+ Параллельно</button>
+                        <button type="button" class="den-del" data-del>Удалить блок</button>
+                        <span class="den-status" data-status></span>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
+        <div class="den-add">
+          <h3>Добавить блок</h3>
+          <div class="den-add-row">
+            <input type="time" id="add-time" class="den-input">
+            <input type="text" id="add-title" class="den-input" placeholder="Название блока">
+            <button type="button" id="add-btn" class="den-save">+ Добавить</button>
+          </div>
+          <button type="button" id="copy-day" class="den-copy">📋 Скопировать этот день на другую дату</button>
+        </div>
+
+        <section class="den-summary" data-summary-event={summaryEvent?.id ?? ''}>
+          <h3>📦 Материалы дня</h3>
+          <p class="den-summary-hint">Общие фото и видео за день — не привязанные к конкретной активности. Загружайте сюда итог дня.</p>
+
+          {dayPhotos.length > 0 && (
+            <div class="den-gallery">
+              {dayPhotos.map((ph) => (
+                <a href={ph.file_url ?? '#'} target="_blank" class="den-thumb">
+                  {ph.file_type === 'video'
+                    ? <span class="den-thumb-vid"><i class="bi bi-play-circle"></i></span>
+                    : <img src={ph.file_url ?? ''} alt={ph.caption ?? ''} loading="lazy">}
+                </a>
+              ))}
+            </div>
+          )}
+          {dayPhotos.length === 0 && <p class="den-summary-empty">Пока ничего не загружено.</p>}
+
+          <div class="den-summary-actions">
+            <input type="file" id="day-file" accept="image/*,video/*" multiple hidden>
+            <button type="button" id="day-upload" class="den-save">⬆ Загрузить фото / видео</button>
+            <span class="den-status" id="day-status"></span>
+          </div>
+        </section>
+      </div>
+    )}
+  </div>
+
+  <!-- Модалка создания чек-листа -->
+  <div class="cl-modal" id="cl-modal" hidden>
+    <div class="cl-modal-box">
+      <div class="cl-modal-head">
+        <h3>Новый чек-лист</h3>
+        <button type="button" class="cl-modal-x" id="cl-close">✕</button>
+      </div>
+      <label class="den-field">
+        <span>Название</span>
+        <input type="text" id="cl-title" placeholder="Напр. Сборы на бассейн">
+      </label>
+      <div class="cl-items-label">Пункты</div>
+      <div id="cl-items"></div>
+      <button type="button" class="den-mini ghost" id="cl-add-item">+ Добавить пункт</button>
+      <div class="cl-modal-foot">
+        <button type="button" class="den-save" id="cl-create">Создать и привязать</button>
+        <span class="den-status" id="cl-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .den{max-width:860px;margin:0 auto;padding:16px}
+    .den-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+    .den-title{font-size:22px;font-weight:800;margin:0}
+    .den-sub{color:#64748b;font-size:14px;margin:2px 0 0}
+    .den-controls{display:flex;gap:8px}
+    .den-input{border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:14px;background:#fff}
+    .den-empty{color:#64748b;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;padding:20px;text-align:center}
+    .den-row{display:flex;gap:12px;margin-bottom:10px}
+    .den-time{flex:none;width:54px;font-weight:700;color:#2563eb;padding-top:14px;font-size:14px}
+    .den-cards{flex:1;display:flex;flex-direction:column;gap:8px}
+    .den-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
+    .den-card-main{padding:12px 14px;cursor:pointer}
+    .den-card-title{font-weight:600;font-size:15px}
+    .den-card-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+    .den-badge{font-size:12px;padding:2px 8px;border-radius:999px;display:inline-flex;align-items:center;gap:4px}
+    .den-badge.tk{background:#fff1ec;color:#c2410c}
+    .den-badge.resp{background:#eef2ff;color:#4338ca}
+    .den-badge.chk{background:#ecfdf3;color:#15803d}
+    .den-card-body{padding:0 14px 14px;border-top:1px solid #f1f5f9}
+    .den-field{display:block;margin-top:10px;font-size:13px;color:#475569}
+    .den-field>span{display:block;font-weight:600;margin-bottom:3px}
+    .den-field input,.den-field select,.den-field textarea{width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:14px;font-family:inherit}
+    .den-suggest{margin-top:6px;background:#f1f5f9;border:none;border-radius:7px;padding:5px 10px;font-size:12px;color:#334155;cursor:pointer}
+    .den-checklists{margin-top:12px}
+    .den-cl{margin-top:8px}
+    .den-cl-title{font-weight:600;font-size:13px;color:#334155;margin-bottom:4px}
+    .den-cl-item{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:14px;cursor:pointer}
+    .den-actions{display:flex;align-items:center;gap:10px;margin-top:14px}
+    .den-save{background:#f97316;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:14px;font-weight:600;cursor:pointer}
+    .den-del{background:#fff;color:#dc2626;border:1.5px solid #fecaca;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer}
+    .den-status{font-size:12px;color:#16a34a}
+    .den-add{margin-top:20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px}
+    .den-add h3{margin:0 0 10px;font-size:15px}
+    .den-add-row{display:flex;gap:8px;flex-wrap:wrap}
+    .den-add-row #add-title{flex:1;min-width:160px}
+    .den-copy{margin-top:12px;background:none;border:none;color:#2563eb;font-size:13px;cursor:pointer;padding:0}
+    .den-days{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+    .den-day{display:flex;flex-direction:column;align-items:center;min-width:60px;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;text-decoration:none;color:#334155;transition:all .12s}
+    .den-day:hover{border-color:#f97316}
+    .den-day.active{background:#f97316;border-color:#f97316;color:#fff}
+    .den-day-n{font-size:13px;font-weight:700}
+    .den-day-d{font-size:11px;opacity:.8;margin-top:1px}
+    .den-cl-manage{margin-top:14px;padding-top:10px;border-top:1px dashed #e2e8f0}
+    .den-field-label{display:block;font-size:13px;font-weight:600;color:#475569;margin-bottom:6px}
+    .den-cl-add{display:flex;gap:6px;margin-bottom:6px}
+    .den-cl-add select{flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 8px;font-size:13px}
+    .den-mini{background:#eef2ff;color:#4338ca;border:none;border-radius:7px;padding:6px 12px;font-size:13px;cursor:pointer;white-space:nowrap}
+    .den-mini.ghost{background:#f8fafc;color:#475569;border:1px solid #e2e8f0}
+    .den-dup{background:#fff;color:#2563eb;border:1.5px solid #bfdbfe;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer}
+    .den-summary{margin-top:22px;background:#fff7ed;border:1px solid #ffe1c2;border-radius:14px;padding:16px}
+    .den-summary h3{margin:0 0 4px;font-size:16px}
+    .den-summary-hint{font-size:13px;color:#9a6b3f;margin:0 0 12px}
+    .den-summary-empty{font-size:13px;color:#b08968;margin:0 0 12px}
+    .den-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-bottom:12px}
+    .den-thumb{display:block;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#fde9d8;border:1px solid #ffe1c2}
+    .den-thumb img{width:100%;height:100%;object-fit:cover}
+    .den-thumb-vid{display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:28px;color:#c2410c}
+    .den-summary-actions{display:flex;align-items:center;gap:10px}
+    .cl-modal{position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+    .cl-modal-box{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:440px;max-height:85vh;overflow-y:auto}
+    .cl-modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .cl-modal-head h3{margin:0;font-size:18px}
+    .cl-modal-x{background:none;border:none;font-size:18px;cursor:pointer;color:#64748b}
+    .cl-items-label{font-size:13px;font-weight:600;color:#475569;margin:12px 0 6px}
+    .cl-item-row{display:flex;gap:6px;margin-bottom:6px}
+    .cl-item-row input{flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:14px}
+    .cl-item-del{background:#fef2f2;color:#dc2626;border:none;border-radius:7px;padding:0 11px;font-size:15px;cursor:pointer}
+    .cl-modal-foot{display:flex;align-items:center;gap:10px;margin-top:16px}
+  </style>
+
+  <script>
+    const root = document.querySelector('.den');
+    const shiftId = root?.getAttribute('data-shift');
+    const date = root?.getAttribute('data-date');
+    const API = '/api/portal/shift/event-edit';
+
+    async function post(body) {
+      const r = await fetch(API, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', body: JSON.stringify(body),
+      });
+      return r.json().catch(() => ({ ok: false }));
+    }
+
+    // Развернуть/свернуть карточку
+    document.querySelectorAll('[data-toggle]').forEach((el) => {
+      el.addEventListener('click', () => {
+        const body = el.parentElement.querySelector('.den-card-body');
+        if (body) body.hidden = !body.hidden;
+      });
+    });
+
+    // Сохранить блок
+    document.querySelectorAll('[data-save]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const card = btn.closest('.den-card');
+        if (!card) return;
+        const eventId = card.getAttribute('data-event');
+        const get = (f) => card.querySelector(`[data-field="${f}"]`)?.value ?? '';
+        const status = card.querySelector('[data-status]');
+        const res = await post({
+          event_id: Number(eventId),
+          title: get('title'), start_time: get('start_time'),
+          notes: get('notes'),
+          responsible_staff_id: get('responsible_staff_id'),
+          content_task_template_id: get('content_task_template_id'),
+        });
+        if (status) status.textContent = res.ok ? 'Сохранено ✓' : ('Ошибка: ' + (res.error || ''));
+        if (res.ok) setTimeout(() => location.reload(), 500);
+      });
+    });
+
+    // Удалить блок
+    document.querySelectorAll('[data-del]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Удалить блок?')) return;
+        const card = btn.closest('.den-card');
+        const res = await post({ event_id: Number(card.getAttribute('data-event')), delete: true });
+        if (res.ok) location.reload();
+      });
+    });
+
+    // Отметка чек-листа
+    document.querySelectorAll('[data-check]').forEach((cb) => {
+      cb.addEventListener('change', async () => {
+        const card = cb.closest('.den-card');
+        await fetch('/api/portal/shift/check', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+          body: JSON.stringify({
+            eventId: Number(card.getAttribute('data-event')),
+            checklistId: Number(cb.getAttribute('data-cl')),
+            itemId: cb.getAttribute('data-item'),
+            done: cb.checked,
+          }),
+        });
+      });
+    });
+
+    // Подсказки контент-заданий по названию блока
+    document.querySelectorAll('[data-suggest]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const title = btn.getAttribute('data-suggest') || '';
+        const r = await fetch('/api/portal/content-tasks?suggest=' + encodeURIComponent(title), { credentials: 'include' });
+        const data = await r.json().catch(() => ({ items: [] }));
+        const sel = btn.parentElement.querySelector('[data-lib]');
+        if (data.items && data.items.length && sel) {
+          const names = data.items.map((t) => `[${t.content_type}] ${t.title}`).join('\n');
+          alert('Подходящие задания:\n\n' + names + '\n\nВыбери в списке выше.');
+        } else {
+          alert('Под этот блок подсказок не нашлось — выбери из общего списка.');
+        }
+      });
+    });
+
+    // Добавить блок
+    document.getElementById('add-btn')?.addEventListener('click', async () => {
+      const title = (document.getElementById('add-title')).value.trim();
+      const time = (document.getElementById('add-time')).value;
+      if (!title) { alert('Введите название блока'); return; }
+      const res = await post({ action: 'create', shift_id: Number(shiftId), date, title, start_time: time });
+      if (res.ok) location.reload();
+      else alert('Ошибка: ' + (res.error || ''));
+    });
+
+    const ADMIN = '/api/portal/shift/admin';
+    async function postForm(fields) {
+      const fd = new FormData();
+      Object.entries(fields).forEach(([k, v]) => fd.append(k, String(v)));
+      const r = await fetch(ADMIN, { method: 'POST', credentials: 'include', body: fd });
+      return r.json().catch(() => ({ ok: false }));
+    }
+
+    // Параллельное событие (копия блока с тем же временем, можно сменить преподавателя)
+    document.querySelectorAll('[data-dup]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const card = btn.closest('.den-card');
+        const res = await postForm({ action: 'duplicateEvent', id: Number(card.getAttribute('data-event')) });
+        if (res.ok) location.reload();
+        else alert('Не удалось создать параллельный блок: ' + (res.error || ''));
+      });
+    });
+
+    // Привязать существующий чек-лист
+    document.querySelectorAll('[data-cl-attach]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const card = btn.closest('.den-card');
+        const pick = card.querySelector('[data-cl-pick]');
+        const checklistId = pick && pick.value;
+        if (!checklistId) { alert('Выбери чек-лист из списка'); return; }
+        const res = await postForm({ action: 'attachChecklist', event_id: Number(card.getAttribute('data-event')), checklist_id: Number(checklistId) });
+        if (res.ok) location.reload();
+        else alert('Ошибка: ' + (res.error || ''));
+      });
+    });
+
+    // Создать новый чек-лист и сразу привязать к блоку
+    // Модалка создания чек-листа
+    const clModal = document.getElementById('cl-modal');
+    const clItems = document.getElementById('cl-items');
+    const clTitle = document.getElementById('cl-title');
+    const clStatus = document.getElementById('cl-status');
+    let clTargetEvent = null;
+
+    function clAddItemRow(value) {
+      const row = document.createElement('div');
+      row.className = 'cl-item-row';
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.placeholder = 'Текст пункта'; inp.value = value || '';
+      const del = document.createElement('button');
+      del.type = 'button'; del.className = 'cl-item-del'; del.textContent = '✕';
+      del.addEventListener('click', () => row.remove());
+      row.appendChild(inp); row.appendChild(del);
+      clItems.appendChild(row);
+      return inp;
+    }
+    function clOpen(eventId) {
+      clTargetEvent = eventId;
+      clTitle.value = '';
+      clItems.innerHTML = '';
+      clAddItemRow(''); clAddItemRow('');
+      clStatus.textContent = '';
+      clModal.hidden = false;
+      clTitle.focus();
+    }
+    function clClose() { clModal.hidden = true; }
+
+    document.querySelectorAll('[data-cl-new]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const card = btn.closest('.den-card');
+        clOpen(Number(card.getAttribute('data-event')));
+      });
+    });
+    document.getElementById('cl-close')?.addEventListener('click', clClose);
+    clModal?.addEventListener('click', (ev) => { if (ev.target === clModal) clClose(); });
+    document.getElementById('cl-add-item')?.addEventListener('click', () => clAddItemRow(''));
+
+    document.getElementById('cl-create')?.addEventListener('click', async () => {
+      const title = clTitle.value.trim();
+      if (!title) { clStatus.textContent = 'Введите название'; clTitle.focus(); return; }
+      const items = Array.from(clItems.querySelectorAll('input'))
+        .map((i) => i.value.trim()).filter(Boolean).join('\n');
+      if (!items) { clStatus.textContent = 'Добавьте хотя бы один пункт'; return; }
+      clStatus.textContent = 'Создаю…';
+      const created = await postForm({ action: 'upsertChecklist', title, items });
+      if (!created.ok || !created.id) { clStatus.textContent = 'Ошибка: ' + (created.error || ''); return; }
+      const att = await postForm({ action: 'attachChecklist', event_id: clTargetEvent, checklist_id: Number(created.id) });
+      if (att.ok) location.reload();
+      else clStatus.textContent = 'Создан, но не привязан: ' + (att.error || '');
+    });
+
+    // Копировать день
+    document.getElementById('copy-day')?.addEventListener('click', () => {
+      const target = prompt('На какую дату скопировать день? (ГГГГ-ММ-ДД)', date);
+      if (!target) return;
+      fetch('/api/portal/shift/copy-day', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ shift_id: Number(shiftId), from_date: date, to_date: target }),
+      }).then((r) => r.json()).then((res) => {
+        if (res.ok) { alert('Скопировано блоков: ' + (res.count ?? 0)); location.href = '/portal/den?shift=' + shiftId + '&date=' + target; }
+        else alert('Ошибка: ' + (res.error || 'copy-day не готов'));
+      });
+    });
+
+    // ── Материалы дня: загрузка общих фото/видео ──
+    (function () {
+      const sec = document.querySelector('.den-summary');
+      if (!sec) return;
+      const fileInput = document.getElementById('day-file');
+      const status = document.getElementById('day-status');
+      document.getElementById('day-upload')?.addEventListener('click', () => fileInput.click());
+
+      async function ensureSummaryEvent() {
+        let id = sec.getAttribute('data-summary-event');
+        if (id) return Number(id);
+        // Служебного блока ещё нет — создаём
+        const res = await post({ action: 'create', shift_id: Number(shiftId), date, title: '📦 Материалы дня', start_time: '23:59' });
+        if (res.ok && res.id) { sec.setAttribute('data-summary-event', res.id); return res.id; }
+        return null;
+      }
+
+      fileInput?.addEventListener('change', async () => {
+        const files = Array.from(fileInput.files || []);
+        if (!files.length) return;
+        if (status) status.textContent = 'Создаю контейнер…';
+        const eventId = await ensureSummaryEvent();
+        if (!eventId) { if (status) status.textContent = 'Ошибка: не создан блок материалов'; return; }
+        let done = 0;
+        for (const f of files) {
+          if (status) status.textContent = `Загрузка ${done + 1}/${files.length}…`;
+          const fd = new FormData();
+          fd.append('event_id', String(eventId));
+          fd.append('file', f);
+          const r = await fetch('/api/portal/photo', { method: 'POST', credentials: 'include', body: fd });
+          const j = await r.json().catch(() => ({ ok: false }));
+          if (j.ok) done++;
+        }
+        if (status) status.textContent = `Готово: ${done}/${files.length}`;
+        setTimeout(() => location.reload(), 700);
+      });
+    })();
+  </script>
+</PortalLayout>
