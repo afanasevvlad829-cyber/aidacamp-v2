@@ -1,14 +1,29 @@
 ---
 import { getCurrentPrice } from '../../data/dynamicPrices';
+import { mainShifts } from '../../data/shifts';
+
+interface Props {
+  shiftId?: string;
+}
+const { shiftId = 'shift-1' } = Astro.props;
+
+const shift = mainShifts.find((s) => s.id === shiftId) ?? mainShifts[0];
+const SHIFT_ID = shift.id;
 
 const today = new Date();
-const currentPrice = getCurrentPrice('shift-1', today) ?? 93900;
+const currentPrice = getCurrentPrice(SHIFT_ID, today) ?? parseInt(shift.price.replace(/\D/g, ''), 10);
 const fortuneMode = process.env.FORTUNE_MODE ?? 'payment'; // 'payment' | 'lead'
 
-// Days until shift starts (May 30, 2026)
-const startDate = new Date('2026-05-30T00:00:00');
+// Days until shift starts
+const startDate = new Date(shift.startDate + 'T00:00:00');
 const daysLeft = Math.max(0, Math.ceil((startDate.getTime() - today.getTime()) / 86_400_000));
 const daysLeftLabel = daysLeft === 0 ? 'сегодня' : daysLeft === 1 ? 'через 1 день' : `через ${daysLeft} дн`;
+
+// Заезд = startDate + 2 дня (запас на справки)
+const arriveDate = new Date(startDate.getTime() + 2 * 86_400_000);
+const monthsGenitive = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const startDayLabel  = `${startDate.getDate()} ${monthsGenitive[startDate.getMonth()]}`;
+const arriveDayLabel = `${arriveDate.getDate()} ${monthsGenitive[arriveDate.getMonth()]}`;
 
 // SVG wheel segments (shared server+client via define:vars)
 // Все секторы с реальными скидками 10–70%, 0% убраны
