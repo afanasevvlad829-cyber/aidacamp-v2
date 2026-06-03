@@ -3,6 +3,7 @@ import { getCurrentPrice } from '../../data/dynamicPrices';
 
 const today = new Date();
 const currentPrice = getCurrentPrice('shift-1', today) ?? 93900;
+const fortuneMode = process.env.FORTUNE_MODE ?? 'payment'; // 'payment' | 'lead'
 
 // Days until shift starts (May 30, 2026)
 const startDate = new Date('2026-05-30T00:00:00');
@@ -180,11 +181,13 @@ const segData = SEGMENTS.map((seg, i) => {
         <p class="mt-1 text-[26px] font-extrabold tracking-[-0.02em] leading-none text-primary" data-dynamic-price="shift-1">{currentPrice.toLocaleString('ru-RU')} ₽</p>
         <p class="mt-1 text-[12px] text-body-faint">всё включено</p>
       </div>
-      <!-- ссылка на страницу смены 1 скрыта — смена началась -->
-      <span class="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold bg-primary/10 text-primary">
-        <i class="bi bi-lightning-charge text-[12px]" aria-hidden="true"></i>
-        Смена идёт
-      </span>
+      <a
+        href="/shifts/shift-1/"
+        class="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-5 py-3 text-[14px] font-semibold transition-colors min-h-[44px] no-underline bg-primary hover:bg-primary-hover text-white"
+      >
+        Выбрать
+        <i class="bi bi-arrow-right text-[13px]" aria-hidden="true"></i>
+      </a>
     </div>
   </div>
 
@@ -270,7 +273,7 @@ const segData = SEGMENTS.map((seg, i) => {
     </div>
 
     <!-- Form -->
-    <div class="px-6 py-4 space-y-3">
+    <div id="fsc-form-wrap" class="px-6 py-4 space-y-3">
       <div>
         <label for="fsc-name" class="block text-[13px] font-semibold text-gray-700 mb-1.5">Ваши ФИО *</label>
         <input
@@ -279,7 +282,7 @@ const segData = SEGMENTS.map((seg, i) => {
           placeholder="Иванов Иван Иванович"
           required
           autocomplete="name"
-          class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[16px] outline-none focus:border-primary focus:ring-2 focus:ring-orange-100 transition"
+          class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[15px] outline-none focus:border-primary focus:ring-2 focus:ring-orange-100 transition"
         />
       </div>
       <div>
@@ -291,8 +294,19 @@ const segData = SEGMENTS.map((seg, i) => {
           required
           autocomplete="tel"
           inputmode="tel"
-          class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[16px] outline-none focus:border-primary focus:ring-2 focus:ring-orange-100 transition"
+          class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-[15px] outline-none focus:border-primary focus:ring-2 focus:ring-orange-100 transition"
         />
+      </div>
+      <!-- Согласие на обработку персональных данных -->
+      <div class="flex items-start gap-2.5 pt-1">
+        <input
+          id="fsc-consent"
+          type="checkbox"
+          class="mt-0.5 h-4 w-4 shrink-0 accent-primary cursor-pointer"
+        />
+        <label for="fsc-consent" class="text-[12px] text-gray-500 leading-[1.4] cursor-pointer select-none">
+          Я согласен(а) на <a href="/privacy/" target="_blank" rel="noopener" class="underline hover:text-primary transition-colors">обработку персональных данных</a>
+        </label>
       </div>
       <p id="fsc-form-error" class="hidden text-[12px] text-red-600 font-medium"></p>
     </div>
@@ -304,8 +318,9 @@ const segData = SEGMENTS.map((seg, i) => {
         type="button"
         class="w-full flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-[15px] py-3.5 min-h-[52px] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        <i class="bi bi-credit-card text-[16px]" aria-hidden="true"></i>
-        <span id="fsc-pay-label">Оплатить через Т-банк</span>
+        <i id="fsc-pay-icon" class="bi bi-send text-[16px]" aria-hidden="true"></i>
+        <span id="fsc-pay-label">Отправить заявку</span>
+        <span id="fsc-pay-disc" class="ml-1 rounded-full bg-white/20 px-2 py-0.5 text-[13px] font-extrabold hidden">−<span id="fsc-pay-disc-val">0</span>%</span>
       </button>
     </div>
 
@@ -348,7 +363,7 @@ const segData = SEGMENTS.map((seg, i) => {
   </div><!-- /flex wrapper -->
 </div>
 
-<script define:vars={{ SEGMENTS, currentPrice }}>
+<script define:vars={{ SEGMENTS, currentPrice, fortuneMode }}>
   (function () {
     var PRICE = currentPrice;
     var segs  = SEGMENTS;
@@ -396,14 +411,29 @@ const segData = SEGMENTS.map((seg, i) => {
     var modalFinal = document.getElementById('fsc-modal-final');
     var modalDep   = document.getElementById('fsc-modal-dep');
     var timerEl    = document.getElementById('fsc-timer');
-    var nameInput  = document.getElementById('fsc-name');
-    var phoneInput = document.getElementById('fsc-phone');
-    var formError  = document.getElementById('fsc-form-error');
-    var payBtn     = document.getElementById('fsc-pay-btn');
+    var nameInput   = document.getElementById('fsc-name');
+    var phoneInput  = document.getElementById('fsc-phone');
+    var consentBox  = document.getElementById('fsc-consent');
+    var formError   = document.getElementById('fsc-form-error');
+    var payBtn      = document.getElementById('fsc-pay-btn');
     var payLabel   = document.getElementById('fsc-pay-label');
     var modalClose = document.getElementById('fsc-modal-close');
 
     if (!wheel || !spinBtn || !modal) return; // guard
+
+    // ── Lead-режим: обновляем блок «что будет» ─────────────────────────────
+    if (fortuneMode === 'lead') {
+      var nextSteps = payBtn && payBtn.closest('[class*="pb-4"]') && payBtn.parentElement && payBtn.parentElement.nextElementSibling;
+      // Обновляем блок «что будет после»
+      var stepsBlock = document.querySelector('.px-6.pb-4.border-t.border-gray-100.pt-4');
+      if (stepsBlock) stepsBlock.innerHTML = [
+        '<p class="font-semibold text-gray-700 text-[13px] mb-2">Что будет дальше:</p>',
+        '<p><span class="inline-block w-4 text-orange-500 font-bold">1.</span> Менеджер позвонит вам до конца дня</p>',
+        '<p><span class="inline-block w-4 text-orange-500 font-bold">2.</span> Возьмёт данные для договора</p>',
+        '<p><span class="inline-block w-4 text-orange-500 font-bold">3.</span> Выставит счёт — оплатить нужно до конца дня</p>',
+        '<p class="text-gray-400 pt-1">Скидка фиксируется прямо сейчас.</p>',
+      ].join('');
+    }
 
     // ── Вернувшийся посетитель (кука есть, активной сессии нет) ────────────
     // Условие: кука = "уже крутил", sessionStorage = нет (вкладка была закрыта)
@@ -497,6 +527,13 @@ const segData = SEGMENTS.map((seg, i) => {
     function showWin(segIdx) {
       var d  = segs[segIdx].d;
       wonDiscount = d;
+
+      // Логируем кручение в БД (fire-and-forget)
+      fetch('/api/fortune/spin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ discount: d, shiftId: 'shift-1' }),
+      }).catch(function() {});
       var fp  = Math.round(PRICE * (1 - d / 100));
       var dep = Math.round(fp * 0.5);
 
@@ -590,7 +627,17 @@ const segData = SEGMENTS.map((seg, i) => {
       modalDisc.textContent  = d + '%';
       modalFinal.textContent = rub(fp);
       modalDep.textContent   = rub(dep);
-      payLabel.textContent   = 'Оплатить ' + rub(dep) + ' через Т-банк';
+
+      // Кнопка: текст и бейдж скидки
+      var discBadge    = document.getElementById('fsc-pay-disc');
+      var discBadgeVal = document.getElementById('fsc-pay-disc-val');
+      if (fortuneMode === 'lead') {
+        if (payLabel) payLabel.textContent = 'Отправить заявку';
+        if (discBadgeVal) discBadgeVal.textContent = String(d);
+        if (discBadge)    discBadge.classList.remove('hidden');
+      } else {
+        if (payLabel) payLabel.textContent = 'Оплатить ' + rub(dep) + ' через Т-банк';
+      }
 
       modal.classList.remove('hidden');
       modal.classList.add('flex');
@@ -657,6 +704,12 @@ const segData = SEGMENTS.map((seg, i) => {
         phoneInput.focus();
         return;
       }
+      if (consentBox && !consentBox.checked) {
+        formError.textContent = 'Подтвердите согласие на обработку персональных данных';
+        formError.classList.remove('hidden');
+        consentBox.focus();
+        return;
+      }
 
       // Metrika: перехватываем лид до отправки в банк
       try {
@@ -686,7 +739,32 @@ const segData = SEGMENTS.map((seg, i) => {
       })
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          if (data.paymentUrl) {
+          if (data.leadMode) {
+            // Режим «лид»: показываем подтверждение, менеджер перезвонит
+            clearInterval(timerInterval);
+            try {
+              window.ym && window.ym(96499295, 'reachGoal', 'fortune_lead', {
+                discount: wonDiscount,
+                order_id: data.orderId,
+              });
+            } catch(_e) {}
+            // Прячем форму, показываем экран благодарности
+            var formWrap = document.getElementById('fsc-form-wrap');
+            if (formWrap) formWrap.innerHTML = [
+              '<div class="flex flex-col items-center gap-4 py-6 text-center">',
+              '  <div class="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">',
+              '    <i class="bi bi-check-lg text-[28px] text-emerald-600" aria-hidden="true"></i>',
+              '  </div>',
+              '  <p class="text-[18px] font-bold text-body">Заявка принята!</p>',
+              '  <p class="text-[14px] text-body-muted leading-[1.5]">Менеджер свяжется с вами до конца дня,<br>возьмёт данные для договора и выставит счёт.</p>',
+              '  <div class="rounded-xl bg-primary/8 px-4 py-3 text-center">',
+              '    <p class="text-[12px] text-body-faint uppercase tracking-wider mb-0.5">Ваша скидка</p>',
+              '    <p class="text-[22px] font-extrabold text-primary">' + wonDiscount + '%</p>',
+              '    <p class="text-[13px] text-body-muted">Итоговая цена: <b>' + (data.finalPrice || '').toLocaleString("ru-RU") + ' ₽</b></p>',
+              '  </div>',
+              '</div>',
+            ].join('');
+          } else if (data.paymentUrl) {
             clearInterval(timerInterval);
             try {
               window.ym && window.ym(96499295, 'reachGoal', 'fortune_payment_start', {
@@ -717,6 +795,7 @@ const segData = SEGMENTS.map((seg, i) => {
       var raw = phoneInput.value.replace(/\D/g, '');
       if (!raw.length) return;
       if (raw[0] === '8') raw = '7' + raw.slice(1);
+      if (raw[0] === '9') raw = '7' + raw; // пользователь ввёл без 7 в начале
       var out = '+' + raw[0];
       if (raw.length > 1) out += ' (' + raw.slice(1, 4);
       if (raw.length >= 4) out += ') ' + raw.slice(4, 7);

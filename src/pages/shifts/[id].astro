@@ -14,6 +14,7 @@ import Footer from '../../components/Footer.astro';
 import ShiftBookModal from '../../components/shifts/ShiftBookModal.astro';
 import ShiftTimeline from '../../components/shifts/ShiftTimeline.astro';
 import { allShifts, shiftInfo, type Shift } from '../../data/shifts';
+import { getCurrentPrice, getTaxDeduction, fmtPrice } from '../../data/dynamicPrices';
 
 export async function getStaticPaths() {
   return allShifts.map((shift) => ({
@@ -50,9 +51,14 @@ const heroDateBig = sameMonth
   : `${startDay} ${months[startMonth].slice(0, 3)} — ${endDay} ${months[endMonth].slice(0, 3)}`;
 const heroMonthLabel = sameMonth ? months[startMonth] : '';
 
+// Актуальная цена (SSR) — единый источник
+const ssrPrice    = getCurrentPrice(shift.id) ?? parseInt(shift.price.replace(/\D/g, ''), 10);
+const ssrPriceFmt = fmtPrice(ssrPrice);
+const ssrVychet   = getTaxDeduction(shift.id);
+
 // SEO
 const seoTitle = `${shift.name} — IT-лагерь АйДаКемп, ${shift.dates} 2026`;
-const seoDescription = `${shift.duration} в IT-лагере под Москвой: Python, AI, хакатон. Возраст 7–15, ${shift.price} всё включено. ${shift.dates} 2026.`;
+const seoDescription = `${shift.duration} в IT-лагере под Москвой: Python, AI, хакатон. Возраст 7–15, ${ssrPriceFmt} всё включено. ${shift.dates} 2026.`;
 const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
 ---
 
@@ -94,7 +100,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
           },
           "offers": {
             "@type": "Offer",
-            "price": shift.price.replace(/[^\d]/g, ''),
+            "price": String(ssrPrice),
             "priceCurrency": "RUB",
             "availability": shift.free > 0 ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
             "url": `https://aidacamp.ru/shifts/${shift.id}/`,
@@ -126,8 +132,8 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
       <div class="mx-auto flex max-w-4xl items-center justify-between gap-2">
         <div class="flex min-w-0 flex-1 items-center justify-center gap-1.5 flex-wrap">
           <i class="bi bi-lightning-charge text-[14px] shrink-0" aria-hidden="true"></i>
-          <span>Смена идёт · Осталось {shift.free} {shift.free === 1 ? 'место' : shift.free < 5 ? 'места' : 'мест'} ·</span>
-          <a href="#booking" class="underline underline-offset-2 hover:text-white/90 transition-colors whitespace-nowrap">Записаться →</a>
+          <span>Осталось {shift.free} {shift.free === 1 ? 'место' : shift.free < 5 ? 'места' : 'мест'} · Старт 30 мая ·</span>
+          <a href="#booking" class="underline underline-offset-2 hover:text-white/90 transition-colors whitespace-nowrap">Забронировать →</a>
         </div>
         <button
           id="shift-top-bar-close"
@@ -215,7 +221,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
           <!-- Price -->
           <div class="flex flex-col">
             <span class="text-[12px] font-semibold uppercase tracking-[0.14em] text-white/65">Стоимость</span>
-            <span class="text-[36px] md:text-[44px] font-extrabold tracking-[-0.02em] text-white leading-none mt-1" data-dynamic-price={shift.id}>{shift.price}</span>
+            <span class="text-[36px] md:text-[44px] font-extrabold tracking-[-0.02em] text-white leading-none mt-1" data-dynamic-price={shift.id}>{ssrPriceFmt}</span>
             <span class="text-[13px] text-white/70 mt-1">всё включено</span>
             <span class="hidden text-[11px] font-semibold text-orange-300 mt-0.5" data-price-urgency={shift.id}></span>
           </div>
@@ -239,7 +245,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
             data-shift-book-name={shift.name}
             data-shift-book-dates={shift.dates}
             data-shift-book-duration={shift.duration}
-            data-shift-book-price={shift.price}
+            data-shift-book-price={ssrPriceFmt}
             data-analytics-goal="shift_select"
             data-analytics-label={shift.name}
             class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover px-6 py-3.5 text-[16px] font-semibold text-white transition-colors min-h-[52px] whitespace-nowrap"
@@ -347,7 +353,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
           <p class="text-[15px] text-body-muted mb-5">{shift.dates} · {shift.duration} {isLowAvail && (<span class="text-orange-700 font-semibold"> · Осталось {shift.free} {shift.free === 1 ? 'место' : shift.free < 5 ? 'места' : 'мест'}</span>)}</p>
 
           <div class="flex items-baseline gap-3 mb-5 pb-5 border-b border-border-light">
-            <span class="text-[36px] font-extrabold tracking-[-0.02em] text-body" data-dynamic-price={shift.id}>{shift.price}</span>
+            <span class="text-[36px] font-extrabold tracking-[-0.02em] text-body" data-dynamic-price={shift.id}>{ssrPriceFmt}</span>
             <span class="text-[15px] md:text-[14px] text-body-muted">всё включено · проживание, питание, программа</span>
           </div>
 
@@ -371,7 +377,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
             data-shift-book-name={shift.name}
             data-shift-book-dates={shift.dates}
             data-shift-book-duration={shift.duration}
-            data-shift-book-price={shift.price}
+            data-shift-book-price={ssrPriceFmt}
             data-analytics-goal="shift_select"
             data-analytics-label={shift.name + '_booking_block'}
             class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover px-6 py-4 text-[17px] font-semibold text-white transition-colors min-h-[56px] whitespace-nowrap"
@@ -456,52 +462,5 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
   }
 </script>
 
-<script is:inline>
-(function () {
-  var DYNAMIC = {
-    'shift-1': {
-      baseDate: '2026-05-23',
-      prices: [85900, 86900, 87900, 89900, 91900, 93900],
-    },
-    'shift-2': {
-      baseDate: '2026-05-23',
-      base: 99000, increment: 500, endDate: '2026-06-10',
-    },
-  };
-  function fmt(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
-  function daysDiff(a, b) {
-    var da = new Date(a); da.setHours(0,0,0,0);
-    var db = new Date(b); db.setHours(0,0,0,0);
-    return Math.floor((db - da) / 86400000);
-  }
-  function todayStr() {
-    var d = new Date();
-    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-  }
-  var today = todayStr();
-  Object.keys(DYNAMIC).forEach(function(id) {
-    var cfg = DYNAMIC[id];
-    var elapsed = daysDiff(cfg.baseDate, today);
-    if (elapsed < 0) return;
-    var cur, next;
-    if (cfg.prices) {
-      var idx = Math.min(elapsed, cfg.prices.length - 1);
-      cur = cfg.prices[idx];
-      next = elapsed < cfg.prices.length - 1 ? cfg.prices[idx + 1] : null;
-    } else {
-      var maxDays = daysDiff(cfg.baseDate, cfg.endDate);
-      var days = Math.min(elapsed, maxDays);
-      cur = cfg.base + days * cfg.increment;
-      next = elapsed < maxDays ? cur + cfg.increment : null;
-    }
-    document.querySelectorAll('[data-dynamic-price="' + id + '"]').forEach(function(el) { el.textContent = fmt(cur); });
-    if (next !== null) {
-      var msg = 'Завтра будет ' + next.toLocaleString('ru-RU') + ' ₽';
-      document.querySelectorAll('[data-price-urgency="' + id + '"]').forEach(function(el) {
-        el.textContent = msg; el.classList.remove('hidden');
-      });
-    }
-  });
-})();
-</script>
+<!-- Цены обновляет глобальный DynamicPrices.astro (подключён через Base.astro) -->
 </Base>
