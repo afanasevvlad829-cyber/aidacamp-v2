@@ -55,7 +55,7 @@ function parseItems(v: unknown): { id: string; text: string }[] {
 }
 
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
-  if (!requireAdmin(cookies)) return new Response('Forbidden', { status: 403 });
+  if (!requireAdmin(cookies)) return new Response(JSON.stringify({ ok: false, error: 'нет прав (нужен руководитель или админ)' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
   const body = await readBody(request);
   const isForm = body.__form === true;
   const action = asStr(body.action);
@@ -152,6 +152,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
 
     return bad('unknown action');
   } catch (e) {
-    return new Response(JSON.stringify({ ok: false, error: 'server-error' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    const msg = e instanceof Error ? e.message : String(e);
+    return new Response(JSON.stringify({ ok: false, error: 'server-error: ' + msg }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 };

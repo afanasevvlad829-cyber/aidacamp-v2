@@ -345,12 +345,28 @@ const checklistProgress = (e: ShiftEvent) => {
     const date = root?.getAttribute('data-date');
     const API = '/api/portal/shift/event-edit';
 
+    // Единый разбор ответа: всегда возвращает {ok, error?, ...} с понятным текстом.
+    async function parseResp(r) {
+      const text = await r.text().catch(() => '');
+      let data = null;
+      try { data = JSON.parse(text); } catch {}
+      if (data && typeof data === 'object') {
+        if (data.ok === false && !data.error) data.error = `ошибка сервера (HTTP ${r.status})`;
+        return data;
+      }
+      const map = { 401: 'нужно войти заново', 403: 'нет прав на это действие', 404: 'не найдено', 413: 'файл слишком большой', 500: 'ошибка на сервере', 503: 'база недоступна' };
+      return { ok: r.ok, error: r.ok ? undefined : (map[r.status] || `HTTP ${r.status}`) + (text ? ': ' + text.slice(0, 100) : '') };
+    }
+
     async function post(body) {
-      const r = await fetch(API, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', body: JSON.stringify(body),
-      });
-      return r.json().catch(() => ({ ok: false }));
+      let r;
+      try {
+        r = await fetch(API, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', body: JSON.stringify(body),
+        });
+      } catch { return { ok: false, error: 'сеть недоступна' }; }
+      return parseResp(r);
     }
 
     // Развернуть/свернуть карточку
@@ -412,7 +428,7 @@ const checklistProgress = (e: ShiftEvent) => {
       btn.addEventListener('click', async () => {
         const title = btn.getAttribute('data-suggest') || '';
         const r = await fetch('/api/portal/content-tasks?suggest=' + encodeURIComponent(title), { credentials: 'include' });
-        const data = await r.json().catch(() => ({ items: [] }));
+        const data = await r.json().catch(() => ({ ok: false, items: [] }));
         const sel = btn.parentElement.querySelector('[data-lib]');
         if (data.items && data.items.length && sel) {
           const names = data.items.map((t) => `[${t.content_type}] ${t.title}`).join('\n');
@@ -435,20 +451,16 @@ const checklistProgress = (e: ShiftEvent) => {
 
     const ADMIN = '/api/portal/shift/admin';
     async function postForm(fields) {
-      const fd = new FormData();
-      Object.entries(fields).forEach(([k, v]) => fd.append(k, String(v)));
+      // JSON, а не FormData: admin при FormData делает redirect (isForm=true),
+      // а нам нужен чистый JSON-ответ для разбора.
       let r;
       try {
-        r = await fetch(ADMIN, { method: 'POST', credentials: 'include', body: fd });
-      } catch (e) {
-        return { ok: false, error: 'сеть недоступна' };
-      }
-      const text = await r.text();
-      let data;
-      try { data = JSON.parse(text); } catch { data = null; }
-      if (data && typeof data === 'object') return data;
-      // Не-JSON ответ (напр. "Forbidden" 403 или 500) — показываем статус
-      return { ok: false, error: `HTTP ${r.status}${text ? ': ' + text.slice(0, 80) : ''}` };
+        r = await fetch(ADMIN, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', body: JSON.stringify(fields),
+        });
+      } catch { return { ok: false, error: 'сеть недоступна' }; }
+      return parseResp(r);
     }
 
     // Параллельное событие (копия блока с тем же временем, можно сменить преподавателя)
@@ -571,11 +583,15 @@ const checklistProgress = (e: ShiftEvent) => {
           const fd = new FormData();
           fd.append('event_id', String(eventId));
           fd.append('file', f);
-          const r = await fetch('/api/portal/photo', { method: 'POST', credentials: 'include', body: fd });
-          const j = await r.json().catch(() => ({ ok: false }));
+          let j;
+          try {
+            const r = await fetch('/api/portal/photo', { method: 'POST', credentials: 'include', body: fd });
+            j = await parseResp(r);
+          } catch { j = { ok: false, error: 'сеть' }; }
           if (j.ok) done++;
+          else if (status) status.textContent = `Файл «${f.name}»: ${j.error || 'ошибка'}`;
         }
-        if (status) status.textContent = `Готово: ${done}/${files.length}`;
+        if (status && done === files.length) status.textContent = `Готово: ${done}/${files.length}`;
         setTimeout(() => location.reload(), 700);
       });
     })();
