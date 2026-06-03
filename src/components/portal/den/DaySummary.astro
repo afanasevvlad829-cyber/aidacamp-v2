@@ -1,0 +1,32 @@
+---
+import type { listPhotosByDay } from '../../../lib/portalShift';
+
+interface Props {
+  summaryEventId: number | string;
+  photos: { file_url: string | null; file_type: string; caption: string | null }[];
+}
+const { summaryEventId, photos } = Astro.props;
+---
+<section class="den-summary" data-summary-event={summaryEventId}>
+  <h3>📦 Материалы дня</h3>
+  <p class="den-summary-hint">Общие фото и видео за день — не привязанные к конкретной активности. Загружайте сюда итог дня.</p>
+
+  {photos.length > 0 && (
+    <div class="den-gallery">
+      {photos.map((ph) => (
+        <a href={ph.file_url ?? '#'} target="_blank" class="den-thumb">
+          {ph.file_type === 'video'
+            ? <span class="den-thumb-vid"><i class="bi bi-play-circle"></i></span>
+            : <img src={ph.file_url ?? ''} alt={ph.caption ?? ''} loading="lazy">}
+        </a>
+      ))}
+    </div>
+  )}
+  {photos.length === 0 && <p class="den-summary-empty">Пока ничего не загружено.</p>}
+
+  <div class="den-summary-actions">
+    <input type="file" id="day-file" accept="image/*,video/*" multiple hidden>
+    <button type="button" id="day-upload" class="den-save">⬆ Загрузить фото / видео</button>
+    <span class="den-status" id="day-status"></span>
+  </div>
+</section>

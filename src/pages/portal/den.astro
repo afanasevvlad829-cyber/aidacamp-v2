@@ -10,6 +10,8 @@ import {
 import { listStaff } from '../../lib/portalStaff';
 import { listPhotosByDay } from '../../lib/portalPhoto';
 import DenCard from '../../components/portal/den/DenCard.astro';
+import DaySummary from '../../components/portal/den/DaySummary.astro';
+import ChecklistModal from '../../components/portal/den/ChecklistModal.astro';
 
 // Доступ гейтит middleware: /portal/* доступен только сотрудникам (не ученикам).
 const role = Astro.locals.portalRole!;
@@ -123,53 +125,12 @@ for (const e of dayEvents) {
           <button type="button" id="copy-day" class="den-copy">📋 Скопировать этот день на другую дату</button>
         </div>
 
-        <section class="den-summary" data-summary-event={summaryEvent?.id ?? ''}>
-          <h3>📦 Материалы дня</h3>
-          <p class="den-summary-hint">Общие фото и видео за день — не привязанные к конкретной активности. Загружайте сюда итог дня.</p>
-
-          {dayPhotos.length > 0 && (
-            <div class="den-gallery">
-              {dayPhotos.map((ph) => (
-                <a href={ph.file_url ?? '#'} target="_blank" class="den-thumb">
-                  {ph.file_type === 'video'
-                    ? <span class="den-thumb-vid"><i class="bi bi-play-circle"></i></span>
-                    : <img src={ph.file_url ?? ''} alt={ph.caption ?? ''} loading="lazy">}
-                </a>
-              ))}
-            </div>
-          )}
-          {dayPhotos.length === 0 && <p class="den-summary-empty">Пока ничего не загружено.</p>}
-
-          <div class="den-summary-actions">
-            <input type="file" id="day-file" accept="image/*,video/*" multiple hidden>
-            <button type="button" id="day-upload" class="den-save">⬆ Загрузить фото / видео</button>
-            <span class="den-status" id="day-status"></span>
-          </div>
-        </section>
+        <DaySummary summaryEventId={summaryEvent?.id ?? ''} photos={dayPhotos} />
       </div>
     )}
   </div>
 
-  <!-- Модалка создания чек-листа -->
-  <div class="cl-modal" id="cl-modal" hidden>
-    <div class="cl-modal-box">
-      <div class="cl-modal-head">
-        <h3>Новый чек-лист</h3>
-        <button type="button" class="cl-modal-x" id="cl-close">✕</button>
-      </div>
-      <label class="den-field">
-        <span>Название</span>
-        <input type="text" id="cl-title" placeholder="Напр. Сборы на бассейн">
-      </label>
-      <div class="cl-items-label">Пункты</div>
-      <div id="cl-items"></div>
-      <button type="button" class="den-mini ghost" id="cl-add-item">+ Добавить пункт</button>
-      <div class="cl-modal-foot">
-        <button type="button" class="den-save" id="cl-create">Создать и привязать</button>
-        <span class="den-status" id="cl-status"></span>
-      </div>
-    </div>
-  </div>
+  <ChecklistModal />
 
   <style>
     .den{max-width:860px;margin:0 auto;padding:16px}
