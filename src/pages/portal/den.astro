@@ -437,8 +437,18 @@ const checklistProgress = (e: ShiftEvent) => {
     async function postForm(fields) {
       const fd = new FormData();
       Object.entries(fields).forEach(([k, v]) => fd.append(k, String(v)));
-      const r = await fetch(ADMIN, { method: 'POST', credentials: 'include', body: fd });
-      return r.json().catch(() => ({ ok: false }));
+      let r;
+      try {
+        r = await fetch(ADMIN, { method: 'POST', credentials: 'include', body: fd });
+      } catch (e) {
+        return { ok: false, error: 'сеть недоступна' };
+      }
+      const text = await r.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = null; }
+      if (data && typeof data === 'object') return data;
+      // Не-JSON ответ (напр. "Forbidden" 403 или 500) — показываем статус
+      return { ok: false, error: `HTTP ${r.status}${text ? ': ' + text.slice(0, 80) : ''}` };
     }
 
     // Параллельное событие (копия блока с тем же временем, можно сменить преподавателя)
