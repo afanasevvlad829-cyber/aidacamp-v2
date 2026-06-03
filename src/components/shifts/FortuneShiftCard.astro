@@ -1,14 +1,29 @@
 ---
 import { getCurrentPrice } from '../../data/dynamicPrices';
+import { mainShifts } from '../../data/shifts';
+
+interface Props {
+  shiftId?: string;
+}
+const { shiftId = 'shift-1' } = Astro.props;
+
+const shift = mainShifts.find((s) => s.id === shiftId) ?? mainShifts[0];
+const SHIFT_ID = shift.id;
 
 const today = new Date();
-const currentPrice = getCurrentPrice('shift-1', today) ?? 93900;
+const currentPrice = getCurrentPrice(SHIFT_ID, today) ?? parseInt(shift.price.replace(/\D/g, ''), 10);
 const fortuneMode = process.env.FORTUNE_MODE ?? 'payment'; // 'payment' | 'lead'
 
-// Days until shift starts (May 30, 2026)
-const startDate = new Date('2026-05-30T00:00:00');
+// Days until shift starts
+const startDate = new Date(shift.startDate + 'T00:00:00');
 const daysLeft = Math.max(0, Math.ceil((startDate.getTime() - today.getTime()) / 86_400_000));
 const daysLeftLabel = daysLeft === 0 ? 'сегодня' : daysLeft === 1 ? 'через 1 день' : `через ${daysLeft} дн`;
+
+// Заезд = startDate + 2 дня (запас на справки)
+const arriveDate = new Date(startDate.getTime() + 2 * 86_400_000);
+const monthsGenitive = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const startDayLabel  = `${startDate.getDate()} ${monthsGenitive[startDate.getMonth()]}`;
+const arriveDayLabel = `${arriveDate.getDate()} ${monthsGenitive[arriveDate.getMonth()]}`;
 
 // SVG wheel segments (shared server+client via define:vars)
 // Все секторы с реальными скидками 10–70%, 0% убраны
@@ -48,13 +63,13 @@ const segData = SEGMENTS.map((seg, i) => {
 <!-- ── Card ── -->
 <article
   data-fortune-card
-  data-shift-id="shift-1"
+  data-shift-id={SHIFT_ID}
   class="relative flex flex-col rounded-[22px] border border-transparent bg-card card-shadow ring-2 ring-primary shadow-[0_0_0_4px_rgba(236,124,0,0.12)] p-5"
 >
 
   <!-- Orange header banner -->
   <div class="-mx-5 -mt-5 mb-4 flex items-center gap-2 rounded-t-[20px] bg-primary px-5 py-3">
-    <span class="text-[16px] font-extrabold text-white leading-none">Смена 1 · 30 мая — 8 июня</span>
+    <span class="text-[16px] font-extrabold text-white leading-none">{shift.name} · {shift.dates}</span>
     <span class="ml-auto flex items-center gap-1.5 whitespace-nowrap text-[12px] font-semibold text-white/80">
       <i class="bi bi-clock text-[11px]" aria-hidden="true"></i>
       {daysLeftLabel}
@@ -65,7 +80,7 @@ const segData = SEGMENTS.map((seg, i) => {
   <div class="flex items-center gap-1.5 mb-4 flex-wrap">
     <span class="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-1 text-[12px] font-semibold text-orange-700">
       <i class="bi bi-calendar-event text-[10px]" aria-hidden="true"></i>
-      10 дней
+      {shift.duration}
     </span>
     <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-[12px] font-bold text-red-700">
       <i class="bi bi-fire text-[10px]" aria-hidden="true"></i>
@@ -73,7 +88,7 @@ const segData = SEGMENTS.map((seg, i) => {
     </span>
     <span class="ml-auto text-right">
       <span class="block text-[10px] font-semibold uppercase tracking-[0.12em] text-body-faint">Стоимость</span>
-      <span class="block text-[20px] font-extrabold text-primary leading-none" data-dynamic-price="shift-1">{currentPrice.toLocaleString('ru-RU')} ₽</span>
+      <span class="block text-[20px] font-extrabold text-primary leading-none" data-dynamic-price={SHIFT_ID}>{currentPrice.toLocaleString('ru-RU')} ₽</span>
     </span>
   </div>
 
@@ -178,11 +193,11 @@ const segData = SEGMENTS.map((seg, i) => {
     <div class="flex items-end justify-between gap-3">
       <div>
         <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-body-faint">Стоимость</p>
-        <p class="mt-1 text-[26px] font-extrabold tracking-[-0.02em] leading-none text-primary" data-dynamic-price="shift-1">{currentPrice.toLocaleString('ru-RU')} ₽</p>
+        <p class="mt-1 text-[26px] font-extrabold tracking-[-0.02em] leading-none text-primary" data-dynamic-price={SHIFT_ID}>{currentPrice.toLocaleString('ru-RU')} ₽</p>
         <p class="mt-1 text-[12px] text-body-faint">всё включено</p>
       </div>
       <a
-        href="/shifts/shift-1/"
+        href={`/shifts//`}
         class="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-5 py-3 text-[14px] font-semibold transition-colors min-h-[44px] no-underline bg-primary hover:bg-primary-hover text-white"
       >
         Выбрать
@@ -220,7 +235,7 @@ const segData = SEGMENTS.map((seg, i) => {
     </p>
     <p>
       <i class="bi bi-calendar-event text-[10px] mr-1" aria-hidden="true"></i>
-      Заехать можно до 1 июня · успейте собрать справки
+      Заехать можно до {arriveDayLabel} · успейте собрать справки
     </p>
     <p class="pt-1">
       <i class="bi bi-telegram text-[10px] mr-1" aria-hidden="true"></i>
@@ -329,8 +344,8 @@ const segData = SEGMENTS.map((seg, i) => {
       <p class="font-semibold text-gray-700 text-[13px] mb-2">Что будет после оплаты:</p>
       <p><span class="inline-block w-4 text-orange-500 font-bold">1.</span> В течение 30 минут с вами свяжется представитель</p>
       <p><span class="inline-block w-4 text-orange-500 font-bold">2.</span> Договор подготовим до конца рабочего дня</p>
-      <p><span class="inline-block w-4 text-orange-500 font-bold">3.</span> Окончательная оплата — до конца дня заезда (30 мая)</p>
-      <p><span class="inline-block w-4 text-orange-500 font-bold">4.</span> Заехать можно до 1 июня — время собрать справки</p>
+      <p><span class="inline-block w-4 text-orange-500 font-bold">3.</span> Окончательная оплата — до конца дня заезда ({startDayLabel})</p>
+      <p><span class="inline-block w-4 text-orange-500 font-bold">4.</span> Заехать можно до {arriveDayLabel} — время собрать справки</p>
       <p class="text-gray-400 pt-1">Трансфер оплачивается отдельно.</p>
     </div>
 
@@ -363,7 +378,7 @@ const segData = SEGMENTS.map((seg, i) => {
   </div><!-- /flex wrapper -->
 </div>
 
-<script define:vars={{ SEGMENTS, currentPrice, fortuneMode }}>
+<script define:vars={{ SEGMENTS, currentPrice, fortuneMode, SHIFT_ID }}>
   (function () {
     var PRICE = currentPrice;
     var segs  = SEGMENTS;
@@ -532,7 +547,7 @@ const segData = SEGMENTS.map((seg, i) => {
       fetch('/api/fortune/spin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ discount: d, shiftId: 'shift-1' }),
+        body: JSON.stringify({ discount: d, shiftId: SHIFT_ID }),
       }).catch(function() {});
       var fp  = Math.round(PRICE * (1 - d / 100));
       var dep = Math.round(fp * 0.5);
@@ -729,7 +744,7 @@ const segData = SEGMENTS.map((seg, i) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          shiftId:  'shift-1',
+          shiftId:  SHIFT_ID,
           discount: wonDiscount,
           token:    wonToken,
           name:     name,
