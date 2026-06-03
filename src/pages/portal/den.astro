@@ -9,6 +9,9 @@ import {
 } from '../../lib/portalShift';
 import { listStaff } from '../../lib/portalStaff';
 import { listPhotosByDay } from '../../lib/portalPhoto';
+import DenCard from '../../components/portal/den/DenCard.astro';
+import DaySummary from '../../components/portal/den/DaySummary.astro';
+import ChecklistModal from '../../components/portal/den/ChecklistModal.astro';
 
 // Доступ гейтит middleware: /portal/* доступен только сотрудникам (не ученикам).
 const role = Astro.locals.portalRole!;
@@ -63,18 +66,10 @@ for (const e of dayEvents) {
   else groups.push({ time: t, items: [e] });
 }
 
-const fmt = (t: string | null) => (t ? t.slice(0, 5) : '');
-const responsibleName = (e: ShiftEvent) => e.responsible_name || '';
-const checklistProgress = (e: ShiftEvent) => {
-  const total = e.checklists.reduce((n, cl) => n + cl.items.length, 0);
-  const done = e.checklists.reduce(
-    (n, cl) => n + cl.items.filter((it) => doneSet.includes(`${e.id}:${cl.checklist_id}:${it.id}`)).length, 0);
-  return { done, total };
-};
 ---
 
 <PortalLayout title="Конструктор дня · АйДаКемп">
-  <div class="den" data-shift={shift?.id ?? ''} data-date={selectedDate}>
+  <div class="den" data-shift={shift?.id ?? ''} data-date={selectedDate} data-summary-title={DAY_SUMMARY_TITLE}>
     <header class="den-head">
       <div>
         <h1 class="den-title">Конструктор дня</h1>
@@ -113,99 +108,9 @@ const checklistProgress = (e: ShiftEvent) => {
           <div class="den-row">
             <div class="den-time">{g.time || '—'}</div>
             <div class="den-cards">
-              {g.items.map((e) => {
-                const pr = checklistProgress(e);
-                return (
-                  <article class="den-card" data-event={e.id}>
-                    <div class="den-card-main" data-toggle>
-                      <div class="den-card-title">{e.title}</div>
-                      <div class="den-card-meta">
-                        {e.content_task && <span class="den-badge tk"><i class="bi bi-camera-reels"></i> {e.content_task.title}</span>}
-                        {responsibleName(e) && <span class="den-badge resp"><i class="bi bi-person"></i> {responsibleName(e)}</span>}
-                        {pr.total > 0 && <span class="den-badge chk"><i class="bi bi-check2-square"></i> {pr.done}/{pr.total}</span>}
-                      </div>
-                    </div>
-
-                    <div class="den-card-body" hidden>
-                      <label class="den-field">
-                        <span>Время</span>
-                        <input type="time" value={fmt(e.start_time)} data-field="start_time">
-                      </label>
-                      <label class="den-field">
-                        <span>Название</span>
-                        <input type="text" value={e.title} data-field="title">
-                      </label>
-                      <label class="den-field">
-                        <span>Ответственный</span>
-                        <select data-field="responsible_staff_id">
-                          <option value="">— не назначен —</option>
-                          {staff.map((s) => (
-                            <option value={s.id} selected={s.id === e.responsible_staff_id}>{s.name}</option>
-                          ))}
-                        </select>
-                      </label>
-                      <label class="den-field">
-                        <span>Комментарий</span>
-                        <textarea rows="2" data-field="notes">{e.notes ?? ''}</textarea>
-                      </label>
-
-                      <div class="den-field">
-                        <span>Контент-задание</span>
-                        <select data-field="content_task_template_id" data-lib>
-                          <option value="">— нет —</option>
-                          {library.map((t) => (
-                            <option value={t.id} selected={e.content_task_template_id === t.id}>
-                              [{t.content_type}] {t.title}
-                            </option>
-                          ))}
-                        </select>
-                        <button type="button" class="den-suggest" data-suggest={e.title}>Подсказать по блоку</button>
-                      </div>
-
-                      {e.checklists.length > 0 && (
-                        <div class="den-checklists">
-                          {e.checklists.map((cl) => (
-                            <div class="den-cl">
-                              <div class="den-cl-title">{cl.title}</div>
-                              {cl.items.map((it) => {
-                                const isDone = doneSet.includes(`${e.id}:${cl.checklist_id}:${it.id}`);
-                                return (
-                                  <label class="den-cl-item">
-                                    <input type="checkbox" checked={isDone}
-                                      data-check data-cl={cl.checklist_id} data-item={it.id}>
-                                    <span>{it.text}</span>
-                                  </label>
-                                );
-                              })}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      <div class="den-cl-manage">
-                        <span class="den-field-label">Чек-листы</span>
-                        <div class="den-cl-add">
-                          <select data-cl-pick>
-                            <option value="">+ привязать чек-лист…</option>
-                            {checklistLib.map((cl) => (
-                              <option value={cl.id}>{cl.title}</option>
-                            ))}
-                          </select>
-                          <button type="button" class="den-mini" data-cl-attach>Привязать</button>
-                        </div>
-                        <button type="button" class="den-mini ghost" data-cl-new>+ Создать новый чек-лист</button>
-                      </div>
-
-                      <div class="den-actions">
-                        <button type="button" class="den-save" data-save>Сохранить</button>
-                        <button type="button" class="den-dup" data-dup>+ Параллельно</button>
-                        <button type="button" class="den-del" data-del>Удалить блок</button>
-                        <span class="den-status" data-status></span>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
+              {g.items.map((e) => (
+                <DenCard event={e} staff={staff} library={library} checklistLib={checklistLib} doneSet={doneSet} />
+              ))}
             </div>
           </div>
         ))}
@@ -220,364 +125,105 @@ const checklistProgress = (e: ShiftEvent) => {
           <button type="button" id="copy-day" class="den-copy">📋 Скопировать этот день на другую дату</button>
         </div>
 
-        <section class="den-summary" data-summary-event={summaryEvent?.id ?? ''}>
-          <h3>📦 Материалы дня</h3>
-          <p class="den-summary-hint">Общие фото и видео за день — не привязанные к конкретной активности. Загружайте сюда итог дня.</p>
-
-          {dayPhotos.length > 0 && (
-            <div class="den-gallery">
-              {dayPhotos.map((ph) => (
-                <a href={ph.file_url ?? '#'} target="_blank" class="den-thumb">
-                  {ph.file_type === 'video'
-                    ? <span class="den-thumb-vid"><i class="bi bi-play-circle"></i></span>
-                    : <img src={ph.file_url ?? ''} alt={ph.caption ?? ''} loading="lazy">}
-                </a>
-              ))}
-            </div>
-          )}
-          {dayPhotos.length === 0 && <p class="den-summary-empty">Пока ничего не загружено.</p>}
-
-          <div class="den-summary-actions">
-            <input type="file" id="day-file" accept="image/*,video/*" multiple hidden>
-            <button type="button" id="day-upload" class="den-save">⬆ Загрузить фото / видео</button>
-            <span class="den-status" id="day-status"></span>
-          </div>
-        </section>
+        <DaySummary summaryEventId={summaryEvent?.id ?? ''} photos={dayPhotos} />
       </div>
     )}
   </div>
 
-  <!-- Модалка создания чек-листа -->
-  <div class="cl-modal" id="cl-modal" hidden>
-    <div class="cl-modal-box">
-      <div class="cl-modal-head">
-        <h3>Новый чек-лист</h3>
-        <button type="button" class="cl-modal-x" id="cl-close">✕</button>
-      </div>
-      <label class="den-field">
-        <span>Название</span>
-        <input type="text" id="cl-title" placeholder="Напр. Сборы на бассейн">
-      </label>
-      <div class="cl-items-label">Пункты</div>
-      <div id="cl-items"></div>
-      <button type="button" class="den-mini ghost" id="cl-add-item">+ Добавить пункт</button>
-      <div class="cl-modal-foot">
-        <button type="button" class="den-save" id="cl-create">Создать и привязать</button>
-        <span class="den-status" id="cl-status"></span>
-      </div>
-    </div>
-  </div>
+  <ChecklistModal />
 
-  <style>
-    .den{max-width:860px;margin:0 auto;padding:16px}
-    .den-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:18px}
-    .den-title{font-size:22px;font-weight:800;margin:0}
-    .den-sub{color:#64748b;font-size:14px;margin:2px 0 0}
+  <style is:global>
+    /* Конструктор дня — фирменный стиль АйДаКемп (DESIGN_SYSTEM.md):
+       soft-orange #ec9b44, navy #0d1a2b, радиусы 14px, мягкие тени. */
+    .den{--orange:#ec9b44;--orange-600:#d68830;--orange-50:#fdf6ec;--orange-100:#faead0;--orange-200:#f5d4a4;
+         --navy:#0d1a2b;--navy-700:#285085;--ink:#1e2430;--muted:#6b7280;--border:#e5e7eb;--surface:#f8f9fb;--green:#2fa768;
+         max-width:880px;margin:0 auto;padding:20px 16px}
+    .den-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+    .den-title{font-size:26px;font-weight:800;letter-spacing:-0.02em;color:var(--navy);margin:0}
+    .den-sub{color:var(--muted);font-size:14px;margin:3px 0 0}
     .den-controls{display:flex;gap:8px}
-    .den-input{border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:14px;background:#fff}
-    .den-empty{color:#64748b;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;padding:20px;text-align:center}
-    .den-row{display:flex;gap:12px;margin-bottom:10px}
-    .den-time{flex:none;width:54px;font-weight:700;color:#2563eb;padding-top:14px;font-size:14px}
-    .den-cards{flex:1;display:flex;flex-direction:column;gap:8px}
-    .den-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
-    .den-card-main{padding:12px 14px;cursor:pointer}
-    .den-card-title{font-weight:600;font-size:15px}
-    .den-card-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-    .den-badge{font-size:12px;padding:2px 8px;border-radius:999px;display:inline-flex;align-items:center;gap:4px}
-    .den-badge.tk{background:#fff1ec;color:#c2410c}
-    .den-badge.resp{background:#eef2ff;color:#4338ca}
-    .den-badge.chk{background:#ecfdf3;color:#15803d}
-    .den-card-body{padding:0 14px 14px;border-top:1px solid #f1f5f9}
-    .den-field{display:block;margin-top:10px;font-size:13px;color:#475569}
+    .den-input{border:1.5px solid var(--border);border-radius:12px;padding:8px 11px;font-size:14px;background:#fff;color:var(--ink)}
+    .den-input:focus{outline:none;border-color:var(--orange)}
+    .den-empty{color:var(--muted);background:var(--surface);border:1px dashed #cbd5e1;border-radius:14px;padding:22px;text-align:center}
+    .den-days{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+    .den-day{display:flex;flex-direction:column;align-items:center;min-width:62px;padding:9px 12px;border:1.5px solid var(--border);border-radius:14px;background:#fff;text-decoration:none;color:var(--ink);transition:all .15s}
+    .den-day:hover{border-color:var(--orange);box-shadow:0 2px 8px rgba(15,23,42,.04)}
+    .den-day.active{background:var(--orange);border-color:var(--orange);color:var(--navy);box-shadow:0 4px 16px rgba(236,155,68,.35)}
+    .den-day-n{font-size:13px;font-weight:700}
+    .den-day-d{font-size:11px;opacity:.85;margin-top:1px}
+    .den-timeline{position:relative}
+    .den-row{display:flex;gap:14px;margin-bottom:12px}
+    .den-time{flex:none;width:54px;font-weight:700;color:var(--navy-700);padding-top:14px;font-size:14px;font-variant-numeric:tabular-nums}
+    .den-cards{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
+    .den-card{background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 4px 16px rgba(15,23,42,.06);overflow:hidden;transition:box-shadow .15s,border-color .15s}
+    .den-card:hover{border-color:var(--orange-200)}
+    .den-card-main{padding:14px 16px;cursor:pointer;display:flex;flex-direction:column;gap:7px}
+    .den-card-title{font-weight:700;font-size:15px;color:var(--navy)}
+    .den-card-meta{display:flex;flex-wrap:wrap;gap:6px}
+    .den-badge{font-size:12px;padding:3px 9px;border-radius:999px;display:inline-flex;align-items:center;gap:4px;font-weight:500}
+    .den-badge.tk{background:var(--orange-50);color:#b66d10}
+    .den-badge.resp{background:#eef4fb;color:var(--navy-700)}
+    .den-badge.chk{background:#eafaf1;color:#1f8a52}
+    .den-card-body{padding:4px 16px 16px;border-top:1px solid #f1f5f9;background:var(--surface)}
+    .den-field{display:block;margin-top:10px;font-size:12.5px;color:var(--muted)}
     .den-field>span{display:block;font-weight:600;margin-bottom:3px}
-    .den-field input,.den-field select,.den-field textarea{width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:14px;font-family:inherit}
-    .den-suggest{margin-top:6px;background:#f1f5f9;border:none;border-radius:7px;padding:5px 10px;font-size:12px;color:#334155;cursor:pointer}
-    .den-checklists{margin-top:12px}
-    .den-cl{margin-top:8px}
-    .den-cl-title{font-weight:600;font-size:13px;color:#334155;margin-bottom:4px}
-    .den-cl-item{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:14px;cursor:pointer}
-    .den-actions{display:flex;align-items:center;gap:10px;margin-top:14px}
-    .den-save{background:#f97316;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:14px;font-weight:600;cursor:pointer}
-    .den-del{background:#fff;color:#dc2626;border:1.5px solid #fecaca;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer}
-    .den-status{font-size:12px;color:#16a34a}
-    .den-add{margin-top:20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px}
-    .den-add h3{margin:0 0 10px;font-size:15px}
+    .den-field input,.den-field select,.den-field textarea{width:100%;border:1.5px solid var(--border);border-radius:12px;padding:8px 11px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink)}
+    .den-field input:focus,.den-field select:focus,.den-field textarea:focus{outline:none;border-color:var(--orange)}
+    .den-row-fields{display:flex;gap:10px;align-items:flex-end}
+    .den-field-time{flex:0 0 100px}
+    .den-field-grow{flex:1 1 auto;min-width:0}
+    .den-field textarea{min-height:40px;resize:vertical}
+    .den-suggest{margin-top:6px;background:var(--orange-50);border:1px solid var(--orange-200);border-radius:10px;padding:6px 11px;font-size:12px;color:#b66d10;cursor:pointer;font-weight:500}
+    .den-suggest:hover{background:var(--orange-100)}
+    .den-checklists{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+    .den-cl{background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+    .den-cl-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+    .den-cl-title{font-weight:700;font-size:13px;color:var(--navy)}
+    .den-cl-tools{display:flex;gap:4px;flex:none}
+    .den-cl-btn{background:var(--surface);border:1px solid var(--border);border-radius:8px;width:28px;height:28px;font-size:13px;cursor:pointer;color:var(--muted);line-height:1}
+    .den-cl-btn:hover{border-color:var(--orange);color:#b66d10}
+    .den-cl-btn.del{background:#fdeeee;border-color:#f6cccc;color:#c4515c}
+    .den-cl-item{display:flex;align-items:center;gap:9px;padding:4px 0;font-size:14px;cursor:pointer;color:var(--ink)}
+    .den-cl-item input{width:17px;height:17px;accent-color:var(--orange)}
+    .den-cl-manage{margin-top:14px;padding-top:12px;border-top:1px dashed var(--border)}
+    .den-field-label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px}
+    .den-cl-add{display:flex;gap:6px;margin-bottom:6px}
+    .den-cl-add select{flex:1;border:1.5px solid var(--border);border-radius:12px;padding:7px 9px;font-size:13px}
+    .den-mini{background:#eef4fb;color:var(--navy-700);border:none;border-radius:10px;padding:7px 13px;font-size:13px;cursor:pointer;white-space:nowrap;font-weight:500}
+    .den-mini.ghost{background:#fff;color:var(--ink);border:1px solid var(--border)}
+    .den-mini:hover{filter:brightness(.97)}
+    .den-actions{display:flex;align-items:center;gap:8px;margin-top:16px;flex-wrap:wrap}
+    .den-save{background:var(--orange);color:var(--navy);border:none;border-radius:12px;padding:9px 18px;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s}
+    .den-save:hover{background:var(--orange-600);box-shadow:0 4px 16px rgba(236,155,68,.35)}
+    .den-dup{background:#fff;color:var(--navy-700);border:1.5px solid #cdddf0;border-radius:12px;padding:9px 14px;font-size:13px;cursor:pointer;font-weight:500}
+    .den-del{background:#fff;color:#c4515c;border:1.5px solid #f6cccc;border-radius:12px;padding:9px 14px;font-size:13px;cursor:pointer}
+    .den-status{font-size:12px;color:var(--green)}
+    .den-add{margin-top:22px;background:var(--orange-50);border:1px solid var(--orange-200);border-radius:16px;padding:16px}
+    .den-add h3{margin:0 0 12px;font-size:15px;font-weight:700;color:var(--navy)}
     .den-add-row{display:flex;gap:8px;flex-wrap:wrap}
     .den-add-row #add-title{flex:1;min-width:160px}
-    .den-copy{margin-top:12px;background:none;border:none;color:#2563eb;font-size:13px;cursor:pointer;padding:0}
-    .den-days{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-    .den-day{display:flex;flex-direction:column;align-items:center;min-width:60px;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;text-decoration:none;color:#334155;transition:all .12s}
-    .den-day:hover{border-color:#f97316}
-    .den-day.active{background:#f97316;border-color:#f97316;color:#fff}
-    .den-day-n{font-size:13px;font-weight:700}
-    .den-day-d{font-size:11px;opacity:.8;margin-top:1px}
-    .den-cl-manage{margin-top:14px;padding-top:10px;border-top:1px dashed #e2e8f0}
-    .den-field-label{display:block;font-size:13px;font-weight:600;color:#475569;margin-bottom:6px}
-    .den-cl-add{display:flex;gap:6px;margin-bottom:6px}
-    .den-cl-add select{flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 8px;font-size:13px}
-    .den-mini{background:#eef2ff;color:#4338ca;border:none;border-radius:7px;padding:6px 12px;font-size:13px;cursor:pointer;white-space:nowrap}
-    .den-mini.ghost{background:#f8fafc;color:#475569;border:1px solid #e2e8f0}
-    .den-dup{background:#fff;color:#2563eb;border:1.5px solid #bfdbfe;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer}
-    .den-summary{margin-top:22px;background:#fff7ed;border:1px solid #ffe1c2;border-radius:14px;padding:16px}
-    .den-summary h3{margin:0 0 4px;font-size:16px}
+    .den-copy{margin-top:12px;background:none;border:none;color:var(--navy-700);font-size:13px;cursor:pointer;padding:0;font-weight:500}
+    .den-copy:hover{color:var(--orange-600)}
+    .den-summary{margin-top:24px;background:var(--orange-50);border:1px solid var(--orange-200);border-radius:16px;padding:18px}
+    .den-summary h3{margin:0 0 4px;font-size:16px;font-weight:700;color:var(--navy)}
     .den-summary-hint{font-size:13px;color:#9a6b3f;margin:0 0 12px}
     .den-summary-empty{font-size:13px;color:#b08968;margin:0 0 12px}
-    .den-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-bottom:12px}
-    .den-thumb{display:block;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#fde9d8;border:1px solid #ffe1c2}
+    .den-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin-bottom:12px}
+    .den-thumb{display:block;aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--orange-100);border:1px solid var(--orange-200)}
     .den-thumb img{width:100%;height:100%;object-fit:cover}
-    .den-thumb-vid{display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:28px;color:#c2410c}
+    .den-thumb-vid{display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:28px;color:#b66d10}
     .den-summary-actions{display:flex;align-items:center;gap:10px}
-    .cl-modal{position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
-    .cl-modal-box{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:440px;max-height:85vh;overflow-y:auto}
-    .cl-modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-    .cl-modal-head h3{margin:0;font-size:18px}
-    .cl-modal-x{background:none;border:none;font-size:18px;cursor:pointer;color:#64748b}
-    .cl-items-label{font-size:13px;font-weight:600;color:#475569;margin:12px 0 6px}
+    .cl-modal{position:fixed;inset:0;background:rgba(13,26,43,.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+    .cl-modal-box{background:#fff;border-radius:20px;padding:22px;width:100%;max-width:460px;max-height:85vh;overflow-y:auto;box-shadow:0 8px 24px rgba(15,23,42,.12)}
+    .cl-modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .cl-modal-head h3{margin:0;font-size:18px;font-weight:700;color:#0d1a2b}
+    .cl-modal-x{background:none;border:none;font-size:18px;cursor:pointer;color:#6b7280}
+    .cl-items-label{font-size:12.5px;font-weight:600;color:#6b7280;margin:14px 0 6px}
     .cl-item-row{display:flex;gap:6px;margin-bottom:6px}
-    .cl-item-row input{flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:14px}
-    .cl-item-del{background:#fef2f2;color:#dc2626;border:none;border-radius:7px;padding:0 11px;font-size:15px;cursor:pointer}
-    .cl-modal-foot{display:flex;align-items:center;gap:10px;margin-top:16px}
+    .cl-item-row input{flex:1;border:1.5px solid #e5e7eb;border-radius:12px;padding:8px 11px;font-size:14px}
+    .cl-item-del{background:#fdeeee;color:#c4515c;border:none;border-radius:8px;padding:0 12px;font-size:15px;cursor:pointer}
+    .cl-modal-foot{display:flex;align-items:center;gap:10px;margin-top:18px}
   </style>
 
-  <script>
-    const root = document.querySelector('.den');
-    const shiftId = root?.getAttribute('data-shift');
-    const date = root?.getAttribute('data-date');
-    const API = '/api/portal/shift/event-edit';
-
-    async function post(body) {
-      const r = await fetch(API, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', body: JSON.stringify(body),
-      });
-      return r.json().catch(() => ({ ok: false }));
-    }
-
-    // Развернуть/свернуть карточку
-    document.querySelectorAll('[data-toggle]').forEach((el) => {
-      el.addEventListener('click', () => {
-        const body = el.parentElement.querySelector('.den-card-body');
-        if (body) body.hidden = !body.hidden;
-      });
-    });
-
-    // Сохранить блок
-    document.querySelectorAll('[data-save]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const card = btn.closest('.den-card');
-        if (!card) return;
-        const eventId = card.getAttribute('data-event');
-        const get = (f) => card.querySelector(`[data-field="${f}"]`)?.value ?? '';
-        const status = card.querySelector('[data-status]');
-        const res = await post({
-          event_id: Number(eventId),
-          title: get('title'), start_time: get('start_time'),
-          notes: get('notes'),
-          responsible_staff_id: get('responsible_staff_id'),
-          content_task_template_id: get('content_task_template_id'),
-        });
-        if (status) status.textContent = res.ok ? 'Сохранено ✓' : ('Ошибка: ' + (res.error || ''));
-        if (res.ok) setTimeout(() => location.reload(), 500);
-      });
-    });
-
-    // Удалить блок
-    document.querySelectorAll('[data-del]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        if (!confirm('Удалить блок?')) return;
-        const card = btn.closest('.den-card');
-        const res = await post({ event_id: Number(card.getAttribute('data-event')), delete: true });
-        if (res.ok) location.reload();
-      });
-    });
-
-    // Отметка чек-листа
-    document.querySelectorAll('[data-check]').forEach((cb) => {
-      cb.addEventListener('change', async () => {
-        const card = cb.closest('.den-card');
-        await fetch('/api/portal/shift/check', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-          body: JSON.stringify({
-            eventId: Number(card.getAttribute('data-event')),
-            checklistId: Number(cb.getAttribute('data-cl')),
-            itemId: cb.getAttribute('data-item'),
-            done: cb.checked,
-          }),
-        });
-      });
-    });
-
-    // Подсказки контент-заданий по названию блока
-    document.querySelectorAll('[data-suggest]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const title = btn.getAttribute('data-suggest') || '';
-        const r = await fetch('/api/portal/content-tasks?suggest=' + encodeURIComponent(title), { credentials: 'include' });
-        const data = await r.json().catch(() => ({ items: [] }));
-        const sel = btn.parentElement.querySelector('[data-lib]');
-        if (data.items && data.items.length && sel) {
-          const names = data.items.map((t) => `[${t.content_type}] ${t.title}`).join('\n');
-          alert('Подходящие задания:\n\n' + names + '\n\nВыбери в списке выше.');
-        } else {
-          alert('Под этот блок подсказок не нашлось — выбери из общего списка.');
-        }
-      });
-    });
-
-    // Добавить блок
-    document.getElementById('add-btn')?.addEventListener('click', async () => {
-      const title = (document.getElementById('add-title')).value.trim();
-      const time = (document.getElementById('add-time')).value;
-      if (!title) { alert('Введите название блока'); return; }
-      const res = await post({ action: 'create', shift_id: Number(shiftId), date, title, start_time: time });
-      if (res.ok) location.reload();
-      else alert('Ошибка: ' + (res.error || ''));
-    });
-
-    const ADMIN = '/api/portal/shift/admin';
-    async function postForm(fields) {
-      const fd = new FormData();
-      Object.entries(fields).forEach(([k, v]) => fd.append(k, String(v)));
-      let r;
-      try {
-        r = await fetch(ADMIN, { method: 'POST', credentials: 'include', body: fd });
-      } catch (e) {
-        return { ok: false, error: 'сеть недоступна' };
-      }
-      const text = await r.text();
-      let data;
-      try { data = JSON.parse(text); } catch { data = null; }
-      if (data && typeof data === 'object') return data;
-      // Не-JSON ответ (напр. "Forbidden" 403 или 500) — показываем статус
-      return { ok: false, error: `HTTP ${r.status}${text ? ': ' + text.slice(0, 80) : ''}` };
-    }
-
-    // Параллельное событие (копия блока с тем же временем, можно сменить преподавателя)
-    document.querySelectorAll('[data-dup]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const card = btn.closest('.den-card');
-        const res = await postForm({ action: 'duplicateEvent', id: Number(card.getAttribute('data-event')) });
-        if (res.ok) location.reload();
-        else alert('Не удалось создать параллельный блок: ' + (res.error || ''));
-      });
-    });
-
-    // Привязать существующий чек-лист
-    document.querySelectorAll('[data-cl-attach]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const card = btn.closest('.den-card');
-        const pick = card.querySelector('[data-cl-pick]');
-        const checklistId = pick && pick.value;
-        if (!checklistId) { alert('Выбери чек-лист из списка'); return; }
-        const res = await postForm({ action: 'attachChecklist', event_id: Number(card.getAttribute('data-event')), checklist_id: Number(checklistId) });
-        if (res.ok) location.reload();
-        else alert('Ошибка: ' + (res.error || ''));
-      });
-    });
-
-    // Создать новый чек-лист и сразу привязать к блоку
-    // Модалка создания чек-листа
-    const clModal = document.getElementById('cl-modal');
-    const clItems = document.getElementById('cl-items');
-    const clTitle = document.getElementById('cl-title');
-    const clStatus = document.getElementById('cl-status');
-    let clTargetEvent = null;
-
-    function clAddItemRow(value) {
-      const row = document.createElement('div');
-      row.className = 'cl-item-row';
-      const inp = document.createElement('input');
-      inp.type = 'text'; inp.placeholder = 'Текст пункта'; inp.value = value || '';
-      const del = document.createElement('button');
-      del.type = 'button'; del.className = 'cl-item-del'; del.textContent = '✕';
-      del.addEventListener('click', () => row.remove());
-      row.appendChild(inp); row.appendChild(del);
-      clItems.appendChild(row);
-      return inp;
-    }
-    function clOpen(eventId) {
-      clTargetEvent = eventId;
-      clTitle.value = '';
-      clItems.innerHTML = '';
-      clAddItemRow(''); clAddItemRow('');
-      clStatus.textContent = '';
-      clModal.hidden = false;
-      clTitle.focus();
-    }
-    function clClose() { clModal.hidden = true; }
-
-    document.querySelectorAll('[data-cl-new]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const card = btn.closest('.den-card');
-        clOpen(Number(card.getAttribute('data-event')));
-      });
-    });
-    document.getElementById('cl-close')?.addEventListener('click', clClose);
-    clModal?.addEventListener('click', (ev) => { if (ev.target === clModal) clClose(); });
-    document.getElementById('cl-add-item')?.addEventListener('click', () => clAddItemRow(''));
-
-    document.getElementById('cl-create')?.addEventListener('click', async () => {
-      const title = clTitle.value.trim();
-      if (!title) { clStatus.textContent = 'Введите название'; clTitle.focus(); return; }
-      const items = Array.from(clItems.querySelectorAll('input'))
-        .map((i) => i.value.trim()).filter(Boolean).join('\n');
-      if (!items) { clStatus.textContent = 'Добавьте хотя бы один пункт'; return; }
-      clStatus.textContent = 'Создаю…';
-      const created = await postForm({ action: 'upsertChecklist', title, items });
-      if (!created.ok || !created.id) { clStatus.textContent = 'Ошибка: ' + (created.error || ''); return; }
-      const att = await postForm({ action: 'attachChecklist', event_id: clTargetEvent, checklist_id: Number(created.id) });
-      if (att.ok) location.reload();
-      else clStatus.textContent = 'Создан, но не привязан: ' + (att.error || '');
-    });
-
-    // Копировать день
-    document.getElementById('copy-day')?.addEventListener('click', () => {
-      const target = prompt('На какую дату скопировать день? (ГГГГ-ММ-ДД)', date);
-      if (!target) return;
-      fetch('/api/portal/shift/copy-day', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ shift_id: Number(shiftId), from_date: date, to_date: target }),
-      }).then((r) => r.json()).then((res) => {
-        if (res.ok) { alert('Скопировано блоков: ' + (res.count ?? 0)); location.href = '/portal/den?shift=' + shiftId + '&date=' + target; }
-        else alert('Ошибка: ' + (res.error || 'copy-day не готов'));
-      });
-    });
-
-    // ── Материалы дня: загрузка общих фото/видео ──
-    (function () {
-      const sec = document.querySelector('.den-summary');
-      if (!sec) return;
-      const fileInput = document.getElementById('day-file');
-      const status = document.getElementById('day-status');
-      document.getElementById('day-upload')?.addEventListener('click', () => fileInput.click());
-
-      async function ensureSummaryEvent() {
-        let id = sec.getAttribute('data-summary-event');
-        if (id) return Number(id);
-        // Служебного блока ещё нет — создаём
-        const res = await post({ action: 'create', shift_id: Number(shiftId), date, title: '📦 Материалы дня', start_time: '23:59' });
-        if (res.ok && res.id) { sec.setAttribute('data-summary-event', res.id); return res.id; }
-        return null;
-      }
-
-      fileInput?.addEventListener('change', async () => {
-        const files = Array.from(fileInput.files || []);
-        if (!files.length) return;
-        if (status) status.textContent = 'Создаю контейнер…';
-        const eventId = await ensureSummaryEvent();
-        if (!eventId) { if (status) status.textContent = 'Ошибка: не создан блок материалов'; return; }
-        let done = 0;
-        for (const f of files) {
-          if (status) status.textContent = `Загрузка ${done + 1}/${files.length}…`;
-          const fd = new FormData();
-          fd.append('event_id', String(eventId));
-          fd.append('file', f);
-          const r = await fetch('/api/portal/photo', { method: 'POST', credentials: 'include', body: fd });
-          const j = await r.json().catch(() => ({ ok: false }));
-          if (j.ok) done++;
-        }
-        if (status) status.textContent = `Готово: ${done}/${files.length}`;
-        setTimeout(() => location.reload(), 700);
-      });
-    })();
-  </script>
+  <script src="../../scripts/portal/den.ts"></script>
 </PortalLayout>

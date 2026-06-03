@@ -89,11 +89,52 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
       >
         {allCarouselShifts.map((shift) => (
           <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-[380px]" data-shift-id={shift.id}>
-            <ShiftCard shift={shift} variant="desktop" />
+            {shift.id === 'shift-2' ? (
+              <Fragment>
+                {/* A/B-тест: вариант A — колесо фортуны, вариант B — обычная карточка */}
+                <div data-ab-fortune="wheel" hidden>
+                  <FortuneShiftCard shiftId="shift-2" />
+                </div>
+                <div data-ab-fortune="card" hidden>
+                  <ShiftCard shift={shift} variant="desktop" />
+                </div>
+              </Fragment>
+            ) : (
+              <ShiftCard shift={shift} variant="desktop" />
+            )}
           </div>
         ))}
       </div>
     </div>
+
+    <!-- A/B-тест колеса фортуны на смене 2 (выбор варианта до отрисовки карусели) -->
+    <script is:inline>
+    (function () {
+      // Bucket: 'wheel' (A) или 'card' (B), 50/50, фиксируется кукой на 30 дней
+      var COOKIE = 'ab_fortune_s2';
+      function getCookie(n) {
+        var m = document.cookie.match(new RegExp('(?:^|; )' + n + '=([^;]*)'));
+        return m ? m[1] : null;
+      }
+      var bucket = getCookie(COOKIE);
+      if (bucket !== 'wheel' && bucket !== 'card') {
+        bucket = Math.random() < 0.5 ? 'wheel' : 'card';
+        document.cookie = COOKIE + '=' + bucket + ';path=/;max-age=' + (60 * 60 * 24 * 30) + ';SameSite=Lax';
+      }
+      // Показываем выбранный вариант, удаляем второй (до клонирования каруселью)
+      document.querySelectorAll('[data-ab-fortune]').forEach(function (el) {
+        if (el.getAttribute('data-ab-fortune') === bucket) {
+          el.hidden = false;
+        } else {
+          el.remove();
+        }
+      });
+      // Метрика: фиксируем показ варианта
+      try {
+        window.ym && window.ym(96499295, 'reachGoal', 'ab_fortune_s2_' + bucket);
+      } catch (e) {}
+    })();
+    </script>
 
     <!-- Dot-индикаторы карусели (генерируются JS) -->
     <div data-shifts-dots class="flex justify-center gap-2 mt-3" aria-hidden="true"></div>
