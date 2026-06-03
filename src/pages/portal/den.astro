@@ -5,7 +5,7 @@ import PortalLayout from '../../layouts/PortalLayout.astro';
 import { verifySessionPayload } from '../../lib/portalSession';
 import {
   getActiveShift, getEvents, getEventDates, getDone, listShifts,
-  listContentTaskTemplates, type ShiftEvent, type ContentTaskTemplate,
+  listContentTaskTemplates, getChecklists, type ShiftEvent, type ContentTaskTemplate,
 } from '../../lib/portalShift';
 import { listStaff } from '../../lib/portalStaff';
 
@@ -27,6 +27,7 @@ let dates: string[] = [];
 let doneSet: string[] = [];
 let staff: { id: number; name: string }[] = [];
 let library: ContentTaskTemplate[] = [];
+let checklistLib: { id: number; title: string; items: { id: string; text: string }[] }[] = [];
 
 if (shift) {
   events = await getEvents(shift.id);
@@ -35,6 +36,7 @@ if (shift) {
   const st = (await listStaff()) ?? [];
   staff = st.filter((s) => s.active && s.full_name).map((s) => ({ id: s.id, name: s.full_name! }));
   library = await listContentTaskTemplates();
+  checklistLib = (await getChecklists()) ?? [];
 }
 
 const selectedDate = Astro.url.searchParams.get('date') || dates[0] || '';
@@ -68,23 +70,28 @@ const checklistProgress = (e: ShiftEvent) => {
         <h1 class="den-title">Конструктор дня</h1>
         <p class="den-sub">{shift ? shift.name : 'Нет активной смены'}</p>
       </div>
-      <form method="get" class="den-controls">
-        {allShifts.length > 1 && (
+      {allShifts.length > 1 && (
+        <form method="get" class="den-controls">
           <select name="shift" class="den-input" onchange="this.form.submit()">
             {allShifts.map((s) => (
               <option value={s.id} selected={s.id === shift?.id}>{s.name}</option>
             ))}
           </select>
-        )}
-        {dates.length > 0 && (
-          <select name="date" class="den-input" onchange="this.form.submit()">
-            {dates.map((d) => (
-              <option value={d} selected={d === selectedDate}>{d}</option>
-            ))}
-          </select>
-        )}
-      </form>
+        </form>
+      )}
     </header>
+
+    {shift && dates.length > 0 && (
+      <nav class="den-days">
+        {dates.map((d, i) => (
+          <a href={`/portal/den?shift=${shift.id}&date=${d}`}
+             class={`den-day${d === selectedDate ? ' active' : ''}`}>
+            <span class="den-day-n">День {i + 1}</span>
+            <span class="den-day-d">{d.slice(8, 10)}.{d.slice(5, 7)}</span>
+          </a>
+        ))}
+      </nav>
+    )}
 
     {!shift && <div class="den-empty">Создайте смену в конструкторе, чтобы собрать день.</div>}
 
@@ -165,8 +172,23 @@ const checklistProgress = (e: ShiftEvent) => {
                         </div>
                       )}
 
+                      <div class="den-cl-manage">
+                        <span class="den-field-label">Чек-листы</span>
+                        <div class="den-cl-add">
+                          <select data-cl-pick>
+                            <option value="">+ привязать чек-лист…</option>
+                            {checklistLib.map((cl) => (
+                              <option value={cl.id}>{cl.title}</option>
+                            ))}
+                          </select>
+                          <button type="button" class="den-mini" data-cl-attach>Привязать</button>
+                        </div>
+                        <button type="button" class="den-mini ghost" data-cl-new>+ Создать новый чек-лист</button>
+                      </div>
+
                       <div class="den-actions">
                         <button type="button" class="den-save" data-save>Сохранить</button>
+                        <button type="button" class="den-dup" data-dup>+ Параллельно</button>
                         <button type="button" class="den-del" data-del>Удалить блок</button>
                         <span class="den-status" data-status></span>
                       </div>
@@ -228,6 +250,19 @@ const checklistProgress = (e: ShiftEvent) => {
     .den-add-row{display:flex;gap:8px;flex-wrap:wrap}
     .den-add-row #add-title{flex:1;min-width:160px}
     .den-copy{margin-top:12px;background:none;border:none;color:#2563eb;font-size:13px;cursor:pointer;padding:0}
+    .den-days{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+    .den-day{display:flex;flex-direction:column;align-items:center;min-width:60px;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;text-decoration:none;color:#334155;transition:all .12s}
+    .den-day:hover{border-color:#f97316}
+    .den-day.active{background:#f97316;border-color:#f97316;color:#fff}
+    .den-day-n{font-size:13px;font-weight:700}
+    .den-day-d{font-size:11px;opacity:.8;margin-top:1px}
+    .den-cl-manage{margin-top:14px;padding-top:10px;border-top:1px dashed #e2e8f0}
+    .den-field-label{display:block;font-size:13px;font-weight:600;color:#475569;margin-bottom:6px}
+    .den-cl-add{display:flex;gap:6px;margin-bottom:6px}
+    .den-cl-add select{flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 8px;font-size:13px}
+    .den-mini{background:#eef2ff;color:#4338ca;border:none;border-radius:7px;padding:6px 12px;font-size:13px;cursor:pointer;white-space:nowrap}
+    .den-mini.ghost{background:#f8fafc;color:#475569;border:1px solid #e2e8f0}
+    .den-dup{background:#fff;color:#2563eb;border:1.5px solid #bfdbfe;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer}
   </style>
 
   <script>
@@ -322,6 +357,54 @@ const checklistProgress = (e: ShiftEvent) => {
       const res = await post({ action: 'create', shift_id: Number(shiftId), date, title, start_time: time });
       if (res.ok) location.reload();
       else alert('Ошибка: ' + (res.error || ''));
+    });
+
+    const ADMIN = '/api/portal/shift/admin';
+    async function postForm(fields) {
+      const fd = new FormData();
+      Object.entries(fields).forEach(([k, v]) => fd.append(k, String(v)));
+      const r = await fetch(ADMIN, { method: 'POST', credentials: 'include', body: fd });
+      return r.json().catch(() => ({ ok: false }));
+    }
+
+    // Параллельное событие (копия блока с тем же временем, можно сменить преподавателя)
+    document.querySelectorAll('[data-dup]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const card = btn.closest('.den-card');
+        const res = await postForm({ action: 'duplicateEvent', id: Number(card.getAttribute('data-event')) });
+        if (res.ok) location.reload();
+        else alert('Не удалось создать параллельный блок: ' + (res.error || ''));
+      });
+    });
+
+    // Привязать существующий чек-лист
+    document.querySelectorAll('[data-cl-attach]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const card = btn.closest('.den-card');
+        const pick = card.querySelector('[data-cl-pick]');
+        const checklistId = pick && pick.value;
+        if (!checklistId) { alert('Выбери чек-лист из списка'); return; }
+        const res = await postForm({ action: 'attachChecklist', event_id: Number(card.getAttribute('data-event')), checklist_id: Number(checklistId) });
+        if (res.ok) location.reload();
+        else alert('Ошибка: ' + (res.error || ''));
+      });
+    });
+
+    // Создать новый чек-лист и сразу привязать к блоку
+    document.querySelectorAll('[data-cl-new]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const card = btn.closest('.den-card');
+        const title = prompt('Название чек-листа:');
+        if (!title) return;
+        const raw = prompt('Пункты через перенос строки (каждый с новой строки):', '');
+        if (raw === null) return;
+        // admin.ts parseItems принимает текст с переносами строк напрямую
+        const created = await postForm({ action: 'upsertChecklist', title, items: raw });
+        if (!created.ok || !created.id) { alert('Не удалось создать чек-лист: ' + (created.error || '')); return; }
+        const att = await postForm({ action: 'attachChecklist', event_id: Number(card.getAttribute('data-event')), checklist_id: Number(created.id) });
+        if (att.ok) location.reload();
+        else alert('Чек-лист создан, но не привязан: ' + (att.error || ''));
+      });
     });
 
     // Копировать день
