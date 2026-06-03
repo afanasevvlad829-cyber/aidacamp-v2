@@ -5,24 +5,19 @@
  * collapsed по умолчанию.
  */
 import type { Shift } from '../../data/shifts';
+import { getCurrentPrice, getTaxDeduction, fmtPrice } from '../../data/dynamicPrices';
 
 interface Props {
   shifts: Shift[];
 }
 
 const { shifts } = Astro.props;
-const minPrice = Math.min(...shifts.map((s) => parseInt(s.price.replace(/\D/g, ''))).filter(n => n > 0));
+const prices = shifts.map(s => getCurrentPrice(s.id) ?? parseInt(s.price.replace(/\D/g, ''), 10)).filter(n => n > 0);
+const minPrice = Math.min(...prices);
+const minPriceFmt = fmtPrice(minPrice);
 
-// Налоговый вычет для коротких смен
-const VYCHET_DATA: Record<string, { price: number; days: number }> = {
-  'shift-2-1': { price: 48000, days: 7 },
-  'shift-2-2': { price: 75000, days: 8 },
-};
-function getVychet(id: string) {
-  const v = VYCHET_DATA[id];
-  return v ? Math.round((v.price - 3800 * v.days) * 0.13) : 0;
-}
-const minPriceFmt = minPrice.toLocaleString('ru-RU') + ' ₽';
+function getVychet(id: string) { return getTaxDeduction(id); }
+function getSsrPrice(s: Shift) { return getCurrentPrice(s.id) ?? parseInt(s.price.replace(/\D/g, ''), 10); }
 const durations = [...new Set(shifts.map((s) => s.duration.replace(/[^\d]/g, '')))].join('–');
 ---
 
@@ -60,7 +55,7 @@ const durations = [...new Set(shifts.map((s) => s.duration.replace(/[^\d]/g, '')
           </div>
           <div class="flex items-center gap-2.5 shrink-0">
             <div class="text-right">
-              <p class="text-[15px] md:text-[16px] font-bold text-primary tabular-nums leading-none">{s.price}</p>
+              <p class="text-[15px] md:text-[16px] font-bold text-primary tabular-nums leading-none" data-dynamic-price={s.id}>{fmtPrice(getSsrPrice(s))}</p>
               {getVychet(s.id) > 0 && (
                 <p class="mt-0.5 text-[10px] text-slate-400 leading-snug">
                   <i class="bi bi-arrow-counterclockwise text-[9px]" aria-hidden="true"></i>

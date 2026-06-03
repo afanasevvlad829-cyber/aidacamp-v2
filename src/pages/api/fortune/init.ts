@@ -1,8 +1,38 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { createHash } from 'node:crypto';
+import { Pool } from 'pg';
 import { getCurrentPrice } from '../../../data/dynamicPrices';
 import { signDiscount } from './token';
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+async function logFortuneEvent(data: {
+  event_type: string;
+  discount?: number;
+  shift_id?: string;
+  name?: string;
+  phone?: string;
+  order_id?: string;
+  final_price?: number;
+  orig_price?: number;
+  ip?: string | null;
+  user_agent?: string | null;
+}) {
+  try {
+    await pool.query(
+      `INSERT INTO fortune_events
+        (event_type, discount, shift_id, name, phone, order_id, final_price, orig_price, ip, user_agent)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      [data.event_type, data.discount ?? null, data.shift_id ?? null,
+       data.name ?? null, data.phone ?? null, data.order_id ?? null,
+       data.final_price ?? null, data.orig_price ?? null,
+       data.ip ?? null, data.user_agent ?? null]
+    );
+  } catch (e: any) {
+    console.error('[fortune/init] DB log error:', e.message);
+  }
+}
 
 // Допустимые скидки (белый список)
 const VALID_DISCOUNTS = new Set([10, 20, 30, 40, 50, 70]);
@@ -61,14 +91,14 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   // Динамическая цена (актуальная на момент запроса)
-  const origPrice  = getCurrentPrice(shiftId) ?? 85900;
+  const FORTUNE_MODE = process.env.FORTUNE_MODE ?? 'payment'; // 'payment' | 'lead'
+  const origPrice  = getCurrentPrice(shiftId) ?? getCurrentPrice('shift-1') ?? 93900;
   const finalPrice = Math.round(origPrice * (1 - discount / 100));
   const deposit    = Math.round(finalPrice * 0.5);       // 50% предоплата
   // Тестовый режим: фиксированные 10 рублей вместо реальной суммы
   const kopecks    = test ? 1000 : deposit * 100;        // Tinkoff принимает копейки
 
   const orderId    = `fortune-${shiftId}-d${discount}-${Date.now()}`;
-
   const shiftLabels: Record<string, string> = {
     'shift-1':   'Смена 1 (30 мая – 8 июня)',
     'shift-2':   'Смена 2',
@@ -78,6 +108,37 @@ export const POST: APIRoute = async ({ request }) => {
     'shift-2-2': 'Смена 2.2',
   };
   const shiftLabel = shiftLabels[shiftId] ?? shiftId;
+
+  // ── Режим «лид» — без Тинькофф, только уведомление менеджеру ─────────────
+  if (FORTUNE_MODE === 'lead') {
+    const tgToken  = process.env.TELEGRAM_BOT_TOKEN;
+    const tgChatId = process.env.TELEGRAM_CHAT_ID;
+    if (tgToken && tgChatId) {
+      const mskTime = new Date().toLocaleString('ru', { timeZone: 'Europe/Moscow', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      const tgLines = [
+        '🎰 <b>Колесо фортуны — лид (без предоплаты)!</b>',
+        '',
+        `📞 <b>${phone || '—'}</b>  |  👤 ${name || '—'}`,
+        `🎁 Скидка: <b>${discount}%</b>`,
+        `🏕 Смена: <b>${shiftLabel}</b>`,
+        `💳 Итоговая цена: <b>${finalPrice.toLocaleString('ru')} ₽</b> (было ${origPrice.toLocaleString('ru')} ₽)`,
+        '',
+        `⚠️ Оплата до конца дня — позвони клиенту!`,
+        `🆔 OrderId: <code>${orderId}</code>`,
+        `⏱ ${mskTime} МСК`,
+      ];
+      fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ chat_id: tgChatId, text: tgLines.join('\n'), parse_mode: 'HTML' }),
+      }).catch(() => {});
+    }
+    const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? null;
+    const ua = request.headers.get('user-agent') ?? null;
+    logFortuneEvent({ event_type: 'lead_submit', discount, shift_id: shiftId, name, phone, order_id: orderId, final_price: finalPrice, orig_price: origPrice, ip, user_agent: ua });
+    console.log(`[fortune/init] LEAD orderId=${orderId} discount=${discount}% finalPrice=${finalPrice}₽ name="${name}" phone="${phone}"`);
+    return json({ leadMode: true, orderId, discount, finalPrice, origPrice });
+  }
 
   // Параметры запроса в Тинькофф
   const params: Record<string, string | number> = {
@@ -142,7 +203,34 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ error: tData.Message || 'Ошибка банка' }, 502);
   }
 
+  const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? null;
+  const ua = request.headers.get('user-agent') ?? null;
+  logFortuneEvent({ event_type: 'payment_start', discount, shift_id: shiftId, name, phone, order_id: orderId, final_price: finalPrice, orig_price: origPrice, ip, user_agent: ua });
   console.log(`[fortune/init] OK orderId=${orderId} paymentId=${tData.PaymentId} deposit=${deposit}₽ name="${name}" phone="${phone}"`);
+
+  // ── Telegram-уведомление (fire-and-forget) ────────────────────────────────
+  const tgToken  = process.env.TELEGRAM_BOT_TOKEN;
+  const tgChatId = process.env.TELEGRAM_CHAT_ID;
+  if (tgToken && tgChatId) {
+    const mskTime = new Date().toLocaleString('ru', { timeZone: 'Europe/Moscow', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const tgLines = [
+      '🎰 <b>Колесо фортуны — лид!</b>',
+      '',
+      `📞 <b>${phone || '—'}</b>  |  👤 ${name || '—'}`,
+      `🎁 Скидка: <b>${discount}%</b>  |  💰 Предоплата: <b>${deposit.toLocaleString('ru')} ₽</b>`,
+      `🏕 Смена: <b>${shiftLabel}</b>`,
+      `💳 Итоговая цена: <b>${finalPrice.toLocaleString('ru')} ₽</b> (было ${origPrice.toLocaleString('ru')} ₽)`,
+      '',
+      `🆔 OrderId: <code>${orderId}</code>`,
+      `🆔 PaymentId: <code>${tData.PaymentId}</code>`,
+      `⏱ ${mskTime} МСК`,
+    ];
+    fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ chat_id: tgChatId, text: tgLines.join('\n'), parse_mode: 'HTML' }),
+    }).catch(() => {/* fire-and-forget */});
+  }
 
   return json({
     paymentUrl: tData.PaymentURL,

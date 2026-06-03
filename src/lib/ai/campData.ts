@@ -1,21 +1,29 @@
+import { getCurrentPrice } from '../../data/dynamicPrices';
+
+// smena-X → shift-X для lookup цен
+function p(smenaId: string): number {
+  const shiftId = smenaId.replace('smena-', 'shift-');
+  return getCurrentPrice(shiftId) ?? 0;
+}
+
 export const campData = {
   shifts: [
-    { id: 'smena-1', name: 'Смена 1', dates: '30 мая — 8 июня', days: 10, price: 85900, available: true,
+    { id: 'smena-1', name: 'Смена 1', dates: '30 мая — 8 июня', days: 10, price: p('smena-1'), available: true,
       desc: 'За 10 дней — от первого шага до собственного проекта с AI и понятным результатом.',
       enrolled: 23, total: 35, enrolledByAge: { '7-9': 8, '10-12': 12, '13-16': 9 } },
-    { id: 'smena-2', name: 'Смена 2', dates: '10 — 23 июня', days: 14, price: 99000, available: true, popular: true,
+    { id: 'smena-2', name: 'Смена 2', dates: '10 — 23 июня', days: 14, price: p('smena-2'), available: true, popular: true,
       desc: 'Полный цикл создания проекта: больше самостоятельности и более сложный результат.',
       enrolled: 41, total: 45, enrolledByAge: { '7-9': 5, '10-12': 8, '13-16': 7 } },
-    { id: 'smena-2-1', name: 'Смена 2.1', dates: '10 — 16 июня', days: 7, price: 48000, available: true, short: true,
+    { id: 'smena-2-1', name: 'Смена 2.1', dates: '10 — 16 июня', days: 7, price: p('smena-2-1'), available: true, short: true,
       desc: 'За 7 дней — быстрый вход, свой проект и понятный результат без перегруза.',
       enrolled: 29, total: 40, enrolledByAge: { '7-9': 4, '10-12': 7, '13-16': 5 } },
-    { id: 'smena-2-2', name: 'Смена 2.2', dates: '16 — 23 июня', days: 8, price: 75000, available: true, short: true,
+    { id: 'smena-2-2', name: 'Смена 2.2', dates: '16 — 23 июня', days: 8, price: p('smena-2-2'), available: true, short: true,
       desc: 'Интенсивная смена: больше времени на доработку и более сильный итоговый проект.',
       enrolled: 37, total: 45, enrolledByAge: { '7-9': 3, '10-12': 6, '13-16': 4 } },
-    { id: 'smena-3', name: 'Смена 3', dates: '3 — 15 августа', days: 13, price: 89400, available: true,
+    { id: 'smena-3', name: 'Смена 3', dates: '3 — 15 августа', days: 13, price: p('smena-3'), available: true,
       desc: 'Проект от идеи до результата с акцентом на командную работу.',
       enrolled: 40, total: 45, enrolledByAge: { '7-9': 3, '10-12': 5, '13-16': 4 } },
-    { id: 'smena-4', name: 'Смена 4', dates: '17 — 26 августа', days: 10, price: 74900, available: true,
+    { id: 'smena-4', name: 'Смена 4', dates: '17 — 26 августа', days: 10, price: p('smena-4'), available: true,
       desc: 'Закрытие лета: сильный проект и уверенный результат.',
       enrolled: 31, total: 45, enrolledByAge: { '7-9': 3, '10-12': 4, '13-16': 3 } },
   ],

@@ -14,8 +14,19 @@ import FAQ from '../components/FAQ.astro';
 import Contacts from '../components/Contacts.astro';
 import { TELEGRAM_URL } from '../data/contacts';
 import { mainShifts, shortShifts } from '../data/shifts';
+import { getCurrentPrice, getDays } from '../data/dynamicPrices';
 
 const allShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShifts[2], mainShifts[3]];
+
+// Считаем вычет на сервере из актуальных цен
+const vychetMap = Object.fromEntries(
+  allShifts.map(s => {
+    const price = getCurrentPrice(s.id);
+    const days  = getDays(s.id);
+    const amt   = (price && days) ? Math.round((price - 3800 * days) * 0.13) : 0;
+    return [s.id, amt];
+  })
+);
 
 const shiftsJson = JSON.stringify(allShifts.map(s => ({
   id: s.id,
@@ -233,17 +244,10 @@ const shiftsJson = JSON.stringify(allShifts.map(s => ({
   <ShiftBookModal />
 </Base>
 
-<script define:vars={{ shiftsJson }}>
+<script define:vars={{ shiftsJson, vychetMap }}>
 const SHIFTS = JSON.parse(shiftsJson);
 
-const VYCHET = {
-  'shift-1':   { price: 74900, days: 10 },
-  'shift-2':   { price: 99000, days: 14 },
-  'shift-3':   { price: 89400, days: 13 },
-  'shift-4':   { price: 74900, days: 10 },
-  'shift-2-1': { price: 48000, days: 7  },
-  'shift-2-2': { price: 75000, days: 8  },
-};
+// vychetMap передан с сервера из dynamicPrices.ts — актуальные суммы вычета
 
 function freeLabel(n) {
   if (n <= 0) return 'мест нет';
@@ -471,9 +475,8 @@ function init() {
   }
 
   // Вычет: показываем сумму возврата, не итоговую цену
-  const v = VYCHET[shift.id];
-  if (v) {
-    const vychetAmt = Math.round((v.price - 3800 * v.days) * 0.13);
+  const vychetAmt = vychetMap[shift.id] || 0;
+  if (vychetAmt) {
     const vychetRow = document.getElementById('r-vychet-row');
     const vychetEl = document.getElementById('r-price-vychet');
     if (vychetEl) vychetEl.textContent = formatPrice(vychetAmt);

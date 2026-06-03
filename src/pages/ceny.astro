@@ -12,6 +12,16 @@ import BenefitCalculator from '../components/BenefitCalculator.astro';
 import { getRelatedPages } from '../data/landing-pages';
 import { mainShifts, shortShifts } from '../data/shifts';
 import AskCta from '../components/AskCta.astro';
+import { getCurrentPrice } from '../data/dynamicPrices';
+
+const schemaPrice = {
+  s1:   String(getCurrentPrice('shift-1')   ?? 74900),
+  s2:   String(getCurrentPrice('shift-2')   ?? 99000),
+  s21:  String(getCurrentPrice('shift-2-1') ?? 48000),
+  s22:  String(getCurrentPrice('shift-2-2') ?? 75000),
+  s3:   String(getCurrentPrice('shift-3')   ?? 89400),
+  s4:   String(getCurrentPrice('shift-4')   ?? 74900),
+};
 
 function freeLabel(free: number): string {
   if (free === 0) return 'Мест нет';
@@ -25,13 +35,18 @@ function freeBadgeClass(free: number): string {
 }
 
 // Таблица цен — формируем из data/shifts.ts, чтобы источник правды был один.
+function shiftPrice(s: { id: string; price: string }): string {
+  const cur = getCurrentPrice(s.id);
+  return cur ? cur.toLocaleString('ru-RU') + ' ₽' : s.price;
+}
+
 const priceRows = [
   ...mainShifts.map((s) => ({
     id: s.id,
     name: s.name,
     dates: s.dates,
     duration: s.duration,
-    price: s.price,
+    price: shiftPrice(s),
     free: s.free,
     freeLabel: freeLabel(s.free),
     freeBadgeClass: freeBadgeClass(s.free),
@@ -42,7 +57,7 @@ const priceRows = [
     name: s.name,
     dates: s.dates,
     duration: s.duration,
-    price: s.price,
+    price: shiftPrice(s),
     free: s.free,
     freeLabel: freeLabel(s.free),
     freeBadgeClass: freeBadgeClass(s.free),
@@ -261,7 +276,7 @@ const sections = [
         "location": { "@type": "Place", "name": "Санаторий Изумруд, Подмосковье", "address": { "@type": "PostalAddress", "addressCountry": "RU", "addressRegion": "Московская область" } },
         "organizer": { "@type": "Organization", "name": "АйДаКемп", "url": "https://aidacamp.ru" },
         "description": "Летний IT-лагерь для детей 7–15 лет. Программирование, AI, командные проекты. 10 дней.",
-        "offers": { "@type": "Offer", "price": "74900", "priceCurrency": "RUB", "url": "https://aidacamp.ru/ceny", "availability": "https://schema.org/InStock" },
+        "offers": { "@type": "Offer", "price": schemaPrice.s1, "priceCurrency": "RUB", "url": "https://aidacamp.ru/ceny", "availability": "https://schema.org/InStock" },
         "audience": { "@type": "PeopleAudience", "suggestedMinAge": 7, "suggestedMaxAge": 15 }
       },
       {
@@ -275,7 +290,7 @@ const sections = [
         "location": { "@type": "Place", "name": "Санаторий Изумруд, Подмосковье", "address": { "@type": "PostalAddress", "addressCountry": "RU", "addressRegion": "Московская область" } },
         "organizer": { "@type": "Organization", "name": "АйДаКемп", "url": "https://aidacamp.ru" },
         "description": "Самая длинная смена IT-лагеря — 14 дней. Глубокое погружение в программирование и AI для детей 7–15 лет.",
-        "offers": { "@type": "Offer", "price": "99000", "priceCurrency": "RUB", "url": "https://aidacamp.ru/ceny", "availability": "https://schema.org/InStock" },
+        "offers": { "@type": "Offer", "price": schemaPrice.s2, "priceCurrency": "RUB", "url": "https://aidacamp.ru/ceny", "availability": "https://schema.org/InStock" },
         "audience": { "@type": "PeopleAudience", "suggestedMinAge": 7, "suggestedMaxAge": 15 }
       },
       {
@@ -289,7 +304,7 @@ const sections = [
         "location": { "@type": "Place", "name": "Санаторий Изумруд, Подмосковье", "address": { "@type": "PostalAddress", "addressCountry": "RU", "addressRegion": "Московская область" } },
         "organizer": { "@type": "Organization", "name": "АйДаКемп", "url": "https://aidacamp.ru" },
         "description": "Короткая смена IT-лагеря АйДаКемп — 7 дней для детей 7–15 лет. Знакомство с программированием и AI.",
-        "offers": { "@type": "Offer", "price": "48000", "priceCurrency": "RUB", "url": "https://aidacamp.ru/ceny", "availability": "https://schema.org/InStock" },
+        "offers": { "@type": "Offer", "price": schemaPrice.s21, "priceCurrency": "RUB", "url": "https://aidacamp.ru/ceny", "availability": "https://schema.org/InStock" },
         "audience": { "@type": "PeopleAudience", "suggestedMinAge": 7, "suggestedMaxAge": 15 }
       },
       {
@@ -303,7 +318,7 @@ const sections = [
         "location": { "@type": "Place", "name": "Санаторий Изумруд, Подмосковье", "address": { "@type": "PostalAddress", "addressCountry": "RU", "addressRegion": "Московская область" } },
         "organizer": { "@type": "Organization", "name": "АйДаКемп", "url": "https://aidacamp.ru" },
         "description": "Короткая смена IT-лагеря АйДаКемп — 8 дней для детей 7–15 лет. Проекты по AI и программированию.",
-        "offers": { "@type": "Offer", "price": "75000", "priceCurrency": "RUB", "url": "https://aidacamp.ru/ceny", "availability": "https://schema.org/InStock" },
+        "offers": { "@type": "Offer", "price": schemaPrice.s22, "priceCurrency": "RUB", "url": "https://aidacamp.ru/ceny", "availability": "https://schema.org/InStock" },
         "audience": { "@type": "PeopleAudience", "suggestedMinAge": 7, "suggestedMaxAge": 15 }
       },
       {
@@ -317,7 +332,7 @@ const sections = [
         "location": { "@type": "Place", "name": "Санаторий Изумруд, Подмосковье", "address": { "@type": "PostalAddress", "addressCountry": "RU", "addressRegion": "Московская область" } },
         "organizer": { "@type": "Organization", "name": "АйДаКемп", "url": "https://aidacamp.ru" },
         "description": "Августовская смена IT-лагеря — 13 дней. Программирование, AI, командный проект для детей 7–15 лет.",
-        "offers": { "@type": "Offer", "price": "89400", "priceCurrency": "RUB", "url": "https://aidacamp.ru/ceny", "availability": "https://schema.org/InStock" },
+        "offers": { "@type": "Offer", "price": schemaPrice.s3, "priceCurrency": "RUB", "url": "https://aidacamp.ru/ceny", "availability": "https://schema.org/InStock" },
         "audience": { "@type": "PeopleAudience", "suggestedMinAge": 7, "suggestedMaxAge": 15 }
       },
       {
@@ -331,7 +346,7 @@ const sections = [
         "location": { "@type": "Place", "name": "Санаторий Изумруд, Подмосковье", "address": { "@type": "PostalAddress", "addressCountry": "RU", "addressRegion": "Московская область" } },
         "organizer": { "@type": "Organization", "name": "АйДаКемп", "url": "https://aidacamp.ru" },
         "description": "Последняя смена лета — 10 дней в августе. IT-лагерь АйДаКемп для детей 7–15 лет перед школой.",
-        "offers": { "@type": "Offer", "price": "74900", "priceCurrency": "RUB", "url": "https://aidacamp.ru/ceny", "availability": "https://schema.org/InStock" },
+        "offers": { "@type": "Offer", "price": schemaPrice.s4, "priceCurrency": "RUB", "url": "https://aidacamp.ru/ceny", "availability": "https://schema.org/InStock" },
         "audience": { "@type": "PeopleAudience", "suggestedMinAge": 7, "suggestedMaxAge": 15 }
       }
     ])} />
