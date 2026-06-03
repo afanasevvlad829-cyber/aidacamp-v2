@@ -247,6 +247,27 @@ const checklistProgress = (e: ShiftEvent) => {
     )}
   </div>
 
+  <!-- Модалка создания чек-листа -->
+  <div class="cl-modal" id="cl-modal" hidden>
+    <div class="cl-modal-box">
+      <div class="cl-modal-head">
+        <h3>Новый чек-лист</h3>
+        <button type="button" class="cl-modal-x" id="cl-close">✕</button>
+      </div>
+      <label class="den-field">
+        <span>Название</span>
+        <input type="text" id="cl-title" placeholder="Напр. Сборы на бассейн">
+      </label>
+      <div class="cl-items-label">Пункты</div>
+      <div id="cl-items"></div>
+      <button type="button" class="den-mini ghost" id="cl-add-item">+ Добавить пункт</button>
+      <div class="cl-modal-foot">
+        <button type="button" class="den-save" id="cl-create">Создать и привязать</button>
+        <span class="den-status" id="cl-status"></span>
+      </div>
+    </div>
+  </div>
+
   <style>
     .den{max-width:860px;margin:0 auto;padding:16px}
     .den-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:18px}
@@ -306,6 +327,16 @@ const checklistProgress = (e: ShiftEvent) => {
     .den-thumb img{width:100%;height:100%;object-fit:cover}
     .den-thumb-vid{display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:28px;color:#c2410c}
     .den-summary-actions{display:flex;align-items:center;gap:10px}
+    .cl-modal{position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+    .cl-modal-box{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:440px;max-height:85vh;overflow-y:auto}
+    .cl-modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .cl-modal-head h3{margin:0;font-size:18px}
+    .cl-modal-x{background:none;border:none;font-size:18px;cursor:pointer;color:#64748b}
+    .cl-items-label{font-size:13px;font-weight:600;color:#475569;margin:12px 0 6px}
+    .cl-item-row{display:flex;gap:6px;margin-bottom:6px}
+    .cl-item-row input{flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:14px}
+    .cl-item-del{background:#fef2f2;color:#dc2626;border:none;border-radius:7px;padding:0 11px;font-size:15px;cursor:pointer}
+    .cl-modal-foot{display:flex;align-items:center;gap:10px;margin-top:16px}
   </style>
 
   <script>
@@ -434,20 +465,58 @@ const checklistProgress = (e: ShiftEvent) => {
     });
 
     // Создать новый чек-лист и сразу привязать к блоку
+    // Модалка создания чек-листа
+    const clModal = document.getElementById('cl-modal');
+    const clItems = document.getElementById('cl-items');
+    const clTitle = document.getElementById('cl-title');
+    const clStatus = document.getElementById('cl-status');
+    let clTargetEvent = null;
+
+    function clAddItemRow(value) {
+      const row = document.createElement('div');
+      row.className = 'cl-item-row';
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.placeholder = 'Текст пункта'; inp.value = value || '';
+      const del = document.createElement('button');
+      del.type = 'button'; del.className = 'cl-item-del'; del.textContent = '✕';
+      del.addEventListener('click', () => row.remove());
+      row.appendChild(inp); row.appendChild(del);
+      clItems.appendChild(row);
+      return inp;
+    }
+    function clOpen(eventId) {
+      clTargetEvent = eventId;
+      clTitle.value = '';
+      clItems.innerHTML = '';
+      clAddItemRow(''); clAddItemRow('');
+      clStatus.textContent = '';
+      clModal.hidden = false;
+      clTitle.focus();
+    }
+    function clClose() { clModal.hidden = true; }
+
     document.querySelectorAll('[data-cl-new]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
+      btn.addEventListener('click', () => {
         const card = btn.closest('.den-card');
-        const title = prompt('Название чек-листа:');
-        if (!title) return;
-        const raw = prompt('Пункты через перенос строки (каждый с новой строки):', '');
-        if (raw === null) return;
-        // admin.ts parseItems принимает текст с переносами строк напрямую
-        const created = await postForm({ action: 'upsertChecklist', title, items: raw });
-        if (!created.ok || !created.id) { alert('Не удалось создать чек-лист: ' + (created.error || '')); return; }
-        const att = await postForm({ action: 'attachChecklist', event_id: Number(card.getAttribute('data-event')), checklist_id: Number(created.id) });
-        if (att.ok) location.reload();
-        else alert('Чек-лист создан, но не привязан: ' + (att.error || ''));
+        clOpen(Number(card.getAttribute('data-event')));
       });
+    });
+    document.getElementById('cl-close')?.addEventListener('click', clClose);
+    clModal?.addEventListener('click', (ev) => { if (ev.target === clModal) clClose(); });
+    document.getElementById('cl-add-item')?.addEventListener('click', () => clAddItemRow(''));
+
+    document.getElementById('cl-create')?.addEventListener('click', async () => {
+      const title = clTitle.value.trim();
+      if (!title) { clStatus.textContent = 'Введите название'; clTitle.focus(); return; }
+      const items = Array.from(clItems.querySelectorAll('input'))
+        .map((i) => i.value.trim()).filter(Boolean).join('\n');
+      if (!items) { clStatus.textContent = 'Добавьте хотя бы один пункт'; return; }
+      clStatus.textContent = 'Создаю…';
+      const created = await postForm({ action: 'upsertChecklist', title, items });
+      if (!created.ok || !created.id) { clStatus.textContent = 'Ошибка: ' + (created.error || ''); return; }
+      const att = await postForm({ action: 'attachChecklist', event_id: clTargetEvent, checklist_id: Number(created.id) });
+      if (att.ok) location.reload();
+      else clStatus.textContent = 'Создан, но не привязан: ' + (att.error || '');
     });
 
     // Копировать день
