@@ -43,7 +43,15 @@ if (shift) {
   checklistLib = (await getChecklists()) ?? [];
 }
 
-const selectedDate = Astro.url.searchParams.get('date') || dates[0] || '';
+// День по умолчанию: сегодня (если входит в смену), иначе ближайший будущий, иначе первый.
+function pickDefaultDate(all: string[]): string {
+  if (all.length === 0) return '';
+  const today = new Date().toISOString().slice(0, 10);
+  if (all.includes(today)) return today;
+  const future = all.find((d) => d >= today);
+  return future || all[0];
+}
+const selectedDate = Astro.url.searchParams.get('date') || pickDefaultDate(dates);
 
 // Итоговый блок «Материалы дня» — служебное событие-контейнер для общих фото/видео дня.
 const DAY_SUMMARY_TITLE = '📦 Материалы дня';
