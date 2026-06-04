@@ -25,7 +25,9 @@ export interface PrizeCustom {
   ozon_price: number | null;
   qty: number;
   img_url: string | null;
+  url: string | null;
   archived: boolean;
+  is_base?: boolean;
   created_at: string;
 }
 
@@ -43,11 +45,12 @@ async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promis
 export async function listCustomPrizes(): Promise<PrizeCustom[]> {
   const r = await withClient(async (c) => {
     const q = await c.query(
-      `SELECT id, slug, name, description, category, ozon_price, qty, img_url, archived,
+      `SELECT id, slug, name, description, category, ozon_price, qty, img_url, url, archived,
+              COALESCE(is_base, FALSE) AS is_base,
               to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SSOF') AS created_at
          FROM portal_prize_custom
          WHERE archived = FALSE
-         ORDER BY created_at DESC`
+         ORDER BY is_base DESC, created_at DESC`
     );
     return q.rows.map((r: any) => ({
       ...r,
