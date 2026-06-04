@@ -92,14 +92,10 @@ export const POST: APIRoute = async ({ cookies, request }) => {
           note: form.get('note')?.toString() || null,
           bongere_price: form.get('bongere_price') ? Number(form.get('bongere_price')) : null,
         });
-        // Декремент остатка: для hardcoded prize → portal_prize_state.remaining_qty,
-        // для custom (slug начинается с 'custom-') → клиент пусть отдельно архивирует когда нужно.
+        // Декремент остатка: все призы теперь в portal_prize_custom (базовые + кастомные),
+        // уменьшаем qty по slug. Fallback на старый hardcoded-механизм, если строки в БД нет.
         let remaining: number | null = null;
-        const hardcoded = PRIZES.find((pp) => pp.id === prizeId);
-        if (hardcoded) {
-          remaining = await decrementPrizeRemaining(prizeId, hardcoded.qty);
-        } else if (prizeId.startsWith('custom-')) {
-          // Для custom уменьшаем portal_prize_custom.qty напрямую
+        {
           const { default: pg } = await import('pg');
           const conn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
           if (conn) {
@@ -111,8 +107,15 @@ export const POST: APIRoute = async ({ cookies, request }) => {
                  WHERE slug = $1 RETURNING qty`,
                 [prizeId]
               );
-              remaining = Number(u.rows[0]?.qty ?? 0);
+              if (u.rowCount && u.rowCount > 0) {
+                remaining = Number(u.rows[0]?.qty ?? 0);
+              }
             } finally { await c.end(); }
+          }
+          // Fallback: приз ещё не в БД (миграция не прогнана) — старый механизм
+          if (remaining === null) {
+            const hardcoded = PRIZES.find((pp) => pp.id === prizeId);
+            if (hardcoded) remaining = await decrementPrizeRemaining(prizeId, hardcoded.qty);
           }
         }
         return j({ ok: true, id, photo_url, video_url, remaining });

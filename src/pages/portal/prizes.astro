@@ -2,7 +2,6 @@
 export const prerender = false;
 import PortalLayout from '../../layouts/PortalLayout.astro';
 import { isStaff } from '../../lib/portalPerms';
-import { PRIZES } from '../../lib/portalPrizes';
 import { listPrizeStates, listActivities } from '../../lib/portalEconomy';
 import { listCustomPrizes, countIssuancesByPrize } from '../../lib/portalPrizeOps';
 import { listKids } from '../../lib/portalKid';
@@ -30,21 +29,20 @@ const [prizeStates, activities, customPrizes, issuanceCounts, kids] = await Prom
 const stateById = new Map(prizeStates.map((s) => [s.prize_id, s]));
 
 // Объединяем hardcoded + кастомные призы в одном списке.
-const ALL_PRIZES = [
-  ...PRIZES,
-  ...customPrizes.map((c) => ({
-    id: c.slug,
-    name: c.name,
-    price: c.ozon_price ?? 0,
-    qty: c.qty,
-    category: c.category ?? 'Кастом',
-    img: c.img_url ?? undefined,
-    url: undefined as string | undefined,
-    sources: undefined as string[] | undefined,
-    isCustom: true,
-    customId: c.id,
-  })),
-];
+// Все призы теперь из БД (portal_prize_custom). Базовые помечены is_base,
+// добавленные штабом — isCustom. Хардкод PRIZES перенесён в БД сид-миграцией.
+const ALL_PRIZES = customPrizes.map((c) => ({
+  id: c.slug,
+  name: c.name,
+  price: c.ozon_price ?? 0,
+  qty: c.qty,
+  category: c.category ?? 'Кастом',
+  img: c.img_url ?? undefined,
+  url: c.url ?? undefined,
+  sources: undefined as string[] | undefined,
+  isCustom: !c.is_base,
+  customId: c.id,
+}));
 
 const totalAll = ALL_PRIZES.reduce((s, p) => s + p.price * p.qty, 0);
 const fmtRub = (n: number) => new Intl.NumberFormat('ru-RU').format(Math.round(n)) + ' ₽';
