@@ -323,10 +323,16 @@ function capitalize(str) {
 function renderTemplate(tmplName, vars) {
   let tpl = fs.readFileSync(path.join(TMPL_DIR, tmplName), 'utf8');
 
-  // Простые замены
+  // Маппинг ключей генератора → плейсхолдеры шаблона
+  const ALIAS = {
+    slug:'SLUG', title:'TITLE', description:'DESCRIPTION', h1:'H1',
+    intro1:'INTRO_P1', intro2:'INTRO_P2',
+    faq1q:'FAQ1_Q', faq1a:'FAQ1_A', faq2q:'FAQ2_Q', faq2a:'FAQ2_A', faq3q:'FAQ3_Q', faq3a:'FAQ3_A',
+  };
   for (const [k, v] of Object.entries(vars)) {
     if (typeof v === 'string') {
-      tpl = tpl.replaceAll(`{{${k}}}`, v.replace(/\\/g, '\\\\').replace(/`/g, '\\`'));
+      const ph = ALIAS[k] || k;
+      tpl = tpl.replaceAll(`{{${ph}}}`, v.replace(/\\/g, '\\\\').replace(/`/g, '\\`'));
     }
   }
 
@@ -504,7 +510,7 @@ async function main() {
   }
 }
 
-main().catch(e => {
-  log(`FATAL: ${e.message}\n${e.stack}`);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch(e => { log(`FATAL: ${e.message}\n${e.stack}`); process.exit(1); });
+}
+module.exports = { getClusters, detectType, generateNchContent, generateGeoContent, renderTemplate, enrichFromRAG, getDbClient, toSlug };
