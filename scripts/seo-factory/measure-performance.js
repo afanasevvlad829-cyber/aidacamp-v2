@@ -4,7 +4,7 @@
  * Запуск: node measure-performance.js   (крон, раз в день после ETL позиций)
  *
  * Что делает:
- * 1. Для каждой страницы из seo_factory_log берёт текущую позицию из seo_positions
+ * 1. Для каждой страницы из seo_factory_log берёт текущую позицию из seo_position_snapshots (Арсенкин)
  * 2. Фиксирует «до» (на момент создания) и «сейчас» → дельта
  * 3. Пишет в seo_page_performance — какой шаблон/тип дал какой результат
  * 4. Эти данные потом читает enrichFromRAG (фабрика учится на успешных паттернах)
@@ -45,7 +45,7 @@ async function main(){
     `);
 
     const today = (await client.query('SELECT CURRENT_DATE::text AS d')).rows[0].d;
-    const lastPosDate = (await client.query('SELECT MAX(date)::text AS d FROM seo_positions')).rows[0].d;
+    const lastPosDate = (await client.query('SELECT MAX(snapshot_date)::text AS d FROM seo_position_snapshots')).rows[0].d;
 
     // Все страницы фабрики + дата создания
     const { rows: pages } = await client.query(`
@@ -57,8 +57,9 @@ async function main(){
     for (const p of pages) {
       // Текущая позиция по главному ключу
       const { rows: pos } = await client.query(`
-        SELECT position FROM seo_positions
-        WHERE keyword = $1 AND searcher = 'yandex_mobile' AND date = $2 AND position IS NOT NULL
+        SELECT position::int AS position FROM seo_position_snapshots
+        WHERE LOWER(keyword) = LOWER($1) AND domain = 'aidacamp.ru'
+          AND snapshot_date = $2 AND position IS NOT NULL
         ORDER BY position ASC LIMIT 1
       `, [p.main_keyword, lastPosDate]);
 
@@ -68,9 +69,9 @@ async function main(){
 
       // Лучшая позиция за всё время
       const { rows: best } = await client.query(`
-        SELECT MIN(position) AS best FROM seo_positions
-        WHERE keyword = $1 AND searcher = 'yandex_mobile' AND position IS NOT NULL
-          AND date >= $2
+        SELECT MIN(position)::int AS best FROM seo_position_snapshots
+        WHERE LOWER(keyword) = LOWER($1) AND domain = 'aidacamp.ru' AND position IS NOT NULL
+          AND snapshot_date >= $2
       `, [p.main_keyword, p.created_date]);
 
       const daysLive = Math.round((new Date(today) - new Date(p.created_date)) / 86400000);
