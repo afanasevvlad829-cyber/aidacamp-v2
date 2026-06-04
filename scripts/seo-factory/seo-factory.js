@@ -18,7 +18,7 @@ const { execSync } = require('child_process');
 const { Client } = require('pg');
 
 // ── CONFIG ────────────────────────────────────────────────────
-const REPO_DIR   = path.resolve(__dirname, '../../..');  // корень репо
+const REPO_DIR   = process.env.SEO_REPO_DIR || '/opt/aidacamp-site';  // корень репо (env для прода)
 const PAGES_DIR  = path.join(REPO_DIR, 'src/pages');
 const TMPL_DIR   = path.join(__dirname, 'templates');
 const LOG_FILE   = '/var/log/seo-factory.log';
@@ -104,6 +104,66 @@ async function getClusters(client, maxClusters) {
   return result.sort((a, b) => b.maxFreq - a.maxFreq);
 }
 
+// ── RAG ENRICHMENT (замыкание петли) ──────────────────────────
+// Перед генерацией страницы тянем из knowledge_chunks накопленную
+// экспертизу: LSI-слова, структурные правила, anti-patterns.
+const OPENAI_KEY = (() => {
+  try {
+    const env = fs.readFileSync('/opt/aidacamp-tools/mcp/.env', 'utf8');
+    return env.match(/OPENAI_API_KEY=(.+)/)?.[1]?.trim() || '';
+  } catch { return ''; }
+})();
+
+async function embedQuery(text) {
+  if (!OPENAI_KEY) return null;
+  try {
+    const resp = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${OPENAI_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input: [text], model: 'text-embedding-3-small' }),
+    });
+    const d = await resp.json();
+    return d?.data?.[0]?.embedding || null;
+  } catch { return null; }
+}
+
+/**
+ * Тянет релевантную экспертизу из RAG для кластера.
+ * Возвращает { insights: [тексты], lsiWords: [слова] }
+ */
+async function enrichFromRAG(client, cluster) {
+  const out = { insights: [], lsiWords: [] };
+  const query = `${cluster.mainKeyword} LSI слова структура title правила SEO`;
+
+  // 1. Семантический поиск по экспертизе
+  const emb = await embedQuery(query);
+  if (emb) {
+    const vecStr = `[${emb.join(',')}]`;
+    try {
+      const { rows } = await client.query(`
+        SELECT text, 1 - (embedding <=> $1::vector) AS rank
+        FROM knowledge_chunks
+        WHERE embedding IS NOT NULL
+          AND (source LIKE 'seo:expertise:%' OR source LIKE 'report:seo:%')
+          AND (1 - (embedding <=> $1::vector)) > 0.35
+        ORDER BY rank DESC
+        LIMIT 5
+      `, [vecStr]);
+      out.insights = rows.map(r => r.text);
+    } catch (e) { log(`  ⚠️  RAG semantic fail: ${e.message.slice(0,60)}`); }
+  }
+
+  // 2. Извлекаем LSI-слова из найденной экспертизы (из инсайта про обязательные LSI)
+  const lsiInsight = out.insights.find(t => /LSI|путёвка|программа|вожат/i.test(t));
+  if (lsiInsight) {
+    const candidates = ['путёвка','программа','отдых','каникулы','смена','цена',
+      'вожатый','рейтинг','бассейн','питание','оздоровительный','комфортный'];
+    out.lsiWords = candidates.filter(w => lsiInsight.toLowerCase().includes(w.toLowerCase().slice(0,5)));
+  }
+
+  return out;
+}
+
 // ── SLUG GENERATOR ────────────────────────────────────────────
 function toSlug(keyword) {
   const map = {
@@ -142,10 +202,11 @@ function detectType(cluster) {
 }
 
 // ── CONTENT GENERATORS ────────────────────────────────────────
-function generateNchContent(cluster) {
+function generateNchContent(cluster, rag = {}) {
   const main = cluster.mainKeyword;
   const allKw = cluster.keywords.join(', ');
   const slug  = toSlug(main);
+  const lsi   = (rag.lsiWords || []);
 
   const title       = `${capitalize(main)} 2026 — IT-лагерь АйДаКемп в Подмосковье`;
   const description = `${capitalize(main)} — детский IT-лагерь АйДаКемп в Подмосковье 2026. Python, AI, Minecraft, группы до 8 чел. Смены июнь–август, от 48 000 ₽. Налоговый вычет 13%.`;
@@ -170,6 +231,22 @@ function generateNchContent(cluster) {
     `Лицензия Минобрнауки, документы для налогового вычета`,
   ];
 
+  // RAG-обогащение: вплетаем обязательные LSI-слова из накопленной экспертизы.
+  // Источник правила — knowledge_chunks (seo:expertise: путёвка/программа/вожатый).
+  if (lsi.length) {
+    const lsiMap = {
+      'путёвка':   `Путёвка в лагерь — от 48 000 ₽, всё включено: проживание, питание, программа`,
+      'вожатый':   `Вожатый и преподаватель рядом круглосуточно — 1 взрослый на 6–8 ребят`,
+      'оздоровительный': `Оздоровительный формат: бассейн, прогулки, режим дня, медконтроль`,
+      'рейтинг':   `Один из лучших IT-лагерей Подмосковья по отзывам родителей на Яндекс.Картах`,
+      'каникулы':  `Каникулы с пользой: ребёнок возвращается с готовым проектом, а не уставшим`,
+    };
+    for (const w of lsi) {
+      const extra = lsiMap[w.toLowerCase()];
+      if (extra && !bullets.some(b => b.includes(extra.slice(0, 20)))) bullets.push(extra);
+    }
+  }
+
   const faq1q = `Что такое ${main}?`;
   const faq1a = `${capitalize(main)} — это летний детский IT-лагерь с проживанием в Подмосковье. `
     + `АйДаКемп предлагает смены для школьников 7–15 лет с программами Python, AI, Minecraft, `
@@ -191,7 +268,7 @@ function generateNchContent(cluster) {
   };
 }
 
-function generateGeoContent(cluster) {
+function generateGeoContent(cluster, rag = {}) {
   // Для гео — упрощённая версия (без данных о маршруте)
   const main = cluster.mainKeyword;
   const slug  = toSlug(main);
@@ -381,7 +458,9 @@ async function main() {
       const type = detectType(cluster);
       let vars;
       try {
-        vars = type === 'geo' ? generateGeoContent(cluster) : generateNchContent(cluster);
+        const rag = await enrichFromRAG(client, cluster);
+        if (rag.lsiWords.length) log(`  🧠 RAG: LSI [${rag.lsiWords.join(', ')}]`);
+        vars = type === 'geo' ? generateGeoContent(cluster, rag) : generateNchContent(cluster, rag);
       } catch (e) {
         log(`  ⚠️  Ошибка генерации для "${cluster.mainKeyword}": ${e.message}`);
         continue;
