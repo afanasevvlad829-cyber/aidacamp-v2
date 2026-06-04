@@ -161,6 +161,22 @@ async function enrichFromRAG(client, cluster) {
     out.lsiWords = candidates.filter(w => lsiInsight.toLowerCase().includes(w.toLowerCase().slice(0,5)));
   }
 
+  // 3. Обратная связь от петли измерения: какой шаблон даёт лучшие позиции.
+  // Фабрика предпочитает шаблон с лучшим индексированием/средней позицией.
+  try {
+    const { rows } = await client.query(`
+      SELECT template, COUNT(*) FILTER (WHERE in_index) AS indexed, COUNT(*) AS total,
+             AVG(position) FILTER (WHERE in_index) AS avg_pos
+      FROM seo_page_performance
+      WHERE measured_date = (SELECT MAX(measured_date) FROM seo_page_performance)
+      GROUP BY template ORDER BY avg_pos ASC NULLS LAST
+    `);
+    if (rows.length) {
+      out.bestTemplate = rows[0].template;
+      out.perfHint = rows.map(r => `${r.template}: ${r.indexed}/${r.total} в индексе, ср.поз ${r.avg_pos ? Number(r.avg_pos).toFixed(1) : '—'}`).join('; ');
+    }
+  } catch { /* таблицы ещё нет — первый запуск */ }
+
   return out;
 }
 
