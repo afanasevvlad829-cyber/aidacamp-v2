@@ -1,11 +1,11 @@
 ---
-import '../../styles/global.css';
-import LandingLayout from '../../layouts/LandingLayout.astro';
-import Shifts from '../../components/Shifts.astro';
-import FAQ from '../../components/FAQ.astro';
-import RelatedPages from '../../components/RelatedPages.astro';
-import { getRelatedPages } from '../../data/landing-pages';
-import ShiftBookModal from '../../components/shifts/ShiftBookModal.astro';
+import '../styles/global.css';
+import LandingLayout from '../layouts/LandingLayout.astro';
+import Shifts from '../components/Shifts.astro';
+import FAQ from '../components/FAQ.astro';
+import RelatedPages from '../components/RelatedPages.astro';
+import { getRelatedPages } from '../data/landing-pages';
+import ShiftBookModal from '../components/shifts/ShiftBookModal.astro';
 ---
 
 <LandingLayout
