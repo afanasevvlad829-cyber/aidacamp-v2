@@ -23,6 +23,16 @@ const done = e.checklists.reduce(
       {e.responsible_name && <span class="den-badge resp"><i class="bi bi-person"></i> {e.responsible_name}</span>}
       {total > 0 && <span class="den-badge chk"><i class="bi bi-check2-square"></i> {done}/{total}</span>}
     </div>
+    {e.notes && <div class="den-card-note">{e.notes}</div>}
+    {e.checklists.length > 0 && (
+      <ul class="den-card-cl-preview">
+        {e.checklists.flatMap((cl) => cl.items.map((it) => ({ it, cl }))).slice(0, 5).map(({ it, cl }) => {
+          const isDone = doneSet.includes(`${e.id}:${cl.checklist_id}:${it.id}`);
+          return <li class={isDone ? 'done' : ''}><i class={`bi ${isDone ? 'bi-check-square-fill' : 'bi-square'}`}></i> {it.text}</li>;
+        })}
+        {total > 5 && <li class="more">…ещё {total - 5}</li>}
+      </ul>
+    )}
   </div>
 
   <div class="den-card-body" hidden>
