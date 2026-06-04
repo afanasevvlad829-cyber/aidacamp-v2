@@ -9,8 +9,6 @@ import {
   listIssuances, createIssuance, deleteIssuance, updateIssuance, countIssuancesByPrize,
   listCustomPrizes, createCustomPrize, archiveCustomPrize, deleteAllIssuances,
 } from '../../../lib/portalPrizeOps';
-import { decrementPrizeRemaining } from '../../../lib/portalEconomy';
-import { PRIZES } from '../../../lib/portalPrizes';
 const UPLOADS_ROOT = process.env.PORTAL_UPLOADS_ROOT || '/var/www/aidacamp-dev/uploads/portal';
 const URL_PREFIX = '/portal/uploads';
 const MAX_FILE_BYTES = 200 * 1024 * 1024; // 200 МБ — фото/видео
@@ -92,8 +90,7 @@ export const POST: APIRoute = async ({ cookies, request }) => {
           note: form.get('note')?.toString() || null,
           bongere_price: form.get('bongere_price') ? Number(form.get('bongere_price')) : null,
         });
-        // Декремент остатка: все призы теперь в portal_prize_custom (базовые + кастомные),
-        // уменьшаем qty по slug. Fallback на старый hardcoded-механизм, если строки в БД нет.
+        // Декремент остатка: все призы в portal_prize_custom — уменьшаем qty по slug.
         let remaining: number | null = null;
         {
           const { default: pg } = await import('pg');
@@ -107,15 +104,8 @@ export const POST: APIRoute = async ({ cookies, request }) => {
                  WHERE slug = $1 RETURNING qty`,
                 [prizeId]
               );
-              if (u.rowCount && u.rowCount > 0) {
-                remaining = Number(u.rows[0]?.qty ?? 0);
-              }
+              if (u.rowCount && u.rowCount > 0) remaining = Number(u.rows[0]?.qty ?? 0);
             } finally { await c.end(); }
-          }
-          // Fallback: приз ещё не в БД (миграция не прогнана) — старый механизм
-          if (remaining === null) {
-            const hardcoded = PRIZES.find((pp) => pp.id === prizeId);
-            if (hardcoded) remaining = await decrementPrizeRemaining(prizeId, hardcoded.qty);
           }
         }
         return j({ ok: true, id, photo_url, video_url, remaining });
