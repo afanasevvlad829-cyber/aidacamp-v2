@@ -1,15 +1,15 @@
 ---
-import '../../styles/global.css';
-import LandingLayout from '../../layouts/LandingLayout.astro';
-import LandingHero from '../../components/LandingHero.astro';
-import LandingTwoCol from '../../components/LandingTwoCol.astro';
-import Shifts from '../../components/Shifts.astro';
-import FAQ from '../../components/FAQ.astro';
-import RelatedPages from '../../components/RelatedPages.astro';
-import { getRelatedPages } from '../../data/landing-pages';
-import Gallery from '../../components/Gallery.astro';
-import ShiftBookModal from '../../components/shifts/ShiftBookModal.astro';
-import CourseSchema from '../../components/CourseSchema.astro';
+import '../styles/global.css';
+import LandingLayout from '../layouts/LandingLayout.astro';
+import LandingHero from '../components/LandingHero.astro';
+import LandingTwoCol from '../components/LandingTwoCol.astro';
+import Shifts from '../components/Shifts.astro';
+import FAQ from '../components/FAQ.astro';
+import RelatedPages from '../components/RelatedPages.astro';
+import { getRelatedPages } from '../data/landing-pages';
+import Gallery from '../components/Gallery.astro';
+import ShiftBookModal from '../components/shifts/ShiftBookModal.astro';
+import CourseSchema from '../components/CourseSchema.astro';
 
 const sections = [
   {
