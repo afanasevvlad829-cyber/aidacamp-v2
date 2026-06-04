@@ -71,22 +71,62 @@ document.querySelectorAll('[data-toggle]').forEach((el) => {
 });
 
 // Сохранить блок
+// Фоновое автосохранение карточки (debounce). Без reload — обновляем только сводку.
+const saveTimers = new WeakMap();
+async function autoSaveCard(card, opts = {}) {
+  const eventId = card.getAttribute('data-event');
+  const get = (f) => card.querySelector(`[data-field="${f}"]`)?.value ?? '';
+  const status = card.querySelector('[data-status]');
+  if (status) status.textContent = 'Сохраняю…';
+  const res = await post({
+    event_id: Number(eventId),
+    title: get('title'), start_time: get('start_time'),
+    notes: get('notes'),
+    responsible_staff_id: get('responsible_staff_id'),
+    content_task_template_id: get('content_task_template_id'),
+  });
+  if (status) {
+    status.textContent = res.ok ? 'Сохранено ✓' : ('Ошибка: ' + (res.error || ''));
+    if (res.ok) setTimeout(() => { if (status.textContent === 'Сохранено ✓') status.textContent = ''; }, 2000);
+  }
+  // Обновляем свёрнутую сводку без перезагрузки страницы
+  if (res.ok) updateCardSummary(card);
+  if (res.ok && opts.reload) reloadKeepingPlace(Number(eventId));
+}
+
+function scheduleSave(card) {
+  clearTimeout(saveTimers.get(card));
+  saveTimers.set(card, setTimeout(() => autoSaveCard(card), 600));
+}
+
+// Обновить мини-сводку (название, ответственный, комментарий) в свёрнутом виде
+function updateCardSummary(card) {
+  const get = (f) => card.querySelector(`[data-field="${f}"]`);
+  const titleEl = card.querySelector('.den-card-title');
+  if (titleEl && get('title')) titleEl.textContent = get('title').value || titleEl.textContent;
+  const noteVal = get('notes')?.value?.trim() || '';
+  let noteEl = card.querySelector('.den-card-note');
+  if (noteEl) noteEl.textContent = noteVal;
+}
+
+// Навешиваем автосохранение на все поля карточек
+document.querySelectorAll('.den-card').forEach((card) => {
+  card.querySelectorAll('[data-field]').forEach((field) => {
+    const tag = field.tagName.toLowerCase();
+    if (tag === 'select') {
+      field.addEventListener('change', () => autoSaveCard(card));
+    } else {
+      field.addEventListener('input', () => scheduleSave(card));
+      field.addEventListener('blur', () => autoSaveCard(card));
+    }
+  });
+});
+
+// Кнопка «Сохранить» остаётся как явный триггер (на случай если нужно сразу)
 document.querySelectorAll('[data-save]').forEach((btn) => {
-  btn.addEventListener('click', async () => {
+  btn.addEventListener('click', () => {
     const card = btn.closest('.den-card');
-    if (!card) return;
-    const eventId = card.getAttribute('data-event');
-    const get = (f) => card.querySelector(`[data-field="${f}"]`)?.value ?? '';
-    const status = card.querySelector('[data-status]');
-    const res = await post({
-      event_id: Number(eventId),
-      title: get('title'), start_time: get('start_time'),
-      notes: get('notes'),
-      responsible_staff_id: get('responsible_staff_id'),
-      content_task_template_id: get('content_task_template_id'),
-    });
-    if (status) status.textContent = res.ok ? 'Сохранено ✓' : ('Ошибка: ' + (res.error || ''));
-    if (res.ok) setTimeout(() => reloadKeepingPlace(Number(eventId)), 400);
+    if (card) autoSaveCard(card);
   });
 });
 
