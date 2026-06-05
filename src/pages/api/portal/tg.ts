@@ -1,7 +1,7 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { verifyLoginWidget, verifyInitData, type TgUser } from '../../../lib/telegramAuth';
-import { getStaff, ensurePending, applyInviteForTelegram } from '../../../lib/portalStaff';
+import { getStaff, ensurePending, applyInviteForTelegram, markStaffTgLogin } from '../../../lib/portalStaff';
 import { findUsableInviteByToken, markInviteUsed } from '../../../lib/portalInvite';
 import { signSession } from '../../../lib/portalSession';
 import { portalCookieOptions } from '../../../lib/portalCookie';
@@ -94,6 +94,7 @@ async function loginResult(
       if (applied && applied.role && applied.active) {
         await markInviteUsed(inv.id, user.telegram_id);
         const token = signSession(applied.role as any, process.env.PORTAL_SESSION_SECRET ?? '', Date.now(), user.telegram_id);
+        markStaffTgLogin(user.telegram_id).catch(() => {});
         cookieSet(token);
         if (debug) { debug.staffFound = true; debug.staffActive = true; debug.staffRole = applied.role; debug.status = 'success'; }
         return { ok: true, role: applied.role };
@@ -123,6 +124,7 @@ async function loginResult(
   }
   const token = signSession(staff.role, process.env.PORTAL_SESSION_SECRET ?? '', Date.now(), user.telegram_id);
   cookieSet(token);
+  markStaffTgLogin(user.telegram_id).catch(() => {});
   if (debug) debug.status = 'success';
   return { ok: true, role: staff.role };
 }
