@@ -258,6 +258,11 @@ export async function markStaffCodeLogin(id: number): Promise<void> {
   await query('UPDATE portal_staff SET code_login_at=NOW() WHERE id=$1', [id]);
 }
 
+/** Зафиксировать факт Telegram-входа сотрудника по telegram_id (не критично если упадёт). */
+export async function markStaffTgLogin(telegramId: number): Promise<void> {
+  await query('UPDATE portal_staff SET tg_login_at=NOW() WHERE telegram_id=$1', [telegramId]);
+}
+
 /**
  * Сгенерировать (перевыпустить) персональный 6-значный код сотрудника.
  * Код уникален и среди сотрудников, и среди учеников — иначе при логине он
