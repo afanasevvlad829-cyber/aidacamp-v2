@@ -504,7 +504,9 @@ import { confirmDialog, alertDialog, haptic } from './tg';
   });
 
   // ── Issuances journal modal ──
-  const issDlg = document.getElementById('issuances-dialog') as HTMLDialogElement | null;
+  const issDlg = document.getElementById('issuances-sheet') as HTMLElement | null;
+  function issOpen() { if (!issDlg) return; issDlg.hidden = false; requestAnimationFrame(() => issDlg.classList.add('open')); }
+  function issClose() { if (!issDlg) return; issDlg.classList.remove('open'); setTimeout(() => { issDlg.hidden = true; }, 300); }
   const issLoading = document.getElementById('iss-loading');
   const issEmpty = document.getElementById('iss-empty');
   const issListEl = document.getElementById('iss-list');
@@ -521,7 +523,7 @@ import { confirmDialog, alertDialog, haptic } from './tg';
     if (issLoading) issLoading.hidden = false;
     if (issEmpty) issEmpty.hidden = true;
     if (issListEl) { issListEl.hidden = true; issListEl.innerHTML = ''; }
-    issDlg.showModal();
+    issOpen();
 
     try {
       const res = await fetch(`/api/portal/prize-ops?action=list_issuances&prize_id=${encodeURIComponent(prizeId)}&limit=200`);
@@ -620,7 +622,7 @@ import { confirmDialog, alertDialog, haptic } from './tg';
         // Edit handlers
         issListEl.querySelectorAll('.iss-edit').forEach((btn: any) => {
           btn.addEventListener('click', () => {
-            issDlg?.close();
+            issClose();
             openGiveDialog({
               prizeId: btn.dataset.issPrizeId,
               prizeName: btn.dataset.issPrizeName,
@@ -638,8 +640,9 @@ import { confirmDialog, alertDialog, haptic } from './tg';
     }
   }
 
-  document.getElementById('iss-close')?.addEventListener('click', () => issDlg?.close());
-  document.getElementById('iss-close2')?.addEventListener('click', () => issDlg?.close());
+  document.getElementById('iss-close')?.addEventListener('click', () => issClose());
+  document.getElementById('iss-close2')?.addEventListener('click', () => issClose());
+  document.querySelector('[data-iss-backdrop]')?.addEventListener('click', () => issClose());
 
   document.querySelectorAll('[data-view-issuances]').forEach((btn: any) => {
     btn.addEventListener('click', () => openIssuancesModal(btn.dataset.prizeId, btn.dataset.prizeName));

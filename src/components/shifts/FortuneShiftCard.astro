@@ -256,7 +256,7 @@ const segData = SEGMENTS.map((seg, i) => {
   aria-labelledby="fsc-modal-title"
 >
   <div class="flex min-h-full items-center justify-center p-4 sm:py-8">
-  <div class="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl">
+  <div class="relative w-full max-w-sm max-h-[92dvh] overflow-y-auto flex flex-col bg-white rounded-2xl shadow-2xl">
 
     <!-- Modal header: green -->
     <div class="bg-green-600 px-6 py-4 rounded-t-2xl">
@@ -435,6 +435,11 @@ const segData = SEGMENTS.map((seg, i) => {
     var modalClose = document.getElementById('fsc-modal-close');
 
     if (!wheel || !spinBtn || !modal) return; // guard
+
+    // Портал: выносим модалку в <body>, чтобы position:fixed считался от вьюпорта,
+    // а не от трансформируемого/скроллящегося предка (карусель) — иначе панель
+    // прижимается влево и обрезается сверху на десктопе.
+    if (modal.parentElement !== document.body) document.body.appendChild(modal);
 
     // ── Lead-режим: обновляем блок «что будет» ─────────────────────────────
     if (fortuneMode === 'lead') {

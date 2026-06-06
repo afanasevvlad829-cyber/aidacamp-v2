@@ -83,7 +83,16 @@ const CAT_LABELS: Record<string, string> = {
     </ul>
   </div>
 
-  <EconomySettings />
+  <details class="econ-collapse mb-6">
+    <summary class="econ-summary">
+      <i class="bi bi-sliders" aria-hidden="true"></i>
+      <span>Параметры и калькулятор экономики</span>
+      <i class="bi bi-chevron-down econ-chevron" aria-hidden="true"></i>
+    </summary>
+    <div class="econ-collapse-body">
+      <EconomySettings />
+    </div>
+  </details>
 
   {/* Tabs */}
   <div class="mb-4 flex flex-wrap gap-2 border-b border-border">
@@ -105,9 +114,10 @@ const CAT_LABELS: Record<string, string> = {
     <CustomPrizeDialog />
 
     {/* ── Modal: Журнал выдач по призу ────────────────────────────── */}
-    <dialog id="issuances-dialog"
-            class="iss-sheet w-full max-w-[640px] border border-border p-0 backdrop:bg-black/50">
-      <div class="aida-modal-form iss-sheet-body">
+    <div id="issuances-sheet" class="iss-overlay" hidden>
+      <div class="iss-overlay-backdrop" data-iss-backdrop></div>
+      <div class="iss-panel">
+        <div class="iss-sheet-body">
         <div class="flex items-center justify-between gap-2">
           <h3 class="text-[18px] font-semibold text-navy-950">
             <i class="bi bi-gift-fill text-primary mr-1" aria-hidden="true"></i>
@@ -132,8 +142,9 @@ const CAT_LABELS: Record<string, string> = {
             Закрыть
           </button>
         </div>
+        </div>
       </div>
-    </dialog>
+    </div>
   </section>
 
   {/* ── Tab: Activities ──────────────────────────────────────────────────── */}
@@ -148,30 +159,33 @@ const CAT_LABELS: Record<string, string> = {
   </section>
 
   <style is:global>
-    /* Выезжающая снизу панель выдач (bottom sheet) вместо центр-модалки */
-    dialog.iss-sheet{
-      margin:0 auto auto auto; /* прижать к низу по центру по горизонтали */
-      position:fixed; left:0; right:0; bottom:0; top:auto;
-      width:100%; max-height:85vh;
-      border-radius:20px 20px 0 0;
-      transform:translateY(100%); transition:transform .28s cubic-bezier(.16,1,.3,1);
-      background:#fff; box-shadow:0 -8px 24px rgba(15,23,42,.12);
+    .econ-collapse{border:1px solid var(--border,#e5e7eb);border-radius:14px;background:#fff;overflow:hidden}
+    .econ-summary{display:flex;align-items:center;gap:8px;cursor:pointer;padding:14px 16px;font-size:14px;font-weight:600;color:#285085;list-style:none;user-select:none}
+    .econ-summary::-webkit-details-marker{display:none}
+    .econ-summary:hover{background:#f8f9fb}
+    .econ-chevron{margin-left:auto;transition:transform .2s;color:#9aa3b0}
+    .econ-collapse[open] .econ-chevron{transform:rotate(180deg)}
+    .econ-collapse-body{padding:0 4px 4px}
+    /* убрать двойную рамку у вложенного EconomySettings */
+    .econ-collapse-body > div{margin-bottom:0 !important;border:none !important;box-shadow:none !important}
+    /* Панель выдач — обычный div-оверлей (НЕ <dialog>), выезжает снизу */
+    .iss-overlay{position:fixed;inset:0;z-index:9999}
+    .iss-overlay[hidden]{display:none}
+    .iss-overlay-backdrop{position:absolute;inset:0;background:rgba(13,26,43,.5);opacity:0;transition:opacity .25s}
+    .iss-overlay.open .iss-overlay-backdrop{opacity:1}
+    .iss-panel{
+      position:absolute;left:0;right:0;bottom:0;
+      background:#fff;border-radius:18px 18px 0 0;
+      max-height:85vh;overflow:hidden;
+      box-shadow:0 -8px 24px rgba(15,23,42,.15);
+      transform:translateY(100%);transition:transform .3s cubic-bezier(.16,1,.3,1);
     }
-    dialog.iss-sheet[open]{ transform:translateY(0); }
-    dialog.iss-sheet::backdrop{ background:rgba(13,26,43,.5); }
-    .iss-sheet-body{
-      max-height:85vh; overflow-y:auto;
-      padding:20px 18px calc(18px + env(safe-area-inset-bottom));
-    }
-    /* «ручка» сверху панели */
-    .iss-sheet-body::before{
-      content:""; display:block; width:40px; height:4px; border-radius:999px;
-      background:#cbd5e1; margin:-6px auto 12px;
-    }
+    .iss-overlay.open .iss-panel{transform:translateY(0)}
+    .iss-sheet-body{max-height:85vh;overflow-y:auto;padding:20px 18px calc(18px + env(safe-area-inset-bottom))}
+    .iss-sheet-body::before{content:"";display:block;width:40px;height:4px;border-radius:999px;background:#cbd5e1;margin:-6px auto 14px}
     @media (min-width:680px){
-      dialog.iss-sheet{ max-width:640px; border-radius:20px; bottom:24px; }
-      dialog.iss-sheet{ left:50%; right:auto; transform:translate(-50%,100%); }
-      dialog.iss-sheet[open]{ transform:translate(-50%,0); }
+      .iss-panel{left:50%;right:auto;transform:translate(-50%,120%);width:100%;max-width:640px;border-radius:18px;bottom:24px}
+      .iss-overlay.open .iss-panel{transform:translate(-50%,0)}
     }
     /* Печать — только активная вкладка */
     @media print {
