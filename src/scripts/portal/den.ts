@@ -145,19 +145,68 @@ document.querySelectorAll('[data-del]').forEach((btn) => {
   });
 });
 
-// Отметка чек-листа
+// Отметка чек-листа (общий POST)
+async function postCheck(card, clId, itemId, done) {
+  return fetch(API.check, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+    body: JSON.stringify({
+      eventId: Number(card.getAttribute('data-event')),
+      checklistId: Number(clId), itemId, done,
+    }),
+  });
+}
+
+// Пересчёт бейджа «done/total» по реальным чекбоксам тела
+function syncChkBadge(card) {
+  const boxes = card.querySelectorAll('[data-check]');
+  if (!boxes.length) return;
+  const done = [...boxes].filter((b) => (b as HTMLInputElement).checked).length;
+  const badge = card.querySelector('.den-badge.chk');
+  if (badge) badge.innerHTML = '<i class="bi bi-check2-square"></i> ' + done + '/' + boxes.length;
+}
+
+// Синхронизировать визуал пункта превью с состоянием done
+function setPreviewState(card, clId, itemId, done) {
+  const li = card.querySelector('[data-preview-check][data-cl="' + clId + '"][data-item="' + itemId + '"]');
+  if (!li) return;
+  li.classList.toggle('done', done);
+  li.setAttribute('aria-pressed', done ? 'true' : 'false');
+  const icon = li.querySelector('i');
+  if (icon) icon.className = 'bi ' + (done ? 'bi-check-square-fill' : 'bi-square');
+}
+
+// Чекбоксы в теле карточки
 document.querySelectorAll('[data-check]').forEach((cb) => {
   cb.addEventListener('change', async () => {
     const card = cb.closest('.den-card');
-    await fetch(API.check, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-      body: JSON.stringify({
-        eventId: Number(card.getAttribute('data-event')),
-        checklistId: Number(cb.getAttribute('data-cl')),
-        itemId: cb.getAttribute('data-item'),
-        done: cb.checked,
-      }),
-    });
+    const clId = cb.getAttribute('data-cl');
+    const itemId = cb.getAttribute('data-item');
+    const done = (cb as HTMLInputElement).checked;
+    setPreviewState(card, clId, itemId, done); // держим превью в синхроне
+    syncChkBadge(card);
+    await postCheck(card, clId, itemId, done);
+  });
+});
+
+// Отметка ПРЯМО В ПРЕВЬЮ (общее представление) — без раскрытия карточки.
+document.querySelectorAll('[data-preview-check]').forEach((li) => {
+  li.addEventListener('click', async (ev) => {
+    ev.stopPropagation(); // не триггерить тогл карточки
+    const card = li.closest('.den-card');
+    const clId = li.getAttribute('data-cl');
+    const itemId = li.getAttribute('data-item');
+    const willDone = !li.classList.contains('done');
+    // оптимистичный UI: превью + реальный чекбокс тела + бейдж
+    setPreviewState(card, clId, itemId, willDone);
+    const cb = card.querySelector('[data-check][data-cl="' + clId + '"][data-item="' + itemId + '"]') as HTMLInputElement | null;
+    if (cb) cb.checked = willDone;
+    syncChkBadge(card);
+    const r = await postCheck(card, clId, itemId, willDone);
+    if (!r.ok) { // откат при ошибке
+      setPreviewState(card, clId, itemId, !willDone);
+      if (cb) cb.checked = !willDone;
+      syncChkBadge(card);
+    }
   });
 });
 
