@@ -119,15 +119,10 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
       // Форс-ключ из URL: ?wheel / ?fortune=wheel / ?fortune=card — у любого, кто открыл ссылку
       var qs = new URLSearchParams(location.search);
       var forced = null;
-      if (qs.has('wheel')) forced = 'wheel';
+      if (qs.has('wheel') || qs.has('wheeltest')) forced = 'wheel';
       else if (qs.get('fortune') === 'wheel' || qs.get('fortune') === 'card') forced = qs.get('fortune');
-      var bucket = forced || getCookie(COOKIE);
-      if (bucket !== 'wheel' && bucket !== 'card') {
-        bucket = Math.random() < 0.5 ? 'wheel' : 'card';
-      }
-      if (forced || !getCookie(COOKIE)) {
-        document.cookie = COOKIE + '=' + bucket + ';path=/;max-age=' + (60 * 60 * 24 * 30) + ';SameSite=Lax';
-      }
+      // A/B-тест отключён — колесо показываем ВСЕМ. ?fortune=card оставляет предпросмотр обычной карточки.
+      var bucket = (forced === 'card') ? 'card' : 'wheel';
       // Показываем выбранный вариант, удаляем второй (до клонирования каруселью)
       document.querySelectorAll('[data-ab-fortune]').forEach(function (el) {
         if (el.getAttribute('data-ab-fortune') === bucket) {
