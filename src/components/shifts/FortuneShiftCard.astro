@@ -416,6 +416,15 @@ const segData = SEGMENTS.map((seg, i) => {
     var wonDiscount = saved ? saved.wonDiscount : 0;
     var wonToken    = saved ? saved.wonToken    : '';
 
+    // ТЕСТ-РЕЖИМ: ?wheeltest — сброс состояния + 99 попыток (для проверки колеса)
+    var FSC_TEST = false;
+    try { FSC_TEST = new URLSearchParams(location.search).has('wheeltest'); } catch (_) {}
+    if (FSC_TEST) {
+      try { sessionStorage.removeItem(SS_KEY); } catch (_) {}
+      document.cookie = COOKIE_KEY + '=;path=/;max-age=0;SameSite=Lax';
+      saved = null; attempts = 99; wonDiscount = 0; wonToken = '';
+    }
+
     function saveState() {
       try { sessionStorage.setItem(SS_KEY, JSON.stringify({ attempts: attempts, wonDiscount: wonDiscount, wonToken: wonToken })); } catch(_) {}
     }
