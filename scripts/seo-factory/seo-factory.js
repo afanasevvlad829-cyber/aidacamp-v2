@@ -320,13 +320,25 @@ function capitalize(str) {
 }
 
 // ── TEMPLATE RENDERER ─────────────────────────────────────────
+// Карта: ключи генераторов (lowercase) → токены шаблонов (UPPERCASE).
+// Без неё replaceAll('{{title}}') не находит '{{TITLE}}' → плейсхолдеры
+// остаются незаполненными и Astro падает с ReferenceError на {{H1}}.
+const TEMPLATE_TOKEN_MAP = {
+  slug: 'SLUG', title: 'TITLE', description: 'DESCRIPTION', h1: 'H1',
+  intro1: 'INTRO_P1', intro2: 'INTRO_P2',
+  faq1q: 'FAQ1_Q', faq1a: 'FAQ1_A',
+  faq2q: 'FAQ2_Q', faq2a: 'FAQ2_A',
+  faq3q: 'FAQ3_Q', faq3a: 'FAQ3_A',
+};
+
 function renderTemplate(tmplName, vars) {
   let tpl = fs.readFileSync(path.join(TMPL_DIR, tmplName), 'utf8');
 
   // Простые замены
   for (const [k, v] of Object.entries(vars)) {
     if (typeof v === 'string') {
-      tpl = tpl.replaceAll(`{{${k}}}`, v.replace(/\\/g, '\\\\').replace(/`/g, '\\`'));
+      const token = TEMPLATE_TOKEN_MAP[k] || k.toUpperCase();
+      tpl = tpl.replaceAll(`{{${token}}}`, v.replace(/\\/g, '\\\\').replace(/`/g, '\\`'));
     }
   }
 
