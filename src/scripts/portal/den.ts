@@ -30,6 +30,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const card = document.querySelector(`.den-card[data-event="${openId}"]`);
     const body = card?.querySelector('.den-card-body');
     if (body) body.hidden = false;
+    if (card && body) card.classList.add('open');
     sessionStorage.removeItem('den-open');
   }
   if (scroll) {
@@ -62,11 +63,15 @@ async function post(body) {
   return parseResp(r);
 }
 
-// Развернуть/свернуть карточку
+// Развернуть/свернуть карточку.
+// При раскрытии помечаем карточку .open — CSS прячет превью чек-листа,
+// чтобы на мобильном тап по пунктам не дублировался с реальными чекбоксами в теле.
 document.querySelectorAll('[data-toggle]').forEach((el) => {
   el.addEventListener('click', () => {
+    const card = el.closest('.den-card');
     const body = el.parentElement.querySelector('.den-card-body');
     if (body) body.hidden = !body.hidden;
+    if (card && body) card.classList.toggle('open', !body.hidden);
   });
 });
 
