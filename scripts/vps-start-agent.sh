@@ -46,9 +46,12 @@ mkdir -p logs/agents
 # Если сессия уже есть — убиваем
 tmux kill-session -t "$SESSION" 2>/dev/null || true
 
-# Запускаем агента в tmux, stdout пишем в лог
+# Запускаем агента в tmux, stdout пишем в лог.
+# Worktree вычисляется детерминированно тем же правилом, что и в agent-start.sh:
+#   WORKTREE_DIR = <repo_parent>/<repo_name>-agent-<slug>  → \$HOME/Aidacamp-agent-<slug>
+# (раньше тут был inline-python с генератором — ломал heredoc: syntax error near '(').
 tmux new-session -d -s "$SESSION" \; \
-  send-keys -t "$SESSION" "cd ~/Aidacamp && ./scripts/agent-start.sh \"$TASK\" 2>&1 | tee $LOG && WORKTREE_DIR=\$(python3 -c \"import json; d=json.load(open('.agent-registry.json')); a=next(x for x in d['agents'] if x['slug']=='$TASK_SLUG'); print(a['worktree'])\") && cd \$WORKTREE_DIR && claude -p \"\$(cat $BRIEF_FILE_REMOTE)\" --permission-mode bypassPermissions 2>&1 | tee -a $LOG; echo 'AGENT_DONE' >> $LOG" Enter
+  send-keys -t "$SESSION" "cd ~/Aidacamp && ./scripts/agent-start.sh \"$TASK\" 2>&1 | tee $LOG && cd \"\$HOME/Aidacamp-agent-$TASK_SLUG\" && claude -p \"\$(cat $BRIEF_FILE_REMOTE)\" --permission-mode bypassPermissions 2>&1 | tee -a $LOG; echo 'AGENT_DONE' >> $LOG" Enter
 
 echo "started"
 REMOTE
