@@ -1,4 +1,12 @@
 #!/usr/bin/env bash
+# 🚫 DEPRECATED 2026-06-06 — небезопасный root-стек (агент под root на проде).
+# Заменён изолированными контейнерами: ./scripts/agent-docker.sh "<задача>" "<бриф>"
+# Подробности: docker/agent/README.md, DEV_PROTOCOL.md → «Правило №1».
+if [ "${ALLOW_DEPRECATED:-0}" != "1" ]; then
+  echo "🚫 $(basename "$0") DEPRECATED и небезопасен. Используй: ./scripts/agent-docker.sh \"<задача>\" \"<бриф>\"" >&2
+  echo "   (старое поведение на свой риск: ALLOW_DEPRECATED=1 $0 ...)" >&2
+  exit 1
+fi
 # vps-agent-run.sh — запуск агента на VPS через claude headless
 # Использование: ./scripts/vps-agent-run.sh "<task>" [--max-turns 50]
 set -e
