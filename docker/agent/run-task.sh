@@ -10,7 +10,12 @@
 # Бриф: /work/brief.txt (монтируется read-only с хоста)
 set -euo pipefail
 
-: "${GH_TOKEN:?нет GH_TOKEN}"; : "${ANTHROPIC_API_KEY:?нет ANTHROPIC_API_KEY}"
+: "${GH_TOKEN:?нет GH_TOKEN}"
+# Авторизация claude: подписка (CLAUDE_CODE_OAUTH_TOKEN) ИЛИ платный API-ключ.
+# Подписка предпочтительна — не тратит API-кредиты (claude setup-token).
+if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] && [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+  echo "✖ нужен CLAUDE_CODE_OAUTH_TOKEN (подписка) или ANTHROPIC_API_KEY"; exit 1
+fi
 : "${REPO:?нет REPO}"; : "${BRANCH:?нет BRANCH}"; : "${SLUG:?нет SLUG}"
 BRIEF_FILE="/work/brief.txt"; [ -f "$BRIEF_FILE" ] || { echo "нет $BRIEF_FILE"; exit 1; }
 
