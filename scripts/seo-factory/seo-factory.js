@@ -196,6 +196,11 @@ function toSlug(keyword) {
     .slice(0, 60);
 }
 
+// Убирает год (4 цифры 20xx/19xx) из ключевого слова, чтобы шаблон не добавлял его повторно
+function stripYear(kw) {
+  return kw.replace(/\b(19|20)\d{2}\b/g, '').replace(/\s{2,}/g, ' ').trim();
+}
+
 // ── DETECT TEMPLATE TYPE ──────────────────────────────────────
 function detectType(cluster) {
   const kw = cluster.mainKeyword.toLowerCase();
@@ -223,10 +228,11 @@ function generateNchContent(cluster, rag = {}) {
   const allKw = cluster.keywords.join(', ');
   const slug  = toSlug(main);
   const lsi   = (rag.lsiWords || []);
+  const mainClean = stripYear(main);
 
-  const title       = `${capitalize(main)} 2026 — IT-лагерь АйДаКемп в Подмосковье`;
+  const title       = `${capitalize(mainClean)} 2026 — IT-лагерь АйДаКемп в Подмосковье`;
   const description = `${capitalize(main)} — детский IT-лагерь АйДаКемп в Подмосковье 2026. Python, AI, Minecraft, группы до 8 чел. Смены июнь–август, от 48 000 ₽. Налоговый вычет 13%.`;
-  const h1          = `${capitalize(main)} 2026 — АйДаКемп`;
+  const h1          = `${capitalize(mainClean)} 2026 — АйДаКемп`;
 
   const intro1 = `АйДаКемп — летний IT-лагерь в Подмосковье для школьников 7–15 лет. `
     + `Если вы ищете ${main}, здесь ребёнок не просто отдохнёт, а создаст настоящий проект: `
@@ -288,12 +294,13 @@ function generateGeoContent(cluster, rag = {}) {
   // Для гео — упрощённая версия (без данных о маршруте)
   const main = cluster.mainKeyword;
   const slug  = toSlug(main);
+  const mainClean = stripYear(main);
   const cityMatch = main.match(/(?:лагерь|лагеря)\s+(?:в\s+)?([а-яА-ЯёЁ]+(?:\s+[а-яА-ЯёЁ]+)?)/i);
   const city = cityMatch ? capitalize(cityMatch[1]) : capitalize(main.split(' ').pop());
 
-  const title       = `${capitalize(main)} 2026 — IT-лагерь АйДаКемп`;
+  const title       = `${capitalize(mainClean)} 2026 — IT-лагерь АйДаКемп`;
   const description = `${capitalize(main)} — АйДаКемп в Подмосковье 2026. Python, AI, Minecraft, бассейн. Смены июнь–август, от 48 000 ₽. Трансфер от м. Солнцево.`;
-  const h1          = `${capitalize(main)} 2026 — АйДаКемп`;
+  const h1          = `${capitalize(mainClean)} 2026 — АйДаКемп`;
 
   // Для гео-страниц используем тот же НЧ-шаблон (гео-шаблон требует данных о маршруте)
   const intro1 = `АйДаКемп — детский IT-лагерь в Подмосковье для школьников 7–15 лет. `
