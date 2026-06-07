@@ -15,12 +15,14 @@ set -euo pipefail
 BRIEF_FILE="/work/brief.txt"; [ -f "$BRIEF_FILE" ] || { echo "нет $BRIEF_FILE"; exit 1; }
 
 cd /work
-echo "▶ clone $REPO (depth 50)"
-git clone --depth 50 "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" repo
+echo "▶ clone $REPO (ветка dev, depth 50)"
+# Клонируем именно dev: shallow-клон тянет только указанную ветку, поэтому
+# branch создаём от dev напрямую (раньше клонировался main → origin/dev отсутствовал).
+git clone --depth 50 --branch dev "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" repo
 cd repo
 git config user.email "agent@aidacamp.local"
 git config user.name  "aidacamp-agent"
-git checkout -b "$BRANCH" origin/dev
+git checkout -b "$BRANCH"
 export GH_TOKEN   # для gh
 
 echo "▶ claude над брифом ($(wc -w < "$BRIEF_FILE") слов)"
