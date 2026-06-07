@@ -9,20 +9,27 @@
 
 ---
 
-## ⚡ Правило №1 — ВСЯ разработка на VPS
+## ⚡ Правило №1 — ВСЯ разработка в изолированном контейнере
 
-**Любая задача по сайту запускается агентом на сервере, не локально:**
+**Любая задача по сайту запускается агентом в одноразовом Docker-контейнере — не локально и не под root на проде:**
 
 ```bash
-./scripts/vps-start-agent.sh "<задача>"
+./scripts/agent-docker.sh "<задача>" "<детальный бриф>"
 ```
 
-Агент работает в tmux + worktree на VPS (`~/Aidacamp`); правки, сборка и деплой — там же. Ноут не должен быть узким местом.
+Контейнер: non-root (юзер `node`), клонирует репо из GitHub внутрь → ветка от `dev` → claude → commit → push → **PR в dev** → самоудаляется (`--rm`). Прод, секреты и соседние проекты агенту **недоступны**. Радиус поражения = только этот репозиторий (по правам fine-grained PAT). Подробности и модель безопасности — [`docker/agent/README.md`](docker/agent/README.md).
 
-- **Локально — только хотфиксы владельца** (`MASTER_AGENT=1` / `SKIP_GIT_GUARD=1`).
-- Статус сессий: `./scripts/vps-status.sh`. Зависших перезапускает `vps-watchdog.sh` (pm2).
-- Headless-вариант: `./scripts/vps-agent-run.sh "<task>"`.
-- Не собирать и не деплоить обычные задачи с локальной машины.
+**Установка (один раз):**
+```bash
+docker build -t aidacamp-agent:latest docker/agent
+cp docker/agent/agent-secrets.env.example ~/.agent-secrets.env && chmod 600 ~/.agent-secrets.env
+#   → вписать GitHub fine-grained PAT (только этот репо: Contents+PR) и ANTHROPIC_API_KEY
+```
+
+- **Локально — только хотфиксы владельца** (`MASTER_AGENT=1`). Прод-деплой — владельцем из чистого worktree.
+- Мерж PR в dev/main и прод-деплой — за владельцем; агент делает только PR.
+
+> **🚫 DEPRECATED (выведено из эксплуатации 2026-06-06):** `vps-start-agent.sh`, `agent-start.sh`, `worker.sh`, `vps-watchdog.sh`, `vps-agent-run.sh`, `vps-status.sh` — старый стек «агент под root в `~/Aidacamp` + tmux + pm2-watchdog». Небезопасен (root на проде = радиус поражения весь сервер; claude блокирует bypass под root). Заменён контейнерами выше. Не использовать.
 
 ---
 
