@@ -14,10 +14,17 @@
 
 import { faqFlat } from '../data/faq';
 
+interface Props {
+  items?: Array<{ q: string; a: string }>;
+}
+
+const { items } = Astro.props;
+const resolvedItems = items ?? faqFlat;
+
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: faqFlat.map((item) => ({
+  mainEntity: resolvedItems.map((item) => ({
     '@type': 'Question',
     name: item.q,
     acceptedAnswer: {
