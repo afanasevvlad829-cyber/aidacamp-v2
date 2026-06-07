@@ -21,8 +21,10 @@ SECRETS="${AGENT_SECRETS:-$HOME/.agent-secrets.env}"
 [ -f "$SECRETS" ] || { echo "✖ Нет файла секретов: $SECRETS (см. docker/agent/agent-secrets.env.example)"; exit 1; }
 docker image inspect "$IMAGE" >/dev/null 2>&1 || { echo "✖ Нет образа $IMAGE. Собери: docker build -t $IMAGE docker/agent"; exit 1; }
 
-# Бриф во временный файл → единственное, что монтируется с хоста (read-only)
-BRIEF_TMP="$(mktemp)"; printf '%s\n' "$BRIEF" > "$BRIEF_TMP"
+# Бриф во временный файл → единственное, что монтируется с хоста (read-only).
+# chmod 644: mktemp создаёт 600/root, а внутри контейнера non-root юзер agent
+# (другой uid) иначе не прочитает смонтированный бриф (Permission denied).
+BRIEF_TMP="$(mktemp)"; printf '%s\n' "$BRIEF" > "$BRIEF_TMP"; chmod 644 "$BRIEF_TMP"
 trap 'rm -f "$BRIEF_TMP"' EXIT
 
 echo "🚀 Агент в контейнере: $SLUG → ветка $BRANCH (репо $REPO)"
