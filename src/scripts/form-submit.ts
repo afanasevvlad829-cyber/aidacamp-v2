@@ -1,4 +1,4 @@
-import { MAILRU_PIXEL_ID } from '../data/tracking';
+import { MAILRU_PIXEL_ID, YM_COUNTER } from '../data/tracking';
 import { STORAGE_KEYS } from '../lib/storage';
 
 /** Читает _ym_uid из cookie как fallback для ym_client_id */
@@ -74,7 +74,7 @@ function collectContext(): Record<string, string> {
   try {
     const ym = (window as any).ym;
     if (typeof ym === 'function') {
-      ym(96499295, 'getClientID', (id: string) => {
+      ym(YM_COUNTER, 'getClientID', (id: string) => {
         ym_client_id = id || '';
       });
     }
