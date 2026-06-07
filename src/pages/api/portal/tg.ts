@@ -164,11 +164,11 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     ip: clientIp(request),
   });
   if (isMiniApp) {
-    // Диагностику (debug) отдаём ВСЕГДА — и при успехе, и при ошибке,
-    // чтобы Mini App мог показать максимум информации на экране.
+    // debug-объект отдаём только при явно включённом PORTAL_DEBUG=1 (только dev/staging)
+    const debugPayload = process.env.PORTAL_DEBUG === '1' ? { debug } : {};
     return res.ok
-      ? new Response(JSON.stringify({ ok: true, role: res.role, debug }), { headers: { 'Content-Type': 'application/json' } })
-      : new Response(JSON.stringify({ ok: false, error: res.status, debug }), {
+      ? new Response(JSON.stringify({ ok: true, role: res.role, ...debugPayload }), { headers: { 'Content-Type': 'application/json' } })
+      : new Response(JSON.stringify({ ok: false, error: res.status, ...debugPayload }), {
           status: res.status === 'invalid' ? 401 : 403,
           headers: { 'Content-Type': 'application/json' },
         });
