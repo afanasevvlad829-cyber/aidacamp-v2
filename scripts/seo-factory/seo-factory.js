@@ -383,6 +383,44 @@ function pageExists(slug) {
   return candidates.some(p => fs.existsSync(p));
 }
 
+// ── GEO DEDUP ─────────────────────────────────────────────────
+// Собирает имена файлов (без .astro) из src/pages/ и src/pages/stati/
+function buildExistingFileNames() {
+  const names = new Set();
+  const dirs = [PAGES_DIR, path.join(PAGES_DIR, 'stati')];
+  for (const dir of dirs) {
+    if (!fs.existsSync(dir)) continue;
+    for (const f of fs.readdirSync(dir)) {
+      if (f.endsWith('.astro')) names.add(f.slice(0, -6));
+    }
+  }
+  return names;
+}
+
+// Извлекает транслит-токен города из гео-ключевика.
+// "детский лагерь Истра Московская область" → "istra"
+function extractCitySlugToken(keyword) {
+  const kw = keyword.toLowerCase();
+  const m = kw.match(/(?:лагерь|лагеря)\s+(?:в\s+|у\s+|из\s+)?([а-яё]+)/i);
+  if (m) {
+    const word = m[1];
+    const skip = new Set(['для','с','без','по','от','до','над','под','при','про','через','между']);
+    if (!skip.has(word)) return toSlug(word);
+  }
+  return toSlug(kw.trim().split(/\s+/).pop());
+}
+
+// Возвращает имя существующего файла если для города уже есть страница, иначе null.
+// Поиск: токен города ∈ substring любого имени файла.
+function findExistingGeoPage(keyword, existingFileNames) {
+  const token = extractCitySlugToken(keyword);
+  if (!token || token.length < 4) return null;
+  for (const name of existingFileNames) {
+    if (name.includes(token)) return name;
+  }
+  return null;
+}
+
 // ── WRITE PAGE ────────────────────────────────────────────────
 function writePage(slug, content) {
   const filePath = path.join(PAGES_DIR, `${slug}.astro`);
@@ -481,10 +519,24 @@ async function main() {
 
     if (!DRY_RUN) setupBranch();
 
+    // Индекс существующих файлов для гео-дедупа (строится один раз)
+    const existingFileNames = buildExistingFileNames();
+    log(`Индекс файлов: ${existingFileNames.size} страниц`);
+
     for (const cluster of clusters) {
       if (createdFiles.length >= MAX_PAGES) break;
 
       const type = detectType(cluster);
+
+      // Гео-дедуп: пропускаем если для города уже есть страница в репо
+      if (type === 'geo') {
+        const existingFile = findExistingGeoPage(cluster.mainKeyword, existingFileNames);
+        if (existingFile) {
+          log(`  ⏩  skip ${cluster.mainKeyword}: уже есть ${existingFile}`);
+          continue;
+        }
+      }
+
       let vars;
       try {
         const rag = await enrichFromRAG(client, cluster);
