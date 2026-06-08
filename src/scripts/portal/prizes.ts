@@ -184,7 +184,7 @@ import { confirmDialog, alertDialog, haptic } from './tg';
       }
     });
   }
-  document.getElementById('btn-show-hidden').addEventListener('click', (ev) => {
+  document.getElementById('btn-show-hidden')?.addEventListener('click', (ev) => {
     showHidden = !showHidden;
     ev.currentTarget.innerHTML = showHidden
       ? '<i class="bi bi-eye-slash"></i> Скрыть скрытые'
@@ -243,7 +243,7 @@ import { confirmDialog, alertDialog, haptic } from './tg';
   });
 
   // Apply markup to all visible
-  document.getElementById('btn-apply-markup').addEventListener('click', async () => {
+  document.getElementById('btn-apply-markup')?.addEventListener('click', async () => {
     const s = readSettings();
     if (!await confirmDialog('Записать «Цена × ' + s.markup + ', округление до ' + s.round + ' ₽» в поле «Цена, игр. ₽» для всех видимых позиций?')) return;
     for (const r of prizeRows) {
@@ -258,7 +258,7 @@ import { confirmDialog, alertDialog, haptic } from './tg';
   });
 
   // Import from localStorage
-  document.getElementById('btn-import-local').addEventListener('click', async () => {
+  document.getElementById('btn-import-local')?.addEventListener('click', async () => {
     let local;
     try { local = JSON.parse(localStorage.getItem(LS_KEY) || '{}') || {}; } catch { local = {}; }
     const deleted = Array.isArray(local.deleted) ? local.deleted : [];
