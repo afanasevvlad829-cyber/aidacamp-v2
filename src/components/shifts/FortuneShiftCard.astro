@@ -1,7 +1,7 @@
 ---
 import { getCurrentPrice } from '../../data/dynamicPrices';
 import { mainShifts } from '../../data/shifts';
-import { YM_COUNTER } from '../../data/tracking';
+import { MS_PER_DAY, daysUntil, formatDaysLabel } from '../../scripts/shifts/fortune';
 
 interface Props {
   shiftId?: string;
@@ -17,11 +17,11 @@ const fortuneMode = process.env.FORTUNE_MODE ?? 'payment'; // 'payment' | 'lead'
 
 // Days until shift starts
 const startDate = new Date(shift.startDate + 'T00:00:00');
-const daysLeft = Math.max(0, Math.ceil((startDate.getTime() - today.getTime()) / 86_400_000));
-const daysLeftLabel = daysLeft === 0 ? 'сегодня' : daysLeft === 1 ? 'через 1 день' : `через ${daysLeft} дн`;
+const daysLeft = daysUntil(startDate.getTime(), today.getTime());
+const daysLeftLabel = formatDaysLabel(daysLeft);
 
 // Заезд = startDate + 2 дня (запас на справки)
-const arriveDate = new Date(startDate.getTime() + 2 * 86_400_000);
+const arriveDate = new Date(startDate.getTime() + 2 * MS_PER_DAY);
 const monthsGenitive = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 const startDayLabel  = `${startDate.getDate()} ${monthsGenitive[startDate.getMonth()]}`;
 const arriveDayLabel = `${arriveDate.getDate()} ${monthsGenitive[arriveDate.getMonth()]}`;
@@ -381,37 +381,64 @@ const segData = SEGMENTS.map((seg, i) => {
   </div><!-- /flex wrapper -->
 </div>
 
-<script define:vars={{ SEGMENTS, currentPrice, fortuneMode, SHIFT_ID, YM_COUNTER }}>
-  (function () {
-    var PRICE = currentPrice;
-    var segs  = SEGMENTS;
-    var isSpinning  = false;
-    var currentRot  = 0;
-    var timerInterval = null;
+<!-- Bridge: pass server-rendered values to the client module script -->
+<script define:vars={{ SEGMENTS, currentPrice, fortuneMode, SHIFT_ID }}>
+  (window.__fsc = window.__fsc || {})[SHIFT_ID] = {
+    segs:  SEGMENTS,
+    price: currentPrice,
+    mode:  fortuneMode,
+  };
+</script>
+
+<!-- Fortune card interactive logic -->
+<script>
+  import {
+    computeFortunePrice,
+    computeDeposit,
+    formatRub,
+    formatTimerTick,
+    MS_PER_DAY,
+    TIMER_SECONDS,
+  } from '../../scripts/shifts/fortune';
+  import { YM_COUNTER } from '../../data/tracking';
+
+  function initFortuneCard() {
+    const cardEl  = document.querySelector<HTMLElement>('[data-fortune-card]');
+    const SHIFT_ID = cardEl?.dataset.shiftId ?? '';
+    const cfg = SHIFT_ID ? (window as any).__fsc?.[SHIFT_ID] : null;
+    if (!cfg) return;
+
+    const segs: Array<{ label: string; d: number; w: number; color: string }> = cfg.segs;
+    const PRICE: number = cfg.price;
+    const fortuneMode: string = cfg.mode;
+
+    let isSpinning = false;
+    let currentRot = 0;
+    let timerInterval: number | null = null;
 
     // ── Cookie helpers ─────────────────────────────────────────────────────
-    var COOKIE_KEY = 'fortune_' + SHIFT_ID + '_played';
-    function getCookie(name) {
-      var m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+    const COOKIE_KEY = 'fortune_' + SHIFT_ID + '_played';
+    function getCookie(name: string): string | null {
+      const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
       return m ? decodeURIComponent(m[1]) : null;
     }
-    function setCookie(name, value, days) {
-      var exp = new Date(Date.now() + days * 864e5).toUTCString();
+    function setCookie(name: string, value: string, days: number) {
+      const exp = new Date(Date.now() + days * MS_PER_DAY).toUTCString();
       document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + exp + '; path=/; SameSite=Lax';
     }
 
     // Restore state from sessionStorage so page refresh doesn't reset spins
-    var SS_KEY = 'fortune_' + SHIFT_ID + '_2026';
-    var saved = (function() {
-      try { return JSON.parse(sessionStorage.getItem(SS_KEY) || 'null'); } catch(_) { return null; }
-    })();
-    var attempts    = saved ? saved.attempts    : 3;
-    var wonDiscount = saved ? saved.wonDiscount : 0;
-    var wonToken    = saved ? saved.wonToken    : '';
-    var spinsDone   = (saved && typeof saved.spinsDone === 'number') ? saved.spinsDone : 0;
+    const SS_KEY = 'fortune_' + SHIFT_ID + '_2026';
+    let saved: { attempts: number; wonDiscount: number; wonToken: string; spinsDone: number } | null = null;
+    try { saved = JSON.parse(sessionStorage.getItem(SS_KEY) || 'null'); } catch (_) {}
+
+    let attempts    = saved ? saved.attempts    : 3;
+    let wonDiscount = saved ? saved.wonDiscount : 0;
+    let wonToken    = saved ? saved.wonToken    : '';
+    let spinsDone   = (saved && typeof saved.spinsDone === 'number') ? saved.spinsDone : 0;
 
     // ТЕСТ-РЕЖИМ: ?wheeltest — сброс состояния + 99 попыток (для проверки колеса)
-    var FSC_TEST = false;
+    let FSC_TEST = false;
     try { FSC_TEST = new URLSearchParams(location.search).has('wheeltest'); } catch (_) {}
     if (FSC_TEST) {
       try { sessionStorage.removeItem(SS_KEY); } catch (_) {}
@@ -420,32 +447,32 @@ const segData = SEGMENTS.map((seg, i) => {
     }
 
     function saveState() {
-      try { sessionStorage.setItem(SS_KEY, JSON.stringify({ attempts: attempts, wonDiscount: wonDiscount, wonToken: wonToken, spinsDone: spinsDone })); } catch(_) {}
+      try { sessionStorage.setItem(SS_KEY, JSON.stringify({ attempts, wonDiscount, wonToken, spinsDone })); } catch (_) {}
     }
 
-    var wheel      = document.getElementById('fsc-wheel');
-    var spinBtn    = document.getElementById('fsc-spin-btn');
-    var spinLabel  = document.getElementById('fsc-spin-label');
-    var attemptsEl = document.getElementById('fsc-attempts');
-    var winBlock   = document.getElementById('fsc-win-block');
-    var fallback   = document.getElementById('fsc-fallback');
-    var wheelArea  = document.getElementById('fsc-wheel-area');
-    var discPctEl  = document.getElementById('fsc-disc-pct');
-    var finalPriceEl = document.getElementById('fsc-final-price');
-    var depPriceEl   = document.getElementById('fsc-dep-price');
-    var bookBtn    = document.getElementById('fsc-book-btn');
-    var modal      = document.getElementById('fsc-modal');
-    var modalDisc  = document.getElementById('fsc-modal-disc');
-    var modalFinal = document.getElementById('fsc-modal-final');
-    var modalDep   = document.getElementById('fsc-modal-dep');
-    var timerEl    = document.getElementById('fsc-timer');
-    var nameInput   = document.getElementById('fsc-name');
-    var phoneInput  = document.getElementById('fsc-phone');
-    var consentBox  = document.getElementById('fsc-consent');
-    var formError   = document.getElementById('fsc-form-error');
-    var payBtn      = document.getElementById('fsc-pay-btn');
-    var payLabel   = document.getElementById('fsc-pay-label');
-    var modalClose = document.getElementById('fsc-modal-close');
+    const wheel        = document.getElementById('fsc-wheel') as SVGSVGElement | null;
+    const spinBtn      = document.getElementById('fsc-spin-btn') as HTMLButtonElement | null;
+    const spinLabel    = document.getElementById('fsc-spin-label');
+    const attemptsEl   = document.getElementById('fsc-attempts');
+    const winBlock     = document.getElementById('fsc-win-block')!;
+    const fallback     = document.getElementById('fsc-fallback');
+    const wheelArea    = document.getElementById('fsc-wheel-area');
+    const discPctEl    = document.getElementById('fsc-disc-pct');
+    const finalPriceEl = document.getElementById('fsc-final-price');
+    const depPriceEl   = document.getElementById('fsc-dep-price');
+    const bookBtn      = document.getElementById('fsc-book-btn');
+    const modal        = document.getElementById('fsc-modal')!;
+    const modalDisc    = document.getElementById('fsc-modal-disc');
+    const modalFinal   = document.getElementById('fsc-modal-final');
+    const modalDep     = document.getElementById('fsc-modal-dep');
+    const timerEl      = document.getElementById('fsc-timer');
+    const nameInput    = document.getElementById('fsc-name') as HTMLInputElement | null;
+    const phoneInput   = document.getElementById('fsc-phone') as HTMLInputElement | null;
+    const consentBox   = document.getElementById('fsc-consent') as HTMLInputElement | null;
+    const formError    = document.getElementById('fsc-form-error');
+    const payBtn       = document.getElementById('fsc-pay-btn') as HTMLButtonElement | null;
+    const payLabel     = document.getElementById('fsc-pay-label');
+    const modalClose   = document.getElementById('fsc-modal-close');
 
     if (!wheel || !spinBtn || !modal) return; // guard
 
@@ -456,9 +483,7 @@ const segData = SEGMENTS.map((seg, i) => {
 
     // ── Lead-режим: обновляем блок «что будет» ─────────────────────────────
     if (fortuneMode === 'lead') {
-      var nextSteps = payBtn && payBtn.closest('[class*="pb-4"]') && payBtn.parentElement && payBtn.parentElement.nextElementSibling;
-      // Обновляем блок «что будет после»
-      var stepsBlock = document.getElementById('fsc-next-steps');
+      const stepsBlock = document.getElementById('fsc-next-steps');
       if (stepsBlock) stepsBlock.innerHTML = [
         '<p class="font-semibold text-gray-700 text-[13px] mb-2">Что будет дальше:</p>',
         '<p><span class="inline-block w-4 text-orange-500 font-bold">1.</span> Менеджер свяжется с вами и ответит на вопросы</p>',
@@ -479,12 +504,12 @@ const segData = SEGMENTS.map((seg, i) => {
     }
 
     // ── Аналитика: колесо появилось на экране ──────────────────────────────
-    var _wheelViewed = false;
+    let _wheelViewed = false;
     if ('IntersectionObserver' in window) {
-      new IntersectionObserver(function(entries, obs) {
+      new IntersectionObserver((entries, obs) => {
         if (entries[0].isIntersecting && !_wheelViewed) {
           _wheelViewed = true;
-          try { window.ym && window.ym(YM_COUNTER, 'reachGoal', 'fortune_wheel_view'); } catch(_e) {}
+          try { (window as any).ym && (window as any).ym(YM_COUNTER, 'reachGoal', 'fortune_wheel_view'); } catch (_e) {}
           obs.disconnect();
         }
       }, { threshold: 0.4 }).observe(wheelArea || wheel);
@@ -494,71 +519,34 @@ const segData = SEGMENTS.map((seg, i) => {
     if (saved) {
       updateDots();
       if (saved.wonDiscount > 0) {
-        // Show win block with saved discount
-        var _fp = Math.round(PRICE * (1 - saved.wonDiscount / 100));
-        var _dep = Math.round(_fp * 0.5);
-        if (discPctEl)   discPctEl.textContent    = saved.wonDiscount + '%';
-        if (finalPriceEl) finalPriceEl.textContent = _fp.toLocaleString('ru-RU') + ' ₽';
-        if (depPriceEl)   depPriceEl.textContent   = _dep.toLocaleString('ru-RU') + ' ₽';
+        const _fp  = computeFortunePrice(PRICE, saved.wonDiscount);
+        const _dep = computeDeposit(_fp);
+        if (discPctEl)    discPctEl.textContent    = saved.wonDiscount + '%';
+        if (finalPriceEl) finalPriceEl.textContent = formatRub(_fp);
+        if (depPriceEl)   depPriceEl.textContent   = formatRub(_dep);
         winBlock.classList.remove('hidden');
         winBlock.classList.add('flex');
         if (saved.attempts <= 0) {
           spinBtn.disabled = true;
-          spinLabel.textContent = 'Попытки исчерпаны';
+          if (spinLabel) spinLabel.textContent = 'Попытки исчерпаны';
         }
       } else if (saved.attempts <= 0) {
-        // Used all spins, no discount — show fallback
         showFallback();
       }
     }
 
-    function rub(n) {
-      return n.toLocaleString('ru-RU') + ' ₽';
-    }
-
-    // Weighted random from a subset of segment indices
-    function pickFrom(indices) {
-      var total = 0;
-      for (var i = 0; i < indices.length; i++) total += segs[indices[i]].w;
-      var r = Math.random() * total;
-      var cum = 0;
-      for (var j = 0; j < indices.length; j++) {
-        cum += segs[indices[j]].w;
-        if (r < cum) return indices[j];
-      }
-      return indices[indices.length - 1];
-    }
-
-    // Spin 1: ≤30%  (indices 0–2: 10/20/30%)
-    // Spin 2: full random (6 segments)
-    // Spin 3: ≥20%  (indices 1–5: 20/30/40/50/70%)
-    function pickWinner(spinNumber) {
-      if (spinNumber === 1) return 2; // первое кручение всегда 30%
-      if (spinNumber === 3) return pickFrom([1, 2, 3, 4, 5]);
-      return pickFrom([0, 1, 2, 3, 4, 5]);
-    }
-
-    // Target rotation so segment i lands at top pointer (0° position)
-    function targetRotation(segIdx) {
-      var segCenterDeg = (segIdx + 0.5) * 60; // 0° = top, 6 segments × 60°
-      var naturalStop  = (360 - segCenterDeg + 360) % 360;
-      var jitter = (Math.random() - 0.5) * 30; // ±15°
-      // 5+ full spins from current position
-      var base = Math.ceil(currentRot / 360) * 360;
-      return base + 5 * 360 + naturalStop + jitter;
-    }
-
     function updateDots() {
-      var dots = attemptsEl.querySelectorAll('[data-dot]');
-      dots.forEach(function (dot, i) {
+      if (!attemptsEl) return;
+      const dots = attemptsEl.querySelectorAll<HTMLElement>('[data-dot]');
+      dots.forEach((dot, i) => {
         dot.style.background = i < attempts
           ? 'var(--color-primary, #f97316)'
           : '#e2e8f0';
       });
     }
 
-    function showWin(segIdx) {
-      var d  = segs[segIdx].d;
+    function showWin(segIdx: number) {
+      const d = segs[segIdx].d;
       wonDiscount = d;
 
       // Логируем кручение в БД (fire-and-forget)
@@ -566,13 +554,14 @@ const segData = SEGMENTS.map((seg, i) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ discount: d, shiftId: SHIFT_ID }),
-      }).catch(function() {});
-      var fp  = Math.round(PRICE * (1 - d / 100));
-      var dep = Math.round(fp * 0.5);
+      }).catch(() => {});
 
-      discPctEl.textContent   = d + '%';
-      finalPriceEl.textContent = rub(fp);
-      depPriceEl.textContent   = rub(dep);
+      const fp  = computeFortunePrice(PRICE, d);
+      const dep = computeDeposit(fp);
+
+      if (discPctEl)    discPctEl.textContent    = d + '%';
+      if (finalPriceEl) finalPriceEl.textContent = formatRub(fp);
+      if (depPriceEl)   depPriceEl.textContent   = formatRub(dep);
 
       winBlock.classList.remove('hidden');
       winBlock.classList.add('flex');
@@ -583,27 +572,27 @@ const segData = SEGMENTS.map((seg, i) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ discount: d }),
       })
-        .then(function(r) { return r.json(); })
-        .then(function(data) { wonToken = data.token || ''; saveState(); })
-        .catch(function() { wonToken = ''; });
+        .then(r => r.json())
+        .then(data => { wonToken = data.token || ''; saveState(); })
+        .catch(() => { wonToken = ''; });
 
       // Metrika: выиграл скидку
       try {
-        window.ym && window.ym(YM_COUNTER, 'reachGoal', 'fortune_win', {
-          discount:    d,
-          price_full:  PRICE,
-          price_final: Math.round(PRICE * (1 - d / 100)),
+        (window as any).ym && (window as any).ym(YM_COUNTER, 'reachGoal', 'fortune_win', {
+          discount:      d,
+          price_full:    PRICE,
+          price_final:   fp,
           attempts_left: attempts,
         });
-      } catch(_e) {}
+      } catch (_e) {}
 
       // Re-enable spin button if attempts remain
       if (attempts > 0) {
         spinBtn.disabled = false;
-        spinLabel.textContent = 'Попробовать ещё раз';
+        if (spinLabel) spinLabel.textContent = 'Попробовать ещё раз';
       } else {
         spinBtn.disabled = true;
-        spinLabel.textContent = 'Попытки исчерпаны';
+        if (spinLabel) spinLabel.textContent = 'Попытки исчерпаны';
       }
     }
 
@@ -615,37 +604,69 @@ const segData = SEGMENTS.map((seg, i) => {
         fallback.classList.remove('hidden');
         fallback.classList.add('flex');
       }
-      try { window.ym && window.ym(YM_COUNTER, 'reachGoal', 'fortune_fallback_shown'); } catch (_) {}
+      try { (window as any).ym && (window as any).ym(YM_COUNTER, 'reachGoal', 'fortune_fallback_shown'); } catch (_) {}
+    }
+
+    // Weighted random from a subset of segment indices
+    function pickFrom(indices: number[]): number {
+      let total = 0;
+      for (let i = 0; i < indices.length; i++) total += segs[indices[i]].w;
+      let r = Math.random() * total;
+      let cum = 0;
+      for (let j = 0; j < indices.length; j++) {
+        cum += segs[indices[j]].w;
+        if (r < cum) return indices[j];
+      }
+      return indices[indices.length - 1];
+    }
+
+    // Spin 1: ≤30%  (indices 0–2: 10/20/30%)
+    // Spin 2: full random (6 segments)
+    // Spin 3: ≥20%  (indices 1–5: 20/30/40/50/70%)
+    function pickWinner(spinNumber: number): number {
+      if (spinNumber === 1) return 2; // первое кручение всегда 30%
+      if (spinNumber === 3) return pickFrom([1, 2, 3, 4, 5]);
+      return pickFrom([0, 1, 2, 3, 4, 5]);
+    }
+
+    // Target rotation so segment i lands at top pointer (0° position)
+    function targetRotation(segIdx: number): number {
+      const segCenterDeg = (segIdx + 0.5) * 60; // 0° = top, 6 segments × 60°
+      const naturalStop  = (360 - segCenterDeg + 360) % 360;
+      const jitter = (Math.random() - 0.5) * 30; // ±15°
+      // 5+ full spins from current position
+      const base = Math.ceil(currentRot / 360) * 360;
+      return base + 5 * 360 + naturalStop + jitter;
     }
 
     // ── Spin ──
-    spinBtn.addEventListener('click', function () {
+    spinBtn.addEventListener('click', () => {
       if (isSpinning || attempts <= 0) return;
       isSpinning = true;
       setCookie(COOKIE_KEY, '1', 90); // помечаем: этот браузер уже крутил (90 дней)
       attempts--;
       updateDots();
       spinBtn.disabled = true;
-      spinLabel.textContent = 'Крутим...';
+      if (spinLabel) spinLabel.textContent = 'Крутим...';
 
       spinsDone++;
-      var spinNumber = spinsDone; // 1 = первое кручение (всегда 30%), далее рандом
+      const spinNumber = spinsDone; // 1 = первое кручение (всегда 30%), далее рандом
 
       // Metrika: спин (номер попытки 1–3)
-      try { window.ym && window.ym(YM_COUNTER, 'reachGoal', 'fortune_spin', { attempt: spinNumber }); } catch (_) {}
+      try { (window as any).ym && (window as any).ym(YM_COUNTER, 'reachGoal', 'fortune_spin', { attempt: spinNumber }); } catch (_) {}
 
       // Hide previous win block while spinning
       winBlock.classList.add('hidden');
       winBlock.classList.remove('flex');
 
-      var winner = pickWinner(spinNumber);
-      var target = targetRotation(winner);
+      const winner = pickWinner(spinNumber);
+      const target = targetRotation(winner);
 
       wheel.style.transition = 'transform 3s cubic-bezier(0.17, 0.67, 0.12, 1.0)';
       wheel.style.transform  = 'rotate(' + target + 'deg)';
       currentRot = target;
 
-      setTimeout(function () {
+      setTimeout(() => {
         isSpinning = false;
         saveState();
         showWin(winner);
@@ -653,112 +674,107 @@ const segData = SEGMENTS.map((seg, i) => {
     });
 
     // ── Open booking modal ──
-    bookBtn.addEventListener('click', function () {
-      var d   = wonDiscount;
-      var fp  = Math.round(PRICE * (1 - d / 100));
-      var dep = Math.round(fp * 0.5);
+    bookBtn?.addEventListener('click', () => {
+      const d   = wonDiscount;
+      const fp  = computeFortunePrice(PRICE, d);
+      const dep = computeDeposit(fp);
 
-      modalDisc.textContent  = d + '%';
-      modalFinal.textContent = rub(fp);
-      modalDep.textContent   = rub(dep);
+      if (modalDisc)  modalDisc.textContent  = d + '%';
+      if (modalFinal) modalFinal.textContent = formatRub(fp);
+      if (modalDep)   modalDep.textContent   = formatRub(dep);
 
       // Кнопка: текст и бейдж скидки
-      var discBadge    = document.getElementById('fsc-pay-disc');
-      var discBadgeVal = document.getElementById('fsc-pay-disc-val');
+      const discBadge    = document.getElementById('fsc-pay-disc');
+      const discBadgeVal = document.getElementById('fsc-pay-disc-val');
       if (fortuneMode === 'lead') {
-        if (payLabel) payLabel.textContent = 'Отправить заявку';
+        if (payLabel)    payLabel.textContent    = 'Отправить заявку';
         if (discBadgeVal) discBadgeVal.textContent = String(d);
         if (discBadge)    discBadge.classList.remove('hidden');
       } else {
-        if (payLabel) payLabel.textContent = 'Оплатить ' + rub(dep) + ' через Т-банк';
+        if (payLabel) payLabel.textContent = 'Оплатить ' + formatRub(dep) + ' через Т-банк';
       }
 
       modal.classList.remove('hidden');
       modal.classList.add('flex');
       startTimer();
-      setTimeout(function () { nameInput.focus(); }, 50);
+      setTimeout(() => { nameInput?.focus(); }, 50);
 
       // Metrika: открыл форму бронирования
-      try { window.ym && window.ym(YM_COUNTER, 'reachGoal', 'fortune_modal_open', { discount: d }); } catch (_) {}
+      try { (window as any).ym && (window as any).ym(YM_COUNTER, 'reachGoal', 'fortune_modal_open', { discount: d }); } catch (_) {}
     });
 
     // ── Timer ──
     function startTimer() {
       if (!timerEl) return; // таймер убран — ничего не делаем
-      clearInterval(timerInterval);
-      var secs = 30 * 60;
+      if (timerInterval !== null) clearInterval(timerInterval);
+      let secs = TIMER_SECONDS;
       function tick() {
-        var m = Math.floor(secs / 60);
-        var s = secs % 60;
-        timerEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+        timerEl!.textContent = formatTimerTick(secs);
         if (secs <= 0) {
-          clearInterval(timerInterval);
-          timerEl.style.color = '#dc2626';
+          clearInterval(timerInterval!);
+          timerEl!.style.color = '#dc2626';
         }
         secs--;
       }
       tick();
-      timerInterval = setInterval(tick, 1000);
+      timerInterval = window.setInterval(tick, 1000);
     }
 
     function closeModal() {
       modal.classList.add('hidden');
       modal.classList.remove('flex');
-      clearInterval(timerInterval);
-      try { window.ym && window.ym(YM_COUNTER, 'reachGoal', 'fortune_modal_close', { discount: wonDiscount }); } catch(_e) {}
+      if (timerInterval !== null) clearInterval(timerInterval);
+      try { (window as any).ym && (window as any).ym(YM_COUNTER, 'reachGoal', 'fortune_modal_close', { discount: wonDiscount }); } catch (_e) {}
     }
 
-    modalClose.addEventListener('click', closeModal);
-    modal.addEventListener('click', function (e) {
+    modalClose?.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
       // закрыть если клик по подложке, но не по карточке
       if (e.target === modal || (e.target instanceof Element && e.target.closest(`[id="fsc-modal"]`) && !e.target.closest('[role="dialog"] .bg-white'))) closeModal();
     });
-    document.addEventListener('keydown', function (e) {
+    document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
     });
 
     // ── Pay button ──
-    payBtn.addEventListener('click', function () {
+    payBtn?.addEventListener('click', () => {
       if (formError) {
         formError.classList.add('hidden');
         formError.textContent = '';
       }
 
-      var name  = nameInput.value.trim();
-      var phone = phoneInput.value.replace(/\D/g, '');
+      const name  = nameInput?.value.trim() ?? '';
+      const phone = phoneInput?.value.replace(/\D/g, '') ?? '';
 
       if (!name || name.split(' ').length < 2) {
-        formError.textContent = 'Введите фамилию и имя';
-        formError.classList.remove('hidden');
-        nameInput.focus();
+        if (formError) { formError.textContent = 'Введите фамилию и имя'; formError.classList.remove('hidden'); }
+        nameInput?.focus();
         return;
       }
       if (phone.length < 10) {
-        formError.textContent = 'Введите корректный номер телефона';
-        formError.classList.remove('hidden');
-        phoneInput.focus();
+        if (formError) { formError.textContent = 'Введите корректный номер телефона'; formError.classList.remove('hidden'); }
+        phoneInput?.focus();
         return;
       }
       if (consentBox && !consentBox.checked) {
-        formError.textContent = 'Подтвердите согласие на обработку персональных данных';
-        formError.classList.remove('hidden');
+        if (formError) { formError.textContent = 'Подтвердите согласие на обработку персональных данных'; formError.classList.remove('hidden'); }
         consentBox.focus();
         return;
       }
 
       // Metrika: перехватываем лид до отправки в банк
       try {
-        window.ym && window.ym(YM_COUNTER, 'reachGoal', 'fortune_lead_capture', {
+        (window as any).ym && (window as any).ym(YM_COUNTER, 'reachGoal', 'fortune_lead_capture', {
           discount: wonDiscount,
-          name:     name,
-          phone:    phoneInput.value.trim(),
+          name,
+          phone: phoneInput?.value.trim(),
         });
       } catch (_) {}
 
-      payBtn.disabled = true;
-      payLabel.textContent = 'Переходим в банк…';
+      if (payBtn) payBtn.disabled = true;
+      if (payLabel) payLabel.textContent = 'Переходим в банк…';
 
-      var isTest = new URLSearchParams(window.location.search).get('ft') === '1';
+      const isTest = new URLSearchParams(window.location.search).get('ft') === '1';
 
       fetch('/api/fortune/init', {
         method: 'POST',
@@ -767,24 +783,23 @@ const segData = SEGMENTS.map((seg, i) => {
           shiftId:  SHIFT_ID,
           discount: wonDiscount,
           token:    wonToken,
-          name:     name,
-          phone:    phoneInput.value.trim(),
-          test:     isTest,
+          name,
+          phone: phoneInput?.value.trim(),
+          test:  isTest,
         }),
       })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
+        .then(r => r.json())
+        .then(data => {
           if (data.leadMode) {
-            // Режим «лид»: показываем подтверждение, менеджер перезвонит
-            clearInterval(timerInterval);
+            if (timerInterval !== null) clearInterval(timerInterval);
             try {
-              window.ym && window.ym(YM_COUNTER, 'reachGoal', 'fortune_lead', {
+              (window as any).ym && (window as any).ym(YM_COUNTER, 'reachGoal', 'fortune_lead', {
                 discount: wonDiscount,
                 order_id: data.orderId,
               });
-            } catch(_e) {}
+            } catch (_e) {}
             // Прячем форму, показываем экран благодарности
-            var formWrap = document.getElementById('fsc-form-wrap');
+            const formWrap = document.getElementById('fsc-form-wrap');
             if (formWrap) formWrap.innerHTML = [
               '<div class="flex flex-col items-center gap-4 py-6 text-center">',
               '  <div class="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">',
@@ -795,49 +810,49 @@ const segData = SEGMENTS.map((seg, i) => {
               '  <div class="rounded-xl bg-primary/8 px-4 py-3 text-center">',
               '    <p class="text-[12px] text-body-faint uppercase tracking-wider mb-0.5">Ваша скидка</p>',
               '    <p class="text-[22px] font-extrabold text-primary">' + wonDiscount + '%</p>',
-              '    <p class="text-[13px] text-body-muted">Итоговая цена: <b>' + (data.finalPrice || '').toLocaleString("ru-RU") + ' ₽</b></p>',
+              '    <p class="text-[13px] text-body-muted">Итоговая цена: <b>' + (data.finalPrice || '').toLocaleString('ru-RU') + ' ₽</b></p>',
               '  </div>',
               '</div>',
             ].join('');
           } else if (data.paymentUrl) {
-            clearInterval(timerInterval);
+            if (timerInterval !== null) clearInterval(timerInterval);
             try {
-              window.ym && window.ym(YM_COUNTER, 'reachGoal', 'fortune_payment_start', {
+              (window as any).ym && (window as any).ym(YM_COUNTER, 'reachGoal', 'fortune_payment_start', {
                 discount:   wonDiscount,
                 deposit:    data.deposit,
                 order_id:   data.orderId,
                 payment_id: data.paymentId,
               });
-            } catch(_e) {}
+            } catch (_e) {}
             window.location.href = data.paymentUrl;
           } else {
-            formError.textContent = data.error || 'Ошибка оплаты. Попробуйте ещё раз.';
-            formError.classList.remove('hidden');
-            payBtn.disabled = false;
-            payLabel.textContent = 'Оплатить через Т-банк';
+            if (formError) { formError.textContent = data.error || 'Ошибка оплаты. Попробуйте ещё раз.'; formError.classList.remove('hidden'); }
+            if (payBtn) payBtn.disabled = false;
+            if (payLabel) payLabel.textContent = 'Оплатить через Т-банк';
           }
         })
-        .catch(function () {
-          formError.textContent = 'Ошибка соединения. Проверьте интернет и попробуйте снова.';
-          formError.classList.remove('hidden');
-          payBtn.disabled = false;
-          payLabel.textContent = 'Оплатить через Т-банк';
+        .catch(() => {
+          if (formError) { formError.textContent = 'Ошибка соединения. Проверьте интернет и попробуйте снова.'; formError.classList.remove('hidden'); }
+          if (payBtn) payBtn.disabled = false;
+          if (payLabel) payLabel.textContent = 'Оплатить через Т-банк';
         });
     });
 
     // ── Phone mask ──
-    phoneInput.addEventListener('input', function () {
-      var raw = phoneInput.value.replace(/\D/g, '');
+    phoneInput?.addEventListener('input', () => {
+      if (!phoneInput) return;
+      let raw = phoneInput.value.replace(/\D/g, '');
       if (!raw.length) return;
       if (raw[0] === '8') raw = '7' + raw.slice(1);
       if (raw[0] === '9') raw = '7' + raw; // пользователь ввёл без 7 в начале
-      var out = '+' + raw[0];
+      let out = '+' + raw[0];
       if (raw.length > 1) out += ' (' + raw.slice(1, 4);
       if (raw.length >= 4) out += ') ' + raw.slice(4, 7);
       if (raw.length >= 7) out += '-' + raw.slice(7, 9);
       if (raw.length >= 9) out += '-' + raw.slice(9, 11);
       phoneInput.value = out;
     });
+  }
 
-  })();
+  initFortuneCard();
 </script>

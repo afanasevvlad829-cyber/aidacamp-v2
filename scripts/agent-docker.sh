@@ -21,6 +21,15 @@ SECRETS="${AGENT_SECRETS:-$HOME/.agent-secrets.env}"
 [ -f "$SECRETS" ] || { echo "✖ Нет файла секретов: $SECRETS (см. docker/agent/agent-secrets.env.example)"; exit 1; }
 docker image inspect "$IMAGE" >/dev/null 2>&1 || { echo "✖ Нет образа $IMAGE. Собери: docker build -t $IMAGE docker/agent"; exit 1; }
 
+# Concurrency guard: два контейнера со сборкой одновременно (2×5g) рискуют OOM
+# на 15g-сервере (инцидент 2026-06-08: ребут от наложения с SEO-крон-агентом).
+# Осознанный параллельный запуск: FORCE_PARALLEL=1.
+RUNNING=$(docker ps --filter ancestor="$IMAGE" --format '{{.ID}}' | wc -l | tr -d ' ')
+if [ "$RUNNING" -gt 0 ] && [ "${FORCE_PARALLEL:-0}" != "1" ]; then
+  echo "✖ Уже запущен агент-контейнер ($RUNNING шт). Дождись завершения, или FORCE_PARALLEL=1 для параллели (риск OOM)."
+  exit 1
+fi
+
 # Бриф во временный файл → единственное, что монтируется с хоста (read-only).
 # chmod 644: mktemp создаёт 600/root, а внутри контейнера non-root юзер agent
 # (другой uid) иначе не прочитает смонтированный бриф (Permission denied).
@@ -32,7 +41,7 @@ docker run --rm \
   --env-file "$SECRETS" \
   -e REPO="$REPO" -e BRANCH="$BRANCH" -e SLUG="$SLUG" \
   -v "$BRIEF_TMP:/work/brief.txt:ro" \
-  --memory=8g --cpus=4 \
+  --memory=5g --cpus=2 \
   "$IMAGE"
 
 echo "✅ Контейнер завершён и удалён. Проверь PR в dev."
