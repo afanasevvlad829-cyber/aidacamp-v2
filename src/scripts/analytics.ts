@@ -74,3 +74,7 @@ export function initScrollTracking() {
     });
   }, { passive: true });
 }
+
+/** ID счётчика Яндекс.Метрики. */
+export const YM_COUNTER = YANDEX_METRIKA_ID;
+export const YM_COUNTER_ID = String(YANDEX_METRIKA_ID);

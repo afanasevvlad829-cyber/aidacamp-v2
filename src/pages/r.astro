@@ -13,6 +13,7 @@ import Reviews from '../components/Reviews.astro';
 import FAQ from '../components/FAQ.astro';
 import Contacts from '../components/Contacts.astro';
 import { TELEGRAM_URL } from '../data/contacts';
+import { YM_COUNTER } from '../data/tracking';
 import { mainShifts, shortShifts } from '../data/shifts';
 import { getCurrentPrice, getDays } from '../data/dynamicPrices';
 
@@ -244,7 +245,7 @@ const shiftsJson = JSON.stringify(allShifts.map(s => ({
   <ShiftBookModal />
 </Base>
 
-<script define:vars={{ shiftsJson, vychetMap }}>
+<script define:vars={{ shiftsJson, vychetMap, YM_COUNTER }}>
 const SHIFTS = JSON.parse(shiftsJson);
 
 // vychetMap передан с сервера из dynamicPrices.ts — актуальные суммы вычета
@@ -471,7 +472,7 @@ function init() {
 
   // Метрика: фиксируем визит с codims
   if (isCodims) {
-    try { window.ym && window.ym(96499295, 'reachGoal', 'codims_r_page_view', { visit: codimsVisits }); } catch {}
+    try { window.ym && window.ym(YM_COUNTER, 'reachGoal', 'codims_r_page_view', { visit: codimsVisits }); } catch {}
   }
 
   // Вычет: показываем сумму возврата, не итоговую цену
@@ -490,11 +491,11 @@ function init() {
 
   document.getElementById('r-book-btn')?.addEventListener('click', () => {
     openBookingModal(shift);
-    try { window.ym && window.ym(96499295, 'reachGoal', 'return_page_book_click'); } catch {}
+    try { window.ym && window.ym(YM_COUNTER, 'reachGoal', 'return_page_book_click'); } catch {}
   });
 
   document.querySelector('a[data-analytics-label="r_hero"]')?.addEventListener('click', () => {
-    try { window.ym && window.ym(96499295, 'reachGoal', 'return_page_telegram_click', { shift: shift.id }); } catch {}
+    try { window.ym && window.ym(YM_COUNTER, 'reachGoal', 'return_page_telegram_click', { shift: shift.id }); } catch {}
     fetch('/api/r-telegram-notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -502,9 +503,9 @@ function init() {
     }).catch(() => {});
   });
 
-  try { window.ym && window.ym(96499295, 'reachGoal', 'return_page_view', { shift: shift.id, from: fromSource || 'direct' }); } catch {}
+  try { window.ym && window.ym(YM_COUNTER, 'reachGoal', 'return_page_view', { shift: shift.id, from: fromSource || 'direct' }); } catch {}
   if (isCodims) {
-    try { window.ym && window.ym(96499295, 'reachGoal', 'codims_r_page_view', { shift: shift.id }); } catch {}
+    try { window.ym && window.ym(YM_COUNTER, 'reachGoal', 'codims_r_page_view', { shift: shift.id }); } catch {}
   }
 }
 
