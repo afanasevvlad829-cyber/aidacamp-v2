@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { requireStaff } from '../../../lib/portalPerms';
+import { requireStaff } from '../../../../lib/portalPerms';
 import { toggleDone, setDone } from '../../../../lib/portalShift';
 
 export const POST: APIRoute = async ({ locals, request }) => {

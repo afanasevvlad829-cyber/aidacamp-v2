@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { requireStaff } from '../../../lib/portalPerms';
+import { requireStaff } from '../../../../lib/portalPerms';
 import {
   createShift, archiveShift, upsertEvent, duplicateEvent, deleteEvent, upsertChecklist, attachChecklist, deleteChecklist,
 } from '../../../../lib/portalShift';
