@@ -37,6 +37,7 @@ export const landingPages: LandingPage[] = [
   { title: 'Московские летние лагеря', description: 'IT-лагерь в 66 км от Москвы, трансфер', url: '/moskovskie-letnie-lagerya', icon: 'bi-geo-alt' },
 
   // 🎯 Тематические IT
+  { title: 'IT-лагерь', description: 'Общий вход в IT-нишу: Python, Roblox, AI, Minecraft для 7–15 лет', url: '/it-lager', icon: 'bi-laptop' },
   { title: 'AI-лагерь для детей', description: 'Нейросети, ChatGPT API, AI-проекты', url: '/ai-lager', icon: 'bi-cpu' },
   { title: 'Лагерь с бассейном', description: 'Закрытый бассейн, всё включено', url: '/lager-s-basseynom', icon: 'bi-sun' },
   { title: 'IT лагерь', description: 'Компьютерный лагерь, Python и AI', url: '/kompyuternyy-lager', icon: 'bi-laptop' },
@@ -108,6 +109,7 @@ const IT_URLS = new Set([
   '/letnyaya-it-shkola',
   '/lager-programmirovaniya',
   '/kompyuternyy-lager',
+  '/it-lager',
   '/ai-lager',
   '/python-lager',
   '/minecraft-lager',
@@ -216,6 +218,9 @@ const ARTICLE_MAP: Record<string, LandingPage[]> = {
   ],
   '/lager-bez-telefonov': [
     { title: 'Зависимость от компьютерных игр', description: 'Признаки, причины, что поможет', url: '/stati/zavisimost-ot-kompyuternyh-igr', icon: 'phone-x' },
+  ],
+  '/it-lager': [
+    { title: 'Чем IT-лагерь отличается от кружка', description: 'Сравнение форматов, что лучше для вашего', url: '/stati/it-lager-vs-kruzhok', icon: 'list-check' },
   ],
   '/scratch-lager': [
     { title: 'Scratch для детей', description: 'Что такое, с чего начать, возраст', url: '/stati/scratch-dlya-detej', icon: 'code-slash' },

@@ -3,9 +3,11 @@
 # Никаких прод-секретов/файлов не запекается. claude bypass работает (non-root).
 FROM node:22-bookworm-slim
 
-# Инструменты: git (worktree/commit), gh (PR), ca-certs, curl (установка gh)
+# Инструменты: git (worktree/commit), gh (PR), ca-certs, curl (установка gh),
+# python3 — нужен для scripts/check-banned-words.sh (guard в npm run build).
+# Без него guard падал и агенты ломали проверку, портируя её на node.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      git openssh-client ca-certificates curl jq \
+      git openssh-client ca-certificates curl jq python3 \
   && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
       -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
   && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
