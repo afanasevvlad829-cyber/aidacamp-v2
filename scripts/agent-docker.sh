@@ -32,7 +32,7 @@ docker run --rm \
   --env-file "$SECRETS" \
   -e REPO="$REPO" -e BRANCH="$BRANCH" -e SLUG="$SLUG" \
   -v "$BRIEF_TMP:/work/brief.txt:ro" \
-  --memory=2g --cpus=2 \
+  --memory=8g --cpus=4 \
   "$IMAGE"
 
 echo "✅ Контейнер завершён и удалён. Проверь PR в dev."
