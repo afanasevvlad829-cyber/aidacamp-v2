@@ -50,6 +50,7 @@ export const ARTICLE_DATES: Record<string, string> = {
   'kak-podgotovit-rebenka-k-lageru':                 '2026-03-15',
   'kak-provesti-leto-s-polzoy':                      '2026-04-01',
   'lager-ili-repetitor-letom':                       '2026-04-10',
+  'lager-na-10-dney-otzyvy-mam':                     '2026-06-08',
   'lager-na-2-nedeli':                               '2026-03-20',
   'luchshie-lagerya-dlya-podrostkov':                '2026-04-01',
   'oplata-detskogo-lagerya':                         '2026-04-15',
