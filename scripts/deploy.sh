@@ -119,6 +119,14 @@ cd "$PROJECT_DIR"
 
 # ── 0. Сборка ─────────────────────────────────────────────────
 echo ""
+echo ""
+echo "📦 Зависимости (синк с lockfile перед сборкой)..."
+if [ ! -d node_modules ] || ! cmp -s package-lock.json node_modules/.package-lock.json 2>/dev/null; then
+  echo "  ⚙️  lockfile изменился или node_modules нет → npm ci..."
+  npm ci
+else
+  echo "  ✅ node_modules в синке"
+fi
 echo "🔨 Сборка..."
 # DEPLOY_ENV=dev → assetsPrefix отключён, JS/CSS грузятся с того же хоста
 # DEPLOY_ENV=prod → assetsPrefix=https://huhodirekeka.begetcdn.cloud (CDN)

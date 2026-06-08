@@ -1,6 +1,7 @@
 ---
 import { getCurrentPrice } from '../../data/dynamicPrices';
 import { mainShifts } from '../../data/shifts';
+import { YM_COUNTER } from '../../data/tracking';
 
 interface Props {
   shiftId?: string;
@@ -380,7 +381,7 @@ const segData = SEGMENTS.map((seg, i) => {
   </div><!-- /flex wrapper -->
 </div>
 
-<script define:vars={{ SEGMENTS, currentPrice, fortuneMode, SHIFT_ID }}>
+<script define:vars={{ SEGMENTS, currentPrice, fortuneMode, SHIFT_ID, YM_COUNTER }}>
   (function () {
     var PRICE = currentPrice;
     var segs  = SEGMENTS;
@@ -483,7 +484,7 @@ const segData = SEGMENTS.map((seg, i) => {
       new IntersectionObserver(function(entries, obs) {
         if (entries[0].isIntersecting && !_wheelViewed) {
           _wheelViewed = true;
-          try { window.ym && window.ym(96499295, 'reachGoal', 'fortune_wheel_view'); } catch(_e) {}
+          try { window.ym && window.ym(YM_COUNTER, 'reachGoal', 'fortune_wheel_view'); } catch(_e) {}
           obs.disconnect();
         }
       }, { threshold: 0.4 }).observe(wheelArea || wheel);
@@ -588,7 +589,7 @@ const segData = SEGMENTS.map((seg, i) => {
 
       // Metrika: выиграл скидку
       try {
-        window.ym && window.ym(96499295, 'reachGoal', 'fortune_win', {
+        window.ym && window.ym(YM_COUNTER, 'reachGoal', 'fortune_win', {
           discount:    d,
           price_full:  PRICE,
           price_final: Math.round(PRICE * (1 - d / 100)),
@@ -614,7 +615,7 @@ const segData = SEGMENTS.map((seg, i) => {
         fallback.classList.remove('hidden');
         fallback.classList.add('flex');
       }
-      try { window.ym && window.ym(96499295, 'reachGoal', 'fortune_fallback_shown'); } catch (_) {}
+      try { window.ym && window.ym(YM_COUNTER, 'reachGoal', 'fortune_fallback_shown'); } catch (_) {}
     }
 
     // ── Spin ──
@@ -631,7 +632,7 @@ const segData = SEGMENTS.map((seg, i) => {
       var spinNumber = spinsDone; // 1 = первое кручение (всегда 30%), далее рандом
 
       // Metrika: спин (номер попытки 1–3)
-      try { window.ym && window.ym(96499295, 'reachGoal', 'fortune_spin', { attempt: spinNumber }); } catch (_) {}
+      try { window.ym && window.ym(YM_COUNTER, 'reachGoal', 'fortune_spin', { attempt: spinNumber }); } catch (_) {}
 
       // Hide previous win block while spinning
       winBlock.classList.add('hidden');
@@ -678,7 +679,7 @@ const segData = SEGMENTS.map((seg, i) => {
       setTimeout(function () { nameInput.focus(); }, 50);
 
       // Metrika: открыл форму бронирования
-      try { window.ym && window.ym(96499295, 'reachGoal', 'fortune_modal_open', { discount: d }); } catch (_) {}
+      try { window.ym && window.ym(YM_COUNTER, 'reachGoal', 'fortune_modal_open', { discount: d }); } catch (_) {}
     });
 
     // ── Timer ──
@@ -704,7 +705,7 @@ const segData = SEGMENTS.map((seg, i) => {
       modal.classList.add('hidden');
       modal.classList.remove('flex');
       clearInterval(timerInterval);
-      try { window.ym && window.ym(96499295, 'reachGoal', 'fortune_modal_close', { discount: wonDiscount }); } catch(_e) {}
+      try { window.ym && window.ym(YM_COUNTER, 'reachGoal', 'fortune_modal_close', { discount: wonDiscount }); } catch(_e) {}
     }
 
     modalClose.addEventListener('click', closeModal);
@@ -747,7 +748,7 @@ const segData = SEGMENTS.map((seg, i) => {
 
       // Metrika: перехватываем лид до отправки в банк
       try {
-        window.ym && window.ym(96499295, 'reachGoal', 'fortune_lead_capture', {
+        window.ym && window.ym(YM_COUNTER, 'reachGoal', 'fortune_lead_capture', {
           discount: wonDiscount,
           name:     name,
           phone:    phoneInput.value.trim(),
@@ -777,7 +778,7 @@ const segData = SEGMENTS.map((seg, i) => {
             // Режим «лид»: показываем подтверждение, менеджер перезвонит
             clearInterval(timerInterval);
             try {
-              window.ym && window.ym(96499295, 'reachGoal', 'fortune_lead', {
+              window.ym && window.ym(YM_COUNTER, 'reachGoal', 'fortune_lead', {
                 discount: wonDiscount,
                 order_id: data.orderId,
               });
@@ -801,7 +802,7 @@ const segData = SEGMENTS.map((seg, i) => {
           } else if (data.paymentUrl) {
             clearInterval(timerInterval);
             try {
-              window.ym && window.ym(96499295, 'reachGoal', 'fortune_payment_start', {
+              window.ym && window.ym(YM_COUNTER, 'reachGoal', 'fortune_payment_start', {
                 discount:   wonDiscount,
                 deposit:    data.deposit,
                 order_id:   data.orderId,
