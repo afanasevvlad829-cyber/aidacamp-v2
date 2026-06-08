@@ -116,6 +116,20 @@ export const shortShifts: Shift[] = [
 
 export const allShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShifts[2], mainShifts[3]];
 
+// === Derived: единые цены для типовых блоков. НЕ хардкодить цифры на страницах! ===
+const _allForPrice = [...mainShifts, ...shortShifts];
+const _priceNum = (p: string) => parseInt(p.replace(/[^\d]/g, ''), 10);
+const _sorted = [..._allForPrice].sort((a, b) => _priceNum(a.price) - _priceNum(b.price));
+export const PRICE_MIN = _sorted[0].price;
+export const PRICE_MAX = _sorted[_sorted.length - 1].price;
+export const PRICE_RANGE = `от ${PRICE_MIN} до ${PRICE_MAX}`;
+export const PRICE_S1 = mainShifts[0].price;
+export const PRICE_S2 = mainShifts[1].price;
+export const PRICE_S3 = mainShifts[2].price;
+export const PRICE_S4 = mainShifts[3].price;
+export const PRICE_S21 = shortShifts[0].price;
+export const PRICE_S22 = shortShifts[1].price;
+
 // Единый источник: сколько ровесников едет в каждую смену по возрасту
 export const PEER_COUNTS: Record<string, Record<string, number>> = {
   'shift-1':   { '7–9': 12, '10–12': 12, '13–15': 12 },
