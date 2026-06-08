@@ -32,8 +32,10 @@ interface Props {
   /** Загружать tag.js Метрики немедленно (без задержки 8 сек / интеракции).
    *  Используй для страниц с коротким визитом — /r/, /akciya/ и т.п. */
   eagerMetrika?: boolean;
-  /** Запрет индексации страницы поисковиками (robots: noindex, nofollow) */
+  /** Запрет индексации страницы поисковиками (robots: noindex, follow) */
   noindex?: boolean;
+  /** Переопределяет self-canonical. Если не задан — строится из Astro.url.pathname. */
+  canonical?: string;
 }
 
 const {
@@ -48,9 +50,10 @@ const {
   heroPreloadDesktop,
   eagerMetrika = false,
   noindex = false,
+  canonical: canonicalProp,
 } = Astro.props;
 const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `https://aidacamp.ru${ogImage}`;
-const canonicalUrl = new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
+const canonicalUrl = canonicalProp ?? new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
 // Автодетект: /stati/ → article, остальные → website
 const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !Astro.url.pathname.endsWith('/stati/') ? 'article' : 'website');
 ---
@@ -70,7 +73,7 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     }
     {heroPreloadDesktop && <link rel="preload" as="image" media="(min-width: 768px)" href={heroPreloadDesktop} type="image/avif" fetchpriority="high" />}
     <meta name="description" content={description} />
-    <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
+    <meta name="robots" content={noindex ? 'noindex, follow' : 'index, follow'} />
     <!-- Mobile address bar / Android task switcher color (бренд orange) -->
     <meta name="theme-color" content="#ec9b44" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#0d1a2b" media="(prefers-color-scheme: dark)">
