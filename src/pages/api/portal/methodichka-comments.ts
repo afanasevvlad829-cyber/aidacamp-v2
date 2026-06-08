@@ -1,22 +1,18 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { verifySessionPayload } from '../../../lib/portalSession';
+import { requireStaff } from '../../../lib/portalPerms';
 import { listComments, listHistory, createComment, archiveComment } from '../../../lib/portalMethodichkaComments';
 
 const ALLOWED = new Set(['admin', 'teacher', 'vozhaty', 'rukovoditel']);
 
-function auth(cookies: Parameters<APIRoute>[0]['cookies']) {
-  const p = verifySessionPayload(cookies.get('portal_session')?.value, process.env.PORTAL_SESSION_SECRET ?? '');
-  if (!p) return null;
-  if (!ALLOWED.has(p.role)) return null;
-  return p as any;
-}
 
 const j = (x: unknown, init?: ResponseInit) =>
   new Response(JSON.stringify(x), { headers: { 'Content-Type': 'application/json' }, ...init });
 
-export const GET: APIRoute = async ({ cookies, url }) => {
-  const p = auth(cookies); if (!p) return j({ ok: false, error: 'forbidden' }, { status: 403 });
+export const GET: APIRoute = async ({ locals, url }) => {
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
   const slug = String(url.searchParams.get('slug') || '').trim();
   const history = url.searchParams.get('history');
   if (history) {
@@ -28,12 +24,14 @@ export const GET: APIRoute = async ({ cookies, url }) => {
   return j({ ok: true, items });
 };
 
-export const POST: APIRoute = async ({ cookies, request }) => {
-  const p = auth(cookies); if (!p) return j({ ok: false, error: 'forbidden' }, { status: 403 });
+export const POST: APIRoute = async ({ locals, request }) => {
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
   const body = await request.json().catch(() => ({} as any));
   const action = String(body.action || 'create');
-  const author = String(p.sub || p.role || 'admin');
-  const authorName = String(p.name || p.role || 'admin');
+  const author = String(sub || role || 'admin');
+  const authorName = String(p.name || role || 'admin');
 
   try {
     if (action === 'create') {

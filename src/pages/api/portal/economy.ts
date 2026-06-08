@@ -1,30 +1,27 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { verifySessionPayload } from '../../../lib/portalSession';
-import { isStaff } from '../../../lib/portalPerms';
+import { isStaff, requireStaff } from '../../../lib/portalPerms';
 import {
   listPrizeStates, replacePrizeState, upsertPrizeState,
   listActivities, upsertActivity, deleteActivity,
 } from '../../../lib/portalEconomy';
 
-function auth(cookies: Parameters<APIRoute>[0]['cookies']) {
-  const p = verifySessionPayload(cookies.get('portal_session')?.value, process.env.PORTAL_SESSION_SECRET ?? '');
-  if (!p) return null;
-  if (!isStaff(p.role)) return null;
-  return p;
-}
 
 const j = (x: unknown, init?: ResponseInit) =>
   new Response(JSON.stringify(x), { headers: { 'Content-Type': 'application/json' }, ...init });
 
-export const GET: APIRoute = async ({ cookies }) => {
-  const p = auth(cookies); if (!p) return j({ ok: false, error: 'forbidden' }, { status: 403 });
+export const GET: APIRoute = async ({ locals }) => {
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
   const [states, activities] = await Promise.all([listPrizeStates(), listActivities()]);
   return j({ ok: true, prize_states: states, activities });
 };
 
-export const POST: APIRoute = async ({ cookies, request }) => {
-  const p = auth(cookies); if (!p) return j({ ok: false, error: 'forbidden' }, { status: 403 });
+export const POST: APIRoute = async ({ locals, request }) => {
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
   const body = await request.json().catch(() => ({} as any));
   const action = String(body.action || '');
   const userId = String((p as any).sub || (p as any).role || 'admin');

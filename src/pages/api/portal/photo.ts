@@ -1,11 +1,11 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
+import { requireAuth, requireStaff } from '../../../lib/portalPerms';
 import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join, extname } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { verifySessionPayload } from '../../../lib/portalSession';
 import { insertPhoto, listPhotosByEvent, setContentTaskCompleted, lookupAuthorNames } from '../../../lib/portalPhoto';
 
 const execFileAsync = promisify(execFile);
@@ -54,14 +54,12 @@ async function probeVideoDuration(filePath: string): Promise<number | null> {
   }
 }
 
-export const POST: APIRoute = async ({ request, cookies }) => {
-  // Auth
-  const session = verifySessionPayload(
-    cookies.get('portal_session')?.value,
-    process.env.PORTAL_SESSION_SECRET ?? '',
-  );
-  if (!session || !session.sub) return jsonError('no-session', 401);
-  if (!ALLOWED_ROLES.has(session.role)) return jsonError('forbidden', 403);
+export const POST: APIRoute = async ({ locals, request }) => {
+  // Auth — любая авторизованная роль (включая student)
+  const authResult = requireAuth(locals);
+  if (authResult instanceof Response) return jsonError('no-session', 401);
+  const { role, sub } = authResult;
+  if (!ALLOWED_ROLES.has(role)) return jsonError('forbidden', 403);
 
   // Parse form
   let formData: FormData;
@@ -179,7 +177,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const inserted = await insertPhoto({
       event_id: eventId,
       content_task_id: null, // resolved below if template found
-      author_telegram_id: session.sub,
+      author_telegram_id: sub,
       file_type: fileType,
       mime,
       width,
@@ -200,7 +198,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   // Mark content task completed
   if (contentTaskTemplateId) {
     try {
-      await setContentTaskCompleted(eventId, contentTaskTemplateId, session.sub);
+      await setContentTaskCompleted(eventId, contentTaskTemplateId, sub);
     } catch {
       // non-fatal
     }
@@ -212,12 +210,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   );
 };
 
-export const GET: APIRoute = async ({ url, cookies }) => {
-  const session = verifySessionPayload(
-    cookies.get('portal_session')?.value,
-    process.env.PORTAL_SESSION_SECRET ?? '',
-  );
-  if (!session) return jsonError('no-session', 401);
+export const GET: APIRoute = async ({ locals, url }) => {
+  const authResult = requireAuth(locals);
+  if (authResult instanceof Response) return jsonError('no-session', 401);
 
   const eventIdRaw = url.searchParams.get('event_id');
   const eventId = eventIdRaw ? Number(eventIdRaw) : NaN;

@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { verifySessionPayload } from '../../../lib/portalSession';
+import { requireAuth } from '../../../lib/portalPerms';
 import { query } from '../../../lib/db';
 
 /**
@@ -36,28 +36,27 @@ function authEmail(role: string, sub?: number | string): string {
   return `tg${sub}@staff.aidacamp.local`;
 }
 
-export const GET: APIRoute = async ({ cookies }) => {
-  const p = verifySessionPayload(
-    cookies.get('portal_session')?.value,
-    process.env.PORTAL_SESSION_SECRET ?? '',
-  );
+export const GET: APIRoute = async ({ locals }) => {
+  const _a = requireAuth(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
   if (!p) {
     return new Response(JSON.stringify({ ok: false }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
     });
   }
-  const email = authEmail(p.role, p.sub);
-  const subStr = p.sub != null ? String(p.sub) : 'shared';
+  const email = authEmail(role, sub);
+  const subStr = sub != null ? String(sub) : 'shared';
 
   // Реальное ФИО для отображения в Open WebUI: для ученика берём из portal_kid.
   // Open WebUI создаёт аккаунт с этим именем при первом входе (X-Auth-Name).
-  let displayName = ROLE_LABEL[p.role] || p.role;
-  if (p.role === 'student' && p.sub != null) {
+  let displayName = ROLE_LABEL[role] || role;
+  if (role === 'student' && sub != null) {
     try {
       const rows = await query<{ name: string }>(
         'SELECT name FROM portal_kid WHERE id = $1',
-        [p.sub],
+        [sub],
       );
       if (rows && rows[0]?.name) displayName = rows[0].name;
     } catch {
@@ -67,15 +66,15 @@ export const GET: APIRoute = async ({ cookies }) => {
 
   return new Response(JSON.stringify({
     ok: true,
-    role: p.role,
-    label: ROLE_LABEL[p.role] || p.role,
-    sub: p.sub ?? null,
+    role: role,
+    label: ROLE_LABEL[role] || role,
+    sub: sub ?? null,
     name: displayName,
     email,
   }), {
     headers: {
       'Content-Type': 'application/json',
-      'X-Auth-Role': p.role,
+      'X-Auth-Role': role,
       'X-Auth-Sub': subStr,
       'X-Auth-Email': email,
       // ФИО для trusted-header Open WebUI. Percent-encoded (UTF-8) —

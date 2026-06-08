@@ -3,8 +3,7 @@ import type { APIRoute } from 'astro';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { verifySessionPayload } from '../../../lib/portalSession';
-import { isStaff } from '../../../lib/portalPerms';
+import { requireStaff } from '../../../lib/portalPerms';
 import {
   listIssuances, createIssuance, deleteIssuance, updateIssuance, countIssuancesByPrize,
   listCustomPrizes, createCustomPrize, archiveCustomPrize, deleteAllIssuances,
@@ -16,13 +15,6 @@ const MAX_FILE_BYTES = 200 * 1024 * 1024; // 200 МБ — фото/видео
 function j(x: unknown, init?: ResponseInit) {
   return new Response(JSON.stringify(x), { headers: { 'Content-Type': 'application/json' }, ...init });
 }
-function auth(cookies: Parameters<APIRoute>[0]['cookies']) {
-  const p = verifySessionPayload(cookies.get('portal_session')?.value, process.env.PORTAL_SESSION_SECRET ?? '');
-  if (!p) return null;
-  if (!isStaff(p.role)) return null;
-  return p as any;
-}
-
 async function saveUpload(file: File, subdir: string): Promise<string | null> {
   if (!file || file.size === 0) return null;
   if (file.size > MAX_FILE_BYTES) throw new Error('file too large');
@@ -37,8 +29,9 @@ async function saveUpload(file: File, subdir: string): Promise<string | null> {
   return `${URL_PREFIX}/${subdir}/${today}/${name}`;
 }
 
-export const GET: APIRoute = async ({ cookies, url }) => {
-  const p = auth(cookies); if (!p) return j({ ok: false, error: 'forbidden' }, { status: 403 });
+export const GET: APIRoute = async ({ locals, url }) => {
+  const auth = requireStaff(locals);
+  if (auth instanceof Response) return auth;
   const action = url.searchParams.get('action');
   try {
     if (action === 'list_custom') {
@@ -58,8 +51,10 @@ export const GET: APIRoute = async ({ cookies, url }) => {
   }
 };
 
-export const POST: APIRoute = async ({ cookies, request }) => {
-  const p = auth(cookies); if (!p) return j({ ok: false, error: 'forbidden' }, { status: 403 });
+export const POST: APIRoute = async ({ locals, request }) => {
+  const auth = requireStaff(locals);
+  if (auth instanceof Response) return auth;
+  const { role, sub } = auth;
   const ct = request.headers.get('content-type') ?? '';
 
   try {
