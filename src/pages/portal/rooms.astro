@@ -32,8 +32,13 @@ const tab = (Astro.url.searchParams.get('tab') || 'inventory') as 'inventory' | 
 if (!role || role === 'student') return Astro.redirect('/portal/');
 
 const shift = await getActiveShift();
-const inventory = shift ? await listInventoryByShift(shift.id) : [];
-const assignments = shift && tab === 'rasselenie' ? await listAssignments(shift.id) : [];
+// inventory, assignments и roomCheckEventId не зависят друг от друга — параллельно
+const [inventory, assignments, roomCheckEventId_] = await Promise.all([
+  shift ? listInventoryByShift(shift.id) : Promise.resolve([] as Awaited<ReturnType<typeof listInventoryByShift>>),
+  shift && tab === 'rasselenie' ? listAssignments(shift.id) : Promise.resolve([] as Awaited<ReturnType<typeof listAssignments>>),
+  shift ? lookupRoomCheckEventId().catch(() => 0) : Promise.resolve(0),
+]);
+roomCheckEventId = roomCheckEventId_;
 const assignedByBed = new Map<string, typeof assignments[number]>();
 const unassignedKids: typeof assignments = [];
 for (const a of assignments) {
@@ -43,7 +48,6 @@ for (const a of assignments) {
     unassignedKids.push(a);
   }
 }
-roomCheckEventId = shift ? await lookupRoomCheckEventId().catch(() => 0) : 0;
 const statusByRoom = new Map<number, string>();
 for (const r of inventory) statusByRoom.set(r.room_number, r.status);
 

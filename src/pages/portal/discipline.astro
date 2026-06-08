@@ -37,21 +37,26 @@ async function staffIdByTg(tg: number): Promise<number | null> {
     return (r.rows[0]?.id as number) ?? null;
   } finally { await c.end(); }
 }
-const mySid = sub != null ? await staffIdByTg(sub) : null;
+// mySid и activeShift независимы — запрашиваем параллельно
+const [mySid, shift] = await Promise.all([
+  sub != null ? staffIdByTg(sub) : Promise.resolve(null),
+  getActiveShift(),
+]);
 const noSubWarning = sub == null;
 
-const shift = await getActiveShift();
 const allowedStatuses = ['open','proposed','confirmed','paid','cancelled'] as const;
 const statusForLib = (allowedStatuses as readonly string[]).includes(filterStatus) ? (filterStatus as (typeof allowedStatuses)[number]) : 'open';
 
-const penalties = await listPenalties({
-  staff_id: scope === 'mine' && mySid ? mySid : undefined,
-  shift_id: shift?.id,
-  status: statusForLib,
-});
-
-const reasons = isManager ? await getReasons() : [];
-const staff   = isManager ? await listStaff() : [];
+// штрафы + справочники менеджера — всё параллельно
+const [penalties, reasons, staff] = await Promise.all([
+  listPenalties({
+    staff_id: scope === 'mine' && mySid ? mySid : undefined,
+    shift_id: shift?.id,
+    status: statusForLib,
+  }),
+  isManager ? getReasons() : Promise.resolve([] as Awaited<ReturnType<typeof getReasons>>),
+  isManager ? listStaff()  : Promise.resolve([] as Awaited<ReturnType<typeof listStaff>>),
+]);
 
 // Сводка по «моим» — сумма по статусам
 const sum = { proposed: 0, confirmed: 0, paid: 0, cancelled: 0 };
