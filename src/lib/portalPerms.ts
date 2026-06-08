@@ -35,3 +35,37 @@ export const ROLE_LABELS: Record<string, string> = {
   vozhaty: 'Вожатый',
   student: 'Ученик',
 };
+
+/**
+ * Проверяет роль из locals (уже валидированных middleware).
+ * Использовать вместо verifySessionPayload в эндпоинтах.
+ */
+export function requireRole(
+  locals: App.Locals,
+  roles: string[],
+): { role: string; sub: number } | Response {
+  const role = locals.portalRole;
+  const sub  = locals.portalSub;
+  if (!role || sub == null) {
+    return new Response(JSON.stringify({ ok: false, error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+  }
+  if (!roles.includes(role)) {
+    return new Response(JSON.stringify({ ok: false, error: 'forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+  }
+  return { role, sub };
+}
+
+/** Любой сотрудник (не student). */
+export function requireStaff(locals: App.Locals): { role: string; sub: number } | Response {
+  return requireRole(locals, ['admin', 'rukovoditel', 'teacher', 'vozhaty']);
+}
+
+/** Любая аутентифицированная роль. */
+export function requireAuth(locals: App.Locals): { role: string; sub: number } | Response {
+  const role = locals.portalRole;
+  const sub  = locals.portalSub;
+  if (!role || sub == null) {
+    return new Response(JSON.stringify({ ok: false, error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+  }
+  return { role, sub };
+}
