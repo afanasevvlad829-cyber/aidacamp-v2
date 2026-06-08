@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { requireStaff } from '../../../lib/portalPerms';
+import { requireStaff } from '../../../../lib/portalPerms';
 import { getActiveShift, getEvents, getDone } from '../../../../lib/portalShift';
 
 export const GET: APIRoute = async ({ locals }) => {

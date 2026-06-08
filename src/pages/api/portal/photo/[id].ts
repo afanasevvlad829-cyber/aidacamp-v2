@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { requireStaff } from '../../../lib/portalPerms';
+import { requireStaff } from '../../../../lib/portalPerms';
 import { unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { getPhotoById, deletePhotoRow } from '../../../../lib/portalPhoto';
