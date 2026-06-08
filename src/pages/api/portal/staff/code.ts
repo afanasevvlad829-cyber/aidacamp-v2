@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { verifySessionPayload } from '../../../../lib/portalSession';
+import { requireStaff } from '../../../lib/portalPerms';
 import { regenerateStaffCode, clearStaffCode } from '../../../../lib/portalStaff';
 
 /**
@@ -10,12 +10,11 @@ import { regenerateStaffCode, clearStaffCode } from '../../../../lib/portalStaff
  *   generate → выдаёт/перевыпускает персональный 6-значный код-вход → { ok, code }
  *   revoke   → убирает код (останется только вход через TG)            → { ok }
  */
-export const POST: APIRoute = async ({ request, cookies }) => {
-  const p = verifySessionPayload(
-    cookies.get('portal_session')?.value,
-    process.env.PORTAL_SESSION_SECRET ?? '',
-  );
-  if (!p || p.role !== 'admin') {
+export const POST: APIRoute = async ({ locals, request }) => {
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
+  if (!p || role !== 'admin') {
     return new Response(JSON.stringify({ ok: false, error: 'forbidden' }), {
       status: 403, headers: { 'Content-Type': 'application/json' },
     });

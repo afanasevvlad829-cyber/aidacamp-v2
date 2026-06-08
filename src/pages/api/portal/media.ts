@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { verifySessionPayload } from '../../../lib/portalSession';
+import { requireStaff } from '../../../lib/portalPerms';
 import { listMedia, attachMedia, deleteMedia, getMedia, reorderMedia } from '../../../lib/portalMedia';
 import { mkdir, writeFile } from 'fs/promises';
 import { join, extname } from 'path';
@@ -29,9 +29,10 @@ function mimeToType(mime: string): 'photo' | 'video' | null {
   return null;
 }
 
-export const GET: APIRoute = async ({ url, cookies }) => {
-  const s = verifySessionPayload(cookies.get('portal_session')?.value, process.env.PORTAL_SESSION_SECRET ?? '');
-  if (!s) return jerr('unauthorized', 401);
+export const GET: APIRoute = async ({ locals, url }) => {
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
   const entityType = url.searchParams.get('entity_type');
   const entityId = url.searchParams.get('entity_id');
   if (!entityType || !entityId) return jerr('entity_type + entity_id required');
@@ -39,10 +40,12 @@ export const GET: APIRoute = async ({ url, cookies }) => {
   return jok({ items });
 };
 
-export const POST: APIRoute = async ({ request, cookies }) => {
-  const s = verifySessionPayload(cookies.get('portal_session')?.value, process.env.PORTAL_SESSION_SECRET ?? '');
-  if (!s || !s.sub) return jerr('unauthorized', 401);
-  if (!ALLOWED_ROLES.has(s.role)) return jerr('forbidden', 403);
+export const POST: APIRoute = async ({ locals, request }) => {
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
+  if (!s || !sub) return jerr('unauthorized', 401);
+  if (!ALLOWED_ROLES.has(role)) return jerr('forbidden', 403);
 
   let form: FormData;
   try { form = await request.formData(); } catch { return jerr('invalid-form'); }
@@ -95,23 +98,25 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     file_type: fileType,
     mime,
     size_bytes: buffer.byteLength,
-    author_telegram_id: s.sub,
+    author_telegram_id: sub,
     storage_kind: 'local',
   });
   return jok({ id, file_url: fileUrl, file_type: fileType });
 };
 
-export const DELETE: APIRoute = async ({ url, cookies }) => {
-  const s = verifySessionPayload(cookies.get('portal_session')?.value, process.env.PORTAL_SESSION_SECRET ?? '');
-  if (!s || !s.sub) return jerr('unauthorized', 401);
+export const DELETE: APIRoute = async ({ locals, url }) => {
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
+  if (!s || !sub) return jerr('unauthorized', 401);
   const idRaw = url.searchParams.get('id');
   const id = Number(idRaw);
   if (!Number.isFinite(id) || id <= 0) return jerr('id required');
   const cur = await getMedia(id);
   if (!cur) return jok({ id });
   // Удалять может: admin/руководитель — любой; остальные — только своё
-  const isManager = s.role === 'admin' || s.role === 'rukovoditel';
-  if (!isManager && Number(cur.author_telegram_id) !== Number(s.sub)) {
+  const isManager = role === 'admin' || role === 'rukovoditel';
+  if (!isManager && Number(cur.author_telegram_id) !== Number(sub)) {
     return jerr('forbidden', 403);
   }
   await deleteMedia(id);

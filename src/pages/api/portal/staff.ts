@@ -1,19 +1,22 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { verifySessionPayload, PORTAL_ROLES, type PortalRole } from '../../../lib/portalSession';
+import { requireRole } from '../../../lib/portalPerms';
+import { PORTAL_ROLES, type PortalRole } from '../../../lib/portalSession';
 import { listStaff, setRole, setActive } from '../../../lib/portalStaff';
 
 function requireAdmin(cookies: Parameters<APIRoute>[0]['cookies']): { sub?: number } | null {
-  const p = verifySessionPayload(cookies.get('portal_session')?.value, process.env.PORTAL_SESSION_SECRET ?? '');
-  return p && p.role === 'admin' ? { sub: p.sub } : null;
+  const _a = requireRole(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
+  return p && role === 'admin' ? { sub: sub } : null;
 }
 
-export const GET: APIRoute = async ({ cookies }) => {
+export const GET: APIRoute = async ({ locals }) => {
   if (!requireAdmin(cookies)) return new Response('Forbidden', { status: 403 });
   return new Response(JSON.stringify(await listStaff()), { headers: { 'Content-Type': 'application/json' } });
 };
 
-export const POST: APIRoute = async ({ request, cookies, redirect }) => {
+export const POST: APIRoute = async ({ locals, request, redirect }) => {
   const admin = requireAdmin(cookies);
   if (!admin) return new Response('Forbidden', { status: 403 });
   const form = await request.formData();

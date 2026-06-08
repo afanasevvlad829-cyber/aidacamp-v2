@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { verifySessionPayload } from '../../../../lib/portalSession';
+import { requireStaff } from '../../../lib/portalPerms';
 import {
   createShift, archiveShift, upsertEvent, duplicateEvent, deleteEvent, upsertChecklist, attachChecklist, deleteChecklist,
 } from '../../../../lib/portalShift';
@@ -8,8 +8,10 @@ import {
 const ALLOWED_ROLES = ['admin', 'rukovoditel'] as const;
 
 function requireAdmin(cookies: Parameters<APIRoute>[0]['cookies']): boolean {
-  const p = verifySessionPayload(cookies.get('portal_session')?.value, process.env.PORTAL_SESSION_SECRET ?? '');
-  return !!p && (ALLOWED_ROLES as readonly string[]).includes(p.role);
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
+  return !!p && (ALLOWED_ROLES as readonly string[]).includes(role);
 }
 
 /** Считать поля из formData или JSON-тела. */
@@ -54,7 +56,7 @@ function parseItems(v: unknown): { id: string; text: string }[] {
     .map((text, i) => ({ id: `i${i + 1}`, text }));
 }
 
-export const POST: APIRoute = async ({ request, cookies, redirect }) => {
+export const POST: APIRoute = async ({ locals, request, redirect }) => {
   if (!requireAdmin(cookies)) return new Response(JSON.stringify({ ok: false, error: 'нет прав (нужен руководитель или админ)' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
   const body = await readBody(request);
   const isForm = body.__form === true;

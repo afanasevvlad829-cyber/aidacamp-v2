@@ -1,26 +1,21 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { verifySessionPayload } from '../../../lib/portalSession';
-import { can } from '../../../lib/portalPerms';
+import { can, requireRole } from '../../../lib/portalPerms';
 import { createInvite, revokeInvite } from '../../../lib/portalInvite';
 
 const ALLOWED_ROLES = ['admin', 'rukovoditel', 'teacher', 'vozhaty', 'student'];
 
-function auth(cookies: Parameters<APIRoute>[0]['cookies']) {
-  const p = verifySessionPayload(cookies.get('portal_session')?.value, process.env.PORTAL_SESSION_SECRET ?? '');
-  if (!p) return null;
-  if (!can(p.role, 'MANAGE_USERS')) return null;
-  return p as any;
-}
 
 const j = (x: unknown, init?: ResponseInit) =>
   new Response(JSON.stringify(x), { headers: { 'Content-Type': 'application/json' }, ...init });
 
-export const POST: APIRoute = async ({ cookies, request }) => {
-  const p = auth(cookies); if (!p) return j({ ok: false, error: 'forbidden' }, { status: 403 });
+export const POST: APIRoute = async ({ locals, request }) => {
+  const _a = requireRole(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
   const body = await request.json().catch(() => ({} as any));
   const action = String(body.action || 'create');
-  const userId = String(p.sub ?? p.role);
+  const userId = String(sub ?? role);
 
   if (action === 'create') {
     const rolesRaw = Array.isArray(body.roles) ? body.roles : [];

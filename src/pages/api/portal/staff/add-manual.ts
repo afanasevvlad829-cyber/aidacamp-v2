@@ -1,6 +1,7 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { verifySessionPayload, type PortalRole } from '../../../../lib/portalSession';
+import { requireStaff } from '../../../lib/portalPerms';
+import { type PortalRole } from '../../../lib/portalSession';
 
 const VALID: PortalRole[] = ['admin', 'rukovoditel', 'teacher', 'vozhaty', 'student'];
 
@@ -19,12 +20,11 @@ async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promis
  * Только admin. Создаёт portal_staff без telegram_id (placeholder).
  * Когда сотрудник позже зайдёт через TG — admin сможет объединить через merge UI.
  */
-export const POST: APIRoute = async ({ request, cookies, redirect }) => {
-  const p = verifySessionPayload(
-    cookies.get('portal_session')?.value,
-    process.env.PORTAL_SESSION_SECRET ?? '',
-  );
-  if (!p || p.role !== 'admin') return new Response('Forbidden', { status: 403 });
+export const POST: APIRoute = async ({ locals, request, redirect }) => {
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
+  if (!p || role !== 'admin') return new Response('Forbidden', { status: 403 });
 
   let body: Record<string, any>;
   const ct = request.headers.get('content-type') ?? '';
@@ -52,7 +52,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     await c.query(
       `INSERT INTO portal_staff (full_name, role, roles, active, staff_key, approved_by, approved_at)
        VALUES ($1, $2, $3, TRUE, $4, $5, now())`,
-      [full_name, activeRole, roles, staff_key, p.sub ?? 0],
+      [full_name, activeRole, roles, staff_key, sub ?? 0],
     );
   });
 

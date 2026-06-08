@@ -1,8 +1,8 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
+import { requireStaff } from '../../../lib/portalPerms';
 import { unlink } from 'node:fs/promises';
 import { join } from 'node:path';
-import { verifySessionPayload } from '../../../../lib/portalSession';
 import { getPhotoById, deletePhotoRow } from '../../../../lib/portalPhoto';
 
 const UPLOADS_ROOT = '/var/www/aidacamp-dev/uploads/portal';
@@ -18,13 +18,11 @@ function json(body: object, status = 200): Response {
  * DELETE /api/portal/photo/:id
  * Только admin и руководитель могут удалять загруженные фото/видео.
  */
-export const DELETE: APIRoute = async ({ params, cookies }) => {
-  const payload = verifySessionPayload(
-    cookies.get('portal_session')?.value,
-    process.env.PORTAL_SESSION_SECRET ?? '',
-  );
-  if (!payload?.role) return json({ ok: false, error: 'unauthorized' }, 401);
-  if (!DELETE_ROLES.has(payload.role)) return json({ ok: false, error: 'forbidden' }, 403);
+export const DELETE: APIRoute = async ({ locals, params }) => {
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
+  if (!DELETE_ROLES.has(role)) return json({ ok: false, error: 'forbidden' }, 403);
 
   const id = Number(params.id);
   if (!Number.isFinite(id) || id <= 0) return json({ ok: false, error: 'bad id' }, 400);
