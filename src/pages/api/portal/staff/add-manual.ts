@@ -1,7 +1,7 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { requireStaff } from '../../../lib/portalPerms';
-import { type PortalRole } from '../../../lib/portalSession';
+import { requireStaff } from '../../../../lib/portalPerms';
+import { type PortalRole } from '../../../../lib/portalSession';
 
 const VALID: PortalRole[] = ['admin', 'rukovoditel', 'teacher', 'vozhaty', 'student'];
 
