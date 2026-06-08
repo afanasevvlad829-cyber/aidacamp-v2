@@ -1,0 +1,247 @@
+---
+import '../styles/global.css';
+import LandingLayout from '../layouts/LandingLayout.astro';
+import LandingHero from '../components/LandingHero.astro';
+import LandingTwoCol from '../components/LandingTwoCol.astro';
+import Shifts from '../components/Shifts.astro';
+import FAQ from '../components/FAQ.astro';
+import RelatedPages from '../components/RelatedPages.astro';
+import { getRelatedPages } from '../data/landing-pages';
+import Gallery from '../components/Gallery.astro';
+import ShiftBookModal from '../components/shifts/ShiftBookModal.astro';
+import CourseSchema from '../components/CourseSchema.astro';
+import FAQSchema from '../components/FAQSchema.astro';
+
+const sections = [
+  {
+    h2: "Почему именно 10 дней — мамин расчёт",
+    text: "Семь дней — мелькнёт и нет. Две недели — звучит как «ты меня отдаёшь надолго». А 10 дней — это золотая середина: ребёнок успевает раскрыться, а мама успевает выдохнуть.\n\nДарья, основатель АйДаКемп, отправила дочь в лагерь впервые именно на 10 дней. Не потому что так в методичке. Просто сама не была готова на две недели — и дочь это чувствовала. Дочка вернулась с игрой в Roblox и одним желанием: «В следующий раз хочу на две недели». Это был лучший ответ на все вопросы.\n\nДесять дней — единственная длина смены, при которой ребёнок успевает адаптироваться (первые 3–4 дня), войти в рабочий ритм и довести проект до хакатона. Не обрывается на полуслове, как неделя. И не превращается в тревожную вечность для тех, кто едет впервые.",
+  },
+  {
+    h2: "Что успевает школьник за 10 дней: от идеи до хакатона",
+    text: "Маршрут конкретный: первый день — знакомство и выбор трека. Дни 2–4 — первые задачи, первые «не получается», первые «получилось!». К 7-му дню — рабочая версия проекта в руках. День 9 — репетиция. День 10 — хакатон и публичная защита перед всем лагерем.\n\nЧто везёт домой:",
+    list: [
+      "Python и ИИ (12–17 лет): телеграм-бот или скрипт на основе нейросети — помощник по домашним заданиям или свой ИИ-ассистент",
+      "Minecraft Education (8–12 лет): мир с авторскими механиками, который можно показать прямо с телефона",
+      "Roblox Studio (8–14 лет): мини-игра или мод — тем, чем хочется похвастаться в чате класса",
+      "AI и нейросети для творчества: серия артов или анимаций, портфолио для соцсетей",
+      "3D-моделирование в Blender: персонаж или объект, который можно распечатать на 3D-принтере"
+    ]
+  },
+  {
+    h2: "Как проходит день в лагере на 10 дней",
+    text: "Никакого «смотрит в экран с утра до ночи». Два занятия по 90 минут, между ними — бассейн, спорт, свободное время, вечерние активности. Через три-четыре дня ребята перестают смотреть в телефон, потому что здесь интереснее.",
+    list: [
+      "08:30 — подъём, зарядка, завтрак в столовой санатория «Изумруд»",
+      "10:00–11:30 — первое занятие: погружение в трек (Python, Minecraft, Roblox, ИИ или 3D), группы до 8 человек",
+      "11:30–13:00 — свободное время: спорт, настолки, прогулки",
+      "13:00 — обед (питание 5 раз в день, аллергии учитываем)",
+      "14:00–15:30 — второе занятие: продолжение проекта, командная работа",
+      "15:30–17:30 — бассейн с ионизированной водой или спортплощадка",
+      "18:00 — ужин",
+      "19:00–21:00 — вечерние активности: квесты, кино, настолки, разговоры у костра",
+      "22:00 — отбой (тихий час соблюдается)"
+    ]
+  },
+  {
+    h2: "Цена и налоговый вычет именно для 10-дневной смены",
+    text: "Стоимость 10-дневной смены — 74 900 ₽, всё включено: проживание в санатории «Изумруд», питание 5 раз в день, IT-программа, ноутбуки лагеря, бассейн, медработник, итоговый хакатон. Доплат за «оборудование» или «материалы» нет.\n\nЧерез налоговый вычет 13% вернёте ~4 800 ₽ — именно для 10-дневной смены (образовательная часть путёвки 36 900 ₽ × 13%). Не универсальная цифра из интернета, а расчёт под нашу конкретную программу. Подробный калькулятор — на странице налогового вычета.",
+    list: [
+      "74 900 ₽ — 10-дневная смена «под ключ»",
+      "~4 800 ₽ — возврат через налоговый вычет 13% от образовательной части путёвки",
+      "Оплата частями: 50% при бронировании, 50% за 3 недели до заезда",
+      "Возврат 50% стоимости, если не понравится в первые 3 дня смены",
+      "Документы для вычета выдаём автоматически: справка об оплате + лицензия Минобрнауки"
+    ]
+  },
+  {
+    h2: "Кому 10-дневная смена подходит лучше всего",
+    text: "Не для всех нужна одинаковая длина. 10 дней — это формат для конкретных ситуаций:",
+    list: [
+      "Первый самостоятельный отъезд — не слишком мало, чтобы почувствовать результат, и не слишком много, чтобы испугаться",
+      "Тревожная мама — вы сами не готовы на 2 недели: 10 дней это именно та граница, за которой выдыхаешь",
+      "Занятое лето — есть семейный отпуск, секция или экзамены: 10 дней легко вписываются в плотный график",
+      "Осторожный ребёнок — медленно привыкающий, немного тревожный: успевает адаптироваться и получить результат",
+      "Хочется «попробовать» перед длинной сменой — убедиться в формате и взять 14 дней в следующий раз со спокойной душой"
+    ]
+  },
+  {
+    h2: "Как записаться и что взять в лагерь",
+    text: "Записаться — на странице цен: выбрать смену, оставить заявку, менеджер перезвонит в течение часа. Места на 10-дневные смены занимаются быстрее, чем кажется: их всего две в расписании лета.\n\nСо списком вещей поможет отдельная статья — там по категориям: что обязательно, что лишнее, что забудут и попросят привезти позже.",
+    list: [
+      "Одежда для улицы, спорта и бассейна (купальник или плавки — обязательно)",
+      "Средства гигиены, лекарства если есть назначения — передать медику при заезде",
+      "Зарядки для устройств, наушники",
+      "Ноутбук не нужен — всё оборудование лагеря",
+      "Телефон разрешён, звонить родителям можно в любое время"
+    ]
+  },
+];
+---
+
+<LandingLayout
+  heroImage="/images/hero/lager-na-leto-2026.avif"
+  title="Детский лагерь на 10 дней в Подмосковье 2026 — IT-смена | АйДаКемп"
+  description="Лагерь на 10 дней в Подмосковье — IT-смена АйДаКемп: Python, Minecraft, AI для школьников 7–17 лет. 74 900 ₽, вычет ~4 800 ₽. Бассейн, хакатон, трансфер."
+  h1="Лагерь на 10 дней: достаточно, чтобы ребёнок раскрылся, не успев заскучать по дому"
+  canonical="https://aidacamp.ru/lager-10-dney"
+>
+  <Fragment slot="head">
+    <FAQSchema items={[
+      { q: "Есть ли у АйДаКемп смена ровно на 10 дней?", a: "Да. В АйДаКемп есть смены на 10 дней (Смена 1 и Смена 4 — 17–26 августа 2026). Стоимость 74 900 ₽, всё включено. Налоговый вычет 13% — возврат ~4 800 ₽ именно для этой смены." },
+      { q: "Подходит ли 10-дневная смена для первого раза в лагере?", a: "Да, 10 дней — оптимально для первого самостоятельного отъезда. Первые 3–4 дня — адаптация. Дни 5–9 — рабочий ритм и проект. День 10 — хакатон и публичная защита. Не слишком коротко для результата, не слишком долго для тревоги." },
+      { q: "Что ребёнок успеет сделать за 10 дней в IT-лагере?", a: "Полный цикл: от выбора трека до готового проекта и хакатона. Python — бот или скрипт на основе ИИ. Minecraft / Roblox — собственный мод или мини-игра. 3D — персонаж в Blender. AI-творчество — серия артов для соцсетей." },
+      { q: "Сколько стоит лагерь на 10 дней и какой налоговый вычет?", a: "74 900 ₽ — всё включено: проживание, питание 5 раз в день, IT-программа, оборудование, бассейн, медработник. Налоговый вычет 13% — ~4 800 ₽ именно для 10-дневной смены." },
+      { q: "Чем 10 дней отличаются от 7 и 14 дней в лагере?", a: "7 дней — адаптация занимает больше половины смены, проект не успевает дозреть. 10 дней — достаточно для адаптации и полного цикла от идеи до хакатона. 14 дней — максимальная глубина, подходит тем, кто уже ездил или легко расстаётся с домом." },
+      { q: "Можно ли в любое время звонить в лагерь?", a: "Да, телефон разрешён, звонить родителям можно в любое время без расписания. Плюс ежедневные фото в закрытом Telegram-чате родителей: с завтрака, с занятий, с бассейна." }
+    ]} />
+    <CourseSchema
+      name="Детский IT-лагерь на 10 дней — АйДаКемп"
+      description="IT-лагерь в Подмосковье. Python, AI, Minecraft, Roblox для школьников 7–17 лет. Смена 10 дней, санаторий Изумруд, Наро-Фоминский округ."
+      url="https://aidacamp.ru/lager-10-dney"
+      ageMin={7}
+      ageMax={17}
+    />
+  </Fragment>
+
+  <LandingHero slot="hero"
+    h1="Лагерь на 10 дней: достаточно, чтобы ребёнок раскрылся, не успев заскучать по дому"
+    subtitle="Первый раз отпустить не так страшно. 10 дней — школьник успевает раскрыться и довезти проект до хакатона, а вы — выдохнуть. Ежедневные фото в Telegram."
+    breadcrumb="Лагерь на 10 дней"
+    keywords={["10 дней — полный цикл от идеи до хакатона", "Python, AI, Minecraft, Roblox для ребят 7–17 лет", "Бассейн, 5-разовое питание, медик 24/7, трансфер от м. Солнцево"]}
+    image="/images/hero/lager-na-leto-2026.avif"
+    imageAlt="Детский IT-лагерь на 10 дней — хакатон в АйДаКемп"
+  />
+
+  <LandingTwoCol sections={sections} />
+
+  <section class="mx-auto max-w-[720px] px-4 py-8">
+    <h2 class="text-[22px] md:text-[28px] font-bold text-body mb-2 leading-[1.2] tracking-[-0.02em]">
+      Маршрут проекта за 10 дней
+    </h2>
+    <p class="text-[15px] text-slate-500 mb-6">Как школьники проходят путь от «ещё не умею» до «я сам это сделал»</p>
+    <div class="flex flex-col gap-3">
+      <div class="flex items-start gap-3 border border-slate-200 rounded-xl p-4">
+        <span class="shrink-0 w-20 text-[13px] font-bold text-orange-500 pt-0.5">День 1–3</span>
+        <div>
+          <p class="text-[15px] font-semibold text-slate-800">Адаптация и выбор направления</p>
+          <p class="text-[14px] text-slate-600 leading-[1.6]">Знакомство с командой, распорядком, пространством. Небольшая тревога — это нормально. К концу третьего дня большинство чувствуют себя «своими». Определяются с треком и первыми задачами.</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-3 border border-slate-200 rounded-xl p-4">
+        <span class="shrink-0 w-20 text-[13px] font-bold text-orange-500 pt-0.5">День 4–7</span>
+        <div>
+          <p class="text-[15px] font-semibold text-slate-800">Рабочий ритм и рост проекта</p>
+          <p class="text-[14px] text-slate-600 leading-[1.6]">Тревога ушла, начинается настоящая работа. Педагог знает каждого, группа сложилась. К 7-му дню — рабочая версия проекта. Дружба уже не случайная, а через общее дело.</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-3 border border-orange-200 bg-orange-50 rounded-xl p-4">
+        <span class="shrink-0 w-20 text-[13px] font-bold text-orange-500 pt-0.5">День 8–9</span>
+        <div>
+          <p class="text-[15px] font-semibold text-slate-800">Финальная доводка и репетиция</p>
+          <p class="text-[14px] text-slate-600 leading-[1.6]">Проект приобретает законченный вид, команда репетирует презентацию. Ребята сами начинают торговаться за дополнительное время на занятиях — это хороший знак.</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-3 border border-slate-200 rounded-xl p-4">
+        <span class="shrink-0 w-20 text-[13px] font-bold text-orange-500 pt-0.5">День 10</span>
+        <div>
+          <p class="text-[15px] font-semibold text-slate-800">Хакатон — публичная защита проекта</p>
+          <p class="text-[14px] text-slate-600 leading-[1.6]">Каждая команда представляет проект перед всем лагерем. Именно это ребята рассказывают дома в первый вечер. Не «было весело», а «смотри, что я сделал».</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-[720px] px-4 py-8">
+    <h2 class="text-[22px] md:text-[28px] font-bold text-body mb-2 leading-[1.2] tracking-[-0.02em]">
+      7, 10 или 14 дней — что выбрать
+    </h2>
+    <p class="text-[15px] text-slate-500 mb-6">Сравниваем без воды, чтобы не угадывать</p>
+    <div class="overflow-x-auto -mx-4 px-4">
+      <table class="w-full min-w-[480px] text-[14px] md:text-[15px] border-collapse">
+        <thead>
+          <tr class="border-b-2 border-slate-200">
+            <th class="text-left py-3 pr-4 font-semibold text-slate-700 w-[36%]">Критерий</th>
+            <th class="text-center py-3 px-2 font-semibold text-slate-500">7 дней</th>
+            <th class="text-center py-3 px-2 font-bold text-primary bg-orange-50 rounded-t">10 дней</th>
+            <th class="text-center py-3 px-2 font-semibold text-slate-500">14 дней</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b border-slate-100">
+            <td class="py-3 pr-4 text-slate-600">Цена</td>
+            <td class="text-center py-3 px-2 text-slate-500">48 000 ₽</td>
+            <td class="text-center py-3 px-2 font-semibold text-body bg-orange-50">74 900 ₽</td>
+            <td class="text-center py-3 px-2 text-slate-500">95 000 ₽</td>
+          </tr>
+          <tr class="border-b border-slate-100">
+            <td class="py-3 pr-4 text-slate-600">Налоговый вычет</td>
+            <td class="text-center py-3 px-2 text-slate-500">~2 800 ₽</td>
+            <td class="text-center py-3 px-2 font-semibold text-body bg-orange-50">~4 800 ₽</td>
+            <td class="text-center py-3 px-2 text-slate-500">~5 434 ₽</td>
+          </tr>
+          <tr class="border-b border-slate-100">
+            <td class="py-3 pr-4 text-slate-600">Адаптация</td>
+            <td class="text-center py-3 px-2 text-slate-500">Половина смены</td>
+            <td class="text-center py-3 px-2 text-body bg-orange-50">Первые 3–4 дня</td>
+            <td class="text-center py-3 px-2 text-slate-500">Первые 3–4 дня</td>
+          </tr>
+          <tr class="border-b border-slate-100">
+            <td class="py-3 pr-4 text-slate-600">Результат</td>
+            <td class="text-center py-3 px-2 text-slate-500">Рабочий MVP</td>
+            <td class="text-center py-3 px-2 font-semibold text-body bg-orange-50">Готовый проект + хакатон</td>
+            <td class="text-center py-3 px-2 text-slate-500">Глубокий проект + хакатон</td>
+          </tr>
+          <tr>
+            <td class="py-3 pr-4 text-slate-600">Идеально для</td>
+            <td class="text-center py-3 px-2 text-slate-500">Занятое лето, проба</td>
+            <td class="text-center py-3 px-2 font-semibold text-body bg-orange-50">Первый отъезд, тревожная мама</td>
+            <td class="text-center py-3 px-2 text-slate-500">Опытный, любит лагерь</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-[14px] text-slate-500 mt-4">
+      Подробнее: <a href="/stati/lager-na-2-nedeli" class="text-primary hover:underline">смена на 2 недели</a> · <a href="/lager-letniy-na-20-dney" class="text-primary hover:underline">длинная смена 20 дней</a>
+    </p>
+  </section>
+
+  <div class="mx-auto max-w-[720px] px-4 py-4 text-center">
+    <p class="text-[14px] text-slate-500">
+      Читайте: <a href="/stati/pervyj-raz-bez-roditeley" class="text-primary hover:underline">первый раз без родителей</a> ·
+      <a href="/stati/chto-vzyat-v-lager" class="text-primary hover:underline">что взять в лагерь</a> ·
+      <a href="/nalogovyj-vychet" class="text-primary hover:underline">как получить налоговый вычет</a>
+    </p>
+  </div>
+
+  <Gallery />
+  <Shifts />
+  <FAQ />
+  <ShiftBookModal />
+
+  <section class="internal-links-block" style="background: #f8f9fa; padding: 24px; border-radius: 8px; margin: 32px auto; max-width: 720px; border-left: 4px solid #ec9b44;">
+    <h3 style="margin-top: 0; font-size: 18px; color: #1a1a1a;">Полезные страницы по теме</h3>
+    <ul style="list-style: none; padding: 0; margin: 0;">
+      <li style="margin-bottom: 8px;">
+        <a href="/ceny" style="color: #ec9b44; text-decoration: none; font-weight: 500;">→ Смены и цены 2026 — выбрать дату и забронировать</a>
+      </li>
+      <li style="margin-bottom: 8px;">
+        <a href="/stati/lager-na-2-nedeli" style="color: #ec9b44; text-decoration: none; font-weight: 500;">→ Смена на 2 недели — чем отличается от 10-дневной</a>
+      </li>
+      <li style="margin-bottom: 8px;">
+        <a href="/lager-letniy-na-20-dney" style="color: #ec9b44; text-decoration: none; font-weight: 500;">→ Длинная смена 20 дней — максимальное погружение</a>
+      </li>
+      <li style="margin-bottom: 8px;">
+        <a href="/stati/pervyj-raz-bez-roditeley" style="color: #ec9b44; text-decoration: none; font-weight: 500;">→ Первый раз без родителей — как подготовить и не переживать</a>
+      </li>
+      <li style="margin-bottom: 8px;">
+        <a href="/stati/chto-vzyat-v-lager" style="color: #ec9b44; text-decoration: none; font-weight: 500;">→ Что взять в лагерь — чек-лист по категориям</a>
+      </li>
+      <li style="margin-bottom: 0;">
+        <a href="/nalogovyj-vychet" style="color: #ec9b44; text-decoration: none; font-weight: 500;">→ Налоговый вычет — как вернуть ~4 800 ₽ за 10-дневную смену</a>
+      </li>
+    </ul>
+  </section>
+
+  <RelatedPages pages={getRelatedPages(Astro.url.pathname)} />
+</LandingLayout>
