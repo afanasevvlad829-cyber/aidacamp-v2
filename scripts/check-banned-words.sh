@@ -9,8 +9,7 @@
 # Soft warning:
 #   > 20 упоминаний «дети» / «ребёнок» в одном файле
 #
-# Использует python3 (есть на macOS и Linux). Запускается из npm run build
-# через guard. Может вызываться вручную.
+# Использует node (fallback с python3 если node недоступен).
 
 set -euo pipefail
 
@@ -18,61 +17,73 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_DIR"
 
-python3 << 'PY'
-import os, re, sys
+node << 'JS'
+const fs = require('fs');
+const path = require('path');
 
-SCAN = ['src/pages', 'src/components']
-EXTS = ('.astro', '.ts', '.tsx', '.md')
+const SCAN = ['src/pages', 'src/components'];
+const EXTS = ['.astro', '.ts', '.tsx', '.md'];
 
-# Hard ban — billing fail
-HARD = re.compile(r'\bединиц\w*\b|\bбалл(?:ов|ы|ами|ах|ам|а|у|е|ом)?\b', re.IGNORECASE)
-# Skip patterns — JSON-LD, HTML comments, code fences
-SKIP_LINE = re.compile(r'^\s*(<!--|//|"@|"name":\s|"description":\s|"text":\s)')
+const HARD = /\bединиц\w*\b|\bбалл(?:ов|ы|ами|ах|ам|а|у|е|ом)?\b/gi;
+const SKIP_LINE = /^\s*(<!--|\/\/|"@|"name":\s|"description":\s|"text":\s)/;
+const SOFT = /\bдет(?:и|ей|ям|ях|ьми)\b|\bребён(?:ок|ка|ку|ком|ке)\b|\bребенок\b/gi;
+const SOFT_THRESHOLD = 20;
 
-# Soft ban — overuse
-SOFT = re.compile(r'\b(?:дет(?:и|ей|ям|ях|ьми)|ребён(?:ок|ка|ку|ком|ке)|ребенок)\b', re.IGNORECASE)
-SOFT_THRESHOLD = 20
+let errors = 0;
+let warnings = 0;
 
-errors = 0
-warnings = 0
+function walkDir(dir, callback) {
+  if (!fs.existsSync(dir)) return;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === 'admin' || entry.name === '_notes') continue;
+      walkDir(full, callback);
+    } else if (entry.isFile()) {
+      callback(full);
+    }
+  }
+}
 
-for base in SCAN:
-    if not os.path.isdir(base): continue
-    for root, dirs, files in os.walk(base):
-        # Skip admin, _notes
-        if '/admin' in root or '_notes' in root: continue
-        for fn in files:
-            if not fn.endswith(EXTS): continue
-            path = os.path.join(root, fn)
-            try:
-                with open(path, encoding='utf-8') as fp:
-                    lines = fp.readlines()
-            except Exception:
-                continue
+for (const base of SCAN) {
+  walkDir(base, (filePath) => {
+    if (!EXTS.some(e => filePath.endsWith(e))) return;
+    let content;
+    try { content = fs.readFileSync(filePath, 'utf8'); } catch { return; }
+    const lines = content.split('\n');
 
-            # Hard scan
-            file_hits = []
-            for i, line in enumerate(lines, 1):
-                if SKIP_LINE.match(line): continue
-                m = HARD.search(line)
-                if m:
-                    file_hits.append((i, m.group(0), line.strip()[:120]))
-            if file_hits:
-                print(f'❌ BANNED в {path}:')
-                for ln, word, text in file_hits:
-                    print(f'   {ln:>4}: «{word}» — {text}')
-                errors += 1
+    // Hard scan
+    const fileHits = [];
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (SKIP_LINE.test(line)) continue;
+      HARD.lastIndex = 0;
+      const m = HARD.exec(line);
+      if (m) fileHits.push({ ln: i + 1, word: m[0], text: line.trim().slice(0, 120) });
+    }
+    if (fileHits.length > 0) {
+      console.log(`❌ BANNED в ${filePath}:`);
+      for (const { ln, word, text } of fileHits) {
+        console.log(`   ${String(ln).padStart(4)}: «${word}» — ${text}`);
+      }
+      errors++;
+    }
 
-            # Soft scan
-            soft_count = len(SOFT.findall(''.join(lines)))
-            if soft_count > SOFT_THRESHOLD:
-                warnings += 1
-                if warnings == 1: print()
-                print(f'⚠  {path}: {soft_count} упоминаний «дети»/«ребёнок» (>20) — разнообразь синонимами')
+    // Soft scan
+    const softMatches = content.match(SOFT);
+    const softCount = softMatches ? softMatches.length : 0;
+    if (softCount > SOFT_THRESHOLD) {
+      warnings++;
+      if (warnings === 1) console.log();
+      console.log(`⚠  ${filePath}: ${softCount} упоминаний «дети»/«ребёнок» (>20) — разнообразь синонимами`);
+    }
+  });
+}
 
-print()
-if errors > 0:
-    print(f'❌ Найдено {errors} файлов с запрещёнными словами. См. CLAUDE.md → BANNED WORDS.')
-    sys.exit(1)
-print(f'✅ Запрещённых слов нет. ({warnings} файлов с soft-warning по «дети»/«ребёнок»)')
-PY
+console.log();
+if (errors > 0) {
+  console.log(`❌ Найдено ${errors} файлов с запрещёнными словами. См. CLAUDE.md → BANNED WORDS.`);
+  process.exit(1);
+}
+console.log(`✅ Запрещённых слов нет. (${warnings} файлов с soft-warning по «дети»/«ребёнок»)`);
+JS
