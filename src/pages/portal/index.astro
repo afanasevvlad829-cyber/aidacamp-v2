@@ -24,12 +24,12 @@ const BASE = 'https://ai.aidacamp.ru';
 const isStaff = role !== 'student';
 const today = new Date().toISOString().slice(0, 10);
 
-let shift = isStaff ? await getActiveShift() : null;
-let events = (isStaff && shift) ? await getEvents(shift.id, today) : [];
-let doneSet: Set<string> = new Set();
-if (isStaff && shift && telegramId) {
-  doneSet = await getDone(telegramId, shift.id);
-}
+const shift = isStaff ? await getActiveShift() : null;
+// events и doneSet не зависят друг от друга — параллельно
+const [events, doneSet] = await Promise.all([
+  (isStaff && shift) ? getEvents(shift.id, today) : Promise.resolve([] as Awaited<ReturnType<typeof getEvents>>),
+  (isStaff && shift && telegramId) ? getDone(telegramId, shift.id) : Promise.resolve(new Set<string>()),
+]);
 
 // Determine if shift is active today
 function shiftActive(sh: typeof shift, d: string): boolean {
