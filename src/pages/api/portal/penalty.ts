@@ -117,8 +117,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const note = String(body.note || '').trim();
     if (!id) return bad('id required');
     if (!note) return bad('note required (укажи причину отмены)');
-    // Отменять штрафы может только Владимир Афанасьев (telegram_id=244314247)
-    if (String(sub) !== '244314247') return forbidden('отменять штрафы может только администратор Владимир Афанасьев');
+    // Отменять штрафы может только admin
+    if (role !== 'admin') return forbidden('отменять штрафы может только администратор');
     await cancelPenalty(id, actorId, note);
     return ok({ id });
   }
