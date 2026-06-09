@@ -305,8 +305,6 @@ function initRasselenie() {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const kidId = (btn as HTMLElement).dataset.kidId;
-      const ok = await confirmDialog('Снять с койки и удалить из списка?');
-      if (!ok) return;
       const r = await fetch('/api/portal/rasselenie', {
         method: 'DELETE',
         headers: { 'content-type': 'application/json' },
