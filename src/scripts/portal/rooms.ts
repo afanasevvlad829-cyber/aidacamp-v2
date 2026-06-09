@@ -113,6 +113,7 @@ function initRasselenie() {
   // ── Авто-расстановка ──
   const autoBtn = document.getElementById('auto-assign-btn') as HTMLButtonElement | null;
   autoBtn?.addEventListener('click', async () => {
+    if (!shiftId) { await alertDialog('Нет активной смены — обновите страницу.'); return; }
     const ok = await confirmDialog('Авто-расстановка заполнит свободные койки с учётом пола (без смешанных) и близкого возраста (разброс ≤3 лет). Уже расселённых не трогаем. Продолжить?');
     if (!ok) return;
     autoBtn.disabled = true;
