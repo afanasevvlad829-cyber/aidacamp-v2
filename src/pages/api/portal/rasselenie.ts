@@ -63,7 +63,7 @@ export const DELETE: APIRoute = async ({ locals, request }) => {
   const _a = requireStaff(locals);
   if (_a instanceof Response) return _a;
   const { role, sub } = _a;
-  if (!p?.role || !isStaff(role)) return json({ ok: false, error: 'forbidden' }, 403);
+  if (!isStaff(role)) return json({ ok: false, error: 'forbidden' }, 403);
   const b = await readBody(request);
   const shift_id = Number(b.shift_id);
   if (!Number.isFinite(shift_id)) return json({ ok: false, error: 'shift_id required' }, 400);

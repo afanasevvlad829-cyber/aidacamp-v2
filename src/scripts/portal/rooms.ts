@@ -114,8 +114,6 @@ function initRasselenie() {
   const autoBtn = document.getElementById('auto-assign-btn') as HTMLButtonElement | null;
   autoBtn?.addEventListener('click', async () => {
     if (!shiftId) { await alertDialog('Нет активной смены — обновите страницу.'); return; }
-    const ok = await confirmDialog('Авто-расстановка заполнит свободные койки с учётом пола (без смешанных) и близкого возраста (разброс ≤3 лет). Уже расселённых не трогаем. Продолжить?');
-    if (!ok) return;
     autoBtn.disabled = true;
     const old = autoBtn.innerHTML;
     autoBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Расставляю…';
@@ -307,8 +305,6 @@ function initRasselenie() {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const kidId = (btn as HTMLElement).dataset.kidId;
-      const ok = await confirmDialog('Снять с койки и удалить из списка?');
-      if (!ok) return;
       const r = await fetch('/api/portal/rasselenie', {
         method: 'DELETE',
         headers: { 'content-type': 'application/json' },
