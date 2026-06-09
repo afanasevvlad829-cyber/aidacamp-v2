@@ -35,7 +35,7 @@ function initRasselenie() {
     crmDlg.showModal();
 
     try {
-      const r = await fetch('/api/alfacrm-groups', { credentials: 'include' });
+      const r = await fetch('/api/portal/alfacrm-groups', { credentials: 'include' });
       const d = await r.json();
       if (!d.ok || !Array.isArray(d.groups)) {
         crmList.innerHTML = '<div style="color:#b91c1c;font-size:14px">Не удалось загрузить группы: ' + (d.error || r.status) + '</div>';
