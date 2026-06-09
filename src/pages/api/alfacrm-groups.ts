@@ -6,7 +6,7 @@ export const prerender = false;
  */
 import type { APIRoute } from 'astro';
 import { readFile } from 'node:fs/promises';
-import { requireStaff } from '../../../lib/portalPerms';
+import { requireStaff } from '../../lib/portalPerms';
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
