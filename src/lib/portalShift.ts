@@ -100,6 +100,14 @@ export async function getActiveShift(): Promise<Shift | null> {
   return rows?.[0] ?? null;
 }
 
+/** Последняя смена независимо от статуса (fallback если нет active). */
+export async function getLatestShift(): Promise<Shift | null> {
+  const rows = await query<Shift>(
+    "SELECT id,name,to_char(start_date,'YYYY-MM-DD') start_date,to_char(end_date,'YYYY-MM-DD') end_date,status FROM shift WHERE status != 'archived' ORDER BY start_date DESC LIMIT 1",
+  );
+  return rows?.[0] ?? null;
+}
+
 /** Отсортированный список дат смены (для навигации/шахматки) — без загрузки событий. */
 export async function getEventDates(shiftId: number): Promise<string[]> {
   const rows = await query(
