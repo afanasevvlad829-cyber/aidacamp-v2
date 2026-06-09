@@ -2,7 +2,7 @@
 export const prerender = false;
 import PortalLayout from '../../layouts/PortalLayout.astro';
 import { ROOMS } from '../../lib/portalRooms';
-import { getActiveShift } from '../../lib/portalShift';
+import { getActiveShift, getLatestShift } from '../../lib/portalShift';
 import { listInventoryByShift } from '../../lib/portalRoomInventory';
 import { listAssignments } from '../../lib/portalRasselenie';
 import RoomsTabs from '../../components/portal/rooms/RoomsTabs.astro';
@@ -31,7 +31,7 @@ const role = Astro.locals.portalRole;
 const tab = (Astro.url.searchParams.get('tab') || 'inventory') as 'inventory' | 'rasselenie';
 if (!role || role === 'student') return Astro.redirect('/portal/');
 
-const shift = await getActiveShift();
+const shift = await getActiveShift() ?? await getLatestShift();
 // inventory, assignments и roomCheckEventId не зависят друг от друга — параллельно
 const [inventory, assignments, roomCheckEventId_] = await Promise.all([
   shift ? listInventoryByShift(shift.id) : Promise.resolve([] as Awaited<ReturnType<typeof listInventoryByShift>>),
