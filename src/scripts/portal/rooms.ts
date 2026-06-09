@@ -15,41 +15,98 @@ if (document.getElementById('room-modal')) {
 }
 
 function initRasselenie() {
-  // ── CRM-загрузка ──
+  // ── CRM-загрузка через диалог выбора групп ──
   const crmBtn = document.getElementById('load-crm-btn') as HTMLButtonElement | null;
+  const crmDlg = document.getElementById('crm-groups-dialog') as HTMLDialogElement | null;
+  const crmList = document.getElementById('crm-groups-list') as HTMLDivElement | null;
+  const crmError = document.getElementById('crm-groups-error') as HTMLDivElement | null;
+  const crmSubmit = document.getElementById('crm-groups-submit') as HTMLButtonElement | null;
+  const crmCancel = document.getElementById('crm-groups-cancel') as HTMLButtonElement | null;
+
+  crmCancel?.addEventListener('click', () => crmDlg?.close());
+  crmDlg?.addEventListener('click', (e) => { if (e.target === crmDlg) crmDlg.close(); });
+
   crmBtn?.addEventListener('click', async () => {
-    const ok = await confirmDialog('Загрузить детей из AlfaCRM (группа 660 = смена 1)? Существующие записи останутся, дубли по alfaId игнорируются.');
-    if (!ok) return;
-    crmBtn.disabled = true;
-    const old = crmBtn.innerHTML;
-    crmBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Загружаю…';
+    if (!crmDlg || !crmList || !crmSubmit) return;
+    // Сбрасываем состояние
+    crmList.innerHTML = '<div style="color:#6b7280;font-size:14px">Загрузка групп…</div>';
+    crmSubmit.disabled = true;
+    if (crmError) crmError.style.display = 'none';
+    crmDlg.showModal();
+
     try {
-      const r = await fetch('/api/shift-roster?shift=1', { credentials: 'include' });
+      const r = await fetch('/api/alfacrm-groups', { credentials: 'include' });
       const d = await r.json();
-      if (!d.ok || !Array.isArray(d.kids)) {
-        await alertDialog('Ошибка AlfaCRM: ' + (d.error || r.status));
+      if (!d.ok || !Array.isArray(d.groups)) {
+        crmList.innerHTML = '<div style="color:#b91c1c;font-size:14px">Не удалось загрузить группы: ' + (d.error || r.status) + '</div>';
         return;
       }
-      let added = 0;
-      for (const k of d.kids) {
-        const gender = k.gender === 1 ? 'M' : (k.gender === 0 ? 'F' : null);
-        await postJson('/api/portal/rasselenie', {
-          shift_id: shiftId,
-          kid_id: 'alfa-' + k.alfaId,
-          kid_name: k.name,
-          kid_gender: gender,
-          kid_age: k.age || null,
-        });
-        added++;
+      if (d.groups.length === 0) {
+        crmList.innerHTML = '<div style="color:#6b7280;font-size:14px">Активных групп не найдено</div>';
+        return;
+      }
+      crmList.innerHTML = d.groups.map((g: any) =>
+        `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;font-size:14px">
+          <input type="checkbox" data-group-id="${g.id}" style="width:16px;height:16px;flex-shrink:0" />
+          <span style="flex:1">${g.name}</span>
+          ${g.student_count != null ? `<span style="color:#6b7280">${g.student_count} уч.</span>` : ''}
+        </label>`
+      ).join('');
+
+      // Активируем кнопку при выборе хотя бы одной группы
+      crmList.addEventListener('change', () => {
+        const checked = crmList.querySelectorAll('input[type=checkbox]:checked');
+        crmSubmit.disabled = checked.length === 0;
+      });
+    } catch (e: any) {
+      crmList.innerHTML = '<div style="color:#b91c1c;font-size:14px">Сетевая ошибка: ' + (e?.message ?? e) + '</div>';
+    }
+  });
+
+  crmSubmit?.addEventListener('click', async () => {
+    if (!crmDlg || !crmList || !crmSubmit || !crmError) return;
+    const checked = Array.from(crmList.querySelectorAll<HTMLInputElement>('input[type=checkbox]:checked'));
+    const groupIds = checked.map(el => Number(el.dataset.groupId)).filter(Boolean);
+    if (groupIds.length === 0) return;
+
+    crmSubmit.disabled = true;
+    const oldText = crmSubmit.innerHTML;
+    crmSubmit.innerHTML = '<i class="bi bi-arrow-repeat"></i> Загружаю…';
+    crmError.style.display = 'none';
+
+    try {
+      let totalAdded = 0;
+      for (const groupId of groupIds) {
+        const r = await fetch('/api/shift-roster?group_id=' + groupId, { credentials: 'include' });
+        const d = await r.json();
+        if (!d.ok || !Array.isArray(d.kids)) {
+          crmError.textContent = 'Ошибка группы ' + groupId + ': ' + (d.error || r.status);
+          crmError.style.display = 'block';
+          crmSubmit.disabled = false;
+          crmSubmit.innerHTML = oldText;
+          return;
+        }
+        for (const k of d.kids) {
+          const gender = k.gender === 1 ? 'M' : (k.gender === 0 ? 'F' : null);
+          await postJson('/api/portal/rasselenie', {
+            shift_id: shiftId,
+            kid_id: 'alfa-' + k.alfaId,
+            kid_name: k.name,
+            kid_gender: gender,
+            kid_age: k.age || null,
+          });
+          totalAdded++;
+        }
       }
       haptic('success');
-      await alertDialog('Загружено: ' + added + ' детей');
+      crmDlg.close();
+      await alertDialog('Загружено: ' + totalAdded + ' детей из ' + groupIds.length + ' групп(ы). Дубли пропущены.');
       window.location.reload();
     } catch (e: any) {
-      await alertDialog('Сетевая ошибка: ' + (e?.message ?? e));
-    } finally {
-      crmBtn.disabled = false;
-      crmBtn.innerHTML = old;
+      crmError.textContent = 'Сетевая ошибка: ' + (e?.message ?? e);
+      crmError.style.display = 'block';
+      crmSubmit.disabled = false;
+      crmSubmit.innerHTML = oldText;
     }
   });
 
