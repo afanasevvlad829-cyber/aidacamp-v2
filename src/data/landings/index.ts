@@ -12,6 +12,11 @@ import lagerShchelkovo from './lager-shchelkovo';
 import lagerNogink from './lager-nogink';
 import lagerVidnoe from './lager-vidnoe';
 import lagerLobnya from './lager-lobnya';
+import lagerBalashiha from './lager-balashiha';
+import lagerMytishchi from './lager-mytishchi';
+import lagerKrasnogorsk from './lager-krasnogorsk';
+import lagerReutov from './lager-reutov';
+import lagerDomodedovo from './lager-domodedovo';
 
 export const allLandings: LandingData[] = [
   lagerIstra,
@@ -27,6 +32,11 @@ export const allLandings: LandingData[] = [
   lagerNogink,
   lagerVidnoe,
   lagerLobnya,
+  lagerBalashiha,
+  lagerMytishchi,
+  lagerKrasnogorsk,
+  lagerReutov,
+  lagerDomodedovo,
 ];
 
 export type { LandingData };
