@@ -2,7 +2,7 @@
 export const prerender = false;
 import PortalLayout from '../../layouts/PortalLayout.astro';
 import { ROOMS } from '../../lib/portalRooms';
-import { getActiveShift } from '../../lib/portalShift';
+import { getActiveShift, getLatestShift } from '../../lib/portalShift';
 import { listInventoryByShift } from '../../lib/portalRoomInventory';
 import { listAssignments } from '../../lib/portalRasselenie';
 import RoomsTabs from '../../components/portal/rooms/RoomsTabs.astro';
@@ -28,12 +28,17 @@ async function lookupRoomCheckEventId(): Promise<number> {
 }
 
 const role = Astro.locals.portalRole;
-const tab = (Astro.url.searchParams.get('tab') || 'inventory') as 'inventory' | 'rasselenie';
+const tab = (Astro.url.searchParams.get('tab') || 'rasselenie') as 'inventory' | 'rasselenie';
 if (!role || role === 'student') return Astro.redirect('/portal/');
 
-const shift = await getActiveShift();
-const inventory = shift ? await listInventoryByShift(shift.id) : [];
-const assignments = shift && tab === 'rasselenie' ? await listAssignments(shift.id) : [];
+const shift = await getActiveShift() ?? await getLatestShift();
+// inventory, assignments и roomCheckEventId не зависят друг от друга — параллельно
+const [inventory, assignments, roomCheckEventId_] = await Promise.all([
+  shift ? listInventoryByShift(shift.id) : Promise.resolve([] as Awaited<ReturnType<typeof listInventoryByShift>>),
+  shift && tab === 'rasselenie' ? listAssignments(shift.id) : Promise.resolve([] as Awaited<ReturnType<typeof listAssignments>>),
+  shift ? lookupRoomCheckEventId().catch(() => 0) : Promise.resolve(0),
+]);
+roomCheckEventId = roomCheckEventId_;
 const assignedByBed = new Map<string, typeof assignments[number]>();
 const unassignedKids: typeof assignments = [];
 for (const a of assignments) {
@@ -43,7 +48,6 @@ for (const a of assignments) {
     unassignedKids.push(a);
   }
 }
-roomCheckEventId = shift ? await lookupRoomCheckEventId().catch(() => 0) : 0;
 const statusByRoom = new Map<number, string>();
 for (const r of inventory) statusByRoom.set(r.room_number, r.status);
 
@@ -106,17 +110,30 @@ const counts = {
         </button>
       </div>
 
-      <div id="rasselenie-plan-view">
-        <RasseleniKidPool unassignedKids={unassignedKids} />
-
-        <div class="space-y-4">
+      <div id="rasselenie-plan-view" class="flex gap-4 items-start">
+        <div class="flex-1 min-w-0 space-y-4">
           <RasseleniePlan assignedByBed={assignedByBed} />
         </div>
+        <RasseleniKidPool unassignedKids={unassignedKids} />
       </div>
 
       <RasselenieList assignedByBed={assignedByBed} unassignedKids={unassignedKids} />
 
       <AddKidModal shiftId={shift?.id ?? 0} />
+
+      {/* Диалог выбора групп AlfaCRM для загрузки детей */}
+      <dialog id="crm-groups-dialog" style="border:none;border-radius:16px;padding:28px 24px;max-width:440px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+        <h3 style="margin:0 0 6px;font-size:18px;font-weight:700">Загрузить из AlfaCRM</h3>
+        <p style="margin:0 0 16px;font-size:14px;color:#6b7280">Выберите одну или несколько групп. Дубли по alfaId игнорируются.</p>
+        <div id="crm-groups-list" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;margin-bottom:16px">
+          <div style="color:#6b7280;font-size:14px">Загрузка групп…</div>
+        </div>
+        <div id="crm-groups-error" style="display:none;margin-bottom:12px;padding:10px 12px;background:#fee2e2;border-radius:8px;color:#b91c1c;font-size:14px"></div>
+        <div style="display:flex;gap:10px">
+          <button type="button" id="crm-groups-submit" class="den-save" style="flex:1" disabled>Загрузить</button>
+          <button type="button" id="crm-groups-cancel" class="den-copy">Отмена</button>
+        </div>
+      </dialog>
 
       {shift && (
         <>

@@ -7,8 +7,8 @@ import { listInvites } from '../../lib/portalInvite';
 
 if (Astro.locals.portalRole !== 'admin') return Astro.redirect('/portal/');
 
-const staff = await listStaff();
-const invites = await listInvites();
+// listStaff и listInvites независимы — запрашиваем параллельно
+const [staff, invites] = await Promise.all([listStaff(), listInvites()]);
 const activeInvites = invites.filter((i) => !i.revoked && !i.used_at && new Date(i.expires_at) > new Date());
 const usedInvites = invites.filter((i) => i.used_at);
 const baseUrl = Astro.url.origin;

@@ -24,12 +24,12 @@ const BASE = 'https://ai.aidacamp.ru';
 const isStaff = role !== 'student';
 const today = new Date().toISOString().slice(0, 10);
 
-let shift = isStaff ? await getActiveShift() : null;
-let events = (isStaff && shift) ? await getEvents(shift.id, today) : [];
-let doneSet: Set<string> = new Set();
-if (isStaff && shift && telegramId) {
-  doneSet = await getDone(telegramId, shift.id);
-}
+const shift = isStaff ? await getActiveShift() : null;
+// events и doneSet не зависят друг от друга — параллельно
+const [events, doneSet] = await Promise.all([
+  (isStaff && shift) ? getEvents(shift.id, today) : Promise.resolve([] as Awaited<ReturnType<typeof getEvents>>),
+  (isStaff && shift && telegramId) ? getDone(telegramId, shift.id) : Promise.resolve(new Set<string>()),
+]);
 
 // Determine if shift is active today
 function shiftActive(sh: typeof shift, d: string): boolean {
@@ -241,60 +241,9 @@ const shiftStatusMsg = isStaff && !isShiftDay ? shiftStatus() : '';
     ))}
   </div>
 
-  <script is:inline>
-    (() => {
-      const dataTag = document.getElementById('portal-search-data');
-      const input = document.getElementById('portal-search');
-      const results = document.getElementById('portal-search-results');
-      const empty = document.getElementById('portal-search-empty');
-      const cards = document.getElementById('portal-cards');
-      if (!dataTag || !input || !results || !empty || !cards) return;
-      let entries = [];
-      try { entries = JSON.parse(dataTag.textContent || '[]'); } catch { entries = []; }
-      const SNIPPET = 160; const MAX_RESULTS = 15;
-      const escapeHtml = (s) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-      function snippet(text, q) {
-        if (!text) return '';
-        const idx = text.toLowerCase().indexOf(q);
-        if (idx < 0) return text.slice(0, SNIPPET).trim() + (text.length > SNIPPET ? '…' : '');
-        const half = Math.floor((SNIPPET - q.length) / 2);
-        const start = Math.max(0, idx - half); const end = Math.min(text.length, start + SNIPPET);
-        let s = text.slice(start, end).trim();
-        if (start > 0) s = '…' + s; if (end < text.length) s = s + '…'; return s;
-      }
-      function search(q) {
-        const needle = q.toLowerCase(); const matched = [];
-        for (const e of entries) {
-          const inTitle = e.title.toLowerCase().includes(needle);
-          const inText = (e.text || '').toLowerCase().includes(needle);
-          if (inTitle || inText) matched.push({ e, rank: inTitle ? 0 : 1 });
-        }
-        matched.sort((a, b) => a.rank - b.rank);
-        return matched.slice(0, MAX_RESULTS).map((m) => m.e);
-      }
-      function render(q) {
-        const found = search(q); results.innerHTML = '';
-        if (found.length === 0) { results.classList.add('hidden'); empty.classList.remove('hidden'); return; }
-        empty.classList.add('hidden'); results.classList.remove('hidden');
-        for (const e of found) {
-          const li = document.createElement('li');
-          li.innerHTML = '<a href="' + escapeHtml(e.url) + '" target="_blank" rel="noopener" class="block rounded-[16px] border border-border bg-white p-4 card-shadow transition hover:border-primary">' +
-            '<span class="block text-[18px] font-semibold text-navy-950">' + escapeHtml(e.title) + '</span>' +
-            '<span class="mt-1 block text-[14px] font-medium text-primary">' + escapeHtml(e.group) + '</span>' +
-            '<span class="mt-1 block text-[16px] leading-[1.5] text-body-muted">' + escapeHtml(snippet(e.text || '', q.toLowerCase())) + '</span></a>';
-          results.appendChild(li);
-        }
-      }
-      let timer;
-      input.addEventListener('input', () => {
-        clearTimeout(timer);
-        timer = setTimeout(() => {
-          const q = input.value.trim();
-          if (!q) { results.classList.add('hidden'); empty.classList.add('hidden'); results.innerHTML = ''; cards.classList.remove('hidden'); return; }
-          cards.classList.add('hidden'); render(q);
-        }, 150);
-      });
-    })();
+  <script>
+    import { initPortalSearch } from '../../scripts/portal/portalSearch';
+    initPortalSearch();
   </script>
 )}
 

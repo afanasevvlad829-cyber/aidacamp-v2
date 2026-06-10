@@ -1,15 +1,16 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { verifySessionPayload } from '../../../../lib/portalSession';
+import { requireStaff } from '../../../../lib/portalPerms';
 import { mergePendingIntoPlaceholder } from '../../../../lib/portalStaff';
 
-function requireAdmin(cookies: Parameters<APIRoute>[0]['cookies']): { sub?: number } | null {
-  const p = verifySessionPayload(cookies.get('portal_session')?.value, process.env.PORTAL_SESSION_SECRET ?? '');
-  return p && p.role === 'admin' ? { sub: p.sub } : null;
+function requireAdmin(locals: App.Locals): { sub: number } | null {
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return null;
+  return _a.role === 'admin' ? { sub: _a.sub } : null;
 }
 
-export const POST: APIRoute = async ({ request, cookies }) => {
-  const admin = requireAdmin(cookies);
+export const POST: APIRoute = async ({ locals, request }) => {
+  const admin = requireAdmin(locals);
   if (!admin) return new Response('Forbidden', { status: 403 });
 
   let body: unknown;

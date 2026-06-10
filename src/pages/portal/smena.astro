@@ -103,7 +103,40 @@ for (const e of dayEvents) {
           </select>
         </form>
       )}
+      {role === 'admin' && shift && (
+        <button type="button" id="copy-shift-btn" class="den-copy" style="margin-left:auto">
+          📋 Создать смену на основе этой
+        </button>
+      )}
     </header>
+
+    {/* Диалог копирования смены — показывается только админу */}
+    {role === 'admin' && shift && (
+      <dialog id="copy-shift-dialog" style="border:none;border-radius:16px;padding:28px 24px;max-width:380px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+        <form method="dialog" id="copy-shift-form">
+          <h3 style="margin:0 0 16px;font-size:18px;font-weight:700">Создать смену на основе «{shift.name}»</h3>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <label style="font-size:14px;font-weight:600">
+              Название новой смены
+              <input type="text" id="cs-name" class="den-input" required placeholder="Смена №2 — лето 2026" style="margin-top:4px;width:100%;box-sizing:border-box" />
+            </label>
+            <label style="font-size:14px;font-weight:600">
+              Дата начала
+              <input type="date" id="cs-start" class="den-input" required style="margin-top:4px;width:100%;box-sizing:border-box" />
+            </label>
+            <label style="font-size:14px;font-weight:600">
+              Дата окончания
+              <input type="date" id="cs-end" class="den-input" required style="margin-top:4px;width:100%;box-sizing:border-box" />
+            </label>
+          </div>
+          <div id="cs-error" style="display:none;margin-top:12px;padding:10px 12px;background:#fee2e2;border-radius:8px;color:#b91c1c;font-size:14px"></div>
+          <div style="display:flex;gap:10px;margin-top:20px">
+            <button type="submit" id="cs-submit" class="den-save" style="flex:1">Создать</button>
+            <button type="button" id="cs-cancel" class="den-copy" style="flex:0 0 auto">Отмена</button>
+          </div>
+        </form>
+      </dialog>
+    )}
 
     {shift && dates.length > 0 && (
       <nav class="den-days">
@@ -152,4 +185,63 @@ for (const e of dayEvents) {
   <ChecklistModal />
 
   <script src="../../scripts/portal/den.ts"></script>
+
+  {role === 'admin' && shift && (
+    <script is:inline define:vars={{ shiftId: shift.id }}>
+      (function () {
+        var btn = document.getElementById('copy-shift-btn');
+        var dlg = document.getElementById('copy-shift-dialog');
+        var form = document.getElementById('copy-shift-form');
+        var errBox = document.getElementById('cs-error');
+        var submitBtn = document.getElementById('cs-submit');
+        var cancelBtn = document.getElementById('cs-cancel');
+        if (!btn || !dlg || !form) return;
+
+        btn.addEventListener('click', function () {
+          errBox.style.display = 'none';
+          dlg.showModal();
+        });
+        cancelBtn.addEventListener('click', function () { dlg.close(); });
+        dlg.addEventListener('click', function (e) {
+          if (e.target === dlg) dlg.close();
+        });
+
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          var name = document.getElementById('cs-name').value.trim();
+          var start = document.getElementById('cs-start').value;
+          var end = document.getElementById('cs-end').value;
+          if (!name || !start || !end) return;
+
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Создаю…';
+          errBox.style.display = 'none';
+
+          fetch('/api/portal/shift/copy-shift', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ source_shift_id: shiftId, name: name, start_date: start, end_date: end }),
+          })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              if (data.ok) {
+                window.location.href = '/portal/smena?shift=' + data.shift_id;
+              } else {
+                errBox.textContent = data.error || 'Ошибка сервера';
+                errBox.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Создать';
+              }
+            })
+            .catch(function (err) {
+              errBox.textContent = 'Сетевая ошибка: ' + (err && err.message ? err.message : err);
+              errBox.style.display = 'block';
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Создать';
+            });
+        });
+      })();
+    </script>
+  )}
 </PortalLayout>

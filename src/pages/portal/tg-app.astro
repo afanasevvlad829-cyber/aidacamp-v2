@@ -134,10 +134,21 @@ import PortalLayout from '../../layouts/PortalLayout.astro';
       };
     }
 
+    // Fallback: если SDK не дал initData — берём из URL-хэша (#tgWebAppData=...)
+    // Telegram передаёт данные так при открытии в некоторых клиентах (Desktop, браузер)
+    function getHashInitData() {
+      try {
+        var hash = window.location.hash.slice(1);
+        var params = new URLSearchParams(hash);
+        var raw = params.get('tgWebAppData');
+        return raw ? decodeURIComponent(raw) : null;
+      } catch(e) { return null; }
+    }
+
     // SDK грузится с defer — ждём его готовности перед проверкой initData
     function tryAuth() {
       var tg = window.Telegram && window.Telegram.WebApp;
-      var initData = tg && tg.initData;
+      var initData = (tg && tg.initData) || getHashInitData();
       var ci = clientInfo(tg);
 
       if (!initData) {

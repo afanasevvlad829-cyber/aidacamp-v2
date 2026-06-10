@@ -1,7 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { verifySessionPayload } from '../../../lib/portalSession';
-import { isStaff } from '../../../lib/portalPerms';
+import { isStaff, requireStaff } from '../../../lib/portalPerms';
 import {
   ensureInventory, toggleCheck, setStatus, attachWalkthrough, getInventory, setNotes,
 } from '../../../lib/portalRoomInventory';
@@ -25,12 +24,10 @@ async function readBody(request: Request): Promise<Record<string, any>> {
  * GET /api/portal/room-inventory?shift_id=N&room=20  → состояние одной комнаты + checks
  * POST /api/portal/room-inventory  body: { shift_id, room, item_id?, done?, comment?, status?, walkthrough_photo_id? }
  */
-export const GET: APIRoute = async ({ url, cookies }) => {
-  const payload = verifySessionPayload(
-    cookies.get('portal_session')?.value,
-    process.env.PORTAL_SESSION_SECRET ?? '',
-  );
-  if (!payload?.role) return json({ ok: false, error: 'unauthorized' }, 401);
+export const GET: APIRoute = async ({ locals, url }) => {
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
 
   const shiftId = Number(url.searchParams.get('shift_id'));
   const room = Number(url.searchParams.get('room'));
@@ -40,13 +37,10 @@ export const GET: APIRoute = async ({ url, cookies }) => {
   return json({ ok: true, ...data });
 };
 
-export const POST: APIRoute = async ({ request, cookies }) => {
-  const payload = verifySessionPayload(
-    cookies.get('portal_session')?.value,
-    process.env.PORTAL_SESSION_SECRET ?? '',
-  );
-  if (!payload?.role) return json({ ok: false, error: 'unauthorized' }, 401);
-  if (!isStaff(payload.role)) return json({ ok: false, error: 'forbidden' }, 403);
+export const POST: APIRoute = async ({ locals, request }) => {
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
 
   const body = await readBody(request);
   const shiftId = Number(body.shift_id);
@@ -74,7 +68,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (body.status) {
     const st = String(body.status);
     if (!['pending', 'ok', 'defects'].includes(st)) return json({ ok: false, error: 'bad status' }, 400);
-    await setStatus(invId, st as any, payload.sub ?? 0);
+    await setStatus(invId, st as any, sub ?? 0);
   }
 
   // Видео обхода

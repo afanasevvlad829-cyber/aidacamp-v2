@@ -1,13 +1,10 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { listForEvent, markChecked, unmark, markCheckedByStaffId, unmarkByStaffId } from '../../../lib/portalSelfCheck';
+import { apiOk, apiBad } from '../../../lib/portalResponse';
 
-function bad(msg: string, status = 400) {
-  return new Response(JSON.stringify({ ok: false, error: msg }), { status, headers: { 'Content-Type': 'application/json' } });
-}
-function ok(data: object) {
-  return new Response(JSON.stringify({ ok: true, ...data }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-}
+const ok  = (data: object) => apiOk(data);
+const bad = (msg: string, status = 400) => apiBad(msg, status);
 
 export const GET: APIRoute = async ({ url, locals }) => {
   if (!locals.portalRole) return bad('unauthorized', 401);

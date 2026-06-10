@@ -13,10 +13,12 @@ if (!role || role === 'student') return Astro.redirect('/portal/');
 const isManager = role === 'admin' || role === 'rukovoditel';
 const canCreate = isManager || role === 'teacher';
 
-const shift = await getActiveShift();
-const lessons: Lesson[] = shift ? await listLessons({ shift_id: shift.id }) : [];
-const teachers = (await listStaff()).filter((s) => s.active && (s.role === 'teacher' || s.role === 'admin'));
-const dates = shift ? await getEventDates(shift.id) : [];
+const [shift, rawTeachers] = await Promise.all([getActiveShift(), listStaff()]);
+const teachers = rawTeachers.filter((s) => s.active && (s.role === 'teacher' || s.role === 'admin'));
+const [lessons, dates] = await Promise.all([
+  shift ? listLessons({ shift_id: shift.id }) : Promise.resolve([] as Lesson[]),
+  shift ? getEventDates(shift.id) : Promise.resolve([] as string[]),
+]);
 
 // Группируем уроки по дате для отображения
 const byDate = new Map<string, Lesson[]>();

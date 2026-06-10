@@ -1,7 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { verifySessionPayload } from '../../../lib/portalSession';
-import { isStaff } from '../../../lib/portalPerms';
+import { isStaff, requireStaff } from '../../../lib/portalPerms';
 import { listAssignments, upsertKid, deleteKid, autoAssign } from '../../../lib/portalRasselenie';
 import { ROOMS } from '../../../lib/portalRooms';
 
@@ -18,19 +17,20 @@ async function readBody(request: Request): Promise<Record<string, any>> {
   return obj;
 }
 
-export const GET: APIRoute = async ({ url, cookies }) => {
-  const p = verifySessionPayload(cookies.get('portal_session')?.value, process.env.PORTAL_SESSION_SECRET ?? '');
-  if (!p?.role) return json({ ok: false, error: 'unauthorized' }, 401);
+export const GET: APIRoute = async ({ locals, url }) => {
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
   const shiftId = Number(url.searchParams.get('shift_id'));
   if (!Number.isFinite(shiftId)) return json({ ok: false, error: 'shift_id required' }, 400);
   const items = await listAssignments(shiftId);
   return json({ ok: true, items });
 };
 
-export const POST: APIRoute = async ({ request, cookies }) => {
-  const p = verifySessionPayload(cookies.get('portal_session')?.value, process.env.PORTAL_SESSION_SECRET ?? '');
-  if (!p?.role) return json({ ok: false, error: 'unauthorized' }, 401);
-  if (!isStaff(p.role)) return json({ ok: false, error: 'forbidden' }, 403);
+export const POST: APIRoute = async ({ locals, request }) => {
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
   const b = await readBody(request);
   const shift_id = Number(b.shift_id);
   if (!Number.isFinite(shift_id)) return json({ ok: false, error: 'shift_id required' }, 400);
@@ -59,9 +59,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   return json({ ok: true, ...r });
 };
 
-export const DELETE: APIRoute = async ({ request, cookies }) => {
-  const p = verifySessionPayload(cookies.get('portal_session')?.value, process.env.PORTAL_SESSION_SECRET ?? '');
-  if (!p?.role || !isStaff(p.role)) return json({ ok: false, error: 'forbidden' }, 403);
+export const DELETE: APIRoute = async ({ locals, request }) => {
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
+  if (!isStaff(role)) return json({ ok: false, error: 'forbidden' }, 403);
   const b = await readBody(request);
   const shift_id = Number(b.shift_id);
   if (!Number.isFinite(shift_id)) return json({ ok: false, error: 'shift_id required' }, 400);

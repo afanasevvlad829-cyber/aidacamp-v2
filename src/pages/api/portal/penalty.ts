@@ -5,27 +5,12 @@ import {
   listPenalties, createPenalty, confirmPenalty, cancelPenalty, markPaid, getReasons,
   type PenaltyStatus,
 } from '../../../lib/portalPenalty';
+import { apiOk, apiBad, apiUnauthorized, apiForbidden } from '../../../lib/portalResponse';
 
-function unauthorized(msg = 'unauthorized') {
-  return new Response(JSON.stringify({ ok: false, error: msg }), {
-    status: 401, headers: { 'Content-Type': 'application/json' },
-  });
-}
-function forbidden(msg = 'forbidden') {
-  return new Response(JSON.stringify({ ok: false, error: msg }), {
-    status: 403, headers: { 'Content-Type': 'application/json' },
-  });
-}
-function bad(msg: string, status = 400) {
-  return new Response(JSON.stringify({ ok: false, error: msg }), {
-    status, headers: { 'Content-Type': 'application/json' },
-  });
-}
-function ok(payload: unknown) {
-  return new Response(JSON.stringify({ ok: true, ...(payload as object) }), {
-    status: 200, headers: { 'Content-Type': 'application/json' },
-  });
-}
+const unauthorized = (msg = 'unauthorized') => apiUnauthorized(msg);
+const forbidden    = (msg = 'forbidden')    => apiForbidden(msg);
+const bad          = (msg: string, status = 400) => apiBad(msg, status);
+const ok           = (payload: unknown)     => apiOk(payload);
 
 function isManager(role: string | null | undefined): boolean {
   return role === 'admin' || role === 'rukovoditel';
@@ -117,8 +102,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const note = String(body.note || '').trim();
     if (!id) return bad('id required');
     if (!note) return bad('note required (укажи причину отмены)');
-    // Отменять штрафы может только Владимир Афанасьев (telegram_id=244314247)
-    if (String(sub) !== '244314247') return forbidden('отменять штрафы может только администратор Владимир Афанасьев');
+    // Отменять штрафы может только admin
+    if (role !== 'admin') return forbidden('отменять штрафы может только администратор');
     await cancelPenalty(id, actorId, note);
     return ok({ id });
   }

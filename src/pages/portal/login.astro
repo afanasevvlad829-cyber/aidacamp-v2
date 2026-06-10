@@ -22,6 +22,34 @@ const tgMsg =
 ---
 
 <PortalLayout title="Вход в портал — АйДаКемп" showHeader={false}>
+  {/*
+    Редирект на tg-app если страница открыта внутри Telegram-браузера.
+    Telegram Login Widget открывает попап через window.open() — в in-app браузерах
+    Telegram (Android/Desktop) это даёт about:blank. tg-app.astro работает без попапов.
+  */}
+  <script is:inline>
+    (function () {
+      // 1. Telegram Mini App: initData уже загружен SDK
+      var tgWA = window.Telegram && window.Telegram.WebApp;
+      if (tgWA && tgWA.initData) {
+        window.location.replace('/portal/tg-app' + window.location.hash);
+        return;
+      }
+      // 2. Fallback: initData передан через URL-хэш (#tgWebAppData=...)
+      if (window.location.hash.indexOf('tgWebAppData') !== -1) {
+        window.location.replace('/portal/tg-app' + window.location.hash);
+        return;
+      }
+      // 3. Telegram Desktop / Android in-app browser: window.Telegram есть, но WebApp ещё не готов —
+      //    ждём загрузки скрипта SDK (он грузится async на tg-app.astro, здесь его нет).
+      //    Детектируем по UA: Telegram Desktop добавляет "TelegramDesktop" или "Telegram".
+      var ua = navigator.userAgent || '';
+      if (/TelegramDesktop|Telegram\/\d/i.test(ua)) {
+        window.location.replace('/portal/tg-app' + window.location.hash);
+        return;
+      }
+    })();
+  </script>
   <div class="flex min-h-[70vh] items-center justify-center">
     <div class="w-full max-w-[420px]">
       <div class="mb-8 text-center">

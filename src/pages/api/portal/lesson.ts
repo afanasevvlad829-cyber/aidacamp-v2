@@ -5,13 +5,10 @@ import {
   listProgress, upsertProgress,
   type LessonStatus, type LessonProgress,
 } from '../../../lib/portalLesson';
+import { apiOk, apiBad } from '../../../lib/portalResponse';
 
-function bad(msg: string, status = 400) {
-  return new Response(JSON.stringify({ ok: false, error: msg }), { status, headers: { 'Content-Type': 'application/json' } });
-}
-function ok(data: object = {}) {
-  return new Response(JSON.stringify({ ok: true, ...data }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-}
+const ok  = (data: object = {}) => apiOk(data);
+const bad = (msg: string, status = 400) => apiBad(msg, status);
 
 function canEditLesson(role: string | null | undefined, lessonTeacherId: number | null, myStaffId: number | null): boolean {
   if (role === 'admin' || role === 'rukovoditel') return true;

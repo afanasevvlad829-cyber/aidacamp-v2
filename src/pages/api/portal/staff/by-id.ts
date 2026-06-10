@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { verifySessionPayload } from '../../../../lib/portalSession';
+import { requireStaff } from '../../../../lib/portalPerms';
 import { setActiveById, deleteStaffById, setNameById } from '../../../../lib/portalStaff';
 
 /**
@@ -8,12 +8,11 @@ import { setActiveById, deleteStaffById, setNameById } from '../../../../lib/por
  *   form: id, action ('activate'|'deactivate'|'delete')
  * Только admin. Работает по PK id (включает placeholder без telegram_id).
  */
-export const POST: APIRoute = async ({ request, cookies, redirect }) => {
-  const p = verifySessionPayload(
-    cookies.get('portal_session')?.value,
-    process.env.PORTAL_SESSION_SECRET ?? '',
-  );
-  if (!p || p.role !== 'admin') return new Response('Forbidden', { status: 403 });
+export const POST: APIRoute = async ({ locals, request, redirect }) => {
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
+  if (role !== 'admin') return new Response('Forbidden', { status: 403 });
 
   const form = await request.formData();
   const id = Number(form.get('id'));

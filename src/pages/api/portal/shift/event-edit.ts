@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { verifySessionPayload } from '../../../../lib/portalSession';
+import { requireStaff } from '../../../../lib/portalPerms';
 import { canEditEvent } from '../../../../lib/portalShiftPerms';
 
 function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
@@ -35,13 +35,10 @@ async function readBody(request: Request): Promise<Record<string, any>> {
  *         attach_checklist?: { checklist_id, roles? },
  *         detach_event_checklist_id?: number }
  */
-export const POST: APIRoute = async ({ request, cookies }) => {
-  const payload = verifySessionPayload(
-    cookies.get('portal_session')?.value,
-    process.env.PORTAL_SESSION_SECRET ?? '',
-  );
-  if (!payload?.role) return json({ ok: false, error: 'unauthorized' }, 401);
-  const role = payload.role;
+export const POST: APIRoute = async ({ locals, request }) => {
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
 
   const body = await readBody(request);
 

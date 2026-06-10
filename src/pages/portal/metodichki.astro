@@ -12,10 +12,11 @@ if (!['admin', 'teacher', 'vozhaty', 'rukovoditel'].includes(role)) {
 const groups = activitiesByAuthor();
 const BASE = '/metodichki';
 
-// Подтянем комментарии для всех slug'ов (один проход)
+// Подтягиваем комментарии для всех slug'ов параллельно (вместо последовательного for-of)
 const allSlugs = groups.flatMap((g) => g.items.map((a) => a.slug));
+const commentResults = await Promise.all(allSlugs.map((s) => listComments(s)));
 const commentsBySlug: Record<string, Awaited<ReturnType<typeof listComments>>> = {};
-for (const s of allSlugs) commentsBySlug[s] = await listComments(s);
+allSlugs.forEach((s, i) => { commentsBySlug[s] = commentResults[i]; });
 
 function fmtDate(s: string): string {
   try { return new Date(s).toLocaleString('ru-RU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); }

@@ -1,16 +1,11 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { verifySessionPayload } from '../../../../lib/portalSession';
+import { requireStaff } from '../../../../lib/portalPerms';
 import {
   createShift, archiveShift, upsertEvent, duplicateEvent, deleteEvent, upsertChecklist, attachChecklist, deleteChecklist,
 } from '../../../../lib/portalShift';
 
 const ALLOWED_ROLES = ['admin', 'rukovoditel'] as const;
-
-function requireAdmin(cookies: Parameters<APIRoute>[0]['cookies']): boolean {
-  const p = verifySessionPayload(cookies.get('portal_session')?.value, process.env.PORTAL_SESSION_SECRET ?? '');
-  return !!p && (ALLOWED_ROLES as readonly string[]).includes(p.role);
-}
 
 /** Считать поля из formData или JSON-тела. */
 async function readBody(request: Request): Promise<Record<string, unknown> & { __form: boolean }> {
@@ -54,8 +49,11 @@ function parseItems(v: unknown): { id: string; text: string }[] {
     .map((text, i) => ({ id: `i${i + 1}`, text }));
 }
 
-export const POST: APIRoute = async ({ request, cookies, redirect }) => {
-  if (!requireAdmin(cookies)) return new Response(JSON.stringify({ ok: false, error: 'нет прав (нужен руководитель или админ)' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+export const POST: APIRoute = async ({ locals, request, redirect }) => {
+  const _auth = requireStaff(locals);
+  if (_auth instanceof Response) return _auth;
+  const { role } = _auth;
+  if (!(ALLOWED_ROLES as readonly string[]).includes(role)) return new Response(JSON.stringify({ ok: false, error: 'нет прав (нужен руководитель или админ)' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
   const body = await readBody(request);
   const isForm = body.__form === true;
   const action = asStr(body.action);

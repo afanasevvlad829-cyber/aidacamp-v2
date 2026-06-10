@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { verifySessionPayload } from '../../../lib/portalSession';
+import { requireStaff } from '../../../lib/portalPerms';
 
 const ALLOWED = new Set(['admin', 'rukovoditel', 'teacher', 'vozhaty', 'student']);
 const MAX_BYTES = 8 * 1024 * 1024; // 8 МБ — ~ минута wav/opus
@@ -68,10 +68,11 @@ async function callProvider(p: Provider, blob: File): Promise<{ ok: true; text: 
  *
  * Чейн: GROQ (whisper-large-v3-turbo, бесплатно) → OpenAI (whisper-1, $0.006/мин) fallback.
  */
-export const POST: APIRoute = async ({ request, cookies }) => {
-  const s = verifySessionPayload(cookies.get('portal_session')?.value, process.env.PORTAL_SESSION_SECRET ?? '');
-  if (!s) return err('unauthorized', 401);
-  if (!ALLOWED.has(s.role)) return err('forbidden', 403);
+export const POST: APIRoute = async ({ locals, request }) => {
+  const _a = requireStaff(locals);
+  if (_a instanceof Response) return _a;
+  const { role, sub } = _a;
+  if (!ALLOWED.has(role)) return err('forbidden', 403);
 
   const chain = providers();
   if (chain.length === 0) return err('no transcribe provider configured (GROQ_API_KEY/OPENAI_API_KEY)', 500);

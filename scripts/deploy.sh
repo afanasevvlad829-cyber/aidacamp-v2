@@ -119,7 +119,28 @@ cd "$PROJECT_DIR"
 
 # ── 0. Сборка ─────────────────────────────────────────────────
 echo ""
+echo ""
+echo "📦 Зависимости (синк с lockfile перед сборкой)..."
+if [ ! -d node_modules ] || ! cmp -s package-lock.json node_modules/.package-lock.json 2>/dev/null; then
+  echo "  ⚙️  lockfile изменился или node_modules нет → npm ci..."
+  npm ci
+else
+  echo "  ✅ node_modules в синке"
+fi
 echo "🔨 Сборка..."
+
+# ── guard: пути импортов во вложенных API-файлах ──────────────
+# Файлы в src/pages/api/portal/*/  на уровень глубже и требуют ../../../../lib/
+# Python bulk-замены могут ставить ../../../ — ловим до сборки, а не внутри vite.
+BROKEN_IMPORTS=$(find src/pages/api/portal -mindepth 2 -name "*.ts" \
+  | xargs grep -l "from '\.\./\.\./\.\./lib/" 2>/dev/null || true)
+if [ -n "$BROKEN_IMPORTS" ]; then
+  echo "❌ guard: битые пути импортов (нужен ../../../../lib/ вместо ../../../lib/):"
+  echo "$BROKEN_IMPORTS"
+  exit 1
+fi
+echo "🔒 guard: пути импортов OK"
+
 # DEPLOY_ENV=dev → assetsPrefix отключён, JS/CSS грузятся с того же хоста
 # DEPLOY_ENV=prod → assetsPrefix=https://huhodirekeka.begetcdn.cloud (CDN)
 DEPLOY_ENV="$TARGET" npm run build --silent
