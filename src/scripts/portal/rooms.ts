@@ -300,26 +300,37 @@ function initRasselenie() {
     });
   }
 
-  // Remove kid
-  document.querySelectorAll('.kid-remove').forEach((btn) => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const kidId = (btn as HTMLElement).dataset.kidId;
-      const r = await fetch('/api/portal/rasselenie', {
-        method: 'DELETE',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ shift_id: shiftId, kid_id: kidId }),
-        credentials: 'include',
-      });
-      if (r.ok) {
-        haptic('success');
-        window.location.reload();
-      } else {
-        const d = await r.json().catch(() => ({}));
-        await alertDialog('Не удалось снять с койки: ' + (d.error || ('HTTP ' + r.status)));
-      }
+  // Remove kid — event delegation на document, срабатывает до Sortable (touch-safe)
+  async function handleKidRemove(kidId: string) {
+    const r = await fetch('/api/portal/rasselenie', {
+      method: 'DELETE',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ shift_id: shiftId, kid_id: kidId }),
+      credentials: 'include',
     });
+    if (r.ok) {
+      haptic('success');
+      window.location.reload();
+    } else {
+      const d = await r.json().catch(() => ({}));
+      await alertDialog('Не удалось снять с койки: ' + (d.error || ('HTTP ' + r.status)));
+    }
+  }
+  // click (desktop) + touchend (mobile/TG) — оба варианта
+  document.addEventListener('click', (e) => {
+    const btn = (e.target as Element).closest('.kid-remove') as HTMLElement | null;
+    if (!btn) return;
+    e.stopPropagation(); e.preventDefault();
+    const kidId = btn.dataset.kidId;
+    if (kidId) handleKidRemove(kidId);
   });
+  document.addEventListener('touchend', (e) => {
+    const btn = (e.target as Element).closest('.kid-remove') as HTMLElement | null;
+    if (!btn) return;
+    e.stopPropagation(); e.preventDefault();
+    const kidId = btn.dataset.kidId;
+    if (kidId) handleKidRemove(kidId);
+  }, { passive: false });
 }
 
 // ── Inventory tab logic ───────────────────────────────────────────────────
