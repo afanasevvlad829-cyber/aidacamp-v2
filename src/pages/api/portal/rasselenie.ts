@@ -1,7 +1,7 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { isStaff, requireStaff } from '../../../lib/portalPerms';
-import { listAssignments, upsertKid, deleteKid, autoAssign } from '../../../lib/portalRasselenie';
+import { listAssignments, upsertKid, deleteKid, autoAssign, takeSnapshot } from '../../../lib/portalRasselenie';
 import { ROOMS } from '../../../lib/portalRooms';
 
 function json(body: object, status = 200): Response {
@@ -35,6 +35,12 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const shift_id = Number(b.shift_id);
   if (!Number.isFinite(shift_id)) return json({ ok: false, error: 'shift_id required' }, 400);
 
+  // Снимок расселения (action=snapshot) — вызывается перед массовой загрузкой из CRM
+  if (b.action === 'snapshot') {
+    await takeSnapshot(shift_id, String(b.reason ?? 'manual'));
+    return json({ ok: true });
+  }
+
   // Авто-расстановка (action=auto_assign)
   if (b.action === 'auto_assign') {
     const eligibleRooms = ROOMS.filter((r) => r.type !== 'staff').map((r) => ({ number: r.number, capacity: r.capacity }));
@@ -47,14 +53,18 @@ export const POST: APIRoute = async ({ locals, request }) => {
   if (!kid_id || !kid_name) {
     return json({ ok: false, error: 'kid_id, kid_name required' }, 400);
   }
-  const room_number = b.room_number != null && b.room_number !== '' ? Number(b.room_number) : null;
-  const bed_index = b.bed_index != null && b.bed_index !== '' ? Number(b.bed_index) : null;
+  // Если room_number/bed_index не переданы вообще (загрузка из CRM/персонала) —
+  // preservePosition=true чтобы не затирать уже проставленную комнату.
+  const hasExplicitPosition = 'room_number' in b || 'bed_index' in b;
+  const room_number = hasExplicitPosition && b.room_number != null && b.room_number !== '' ? Number(b.room_number) : null;
+  const bed_index   = hasExplicitPosition && b.bed_index   != null && b.bed_index   !== '' ? Number(b.bed_index)   : null;
   const r = await upsertKid({
     shift_id, kid_id, kid_name,
     kid_gender: (b.kid_gender === 'M' || b.kid_gender === 'F') ? b.kid_gender : null,
     kid_age: b.kid_age != null && b.kid_age !== '' ? Number(b.kid_age) : null,
     notes: b.notes ? String(b.notes) : null,
     room_number, bed_index,
+    preservePosition: !hasExplicitPosition,
   });
   return json({ ok: true, ...r });
 };
