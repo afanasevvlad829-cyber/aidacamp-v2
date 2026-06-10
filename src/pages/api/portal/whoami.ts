@@ -40,12 +40,6 @@ export const GET: APIRoute = async ({ locals }) => {
   const _a = requireAuth(locals);
   if (_a instanceof Response) return _a;
   const { role, sub } = _a;
-  if (!p) {
-    return new Response(JSON.stringify({ ok: false }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
   const email = authEmail(role, sub);
   const subStr = sub != null ? String(sub) : 'shared';
 

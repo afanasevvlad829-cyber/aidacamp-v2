@@ -31,7 +31,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const body = await request.json().catch(() => ({} as any));
   const action = String(body.action || 'create');
   const author = String(sub || role || 'admin');
-  const authorName = String(p.name || role || 'admin');
+  const authorName = String(role || 'admin');
 
   try {
     if (action === 'create') {

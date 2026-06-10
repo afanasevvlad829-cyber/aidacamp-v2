@@ -3,15 +3,14 @@ import type { APIRoute } from 'astro';
 import { requireStaff } from '../../../../lib/portalPerms';
 import { mergePendingIntoPlaceholder } from '../../../../lib/portalStaff';
 
-function requireAdmin(cookies: Parameters<APIRoute>[0]['cookies']): { sub?: number } | null {
+function requireAdmin(locals: App.Locals): { sub: number } | null {
   const _a = requireStaff(locals);
-  if (_a instanceof Response) return _a;
-  const { role, sub } = _a;
-  return p && role === 'admin' ? { sub: sub } : null;
+  if (_a instanceof Response) return null;
+  return _a.role === 'admin' ? { sub: _a.sub } : null;
 }
 
 export const POST: APIRoute = async ({ locals, request }) => {
-  const admin = requireAdmin(cookies);
+  const admin = requireAdmin(locals);
   if (!admin) return new Response('Forbidden', { status: 403 });
 
   let body: unknown;

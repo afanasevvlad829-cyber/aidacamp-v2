@@ -14,7 +14,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const _a = requireStaff(locals);
   if (_a instanceof Response) return _a;
   const { role, sub } = _a;
-  if (!p || role !== 'admin') {
+  if (role !== 'admin') {
     return new Response(JSON.stringify({ ok: false, error: 'forbidden' }), {
       status: 403, headers: { 'Content-Type': 'application/json' },
     });

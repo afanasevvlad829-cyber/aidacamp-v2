@@ -4,20 +4,19 @@ import { requireRole } from '../../../lib/portalPerms';
 import { PORTAL_ROLES, type PortalRole } from '../../../lib/portalSession';
 import { listStaff, setRole, setActive } from '../../../lib/portalStaff';
 
-function requireAdmin(cookies: Parameters<APIRoute>[0]['cookies']): { sub?: number } | null {
-  const _a = requireRole(locals);
-  if (_a instanceof Response) return _a;
-  const { role, sub } = _a;
-  return p && role === 'admin' ? { sub: sub } : null;
+function requireAdmin(locals: App.Locals): { sub: number } | null {
+  const _a = requireRole(locals, ['admin']);
+  if (_a instanceof Response) return null;
+  return { sub: _a.sub };
 }
 
 export const GET: APIRoute = async ({ locals }) => {
-  if (!requireAdmin(cookies)) return new Response('Forbidden', { status: 403 });
+  if (!requireAdmin(locals)) return new Response('Forbidden', { status: 403 });
   return new Response(JSON.stringify(await listStaff()), { headers: { 'Content-Type': 'application/json' } });
 };
 
 export const POST: APIRoute = async ({ locals, request, redirect }) => {
-  const admin = requireAdmin(cookies);
+  const admin = requireAdmin(locals);
   if (!admin) return new Response('Forbidden', { status: 403 });
   const form = await request.formData();
   const action = String(form.get('action') ?? '');
