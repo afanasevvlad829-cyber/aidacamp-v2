@@ -24,7 +24,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const { role, sub } = _a;
   const body = await request.json().catch(() => ({} as any));
   const action = String(body.action || '');
-  const userId = String((p as any).sub || (p as any).role || 'admin');
+  const userId = String(sub || role || 'admin');
 
   try {
     if (action === 'set_prize') {
