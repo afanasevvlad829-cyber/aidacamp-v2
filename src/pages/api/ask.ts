@@ -128,8 +128,9 @@ export const POST: APIRoute = async ({ request }) => {
   // X-Audit: 1 заголовок → режим аудита: Haiku, пониженный приоритет в логах
   const _isAudit = request.headers.get('X-Audit') === '1';
   const _auditModelOverride = request.headers.get('X-Audit-Model'); // 'haiku' | 'sonnet' | null
+  let body: AskRequest | undefined;
   try {
-    const body: AskRequest = await request.json();
+    body = await request.json();
     const { message, history = [], sessionId } = body;
 
     if (!message?.trim()) {
@@ -347,8 +348,8 @@ export const POST: APIRoute = async ({ request }) => {
     console.error('ask.ts error:', e?.name, e?.message);
     // Логируем сбой тоже — чтобы CSAT мог поставить минус и в воронке видна ошибка
     try {
-      const sid = (typeof body !== 'undefined' && body?.sessionId) || 'err-' + Date.now();
-      const userQ = (typeof body !== 'undefined' && body?.message) || '';
+      const sid = (body?.sessionId) || 'err-' + Date.now();
+      const userQ = (body?.message) || '';
       await logSession(sid, userQ, TIMEOUT_FALLBACK, { error: e?.message?.slice(0,200) });
     } catch {}
     return new Response(TIMEOUT_FALLBACK, {
