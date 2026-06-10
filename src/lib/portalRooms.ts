@@ -64,23 +64,37 @@ export const INVENTORY_CHECKLIST = [
 ] as const;
 
 /**
- * Единая «крыльевая» раскладка плана этажа — общая для инвентаризации и расселения,
- * чтобы план выглядел одинаково на обеих вкладках.
- *  Каждый этаж: массив рядов; ряд = левое крыло + пунктирный коридор + правое крыло.
+ * Точная grid-раскладка плана 3-го корпуса — общая для инвентаризации и расселения,
+ * чтобы план совпадал с реальным чертежом и выглядел одинаково на обеих вкладках.
+ *
+ * Сетка 9 колонок: cols 1-4 = левое крыло, col 5 = коридор, cols 6-9 = правое крыло.
+ *  col — CSS grid-column (с диапазоном для широких комнат), row — номер ряда.
+ *  Этаж 1: верхний ряд — узкие 2-местные (1 колонка), нижний — широкие (2 колонки).
+ *  Этаж 2: верхний ряд — люксы (2 колонки), нижний — 2-местные; №27 стоит по центру (коридор).
  */
-export const FLOOR_LAYOUT: Record<1 | 2, { title: string; rows: { left: number[]; right: number[] }[] }> = {
+export interface FloorCell { n: number; col: string; row: number; }
+export const FLOOR_GRID: Record<1 | 2, { title: string; cols: number; rowsTemplate: string; cells: FloorCell[] }> = {
   1: {
     title: 'Этаж 1 · 22 места',
-    rows: [
-      { left: [20, 19, 18, 17], right: [11, 12, 13, 14] },
-      { left: [21, 22], right: [16, 15] },
+    cols: 9,
+    rowsTemplate: 'minmax(96px, auto) minmax(120px, auto)',
+    cells: [
+      { n: 20, col: '1', row: 1 }, { n: 19, col: '2', row: 1 }, { n: 18, col: '3', row: 1 }, { n: 17, col: '4', row: 1 },
+      { n: 11, col: '6', row: 1 }, { n: 12, col: '7', row: 1 }, { n: 13, col: '8', row: 1 }, { n: 14, col: '9', row: 1 },
+      { n: 21, col: '1 / 3', row: 2 }, { n: 22, col: '3 / 5', row: 2 },
+      { n: 16, col: '6 / 8', row: 2 }, { n: 15, col: '8 / 10', row: 2 },
     ],
   },
   2: {
     title: 'Этаж 2 · 24 места',
-    rows: [
-      { left: [30, 31], right: [23, 24] },
-      { left: [29, 28, 27], right: [26, 25] },
+    cols: 9,
+    rowsTemplate: 'minmax(120px, auto) minmax(110px, auto)',
+    cells: [
+      { n: 30, col: '1 / 3', row: 1 }, { n: 31, col: '3 / 5', row: 1 },
+      { n: 23, col: '6 / 8', row: 1 }, { n: 24, col: '8 / 10', row: 1 },
+      { n: 29, col: '1 / 3', row: 2 }, { n: 28, col: '3 / 5', row: 2 },
+      { n: 27, col: '5 / 6', row: 2 },
+      { n: 26, col: '6 / 8', row: 2 }, { n: 25, col: '8 / 10', row: 2 },
     ],
   },
 };
