@@ -1,10 +1,10 @@
-import { PRICE_MAX, PRICE_MIN, PRICE_S3, PRICE_S4 } from '../shifts';
+import { PRICE_MAX, PRICE_MIN, PRICE_S3, PRICE_S4, VYCHET_S2 } from '../shifts';
 import type { LandingData } from './types';
 
 const landing: LandingData = {
   slug: 'lager-pushkino',
   title: 'Детский лагерь рядом с Пушкино 2026 — IT-смены | АйДаКемп',
-  description: `IT-лагерь для ребят из Пушкино 7–15 лет. Python, AI, Minecraft, бассейн. Смены от ${PRICE_MIN}, вычет до 5 434 ₽. Трансфер от м. Солнцево.`,
+  description: `IT-лагерь для ребят из Пушкино 7–15 лет. Python, AI, Minecraft, бассейн. Смены от ${PRICE_MIN}, вычет до ${VYCHET_S2}. Трансфер от м. Солнцево.`,
   h1: 'Детский лагерь из Пушкино — АйДаКемп в Наро-Фоминске',
   canonical: 'https://aidacamp.ru/lager-pushkino',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
