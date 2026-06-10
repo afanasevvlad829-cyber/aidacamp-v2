@@ -63,6 +63,28 @@ export const INVENTORY_CHECKLIST = [
   { id: 'video',    text: 'Видео обхода комнаты загружено (обязательно)' },
 ] as const;
 
+/**
+ * Единая «крыльевая» раскладка плана этажа — общая для инвентаризации и расселения,
+ * чтобы план выглядел одинаково на обеих вкладках.
+ *  Каждый этаж: массив рядов; ряд = левое крыло + пунктирный коридор + правое крыло.
+ */
+export const FLOOR_LAYOUT: Record<1 | 2, { title: string; rows: { left: number[]; right: number[] }[] }> = {
+  1: {
+    title: 'Этаж 1 · 22 места',
+    rows: [
+      { left: [20, 19, 18, 17], right: [11, 12, 13, 14] },
+      { left: [21, 22], right: [16, 15] },
+    ],
+  },
+  2: {
+    title: 'Этаж 2 · 24 места',
+    rows: [
+      { left: [30, 31], right: [23, 24] },
+      { left: [29, 28, 27], right: [26, 25] },
+    ],
+  },
+};
+
 export function getRoom(number: number): RoomDef | undefined {
   return ROOMS.find((r) => r.number === number);
 }
