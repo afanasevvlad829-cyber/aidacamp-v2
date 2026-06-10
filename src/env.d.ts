@@ -1,6 +1,19 @@
 /// <reference path="../.astro/types.d.ts" />
 /// <reference types="astro/client" />
 
+/** Яндекс.Метрика (глобал, подключается внешним скриптом). */
+declare function ym(...args: any[]): void;
+
+/** Tailwind CDN runtime config (demo-страницы на cdn.tailwindcss.com). */
+declare const tailwind: any;
+
+interface Window {
+  ym?: (...args: any[]) => void;
+  openSnakeOverlay?: () => void;
+  closeSnakeOverlay?: () => void;
+  tailwind?: any;
+}
+
 declare namespace App {
   interface Locals {
     portalRole?: 'admin' | 'teacher' | 'student' | 'vozhaty' | 'rukovoditel';
