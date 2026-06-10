@@ -228,6 +228,7 @@ function initRasselenie() {
 
   // ── Drag-n-drop через Sortable.js ──
   const poolEl = document.getElementById('pool-list');
+  const staffPoolEl = document.getElementById('staff-pool-list');
 
   function initSortable() {
     const S = (window as any).Sortable;
@@ -248,8 +249,10 @@ function initRasselenie() {
       forceFallback: false,
     };
 
-    if (poolEl) {
-      S.create(poolEl, {
+    // Пул детей и пул сотрудников — оба источник перетаскивания, возврат = снять с койки
+    [poolEl, staffPoolEl].forEach((el) => {
+      if (!el) return;
+      S.create(el, {
         ...commonOpts,
         onAdd: async (evt: any) => {
           const item = evt.item;
@@ -259,7 +262,7 @@ function initRasselenie() {
           await moveKid(kidId, kidName, null, null);
         },
       });
-    }
+    });
 
     document.querySelectorAll('.bed').forEach((bed: Element) => {
       S.create(bed, {
