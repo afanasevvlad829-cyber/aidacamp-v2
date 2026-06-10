@@ -57,7 +57,8 @@ run(service="ssh", command="/opt/restic-snapshot.sh")
 # или напрямую: ssh aidacamp '/opt/restic-snapshot.sh'
 ```
 
-- Репозиторий: `/opt/restic-repo` (пароль `/root/.restic-pass`).
+- **Репозиторий: на Яндекс.Диске** — `rclone:yadisk:aidacamp-snapshots/restic` (off-server, на сервере НЕ хранится). Пароль: `/root/.restic-pass`. rclone-remote `yadisk` настроен на сервере.
 - Прод-деплой (`deploy.sh prod`) делает снапшот **автоматически** перед выкаткой.
-- Откат: `restic -r /opt/restic-repo --password-file /root/.restic-pass restore latest --target /tmp/restore --include <путь>`.
+- Откат: `restic -r rclone:yadisk:aidacamp-snapshots/restic --password-file /root/.restic-pass restore latest --target /tmp/restore --include <путь>`.
+- Ротация: 3 суточных снапшота (`--keep-daily 3`), cron 03:33. Шифрование restic (пароль сохранён владельцем вне сервера).
 - Инцидент-первопричина: пропажа `gallery-additions.json` (2026-06) — фото исчезли с /foto/, бэкапа не было. Снапшоты закрывают этот класс.
