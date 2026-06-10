@@ -1,5 +1,5 @@
 ---
-import { ROOMS, FLOOR_LAYOUT } from '../../../lib/portalRooms';
+import { ROOMS, FLOOR_GRID } from '../../../lib/portalRooms';
 import KidCardBody from './KidCardBody.astro';
 
 interface KidAssignment {
@@ -20,70 +20,72 @@ const floors: (1 | 2)[] = [1, 2];
 ---
 
 <div class="space-y-8">
-  {floors.map((floor) => (
-    <section>
-      <h2 class="mb-3 text-[20px] font-bold text-navy-950">{FLOOR_LAYOUT[floor].title}</h2>
-      <div class="overflow-x-auto rounded-[16px] border-2 border-slate-300 bg-slate-100 p-5">
-        <div class="flex flex-col gap-3" style="min-width: 640px;">
-          {FLOOR_LAYOUT[floor].rows.map((row) => (
-            <div class="flex items-stretch gap-3">
-              {[row.left, row.right].map((wing, wi) => (
-                <Fragment>
-                  {wi === 1 && <div class="w-8 shrink-0 border-x border-dashed border-slate-400 opacity-50"></div>}
-                  <div class="flex flex-1 gap-2">
-                    {wing.map((num) => {
-                      const r = ROOMS.find((x) => x.number === num)!;
-                      const isStaff = r.type === 'staff';
-                      const occ = Array.from({ length: r.capacity }).map((_, i) => assignedByBed.get(`${r.number}:${i}`)).filter(Boolean).length;
-                      const full = !isStaff && occ >= r.capacity;
-                      return (
-                        <div class={`rasselenie-room flex flex-1 flex-col rounded-[12px] border-2 p-3 shadow-sm transition min-w-[120px] ${
-                          isStaff ? 'border-slate-200 bg-slate-100 opacity-60'
-                          : full ? 'border-emerald-300 bg-emerald-50'
-                          : 'border-border bg-white'}`}
-                             data-room-number={r.number}>
-                          <div class="mb-1 flex items-center justify-between">
-                            <div class="font-bold text-[15px] text-navy-950">№{r.number}</div>
-                            {!isStaff && <div class={`text-[12px] font-semibold ${full ? 'text-emerald-700' : 'text-body-muted'}`}>{occ}/{r.capacity}</div>}
-                          </div>
-                          <div class="mb-2 text-[10px] text-body-muted leading-tight">{r.label}</div>
-                          {!isStaff && (
-                            <div class="flex-1 space-y-1.5">
-                              {Array.from({ length: r.capacity }).map((_, i) => {
-                                const kid = assignedByBed.get(`${r.number}:${i}`);
-                                return (
-                                  <div
-                                    class={`bed flex min-h-[44px] items-stretch gap-2 rounded-[8px] border px-2 py-1 text-[13px] ${kid ? 'border-solid border-slate-200 bg-white' : 'border-dashed border-slate-300 bg-slate-50'}`}
-                                    data-room-number={r.number}
-                                    data-bed-index={i}
-                                    data-kid-id={kid?.kid_id ?? ''}
-                                  >
-                                    {kid ? (
-                                      <div class="kid-card relative flex min-w-0 flex-1 cursor-grab items-start gap-1.5 active:cursor-grabbing"
-                                           draggable="true"
-                                           data-kid-id={kid.kid_id}
-                                           data-kid-name={kid.kid_name}
-                                           title={`${kid.kid_name}${kid.kid_age ? ' · ' + kid.kid_age + ' лет' : ''}`}>
-                                        <KidCardBody kid={kid} removeTitle="Вернуть в список" removeAction="unassign" />
-                                      </div>
-                                    ) : (
-                                      <span class="text-slate-400 self-center">место {i + 1}</span>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+  {floors.map((floor) => {
+    const plan = FLOOR_GRID[floor];
+    return (
+      <section>
+        <h2 class="mb-3 text-[20px] font-bold text-navy-950">{plan.title}</h2>
+        <div class="overflow-x-auto rounded-[16px] border-2 border-slate-300 bg-slate-100 p-5">
+          <div
+            class="grid gap-2"
+            style={`grid-template-columns: repeat(${plan.cols}, minmax(64px, 1fr)); grid-template-rows: ${plan.rowsTemplate}; min-width: 660px;`}
+          >
+            {/* Коридор по центру — пунктирная вертикаль */}
+            <div class="pointer-events-none border-x border-dashed border-slate-400 opacity-40"
+                 style="grid-column: 5; grid-row: 1 / -1;"></div>
+
+            {plan.cells.map((cell) => {
+              const r = ROOMS.find((x) => x.number === cell.n)!;
+              const isStaff = r.type === 'staff';
+              const occ = Array.from({ length: r.capacity }).map((_, i) => assignedByBed.get(`${r.number}:${i}`)).filter(Boolean).length;
+              const full = !isStaff && occ >= r.capacity;
+              return (
+                <div
+                  class={`rasselenie-room flex flex-col rounded-[12px] border-2 p-3 shadow-sm ${
+                    isStaff ? 'border-slate-200 bg-slate-100 opacity-60'
+                    : full ? 'border-emerald-300 bg-emerald-50'
+                    : 'border-border bg-white'}`}
+                  style={`grid-column: ${cell.col}; grid-row: ${cell.row};`}
+                  data-room-number={r.number}
+                >
+                  <div class="mb-1 flex items-center justify-between">
+                    <div class="font-bold text-[15px] text-navy-950">№{r.number}</div>
+                    {!isStaff && <div class={`text-[12px] font-semibold ${full ? 'text-emerald-700' : 'text-body-muted'}`}>{occ}/{r.capacity}</div>}
                   </div>
-                </Fragment>
-              ))}
-            </div>
-          ))}
+                  <div class="mb-2 text-[10px] text-body-muted leading-tight">{r.label}</div>
+                  {!isStaff && (
+                    <div class="flex-1 space-y-1.5">
+                      {Array.from({ length: r.capacity }).map((_, i) => {
+                        const kid = assignedByBed.get(`${r.number}:${i}`);
+                        return (
+                          <div
+                            class={`bed flex min-h-[44px] items-stretch gap-2 rounded-[8px] border px-2 py-1 text-[13px] ${kid ? 'border-solid border-slate-200 bg-white' : 'border-dashed border-slate-300 bg-slate-50'}`}
+                            data-room-number={r.number}
+                            data-bed-index={i}
+                            data-kid-id={kid?.kid_id ?? ''}
+                          >
+                            {kid ? (
+                              <div class="kid-card relative flex min-w-0 flex-1 cursor-grab items-start gap-1.5 active:cursor-grabbing"
+                                   draggable="true"
+                                   data-kid-id={kid.kid_id}
+                                   data-kid-name={kid.kid_name}
+                                   title={`${kid.kid_name}${kid.kid_age ? ' · ' + kid.kid_age + ' лет' : ''}`}>
+                                <KidCardBody kid={kid} removeTitle="Вернуть в список" removeAction="unassign" />
+                              </div>
+                            ) : (
+                              <span class="text-slate-400 self-center">место {i + 1}</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
-    </section>
-  ))}
+      </section>
+    );
+  })}
 </div>
