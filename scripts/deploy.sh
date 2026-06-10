@@ -108,6 +108,10 @@ case "$TARGET" in
     echo "🧹 Ротация бэкапов (оставляю 3 последних)..."
     ssh -i "$SSH_KEY" "$SSH_HOST" "ls -dt /var/www/aidacamp/backup-* 2>/dev/null | tail -n +4 | xargs -r rm -rf"
     echo "✅ Старые бэкапы удалены"
+    echo "📸 Restic-снапшот критичных данных (галерея/.env/БД) перед деплоем..."
+    ssh -i "$SSH_KEY" "$SSH_HOST" "/opt/restic-snapshot.sh" >/dev/null 2>&1 \
+      && echo "✅ Снапшот создан (restic)" \
+      || echo "⚠️  снапшот не создан — см. /var/log/restic-snapshot.log (деплой продолжается)"
     ;;
   *)
     echo "Использование: $0 [dev|prod]"
