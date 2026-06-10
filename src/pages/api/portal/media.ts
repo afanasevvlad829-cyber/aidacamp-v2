@@ -44,7 +44,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const _a = requireStaff(locals);
   if (_a instanceof Response) return _a;
   const { role, sub } = _a;
-  if (!s || !sub) return jerr('unauthorized', 401);
+  if (!sub) return jerr('unauthorized', 401);
   if (!ALLOWED_ROLES.has(role)) return jerr('forbidden', 403);
 
   let form: FormData;
@@ -108,7 +108,7 @@ export const DELETE: APIRoute = async ({ locals, url }) => {
   const _a = requireStaff(locals);
   if (_a instanceof Response) return _a;
   const { role, sub } = _a;
-  if (!s || !sub) return jerr('unauthorized', 401);
+  if (!sub) return jerr('unauthorized', 401);
   const idRaw = url.searchParams.get('id');
   const id = Number(idRaw);
   if (!Number.isFinite(id) || id <= 0) return jerr('id required');
