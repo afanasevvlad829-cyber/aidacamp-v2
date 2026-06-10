@@ -20,7 +20,8 @@ const isStaff = kid.kid_id.startsWith('staff-');
 const raw = (kid.kid_name || '').trim();
 const parts = raw.split(/\s+/);
 const surname = parts[0] || raw;
-const firstName = parts.slice(1).join(' ');
+// Только имя, без отчества — компактнее (для сотрудников оставляем «(роль)», если есть)
+const firstName = isStaff ? parts.slice(1).join(' ') : (parts[1] ?? '');
 
 const genderClass = kid.kid_gender === 'F' ? 'bg-pink-500'
   : kid.kid_gender === 'M' ? 'bg-sky-500'
