@@ -130,6 +130,34 @@ export const PRICE_S4 = mainShifts[3].price;
 export const PRICE_S21 = shortShifts[0].price;
 export const PRICE_S22 = shortShifts[1].price;
 
+// === Налоговый вычет — ПРОИЗВОДНЫЙ от цены (ст. 219 НК РФ). Меняется цена/акция → меняется вычет. ===
+// НЕ хардкодить суммы вычета рядом с ценой — выводить из этих функций/констант.
+export const BYT_PER_DAY = 3800;     // бытовая часть (проживание+питание) за день — не вычитается
+export const NDFL_RATE = 0.13;       // ставка НДФЛ
+export const EDU_BASE_CAP = 110000;  // годовой лимит базы вычета на 1 ребёнка (ст.219 НК РФ, с 2024)
+
+/** Точный вычет от ЛЮБОЙ цены (учитывает акции/повышения): (цена − 3800×дни) с лимитом × 13%. */
+export function taxDeduction(priceRub: number, days: number): number {
+  const edu = Math.min(Math.max(priceRub - BYT_PER_DAY * days, 0), EDU_BASE_CAP);
+  return Math.round(edu * NDFL_RATE);
+}
+const _days = (d: string) => parseInt(d.replace(/[^\d]/g, ''), 10) || 0;
+/** Округлённый (до 50 ₽) вычет смены — для прозы «цена X → вычет ~Y». */
+export function shiftDeduction(s: Shift): number {
+  return Math.round(taxDeduction(_priceNum(s.price), _days(s.duration)) / 50) * 50;
+}
+const _fmtV = (n: number) => n.toLocaleString('ru-RU').replace(/\u00a0/g, ' ') + ' ₽';
+// Форматированные строки вычета для прозы (как PRICE_*): «6 250 ₽».
+export const VYCHET_S1 = _fmtV(shiftDeduction(mainShifts[0]));
+export const VYCHET_S2 = _fmtV(shiftDeduction(mainShifts[1]));
+export const VYCHET_S3 = _fmtV(shiftDeduction(mainShifts[2]));
+export const VYCHET_S4 = _fmtV(shiftDeduction(mainShifts[3]));
+export const VYCHET_S21 = _fmtV(shiftDeduction(shortShifts[0]));
+export const VYCHET_S22 = _fmtV(shiftDeduction(shortShifts[1]));
+export const VYCHET_MAX = _fmtV(Math.max(
+  shiftDeduction(mainShifts[0]), shiftDeduction(mainShifts[1]), shiftDeduction(mainShifts[2]),
+  shiftDeduction(mainShifts[3]), shiftDeduction(shortShifts[0]), shiftDeduction(shortShifts[1])));
+
 // Единый источник: сколько ровесников едет в каждую смену по возрасту
 export const PEER_COUNTS: Record<string, Record<string, number>> = {
   'shift-1':   { '7–9': 12, '10–12': 12, '13–15': 12 },
