@@ -4,12 +4,27 @@ import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { getInfoEffect } from '../lib/heroVariant';
+import { allShifts, BYT_PER_DAY } from '../data/shifts';
+
 const heroEffect = getInfoEffect('politika-vozvrata');
+
+const _priceNum = (s: string) => parseInt(s.replace(/[^\d]/g, ''), 10);
+const _daysNum  = (s: string) => parseInt(s.replace(/[^\d]/g, ''), 10);
+
+const refundRows = allShifts.map(s => {
+  const price    = _priceNum(s.price);
+  const days     = _daysNum(s.duration);
+  const expenses = BYT_PER_DAY * days;
+  const refund   = price - expenses;
+  return { name: s.name, duration: s.duration, price, days, expenses, refund };
+});
+
+const fmt = (n: number) => n.toLocaleString('ru-RU') + ' ₽';
 ---
 
 <Base
   title="Политика возврата путёвки — АйДаКемп"
-  description="Условия возврата средств за путёвку в детский лагерь АйДаКемп. Уважительные и неуважительные причины, сроки, проценты возврата."
+  description="Условия возврата средств за путёвку в детский лагерь АйДаКемп. Два варианта: перенос на другую смену или возврат деньгами по ФЗ № 2300-1."
 >
   <Fragment slot="head">
     <link rel="canonical" href="https://aidacamp.ru/politika-vozvrata" />
@@ -30,7 +45,7 @@ const heroEffect = getInfoEffect('politika-vozvrata');
       <div class="flex items-start justify-between gap-4">
         <div>
           <h1 class="text-[24px] font-bold text-white md:text-[32px]">Политика возврата</h1>
-          <p class="mt-2 text-[14px] text-white/75">ООО «ВОИП КОННЕКТ» · Детский ИТ-лагерь АйДаКемп · Актуально для смен 2026 года</p>
+          <p class="mt-2 text-[14px] text-white/75">ООО «ВОИП КОННЕКТ» · Детский ИТ-лагерь АйДаКемп · Смены 2026</p>
         </div>
         <a href="/" class="shrink-0 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20 transition-colors backdrop-blur-sm">
           На главную
@@ -44,120 +59,82 @@ const heroEffect = getInfoEffect('politika-vozvrata');
     <!-- Вводный блок -->
     <div class="mt-6 rounded-[20px] bg-[#fff8f0] border border-[#ffd9a8] p-5">
       <p class="text-[15px] leading-[1.65] text-slate-700">
-        Возврат средств происходит в соответствии с Законом о защите прав потребителей (ФЗ № 2300-1) и условиями договора-оферты. Всё чётко и прозрачно — никаких «мы оставляем за собой право всё забрать».
+        При досрочном отъезде или отмене путёвки мы предлагаем <strong>два варианта</strong>. Выбирает родитель.
       </p>
-    </div>
-
-    <!-- ⭐ Гарантия первых 3 дней — 50% -->
-    <div class="mt-5 rounded-[20px] bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-primary/30 p-5 shadow-[0_4px_16px_rgba(236,124,0,0.12)]">
-      <div class="flex items-start gap-3">
-        <div class="shrink-0 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white">
-          <i class="bi bi-shield-check text-[22px]" aria-hidden="true"></i>
-        </div>
-        <div>
-          <p class="text-[12px] font-bold uppercase tracking-wider text-primary">Гарантия АйДаКемп</p>
-          <h2 class="mt-0.5 text-[20px] font-bold text-slate-900 md:text-[22px]">Первые 3 дня смены — вернём 50% (смены от 10 дней)</h2>
-          <p class="mt-2 text-[14px] leading-[1.65] text-slate-700">
-            Если ребёнку <strong>не подошло в первые 3 дня</strong> смены — забираете и получаете <strong>50% стоимости путёвки за вычетом скидок</strong> обратно. Это наша уверенность в продукте, зафиксированная в договоре-оферте. <strong>Гарантия действует только для смен от 10 дней</strong> (короткие смены 7–8 дней не подпадают — там слишком мало времени, чтобы понять).
-          </p>
-        </div>
-      </div>
     </div>
 
     <div class="mt-5 grid gap-4">
 
-      <!-- Уважительная причина -->
-      <section class="rounded-[20px] border border-slate-200 bg-white p-5 shadow-[0_4px_12px_rgba(15,23,42,0.04)]">
+      <!-- Вариант 1 — перенос -->
+      <section class="rounded-[20px] border-2 border-primary/30 bg-gradient-to-br from-orange-50 to-amber-50 p-5 shadow-[0_4px_16px_rgba(236,124,0,0.10)]">
         <div class="flex items-center gap-2.5">
-          <i class="bi bi-shield-check text-[22px] text-emerald-500" aria-hidden="true"></i>
-          <h2 class="text-[18px] font-semibold text-slate-900">Уважительная причина</h2>
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-white text-[13px] font-bold">1</span>
+          <h2 class="text-[18px] font-semibold text-slate-900">Перенос — 100% остатка на другую смену или школу</h2>
         </div>
-        <p class="mt-3 text-[14px] leading-[1.65] text-slate-600">
-          К уважительным причинам относятся: болезнь ребёнка или близкого родственника, подтверждённые документально обстоятельства непреодолимой силы.
+        <p class="mt-3 text-[14px] leading-[1.65] text-slate-700">
+          Переносим <strong>100% неиспользованной суммы</strong> — деньги не сгорают, а превращаются в кредит:
         </p>
-
-        <div class="mt-4 rounded-[14px] bg-slate-50 border border-slate-200 p-4">
-          <p class="text-[14px] font-semibold text-slate-700">Порядок возврата:</p>
-          <ol class="mt-2 space-y-1.5 text-[14px] leading-[1.6] text-slate-600 list-decimal list-inside">
-            <li>Предоставляете подтверждающий документ (справка, заключение врача и т.п.)</li>
-            <li>Мы проверяем документ</li>
-            <li>Возвращаем всю сумму путёвки <strong>за вычетом фактически понесённых расходов</strong></li>
-          </ol>
-        </div>
-
-        <div class="mt-3 rounded-[14px] bg-amber-50 border border-amber-200 p-4">
-          <p class="text-[13px] leading-[1.6] text-amber-800">
-            <i class="bi bi-info-circle mr-1" aria-hidden="true"></i>
-            <strong>Что считается «понесёнными расходами»:</strong> если заявка поступила менее чем за 3 недели до начала смены — стоимость забронированного койко-места, питания и охраны за этот период. За 3 недели и более — фактических расходов нет, возврат 100%.
+        <ul class="mt-3 space-y-2 text-[14px] leading-[1.6] text-slate-700">
+          <li class="flex items-start gap-2">
+            <i class="bi bi-check-circle-fill text-primary mt-0.5 shrink-0" aria-hidden="true"></i>
+            <span>На любую другую смену АйДаКемп — при наличии свободных мест</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i class="bi bi-check-circle-fill text-primary mt-0.5 shrink-0" aria-hidden="true"></i>
+            <span>На занятия в школе программирования АйДаКемп</span>
+          </li>
+        </ul>
+        <div class="mt-4 rounded-[12px] bg-white/70 border border-primary/20 p-3.5">
+          <p class="text-[13px] leading-[1.6] text-slate-600">
+            <strong>Как считается остаток при досрочном отъезде:</strong> пропорционально неиспользованным дням.
+            Уехали на 3-й день из 14 — переносим 11/14 от стоимости путёвки.
           </p>
         </div>
       </section>
 
-      <!-- Неуважительная причина — таблица -->
+      <!-- Вариант 2 — возврат деньгами по закону -->
       <section class="rounded-[20px] border border-slate-200 bg-white p-5 shadow-[0_4px_12px_rgba(15,23,42,0.04)]">
         <div class="flex items-center gap-2.5">
-          <i class="bi bi-calendar-x text-[22px] text-slate-400" aria-hidden="true"></i>
-          <h2 class="text-[18px] font-semibold text-slate-900">Неуважительная причина</h2>
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-600 text-white text-[13px] font-bold">2</span>
+          <h2 class="text-[18px] font-semibold text-slate-900">Возврат деньгами — по ФЗ № 2300-1, ст. 32</h2>
         </div>
         <p class="mt-3 text-[14px] leading-[1.65] text-slate-600">
-          Если вы отказываетесь от путёвки по личным обстоятельствам без подтверждающих документов — применяется следующая шкала. Чем раньше сообщаете — тем больше возвращаем.
+          Если выбираете деньгами — возвращаем согласно Закону о защите прав потребителей. Потребитель вправе
+          отказаться от услуги в любое время, оплатив исполнителю <strong>фактически понесённые расходы</strong>.
         </p>
 
-        <!-- Шкала -->
-        <div class="mt-4 overflow-hidden rounded-[14px] border border-slate-200">
-
-          <!-- Строка 1 — 100% -->
-          <div class="flex items-center justify-between gap-4 border-b border-slate-100 bg-emerald-50 px-4 py-3.5">
-            <div class="flex items-center gap-3">
-              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white text-[13px] font-bold">100%</span>
-              <div>
-                <p class="text-[14px] font-semibold text-slate-900">Более чем за 15 дней до начала смены</p>
-                <p class="text-[13px] text-slate-500">Полный возврат без вопросов</p>
-              </div>
-            </div>
-            <i class="bi bi-check-circle-fill text-[20px] text-emerald-500 shrink-0" aria-hidden="true"></i>
-          </div>
-
-          <!-- Строка 2 — 65% -->
-          <div class="flex items-center justify-between gap-4 border-b border-slate-100 bg-yellow-50 px-4 py-3.5">
-            <div class="flex items-center gap-3">
-              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-yellow-400 text-white text-[13px] font-bold">65%</span>
-              <div>
-                <p class="text-[14px] font-semibold text-slate-900">За 10–14 дней до начала смены</p>
-                <p class="text-[13px] text-slate-500">Возврат 65% от стоимости путёвки</p>
-              </div>
-            </div>
-            <i class="bi bi-dash-circle text-[20px] text-yellow-400 shrink-0" aria-hidden="true"></i>
-          </div>
-
-          <!-- Строка 3 — 50% -->
-          <div class="flex items-center justify-between gap-4 border-b border-slate-100 bg-orange-50 px-4 py-3.5">
-            <div class="flex items-center gap-3">
-              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-400 text-white text-[13px] font-bold">50%</span>
-              <div>
-                <p class="text-[14px] font-semibold text-slate-900">За 7–9 дней до начала смены</p>
-                <p class="text-[13px] text-slate-500">Возврат 50% от стоимости путёвки</p>
-              </div>
-            </div>
-            <i class="bi bi-dash-circle text-[20px] text-orange-400 shrink-0" aria-hidden="true"></i>
-          </div>
-
-          <!-- Строка 4 — 0% -->
-          <div class="flex items-center justify-between gap-4 bg-red-50 px-4 py-3.5">
-            <div class="flex items-center gap-3">
-              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-400 text-white text-[13px] font-bold">0%</span>
-              <div>
-                <p class="text-[14px] font-semibold text-slate-900">Менее чем за 7 дней до начала смены</p>
-                <p class="text-[13px] text-slate-500">Возврат не производится</p>
-              </div>
-            </div>
-            <i class="bi bi-x-circle-fill text-[20px] text-red-400 shrink-0" aria-hidden="true"></i>
-          </div>
-
+        <!-- Формула -->
+        <div class="mt-4 rounded-[14px] bg-slate-50 border border-slate-200 p-4">
+          <p class="text-[13px] font-semibold text-slate-500 uppercase tracking-wide mb-2">Формула</p>
+          <p class="text-[15px] font-mono text-slate-800">
+            Возврат = Цена путёвки − {BYT_PER_DAY.toLocaleString('ru-RU')} ₽ × количество дней смены
+          </p>
+          <p class="mt-2 text-[12px] leading-[1.55] text-slate-500">
+            {BYT_PER_DAY.toLocaleString('ru-RU')} ₽/день — фактически понесённые расходы: проживание и питание,
+            оплаченные базе отдыха за 6 месяцев до старта смены (не подлежат возврату базой).
+          </p>
         </div>
 
-        <p class="mt-3 text-[13px] leading-[1.55] text-slate-500">
-          Срок считается в календарных сутках до <strong>первого дня смены</strong> (дата заезда по договору).
+        <!-- Таблица по сменам -->
+        <p class="mt-4 text-[13px] font-semibold text-slate-700">Конкретные суммы по каждой смене:</p>
+        <div class="mt-2 overflow-hidden rounded-[14px] border border-slate-200 text-[13px]">
+          <div class="grid grid-cols-4 gap-0 bg-slate-100 px-4 py-2 font-semibold text-slate-500">
+            <span>Смена</span>
+            <span class="text-right">Цена</span>
+            <span class="text-right">Удержание</span>
+            <span class="text-right">Возврат</span>
+          </div>
+          {refundRows.map((r, i) => (
+            <div class={`grid grid-cols-4 gap-0 px-4 py-3 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'} border-t border-slate-100`}>
+              <span class="text-slate-700 font-medium">{r.name} <span class="text-slate-400 font-normal">({r.duration})</span></span>
+              <span class="text-right text-slate-600">{fmt(r.price)}</span>
+              <span class="text-right text-slate-500">{fmt(r.expenses)}</span>
+              <span class="text-right font-semibold text-emerald-700">{fmt(r.refund)}</span>
+            </div>
+          ))}
+        </div>
+        <p class="mt-3 text-[12px] leading-[1.55] text-slate-400">
+          При досрочном отъезде во время смены удержание рассчитывается только за дни, когда базой уже оказаны услуги (проживание + питание).
         </p>
       </section>
 
@@ -165,29 +142,14 @@ const heroEffect = getInfoEffect('politika-vozvrata');
       <section class="rounded-[20px] border border-slate-200 bg-white p-5 shadow-[0_4px_12px_rgba(15,23,42,0.04)]">
         <div class="flex items-center gap-2.5">
           <i class="bi bi-send text-[20px] text-primary" aria-hidden="true"></i>
-          <h2 class="text-[18px] font-semibold text-slate-900">Как подать заявку на возврат</h2>
+          <h2 class="text-[18px] font-semibold text-slate-900">Как оформить</h2>
         </div>
         <ol class="mt-3 space-y-2 text-[14px] leading-[1.65] text-slate-600 list-decimal list-inside">
-          <li>Напишите на <a href="mailto:hello@codims.ru" class="text-primary underline decoration-orange-200 underline-offset-2">hello@codims.ru</a> или в <a href="https://wa.me/79688086455" target="_blank" rel="noopener" class="text-primary underline decoration-orange-200 underline-offset-2">WhatsApp менеджеру</a></li>
-          <li>Укажите ФИО ребёнка, номер договора, причину отказа</li>
-          <li>При уважительной причине — приложите подтверждающий документ</li>
-          <li>Мы подтвердим заявку в течение 1 рабочего дня</li>
-          <li>Возврат на карту — в течение 10 рабочих дней с момента подтверждения</li>
+          <li>Напишите на <a href="mailto:hello@codims.ru" class="text-primary underline decoration-orange-200 underline-offset-2">hello@codims.ru</a> или в <a href="https://wa.me/79688086455" target="_blank" rel="noopener" class="text-primary underline decoration-orange-200 underline-offset-2">WhatsApp</a></li>
+          <li>Укажите ФИО ребёнка, номер договора, выбранный вариант (перенос или деньги)</li>
+          <li>Мы подтвердим в течение 1 рабочего дня</li>
+          <li>Перенос — активируем сразу. Возврат деньгами — на карту в течение 10 рабочих дней</li>
         </ol>
-      </section>
-
-      <!-- Если ребёнок уехал домой досрочно -->
-      <section class="rounded-[20px] border border-slate-200 bg-white p-5 shadow-[0_4px_12px_rgba(15,23,42,0.04)]">
-        <div class="flex items-center gap-2.5">
-          <i class="bi bi-house-door text-[20px] text-slate-400" aria-hidden="true"></i>
-          <h2 class="text-[18px] font-semibold text-slate-900">Досрочный отъезд во время смены</h2>
-        </div>
-        <p class="mt-3 text-[14px] leading-[1.65] text-slate-600">
-          Если ребёнок уезжает домой <strong>после начала смены</strong> — возврат рассчитывается пропорционально неиспользованным дням, за вычетом фактически понесённых расходов. Основание — ФЗ № 2300-1, ст. 32.
-        </p>
-        <p class="mt-2 text-[14px] leading-[1.65] text-slate-600">
-          При уважительной причине (болезнь, подтверждённая медицински) — возврат за неиспользованные дни без удержаний.
-        </p>
       </section>
 
       <!-- Ссылки -->
