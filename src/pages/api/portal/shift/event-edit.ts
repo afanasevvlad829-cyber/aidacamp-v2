@@ -3,6 +3,7 @@ import type { APIRoute } from 'astro';
 import { requireStaff } from '../../../../lib/portalPerms';
 import { canEditEvent } from '../../../../lib/portalShiftPerms';
 import type { PortalRole } from '../../../../lib/portalSession';
+import { logAction, clientIp } from '../../../../lib/portalLog';
 
 function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
 async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
@@ -40,6 +41,8 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const _a = requireStaff(locals);
   if (_a instanceof Response) return _a;
   const { role, sub } = _a;
+  const ip = clientIp(request);
+  const staffId = locals.portalSid ?? null;
 
   const body = await readBody(request);
 
@@ -65,6 +68,8 @@ export const POST: APIRoute = async ({ locals, request }) => {
       return r.rows[0]?.id ?? null;
     });
     if (created == null) return json({ ok: false, error: 'db unavailable' }, 503);
+    logAction({ staffId, action: 'event_create', entityType: 'shift_event', entityId: Number(created), ip,
+      payload: { shift_id: shiftId, date, title, start_time: body.start_time ?? null, end_time: body.end_time ?? null } });
     return json({ ok: true, id: Number(created) });
   }
 
@@ -72,8 +77,8 @@ export const POST: APIRoute = async ({ locals, request }) => {
   if (!Number.isFinite(eventId) || eventId <= 0) return json({ ok: false, error: 'event_id required' }, 400);
 
   const result = await withClient(async (c) => {
-    // Получить event.roles для проверки доступа.
-    const ev = await c.query('SELECT id, roles FROM shift_event WHERE id=$1', [eventId]);
+    // Получить event для проверки доступа + payload лога.
+    const ev = await c.query('SELECT id, title, date, start_time, end_time, notes, roles FROM shift_event WHERE id=$1', [eventId]);
     if (ev.rowCount === 0) return { code: 404, error: 'event not found' };
     const eventRoles: string[] = ev.rows[0].roles ?? [];
 
@@ -83,6 +88,8 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
     // Удаление события (ограничения по ролям сняты — может любой, кто проходит canEditEvent).
     if (body.delete === true || body.delete === 'true' || body.delete === 1 || body.delete === '1') {
+      logAction({ staffId, action: 'event_delete', entityType: 'shift_event', entityId: eventId, ip,
+        payload: { title: ev.rows[0]?.title ?? null, date: ev.rows[0]?.date ?? null } });
       await c.query('DELETE FROM event_checklist WHERE event_id=$1', [eventId]);
       await c.query('DELETE FROM shift_event WHERE id=$1', [eventId]);
       return { code: 200, deleted: true };
@@ -109,6 +116,11 @@ export const POST: APIRoute = async ({ locals, request }) => {
     if (sets.length > 0) {
       vals.push(eventId);
       await c.query(`UPDATE shift_event SET ${sets.join(', ')} WHERE id=$${i}`, vals);
+      const old = ev.rows[0];
+      logAction({ staffId, action: 'event_update', entityType: 'shift_event', entityId: eventId, ip,
+        payload: { title: old.title, date: old.date, changes: Object.fromEntries(
+          sets.map((s, idx) => [s.split('=')[0].trim(), vals[idx]])
+        ) } });
     }
 
     // attach_checklist
