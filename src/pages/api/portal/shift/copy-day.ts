@@ -2,6 +2,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { requireStaff } from '../../../../lib/portalPerms';
 import { canEditEvent } from '../../../../lib/portalShiftPerms';
+import type { PortalRole } from '../../../../lib/portalSession';
 
 function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
 async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
@@ -27,7 +28,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const _a = requireStaff(locals);
   if (_a instanceof Response) return _a;
   const { role, sub } = _a;
-  if (!canEditEvent(role, null)) return json({ ok: false, error: 'forbidden' }, 403);
+  if (!canEditEvent(role as PortalRole, null)) return json({ ok: false, error: 'forbidden' }, 403);
 
   const body = await request.json().catch(() => ({}));
   const shiftId = Number(body.shift_id);
