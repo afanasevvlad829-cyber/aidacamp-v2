@@ -18,6 +18,7 @@ const schedule = [
   { time: '12:00', text: 'Обед. Запиваешь фильтрованной водой. Снова думаешь про ребёнка' },
   { time: '13:00', text: 'Тихий час. Переписка в родительском чате: «А вашему тоже написали?»' },
   { time: '14:30', text: 'Шикарный вид на летний подмосковный лес. Сидишь на подоконнике с телефоном — как пушкинская Татьяна' },
+  { time: '15:00', text: 'Смотришь украдкой из-за занавески как ребёнок играет с остальными. Волнуешься, что бегает без шапки при +25.' },
   { time: '16:00', text: 'Практика «Я отпустил(а)» · 50 минут · по желанию' },
   { time: '19:00', text: 'Ужин. Снова вода. Снова думаешь' },
   { time: '20:00', text: 'Видеозвонок с ребёнком' },
@@ -60,6 +61,14 @@ const reviews = [
     badge: 'Была на программе',
     text: 'Фильтрованная вода — в наличии. Лес — в наличии. Отсутствие алкоголя — соблюдено, хотя к концу третьего дня становится сложновато. Минус звезда: ребёнок вернулся счастливым. Пришлось признать, что зря волновалась.',
   },
+];
+const upsells = [
+  { icon: 'chat-dots-fill',        text: 'Отругать вожатого',                                                  price: '9 000 ₽',    note: null },
+  { icon: 'cup-hot-fill',          text: 'Отругать кухню за неправильно сваренную гречку',                    price: '20 000 ₽',   note: null },
+  { icon: 'mortarboard',           text: 'Отругать преподавателя за неправильное преподавание',               price: '30 000 ₽',   note: null },
+  { icon: 'person-badge',          text: 'Отчитать руководителя смены',                                       price: '50 000 ₽',   note: null },
+  { icon: 'star-fill',             text: 'Отчитать основателя лагеря',                                        price: '100 000 ₽',  note: 'Включён написанный нами для вас негативный отзыв' },
+  { icon: 'people-fill',           text: 'Построить весь персонал и прочитать лекцию о том, как надо работать', price: '500 000 ₽',  note: null },
 ];
 ---
 
@@ -213,38 +222,117 @@ const reviews = [
       </div>
     </section>
 
+    <!-- Дополнительные опции -->
+    <section>
+      <h2 class="text-[22px] font-bold text-slate-900 mb-1">Дополнительные опции</h2>
+      <p class="text-[14px] text-slate-500 mb-6">Не входят в базовую стоимость. Оплачиваются по факту желания.</p>
+
+      <div class="space-y-2">
+        {upsells.map((u, i) => (
+          <div class={`flex items-start justify-between gap-4 rounded-[14px] border px-4 py-3.5 ${i === upsells.length - 1 ? 'bg-gradient-to-r from-slate-900 to-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <div class="flex items-start gap-3 flex-1 min-w-0">
+              <i class={`bi bi-${u.icon} text-[18px] shrink-0 mt-0.5 ${i === upsells.length - 1 ? 'text-pink-400' : 'text-pink-400'}`} aria-hidden="true"></i>
+              <div class="min-w-0">
+                <p class={`text-[15px] leading-[1.5] font-medium ${i === upsells.length - 1 ? 'text-white' : 'text-slate-800'}`}>{u.text}</p>
+                {u.note && <p class="text-[13px] text-amber-500 mt-0.5">{u.note}</p>}
+              </div>
+            </div>
+            <span class={`shrink-0 text-[15px] font-black tabular-nums whitespace-nowrap ${i === upsells.length - 1 ? 'text-pink-400' : i >= 3 ? 'text-slate-700' : 'text-slate-500'}`}>{u.price}</span>
+          </div>
+        ))}
+      </div>
+      <p class="mt-3 text-[13px] text-slate-400 italic">* Мы не несём ответственности за ваши отношения с персоналом после оказания данных услуг.</p>
+    </section>
+
     <!-- Сертификат «Я отпустил(а)» -->
     <section class="rounded-[24px] border border-amber-200 bg-amber-50/40 p-6 md:p-8 text-center">
       <p class="text-[15px] font-bold uppercase tracking-widest text-amber-600 mb-3">Каждый участник тарифа получает</p>
       <h2 class="text-[20px] font-bold text-slate-900 mb-5">Именной сертификат</h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
         <div>
-          <img
-            src="/images/sertifikat-ya-otpustila.png"
-            alt="Сертификат «Я отпустил(а)» — АйДаКемп"
-            class="w-full rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
-            loading="lazy"
-            width="900"
-            height="1200"
-          />
-          <p class="mt-2 text-[14px] text-slate-400">для мам</p>
+          <button
+            type="button"
+            data-lb-src="/images/sertifikat-ya-otpustila.png"
+            data-lb-alt="Сертификат «Я отпустила» — АйДаКемп"
+            class="block w-full cursor-zoom-in group"
+            aria-label="Увеличить сертификат для мам"
+          >
+            <img
+              src="/images/sertifikat-ya-otpustila.png"
+              alt="Сертификат «Я отпустила» — АйДаКемп"
+              class="w-full rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] group-hover:shadow-[0_12px_40px_rgba(0,0,0,0.20)] transition-shadow"
+              loading="lazy"
+              width="900"
+              height="1200"
+            />
+          </button>
+          <p class="mt-2 text-[14px] text-slate-400">для мам <span class="text-slate-300">· нажмите для увеличения</span></p>
         </div>
         <div>
-          <img
-            src="/images/sertifikat-ya-otpustil.png"
-            alt="Сертификат «Я отпустил» — АйДаКемп"
-            class="w-full rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
-            loading="lazy"
-            width="900"
-            height="1200"
-          />
-          <p class="mt-2 text-[14px] text-slate-400">для пап</p>
+          <button
+            type="button"
+            data-lb-src="/images/sertifikat-ya-otpustil.png"
+            data-lb-alt="Сертификат «Я отпустил» — АйДаКемп"
+            class="block w-full cursor-zoom-in group"
+            aria-label="Увеличить сертификат для пап"
+          >
+            <img
+              src="/images/sertifikat-ya-otpustil.png"
+              alt="Сертификат «Я отпустил» — АйДаКемп"
+              class="w-full rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] group-hover:shadow-[0_12px_40px_rgba(0,0,0,0.20)] transition-shadow"
+              loading="lazy"
+              width="900"
+              height="1200"
+            />
+          </button>
+          <p class="mt-2 text-[14px] text-slate-400">для пап <span class="text-slate-300">· нажмите для увеличения</span></p>
         </div>
       </div>
       <p class="mt-4 text-[15px] text-slate-500 max-w-sm mx-auto leading-relaxed">
         Официальное подтверждение того, что вы это сделали.<br>Можно повесить на холодильник.
       </p>
     </section>
+
+    <!-- Lightbox overlay -->
+    <div
+      id="lb-overlay"
+      class="fixed inset-0 z-[9999] bg-black/85 flex items-center justify-center p-4 hidden cursor-zoom-out"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Просмотр сертификата"
+    >
+      <button
+        type="button"
+        id="lb-close"
+        class="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors text-[20px] leading-none"
+        aria-label="Закрыть"
+      >✕</button>
+      <img id="lb-img" src="" alt="" class="max-w-full max-h-[90vh] rounded-[16px] shadow-2xl" />
+    </div>
+
+    <script>
+      const overlay = document.getElementById('lb-overlay');
+      const lbImg = document.getElementById('lb-img');
+      const lbClose = document.getElementById('lb-close');
+
+      document.querySelectorAll('[data-lb-src]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          lbImg.src = btn.dataset.lbSrc;
+          lbImg.alt = btn.dataset.lbAlt || '';
+          overlay.classList.remove('hidden');
+          document.body.style.overflow = 'hidden';
+        });
+      });
+
+      function closeLb() {
+        overlay.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) closeLb(); });
+      lbClose.addEventListener('click', closeLb);
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLb(); });
+    </script>
 
     <!-- CTA -->
     <section class="rounded-[24px] bg-gradient-to-br from-pink-50 to-fuchsia-50 border-2 border-pink-200 p-6 md:p-8 text-center">
