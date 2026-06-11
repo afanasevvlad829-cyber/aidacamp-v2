@@ -50,9 +50,10 @@ function collectContext(): Record<string, string> {
   const qs = new URLSearchParams(window.location.search);
   const pick = (k: string) => qs.get(k) || '';
 
-  // UTM: если в URL есть — сохраняем в sessionStorage; иначе берём сохранённые
+  // UTM: если в URL есть — сохраняем в localStorage (переживает закрытие вкладки);
+  // иначе берём сохранённые — человек мог вернуться через день после клика по рекламе
   const stored: Record<string, string> = JSON.parse(
-    sessionStorage.getItem(STORAGE_KEYS.attribution) || '{}'
+    localStorage.getItem(STORAGE_KEYS.attribution) || '{}'
   );
   const currentUtm: Record<string, string> = {
     utm_source: pick('utm_source'),
@@ -65,7 +66,7 @@ function collectContext(): Record<string, string> {
     gclid: pick('gclid'),
   };
   if (Object.values(currentUtm).some(Boolean)) {
-    sessionStorage.setItem(STORAGE_KEYS.attribution, JSON.stringify(currentUtm));
+    localStorage.setItem(STORAGE_KEYS.attribution, JSON.stringify(currentUtm));
   }
   const attr = Object.values(currentUtm).some(Boolean) ? currentUtm : stored;
 
