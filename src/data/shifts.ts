@@ -158,6 +158,34 @@ export const VYCHET_MAX = _fmtV(Math.max(
   shiftDeduction(mainShifts[0]), shiftDeduction(mainShifts[1]), shiftDeduction(mainShifts[2]),
   shiftDeduction(mainShifts[3]), shiftDeduction(shortShifts[0]), shiftDeduction(shortShifts[1])));
 
+// === Даты смен — ПРОИЗВОДНЫЕ от startDate/endDate (ISO). НЕ хардкодить даты на страницах! ===
+// Меняешь startDate/endDate смены → даты обновляются везде. Страж: npm run check:dates.
+const _MONTHS_RU = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const _d = (iso: string) => { const [y,m,dd] = iso.split('-').map(Number); return { d: dd, m }; };
+/** «10 июня — 23 июня» */
+export function shiftDatesFull(s: Shift): string {
+  const a=_d(s.startDate), b=_d(s.endDate);
+  return `${a.d} ${_MONTHS_RU[a.m-1]} — ${b.d} ${_MONTHS_RU[b.m-1]}`;
+}
+/** «10–23 июня» (один месяц) либо полная форма */
+export function shiftDatesShort(s: Shift): string {
+  const a=_d(s.startDate), b=_d(s.endDate);
+  return a.m===b.m ? `${a.d}–${b.d} ${_MONTHS_RU[a.m-1]}` : shiftDatesFull(s);
+}
+export const DATES_S1 = shiftDatesFull(mainShifts[0]);
+export const DATES_S2 = shiftDatesFull(mainShifts[1]);
+export const DATES_S3 = shiftDatesFull(mainShifts[2]);
+export const DATES_S4 = shiftDatesFull(mainShifts[3]);
+export const DATES_S21 = shiftDatesFull(shortShifts[0]);
+export const DATES_S22 = shiftDatesFull(shortShifts[1]);
+export const DATES_SHORT_S1 = shiftDatesShort(mainShifts[0]);
+export const DATES_SHORT_S2 = shiftDatesShort(mainShifts[1]);
+export const DATES_SHORT_S3 = shiftDatesShort(mainShifts[2]);
+export const DATES_SHORT_S4 = shiftDatesShort(mainShifts[3]);
+export const DATES_SHORT_S21 = shiftDatesShort(shortShifts[0]);
+export const DATES_SHORT_S22 = shiftDatesShort(shortShifts[1]);
+export const SEASON_RANGE = `${shiftDatesShort(mainShifts[0]).split('–')[0].trim()} ${_MONTHS_RU[_d(mainShifts[0].startDate).m-1]} — ${shiftDatesShort(mainShifts[3])}`; // ориентир сезона
+
 // Единый источник: сколько ровесников едет в каждую смену по возрасту
 export const PEER_COUNTS: Record<string, Record<string, number>> = {
   'shift-1':   { '7–9': 12, '10–12': 12, '13–15': 12 },

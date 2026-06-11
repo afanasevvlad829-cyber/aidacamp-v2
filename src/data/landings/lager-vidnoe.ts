@@ -1,4 +1,4 @@
-import { PRICE_MAX, PRICE_MIN, PRICE_S3, PRICE_S4, VYCHET_MAX } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S3, PRICE_S4, VYCHET_MAX } from '../shifts';
 import type { LandingData } from './types';
 
 const landing: LandingData = {
@@ -76,10 +76,10 @@ const landing: LandingData = {
       h2: 'Смены 2026 — цены',
       text: 'Места на смены 2026 есть — бронируйте заранее. В стоимость включены проживание в комнатах по 2–4 человека с санузлом, 5-разовое питание, полная IT-программа, бассейн, вечерние активности. На путёвку оформляется налоговый вычет — возвращается часть суммы.',
       list: [
-        `Смена 2.1: 10–16 июня, 7 дней — ${PRICE_MIN}`,
-        `Смена 2: 10–23 июня, 14 дней — ${PRICE_MAX} (самая популярная)`,
-        `Смена 3: 3–15 августа, 13 дней — ${PRICE_S3}`,
-        `Смена 4: 17–26 августа, 10 дней — ${PRICE_S4}`,
+        `Смена 2.1: ${DATES_SHORT_S21}, 7 дней — ${PRICE_MIN}`,
+        `Смена 2: ${DATES_SHORT_S2}, 14 дней — ${PRICE_MAX} (самая популярная)`,
+        `Смена 3: ${DATES_SHORT_S3}, 13 дней — ${PRICE_S3}`,
+        `Смена 4: ${DATES_SHORT_S4}, 10 дней — ${PRICE_S4}`,
         'Трансфер лагеря от м. Солнцево — 2 000 ₽ в одну сторону, с сопровождающим',
       ],
     },
