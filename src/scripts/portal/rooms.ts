@@ -75,6 +75,8 @@ function initRasselenie() {
     crmError.style.display = 'none';
 
     try {
+      // Снимок перед загрузкой — защита от случайного затирания расселения
+      await postJson('/api/portal/rasselenie', { action: 'snapshot', shift_id: shiftId, reason: 'crm_load' });
       let totalAdded = 0;
       for (const groupId of groupIds) {
         const r = await fetch('/api/shift-roster?group_id=' + groupId, { credentials: 'include' });
