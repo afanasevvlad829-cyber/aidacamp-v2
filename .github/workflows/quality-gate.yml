@@ -24,6 +24,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Кеш Astro — инкрементальный билд (Вариант B)
+      # restore-keys без хеша = берём самый свежий кеш независимо от изменений
+      # Astro сам решает что пересобирать на основе .astro/cache
+      - name: Cache Astro build
+        if: github.event_name == 'push'
+        uses: actions/cache@v4
+        with:
+          path: |
+            .astro
+            dist
+          key: astro-${{ runner.os }}-${{ hashFiles('src/**', 'public/**', 'astro.config.*', 'package-lock.json') }}
+          restore-keys: |
+            astro-${{ runner.os }}-
+
       - name: Гейт TS2304 (несуществующие переменные)
         run: npm run check:undefined
 
@@ -34,6 +48,7 @@ jobs:
         run: npm run check:prices
 
       # Полный билд — только при пуше в ветки (не на PR)
+      # С кешем Astro пересобирает только изменившиеся страницы
       - name: Build site
         if: github.event_name == 'push'
         run: npm run build
