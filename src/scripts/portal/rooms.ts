@@ -396,8 +396,9 @@ function initRasselenie() {
 // ── Inventory tab logic ───────────────────────────────────────────────────
 
 function initInventory() {
-  const modal = document.getElementById('room-modal') as HTMLDialogElement | null;
-  if (!modal) return;
+  const modalEl = document.getElementById('room-modal') as HTMLDialogElement | null;
+  if (!modalEl) return;
+  const modal = modalEl;
 
   const numEl = document.getElementById('room-modal-num');
   const closeBtn = document.getElementById('room-modal-close');
