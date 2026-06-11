@@ -7,7 +7,6 @@ import {
   getActiveShift, getEvents, getEventDates, getDone, listShifts,
   listContentTaskTemplates, getChecklists, upsertEvent, type ShiftEvent, type ContentTaskTemplate,
 } from '../../lib/portalShift';
-import { roleAllowed } from '../../lib/portalShiftRoles';
 import { listStaff } from '../../lib/portalStaff';
 import { listPhotosByDay } from '../../lib/portalPhoto';
 import DenCard from '../../components/portal/den/DenCard.astro';
@@ -74,7 +73,7 @@ if (shift && selectedDate) {
   dayPhotos = await listPhotosByDay(shift.id, selectedDate);
 }
 const dayEvents = events
-  .filter((e) => e.date === selectedDate && e.title !== DAY_SUMMARY_TITLE && roleAllowed(role, e.roles))
+  .filter((e) => e.date === selectedDate && e.title !== DAY_SUMMARY_TITLE)
   .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '') || a.sort - b.sort);
 
 // Группировка по времени — параллельные блоки (одинаковое start_time) рядом.
