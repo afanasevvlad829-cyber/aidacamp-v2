@@ -56,10 +56,18 @@ if [ ! -d node_modules/astro ] || [ "$(cat .lock-sha256 2>/dev/null)" != "$LOCK"
   echo "$LOCK" > .lock-sha256
 fi
 
-# 3. билд (15ГБ RAM — без флагов)
+# 3. билд (15ГБ RAM — без флагов). dist чистим ОБЯЗАТЕЛЬНО:
+# инцидент 11.06.2026 — билд поверх старого dist дал несогласованный артефакт
+# (entry.mjs импортил несуществующий чанк) → SSR-прод упал на ~8 минут.
 echo "🏗  npm run build…"
+rm -rf dist
 DEPLOY_ENV="$TARGET" npm run build --silent
 [ -f dist/client/index.html ] || { echo "❌ dist не собрался"; exit 1; }
+# страж согласованности: каждый чанк из entry.mjs существует
+for c in $(grep -oE "chunks/[A-Za-z0-9_./-]+\.mjs" dist/server/entry.mjs | sort -u); do
+  [ -f "dist/server/$c" ] || { echo "❌ несогласованный билд: нет $c"; exit 1; }
+done
+echo "  ✅ чанки согласованы"
 HERO=$(grep -coE '/images/hero-mobile-bean[a-z0-9-]*\.(webp|avif)' dist/client/index.html || true)
 echo "  ✅ dist ok (hero-refs: $HERO)"
 
