@@ -191,12 +191,22 @@ npm run build   # включает: guard-no-partytown + icons + astro build + s
 ## 6. Деплой
 
 ### 6.1. Сначала dev, потом prod
+
+> **⚡ Правило (с 11.06.2026): билд — НА СЕРВЕРЕ.** Основной путь — `deploy-server.sh`:
+> Мак/агент только оркестрирует (git guard + ssh), а клон/`npm ci`/билд/rsync/рестарт
+> происходят на сервере в `/opt/aidacamp-build` (15 ГБ RAM). Причина: 8 ГБ Мак стабильно
+> ронял `astro build` (Abort trap/137, инцидент 11.06.2026) + не гоняем 25 МБ dist по сети.
+> Локальный `deploy.sh` — ЗАПАСНОЙ путь (использует `NODE_OPTIONS=6144MB`).
+
 ```bash
 # dev (всегда первым делом)
-./scripts/deploy.sh dev
+./scripts/deploy-server.sh dev
 
 # Только после визуальной проверки на dev.aidacamp.ru и одобрения владельца:
-./scripts/deploy.sh prod   # потребует ручное подтверждение "yes"
+MASTER_AGENT=1 ./scripts/deploy-server.sh prod   # подтверждение "yes" в интерактиве
+
+# Запасной (локальный билд), если сервер недоступен:
+./scripts/deploy.sh dev|prod
 ```
 
 **НИКОГДА** не деплоить прод без:
