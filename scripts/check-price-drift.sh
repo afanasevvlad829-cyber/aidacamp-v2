@@ -13,7 +13,7 @@ if not canon: print('❌ нет цен в shifts.ts'); sys.exit(2)
 # allowlist: суммы налогового вычета (база/лимиты/нетто), НЕ цены смен
 ALLOW={'40000','41800','44600','49400','50000','53200','89600','110000'}
 # исключаемые пути: demo/архив/корп/эксперименты (не боевые SEO-страницы)
-EXCL=('/demo/','/_archive','/corp/','dlya-kompaniy','lanit-v5','design-v2','glass-','hyperui','CorpHero','CorpShifts','it-lager-vs-kruzhok','kak-provesti-leto-s-polzoy','skolko-stoit-detskiy-lager','kuda-det-rebenka-letom','kuda-otdat-rebenka-na-leto','strakhovka-v-lager')
+EXCL=('/demo/','/_archive','/corp/','dlya-kompaniy','lanit-v5','design-v2','glass-','hyperui','CorpHero','CorpShifts','it-lager-vs-kruzhok','kak-provesti-leto-s-polzoy','skolko-stoit-detskiy-lager','kuda-det-rebenka-letom','kuda-otdat-rebenka-na-leto','strakhovka-v-lager','tarif-trevozhniy-roditel')
 PRICE=re.compile(r'(\d{2,3}[   ]?\d{3})\s*₽')
 drift={}
 for base in ['src/pages','src/components']:
