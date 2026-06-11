@@ -4,8 +4,8 @@ import { roundTo, recommendedBongere, saveDays, dailyPotential, shiftFunds,
 import { postJson, postForm } from '../../lib/portalApi';
 import { confirmDialog, alertDialog, haptic } from './tg';
 // Реактивная подпись «выбран файл X» под label-кнопкой загрузки в обоих модалках.
-  function bindFileLabel(inputId, labelId, fallback) {
-    const inp = document.getElementById(inputId);
+  function bindFileLabel(inputId: string, labelId: string, fallback: string) {
+    const inp = document.getElementById(inputId) as HTMLInputElement | null;
     const lbl = document.getElementById(labelId);
     if (!inp || !lbl) return;
     inp.addEventListener('change', () => {
@@ -18,23 +18,23 @@ import { confirmDialog, alertDialog, haptic } from './tg';
 
   const LS_KEY = 'aidacamp.portal.prizes.v1';        // старое хранение
   const LS_SETTINGS = 'aidacamp.portal.economy.settings.v1';
-  const fmt = (n) => new Intl.NumberFormat('ru-RU').format(Math.round(n)) + ' ₽';
+  const fmt = (n: number) => new Intl.NumberFormat('ru-RU').format(Math.round(n)) + ' ₽';
 
   // Settings
   function loadSettings() {
     try { return JSON.parse(localStorage.getItem(LS_SETTINGS) || '{}') || {}; } catch { return {}; }
   }
-  function saveSettings(s) {
+  function saveSettings(s: unknown) {
     try { localStorage.setItem(LS_SETTINGS, JSON.stringify(s)); } catch {}
   }
   const set = Object.assign({
     kids: 35, days: 10, phoneMin: 10, markup: 3, round: 50, daily: 600, targetExtract: 75,
   }, loadSettings());
-  const idMap = {
+  const idMap: Record<string, string> = {
     'set-kids':'kids','set-days':'days','set-phone-min':'phoneMin','set-markup':'markup','set-round':'round','set-daily':'daily','set-target-extract':'targetExtract',
   };
   for (const id of Object.keys(idMap)) {
-    const el = document.getElementById(id);
+    const el = document.getElementById(id) as HTMLInputElement | null;
     if (el) el.value = String(set[idMap[id]] ?? '');
   }
 
@@ -51,10 +51,10 @@ import { confirmDialog, alertDialog, haptic } from './tg';
     };
   }
   // Tabs
-  document.querySelectorAll('[data-tab]').forEach((btn) => {
+  document.querySelectorAll<HTMLElement>('[data-tab]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.tab;
-      document.querySelectorAll('[data-tab]').forEach((b) => {
+      document.querySelectorAll<HTMLElement>('[data-tab]').forEach((b) => {
         const active = b.dataset.tab === tab;
         b.classList.toggle('bg-white', active);
         b.classList.toggle('border-border', active);
@@ -62,14 +62,14 @@ import { confirmDialog, alertDialog, haptic } from './tg';
         b.classList.toggle('border-transparent', !active);
         b.classList.toggle('text-body-muted', !active);
       });
-      document.querySelectorAll('[data-tab-pane]').forEach((p) => {
+      document.querySelectorAll<HTMLElement>('[data-tab-pane]').forEach((p) => {
         p.hidden = p.dataset.tabPane !== tab;
       });
     });
   });
 
   // ── Prizes ────────────────────────────────────────
-  const prizeRows = Array.from(document.querySelectorAll('[data-prize-row]'));
+  const prizeRows = Array.from(document.querySelectorAll<HTMLElement>('[data-prize-row]'));
   let showHidden = false;
 
   function recalcPrizes() {
@@ -91,12 +91,12 @@ import { confirmDialog, alertDialog, haptic } from './tg';
       if (recCell) recCell.innerHTML = fmt(rec) + ' / шт';
       // Цена игровая: либо заданная вручную (input), либо рекомендованная.
       // Если input пуст — показываем рекомендованную как placeholder.
-      const inp = r.querySelector('[data-bongere-input]');
+      const inp = r.querySelector<HTMLInputElement>('[data-bongere-input]');
       if (inp) {
         inp.placeholder = String(rec);
         if (inp.dataset.recDefault !== String(rec)) inp.dataset.recDefault = String(rec);
       }
-      const v = inp.value === '' ? null : Number(inp.value);
+      const v = inp?.value === '' ? null : Number(inp?.value);
       // Эффективная цена = ввели → её; иначе → рекомендованная.
       const effective = (v != null && !isNaN(v)) ? v : rec;
       if (!isHidden) sumBongere += effective * qty;
@@ -114,15 +114,15 @@ import { confirmDialog, alertDialog, haptic } from './tg';
         }
       }
     });
-    document.getElementById('cnt-active').textContent = String(active);
-    document.getElementById('sum-bongere').textContent = fmt(sumBongere);
+    document.getElementById('cnt-active')!.textContent = String(active);
+    document.getElementById('sum-bongere')!.textContent = fmt(sumBongere);
     // KPI шапки
     const sf = shiftFunds(s);
-    document.getElementById('kpi-potential').textContent = fmt(sf.dp);
-    document.getElementById('kpi-daily-fund').textContent = fmt(sf.dailyFund);
-    document.getElementById('kpi-per-kid').textContent = fmt(sf.perKid);
-    document.getElementById('kpi-phone-equiv').textContent = sf.phoneEquiv;
-    document.getElementById('kpi-total').textContent = fmt(sf.total);
+    document.getElementById('kpi-potential')!.textContent = fmt(sf.dp);
+    document.getElementById('kpi-daily-fund')!.textContent = fmt(sf.dailyFund);
+    document.getElementById('kpi-per-kid')!.textContent = fmt(sf.perKid);
+    document.getElementById('kpi-phone-equiv')!.textContent = String(sf.phoneEquiv);
+    document.getElementById('kpi-total')!.textContent = fmt(sf.total);
     const ext = document.getElementById('kpi-target-extract'); if (ext) ext.textContent = fmt(sf.targetExtract);
     // Сводка
     const sumOzVis = document.getElementById('sum-ozon-visible'); if (sumOzVis) sumOzVis.textContent = fmt(sumOzonVisible);
@@ -144,17 +144,17 @@ import { confirmDialog, alertDialog, haptic } from './tg';
   function recalcKPIOnly() {
     const s = readSettings();
     const sf = shiftFunds(s);
-    document.getElementById('kpi-potential').textContent = fmt(sf.dp);
-    document.getElementById('kpi-daily-fund').textContent = fmt(sf.dailyFund);
-    document.getElementById('kpi-per-kid').textContent = fmt(sf.perKid);
-    document.getElementById('kpi-phone-equiv').textContent = sf.phoneEquiv;
-    document.getElementById('kpi-total').textContent = fmt(sf.total);
+    document.getElementById('kpi-potential')!.textContent = fmt(sf.dp);
+    document.getElementById('kpi-daily-fund')!.textContent = fmt(sf.dailyFund);
+    document.getElementById('kpi-per-kid')!.textContent = fmt(sf.perKid);
+    document.getElementById('kpi-phone-equiv')!.textContent = String(sf.phoneEquiv);
+    document.getElementById('kpi-total')!.textContent = fmt(sf.total);
     const ext = document.getElementById('kpi-target-extract'); if (ext) ext.textContent = fmt(sf.targetExtract);
   }
 
   ['set-kids','set-days','set-phone-min','set-markup','set-round','set-daily','set-target-extract'].forEach((id) => {
     const el = document.getElementById(id);
-    el.addEventListener('input', () => {
+    el?.addEventListener('input', () => {
       const s = readSettings();
       saveSettings(s);
       recalcKPIOnly();
@@ -167,7 +167,7 @@ import { confirmDialog, alertDialog, haptic } from './tg';
     });
   });
 
-  const resetBtn = document.getElementById('btn-reset-issuances');
+  const resetBtn = document.getElementById('btn-reset-issuances') as HTMLButtonElement | null;
   if (resetBtn) {
     resetBtn.addEventListener('click', async () => {
       if (!await confirmDialog('Удалить ВСЕ выдачи призов?\n\nЭто действие необратимо. История очистится полностью.\nИспользуй только для очистки тестовых данных перед началом смены.')) return;
@@ -179,21 +179,22 @@ import { confirmDialog, alertDialog, haptic } from './tg';
         await alertDialog('Удалено выдач: ' + j.deleted);
         location.reload();
       } catch (e) {
-        await alertDialog('Ошибка: ' + (e && e.message ? e.message : e));
+        const msg = e instanceof Error ? e.message : String(e);
+        await alertDialog('Ошибка: ' + msg);
         resetBtn.disabled = false;
       }
     });
   }
   document.getElementById('btn-show-hidden')?.addEventListener('click', (ev) => {
     showHidden = !showHidden;
-    ev.currentTarget.innerHTML = showHidden
+    (ev.currentTarget as HTMLElement).innerHTML = showHidden
       ? '<i class="bi bi-eye-slash"></i> Скрыть скрытые'
       : '<i class="bi bi-eye"></i> Показать скрытые';
     recalcPrizes();
   });
 
   // Save prize state to server
-  async function savePrizeState(id, patch) {
+  async function savePrizeState(id: string | number | undefined, patch: Record<string, unknown>) {
     try {
       const result = await postJson('/api/portal/economy', { action: 'set_prize', prize_id: id, ...patch });
       if (!result.ok) throw new Error(result.error || 'error');
@@ -203,10 +204,10 @@ import { confirmDialog, alertDialog, haptic } from './tg';
   // Bongere input — debounced save
   prizeRows.forEach((r) => {
     const id = r.dataset.id;
-    const inp = r.querySelector('[data-bongere-input]');
-    let t;
-    const saveFlag = r.querySelector('[data-save-flag]');
-    inp.addEventListener('input', () => {
+    const inp = r.querySelector<HTMLInputElement>('[data-bongere-input]');
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const saveFlag = r.querySelector<HTMLElement>('[data-save-flag]');
+    inp?.addEventListener('input', () => {
       clearTimeout(t);
       t = setTimeout(async () => {
         const v = inp.value === '' ? null : Number(inp.value);
@@ -223,21 +224,21 @@ import { confirmDialog, alertDialog, haptic } from './tg';
       }, 350);
     });
     // Сбросить к рекомендованной → удаляем ручную цену из БД
-    const resetBtn = r.querySelector('[data-reset-price]');
-    if (resetBtn) resetBtn.addEventListener('click', async () => {
-      inp.value = '';
+    const resetPriceBtn = r.querySelector('[data-reset-price]');
+    if (resetPriceBtn) resetPriceBtn.addEventListener('click', async () => {
+      if (inp) inp.value = '';
       r.dataset.bongere = '';
       await savePrizeState(id, { bongere_price: null });
       recalcPrizes();
     });
     // Hide / show
-    r.querySelector('[data-toggle-hidden]').addEventListener('click', async () => {
+    r.querySelector('[data-toggle-hidden]')!.addEventListener('click', async () => {
       const wasHidden = r.dataset.hidden === '1';
       if (!wasHidden && !await confirmDialog('Скрыть эту позицию? Она пропадёт из активного списка, можно вернуть кнопкой «Показать скрытые».')) return;
       r.dataset.hidden = wasHidden ? '0' : '1';
       await savePrizeState(id, { hidden: !wasHidden });
       // Refresh icon
-      r.querySelector('[data-toggle-hidden] i').className = wasHidden ? 'bi bi-x-lg' : 'bi bi-eye-slash';
+      r.querySelector('[data-toggle-hidden] i')!.className = wasHidden ? 'bi bi-x-lg' : 'bi bi-eye-slash';
       recalcPrizes();
     });
   });
@@ -250,7 +251,7 @@ import { confirmDialog, alertDialog, haptic } from './tg';
       if (r.dataset.hidden === '1') continue;
       const price = Number(r.dataset.price || 0);
       const rec = roundTo(price * s.markup, s.round);
-      r.querySelector('[data-bongere-input]').value = rec;
+      r.querySelector<HTMLInputElement>('[data-bongere-input]')!.value = String(rec);
       r.dataset.bongere = String(rec);
       await savePrizeState(r.dataset.id, { bongere_price: rec });
     }
@@ -276,10 +277,10 @@ import { confirmDialog, alertDialog, haptic } from './tg';
   });
 
   // ── Activities ────────────────────────────────────
-  const actRows = Array.from(document.querySelectorAll('[data-activity-row]'));
+  const actRows = Array.from(document.querySelectorAll<HTMLElement>('[data-activity-row]'));
 
   // Сохранение Цены вручную в активности
-  async function saveActivityCustom(id, val) {
+  async function saveActivityCustom(id: number, val: number | null) {
     try {
       const result = await postJson('/api/portal/economy', { action: 'set_activity_custom_price', id, custom_price: val });
       return result.ok;
@@ -287,9 +288,9 @@ import { confirmDialog, alertDialog, haptic } from './tg';
   }
   actRows.forEach((r) => {
     const id = Number(r.dataset.id);
-    const inp = r.querySelector('[data-custom-price-input]');
-    const flag = r.querySelector('[data-act-save-flag]');
-    let t;
+    const inp = r.querySelector<HTMLInputElement>('[data-custom-price-input]');
+    const flag = r.querySelector<HTMLElement>('[data-act-save-flag]');
+    let t: ReturnType<typeof setTimeout> | undefined;
     if (inp) inp.addEventListener('input', () => {
       clearTimeout(t);
       t = setTimeout(async () => {
@@ -330,7 +331,7 @@ import { confirmDialog, alertDialog, haptic } from './tg';
       );
 
       // Цена вручную из input или из data-атрибута (был загружен с сервера)
-      const customInp = r.querySelector('[data-custom-price-input]');
+      const customInp = r.querySelector<HTMLInputElement>('[data-custom-price-input]');
       const customRaw = customInp ? customInp.value : (r.dataset.customPrice || '');
       const custom = customRaw === '' || customRaw == null ? null : Number(customRaw);
 
@@ -340,14 +341,14 @@ import { confirmDialog, alertDialog, haptic } from './tg';
       // Placeholder для input — показываем recommended
       if (customInp) customInp.placeholder = recommended > 0 ? String(recommended) : '';
 
-      r.querySelector('[data-formula]').textContent = formulaText;
+      r.querySelector('[data-formula]')!.textContent = formulaText;
       const recCell = r.querySelector('[data-recommended-price]');
       if (recCell) recCell.textContent = recommended > 0 ? fmt(recommended) : '—';
-      r.querySelector('[data-total-price]').textContent = price > 0
+      r.querySelector('[data-total-price]')!.textContent = price > 0
         ? fmt(price) + (custom != null ? '' : '')
         : '—';
       const pp = perPerson(price, participants, s.round);
-      r.querySelector('[data-per-person]').textContent = price <= 0 ? '—' :
+      r.querySelector('[data-per-person]')!.textContent = price <= 0 ? '—' :
         (participants > 1 ? fmt(pp) + ' × ' + participants : fmt(pp));
       const extractPctEl = r.querySelector('[data-extract-pct]');
       if (extractPctEl) {
@@ -358,48 +359,49 @@ import { confirmDialog, alertDialog, haptic } from './tg';
   }
 
   // Activity dialog
-  const dlg = document.getElementById('activity-dialog');
-  function openDialog(act) {
-    document.getElementById('act-id').value = act?.id || '';
-    document.getElementById('act-name').value = act?.name || '';
-    document.getElementById('act-desc').value = act?.description || '';
-    document.getElementById('act-cat').value = act?.category || 'fun';
-    document.getElementById('act-price').value = act?.base_price ?? '';
-    document.getElementById('act-participants').value = act?.participants_hint ?? '';
-    document.getElementById('act-target-days').value = act?.target_days ?? '';
-    document.getElementById('act-target-share').value = act?.target_share_pct ?? '';
-    document.getElementById('act-repeat').value = act?.repeat_multiplier ?? '';
-    dlg.showModal();
+  const dlg = document.getElementById('activity-dialog') as HTMLDialogElement | null;
+  function openDialog(act: any) {
+    (document.getElementById('act-id') as HTMLInputElement).value = act?.id || '';
+    (document.getElementById('act-name') as HTMLInputElement).value = act?.name || '';
+    (document.getElementById('act-desc') as HTMLInputElement).value = act?.description || '';
+    (document.getElementById('act-cat') as HTMLInputElement).value = act?.category || 'fun';
+    (document.getElementById('act-price') as HTMLInputElement).value = act?.base_price ?? '';
+    (document.getElementById('act-participants') as HTMLInputElement).value = act?.participants_hint ?? '';
+    (document.getElementById('act-target-days') as HTMLInputElement).value = act?.target_days ?? '';
+    (document.getElementById('act-target-share') as HTMLInputElement).value = act?.target_share_pct ?? '';
+    (document.getElementById('act-repeat') as HTMLInputElement).value = act?.repeat_multiplier ?? '';
+    dlg!.showModal();
   }
-  document.getElementById('btn-add-activity').addEventListener('click', () => openDialog(null));
-  document.getElementById('act-cancel').addEventListener('click', () => dlg.close());
+  document.getElementById('btn-add-activity')!.addEventListener('click', () => openDialog(null));
+  document.getElementById('act-cancel')!.addEventListener('click', () => dlg!.close());
 
-  document.getElementById('act-save').addEventListener('click', async () => {
-    const id = document.getElementById('act-id').value;
+  document.getElementById('act-save')!.addEventListener('click', async () => {
+    const id = (document.getElementById('act-id') as HTMLInputElement).value;
     const body = {
       action: 'upsert_activity',
       id: id ? Number(id) : undefined,
-      name: document.getElementById('act-name').value.trim(),
-      description: document.getElementById('act-desc').value.trim() || null,
-      category: document.getElementById('act-cat').value,
-      base_price: document.getElementById('act-price').value || null,
-      participants_hint: document.getElementById('act-participants').value || null,
-      target_days: document.getElementById('act-target-days').value || null,
-      target_share_pct: document.getElementById('act-target-share').value || null,
-      repeat_multiplier: document.getElementById('act-repeat').value || null,
+      name: (document.getElementById('act-name') as HTMLInputElement).value.trim(),
+      description: (document.getElementById('act-desc') as HTMLInputElement).value.trim() || null,
+      category: (document.getElementById('act-cat') as HTMLInputElement).value,
+      base_price: (document.getElementById('act-price') as HTMLInputElement).value || null,
+      participants_hint: (document.getElementById('act-participants') as HTMLInputElement).value || null,
+      target_days: (document.getElementById('act-target-days') as HTMLInputElement).value || null,
+      target_share_pct: (document.getElementById('act-target-share') as HTMLInputElement).value || null,
+      repeat_multiplier: (document.getElementById('act-repeat') as HTMLInputElement).value || null,
     };
     if (!body.name) { await alertDialog('Введите название'); return; }
     const jr = await postJson('/api/portal/economy', body);
-    if (jr.ok) { dlg.close(); location.reload(); }
+    if (jr.ok) { dlg!.close(); location.reload(); }
     else await alertDialog('Ошибка: ' + (jr.error || 'unknown'));
   });
 
-  document.querySelectorAll('[data-edit-activity]').forEach((btn) => {
+  document.querySelectorAll<HTMLElement>('[data-edit-activity]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const r = btn.closest('[data-activity-row]');
+      const r = btn.closest<HTMLElement>('[data-activity-row]');
+      if (!r) return;
       openDialog({
         id: r.dataset.id,
-        name: r.querySelector('td .font-medium').textContent,
+        name: r.querySelector('td .font-medium')!.textContent,
         description: r.querySelector('td .text-body-muted')?.textContent || '',
         category: '',
         base_price: r.dataset.bongere === '' ? null : Number(r.dataset.bongere),
@@ -410,7 +412,7 @@ import { confirmDialog, alertDialog, haptic } from './tg';
       });
     });
   });
-  document.querySelectorAll('[data-delete-activity]').forEach((btn) => {
+  document.querySelectorAll<HTMLElement>('[data-delete-activity]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       if (!await confirmDialog('Удалить эту активность?')) return;
       const id = btn.dataset.id;
@@ -649,7 +651,7 @@ import { confirmDialog, alertDialog, haptic } from './tg';
   });
 
   // ── Custom prize modal ──
-  const custDlg = document.getElementById('custom-dialog');
+  const custDlg = document.getElementById('custom-dialog') as HTMLDialogElement | null;
   const custCancel = document.getElementById('cust-cancel');
   const custSave = document.getElementById('cust-save');
   const custStatus = document.getElementById('cust-status');
@@ -676,7 +678,7 @@ import { confirmDialog, alertDialog, haptic } from './tg';
   // ── Экспорт активностей в Excel: список с ценами (HTML-таблица .xls) ──
   document.getElementById('btn-export-activities')?.addEventListener('click', () => {
     const clean = (s: string | null | undefined) =>
-      (s ?? '').replace(/ /g, ' ').replace(/₽/g, '').trim();
+      (s ?? '').replace(/ /g, ' ').replace(/₽/g, '').trim();
     const rows = Array.from(document.querySelectorAll<HTMLElement>('#activities-tbody [data-activity-row]'));
     const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const trs = rows.map((row) => {
@@ -705,45 +707,46 @@ import { confirmDialog, alertDialog, haptic } from './tg';
 
   document.getElementById('btn-add-custom')?.addEventListener('click', () => {
     ['cust-name','cust-desc','cust-cat','cust-price','cust-file'].forEach((id) => {
-      const el = document.getElementById(id); if (el) el.value = id === 'cust-qty' ? 1 : '';
+      const el = document.getElementById(id) as HTMLInputElement | null;
+      if (el) el.value = '';
     });
-    document.getElementById('cust-qty').value = 1;
-    custStatus.textContent = '';
-    custDlg.showModal();
+    (document.getElementById('cust-qty') as HTMLInputElement).value = '1';
+    if (custStatus) custStatus.textContent = '';
+    custDlg!.showModal();
   });
-  if (custCancel) custCancel.addEventListener('click', () => custDlg.close());
+  if (custCancel) custCancel.addEventListener('click', () => custDlg!.close());
   if (custSave) custSave.addEventListener('click', async () => {
-    const name = document.getElementById('cust-name').value.trim();
-    if (!name) { custStatus.textContent = 'Название обязательно'; return; }
+    const name = (document.getElementById('cust-name') as HTMLInputElement).value.trim();
+    if (!name) { if (custStatus) custStatus.textContent = 'Название обязательно'; return; }
     const fd = new FormData();
     fd.append('action', 'create_custom');
     fd.append('name', name);
-    fd.append('description', document.getElementById('cust-desc').value);
-    fd.append('category', document.getElementById('cust-cat').value);
-    const price = document.getElementById('cust-price').value;
+    fd.append('description', (document.getElementById('cust-desc') as HTMLInputElement).value);
+    fd.append('category', (document.getElementById('cust-cat') as HTMLInputElement).value);
+    const price = (document.getElementById('cust-price') as HTMLInputElement).value;
     if (price) fd.append('ozon_price', price);
-    fd.append('qty', document.getElementById('cust-qty').value || '1');
-    const file = document.getElementById('cust-file').files[0];
+    fd.append('qty', (document.getElementById('cust-qty') as HTMLInputElement).value || '1');
+    const file = (document.getElementById('cust-file') as HTMLInputElement).files?.[0];
     if (file) fd.append('file', file);
-    custStatus.textContent = 'Сохраняем…';
+    if (custStatus) custStatus.textContent = 'Сохраняем…';
     try {
       const jr = await postForm('/api/portal/prize-ops', fd);
       if (jr.ok) {
-        custStatus.textContent = '✓ добавлен';
-        setTimeout(() => { custDlg.close(); location.reload(); }, 600);
-      } else custStatus.textContent = 'Ошибка: ' + (jr.error || 'unknown');
-    } catch (e) { custStatus.textContent = 'Сетевая ошибка'; }
+        if (custStatus) custStatus.textContent = '✓ добавлен';
+        setTimeout(() => { custDlg!.close(); location.reload(); }, 600);
+      } else if (custStatus) custStatus.textContent = 'Ошибка: ' + (jr.error || 'unknown');
+    } catch { if (custStatus) custStatus.textContent = 'Сетевая ошибка'; }
   });
 
   // Archive custom prize
-  document.querySelectorAll('[data-archive-custom]').forEach((btn) => {
+  document.querySelectorAll<HTMLElement>('[data-archive-custom]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const id = Number(btn.dataset.customId);
       if (!await confirmDialog('Удалить этот кастомный приз? (записи о выдачах останутся в журнале)')) return;
       try {
         const jr = await postJson('/api/portal/prize-ops', { action: 'archive_custom', id });
         if (jr.ok) location.reload(); else await alertDialog('Ошибка: ' + (jr.error || ''));
-      } catch (e) { await alertDialog('Сетевая ошибка'); }
+      } catch { await alertDialog('Сетевая ошибка'); }
     });
   });
 
