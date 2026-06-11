@@ -85,7 +85,7 @@ const landing: LandingData = {
         `Смена 2 — ${DATES_SHORT_S2}, 14 дней, ${PRICE_MAX} → возврат до ${VYCHET_MAX} (самая популярная)`,
         `Смена 3 — ${DATES_SHORT_S3}, 13 дней, ${PRICE_S3} → возврат ~${VYCHET_S3}`,
         `Смена 4 — ${DATES_SHORT_S4}, 10 дней, ${PRICE_S4} → возврат ~${VYCHET_S4}`,
-        'Возврат 50% стоимости, если не понравится в первые 3 дня смены (для смен от 10 дней)',
+        '<a href="/politika-vozvrata/" class="text-orange-600 underline underline-offset-2 hover:text-orange-700">Гарантия и условия возврата →</a>',
       ],
     },
     {
