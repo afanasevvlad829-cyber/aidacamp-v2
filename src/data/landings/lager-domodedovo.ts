@@ -1,4 +1,4 @@
-import { PRICE_MAX, PRICE_MIN, PRICE_S3, PRICE_S4, VYCHET_MAX, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S3, PRICE_S4, VYCHET_MAX, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
 import type { LandingData } from './types';
 
 const landing: LandingData = {
@@ -81,10 +81,10 @@ const landing: LandingData = {
       h2: 'Сколько стоит и как вернуть 13%',
       text: 'В стоимость входит всё: проживание, пятиразовое питание, IT-программа, ноутбуки, бассейн, спорт, медик, итоговый хакатон. Доплат за «оборудование» или «материалы» нет.',
       list: [
-        `Смена 2.1 — 10–16 июня, 7 дней, ${PRICE_MIN} → налоговый возврат ~${VYCHET_S21}`,
-        `Смена 2 — 10–23 июня, 14 дней, ${PRICE_MAX} → возврат до ${VYCHET_MAX} (самая популярная)`,
-        `Смена 3 — 3–15 августа, 13 дней, ${PRICE_S3} → возврат ~${VYCHET_S3}`,
-        `Смена 4 — 17–26 августа, 10 дней, ${PRICE_S4} → возврат ~${VYCHET_S4}`,
+        `Смена 2.1 — ${DATES_SHORT_S21}, 7 дней, ${PRICE_MIN} → налоговый возврат ~${VYCHET_S21}`,
+        `Смена 2 — ${DATES_SHORT_S2}, 14 дней, ${PRICE_MAX} → возврат до ${VYCHET_MAX} (самая популярная)`,
+        `Смена 3 — ${DATES_SHORT_S3}, 13 дней, ${PRICE_S3} → возврат ~${VYCHET_S3}`,
+        `Смена 4 — ${DATES_SHORT_S4}, 10 дней, ${PRICE_S4} → возврат ~${VYCHET_S4}`,
         'Возврат 50% стоимости, если не понравится в первые 3 дня смены (для смен от 10 дней)',
       ],
     },
