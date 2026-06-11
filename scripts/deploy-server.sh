@@ -102,7 +102,10 @@ if [ "$(cat $RT/.lock-sha256 2>/dev/null)" != "$LOCK" ] || [ ! -d "$RT/node_modu
   echo "⚙️  runtime npm ci…"; (cd "$RT" && npm ci --omit=dev --prefer-offline --legacy-peer-deps 2>&1 | tail -2 && echo "$LOCK" > .lock-sha256)
 fi
 
-# 7. рестарт + верификация
+# 7. симлинк node_modules (ExecStartPre тоже делает это, но подстраховываемся)
+ln -sfn "$RT/node_modules" "${REMOTE_DIR%/}/node_modules"
+
+# 8. рестарт + верификация
 PID_BEFORE=$(systemctl show -p MainPID --value "$SERVICE")
 systemctl restart "$SERVICE"; sleep 2
 PID_AFTER=$(systemctl show -p MainPID --value "$SERVICE")
