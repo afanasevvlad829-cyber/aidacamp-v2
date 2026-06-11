@@ -43,6 +43,7 @@ export const ARTICLE_DATES: Record<string, string> = {
   'zavisimost-ot-kompyuternyh-igr':                  '2026-02-01',
   'zavisimost-ot-telefona-u-podrostkov':             '2026-04-01',
   'adaptaciya-rebenka-v-lagere':                     '2026-03-15',
+  'pervye-tri-dnya':                                 '2026-06-11',
   'ai-proekty-v-lagere':                             '2026-04-10',
   'bezopasnost-v-detskom-lagere':                    '2026-03-10',
   'detskiy-lager-v-lesu':                            '2026-03-20',
