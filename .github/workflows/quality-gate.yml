@@ -27,16 +27,21 @@ jobs:
       - name: Гейт TS2304 (несуществующие переменные)
         run: npm run check:undefined
 
+      - name: Проверка запрещённых слов
+        run: npm run check:banned
+
+      - name: Проверка цен
+        run: npm run check:prices
+
+      # Полный билд — только при пуше в ветки (не на PR)
       - name: Build site
+        if: github.event_name == 'push'
         run: npm run build
 
       # ——— Optional: pull tooling branch and run quality scripts ———
-      # `tooling` is an orphan branch holding tools/quality-*.sh etc.
-      # These checks are informational — they don't fail the gate (yet).
-      # When the scripts are stable on aidacamp-v2, flip the final step to fail on non-zero.
-
       - name: Fetch tooling branch (best-effort)
         id: fetch_tooling
+        if: github.event_name == 'push'
         continue-on-error: true
         run: |
           if git fetch origin tooling --depth=1 2>/dev/null; then
@@ -50,7 +55,7 @@ jobs:
           fi
 
       - name: Quality metrics (informational)
-        if: steps.fetch_tooling.outputs.tooling_ok == '1'
+        if: github.event_name == 'push' && steps.fetch_tooling.outputs.tooling_ok == '1'
         continue-on-error: true
         run: |
           if [ -x .ci-tooling/tools/quality-metrics.sh ]; then
