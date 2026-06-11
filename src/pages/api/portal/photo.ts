@@ -140,7 +140,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
         resizer = sharpInstance.resize(maxSide, maxSide, { fit: 'inside', withoutEnlargement: true });
       }
       const jpegBuf = await resizer.jpeg({ quality: 85 }).toBuffer({ resolveWithObject: true });
-      finalBuffer = jpegBuf.data;
+      finalBuffer = jpegBuf.data as Buffer<ArrayBuffer>;
       width = jpegBuf.info.width;
       height = jpegBuf.info.height;
     } catch {
