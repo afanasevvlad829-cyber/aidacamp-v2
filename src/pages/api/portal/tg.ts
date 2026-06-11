@@ -5,7 +5,7 @@ import { getStaff, ensurePending, applyInviteForTelegram, markStaffTgLogin } fro
 import { findUsableInviteByToken, markInviteUsed } from '../../../lib/portalInvite';
 import { signSession } from '../../../lib/portalSession';
 import { portalCookieOptions } from '../../../lib/portalCookie';
-import { logAuth, clientIp } from '../../../lib/portalLog';
+import { logAuth, logAction, clientIp } from '../../../lib/portalLog';
 
 function botToken(): string {
   return process.env.PORTAL_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || '';
@@ -147,7 +147,11 @@ export const GET: APIRoute = async ({ url, cookies, redirect, request }) => {
     role: res.ok ? res.role : null,
     ip: clientIp(request),
   });
-  if (res.ok) return redirect('/portal/', 303);
+  if (res.ok) {
+    logAction({ action: 'login', entityType: 'session', ip: clientIp(request),
+      payload: { method: 'tg-widget', role: res.role, tg_id: user?.telegram_id ?? null } });
+    return redirect('/portal/', 303);
+  }
   return redirect(`/portal/login?tg=${res.status}`, 303);
 };
 
@@ -156,13 +160,18 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const { user, isMiniApp, inviteToken, debug } = await resolveTgUser(request);
   debug.ip = clientIp(request);
   const res = await loginResult(user, (t) => setSessionCookie(cookies, t), inviteToken, debug);
+  const _ip = clientIp(request);
   logAuth({
     method: isMiniApp ? 'tg-miniapp' : 'tg-widget',
     outcome: res.ok ? 'success' : res.status,
     telegramId: user?.telegram_id ?? null,
     role: res.ok ? res.role : null,
-    ip: clientIp(request),
+    ip: _ip,
   });
+  if (res.ok) {
+    logAction({ action: 'login', entityType: 'session', ip: _ip,
+      payload: { method: isMiniApp ? 'tg-miniapp' : 'tg-widget', role: res.role, tg_id: user?.telegram_id ?? null } });
+  }
   if (isMiniApp) {
     // debug-объект отдаём только при явно включённом PORTAL_DEBUG=1 (только dev/staging)
     const debugPayload = process.env.PORTAL_DEBUG === '1' ? { debug } : {};
