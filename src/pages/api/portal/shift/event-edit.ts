@@ -2,6 +2,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { requireStaff } from '../../../../lib/portalPerms';
 import { canEditEvent } from '../../../../lib/portalShiftPerms';
+import type { PortalRole } from '../../../../lib/portalSession';
 
 function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
 async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
@@ -44,7 +45,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   // ── action=create: создать новый блок дня ──────────────────────────────
   if (body.action === 'create') {
-    if (canEditEvent(role, null) !== true) return json({ ok: false, error: 'forbidden' }, 403);
+    if (canEditEvent(role as PortalRole, null) !== true) return json({ ok: false, error: 'forbidden' }, 403);
     const shiftId = Number(body.shift_id);
     const date = String(body.date ?? '').trim();
     const title = String(body.title ?? '').trim();
@@ -76,7 +77,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
     if (ev.rowCount === 0) return { code: 404, error: 'event not found' };
     const eventRoles: string[] = ev.rows[0].roles ?? [];
 
-    if (!canEditEvent(role, eventRoles)) {
+    if (!canEditEvent(role as PortalRole, eventRoles)) {
       return { code: 403, error: 'не ваше событие' };
     }
 

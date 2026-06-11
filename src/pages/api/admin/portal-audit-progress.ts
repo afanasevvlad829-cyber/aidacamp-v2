@@ -1,7 +1,11 @@
 import type { APIRoute } from 'astro'
 
 // Real-time progress API for visual audit dashboard
-export const POST: APIRoute = async ({ request, clientIP }) => {
+export const POST: APIRoute = async ({ request }) => {
+  const clientIP = request.headers.get('cf-connecting-ip')
+    ?? request.headers.get('x-forwarded-for')?.split(',')[0].trim()
+    ?? request.headers.get('x-real-ip')
+    ?? '';
   // Admin access check
   if (clientIP !== '127.0.0.1' && clientIP !== '::1' && clientIP !== '37.113.209.255') {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {

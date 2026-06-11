@@ -139,8 +139,8 @@ function getDeployStatus() {
 
     return {
       lastDeployTime: deployLog ? new Date(deployLog).toISOString() : null,
-      environment: currentBranch === 'main' ? 'prod' : currentBranch === 'dev' ? 'dev' : 'unknown',
-      buildStatus: gitStatus.length === 0 ? 'clean' : 'dirty',
+      environment: (currentBranch === 'main' ? 'prod' : currentBranch === 'dev' ? 'dev' : 'unknown') as 'dev' | 'prod' | 'unknown',
+      buildStatus: (gitStatus.length === 0 ? 'clean' : 'dirty') as 'clean' | 'dirty',
     };
   } catch {
     return {

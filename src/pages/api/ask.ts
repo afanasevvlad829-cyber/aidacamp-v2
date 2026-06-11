@@ -131,7 +131,7 @@ export const POST: APIRoute = async ({ request }) => {
   let body: AskRequest | undefined;
   try {
     body = await request.json();
-    const { message, history = [], sessionId } = body;
+    const { message, history = [], sessionId } = body!;
 
     if (!message?.trim()) {
       return new Response(JSON.stringify({ state: 'error', text: 'Пустое сообщение' }), {
@@ -177,7 +177,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (escalation) {
       const tplResp = templateToResponse(escalation);
       const _msgIdEsc = await logSession(sid, message, tplResp,
-        { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, hits: ragResult.hits, escalation: escalation.id }
+        { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, escalation: escalation.id }
       );
       const finalEsc = JSON.stringify({ ...JSON.parse(tplResp), message_id: _msgIdEsc });
       return new Response(finalEsc, { headers: { 'Content-Type': 'application/json' } });
@@ -216,7 +216,7 @@ export const POST: APIRoute = async ({ request }) => {
     const systemText = basePrompt + ctxForLLM + intentBoost;
 
     const messages: Anthropic.MessageParam[] = [
-      ...history.slice(-12).map((m) => ({
+      ...history.slice(-12).map((m: ChatMessage) => ({
         role: m.role as 'user' | 'assistant',
         content: m.content,
       })),
@@ -279,7 +279,7 @@ export const POST: APIRoute = async ({ request }) => {
           { label: 'Написать менеджеру', action: 'contact_request' },
         ],
       });
-      logSession(sid, message, fallbackResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, hits: ragResult.hits }, metrics);
+      logSession(sid, message, fallbackResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty }, metrics);
       return new Response(fallbackResp, { headers: { 'Content-Type': 'application/json' } });
     }
 
@@ -291,7 +291,7 @@ export const POST: APIRoute = async ({ request }) => {
       // Try fixing unescaped newlines inside JSON string values
       const fixed = jsonMatch[0].replace(
         /"((?:[^"\\]|\\.)*)"/g,
-        (_m, s) => '"' + s.replace(/\n/g, '\\n').replace(/\r/g, '') + '"'
+        (_m: string, s: string) => '"' + s.replace(/\n/g, '\\n').replace(/\r/g, '') + '"'
       );
       try { parsedJson = JSON.parse(fixed); }
       catch { parsedJson = null; }
@@ -305,7 +305,7 @@ export const POST: APIRoute = async ({ request }) => {
         block_data: null,
         chips: [{ label: 'Смены 2026', query: 'смены' }, { label: 'Цены', query: 'цены' }, { label: 'Написать менеджеру', action: 'contact_request' }]
       });
-      logSession(sid, message, parseErrResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, hits: ragResult.hits }, metrics);
+      logSession(sid, message, parseErrResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty }, metrics);
       return new Response(parseErrResp, { headers: { 'Content-Type': 'application/json' } });
     }
 
@@ -323,7 +323,7 @@ export const POST: APIRoute = async ({ request }) => {
           { label: 'Забронировать', action: 'book' },
         ],
       });
-      logSession(sid, message, schemaErrResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, hits: ragResult.hits }, metrics);
+      logSession(sid, message, schemaErrResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty }, metrics);
       return new Response(schemaErrResp, { headers: { 'Content-Type': 'application/json' } });
     }
 
@@ -341,7 +341,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Сначала логируем (получаем PK), потом инжектим в ответ — иначе TDZ
     const _bodyForLog = JSON.stringify({ state: 'ok', ...responseData });
-    const _msgId = await logSession(sid, message, _bodyForLog, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, hits: ragResult.hits }, metrics);
+    const _msgId = await logSession(sid, message, _bodyForLog, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty }, metrics);
     const finalResp = JSON.stringify({ state: 'ok', ...responseData, message_id: _msgId });
     return new Response(finalResp, { headers: { 'Content-Type': 'application/json' } });
   } catch (e: any) {
