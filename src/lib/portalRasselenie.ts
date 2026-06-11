@@ -41,9 +41,30 @@ export async function takeSnapshot(shiftId: number, reason: string): Promise<voi
 /** Все назначения для смены (включая нерасселённых). */
 export async function listAssignments(shiftId: number): Promise<RoomAssignment[]> {
   return (await withClient(async (c) => {
+    // Для записей staff-{id} берём актуальное имя из portal_staff.
+    // kid_name остаётся fallback если запись была удалена из portal_staff.
     const r = await c.query(
-      `SELECT id, shift_id, kid_id, kid_name, kid_gender, kid_age, notes, room_number, bed_index
-       FROM room_assignment WHERE shift_id=$1 ORDER BY kid_name`,
+      `SELECT ra.id, ra.shift_id, ra.kid_id,
+              CASE
+                WHEN ra.kid_id LIKE 'staff-%' AND ps.full_name IS NOT NULL
+                THEN ps.full_name || ' (' || COALESCE(
+                  CASE ps.role
+                    WHEN 'admin'       THEN 'Админ'
+                    WHEN 'rukovoditel' THEN 'Руководитель'
+                    WHEN 'teacher'     THEN 'Преподаватель'
+                    WHEN 'vozhaty'     THEN 'Вожатый'
+                    WHEN 'student'     THEN 'Участник'
+                    ELSE ps.role
+                  END, ps.role, ra.kid_name) || ')'
+                ELSE ra.kid_name
+              END AS kid_name,
+              ra.kid_gender, ra.kid_age, ra.notes, ra.room_number, ra.bed_index
+       FROM room_assignment ra
+       LEFT JOIN portal_staff ps
+         ON ra.kid_id LIKE 'staff-%'
+        AND ps.id = CAST(SUBSTRING(ra.kid_id FROM 7) AS INTEGER)
+       WHERE ra.shift_id=$1
+       ORDER BY kid_name`,
       [shiftId],
     );
     return r.rows as RoomAssignment[];
