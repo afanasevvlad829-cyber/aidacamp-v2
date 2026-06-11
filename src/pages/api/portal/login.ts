@@ -5,7 +5,7 @@ import { signSession } from '../../../lib/portalSession';
 import { portalCookieOptions } from '../../../lib/portalCookie';
 import { findKidByCode, markKidLoggedIn } from '../../../lib/portalKid';
 import { findStaffByCode, markStaffCodeLogin } from '../../../lib/portalStaff';
-import { logAuth } from '../../../lib/portalLog';
+import { logAuth, logAction } from '../../../lib/portalLog';
 
 const ROLE_PRIORITY = ['admin', 'rukovoditel', 'teacher', 'vozhaty', 'student'] as const;
 
@@ -65,6 +65,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   // Для code-входа sub — это portal_kid.id (ученик) либо undefined (staff по паролю),
   // НЕ telegram_id, поэтому telegramId здесь не передаём.
   logAuth({ method: 'code', outcome: 'success', role, ip });
+  if (sid) logAction({ staffId: sid, action: 'login', entityType: 'session', ip,
+    payload: { method: 'code', role } });
 
   const token = signSession(role as any, process.env.PORTAL_SESSION_SECRET ?? '', Date.now(), sub, sid);
   cookies.set('portal_session', token, portalCookieOptions());
