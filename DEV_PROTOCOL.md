@@ -192,22 +192,49 @@ npm run build   # включает: guard-no-partytown + icons + astro build + s
 
 ### 6.1. Сначала dev, потом prod
 
-> **⚡ Правило (с 11.06.2026): билд — НА СЕРВЕРЕ.** Основной путь — `deploy-server.sh`:
-> Мак/агент только оркестрирует (git guard + ssh), а клон/`npm ci`/билд/rsync/рестарт
-> происходят на сервере в `/opt/aidacamp-build` (15 ГБ RAM). Причина: 8 ГБ Мак стабильно
-> ронял `astro build` (Abort trap/137, инцидент 11.06.2026) + не гоняем 25 МБ dist по сети.
-> Локальный `deploy.sh` — ЗАПАСНОЙ путь (использует `NODE_OPTIONS=6144MB`).
+> **⚡ Правило (с 11.06.2026): билд — НА СЕРВЕРЕ.** Билд запускается через SSH напрямую на сервере в `/opt/aidacamp-site`. Мак/агент только пушит коммит и запускает команду.
+
+#### Быстрый деплой на dev (основной путь)
 
 ```bash
-# dev (всегда первым делом)
-./scripts/deploy-server.sh dev
+# 1. Запустить билд в фоне (nohup — чтобы не убился по таймауту SSH/MCP)
+ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 \
+  "nohup bash /opt/aidacamp-site/scripts/server-deploy.sh dev > /tmp/deploy-dev.log 2>&1 &"
 
-# Только после визуальной проверки на dev.aidacamp.ru и одобрения владельца:
-MASTER_AGENT=1 ./scripts/deploy-server.sh prod   # подтверждение "yes" в интерактиве
+# 2. Следить за прогрессом
+ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "tail -f /tmp/deploy-dev.log"
 
-# Запасной (локальный билд), если сервер недоступен:
-./scripts/deploy.sh dev|prod
+# 3. Или проверить итог
+ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "tail -10 /tmp/deploy-dev.log"
 ```
+
+Через MCP `aidacamp-tools` (ssh):
+```
+run(service="ssh", action="run", params={host:"aidacamp",
+  command:"nohup bash /opt/aidacamp-site/scripts/server-deploy.sh dev > /tmp/deploy-dev.log 2>&1 & echo PID=$!"})
+# затем проверять:
+run(service="ssh", action="run", params={host:"aidacamp",
+  command:"ps -p <PID> > /dev/null && echo 'идёт' || tail -8 /tmp/deploy-dev.log"})
+```
+
+> **⚠️ Важно:** `server-deploy.sh` синхронизирует и `current/` и плоский корень `/var/www/aidacamp-dev/` (nginx отдаёт оттуда). Если деплой прошёл, но страница 404 — проверь плоский корень вручную:
+> ```bash
+> rsync -a /opt/aidacamp-site/dist/client/stati/СТРАНИЦА/ /var/www/aidacamp-dev/stati/СТРАНИЦА/
+> ```
+
+#### Прод (только после проверки на dev)
+```bash
+# Только владелец, с подтверждением:
+MASTER_AGENT=1 ./scripts/deploy-server.sh prod
+```
+
+#### Запасной путь (если сервер недоступен)
+```bash
+./scripts/deploy.sh dev|prod   # локальный билд, NODE_OPTIONS=6144MB
+```
+
+#### Статьи — только в `/stati/`, не в `/blog/`
+`src/pages/blog/` **исключён из sitemap** и не индексируется. Все SEO-статьи — в `src/pages/stati/`.
 
 **НИКОГДА** не деплоить прод без:
 1. PR смёрджен в `dev`
