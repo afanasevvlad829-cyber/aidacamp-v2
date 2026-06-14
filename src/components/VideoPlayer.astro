@@ -1,0 +1,184 @@
+---
+/**
+ * VideoPlayer.astro — самохостируемый плеер на базе Plyr
+ *
+ * Использование:
+ * <VideoPlayer
+ *   src="/videos/smena1/promo-01.mp4"
+ *   poster="/videos/posters/promo-01.jpg"
+ *   title="АйДаКемп — лето 2025"
+ *   autoplay={false}
+ *   muted={false}
+ * />
+ *
+ * Для автоплея на главной (без звука):
+ * <VideoPlayer src="/videos/hero.mp4" autoplay muted loop />
+ */
+
+interface Props {
+  src: string;           // путь к mp4, напр. /videos/smena1/promo-01.mp4
+  srcWebm?: string;      // путь к webm (опционально)
+  poster?: string;       // постер-картинка до нажатия play
+  title?: string;        // alt для accessibility
+  autoplay?: boolean;
+  muted?: boolean;
+  loop?: boolean;
+  controls?: boolean;
+  aspectRatio?: '16:9' | '4:3' | '1:1' | '9:16';
+  class?: string;
+}
+
+const {
+  src,
+  srcWebm,
+  poster,
+  title = 'Видео АйДаКемп',
+  autoplay = false,
+  muted = false,
+  loop = false,
+  controls = true,
+  aspectRatio = '16:9',
+  class: className = '',
+} = Astro.props;
+
+const playerId = `plyr-${src.replace(/[^a-z0-9]/gi, '-').slice(-12)}`;
+---
+
+<div class={`video-player-wrap ${className}`} data-aspect={aspectRatio}>
+  <video
+    id={playerId}
+    class="plyr-video"
+    playsinline
+    controls={controls}
+    autoplay={autoplay}
+    muted={muted || autoplay}
+    loop={loop}
+    poster={poster}
+    preload={autoplay ? 'auto' : 'metadata'}
+    aria-label={title}
+  >
+    {srcWebm && <source src={srcWebm} type="video/webm" />}
+    <source src={src} type="video/mp4" />
+    <p>Ваш браузер не поддерживает HTML5 видео.</p>
+  </video>
+</div>
+
+<link
+  rel="preload"
+  href="https://cdn.jsdelivr.net/npm/plyr@3.8.4/dist/plyr.css"
+  as="style"
+  onload="this.onload=null;this.rel='stylesheet'"
+/>
+<noscript>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.8.4/dist/plyr.css" />
+</noscript>
+
+<script>
+  function initPlyr(videoEl: HTMLVideoElement) {
+    // @ts-ignore
+    if (window.__PlyrLoaded) {
+      // @ts-ignore
+      new window.Plyr(videoEl, window.__PlyrOptions);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/plyr@3.8.4/dist/plyr.js';
+    script.onload = () => {
+      // @ts-ignore
+      window.__PlyrLoaded = true;
+
+      const options = {
+        controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
+        hideControls: true,
+        resetOnEnd: false,
+        invertTime: false,
+        toggleInvert: false,
+        ratio: undefined,
+        i18n: {
+          play: 'Воспроизвести',
+          pause: 'Пауза',
+          mute: 'Выключить звук',
+          unmute: 'Включить звук',
+          enterFullscreen: 'На весь экран',
+          exitFullscreen: 'Выйти из полного экрана',
+          speed: 'Скорость',
+          normal: 'Обычная',
+        },
+      };
+
+      // @ts-ignore
+      window.__PlyrOptions = options;
+
+      document.querySelectorAll('.plyr-video').forEach((el) => {
+        // @ts-ignore
+        new window.Plyr(el as HTMLVideoElement, options);
+      });
+    };
+    document.head.appendChild(script);
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const video = entry.target as HTMLVideoElement;
+          observer.unobserve(video);
+          initPlyr(video);
+        }
+      });
+    },
+    { rootMargin: '200px' }
+  );
+
+  document.querySelectorAll('.plyr-video').forEach((el) => {
+    observer.observe(el);
+  });
+</script>
+
+<style>
+  .video-player-wrap {
+    width: 100%;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #0d1a2b;
+    aspect-ratio: 16 / 9;
+  }
+
+  .video-player-wrap[data-aspect='4:3'] { aspect-ratio: 4 / 3; }
+  .video-player-wrap[data-aspect='1:1'] { aspect-ratio: 1 / 1; }
+  .video-player-wrap[data-aspect='9:16'] { aspect-ratio: 9 / 16; }
+
+  .video-player-wrap :global(.plyr) {
+    --plyr-color-main: #ec7c00;
+    --plyr-video-control-color: #fff;
+    --plyr-video-controls-background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%);
+    --plyr-control-radius: 6px;
+    --plyr-font-family: inherit;
+    border-radius: 14px;
+    height: 100%;
+    width: 100%;
+  }
+
+  .video-player-wrap :global(.plyr__control--overlaid) {
+    background: rgba(236, 124, 0, 0.9);
+    padding: 20px;
+    border-radius: 50%;
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+  .video-player-wrap :global(.plyr__control--overlaid:hover) {
+    background: #ec7c00;
+    transform: scale(1.08);
+  }
+
+  .video-player-wrap :global(.plyr__poster) {
+    background-size: cover;
+    background-position: center;
+  }
+
+  .video-player-wrap :global(video) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+</style>
