@@ -13,12 +13,18 @@ if (!role || role === 'student') return Astro.redirect('/portal/');
 const isManager = role === 'admin' || role === 'rukovoditel';
 const canCreate = isManager || role === 'teacher';
 
+const myTgId = Astro.locals.portalSub ?? null;
 const [shift, rawTeachers] = await Promise.all([getActiveShift(), listStaff()]);
 const teachers = rawTeachers.filter((s) => s.active && (s.role === 'teacher' || s.role === 'admin'));
-const [lessons, dates] = await Promise.all([
-  shift ? listLessons({ shift_id: shift.id }) : Promise.resolve([] as Lesson[]),
-  shift ? getEventDates(shift.id) : Promise.resolve([] as string[]),
-]);
+
+// Находим staff.id текущего пользователя (для преподавателей — автовыбор себя)
+const myStaff = myTgId != null ? rawTeachers.find((s) => s.telegram_id === myTgId) ?? null : null;
+const myStaffId = myStaff?.id ?? null;
+
+const allLessons = await (shift ? listLessons({ shift_id: shift.id }) : Promise.resolve([] as Lesson[]));
+// Преподаватели видят только свои уроки; менеджеры — все
+const lessons = isManager ? allLessons : allLessons.filter((l) => l.teacher_staff_id === myStaffId);
+const dates = await (shift ? getEventDates(shift.id) : Promise.resolve([] as string[]));
 
 // Группируем уроки по дате для отображения
 const byDate = new Map<string, Lesson[]>();
@@ -166,12 +172,21 @@ function fmtTime(t: string | null): string {
           </div>
           <label class="block">
             <span class="text-body-muted">Преподаватель</span>
-            <select id="ln-teacher" class="mt-1 w-full rounded-[8px] border border-border px-3 py-2">
-              <option value="">— выбрать —</option>
-              {teachers.map((t) => (
-                <option value={t.id}>{t.full_name ?? `id=${t.id}`}</option>
-              ))}
-            </select>
+            {isManager ? (
+              <select id="ln-teacher" class="mt-1 w-full rounded-[8px] border border-border px-3 py-2">
+                <option value="">— выбрать —</option>
+                {teachers.map((t) => (
+                  <option value={t.id}>{t.full_name ?? `id=${t.id}`}</option>
+                ))}
+              </select>
+            ) : (
+              <div class="mt-1">
+                <input id="ln-teacher" type="hidden" value={myStaffId ?? ''} />
+                <p class="rounded-[8px] border border-border bg-gray-50 px-3 py-2 text-[14px] text-navy-950">
+                  {myStaff?.full_name ?? '—'}
+                </p>
+              </div>
+            )}
           </label>
           <label class="block">
             <span class="text-body-muted">Методичка (slug)</span>
@@ -209,7 +224,7 @@ function fmtTime(t: string | null): string {
     </dialog>
   )}
 
-  <script define:vars={{ shiftId: shift?.id ?? 0 }}>
+  <script define:vars={{ shiftId: shift?.id ?? 0, isManager, myStaffId }}>
     const dlg = document.getElementById('lesson-dlg');
     const openBtn = document.getElementById('btn-new-lesson');
     const cancelBtn = document.getElementById('ln-cancel');
@@ -224,7 +239,9 @@ function fmtTime(t: string | null): string {
     function set(k, v) { document.getElementById(fields[k]).value = v ?? ''; }
     function reset() {
       set('id', ''); set('topic', ''); set('start', ''); set('end', '');
-      set('teacher', ''); set('slug', ''); set('outcome', ''); set('materials', '');
+      // Для преподавателя всегда подставляем его id; для менеджера — сбрасываем
+      set('teacher', isManager ? '' : (myStaffId ?? ''));
+      set('slug', ''); set('outcome', ''); set('materials', '');
       set('status', 'planned');
       if (ttl) ttl.textContent = 'Новый урок';
     }
