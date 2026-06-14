@@ -221,7 +221,8 @@ function fmtTime(t: string | null): string {
             </select>
           </label>
         </div>
-        <div class="mt-5 flex justify-end gap-2">
+        <div id="ln-error" style="display:none" class="mt-3 rounded-[8px] border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-700"></div>
+        <div class="mt-4 flex justify-end gap-2">
           <button type="button" id="ln-cancel" class="rounded-[8px] border border-border bg-white px-4 py-2 text-[14px]">Отмена</button>
           <button type="button" id="ln-save" class="rounded-[8px] border border-primary bg-primary px-4 py-2 text-[14px] font-semibold text-white">
             Сохранить
@@ -237,6 +238,9 @@ function fmtTime(t: string | null): string {
     const cancelBtn = document.getElementById('ln-cancel');
     const saveBtn = document.getElementById('ln-save');
     const ttl = document.getElementById('lesson-dlg-title');
+    const errBox = document.getElementById('ln-error');
+    function showErr(msg) { if (errBox) { errBox.textContent = msg; errBox.style.display = 'block'; } }
+    function clearErr() { if (errBox) { errBox.textContent = ''; errBox.style.display = 'none'; } }
     const fields = {
       id: 'ln-id', topic: 'ln-topic', date: 'ln-date', start: 'ln-start', end: 'ln-end',
       teacher: 'ln-teacher', slug: 'ln-slug', outcome: 'ln-outcome',
@@ -245,6 +249,7 @@ function fmtTime(t: string | null): string {
     function val(k) { return document.getElementById(fields[k]).value; }
     function set(k, v) { document.getElementById(fields[k]).value = v ?? ''; }
     function reset() {
+      clearErr();
       set('id', ''); set('topic', ''); set('start', ''); set('end', '');
       // Для преподавателя всегда подставляем его id; для менеджера — сбрасываем
       set('teacher', isManager ? '' : (myStaffId ?? ''));
@@ -270,17 +275,18 @@ function fmtTime(t: string | null): string {
         status: val('status'),
       };
       if (!body.topic || !body.teacher_staff_id || !body.date) {
-        (window.toast || window.alert)('Заполни тему, преподавателя и дату');
+        showErr('Заполни тему, преподавателя и дату');
         return;
       }
+      clearErr();
       saveBtn.disabled = true;
       try {
         const r = await fetch('/api/portal/lesson', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
         const j = await r.json();
-        if (!j.ok) throw new Error(j.error || 'error');
+        if (!j.ok) throw new Error(j.error || 'Ошибка сервера');
         location.reload();
       } catch (e) {
-        (window.toast?.error || window.alert)('Ошибка: ' + (e.message || e));
+        showErr(e.message || String(e));
         saveBtn.disabled = false;
       }
     });
