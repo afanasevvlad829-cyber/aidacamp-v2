@@ -13,13 +13,20 @@ if (!role || role === 'student') return Astro.redirect('/portal/');
 const isManager = role === 'admin' || role === 'rukovoditel';
 const canCreate = isManager || role === 'teacher';
 
-const myTgId = Astro.locals.portalSub ?? null;
 const [shift, rawTeachers] = await Promise.all([getActiveShift(), listStaff()]);
 const teachers = rawTeachers.filter((s) => s.active && (s.role === 'teacher' || s.role === 'admin'));
 
-// Находим staff.id текущего пользователя (для преподавателей — автовыбор себя)
-const myStaff = myTgId != null ? rawTeachers.find((s) => s.telegram_id === myTgId) ?? null : null;
-const myStaffId = myStaff?.id ?? null;
+// Находим staff.id текущего пользователя (для преподавателей — автовыбор себя).
+// portalSid — staff.id напрямую (вход по коду). portalSub — telegram_id (TG-вход),
+// telegram_id в БД BIGINT → pg возвращает строку, сравниваем через Number().
+const mySid: number | null = Astro.locals.portalSid ? Number(Astro.locals.portalSid) : null;
+const myTgId = Astro.locals.portalSub ?? null;
+let myStaffId: number | null = mySid;
+let myStaff = mySid ? (rawTeachers.find((s) => s.id === mySid) ?? null) : null;
+if (!myStaffId && myTgId != null) {
+  myStaff = rawTeachers.find((s) => Number(s.telegram_id) === Number(myTgId)) ?? null;
+  myStaffId = myStaff?.id ?? null;
+}
 
 const allLessons = await (shift ? listLessons({ shift_id: shift.id }) : Promise.resolve([] as Lesson[]));
 // Преподаватели видят только свои уроки; менеджеры — все
