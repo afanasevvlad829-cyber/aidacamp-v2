@@ -221,7 +221,14 @@ function fmtTime(t: string | null): string {
             </select>
           </label>
         </div>
-        <div id="ln-error" style="display:none" class="mt-3 rounded-[8px] border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-700"></div>
+        <div id="ln-error" style="display:none" class="mt-3 rounded-[8px] border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-700">
+          <span id="ln-error-text"></span>
+          <button type="button" id="ln-report-btn"
+                  class="ml-2 underline text-red-600 hover:text-red-800" style="display:none">
+            Сообщить администратору
+          </button>
+          <span id="ln-report-sent" class="ml-2 text-emerald-600" style="display:none">✓ Отправлено</span>
+        </div>
         <div class="mt-4 flex justify-end gap-2">
           <button type="button" id="ln-cancel" class="rounded-[8px] border border-border bg-white px-4 py-2 text-[14px]">Отмена</button>
           <button type="button" id="ln-save" class="rounded-[8px] border border-primary bg-primary px-4 py-2 text-[14px] font-semibold text-white">
@@ -238,9 +245,49 @@ function fmtTime(t: string | null): string {
     const cancelBtn = document.getElementById('ln-cancel');
     const saveBtn = document.getElementById('ln-save');
     const ttl = document.getElementById('lesson-dlg-title');
-    const errBox = document.getElementById('ln-error');
-    function showErr(msg) { if (errBox) { errBox.textContent = msg; errBox.style.display = 'block'; } }
-    function clearErr() { if (errBox) { errBox.textContent = ''; errBox.style.display = 'none'; } }
+    const errBox     = document.getElementById('ln-error');
+    const errText    = document.getElementById('ln-error-text');
+    const reportBtn  = document.getElementById('ln-report-btn');
+    const reportSent = document.getElementById('ln-report-sent');
+    let lastError = '';
+
+    function showErr(msg) {
+      lastError = msg;
+      if (errText) errText.textContent = msg;
+      if (errBox) errBox.style.display = 'block';
+      if (reportBtn) reportBtn.style.display = 'inline';
+      if (reportSent) reportSent.style.display = 'none';
+    }
+    function clearErr() {
+      lastError = '';
+      if (errBox) errBox.style.display = 'none';
+      if (errText) errText.textContent = '';
+      if (reportBtn) reportBtn.style.display = 'none';
+      if (reportSent) reportSent.style.display = 'none';
+    }
+
+    if (reportBtn) {
+      reportBtn.addEventListener('click', async () => {
+        reportBtn.textContent = 'Отправляю…';
+        reportBtn.disabled = true;
+        try {
+          await fetch('/api/portal/error-report', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              error: lastError,
+              context: `myStaffId=${myStaffId ?? '?'} isManager=${isManager}`,
+              url: window.location.href,
+            }),
+          });
+          reportBtn.style.display = 'none';
+          if (reportSent) reportSent.style.display = 'inline';
+        } catch {
+          reportBtn.textContent = 'Сообщить администратору';
+          reportBtn.disabled = false;
+        }
+      });
+    }
     const fields = {
       id: 'ln-id', topic: 'ln-topic', date: 'ln-date', start: 'ln-start', end: 'ln-end',
       teacher: 'ln-teacher', slug: 'ln-slug', outcome: 'ln-outcome',
