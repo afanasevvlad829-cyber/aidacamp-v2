@@ -16,7 +16,7 @@ function bad(msg: string, status = 400, ctx?: string) {
 
 function canEditLesson(role: string | null | undefined, lessonTeacherId: number | null, myStaffId: number | null): boolean {
   if (role === 'admin' || role === 'rukovoditel') return true;
-  if (role === 'teacher' && myStaffId && lessonTeacherId === myStaffId) return true;
+  if (role === 'teacher' && myStaffId && Number(lessonTeacherId) === myStaffId) return true;
   return false;
 }
 
