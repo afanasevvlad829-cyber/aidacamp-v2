@@ -8,6 +8,7 @@ import {
   listContentTaskTemplates, getChecklists, upsertEvent, type ShiftEvent, type ContentTaskTemplate,
 } from '../../lib/portalShift';
 import { listStaff } from '../../lib/portalStaff';
+import { listLessons, type Lesson } from '../../lib/portalLesson';
 import { listPhotosByDay } from '../../lib/portalPhoto';
 import DenCard from '../../components/portal/den/DenCard.astro';
 import DaySummary from '../../components/portal/den/DaySummary.astro';
@@ -76,14 +77,22 @@ const dayEvents = events
   .filter((e) => e.date === selectedDate && e.title !== DAY_SUMMARY_TITLE)
   .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '') || a.sort - b.sort);
 
-// Группировка по времени — параллельные блоки (одинаковое start_time) рядом.
-const groups: { time: string; items: ShiftEvent[] }[] = [];
-for (const e of dayEvents) {
-  const t = (e.start_time || '').slice(0, 5);
-  const g = groups.find((x) => x.time === t);
-  if (g) g.items.push(e);
-  else groups.push({ time: t, items: [e] });
-}
+// Уроки текущего дня
+const dayLessons: Lesson[] = shift && selectedDate
+  ? await listLessons({ shift_id: shift.id, date: selectedDate })
+  : [];
+
+// Объединённая раскладка по времени: события + уроки в одну временну́ю шкалу
+const timeMap = new Map<string, { events: ShiftEvent[]; lessons: Lesson[] }>();
+const getSlot = (t: string) => {
+  if (!timeMap.has(t)) timeMap.set(t, { events: [], lessons: [] });
+  return timeMap.get(t)!;
+};
+for (const e of dayEvents) getSlot((e.start_time || '').slice(0, 5)).events.push(e);
+for (const l of dayLessons) getSlot((l.start_time || '').slice(0, 5)).lessons.push(l);
+const timeline = [...timeMap.entries()]
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([time, slot]) => ({ time, ...slot }));
 
 ---
 
@@ -154,14 +163,28 @@ for (const e of dayEvents) {
 
     {shift && (
       <div class="den-timeline">
-        {groups.length === 0 && <div class="den-empty">На этот день пока нет блоков. Добавьте первый ниже.</div>}
+        {timeline.length === 0 && <div class="den-empty">На этот день пока нет блоков. Добавьте первый ниже.</div>}
 
-        {groups.map((g) => (
+        {timeline.map(({ time, events: tevents, lessons: tlessons }) => (
           <div class="den-row">
-            <div class="den-time">{g.time || '—'}</div>
+            <div class="den-time">{time || '—'}</div>
             <div class="den-cards">
-              {g.items.map((e) => (
+              {tevents.map((e) => (
                 <DenCard event={e} staff={staff} library={library} checklistLib={checklistLib} doneSet={doneSet} />
+              ))}
+              {tlessons.map((l) => (
+                <article class="den-card den-card--lesson">
+                  <div class="den-card-main" style="cursor:default">
+                    <div class="den-card-title">{l.topic}</div>
+                    <div class="den-card-meta">
+                      <span class="den-badge den-badge--lesson-lbl"><i class="bi bi-book" aria-hidden="true"></i> Урок</span>
+                      {l.teacher_name && <span class="den-badge resp"><i class="bi bi-person-badge" aria-hidden="true"></i> {l.teacher_name}</span>}
+                      {l.group_color_name && <span class="den-badge tk">{l.group_color_name}</span>}
+                      {l.end_time && <span class="den-badge" style="background:#f1f5f9;color:#64748b">{(l.start_time||'').slice(0,5)}–{l.end_time.slice(0,5)}</span>}
+                    </div>
+                    {l.expected_outcome && <div class="den-card-note">{l.expected_outcome}</div>}
+                  </div>
+                </article>
               ))}
             </div>
           </div>
