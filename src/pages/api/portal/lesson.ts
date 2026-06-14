@@ -59,7 +59,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
   let body: any;
   try { body = await request.json(); } catch { return bad('invalid json'); }
   const action = String(body.action || 'upsert');
-  const myStaffId = await staffIdByTg(sub);
+  // portalSid = staff.id напрямую (вход по коду); portalSub = telegram_id (TG-вход)
+  const myStaffId = locals.portalSid ? Number(locals.portalSid) : await staffIdByTg(sub);
 
   if (action === 'upsert') {
     const isUpdate = !!body.id;
