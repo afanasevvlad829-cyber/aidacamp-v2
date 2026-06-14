@@ -47,7 +47,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       const rs = (st.roles && st.roles.length > 0) ? st.roles : (st.role ? [st.role] : []);
       role = ROLE_PRIORITY.find((r) => rs.includes(r as any)) ?? rs[0] ?? null;
       if (role) {
-        sid = st.id;
+        sid = Number(st.id); // BIGINT → pg возвращает строку; signSession нужен number
         markStaffCodeLogin(st.id).catch(() => {});
       }
     }

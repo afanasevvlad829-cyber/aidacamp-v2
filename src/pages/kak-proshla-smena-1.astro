@@ -4,10 +4,14 @@ import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Gallery from '../components/Gallery.astro';
-import { mainShifts } from '../data/shifts';
+import { mainShifts, shortShifts } from '../data/shifts';
 
-const shift1 = mainShifts[0]; // Смена 1: 30 мая — 8 июня, 10 дней
-const openShifts = mainShifts.slice(1); // Смены 2, 3, 4 — ещё открыты
+const shift1 = mainShifts[0];
+const today = new Date().toISOString().slice(0, 10);
+const openShifts = [...mainShifts.slice(1), ...shortShifts]
+  .filter(s => s.startDate >= today)
+  .sort((a, b) => a.startDate.localeCompare(b.startDate))
+  .slice(0, 3);
 ---
 
 <Base
