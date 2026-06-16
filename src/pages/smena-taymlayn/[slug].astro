@@ -1,0 +1,90 @@
+---
+import Base from '../../layouts/Base.astro';
+import TimelineHero from '../../components/timeline/TimelineHero.astro';
+import TimelineDayNav from '../../components/timeline/TimelineDayNav.astro';
+import TimelineDay from '../../components/timeline/TimelineDay.astro';
+import { getAllTimelineSlugs, getTimelineData } from '../../data/timeline/index';
+
+export function getStaticPaths() {
+  return getAllTimelineSlugs().map((slug) => ({ params: { slug } }));
+}
+
+const { slug } = Astro.params;
+const timeline = getTimelineData(slug!)!;
+---
+
+<Base
+  title={`${timeline.shiftName} — Таймлайн АйДаКемп`}
+  description={`${timeline.shiftName} IT-лагеря АйДаКемп. ${timeline.dateRange}. ${timeline.daysCount} дней, ${timeline.kidsCount} участников. День за днём — фото и видео для родителей.`}
+  noindex={true}
+  canonical={timeline.canonicalUrl}
+>
+  <Fragment slot="head">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+      body { background: #f3eee6; }
+    </style>
+  </Fragment>
+
+  <!-- Полноэкранный hero вместо стандартного Header -->
+  <TimelineHero timeline={timeline} />
+
+  <!-- Липкая навигация по дням -->
+  <TimelineDayNav days={timeline.days} />
+
+  <!-- Основной контент: таймлайн -->
+  <main
+    id="main-content"
+    style="max-width: 780px; margin: 0 auto; padding: 40px 18px 20px; background: #f3eee6;"
+  >
+    {timeline.days.map((day) => (
+      <TimelineDay day={day} />
+    ))}
+  </main>
+
+  <!-- CTA: запись на следующую смену -->
+  <section
+    id="footer-cta"
+    style="background:#0d1a2b; color:#fff; position:relative; overflow:hidden; scroll-margin-top:70px;"
+  >
+    <div style="position:absolute; bottom:-180px; left:-100px; width:460px; height:460px; border-radius:50%; background:radial-gradient(circle,var(--color-primary,#ec7c00) 0%,transparent 70%); opacity:0.18; filter:blur(12px); pointer-events:none;"></div>
+    <div style="position:relative; max-width:780px; margin:0 auto; padding:54px 22px;">
+
+      <div style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.14em; color:var(--color-primary,#ec7c00); text-transform:uppercase; margin-bottom:14px;">до встречи летом</div>
+
+      <h2 style="font-family:'Unbounded',system-ui,sans-serif; font-weight:700; font-size:clamp(24px,5vw,38px); line-height:1.08; letter-spacing:-0.02em; margin:0 0 14px; max-width:18ch;">
+        Понравилось, как прошла смена?
+      </h2>
+      <p style="font-size:16px; line-height:1.55; color:#b9c4d2; max-width:48ch; margin:0 0 26px;">
+        Места на летние смены 2026 заканчиваются — июль уже полностью забронирован.
+        Напишите нам, подберём даты для вашего ребёнка.
+      </p>
+
+      <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:38px;">
+        <a href="https://aidacamp.ru/#shifts" style="display:inline-flex; align-items:center; gap:8px; background:var(--color-primary,#ec7c00); color:#0d1a2b; font-weight:600; font-size:15px; text-decoration:none; padding:14px 22px; border-radius:12px;">
+          Выбрать смену →
+        </a>
+        <a href="https://t.me/Progaschool" style="display:inline-flex; align-items:center; gap:8px; background:transparent; color:#fff; font-weight:500; font-size:15px; text-decoration:none; padding:14px 22px; border-radius:12px; border:1px solid rgba(255,255,255,0.22);">
+          Написать в Telegram
+        </a>
+      </div>
+
+      <div style="display:flex; flex-wrap:wrap; gap:24px; border-top:1px solid rgba(255,255,255,0.12); padding-top:24px; font-size:14px; color:#9fabbb;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <div style="width:26px; height:26px; border-radius:8px; background:var(--color-primary,#ec7c00); display:flex; align-items:center; justify-content:center; font-family:'Unbounded',sans-serif; font-weight:800; font-size:13px; color:#0d1a2b;">А</div>
+          <span style="color:#fff; font-weight:600;">АйДаКемп</span>
+        </div>
+        <span>+7 (495) 128-44-29</span>
+        <span>Telegram · WhatsApp</span>
+        <a href="https://aidacamp.ru" style="color:#9fabbb; text-decoration:none;">aidacamp.ru</a>
+      </div>
+
+      <div style="font-size:12px; color:#5f6c7d; margin-top:18px; line-height:1.5;">
+        Фотографии детей публикуются с согласия родителей. Эта страница доступна по приватной ссылке.
+      </div>
+    </div>
+  </section>
+
+</Base>
