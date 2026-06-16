@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS tg_posts (
 
 **`.env`:**
 ```
-TELEGRAM_BOT_TOKEN=<токен @Aidacamp2026bot из /opt/aidacamp-hub/.env>
+TELEGRAM_BOT_TOKEN=<токен @Vroderabotaet_bot — хранить в /opt/tg-collector/.env, не в git>
 TELEGRAM_CHANNEL=@vroderabotaetno
 DATABASE_URL=<из /opt/aidacamp-hub/.env, ключ DATABASE_URL>
 ```
@@ -71,7 +71,7 @@ DATABASE_URL=<из /opt/aidacamp-hub/.env, ключ DATABASE_URL>
 
 ### 4. Предусловие
 
-Бот `@Aidacamp2026bot` должен быть добавлен в канал `@vroderabotaetno` как администратор с правом "Просмотр сообщений".
+Бот `@Vroderabotaet_bot` должен быть добавлен в канал `@vroderabotaetno` как администратор с правом "Просмотр сообщений".
 
 ---
 
