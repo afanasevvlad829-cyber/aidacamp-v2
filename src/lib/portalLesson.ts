@@ -153,13 +153,13 @@ export async function deleteLesson(id: number): Promise<void> {
 export async function listProgress(lessonId: number): Promise<LessonProgressRow[]> {
   return (await withClient(async (c) => {
     const r = await c.query(
-      `SELECT lp.id, lp.lesson_id, lp.kid_id, k.full_name AS kid_name,
+      `SELECT lp.id, lp.lesson_id, lp.kid_id, k.name AS kid_name,
               lp.status::text AS status, lp.outcome_note, lp.difficulty_note,
               lp.artifact_url, lp.recorded_at
          FROM portal_lesson_progress lp
          JOIN portal_kid k ON k.id = lp.kid_id
         WHERE lp.lesson_id=$1
-        ORDER BY k.full_name`,
+        ORDER BY k.name`,
       [lessonId],
     );
     return r.rows as LessonProgressRow[];
