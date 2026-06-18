@@ -254,24 +254,7 @@ const photoH = compact ? 96 : 192;
 </dialog>
 
 <style>
-  /* ── Karaoke subtitles ── */
-  .karaoke-line {
-    display: inline-block;
-    background: rgba(0, 0, 0, 0.72);
-    border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 15px;
-    font-weight: 600;
-    line-height: 1.5;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.9);
-  }
-  .karaoke-word {
-    transition: color 0.08s, font-weight 0.08s;
-    display: inline;
-  }
-  .karaoke-past   { color: rgba(255,255,255,0.5); }
-  .karaoke-active { color: #FFD60A; font-weight: 800; text-shadow: 0 0 8px rgba(255,214,10,0.6); }
-  .karaoke-future { color: #ffffff; }
+  /* karaoke styles are applied via inline JS (Astro scoping bypass) */
 
   .daria-hover-wrap {
     position: relative;
@@ -475,15 +458,15 @@ const photoH = compact ? 96 : 192;
       const activeW = Math.floor(elapsed / wordDur);
 
       const html = words.map((w, i) => {
-        const cls = i < activeW
-          ? 'karaoke-past'
+        const style = i < activeW
+          ? 'color:rgba(255,255,255,0.45)'
           : i === activeW
-            ? 'karaoke-active'
-            : 'karaoke-future';
-        return `<span class="karaoke-word ${cls}">${w}</span>`;
+            ? 'color:#FFD60A;font-weight:800;text-shadow:0 0 8px rgba(255,214,10,0.5)'
+            : 'color:#ffffff';
+        return `<span style="${style};transition:color 0.08s">${w}</span>`;
       }).join(' ');
 
-      karaokeEl.innerHTML = `<span class="karaoke-line">${html}</span>`;
+      karaokeEl.innerHTML = `<span style="display:inline-block;background:rgba(0,0,0,0.72);border-radius:8px;padding:6px 12px;font-size:15px;font-weight:600;line-height:1.5;text-shadow:0 1px 4px rgba(0,0,0,0.9)">${html}</span>`;
     }
 
     // re-render per word timing, not just cue change
@@ -498,10 +481,14 @@ const photoH = compact ? 96 : 192;
         const elapsed = t - cue.s;
         const activeW = Math.min(Math.floor(elapsed / wordDur), words.length - 1);
         const html = words.map((w, i) => {
-          const cls = i < activeW ? 'karaoke-past' : i === activeW ? 'karaoke-active' : 'karaoke-future';
-          return `<span class="karaoke-word ${cls}">${w}</span>`;
+          const style = i < activeW
+            ? 'color:rgba(255,255,255,0.45)'
+            : i === activeW
+              ? 'color:#FFD60A;font-weight:800;text-shadow:0 0 8px rgba(255,214,10,0.5)'
+              : 'color:#ffffff';
+          return `<span style="${style};transition:color 0.08s">${w}</span>`;
         }).join(' ');
-        if (karaokeEl) karaokeEl.innerHTML = `<span class="karaoke-line">${html}</span>`;
+        if (karaokeEl) karaokeEl.innerHTML = `<span style="display:inline-block;background:rgba(0,0,0,0.72);border-radius:8px;padding:6px 12px;font-size:15px;font-weight:600;line-height:1.5;text-shadow:0 1px 4px rgba(0,0,0,0.9)">${html}</span>`;
       } else {
         renderKaraoke();
       }
