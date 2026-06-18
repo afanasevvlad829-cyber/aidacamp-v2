@@ -20,6 +20,15 @@ const ssrPriceFmt  = ssrPrice ? fmtPrice(ssrPrice) : shift.price;
 const isMobile = variant === 'mobile';
 const isLowAvailability = pct >= 85;
 
+// Предупреждение о росте цены: показываем только до старта инкремента
+const PRICE_INCREMENT_WARN: Record<string, { date: string; label: string; increment: string }> = {
+  'shift-3': { date: '2026-07-01', label: '1 июля', increment: '+500 ₽/день' },
+  'shift-4': { date: '2026-07-10', label: '10 июля', increment: '+300 ₽/день' },
+};
+const todayISO = new Date().toISOString().slice(0, 10);
+const priceWarn = PRICE_INCREMENT_WARN[shift.id];
+const showPriceWarn = priceWarn && todayISO < priceWarn.date;
+
 // Eyebrow с месяцами по диапазону дат
 const monthsRu: Record<string, string> = {
   '01': 'Январь', '02': 'Февраль', '03': 'Март', '04': 'Апрель',
@@ -166,6 +175,12 @@ const daysLeft = startDate
         <p class="mt-0.5 text-[11px] text-slate-400 leading-[1.3]">
           <i class="bi bi-arrow-counterclockwise text-[10px]" aria-hidden="true"></i>
           {' '}Вернёте ~<a href="/nalogovyj-vychet/" class="underline hover:text-slate-600" data-vychet-link={shift.id}>{vychetAmount.toLocaleString('ru-RU')} ₽ налогового вычета</a>
+        </p>
+      )}
+      {showPriceWarn && (
+        <p class="mt-1.5 inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-200 px-2 py-0.5 text-[11px] font-semibold text-orange-600 leading-none">
+          <i class="bi bi-graph-up-arrow text-[10px]" aria-hidden="true"></i>
+          С {priceWarn.label} цена растёт {priceWarn.increment}
         </p>
       )}
     </div>
