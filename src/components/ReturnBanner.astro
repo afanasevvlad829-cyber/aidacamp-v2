@@ -7,11 +7,10 @@
  * Gap считается по ts в localStorage ac:viewed_shifts.
  * CTA раскрывает инлайн-форму с телефоном → /api/lead (source=return_banner).
  */
-import { mainShifts, shortShifts } from '../data/shifts';
+import { mainShifts } from '../data/shifts';
 
-const allShifts = [...mainShifts, ...shortShifts];
 const shiftsJson = JSON.stringify(
-  allShifts.map(s => ({ id: s.id, name: s.name, free: s.free }))
+  mainShifts.map(s => ({ id: s.id, name: s.name, free: s.free, startDate: s.startDate }))
 );
 ---
 
@@ -89,16 +88,20 @@ const shiftsJson = JSON.stringify(
   const SHIFTS = JSON.parse(shiftsJson);
   const SESSION_KEY = 'ac:return_banner_shown';
 
+  const todayStr = new Date().toISOString().slice(0, 10);
+  function activeShifts() {
+    return SHIFTS.filter(s => s.free > 0 && (!s.startDate || s.startDate > todayStr));
+  }
   function getTargetShift() {
     try {
       const viewed = JSON.parse(localStorage.getItem('ac:viewed_shifts') || '[]');
       if (viewed.length > 0) {
         const viewedIds = viewed.map(v => v.id);
-        const candidates = SHIFTS.filter(s => viewedIds.includes(s.id) && s.free > 0);
+        const candidates = activeShifts().filter(s => viewedIds.includes(s.id));
         if (candidates.length > 0) return candidates.sort((a, b) => a.free - b.free)[0];
       }
     } catch {}
-    return SHIFTS.filter(s => s.free > 0).sort((a, b) => a.free - b.free)[0];
+    return activeShifts().sort((a, b) => a.free - b.free)[0];
   }
 
   function getGapDays() {
