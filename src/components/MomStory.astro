@@ -170,17 +170,23 @@ const photoH = compact ? 96 : 192;
       >
         <i class="bi bi-x-lg text-[14px]" aria-hidden="true"></i>
       </button>
-      <!-- Видео 9:16 -->
-      <video
-        id="dariaVideoModalPlayer"
-        class="w-full rounded-[18px] shadow-2xl"
-        style="aspect-ratio:9/16;max-height:80svh;object-fit:cover"
-        playsinline
-        controls
-        preload="none"
-      >
-        <track kind="subtitles" src="/video/daria-story.ru.vtt" srclang="ru" label="Русский" default />
-      </video>
+      <!-- Видео 9:16 + karaoke overlay -->
+      <div class="relative w-full" style="aspect-ratio:9/16;max-height:80svh">
+        <video
+          id="dariaVideoModalPlayer"
+          class="w-full h-full rounded-[18px] shadow-2xl object-cover"
+          playsinline
+          controls
+          preload="none"
+        ></video>
+        <!-- Karaoke subtitle overlay -->
+        <div
+          id="dariaKaraoke"
+          class="pointer-events-none absolute bottom-12 left-0 right-0 px-4 pb-2 text-center"
+          aria-live="polite"
+          aria-atomic="true"
+        ></div>
+      </div>
     </div>
   </div>
 </dialog>
@@ -248,6 +254,25 @@ const photoH = compact ? 96 : 192;
 </dialog>
 
 <style>
+  /* ── Karaoke subtitles ── */
+  .karaoke-line {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.55);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.5;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  }
+  .karaoke-word {
+    transition: color 0.08s, font-weight 0.08s;
+    display: inline;
+  }
+  .karaoke-past   { color: rgba(255,255,255,0.45); }
+  .karaoke-active { color: #FFD60A; font-weight: 800; }
+  .karaoke-future { color: rgba(255,255,255,0.85); }
+
   .daria-hover-wrap {
     position: relative;
     border-radius: inherit;
@@ -405,21 +430,103 @@ const photoH = compact ? 96 : 192;
     });
 
     // ── Лайтбокс ─────────────────────────────────────────────────────────
-    const modal   = document.getElementById('dariaVideoModal') as HTMLDialogElement | null;
+    const modal    = document.getElementById('dariaVideoModal') as HTMLDialogElement | null;
     const modalVid = document.getElementById('dariaVideoModalPlayer') as HTMLVideoElement | null;
+    const karaokeEl = document.getElementById('dariaKaraoke') as HTMLElement | null;
     if (!modal || !modalVid) return;
+
+    // ── Karaoke cues ───────────────────────────────────────────────────
+    const CUES = [
+      { s: 0.000, e: 3.800, t: 'Мы живём в самом прекрасном IT-лагере на свете.' },
+      { s: 4.000, e: 6.800, t: 'А все остальные лагеря нам завидуют.' },
+      { s: 7.000, e: 11.500, t: 'Ведь только у нас дети пишут родителям, что здесь плохая еда,' },
+      { s: 11.600, e: 16.100, t: 'и тут же заказывают во вкусвилл 20 жвачек и чипсы.' },
+      { s: 16.400, e: 18.600, t: 'Только у нас можно не звонить маме,' },
+      { s: 18.800, e: 21.500, t: 'потому что копишь на Крипера из Майнкрафта.' },
+      { s: 21.600, e: 24.000, t: 'Она даже не знает, что это такое.' },
+      { s: 24.200, e: 29.100, t: 'Только у нас некоторые узнают, что гречка — это не наказание, а еда.' },
+      { s: 29.300, e: 31.400, t: 'У нас дети плачут дважды.' },
+      { s: 31.600, e: 34.900, t: 'Первый раз в трубку: «Мама, забери меня отсюда!»' },
+      { s: 35.100, e: 39.400, t: 'Второй раз, когда мама приезжает, а уезжать перехотелось.' },
+      { s: 39.600, e: 43.400, t: 'Родители называют это катастрофой и временем для себя.' },
+      { s: 43.600, e: 47.400, t: 'Мы называем это свободой и самостоятельностью.' },
+    ];
+
+    let rafId = 0;
+    let lastCueIdx = -1;
+
+    function renderKaraoke() {
+      if (!karaokeEl || !modalVid) return;
+      const t = modalVid.currentTime;
+      const idx = CUES.findIndex(c => t >= c.s && t < c.e);
+
+      if (idx === -1) {
+        if (lastCueIdx !== -1) { karaokeEl.innerHTML = ''; lastCueIdx = -1; }
+        return;
+      }
+      if (idx === lastCueIdx) return; // same cue, words are re-rendered each RAF anyway
+
+      const cue = CUES[idx];
+      lastCueIdx = idx;
+      const words = cue.t.split(' ');
+      const dur = cue.e - cue.s;
+      const wordDur = dur / words.length;
+      const elapsed = t - cue.s;
+      const activeW = Math.floor(elapsed / wordDur);
+
+      const html = words.map((w, i) => {
+        const cls = i < activeW
+          ? 'karaoke-past'
+          : i === activeW
+            ? 'karaoke-active'
+            : 'karaoke-future';
+        return `<span class="karaoke-word ${cls}">${w}</span>`;
+      }).join(' ');
+
+      karaokeEl.innerHTML = `<span class="karaoke-line">${html}</span>`;
+    }
+
+    // re-render per word timing, not just cue change
+    function rafLoop() {
+      if (!modalVid || modalVid.paused) return;
+      const t = modalVid.currentTime;
+      const cue = CUES[lastCueIdx];
+      if (cue) {
+        const words = cue.t.split(' ');
+        const dur = cue.e - cue.s;
+        const wordDur = dur / words.length;
+        const elapsed = t - cue.s;
+        const activeW = Math.min(Math.floor(elapsed / wordDur), words.length - 1);
+        const html = words.map((w, i) => {
+          const cls = i < activeW ? 'karaoke-past' : i === activeW ? 'karaoke-active' : 'karaoke-future';
+          return `<span class="karaoke-word ${cls}">${w}</span>`;
+        }).join(' ');
+        if (karaokeEl) karaokeEl.innerHTML = `<span class="karaoke-line">${html}</span>`;
+      } else {
+        renderKaraoke();
+      }
+      rafId = requestAnimationFrame(rafLoop);
+    }
 
     const openModal = () => {
       modalVid.src = '/video/daria-story.mp4';
       modal.showModal();
+      lastCueIdx = -1;
       modalVid.play().catch(() => {});
+      rafId = requestAnimationFrame(rafLoop);
       try { (window as any).ym?.(96499295, 'reachGoal', 'daria_video_play'); } catch {}
     };
     const closeModal = () => {
+      cancelAnimationFrame(rafId);
       modal.close();
       modalVid.pause();
       modalVid.src = '';
+      if (karaokeEl) karaokeEl.innerHTML = '';
+      lastCueIdx = -1;
     };
+
+    modalVid.addEventListener('play', () => { rafId = requestAnimationFrame(rafLoop); });
+    modalVid.addEventListener('pause', () => cancelAnimationFrame(rafId));
 
     document.querySelectorAll('[data-daria-video-open]').forEach(btn => {
       btn.addEventListener('click', openModal);
