@@ -61,13 +61,11 @@ const cuesJson = JSON.stringify(cues);
         <div class="h-2 w-20 rounded-full bg-slate-300/60"></div>
       </div>
     </div>
-    <!-- Тихое превью-видео -->
+    <!-- Тихое превью-видео: preload=none, грузится только при попадании в viewport -->
     <video
       class="vp-preview absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-500 pointer-events-none"
-      muted playsinline loop preload="metadata"
-    >
-      <source src={src} type="video/mp4" />
-    </video>
+      muted playsinline loop preload="none"
+    ></video>
     <!-- Play-кнопка -->
     <span class="absolute inset-0 flex items-center justify-center z-10">
       <span class="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-xl backdrop-blur-sm transition-transform duration-200 group-hover:scale-110">
@@ -130,21 +128,24 @@ const cuesJson = JSON.stringify(cues);
     if (wrap.__vpReady) return;
     wrap.__vpReady = true;
 
-    // ── Превью autoplay ───────────────────────────────────────────────
+    // ── Превью: lazy-load при попадании в viewport ────────────────────
     const preview  = wrap.querySelector('.vp-preview');
     const skeleton = wrap.querySelector('.vp-skeleton');
     if (preview) {
-      const io = new IntersectionObserver(entries => {
-        if (!entries[0].isIntersecting) return;
-        io.disconnect();
-        preview.load();
-      }, { threshold: 0.1 });
-      io.observe(wrap);
       preview.addEventListener('canplay', () => {
         skeleton?.classList.add('opacity-0');
         preview.style.opacity = '1';
         preview.play().catch(() => {});
       }, { once: true });
+
+      const io = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return;
+        io.disconnect();
+        // src устанавливается здесь — до этого момента сеть не используется
+        preview.src = src;
+        preview.load();
+      }, { threshold: 0.1 });
+      io.observe(wrap);
     }
 
     // ── Karaoke RAF ───────────────────────────────────────────────────
@@ -200,5 +201,6 @@ const cuesJson = JSON.stringify(cues);
   }
 
   document.addEventListener('astro:page-load', initVP);
-  if (document.readyState !== 'loading') initVP();
+  document.addEventListener('DOMContentLoaded', initVP);
+  if (document.readyState === 'complete' || document.readyState === 'interactive') initVP();
 </script>
