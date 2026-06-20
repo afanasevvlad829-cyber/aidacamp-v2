@@ -1,23 +1,23 @@
 /**
- * ЕДИНСТВЕННЫЙ источник правды для всех цен смен.
+ * ЕДИНЫЙ ИСТОЧНИК ПРАВИЛА ЦЕН смен.
  *
- * Архитектура: явные ценовые ступени + необязательный ежедневный инкремент.
+ * Данные (база/дата/длительность) берутся из ОДНОГО места — `SHIFT_META` в shifts.ts.
+ * Здесь — только ПРАВИЛО, как из базовой цены получается текущая.
  *
- * Каждая ступень (PriceStage) задаёт:
- *   from      — дата начала ступени (YYYY-MM-DD)
- *   price     — базовая цена ступени
- *   increment — (опц.) рост цены в ₽/день; работает до начала следующей ступени
+ * ─── ЕДИНОЕ ПРАВИЛО РОСТА (для всех смен одинаковое) ───────────────────────
+ *   1. До «старт − 30 дней» цена = базовой.
+ *   2. За 30 дней до старта — разовый шаг +5 % к базе.
+ *   3. Далее каждый день +500 ₽.
+ *   4. На дату старта смены рост ОСТАНАВЛИВАЕТСЯ (цена фиксируется).
  *
- * Примеры:
- *   { from: '2026-05-23', price: 99000, increment: 500 }
- *     → 23 мая: 99 000, 24 мая: 99 500, 25 мая: 100 000, ...
- *     → останавливается, когда наступает следующая ступень
+ *   Цена на старте = round(base × 1.05) + 30 × 500.
  *
- *   { from: '2026-06-20', price: 109000 }
- *     → фиксированная цена «последние места», инкремент отсутствует
- *
- * Чтобы изменить цену — добавь ступень в stages и задеплой.
+ * Параметры правила — константы RAMP_DAYS / STEP_PCT / DAILY_INC ниже.
+ * Чтобы изменить цену/дату смены — правь shifts.ts (НЕ здесь).
+ * Чтобы изменить само правило роста — правь константы здесь.
  */
+
+import { SHIFT_META } from './shifts';
 
 interface PriceStage {
   from: string;        // YYYY-MM-DD
@@ -35,77 +35,50 @@ interface ShiftPricing {
   };
 }
 
-// ─── Конфигурация всех смен ────────────────────────────────────────────────
-export const PRICING: Record<string, ShiftPricing> = {
+// ─── Параметры единого правила роста ───────────────────────────────────────
+const RAMP_DAYS = 30;     // за сколько дней до старта начинается рост
+const STEP_PCT  = 0.05;   // разовый шаг в начале роста: +5 %
+const DAILY_INC = 500;    // далее ₽/день
 
-  // Смена 1 (30 мая — 8 июня, 10 дней)
-  // Цена поднималась ступенями, сейчас на максимуме 93 900
-  'shift-1': {
-    days: 10,
-    stages: [
-      { from: '2026-01-01', price: 74900 },
-      { from: '2026-04-01', price: 79900 },
-      { from: '2026-05-01', price: 85900 },
-      { from: '2026-05-23', price: 85900, increment: 1000 }, // +1 000/день
-      { from: '2026-05-28', price: 93900 },                  // максимум, фиксируем
-    ],
-    fortune: { discountPct: 7, depositPct: 30 },
-  },
-
-  // Смена 2 (10 июня — 23 июня, 14 дней)
-  // Сейчас в режиме инкремента +500/день от базы 99 000 с 23 мая
-  'shift-2': {
-    days: 14,
-    stages: [
-      { from: '2026-01-01', price: 95000 },
-      { from: '2026-04-01', price: 99000 },
-      { from: '2026-05-23', price: 99000, increment: 500 }, // +500/день
-      // Пример «последние места»:
-      // { from: '2026-06-15', price: 115000 }, // фиксированная, инкремент останавливается
-    ],
-    fortune: { discountPct: 7, depositPct: 30 },
-  },
-
-  // Смена 3 (3–15 августа, 13 дней)
-  // До 30 июня: 89 400
-  // С 1 июля: +500/день
-  // 3 августа (день старта): фиксируем 105 900 ₽ — рост останавливается
-  'shift-3': {
-    days: 13,
-    stages: [
-      { from: '2026-01-01', price: 89400 },
-      { from: '2026-07-01', price: 89400, increment: 500 }, // +500/день
-      { from: '2026-08-03', price: 105900 },                // старт смены — рост остановлен
-    ],
-  },
-
-  // Смена 4 (17–26 августа, 10 дней)
-  // До 10 июля: 74 900
-  // С 10 июля: +300/день
-  // 17 августа (день старта): фиксируем 86 300 ₽ — рост останавливается
-  'shift-4': {
-    days: 10,
-    stages: [
-      { from: '2026-01-01', price: 74900 },
-      { from: '2026-07-10', price: 74900, increment: 300 }, // +300/день
-      { from: '2026-08-17', price: 86300 },                 // старт смены — рост остановлен
-    ],
-  },
-
-  'shift-2-1': {
-    days: 7,
-    stages: [
-      { from: '2026-01-01', price: 48000 },
-    ],
-  },
-
-  'shift-2-2': {
-    days: 8,
-    stages: [
-      { from: '2026-01-01', price: 75000 },
-    ],
-  },
+// Fortune-скидки (колесо фортуны) — только у смен, где она включена.
+const FORTUNE: Record<string, { discountPct: number; depositPct: number }> = {
+  'shift-1': { discountPct: 7, depositPct: 30 },
+  'shift-2': { discountPct: 7, depositPct: 30 },
 };
+
+// ─── Сдвиг ISO-даты на N дней (для границы начала роста) ────────────────────
+function isoShift(iso: string, deltaDays: number): string {
+  const dt = new Date(iso + 'T00:00:00Z');
+  dt.setUTCDate(dt.getUTCDate() + deltaDays);
+  return dt.toISOString().slice(0, 10);
+}
+
+/**
+ * Строит ступени из базовой цены и даты старта по ЕДИНОМУ правилу:
+ *   base → (старт−30д: +5%) → +500/день → фиксация на старте.
+ */
+function buildStages(basePrice: number, startDate: string): PriceStage[] {
+  const rampFrom = isoShift(startDate, -RAMP_DAYS);
+  const stepped  = Math.round(basePrice * (1 + STEP_PCT)); // +5 % к базе
+  const atStart  = stepped + RAMP_DAYS * DAILY_INC;        // цена на старте (фиксируется)
+  return [
+    { from: '2026-01-01', price: basePrice },                 // база держится
+    { from: rampFrom,     price: stepped, increment: DAILY_INC }, // +5 %, далее +500/день
+    { from: startDate,    price: atStart },                   // фиксация на старте
+  ];
+}
+
+// ─── PRICING строится из SHIFT_META (единый источник данных) + правила ──────
+export const PRICING: Record<string, ShiftPricing> = Object.fromEntries(
+  Object.entries(SHIFT_META).map(([id, m]) => [
+    id,
+    {
+      days: m.days,
+      stages: buildStages(m.basePrice, m.startDate),
+      ...(FORTUNE[id] ? { fortune: FORTUNE[id] } : {}),
+    },
+  ]),
+);
 
 // ─── Вспомогательные функции ───────────────────────────────────────────────
 
@@ -166,7 +139,8 @@ export function getNextPriceStage(shiftId: string, today: Date = new Date()): { 
   const cfg = PRICING[shiftId];
   if (!cfg) return null;
   const todayStr = todayISO(today);
-  return cfg.stages.find(s => s.from > todayStr) ?? null;
+  const next = cfg.stages.find(s => s.from > todayStr);
+  return next ? { from: next.from, price: next.price } : null;
 }
 
 /** Цена со скидкой фортуны и сумма депозита. */

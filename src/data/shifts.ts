@@ -84,6 +84,28 @@ export const shortShifts: Shift[] = [];
 
 export const allShifts = [...mainShifts];
 
+// === ЕДИНЫЙ ИСТОЧНИК метаданных смены (дата + база + длительность) ===
+// Отсюда dynamicPrices.ts берёт basePrice/startDate/days и применяет правило роста.
+// Включает завершённые смены — для исторических цен и фолбэков.
+const _priceToNum = (p: string) => parseInt(p.replace(/[^\d]/g, ''), 10);
+export interface ShiftMeta {
+  basePrice: number;   // базовая цена (до роста) — из price-строки выше
+  startDate: string;   // YYYY-MM-DD
+  endDate: string;     // YYYY-MM-DD
+  days: number;        // длительность из duration
+}
+export const SHIFT_META: Record<string, ShiftMeta> = Object.fromEntries(
+  [_shift1, _shift2, _shift21, _shift22, ...mainShifts].map((s) => [
+    s.id,
+    {
+      basePrice: _priceToNum(s.price),
+      startDate: s.startDate,
+      endDate: s.endDate,
+      days: parseInt(s.duration.replace(/[^\d]/g, ''), 10),
+    },
+  ]),
+);
+
 // === Derived: единые цены для типовых блоков. НЕ хардкодить цифры на страницах! ===
 const _allForPrice = [...mainShifts];
 const _priceNum = (p: string) => parseInt(p.replace(/[^\d]/g, ''), 10);
