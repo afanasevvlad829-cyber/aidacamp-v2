@@ -11,6 +11,7 @@ import {
   getNextDayPrice,
   getNextPriceStage,
   getFortunePrice,
+  isFortuneActive,
   getDays,
   getTaxDeduction,
   fmtPrice,
@@ -162,6 +163,39 @@ describe('getFortunePrice', () => {
   it('deposit меньше final', () => {
     const result = getFortunePrice('shift-1', d('2026-04-01'))!;
     expect(result.deposit).toBeLessThan(result.final);
+  });
+});
+
+// ── isFortuneActive (последние 3 дня / 3 места) ──────────────────────────────
+// shift-3: старт 2026-08-03.
+
+describe('isFortuneActive', () => {
+  it('активна: 3 дня до старта + 3 места', () => {
+    expect(isFortuneActive('shift-3', 3, d('2026-07-31'))).toBe(true);
+  });
+
+  it('активна: 1 день до старта + 1 место', () => {
+    expect(isFortuneActive('shift-3', 1, d('2026-08-02'))).toBe(true);
+  });
+
+  it('не активна: 4 дня до старта (вне окна)', () => {
+    expect(isFortuneActive('shift-3', 2, d('2026-07-30'))).toBe(false);
+  });
+
+  it('не активна: 4 свободных места (не последние 3)', () => {
+    expect(isFortuneActive('shift-3', 4, d('2026-07-31'))).toBe(false);
+  });
+
+  it('не активна: распродано (0 мест)', () => {
+    expect(isFortuneActive('shift-3', 0, d('2026-08-02'))).toBe(false);
+  });
+
+  it('не активна: после старта', () => {
+    expect(isFortuneActive('shift-3', 2, d('2026-08-05'))).toBe(false);
+  });
+
+  it('false для неизвестной смены', () => {
+    expect(isFortuneActive('unknown', 1, d('2026-08-02'))).toBe(false);
   });
 });
 

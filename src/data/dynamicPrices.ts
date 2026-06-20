@@ -12,9 +12,15 @@
  *
  *   Цена на старте = round(base × 1.05) + 30 × 500.
  *
- * Параметры правила — константы RAMP_DAYS / STEP_PCT / DAILY_INC ниже.
+ * ─── ПРАВИЛО ЗАПУСКА ФОРТУНЫ ───────────────────────────────────────────────
+ *   Колесо фортуны (скидка на последние места) запускается в ПОСЛЕДНИЕ 3 ДНЯ
+ *   перед стартом смены И только когда осталось ≤ 3 свободных мест.
+ *   Источник истины — функция isFortuneActive() ниже.
+ *
+ * Параметры правил — константы RAMP_DAYS / STEP_PCT / DAILY_INC /
+ * FORTUNE_WINDOW_DAYS / FORTUNE_LAST_SPOTS ниже.
  * Чтобы изменить цену/дату смены — правь shifts.ts (НЕ здесь).
- * Чтобы изменить само правило роста — правь константы здесь.
+ * Чтобы изменить сами правила — правь константы здесь.
  */
 
 import { SHIFT_META } from './shifts';
@@ -39,6 +45,10 @@ interface ShiftPricing {
 const RAMP_DAYS = 30;     // за сколько дней до старта начинается рост
 const STEP_PCT  = 0.05;   // разовый шаг в начале роста: +5 %
 const DAILY_INC = 500;    // далее ₽/день
+
+// ─── Параметры правила запуска фортуны ──────────────────────────────────────
+const FORTUNE_WINDOW_DAYS = 3;  // за сколько дней до старта запускается фортуна
+const FORTUNE_LAST_SPOTS  = 3;  // на сколько последних мест
 
 // Fortune-скидки (колесо фортуны) — только у смен, где она включена.
 const FORTUNE: Record<string, { discountPct: number; depositPct: number }> = {
@@ -151,6 +161,35 @@ export function getFortunePrice(shiftId: string, today: Date = new Date()): { fi
   const final   = Math.round(base * (1 - cfg.fortune.discountPct / 100));
   const deposit = Math.round(final * cfg.fortune.depositPct / 100);
   return { final, deposit };
+}
+
+/**
+ * Запущена ли фортуна для смены.
+ * ПРАВИЛО: последние 3 дня перед стартом (0…3 дня до старта) И ≤ 3 свободных мест.
+ * freeSpots — текущее число свободных мест (источник — shifts.ts, поле free).
+ */
+export function isFortuneActive(shiftId: string, freeSpots: number, today: Date = new Date()): boolean {
+  const m = SHIFT_META[shiftId];
+  if (!m) return false;
+  const start    = new Date(m.startDate + 'T00:00:00');
+  const todayMid = new Date(today);
+  todayMid.setHours(0, 0, 0, 0);
+  const daysUntilStart = Math.ceil((start.getTime() - todayMid.getTime()) / 86_400_000);
+  const inWindow  = daysUntilStart >= 0 && daysUntilStart <= FORTUNE_WINDOW_DAYS;
+  const lastSpots = freeSpots > 0 && freeSpots <= FORTUNE_LAST_SPOTS;
+  return inWindow && lastSpots;
+}
+
+/** Фаза смены по датам: предстоит → идёт → прошла. Единый источник статуса. */
+export type ShiftPhase = 'upcoming' | 'live' | 'done';
+export function getShiftPhase(shiftId: string, today: Date = new Date()): ShiftPhase | null {
+  const m = SHIFT_META[shiftId];
+  if (!m) return null;
+  const start = new Date(m.startDate + 'T00:00:00');
+  const end   = new Date(m.endDate + 'T23:59:59');
+  if (today < start) return 'upcoming';
+  if (today > end)   return 'done';
+  return 'live';
 }
 
 /** Длительность смены в днях. */
