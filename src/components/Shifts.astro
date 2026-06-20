@@ -86,13 +86,25 @@ const nowDate = new Date();
       >
 
         {/* ─── Все смены: фаза по датам (предстоит → идёт → прошла) ─── */}
+        {/* Колесо фортуны рендерится скрытым у ближайшей смены; показывается
+            клиентским скриптом ниже по правилу (последние 3 дня + ≤3 места) или по ?fortune=wheel. */}
         {displayShifts.map((shift) => {
           const phase = getShiftPhase(shift.id, nowDate);
+          const withFortune = phase === 'upcoming' && shift.nearest;
           return (
             <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch" data-shift-id={shift.id}>
-              {phase === 'upcoming'
-                ? <ShiftCard shift={shift} variant="desktop" />
-                : <ShiftRetroCard shift={shift} />}
+              {phase !== 'upcoming' ? (
+                <ShiftRetroCard shift={shift} />
+              ) : withFortune ? (
+                <Fragment>
+                  <div data-fortune-normal class="h-full"><ShiftCard shift={shift} variant="desktop" /></div>
+                  <div data-fortune-wheel hidden data-fortune-start={shift.startDate} data-fortune-free={shift.free} class="h-full">
+                    <FortuneShiftCard shiftId={shift.id} />
+                  </div>
+                </Fragment>
+              ) : (
+                <ShiftCard shift={shift} variant="desktop" />
+              )}
             </div>
           );
         })}
@@ -110,6 +122,32 @@ const nowDate = new Date();
     </div>
   </div>
 </section>
+
+<script is:inline>
+/* Активация колеса фортуны: последние 3 дня перед стартом + ≤3 места.
+   Считается клиентски (главная статична). Превью в любой момент: ?fortune=wheel */
+(function () {
+  var WINDOW_DAYS = 3, LAST_SPOTS = 3; // правило (см. dynamicPrices.ts: FORTUNE_WINDOW_DAYS/LAST_SPOTS)
+  function apply() {
+    var qs = new URLSearchParams(location.search);
+    var force = qs.get('fortune') === 'wheel' || qs.has('wheel');
+    document.querySelectorAll('[data-fortune-wheel]').forEach(function (wheel) {
+      var slot = wheel.closest('[data-shift-id]');
+      var normal = slot ? slot.querySelector('[data-fortune-normal]') : null;
+      var start = new Date((wheel.getAttribute('data-fortune-start') || '') + 'T00:00:00');
+      var free = parseInt(wheel.getAttribute('data-fortune-free') || '0', 10);
+      var today = new Date(); today.setHours(0, 0, 0, 0);
+      var days = Math.ceil((start.getTime() - today.getTime()) / 86400000);
+      var active = force || (days >= 0 && days <= WINDOW_DAYS && free > 0 && free <= LAST_SPOTS);
+      if (active) { wheel.hidden = false; if (normal) normal.hidden = true; }
+      else { wheel.hidden = true; if (normal) normal.hidden = false; }
+    });
+  }
+  document.addEventListener('astro:page-load', apply);
+  if (document.readyState !== 'loading') apply();
+  else document.addEventListener('DOMContentLoaded', apply);
+})();
+</script>
 
 <style>
   /* ── MARQUEE VIEWPORT ── */
