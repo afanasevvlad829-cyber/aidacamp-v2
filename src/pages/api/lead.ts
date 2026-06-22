@@ -200,6 +200,41 @@ function buildCrmNote(body: Record<string, string>): string {
   return lines.join('\n') || '';
 }
 
+/**
+ * Авто-источник лида в AlfaCRM (lead_source_id) по UTM/рефереру.
+ * Справочник филиала 5: 20=Яндекс Директ, 14=Поиск, 17=WhatsApp, 10=Телеграм, 8=ВК, 9=Сайт.
+ * Без этого поля лид падает в CRM без источника → отчёты по каналам пустые,
+ * Директ размазан внутри «Сайта». Приоритет: платная реклама → мессенджеры → органика → Сайт.
+ */
+function mapLeadSourceId(body: Record<string, string>): number {
+  const src = (body.utm_source || '').toLowerCase();
+  const med = (body.utm_medium || '').toLowerCase();
+  const ref = (body.referrer || '').toLowerCase();
+
+  // Платная реклама Яндекса (Директ): yclid, cpc/cpm, либо source=yandex с платным medium
+  if (body.yclid || med === 'cpc' || med === 'cpm' || med === 'cpa' ||
+      (src.includes('yandex') && med && med !== 'organic' && med !== 'referral')) {
+    return 20; // Яндекс Директ
+  }
+  // ВКонтакте (реклама/переходы)
+  if (src.includes('vk') || ref.includes('vk.com') || ref.includes('vk.ru')) {
+    return 8; // ВКонтакте
+  }
+  // Мессенджеры — по метке или рефереру
+  if (src.includes('whatsapp') || ref.includes('wa.me') || ref.includes('whatsapp')) {
+    return 17; // WhatsApp
+  }
+  if (src.includes('telegram') || src === 'tg' || ref.includes('t.me') || ref.includes('telegram')) {
+    return 10; // Телеграм
+  }
+  // Органический поиск
+  if (med === 'organic' || ref.includes('yandex.') || ref.includes('google.') ||
+      ref.includes('ya.ru') || ref.includes('bing.') || ref.includes('mail.ru')) {
+    return 14; // Поиск в интернете
+  }
+  return 9; // Сайт (прямой/неизвестно)
+}
+
 async function createCrmLead(body: Record<string, string>): Promise<number | null> {
   const hostname = process.env.ALFACRM_HOSTNAME;
   const email    = process.env.ALFACRM_EMAIL;
@@ -238,6 +273,8 @@ async function createCrmLead(body: Record<string, string>): Promise<number | nul
       branch_ids: [5],
       is_study: 0,
       legal_type: 1,
+      // Авто-источник по UTM/рефереру (для отчётов «канал → оплата»)
+      lead_source_id: mapLeadSourceId(body),
       // UTM
       utm_source:   body.utm_source   || undefined,
       utm_medium:   body.utm_medium   || undefined,

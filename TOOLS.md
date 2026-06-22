@@ -1007,7 +1007,12 @@ def tg_photo(photo_url, caption="", chat_id=None):
 ---
 
 ### Green API (WhatsApp / Telegram gateway)
-**Ключи:** `GREEN_API_WA_ID_INSTANCE` / `GREEN_API_WA_TOKEN` (WA), `GREEN_API_TG_ID_INSTANCE` / `GREEN_API_TG_TOKEN` (TG)
+**3 инстанса** (аккаунт `va@icepartners.ru`):
+- `GREENAPI_INSTANCE_ID=4100566778` — **Telegram** Дарьи (`2040464481`); API host `api.greenapi.com`
+- `GREENAPI_SCHOOL_INSTANCE_ID=4100613561` — **Telegram** школы АйДаКодить
+- `GREENAPI_WA_INSTANCE_ID=1105659052` — **WhatsApp** Дарьи (`79688086455`); API host `api.green-api.com`; входящие/исходящие → вебхук `https://aidacamp.ru/api/tg-debug` → `ai_dialogs` (`source=wa_gapi`)
+
+> ⚠️ Исторически `4100566778`/`4100613561` были WhatsApp, сейчас переключены на **Telegram** (`getSettings.typeInstance=telegram`). Реальный WhatsApp — только `1105659052`.
 
 ```python
 def green_send(phone, message, instance_id, token, channel="wa"):
@@ -1094,6 +1099,38 @@ crm_coach_logs        — логи AI-коуча
 ai_dialogs            — переписки WA + TG
 ai_tg_users           — маппинг телефон → TG peer_id
 ```
+
+---
+
+## 📤 ЗАГРУЗКА ФАЙЛОВ НА СЕРВЕР
+
+**Два шага, без вариантов:**
+1. `aidacamp_tools.write_file` → записать на Мак (локально)
+2. `Desktop_Commander.start_process("scp -i ~/.ssh/aidacamp_prod /путь/на/маке root@159.194.223.55:/путь/на/сервере")` → скопировать на сервер
+
+Всё. 0.44 секунды. Работает с кириллицей, любыми размерами, без проблем.
+
+```
+# Пример: положить скилл на сервер
+aidacamp_tools.write_file(
+    path="/Users/vladimirafanasev/Aidacamp-cloude/.claude/skills/мой-скилл.md",
+    content="полный текст"
+)
+Desktop_Commander.start_process(
+    "scp -i ~/.ssh/aidacamp_prod "
+    "/Users/vladimirafanasev/Aidacamp-cloude/.claude/skills/мой-скилл.md "
+    "root@159.194.223.55:/opt/aidacamp-build/.claude/skills/мой-скилл.md"
+)
+```
+
+**ЗАПРЕЩЕНО:**
+- base64 + chunking
+- SSH heredoc с кириллицей (таймаутится на больших файлах)
+- aidacamp_tools.write_file на серверный путь /opt/... (он локальный, ENOENT)
+
+**Канонические пути для скиллов:**
+- Мак:    `/Users/vladimirafanasev/Aidacamp-cloude/.claude/skills/`
+- Сервер: `/opt/aidacamp-build/.claude/skills/`
 
 ---
 

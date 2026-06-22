@@ -1,6 +1,8 @@
 ---
-import { mainShifts } from '../data/shifts';
+import { mainShifts, displayShifts } from '../data/shifts';
+import { getShiftPhase } from '../data/dynamicPrices';
 import ShiftCard from './shifts/ShiftCard.astro';
+import ShiftRetroCard from './shifts/ShiftRetroCard.astro';
 import ShiftCardCombined from './shifts/ShiftCardCombined.astro';
 import ShortShiftsBlock from './shifts/ShortShiftsBlock.astro';
 import FortuneShiftCard from './shifts/FortuneShiftCard.astro';
@@ -8,15 +10,8 @@ import ShiftBookModal from './shifts/ShiftBookModal.astro';
 import ShiftCalendarModal from './shifts/ShiftCalendarModal.astro';
 import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
 
-// Shift 2 progress (June 10–23, 14 days) — computed SSR
-const s2Start = new Date('2026-06-10T00:00:00');
-const s2End   = new Date('2026-06-23T23:59:59');
+// Фаза смены считается по датам (getShiftPhase): upcoming → live → done.
 const nowDate = new Date();
-const S2_TOTAL = 14;
-const s2ElapsedDays = Math.max(0, Math.min(S2_TOTAL, Math.floor((nowDate.getTime() - s2Start.getTime()) / 86_400_000)));
-const s2Pct = Math.round(s2ElapsedDays / S2_TOTAL * 100);
-const s2IsLive = nowDate >= s2Start && nowDate <= s2End;
-const s2IsDone = nowDate > s2End;
 ---
 
 <section id="shifts" class="mx-auto max-w-[1312px] px-[2px] pt-10 md:px-4">
@@ -90,116 +85,29 @@ const s2IsDone = nowDate > s2End;
         data-carousel-initial="2"
       >
 
-        {/* ─── Смена 1 — завершена ─── */}
-        <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch" data-shift-id="shift-1">
-          <div class="flex flex-col h-full rounded-[22px] border border-border-light bg-card p-5 shadow-[0_2px_6px_rgba(15,23,42,0.06),0_4px_14px_rgba(15,23,42,0.08)]">
-            <!-- header: circle + month | status -->
-            <div class="flex items-center justify-between gap-2 mb-3">
-              <div class="flex items-center gap-1.5">
-                <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[13px] font-extrabold text-slate-400 leading-none shrink-0">1</span>
-                <p class="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Май — Июнь</p>
-              </div>
-              <span class="shrink-0 inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
-                <i class="bi bi-check-circle-fill text-[10px]" aria-hidden="true"></i>
-                завершена
-              </span>
-            </div>
-            <!-- dates -->
-            <h3 class="text-[18px] font-extrabold tracking-[-0.02em] leading-[1.1] text-slate-400 whitespace-nowrap">30 мая — 8 июня</h3>
-            <p class="mt-0.5 text-[13px] text-slate-400">10 дней</p>
-            <!-- occupancy -->
-            <div class="mt-4">
-              <div class="flex justify-between text-[12px] mb-1.5">
-                <span class="text-slate-400">Занято</span>
-                <span class="font-semibold text-emerald-600">45 из 45</span>
-              </div>
-              <div class="h-1.5 w-full rounded-full overflow-hidden bg-slate-100">
-                <div class="h-full rounded-full bg-emerald-400 w-full"></div>
-              </div>
-            </div>
-            <!-- price history compact -->
-            <div class="mt-4 flex-1">
-              <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 mb-1.5">Как росла цена</p>
-              <div class="flex items-center gap-1.5 text-[13px]">
-                <span class="text-slate-400">74&nbsp;900 ₽</span>
-                <i class="bi bi-arrow-right text-[11px] text-slate-300" aria-hidden="true"></i>
-                <span class="font-bold text-slate-600">93&nbsp;900 ₽</span>
-                <span class="ml-auto text-[11px] bg-slate-100 text-slate-500 rounded-full px-2 py-0.5 font-semibold">+25%</span>
-              </div>
-              <p class="mt-0.5 text-[11px] text-slate-400">Январь → Старт смены</p>
-            </div>
-            <!-- CTA full width -->
-            <a href="/kak-proshla-smena-1/" class="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl py-3 text-[14px] font-semibold text-emerald-700 border border-emerald-200 hover:bg-emerald-50 transition-colors no-underline group">
-              Смотреть как прошла
-              <i class="bi bi-arrow-right text-[13px] transition-transform group-hover:translate-x-1" aria-hidden="true"></i>
-            </a>
-          </div>
-        </div>
-
-        {/* ─── Смена 2 — идёт / завершилась ─── */}
-        <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch" data-shift-id="shift-2">
-          <div class={`flex flex-col h-full rounded-[22px] border p-5 shadow-[0_2px_6px_rgba(15,23,42,0.06),0_4px_14px_rgba(15,23,42,0.08)] ${s2IsLive ? 'border-amber-200 bg-amber-50/60' : 'border-border-light bg-card'}`}>
-            <!-- header: circle + month | status -->
-            <div class="flex items-center justify-between gap-2 mb-3">
-              <div class="flex items-center gap-1.5">
-                <span class={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[13px] font-extrabold leading-none shrink-0 ${s2IsLive ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-400'}`}>2</span>
-                <p class="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Июнь</p>
-              </div>
-              {s2IsLive ? (
-                <span class="shrink-0 inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-300 px-2.5 py-0.5 text-[11px] font-bold text-amber-700">
-                  <span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
-                  идёт
-                </span>
-              ) : s2IsDone ? (
-                <span class="shrink-0 inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
-                  <i class="bi bi-check-circle-fill text-[10px]" aria-hidden="true"></i>
-                  завершена
-                </span>
+        {/* ─── Все смены: фаза по датам (предстоит → идёт → прошла) ─── */}
+        {/* Колесо фортуны рендерится скрытым у ближайшей смены; показывается
+            клиентским скриптом ниже по правилу (последние 3 дня + ≤3 места) или по ?fortune=wheel. */}
+        {displayShifts.map((shift) => {
+          const phase = getShiftPhase(shift.id, nowDate);
+          const withFortune = phase === 'upcoming' && shift.nearest;
+          return (
+            <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch" data-shift-id={shift.id}>
+              {phase !== 'upcoming' ? (
+                <ShiftRetroCard shift={shift} />
+              ) : withFortune ? (
+                <Fragment>
+                  <div data-fortune-normal class="h-full"><ShiftCard shift={shift} variant="desktop" /></div>
+                  <div data-fortune-wheel hidden data-fortune-start={shift.startDate} data-fortune-free={shift.free} class="h-full">
+                    <FortuneShiftCard shiftId={shift.id} />
+                  </div>
+                </Fragment>
               ) : (
-                <span class="shrink-0 inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-500">скоро</span>
+                <ShiftCard shift={shift} variant="desktop" />
               )}
             </div>
-            <!-- dates -->
-            <h3 class={`text-[18px] font-extrabold tracking-[-0.02em] leading-[1.1] whitespace-nowrap ${s2IsLive ? 'text-amber-800' : 'text-slate-400'}`}>10 июня — 23 июня</h3>
-            <p class={`mt-0.5 text-[13px] ${s2IsLive ? 'text-amber-700' : 'text-slate-400'}`}>14 дней</p>
-            <!-- progress bar -->
-            <div class="mt-4">
-              <div class="flex justify-between text-[12px] mb-1.5">
-                <span class={s2IsLive ? 'text-amber-700' : 'text-slate-400'}>Прогресс</span>
-                <span class={`font-semibold ${s2IsLive ? 'text-amber-700' : 'text-slate-500'}`}>{s2ElapsedDays} / {S2_TOTAL} дн</span>
-              </div>
-              <div class="h-1.5 w-full rounded-full overflow-hidden bg-slate-100">
-                <div class={`h-full rounded-full ${s2IsDone ? 'bg-emerald-400' : 'bg-amber-400'}`} style={`width:${s2Pct}%`}></div>
-              </div>
-              <p class="mt-1 text-[11px] text-slate-400">
-                {s2IsDone ? 'Смена завершена' : s2IsLive ? `Осталось ${S2_TOTAL - s2ElapsedDays} дн` : 'Набор закрыт'}
-              </p>
-            </div>
-            <!-- price history compact -->
-            <div class="mt-4 flex-1">
-              <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 mb-1.5">Как росла цена</p>
-              <div class="flex items-center gap-1.5 text-[13px]">
-                <span class="text-slate-400">95&nbsp;000 ₽</span>
-                <i class="bi bi-arrow-right text-[11px] text-slate-300" aria-hidden="true"></i>
-                <span class="font-bold text-slate-600">108&nbsp;000 ₽</span>
-                <span class="ml-auto text-[11px] bg-slate-100 text-slate-500 rounded-full px-2 py-0.5 font-semibold">+14%</span>
-              </div>
-              <p class="mt-0.5 text-[11px] text-slate-400">Январь → Старт смены</p>
-            </div>
-            <!-- CTA -->
-            <div class="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl py-3 text-[14px] font-semibold text-slate-400 border border-slate-200 select-none cursor-default">
-              <i class="bi bi-lock text-[12px]" aria-hidden="true"></i>
-              Продажи закрыты
-            </div>
-          </div>
-        </div>
-
-        {/* ─── Смены 3 и 4 — активные ─── */}
-        {mainShifts.map((shift) => (
-          <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch" data-shift-id={shift.id}>
-            <ShiftCard shift={shift} variant="desktop" />
-          </div>
-        ))}
+          );
+        })}
 
       </div>
     </div>
@@ -214,6 +122,32 @@ const s2IsDone = nowDate > s2End;
     </div>
   </div>
 </section>
+
+<script is:inline>
+/* Активация колеса фортуны: последние 3 дня перед стартом + ≤3 места.
+   Считается клиентски (главная статична). Превью в любой момент: ?fortune=wheel */
+(function () {
+  var WINDOW_DAYS = 3, LAST_SPOTS = 3; // правило (см. dynamicPrices.ts: FORTUNE_WINDOW_DAYS/LAST_SPOTS)
+  function apply() {
+    var qs = new URLSearchParams(location.search);
+    var force = qs.get('fortune') === 'wheel' || qs.has('wheel');
+    document.querySelectorAll('[data-fortune-wheel]').forEach(function (wheel) {
+      var slot = wheel.closest('[data-shift-id]');
+      var normal = slot ? slot.querySelector('[data-fortune-normal]') : null;
+      var start = new Date((wheel.getAttribute('data-fortune-start') || '') + 'T00:00:00');
+      var free = parseInt(wheel.getAttribute('data-fortune-free') || '0', 10);
+      var today = new Date(); today.setHours(0, 0, 0, 0);
+      var days = Math.ceil((start.getTime() - today.getTime()) / 86400000);
+      var active = force || (days >= 0 && days <= WINDOW_DAYS && free > 0 && free <= LAST_SPOTS);
+      if (active) { wheel.hidden = false; if (normal) normal.hidden = true; }
+      else { wheel.hidden = true; if (normal) normal.hidden = false; }
+    });
+  }
+  document.addEventListener('astro:page-load', apply);
+  if (document.readyState !== 'loading') apply();
+  else document.addEventListener('DOMContentLoaded', apply);
+})();
+</script>
 
 <style>
   /* ── MARQUEE VIEWPORT ── */

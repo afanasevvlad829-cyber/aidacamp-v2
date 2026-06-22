@@ -19,6 +19,9 @@ export interface Shift {
   popular?: boolean;
   startDate: string; // YYYY-MM-DD for calendar
   endDate: string;
+  recapUrl?: string;   // ссылка «Смотреть как прошла» (для завершённых; нет → без кнопки)
+  priceFrom?: string;  // первая цена для блока «как росла цена» (legacy-факт; нет → из правила)
+  priceTo?: string;    // последняя цена (на старте) для блока «как росла цена»
 }
 
 // Завершённые смены — данные сохранены для констант (PRICE_S1/S2 и т.д.), не показываются в UI
@@ -27,12 +30,14 @@ const _shift1: Shift = {
   status: 'завершена', statusType: 'available',
   description: 'За 10 дней — от первого шага до собственного проекта с AI и понятным результатом.',
   price: '85 900 ₽', free: 0, occupied: 35, startDate: '2026-05-30', endDate: '2026-06-08',
+  recapUrl: '/kak-proshla-smena-1/', priceFrom: '74 900 ₽', priceTo: '93 900 ₽',
 };
 const _shift2: Shift = {
   id: 'shift-2', name: 'Смена 2', dates: '10 июня — 23 июня', duration: '14 дней',
   status: 'завершена', statusType: 'available',
   description: 'Полный цикл создания проекта: больше самостоятельности и более сложный результат.',
   price: '99 000 ₽', free: 0, occupied: 45, startDate: '2026-06-10', endDate: '2026-06-23',
+  priceFrom: '95 000 ₽', priceTo: '108 000 ₽',
 };
 const _shift21: Shift = {
   id: 'shift-2-1', name: 'Смена 2.1', dates: '10 июня — 16 июня', duration: '7 дней',
@@ -83,6 +88,32 @@ export const mainShifts: Shift[] = [
 export const shortShifts: Shift[] = [];
 
 export const allShifts = [...mainShifts];
+
+// Все смены для показа в карусели (завершённые + активные), в хронологии.
+// Фаза (предстоит/идёт/прошла) считается по датам в getShiftPhase().
+export const displayShifts: Shift[] = [_shift1, _shift2, ...mainShifts];
+
+// === ЕДИНЫЙ ИСТОЧНИК метаданных смены (дата + база + длительность) ===
+// Отсюда dynamicPrices.ts берёт basePrice/startDate/days и применяет правило роста.
+// Включает завершённые смены — для исторических цен и фолбэков.
+const _priceToNum = (p: string) => parseInt(p.replace(/[^\d]/g, ''), 10);
+export interface ShiftMeta {
+  basePrice: number;   // базовая цена (до роста) — из price-строки выше
+  startDate: string;   // YYYY-MM-DD
+  endDate: string;     // YYYY-MM-DD
+  days: number;        // длительность из duration
+}
+export const SHIFT_META: Record<string, ShiftMeta> = Object.fromEntries(
+  [_shift1, _shift2, _shift21, _shift22, ...mainShifts].map((s) => [
+    s.id,
+    {
+      basePrice: _priceToNum(s.price),
+      startDate: s.startDate,
+      endDate: s.endDate,
+      days: parseInt(s.duration.replace(/[^\d]/g, ''), 10),
+    },
+  ]),
+);
 
 // === Derived: единые цены для типовых блоков. НЕ хардкодить цифры на страницах! ===
 const _allForPrice = [...mainShifts];

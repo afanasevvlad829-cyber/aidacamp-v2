@@ -11,6 +11,24 @@ function getYmUidCookie(): string {
   }
 }
 
+/** getClientID асинхронный — ждём callback до 300ms, затем fallback на cookie */
+function getYmClientId(): Promise<string> {
+  return new Promise((resolve) => {
+    try {
+      const ym = (window as any).ym;
+      if (typeof ym === 'function') {
+        const timer = setTimeout(() => resolve(getYmUidCookie()), 300);
+        ym(YM_COUNTER, 'getClientID', (id: string) => {
+          clearTimeout(timer);
+          resolve(id || getYmUidCookie());
+        });
+        return;
+      }
+    } catch { /* ignore */ }
+    resolve(getYmUidCookie());
+  });
+}
+
 /** ubtcuid — идентификатор трекинга Andata (cookie ubtcuid) */
 function getUbtcuid(): string {
   try {
@@ -70,20 +88,6 @@ function collectContext(): Record<string, string> {
   }
   const attr = Object.values(currentUtm).some(Boolean) ? currentUtm : stored;
 
-  // ym_client_id: сначала Metrika API, fallback — cookie
-  let ym_client_id = '';
-  try {
-    const ym = (window as any).ym;
-    if (typeof ym === 'function') {
-      ym(YM_COUNTER, 'getClientID', (id: string) => {
-        ym_client_id = id || '';
-      });
-    }
-  } catch {
-    /* ignore */
-  }
-  if (!ym_client_id) ym_client_id = getYmUidCookie();
-
   // session_ms — время с первого открытия любой страницы сайта в сессии.
   // ac_session_start ставится в Base.astro inline-скриптом ПРИ ЗАГРУЗКЕ страницы,
   // а не здесь — иначе на первом сабмите всегда будет 0 (start пишется одновременно с измерением).
@@ -121,7 +125,6 @@ function collectContext(): Record<string, string> {
     landing_url: window.location.href,
     page_title: document.title,
     referrer: document.referrer,
-    ym_client_id,
     ubtcuid: getUbtcuid(),
     domain_userid: getDomainUserId(),
     device,
@@ -145,7 +148,10 @@ export async function submitLead(data: {
 }): Promise<boolean> {
   (window as any).trackGoal?.('form_submit', { form: data.form || 'booking', age: data.age });
 
-  const ctx = collectContext();
+  const [ctx, ym_client_id] = await Promise.all([
+    Promise.resolve(collectContext()),
+    getYmClientId(),
+  ]);
 
   try {
     await fetch('/api/lead', {
@@ -158,6 +164,7 @@ export async function submitLead(data: {
         source: data.source || ctx.utm_source || '',
         call_time: data.call_time || '',
         ...ctx,
+        ym_client_id,
       }),
     });
 
