@@ -102,9 +102,9 @@ const landing: LandingData = {
     title: 'Как выбрать смену и программу',
     intro: 'Изучите детально, что входит в каждый формат обучения и какие сроки доступны:',
     links: [
-      { href: '/programmy', label: '→ Все IT-программы в лагере', description: 'Python, нейросети, Minecraft, Roblox, 3D-моделирование' },
-      { href: '/smeny', label: '→ Расписание смен на лето 2026', description: 'июнь, июль, август с указанием мест' },
-      { href: '/stoimost', label: '→ Стоимость и налоговый возврат 13%', description: 'полная разбивка цен и условия возврата' },
+      { href: '/programma-smeny', label: '→ Все IT-программы в лагере', description: 'Python, нейросети, Minecraft, Roblox, 3D-моделирование' },
+      { href: '/ceny', label: '→ Расписание смен на лето 2026', description: 'июнь, июль, август с указанием мест' },
+      { href: '/ceny', label: '→ Стоимость и налоговый возврат 13%', description: 'полная разбивка цен и условия возврата' },
     ],
   },
   educationEvent: {
@@ -141,7 +141,7 @@ const landing: LandingData = {
         price: '48000',
         priceCurrency: 'RUB',
         availability: 'https://schema.org/InStock',
-        url: '/smeny',
+        url: '/ceny',
       },
       {
         '@type': 'Offer',
@@ -149,7 +149,7 @@ const landing: LandingData = {
         price: '95000',
         priceCurrency: 'RUB',
         availability: 'https://schema.org/InStock',
-        url: '/smeny',
+        url: '/ceny',
       },
     ],
     aggregateRating: {
