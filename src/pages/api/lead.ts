@@ -4,6 +4,7 @@ import { appendFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { sendAndataEvent, andataDatetime, andataPhone } from '../../lib/andata';
 import { allShifts } from '../../data/shifts';
+import { readVisitorId } from '../../lib/attribution/cookie';
 
 /** Цена выбранной смены в рублях по её названию (для Andata order_value) */
 function shiftPrice(shift: string): number | undefined {
@@ -31,7 +32,7 @@ async function saveLead(lead: Record<string, unknown>) {
 
 async function saveLeadToPg(
   body: Record<string, string>,
-  extra: { ip: string; userAgent: string; crmId: number | null },
+  extra: { ip: string; userAgent: string; crmId: number | null; visitorId: string | null },
 ) {
   const pgDsn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
   if (!pgDsn) return;
@@ -47,7 +48,7 @@ async function saveLeadToPg(
         landing_url, page_title, referrer,
         form_id, ym_client_id,
         screen, viewport, language, tz, session_ms,
-        crm_id, ip, user_agent, raw
+        crm_id, ip, user_agent, raw, visitor_id
       ) VALUES (
         $1,$2,$3,$4,
         $5,$6,$7,$8,$9,
@@ -55,7 +56,7 @@ async function saveLeadToPg(
         $13,$14,$15,
         $16,$17,
         $18,$19,$20,$21,$22,
-        $23,$24,$25,$26
+        $23,$24,$25,$26,$27
       )`,
       [
         body.phone || null, body.age || null, body.shift || null, body.source || null,
@@ -68,6 +69,7 @@ async function saveLeadToPg(
         body.tz || null,
         body.session_ms ? parseInt(body.session_ms, 10) : null,
         extra.crmId, extra.ip || null, extra.userAgent || null, JSON.stringify(body),
+        extra.visitorId || null,
       ],
     );
     await client.end();
@@ -294,7 +296,7 @@ export const POST: APIRoute = async ({ request }) => {
     const crmId = await createCrmLead(body);
 
     // PG лог (best-effort)
-    await saveLeadToPg(body, { ip, userAgent, crmId });
+    await saveLeadToPg(body, { ip, userAgent, crmId, visitorId: readVisitorId(request) });
 
     // Andata — событие order_new. Fire-and-forget: НЕ ждём ответ и НЕ блокируем
     // путь заявки (у sendAndataEvent есть свой таймаут и он не бросает исключений).
