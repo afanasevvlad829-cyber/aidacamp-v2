@@ -2,7 +2,7 @@
 /**
  * TaxWidget — компактный CTA-виджет для налогового вычета 13%.
  *
- * Показывает ориентировочную сумму возврата за самую популярную смену (Смена 2)
+ * Показывает ориентировочную сумму возврата за Смену 3 (13 дней)
  * и при клике открывает модалку с полным TaxCalculator.
  *
  * Работает одинаково на десктопе и мобилке (модалка адаптивная).
@@ -19,6 +19,7 @@
  */
 
 import TaxCalculator from './TaxCalculator.astro';
+import { PRICE_S3, VYCHET_S3 } from '../data/shifts';
 
 interface Props {
   variant?: 'card' | 'compact';
@@ -26,15 +27,10 @@ interface Props {
 
 const { variant = 'card' } = Astro.props;
 
-// Расчёт для Смены 2 (самая популярная) — синхронизировано с TaxCalculator:
-//   price = 99000, days = 14
-//   residential = 3800 × 14 = 53 200
-//   edu = 99000 - 53200 = 41 800
-//   base = min(41800, 110000) = 41 800
-//   deduction = round(41800 × 0.13, to 100) = 5 400
-const SHIFT2_DEDUCTION_DISPLAY = '5 434 ₽';
-const SHIFT2_PRICE = '99 000 ₽';
-const SHIFT2_DAYS = 14;
+// Расчёт для Смены 3 (13 дней) — синхронизировано с TaxCalculator и shifts.ts.
+// Цена и вычет — производные из SHIFT_META, не хардкодим.
+const SHIFT_DEDUCTION_DISPLAY = VYCHET_S3;
+const SHIFT_PRICE = PRICE_S3;
 ---
 
 {variant === 'card' && (
@@ -54,7 +50,7 @@ const SHIFT2_DAYS = 14;
           Налоговый вычет 13%
         </div>
         <div class="mt-1 text-[14px] md:text-[15px] leading-[1.4] text-slate-700">
-          Возврат за самую популярную <b>Смену 2</b> (14 дней, {SHIFT2_PRICE})
+          Возврат за <b>Смену 3</b> (13 дней, {SHIFT_PRICE})
         </div>
       </div>
     </div>
@@ -62,7 +58,7 @@ const SHIFT2_DAYS = 14;
     <div class="mt-4 flex items-baseline justify-between gap-2 rounded-[12px] bg-white/70 px-4 py-3 border border-orange-100">
       <span class="text-[12px] md:text-[13px] text-slate-500">Ориентировочно:</span>
       <span class="text-[24px] md:text-[28px] font-bold leading-none text-orange-600 tabular-nums whitespace-nowrap">
-        {SHIFT2_DEDUCTION_DISPLAY}
+        {SHIFT_DEDUCTION_DISPLAY}
       </span>
     </div>
 
@@ -83,7 +79,7 @@ const SHIFT2_DAYS = 14;
     class="inline-flex items-center gap-2 rounded-[10px] border border-orange-200 bg-orange-50 px-4 py-2.5 text-[14px] font-semibold text-orange-700 transition hover:bg-orange-100 hover:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
   >
     <i class="bi bi-receipt text-[16px]"></i>
-    <span>Вернуть 13% с путёвки (5 434 ₽ за Смену 2)</span>
+    <span>Вернуть 13% с путёвки ({SHIFT_DEDUCTION_DISPLAY} за Смену 3)</span>
     <i class="bi bi-arrow-right-short text-[18px]"></i>
   </button>
 )}
