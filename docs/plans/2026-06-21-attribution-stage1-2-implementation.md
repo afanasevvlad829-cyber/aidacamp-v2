@@ -482,3 +482,30 @@ git commit -m "test(attribution): acceptance 'blind attribution' 5/5 + monitorin
 - GeoIP `geo_city` — опционально (🟡), не блокер.
 - Партиция-ротация: ежемесячный `SELECT fn_visits_ensure_partition(...)` повесить на cron (1-го числа).
 - Этапы 3-6 (UserID-склейка, маяк ym_blocked, offline-оплаты, качество) — отдельные планы.
+
+---
+
+## Интеграция с существующим `client_attribution` (attribution.aidacamp.ru)
+
+> Обнаружено 22.06: уже есть КЛИЕНТ-уровневая атрибуция — таблица `client_attribution`
+> (`crm_id` PK, `phone`, `source`, `confidence`, `method`, `proof`, `ym_client_id`, `revenue`,
+> `shift`, `is_spam`; ~179 строк, живая). Отдаёт `attribution.service`
+> (node `/opt/aidacamp-attribution/server.js`, сейчас **FAILED**), данные из AlfaCRM
+> (`/opt/alfacrm-exporter`). Наш `visits` = автоматический ВХОД для неё, **не дубль**.
+
+### Task 6: visits → client_attribution (обогащение)
+**Принцип:** НЕ ломать существующий populator. `visits` лишь ПОВЫШАЕТ точность — заполняет
+`source`/`confidence`/`method='visits-first-touch'`/`proof` там, где есть server-side доказательство.
+**Связка:** `client_attribution.crm_id` → `leads_log`(crm_id, phone, **visitor_id**) →
+`visits.visitor_id` (или по `phone`/`ym_uid`) → строка first-touch.
+
+- [ ] Шаг 1: ПЕРЕД реализацией прочитать `/opt/aidacamp-attribution/server.js` + экспортер —
+      понять, как сейчас пишутся `source/confidence/method` (чтобы не конфликтовать).
+- [ ] Шаг 2: SQL-реконсиляция (job): для `client_attribution` со слабым источником найти
+      first-touch visit по `visitor_id`/`phone`/`ym_uid` и `UPDATE` source/confidence/method/proof —
+      ТОЛЬКО если наша уверенность выше (yclid/gclid='high', utm/referer='medium').
+- [ ] Шаг 3: правила confidence в SQL (`fn_confidence(...)` рядом с `fn_classify_source`).
+- [ ] Шаг 4: повесить на то же расписание, что обновляет `client_attribution`.
+- [ ] (Опц., отдельный инцидент) поднять упавший `attribution.service`.
+
+Зависит от: `visits` с данными (этапы 1-2 на проде ✓ миграция) + маппинг phone→crm_id (есть в `leads_log`).
