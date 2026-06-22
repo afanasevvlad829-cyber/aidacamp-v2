@@ -53,7 +53,11 @@ const {
   canonical: canonicalProp,
 } = Astro.props;
 const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `https://aidacamp.ru${ogImage}`;
-const canonicalUrl = canonicalProp ?? new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
+// Единый canonical: абсолютный, всегда с trailing slash (соответствует sitemap и реально отдаваемому URL).
+// new URL(x, base) корректно обрабатывает и абсолютный проп, и относительный путь, и pathname.
+const _canonicalNorm = new URL(canonicalProp ?? Astro.url.pathname, 'https://aidacamp.ru');
+if (!_canonicalNorm.pathname.endsWith('/')) _canonicalNorm.pathname += '/';
+const canonicalUrl = _canonicalNorm.href;
 // Автодетект: /stati/ → article, остальные → website
 const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !Astro.url.pathname.endsWith('/stati/') ? 'article' : 'website');
 ---
