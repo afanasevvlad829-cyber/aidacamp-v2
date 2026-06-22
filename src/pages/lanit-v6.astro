@@ -1,6 +1,25 @@
 ---
-import { PRICE_MAX, PRICE_MIN, VYCHET_MAX } from '../data/shifts';
+import { PRICE_MIN, PRICE_S3, VYCHET_MAX, mainShifts, SHIFT_META } from '../data/shifts';
 import LanitPageLayout from '../layouts/LanitPageLayout.astro';
+
+// Данные открытых смен для клиентского калькулятора (без хардкода цен/дат).
+const lanitSmenas = mainShifts.map((s, i) => ({
+  id: i,
+  label: s.name,
+  tag: 'Август',
+  dates: s.dates,
+  days: SHIFT_META[s.id].days,
+  basePrice: SHIFT_META[s.id].basePrice,
+  description: s.description,
+}));
+
+// Статический пример расчёта вычета — по открытой Смене 4 (PRICE_MIN, 10 дней).
+const _exShift = mainShifts[mainShifts.length - 1];
+const _exMeta = SHIFT_META[_exShift.id];
+const _fmtRub = (n: number) => n.toLocaleString('ru-RU').replace(/ /g, ' ') + ' ₽';
+const taxExampleLimit = _fmtRub(3800 * _exMeta.days);
+const taxExampleBase = _fmtRub(Math.max(0, _exMeta.basePrice - 3800 * _exMeta.days));
+const taxExampleReturn = '~' + _fmtRub(Math.round(Math.max(0, _exMeta.basePrice - 3800 * _exMeta.days) * 0.13));
 ---
 
 <LanitPageLayout title="IT-лагерь для детей айтишников · ЛАНИТ" description="Партнёрская программа с ГК ЛАНИТ — специальные условия для сотрудников">
@@ -282,10 +301,8 @@ import LanitPageLayout from '../layouts/LanitPageLayout.astro';
     <h2><em>Смены</em> и цены</h2>
     <div class="pricing-container">
       <div class="smena-tabs">
-        <button class="stab active" onclick="selectSmena(0, this)">Смена 1</button>
-        <button class="stab" onclick="selectSmena(1, this)">Смена 2.1</button>
-        <button class="stab" onclick="selectSmena(2, this)">Смена 2.2</button>
-        <button class="stab" onclick="selectSmena(3, this)">Смена 4</button>
+        <button class="stab active" onclick="selectSmena(0, this)">Смена 3</button>
+        <button class="stab" onclick="selectSmena(1, this)">Смена 4</button>
       </div>
       <div class="smena-meta">
         <div class="smena-label"></div>
@@ -308,7 +325,7 @@ import LanitPageLayout from '../layouts/LanitPageLayout.astro';
         </div>
         <div class="calc-result">
           <span>Налоговый вычет 13%</span>
-          <span id="tax-return">~2 800 ₽</span>
+          <span id="tax-return">{taxExampleReturn}</span>
         </div>
         <div class="calc-result group-result" id="group-result-box" style="display: none;">
           <span>Групповая скидка (6+ детей)</span>
@@ -339,15 +356,15 @@ import LanitPageLayout from '../layouts/LanitPageLayout.astro';
         </div>
         <div class="tax-row">
           <span>−  Лимит на день (3 800 ₽ × дни)</span>
-          <span id="tax-limit">-38 000 ₽</span>
+          <span id="tax-limit">-{taxExampleLimit}</span>
         </div>
         <div class="tax-row" style="border-top: 1px solid var(--txt2);">
           <span>= Налоговая база</span>
-          <span id="tax-taxable">10 000 ₽</span>
+          <span id="tax-taxable">{taxExampleBase}</span>
         </div>
         <div class="tax-row" style="font-weight: bold; color: var(--or);">
           <span>13% вычет</span>
-          <span id="tax-final">~1 300 ₽</span>
+          <span id="tax-final">{taxExampleReturn}</span>
         </div>
       </div>
     </div>
@@ -381,7 +398,7 @@ import LanitPageLayout from '../layouts/LanitPageLayout.astro';
   <!-- Gallery Section -->
   <section id="gallery-section" class="section">
     <div class="s-kicker">Фотоальбом</div>
-    <h2>Впечатления<br/>за 14 дней</h2>
+    <h2>Впечатления<br/>за смену</h2>
     <div id="gal-tabs" class="gal-tabs">
       <button class="gtab active" onclick="switchGalCat('camp')">Атмосфера</button>
       <button class="gtab" onclick="switchGalCat('pool')">Бассейн</button>
@@ -573,8 +590,8 @@ import LanitPageLayout from '../layouts/LanitPageLayout.astro';
       </div>
       <div class="chat-window">
         <div class="chat-msg bot">Привет! 👋 Я AidaCamp бот. Помогу с любыми вопросами про лагерь.</div>
-        <div class="chat-msg user">Сколько стоит Смена 2?</div>
-        <div class="chat-msg bot">Смена 2 (14 дней): <strong>{PRICE_MAX}</strong><br/>Для сотрудников ГК ЛАНИТ скидка <strong>12%</strong>. Налоговый вычет <strong>~{VYCHET_MAX}</strong>.</div>
+        <div class="chat-msg user">Сколько стоит Смена 3?</div>
+        <div class="chat-msg bot">Смена 3 (13 дней): <strong>{PRICE_S3}</strong><br/>Для сотрудников ГК ЛАНИТ скидка <strong>12%</strong>. Налоговый вычет <strong>~{VYCHET_MAX}</strong>.</div>
         <div class="chat-typing">
           <span></span><span></span><span></span>
         </div>
@@ -2367,7 +2384,7 @@ import LanitPageLayout from '../layouts/LanitPageLayout.astro';
     }
   </style>
 
-  <script is:inline>
+  <script is:inline define:vars={{ lanitSmenas }}>
     if (typeof document !== 'undefined' && typeof window !== 'undefined') {
       // Theme Toggle
       const themeToggle = document.getElementById('theme-toggle');
@@ -2580,12 +2597,7 @@ import LanitPageLayout from '../layouts/LanitPageLayout.astro';
       { min: 10, max: 30, discount: 0.12 }
     ];
 
-    const smenas = [
-      { id: 0, label: 'Смена 1', tag: 'Май-июнь', dates: '10–24 июня', days: 14, basePrice: 74900, description: 'Начало лета, самая популярная смена' },
-      { id: 1, label: 'Смена 2.1', tag: 'Июнь', dates: '24 июня – 1 июля', days: 7, basePrice: 48000, description: 'Короткая смена в начале лета' },
-      { id: 2, label: 'Смена 2.2', tag: 'Июль', dates: '1–9 августа', days: 8, basePrice: 65000, description: 'Середина лета, хорошая погода' },
-      { id: 3, label: 'Смена 4', tag: 'Август', dates: '20 августа – 3 сентября', days: 14, basePrice: 99000, description: 'Конец лета, самая продвинутая смена' }
-    ];
+    const smenas = lanitSmenas;
 
     function fmt(n) {
       return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ₽';
