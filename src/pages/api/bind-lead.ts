@@ -1,6 +1,7 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { verifyLid } from '../../lib/leadLink';
+import { readVisitorId } from '../../lib/attribution/cookie';
 
 const BRANCH = 5;
 
@@ -132,7 +133,7 @@ function parseUA(ua: string): { device: string; browser: string; os: string } {
 type ExtraData = {
   referrer?: string; screenW?: number; screenH?: number;
   lang?: string; tz?: string; ymFirstVisit?: string;
-  vkVid?: string; utm?: Record<string, string>;
+  vkVid?: string; utm?: Record<string, string>; visitorId?: string;
 };
 
 /** Авто-детект менеджера: тот же ymCid или IP открывал другие лиды за 2 часа */
@@ -182,15 +183,15 @@ async function logBinding(
     for (const col of [
       'is_manager boolean default false', 'crm_updated boolean default false',
       'referrer text', 'screen_w int', 'screen_h int',
-      'lang text', 'tz text', 'ym_first_visit date', 'vk_vid text', 'utm jsonb',
+      'lang text', 'tz text', 'ym_first_visit date', 'vk_vid text', 'utm jsonb', 'visitor_id text',
     ]) {
       await c.query(`ALTER TABLE pamyatka_bindings ADD COLUMN IF NOT EXISTS ${col}`).catch(() => {});
     }
     await c.query(
       `INSERT INTO pamyatka_bindings(
          crm_id, ym_client_id, ip, user_agent, is_manager, crm_updated,
-         referrer, screen_w, screen_h, lang, tz, ym_first_visit, vk_vid, utm
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+         referrer, screen_w, screen_h, lang, tz, ym_first_visit, vk_vid, utm, visitor_id
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
       [
         lid, ymCid, ip || null, ua || null, isManager, true,
         extra.referrer || null,
@@ -199,6 +200,7 @@ async function logBinding(
         extra.ymFirstVisit || null,
         extra.vkVid || null,
         extra.utm ? JSON.stringify(extra.utm) : null,
+        extra.visitorId || null,
       ],
     );
     await c.end();
@@ -235,6 +237,7 @@ export const POST: APIRoute = async ({ request }) => {
       ymFirstVisit: typeof body.ym_first_visit === 'string' ? body.ym_first_visit.slice(0, 10) : undefined,
       vkVid:        typeof body.vk_vid        === 'string' ? body.vk_vid.slice(0, 50)        : undefined,
       utm:          (body.utm && typeof body.utm === 'object') ? body.utm as Record<string, string> : undefined,
+      visitorId:    readVisitorId(request) ?? undefined,
     };
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()

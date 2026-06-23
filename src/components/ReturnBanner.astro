@@ -7,11 +7,10 @@
  * Gap считается по ts в localStorage ac:viewed_shifts.
  * CTA раскрывает инлайн-форму с телефоном → /api/lead (source=return_banner).
  */
-import { mainShifts, shortShifts } from '../data/shifts';
+import { mainShifts } from '../data/shifts';
 
-const allShifts = [...mainShifts, ...shortShifts];
 const shiftsJson = JSON.stringify(
-  allShifts.map(s => ({ id: s.id, name: s.name, free: s.free }))
+  mainShifts.map(s => ({ id: s.id, name: s.name, free: s.free, startDate: s.startDate }))
 );
 ---
 
@@ -89,16 +88,20 @@ const shiftsJson = JSON.stringify(
   const SHIFTS = JSON.parse(shiftsJson);
   const SESSION_KEY = 'ac:return_banner_shown';
 
+  const todayStr = new Date().toISOString().slice(0, 10);
+  function activeShifts() {
+    return SHIFTS.filter(s => s.free > 0 && (!s.startDate || s.startDate > todayStr));
+  }
   function getTargetShift() {
     try {
       const viewed = JSON.parse(localStorage.getItem('ac:viewed_shifts') || '[]');
       if (viewed.length > 0) {
         const viewedIds = viewed.map(v => v.id);
-        const candidates = SHIFTS.filter(s => viewedIds.includes(s.id) && s.free > 0);
+        const candidates = activeShifts().filter(s => viewedIds.includes(s.id));
         if (candidates.length > 0) return candidates.sort((a, b) => a.free - b.free)[0];
       }
     } catch {}
-    return SHIFTS.filter(s => s.free > 0).sort((a, b) => a.free - b.free)[0];
+    return activeShifts().sort((a, b) => a.free - b.free)[0];
   }
 
   function getGapDays() {
@@ -124,8 +127,6 @@ const shiftsJson = JSON.stringify(
     if (sessionStorage.getItem(SESSION_KEY)) return;
     const shift = getTargetShift();
     if (!shift) return;
-    // Смена 1 использует колесо фортуны — отдельная страница не нужна
-    if (shift.id === 'shift-1') return;
 
     const gap = getGapDays();
     const isHot = gap !== null && gap >= 1 && gap <= 3;
@@ -139,37 +140,9 @@ const shiftsJson = JSON.stringify(
       const askLink  = document.getElementById('return-top-ask');
       const closeBtn = document.getElementById('return-top-close');
       const defaultEl = document.getElementById('return-top-default');
-      const badgeEl  = document.getElementById('return-top-badge');
-      const subEl    = document.getElementById('return-top-sub');
       if (!bar || !textEl) return;
 
-      const isShift1 = shift.id === 'shift-1';
-
-      if (isShift1) {
-        // Специальный оффер для Смены 1: конкретный заголовок + подзаголовок + бейдж
-        textEl.textContent = 'Смена 1 — осталось 3 места';
-        if (badgeEl) {
-          badgeEl.textContent = '3 места';
-          badgeEl.classList.remove('hidden');
-        }
-        if (subEl) {
-          const daysLeft = Math.ceil((new Date('2026-05-30').getTime() - new Date().getTime()) / 86400000);
-          subEl.textContent = `Старт 30 мая — через ${Math.max(0, daysLeft)} дн`;
-          subEl.classList.remove('hidden');
-        }
-        // CTA кнопка сразу ведёт на страницу смены
-        if (ctaBtn) ctaBtn.textContent = '';
-        if (askLink) {
-          askLink.href = '/r/';
-          askLink.innerHTML = 'Смотреть предложение <i class="bi bi-arrow-right text-[11px]" aria-hidden="true"></i>';
-          askLink.classList.remove('hidden');
-          askLink.classList.add('flex');
-        }
-        // Скрываем исходную кнопку "Узнать подробности"
-        if (ctaBtn) ctaBtn.classList.add('hidden');
-      } else {
-        textEl.textContent = `${shift.name} — осталось ${freeLabel(shift.free)}`;
-      }
+      textEl.textContent = `${shift.name} — осталось ${freeLabel(shift.free)}`;
 
       bar.classList.remove('hidden');
       requestAnimationFrame(() => {
@@ -177,18 +150,12 @@ const shiftsJson = JSON.stringify(
         bar.classList.add('translate-y-0');
       });
 
-      if (!isShift1) {
-        ctaBtn?.addEventListener('click', () => {
-          defaultEl?.classList.add('hidden');
-          askLink?.classList.remove('hidden');
-          askLink?.classList.add('flex');
-          try { window.ym && window.ym(96499295, 'reachGoal', 'return_banner_cta_click'); } catch {}
-        });
-      } else {
-        askLink?.addEventListener('click', () => {
-          try { window.ym && window.ym(96499295, 'reachGoal', 'return_banner_cta_click'); } catch {}
-        });
-      }
+      ctaBtn?.addEventListener('click', () => {
+        defaultEl?.classList.add('hidden');
+        askLink?.classList.remove('hidden');
+        askLink?.classList.add('flex');
+        try { window.ym && window.ym(96499295, 'reachGoal', 'return_banner_cta_click'); } catch {}
+      });
 
       closeBtn?.addEventListener('click', () => {
         bar.classList.remove('translate-y-0');

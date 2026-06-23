@@ -4,6 +4,8 @@
  * Если статья добавляется новая — добавить сюда строку.
  */
 export const ARTICLE_DATES: Record<string, string> = {
+  'vasya-i-sistema':                                  '2026-06-19',
+  'hakaton-odin-malchik':                             '2026-06-19',
   'gorodskoy-ili-zagorodnyy-lager':                  '2026-06-10',
   '3d-modelirovanie-dlya-detej':                     '2026-04-24',
   'chto-vzyat-v-lager':                              '2026-04-01',

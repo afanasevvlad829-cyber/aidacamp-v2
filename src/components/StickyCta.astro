@@ -360,14 +360,17 @@ import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, WHATSAPP_
       };
       window.addEventListener('scroll', onScrollCta, { passive: true });
 
-      // Кнопка «Забронировать» — открываем AgeBar
+      // Кнопка «Забронировать» — открываем AgeBar или переходим к бронированию
       scrollCtaBtn?.addEventListener('click', () => {
         try { (window as any).trackGoal?.('sticky_cta_click'); } catch {}
-        // Диспатчим событие которое слушает AgeBar
         document.dispatchEvent(new CustomEvent('agebar:open'));
-        // Фолбэк: скроллим к форме
         const form = document.querySelector('[data-form]') as HTMLElement | null;
-        if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (form) {
+          form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else if (!document.getElementById('age-bar')) {
+          // Страница без AgeBar (напр. /vakansii/) — переходим к основному бронированию
+          window.location.href = '/#smeny';
+        }
       });
 
       // Закрытие крестом

@@ -1,23 +1,29 @@
 /**
- * ЕДИНСТВЕННЫЙ источник правды для всех цен смен.
+ * ЕДИНЫЙ ИСТОЧНИК ПРАВИЛА ЦЕН смен.
  *
- * Архитектура: явные ценовые ступени + необязательный ежедневный инкремент.
+ * Данные (база/дата/длительность) берутся из ОДНОГО места — `SHIFT_META` в shifts.ts.
+ * Здесь — только ПРАВИЛО, как из базовой цены получается текущая.
  *
- * Каждая ступень (PriceStage) задаёт:
- *   from      — дата начала ступени (YYYY-MM-DD)
- *   price     — базовая цена ступени
- *   increment — (опц.) рост цены в ₽/день; работает до начала следующей ступени
+ * ─── ЕДИНОЕ ПРАВИЛО РОСТА (для всех смен одинаковое) ───────────────────────
+ *   1. До «старт − 30 дней» цена = базовой.
+ *   2. За 30 дней до старта — разовый шаг +5 % к базе.
+ *   3. Далее каждый день +500 ₽.
+ *   4. На дату старта смены рост ОСТАНАВЛИВАЕТСЯ (цена фиксируется).
  *
- * Примеры:
- *   { from: '2026-05-23', price: 99000, increment: 500 }
- *     → 23 мая: 99 000, 24 мая: 99 500, 25 мая: 100 000, ...
- *     → останавливается, когда наступает следующая ступень
+ *   Цена на старте = round(base × 1.05) + 30 × 500.
  *
- *   { from: '2026-06-20', price: 109000 }
- *     → фиксированная цена «последние места», инкремент отсутствует
+ * ─── ПРАВИЛО ЗАПУСКА ФОРТУНЫ ───────────────────────────────────────────────
+ *   Колесо фортуны (скидка на последние места) запускается в ПОСЛЕДНИЕ 3 ДНЯ
+ *   перед стартом смены И только когда осталось ≤ 3 свободных мест.
+ *   Источник истины — функция isFortuneActive() ниже.
  *
- * Чтобы изменить цену — добавь ступень в stages и задеплой.
+ * Параметры правил — константы RAMP_DAYS / STEP_PCT / DAILY_INC /
+ * FORTUNE_WINDOW_DAYS / FORTUNE_LAST_SPOTS ниже.
+ * Чтобы изменить цену/дату смены — правь shifts.ts (НЕ здесь).
+ * Чтобы изменить сами правила — правь константы здесь.
  */
+
+import { SHIFT_META } from './shifts';
 
 interface PriceStage {
   from: string;        // YYYY-MM-DD
@@ -35,77 +41,54 @@ interface ShiftPricing {
   };
 }
 
-// ─── Конфигурация всех смен ────────────────────────────────────────────────
-export const PRICING: Record<string, ShiftPricing> = {
+// ─── Параметры единого правила роста ───────────────────────────────────────
+const RAMP_DAYS = 30;     // за сколько дней до старта начинается рост
+const STEP_PCT  = 0.05;   // разовый шаг в начале роста: +5 %
+const DAILY_INC = 500;    // далее ₽/день
 
-  // Смена 1 (30 мая — 8 июня, 10 дней)
-  // Цена поднималась ступенями, сейчас на максимуме 93 900
-  'shift-1': {
-    days: 10,
-    stages: [
-      { from: '2026-01-01', price: 74900 },
-      { from: '2026-04-01', price: 79900 },
-      { from: '2026-05-01', price: 85900 },
-      { from: '2026-05-23', price: 85900, increment: 1000 }, // +1 000/день
-      { from: '2026-05-28', price: 93900 },                  // максимум, фиксируем
-    ],
-    fortune: { discountPct: 7, depositPct: 30 },
-  },
+// ─── Параметры правила запуска фортуны ──────────────────────────────────────
+const FORTUNE_WINDOW_DAYS = 3;  // за сколько дней до старта запускается фортуна
+const FORTUNE_LAST_SPOTS  = 3;  // на сколько последних мест
 
-  // Смена 2 (10 июня — 23 июня, 14 дней)
-  // Сейчас в режиме инкремента +500/день от базы 99 000 с 23 мая
-  'shift-2': {
-    days: 14,
-    stages: [
-      { from: '2026-01-01', price: 95000 },
-      { from: '2026-04-01', price: 99000 },
-      { from: '2026-05-23', price: 99000, increment: 500 }, // +500/день
-      // Пример «последние места»:
-      // { from: '2026-06-15', price: 115000 }, // фиксированная, инкремент останавливается
-    ],
-    fortune: { discountPct: 7, depositPct: 30 },
-  },
-
-  // Смена 3 (3–15 августа, 13 дней)
-  // До 30 июня: 89 400 (старая цена)
-  // С 1 июля: +500/день (~4 недели)
-  // С 28 июля: фикс 104 400 ₽ (последние места)
-  'shift-3': {
-    days: 13,
-    stages: [
-      { from: '2026-01-01', price: 89400 },
-      { from: '2026-07-01', price: 89400, increment: 500 }, // +500/день
-      { from: '2026-07-28', price: 104400 },                // последние места, фиксируем
-    ],
-  },
-
-  // Смена 4 (17–26 августа, 10 дней)
-  // До 10 июля: 74 900 (ловим тех, кто не попал на 3-ю)
-  // С 10 июля: +300/день (~25 дней)
-  // С 3 августа (старт Смены 3): фикс 82 400 ₽ (последние места)
-  'shift-4': {
-    days: 10,
-    stages: [
-      { from: '2026-01-01', price: 74900 },
-      { from: '2026-07-10', price: 74900, increment: 300 }, // +300/день
-      { from: '2026-08-03', price: 82400 },                 // последние места, фиксируем
-    ],
-  },
-
-  'shift-2-1': {
-    days: 7,
-    stages: [
-      { from: '2026-01-01', price: 48000 },
-    ],
-  },
-
-  'shift-2-2': {
-    days: 8,
-    stages: [
-      { from: '2026-01-01', price: 75000 },
-    ],
-  },
+// Fortune-скидки (колесо фортуны) — только у смен, где она включена.
+const FORTUNE: Record<string, { discountPct: number; depositPct: number }> = {
+  'shift-1': { discountPct: 7, depositPct: 30 },
+  'shift-2': { discountPct: 7, depositPct: 30 },
 };
+
+// ─── Сдвиг ISO-даты на N дней (для границы начала роста) ────────────────────
+function isoShift(iso: string, deltaDays: number): string {
+  const dt = new Date(iso + 'T00:00:00Z');
+  dt.setUTCDate(dt.getUTCDate() + deltaDays);
+  return dt.toISOString().slice(0, 10);
+}
+
+/**
+ * Строит ступени из базовой цены и даты старта по ЕДИНОМУ правилу:
+ *   base → (старт−30д: +5%) → +500/день → фиксация на старте.
+ */
+function buildStages(basePrice: number, startDate: string): PriceStage[] {
+  const rampFrom = isoShift(startDate, -RAMP_DAYS);
+  const stepped  = Math.round(basePrice * (1 + STEP_PCT)); // +5 % к базе
+  const atStart  = stepped + RAMP_DAYS * DAILY_INC;        // цена на старте (фиксируется)
+  return [
+    { from: '2026-01-01', price: basePrice },                 // база держится
+    { from: rampFrom,     price: stepped, increment: DAILY_INC }, // +5 %, далее +500/день
+    { from: startDate,    price: atStart },                   // фиксация на старте
+  ];
+}
+
+// ─── PRICING строится из SHIFT_META (единый источник данных) + правила ──────
+export const PRICING: Record<string, ShiftPricing> = Object.fromEntries(
+  Object.entries(SHIFT_META).map(([id, m]) => [
+    id,
+    {
+      days: m.days,
+      stages: buildStages(m.basePrice, m.startDate),
+      ...(FORTUNE[id] ? { fortune: FORTUNE[id] } : {}),
+    },
+  ]),
+);
 
 // ─── Вспомогательные функции ───────────────────────────────────────────────
 
@@ -166,7 +149,8 @@ export function getNextPriceStage(shiftId: string, today: Date = new Date()): { 
   const cfg = PRICING[shiftId];
   if (!cfg) return null;
   const todayStr = todayISO(today);
-  return cfg.stages.find(s => s.from > todayStr) ?? null;
+  const next = cfg.stages.find(s => s.from > todayStr);
+  return next ? { from: next.from, price: next.price } : null;
 }
 
 /** Цена со скидкой фортуны и сумма депозита. */
@@ -177,6 +161,35 @@ export function getFortunePrice(shiftId: string, today: Date = new Date()): { fi
   const final   = Math.round(base * (1 - cfg.fortune.discountPct / 100));
   const deposit = Math.round(final * cfg.fortune.depositPct / 100);
   return { final, deposit };
+}
+
+/**
+ * Запущена ли фортуна для смены.
+ * ПРАВИЛО: последние 3 дня перед стартом (0…3 дня до старта) И ≤ 3 свободных мест.
+ * freeSpots — текущее число свободных мест (источник — shifts.ts, поле free).
+ */
+export function isFortuneActive(shiftId: string, freeSpots: number, today: Date = new Date()): boolean {
+  const m = SHIFT_META[shiftId];
+  if (!m) return false;
+  const start    = new Date(m.startDate + 'T00:00:00');
+  const todayMid = new Date(today);
+  todayMid.setHours(0, 0, 0, 0);
+  const daysUntilStart = Math.ceil((start.getTime() - todayMid.getTime()) / 86_400_000);
+  const inWindow  = daysUntilStart >= 0 && daysUntilStart <= FORTUNE_WINDOW_DAYS;
+  const lastSpots = freeSpots > 0 && freeSpots <= FORTUNE_LAST_SPOTS;
+  return inWindow && lastSpots;
+}
+
+/** Фаза смены по датам: предстоит → идёт → прошла. Единый источник статуса. */
+export type ShiftPhase = 'upcoming' | 'live' | 'done';
+export function getShiftPhase(shiftId: string, today: Date = new Date()): ShiftPhase | null {
+  const m = SHIFT_META[shiftId];
+  if (!m) return null;
+  const start = new Date(m.startDate + 'T00:00:00');
+  const end   = new Date(m.endDate + 'T23:59:59');
+  if (today < start) return 'upcoming';
+  if (today > end)   return 'done';
+  return 'live';
 }
 
 /** Длительность смены в днях. */

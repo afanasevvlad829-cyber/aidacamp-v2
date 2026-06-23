@@ -76,7 +76,8 @@
 |--------------------|-----------|-----|
 | `8619240142:AAE…` | SEO-брифинги, seo-reminder (владелец) | `244314247` |
 | `8663835446:AAE…` | negkw_patrol (рекламный мониторинг) | `244314247` |
-| Green-API `4100566778` | WhatsApp Дарьи (CRM-дайджест, tg-monitor) | `2040464481` |
-| Green-API `4100613561` (`GREENAPI_SCHOOL_ID`) | WhatsApp школы АйДаКодить | Чаты преподавателей |
+| Green-API `4100566778` (`GREENAPI_INSTANCE_ID`) | **Telegram** Дарьи (CRM-дайджест, tg-monitor) | `2040464481` |
+| Green-API `4100613561` (`GREENAPI_SCHOOL_ID`) | **Telegram** школы АйДаКодить | Чаты преподавателей |
+| Green-API `1105659052` (`GREENAPI_WA_*`) | **WhatsApp** Дарьи — реальный (`79688086455`); входящие клиентов → `ai_dialogs` | — |
 
 > Общий env: `/opt/aidacamp-tools/common/telegram.py` — `tg_send()` — читает `TG_TOKEN`/`TG_CHAT` из env.
