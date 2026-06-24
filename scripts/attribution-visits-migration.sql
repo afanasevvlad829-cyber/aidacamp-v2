@@ -32,7 +32,7 @@ CREATE OR REPLACE FUNCTION fn_classify_source(
     WHEN p_referer ~* 'google\.'  THEN 'google_organic'
     WHEN p_referer ~* 'vk\.com'   THEN 'vk'
     WHEN coalesce(p_referer,'') = '' AND p_landing ~* '/shifts/' THEN 'referral_link'
-    WHEN coalesce(p_referer,'') = '' AND coalesce(p_landing,'/') = '/' THEN 'direct'
+    WHEN coalesce(p_referer,'') = '' AND coalesce(p_utm_source,'') = '' THEN 'direct'
     ELSE 'other'
   END;
 $$;
@@ -58,6 +58,29 @@ END $$;
 -- Текущий + следующий месяц
 SELECT fn_visits_ensure_partition(now()::date);
 SELECT fn_visits_ensure_partition((now() + interval '1 month')::date);
+
+-- 3b. Обслуживание партиций: создать будущие месяцы + DROP старше 24 мес.
+-- Вызывается cron-ом /etc/cron.d/visits-maintain (1-го числа). Идемпотентно.
+CREATE OR REPLACE FUNCTION fn_visits_maintain() RETURNS void LANGUAGE plpgsql AS $$
+DECLARE
+  r record;
+  cutoff date := (date_trunc('month', now()) - interval '24 months')::date;
+BEGIN
+  PERFORM fn_visits_ensure_partition(now()::date);
+  PERFORM fn_visits_ensure_partition((now() + interval '1 month')::date);
+  PERFORM fn_visits_ensure_partition((now() + interval '2 months')::date);
+  FOR r IN
+    SELECT c.relname AS n FROM pg_inherits i
+    JOIN pg_class c ON c.oid=i.inhrelid
+    JOIN pg_class p ON p.oid=i.inhparent
+    WHERE p.relname='visits' AND c.relname ~ '^visits_[0-9]{4}_[0-9]{2}$'
+      AND to_date(substring(c.relname from 'visits_(\d{4}_\d{2})'),'YYYY_MM') < cutoff
+  LOOP
+    EXECUTE format('DROP TABLE IF EXISTS %I', r.n);
+    RAISE NOTICE 'dropped old partition %', r.n;
+  END LOOP;
+END $$;
+SELECT fn_visits_maintain();
 
 -- 4. Линковка существующих таблиц (без переписывания логики)
 ALTER TABLE leads_log         ADD COLUMN IF NOT EXISTS visitor_id text;
