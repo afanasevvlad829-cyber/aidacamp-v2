@@ -24,19 +24,39 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Кеш Astro — инкрементальный билд (Вариант B)
+      # restore-keys без хеша = берём самый свежий кеш независимо от изменений
+      # Astro сам решает что пересобирать на основе .astro/cache
+      - name: Cache Astro build
+        if: github.event_name == 'push'
+        uses: actions/cache@v4
+        with:
+          path: |
+            .astro
+            dist
+          key: astro-${{ runner.os }}-${{ hashFiles('src/**', 'public/**', 'astro.config.*', 'package-lock.json') }}
+          restore-keys: |
+            astro-${{ runner.os }}-
+
       - name: Гейт TS2304 (несуществующие переменные)
         run: npm run check:undefined
 
+      - name: Проверка запрещённых слов
+        run: npm run check:banned
+
+      - name: Проверка цен
+        run: npm run check:prices
+
+      # Полный билд — только при пуше в ветки (не на PR)
+      # С кешем Astro пересобирает только изменившиеся страницы
       - name: Build site
+        if: github.event_name == 'push'
         run: npm run build
 
       # ——— Optional: pull tooling branch and run quality scripts ———
-      # `tooling` is an orphan branch holding tools/quality-*.sh etc.
-      # These checks are informational — they don't fail the gate (yet).
-      # When the scripts are stable on aidacamp-v2, flip the final step to fail on non-zero.
-
       - name: Fetch tooling branch (best-effort)
         id: fetch_tooling
+        if: github.event_name == 'push'
         continue-on-error: true
         run: |
           if git fetch origin tooling --depth=1 2>/dev/null; then
@@ -50,7 +70,7 @@ jobs:
           fi
 
       - name: Quality metrics (informational)
-        if: steps.fetch_tooling.outputs.tooling_ok == '1'
+        if: github.event_name == 'push' && steps.fetch_tooling.outputs.tooling_ok == '1'
         continue-on-error: true
         run: |
           if [ -x .ci-tooling/tools/quality-metrics.sh ]; then
