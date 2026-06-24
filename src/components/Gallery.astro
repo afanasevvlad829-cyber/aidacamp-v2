@@ -1,12 +1,21 @@
 ---
-import { filters } from '../data/gallery';
+import { filters as defaultFilters } from '../data/gallery';
+interface Props {
+  sections?: { value: string; label: string }[];
+  title?: string;
+  sectionClass?: string;
+}
+const { sections, title = 'Фото', sectionClass } = Astro.props;
+const filters = sections ?? defaultFilters;
+const defaultFilter = filters[0]?.value ?? 'camp';
+const baseClass = 'mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4';
 ---
 
-<section id="gallery" class="mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4" data-gallery-root data-default-filter="camp">
+<section id="gallery" class={sectionClass ?? baseClass} data-gallery-root data-default-filter={defaultFilter}>
   <div class="p-[18px]">
     <div class="flex items-center gap-2 mb-1">
       <div class="w-1 h-5 rounded-full bg-primary shrink-0"></div>
-      <h2 class="text-[20px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[24px]">Фото</h2>
+      <h2 class="text-[20px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[24px]">{title}</h2>
     </div>
 
     <!-- Filter tabs -->
@@ -118,6 +127,7 @@ import { filters } from '../data/gallery';
     }
 
     function jpgFallback(src: string) {
+      if (!src.endsWith('.avif')) return src;
       return src.replace('/images/gallery/', '/images/gallery/jpg/').replace('.avif', '.jpg');
     }
 
@@ -126,9 +136,10 @@ import { filters } from '../data/gallery';
       btn.type = 'button';
       btn.className = `cursor-pointer group relative overflow-hidden ${className}`;
       btn.dataset.gallerySrc = p.src;
+      const avifSource = p.src.endsWith('.avif') ? `<source srcset="${p.src}" type="image/avif">` : '';
       btn.innerHTML = `
         <picture>
-          <source srcset="${p.src}" type="image/avif">
+          ${avifSource}
           <img src="${jpgFallback(p.src)}" alt="${p.alt}" loading="lazy"
             class="${imgClass} transition group-hover:scale-105">
         </picture>

@@ -9,10 +9,11 @@ type TabName = 'description' | 'calendar' | 'info';
 let initialized = false;
 
 export function initShiftModal() {
-  const modal = document.getElementById('shift-modal');
-  if (!modal) return;
+  const modalEl = document.getElementById('shift-modal');
+  if (!modalEl) return;
   if (initialized) return;
   initialized = true;
+  const modal = modalEl;
 
   const backdrop = modal.querySelector<HTMLElement>('[data-shift-modal-backdrop]')!;
   const panel = modal.querySelector<HTMLElement>('[data-shift-modal-panel]')!;
@@ -68,7 +69,7 @@ export function initShiftModal() {
     durationEl.textContent = shift.duration;
     dateRangeEl.textContent = shift.dates;
 
-    const total = shift.total || (shift.occupied + shift.free) || 1;
+    const total = (shift.occupied + shift.free) || 1;
     const pct = Math.round((shift.occupied / total) * 100);
     barTaken.style.width = pct + '%';
     barFree.style.width = (100 - pct) + '%';

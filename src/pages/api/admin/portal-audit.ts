@@ -185,7 +185,7 @@ function listAudits() {
     JSON.stringify({
       success: true,
       data: runs,
-    } as AuditResponse),
+    } as unknown as AuditResponse),
     { status: 200 }
   )
 }

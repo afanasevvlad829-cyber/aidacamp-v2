@@ -14,11 +14,14 @@ function makeEvent(overrides: Partial<ShiftEvent> & { id: number; start_time: st
     event_type: overrides.event_type ?? null,
     activity_slug: null,
     content_task_template_id: null,
+    content_task: null,
     group_color_id: null,
     staff_keys: [],
     roles: overrides.roles ?? ['vozhaty', 'teacher'],
     notes: null,
     sort: overrides.id,
+    responsible_staff_id: null,
+    responsible_name: null,
     checklists: overrides.checklists ?? [],
   };
 }

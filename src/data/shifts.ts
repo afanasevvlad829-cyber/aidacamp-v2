@@ -19,40 +19,40 @@ export interface Shift {
   popular?: boolean;
   startDate: string; // YYYY-MM-DD for calendar
   endDate: string;
+  recapUrl?: string;   // ссылка «Смотреть как прошла» (для завершённых; нет → без кнопки)
+  priceFrom?: string;  // первая цена для блока «как росла цена» (legacy-факт; нет → из правила)
+  priceTo?: string;    // последняя цена (на старте) для блока «как росла цена»
 }
 
+// Завершённые смены — данные сохранены для констант (PRICE_S1/S2 и т.д.), не показываются в UI
+const _shift1: Shift = {
+  id: 'shift-1', name: 'Смена 1', dates: '30 мая — 8 июня', duration: '10 дней',
+  status: 'завершена', statusType: 'available',
+  description: 'За 10 дней — от первого шага до собственного проекта с AI и понятным результатом.',
+  price: '85 900 ₽', free: 0, occupied: 35, startDate: '2026-05-30', endDate: '2026-06-08',
+  recapUrl: '/kak-proshla-smena-1/', priceFrom: '74 900 ₽', priceTo: '93 900 ₽',
+};
+const _shift2: Shift = {
+  id: 'shift-2', name: 'Смена 2', dates: '10 июня — 23 июня', duration: '14 дней',
+  status: 'завершена', statusType: 'available',
+  description: 'Полный цикл создания проекта: больше самостоятельности и более сложный результат.',
+  price: '99 000 ₽', free: 0, occupied: 45, startDate: '2026-06-10', endDate: '2026-06-23',
+  priceFrom: '95 000 ₽', priceTo: '108 000 ₽',
+};
+const _shift21: Shift = {
+  id: 'shift-2-1', name: 'Смена 2.1', dates: '10 июня — 16 июня', duration: '7 дней',
+  status: 'завершена', statusType: 'short',
+  description: 'За 7 дней — быстрый вход, свой проект и понятный результат без перегруза.',
+  price: '48 000 ₽', free: 0, occupied: 40, startDate: '2026-06-10', endDate: '2026-06-16',
+};
+const _shift22: Shift = {
+  id: 'shift-2-2', name: 'Смена 2.2', dates: '16 июня — 23 июня', duration: '8 дней',
+  status: 'завершена', statusType: 'short',
+  description: 'Интенсивная смена: больше времени на доработку и более сильный итоговый проект.',
+  price: '75 000 ₽', free: 0, occupied: 45, startDate: '2026-06-16', endDate: '2026-06-23',
+};
+
 export const mainShifts: Shift[] = [
-  {
-    id: 'shift-1',
-    name: 'Смена 1',
-    dates: '30 мая — 8 июня',
-    duration: '10 дней',
-    status: 'места есть',
-    statusType: 'available',
-    description: 'За 10 дней — от первого шага до собственного проекта с AI и понятным результатом.',
-    price: '85 900 ₽',
-    free: 3,
-    occupied: 32,
-    highlighted: true,
-    nearest: true,
-    popular: true,
-    startDate: '2026-05-30',
-    endDate: '2026-06-08',
-  },
-  {
-    id: 'shift-2',
-    name: 'Смена 2',
-    dates: '10 июня — 23 июня',
-    duration: '14 дней',
-    status: 'места есть',
-    statusType: 'available',
-    description: 'Полный цикл создания проекта: больше самостоятельности и более сложный результат.',
-    price: '99 000 ₽',
-    free: 2,
-    occupied: 43,
-    startDate: '2026-06-10',
-    endDate: '2026-06-23',
-  },
   {
     id: 'shift-3',
     name: 'Смена 3',
@@ -61,9 +61,11 @@ export const mainShifts: Shift[] = [
     status: 'места есть',
     statusType: 'available',
     description: 'Проект от идеи до результата с акцентом на командную работу.',
-    price: '89 400 ₽',
+    price: '89 400 ₽',
     free: 4,
     occupied: 41,
+    highlighted: true,
+    nearest: true,
     startDate: '2026-08-03',
     endDate: '2026-08-15',
   },
@@ -75,7 +77,7 @@ export const mainShifts: Shift[] = [
     status: 'места есть',
     statusType: 'available',
     description: 'Закрытие лета: сильный проект и уверенный результат.',
-    price: '74 900 ₽',
+    price: '74 900 ₽',
     free: 8,
     occupied: 37,
     startDate: '2026-08-17',
@@ -83,62 +85,62 @@ export const mainShifts: Shift[] = [
   },
 ];
 
-export const shortShifts: Shift[] = [
-  {
-    id: 'shift-2-1',
-    name: 'Смена 2.1',
-    dates: '10 июня — 16 июня',
-    duration: '7 дней',
-    status: 'короткая',
-    statusType: 'short',
-    description: 'За 7 дней — быстрый вход, свой проект и понятный результат без перегруза.',
-    price: '48 000 ₽',
-    free: 7,
-    occupied: 33,
-    startDate: '2026-06-10',
-    endDate: '2026-06-16',
-  },
-  {
-    id: 'shift-2-2',
-    name: 'Смена 2.2',
-    dates: '16 июня — 23 июня',
-    duration: '8 дней',
-    status: 'короткая',
-    statusType: 'short',
-    description: 'Интенсивная смена: больше времени на доработку и более сильный итоговый проект.',
-    price: '75 000 ₽',
-    free: 5,
-    occupied: 40,
-    startDate: '2026-06-16',
-    endDate: '2026-06-23',
-  },
-];
+export const shortShifts: Shift[] = [];
 
-export const allShifts = [mainShifts[0], mainShifts[1], ...shortShifts, mainShifts[2], mainShifts[3]];
+export const allShifts = [...mainShifts];
+
+// Все смены для показа в карусели (завершённые + активные), в хронологии.
+// Фаза (предстоит/идёт/прошла) считается по датам в getShiftPhase().
+export const displayShifts: Shift[] = [_shift1, _shift2, ...mainShifts];
+
+// === ЕДИНЫЙ ИСТОЧНИК метаданных смены (дата + база + длительность) ===
+// Отсюда dynamicPrices.ts берёт basePrice/startDate/days и применяет правило роста.
+// Включает завершённые смены — для исторических цен и фолбэков.
+const _priceToNum = (p: string) => parseInt(p.replace(/[^\d]/g, ''), 10);
+export interface ShiftMeta {
+  basePrice: number;   // базовая цена (до роста) — из price-строки выше
+  startDate: string;   // YYYY-MM-DD
+  endDate: string;     // YYYY-MM-DD
+  days: number;        // длительность из duration
+}
+export const SHIFT_META: Record<string, ShiftMeta> = Object.fromEntries(
+  [_shift1, _shift2, _shift21, _shift22, ...mainShifts].map((s) => [
+    s.id,
+    {
+      basePrice: _priceToNum(s.price),
+      startDate: s.startDate,
+      endDate: s.endDate,
+      days: parseInt(s.duration.replace(/[^\d]/g, ''), 10),
+    },
+  ]),
+);
 
 // === Derived: единые цены для типовых блоков. НЕ хардкодить цифры на страницах! ===
-const _allForPrice = [...mainShifts, ...shortShifts];
+const _allForPrice = [...mainShifts];
 const _priceNum = (p: string) => parseInt(p.replace(/[^\d]/g, ''), 10);
 const _sorted = [..._allForPrice].sort((a, b) => _priceNum(a.price) - _priceNum(b.price));
 export const PRICE_MIN = _sorted[0].price;
 export const PRICE_MAX = _sorted[_sorted.length - 1].price;
 export const PRICE_RANGE = `от ${PRICE_MIN} до ${PRICE_MAX}`;
-export const PRICE_S1 = mainShifts[0].price;
-export const PRICE_S2 = mainShifts[1].price;
-export const PRICE_S3 = mainShifts[2].price;
-export const PRICE_S4 = mainShifts[3].price;
-export const PRICE_S21 = shortShifts[0].price;
-export const PRICE_S22 = shortShifts[1].price;
+export const PRICE_S1 = _shift1.price;
+export const PRICE_S2 = _shift2.price;
+export const PRICE_S3 = mainShifts[0].price;
+export const PRICE_S4 = mainShifts[1].price;
+export const PRICE_S21 = _shift21.price;
+export const PRICE_S22 = _shift22.price;
+
+// === Возврат при отказе от путёвки (ФЗ №2300-1 о защите прав потребителей) ===
+export const BYT_PER_DAY = 6100;     // фактические расходы лагеря/день (предоплата базе отдыха) — удерживаются при возврате
 
 // === Налоговый вычет — ПРОИЗВОДНЫЙ от цены (ст. 219 НК РФ). Меняется цена/акция → меняется вычет. ===
 // НЕ хардкодить суммы вычета рядом с ценой — выводить из этих функций/констант.
-export const BYT_PER_DAY = 3800;     // бытовая часть (проживание+питание) за день — не вычитается
-export const NDFL_RATE = 0.13;       // ставка НДФЛ
-export const EDU_BASE_CAP = 110000;  // годовой лимит базы вычета на 1 ребёнка (ст.219 НК РФ, с 2024)
+export const EDU_RESID_PER_DAY = 3800; // стоимость проживания+питания по НК РФ/день — вычитается из базы вычета
+export const NDFL_RATE = 0.13;         // ставка НДФЛ
+export const EDU_BASE_CAP = 110000;    // годовой лимит базы вычета на 1 ребёнка (ст.219 НК РФ, с 2024)
 
 /** Точный вычет от ЛЮБОЙ цены (учитывает акции/повышения): (цена − 3800×дни) с лимитом × 13%. */
 export function taxDeduction(priceRub: number, days: number): number {
-  const edu = Math.min(Math.max(priceRub - BYT_PER_DAY * days, 0), EDU_BASE_CAP);
+  const edu = Math.min(Math.max(priceRub - EDU_RESID_PER_DAY * days, 0), EDU_BASE_CAP);
   return Math.round(edu * NDFL_RATE);
 }
 const _days = (d: string) => parseInt(d.replace(/[^\d]/g, ''), 10) || 0;
@@ -148,15 +150,42 @@ export function shiftDeduction(s: Shift): number {
 }
 const _fmtV = (n: number) => n.toLocaleString('ru-RU').replace(/\u00a0/g, ' ') + ' ₽';
 // Форматированные строки вычета для прозы (как PRICE_*): «6 250 ₽».
-export const VYCHET_S1 = _fmtV(shiftDeduction(mainShifts[0]));
-export const VYCHET_S2 = _fmtV(shiftDeduction(mainShifts[1]));
-export const VYCHET_S3 = _fmtV(shiftDeduction(mainShifts[2]));
-export const VYCHET_S4 = _fmtV(shiftDeduction(mainShifts[3]));
-export const VYCHET_S21 = _fmtV(shiftDeduction(shortShifts[0]));
-export const VYCHET_S22 = _fmtV(shiftDeduction(shortShifts[1]));
-export const VYCHET_MAX = _fmtV(Math.max(
-  shiftDeduction(mainShifts[0]), shiftDeduction(mainShifts[1]), shiftDeduction(mainShifts[2]),
-  shiftDeduction(mainShifts[3]), shiftDeduction(shortShifts[0]), shiftDeduction(shortShifts[1])));
+export const VYCHET_S1 = _fmtV(shiftDeduction(_shift1));
+export const VYCHET_S2 = _fmtV(shiftDeduction(_shift2));
+export const VYCHET_S3 = _fmtV(shiftDeduction(mainShifts[0]));
+export const VYCHET_S4 = _fmtV(shiftDeduction(mainShifts[1]));
+export const VYCHET_S21 = _fmtV(shiftDeduction(_shift21));
+export const VYCHET_S22 = _fmtV(shiftDeduction(_shift22));
+export const VYCHET_MAX = _fmtV(Math.max(shiftDeduction(mainShifts[0]), shiftDeduction(mainShifts[1])));
+
+// === Даты смен — ПРОИЗВОДНЫЕ от startDate/endDate (ISO). НЕ хардкодить даты на страницах! ===
+// Меняешь startDate/endDate смены → даты обновляются везде. Страж: npm run check:dates.
+const _MONTHS_RU = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const _d = (iso: string) => { const [y,m,dd] = iso.split('-').map(Number); return { d: dd, m }; };
+/** «10 июня — 23 июня» */
+export function shiftDatesFull(s: Shift): string {
+  const a=_d(s.startDate), b=_d(s.endDate);
+  return `${a.d} ${_MONTHS_RU[a.m-1]} — ${b.d} ${_MONTHS_RU[b.m-1]}`;
+}
+/** «10–23 июня» (один месяц) либо полная форма */
+export function shiftDatesShort(s: Shift): string {
+  const a=_d(s.startDate), b=_d(s.endDate);
+  return a.m===b.m ? `${a.d}–${b.d} ${_MONTHS_RU[a.m-1]}` : shiftDatesFull(s);
+}
+export const DATES_S1 = shiftDatesFull(_shift1);
+export const DATES_S2 = shiftDatesFull(_shift2);
+export const DATES_S3 = shiftDatesFull(mainShifts[0]);
+export const DATES_S4 = shiftDatesFull(mainShifts[1]);
+export const DATES_S21 = shiftDatesFull(_shift21);
+export const DATES_S22 = shiftDatesFull(_shift22);
+export const DATES_SHORT_S1 = shiftDatesShort(_shift1);
+export const DATES_SHORT_S2 = shiftDatesShort(_shift2);
+export const DATES_SHORT_S3 = shiftDatesShort(mainShifts[0]);
+export const DATES_SHORT_S4 = shiftDatesShort(mainShifts[1]);
+export const DATES_SHORT_S21 = shiftDatesShort(_shift21);
+export const DATES_SHORT_S22 = shiftDatesShort(_shift22);
+export const SEASON_RANGE = `${shiftDatesShort(mainShifts[0]).split('–')[0].trim()} ${_MONTHS_RU[_d(mainShifts[0].startDate).m-1]} — ${shiftDatesShort(mainShifts[1])}`; // ориентир сезона
+
 
 // Единый источник: сколько ровесников едет в каждую смену по возрасту
 export const PEER_COUNTS: Record<string, Record<string, number>> = {

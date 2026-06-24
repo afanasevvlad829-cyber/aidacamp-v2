@@ -342,7 +342,7 @@ function blockSmeny(){
   ctaRow.appendChild(btn);
   card.appendChild(ctaRow);
 
-  const foot=mkEl('div','padding:0 14px 10px;font-size:10px;color:rgba(13,27,42,.35);text-align:center','Налоговый вычет 13% · Место фиксируется на 48ч · Возврат 50% за первые 3 дня (смены от 10 дней)');
+  const foot=mkEl('div','padding:0 14px 10px;font-size:10px;color:rgba(13,27,42,.35);text-align:center','Налоговый вычет 13% · Место фиксируется на 48ч · <a href="/politika-vozvrata/" style="color:rgba(13,27,42,.5);text-decoration:underline">Гарантия возврата</a>');
   card.appendChild(foot);
 
   wrap.appendChild(card);
