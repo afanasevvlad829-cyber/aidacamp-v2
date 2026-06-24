@@ -63,6 +63,42 @@ export const INVENTORY_CHECKLIST = [
   { id: 'video',    text: 'Видео обхода комнаты загружено (обязательно)' },
 ] as const;
 
+/**
+ * Точная grid-раскладка плана 3-го корпуса — общая для инвентаризации и расселения,
+ * чтобы план совпадал с реальным чертежом и выглядел одинаково на обеих вкладках.
+ *
+ * Сетка 9 колонок: cols 1-4 = левое крыло, col 5 = коридор, cols 6-9 = правое крыло.
+ *  col — CSS grid-column (с диапазоном для широких комнат), row — номер ряда.
+ *  Этаж 1: верхний ряд — узкие 2-местные (1 колонка), нижний — широкие (2 колонки).
+ *  Этаж 2: верхний ряд — люксы (2 колонки), нижний — 2-местные; №27 стоит по центру (коридор).
+ */
+export interface FloorCell { n: number; col: string; row: number; }
+export const FLOOR_GRID: Record<1 | 2, { title: string; cols: number; rowsTemplate: string; cells: FloorCell[] }> = {
+  1: {
+    title: 'Этаж 1 · 22 места',
+    cols: 9,
+    rowsTemplate: 'minmax(96px, auto) minmax(120px, auto)',
+    cells: [
+      { n: 20, col: '1', row: 1 }, { n: 19, col: '2', row: 1 }, { n: 18, col: '3', row: 1 }, { n: 17, col: '4', row: 1 },
+      { n: 11, col: '6', row: 1 }, { n: 12, col: '7', row: 1 }, { n: 13, col: '8', row: 1 }, { n: 14, col: '9', row: 1 },
+      { n: 21, col: '1 / 3', row: 2 }, { n: 22, col: '3 / 5', row: 2 },
+      { n: 16, col: '6 / 8', row: 2 }, { n: 15, col: '8 / 10', row: 2 },
+    ],
+  },
+  2: {
+    title: 'Этаж 2 · 24 места',
+    cols: 9,
+    rowsTemplate: 'minmax(120px, auto) minmax(110px, auto)',
+    cells: [
+      { n: 30, col: '1 / 3', row: 1 }, { n: 31, col: '3 / 5', row: 1 },
+      { n: 23, col: '6 / 8', row: 1 }, { n: 24, col: '8 / 10', row: 1 },
+      { n: 29, col: '1 / 3', row: 2 }, { n: 28, col: '3 / 5', row: 2 },
+      { n: 27, col: '5 / 6', row: 2 },
+      { n: 26, col: '6 / 8', row: 2 }, { n: 25, col: '8 / 10', row: 2 },
+    ],
+  },
+};
+
 export function getRoom(number: number): RoomDef | undefined {
   return ROOMS.find((r) => r.number === number);
 }

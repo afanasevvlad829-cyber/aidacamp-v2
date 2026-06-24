@@ -44,3 +44,61 @@ export function logAuth(f: AuthLogFields): void {
   if (f.outcome === 'success') console.log(line);
   else console.warn(line);
 }
+
+// ─── Action log (DB) ────────────────────────────────────────────────────────
+
+function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
+
+export interface ActionLogFields {
+  staffId?: number | null;
+  action: string;
+  entityType?: string | null;
+  entityId?: number | null;
+  payload?: Record<string, unknown> | null;
+  ip?: string | null;
+}
+
+/** Записать действие сотрудника в portal_action_log. Fire-and-forget. */
+export function logAction(f: ActionLogFields): void {
+  const conn = dsn();
+  if (!conn) return;
+  (async () => {
+    try {
+      const { default: pg } = await import('pg');
+      const client = new pg.Client({ connectionString: conn });
+      await client.connect();
+      try {
+        await client.query(
+          `INSERT INTO portal_action_log(staff_id, action, entity_type, entity_id, payload, ip)
+           VALUES($1,$2,$3,$4,$5,$6)`,
+          [
+            f.staffId ?? null, f.action,
+            f.entityType ?? null, f.entityId ?? null,
+            f.payload ? JSON.stringify(f.payload) : null,
+            f.ip ?? null,
+          ],
+        );
+      } finally { await client.end(); }
+    } catch { /* не мешаем основному флоу */ }
+  })();
+}
+
+/** Обновить last_seen_at — не чаще раза в 5 минут. Fire-and-forget. */
+const _lastSeenFlush = new Map<number, number>();
+export function touchLastSeen(staffId: number): void {
+  const now = Date.now();
+  if ((_lastSeenFlush.get(staffId) ?? 0) + 300_000 > now) return;
+  _lastSeenFlush.set(staffId, now);
+  const conn = dsn();
+  if (!conn) return;
+  (async () => {
+    try {
+      const { default: pg } = await import('pg');
+      const client = new pg.Client({ connectionString: conn });
+      await client.connect();
+      try {
+        await client.query('UPDATE portal_staff SET last_seen_at=now() WHERE id=$1', [staffId]);
+      } finally { await client.end(); }
+    } catch { /* fire-and-forget */ }
+  })();
+}

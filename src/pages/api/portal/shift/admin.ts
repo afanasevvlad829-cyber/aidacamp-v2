@@ -7,13 +7,6 @@ import {
 
 const ALLOWED_ROLES = ['admin', 'rukovoditel'] as const;
 
-function requireAdmin(cookies: Parameters<APIRoute>[0]['cookies']): boolean {
-  const _a = requireStaff(locals);
-  if (_a instanceof Response) return _a;
-  const { role, sub } = _a;
-  return !!p && (ALLOWED_ROLES as readonly string[]).includes(role);
-}
-
 /** Считать поля из formData или JSON-тела. */
 async function readBody(request: Request): Promise<Record<string, unknown> & { __form: boolean }> {
   const ct = request.headers.get('content-type') ?? '';
@@ -57,7 +50,10 @@ function parseItems(v: unknown): { id: string; text: string }[] {
 }
 
 export const POST: APIRoute = async ({ locals, request, redirect }) => {
-  if (!requireAdmin(cookies)) return new Response(JSON.stringify({ ok: false, error: 'нет прав (нужен руководитель или админ)' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+  const _auth = requireStaff(locals);
+  if (_auth instanceof Response) return _auth;
+  const { role } = _auth;
+  if (!(ALLOWED_ROLES as readonly string[]).includes(role)) return new Response(JSON.stringify({ ok: false, error: 'нет прав (нужен руководитель или админ)' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
   const body = await readBody(request);
   const isForm = body.__form === true;
   const action = asStr(body.action);

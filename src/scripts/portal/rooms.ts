@@ -75,6 +75,8 @@ function initRasselenie() {
     crmError.style.display = 'none';
 
     try {
+      // Снимок перед загрузкой — защита от случайного затирания расселения
+      await postJson('/api/portal/rasselenie', { action: 'snapshot', shift_id: shiftId, reason: 'crm_load' });
       let totalAdded = 0;
       for (const groupId of groupIds) {
         const r = await fetch('/api/shift-roster?group_id=' + groupId, { credentials: 'include' });
@@ -113,8 +115,7 @@ function initRasselenie() {
   // ── Авто-расстановка ──
   const autoBtn = document.getElementById('auto-assign-btn') as HTMLButtonElement | null;
   autoBtn?.addEventListener('click', async () => {
-    const ok = await confirmDialog('Авто-расстановка заполнит свободные койки с учётом пола (без смешанных) и близкого возраста (разброс ≤3 лет). Уже расселённых не трогаем. Продолжить?');
-    if (!ok) return;
+    if (!shiftId) { await alertDialog('Нет активной смены — обновите страницу.'); return; }
     autoBtn.disabled = true;
     const old = autoBtn.innerHTML;
     autoBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Расставляю…';
@@ -229,6 +230,7 @@ function initRasselenie() {
 
   // ── Drag-n-drop через Sortable.js ──
   const poolEl = document.getElementById('pool-list');
+  const staffPoolEl = document.getElementById('staff-pool-list');
 
   function initSortable() {
     const S = (window as any).Sortable;
@@ -249,8 +251,10 @@ function initRasselenie() {
       forceFallback: false,
     };
 
-    if (poolEl) {
-      S.create(poolEl, {
+    // Пул детей и пул сотрудников — оба источник перетаскивания, возврат = снять с койки
+    [poolEl, staffPoolEl].forEach((el) => {
+      if (!el) return;
+      S.create(el, {
         ...commonOpts,
         onAdd: async (evt: any) => {
           const item = evt.item;
@@ -260,7 +264,7 @@ function initRasselenie() {
           await moveKid(kidId, kidName, null, null);
         },
       });
-    }
+    });
 
     document.querySelectorAll('.bed').forEach((bed: Element) => {
       S.create(bed, {
@@ -290,6 +294,45 @@ function initRasselenie() {
     else await alertDialog('Ошибка: ' + (d.error || ''));
   }
 
+  // ── Загрузка сотрудников ──
+  const loadStaffBtn = document.getElementById('load-staff-btn') as HTMLButtonElement | null;
+  const staffPoolList = document.getElementById('staff-pool-list') as HTMLDivElement | null;
+
+  loadStaffBtn?.addEventListener('click', async () => {
+    if (!staffPoolList) return;
+    loadStaffBtn.disabled = true;
+    loadStaffBtn.textContent = 'Загрузка…';
+    try {
+      const r = await fetch('/api/portal/staff-for-rooms', { credentials: 'include' });
+      const d = await r.json();
+      if (!d.ok || !Array.isArray(d.staff)) {
+        await alertDialog('Не удалось загрузить сотрудников: ' + (d.error || r.status));
+        loadStaffBtn.disabled = false;
+        loadStaffBtn.textContent = '+ Загрузить';
+        return;
+      }
+      // Добавляем каждого сотрудника в pool (room_assignment без комнаты)
+      let added = 0;
+      for (const s of d.staff) {
+        const res = await postJson('/api/portal/rasselenie', {
+          shift_id: shiftId,
+          kid_id: 'staff-' + s.id,
+          kid_name: s.name + (s.roleLabel ? ' (' + s.roleLabel + ')' : ''),
+          kid_gender: null,
+          kid_age: null,
+        });
+        if (res.ok) added++;
+      }
+      haptic('success');
+      await alertDialog('Добавлено сотрудников: ' + added + '. Дубли пропущены.');
+      window.location.reload();
+    } catch (e: any) {
+      await alertDialog('Сетевая ошибка: ' + (e?.message ?? e));
+      loadStaffBtn.disabled = false;
+      loadStaffBtn.textContent = '+ Загрузить';
+    }
+  });
+
   // Pool toggle
   const toggleBtn = document.getElementById('toggle-pool-btn');
   const poolList = document.getElementById('pool-list');
@@ -301,35 +344,61 @@ function initRasselenie() {
     });
   }
 
-  // Remove kid
-  document.querySelectorAll('.kid-remove').forEach((btn) => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const kidId = (btn as HTMLElement).dataset.kidId;
-      const ok = await confirmDialog('Снять с койки и удалить из списка?');
-      if (!ok) return;
-      const r = await fetch('/api/portal/rasselenie', {
-        method: 'DELETE',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ shift_id: shiftId, kid_id: kidId }),
-        credentials: 'include',
+  // Remove kid — event delegation на document, срабатывает до Sortable (touch-safe)
+  //   action="unassign" (× на койке)  → вернуть в пул (room_number=null), карточка остаётся в списке
+  //   action="delete"   (× в пуле)    → удалить из списка полностью
+  async function handleKidRemove(kidId: string, action: string, kidName: string) {
+    if (action === 'unassign') {
+      const d = await postJson('/api/portal/rasselenie', {
+        shift_id: shiftId, kid_id: kidId, kid_name: kidName,
+        room_number: null, bed_index: null,
       });
-      if (r.ok) {
-        haptic('success');
-        window.location.reload();
-      } else {
-        const d = await r.json().catch(() => ({}));
-        await alertDialog('Не удалось снять с койки: ' + (d.error || ('HTTP ' + r.status)));
-      }
+      if (d.ok) { haptic('success'); window.location.reload(); }
+      else await alertDialog('Не удалось вернуть в список: ' + (d.error || ''));
+      return;
+    }
+    const r = await fetch('/api/portal/rasselenie', {
+      method: 'DELETE',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ shift_id: shiftId, kid_id: kidId }),
+      credentials: 'include',
     });
+    if (r.ok) {
+      haptic('success');
+      window.location.reload();
+    } else {
+      const d = await r.json().catch(() => ({}));
+      await alertDialog('Не удалось удалить: ' + (d.error || ('HTTP ' + r.status)));
+    }
+  }
+  function fireRemove(btn: HTMLElement) {
+    const kidId = btn.dataset.kidId;
+    const action = btn.dataset.action || 'delete';
+    const card = btn.closest('.kid-card') as HTMLElement | null;
+    const kidName = card?.dataset.kidName || '';
+    if (kidId) handleKidRemove(kidId, action, kidName);
+  }
+  // click (desktop) + touchend (mobile/TG) — оба варианта
+  document.addEventListener('click', (e) => {
+    const btn = (e.target as Element).closest('.kid-remove') as HTMLElement | null;
+    if (!btn) return;
+    e.stopPropagation(); e.preventDefault();
+    fireRemove(btn);
   });
+  document.addEventListener('touchend', (e) => {
+    const btn = (e.target as Element).closest('.kid-remove') as HTMLElement | null;
+    if (!btn) return;
+    e.stopPropagation(); e.preventDefault();
+    fireRemove(btn);
+  }, { passive: false });
 }
 
 // ── Inventory tab logic ───────────────────────────────────────────────────
 
 function initInventory() {
-  const modal = document.getElementById('room-modal') as HTMLDialogElement | null;
-  if (!modal) return;
+  const modalEl = document.getElementById('room-modal') as HTMLDialogElement | null;
+  if (!modalEl) return;
+  const modal = modalEl;
 
   const numEl = document.getElementById('room-modal-num');
   const closeBtn = document.getElementById('room-modal-close');

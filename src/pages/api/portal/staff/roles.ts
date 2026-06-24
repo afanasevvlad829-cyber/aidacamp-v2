@@ -12,10 +12,9 @@ const VALID: PortalRole[] = ['admin', 'rukovoditel', 'teacher', 'vozhaty', 'stud
  * Только admin.
  */
 export const POST: APIRoute = async ({ locals, request, redirect }) => {
-  const _a = requireRole(locals);
+  const _a = requireRole(locals, ['admin']);
   if (_a instanceof Response) return _a;
-  const { role, sub } = _a;
-  if (!p || role !== 'admin') return new Response('Forbidden', { status: 403 });
+  const { sub } = _a;
 
   const form = await request.formData();
   const tgId = Number(form.get('telegram_id'));

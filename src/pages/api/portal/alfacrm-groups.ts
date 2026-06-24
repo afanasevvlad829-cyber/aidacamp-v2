@@ -1,6 +1,6 @@
 export const prerender = false;
 /**
- * GET /api/alfacrm-groups — список активных групп из AlfaCRM (филиал 5 CAMP).
+ * GET /api/portal/alfacrm-groups — список активных групп из AlfaCRM (филиал 5 CAMP).
  * Возвращает [{ id, name, student_count }] отсортированных по имени.
  * Используется в UI расселения для выбора одной или нескольких групп.
  */
@@ -58,7 +58,6 @@ export const GET: APIRoute = async ({ locals }) => {
     const token = login?.token;
     if (!token) return json({ ok: false, error: 'AlfaCRM login failed' }, 502);
 
-    // Получаем все группы филиала, статус active (is_active=1)
     const res = await post(H, `/${BRANCH}/group/index`, { page: 0, is_active: 1 }, token);
     const items: any[] = Array.isArray(res?.items) ? res.items : [];
 

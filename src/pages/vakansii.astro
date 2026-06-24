@@ -1,0 +1,669 @@
+---
+import '../styles/global.css';
+import LandingLayout from '../layouts/LandingLayout.astro';
+import FAQ from '../components/FAQ.astro';
+import FAQSchema from '../components/FAQSchema.astro';
+import { WHATSAPP_URL, TELEGRAM_URL, PHONE_MOBILE, PHONE_MOBILE_HREF } from '../data/contacts';
+
+const title = 'Работа в летнем лагере — вожатые, IT-преподаватели, видеограф | АйДаКемп 2026';
+const description = 'Вакансии в детский IT-лагерь АйДаКемп — Подмосковье, лето 2026. Ищем вожатых, преподавателей по программированию и видеографа. Проживание, питание, трансфер включены.';
+const h1 = 'Работа в детском лагере летом 2026';
+
+const positions = [
+  {
+    id: 'vozhaty',
+    title: 'Вожатый',
+    icon: 'heart-fill',
+    color: '#E85D75',
+    tagline: 'Самая живая работа этого лета',
+    description: 'Вы — главный человек для ребят 7–15 лет. Утром — общий сбор, вечером — конкурсы, ночью — тишина (мы надеемся). Каждый день — другой.',
+    requirements: [
+      'Возраст от 18 лет',
+      'Курсы вожатских кадров (КВС) или опыт работы с детьми',
+      'Медицинская книжка (поможем оформить)',
+      'Ответственность, энергия, умение держать внимание аудитории',
+      'Опыт в спорте, музыке, творчестве — большой плюс',
+    ],
+    plus: 'Опыт в театре, стендапе, аниматорстве — приветствуется. Нам нужны люди, которые умеют зажечь зал.',
+  },
+  {
+    id: 'it',
+    title: 'Преподаватель IT',
+    icon: 'laptop',
+    color: '#4361EE',
+    tagline: 'Учишь детей — они делают реальный продукт',
+    description: 'Вы ведёте занятия по Python, Scratch, веб-разработке или AI. Группы до 8 человек, возраст 7–15 лет. Продукт смены — рабочий проект, который ребёнок показывает родителям на защите.',
+    requirements: [
+      'Уверенное знание Python / Scratch / веб (HTML+CSS+JS) или смежных технологий',
+      'Умение объяснять сложное простыми словами',
+      'Возраст от 18 лет',
+      'Опыт преподавания или работы с детьми — плюс, но не обязателен',
+      'Знание нейросетей (ChatGPT, Stable Diffusion, Copilot) — будет преимуществом',
+    ],
+    plus: 'Студенты IT-специальностей — welcome. Главное: реальный опыт в коде и желание передавать его детям.',
+  },
+  {
+    id: 'video',
+    title: 'Оператор-видеограф',
+    icon: 'camera-video-fill',
+    color: '#0CAA5E',
+    tagline: 'Снимаешь всю смену — делаешь итоговое видео',
+    description: 'Вы на смене с первого до последнего дня. Снимаете жизнь лагеря, хакатон, конкурсы, мастер-классы. На выходе — итоговый ролик смены, рилсы для соцсетей и фотоконтент для сайта.',
+    requirements: [
+      'Опыт видеосъёмки: репортаж, события, повседневная жизнь',
+      'Монтаж: Premiere Pro, DaVinci Resolve или CapCut (любой из)',
+      'Понимание формата Reels / Shorts — умение снимать вертикалку',
+      'Своя техника (камера или хорошее зеркало/беззеркалка) — большой плюс',
+      'Готовность работать в ритме лагеря: ранние подъёмы, поздние вечера',
+    ],
+    plus: 'Если есть дрон с лицензией — это вообще идеально. Пишите.',
+  },
+];
+
+const conditions = [
+  { icon: 'house-door-fill', text: 'Проживание на территории лагеря' },
+  { icon: 'bag-check-fill', text: '5-разовое питание, как у ребят' },
+  { icon: 'truck', text: 'Трансфер Москва — лагерь — Москва' },
+  { icon: 'award-fill', text: 'Оплата обсуждается на собеседовании' },
+  { icon: 'heart-pulse-fill', text: 'Медработник и страховка на смену' },
+  { icon: 'moon-stars', text: 'Атмосфера, которую запомнишь навсегда' },
+];
+
+const faqItems = [
+  {
+    q: 'Когда начинаются смены?',
+    a: 'Смены 2026: 30 мая, 10 июня, 3 августа и 17 августа. Набираем команду на каждую смену отдельно. Можно работать на одной или нескольких сменах подряд.'
+  },
+  {
+    q: 'Нужен ли опыт для работы вожатым?',
+    a: 'Желателен, но не обязателен. Берём студентов педагогических, психологических и физкультурных специальностей от 18 лет. Курсы вожатских кадров (КВС) — большой плюс. Проводим собственный инструктаж перед каждой сменой.'
+  },
+  {
+    q: 'Можно ли работать на нескольких сменах?',
+    a: 'Да, и это приветствуется. Многие сотрудники работают по 2–4 смены за лето. Оплата за каждую смену отдельно.'
+  },
+  {
+    q: 'Как подать заявку?',
+    a: `Напишите в <a href="${WHATSAPP_URL}" target="_blank" rel="noopener">WhatsApp</a> или <a href="${TELEGRAM_URL}" target="_blank" rel="noopener">Telegram</a> — расскажите о себе и на какую позицию претендуете. Ответим и назначим короткое знакомство по видео.`
+  },
+  {
+    q: 'Сколько детей на одного вожатого?',
+    a: 'Не более 10 ребят. Вожатые работают в парах, поэтому реально — 1 вожатый на 5 детей. Это комфортное соотношение.'
+  },
+  {
+    q: 'Нужна ли медицинская книжка?',
+    a: 'Да, для всех сотрудников. Если ещё не оформляли — подскажем, где сделать быстро и без очередей.'
+  },
+];
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "JobPosting",
+      "title": "Вожатый в детский IT-лагерь",
+      "description": "Ищем вожатых в летний IT-лагерь АйДаКемп (Подмосковье). Проживание, питание, трансфер включены.",
+      "datePosted": "2026-04-01",
+      "validThrough": "2026-08-01",
+      "employmentType": "TEMPORARY",
+      "hiringOrganization": {
+        "@type": "Organization",
+        "name": "АйДаКемп",
+        "sameAs": "https://aidacamp.ru"
+      },
+      "jobLocation": {
+        "@type": "Place",
+        "name": "Детский лагерь АйДаКемп",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Наро-Фоминский округ",
+          "addressRegion": "Московская область",
+          "addressCountry": "RU"
+        }
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "АйДаКемп", "item": "https://aidacamp.ru" },
+        { "@type": "ListItem", "position": 2, "name": "Вакансии", "item": "https://aidacamp.ru/vakansii" }
+      ]
+    }
+  ]
+};
+---
+
+<LandingLayout title={title} description={description} h1={h1}>
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
+
+  <!-- Hero -->
+  <section class="vak-hero">
+    <div class="container">
+      <div class="vak-hero__inner">
+        <p class="vak-hero__sub">Лето 2026 · Подмосковье · Наро-Фоминский округ</p>
+        <h2 class="vak-hero__tagline">Лагерь — это место, где взрослые тоже перезагружаются</h2>
+        <p class="vak-hero__text">
+          АйДаКемп — IT-лагерь для детей 7–15 лет. Каждое лето мы собираем команду,
+          которая превращает смену в лучшие 7–14 дней в году для 80+ ребят.
+          Ищем вожатых, IT-преподавателей и видеографа.
+        </p>
+        <div class="vak-hero__cta">
+          <a href={WHATSAPP_URL} target="_blank" rel="noopener" class="btn btn-primary btn-lg">
+            <i class="bi bi-whatsapp"></i> Написать в WhatsApp
+          </a>
+          <a href={TELEGRAM_URL} target="_blank" rel="noopener" class="btn btn-outline-primary btn-lg">
+            <i class="bi bi-telegram"></i> Telegram
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Positions -->
+  <section class="vak-positions section-padding">
+    <div class="container">
+      <h2 class="section-title text-center mb-5">Открытые вакансии</h2>
+      <div class="vak-grid">
+        {positions.map(pos => (
+          <article class="vak-card" id={pos.id}>
+            <div class="vak-card__header" style={`--pos-color: ${pos.color}`}>
+              <i class={`bi bi-${pos.icon} vak-card__icon`}></i>
+              <div>
+                <h3 class="vak-card__title">{pos.title}</h3>
+                <p class="vak-card__tagline">{pos.tagline}</p>
+              </div>
+            </div>
+            <div class="vak-card__body">
+              <p class="vak-card__desc">{pos.description}</p>
+              <h4 class="vak-card__req-title">Что нам важно:</h4>
+              <ul class="vak-card__req-list">
+                {pos.requirements.map(r => (
+                  <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>{r}</span>
+                  </li>
+                ))}
+              </ul>
+              {pos.plus && (
+                <p class="vak-card__plus">
+                  <i class="bi bi-stars"></i> {pos.plus}
+                </p>
+              )}
+              <a href={WHATSAPP_URL} target="_blank" rel="noopener" class="vak-card__apply">
+                Откликнуться →
+              </a>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Conditions -->
+  <section class="vak-conditions section-padding bg-light-subtle">
+    <div class="container">
+      <h2 class="section-title text-center mb-4">Что мы даём</h2>
+      <p class="text-center text-muted mb-5" style="max-width:560px;margin-inline:auto">
+        Одинаково для всех сотрудников — вожатых, преподавателей, видеографа.
+      </p>
+      <div class="vak-conditions__grid">
+        {conditions.map(c => (
+          <div class="vak-condition">
+            <i class={`bi bi-${c.icon} vak-condition__icon`}></i>
+            <span>{c.text}</span>
+          </div>
+        ))}
+      </div>
+      <div class="vak-conditions__note">
+        <strong>Оплата:</strong> сумма обсуждается индивидуально на собеседовании.
+        Зависит от опыта, роли и количества смен. Не стесняйтесь называть свои ожидания —
+        мы за честный разговор.
+      </div>
+    </div>
+  </section>
+
+  <!-- Salary -->
+  <section class="vak-salary section-padding">
+    <div class="container">
+      <h2 class="section-title text-center mb-2">Сколько зарабатывает вожатый</h2>
+      <p class="text-center text-muted mb-5" style="max-width:580px;margin-inline:auto;font-size:0.95rem">
+        Ниже — средние рыночные ставки по Подмосковью (по данным hh.ru и профильных чатов вожатых, 2025–2026).
+        Мы стараемся платить выше рынка — но и требуем соответственно.
+      </p>
+
+      <div class="salary-grid">
+        <div class="salary-card">
+          <div class="salary-role">Вожатый</div>
+          <div class="salary-market">
+            <span class="salary-label">Рынок</span>
+            <span class="salary-range">25 000 — 45 000 руб. / смена</span>
+            <span class="salary-day">≈ 1 800 — 3 200 руб./сутки</span>
+          </div>
+          <div class="salary-us">
+            <i class="bi bi-arrow-up-circle-fill"></i>
+            Мы — выше рынка. Конкретная сумма зависит от опыта и обсуждается на собеседовании.
+          </div>
+        </div>
+
+        <div class="salary-card">
+          <div class="salary-role">Преподаватель IT</div>
+          <div class="salary-market">
+            <span class="salary-label">Рынок</span>
+            <span class="salary-range">45 000 — 80 000 руб. / смена</span>
+            <span class="salary-day">≈ 3 200 — 5 700 руб./сутки</span>
+          </div>
+          <div class="salary-us">
+            <i class="bi bi-arrow-up-circle-fill"></i>
+            Мы — выше рынка. Зависит от стека, уровня и количества смен.
+          </div>
+        </div>
+
+        <div class="salary-card">
+          <div class="salary-role">Видеограф</div>
+          <div class="salary-market">
+            <span class="salary-label">Рынок</span>
+            <span class="salary-range">35 000 — 60 000 руб. / смена</span>
+            <span class="salary-day">≈ 2 500 — 4 300 руб./сутки</span>
+          </div>
+          <div class="salary-us">
+            <i class="bi bi-arrow-up-circle-fill"></i>
+            Мы — выше рынка. Итоговый ролик + рилсы = реальное портфолио на выходе.
+          </div>
+        </div>
+      </div>
+
+      <div class="salary-note">
+        <strong>Почему выше рынка?</strong> Потому что мы требуем больше.
+        Маленькие группы (до 8 ребят) — вожатый знает каждого по имени, характеру и проекту.
+        Преподаватель не читает скрипт — он адаптирует программу под конкретных детей.
+        Видеограф снимает с 7 утра до позднего вечера. Это настоящая работа, а не «весёлое лето».
+        Мы платим честно — называйте свои ожидания, и мы ответим честно.
+      </div>
+    </div>
+  </section>
+
+  <!-- How to apply -->
+  <section class="vak-apply section-padding">
+    <div class="container">
+      <div class="vak-apply__inner">
+        <h2 class="section-title">Как откликнуться</h2>
+        <ol class="vak-apply__steps">
+          <li>
+            <span class="vak-apply__num">1</span>
+            <div>
+              <strong>Напишите нам</strong> — в WhatsApp или Telegram. Скажите, на какую
+              позицию претендуете и немного о себе.
+            </div>
+          </li>
+          <li>
+            <span class="vak-apply__num">2</span>
+            <div>
+              <strong>Короткое знакомство</strong> — видеозвонок на 15–20 минут.
+              Хотим увидеть человека, а не читать резюме.
+            </div>
+          </li>
+          <li>
+            <span class="vak-apply__num">3</span>
+            <div>
+              <strong>Подтверждение и оформление</strong> — договор, медкнижка, инструктаж
+              перед сменой. Всё по закону.
+            </div>
+          </li>
+        </ol>
+        <div class="vak-apply__contacts">
+          <a href={WHATSAPP_URL} target="_blank" rel="noopener" class="btn btn-primary btn-lg">
+            <i class="bi bi-whatsapp"></i> WhatsApp
+          </a>
+          <a href={TELEGRAM_URL} target="_blank" rel="noopener" class="btn btn-outline-secondary btn-lg">
+            <i class="bi bi-telegram"></i> Telegram
+          </a>
+          <a href={`tel:${PHONE_MOBILE.replace(/[^+\d]/g, '')}`} class="btn btn-outline-secondary btn-lg">
+            <i class="bi bi-telephone"></i> {PHONE_MOBILE}
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section-padding">
+    <div class="container">
+      <h2 class="section-title text-center mb-5">Частые вопросы</h2>
+      <div style="max-width:720px;margin-inline:auto">
+        {faqItems.map((item, i) => (
+          <details class="vak-faq-item" open={i === 0}>
+            <summary class="vak-faq-q">{item.q}</summary>
+            <div class="vak-faq-a" set:html={item.a} />
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <FAQSchema items={faqItems} />
+</LandingLayout>
+
+<style>
+  /* ── Hero ── */
+  .vak-hero {
+    background: linear-gradient(135deg, #f0f4ff 0%, #fef6fa 100%);
+    padding: 64px 0 56px;
+    text-align: center;
+  }
+  .vak-hero__inner {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .vak-hero__sub {
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #4361EE;
+    margin-bottom: 12px;
+  }
+  .vak-hero__tagline {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 16px;
+    color: #1a1a2e;
+  }
+  .vak-hero__text {
+    font-size: 1.05rem;
+    color: #555;
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+  .vak-hero__cta {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ── Positions grid ── */
+  .vak-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 28px;
+  }
+  .vak-card {
+    border: 1px solid #e8eaf0;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+  }
+  .vak-card__header {
+    padding: 24px 24px 20px;
+    background: color-mix(in srgb, var(--pos-color) 8%, white);
+    border-bottom: 3px solid var(--pos-color);
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .vak-card__icon {
+    font-size: 2rem;
+    color: var(--pos-color);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .vak-card__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 4px;
+  }
+  .vak-card__tagline {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0;
+  }
+  .vak-card__body {
+    padding: 24px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .vak-card__desc {
+    font-size: 0.95rem;
+    color: #444;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  .vak-card__req-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+    margin-bottom: 12px;
+  }
+  .vak-card__req-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .vak-card__req-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: #333;
+    line-height: 1.5;
+  }
+  .vak-card__req-list li .bi {
+    color: #0CAA5E;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    margin-top: 3px;
+  }
+  .vak-card__plus {
+    background: #f8f9ff;
+    border-left: 3px solid #4361EE;
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    color: #444;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+  .vak-card__plus .bi {
+    color: #4361EE;
+    margin-right: 4px;
+  }
+  .vak-card__apply {
+    margin-top: auto;
+    display: inline-block;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #4361EE;
+    text-decoration: none;
+  }
+  .vak-card__apply:hover { text-decoration: underline; }
+
+  /* ── Conditions ── */
+  .vak-conditions__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+  .vak-condition {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 0.9rem;
+    color: #333;
+    border: 1px solid #e8eaf0;
+  }
+  .vak-condition__icon {
+    font-size: 1.3rem;
+    color: #4361EE;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .vak-conditions__note {
+    background: #fff8e1;
+    border-left: 4px solid #f9a825;
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    font-size: 0.9rem;
+    color: #444;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  /* ── Salary ── */
+  .salary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+  .salary-card {
+    border: 1px solid #e8eaf0;
+    border-radius: 14px;
+    padding: 20px;
+    background: #fff;
+  }
+  .salary-role {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #1a1a2e;
+    margin-bottom: 14px;
+  }
+  .salary-market {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px dashed #e0e0e0;
+  }
+  .salary-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #999;
+  }
+  .salary-range {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #333;
+  }
+  .salary-day {
+    font-size: 0.8rem;
+    color: #888;
+  }
+  .salary-us {
+    font-size: 0.88rem;
+    color: #0CAA5E;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .salary-us .bi {
+    font-size: 1rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .salary-note {
+    background: #f8f9ff;
+    border-left: 4px solid #4361EE;
+    border-radius: 0 10px 10px 0;
+    padding: 16px 20px;
+    font-size: 0.9rem;
+    color: #444;
+    line-height: 1.65;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .salary-note strong { color: #1a1a2e; }
+
+  /* ── Apply steps ── */
+  .vak-apply__inner {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .vak-apply__steps {
+    list-style: none;
+    padding: 0;
+    margin: 32px 0 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .vak-apply__steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    font-size: 0.95rem;
+    color: #333;
+    line-height: 1.5;
+  }
+  .vak-apply__num {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #4361EE;
+    color: #fff;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1rem;
+  }
+  .vak-apply__contacts {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  /* ── FAQ ── */
+  .vak-faq-item {
+    border-bottom: 1px solid #e8eaf0;
+    padding: 4px 0;
+  }
+  .vak-faq-q {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 16px 0;
+    color: #1a1a2e;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .vak-faq-q::after {
+    content: '+';
+    font-size: 1.4rem;
+    color: #4361EE;
+    flex-shrink: 0;
+  }
+  details[open] .vak-faq-q::after { content: '−'; }
+  .vak-faq-a {
+    font-size: 0.93rem;
+    color: #555;
+    line-height: 1.65;
+    padding-bottom: 16px;
+  }
+  .vak-faq-a a { color: #4361EE; }
+
+  /* ── Utility ── */
+  .section-padding { padding: 64px 0; }
+  .section-title { font-size: clamp(1.4rem, 2.5vw, 1.9rem); font-weight: 700; color: #1a1a2e; }
+  .bg-light-subtle { background: #f8f9ff; }
+</style>

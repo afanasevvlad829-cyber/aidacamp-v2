@@ -4,6 +4,7 @@ import { appendFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { sendAndataEvent, andataDatetime, andataPhone } from '../../lib/andata';
 import { allShifts } from '../../data/shifts';
+import { readVisitorId } from '../../lib/attribution/cookie';
 
 /** Цена выбранной смены в рублях по её названию (для Andata order_value) */
 function shiftPrice(shift: string): number | undefined {
@@ -31,7 +32,7 @@ async function saveLead(lead: Record<string, unknown>) {
 
 async function saveLeadToPg(
   body: Record<string, string>,
-  extra: { ip: string; userAgent: string; crmId: number | null },
+  extra: { ip: string; userAgent: string; crmId: number | null; visitorId: string | null },
 ) {
   const pgDsn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
   if (!pgDsn) return;
@@ -47,7 +48,7 @@ async function saveLeadToPg(
         landing_url, page_title, referrer,
         form_id, ym_client_id,
         screen, viewport, language, tz, session_ms,
-        crm_id, ip, user_agent, raw
+        crm_id, ip, user_agent, raw, visitor_id
       ) VALUES (
         $1,$2,$3,$4,
         $5,$6,$7,$8,$9,
@@ -55,7 +56,7 @@ async function saveLeadToPg(
         $13,$14,$15,
         $16,$17,
         $18,$19,$20,$21,$22,
-        $23,$24,$25,$26
+        $23,$24,$25,$26,$27
       )`,
       [
         body.phone || null, body.age || null, body.shift || null, body.source || null,
@@ -68,6 +69,7 @@ async function saveLeadToPg(
         body.tz || null,
         body.session_ms ? parseInt(body.session_ms, 10) : null,
         extra.crmId, extra.ip || null, extra.userAgent || null, JSON.stringify(body),
+        extra.visitorId || null,
       ],
     );
     await client.end();
@@ -200,6 +202,41 @@ function buildCrmNote(body: Record<string, string>): string {
   return lines.join('\n') || '';
 }
 
+/**
+ * Авто-источник лида в AlfaCRM (lead_source_id) по UTM/рефереру.
+ * Справочник филиала 5: 20=Яндекс Директ, 14=Поиск, 17=WhatsApp, 10=Телеграм, 8=ВК, 9=Сайт.
+ * Без этого поля лид падает в CRM без источника → отчёты по каналам пустые,
+ * Директ размазан внутри «Сайта». Приоритет: платная реклама → мессенджеры → органика → Сайт.
+ */
+function mapLeadSourceId(body: Record<string, string>): number {
+  const src = (body.utm_source || '').toLowerCase();
+  const med = (body.utm_medium || '').toLowerCase();
+  const ref = (body.referrer || '').toLowerCase();
+
+  // Платная реклама Яндекса (Директ): yclid, cpc/cpm, либо source=yandex с платным medium
+  if (body.yclid || med === 'cpc' || med === 'cpm' || med === 'cpa' ||
+      (src.includes('yandex') && med && med !== 'organic' && med !== 'referral')) {
+    return 20; // Яндекс Директ
+  }
+  // ВКонтакте (реклама/переходы)
+  if (src.includes('vk') || ref.includes('vk.com') || ref.includes('vk.ru')) {
+    return 8; // ВКонтакте
+  }
+  // Мессенджеры — по метке или рефереру
+  if (src.includes('whatsapp') || ref.includes('wa.me') || ref.includes('whatsapp')) {
+    return 17; // WhatsApp
+  }
+  if (src.includes('telegram') || src === 'tg' || ref.includes('t.me') || ref.includes('telegram')) {
+    return 10; // Телеграм
+  }
+  // Органический поиск
+  if (med === 'organic' || ref.includes('yandex.') || ref.includes('google.') ||
+      ref.includes('ya.ru') || ref.includes('bing.') || ref.includes('mail.ru')) {
+    return 14; // Поиск в интернете
+  }
+  return 9; // Сайт (прямой/неизвестно)
+}
+
 async function createCrmLead(body: Record<string, string>): Promise<number | null> {
   const hostname = process.env.ALFACRM_HOSTNAME;
   const email    = process.env.ALFACRM_EMAIL;
@@ -238,6 +275,8 @@ async function createCrmLead(body: Record<string, string>): Promise<number | nul
       branch_ids: [5],
       is_study: 0,
       legal_type: 1,
+      // Авто-источник по UTM/рефереру (для отчётов «канал → оплата»)
+      lead_source_id: mapLeadSourceId(body),
       // UTM
       utm_source:   body.utm_source   || undefined,
       utm_medium:   body.utm_medium   || undefined,
@@ -294,7 +333,7 @@ export const POST: APIRoute = async ({ request }) => {
     const crmId = await createCrmLead(body);
 
     // PG лог (best-effort)
-    await saveLeadToPg(body, { ip, userAgent, crmId });
+    await saveLeadToPg(body, { ip, userAgent, crmId, visitorId: readVisitorId(request) });
 
     // Andata — событие order_new. Fire-and-forget: НЕ ждём ответ и НЕ блокируем
     // путь заявки (у sendAndataEvent есть свой таймаут и он не бросает исключений).

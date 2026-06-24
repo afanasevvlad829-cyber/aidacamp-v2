@@ -8,11 +8,15 @@ import {
 import { apiOk, apiBad } from '../../../lib/portalResponse';
 
 const ok  = (data: object = {}) => apiOk(data);
-const bad = (msg: string, status = 400) => apiBad(msg, status);
+
+function bad(msg: string, status = 400, ctx?: string) {
+  if (status >= 400) console.error(`[lesson-api] ${ctx ?? ''} → ${status} ${msg}`);
+  return apiBad(msg, status);
+}
 
 function canEditLesson(role: string | null | undefined, lessonTeacherId: number | null, myStaffId: number | null): boolean {
   if (role === 'admin' || role === 'rukovoditel') return true;
-  if (role === 'teacher' && myStaffId && lessonTeacherId === myStaffId) return true;
+  if (role === 'teacher' && myStaffId && Number(lessonTeacherId) === myStaffId) return true;
   return false;
 }
 
@@ -59,21 +63,38 @@ export const POST: APIRoute = async ({ request, locals }) => {
   let body: any;
   try { body = await request.json(); } catch { return bad('invalid json'); }
   const action = String(body.action || 'upsert');
-  const myStaffId = await staffIdByTg(sub);
+
+  // portalSid = staff.id напрямую (вход по коду); portalSub = telegram_id (TG-вход, BIGINT→число)
+  const myStaffId = locals.portalSid ? Number(locals.portalSid) : await staffIdByTg(sub);
+
+  const ctx = `action=${action} role=${role} sid=${locals.portalSid ?? '-'} sub=${sub ?? '-'} myStaffId=${myStaffId ?? 'null'}`;
+  console.log(`[lesson-api] ${ctx}`);
 
   if (action === 'upsert') {
     const isUpdate = !!body.id;
     if (isUpdate) {
       const cur = await getLesson(Number(body.id));
-      if (!cur) return bad('lesson not found', 404);
-      if (!canEditLesson(role, cur.teacher_staff_id, myStaffId)) return bad('no permission', 403);
+      if (!cur) return bad(`Урок #${body.id} не найден`, 404, ctx);
+      if (!canEditLesson(role, cur.teacher_staff_id, myStaffId)) {
+        return bad(
+          `Нет прав: урок принадлежит сотруднику #${cur.teacher_staff_id}, вы — #${myStaffId ?? '?'}`,
+          403, ctx,
+        );
+      }
     } else {
-      // Создавать урок может admin/rukovoditel ИЛИ преподаватель для себя
       if (role !== 'admin' && role !== 'rukovoditel') {
-        if (role !== 'teacher') return bad('no permission', 403);
-        // Преподаватель создаёт только себе
-        if (!myStaffId || Number(body.teacher_staff_id) !== myStaffId) {
-          return bad('teacher может создавать урок только себе', 403);
+        if (role !== 'teacher') return bad('Создавать уроки могут только преподаватели', 403, ctx);
+        if (!myStaffId) {
+          return bad(
+            `Не удалось определить ваш аккаунт (sid=${locals.portalSid ?? '-'} sub=${sub ?? '-'}). Обратитесь к администратору.`,
+            403, ctx,
+          );
+        }
+        if (Number(body.teacher_staff_id) !== myStaffId) {
+          return bad(
+            `Преподаватель может создавать урок только для себя (вы — #${myStaffId}, выбран — #${body.teacher_staff_id})`,
+            403, ctx,
+          );
         }
       }
     }
@@ -94,26 +115,38 @@ export const POST: APIRoute = async ({ request, locals }) => {
       notes: body.notes ?? null,
       created_by: myStaffId,
     });
+    console.log(`[lesson-api] upsert ok id=${id} by myStaffId=${myStaffId}`);
     return ok({ id });
   }
 
   if (action === 'delete') {
     const id = Number(body.id);
-    if (!id) return bad('id required');
+    if (!id) return bad('id обязателен', 400, ctx);
     const cur = await getLesson(id);
     if (!cur) return ok({ id });
-    if (!canEditLesson(role, cur.teacher_staff_id, myStaffId)) return bad('no permission', 403);
+    if (!canEditLesson(role, cur.teacher_staff_id, myStaffId)) {
+      return bad(
+        `Нет прав на удаление: урок принадлежит #${cur.teacher_staff_id}, вы — #${myStaffId ?? '?'}`,
+        403, ctx,
+      );
+    }
     await deleteLesson(id);
+    console.log(`[lesson-api] delete ok id=${id} by myStaffId=${myStaffId}`);
     return ok({ id });
   }
 
   if (action === 'progress') {
     const lessonId = Number(body.lesson_id);
     const kidId = Number(body.kid_id);
-    if (!lessonId || !kidId) return bad('lesson_id + kid_id required');
+    if (!lessonId || !kidId) return bad('lesson_id + kid_id обязательны', 400, ctx);
     const cur = await getLesson(lessonId);
-    if (!cur) return bad('lesson not found', 404);
-    if (!canEditLesson(role, cur.teacher_staff_id, myStaffId)) return bad('no permission', 403);
+    if (!cur) return bad(`Урок #${lessonId} не найден`, 404, ctx);
+    if (!canEditLesson(role, cur.teacher_staff_id, myStaffId)) {
+      return bad(
+        `Нет прав на прогресс: урок #${cur.teacher_staff_id}, вы — #${myStaffId ?? '?'}`,
+        403, ctx,
+      );
+    }
     await upsertProgress({
       lesson_id: lessonId,
       kid_id: kidId,
@@ -126,5 +159,5 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return ok({ lesson_id: lessonId, kid_id: kidId });
   }
 
-  return bad('unknown action');
+  return bad(`Неизвестное действие: ${action}`, 400, ctx);
 };

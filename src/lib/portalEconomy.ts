@@ -191,21 +191,21 @@ export async function deleteActivity(id: number): Promise<void> {
 /** Сидинг — стандартные активности, чтобы у админа было с чего начать. */
 export async function seedDefaultActivities(): Promise<number> {
   const defaults: Omit<ActivityOffer, 'id' | 'sort' | 'archived'>[] = [
-    { name: 'Телефон на всю ночь', description: 'Можно оставить телефон у себя до утра вместо сдачи в сейф', category: 'privilege', base_price: 0, participants_hint: 1 },
-    { name: 'Отменить зарядку', description: 'Команда откупается от утренней зарядки на 1 день', category: 'privilege', base_price: 0, participants_hint: 25 },
-    { name: 'Подъём на час позже', description: 'На всю комнату — общий поздний подъём', category: 'comfort', base_price: 0, participants_hint: 4 },
-    { name: 'Уборка вожатого', description: 'Вожатый убирает вашу комнату вместо вас', category: 'service', base_price: 0, participants_hint: 4 },
-    { name: 'Встать вожатым на смену', description: 'Стать «исполняющим обязанности» вожатого на полдня', category: 'fun', base_price: 0, participants_hint: 1 },
-    { name: 'Фильм на вечер', description: 'Выбрать фильм для общего киновечера', category: 'fun', base_price: 500, participants_hint: 30 },
-    { name: 'Сосиски на костре', description: 'Сосиски + хлеб на всю компанию у костра', category: 'food', base_price: 1500, participants_hint: 15 },
-    { name: 'Пицца в комнату', description: 'Доставка пиццы прямо в комнату вечером', category: 'food', base_price: 1200, participants_hint: 4 },
-    { name: 'Шашлык для команды', description: 'Шашлык на компанию (вечерний ужин у костра)', category: 'food', base_price: 5000, participants_hint: 25 },
-    { name: 'Мороженое на всю комнату', description: 'По мороженому каждому в комнате', category: 'food', base_price: 600, participants_hint: 4 },
-    { name: 'Чипсы и газировка', description: 'Набор снеков для вечерних посиделок', category: 'food', base_price: 800, participants_hint: 6 },
-    { name: 'Дискотека по заявкам', description: 'Полчаса дискотеки с вашим плейлистом', category: 'fun', base_price: 0, participants_hint: 20 },
-    { name: 'Пейнтбол на природе', description: 'Выезд на пейнтбол (по согласованию с лагерем)', category: 'fun', base_price: 8000, participants_hint: 10 },
-    { name: 'Тихий час отменить', description: 'Можно не спать в тихий час (только для команды)', category: 'privilege', base_price: 0, participants_hint: 4 },
-    { name: 'Дополнительные 30 мин в бассейне', description: '+30 мин водных активностей сверх расписания', category: 'fun', base_price: 0, participants_hint: 10 },
+    { name: 'Телефон на всю ночь', description: 'Можно оставить телефон у себя до утра вместо сдачи в сейф', category: 'privilege', base_price: 0, participants_hint: 1, target_days: null, target_share_pct: null, repeat_multiplier: null, custom_price: null },
+    { name: 'Отменить зарядку', description: 'Команда откупается от утренней зарядки на 1 день', category: 'privilege', base_price: 0, participants_hint: 25, target_days: null, target_share_pct: null, repeat_multiplier: null, custom_price: null },
+    { name: 'Подъём на час позже', description: 'На всю комнату — общий поздний подъём', category: 'comfort', base_price: 0, participants_hint: 4, target_days: null, target_share_pct: null, repeat_multiplier: null, custom_price: null },
+    { name: 'Уборка вожатого', description: 'Вожатый убирает вашу комнату вместо вас', category: 'service', base_price: 0, participants_hint: 4, target_days: null, target_share_pct: null, repeat_multiplier: null, custom_price: null },
+    { name: 'Встать вожатым на смену', description: 'Стать «исполняющим обязанности» вожатого на полдня', category: 'fun', base_price: 0, participants_hint: 1, target_days: null, target_share_pct: null, repeat_multiplier: null, custom_price: null },
+    { name: 'Фильм на вечер', description: 'Выбрать фильм для общего киновечера', category: 'fun', base_price: 500, participants_hint: 30, target_days: null, target_share_pct: null, repeat_multiplier: null, custom_price: null },
+    { name: 'Сосиски на костре', description: 'Сосиски + хлеб на всю компанию у костра', category: 'food', base_price: 1500, participants_hint: 15, target_days: null, target_share_pct: null, repeat_multiplier: null, custom_price: null },
+    { name: 'Пицца в комнату', description: 'Доставка пиццы прямо в комнату вечером', category: 'food', base_price: 1200, participants_hint: 4, target_days: null, target_share_pct: null, repeat_multiplier: null, custom_price: null },
+    { name: 'Шашлык для команды', description: 'Шашлык на компанию (вечерний ужин у костра)', category: 'food', base_price: 5000, participants_hint: 25, target_days: null, target_share_pct: null, repeat_multiplier: null, custom_price: null },
+    { name: 'Мороженое на всю комнату', description: 'По мороженому каждому в комнате', category: 'food', base_price: 600, participants_hint: 4, target_days: null, target_share_pct: null, repeat_multiplier: null, custom_price: null },
+    { name: 'Чипсы и газировка', description: 'Набор снеков для вечерних посиделок', category: 'food', base_price: 800, participants_hint: 6, target_days: null, target_share_pct: null, repeat_multiplier: null, custom_price: null },
+    { name: 'Дискотека по заявкам', description: 'Полчаса дискотеки с вашим плейлистом', category: 'fun', base_price: 0, participants_hint: 20, target_days: null, target_share_pct: null, repeat_multiplier: null, custom_price: null },
+    { name: 'Пейнтбол на природе', description: 'Выезд на пейнтбол (по согласованию с лагерем)', category: 'fun', base_price: 8000, participants_hint: 10, target_days: null, target_share_pct: null, repeat_multiplier: null, custom_price: null },
+    { name: 'Тихий час отменить', description: 'Можно не спать в тихий час (только для команды)', category: 'privilege', base_price: 0, participants_hint: 4, target_days: null, target_share_pct: null, repeat_multiplier: null, custom_price: null },
+    { name: 'Дополнительные 30 мин в бассейне', description: '+30 мин водных активностей сверх расписания', category: 'fun', base_price: 0, participants_hint: 10, target_days: null, target_share_pct: null, repeat_multiplier: null, custom_price: null },
   ];
 
   return (await withClient(async (c) => {

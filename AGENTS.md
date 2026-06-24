@@ -47,3 +47,18 @@ Prefer: `git revert` over `reset --hard`, `git stash` over `clean`, new branch o
 4. If change scope is visual, prefer CSS/class/template updates; do not duplicate business/state logic.
 5. Keep one shared state/action pipeline for both views; only rendering differs.
 6. Legacy mode is not used for production changes.
+
+## 📸 Снапшот перед рискованными правками (обязательно)
+
+Перед любой потенциально деструктивной операцией над прод-данными (деплой, массовое удаление/перезапись файлов, миграции, правки `images/gallery`, `.env`, БД) — **сделать restic-снапшот**:
+
+```
+run(service="ssh", command="/opt/restic-snapshot.sh")
+# или напрямую: ssh aidacamp '/opt/restic-snapshot.sh'
+```
+
+- **Репозиторий: на Яндекс.Диске** — `rclone:yadisk:aidacamp-snapshots/restic` (off-server, на сервере НЕ хранится). Пароль: `/root/.restic-pass`. rclone-remote `yadisk` настроен на сервере.
+- Прод-деплой (`deploy.sh prod`) делает снапшот **автоматически** перед выкаткой.
+- Откат: `restic -r rclone:yadisk:aidacamp-snapshots/restic --password-file /root/.restic-pass restore latest --target /tmp/restore --include <путь>`.
+- Ротация: 3 суточных снапшота (`--keep-daily 3`), cron 03:33. Шифрование restic (пароль сохранён владельцем вне сервера).
+- Инцидент-первопричина: пропажа `gallery-additions.json` (2026-06) — фото исчезли с /foto/, бэкапа не было. Снапшоты закрывают этот класс.

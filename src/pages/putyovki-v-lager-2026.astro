@@ -1,0 +1,378 @@
+---
+import '../styles/global.css';
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import BlogCTA from '../components/BlogCTA.astro';
+import RelatedPages from '../components/RelatedPages.astro';
+import { mainShifts } from '../data/shifts';
+import { getCurrentPrice, fmtPrice } from '../data/dynamicPrices';
+
+const relatedPages = [
+  { title: "Смены и даты 2026", url: "/ceny", icon: "calendar-event", description: "Все смены с ценами и датами" },
+  { title: "Сколько стоит лагерь", url: "/stati/nedorogoy-lager", icon: "cash-stack", description: "Честная математика цены путёвки" },
+  { title: "Налоговый вычет за лагерь", url: "/stati/nalogovyy-vychet-za-lager", icon: "cash-coin", description: "Как вернуть до 5 434 ₽" },
+  { title: "Как выбрать летний лагерь", url: "/stati/kak-vybrat-lager", icon: "patch-check-fill", description: "7 критериев без воды" },
+];
+
+const faqItems = [
+  {
+    question: "Что входит в путёвку в детский лагерь?",
+    answer: "Стандартная путёвка включает проживание, питание (как правило, 4–5 раз в день), вожатое сопровождение, досуговую программу и базовые активности. В хорошем образовательном лагере к этому добавляется предметная программа под руководством практикующих педагогов, всё необходимое оборудование и медицинский персонал. Уточняйте при бронировании, что именно входит в цену — транспорт, страховка, дополнительные занятия."
+  },
+  {
+    question: "Сколько стоит путёвка в детский лагерь в Подмосковье в 2026 году?",
+    answer: "Диапазон широкий: от 30 000–40 000 ₽ за две недели в базовых вариантах до 80 000–110 000 ₽ в лагерях с сильной предметной программой. Разница — не маркетинг, а реальная структура затрат: качество еды, соотношение педагогов и детей, оборудование. Купить путёвку в лагерь дешевле 35 000 ₽ без субсидии обычно означает, что что-то срезано внутри — чаще всего на питании или персонале."
+  },
+  {
+    question: "Когда лучше покупать путёвку в лагерь?",
+    answer: "Чем раньше, тем выгоднее: большинство хороших лагерей держат базовую цену до определённой даты, потом она растёт — иногда каждый день. Популярные смены расходятся к апрелю–маю. Если выбрали лагерь — бронируйте сразу, не ждите 'вдруг ещё подешевеет'. Хорошие лагеря не дешевеют ближе к лету."
+  },
+  {
+    question: "Можно ли получить налоговый вычет за детский лагерь?",
+    answer: "Да, если лагерь работает с образовательной лицензией Минобрнауки. Тогда 13% от образовательной части путёвки возвращаются через налоговый вычет. В зависимости от длительности смены и цены — это от 2 800 до 5 434 ₽ живыми деньгами. Оформляется через личный кабинет налоговой или работодателя."
+  },
+];
+
+// Текущие цены смен (через единое правило роста)
+const shiftPrices = mainShifts.map(s => ({
+  shift: s,
+  price: getCurrentPrice(s.id),
+}));
+---
+
+<Base
+  title="Путёвки в детский лагерь 2026 — купить в АйДаКемп"
+  description="Путёвки в детский лагерь 2026: что входит, сколько стоят в Подмосковье и как выбрать. Смены АйДаКемп — IT-программа, бассейн, питание. Купить путёвку онлайн."
+  canonical="/putyovki-v-lager-2026"
+>
+  <Header />
+
+  <main class="mx-auto max-w-[860px] px-4 pt-8 pb-0 md:pt-12">
+    <article>
+
+      <!-- Хлебные крошки -->
+      <nav class="mb-6 text-[13px] text-slate-400" aria-label="Breadcrumb">
+        <a href="/" class="hover:text-primary transition-colors">АйДаКемп</a>
+        <span class="mx-1.5">·</span>
+        <span class="text-slate-600">Путёвки в лагерь 2026</span>
+      </nav>
+
+      <!-- H1 -->
+      <h1 class="text-[28px] md:text-[36px] font-bold leading-[1.15] tracking-[-0.025em] text-slate-900 mb-5 max-w-[720px]">
+        Путёвки в детский лагерь 2026: как выбрать и где купить
+      </h1>
+
+      <!-- Лид -->
+      <div class="mb-10">
+        <p class="text-[16px] md:text-[17px] leading-[1.7] text-slate-600 max-w-[720px]">
+          «Купить путёвку в лагерь» и «выбрать хороший лагерь» — разные задачи. В первом случае
+          достаточно найти свободное место с подходящими датами. Во втором — понять, что реально
+          стоит за цифрой в прайсе: питание, программа, персонал, безопасность. Разбираем всё по порядку.
+        </p>
+      </div>
+
+      <!-- Раздел 1: Что входит в путёвку -->
+      <div class="mb-8 pt-2">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-1 h-5 rounded-full bg-primary shrink-0"></div>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
+            Что входит в путёвку в детский лагерь
+          </h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-5">
+          Стандартный состав путёвки — проживание, питание, вожатое сопровождение и досуговая программа.
+          В лагерях с образовательной составляющей добавляется предметная программа, оборудование
+          и педагоги с практическим опытом. Вот что обычно стоит проверять:
+        </p>
+
+        <div class="space-y-3 max-w-[720px]">
+          <div class="flex gap-3 p-4 rounded-[12px] bg-slate-50 border border-slate-100">
+            <i class="bi bi-check-circle text-emerald-500 text-[18px] shrink-0 mt-0.5" aria-hidden="true"></i>
+            <div>
+              <p class="text-[15px] font-semibold text-slate-800 mb-1">Питание</p>
+              <p class="text-[14px] leading-[1.6] text-slate-600">
+                Минимум 4–5 раз в день по нормам СанПиН. Важно: «соответствует требованиям» и «вкусно»
+                — разные вещи. Спросите отзывы у родителей предыдущих смен.
+              </p>
+            </div>
+          </div>
+          <div class="flex gap-3 p-4 rounded-[12px] bg-slate-50 border border-slate-100">
+            <i class="bi bi-check-circle text-emerald-500 text-[18px] shrink-0 mt-0.5" aria-hidden="true"></i>
+            <div>
+              <p class="text-[15px] font-semibold text-slate-800 mb-1">Проживание</p>
+              <p class="text-[14px] leading-[1.6] text-slate-600">
+                Корпус, постельное бельё, санузлы. Есть ли розетки, нормальные кровати,
+                отопление на случай прохладных ночей — всё это стоит проверить на фото или очном визите.
+              </p>
+            </div>
+          </div>
+          <div class="flex gap-3 p-4 rounded-[12px] bg-slate-50 border border-slate-100">
+            <i class="bi bi-check-circle text-emerald-500 text-[18px] shrink-0 mt-0.5" aria-hidden="true"></i>
+            <div>
+              <p class="text-[15px] font-semibold text-slate-800 mb-1">Программа</p>
+              <p class="text-[14px] leading-[1.6] text-slate-600">
+                Что ребята делают каждый день. Чем конкретнее лагерь описывает распорядок и
+                содержание занятий — тем честнее. Расплывчатые «творческие мастерские» и
+                «развивающие активности» — сигнал уточнить подробнее.
+              </p>
+            </div>
+          </div>
+          <div class="flex gap-3 p-4 rounded-[12px] bg-slate-50 border border-slate-100">
+            <i class="bi bi-check-circle text-emerald-500 text-[18px] shrink-0 mt-0.5" aria-hidden="true"></i>
+            <div>
+              <p class="text-[15px] font-semibold text-slate-800 mb-1">Безопасность</p>
+              <p class="text-[14px] leading-[1.6] text-slate-600">
+                Медработник на территории (обязателен по закону), охрана периметра,
+                видеонаблюдение. Спросите: кто дежурит ночью, есть ли журнал выхода.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-[15px] leading-[1.6] text-slate-500 max-w-[720px] mt-4">
+          <i class="bi bi-info-circle text-slate-400 mr-1" aria-hidden="true"></i>
+          Страховка, противоклещевые обработки, лицензия Роспотребнадзора — обязательные требования,
+          но их наличие стоит проверять отдельно. Хороший лагерь сам предоставит документы по запросу.
+        </p>
+      </div>
+
+      <!-- Раздел 2: Сколько стоят путёвки -->
+      <div class="mb-8 pt-2">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-1 h-5 rounded-full bg-primary shrink-0"></div>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
+            Сколько стоят путёвки в лагерь в 2026 году
+          </h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-5">
+          По рыночным данным Подмосковья 2026 года, диапазон примерно такой:
+        </p>
+
+        <div class="overflow-x-auto rounded-[14px] border border-slate-200 mb-5">
+          <table class="w-full text-[14px]">
+            <thead>
+              <tr class="bg-slate-100 border-b border-slate-200">
+                <th class="text-left px-4 py-3 font-semibold text-slate-700">Тип лагеря</th>
+                <th class="text-right px-4 py-3 font-semibold text-slate-700">Цена за смену (~14 дней)</th>
+                <th class="text-left px-4 py-3 font-semibold text-slate-700">Что включено</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b border-slate-100">
+                <td class="px-4 py-3 text-slate-700">Базовый / муниципальный</td>
+                <td class="px-4 py-3 text-right text-slate-600">30 000–45 000 ₽</td>
+                <td class="px-4 py-3 text-slate-500 text-[13px]">Проживание, питание, вожатые, базовая программа</td>
+              </tr>
+              <tr class="border-b border-slate-100 bg-slate-50">
+                <td class="px-4 py-3 text-slate-700">Тематический / спортивный</td>
+                <td class="px-4 py-3 text-right text-slate-600">50 000–75 000 ₽</td>
+                <td class="px-4 py-3 text-slate-500 text-[13px]">Программа по направлению, педагоги, часть оборудования</td>
+              </tr>
+              <tr class="border-b border-slate-100">
+                <td class="px-4 py-3 text-slate-700 font-medium">IT / образовательный</td>
+                <td class="px-4 py-3 text-right text-slate-600 font-medium">75 000–110 000 ₽</td>
+                <td class="px-4 py-3 text-slate-500 text-[13px]">Полное оборудование, практикующие педагоги, проект на выходе</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
+          Если путёвка стоит значительно ниже рынка — либо она субсидирована (профсоюз,
+          работодатель, региональная программа), либо что-то срезано внутри. Математика не врёт:
+          питание, персонал и безопасность имеют фиксированную себестоимость.
+        </p>
+
+        <div class="rounded-[14px] bg-orange-50 border border-orange-200 p-5 max-w-[720px]">
+          <div class="flex items-start gap-3">
+            <i class="bi bi-cash-stack text-[22px] text-orange-600 shrink-0 mt-0.5" aria-hidden="true"></i>
+            <div>
+              <p class="text-[15px] font-semibold text-slate-800 mb-1">Как сэкономить без потери качества</p>
+              <ul class="space-y-1.5 mt-1">
+                <li class="flex items-start gap-2 text-[14px] leading-[1.5] text-slate-600">
+                  <span class="mt-1.5 block h-1.5 w-1.5 shrink-0 rounded-full bg-primary"></span>
+                  Бронировать как можно раньше — большинство лагерей держат базовую цену до определённой даты
+                </li>
+                <li class="flex items-start gap-2 text-[14px] leading-[1.5] text-slate-600">
+                  <span class="mt-1.5 block h-1.5 w-1.5 shrink-0 rounded-full bg-primary"></span>
+                  Оформить налоговый вычет 13% — если лагерь с образовательной лицензией Минобрнауки
+                </li>
+                <li class="flex items-start gap-2 text-[14px] leading-[1.5] text-slate-600">
+                  <span class="mt-1.5 block h-1.5 w-1.5 shrink-0 rounded-full bg-primary"></span>
+                  Уточнить рассрочку — многие лагеря предлагают её без переплаты
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Раздел 3: Путёвки в АйДаКемп -->
+      <div class="mb-8 pt-2">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-1 h-5 rounded-full bg-primary shrink-0"></div>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
+            Путёвки в АйДаКемп — лето 2026
+          </h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-5">
+          АйДаКемп — IT-лагерь в Подмосковье для школьников 7–15 лет. За каждую смену ребята
+          создают собственный проект: бот, игру или приложение. Не смотрят на педагога — делают сами.
+          Программу ведут практикующие специалисты, оборудование лагерное (ноутбуки приносить не нужно).
+        </p>
+
+        <div class="space-y-3 max-w-[720px] mb-5">
+          {shiftPrices.map(({ shift, price }) => (
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-[14px] border border-slate-200 bg-white hover:border-primary/30 transition-colors">
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-0.5">
+                  <p class="text-[15px] font-semibold text-slate-900">{shift.name}</p>
+                  {shift.highlighted && (
+                    <span class="text-[11px] font-semibold uppercase tracking-wide text-orange-600 bg-orange-100 rounded px-1.5 py-0.5">
+                      хит
+                    </span>
+                  )}
+                </div>
+                <p class="text-[13px] text-slate-500">{shift.dates} · {shift.duration}</p>
+                <p class="text-[13px] text-slate-500 mt-0.5">{shift.description}</p>
+              </div>
+              <div class="text-right shrink-0">
+                <p class="text-[20px] font-bold text-primary leading-none">
+                  {price ? fmtPrice(price) : shift.price}
+                </p>
+                <p class="text-[12px] text-slate-400 mt-0.5">всё включено</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p class="text-[15px] leading-[1.6] text-slate-500 max-w-[720px] mb-4">
+          В стоимость входит: проживание, 5-разовое питание, IT-программа, бассейн,
+          медработник на территории, трансфер от метро Солнцево. Ноутбуки — лагерные.
+        </p>
+
+        <a
+          href="/ceny"
+          class="inline-flex items-center gap-2 rounded-[12px] bg-primary px-5 py-3 text-[15px] font-semibold text-white hover:bg-primary/90 transition-colors"
+        >
+          Смотреть все смены и цены
+          <i class="bi bi-arrow-right text-[14px]" aria-hidden="true"></i>
+        </a>
+      </div>
+
+      <!-- Раздел 4: Как выбрать лагерь — 5 вопросов -->
+      <div class="mb-8 pt-2">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-1 h-5 rounded-full bg-primary shrink-0"></div>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
+            5 вопросов перед покупкой путёвки
+          </h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-5">
+          Если выбираете между несколькими вариантами — задайте каждому лагерю эти вопросы.
+          Хороший лагерь отвечает конкретно и без промедления.
+        </p>
+
+        <ol class="space-y-4 max-w-[720px]">
+          <li class="flex gap-3">
+            <span class="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-white text-[13px] font-bold flex items-center justify-center mt-0.5">1</span>
+            <div>
+              <p class="text-[15px] font-semibold text-slate-800 mb-0.5">Есть ли образовательная лицензия Минобрнауки?</p>
+              <p class="text-[14px] leading-[1.6] text-slate-600">
+                Без неё нельзя оформить налоговый вычет. Плюс наличие лицензии — сигнал, что лагерь
+                проходил соответствующие проверки.
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-3">
+            <span class="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-white text-[13px] font-bold flex items-center justify-center mt-0.5">2</span>
+            <div>
+              <p class="text-[15px] font-semibold text-slate-800 mb-0.5">Сколько детей на одного вожатого?</p>
+              <p class="text-[14px] leading-[1.6] text-slate-600">
+                Норма СанПиН — 1 : 8. В базовых лагерях часто 1 : 20–25. Это означает в 2–3 раза
+                меньше внимания к каждому ребёнку, особенно в сложных ситуациях.
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-3">
+            <span class="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-white text-[13px] font-bold flex items-center justify-center mt-0.5">3</span>
+            <div>
+              <p class="text-[15px] font-semibold text-slate-800 mb-0.5">Кто ведёт программу?</p>
+              <p class="text-[14px] leading-[1.6] text-slate-600">
+                Практикующий специалист или человек с дипломом, прочитавший про тему. Разница в качестве
+                — огромная. Попросите рассказать про конкретного педагога.
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-3">
+            <span class="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-white text-[13px] font-bold flex items-center justify-center mt-0.5">4</span>
+            <div>
+              <p class="text-[15px] font-semibold text-slate-800 mb-0.5">Что конкретно получится на выходе?</p>
+              <p class="text-[14px] leading-[1.6] text-slate-600">
+                Если лагерь говорит «развивающая программа» — спросите: что конкретно создаёт ребёнок
+                за смену? Что остаётся у него после? Конкретный ответ — хороший знак.
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-3">
+            <span class="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-white text-[13px] font-bold flex items-center justify-center mt-0.5">5</span>
+            <div>
+              <p class="text-[15px] font-semibold text-slate-800 mb-0.5">Есть ли отзывы родителей за прошлые сезоны?</p>
+              <p class="text-[14px] leading-[1.6] text-slate-600">
+                Не рекламные, а реальные. Яндекс.Карты, отзовики, родительские чаты — там видно настоящую
+                картину. Обращайте внимание на комментарии про еду, сон и коммуникацию с организаторами.
+              </p>
+            </div>
+          </li>
+        </ol>
+      </div>
+
+      <BlogCTA />
+
+      <!-- FAQ -->
+      <div class="mb-10 pt-2">
+        <div class="flex items-center gap-2 mb-5">
+          <div class="w-1 h-5 rounded-full bg-primary shrink-0"></div>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
+            Частые вопросы про путёвки в лагерь
+          </h2>
+        </div>
+        <div class="space-y-3 max-w-[720px]">
+          {faqItems.map((item) => (
+            <details class="group rounded-[14px] border border-slate-200 bg-white overflow-hidden">
+              <summary class="flex cursor-pointer items-start justify-between gap-4 px-5 py-4 text-[15px] font-semibold text-slate-800 select-none list-none [&::-webkit-details-marker]:hidden">
+                {item.question}
+                <i class="bi bi-chevron-down text-[13px] text-slate-400 shrink-0 mt-0.5 transition-transform group-open:rotate-180" aria-hidden="true"></i>
+              </summary>
+              <div class="px-5 pb-4 text-[15px] leading-[1.65] text-slate-600 border-t border-slate-100 pt-3">
+                {item.answer}
+              </div>
+            </details>
+          ))}
+        </div>
+      </div>
+
+    </article>
+
+    <div class="mt-12">
+      <RelatedPages pages={relatedPages} />
+    </div>
+
+    <!-- FAQ Schema -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": faqItems.map(item => ({
+        "@type": "Question",
+        "name": item.question,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": item.answer
+        }
+      }))
+    })} />
+  </main>
+
+  <Footer />
+</Base>
