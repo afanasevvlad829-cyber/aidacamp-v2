@@ -1,0 +1,206 @@
+---
+/**
+ * VideoPlayer — превью (тихое, autoplay) + лайтбокс с полным звуком + karaoke-субтитры.
+ *
+ * <VideoPlayer
+ *   src="/video/daria-story.mp4"
+ *   caption="«Мы живём в самом прекрасном IT-лагере»"
+ *   cues={DARIA_CUES}
+ *   goalName="daria_video_play"
+ * />
+ */
+
+interface Cue {
+  s: number;  // start, секунды
+  e: number;  // end, секунды
+  t: string;  // текст реплики
+}
+
+interface Props {
+  src: string;
+  caption?: string;
+  cues?: Cue[];
+  aspect?: string;       // CSS aspect-ratio, дефолт '9/16'
+  maxHeight?: string;    // max-height превью, дефолт '460px'
+  goalName?: string;     // Яндекс.Метрика цель
+  uid?: string;          // уникальный суффикс если несколько плееров на странице
+}
+
+const {
+  src,
+  caption,
+  cues = [],
+  aspect = '9/16',
+  maxHeight = '460px',
+  goalName = 'video_play',
+  uid = 'vp',
+} = Astro.props;
+
+const modalId   = `${uid}-modal`;
+const playerId  = `${uid}-player`;
+const karaokeId = `${uid}-karaoke`;
+const closeId   = `${uid}-close`;
+const wrapId    = `${uid}-wrap`;
+
+const cuesJson = JSON.stringify(cues);
+---
+
+<!-- Превью-блок -->
+<div>
+  <button
+    type="button"
+    id={wrapId}
+    class="vp-wrap group relative block w-full overflow-hidden rounded-[18px] bg-slate-100 shadow-[0_4px_24px_rgba(15,23,42,0.12)] cursor-pointer hover:shadow-[0_8px_32px_rgba(15,23,42,0.18)] transition-shadow"
+    style={`aspect-ratio:${aspect};max-height:${maxHeight}`}
+    aria-label="Смотреть видео"
+  >
+    <!-- Скелетон -->
+    <div class="vp-skeleton absolute inset-0 animate-pulse bg-gradient-to-b from-slate-200 to-slate-100 rounded-[18px]">
+      <div class="absolute inset-0 flex flex-col items-center justify-center gap-3">
+        <div class="h-12 w-12 rounded-full bg-slate-300/60"></div>
+        <div class="h-2 w-20 rounded-full bg-slate-300/60"></div>
+      </div>
+    </div>
+    <!-- Тихое превью-видео: preload=none, грузится только при попадании в viewport -->
+    <video
+      class="vp-preview absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-500 pointer-events-none"
+      muted playsinline loop preload="none"
+    ></video>
+    <!-- Play-кнопка -->
+    <span class="absolute inset-0 flex items-center justify-center z-10">
+      <span class="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-xl backdrop-blur-sm transition-transform duration-200 group-hover:scale-110">
+        <i class="bi bi-play-fill text-[26px] text-primary ml-1" aria-hidden="true"></i>
+      </span>
+    </span>
+  </button>
+  {caption && (
+    <p class="mt-2 text-[12px] text-body-faint text-center leading-[1.5]" set:html={caption}></p>
+  )}
+</div>
+
+<!-- Лайтбокс -->
+<dialog
+  id={modalId}
+  class="m-0 h-full w-full max-w-none border-0 bg-transparent p-0 backdrop:bg-black/80 outline-none"
+>
+  <div class="flex min-h-full items-center justify-center p-4">
+    <div class="relative w-full max-w-[400px]">
+      <!-- Кнопка закрытия -->
+      <button
+        id={closeId}
+        type="button"
+        class="absolute -top-10 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-800 hover:bg-slate-100 transition-colors z-10 shadow"
+        aria-label="Закрыть"
+      >
+        <i class="bi bi-x-lg text-[14px]" aria-hidden="true"></i>
+      </button>
+      <!-- Видео + karaoke overlay -->
+      <div class="relative w-full" style={`aspect-ratio:${aspect};max-height:80svh`}>
+        <video
+          id={playerId}
+          class="w-full h-full rounded-[18px] shadow-2xl object-cover"
+          playsinline controls preload="none"
+        ></video>
+        {cues.length > 0 && (
+          <div
+            id={karaokeId}
+            class="pointer-events-none absolute bottom-12 left-0 right-0 px-4 pb-2 text-center"
+            aria-live="polite"
+            aria-atomic="true"
+          ></div>
+        )}
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<script define:vars={{ src, modalId, playerId, karaokeId, closeId, wrapId, cuesJson, goalName }}>
+  const CUES = JSON.parse(cuesJson);
+  const LINE_STYLE = 'display:inline-block;background:rgba(0,0,0,0.72);border-radius:8px;padding:6px 12px;font-size:15px;font-weight:600;line-height:1.6;text-shadow:0 1px 4px rgba(0,0,0,0.9)';
+
+  function initVP() {
+    const wrap     = document.getElementById(wrapId);
+    const modal    = document.getElementById(modalId);
+    const player   = document.getElementById(playerId);
+    const kEl      = document.getElementById(karaokeId);
+    const closeBtn = document.getElementById(closeId);
+    if (!wrap || !modal || !player) return;
+    if (wrap.__vpReady) return;
+    wrap.__vpReady = true;
+
+    // ── Превью: lazy-load при попадании в viewport ────────────────────
+    const preview  = wrap.querySelector('.vp-preview');
+    const skeleton = wrap.querySelector('.vp-skeleton');
+    if (preview) {
+      preview.addEventListener('canplay', () => {
+        skeleton?.classList.add('opacity-0');
+        preview.style.opacity = '1';
+        preview.play().catch(() => {});
+      }, { once: true });
+
+      const io = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return;
+        io.disconnect();
+        // src устанавливается здесь — до этого момента сеть не используется
+        preview.src = src;
+        preview.load();
+      }, { threshold: 0.1 });
+      io.observe(wrap);
+    }
+
+    // ── Karaoke RAF ───────────────────────────────────────────────────
+    let rafId = 0;
+    function rafLoop() {
+      if (!player.paused && CUES.length) {
+        const t = player.currentTime;
+        const idx = CUES.findIndex(c => t >= c.s && t < c.e);
+        if (idx === -1) {
+          if (kEl) kEl.innerHTML = '';
+        } else {
+          const cue = CUES[idx];
+          const words = cue.t.split(' ');
+          const wordDur = (cue.e - cue.s) / words.length;
+          const activeW = Math.min(Math.floor((t - cue.s) / wordDur), words.length - 1);
+          const html = words.map((w, i) => {
+            const s = i < activeW
+              ? 'color:rgba(255,255,255,0.45)'
+              : i === activeW
+                ? 'color:#FFD60A;font-weight:800;text-shadow:0 0 10px rgba(255,214,10,0.6)'
+                : 'color:#ffffff';
+            return `<span style="${s}">${w}</span>`;
+          }).join(' ');
+          if (kEl) kEl.innerHTML = `<span style="${LINE_STYLE}">${html}</span>`;
+        }
+      }
+      rafId = requestAnimationFrame(rafLoop);
+    }
+
+    // ── Open / Close ──────────────────────────────────────────────────
+    const openModal = () => {
+      player.src = src;
+      modal.showModal();
+      player.play().catch(() => {});
+      if (CUES.length) rafId = requestAnimationFrame(rafLoop);
+      try { window.ym?.(96499295, 'reachGoal', goalName); } catch {}
+    };
+    const closeModal = () => {
+      cancelAnimationFrame(rafId);
+      modal.close();
+      player.pause();
+      player.src = '';
+      if (kEl) kEl.innerHTML = '';
+    };
+
+    player.addEventListener('pause', () => cancelAnimationFrame(rafId));
+    player.addEventListener('play',  () => { if (CUES.length) rafId = requestAnimationFrame(rafLoop); });
+
+    wrap.addEventListener('click', openModal);
+    closeBtn?.addEventListener('click', closeModal);
+    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.open) closeModal(); });
+  }
+
+  document.addEventListener('astro:page-load', initVP);
+  document.addEventListener('DOMContentLoaded', initVP);
+  if (document.readyState === 'complete' || document.readyState === 'interactive') initVP();
+</script>

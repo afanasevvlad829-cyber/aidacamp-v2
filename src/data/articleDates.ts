@@ -4,6 +4,9 @@
  * Если статья добавляется новая — добавить сюда строку.
  */
 export const ARTICLE_DATES: Record<string, string> = {
+  'vasya-i-sistema':                                  '2026-06-19',
+  'hakaton-odin-malchik':                             '2026-06-19',
+  'gorodskoy-ili-zagorodnyy-lager':                  '2026-06-10',
   '3d-modelirovanie-dlya-detej':                     '2026-04-24',
   'chto-vzyat-v-lager':                              '2026-04-01',
   'detskiy-lager-bez-telefonov':                     '2026-03-01',
@@ -42,6 +45,7 @@ export const ARTICLE_DATES: Record<string, string> = {
   'zavisimost-ot-kompyuternyh-igr':                  '2026-02-01',
   'zavisimost-ot-telefona-u-podrostkov':             '2026-04-01',
   'adaptaciya-rebenka-v-lagere':                     '2026-03-15',
+  'pervye-tri-dnya':                                 '2026-06-11',
   'ai-proekty-v-lagere':                             '2026-04-10',
   'bezopasnost-v-detskom-lagere':                    '2026-03-10',
   'detskiy-lager-v-lesu':                            '2026-03-20',

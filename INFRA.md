@@ -1,10 +1,23 @@
-# INFRA — карта инфраструктуры АйДаКемп
+# INFRA — карта инфраструктуры (все сайты)
 
-> **Читай ПЕРЕД любым деплоем или работой с сервером.** Здесь записано, какой
-> домен куда идёт, какой сервис что обслуживает и из какой папки. Незнание этой
-> карты привело к инциденту 2026-05-31 (методички не появлялись на проде).
+> **Читай ПЕРЕД любым деплоем или работой с сервером.**
 
 Сервер: **159.194.223.55** (Beget VPS). SSH-ключ: `~/.ssh/aidacamp_prod`.
+
+---
+
+## Все сайты на одном сервере
+
+| Домен | Папка на сервере | Деплой | Локальное репо |
+|---|---|---|---|
+| `aidacamp.ru` | `/var/www/aidacamp/current/` | `./scripts/deploy.sh` | `~/Aidacamp-cloude/` |
+| `dev.aidacamp.ru` | `/var/www/aidacamp-dev/current/` | `./scripts/deploy.sh dev` | `~/Aidacamp-cloude/` |
+| `codims.ru` | `/var/www/codims/` | push `main` → GH Actions | `~/codims/` |
+| `dev.codims.ru` | `/var/www/codims-dev/` | push `dev` → GH Actions | `~/codims/` |
+| `icepartners.ru` | `/var/www/icepartners/` | push `main` → GH Actions | `~/icepartners-git/` |
+| `dev.icepartners.ru` | `/var/www/icepartners/` (тот же dist) | — | — |
+| `vlad-a.ru` | `/var/www/vlad-a-prod/` | SSH напрямую | ❌ нет локального |
+| `ai.aidacamp.ru` | `/opt/aistudio/` (docker compose) | `docker compose up -d` | `~/MCP/` |
 
 ---
 

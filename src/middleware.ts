@@ -1,6 +1,7 @@
 import type { MiddlewareHandler } from 'astro';
 import { verifySessionPayload } from './lib/portalSession';
 import { getStaff, getStaffById } from './lib/portalStaff';
+import { touchLastSeen } from './lib/portalLog';
 
 const PORTAL_PUBLIC = new Set(['/portal/login', '/portal/login/', '/portal/tg-app', '/api/portal/login', '/api/portal/check', '/api/portal/tg', '/api/portal/penalty/scan']);
 
@@ -103,6 +104,8 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
       const cachedTg = staffKey ? staffActiveCache.get(staffKey)?.telegramId : null;
       locals.portalSub = payload?.sub ?? (typeof cachedTg === 'number' ? cachedTg : undefined);
       locals.portalSid = payload?.sid;
+      // Обновить last_seen_at (не чаще раза в 5 мин, fire-and-forget)
+      if (payload?.sid) touchLastSeen(payload.sid);
     }
   }
 

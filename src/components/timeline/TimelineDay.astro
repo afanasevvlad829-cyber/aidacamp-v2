@@ -1,0 +1,117 @@
+---
+import type { TimelineDay } from '../../data/timeline/types';
+import TimelinePost from './TimelinePost.astro';
+
+interface Props {
+  day: TimelineDay;
+}
+
+const { day } = Astro.props;
+---
+
+<section
+  id={`day-${day.id}`}
+  class="tl-day"
+  data-screen-label={`День ${day.id} — ${day.title}`}
+>
+  <!-- Шапка дня -->
+  <div class="tl-day-header">
+    <div class={`tl-day-badge ${day.isSpecial ? 'tl-day-badge--special' : ''}`}>
+      <span class="tl-day-label">ДЕНЬ</span>
+      <span class="tl-day-num">{day.id}</span>
+    </div>
+    <div class="tl-day-info">
+      <h2 class="tl-day-title">{day.title}</h2>
+      <div class="tl-day-meta">
+        <span class="tl-day-date">{day.date}</span>
+        {' · '}{day.weekday}{' · '}{day.summary}
+      </div>
+    </div>
+  </div>
+
+  <!-- Лента постов с вертикальной осью -->
+  <div class="tl-posts-wrap">
+    {day.posts.map(post => (
+      <TimelinePost post={post} />
+    ))}
+  </div>
+</section>
+
+<style>
+  .tl-day {
+    scroll-margin-top: 84px;
+    margin-bottom: 14px;
+  }
+
+  /* Шапка дня */
+  .tl-day-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 14px 0 20px;
+  }
+
+  .tl-day-badge {
+    width: 58px;
+    height: 58px;
+    border-radius: 17px;
+    background: #0d1a2b;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 10px 24px -12px rgba(13,26,43,0.5);
+  }
+  .tl-day-badge--special {
+    background: var(--color-primary, #ec7c00);
+    color: #0d1a2b;
+  }
+
+  .tl-day-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.18em;
+    color: #8aa0bb;
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+  .tl-day-badge--special .tl-day-label {
+    color: rgba(13,26,43,0.6);
+  }
+  .tl-day-num {
+    font-family: 'Unbounded', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .tl-day-title {
+    font-family: 'Unbounded', system-ui, sans-serif;
+    font-weight: 600;
+    font-size: clamp(18px, 4vw, 24px);
+    letter-spacing: -0.01em;
+    margin: 0 0 3px;
+    color: #1a2433;
+  }
+
+  .tl-day-meta {
+    font-size: 13.5px;
+    color: #707885;
+  }
+  .tl-day-date {
+    color: var(--color-primary, #ec7c00);
+    font-weight: 600;
+  }
+
+  /* Лента с осью */
+  .tl-posts-wrap {
+    margin-left: 28px;
+    padding-left: 30px;
+    border-left: 2px solid #e3d8c2;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+</style>

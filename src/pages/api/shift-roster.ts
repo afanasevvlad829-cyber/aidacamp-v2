@@ -59,9 +59,17 @@ function ageFrom(d?: string): number | null {
 }
 
 export const GET: APIRoute = async ({ url }) => {
-  const shift = Number(url.searchParams.get('shift') || '1');
-  const group = SHIFT_GROUP[shift];
-  if (!group) return json({ ok: false, error: 'unknown shift ' + shift }, 400);
+  // Принимаем либо group_id напрямую, либо shift (номер смены → группа по маппингу)
+  let group: number;
+  const groupIdParam = url.searchParams.get('group_id');
+  if (groupIdParam) {
+    group = Number(groupIdParam);
+    if (!Number.isFinite(group) || group <= 0) return json({ ok: false, error: 'invalid group_id' }, 400);
+  } else {
+    const shift = Number(url.searchParams.get('shift') || '1');
+    group = SHIFT_GROUP[shift];
+    if (!group) return json({ ok: false, error: 'unknown shift ' + shift }, 400);
+  }
 
   const { H, E, K } = await getCreds();
   if (!H || !E || !K) return json({ ok: false, error: 'AlfaCRM creds not configured' });
@@ -79,7 +87,7 @@ export const GET: APIRoute = async ({ url }) => {
       gender: it.gender === 1 ? 1 : it.gender === 0 ? 0 : null,
       age: ageFrom(it.dob || it.b_date),
     }));
-    return json({ ok: true, shift, group, count: kids.length, kids });
+    return json({ ok: true, group, count: kids.length, kids });
   } catch (e) {
     return json({ ok: false, error: String(e) });
   }

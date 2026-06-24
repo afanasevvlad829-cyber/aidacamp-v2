@@ -26,12 +26,45 @@ async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promis
   try { return await fn(client); } finally { await client.end(); }
 }
 
+/** Сохранить снимок текущего расселения смены (резерв перед массовыми операциями). */
+export async function takeSnapshot(shiftId: number, reason: string): Promise<void> {
+  await withClient(async (c) => {
+    await c.query(
+      `INSERT INTO room_assignment_snapshot(shift_id, reason, snapshot_data)
+       SELECT $1, $2, COALESCE(jsonb_agg(row_to_json(ra)), '[]'::jsonb)
+       FROM room_assignment ra WHERE ra.shift_id = $1`,
+      [shiftId, reason],
+    );
+  });
+}
+
 /** Все назначения для смены (включая нерасселённых). */
 export async function listAssignments(shiftId: number): Promise<RoomAssignment[]> {
   return (await withClient(async (c) => {
+    // Для записей staff-{id} берём актуальное имя из portal_staff.
+    // kid_name остаётся fallback если запись была удалена из portal_staff.
     const r = await c.query(
-      `SELECT id, shift_id, kid_id, kid_name, kid_gender, kid_age, notes, room_number, bed_index
-       FROM room_assignment WHERE shift_id=$1 ORDER BY kid_name`,
+      `SELECT ra.id, ra.shift_id, ra.kid_id,
+              CASE
+                WHEN ra.kid_id LIKE 'staff-%' AND ps.full_name IS NOT NULL
+                THEN ps.full_name || ' (' || COALESCE(
+                  CASE ps.role
+                    WHEN 'admin'       THEN 'Админ'
+                    WHEN 'rukovoditel' THEN 'Руководитель'
+                    WHEN 'teacher'     THEN 'Преподаватель'
+                    WHEN 'vozhaty'     THEN 'Вожатый'
+                    WHEN 'student'     THEN 'Участник'
+                    ELSE ps.role
+                  END, ps.role, ra.kid_name) || ')'
+                ELSE ra.kid_name
+              END AS kid_name,
+              ra.kid_gender, ra.kid_age, ra.notes, ra.room_number, ra.bed_index
+       FROM room_assignment ra
+       LEFT JOIN portal_staff ps
+         ON ra.kid_id LIKE 'staff-%'
+        AND ps.id = CAST(SUBSTRING(ra.kid_id FROM 7) AS INTEGER)
+       WHERE ra.shift_id=$1
+       ORDER BY kid_name`,
       [shiftId],
     );
     return r.rows as RoomAssignment[];
@@ -51,7 +84,14 @@ export async function upsertKid(input: {
   notes?: string | null;
   room_number?: number | null;
   bed_index?: number | null;
+  /** Если true — при конфликте НЕ перезаписывать room_number/bed_index (загрузка из CRM). */
+  preservePosition?: boolean;
 }): Promise<{ id: number; bumped_kid_id: string | null } | null> {
+  const posClause = input.preservePosition
+    ? `room_number = COALESCE(EXCLUDED.room_number, room_assignment.room_number),
+           bed_index   = COALESCE(EXCLUDED.bed_index,   room_assignment.bed_index),`
+    : `room_number = EXCLUDED.room_number,
+           bed_index   = EXCLUDED.bed_index,`;
   return await withClient(async (c) => {
     await c.query('BEGIN');
     let bumped: string | null = null;
@@ -77,12 +117,11 @@ export async function upsertKid(input: {
         `INSERT INTO room_assignment(shift_id, kid_id, kid_name, kid_gender, kid_age, notes, room_number, bed_index)
          VALUES($1,$2,$3,$4,$5,$6,$7,$8)
          ON CONFLICT (shift_id, kid_id) DO UPDATE SET
-           kid_name = EXCLUDED.kid_name,
+           kid_name   = EXCLUDED.kid_name,
            kid_gender = COALESCE(EXCLUDED.kid_gender, room_assignment.kid_gender),
-           kid_age = COALESCE(EXCLUDED.kid_age, room_assignment.kid_age),
-           notes = COALESCE(EXCLUDED.notes, room_assignment.notes),
-           room_number = EXCLUDED.room_number,
-           bed_index = EXCLUDED.bed_index,
+           kid_age    = COALESCE(EXCLUDED.kid_age,    room_assignment.kid_age),
+           notes      = COALESCE(EXCLUDED.notes,      room_assignment.notes),
+           ${posClause}
            updated_at = now()
          RETURNING id`,
         [
@@ -102,6 +141,7 @@ export async function upsertKid(input: {
 
 /** Снять всех детей с коек (комнаты обнуляются, дети остаются в реестре). */
 export async function resetAssignmentsForShift(shiftId: number): Promise<number> {
+  await takeSnapshot(shiftId, 'reset_all');
   const n = await withClient(async (c) => {
     const r = await c.query(
       `UPDATE room_assignment SET room_number=NULL, bed_index=NULL, updated_at=now()
@@ -123,6 +163,7 @@ export async function resetAssignmentsForShift(shiftId: number): Promise<number>
 const AGE_SPREAD = 3;
 export interface AutoAssignRoomDef { number: number; capacity: number; }
 export async function autoAssign(shiftId: number, rooms: AutoAssignRoomDef[]): Promise<{ assigned: number; skipped: number }> {
+  await takeSnapshot(shiftId, 'auto_assign');
   const items = await listAssignments(shiftId);
   // Карта занятости коек и текущие жильцы по комнате
   const occByRoom = new Map<number, RoomAssignment[]>();
@@ -213,6 +254,7 @@ export async function autoAssign(shiftId: number, rooms: AutoAssignRoomDef[]): P
 
 /** Полная очистка списка детей смены (удаляем все записи). */
 export async function wipeKidsForShift(shiftId: number): Promise<number> {
+  await takeSnapshot(shiftId, 'wipe_all');
   const n = await withClient(async (c) => {
     const r = await c.query('DELETE FROM room_assignment WHERE shift_id=$1', [shiftId]);
     return r.rowCount ?? 0;

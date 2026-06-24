@@ -108,6 +108,10 @@ case "$TARGET" in
     echo "🧹 Ротация бэкапов (оставляю 3 последних)..."
     ssh -i "$SSH_KEY" "$SSH_HOST" "ls -dt /var/www/aidacamp/backup-* 2>/dev/null | tail -n +4 | xargs -r rm -rf"
     echo "✅ Старые бэкапы удалены"
+    echo "📸 Restic-снапшот критичных данных (галерея/.env/БД) перед деплоем..."
+    ssh -i "$SSH_KEY" "$SSH_HOST" "/opt/restic-snapshot.sh" >/dev/null 2>&1 \
+      && echo "✅ Снапшот создан (restic)" \
+      || echo "⚠️  снапшот не создан — см. /var/log/restic-snapshot.log (деплой продолжается)"
     ;;
   *)
     echo "Использование: $0 [dev|prod]"
@@ -143,7 +147,8 @@ echo "🔒 guard: пути импортов OK"
 
 # DEPLOY_ENV=dev → assetsPrefix отключён, JS/CSS грузятся с того же хоста
 # DEPLOY_ENV=prod → assetsPrefix=https://huhodirekeka.begetcdn.cloud (CDN)
-DEPLOY_ENV="$TARGET" npm run build --silent
+# Явная V8-куча: на 8ГБ Маке под нагрузкой дефолт падает (Abort trap/137, инцидент 11.06.2026)
+NODE_OPTIONS="--max-old-space-size=5120" DEPLOY_ENV="$TARGET" npm run build --silent
 
 if [ ! -f "dist/client/index.html" ]; then
   echo "❌ dist/client/index.html не найден. Сборка не удалась."

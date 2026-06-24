@@ -32,12 +32,7 @@ deploy_to() {
   local DIR="$1"
   local LABEL="$2"
 
-<<<<<<< HEAD
-  # Статика
-=======
   # Статика — БЕЗ --delete чтобы не снести server/ и node_modules/
-  # Используем --delete-excluded=no (или просто убираем --delete)
->>>>>>> 81cf09fe (kaizen(faq_add + schema_add + internal_link): /stati/lager-naro-fominsk — лагерь наро-фоминск)
   rsync -a \
     --exclude='.env' \
     --exclude='server/' \
@@ -45,13 +40,8 @@ deploy_to() {
     --exclude='backup-*' \
     "$REPO/dist/client/" "$DIR/" && echo "  ✅ client → $LABEL"
 
-<<<<<<< HEAD
-  # SSR
-  rsync -a \
-=======
   # SSR — отдельно, с --delete только внутри server/
   rsync -a --delete \
->>>>>>> 81cf09fe (kaizen(faq_add + schema_add + internal_link): /stati/lager-naro-fominsk — лагерь наро-фоминск)
     "$REPO/dist/server/" "$DIR/server/" && echo "  ✅ server → $LABEL"
 
   # node_modules — симлинк
@@ -60,6 +50,11 @@ deploy_to() {
 
 if [ "$TARGET" = "dev" ] || [ "$TARGET" = "both" ]; then
   deploy_to "$DEV_DIR" "dev"
+  # Синхронизируем также плоский корень /var/www/aidacamp-dev/ (nginx отдаёт оттуда статику)
+  # Инцидент 2026-06-12: без этого шага новые страницы появляются в current/ но не в flat-root → 404
+  rsync -a \
+    --exclude='.env' --exclude='server/' --exclude='node_modules/' --exclude='backup-*' \
+    "$REPO/dist/client/" /var/www/aidacamp-dev/ && echo "  ✅ client → dev flat-root"
 fi
 if [ "$TARGET" = "prod" ] || [ "$TARGET" = "both" ]; then
   deploy_to "$PROD_DIR" "prod"

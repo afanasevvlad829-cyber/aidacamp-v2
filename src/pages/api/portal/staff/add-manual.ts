@@ -24,7 +24,7 @@ export const POST: APIRoute = async ({ locals, request, redirect }) => {
   const _a = requireStaff(locals);
   if (_a instanceof Response) return _a;
   const { role, sub } = _a;
-  if (!p || role !== 'admin') return new Response('Forbidden', { status: 403 });
+  if (role !== 'admin') return new Response('Forbidden', { status: 403 });
 
   let body: Record<string, any>;
   const ct = request.headers.get('content-type') ?? '';

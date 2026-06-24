@@ -1,5 +1,5 @@
 ---
-import { ROOMS, type RoomDef } from '../../../lib/portalRooms';
+import { ROOMS, FLOOR_GRID } from '../../../lib/portalRooms';
 
 interface Props {
   statusByRoom: Map<number, string>;
@@ -16,179 +16,38 @@ function colorCls(s: string, type: string): string {
   return 'bg-white border-border text-navy-950';
 }
 
-// Жёсткая раскладка крыльев по номерам (соответствует плану здания)
-const layout = {
-  floor1: {
-    row1: { left: [20, 19, 18, 17], right: [11, 12, 13, 14] },
-    row2: { left: [21, 22], right: [16, 15] },
-  },
-  floor2: {
-    row1: { left: [30, 31], right: [23, 24] },
-    row2: { left: [29, 28, 27], right: [26, 25] },
-  },
-};
+const floors: (1 | 2)[] = [1, 2];
 ---
 
-{/* Этаж 1 */}
-<section class="mb-8">
-  <h2 class="mb-3 text-[20px] font-bold text-navy-950">Этаж 1 · 22 места</h2>
-  <div class="overflow-x-auto rounded-[16px] border-2 border-slate-300 bg-slate-100 p-5">
-    <div class="flex flex-col gap-3" style="min-width: 580px;">
-      {/* Row 1: 4 + divider + 4 */}
-      <div class="flex items-stretch gap-3">
-        <div class="flex flex-1 gap-2">
-          {layout.floor1.row1.left.map((num) => {
-            const r = ROOMS.find((x) => x.number === num)!;
-            const s = statusOf(num);
-            const isStaff = r.type === 'staff';
-            return (
-              <button type="button"
-                class={`room-tile flex-1 rounded-[12px] border-2 p-3 text-left shadow-sm transition touch-manipulation active:scale-[0.97] h-[100px] min-w-[70px] ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
-                data-room={num}
-                disabled={isStaff}
-              >
-                <div class="text-[15px] font-bold">№{num}</div>
-                <div class="mt-0.5 text-[10px] text-body-muted leading-tight">{r.label}</div>
-                {!isStaff && (
-                  <div class="mt-1 text-[11px] font-semibold">
-                    {s === 'ok' && <><i class="bi bi-check-lg" aria-hidden="true"></i> принято</>}
-                    {s === 'defects' && <><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> замечания</>}
-                    {s === 'pending' && <><i class="bi bi-circle" aria-hidden="true"></i> не принято</>}
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-        <div class="w-8 shrink-0 border-x border-dashed border-slate-400 opacity-50"></div>
-        <div class="flex flex-1 gap-2">
-          {layout.floor1.row1.right.map((num) => {
-            const r = ROOMS.find((x) => x.number === num)!;
-            const s = statusOf(num);
-            const isStaff = r.type === 'staff';
-            return (
-              <button type="button"
-                class={`room-tile flex-1 rounded-[12px] border-2 p-3 text-left shadow-sm transition touch-manipulation active:scale-[0.97] h-[100px] min-w-[70px] ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
-                data-room={num}
-                disabled={isStaff}
-              >
-                <div class="text-[15px] font-bold">№{num}</div>
-                <div class="mt-0.5 text-[10px] text-body-muted leading-tight">{r.label}</div>
-                {!isStaff && (
-                  <div class="mt-1 text-[11px] font-semibold">
-                    {s === 'ok' && <><i class="bi bi-check-lg" aria-hidden="true"></i> принято</>}
-                    {s === 'defects' && <><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> замечания</>}
-                    {s === 'pending' && <><i class="bi bi-circle" aria-hidden="true"></i> не принято</>}
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      {/* Row 2: 2 + divider + 2 */}
-      <div class="flex items-stretch gap-3">
-        <div class="flex flex-1 gap-2">
-          {layout.floor1.row2.left.map((num) => {
-            const r = ROOMS.find((x) => x.number === num)!;
-            const s = statusOf(num);
-            const isStaff = r.type === 'staff';
-            return (
-              <button type="button"
-                class={`room-tile flex-1 rounded-[12px] border-2 p-3 text-left shadow-sm transition touch-manipulation active:scale-[0.97] h-[140px] min-w-[70px] ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
-                data-room={num}
-                disabled={isStaff}
-              >
-                <div class="text-[15px] font-bold">№{num}</div>
-                <div class="mt-0.5 text-[10px] text-body-muted leading-tight">{r.label}</div>
-                {!isStaff && (
-                  <div class="mt-1 text-[11px] font-semibold">
-                    {s === 'ok' && <><i class="bi bi-check-lg" aria-hidden="true"></i> принято</>}
-                    {s === 'defects' && <><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> замечания</>}
-                    {s === 'pending' && <><i class="bi bi-circle" aria-hidden="true"></i> не принято</>}
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-        <div class="w-8 shrink-0 border-x border-dashed border-slate-400 opacity-50"></div>
-        <div class="flex flex-1 gap-2">
-          {layout.floor1.row2.right.map((num) => {
-            const r = ROOMS.find((x) => x.number === num)!;
-            const s = statusOf(num);
-            const isStaff = r.type === 'staff';
-            return (
-              <button type="button"
-                class={`room-tile flex-1 rounded-[12px] border-2 p-3 text-left shadow-sm transition touch-manipulation active:scale-[0.97] h-[140px] min-w-[70px] ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
-                data-room={num}
-                disabled={isStaff}
-              >
-                <div class="text-[15px] font-bold">№{num}</div>
-                <div class="mt-0.5 text-[10px] text-body-muted leading-tight">{r.label}</div>
-                {!isStaff && (
-                  <div class="mt-1 text-[11px] font-semibold">
-                    {s === 'ok' && <><i class="bi bi-check-lg" aria-hidden="true"></i> принято</>}
-                    {s === 'defects' && <><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> замечания</>}
-                    {s === 'pending' && <><i class="bi bi-circle" aria-hidden="true"></i> не принято</>}
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+{floors.map((floor) => {
+  const plan = FLOOR_GRID[floor];
+  return (
+    <section class="mb-8">
+      <h2 class="mb-3 text-[20px] font-bold text-navy-950">{plan.title}</h2>
+      <div class="overflow-x-auto rounded-[16px] border-2 border-slate-300 bg-slate-100 p-5">
+        <div
+          class="grid gap-2"
+          style={`grid-template-columns: repeat(${plan.cols}, minmax(64px, 1fr)); grid-template-rows: ${plan.rowsTemplate}; min-width: 660px;`}
+        >
+          {/* Коридор по центру — пунктирная вертикаль */}
+          <div class="pointer-events-none border-x border-dashed border-slate-400 opacity-40"
+               style="grid-column: 5; grid-row: 1 / -1;"></div>
 
-{/* Этаж 2 */}
-<section class="mb-8">
-  <h2 class="mb-3 text-[20px] font-bold text-navy-950">Этаж 2 · 24 места</h2>
-  <div class="overflow-x-auto rounded-[16px] border-2 border-slate-300 bg-slate-100 p-5">
-    <div class="flex flex-col gap-3" style="min-width: 580px;">
-      {/* Row 1: 2 + divider + 2 */}
-      <div class="flex items-stretch gap-3">
-        <div class="flex flex-1 gap-2">
-          {layout.floor2.row1.left.map((num) => {
-            const r = ROOMS.find((x) => x.number === num)!;
-            const s = statusOf(num);
+          {plan.cells.map((cell) => {
+            const r = ROOMS.find((x) => x.number === cell.n)!;
+            const s = statusOf(cell.n);
             const isStaff = r.type === 'staff';
             return (
               <button type="button"
-                class={`room-tile flex-1 rounded-[12px] border-2 p-3 text-left shadow-sm transition touch-manipulation active:scale-[0.97] h-[150px] min-w-[70px] ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
-                data-room={num}
+                class={`room-tile flex flex-col rounded-[12px] border-2 p-3 text-left shadow-sm transition touch-manipulation active:scale-[0.97] ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
+                style={`grid-column: ${cell.col}; grid-row: ${cell.row};`}
+                data-room={cell.n}
                 disabled={isStaff}
               >
-                <div class="text-[15px] font-bold">№{num}</div>
+                <div class="text-[15px] font-bold">№{cell.n}</div>
                 <div class="mt-0.5 text-[10px] text-body-muted leading-tight">{r.label}</div>
                 {!isStaff && (
-                  <div class="mt-1 text-[11px] font-semibold">
-                    {s === 'ok' && <><i class="bi bi-check-lg" aria-hidden="true"></i> принято</>}
-                    {s === 'defects' && <><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> замечания</>}
-                    {s === 'pending' && <><i class="bi bi-circle" aria-hidden="true"></i> не принято</>}
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-        <div class="w-8 shrink-0 border-x border-dashed border-slate-400 opacity-50"></div>
-        <div class="flex flex-1 gap-2">
-          {layout.floor2.row1.right.map((num) => {
-            const r = ROOMS.find((x) => x.number === num)!;
-            const s = statusOf(num);
-            const isStaff = r.type === 'staff';
-            return (
-              <button type="button"
-                class={`room-tile flex-1 rounded-[12px] border-2 p-3 text-left shadow-sm transition touch-manipulation active:scale-[0.97] h-[150px] min-w-[70px] ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
-                data-room={num}
-                disabled={isStaff}
-              >
-                <div class="text-[15px] font-bold">№{num}</div>
-                <div class="mt-0.5 text-[10px] text-body-muted leading-tight">{r.label}</div>
-                {!isStaff && (
-                  <div class="mt-1 text-[11px] font-semibold">
+                  <div class="mt-auto pt-1 text-[11px] font-semibold">
                     {s === 'ok' && <><i class="bi bi-check-lg" aria-hidden="true"></i> принято</>}
                     {s === 'defects' && <><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> замечания</>}
                     {s === 'pending' && <><i class="bi bi-circle" aria-hidden="true"></i> не принято</>}
@@ -199,58 +58,6 @@ const layout = {
           })}
         </div>
       </div>
-      {/* Row 2: 3 + divider + 2 */}
-      <div class="flex items-stretch gap-3">
-        <div class="flex flex-1 gap-2">
-          {layout.floor2.row2.left.map((num) => {
-            const r = ROOMS.find((x) => x.number === num)!;
-            const s = statusOf(num);
-            const isStaff = r.type === 'staff';
-            return (
-              <button type="button"
-                class={`room-tile flex-1 rounded-[12px] border-2 p-3 text-left shadow-sm transition touch-manipulation active:scale-[0.97] h-[110px] min-w-[70px] ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
-                data-room={num}
-                disabled={isStaff}
-              >
-                <div class="text-[15px] font-bold">№{num}</div>
-                <div class="mt-0.5 text-[10px] text-body-muted leading-tight">{r.label}</div>
-                {!isStaff && (
-                  <div class="mt-1 text-[11px] font-semibold">
-                    {s === 'ok' && <><i class="bi bi-check-lg" aria-hidden="true"></i> принято</>}
-                    {s === 'defects' && <><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> замечания</>}
-                    {s === 'pending' && <><i class="bi bi-circle" aria-hidden="true"></i> не принято</>}
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-        <div class="w-8 shrink-0 border-x border-dashed border-slate-400 opacity-50"></div>
-        <div class="flex flex-1 gap-2">
-          {layout.floor2.row2.right.map((num) => {
-            const r = ROOMS.find((x) => x.number === num)!;
-            const s = statusOf(num);
-            const isStaff = r.type === 'staff';
-            return (
-              <button type="button"
-                class={`room-tile flex-1 rounded-[12px] border-2 p-3 text-left shadow-sm transition touch-manipulation active:scale-[0.97] h-[110px] min-w-[70px] ${colorCls(s, r.type)} ${isStaff ? 'cursor-not-allowed opacity-60' : 'hover:shadow-md'}`}
-                data-room={num}
-                disabled={isStaff}
-              >
-                <div class="text-[15px] font-bold">№{num}</div>
-                <div class="mt-0.5 text-[10px] text-body-muted leading-tight">{r.label}</div>
-                {!isStaff && (
-                  <div class="mt-1 text-[11px] font-semibold">
-                    {s === 'ok' && <><i class="bi bi-check-lg" aria-hidden="true"></i> принято</>}
-                    {s === 'defects' && <><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> замечания</>}
-                    {s === 'pending' && <><i class="bi bi-circle" aria-hidden="true"></i> не принято</>}
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+    </section>
+  );
+})}

@@ -80,7 +80,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
           prize_name: form.get('prize_name')?.toString() || null,
           kid_id: form.get('kid_id') ? Number(form.get('kid_id')) : null,
           kid_name: form.get('kid_name')?.toString() || null,
-          issued_by: String((p.sub ?? p.role)),
+          issued_by: String((sub ?? role)),
           photo_url, video_url,
           note: form.get('note')?.toString() || null,
           bongere_price: form.get('bongere_price') ? Number(form.get('bongere_price')) : null,

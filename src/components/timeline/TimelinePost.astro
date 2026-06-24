@@ -1,0 +1,432 @@
+---
+import type { TimelinePost } from '../../data/timeline/types';
+import VideoPlayer from '../VideoPlayer.astro';
+
+interface Props {
+  post: TimelinePost;
+}
+
+const { post } = Astro.props;
+
+const AVATAR_COLORS = ['#ec7c00', '#3a7bd5', '#2faa6a', '#9b6cd1', '#d6557a', '#3f8f8f'];
+function avatarColor(name: string): string {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+
+const photoCols = !post.photos ? 0 : Math.min(post.photos.length, 2);
+---
+
+<article class="tl-post relative">
+  <!-- Точка на линии -->
+  <span class="tl-dot" aria-hidden="true"></span>
+
+  <!-- Шапка: время + тип -->
+  <div class="flex items-center gap-2 mb-3 flex-wrap">
+    <span class="tl-time">{post.time}</span>
+    <span class="tl-kind">{post.kind}</span>
+  </div>
+
+  <!-- Заголовок -->
+  <h3 class="tl-post-title">{post.title}</h3>
+
+  <!-- Текст -->
+  {post.text && <p class="tl-post-text">{post.text}</p>}
+
+  <!-- Фотогалерея -->
+  {post.photos && post.photos.length > 0 && !post.video && (
+    <div class="tl-photos" style={`grid-template-columns: repeat(${photoCols}, 1fr)`}>
+      {post.photos.map(photo => (
+        photo.src ? (
+          <img
+            src={photo.src}
+            alt={photo.alt}
+            class="tl-photo-real"
+            loading="lazy"
+          />
+        ) : (
+          <div class="tl-photo-placeholder">
+            <span class="tl-photo-badge">ФОТО</span>
+            <span class="tl-photo-label">{photo.alt}</span>
+          </div>
+        )
+      ))}
+    </div>
+  )}
+
+  <!-- Видео -->
+  {post.video && (
+    post.video.isPlaceholder ? (
+      <div class="tl-video-placeholder">
+        <div class="tl-play-btn" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M6 3.5L14.5 9L6 14.5V3.5Z" fill="#0d1a2b"/>
+          </svg>
+        </div>
+        <span class="tl-video-badge">▶ ВИДЕО</span>
+        {post.video.dur && <span class="tl-video-dur">{post.video.dur}</span>}
+        {post.video.label && <span class="tl-video-label">видео · {post.video.label}</span>}
+      </div>
+    ) : (
+      <VideoPlayer
+        src={post.video.src}
+        poster={post.video.poster}
+        title={post.title}
+      />
+    )
+  )}
+
+  <!-- Цитата -->
+  {post.quote && (
+    <blockquote class="tl-quote">
+      <span class="tl-quote-mark" aria-hidden="true">"</span>
+      <p class="tl-quote-text">{post.quote.text}</p>
+      <footer class="tl-quote-author">{post.quote.author}</footer>
+    </blockquote>
+  )}
+
+  <!-- Проекты хакатона -->
+  {post.projects && post.projects.length > 0 && (
+    <div class="tl-projects">
+      {post.projects.map(proj => (
+        <div class="tl-project-card">
+          <div class="tl-project-name">{proj.name}</div>
+          <div class="tl-project-desc">{proj.desc}</div>
+          <div class="tl-project-team">команда: {proj.team}</div>
+        </div>
+      ))}
+    </div>
+  )}
+
+  <!-- Реакции -->
+  {post.reactions && post.reactions.length > 0 && (
+    <div class="tl-reactions">
+      {post.reactions.map(r => (
+        <span class="tl-reaction">
+          <span>{r.emoji}</span>
+          <span class="tl-reaction-count">{r.count}</span>
+        </span>
+      ))}
+    </div>
+  )}
+
+  <!-- Комментарии -->
+  {post.comments && post.comments.length > 0 && (
+    <div class="tl-comments">
+      {post.comments.map(c => (
+        <div class="tl-comment">
+          <span class="tl-avatar" style={`background:${avatarColor(c.name)}`}>
+            {c.name.trim()[0].toUpperCase()}
+          </span>
+          <div class="tl-comment-body">
+            <span class="tl-comment-name">{c.name}</span>{' '}
+            <span class="tl-comment-text">{c.text}</span>
+          </div>
+        </div>
+      ))}
+      {post.moreCommentsText && (
+        <span class="tl-more-comments">{post.moreCommentsText}</span>
+      )}
+    </div>
+  )}
+</article>
+
+<style>
+  .tl-post {
+    background: #fffdf9;
+    border: 1px solid #ece4d6;
+    border-radius: 20px;
+    padding: 18px;
+    box-shadow: 0 1px 2px rgba(13,26,43,0.04), 0 14px 30px -20px rgba(13,26,43,0.20);
+  }
+
+  /* Точка на временно́й шкале */
+  .tl-dot {
+    position: absolute;
+    left: -2.3125rem;   /* -(32px padding + 5px half) */
+    top: 24px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--color-primary, #ec7c00);
+    border: 3px solid #f3eee6;
+  }
+
+  /* Бейджи шапки */
+  .tl-time {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    background: #0d1a2b;
+    color: #fff;
+    border-radius: 7px;
+    padding: 4px 8px;
+  }
+  .tl-kind {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--color-primary, #ec7c00);
+    border: 1px solid var(--color-primary, #ec7c00);
+    border-radius: 7px;
+    padding: 3px 8px;
+  }
+
+  /* Заголовок */
+  .tl-post-title {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.3;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+    color: #1a2433;
+  }
+
+  /* Текст */
+  .tl-post-text {
+    font-size: 15px;
+    line-height: 1.6;
+    color: #48505c;
+    margin: 0 0 14px;
+  }
+
+  /* Фотогалерея */
+  .tl-photos {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .tl-photo-real {
+    width: 100%;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+    border-radius: 13px;
+    display: block;
+  }
+
+  .tl-photo-placeholder {
+    position: relative;
+    aspect-ratio: 4/3;
+    border-radius: 13px;
+    overflow: hidden;
+    background: #ece6db;
+    background-image: repeating-linear-gradient(135deg, rgba(13,26,43,0.045) 0 11px, rgba(13,26,43,0.08) 11px 22px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+  }
+  .tl-photo-badge {
+    position: absolute;
+    top: 7px;
+    left: 7px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    color: #9aa0aa;
+    border: 1px solid rgba(13,26,43,0.12);
+    border-radius: 5px;
+    padding: 2px 5px;
+    background: rgba(255,255,255,0.5);
+  }
+  .tl-photo-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.01em;
+    color: #5b6472;
+    text-align: center;
+    line-height: 1.45;
+  }
+
+  /* Видео-заглушка */
+  .tl-video-placeholder {
+    position: relative;
+    aspect-ratio: 16/9;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #0d1a2b;
+    background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0 12px, rgba(255,255,255,0.06) 12px 24px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+  }
+  .tl-play-btn {
+    width: 66px;
+    height: 66px;
+    border-radius: 50%;
+    background: var(--color-primary, #ec7c00);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 12px 30px -8px rgba(0,0,0,0.5);
+  }
+  .tl-video-badge {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: #cdd6e2;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 6px;
+    padding: 4px 7px;
+  }
+  .tl-video-dur {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #fff;
+    background: rgba(0,0,0,0.5);
+    border-radius: 6px;
+    padding: 3px 7px;
+  }
+  .tl-video-label {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #8794a4;
+  }
+
+  /* Цитата */
+  .tl-quote {
+    background: #0d1a2b;
+    border-radius: 16px;
+    padding: 22px 22px 20px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    margin: 0 0 14px;
+  }
+  .tl-quote-mark {
+    position: absolute;
+    top: -6px;
+    left: 14px;
+    font-size: 90px;
+    line-height: 1;
+    color: var(--color-primary, #ec7c00);
+    opacity: 0.22;
+    font-family: serif;
+  }
+  .tl-quote-text {
+    position: relative;
+    font-weight: 600;
+    font-size: clamp(16px, 3vw, 20px);
+    line-height: 1.4;
+    margin: 0 0 14px;
+    letter-spacing: -0.01em;
+  }
+  .tl-quote-author {
+    font-size: 13px;
+    color: var(--color-primary, #ec7c00);
+    font-weight: 600;
+  }
+
+  /* Проекты */
+  .tl-projects {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  @media (max-width: 480px) {
+    .tl-projects { grid-template-columns: 1fr; }
+  }
+  .tl-project-card {
+    background: #f6f1e8;
+    border: 1px solid #e7ddca;
+    border-radius: 14px;
+    padding: 14px;
+  }
+  .tl-project-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: #0d1a2b;
+    margin-bottom: 6px;
+  }
+  .tl-project-desc {
+    font-size: 13px;
+    line-height: 1.45;
+    color: #5b6472;
+    margin-bottom: 10px;
+  }
+  .tl-project-team {
+    font-size: 11.5px;
+    color: #8a8f99;
+  }
+
+  /* Реакции */
+  .tl-reactions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 14px;
+  }
+  .tl-reaction {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #fff;
+    border: 1px solid #ece4d6;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 13px;
+  }
+  .tl-reaction-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #5b6472;
+  }
+
+  /* Комментарии */
+  .tl-comments {
+    margin-top: 15px;
+    border-top: 1px solid #efe7da;
+    padding-top: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+  }
+  .tl-comment {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .tl-avatar {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .tl-comment-body {
+    font-size: 14px;
+    line-height: 1.45;
+    padding-top: 5px;
+  }
+  .tl-comment-name { font-weight: 600; color: #1a2433; }
+  .tl-comment-text { color: #5b6472; }
+  .tl-more-comments {
+    font-size: 13px;
+    color: var(--color-primary, #ec7c00);
+    font-weight: 600;
+    cursor: pointer;
+  }
+</style>

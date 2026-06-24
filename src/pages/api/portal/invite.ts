@@ -10,7 +10,7 @@ const j = (x: unknown, init?: ResponseInit) =>
   new Response(JSON.stringify(x), { headers: { 'Content-Type': 'application/json' }, ...init });
 
 export const POST: APIRoute = async ({ locals, request }) => {
-  const _a = requireRole(locals);
+  const _a = requireRole(locals, ['admin', 'rukovoditel']);
   if (_a instanceof Response) return _a;
   const { role, sub } = _a;
   const body = await request.json().catch(() => ({} as any));

@@ -154,8 +154,9 @@ import { alertDialog } from './tg';
 
 // ── Duplicate event dialog (admin only) ──────────────────────────────────
 (() => {
-  const dlg = document.getElementById('dup-dlg') as HTMLDialogElement | null;
-  if (!dlg) return;
+  const dlgEl = document.getElementById('dup-dlg') as HTMLDialogElement | null;
+  if (!dlgEl) return;
+  const dlg = dlgEl;
   const sourceInp = document.getElementById('dup-source-id') as HTMLInputElement | null;
   const respSel = document.getElementById('dup-resp') as HTMLSelectElement | null;
   const errBox = document.getElementById('dup-error') as HTMLElement | null;
