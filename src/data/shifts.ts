@@ -129,15 +129,18 @@ export const PRICE_S4 = mainShifts[1].price;
 export const PRICE_S21 = _shift21.price;
 export const PRICE_S22 = _shift22.price;
 
+// === Возврат при отказе от путёвки (ФЗ №2300-1 о защите прав потребителей) ===
+export const BYT_PER_DAY = 6100;     // фактические расходы лагеря/день (предоплата базе отдыха) — удерживаются при возврате
+
 // === Налоговый вычет — ПРОИЗВОДНЫЙ от цены (ст. 219 НК РФ). Меняется цена/акция → меняется вычет. ===
 // НЕ хардкодить суммы вычета рядом с ценой — выводить из этих функций/констант.
-export const BYT_PER_DAY = 3800;     // бытовая часть (проживание+питание) за день — не вычитается
-export const NDFL_RATE = 0.13;       // ставка НДФЛ
-export const EDU_BASE_CAP = 110000;  // годовой лимит базы вычета на 1 ребёнка (ст.219 НК РФ, с 2024)
+export const EDU_RESID_PER_DAY = 3800; // стоимость проживания+питания по НК РФ/день — вычитается из базы вычета
+export const NDFL_RATE = 0.13;         // ставка НДФЛ
+export const EDU_BASE_CAP = 110000;    // годовой лимит базы вычета на 1 ребёнка (ст.219 НК РФ, с 2024)
 
 /** Точный вычет от ЛЮБОЙ цены (учитывает акции/повышения): (цена − 3800×дни) с лимитом × 13%. */
 export function taxDeduction(priceRub: number, days: number): number {
-  const edu = Math.min(Math.max(priceRub - BYT_PER_DAY * days, 0), EDU_BASE_CAP);
+  const edu = Math.min(Math.max(priceRub - EDU_RESID_PER_DAY * days, 0), EDU_BASE_CAP);
   return Math.round(edu * NDFL_RATE);
 }
 const _days = (d: string) => parseInt(d.replace(/[^\d]/g, ''), 10) || 0;
