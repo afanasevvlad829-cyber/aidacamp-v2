@@ -1,19 +1,17 @@
 ---
-import { mainShifts, shortShifts } from '../data/shifts';
+import { mainShifts, displayShifts } from '../data/shifts';
+import { getShiftPhase } from '../data/dynamicPrices';
 import ShiftCard from './shifts/ShiftCard.astro';
+import ShiftRetroCard from './shifts/ShiftRetroCard.astro';
 import ShiftCardCombined from './shifts/ShiftCardCombined.astro';
 import ShortShiftsBlock from './shifts/ShortShiftsBlock.astro';
 import FortuneShiftCard from './shifts/FortuneShiftCard.astro';
-
-// Смена 1 закрыта — выносим в отдельный блок внизу
-const shift1 = mainShifts.find((s) => s.id === 'shift-1')!;
-const summerShifts = shortShifts.filter((s) => s.id === 'shift-2-2'); // Смена 2.2 вместо полной Смены 2 на витрине
-const augustShifts = mainShifts.filter((s) => s.startDate?.startsWith('2026-08'));
-const allCarouselShifts = [...summerShifts, ...augustShifts];
-const totalCarousel = allCarouselShifts.length;
 import ShiftBookModal from './shifts/ShiftBookModal.astro';
 import ShiftCalendarModal from './shifts/ShiftCalendarModal.astro';
 import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
+
+// Фаза смены считается по датам (getShiftPhase): upcoming → live → done.
+const nowDate = new Date();
 ---
 
 <section id="shifts" class="mx-auto max-w-[1312px] px-[2px] pt-10 md:px-4">
@@ -75,94 +73,81 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
       <p class="mt-1.5 text-[14px] md:text-[15px] font-semibold text-body leading-[1.65]">И это чувствуется с первого дня.</p>
     </div>
 
-    <!-- ═══ INFINITE MARQUEE — mobile + desktop ═══ -->
-    <!-- Viewport: overflow hidden + fade edges -->
-    <div class="shifts-marquee-vp mt-4 -mx-[18px] relative" data-shifts-marquee-vp aria-label="Карусель смен">
-      <!-- fade left / right -->
+    <!-- ═══ КАРТОЧКИ СМЕН: 4 в ряд (desktop) / карусель (mobile) ═══ -->
+    <div class="shifts-marquee-vp mt-4 -mx-[18px] md:mx-0 relative" data-shifts-marquee-vp aria-label="Карусель смен">
+      <!-- Fade edges — mobile only -->
       <div class="shifts-mq-fade-l" aria-hidden="true"></div>
       <div class="shifts-mq-fade-r" aria-hidden="true"></div>
 
-      <!-- Track: карточки в ряд, JS дублирует для бесконечной петли -->
       <div
-        class="shifts-marquee-track flex gap-3 md:gap-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        class="shifts-marquee-track flex gap-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         data-shifts-marquee-track
+        data-carousel-initial="2"
       >
-        {allCarouselShifts.map((shift) => (
-          <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-[380px]" data-shift-id={shift.id}>
-            {shift.id === 'shift-2' ? (
-              <Fragment>
-                {/* A/B-тест: вариант A — колесо фортуны, вариант B — обычная карточка */}
-                <div data-ab-fortune="wheel" hidden>
-                  <FortuneShiftCard shiftId="shift-2" />
-                </div>
-                <div data-ab-fortune="card" hidden>
-                  <ShiftCard shift={shift} variant="desktop" />
-                </div>
-              </Fragment>
-            ) : (
-              <ShiftCard shift={shift} variant="desktop" />
-            )}
-          </div>
-        ))}
+
+        {/* ─── Все смены: фаза по датам (предстоит → идёт → прошла) ─── */}
+        {/* Колесо фортуны рендерится скрытым у ближайшей смены; показывается
+            клиентским скриптом ниже по правилу (последние 3 дня + ≤3 места) или по ?fortune=wheel. */}
+        {displayShifts.map((shift) => {
+          const phase = getShiftPhase(shift.id, nowDate);
+          const withFortune = phase === 'upcoming' && shift.nearest;
+          return (
+            <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch" data-shift-id={shift.id}>
+              {phase !== 'upcoming' ? (
+                <ShiftRetroCard shift={shift} />
+              ) : withFortune ? (
+                <Fragment>
+                  <div data-fortune-normal class="h-full"><ShiftCard shift={shift} variant="desktop" /></div>
+                  <div data-fortune-wheel hidden data-fortune-start={shift.startDate} data-fortune-free={shift.free} class="h-full">
+                    <FortuneShiftCard shiftId={shift.id} />
+                  </div>
+                </Fragment>
+              ) : (
+                <ShiftCard shift={shift} variant="desktop" />
+              )}
+            </div>
+          );
+        })}
+
       </div>
     </div>
 
-    <!-- A/B-тест колеса фортуны на смене 2 (выбор варианта до отрисовки карусели) -->
-    <script is:inline>
-    (function () {
-      // Bucket: 'wheel' (A) или 'card' (B), 50/50, фиксируется кукой на 30 дней
-      var COOKIE = 'ab_fortune_s2';
-      function getCookie(n) {
-        var m = document.cookie.match(new RegExp('(?:^|; )' + n + '=([^;]*)'));
-        return m ? m[1] : null;
-      }
-      // Форс-ключ из URL: ?wheel / ?fortune=wheel / ?fortune=card — у любого, кто открыл ссылку
-      var qs = new URLSearchParams(location.search);
-      var forced = null;
-      if (qs.has('wheel') || qs.has('wheeltest')) forced = 'wheel';
-      else if (qs.get('fortune') === 'wheel' || qs.get('fortune') === 'card') forced = qs.get('fortune');
-      // A/B-тест отключён — колесо показываем ВСЕМ. ?fortune=card оставляет предпросмотр обычной карточки.
-      var bucket = (forced === 'card') ? 'card' : 'wheel';
-      // Показываем выбранный вариант, удаляем второй (до клонирования каруселью)
-      document.querySelectorAll('[data-ab-fortune]').forEach(function (el) {
-        if (el.getAttribute('data-ab-fortune') === bucket) {
-          el.hidden = false;
-        } else {
-          el.remove();
-        }
-      });
-      // Метрика: фиксируем показ варианта
-      try {
-        window.ym && window.ym(96499295, 'reachGoal', 'ab_fortune_s2_' + bucket);
-      } catch (e) {}
-    })();
-    </script>
-
     <!-- Dot-индикаторы карусели (генерируются JS) -->
-    <div data-shifts-dots class="flex justify-center gap-2 mt-3" aria-hidden="true"></div>
+    <div data-shifts-dots class="flex justify-center gap-2 mt-3 md:hidden" aria-hidden="true"></div>
 
-    <!-- Смена 1 — завершена, прямая ссылка на репортаж -->
-    <a
-      href="/kak-proshla-smena-1/"
-      class="reveal mt-6 flex items-center gap-3 rounded-2xl border border-border-light bg-card px-5 py-4 md:px-6 shadow-[0_2px_8px_rgba(15,23,42,0.06),0_12px_32px_rgba(15,23,42,0.10)] hover:border-primary/30 hover:shadow-[0_4px_16px_rgba(236,124,0,0.12)] transition-all no-underline group"
-    >
-      <div class="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-        <i class="bi bi-check-circle-fill text-[15px]" aria-hidden="true"></i>
-      </div>
-      <div class="text-left flex-1 min-w-0">
-        <p class="text-[15px] md:text-[16px] font-bold text-body-muted group-hover:text-primary transition-colors">{shift1.name} · {shift1.dates}</p>
-        <p class="mt-0.5 text-[13px] text-body-faint">{shift1.duration} · {shift1.price} · смена завершена</p>
-      </div>
-      <span class="shrink-0 text-[13px] font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">Смотреть как прошла</span>
-      <i class="bi bi-arrow-right text-[16px] text-body-faint group-hover:text-primary transition-all shrink-0" aria-hidden="true"></i>
-    </a>
     <!-- stub div for old JS that refs data-closed-panel (no-op) -->
     <div class="hidden">
       <div id="closed-shift-panel" data-closed-panel></div>
-      </div>
+    </div>
     </div>
   </div>
 </section>
+
+<script is:inline>
+/* Активация колеса фортуны: последние 3 дня перед стартом + ≤3 места.
+   Считается клиентски (главная статична). Превью в любой момент: ?fortune=wheel */
+(function () {
+  var WINDOW_DAYS = 3, LAST_SPOTS = 3; // правило (см. dynamicPrices.ts: FORTUNE_WINDOW_DAYS/LAST_SPOTS)
+  function apply() {
+    var qs = new URLSearchParams(location.search);
+    var force = qs.get('fortune') === 'wheel' || qs.has('wheel');
+    document.querySelectorAll('[data-fortune-wheel]').forEach(function (wheel) {
+      var slot = wheel.closest('[data-shift-id]');
+      var normal = slot ? slot.querySelector('[data-fortune-normal]') : null;
+      var start = new Date((wheel.getAttribute('data-fortune-start') || '') + 'T00:00:00');
+      var free = parseInt(wheel.getAttribute('data-fortune-free') || '0', 10);
+      var today = new Date(); today.setHours(0, 0, 0, 0);
+      var days = Math.ceil((start.getTime() - today.getTime()) / 86400000);
+      var active = force || (days >= 0 && days <= WINDOW_DAYS && free > 0 && free <= LAST_SPOTS);
+      if (active) { wheel.hidden = false; if (normal) normal.hidden = true; }
+      else { wheel.hidden = true; if (normal) normal.hidden = false; }
+    });
+  }
+  document.addEventListener('astro:page-load', apply);
+  if (document.readyState !== 'loading') apply();
+  else document.addEventListener('DOMContentLoaded', apply);
+})();
+</script>
 
 <style>
   /* ── MARQUEE VIEWPORT ── */
@@ -191,10 +176,26 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
     padding-right: 18px;
   }
   @media (min-width: 768px) {
+    .shifts-marquee-vp {
+      overflow: visible;
+      padding-top: 20px;
+      padding-bottom: 36px;
+    }
     .shifts-marquee-track {
-      /* desktop shadow: 0 X offset + 8px blur → 8px horizontal clearance needed */
-      padding-left: 8px;
-      padding-right: 8px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      overflow-x: visible;
+      overflow-y: visible;
+      cursor: default;
+      padding-left: 0;
+      padding-right: 0;
+      padding-top: 20px;
+      padding-bottom: 36px;
+      gap: 16px;
+      align-items: stretch;
+    }
+    .shifts-mq-item {
+      width: auto !important;
     }
   }
 
@@ -521,6 +522,18 @@ import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
 
     const origItems = Array.from(track.querySelectorAll<HTMLElement>('.shifts-mq-item'));
     if (!origItems.length) return;
+
+    // Mobile initial scroll to active shift (index from data-carousel-initial)
+    if (window.innerWidth < 768) {
+      const initialIdx = parseInt(track.dataset.carouselInitial || '0', 10);
+      if (initialIdx > 0 && origItems[initialIdx]) {
+        requestAnimationFrame(() => {
+          const item = origItems[initialIdx];
+          const vw = window.innerWidth;
+          track.scrollLeft = item.offsetLeft - (vw - item.offsetWidth) / 2;
+        });
+      }
+    }
 
     // ── Dot-индикаторы ───────────────────────────────────────
     const dotsContainer = document.querySelector<HTMLElement>('[data-shifts-dots]');

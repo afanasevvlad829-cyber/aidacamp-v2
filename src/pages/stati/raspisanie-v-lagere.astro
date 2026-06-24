@@ -1,0 +1,378 @@
+---
+import { PRICE_MIN, PRICE_MAX, VYCHET_MAX } from '../../data/shifts';
+import '../../styles/global.css';
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import RelatedPages from '../../components/RelatedPages.astro';
+import ArticleHero from '../../components/ArticleHero.astro';
+import ArticleBottomCta from '../../components/ArticleBottomCta.astro';
+import StatCallout from '../../components/StatCallout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+
+const relatedPages = [
+  { title: "Смены и цены 2026", url: "/ceny/", icon: "calendar-event", description: "Расписание всех смен, стоимость, что входит" },
+  { title: "Что взять в лагерь", url: "/stati/chto-vzyat-v-lager/", icon: "bag-check", description: "Полный список одежды, документов и гаджетов" },
+  { title: "Жизнь в лагере", url: "/stati/zhizn-v-lagere-dlya-detej/", icon: "house-heart", description: "Как проходит каждый день — глазами ребят" },
+  { title: "О лагере", url: "/o-lagere/", icon: "info-circle", description: "Территория, команда и философия АйДаКемп" },
+];
+
+const schedule = [
+  { time: '8:00',  icon: 'sunrise',        phase: 'Утро',    title: 'Подъём и завтрак',
+    desc: 'Плавный подъём, утренняя зарядка (необязательная, но большинство идёт). Завтрак: горячая каша, яйцо, чай или какао.' },
+  { time: '9:30',  icon: 'laptop',         phase: 'День',    title: 'Первый IT-блок',
+    desc: 'Программирование. Дети работают над проектом с преподавателем. Группы до 8 человек — всегда есть время задать вопрос.' },
+  { time: '12:00', icon: 'water',          phase: 'День',    title: 'Бассейн или спорт',
+    desc: 'Закрытый бассейн, футбол, волейбол, настольный теннис — каждый день что-то новое. Это не тихий час — это полноценная активность.' },
+  { time: '13:30', icon: 'cup-hot-fill',   phase: 'День',    title: 'Обед',
+    desc: 'Полноценный горячий обед: суп, второе, компот. Меню составляется на неделю, учитываются аллергии.' },
+  { time: '15:00', icon: 'cpu-fill',       phase: 'День',    title: 'Второй IT-блок',
+    desc: 'Продолжение работы над проектом. К концу смены здесь ребята финализируют игру, бота или приложение перед хакатоном.' },
+  { time: '18:00', icon: 'controller',     phase: 'Вечер',   title: 'Свободное время',
+    desc: 'Настолки, разговоры, прогулки по территории. Никаких обязательных активностей — дети сами выбирают.' },
+  { time: '19:00', icon: 'cup-hot-fill',   phase: 'Вечер',   title: 'Ужин',
+    desc: 'Горячий ужин. Примерно в это время дети вспоминают родителей и идут звонить — предусмотрено время для связи.' },
+  { time: '20:30', icon: 'people-fill',    phase: 'Вечер',   title: 'Вечерняя активность',
+    desc: 'Квест, творческий конкурс, кино, мастер-класс от кого-то из команды. Каждый вечер — другая активность.' },
+  { time: '22:00', icon: 'moon-stars',     phase: 'Ночь',    title: 'Отбой',
+    desc: '22:00 — в корпусах тишина. Вожатые на дежурстве всю ночь. Для младших (7–9 лет) отбой в 21:30.' },
+];
+
+const faqItems = [
+  {
+    q: 'В 8 утра вы правда поднимаете детей?',
+    a: 'Да. Через 2–3 дня они сами просыпаются раньше будильника — режим работает. Первые сутки сложнее, дальше легче.'
+  },
+  {
+    q: 'Сколько времени дети проводят за компьютером?',
+    a: 'Около 4–5 часов в день в два блока. Это оптимум: достаточно для реального прогресса, не перегружает. Остальное время — активность, еда, общение.'
+  },
+  {
+    q: 'Когда можно позвонить ребёнку?',
+    a: 'Лучше всего в 19:00–20:00, когда ужин и свободное время. Утром и в блоки программирования ребята заняты.'
+  },
+  {
+    q: 'Есть ли тихий час?',
+    a: 'Нет. Для подростков обязательный тихий час — это стресс, а не отдых. Вместо него — свободное время с 18:00, где каждый делает что хочет.'
+  },
+  {
+    q: 'Как долго ребёнок адаптируется к режиму?',
+    a: 'В среднем 2–3 дня. Первое утро может быть сложным, к третьему дню большинство ребят сами встают, идут завтракать и ждут начала занятий.'
+  },
+  {
+    q: 'Бывает ли скучно вечером?',
+    a: 'Обычно нет — вожатые планируют разные активности на каждый вечер. Но если ребёнок хочет просто лежать и читать — это тоже нормально.'
+  },
+];
+
+const phaseColors = {
+  'Утро': '#FF9800', 'День': '#4361EE', 'Вечер': '#9C27B0', 'Ночь': '#1a1a2e'
+} as Record<string, string>;
+
+// Pre-compute schedule with phase change markers
+const scheduleWithPhases = schedule.map((item, i) => ({
+  ...item,
+  phaseChanged: i === 0 || item.phase !== schedule[i - 1].phase,
+  color: phaseColors[item.phase] ?? '#4361EE',
+}));
+
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "Режим дня в детском лагере: расписание от подъёма до отбоя",
+    "description": "Подробное расписание дня в детском лагере — по часам: подъём, занятия, бассейн, свободное время и отбой. Реальное расписание АйДаКемп.",
+    "author": {"@type": "Person", "name": "Дарья Афанасьева", "url": "https://aidacamp.ru/o-lagere"},
+    "publisher": {"@type": "Organization", "name": "АйДаКемп", "url": "https://aidacamp.ru"},
+    "datePublished": "2026-06-17",
+    "dateModified": "2026-06-17",
+    "mainEntityOfPage": {"@type": "WebPage", "@id": "https://aidacamp.ru/stati/raspisanie-v-lagere/"}
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {"@type": "ListItem", "position": 1, "name": "АйДаКемп", "item": "https://aidacamp.ru"},
+      {"@type": "ListItem", "position": 2, "name": "Статьи", "item": "https://aidacamp.ru/stati/"},
+      {"@type": "ListItem", "position": 3, "name": "Расписание дня в лагере", "item": "https://aidacamp.ru/stati/raspisanie-v-lagere/"}
+    ]
+  }
+];
+---
+
+<Base
+  title="Режим дня в детском лагере: расписание от подъёма до отбоя | АйДаКемп"
+  description="Подробное расписание дня в детском лагере — по часам: подъём 8:00, IT-занятия, бассейн, ужин, вечерняя активность, отбой 22:00. Реальное расписание АйДаКемп, Подмосковье."
+  ogImage="/images/hero/lager-programmirovaniya.avif"
+>
+  <Fragment slot="head">
+    <link rel="canonical" href="https://aidacamp.ru/stati/raspisanie-v-lagere/" />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </Fragment>
+
+  <Header />
+
+  <main>
+    <ArticleHero
+      title="Режим дня в детском лагере"
+      subtitle="Расписание от подъёма до отбоя — по часам, честно"
+      breadcrumbs={[
+        { label: "АйДаКемп", href: "/" },
+        { label: "Статьи", href: "/stati/" },
+        { label: "Расписание дня в лагере" },
+      ]}
+      breadcrumbsLast="Расписание дня в лагере"
+    />
+
+    <article class="mx-auto max-w-[780px] px-4 pb-16">
+
+      <p class="lead">
+        Каждый год первым делом спрашивают: «А вы правда в 8 поднимаете?» и «Когда можно позвонить?»
+        Вот честное расписание дня в нашем лагере — без купюр. Режим дня в лагере — это не армия.
+        Это структура, которая помогает детям не зависнуть и успеть всё.
+      </p>
+
+      <StatCallout tone="info">
+        К третьему дню большинство ребят встают сами — за 5–10 минут до будильника. Режим перестраивает внутренние часы быстро.
+      </StatCallout>
+
+      <!-- Schedule timeline -->
+      <h2>Расписание лагеря — по часам</h2>
+
+      <div class="schedule-timeline">
+        {scheduleWithPhases.map(item => (
+          <div class="schedule-block">
+            {item.phaseChanged && (
+              <div class="phase-label" style={`color: ${item.color}`}>
+                {item.phase}
+              </div>
+            )}
+            <div class="schedule-item">
+              <div class="schedule-time">{item.time}</div>
+              <div class="schedule-dot" style={`background: ${item.color}`}></div>
+              <div class="schedule-content">
+                <strong>{item.title}</strong>
+                <p>{item.desc}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <h2>Почему именно такой режим дня?</h2>
+
+      <p>
+        Расписание в детском лагере — не произвол. За каждым временным блоком стоит логика.
+        Два IT-блока разнесены активностью: мозг ребёнка не перегревается, концентрация
+        выше, чем если бы мы занимались 6 часов подряд.
+      </p>
+
+      <p>
+        Бассейн и спорт между двумя рабочими блоками — осознанный выбор. Физическая активность
+        буквально «перезагружает» мозг. Дети, которые поплавали в обед, во втором блоке работают
+        лучше — это не педагогика, это физиология.
+      </p>
+
+      <h2>Режим дня по возрастам</h2>
+
+      <div class="age-grid">
+        <div class="age-card">
+          <div class="age-badge">7–9 лет</div>
+          <p>Отбой в 21:30 — на полчаса раньше. Физиологически детям до 10 лет нужно больше сна. Программа адаптирована: Scratch и Minecraft, меньше текста, больше игровых механик.</p>
+        </div>
+        <div class="age-card">
+          <div class="age-badge">10–12 лет</div>
+          <p>Стандартное расписание. Отбой в 22:00. Python, pygame, первые алгоритмы. К этому возрасту дети легче держат режим дня и реже скучают по дому.</p>
+        </div>
+        <div class="age-card">
+          <div class="age-badge">13–15 лет</div>
+          <p>Расписание такое же, но программа сложнее: AI-модули, Telegram-боты, работа с API. Старшие часто сами задерживаются на занятиях — вожатым приходится говорить «стоп».</p>
+        </div>
+      </div>
+
+      <h2>Что происходит в «свободное время»?</h2>
+
+      <p>
+        Распорядок дня лагеря с 18:00 до ужина — это зона без обязательных активностей.
+        Кто-то идёт в настолки, кто-то дочитывает главу в книге, кто-то гоняет мяч.
+        Несколько ребят каждую смену возвращаются к ноутбуку добровольно — потому что
+        не успели доделать деталь проекта. Это всегда приятно видеть.
+      </p>
+
+      <StatCallout tone="warn">
+        Первые 1–2 дня дети могут скучать в «свободное время» — они не привыкли к нему без телефона. К третьему дню сами придумывают, чем заняться.
+      </StatCallout>
+
+      <h2>Вечерние активности — что бывает?</h2>
+
+      <p>
+        Вечерняя активность (20:30–22:00) каждый день разная. Из постоянных:
+      </p>
+
+      <ul>
+        <li><strong>Квесты по территории</strong> — командные, с загадками и тайными заданиями</li>
+        <li><strong>«Что? Где? Когда?»</strong> — команды ребят против команды взрослых</li>
+        <li><strong>Кино под открытым небом</strong> — или в холле если дождь</li>
+        <li><strong>Мастер-класс от вожатого</strong> — кто умеет рисовать, кто умеет петь</li>
+        <li><strong>Хакатон-презентации</strong> — в последние дни смены</li>
+      </ul>
+
+      <h2>Связь с родителями</h2>
+
+      <p>
+        Лучшее время для звонка — 19:00–20:00: ужин уже был, вечерняя активность ещё не началась.
+        Утром и в блоки занятий ребята заняты и звонки их отвлекают. После 22:00 уже отбой.
+      </p>
+
+      <p>
+        Если ребёнок не взял трубку — это нормально. Он или занят, или поплавал и лёг
+        на полчаса раньше. Вожатые пишут в общий чат смены если что-то важное.
+      </p>
+
+      <h2>Первый день — особый режим</h2>
+
+      <p>
+        В день заезда расписание лагеря отличается. Ребята приезжают с 10:00 до 13:00,
+        размещаются, знакомятся с командой и территорией. Первый IT-блок короткий —
+        вводный. Вечером — большая игра-знакомство. Это помогает «растопить лёд» быстро:
+        к ужину первого дня большинство уже знает соседей по комнате по именам.
+      </p>
+
+      <StatCallout tone="info">
+        Дети, у которых сложности с социализацией, чаще всего «раскрываются» именно на вечерней игре первого дня. Это работает.
+      </StatCallout>
+
+      <ArticleBottomCta
+        heading="Хотите узнать расписание конкретной смены?"
+        bookingSubtitle="Напишите — расскажем про даты и программу ближайших смен."
+      />
+
+    </article>
+
+    <section class="mx-auto max-w-[780px] px-4 pb-12">
+      <h2 class="text-[22px] font-bold mb-6">Частые вопросы о режиме дня</h2>
+      {faqItems.map((item, i) => (
+        <details class="faq-item" open={i === 0}>
+          <summary class="faq-q">{item.q}</summary>
+          <div class="faq-a">{item.a}</div>
+        </details>
+      ))}
+    </section>
+
+    <RelatedPages title="Полезные страницы" pages={relatedPages} />
+  </main>
+
+  <Footer />
+  <FAQSchema items={faqItems} />
+</Base>
+
+<style>
+  .lead {
+    font-size: 1.1rem;
+    color: #444;
+    line-height: 1.7;
+    margin-bottom: 32px;
+  }
+
+  /* Schedule timeline */
+  .schedule-timeline {
+    margin: 32px 0 40px;
+    position: relative;
+  }
+  .phase-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    margin-top: 24px;
+  }
+  .phase-label:first-child { margin-top: 0; }
+  .schedule-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .schedule-time {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    min-width: 52px;
+    padding-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .schedule-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+  .schedule-content strong {
+    font-size: 1rem;
+    color: #1a1a2e;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .schedule-content p {
+    font-size: 0.9rem;
+    color: #555;
+    margin: 0;
+    line-height: 1.55;
+  }
+
+  /* Age grid */
+  .age-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 24px 0 32px;
+  }
+  .age-card {
+    border: 1px solid #e8eaf0;
+    border-radius: 12px;
+    padding: 16px;
+    background: #f8f9ff;
+  }
+  .age-badge {
+    display: inline-block;
+    background: #4361EE;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border-radius: 20px;
+    padding: 2px 12px;
+    margin-bottom: 10px;
+  }
+  .age-card p { font-size: 0.88rem; color: #444; line-height: 1.55; margin: 0; }
+
+  /* FAQ */
+  .faq-item { border-bottom: 1px solid #e8eaf0; }
+  .faq-q {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 14px 0;
+    color: #1a1a2e;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.98rem;
+  }
+  .faq-q::after { content: '+'; font-size: 1.4rem; color: #4361EE; }
+  details[open] .faq-q::after { content: '−'; }
+  .faq-a {
+    font-size: 0.92rem;
+    color: #555;
+    line-height: 1.65;
+    padding-bottom: 14px;
+  }
+
+  /* Article content */
+  article h2 { font-size: 1.4rem; font-weight: 700; color: #1a1a2e; margin: 36px 0 16px; }
+  article p { font-size: 0.97rem; color: #444; line-height: 1.7; margin-bottom: 16px; }
+  article ul { padding-left: 20px; margin-bottom: 20px; }
+  article li { font-size: 0.95rem; color: #444; line-height: 1.65; margin-bottom: 6px; }
+</style>

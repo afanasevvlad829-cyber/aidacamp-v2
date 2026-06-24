@@ -148,7 +148,7 @@ echo "🔒 guard: пути импортов OK"
 # DEPLOY_ENV=dev → assetsPrefix отключён, JS/CSS грузятся с того же хоста
 # DEPLOY_ENV=prod → assetsPrefix=https://huhodirekeka.begetcdn.cloud (CDN)
 # Явная V8-куча: на 8ГБ Маке под нагрузкой дефолт падает (Abort trap/137, инцидент 11.06.2026)
-NODE_OPTIONS="--max-old-space-size=6144" DEPLOY_ENV="$TARGET" npm run build --silent
+NODE_OPTIONS="--max-old-space-size=5120" DEPLOY_ENV="$TARGET" npm run build --silent
 
 if [ ! -f "dist/client/index.html" ]; then
   echo "❌ dist/client/index.html не найден. Сборка не удалась."

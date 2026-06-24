@@ -50,6 +50,11 @@ deploy_to() {
 
 if [ "$TARGET" = "dev" ] || [ "$TARGET" = "both" ]; then
   deploy_to "$DEV_DIR" "dev"
+  # Синхронизируем также плоский корень /var/www/aidacamp-dev/ (nginx отдаёт оттуда статику)
+  # Инцидент 2026-06-12: без этого шага новые страницы появляются в current/ но не в flat-root → 404
+  rsync -a \
+    --exclude='.env' --exclude='server/' --exclude='node_modules/' --exclude='backup-*' \
+    "$REPO/dist/client/" /var/www/aidacamp-dev/ && echo "  ✅ client → dev flat-root"
 fi
 if [ "$TARGET" = "prod" ] || [ "$TARGET" = "both" ]; then
   deploy_to "$PROD_DIR" "prod"

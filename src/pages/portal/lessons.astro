@@ -15,10 +15,23 @@ const canCreate = isManager || role === 'teacher';
 
 const [shift, rawTeachers] = await Promise.all([getActiveShift(), listStaff()]);
 const teachers = rawTeachers.filter((s) => s.active && (s.role === 'teacher' || s.role === 'admin'));
-const [lessons, dates] = await Promise.all([
-  shift ? listLessons({ shift_id: shift.id }) : Promise.resolve([] as Lesson[]),
-  shift ? getEventDates(shift.id) : Promise.resolve([] as string[]),
-]);
+
+// Находим staff.id текущего пользователя (для преподавателей — автовыбор себя).
+// portalSid — staff.id напрямую (вход по коду). portalSub — telegram_id (TG-вход),
+// telegram_id в БД BIGINT → pg возвращает строку, сравниваем через Number().
+const mySid: number | null = Astro.locals.portalSid ? Number(Astro.locals.portalSid) : null;
+const myTgId = Astro.locals.portalSub ?? null;
+let myStaffId: number | null = mySid;
+let myStaff = mySid ? (rawTeachers.find((s) => s.id === mySid) ?? null) : null;
+if (!myStaffId && myTgId != null) {
+  myStaff = rawTeachers.find((s) => Number(s.telegram_id) === Number(myTgId)) ?? null;
+  myStaffId = myStaff?.id ?? null;
+}
+
+const allLessons = await (shift ? listLessons({ shift_id: shift.id }) : Promise.resolve([] as Lesson[]));
+// Преподаватели видят только свои уроки; менеджеры — все
+const lessons = isManager ? allLessons : allLessons.filter((l) => Number(l.teacher_staff_id) === myStaffId);
+const dates = await (shift ? getEventDates(shift.id) : Promise.resolve([] as string[]));
 
 // Группируем уроки по дате для отображения
 const byDate = new Map<string, Lesson[]>();
@@ -106,7 +119,7 @@ function fmtTime(t: string | null): string {
                     <h3 class="mt-1 text-[17px] font-semibold text-navy-950">{l.topic}</h3>
                     <div class="mt-1 flex flex-wrap gap-x-3 text-[13px] text-body-muted">
                       {l.teacher_name && <span><i class="bi bi-person-badge" aria-hidden="true"></i> {l.teacher_name}</span>}
-                      {l.activity_slug && <a class="text-primary hover:underline" href={`/portal/metodichki/${l.activity_slug}/`}>методичка</a>}
+                      {l.activity_slug && <a class="text-primary hover:underline" href={`/metodichki/${l.activity_slug}/`}>методичка</a>}
                     </div>
                     {l.expected_outcome && (
                       <p class="mt-2 text-[14px] text-navy-900"><b>Что унесут:</b> {l.expected_outcome}</p>
@@ -166,12 +179,21 @@ function fmtTime(t: string | null): string {
           </div>
           <label class="block">
             <span class="text-body-muted">Преподаватель</span>
-            <select id="ln-teacher" class="mt-1 w-full rounded-[8px] border border-border px-3 py-2">
-              <option value="">— выбрать —</option>
-              {teachers.map((t) => (
-                <option value={t.id}>{t.full_name ?? `id=${t.id}`}</option>
-              ))}
-            </select>
+            {isManager ? (
+              <select id="ln-teacher" class="mt-1 w-full rounded-[8px] border border-border px-3 py-2">
+                <option value="">— выбрать —</option>
+                {teachers.map((t) => (
+                  <option value={t.id}>{t.full_name ?? `id=${t.id}`}</option>
+                ))}
+              </select>
+            ) : (
+              <div class="mt-1">
+                <input id="ln-teacher" type="hidden" value={myStaffId ?? ''} />
+                <p class="rounded-[8px] border border-border bg-gray-50 px-3 py-2 text-[14px] text-navy-950">
+                  {myStaff?.full_name ?? '—'}
+                </p>
+              </div>
+            )}
           </label>
           <label class="block">
             <span class="text-body-muted">Методичка (slug)</span>
@@ -199,7 +221,15 @@ function fmtTime(t: string | null): string {
             </select>
           </label>
         </div>
-        <div class="mt-5 flex justify-end gap-2">
+        <div id="ln-error" style="display:none" class="mt-3 rounded-[8px] border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-700">
+          <span id="ln-error-text"></span>
+          <button type="button" id="ln-report-btn"
+                  class="ml-2 underline text-red-600 hover:text-red-800" style="display:none">
+            Сообщить администратору
+          </button>
+          <span id="ln-report-sent" class="ml-2 text-emerald-600" style="display:none">✓ Отправлено</span>
+        </div>
+        <div class="mt-4 flex justify-end gap-2">
           <button type="button" id="ln-cancel" class="rounded-[8px] border border-border bg-white px-4 py-2 text-[14px]">Отмена</button>
           <button type="button" id="ln-save" class="rounded-[8px] border border-primary bg-primary px-4 py-2 text-[14px] font-semibold text-white">
             Сохранить
@@ -209,12 +239,55 @@ function fmtTime(t: string | null): string {
     </dialog>
   )}
 
-  <script define:vars={{ shiftId: shift?.id ?? 0 }}>
+  <script define:vars={{ shiftId: shift?.id ?? 0, isManager, myStaffId }}>
     const dlg = document.getElementById('lesson-dlg');
     const openBtn = document.getElementById('btn-new-lesson');
     const cancelBtn = document.getElementById('ln-cancel');
     const saveBtn = document.getElementById('ln-save');
     const ttl = document.getElementById('lesson-dlg-title');
+    const errBox     = document.getElementById('ln-error');
+    const errText    = document.getElementById('ln-error-text');
+    const reportBtn  = document.getElementById('ln-report-btn');
+    const reportSent = document.getElementById('ln-report-sent');
+    let lastError = '';
+
+    function showErr(msg) {
+      lastError = msg;
+      if (errText) errText.textContent = msg;
+      if (errBox) errBox.style.display = 'block';
+      if (reportBtn) reportBtn.style.display = 'inline';
+      if (reportSent) reportSent.style.display = 'none';
+    }
+    function clearErr() {
+      lastError = '';
+      if (errBox) errBox.style.display = 'none';
+      if (errText) errText.textContent = '';
+      if (reportBtn) reportBtn.style.display = 'none';
+      if (reportSent) reportSent.style.display = 'none';
+    }
+
+    if (reportBtn) {
+      reportBtn.addEventListener('click', async () => {
+        reportBtn.textContent = 'Отправляю…';
+        reportBtn.disabled = true;
+        try {
+          await fetch('/api/portal/error-report', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              error: lastError,
+              context: `myStaffId=${myStaffId ?? '?'} isManager=${isManager}`,
+              url: window.location.href,
+            }),
+          });
+          reportBtn.style.display = 'none';
+          if (reportSent) reportSent.style.display = 'inline';
+        } catch {
+          reportBtn.textContent = 'Сообщить администратору';
+          reportBtn.disabled = false;
+        }
+      });
+    }
     const fields = {
       id: 'ln-id', topic: 'ln-topic', date: 'ln-date', start: 'ln-start', end: 'ln-end',
       teacher: 'ln-teacher', slug: 'ln-slug', outcome: 'ln-outcome',
@@ -223,8 +296,11 @@ function fmtTime(t: string | null): string {
     function val(k) { return document.getElementById(fields[k]).value; }
     function set(k, v) { document.getElementById(fields[k]).value = v ?? ''; }
     function reset() {
+      clearErr();
       set('id', ''); set('topic', ''); set('start', ''); set('end', '');
-      set('teacher', ''); set('slug', ''); set('outcome', ''); set('materials', '');
+      // Для преподавателя всегда подставляем его id; для менеджера — сбрасываем
+      set('teacher', isManager ? '' : (myStaffId ?? ''));
+      set('slug', ''); set('outcome', ''); set('materials', '');
       set('status', 'planned');
       if (ttl) ttl.textContent = 'Новый урок';
     }
@@ -246,17 +322,18 @@ function fmtTime(t: string | null): string {
         status: val('status'),
       };
       if (!body.topic || !body.teacher_staff_id || !body.date) {
-        (window.toast || window.alert)('Заполни тему, преподавателя и дату');
+        showErr('Заполни тему, преподавателя и дату');
         return;
       }
+      clearErr();
       saveBtn.disabled = true;
       try {
         const r = await fetch('/api/portal/lesson', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
         const j = await r.json();
-        if (!j.ok) throw new Error(j.error || 'error');
+        if (!j.ok) throw new Error(j.error || 'Ошибка сервера');
         location.reload();
       } catch (e) {
-        (window.toast?.error || window.alert)('Ошибка: ' + (e.message || e));
+        showErr(e.message || String(e));
         saveBtn.disabled = false;
       }
     });

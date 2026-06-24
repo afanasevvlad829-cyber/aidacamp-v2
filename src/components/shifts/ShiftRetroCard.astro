@@ -1,0 +1,111 @@
+---
+/**
+ * ShiftRetroCard — карточка смены в фазе «идёт» (live) или «прошла» (done).
+ * Фаза определяется по датам (getShiftPhase). Всё из данных смены — без хардкода.
+ *
+ * Блок «как росла цена» (первая → последняя цена) — главный призыв: показывает
+ * выгоду раннего бронирования. Источник цен:
+ *   priceFrom/priceTo заданы в данных (legacy-факт) → берём их;
+ *   иначе выводим из правила: база (shift.price) → цена на старте (getCurrentPrice).
+ */
+import type { Shift } from '../../data/shifts';
+import { getShiftPhase, getCurrentPrice, fmtPrice, getDays } from '../../data/dynamicPrices';
+
+interface Props {
+  shift: Shift;
+}
+const { shift } = Astro.props;
+
+const today = new Date();
+const phase = getShiftPhase(shift.id, today); // 'live' | 'done'
+const isLive = phase === 'live';
+const isDone = phase === 'done';
+
+// Номер в кружке: shift-2-1 → "2.1"
+const circle = shift.id.replace('shift-', '').replace('-', '.');
+
+// Подпись месяца(ев) из дат старта/конца
+const MON = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const sd = new Date(shift.startDate + 'T00:00:00');
+const ed = new Date(shift.endDate + 'T00:00:00');
+const monthLabel = sd.getMonth() === ed.getMonth() ? MON[sd.getMonth()] : `${MON[sd.getMonth()]} — ${MON[ed.getMonth()]}`;
+
+// Прогресс для live (дни)
+const totalDays = getDays(shift.id) || 1;
+const elapsed = Math.max(0, Math.min(totalDays, Math.floor((today.getTime() - sd.getTime()) / 86_400_000)));
+const pct = Math.round((elapsed / totalDays) * 100);
+
+// Места
+const total = shift.occupied + shift.free;
+
+// Блок «как росла цена»: первая → последняя
+const num = (s: string) => parseInt(s.replace(/\D/g, ''), 10) || 0;
+const priceFromStr = shift.priceFrom ?? shift.price;
+const startPrice = getCurrentPrice(shift.id, sd);
+const priceToStr = shift.priceTo ?? (startPrice ? fmtPrice(startPrice) : shift.price);
+const fromN = num(priceFromStr);
+const toN = num(priceToStr);
+const growthPct = fromN > 0 ? Math.round(((toN - fromN) / fromN) * 100) : 0;
+---
+
+<div class={`flex flex-col h-full rounded-[22px] border p-5 shadow-[0_2px_6px_rgba(15,23,42,0.06),0_4px_14px_rgba(15,23,42,0.08)] ${isLive ? 'border-amber-200 bg-amber-50/60' : 'border-border-light bg-card'}`}>
+  <!-- header: circle + month | status -->
+  <div class="flex items-center justify-between gap-2 mb-3">
+    <div class="flex items-center gap-1.5">
+      <span class={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[13px] font-extrabold leading-none shrink-0 ${isLive ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-400'}`}>{circle}</span>
+      <p class="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">{monthLabel}</p>
+    </div>
+    {isLive ? (
+      <span class="shrink-0 inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-300 px-2.5 py-0.5 text-[11px] font-bold text-amber-700">
+        <span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
+        идёт
+      </span>
+    ) : (
+      <span class="shrink-0 inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
+        <i class="bi bi-check-circle-fill text-[10px]" aria-hidden="true"></i>
+        завершена
+      </span>
+    )}
+  </div>
+
+  <!-- dates -->
+  <h3 class={`text-[18px] font-extrabold tracking-[-0.02em] leading-[1.1] whitespace-nowrap ${isLive ? 'text-amber-800' : 'text-slate-400'}`}>{shift.dates}</h3>
+  <p class={`mt-0.5 text-[13px] ${isLive ? 'text-amber-700' : 'text-slate-400'}`}>{shift.duration}</p>
+
+  <!-- progress / occupancy -->
+  <div class="mt-4">
+    <div class="flex justify-between text-[12px] mb-1.5">
+      <span class={isLive ? 'text-amber-700' : 'text-slate-400'}>{isLive ? 'Прогресс' : 'Занято'}</span>
+      <span class={`font-semibold ${isLive ? 'text-amber-700' : 'text-emerald-600'}`}>{isLive ? `${elapsed} / ${totalDays} дн` : `${shift.occupied} из ${total}`}</span>
+    </div>
+    <div class="h-1.5 w-full rounded-full overflow-hidden bg-slate-100">
+      <div class={`h-full rounded-full ${isLive ? 'bg-amber-400' : 'bg-emerald-400'}`} style={`width:${isLive ? pct : 100}%`}></div>
+    </div>
+    {isLive && <p class="mt-1 text-[11px] text-slate-400">Осталось {totalDays - elapsed} дн</p>}
+  </div>
+
+  <!-- price history compact: первая → последняя цена -->
+  <div class="mt-4 flex-1">
+    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 mb-1.5">Как росла цена</p>
+    <div class="flex items-center gap-1.5 text-[13px]">
+      <span class="text-slate-400">{priceFromStr}</span>
+      <i class="bi bi-arrow-right text-[11px] text-slate-300" aria-hidden="true"></i>
+      <span class="font-bold text-slate-600">{priceToStr}</span>
+      {growthPct > 0 && <span class="ml-auto text-[11px] bg-slate-100 text-slate-500 rounded-full px-2 py-0.5 font-semibold">+{growthPct}%</span>}
+    </div>
+    <p class="mt-0.5 text-[11px] text-slate-400">Январь → Старт смены</p>
+  </div>
+
+  <!-- CTA -->
+  {isDone && shift.recapUrl ? (
+    <a href={shift.recapUrl} class="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl py-3 text-[14px] font-semibold text-emerald-700 border border-emerald-200 hover:bg-emerald-50 transition-colors no-underline group">
+      Смотреть как прошла
+      <i class="bi bi-arrow-right text-[13px] transition-transform group-hover:translate-x-1" aria-hidden="true"></i>
+    </a>
+  ) : (
+    <div class="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl py-3 text-[14px] font-semibold text-slate-400 border border-slate-200 select-none cursor-default">
+      <i class="bi bi-lock text-[12px]" aria-hidden="true"></i>
+      Продажи закрыты
+    </div>
+  )}
+</div>

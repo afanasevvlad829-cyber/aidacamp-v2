@@ -129,9 +129,9 @@ const landing: LandingData = {
     label: 'Смотрите также',
     separator: ' — ',
     links: [
-      { href: '/smeny', text: 'смены и даты 2026' },
-      { href: '/stoimost', text: 'стоимость и что входит' },
-      { href: '/programmy', text: 'программы IT-треков' },
+      { href: '/ceny', text: 'смены и даты 2026' },
+      { href: '/ceny', text: 'стоимость и что входит' },
+      { href: '/programma-smeny', text: 'программы IT-треков' },
     ],
   },
 };

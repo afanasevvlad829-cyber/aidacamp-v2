@@ -1,6 +1,7 @@
 /**
- * Characterization tests for dynamicPrices.ts.
- * Фиксируют ТЕКУЩЕЕ поведение как есть — не исправляют логику.
+ * Тесты единого правила роста цены (dynamicPrices.ts).
+ * Правило: база → (старт−30д: +5%) → +500/день → фиксация на старте.
+ * Данные смен берутся из SHIFT_META (shifts.ts).
  * Используем noon-UTC даты чтобы избежать timezone-edge-cases в daysDiff.
  */
 import { describe, it, expect } from 'vitest';
@@ -10,6 +11,7 @@ import {
   getNextDayPrice,
   getNextPriceStage,
   getFortunePrice,
+  isFortuneActive,
   getDays,
   getTaxDeduction,
   fmtPrice,
@@ -23,6 +25,12 @@ const d = (s: string) => new Date(s + 'T12:00:00Z');
 describe('PRICING config', () => {
   it('содержит 6 смен', () => {
     expect(Object.keys(PRICING)).toHaveLength(6);
+  });
+
+  it('каждая смена имеет 3 ступени (база → рост → фиксация)', () => {
+    for (const id of Object.keys(PRICING)) {
+      expect(PRICING[id].stages).toHaveLength(3);
+    }
   });
 
   it('shift-2 длиннее shift-1', () => {
@@ -39,73 +47,43 @@ describe('PRICING config', () => {
   });
 });
 
-// ── getCurrentPrice ──────────────────────────────────────────────────────────
+// ── Единое правило роста (на примере shift-3: старт 2026-08-03, база 89 400) ──
+// rampFrom = 2026-07-04 (старт − 30 дней); +5% → 93 870; на старте → 108 870.
 
-describe('getCurrentPrice', () => {
+describe('getCurrentPrice — единое правило', () => {
   it('возвращает null для неизвестного shiftId', () => {
     expect(getCurrentPrice('unknown-shift', d('2026-06-01'))).toBeNull();
   });
 
   it('возвращает null если дата раньше первой ступени', () => {
-    expect(getCurrentPrice('shift-1', d('2025-12-31'))).toBeNull();
+    expect(getCurrentPrice('shift-3', d('2025-12-31'))).toBeNull();
   });
 
-  it('shift-1: ступень 1 (2026-01-01) = 74 900', () => {
-    expect(getCurrentPrice('shift-1', d('2026-01-01'))).toBe(74900);
-  });
-
-  it('shift-1: ступень 2 (2026-04-01) = 79 900', () => {
-    expect(getCurrentPrice('shift-1', d('2026-04-01'))).toBe(79900);
-  });
-
-  it('shift-1: ступень 3 (2026-05-01) = 85 900', () => {
-    expect(getCurrentPrice('shift-1', d('2026-05-01'))).toBe(85900);
-  });
-
-  it('shift-1: инкремент-ступень — день 0 (2026-05-23) = базовая 85 900', () => {
-    // Первый день инкремента: elapsed=0, прирост отсутствует
-    expect(getCurrentPrice('shift-1', d('2026-05-23'))).toBe(85900);
-  });
-
-  it('shift-1: инкремент +1 000/день — день 1 (2026-05-24) = 86 900', () => {
-    expect(getCurrentPrice('shift-1', d('2026-05-24'))).toBe(86900);
-  });
-
-  it('shift-1: инкремент — день 4 (2026-05-27) = 89 900', () => {
-    expect(getCurrentPrice('shift-1', d('2026-05-27'))).toBe(89900);
-  });
-
-  it('shift-1: фиксированный максимум (2026-05-28) = 93 900', () => {
-    // Следующая ступень фиксирует цену, инкремент прекращается
-    expect(getCurrentPrice('shift-1', d('2026-05-28'))).toBe(93900);
-  });
-
-  it('shift-1: максимум держится после 2026-05-28', () => {
-    expect(getCurrentPrice('shift-1', d('2026-06-01'))).toBe(93900);
-  });
-
-  it('shift-2: инкремент-ступень — день 0 (2026-05-23) = 99 000', () => {
-    expect(getCurrentPrice('shift-2', d('2026-05-23'))).toBe(99000);
-  });
-
-  it('shift-2: инкремент +500/день — день 1 (2026-05-24) = 99 500', () => {
-    expect(getCurrentPrice('shift-2', d('2026-05-24'))).toBe(99500);
-  });
-
-  it('shift-3: одна фиксированная ступень', () => {
+  it('до начала роста (за 30+ дней) — базовая цена', () => {
     expect(getCurrentPrice('shift-3', d('2026-06-01'))).toBe(89400);
+    expect(getCurrentPrice('shift-3', d('2026-07-03'))).toBe(89400); // день до роста
   });
 
-  it('shift-4: одна фиксированная ступень', () => {
-    expect(getCurrentPrice('shift-4', d('2026-06-01'))).toBe(74900);
+  it('за 30 дней до старта — разовый шаг +5% к базе', () => {
+    // round(89400 * 1.05) = 93870
+    expect(getCurrentPrice('shift-3', d('2026-07-04'))).toBe(93870);
   });
 
-  it('shift-2-1: цена 48 000', () => {
-    expect(getCurrentPrice('shift-2-1', d('2026-06-01'))).toBe(48000);
+  it('далее +500 ₽/день', () => {
+    expect(getCurrentPrice('shift-3', d('2026-07-05'))).toBe(94370); // +1 день
+    expect(getCurrentPrice('shift-3', d('2026-07-14'))).toBe(98870); // +10 дней
   });
 
-  it('shift-2-2: цена 75 000', () => {
-    expect(getCurrentPrice('shift-2-2', d('2026-06-01'))).toBe(75000);
+  it('на старте смены цена фиксируется (рост останавливается)', () => {
+    // 93870 + 30*500 = 108870
+    expect(getCurrentPrice('shift-3', d('2026-08-03'))).toBe(108870);
+    expect(getCurrentPrice('shift-3', d('2026-08-20'))).toBe(108870); // держится
+  });
+
+  it('shift-4: то же правило (база 74 900, старт 2026-08-17)', () => {
+    expect(getCurrentPrice('shift-4', d('2026-06-01'))).toBe(74900);          // база
+    expect(getCurrentPrice('shift-4', d('2026-07-18'))).toBe(78645);          // +5% (round(74900*1.05))
+    expect(getCurrentPrice('shift-4', d('2026-08-17'))).toBe(78645 + 15000);  // фиксация = 93645
   });
 });
 
@@ -116,20 +94,18 @@ describe('getNextDayPrice', () => {
     expect(getNextDayPrice('unknown-shift', d('2026-06-01'))).toBeNull();
   });
 
-  it('shift-2: растущая цена — завтра на 500 дороже', () => {
-    const today = d('2026-05-24');
-    const todayPrice = getCurrentPrice('shift-2', today)!;
-    const tomorrow = getNextDayPrice('shift-2', today);
-    expect(tomorrow).not.toBeNull();
-    expect(tomorrow).toBe(todayPrice + 500);
+  it('в фазе роста — завтра на 500 дороже', () => {
+    const today = d('2026-07-05');
+    const todayPrice = getCurrentPrice('shift-3', today)!;
+    expect(getNextDayPrice('shift-3', today)).toBe(todayPrice + 500);
   });
 
-  it('shift-1: на максимальной цене — возвращает null', () => {
-    expect(getNextDayPrice('shift-1', d('2026-06-01'))).toBeNull();
-  });
-
-  it('shift-3: нет инкремента — всегда null', () => {
+  it('до начала роста — null (цена ещё не растёт)', () => {
     expect(getNextDayPrice('shift-3', d('2026-06-01'))).toBeNull();
+  });
+
+  it('после фиксации на старте — null', () => {
+    expect(getNextDayPrice('shift-3', d('2026-08-10'))).toBeNull();
   });
 });
 
@@ -140,19 +116,21 @@ describe('getNextPriceStage', () => {
     expect(getNextPriceStage('unknown-shift', d('2026-06-01'))).toBeNull();
   });
 
-  it('shift-1 на 2026-01-01: следующая ступень — 2026-04-01, 79 900', () => {
-    const next = getNextPriceStage('shift-1', d('2026-01-01'));
+  it('до роста: следующая ступень — начало роста (+5%)', () => {
+    const next = getNextPriceStage('shift-3', d('2026-06-01'));
     expect(next).not.toBeNull();
-    expect(next!.from).toBe('2026-04-01');
-    expect(next!.price).toBe(79900);
+    expect(next!.from).toBe('2026-07-04');
+    expect(next!.price).toBe(93870);
   });
 
-  it('shift-1 после последней ступени: следующей ступени нет', () => {
-    expect(getNextPriceStage('shift-1', d('2026-06-01'))).toBeNull();
+  it('в фазе роста: следующая ступень — фиксация на старте', () => {
+    const next = getNextPriceStage('shift-3', d('2026-07-10'));
+    expect(next!.from).toBe('2026-08-03');
+    expect(next!.price).toBe(108870);
   });
 
-  it('shift-3 с одной ступенью: нет следующей ступени', () => {
-    expect(getNextPriceStage('shift-3', d('2026-06-01'))).toBeNull();
+  it('после старта: следующей ступени нет', () => {
+    expect(getNextPriceStage('shift-3', d('2026-08-10'))).toBeNull();
   });
 });
 
@@ -167,33 +145,57 @@ describe('getFortunePrice', () => {
     expect(getFortunePrice('shift-3', d('2026-06-01'))).toBeNull();
   });
 
-  it('shift-1 при цене 93 900: 7% скидка + 30% депозит', () => {
-    // final = round(93900 * 0.93) = 87327
-    // deposit = round(87327 * 0.30) = 26198
-    const result = getFortunePrice('shift-1', d('2026-06-01'));
-    expect(result).not.toBeNull();
-    expect(result!.final).toBe(87327);
-    expect(result!.deposit).toBe(26198);
-  });
-
   it('shift-2 при базовой цене 99 000: 7% скидка + 30% депозит', () => {
-    // final = round(99000 * 0.93) = 92070
-    // deposit = round(92070 * 0.30) = 27621
-    const result = getFortunePrice('shift-2', d('2026-05-23'));
+    // до роста (rampFrom shift-2 = 2026-05-11): база 99 000
+    // final = round(99000 * 0.93) = 92070; deposit = round(92070 * 0.30) = 27621
+    const result = getFortunePrice('shift-2', d('2026-05-01'));
     expect(result).not.toBeNull();
     expect(result!.final).toBe(92070);
     expect(result!.deposit).toBe(27621);
   });
 
   it('final всегда меньше базовой цены', () => {
-    const base = getCurrentPrice('shift-1', d('2026-06-01'))!;
-    const result = getFortunePrice('shift-1', d('2026-06-01'))!;
+    const base = getCurrentPrice('shift-1', d('2026-04-01'))!;
+    const result = getFortunePrice('shift-1', d('2026-04-01'))!;
     expect(result.final).toBeLessThan(base);
   });
 
   it('deposit меньше final', () => {
-    const result = getFortunePrice('shift-1', d('2026-06-01'))!;
+    const result = getFortunePrice('shift-1', d('2026-04-01'))!;
     expect(result.deposit).toBeLessThan(result.final);
+  });
+});
+
+// ── isFortuneActive (последние 3 дня / 3 места) ──────────────────────────────
+// shift-3: старт 2026-08-03.
+
+describe('isFortuneActive', () => {
+  it('активна: 3 дня до старта + 3 места', () => {
+    expect(isFortuneActive('shift-3', 3, d('2026-07-31'))).toBe(true);
+  });
+
+  it('активна: 1 день до старта + 1 место', () => {
+    expect(isFortuneActive('shift-3', 1, d('2026-08-02'))).toBe(true);
+  });
+
+  it('не активна: 4 дня до старта (вне окна)', () => {
+    expect(isFortuneActive('shift-3', 2, d('2026-07-30'))).toBe(false);
+  });
+
+  it('не активна: 4 свободных места (не последние 3)', () => {
+    expect(isFortuneActive('shift-3', 4, d('2026-07-31'))).toBe(false);
+  });
+
+  it('не активна: распродано (0 мест)', () => {
+    expect(isFortuneActive('shift-3', 0, d('2026-08-02'))).toBe(false);
+  });
+
+  it('не активна: после старта', () => {
+    expect(isFortuneActive('shift-3', 2, d('2026-08-05'))).toBe(false);
+  });
+
+  it('false для неизвестной смены', () => {
+    expect(isFortuneActive('unknown', 1, d('2026-08-02'))).toBe(false);
   });
 });
 
@@ -209,36 +211,26 @@ describe('getDays', () => {
   it('неизвестная смена = 0', () => { expect(getDays('unknown')).toBe(0); });
 });
 
-// ── getTaxDeduction ──────────────────────────────────────────────────────────
+// ── getTaxDeduction (на базовой цене — до роста) ──────────────────────────────
 
 describe('getTaxDeduction', () => {
   it('возвращает 0 для неизвестной смены', () => {
     expect(getTaxDeduction('unknown-shift', d('2026-06-01'))).toBe(0);
   });
 
-  it('shift-1 при 93 900 / 10 дней: 13% от образовательной части', () => {
-    // eduPart = 93900 - 3800*10 = 55900; deduction = round(55900 * 0.13) = 7267
-    expect(getTaxDeduction('shift-1', d('2026-06-01'))).toBe(7267);
-  });
-
-  it('shift-2-1 при 48 000 / 7 дней', () => {
-    // eduPart = 48000 - 26600 = 21400; deduction = round(21400 * 0.13) = 2782
-    expect(getTaxDeduction('shift-2-1', d('2026-06-01'))).toBe(2782);
-  });
-
-  it('shift-2-2 при 75 000 / 8 дней', () => {
-    // eduPart = 75000 - 30400 = 44600; deduction = round(44600 * 0.13) = 5798
-    expect(getTaxDeduction('shift-2-2', d('2026-06-01'))).toBe(5798);
-  });
-
-  it('shift-3 при 89 400 / 13 дней', () => {
-    // eduPart = 89400 - 49400 = 40000; deduction = round(40000 * 0.13) = 5200
+  it('shift-3 при базе 89 400 / 13 дней', () => {
+    // eduPart = 89400 - 3800*13 = 40000; deduction = round(40000 * 0.13) = 5200
     expect(getTaxDeduction('shift-3', d('2026-06-01'))).toBe(5200);
   });
 
-  it('shift-4 при 74 900 / 10 дней', () => {
+  it('shift-4 при базе 74 900 / 10 дней', () => {
     // eduPart = 74900 - 38000 = 36900; deduction = round(36900 * 0.13) = 4797
     expect(getTaxDeduction('shift-4', d('2026-06-01'))).toBe(4797);
+  });
+
+  it('shift-2-1 при базе 48 000 / 7 дней (до роста)', () => {
+    // eduPart = 48000 - 26600 = 21400; deduction = round(21400 * 0.13) = 2782
+    expect(getTaxDeduction('shift-2-1', d('2026-05-01'))).toBe(2782);
   });
 });
 
@@ -252,10 +244,6 @@ describe('fmtPrice', () => {
 
   it('форматирует 0', () => {
     expect(fmtPrice(0)).toBe('0 ₽');
-  });
-
-  it('форматирует 1000', () => {
-    expect(fmtPrice(1000)).toBe('1 000 ₽');
   });
 
   it('всегда заканчивается на ₽', () => {

@@ -1,0 +1,340 @@
+---
+import { PRICE_MIN, PRICE_MAX, VYCHET_MAX, DATES_S1, DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S22, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_S3, PRICE_S4, PRICE_S22 } from '../../data/shifts';
+import '../../styles/global.css';
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import RelatedPages from '../../components/RelatedPages.astro';
+import ArticleHero from '../../components/ArticleHero.astro';
+import ArticleBottomCta from '../../components/ArticleBottomCta.astro';
+import StatCallout from '../../components/StatCallout.astro';
+import FAQSchema from '../../components/FAQSchema.astro';
+
+const relatedPages = [
+  { title: "Смены и цены 2026", url: "/ceny/", icon: "calendar-event", description: "Все смены лагеря — даты и стоимость" },
+  { title: "Куда отдать ребёнка на лето", url: "/stati/kuda-otdat-rebenka-na-leto/", icon: "compass", description: "8 вариантов с плюсами и минусами" },
+  { title: "Что взять в лагерь", url: "/stati/chto-vzyat-v-lager/", icon: "bag-check", description: "Полный список — ничего не забудете" },
+  { title: "Лагерь для подростков", url: "/lager-dlya-podrostkov/", icon: "rocket-takeoff", description: "Программа 12–16 лет" },
+];
+
+const summerShifts = [
+  { name: "Смена 1 (ранняя)", dates: DATES_S1, days: "10 дней", price: PRICE_S4, tag: "Конец мая" },
+  { name: "Смена 2.1 (мини)", dates: DATES_SHORT_S21, days: "7 дней", price: PRICE_MIN, tag: "Июнь" },
+  { name: "Смена 2 (флагман)", dates: DATES_SHORT_S2, days: "14 дней", price: PRICE_MAX, tag: "Июнь" },
+  { name: "Смена 2.2 (сплит)", dates: DATES_SHORT_S22, days: "8 дней", price: PRICE_S22, tag: "Июнь" },
+  { name: "Смена 3 (август)", dates: DATES_SHORT_S3, days: "13 дней", price: PRICE_S3, tag: "Август" },
+  { name: "Смена 4 (поздняя)", dates: DATES_SHORT_S4, days: "10 дней", price: PRICE_S4, tag: "Август" },
+];
+
+const questions = [
+  {
+    icon: "calendar2-check",
+    q: "Когда лучше всего ехать?",
+    a: `Если хотите длинную смену с самым тёплым погодой — июнь. Если нужно сначала завершить кружки или экзамены — август. Смены 3 и 4 (август) — популярный выбор у тех, кто откладывает решение. Но к маю-июню лучшие места уже заняты.`
+  },
+  {
+    icon: "laptop",
+    q: "Что делает ребёнок на каникулах в лагере?",
+    a: "Программирует, плавает, участвует в хакатоне. Это не «детский сад с кроватями» — каждый уезжает с реальным проектом. Первые 2 дня — адаптация, потом — полное погружение."
+  },
+  {
+    icon: "people",
+    q: "С кем подружится мой ребёнок?",
+    a: "Группы по 8 человек одного возраста. Вы удивитесь, как быстро незнакомые дети находят общий язык когда работают над совместным проектом. После смены многие продолжают общаться."
+  },
+  {
+    icon: "shield-check",
+    q: "Безопасно ли?",
+    a: "Закрытая территория, охрана, медработник 24/7. Детский лагерь работает по лицензии Минобрнауки. Страховка на смену. Вожатые работают в парах — не более 10 ребят на пару."
+  }
+];
+
+const faqItems = [
+  {
+    q: "Есть ли лагерь на весенние или осенние каникулы?",
+    a: "Основные смены — летние (май–август). Изредка проводим весенние мини-смены — следите за анонсами в соцсетях или спрашивайте при записи."
+  },
+  {
+    q: "Подойдёт ли лагерь ребёнку, который не умеет программировать?",
+    a: "Да — это основная аудитория. Группы делятся по возрасту и уровню. Новичок 7–9 лет начинает со Scratch, к концу смены создаёт первую игру. Никаких требований к опыту."
+  },
+  {
+    q: "Можно ли отправить ребёнка на несколько смен подряд?",
+    a: "Да, берём на 2 смены подряд (например, 2.1 + 2.2 = полный июнь). Программа разная — ребёнок не повторяется. Многие ездят к нам каждый год."
+  },
+  {
+    q: "Как долго можно занять место?",
+    a: "Бронь без предоплаты держится 72 часа. После предоплаты место ваше. Возврат — полный, если отказались за 14+ дней до смены."
+  },
+  {
+    q: "Есть ли скидки?",
+    a: `Плюс к этому — налоговый вычет 13% от образовательной части (до ${VYCHET_MAX}). Больше никаких скрытых скидок «по акции» — у нас честное ценообразование.`
+  },
+  {
+    q: "Сколько стоит детский лагерь на каникулы?",
+    a: `От ${PRICE_MIN} за 7 дней (смена 2.1) до ${PRICE_MAX} за 14 дней (смена 2). Всё включено: проживание, 5-разовое питание, IT-программа, бассейн. Налоговый вычет до ${VYCHET_MAX}.`
+  },
+];
+
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "Лагерь на каникулы 2026 — детские летние смены в Подмосковье",
+    "description": "Детский лагерь на летние каникулы 2026 в Подмосковье. Смены июнь–август, 7–14 дней. IT-программа, бассейн, хакатон.",
+    "author": {"@type": "Person", "name": "Дарья Афанасьева", "url": "https://aidacamp.ru/o-lagere"},
+    "publisher": {"@type": "Organization", "name": "АйДаКемп", "url": "https://aidacamp.ru"},
+    "datePublished": "2026-06-17",
+    "dateModified": "2026-06-17",
+    "mainEntityOfPage": {"@type": "WebPage", "@id": "https://aidacamp.ru/stati/lager-na-kanikuly/"}
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {"@type": "ListItem", "position": 1, "name": "АйДаКемп", "item": "https://aidacamp.ru"},
+      {"@type": "ListItem", "position": 2, "name": "Статьи", "item": "https://aidacamp.ru/stati/"},
+      {"@type": "ListItem", "position": 3, "name": "Лагерь на каникулы", "item": "https://aidacamp.ru/stati/lager-na-kanikuly/"}
+    ]
+  }
+];
+---
+
+<Base
+  title="Лагерь на летние каникулы 2026 — смены в Подмосковье | АйДаКемп"
+  description={`Детский лагерь на каникулы 2026 в Подмосковье. Летние смены с мая по август, от ${PRICE_MIN} за 7 дней. IT-программа, бассейн, питание — всё включено. Налоговый вычет 13%.`}
+  ogImage="/images/hero/lager-programmirovaniya.avif"
+>
+  <Fragment slot="head">
+    <link rel="canonical" href="https://aidacamp.ru/stati/lager-na-kanikuly/" />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </Fragment>
+
+  <Header />
+
+  <main>
+    <ArticleHero
+      title="Лагерь на каникулы 2026"
+      subtitle="Детские летние смены в Подмосковье — выбрать и записать"
+      breadcrumbs={[
+        { label: "АйДаКемп", href: "/" },
+        { label: "Статьи", href: "/stati/" },
+        { label: "Лагерь на каникулы" },
+      ]}
+      breadcrumbsLast="Лагерь на каникулы"
+    />
+
+    <article class="mx-auto max-w-[780px] px-4 pb-16">
+
+      <p class="lead">
+        Каникулы — это то короткое окно, когда ребёнок может попробовать что-то настоящее без
+        давления учёбы. Мы отправляем детей домой с готовым IT-проектом: игрой, ботом или
+        AI-приложением. Это лучший «трофей с каникул», который можно показать друзьям.
+      </p>
+
+      <StatCallout tone="info">
+        Июньские смены разбирают первыми. Если вы читаете это в мае — звоните сейчас, а не в июне.
+      </StatCallout>
+
+      <h2>Смены на летние каникулы 2026 — все даты</h2>
+
+      <div class="shifts-grid">
+        {summerShifts.map(s => (
+          <div class="shift-card">
+            <div class="shift-tag">{s.tag}</div>
+            <div class="shift-name">{s.name}</div>
+            <div class="shift-dates">{s.dates}</div>
+            <div class="shift-meta">
+              <span class="shift-days">{s.days}</span>
+              <span class="shift-price">{s.price}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <p>
+        Все смены включают: IT-программу с преподавателями, проживание в корпусе (комнаты по 2–4 человека),
+        5-разовое питание, закрытый бассейн, спорт, вечерние активности и финальный хакатон.
+        Ноутбуки предоставляем — свой не нужен.
+      </p>
+
+      <h2>Лагерь на каникулы: что важно знать заранее</h2>
+
+      <div class="questions-grid">
+        {questions.map(q => (
+          <div class="question-card">
+            <i class={`bi bi-${q.icon} question-icon`}></i>
+            <strong>{q.q}</strong>
+            <p>{q.a}</p>
+          </div>
+        ))}
+      </div>
+
+      <h2>Почему лагерь — лучший вариант для летних каникул</h2>
+
+      <p>
+        У родителей обычно три варианта на лето: дача/бабушка, городские кружки или лагерь.
+        Дача — отдых, но без нового опыта. Кружки — развитие, но без смены обстановки.
+        Лагерь — и то, и другое одновременно.
+      </p>
+
+      <p>
+        Конкретно про IT-лагерь: дети в среднем проводят за компьютером дома 6–8 часов в день
+        в каникулы. В лагере — 4–5 часов, но продуктивно. Оставшееся время — бассейн, спорт,
+        общение живьём. Многие мамы пишут нам: «Он приехал другим человеком».
+      </p>
+
+      <StatCallout tone="warn">
+        По данным Яндекс.Wordstat, запрос «лагерь на каникулы» резко растёт в апреле-мае. К июню свободных мест становится значительно меньше — особенно в июньских сменах.
+      </StatCallout>
+
+      <h2>Как выбрать смену на каникулы?</h2>
+
+      <p>
+        Простой алгоритм:
+      </p>
+
+      <ol>
+        <li><strong>Возраст и уровень ребёнка</strong> — с 7 лет принимаем всех, в том числе без опыта программирования</li>
+        <li><strong>Даты, которые не конфликтуют с поездками</strong> — посмотрите все смены выше</li>
+        <li><strong>Длина смены</strong> — 7 дней для первого раза, 14 дней если ребёнок уже ездил в лагерь</li>
+        <li><strong>Записывайтесь</strong> — место фиксируется предоплатой, бронь без оплаты держится 72 часа</li>
+      </ol>
+
+      <p>
+        Налоговый вычет: образовательная лицензия Минобрнауки позволяет вернуть 13% от образовательной
+        части стоимости — до {VYCHET_MAX}. Документы вышлем автоматически после оплаты.
+      </p>
+
+      <ArticleBottomCta
+        heading="Записаться на каникулы"
+        bookingSubtitle="Напишите — расскажем про свободные смены и подберём подходящую."
+      />
+
+    </article>
+
+    <section class="mx-auto max-w-[780px] px-4 pb-12">
+      <h2 class="text-[22px] font-bold mb-6">Частые вопросы о лагере на каникулы</h2>
+      {faqItems.map((item, i) => (
+        <details class="faq-item" open={i === 0}>
+          <summary class="faq-q">{item.q}</summary>
+          <div class="faq-a">{item.a}</div>
+        </details>
+      ))}
+    </section>
+
+    <RelatedPages title="Полезные страницы" pages={relatedPages} />
+  </main>
+
+  <Footer />
+  <FAQSchema items={faqItems} />
+</Base>
+
+<style>
+  .lead {
+    font-size: 1.1rem;
+    color: #444;
+    line-height: 1.7;
+    margin-bottom: 32px;
+  }
+
+  /* Shifts grid */
+  .shifts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 24px 0 32px;
+  }
+  .shift-card {
+    border: 1px solid #e8eaf0;
+    border-radius: 12px;
+    padding: 16px;
+    background: #fff;
+  }
+  .shift-tag {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #4361EE;
+    margin-bottom: 6px;
+  }
+  .shift-name {
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 4px;
+    font-size: 0.95rem;
+  }
+  .shift-dates {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 10px;
+  }
+  .shift-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .shift-days { font-size: 0.8rem; color: #888; }
+  .shift-price { font-weight: 700; color: #1a1a2e; font-size: 0.95rem; }
+
+  /* Questions grid */
+  .questions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 24px 0 32px;
+  }
+  .question-card {
+    background: #f8f9ff;
+    border-radius: 12px;
+    padding: 18px;
+    border: 1px solid #e8eaf0;
+  }
+  .question-icon {
+    font-size: 1.4rem;
+    color: #4361EE;
+    display: block;
+    margin-bottom: 8px;
+  }
+  .question-card strong {
+    display: block;
+    font-size: 0.95rem;
+    color: #1a1a2e;
+    margin-bottom: 8px;
+  }
+  .question-card p {
+    font-size: 0.87rem;
+    color: #555;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  /* FAQ */
+  .faq-item { border-bottom: 1px solid #e8eaf0; }
+  .faq-q {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 14px 0;
+    color: #1a1a2e;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.98rem;
+  }
+  .faq-q::after { content: '+'; font-size: 1.4rem; color: #4361EE; }
+  details[open] .faq-q::after { content: '−'; }
+  .faq-a {
+    font-size: 0.92rem;
+    color: #555;
+    line-height: 1.65;
+    padding-bottom: 14px;
+  }
+
+  /* Article content */
+  article h2 { font-size: 1.4rem; font-weight: 700; color: #1a1a2e; margin: 36px 0 16px; }
+  article p { font-size: 0.97rem; color: #444; line-height: 1.7; margin-bottom: 16px; }
+  article ol { padding-left: 20px; margin-bottom: 20px; }
+  article li { font-size: 0.95rem; color: #444; line-height: 1.65; margin-bottom: 8px; }
+</style>

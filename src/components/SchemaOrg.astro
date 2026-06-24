@@ -14,6 +14,7 @@
  */
 
 import { mainShifts, shortShifts, type Shift } from '../data/shifts';
+import { getCurrentPrice } from '../data/dynamicPrices';
 import { members as teamMembers } from '../data/team';
 import { reviews } from '../data/reviews';
 import {
@@ -32,8 +33,12 @@ const HERO_IMAGE = `${SITE_URL}/images/hero-custom-2026-04-07-1100.avif`;
 // Цена в рублях из строки "74 900 ₽" → "74900"
 const parsePrice = (p: string) => p.replace(/[^\d]/g, '');
 
+// РЕАЛЬНАЯ текущая цена смены — из dynamicPrices.ts (единый источник).
+// Фолбэк на статичную строку shifts.ts, если getCurrentPrice вернул null.
+const shiftPriceNum = (s: Shift) => getCurrentPrice(s.id) ?? (parseInt(parsePrice(s.price), 10) || 0);
+
 const allShiftsForPrice = [...mainShifts, ...shortShifts];
-const prices = allShiftsForPrice.map(s => parseInt(parsePrice(s.price), 10)).filter(Boolean);
+const prices = allShiftsForPrice.map(shiftPriceNum).filter(Boolean);
 const minPrice = Math.min(...prices).toLocaleString('ru-RU');
 const maxPrice = Math.max(...prices).toLocaleString('ru-RU');
 const priceRange = `${minPrice} ₽ – ${maxPrice} ₽`;
@@ -181,7 +186,7 @@ const eventsList = {
       image: HERO_IMAGE,
       offers: {
         '@type': 'Offer',
-        price: parsePrice(shift.price),
+        price: String(shiftPriceNum(shift)),
         priceCurrency: 'RUB',
         availability:
           shift.free > 0

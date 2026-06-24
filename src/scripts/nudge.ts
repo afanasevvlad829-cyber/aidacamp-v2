@@ -12,7 +12,7 @@ interface NudgeFlow {
 }
 
 const flows: NudgeFlow[] = [
-  { id: 'scroll-30', message: 'Смена 2 — самая популярная. Осталось 12 мест', trigger: 'scroll', value: 30, once: true },
+  { id: 'scroll-30', message: 'Август в IT-лагере — две смены, успейте записать ребёнка', trigger: 'scroll', value: 30, once: true },
   { id: 'scroll-60', message: 'Каждый день — фотоотчёт для родителей', trigger: 'scroll', value: 60, once: true },
   { id: 'scroll-80', message: 'Лицензированный туроператор РТО 025773', trigger: 'scroll', value: 80, once: true },
   // time-based nudges отключены: всплывали через 30/60/90 сек, отвлекали от букинга

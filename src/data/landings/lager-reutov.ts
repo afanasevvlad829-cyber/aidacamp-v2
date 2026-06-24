@@ -118,9 +118,9 @@ const landing: LandingData = {
     label: 'Полезные разделы',
     separator: ' · ',
     links: [
-      { href: '/smeny', text: 'смены и даты 2026' },
-      { href: '/stoimost', text: 'стоимость и что входит' },
-      { href: '/programmy', text: 'IT-программы лагеря' },
+      { href: '/ceny', text: 'смены и даты 2026' },
+      { href: '/ceny', text: 'стоимость и что входит' },
+      { href: '/programma-smeny', text: 'IT-программы лагеря' },
     ],
     asBlock: true,
   },
