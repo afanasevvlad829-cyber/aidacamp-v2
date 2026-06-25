@@ -4,6 +4,7 @@ import HeroDesktop from './hero/Desktop.astro';
 import HeroModals from './HeroModals.astro';
 import HeroFeatures from './HeroFeatures.astro';
 import NewsJazz from './NewsJazz.astro';
+import { displayShifts, shiftDatesShort, DATES_SHORT_S21, DATES_SHORT_S22 } from '../data/shifts';
 
 interface Props {
   imageSrc?: string;
@@ -11,6 +12,15 @@ interface Props {
 }
 
 const { imageSrc, hasVariants = false } = Astro.props;
+
+const heroShiftsData = {
+  ...Object.fromEntries(displayShifts.map(s => [
+    s.id,
+    { name: s.name.replace('Смена', 'Смену'), dates: shiftDatesShort(s), free: s.free }
+  ])),
+  'shift-2-1': { name: 'Смену 2.1', dates: DATES_SHORT_S21, free: 0 },
+  'shift-2-2': { name: 'Смену 2.2', dates: DATES_SHORT_S22, free: 0 },
+};
 ---
 
 <section id="hero" class="relative mx-auto w-full overflow-x-hidden bg-surface-warm md:max-w-[1440px]">
@@ -41,16 +51,9 @@ const { imageSrc, hasVariants = false } = Astro.props;
     <i class="bi bi-arrow-right text-[14px] text-primary ml-auto shrink-0" aria-hidden="true"></i>
   </a>
 </div>
-<script is:inline>
+<script is:inline define:vars={{ heroShiftsData }}>
 (function() {
-  var SHIFTS = {
-    'shift-1':   { name: 'Смену 1',   dates: '30 мая — 8 июня',       free: 3  },
-    'shift-2':   { name: 'Смену 2',   dates: '10–23 июня',             free: 2  },
-    'shift-3':   { name: 'Смену 3',   dates: '3–15 августа',           free: 4  },
-    'shift-4':   { name: 'Смену 4',   dates: '17–26 августа',          free: 8  },
-    'shift-2-1': { name: 'Смену 2.1', dates: '10–16 июня',             free: 7  },
-    'shift-2-2': { name: 'Смену 2.2', dates: '16–23 июня',             free: 5  },
-  };
+  var SHIFTS = heroShiftsData;
   try {
     var viewed = JSON.parse(localStorage.getItem('ac:viewed_shifts') || '[]');
     if (!viewed.length) return;
