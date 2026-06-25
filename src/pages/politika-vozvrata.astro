@@ -81,7 +81,7 @@ const fmt = (n: number) => n.toLocaleString('ru-RU') + ' ₽';
           </li>
           <li class="flex items-start gap-2">
             <i class="bi bi-check-circle-fill text-primary mt-0.5 shrink-0" aria-hidden="true"></i>
-            <span>На занятия в школе программирования АйДаКемп</span>
+            <span>На занятия в школе программирования АйДаКодить</span>
           </li>
         </ul>
         <div class="mt-4 rounded-[12px] bg-white/70 border border-primary/20 p-3.5">
@@ -139,18 +139,24 @@ const fmt = (n: number) => n.toLocaleString('ru-RU') + ' ₽';
 
         <!-- Калькулятор -->
         <div class="mt-5 rounded-[14px] bg-slate-50 border border-slate-200 p-4" id="refund-calc">
-          <p class="text-base font-semibold text-slate-700 mb-3">Посчитать для своей смены</p>
-          <select id="calc-select" class="w-full rounded-[10px] border border-slate-200 bg-white px-3 py-2.5 text-base text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30">
-            <option value="">— выберите смену —</option>
-            {refundRows.map(r => (
-              <option value={`${r.price}|${r.expenses}|${r.refund}`}>
-                {r.name} ({r.duration}) — {fmt(r.price)}
-              </option>
-            ))}
-          </select>
+          <p class="text-base font-semibold text-slate-700 mb-1">Посчитать для своей смены</p>
+          <p class="text-[12px] text-slate-400 mb-3">Выберите смену и укажите, сколько дней ребёнок не провёл в лагере (неотбытые дни).</p>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <select id="calc-select" class="w-full rounded-[10px] border border-slate-200 bg-white px-3 py-2.5 text-base text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30">
+              <option value="">— выберите смену —</option>
+              {refundRows.map(r => (
+                <option value={`${r.price}|${r.days}`}>
+                  {r.name} ({r.duration}) — {fmt(r.price)}
+                </option>
+              ))}
+            </select>
+            <input id="calc-days" type="number" inputmode="numeric" min="0" placeholder="Неотбытые дни" disabled
+              class="w-full rounded-[10px] border border-slate-200 bg-white px-3 py-2.5 text-base text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-slate-100 disabled:text-slate-400" />
+          </div>
+          <p id="calc-hint" class="mt-1.5 text-[12px] text-slate-400 hidden">Из <span id="calc-total"></span> дней смены отбыто <span id="calc-used"></span>.</p>
           <div id="calc-result" class="hidden mt-4 rounded-[10px] bg-white border border-emerald-200 px-4 py-3 flex items-center justify-between gap-4">
             <div>
-              <p class="text-[12px] text-slate-500">Фактические расходы (удержание)</p>
+              <p class="text-[12px] text-slate-500">Удержание (фактические расходы за отбытые дни)</p>
               <p id="calc-expenses" class="text-[16px] font-bold text-slate-600"></p>
             </div>
             <div class="h-8 w-px bg-slate-200"></div>
@@ -160,21 +166,45 @@ const fmt = (n: number) => n.toLocaleString('ru-RU') + ' ₽';
             </div>
           </div>
           <p class="mt-3 text-[12px] leading-[1.5] text-slate-400">
-            Расчёт носит ориентировочный характер и не является основанием для предъявления требований к ООО «ВОИП КОННЕКТ». Итоговая сумма возврата определяется в соответствии с условиями заключённого договора и действующим законодательством.
+            Расчёт носит ознакомительный характер и не является основанием для предъявления требований к ООО «ВОИП КОННЕКТ». Итоговая сумма возврата определяется по фактическим данным в соответствии с условиями заключённого договора и действующим законодательством. Согласно Гражданскому кодексу РФ исполнитель вправе удержать суммы для покрытия фактически понесённых расходов и причинённого ущерба на условиях договора.
           </p>
         </div>
-        <script>
-          const sel = document.getElementById('calc-select') as HTMLSelectElement | null;
-          const res = document.getElementById('calc-result') as HTMLElement | null;
-          const expEl = document.getElementById('calc-expenses') as HTMLElement | null;
-          const refEl = document.getElementById('calc-refund') as HTMLElement | null;
-          if (sel) sel.addEventListener('change', () => {
-            if (!sel.value || !res || !expEl || !refEl) return;
-            const [, exp, ref] = sel.value.split('|').map(Number);
-            expEl.textContent = exp.toLocaleString('ru-RU') + ' ₽';
-            refEl.textContent = ref.toLocaleString('ru-RU') + ' ₽';
-            res.classList.remove('hidden');
-          });
+        <script define:vars={{ byt: BYT_PER_DAY }}>
+          const sel = document.getElementById('calc-select');
+          const daysIn = document.getElementById('calc-days');
+          const res = document.getElementById('calc-result');
+          const expEl = document.getElementById('calc-expenses');
+          const refEl = document.getElementById('calc-refund');
+          const hint = document.getElementById('calc-hint');
+          const totalEl = document.getElementById('calc-total');
+          const usedEl = document.getElementById('calc-used');
+          const money = (n) => Math.round(n).toLocaleString('ru-RU') + ' ₽';
+          function recalc() {
+            if (!sel || !sel.value) {
+              if (daysIn) { daysIn.disabled = true; daysIn.value = ''; }
+              if (res) res.classList.add('hidden');
+              if (hint) hint.classList.add('hidden');
+              return;
+            }
+            const parts = sel.value.split('|').map(Number);
+            const price = parts[0], days = parts[1];
+            daysIn.disabled = false;
+            daysIn.max = String(days);
+            let unused = parseInt(daysIn.value, 10);
+            if (isNaN(unused) || unused < 0) unused = 0;
+            if (unused > days) { unused = days; daysIn.value = String(days); }
+            const used = days - unused;
+            const expenses = byt * used;
+            const refund = Math.max(0, price - expenses);
+            totalEl.textContent = String(days);
+            usedEl.textContent = String(used);
+            expEl.textContent = money(expenses);
+            refEl.textContent = money(refund);
+            hint.classList.remove('hidden');
+            if (daysIn.value !== '') res.classList.remove('hidden'); else res.classList.add('hidden');
+          }
+          if (sel) sel.addEventListener('change', recalc);
+          if (daysIn) daysIn.addEventListener('input', recalc);
         </script>
       </section>
 
