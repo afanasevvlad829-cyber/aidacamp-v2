@@ -1,0 +1,479 @@
+---
+import Base from '../layouts/Base.astro';
+
+const videos = [
+  {
+    id: 'v1',
+    file: '01_sovremennye_lageri.mp4',
+    poster: '/videos/darya/01_sovremennye_lageri.jpg',
+    num: '01',
+    title: 'Современные лагеря',
+    question: 'Изменились ли детские лагеря и остались ли пионерские?',
+    duration: '3:27',
+  },
+  {
+    id: 'v2',
+    file: '02_valyuta_i_telefony.mp4',
+    poster: '/videos/darya/02_valyuta_i_telefony.jpg',
+    num: '02',
+    title: 'Телефоны и внутренняя валюта',
+    question: 'Как IT-лагерь совмещает детокс от телефонов с технологиями?',
+    duration: '2:46',
+  },
+  {
+    id: 'v3',
+    file: '03_chemu_nauchitsya.mp4',
+    poster: '/videos/darya/03_chemu_nauchitsya.jpg',
+    num: '03',
+    title: 'Чему можно научиться за смену',
+    question: 'Реально ли освоить IT за одну лагерную смену?',
+    duration: '2:40',
+  },
+  {
+    id: 'v4',
+    file: '04_hrustalny_kolpak.mp4',
+    poster: '/videos/darya/04_hrustalny_kolpak.jpg',
+    num: '04',
+    title: 'Дети под хрустальным колпаком',
+    question: 'Лишены ли современные дети самостоятельности?',
+    duration: '2:14',
+  },
+  {
+    id: 'v5',
+    file: '05_budushchee_lagerei.mp4',
+    poster: '/videos/darya/05_budushchee_lagerei.jpg',
+    num: '05',
+    title: 'Будущее за профильными лагерями',
+    question: 'Станут ли профильные лагеря основным форматом отдыха?',
+    duration: '2:04',
+  },
+];
+
+const BASE = '/videos/darya';
+---
+
+<Base
+  title="Дарья Афанасьева на федеральном ТВ — АйДаКемп"
+  description="Директор IT-лагеря АйДаКемп Дарья Афанасьева в программе «Родительское собрание» на канале ОТР — о современных лагерях, телефонах и детях."
+>
+
+  <!-- Hero -->
+  <section class="tv-hero">
+    <div class="tv-hero__inner">
+      <p class="tv-hero__label">Канал ОТР · Программа «Родительское собрание»</p>
+      <h1 class="tv-hero__title">Дарья Афанасьева<br>на федеральном телевидении</h1>
+      <p class="tv-hero__sub">5 коротких интервью о детских IT-лагерях, современном образовании и воспитании</p>
+    </div>
+  </section>
+
+  <!-- ── DESKTOP: сетка ── -->
+  <section class="tv-grid-section">
+    <div class="tv-grid">
+      {videos.map((v) => (
+        <button
+          class="tv-card"
+          data-src={`${BASE}/${v.file}`}
+          data-poster={v.poster}
+          data-title={v.title}
+          aria-label={`Смотреть: ${v.title}`}
+        >
+          <!-- Постер -->
+          <div class="tv-card__thumb">
+            <img
+              src={v.poster}
+              alt={v.title}
+              class="tv-card__img"
+              loading="lazy"
+              width="640"
+              height="360"
+            />
+            <!-- Большая кнопка Play -->
+            <span class="tv-card__play" aria-hidden="true">
+              <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="32" cy="32" r="32" fill="rgba(0,0,0,0.55)"/>
+                <polygon points="26,18 50,32 26,46" fill="white"/>
+              </svg>
+            </span>
+            <span class="tv-card__num">#{v.num}</span>
+            <span class="tv-card__dur">{v.duration}</span>
+          </div>
+          <!-- Текст -->
+          <div class="tv-card__body">
+            <p class="tv-card__title">{v.title}</p>
+            <p class="tv-card__q">«{v.question}»</p>
+          </div>
+        </button>
+      ))}
+    </div>
+  </section>
+
+  <!-- ── MOBILE: карусель ── -->
+  <section class="tv-carousel-section">
+    <div class="tv-track-wrap">
+      <div class="tv-track" id="tvTrack">
+        {videos.map((v, i) => (
+          <div class="tv-slide" data-index={i}>
+            <button
+              class="tv-card"
+              data-src={`${BASE}/${v.file}`}
+              data-poster={v.poster}
+              data-title={v.title}
+              aria-label={`Смотреть: ${v.title}`}
+            >
+              <div class="tv-card__thumb">
+                <img src={v.poster} alt={v.title} class="tv-card__img" loading="lazy" width="640" height="360" />
+                <span class="tv-card__play" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="32" cy="32" r="32" fill="rgba(0,0,0,0.55)"/>
+                    <polygon points="26,18 50,32 26,46" fill="white"/>
+                  </svg>
+                </span>
+                <span class="tv-card__num">#{v.num}</span>
+                <span class="tv-card__dur">{v.duration}</span>
+              </div>
+              <div class="tv-card__body">
+                <p class="tv-card__title">{v.title}</p>
+                <p class="tv-card__q">«{v.question}»</p>
+              </div>
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+    <!-- Точки -->
+    <div class="tv-dots" id="tvDots">
+      {videos.map((_, i) => (
+        <button class={`tv-dot${i === 0 ? ' is-active' : ''}`} data-index={i} aria-label={`Видео ${i + 1}`} />
+      ))}
+    </div>
+  </section>
+
+  <!-- ── Лайтбокс ── -->
+  <div class="tv-lb" id="tvLb" role="dialog" aria-modal="true" aria-label="Просмотр видео" hidden>
+    <div class="tv-lb__overlay" id="tvLbOverlay"></div>
+    <div class="tv-lb__box">
+      <button class="tv-lb__close" id="tvLbClose" aria-label="Закрыть">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      <div class="tv-lb__title-bar" id="tvLbTitle"></div>
+      <div class="tv-lb__video-wrap">
+        <video
+          id="tvLbVideo"
+          class="tv-lb__video"
+          controls
+          playsinline
+          preload="none"
+        ></video>
+      </div>
+    </div>
+  </div>
+
+</Base>
+
+<style>
+/* ── Hero ──────────────────────────────────────────── */
+.tv-hero {
+  background: linear-gradient(135deg, #0d1a2b 0%, #152a46 100%);
+  padding: 64px 20px 56px;
+  text-align: center;
+}
+.tv-hero__inner { max-width: 720px; margin: 0 auto; }
+.tv-hero__label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ec9b44;
+  margin: 0 0 16px;
+}
+.tv-hero__title {
+  font-size: clamp(28px, 5vw, 48px);
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.15;
+  margin: 0 0 16px;
+}
+.tv-hero__sub {
+  font-size: clamp(15px, 2vw, 18px);
+  color: rgba(255,255,255,0.6);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Общие стили карточки ──────────────────────────── */
+.tv-card {
+  display: block;
+  width: 100%;
+  background: #152a46;
+  border: none;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.tv-card:hover { transform: translateY(-3px); box-shadow: 0 10px 36px rgba(0,0,0,0.45); }
+.tv-card:focus-visible { outline: 3px solid #ec9b44; outline-offset: 3px; }
+
+.tv-card__thumb {
+  position: relative;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  background: #0a1520;
+}
+.tv-card__img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+.tv-card:hover .tv-card__img { transform: scale(1.03); }
+
+/* Большая кнопка Play */
+.tv-card__play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+.tv-card__play svg {
+  width: clamp(56px, 12%, 80px);
+  height: clamp(56px, 12%, 80px);
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+  transition: transform 0.2s;
+}
+.tv-card:hover .tv-card__play svg { transform: scale(1.12); }
+
+.tv-card__num {
+  position: absolute; top: 10px; left: 12px;
+  background: rgba(236,155,68,0.9);
+  color: #fff; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.05em; padding: 3px 8px;
+  border-radius: 6px; pointer-events: none;
+}
+.tv-card__dur {
+  position: absolute; bottom: 10px; right: 12px;
+  background: rgba(0,0,0,0.65);
+  color: rgba(255,255,255,0.9); font-size: 12px; font-weight: 600;
+  padding: 2px 7px; border-radius: 5px; pointer-events: none;
+}
+
+.tv-card__body { padding: 16px 18px 20px; }
+.tv-card__title {
+  font-size: 16px; font-weight: 700; color: #fff;
+  margin: 0 0 6px; line-height: 1.25;
+}
+.tv-card__q {
+  font-size: 13px; color: rgba(255,255,255,0.5);
+  margin: 0; line-height: 1.45; font-style: italic;
+}
+
+/* ── Desktop: сетка ────────────────────────────────── */
+.tv-grid-section {
+  display: none; /* скрыт на мобиле */
+  background: #0d1a2b;
+  padding: 56px 20px 64px;
+}
+.tv-grid {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+/* Пятый элемент по центру */
+.tv-grid > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  max-width: 540px;
+  justify-self: center;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .tv-grid-section { display: block; }
+  .tv-carousel-section { display: none; }
+}
+
+/* ── Mobile: карусель ──────────────────────────────── */
+.tv-carousel-section {
+  background: #0d1a2b;
+  padding: 32px 0 40px;
+}
+.tv-track-wrap {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%);
+}
+.tv-track {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 4px 0 8px;
+  padding-left: calc((100% - min(84vw, 400px)) / 2);
+  padding-right: calc((100% - min(84vw, 400px)) / 2);
+}
+.tv-track::-webkit-scrollbar { display: none; }
+
+.tv-slide {
+  flex: 0 0 min(84vw, 400px);
+  scroll-snap-align: center;
+}
+
+.tv-dots {
+  display: flex; justify-content: center; gap: 8px; margin-top: 20px;
+}
+.tv-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  border: none; padding: 0;
+  background: rgba(255,255,255,0.2); cursor: pointer;
+  transition: background 0.2s, width 0.2s, border-radius 0.2s;
+}
+.tv-dot.is-active { background: #ec9b44; width: 24px; border-radius: 4px; }
+
+/* ── Лайтбокс ─────────────────────────────────────── */
+.tv-lb {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.tv-lb[hidden] { display: none; }
+
+.tv-lb__overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.88);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+
+.tv-lb__box {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  z-index: 1;
+  animation: lbIn 0.22s ease;
+}
+@keyframes lbIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.tv-lb__close {
+  position: absolute;
+  top: -44px; right: 0;
+  width: 36px; height: 36px;
+  border: none; background: rgba(255,255,255,0.15);
+  border-radius: 50%; cursor: pointer;
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+  padding: 0;
+}
+.tv-lb__close:hover { background: rgba(255,255,255,0.3); }
+.tv-lb__close svg { width: 18px; height: 18px; }
+
+.tv-lb__title-bar {
+  font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.7);
+  margin-bottom: 10px; padding-left: 2px;
+}
+
+.tv-lb__video-wrap {
+  aspect-ratio: 16/9;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+}
+.tv-lb__video {
+  width: 100%; height: 100%;
+  display: block;
+}
+</style>
+
+<script>
+(() => {
+  /* ── Лайтбокс ── */
+  const lb      = document.getElementById('tvLb') as HTMLElement;
+  const lbVideo = document.getElementById('tvLbVideo') as HTMLVideoElement;
+  const lbTitle = document.getElementById('tvLbTitle') as HTMLElement;
+  const lbClose = document.getElementById('tvLbClose') as HTMLButtonElement;
+  const lbOverlay = document.getElementById('tvLbOverlay') as HTMLElement;
+
+  function openLb(src: string, poster: string, title: string) {
+    lbVideo.src = src;
+    lbVideo.poster = poster;
+    lbTitle.textContent = title;
+    lb.hidden = false;
+    document.body.style.overflow = 'hidden';
+    lbVideo.play().catch(() => {});
+  }
+
+  function closeLb() {
+    lbVideo.pause();
+    lbVideo.src = '';
+    lb.hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  lbClose.addEventListener('click', closeLb);
+  lbOverlay.addEventListener('click', closeLb);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLb(); });
+
+  /* ── Карточки (grid + carousel) ── */
+  document.querySelectorAll<HTMLButtonElement>('.tv-card').forEach((card) => {
+    card.addEventListener('click', () => {
+      openLb(
+        card.dataset.src   ?? '',
+        card.dataset.poster ?? '',
+        card.dataset.title  ?? '',
+      );
+    });
+  });
+
+  /* ── Карусель: точки + scroll observer ── */
+  const track = document.getElementById('tvTrack');
+  const dots  = document.querySelectorAll<HTMLButtonElement>('#tvDots .tv-dot');
+  if (!track || !dots.length) return;
+
+  function setActive(i: number) {
+    dots.forEach((d, idx) => {
+      d.classList.toggle('is-active', idx === i);
+    });
+  }
+
+  dots.forEach((dot, i) => {
+    dot.addEventListener('click', () => {
+      const slide = track.children[i] as HTMLElement;
+      if (slide) {
+        const offset = slide.offsetLeft - (track.offsetWidth - slide.offsetWidth) / 2;
+        track.scrollTo({ left: offset, behavior: 'smooth' });
+      }
+      setActive(i);
+    });
+  });
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      let best = -1, bestRatio = 0;
+      entries.forEach((e) => {
+        if (e.intersectionRatio > bestRatio) {
+          bestRatio = e.intersectionRatio;
+          best = parseInt((e.target as HTMLElement).dataset.index ?? '0', 10);
+        }
+      });
+      if (best >= 0 && bestRatio > 0.4) setActive(best);
+    },
+    { root: track, threshold: [0.4, 0.6, 0.8] }
+  );
+  track.querySelectorAll('.tv-slide').forEach((s) => observer.observe(s));
+})();
+</script>
