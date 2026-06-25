@@ -4,6 +4,7 @@ import HeroDesktop from './hero/Desktop.astro';
 import HeroModals from './HeroModals.astro';
 import HeroFeatures from './HeroFeatures.astro';
 import NewsJazz from './NewsJazz.astro';
+import { displayShifts, shiftDatesShort, DATES_SHORT_S21, DATES_SHORT_S22 } from '../data/shifts';
 
 interface Props {
   imageSrc?: string;
@@ -11,6 +12,15 @@ interface Props {
 }
 
 const { imageSrc, hasVariants = false } = Astro.props;
+
+const heroShiftsData = {
+  ...Object.fromEntries(displayShifts.map(s => [
+    s.id,
+    { name: s.name.replace('Смена', 'Смену'), dates: shiftDatesShort(s), free: s.free }
+  ])),
+  'shift-2-1': { name: 'Смену 2.1', dates: DATES_SHORT_S21, free: 0 },
+  'shift-2-2': { name: 'Смену 2.2', dates: DATES_SHORT_S22, free: 0 },
+};
 ---
 
 <section id="hero" class="relative mx-auto w-full overflow-x-hidden bg-surface-warm md:max-w-[1440px]">
@@ -35,22 +45,15 @@ const { imageSrc, hasVariants = false } = Astro.props;
 <!-- ── Персонализированный баннер для возвратников ── -->
 <div id="returning-hero-hint" class="hidden mx-auto max-w-[1312px] px-4 py-3">
   <a id="returning-hero-link" href="/shifts/shift-1/"
-     class="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-[14px] hover:bg-primary/10 transition-colors no-underline">
+     class="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-base hover:bg-primary/10 transition-colors no-underline">
     <i class="bi bi-arrow-left-circle-fill text-[20px] text-primary shrink-0" aria-hidden="true"></i>
     <span id="returning-hero-text" class="text-slate-700 font-medium"></span>
-    <i class="bi bi-arrow-right text-[14px] text-primary ml-auto shrink-0" aria-hidden="true"></i>
+    <i class="bi bi-arrow-right text-base text-primary ml-auto shrink-0" aria-hidden="true"></i>
   </a>
 </div>
-<script is:inline>
+<script is:inline define:vars={{ heroShiftsData }}>
 (function() {
-  var SHIFTS = {
-    'shift-1':   { name: 'Смену 1',   dates: '30 мая — 8 июня',       free: 3  },
-    'shift-2':   { name: 'Смену 2',   dates: '10–23 июня',             free: 2  },
-    'shift-3':   { name: 'Смену 3',   dates: '3–15 августа',           free: 4  },
-    'shift-4':   { name: 'Смену 4',   dates: '17–26 августа',          free: 8  },
-    'shift-2-1': { name: 'Смену 2.1', dates: '10–16 июня',             free: 7  },
-    'shift-2-2': { name: 'Смену 2.2', dates: '16–23 июня',             free: 5  },
-  };
+  var SHIFTS = heroShiftsData;
   try {
     var viewed = JSON.parse(localStorage.getItem('ac:viewed_shifts') || '[]');
     if (!viewed.length) return;
@@ -169,7 +172,7 @@ const { imageSrc, hasVariants = false } = Astro.props;
           if (v.badge) {
             var badgesEl = document.getElementById('hero-badges');
             if (badgesEl) {
-              badgesEl.innerHTML = '<span class="flex h-[26px] items-center rounded-full bg-white/22 px-3 text-[14px] text-white/85">' + v.badge + '</span>';
+              badgesEl.innerHTML = '<span class="flex h-[26px] items-center rounded-full bg-white/22 px-3 text-base text-white/85">' + v.badge + '</span>';
             }
           }
         }

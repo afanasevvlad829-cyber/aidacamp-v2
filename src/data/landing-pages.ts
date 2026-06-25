@@ -40,7 +40,7 @@ export const landingPages: LandingPage[] = [
   { title: 'IT-лагерь', description: 'Общий вход в IT-нишу: Python, Roblox, AI, Minecraft для 7–15 лет', url: '/it-lager', icon: 'bi-laptop' },
   { title: 'AI-лагерь для детей', description: 'Нейросети, ChatGPT API, AI-проекты', url: '/ai-lager', icon: 'bi-cpu' },
   { title: 'Лагерь с бассейном', description: 'Закрытый бассейн, всё включено', url: '/lager-s-basseynom', icon: 'bi-sun' },
-  { title: 'IT лагерь', description: 'Компьютерный лагерь, Python и AI', url: '/kompyuternyy-lager', icon: 'bi-laptop' },
+  { title: 'Детский компьютерный лагерь', description: 'Python, AI и Roblox — проект за смену', url: '/kompyuternyy-lager', icon: 'bi-laptop' },
   { title: 'Лагерь программирования', description: 'От кода до проекта', url: '/lager-programmirovaniya', icon: 'bi-keyboard' },
   { title: 'Лагерь Майнкрафт', description: 'Minecraft Education, создание модов', url: '/minecraft-lager', icon: 'bi-controller' },
   { title: 'Лагерь Python', description: 'Python с нуля до бота за 10 дней', url: '/python-lager', icon: 'bi-code-slash' },
@@ -70,6 +70,10 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь рядом с Истрой', description: 'IT-лагерь, ~1.5 ч от Истры', url: '/lager-istra', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Клином', description: 'IT-лагерь, ~2 часа от Клина', url: '/lager-klin', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Пушкино', description: 'IT-лагерь, ~1.5 ч от Пушкино', url: '/lager-pushkino', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Солнечногорском', description: 'IT-лагерь, ~1,5 часа через ЦКАД, трансфер', url: '/lager-solnechnogorsk', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом со Звенигородом', description: 'IT-лагерь, ~45 км по А107, ~1 час', url: '/lager-zvenigorod', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Рузой', description: 'IT-лагерь, ~55 км по А108, ~1–1,5 часа', url: '/lager-ruza', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Троицком', description: 'IT-лагерь, ~45 км, одно направление, ~50 мин', url: '/lager-troitsk', icon: 'bi-geo-alt' },
 
   // 💰 Коммерческие
   { title: 'Записаться в лагерь', description: 'Как записать ребёнка в IT-лагерь', url: '/zapisatsya', icon: 'bi-calendar-check' },

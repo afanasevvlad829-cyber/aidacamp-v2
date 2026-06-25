@@ -168,6 +168,9 @@ HERO_IMAGES=$(grep -oE '/images/hero-mobile-bean[a-z0-9-]*\.(webp|avif)' dist/cl
 # (живой nginx-root dev) удалил весь current/ + .env — dev упал бы при рестарте.
 echo ""
 echo "🚀 Деплой статики на $LABEL..."
+# Статика кладётся в REMOTE_DIR/client/ — там её ищет Astro standalone SSR-сервер
+# (entry.mjs резолвит ../client/ относительно server/).
+# REMOTE_DIR = current/ → SSR читает current/client/.
 rsync -az --checksum --stats \
   --exclude='.env' \
   --exclude='current/' \
@@ -180,7 +183,7 @@ rsync -az --checksum --stats \
   --exclude='images/team/' \
   --exclude='data/' \
   -e "ssh -i $SSH_KEY" \
-  dist/client/ "$SSH_HOST:$REMOTE_DIR"
+  dist/client/ "${SSH_HOST}:${REMOTE_DIR}client/"
 
 # ── 2. Изображения root (hero-mobile, hero-desktop, og, etc) ──
 echo ""
@@ -189,7 +192,7 @@ rsync -az --stats \
   --include='*.webp' --include='*.avif' --include='*.svg' --include='*.png' --include='*.jpg' --include='*.jpeg' --include='*.gif' \
   --include='*/' --exclude='*' \
   -e "ssh -i $SSH_KEY" \
-  dist/client/images/ "$SSH_HOST:${REMOTE_DIR}images/"
+  dist/client/images/ "${SSH_HOST}:${REMOTE_DIR}client/images/"
 
 # ── 2b. Галерея (admin-uploaded photos) ───────────────────────
 # Фото загружаются через админку в /var/www/aidacamp-dev/current/images/gallery/
@@ -315,7 +318,7 @@ done
 
 # 6b. Проверяем что HTML обновился — что в нём актуальные хеши
 LOCAL_HTML_HASH=$(md5 -q dist/client/index.html 2>/dev/null || md5sum dist/client/index.html | awk '{print $1}')
-REMOTE_HTML_HASH=$(ssh -i "$SSH_KEY" "$SSH_HOST" "md5sum ${REMOTE_DIR}index.html 2>/dev/null | awk '{print \$1}'")
+REMOTE_HTML_HASH=$(ssh -i "$SSH_KEY" "$SSH_HOST" "md5sum ${REMOTE_DIR}client/index.html 2>/dev/null | awk '{print \$1}'")
 if [ "$LOCAL_HTML_HASH" != "$REMOTE_HTML_HASH" ]; then
   echo "  ❌ index.html на сервере НЕ совпадает с локальным!"
   echo "     local:  $LOCAL_HTML_HASH"
