@@ -1,0 +1,311 @@
+---
+interface Video {
+  file: string;
+  poster: string;
+  num: string;
+  title: string;
+  question: string;
+  duration: string;
+}
+interface Props {
+  videos: Video[];
+  baseUrl?: string;
+}
+
+const { videos, baseUrl = '/videos/darya' } = Astro.props;
+---
+
+<!-- ── Desktop grid ── -->
+<section class="vg-grid-section">
+  <div class="vg-grid">
+    {videos.map((v) => (
+      <button
+        class="vg-card"
+        data-src={`${baseUrl}/${v.file}`}
+        data-poster={v.poster}
+        data-title={v.title}
+        aria-label={`Смотреть: ${v.title}`}
+      >
+        <div class="vg-card__thumb">
+          <img src={v.poster} alt={v.title} class="vg-card__img" loading="lazy" width="640" height="360" />
+          <span class="vg-card__play" aria-hidden="true">
+            <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="rgba(0,0,0,0.55)"/><polygon points="26,18 50,32 26,46" fill="white"/></svg>
+          </span>
+          <span class="vg-card__num">#{v.num}</span>
+          <span class="vg-card__dur">{v.duration}</span>
+        </div>
+        <div class="vg-card__body">
+          <p class="vg-card__title">{v.title}</p>
+          <p class="vg-card__q">«{v.question}»</p>
+        </div>
+      </button>
+    ))}
+  </div>
+</section>
+
+<!-- ── Mobile carousel ── -->
+<section class="vg-carousel-section">
+  <div class="vg-track-wrap">
+    <div class="vg-track" id="vgTrack">
+      {videos.map((v, i) => (
+        <div class="vg-slide" data-index={i}>
+          <button
+            class="vg-card"
+            data-src={`${baseUrl}/${v.file}`}
+            data-poster={v.poster}
+            data-title={v.title}
+            aria-label={`Смотреть: ${v.title}`}
+          >
+            <div class="vg-card__thumb">
+              <img src={v.poster} alt={v.title} class="vg-card__img" loading="lazy" width="640" height="360" />
+              <span class="vg-card__play" aria-hidden="true">
+                <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="rgba(0,0,0,0.55)"/><polygon points="26,18 50,32 26,46" fill="white"/></svg>
+              </span>
+              <span class="vg-card__num">#{v.num}</span>
+              <span class="vg-card__dur">{v.duration}</span>
+            </div>
+            <div class="vg-card__body">
+              <p class="vg-card__title">{v.title}</p>
+              <p class="vg-card__q">«{v.question}»</p>
+            </div>
+          </button>
+        </div>
+      ))}
+    </div>
+  </div>
+  <div class="vg-dots" id="vgDots">
+    {videos.map((_, i) => (
+      <button class={`vg-dot${i === 0 ? ' is-active' : ''}`} data-index={i} aria-label={`Видео ${i + 1}`} />
+    ))}
+  </div>
+</section>
+
+<!-- ── Lightbox ── -->
+<div class="vg-lb" id="vgLb" role="dialog" aria-modal="true" aria-label="Просмотр видео" hidden>
+  <div class="vg-lb__overlay" id="vgLbOverlay"></div>
+  <div class="vg-lb__box">
+    <button class="vg-lb__close" id="vgLbClose" aria-label="Закрыть">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+    <div class="vg-lb__title" id="vgLbTitle"></div>
+    <div class="vg-lb__video-wrap">
+      <video id="vgLbVideo" class="vg-lb__video" controls playsinline></video>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ── Card ─────────────────────────────────────────────── */
+.vg-card {
+  display: block; width: 100%;
+  background: #fff; border: 1px solid #e8ecf0;
+  border-radius: 16px; overflow: hidden;
+  cursor: pointer; text-align: left; padding: 0;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+.vg-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,0.14); }
+.vg-card:focus-visible { outline: 3px solid #ec9b44; outline-offset: 3px; }
+
+.vg-card__thumb {
+  position: relative; aspect-ratio: 16/9;
+  overflow: hidden; background: #0a1520;
+}
+.vg-card__img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: transform 0.3s;
+}
+.vg-card:hover .vg-card__img { transform: scale(1.03); }
+
+.vg-card__play {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.vg-card__play svg {
+  width: clamp(56px, 12%, 80px); height: clamp(56px, 12%, 80px);
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+  transition: transform 0.2s;
+}
+.vg-card:hover .vg-card__play svg { transform: scale(1.12); }
+
+.vg-card__num {
+  position: absolute; top: 10px; left: 12px;
+  background: rgba(236,155,68,0.9); color: #fff;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.05em;
+  padding: 3px 8px; border-radius: 6px; pointer-events: none;
+}
+.vg-card__dur {
+  position: absolute; bottom: 10px; right: 12px;
+  background: rgba(0,0,0,0.65); color: rgba(255,255,255,0.9);
+  font-size: 12px; font-weight: 600;
+  padding: 2px 7px; border-radius: 5px; pointer-events: none;
+}
+
+.vg-card__body { padding: 16px 18px 20px; }
+.vg-card__title { font-size: 16px; font-weight: 700; color: #1a2a3a; margin: 0 0 6px; }
+.vg-card__q { font-size: 13px; color: #6e788a; margin: 0; font-style: italic; line-height: 1.45; }
+
+/* ── Desktop grid ─────────────────────────────────────── */
+.vg-grid-section {
+  display: none;
+  background: #f4f6f8; padding: 56px 20px 64px;
+}
+.vg-grid {
+  max-width: 1100px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;
+}
+.vg-grid > :last-child:nth-child(odd) {
+  grid-column: 1 / -1; max-width: 540px;
+  justify-self: center; width: 100%;
+}
+
+@media (min-width: 768px) {
+  .vg-grid-section { display: block; }
+  .vg-carousel-section { display: none; }
+}
+
+/* ── Mobile carousel ──────────────────────────────────── */
+.vg-carousel-section { background: #f4f6f8; padding: 32px 0 40px; }
+.vg-track-wrap {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%);
+}
+.vg-track {
+  display: flex; gap: 16px;
+  overflow-x: auto; scroll-snap-type: x mandatory;
+  scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 4px 0 8px;
+  padding-left: calc((100% - min(84vw, 400px)) / 2);
+  padding-right: calc((100% - min(84vw, 400px)) / 2);
+}
+.vg-track::-webkit-scrollbar { display: none; }
+.vg-slide { flex: 0 0 min(84vw, 400px); scroll-snap-align: center; }
+
+.vg-dots { display: flex; justify-content: center; gap: 8px; margin-top: 20px; }
+.vg-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  border: none; padding: 0;
+  background: rgba(0,0,0,0.18); cursor: pointer;
+  transition: background 0.2s, width 0.2s, border-radius 0.2s;
+}
+.vg-dot.is-active { background: #ec9b44; width: 24px; border-radius: 4px; }
+
+/* ── Lightbox ─────────────────────────────────────────── */
+.vg-lb {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.vg-lb[hidden] { display: none; }
+
+.vg-lb__overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.88);
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+.vg-lb__box {
+  position: relative; width: 100%; max-width: 960px; z-index: 1;
+  animation: lbIn 0.2s ease;
+}
+@keyframes lbIn {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.vg-lb__close {
+  position: absolute; top: -44px; right: 0;
+  width: 36px; height: 36px; border: none;
+  background: rgba(255,255,255,0.15); border-radius: 50%;
+  cursor: pointer; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s; padding: 0;
+}
+.vg-lb__close:hover { background: rgba(255,255,255,0.3); }
+.vg-lb__close svg { width: 18px; height: 18px; }
+
+.vg-lb__title {
+  font-size: 14px; font-weight: 600;
+  color: rgba(255,255,255,0.7); margin-bottom: 10px; padding-left: 2px;
+}
+.vg-lb__video-wrap {
+  aspect-ratio: 16/9; background: #000;
+  border-radius: 12px; overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+}
+.vg-lb__video { width: 100%; height: 100%; display: block; }
+</style>
+
+<script>
+{
+  const lb      = document.getElementById('vgLb');
+  const video   = document.getElementById('vgLbVideo');
+  const title   = document.getElementById('vgLbTitle');
+  const closeBtn = document.getElementById('vgLbClose');
+  const overlay = document.getElementById('vgLbOverlay');
+
+  function open(src, poster, label) {
+    title.textContent = label;
+    video.poster = poster;
+    video.src = src;
+    lb.removeAttribute('hidden');
+    document.body.style.overflow = 'hidden';
+    video.play().catch(() => {});
+  }
+
+  function close() {
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+    lb.setAttribute('hidden', '');
+    document.body.style.overflow = '';
+  }
+
+  closeBtn.addEventListener('click', close);
+  overlay.addEventListener('click', close);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+
+  document.querySelectorAll('.vg-card').forEach((card) => {
+    card.addEventListener('click', () => {
+      open(card.dataset.src, card.dataset.poster, card.dataset.title);
+    });
+  });
+
+  /* ── Carousel dots ── */
+  const track = document.getElementById('vgTrack');
+  const dots  = document.querySelectorAll('#vgDots .vg-dot');
+  if (!track || !dots.length) return;
+
+  function setActive(i) {
+    dots.forEach((d, idx) => d.classList.toggle('is-active', idx === i));
+  }
+
+  dots.forEach((dot, i) => {
+    dot.addEventListener('click', () => {
+      const slide = track.children[i];
+      if (slide) {
+        const offset = slide.offsetLeft - (track.offsetWidth - slide.offsetWidth) / 2;
+        track.scrollTo({ left: offset, behavior: 'smooth' });
+      }
+      setActive(i);
+    });
+  });
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      let best = -1, bestRatio = 0;
+      for (const e of entries) {
+        if (e.intersectionRatio > bestRatio) {
+          bestRatio = e.intersectionRatio;
+          best = parseInt(e.target.dataset.index ?? '0', 10);
+        }
+      }
+      if (best >= 0 && bestRatio > 0.4) setActive(best);
+    },
+    { root: track, threshold: [0.4, 0.6, 0.8] }
+  );
+  track.querySelectorAll('.vg-slide').forEach((s) => observer.observe(s));
+}
+</script>
