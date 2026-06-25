@@ -239,15 +239,16 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
 </style>
 
 <script>
-{
-  const lb      = document.getElementById('vgLb');
-  const video   = document.getElementById('vgLbVideo');
-  const title   = document.getElementById('vgLbTitle');
+(() => {
+  /* ── Lightbox ── */
+  const lb       = document.getElementById('vgLb');
+  const video    = document.getElementById('vgLbVideo');
+  const titleEl  = document.getElementById('vgLbTitle');
   const closeBtn = document.getElementById('vgLbClose');
-  const overlay = document.getElementById('vgLbOverlay');
+  const overlay  = document.getElementById('vgLbOverlay');
 
-  function open(src, poster, label) {
-    title.textContent = label;
+  function openLb(src, poster, label) {
+    titleEl.textContent = label;
     video.poster = poster;
     video.src = src;
     lb.removeAttribute('hidden');
@@ -255,7 +256,7 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
     video.play().catch(() => {});
   }
 
-  function close() {
+  function closeLb() {
     video.pause();
     video.removeAttribute('src');
     video.load();
@@ -263,20 +264,20 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
     document.body.style.overflow = '';
   }
 
-  closeBtn.addEventListener('click', close);
-  overlay.addEventListener('click', close);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  closeBtn.addEventListener('click', closeLb);
+  overlay.addEventListener('click', closeLb);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLb(); });
 
   document.querySelectorAll('.vg-card').forEach((card) => {
     card.addEventListener('click', () => {
-      open(card.dataset.src, card.dataset.poster, card.dataset.title);
+      openLb(card.dataset.src, card.dataset.poster, card.dataset.title);
     });
   });
 
   /* ── Carousel dots ── */
   const track = document.getElementById('vgTrack');
   const dots  = document.querySelectorAll('#vgDots .vg-dot');
-  if (!track || !dots.length) return;
+  if (!track || !dots.length) { return; }
 
   function setActive(i) {
     dots.forEach((d, idx) => d.classList.toggle('is-active', idx === i));
@@ -286,8 +287,10 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
     dot.addEventListener('click', () => {
       const slide = track.children[i];
       if (slide) {
-        const offset = slide.offsetLeft - (track.offsetWidth - slide.offsetWidth) / 2;
-        track.scrollTo({ left: offset, behavior: 'smooth' });
+        track.scrollTo({
+          left: slide.offsetLeft - (track.offsetWidth - slide.offsetWidth) / 2,
+          behavior: 'smooth',
+        });
       }
       setActive(i);
     });
@@ -307,5 +310,5 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
     { root: track, threshold: [0.4, 0.6, 0.8] }
   );
   track.querySelectorAll('.vg-slide').forEach((s) => observer.observe(s));
-}
+})();
 </script>
