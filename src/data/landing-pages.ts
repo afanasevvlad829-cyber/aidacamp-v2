@@ -70,6 +70,10 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь рядом с Истрой', description: 'IT-лагерь, ~1.5 ч от Истры', url: '/lager-istra', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Клином', description: 'IT-лагерь, ~2 часа от Клина', url: '/lager-klin', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Пушкино', description: 'IT-лагерь, ~1.5 ч от Пушкино', url: '/lager-pushkino', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Солнечногорском', description: 'IT-лагерь, ~1,5 часа через ЦКАД, трансфер', url: '/lager-solnechnogorsk', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом со Звенигородом', description: 'IT-лагерь, ~45 км по А107, ~1 час', url: '/lager-zvenigorod', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Рузой', description: 'IT-лагерь, ~55 км по А108, ~1–1,5 часа', url: '/lager-ruza', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Троицком', description: 'IT-лагерь, ~45 км, одно направление, ~50 мин', url: '/lager-troitsk', icon: 'bi-geo-alt' },
 
   // 💰 Коммерческие
   { title: 'Записаться в лагерь', description: 'Как записать ребёнка в IT-лагерь', url: '/zapisatsya', icon: 'bi-calendar-check' },
