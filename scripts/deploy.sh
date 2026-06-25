@@ -318,7 +318,7 @@ done
 
 # 6b. Проверяем что HTML обновился — что в нём актуальные хеши
 LOCAL_HTML_HASH=$(md5 -q dist/client/index.html 2>/dev/null || md5sum dist/client/index.html | awk '{print $1}')
-REMOTE_HTML_HASH=$(ssh -i "$SSH_KEY" "$SSH_HOST" "md5sum ${REMOTE_DIR}index.html 2>/dev/null | awk '{print \$1}'")
+REMOTE_HTML_HASH=$(ssh -i "$SSH_KEY" "$SSH_HOST" "md5sum ${REMOTE_DIR}client/index.html 2>/dev/null | awk '{print \$1}'")
 if [ "$LOCAL_HTML_HASH" != "$REMOTE_HTML_HASH" ]; then
   echo "  ❌ index.html на сервере НЕ совпадает с локальным!"
   echo "     local:  $LOCAL_HTML_HASH"
