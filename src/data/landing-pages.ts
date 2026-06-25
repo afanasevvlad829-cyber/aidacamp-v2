@@ -40,7 +40,7 @@ export const landingPages: LandingPage[] = [
   { title: 'IT-лагерь', description: 'Общий вход в IT-нишу: Python, Roblox, AI, Minecraft для 7–15 лет', url: '/it-lager', icon: 'bi-laptop' },
   { title: 'AI-лагерь для детей', description: 'Нейросети, ChatGPT API, AI-проекты', url: '/ai-lager', icon: 'bi-cpu' },
   { title: 'Лагерь с бассейном', description: 'Закрытый бассейн, всё включено', url: '/lager-s-basseynom', icon: 'bi-sun' },
-  { title: 'IT лагерь', description: 'Компьютерный лагерь, Python и AI', url: '/kompyuternyy-lager', icon: 'bi-laptop' },
+  { title: 'Детский компьютерный лагерь', description: 'Python, AI и Roblox — проект за смену', url: '/kompyuternyy-lager', icon: 'bi-laptop' },
   { title: 'Лагерь программирования', description: 'От кода до проекта', url: '/lager-programmirovaniya', icon: 'bi-keyboard' },
   { title: 'Лагерь Майнкрафт', description: 'Minecraft Education, создание модов', url: '/minecraft-lager', icon: 'bi-controller' },
   { title: 'Лагерь Python', description: 'Python с нуля до бота за 10 дней', url: '/python-lager', icon: 'bi-code-slash' },
