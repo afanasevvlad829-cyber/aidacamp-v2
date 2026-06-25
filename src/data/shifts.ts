@@ -89,9 +89,16 @@ export const shortShifts: Shift[] = [];
 
 export const allShifts = [...mainShifts];
 
+/** Смены, которые ещё не начались (startDate >= today). Передай today = new Date().toISOString().slice(0,10). */
+export const upcomingShifts = (today: string) =>
+  [...mainShifts, ...shortShifts]
+    .filter(s => s.startDate >= today)
+    .sort((a, b) => a.startDate.localeCompare(b.startDate));
+
 // Все смены для показа в карусели (завершённые + активные), в хронологии.
 // Фаза (предстоит/идёт/прошла) считается по датам в getShiftPhase().
 export const displayShifts: Shift[] = [_shift1, _shift2, ...mainShifts];
+export const shift1 = _shift1;
 
 // === ЕДИНЫЙ ИСТОЧНИК метаданных смены (дата + база + длительность) ===
 // Отсюда dynamicPrices.ts берёт basePrice/startDate/days и применяет правило роста.
