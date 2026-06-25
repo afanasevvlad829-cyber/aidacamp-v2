@@ -99,6 +99,7 @@ export const upcomingShifts = (today: string) =>
 // Фаза (предстоит/идёт/прошла) считается по датам в getShiftPhase().
 export const displayShifts: Shift[] = [_shift1, _shift2, ...mainShifts];
 export const shift1 = _shift1;
+export const shift2 = _shift2;
 
 // === ЕДИНЫЙ ИСТОЧНИК метаданных смены (дата + база + длительность) ===
 // Отсюда dynamicPrices.ts берёт basePrice/startDate/days и применяет правило роста.
