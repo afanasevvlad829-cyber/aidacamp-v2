@@ -50,6 +50,11 @@ deploy_to() {
 
 if [ "$TARGET" = "dev" ] || [ "$TARGET" = "both" ]; then
   deploy_to "$DEV_DIR" "dev"
+  # nginx root = current/client/ — синхронизируем туда же
+  # Инцидент 2026-06-26: deploy_to копирует в current/, но nginx отдаёт из current/client/ → JS 404
+  rsync -a \
+    --exclude='.env' --exclude='server/' --exclude='node_modules/' --exclude='backup-*' \
+    "$REPO/dist/client/" "$DEV_DIR/client/" && echo "  ✅ client → dev current/client"
   # Синхронизируем также плоский корень /var/www/aidacamp-dev/ (nginx отдаёт оттуда статику)
   # Инцидент 2026-06-12: без этого шага новые страницы появляются в current/ но не в flat-root → 404
   rsync -a \

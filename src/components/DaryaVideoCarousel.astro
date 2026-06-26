@@ -1,0 +1,351 @@
+---
+// DaryaVideoCarousel.astro
+// Карусель видео-интервью Дарьи с ТВ-передачи "Родительское собрание"
+// Использование: <DaryaVideoCarousel baseUrl="/videos/darya" />
+// Видео хостятся на сервере, путь задаётся через baseUrl
+
+interface Props {
+  baseUrl?: string;  // URL-префикс где лежат mp4
+  heading?: string;
+}
+
+const {
+  baseUrl = '/videos/darya',
+  heading = 'Дарья Афанасьева о детских IT-лагерях',
+} = Astro.props;
+
+const videos = [
+  {
+    file: '01_sovremennye_lageri.mp4',
+    num: '01',
+    title: 'Современные лагеря',
+    question: 'Изменились ли детские лагеря и остались ли пионерские?',
+    duration: '3:27',
+  },
+  {
+    file: '02_valyuta_i_telefony.mp4',
+    num: '02',
+    title: 'Телефоны и внутренняя валюта',
+    question: 'Как IT-лагерь совмещает детокс от телефонов с технологиями?',
+    duration: '2:46',
+  },
+  {
+    file: '03_chemu_nauchitsya.mp4',
+    num: '03',
+    title: 'Чему научиться за смену',
+    question: 'Реально ли освоить IT за одну лагерную смену?',
+    duration: '2:40',
+  },
+  {
+    file: '04_hrustalny_kolpak.mp4',
+    num: '04',
+    title: 'Дети под хрустальным колпаком',
+    question: 'Лишены ли современные дети самостоятельности?',
+    duration: '2:14',
+  },
+  {
+    file: '05_budushchee_lagerei.mp4',
+    num: '05',
+    title: 'Будущее за профильными лагерями',
+    question: 'Станут ли профильные лагеря основным форматом отдыха?',
+    duration: '2:04',
+  },
+];
+---
+
+<section class="dvc-section">
+  <div class="dvc-inner">
+    <h2 class="dvc-heading">{heading}</h2>
+    <p class="dvc-sub">Интервью на федеральном ТВ — программа «Родительское собрание»</p>
+
+    <!-- Карусель -->
+    <div class="dvc-track-wrap">
+      <div class="dvc-track" id="dvcTrack">
+        {videos.map((v, i) => (
+          <div class="dvc-slide" data-index={i}>
+            <div class="dvc-card">
+              <!-- Видео -->
+              <div class="dvc-video-wrap">
+                <video
+                  class="dvc-video"
+                  src={`${baseUrl}/${v.file}`}
+                  preload="none"
+                  controls
+                  playsinline
+                  poster=""
+                  data-index={i}
+                />
+                <div class="dvc-num">#{v.num}</div>
+                <div class="dvc-duration">{v.duration}</div>
+              </div>
+              <!-- Текст под видео -->
+              <div class="dvc-info">
+                <p class="dvc-title">{v.title}</p>
+                <p class="dvc-question">«{v.question}»</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Точки-пагинация -->
+    <div class="dvc-dots" id="dvcDots" role="tablist" aria-label="Навигация по видео">
+      {videos.map((v, i) => (
+        <button
+          class={`dvc-dot${i === 0 ? ' is-active' : ''}`}
+          data-index={i}
+          role="tab"
+          aria-label={v.title}
+          aria-selected={i === 0 ? 'true' : 'false'}
+        />
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  /* ─── Section ────────────────────────────────────── */
+  .dvc-section {
+    background: #0d1a2b;
+    padding: 48px 0 56px;
+  }
+
+  .dvc-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  .dvc-heading {
+    font-size: clamp(22px, 5vw, 32px);
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 8px;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .dvc-sub {
+    font-size: 14px;
+    color: rgba(255,255,255,0.5);
+    text-align: center;
+    margin: 0 0 28px;
+  }
+
+  /* ─── Track ──────────────────────────────────────── */
+  .dvc-track-wrap {
+    overflow: hidden;
+    /* Лёгкая тень по краям — намёк что есть ещё */
+    mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+  }
+
+  .dvc-track {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;        /* Firefox */
+    padding: 4px 0 16px;
+    /* Padding-inline для peek на следующий слайд */
+    padding-left: calc((100% - min(85vw, 420px)) / 2);
+    padding-right: calc((100% - min(85vw, 420px)) / 2);
+  }
+  .dvc-track::-webkit-scrollbar { display: none; }
+
+  /* ─── Slide ──────────────────────────────────────── */
+  .dvc-slide {
+    flex: 0 0 min(85vw, 420px);
+    scroll-snap-align: center;
+  }
+
+  /* На широких экранах — компактнее */
+  @media (min-width: 768px) {
+    .dvc-slide {
+      flex: 0 0 clamp(340px, 38vw, 480px);
+    }
+    .dvc-track {
+      padding-left: calc((100% - clamp(340px, 38vw, 480px)) / 2);
+      padding-right: calc((100% - clamp(340px, 38vw, 480px)) / 2);
+    }
+  }
+
+  /* ─── Card ───────────────────────────────────────── */
+  .dvc-card {
+    background: #152a46;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .dvc-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+  }
+
+  /* ─── Video ──────────────────────────────────────── */
+  .dvc-video-wrap {
+    position: relative;
+    aspect-ratio: 16/9;
+    background: #0a1520;
+  }
+
+  .dvc-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Номер в углу */
+  .dvc-num {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    background: rgba(236,155,68,0.9);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 3px 8px;
+    border-radius: 6px;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  /* Длительность */
+  .dvc-duration {
+    position: absolute;
+    bottom: 10px;
+    right: 12px;
+    background: rgba(0,0,0,0.65);
+    color: rgba(255,255,255,0.9);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 5px;
+    pointer-events: none;
+  }
+
+  /* ─── Info ───────────────────────────────────────── */
+  .dvc-info {
+    padding: 16px 18px 20px;
+  }
+
+  .dvc-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 6px;
+    line-height: 1.25;
+  }
+
+  .dvc-question {
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+    margin: 0;
+    line-height: 1.45;
+    font-style: italic;
+  }
+
+  /* ─── Dots ───────────────────────────────────────── */
+  .dvc-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+  }
+
+  .dvc-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: none;
+    padding: 0;
+    background: rgba(255,255,255,0.25);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s, width 0.2s;
+  }
+  .dvc-dot.is-active {
+    background: #ec9b44;
+    width: 24px;
+    border-radius: 4px;
+    transform: none;
+  }
+  .dvc-dot:focus-visible {
+    outline: 2px solid #ec9b44;
+    outline-offset: 2px;
+  }
+</style>
+
+<script>
+  (() => {
+    const track = document.getElementById('dvcTrack');
+    const dots = document.querySelectorAll('#dvcDots .dvc-dot');
+    if (!track || !dots.length) return;
+
+    // Пауза видео при смене слайда
+    function pauseAll() {
+      track.querySelectorAll('video').forEach((v) => {
+        if (!v.paused) v.pause();
+      });
+    }
+
+    // Перейти к слайду по индексу
+    function goTo(index: number) {
+      const slide = track.children[index] as HTMLElement;
+      if (!slide) return;
+      const slideRect = slide.getBoundingClientRect();
+      const trackRect = track.getBoundingClientRect();
+      const offset = slide.offsetLeft - (track.offsetWidth - slide.offsetWidth) / 2;
+      track.scrollTo({ left: offset, behavior: 'smooth' });
+    }
+
+    // Активировать точку
+    function setActive(index: number) {
+      dots.forEach((d, i) => {
+        const active = i === index;
+        d.classList.toggle('is-active', active);
+        d.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+    }
+
+    // Клик по точке
+    dots.forEach((dot, i) => {
+      dot.addEventListener('click', () => {
+        pauseAll();
+        goTo(i);
+        setActive(i);
+      });
+    });
+
+    // Intersection Observer — следить за текущим слайдом
+    const slides = track.querySelectorAll('.dvc-slide');
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Берём слайд с максимальным intersectionRatio
+        let best = -1, bestRatio = 0;
+        entries.forEach((entry) => {
+          if (entry.intersectionRatio > bestRatio) {
+            bestRatio = entry.intersectionRatio;
+            best = parseInt((entry.target as HTMLElement).dataset.index || '0', 10);
+          }
+        });
+        if (best >= 0 && bestRatio > 0.4) setActive(best);
+      },
+      { root: track, threshold: [0.4, 0.6, 0.8] }
+    );
+    slides.forEach((s) => observer.observe(s));
+
+    // Пауза при уходе из viewport (экономия трафика)
+    const sectionObserver = new IntersectionObserver(
+      ([entry]) => { if (!entry.isIntersecting) pauseAll(); },
+      { threshold: 0 }
+    );
+    const section = track.closest('.dvc-section');
+    if (section) sectionObserver.observe(section);
+  })();
+</script>

@@ -27,10 +27,27 @@ if [ "$TARGET" = "prod" ] && [ "${MASTER_AGENT:-0}" != "1" ] && [ "${SKIP_GIT_GU
   exit 1
 fi
 
+# ── 0a. BRANCH GUARD: прод деплоится ТОЛЬКО из main ─────────
+# Эта проверка не обходится SKIP_GIT_GUARD — только явный FORCE_BRANCH=1.
+# Инцидент 2026-06-25: деплой из fix/video-player-import → сломанный прод.
+cd "$PROJECT_DIR"
+if [ "$TARGET" = "prod" ] && [ "${FORCE_BRANCH:-0}" != "1" ]; then
+  CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "detached")
+  if [ "$CURRENT_BRANCH" != "main" ]; then
+    echo "❌ DEPLOY BLOCKED: прод деплоится только из ветки main"
+    echo "   Текущая ветка: $CURRENT_BRANCH"
+    echo ""
+    echo "→ git checkout main && git pull origin main"
+    echo "   ./scripts/deploy.sh prod"
+    echo ""
+    echo "Исключение (хотфикс прямо из этой ветки): FORCE_BRANCH=1 ./scripts/deploy.sh prod"
+    exit 1
+  fi
+fi
+
 # ── 0. Pre-flight git guard ───────────────────────────────────
 # Запрещаем деплой при расхождении git ↔ working tree ↔ origin.
 # Обход: SKIP_GIT_GUARD=1 (только для критических hotfix владельцем).
-cd "$PROJECT_DIR"
 if [ "${SKIP_GIT_GUARD:-0}" != "1" ]; then
   case "$TARGET" in
     dev)  GUARD_BRANCH="dev" ;;
@@ -178,64 +195,36 @@ rsync -az --checksum --stats \
   --exclude='node_modules/' \
   --exclude='backup-*' \
   --exclude='client/' \
-  --exclude='images/hero/' \
-  --exclude='images/gallery/' \
-  --exclude='images/team/' \
+  --exclude='images/' \
+  --exclude='video/' \
   --exclude='data/' \
   -e "ssh -i $SSH_KEY" \
   dist/client/ "${SSH_HOST}:${REMOTE_DIR}client/"
 
-# ── 2. Изображения root (hero-mobile, hero-desktop, og, etc) ──
-echo ""
-echo "🖼️  Синхронизация изображений root..."
-rsync -az --stats \
-  --include='*.webp' --include='*.avif' --include='*.svg' --include='*.png' --include='*.jpg' --include='*.jpeg' --include='*.gif' \
-  --include='*/' --exclude='*' \
-  -e "ssh -i $SSH_KEY" \
-  dist/client/images/ "${SSH_HOST}:${REMOTE_DIR}client/images/"
-
-# ── 2b. Галерея (admin-uploaded photos) ───────────────────────
-# Фото загружаются через админку в /var/www/aidacamp-dev/current/images/gallery/
-# и не входят в сборку. На prod синхронизируем с dev вручную.
-if [ "$TARGET" = "prod" ]; then
-  echo ""
-  echo "🖼️  Синхронизация галереи dev → prod..."
-  ssh -i "$SSH_KEY" "$SSH_HOST" \
-    "rsync -a /var/www/aidacamp-dev/current/images/gallery/ /var/www/aidacamp/current/images/gallery/"
-  echo "  ✅ Галерея синхронизирована"
-fi
-
-# ── 2c. DEV: статика → плоский корень nginx (/var/www/aidacamp-dev/) ───────
-# На dev nginx отдаёт статику из ПЛОСКОГО корня, а не из current/ (см. инцидент
-# flat-root). Дублируем статику туда БЕЗ --delete — ничего не удаляем,
-# .env / data/ / images/gallery/ остаются нетронутыми.
+# ── 2b. DEV: статика → плоский корень nginx (/var/www/aidacamp-dev/) ───────
+# images/ и video/ — симлинки на /var/www/aidacamp-media/, не трогаем.
 if [ "$TARGET" = "dev" ]; then
   FLAT_DIR="/var/www/aidacamp-dev/"
   echo ""
   echo "🚀 [dev] Статика → плоский корень nginx ($FLAT_DIR)..."
-  rsync -az --stats \
+  rsync -az --checksum --stats \
     --exclude='.env' \
     --exclude='server/' \
     --exclude='node_modules/' \
     --exclude='backup-*' \
     --exclude='current/' \
     --exclude='client/' \
-    --exclude='images/gallery/' \
+    --exclude='images/' \
+    --exclude='video/' \
     --exclude='data/' \
     -e "ssh -i $SSH_KEY" \
     dist/client/ "$SSH_HOST:$FLAT_DIR"
-  echo "🖼️  [dev] Картинки root → плоский корень..."
-  rsync -az \
-    --include='*.webp' --include='*.avif' --include='*.svg' --include='*.png' --include='*.jpg' --include='*.jpeg' --include='*.gif' \
-    --include='*/' --exclude='*' \
-    -e "ssh -i $SSH_KEY" \
-    dist/client/images/ "$SSH_HOST:${FLAT_DIR}images/"
 fi
 
 # ── 3. SSR ────────────────────────────────────────────────────
 echo ""
 echo "🔄 Деплой SSR-сервера..."
-rsync -az --delete --stats \
+rsync -az --checksum --delete --stats \
   -e "ssh -i $SSH_KEY" \
   dist/server/ "$SSH_HOST:$SSR_DIR"
 

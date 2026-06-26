@@ -1,0 +1,163 @@
+---
+interface Props {
+  section: string;         // gallery section key, e.g. 'smena2'
+  title?: string;
+  subtitle?: string;
+  interval?: number;       // ms between slides (default 4500)
+}
+const {
+  section,
+  title = 'Фотографии',
+  subtitle,
+  interval = 4500,
+} = Astro.props;
+---
+
+<section
+  class="relative w-full overflow-hidden bg-slate-950"
+  data-slideshow
+  data-section={section}
+  data-interval={interval}
+  aria-label={title}
+>
+  <!-- Загрузка / пустое состояние -->
+  <div data-slide-loading class="flex h-[360px] md:h-[560px] items-center justify-center">
+    <div class="text-center text-white/40">
+      <div class="inline-block h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white/80 mb-3"></div>
+      <p class="text-sm">Загружаем фотографии…</p>
+    </div>
+  </div>
+
+  <!-- Контейнер слайдов (заполняется JS) -->
+  <div data-slide-track class="hidden relative h-[360px] md:h-[560px]">
+
+    <!-- Слайды монтируются сюда динамически -->
+
+    <!-- Кнопки nav -->
+    <button
+      type="button"
+      data-slide-prev
+      aria-label="Предыдущее фото"
+      class="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60 transition-colors md:left-5 md:h-12 md:w-12"
+    >
+      <i class="bi bi-chevron-left text-base md:text-xl" aria-hidden="true"></i>
+    </button>
+    <button
+      type="button"
+      data-slide-next
+      aria-label="Следующее фото"
+      class="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60 transition-colors md:right-5 md:h-12 md:w-12"
+    >
+      <i class="bi bi-chevron-right text-base md:text-xl" aria-hidden="true"></i>
+    </button>
+
+    <!-- Прогресс-точки -->
+    <div data-slide-dots class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 flex-wrap justify-center max-w-[200px]"></div>
+
+    <!-- Подпись -->
+    <div class="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/70 to-transparent px-4 py-3 md:px-8 md:py-4">
+      <p data-slide-caption class="text-sm text-white/90 leading-snug line-clamp-2 md:text-base max-w-2xl"></p>
+      <p data-slide-counter class="text-[11px] text-white/40 mt-0.5"></p>
+    </div>
+  </div>
+</section>
+
+<script define:vars={{ section, interval }}>
+(function () {
+  const root = document.querySelector('[data-slideshow]');
+  if (!root) return;
+
+  const loading  = root.querySelector('[data-slide-loading]');
+  const track    = root.querySelector('[data-slide-track]');
+  const prevBtn  = root.querySelector('[data-slide-prev]');
+  const nextBtn  = root.querySelector('[data-slide-next]');
+  const dotsEl   = root.querySelector('[data-slide-dots]');
+  const captionEl = root.querySelector('[data-slide-caption]');
+  const counterEl = root.querySelector('[data-slide-counter]');
+
+  let photos = [];
+  let current = 0;
+  let timer = null;
+
+  function showSlide(idx) {
+    const slides = track.querySelectorAll('[data-slide-img]');
+    slides.forEach((s, i) => s.classList.toggle('opacity-0', i !== idx));
+    const dots = dotsEl.querySelectorAll('button');
+    dots.forEach((d, i) => {
+      d.classList.toggle('bg-white', i === idx);
+      d.classList.toggle('bg-white/30', i !== idx);
+    });
+    captionEl.textContent = photos[idx]?.alt || '';
+    counterEl.textContent = `${idx + 1} / ${photos.length}`;
+    current = idx;
+  }
+
+  function advance() {
+    showSlide((current + 1) % photos.length);
+  }
+
+  function startAuto() {
+    clearInterval(timer);
+    timer = setInterval(advance, interval);
+  }
+
+  function build(data) {
+    photos = data;
+    if (!photos.length) {
+      loading.querySelector('p').textContent = 'Фотографии появятся скоро';
+      return;
+    }
+
+    // Создаём слайды
+    photos.forEach((p, i) => {
+      const div = document.createElement('div');
+      div.dataset.slideImg = i;
+      div.className = `absolute inset-0 transition-opacity duration-700 ${i === 0 ? '' : 'opacity-0'}`;
+      const img = document.createElement('img');
+      img.src = p.src;
+      img.alt = p.alt || '';
+      img.className = 'h-full w-full object-cover';
+      img.loading = i < 3 ? 'eager' : 'lazy';
+      div.appendChild(img);
+      track.insertBefore(div, prevBtn);
+    });
+
+    // Точки (максимум 20)
+    const maxDots = Math.min(photos.length, 20);
+    for (let i = 0; i < maxDots; i++) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `h-1.5 w-1.5 rounded-full transition-colors ${i === 0 ? 'bg-white' : 'bg-white/30'}`;
+      btn.setAttribute('aria-label', `Фото ${i + 1}`);
+      btn.addEventListener('click', () => { showSlide(i); startAuto(); });
+      dotsEl.appendChild(btn);
+    }
+
+    captionEl.textContent = photos[0]?.alt || '';
+    counterEl.textContent = `1 / ${photos.length}`;
+
+    loading.classList.add('hidden');
+    track.classList.remove('hidden');
+    startAuto();
+  }
+
+  prevBtn.addEventListener('click', () => {
+    showSlide((current - 1 + photos.length) % photos.length);
+    startAuto();
+  });
+  nextBtn.addEventListener('click', () => {
+    showSlide((current + 1) % photos.length);
+    startAuto();
+  });
+
+  // Пауза при наведении
+  root.addEventListener('mouseenter', () => clearInterval(timer));
+  root.addEventListener('mouseleave', () => startAuto());
+
+  // Загружаем данные
+  fetch(`/api/gallery-photos?section=${section}`)
+    .then(r => r.json())
+    .then(data => build(Array.isArray(data) ? data : []))
+    .catch(() => { loading.querySelector('p').textContent = 'Не удалось загрузить фото'; });
+})();
+</script>
