@@ -25,7 +25,7 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
         data-src={`${baseUrl}/${v.file}?v=2`}
 
         data-poster={v.poster}
-        data-track={v.track ?? `${baseUrl}/${v.file.replace('.mp4', '.vtt')}?v=2`}
+        data-track={v.track ?? `${baseUrl}/${v.file.replace(/\.mp4$/i, '.vtt')}?v=2`}
         data-title={v.title}
         aria-label={`Смотреть: ${v.title}`}
       >
@@ -55,9 +55,9 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
           <button
             class="vg-card"
             data-src={`${baseUrl}/${v.file}?v=2`}
-    
+
             data-poster={v.poster}
-            data-track={v.track ?? `${baseUrl}/${v.file.replace('.mp4', '.vtt')}?v=2`}
+            data-track={v.track ?? `${baseUrl}/${v.file.replace(/\.mp4$/i, '.vtt')}?v=2`}
             data-title={v.title}
             aria-label={`Смотреть: ${v.title}`}
           >
@@ -299,11 +299,15 @@ import Plyr from 'plyr';
       sources: [{ src: mp4Src, type: 'video/mp4' }],
       tracks: [{ kind: 'captions', label: 'Субтитры', srclang: 'ru', src: trackSrc, default: true }],
     };
-    p.play();
+    p.play().catch(() => {});
   }
 
   function closeLb() {
-    if (player) player.stop();
+    if (player) {
+      player.stop();
+      const videoEl = document.querySelector('#vgLbVideo');
+      if (videoEl) { videoEl.pause(); videoEl.removeAttribute('src'); videoEl.load(); }
+    }
     lb.setAttribute('hidden', '');
     document.body.style.overflow = '';
   }
