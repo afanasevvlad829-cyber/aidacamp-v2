@@ -15,21 +15,12 @@
  *   13% × min(discountedEdu, 110 000 ₽) — независимая опция, применяется поверх.
  */
 
-import { mainShifts } from '../data/shifts';
+import { EDU_RESID_PER_DAY, NDFL_RATE, EDU_BASE_CAP } from '../data/shifts';
 import { fmtPrice } from '../data/dynamicPrices';
+import { getShiftSelectOptions } from '../utils/shiftSelectOptions';
 
-const parsePrice = (s: string) => parseInt(s.replace(/[^\d]/g, ''), 10) || 0;
-const parseDays  = (s: string) => parseInt(s, 10) || 0;
-
-const orderedShifts = [...mainShifts];
-
-const shifts = orderedShifts.map((s) => ({
-  id:      s.id,
-  label:   `${s.name} — ${s.dates}, ${s.duration}`,
-  price:   parsePrice(s.price),
-  days:    parseDays(s.duration),
-  popular: s.popular ?? false,
-}));
+// Опции смен (цена/дни из data/shifts.ts) — единый источник, без дублирования парсинга.
+const shifts = getShiftSelectOptions();
 ---
 
 <section class="mx-auto max-w-[720px] px-4 pb-10 md:pb-14">
@@ -56,6 +47,9 @@ const shifts = orderedShifts.map((s) => ({
         <select
           id="bc-shift"
           class="w-full appearance-none rounded-[10px] border border-slate-300 bg-white px-4 py-3 pr-10 text-base text-body focus:border-orange-500 focus:outline-none"
+          data-edu-resid={EDU_RESID_PER_DAY}
+          data-ndfl-rate={NDFL_RATE}
+          data-edu-cap={EDU_BASE_CAP}
         >
           {shifts.map((s) => (
             <option
@@ -181,15 +175,16 @@ const shifts = orderedShifts.map((s) => ({
 
 <script is:inline>
 (function () {
-  const RESIDENTIAL_PER_DAY = 3800;
-  const TAX_RATE = 0.13;
-  const TAX_LIMIT = 110000;
   const EDU_FIXED_GROUP10 = 100;
 
   const fmt = (n) => Math.round(n).toLocaleString('ru-RU');
   const roundTo100 = (n) => Math.round(n / 100) * 100;
 
   const shiftSel  = document.getElementById('bc-shift');
+  // Константы вычета — из data/shifts.ts через data-атрибуты <select> (единый источник).
+  const RESIDENTIAL_PER_DAY = Number(shiftSel?.dataset.eduResid) || 3800;
+  const TAX_RATE = Number(shiftSel?.dataset.ndflRate) || 0.13;
+  const TAX_LIMIT = Number(shiftSel?.dataset.eduCap) || 110000;
   const taxCheck  = document.getElementById('bc-tax');
   const groupRads = document.querySelectorAll('input[name="bc-group"]');
 
