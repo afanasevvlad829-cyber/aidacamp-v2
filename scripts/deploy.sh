@@ -27,10 +27,27 @@ if [ "$TARGET" = "prod" ] && [ "${MASTER_AGENT:-0}" != "1" ] && [ "${SKIP_GIT_GU
   exit 1
 fi
 
+# ── 0a. BRANCH GUARD: прод деплоится ТОЛЬКО из main ─────────
+# Эта проверка не обходится SKIP_GIT_GUARD — только явный FORCE_BRANCH=1.
+# Инцидент 2026-06-25: деплой из fix/video-player-import → сломанный прод.
+cd "$PROJECT_DIR"
+if [ "$TARGET" = "prod" ] && [ "${FORCE_BRANCH:-0}" != "1" ]; then
+  CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "detached")
+  if [ "$CURRENT_BRANCH" != "main" ]; then
+    echo "❌ DEPLOY BLOCKED: прод деплоится только из ветки main"
+    echo "   Текущая ветка: $CURRENT_BRANCH"
+    echo ""
+    echo "→ git checkout main && git pull origin main"
+    echo "   ./scripts/deploy.sh prod"
+    echo ""
+    echo "Исключение (хотфикс прямо из этой ветки): FORCE_BRANCH=1 ./scripts/deploy.sh prod"
+    exit 1
+  fi
+fi
+
 # ── 0. Pre-flight git guard ───────────────────────────────────
 # Запрещаем деплой при расхождении git ↔ working tree ↔ origin.
 # Обход: SKIP_GIT_GUARD=1 (только для критических hotfix владельцем).
-cd "$PROJECT_DIR"
 if [ "${SKIP_GIT_GUARD:-0}" != "1" ]; then
   case "$TARGET" in
     dev)  GUARD_BRANCH="dev" ;;
