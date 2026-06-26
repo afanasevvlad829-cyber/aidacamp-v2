@@ -195,37 +195,14 @@ rsync -az --checksum --stats \
   --exclude='node_modules/' \
   --exclude='backup-*' \
   --exclude='client/' \
-  --exclude='images/hero/' \
-  --exclude='images/gallery/' \
-  --exclude='images/team/' \
+  --exclude='images/' \
+  --exclude='video/' \
   --exclude='data/' \
   -e "ssh -i $SSH_KEY" \
   dist/client/ "${SSH_HOST}:${REMOTE_DIR}client/"
 
-# ── 2. Изображения root (hero-mobile, hero-desktop, og, etc) ──
-echo ""
-echo "🖼️  Синхронизация изображений root..."
-rsync -az --stats \
-  --include='*.webp' --include='*.avif' --include='*.svg' --include='*.png' --include='*.jpg' --include='*.jpeg' --include='*.gif' \
-  --include='*/' --exclude='*' \
-  -e "ssh -i $SSH_KEY" \
-  dist/client/images/ "${SSH_HOST}:${REMOTE_DIR}client/images/"
-
-# ── 2b. Галерея (admin-uploaded photos) ───────────────────────
-# Фото загружаются через админку в /var/www/aidacamp-dev/current/images/gallery/
-# и не входят в сборку. На prod синхронизируем с dev вручную.
-if [ "$TARGET" = "prod" ]; then
-  echo ""
-  echo "🖼️  Синхронизация галереи dev → prod..."
-  ssh -i "$SSH_KEY" "$SSH_HOST" \
-    "rsync -a /var/www/aidacamp-dev/current/images/gallery/ /var/www/aidacamp/current/images/gallery/"
-  echo "  ✅ Галерея синхронизирована"
-fi
-
-# ── 2c. DEV: статика → плоский корень nginx (/var/www/aidacamp-dev/) ───────
-# На dev nginx отдаёт статику из ПЛОСКОГО корня, а не из current/ (см. инцидент
-# flat-root). Дублируем статику туда БЕЗ --delete — ничего не удаляем,
-# .env / data/ / images/gallery/ остаются нетронутыми.
+# ── 2b. DEV: статика → плоский корень nginx (/var/www/aidacamp-dev/) ───────
+# images/ и video/ — симлинки на /var/www/aidacamp-media/, не трогаем.
 if [ "$TARGET" = "dev" ]; then
   FLAT_DIR="/var/www/aidacamp-dev/"
   echo ""
@@ -237,16 +214,11 @@ if [ "$TARGET" = "dev" ]; then
     --exclude='backup-*' \
     --exclude='current/' \
     --exclude='client/' \
-    --exclude='images/gallery/' \
+    --exclude='images/' \
+    --exclude='video/' \
     --exclude='data/' \
     -e "ssh -i $SSH_KEY" \
     dist/client/ "$SSH_HOST:$FLAT_DIR"
-  echo "🖼️  [dev] Картинки root → плоский корень..."
-  rsync -az \
-    --include='*.webp' --include='*.avif' --include='*.svg' --include='*.png' --include='*.jpg' --include='*.jpeg' --include='*.gif' \
-    --include='*/' --exclude='*' \
-    -e "ssh -i $SSH_KEY" \
-    dist/client/images/ "$SSH_HOST:${FLAT_DIR}images/"
 fi
 
 # ── 3. SSR ────────────────────────────────────────────────────
