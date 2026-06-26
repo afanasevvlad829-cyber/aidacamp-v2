@@ -15,8 +15,9 @@
  *   - title: заголовок над калькулятором (по умолчанию "Калькулятор налогового вычета")
  */
 
-import { mainShifts, PRICE_S2 } from '../data/shifts';
+import { PRICE_S2, EDU_RESID_PER_DAY, NDFL_RATE, EDU_BASE_CAP } from '../data/shifts';
 import { fmtPrice } from '../data/dynamicPrices';
+import { getShiftSelectOptions } from '../utils/shiftSelectOptions';
 
 interface Props {
   variant?: 'full' | 'compact';
@@ -25,20 +26,8 @@ interface Props {
 
 const { variant = 'full', title = 'Калькулятор налогового вычета' } = Astro.props;
 
-// Единый источник правды — data/shifts.ts.
-// Парсим цену из строки "74 900 ₽" и дни из "10 дней" чтобы не дублировать числа.
-const parsePrice = (s: string) => parseInt(s.replace(/[^\d]/g, ''), 10) || 0;
-const parseDays = (s: string) => parseInt(s, 10) || 0;
-
-const orderedShifts = [...mainShifts];
-
-const shifts = orderedShifts.map((s) => ({
-  id: s.id,
-  label: `${s.name} — ${s.dates}, ${s.duration}`,
-  price: parsePrice(s.price),
-  days: parseDays(s.duration),
-  popular: s.popular ?? false,
-}));
+// Опции смен (цена/дни из data/shifts.ts) — единый источник, без дублирования парсинга.
+const shifts = getShiftSelectOptions();
 ---
 
 <section class="tax-calc mx-auto my-8 max-w-[720px] rounded-[16px] border border-orange-100 bg-white p-6 md:p-8 shadow-[0_4px_20px_rgba(236,124,0,0.08)]">
@@ -64,6 +53,9 @@ const shifts = orderedShifts.map((s) => ({
     <select
       id="tc-shift"
       class="w-full appearance-none rounded-[10px] border border-slate-300 bg-white px-4 py-3 pr-10 text-base text-slate-900 focus:border-orange-500 focus:outline-none"
+      data-edu-resid={EDU_RESID_PER_DAY}
+      data-ndfl-rate={NDFL_RATE}
+      data-edu-cap={EDU_BASE_CAP}
     >
       <option value="" disabled>— Выберите смену —</option>
       {shifts.map((s) => (
@@ -200,9 +192,10 @@ const shifts = orderedShifts.map((s) => ({
     const priceEl = document.getElementById('tc-price');
     const daysEl = document.getElementById('tc-days');
 
-    const RESIDENTIAL_PER_DAY = 3800;
-    const DEDUCTION_LIMIT_CHILD = 110000;
-    const DEDUCTION_RATE = 0.13;
+    // Константы вычета — из data/shifts.ts через data-атрибуты <select> (единый источник).
+    const RESIDENTIAL_PER_DAY = Number(sel?.dataset.eduResid) || 3800;
+    const DEDUCTION_LIMIT_CHILD = Number(sel?.dataset.eduCap) || 110000;
+    const DEDUCTION_RATE = Number(sel?.dataset.ndflRate) || 0.13;
 
     const fmt = (n) => n.toLocaleString('ru-RU');
     const roundTo100 = (n) => Math.round(n / 100) * 100;
