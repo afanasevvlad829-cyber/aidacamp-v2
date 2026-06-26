@@ -213,7 +213,7 @@ if [ "$TARGET" = "dev" ]; then
   FLAT_DIR="/var/www/aidacamp-dev/"
   echo ""
   echo "🚀 [dev] Статика → плоский корень nginx ($FLAT_DIR)..."
-  rsync -az --stats \
+  rsync -az --checksum --stats \
     --exclude='.env' \
     --exclude='server/' \
     --exclude='node_modules/' \
@@ -235,7 +235,7 @@ fi
 # ── 3. SSR ────────────────────────────────────────────────────
 echo ""
 echo "🔄 Деплой SSR-сервера..."
-rsync -az --delete --stats \
+rsync -az --checksum --delete --stats \
   -e "ssh -i $SSH_KEY" \
   dist/server/ "$SSH_HOST:$SSR_DIR"
 
