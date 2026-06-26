@@ -3,8 +3,6 @@ import { mainShifts, displayShifts } from '../data/shifts';
 import { getShiftPhase } from '../data/dynamicPrices';
 import ShiftCard from './shifts/ShiftCard.astro';
 import ShiftRetroCard from './shifts/ShiftRetroCard.astro';
-import ShiftCardCombined from './shifts/ShiftCardCombined.astro';
-import ShortShiftsBlock from './shifts/ShortShiftsBlock.astro';
 import FortuneShiftCard from './shifts/FortuneShiftCard.astro';
 import ShiftBookModal from './shifts/ShiftBookModal.astro';
 import ShiftCalendarModal from './shifts/ShiftCalendarModal.astro';
@@ -114,11 +112,6 @@ const nowDate = new Date();
 
     <!-- Dot-индикаторы карусели (генерируются JS) -->
     <div data-shifts-dots class="flex justify-center gap-2 mt-3 md:hidden" aria-hidden="true"></div>
-
-    <!-- stub div for old JS that refs data-closed-panel (no-op) -->
-    <div class="hidden">
-      <div id="closed-shift-panel" data-closed-panel></div>
-    </div>
     </div>
   </div>
 </section>
@@ -346,56 +339,6 @@ const nowDate = new Date();
         if (chevron) chevron.style.transform = expanded ? '' : 'rotate(180deg)';
       });
     });
-
-    // === MOBILE CAROUSEL TABS ===
-    const carousel = document.querySelector<HTMLElement>('[data-shifts-carousel]');
-    const tabs = document.querySelectorAll<HTMLButtonElement>('[data-shifts-tab]');
-    const dots = document.querySelectorAll<HTMLElement>('[data-shifts-dot]');
-
-    if (carousel && tabs.length) {
-      const cards = Array.from(carousel.children) as HTMLElement[];
-
-      tabs.forEach((tab) => {
-        tab.addEventListener('click', () => {
-          const idx = parseInt(tab.dataset.shiftsTab || '0', 10);
-          cards[idx]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
-        });
-      });
-
-      // Swipe hint: скрыть если уже свайпали раньше
-      const swipeHint = document.querySelector<HTMLElement>('[data-shifts-swipe-hint]');
-      if (swipeHint && localStorage.getItem(STORAGE_KEYS.shiftsSwiped)) {
-        swipeHint.style.display = 'none';
-      }
-
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const idx = cards.indexOf(entry.target as HTMLElement);
-            tabs.forEach((t, ti) => {
-              t.classList.toggle('bg-primary-light', ti === idx);
-              t.classList.toggle('text-white', ti === idx);
-              t.classList.toggle('bg-surface', ti !== idx);
-              t.classList.toggle('text-body-muted', ti !== idx);
-            });
-            dots.forEach((d, di) => {
-              const isActive = di === idx;
-              d.classList.toggle('bg-primary-dark', isActive);
-              d.classList.toggle('w-6', isActive);
-              d.classList.toggle('bg-border', !isActive);
-              d.classList.toggle('w-2', !isActive);
-              d.setAttribute('aria-current', isActive ? 'true' : 'false');
-            });
-            if (idx > 0 && swipeHint) {
-              swipeHint.classList.add('opacity-0');
-              localStorage.setItem(STORAGE_KEYS.shiftsSwiped, '1');
-            }
-          }
-        });
-      }, { root: carousel, threshold: 0.6 });
-
-      cards.forEach((card) => observer.observe(card));
-    }
 
     // === BOOKING MODAL — лишь биндинг кнопок открытия + заполнение данных смены.
     // Вся логика валидации/сабмита формы — внутри ShiftBookModal.astro (self-contained).
@@ -685,22 +628,4 @@ const nowDate = new Date();
     if (pill) pill.textContent = `Осталось ${adj}`;
   });
 })();
-</script>
-
-<script>
-  function initClosedShift() {
-    const toggle = document.querySelector('[data-closed-toggle]') as HTMLButtonElement | null;
-    const panel  = document.querySelector('[data-closed-panel]') as HTMLElement | null;
-    const chevron = document.querySelector('[data-closed-chevron]') as HTMLElement | null;
-    if (!toggle || !panel) return;
-    if ((toggle as any).__closedReady) return;
-    (toggle as any).__closedReady = true;
-    toggle.addEventListener('click', () => {
-      const nowHidden = panel.classList.toggle('hidden');
-      toggle.setAttribute('aria-expanded', String(!nowHidden));
-      if (chevron) chevron.style.transform = nowHidden ? '' : 'rotate(180deg)';
-    });
-  }
-  document.addEventListener('astro:page-load', initClosedShift);
-  if (document.readyState !== 'loading') initClosedShift();
 </script>
