@@ -272,40 +272,66 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
   const closeBtn = document.getElementById('vgLbClose');
   const overlay  = document.getElementById('vgLbOverlay');
 
+  let cues = [];
+
+  function parseVTTTime(s) {
+    const p = s.trim().split(':');
+    return p.length === 3
+      ? +p[0] * 3600 + +p[1] * 60 + parseFloat(p[2])
+      : +p[0] * 60 + parseFloat(p[1]);
+  }
+
+  function parseVTT(text) {
+    const result = [];
+    for (const block of text.split(/\n\n+/)) {
+      const lines = block.trim().split('\n');
+      const ti = lines.findIndex((l) => l.includes('-->'));
+      if (ti < 0) continue;
+      const [s, e] = lines[ti].split('-->');
+      const txt = lines.slice(ti + 1).join('\n').trim();
+      if (txt) result.push({ start: parseVTTTime(s), end: parseVTTTime(e), text: txt });
+    }
+    return result;
+  }
+
+  function updateSubs() {
+    const t = video.currentTime;
+    const cue = cues.find((c) => t >= c.start && t <= c.end);
+    if (cue) {
+      subsEl.textContent = cue.text;
+      subsEl.style.display = 'block';
+    } else {
+      subsEl.style.display = 'none';
+    }
+  }
+
   function openLb(src, trackSrc, poster, label) {
     titleEl.textContent = label;
     video.poster = poster;
-    trackEl.setAttribute('src', trackSrc);
     video.src = src;
     lb.removeAttribute('hidden');
     document.body.style.overflow = 'hidden';
     subsEl.style.display = 'none';
-    subsEl.textContent = '';
-    video.load();
-    video.play().catch(() => {});
-
-    /* Субтитры через TextTrack API */
-    video.addEventListener('loadedmetadata', () => {
-      const tt = video.textTracks[0];
-      if (!tt) return;
-      tt.mode = 'hidden'; /* читаем программно, не нативный рендер */
-      tt.addEventListener('cuechange', () => {
-        const cue = tt.activeCues && tt.activeCues[0];
-        if (cue) {
-          subsEl.textContent = cue.text;
-          subsEl.style.display = 'block';
-        } else {
-          subsEl.style.display = 'none';
-        }
-      });
-    }, { once: true });
+    cues = [];
+    video.removeEventListener('timeupdate', updateSubs);
+    video.play().catch(() => {
+      video.addEventListener('canplay', () => video.play().catch(() => {}), { once: true });
+    });
+    fetch(trackSrc)
+      .then((r) => r.text())
+      .then((txt) => {
+        cues = parseVTT(txt);
+        video.addEventListener('timeupdate', updateSubs);
+      })
+      .catch(() => {});
   }
 
   function closeLb() {
     video.pause();
+    video.removeEventListener('timeupdate', updateSubs);
+    cues = [];
     subsEl.style.display = 'none';
     video.removeAttribute('src');
-    trackEl.removeAttribute('src');
     video.load();
     lb.setAttribute('hidden', '');
     document.body.style.overflow = '';
