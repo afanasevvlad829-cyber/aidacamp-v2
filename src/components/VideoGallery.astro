@@ -315,7 +315,11 @@ import Hls from 'hls.js';
       hlsInstance = new Hls({ startLevel: -1 });
       hlsInstance.loadSource(hlsSrc);
       hlsInstance.attachMedia(videoEl);
-      hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => p.play());
+      // play() синхронно — в стеке пользовательского жеста (click).
+      // Браузер разрешит воспроизведение даже до загрузки первого сегмента.
+      p.play().catch(() => {
+        hlsInstance?.on(Hls.Events.MANIFEST_PARSED, () => p.play());
+      });
     } else if (videoEl.canPlayType('application/vnd.apple.mpegurl') && hlsSrc) {
       // Safari — нативный HLS
       videoEl.poster = poster;
