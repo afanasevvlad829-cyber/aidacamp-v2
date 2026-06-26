@@ -23,6 +23,7 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
       <button
         class="vg-card"
         data-src={`${baseUrl}/${v.file}?v=2`}
+        data-hls={`${baseUrl}/hls/${v.file.replace('.mp4', '')}/playlist.m3u8`}
         data-poster={v.poster}
         data-track={v.track ?? `${baseUrl}/${v.file.replace('.mp4', '.vtt')}?v=2`}
         data-title={v.title}
@@ -54,6 +55,7 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
           <button
             class="vg-card"
             data-src={`${baseUrl}/${v.file}?v=2`}
+            data-hls={`${baseUrl}/hls/${v.file.replace('.mp4', '')}/playlist.m3u8`}
             data-poster={v.poster}
             data-track={v.track ?? `${baseUrl}/${v.file.replace('.mp4', '.vtt')}?v=2`}
             data-title={v.title}
@@ -266,6 +268,7 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
 
 <script>
 import Plyr from 'plyr';
+import Hls from 'hls.js';
 
 (() => {
   const lb       = document.getElementById('vgLb');
@@ -274,6 +277,7 @@ import Plyr from 'plyr';
   const overlay  = document.getElementById('vgLbOverlay');
 
   let player = null;
+  let hlsInstance = null;
 
   function getPlayer() {
     if (!player) {
@@ -285,22 +289,54 @@ import Plyr from 'plyr';
     return player;
   }
 
-  function openLb(src, trackSrc, poster, label) {
+  function applyTrack(videoEl, trackSrc) {
+    videoEl.querySelectorAll('track').forEach((t) => t.remove());
+    if (!trackSrc) return;
+    const t = document.createElement('track');
+    t.kind = 'captions'; t.label = 'Субтитры';
+    t.srclang = 'ru'; t.src = trackSrc; t.default = true;
+    videoEl.appendChild(t);
+  }
+
+  function openLb(hlsSrc, mp4Src, trackSrc, poster, label) {
     titleEl.textContent = label;
     lb.removeAttribute('hidden');
     document.body.style.overflow = 'hidden';
 
     const p = getPlayer();
-    p.source = {
-      type: 'video',
-      poster,
-      sources: [{ src, type: 'video/mp4' }],
-      tracks: [{ kind: 'captions', label: 'Субтитры', srclang: 'ru', src: trackSrc, default: true }],
-    };
-    p.play();
+    const videoEl = document.querySelector('#vgLbVideo');
+
+    if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+
+    if (Hls.isSupported() && hlsSrc) {
+      // Chrome / Firefox — HLS через hls.js
+      videoEl.poster = poster;
+      applyTrack(videoEl, trackSrc);
+      hlsInstance = new Hls({ startLevel: -1 });
+      hlsInstance.loadSource(hlsSrc);
+      hlsInstance.attachMedia(videoEl);
+      hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => p.play());
+    } else if (videoEl.canPlayType('application/vnd.apple.mpegurl') && hlsSrc) {
+      // Safari — нативный HLS
+      videoEl.poster = poster;
+      videoEl.src = hlsSrc;
+      applyTrack(videoEl, trackSrc);
+      p.play();
+    } else {
+      // Fallback — MP4
+      p.source = {
+        type: 'video', poster,
+        sources: [{ src: mp4Src, type: 'video/mp4' }],
+        tracks: [{ kind: 'captions', label: 'Субтитры', srclang: 'ru', src: trackSrc, default: true }],
+      };
+      p.play();
+    }
   }
 
   function closeLb() {
+    if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
+    const videoEl = document.querySelector('#vgLbVideo');
+    if (videoEl) { videoEl.pause(); videoEl.removeAttribute('src'); }
     if (player) player.stop();
     lb.setAttribute('hidden', '');
     document.body.style.overflow = '';
@@ -313,6 +349,7 @@ import Plyr from 'plyr';
   document.querySelectorAll('.vg-card').forEach((card) => {
     card.addEventListener('click', () => {
       openLb(
+        card.dataset.hls,
         card.dataset.src,
         card.dataset.track,
         card.dataset.poster,
