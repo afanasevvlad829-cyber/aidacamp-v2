@@ -1,6 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
 import VideoGallery from '../components/VideoGallery.astro';
+import ArticleBottomCta from '../components/ArticleBottomCta.astro';
 
 const videos = [
   {
@@ -58,8 +60,10 @@ const BASE = '/videos/darya';
   description="Директор IT-лагеря АйДаКемп Дарья Афанасьева в программе «Родительское собрание» на канале ОТР — о современных лагерях, телефонах и детях."
 >
 
+  <Header />
+
   <!-- Hero -->
-  <section class="tv-hero">
+  <section class="tv-hero" id="tvHero">
     <div class="tv-hero__inner">
       <p class="tv-hero__label">Канал ОТР · Программа «Родительское собрание»</p>
       <h1 class="tv-hero__title">Дарья Афанасьева<br>на федеральном телевидении</h1>
@@ -88,16 +92,109 @@ const BASE = '/videos/darya';
 
   <VideoGallery videos={videos} baseUrl={BASE} />
 
+  <div class="py-10">
+    <ArticleBottomCta
+      bookingTitle="Запишите ребёнка на ближайшую смену"
+      bookingSubtitle="Ответим за 10 минут. Покажем программу и расскажем про свободные места."
+    />
+  </div>
+
 </Base>
+
+<script>
+(function() {
+  const hero = document.getElementById('tvHero');
+  if (!hero) return;
+  const syms = ['</>','{}','01','&&','[ ]','!=','++','//','( )','0x','>>','?:'];
+  syms.forEach(function(s, i) {
+    var el = document.createElement('span');
+    el.className = 'tv-hero__sym';
+    el.textContent = s;
+    var x = 4 + Math.floor(i * 8.3) % 92;
+    var y = 8 + Math.floor(i * 13.7) % 80;
+    var dur = 5 + (i % 4);
+    var sz = 13 + (i % 3) * 4;
+    var op = 0.25 + (i % 4) * 0.08;
+    var rotFrom = -3 - (i % 4);
+    var rotTo = 3 + (i % 4);
+    el.style.cssText =
+      'left:' + x + '%;top:' + y + '%;' +
+      'font-size:' + sz + 'px;' +
+      '--dur:' + dur + 's;--delay:' + (i * 0.4) + 's;' +
+      '--op:' + op + ';--rot-from:' + rotFrom + 'deg;--rot-to:' + rotTo + 'deg;';
+    hero.appendChild(el);
+  });
+})();
+</script>
 
 <style>
 /* ── Hero ──────────────────────────────────────────── */
 .tv-hero {
-  background: linear-gradient(135deg, #0d1a2b 0%, #152a46 100%);
-  padding: 64px 20px 56px;
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(to bottom,
+      rgba(6,15,30,0.18) 0%,
+      rgba(6,15,30,0.4)  40%,
+      rgba(6,15,30,0.78) 68%,
+      rgba(6,15,30,0.90) 100%),
+    url('/images/tv-hero-bg.jpg') center/cover no-repeat;
+  padding: 100px 20px 64px;
   text-align: center;
+  isolation: isolate;
 }
-.tv-hero__inner { max-width: 720px; margin: 0 auto; }
+@media (min-width: 768px) {
+  .tv-hero { padding-top: 120px; }
+}
+
+/* мелкие звёзды */
+.tv-hero::before {
+  content: '';
+  position: absolute; inset: 0; z-index: 0;
+  background:
+    radial-gradient(circle, rgba(255,255,255,0.28) 1px, transparent 0) 0 0 / 30px 30px,
+    radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 0) 15px 15px / 30px 30px;
+  animation: starsA 22s linear infinite;
+  pointer-events: none;
+}
+
+/* крупные звёзды + оранжевые акценты */
+.tv-hero::after {
+  content: '';
+  position: absolute; inset: 0; z-index: 0;
+  background:
+    radial-gradient(circle, rgba(236,155,68,0.18) 1.5px, transparent 0) 0 0 / 74px 74px,
+    radial-gradient(circle, rgba(255,255,255,0.1) 1.5px, transparent 0) 37px 37px / 74px 74px;
+  animation: starsB 40s linear infinite reverse;
+  pointer-events: none;
+}
+
+@keyframes starsA {
+  to { transform: translate(30px, 30px); }
+}
+@keyframes starsB {
+  to { transform: translate(74px, 74px); }
+}
+
+/* плавающие символы кода */
+.tv-hero__sym {
+  position: absolute;
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  color: #ffffff;
+  pointer-events: none;
+  user-select: none;
+  z-index: 2;
+  animation: symFloat var(--dur, 6s) ease-in-out infinite alternate;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes symFloat {
+  from { transform: translateY(0) rotate(var(--rot-from, -4deg)); opacity: var(--op, 0.25); }
+  to   { transform: translateY(-18px) rotate(var(--rot-to, 4deg)); opacity: calc(var(--op, 0.25) * 1.5); }
+}
+
+.tv-hero__inner { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; }
 .tv-hero__label {
   font-size: 13px;
   font-weight: 600;
