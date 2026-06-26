@@ -55,6 +55,7 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
             class="vg-card"
             data-src={`${baseUrl}/${v.file}`}
             data-poster={v.poster}
+            data-track={v.track ?? `${baseUrl}/${v.file.replace('.mp4', '.vtt')}`}
             data-title={v.title}
             aria-label={`Смотреть: ${v.title}`}
           >
@@ -93,15 +94,27 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
     </button>
     <div class="vg-lb__title" id="vgLbTitle"></div>
     <div class="vg-lb__video-wrap">
-      <video id="vgLbVideo" class="vg-lb__video" controls playsinline>
-        <track id="vgLbTrack" kind="subtitles" srclang="ru" default>
-      </video>
-      <div class="vg-lb__subs" id="vgLbSubs"></div>
+      <video id="vgLbVideo" playsinline></video>
     </div>
   </div>
 </div>
 
 <style>
+/* ── Plyr theme ─────────────────────────────────────────── */
+@import 'plyr/dist/plyr.css';
+:root {
+  --plyr-color-main: #ec9b44;
+  --plyr-captions-background: rgba(238, 70, 95, 0.92);
+  --plyr-captions-text-color: #fff;
+  --plyr-font-size-captions-medium: clamp(18px, 3vw, 28px);
+}
+.plyr__caption {
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  padding: 5px 14px;
+  border-radius: 6px;
+}
+
 /* ── Card ─────────────────────────────────────────────── */
 .vg-card {
   display: block; width: 100%;
@@ -227,6 +240,7 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
   cursor: pointer; color: #fff;
   display: flex; align-items: center; justify-content: center;
   transition: background 0.15s; padding: 0;
+  z-index: 2;
 }
 .vg-lb__close:hover { background: rgba(255,255,255,0.3); }
 .vg-lb__close svg { width: 18px; height: 18px; }
@@ -236,103 +250,42 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
   color: rgba(255,255,255,0.7); margin-bottom: 10px; padding-left: 2px;
 }
 .vg-lb__video-wrap {
-  aspect-ratio: 16/9; background: #000;
   border-radius: 12px; overflow: hidden;
   box-shadow: 0 24px 80px rgba(0,0,0,0.6);
 }
-.vg-lb__video { width: 100%; height: 100%; display: block; }
-
-.vg-lb__subs {
-  position: absolute;
-  bottom: 56px; /* выше нативных контролов */
-  left: 50%; transform: translateX(-50%);
-  max-width: 90%;
-  background: rgba(0,0,0,0.78);
-  color: #fff;
-  font-size: clamp(14px, 2.2vw, 20px);
-  font-family: Arial, sans-serif;
-  line-height: 1.4;
-  padding: 6px 14px;
-  border-radius: 4px;
-  text-align: center;
-  pointer-events: none;
-  white-space: pre-wrap;
-  display: none;
-}
+.vg-lb__video-wrap .plyr { border-radius: 12px; }
 </style>
 
 <script>
+import Plyr from 'plyr';
+
 (() => {
-  /* ── Lightbox ── */
   const lb       = document.getElementById('vgLb');
-  const video    = document.getElementById('vgLbVideo');
-  const trackEl  = document.getElementById('vgLbTrack');
-  const subsEl   = document.getElementById('vgLbSubs');
   const titleEl  = document.getElementById('vgLbTitle');
   const closeBtn = document.getElementById('vgLbClose');
   const overlay  = document.getElementById('vgLbOverlay');
 
-  let cues = [];
-
-  function parseVTTTime(s) {
-    const p = s.trim().split(':');
-    return p.length === 3
-      ? +p[0] * 3600 + +p[1] * 60 + parseFloat(p[2])
-      : +p[0] * 60 + parseFloat(p[1]);
-  }
-
-  function parseVTT(text) {
-    const result = [];
-    for (const block of text.split(/\n\n+/)) {
-      const lines = block.trim().split('\n');
-      const ti = lines.findIndex((l) => l.includes('-->'));
-      if (ti < 0) continue;
-      const [s, e] = lines[ti].split('-->');
-      const txt = lines.slice(ti + 1).join('\n').trim();
-      if (txt) result.push({ start: parseVTTTime(s), end: parseVTTTime(e), text: txt });
-    }
-    return result;
-  }
-
-  function updateSubs() {
-    const t = video.currentTime;
-    const cue = cues.find((c) => t >= c.start && t <= c.end);
-    if (cue) {
-      subsEl.textContent = cue.text;
-      subsEl.style.display = 'block';
-    } else {
-      subsEl.style.display = 'none';
-    }
-  }
+  const player = new Plyr('#vgLbVideo', {
+    captions: { active: true, language: 'ru', update: true },
+    controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'captions', 'fullscreen'],
+  });
 
   function openLb(src, trackSrc, poster, label) {
     titleEl.textContent = label;
-    video.poster = poster;
-    video.src = src;
     lb.removeAttribute('hidden');
     document.body.style.overflow = 'hidden';
-    subsEl.style.display = 'none';
-    cues = [];
-    video.removeEventListener('timeupdate', updateSubs);
-    video.play().catch(() => {
-      video.addEventListener('canplay', () => video.play().catch(() => {}), { once: true });
-    });
-    fetch(trackSrc)
-      .then((r) => r.text())
-      .then((txt) => {
-        cues = parseVTT(txt);
-        video.addEventListener('timeupdate', updateSubs);
-      })
-      .catch(() => {});
+
+    player.source = {
+      type: 'video',
+      poster,
+      sources: [{ src, type: 'video/mp4' }],
+      tracks: [{ kind: 'captions', label: 'Субтитры', srclang: 'ru', src: trackSrc, default: true }],
+    };
+    player.play();
   }
 
   function closeLb() {
-    video.pause();
-    video.removeEventListener('timeupdate', updateSubs);
-    cues = [];
-    subsEl.style.display = 'none';
-    video.removeAttribute('src');
-    video.load();
+    player.stop();
     lb.setAttribute('hidden', '');
     document.body.style.overflow = '';
   }
@@ -343,14 +296,19 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
 
   document.querySelectorAll('.vg-card').forEach((card) => {
     card.addEventListener('click', () => {
-      openLb(card.dataset.src, card.dataset.track, card.dataset.poster, card.dataset.title);
+      openLb(
+        card.dataset.src,
+        card.dataset.track,
+        card.dataset.poster,
+        card.dataset.title,
+      );
     });
   });
 
   /* ── Carousel dots ── */
   const track = document.getElementById('vgTrack');
   const dots  = document.querySelectorAll('#vgDots .vg-dot');
-  if (!track || !dots.length) { return; }
+  if (!track || !dots.length) return;
 
   function setActive(i) {
     dots.forEach((d, idx) => d.classList.toggle('is-active', idx === i));
@@ -380,7 +338,7 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
       }
       if (best >= 0 && bestRatio > 0.4) setActive(best);
     },
-    { root: track, threshold: [0.4, 0.6, 0.8] }
+    { root: track, threshold: [0.4, 0.6, 0.8] },
   );
   track.querySelectorAll('.vg-slide').forEach((s) => observer.observe(s));
 })();
