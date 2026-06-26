@@ -265,27 +265,35 @@ import Plyr from 'plyr';
   const closeBtn = document.getElementById('vgLbClose');
   const overlay  = document.getElementById('vgLbOverlay');
 
-  const player = new Plyr('#vgLbVideo', {
-    captions: { active: true, language: 'ru', update: true },
-    controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'captions', 'fullscreen'],
-  });
+  let player = null;
+
+  function getPlayer() {
+    if (!player) {
+      player = new Plyr('#vgLbVideo', {
+        captions: { active: true, language: 'ru', update: true },
+        controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'captions', 'fullscreen'],
+      });
+    }
+    return player;
+  }
 
   function openLb(src, trackSrc, poster, label) {
     titleEl.textContent = label;
     lb.removeAttribute('hidden');
     document.body.style.overflow = 'hidden';
 
-    player.source = {
+    const p = getPlayer();
+    p.source = {
       type: 'video',
       poster,
       sources: [{ src, type: 'video/mp4' }],
       tracks: [{ kind: 'captions', label: 'Субтитры', srclang: 'ru', src: trackSrc, default: true }],
     };
-    player.play();
+    p.play();
   }
 
   function closeLb() {
-    player.stop();
+    if (player) player.stop();
     lb.setAttribute('hidden', '');
     document.body.style.overflow = '';
   }
