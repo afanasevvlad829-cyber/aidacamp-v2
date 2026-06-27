@@ -54,6 +54,113 @@ const fmt = (n: number) => n.toLocaleString('ru-RU');
     </div>
   </section>
 
+  <!-- ── ЯКОРНАЯ НАВИГАЦИЯ ── -->
+  <nav class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-100 shadow-sm">
+    <div class="mx-auto max-w-4xl px-4">
+      <ul class="flex gap-1 overflow-x-auto py-3 scrollbar-none">
+        {[
+          { href: '#drug',      label: 'Едете вдвоём' },
+          { href: '#pyatero',   label: 'Пятеро друзей' },
+          { href: '#desyataya', label: '9 → 10-я за 100 ₽' },
+        ].map(({ href, label }) => (
+          <li class="shrink-0">
+            <a
+              href={href}
+              class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 text-[15px] font-medium text-slate-700 transition hover:border-primary hover:bg-primary/5 hover:text-primary"
+            >
+              <i class="bi bi-chevron-right text-[11px] text-primary" aria-hidden="true"></i>
+              {label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ── МЕРЧ ── -->
+  <section class="bg-white border-b border-slate-100 py-10 md:py-14">
+    <div class="mx-auto max-w-4xl px-4">
+      <div class="text-[11px] font-bold tracking-[.1em] uppercase text-primary mb-3">Фирменный мерч</div>
+      <h2 class="text-[26px] md:text-[34px] font-bold leading-[1.1] tracking-[-0.02em] text-slate-900 mb-8">
+        Худи АйДаКемп Junior — обоим участникам акции
+      </h2>
+
+      <div class="grid md:grid-cols-2 gap-8 items-center">
+        <!-- Фото с лайтбоксом -->
+        <button
+          type="button"
+          id="merch-open"
+          class="group relative w-full rounded-[20px] overflow-hidden border border-slate-200 shadow-[0_4px_16px_rgba(15,23,42,.06)] cursor-zoom-in"
+          aria-label="Посмотреть худи крупнее"
+        >
+          <img
+            src="/images/merch-hoodie-junior.avif"
+            alt="Фирменное худи АйДаКемп Junior — оранжевое, с лого"
+            width="640" height="640"
+            loading="eager"
+            class="w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          >
+          <div class="absolute inset-0 flex items-end justify-end p-4 pointer-events-none">
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 text-[13px] text-white backdrop-blur-sm">
+              <i class="bi bi-zoom-in" aria-hidden="true"></i>
+              Увеличить
+            </span>
+          </div>
+        </button>
+
+        <!-- Описание -->
+        <div class="flex flex-col gap-5">
+          <div class="flex flex-col gap-3">
+            {[
+              { icon: 'stars',          title: 'Оранжевое худи Junior', text: 'Вышитый логотип АйДаКемп, принт с Python-кодом на спине — «# TODO: become a pro»' },
+              { icon: 'people-fill',    title: 'Обоим участникам', text: 'Тот, кто позвал, и тот, кого позвали — оба получают худи' },
+              { icon: 'geo-alt-fill',   title: 'Выдаём при заезде', text: 'В первый день смены, без лишних условий' },
+              { icon: 'shield-check',   title: '1-й сезон — First Deploy', text: 'Коллекция 2026. Носят весь сезон как знак принадлежности к комьюнити' },
+            ].map(item => (
+              <div class="flex items-start gap-3 rounded-[14px] bg-slate-50 border border-slate-100 p-4">
+                <div class="w-9 h-9 rounded-[10px] bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-[18px] shrink-0">
+                  <i class={`bi bi-${item.icon}`} aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div class="text-[16px] font-semibold text-slate-900 mb-0.5">{item.title}</div>
+                  <div class="text-[16px] text-slate-500 leading-snug">{item.text}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Лайтбокс мерча -->
+  <dialog
+    id="merch-lightbox"
+    class="m-0 h-full w-full max-w-none border-0 bg-black/90 p-4 backdrop:bg-black/90 outline-none"
+    aria-label="Просмотр мерча"
+  >
+    <button type="button" id="merch-lightbox-close" aria-label="Закрыть"
+      class="absolute right-4 top-4 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25 transition-colors">
+      <i class="bi bi-x-lg text-[18px]" aria-hidden="true"></i>
+    </button>
+    <div class="flex h-full items-center justify-center">
+      <img
+        src="/images/merch-hoodie-junior.avif"
+        alt="Фирменное худи АйДаКемп Junior"
+        class="max-h-[90vh] max-w-full rounded-[20px] object-contain shadow-2xl"
+        width="1280" height="1280"
+      >
+    </div>
+  </dialog>
+  <script>
+    const btn   = document.getElementById('merch-open');
+    const dlg   = document.getElementById('merch-lightbox') as HTMLDialogElement | null;
+    const close = document.getElementById('merch-lightbox-close');
+    btn?.addEventListener('click', () => dlg?.showModal());
+    close?.addEventListener('click', () => dlg?.close());
+    dlg?.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+  </script>
+
   <!-- ── АКЦИИ ── -->
   <div class="mx-auto max-w-4xl px-4 py-14 md:py-20 space-y-14">
 
@@ -253,12 +360,11 @@ const fmt = (n: number) => n.toLocaleString('ru-RU');
         <a href="/kak-proshla-smena-1" class="group block rounded-[20px] bg-white border border-slate-200 shadow-[0_4px_16px_rgba(15,23,42,.06)] overflow-hidden transition-all hover:-translate-y-[2px] hover:shadow-[0_8px_24px_rgba(15,23,42,.10)]">
           <div class="aspect-[16/9] bg-slate-100 overflow-hidden relative">
             <img
-              src="/images/smena1-cover.avif"
+              src="/images/gallery/smena1-005.jpg"
               alt="Смена 1 АйДаКемп — 30 мая — 8 июня 2026"
               width="640" height="360"
               loading="lazy" decoding="async"
               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              onerror="this.parentElement.classList.add('flex','items-center','justify-center'); this.style.display='none'; this.parentElement.innerHTML += '<i class=\\'bi bi-image text-[48px] text-slate-300\\'></i>'"
             >
             <div class="absolute top-3 left-3">
               <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500 px-3 py-1 text-[12px] font-semibold text-white">
@@ -289,12 +395,11 @@ const fmt = (n: number) => n.toLocaleString('ru-RU');
         <a href="/kak-proshla-smena-2" class="group block rounded-[20px] bg-white border border-slate-200 shadow-[0_4px_16px_rgba(15,23,42,.06)] overflow-hidden transition-all hover:-translate-y-[2px] hover:shadow-[0_8px_24px_rgba(15,23,42,.10)]">
           <div class="aspect-[16/9] bg-slate-100 overflow-hidden relative">
             <img
-              src="/images/smena2-cover.avif"
+              src="/images/gallery/smena2/IMG_3846.avif"
               alt="Смена 2 АйДаКемп — 10–23 июня 2026"
               width="640" height="360"
               loading="lazy" decoding="async"
               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              onerror="this.parentElement.classList.add('flex','items-center','justify-center'); this.style.display='none'; this.parentElement.innerHTML += '<i class=\\'bi bi-image text-[48px] text-slate-300\\'></i>'"
             >
             <div class="absolute top-3 left-3">
               <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500 px-3 py-1 text-[12px] font-semibold text-white">
@@ -334,7 +439,7 @@ const fmt = (n: number) => n.toLocaleString('ru-RU');
       Выберите смену — скидки по акциям применяются при записи через менеджера.
     </p>
 
-    <Shifts />
+    <Shifts hideFriendBanner />
   </section>
 
   <!-- ── ФИНАЛЬНЫЙ CTA ── -->
