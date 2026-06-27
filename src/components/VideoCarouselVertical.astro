@@ -1,0 +1,323 @@
+---
+interface Video {
+  file: string;
+  poster: string;
+  track?: string;
+  num: string;
+  title: string;
+  desc: string;
+  duration: string;
+}
+interface Props {
+  videos: Video[];
+  baseUrl?: string;
+}
+const { videos, baseUrl = '/videos/smena2' } = Astro.props;
+---
+
+<section class="vcv-section">
+  <div class="vcv-track-wrap">
+    <div class="vcv-track" id="vcvTrack">
+      {videos.map((v, i) => (
+        <div class="vcv-slide" data-index={i}>
+          <button
+            class="vcv-card"
+            data-src={`${baseUrl}/${v.file}`}
+            data-poster={v.poster}
+            data-track={v.track ?? `${baseUrl}/${v.file.replace(/\.mp4$/i, '.vtt')}`}
+            data-title={v.title}
+            aria-label={`Смотреть: ${v.title}`}
+          >
+            <div class="vcv-thumb">
+              <img src={v.poster} alt={v.title} class="vcv-img" loading="lazy" width="608" height="1080" />
+              <span class="vcv-play" aria-hidden="true">
+                <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="rgba(0,0,0,0.52)"/><polygon points="26,18 50,32 26,46" fill="white"/></svg>
+              </span>
+              <span class="vcv-dur">{v.duration}</span>
+            </div>
+            <div class="vcv-body">
+              <p class="vcv-num">#{v.num}</p>
+              <p class="vcv-title">{v.title}</p>
+              <p class="vcv-desc">{v.desc}</p>
+            </div>
+          </button>
+        </div>
+      ))}
+    </div>
+  </div>
+  <div class="vcv-dots" id="vcvDots">
+    {videos.map((_, i) => (
+      <button class={`vcv-dot${i === 0 ? ' is-active' : ''}`} data-index={i} aria-label={`Видео ${i + 1}`} />
+    ))}
+  </div>
+</section>
+
+<!-- Лайтбокс -->
+<div class="vcv-lb" id="vcvLb" role="dialog" aria-modal="true" hidden>
+  <div class="vcv-lb__overlay" id="vcvOverlay"></div>
+  <div class="vcv-lb__box">
+    <button class="vcv-lb__close" id="vcvClose" aria-label="Закрыть">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+    <div class="vcv-lb__title" id="vcvTitle"></div>
+    <div class="vcv-lb__wrap">
+      <video id="vcvVideo" playsinline></video>
+      <div id="vcvKaraoke" class="vcv-karaoke" aria-live="polite" aria-atomic="true"></div>
+    </div>
+  </div>
+</div>
+
+<style is:global>
+@import 'plyr/dist/plyr.css';
+:root { --plyr-color-main: #ec9b44; }
+.vcv-lb__wrap .plyr { width: 100%; height: 100%; border-radius: 16px; }
+</style>
+
+<style>
+.vcv-section { padding: 24px 0 36px; background: #f4f6f8; }
+
+.vcv-track-wrap {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+}
+.vcv-track {
+  display: flex; gap: 16px;
+  overflow-x: auto; scroll-snap-type: x mandatory;
+  scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 4px 0 8px;
+  padding-left: calc((100% - min(56vw, 260px)) / 2);
+  padding-right: calc((100% - min(56vw, 260px)) / 2);
+}
+.vcv-track::-webkit-scrollbar { display: none; }
+.vcv-slide {
+  flex: 0 0 min(56vw, 260px);
+  scroll-snap-align: center;
+}
+
+@media (min-width: 768px) {
+  .vcv-track {
+    padding-left: calc((100% - 4 * 220px - 3 * 16px) / 2);
+    padding-right: calc((100% - 4 * 220px - 3 * 16px) / 2);
+  }
+  .vcv-slide { flex: 0 0 220px; }
+}
+
+.vcv-card {
+  display: block; width: 100%;
+  background: #fff; border: 1px solid #e8ecf0;
+  border-radius: 20px; overflow: hidden;
+  cursor: pointer; text-align: left; padding: 0;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+.vcv-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,0.14); }
+.vcv-card:focus-visible { outline: 3px solid #ec9b44; outline-offset: 3px; }
+
+.vcv-thumb {
+  position: relative; aspect-ratio: 9/16;
+  overflow: hidden; background: #111;
+}
+.vcv-img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s; }
+.vcv-card:hover .vcv-img { transform: scale(1.03); }
+
+.vcv-play {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.vcv-play svg { width: 52px; height: 52px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5)); transition: transform 0.2s; }
+.vcv-card:hover .vcv-play svg { transform: scale(1.12); }
+
+.vcv-dur {
+  position: absolute; bottom: 10px; right: 10px;
+  background: rgba(0,0,0,0.65); color: rgba(255,255,255,0.9);
+  font-size: 12px; font-weight: 600;
+  padding: 2px 7px; border-radius: 5px; pointer-events: none;
+}
+
+.vcv-body { padding: 14px 16px 18px; }
+.vcv-num { font-size: 11px; color: #ec9b44; font-weight: 700; letter-spacing: 0.05em; margin: 0 0 4px; }
+.vcv-title { font-size: 15px; font-weight: 700; color: #1a2a3a; margin: 0 0 6px; line-height: 1.35; }
+.vcv-desc { font-size: 12px; color: #6e788a; margin: 0; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+.vcv-dots { display: flex; justify-content: center; align-items: center; gap: 4px; margin-top: 20px; }
+.vcv-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  border: none; padding: 10px;
+  background-color: rgba(0,0,0,0.2);
+  background-clip: content-box; box-sizing: content-box;
+  cursor: pointer; transition: background-color 0.2s, width 0.2s, border-radius 0.2s;
+}
+.vcv-dot.is-active { background-color: #ec9b44; width: 26px; border-radius: 5px; }
+
+/* Лайтбокс */
+.vcv-lb {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.vcv-lb[hidden] { display: none; }
+.vcv-lb__overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.92); cursor: pointer; }
+.vcv-lb__box {
+  position: relative; z-index: 1;
+  width: 100%;
+  max-width: min(400px, calc(100vh * 9 / 16 - 32px));
+  animation: lbIn 0.2s ease;
+}
+@keyframes lbIn {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.vcv-lb__close {
+  position: absolute; top: -44px; right: 0;
+  width: 36px; height: 36px; border: none;
+  background: rgba(255,255,255,0.15); border-radius: 50%;
+  cursor: pointer; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s; padding: 0; z-index: 2;
+}
+.vcv-lb__close:hover { background: rgba(255,255,255,0.3); }
+.vcv-lb__close svg { width: 18px; height: 18px; }
+.vcv-lb__title { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.7); margin-bottom: 10px; padding-left: 2px; }
+.vcv-lb__wrap {
+  aspect-ratio: 9/16; background: #000;
+  border-radius: 16px; overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.7);
+  position: relative;
+}
+.vcv-karaoke {
+  position: absolute; bottom: 70px; left: 0; right: 0;
+  text-align: center; pointer-events: none; z-index: 10; padding: 0 12px;
+}
+</style>
+
+<script>
+import Plyr from 'plyr';
+
+(() => {
+  const lb      = document.getElementById('vcvLb');
+  const titleEl = document.getElementById('vcvTitle');
+  const closeBtn= document.getElementById('vcvClose');
+  const overlay = document.getElementById('vcvOverlay');
+  const kEl     = document.getElementById('vcvKaraoke');
+
+  const LINE_STYLE = 'display:inline-block;background:rgba(0,0,0,0.88);border-radius:6px;padding:5px 12px;font-size:clamp(14px,3.5vw,18px);font-weight:700;line-height:1.5;letter-spacing:0.01em';
+
+  let player = null, cues = [], rafId = 0;
+
+  function getPlayer() {
+    if (!player) {
+      player = new Plyr('#vcvVideo', {
+        captions: { active: false },
+        controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
+      });
+      player.on('pause', () => cancelAnimationFrame(rafId));
+      player.on('play',  () => { rafId = requestAnimationFrame(rafLoop); });
+    }
+    return player;
+  }
+
+  async function loadVTT(url) {
+    try {
+      const text = await fetch(url).then(r => r.text());
+      const result = [];
+      for (const block of text.split(/\n\n+/)) {
+        const lines = block.trim().split('\n');
+        const ti = lines.findIndex(l => l.includes('-->'));
+        if (ti === -1) continue;
+        const [s, e] = lines[ti].split('-->').map(p => {
+          const parts = p.trim().split(':');
+          return +parts[0] * 3600 + +parts[1] * 60 + parseFloat(parts[2]);
+        });
+        const t = lines.slice(ti + 1).join(' ').trim();
+        if (t && !isNaN(s) && !isNaN(e)) result.push({ s, e, t });
+      }
+      return result;
+    } catch { return []; }
+  }
+
+  function rafLoop() {
+    const videoEl = player?.media;
+    if (videoEl && !videoEl.paused && cues.length) {
+      const t = videoEl.currentTime;
+      const cue = cues.find(c => t >= c.s && t < c.e);
+      if (!cue) { kEl.innerHTML = ''; }
+      else {
+        const words = cue.t.split(' ');
+        const wordDur = (cue.e - cue.s) / words.length;
+        const activeW = Math.min(Math.floor((t - cue.s) / wordDur), words.length - 1);
+        const html = words.map((w, i) => {
+          const col = i < activeW
+            ? 'color:rgba(255,220,0,0.5)'
+            : i === activeW
+              ? 'color:#fff;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000'
+              : 'color:#FFE000;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000';
+          const esc = w.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+          return `<span style="${col}">${esc}</span>`;
+        }).join(' ');
+        kEl.innerHTML = `<span style="${LINE_STYLE}">${html}</span>`;
+      }
+    }
+    rafId = requestAnimationFrame(rafLoop);
+  }
+
+  async function openLb(mp4Src, trackSrc, poster, label) {
+    titleEl.textContent = label;
+    lb.removeAttribute('hidden');
+    document.body.style.overflow = 'hidden';
+    cues = await loadVTT(trackSrc);
+    const p = getPlayer();
+    p.source = { type: 'video', poster, sources: [{ src: mp4Src, type: 'video/mp4' }] };
+    p.play().catch(() => {});
+  }
+
+  function closeLb() {
+    cancelAnimationFrame(rafId);
+    kEl.innerHTML = '';
+    cues = [];
+    if (player) {
+      player.stop();
+      const v = document.querySelector('#vcvVideo');
+      if (v) { v.pause(); v.removeAttribute('src'); v.load(); }
+    }
+    lb.setAttribute('hidden', '');
+    document.body.style.overflow = '';
+  }
+
+  closeBtn.addEventListener('click', closeLb);
+  overlay.addEventListener('click', closeLb);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLb(); });
+
+  document.querySelectorAll('.vcv-card').forEach(card => {
+    card.addEventListener('click', () => {
+      openLb(card.dataset.src, card.dataset.track, card.dataset.poster, card.dataset.title);
+    });
+  });
+
+  const track = document.getElementById('vcvTrack');
+  const dots  = document.querySelectorAll('#vcvDots .vcv-dot');
+  if (!track || !dots.length) return;
+
+  function setActive(i) { dots.forEach((d, idx) => d.classList.toggle('is-active', idx === i)); }
+
+  dots.forEach((dot, i) => {
+    dot.addEventListener('click', () => {
+      const slide = track.children[i];
+      if (slide) track.scrollTo({ left: slide.offsetLeft - (track.offsetWidth - slide.offsetWidth) / 2, behavior: 'smooth' });
+      setActive(i);
+    });
+  });
+
+  const obs = new IntersectionObserver(
+    entries => {
+      let best = -1, bestR = 0;
+      for (const e of entries) { if (e.intersectionRatio > bestR) { bestR = e.intersectionRatio; best = parseInt(e.target.dataset.index ?? '0', 10); } }
+      if (best >= 0 && bestR > 0.4) setActive(best);
+    },
+    { root: track, threshold: [0.4, 0.6, 0.8] }
+  );
+  track.querySelectorAll('.vcv-slide').forEach(s => obs.observe(s));
+})();
+</script>
