@@ -22,10 +22,10 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
     {videos.map((v) => (
       <button
         class="vg-card"
-        data-src={`${baseUrl}/${v.file}?v=3`}
+        data-src={`${baseUrl}/${v.file}?v=4`}
 
         data-poster={v.poster}
-        data-track={v.track ?? `${baseUrl}/${v.file.replace(/\.mp4$/i, '.vtt')}?v=3`}
+        data-track={v.track ?? `${baseUrl}/${v.file.replace(/\.mp4$/i, '.vtt')}?v=4`}
         data-title={v.title}
         aria-label={`Смотреть: ${v.title}`}
       >
@@ -54,10 +54,10 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
         <div class="vg-slide" data-index={i}>
           <button
             class="vg-card"
-            data-src={`${baseUrl}/${v.file}?v=3`}
+            data-src={`${baseUrl}/${v.file}?v=4`}
 
             data-poster={v.poster}
-            data-track={v.track ?? `${baseUrl}/${v.file.replace(/\.mp4$/i, '.vtt')}?v=3`}
+            data-track={v.track ?? `${baseUrl}/${v.file.replace(/\.mp4$/i, '.vtt')}?v=4`}
             data-title={v.title}
             aria-label={`Смотреть: ${v.title}`}
           >
@@ -261,9 +261,9 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
   position: relative;
 }
 .vg-karaoke {
-  position: absolute; bottom: 52px; left: 0; right: 0;
+  position: absolute; bottom: 60px; left: 0; right: 0;
   text-align: center; pointer-events: none; z-index: 10;
-  padding: 0 12px;
+  padding: 0 16px;
 }
 </style>
 
@@ -277,7 +277,7 @@ import Plyr from 'plyr';
   const overlay  = document.getElementById('vgLbOverlay');
   const kEl      = document.getElementById('vgKaraoke');
 
-  const LINE_STYLE = 'display:inline-block;background:rgba(0,0,0,0.92);border-radius:6px;padding:8px 18px;font-size:clamp(18px,2.4vw,24px);font-weight:800;line-height:1.5;letter-spacing:0.01em';
+  const LINE_STYLE = 'display:inline-block;background:rgba(0,0,0,0.88);border-radius:6px;padding:6px 16px;font-size:clamp(16px,2.2vw,22px);font-weight:700;line-height:1.5;letter-spacing:0.01em';
 
   let player = null;
   let cues   = [];
@@ -318,21 +318,20 @@ import Plyr from 'plyr';
     const videoEl = player?.media;
     if (videoEl && !videoEl.paused && cues.length) {
       const t = videoEl.currentTime;
-      const idx = cues.findIndex(c => t >= c.s && t < c.e);
-      if (idx === -1) {
+      const cue = cues.find(c => t >= c.s && t < c.e);
+      if (!cue) {
         kEl.innerHTML = '';
       } else {
-        const cue = cues[idx];
         const words = cue.t.split(' ');
         const wordDur = (cue.e - cue.s) / words.length;
         const activeW = Math.min(Math.floor((t - cue.s) / wordDur), words.length - 1);
         const html = words.map((w, i) => {
-          const style = i < activeW
-            ? 'color:rgba(255,220,0,0.45)'
+          const col = i < activeW
+            ? 'color:rgba(255,220,0,0.5)'
             : i === activeW
               ? 'color:#fff;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000'
               : 'color:#FFE000;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000';
-          return `<span style="${style}">${w}</span>`;
+          return `<span style="${col}">${w}</span>`;
         }).join(' ');
         kEl.innerHTML = `<span style="${LINE_STYLE}">${html}</span>`;
       }
@@ -354,8 +353,6 @@ import Plyr from 'plyr';
       sources: [{ src: mp4Src, type: 'video/mp4' }],
     };
     p.play().catch(() => {});
-    cancelAnimationFrame(rafId);
-    rafId = requestAnimationFrame(rafLoop);
   }
 
   function closeLb() {
