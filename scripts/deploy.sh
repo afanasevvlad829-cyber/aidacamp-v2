@@ -196,13 +196,14 @@ rsync -az --checksum --stats \
   --exclude='backup-*' \
   --exclude='client/' \
   --exclude='images/' \
+  --exclude='videos/' \
   --exclude='video/' \
   --exclude='data/' \
   -e "ssh -i $SSH_KEY" \
   dist/client/ "${SSH_HOST}:${REMOTE_DIR}client/"
 
 # ── 2b. DEV: статика → плоский корень nginx (/var/www/aidacamp-dev/) ───────
-# images/ и video/ — симлинки на /var/www/aidacamp-media/, не трогаем.
+# images/, videos/, video/ — симлинки на /var/www/aidacamp-media/, не трогаем.
 if [ "$TARGET" = "dev" ]; then
   FLAT_DIR="/var/www/aidacamp-dev/"
   echo ""
@@ -215,6 +216,7 @@ if [ "$TARGET" = "dev" ]; then
     --exclude='current/' \
     --exclude='client/' \
     --exclude='images/' \
+    --exclude='videos/' \
     --exclude='video/' \
     --exclude='data/' \
     -e "ssh -i $SSH_KEY" \
