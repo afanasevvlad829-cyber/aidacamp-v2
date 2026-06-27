@@ -146,6 +146,8 @@ import { reviews } from '../data/reviews';
 <script type="application/json" id="reviews-json" set:html={JSON.stringify(reviews)}></script>
 
 <script>
+  import { lockScroll, unlockScroll } from '../scripts/scrollLock';
+
   function initReviews() {
     // Dots indicator for mobile carousel
     const carousel = document.querySelector<HTMLElement>('[data-reviews-carousel]');
@@ -170,9 +172,6 @@ import { reviews } from '../data/reviews';
       cards.forEach((card) => dotObserver.observe(card));
     }
 
-    function _lockScroll() { document.body.style.overflow = 'hidden'; }
-    function _unlockScroll() { document.body.style.overflow = ''; }
-
     const reviews = JSON.parse(document.getElementById('reviews-json')?.textContent || '[]');
     const modal    = document.getElementById('review-modal')!;
     const backdrop = document.getElementById('review-modal-backdrop')!;
@@ -195,7 +194,7 @@ import { reviews } from '../data/reviews';
       modal.classList.remove('hidden');
       modal.classList.add('flex');
       modal.removeAttribute('inert');
-      _lockScroll();
+      lockScroll();
 
       requestAnimationFrame(() => {
         backdrop.style.opacity = '1';
@@ -208,7 +207,7 @@ import { reviews } from '../data/reviews';
       backdrop.style.opacity = '0';
       panel.classList.add('translate-y-full', 'md:translate-y-4', 'opacity-0');
       panel.classList.remove('translate-y-0', 'opacity-100');
-      _unlockScroll();
+      unlockScroll();
       setTimeout(() => {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
