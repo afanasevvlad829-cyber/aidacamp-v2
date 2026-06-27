@@ -97,7 +97,6 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
     <div class="vg-lb__title" id="vgLbTitle"></div>
     <div class="vg-lb__video-wrap">
       <video id="vgLbVideo" playsinline></video>
-      <div id="vgKaraoke" class="vg-karaoke" aria-live="polite" aria-atomic="true"></div>
     </div>
   </div>
 </div>
@@ -260,11 +259,6 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
   box-shadow: 0 24px 80px rgba(0,0,0,0.6);
   position: relative;
 }
-.vg-karaoke {
-  position: absolute; bottom: 54px; left: 0; right: 0;
-  text-align: center; pointer-events: none; z-index: 10;
-  padding: 0 12px;
-}
 </style>
 
 <script>
@@ -275,13 +269,8 @@ import Plyr from 'plyr';
   const titleEl  = document.getElementById('vgLbTitle');
   const closeBtn = document.getElementById('vgLbClose');
   const overlay  = document.getElementById('vgLbOverlay');
-  const kEl      = document.getElementById('vgKaraoke');
-
-  const LINE_STYLE = 'display:inline-block;background:rgba(0,0,0,0.92);border-radius:6px;padding:8px 18px;font-size:clamp(18px,2.4vw,24px);font-weight:800;line-height:1.5;letter-spacing:0.01em';
 
   let player = null;
-  let cues   = [];
-  let rafId  = 0;
 
   function getPlayer() {
     if (!player) {
@@ -289,63 +278,14 @@ import Plyr from 'plyr';
         captions: { active: false },
         controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
       });
-      player.on('pause', () => cancelAnimationFrame(rafId));
-      player.on('play',  () => { rafId = requestAnimationFrame(rafLoop); });
     }
     return player;
   }
 
-  async function loadVTT(url) {
-    try {
-      const text = await fetch(url).then(r => r.text());
-      const result = [];
-      for (const block of text.split(/\n\n+/)) {
-        const lines = block.trim().split('\n');
-        const ti = lines.findIndex(l => l.includes('-->'));
-        if (ti === -1) continue;
-        const [s, e] = lines[ti].split('-->').map(p => {
-          const parts = p.trim().split(':');
-          return +parts[0] * 3600 + +parts[1] * 60 + parseFloat(parts[2]);
-        });
-        const t = lines.slice(ti + 1).join(' ').trim();
-        if (t && !isNaN(s) && !isNaN(e)) result.push({ s, e, t });
-      }
-      return result;
-    } catch { return []; }
-  }
-
-  function rafLoop() {
-    const videoEl = player?.media;
-    if (videoEl && !videoEl.paused && cues.length) {
-      const t = videoEl.currentTime;
-      const idx = cues.findIndex(c => t >= c.s && t < c.e);
-      if (idx === -1) {
-        kEl.innerHTML = '';
-      } else {
-        const cue = cues[idx];
-        const words = cue.t.split(' ');
-        const wordDur = (cue.e - cue.s) / words.length;
-        const activeW = Math.min(Math.floor((t - cue.s) / wordDur), words.length - 1);
-        const html = words.map((w, i) => {
-          const style = i < activeW
-            ? 'color:rgba(255,220,0,0.45)'
-            : i === activeW
-              ? 'color:#fff;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000'
-              : 'color:#FFE000;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000';
-          return `<span style="${style}">${w}</span>`;
-        }).join(' ');
-        kEl.innerHTML = `<span style="${LINE_STYLE}">${html}</span>`;
-      }
-    }
-    rafId = requestAnimationFrame(rafLoop);
-  }
-
-  async function openLb(mp4Src, trackSrc, poster, label) {
+  function openLb(mp4Src, poster, label) {
     titleEl.textContent = label;
     lb.removeAttribute('hidden');
     document.body.style.overflow = 'hidden';
-
-    cues = await loadVTT(trackSrc);
 
     const p = getPlayer();
     p.source = {
@@ -354,14 +294,9 @@ import Plyr from 'plyr';
       sources: [{ src: mp4Src, type: 'video/mp4' }],
     };
     p.play().catch(() => {});
-    cancelAnimationFrame(rafId);
-    rafId = requestAnimationFrame(rafLoop);
   }
 
   function closeLb() {
-    cancelAnimationFrame(rafId);
-    kEl.innerHTML = '';
-    cues = [];
     if (player) {
       player.stop();
       const videoEl = document.querySelector('#vgLbVideo');
@@ -379,7 +314,6 @@ import Plyr from 'plyr';
     card.addEventListener('click', () => {
       openLb(
         card.dataset.src,
-        card.dataset.track,
         card.dataset.poster,
         card.dataset.title,
       );
