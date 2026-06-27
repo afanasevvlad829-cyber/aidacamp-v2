@@ -23,7 +23,7 @@
  * Чтобы изменить сами правила — правь константы здесь.
  */
 
-import { SHIFT_META } from './shifts';
+import { SHIFT_META, taxDeduction } from './shifts';
 
 interface PriceStage {
   from: string;        // YYYY-MM-DD
@@ -205,8 +205,9 @@ export function getTaxDeduction(shiftId: string, today: Date = new Date()): numb
   const price = getCurrentPrice(shiftId, today);
   const days  = getDays(shiftId);
   if (!price || !days) return 0;
-  const eduPart = price - 3800 * days;
-  return eduPart > 0 ? Math.round(eduPart * 0.13) : 0;
+  // Единый источник формулы — taxDeduction() в shifts.ts (константы EDU_RESID_PER_DAY/
+  // NDFL_RATE + лимит EDU_BASE_CAP). Не дублировать формулу здесь.
+  return taxDeduction(price, days);
 }
 
 /** Форматирует цену: 93900 → "93 900 ₽" */

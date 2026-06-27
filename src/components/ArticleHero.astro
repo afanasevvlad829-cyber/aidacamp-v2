@@ -194,3 +194,23 @@ const formattedDate = _rawDate
 
   </div>
 </section>
+
+<!-- Маячок просмотра: инкремент счётчика article_views один раз за сессию (только /stati/*) -->
+<script is:inline>
+  (function () {
+    try {
+      if (!/^\/stati\/[^/]+/.test(location.pathname)) return;
+      var slug = location.pathname.replace(/\/+$/, '').split('/').pop();
+      if (!slug || slug === 'stati') return;
+      var key = 'av:' + slug;
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, '1');
+      fetch('/api/article-views', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: slug }),
+        keepalive: true,
+      }).catch(function () {});
+    } catch (e) {}
+  })();
+</script>

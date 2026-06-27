@@ -3,485 +3,39 @@ import '../../styles/global.css';
 import Base from '../../layouts/Base.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
-import { getInfoEffect } from '../../lib/heroVariant';
-const heroEffect = getInfoEffect('stati-hub');
+import { ARTICLES, CLUSTERS, ARTICLE_COUNT, articlesByCluster } from '../../data/articles';
+import { getViews, VIEWS_THRESHOLD } from '../../data/articleViews';
 
-type Article = {
-  url: string;
-  title: string;
-  description: string;
-  tag: string;
-  tagColor: string;
-  readTime?: string;
-};
+// Просмотры (снимок Метрики; на проде уточняются живым счётчиком через /api/article-views)
+const withViews = ARTICLES.map(a => ({ ...a, views: getViews(a.slug) }));
 
-const clusters: { label: string; id: string; color: string; articles: Article[] }[] = [
-  {
-    label: 'Лагерь и летний отдых',
-    id: 'lager',
-    color: 'emerald',
-    articles: [
-      {
-        url: '/stati/kak-vybrat-lager',
-        title: 'Как выбрать детский лагерь: 7 критериев от мамы к маме',
-        description: 'Что смотреть в первую очередь, на что не вестись и какие вопросы задать менеджеру.',
-        tag: 'Выбор лагеря',
-        tagColor: 'bg-emerald-100 text-emerald-700',
-        readTime: '7 мин',
-      },
-      {
-        url: '/stati/gorodskoy-ili-zagorodnyy-lager',
-        title: 'Городской или загородный лагерь: что выбрать на лето 2026',
-        description: 'Честное сравнение двух форматов: цены, режим, самостоятельность. Кому подходит дневной, а кому — смена с проживанием.',
-        tag: 'Выбор лагеря',
-        tagColor: 'bg-sky-100 text-sky-700',
-        readTime: '6 мин',
-      },
-      {
-        url: '/stati/it-lager-dlya-devochki-podrostka',
-        title: 'IT-лагерь для девочки-подростка: код — это не только для мальчиков',
-        description: 'Личная история Дарьи: как дочь перестала думать, что программирование «не для неё». AI-арт, 3D, дизайн — треки, которые выбирают школьницы.',
-        tag: 'Для девочек',
-        tagColor: 'bg-orange-100 text-orange-700',
-        readTime: '9 мин',
-      },
-      {
-        url: '/stati/lager-na-10-dney-otzyvy-mam',
-        title: 'Отзывы мам о детских лагерях: как читать и не ошибиться',
-        description: 'Что реально пишут родители после смены, 4 признака живого отзыва и как 3 главных страха снимаются опытом других мам.',
-        tag: 'Выбор лагеря',
-        tagColor: 'bg-emerald-100 text-emerald-700',
-        readTime: '6 мин',
-      },
-      {
-        url: '/stati/mify-o-detskikh-lageryakh',
-        title: '7 мифов о детских лагерях, которые мешают маме решиться',
-        description: 'Разбираем страхи честно: буллинг, скучная еда, «ребёнку будет плохо без меня».',
-        tag: 'Выбор лагеря',
-        tagColor: 'bg-emerald-100 text-emerald-700',
-        readTime: '6 мин',
-      },
-      {
-        url: '/stati/pervyj-raz-v-lagere',
-        title: 'Ребёнок первый раз в лагере — страхи мамы и реальность',
-        description: 'Что на самом деле происходит в первые дни и как подготовить ребёнка (и себя).',
-        tag: 'Первый раз',
-        tagColor: 'bg-emerald-100 text-emerald-700',
-        readTime: '8 мин',
-      },
-      {
-        url: '/stati/pervye-tri-dnya',
-        title: 'Первые три дня: почему ребёнок хочет домой — и что делать',
-        description: '83% детей скучают по дому, меньше 1% уезжают. Что не делать родителю и чем реально помочь.',
-        tag: 'Адаптация',
-        tagColor: 'bg-emerald-100 text-emerald-700',
-        readTime: '7 мин',
-      },
-      {
-        url: '/stati/chto-vzyat-v-lager',
-        title: 'Что взять в летний лагерь — полный список',
-        description: 'Одежда, документы, гигиена, гаджеты — чек-лист, чтобы ничего не забыть.',
-        tag: 'Подготовка',
-        tagColor: 'bg-emerald-100 text-emerald-700',
-        readTime: '5 мин',
-      },
-      {
-        url: '/stati/chem-zanyat-rebyonka-letom',
-        title: 'Чем занять ребёнка летом: 8 идей — от банальных до тех, что работают',
-        description: 'Дача, секции, онлайн-курсы, лагерь — честный разбор каждого варианта без рекламы.',
-        tag: 'Летний отдых',
-        tagColor: 'bg-emerald-100 text-emerald-700',
-        readTime: '8 мин',
-      },
-      {
-        url: '/stati/kak-dobratsya-do-lagera',
-        title: 'Как добраться до лагеря АйДаКемп — маршруты и трансфер',
-        description: '66 км от МКАД. На машине, трансфером от метро или электричкой с Киевского вокзала.',
-        tag: 'Маршрут',
-        tagColor: 'bg-emerald-100 text-emerald-700',
-        readTime: '5 мин',
-      },
-      {
-        url: '/stati/kuda-det-rebenka-letom',
-        title: 'Куда отправить ребёнка летом: разбор всех вариантов',
-        description: 'Бабушка, лагерь, кружки или с собой в отпуск — плюсы и минусы каждого.',
-        tag: 'Летний отдых',
-        tagColor: 'bg-emerald-100 text-emerald-700',
-        readTime: '6 мин',
-      },
-      {
-        url: '/stati/dokumenty-licenziya-strahovka',
-        title: 'Документы, лицензия и страховка АйДаКемп',
-        description: 'Лицензия Минобра, страховка, медперсонал — всё официально.',
-        tag: 'Официальное',
-        tagColor: 'bg-emerald-100 text-emerald-700',
-        readTime: '4 мин',
-      },
-      {
-        url: '/stati/spravki-dlya-lagera',
-        title: 'Справки для детского лагеря 2026 — полный список',
-        description: 'Форма 079/у, прививочный сертификат, ОМС, страховка — что брать и где получить.',
-        tag: 'Подготовка',
-        tagColor: 'bg-emerald-100 text-emerald-700',
-        readTime: '6 мин',
-      },
-      {
-        url: '/stati/strakhovka-v-lager',
-        title: 'Страховка в детский лагерь 2026 — нужна ли и какую выбрать',
-        description: 'ОМС vs НС-страховка: в чём разница, что покрывает, подборка страховых компаний 2026.',
-        tag: 'Официальное',
-        tagColor: 'bg-emerald-100 text-emerald-700',
-        readTime: '5 мин',
-      },
-      {
-        url: '/stati/rebenok-ne-hochet-v-lager',
-        title: 'Ребёнок не хочет в лагерь — разбираемся без скандалов',
-        description: 'Почему так бывает, как поговорить, когда настоять, а когда дать время.',
-        tag: 'Первый раз',
-        tagColor: 'bg-emerald-100 text-emerald-700',
-        readTime: '7 мин',
-      },
-      {
-        url: '/stati/rebenok-zabolel-v-lagere',
-        title: 'Ребёнок заболел в лагере — что делать и как не паниковать',
-        description: 'Как работает медпункт, когда сообщают родителям, когда забирать. Алгоритм для мамы.',
-        tag: 'Безопасность',
-        tagColor: 'bg-emerald-100 text-emerald-700',
-        readTime: '6 мин',
-      },
-      {
-        url: '/stati/socializaciya-rebenka-v-lagere',
-        title: 'Лагерь и социализация — что происходит за 2 недели',
-        description: 'Почему застенчивые дети расцветают в лагере. Командная работа, новые друзья, чистый лист.',
-        tag: 'Психология',
-        tagColor: 'bg-emerald-100 text-emerald-700',
-        readTime: '7 мин',
-      },
-    ],
-  },
-  {
-    label: 'IT-образование и программирование',
-    id: 'it',
-    color: 'orange',
-    articles: [
-      {
-        url: '/stati/kak-vybrat-it-lager',
-        title: 'Как выбрать IT-лагерь: 7 вопросов на которые должен ответить каждый лагерь',
-        description: 'Конкретные вопросы менеджеру перед бронированием. Чек-лист от мам которые уже отправляли детей.',
-        tag: 'Выбор лагеря',
-        tagColor: 'bg-orange-100 text-orange-700',
-        readTime: '8 мин',
-      },
-      {
-        url: '/stati/programmirovaniye-s-kakogo-vozrasta',
-        title: 'С какого возраста учить ребёнка программированию: честный ответ',
-        description: '7, 10 или 14 лет — у каждого возраста свои плюсы. Признаки готовности и конкретные треки.',
-        tag: 'Программирование',
-        tagColor: 'bg-orange-100 text-orange-700',
-        readTime: '7 мин',
-      },
-      {
-        url: '/stati/ii-zamenit-programmista',
-        title: 'ИИ заменит программиста? Что стоит знать родителям',
-        description: 'Почему умение работать с AI — самый востребованный навык ближайшего десятилетия.',
-        tag: 'IT и будущее',
-        tagColor: 'bg-orange-100 text-orange-700',
-        readTime: '7 мин',
-      },
-      {
-        url: '/stati/navyki-kotorye-ne-ustareut',
-        title: 'Навыки которые не устареют — чему учить ребёнка',
-        description: 'IBM посчитал: знание устаревает за 5 лет. Тогда какие навыки важнее любого репетитора.',
-        tag: 'IT и будущее',
-        tagColor: 'bg-orange-100 text-orange-700',
-        readTime: '7 мин',
-      },
-      {
-        url: '/stati/game-dev-skills',
-        title: 'Геймдев как образовательный инструмент: что говорит нейронаука',
-        description: 'Почему создание игр — это серьёзнее Excel. MIT, McKinsey и 8 лет наблюдений.',
-        tag: 'IT и будущее',
-        tagColor: 'bg-orange-100 text-orange-700',
-        readTime: '5 мин',
-      },
-      {
-        url: '/stati/meta-skills',
-        title: '85% профессий ещё не существует. Что с этим делать',
-        description: 'IFTF прогнозирует рынок труда с 1968 года. Объясняю, как готовить ребёнка к быстрому освоению следующей профессии.',
-        tag: 'IT и будущее',
-        tagColor: 'bg-orange-100 text-orange-700',
-        readTime: '5 мин',
-      },
-      {
-        url: '/stati/future-skills',
-        title: 'ROI образовательных инвестиций: что считать и как',
-        description: 'IBM: знание устаревает за 2,5 года. Какие вложения окупаются дольше всего.',
-        tag: 'IT и будущее',
-        tagColor: 'bg-orange-100 text-orange-700',
-        readTime: '5 мин',
-      },
-      {
-        url: '/stati/ai-economy',
-        title: 'AI и ВВП: почему статистика не видит революции',
-        description: 'Корпорации вложили $40 млрд в AI — у 95% ноль эффекта на прибыль. Объясняю механику.',
-        tag: 'IT и будущее',
-        tagColor: 'bg-orange-100 text-orange-700',
-        readTime: '5 мин',
-      },
-      {
-        url: '/ai-studio/',
-        title: 'Как устроена AI-платформа АйДаКемп: один логин — 13 нейросетей',
-        description: 'Текст, картинки, видео, код — всё в одном месте. Без личных подписок и кредиток. Как мы это сделали и зачем.',
-        tag: 'Технологии',
-        tagColor: 'bg-orange-100 text-orange-700',
-        readTime: '5 мин',
-      },
-      {
-        url: '/stati/hakaton-v-detskom-lagere',
-        title: 'Хакатон в детском лагере — как это устроено',
-        description: 'Почему защита проекта перед аудиторией — ключевой момент смены.',
-        tag: 'IT в лагере',
-        tagColor: 'bg-orange-100 text-orange-700',
-        readTime: '5 мин',
-      },
-      {
-        url: '/stati/vnutrennyaya-ekonomika-v-lagere',
-        title: 'Внутренняя экономика в лагере — зачем детям «лагерные деньги»',
-        description: 'Как игровая экономика учит ценить время и принимать решения.',
-        tag: 'IT в лагере',
-        tagColor: 'bg-orange-100 text-orange-700',
-        readTime: '5 мин',
-      },
-      {
-        url: '/stati/detskiy-lager-bez-telefonov',
-        title: 'Детский лагерь без телефонов — что это и зачем',
-        description: 'Как работает лагерь с ограниченным экранным временем и что дети получают взамен.',
-        tag: 'Лагерь без гаджетов',
-        tagColor: 'bg-orange-100 text-orange-700',
-        readTime: '6 мин',
-      },
-      {
-        url: '/stati/nejroseti-dlya-detej',
-        title: 'Нейросети для детей — с чего начать и зачем',
-        description: 'С какого возраста учить, что дети делают с ChatGPT, безопасность и почему код важнее промптов.',
-        tag: 'AI и нейросети',
-        tagColor: 'bg-orange-100 text-orange-700',
-        readTime: '7 мин',
-      },
-      {
-        url: '/stati/python-dlya-detej',
-        title: 'Python для детей — с нуля до первого проекта',
-        description: 'Почему Python первый язык, с какого возраста, что создают дети за 2 недели в лагере.',
-        tag: 'Программирование',
-        tagColor: 'bg-orange-100 text-orange-700',
-        readTime: '6 мин',
-      },
-      {
-        url: '/stati/scratch-dlya-detej',
-        title: 'Scratch для детей: первые шаги в программировании',
-        description: 'Что такое Scratch, почему с него начинают в 7-11 лет и как перейти к Python.',
-        tag: 'Программирование',
-        tagColor: 'bg-orange-100 text-orange-700',
-        readTime: '5 мин',
-      },
-      {
-        url: '/stati/programmirovanie-dlya-detej-s-nulya',
-        title: 'Программирование с нуля: путь до первого проекта',
-        description: 'Нулевой опыт — норма. Дорожная карта по возрастам, ресурсы дома, и зачем нужен лагерь.',
-        tag: 'Программирование',
-        tagColor: 'bg-orange-100 text-orange-700',
-        readTime: '7 мин',
-      },
-      {
-        url: '/stati/roblox-dlya-detej',
-        title: 'Roblox для детей — польза, риски и что с этим делать',
-        description: 'Чем полезна платформа, риски покупок и общения, как направить интерес к созданию игр.',
-        tag: 'Игры',
-        tagColor: 'bg-orange-100 text-orange-700',
-        readTime: '6 мин',
-      },
-      {
-        url: '/stati/3d-modelirovanie-dlya-detej',
-        title: '3D-моделирование для детей — первые шаги',
-        description: 'Почему Minecraft учит 3D-мышлению, Tinkercad и Blender для детей, связь с программированием.',
-        tag: 'IT-инструменты',
-        tagColor: 'bg-orange-100 text-orange-700',
-        readTime: '5 мин',
-      },
-    ],
-  },
-  {
-    label: 'Гаджеты и зависимость',
-    id: 'gadgets',
-    color: 'red',
-    articles: [
-      {
-        url: '/stati/zavisimost-ot-telefona-u-podrostkov',
-        title: 'Подросток в телефоне 24/7 — 5 способов без конфликта',
-        description: 'Почему забрать телефон не работает и что реально помогает снизить экранное время.',
-        tag: 'Телефон',
-        tagColor: 'bg-red-100 text-red-700',
-        readTime: '8 мин',
-      },
-      {
-        url: '/stati/zavisimost-ot-kompyuternyh-igr',
-        title: 'Ребёнок не вылезает из игр — 4 шага без скандалов',
-        description: 'Как отличить увлечение от зависимости и что делать если ребёнок проводит в играх всё время.',
-        tag: 'Игры',
-        tagColor: 'bg-red-100 text-red-700',
-        readTime: '7 мин',
-      },
-      {
-        url: '/stati/igromaniya-u-detej',
-        title: '«Просто играет» или уже зависимость? 7 признаков игромании',
-        description: 'Конкретные признаки, которые отличают нормальное увлечение от компьютерной зависимости.',
-        tag: 'Игры',
-        tagColor: 'bg-red-100 text-red-700',
-        readTime: '6 мин',
-      },
-      {
-        url: '/stati/priznaki-kompyuternoj-zavisimosti',
-        title: 'Признаки компьютерной зависимости у детей и подростков',
-        description: 'Поведенческие, эмоциональные и физические симптомы — чек-лист для родителей.',
-        tag: 'Зависимость',
-        tagColor: 'bg-red-100 text-red-700',
-        readTime: '5 мин',
-      },
-      {
-        url: '/stati/lechenie-kompyuternoj-zavisimosti',
-        title: 'Лечение компьютерной зависимости у детей',
-        description: 'Что работает, а что нет. Роль родителей, среды и смены обстановки.',
-        tag: 'Зависимость',
-        tagColor: 'bg-red-100 text-red-700',
-        readTime: '7 мин',
-      },
-      {
-        url: '/stati/profilaktika-kompyuternoj-zavisimosti',
-        title: 'Профилактика компьютерной зависимости у детей',
-        description: 'Как выстроить среду дома, чтобы зависимость не развилась — конкретные шаги.',
-        tag: 'Зависимость',
-        tagColor: 'bg-red-100 text-red-700',
-        readTime: '6 мин',
-      },
-      {
-        url: '/stati/kak-izbavitsya-ot-zavisimosti-ot-igr',
-        title: 'Как избавиться от зависимости от игр — пошаговый план',
-        description: 'Практический план действий для родителей: от диалога до смены среды.',
-        tag: 'Зависимость',
-        tagColor: 'bg-red-100 text-red-700',
-        readTime: '8 мин',
-      },
-      {
-        url: '/stati/ekrannoe-vremya-detej-norma',
-        title: 'Экранное время детей — нормы и как найти баланс',
-        description: 'Нормы ВОЗ по экранному времени, активный vs пассивный экран, признаки избытка.',
-        tag: 'Экранное время',
-        tagColor: 'bg-red-100 text-red-700',
-        readTime: '7 мин',
-      },
-    ],
-  },
-  {
-    label: 'Подростки и воспитание',
-    id: 'teens',
-    color: 'purple',
-    articles: [
-      {
-        url: '/stati/podrostok-ne-hochet-uchitsya',
-        title: 'Подросток не хочет учиться — что делать. Без нотаций',
-        description: 'По-человечески, от мамы к маме: что реально возвращает интерес к учёбе.',
-        tag: 'Учёба',
-        tagColor: 'bg-purple-100 text-purple-700',
-        readTime: '7 мин',
-      },
-      {
-        url: '/stati/nizkaya-samootsenka-u-rebenka',
-        title: '«Я неудачник» — что делать маме когда ребёнок говорит это',
-        description: 'Причины низкой самооценки и конкретные способы помочь ребёнку почувствовать себя успешным.',
-        tag: 'Самооценка',
-        tagColor: 'bg-purple-100 text-purple-700',
-        readTime: '8 мин',
-      },
-      {
-        url: '/stati/problemy-v-obschenii-podrostkov',
-        title: 'Подросток один и без друзей — что мама может сделать',
-        description: 'Почему подростки теряют друзей и как помочь ребёнку найти своих.',
-        tag: 'Общение',
-        tagColor: 'bg-purple-100 text-purple-700',
-        readTime: '7 мин',
-      },
-      {
-        url: '/stati/kak-pomoch-podrostku-kotoryj-nichego-ne-hochet',
-        title: 'Подростку ничего не надо — что за этим стоит и как помочь',
-        description: 'Апатия у подростка — не лень. Что на самом деле происходит и что делать родителям.',
-        tag: 'Апатия',
-        tagColor: 'bg-purple-100 text-purple-700',
-        readTime: '8 мин',
-      },
-    ],
-  },
-  {
-    label: 'По городам и районам',
-    id: 'geo',
-    color: 'sky',
-    articles: [
-      {
-        url: '/stati/lager-podolsk',
-        title: 'Детский IT-лагерь рядом с Подольском — смены 2026',
-        description: '55 км от Подольска, трансфер через партнёра по запросу от метро Солнцево. Python, AI, Minecraft, бассейн.',
-        tag: 'Подольск',
-        tagColor: 'bg-sky-100 text-sky-700',
-        readTime: '4 мин',
-      },
-      {
-        url: '/stati/lager-naro-fominsk',
-        title: 'Детский IT-лагерь в Наро-Фоминском районе — 2026',
-        description: '66 км от МКАД по А-101, трансфер через партнёра по запросу от метро Солнцево. Python, AI, Minecraft, бассейн.',
-        tag: 'Наро-Фоминск',
-        tagColor: 'bg-sky-100 text-sky-700',
-        readTime: '4 мин',
-      },
-      {
-        url: '/stati/lager-novaya-moskva',
-        title: 'Детский IT-лагерь рядом с Новой Москвой — 2026',
-        description: 'По трассе А-101 из Коммунарки и Троицка. ~35-50 км, трансфер через партнёра по запросу от метро Солнцево.',
-        tag: 'Новая Москва',
-        tagColor: 'bg-sky-100 text-sky-700',
-        readTime: '4 мин',
-      },
-    ],
-  },
-];
+// Популярное — топ-4 по просмотрам, выносим наверх большими блоками
+const popular = [...withViews].sort((a, b) => b.views - a.views).slice(0, 4);
+const popularSlugs = new Set(popular.map(a => a.slug));
 
-const allArticles = clusters.flatMap(c => c.articles);
-const totalCount = allArticles.length;
-
-// Category filter mapping: returns filter key based on article URL slug
-function getArticleCategory(url: string): string {
-  const slug = url.replace(/^\/stati\//, '').replace(/\/$/, '');
-
-  // Зависимость — gadget/phone addiction
-  if (/zavisimost|telefon|kompyuter|igr|ekrannoe|gadget/.test(slug)) return 'zavisimost';
-
-  // Финансы — tax returns, costs
-  if (/nalog|ceny|vychet|finansov/.test(slug)) return 'finansy';
-
-  // IT и образование — programming, AI, tech
-  if (/\bit\b|python|nejroseti|programmirovan|scratch|roblox|3d|game-dev|meta-skills|future-skills|ai-economy|ai-studio|hakaton|navyki|vnutrennyaya|ii-zamenit|programmirovanie|detskiy-lager-bez-telefonov/.test(slug)) return 'it';
-
-  // Выбор лагеря — choosing camps
-  if (/kak-vybrat|mify|reiting|otzyvy/.test(slug)) return 'vybor';
-
-  // Жизнь в лагере — daily life, health, safety
-  if (/pitanie|zabolel|vzyat|pervyj-raz|bezopasnost|obshhenie|obshchenie|socializaciya|spravki|strakhovka|dokumenty|kak-dobratsya|kuda-det|letom|lager-podolsk|lager-naro|lager-novaya|rebenok-ne-hochet|podrostok|nizkaya|problemy|nichego-ne-hochet/.test(slug)) return 'lager';
-
-  return 'lager'; // fallback
+function plural(n: number, one: string, few: string, many: string): string {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return one;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
+  return many;
 }
+function viewsLabel(n: number): string {
+  return `${n.toLocaleString('ru-RU')} ${plural(n, 'просмотр', 'просмотра', 'просмотров')}`;
+}
+
+const clusterColorBar: Record<string, string> = {
+  emerald: 'bg-emerald-500',
+  orange: 'bg-primary',
+  red: 'bg-red-500',
+  purple: 'bg-purple-500',
+  amber: 'bg-amber-500',
+  sky: 'bg-sky-500',
+};
 ---
 
 <Base
   title="Статьи для родителей о детях, лагере и IT — АйДаКемп"
-  description={`Честные статьи о подростках, гаджетах, выборе лагеря и IT-образовании. Без нотаций — от мамы к маме. ${totalCount} материалов от команды АйДаКемп.`}
+  description={`Честные статьи о подростках, гаджетах, выборе лагеря и IT-образовании. Без нотаций — от мамы к маме. ${ARTICLE_COUNT} материалов от команды АйДаКемп.`}
 >
   <Fragment slot="head">
     <link rel="canonical" href="https://aidacamp.ru/stati" />
@@ -499,7 +53,7 @@ function getArticleCategory(url: string): string {
       "name": "Статьи для родителей — АйДаКемп",
       "description": "Честные статьи о подростках, гаджетах, выборе лагеря и IT-образовании.",
       "url": "https://aidacamp.ru/stati",
-      "hasPart": allArticles.map(a => ({
+      "hasPart": ARTICLES.map(a => ({
         "@type": "Article",
         "name": a.title,
         "url": `https://aidacamp.ru${a.url}`,
@@ -523,76 +77,132 @@ function getArticleCategory(url: string): string {
         Статьи для родителей
       </h1>
       <p class="mt-3 text-[16px] md:text-[17px] text-white/70 max-w-[560px] leading-[1.6]">
-        Честно о подростках, гаджетах и летнем отдыхе — без педагогических терминов и нотаций. {totalCount} материалов.
+        Честно о подростках, гаджетах и летнем отдыхе — без педагогических терминов и нотаций. {ARTICLE_COUNT} материалов.
       </p>
+
+      <!-- Поиск -->
+      <div class="mt-6 max-w-[520px]">
+        <div class="flex items-center gap-2.5 rounded-full bg-white/10 ring-1 ring-white/15 px-4 py-2.5 focus-within:ring-white/40 transition">
+          <i class="bi bi-search text-white/50 text-base" aria-hidden="true"></i>
+          <input
+            id="article-search"
+            type="search"
+            placeholder="Поиск по статьям — «телефон», «первый раз», «Python»…"
+            autocomplete="off"
+            aria-label="Поиск по статьям"
+            class="flex-1 min-w-0 bg-transparent border-0 outline-none text-white placeholder:text-white/45 text-base"
+          />
+        </div>
+      </div>
     </div>
   </section>
 
   <main class="mx-auto max-w-[1120px] px-4 py-8 pb-20">
 
-    <!-- Фильтры по категориям -->
-    <div class="mb-10">
-      <div id="category-filters" class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width:none;-ms-overflow-style:none;">
-        <button data-filter="all"     class="filter-btn shrink-0 rounded-full px-4 py-1.5 text-base font-semibold bg-primary text-[#0d1a2b] transition-colors">Все</button>
-        <button data-filter="zavisimost" class="filter-btn shrink-0 rounded-full px-4 py-1.5 text-base bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">Зависимость</button>
-        <button data-filter="vybor"   class="filter-btn shrink-0 rounded-full px-4 py-1.5 text-base bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">Выбор лагеря</button>
-        <button data-filter="it"      class="filter-btn shrink-0 rounded-full px-4 py-1.5 text-base bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">IT и образование</button>
-        <button data-filter="finansy" class="filter-btn shrink-0 rounded-full px-4 py-1.5 text-base bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">Финансы</button>
-        <button data-filter="lager"   class="filter-btn shrink-0 rounded-full px-4 py-1.5 text-base bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">Жизнь в лагере</button>
-      </div>
-    </div>
-
-    <!-- Кластеры -->
-    {clusters.map(cluster => (
-      <section id={cluster.id} data-cluster class="mb-14 scroll-mt-6">
+    <!-- ПОПУЛЯРНОЕ — большие блоки -->
+    {popular.length > 0 && popular[0].views > 0 && (
+      <section id="popular-section" class="mb-12">
         <div class="flex items-center gap-3 mb-6">
-          <div class={`w-1 h-6 rounded-full shrink-0
-            ${cluster.color === 'emerald' ? 'bg-emerald-500' :
-              cluster.color === 'orange' ? 'bg-primary' :
-              cluster.color === 'red' ? 'bg-red-500' :
-              cluster.color === 'sky' ? 'bg-sky-500' : 'bg-purple-500'}`}
-          ></div>
-          <h2 class="text-[20px] md:text-[22px] font-bold text-slate-900 tracking-[-0.01em]">
-            {cluster.label}
-          </h2>
-          <span class="text-base text-slate-400 font-normal">{cluster.articles.length} статьи</span>
+          <i class="bi bi-fire text-primary text-[22px]" aria-hidden="true"></i>
+          <h2 class="text-[20px] md:text-[22px] font-bold text-slate-900 tracking-[-0.01em]">Популярное</h2>
+          <span class="text-base text-slate-400 font-normal">Читают чаще всего</span>
         </div>
 
-        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {cluster.articles.map(article => (
+        <div class="grid gap-4 sm:grid-cols-2">
+          {popular.map((article, i) => (
             <a
               href={article.url}
-              data-category={getArticleCategory(article.url)}
-              class="article-card group flex flex-col rounded-[22px] border border-border bg-card p-5 card-shadow card-shadow-hover hover:border-slate-300 transition-all duration-200"
+              data-slug={article.slug}
+              class="group relative flex flex-col justify-end overflow-hidden rounded-[24px] border border-border bg-card p-6 md:p-7 card-shadow card-shadow-hover hover:border-slate-300 transition-all min-h-[190px]"
             >
-              <div class="flex items-start justify-between gap-2 mb-3">
-                <span class={`inline-block rounded-full px-2.5 py-0.5 text-base font-semibold ${article.tagColor}`}>
-                  {article.tag}
-                </span>
-                {article.readTime && (
-                  <span class="text-base text-slate-400 shrink-0 mt-0.5">{article.readTime}</span>
-                )}
+              <div class="absolute top-5 right-5 flex items-center gap-1.5 rounded-full bg-[#0d1a2b] px-3 py-1 text-base font-semibold text-white">
+                <i class="bi bi-eye-fill text-base" aria-hidden="true"></i>
+                <span data-view-num>{article.views.toLocaleString('ru-RU')}</span>
               </div>
-              <h3 class="text-base font-semibold leading-[1.4] text-slate-900 group-hover:text-primary transition-colors mb-2 flex-1">
+              <span class={`mb-3 inline-block w-fit rounded-full px-2.5 py-0.5 text-base font-semibold ${article.tagColor}`}>
+                {i === 0 ? '🔥 ' : ''}{article.tag}
+              </span>
+              <h3 class="text-[18px] md:text-[20px] font-bold leading-[1.3] text-slate-900 group-hover:text-primary transition-colors mb-2">
                 {article.title}
               </h3>
-              <p class="text-base leading-[1.55] text-slate-500 mb-4">
-                {article.description}
-              </p>
-              <div class="flex items-center justify-between mt-auto">
-                <span class="text-base text-slate-400">
-                  <i class="bi bi-person text-base" aria-hidden="true"></i> Дарья Афанасьева
-                </span>
-                <span class="flex items-center gap-1 text-base font-medium text-primary">
-                  Читать
-                  <i class="bi bi-arrow-right text-base group-hover:translate-x-0.5 transition-transform" aria-hidden="true"></i>
-                </span>
-              </div>
+              <p class="text-base leading-[1.5] text-slate-500 mb-3 line-clamp-2">{article.description}</p>
+              <span class="inline-flex items-center gap-1.5 text-base text-slate-400">
+                <i class="bi bi-eye text-base" aria-hidden="true"></i>
+                <span data-view-full>{viewsLabel(article.views)}</span>
+              </span>
             </a>
           ))}
         </div>
       </section>
-    ))}
+    )}
+
+    <!-- Фильтры по рубрикам -->
+    <div class="mb-8">
+      <div id="category-filters" class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width:none;-ms-overflow-style:none;">
+        <button data-filter="all" class="filter-btn shrink-0 rounded-full px-4 py-1.5 text-base font-semibold bg-primary text-[#0d1a2b] transition-colors">
+          Все {ARTICLE_COUNT}
+        </button>
+        {CLUSTERS.map(c => (
+          <button data-filter={c.id} class="filter-btn shrink-0 rounded-full px-4 py-1.5 text-base bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
+            {c.label}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <!-- Пусто (поиск) -->
+    <p id="no-results" class="hidden py-12 text-center text-base text-slate-400">
+      Ничего не нашлось. Попробуйте другой запрос.
+    </p>
+
+    <!-- Кластеры -->
+    {CLUSTERS.map(cluster => {
+      const items = withViews.filter(a => a.cluster === cluster.id && !popularSlugs.has(a.slug));
+      if (items.length === 0) return null;
+      return (
+        <section id={cluster.id} data-cluster={cluster.id} class="mb-14 scroll-mt-6">
+          <div class="flex items-center gap-3 mb-6">
+            <div class={`w-1 h-6 rounded-full shrink-0 ${clusterColorBar[cluster.color] ?? 'bg-slate-400'}`}></div>
+            <h2 class="text-[20px] md:text-[22px] font-bold text-slate-900 tracking-[-0.01em]">{cluster.label}</h2>
+            <span data-cluster-count class="text-base text-slate-400 font-normal">{items.length}</span>
+          </div>
+
+          <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {items.map(article => (
+              <a
+                href={article.url}
+                data-slug={article.slug}
+                data-category={article.cluster}
+                data-search={`${article.title} ${article.description} ${article.tag}`.toLowerCase()}
+                class="article-card group flex flex-col rounded-[22px] border border-border bg-card p-5 card-shadow card-shadow-hover hover:border-slate-300 transition-all duration-200"
+              >
+                <div class="flex items-start justify-between gap-2 mb-3">
+                  <span class={`inline-block rounded-full px-2.5 py-0.5 text-base font-semibold ${article.tagColor}`}>{article.tag}</span>
+                </div>
+                <h3 class="text-base font-semibold leading-[1.4] text-slate-900 group-hover:text-primary transition-colors mb-2 flex-1">
+                  {article.title}
+                </h3>
+                <p class="text-base leading-[1.55] text-slate-500 mb-4">{article.description}</p>
+                <div class="flex items-center justify-between mt-auto">
+                  <span class="inline-flex items-center gap-1 text-base text-slate-400">
+                    {article.views >= VIEWS_THRESHOLD
+                      ? (<><i class="bi bi-eye text-base" aria-hidden="true"></i> <span data-view-full>{viewsLabel(article.views)}</span></>)
+                      : article.readTime
+                        ? (<><i class="bi bi-clock text-base" aria-hidden="true"></i> {article.readTime}</>)
+                        : (<><i class="bi bi-person text-base" aria-hidden="true"></i> Дарья Афанасьева</>)
+                    }
+                  </span>
+                  <span class="flex items-center gap-1 text-base font-medium text-primary">
+                    Читать
+                    <i class="bi bi-arrow-right text-base group-hover:translate-x-0.5 transition-transform" aria-hidden="true"></i>
+                  </span>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+      );
+    })}
 
     <!-- CTA -->
     <div class="rounded-[24px] bg-[#0d1a2b] px-6 py-8 text-center md:px-12 md:py-10">
@@ -616,9 +226,15 @@ function getArticleCategory(url: string): string {
       const buttons = document.querySelectorAll<HTMLButtonElement>('#category-filters .filter-btn');
       const cards = document.querySelectorAll<HTMLElement>('.article-card');
       const clusters = document.querySelectorAll<HTMLElement>('[data-cluster]');
+      const popular = document.getElementById('popular-section');
+      const noResults = document.getElementById('no-results');
+      const search = document.getElementById('article-search') as HTMLInputElement | null;
 
       const ACTIVE = ['bg-primary', 'text-[#0d1a2b]', 'font-semibold'];
       const INACTIVE = ['bg-slate-100', 'text-slate-600', 'hover:bg-slate-200'];
+
+      let category = 'all';
+      let query = '';
 
       function setActive(btn: HTMLButtonElement) {
         buttons.forEach(b => {
@@ -629,33 +245,65 @@ function getArticleCategory(url: string): string {
         ACTIVE.forEach(c => btn.classList.add(c));
       }
 
-      function filter(value: string) {
+      function apply() {
+        let visible = 0;
         cards.forEach(card => {
-          if (value === 'all' || card.dataset.category === value) {
-            card.classList.remove('hidden');
-          } else {
-            card.classList.add('hidden');
-          }
+          const okCat = category === 'all' || card.dataset.category === category;
+          const okText = !query || (card.dataset.search ?? '').includes(query);
+          const show = okCat && okText;
+          card.classList.toggle('hidden', !show);
+          if (show) visible++;
         });
 
-        // Hide cluster section when all its cards are hidden
         clusters.forEach(section => {
-          const visible = section.querySelectorAll('.article-card:not(.hidden)');
-          if (visible.length === 0) {
-            section.classList.add('hidden');
-          } else {
-            section.classList.remove('hidden');
-          }
+          const shown = section.querySelectorAll('.article-card:not(.hidden)').length;
+          section.classList.toggle('hidden', shown === 0);
+          const counter = section.querySelector('[data-cluster-count]');
+          if (counter) counter.textContent = String(shown);
         });
+
+        if (popular) popular.classList.toggle('hidden', category !== 'all' || query.length > 0);
+        if (noResults) noResults.classList.toggle('hidden', visible > 0);
       }
 
       buttons.forEach(btn => {
         btn.addEventListener('click', () => {
-          const value = btn.dataset.filter ?? 'all';
+          category = btn.dataset.filter ?? 'all';
           setActive(btn);
-          filter(value);
+          apply();
         });
       });
+
+      if (search) {
+        search.addEventListener('input', () => {
+          query = search.value.trim().toLowerCase();
+          apply();
+        });
+      }
+
+      // Живой счётчик: обновляем числа из БД (Стадия 2). Тихо игнорируем, если эндпоинта ещё нет.
+      const fmt = (n: number) => n.toLocaleString('ru-RU');
+      const pl = (n: number, a: string, b: string, c: string) => {
+        const m10 = n % 10, m100 = n % 100;
+        if (m10 === 1 && m100 !== 11) return a;
+        if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return b;
+        return c;
+      };
+      const viewsLabel = (n: number) => `${fmt(n)} ${pl(n, 'просмотр', 'просмотра', 'просмотров')}`;
+      fetch('/api/article-views')
+        .then(r => (r.ok ? r.json() : null))
+        .then((data: Record<string, number> | null) => {
+          if (!data) return;
+          document.querySelectorAll<HTMLElement>('a[data-slug]').forEach(card => {
+            const live = data[card.dataset.slug!];
+            if (typeof live !== 'number') return;
+            const num = card.querySelector<HTMLElement>('[data-view-num]');
+            if (num) num.textContent = fmt(live);
+            const full = card.querySelector<HTMLElement>('[data-view-full]');
+            if (full) full.textContent = viewsLabel(live);
+          });
+        })
+        .catch(() => {});
     })();
   </script>
 </Base>
