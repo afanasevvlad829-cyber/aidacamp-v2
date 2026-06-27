@@ -43,6 +43,8 @@
 </div>
 
 <script>
+import { lockScroll, unlockScroll } from '../scripts/scrollLock';
+
 let pagefindInstance: any = null;
 let initPromise: Promise<any> | null = null;
 
@@ -67,22 +69,12 @@ async function initPagefind() {
   return initPromise;
 }
 
-  // iOS Safari: overflow:hidden alone doesn't prevent scroll — use position:fixed
-  let _savedScrollY = 0;
-  function _lockScroll() {
-    _savedScrollY = window.scrollY;
-    Object.assign(document.body.style, { position: 'fixed', top: `-${_savedScrollY}px`, width: '100%', overflow: 'hidden' });
-  }
-  function _unlockScroll() {
-    Object.assign(document.body.style, { position: '', top: '', width: '', overflow: '' });
-    window.scrollTo(0, _savedScrollY);
-  }
 function openOverlay() {
   const overlay = document.getElementById('site-search-overlay');
   const input = document.getElementById('site-search-input') as HTMLInputElement;
   if (!overlay || !input) return;
   overlay.classList.remove('hidden');
-  _lockScroll();
+  lockScroll();
   setTimeout(() => input.focus(), 50);
   initPagefind();
 }
@@ -91,7 +83,7 @@ function closeOverlay() {
   const overlay = document.getElementById('site-search-overlay');
   if (!overlay) return;
   overlay.classList.add('hidden');
-  _unlockScroll();
+  unlockScroll();
 }
 
 function escapeHtml(s: string) {
