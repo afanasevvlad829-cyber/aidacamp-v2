@@ -31,6 +31,9 @@ const TILDA_REDIRECTS: Record<string, string> = {
   // Duplicate slug: -ey → canonical -ej
   '/stati/reiting-detskih-lagerey-podmoskove': '/stati/reiting-detskih-lagerej-podmoskove/',
   '/stati/reiting-detskih-lagerey-podmoskove/': '/stati/reiting-detskih-lagerej-podmoskove/',
+  // Легаси-страницы в индексе Яндекса, отдавали 404 (HTTP_ERROR) → 301 на актуальные
+  '/cookie': '/privacy-policy/',
+  '/dokumentaciya-k-letnemu-it-lageryu-ajdakemp': '/stati/dokumenty-licenziya-strahovka/',
 };
 
 // ─── Rate limiter state ─────────────────────────────────────────────────────

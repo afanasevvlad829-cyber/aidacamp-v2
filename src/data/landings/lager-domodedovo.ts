@@ -141,7 +141,7 @@ const landing: LandingData = {
         price: '48000',
         priceCurrency: 'RUB',
         availability: 'https://schema.org/InStock',
-        url: '/ceny',
+        url: '/ceny/',
       },
       {
         '@type': 'Offer',
@@ -149,7 +149,7 @@ const landing: LandingData = {
         price: '95000',
         priceCurrency: 'RUB',
         availability: 'https://schema.org/InStock',
-        url: '/ceny',
+        url: '/ceny/',
       },
     ],
     aggregateRating: {
