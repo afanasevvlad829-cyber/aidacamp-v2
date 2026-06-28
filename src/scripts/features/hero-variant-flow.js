@@ -142,7 +142,6 @@
         var wrap = doc.createElement('div');
         wrap.className = 'hero-season-offer';
         wrap.innerHTML =
-          '<div class="hero-season-offer-price">' + bookingText('heroSeasonOfferPriceText') + '</div>' +
           '<button class="hero-season-calendar-btn" type="button" data-action="open-season-calendar" aria-label="' + bookingText('heroSeasonCalendarAria') + '">' +
           '<img class="ac-icon" src="/assets/icons/calendar.svg" alt="" aria-hidden="true">' +
           '<span>' + bookingText('heroSeasonCalendarText') + '</span>' +
