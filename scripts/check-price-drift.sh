@@ -11,7 +11,8 @@ canon={re.sub(r'\D','',m.group(1)) for m in re.finditer(r"price:\s*'([^']*)'",sr
 canon={c for c in canon if c}
 if not canon: print('❌ нет цен в shifts.ts'); sys.exit(2)
 # allowlist: суммы налогового вычета (база/лимиты/нетто), НЕ цены смен
-ALLOW={'40000','41800','44600','49400','50000','53200','89600','110000'}
+# 45800 = образоват. часть Смены 2 (99000−53200); 47900 = образоват. часть Смены 1 (85900−38000)
+ALLOW={'40000','41800','44600','45800','47900','49400','50000','53200','89600','110000'}
 # исключаемые пути: demo/архив/корп/эксперименты (не боевые SEO-страницы)
 EXCL=('/demo/','/_archive','/corp/','dlya-kompaniy','lanit-v5','design-v2','glass-','hyperui','CorpHero','CorpShifts','it-lager-vs-kruzhok','kak-provesti-leto-s-polzoy','skolko-stoit-detskiy-lager','kuda-det-rebenka-letom','kuda-otdat-rebenka-na-leto','strakhovka-v-lager','tarif-trevozhniy-roditel','nedorogoy-lager','putyovki-v-lager')
 PRICE=re.compile(r'(\d{2,3}[   ]?\d{3})\s*₽')

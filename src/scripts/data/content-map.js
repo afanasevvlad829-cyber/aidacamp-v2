@@ -66,7 +66,7 @@
       phoneLabel: "Телефон",
       telegramLabel: "Telegram",
       emailLabel: "Email",
-      shiftPriceFrom: "от 48 000 ₽",
+      shiftPriceFrom: "от 74 900 ₽",
       yandexReviewsLabel: "Отзывы на Яндекс Картах",
       yandexReviewsUrl: "https://yandex.ru/maps/org/aydakemp/35558479035/reviews/",
       programmingBookUrl: "https://www.codims.ru/python-book"
