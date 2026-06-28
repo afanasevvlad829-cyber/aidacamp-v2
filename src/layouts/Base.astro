@@ -277,9 +277,28 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         };
       })();
     </script>
-    <!-- Novofon -->
-    <script type="text/javascript" async src="https://widget.novofon.ru/novofon.js?k=krSWuOAGuEr40pPzs0o66QKdaef8K0BY"></script>
-    <!-- Novofon -->
+    <!-- Novofon — отложенная загрузка (idle/после load/первое взаимодействие), чтобы не конкурировать с LCP -->
+    <script>
+      (function () {
+        var loaded = false;
+        function loadNovofon() {
+          if (loaded) return; loaded = true;
+          var s = document.createElement('script');
+          s.type = 'text/javascript'; s.async = true;
+          s.src = 'https://widget.novofon.ru/novofon.js?k=krSWuOAGuEr40pPzs0o66QKdaef8K0BY';
+          document.body.appendChild(s);
+        }
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(loadNovofon, { timeout: 5000 });
+        } else {
+          window.addEventListener('load', function () { setTimeout(loadNovofon, 2500); });
+        }
+        ['scroll', 'pointerdown', 'keydown'].forEach(function (e) {
+          window.addEventListener(e, loadNovofon, { once: true, passive: true });
+        });
+      })();
+    </script>
+    <!-- /Novofon -->
   </head>
   <body class="font-sans text-[var(--color-text)] bg-white antialiased">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-primary focus:text-white focus:font-semibold focus:shadow-lg">Перейти к содержимому</a>
