@@ -182,3 +182,5 @@ export const ARTICLE_COUNT = ARTICLES.length;
 export function articlesByCluster(id: string): Article[] {
   return ARTICLES.filter(a => a.cluster === id);
 }
+// алиас для обратной совместимости
+export const articles = ARTICLES;
