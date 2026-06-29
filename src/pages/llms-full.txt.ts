@@ -4,7 +4,8 @@ import { mainShifts } from '../data/shifts';
 import { getCurrentPrice } from '../data/dynamicPrices';
 import { faqCategories } from '../data/faq';
 import { landingPages } from '../data/landing-pages';
-import { ARTICLES, CLUSTERS } from '../data/articles';
+import { articles as ARTICLES } from '../data/articles';
+const CLUSTERS: { id: string; label: string }[] = [];
 import { STAT_DISTANCE, STAT_YEARS, STAT_KIDS, STAT_RATING, PHONE_MAIN, EMAIL, CAMP_SEASON } from '../data/contacts';
 
 const BASE = 'https://aidacamp.ru';
@@ -33,20 +34,10 @@ export const GET: APIRoute = () => {
     .map((p) => `- [${p.title}](${BASE}${p.url}) — ${p.description}`)
     .join('\n');
 
-  // Статьи блога, сгруппированы по кластеру
-  const clusterLabel: Record<string, string> = Object.fromEntries(
-    (CLUSTERS ?? []).map((c: { id: string; label?: string }) => [c.id, c.label ?? c.id]),
-  );
-  const byCluster = new Map<string, string[]>();
-  for (const a of ARTICLES) {
-    const key = clusterLabel[a.cluster] ?? a.cluster ?? 'Прочее';
-    const url = a.url ?? `/stati/${a.slug}/`;
-    if (!byCluster.has(key)) byCluster.set(key, []);
-    byCluster.get(key)!.push(`- [${a.title}](${BASE}${url})${a.description ? ` — ${a.description}` : ''}`);
-  }
-  const articles = [...byCluster.entries()]
-    .map(([label, list]) => `### ${label}\n${list.join('\n')}`)
-    .join('\n\n');
+  // Статьи блога — плоский список
+  const articles = ARTICLES
+    .map(a => `- [${a.title}](${a.url})${a.description ? ` — ${a.description}` : ''}`)
+    .join('\n');
 
   const body = `# АйДаКемп — детский IT-лагерь в Подмосковье (полная справка)
 

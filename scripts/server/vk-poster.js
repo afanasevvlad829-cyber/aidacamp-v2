@@ -76,14 +76,26 @@ async function main() {
 
   let attachment = '';
   try {
-    const photoId = await uploadPhoto(article.ogImage);
+    const imageUrl = article.ogImageJpg || article.ogImage;
+    const photoId = await uploadPhoto(imageUrl);
     if (photoId) attachment = photoId;
   } catch (e) {
     console.warn('Photo upload failed:', e.message);
   }
 
+  // Извлечь plain-text из contentHtml (первые ~700 символов)
+  function htmlToPlainText(html) {
+    if (!html) return '';
+    return html
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+      .replace(/\s+/g, ' ').trim()
+      .substring(0, 700);
+  }
+
+  const excerpt = article.contentHtml ? htmlToPlainText(article.contentHtml) : article.description;
   const utmUrl = `https://aidacamp.ru?utm_source=vk&utm_medium=social&utm_campaign=articles`;
-  const message = `${article.title}\n\n${article.description}\n\nЧитать полностью: ${article.url}\n\nАйДаКемп — IT-лагерь для детей: ${utmUrl}`;
+  const message = `${article.title}\n\n${excerpt}\n\nЧитать полностью: ${article.url}\n\nАйДаКемп — IT-лагерь для детей: ${utmUrl}`;
   const postParams = { message, owner_id: String(VK_OWNER_ID) };
   if (attachment) postParams.attachments = attachment;
 
