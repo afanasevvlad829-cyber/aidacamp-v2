@@ -1,0 +1,62 @@
+---
+/**
+ * ArticleSchema — JSON-LD для статей блога (Article + BreadcrumbList).
+ *
+ * Использование: добавляй <ArticleSchema slot="head" ...> в <head> статьи.
+ * Или вставляй напрямую до </head> в статьях без Layout.
+ *
+ * Props:
+ *   slug        — путь без слеша: 'artek-i-sovetskie-lagerya'
+ *   title       — headline (без суффикса бренда)
+ *   description — meta description
+ *   datePublished — 'YYYY-MM-DD'
+ *   dateModified  — 'YYYY-MM-DD' (по умолчанию = datePublished)
+ */
+
+interface Props {
+  slug: string;
+  title: string;
+  description: string;
+  datePublished: string;
+  dateModified?: string;
+}
+
+const { slug, title, description, datePublished, dateModified } = Astro.props;
+const SITE = 'https://aidacamp.ru';
+const url = `${SITE}/stati/${slug}`;
+
+const article = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: title,
+  description,
+  author: {
+    '@type': 'Person',
+    name: 'Дарья Афанасьева',
+    url: `${SITE}/o-lagere`,
+    sameAs: [`${SITE}/o-lagere`],
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'АйДаКемп',
+    url: SITE,
+    logo: { '@type': 'ImageObject', url: `${SITE}/images/logo.svg` },
+  },
+  datePublished,
+  dateModified: dateModified ?? datePublished,
+  mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+};
+
+const breadcrumbs = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: `${SITE}/` },
+    { '@type': 'ListItem', position: 2, name: 'Статьи', item: `${SITE}/stati/` },
+    { '@type': 'ListItem', position: 3, name: title, item: url },
+  ],
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(article)} />
+<script type="application/ld+json" set:html={JSON.stringify(breadcrumbs)} />

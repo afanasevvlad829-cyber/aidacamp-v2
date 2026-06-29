@@ -1,0 +1,304 @@
+---
+export const prerender = false;
+---
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Редактор кадра — Смена 2 слайдшоу</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #111; color: #eee; font-family: system-ui, sans-serif; padding: 24px; }
+    h1 { font-size: 18px; margin-bottom: 8px; }
+    .subtitle { color: #999; font-size: 13px; margin-bottom: 24px; }
+
+    .grid { display: flex; flex-direction: column; gap: 32px; }
+
+    .photo-row {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      background: #1c1c1c;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .photo-wrap {
+      position: relative;
+      width: 480px;
+      height: 270px;
+      flex-shrink: 0;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #000;
+      cursor: ns-resize;
+      user-select: none;
+    }
+    .photo-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+    }
+    /* Горизонтальная линия-ориентир */
+    .crosshair {
+      position: absolute;
+      left: 0; right: 0;
+      height: 2px;
+      background: rgba(255,220,0,0.8);
+      pointer-events: none;
+      transition: top 0.05s;
+    }
+    .crosshair::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: -4px;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: rgba(255,220,0,0.9);
+      transform: translateX(-50%);
+    }
+
+    .controls {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-top: 4px;
+    }
+    .filename { font-size: 12px; color: #888; word-break: break-all; }
+    .pos-label {
+      font-size: 28px;
+      font-weight: bold;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+    .hint { font-size: 12px; color: #555; }
+    input[type=range] {
+      width: 100%;
+      accent-color: #f5a623;
+      cursor: pointer;
+    }
+    .presets {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .preset-btn {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      color: #ccc;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .preset-btn:hover { background: #333; border-color: #666; }
+
+    .save-bar {
+      position: sticky;
+      bottom: 0;
+      background: #111;
+      border-top: 1px solid #333;
+      padding: 16px 0;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 32px;
+    }
+    .save-btn {
+      background: #f5a623;
+      color: #111;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .save-btn:hover { background: #e69500; }
+    .save-btn:disabled { background: #555; color: #888; cursor: not-allowed; }
+    .status { font-size: 13px; color: #999; }
+    .status.ok { color: #4caf50; }
+    .status.err { color: #f44336; }
+  </style>
+</head>
+<body>
+  <h1>Редактор кадра слайдшоу — Смена 2</h1>
+  <p class="subtitle">Перетащи фото мышью вверх/вниз, или используй слайдер. Нажми «Сохранить» — изменения применятся к сайту.</p>
+
+  <div id="grid" class="grid">
+    <p style="color:#666">Загружаем фото…</p>
+  </div>
+
+  <div class="save-bar">
+    <button class="save-btn" id="saveBtn" disabled>Сохранить все позиции</button>
+    <span class="status" id="statusMsg"></span>
+  </div>
+
+  <script>
+    const SECTION = 'smena2_slideshow';
+    let photos = [];
+
+    const grid = document.getElementById('grid');
+    const saveBtn = document.getElementById('saveBtn');
+    const statusMsg = document.getElementById('statusMsg');
+
+    fetch(`/api/gallery-photos?section=${SECTION}`)
+      .then(r => r.json())
+      .then(data => {
+        photos = data;
+        grid.innerHTML = '';
+        data.forEach((p, idx) => {
+          const row = buildRow(p, idx);
+          grid.appendChild(row);
+        });
+        saveBtn.disabled = false;
+      })
+      .catch(() => { grid.innerHTML = '<p style="color:#f44">Ошибка загрузки фото</p>'; });
+
+    function buildRow(p, idx) {
+      const initPos = p.position ? parseInt(p.position.split(' ')[1] ?? p.position) : 30;
+
+      const row = document.createElement('div');
+      row.className = 'photo-row';
+      row.dataset.file = p.file || '';
+      row.dataset.position = `50% ${initPos}%`;
+
+      // — фото-контейнер —
+      const wrap = document.createElement('div');
+      wrap.className = 'photo-wrap';
+
+      const img = document.createElement('img');
+      img.src = p.src;
+      img.alt = p.alt || '';
+      img.draggable = false;
+      img.style.objectPosition = `50% ${initPos}%`;
+
+      const cross = document.createElement('div');
+      cross.className = 'crosshair';
+      cross.style.top = `${initPos}%`;
+
+      wrap.appendChild(img);
+      wrap.appendChild(cross);
+
+      // — контролы — (создаём ДО setPos чтобы были в замыкании)
+      const controls = document.createElement('div');
+      controls.className = 'controls';
+
+      const filename = document.createElement('div');
+      filename.className = 'filename';
+      filename.textContent = (p.file || p.src).split('/').pop();
+
+      const label = document.createElement('div');
+      label.className = 'pos-label';
+      label.textContent = `50% ${initPos}%`;
+
+      const hint = document.createElement('div');
+      hint.className = 'hint';
+      hint.textContent = 'Перетащи фото или двигай слайдер';
+
+      const slider = document.createElement('input');
+      slider.type = 'range';
+      slider.min = 0;
+      slider.max = 100;
+      slider.value = initPos;
+
+      const presets = document.createElement('div');
+      presets.className = 'presets';
+
+      // — setPos — (теперь slider и label уже объявлены)
+      function setPos(pct) {
+        const clamped = Math.max(0, Math.min(100, Math.round(pct)));
+        img.style.objectPosition = `50% ${clamped}%`;
+        cross.style.top = `${clamped}%`;
+        slider.value = clamped;
+        label.textContent = `50% ${clamped}%`;
+        row.dataset.position = `50% ${clamped}%`;
+      }
+
+      slider.addEventListener('input', () => setPos(parseInt(slider.value)));
+
+      [0, 15, 25, 30, 40, 50, 65, 80, 100].forEach(v => {
+        const btn = document.createElement('button');
+        btn.className = 'preset-btn';
+        btn.textContent = `${v}%`;
+        btn.addEventListener('click', () => setPos(v));
+        presets.appendChild(btn);
+      });
+
+      controls.append(filename, label, hint, slider, presets);
+
+      // — drag мышь —
+      let dragging = false;
+      let startY = 0;
+      let startPos = initPos;
+
+      wrap.addEventListener('mousedown', e => {
+        dragging = true;
+        startY = e.clientY;
+        startPos = parseInt(slider.value);
+        e.preventDefault();
+      });
+      document.addEventListener('mousemove', e => {
+        if (!dragging) return;
+        const dy = e.clientY - startY;
+        setPos(startPos + (dy / wrap.offsetHeight) * 100);
+      });
+      document.addEventListener('mouseup', () => { dragging = false; });
+
+      // — touch —
+      wrap.addEventListener('touchstart', e => {
+        dragging = true;
+        startY = e.touches[0].clientY;
+        startPos = parseInt(slider.value);
+        e.preventDefault();
+      }, { passive: false });
+      document.addEventListener('touchmove', e => {
+        if (!dragging) return;
+        const dy = e.touches[0].clientY - startY;
+        setPos(startPos + (dy / wrap.offsetHeight) * 100);
+      });
+      document.addEventListener('touchend', () => { dragging = false; });
+
+      row.append(wrap, controls);
+      return row;
+    }
+
+    saveBtn.addEventListener('click', async () => {
+      const positions = {};
+      document.querySelectorAll('.photo-row[data-file]').forEach(row => {
+        const file = row.dataset.file;
+        const pos = row.dataset.position;
+        if (file && pos) positions[file] = pos;
+      });
+
+      saveBtn.disabled = true;
+      statusMsg.className = 'status';
+      statusMsg.textContent = 'Сохраняем…';
+
+      try {
+        const resp = await fetch('/api/save-photo-positions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ section: SECTION, positions }),
+        });
+        const result = await resp.json();
+        if (result.ok) {
+          statusMsg.className = 'status ok';
+          statusMsg.textContent = `✓ Сохранено ${result.updated} фото`;
+        } else {
+          throw new Error(result.error || 'ошибка');
+        }
+      } catch (e) {
+        statusMsg.className = 'status err';
+        statusMsg.textContent = `✗ Ошибка: ${e.message}`;
+      } finally {
+        saveBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
