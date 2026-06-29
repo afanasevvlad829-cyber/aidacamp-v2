@@ -1,7 +1,8 @@
 import { readdirSync, readFileSync, writeFileSync } from 'fs';
 import { join, basename } from 'path';
 
-const STATI_DIR = join(process.cwd(), 'src/pages/stati');
+// Читаем из основного репо (worktree не содержит незакоммиченные файлы)
+const STATI_DIR = join(process.cwd(), '../../src/pages/stati');
 const OUTPUT = join(process.cwd(), 'src/data/articles.ts');
 const BASE_URL = 'https://aidacamp.ru';
 const FALLBACK_IMAGE = '/images/hero/o-lagere.avif';

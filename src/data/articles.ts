@@ -12,6 +12,38 @@ export interface Article {
 
 export const articles: Article[] = [
   {
+    "slug": "ekonomika-detskogo-lagerya",
+    "title": "Почему детский лагерь стоит столько, сколько стоит: экономика изнутри",
+    "description": "44% выручки уходит на аренду базы. В США эту статью несёт НКО-фонд с землёй 1950-х годов. В Норвегии — государство. В России — вы. Разбираем экономику детских лагерей по цифрам.",
+    "date": "2026-06-29",
+    "ogImage": "/images/hero/lager-programmirovaniya.avif",
+    "url": "https://aidacamp.ru/stati/ekonomika-detskogo-lagerya"
+  },
+  {
+    "slug": "neobychnye-detskie-lagerya-v-mire",
+    "title": "Топ необычных детских лагерей в мире: шпионы, акулы, зомби и каскадёры",
+    "description": "Шпионский лагерь в здании музея ЦРУ, лагерь на яхте в Карибском море, STEM через зомби-апокалипсис. 9 самых необычных детских лагерей мира — реальные, с ценами.",
+    "date": "2026-06-29",
+    "ogImage": "/images/hero/lager-programmirovaniya.avif",
+    "url": "https://aidacamp.ru/stati/neobychnye-detskie-lagerya-v-mire"
+  },
+  {
+    "slug": "detskie-lagerya-v-mire",
+    "title": "Детские лагеря в мире: сколько стоит и чему учат",
+    "description": "США — $179 в день, Швейцария — 23 000 ₽ в день, Калифорния — $325. Сравниваем стоимость детских лагерей по всему миру в рублях и долларах. И смотрим, что за эти деньги воспитывают.",
+    "date": "2026-06-28",
+    "ogImage": "/images/hero/lager-programmirovaniya.avif",
+    "url": "https://aidacamp.ru/stati/detskie-lagerya-v-mire"
+  },
+  {
+    "slug": "kak-mir-vospityvaet-samostoyatelnost",
+    "title": "Как мир воспитывает самостоятельность у детей",
+    "description": "Финляндия — дети сами стирают одежду. США — запрещают звонить маме. Китай — инвестируют в результат. Как разные культуры решают вопрос взросления — и чему это учит нас.",
+    "date": "2026-06-28",
+    "ogImage": "/images/hero/lager-programmirovaniya.avif",
+    "url": "https://aidacamp.ru/stati/kak-mir-vospityvaet-samostoyatelnost"
+  },
+  {
     "slug": "chestno-pro-detskiy-lager",
     "title": "Что вы покупаете, отправляя ребёнка в лагерь — честно",
     "description": "Честно от Дарьи, основателя АйДаКемп: навык за смену устареет, а первый самостоятельный «я смог» — нет. Почему хороший лагерь стоит дорого и что ребёнок привозит на самом деле.",
