@@ -1,8 +1,21 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { articles } from '../data/articles';
+import pg from 'pg';
+
+const { Pool } = pg;
 
 const BASE_URL = 'https://aidacamp.ru';
+
+let _pool: InstanceType<typeof Pool> | null = null;
+function getPool() {
+  if (!_pool) {
+    const url = process.env.DATABASE_URL || import.meta.env.DATABASE_URL;
+    if (!url) return null;
+    _pool = new Pool({ connectionString: url, max: 3 });
+  }
+  return _pool;
+}
 
 function toRFC822(dateStr: string): string {
   return new Date(dateStr).toUTCString();
@@ -16,8 +29,24 @@ function esc(s: string): string {
     .replace(/"/g, '&quot;');
 }
 
-export const GET: APIRoute = () => {
-  const items = articles.slice(0, 50).map(a => {
+export const GET: APIRoute = async () => {
+  // Получаем слаги опубликованных статей из БД
+  let publishedSlugs: Set<string> = new Set();
+  try {
+    const pool = getPool();
+    if (pool) {
+      const { rows } = await pool.query(
+        `SELECT slug FROM article_views WHERE rss_published_at IS NOT NULL ORDER BY rss_published_at DESC LIMIT 100`
+      );
+      publishedSlugs = new Set(rows.map((r: { slug: string }) => r.slug));
+    }
+  } catch {
+    // БД недоступна — отдаём пустой фид
+  }
+
+  const published = articles.filter(a => publishedSlugs.has(a.slug));
+
+  const items = published.map(a => {
     const imageUrl = a.ogImage.startsWith('http') ? a.ogImage : `${BASE_URL}${a.ogImage}`;
     return `  <item>
     <title>${esc(a.title)}</title>

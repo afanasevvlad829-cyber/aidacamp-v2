@@ -89,21 +89,21 @@ const { videos, baseUrl = '/videos/smena2' } = Astro.props;
   scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   padding: 4px 0 8px;
-  padding-left: calc((100% - min(56vw, 260px)) / 2);
-  padding-right: calc((100% - min(56vw, 260px)) / 2);
+  padding-left: calc((100% - min(72vw, 300px)) / 2);
+  padding-right: calc((100% - min(72vw, 300px)) / 2);
 }
 .vcv-track::-webkit-scrollbar { display: none; }
 .vcv-slide {
-  flex: 0 0 min(56vw, 260px);
+  flex: 0 0 min(72vw, 300px);
   scroll-snap-align: center;
 }
 
 @media (min-width: 768px) {
   .vcv-track {
-    padding-left: calc((100% - 4 * 220px - 3 * 16px) / 2);
-    padding-right: calc((100% - 4 * 220px - 3 * 16px) / 2);
+    padding-left: calc((100% - 4 * 260px - 3 * 16px) / 2);
+    padding-right: calc((100% - 4 * 260px - 3 * 16px) / 2);
   }
-  .vcv-slide { flex: 0 0 220px; }
+  .vcv-slide { flex: 0 0 260px; }
 }
 
 .vcv-card {
@@ -143,15 +143,22 @@ const { videos, baseUrl = '/videos/smena2' } = Astro.props;
 .vcv-title { font-size: 15px; font-weight: 700; color: #1a2a3a; margin: 0 0 6px; line-height: 1.35; }
 .vcv-desc { font-size: 12px; color: #6e788a; margin: 0; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 
-.vcv-dots { display: flex; justify-content: center; align-items: center; gap: 4px; margin-top: 20px; }
+.vcv-dots { display: flex; justify-content: center; align-items: center; gap: 0; margin-top: 20px; }
 .vcv-dot {
-  width: 10px; height: 10px; border-radius: 50%;
-  border: none; padding: 10px;
-  background-color: rgba(0,0,0,0.2);
-  background-clip: content-box; box-sizing: content-box;
-  cursor: pointer; transition: background-color 0.2s, width 0.2s, border-radius 0.2s;
+  width: 32px; height: 32px;
+  border: none; padding: 0; background: transparent;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
 }
-.vcv-dot.is-active { background-color: #ec9b44; width: 26px; border-radius: 5px; }
+.vcv-dot::after {
+  content: '';
+  display: block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.2);
+  transition: width 0.2s, border-radius 0.2s, background-color 0.2s;
+}
+.vcv-dot.is-active::after { background-color: #ec9b44; width: 24px; border-radius: 4px; }
 
 /* Лайтбокс */
 .vcv-lb {
@@ -269,8 +276,8 @@ import Plyr from 'plyr';
     document.body.style.overflow = 'hidden';
     cues = await loadVTT(trackSrc);
     const p = getPlayer();
+    p.media.addEventListener('canplay', () => p.play().catch(() => {}), { once: true });
     p.source = { type: 'video', poster, sources: [{ src: mp4Src, type: 'video/mp4' }] };
-    p.play().catch(() => {});
   }
 
   function closeLb() {

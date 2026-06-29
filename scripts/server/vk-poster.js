@@ -82,7 +82,8 @@ async function main() {
     console.warn('Photo upload failed:', e.message);
   }
 
-  const message = `${article.title}\n\n${article.description}\n\nЧитать полностью: ${article.url}`;
+  const utmUrl = `https://aidacamp.ru?utm_source=vk&utm_medium=social&utm_campaign=articles`;
+  const message = `${article.title}\n\n${article.description}\n\nЧитать полностью: ${article.url}\n\nАйДаКемп — IT-лагерь для детей: ${utmUrl}`;
   const postParams = { message, owner_id: String(VK_OWNER_ID) };
   if (attachment) postParams.attachments = attachment;
 
@@ -97,6 +98,28 @@ async function main() {
   `, [slug, String(postId), VK_OWNER_ID]);
 
   console.log(`Posted: vk.com/wall${VK_OWNER_ID}_${postId}`);
+
+  // Открываем другую статью в RSS (не ту же что в ВК)
+  try {
+    const { rows: rssRows } = await pool.query(`
+      SELECT slug FROM article_views
+      WHERE rss_published_at IS NULL AND slug != $1
+      ORDER BY metrika_visits DESC NULLS LAST, slug ASC
+      LIMIT 1
+    `, [slug]);
+    if (rssRows.length) {
+      await pool.query(
+        `INSERT INTO article_views (slug, views, updated_at, rss_published_at)
+         VALUES ($1, 0, now(), now())
+         ON CONFLICT (slug) DO UPDATE SET rss_published_at=now(), updated_at=now()`,
+        [rssRows[0].slug]
+      );
+      console.log(`RSS published: ${rssRows[0].slug}`);
+    }
+  } catch (e) {
+    console.warn('RSS publish failed:', e.message);
+  }
+
   await pool.end();
 }
 

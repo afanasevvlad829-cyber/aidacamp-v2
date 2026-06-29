@@ -14,7 +14,7 @@ export const GET: APIRoute = ({ url }) => {
   }
 
   const galleryDir = join(process.cwd(), 'images', 'gallery');
-  type Addition = { file: string; alt: string };
+  type Addition = { file: string; alt: string; position?: string };
   let additions: Record<string, Addition[]> = {};
   try {
     additions = JSON.parse(readFileSync(join(galleryDir, 'gallery-additions.json'), 'utf-8'));
@@ -24,6 +24,8 @@ export const GET: APIRoute = ({ url }) => {
   const extra = (additions[section] ?? []).map(e => ({
     src: `/images/gallery/${e.file}`,
     alt: e.alt || '',
+    file: e.file,
+    ...(e.position ? { position: e.position } : {}),
   }));
 
   const photos = [...base, ...extra];

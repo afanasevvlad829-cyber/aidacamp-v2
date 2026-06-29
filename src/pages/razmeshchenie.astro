@@ -271,7 +271,7 @@ const relatedPages = [
             <h2 class="text-[20px] md:text-[26px] font-extrabold tracking-[-0.02em] text-body">Санаторий «Изумруд»</h2>
           </div>
           <p class="text-base text-body-muted leading-[1.65] mb-4">
-            Лагерь АйДаКемп базируется в Наро-Фоминском районе Подмосковья — 66 км от МКАД. Капитальные корпуса, бассейн, спортивные поля, столовая и медпункт.
+            Лагерь АйДаКемп базируется в Наро-Фоминском районе Подмосковья — 66 км от МКАД. Капитальные корпуса, бассейн, спортивные площадки, столовая и медпункт.
           </p>
           <p class="text-base text-body-muted leading-[1.65] mb-6">
             Санаторий работает круглый год — инфраструктура всегда в отличном состоянии. Полный доступ ко всем объектам в течение смены.
@@ -287,17 +287,27 @@ const relatedPages = [
             </div>
           </div>
         </div>
-        <div class="rounded-[16px] overflow-hidden shadow-lg aspect-[4/3]">
-          <picture>
-            <source srcset="/images/gallery/territory-korpus.avif" type="image/avif" />
-            <img
-              src="/images/gallery/jpg/territory-korpus.jpg"
-              alt="Жилой корпус санатория Изумруд"
-              class="w-full h-full object-cover"
-              loading="lazy"
-            />
-          </picture>
-        </div>
+        <button
+          type="button"
+          id="izumrud-video-btn"
+          data-video-src="/video/territoriya-izumrud.mp4"
+          class="group relative block w-full overflow-hidden rounded-[16px] shadow-lg aspect-video bg-slate-900 cursor-pointer"
+          aria-label="Смотреть обзор территории лагеря АйДаКемп — санаторий «Изумруд»"
+        >
+          <img
+            src="/video/territoriya-izumrud-poster.jpg"
+            alt="Обзор территории лагеря АйДаКемп — санаторий Изумруд"
+            class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
+          />
+          <span class="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></span>
+          <span class="absolute inset-0 flex items-center justify-center">
+            <span class="flex h-16 w-16 items-center justify-center rounded-full bg-black/55 backdrop-blur-sm transition-transform duration-200 group-hover:scale-110">
+              <i class="bi bi-play-fill text-[34px] text-white" aria-hidden="true"></i>
+            </span>
+          </span>
+          <span class="absolute bottom-3 left-3 rounded-md bg-black/65 px-2.5 py-1 text-base font-semibold text-white backdrop-blur-sm">Обзор территории</span>
+        </button>
       </div>
     </div>
   </section>
@@ -346,6 +356,14 @@ const relatedPages = [
     </div>
   </section>
 
+  <!-- VIDEO LIGHTBOX -->
+  <div id="video-lightbox" class="fixed inset-0 bg-black/90 z-[200] hidden items-center justify-center p-4" role="dialog" aria-modal="true">
+    <button id="video-lightbox-close" class="absolute top-4 right-4 text-white/70 hover:text-white z-10" aria-label="Закрыть">
+      <i class="bi bi-x-lg text-[24px]" aria-hidden="true"></i>
+    </button>
+    <video id="video-lightbox-player" class="max-h-[90vh] max-w-[90vw] rounded-[12px] bg-black" controls playsinline></video>
+  </div>
+
   <!-- LIGHTBOX -->
   <div id="lightbox" class="fixed inset-0 bg-black/90 z-[200] hidden items-center justify-center p-4" role="dialog" aria-modal="true">
     <button id="lightbox-close" class="absolute top-4 right-4 text-white/70 hover:text-white z-10" aria-label="Закрыть">
@@ -362,6 +380,33 @@ const relatedPages = [
 </LandingLayout>
 
 <script>
+  // ── Видео-лайтбокс: обзор территории «Изумруд» ──
+  const vlb = document.getElementById('video-lightbox');
+  const vlbPlayer = document.getElementById('video-lightbox-player') as HTMLVideoElement | null;
+  const vlbClose = document.getElementById('video-lightbox-close');
+  const vlbBtn = document.getElementById('izumrud-video-btn') as HTMLButtonElement | null;
+
+  function openVideoLb(src: string) {
+    if (!vlb || !vlbPlayer) return;
+    vlbPlayer.src = src;
+    vlb.classList.remove('hidden'); vlb.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    vlbPlayer.play().catch(() => {});
+  }
+  function closeVideoLb() {
+    if (!vlb || !vlbPlayer) return;
+    vlbPlayer.pause();
+    vlbPlayer.removeAttribute('src'); vlbPlayer.load();
+    vlb.classList.add('hidden'); vlb.classList.remove('flex');
+    document.body.style.overflow = '';
+  }
+  vlbBtn?.addEventListener('click', () => openVideoLb(vlbBtn.dataset.videoSrc!));
+  vlbClose?.addEventListener('click', closeVideoLb);
+  vlb?.addEventListener('click', e => { if (e.target === vlb) closeVideoLb(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && vlb && !vlb.classList.contains('hidden')) closeVideoLb();
+  });
+
   const lb = document.getElementById('lightbox')!;
   const lbImg = document.getElementById('lightbox-img') as HTMLImageElement;
   const lbClose = document.getElementById('lightbox-close')!;
