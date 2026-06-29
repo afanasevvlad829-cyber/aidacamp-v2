@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { ARTICLES as articles } from '../data/articles';
+import { articles } from '../data/articles';
 import pg from 'pg';
 
 const { Pool } = pg;
@@ -29,8 +29,12 @@ function esc(s: string): string {
     .replace(/"/g, '&quot;');
 }
 
+function wrapCdata(html: string): string {
+  // Дзен принимает CDATA в content:encoded
+  return `<![CDATA[${html}]]>`;
+}
+
 export const GET: APIRoute = async () => {
-  // Получаем слаги опубликованных статей из БД
   let publishedSlugs: Set<string> = new Set();
   try {
     const pool = getPool();
@@ -41,25 +45,29 @@ export const GET: APIRoute = async () => {
       publishedSlugs = new Set(rows.map((r: { slug: string }) => r.slug));
     }
   } catch {
-    // БД недоступна — отдаём пустой фид
+    // БД недоступна — пустой фид
   }
 
   const published = articles.filter(a => publishedSlugs.has(a.slug));
 
   const items = published.map(a => {
-    const imageUrl = a.ogImage.startsWith('http') ? a.ogImage : `${BASE_URL}${a.ogImage}`;
+    const imageUrl = a.ogImageJpg.startsWith('http') ? a.ogImageJpg : `${BASE_URL}${a.ogImageJpg}`;
     return `  <item>
     <title>${esc(a.title)}</title>
     <link>${esc(a.url)}</link>
     <description>${esc(a.description)}</description>
     <pubDate>${toRFC822(a.date)}</pubDate>
     <guid isPermaLink="true">${esc(a.url)}</guid>
-    <enclosure url="${esc(imageUrl)}" type="image/avif" length="0"/>
+    <category>format-article</category>
+    <enclosure url="${esc(imageUrl)}" type="image/jpeg" length="0"/>
+    <content:encoded>${wrapCdata(a.contentHtml)}</content:encoded>
   </item>`;
   }).join('\n');
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/">
+<rss version="2.0"
+  xmlns:content="http://purl.org/rss/modules/content/"
+  xmlns:media="http://search.yahoo.com/mrss/">
   <channel>
     <title>АйДаКемп — блог об IT-лагере для детей</title>
     <link>${BASE_URL}</link>
@@ -67,7 +75,7 @@ export const GET: APIRoute = async () => {
     <language>ru</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
     <image>
-      <url>${BASE_URL}/images/hero/o-lagere.avif</url>
+      <url>${BASE_URL}/images/hero/jpg/o-lagere.jpg</url>
       <title>АйДаКемп</title>
       <link>${BASE_URL}</link>
     </image>
