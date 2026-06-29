@@ -200,10 +200,10 @@ initTheme();
 
 /* ── CAMP DATA ── */
 const SMENY=[
-  {n:'Смена 1',dates:'30 мая — 8 июня',days:'10 дней',price:'85 900 ₽',available:true,occupied:23,total:35},
-  {n:'Смена 2',dates:'10 — 23 июня',days:'14 дней',price:'99 000 ₽',available:true,popular:true,occupied:41,total:45},
-  {n:'Смена 2.1',dates:'10 — 16 июня',days:'7 дней',price:'48 000 ₽',available:true,short:true,occupied:29,total:40},
-  {n:'Смена 2.2',dates:'16 — 23 июня',days:'8 дней',price:'75 000 ₽',available:true,short:true,occupied:37,total:45},
+  {n:'Смена 1',dates:'30 мая — 8 июня',days:'10 дней',price:'85 900 ₽',available:false,occupied:23,total:35},
+  {n:'Смена 2',dates:'10 — 23 июня',days:'14 дней',price:'99 000 ₽',available:false,popular:true,occupied:41,total:45},
+  {n:'Смена 2.1',dates:'10 — 16 июня',days:'7 дней',price:'48 000 ₽',available:false,short:true,occupied:29,total:40},
+  {n:'Смена 2.2',dates:'16 — 23 июня',days:'8 дней',price:'75 000 ₽',available:false,short:true,occupied:37,total:45},
   {n:'Смена 3',dates:'3 — 15 августа',days:'13 дней',price:'89 400 ₽',available:true,occupied:40,total:45},
   {n:'Смена 4',dates:'17 — 26 августа',days:'10 дней',price:'74 900 ₽',available:true,occupied:31,total:45},
 ];
@@ -511,9 +511,8 @@ function blockPrices(){
   head.innerHTML='<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:8px"><i class="bi bi-tag" aria-hidden="true"></i>Стоимость смен</span>';
   card.appendChild(head);
   const tabs=[
-    {label:'7 дней',price:'48 000 ₽',sub:'за смену · смена 2.1',inc:['Проживание в корпусе','5-разовое питание','IT-программа по направлению','Трансфер от м. Солнцево','Бассейн через день'],cb:'Налоговый вычет 13% — вернёте до <strong>5 200 ₽</strong> через ФНС'},
-    {label:'10 дней',price:'69 600–85 900 ₽',sub:'за смену · смены 1 и 4',inc:['Всё включено (проживание, питание, IT, трансфер)','Хакатон в последние 2 дня','Сертификат по итогам'],cb:'Налоговый вычет 13% — вернёте до <strong>9 737 ₽</strong> через ФНС'},
-    {label:'14 дней',price:'99 000 ₽',sub:'за смену · смена 2 (популярная)',inc:['Самая полная программа — 14 дней','Всё включено + хакатон','Дети успевают подружиться по-настоящему'],cb:'Налоговый вычет 13% — вернёте до <strong>5 200 ₽</strong> через ФНС'},
+    {label:'10 дней',price:'74 900 ₽',sub:'за смену · Смена 4 (август)',inc:['Всё включено (проживание, питание, IT, трансфер)','Хакатон в последние 2 дня','Сертификат по итогам'],cb:'Налоговый вычет 13% — вернёте до <strong>4 800 ₽</strong> через ФНС'},
+    {label:'13 дней',price:'89 400 ₽',sub:'за смену · Смена 3 (август)',inc:['Полная программа — 13 дней','Всё включено + хакатон','Дети успевают подружиться по-настоящему'],cb:'Налоговый вычет 13% — вернёте до <strong>5 200 ₽</strong> через ФНС'},
   ];
   const tabRow=mkEl('div','display:flex;gap:1px;background:rgba(13,27,42,.07)');
   const bodies=[];
@@ -545,12 +544,12 @@ function blockPrices(){
 function blockTaxCalculator(){
   // Смены: [название, цена, дней]
   const SHIFTS=[
-    ['Смена 1 — 10 июня–8 июн, 10 дней', 85900, 10],
-    ['Смена 2 — 10–23 июн, 14 дней ⭐', 99000, 14],
-    ['Смена 2.1 — 10–16 июн, 7 дней', 48000, 7],
-    ['Смена 2.2 — 16–23 июн, 8 дней', 75000, 8],
-    ['Смена 3 — 3–15 авг, 13 дней', 89400, 13],
     ['Смена 4 — 17–26 авг, 10 дней', 74900, 10],
+    ['Смена 3 — 3–15 авг, 13 дней', 89400, 13],
+    ['Смена 1 (завершена) — 30 мая–8 июн, 10 дней', 85900, 10],
+    ['Смена 2 (завершена) — 10–23 июн, 14 дней', 99000, 14],
+    ['Смена 2.1 (завершена) — 10–16 июн, 7 дней', 48000, 7],
+    ['Смена 2.2 (завершена) — 16–23 июн, 8 дней', 75000, 8],
   ];
   const RESIDENTIAL_PER_DAY=3800;
   const EDU_LIMIT=110000;
@@ -633,7 +632,7 @@ function blockOccupancyChart(){
     nm.appendChild(mkEl('span','font-size:14px;font-weight:700;color:#0d1a2b',s.n));
     nm.appendChild(mkEl('span','font-size:12px;color:#7e9094;margin-left:8px',s.dates));
     top.appendChild(nm);
-    top.appendChild(mkEl('span','font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:'+bg+';color:'+clr,s.available?free+' свободно':'Нет мест'));
+    top.appendChild(mkEl('span','font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:'+bg+';color:'+clr,s.available?free+' свободно':'Завершена'));
     row.appendChild(top);
     const barWrap=mkEl('div','height:10px;border-radius:5px;background:rgba(13,27,42,.07);overflow:hidden;margin-bottom:4px');
     const fill=mkEl('div','height:100%;border-radius:5px;width:0;transition:width 1.1s '+(0.08+idx*.12)+'s cubic-bezier(.34,1.56,.64,1);background:'+grad);
@@ -893,7 +892,7 @@ function blockPricingBreakdown(){
   const body=mkEl('div','padding:18px 20px;display:flex;flex-direction:column;gap:0');
   const priceEl=mkEl('div','font-size:40px;font-weight:800;color:#0d1a2b;letter-spacing:-.03em;margin-bottom:4px;transition:all .5s','99 000 ₽');
   body.appendChild(priceEl);
-  body.appendChild(mkEl('div','font-size:13px;color:#4e6072;margin-bottom:20px','смена 2 · 14 дней · всё включено'));
+  body.appendChild(mkEl('div','font-size:13px;color:#4e6072;margin-bottom:20px','августовские смены · всё включено'));
   const steps=[
     {icon:'mortarboard',label:'Налоговый вычет 13% (через ФНС)',amount:'-5 200 ₽',color:'#1d6fe0',delay:600},
   ];
