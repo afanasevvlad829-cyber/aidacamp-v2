@@ -68,6 +68,14 @@ export const articles: Article[] = [
     "url": "https://aidacamp.ru/stati/lager-bez-roditeley-10-let"
   },
   {
+    "slug": "lager-na-kanikuly",
+    "title": "Лагерь на летние каникулы 2026 — смены в Подмосковье",
+    "description": "Детский лагерь на летние каникулы 2026 в Подмосковье. Смены июнь–август, 7–14 дней. IT-программа, бассейн, хакатон.",
+    "date": "2026-06-17",
+    "ogImage": "/images/hero/lager-programmirovaniya.avif",
+    "url": "https://aidacamp.ru/stati/lager-na-kanikuly"
+  },
+  {
     "slug": "lager-s-basseynom-podmoskove",
     "title": "Лагерь с бассейном в Подмосковье — детский отдых с плаванием",
     "description": "Детский лагерь с бассейном в Подмосковье — крытый бассейн с ионизированной водой, хвойный лес, 66 км от МКАД. IT-программа + плавание. Смены 2026.",
@@ -396,6 +404,14 @@ export const articles: Article[] = [
     "url": "https://aidacamp.ru/stati/robotehnika-dlya-detej"
   },
   {
+    "slug": "skolko-stoit-detskiy-lager",
+    "title": "Сколько стоит детский лагерь 2026 — цены и как сэкономить",
+    "description": "Реальные цены на детские лагеря в 2026: дневной от 15 000 ₽, загородный 40–100 000 ₽, IT-лагерь 48–",
+    "date": "2026-05-15",
+    "ogImage": "/images/hero/lager-programmirovaniya.avif",
+    "url": "https://aidacamp.ru/stati/skolko-stoit-detskiy-lager"
+  },
+  {
     "slug": "soft-skills-dlya-detej",
     "title": "Soft skills для детей: что это, зачем и как развивать",
     "description": "Что такое soft skills для детей, почему школа их не даёт и как IT-лагерь развивает коммуникацию, лидерство и работу в команде.",
@@ -580,6 +596,14 @@ export const articles: Article[] = [
     "url": "https://aidacamp.ru/stati/luchshie-lagerya-dlya-podrostkov"
   },
   {
+    "slug": "oplata-detskogo-lagerya",
+    "title": "Как оплатить детский лагерь 2026 — рассрочка 50/50, возврат 13%",
+    "description": "Способы оплаты детского лагеря, рассрочка 50/50, что входит в стоимость и как вернуть 13% через налоговый вычет.",
+    "date": "2026-04-25",
+    "ogImage": "/images/hero/lager-na-leto-2026.avif",
+    "url": "https://aidacamp.ru/stati/oplata-detskogo-lagerya"
+  },
+  {
     "slug": "pismo-rebenku-v-lager",
     "title": "Письмо ребёнку в лагерь — что писать и как не ляпнуть лишнего",
     "description": "Практичное руководство: что писать ребёнку в лагерь, примеры поддерживающих фраз, что НЕ писать. Как работает связь в АйДаКемп.",
@@ -700,6 +724,30 @@ export const articles: Article[] = [
     "url": "https://aidacamp.ru/stati/kak-dobratsya-do-lagera"
   },
   {
+    "slug": "lager-naro-fominsk",
+    "title": "Детский лагерь в Наро-Фоминском районе 2026 — 66 км от МКАД",
+    "description": "Летний IT-лагерь для детей 7-16 лет в Наро-Фоминском округе Московской области. Python, AI, Minecraft. Бассейн, спорт, творчество.",
+    "date": "2026-04-24",
+    "ogImage": "/images/articles/kuda-letom-1600.jpg",
+    "url": "https://aidacamp.ru/stati/lager-naro-fominsk"
+  },
+  {
+    "slug": "lager-novaya-moskva",
+    "title": "Детский лагерь в Новой Москве и рядом 2026 — IT-смены",
+    "description": "Детский IT-лагерь рядом с Новой Москвой: 40-70 км, трансфер через партнёра по запросу от метро Солнцево. Python, AI, Minecraft. Смены 2026 от",
+    "date": "2026-04-24",
+    "ogImage": "/images/articles/kuda-letom-1600.jpg",
+    "url": "https://aidacamp.ru/stati/lager-novaya-moskva"
+  },
+  {
+    "slug": "lager-podolsk",
+    "title": "Детский лагерь рядом с Подольском 2026 — IT-программа",
+    "description": "Детский IT-лагерь рядом с Подольском: 55 км, Python, AI, Minecraft. Смены 2026 от",
+    "date": "2026-04-24",
+    "ogImage": "/images/articles/kuda-letom-1600.jpg",
+    "url": "https://aidacamp.ru/stati/lager-podolsk"
+  },
+  {
     "slug": "nejroseti-dlya-detej",
     "title": "Нейросети для детей — с какого возраста начинать",
     "description": "ChatGPT, Midjourney, AI-арт — дети уже этим пользуются. Узнайте с какого возраста это безопасно, что могут создавать дети и как первое знакомство сделать",
@@ -796,12 +844,28 @@ export const articles: Article[] = [
     "url": "https://aidacamp.ru/stati/chto-vzyat-v-lager"
   },
   {
+    "slug": "dokumenty-licenziya-strahovka",
+    "title": "Документы лагеря: лицензия, страховка, налоговый вычет",
+    "description": "Лицензия Минобра, налоговый вычет 13% (до",
+    "date": "2026-04-21",
+    "ogImage": "/images/hero/o-lagere.avif",
+    "url": "https://aidacamp.ru/stati/dokumenty-licenziya-strahovka"
+  },
+  {
     "slug": "kak-vybrat-lager",
     "title": "Как выбрать детский лагерь 2026 — 7 критериев от мамы к маме",
     "description": "Как выбрать летний лагерь для ребёнка: 7 честных критериев, которые отсекают плохие варианты. Лицензия, медик, отзывы, возврат денег — чек-лист.",
     "date": "2026-04-21",
     "ogImage": "/images/hero/o-lagere.avif",
     "url": "https://aidacamp.ru/stati/kak-vybrat-lager"
+  },
+  {
+    "slug": "pervyj-raz-v-lagere",
+    "title": "Ребёнок первый раз в лагере — страхи мамы и реальность",
+    "description": "\"А вдруг он будет плакать?\" — разбираем 6 главных страхов мамы перед первым лагерем. Что из них реально, что нет, и как подготовиться без тревоги.",
+    "date": "2026-04-21",
+    "ogImage": "/images/hero/o-lagere.avif",
+    "url": "https://aidacamp.ru/stati/pervyj-raz-v-lagere"
   },
   {
     "slug": "ii-zamenit-programmista",

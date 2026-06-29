@@ -32,7 +32,15 @@ for (const file of files) {
 
   const rawTitle = extract(content, /title="([^"]+)"/);
   const title = rawTitle.replace(/\s*\|\s*АйДаКемп\s*$/, '').trim();
-  const description = extract(content, /description="([^"]+)"/);
+  const description =
+    extract(content, /description="([^"]+)"/) ||
+    extract(content, /description='([^']+)'/) ||
+    extract(content, /const\s+description\s*=\s*['"]([^'"]+)['"]/) ||
+    extract(content, /"description":\s*"([^"]+)"/) ||
+    // template literal: grab text before first ${...} interpolation
+    extract(content, /description=\{`([^`$]+)/) ||
+    extract(content, /"description":\s*`([^`$]+)/);
+
   const ogImage = extract(content, /ogImage="([^"]+)"/) || FALLBACK_IMAGE;
 
   if (!title || !description) continue;
