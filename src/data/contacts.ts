@@ -1,4 +1,6 @@
 // Единый источник контактных данных
+import { PRICE_MIN } from './shifts';
+
 export const PHONE_MAIN = '+7 (495) 128-44-29';
 export const PHONE_MAIN_RAW = '+74951284429';
 export const PHONE_MAIN_HREF = 'tel:+74951284429';
@@ -23,4 +25,6 @@ export const STAT_RATING = '5.0';        // рейтинг
 export const STAT_DISTANCE = '66 км';    // от Москвы
 export const STAT_RETURN = '60%';        // возвращаются снова
 export const CAMP_SEASON = 'июнь–август 2026';
-export const CAMP_PRICE_FROM = '48 000 ₽';
+// Якорь «от X» — берётся из минимума ОТКРЫТЫХ смен (PRICE_MIN из shifts.ts),
+// чтобы не устаревать при смене сезона. Сейчас = 74 900 ₽ (10-дневная Смена 4).
+export const CAMP_PRICE_FROM = PRICE_MIN;
