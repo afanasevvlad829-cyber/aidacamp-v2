@@ -1,0 +1,317 @@
+---
+import '../../styles/global.css';
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import RelatedPages from '../../components/RelatedPages.astro';
+import ArticleHero from '../../components/ArticleHero.astro';
+import ArticleBottomCta from '../../components/ArticleBottomCta.astro';
+import BlogCTA from '../../components/BlogCTA.astro';
+
+const relatedPages = [
+  { title: "Лагеря мира: сравнение цен", url: "/stati/detskie-lagerya-v-mire", icon: "globe2", description: "США, Швейцария, Япония — кто сколько платит" },
+  { title: "Как мир воспитывает самостоятельность", url: "/stati/kak-mir-vospityvaet-samostoyatelnost", icon: "people", description: "Финляндия, США, Китай — три разных ответа" },
+  { title: "ИТ-лагерь для детей", url: "/it-lager-dlya-detey", icon: "cpu", description: "Программирование + командная работа" },
+  { title: "ИТ-лагерь для подростков", url: "/it-lager-dlya-podrostkov", icon: "laptop", description: "Проекты, хакатоны, реальные задачи" },
+];
+
+const camps = [
+  {
+    n: 1,
+    flag: "🇺🇸",
+    country: "США, Алабама",
+    name: "Space Camp",
+    tag: "Космос",
+    tagIcon: "stars",
+    tagColor: "bg-indigo-100 text-indigo-700",
+    age: "9–18 лет",
+    price: "от $1 299/неделю",
+    desc: "Лагерь на территории Центра США по космосу и ракетам прямо при NASA. Дети проходят симуляции космических миссий, тренируются на тренажёре Multi-Axis Trainer — вращение по трём осям одновременно — строят и запускают ракеты.",
+    detail: "Каждую неделю в лагере выступает живой астронавт. За 40+ лет через лагерь прошло более 700 000 детей из 150 стран.",
+    wow: "Реальная симуляция миссии на МКС — роли пилота, командира, оператора связи и специалиста по полезной нагрузке.",
+    color: "border-indigo-200",
+    bg: "bg-indigo-50",
+  },
+  {
+    n: 2,
+    flag: "🇺🇸",
+    country: "США, Вашингтон DC",
+    name: "Spy Camp (Музей шпионажа)",
+    tag: "Шпионаж",
+    tagIcon: "eye",
+    tagColor: "bg-slate-100 text-slate-700",
+    age: "9–12 лет",
+    price: "$625 за неделю",
+    desc: "Недельный шпионский лагерь в здании Международного музея шпионажа. Дети работают под руководством бывших сотрудников спецслужб: создают гаджеты, разрабатывают легенды прикрытия и выходят на задания по улицам Вашингтона.",
+    detail: "Программа 9:00–15:00, пять дней. Реальные улицы DC — в легенде прикрытия и гриме.",
+    wow: "Полевые миссии по Вашингтону в образе: грим, легенда, маршрут. Не квест — полноценная учебная операция.",
+    color: "border-slate-200",
+    bg: "bg-slate-50",
+  },
+  {
+    n: 3,
+    flag: "🇺🇸",
+    country: "США, Калифорния",
+    name: "Hollywood Stunt Camp (Pali Adventures)",
+    tag: "Трюки",
+    tagIcon: "lightning",
+    tagColor: "bg-orange-100 text-orange-700",
+    age: "8–16 лет",
+    price: "от $1 615/неделю",
+    desc: "Профессиональные каскадёры обучают детей трюкам из Голливуда: падения, бой на мечах, рукопашные сцены, пиротехническая безопасность. На второй неделе — сертифицированный прыжок с 10-метровой башни.",
+    detail: "Соотношение персонал/участник 1:3 — как на профессиональных съёмочных площадках.",
+    wow: "Прыжок с 10-метровой башни — часть официальной учебной программы, не аттракцион.",
+    color: "border-orange-200",
+    bg: "bg-orange-50",
+  },
+  {
+    n: 4,
+    flag: "🇺🇸",
+    country: "США, Техас",
+    name: "Sherwood Forest Summer Camp",
+    tag: "Средневековье",
+    tagIcon: "shield",
+    tagColor: "bg-amber-100 text-amber-700",
+    age: "7–16 лет",
+    price: "по запросу",
+    desc: "Ночной лагерь на 25 акрах настоящей средневековой деревни без современных технологий. Программа: кузнечное дело, плетение кольчуги, метание топора, фехтование, верховая езда, изготовление свечей — и официальный курс «Fae Studies».",
+    detail: "Дети 10 лет и младше автоматически заселяются в реальный Замок с башнями и бункерами.",
+    wow: "«Fae Studies» — официальный предмет программы. Исследование магии фей как часть расписания.",
+    color: "border-amber-200",
+    bg: "bg-amber-50",
+  },
+  {
+    n: 5,
+    flag: "🌊",
+    country: "Карибский бассейн",
+    name: "Caribbean Marine Biology Voyage (Broadreach)",
+    tag: "Океан",
+    tagIcon: "tsunami",
+    tagColor: "bg-cyan-100 text-cyan-700",
+    age: "13–17 лет",
+    price: "от $4 000 за 12 дней",
+    desc: "Подростки живут на парусной яхте в Карибском море 12–24 дня. Сертификат дайвера PADI, изучение коралловых рифов, прибрежная биология. На борту — морской биолог, инструктор и дайв-мастер.",
+    detail: "Каждый участник по очереди выполняет роль шкипера, штурмана, кока и офицера безопасности погружений.",
+    wow: "Ты не пассажир — ты экипаж. Реальное управление яхтой в открытом море.",
+    color: "border-cyan-200",
+    bg: "bg-cyan-50",
+  },
+  {
+    n: 6,
+    flag: "🐢",
+    country: "США, Северная Каролина",
+    name: "Sea Turtle Camp",
+    tag: "Биология",
+    tagIcon: "tree",
+    tagColor: "bg-green-100 text-green-700",
+    age: "10–18 лет",
+    price: "от $2 980 за 6 дней",
+    desc: "Подростки работают вместе с сотрудниками Центра спасения морских черепах. Ночные патрули пляжей, мониторинг кладок яиц, реабилитация раненых черепах — полноценная полевая биология, а не экскурсия.",
+    detail: "Программа в Коста-Рике — только для девочек, работа на одном из самых активных черепашьих побережий мира.",
+    wow: "Выход на пляж ночью во время сезона нереста вместе с учёными. Реальная охрана вида, не наблюдение.",
+    color: "border-green-200",
+    bg: "bg-green-50",
+  },
+  {
+    n: 7,
+    flag: "🧟",
+    country: "США, Массачусетс",
+    name: "Zombie STEM Camp",
+    tag: "STEM + зомби",
+    tagIcon: "cpu",
+    tagColor: "bg-red-100 text-red-700",
+    age: "7–13 лет",
+    price: "уточняется",
+    desc: "STEM-лагерь, упакованный в нарратив зомби-апокалипсиса. Электрические схемы, двоичный код, инженерия — и Nerf-бластеры для уничтожения зомби. Каждый урок интегрирован в сюжет выживания.",
+    detail: "Изучение двоичного кода подаётся как «единственный способ взломать защиту и остановить эпидемию».",
+    wow: "Дети решают реальные инженерные задачи, думая что спасают мир от зомби-апокалипсиса.",
+    color: "border-red-200",
+    bg: "bg-red-50",
+  },
+  {
+    n: 8,
+    flag: "🦈",
+    country: "США, Техас",
+    name: "Sea Camp: Sharks & More (Texas A&M)",
+    tag: "Акулы",
+    tagIcon: "moisture",
+    tagColor: "bg-blue-100 text-blue-700",
+    age: "10–12 лет",
+    price: "$1 050 за неделю",
+    desc: "Недельный лагерь при Техасском университете A&M. Лабораторные исследования акул и глубоководной биологии, выходы на исследовательских судах в Мексиканский залив, препарирование образцов в реальных университетских лабораториях.",
+    detail: "Дети работают на том же оборудовании и в тех же лабораториях, что и студенты Texas A&M.",
+    wow: "Выход в открытый залив на научном судне — не тематический лагерь, а полноценная исследовательская программа.",
+    color: "border-blue-200",
+    bg: "bg-blue-50",
+  },
+  {
+    n: 9,
+    flag: "🇬🇧",
+    country: "Великобритания",
+    name: "Wildlings Forest School Medieval Camp",
+    tag: "Лес + оружие",
+    tagIcon: "tree-fill",
+    tagColor: "bg-teal-100 text-teal-700",
+    age: "6–14 лет",
+    price: "уточняется",
+    desc: "Лесной средневековый лагерь: дети строят оружие своими руками с настоящими инструментами — пилы, молотки, ножи для резьбы. Рыцарские турниры, стрельба из луков. Никаких гаджетов, никакого пластика.",
+    detail: "В большинстве школ детям запрещено работать с режущими инструментами. Здесь — это главный принцип.",
+    wow: "Детям выдают настоящие пилы и ножи для резьбы. Именно это позиционируется как главная ценность лагеря.",
+    color: "border-teal-200",
+    bg: "bg-teal-50",
+  },
+];
+---
+
+<Base
+  title="Топ необычных детских лагерей в мире: шпионы, акулы, зомби и каскадёры | АйДаКемп"
+  description="Шпионский лагерь в здании музея ЦРУ, лагерь на яхте в Карибском море, STEM через зомби-апокалипсис. 9 самых необычных детских лагерей мира — реальные, с ценами."
+  ogImage="/images/hero/lager-programmirovaniya.avif"
+>
+  <Fragment slot="head">
+    <link rel="canonical" href="https://aidacamp.ru/stati/neobychnye-detskie-lagerya-v-mire" />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Топ необычных детских лагерей в мире: шпионы, акулы, зомби и каскадёры",
+      "description": "9 самых необычных детских лагерей мира — реальные, с ценами и деталями. Космос при NASA, шпионаж в Вашингтоне, трюки от голливудских каскадёров.",
+      "author": {"@type": "Person", "name": "Дарья Афанасьева", "url": "https://aidacamp.ru/o-lagere"},
+      "publisher": {"@type": "Organization", "name": "АйДаКемп", "url": "https://aidacamp.ru", "logo": {"@type": "ImageObject", "url": "https://aidacamp.ru/images/logo.svg"}},
+      "datePublished": "2026-06-29",
+      "dateModified": "2026-06-29",
+      "mainEntityOfPage": {"@type": "WebPage", "@id": "https://aidacamp.ru/stati/neobychnye-detskie-lagerya-v-mire"}
+    })} />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://aidacamp.ru/" },
+        { "@type": "ListItem", "position": 2, "name": "Статьи", "item": "https://aidacamp.ru/stati/" },
+        { "@type": "ListItem", "position": 3, "name": "Необычные детские лагеря в мире", "item": "https://aidacamp.ru/stati/neobychnye-detskie-lagerya-v-mire/" }
+      ]
+    })} />
+  </Fragment>
+  <Header />
+
+  <ArticleHero
+    title="Топ необычных детских лагерей в мире: шпионы, акулы, зомби и каскадёры"
+    subtitle="Лагерь при NASA, шпионская миссия по Вашингтону, прыжок с 10-метровой башни под руководством голливудских каскадёров. Это реальные лагеря — и они существуют прямо сейчас."
+    imageBase="lager-programmirovaniya"
+    imageAlt="Необычные детские лагеря в мире"
+    breadcrumbsLast="Необычные лагеря мира"
+    readTime="7 мин"
+  />
+
+  <main class="mx-auto max-w-[860px] px-4 py-10 pb-0">
+    <article>
+
+      <!-- Лид -->
+      <div class="mb-10">
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px]">
+          Пока одни спорят, нужен ли ребёнку лагерь вообще, другие отправляют своих детей управлять яхтой в Карибском море, разрабатывать шпионские легенды прикрытия на улицах Вашингтона или изучать двоичный код в сценарии зомби-апокалипсиса. Собрали 9 лагерей, после которых обычная «смена» кажется скучноватой.
+        </p>
+      </div>
+
+      <!-- Карточки лагерей -->
+      {camps.map((c) => (
+        <div class={`mb-8 rounded-[20px] border-2 ${c.color} overflow-hidden`}>
+          <!-- Шапка -->
+          <div class={`${c.bg} px-6 pt-6 pb-4`}>
+            <div class="flex items-start justify-between gap-4 mb-3">
+              <div class="flex items-center gap-3">
+                <span class="text-[40px] leading-none">{c.flag}</span>
+                <div>
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class={`inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-[0.08em] px-2 py-0.5 rounded-full ${c.tagColor}`}>
+                      <i class={`bi bi-${c.tagIcon} text-[11px]`} aria-hidden="true"></i>
+                      {c.tag}
+                    </span>
+                    <span class="text-[12px] text-slate-400">{c.country}</span>
+                  </div>
+                  <h2 class="text-[18px] md:text-[20px] font-bold text-slate-900 leading-[1.2]">
+                    #{c.n} {c.name}
+                  </h2>
+                </div>
+              </div>
+            </div>
+
+            <!-- Возраст и цена -->
+            <div class="flex gap-4 mt-2">
+              <div class="flex items-center gap-1.5">
+                <i class="bi bi-person text-slate-400 text-[14px]" aria-hidden="true"></i>
+                <span class="text-[13px] text-slate-600">{c.age}</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <i class="bi bi-cash-coin text-slate-400 text-[14px]" aria-hidden="true"></i>
+                <span class="text-[13px] text-slate-600">{c.price}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Тело -->
+          <div class="bg-white px-6 py-5">
+            <p class="text-[15px] leading-[1.7] text-slate-600 mb-4">{c.desc}</p>
+            <p class="text-[14px] leading-[1.6] text-slate-500 mb-4">{c.detail}</p>
+
+            <!-- WOW-факт -->
+            <div class="flex items-start gap-3 rounded-[12px] bg-slate-50 border border-slate-100 px-4 py-3">
+              <i class="bi bi-lightning-charge-fill text-amber-400 text-[16px] shrink-0 mt-0.5" aria-hidden="true"></i>
+              <p class="text-[14px] leading-[1.6] text-slate-700"><strong>WOW:</strong> {c.wow}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+
+      <!-- Итог -->
+      <div class="mb-10">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="list-accent-dot"></div>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
+            Что общего у всех этих лагерей
+          </h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] text-slate-600 mb-4">
+          Ни один из них не строится на идее «отдохни и развлекись». Каждый — вокруг реального опыта: управление яхтой, ночной патруль пляжа, прыжок с башни, полевая шпионская операция. Ребёнок делает что-то настоящее — и именно поэтому запоминает это навсегда.
+        </p>
+        <p class="text-[16px] leading-[1.7] text-slate-600 mb-6">
+          Второй общий принцип — специализация. Каждый лагерь делает одно, но по-настоящему. Акулы — значит, реальная лаборатория Texas A&M и исследовательское судно. Шпионаж — значит, бывшие сотрудники спецслужб и улицы Вашингтона, а не квест в актовом зале.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div class="rounded-[16px] bg-indigo-50 border border-indigo-100 p-5 text-center">
+            <i class="bi bi-stars text-indigo-500 text-[28px] mb-2 block" aria-hidden="true"></i>
+            <p class="font-bold text-slate-900 mb-1">Реальный опыт</p>
+            <p class="text-[13px] text-slate-500">Не симуляция и не игра — настоящая работа под руководством профессионалов</p>
+          </div>
+          <div class="rounded-[16px] bg-orange-50 border border-orange-100 p-5 text-center">
+            <i class="bi bi-bullseye text-orange-500 text-[28px] mb-2 block" aria-hidden="true"></i>
+            <p class="font-bold text-slate-900 mb-1">Глубокая специализация</p>
+            <p class="text-[13px] text-slate-500">Одна тема — и погружение в неё по максимуму, а не всего понемногу</p>
+          </div>
+          <div class="rounded-[16px] bg-green-50 border border-green-100 p-5 text-center">
+            <i class="bi bi-person-arms-up text-green-500 text-[28px] mb-2 block" aria-hidden="true"></i>
+            <p class="font-bold text-slate-900 mb-1">«Я сам справился»</p>
+            <p class="text-[13px] text-slate-500">Прыжок с башни, ночной патруль, управление яхтой — опыт, который остаётся навсегда</p>
+          </div>
+        </div>
+
+        <div class="rounded-[20px] bg-slate-900 text-white px-7 py-6">
+          <p class="text-[17px] font-bold mb-3">А что у нас?</p>
+          <p class="text-[15px] leading-[1.7] text-slate-300">
+            В АйДаКемп нет ни акул, ни яхт — зато есть реальные проекты, которые ребята делают от идеи до готового результата. Программирование, дизайн, разработка игр — не «кружок», а полноценный командный продукт за смену. Тот же принцип: настоящая задача, настоящий результат, навсегда.
+          </p>
+        </div>
+      </div>
+
+      <BlogCTA />
+    </article>
+  </main>
+
+  <ArticleBottomCta
+    bookingTitle="Реальный проект за смену — не кружок, не конкурс"
+    bookingSubtitle="Оставьте телефон — расскажем про программу и свободные места."
+  />
+
+  <RelatedPages title="Похожие статьи" pages={relatedPages} />
+  <Footer />
+</Base>

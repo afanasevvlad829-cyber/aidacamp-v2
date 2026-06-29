@@ -1,0 +1,66 @@
+---
+/**
+ * LiveBookingFeed — тост «кто-то только что записал ребёнка».
+ * Появляется раз в 35–55 сек, снизу слева. Исчезает через 5 сек.
+ * Псевдо-реальные данные (нет API): имена + города из типичных лидов.
+ */
+---
+
+<div id="lbf-toast" aria-live="polite" aria-atomic="true"
+  class="fixed bottom-6 left-4 z-[300] w-[280px] pointer-events-none opacity-0 translate-y-2 transition-all duration-300 ease-out md:bottom-8 md:left-6">
+  <div class="flex items-start gap-3 rounded-2xl bg-white shadow-[0_8px_32px_rgba(15,23,42,0.14)] border border-slate-100 px-4 py-3">
+    <div class="mt-0.5 shrink-0 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+      <i class="bi bi-check2-circle text-primary text-base" aria-hidden="true"></i>
+    </div>
+    <div class="min-w-0">
+      <p id="lbf-text" class="text-[13px] font-semibold text-slate-800 leading-[1.35]"></p>
+      <p class="text-[11px] text-slate-400 mt-0.5">только что</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const ENTRIES = [
+    'Анна из Москвы записала дочь на Смену 3',
+    'Елена из Подольска забронировала место',
+    'Мария из Балашихи записала сына на Смену 4',
+    'Ольга из Химок выбрала Смену 3',
+    'Светлана из Мытищ записала дочь',
+    'Ирина из Красногорска забронировала Смену 4',
+    'Наталья из Люберец записала ребёнка',
+    'Екатерина из Королёва выбрала место',
+    'Татьяна из Домодедово записала дочь на Смену 3',
+    'Юлия из Одинцово забронировала Смену 4',
+  ];
+
+  const toast = document.getElementById('lbf-toast');
+  const textEl = document.getElementById('lbf-text');
+  if (!toast || !textEl) return;
+
+  let lastIdx = -1;
+
+  function show() {
+    let idx;
+    do { idx = Math.floor(Math.random() * ENTRIES.length); } while (idx === lastIdx);
+    lastIdx = idx;
+    textEl.textContent = ENTRIES[idx];
+
+    toast.classList.remove('opacity-0', 'translate-y-2');
+    toast.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+
+    setTimeout(() => {
+      toast.classList.add('opacity-0', 'translate-y-2');
+      toast.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+    }, 5000);
+  }
+
+  function scheduleNext() {
+    const delay = 35000 + Math.random() * 20000; // 35–55 сек
+    setTimeout(() => { show(); scheduleNext(); }, delay);
+  }
+
+  // Первый показ через 20–30 сек после загрузки
+  setTimeout(() => { show(); scheduleNext(); }, 20000 + Math.random() * 10000);
+})();
+</script>
