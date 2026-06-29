@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { articles } from '../data/articles';
+import { ARTICLES as articles } from '../data/articles';
 import pg from 'pg';
 
 const { Pool } = pg;
