@@ -111,7 +111,7 @@
       bookingYourTermsTitle: 'Ваши условия',
       heroSeasonCalendarAria: 'Открыть календарь смен',
       heroSeasonCalendarText: 'Календарь смен',
-      heroSeasonOfferPriceText: 'от 48 000 ₽ за смену',
+      heroSeasonOfferPriceText: 'от 74 900 ₽ за смену',
       heroSeasonSlogan: 'Смена, где ребёнок уедет с проектом',
       inviteCopyFailed: 'Не удалось скопировать ссылку',
       inviteCopyManual: 'Скопируйте ссылку вручную',
