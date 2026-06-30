@@ -384,17 +384,21 @@ const daysLeft = startDate
       if (!r.includes(id)) { r.push(id); try { sessionStorage.setItem(KEY, JSON.stringify(r)); } catch {} }
     };
 
-    const lerp = (a: number, b: number, t: number) => Math.round(a + (b - a) * t);
-    // Цвет бара по занятости: зелёный → жёлтый → красный
-    function colorForPct(p: number) {
-      if (p <= 55) {
-        const t = p / 55;
-        return `rgb(${lerp(22, 234, t)}, ${lerp(163, 179, t)}, ${lerp(74, 8, t)})`;
-      }
-      const t = Math.min((p - 55) / 35, 1);
-      return `rgb(${lerp(234, 220, t)}, ${lerp(179, 38, t)}, ${lerp(8, 38, t)})`;
+    // Цвет бара по прогрессу проверки: 1-я треть зелёный, 2-я жёлтый, 3-я красный
+    function colorForProgress(t: number) {
+      if (t < 1 / 3) return 'rgb(22, 163, 74)';   // зелёный
+      if (t < 2 / 3) return 'rgb(234, 179, 8)';   // жёлтый
+      return 'rgb(220, 38, 38)';                  // красный
     }
     const barPct = (bar: HTMLElement | null) => (bar ? parseFloat(bar.style.getPropertyValue('--bar-pct')) || 0 : 0);
+    // Ширину бара двигаем через --bar-pct (CSS: width: var(--bar-pct) !important — inline width бессилен)
+    function setBar(bar: HTMLElement | null, pct: number, t: number) {
+      if (!bar) return;
+      bar.classList.add('bar-filled');
+      bar.style.transition = 'none';
+      bar.style.setProperty('--bar-pct', pct + '%');
+      bar.style.backgroundColor = colorForProgress(t);
+    }
 
     function animateCount(el: HTMLElement) {
       const target = parseInt(el.dataset.countTo || '0', 10);
@@ -413,8 +417,7 @@ const daysLeft = startDate
     // Мгновенное финальное состояние — для уже открытых в этой сессии
     function setFinal(block: HTMLElement) {
       const bar = block.querySelector<HTMLElement>('[data-shift-bar]');
-      const pct = barPct(bar);
-      if (bar) { bar.style.transition = 'none'; bar.style.width = pct + '%'; bar.style.backgroundColor = colorForPct(pct); }
+      setBar(bar, barPct(bar), 1);
       block.querySelectorAll<HTMLElement>('[data-count-to]').forEach((el) => { el.textContent = el.dataset.countTo || '0'; });
       const num = block.querySelector<HTMLElement>('[data-occ-num]');
       if (num) num.style.display = '';
@@ -432,7 +435,7 @@ const daysLeft = startDate
       const finalPct = barPct(bar);
 
       if (num) num.style.display = 'none';          // число прячем, пока «считаем остаток»
-      if (bar) { bar.style.transition = 'none'; bar.style.width = '0%'; bar.style.backgroundColor = colorForPct(0); }
+      setBar(bar, 0, 0);                             // старт с нуля, зелёный
 
       let si = -1;
       const step = () => { si++; if (slot && si < STEPS.length) slot.innerHTML = `<i class="bi bi-arrow-repeat animate-spin"></i> ${STEPS[si]}`; };
@@ -442,9 +445,8 @@ const daysLeft = startDate
       const t0 = performance.now();
       function frame(now: number) {
         const t = Math.min((now - t0) / DUR, 1);
-        // линейно — бар растёт ровно вместе со статус-шагами, без рывка в начале
-        const pct = finalPct * t;
-        if (bar) { bar.style.width = pct + '%'; bar.style.backgroundColor = colorForPct(pct); }
+        // бар растёт линейно вместе со статус-шагами; цвет — по третям прогресса
+        setBar(bar, finalPct * t, t);
         if (t < 1) { requestAnimationFrame(frame); return; }
         clearInterval(iv);
         if (slot) slot.textContent = slot.dataset.occDefault || 'Занято';
