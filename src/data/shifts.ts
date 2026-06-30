@@ -37,7 +37,7 @@ const _shift2: Shift = {
   status: 'завершена', statusType: 'available',
   description: 'Полный цикл создания проекта: больше самостоятельности и более сложный результат.',
   price: '99 000 ₽', free: 0, occupied: 45, startDate: '2026-06-10', endDate: '2026-06-23',
-  priceFrom: '95 000 ₽', priceTo: '108 000 ₽',
+  recapUrl: '/kak-proshla-smena-2/', priceFrom: '95 000 ₽', priceTo: '108 000 ₽',
 };
 const _shift21: Shift = {
   id: 'shift-2-1', name: 'Смена 2.1', dates: '10 июня — 16 июня', duration: '7 дней',
