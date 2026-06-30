@@ -408,7 +408,7 @@ const daysLeft = startDate
     }
 
     const STEPS = ['Сверяемся…', 'Запрос в CRM…', 'Сверяем брони…', 'Смотрим отказы…', 'Просроченные брони…'];
-    const DUR = 2500;
+    const DUR = 7000;
 
     // Мгновенное финальное состояние — для уже открытых в этой сессии
     function setFinal(block: HTMLElement) {
@@ -442,8 +442,8 @@ const daysLeft = startDate
       const t0 = performance.now();
       function frame(now: number) {
         const t = Math.min((now - t0) / DUR, 1);
-        const e = 1 - Math.pow(1 - t, 3);
-        const pct = finalPct * e;
+        // линейно — бар растёт ровно вместе со статус-шагами, без рывка в начале
+        const pct = finalPct * t;
         if (bar) { bar.style.width = pct + '%'; bar.style.backgroundColor = colorForPct(pct); }
         if (t < 1) { requestAnimationFrame(frame); return; }
         clearInterval(iv);
