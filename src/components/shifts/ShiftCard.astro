@@ -140,8 +140,8 @@ const daysLeft = startDate
   <div class="mt-4 relative min-h-[40px]" data-occupancy data-occ-shift={shift.id}>
     <div data-occ-content class="occ-cover transition-[filter,opacity] duration-300">
       <div class="flex justify-between text-[12px] mb-1.5">
-        <span class="text-body-faint">Занято</span>
-        <span class:list={['font-semibold', isLowAvailability ? 'text-primary' : 'text-emerald-600']}>
+        <span class="text-body-faint whitespace-nowrap" data-occ-status-slot data-occ-default="Занято">Занято</span>
+        <span data-occ-num class:list={['font-semibold', isLowAvailability ? 'text-primary' : 'text-emerald-600']}>
           {isLowAvailability
             ? <Fragment>Осталось <span data-count-to={shift.free}>{shift.free}</span></Fragment>
             : <Fragment><span data-count-to={shift.occupied}>{shift.occupied}</span> из {total}</Fragment>
@@ -384,10 +384,21 @@ const daysLeft = startDate
       if (!r.includes(id)) { r.push(id); try { sessionStorage.setItem(KEY, JSON.stringify(r)); } catch {} }
     };
 
+    const lerp = (a: number, b: number, t: number) => Math.round(a + (b - a) * t);
+    // Цвет бара по занятости: зелёный → жёлтый → красный
+    function colorForPct(p: number) {
+      if (p <= 55) {
+        const t = p / 55;
+        return `rgb(${lerp(22, 234, t)}, ${lerp(163, 179, t)}, ${lerp(74, 8, t)})`;
+      }
+      const t = Math.min((p - 55) / 35, 1);
+      return `rgb(${lerp(234, 220, t)}, ${lerp(179, 38, t)}, ${lerp(8, 38, t)})`;
+    }
+    const barPct = (bar: HTMLElement | null) => (bar ? parseFloat(bar.style.getPropertyValue('--bar-pct')) || 0 : 0);
+
     function animateCount(el: HTMLElement) {
       const target = parseInt(el.dataset.countTo || '0', 10);
-      if (!target) return;
-      const dur = 700, t0 = performance.now();
+      const dur = 600, t0 = performance.now();
       function tick(now: number) {
         const t = Math.min((now - t0) / dur, 1);
         el.textContent = String(Math.round((1 - Math.pow(1 - t, 3)) * target));
@@ -396,21 +407,64 @@ const daysLeft = startDate
       requestAnimationFrame(tick);
     }
 
+    const STEPS = ['Сверяемся…', 'Запрос в CRM…', 'Сверяем брони…', 'Смотрим отказы…', 'Просроченные брони…'];
+    const DUR = 2500;
+
+    // Мгновенное финальное состояние — для уже открытых в этой сессии
+    function setFinal(block: HTMLElement) {
+      const bar = block.querySelector<HTMLElement>('[data-shift-bar]');
+      const pct = barPct(bar);
+      if (bar) { bar.style.transition = 'none'; bar.style.width = pct + '%'; bar.style.backgroundColor = colorForPct(pct); }
+      block.querySelectorAll<HTMLElement>('[data-count-to]').forEach((el) => { el.textContent = el.dataset.countTo || '0'; });
+      const num = block.querySelector<HTMLElement>('[data-occ-num]');
+      if (num) num.style.display = '';
+      const slot = block.querySelector<HTMLElement>('[data-occ-status-slot]');
+      if (slot) slot.textContent = slot.dataset.occDefault || 'Занято';
+    }
+
+    // Драматичный reveal ~2.5 с: статус-цепочка + бар зелёный→жёлтый→красный
+    function playReveal(block: HTMLElement) {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setFinal(block); return; }
+      const bar = block.querySelector<HTMLElement>('[data-shift-bar]');
+      const slot = block.querySelector<HTMLElement>('[data-occ-status-slot]');
+      const num = block.querySelector<HTMLElement>('[data-occ-num]');
+      const content = block.querySelector<HTMLElement>('[data-occ-content]');
+      const finalPct = barPct(bar);
+
+      if (num) num.style.display = 'none';          // число прячем, пока «считаем остаток»
+      if (bar) { bar.style.transition = 'none'; bar.style.width = '0%'; bar.style.backgroundColor = colorForPct(0); }
+
+      let si = -1;
+      const step = () => { si++; if (slot && si < STEPS.length) slot.innerHTML = `<i class="bi bi-arrow-repeat animate-spin"></i> ${STEPS[si]}`; };
+      step();
+      const iv = setInterval(step, DUR / STEPS.length);
+
+      const t0 = performance.now();
+      function frame(now: number) {
+        const t = Math.min((now - t0) / DUR, 1);
+        const e = 1 - Math.pow(1 - t, 3);
+        const pct = finalPct * e;
+        if (bar) { bar.style.width = pct + '%'; bar.style.backgroundColor = colorForPct(pct); }
+        if (t < 1) { requestAnimationFrame(frame); return; }
+        clearInterval(iv);
+        if (slot) slot.textContent = slot.dataset.occDefault || 'Занято';
+        if (num) num.style.display = '';
+        block.querySelectorAll<HTMLElement>('[data-count-to]').forEach(animateCount);
+        content?.classList.add('occ-pop');
+        setTimeout(() => content?.classList.remove('occ-pop'), 700);
+      }
+      requestAnimationFrame(frame);
+    }
+
     function revealShift(id: string, animate: boolean) {
       document.querySelectorAll<HTMLElement>(`[data-occupancy][data-occ-shift="${id}"]`).forEach((block) => {
-        const content = block.querySelector<HTMLElement>('[data-occ-content]');
-        content?.classList.remove('occ-cover');
+        block.querySelector('[data-occ-content]')?.classList.remove('occ-cover');
         block.querySelector('[data-occ-reveal]')?.classList.add('hidden');
-        if (animate) {
-          content?.classList.add('occ-pop');
-          block.querySelectorAll<HTMLElement>('[data-shift-bar]').forEach((b) => b.classList.add('bar-filled'));
-          block.querySelectorAll<HTMLElement>('[data-count-to]').forEach(animateCount);
-          setTimeout(() => content?.classList.remove('occ-pop'), 700);
-        }
+        if (animate) playReveal(block); else setFinal(block);
       });
     }
 
-    // На загрузке — раскрываем уже открытые в этой сессии (без спиннера)
+    // На загрузке — раскрываем уже открытые в этой сессии (без анимации)
     getRevealed().forEach((id: string) => revealShift(id, false));
 
     document.querySelectorAll<HTMLElement>('[data-occ-reveal]').forEach((btn) => {
@@ -425,23 +479,9 @@ const daysLeft = startDate
         const block = btn.closest<HTMLElement>('[data-occupancy]');
         const id = block?.dataset.occShift;
         if (!id) return;
-        const icon = btn.querySelector<HTMLElement>('[data-occ-icon] i');
-        const label = btn.querySelector<HTMLElement>('[data-occ-label]');
-        btn.classList.add('occ-loading');
-        if (icon) icon.className = 'bi bi-arrow-repeat text-[11px] animate-spin';
-        const steps = ['Сверяемся…', 'Запрос в CRM…', 'Сверяем брони…', 'Смотрим отказы…', 'Просроченные брони…'];
-        let si = 0;
-        if (label) label.textContent = steps[0];
-        const stepIv = setInterval(() => {
-          si++;
-          if (label && si < steps.length) label.textContent = steps[si];
-        }, 320);
-        setTimeout(() => {
-          clearInterval(stepIv);
-          saveRevealed(id);
-          revealShift(id, true);
-          try { (window as any).ym?.(96499295, 'reachGoal', 'occupancy_check', { shift: id }); } catch {}
-        }, 320 * steps.length + 160);
+        saveRevealed(id);
+        revealShift(id, true);
+        try { (window as any).ym?.(96499295, 'reachGoal', 'occupancy_check', { shift: id }); } catch {}
       });
     });
   }
