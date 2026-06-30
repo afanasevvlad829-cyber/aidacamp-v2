@@ -308,6 +308,26 @@ const relatedPages = [
           </span>
           <span class="absolute bottom-3 left-3 rounded-md bg-black/65 px-2.5 py-1 text-base font-semibold text-white backdrop-blur-sm">Обзор территории</span>
         </button>
+        <button
+          type="button"
+          data-video-src="/video/komnaty-obzor.mp4"
+          class="group relative block w-full overflow-hidden rounded-[16px] shadow-lg aspect-video bg-slate-900 cursor-pointer mt-3"
+          aria-label="Смотреть обзор комнат лагеря АйДаКемп"
+        >
+          <img
+            src="/video/komnaty-obzor-poster.jpg"
+            alt="Обзор комнат лагеря АйДаКемп — где живут ребята"
+            class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
+          />
+          <span class="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></span>
+          <span class="absolute inset-0 flex items-center justify-center">
+            <span class="flex h-16 w-16 items-center justify-center rounded-full bg-black/55 backdrop-blur-sm transition-transform duration-200 group-hover:scale-110">
+              <i class="bi bi-play-fill text-[34px] text-white" aria-hidden="true"></i>
+            </span>
+          </span>
+          <span class="absolute bottom-3 left-3 rounded-md bg-black/65 px-2.5 py-1 text-base font-semibold text-white backdrop-blur-sm">Обзор комнат</span>
+        </button>
       </div>
     </div>
   </section>
@@ -384,14 +404,13 @@ const relatedPages = [
   const vlb = document.getElementById('video-lightbox');
   const vlbPlayer = document.getElementById('video-lightbox-player') as HTMLVideoElement | null;
   const vlbClose = document.getElementById('video-lightbox-close');
-  const vlbBtn = document.getElementById('izumrud-video-btn') as HTMLButtonElement | null;
-
   function openVideoLb(src: string) {
     if (!vlb || !vlbPlayer) return;
     vlbPlayer.src = src;
     vlb.classList.remove('hidden'); vlb.classList.add('flex');
     document.body.style.overflow = 'hidden';
     vlbPlayer.play().catch(() => {});
+    try { (window as any).ym?.(96499295, 'reachGoal', 'video_play', { page: 'razmeshchenie', src }); } catch {}
   }
   function closeVideoLb() {
     if (!vlb || !vlbPlayer) return;
@@ -400,7 +419,8 @@ const relatedPages = [
     vlb.classList.add('hidden'); vlb.classList.remove('flex');
     document.body.style.overflow = '';
   }
-  vlbBtn?.addEventListener('click', () => openVideoLb(vlbBtn.dataset.videoSrc!));
+  document.querySelectorAll<HTMLButtonElement>('[data-video-src]').forEach(btn =>
+    btn.addEventListener('click', () => openVideoLb(btn.dataset.videoSrc!)));
   vlbClose?.addEventListener('click', closeVideoLb);
   vlb?.addEventListener('click', e => { if (e.target === vlb) closeVideoLb(); });
   document.addEventListener('keydown', e => {
