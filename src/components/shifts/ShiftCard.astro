@@ -136,20 +136,30 @@ const daysLeft = startDate
   </h3>
   <p class="mt-0.5 text-base text-body-muted">{shift.duration}</p>
 
-  <!-- OCCUPANCY BAR -->
-  <div class="mt-4">
-    <div class="flex justify-between text-[12px] mb-1.5">
-      <span class="text-body-faint">Занято</span>
-      <span class:list={['font-semibold', isLowAvailability ? 'text-primary' : 'text-emerald-600']}>
-        {isLowAvailability
-          ? <Fragment>Осталось <span data-count-to={shift.free}>{shift.free}</span></Fragment>
-          : <Fragment><span data-count-to={shift.occupied}>{shift.occupied}</span> из {total}</Fragment>
-        }
+  <!-- OCCUPANCY BAR — скрыто блюром до клика «узнать места» (раскрытие на сессию, синхронно по data-occ-shift) -->
+  <div class="mt-4 relative min-h-[40px]" data-occupancy data-occ-shift={shift.id}>
+    <div data-occ-content class="occ-cover transition-[filter,opacity] duration-300">
+      <div class="flex justify-between text-[12px] mb-1.5">
+        <span class="text-body-faint">Занято</span>
+        <span class:list={['font-semibold', isLowAvailability ? 'text-primary' : 'text-emerald-600']}>
+          {isLowAvailability
+            ? <Fragment>Осталось <span data-count-to={shift.free}>{shift.free}</span></Fragment>
+            : <Fragment><span data-count-to={shift.occupied}>{shift.occupied}</span> из {total}</Fragment>
+          }
+        </span>
+      </div>
+      <div class="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
+        <div data-shift-bar class:list={['h-full rounded-full', isLowAvailability ? 'bg-primary' : 'bg-emerald-400']} style={`--bar-pct:${pct}%`}></div>
+      </div>
+    </div>
+    <button type="button" data-occ-reveal
+      class="absolute inset-0 z-10 flex items-center justify-center gap-1.5 rounded-lg text-[12px] font-semibold text-primary hover:text-primary-hover transition-colors"
+      aria-label="Узнать число свободных мест в этой смене">
+      <span data-occ-icon class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/40 bg-primary/5">
+        <i class="bi bi-search text-[10px]" aria-hidden="true"></i>
       </span>
-    </div>
-    <div class="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
-      <div data-shift-bar class:list={['h-full rounded-full', isLowAvailability ? 'bg-primary' : 'bg-emerald-400']} style={`--bar-pct:${pct}%`}></div>
-    </div>
+      <span data-occ-label>узнать места</span>
+    </button>
   </div>
 
   <!-- PRICE -->
@@ -208,6 +218,11 @@ const daysLeft = startDate
   </a>
 
 </article>
+
+<style>
+  /* Счётчик мест скрыт блюром, пока не нажали «узнать места» */
+  .occ-cover { filter: blur(5px); opacity: 0.45; }
+</style>
 
 <script>
   function initShiftCards() {
@@ -322,4 +337,71 @@ const daysLeft = startDate
   }
   document.addEventListener('astro:page-load', updateShift1Days);
   updateShift1Days();
+
+  // ── Блюр счётчика мест → клик «узнать места» раскрывает смену ──────────────
+  // Гранулярно по смене, синхронно на всех карточках (data-occ-shift).
+  // Храним в sessionStorage → повторный заход снова под блюром → снова событие.
+  function initOccupancy() {
+    const KEY = 'ac:occ_revealed';
+    const getRevealed = () => {
+      try { return JSON.parse(sessionStorage.getItem(KEY) || '[]'); } catch { return []; }
+    };
+    const saveRevealed = (id: string) => {
+      const r = getRevealed();
+      if (!r.includes(id)) { r.push(id); try { sessionStorage.setItem(KEY, JSON.stringify(r)); } catch {} }
+    };
+
+    function animateCount(el: HTMLElement) {
+      const target = parseInt(el.dataset.countTo || '0', 10);
+      if (!target) return;
+      const dur = 700, t0 = performance.now();
+      function tick(now: number) {
+        const t = Math.min((now - t0) / dur, 1);
+        el.textContent = String(Math.round((1 - Math.pow(1 - t, 3)) * target));
+        if (t < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    function revealShift(id: string, animate: boolean) {
+      document.querySelectorAll<HTMLElement>(`[data-occupancy][data-occ-shift="${id}"]`).forEach((block) => {
+        block.querySelector('[data-occ-content]')?.classList.remove('occ-cover');
+        block.querySelector('[data-occ-reveal]')?.classList.add('hidden');
+        if (animate) {
+          block.querySelectorAll<HTMLElement>('[data-shift-bar]').forEach((b) => b.classList.add('bar-filled'));
+          block.querySelectorAll<HTMLElement>('[data-count-to]').forEach(animateCount);
+        }
+      });
+    }
+
+    // На загрузке — раскрываем уже открытые в этой сессии (без спиннера)
+    getRevealed().forEach((id: string) => revealShift(id, false));
+
+    document.querySelectorAll<HTMLElement>('[data-occ-reveal]').forEach((btn) => {
+      if (btn.dataset.occBound) return;
+      btn.dataset.occBound = '1';
+      // не даём клику всплыть до навигации по карточке
+      ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'touchstart', 'touchend'].forEach((ev) =>
+        btn.addEventListener(ev, (e) => e.stopPropagation()));
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const block = btn.closest<HTMLElement>('[data-occupancy]');
+        const id = block?.dataset.occShift;
+        if (!id) return;
+        const icon = btn.querySelector<HTMLElement>('[data-occ-icon] i');
+        const label = btn.querySelector<HTMLElement>('[data-occ-label]');
+        if (icon) icon.className = 'bi bi-arrow-repeat text-[10px] animate-spin';
+        if (label) label.textContent = 'проверяем…';
+        setTimeout(() => {
+          saveRevealed(id);
+          revealShift(id, true);
+          try { (window as any).ym?.(96499295, 'reachGoal', 'occupancy_check', { shift: id }); } catch {}
+        }, 420);
+      });
+    });
+  }
+
+  document.addEventListener('astro:page-load', initOccupancy);
+  if (document.readyState !== 'loading') initOccupancy();
 </script>
