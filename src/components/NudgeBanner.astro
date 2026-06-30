@@ -1,0 +1,115 @@
+---
+/**
+ * NudgeBanner — догрев-плашка для повторщиков (2-й+ заход на сайт).
+ * Нижняя плашка, A/B 50/50 (фиксируется за посетителем в localStorage: ac:nudge_ab):
+ *   A (отзывы) → /kak-proshla-smena-2/  «Что пишут родители после смен»
+ *   B (ТВ)     → /tv/                   «Наш директор — на федеральном ТВ»
+ * События в Метрику 96499295: nudge_shown / nudge_click с параметром variant (A|B).
+ * Показывается 1 раз за сессию, через 8 сек, только начиная со 2-го захода.
+ */
+const ARMS = {
+  A: { icon: 'bi-camera-reels', text: 'Что пишут родители после смен', cta: 'Посмотреть', href: '/kak-proshla-smena-2/' },
+  B: { icon: 'bi-tv',           text: 'Наш директор — на федеральном ТВ, ОТР', cta: 'Смотреть', href: '/tv/' },
+};
+const armsJson = JSON.stringify(ARMS);
+---
+
+<div
+  id="nudge-banner"
+  class="hidden fixed bottom-0 left-0 right-0 z-50 translate-y-full transition-transform duration-400 ease-out"
+  aria-live="polite"
+  role="status"
+>
+  <div class="bg-slate-900 border-t border-slate-700 px-4 py-3 md:py-3.5 shadow-[0_-4px_24px_rgba(0,0,0,0.18)]">
+    <div class="mx-auto max-w-2xl flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3 min-w-0">
+        <i id="nudge-icon" class="bi bi-camera-reels text-orange-400 text-[18px] shrink-0" aria-hidden="true"></i>
+        <p id="nudge-text" class="text-base text-white/90 leading-[1.4] min-w-0"></p>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <a id="nudge-cta" href="#"
+          class="inline-flex items-center gap-1.5 rounded-lg bg-primary hover:bg-orange-400 px-3.5 py-1.5 text-base font-semibold text-white transition-colors whitespace-nowrap no-underline">
+          <span id="nudge-cta-text">Посмотреть</span>
+          <i class="bi bi-arrow-right text-[11px]" aria-hidden="true"></i>
+        </a>
+        <button id="nudge-close" type="button"
+          class="inline-flex h-7 w-7 items-center justify-center rounded-full text-white/50 hover:text-white/90 hover:bg-white/10 transition-colors"
+          aria-label="Закрыть">
+          <i class="bi bi-x-lg text-base" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ armsJson }}>
+  const ARMS = JSON.parse(armsJson);
+  const YM = 96499295;
+  const SESSION_FLAG = 'ac:session_active';
+  const SHOWN_FLAG = 'ac:nudge_shown';    // показано в этой сессии
+  const CLOSED_FLAG = 'ac:nudge_closed';  // закрыто в этой сессии
+
+  function pickArm() {
+    let arm = localStorage.getItem('ac:nudge_ab');
+    if (arm !== 'A' && arm !== 'B') {
+      arm = Math.random() < 0.5 ? 'A' : 'B';
+      try { localStorage.setItem('ac:nudge_ab', arm); } catch {}
+    }
+    return arm;
+  }
+
+  // Счётчик визитов: +1 на каждую новую сессию (sessionStorage гейт)
+  function countVisit() {
+    let visits = parseInt(localStorage.getItem('ac:visits') || '0', 10) || 0;
+    if (!sessionStorage.getItem(SESSION_FLAG)) {
+      try { sessionStorage.setItem(SESSION_FLAG, '1'); } catch {}
+      visits += 1;
+      try { localStorage.setItem('ac:visits', String(visits)); } catch {}
+    }
+    return visits;
+  }
+
+  function initNudge() {
+    if (sessionStorage.getItem(SHOWN_FLAG) || sessionStorage.getItem(CLOSED_FLAG)) return;
+    const visits = countVisit();
+    if (visits < 2) return;  // только повторщик (2-й заход и далее)
+
+    const arm = pickArm();
+    const a = ARMS[arm];
+    const banner = document.getElementById('nudge-banner');
+    const iconEl = document.getElementById('nudge-icon');
+    const textEl = document.getElementById('nudge-text');
+    const cta = document.getElementById('nudge-cta');
+    const ctaText = document.getElementById('nudge-cta-text');
+    const closeBtn = document.getElementById('nudge-close');
+    if (!banner || !textEl || !cta) return;
+
+    if (iconEl) iconEl.className = `bi ${a.icon} text-orange-400 text-[18px] shrink-0`;
+    textEl.textContent = a.text;
+    cta.setAttribute('href', a.href);
+    if (ctaText) ctaText.textContent = a.cta;
+
+    cta.addEventListener('click', () => {
+      try { window.ym && window.ym(YM, 'reachGoal', 'nudge_click', { variant: arm }); } catch {}
+    });
+    closeBtn?.addEventListener('click', () => {
+      try { sessionStorage.setItem(CLOSED_FLAG, '1'); } catch {}
+      banner.classList.remove('translate-y-0');
+      banner.classList.add('translate-y-full');
+      setTimeout(() => banner.classList.add('hidden'), 400);
+    });
+
+    setTimeout(() => {
+      try { sessionStorage.setItem(SHOWN_FLAG, '1'); } catch {}
+      banner.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        banner.classList.remove('translate-y-full');
+        banner.classList.add('translate-y-0');
+      });
+      try { window.ym && window.ym(YM, 'reachGoal', 'nudge_shown', { variant: arm }); } catch {}
+    }, 8000);
+  }
+
+  document.addEventListener('astro:page-load', initNudge);
+  if (document.readyState !== 'loading') initNudge();
+</script>
