@@ -222,6 +222,39 @@ const daysLeft = startDate
 <style>
   /* Счётчик мест скрыт блюром, пока не нажали «узнать места» */
   .occ-cover { filter: blur(5px); opacity: 0.45; }
+
+  /* Загрузка — яркий пульсирующий кружок + статус primary-цветом */
+  [data-occ-reveal].occ-loading [data-occ-icon] {
+    background: rgb(236, 124, 0);
+    border-color: rgb(236, 124, 0);
+    color: #fff;
+    animation: occ-pulse 0.9s ease-in-out infinite;
+  }
+  [data-occ-reveal].occ-loading [data-occ-label] { color: rgb(236, 124, 0); }
+  @keyframes occ-pulse {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(236, 124, 0, 0.18); }
+    50%      { box-shadow: 0 0 0 7px rgba(236, 124, 0, 0.30); }
+  }
+
+  /* Раскрытие — pop счётчика + вспышка числа */
+  @keyframes occ-pop {
+    0%   { transform: scale(0.9); }
+    55%  { transform: scale(1.07); }
+    100% { transform: scale(1); }
+  }
+  .occ-pop { animation: occ-pop 0.5s cubic-bezier(0.2, 0.8, 0.3, 1.3); }
+  .occ-pop [data-count-to] {
+    border-radius: 6px;
+    padding: 0 3px;
+    animation: occ-glow 1s ease-out;
+  }
+  @keyframes occ-glow {
+    0%   { background: rgba(236, 124, 0, 0.40); box-shadow: 0 0 14px rgba(236, 124, 0, 0.55); }
+    100% { background: transparent; box-shadow: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .occ-pop, [data-occ-reveal].occ-loading [data-occ-icon] { animation: none; }
+  }
 </style>
 
 <script>
@@ -365,11 +398,14 @@ const daysLeft = startDate
 
     function revealShift(id: string, animate: boolean) {
       document.querySelectorAll<HTMLElement>(`[data-occupancy][data-occ-shift="${id}"]`).forEach((block) => {
-        block.querySelector('[data-occ-content]')?.classList.remove('occ-cover');
+        const content = block.querySelector<HTMLElement>('[data-occ-content]');
+        content?.classList.remove('occ-cover');
         block.querySelector('[data-occ-reveal]')?.classList.add('hidden');
         if (animate) {
+          content?.classList.add('occ-pop');
           block.querySelectorAll<HTMLElement>('[data-shift-bar]').forEach((b) => b.classList.add('bar-filled'));
           block.querySelectorAll<HTMLElement>('[data-count-to]').forEach(animateCount);
+          setTimeout(() => content?.classList.remove('occ-pop'), 700);
         }
       });
     }
@@ -391,13 +427,21 @@ const daysLeft = startDate
         if (!id) return;
         const icon = btn.querySelector<HTMLElement>('[data-occ-icon] i');
         const label = btn.querySelector<HTMLElement>('[data-occ-label]');
-        if (icon) icon.className = 'bi bi-arrow-repeat text-[10px] animate-spin';
-        if (label) label.textContent = 'проверяем…';
+        btn.classList.add('occ-loading');
+        if (icon) icon.className = 'bi bi-arrow-repeat text-[11px] animate-spin';
+        const steps = ['Сверяемся…', 'Запрос в CRM…', 'Сверяем брони…', 'Смотрим отказы…', 'Просроченные брони…'];
+        let si = 0;
+        if (label) label.textContent = steps[0];
+        const stepIv = setInterval(() => {
+          si++;
+          if (label && si < steps.length) label.textContent = steps[si];
+        }, 320);
         setTimeout(() => {
+          clearInterval(stepIv);
           saveRevealed(id);
           revealShift(id, true);
           try { (window as any).ym?.(96499295, 'reachGoal', 'occupancy_check', { shift: id }); } catch {}
-        }, 420);
+        }, 320 * steps.length + 160);
       });
     });
   }
