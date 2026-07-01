@@ -8,20 +8,64 @@ server {
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
-    server_name aidacamp.ru www.aidacamp.ru;
+    server_name www.aidacamp.ru;
 
     ssl_certificate     /etc/letsencrypt/live/aidacamp.ru/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/aidacamp.ru/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
 
-    root /var/www/aidacamp/current/;
+    return 301 https://aidacamp.ru$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name aidacamp.ru;
+
+    ssl_certificate     /etc/letsencrypt/live/aidacamp.ru/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/aidacamp.ru/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    root /var/www/aidacamp/current/client/;
     index index.html;
+
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
     # HTML: no-cache (браузер всегда проверяет свежесть)
     location ~* .html$ {
+        include snippets/security-headers.conf;
+        add_header Set-Cookie $aid_set;
+        access_log /var/log/nginx/access.log combined_host;
+        access_log /var/log/nginx/attribution.log attribution;
         add_header Cache-Control "no-cache, must-revalidate";
         expires 0;
     }
+
+    location ^~ /videos/smena2/ {
+        alias /var/www/aidacamp-media/videos/smena2/;
+        add_header Cache-Control "public, max-age=31536000";
+    }
+
+    location ^~ /videos/darya/ {
+        alias /var/www/aidacamp-media/videos/darya/;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        add_header Accept-Ranges bytes;
+        types { video/mp4 mp4; image/jpeg jpg; text/vtt vtt; }
+    }
+
+    location ^~ /images/gallery/ {
+        alias /var/www/aidacamp-gallery/;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        add_header Vary Accept;
+    }
+    location ^~ /images/gallery/originals/ { deny all; }
+
 
     # Cache: images
     location ~* \.(avif|webp|jpg|jpeg|png|gif|svg|ico)$ {
@@ -36,13 +80,32 @@ server {
         add_header Cache-Control "public, immutable";
     }
 
+    # Cache: video
+    location ~* \.(mp4|webm|ogg|ogv)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
     # Cache: fonts
     location ~* \.(woff|woff2|ttf|otf|eot)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
     }
 
+    # AI-Markdown копии статей (ночной cron → /var/www/aidacamp-md)
+    location ~ ^/stati/.+\.md$ {
+        root /var/www/aidacamp-md;
+        default_type "text/markdown; charset=utf-8";
+        add_header Cache-Control "public, max-age=3600";
+        try_files $uri =404;
+    }
+
     # Gzip
+    # Brotli
+    brotli on;
+    brotli_comp_level 6;
+    brotli_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss image/svg+xml;
+
     gzip on;
     gzip_vary on;
     gzip_proxied any;
@@ -52,7 +115,7 @@ server {
 
     # Redirects from old URLs
     rewrite ^/partners/?$                                                    /dlya-kompaniy/ permanent;
-    rewrite ^/ob-organiz.*$                                                  / permanent;
+    
     # 301 редиректы со старых Tilda-URL на Astro (2026-04-19)
     # Топ-5 жирных
     rewrite ^/tpost/pvng3n7ol1.*$       /stati/problemy-v-obschenii-podrostkov/ permanent;
@@ -86,16 +149,50 @@ server {
     # Catch-all для остальных (неизвестных) /tpost/* и /stati/tpost/* — на главную
     rewrite ^/stati/tpost/.*$           / permanent;
     rewrite ^/tpost/.*$                 / permanent;
-    # /stati/ теперь имеет собственный index-page, редирект убран 2026-04-24
     rewrite ^/detskij-lager-v-podmoskove/?$ /detskiy-lager-podmoskove/ permanent;
     rewrite ^/letnij-lager-s-programmirovaniem-v-minecraft/?$ /minecraft-lager/ permanent;
     rewrite ^/kompyuternye-lagerya-v-podmoskove.*/?$ /kompyuternyy-lager/ permanent;
+    # 2026-06-08: redirect /it-lager -> /it-camp removed intentionally; now own page it-lager.astro (SEO exact-match). Do NOT restore.
     rewrite ^/letniy-it-lager/?$ /kompyuternyy-lager/ permanent;
     rewrite ^/letnyaya-shkola-programmirovaniya.*/?$ /letnyaya-it-shkola/ permanent;
+    rewrite ^/main5/?$ /letnyaya-it-shkola/ permanent;
+# 301 редиректы с Tilda slug-URL (добавлено 2026-04-20, источник: GSC 28-day data)
+    rewrite ^/letnij-lager-programmirovanie/?$                                                    /lager-programmirovaniya/ permanent;
+    rewrite ^/detskij-kompyuternyj-lager-ajdakemp/?$                                              /kompyuternyy-lager/ permanent;
+    rewrite ^/kompyuternyj-lager-dlya-detej-obuchaem-programmirovaniyu-v-podmoskove/?$            /kompyuternyy-lager/ permanent;
+    rewrite ^/media/?$                                                                            /stati permanent;
+    rewrite ^/requisites/?$                                                                       /legal/ permanent;
+    # /location → /#contacts — через location= потому что rewrite обрезает якорь
+    location = /location { return 301 /#contacts; }
     rewrite ^/booking/?$ / permanent;
 
+    location = /llms.txt {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location = /llms-full.txt {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location = /feed.xml {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location = /rss.xml {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
     location ^~ /api/tg-debug {
-        client_max_body_size 20m;
+        client_max_body_size 500M;
         if ($request_method = OPTIONS) {
             add_header Access-Control-Allow-Origin "*" always;
             add_header Access-Control-Allow-Methods "POST, OPTIONS" always;
@@ -122,8 +219,46 @@ server {
     }
 
 
-    location ^~ /api/ {
-        proxy_pass http://127.0.0.1:4181;
+    location ^~ /crm-api/ {
+        proxy_pass http://127.0.0.1:6300/;
+        proxy_set_header Host $host;
+        add_header Access-Control-Allow-Origin "*";
+        add_header Access-Control-Allow-Headers "*";
+    }
+
+    location ^~ /metabase/ {
+        proxy_pass http://127.0.0.1:3000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 300s;
+    }
+
+    # FastAPI: /ask/lead и /ask/health — лиды в CRM, healthcheck
+    location ^~ /api/ask/lead {
+        proxy_pass http://127.0.0.1:8001;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30s;
+        add_header Cache-Control "no-cache";
+    }
+
+    location ^~ /api/knowledge/ {
+        proxy_pass http://127.0.0.1:8001;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        add_header Access-Control-Allow-Origin "*" always;
+    }
+
+    location ^~ /api/ask/health {
+        proxy_pass http://127.0.0.1:8001;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -131,7 +266,241 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
+    location ^~ /p/ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        add_header Cache-Control "no-store";
+    }
+
+
+    location ^~ /portal/uploads/ {
+        alias /var/www/aidacamp-dev/uploads/portal/;
+        expires 7d;
+        add_header X-Content-Type-Options nosniff;
+    }
+
+    location ^~ /portal/ {
+        client_max_body_size 500M;
+        proxy_pass http://127.0.0.1:4185;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        add_header Cache-Control "no-store";
+    }
+
+    location ^~ /api/share {
+        proxy_pass http://127.0.0.1:3098;
+        proxy_read_timeout 10s;
+        proxy_set_header Host $host;
+    }
+
+    location ^~ /api/ai-messages {
+        proxy_pass http://127.0.0.1:3098;
+        proxy_buffering off;
+        proxy_read_timeout 60s;
+        proxy_set_header Host $host;
+    }
+
+    location ^~ /api/ {
+        client_max_body_size 500M;
+        proxy_read_timeout 300s;
+        proxy_pass http://127.0.0.1:4185;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Bot IP block
+    if ($block_bot) { return 403; }
+
+    # --- 301-редиректы seo-factory (аудит 2026-07-01) — proxy на Node, т.к. только SSR умеет отдать реальный 301 ---
+    location ~ ^/deti-otdokhnuli-v-letnikh-lageryakh/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/detskie-letnie-lagerya-v-podmoskove/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/detskiy-letniy-lager-v-podmoskove/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/kanikuly-otdykh-v-lagere/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/lager-letniy-na-20-dney/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/lager-v-podmoskove-na-leto-2026-nedorogo/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/lagerya-v-podmoskove-na-leto-dlya-podrostkov/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/letnie-lagerya-podmoskove/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/letnie-lagerya/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/letniy-lager-dlya-detey-v-moskve/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/letniy-lager-v-moskve/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/mesta-v-letniy-lager/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/nedorogoy-letniy-lager-dlya-detey-v-podmoskove/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/popali-v-letniy-lager/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/rozendorf-detskiy-lager/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/terra-nostra-shatura-detskiy-lager/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/lager-elochki-domodedovo/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/lager-petrushka-v-podmoskove/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/neo-kemp-detskiy-lager/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/sportzaniya-lager-v-podmoskove/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/strannyy-detskiy-lager/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/lagerya-za-granitsu-dlya-podrostkov/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/mos-ru-detskiy-lager/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/lager-vshe-dlya-shkolnikov-2026/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/gde-poluchit-spravku-079u-dlya-lagerya/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/skolko-delaetsya-spravka-079u-dlya-lagerya/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/skolko-deystvuet-spravka-079u-dlya-lagerya/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location ~ ^/nalogovyy-vychet-za-detskiy-lager/?$ {
+        proxy_pass http://127.0.0.1:4185;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location = /data/news-jazz.json {
+        alias /var/www/aidacamp/current/data/news-jazz.json;
+        add_header Cache-Control "no-cache, must-revalidate";
+    }
+
     location / {
+        include snippets/security-headers.conf;
+        add_header Set-Cookie $aid_set;
+        access_log /var/log/nginx/access.log combined_host;
+        access_log /var/log/nginx/attribution.log attribution;
         try_files $uri $uri/ =404;
         error_page 404 /404.html;
     }
@@ -143,7 +512,11 @@ server {
     }
 
     location = /healthz {
-        access_log off;
+        access_log /var/log/nginx/access.log combined_host;
         return 200 "ok\n";
     }
 }
+
+# === Android Browser bot blocker (added 2026-05-08) ===
+# Real Android users use Chrome. Old WebKit without Chrome/ = bots/scrapers.
+# Known bot IPs from nginx logs + Metrika (Alibaba Cloud 47.128.x, Asia 114.119.x)
