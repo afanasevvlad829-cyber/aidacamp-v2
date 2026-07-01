@@ -90,7 +90,23 @@ rsync -a \
   --include='*/' --exclude='*' \
   dist/client/images/ "${REMOTE_DIR}images/"
 if [ "$TARGET" = "prod" ]; then
-  rsync -a /var/www/aidacamp-dev/current/images/gallery/ /var/www/aidacamp/current/images/gallery/ || true
+  # ── Галерея dev→prod: ТОЛЬКО добавление новых файлов, прод авторитетен ──
+  # Инцидент: слепой `rsync -a` затирал прод-манифест и общие картинки dev-версией.
+  # Прод-галерея (/var/www/aidacamp-gallery/, симлинк из current/images/gallery/)
+  # редактируется прямо на проде: gallery-additions.json (154 записи), day_f*,
+  # smena1-*, reels/, music/ — этих файлов в dev нет. Больше того, dev-манифест
+  # gallery-additions.json — это СИМЛИНК на прод-манифест (общий файл!), поэтому
+  # `rsync -a` (с -l) заменял реальный прод-файл на рекурсивный симлинк → потеря манифеста.
+  # Правила безопасности:
+  #   --ignore-existing        — никогда не перезаписываем то, что уже на проде;
+  #   --exclude gallery-additions.json — манифест правится на проде, не трогаем;
+  #   --exclude originals/     — исходники не публикуем (nginx их и так deny);
+  #   --no-links + -r          — не копируем симлинки (в т.ч. манифест-симлинк из dev),
+  #                              -a убран чтобы -l не тащил ссылки.
+  rsync -rtvh --ignore-existing --no-links \
+    --exclude='gallery-additions.json' --exclude='originals/' \
+    /var/www/aidacamp-dev/current/images/gallery/ \
+    /var/www/aidacamp/current/images/gallery/ || true
 fi
 if [ "$TARGET" = "dev" ]; then
   FLAT="/var/www/aidacamp-dev/"
