@@ -1,0 +1,352 @@
+server {
+    server_name dev.aidacamp.ru localhost;
+    add_header X-Robots-Tag "noindex, nofollow" always;
+
+    root /var/www/aidacamp-dev/current/client/;
+
+    location ^~ /render-tmp/ {
+        alias /var/www/aidacamp-dev/current/client/render-tmp/;
+        add_header Access-Control-Allow-Origin *;
+    }
+
+    location /faces/api/ {
+        proxy_pass http://127.0.0.1:9091;
+        proxy_set_header Host $host;
+    }
+
+    location ^~ /videos/smena2/ {
+        alias /var/www/aidacamp-media/videos/smena2/;
+        add_header Cache-Control "public, max-age=31536000";
+    }
+
+    location ^~ /videos/darya/ {
+        alias /var/www/aidacamp-media/videos/darya/;
+
+        types {
+            video/mp4  mp4;
+            text/vtt   vtt;
+            image/jpeg jpg jpeg;
+        }
+
+        # 1 год кэша — инвалидируется через ?v=N в URL компонента
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        # Эффективная отдача больших файлов
+        sendfile        on;
+        tcp_nopush      on;
+        output_buffers  2 1m;
+    }
+
+    location ^~ /videos/darya/hls/ {
+        alias /var/www/aidacamp-dev/videos/darya/hls/;
+
+        types {
+            application/vnd.apple.mpegurl  m3u8;
+            video/mp2t                     ts;
+        }
+
+        # Сегменты .ts — год; .m3u8 — 1 час (на случай регенерации)
+        add_header Cache-Control "public, max-age=3600";
+        add_header Access-Control-Allow-Origin *;
+    }
+
+
+    location /videos/smena1/ {
+        alias /opt/smena-pipeline/videos/;
+        add_header Cache-Control "public, no-cache, must-revalidate";
+        add_header Access-Control-Allow-Origin *;
+    }
+
+    # merch tool — stable dir outside deploy path (survives redeploys)
+    location ~ ^/merch[-.] {
+        root /var/www/merch-static;
+        add_header Cache-Control "no-cache, must-revalidate";
+        add_header Pragma "no-cache";
+    }
+
+    # Cache: images
+    location ~* \.(avif|webp|jpg|jpeg|png|gif|svg|ico)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        add_header Vary Accept;
+    }
+
+    # Cache: CSS/JS
+    location ~* \.(css|js)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Cache: fonts
+    location ~* \.(woff|woff2|ttf|otf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Gzip
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml application/json application/javascript application/xml+rss application/atom+xml image/svg+xml;
+
+    index index.html;
+
+    # API (SSR) — без авторизации, большие файлы для загрузки
+    location ^~ /p/ {
+        proxy_pass http://127.0.0.1:4181;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        add_header Cache-Control "no-store";
+    }
+
+    # Статические загрузки портала (фото/видео вручения призов)
+    location ^~ /portal/uploads/ {
+        alias /var/www/aidacamp-dev/uploads/portal/;
+        expires 7d;
+        add_header X-Content-Type-Options nosniff;
+    }
+
+    # Портал — SSR (единый портал-лончер)
+    location ^~ /portal/ {
+        proxy_pass http://127.0.0.1:4181;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location = /portal { return 301 /portal/; }
+
+    location ^~ /autopilot/ {
+        proxy_pass http://127.0.0.1:8765;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 300s;
+        add_header Cache-Control "no-cache";
+    }
+
+    location ^~ /admin/ {
+        proxy_pass http://127.0.0.1:4181;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        client_max_body_size 50m;
+        add_header Cache-Control "no-cache, must-revalidate";
+    }
+
+    # FastAPI: /ask/lead и /ask/health — лиды в CRM, healthcheck
+    location ^~ /api/ask/lead {
+        proxy_pass http://127.0.0.1:8001;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30s;
+        add_header Cache-Control "no-cache";
+    }
+
+    location ^~ /api/ask/health {
+        proxy_pass http://127.0.0.1:8001;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location ^~ /api/ {
+        proxy_pass http://127.0.0.1:4181;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        client_max_body_size 50m;
+    }
+
+    # Admin — SSR + basic auth
+    # MCP Remote Server
+    location ^~ /mcp {
+        proxy_pass http://127.0.0.1:3457;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection "";
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+        chunked_transfer_encoding on;
+    }
+
+    # Telegram ↔ MAX Bot Synchronizer webhook
+    location ^~ /tg-webhook {
+        proxy_pass http://127.0.0.1:8443;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        client_max_body_size 50m;
+        proxy_read_timeout 30s;
+        add_header Cache-Control "no-cache";
+    }
+
+    location ^~ /_ops/ {
+        allow 127.0.0.1;
+        allow ::1;
+        deny all;
+    }
+
+    location = /healthz {
+        access_log /var/log/nginx/access.log combined_host;
+        return 200 "ok\n";
+    }
+
+    # Browser agent screenshots
+    location ^~ /audit-reports/ {
+        alias /opt/audit/reports/;
+        autoindex on;
+        add_header Cache-Control "no-store, no-cache";
+    }
+
+    location ^~ /_reports/ {
+        add_header Cache-Control "no-store, no-cache, must-revalidate";
+        add_header Pragma "no-cache";
+        alias /var/www/aidacamp-dev/reports/;
+        try_files $uri $uri/ =404;
+    }
+
+    location ^~ /reports-hub/ {
+
+        alias /opt/reports-hub/;
+        add_header Cache-Control "no-store, no-cache, must-revalidate";
+        add_header Pragma "no-cache";
+    }
+
+    location ^~ /seo/ {
+        alias /var/www/aidacamp-dev/seo/;
+        add_header Cache-Control "no-store, no-cache, must-revalidate";
+        add_header Pragma "no-cache";
+        try_files $uri $uri/ /seo/index.html;
+    }
+
+
+    location ^~ /screenshots/ {
+        alias /opt/browser-agent/output/;
+        autoindex on;
+        expires -1;
+        add_header Cache-Control "no-cache";
+    }
+
+
+    location ^~ /video-studio { proxy_pass http://127.0.0.1:7745/; proxy_http_version 1.1; proxy_set_header Host $host; }
+    location ^~ /vs-photo { proxy_pass http://127.0.0.1:7745; }
+    location ^~ /vs-preview { proxy_pass http://127.0.0.1:7745; }
+    location ^~ /vs-template { proxy_pass http://127.0.0.1:7745; }
+    location ^~ /vs-templates { proxy_pass http://127.0.0.1:7745; }
+
+    location ^~ /smena2-curator/ {
+        proxy_pass http://127.0.0.1:5151/;
+        proxy_set_header Host $host;
+        proxy_http_version 1.1;
+    }
+
+    location ^~ /smena2-zip {
+        proxy_pass http://127.0.0.1:7743;
+    }
+
+    location ^~ /smena2-rotate {
+        proxy_pass http://127.0.0.1:7743;
+    }
+
+    location ^~ /smena2-dl {
+        proxy_pass http://127.0.0.1:7742;
+    }
+
+
+    # Общее медиахранилище: превью, дебаг-файлы, картинки
+    location ^~ /media/ { alias /var/www/aidacamp-media/; }
+    location /reels/ { alias /var/www/aidacamp-gallery/reels/; add_header Content-Disposition 'attachment'; }
+    location /smena2-reels-list { proxy_pass http://127.0.0.1:7743; }
+    location ^~ /smena2-reel-file {
+        alias /var/www/aidacamp-gallery/smena2_reel.mp4;
+        add_header Content-Disposition "attachment; filename=smena2_reel.mp4";
+    }
+    location ^~ /smena2-reel { proxy_pass http://127.0.0.1:7743; }
+    location ^~ /smena2-reel-status { proxy_pass http://127.0.0.1:7743; }
+    location ^~ /smena2-reel-reset   { proxy_pass http://127.0.0.1:7743; }
+    location ^~ /smena2-remotion      { proxy_pass http://127.0.0.1:7743; }
+    location ^~ /smena2-music-search { proxy_pass http://127.0.0.1:7743; }
+    location ^~ /smena2-music-download { proxy_pass http://127.0.0.1:7743; }
+    location ^~ /music-files/ { alias /var/www/aidacamp-gallery/music/; }
+
+    location ^~ /smena2-thumbs/ {
+        alias /var/www/aidacamp-gallery/smena2_thumbs/;
+        expires -1;
+        add_header Cache-Control "no-store";
+    }
+    location = /images/gallery/smena2_gallery.html {
+        alias /var/www/aidacamp-gallery/smena2_gallery.html;
+        add_header Cache-Control "no-cache, must-revalidate";
+        add_header X-Robots-Tag "noindex, nofollow" always;
+    }
+
+    location ^~ /images/gallery/ {
+        alias /var/www/aidacamp-gallery/;
+        expires 1h;
+        add_header Cache-Control "public";
+    }
+
+    location ^~ /images/gallery/originals/ { deny all; }
+    location = /merch-state.json {
+        proxy_pass http://127.0.0.1:3099;
+    }
+
+    location ^~ /gallery-originals/ { alias /var/www/aidacamp-gallery/smena2_originals/; }
+
+    location = /data/news-jazz.json {
+        alias /var/www/aidacamp-dev/current/data/news-jazz.json;
+        add_header Cache-Control "no-cache, must-revalidate";
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:4181;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        add_header Cache-Control "no-cache, must-revalidate";
+    }
+
+
+    listen [::]:443 ssl ipv6only=on;
+    listen 443 ssl;
+    ssl_certificate /etc/letsencrypt/live/dev.aidacamp.ru/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/dev.aidacamp.ru/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+
+server {
+    if ($host = dev.aidacamp.ru) {
+        return 301 https://$host$request_uri;
+    }
+    listen 80;
+    listen [::]:80;
+    server_name dev.aidacamp.ru localhost;
+    add_header X-Robots-Tag "noindex, nofollow" always;
+    return 404;
+
+
+}
