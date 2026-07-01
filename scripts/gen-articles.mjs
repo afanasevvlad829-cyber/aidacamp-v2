@@ -16,8 +16,51 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const STATI_DIR = path.join(ROOT, 'src/pages/stati');
+const PUBLIC_DIR = path.join(ROOT, 'public');
 const DATES_FILE = path.join(ROOT, 'src/data/articleDates.ts');
 const OUT_FILE = path.join(ROOT, 'src/data/articles.ts');
+const FALLBACK_IMAGE = '/images/og-default.jpg';
+
+// Найти jpg-версию avif изображения (для RSS/VK, которым нужен растровый формат)
+function findJpgImage(avifPath) {
+  const m = avifPath.match(/\/images\/hero\/([^/]+)\.avif$/);
+  if (m) {
+    const jpgPath = `/images/hero/jpg/${m[1]}.jpg`;
+    if (fs.existsSync(path.join(PUBLIC_DIR, jpgPath))) return jpgPath;
+  }
+  if (avifPath.match(/\.(jpg|jpeg|png)$/i)) return avifPath;
+  return FALLBACK_IMAGE;
+}
+
+// Извлечь и очистить HTML контент статьи для RSS/content:encoded
+function extractContent(astroSource) {
+  const articleMatch = astroSource.match(/<article[^>]*>([\s\S]*?)<\/article>/)
+    || astroSource.match(/<main[^>]*class="[^"]*article-body[^"]*"[^>]*>([\s\S]*?)<\/main>/);
+  if (!articleMatch) return '';
+  let html = articleMatch[1];
+
+  html = html.replace(/<[A-Z][A-Za-z]*[^>]*\/>/g, '');
+  html = html.replace(/<[A-Z][A-Za-z]*[^>]*>[\s\S]*?<\/[A-Z][A-Za-z]*>/g, '');
+  html = html.replace(/<i\s[^>]*class="bi[^"]*"[^>]*><\/i>/g, '');
+  html = html.replace(/<i\s[^>]*class="bi[^"]*"[^>]*\/>/g, '');
+  html = html.replace(/<div[^>]*class="list-accent-dot"[^>]*><\/div>/g, '');
+  html = html.replace(/<h([2-4])[^>]*>([\s\S]*?)<\/h\1>/g, (_, n, inner) => {
+    const text = inner.replace(/<[^>]+>/g, '').trim();
+    return `<h${n}>${text}</h${n}>`;
+  });
+  html = html.replace(/<div[^>]*class="[^"]*border[^"]*rounded[^"]*"[^>]*>([\s\S]*?)<\/div>/g, (_, inner) => {
+    const text = inner.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    return text ? `<p>${text}</p>` : '';
+  });
+  html = html.replace(/\s(class|style|aria-hidden|aria-label|role)="[^"]*"/g, '');
+  html = html.replace(/<div[^>]*>([\s\S]*?)<\/div>/g, '$1');
+  html = html.replace(/<span[^>]*>([\s\S]*?)<\/span>/g, '$1');
+  html = html.replace(/<li[^>]*>/g, '<li>');
+  html = html.replace(/\n{3,}/g, '\n\n').replace(/[ \t]+/g, ' ').trim();
+  html = html.replace(/<(p|li|h[2-4])>\s*<\/\1>/g, '');
+
+  return html;
+}
 
 // Рубрики каталога (порядок = порядок секций на странице)
 const CLUSTERS = {
@@ -106,6 +149,8 @@ for (const file of files) {
   const readTime = readTimeRaw ? readTimeRaw.replace(/\s*чтения/, '') : '';
   if (!title) { console.error(`⚠ нет title в ${file} — пропуск`); continue; }
   const cluster = classifyCluster(slug);
+  const ogImageMatch = src.match(/ogImage="([^"]+)"/);
+  const ogImage = ogImageMatch ? ogImageMatch[1] : FALLBACK_IMAGE;
   articles.push({
     slug,
     url: `/stati/${slug}`,
@@ -116,6 +161,9 @@ for (const file of files) {
     tagColor: CLUSTERS[cluster].tagColor,
     readTime,
     date: DATES[slug] || '',
+    ogImage,
+    ogImageJpg: findJpgImage(ogImage),
+    contentHtml: extractContent(src),
   });
 }
 
@@ -146,6 +194,9 @@ export type Article = {
   tagColor: string;
   readTime: string;
   date: string;
+  ogImage: string;
+  ogImageJpg: string;
+  contentHtml: string;
 };
 
 export type Cluster = { id: string; label: string; color: string };
@@ -157,6 +208,9 @@ ${clustersOut}
 export const ARTICLES: Article[] = [
 ${articlesOut}
 ];
+
+/** Алиас для скриптов, читающих articles.ts (RSS, VK-постер, экспорт JSON). */
+export const articles = ARTICLES;
 
 export const ARTICLE_COUNT = ARTICLES.length;
 
