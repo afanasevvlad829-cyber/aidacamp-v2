@@ -136,20 +136,30 @@ const daysLeft = startDate
   </h3>
   <p class="mt-0.5 text-base text-body-muted">{shift.duration}</p>
 
-  <!-- OCCUPANCY BAR -->
-  <div class="mt-4">
-    <div class="flex justify-between text-[12px] mb-1.5">
-      <span class="text-body-faint">Занято</span>
-      <span class:list={['font-semibold', isLowAvailability ? 'text-primary' : 'text-emerald-600']}>
-        {isLowAvailability
-          ? <Fragment>Осталось <span data-count-to={shift.free}>{shift.free}</span></Fragment>
-          : <Fragment><span data-count-to={shift.occupied}>{shift.occupied}</span> из {total}</Fragment>
-        }
+  <!-- OCCUPANCY BAR — скрыто блюром до клика «узнать места» (раскрытие на сессию, синхронно по data-occ-shift) -->
+  <div class="mt-4 relative min-h-[40px]" data-occupancy data-occ-shift={shift.id}>
+    <div data-occ-content class="occ-cover transition-[filter,opacity] duration-300">
+      <div class="flex justify-between text-[12px] mb-1.5">
+        <span class="text-body-faint whitespace-nowrap" data-occ-status-slot data-occ-default="Занято">Занято</span>
+        <span data-occ-num class:list={['font-semibold', isLowAvailability ? 'text-primary' : 'text-emerald-600']}>
+          {isLowAvailability
+            ? <Fragment>Осталось <span data-count-to={shift.free}>{shift.free}</span></Fragment>
+            : <Fragment><span data-count-to={shift.occupied}>{shift.occupied}</span> из {total}</Fragment>
+          }
+        </span>
+      </div>
+      <div class="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
+        <div data-shift-bar class:list={['h-full rounded-full', isLowAvailability ? 'bg-primary' : 'bg-emerald-400']} style={`--bar-pct:${pct}%`}></div>
+      </div>
+    </div>
+    <button type="button" data-occ-reveal
+      class="absolute inset-0 z-10 flex items-center justify-center gap-1.5 rounded-lg text-[12px] font-semibold text-primary hover:text-primary-hover transition-colors"
+      aria-label="Узнать число свободных мест в этой смене">
+      <span data-occ-icon class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/40 bg-primary/5">
+        <i class="bi bi-search text-[10px]" aria-hidden="true"></i>
       </span>
-    </div>
-    <div class="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
-      <div data-shift-bar class:list={['h-full rounded-full', isLowAvailability ? 'bg-primary' : 'bg-emerald-400']} style={`--bar-pct:${pct}%`}></div>
-    </div>
+      <span data-occ-label>узнать места</span>
+    </button>
   </div>
 
   <!-- PRICE -->
@@ -208,6 +218,44 @@ const daysLeft = startDate
   </a>
 
 </article>
+
+<style>
+  /* Счётчик мест скрыт блюром, пока не нажали «узнать места» */
+  .occ-cover { filter: blur(5px); opacity: 0.45; }
+
+  /* Загрузка — яркий пульсирующий кружок + статус primary-цветом */
+  [data-occ-reveal].occ-loading [data-occ-icon] {
+    background: rgb(236, 124, 0);
+    border-color: rgb(236, 124, 0);
+    color: #fff;
+    animation: occ-pulse 0.9s ease-in-out infinite;
+  }
+  [data-occ-reveal].occ-loading [data-occ-label] { color: rgb(236, 124, 0); }
+  @keyframes occ-pulse {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(236, 124, 0, 0.18); }
+    50%      { box-shadow: 0 0 0 7px rgba(236, 124, 0, 0.30); }
+  }
+
+  /* Раскрытие — pop счётчика + вспышка числа */
+  @keyframes occ-pop {
+    0%   { transform: scale(0.9); }
+    55%  { transform: scale(1.07); }
+    100% { transform: scale(1); }
+  }
+  .occ-pop { animation: occ-pop 0.5s cubic-bezier(0.2, 0.8, 0.3, 1.3); }
+  .occ-pop [data-count-to] {
+    border-radius: 6px;
+    padding: 0 3px;
+    animation: occ-glow 1s ease-out;
+  }
+  @keyframes occ-glow {
+    0%   { background: rgba(236, 124, 0, 0.40); box-shadow: 0 0 14px rgba(236, 124, 0, 0.55); }
+    100% { background: transparent; box-shadow: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .occ-pop, [data-occ-reveal].occ-loading [data-occ-icon] { animation: none; }
+  }
+</style>
 
 <script>
   function initShiftCards() {
@@ -322,4 +370,124 @@ const daysLeft = startDate
   }
   document.addEventListener('astro:page-load', updateShift1Days);
   updateShift1Days();
+
+  // ── Блюр счётчика мест → клик «узнать места» раскрывает смену ──────────────
+  // Гранулярно по смене, синхронно на всех карточках (data-occ-shift).
+  // Храним в sessionStorage → повторный заход снова под блюром → снова событие.
+  function initOccupancy() {
+    const KEY = 'ac:occ_revealed';
+    const getRevealed = () => {
+      try { return JSON.parse(sessionStorage.getItem(KEY) || '[]'); } catch { return []; }
+    };
+    const saveRevealed = (id: string) => {
+      const r = getRevealed();
+      if (!r.includes(id)) { r.push(id); try { sessionStorage.setItem(KEY, JSON.stringify(r)); } catch {} }
+    };
+
+    // Цвет бара по прогрессу проверки: 1-я треть зелёный, 2-я жёлтый, 3-я красный
+    function colorForProgress(t: number) {
+      if (t < 1 / 3) return 'rgb(22, 163, 74)';   // зелёный
+      if (t < 2 / 3) return 'rgb(234, 179, 8)';   // жёлтый
+      return 'rgb(220, 38, 38)';                  // красный
+    }
+    const barPct = (bar: HTMLElement | null) => (bar ? parseFloat(bar.style.getPropertyValue('--bar-pct')) || 0 : 0);
+    // Ширину бара двигаем через --bar-pct (CSS: width: var(--bar-pct) !important — inline width бессилен)
+    function setBar(bar: HTMLElement | null, pct: number, t: number) {
+      if (!bar) return;
+      bar.classList.add('bar-filled');
+      bar.style.transition = 'none';
+      bar.style.setProperty('--bar-pct', pct + '%');
+      bar.style.backgroundColor = colorForProgress(t);
+    }
+
+    function animateCount(el: HTMLElement) {
+      const target = parseInt(el.dataset.countTo || '0', 10);
+      const dur = 600, t0 = performance.now();
+      function tick(now: number) {
+        const t = Math.min((now - t0) / dur, 1);
+        el.textContent = String(Math.round((1 - Math.pow(1 - t, 3)) * target));
+        if (t < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    const STEPS = ['Сверяемся…', 'Запрос в CRM…', 'Сверяем брони…', 'Смотрим отказы…', 'Просроченные брони…'];
+    const DUR = 7000;
+
+    // Мгновенное финальное состояние — для уже открытых в этой сессии
+    function setFinal(block: HTMLElement) {
+      const bar = block.querySelector<HTMLElement>('[data-shift-bar]');
+      setBar(bar, barPct(bar), 1);
+      block.querySelectorAll<HTMLElement>('[data-count-to]').forEach((el) => { el.textContent = el.dataset.countTo || '0'; });
+      const num = block.querySelector<HTMLElement>('[data-occ-num]');
+      if (num) num.style.display = '';
+      const slot = block.querySelector<HTMLElement>('[data-occ-status-slot]');
+      if (slot) slot.textContent = slot.dataset.occDefault || 'Занято';
+    }
+
+    // Драматичный reveal ~2.5 с: статус-цепочка + бар зелёный→жёлтый→красный
+    function playReveal(block: HTMLElement) {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setFinal(block); return; }
+      const bar = block.querySelector<HTMLElement>('[data-shift-bar]');
+      const slot = block.querySelector<HTMLElement>('[data-occ-status-slot]');
+      const num = block.querySelector<HTMLElement>('[data-occ-num]');
+      const content = block.querySelector<HTMLElement>('[data-occ-content]');
+      const finalPct = barPct(bar);
+
+      if (num) num.style.display = 'none';          // число прячем, пока «считаем остаток»
+      setBar(bar, 0, 0);                             // старт с нуля, зелёный
+
+      let si = -1;
+      const step = () => { si++; if (slot && si < STEPS.length) slot.innerHTML = `<i class="bi bi-arrow-repeat animate-spin"></i> ${STEPS[si]}`; };
+      step();
+      const iv = setInterval(step, DUR / STEPS.length);
+
+      const t0 = performance.now();
+      function frame(now: number) {
+        const t = Math.min((now - t0) / DUR, 1);
+        // бар растёт линейно вместе со статус-шагами; цвет — по третям прогресса
+        setBar(bar, finalPct * t, t);
+        if (t < 1) { requestAnimationFrame(frame); return; }
+        clearInterval(iv);
+        if (slot) slot.textContent = slot.dataset.occDefault || 'Занято';
+        if (num) num.style.display = '';
+        block.querySelectorAll<HTMLElement>('[data-count-to]').forEach(animateCount);
+        content?.classList.add('occ-pop');
+        setTimeout(() => content?.classList.remove('occ-pop'), 700);
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function revealShift(id: string, animate: boolean) {
+      document.querySelectorAll<HTMLElement>(`[data-occupancy][data-occ-shift="${id}"]`).forEach((block) => {
+        block.querySelector('[data-occ-content]')?.classList.remove('occ-cover');
+        block.querySelector('[data-occ-reveal]')?.classList.add('hidden');
+        if (animate) playReveal(block); else setFinal(block);
+      });
+    }
+
+    // На загрузке — раскрываем уже открытые в этой сессии (без анимации)
+    getRevealed().forEach((id: string) => revealShift(id, false));
+
+    document.querySelectorAll<HTMLElement>('[data-occ-reveal]').forEach((btn) => {
+      if (btn.dataset.occBound) return;
+      btn.dataset.occBound = '1';
+      // не даём клику всплыть до навигации по карточке
+      ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'touchstart', 'touchend'].forEach((ev) =>
+        btn.addEventListener(ev, (e) => e.stopPropagation()));
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const block = btn.closest<HTMLElement>('[data-occupancy]');
+        const id = block?.dataset.occShift;
+        if (!id) return;
+        saveRevealed(id);
+        revealShift(id, true);
+        try { (window as any).ym?.(96499295, 'reachGoal', 'occupancy_check', { shift: id }); } catch {}
+      });
+    });
+  }
+
+  document.addEventListener('astro:page-load', initOccupancy);
+  if (document.readyState !== 'loading') initOccupancy();
 </script>
