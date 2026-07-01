@@ -10,6 +10,22 @@ LOG = os.environ.get("VISITS_LOG", "/var/log/nginx/attribution.log")
 DSN = os.environ.get("DB_DSN", "dbname=aidacamp user=postgres")
 
 
+import re
+
+# Шум: краулеры (по User-Agent) и не-страницы (ассеты по расширению URL).
+# Отсекаем В МОМЕНТ ЗАПИСИ, чтобы сырая visits не копила ~59% мусора.
+_BOT_RE = re.compile(r"bot|crawl|spider|externalagent|amazonbot|ahrefs|semrush|duckduck|preview|monitor|uptime|python|curl|wget|go-http|java/|okhttp|headless|phantom|slurp|bingpreview|facebookexternalhit", re.I)
+_ASSET_RE = re.compile(r"\.(json|webmanifest|xml|txt|ico|css|js|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|map|mp4|webm|pdf)(\?|$)", re.I)
+
+def is_noise(ua: str, uri: str) -> bool:
+    """True если это краулер или технический ассет, а не живой просмотр страницы."""
+    if ua and _BOT_RE.search(ua):
+        return True
+    if uri and _ASSET_RE.search(uri):
+        return True
+    return False
+
+
 def parse_line(line: str):
     """JSON-строка лога -> dict для INSERT (или None если не парсится)."""
     try:
@@ -57,7 +73,10 @@ def insert(cur, r):
 
 def main():
     import psycopg2  # ленивый импорт — нужен только при реальном прогоне
-    off = int(open(OFFSET_FILE).read()) if os.path.exists(OFFSET_FILE) else 0
+    try:
+        off = int(open(OFFSET_FILE).read().strip())
+    except Exception:
+        off = 0
     if not os.path.exists(LOG):
         return
     if os.path.getsize(LOG) < off:
@@ -68,6 +87,8 @@ def main():
         f.seek(off)
         for line in f:
             r = parse_line(line)
+            if r and is_noise(r.get("user_agent") or "", r.get("landing_url") or ""):
+                continue
             if r and r.get("visitor_id"):
                 try:
                     insert(cur, r)
