@@ -5,7 +5,8 @@
  *
  * Атрибуты которые поддерживаются:
  *   data-dynamic-price="shift-1"   → span с ценой (обновляется текст)
- *   data-price-urgency="shift-1"   → строка "Завтра будет X ₽" (если есть следующая ступень)
+ *   data-price-stage="shift-1"     → строка "с 4 июля: X ₽" (плановый скачок ДО старта рампы)
+ *   data-price-urgency="shift-1"   → строка "Завтра будет X ₽" (когда цена растёт день-в-день)
  *   data-vychet-link="shift-1"     → ссылка налогового вычета (ищет data-shift-days на родителе)
  *   data-option-price="shift-1"    → <option data-price> в калькуляторе
  */
@@ -63,6 +64,22 @@ import { PRICING } from '../data/dynamicPrices';
     return (next && cur && next > cur) ? next : null;
   }
 
+  var MONTHS_RU = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  function fmtDateRu(iso) {
+    var p = iso.split('-');
+    return parseInt(p[2], 10) + ' ' + MONTHS_RU[parseInt(p[1], 10) - 1];
+  }
+
+  /** Ближайшая плановая ступень-скачок ДО начала ежедневного роста (для «с 4 июля: X ₽»). */
+  function nextStage(c, today) {
+    var stages = c.stages;
+    if (!stages) return null;
+    for (var i = 0; i < stages.length; i++) {
+      if (stages[i].from > today) return stages[i];
+    }
+    return null;
+  }
+
   function applyPrices() {
     var today = todayStr();
     Object.keys(cfg).forEach(function (id) {
@@ -82,6 +99,17 @@ import { PRICING } from '../data/dynamicPrices';
         document.querySelectorAll('[data-price-urgency="' + id + '"]').forEach(function (el) {
           el.textContent = msg; el.classList.remove('hidden');
         });
+      }
+
+      // "с 4 июля: X ₽" — плановый скачок ДО старта ежедневного роста (ступень с инкрементом).
+      // Пока идёт ежедневный рост — не показываем (его несёт «Завтра будет X»).
+      var ns = nextStage(c, today);
+      var stageEls = document.querySelectorAll('[data-price-stage="' + id + '"]');
+      if (ns && ns.increment && ns.price > cur) {
+        var smsg = 'с ' + fmtDateRu(ns.from) + ': ' + ns.price.toLocaleString('ru-RU') + ' ₽';
+        stageEls.forEach(function (el) { el.textContent = smsg; el.classList.remove('hidden'); });
+      } else {
+        stageEls.forEach(function (el) { el.classList.add('hidden'); });
       }
 
       // Вычет — пересчёт на основе актуальной цены

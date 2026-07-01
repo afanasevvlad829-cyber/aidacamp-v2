@@ -8,6 +8,7 @@ export const ARTICLE_DATES: Record<string, string> = {
   'vasya-i-sistema':                                  '2026-06-19',
   'hakaton-odin-malchik':                             '2026-06-19',
   'periody-smeny-v-lagere':                          '2026-06-22',
+  'kakuyu-smenu-vybrat':                              '2026-07-01',
   'kiberbezopasnost-dlya-detej':                     '2026-06-22',
   'gorodskoy-ili-zagorodnyy-lager':                  '2026-06-10',
   '3d-modelirovanie-dlya-detej':                     '2026-04-24',

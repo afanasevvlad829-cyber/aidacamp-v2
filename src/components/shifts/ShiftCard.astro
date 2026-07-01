@@ -23,15 +23,6 @@ const isLowAvailability = pct >= 85;
 // Номер смены: 'shift-3' → '3', 'shift-2-1' → '2.1'
 const shiftNum = shift.id.replace('shift-', '').replace('-', '.');
 
-// Предупреждение о росте цены: показываем только до старта инкремента
-const PRICE_INCREMENT_WARN: Record<string, { date: string; label: string; increment: string }> = {
-  'shift-3': { date: '2026-07-01', label: '1 июля', increment: '+500 ₽/день' },
-  'shift-4': { date: '2026-07-10', label: '10 июля', increment: '+300 ₽/день' },
-};
-const todayISO = new Date().toISOString().slice(0, 10);
-const priceWarn = PRICE_INCREMENT_WARN[shift.id];
-const showPriceWarn = priceWarn && todayISO < priceWarn.date;
-
 // Eyebrow с месяцами по диапазону дат
 const monthsRu: Record<string, string> = {
   '01': 'Январь', '02': 'Февраль', '03': 'Март', '04': 'Апрель',
@@ -165,6 +156,7 @@ const daysLeft = startDate
   <!-- PRICE -->
   <div class="mt-4 flex-1 flex flex-col justify-end">
     <p class="text-[24px] font-extrabold tracking-[-0.02em] leading-none text-primary" data-dynamic-price={shift.id}>{ssrPriceFmt}</p>
+    <span class="hidden text-[11px] font-semibold text-orange-500 mt-0.5" data-price-stage={shift.id}></span>
     {priceGrowsToday && (
       <p class="text-[11px] font-semibold text-orange-500 mt-0.5 flex items-center gap-1">
         <i class="bi bi-graph-up-arrow text-[10px]" aria-hidden="true"></i>
@@ -179,12 +171,6 @@ const daysLeft = startDate
         </span>
       )}
     </div>
-    {showPriceWarn && (
-      <p class="mt-2 inline-flex items-center gap-1 self-start rounded-full bg-orange-50 border border-orange-200 px-2 py-0.5 text-[11px] font-semibold text-orange-600">
-        <i class="bi bi-graph-up-arrow text-[10px]" aria-hidden="true"></i>
-        С {priceWarn.label} {priceWarn.increment}
-      </p>
-    )}
   </div>
 
   {PEER_COUNTS[shift.id] && (
