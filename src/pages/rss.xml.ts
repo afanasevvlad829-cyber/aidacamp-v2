@@ -54,12 +54,15 @@ export const GET: APIRoute = async () => {
     // Фолбэк: без ogImageJpg (у части статей его нет) весь фид падал в 500 (TypeError startsWith)
     const rawImg = a.ogImageJpg || a.ogImage || '/images/hero/jpg/o-lagere.jpg';
     const imageUrl = rawImg.startsWith('http') ? rawImg : `${BASE_URL}${rawImg}`;
+    // Дзену нужны АБСОЛЮТНЫЕ ссылки в <link>/<guid>, иначе импорт статей не работает.
+    // a.url в articles.ts относительный (/stati/...) — дополняем доменом здесь.
+    const absUrl = a.url.startsWith('http') ? a.url : `${BASE_URL}${a.url}`;
     return `  <item>
     <title>${esc(a.title)}</title>
-    <link>${esc(a.url)}</link>
+    <link>${esc(absUrl)}</link>
     <description>${esc(a.description)}</description>
     <pubDate>${toRFC822(a.date)}</pubDate>
-    <guid isPermaLink="true">${esc(a.url)}</guid>
+    <guid isPermaLink="true">${esc(absUrl)}</guid>
     <category>format-article</category>
     <enclosure url="${esc(imageUrl)}" type="image/jpeg" length="0"/>
     <content:encoded>${wrapCdata(a.contentHtml)}</content:encoded>
