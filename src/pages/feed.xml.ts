@@ -8,16 +8,17 @@ const BASE_URL = 'https://aidacamp.ru';
 // Только смены 3 и 4 для Яндекс.Бизнес
 const FEED_SHIFT_IDS = ['shift-3', 'shift-4'];
 
+// Яндекс.Бизнес фид не читает AVIF — только JPG/PNG большого размера (1600×1200, 4:3).
 const PICTURES: Record<string, string[]> = {
   'shift-3': [
-    `${BASE_URL}/images/gallery/camp-smile.avif`,
-    `${BASE_URL}/images/gallery/camp-group-beanbags.avif`,
-    `${BASE_URL}/hero/hero-custom-2026-04-07-1100.avif`,
+    `${BASE_URL}/images/hero/jpg/lager-programmirovaniya.jpg`,
+    `${BASE_URL}/images/hero/jpg/letnyaya-it-shkola.jpg`,
+    `${BASE_URL}/images/hero/jpg/detskiy-lager-podmoskove.jpg`,
   ],
   'shift-4': [
-    `${BASE_URL}/images/gallery/camp-group-beanbags.avif`,
-    `${BASE_URL}/images/gallery/camp-smile.avif`,
-    `${BASE_URL}/hero/hero-custom-2026-04-07-1100.avif`,
+    `${BASE_URL}/images/hero/jpg/kompyuternyy-lager.jpg`,
+    `${BASE_URL}/images/hero/jpg/lager-programmirovaniya.jpg`,
+    `${BASE_URL}/images/hero/jpg/letnyaya-it-shkola.jpg`,
   ],
 };
 
