@@ -51,7 +51,9 @@ export const GET: APIRoute = async () => {
   const published = articles.filter(a => publishedSlugs.has(a.slug));
 
   const items = published.map(a => {
-    const imageUrl = a.ogImageJpg.startsWith('http') ? a.ogImageJpg : `${BASE_URL}${a.ogImageJpg}`;
+    // Фолбэк: без ogImageJpg (у части статей его нет) весь фид падал в 500 (TypeError startsWith)
+    const rawImg = a.ogImageJpg || a.ogImage || '/images/hero/jpg/o-lagere.jpg';
+    const imageUrl = rawImg.startsWith('http') ? rawImg : `${BASE_URL}${rawImg}`;
     return `  <item>
     <title>${esc(a.title)}</title>
     <link>${esc(a.url)}</link>
