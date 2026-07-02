@@ -11,14 +11,14 @@ const FEED_SHIFT_IDS = ['shift-3', 'shift-4'];
 // Яндекс.Бизнес фид не читает AVIF — только JPG/PNG большого размера (1600×1200, 4:3).
 const PICTURES: Record<string, string[]> = {
   'shift-3': [
+    `${BASE_URL}/lanit-photos/beanbags.jpg`,
+    `${BASE_URL}/lanit-photos/coding.jpg`,
     `${BASE_URL}/images/hero/jpg/lager-programmirovaniya.jpg`,
-    `${BASE_URL}/images/hero/jpg/letnyaya-it-shkola.jpg`,
-    `${BASE_URL}/images/hero/jpg/detskiy-lager-podmoskove.jpg`,
   ],
   'shift-4': [
+    `${BASE_URL}/lanit-photos/coding.jpg`,
+    `${BASE_URL}/lanit-photos/beanbags.jpg`,
     `${BASE_URL}/images/hero/jpg/kompyuternyy-lager.jpg`,
-    `${BASE_URL}/images/hero/jpg/lager-programmirovaniya.jpg`,
-    `${BASE_URL}/images/hero/jpg/letnyaya-it-shkola.jpg`,
   ],
 };
 
