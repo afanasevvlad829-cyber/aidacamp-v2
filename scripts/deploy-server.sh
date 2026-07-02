@@ -89,6 +89,15 @@ rsync -a \
   --include='*.webp' --include='*.avif' --include='*.svg' --include='*.png' --include='*.jpg' --include='*.jpeg' --include='*.gif' \
   --include='*/' --exclude='*' \
   dist/client/images/ "${REMOTE_DIR}images/"
+# nginx root = ${REMOTE_DIR}client/ — синхронизируем туда же (тот же паттерн, что в server-deploy.sh
+# для dev, см. его инцидент 2026-06-26). Инцидент 2026-07-02: этот скрипт лил только в $REMOTE_DIR,
+# а прод/dev nginx отдают статику из вложенной client/ — деплой рапортовал HTTP 200 и новый SHA,
+# но реальные страницы статей оставались старыми, потому что client/ не обновлялась.
+echo "📤 статика → ${REMOTE_DIR}client/ (nginx root)"
+rsync -a --checksum \
+  --exclude='.env' --exclude='server/' --exclude='node_modules/' --exclude='backup-*' \
+  --exclude='images/gallery/' --exclude='images/team/' --exclude='data/' \
+  dist/client/ "${REMOTE_DIR}client/"
 if [ "$TARGET" = "prod" ]; then
   # ── Галерея dev→prod: ТОЛЬКО добавление новых файлов, прод авторитетен ──
   # Инцидент: слепой `rsync -a` затирал прод-манифест и общие картинки dev-версией.
