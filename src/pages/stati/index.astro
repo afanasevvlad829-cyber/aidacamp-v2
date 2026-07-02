@@ -3,8 +3,15 @@ import '../../styles/global.css';
 import Base from '../../layouts/Base.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
-import { ARTICLES, CLUSTERS, ARTICLE_COUNT, articlesByCluster } from '../../data/articles';
+import { getCollection } from 'astro:content';
+import CLUSTERS from '../../data/articleClusters.json';
 import { getViews, VIEWS_THRESHOLD } from '../../data/articleViews';
+
+const articleEntries = await getCollection('articles');
+const ARTICLES = articleEntries
+  .map(e => ({ slug: e.id, ...e.data }))
+  .sort((a, b) => (b.date || '').localeCompare(a.date || '') || a.slug.localeCompare(b.slug));
+const ARTICLE_COUNT = ARTICLES.length;
 
 // Просмотры (снимок Метрики; на проде уточняются живым счётчиком через /api/article-views)
 const withViews = ARTICLES.map(a => ({ ...a, views: getViews(a.slug) }));

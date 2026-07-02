@@ -1,11 +1,10 @@
 export const prerender = false; // всегда свежие данные из shifts/faq/articles
 import type { APIRoute } from 'astro';
+import { getCollection } from 'astro:content';
 import { mainShifts } from '../data/shifts';
 import { getCurrentPrice } from '../data/dynamicPrices';
 import { faqCategories } from '../data/faq';
 import { landingPages } from '../data/landing-pages';
-import { articles as ARTICLES } from '../data/articles';
-const CLUSTERS: { id: string; label: string }[] = [];
 import { STAT_DISTANCE, STAT_YEARS, STAT_KIDS, STAT_RATING, PHONE_MAIN, EMAIL, CAMP_SEASON } from '../data/contacts';
 
 const BASE = 'https://aidacamp.ru';
@@ -15,7 +14,9 @@ const fmtPrice = (id: string, fallback: string) => {
   return p ? `${p.toLocaleString('ru-RU')} ₽` : fallback;
 };
 
-export const GET: APIRoute = () => {
+export const GET: APIRoute = async () => {
+  const ARTICLES = (await getCollection('articles')).map(e => ({ slug: e.id, ...e.data }));
+
   // Смены
   const shifts = mainShifts
     .map((s) => `- **${s.name}** — ${s.dates}, ${s.duration}, от ${fmtPrice(s.id, s.price)}. ${BASE}/shifts/${s.id}/`)

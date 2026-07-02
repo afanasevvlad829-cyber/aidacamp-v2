@@ -1,13 +1,15 @@
 /**
- * gen-articles.mjs — генератор реестра статей src/data/articles.ts.
+ * gen-articles.mjs — генератор реестра статей src/data/articles.json (Content Collection).
  *
  * Единый источник метаданных каталога /stati/ — это сами статьи (их <ArticleHero>).
  * Скрипт извлекает title / subtitle / readTime из каждого файла src/pages/stati/*.astro,
- * берёт дату из articleDates.ts, классифицирует рубрику по slug и пишет articles.ts.
+ * берёт дату из articleDates.ts, классифицирует рубрику по slug и пишет articles.json.
+ * Схема данных описана в src/content.config.ts (Astro Content Layer API, file() loader).
  *
  * Запуск:  node scripts/gen-articles.mjs
- * Идемпотентно: повторный прогон даёт тот же результат. Ручные исключения по рубрике/тегу —
- * в карте OVERRIDES ниже (а не правкой articles.ts, который перезаписывается).
+ * Идемпотентно: повторный прогон даёт тот же результат. Ручные исключения по рубрике —
+ * в карте OVERRIDES ниже (а не правкой articles.json, который перезаписывается).
+ * Рубрики (label/tag/tagColor) — в src/data/articleClusters.json.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -18,7 +20,8 @@ const ROOT = path.resolve(__dirname, '..');
 const STATI_DIR = path.join(ROOT, 'src/pages/stati');
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const DATES_FILE = path.join(ROOT, 'src/data/articleDates.ts');
-const OUT_FILE = path.join(ROOT, 'src/data/articles.ts');
+const CLUSTERS_FILE = path.join(ROOT, 'src/data/articleClusters.json');
+const OUT_FILE = path.join(ROOT, 'src/data/articles.json');
 const FALLBACK_IMAGE = '/images/og-default.jpg';
 
 // Найти jpg-версию avif изображения (для RSS/VK, которым нужен растровый формат)
@@ -62,15 +65,10 @@ function extractContent(astroSource) {
   return html;
 }
 
-// Рубрики каталога (порядок = порядок секций на странице)
-const CLUSTERS = {
-  lager:   { label: 'Лагерь и летний отдых',        color: 'emerald', tag: 'Лагерь',        tagColor: 'bg-emerald-100 text-emerald-700' },
-  it:      { label: 'IT и программирование',         color: 'orange',  tag: 'IT',            tagColor: 'bg-orange-100 text-orange-700' },
-  gadgets: { label: 'Гаджеты и зависимость',         color: 'red',     tag: 'Зависимость',   tagColor: 'bg-red-100 text-red-700' },
-  teens:   { label: 'Подростки и воспитание',        color: 'purple',  tag: 'Воспитание',    tagColor: 'bg-purple-100 text-purple-700' },
-  money:   { label: 'Деньги и документы',            color: 'amber',   tag: 'Документы',     tagColor: 'bg-amber-100 text-amber-700' },
-  geo:     { label: 'Лагерь по городам',             color: 'sky',     tag: 'География',     tagColor: 'bg-sky-100 text-sky-700' },
-};
+// Рубрики каталога (порядок = порядок секций на странице) — src/data/articleClusters.json
+const CLUSTERS = Object.fromEntries(
+  JSON.parse(fs.readFileSync(CLUSTERS_FILE, 'utf8')).map(c => [c.id, c])
+);
 
 // Ручные исключения классификатора: slug -> cluster
 const OVERRIDES = {
@@ -152,7 +150,7 @@ for (const file of files) {
   const ogImageMatch = src.match(/ogImage="([^"]+)"/);
   const ogImage = ogImageMatch ? ogImageMatch[1] : FALLBACK_IMAGE;
   articles.push({
-    slug,
+    id: slug,
     url: `/stati/${slug}`,
     title,
     description,
@@ -168,59 +166,9 @@ for (const file of files) {
 }
 
 // Сортировка: по дате (свежие сверху), затем по алфавиту
-articles.sort((a, b) => (b.date || '').localeCompare(a.date || '') || a.slug.localeCompare(b.slug));
+articles.sort((a, b) => (b.date || '').localeCompare(a.date || '') || a.id.localeCompare(b.id));
 
-const banner = `// АВТОГЕНЕРАЦИЯ — не редактировать вручную.
-// Источник: src/pages/stati/*.astro (<ArticleHero>) + src/data/articleDates.ts.
-// Регенерация: node scripts/gen-articles.mjs. Исключения рубрик — в scripts/gen-articles.mjs (OVERRIDES).
-`;
-
-const clustersOut = Object.entries(CLUSTERS)
-  .map(([id, c]) => `  { id: ${JSON.stringify(id)}, label: ${JSON.stringify(c.label)}, color: ${JSON.stringify(c.color)} },`)
-  .join('\n');
-
-const articlesOut = articles
-  .map(a => `  ${JSON.stringify(a)},`)
-  .join('\n');
-
-const out = `${banner}
-export type Article = {
-  slug: string;
-  url: string;
-  title: string;
-  description: string;
-  cluster: string;
-  tag: string;
-  tagColor: string;
-  readTime: string;
-  date: string;
-  ogImage: string;
-  ogImageJpg: string;
-  contentHtml: string;
-};
-
-export type Cluster = { id: string; label: string; color: string };
-
-export const CLUSTERS: Cluster[] = [
-${clustersOut}
-];
-
-export const ARTICLES: Article[] = [
-${articlesOut}
-];
-
-/** Алиас для скриптов, читающих articles.ts (RSS, VK-постер, экспорт JSON). */
-export const articles = ARTICLES;
-
-export const ARTICLE_COUNT = ARTICLES.length;
-
-/** Статьи одной рубрики (в порядке ARTICLES — по свежести). */
-export function articlesByCluster(id: string): Article[] {
-  return ARTICLES.filter(a => a.cluster === id);
-}
-`;
-
-fs.writeFileSync(OUT_FILE, out);
+fs.writeFileSync(OUT_FILE, JSON.stringify(articles, null, 2) + '\n');
 console.log(`✓ ${OUT_FILE} — ${articles.length} статей`);
 for (const c of Object.keys(CLUSTERS)) {
   console.log(`  ${c}: ${articles.filter(a => a.cluster === c).length}`);

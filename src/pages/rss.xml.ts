@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { articles } from '../data/articles';
+import { getCollection } from 'astro:content';
 import pg from 'pg';
 
 const { Pool } = pg;
@@ -48,6 +48,8 @@ export const GET: APIRoute = async () => {
     // БД недоступна — пустой фид
   }
 
+  const articleEntries = await getCollection('articles');
+  const articles = articleEntries.map(e => ({ slug: e.id, ...e.data }));
   const published = articles.filter(a => publishedSlugs.has(a.slug));
 
   const items = published.map(a => {
