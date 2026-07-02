@@ -223,6 +223,21 @@ if [ "$TARGET" = "dev" ]; then
     dist/client/ "$SSH_HOST:$FLAT_DIR"
 fi
 
+# ── 2c. Медиа → единое хранилище (2026-07-02) ──────────────────────────────
+# /images/ и /videos/ на prod и dev отдаются nginx-alias'ом из /var/www/aidacamp-media/
+# (см. sites-enabled/*.conf). Деплой их НЕ таскает (exclude выше), но НОВЫЕ файлы
+# из репо доливаются сюда --ignore-existing: серверная копия авторитетна, ничего
+# не перезаписывается и не удаляется. Одно хранилище на оба окружения.
+MEDIA_DIR="/var/www/aidacamp-media"
+echo ""
+echo "🖼  Медиа: доливка новых файлов в $MEDIA_DIR..."
+for sub in images videos; do
+  if [ -d "dist/client/$sub" ]; then
+    rsync -a --ignore-existing --stats -e "ssh -i $SSH_KEY" \
+      "dist/client/$sub/" "$SSH_HOST:$MEDIA_DIR/$sub/" | grep -E "transferred" | sed "s/^/  [$sub] /"
+  fi
+done
+
 # ── 3. SSR ────────────────────────────────────────────────────
 echo ""
 echo "🔄 Деплой SSR-сервера..."
