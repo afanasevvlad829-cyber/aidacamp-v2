@@ -93,5 +93,8 @@ export default defineConfig({
     // CDN отключён: cross-origin overhead (DNS+TCP+TLS к huhodirekeka.begetcdn.cloud)
     // замедляет LCP с 1.6s до 3.7s на мобильном тесте. Сервер в России → CDN не даёт
     // выигрыша в latency, только overhead. Откат 2026-05-24.
+    // Параллельная сборка страниц — дефолт Astro=1 (только 1 ядро). У нас 357 страниц
+    // и 8 ядер на сборочной машине, было 112% CPU. Тестируем 4 (кейс на 12 ядрах — оптимум).
+    concurrency: 4,
   },
 });
