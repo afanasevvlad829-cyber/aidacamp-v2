@@ -1,0 +1,29 @@
+---
+// Тир-2 рейтинга /luchshie: компактная сетка «ещё лагеря Подмосковья по оценкам Я.Карт».
+// Только реальные Я.Карт: имя + оценка + число оценок. Конкуренты БЕЗ ссылок.
+import type { CompactCamp } from '../../data/luchshieCamps';
+
+interface Props {
+  camps: CompactCamp[];
+  asOf: string;
+}
+const { camps, asOf } = Astro.props;
+---
+
+<section class="mx-auto max-w-[1080px] px-4 py-6" data-more-block>
+  <h2 class="text-[24px] md:text-[30px] font-bold text-body leading-tight mb-2">Ещё {camps.length} лагерей Подмосковья — по оценкам Яндекс.Карт</h2>
+  <p class="text-[16px] text-body-muted leading-relaxed mb-6 max-w-[820px]">Собственная карточка на Яндекс.Картах есть у десятков загородных лагерей области. Ниже — оценка и число оценок с их карточек (данные на {asOf}), по убыванию популярности. Оценку не придумываем — она проверяется на самой карточке.</p>
+
+  <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+    {camps.map((camp) => (
+      <div class="flex items-center justify-between gap-3 rounded-[12px] border border-slate-100 bg-white px-3.5 py-2.5">
+        <span class="min-w-0 leading-tight">
+          <span class="block text-[14px] text-body truncate">{camp.name}</span>
+          {camp.location && <span class="block text-[11.5px] text-slate-400 truncate">{camp.location}</span>}
+        </span>
+        <span class="inline-flex items-center gap-1 shrink-0 text-[13px] font-semibold text-orange-600"><i class="bi bi-star-fill text-[10px]" aria-hidden="true"></i>{camp.rating.toFixed(1)}<span class="font-normal text-slate-400"> · {camp.reviews}</span></span>
+      </div>
+    ))}
+  </div>
+  <p class="text-[12px] text-slate-400 mt-3">Число рядом с оценкой — количество оценок на Яндекс.Картах. Данные на {asOf}, могут меняться.</p>
+</section>
