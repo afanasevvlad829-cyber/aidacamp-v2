@@ -32,7 +32,7 @@ async function saveLead(lead: Record<string, unknown>) {
 
 async function saveLeadToPg(
   body: Record<string, string>,
-  extra: { ip: string; userAgent: string; crmId: number | null; visitorId: string | null },
+  extra: { ip: string; userAgent: string; crmId: number | null; visitorId: string | null; duplicateOf?: number | null },
 ) {
   const pgDsn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
   if (!pgDsn) return;
@@ -40,7 +40,20 @@ async function saveLeadToPg(
     const { default: pg } = await import('pg');
     const client = new pg.Client({ connectionString: pgDsn });
     await client.connect();
-    await client.query(
+    const values = [
+      body.phone || null, body.age || null, body.shift || null, body.source || null,
+      body.utm_source || null, body.utm_medium || null, body.utm_campaign || null,
+      body.utm_content || null, body.utm_term || null,
+      body.yclid || null, body.ysclid || null, body.gclid || null,
+      body.landing_url || null, body.page_title || null, body.referrer || null,
+      body.form_id || null, body.ym_client_id || null,
+      body.screen || null, body.viewport || null, body.language || null,
+      body.tz || null,
+      body.session_ms ? parseInt(body.session_ms, 10) : null,
+      extra.crmId, extra.ip || null, extra.userAgent || null, JSON.stringify(body),
+      extra.visitorId || null,
+    ];
+    const insert = (withDup: boolean) => client.query(
       `INSERT INTO leads_log (
         phone, age, shift, source,
         utm_source, utm_medium, utm_campaign, utm_content, utm_term,
@@ -48,7 +61,7 @@ async function saveLeadToPg(
         landing_url, page_title, referrer,
         form_id, ym_client_id,
         screen, viewport, language, tz, session_ms,
-        crm_id, ip, user_agent, raw, visitor_id
+        crm_id, ip, user_agent, raw, visitor_id${withDup ? ', duplicate_of' : ''}
       ) VALUES (
         $1,$2,$3,$4,
         $5,$6,$7,$8,$9,
@@ -56,25 +69,52 @@ async function saveLeadToPg(
         $13,$14,$15,
         $16,$17,
         $18,$19,$20,$21,$22,
-        $23,$24,$25,$26,$27
+        $23,$24,$25,$26,$27${withDup ? ',$28' : ''}
       )`,
-      [
-        body.phone || null, body.age || null, body.shift || null, body.source || null,
-        body.utm_source || null, body.utm_medium || null, body.utm_campaign || null,
-        body.utm_content || null, body.utm_term || null,
-        body.yclid || null, body.ysclid || null, body.gclid || null,
-        body.landing_url || null, body.page_title || null, body.referrer || null,
-        body.form_id || null, body.ym_client_id || null,
-        body.screen || null, body.viewport || null, body.language || null,
-        body.tz || null,
-        body.session_ms ? parseInt(body.session_ms, 10) : null,
-        extra.crmId, extra.ip || null, extra.userAgent || null, JSON.stringify(body),
-        extra.visitorId || null,
-      ],
+      withDup ? [...values, extra.duplicateOf ?? null] : values,
     );
+    try {
+      await insert(true);
+    } catch {
+      // колонка duplicate_of ещё не создана (миграция не применена) — пишем без неё,
+      // чтобы не терять лог заявок; см. scripts/leads-log-duplicate-of-migration.sql
+      await insert(false);
+    }
     await client.end();
   } catch {
     // best-effort — не блокируем ответ
+  }
+}
+
+/**
+ * Дубль заявки: та же смена и тот же телефон (по цифрам) за последние 5 минут.
+ * При недоступном PG дедуп отключается — принять заявку важнее, чем отсечь дубль.
+ */
+async function findRecentDuplicate(
+  phoneDigits: string,
+  shift: string,
+): Promise<{ id: number; crmId: number | null } | null> {
+  // Смоук-тесты (+7999000XXXX) шлют один номер многократно — для них дедуп выключен
+  if (phoneDigits.startsWith('7999000')) return null;
+  const pgDsn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
+  if (!pgDsn) return null;
+  try {
+    const { default: pg } = await import('pg');
+    const client = new pg.Client({ connectionString: pgDsn });
+    await client.connect();
+    const { rows } = await client.query(
+      `SELECT id, crm_id FROM leads_log
+       WHERE regexp_replace(coalesce(phone, ''), '\\D', '', 'g') = $1
+         AND coalesce(shift, '') = $2
+         AND ts > now() - interval '5 minutes'
+       ORDER BY id DESC
+       LIMIT 1`,
+      [phoneDigits, shift],
+    );
+    await client.end();
+    return rows[0] ? { id: rows[0].id, crmId: rows[0].crm_id ?? null } : null;
+  } catch {
+    return null;
   }
 }
 
@@ -318,6 +358,20 @@ export const POST: APIRoute = async ({ request }) => {
       || request.headers.get('x-real-ip')
       || '';
     const userAgent = request.headers.get('user-agent') || '';
+
+    // Дедуп: повторная заявка с тем же телефоном и сменой за 5 минут — идемпотентный 200
+    // без второго лида в CRM, TG и Andata (инцидент 03.07.2026: crm 5235/5236 от одного клиента)
+    const dup = await findRecentDuplicate(digits, shift || '');
+    if (dup) {
+      await saveLead({ ...body, duplicate_of: dup.id });
+      await saveLeadToPg(body, {
+        ip, userAgent, crmId: null, visitorId: readVisitorId(request), duplicateOf: dup.id,
+      });
+      return new Response(
+        JSON.stringify({ ok: true, duplicate: true, crm_id: dup.crmId }),
+        { status: 200 },
+      );
+    }
 
     // Always save to filesystem first (backup)
     await saveLead(body);

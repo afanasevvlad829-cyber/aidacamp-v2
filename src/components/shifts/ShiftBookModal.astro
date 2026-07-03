@@ -84,8 +84,26 @@ import CallTimeSelector from '../CallTimeSelector.astro';
 <script>
   import { formatPhone } from '../../utils/phoneMask';
   import { hapticTap } from '../../scripts/haptic';
+  import { STORAGE_KEYS } from '../../lib/storage';
   document.querySelectorAll<HTMLElement>('button[data-haptic], a[data-haptic]')
     .forEach(el => el.addEventListener('click', hapticTap));
+
+  // Защита от повторной отправки той же заявки (телефон+смена) в течение 5 минут —
+  // инцидент 03.07.2026: два сабмита с интервалом 15 сек → два лида в CRM
+  const LEAD_RESEND_MS = 5 * 60 * 1000;
+  function wasRecentlySent(key: string): boolean {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEYS.leadSent) || 'null');
+      return Boolean(saved) && saved.k === key && Date.now() - saved.ts < LEAD_RESEND_MS;
+    } catch {
+      return false;
+    }
+  }
+  function markSent(key: string): void {
+    try {
+      sessionStorage.setItem(STORAGE_KEYS.leadSent, JSON.stringify({ k: key, ts: Date.now() }));
+    } catch { /* ignore */ }
+  }
 
   function initShiftBookModal() {
     const modal = document.getElementById('shiftBookModal') as HTMLDialogElement | null;
@@ -169,18 +187,29 @@ import CallTimeSelector from '../CallTimeSelector.astro';
         return;
       }
 
+      const dedupKey = `${(phone?.value || '').replace(/\D/g, '')}|${(nameEl?.textContent || '').trim()}`;
+      if (wasRecentlySent(dedupKey)) {
+        // Эта заявка уже ушла — не постим второй раз, ведём себя как при успехе
+        modal.close();
+        (document.getElementById('referralModal') as HTMLDialogElement | null)?.showModal();
+        resetForm();
+        return;
+      }
+
       submit.disabled = true;
       submit.textContent = 'Отправляем…';
+      submit.classList.add('btn-loading');
       try {
         const callTimeInput = modal.querySelector<HTMLInputElement>('[data-call-time-value]');
         const { submitLead } = await import('../../scripts/form-submit');
-        await submitLead({
+        const ok = await submitLead({
           phone: phone?.value || '',
           age: selectedAge,
           shift: nameEl?.textContent || '',
           form: 'shifts_book',
           call_time: callTimeInput?.value || '',
         });
+        if (ok) markSent(dedupKey);
         modal.close();
         const referralModal = document.getElementById('referralModal') as HTMLDialogElement | null;
         referralModal?.showModal();
@@ -193,6 +222,7 @@ import CallTimeSelector from '../CallTimeSelector.astro';
       } finally {
         submit.disabled = false;
         submit.textContent = 'Отправить заявку';
+        submit.classList.remove('btn-loading');
       }
     });
 

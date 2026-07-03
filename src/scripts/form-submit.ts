@@ -163,6 +163,9 @@ export async function submitLead(data: {
         shift: data.shift || '',
         source: data.source || ctx.utm_source || '',
         call_time: data.call_time || '',
+        // form_id раньше не отправлялся вовсе — leads_log.form_id был пуст,
+        // из-за чего нельзя было понять, какая форма дала заявку (инцидент 03.07.2026)
+        form_id: data.form || '',
         ...ctx,
         ym_client_id,
       }),

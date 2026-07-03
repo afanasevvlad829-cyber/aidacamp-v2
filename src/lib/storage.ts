@@ -21,6 +21,8 @@ export const STORAGE_KEYS = {
   attribution:        'ac_attribution',
   /** localStorage — список просмотренных смен [{id, ts}], для детекции второго визита */
   viewedShifts:       'ac:viewed_shifts',
+  /** sessionStorage — последняя отправленная заявка {k: 'телефон|смена', ts} — защита от повторного сабмита */
+  leadSent:           'ac:lead_sent',
 } as const;
 
 export type StorageKey = typeof STORAGE_KEYS[keyof typeof STORAGE_KEYS];
