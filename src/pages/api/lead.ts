@@ -104,6 +104,7 @@ function buildTgText(body: Record<string, string>, crmId?: number | null): strin
   lines.push('');
 
   // Контакт
+  if (body.name) lines.push(`🙋 <b>${esc(body.name)}</b>`);
   lines.push(`📞 <b>${esc(phone)}</b>  |  👶 ${esc(age) || '—'}  |  🏕 ${esc(shift) || '—'}`);
   if (body.call_time) lines.push(`⏰ Позвонить: <b>${esc(body.call_time)}</b>`);
   if (isReferral) lines.push('→ Отправить мерч тому кто поделился!');
