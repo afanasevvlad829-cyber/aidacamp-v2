@@ -9,8 +9,10 @@ interface Props {
   seasonAcc: string;
   /** Слаг для form_id: osen-2026, zima-2026-27, vesna-2027 */
   slug: string;
+  /** Окна заездов на выбор (например, по системам каникул: четверти/триместры) */
+  windows?: string[];
 }
-const { seasonAcc, slug } = Astro.props;
+const { seasonAcc, slug, windows } = Astro.props;
 const uid = `spr-${slug}`;
 ---
 
@@ -33,6 +35,19 @@ const uid = `spr-${slug}`;
     </p>
 
     <form id={`${uid}-form`} class="flex flex-col gap-3" novalidate data-slug={slug} data-season={seasonAcc}>
+      {windows && windows.length > 0 && (
+        <fieldset class="mb-1">
+          <legend class="text-base font-semibold text-body mb-2">Какие даты вам удобнее? Зависит от системы каникул в школе:</legend>
+          <div class="flex flex-wrap gap-2">
+            {windows.map((w, idx) => (
+              <label class="cursor-pointer">
+                <input type="radio" name={`${uid}-window`} value={w} class="peer sr-only" checked={idx === 0} />
+                <span class="inline-block rounded-full border border-slate-300 bg-white px-4 py-2 text-base text-body-muted transition-colors peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:text-body peer-checked:font-medium">{w}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div class="relative">
           <label for={`${uid}-phone`} class="sr-only">Телефон</label>
@@ -147,12 +162,14 @@ const uid = `spr-${slug}`;
       submitBtn.disabled = true;
       submitBtn.textContent = 'Отправляем…';
 
+      const windowEl = form.querySelector<HTMLInputElement>(`input[name="${uid}-window"]:checked`);
+      const windowSuffix = windowEl ? ` — ${windowEl.value}` : '';
       const body: Record<string, string> = {
         phone,
         email,
         source: 'prezapis',
         form_id: `prezapis-${form.dataset.slug}`,
-        shift: `Предзапись: ${form.dataset.season}`,
+        shift: `Предзапись: ${form.dataset.season}${windowSuffix}`,
         landing_url: window.location.href,
         page_title: document.title,
         referrer: document.referrer,
