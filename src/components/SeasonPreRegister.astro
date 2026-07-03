@@ -1,0 +1,241 @@
+---
+/**
+ * SeasonPreRegister — предварительная запись на сезонную смену (осень/зима/весна).
+ * Даты каникул школы публикуют в сентябре — до этого собираем предзапись без оплаты:
+ * контакт + обещание написать первыми и зафиксировать раннюю цену.
+ * Окна заездов: calWindows (карточки с мини-календарями) или windows (текстовые чипы).
+ */
+import { buildMonthCells, monthLabel, WEEKDAYS } from '../utils/seasonCalendar';
+import type { SeasonCalWindow } from '../data/seasons';
+
+interface Props {
+  /** Название сезона в творительном контексте: «осеннюю смену 2026» */
+  seasonAcc: string;
+  /** Слаг для form_id: osen-2026, zima-2026-27, vesna-2027 */
+  slug: string;
+  /** Окна заездов на выбор (текстовые чипы — фолбэк) */
+  windows?: string[];
+  /** Окна заездов карточками с мини-календарями (приоритетно) */
+  calWindows?: SeasonCalWindow[];
+}
+const { seasonAcc, slug, windows, calWindows } = Astro.props;
+const uid = `spr-${slug}`;
+
+const CELL_CLS: Record<string, string> = {
+  primary: 'py-0.5 rounded bg-primary text-white font-semibold',
+  secondary: 'py-0.5 rounded bg-primary text-white font-semibold',
+  month: 'py-0.5 text-slate-400',
+  off: 'py-0.5 text-slate-300',
+};
+const calCards = (calWindows ?? []).map((w) => ({
+  label: w.label,
+  sub: w.sub,
+  monthLabel: monthLabel(w.year, w.month),
+  cells: buildMonthCells(w.year, w.month, [{ from: w.from, to: w.to, primary: true }], true)
+    .map((c) => ({ day: c.day, cls: CELL_CLS[c.state] })),
+}));
+---
+
+<section id="prezapis" class="py-14 md:py-20 bg-orange-50/70 border-y border-orange-100">
+  <div class="mx-auto max-w-[760px] px-5 md:px-8">
+
+    <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-primary mb-3">Предварительная запись</p>
+
+    <h2 class="text-[26px] md:text-[32px] font-extrabold tracking-[-0.02em] leading-[1.15] text-body mb-4">
+      Запишитесь на {seasonAcc} заранее — без оплаты
+    </h2>
+
+    <p class="text-[16px] leading-[1.65] text-body-muted mb-2">
+      Даты смены пока предварительные: школы опубликуют расписание каникул в сентябре,
+      и мы сразу скорректируем даты под него.
+    </p>
+    <p class="text-[16px] leading-[1.65] text-body-muted mb-8">
+      Оставьте контакт — как только даты подтвердятся, напишем первыми и зафиксируем
+      за вами раннюю цену. <strong class="font-medium text-body">Это не бронь и ни к чему не обязывает.</strong>
+    </p>
+
+    <form id={`${uid}-form`} class="flex flex-col gap-3" novalidate data-slug={slug} data-season={seasonAcc}>
+      {calCards.length > 0 ? (
+        <fieldset class="mb-1">
+          <legend class="text-base font-semibold text-body mb-2.5">{calCards.length > 1 ? 'Какие даты вам удобнее? Зависит от системы каникул в школе:' : 'Даты заезда (ориентир):'}</legend>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {calCards.map((w, idx) => (
+              <label class="cursor-pointer">
+                <input type="radio" name={`${uid}-window`} value={w.label} class="peer sr-only" checked={idx === 0} />
+                <span class="block h-full rounded-[14px] border-2 border-slate-200 bg-white p-3 transition-colors peer-checked:border-primary peer-checked:bg-orange-50/60 peer-checked:shadow-[0_2px_12px_rgba(236,124,0,0.15)]">
+                  <span class="block text-[13.5px] font-bold text-body leading-tight">{w.label}</span>
+                  <span class="block text-[12px] text-slate-500 mb-2">{w.sub}</span>
+                  <span class="block text-[11.5px] font-medium text-body-muted mb-1">{w.monthLabel}</span>
+                  <span class="grid grid-cols-7 gap-y-0.5 text-center text-[11px]">
+                    {WEEKDAYS.map((d) => <span class="text-slate-400 pb-0.5">{d}</span>)}
+                    {w.cells.map((c) => <span class={c.cls}>{c.day}</span>)}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      ) : windows && windows.length > 0 && (
+        <fieldset class="mb-1">
+          <legend class="text-base font-semibold text-body mb-2">Какие даты вам удобнее? Зависит от системы каникул в школе:</legend>
+          <div class="flex flex-wrap gap-2">
+            {windows.map((w, idx) => (
+              <label class="cursor-pointer">
+                <input type="radio" name={`${uid}-window`} value={w} class="peer sr-only" checked={idx === 0} />
+                <span class="inline-block rounded-full border border-slate-300 bg-white px-4 py-2 text-base text-body-muted transition-colors peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:text-body peer-checked:font-medium">{w}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="relative">
+          <label for={`${uid}-phone`} class="sr-only">Телефон</label>
+          <i class="bi bi-telephone-fill absolute left-4 top-1/2 -translate-y-1/2 text-base text-slate-400 pointer-events-none" aria-hidden="true"></i>
+          <input
+            id={`${uid}-phone`}
+            name="phone"
+            type="tel"
+            placeholder="+7 (___) ___-__-__"
+            autocomplete="tel"
+            class="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3.5 text-base text-body placeholder:text-slate-400 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary/40 transition-colors"
+          />
+        </div>
+        <div class="relative">
+          <label for={`${uid}-name`} class="sr-only">Как вас зовут</label>
+          <i class="bi bi-person-fill absolute left-4 top-1/2 -translate-y-1/2 text-base text-slate-400 pointer-events-none" aria-hidden="true"></i>
+          <input
+            id={`${uid}-name`}
+            name="name"
+            type="text"
+            placeholder="Как вас зовут"
+            autocomplete="given-name"
+            class="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3.5 text-base text-body placeholder:text-slate-400 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary/40 transition-colors"
+          />
+        </div>
+      </div>
+
+      <p id={`${uid}-error`} class="hidden text-base text-red-500">Укажите телефон — по нему напишем в WhatsApp, когда подтвердятся даты</p>
+
+      <label class="flex cursor-pointer items-start gap-3 mt-1">
+        <input type="checkbox" id={`${uid}-consent-policy`} class="mt-[3px] h-5 w-5 shrink-0 rounded border-slate-300 accent-primary" />
+        <span class="text-base leading-[1.45] text-body-muted">Ознакомлен(а) с <a href="/privacy-policy/" target="_blank" rel="noopener" class="text-primary underline hover:no-underline">Политикой обработки персональных данных</a></span>
+      </label>
+      <label class="flex cursor-pointer items-start gap-3">
+        <input type="checkbox" id={`${uid}-consent`} class="mt-[3px] h-5 w-5 shrink-0 rounded border-slate-300 accent-primary" />
+        <span class="text-base leading-[1.45] text-body-muted">Согласен(а) на <a href="/soglasie-na-obrabotku-personalnyh-dannyh/" target="_blank" rel="noopener" class="text-primary underline hover:no-underline">обработку персональных данных</a></span>
+      </label>
+      <p id={`${uid}-hint-consent`} class="hidden text-base text-red-500 -mt-1">Поставьте обе галочки — без них не можем принять заявку</p>
+
+      <div class="mt-2">
+        <button
+          type="submit"
+          id={`${uid}-submit`}
+          class="inline-flex items-center gap-2 rounded-xl bg-primary hover:bg-orange-400 active:scale-[0.98] px-7 py-3.5 text-base font-semibold text-white transition-all duration-150 min-h-[48px] cursor-pointer"
+        >
+          <i class="bi bi-calendar-heart text-base" aria-hidden="true"></i>
+          Записаться заранее
+        </button>
+      </div>
+      <p class="text-[12px] text-slate-500 leading-[1.5] mt-1">
+        Напишем один раз — когда подтвердятся даты. Без рассылок.
+      </p>
+    </form>
+
+    <div id={`${uid}-success`} class="hidden mt-2">
+      <div class="flex items-start gap-3 rounded-xl border border-emerald-300 bg-emerald-50 px-5 py-4">
+        <i class="bi bi-check-circle-fill text-emerald-500 text-[20px] shrink-0 mt-0.5" aria-hidden="true"></i>
+        <div>
+          <p class="text-base font-semibold text-body mb-1">Записали!</p>
+          <p class="text-base text-body-muted">Как только школы подтвердят даты каникул — напишем первыми и предложим раннюю цену.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+  import { formatPhone, isPhoneValid } from '../utils/phoneMask';
+
+  document.querySelectorAll<HTMLFormElement>('form[id^="spr-"][id$="-form"]').forEach((form) => {
+    const uid = form.id.replace(/-form$/, '');
+    const $ = (suffix: string) => document.getElementById(`${uid}-${suffix}`);
+
+    const phoneInput = $('phone') as HTMLInputElement;
+    const nameInput = $('name') as HTMLInputElement;
+    const errorEl = $('error') as HTMLElement;
+    const hintConsentEl = $('hint-consent') as HTMLElement;
+    const successEl = $('success') as HTMLElement;
+    const submitBtn = $('submit') as HTMLButtonElement;
+    const consentEl = $('consent') as HTMLInputElement;
+    const consentPolicyEl = $('consent-policy') as HTMLInputElement;
+
+    phoneInput?.addEventListener('input', () => {
+      phoneInput.value = formatPhone(phoneInput.value);
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const phone = phoneInput.value.trim();
+      const name = nameInput.value.trim();
+      const phoneOk = phone.length > 0 && isPhoneValid(phone);
+
+      if (!phoneOk) {
+        errorEl.classList.remove('hidden');
+        hintConsentEl.classList.add('hidden');
+        phoneInput.focus();
+        return;
+      }
+      if (!(consentEl.checked && consentPolicyEl.checked)) {
+        errorEl.classList.add('hidden');
+        hintConsentEl.classList.remove('hidden');
+        consentPolicyEl.focus();
+        return;
+      }
+
+      errorEl.classList.add('hidden');
+      hintConsentEl.classList.add('hidden');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Отправляем…';
+
+      const windowEl = form.querySelector<HTMLInputElement>(`input[name="${uid}-window"]:checked`);
+      const windowSuffix = windowEl ? ` — ${windowEl.value}` : '';
+      const body: Record<string, string> = {
+        phone,
+        name,
+        source: 'prezapis',
+        form_id: `prezapis-${form.dataset.slug}`,
+        shift: `Предзапись: ${form.dataset.season}${windowSuffix}`,
+        landing_url: window.location.href,
+        page_title: document.title,
+        referrer: document.referrer,
+      };
+      const urlParams = new URLSearchParams(window.location.search);
+      ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','yclid','ysclid'].forEach(k => {
+        const v = urlParams.get(k);
+        if (v) body[k] = v;
+      });
+
+      try {
+        const resp = await fetch('/api/lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (!resp.ok) throw new Error('server error');
+        form.classList.add('hidden');
+        successEl.classList.remove('hidden');
+        if (typeof window.ym === 'function') {
+          window.ym(88121468, 'reachGoal', 'form_submit');
+        }
+      } catch {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-calendar-heart text-base" aria-hidden="true"></i> Записаться заранее';
+        errorEl.textContent = 'Не удалось отправить — попробуйте ещё раз';
+        errorEl.classList.remove('hidden');
+      }
+    });
+  });
+</script>

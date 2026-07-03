@@ -166,6 +166,38 @@ export const VYCHET_S21 = _fmtV(shiftDeduction(_shift21));
 export const VYCHET_S22 = _fmtV(shiftDeduction(_shift22));
 export const VYCHET_MAX = _fmtV(Math.max(shiftDeduction(mainShifts[0]), shiftDeduction(mainShifts[1])));
 
+// === Осень 2026 — ПРЕДВАРИТЕЛЬНО (решение владельца 2026-07-03, утверждение дат и цены — сентябрь) ===
+// Сознательно НЕ в mainShifts/shortShifts: бронь закрыта, на сайте только предзапись (SeasonPreRegister).
+// При открытии продаж: перенести в mainShifts обычной сменой и удалить эти константы.
+export const AUTUMN_2026 = {
+  price: '49 900 ₽',
+  startDate: '2026-10-27',
+  endDate: '2026-11-02',
+  days: 7,
+} as const;
+export const PRICE_OSEN = AUTUMN_2026.price;
+export const VYCHET_OSEN = _fmtV(Math.round(taxDeduction(_priceNum(AUTUMN_2026.price), AUTUMN_2026.days) / 50) * 50);
+
+// === Зима 2026–2027 — ПРЕДВАРИТЕЛЬНО (цена — текущая зимняя, даты уточнятся в сентябре) ===
+export const WINTER_2026 = {
+  price: '74 900 ₽',
+  startDate: '2026-12-30',
+  endDate: '2027-01-08',
+  days: 10,
+} as const;
+export const PRICE_ZIMA = WINTER_2026.price;
+export const VYCHET_ZIMA = _fmtV(Math.round(taxDeduction(_priceNum(WINTER_2026.price), WINTER_2026.days) / 50) * 50);
+
+// === Весна 2027 — ПРЕДВАРИТЕЛЬНО (модель осенней недели, утверждение — к январю) ===
+export const SPRING_2027 = {
+  price: '49 900 ₽',
+  startDate: '2027-03-29',
+  endDate: '2027-04-04',
+  days: 7,
+} as const;
+export const PRICE_VESNA = SPRING_2027.price;
+export const VYCHET_VESNA = _fmtV(Math.round(taxDeduction(_priceNum(SPRING_2027.price), SPRING_2027.days) / 50) * 50);
+
 // === Даты смен — ПРОИЗВОДНЫЕ от startDate/endDate (ISO). НЕ хардкодить даты на страницах! ===
 // Меняешь startDate/endDate смены → даты обновляются везде. Страж: npm run check:dates.
 const _MONTHS_RU = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
