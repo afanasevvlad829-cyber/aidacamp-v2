@@ -108,11 +108,11 @@ export default defineConfig({
     },
   },
   build: {
-    // CSS инлайнится полностью в HTML — нет блокирующих запросов к CDN за CSS.
-    // Было: 'auto' (threshold 4KB) → Base.css 37KB уходил на CDN → блокировал рендер 1350мс.
-    // Теперь: 'always' → CSS в <style> в HTML → рендер начинается сразу.
-    // Минус: HTML тяжелее на ~70KB, но это компенсируется gzip и отсутствием round-trip к CDN.
-    inlineStylesheets: 'always',
+    // История: в мае 2026 при 'auto' Base.css 37KB уходил на CDN (cross-origin) и
+    // блокировал рендер 1350мс → переключили на 'always' (CSS в <style> в HTML).
+    // 2026-07-03: CDN отключён — вернули 'auto': CSS отдаётся same-origin с
+    // иммутабельным кэшем, HTML худеет на сотни KB, SSR-манифест 148MB → ~4MB.
+    inlineStylesheets: 'auto',
     // CDN отключён: cross-origin overhead (DNS+TCP+TLS к huhodirekeka.begetcdn.cloud)
     // замедляет LCP с 1.6s до 3.7s на мобильном тесте. Сервер в России → CDN не даёт
     // выигрыша в latency, только overhead. Откат 2026-05-24.
