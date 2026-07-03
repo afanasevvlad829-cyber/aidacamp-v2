@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { articles } from '../data/articles';
+import { getCollection } from 'astro:content';
 import pg from 'pg';
 
 const { Pool } = pg;
@@ -35,9 +35,9 @@ function wrapCdata(html: string): string {
 }
 
 export const GET: APIRoute = async () => {
-  // pubDate = дата публикации В ФИД (rss_published_at), не дата написания статьи:
+  // pubDate = дата публикации В ФИД (rss_published_at), не дата статьи:
   // Дзен импортирует только записи, свежие на момент опроса фида — со старой
-  // датой статьи (март-апрель) он их молча пропускает.
+  // датой статьи он их молча пропускает.
   const pubDates = new Map<string, Date>();
   try {
     const pool = getPool();
@@ -53,6 +53,8 @@ export const GET: APIRoute = async () => {
     // БД недоступна — пустой фид
   }
 
+  const articleEntries = await getCollection('articles');
+  const articles = articleEntries.map(e => ({ slug: e.id, ...e.data }));
   const published = articles.filter(a => pubDates.has(a.slug));
 
   const items = published.map(a => {
