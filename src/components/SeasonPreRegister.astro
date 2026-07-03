@@ -102,21 +102,20 @@ const calCards = (calWindows ?? []).map((w) => ({
           />
         </div>
         <div class="relative">
-          <label for={`${uid}-email`} class="sr-only">Email</label>
-          <i class="bi bi-envelope-fill absolute left-4 top-1/2 -translate-y-1/2 text-base text-slate-400 pointer-events-none" aria-hidden="true"></i>
+          <label for={`${uid}-name`} class="sr-only">Как вас зовут</label>
+          <i class="bi bi-person-fill absolute left-4 top-1/2 -translate-y-1/2 text-base text-slate-400 pointer-events-none" aria-hidden="true"></i>
           <input
-            id={`${uid}-email`}
-            name="email"
-            type="email"
-            placeholder="почта@пример.ru"
-            autocomplete="email"
+            id={`${uid}-name`}
+            name="name"
+            type="text"
+            placeholder="Как вас зовут"
+            autocomplete="given-name"
             class="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3.5 text-base text-body placeholder:text-slate-400 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary/40 transition-colors"
           />
         </div>
       </div>
 
-      <p id={`${uid}-hint`} class="text-base text-slate-500 -mt-1">Достаточно указать одно — телефон или email</p>
-      <p id={`${uid}-error`} class="hidden text-base text-red-500">Укажите телефон или email — чтобы мы могли написать</p>
+      <p id={`${uid}-error`} class="hidden text-base text-red-500">Укажите телефон — по нему напишем в WhatsApp, когда подтвердятся даты</p>
 
       <label class="flex cursor-pointer items-start gap-3 mt-1">
         <input type="checkbox" id={`${uid}-consent-policy`} class="mt-[3px] h-5 w-5 shrink-0 rounded border-slate-300 accent-primary" />
@@ -164,7 +163,7 @@ const calCards = (calWindows ?? []).map((w) => ({
     const $ = (suffix: string) => document.getElementById(`${uid}-${suffix}`);
 
     const phoneInput = $('phone') as HTMLInputElement;
-    const emailInput = $('email') as HTMLInputElement;
+    const nameInput = $('name') as HTMLInputElement;
     const errorEl = $('error') as HTMLElement;
     const hintConsentEl = $('hint-consent') as HTMLElement;
     const successEl = $('success') as HTMLElement;
@@ -180,11 +179,10 @@ const calCards = (calWindows ?? []).map((w) => ({
       e.preventDefault();
 
       const phone = phoneInput.value.trim();
-      const email = emailInput.value.trim();
+      const name = nameInput.value.trim();
       const phoneOk = phone.length > 0 && isPhoneValid(phone);
-      const emailOk = email.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-      if (!phoneOk && !emailOk) {
+      if (!phoneOk) {
         errorEl.classList.remove('hidden');
         hintConsentEl.classList.add('hidden');
         phoneInput.focus();
@@ -206,7 +204,7 @@ const calCards = (calWindows ?? []).map((w) => ({
       const windowSuffix = windowEl ? ` — ${windowEl.value}` : '';
       const body: Record<string, string> = {
         phone,
-        email,
+        name,
         source: 'prezapis',
         form_id: `prezapis-${form.dataset.slug}`,
         shift: `Предзапись: ${form.dataset.season}${windowSuffix}`,
