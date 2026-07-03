@@ -120,7 +120,7 @@ const landing: LandingData = {
     links: [
       { href: '/ceny', text: 'смены и даты 2026' },
       { href: '/ceny', text: 'стоимость и что входит' },
-      { href: '/programma-smeny', text: 'IT-программы лагеря' },
+      { href: '/stati/programma-it-lagerya/', text: 'IT-программы лагеря' },
     ],
     asBlock: true,
   },

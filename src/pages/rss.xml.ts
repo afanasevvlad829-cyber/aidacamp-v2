@@ -17,8 +17,8 @@ function getPool() {
   return _pool;
 }
 
-function toRFC822(dateStr: string): string {
-  return new Date(dateStr).toUTCString();
+function toRFC822(date: string | Date): string {
+  return new Date(date).toUTCString();
 }
 
 function esc(s: string): string {
@@ -35,14 +35,19 @@ function wrapCdata(html: string): string {
 }
 
 export const GET: APIRoute = async () => {
-  let publishedSlugs: Set<string> = new Set();
+  // pubDate = дата публикации В ФИД (rss_published_at), не дата статьи:
+  // Дзен импортирует только записи, свежие на момент опроса фида — со старой
+  // датой статьи он их молча пропускает.
+  const pubDates = new Map<string, Date>();
   try {
     const pool = getPool();
     if (pool) {
       const { rows } = await pool.query(
-        `SELECT slug FROM article_views WHERE rss_published_at IS NOT NULL ORDER BY rss_published_at DESC LIMIT 100`
+        `SELECT slug, rss_published_at FROM article_views WHERE rss_published_at IS NOT NULL ORDER BY rss_published_at DESC LIMIT 100`
       );
-      publishedSlugs = new Set(rows.map((r: { slug: string }) => r.slug));
+      for (const r of rows as { slug: string; rss_published_at: Date }[]) {
+        pubDates.set(r.slug, r.rss_published_at);
+      }
     }
   } catch {
     // БД недоступна — пустой фид
@@ -50,7 +55,7 @@ export const GET: APIRoute = async () => {
 
   const articleEntries = await getCollection('articles');
   const articles = articleEntries.map(e => ({ slug: e.id, ...e.data }));
-  const published = articles.filter(a => publishedSlugs.has(a.slug));
+  const published = articles.filter(a => pubDates.has(a.slug));
 
   const items = published.map(a => {
     // Фолбэк: без ogImageJpg (у части статей его нет) весь фид падал в 500 (TypeError startsWith)
@@ -63,7 +68,7 @@ export const GET: APIRoute = async () => {
     <title>${esc(a.title)}</title>
     <link>${esc(absUrl)}</link>
     <description>${esc(a.description)}</description>
-    <pubDate>${toRFC822(a.date)}</pubDate>
+    <pubDate>${toRFC822(pubDates.get(a.slug) ?? a.date)}</pubDate>
     <guid isPermaLink="true">${esc(absUrl)}</guid>
     <category>format-article</category>
     <enclosure url="${esc(imageUrl)}" type="image/jpeg" length="0"/>
