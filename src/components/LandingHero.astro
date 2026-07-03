@@ -33,9 +33,12 @@ interface Props {
   keywords: string[];
   image?: string;
   imageAlt?: string;
+  /** Сезонная мета вместо летней («смены июнь–август · от PRICE_MIN»):
+   *  чипы дат и цены сезона, ведут на #prezapis. Для осень/зима/весна. */
+  seasonMeta?: { dates: string; price: string };
 }
 
-const { h1, subtitle, breadcrumb, keywords, image, imageAlt = '' } = Astro.props;
+const { h1, subtitle, breadcrumb, keywords, image, imageAlt = '', seasonMeta } = Astro.props;
 
 const breadcrumbJsonLd = {
   "@context": "https://schema.org",
@@ -113,13 +116,27 @@ const breadcrumbJsonLd = {
             {STAT_DISTANCE} от Москвы
           </a>
           <span class="text-white/30" aria-hidden="true">·</span>
-          <a href="/#shifts" class="hover:text-white/85 transition-colors">
-            смены {CAMP_SEASON}
-          </a>
-          <span class="text-white/30" aria-hidden="true">·</span>
-          <button type="button" data-shift-link="shift-2-1" class="hover:text-white/85 transition-colors cursor-pointer">
-            от {CAMP_PRICE_FROM}
-          </button>
+          {seasonMeta ? (
+            <>
+              <a href="#prezapis" class="hover:text-white/85 transition-colors">
+                {seasonMeta.dates}
+              </a>
+              <span class="text-white/30" aria-hidden="true">·</span>
+              <a href="#prezapis" class="hover:text-white/85 transition-colors">
+                {seasonMeta.price}
+              </a>
+            </>
+          ) : (
+            <>
+              <a href="/#shifts" class="hover:text-white/85 transition-colors">
+                смены {CAMP_SEASON}
+              </a>
+              <span class="text-white/30" aria-hidden="true">·</span>
+              <button type="button" data-shift-link="shift-2-1" class="hover:text-white/85 transition-colors cursor-pointer">
+                от {CAMP_PRICE_FROM}
+              </button>
+            </>
+          )}
           <span class="text-white/30" aria-hidden="true">·</span>
           <a href="https://vc.ru/gdekurs/1216219-top-20-detskih-letnih-it-lagerei-v-moskve-i-podmoskove" target="_blank" rel="noopener" class="flex items-center gap-1 hover:text-white/80 transition-colors">
             <i class="bi bi-trophy text-[11px]" aria-hidden="true"></i>
