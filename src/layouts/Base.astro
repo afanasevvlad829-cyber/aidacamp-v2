@@ -35,6 +35,8 @@ interface Props {
   noindex?: boolean;
   /** Переопределяет self-canonical. Если не задан — строится из Astro.url.pathname. */
   canonical?: string;
+  /** Скрыть нижнюю AgeBar-плашку с летними сменами (сезонные лендинги: осень/зима/весна) */
+  hideAgeBar?: boolean;
 }
 
 const {
@@ -50,6 +52,7 @@ const {
   eagerMetrika = false,
   noindex = false,
   canonical: canonicalProp,
+  hideAgeBar = false,
 } = Astro.props;
 const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `https://aidacamp.ru${ogImage}`;
 const canonicalUrl = canonicalProp ?? new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
@@ -338,8 +341,8 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     </script>
     <!-- DynamicPrices: единый скрипт динамических цен для всех страниц -->
     <DynamicPrices />
-    <!-- AgeBar: мобильная плашка выбора возраста -->
-    <AgeBar />
+    <!-- AgeBar: мобильная плашка выбора возраста (летние смены) — на сезонных лендингах скрыта -->
+    {!hideAgeBar && <AgeBar />}
     <!-- ShiftModal: открывается из AgeBar «Посмотреть» и data-shift-link на всех страницах -->
     <ShiftModal />
     <GlobalShiftLinkHandler />

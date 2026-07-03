@@ -1,0 +1,205 @@
+---
+/**
+ * SeasonLanding — универсальный лендинг сезонной смены (осень/зима/весна).
+ * Всё содержимое приходит из конфига SeasonConfig (src/data/seasons.ts):
+ * новый сезон = новый конфиг + страница-обёртка в 5 строк.
+ * Летние элементы (AgeBar, мета «смены июнь–август», блок Shifts, летний FAQ)
+ * здесь сознательно отсутствуют — лендинги сезонов не каннибализируют лето.
+ */
+import '../../styles/global.css';
+import LandingLayout from '../../layouts/LandingLayout.astro';
+import LandingHero from '../LandingHero.astro';
+import SeasonPreRegister from '../SeasonPreRegister.astro';
+import SeasonCalendar from './SeasonCalendar.astro';
+import VideoPlayer from '../VideoPlayer.astro';
+import { DARIA_CUES } from '../../data/dariaCues';
+import Stay from '../Stay.astro';
+import Team from '../Team.astro';
+import Contacts from '../Contacts.astro';
+import RelatedPages from '../RelatedPages.astro';
+import { getRelatedPages } from '../../data/landing-pages';
+import type { SeasonConfig } from '../../data/seasons';
+
+interface Props { config: SeasonConfig; }
+const { config: c } = Astro.props;
+
+const canonical = `https://aidacamp.ru${c.path}`;
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://aidacamp.ru" },
+        { "@type": "ListItem", "position": 2, "name": c.breadcrumb, "item": canonical }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": c.faq.items.map((f) => ({
+        "@type": "Question",
+        "name": f.q,
+        "acceptedAnswer": { "@type": "Answer", "text": f.a }
+      }))
+    }
+  ]
+};
+---
+
+<LandingLayout
+  heroImage={c.heroImage}
+  title={c.title}
+  description={c.description}
+  h1={c.h1}
+  canonical={canonical}
+  hideAgeBar={true}
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </Fragment>
+
+  <LandingHero slot="hero"
+    h1={c.h1}
+    subtitle={c.subtitle}
+    breadcrumb={c.breadcrumb}
+    keywords={c.heroKeywords}
+    image={c.heroImage}
+    imageAlt={c.heroImageAlt}
+    seasonMeta={c.seasonMeta}
+  />
+
+  <!-- Даты и стоимость -->
+  <section class="py-14 md:py-20">
+    <div class="mx-auto max-w-[860px] px-5 md:px-8">
+      <h2 class="text-[26px] md:text-[32px] font-extrabold tracking-[-0.02em] leading-[1.15] text-body mb-4">{c.datesBlock.heading}</h2>
+      <p class="text-[16px] leading-[1.65] text-body-muted mb-6">{c.datesBlock.intro}</p>
+      <ul class="space-y-2.5">
+        {c.datesBlock.facts.map((f) => (
+          <li class="flex items-start gap-2.5 text-[16px] text-body">
+            <i class="bi bi-check-lg text-primary mt-0.5 shrink-0" aria-hidden="true"></i>
+            <span>{f}</span>
+          </li>
+        ))}
+      </ul>
+      <p class="mt-5">
+        <a href="#prezapis" class="inline-flex items-center gap-2 rounded-xl bg-primary hover:bg-orange-400 px-6 py-3 text-base font-semibold text-white transition-colors">
+          <i class="bi bi-calendar-heart" aria-hidden="true"></i>
+          Предварительная запись — без оплаты
+        </a>
+      </p>
+    </div>
+  </section>
+
+  <!-- Окна заездов (четверти/триместры) — календарём -->
+  {c.windowsBlock && c.calendarWindows && (
+    <section class="py-14 md:py-16 bg-slate-50">
+      <div class="mx-auto max-w-[1080px] px-5 md:px-8">
+        <h2 class="text-[24px] md:text-[30px] font-extrabold tracking-[-0.02em] leading-[1.15] text-body mb-4">{c.windowsBlock.heading}</h2>
+        <p class="text-[16px] leading-[1.65] text-body-muted mb-6 max-w-[860px]">{c.windowsBlock.intro}</p>
+        <SeasonCalendar windows={c.calendarWindows} />
+      </div>
+    </section>
+  )}
+
+  <!-- Расписание по дням -->
+  <section class="py-14 md:py-20">
+    <div class="mx-auto max-w-[860px] px-5 md:px-8">
+      <h2 class="text-[26px] md:text-[32px] font-extrabold tracking-[-0.02em] leading-[1.15] text-body mb-4">{c.schedule.heading}</h2>
+      <p class="text-[16px] leading-[1.65] text-body-muted mb-8">{c.schedule.intro}</p>
+      <ol class="relative border-s-2 border-orange-200 space-y-8 ps-6">
+        {c.schedule.days.map((d) => (
+          <li class="relative">
+            <span class="absolute -start-[31px] top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary ring-4 ring-orange-100" aria-hidden="true"></span>
+            <p class="text-[12px] font-bold uppercase tracking-[0.15em] text-primary mb-1">{d.day}</p>
+            <h3 class="text-[18px] font-bold text-body mb-1.5">{d.title}</h3>
+            <p class="text-[15.5px] leading-[1.6] text-body-muted">{d.text}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- Цитата Дарьи: слева цитата + фото, справа видео (как на главной) -->
+  {c.quote && (
+    <section class="py-14 md:py-18 bg-[#0d1a2b] overflow-hidden">
+      <div class="mx-auto max-w-[1080px] px-5 md:px-8">
+        <div class="flex flex-col md:flex-row items-center gap-10 md:gap-14">
+          <div class="min-w-0 flex-1">
+            <i class="bi bi-quote text-[44px] text-orange-400/80 leading-none" aria-hidden="true"></i>
+            <blockquote class="mt-2 text-[22px] md:text-[28px] font-bold leading-[1.35] tracking-[-0.01em] text-white">
+              {c.quote.text}
+            </blockquote>
+            <div class="mt-6 flex items-center gap-3.5">
+              {c.quote.photo && (
+                <img src={c.quote.photo} alt={c.quote.author} loading="lazy"
+                  class="h-14 w-14 rounded-full object-cover ring-2 ring-orange-400/60" />
+              )}
+              <p class="text-[15px] text-white/60">{c.quote.author}</p>
+            </div>
+          </div>
+          {c.quote.videoSrc && (
+            <div class="shrink-0 w-full max-w-[300px] md:w-[280px] lg:w-[320px]">
+              <VideoPlayer
+                src={c.quote.videoSrc}
+                cues={DARIA_CUES}
+                uid={`season-daria-${c.slug}`}
+                goalName="daria_video_play"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Что внутри смены -->
+  <section class="py-14 md:py-20 bg-slate-50">
+    <div class="mx-auto max-w-[1080px] px-5 md:px-8">
+      <h2 class="text-[26px] md:text-[32px] font-extrabold tracking-[-0.02em] leading-[1.15] text-body mb-2">{c.options.heading}</h2>
+      <p class="text-[16px] text-body-muted mb-8">{c.options.intro}</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {c.options.items.map((o) => (
+          <div class="rounded-[16px] border border-slate-200 bg-white p-5 flex flex-col">
+            <i class={`bi bi-${o.icon} text-[26px] text-primary mb-3`} aria-hidden="true"></i>
+            <h3 class="text-[16px] font-bold text-body mb-1.5">{o.title}</h3>
+            <p class="text-[14.5px] leading-[1.55] text-body-muted">{o.text}</p>
+            {o.href && (
+              <a href={o.href} class="mt-auto pt-3 text-[14px] font-medium text-primary hover:underline">
+                {o.hrefLabel ?? 'Подробнее'} →
+              </a>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <SeasonPreRegister seasonAcc={c.seasonAcc} slug={c.slug} windows={c.windows} calWindows={c.calendarWindows} />
+
+  <!-- Размещение и команда — те же блоки, что на главной -->
+  <Stay />
+  <Team />
+
+  <!-- Сезонный FAQ -->
+  <section class="py-14 md:py-20">
+    <div class="mx-auto max-w-[860px] px-5 md:px-8">
+      <h2 class="text-[26px] md:text-[32px] font-extrabold tracking-[-0.02em] leading-[1.15] text-body mb-6">{c.faq.heading}</h2>
+      <div class="space-y-3">
+        {c.faq.items.map((f) => (
+          <details class="group rounded-[14px] border border-slate-200 bg-white px-5 py-4">
+            <summary class="flex cursor-pointer items-center justify-between gap-3 text-[16px] font-semibold text-body list-none [&::-webkit-details-marker]:hidden">
+              {f.q}
+              <i class="bi bi-chevron-down shrink-0 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true"></i>
+            </summary>
+            <p class="mt-3 text-[15.5px] leading-[1.6] text-body-muted">{f.a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Контакты с картой — как на главной -->
+  <Contacts />
+
+  <RelatedPages pages={getRelatedPages(Astro.url.pathname)} />
+</LandingLayout>
