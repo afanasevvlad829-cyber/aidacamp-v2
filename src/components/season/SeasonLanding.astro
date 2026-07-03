@@ -10,6 +10,10 @@ import '../../styles/global.css';
 import LandingLayout from '../../layouts/LandingLayout.astro';
 import LandingHero from '../LandingHero.astro';
 import SeasonPreRegister from '../SeasonPreRegister.astro';
+import SeasonCalendar from './SeasonCalendar.astro';
+import Stay from '../Stay.astro';
+import Team from '../Team.astro';
+import Contacts from '../Contacts.astro';
 import RelatedPages from '../RelatedPages.astro';
 import { getRelatedPages } from '../../data/landing-pages';
 import type { SeasonConfig } from '../../data/seasons';
@@ -84,20 +88,13 @@ const jsonLd = {
     </div>
   </section>
 
-  <!-- Окна заездов (четверти/триместры) -->
-  {c.windowsBlock && (
+  <!-- Окна заездов (четверти/триместры) — календарём -->
+  {c.windowsBlock && c.calendarWindows && (
     <section class="py-14 md:py-16 bg-slate-50">
-      <div class="mx-auto max-w-[860px] px-5 md:px-8">
+      <div class="mx-auto max-w-[1080px] px-5 md:px-8">
         <h2 class="text-[24px] md:text-[30px] font-extrabold tracking-[-0.02em] leading-[1.15] text-body mb-4">{c.windowsBlock.heading}</h2>
-        <p class="text-[16px] leading-[1.65] text-body-muted mb-5">{c.windowsBlock.intro}</p>
-        <ul class="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {c.windowsBlock.items.map((w) => (
-            <li class="rounded-[14px] border border-slate-200 bg-white px-4 py-3.5 text-base text-body flex items-start gap-2.5">
-              <i class="bi bi-calendar2-check text-primary mt-0.5 shrink-0" aria-hidden="true"></i>
-              <span>{w}</span>
-            </li>
-          ))}
-        </ul>
+        <p class="text-[16px] leading-[1.65] text-body-muted mb-6 max-w-[860px]">{c.windowsBlock.intro}</p>
+        <SeasonCalendar windows={c.calendarWindows} />
       </div>
     </section>
   )}
@@ -144,6 +141,10 @@ const jsonLd = {
 
   <SeasonPreRegister seasonAcc={c.seasonAcc} slug={c.slug} windows={c.windows} />
 
+  <!-- Размещение и команда — те же блоки, что на главной -->
+  <Stay />
+  <Team />
+
   <!-- Сезонный FAQ -->
   <section class="py-14 md:py-20">
     <div class="mx-auto max-w-[860px] px-5 md:px-8">
@@ -161,6 +162,9 @@ const jsonLd = {
       </div>
     </div>
   </section>
+
+  <!-- Контакты с картой — как на главной -->
+  <Contacts />
 
   <RelatedPages pages={getRelatedPages(Astro.url.pathname)} />
 </LandingLayout>
