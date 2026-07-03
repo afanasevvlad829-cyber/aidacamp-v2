@@ -3,17 +3,37 @@
  * SeasonPreRegister — предварительная запись на сезонную смену (осень/зима/весна).
  * Даты каникул школы публикуют в сентябре — до этого собираем предзапись без оплаты:
  * контакт + обещание написать первыми и зафиксировать раннюю цену.
+ * Окна заездов: calWindows (карточки с мини-календарями) или windows (текстовые чипы).
  */
+import { buildMonthCells, monthLabel, WEEKDAYS } from '../utils/seasonCalendar';
+import type { SeasonCalWindow } from '../data/seasons';
+
 interface Props {
   /** Название сезона в творительном контексте: «осеннюю смену 2026» */
   seasonAcc: string;
   /** Слаг для form_id: osen-2026, zima-2026-27, vesna-2027 */
   slug: string;
-  /** Окна заездов на выбор (например, по системам каникул: четверти/триместры) */
+  /** Окна заездов на выбор (текстовые чипы — фолбэк) */
   windows?: string[];
+  /** Окна заездов карточками с мини-календарями (приоритетно) */
+  calWindows?: SeasonCalWindow[];
 }
-const { seasonAcc, slug, windows } = Astro.props;
+const { seasonAcc, slug, windows, calWindows } = Astro.props;
 const uid = `spr-${slug}`;
+
+const CELL_CLS: Record<string, string> = {
+  primary: 'py-0.5 rounded bg-primary text-white font-semibold',
+  secondary: 'py-0.5 rounded bg-primary text-white font-semibold',
+  month: 'py-0.5 text-slate-400',
+  off: 'py-0.5 text-slate-300',
+};
+const calCards = (calWindows ?? []).map((w) => ({
+  label: w.label,
+  sub: w.sub,
+  monthLabel: monthLabel(w.year, w.month),
+  cells: buildMonthCells(w.year, w.month, [{ from: w.from, to: w.to, primary: true }], true)
+    .map((c) => ({ day: c.day, cls: CELL_CLS[c.state] })),
+}));
 ---
 
 <section id="prezapis" class="py-14 md:py-20 bg-orange-50/70 border-y border-orange-100">
@@ -35,7 +55,27 @@ const uid = `spr-${slug}`;
     </p>
 
     <form id={`${uid}-form`} class="flex flex-col gap-3" novalidate data-slug={slug} data-season={seasonAcc}>
-      {windows && windows.length > 0 && (
+      {calCards.length > 0 ? (
+        <fieldset class="mb-1">
+          <legend class="text-base font-semibold text-body mb-2.5">Какие даты вам удобнее? Зависит от системы каникул в школе:</legend>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {calCards.map((w, idx) => (
+              <label class="cursor-pointer">
+                <input type="radio" name={`${uid}-window`} value={w.label} class="peer sr-only" checked={idx === 0} />
+                <span class="block h-full rounded-[14px] border-2 border-slate-200 bg-white p-3 transition-colors peer-checked:border-primary peer-checked:bg-orange-50/60 peer-checked:shadow-[0_2px_12px_rgba(236,124,0,0.15)]">
+                  <span class="block text-[13.5px] font-bold text-body leading-tight">{w.label}</span>
+                  <span class="block text-[12px] text-slate-500 mb-2">{w.sub}</span>
+                  <span class="block text-[11.5px] font-medium text-body-muted mb-1">{w.monthLabel}</span>
+                  <span class="grid grid-cols-7 gap-y-0.5 text-center text-[11px]">
+                    {WEEKDAYS.map((d) => <span class="text-slate-400 pb-0.5">{d}</span>)}
+                    {w.cells.map((c) => <span class={c.cls}>{c.day}</span>)}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      ) : windows && windows.length > 0 && (
         <fieldset class="mb-1">
           <legend class="text-base font-semibold text-body mb-2">Какие даты вам удобнее? Зависит от системы каникул в школе:</legend>
           <div class="flex flex-wrap gap-2">

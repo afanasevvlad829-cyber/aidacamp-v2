@@ -11,6 +11,8 @@ import LandingLayout from '../../layouts/LandingLayout.astro';
 import LandingHero from '../LandingHero.astro';
 import SeasonPreRegister from '../SeasonPreRegister.astro';
 import SeasonCalendar from './SeasonCalendar.astro';
+import VideoPlayer from '../VideoPlayer.astro';
+import { DARIA_CUES } from '../../data/dariaCues';
 import Stay from '../Stay.astro';
 import Team from '../Team.astro';
 import Contacts from '../Contacts.astro';
@@ -135,18 +137,14 @@ const jsonLd = {
               <p class="text-[15px] text-white/60">{c.quote.author}</p>
             </div>
           </div>
-          {c.quote.video && (
-            <div class="shrink-0 w-full max-w-[300px] md:w-[280px]">
-              <video
-                class="w-full rounded-2xl shadow-2xl ring-1 ring-white/10"
-                autoplay muted loop playsinline
-                preload="metadata"
-                poster={c.quote.video.poster}
-                aria-label={c.quote.author}
-              >
-                <source src={c.quote.video.webm} type="video/webm" />
-                <source src={c.quote.video.mp4} type="video/mp4" />
-              </video>
+          {c.quote.videoSrc && (
+            <div class="shrink-0 w-full max-w-[300px] md:w-[280px] lg:w-[320px]">
+              <VideoPlayer
+                src={c.quote.videoSrc}
+                cues={DARIA_CUES}
+                uid={`season-daria-${c.slug}`}
+                goalName="daria_video_play"
+              />
             </div>
           )}
         </div>
@@ -176,7 +174,7 @@ const jsonLd = {
     </div>
   </section>
 
-  <SeasonPreRegister seasonAcc={c.seasonAcc} slug={c.slug} windows={c.windows} />
+  <SeasonPreRegister seasonAcc={c.seasonAcc} slug={c.slug} windows={c.windows} calWindows={c.calendarWindows} />
 
   <!-- Размещение и команда — те же блоки, что на главной -->
   <Stay />

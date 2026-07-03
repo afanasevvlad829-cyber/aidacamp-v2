@@ -1,77 +1,59 @@
 ---
 /**
- * SeasonCalendar — окна заездов сезонной смены в виде мини-календарей.
- * Каждое окно = месячная сетка (пн–вс) с подсвеченным диапазоном заезда.
- * Диапазон может перетекать в следующий месяц (27 окт — 2 ноя): хвостовые
- * дни соседнего месяца рисуются приглушённо, но подсвечиваются.
- * Вся логика — во frontmatter: Astro-компилятор не любит операторы сравнения в разметке.
+ * SeasonCalendar — предварительные даты заездов мини-календарями.
+ * Окна группируются по месяцу: один месяц = одна сетка, в ней могут быть
+ * и основной заезд (оранжевый), и триместровые окна (светлая подсветка).
+ * Легенда собирается из label/sub всех окон.
  */
-export interface CalWindow {
-  label: string;
-  sub: string;
-  year: number;
-  month: number;       // 1–12 — месяц сетки
-  from: string;        // ISO 'YYYY-MM-DD' начала заезда
-  to: string;          // ISO 'YYYY-MM-DD' конца заезда
-  primary?: boolean;   // основной заезд — оранжевая подсветка
-}
-interface Props { windows: CalWindow[]; }
+import { buildMonthCells, monthLabel, WEEKDAYS, type CalRange } from '../../utils/seasonCalendar';
+import type { SeasonCalWindow } from '../../data/seasons';
+
+interface Props { windows: SeasonCalWindow[]; }
 const { windows } = Astro.props;
 
-const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-const WEEKDAYS = ['пн','вт','ср','чт','пт','сб','вс'];
+// Все диапазоны — каждый месяц подсвечивает и «перетёкшие» в него чужие заезды
+const allRanges: CalRange[] = windows.map((w) => ({ from: w.from, to: w.to, primary: w.primary }));
 
-interface Cell { day: number; cls: string; }
-interface RenderedWindow { label: string; sub: string; monthLabel: string; boxCls: string; cells: Cell[]; }
-
-const iso = (d: Date) => d.toISOString().slice(0, 10);
-
-const rendered: RenderedWindow[] = windows.map((w) => {
-  const first = new Date(Date.UTC(w.year, w.month - 1, 1));
-  const startOffset = (first.getUTCDay() + 6) % 7; // 0 = понедельник
-  const cur = new Date(first);
-  cur.setUTCDate(1 - startOffset);
-
-  const weeks: Cell[][] = [];
-  for (let wk = 0; wk < 6; wk++) {
-    const week: Cell[] = [];
-    let touches = false;
-    for (let d = 0; d < 7; d++) {
-      const dayIso = iso(cur);
-      const inMonth = cur.getUTCMonth() === w.month - 1;
-      const inRange = dayIso >= w.from && dayIso <= w.to;
-      if (inMonth || inRange) touches = true;
-      const cls = inRange
-        ? (w.primary ? 'py-1 rounded-md bg-primary text-white font-semibold' : 'py-1 rounded-md bg-orange-100 text-orange-900 font-semibold')
-        : inMonth ? 'py-1 text-body-muted' : 'py-1 text-slate-300';
-      week.push({ day: cur.getUTCDate(), cls });
-      cur.setUTCDate(cur.getUTCDate() + 1);
-    }
-    if (touches) weeks.push(week);
+// Уникальные месяцы в порядке следования окон
+const monthKeys: { year: number; month: number }[] = [];
+for (const w of windows) {
+  if (!monthKeys.some((m) => m.year === w.year && m.month === w.month)) {
+    monthKeys.push({ year: w.year, month: w.month });
   }
+}
 
-  return {
-    label: w.label,
-    sub: w.sub,
-    monthLabel: `${MONTHS[w.month - 1]} ${w.year}`,
-    boxCls: w.primary
-      ? 'rounded-[16px] border bg-white p-4 border-primary/60 shadow-[0_4px_20px_rgba(236,124,0,0.12)]'
-      : 'rounded-[16px] border bg-white p-4 border-slate-200',
-    cells: weeks.flat(),
-  };
-});
+const CELL_CLS: Record<string, string> = {
+  primary: 'py-1 rounded-md bg-primary text-white font-semibold',
+  secondary: 'py-1 rounded-md bg-orange-100 text-orange-900 font-semibold',
+  month: 'py-1 text-body-muted',
+  off: 'py-1 text-slate-300',
+};
+
+const months = monthKeys.map((m) => ({
+  label: monthLabel(m.year, m.month),
+  cells: buildMonthCells(m.year, m.month, allRanges).map((c) => ({ day: c.day, cls: CELL_CLS[c.state] })),
+}));
 ---
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-  {rendered.map((w) => (
-    <div class={w.boxCls}>
-      <p class="text-[14px] font-bold text-body">{w.label}</p>
-      <p class="text-[12.5px] text-slate-500 mb-3">{w.sub}</p>
-      <p class="text-[13px] font-semibold text-body-muted mb-1.5">{w.monthLabel}</p>
+<p class="text-[14px] font-bold uppercase tracking-[0.12em] text-primary mb-4">Предварительные даты заездов</p>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-[720px]">
+  {months.map((m) => (
+    <div class="rounded-[16px] border border-slate-200 bg-white p-4">
+      <p class="text-[14px] font-semibold text-body mb-2">{m.label}</p>
       <div class="grid grid-cols-7 gap-y-0.5 text-center text-[12px]">
         {WEEKDAYS.map((d) => <span class="text-slate-400 font-medium pb-1">{d}</span>)}
-        {w.cells.map((c) => <span class={c.cls}>{c.day}</span>)}
+        {m.cells.map((c) => <span class={c.cls}>{c.day}</span>)}
       </div>
     </div>
   ))}
 </div>
+
+<!-- Легенда -->
+<ul class="mt-5 space-y-2">
+  {windows.map((w) => (
+    <li class="flex items-center gap-2.5 text-[14.5px] text-body">
+      <span class={`inline-block h-3.5 w-3.5 rounded ${w.primary ? 'bg-primary' : 'bg-orange-100 border border-orange-300'}`} aria-hidden="true"></span>
+      <span><strong class="font-semibold">{w.label}</strong> <span class="text-slate-500">— {w.sub}</span></span>
+    </li>
+  ))}
+</ul>

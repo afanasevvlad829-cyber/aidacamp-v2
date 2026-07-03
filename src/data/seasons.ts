@@ -54,8 +54,8 @@ export interface SeasonConfig {
   quote?: {
     text: string;
     author: string;
-    photo?: string;                              // аватар автора под цитатой
-    video?: { webm: string; mp4: string; poster: string };  // видео справа (как на главной)
+    photo?: string;      // аватар автора под цитатой
+    videoSrc?: string;   // вертикальное видео справа (VideoPlayer, как MomStory на главной)
   };
   options: { heading: string; intro: string; items: SeasonOption[] };
   faq: { heading: string; items: SeasonFaqItem[] };
@@ -121,11 +121,7 @@ export const AUTUMN_SEASON: SeasonConfig = {
     text: 'Мы живём в самом прекрасном IT-лагере на свете. А все остальные лагеря нам завидуют…',
     author: 'Дарья Афанасьева — основатель лагеря и мама',
     photo: '/images/team/sm/daria-wave-01.avif',
-    video: {
-      webm: '/images/team/daria-wave.webm',
-      mp4: '/images/team/daria-wave.mp4',
-      poster: '/images/team/daria-wave-01.avif',
-    },
+    videoSrc: '/video/daria-story.mp4',
   },
   options: {
     heading: 'Что внутри смены',
