@@ -1,0 +1,102 @@
+---
+// Сравнение лагерей Подмосковья по нишам: год работы, цена «от», оценка Яндекс.Карт (где есть карточка).
+// Конкуренты БЕЗ ссылок (не продвигаем). Оценка — только реальная с Я.Карт; нет карточки → не показываем.
+// Фильтры по интенту (чипы) — клиентский JS показывает нужную нишу; «Все» — всё.
+import type { CampNiche } from '../../data/luchshieCamps';
+
+interface Props {
+  niches: CampNiche[];
+  asOf: string;
+}
+const { niches, asOf } = Astro.props;
+
+// Чипы-фильтры: интент-подпись → id ниши (совпадает с campNiches).
+const filters = [
+  { id: 'all',       label: 'Все лагеря',            icon: 'bi-grid' },
+  { id: 'health',    label: 'Отдохнуть',             icon: 'bi-tree' },
+  { id: 'it',        label: 'Научиться (IT)',        icon: 'bi-cpu' },
+  { id: 'language',  label: 'Английский и языки',    icon: 'bi-translate' },
+  { id: 'sport',     label: 'Спорт',                 icon: 'bi-trophy' },
+  { id: 'creative',  label: 'Творчество',            icon: 'bi-palette' },
+  { id: 'adventure', label: 'Приключения',           icon: 'bi-compass' },
+];
+---
+
+<section class="mx-auto max-w-[1080px] px-4 pb-4" data-rating-root>
+  <h2 class="text-[24px] md:text-[30px] font-bold text-body leading-tight mb-2">Лагеря Подмосковья по нишам — сравнение</h2>
+  <p class="text-[16px] text-body-muted leading-relaxed mb-5 max-w-[780px]">Собрали лагеря по нишам с проверяемыми фактами: год работы, цена «от» и оценка на Яндекс.Картах (данные на {asOf}). Оценку показываем только там, где у лагеря есть собственная карточка на Яндекс.Картах — свою оценку не придумываем.</p>
+
+  <!-- Фильтры -->
+  <div class="flex flex-wrap gap-2 mb-8" data-rating-filters role="group" aria-label="Фильтр лагерей">
+    {filters.map((f) => (
+      <button
+        type="button"
+        data-filter={f.id}
+        class:list={[
+          'inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13.5px] font-medium border transition-colors',
+          f.id === 'all'
+            ? 'bg-orange-500 text-white border-orange-500'
+            : 'bg-white text-body-muted border-slate-200 hover:border-orange-300',
+        ]}
+        aria-pressed={f.id === 'all' ? 'true' : 'false'}
+      >
+        <i class={`bi ${f.icon} text-[12px]`} aria-hidden="true"></i>{f.label}
+      </button>
+    ))}
+  </div>
+
+  {niches.map((niche) => (
+    <div class="mb-10" data-niche-section={niche.id}>
+      <h3 class="text-[19px] md:text-[22px] font-bold text-body mb-4">{niche.label}</h3>
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {niche.camps.map((camp) => (
+          <article class="rounded-[16px] border border-slate-100 bg-white p-4 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+            <p class="font-semibold text-body leading-tight">{camp.name}</p>
+            <p class="text-[13px] text-slate-400 mt-0.5">{camp.location}{camp.region ? ` · ${camp.region}` : ''}</p>
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2.5 text-[13px]">
+              {camp.rating && (
+                <span class="inline-flex items-center gap-1 font-semibold text-orange-600"><i class="bi bi-star-fill text-[11px]" aria-hidden="true"></i>{camp.rating.toFixed(1)}<span class="font-normal text-slate-400"> · {camp.reviews} оценок</span></span>
+              )}
+              {camp.year && <span class="text-slate-500">работает с {camp.year}</span>}
+              {camp.priceFrom && <span class="text-slate-500">от {camp.priceFrom}</span>}
+            </div>
+            {camp.note && (
+              <p class="text-[12.5px] text-slate-500 leading-snug mt-2 pt-2 border-t border-slate-50"><span class="text-slate-400">Родители отмечают:</span> {camp.note}</p>
+            )}
+          </article>
+        ))}
+      </div>
+    </div>
+  ))}
+  <p class="text-[13px] text-slate-400">Сравнение информационное, по открытым данным Яндекс.Карт и каталогов на {asOf}. Оценки и цены могут меняться. Мы не связаны с перечисленными лагерями.</p>
+</section>
+
+<script>
+  document.querySelectorAll('[data-rating-filters]').forEach((bar) => {
+    const chips = Array.from(bar.querySelectorAll('button[data-filter]'));
+    const sections = Array.from(document.querySelectorAll('[data-niche-section]'));
+    const moreBlocks = Array.from(document.querySelectorAll('[data-more-block]'));
+    const setActive = (active) => {
+      chips.forEach((c) => {
+        const on = c === active;
+        c.setAttribute('aria-pressed', on ? 'true' : 'false');
+        c.classList.toggle('bg-orange-500', on);
+        c.classList.toggle('text-white', on);
+        c.classList.toggle('border-orange-500', on);
+        c.classList.toggle('bg-white', !on);
+        c.classList.toggle('text-body-muted', !on);
+        c.classList.toggle('border-slate-200', !on);
+      });
+    };
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const f = chip.getAttribute('data-filter');
+        setActive(chip);
+        sections.forEach((s) => {
+          (s as HTMLElement).hidden = !(f === 'all' || s.getAttribute('data-niche-section') === f);
+        });
+        moreBlocks.forEach((b) => { (b as HTMLElement).hidden = f !== 'all'; });
+      });
+    });
+  });
+</script>
