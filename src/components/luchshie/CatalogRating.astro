@@ -1,0 +1,32 @@
+---
+// Отдельный блок /luchshie: «по данным каталогов» — агрегаторные рейтинги (incamp.ru / vlagere.ru).
+// Честно помечены как МЕНЕЕ строгие (методика агрегатора закрыта, не Яндекс.Карты). Конкуренты БЕЗ ссылок.
+import type { CatalogCamp } from '../../data/luchshieCamps';
+
+interface Props {
+  camps: CatalogCamp[];
+  asOf: string;
+}
+const { camps, asOf } = Astro.props;
+---
+
+<section class="mx-auto max-w-[1080px] px-4 py-6" data-more-block>
+  <div class="rounded-[16px] border border-slate-200 bg-slate-50/60 p-5 md:p-6">
+    <h2 class="text-[22px] md:text-[26px] font-bold text-body leading-tight mb-2">Ещё {camps.length} лагерей — по данным каталогов</h2>
+    <p class="text-[15px] text-body-muted leading-relaxed mb-5 max-w-[820px]">У этих лагерей нет собственной карточки на Яндекс.Картах — их рейтинг берём из каталогов incamp.ru и vlagere.ru. Это <b>менее строгий</b> сигнал: методика оценки у каталога закрыта и проверить её сложнее, чем оценку Яндекс.Карт. Приводим отдельно и честно помечаем источник.</p>
+
+    <div class="grid gap-2.5 sm:grid-cols-2">
+      {camps.map((camp) => (
+        <article class="rounded-[12px] border border-slate-100 bg-white p-3.5">
+          <div class="flex items-start justify-between gap-2">
+            <p class="font-semibold text-body leading-tight text-[15px]">{camp.name}</p>
+            <span class="inline-flex items-center gap-1 shrink-0 text-[13px] font-semibold text-slate-500"><i class="bi bi-star text-[10px]" aria-hidden="true"></i>{camp.rating.toFixed(1)}<span class="font-normal text-slate-400"> · {camp.reviews}</span></span>
+          </div>
+          <p class="text-[12.5px] text-slate-400 mt-1">{camp.direction} · {camp.location}{camp.region ? ` · ${camp.region}` : ''}</p>
+          {camp.priceFrom && <p class="text-[12.5px] text-slate-500 mt-0.5">от {camp.priceFrom}</p>}
+        </article>
+      ))}
+    </div>
+    <p class="text-[12px] text-slate-400 mt-4">Источник рейтинга — каталоги incamp.ru / vlagere.ru (не Яндекс.Карты). Цены «от» и данные на {asOf}, могут меняться. Мы не связаны с перечисленными лагерями.</p>
+  </div>
+</section>
