@@ -9,6 +9,7 @@
 //   Ничего не постит в VK и НЕ пишет в БД — только логирует, что сделал бы.
 import pg from 'pg';
 import fs from 'fs';
+import path from 'path';
 import { FormData, File } from 'undici';
 
 const DRY_RUN = process.env.DRY_RUN === '1' || process.argv.includes('--dry-run');
@@ -25,6 +26,33 @@ const VK_V = '5.199';
 const VK_OWNER_ID = 712299377;
 const BASE_URL = 'https://aidacamp.ru';
 
+// --- Пул обработанных фото лагеря для постов (2026-07-03) ---
+// /var/www/aidacamp-media/images/vk-pool/<категория>/*.jpg — залито с локального архива
+// «Обработанные». Категория подбирается по слагу+заголовку, файл — детерминированно
+// по хэшу слага (одна статья = всегда одно и то же фото, разные статьи — разные).
+const PHOTO_POOL = '/var/www/aidacamp-media/images/vk-pool';
+const POOL_RULES = [
+  [/pitani|eda|menu|kaloriy|едой|еда|питани|меню/i, 'pitanie'],
+  [/bassein|kupani|бассейн|купани/i, 'bassein'],
+  [/sport|zaryadka|спорт|зарядк/i, 'sport'],
+  [/razmeshchen|komnat|nomer|spal|размещени|комнат|жиль/i, 'razmeshchenie'],
+  [/territor|bezopasn|dobratsya|adres|территори|безопасн|добраться/i, 'territoriya'],
+  [/\bit\b|kod|program|neyroset|robot|kompyuter|ucheb|zanyat|hakaton|minecraft|roblox|scratch|ekrannoe|telefon|нейросет|программир|экранн|телефон/i, 'ucheba'],
+];
+function pickPoolPhoto(slugAndTitle) {
+  let cat = 'atmosfera';
+  for (const [re, c] of POOL_RULES) if (re.test(slugAndTitle)) { cat = c; break; }
+  const read = d => { try { return fs.readdirSync(d).filter(f => f.endsWith('.jpg')); } catch { return []; } };
+  let dir = path.join(PHOTO_POOL, cat);
+  let files = read(dir);
+  if (!files.length) { dir = path.join(PHOTO_POOL, 'atmosfera'); files = read(dir); }
+  if (!files.length) return null;
+  files.sort();
+  const h = [...slugAndTitle].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 0);
+  return path.join(dir, files[h % files.length]);
+}
+
+
 const log = (...a) => console.log(DRY_RUN ? '[DRY-RUN]' : '[LIVE]', ...a);
 
 async function vkApi(method, params) {
@@ -40,9 +68,14 @@ async function vkApi(method, params) {
 
 async function uploadPhoto(imageUrl) {
   const uploadServer = await vkApi('photos.getWallUploadServer', {});
-  const imgRes = await fetch(imageUrl.startsWith('http') ? imageUrl : `${BASE_URL}${imageUrl}`);
-  if (!imgRes.ok) return null;
-  const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
+  let imgBuffer;
+  if (!imageUrl.startsWith('http') && fs.existsSync(imageUrl)) {
+    imgBuffer = fs.readFileSync(imageUrl); // локальный файл из пула
+  } else {
+    const imgRes = await fetch(imageUrl.startsWith('http') ? imageUrl : `${BASE_URL}${imageUrl}`);
+    if (!imgRes.ok) return null;
+    imgBuffer = Buffer.from(await imgRes.arrayBuffer());
+  }
   const form = new FormData();
   form.append('photo', new File([imgBuffer], 'photo.jpg', { type: 'image/jpeg' }));
   const uploadRes = await fetch(uploadServer.upload_url, { method: 'POST', body: form });
@@ -90,11 +123,15 @@ async function main() {
       if (DRY_RUN) {
         log(`VK: ВЫЛОЖИЛ БЫ '${slug}'`);
         log(`VK: og=${article.ogImage}`);
+        log(`VK: фото из пула=${pickPoolPhoto(`${slug} ${article.title || ''}`)}`);
         log(`VK: сообщение (первые 120): ${message.slice(0,120).replace(/\n/g,' ⏎ ')}...`);
       } else {
         let attachment = '';
         try {
-          const photoId = await uploadPhoto(article.ogImage);
+          const poolPhoto = pickPoolPhoto(`${slug} ${article.title || ''}`);
+          const photoId = poolPhoto
+            ? await uploadPhoto(poolPhoto)
+            : /\.jpe?g$/i.test(article.ogImage || '') ? await uploadPhoto(article.ogImage) : null;
           if (photoId) attachment = photoId;
         } catch (e) { console.warn('Photo upload failed:', e.message); }
 
