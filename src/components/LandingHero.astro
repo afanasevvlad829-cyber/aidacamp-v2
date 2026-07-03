@@ -70,19 +70,20 @@ const breadcrumbJsonLd = {
     </div>
   )}
 
-  {/* Сезонное фото, десктоп: правая половина hero во всю высоту,
-      плавно растворяется в тёмный фон слева и снизу */}
+  {/* Сезонное фото — подложка на ВЕСЬ hero. Затемнение градиентное, не сплошное:
+      плотнее слева (под текстом) и у низа, справа фото дышит. */}
   {seasonMeta && image && (
-    <div class="hidden lg:block absolute inset-y-0 right-0 w-[48%] z-[1]" aria-hidden="true">
+    <div class="absolute inset-0 z-[1]" aria-hidden="true">
       <img
         src={image}
         alt=""
         loading="eager"
         fetchpriority="high"
         class="h-full w-full object-cover"
-        style="mask-image: linear-gradient(to right, transparent 0%, black 34%); -webkit-mask-image: linear-gradient(to right, transparent 0%, black 34%);"
       />
-      <div class="absolute inset-0 bg-gradient-to-t from-[#0d1a2b]/55 via-transparent to-[#0d1a2b]/25"></div>
+      <div class="absolute inset-0 bg-[#0d1a2b]/70 md:hidden"></div>
+      <div class="hidden md:block absolute inset-0 bg-gradient-to-r from-[#0d1a2b]/95 via-[#0d1a2b]/70 to-[#0d1a2b]/25"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-[#0d1a2b]/60 via-transparent to-transparent"></div>
     </div>
   )}
 
@@ -124,17 +125,8 @@ const breadcrumbJsonLd = {
           ))}
         </ul>
 
-        {/* Сезонное фото (осень/зима/весна), мобилка — в потоке под текстом.
-            Летние лендинги (без seasonMeta) — CSS-фоны по ТЗ v3.0. */}
-        {seasonMeta && image && (
-          <img
-            src={image}
-            alt={imageAlt}
-            loading="eager"
-            fetchpriority="high"
-            class="mt-6 w-full rounded-2xl shadow-2xl object-cover aspect-[4/3] lg:hidden"
-          />
-        )}
+        {/* Сезонное фото — фоновая подложка hero (см. блок выше); alt-текст для доступности */}
+        {seasonMeta && image && <span class="sr-only">{imageAlt}</span>}
 
 
         <!-- Meta line — кликабельные чипы -->
