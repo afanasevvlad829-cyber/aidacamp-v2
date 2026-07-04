@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { ensureTrailingSlash } from '../utils/canonical';
 import '../styles/icons.css';
 import '../styles/mobile-ux-p0.css';
 import '../styles/microinteractions.css';
@@ -55,7 +56,8 @@ const {
   hideAgeBar = false,
 } = Astro.props;
 const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `https://aidacamp.ru${ogImage}`;
-const canonicalUrl = canonicalProp ?? new URL(Astro.url.pathname, 'https://aidacamp.ru').href;
+// canonical/og:url — на финальный слеш-URL (см. src/utils/canonical.ts, инцидент 03.07.2026).
+const canonicalUrl = ensureTrailingSlash(canonicalProp ?? new URL(Astro.url.pathname, 'https://aidacamp.ru').href);
 // Автодетект: /stati/ → article, остальные → website
 const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !Astro.url.pathname.endsWith('/stati/') ? 'article' : 'website');
 ---
