@@ -85,6 +85,7 @@ export const landingPages: LandingPage[] = [
   // 🗓 Сезонные
   { title: 'Лагерь летом', description: 'IT-лагерь летом 2026 для детей 7–15 лет', url: '/lager-letom/', icon: 'bi-sun-fill' },
   { title: 'Лагерь на каникулы', description: 'Июнь, июль, август 2026', url: '/lager-na-kanikuly/', icon: 'bi-sun' },
+  { title: 'Лагерь на неделю', description: 'Короткие смены 7–10 дней круглый год', url: '/lager-na-nedelyu/', icon: 'bi-calendar2-check' },
   { title: 'Лагерь на июнь', description: 'Смены июня 2026, с 30 мая', url: '/lager-na-iyun/', icon: 'bi-calendar-event' },
   { title: 'Лагерь на июль', description: 'Июльские смены 2026 в Подмосковье', url: '/lager-na-iyul/', icon: 'bi-sun' },
   { title: 'Лагерь на август', description: 'Смены августа 2026 в Подмосковье', url: '/lager-na-avgust-podmoskove/', icon: 'bi-sun' },
