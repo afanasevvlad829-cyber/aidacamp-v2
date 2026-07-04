@@ -111,11 +111,16 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         || /bot|crawl|spider|headless|puppeteer|playwright|phantom|chrome-lighthouse|gptbot|claudebot|perplexity|ahrefs|semrush|googlebot|yandexbot|bingbot|duckduckbot|applebot|facebookexternalhit/i.test(__ua)
         || (navigator.plugins && navigator.plugins.length === 0 && /Chrome/.test(__ua) && !/Mobile/.test(__ua));
 
-      if (window.location.search.includes('ym_disable=1') || __isInternalPath || __isBot || __isDevHost) {
+      // ⏳ ВРЕМЕННО (с 2026-07-04, на пару дней): __isBot убран из условий Метрики,
+      // чтобы робот-проверка Яндекс.Бизнеса увидела счётчик. Вернуть __isBot в оба
+      // условия Метрики + lazy-load ниже (см. git history). Clarity фильтрует ботов как раньше.
+      if (window.location.search.includes('ym_disable=1') || __isInternalPath || __isDevHost) {
         document.cookie = 'ym_disable96499295=true; expires=Thu, 31 Dec 2099 23:59:59 UTC; path=/';
+      }
+      if (window.location.search.includes('ym_disable=1') || __isInternalPath || __isBot || __isDevHost) {
         document.cookie = 'clarity_disable=true; expires=Thu, 31 Dec 2099 23:59:59 UTC; path=/';
       }
-      if (document.cookie.indexOf('ym_disable96499295=true') !== -1 || __isInternalPath || __isBot || __isDevHost) {
+      if (document.cookie.indexOf('ym_disable96499295=true') !== -1 || __isInternalPath || __isDevHost) {
         window.ym_disable96499295 = true;
       }
       if (document.cookie.indexOf('clarity_disable=true') !== -1 || __isInternalPath || __isBot || __isDevHost) {
@@ -124,35 +129,21 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     </script>
     {/* eagerMetrika: устанавливает глобальный флаг ДО инлайн-скрипта Метрики */}
     {eagerMetrika && <script is:inline>window.__ymEager=true;</script>}
-    <!-- Yandex.Metrika — lazy load: ym() stub queues calls until tag.js is fetched -->
+    <!-- Yandex.Metrika counter -->
+    <!-- ⏳ ВРЕМЕННО (с 2026-07-04, на пару дней): стандартный сниппет из Яндекс.Бизнеса
+         вместо lazy-load, чтобы проверка увидела счётчик. Вернуть lazy-load из git history. -->
     <script type="text/javascript" is:inline>
-      (function(m,i){
+      (function(m,e,t,r,i,k,a){
         m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
         m[i].l=1*new Date();
-      })(window,'ym');
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+      })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=96499295', 'ym');
+
       if (!window.ym_disable96499295 && !window._ymInited) {
         window._ymInited = true;
-        ym(96499295,'init',{clickmap:true,referrer:document.referrer,url:location.href,accurateTrackBounce:true,trackLinks:false});
+        ym(96499295, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
       }
-      (function(){
-        if(window.ym_disable96499295) return;
-        var loaded=false;
-        function loadYM(){
-          if(loaded) return; loaded=true;
-          var s=document.createElement('script'); s.async=1;
-          s.src='https://mc.yandex.ru/metrika/tag.js';
-          document.head.appendChild(s);
-        }
-        if(window.__ymEager){
-          /* eagerMetrika: load immediately */
-          loadYM();
-        } else {
-          var t=setTimeout(loadYM,8000);
-          ['scroll','click','touchstart','keydown'].forEach(function(e){
-            document.addEventListener(e,function(){clearTimeout(t);loadYM();},{once:true,passive:true});
-          });
-        }
-      })();
     </script>
     <noscript><div><img src="https://mc.yandex.ru/watch/96499295" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
     <!-- /Yandex.Metrika counter -->
