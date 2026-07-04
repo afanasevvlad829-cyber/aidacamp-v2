@@ -1,5 +1,5 @@
 ---
-import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, EMAIL, EMAIL_HREF, WHATSAPP_URL, TELEGRAM_URL } from '../data/contacts';
+import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, EMAIL, EMAIL_HREF, WHATSAPP_URL, TELEGRAM_URL, YANDEX_MAPS_URL, YANDEX_MAPS_ROUTE_URL } from '../data/contacts';
 
 const socials = [
   { abbr: 'VK', label: 'ВКонтакте', href: 'https://vk.com/aidacamp' },
@@ -23,6 +23,7 @@ const socials = [
 
     <div class="overflow-hidden rounded-[18px] border border-border">
       <iframe
+        id="contacts-map-frame"
         src="https://yandex.ru/map-widget/v1/?ll=37.160000%2C55.500000&z=8&pt=36.724185,55.265643,pm2rdm"
         width="100%"
         height="260"
@@ -32,7 +33,17 @@ const socials = [
         title="Расположение АйДаКемп на карте"
       ></iframe>
     </div>
-    <p class="mt-1.5 text-base md:text-base text-body-muted">
+    <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+      <a href={YANDEX_MAPS_ROUTE_URL} target="_blank" rel="noopener"
+         class="inline-flex items-center gap-2 rounded-xl bg-primary hover:bg-orange-400 px-5 py-2.5 text-base font-semibold text-white transition-colors">
+        <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
+        Построить маршрут
+      </a>
+      <a href={YANDEX_MAPS_URL} target="_blank" rel="noopener" class="text-base text-primary hover:underline">
+        Открыть в Яндекс.Картах
+      </a>
+    </div>
+    <p class="mt-2 text-base md:text-base text-body-muted">
       66 км от МКАД · Наро-Фоминский городской округ · территория «Санаторий Изумруд»
     </p>
 
@@ -119,4 +130,19 @@ const socials = [
   document.querySelectorAll('#contacts a[href*="t.me"]').forEach(function (a) {
     a.addEventListener('click', function () { if (window.trackGoal) window.trackGoal('telegram_click'); });
   });
+</script>
+
+<script is:inline>
+  // Взаимодействие с картой-iframe (клик/зум внутри cross-origin не виден):
+  // прокси-сигнал — окно теряет фокус, а активный элемент = iframe карты.
+  (function () {
+    var frame = document.getElementById('contacts-map-frame');
+    if (!frame) return;
+    window.addEventListener('blur', function onMapBlur() {
+      if (document.activeElement === frame && typeof window.trackGoal === 'function') {
+        window.trackGoal('map_interact', { page: location.pathname });
+        window.removeEventListener('blur', onMapBlur);
+      }
+    });
+  })();
 </script>
