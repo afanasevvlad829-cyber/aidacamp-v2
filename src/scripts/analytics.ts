@@ -54,6 +54,11 @@ export function initContactTracking(scope: string) {
   document.querySelectorAll<HTMLAnchorElement>(`${scope} a[href*="t.me"]`).forEach((a) => {
     a.addEventListener('click', () => trackGoal('telegram_click'));
   });
+  // Яндекс.Карты: клик по карте/адресу и «Построить маршрут» (rtext=) — горячий intent-сигнал
+  document.querySelectorAll<HTMLAnchorElement>(`${scope} a[href*="yandex.ru/maps"]`).forEach((a) => {
+    a.addEventListener('click', () =>
+      trackGoal(a.href.includes('rtext=') ? 'maps_route_click' : 'maps_click', { href: a.href.slice(0, 150), page: location.pathname }));
+  });
 }
 
 export function initScrollTracking() {

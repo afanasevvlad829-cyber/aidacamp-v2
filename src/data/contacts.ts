@@ -18,6 +18,9 @@ export const VK_URL = 'https://vk.com/aidacamp';
 export const INSTAGRAM_URL = 'https://www.instagram.com/aidacamp.ru/';
 
 export const YANDEX_MAPS_URL = 'https://yandex.ru/maps/?ll=36.724185,55.265643&z=15&pt=36.724185,55.265643,pm2rdm';
+// Маршрут «моё местоположение → лагерь» в Яндекс.Картах. Клик = горячий intent-сигнал
+// (цель maps_route_click: initContactTracking ловит rtext= в href).
+export const YANDEX_MAPS_ROUTE_URL = 'https://yandex.ru/maps/?rtext=~55.265643%2C36.724185&rtt=auto';
 
 export const STAT_YEARS = '5';           // лет работы (с 2021, синхронно с SchemaOrg foundingDate)
 export const STAT_KIDS = '1200+';        // детей
