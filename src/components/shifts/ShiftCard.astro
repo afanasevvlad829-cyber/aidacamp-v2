@@ -469,7 +469,15 @@ const daysLeft = startDate
         if (!id) return;
         saveRevealed(id);
         revealShift(id, true);
-        try { (window as any).ym?.(96499295, 'reachGoal', 'available_spots', { shift: id }); } catch {}
+        // trackGoal вместо прямого ym: цель уходит и в Метрику, и в /api/track → analytics_events
+        // (клик «проверить места» = сигнал заполненности в intent-скоринге горячих посетителей)
+        try {
+          if (typeof (window as any).trackGoal === 'function') {
+            (window as any).trackGoal('available_spots', { shift: id, page: location.pathname });
+          } else {
+            (window as any).ym?.(96499295, 'reachGoal', 'available_spots', { shift: id });
+          }
+        } catch {}
       });
     });
   }
