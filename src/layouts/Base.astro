@@ -273,6 +273,15 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
             a.addEventListener('click', function () { window.trackGoal('telegram_click'); });
           });
         };
+        // Яндекс.Карты: клик по любой ссылке на карты и «Построить маршрут» (rtext=) —
+        // горячий intent-сигнал («собирается ехать»). Делегирование: ловит все страницы
+        // и все места (hero-чип, контакты, сезонные карточки) без scope-инициализации.
+        document.addEventListener('click', function (e) {
+          var a = e.target && e.target.closest ? e.target.closest('a[href*="yandex.ru/maps"]') : null;
+          if (!a) return;
+          var goal = a.href.indexOf('rtext=') !== -1 ? 'maps_route_click' : 'maps_click';
+          window.trackGoal(goal, { href: a.href.slice(0, 150), page: location.pathname });
+        });
       })();
     </script>
     <!-- Novofon — отложенная загрузка (idle/после load/первое взаимодействие), чтобы не конкурировать с LCP -->
