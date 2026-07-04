@@ -22,7 +22,7 @@ DASH=r'[–—-]'
 # формы: "D1 mon1 [-] D2 mon2"  и  "D1[-]D2 mon"
 P_FULL=re.compile(r'(\d{1,2})\s+([а-яё]+)\s*'+DASH+r'\s*(\d{1,2})\s+([а-яё]+)')
 P_SHORT=re.compile(r'(\d{1,2})\s*'+DASH+r'\s*(\d{1,2})\s+([а-яё]+)')
-EXCL=('/demo/','/_archive','/corp/','/admin/','lanit','glass-','hyperui','design-','lager-na-osenie-kanikuly','lager-na-zimnie-kanikuly')
+EXCL=('/demo/','/_archive','/corp/','/admin/','lanit','glass-','hyperui','design-','lager-na-osennie-kanikuly','lager-na-zimnie-kanikuly','lager-na-vesennie-kanikuly')
 drift={}
 def chk(p,line,i,m,a_d,a_m,b_d,b_m,tok):
     if a_m is None or b_m is None: return

@@ -10,11 +10,35 @@ export default defineConfig({
   adapter: node({ mode: 'standalone' }),
   security: { checkOrigin: false },
   integrations: [
+    // Стабильные имена server-чанков (без content-hash). SSR-серверу кэш-бастинг
+    // не нужен (Node читает файлы с диска при старте), а хэш в имени ломал
+    // rsync-дельту при деплое: манифест-чанк ~150MB каждую сборку получал новое
+    // имя (в манифесте есть случайный key server islands) → rsync видел «новый
+    // файл» и гнал все ~150MB по сети (Matched data: 0). Со стабильными именами
+    // rsync делает дельта-передачу — уезжают только изменённые байты (~0.1MB).
+    // Client-бандл НЕ трогаем: браузерам хэш в имени обязателен для кэша.
+    // Замер 2026-07-03: rsync шага SSR 152.5MB → 93KB (Matched data: 152.4MB).
+    {
+      name: 'stable-server-chunk-names',
+      hooks: {
+        'astro:build:setup'({ vite, target }) {
+          if (target !== 'server') return;
+          vite.build ??= {};
+          vite.build.rollupOptions ??= {};
+          const ro = vite.build.rollupOptions;
+          const patch = (out) => ({ ...out, chunkFileNames: 'chunks/[name].mjs' });
+          ro.output = Array.isArray(ro.output)
+            ? ro.output.map(patch)
+            : patch(ro.output ?? {});
+        },
+      },
+    },
     sitemap({
       // Исключаем служебные и тестовые страницы из sitemap.xml
       // /admin/* — админка загрузки фото, /попробовать/ — внутренняя страница
       filter: (page) =>
         !page.includes('/admin/') &&
+        !page.includes('/portal/') && // приватный портал (302→login) — не в публичной карте
         !page.includes('/попробовать/') &&
         !page.includes('/%D0%BF%D0%BE%D0%BF%D1%80%D0%BE%D0%B1%D0%BE%D0%B2%D0%B0%D1%82%D1%8C/') &&
         !page.includes('/demo/') &&
@@ -85,11 +109,11 @@ export default defineConfig({
     },
   },
   build: {
-    // CSS инлайнится полностью в HTML — нет блокирующих запросов к CDN за CSS.
-    // Было: 'auto' (threshold 4KB) → Base.css 37KB уходил на CDN → блокировал рендер 1350мс.
-    // Теперь: 'always' → CSS в <style> в HTML → рендер начинается сразу.
-    // Минус: HTML тяжелее на ~70KB, но это компенсируется gzip и отсутствием round-trip к CDN.
-    inlineStylesheets: 'always',
+    // История: в мае 2026 при 'auto' Base.css 37KB уходил на CDN (cross-origin) и
+    // блокировал рендер 1350мс → переключили на 'always' (CSS в <style> в HTML).
+    // 2026-07-03: CDN отключён — вернули 'auto': CSS отдаётся same-origin с
+    // иммутабельным кэшем, HTML худеет на сотни KB, SSR-манифест 148MB → ~4MB.
+    inlineStylesheets: 'auto',
     // CDN отключён: cross-origin overhead (DNS+TCP+TLS к huhodirekeka.begetcdn.cloud)
     // замедляет LCP с 1.6s до 3.7s на мобильном тесте. Сервер в России → CDN не даёт
     // выигрыша в latency, только overhead. Откат 2026-05-24.

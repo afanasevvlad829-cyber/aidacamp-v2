@@ -33,9 +33,12 @@ interface Props {
   keywords: string[];
   image?: string;
   imageAlt?: string;
+  /** Сезонная мета вместо летней («смены июнь–август · от PRICE_MIN»):
+   *  чипы дат и цены сезона, ведут на #prezapis. Для осень/зима/весна. */
+  seasonMeta?: { dates: string; price: string };
 }
 
-const { h1, subtitle, breadcrumb, keywords, image, imageAlt = '' } = Astro.props;
+const { h1, subtitle, breadcrumb, keywords, image, imageAlt = '', seasonMeta } = Astro.props;
 
 const breadcrumbJsonLd = {
   "@context": "https://schema.org",
@@ -67,6 +70,23 @@ const breadcrumbJsonLd = {
     </div>
   )}
 
+  {/* Сезонное фото — подложка на ВЕСЬ hero. Затемнение градиентное, не сплошное:
+      плотнее слева (под текстом) и у низа, справа фото дышит. */}
+  {seasonMeta && image && (
+    <div class="absolute inset-0 z-[1]" aria-hidden="true">
+      <img
+        src={image}
+        alt=""
+        loading="eager"
+        fetchpriority="high"
+        class="h-full w-full object-cover"
+      />
+      <div class="absolute inset-0 bg-[#0d1a2b]/70 md:hidden"></div>
+      <div class="hidden md:block absolute inset-0 bg-gradient-to-r from-[#0d1a2b]/95 via-[#0d1a2b]/70 to-[#0d1a2b]/25"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-[#0d1a2b]/60 via-transparent to-transparent"></div>
+    </div>
+  )}
+
   <div class="relative z-10 mx-auto max-w-[1312px]">
     <div class="flex flex-col gap-8 lg:max-w-[680px]">
 
@@ -91,7 +111,7 @@ const breadcrumbJsonLd = {
         </h1>
 
         <!-- Subtitle -->
-        <p class="mt-4 text-[16px] md:text-[17px] text-white/70 leading-[1.6]">
+        <p class={`mt-4 text-[16px] md:text-[17px] leading-[1.6] ${seasonMeta ? 'text-white/90' : 'text-white/70'}`}>
           {subtitle}
         </p>
 
@@ -105,6 +125,9 @@ const breadcrumbJsonLd = {
           ))}
         </ul>
 
+        {/* Сезонное фото — фоновая подложка hero (см. блок выше); alt-текст для доступности */}
+        {seasonMeta && image && <span class="sr-only">{imageAlt}</span>}
+
 
         <!-- Meta line — кликабельные чипы -->
         <div class="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-base text-white/65">
@@ -113,13 +136,27 @@ const breadcrumbJsonLd = {
             {STAT_DISTANCE} от Москвы
           </a>
           <span class="text-white/30" aria-hidden="true">·</span>
-          <a href="/#shifts" class="hover:text-white/85 transition-colors">
-            смены {CAMP_SEASON}
-          </a>
-          <span class="text-white/30" aria-hidden="true">·</span>
-          <button type="button" data-shift-link="shift-2-1" class="hover:text-white/85 transition-colors cursor-pointer">
-            от {CAMP_PRICE_FROM}
-          </button>
+          {seasonMeta ? (
+            <>
+              <a href="#prezapis" class="hover:text-white/85 transition-colors">
+                {seasonMeta.dates}
+              </a>
+              <span class="text-white/30" aria-hidden="true">·</span>
+              <a href="#prezapis" class="hover:text-white/85 transition-colors">
+                {seasonMeta.price}
+              </a>
+            </>
+          ) : (
+            <>
+              <a href="/#shifts" class="hover:text-white/85 transition-colors">
+                смены {CAMP_SEASON}
+              </a>
+              <span class="text-white/30" aria-hidden="true">·</span>
+              <button type="button" data-shift-link="shift-2-1" class="hover:text-white/85 transition-colors cursor-pointer">
+                от {CAMP_PRICE_FROM}
+              </button>
+            </>
+          )}
           <span class="text-white/30" aria-hidden="true">·</span>
           <a href="https://vc.ru/gdekurs/1216219-top-20-detskih-letnih-it-lagerei-v-moskve-i-podmoskove" target="_blank" rel="noopener" class="flex items-center gap-1 hover:text-white/80 transition-colors">
             <i class="bi bi-trophy text-[11px]" aria-hidden="true"></i>
