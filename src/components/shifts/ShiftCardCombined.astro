@@ -33,9 +33,9 @@ const isAnyLow = shifts.some((s) => {
   return Math.round((s.occupied / t) * 100) >= 85;
 });
 
-// Status pill
+// Status pill — точное число НЕ показываем (05.07.2026), только качественный сигнал
 const statusPill = !isAnyLow && totalFree >= 10
-  ? { text: `${totalFree} мест`, cls: 'bg-emerald-100 text-emerald-700' }
+  ? { text: 'Места есть', cls: 'bg-emerald-100 text-emerald-700' }
   : isAnyLow
     ? { text: 'мест мало', cls: 'bg-[var(--color-primary-100)] text-[var(--color-primary-700)]' }
     : null;
@@ -99,10 +99,14 @@ const sizeCls = isMobile
               </span>
             </span>
             <span class={`font-semibold whitespace-nowrap ${freeColor}`}>
-              <span data-count-to={s.free}>{s.free}</span> мест
+              <span data-spots-num data-spots-shift={s.id} class="blur-[6px] transition-[filter] duration-300 select-none"><span data-count-to={s.free}>{s.free}</span> мест</span>
             </span>
           </div>
           <div class="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
+            <!-- Полосу НЕ блюрим: глобальный scroll-entrance скрипт (ShiftCard.astro)
+                 сам раскрывает [data-shift-bar] по IntersectionObserver через CSS
+                 !important — независимо от клика «узнать места». Трогать рискованно
+                 (сломает анимацию появления карточки). Число рядом уже заблюрено. -->
             <div data-shift-bar class={`h-full rounded-full ${barColor}`} style={`--bar-pct:${pct}%`}></div>
           </div>
         </a>

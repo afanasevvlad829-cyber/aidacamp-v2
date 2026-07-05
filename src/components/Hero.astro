@@ -67,7 +67,12 @@ const heroShiftsData = {
     var link = document.getElementById('returning-hero-link');
     if (!hint || !text || !link) return;
     var freePlural = s.free === 1 ? 'место' : s.free < 5 ? 'места' : 'мест';
-    text.textContent = 'Вы смотрели ' + s.name + ' · ' + s.free + ' ' + freePlural + ' · ' + s.dates;
+    // Число мест — блюром до раскрытия (05.07.2026). Спан появляется уже после
+    // глобального spotsInit() в Base.astro, поэтому проверяем sessionStorage сами.
+    var revealed = [];
+    try { revealed = JSON.parse(sessionStorage.getItem('ac:occ_revealed') || '[]'); } catch(e2) {}
+    var blurCls = revealed.indexOf(last) === -1 ? ' blur-[6px] transition-[filter] duration-300 select-none' : '';
+    text.innerHTML = 'Вы смотрели ' + s.name + ' · <span data-spots-num data-spots-shift="' + last + '" class="' + blurCls + '">' + s.free + ' ' + freePlural + '</span> · ' + s.dates;
     link.href = '/shifts/' + last + '/';
     hint.classList.remove('hidden');
   } catch(e) {}

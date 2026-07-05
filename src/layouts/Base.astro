@@ -282,6 +282,46 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
           var goal = a.href.indexOf('rtext=') !== -1 ? 'maps_route_click' : 'maps_click';
           window.trackGoal(goal, { href: a.href.slice(0, 150), page: location.pathname });
         });
+        // Число свободных мест скрыто блюром до клика «узнать места» — единый
+        // глобальный обработчик (05.07.2026), работает на любой странице для любого
+        // числа смен сразу: разметка [data-spots-num]/[data-spots-bar]/[data-spots-reveal-btn]
+        // с общим [data-spots-shift=<id>]. Раскрытие — на сессию (sessionStorage),
+        // синхронно между всеми страницами/карточками одной смены.
+        var SPOTS_KEY = 'ac:occ_revealed';
+        function spotsRevealed() {
+          try { return JSON.parse(sessionStorage.getItem(SPOTS_KEY) || '[]'); } catch (e) { return []; }
+        }
+        function spotsReveal(shiftId) {
+          document.querySelectorAll('[data-spots-num][data-spots-shift="' + shiftId + '"]').forEach(function (el) {
+            el.classList.remove('blur-[6px]');
+          });
+          document.querySelectorAll('[data-spots-bar][data-spots-shift="' + shiftId + '"]').forEach(function (el) {
+            el.style.width = el.dataset.spotsWidth || '0%';
+          });
+          document.querySelectorAll('[data-spots-reveal-btn][data-spots-shift="' + shiftId + '"]').forEach(function (el) {
+            el.classList.add('hidden');
+          });
+        }
+        function spotsInit() {
+          var revealed = spotsRevealed();
+          revealed.forEach(spotsReveal);
+        }
+        document.addEventListener('click', function (e) {
+          var btn = e.target && e.target.closest ? e.target.closest('[data-spots-reveal-btn]') : null;
+          if (!btn) return;
+          var shiftId = btn.dataset.spotsShift;
+          if (!shiftId) return;
+          var revealed = spotsRevealed();
+          if (!revealed.includes(shiftId)) {
+            revealed.push(shiftId);
+            try { sessionStorage.setItem(SPOTS_KEY, JSON.stringify(revealed)); } catch (e2) {}
+          }
+          spotsReveal(shiftId);
+          window.trackGoal('available_spots', { shift: shiftId });
+          if (btn.dataset.spotsLow === '1') window.trackGoal('viewed_low_availability', { shift: shiftId });
+        });
+        document.addEventListener('astro:page-load', spotsInit);
+        if (document.readyState !== 'loading') spotsInit();
       })();
     </script>
     <!-- Novofon — отложенная загрузка (idle/после load/первое взаимодействие), чтобы не конкурировать с LCP -->

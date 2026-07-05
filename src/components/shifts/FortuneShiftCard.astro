@@ -11,6 +11,12 @@ const { shiftId = 'shift-1' } = Astro.props;
 const shift = mainShifts.find((s) => s.id === shiftId) ?? mainShifts[0];
 const SHIFT_ID = shift.id;
 
+// Занятость fallback-карточки — было захардкожено "Осталось 3 места"/"width:91%"
+// (05.07.2026: чинил заодно с блюром — число разошлось с реальными данными shifts.ts).
+const fscTotal = shift.free + shift.occupied || 1;
+const fscPct = Math.round((shift.occupied / fscTotal) * 100);
+const fscFreeLabel = shift.free === 1 ? '1 место' : shift.free < 5 ? `${shift.free} места` : `${shift.free} мест`;
+
 const today = new Date();
 const currentPrice = getCurrentPrice(SHIFT_ID, today) ?? parseInt(shift.price.replace(/\D/g, ''), 10);
 const fortuneMode = process.env.FORTUNE_MODE ?? 'payment'; // 'payment' | 'lead'
@@ -184,10 +190,10 @@ const segData = SEGMENTS.map((seg, i) => {
     <div>
       <div class="flex justify-between text-base mb-1.5">
         <span class="text-body-muted">Занято</span>
-        <span class="font-bold text-primary">Осталось 3 места</span>
+        <span data-spots-num data-spots-shift={shift.id} class="font-bold text-primary blur-[6px] transition-[filter] duration-300 select-none">Осталось {fscFreeLabel}</span>
       </div>
       <div class="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
-        <div class="h-full rounded-full bg-primary" style="width:91%"></div>
+        <div class="h-full rounded-full bg-primary" style={`width:${fscPct}%`}></div>
       </div>
     </div>
     <!-- Price + CTA -->
