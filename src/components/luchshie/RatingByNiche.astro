@@ -20,6 +20,16 @@ const filters = [
   { id: 'creative',  label: 'Творчество',            icon: 'bi-palette' },
   { id: 'adventure', label: 'Приключения',           icon: 'bi-compass' },
 ];
+
+// Та же иконка, что у чипа-фильтра этой ниши — визуальный якорь у заголовка секции.
+const nicheIcon: Record<string, string> = Object.fromEntries(filters.map(f => [f.id, f.icon]));
+
+// Числовая цена из строки camp.priceFrom (например, у конкурента) — для сортировки; NaN, если цены нет, сортируется в конец.
+function priceNumber(priceFrom?: string): number {
+  if (!priceFrom) return Number.POSITIVE_INFINITY;
+  const digits = priceFrom.replace(/[^\d]/g, '');
+  return digits ? parseInt(digits, 10) : Number.POSITIVE_INFINITY;
+}
 ---
 
 <section class="mx-auto max-w-[1080px] px-4 pb-4" data-rating-root>
@@ -27,30 +37,43 @@ const filters = [
   <p class="text-[16px] text-body-muted leading-relaxed mb-5 max-w-[780px]">Собрали лагеря по нишам с проверяемыми фактами: год работы, цена «от» и оценка на Яндекс.Картах (данные на {asOf}). Оценку показываем только там, где у лагеря есть собственная карточка на Яндекс.Картах — свою оценку не придумываем.</p>
 
   <!-- Фильтры -->
-  <div class="flex flex-wrap gap-2 mb-8" data-rating-filters role="group" aria-label="Фильтр лагерей">
-    {filters.map((f) => (
-      <button
-        type="button"
-        data-filter={f.id}
-        class:list={[
-          'inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13.5px] font-medium border transition-colors',
-          f.id === 'all'
-            ? 'bg-orange-500 text-white border-orange-500'
-            : 'bg-white text-body-muted border-slate-200 hover:border-orange-300',
-        ]}
-        aria-pressed={f.id === 'all' ? 'true' : 'false'}
-      >
-        <i class={`bi ${f.icon} text-[12px]`} aria-hidden="true"></i>{f.label}
-      </button>
-    ))}
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-8">
+    <div class="flex flex-wrap gap-2" data-rating-filters role="group" aria-label="Фильтр лагерей">
+      {filters.map((f) => (
+        <button
+          type="button"
+          data-filter={f.id}
+          class:list={[
+            'inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13.5px] font-medium border transition-colors',
+            f.id === 'all'
+              ? 'bg-orange-500 text-white border-orange-500'
+              : 'bg-white text-body-muted border-slate-200 hover:border-orange-300',
+          ]}
+          aria-pressed={f.id === 'all' ? 'true' : 'false'}
+        >
+          <i class={`bi ${f.icon} text-[12px]`} aria-hidden="true"></i>{f.label}
+        </button>
+      ))}
+    </div>
+    <label class="flex items-center gap-2 text-[13.5px] text-body-muted">
+      Сортировать:
+      <select data-rating-sort class="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[13.5px] text-body">
+        <option value="default">По умолчанию</option>
+        <option value="price-asc">Сначала дешевле</option>
+        <option value="rating-desc">Сначала оценка выше</option>
+      </select>
+    </label>
   </div>
 
   {niches.map((niche) => (
     <div class="mb-10" data-niche-section={niche.id}>
-      <h3 class="text-[19px] md:text-[22px] font-bold text-body mb-4">{niche.label}</h3>
-      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <h3 class="flex items-center gap-2 text-[19px] md:text-[22px] font-bold text-body mb-4">
+        <i class={`bi ${nicheIcon[niche.id] ?? 'bi-grid'} text-orange-500 text-[17px]`} aria-hidden="true"></i>
+        {niche.label}
+      </h3>
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-niche-grid>
         {niche.camps.map((camp) => (
-          <article class="rounded-[16px] border border-slate-100 bg-white p-4 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+          <article class="rounded-[16px] border border-slate-100 bg-white p-4 shadow-[0_2px_8px_rgba(15,23,42,0.04)]" data-price={priceNumber(camp.priceFrom)} data-rating={camp.rating ?? 0}>
             <p class="font-semibold text-body leading-tight">{camp.name}</p>
             <p class="text-[13px] text-slate-400 mt-0.5">{camp.location}{camp.region ? ` · ${camp.region}` : ''}</p>
             <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2.5 text-[13px]">
@@ -98,5 +121,28 @@ const filters = [
         moreBlocks.forEach((b) => { (b as HTMLElement).hidden = f !== 'all'; });
       });
     });
+  });
+
+  // Сортировка карточек внутри каждой ниши — по цене (возрастание) или по оценке (убывание).
+  // "По умолчанию" возвращает исходный порядок (сортировка внутри ниши по оценке, как задано в данных).
+  document.querySelectorAll('[data-rating-sort]').forEach((select) => {
+    select.addEventListener('change', () => {
+      const mode = (select as HTMLSelectElement).value;
+      document.querySelectorAll('[data-niche-grid]').forEach((grid) => {
+        const cards = Array.from(grid.children) as HTMLElement[];
+        if (mode === 'price-asc') {
+          cards.sort((a, b) => parseFloat(a.dataset.price || 'Infinity') - parseFloat(b.dataset.price || 'Infinity'));
+        } else if (mode === 'rating-desc') {
+          cards.sort((a, b) => parseFloat(b.dataset.rating || '0') - parseFloat(a.dataset.rating || '0'));
+        } else {
+          cards.sort((a, b) => (Number(a.dataset.origIndex) || 0) - (Number(b.dataset.origIndex) || 0));
+        }
+        cards.forEach((c) => grid.appendChild(c));
+      });
+    });
+  });
+  // Запоминаем исходный порядок для возврата к "По умолчанию".
+  document.querySelectorAll('[data-niche-grid]').forEach((grid) => {
+    Array.from(grid.children).forEach((c, i) => { (c as HTMLElement).dataset.origIndex = String(i); });
   });
 </script>
