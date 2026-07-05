@@ -1,0 +1,42 @@
+---
+/**
+ * ItemListSchema — JSON-LD schema.org/ItemList для рейтинг-страницы /luchshie-detskie-lagerya.
+ * Только тир-1 (campNiches) — лагеря с полными данными и проверяемой оценкой.
+ * Без ссылок на конкурентов (item — LocalBusiness без url), только имя + AggregateRating.
+ */
+import type { CampNiche } from '../../data/luchshieCamps';
+
+interface Props {
+  niches: CampNiche[];
+}
+
+const { niches } = Astro.props;
+
+const itemListElement = niches
+  .flatMap((niche) => niche.camps)
+  .filter((camp) => camp.rating)
+  .map((camp, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    item: {
+      '@type': 'LocalBusiness',
+      name: camp.name,
+      address: camp.location,
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: camp.rating,
+        reviewCount: camp.reviews,
+        bestRating: 5,
+      },
+    },
+  }));
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Лучшие детские лагеря Подмосковья — рейтинг по оценкам Яндекс.Карт',
+  itemListElement,
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(schema)} />
