@@ -61,12 +61,12 @@ const sections = [
     h2: "Смены в Подмосковье летом 2026 — успевайте",
     text: `Лагерь работал с конца мая по август 2026. Сейчас к записи открыты две августовские смены — стоимость от ${PRICE_MIN} за 10 дней до ${PRICE_MAX} за 13 дней включает проживание, питание, полную IT-программу и активности. Июньские смены уже прошли — оставляем их в списке для истории.`,
     list: [
+      `Смена 3 — ${DATES_SHORT_S3}, 13 дней, ${PRICE_S3} (места есть)`,
+      `Смена 4 — ${DATES_SHORT_S4}, 10 дней, ${PRICE_S4} (места есть)`,
       `Смена 1 (завершена) — ${DATES_SHORT_S1}, 10 дней, ${PRICE_S1}`,
       `Смена 2 (завершена) — ${DATES_SHORT_S2}, 14 дней, ${PRICE_S2} (была самой популярной)`,
       `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, 7 дней, ${PRICE_S21}`,
-      `Смена 2.2 (завершена) — ${DATES_SHORT_S22}, 8 дней, ${PRICE_S22}`,
-      `Смена 3 — ${DATES_SHORT_S3}, 13 дней, ${PRICE_S3} (места есть)`,
-      `Смена 4 — ${DATES_SHORT_S4}, 10 дней, ${PRICE_S4} (места есть)`
+      `Смена 2.2 (завершена) — ${DATES_SHORT_S22}, 8 дней, ${PRICE_S22}`
     ]
   },
   {
@@ -166,6 +166,13 @@ const sections = [
   }
 ];
 
+const faqItems = [
+  { question: "Где находится лагерь в Подмосковье АйДаКемп?", answer: "Наро-Фоминский район, 66 км от МКАД по А-101 (Киевское шоссе). Санаторий «Изумруд»." },
+  { question: "Сколько стоит лагерь в Подмосковье 2026?", answer: `Открытые августовские смены — от ${PRICE_MIN} (10 дней) до ${PRICE_MAX} (13 дней). Всё включено.` },
+  { question: "Как добраться до лагеря в Подмосковье из Москвы?", answer: "На машине по А-101 (Калужское шоссе) — 40–60 минут от МКАД. Трансфер от м. Солнцево в день заезда. Электричка с Киевского вокзала до Апрелевки + такси 15 мин." },
+  { question: "Какая программа в загородном лагере Подмосковья?", answer: "Python, AI, Minecraft, Roblox, 3D-моделирование. 2 занятия в день + бассейн + активности." },
+];
+
 ---
 
 <LandingLayout
@@ -176,12 +183,7 @@ const sections = [
   canonical="https://aidacamp.ru/lager-v-podmoskove"
 >
   <Fragment slot="head">
-    <FAQSchema items={[
-    { q: "Где находится лагерь в Подмосковье АйДаКемп?", a: "Наро-Фоминский район, 66 км от МКАД по А-101 (Киевское шоссе). Санаторий «Изумруд»." },
-    { q: "Сколько стоит лагерь в Подмосковье 2026?", a: `Открытые августовские смены — от ${PRICE_MIN} (10 дней) до ${PRICE_MAX} (13 дней). Всё включено.` },
-    { q: "Как добраться до лагеря в Подмосковье из Москвы?", a: "На машине по А-101 (Калужское шоссе) — 40–60 минут от МКАД. Трансфер от м. Солнцево в день заезда. Электричка с Киевского вокзала до Апрелевки + такси 15 мин." },
-    { q: "Какая программа в загородном лагере Подмосковья?", a: "Python, AI, Minecraft, Roblox, 3D-моделирование. 2 занятия в день + бассейн + активности." }
-  ]} />
+    <FAQSchema items={faqItems.map(item => ({ q: item.question, a: item.answer }))} />
   </Fragment>
   <LandingHero slot="hero"
     h1="Летний лагерь в Подмосковье для детей 7–15 лет"
@@ -204,6 +206,29 @@ const sections = [
   <LandingTwoCol sections={sections} />
   <Gallery />
   <Shifts />
+
+  <section class="mx-auto max-w-[860px] px-4 py-10">
+    <div class="flex items-center gap-2 mb-6">
+      <div class="list-accent-dot"></div>
+      <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
+        Частые вопросы о лагере в Подмосковье
+      </h2>
+    </div>
+    <div class="space-y-4">
+      {faqItems.map((item) => (
+        <div class="rounded-[14px] border border-slate-200 bg-slate-50" data-faq-item>
+          <button type="button" data-faq-toggle class="flex w-full cursor-pointer items-center justify-between p-4 text-left text-base font-semibold text-slate-900" aria-expanded="false">
+            <span>{item.question}</span>
+            <span class="ml-3 shrink-0 text-lg text-slate-400 transition-transform duration-200" data-faq-icon aria-hidden="true">+</span>
+          </button>
+          <div class="px-4 pb-4 text-[16px] leading-[1.55] text-slate-600" data-faq-answer>
+            <p class="text-base leading-[1.7] text-slate-600">{item.answer}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
   <FAQ />
   <ShiftBookModal />
   <RelatedPages pages={getRelatedPages(Astro.url.pathname)} />
@@ -211,3 +236,23 @@ const sections = [
     <AskCta />
   </section>
 </LandingLayout>
+
+<script>
+  document.querySelectorAll('[data-faq-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = btn.closest('[data-faq-item]');
+      const answer = item.querySelector('[data-faq-answer]');
+      const icon = btn.querySelector('[data-faq-icon]');
+      const isOpen = btn.getAttribute('aria-expanded') === 'true';
+      if (isOpen) {
+        answer.classList.remove('is-open');
+        if (icon) icon.style.transform = '';
+        btn.setAttribute('aria-expanded', 'false');
+      } else {
+        answer.classList.add('is-open');
+        if (icon) icon.style.transform = 'rotate(45deg)';
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    });
+  });
+</script>
