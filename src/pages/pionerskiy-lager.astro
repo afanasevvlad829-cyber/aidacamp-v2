@@ -83,6 +83,14 @@ const sections = [
     ]
   }
 ];
+
+const faqItems = [
+  { question: "Есть ли сейчас пионерские лагеря?", answer: "Пионерских лагерей в советском смысле нет — но есть детские загородные лагеря с проживанием, которые выполняют ту же функцию: ребёнок уезжает на лето, живёт в коллективе, возвращается с новым опытом. АйДаКемп — IT-лагерь в Подмосковье, открыты августовские смены 10 и 13 дней, для детей 7–15 лет." },
+  { question: "Правда ли, что в лагерях пьют вожатые?", answer: "Нет. В современных коммерческих лагерях — жёсткий отбор персонала, договор с прямой ответственностью за детей, система отзывов на Яндексе где родители замечают всё. Страх «пьяной вожатой» — это образ из песни Бахыт-Компот 90-х, не из реальности 2026 года." },
+  { question: "Сколько стоит путёвка в лагерь?", answer: `В АйДаКемп — от ${PRICE_MIN} за 10-дневную смену. В стоимость включены проживание, питание, IT-программа, бассейн. По лицензии Минобрнауки возврат 13% через налоговый вычет — до ${VYCHET_MAX}.` },
+  { question: "Чем занимаются дети в современном лагере?", answer: "В АйДаКемп дети пишут код, создают игры и ботов по направлениям: Python, AI, Minecraft, Roblox & 3D. К концу смены каждый защищает реальный проект на хакатоне. Плюс — бассейн, спорт, квесты, командные активности." },
+  { question: "Как выбрать хороший детский лагерь?", answer: "Проверьте: наличие лицензии, отзывы на Яндекс.Картах (не только на сайте лагеря), договор с прописанными обязательствами, медработника на территории. АйДаКемп: лицензия Минобрнауки, рейтинг 5.0 на Яндексе (40+ отзывов), медработник 24/7, охраняемая территория." },
+];
 ---
 
 <LandingLayout
@@ -93,13 +101,7 @@ const sections = [
   canonical="https://aidacamp.ru/pionerskiy-lager/"
 >
   <Fragment slot="head">
-    <FAQSchema items={[
-    { q: "Есть ли сейчас пионерские лагеря?", a: "Пионерских лагерей в советском смысле нет — но есть детские загородные лагеря с проживанием, которые выполняют ту же функцию: ребёнок уезжает на лето, живёт в коллективе, возвращается с новым опытом. АйДаКемп — IT-лагерь в Подмосковье, открыты августовские смены 10 и 13 дней, для детей 7–15 лет." },
-    { q: "Правда ли, что в лагерях пьют вожатые?", a: "Нет. В современных коммерческих лагерях — жёсткий отбор персонала, договор с прямой ответственностью за детей, система отзывов на Яндексе где родители замечают всё. Страх «пьяной вожатой» — это образ из песни Бахыт-Компот 90-х, не из реальности 2026 года." },
-    { q: "Сколько стоит путёвка в лагерь?", a: `В АйДаКемп — от ${PRICE_MIN} за 10-дневную смену. В стоимость включены проживание, питание, IT-программа, бассейн. По лицензии Минобрнауки возврат 13% через налоговый вычет — до ${VYCHET_MAX}.` },
-    { q: "Чем занимаются дети в современном лагере?", a: "В АйДаКемп дети пишут код, создают игры и ботов по направлениям: Python, AI, Minecraft, Roblox & 3D. К концу смены каждый защищает реальный проект на хакатоне. Плюс — бассейн, спорт, квесты, командные активности." },
-    { q: "Как выбрать хороший детский лагерь?", a: "Проверьте: наличие лицензии, отзывы на Яндекс.Картах (не только на сайте лагеря), договор с прописанными обязательствами, медработника на территории. АйДаКемп: лицензия Минобрнауки, рейтинг 5.0 на Яндексе (40+ отзывов), медработник 24/7, охраняемая территория." }
-  ]} />
+    <FAQSchema items={faqItems.map(item => ({ q: item.question, a: item.answer }))} />
     <CourseSchema
       name="Пионерский лагерь — АйДаКемп IT-лагерь в Подмосковье"
       description="Детский IT-лагерь с проживанием в Подмосковье. Современный аналог пионерского лагеря: Python, AI, Minecraft, Roblox для детей 7–15 лет."
@@ -119,7 +121,50 @@ const sections = [
   <LandingTwoCol sections={sections} />
   <Gallery />
   <Shifts />
+
+  <section class="mx-auto max-w-[860px] px-4 py-10">
+    <div class="flex items-center gap-2 mb-6">
+      <div class="list-accent-dot"></div>
+      <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
+        Частые вопросы о пионерском лагере
+      </h2>
+    </div>
+    <div class="space-y-4">
+      {faqItems.map((item) => (
+        <div class="rounded-[14px] border border-slate-200 bg-slate-50" data-faq-item>
+          <button type="button" data-faq-toggle class="flex w-full cursor-pointer items-center justify-between p-4 text-left text-base font-semibold text-slate-900" aria-expanded="false">
+            <span>{item.question}</span>
+            <span class="ml-3 shrink-0 text-lg text-slate-400 transition-transform duration-200" data-faq-icon aria-hidden="true">+</span>
+          </button>
+          <div class="px-4 pb-4 text-[16px] leading-[1.55] text-slate-600" data-faq-answer>
+            <p class="text-base leading-[1.7] text-slate-600">{item.answer}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
   <FAQ />
   <ShiftBookModal />
   <RelatedPages pages={getRelatedPages(Astro.url.pathname)} />
 </LandingLayout>
+
+<script>
+  document.querySelectorAll('[data-faq-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = btn.closest('[data-faq-item]');
+      const answer = item.querySelector('[data-faq-answer]');
+      const icon = btn.querySelector('[data-faq-icon]');
+      const isOpen = btn.getAttribute('aria-expanded') === 'true';
+      if (isOpen) {
+        answer.classList.remove('is-open');
+        if (icon) icon.style.transform = '';
+        btn.setAttribute('aria-expanded', 'false');
+      } else {
+        answer.classList.add('is-open');
+        if (icon) icon.style.transform = 'rotate(45deg)';
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    });
+  });
+</script>
