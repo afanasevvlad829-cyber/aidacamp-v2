@@ -468,5 +468,17 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
   }
 </script>
 
+<script define:vars={{ isLowAvail, shiftId: shift.id }}>
+  // Честный трекинг вместо чужой цели available_spots (та привязана к клику
+  // «узнать места» на карточке смены на главной — на этой странице число
+  // и так видно сразу, кликать нечего). Цель viewed_low_availability (id 578514076)
+  // создана 04.07.2026 — фиксирует, что человек РЕАЛЬНО увидел дефицит.
+  function trackLowAvail() {
+    if (isLowAvail) (window).trackGoal?.('viewed_low_availability', { shift: shiftId });
+  }
+  document.addEventListener('astro:page-load', trackLowAvail);
+  if (document.readyState !== 'loading') trackLowAvail();
+</script>
+
 <!-- Цены обновляет глобальный DynamicPrices.astro (подключён через Base.astro) -->
 </Base>
