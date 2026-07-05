@@ -1,16 +1,40 @@
 ---
+import { mainShifts, shortShifts } from '../data/shifts';
+
 /**
  * NudgeBanner — догрев-плашка для повторщиков (2-й+ заход на сайт).
- * Нижняя плашка, A/B 50/50 (фиксируется за посетителем в localStorage: ac:nudge_ab):
- *   A (отзывы) → /kak-proshla-smena-2/  «Что пишут родители после смен»
- *   B (ТВ)     → /tv/                   «Наш директор — на федеральном ТВ»
- * События в Метрику 96499295: nudge_shown / nudge_click с параметром variant (A|B).
+ * Нижняя плашка, A/B(/C) поровну (фиксируется за посетителем в localStorage: ac:nudge_ab):
+ *   A (отзывы)  → /kak-proshla-smena-2/  «Что пишут родители после смен»
+ *   B (ТВ)      → /tv/                   «Наш директор — на федеральном ТВ»
+ *   C (дефицит) → /shifts/<id>/          «Смена N — осталось K мест» — ТОЛЬКО если
+ *     есть реально дефицитная смена (занятость ≥85%, добавлено 04.07.2026).
+ *     Цифра и ссылка вычисляются из shifts.ts на каждой сборке — не хардкод.
+ *     Если дефицитных смен нет — вариант C не показываем (не изображаем то, чего нет).
+ * События в Метрику 96499295: nudge_shown / nudge_click с параметром variant.
  * Показывается 1 раз за сессию, через 8 сек, только начиная со 2-го захода.
  */
-const ARMS = {
+function freeLabel(free: number) {
+  if (free === 1) return '1 место';
+  if (free < 5) return `${free} места`;
+  return `${free} мест`;
+}
+
+const scarceShift = [...mainShifts, ...shortShifts]
+  .filter((s) => s.free > 0 && Math.round((s.occupied / (s.free + s.occupied)) * 100) >= 85)
+  .sort((a, b) => a.free - b.free)[0];
+
+const ARMS: Record<string, { icon: string; text: string; cta: string; href: string }> = {
   A: { icon: 'bi-camera-reels', text: 'Что пишут родители после смен', cta: 'Посмотреть', href: '/kak-proshla-smena-1/' },
   B: { icon: 'bi-tv',           text: 'Наш директор — на федеральном ТВ, ОТР', cta: 'Смотреть', href: '/tv/' },
 };
+if (scarceShift) {
+  ARMS.C = {
+    icon: 'bi-people-fill',
+    text: `${scarceShift.name} — осталось ${freeLabel(scarceShift.free)}`,
+    cta: 'Забронировать',
+    href: `/shifts/${scarceShift.id}/`,
+  };
+}
 const armsJson = JSON.stringify(ARMS);
 ---
 
@@ -50,9 +74,10 @@ const armsJson = JSON.stringify(ARMS);
   const CLOSED_FLAG = 'ac:nudge_closed';  // закрыто в этой сессии
 
   function pickArm() {
+    const keys = Object.keys(ARMS);
     let arm = localStorage.getItem('ac:nudge_ab');
-    if (arm !== 'A' && arm !== 'B') {
-      arm = Math.random() < 0.5 ? 'A' : 'B';
+    if (!keys.includes(arm)) {
+      arm = keys[Math.floor(Math.random() * keys.length)];
       try { localStorage.setItem('ac:nudge_ab', arm); } catch {}
     }
     return arm;
