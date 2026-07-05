@@ -1,35 +1,51 @@
 ---
 /**
  * ItemListSchema — JSON-LD schema.org/ItemList для рейтинг-страницы /luchshie-detskie-lagerya.
- * Только тир-1 (campNiches) — лагеря с полными данными и проверяемой оценкой.
- * Без ссылок на конкурентов (item — LocalBusiness без url), только имя + AggregateRating.
+ * Тир-1 (campNiches) — полные карточки: имя + адрес + AggregateRating.
+ * Тир-2/тир-3 (compactCamps/catalogCamps) — тоже реальные оценки, но без адреса/локации
+ * в части записей, поэтому идут упрощёнными ListItem (только имя + AggregateRating, где есть рейтинг).
+ * Без ссылок на конкурентов (item — LocalBusiness без url), только факты.
  */
-import type { CampNiche } from '../../data/luchshieCamps';
+import type { CampNiche, CompactCamp, CatalogCamp } from '../../data/luchshieCamps';
 
 interface Props {
   niches: CampNiche[];
+  compactCamps?: CompactCamp[];
+  catalogCamps?: CatalogCamp[];
 }
 
-const { niches } = Astro.props;
+const { niches, compactCamps = [], catalogCamps = [] } = Astro.props;
 
-const itemListElement = niches
-  .flatMap((niche) => niche.camps)
-  .filter((camp) => camp.rating)
-  .map((camp, i) => ({
-    '@type': 'ListItem',
-    position: i + 1,
-    item: {
-      '@type': 'LocalBusiness',
-      name: camp.name,
-      address: camp.location,
+function toListItem(name: string, rating: number | undefined, reviews: number | undefined, address?: string) {
+  return {
+    '@type': 'LocalBusiness',
+    name,
+    ...(address ? { address } : {}),
+    ...(rating ? {
       aggregateRating: {
         '@type': 'AggregateRating',
-        ratingValue: camp.rating,
-        reviewCount: camp.reviews,
+        ratingValue: rating,
+        reviewCount: reviews,
         bestRating: 5,
       },
-    },
-  }));
+    } : {}),
+  };
+}
+
+const tier1 = niches.flatMap((niche) => niche.camps).filter((camp) => camp.rating)
+  .map((camp) => toListItem(camp.name, camp.rating, camp.reviews, camp.location));
+
+const tier2 = compactCamps.filter((camp) => camp.rating)
+  .map((camp) => toListItem(camp.name, camp.rating, camp.reviews, camp.location));
+
+const tier3 = catalogCamps.filter((camp) => camp.rating)
+  .map((camp) => toListItem(camp.name, camp.rating, camp.reviews, camp.location));
+
+const itemListElement = [...tier1, ...tier2, ...tier3].map((item, i) => ({
+  '@type': 'ListItem',
+  position: i + 1,
+  item,
+}));
 
 const schema = {
   '@context': 'https://schema.org',
