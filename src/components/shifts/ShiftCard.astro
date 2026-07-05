@@ -62,13 +62,15 @@ const freeLabel = isLowAvailability
   : `Свободно ${shift.free}`;
 
 // Status pill (правый верхний угол) — не показываем для nearest (info уже в баннере)
+// Точное число мест сюда НЕ выводим (05.07.2026) — иначе бейдж протекает мимо
+// блюра на полосе занятости ниже. Цифра доступна только через клик «узнать места».
 const statusPill = shift.nearest ? null
   : shift.statusType === 'short'
     ? { text: 'короткая', cls: 'bg-[var(--color-primary-100)] text-[var(--color-primary-700)]' }
     : isLowAvailability
-      ? { text: `Осталось ${shift.free}`, cls: 'bg-orange-100 text-orange-700 font-bold' }
+      ? { text: 'Мало мест', cls: 'bg-orange-100 text-orange-700 font-bold' }
       : shift.free >= 10
-        ? { text: `${shift.free} мест`, cls: 'bg-emerald-100 text-emerald-700' }
+        ? { text: 'Места есть', cls: 'bg-emerald-100 text-emerald-700' }
         : null;
 
 // CTA — primary (orange) для nearest/popular/low_avail, иначе ghost (Что внутри смены)
