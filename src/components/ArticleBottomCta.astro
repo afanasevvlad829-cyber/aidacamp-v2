@@ -11,7 +11,7 @@
  */
 
 import AskCta from './AskCta.astro';
-import { mainShifts } from '../data/shifts';
+import { mainShifts, getAvailabilityLevel } from '../data/shifts';
 import { reviews as allReviews } from '../data/reviews';
 import ShiftsGuideLink from './ShiftsGuideLink.astro';
 
@@ -65,7 +65,9 @@ const upcomingShifts = mainShifts
       </div>
 
       <div class="mt-4 space-y-3">
-        {upcomingShifts.length > 0 ? upcomingShifts.map(shift => (
+        {upcomingShifts.length > 0 ? upcomingShifts.map(shift => {
+          const isSoldOut = getAvailabilityLevel(shift) === 'soldout';
+          return (
           <a href="/ceny/" class="block rounded-[12px] bg-card border border-border-light p-3.5 hover:border-orange-200 hover:shadow-[0_4px_12px_rgba(236,124,0,0.1)] transition-all group">
             <div class="flex items-baseline justify-between gap-2">
               <p class="text-base font-bold text-body">
@@ -76,11 +78,21 @@ const upcomingShifts = mainShifts
             </div>
             <p class="mt-1 text-base text-body-faint">{shift.dates} · {shift.duration}</p>
             <p class="mt-2 inline-flex items-center gap-1.5 text-base text-body-muted">
-              <i class="bi bi-circle-fill text-[6px] text-emerald-500"></i>
-              <span>Свободно <span data-spots-num data-spots-shift={shift.id} class="blur-[6px] transition-[filter] duration-300 select-none">{shift.free} мест</span></span>
+              {isSoldOut ? (
+                <Fragment>
+                  <i class="bi bi-circle-fill text-[6px] text-slate-400"></i>
+                  <span>Мест нет · <span class="text-primary underline">лист ожидания</span></span>
+                </Fragment>
+              ) : (
+                <Fragment>
+                  <i class="bi bi-circle-fill text-[6px] text-emerald-500"></i>
+                  <span>Свободно <span data-spots-num data-spots-shift={shift.id} class="blur-[6px] transition-[filter] duration-300 select-none">{shift.free} мест</span></span>
+                </Fragment>
+              )}
             </p>
           </a>
-        )) : (
+          );
+        }) : (
           <p class="text-base text-body-faint">Смены 2026 ещё не открыты</p>
         )}
       </div>
