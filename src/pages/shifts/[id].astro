@@ -132,7 +132,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
       <div class="mx-auto flex max-w-4xl items-center justify-between gap-2">
         <div class="flex min-w-0 flex-1 items-center justify-center gap-1.5 flex-wrap">
           <i class="bi bi-lightning-charge text-base shrink-0" aria-hidden="true"></i>
-          <span>Осталось {shift.free} {shift.free === 1 ? 'место' : shift.free < 5 ? 'места' : 'мест'} · Старт 30 мая ·</span>
+          <span>Осталось <span data-spots-num data-spots-shift={shift.id} class="blur-[6px] transition-[filter] duration-300 select-none">{shift.free} {shift.free === 1 ? 'место' : shift.free < 5 ? 'места' : 'мест'}</span> · Старт 30 мая ·</span>
           <a href="#booking" class="underline underline-offset-2 hover:text-white/90 transition-colors whitespace-nowrap">Забронировать →</a>
         </div>
         <button
@@ -192,7 +192,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
           <div class="mb-3 block">
             <span class="inline-flex items-center gap-1.5 rounded-full bg-orange-600 backdrop-blur-md px-3 py-1 text-base font-semibold text-white">
               <i class="bi bi-people-fill text-base" aria-hidden="true"></i>
-              Осталось {shift.free} {shift.free === 1 ? 'место' : shift.free < 5 ? 'места' : 'мест'}
+              Осталось <span data-spots-num data-spots-shift={shift.id} class="blur-[6px] transition-[filter] duration-300 select-none">{shift.free} {shift.free === 1 ? 'место' : shift.free < 5 ? 'места' : 'мест'}</span>
             </span>
           </div>
         )}
@@ -200,7 +200,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
           <div class="mb-3 block">
             <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/90 backdrop-blur-md px-3 py-1 text-base font-semibold text-white">
               <i class="bi bi-people-fill text-base" aria-hidden="true"></i>
-              Осталось {shift.free} мест
+              Осталось <span data-spots-num data-spots-shift={shift.id} class="blur-[6px] transition-[filter] duration-300 select-none">{shift.free} мест</span>
             </span>
           </div>
         )}
@@ -230,17 +230,20 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
             <span class="hidden text-[11px] font-semibold text-orange-300 mt-0.5" data-price-urgency={shift.id}></span>
           </div>
 
-          <!-- Occupancy -->
+          <!-- Occupancy — число и заполненность полосы скрыты блюром до клика «узнать места» -->
           <div class="flex flex-col">
             <div class="flex justify-between mb-2 text-base">
               <span class="text-white/75">Свободно мест</span>
-              <span class={isLowAvail ? 'text-orange-300 font-semibold' : 'text-emerald-300 font-semibold'}>
+              <span data-spots-num data-spots-shift={shift.id} class={`blur-[6px] transition-[filter] duration-300 select-none ${isLowAvail ? 'text-orange-300 font-semibold' : 'text-emerald-300 font-semibold'}`}>
                 {isLowAvail ? `Осталось ${shift.free}` : `${shift.free}`}
               </span>
             </div>
             <div class="h-2 w-full overflow-hidden rounded-full bg-white/15">
-              <div class={`h-full ${isLowAvail ? 'bg-orange-400' : 'bg-emerald-400'} rounded-full`} style={`width:${occupiedPct}%`}></div>
+              <div data-spots-bar data-spots-shift={shift.id} data-spots-width={`${occupiedPct}%`} class={`h-full ${isLowAvail ? 'bg-orange-400' : 'bg-emerald-400'} rounded-full transition-[width] duration-500`} style="width:0%"></div>
             </div>
+            <button type="button" data-spots-reveal-btn data-spots-shift={shift.id} data-spots-low={isLowAvail ? '1' : undefined} class="mt-1.5 self-start text-[12px] font-semibold text-white/70 hover:text-white underline underline-offset-2 transition-colors">
+              Узнать точное число мест
+            </button>
           </div>
 
           <!-- Primary CTA -->
@@ -354,7 +357,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
       <div class="mx-auto max-w-[640px] px-5 py-12 md:px-8 md:py-20">
         <div class="rounded-[20px] bg-card p-6 md:p-8 card-shadow">
           <h3 class="text-[24px] md:text-[28px] font-bold text-body mb-2">Забронировать {shift.name}</h3>
-          <p class="text-base text-body-muted mb-5">{shift.dates} · {shift.duration} {isLowAvail && (<span class="text-orange-700 font-semibold"> · Осталось {shift.free} {shift.free === 1 ? 'место' : shift.free < 5 ? 'места' : 'мест'}</span>)}</p>
+          <p class="text-base text-body-muted mb-5">{shift.dates} · {shift.duration} {isLowAvail && (<span class="text-orange-700 font-semibold"> · Осталось <span data-spots-num data-spots-shift={shift.id} class="blur-[6px] transition-[filter] duration-300 select-none">{shift.free} {shift.free === 1 ? 'место' : shift.free < 5 ? 'места' : 'мест'}</span></span>)}</p>
 
           <div class="flex items-baseline gap-3 mb-2">
             <span class="text-[36px] font-extrabold tracking-[-0.02em] text-body" data-dynamic-price={shift.id}>{ssrPriceFmt}</span>
@@ -468,17 +471,8 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
   }
 </script>
 
-<script define:vars={{ isLowAvail, shiftId: shift.id }}>
-  // Честный трекинг вместо чужой цели available_spots (та привязана к клику
-  // «узнать места» на карточке смены на главной — на этой странице число
-  // и так видно сразу, кликать нечего). Цель viewed_low_availability (id 578514076)
-  // создана 04.07.2026 — фиксирует, что человек РЕАЛЬНО увидел дефицит.
-  function trackLowAvail() {
-    if (isLowAvail) (window).trackGoal?.('viewed_low_availability', { shift: shiftId });
-  }
-  document.addEventListener('astro:page-load', trackLowAvail);
-  if (document.readyState !== 'loading') trackLowAvail();
-</script>
+<!-- Раскрытие блюра мест обрабатывает глобальный делегированный обработчик в Base.astro
+     (клик по [data-spots-reveal-btn]) — свой скрипт здесь не нужен. -->
 
 <!-- Цены обновляет глобальный DynamicPrices.astro (подключён через Base.astro) -->
 </Base>

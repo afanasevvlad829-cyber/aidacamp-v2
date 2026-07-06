@@ -19,9 +19,15 @@ function freeLabel(free: number) {
   return `${free} мест`;
 }
 
-const scarceShift = [...mainShifts, ...shortShifts]
-  .filter((s) => s.free > 0 && Math.round((s.occupied / (s.free + s.occupied)) * 100) >= 85)
-  .sort((a, b) => a.free - b.free)[0];
+// Вариант C временно СКРЫТ по решению владельца (05.07.2026): число мест теперь
+// везде под блюром/кликом, отдельная плашка с открытым числом — лишний канал
+// утечки той же информации. Код оставлен (не удалён) — вернуть = SHOW_SCARCITY_ARM=true.
+const SHOW_SCARCITY_ARM = false;
+const scarceShift = SHOW_SCARCITY_ARM
+  ? [...mainShifts, ...shortShifts]
+      .filter((s) => s.free > 0 && Math.round((s.occupied / (s.free + s.occupied)) * 100) >= 85)
+      .sort((a, b) => a.free - b.free)[0]
+  : undefined;
 
 const ARMS: Record<string, { icon: string; text: string; cta: string; href: string }> = {
   A: { icon: 'bi-camera-reels', text: 'Что пишут родители после смен', cta: 'Посмотреть', href: '/kak-proshla-smena-1/' },

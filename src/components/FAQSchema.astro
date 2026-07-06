@@ -21,6 +21,10 @@ interface Props {
 const { items } = Astro.props;
 const resolvedItems = items ?? faqFlat;
 
+// Schema.org Text — только чистый текст; HTML-теги (напр. <a> в ответах с
+// ссылками) ломают парсинг JSON-LD у html-minifier-terser и невалидны по спеке.
+const stripHtml = (s: string) => s.replace(/<[^>]+>/g, '');
+
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -29,7 +33,7 @@ const faqSchema = {
     name: item.q,
     acceptedAnswer: {
       '@type': 'Answer',
-      text: item.a,
+      text: stripHtml(item.a),
     },
   })),
 };
