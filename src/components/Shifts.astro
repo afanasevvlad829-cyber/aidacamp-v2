@@ -93,7 +93,7 @@ const nowDate = new Date();
             клиентским скриптом ниже по правилу (последние 3 дня + ≤3 места) или по ?fortune=wheel. */}
         {displayShifts.map((shift) => {
           const phase = getShiftPhase(shift.id, nowDate);
-          const withFortune = phase === 'upcoming' && shift.nearest;
+          const withFortune = phase === 'upcoming' && shift.nearest && shift.free > 0;
           return (
             <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch" data-shift-id={shift.id}>
               {phase !== 'upcoming' ? (
@@ -366,9 +366,10 @@ const nowDate = new Date();
         if (bookDuration) bookDuration.textContent = el.dataset.shiftBookDuration || '';
         if (bookPrice) bookPrice.textContent = el.dataset.shiftBookPrice || '';
         if (bookShiftBlock) bookShiftBlock.classList.toggle('hidden', !name);
+        (bookModal as HTMLElement).dataset.waitlist = el.dataset.shiftWaitlist === 'true' ? 'true' : 'false';
         showShiftToast(name);
         bookModal.showModal();
-        (window as any).trackGoal?.('shift_book_click', { shift: name }, 500);
+        (window as any).trackGoal?.(el.dataset.shiftWaitlist === 'true' ? 'waitlist_click' : 'shift_book_click', { shift: name }, 500);
       });
     });
 

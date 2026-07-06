@@ -24,6 +24,26 @@ export interface Shift {
   priceTo?: string;    // последняя цена (на старте) для блока «как росла цена»
 }
 
+/**
+ * Единый расчёт доступности смены — вместо дублирования порога 85% в каждом компоненте.
+ * free <= 0 → распродано (лист ожидания); occupied% >= 85 → мало мест; иначе — места есть.
+ */
+export type AvailabilityLevel = 'available' | 'low' | 'soldout';
+
+export function getAvailabilityLevel(shift: Pick<Shift, 'free' | 'occupied'>): AvailabilityLevel {
+  if (shift.free <= 0) return 'soldout';
+  const total = shift.occupied + shift.free;
+  const pct = total > 0 ? Math.round((shift.occupied / total) * 100) : 0;
+  return pct >= 85 ? 'low' : 'available';
+}
+
+export function getAvailabilityLabel(shift: Pick<Shift, 'free' | 'occupied'>): string {
+  const level = getAvailabilityLevel(shift);
+  if (level === 'soldout') return 'Мест нет';
+  if (level === 'low') return 'Мало мест';
+  return 'Места есть';
+}
+
 // Завершённые смены — данные сохранены для констант (PRICE_S1/S2 и т.д.), не показываются в UI
 const _shift1: Shift = {
   id: 'shift-1', name: 'Смена 1', dates: '30 мая — 8 июня', duration: '10 дней',
@@ -58,11 +78,11 @@ export const mainShifts: Shift[] = [
     name: 'Смена 3',
     dates: '3 августа — 15 августа',
     duration: '13 дней',
-    status: 'места есть',
+    status: 'мест нет',
     statusType: 'available',
     description: 'Проект от идеи до результата с акцентом на командную работу.',
     price: '89 400 ₽',
-    free: 4,
+    free: 0,
     occupied: 41,
     highlighted: true,
     nearest: true,

@@ -28,6 +28,13 @@ import CallTimeSelector from '../CallTimeSelector.astro';
         </div>
       </div>
 
+      <!-- Лист ожидания — объяснение, показывается только в waitlist-режиме (см. modal.dataset.waitlist) -->
+      <div class="hidden mt-3 rounded-[14px] border border-slate-200 bg-white p-3" data-book-waitlist-block>
+        <p class="text-base leading-[1.5] text-slate-600">
+          Смена распродана. Обычно к её старту 2–3 семьи отказываются от путёвки по разным причинам — освободившиеся места предлагаем по листу ожидания, в порядке очереди. Оставьте заявку — позвоним, как только появится место.
+        </p>
+      </div>
+
       <!-- Age — без предвыбора, обязателен -->
       <p class="mt-4 text-base font-semibold text-slate-700">Возраст</p>
       <div class="mt-2 flex gap-2" data-book-age-group>
@@ -102,8 +109,12 @@ import CallTimeSelector from '../CallTimeSelector.astro';
     const hintAge = modal.querySelector<HTMLElement>('[data-book-hint-age]');
     const hintPhone = modal.querySelector<HTMLElement>('[data-book-hint-phone]');
     const hintConsent = modal.querySelector<HTMLElement>('[data-book-hint-consent]');
+    const waitlistBlock = modal.querySelector<HTMLElement>('[data-book-waitlist-block]');
 
     let selectedAge = '';
+
+    function isWaitlist() { return modal.dataset.waitlist === 'true'; }
+    function submitLabel() { return isWaitlist() ? 'Оставить заявку в лист ожидания' : 'Отправить заявку'; }
 
     function resetForm() {
       selectedAge = '';
@@ -115,6 +126,8 @@ import CallTimeSelector from '../CallTimeSelector.astro';
       hintPhone?.classList.add('hidden');
       hintConsent?.classList.add('hidden');
       errEl?.classList.add('hidden');
+      waitlistBlock?.classList.toggle('hidden', !isWaitlist());
+      if (submit) submit.textContent = submitLabel();
       // Сброс CallTimeSelector (чипы + closure-переменные)
       modal.querySelector('.call-time-selector')?.dispatchEvent(new CustomEvent('call-time:reset'));
     }
@@ -178,7 +191,7 @@ import CallTimeSelector from '../CallTimeSelector.astro';
           phone: phone?.value || '',
           age: selectedAge,
           shift: nameEl?.textContent || '',
-          form: 'shifts_book',
+          form: isWaitlist() ? 'shifts_book_waitlist' : 'shifts_book',
           call_time: callTimeInput?.value || '',
         });
         modal.close();
@@ -192,7 +205,7 @@ import CallTimeSelector from '../CallTimeSelector.astro';
         }
       } finally {
         submit.disabled = false;
-        submit.textContent = 'Отправить заявку';
+        submit.textContent = submitLabel();
       }
     });
 

@@ -1,6 +1,6 @@
 ---
 import type { Shift } from '../../data/shifts';
-import { renderCard, PEER_COUNTS } from '../../data/shifts';
+import { renderCard, PEER_COUNTS, getAvailabilityLevel } from '../../data/shifts';
 import { pluralDays } from '../../utils/plural';
 import { getTaxDeduction, getCurrentPrice, getNextDayPrice, getDays, fmtPrice } from '../../data/dynamicPrices';
 
@@ -18,7 +18,9 @@ const ssrPrice     = getCurrentPrice(shift.id);
 const ssrPriceFmt  = ssrPrice ? fmtPrice(ssrPrice) : shift.price;
 
 const isMobile = variant === 'mobile';
-const isLowAvailability = pct >= 85;
+const availability = getAvailabilityLevel(shift);
+const isSoldOut = availability === 'soldout';
+const isLowAvailability = availability === 'low';
 
 // Номер смены: 'shift-3' → '3', 'shift-2-1' → '2.1'
 const shiftNum = shift.id.replace('shift-', '').replace('-', '.');
@@ -41,13 +43,15 @@ const priceGrowsToday = nextDayPrice !== null;
 const priceGrowsDiff = nextDayPrice && ssrPrice ? nextDayPrice - ssrPrice : 0;
 
 // Ring/border вариант
-const ringCls = shift.nearest
-  ? 'ring-2 ring-primary border-transparent shadow-[0_0_0_4px_rgba(236,124,0,0.12)]'
-  : shift.popular
-    ? 'ring-2 ring-primary/70 border-transparent'
-    : isLowAvailability
-      ? 'ring-1 ring-primary/40 border-primary/30'
-      : 'border-border-light';
+const ringCls = isSoldOut
+  ? 'border-border-light opacity-90'
+  : shift.nearest
+    ? 'ring-2 ring-primary border-transparent shadow-[0_0_0_4px_rgba(236,124,0,0.12)]'
+    : shift.popular
+      ? 'ring-2 ring-primary/70 border-transparent'
+      : isLowAvailability
+        ? 'ring-1 ring-primary/40 border-primary/30'
+        : 'border-border-light';
 
 // Mobile vs desktop wrapper sizing
 const sizeCls = isMobile
@@ -64,7 +68,9 @@ const freeLabel = isLowAvailability
 // Status pill (правый верхний угол) — не показываем для nearest (info уже в баннере)
 // Точное число мест сюда НЕ выводим (05.07.2026) — иначе бейдж протекает мимо
 // блюра на полосе занятости ниже. Цифра доступна только через клик «узнать места».
-const statusPill = shift.nearest ? null
+const statusPill = isSoldOut
+  ? { text: 'Мест нет', cls: 'bg-slate-200 text-slate-600 font-bold' }
+  : shift.nearest ? null
   : shift.statusType === 'short'
     ? { text: 'короткая', cls: 'bg-[var(--color-primary-100)] text-[var(--color-primary-700)]' }
     : isLowAvailability
@@ -130,30 +136,38 @@ const daysLeft = startDate
   <p class="mt-0.5 text-base text-body-muted">{shift.duration}</p>
 
   <!-- OCCUPANCY BAR — скрыто блюром до клика «узнать места» (раскрытие на сессию, синхронно по data-occ-shift) -->
-  <div class="mt-4 relative min-h-[40px]" data-occupancy data-occ-shift={shift.id}>
-    <div data-occ-content class="occ-cover transition-[filter,opacity] duration-300">
-      <div class="flex justify-between text-[12px] mb-1.5">
-        <span class="text-body-faint whitespace-nowrap" data-occ-status-slot data-occ-default="Занято">Занято</span>
-        <span data-occ-num class:list={['font-semibold', isLowAvailability ? 'text-primary' : 'text-emerald-600']}>
-          {isLowAvailability
-            ? <Fragment>Осталось <span data-count-to={shift.free}>{shift.free}</span></Fragment>
-            : <Fragment><span data-count-to={shift.occupied}>{shift.occupied}</span> из {total}</Fragment>
-          }
-        </span>
-      </div>
+  {isSoldOut ? (
+    <div class="mt-4 flex items-center gap-1.5 min-h-[40px]">
       <div class="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
-        <div data-shift-bar class:list={['h-full rounded-full', isLowAvailability ? 'bg-primary' : 'bg-emerald-400']} style={`--bar-pct:${pct}%`}></div>
+        <div class="h-full w-full rounded-full bg-slate-400"></div>
       </div>
     </div>
-    <button type="button" data-occ-reveal
-      class="absolute inset-0 z-10 flex items-center justify-center gap-1.5 rounded-lg text-[12px] font-semibold text-primary hover:text-primary-hover transition-colors"
-      aria-label="Узнать число свободных мест в этой смене">
-      <span data-occ-icon class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/40 bg-primary/5">
-        <i class="bi bi-search text-[10px]" aria-hidden="true"></i>
-      </span>
-      <span data-occ-label>узнать места</span>
-    </button>
-  </div>
+  ) : (
+    <div class="mt-4 relative min-h-[40px]" data-occupancy data-occ-shift={shift.id}>
+      <div data-occ-content class="occ-cover transition-[filter,opacity] duration-300">
+        <div class="flex justify-between text-[12px] mb-1.5">
+          <span class="text-body-faint whitespace-nowrap" data-occ-status-slot data-occ-default="Занято">Занято</span>
+          <span data-occ-num class:list={['font-semibold', isLowAvailability ? 'text-primary' : 'text-emerald-600']}>
+            {isLowAvailability
+              ? <Fragment>Осталось <span data-count-to={shift.free}>{shift.free}</span></Fragment>
+              : <Fragment><span data-count-to={shift.occupied}>{shift.occupied}</span> из {total}</Fragment>
+            }
+          </span>
+        </div>
+        <div class="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
+          <div data-shift-bar class:list={['h-full rounded-full', isLowAvailability ? 'bg-primary' : 'bg-emerald-400']} style={`--bar-pct:${pct}%`}></div>
+        </div>
+      </div>
+      <button type="button" data-occ-reveal
+        class="absolute inset-0 z-10 flex items-center justify-center gap-1.5 rounded-lg text-[12px] font-semibold text-primary hover:text-primary-hover transition-colors"
+        aria-label="Узнать число свободных мест в этой смене">
+        <span data-occ-icon class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/40 bg-primary/5">
+          <i class="bi bi-search text-[10px]" aria-hidden="true"></i>
+        </span>
+        <span data-occ-label>узнать места</span>
+      </button>
+    </div>
+  )}
 
   <!-- PRICE -->
   <div class="mt-4 flex-1 flex flex-col justify-end">
@@ -190,20 +204,36 @@ const daysLeft = startDate
   </p>
 
   <!-- CTA: полная ширина снизу -->
-  <a
-    href={`/shifts/${shift.id}/`}
-    data-analytics-goal="shift_card_click"
-    data-analytics-label={shift.name}
-    class:list={[
-      'group/cta mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl py-3 text-base font-semibold transition-colors min-h-[44px] no-underline',
-      isPrimaryCta
-        ? 'bg-primary hover:bg-primary-hover text-white'
-        : 'border border-border bg-transparent hover:border-primary/40 hover:bg-primary/5 text-body-muted hover:text-primary',
-    ]}
-  >
-    {isPrimaryCta ? 'Выбрать' : 'Что внутри?'}
-    <i class="bi bi-arrow-right text-base transition-transform group-hover/cta:translate-x-1" aria-hidden="true"></i>
-  </a>
+  {isSoldOut ? (
+    <button
+      type="button"
+      data-shift-book={shift.id}
+      data-shift-book-name={shift.name}
+      data-shift-book-dates={shift.dates}
+      data-shift-book-duration={shift.duration}
+      data-shift-book-price={ssrPriceFmt}
+      data-shift-waitlist="true"
+      class="group/cta mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-transparent py-3 text-base font-semibold text-slate-700 transition-colors min-h-[44px] hover:bg-slate-50"
+    >
+      Лист ожидания
+      <i class="bi bi-arrow-right text-base transition-transform group-hover/cta:translate-x-1" aria-hidden="true"></i>
+    </button>
+  ) : (
+    <a
+      href={`/shifts/${shift.id}/`}
+      data-analytics-goal="shift_card_click"
+      data-analytics-label={shift.name}
+      class:list={[
+        'group/cta mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl py-3 text-base font-semibold transition-colors min-h-[44px] no-underline',
+        isPrimaryCta
+          ? 'bg-primary hover:bg-primary-hover text-white'
+          : 'border border-border bg-transparent hover:border-primary/40 hover:bg-primary/5 text-body-muted hover:text-primary',
+      ]}
+    >
+      {isPrimaryCta ? 'Выбрать' : 'Что внутри?'}
+      <i class="bi bi-arrow-right text-base transition-transform group-hover/cta:translate-x-1" aria-hidden="true"></i>
+    </a>
+  )}
 
 </article>
 

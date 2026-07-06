@@ -13,7 +13,7 @@ import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import ShiftBookModal from '../../components/shifts/ShiftBookModal.astro';
 import ShiftTimeline from '../../components/shifts/ShiftTimeline.astro';
-import { allShifts, shiftInfo, type Shift } from '../../data/shifts';
+import { allShifts, shiftInfo, type Shift, getAvailabilityLevel } from '../../data/shifts';
 import { getCurrentPrice, getTaxDeduction, fmtPrice } from '../../data/dynamicPrices';
 
 export async function getStaticPaths() {
@@ -34,6 +34,7 @@ const info = shiftInfo[shift.id];
 const total = (shift.free || 0) + (shift.occupied || 0) || 1;
 const occupiedPct = Math.round((shift.occupied / total) * 100);
 const isLowAvail = occupiedPct >= 85;
+const isSoldOut = getAvailabilityLevel(shift) === 'soldout';
 
 // Парсинг дат для крупного отображения «10—23 июня»
 const months: Record<string, string> = {
@@ -230,21 +231,33 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
             <span class="hidden text-[11px] font-semibold text-orange-300 mt-0.5" data-price-urgency={shift.id}></span>
           </div>
 
-          <!-- Occupancy — число и заполненность полосы скрыты блюром до клика «узнать места» -->
-          <div class="flex flex-col">
-            <div class="flex justify-between mb-2 text-base">
-              <span class="text-white/75">Свободно мест</span>
-              <span data-spots-num data-spots-shift={shift.id} class={`blur-[6px] transition-[filter] duration-300 select-none ${isLowAvail ? 'text-orange-300 font-semibold' : 'text-emerald-300 font-semibold'}`}>
-                {isLowAvail ? `Осталось ${shift.free}` : `${shift.free}`}
-              </span>
+          {isSoldOut ? (
+            <div class="flex flex-col">
+              <div class="flex justify-between mb-2 text-base">
+                <span class="text-white/75">Мест на смену</span>
+                <span class="font-semibold text-white/90">нет</span>
+              </div>
+              <div class="h-2 w-full overflow-hidden rounded-full bg-white/15">
+                <div class="h-full w-full rounded-full bg-white/40"></div>
+              </div>
             </div>
-            <div class="h-2 w-full overflow-hidden rounded-full bg-white/15">
-              <div data-spots-bar data-spots-shift={shift.id} data-spots-width={`${occupiedPct}%`} class={`h-full ${isLowAvail ? 'bg-orange-400' : 'bg-emerald-400'} rounded-full transition-[width] duration-500`} style="width:0%"></div>
+          ) : (
+            <!-- Occupancy — число и заполненность полосы скрыты блюром до клика «узнать места» -->
+            <div class="flex flex-col">
+              <div class="flex justify-between mb-2 text-base">
+                <span class="text-white/75">Свободно мест</span>
+                <span data-spots-num data-spots-shift={shift.id} class={`blur-[6px] transition-[filter] duration-300 select-none ${isLowAvail ? 'text-orange-300 font-semibold' : 'text-emerald-300 font-semibold'}`}>
+                  {isLowAvail ? `Осталось ${shift.free}` : `${shift.free}`}
+                </span>
+              </div>
+              <div class="h-2 w-full overflow-hidden rounded-full bg-white/15">
+                <div data-spots-bar data-spots-shift={shift.id} data-spots-width={`${occupiedPct}%`} class={`h-full ${isLowAvail ? 'bg-orange-400' : 'bg-emerald-400'} rounded-full transition-[width] duration-500`} style="width:0%"></div>
+              </div>
+              <button type="button" data-spots-reveal-btn data-spots-shift={shift.id} data-spots-low={isLowAvail ? '1' : undefined} class="mt-1.5 self-start text-[12px] font-semibold text-white/70 hover:text-white underline underline-offset-2 transition-colors">
+                Узнать точное число мест
+              </button>
             </div>
-            <button type="button" data-spots-reveal-btn data-spots-shift={shift.id} data-spots-low={isLowAvail ? '1' : undefined} class="mt-1.5 self-start text-[12px] font-semibold text-white/70 hover:text-white underline underline-offset-2 transition-colors">
-              Узнать точное число мест
-            </button>
-          </div>
+          )}
 
           <!-- Primary CTA -->
           <button type="button"
@@ -253,11 +266,15 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
             data-shift-book-dates={shift.dates}
             data-shift-book-duration={shift.duration}
             data-shift-book-price={ssrPriceFmt}
+            data-shift-waitlist={isSoldOut ? 'true' : undefined}
             data-analytics-goal="shift_select"
             data-analytics-label={shift.name}
-            class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover px-6 py-3.5 text-[16px] font-semibold text-white transition-colors min-h-[52px] whitespace-nowrap"
+            class:list={[
+              'inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-[16px] font-semibold transition-colors min-h-[52px] whitespace-nowrap',
+              isSoldOut ? 'bg-white/15 hover:bg-white/25 text-white border border-white/30' : 'bg-primary hover:bg-primary-hover text-white',
+            ]}
           >
-            Забронировать
+            {isSoldOut ? 'Лист ожидания' : 'Забронировать'}
             <i class="bi bi-arrow-right text-base" aria-hidden="true"></i>
           </button>
         </div>
@@ -356,8 +373,17 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
     <section id="booking" class="border-t border-border-light bg-surface">
       <div class="mx-auto max-w-[640px] px-5 py-12 md:px-8 md:py-20">
         <div class="rounded-[20px] bg-card p-6 md:p-8 card-shadow">
-          <h3 class="text-[24px] md:text-[28px] font-bold text-body mb-2">Забронировать {shift.name}</h3>
-          <p class="text-base text-body-muted mb-5">{shift.dates} · {shift.duration} {isLowAvail && (<span class="text-orange-700 font-semibold"> · Осталось <span data-spots-num data-spots-shift={shift.id} class="blur-[6px] transition-[filter] duration-300 select-none">{shift.free} {shift.free === 1 ? 'место' : shift.free < 5 ? 'места' : 'мест'}</span></span>)}</p>
+          <h3 class="text-[24px] md:text-[28px] font-bold text-body mb-2">{isSoldOut ? `Лист ожидания: ${shift.name}` : `Забронировать ${shift.name}`}</h3>
+          <p class="text-base text-body-muted mb-5">
+            {shift.dates} · {shift.duration}
+            {isSoldOut && <span class="text-slate-500 font-semibold"> · Мест нет</span>}
+            {!isSoldOut && isLowAvail && (<span class="text-orange-700 font-semibold"> · Осталось <span data-spots-num data-spots-shift={shift.id} class="blur-[6px] transition-[filter] duration-300 select-none">{shift.free} {shift.free === 1 ? 'место' : shift.free < 5 ? 'места' : 'мест'}</span></span>)}
+          </p>
+          {isSoldOut && (
+            <p class="mb-5 rounded-xl bg-slate-50 border border-slate-200 p-4 text-base leading-[1.55] text-slate-600">
+              Смена распродана. Обычно к её старту 2–3 семьи отказываются от путёвки по разным причинам — мы предлагаем освободившиеся места по листу ожидания, в порядке очереди. Оставьте заявку — позвоним, как только появится место.
+            </p>
+          )}
 
           <div class="flex items-baseline gap-3 mb-2">
             <span class="text-[36px] font-extrabold tracking-[-0.02em] text-body" data-dynamic-price={shift.id}>{ssrPriceFmt}</span>
@@ -453,8 +479,9 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
         if (durationEl) durationEl.textContent = el.dataset.shiftBookDuration || '';
         if (priceEl) priceEl.textContent = el.dataset.shiftBookPrice || '';
         if (blockEl) blockEl.classList.toggle('hidden', !name);
+        (modal as HTMLElement).dataset.waitlist = el.dataset.shiftWaitlist === 'true' ? 'true' : 'false';
         (modal as HTMLDialogElement).showModal();
-        (window as any).trackGoal?.('shift_book_click', { shift: name }, 500);
+        (window as any).trackGoal?.(el.dataset.shiftWaitlist === 'true' ? 'waitlist_click' : 'shift_book_click', { shift: name }, 500);
       });
     });
   }
