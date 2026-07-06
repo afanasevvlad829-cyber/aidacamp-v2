@@ -5,7 +5,6 @@ import HeroModals from './HeroModals.astro';
 import HeroFeatures from './HeroFeatures.astro';
 import NewsJazz from './NewsJazz.astro';
 import { displayShifts, shiftDatesShort, DATES_SHORT_S21, DATES_SHORT_S22 } from '../data/shifts';
-import { getVisitorShiftHistory, formatVisitDate } from '../lib/visitorHistory';
 
 interface Props {
   imageSrc?: string;
@@ -22,20 +21,6 @@ const heroShiftsData = {
   'shift-2-1': { name: 'Смену 2.1', dates: DATES_SHORT_S21, free: 0 },
   'shift-2-2': { name: 'Смену 2.2', dates: DATES_SHORT_S22, free: 0 },
 };
-
-// Персонализация возвратника — SSR, по куке aid_visitor (HttpOnly, ставит nginx,
-// живёт год). Переживает очистку localStorage/смену браузера в отличие от
-// прежней клиентской версии (06.07.2026). Если куки/истории нет — баннер просто
-// не рендерится, без ошибок (query() в lib/db.ts null-safe).
-const aidVisitorId = Astro.cookies.get('aid_visitor')?.value;
-const shiftHistory = aidVisitorId ? await getVisitorShiftHistory(aidVisitorId) : [];
-function freeLabel(free: number) {
-  return free === 1 ? '1 место' : free < 5 ? `${free} места` : `${free} мест`;
-}
-const recentViews = shiftHistory
-  .map((v) => ({ ...v, meta: (heroShiftsData as Record<string, { name: string; dates: string; free: number }>)[v.shiftId] }))
-  .filter((v) => v.meta)
-  .slice(0, 2); // не более 2 в баннере — не перегружаем
 ---
 
 <section id="hero" class="relative mx-auto w-full overflow-x-hidden bg-surface-warm md:max-w-[1440px]">
@@ -57,23 +42,43 @@ const recentViews = shiftHistory
 
 <HeroModals />
 
-<!-- ── Персонализированный баннер для возвратников — SSR, из visits по aid_visitor ── -->
-{recentViews.length > 0 && (
-  <div id="returning-hero-hint" class="mx-auto max-w-[1312px] px-4 py-3">
-    <div class="flex flex-col gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
-      {recentViews.map((v) => (
-        <a href={`/shifts/${v.shiftId}/`}
-           class="flex items-center gap-3 text-base hover:text-primary transition-colors no-underline text-slate-700 font-medium">
-          <i class="bi bi-arrow-left-circle-fill text-[20px] text-primary shrink-0" aria-hidden="true"></i>
-          <span>
-            Вы смотрели {v.meta.name} ({formatVisitDate(v.lastSeen)}) · <span data-spots-num data-spots-shift={v.shiftId} class="blur-[6px] transition-[filter] duration-300 select-none">{freeLabel(v.meta.free)}</span> · {v.meta.dates}
-          </span>
-          <i class="bi bi-arrow-right text-base text-primary ml-auto shrink-0" aria-hidden="true"></i>
-        </a>
-      ))}
-    </div>
-  </div>
-)}
+<!--
+  ── Персонализированный баннер для возвратников ──
+  Главная страница отдаётся nginx статикой (root .../current/client/, try_files) —
+  Node для неё не вызывается, серверный код в самом .astro НЕ исполняется на
+  каждый запрос (проверено 06.07.2026: SSR-версия рендерилась один раз при
+  build, без реальной куки, и оставалась одинаковой для всех). Поэтому данные
+  берём через fetch() к /api/visitor-history — этот путь nginx реально
+  проксирует в живой Node-процесс, кука читается там на каждый запрос.
+-->
+<div id="returning-hero-hint" class="hidden mx-auto max-w-[1312px] px-4 py-3">
+  <div id="returning-hero-list" class="flex flex-col gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3"></div>
+</div>
+<script is:inline>
+(function() {
+  function freeLabel(free) { return free === 1 ? '1 место' : free < 5 ? free + ' места' : free + ' мест'; }
+  fetch('/api/visitor-history', { credentials: 'same-origin' })
+    .then(function(r) { return r.ok ? r.json() : []; })
+    .then(function(views) {
+      if (!views || !views.length) return;
+      var hint = document.getElementById('returning-hero-hint');
+      var list = document.getElementById('returning-hero-list');
+      if (!hint || !list) return;
+      var revealed = [];
+      try { revealed = JSON.parse(sessionStorage.getItem('ac:occ_revealed') || '[]'); } catch (e) {}
+      list.innerHTML = views.map(function(v) {
+        var blurCls = revealed.indexOf(v.shiftId) === -1 ? ' blur-[6px] transition-[filter] duration-300 select-none' : '';
+        return '<a href="/shifts/' + v.shiftId + '/" class="flex items-center gap-3 text-base hover:text-primary transition-colors no-underline text-slate-700 font-medium">' +
+          '<i class="bi bi-arrow-left-circle-fill text-[20px] text-primary shrink-0" aria-hidden="true"></i>' +
+          '<span>Вы смотрели ' + v.name + ' (' + v.lastSeenLabel + ') · <span data-spots-num data-spots-shift="' + v.shiftId + '" class="' + blurCls + '">' + freeLabel(v.free) + '</span> · ' + v.dates + '</span>' +
+          '<i class="bi bi-arrow-right text-base text-primary ml-auto shrink-0" aria-hidden="true"></i>' +
+          '</a>';
+      }).join('');
+      hint.classList.remove('hidden');
+    })
+    .catch(function() {});
+})();
+</script>
 
 <script is:inline>
   // UTM-based title variations
