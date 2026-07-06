@@ -282,12 +282,11 @@ direct_api("negativekeywordsharedsets", "update", {"NegativeKeywordSharedSets": 
     "NegativeKeywords": sets[0]["NegativeKeywords"] + ["новая минус фраза"],
 }]})
 
-# Исключённые площадки РСЯ
-resp = direct_api("adimages", params={})  # не то
-# Площадки — через excludedsites (специальный endpoint):
-body = json.dumps({"method": "add", "params": {
-    "ExcludedSites": [{"CampaignId": 123456, "Sites": ["bad-site.ru"]}]
-}}).encode()
+# Исключённые площадки РСЯ — API-МЕТОДА НЕТ (проверено 06.07.2026)
+# v5 REST (json/v5/excludedsites и варианты имени) → HTTP 404
+# v4 Live (method: ExcludedSites) → {"error_code":55,"error_str":"Метод не существует"}
+# Запрещённые площадки добавляются ТОЛЬКО вручную в интерфейсе Директа:
+# Кампания → Настройки → «Запрещённые площадки и внешние сети» (лимит 1000 доменов)
 ```
 
 #### Reports API — статистика
