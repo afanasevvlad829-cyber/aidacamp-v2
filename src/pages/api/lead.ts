@@ -97,10 +97,15 @@ function buildTgText(body: Record<string, string>, crmId?: number | null): strin
   } = body;
 
   const isReferral = source === 'refer';
+  const isWaitlist = body.form_id === 'shifts_book_waitlist';
   const lines: string[] = [];
 
   // Заголовок
-  lines.push(isReferral ? '🎁 <b>Реферальная заявка!</b>' : '🎯 <b>Новая заявка АйДаКемп</b>');
+  lines.push(
+    isWaitlist ? '⏳ <b>Заявка в лист ожидания!</b>'
+      : isReferral ? '🎁 <b>Реферальная заявка!</b>'
+      : '🎯 <b>Новая заявка АйДаКемп</b>'
+  );
   lines.push('');
 
   // Контакт

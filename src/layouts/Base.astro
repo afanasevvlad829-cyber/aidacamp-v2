@@ -322,6 +322,24 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         });
         document.addEventListener('astro:page-load', spotsInit);
         if (document.readyState !== 'loading') spotsInit();
+
+        // Иконка «?» рядом с кнопкой «Лист ожидания» — тултип по клику (не hover,
+        // чтобы работало на мобильных). Разметка — WaitlistInfoIcon.astro, единый
+        // глобальный обработчик для любого числа иконок на странице.
+        document.addEventListener('click', function (e) {
+          var btn = e.target && e.target.closest ? e.target.closest('[data-waitlist-info-btn]') : null;
+          if (btn) {
+            var tip = btn.parentElement && btn.parentElement.querySelector('[data-waitlist-info-tooltip]');
+            document.querySelectorAll('[data-waitlist-info-tooltip]').forEach(function (el) {
+              if (el !== tip) el.classList.add('hidden');
+            });
+            if (tip) tip.classList.toggle('hidden');
+            return;
+          }
+          if (!e.target.closest || !e.target.closest('[data-waitlist-info]')) {
+            document.querySelectorAll('[data-waitlist-info-tooltip]').forEach(function (el) { el.classList.add('hidden'); });
+          }
+        });
       })();
     </script>
     <!-- Novofon — отложенная загрузка (idle/после load/первое взаимодействие), чтобы не конкурировать с LCP -->
