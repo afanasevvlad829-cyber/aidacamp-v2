@@ -42,40 +42,41 @@ const heroShiftsData = {
 
 <HeroModals />
 
-<!-- ── Персонализированный баннер для возвратников ── -->
+<!--
+  ── Персонализированный баннер для возвратников ──
+  Главная страница отдаётся nginx статикой (root .../current/client/, try_files) —
+  Node для неё не вызывается, серверный код в самом .astro НЕ исполняется на
+  каждый запрос (проверено 06.07.2026: SSR-версия рендерилась один раз при
+  build, без реальной куки, и оставалась одинаковой для всех). Поэтому данные
+  берём через fetch() к /api/visitor-history — этот путь nginx реально
+  проксирует в живой Node-процесс, кука читается там на каждый запрос.
+-->
 <div id="returning-hero-hint" class="hidden mx-auto max-w-[1312px] px-4 py-3">
-  <a id="returning-hero-link" href="/shifts/shift-1/"
-     class="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-base hover:bg-primary/10 transition-colors no-underline">
-    <i class="bi bi-arrow-left-circle-fill text-[20px] text-primary shrink-0" aria-hidden="true"></i>
-    <span id="returning-hero-text" class="text-slate-700 font-medium"></span>
-    <i class="bi bi-arrow-right text-base text-primary ml-auto shrink-0" aria-hidden="true"></i>
-  </a>
+  <div id="returning-hero-list" class="flex flex-col gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3"></div>
 </div>
-<script is:inline define:vars={{ heroShiftsData }}>
+<script is:inline>
 (function() {
-  var SHIFTS = heroShiftsData;
-  try {
-    var viewed = JSON.parse(localStorage.getItem('ac:viewed_shifts') || '[]');
-    if (!viewed.length) return;
-    var last = viewed[viewed.length - 1];
-    // Support both {id, ts} objects and plain string IDs
-    if (last && typeof last === 'object') last = last.id;
-    var s = SHIFTS[last];
-    if (!s) return;
-    var hint = document.getElementById('returning-hero-hint');
-    var text = document.getElementById('returning-hero-text');
-    var link = document.getElementById('returning-hero-link');
-    if (!hint || !text || !link) return;
-    var freePlural = s.free === 1 ? 'место' : s.free < 5 ? 'места' : 'мест';
-    // Число мест — блюром до раскрытия (05.07.2026). Спан появляется уже после
-    // глобального spotsInit() в Base.astro, поэтому проверяем sessionStorage сами.
-    var revealed = [];
-    try { revealed = JSON.parse(sessionStorage.getItem('ac:occ_revealed') || '[]'); } catch(e2) {}
-    var blurCls = revealed.indexOf(last) === -1 ? ' blur-[6px] transition-[filter] duration-300 select-none' : '';
-    text.innerHTML = 'Вы смотрели ' + s.name + ' · <span data-spots-num data-spots-shift="' + last + '" class="' + blurCls + '">' + s.free + ' ' + freePlural + '</span> · ' + s.dates;
-    link.href = '/shifts/' + last + '/';
-    hint.classList.remove('hidden');
-  } catch(e) {}
+  function freeLabel(free) { return free === 1 ? '1 место' : free < 5 ? free + ' места' : free + ' мест'; }
+  fetch('/api/visitor-history', { credentials: 'same-origin' })
+    .then(function(r) { return r.ok ? r.json() : []; })
+    .then(function(views) {
+      if (!views || !views.length) return;
+      var hint = document.getElementById('returning-hero-hint');
+      var list = document.getElementById('returning-hero-list');
+      if (!hint || !list) return;
+      var revealed = [];
+      try { revealed = JSON.parse(sessionStorage.getItem('ac:occ_revealed') || '[]'); } catch (e) {}
+      list.innerHTML = views.map(function(v) {
+        var blurCls = revealed.indexOf(v.shiftId) === -1 ? ' blur-[6px] transition-[filter] duration-300 select-none' : '';
+        return '<a href="/shifts/' + v.shiftId + '/" class="flex items-center gap-3 text-base hover:text-primary transition-colors no-underline text-slate-700 font-medium">' +
+          '<i class="bi bi-arrow-left-circle-fill text-[20px] text-primary shrink-0" aria-hidden="true"></i>' +
+          '<span>Вы смотрели ' + v.name + ' (' + v.lastSeenLabel + ') · <span data-spots-num data-spots-shift="' + v.shiftId + '" class="' + blurCls + '">' + freeLabel(v.free) + '</span> · ' + v.dates + '</span>' +
+          '<i class="bi bi-arrow-right text-base text-primary ml-auto shrink-0" aria-hidden="true"></i>' +
+          '</a>';
+      }).join('');
+      hint.classList.remove('hidden');
+    })
+    .catch(function() {});
 })();
 </script>
 
