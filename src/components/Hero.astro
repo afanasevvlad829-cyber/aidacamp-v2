@@ -5,6 +5,7 @@ import HeroModals from './HeroModals.astro';
 import HeroFeatures from './HeroFeatures.astro';
 import NewsJazz from './NewsJazz.astro';
 import { displayShifts, shiftDatesShort, DATES_SHORT_S21, DATES_SHORT_S22 } from '../data/shifts';
+import { getVisitorShiftHistory, formatVisitDate } from '../lib/visitorHistory';
 
 interface Props {
   imageSrc?: string;
@@ -21,6 +22,20 @@ const heroShiftsData = {
   'shift-2-1': { name: 'Смену 2.1', dates: DATES_SHORT_S21, free: 0 },
   'shift-2-2': { name: 'Смену 2.2', dates: DATES_SHORT_S22, free: 0 },
 };
+
+// Персонализация возвратника — SSR, по куке aid_visitor (HttpOnly, ставит nginx,
+// живёт год). Переживает очистку localStorage/смену браузера в отличие от
+// прежней клиентской версии (06.07.2026). Если куки/истории нет — баннер просто
+// не рендерится, без ошибок (query() в lib/db.ts null-safe).
+const aidVisitorId = Astro.cookies.get('aid_visitor')?.value;
+const shiftHistory = aidVisitorId ? await getVisitorShiftHistory(aidVisitorId) : [];
+function freeLabel(free: number) {
+  return free === 1 ? '1 место' : free < 5 ? `${free} места` : `${free} мест`;
+}
+const recentViews = shiftHistory
+  .map((v) => ({ ...v, meta: (heroShiftsData as Record<string, { name: string; dates: string; free: number }>)[v.shiftId] }))
+  .filter((v) => v.meta)
+  .slice(0, 2); // не более 2 в баннере — не перегружаем
 ---
 
 <section id="hero" class="relative mx-auto w-full overflow-x-hidden bg-surface-warm md:max-w-[1440px]">
@@ -42,42 +57,23 @@ const heroShiftsData = {
 
 <HeroModals />
 
-<!-- ── Персонализированный баннер для возвратников ── -->
-<div id="returning-hero-hint" class="hidden mx-auto max-w-[1312px] px-4 py-3">
-  <a id="returning-hero-link" href="/shifts/shift-1/"
-     class="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-base hover:bg-primary/10 transition-colors no-underline">
-    <i class="bi bi-arrow-left-circle-fill text-[20px] text-primary shrink-0" aria-hidden="true"></i>
-    <span id="returning-hero-text" class="text-slate-700 font-medium"></span>
-    <i class="bi bi-arrow-right text-base text-primary ml-auto shrink-0" aria-hidden="true"></i>
-  </a>
-</div>
-<script is:inline define:vars={{ heroShiftsData }}>
-(function() {
-  var SHIFTS = heroShiftsData;
-  try {
-    var viewed = JSON.parse(localStorage.getItem('ac:viewed_shifts') || '[]');
-    if (!viewed.length) return;
-    var last = viewed[viewed.length - 1];
-    // Support both {id, ts} objects and plain string IDs
-    if (last && typeof last === 'object') last = last.id;
-    var s = SHIFTS[last];
-    if (!s) return;
-    var hint = document.getElementById('returning-hero-hint');
-    var text = document.getElementById('returning-hero-text');
-    var link = document.getElementById('returning-hero-link');
-    if (!hint || !text || !link) return;
-    var freePlural = s.free === 1 ? 'место' : s.free < 5 ? 'места' : 'мест';
-    // Число мест — блюром до раскрытия (05.07.2026). Спан появляется уже после
-    // глобального spotsInit() в Base.astro, поэтому проверяем sessionStorage сами.
-    var revealed = [];
-    try { revealed = JSON.parse(sessionStorage.getItem('ac:occ_revealed') || '[]'); } catch(e2) {}
-    var blurCls = revealed.indexOf(last) === -1 ? ' blur-[6px] transition-[filter] duration-300 select-none' : '';
-    text.innerHTML = 'Вы смотрели ' + s.name + ' · <span data-spots-num data-spots-shift="' + last + '" class="' + blurCls + '">' + s.free + ' ' + freePlural + '</span> · ' + s.dates;
-    link.href = '/shifts/' + last + '/';
-    hint.classList.remove('hidden');
-  } catch(e) {}
-})();
-</script>
+<!-- ── Персонализированный баннер для возвратников — SSR, из visits по aid_visitor ── -->
+{recentViews.length > 0 && (
+  <div id="returning-hero-hint" class="mx-auto max-w-[1312px] px-4 py-3">
+    <div class="flex flex-col gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
+      {recentViews.map((v) => (
+        <a href={`/shifts/${v.shiftId}/`}
+           class="flex items-center gap-3 text-base hover:text-primary transition-colors no-underline text-slate-700 font-medium">
+          <i class="bi bi-arrow-left-circle-fill text-[20px] text-primary shrink-0" aria-hidden="true"></i>
+          <span>
+            Вы смотрели {v.meta.name} ({formatVisitDate(v.lastSeen)}) · <span data-spots-num data-spots-shift={v.shiftId} class="blur-[6px] transition-[filter] duration-300 select-none">{freeLabel(v.meta.free)}</span> · {v.meta.dates}
+          </span>
+          <i class="bi bi-arrow-right text-base text-primary ml-auto shrink-0" aria-hidden="true"></i>
+        </a>
+      ))}
+    </div>
+  </div>
+)}
 
 <script is:inline>
   // UTM-based title variations
