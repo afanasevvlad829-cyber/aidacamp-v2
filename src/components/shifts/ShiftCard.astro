@@ -1,8 +1,9 @@
 ---
 import type { Shift } from '../../data/shifts';
-import { renderCard, PEER_COUNTS, getAvailabilityLevel } from '../../data/shifts';
+import { renderCard, PEER_COUNTS, getAvailabilityLevel, getBookingCta } from '../../data/shifts';
 import { pluralDays } from '../../utils/plural';
 import { getTaxDeduction, getCurrentPrice, getNextDayPrice, getDays, fmtPrice } from '../../data/dynamicPrices';
+import WaitlistInfoIcon from './WaitlistInfoIcon.astro';
 
 interface Props {
   shift: Shift;
@@ -21,6 +22,7 @@ const isMobile = variant === 'mobile';
 const availability = getAvailabilityLevel(shift);
 const isSoldOut = availability === 'soldout';
 const isLowAvailability = availability === 'low';
+const bookingCta = getBookingCta(shift);
 
 // Номер смены: 'shift-3' → '3', 'shift-2-1' → '2.1'
 const shiftNum = shift.id.replace('shift-', '').replace('-', '.');
@@ -205,19 +207,22 @@ const daysLeft = startDate
 
   <!-- CTA: полная ширина снизу -->
   {isSoldOut ? (
-    <button
-      type="button"
-      data-shift-book={shift.id}
-      data-shift-book-name={shift.name}
-      data-shift-book-dates={shift.dates}
-      data-shift-book-duration={shift.duration}
-      data-shift-book-price={ssrPriceFmt}
-      data-shift-waitlist="true"
-      class="group/cta mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-transparent py-3 text-base font-semibold text-slate-700 transition-colors min-h-[44px] hover:bg-slate-50"
-    >
-      Лист ожидания
-      <i class="bi bi-arrow-right text-base transition-transform group-hover/cta:translate-x-1" aria-hidden="true"></i>
-    </button>
+    <div class="mt-4 flex items-center gap-2">
+      <button
+        type="button"
+        data-shift-book={shift.id}
+        data-shift-book-name={shift.name}
+        data-shift-book-dates={shift.dates}
+        data-shift-book-duration={shift.duration}
+        data-shift-book-price={ssrPriceFmt}
+        data-shift-waitlist="true"
+        class="group/cta flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-transparent py-3 text-base font-semibold text-slate-700 transition-colors min-h-[44px] hover:bg-slate-50"
+      >
+        {bookingCta.label}
+        <i class="bi bi-arrow-right text-base transition-transform group-hover/cta:translate-x-1" aria-hidden="true"></i>
+      </button>
+      <WaitlistInfoIcon />
+    </div>
   ) : (
     <a
       href={`/shifts/${shift.id}/`}

@@ -44,6 +44,19 @@ export function getAvailabilityLabel(shift: Pick<Shift, 'free' | 'occupied'>): s
   return 'Места есть';
 }
 
+/**
+ * Единая точка правды для текста и поведения кнопки брони.
+ * soldout → «Лист ожидания» (та же форма, помечена isWaitlist для CRM/попапа-объяснения).
+ */
+export function getBookingCta(shift: Pick<Shift, 'free' | 'occupied'>): { label: string; isWaitlist: boolean } {
+  const isWaitlist = getAvailabilityLevel(shift) === 'soldout';
+  return { label: isWaitlist ? 'Лист ожидания' : 'Забронировать', isWaitlist };
+}
+
+/** Единый текст объяснения механики листа ожидания — используется и в попапе, и в модалке брони. */
+export const WAITLIST_EXPLANATION =
+  'Смена распродана. Обычно к её старту 2–3 семьи отказываются от путёвки по разным причинам — освободившиеся места предлагаем по листу ожидания, в порядке очереди. Оставьте заявку — позвоним, как только появится место.';
+
 // Завершённые смены — данные сохранены для констант (PRICE_S1/S2 и т.д.), не показываются в UI
 const _shift1: Shift = {
   id: 'shift-1', name: 'Смена 1', dates: '30 мая — 8 июня', duration: '10 дней',
