@@ -27,7 +27,7 @@ function getPool() {
   return _pool;
 }
 
-function openaiEmbed(text: string): Promise<number[]> {
+export function openaiEmbed(text: string): Promise<number[]> {
   return new Promise((resolve) => {
     if (!OPENAI_API_KEY) return resolve([]);
     const body = JSON.stringify({ input: [text], model: 'text-embedding-3-small' });
