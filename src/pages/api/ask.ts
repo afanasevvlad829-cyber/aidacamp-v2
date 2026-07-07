@@ -7,6 +7,7 @@ import { ragSearch } from '../../lib/ai/rag';
 import { findPhotos } from '../../lib/ai/photoSearch';
 import { matchEscalation, templateToResponse } from '../../lib/ai/escalation_templates';
 import { classifyIntent, pickRealStory } from '../../lib/ai/intent_router';
+import { validateBotResponse, logGuardFlag } from '../../lib/ai/validator';
 import { readFileSync } from 'node:fs';
 import pg from 'pg';
 
@@ -143,10 +144,11 @@ export const POST: APIRoute = async ({ request }) => {
     // Генерируем session_id если клиент не прислал
     const sid = sessionId || crypto.randomUUID();
 
-    // RAG: ищем релевантные фрагменты из базы знаний (параллельно со сборкой промпта)
-    const [ragResult, basePrompt] = await Promise.all([
+    // RAG + классификация intent — параллельно со сборкой промпта, не последовательно
+    const [ragResult, basePrompt, intent] = await Promise.all([
       ragSearch(message),
       Promise.resolve(getLivePrompt()),
+      classifyIntent(message),
     ]);
 
     // Hard-gates сняты — доверяем LLM с RAG-контекстом отвечать честно.
@@ -183,12 +185,12 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(finalEsc, { headers: { 'Content-Type': 'application/json' } });
     }
 
-    // INTENT ROUTER: классифицируем запрос. Для intent=story достаём 1 реальную историю
-    // и жёстко ограничиваем модель её пересказывать, без миксования с маркетингом/видео.
-    const intent = await classifyIntent(message);
+    // INTENT ROUTER: intent уже классифицирован выше (параллельно с RAG). Для intent=story
+    // достаём 1 реальную историю и жёстко ограничиваем модель её пересказывать, без
+    // миксования с маркетингом/видео.
     let intentBoost = '';
     if (intent === 'story') {
-      const real = await pickRealStory();
+      const real = await pickRealStory(message);
       if (real) {
         intentBoost =
           '\n\n=== РЕЖИМ ИСТОРИИ (intent=story) ===\n' +
@@ -338,6 +340,16 @@ export const POST: APIRoute = async ({ request }) => {
       const photoQuery = (responseData.block_data as any)?.query || message;
       responseData.block_data = { photos: findPhotos(photoQuery, 4) };
     }
+
+    // GUARD: проверяем текст на фактические ошибки (цены, даты, вычет и т.п.) по списку фактов.
+    // Блокирующе (Haiku, быстро) — иначе галлюцинация уходит пользователю до всякой проверки.
+    try {
+      const validation = await validateBotResponse(message, responseData.text);
+      if (!validation.valid && validation.correction) {
+        logGuardFlag(message, responseData.text, validation.issue || '', validation.correction, true);
+        responseData.text = validation.correction;
+      }
+    } catch { /* validateBotResponse сам не бросает, но подстрахуемся */ }
 
     // Сначала логируем (получаем PK), потом инжектим в ответ — иначе TDZ
     const _bodyForLog = JSON.stringify({ state: 'ok', ...responseData });
