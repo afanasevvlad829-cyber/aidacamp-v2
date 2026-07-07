@@ -215,7 +215,10 @@ export const POST: APIRoute = async ({ request }) => {
     }
     // Для story режима убираем общий RAG-контекст (другие истории/видео миксуют) — оставляем ТОЛЬКО pickRealStory
     const ctxForLLM = (intent === 'story') ? '' : ragResult.context;
-    const systemText = basePrompt + ctxForLLM + intentBoost;
+    // basePrompt меняется ~раз в день (cron обновляет shifts.json) — кэшируем отдельным блоком.
+    // ctxForLLM/intentBoost меняются на каждый запрос — не кэшируем, иначе маркер в конце
+    // общего блока делает байты уникальными почти всегда и кэш никогда не читается.
+    const volatileSuffix = ctxForLLM + intentBoost;
 
     const messages: Anthropic.MessageParam[] = [
       ...history.slice(-12).map((m: ChatMessage) => ({
@@ -243,7 +246,10 @@ export const POST: APIRoute = async ({ request }) => {
         model: PRIMARY_MODEL,
         max_tokens: 1200,
         temperature: 0,
-        system: [{ type: 'text', text: systemText, cache_control: { type: 'ephemeral' } }],
+        system: [
+          { type: 'text', text: basePrompt, cache_control: { type: 'ephemeral' } },
+          { type: 'text', text: volatileSuffix },
+        ],
         messages,
       });
     } catch (primaryErr: any) {
@@ -253,14 +259,21 @@ export const POST: APIRoute = async ({ request }) => {
         model: FALLBACK_MODEL,
         max_tokens: 1200,
         temperature: 0,
-        system: [{ type: 'text', text: systemText, cache_control: { type: 'ephemeral' } }],
+        system: [
+          { type: 'text', text: basePrompt, cache_control: { type: 'ephemeral' } },
+          { type: 'text', text: volatileSuffix },
+        ],
         messages,
       });
     }
     const latencyMs = Date.now() - t0;
     const inputTokens = response?.usage?.input_tokens ?? null;
     const outputTokens = response?.usage?.output_tokens ?? null;
-    const metrics = { latencyMs, model: usedModel, inputTokens, outputTokens };
+    const cacheReadTokens = response?.usage?.cache_read_input_tokens ?? null;
+    const cacheCreationTokens = response?.usage?.cache_creation_input_tokens ?? null;
+    const metrics = { latencyMs, model: usedModel, inputTokens, outputTokens, cacheReadTokens, cacheCreationTokens };
+    // Видимость кэша в логах сервера — ai_ask_sessions пока не хранит эти поля (нет колонок в БД)
+    console.log(`[ask] cache read=${cacheReadTokens} created=${cacheCreationTokens} input=${inputTokens} model=${usedModel}`);
 
     const raw = response.content[0].type === 'text' ? response.content[0].text : '';
 
