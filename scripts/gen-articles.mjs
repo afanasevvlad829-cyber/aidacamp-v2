@@ -151,7 +151,9 @@ for (const file of files) {
   const ogImage = ogImageMatch ? ogImageMatch[1] : FALLBACK_IMAGE;
   articles.push({
     id: slug,
-    url: `/stati/${slug}`,
+    // Trailing slash — канонич. форма сайта (ensureTrailingSlash). Без него внутренние
+    // ссылки блога дают 301 на слеш-версию и жгут краул-бюджет (SEO-аудит: 142 редиректа с /stati/).
+    url: `/stati/${slug}/`,
     title,
     description,
     cluster,

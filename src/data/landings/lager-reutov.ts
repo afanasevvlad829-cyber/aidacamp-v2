@@ -118,8 +118,8 @@ const landing: LandingData = {
     label: 'Полезные разделы',
     separator: ' · ',
     links: [
-      { href: '/ceny', text: 'смены и даты 2026' },
-      { href: '/ceny', text: 'стоимость и что входит' },
+      { href: '/ceny/', text: 'смены и даты 2026' },
+      { href: '/ceny/', text: 'стоимость и что входит' },
       { href: '/stati/programma-it-lagerya/', text: 'IT-программы лагеря' },
     ],
     asBlock: true,

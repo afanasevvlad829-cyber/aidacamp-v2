@@ -124,8 +124,8 @@ const landing: LandingData = {
     },
   ],
   relatedCities: [
-    { href: '/lager-reutov', text: 'лагерь из Реутова' },
-    { href: '/lager-jeleznodarozhnyj', text: 'лагерь из Железнодорожного' },
+    { href: '/lager-reutov/', text: 'лагерь из Реутова' },
+    { href: '/lager-jeleznodarozhnyj/', text: 'лагерь из Железнодорожного' },
   ],
 };
 

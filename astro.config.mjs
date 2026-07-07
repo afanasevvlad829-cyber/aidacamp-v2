@@ -47,6 +47,10 @@ export default defineConfig({
         !page.includes('/ask/') &&
         !page.includes('/ai-studio/') &&
         !page.includes('/blog/') &&
+        // noindex-страницы: карта не должна их звать (смешанный сигнал Яндексу).
+        // reiting-detskih-lager* — оба варианта (ej/ey), оба noindex; reiting-it-* НЕ трогаем (индексируемая).
+        !page.includes('/onboarding/') &&
+        !page.includes('/stati/reiting-detskih-lager') &&
         // Редирект-стабы и битые страницы — НЕ в sitemap (иначе смешанный сигнал
         // Яндексу: карта говорит «индексируй», страница — noindex/редирект → тормозит перенос)
         !/\/(deti-otdokhnuli-v-letnikh-lageryakh|detskie-letnie-lagerya-v-podmoskove|detskie-ozdorovitelnye-lagerya-2026|detskiy-letniy-lager-v-podmoskove|detskiy-ozdorovitelnyy-lager|kanikuly-otdykh-v-lagere|kupit-putevku-v-lager-2026|kupit-putevku-v-lager|lager-letniy-na-20-dney|lager-v-podmoskove-na-leto-2026-nedorogo|lagerya-v-podmoskove-na-leto-dlya-podrostkov|letnie-lagerya-podmoskove|letnie-lagerya|letniy-lager-dlya-detey-v-moskve|letniy-lager-v-moskve|luchshie-detskie-lagerya-podmoskovya|luchshie-lagerya-v-podmoskove|mesta-v-letniy-lager|nedorogoy-letniy-lager-dlya-detey-v-podmoskove|ob-organizacii-otdyha-detej-i-ozdarovleniya|popali-v-letniy-lager|programma-smeny|putevka-v-detskiy-lager-letom|putevka-v-lager-v-podmoskove-2026|putevki-v-detskiy-lager-na-leto-2026|fortune-fail|smena2-editor|gde-poluchit-spravku-079u-dlya-lagerya|lager-elochki-domodedovo|lager-petrushka-v-podmoskove|lager-vshe-dlya-shkolnikov-2026|lagerya-za-granitsu-dlya-podrostkov|mos-ru-detskiy-lager|nalogovyy-vychet-za-detskiy-lager|neo-kemp-detskiy-lager|rozendorf-detskiy-lager|skolko-delaetsya-spravka-079u-dlya-lagerya|skolko-deystvuet-spravka-079u-dlya-lagerya|sportzaniya-lager-v-podmoskove|strannyy-detskiy-lager|terra-nostra-shatura-detskiy-lager)\/?$/.test(page),
