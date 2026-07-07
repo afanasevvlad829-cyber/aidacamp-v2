@@ -104,8 +104,8 @@ const landing: LandingData = {
     intro: 'Изучите детально, что входит в каждый формат обучения и какие сроки доступны:',
     links: [
       { href: '/stati/programma-it-lagerya/', label: '→ Все IT-программы в лагере', description: 'Python, нейросети, Minecraft, Roblox, 3D-моделирование' },
-      { href: '/ceny', label: '→ Расписание смен на лето 2026', description: 'июнь, июль, август с указанием мест' },
-      { href: '/ceny', label: '→ Стоимость и налоговый возврат 13%', description: 'полная разбивка цен и условия возврата' },
+      { href: '/ceny/', label: '→ Расписание смен на лето 2026', description: 'июнь, июль, август с указанием мест' },
+      { href: '/ceny/', label: '→ Стоимость и налоговый возврат 13%', description: 'полная разбивка цен и условия возврата' },
     ],
   },
   educationEvent: {
