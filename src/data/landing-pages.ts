@@ -166,6 +166,12 @@ const GEO_URLS = new Set([
   '/lager-zhukovskiy',
   '/lager-ryadom',
   '/detskiy-lager-podmoskove',
+  // Были в массиве landingPages, но отсутствовали в наборе → выпадали из гео-кластера
+  // (никто из гео их не линковал, сами шли в default-ветку). Аудит перелинковки 07.07.
+  '/lager-solnechnogorsk',
+  '/lager-zvenigorod',
+  '/lager-ruza',
+  '/lager-troitsk',
 ]);
 
 /**
@@ -248,53 +254,93 @@ const ARTICLE_MAP: Record<string, LandingPage[]> = {
   ],
 };
 
+/** Циклический сдвиг массива на offset — распределяет показы по всему пулу. */
+function rotate<T>(arr: T[], offset: number): T[] {
+  if (arr.length === 0) return arr;
+  const k = ((offset % arr.length) + arr.length) % arr.length;
+  return [...arr.slice(k), ...arr.slice(0, k)];
+}
+
 /**
- * Возвращает первые `count` лендингов из приоритетного списка, исключая `currentUrl`.
- * Используется для блока RelatedPages на каждом лендинге.
+ * Детерминированный хеш строки → смещение [0, len). Fallback, когда текущей страницы
+ * нет в пуле (напр. пул «rest» для страницы из кластера) — даёт стабильный разброс
+ * без Math.random (иначе результат менялся бы между сборками).
+ */
+function globalHash(s: string, len: number): number {
+  if (len <= 0) return 0;
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h % len;
+}
+
+/**
+ * Возвращает `count` релевантных лендингов для блока RelatedPages, исключая `currentUrl`.
  *
- * Для IT-страниц приоритет отдаётся IT-кластеру (устраняет каннибализацию).
- * Для остальных страниц — стандартный порядок массива.
- * В конец результата автоматически добавляются релевантные статьи из ARTICLE_MAP.
+ * Кластер (IT / гео / возраст) идёт первым — устраняет каннибализацию и держит тему.
+ * Внутри кластера и в «остальном» пуле применяется ДЕТЕРМИНИРОВАННАЯ РОТАЦИЯ по хешу URL:
+ * разные страницы показывают разные срезы → входящие ссылки распределяются равномерно
+ * по всему кластеру, а не копятся на первых 6 элементах массива (SEO-аудит: было
+ * 116 посадочных с <5 входящих — «хвост» кластеров голодал из-за фикс. slice(0,N)).
+ * Хабы (/lager-v-podmoskove, /detskiy-lager, /lager-dlya-podrostkov) остаются
+ * приколоты первыми — им высокая входящая связность нужна намеренно.
+ * В конец результата добавляются релевантные статьи из ARTICLE_MAP.
  *
  * @param currentUrl URL текущей страницы (без протокола/хоста), например "/minecraft-lager"
  * @param count Сколько ссылок вернуть (по умолчанию 6)
  */
 export function getRelatedPages(currentUrl: string, count: number = 6): LandingPage[] {
-  const normalized = currentUrl.replace(/\/$/, '');
-  const others = landingPages.filter((page) => page.url.replace(/\/$/, '') !== normalized);
+  // norm() — url в массиве с trailing slash ('/detskiy-lager/'), а сравнения/множества
+  // *_URLS — без. Без нормализации hub-find возвращал undefined и хабы НИКОГДА не
+  // приколачивались (предсуществующий баг, вскрыт при аудите перелинковки).
+  const norm = (u: string) => u.replace(/\/$/, '');
+  const normalized = norm(currentUrl);
 
   // Статьи для этой страницы (вставляем в конец, уменьшая count на их количество)
   const articles = ARTICLE_MAP[normalized] ?? [];
   const landingCount = Math.max(count - articles.length, 0);
 
+  // evenPool(pred, exclude): равномерная выборка пула по предикату.
+  // Пул строится из СТАБИЛЬНОГО landingPages (не из per-source others), ротируется по
+  // позиции текущей страницы В ЭТОМ ЖЕ пуле, и лишь потом отбрасываются текущая+хабы.
+  // Стабильная база + смещение-по-индексу = скользящее окно РОВНО тайлит пул → каждая
+  // страница набирает ~одинаково входящих (фикс. slice(0,N) копил всё на первых 6 →
+  // 116 посадочных с <5 входящих в SEO-аудите). Хеш/per-source-массив оставляли пробелы.
+  const evenPool = (pred: (u: string) => boolean, exclude: string[]): LandingPage[] => {
+    const poolAll = landingPages.filter((p) => pred(norm(p.url)));
+    const idx = poolAll.findIndex((p) => norm(p.url) === normalized);
+    const off = idx >= 0 ? idx : globalHash(normalized, poolAll.length);
+    const ex = new Set([normalized, ...exclude]);
+    return rotate(poolAll, off).filter((p) => !ex.has(norm(p.url)));
+  };
+
+  const findPage = (u: string) => landingPages.find((p) => norm(p.url) === u);
   let base: LandingPage[];
 
-  // IT-страница → IT-кластер в начале списка, потом общие
+  // IT-страница → IT-кластер (равномерно) в начале, потом общие
   if (IT_URLS.has(normalized)) {
-    const itPages = others.filter((p) => IT_URLS.has(p.url.replace(/\/$/, '')));
-    const rest = others.filter((p) => !IT_URLS.has(p.url.replace(/\/$/, '')));
+    const itPages = evenPool((u) => IT_URLS.has(u), []);
+    const rest = evenPool((u) => !IT_URLS.has(u), []);
     base = [...itPages, ...rest].slice(0, landingCount);
   }
-  // Гео-страница → хаб /lager-v-podmoskove + /detskiy-lager первыми, потом другие гео
+  // Гео-страница → хабы /lager-v-podmoskove + /detskiy-lager приколоты, дальше гео и общие
   else if (GEO_URLS.has(normalized)) {
-    const hub = landingPages.find((p) => p.url === '/lager-v-podmoskove');
-    const hub2 = landingPages.find((p) => p.url === '/detskiy-lager');
-    const geoPages = others.filter((p) => GEO_URLS.has(p.url.replace(/\/$/, '')) && p.url !== '/lager-v-podmoskove');
-    const rest = others.filter((p) => !GEO_URLS.has(p.url.replace(/\/$/, '')) && p.url !== '/lager-v-podmoskove' && p.url !== '/detskiy-lager');
-    const priority = [hub, hub2].filter((p): p is LandingPage => !!p);
+    const priority = [findPage('/lager-v-podmoskove'), findPage('/detskiy-lager')]
+      .filter((p): p is LandingPage => !!p);
+    const geoPages = evenPool((u) => GEO_URLS.has(u), ['/lager-v-podmoskove', '/detskiy-lager']);
+    const rest = evenPool((u) => !GEO_URLS.has(u), ['/lager-v-podmoskove', '/detskiy-lager']);
     base = [...priority, ...geoPages, ...rest].slice(0, landingCount);
   }
-  // Возрастная страница → /detskiy-lager + /lager-dlya-podrostkov первыми, потом другие возрастные
+  // Возрастная страница → /detskiy-lager + /lager-dlya-podrostkov приколоты, дальше возраст и общие
   else if (AGE_URLS.has(normalized)) {
-    const hub1 = landingPages.find((p) => p.url === '/detskiy-lager');
-    const hub2 = landingPages.find((p) => p.url === '/lager-dlya-podrostkov');
-    const agePages = others.filter((p) => AGE_URLS.has(p.url.replace(/\/$/, '')) && p.url !== '/lager-dlya-podrostkov');
-    const rest = others.filter((p) => !AGE_URLS.has(p.url.replace(/\/$/, '')) && p.url !== '/detskiy-lager' && p.url !== '/lager-dlya-podrostkov');
-    const priority = [hub1, hub2].filter((p): p is LandingPage => !!p);
+    const priority = [findPage('/detskiy-lager'), findPage('/lager-dlya-podrostkov')]
+      .filter((p): p is LandingPage => !!p);
+    const agePages = evenPool((u) => AGE_URLS.has(u), ['/detskiy-lager', '/lager-dlya-podrostkov']);
+    const rest = evenPool((u) => !AGE_URLS.has(u), ['/detskiy-lager', '/lager-dlya-podrostkov']);
     base = [...priority, ...agePages, ...rest].slice(0, landingCount);
   }
   else {
-    base = others.slice(0, landingCount);
+    // Общие (коммерч./сезон.) страницы — равномерно по всему пулу
+    base = evenPool(() => true, []).slice(0, landingCount);
   }
 
   return [...base, ...articles];
