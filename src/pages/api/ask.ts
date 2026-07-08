@@ -356,11 +356,18 @@ export const POST: APIRoute = async ({ request }) => {
 
     // GUARD: проверяем текст на фактические ошибки (цены, даты, вычет и т.п.) по списку фактов.
     // Блокирующе (Haiku, быстро) — иначе галлюцинация уходит пользователю до всякой проверки.
+    // Инцидент 08.07: Haiku иногда кладёт в correction мета-разбор ("бот ошибся, правильный
+    // ответ...") вместо чистой фразы — такое НЕЛЬЗЯ показывать пользователю напрямую.
+    // Не полагаемся только на промпт — фильтруем по форме перед подстановкой.
+    const META_CORRECTION = /\bбот\b|правильный ответ|должен был|не должен|выдумал|не ответил на вопрос|проигнорировал|ошиб(ся|ка|очн)/i;
     try {
       const validation = await validateBotResponse(message, responseData.text);
       if (!validation.valid && validation.correction) {
-        logGuardFlag(message, responseData.text, validation.issue || '', validation.correction, true);
-        responseData.text = validation.correction;
+        const isMeta = META_CORRECTION.test(validation.correction);
+        logGuardFlag(message, responseData.text, validation.issue || '', validation.correction, !isMeta);
+        if (!isMeta) {
+          responseData.text = validation.correction;
+        }
       }
     } catch { /* validateBotResponse сам не бросает, но подстрахуемся */ }
 
