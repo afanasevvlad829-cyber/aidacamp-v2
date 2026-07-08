@@ -320,11 +320,18 @@ echo ""
 echo "🔍 Верификация..."
 MISSING=0
 
-# 6a. Проверяем hero-images явно
+# 6a. Проверяем hero-images ПО HTTP, а не по наличию файла в current/.
+#
+# С 2026-07-02 медиа живут в едином хранилище /var/www/aidacamp-media/,
+# nginx отдаёт /images/ и /videos/ оттуда через alias, а rsync выше их
+# намеренно исключает (--exclude='images/'). Прежняя проверка `test -f`
+# внутри current/images/ искала файлы там, куда их больше не кладут:
+# она падала всегда, хотя картинки отдавались с HTTP 200.
+# С AUTO_ROLLBACK это откатывало бы полностью здоровый прод.
 for img in $HERO_IMAGES; do
-  REMOTE_PATH="${REMOTE_DIR}${img#/}"
-  if ! ssh -i "$SSH_KEY" "$SSH_HOST" "test -f '$REMOTE_PATH'" 2>/dev/null; then
-    echo "  ❌ MISSING: $REMOTE_PATH"
+  IMG_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$HEALTH_URL$img") || IMG_CODE="000"
+  if [ "$IMG_CODE" != "200" ]; then
+    echo "  ❌ MISSING: $HEALTH_URL$img → HTTP $IMG_CODE"
     MISSING=$((MISSING + 1))
   fi
 done
