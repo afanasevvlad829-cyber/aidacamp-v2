@@ -26,8 +26,9 @@ cp docker/agent/agent-secrets.env.example ~/.agent-secrets.env && chmod 600 ~/.a
 #   → вписать GitHub fine-grained PAT (только этот репо: Contents+PR) и ANTHROPIC_API_KEY
 ```
 
-- **Локально — только хотфиксы владельца** (`MASTER_AGENT=1`). Прод-деплой — владельцем из чистого worktree.
-- Мерж PR в dev/main и прод-деплой — за владельцем; агент делает только PR.
+- **Локально — только хотфиксы владельца** (`MASTER_AGENT=1`).
+- Мерж PR в `dev` — за владельцем; агент делает только PR.
+- **Прод выкатывается автоматически** после мержа в `dev` (см. §6.1). Вручную прод не катят.
 
 > **🚫 DEPRECATED (выведено из эксплуатации 2026-06-06):** `vps-start-agent.sh`, `agent-start.sh`, `worker.sh`, `vps-watchdog.sh`, `vps-agent-run.sh`, `vps-status.sh` — старый стек «агент под root в `~/Aidacamp` + tmux + pm2-watchdog». Небезопасен (root на проде = радиус поражения весь сервер; claude блокирует bypass под root). Заменён контейнерами выше. Не использовать.
 
@@ -222,24 +223,40 @@ run(service="ssh", action="run", params={host:"aidacamp",
 > rsync -a /opt/aidacamp-site/dist/client/stati/СТРАНИЦА/ /var/www/aidacamp-dev/stati/СТРАНИЦА/
 > ```
 
-#### Прод (только после проверки на dev)
-```bash
-# Только владелец, с подтверждением:
-MASTER_AGENT=1 ./scripts/deploy-server.sh prod
+#### Прод — автоматически, руками не катят
+
+Мерж PR в `dev` запускает [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml):
+
+```
+push в dev → деплой dev → smoke dev → merge dev→main → деплой prod → smoke prod
+                              ↓ красный                                  ↓ красный
+                          поезд встал                              авто-откат прода
 ```
 
-#### Запасной путь (если сервер недоступен)
+Три рубежа защиты:
+1. `quality-gate.yml` — `check:banned`, `check:prices`, `build`;
+2. **smoke на dev** — прод не поедет, пока dev красный;
+3. **авто-откат** на последний `backup-*`, если верификация или smoke прода провалились.
+
+`main` **мержится**, а не ресетится: прежний `reset --hard`-промоут разъезжал истории
+и терял правки (инцидент 2026-07-07), из-за чего один хотфикс пришлось делать дважды.
+
+**Как остановить выкат:** выключить workflow `Deploy` в GitHub Actions,
+либо запустить его вручную (`workflow_dispatch`) с галкой `skip_prod`.
+
+**Откат вручную** (если авто-откат не справился):
 ```bash
-./scripts/deploy.sh dev|prod   # локальный билд, NODE_OPTIONS=6144MB
+./scripts/rollback.sh prod                    # на последний бэкап
+./scripts/rollback.sh prod backup-20260708-1200   # на конкретный
+```
+
+#### Запасной путь (если Actions недоступны)
+```bash
+MASTER_AGENT=1 ./scripts/deploy.sh prod       # локальный билд, интерактивное подтверждение
 ```
 
 #### Статьи — только в `/stati/`, не в `/blog/`
 `src/pages/blog/` **исключён из sitemap** и не индексируется. Все SEO-статьи — в `src/pages/stati/`.
-
-**НИКОГДА** не деплоить прод без:
-1. PR смёрджен в `dev`
-2. dev.aidacamp.ru проверен глазами
-3. Владелец сказал «выкатываем»
 
 ### 6.2. После деплоя
 - Проверить что HTTP 200 на главной (deploy.sh автоматически)

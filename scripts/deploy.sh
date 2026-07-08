@@ -112,10 +112,17 @@ case "$TARGET" in
     echo ""
     echo "⚠️  ВНИМАНИЕ: деплой на ПРОДАКШН ($LABEL)"
     echo ""
-    read -p "Точно деплоить на прод? (yes/no): " CONFIRM
-    if [ "$CONFIRM" != "yes" ]; then
-      echo "Отменено."
-      exit 1
+    # DEPLOY_YES=1 — неинтерактивный режим для CI (в GitHub Actions нет stdin).
+    # Роль «человека, который смотрит на сайт после деплоя» берут на себя
+    # smoke.sh + авто-откат ниже, поэтому подтверждение здесь не единственная защита.
+    if [ "${DEPLOY_YES:-0}" = "1" ]; then
+      echo "  (DEPLOY_YES=1 — подтверждение пропущено, неинтерактивный режим)"
+    else
+      read -p "Точно деплоить на прод? (yes/no): " CONFIRM
+      if [ "$CONFIRM" != "yes" ]; then
+        echo "Отменено."
+        exit 1
+      fi
     fi
     BACKUP="backup-$(date +%Y%m%d-%H%M%S)"
     echo "📦 Бэкап прода → /var/www/aidacamp/$BACKUP/"
@@ -313,11 +320,18 @@ echo ""
 echo "🔍 Верификация..."
 MISSING=0
 
-# 6a. Проверяем hero-images явно
+# 6a. Проверяем hero-images ПО HTTP, а не по наличию файла в current/.
+#
+# С 2026-07-02 медиа живут в едином хранилище /var/www/aidacamp-media/,
+# nginx отдаёт /images/ и /videos/ оттуда через alias, а rsync выше их
+# намеренно исключает (--exclude='images/'). Прежняя проверка `test -f`
+# внутри current/images/ искала файлы там, куда их больше не кладут:
+# она падала всегда, хотя картинки отдавались с HTTP 200.
+# С AUTO_ROLLBACK это откатывало бы полностью здоровый прод.
 for img in $HERO_IMAGES; do
-  REMOTE_PATH="${REMOTE_DIR}${img#/}"
-  if ! ssh -i "$SSH_KEY" "$SSH_HOST" "test -f '$REMOTE_PATH'" 2>/dev/null; then
-    echo "  ❌ MISSING: $REMOTE_PATH"
+  IMG_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$HEALTH_URL$img") || IMG_CODE="000"
+  if [ "$IMG_CODE" != "200" ]; then
+    echo "  ❌ MISSING: $HEALTH_URL$img → HTTP $IMG_CODE"
     MISSING=$((MISSING + 1))
   fi
 done
@@ -333,20 +347,56 @@ if [ "$LOCAL_HTML_HASH" != "$REMOTE_HTML_HASH" ]; then
 fi
 
 # 6c. HTTP healthcheck
-HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$HEALTH_URL" || echo "000")
+# Раньше это был только warning: сайт мог отдавать 500, а деплой считался успешным.
+# `|| HTTP_STATUS=000`, а не `|| echo 000`: под `set -e` падение curl убило бы
+# скрипт до авто-отката, а склейка через echo дала бы "000000".
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$HEALTH_URL") || HTTP_STATUS="000"
 if [ "$HTTP_STATUS" != "200" ]; then
-  echo "  ⚠️  $HEALTH_URL вернул HTTP $HTTP_STATUS"
+  echo "  ❌ $HEALTH_URL вернул HTTP $HTTP_STATUS"
+  MISSING=$((MISSING + 1))
 fi
 
-if [ $MISSING -gt 0 ]; then
+# ── Аварийный откат ───────────────────────────────────────────
+# Прод уже перезаписан к этому моменту, поэтому «exit 1» оставлял бы
+# сайт сломанным. AUTO_ROLLBACK=1 (по умолчанию в CI) возвращает
+# последний бэкап и только потом падает.
+fail_deploy() {
+  local reason="$1"
   echo ""
-  echo "❌ ВЕРИФИКАЦИЯ ПРОВАЛЕНА — $MISSING критичных файлов отсутствуют/несовпадают"
+  echo "❌ ДЕПЛОЙ ПРОВАЛЕН: $reason"
+  if [ "$TARGET" = "prod" ] && [ "${AUTO_ROLLBACK:-0}" = "1" ]; then
+    echo ""
+    echo "⏮  Запускаю авто-откат..."
+    if SSH_KEY_PROD="$SSH_KEY" "$SCRIPT_DIR/rollback.sh" prod; then
+      echo "✅ Прод откачен на предыдущую версию."
+    else
+      echo "🔥 ОТКАТ НЕ УДАЛСЯ — прод требует ручного вмешательства!"
+    fi
+  elif [ "$TARGET" = "prod" ]; then
+    echo "⚠️  AUTO_ROLLBACK выключен. Прод остался в сломанном состоянии."
+    echo "   Откат вручную: ./scripts/rollback.sh prod"
+  fi
   exit 1
+}
+
+if [ $MISSING -gt 0 ]; then
+  fail_deploy "верификация не пройдена ($MISSING проблем)"
 fi
 
 echo "  ✅ HTML hash совпадает"
 echo "  ✅ Все hero-images на месте ($(echo "$HERO_IMAGES" | wc -l | tr -d ' ') файлов)"
 echo "  ✅ HTTP $HTTP_STATUS"
+
+# ── 6d. Smoke: критичные страницы + внутренние ссылки ─────────
+# Ловит то, что не видно по одной главной странице: битую перелинковку,
+# упавший раздел, 404 после переименования слага.
+if [ "${SKIP_SMOKE:-0}" != "1" ]; then
+  echo ""
+  echo "🔥 Smoke-тест..."
+  if ! "$SCRIPT_DIR/smoke.sh" "$HEALTH_URL"; then
+    fail_deploy "smoke-тест не пройден"
+  fi
+fi
 
 
 # Запишем SHA задеплоенного коммита на сервер для drift-check (cron алертит при расхождении)
