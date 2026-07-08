@@ -38,6 +38,26 @@ jobs:
           restore-keys: |
             astro-${{ runner.os }}-
 
+      # Невалидный workflow не падает громко — он получает startup_failure
+      # и молча не выполняется. Так guard-agent-prs.yml 2.5 месяца числился
+      # защитой и не срабатывал ни разу (сломан 2026-04-24, найден 2026-07-08).
+      - name: Валидность workflow-файлов
+        run: |
+          python3 - <<'PY'
+          import glob, sys, yaml
+          bad = []
+          for f in sorted(glob.glob('.github/workflows/*.yml') + glob.glob('.github/workflows/*.yaml')):
+              try:
+                  yaml.safe_load(open(f))
+                  print(f'  OK   {f}')
+              except yaml.YAMLError as e:
+                  bad.append(f)
+                  print(f'  FAIL {f}\n       {e}')
+          if bad:
+              print(f'::error::Невалидный YAML в {len(bad)} workflow — GitHub не сможет их запустить')
+              sys.exit(1)
+          PY
+
       - name: Гейт TS2304 (несуществующие переменные)
         run: npm run check:undefined
 

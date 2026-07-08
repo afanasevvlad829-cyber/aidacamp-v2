@@ -1,5 +1,14 @@
 name: Guard — блокировать PR от агентов напрямую в main
 
+# ⚠️ Отступы внутри `script: |` критичны.
+# Базовый отступ блочного скаляра задаёт ПЕРВАЯ непустая строка (здесь 12 пробелов).
+# Любая строка левее — завершает блок, и YAML начинает парсить её как код.
+# Именно так этот workflow был сломан с 2026-04-24 по 2026-07-08: строки
+# markdown-текста стояли в первой колонке, `**жирный**` читался как alias-якорь
+# → `startup_failure` на каждом push, guard не срабатывал ни разу.
+#
+# Проверять перед коммитом:  python3 -c "import yaml;yaml.safe_load(open('.github/workflows/guard-agent-prs.yml'))"
+
 on:
   pull_request:
     types: [opened, reopened, edited]
@@ -8,6 +17,8 @@ on:
 
 jobs:
   block-agent-pr:
+    # Ловит только ветки agent/*. Прочие (fix/*, chore/*, feat/*) не блокируются —
+    # PR в main от них по-прежнему возможен, хотя схеме и не нужен.
     if: startsWith(github.head_ref, 'agent/')
     runs-on: ubuntu-latest
     permissions:
@@ -17,30 +28,37 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const branch = context.payload.pull_request.head.ref;
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: `## 🚫 PR заблокирован
-
-**Воркеры не могут делать PR напрямую в \`main\`.**
-
-Схема: \`agent/*\` → PR → \`dev\` → PR → \`main\`
-
-**Что сделать:**
-\`\`\`bash
-gh pr edit ${context.issue.number} --base dev
-\`\`\`
-
-Или пересоздай PR с правильной базой:
-\`\`\`bash
-gh pr create --base dev --head ${context.payload.pull_request.head.ref}
-\`\`\``
+              body: [
+                '## 🚫 PR заблокирован',
+                '',
+                '**Агенты не открывают PR напрямую в `main`.**',
+                '',
+                '`main` продвигается только fast-forward\'ом из `dev` — внутри',
+                '[`deploy.yml`](.github/workflows/deploy.yml), после зелёного smoke на dev.',
+                'PR в `main` создал бы merge-коммит и развёл ветки.',
+                '',
+                'Схема: `agent/*` → PR → `dev` → (автоматически) → `main` → прод',
+                '',
+                '**Что сделать — переставить базу на `dev`:**',
+                '```bash',
+                `gh pr edit ${context.issue.number} --base dev`,
+                '```',
+                '',
+                'Или пересоздать PR с правильной базой:',
+                '```bash',
+                `gh pr create --base dev --head ${branch}`,
+                '```',
+              ].join('\n'),
             });
 
             await github.rest.pulls.update({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.issue.number,
-              state: 'closed'
+              state: 'closed',
             });
