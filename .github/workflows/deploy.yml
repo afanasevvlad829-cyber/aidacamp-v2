@@ -46,16 +46,9 @@ jobs:
         with: { node-version: '22', cache: 'npm' }
 
       - name: Установка SSH-ключа
-        run: |
-          if [ -z "${{ secrets.SSH_KEY_PROD }}" ]; then
-            echo "::error::Секрет SSH_KEY_PROD не задан."
-            echo "Добавь приватный ключ: Settings → Secrets and variables → Actions → SSH_KEY_PROD"
-            exit 1
-          fi
-          mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.SSH_KEY_PROD }}" > ~/.ssh/aidacamp_prod
-          chmod 600 ~/.ssh/aidacamp_prod
-          ssh-keyscan -H 159.194.223.55 >> ~/.ssh/known_hosts 2>/dev/null
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY_PROD }}
+        run: ./scripts/ci-setup-ssh.sh
 
       - run: npm ci
 
@@ -105,11 +98,9 @@ jobs:
         with: { node-version: '22', cache: 'npm' }
 
       - name: Установка SSH-ключа
-        run: |
-          mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.SSH_KEY_PROD }}" > ~/.ssh/aidacamp_prod
-          chmod 600 ~/.ssh/aidacamp_prod
-          ssh-keyscan -H 159.194.223.55 >> ~/.ssh/known_hosts 2>/dev/null
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY_PROD }}
+        run: ./scripts/ci-setup-ssh.sh
 
       - run: npm ci
 
