@@ -4,7 +4,7 @@ import type { LandingData } from './types';
 const landing: LandingData = {
   slug: 'lager-istra',
   title: 'Детский лагерь рядом с Истрой 2026 | АйДаКемп',
-  description: 'IT-лагерь из Истры: ~1.5–2 ч через МКАД по Киевскому шоссе. Python, AI, Minecraft, бассейн, питание. Трансфер от метро Солнцево.',
+  description: 'Детский IT-лагерь из Истры: ~1.5–2 ч через МКАД по Киевскому шоссе. Python, AI, Minecraft для детей 7–15 лет, бассейн, питание. Трансфер от метро Солнцево.',
   h1: 'Детский лагерь из Истры — АйДаКемп в Подмосковье',
   canonical: 'https://aidacamp.ru/lager-istra',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
