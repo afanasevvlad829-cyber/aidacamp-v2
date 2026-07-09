@@ -34,7 +34,10 @@ An agent must STOP and ask in plain text. "The task seems to require it" is NOT 
    - NEVER run `rm -rf` outside a clearly scoped build/temp dir
    - Deploy ONLY via `./scripts/deploy.sh [dev|prod]`. NEVER call `rsync` by hand.
    - Manual `rsync --delete` against live web-root wipes `current/`, `.env`, `node_modules` (incident 2026-05-22)
-   - NEVER deploy `prod` on the user's behalf (requires `MASTER_AGENT=1` + interactive "yes")
+   - NEVER deploy `prod` locally on the user's behalf (`deploy.sh prod` is in `permissions.deny`)
+   - Prod ships ONLY through CI: merge a PR into `dev` → `.github/workflows/deploy.yml`
+     (quality-gate → smoke on dev → fast-forward `main` → prod deploy → smoke → auto-rollback).
+     Agents may run `gh pr merge`, `gh workflow run` and `./scripts/rollback.sh prod`.
 
 If unsure — treat as destructive and ask first.
 Prefer: `git revert` over `reset --hard`, `git stash` over `clean`, new branch over force-push.
