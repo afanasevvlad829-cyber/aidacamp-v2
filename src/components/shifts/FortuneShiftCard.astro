@@ -1,6 +1,6 @@
 ---
 import { getCurrentPrice, fmtPrice } from '../../data/dynamicPrices';
-import { mainShifts } from '../../data/shifts';
+import { mainShifts, getAvailabilityLevel } from '../../data/shifts';
 import { MS_PER_DAY, daysUntil, formatDaysLabel } from '../../scripts/shifts/fortune';
 
 interface Props {
@@ -16,6 +16,7 @@ const SHIFT_ID = shift.id;
 const fscTotal = shift.free + shift.occupied || 1;
 const fscPct = Math.round((shift.occupied / fscTotal) * 100);
 const fscFreeLabel = shift.free === 1 ? '1 место' : shift.free < 5 ? `${shift.free} места` : `${shift.free} мест`;
+const fscIsLow = getAvailabilityLevel(shift) === 'low';
 
 const today = new Date();
 const currentPrice = getCurrentPrice(SHIFT_ID, today) ?? parseInt(shift.price.replace(/\D/g, ''), 10);
@@ -195,6 +196,9 @@ const segData = SEGMENTS.map((seg, i) => {
       <div class="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
         <div class="h-full rounded-full bg-primary" style={`width:${fscPct}%`}></div>
       </div>
+      <button type="button" data-spots-reveal-btn data-spots-shift={shift.id} data-spots-low={fscIsLow ? '1' : undefined} class="mt-1.5 text-[12px] font-semibold text-primary hover:text-primary-hover underline underline-offset-2 transition-colors">
+        Узнать точное число мест
+      </button>
     </div>
     <!-- Price + CTA -->
     <div class="flex items-end justify-between gap-3">
