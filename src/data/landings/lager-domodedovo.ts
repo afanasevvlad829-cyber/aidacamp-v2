@@ -6,7 +6,7 @@ const landing: LandingData = {
   slug: 'lager-domodedovo',
   title: 'Детский лагерь Домодедово 2026 — IT-смена за час | АйДаКемп',
   description: 'Детский IT-лагерь рядом с Домодедово: 66 км от МКАД, ~1 час. Python, нейросети, Minecraft, Roblox. Питание 5 раз, бассейн, медик. Трансфер 2000₽, возврат 13%.',
-  h1: 'Летний лагерь Домодедово 2026 — IT-смена для 7–15 лет',
+  h1: 'Летний лагерь Домодедово 2026',
   canonical: 'https://aidacamp.ru/lager-domodedovo',
   heroImage: '/images/hero/lager-na-leto-2026.avif',
   faqItems: [
