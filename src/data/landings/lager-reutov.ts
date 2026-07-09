@@ -3,7 +3,7 @@ import type { LandingData } from './types';
 
 const landing: LandingData = {
   slug: 'lager-reutov',
-  title: 'Детский лагерь рядом с Реутовом 2026 — IT-смена | АйДаКемп',
+  title: 'Детский лагерь Реутов 2026 — IT-смена рядом | АйДаКемп',
   description: `Из Реутова до IT-лагеря через м. Солнцево + трансфер, налоговый вычет до ${VYCHET_MAX}. Python, AI, Minecraft для 7–15 лет. От ${PRICE_MIN}.`,
   h1: 'Детский лагерь рядом с Реутовом',
   canonical: 'https://aidacamp.ru/lager-reutov',

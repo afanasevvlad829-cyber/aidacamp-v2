@@ -4,7 +4,7 @@ import type { LandingData } from './types';
 const landing: LandingData = {
   slug: 'lager-mytishchi',
   title: 'Выездной детский лагерь рядом с Мытищами 2026 | АйДаКемп',
-  description: `Выездной IT-лагерь с проживанием рядом с Мытищами: 66 км от МКАД, трансфер от м. Солнцево. Налоговый вычет до ${VYCHET_MAX}. Python, AI, Minecraft, 7–15 лет.`,
+  description: `Выездной летний IT-лагерь с проживанием рядом с Мытищами: 66 км от МКАД, трансфер от м. Солнцево. Налоговый вычет до ${VYCHET_MAX}. Python, AI, Minecraft, 7–15 лет.`,
   h1: 'Лагерь для детей из Мытищ',
   canonical: 'https://aidacamp.ru/lager-mytishchi',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
