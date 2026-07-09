@@ -67,11 +67,18 @@ const heroShiftsData = {
       try { revealed = JSON.parse(sessionStorage.getItem('ac:occ_revealed') || '[]'); } catch (e) {}
       list.innerHTML = views.map(function(v) {
         var blurCls = revealed.indexOf(v.shiftId) === -1 ? ' blur-[6px] transition-[filter] duration-300 select-none' : '';
-        return '<a href="/shifts/' + v.shiftId + '/" class="flex items-center gap-3 text-base hover:text-primary transition-colors no-underline text-slate-700 font-medium">' +
-          '<i class="bi bi-arrow-left-circle-fill text-[20px] text-primary shrink-0" aria-hidden="true"></i>' +
-          '<span>Вы смотрели ' + v.name + ' (' + v.lastSeenLabel + ') · <span data-spots-num data-spots-shift="' + v.shiftId + '" class="' + blurCls + '">' + v.freeLabel + '</span> · ' + v.dates + '</span>' +
-          '<i class="bi bi-arrow-right text-base text-primary ml-auto shrink-0" aria-hidden="true"></i>' +
-          '</a>';
+        return '<div class="flex items-center gap-3 text-base text-slate-700 font-medium">' +
+          '<a href="/shifts/' + v.shiftId + '/" class="flex items-center gap-3 min-w-0 hover:text-primary transition-colors no-underline">' +
+            '<i class="bi bi-arrow-left-circle-fill text-[20px] text-primary shrink-0" aria-hidden="true"></i>' +
+            '<span class="truncate">Вы смотрели ' + v.name + ' (' + v.lastSeenLabel + ')</span>' +
+          '</a>' +
+          '<span class="shrink-0">· <span data-spots-num data-spots-shift="' + v.shiftId + '" class="' + blurCls + '">' + v.freeLabel + '</span></span>' +
+          '<button type="button" data-spots-reveal-btn data-spots-shift="' + v.shiftId + '" class="shrink-0 text-[12px] font-semibold text-primary underline underline-offset-2 hover:text-primary-hover transition-colors">узнать</button>' +
+          '<a href="/shifts/' + v.shiftId + '/" class="ml-auto flex items-center gap-2 shrink-0 hover:text-primary transition-colors no-underline">' +
+            '<span class="hidden sm:inline text-slate-500">' + v.dates + '</span>' +
+            '<i class="bi bi-arrow-right text-base text-primary" aria-hidden="true"></i>' +
+          '</a>' +
+        '</div>';
       }).join('');
       hint.classList.remove('hidden');
     })
