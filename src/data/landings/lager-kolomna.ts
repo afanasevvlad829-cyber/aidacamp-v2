@@ -3,9 +3,9 @@ import type { LandingData } from './types';
 
 const landing: LandingData = {
   slug: 'lager-kolomna',
-  title: 'Детский лагерь рядом с Коломной 2026 | АйДаКемп',
-  description: `Детский IT-лагерь рядом с Коломной — ~2 ч через Новорязанское шоссе → МКАД → Киевское. Python, AI, Minecraft. От ${PRICE_MIN}.`,
-  h1: 'Детский лагерь рядом с Коломной',
+  title: 'Детский летний лагерь рядом с Коломной 2026 | АйДаКемп',
+  description: `Детский летний IT-лагерь рядом с Коломной — ~2 ч через Новорязанское шоссе → МКАД → Киевское. Python, AI, Minecraft. От ${PRICE_MIN}.`,
+  h1: 'Детский летний лагерь рядом с Коломной',
   canonical: 'https://aidacamp.ru/lager-kolomna',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
   faqItems: [

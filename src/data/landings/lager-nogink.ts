@@ -5,8 +5,8 @@ import type { LandingData } from './types';
 const landing: LandingData = {
   slug: 'lager-nogink',
   title: 'IT-лагерь рядом с Ногинском 2026 — Python 7-15 лет | АйДаКемп',
-  description: `Смены июнь и август 2026 ещё открыты, ~1 час от МКАД по Киевскому шоссе. Python, AI, Minecraft для ребят 7–15 лет. Вычет до ${VYCHET_MAX}, трансфер от м. Солнцево.`,
-  h1: 'Детский лагерь рядом с Ногинском',
+  description: `Детский IT-лагерь для семей в Ногинске: смены август 2026 открыты. Python, AI, Minecraft, 7–15 лет. Вычет до ${VYCHET_MAX}, трансфер от м. Солнцево.`,
+  h1: 'Детский лагерь — Ногинск',
   canonical: 'https://aidacamp.ru/lager-nogink',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
   faqItems: [
