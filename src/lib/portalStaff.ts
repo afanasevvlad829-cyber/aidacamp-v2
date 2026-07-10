@@ -1,6 +1,6 @@
 import type { PortalRole } from './portalSession';
 import { highestRole } from './portalRoles';
-import { query } from './db';
+import { query, withDbClient } from './db';
 
 export interface StaffRow {
   telegram_id: number | null;
@@ -20,23 +20,6 @@ export interface StaffRowFull extends StaffRow {
   code?: string | null;
 }
 
-function dsn(): string {
-  return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
-}
-
-async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
-  const conn = dsn();
-  if (!conn) return null;
-  const { default: pg } = await import('pg');
-  const client = new pg.Client({ connectionString: conn });
-  await client.connect();
-  try {
-    return await fn(client);
-  } finally {
-    await client.end();
-  }
-}
-
 /** Запись сотрудника по telegram_id (или null). */
 export async function getStaff(telegramId: number): Promise<StaffRow | null> {
   const rows = await query<StaffRow>(
@@ -52,7 +35,7 @@ export async function ensurePending(
   fullName: string | null,
   username: string | null,
 ): Promise<StaffRow | null> {
-  return await withClient(async (c) => {
+  return await withDbClient(async (c) => {
     await c.query(
       `INSERT INTO portal_staff (telegram_id, full_name, tg_username)
        VALUES ($1,$2,$3)
@@ -85,7 +68,7 @@ export async function mergePendingIntoPlaceholder(
   placeholderId: number,
   adminTelegramId: number,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const result = await withClient(async (c) => {
+  const result = await withDbClient(async (c) => {
     await c.query('BEGIN');
     try {
       const pRes = await c.query(
@@ -210,7 +193,7 @@ export async function applyInviteForTelegram(
   inviteRoles: string[],
 ): Promise<StaffRow | null> {
   if (!Array.isArray(inviteRoles) || inviteRoles.length === 0) return null;
-  return await withClient(async (c) => {
+  return await withDbClient(async (c) => {
     const primary = highestRole(inviteRoles) ?? inviteRoles[0];
     await c.query(
       `INSERT INTO portal_staff (telegram_id, full_name, tg_username, role, roles, active)
@@ -269,7 +252,7 @@ export async function markStaffTgLogin(telegramId: number): Promise<void> {
  * сматчился бы как ученический (role=student). Возвращает новый код или null.
  */
 export async function regenerateStaffCode(id: number): Promise<string | null> {
-  return await withClient(async (c) => {
+  return await withDbClient(async (c) => {
     for (let i = 0; i < 12; i++) {
       const code = String(Math.floor(Math.random() * 900000) + 100000);
       const kid = await c.query('SELECT 1 FROM portal_kid WHERE code=$1', [code]);

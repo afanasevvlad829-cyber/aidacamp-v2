@@ -1,5 +1,6 @@
 // Единая система медиа: фото/видео крепятся к любой сущности портала
 // через (entity_type, entity_id) поверх archive_photo.
+import { withDbClient } from './db';
 
 export type EntityType = 'event' | 'student' | 'prize' | 'lesson' | 'room' | 'profile' | string;
 
@@ -20,15 +21,6 @@ export interface MediaItem {
   uploaded_at: string;
 }
 
-function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
-
-async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
-  const conn = dsn(); if (!conn) return null;
-  const { default: pg } = await import('pg');
-  const client = new pg.Client({ connectionString: conn });
-  await client.connect();
-  try { return await fn(client); } finally { await client.end(); }
-}
 
 const SELECT_BASE = `
   SELECT ap.id, ap.entity_type, ap.entity_id, ap.event_id,
@@ -41,7 +33,7 @@ const SELECT_BASE = `
 `;
 
 export async function listMedia(entityType: EntityType, entityId: number | string): Promise<MediaItem[]> {
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     const eid = Number(entityId);
     const r = await c.query(
       `${SELECT_BASE}
@@ -55,7 +47,7 @@ export async function listMedia(entityType: EntityType, entityId: number | strin
 }
 
 export async function getMedia(id: number): Promise<MediaItem | null> {
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     const r = await c.query(`${SELECT_BASE} WHERE ap.id=$1`, [id]);
     return (r.rows[0] as MediaItem) ?? null;
   })) ?? null;
@@ -75,7 +67,7 @@ export async function attachMedia(inp: {
   author_telegram_id: number;
   storage_kind?: 'local' | 'yadisk';
 }): Promise<number | null> {
-  return await withClient(async (c) => {
+  return await withDbClient(async (c) => {
     // Найти максимальный sort_order по этой сущности
     const s = await c.query(
       `SELECT COALESCE(MAX(sort_order), -1) AS s FROM archive_photo
@@ -103,7 +95,7 @@ export async function attachMedia(inp: {
 }
 
 export async function deleteMedia(id: number): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     await c.query('DELETE FROM archive_photo WHERE id=$1', [id]);
   });
 }
@@ -111,7 +103,7 @@ export async function deleteMedia(id: number): Promise<void> {
 /** Массовое обновление sort_order. ids приходят в нужном порядке. */
 export async function reorderMedia(ids: number[]): Promise<void> {
   if (!ids.length) return;
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     await c.query('BEGIN');
     try {
       for (let i = 0; i < ids.length; i++) {

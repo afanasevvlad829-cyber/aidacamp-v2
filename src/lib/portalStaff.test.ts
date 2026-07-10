@@ -3,6 +3,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // ---------------------------------------------------------------------------
 // Mock pg.Client — full in-memory simulation for mergePendingIntoPlaceholder
 // ---------------------------------------------------------------------------
+//
+// db.ts берёт клиента через getPool()->pool.connect() (не new pg.Client()
+// напрямую), а pool в db.ts — module-level singleton, живущий всю жизнь
+// тестового файла. Поэтому мок регистрируем ОДИН раз на уровне модуля, а
+// per-test клиент подставляем через мутабельную currentClient — так Pool
+// не приходится пересоздавать между тестами.
+let currentClient: unknown;
+vi.mock('pg', () => ({
+  default: {
+    Client: vi.fn(() => currentClient),
+    Pool: vi.fn(() => ({ connect: vi.fn(async () => currentClient), on: vi.fn() })),
+  },
+}));
 
 type Row = Record<string, unknown>;
 
@@ -17,6 +30,7 @@ function makeClient(rows: { pending?: Row; target?: Row } = {}) {
     _rolledBack: () => rolledBack,
     connect: vi.fn(),
     end: vi.fn(),
+    release: vi.fn(),
     query: vi.fn(async (sql: string, params?: unknown[]) => {
       queries.push(sql.trim());
       const s = sql.trim().toUpperCase();
@@ -58,6 +72,7 @@ function makeSmartClient(rows: { pending?: Row; target?: Row } = {}, throwOnUpda
     _committed: () => committed,
     connect: vi.fn(),
     end: vi.fn(),
+    release: vi.fn(),
     query: vi.fn(async (sql: string, params?: unknown[]) => {
       const s = sql.trim().toUpperCase();
       if (s === 'BEGIN') return { rows: [] };
@@ -88,18 +103,17 @@ function makeSmartClient(rows: { pending?: Row; target?: Row } = {}, throwOnUpda
   return client;
 }
 
-// Patch withClient to use our fake client
+// Подставляет fake-клиент на время выполнения fn (см. currentClient выше).
 async function withMockedClient<T>(
   client: ReturnType<typeof makeSmartClient>,
   fn: () => Promise<T>,
 ): Promise<T> {
-  const pg = await import('pg');
-  const origClient = pg.default.Client;
-  (pg.default as unknown as Record<string, unknown>).Client = vi.fn(() => client);
+  const prev = currentClient;
+  currentClient = client;
   try {
     return await fn();
   } finally {
-    (pg.default as unknown as Record<string, unknown>).Client = origClient;
+    currentClient = prev;
   }
 }
 

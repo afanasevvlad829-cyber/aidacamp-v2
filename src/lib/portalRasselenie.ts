@@ -4,6 +4,7 @@
  * Один ребёнок ∈ shift_id уникален (UNIQUE shift_id+kid_id).
  * Одна койка (shift+room+bed) занята максимум одним ребёнком.
  */
+import { withDbClient } from './db';
 
 export interface RoomAssignment {
   id: number;
@@ -17,18 +18,9 @@ export interface RoomAssignment {
   bed_index: number | null;
 }
 
-function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
-async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
-  const conn = dsn(); if (!conn) return null;
-  const { default: pg } = await import('pg');
-  const client = new pg.Client({ connectionString: conn });
-  await client.connect();
-  try { return await fn(client); } finally { await client.end(); }
-}
-
 /** Сохранить снимок текущего расселения смены (резерв перед массовыми операциями). */
 export async function takeSnapshot(shiftId: number, reason: string): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     await c.query(
       `INSERT INTO room_assignment_snapshot(shift_id, reason, snapshot_data)
        SELECT $1, $2, COALESCE(jsonb_agg(row_to_json(ra)), '[]'::jsonb)
@@ -40,7 +32,7 @@ export async function takeSnapshot(shiftId: number, reason: string): Promise<voi
 
 /** Все назначения для смены (включая нерасселённых). */
 export async function listAssignments(shiftId: number): Promise<RoomAssignment[]> {
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     // Для записей staff-{id} берём актуальное имя из portal_staff.
     // kid_name остаётся fallback если запись была удалена из portal_staff.
     const r = await c.query(
@@ -92,7 +84,7 @@ export async function upsertKid(input: {
            bed_index   = COALESCE(EXCLUDED.bed_index,   room_assignment.bed_index),`
     : `room_number = EXCLUDED.room_number,
            bed_index   = EXCLUDED.bed_index,`;
-  return await withClient(async (c) => {
+  return await withDbClient(async (c) => {
     await c.query('BEGIN');
     let bumped: string | null = null;
     try {
@@ -142,7 +134,7 @@ export async function upsertKid(input: {
 /** Снять всех детей с коек (комнаты обнуляются, дети остаются в реестре). */
 export async function resetAssignmentsForShift(shiftId: number): Promise<number> {
   await takeSnapshot(shiftId, 'reset_all');
-  const n = await withClient(async (c) => {
+  const n = await withDbClient(async (c) => {
     const r = await c.query(
       `UPDATE room_assignment SET room_number=NULL, bed_index=NULL, updated_at=now()
        WHERE shift_id=$1 AND (room_number IS NOT NULL OR bed_index IS NOT NULL)`,
@@ -255,7 +247,7 @@ export async function autoAssign(shiftId: number, rooms: AutoAssignRoomDef[]): P
 /** Полная очистка списка детей смены (удаляем все записи). */
 export async function wipeKidsForShift(shiftId: number): Promise<number> {
   await takeSnapshot(shiftId, 'wipe_all');
-  const n = await withClient(async (c) => {
+  const n = await withDbClient(async (c) => {
     const r = await c.query('DELETE FROM room_assignment WHERE shift_id=$1', [shiftId]);
     return r.rowCount ?? 0;
   });
@@ -264,7 +256,7 @@ export async function wipeKidsForShift(shiftId: number): Promise<number> {
 
 /** Удалить ребёнка полностью из реестра расселения. */
 export async function deleteKid(shiftId: number, kidId: string): Promise<boolean> {
-  const ok = await withClient(async (c) => {
+  const ok = await withDbClient(async (c) => {
     const r = await c.query(
       'DELETE FROM room_assignment WHERE shift_id=$1 AND kid_id=$2',
       [shiftId, kidId],

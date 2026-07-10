@@ -1,5 +1,5 @@
 import type { PortalRole } from './portalSession';
-import { query } from './db';
+import { query, withDbClient } from './db';
 
 export interface ContentTask {
   id: number;
@@ -84,15 +84,6 @@ export function eventColorClass(eventType: string | null | undefined): string {
   return (eventType && EVENT_TYPE_COLORS[eventType]) || 'bg-slate-50 text-slate-700 border-slate-200';
 }
 
-function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
-async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
-  const conn = dsn(); if (!conn) return null;
-  const { default: pg } = await import('pg');
-  const client = new pg.Client({ connectionString: conn });
-  await client.connect();
-  try { return await fn(client); } finally { await client.end(); }
-}
-
 export async function getActiveShift(): Promise<Shift | null> {
   const rows = await query<Shift>(
     "SELECT id,name,to_char(start_date,'YYYY-MM-DD') start_date,to_char(end_date,'YYYY-MM-DD') end_date,status FROM shift WHERE status='active' ORDER BY start_date DESC LIMIT 1",
@@ -160,7 +151,7 @@ export async function getDone(_telegramId: number, shiftId: number): Promise<Set
 
 /** Переключить пункт; возвращает {done}. Требует одного соединения (DELETE + условный INSERT). */
 export async function toggleDone(telegramId: number, eventId: number, checklistId: number, itemId: string): Promise<{ done: boolean } | null> {
-  return await withClient(async (c) => {
+  return await withDbClient(async (c) => {
     // Общая отметка: снимаем независимо от того, кто ставил.
     const del = await c.query("DELETE FROM checklist_done WHERE event_id=$1 AND checklist_id=$2 AND item_id=$3",
       [eventId, checklistId, itemId]);
@@ -177,7 +168,7 @@ export async function toggleDone(telegramId: number, eventId: number, checklistI
  * toggle давал бы откат, а set всегда приводит к одному и тому же состоянию.
  */
 export async function setDone(telegramId: number, eventId: number, checklistId: number, itemId: string, done: boolean): Promise<{ done: boolean } | null> {
-  return await withClient(async (c) => {
+  return await withDbClient(async (c) => {
     if (done) {
       await c.query("INSERT INTO checklist_done(event_id,checklist_id,item_id,telegram_id) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING",
         [eventId, checklistId, itemId, telegramId]);
@@ -236,7 +227,7 @@ export async function upsertEvent(e: {
   title: string; activity_type: string | null; roles: string[]; sort: number; notes?: string | null;
   responsible_staff_id?: number | null;
 }): Promise<number | null> {
-  return await withClient(async (c) => {
+  return await withDbClient(async (c) => {
     if (e.id) {
       await c.query(
         "UPDATE shift_event SET date=$2,start_time=$3,end_time=$4,title=$5,activity_type=$6,roles=$7,sort=$8,notes=$9,responsible_staff_id=$10 WHERE id=$1",
@@ -252,7 +243,7 @@ export async function upsertEvent(e: {
 
 /** Дублировать событие в том же слоте, с новым ответственным. Копирует и привязки чек-листов. */
 export async function duplicateEvent(eventId: number, newResponsibleId: number | null): Promise<number | null> {
-  return await withClient(async (c) => {
+  return await withDbClient(async (c) => {
     const r = await c.query(
       `INSERT INTO shift_event
         (shift_id, date, start_time, end_time, title, event_type, activity_type, roles,
@@ -281,7 +272,7 @@ export async function duplicateEvent(eventId: number, newResponsibleId: number |
 export async function upsertChecklist(cl: {
   id?: number; key: string | null; title: string; items: { id: string; text: string }[];
 }): Promise<number | null> {
-  return await withClient(async (c) => {
+  return await withDbClient(async (c) => {
     if (cl.id) {
       await c.query("UPDATE checklist SET key=$2,title=$3,items=$4 WHERE id=$1", [cl.id, cl.key, cl.title, JSON.stringify(cl.items)]);
       return cl.id;
@@ -303,7 +294,7 @@ export async function deleteChecklist(id: number): Promise<void> {
 
 /** Привязать чек-лист к событию для ролей (или обновить роли существующей привязки). */
 export async function attachChecklist(eventId: number, checklistId: number, roles: string[]): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     const ex = await c.query("SELECT id FROM event_checklist WHERE event_id=$1 AND checklist_id=$2 LIMIT 1", [eventId, checklistId]);
     if (ex.rows[0]) {
       await c.query("UPDATE event_checklist SET roles=$2 WHERE id=$1", [ex.rows[0].id, roles]);
