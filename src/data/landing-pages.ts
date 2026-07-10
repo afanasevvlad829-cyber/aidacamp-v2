@@ -48,13 +48,24 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь Roblox', description: 'Roblox Studio + Lua, создание 3D-игр', url: '/roblox-lager/', icon: 'bi-controller' },
   { title: 'Лагерь 3D-моделирования', description: 'Blender + 3D-печать модели', url: '/3d-modelirovanie-lager/', icon: 'bi-box' },
   { title: 'Летняя IT-школа', description: 'Загородный формат, с проживанием', url: '/letnyaya-it-shkola/', icon: 'bi-mortarboard' },
+  { title: 'IT-лагерь с проживанием', description: 'IT-программа + проживание, 66 км от МКАД', url: '/it-lager-s-prozhivaniem/', icon: 'bi-laptop' },
+  { title: 'IT-лагерь для подростков', description: 'Python, AI, Roblox — для 11–15 лет', url: '/it-lager-dlya-podrostkov/', icon: 'bi-laptop' },
+  { title: 'IT-лагерь для детей', description: 'Компьютерный лагерь, программирование с нуля', url: '/it-lager-dlya-detey/', icon: 'bi-laptop' },
+  { title: 'Хакатон для школьников', description: 'Финал смены — защита своего проекта', url: '/hakaton-dlya-shkolnikov/', icon: 'bi-trophy-fill' },
 
   // 👧 Возрастные
+  { title: 'Лагерь для детей 7 лет', description: 'Scratch — первый язык программирования', url: '/lager-7-let/', icon: 'bi-emoji-smile' },
   { title: 'Лагерь для детей 8 лет', description: 'Scratch, Minecraft — первый код', url: '/lager-8-let/', icon: 'bi-emoji-smile' },
+  { title: 'Лагерь для детей 9 лет', description: 'Python и первые проекты для 9 лет', url: '/lager-9-let/', icon: 'bi-laptop' },
   { title: 'Лагерь для детей 10 лет', description: 'Python и боты для 9–11 лет', url: '/lager-10-let/', icon: 'bi-laptop' },
+  { title: 'Лагерь для детей 11 лет', description: 'Python и Roblox для 11 лет', url: '/lager-11-let/', icon: 'bi-rocket-takeoff' },
   { title: 'Лагерь для детей 12 лет', description: 'Python, AI — для 11–13 лет', url: '/lager-12-let/', icon: 'bi-rocket-takeoff' },
+  { title: 'Лагерь для детей 13 лет', description: 'IT-проекты и хакатон для 13 лет', url: '/lager-13-let/', icon: 'bi-rocket-takeoff' },
+  { title: 'Лагерь для детей 15 лет', description: 'IT-проекты для подростков 15 лет', url: '/lager-15-let/', icon: 'bi-rocket-takeoff' },
   { title: 'Летний лагерь для подростков', description: 'Подмосковье, смены 11–15 лет 2026', url: '/lager-dlya-podrostkov/', icon: 'bi-rocket-takeoff' },
   { title: 'Лагерь для школьников', description: '1–8 класс, IT-проект', url: '/lager-dlya-shkolnikov/', icon: 'bi-backpack' },
+  { title: 'Лагерь для школьников на лето', description: 'IT-смены 2026 для 1–8 класса', url: '/lager-dlya-shkolnikov-na-leto/', icon: 'bi-backpack' },
+  { title: 'Лагерь для детей', description: 'Группы по возрасту, IT-лагерь в Подмосковье', url: '/lager-dlya-detey/', icon: 'bi-house-heart' },
   { title: 'Лагерь для мальчиков', description: 'Minecraft, Roblox, Python, AI', url: '/lager-dlya-malchikov/', icon: 'bi-rocket-takeoff' },
   { title: 'Лагерь для девочек', description: 'AI, 3D-моделирование, Python', url: '/lager-dlya-devochek/', icon: 'bi-star-fill' },
 
@@ -74,11 +85,21 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь рядом со Звенигородом', description: 'IT-лагерь, ~45 км по А107, ~1 час', url: '/lager-zvenigorod/', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Рузой', description: 'IT-лагерь, ~55 км по А108, ~1–1,5 часа', url: '/lager-ruza/', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Троицком', description: 'IT-лагерь, ~45 км, одно направление, ~50 мин', url: '/lager-troitsk/', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Железнодорожным', description: 'IT-лагерь в Подмосковье', url: '/lager-jeleznodarozhnyj/', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Ногинском', description: 'IT-лагерь, Python для 7–15 лет', url: '/lager-nogink/', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Видным', description: 'IT-лагерь, бассейн', url: '/lager-vidnoe/', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Жуковским', description: 'IT-лагерь в Подмосковье', url: '/lager-zhukovskiy/', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Мытищами', description: 'Выездной детский лагерь', url: '/lager-mytishchi/', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Коломной', description: 'Детский летний лагерь', url: '/lager-kolomna/', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом с Люберцами', description: 'IT-смены для школьников', url: '/lager-lubertsy/', icon: 'bi-geo-alt' },
+  { title: 'Лагерь рядом со Ступино', description: 'Детский IT-лагерь', url: '/lager-stupino/', icon: 'bi-geo-alt' },
 
   // 💰 Коммерческие
   { title: 'Записаться в лагерь', description: 'Как записать ребёнка в IT-лагерь', url: '/zapisatsya/', icon: 'bi-calendar-check' },
   { title: 'Цены на смены 2026', description: 'Стоимость всех смен, что входит', url: '/ceny/', icon: 'bi-coin' },
   { title: 'Купить путёвку в лагерь', description: 'Оплата, договор, 50% сейчас + 50% за 3 нед.', url: '/kupit-putevku-v-lager/', icon: 'bi-credit-card' },
+  { title: 'Путёвка в лагерь', description: 'Цены на путёвки от 74 900 ₽', url: '/putevka-v-lager/', icon: 'bi-credit-card' },
+  { title: 'Сколько стоит лагерь', description: 'Разбор цен по типам лагерей', url: '/skolko-stoit-lager-dlya-rebenka/', icon: 'bi-coin' },
   { title: 'Налоговый вычет 13%', description: 'Калькулятор возврата с путёвки', url: '/nalogovyj-vychet/', icon: 'bi-receipt' },
   { title: 'Лагерь недорого', description: 'От 74 900 ₽ за смену, оплата частями', url: '/lager-nedorogo/', icon: 'bi-tag' },
 
@@ -96,6 +117,8 @@ export const landingPages: LandingPage[] = [
   // 🎨 Прочее
   { title: 'Пионерский лагерь', description: 'Современный аналог — IT-смены 2026', url: '/pionerskiy-lager/', icon: 'bi-flag-fill' },
   { title: 'Лагерь без телефонов', description: 'Ребёнок без гаджетов 24/7', url: '/lager-bez-telefonov/', icon: 'bi-phone-x' },
+  { title: 'Детокс от телефона', description: 'IT-лагерь без гаджетов', url: '/detox-ot-telefona/', icon: 'bi-phone-x' },
+  { title: 'Тревожный родитель', description: 'Расписание и связь с ребёнком на 10 дней', url: '/tarif-trevozhniy-roditel/', icon: 'bi-shield-check' },
   { title: 'Тематический лагерь', description: 'Каждая смена — своя тема', url: '/tematicheskiy-lager/', icon: 'bi-bullseye' },
   { title: 'Образовательный лагерь', description: 'Учёба + результат за смену', url: '/obrazovatelnyy-lager/', icon: 'bi-book' },
   { title: 'Для компаний', description: 'Путёвки для сотрудников', url: '/dlya-kompaniy/', icon: 'bi-building' },
@@ -103,6 +126,8 @@ export const landingPages: LandingPage[] = [
   // ℹ️ Информационные
   { title: 'О лагере', description: 'Кто мы, история, как устроен день', url: '/o-lagere/', icon: 'bi-info-circle' },
   { title: 'Отзывы родителей', description: '5.0 — 40+ отзывов на Яндекс.Картах', url: '/otzyvy/', icon: 'bi-chat-quote' },
+  { title: 'Размещение в лагере', description: 'Корпуса, комнаты, условия проживания', url: '/razmeshchenie/', icon: 'bi-houses' },
+  { title: 'АйДаКемп на ТВ', description: 'Дарья Афанасьева на федеральном канале', url: '/tv/', icon: 'bi-tv' },
 ];
 
 /**
@@ -184,8 +209,11 @@ const AGE_URLS = new Set([
   '/lager-8-let',
   '/lager-9-let',
   '/lager-10-let',
+  '/lager-11-let',
   '/lager-12-let',
+  '/lager-13-let',
   '/lager-14-let',
+  '/lager-15-let',
   '/lager-dlya-podrostkov',
   '/lager-dlya-shkolnikov',
   '/lager-dlya-shkolnikov-na-leto',
