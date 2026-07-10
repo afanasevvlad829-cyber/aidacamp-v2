@@ -47,8 +47,9 @@ const cuesJson = JSON.stringify(cues);
 
 <!-- Превью-блок -->
 <div>
-  <button
-    type="button"
+  <div
+    role="button"
+    tabindex="0"
     id={wrapId}
     class="vp-wrap group relative block w-full overflow-hidden rounded-[18px] bg-slate-100 shadow-[0_4px_24px_rgba(15,23,42,0.12)] cursor-pointer hover:shadow-[0_8px_32px_rgba(15,23,42,0.18)] transition-shadow"
     style={`aspect-ratio:${aspect};max-height:${maxHeight}`}
@@ -72,7 +73,7 @@ const cuesJson = JSON.stringify(cues);
         <i class="bi bi-play-fill text-[26px] text-primary ml-1" aria-hidden="true"></i>
       </span>
     </span>
-  </button>
+  </div>
   {caption && (
     <p class="mt-2 text-[12px] text-body-faint text-center leading-[1.5]" set:html={caption}></p>
   )}
@@ -195,6 +196,10 @@ const cuesJson = JSON.stringify(cues);
     player.addEventListener('play',  () => { if (CUES.length) rafId = requestAnimationFrame(rafLoop); });
 
     wrap.addEventListener('click', openModal);
+    // wrap — div role="button" (в button нельзя вкладывать div-скелетон), нужен свой keydown
+    wrap.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(); }
+    });
     closeBtn?.addEventListener('click', closeModal);
     modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.open) closeModal(); });

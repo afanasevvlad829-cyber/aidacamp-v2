@@ -20,7 +20,9 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
 <section class="vg-grid-section">
   <div class="vg-grid">
     {videos.map((v) => (
-      <button
+      <div
+        role="button"
+        tabindex="0"
         class="vg-card"
         data-src={`${baseUrl}/${v.file}?v=4`}
 
@@ -41,7 +43,7 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
           <p class="vg-card__title">{v.title}</p>
           <p class="vg-card__q">«{v.question}»</p>
         </div>
-      </button>
+      </div>
     ))}
   </div>
 </section>
@@ -52,7 +54,9 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
     <div class="vg-track" id="vgTrack">
       {videos.map((v, i) => (
         <div class="vg-slide" data-index={i}>
-          <button
+          <div
+            role="button"
+            tabindex="0"
             class="vg-card"
             data-src={`${baseUrl}/${v.file}?v=4`}
 
@@ -73,7 +77,7 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
               <p class="vg-card__title">{v.title}</p>
               <p class="vg-card__q">«{v.question}»</p>
             </div>
-          </button>
+          </div>
         </div>
       ))}
     </div>
@@ -374,13 +378,18 @@ import Plyr from 'plyr';
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLb(); });
 
   document.querySelectorAll('.vg-card').forEach((card) => {
-    card.addEventListener('click', () => {
+    const open = () => {
       openLb(
         card.dataset.src,
         card.dataset.track,
         card.dataset.poster,
         card.dataset.title,
       );
+    };
+    card.addEventListener('click', open);
+    // .vg-card — div role="button" (в button нельзя вкладывать div-разметку карточки), свой keydown
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
     });
   });
 

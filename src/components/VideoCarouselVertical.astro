@@ -20,7 +20,9 @@ const { videos, baseUrl = '/videos/smena2' } = Astro.props;
     <div class="vcv-track" id="vcvTrack">
       {videos.map((v, i) => (
         <div class="vcv-slide" data-index={i}>
-          <button
+          <div
+            role="button"
+            tabindex="0"
             class="vcv-card"
             data-src={`${baseUrl}/${v.file}`}
             data-poster={v.poster}
@@ -40,7 +42,7 @@ const { videos, baseUrl = '/videos/smena2' } = Astro.props;
               <p class="vcv-title">{v.title}</p>
               <p class="vcv-desc">{v.desc}</p>
             </div>
-          </button>
+          </div>
         </div>
       ))}
     </div>
@@ -299,8 +301,11 @@ import Plyr from 'plyr';
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLb(); });
 
   document.querySelectorAll('.vcv-card').forEach(card => {
-    card.addEventListener('click', () => {
-      openLb(card.dataset.src, card.dataset.track, card.dataset.poster, card.dataset.title);
+    const open = () => openLb(card.dataset.src, card.dataset.track, card.dataset.poster, card.dataset.title);
+    card.addEventListener('click', open);
+    // .vcv-card — div role="button" (в button нельзя вкладывать div-разметку карточки), свой keydown
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
     });
   });
 
