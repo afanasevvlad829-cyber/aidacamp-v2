@@ -4,7 +4,7 @@
  *             role=student, sub=portal_kid.id → Open WebUI получает kid<id>@students.
  */
 
-import { query } from './db';
+import { query, withDbClient } from './db';
 
 export interface Kid {
   id: number;
@@ -19,14 +19,6 @@ export interface Kid {
   last_login_at: string | null;
 }
 
-function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
-async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
-  const conn = dsn(); if (!conn) return null;
-  const { default: pg } = await import('pg');
-  const client = new pg.Client({ connectionString: conn });
-  await client.connect();
-  try { return await fn(client); } finally { await client.end(); }
-}
 
 // PostgreSQL BIGSERIAL/BIGINT возвращается из node-pg как строка (для сохранности
 // 64-битной точности). Для наших ID (< 2^53) безопасно сразу кастовать к number,
@@ -71,7 +63,7 @@ export async function markKidLoggedIn(id: number): Promise<void> {
 
 /** Регенерировать код. Требует одного соединения из-за retry-loop с unique violation. */
 export async function regenerateCode(id: number): Promise<string | null> {
-  const r = await withClient(async (c) => {
+  const r = await withDbClient(async (c) => {
     for (let i = 0; i < 10; i++) {
       const code = String(Math.floor(Math.random() * 900000) + 100000);
       try {

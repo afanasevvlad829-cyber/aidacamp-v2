@@ -1,5 +1,6 @@
 // Дисциплина сотрудников: штрафы, причины, авто-детекторы.
 // Изолирован от детской игровой экономики (portal_prize_*).
+import { withDbClient } from './db';
 
 // Telegram: уведомление сотруднику + копия Дарье и Владимиру
 const DARYA_TG_ID  = 2040464481;   // Дарья Афанасьева
@@ -101,16 +102,6 @@ export interface Penalty {
   cancelled_note: string | null;
 }
 
-function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
-
-async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
-  const conn = dsn(); if (!conn) return null;
-  const { default: pg } = await import('pg');
-  const client = new pg.Client({ connectionString: conn });
-  await client.connect();
-  try { return await fn(client); } finally { await client.end(); }
-}
-
 const SELECT_PENALTY = `
   SELECT p.id, p.staff_id, s.full_name AS staff_name, s.role AS staff_role,
          p.shift_id, p.event_id, e.title AS event_title, e.date::text AS event_date,
@@ -126,7 +117,7 @@ const SELECT_PENALTY = `
 
 // ── Reasons (словарь) ──────────────────────────────────────────
 export async function getReasons(): Promise<PenaltyReason[]> {
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     const r = await c.query(
       'SELECT code, title, default_rub, description, active FROM portal_penalty_reason WHERE active=TRUE ORDER BY default_rub DESC'
     );
@@ -143,7 +134,7 @@ export interface ListFilter {
 }
 
 export async function listPenalties(f: ListFilter = {}): Promise<Penalty[]> {
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     const where: string[] = [];
     const vals: unknown[] = [];
     if (f.staff_id) { vals.push(f.staff_id); where.push(`p.staff_id=$${vals.length}`); }
@@ -159,7 +150,7 @@ export async function listPenalties(f: ListFilter = {}): Promise<Penalty[]> {
 }
 
 export async function getPenalty(id: number): Promise<Penalty | null> {
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     const r = await c.query(`${SELECT_PENALTY} WHERE p.id=$1`, [id]);
     return (r.rows[0] as Penalty) ?? null;
   })) ?? null;
@@ -179,7 +170,7 @@ export interface CreateInput {
 }
 
 export async function createPenalty(inp: CreateInput): Promise<number | null> {
-  return await withClient(async (c) => {
+  return await withDbClient(async (c) => {
     const reason = await c.query(
       'SELECT default_rub, title FROM portal_penalty_reason WHERE code=$1 AND active=TRUE',
       [inp.reason_code],
@@ -240,7 +231,7 @@ export async function createPenalty(inp: CreateInput): Promise<number | null> {
 }
 
 export async function confirmPenalty(id: number, actorId: number, amountOverride?: number): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     if (typeof amountOverride === 'number') {
       await c.query('UPDATE portal_penalty SET amount_rub=$2 WHERE id=$1 AND status IN (\'proposed\',\'contested\')',
         [id, amountOverride]);
@@ -259,7 +250,7 @@ export async function confirmPenalty(id: number, actorId: number, amountOverride
 }
 
 export async function cancelPenalty(id: number, actorId: number, note: string): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     await c.query(
       `UPDATE portal_penalty SET status='cancelled', cancelled_by=$2, cancelled_at=now(), cancelled_note=$3
        WHERE id=$1 AND status IN ('proposed','confirmed','contested')`,
@@ -274,7 +265,7 @@ export async function cancelPenalty(id: number, actorId: number, note: string): 
 }
 
 export async function markPaid(id: number, actorId: number): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     await c.query(
       `UPDATE portal_penalty SET status='paid', paid_at=now() WHERE id=$1 AND status='confirmed'`,
       [id],
@@ -302,7 +293,7 @@ export interface ScanResult {
  */
 export async function scanOverdueEvents(graceMinutes = 30): Promise<ScanResult> {
   const out: ScanResult = { scanned: 0, created: 0, reasons: {} };
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     const r = await c.query(
       `WITH due_events AS (
          SELECT e.id, e.shift_id, e.responsible_staff_id, e.title, e.date,
@@ -375,7 +366,7 @@ export async function scanOverdueEvents(graceMinutes = 30): Promise<ScanResult> 
  */
 export async function scanUnassignedEvents(): Promise<ScanResult> {
   const out: ScanResult = { scanned: 0, created: 0, reasons: {} };
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     const r = await c.query(
       `SELECT e.id, e.shift_id
          FROM shift_event e
@@ -418,7 +409,7 @@ export async function scanUnassignedEvents(): Promise<ScanResult> {
  */
 export async function scanWakeupMissed(graceMinutes = 30): Promise<ScanResult> {
   const out: ScanResult = { scanned: 0, created: 0, reasons: {} };
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     const r = await c.query(
       `WITH due AS (
          SELECT e.id, e.shift_id

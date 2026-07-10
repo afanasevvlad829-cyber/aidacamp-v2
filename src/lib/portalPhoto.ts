@@ -1,7 +1,7 @@
 /**
  * portalPhoto.ts — слой данных для фото-архива портала.
- * Паттерн withClient идентичен portalShift.ts.
  */
+import { withDbClient } from './db';
 
 export interface ArchivePhoto {
   id: number;
@@ -46,19 +46,9 @@ export interface InsertPhotoParams {
   file_url?: string | null;
 }
 
-function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
-
-async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
-  const conn = dsn();
-  if (!conn) return null;
-  const { default: pg } = await import('pg');
-  const client = new pg.Client({ connectionString: conn });
-  await client.connect();
-  try { return await fn(client); } finally { await client.end(); }
-}
 
 export async function listPhotosByEvent(eventId: number): Promise<ArchivePhoto[]> {
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     const r = await c.query(
       `SELECT id, event_id, content_task_id, author_telegram_id, storage_kind,
               file_path, file_url, file_type, mime, width, height, duration_ms,
@@ -73,7 +63,7 @@ export async function listPhotosByEvent(eventId: number): Promise<ArchivePhoto[]
 }
 
 export async function listPhotosByDay(shiftId: number, date: string): Promise<ArchivePhoto[]> {
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     const r = await c.query(
       `SELECT ap.id, ap.event_id, ap.content_task_id, ap.author_telegram_id, ap.storage_kind,
               ap.file_path, ap.file_url, ap.file_type, ap.mime, ap.width, ap.height, ap.duration_ms,
@@ -89,7 +79,7 @@ export async function listPhotosByDay(shiftId: number, date: string): Promise<Ar
 }
 
 export async function insertPhoto(p: InsertPhotoParams): Promise<{ id: number; file_url: string | null }> {
-  const result = await withClient(async (c) => {
+  const result = await withDbClient(async (c) => {
     const r = await c.query(
       `INSERT INTO archive_photo
          (event_id, content_task_id, author_telegram_id, storage_kind, file_path, file_url,
@@ -127,7 +117,7 @@ export async function setContentTaskCompleted(
   templateId: string,
   byTelegramId: number,
 ): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     await c.query(
       `UPDATE event_content_task
        SET status = 'completed', completed_at = now(), completed_by = $3
@@ -139,7 +129,7 @@ export async function setContentTaskCompleted(
 
 /** Получить фото по id. */
 export async function getPhotoById(id: number): Promise<ArchivePhoto | null> {
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     const r = await c.query(
       `SELECT id, event_id, content_task_id, author_telegram_id, storage_kind,
               file_path, file_url, file_type, mime, width, height, duration_ms,
@@ -153,7 +143,7 @@ export async function getPhotoById(id: number): Promise<ArchivePhoto | null> {
 
 /** Удалить запись фото из БД (файл — отдельно в endpoint). */
 export async function deletePhotoRow(id: number): Promise<boolean> {
-  const ok = await withClient(async (c) => {
+  const ok = await withDbClient(async (c) => {
     const r = await c.query('DELETE FROM archive_photo WHERE id=$1', [id]);
     return (r.rowCount ?? 0) > 0;
   });
@@ -163,7 +153,7 @@ export async function deletePhotoRow(id: number): Promise<boolean> {
 /** Имена авторов по telegram_id — для ленты. */
 export async function lookupAuthorNames(telegramIds: number[]): Promise<Map<number, string>> {
   if (telegramIds.length === 0) return new Map();
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     const r = await c.query(
       `SELECT telegram_id, COALESCE(NULLIF(full_name,''), tg_username, telegram_id::text) AS name
        FROM portal_staff WHERE telegram_id = ANY($1)`,
@@ -182,7 +172,7 @@ export async function listEventContentTasks(
   eventIds: number[],
 ): Promise<EventContentTask[]> {
   if (eventIds.length === 0) return [];
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     const r = await c.query(
       `SELECT ect.event_id, ect.template_id, ect.status::text,
               ctt.brief, ctt.content_type::text, ctt.title
