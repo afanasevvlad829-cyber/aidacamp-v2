@@ -9,12 +9,18 @@ const staffActiveCache = new Map<string, { ok: boolean; role: string | null; rol
 const STAFF_CACHE_MS = 60_000;
 
 // ─── 301 Redirects ──────────────────────────────────────────────────────────
-
+// ⚠️ Для путей без физической страницы (нет src/pages/<path>.astro) middleware
+// НЕ вызывается — Astro не роутит через SSR-пайплайн то, для чего нет ни
+// статической, ни on-demand страницы. Эта карта поэтому продублирована
+// напрямую в nginx (`location = /path { return 301 ...; }` в aidacamp.conf)
+// для всех путей ниже, кроме reiting-detskih-lagerey-podmoskove (у неё есть
+// физическая .astro-страница → мидлварь реально отрабатывает). Меняя target
+// здесь — меняй и в nginx-конфиге на сервере, иначе они разойдутся.
 const TILDA_REDIRECTS: Record<string, string> = {
   '/about': '/',
   '/catalog': '/ceny/',
   '/subrent': '/',
-  '/cookies': '/privacy/',
+  '/cookies': '/privacy-policy/',
   '/pine-camp-v2': '/',
   '/svedeniya-ob-obrazovatelnoj-organizacii': '/requisites/',
   '/programmirovanei-dlya-detey-7-let': '/lager-7-let/',
