@@ -204,13 +204,16 @@ rsync -az --checksum --stats \
   --exclude='client/' \
   --exclude='images/' \
   --exclude='videos/' \
-  --exclude='video/' \
   --exclude='data/' \
   -e "ssh -i $SSH_KEY" \
   dist/client/ "${SSH_HOST}:${REMOTE_DIR}client/"
 
 # ── 2b. DEV: статика → плоский корень nginx (/var/www/aidacamp-dev/) ───────
-# images/, videos/, video/ — симлинки на /var/www/aidacamp-media/, не трогаем.
+# images/, videos/ — симлинки на /var/www/aidacamp-media/, не трогаем.
+# ⚠️ video/ (без -s) — это РЕАЛЬНАЯ страница src/pages/video/index.astro,
+# НЕ симлинк на медиа. До 2026-07-10 сюда ошибочно добавляли --exclude='video/'
+# (спутали с одноимённой мусорной папкой в aidacamp-media/) — страница
+# /video/ молча не обновлялась с 07.07 при каждом деплое. Не возвращай exclude.
 if [ "$TARGET" = "dev" ]; then
   FLAT_DIR="/var/www/aidacamp-dev/"
   echo ""
@@ -224,7 +227,6 @@ if [ "$TARGET" = "dev" ]; then
     --exclude='client/' \
     --exclude='images/' \
     --exclude='videos/' \
-    --exclude='video/' \
     --exclude='data/' \
     -e "ssh -i $SSH_KEY" \
     dist/client/ "$SSH_HOST:$FLAT_DIR"
