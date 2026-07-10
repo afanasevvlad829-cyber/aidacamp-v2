@@ -738,6 +738,45 @@ def get_keywords_frequency(keywords_list, regions=[213]):
 
 ---
 
+### Яндекс.Вебмастер
+**Токен:** `WEBMASTER_TOKEN` (fallback `YANDEX_METRIKA_TOKEN`), `WEBMASTER_USER_ID`  
+**Код:** `~/MCP/remote-mcp/lib/run/webmaster.mjs`  
+**Вызов:** `run(service="webmaster", action="...", params={...})`
+
+> Действия: `queries`, `sitemaps`, `hosts`, `indexing`, `errors`, `recrawl`, `ping_sitemap`.
+
+**⚠️ Грабли — для любого домена кроме aidacamp.ru нужен `host_id`.**
+Если его не передать, сервер молча берёт дефолт `https:aidacamp.ru:443`
+(см. `webmaster.mjs:11`) — переобход codims.ru/icepartners.ru/vlad-a.ru
+без этого параметра падает с `400 INVALID_URL` (запрос уходит на хост
+aidacamp с чужим URL). Инцидент 2026-07-10: полчаса потратили на это,
+пока не открыли код — площадка была подключена и верифицирована всё время.
+
+Формат `host_id`: `https:<домен>:443` (без `//`, порт обязателен).
+Список подключённых площадок и их `host_id` — action `hosts`.
+
+```python
+# Переобход страницы на aidacamp.ru — host_id не нужен (дефолт)
+run(service="webmaster", action="recrawl", params={
+    "urls": ["https://aidacamp.ru/lager-v-moskve/"]
+})
+
+# Переобход на ЛЮБОМ другом домене — host_id ОБЯЗАТЕЛЕН
+run(service="webmaster", action="recrawl", params={
+    "host_id": "https:codims.ru:443",
+    "urls": ["https://codims.ru/gorodskoy-lager/"]
+})
+
+# Список подключённых площадок (проверить host_id перед первым вызовом)
+run(service="webmaster", action="hosts", params={})
+```
+
+Известные `host_id`: `https:aidacamp.ru:443` (дефолт), `https:codims.ru:443`,
+`https:icepartners.ru:443`, `https:vlad-a.ru:443`, `https:k-d-a.ru:443`,
+`https:code-rock.ru:443`.
+
+---
+
 ### DataForSEO
 **Ключи:** `DATAFORSEO_LOGIN`, `DATAFORSEO_KEY`  
 **Документация:** https://docs.dataforseo.com/  
