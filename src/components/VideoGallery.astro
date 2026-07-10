@@ -272,162 +272,19 @@ const { videos, baseUrl = '/videos/darya' } = Astro.props;
 </style>
 
 <script>
-import Plyr from 'plyr';
+  import { initVideoLightbox } from '../scripts/videoLightbox';
 
-(() => {
-  const lb       = document.getElementById('vgLb');
-  const titleEl  = document.getElementById('vgLbTitle');
-  const closeBtn = document.getElementById('vgLbClose');
-  const overlay  = document.getElementById('vgLbOverlay');
-  const kEl      = document.getElementById('vgKaraoke');
-
-  const LINE_STYLE = 'display:inline-block;background:rgba(0,0,0,0.88);border-radius:6px;padding:6px 16px;font-size:clamp(16px,2.2vw,22px);font-weight:700;line-height:1.5;letter-spacing:0.01em';
-
-  let player = null;
-  let cues   = [];
-  let rafId  = 0;
-
-  function getPlayer() {
-    if (!player) {
-      player = new Plyr('#vgLbVideo', {
-        captions: { active: false },
-        controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
-      });
-      player.on('pause', () => cancelAnimationFrame(rafId));
-      player.on('play',  () => { rafId = requestAnimationFrame(rafLoop); });
-    }
-    return player;
-  }
-
-  async function loadVTT(url) {
-    try {
-      const text = await fetch(url).then(r => r.text());
-      const result = [];
-      for (const block of text.split(/\n\n+/)) {
-        const lines = block.trim().split('\n');
-        const ti = lines.findIndex(l => l.includes('-->'));
-        if (ti === -1) continue;
-        const [s, e] = lines[ti].split('-->').map(p => {
-          const parts = p.trim().split(':');
-          return +parts[0] * 3600 + +parts[1] * 60 + parseFloat(parts[2]);
-        });
-        const t = lines.slice(ti + 1).join(' ').trim();
-        if (t && !isNaN(s) && !isNaN(e)) result.push({ s, e, t });
-      }
-      return result;
-    } catch { return []; }
-  }
-
-  function rafLoop() {
-    const videoEl = player?.media;
-    if (videoEl && !videoEl.paused && cues.length) {
-      const t = videoEl.currentTime;
-      const cue = cues.find(c => t >= c.s && t < c.e);
-      if (!cue) {
-        kEl.innerHTML = '';
-      } else {
-        const words = cue.t.split(' ');
-        const wordDur = (cue.e - cue.s) / words.length;
-        const activeW = Math.min(Math.floor((t - cue.s) / wordDur), words.length - 1);
-        const html = words.map((w, i) => {
-          const col = i < activeW
-            ? 'color:rgba(255,220,0,0.5)'
-            : i === activeW
-              ? 'color:#fff;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000'
-              : 'color:#FFE000;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000';
-          const esc = w.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-          return `<span style="${col}">${esc}</span>`;
-        }).join(' ');
-        kEl.innerHTML = `<span style="${LINE_STYLE}">${html}</span>`;
-      }
-    }
-    rafId = requestAnimationFrame(rafLoop);
-  }
-
-  async function openLb(mp4Src, trackSrc, poster, label) {
-    titleEl.textContent = label;
-    lb.removeAttribute('hidden');
-    document.body.style.overflow = 'hidden';
-
-    cues = await loadVTT(trackSrc);
-
-    const p = getPlayer();
-    p.source = {
-      type: 'video',
-      poster,
-      sources: [{ src: mp4Src, type: 'video/mp4' }],
-    };
-    p.play().catch(() => {});
-  }
-
-  function closeLb() {
-    cancelAnimationFrame(rafId);
-    kEl.innerHTML = '';
-    cues = [];
-    if (player) {
-      player.stop();
-      const videoEl = document.querySelector('#vgLbVideo');
-      if (videoEl) { videoEl.pause(); videoEl.removeAttribute('src'); videoEl.load(); }
-    }
-    lb.setAttribute('hidden', '');
-    document.body.style.overflow = '';
-  }
-
-  closeBtn.addEventListener('click', closeLb);
-  overlay.addEventListener('click', closeLb);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLb(); });
-
-  document.querySelectorAll('.vg-card').forEach((card) => {
-    const open = () => {
-      openLb(
-        card.dataset.src,
-        card.dataset.track,
-        card.dataset.poster,
-        card.dataset.title,
-      );
-    };
-    card.addEventListener('click', open);
-    // .vg-card — div role="button" (в button нельзя вкладывать div-разметку карточки), свой keydown
-    card.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
-    });
+  initVideoLightbox({
+    lbId: 'vgLb',
+    titleId: 'vgLbTitle',
+    closeId: 'vgLbClose',
+    overlayId: 'vgLbOverlay',
+    karaokeId: 'vgKaraoke',
+    videoId: 'vgLbVideo',
+    cardSelector: '.vg-card',
+    trackId: 'vgTrack',
+    dotsSelector: '#vgDots .vg-dot',
+    slideSelector: '.vg-slide',
+    lineStyle: 'display:inline-block;background:rgba(0,0,0,0.88);border-radius:6px;padding:6px 16px;font-size:clamp(16px,2.2vw,22px);font-weight:700;line-height:1.5;letter-spacing:0.01em',
   });
-
-  /* ── Carousel dots ── */
-  const track = document.getElementById('vgTrack');
-  const dots  = document.querySelectorAll('#vgDots .vg-dot');
-  if (!track || !dots.length) return;
-
-  function setActive(i) {
-    dots.forEach((d, idx) => d.classList.toggle('is-active', idx === i));
-  }
-
-  dots.forEach((dot, i) => {
-    dot.addEventListener('click', () => {
-      const slide = track.children[i];
-      if (slide) {
-        track.scrollTo({
-          left: slide.offsetLeft - (track.offsetWidth - slide.offsetWidth) / 2,
-          behavior: 'smooth',
-        });
-      }
-      setActive(i);
-    });
-  });
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      let best = -1, bestRatio = 0;
-      for (const e of entries) {
-        if (e.intersectionRatio > bestRatio) {
-          bestRatio = e.intersectionRatio;
-          best = parseInt(e.target.dataset.index ?? '0', 10);
-        }
-      }
-      if (best >= 0 && bestRatio > 0.4) setActive(best);
-    },
-    { root: track, threshold: [0.4, 0.6, 0.8] },
-  );
-  track.querySelectorAll('.vg-slide').forEach((s) => observer.observe(s));
-})();
 </script>
