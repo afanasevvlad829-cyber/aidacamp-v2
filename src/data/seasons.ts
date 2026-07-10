@@ -58,6 +58,7 @@ export interface SeasonConfig {
     author: string;
     photo?: string;      // аватар автора под цитатой
     videoSrc?: string;   // вертикальное видео справа (VideoPlayer, как MomStory на главной)
+    videoPreviewSrc?: string; // лёгкий немой луп для авто-превью (см. VideoPlayer.previewSrc); по умолчанию — videoSrc
   };
   options: { heading: string; intro: string; items: SeasonOption[] };
   faq: { heading: string; items: SeasonFaqItem[] };
@@ -124,6 +125,7 @@ export const AUTUMN_SEASON: SeasonConfig = {
     author: 'Дарья Афанасьева — основатель лагеря и мама',
     photo: '/images/team/sm/daria-wave-01.avif',
     videoSrc: '/video/daria-story.mp4',
+    videoPreviewSrc: '/video/daria-story-preview.mp4',
   },
   options: {
     heading: 'Что внутри смены',
@@ -206,6 +208,7 @@ export const WINTER_SEASON: SeasonConfig = {
     author: 'Дарья Афанасьева — основатель лагеря и мама',
     photo: '/images/team/sm/daria-wave-01.avif',
     videoSrc: '/video/daria-story.mp4',
+    videoPreviewSrc: '/video/daria-story-preview.mp4',
   },
   options: {
     heading: 'Что входит в зимнюю смену',
@@ -286,6 +289,7 @@ export const SPRING_SEASON: SeasonConfig = {
     author: 'Дарья Афанасьева — основатель лагеря и мама',
     photo: '/images/team/sm/daria-wave-01.avif',
     videoSrc: '/video/daria-story.mp4',
+    videoPreviewSrc: '/video/daria-story-preview.mp4',
   },
   options: {
     heading: 'Из чего состоит смена',

@@ -4,6 +4,7 @@
  *
  * <VideoPlayer
  *   src="/video/daria-story.mp4"
+ *   previewSrc="/video/daria-story-preview.mp4"
  *   caption="«Мы живём в самом прекрасном IT-лагере»"
  *   cues={DARIA_CUES}
  *   goalName="daria_video_play"
@@ -18,6 +19,8 @@ interface Cue {
 
 interface Props {
   src: string;
+  /** Лёгкий немой луп для авто-превью в viewport (без звука, короче полного). По умолчанию — src (полный файл). */
+  previewSrc?: string;
   caption?: string;
   cues?: Cue[];
   aspect?: string;       // CSS aspect-ratio, дефолт '9/16'
@@ -28,6 +31,7 @@ interface Props {
 
 const {
   src,
+  previewSrc = src,
   caption,
   cues = [],
   aspect = '9/16',
@@ -115,7 +119,7 @@ const cuesJson = JSON.stringify(cues);
   </div>
 </dialog>
 
-<script define:vars={{ src, modalId, playerId, karaokeId, closeId, wrapId, cuesJson, goalName }}>
+<script define:vars={{ src, previewSrc, modalId, playerId, karaokeId, closeId, wrapId, cuesJson, goalName }}>
   const CUES = JSON.parse(cuesJson);
   const LINE_STYLE = 'display:inline-block;background:rgba(0,0,0,0.72);border-radius:8px;padding:6px 12px;font-size:15px;font-weight:600;line-height:1.6;text-shadow:0 1px 4px rgba(0,0,0,0.9)';
 
@@ -143,7 +147,7 @@ const cuesJson = JSON.stringify(cues);
         if (!entries[0].isIntersecting) return;
         io.disconnect();
         // src устанавливается здесь — до этого момента сеть не используется
-        preview.src = src;
+        preview.src = previewSrc;
         preview.load();
       }, { threshold: 0.1 });
       io.observe(wrap);
