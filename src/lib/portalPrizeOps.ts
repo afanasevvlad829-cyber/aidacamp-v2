@@ -1,6 +1,7 @@
 /**
  * Серверные операции над призами: журнал выдач + кастомный каталог.
  */
+import { withDbClient } from './db';
 
 export interface PrizeIssuance {
   id: number;
@@ -31,19 +32,10 @@ export interface PrizeCustom {
   created_at: string;
 }
 
-function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
-async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
-  const conn = dsn(); if (!conn) return null;
-  const { default: pg } = await import('pg');
-  const client = new pg.Client({ connectionString: conn });
-  await client.connect();
-  try { return await fn(client); } finally { await client.end(); }
-}
-
 // ── Custom prizes ──────────────────────────────────────────────────────────
 
 export async function listCustomPrizes(): Promise<PrizeCustom[]> {
-  const r = await withClient(async (c) => {
+  const r = await withDbClient(async (c) => {
     const q = await c.query(
       `SELECT id, slug, name, description, category, ozon_price, qty, img_url, url, archived,
               COALESCE(is_base, FALSE) AS is_base,
@@ -71,7 +63,7 @@ export async function createCustomPrize(p: {
   img_url?: string | null;
 }): Promise<{ id: number; slug: string }> {
   const slug = 'custom-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
-  const r = await withClient(async (c) => {
+  const r = await withDbClient(async (c) => {
     const q = await c.query(
       `INSERT INTO portal_prize_custom (slug, name, description, category, ozon_price, qty, img_url)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -84,7 +76,7 @@ export async function createCustomPrize(p: {
 }
 
 export async function archiveCustomPrize(id: number): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     await c.query(`UPDATE portal_prize_custom SET archived = TRUE, updated_at = NOW() WHERE id = $1`, [id]);
   });
 }
@@ -92,7 +84,7 @@ export async function archiveCustomPrize(id: number): Promise<void> {
 // ── Issuances ──────────────────────────────────────────────────────────────
 
 export async function listIssuances(prizeId?: string, limit = 200): Promise<PrizeIssuance[]> {
-  const r = await withClient(async (c) => {
+  const r = await withDbClient(async (c) => {
     const where: string[] = [];
     const params: any[] = [];
     if (prizeId) { params.push(prizeId); where.push(`prize_id = $${params.length}`); }
@@ -117,7 +109,7 @@ export async function listIssuances(prizeId?: string, limit = 200): Promise<Priz
 }
 
 export async function countIssuancesByPrize(): Promise<Record<string, number>> {
-  const r = await withClient(async (c) => {
+  const r = await withDbClient(async (c) => {
     const q = await c.query(
       `SELECT prize_id, count(*)::int AS cnt
          FROM portal_prize_issuance
@@ -141,7 +133,7 @@ export async function createIssuance(p: {
   note?: string | null;
   bongere_price?: number | null;
 }): Promise<number> {
-  const r = await withClient(async (c) => {
+  const r = await withDbClient(async (c) => {
     const q = await c.query(
       `INSERT INTO portal_prize_issuance (prize_id, prize_name, kid_id, kid_name, issued_by, photo_url, video_url, note, bongere_price)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
@@ -154,14 +146,14 @@ export async function createIssuance(p: {
 }
 
 export async function deleteIssuance(id: number): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     await c.query(`DELETE FROM portal_prize_issuance WHERE id = $1`, [id]);
   });
 }
 
 /** Удалить ВСЕ выдачи (для админского сброса тестовых данных). */
 export async function deleteAllIssuances(): Promise<number> {
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     const r = await c.query(`DELETE FROM portal_prize_issuance`);
     return r.rowCount ?? 0;
   })) ?? 0;
@@ -176,7 +168,7 @@ export async function updateIssuance(id: number, p: {
   photo_url?: string | null;
   video_url?: string | null;
 }): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     const sets: string[] = [];
     const vals: any[] = [];
     const push = (col: string, val: any) => { vals.push(val); sets.push(`${col} = $${vals.length}`); };

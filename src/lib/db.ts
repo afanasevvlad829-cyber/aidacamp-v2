@@ -28,3 +28,22 @@ export async function query<T = any>(sql: string, params?: any[]): Promise<T[] |
   const r = await p.query(sql, params);
   return r.rows as T[];
 }
+
+/**
+ * Выделенный клиент из общего пула — для транзакций (BEGIN/COMMIT/ROLLBACK),
+ * где нужен один и тот же коннект на все запросы подряд. В отличие от
+ * отдельного `new pg.Client()`, НЕ открывает новое TCP-подключение — берёт
+ * клиента из pool.connect() и возвращает его обратно через release()
+ * (вместо end(), который закрыл бы соединение насовсем).
+ * Возвращает null если нет DSN — как и query().
+ */
+export async function withDbClient<T>(fn: (c: pg.PoolClient) => Promise<T>): Promise<T | null> {
+  const p = getPool();
+  if (!p) return null;
+  const client = await p.connect();
+  try {
+    return await fn(client);
+  } finally {
+    client.release();
+  }
+}
