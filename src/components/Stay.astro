@@ -34,13 +34,13 @@ const rooms = [
     <div class="-mx-[2px] px-[2px] mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pt-3 pb-5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:pt-1 md:pb-2" data-stay-carousel>
       {rooms.map((room, i) => (
         <article class="reveal min-w-[84%] snap-start overflow-hidden rounded-[22px] border border-border-light bg-card md:min-w-0 card-shadow">
-          <button type="button" data-stay-open data-stay-index={i} class="block w-full text-left cursor-pointer active:scale-[0.98] transition-transform duration-150">
+          <div role="button" tabindex="0" data-stay-open data-stay-index={i} class="block w-full text-left cursor-pointer active:scale-[0.98] transition-transform duration-150">
             <img src={room.image} alt={room.title} width="640" height="220" class="h-[220px] w-full object-cover" loading="lazy" />
             <div class="p-4">
               <h3 class="text-[19px] font-semibold text-body">{room.title}</h3>
               <p class="mt-1 text-[16px] leading-[1.5] text-body-muted">{room.description}</p>
             </div>
-          </button>
+          </div>
         </article>
       ))}
     </div>
@@ -156,12 +156,20 @@ const rooms = [
       if (counter) counter.textContent = `${current + 1} / ${photos.length}`;
     }
 
-    // Open on card click
+    // Open on card click (div role="button" — нужен свой keydown для Enter/Space)
     document.querySelectorAll('[data-stay-open]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      const open = () => {
         const idx = Number((btn as HTMLElement).dataset.stayIndex);
         show(idx);
         modal.showModal();
+      };
+      btn.addEventListener('click', open);
+      btn.addEventListener('keydown', (e) => {
+        const key = (e as KeyboardEvent).key;
+        if (key === 'Enter' || key === ' ') {
+          e.preventDefault();
+          open();
+        }
       });
     });
 
