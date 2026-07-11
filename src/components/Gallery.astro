@@ -126,9 +126,11 @@ const baseClass = 'mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4';
       lightbox.showModal();
     }
 
-    function jpgFallback(src: string) {
+    // /images/gallery/jpg/*.jpg никогда не существовал на сервере (404 для
+    // не-avif браузеров) — используем реально существующий .webp рядом с .avif.
+    function webpFallback(src: string) {
       if (!src.endsWith('.avif')) return src;
-      return src.replace('/images/gallery/', '/images/gallery/jpg/').replace('.avif', '.jpg');
+      return src.replace('.avif', '.webp');
     }
 
     function makePhotoBtn(p: Photo, className: string, imgClass: string): HTMLButtonElement {
@@ -140,7 +142,7 @@ const baseClass = 'mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4';
       btn.innerHTML = `
         <picture>
           ${avifSource}
-          <img src="${jpgFallback(p.src)}" alt="${p.alt}" loading="lazy"
+          <img src="${webpFallback(p.src)}" alt="${p.alt}" loading="lazy"
             style="object-position:50% 25%"
             class="${imgClass} transition group-hover:scale-105">
         </picture>
@@ -230,7 +232,7 @@ const baseClass = 'mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4';
         btn.innerHTML = `
           <picture>
             <source srcset="${p.src}" type="image/avif">
-            <img src="${jpgFallback(p.src)}" alt="${p.alt}" loading="lazy"
+            <img src="${webpFallback(p.src)}" alt="${p.alt}" loading="lazy"
               class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
           </picture>`;
         btn.addEventListener('click', () => openLb(photos, p.src));
