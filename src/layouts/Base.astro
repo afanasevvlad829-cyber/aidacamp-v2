@@ -307,7 +307,9 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
           revealed.forEach(spotsReveal);
         }
         document.addEventListener('click', function (e) {
-          var btn = e.target && e.target.closest ? e.target.closest('[data-spots-reveal-btn]') : null;
+          // Клик работает и по кнопке «узнать», и по самому блюру (data-spots-num) —
+          // раньше раскрывало только кнопку, замыленное число было некликабельным.
+          var btn = e.target && e.target.closest ? e.target.closest('[data-spots-reveal-btn], [data-spots-num]') : null;
           if (!btn) return;
           var shiftId = btn.dataset.spotsShift;
           if (!shiftId) return;
@@ -318,7 +320,9 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
           }
           spotsReveal(shiftId);
           window.trackGoal('available_spots', { shift: shiftId });
-          if (btn.dataset.spotsLow === '1') window.trackGoal('viewed_low_availability', { shift: shiftId });
+          var isLow = btn.dataset.spotsLow === '1' ||
+            !!document.querySelector('[data-spots-reveal-btn][data-spots-shift="' + shiftId + '"][data-spots-low="1"]');
+          if (isLow) window.trackGoal('viewed_low_availability', { shift: shiftId });
         });
         document.addEventListener('astro:page-load', spotsInit);
         if (document.readyState !== 'loading') spotsInit();
