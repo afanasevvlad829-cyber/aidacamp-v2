@@ -46,6 +46,23 @@ export interface InsertPhotoParams {
   file_url?: string | null;
 }
 
+export interface EventLocation {
+  date: string;
+  shift_id: number;
+  ext_id: string;
+}
+
+/** Дата/смена/внешний id события — нужны для построения пути хранения загруженного файла. */
+export async function resolveEventLocation(eventId: number): Promise<EventLocation | null> {
+  return (await withDbClient(async (c) => {
+    const r = await c.query(
+      `SELECT to_char(date,'YYYY-MM-DD') date, shift_id, COALESCE(external_id, id::text) ext_id
+         FROM shift_event WHERE id = $1`,
+      [eventId],
+    );
+    return (r.rows[0] as EventLocation) ?? null;
+  })) ?? null;
+}
 
 export async function listPhotosByEvent(eventId: number): Promise<ArchivePhoto[]> {
   return (await withDbClient(async (c) => {

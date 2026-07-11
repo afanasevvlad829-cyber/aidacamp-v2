@@ -2,17 +2,15 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { requireAuth, requireStaff } from '../../../lib/portalPerms';
 import { randomUUID } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
-import { join, extname } from 'node:path';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { insertPhoto, listPhotosByEvent, setContentTaskCompleted, lookupAuthorNames } from '../../../lib/portalPhoto';
-
-const execFileAsync = promisify(execFile);
+import { extname } from 'node:path';
+import { insertPhoto, listPhotosByEvent, setContentTaskCompleted, lookupAuthorNames, resolveEventLocation } from '../../../lib/portalPhoto';
+import { saveUploadedPhoto, saveUploadedVideo } from '../../../lib/portalPhotoStorage';
 
 // Все авторизованные роли (включая student) могут загружать фото/видео в смене.
 const ALLOWED_ROLES = new Set(['admin', 'teacher', 'vozhaty', 'rukovoditel', 'student']);
 const MAX_FILE_BYTES = 500 * 1024 * 1024; // 500 МБ
+// Запас сверх файла — multipart boundary + остальные поля формы (event_id, caption и т.п.).
+const MAX_CONTENT_LENGTH = MAX_FILE_BYTES + 1024 * 1024;
 const UPLOADS_ROOT = '/var/www/aidacamp-dev/uploads/portal';
 const URL_PREFIX = '/portal/uploads';
 
@@ -39,27 +37,17 @@ function extFromMime(mime: string, fallback: string): string {
   return map[mime] ?? fallback.replace(/^\./, '') ?? 'bin';
 }
 
-async function probeVideoDuration(filePath: string): Promise<number | null> {
-  try {
-    const { stdout } = await execFileAsync('ffprobe', [
-      '-v', 'error', '-select_streams', 'v:0',
-      '-show_entries', 'format=duration',
-      '-of', 'default=noprint_wrappers=1:nokey=1',
-      filePath,
-    ], { timeout: 5000 });
-    const secs = parseFloat(stdout.trim());
-    return isNaN(secs) ? null : Math.round(secs * 1000);
-  } catch {
-    return null;
-  }
-}
-
 export const POST: APIRoute = async ({ locals, request }) => {
   // Auth — любая авторизованная роль (включая student)
   const authResult = requireAuth(locals);
   if (authResult instanceof Response) return jsonError('no-session', 401);
   const { role, sub } = authResult;
   if (!ALLOWED_ROLES.has(role)) return jsonError('forbidden', 403);
+
+  // Отказ по Content-Length до чтения тела — не даём Node буферизовать заведомо
+  // слишком большой аплоад целиком в память ради последующего reject.
+  const contentLength = Number(request.headers.get('content-length') || '0');
+  if (contentLength > MAX_CONTENT_LENGTH) return jsonError('file too large (max 500MB)', 413);
 
   // Parse form
   let formData: FormData;
@@ -87,88 +75,20 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const buffer = Buffer.from(await file.arrayBuffer());
   if (buffer.byteLength > MAX_FILE_BYTES) return jsonError('file too large (max 500MB)', 413);
 
-  // Resolve event date and shift_id for path
-  let eventDate = 'unknown';
-  let shiftId = 0;
-  let eventExternalId = '';
-  try {
-    const { default: pg } = await import('pg');
-    const client = new pg.Client({ connectionString: process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '' });
-    await client.connect();
-    try {
-      const r = await client.query(
-        `SELECT to_char(date,'YYYY-MM-DD') date, shift_id, COALESCE(external_id, id::text) ext_id
-         FROM shift_event WHERE id = $1`,
-        [eventId],
-      );
-      if (r.rows[0]) {
-        eventDate = r.rows[0].date as string;
-        shiftId = r.rows[0].shift_id as number;
-        eventExternalId = r.rows[0].ext_id as string;
-      }
-    } finally {
-      await client.end();
-    }
-  } catch {
-    // non-fatal — fall back to defaults
-  }
-  if (!shiftId) return jsonError('event not found', 404);
+  const location = await resolveEventLocation(eventId);
+  if (!location) return jsonError('event not found', 404);
+  const { date: eventDate, shift_id: shiftId, ext_id: eventExternalId } = location;
 
-  // Save file
   const uuid = randomUUID();
-  const origExt = extname(file.name).replace(/^\./, '') || extFromMime(mime, 'bin');
   const relDir = `${shiftId}/${eventDate}/${eventExternalId || eventId}`;
-  const absDir = join(UPLOADS_ROOT, relDir);
+  const absDir = `${UPLOADS_ROOT}/${relDir}`;
 
-  await mkdir(absDir, { recursive: true });
-
-  let finalExt = origExt;
-  let width: number | null = null;
-  let height: number | null = null;
-  let duration_ms: number | null = null;
-  let finalBuffer = buffer;
-
-  if (fileType === 'photo') {
-    finalExt = 'jpg';
-    try {
-      const sharp = (await import('sharp')).default;
-      const sharpInstance = sharp(buffer).rotate(); // auto-orient
-      const meta = await sharpInstance.metadata();
-      const maxSide = 1600;
-      let resizer = sharpInstance;
-      if ((meta.width ?? 0) > maxSide || (meta.height ?? 0) > maxSide) {
-        resizer = sharpInstance.resize(maxSide, maxSide, { fit: 'inside', withoutEnlargement: true });
-      }
-      const jpegBuf = await resizer.jpeg({ quality: 85 }).toBuffer({ resolveWithObject: true });
-      finalBuffer = jpegBuf.data as Buffer<ArrayBuffer>;
-      width = jpegBuf.info.width;
-      height = jpegBuf.info.height;
-    } catch {
-      // sharp failed — save original, no dimensions
-    }
-  } else {
-    // video: probe duration
-    const tmpPath = join(absDir, `${uuid}_tmp.${origExt}`);
-    await writeFile(tmpPath, buffer);
-    duration_ms = await probeVideoDuration(tmpPath);
-    // rename to final below
-    try { const { rename } = await import('node:fs/promises'); await rename(tmpPath, join(absDir, `${uuid}.${origExt}`)); } catch { /* ignore */ }
-    finalExt = origExt;
-  }
-
-  const fileName = `${uuid}.${finalExt}`;
-  const absPath = join(absDir, fileName);
-
-  if (fileType === 'photo') {
-    await writeFile(absPath, finalBuffer);
-  }
-  // video was already written above during probe (or will be written now if probe skipped)
-  if (fileType === 'video') {
-    try { await writeFile(absPath, buffer); } catch { /* already written */ }
-  }
-
-  const relPath = `${relDir}/${fileName}`;
-  const fileUrl = `${URL_PREFIX}/${relPath}`;
+  const saved = fileType === 'photo'
+    ? await saveUploadedPhoto({ buffer, uuid, relDir, absDir, urlPrefix: URL_PREFIX })
+    : await saveUploadedVideo({
+        buffer, uuid, relDir, absDir, urlPrefix: URL_PREFIX,
+        ext: extname(file.name).replace(/^\./, '') || extFromMime(mime, 'bin'),
+      });
 
   // Insert into DB
   let photoId: number;
@@ -180,14 +100,14 @@ export const POST: APIRoute = async ({ locals, request }) => {
       author_telegram_id: sub,
       file_type: fileType,
       mime,
-      width,
-      height,
-      duration_ms,
-      size_bytes: finalBuffer.byteLength,
+      width: saved.width,
+      height: saved.height,
+      duration_ms: saved.duration_ms,
+      size_bytes: saved.size_bytes,
       caption,
       storage_kind: 'local',
-      file_path: relPath,
-      file_url: fileUrl,
+      file_path: saved.relPath,
+      file_url: saved.fileUrl,
     });
     photoId = inserted.id;
     storedFileUrl = inserted.file_url;
@@ -205,7 +125,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
   }
 
   return new Response(
-    JSON.stringify({ ok: true, id: photoId, file_url: storedFileUrl ?? fileUrl, file_type: fileType, width, height }),
+    JSON.stringify({ ok: true, id: photoId, file_url: storedFileUrl ?? saved.fileUrl, file_type: fileType, width: saved.width, height: saved.height }),
     { headers: { 'Content-Type': 'application/json' } },
   );
 };
