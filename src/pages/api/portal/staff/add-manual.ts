@@ -2,17 +2,9 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { requireStaff } from '../../../../lib/portalPerms';
 import { type PortalRole } from '../../../../lib/portalSession';
+import { withDbClient } from '../../../../lib/db';
 
 const VALID: PortalRole[] = ['admin', 'rukovoditel', 'teacher', 'vozhaty', 'student'];
-
-function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
-async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
-  const conn = dsn(); if (!conn) return null;
-  const { default: pg } = await import('pg');
-  const client = new pg.Client({ connectionString: conn });
-  await client.connect();
-  try { return await fn(client); } finally { await client.end(); }
-}
 
 /**
  * POST /api/portal/staff/add-manual
@@ -48,7 +40,7 @@ export const POST: APIRoute = async ({ locals, request, redirect }) => {
   const staff_key = body.staff_key ? String(body.staff_key).trim() || null : null;
   const activeRole = roles[0];
 
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     await c.query(
       `INSERT INTO portal_staff (full_name, role, roles, active, staff_key, approved_by, approved_at)
        VALUES ($1, $2, $3, TRUE, $4, $5, now())`,
