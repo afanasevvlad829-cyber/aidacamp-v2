@@ -38,6 +38,9 @@ interface Props {
   canonical?: string;
   /** Скрыть нижнюю AgeBar-плашку с летними сменами (сезонные лендинги: осень/зима/весна) */
   hideAgeBar?: boolean;
+  /** Скрыть конверсионные виджеты (DynamicPrices, AgeBar, ShiftModal, ReferralModal,
+   *  NudgeBanner) — для страниц без воронки записи (404, юридические документы). */
+  hideMarketingWidgets?: boolean;
 }
 
 const {
@@ -54,6 +57,7 @@ const {
   noindex = false,
   canonical: canonicalProp,
   hideAgeBar = false,
+  hideMarketingWidgets = false,
 } = Astro.props;
 const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `https://aidacamp.ru${ogImage}`;
 // canonical/og:url — на финальный слеш-URL (см. src/utils/canonical.ts, инцидент 03.07.2026).
@@ -399,14 +403,18 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         }
       })();
     </script>
-    <!-- DynamicPrices: единый скрипт динамических цен для всех страниц -->
-    <DynamicPrices />
-    <!-- AgeBar: мобильная плашка выбора возраста (летние смены) — на сезонных лендингах скрыта -->
-    {!hideAgeBar && <AgeBar />}
-    <!-- ShiftModal: открывается из AgeBar «Посмотреть» и data-shift-link на всех страницах -->
-    <ShiftModal />
-    <GlobalShiftLinkHandler />
-    <ReferralModal />
+    {!hideMarketingWidgets && (
+      <Fragment>
+        <!-- DynamicPrices: единый скрипт динамических цен для всех страниц -->
+        <DynamicPrices />
+        <!-- AgeBar: мобильная плашка выбора возраста (летние смены) — на сезонных лендингах скрыта -->
+        {!hideAgeBar && <AgeBar />}
+        <!-- ShiftModal: открывается из AgeBar «Посмотреть» и data-shift-link на всех страницах -->
+        <ShiftModal />
+        <GlobalShiftLinkHandler />
+      </Fragment>
+    )}
+    {!hideMarketingWidgets && <ReferralModal />}
     <!-- <ExitIntentPopup /> отключён -->
     <!-- Debug: ?modal=referral открывает модалку напрямую -->
     <script is:inline>
@@ -433,7 +441,7 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     </script>
     <SiteSearch />
     <!-- ReturnBanner отключён → заменён на NudgeBanner (догрев повторщиков, A/B отзывы vs ТВ) -->
-    <NudgeBanner />
+    {!hideMarketingWidgets && <NudgeBanner />}
 
     <!-- Неизвестные якоря и ретаргет-трафик → #shifts -->
     <script is:inline>
