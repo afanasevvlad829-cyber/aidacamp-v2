@@ -61,6 +61,22 @@ kb_search("портрет клиента мама страхи мотиваци�
 
 ---
 
+## 📣 ПУБЛИКАТОР — единая точка для всех публикаций
+
+**Любая задача про публикации (Дзен, VK, FB/IG, LinkedIn, YouTube, контент-план,
+тайминги, статусы) начинается здесь:**
+
+```bash
+~/MCP/social-poster/publisher/pub status   # сводка по всем каналам
+~/MCP/social-poster/publisher/pub help     # все команды
+```
+
+Карта методов, тайминги и грабли: `~/MCP/social-poster/publisher/README.md`.
+Источник правды по статусам — Postgres `aidacamp` (content_items/publications).
+Не изобретать новые способы постинга, не прочитав этот README.
+
+---
+
 ## 🔐 КАК ПОЛУЧАТЬ ТОКЕНЫ
 
 ### На сервере (скрипты через SSH)
@@ -1121,6 +1137,42 @@ stats = kinescope("GET", f"videos/{video_id}/statistics")
 | `write_file` | Писать файл на сервере |
 | `list_directory` | Список файлов |
 | `diagnostics` | Диагностика сервера |
+
+---
+
+## 🌐 ИНТЕРАКТИВНОЕ УПРАВЛЕНИЕ БРАУЗЕРОМ (локальный Chrome, живые сессии)
+
+⚠️ **`Chrome MCP` / `Claude in Chrome` — ЗАПРЕЩЕНЫ правилом проекта** (см. `CLAUDE.md` → «Используй только aidacamp-tools MCP»). Не вызывать, не предлагать, не документировать как рабочий вариант — только два инструмента ниже.
+
+Отличается от `browser_agent` выше (MCP-инструмент, server-side Playwright через SSH — для скрапинга/скриншотов aidacamp.ru без интерактивности). Этот раздел — про управление РЕАЛЬНЫМ Chrome на Маке пользователя с живыми залогиненными сессиями: личные кабинеты, соцсети, сторонние сервисы.
+
+**Два уровня — эскалируй по возрастанию, начинай всегда с первого:**
+
+### 1. Playwright MCP `--extension` (дефолт)
+
+Подключён глобально (`claude mcp add --scope user playwright -- npx @playwright/mcp@latest --extension`, `--scope user`). Работает в реальном Chrome пользователя через официальное расширение «Playwright Extension» (Chrome Web Store, id `mmlmfjhmonkocbjadbfplnigmagldckm`) — при первом действии всплывает выбор вкладки, дальше живая сессия с логинами.
+
+Когда использовать: навигация/клики/чтение DOM/скриншоты/формы на любом сайте, где нужна текущая сессия пользователя. Industrial-grade auto-wait, надёжные локаторы, загрузка файлов через `setInputFiles`.
+
+Ограничение: `newCDPSession` запрещён — не годится для приватных CDP-трюков (см. уровень 2).
+
+### 2. agent-browser (сырой CDP — эскалация)
+
+CLI с демоном (`~/.claude/skills/agent-browser`, `npm i -g agent-browser`), профиль Chrome «Profile 1» = Дарья (используется для автопостинга Дзен/VK, отдельная headed-сессия с логином).
+
+Когда использовать: сайт активно ломает synthetic paste/type/drag через JS-события (проверено на редакторе Дзена, Draft.js — content-script/execCommand/synthetic paste рушат Draft.js, `isTrusted`-проверка блокирует загрузку файлов). Единственный уровень с полным CDP: `agent-browser get cdp-url` → подключение по WebSocket напрямую → `Input.dispatchKeyEvent {commands:['Paste']}` для нативной вставки из системного буфера, `DOM.setFileInputFiles` для загрузки файлов в обход `isTrusted`-проверки.
+
+Требует ручных скриптов — см. `~/MCP/social-poster/zen-scripts/` и полный рецепт для Дзена в памяти агента (`reference_browser_automation_stack.md`).
+
+### Решётка выбора
+
+| Задача | Инструмент |
+|---|---|
+| Прочитать/кликнуть/скрин/заполнить форму на любом сайте | Playwright MCP `--extension` |
+| Сайт блокирует вставку/тайп через JS (Draft.js и т.п.) | agent-browser (сырой CDP) |
+| Скрапинг/PDF/HAR по aidacamp.ru без интерактивности | `browser_agent` (MCP, server-side, выше) |
+
+**Запрещено:** Kapture, Desktop Commander для браузера, Chrome MCP, Claude in Chrome, computer-use для веб-страниц (только для нативных десктоп-приложений — Finder, Notes и т.п.).
 
 ---
 
