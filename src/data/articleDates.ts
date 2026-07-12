@@ -72,6 +72,7 @@ export const ARTICLE_DATES: Record<string, string> = {
   'rebenok-skuchaet-po-domu-v-lagere':               '2026-03-20',
   'reiting-detskih-lagerej-podmoskove':               '2026-04-20',
   'reiting-detskih-lagerey-podmoskove':               '2026-04-20',
+  'telefon-posle-lagerya':                           '2026-06-29',
   'telefon-v-lagere':                                '2026-03-15',
   'territoriya-detskogo-lagerya':                    '2026-03-10',
   'zadaniya-dlya-detej-v-lagere':                    '2026-04-01',
