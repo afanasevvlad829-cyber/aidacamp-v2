@@ -1,0 +1,131 @@
+---
+/**
+ * VozrastyTents — «Палатки»: интересуются vs реально едут, по трём возрастам.
+ * Чистый HTML+CSS, без JS. Треугольники (clip-path), высота ∝ проценту.
+ * Цифры зафиксированы по статистике сезона-2026 — см. src/pages/stati/kto-edet-v-lager-vozrasty.astro.
+ */
+interface AgeGroup {
+  range: string;
+  interest: number;
+  go: number;
+  note: string;
+  accent: 'blue' | 'primary' | 'purple';
+}
+
+const GROUPS: AgeGroup[] = [
+  { range: '7–9 лет', interest: 21, go: 8, note: 'Интересуются — но боятся отпустить', accent: 'blue' },
+  { range: '10–12 лет', interest: 43, go: 66, note: 'Золотой возраст: хотят — и едут', accent: 'primary' },
+  { range: '13–16 лет', interest: 36, go: 26, note: 'Просятся сами — решают родители', accent: 'purple' },
+];
+
+// Масштаб высоты треугольников — от максимального значения среди всех цифр (66%).
+const MAX = 70;
+
+const ACCENT: Record<AgeGroup['accent'], { interest: string; go: string; label: string }> = {
+  blue: { interest: 'bg-blue-200', go: 'bg-blue-600', label: 'text-blue-700' },
+  primary: { interest: 'bg-primary-soft', go: 'bg-primary', label: 'text-primary-text' },
+  purple: { interest: 'bg-purple-200', go: 'bg-purple-600', label: 'text-purple-700' },
+};
+---
+
+<div class="vt-grid">
+  {GROUPS.map((g) => {
+    const c = ACCENT[g.accent];
+    const interestH = Math.round((g.interest / MAX) * 100);
+    const goH = Math.round((g.go / MAX) * 100);
+    return (
+      <div class="vt-col">
+        <div class="vt-tents">
+          <div class="vt-tent-wrap">
+            <span class={`vt-value ${c.label}`}>{g.interest}%</span>
+            <div class={`vt-tent ${c.interest}`} style={`height:${interestH}%`}></div>
+          </div>
+          <div class="vt-tent-wrap">
+            <span class={`vt-value ${c.label}`}>{g.go}%</span>
+            <div class={`vt-tent ${c.go}`} style={`height:${goH}%`}></div>
+          </div>
+        </div>
+        <p class="vt-range">{g.range}</p>
+        <p class="vt-note">{g.note}</p>
+      </div>
+    );
+  })}
+</div>
+
+<div class="vt-legend">
+  <span><i class="vt-sw bg-slate-300" aria-hidden="true"></i>интересуются лагерем</span>
+  <span><i class="vt-sw bg-primary" aria-hidden="true"></i>реально едут</span>
+</div>
+
+<style>
+  .vt-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    align-items: end;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .vt-col { text-align: center; min-width: 0; }
+  .vt-tents {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 8px;
+    height: 140px;
+    margin-bottom: 12px;
+  }
+  .vt-tent-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    width: 42%;
+  }
+  .vt-tent {
+    width: 100%;
+    min-height: 12px;
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  }
+  .vt-value {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    white-space: nowrap;
+  }
+  .vt-range {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--color-body, #17251c);
+  }
+  .vt-note {
+    font-size: 12.5px;
+    color: var(--color-body-muted, #5e6e64);
+    max-width: 150px;
+    margin: 4px auto 0;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+  .vt-legend {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 22px;
+    font-size: 13px;
+    flex-wrap: wrap;
+    color: var(--color-body-muted, #5e6e64);
+  }
+  .vt-legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .vt-sw {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  }
+  @media (max-width: 400px) {
+    .vt-tents { height: 110px; }
+    .vt-note { font-size: 11.5px; max-width: 100px; }
+  }
+</style>
