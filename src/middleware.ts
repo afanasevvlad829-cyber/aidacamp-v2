@@ -40,6 +40,9 @@ const TILDA_REDIRECTS: Record<string, string> = {
   // Легаси-страницы в индексе Яндекса, отдавали 404 (HTTP_ERROR) → 301 на актуальные
   '/cookie': '/privacy-policy/',
   '/dokumentaciya-k-letnemu-it-lageryu-ajdakemp': '/stati/dokumenty-licenziya-strahovka/',
+  // Дубль статьи объединён (2026-07-13): -rebenka версия удалена, контент слит в каноническую
+  '/stati/lager-dlya-giperaktivnogo-rebenka': '/stati/lager-dlya-giperaktivnogo/',
+  '/stati/lager-dlya-giperaktivnogo-rebenka/': '/stati/lager-dlya-giperaktivnogo/',
 };
 
 // ─── Rate limiter state ─────────────────────────────────────────────────────
