@@ -87,6 +87,43 @@ import { landingPages as allLandingPages } from '../../data/landing-pages';
     </main>
     <Footer />
   </div>
+<script>
+  function liqMovePill(btn: HTMLButtonElement) {
+    const pill = document.getElementById('liq-pill') as HTMLDivElement;
+    const sw   = document.getElementById('liq-sw')   as HTMLDivElement;
+    if (!pill || !sw) return;
+    const sr = sw.getBoundingClientRect();
+    const br = btn.getBoundingClientRect();
+    pill.style.left  = (br.left - sr.left - 4) + 'px';
+    pill.style.width = br.width + 'px';
+  }
+
+  function liqSetTheme(t: string) {
+    const on = t === 'liquid';
+    document.body.classList.toggle('liq', on);
+
+    const bCur = document.getElementById('btn-cur') as HTMLButtonElement;
+    const bLiq = document.getElementById('btn-liq') as HTMLButtonElement;
+    if (!bCur || !bLiq) return;
+    bCur.setAttribute('aria-pressed', String(!on));
+    bLiq.setAttribute('aria-pressed', String(on));
+    liqMovePill(on ? bLiq : bCur);
+    try { localStorage.setItem('aidacamp-liq', t); } catch {}
+  }
+
+  function liqInit() {
+    const bCur = document.getElementById('btn-cur') as HTMLButtonElement;
+    if (bCur) liqMovePill(bCur);
+    let saved = 'current';
+    try { saved = localStorage.getItem('aidacamp-liq') || 'current'; } catch {}
+    liqSetTheme(saved);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', liqInit);
+  else liqInit();
+
+  (window as any).liqSetTheme = liqSetTheme;
+</script>
 </Base>
 
 <style is:global>
@@ -357,41 +394,3 @@ body.liq button:not(#liq-sw button):hover {
   transform: translateY(-1px) !important;
 }
 </style>
-
-<script>
-  function liqMovePill(btn: HTMLButtonElement) {
-    const pill = document.getElementById('liq-pill') as HTMLDivElement;
-    const sw   = document.getElementById('liq-sw')   as HTMLDivElement;
-    if (!pill || !sw) return;
-    const sr = sw.getBoundingClientRect();
-    const br = btn.getBoundingClientRect();
-    pill.style.left  = (br.left - sr.left - 4) + 'px';
-    pill.style.width = br.width + 'px';
-  }
-
-  function liqSetTheme(t: string) {
-    const on = t === 'liquid';
-    document.body.classList.toggle('liq', on);
-
-    const bCur = document.getElementById('btn-cur') as HTMLButtonElement;
-    const bLiq = document.getElementById('btn-liq') as HTMLButtonElement;
-    if (!bCur || !bLiq) return;
-    bCur.setAttribute('aria-pressed', String(!on));
-    bLiq.setAttribute('aria-pressed', String(on));
-    liqMovePill(on ? bLiq : bCur);
-    try { localStorage.setItem('aidacamp-liq', t); } catch {}
-  }
-
-  function liqInit() {
-    const bCur = document.getElementById('btn-cur') as HTMLButtonElement;
-    if (bCur) liqMovePill(bCur);
-    let saved = 'current';
-    try { saved = localStorage.getItem('aidacamp-liq') || 'current'; } catch {}
-    liqSetTheme(saved);
-  }
-
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', liqInit);
-  else liqInit();
-
-  (window as any).liqSetTheme = liqSetTheme;
-</script>
