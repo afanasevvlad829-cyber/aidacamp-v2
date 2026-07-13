@@ -1,5 +1,5 @@
 // Единый источник контактных данных
-import { PRICE_MIN } from './shifts';
+import { PRICE_MIN, PRICE_MIN_ID } from './shifts';
 
 export const PHONE_MAIN = '+7 (495) 128-44-29';
 export const PHONE_MAIN_RAW = '+74951284429';
@@ -38,3 +38,6 @@ export const CAMP_SEASON = 'июнь–август 2026';
 // Якорь «от X» — берётся из минимума ОТКРЫТЫХ смен (PRICE_MIN из shifts.ts),
 // чтобы не устаревать при смене сезона. Сейчас = 74 900 ₽ (10-дневная Смена 4).
 export const CAMP_PRICE_FROM = PRICE_MIN;
+// id смены, к которой относится CAMP_PRICE_FROM — используй для data-shift-link
+// у ссылок «от {CAMP_PRICE_FROM}», чтобы ссылка не отставала от смены при смене сезона.
+export const CAMP_PRICE_FROM_ID = PRICE_MIN_ID;

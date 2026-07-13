@@ -3,11 +3,15 @@
  * ShiftInfoModal с описанием указанной смены.
  *
  * Использование в `list:` секций LandingTwoCol / articles:
- *   `${shiftLinkHtml('shift-2-1', 'Смена 2.1')} — 7 дней, 48 000 ₽`
+ *   `${shiftLinkHtml('shift-3', 'Смена 3')} — 13 дней, 89 400 ₽`
  *
- * Глобальный делегированный обработчик подхватывает `data-shift-link`
- * и диспатчит `CustomEvent('shift-modal-open', { shiftId, tab: 'description' })`.
- * См. `src/scripts/shift-modal.ts` — там же слушатель `shift-modal-open`.
+ * `data-shift-link` подхватывается собственным document click-делегатом
+ * в `src/scripts/shift-modal.ts` (initShiftModal()), который сразу вызывает
+ * open(shiftId, 'description') — без промежуточного CustomEvent.
+ *
+ * shiftId ДОЛЖЕН существовать в allShifts (src/data/shifts.ts) — иначе open()
+ * молча ничего не делает. Не используй id завершённых смен (shift-1, shift-2,
+ * shift-2-1, shift-2-2) — их больше нет в allShifts.
  */
 
 export function shiftLinkHtml(shiftId: string, label: string): string {

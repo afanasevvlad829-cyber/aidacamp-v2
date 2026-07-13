@@ -123,8 +123,8 @@
 ## 13. Общий контент (19)
 `About`, `Contacts`, `Economy`, `Gallery`, `GalleryPreview`, `Guarantees`, `Hackathon`, `HeroFeatures`, `Journey`, `Mentors`, `MomStory`, `NewsJazz`, `Philosophy`, `Slideshow`, `SoftStart`, `Stay`, `Team`, `TrevoznyjRoditel`, `ShiftOccupancy`. Преимущественно секции главной/демо-страниц (`blocks.astro`, `nexfield.astro`), props в основном отсутствуют.
 
-## 14. Вспомогательное (10)
-`AgeBar`, `CallTimeSelector` (`dark?`), `DotPatternBackground`, `DynamicPrices`, `GlobalShiftLinkHandler`, `ShiftLink` (`shiftId`, `title?`), `ReturnBanner`, `UploadQueueIndicator`, `FAQ` (эталон), `LastMinuteWidget`.
+## 14. Вспомогательное (9)
+`AgeBar`, `CallTimeSelector` (`dark?`), `DotPatternBackground`, `DynamicPrices`, `ShiftLink` (`shiftId`, `title?`), `ReturnBanner`, `UploadQueueIndicator`, `FAQ` (эталон), `LastMinuteWidget`.
 
 ## 15. Корпоративные `corp/` (20, B2B → `mincifry-v2.astro`)
 `CorpHero`, `CorpNav`, `CorpFooter`, `CorpVideo`, `CorpGallery`, `CorpWhy`, `CorpShifts`, `CorpHackathon`, `CorpTeam`, `CorpReviews`, `CorpFAQ`, `CorpPool`, `CorpContacts`, `CorpBot`, `CorpMap`, `CorpPricing`, `CorpTax`, `CorpTracks`, `CorpRefund`. Многие принимают `client` для персонализации.
