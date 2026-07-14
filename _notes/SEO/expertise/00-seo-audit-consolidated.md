@@ -199,8 +199,8 @@
 - `scripts/guard-no-partytown.sh`, `npm run check:banned` — guard-проверки в билде.
 
 **База данных (PostgreSQL `aidacamp` на сервере):**
-- `seo_keywords`, `seo_positions`, `seo_queries` (clicks — главный сигнал), `seo_cluster_progress`, `seo_pages`, `seo_factory_log`, `seo_etl_log`, `knowledge_chunks`.
-- ETL ~06:15 ежедневно; codims Б/Д (`...:5432/codims`) — заготовка в skill.
+- `seo_keywords`, `seo_positions`, `seo_queries` (clicks — главный сигнал), `seo_cluster_progress`, `seo_pages`, `seo_factory_log`, `seo_etl_log` (крон-ETL декоммишен 14.07.2026, не восстанавливать), `knowledge_chunks`.
+- codims Б/Д (`...:5432/codims`) — заготовка в skill.
 
 **Сервер (`/opt/reports-hub/files/`, ~420 файлов, дашборд https://dev.aidacamp.ru/reports-hub/):**
 - aidacamp ежедневные `YYYY-MM-DD-seo-*.html` (до 2026-06-04), `seo-geo-aeo-full-audit-aidacamp-ru.html`, `seo-architecture*.html`, `seo-positions-latest.html`, `serp-ctr-*.html`.

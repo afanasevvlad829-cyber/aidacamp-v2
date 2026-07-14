@@ -24,14 +24,7 @@
 | `etl/seo-arsenkin-etl.py` | 🟢 07:00 | Топ-130 ключей через Арсенкин (Яндекс Desktop, Москва) → `seo_position_snapshots` |
 | `etl/seo-xmlstock-etl.py` | ⚪ не в кроне | SERP-позиции Яндекс+Google для всех ключей, конкуренты топ-3, aggregator_flag. Заменён Арсенкиным |
 | `etl/seo-positions-snapshot.py` | ⚪ не в кроне | Снимок позиций (legacy) |
-| `seo-etl/etl_topvisor.js` | 🟢 ПОЧИНЕН 04.06 | Топвизор → seo_positions. Был 0 строк с 27.05 из-за неверных REGIONS [1,2,33] вместо реальных [33 Yandex, 30 Google]. После фикса: 83460 строк/день, 908 запросов |
-| `seo-etl/etl_webmaster.js` | 🟢 (run_all) | Яндекс.Вебмастер → seo_queries (клики/показы) |
-| `seo-etl/etl_indexation.js` | 🟢 (run_all) | Статус индексации |
-| `seo-etl/etl_pagespeed.js` | 🟢 (run_all) | PageSpeed метрики |
-| `seo-etl/etl_inlinks.js` | 🟢 (run_all) | Внутренняя перелинковка |
-| `seo-etl/etl_crawl.js` | 🟢 (run_all) | Краул сайта |
-| `seo-etl/etl_wordcount.js` | 🟢 (run_all) | Объём текста страниц |
-| `seo-etl/run_all.sh` | 🟢 14:00 | Оркестратор всех ETL выше |
+| `seo-etl/*` (etl_topvisor/webmaster/indexation/pagespeed/inlinks/crawl/wordcount, run_all.sh) | 🔴 ДЕКОММИШЕН 14.07.2026 | Крон пропал 17.06, владелец решил не восстанавливать. Папка удалена с сервера. Не предлагать чинить/восстанавливать. |
 
 ### Анализ и отчёты (читают данные → выводы)
 
@@ -51,8 +44,7 @@
 | **`/opt/seo-factory/seo-factory.js`** | 🟢 07:00 | НАША фабрика: кластеры → страницы → PR | ⚠️ дублирует kaizen |
 | **`seo_kaizen.py`** | 🔴 ОТКЛЮЧЁН | create_page под непокрытые ключи + автоправки | ⚠️ дублирует фабрику |
 | `seo_kaizen_deploy_listener.py` | ⚪ не в кроне | Авто-деплой kaizen-изменений через 6ч | связан с kaizen |
-| `seo-etl/fix_missing_h1.js` | ⚪ разовый | Чинит отсутствующие H1 |
-| `seo-etl/etl_quickwin_sync.js` | 🟢 (run_all) | Синк quick-win правок |
+| `seo-etl/fix_missing_h1.js`, `seo-etl/etl_quickwin_sync.js` | 🔴 ДЕКОММИШЕН 14.07.2026 | Были частью seo-etl/run_all.sh — см. выше |
 
 ### Наша новая надстройка (2026-06-04)
 
