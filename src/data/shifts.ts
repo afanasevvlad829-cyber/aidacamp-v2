@@ -140,6 +140,18 @@ export const upcomingShifts = (today: string) =>
     .filter(s => s.startDate >= today)
     .sort((a, b) => a.startDate.localeCompare(b.startDate));
 
+/**
+ * Последняя УЖЕ ЗАВЕРШИВШАЯСЯ смена на дату today (endDate < today), либо null если такой нет.
+ * Используется ботом (api/ask.ts) для честного ответа на "фото/итоги с последней смены" —
+ * см. docs/superpowers/plans/2026-07-14-ask-bot-shift-photos-and-evals.md.
+ * today = 'YYYY-MM-DD' (new Date().toISOString().slice(0,10)).
+ */
+export function lastCompletedShift(today: string): Shift | null {
+  const completed = displayShifts.filter(s => s.endDate < today);
+  if (!completed.length) return null;
+  return completed.reduce((latest, s) => (s.endDate > latest.endDate ? s : latest));
+}
+
 // Все смены для показа в карусели (завершённые + активные), в хронологии.
 // Фаза (предстоит/идёт/прошла) считается по датам в getShiftPhase().
 export const displayShifts: Shift[] = [_shift1, _shift2, ...mainShifts];
