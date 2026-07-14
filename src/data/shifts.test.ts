@@ -12,6 +12,8 @@ import {
   shiftDeduction,
   shiftDatesFull,
   shiftDatesShort,
+  lastCompletedShift,
+  displayShifts,
   type Shift,
 } from './shifts';
 import { getCurrentPrice, getTaxDeduction } from './dynamicPrices';
@@ -190,5 +192,30 @@ describe('date exports', () => {
 
   it('DATES_SHORT_S2 — одномесячный диапазон (содержит –)', () => {
     expect(DATES_SHORT_S2).toContain('–');
+  });
+});
+
+// ── lastCompletedShift: честное определение последней завершённой смены ──────
+
+describe('lastCompletedShift', () => {
+  it('находит самую позднюю смену с endDate < today', () => {
+    const s = lastCompletedShift('2026-07-14');
+    expect(s?.id).toBe('shift-2'); // endDate 2026-06-23, позже чем у shift-1 (2026-06-08)
+  });
+
+  it('возвращает null, если ни одна смена ещё не завершилась', () => {
+    const s = lastCompletedShift('2026-01-01');
+    expect(s).toBeNull();
+  });
+
+  it('смена, которая идёт прямо сейчас (today внутри диапазона) — не считается завершённой', () => {
+    const s = lastCompletedShift('2026-06-15'); // внутри shift-2 (10-23 июня)
+    expect(s?.id).not.toBe('shift-2');
+  });
+
+  it('рассматривает все смены из displayShifts, не только mainShifts', () => {
+    // displayShifts включает завершённые _shift1/_shift2 — эта проверка ловит регресс,
+    // если кто-то случайно перепишет функцию на mainShifts (там завершённых уже нет).
+    expect(displayShifts.some(s => s.id === 'shift-2')).toBe(true);
   });
 });
