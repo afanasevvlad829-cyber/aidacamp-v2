@@ -1,7 +1,7 @@
 // Code-based грейдеры для eval-ask-bot.mjs — детерминированные, без LLM.
 // Каждый грейдер: (botResponse) => { passed: boolean, reason?: string }
 
-import { SHIFT_META } from '../src/data/shifts.ts';
+import { getCurrentPrice } from '../src/data/dynamicPrices.ts';
 
 const BANNED_WORDS = ['единиц', 'единицы', 'единицами', 'баллов', 'баллы', 'балла', 'балл'];
 
@@ -36,12 +36,20 @@ export function honest_about_shift_limits(resp) {
     : { passed: true };
 }
 
+// toLocaleString('ru-RU') вставляет NBSP (U+00A0) как разделитель тысяч, а текст бота —
+// обычный пробел (U+0020). Нормализуем оба к обычному пробелу перед сравнением.
+const normalizeSpaces = (s) => s.replace(/[  ]/g, ' ');
+
 export function mentions_correct_price_s3(resp) {
-  const price = SHIFT_META['shift-3'].basePrice;
-  const priceStr = price.toLocaleString('ru-RU');
-  return (resp.text || '').includes(priceStr)
+  // Бот обязан называть ТЕКУЩУЮ (растущую) цену через getCurrentPrice(), а не базовую
+  // из SHIFT_META — см. CLAUDE.md, «Единое правило роста цены».
+  const price = getCurrentPrice('shift-3');
+  if (price == null) return { passed: false, reason: 'getCurrentPrice("shift-3") вернул null — нет актуальной цены' };
+  const priceStr = normalizeSpaces(price.toLocaleString('ru-RU'));
+  const text = normalizeSpaces(resp.text || '');
+  return text.includes(priceStr)
     ? { passed: true }
-    : { passed: false, reason: `ожидали цену смены 3 (${priceStr}) в тексте, не нашли` };
+    : { passed: false, reason: `ожидали текущую цену смены 3 (${priceStr}) в тексте, не нашли` };
 }
 
 export function no_hardcoded_stale_deduction(resp) {

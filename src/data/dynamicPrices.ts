@@ -23,7 +23,7 @@
  * Чтобы изменить сами правила — правь константы здесь.
  */
 
-import { SHIFT_META, taxDeduction } from './shifts';
+import { SHIFT_META, taxDeduction } from './shifts.ts';
 
 interface PriceStage {
   from: string;        // YYYY-MM-DD
