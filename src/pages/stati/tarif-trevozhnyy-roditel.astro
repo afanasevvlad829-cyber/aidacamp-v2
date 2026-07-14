@@ -1,0 +1,216 @@
+---
+import '../../styles/global.css';
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import RelatedPages from '../../components/RelatedPages.astro';
+import ArticleBottomCta from '../../components/ArticleBottomCta.astro';
+import ArticleHero from '../../components/ArticleHero.astro';
+import BlogCTA from '../../components/BlogCTA.astro';
+
+const relatedPages = [
+  { title: "Недорогой лагерь", url: "/stati/nedorogoy-lager/", icon: "coin", description: "Из чего складывается цена путёвки" },
+  { title: "Как выбрать летний лагерь", url: "/stati/kak-vybrat-lager/", icon: "search", description: "7 критериев без воды" },
+  { title: "Ребёнок скучает по дому", url: "/stati/rebenok-skuchaet-po-domu-v-lagere/", icon: "heart", description: "Что делать и когда это норма" },
+  { title: "О лагере АйДаКемп", url: "/o-lagere/", icon: "info-circle", description: "Кто мы и как устроен день" },
+];
+
+const schedule = [
+  { time: "06:00", text: "Подъём. Сама. Потому что не спится с 5:30" },
+  { time: "06:15", text: "Лежишь. Смотришь в потолок. Думаешь про ребёнка" },
+  { time: "08:00", text: "Завтрак. Запиваешь всё чистой фильтрованной водой. Думаешь: «Интересно, что сейчас ест он»" },
+  { time: "08:30", text: "Первая проверка телефона. Ничего нет — это нормально" },
+  { time: "09:00", text: "Свободное время: прогулка / чтение / тревога на выбор" },
+  { time: "10:00", text: "Фото из лагеря. Пересматриваешь три раза. Ищешь ребёнка на заднем плане" },
+  { time: "12:00", text: "Обед. Запиваешь фильтрованной водой. Снова думаешь про ребёнка" },
+  { time: "13:00", text: "Тихий час. Переписка в родительском чате: «А вашему тоже написали?»" },
+  { time: "14:30", text: "Вид на летний подмосковный лес. Сидишь на подоконнике с телефоном — как пушкинская Татьяна" },
+  { time: "15:00", text: "Смотришь украдкой из-за занавески, как он играет с остальными. Волнуешься, что бегает без шапки при +25" },
+  { time: "16:00", text: "Практика «Я отпустила» · 50 минут · по желанию" },
+  { time: "19:00", text: "Ужин. Снова вода. Снова думаешь" },
+  { time: "20:00", text: "Видеозвонок с ребёнком" },
+  { time: "20:05", text: "Анализ звонка: «Он сказал \"нормально\" — что это значит?»" },
+  { time: "22:00", text: "Скроллинг родительского чата. Подготовка ко сну" },
+  { time: "23:00", text: "Сон (условно)" },
+];
+
+const conditions = [
+  "Неограниченный доступ к фильтрованной воде — запивать всё вышеперечисленное",
+  "Полное отсутствие алкоголя",
+  "Отсутствие внешних факторов стресса — только ваши внутренние мысли",
+  "Вид на летний подмосковный лес — чтобы грустить в тишине",
+  "Телефон при вас всегда — ребёнок на связи, WhatsApp работает",
+  "Ежедневные фото из лагеря — пересматривать по несколько раз",
+  "Доступ в родительский чат 24/7 — найдите единомышленников",
+  "10 000 шагов в день — гарантированная активность",
+  "Питание проверено Роспотребнадзором",
+  "Две тренировки по пожарной безопасности и эвакуации",
+  "Сертификат «Я отпустил(а)» по итогам 10 дней",
+];
+
+const faqItems = [
+  {
+    question: "Это правда официальный тариф, который можно купить?",
+    answer: "Нет, это шутка — наш способ ответить на вопросы, которые нам реально пишут каждое лето: «а вдруг он плачет», «а можно звонить в тихий час». Купить можно только путёвку для ребёнка — тариф «Тревожный родитель» существует только в этой статье."
+  },
+  {
+    question: "Хорошо, а если серьёзно — можно ли позвонить ребёнку в лагере?",
+    answer: "Да. Видеозвонок с родителями — часть расписания дня, не редкость и не поблажка. Плюс ежедневные фото и видео со смены выкладываются в закрытый родительский чат, так что «что он сейчас делает» видно и без звонка."
+  },
+  {
+    question: "А если ребёнок правда затоскует по дому?",
+    answer: "Такое бывает, особенно в первые дни — это нормально и почти всегда проходит к третьему-четвёртому дню. Вожатые обучены с этим работать, а если тревога не проходит — мы сразу говорим родителям честно, а не молчим до конца смены."
+  },
+  {
+    question: "Значит, тревожиться вообще не о чем?",
+    answer: "Тревожиться — нормально, вы же не первый раз отпускаете. Но за 5 лет лагеря большинство родителей к середине смены сами расслабляются — обычно даже раньше, чем дети перестают скучать по дому."
+  },
+];
+---
+
+<Base
+  title="Тариф «Тревожный родитель»: мы посчитали, сколько стоит — АйДаКемп"
+  description="Расписание дня, условия программы и сертификат для родителя, который сам не может расслабиться, пока ребёнок в лагере. Шутка с долей правды про то, как на самом деле устроена связь с детьми на смене."
+  canonical="/stati/tarif-trevozhnyy-roditel"
+>
+  <Header />
+
+  <ArticleHero
+    title="Тариф «Тревожный родитель»: мы посчитали, сколько стоит"
+    subtitle="Каждое лето мы отвечаем на один и тот же набор вопросов. В этом году сдались и сделали официальный тариф."
+    imageBase="lager-programmirovaniya"
+    imageAlt="Тариф «Тревожный родитель» — АйДаКемп"
+    breadcrumbsLast="Тариф «Тревожный родитель»"
+    readTime="5 мин"
+  />
+
+  <main class="mx-auto max-w-[860px] px-4 pt-8 pb-0 md:pt-12">
+    <article>
+
+      <!-- Лид -->
+      <div class="mb-10">
+        <p class="text-[16px] md:text-[17px] leading-[1.7] text-slate-600 max-w-[720px]">
+          «А вдруг он там плачет?», «А можно я позвоню в тихий час?», «А если он не поест?» — каждое лето мы отвечаем на одни и те же вопросы. В этом году мы сдались и сделали официальный тариф. Теперь каждый тревожный родитель может приехать и контролировать всё на месте.
+        </p>
+      </div>
+
+      <!-- Расписание дня -->
+      <div class="mb-10">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="list-accent-dot"></div>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
+            Расписание дня
+          </h2>
+        </div>
+        <p class="text-[15px] text-slate-500 mb-5">Приблизительное. Точность зависит от вашего внутреннего состояния.</p>
+
+        <div class="space-y-0 max-w-[720px] border-l-2 border-slate-100 pl-5">
+          {schedule.map((item) => (
+            <div class="relative pb-5 last:pb-0">
+              <div class="absolute -left-[26px] top-1 h-2.5 w-2.5 rounded-full bg-orange-400"></div>
+              <div class="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
+                <span class="text-[14px] font-mono font-semibold text-orange-600 shrink-0">{item.time}</span>
+                <span class="text-[15px] leading-[1.6] text-slate-700">{item.text}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- Путь за 10 дней -->
+      <div class="mb-10">
+        <div class="flex items-center gap-2 mb-5">
+          <div class="list-accent-dot"></div>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
+            Путь за 10 дней
+          </h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px]">
+          Эмоциональная дуга участника программы предсказуема: тревога в день заезда → пик тревоги на второй-третий день → первое смешное фото из лагеря → постепенное принятие → к середине смены — почти покой. К моменту встречи большинство родителей на этом тарифе расслабляются быстрее, чем их дети успевают заскучать по дому.
+        </p>
+      </div>
+
+      <!-- Условия программы -->
+      <div class="mb-10">
+        <div class="flex items-center gap-2 mb-5">
+          <div class="list-accent-dot"></div>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
+            Условия программы
+          </h2>
+        </div>
+        <ul class="space-y-3 max-w-[720px]">
+          {conditions.map((c) => (
+            <li class="flex items-start gap-3">
+              <i class="bi bi-check-circle-fill text-orange-500 text-[18px] mt-0.5 shrink-0" aria-hidden="true"></i>
+              <span class="text-[15px] leading-[1.6] text-slate-700">{c}</span>
+            </li>
+          ))}
+        </ul>
+        <p class="text-[14px] text-slate-400 mt-4 italic">Налоговый вычет — только на ребёнка. Простите.</p>
+      </div>
+
+      <!-- Дополнительные опции -->
+      <div class="mb-10 rounded-[14px] border border-orange-100 bg-orange-50/60 p-5 max-w-[720px]">
+        <div class="flex items-center gap-2 mb-2">
+          <i class="bi bi-patch-question text-orange-500 text-[18px]" aria-hidden="true"></i>
+          <h3 class="text-[16px] font-bold text-slate-900">Дополнительные опции — не входит в базовую стоимость</h3>
+        </div>
+        <p class="text-[15px] leading-[1.6] text-slate-600">
+          Мы не несём ответственности за ваши отношения с персоналом после оказания данных услуг. Каждый участник тарифа получает именной сертификат — официальное подтверждение того, что вы это сделали. Можно повесить на холодильник.
+        </p>
+      </div>
+
+      <div class="mb-10">
+        <BlogCTA variant="default" />
+      </div>
+
+      <!-- FAQ -->
+      <div class="mb-10 pt-2">
+        <div class="flex items-center gap-2 mb-5">
+          <div class="list-accent-dot"></div>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
+            Частые вопросы
+          </h2>
+        </div>
+        <div class="space-y-3 max-w-[720px]">
+          {faqItems.map((item) => (
+            <details class="group rounded-[14px] border border-slate-200 bg-white overflow-hidden">
+              <summary class="flex cursor-pointer items-start justify-between gap-4 px-5 py-4 text-base font-semibold text-slate-800 select-none list-none [&::-webkit-details-marker]:hidden">
+                {item.question}
+                <i class="bi bi-chevron-down text-base text-slate-400 shrink-0 mt-0.5 transition-transform group-open:rotate-180" aria-hidden="true"></i>
+              </summary>
+              <div class="px-5 pb-4 text-base leading-[1.65] text-slate-600 border-t border-slate-100 pt-3">
+                {item.answer}
+              </div>
+            </details>
+          ))}
+        </div>
+      </div>
+
+    </article>
+
+    <div class="mt-12">
+      <RelatedPages pages={relatedPages} />
+    </div>
+
+    <div class="mt-10">
+      <ArticleBottomCta />
+    </div>
+
+    <!-- FAQ Schema -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": faqItems.map(item => ({
+        "@type": "Question",
+        "name": item.question,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": item.answer
+        }
+      }))
+    })} />
+  </main>
+
+  <Footer />
+</Base>
