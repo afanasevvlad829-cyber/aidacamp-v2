@@ -242,22 +242,13 @@ const sections = [
 | seo_pages | 140+ строк, h1≠'' у 90%+, word_count>0 у 90%+ контентных | `SELECT COUNT(*), ROUND(100*SUM(CASE WHEN h1!='' THEN 1 ELSE 0 END)/COUNT(*),1) FROM seo_pages` |
 | seo_positions | 900+ уникальных ключей, накапливается ≥1 дата/день | `SELECT COUNT(DISTINCT keyword), COUNT(DISTINCT date) FROM seo_positions` |
 | seo_queries | url != '' у 80%+ | `SELECT ROUND(100*SUM(CASE WHEN url!='' THEN 1 ELSE 0 END)/COUNT(*),1) FROM seo_queries` |
-| seo_etl_log | EXISTS, status='ok' после запуска | `SELECT status FROM seo_etl_log ORDER BY started_at DESC LIMIT 1` |
 
 ### Дашборд (https://dev.aidacamp.ru/seo/)
 - **Обзор:** ETL health + алерты каннибализации + snippet-проблемы + топ падений/ростов
 - **Страницы:** URL/H1/title len/desc len/слов/трафик/ключей/лучшая позиция
 - **Ключевые слова:** 900+ строк, keyword/URL/поз/объём/δ, Quick Wins не пуст
 - **Каннибализация:** по keyword и по H1
-- **ETL/Здоровье:** лог 10 запусков
 - **Кластеры:** прогресс-бар, таблица статусов
-
-### ETL: cron
-```
-0 14 * * *  /opt/seo-etl/run_all.sh       # ежедневный полный прогон
-0 8  * * 1  /opt/seo-etl/weekly-positions.sh  # понедельник: отчёт
-30 7 * * *  node /opt/seo-etl/seo_morning_pulse.js
-```
 
 ---
 
@@ -267,8 +258,7 @@ const sections = [
 |---|---|---|
 | `word_count = 0` у /shifts/* и /docs/* | Динамический контент + PDF | Удалить PDF из seo_pages; /shifts/* исключить из метрики |
 | Все ключи landingAt='/' | Каннибализация: homepage перехватывает трафик | Усилить dedicated page: H1 с ключом, FAQ schema, больше контента |
-| История позиций <30 дат | Topvisor запускает проверки не каждый день изначально | Накапливается само при ежедневном cron |
-| Schema в дашборде = 0 | Краулер запустился до наших изменений | Запустить `node /opt/seo-etl/etl_crawl.js` после деплоя |
+| История позиций <30 дат | Topvisor запускает проверки не каждый день изначально | Накапливается по мере ручных/иных запусков Topvisor-проверок |
 | Merge conflict в worktree | Worktree отстал от dev | Не мёрджить PR — копировать файлы напрямую и коммитить с MASTER_AGENT=1 |
 | Pre-commit hook отклоняет коммит | Не семантический prefix | Использовать `perf(seo):`, `feat(seo):`, `fix(seo):` |
 
