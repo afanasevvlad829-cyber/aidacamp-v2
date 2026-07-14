@@ -20,6 +20,7 @@ export interface RatedCamp {
 export interface CampNiche {
   id: string;
   label: string;
+  description?: string; // короткое пояснение ниши — для сравнения с АйДаКемп (IT-лагерь)
   camps: RatedCamp[];
 }
 
@@ -54,6 +55,7 @@ export const campNiches: CampNiche[] = [
   {
     id: 'language',
     label: 'Языковые',
+    description: 'Языковой лагерь — обучение иностранными языками (английский язык с носителями), для сравнения ниже.',
     camps: [
       { name: 'BKC / ВКС кэмп', location: 'Покров, ~90 км от Москвы', priceFrom: '32 290 ₽', rating: 5.0, reviews: 1038, region: 'граница Владимирской обл.' , note: 'английский с носителями, домики по отрядам, верёвочный парк; отмечают цену' },
       { name: 'Объединённое Королевство', location: 'Одинцово', year: 1999, priceFrom: '88 160 ₽', rating: 5.0, reviews: 375 , note: 'хвалят вожатых, питание и запрет гаджетов' },
@@ -88,6 +90,7 @@ export const campNiches: CampNiche[] = [
   {
     id: 'health',
     label: 'Оздоровительные и загородные',
+    description: 'Оздоровительный лагерь — акцент на режиме, воздухе и питании.',
     camps: [
       { name: 'Орлёнок', location: 'Клинский район, п/о Зубово', year: 1965, rating: 5.0, reviews: 1033 , note: 'пионерская атмосфера, хорошая еда, кружки и детокс от телефонов; мест мало' },
       { name: 'Лаборатория Приключений', location: 'Пушкино', rating: 5.0, reviews: 323 , note: 'ролевые игры «Сталкер» и «Зомби» затягивают, занятость и еда' },
