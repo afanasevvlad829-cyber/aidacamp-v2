@@ -1,0 +1,110 @@
+---
+import '../../styles/global.css';
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import { allVideos, videoOgImage, isEmbed, type VideoItem } from '../../data/videos';
+
+export function getStaticPaths() {
+  return allVideos.map((video) => ({ params: { slug: video.slug }, props: { video } }));
+}
+
+interface Props { video: VideoItem }
+const { video } = Astro.props;
+
+const SITE = 'https://aidacamp.ru';
+const pageUrl = `${SITE}/video/${video.slug}/`;
+const embed = isEmbed(video);
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'VideoObject',
+  name: video.title,
+  description: video.description ?? video.title,
+  thumbnailUrl: `${SITE}${videoOgImage(video)}`,
+  uploadDate: video.uploadDate ?? '2025-01-01',
+  ...(embed ? { embedUrl: video.url } : { contentUrl: `${SITE}${video.url}` }),
+  publisher: {
+    '@type': 'Organization',
+    name: 'АйДаКемп',
+    url: SITE,
+    logo: { '@type': 'ImageObject', url: `${SITE}/images/logo-aidacamp.svg` },
+  },
+};
+---
+
+<Base
+  title={`${video.title} — видео АйДаКемп`}
+  description={video.description ?? video.title}
+  ogType="video.other"
+  ogImage={`${SITE}${videoOgImage(video)}`}
+  ogImageAlt={video.alt}
+>
+  <script type="application/ld+json" set:html={JSON.stringify(schema)} slot="head" />
+  <Header />
+
+  <main class="mx-auto max-w-[1312px] px-4 pt-24 pb-16 md:pt-28">
+    <nav class="mb-5 flex items-center gap-2 text-base text-body-muted" aria-label="Хлебные крошки">
+      <a href="/" class="hover:text-primary no-underline">Главная</a>
+      <i class="bi bi-chevron-right text-[10px]" aria-hidden="true"></i>
+      <a href="/video/" class="hover:text-primary no-underline">Видео</a>
+    </nav>
+
+    <div class="flex flex-col gap-8 md:flex-row md:items-start md:gap-12">
+      {/* Плеер — вертикальный, как исходные ролики */}
+      <div class="mx-auto w-full max-w-[400px] shrink-0 md:mx-0 md:w-[360px]">
+        {embed ? (
+          <iframe
+            src={video.url}
+            title={video.title}
+            class="w-full rounded-[18px] shadow-[0_8px_32px_rgba(15,23,42,0.18)]"
+            style="aspect-ratio:9/16;border:none"
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+            allowfullscreen
+          ></iframe>
+        ) : (
+          <video
+            src={video.url}
+            poster={video.thumb}
+            controls
+            playsinline
+            preload="metadata"
+            class="w-full rounded-[18px] object-cover shadow-[0_8px_32px_rgba(15,23,42,0.18)]"
+            style="aspect-ratio:9/16"
+          ></video>
+        )}
+      </div>
+
+      {/* Текст + действия */}
+      <div class="min-w-0 flex-1">
+        <h1 class="text-[26px] font-extrabold leading-[1.15] tracking-[-0.02em] text-body md:text-[38px]">
+          {video.title}
+        </h1>
+        {video.description && (
+          <p class="mt-4 max-w-[640px] text-[17px] leading-[1.6] text-body-muted">{video.description}</p>
+        )}
+
+        <div class="mt-6 flex flex-wrap items-center gap-3">
+          <a
+            href="/#shifts"
+            class="inline-flex h-[48px] items-center rounded-[10px] bg-primary px-6 text-[16px] font-semibold text-[#0d1a2b] no-underline transition hover:bg-primary-hover"
+          >
+            Выбрать смену
+          </a>
+          <ShareButton url={pageUrl} title={video.title} />
+        </div>
+
+        <a
+          href="/video/"
+          class="mt-8 inline-flex items-center gap-2 text-base font-medium text-primary no-underline hover:text-primary-hover"
+        >
+          <i class="bi bi-arrow-left text-base" aria-hidden="true"></i>
+          Все видео из лагеря
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</Base>
