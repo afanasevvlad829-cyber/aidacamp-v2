@@ -13,8 +13,8 @@
  * Валидатор: https://search.google.com/test/rich-results + Яндекс.Вебмастер → Инструменты → Валидатор.
  */
 
-import { mainShifts, shortShifts, type Shift, PRICE_MIN, PRICE_MAX, VYCHET_S4, VYCHET_MAX } from '../data/shifts';
-import { getCurrentPrice } from '../data/dynamicPrices';
+import { mainShifts, shortShifts, type Shift } from '../data/shifts';
+import { getCurrentPrice, getTaxDeduction, fmtPrice } from '../data/dynamicPrices';
 import { members as teamMembers } from '../data/team';
 import { reviews } from '../data/reviews';
 import {
@@ -42,6 +42,16 @@ const prices = allShiftsForPrice.map(shiftPriceNum).filter(Boolean);
 const minPrice = Math.min(...prices).toLocaleString('ru-RU');
 const maxPrice = Math.max(...prices).toLocaleString('ru-RU');
 const priceRange = `${minPrice} ₽ – ${maxPrice} ₽`;
+
+// Форматированные текущие цены для прозы (description/FAQ) — как PRICE_MIN/PRICE_MAX
+// в shifts.ts, но НЕ база: те же числа, что уже идут в offers.price выше.
+const PRICE_MIN_NOW = fmtPrice(Math.min(...prices));
+const PRICE_MAX_NOW = fmtPrice(Math.max(...prices));
+
+// Вычет — от текущих цен основных смен (mainShifts), не от базовых VYCHET_S4/VYCHET_MAX.
+const deductionsNow = mainShifts.map((s) => getTaxDeduction(s.id));
+const VYCHET_MIN_NOW = fmtPrice(Math.min(...deductionsNow));
+const VYCHET_MAX_NOW = fmtPrice(Math.max(...deductionsNow));
 
 const reviewCount = reviews.length.toString();
 
@@ -110,7 +120,7 @@ const summerCamp = {
   '@id': `${SITE_URL}/#camp`,
   name: 'АйДаКемп — детский IT-лагерь',
   description:
-    `АйДаКемп — летний IT-лагерь для детей 7–15 лет в Подмосковье, 66 км от Москвы. Python, AI, Minecraft, Scratch, бассейн, 5-разовое питание. Каждый ребёнок уезжает с собственным IT-проектом. Работаем с 2021 года. Лицензия Минобрнауки Л035-01298-77/01082973. От ${PRICE_MIN}.`,
+    `АйДаКемп — летний IT-лагерь для детей 7–15 лет в Подмосковье, 66 км от Москвы. Python, AI, Minecraft, Scratch, бассейн, 5-разовое питание. Каждый ребёнок уезжает с собственным IT-проектом. Работаем с 2021 года. Лицензия Минобрнауки Л035-01298-77/01082973. От ${PRICE_MIN_NOW}.`,
   url: SITE_URL,
   image: HERO_IMAGE,
   telephone: PHONE_MAIN,
@@ -214,7 +224,7 @@ const faqPage = {
       name: 'Сколько стоит смена в лагере АйДаКемп?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: `Стоимость смены — от ${PRICE_MIN} за 10 дней до ${PRICE_MAX} за 13 дней. В стоимость включены проживание, питание 5 раз в день, программа с преподавателями, бассейн и досуг. Есть налоговый вычет 13%. Смены июнь–август 2026.`,
+        text: `Стоимость смены — от ${PRICE_MIN_NOW} за 10 дней до ${PRICE_MAX_NOW} за 13 дней. В стоимость включены проживание, питание 5 раз в день, программа с преподавателями, бассейн и досуг. Есть налоговый вычет 13%. Смены июнь–август 2026.`,
       },
     },
     {
@@ -270,7 +280,7 @@ const faqPage = {
       name: 'Как записаться в детский лагерь на лето 2026?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: `Нажмите кнопку «Записаться» на сайте или напишите в WhatsApp ${PHONE_MOBILE}. Менеджер ответит в течение часа, уточнит свободные даты и поможет выбрать смену. Смены лето 2026: июнь, июль, август. Стоимость от ${PRICE_MIN}.`,
+        text: `Нажмите кнопку «Записаться» на сайте или напишите в WhatsApp ${PHONE_MOBILE}. Менеджер ответит в течение часа, уточнит свободные даты и поможет выбрать смену. Смены лето 2026: июнь, июль, август. Стоимость от ${PRICE_MIN_NOW}.`,
       },
     },
     {
@@ -294,7 +304,7 @@ const faqPage = {
       name: 'Какова цена в детском летнем лагере в Подмосковье?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: `Стоимость в АйДаКемп — от ${PRICE_MIN} за 10-дневную смену до ${PRICE_MAX} за 13 дней. Все включено: проживание, питание, IT-программа, бассейн. Можно вернуть 13% через налоговый вычет — от ${VYCHET_S4} до ${VYCHET_MAX} в зависимости от смены.`,
+        text: `Стоимость в АйДаКемп — от ${PRICE_MIN_NOW} за 10-дневную смену до ${PRICE_MAX_NOW} за 13 дней. Все включено: проживание, питание, IT-программа, бассейн. Можно вернуть 13% через налоговый вычет — от ${VYCHET_MIN_NOW} до ${VYCHET_MAX_NOW} в зависимости от смены.`,
       },
     },
     {

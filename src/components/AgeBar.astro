@@ -1,7 +1,16 @@
 ---
 import { DATES_S3, DATES_SHORT_S4, PEER_COUNTS, PRICE_S3, PRICE_S4 } from '../data/shifts';
+import { getCurrentPrice, fmtPrice } from '../data/dynamicPrices';
 // AgeBar.astro — плашка выбора возраста (снизу экрана)
 // v3: scroll-triggered (25%), без таймера, мобилка + десктоп, вторичные страницы
+
+// Цена — текущая (правило роста), PRICE_S3/S4 — только фолбэк на базу.
+// data-dynamic-price ниже перепишет то же значение на клиенте (DynamicPrices.astro) —
+// это лишь корректный SSR для ботов/краулеров и чтобы не мигало неверной цифрой.
+const priceS3Now = getCurrentPrice('shift-3');
+const priceS4Now = getCurrentPrice('shift-4');
+const priceS3 = priceS3Now ? fmtPrice(priceS3Now) : PRICE_S3;
+const priceS4 = priceS4Now ? fmtPrice(priceS4Now) : PRICE_S4;
 
 const ageCountsJson = JSON.stringify({
   '7–9':   { 'shift-3': PEER_COUNTS['shift-3']['7–9'],  'shift-4': PEER_COUNTS['shift-4']['7–9']  },
@@ -133,7 +142,7 @@ const ageCountsJson = JSON.stringify({
             <i class="bi bi-people-fill text-primary mr-1" aria-hidden="true"></i>уже едут ровесники
           </p>
         </div>
-        <span class="shrink-0 text-base font-bold text-primary whitespace-nowrap"><span data-dynamic-price="shift-3">{PRICE_S3}</span> →</span>
+        <span class="shrink-0 text-base font-bold text-primary whitespace-nowrap"><span data-dynamic-price="shift-3">{priceS3}</span> →</span>
       </a>
 
       <!-- Смена 4 — альтернатива -->
@@ -153,7 +162,7 @@ const ageCountsJson = JSON.stringify({
             <i class="bi bi-people-fill text-body-faint mr-1" aria-hidden="true"></i>уже едут ровесники
           </p>
         </div>
-        <span class="shrink-0 text-base font-semibold text-body-muted whitespace-nowrap"><span data-dynamic-price="shift-4">{PRICE_S4}</span> →</span>
+        <span class="shrink-0 text-base font-semibold text-body-muted whitespace-nowrap"><span data-dynamic-price="shift-4">{priceS4}</span> →</span>
       </a>
 
       <!-- Гарантия -->
