@@ -1,5 +1,6 @@
 ---
-import { PRICE_MAX, PRICE_MIN, PRICE_S1, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, VYCHET_MAX, VYCHET_S1, VYCHET_S2, VYCHET_S21, VYCHET_S22, VYCHET_S3, VYCHET_S4 } from '../../data/shifts';
+import { SHIFT_META, mainShifts } from '../../data/shifts';
+import { getCurrentPrice, getTaxDeduction, fmtPrice } from '../../data/dynamicPrices';
 import '../../styles/global.css';
 import Base from '../../layouts/Base.astro';
 import Header from '../../components/Header.astro';
@@ -8,8 +9,20 @@ import RelatedPages from '../../components/RelatedPages.astro';
 import ArticleHero from '../../components/ArticleHero.astro';
 import ArticleBottomCta from '../../components/ArticleBottomCta.astro';
 
+// Цены — только текущие, по единому правилу роста (dynamicPrices.ts).
+// У завершённых смен getCurrentPrice отдаёт цену, на которой рост остановился на старте.
+// Базовые PRICE_S*/VYCHET_S* здесь не годятся: они не учитывают рост и занижают цену.
+const priceOf = (id: string) => fmtPrice(getCurrentPrice(id) ?? SHIFT_META[id].basePrice);
+const vychetOf = (id: string) => fmtPrice(getTaxDeduction(id));
+
+// Диапазон и максимальный вычет — по открытым сменам, тоже от текущих цен.
+const openPrices = mainShifts.map((s) => getCurrentPrice(s.id) ?? SHIFT_META[s.id].basePrice);
+const PRICE_MIN_NOW = fmtPrice(Math.min(...openPrices));
+const PRICE_MAX_NOW = fmtPrice(Math.max(...openPrices));
+const VYCHET_MAX_NOW = fmtPrice(Math.max(...mainShifts.map((s) => getTaxDeduction(s.id))));
+
 const relatedPages = [
-  { title: "Налоговый вычет за лагерь", url: "/nalogovyj-vychet/", icon: "cash-coin", description: `Как вернуть до ${VYCHET_MAX} — пошаговая инструкция` },
+  { title: "Налоговый вычет за лагерь", url: "/nalogovyj-vychet/", icon: "cash-coin", description: `Как вернуть до ${VYCHET_MAX_NOW} — пошаговая инструкция` },
   { title: "Лагерь программирования", url: "/lager-programmirovaniya/", icon: "laptop", description: "IT-смены АйДаКемп — чему учат и сколько стоит" },
   { title: "Детский лагерь", url: "/detskiy-lager/", icon: "house-heart", description: "Всё о летнем отдыхе в АйДаКемп" },
   { title: "Лагерь недорого", url: "/lager-nedorogo/", icon: "coin", description: "Как попасть в хороший лагерь с выгодой" },
@@ -26,7 +39,7 @@ const faqItems = [
   },
   {
     question: "Можно ли получить налоговый вычет за IT-лагерь?",
-    answer: `Да. АйДаКемп — образовательная организация с лицензией Министерства образования. Это значит, что вы можете подать на социальный налоговый вычет по ст. 219 НК РФ и вернуть 13% от стоимости образовательной части смены. Сумма возврата зависит от длины смены: по открытым августовским сменам — от ~${VYCHET_S4} за 10-дневную смену до ~${VYCHET_MAX} за 13-дневную. Мы выдаём все нужные документы.`
+    answer: `Да. АйДаКемп — образовательная организация с лицензией Министерства образования. Это значит, что вы можете подать на социальный налоговый вычет по ст. 219 НК РФ и вернуть 13% от стоимости образовательной части смены. Сумма возврата зависит от длины смены: по открытым августовским сменам — от ~${vychetOf('shift-4')} за 10-дневную смену до ~${VYCHET_MAX_NOW} за 13-дневную. Мы выдаём все нужные документы.`
   },
   {
     question: "Что делать, если нет возможности оплатить сразу?",
@@ -37,7 +50,7 @@ const faqItems = [
 
 <Base
   title="Сколько стоит детский лагерь 2026 — цены и как сэкономить"
-  description={`Реальные цены на детские лагеря в 2026: дневной от 15 000 ₽, загородный 40–100 000 ₽, IT-лагерь ${PRICE_MIN}–${PRICE_MAX}. Что входит в стоимость, как вернуть до ${VYCHET_MAX}`}
+  description={`Реальные цены на детские лагеря в 2026: дневной от 15 000 ₽, загородный 40–100 000 ₽, IT-лагерь ${PRICE_MIN_NOW}–${PRICE_MAX_NOW}. Что входит в стоимость, как вернуть до ${VYCHET_MAX_NOW}`}
   ogImage="/images/hero/lager-programmirovaniya.avif"
 >
   <Fragment slot="head">
@@ -46,7 +59,7 @@ const faqItems = [
         "@context": "https://schema.org",
         "@type": "Article",
         "headline": "Сколько стоит детский лагерь в 2026 году — цены, что входит и как сэкономить",
-        "description": `Реальные цены на детские лагеря в 2026: дневной от 15 000 ₽, загородный 40–100 000 ₽, IT-лагерь ${PRICE_MIN}–${PRICE_MAX}. Что входит в стоимость, как вернуть до ${VYCHET_MAX} через налоговый вычет.`,
+        "description": `Реальные цены на детские лагеря в 2026: дневной от 15 000 ₽, загородный 40–100 000 ₽, IT-лагерь ${PRICE_MIN_NOW}–${PRICE_MAX_NOW}. Что входит в стоимость, как вернуть до ${VYCHET_MAX_NOW} через налоговый вычет.`,
         "author": {"@type": "Person", "name": "Дарья Афанасьева", "url": "https://aidacamp.ru/o-lagere", "sameAs": ["https://aidacamp.ru/o-lagere"]},
         "publisher": {"@type": "Organization", "name": "АйДаКемп", "url": "https://aidacamp.ru", "logo": {"@type": "ImageObject", "url": "https://aidacamp.ru/images/logo.svg"}},
         "datePublished": "2026-05-15",
@@ -83,7 +96,7 @@ const faqItems = [
 
   <ArticleHero
     title="Сколько стоит детский лагерь в 2026 году"
-    subtitle={`Цены по рынку, что реально входит в стоимость и как сэкономить до ${VYCHET_MAX} через налоговый вычет.`}
+    subtitle={`Цены по рынку, что реально входит в стоимость и как сэкономить до ${VYCHET_MAX_NOW} через налоговый вычет.`}
     imageBase="lager-programmirovaniya"
     imageAlt="Дети за ноутбуками на IT-смене — летний лагерь программирования АйДаКемп"
     readTime="7 мин чтения"
@@ -100,7 +113,7 @@ const faqItems = [
           Вопрос «сколько стоит лагерь» — один из первых, которые задают родители. И ответ зависит от формата: разброс на рынке огромный — от 15 000 до 150 000 ₽ и выше за одну смену. Разберём конкретно: что за что платите и как сориентироваться в цифрах.
         </p>
         <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px]">
-          Если коротко: <strong>дневной лагерь</strong> — 15 000–25 000 ₽ за смену (без ночёвки), <strong>загородный стандарт</strong> — 40 000–70 000 ₽, <strong>профильный IT-лагерь</strong> — 48 000–{PRICE_MAX}. Дальше — детали, которые объясняют разницу.
+          Если коротко: <strong>дневной лагерь</strong> — 15 000–25 000 ₽ за смену (без ночёвки), <strong>загородный стандарт</strong> — 40 000–70 000 ₽, <strong>профильный IT-лагерь</strong> — 48 000–{PRICE_MAX_NOW}. Дальше — детали, которые объясняют разницу.
         </p>
       </div>
 
@@ -215,7 +228,7 @@ const faqItems = [
               </tr>
               <tr>
                 <td class="px-4 py-3 font-medium text-slate-800">IT / профильный</td>
-                <td class="px-4 py-3">48 000–{PRICE_MAX}</td>
+                <td class="px-4 py-3">48 000–{PRICE_MAX_NOW}</td>
                 <td class="px-4 py-3">7–14 дней</td>
                 <td class="px-4 py-3">Всё выше + спецы-разработчики, оборудование, реальный проект</td>
                 <td class="px-4 py-3">10–17 лет, интерес к технологиям</td>
@@ -251,8 +264,8 @@ const faqItems = [
               <p class="text-base text-slate-500">13 дней · август</p>
             </div>
             <div class="sm:text-right">
-              <p class="text-[18px] font-bold text-primary">{PRICE_S3}</p>
-              <p class="text-base text-slate-400">~{VYCHET_S3} вычет</p>
+              <p class="text-[18px] font-bold text-primary">{priceOf('shift-3')}</p>
+              <p class="text-base text-slate-400">~{vychetOf('shift-3')} вычет</p>
             </div>
           </div>
 
@@ -266,8 +279,8 @@ const faqItems = [
               <p class="text-base text-slate-500">10 дней · август</p>
             </div>
             <div class="sm:text-right">
-              <p class="text-[18px] font-bold text-primary">{PRICE_S4}</p>
-              <p class="text-base text-slate-400">~{VYCHET_S4} вычет</p>
+              <p class="text-[18px] font-bold text-primary">{priceOf('shift-4')}</p>
+              <p class="text-base text-slate-400">~{vychetOf('shift-4')} вычет</p>
             </div>
           </div>
 
@@ -277,8 +290,8 @@ const faqItems = [
               <p class="text-base text-slate-500">10 дней · май–июнь</p>
             </div>
             <div class="sm:text-right">
-              <p class="text-[18px] font-bold text-primary">{PRICE_S1}</p>
-              <p class="text-base text-slate-400">~{VYCHET_S1} вычет</p>
+              <p class="text-[18px] font-bold text-primary">{priceOf('shift-1')}</p>
+              <p class="text-base text-slate-400">~{vychetOf('shift-1')} вычет</p>
             </div>
           </div>
 
@@ -288,8 +301,8 @@ const faqItems = [
               <p class="text-base text-slate-500">14 дней · июнь</p>
             </div>
             <div class="sm:text-right">
-              <p class="text-[18px] font-bold text-primary">{PRICE_S2}</p>
-              <p class="text-base text-slate-400">~{VYCHET_S2} вычет</p>
+              <p class="text-[18px] font-bold text-primary">{priceOf('shift-2')}</p>
+              <p class="text-base text-slate-400">~{vychetOf('shift-2')} вычет</p>
             </div>
           </div>
 
@@ -299,8 +312,8 @@ const faqItems = [
               <p class="text-base text-slate-500">7 дней · июнь</p>
             </div>
             <div class="sm:text-right">
-              <p class="text-[18px] font-bold text-primary">{PRICE_S21}</p>
-              <p class="text-base text-slate-400">~{VYCHET_S21} вычет</p>
+              <p class="text-[18px] font-bold text-primary">{priceOf('shift-2-1')}</p>
+              <p class="text-base text-slate-400">~{vychetOf('shift-2-1')} вычет</p>
             </div>
           </div>
 
@@ -310,8 +323,8 @@ const faqItems = [
               <p class="text-base text-slate-500">8 дней · июнь</p>
             </div>
             <div class="sm:text-right">
-              <p class="text-[18px] font-bold text-primary">{PRICE_S22}</p>
-              <p class="text-base text-slate-400">~{VYCHET_S22} вычет</p>
+              <p class="text-[18px] font-bold text-primary">{priceOf('shift-2-2')}</p>
+              <p class="text-base text-slate-400">~{vychetOf('shift-2-2')} вычет</p>
             </div>
           </div>
         </div>
@@ -354,7 +367,7 @@ const faqItems = [
               <div class="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-base font-bold shrink-0 mt-0.5">2</div>
               <div>
                 <p class="text-base font-semibold text-slate-800 mb-1">Налоговый вычет</p>
-                <p class="text-base leading-[1.6] text-slate-600">Если лагерь имеет образовательную лицензию — вы можете вернуть 13% от стоимости образовательной части через ФНС. По открытой смене 3 (13 дней, {PRICE_S3}) это до {VYCHET_MAX} живыми деньгами на карту. Подать можно онлайн через Госуслуги или личный кабинет ФНС.</p>
+                <p class="text-base leading-[1.6] text-slate-600">Если лагерь имеет образовательную лицензию — вы можете вернуть 13% от стоимости образовательной части через ФНС. По открытой смене 3 (13 дней, {priceOf('shift-3')}) это до {VYCHET_MAX_NOW} живыми деньгами на карту. Подать можно онлайн через Госуслуги или личный кабинет ФНС.</p>
               </div>
             </div>
           </div>
@@ -376,7 +389,7 @@ const faqItems = [
         <div class="flex items-center gap-2 mb-4">
           <div class="list-accent-dot"></div>
           <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
-            Налоговый вычет: возвращаем от {VYCHET_S4} до {VYCHET_MAX}
+            Налоговый вычет: возвращаем от {vychetOf('shift-4')} до {VYCHET_MAX_NOW}
           </h2>
         </div>
         <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
@@ -387,28 +400,28 @@ const faqItems = [
           <p class="text-base font-semibold text-emerald-800 mb-3">Сколько можно вернуть по сменам АйДаКемп 2026:</p>
           <ul class="space-y-2">
             <li class="flex justify-between text-base">
-              <span class="text-slate-700">Смена 4 (10 дней, {PRICE_S4})</span>
-              <span class="font-semibold text-emerald-700">~{VYCHET_S4}</span>
+              <span class="text-slate-700">Смена 4 (10 дней, {priceOf('shift-4')})</span>
+              <span class="font-semibold text-emerald-700">~{vychetOf('shift-4')}</span>
             </li>
             <li class="flex justify-between text-base border-b border-emerald-200 pb-2 mb-1">
-              <span class="text-slate-700 font-semibold">Смена 3 (13 дней, {PRICE_S3})</span>
-              <span class="font-bold text-emerald-700">до {VYCHET_S3}</span>
+              <span class="text-slate-700 font-semibold">Смена 3 (13 дней, {priceOf('shift-3')})</span>
+              <span class="font-bold text-emerald-700">до {vychetOf('shift-3')}</span>
             </li>
             <li class="flex justify-between text-base">
-              <span class="text-slate-700">Смена 2.1 (завершена, 7 дней, {PRICE_S21})</span>
-              <span class="font-semibold text-emerald-700">~{VYCHET_S21}</span>
+              <span class="text-slate-700">Смена 2.1 (завершена, 7 дней, {priceOf('shift-2-1')})</span>
+              <span class="font-semibold text-emerald-700">~{vychetOf('shift-2-1')}</span>
             </li>
             <li class="flex justify-between text-base">
-              <span class="text-slate-700">Смена 2.2 (завершена, 8 дней, {PRICE_S22})</span>
-              <span class="font-semibold text-emerald-700">~{VYCHET_S22}</span>
+              <span class="text-slate-700">Смена 2.2 (завершена, 8 дней, {priceOf('shift-2-2')})</span>
+              <span class="font-semibold text-emerald-700">~{vychetOf('shift-2-2')}</span>
             </li>
             <li class="flex justify-between text-base">
-              <span class="text-slate-700">Смена 1 (завершена, 10 дней, {PRICE_S1})</span>
-              <span class="font-semibold text-emerald-700">~{VYCHET_S1}</span>
+              <span class="text-slate-700">Смена 1 (завершена, 10 дней, {priceOf('shift-1')})</span>
+              <span class="font-semibold text-emerald-700">~{vychetOf('shift-1')}</span>
             </li>
             <li class="flex justify-between text-base">
-              <span class="text-slate-700">Смена 2 (завершена, 14 дней, {PRICE_S2})</span>
-              <span class="font-semibold text-emerald-700">~{VYCHET_S2}</span>
+              <span class="text-slate-700">Смена 2 (завершена, 14 дней, {priceOf('shift-2')})</span>
+              <span class="font-semibold text-emerald-700">~{vychetOf('shift-2')}</span>
             </li>
           </ul>
           <p class="text-base text-slate-500 mt-3">Расчёт: 13% × (цена смены − 3 800 ₽ × кол-во дней). Под рублями в расчёте — реальная, не игровая валюта.</p>
