@@ -15,6 +15,11 @@ import ArticleBottomCta from '../../components/ArticleBottomCta.astro';
 const priceOf = (id: string) => fmtPrice(getCurrentPrice(id) ?? SHIFT_META[id].basePrice);
 const vychetOf = (id: string) => fmtPrice(getTaxDeduction(id));
 
+// Длительности — тоже из данных, не литералом: иначе протухают при смене состава смен.
+const daysOf = (id: string) => `${SHIFT_META[id].days} дней`;
+const openDays = mainShifts.map((s) => SHIFT_META[s.id].days).sort((a, b) => a - b);
+const DAYS_RANGE_NOW = `${openDays[0]}–${openDays[openDays.length - 1]} дней`;
+
 // Диапазон и максимальный вычет — по открытым сменам, тоже от текущих цен.
 const openPrices = mainShifts.map((s) => getCurrentPrice(s.id) ?? SHIFT_META[s.id].basePrice);
 const PRICE_MIN_NOW = fmtPrice(Math.min(...openPrices));
@@ -39,7 +44,7 @@ const faqItems = [
   },
   {
     question: "Можно ли получить налоговый вычет за IT-лагерь?",
-    answer: `Да. АйДаКемп — образовательная организация с лицензией Министерства образования. Это значит, что вы можете подать на социальный налоговый вычет по ст. 219 НК РФ и вернуть 13% от стоимости образовательной части смены. Сумма возврата зависит от длины смены: по открытым августовским сменам — от ~${vychetOf('shift-4')} за 10-дневную смену до ~${VYCHET_MAX_NOW} за 13-дневную. Мы выдаём все нужные документы.`
+    answer: `Да. АйДаКемп — образовательная организация с лицензией Министерства образования. Это значит, что вы можете подать на социальный налоговый вычет по ст. 219 НК РФ и вернуть 13% от стоимости образовательной части смены. Сумма возврата зависит от длины смены: по открытым августовским сменам — от ~${vychetOf('shift-4')} за ${SHIFT_META['shift-4'].days}-дневную смену до ~${VYCHET_MAX_NOW} за ${SHIFT_META['shift-3'].days}-дневную. Мы выдаём все нужные документы.`
   },
   {
     question: "Что делать, если нет возможности оплатить сразу?",
@@ -229,7 +234,7 @@ const faqItems = [
               <tr>
                 <td class="px-4 py-3 font-medium text-slate-800">IT / профильный</td>
                 <td class="px-4 py-3">48 000–{PRICE_MAX_NOW}</td>
-                <td class="px-4 py-3">7–14 дней</td>
+                <td class="px-4 py-3">{DAYS_RANGE_NOW}</td>
                 <td class="px-4 py-3">Всё выше + спецы-разработчики, оборудование, реальный проект</td>
                 <td class="px-4 py-3">10–17 лет, интерес к технологиям</td>
               </tr>
@@ -261,7 +266,7 @@ const faqItems = [
                 Открыта
               </div>
               <p class="text-base font-semibold text-slate-800">Смена 3</p>
-              <p class="text-base text-slate-500">13 дней · август</p>
+              <p class="text-base text-slate-500">{daysOf('shift-3')} · август</p>
             </div>
             <div class="sm:text-right">
               <p class="text-[18px] font-bold text-primary">{priceOf('shift-3')}</p>
@@ -276,7 +281,7 @@ const faqItems = [
                 Открыта
               </div>
               <p class="text-base font-semibold text-slate-800">Смена 4</p>
-              <p class="text-base text-slate-500">10 дней · август</p>
+              <p class="text-base text-slate-500">{daysOf('shift-4')} · август</p>
             </div>
             <div class="sm:text-right">
               <p class="text-[18px] font-bold text-primary">{priceOf('shift-4')}</p>
@@ -287,7 +292,7 @@ const faqItems = [
           <div class="rounded-xl border border-slate-200 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 opacity-70">
             <div>
               <p class="text-base font-semibold text-slate-800">Смена 1 (завершена)</p>
-              <p class="text-base text-slate-500">10 дней · май–июнь</p>
+              <p class="text-base text-slate-500">{daysOf('shift-1')} · май–июнь</p>
             </div>
             <div class="sm:text-right">
               <p class="text-[18px] font-bold text-primary">{priceOf('shift-1')}</p>
@@ -298,7 +303,7 @@ const faqItems = [
           <div class="rounded-xl border border-slate-200 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 opacity-70">
             <div>
               <p class="text-base font-semibold text-slate-800">Смена 2 (завершена)</p>
-              <p class="text-base text-slate-500">14 дней · июнь</p>
+              <p class="text-base text-slate-500">{daysOf('shift-2')} · июнь</p>
             </div>
             <div class="sm:text-right">
               <p class="text-[18px] font-bold text-primary">{priceOf('shift-2')}</p>
@@ -309,7 +314,7 @@ const faqItems = [
           <div class="rounded-xl border border-slate-200 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 opacity-70">
             <div>
               <p class="text-base font-semibold text-slate-800">Смена 2.1 (завершена)</p>
-              <p class="text-base text-slate-500">7 дней · июнь</p>
+              <p class="text-base text-slate-500">{daysOf('shift-2-1')} · июнь</p>
             </div>
             <div class="sm:text-right">
               <p class="text-[18px] font-bold text-primary">{priceOf('shift-2-1')}</p>
@@ -320,7 +325,7 @@ const faqItems = [
           <div class="rounded-xl border border-slate-200 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 opacity-70">
             <div>
               <p class="text-base font-semibold text-slate-800">Смена 2.2 (завершена)</p>
-              <p class="text-base text-slate-500">8 дней · июнь</p>
+              <p class="text-base text-slate-500">{daysOf('shift-2-2')} · июнь</p>
             </div>
             <div class="sm:text-right">
               <p class="text-[18px] font-bold text-primary">{priceOf('shift-2-2')}</p>
@@ -367,7 +372,7 @@ const faqItems = [
               <div class="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-base font-bold shrink-0 mt-0.5">2</div>
               <div>
                 <p class="text-base font-semibold text-slate-800 mb-1">Налоговый вычет</p>
-                <p class="text-base leading-[1.6] text-slate-600">Если лагерь имеет образовательную лицензию — вы можете вернуть 13% от стоимости образовательной части через ФНС. По открытой смене 3 (13 дней, {priceOf('shift-3')}) это до {VYCHET_MAX_NOW} живыми деньгами на карту. Подать можно онлайн через Госуслуги или личный кабинет ФНС.</p>
+                <p class="text-base leading-[1.6] text-slate-600">Если лагерь имеет образовательную лицензию — вы можете вернуть 13% от стоимости образовательной части через ФНС. По открытой смене 3 ({daysOf('shift-3')}, {priceOf('shift-3')}) это до {VYCHET_MAX_NOW} живыми деньгами на карту. Подать можно онлайн через Госуслуги или личный кабинет ФНС.</p>
               </div>
             </div>
           </div>
@@ -400,27 +405,27 @@ const faqItems = [
           <p class="text-base font-semibold text-emerald-800 mb-3">Сколько можно вернуть по сменам АйДаКемп 2026:</p>
           <ul class="space-y-2">
             <li class="flex justify-between text-base">
-              <span class="text-slate-700">Смена 4 (10 дней, {priceOf('shift-4')})</span>
+              <span class="text-slate-700">Смена 4 ({daysOf('shift-4')}, {priceOf('shift-4')})</span>
               <span class="font-semibold text-emerald-700">~{vychetOf('shift-4')}</span>
             </li>
             <li class="flex justify-between text-base border-b border-emerald-200 pb-2 mb-1">
-              <span class="text-slate-700 font-semibold">Смена 3 (13 дней, {priceOf('shift-3')})</span>
+              <span class="text-slate-700 font-semibold">Смена 3 ({daysOf('shift-3')}, {priceOf('shift-3')})</span>
               <span class="font-bold text-emerald-700">до {vychetOf('shift-3')}</span>
             </li>
             <li class="flex justify-between text-base">
-              <span class="text-slate-700">Смена 2.1 (завершена, 7 дней, {priceOf('shift-2-1')})</span>
+              <span class="text-slate-700">Смена 2.1 (завершена, {daysOf('shift-2-1')}, {priceOf('shift-2-1')})</span>
               <span class="font-semibold text-emerald-700">~{vychetOf('shift-2-1')}</span>
             </li>
             <li class="flex justify-between text-base">
-              <span class="text-slate-700">Смена 2.2 (завершена, 8 дней, {priceOf('shift-2-2')})</span>
+              <span class="text-slate-700">Смена 2.2 (завершена, {daysOf('shift-2-2')}, {priceOf('shift-2-2')})</span>
               <span class="font-semibold text-emerald-700">~{vychetOf('shift-2-2')}</span>
             </li>
             <li class="flex justify-between text-base">
-              <span class="text-slate-700">Смена 1 (завершена, 10 дней, {priceOf('shift-1')})</span>
+              <span class="text-slate-700">Смена 1 (завершена, {daysOf('shift-1')}, {priceOf('shift-1')})</span>
               <span class="font-semibold text-emerald-700">~{vychetOf('shift-1')}</span>
             </li>
             <li class="flex justify-between text-base">
-              <span class="text-slate-700">Смена 2 (завершена, 14 дней, {priceOf('shift-2')})</span>
+              <span class="text-slate-700">Смена 2 (завершена, {daysOf('shift-2')}, {priceOf('shift-2')})</span>
               <span class="font-semibold text-emerald-700">~{vychetOf('shift-2')}</span>
             </li>
           </ul>
