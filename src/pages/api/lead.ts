@@ -5,6 +5,12 @@ import { join } from 'node:path';
 import { sendAndataEvent, andataDatetime, andataPhone } from '../../lib/andata';
 import { allShifts } from '../../data/shifts';
 import { readVisitorId } from '../../lib/attribution/cookie';
+import { fetchWithTimeout } from '../../lib/fetchWithTimeout';
+
+// Таймауты на внешние вызовы критического пути заявки: зависший AlfaCRM/Telegram
+// не должен вешать приём заявки. Ошибка таймаута ловится существующими try/catch.
+const ALFA_TIMEOUT_MS = 8000;
+const TELEGRAM_TIMEOUT_MS = 5000;
 
 /** Цена выбранной смены в рублях по её названию (для Andata order_value) */
 function shiftPrice(shift: string): number | undefined {
@@ -251,11 +257,11 @@ async function createCrmLead(body: Record<string, string>): Promise<number | nul
 
   try {
     // Auth (один токен на всё)
-    const authRes = await fetch(`https://${hostname}/v2api/auth/login`, {
+    const authRes = await fetchWithTimeout(`https://${hostname}/v2api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, api_key: apiKey }),
-    });
+    }, ALFA_TIMEOUT_MS);
     const authData = await authRes.json();
     const token: string = authData?.token;
     if (!token) return null;
@@ -296,11 +302,11 @@ async function createCrmLead(body: Record<string, string>): Promise<number | nul
     };
 
     // Лагерь — филиал 5
-    const custRes = await fetch(`https://${hostname}/v2api/5/customer/create`, {
+    const custRes = await fetchWithTimeout(`https://${hostname}/v2api/5/customer/create`, {
       method: 'POST',
       headers,
       body: JSON.stringify(payload),
-    });
+    }, ALFA_TIMEOUT_MS);
     const custData = await custRes.json();
     return custData?.model?.id ?? null;
   } catch {
@@ -365,13 +371,19 @@ export const POST: APIRoute = async ({ request }) => {
 
     const text = buildTgText(body, crmId);
 
-    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
-    });
-
-    const tgData = await res.json();
+    let tgData: any;
+    try {
+      const res = await fetchWithTimeout(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
+      }, TELEGRAM_TIMEOUT_MS);
+      tgData = await res.json();
+    } catch {
+      // Telegram не ответил (таймаут/сеть). Заявка уже сохранена в PG/CRM/ФС —
+      // не роняем ответ клиенту из-за недоставленного уведомления.
+      return new Response(JSON.stringify({ ok: true, tg: false, crm_id: crmId }), { status: 200 });
+    }
 
     if (!tgData.ok) {
       return new Response(JSON.stringify({ ok: true, tg: false, crm_id: crmId }), { status: 200 });
