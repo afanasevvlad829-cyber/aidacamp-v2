@@ -165,6 +165,7 @@ const _allForPrice = [...mainShifts];
 const _priceNum = (p: string) => parseInt(p.replace(/[^\d]/g, ''), 10);
 const _sorted = [..._allForPrice].sort((a, b) => _priceNum(a.price) - _priceNum(b.price));
 export const PRICE_MIN = _sorted[0].price;
+export const PRICE_MIN_ID = _sorted[0].id; // id смены с ценой PRICE_MIN — для ссылок «от X ₽», ведущих на эту смену
 export const PRICE_MAX = _sorted[_sorted.length - 1].price;
 export const PRICE_RANGE = `от ${PRICE_MIN} до ${PRICE_MAX}`;
 export const PRICE_S1 = _shift1.price;

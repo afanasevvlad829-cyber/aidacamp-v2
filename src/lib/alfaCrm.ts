@@ -1,6 +1,11 @@
 // Лёгкий клиент Альфа-CRM для SSR-страниц.
 // Кеш токена в памяти процесса до 50 минут.
 
+import { fetchWithTimeout } from './fetchWithTimeout';
+
+// Таймаут на все запросы к AlfaCRM: зависший CRM не должен вешать SSR/приём заявки.
+const ALFA_TIMEOUT_MS = 8000;
+
 const BRANCH = 5;
 
 let _tokenCache: { token: string; exp: number } | null = null;
@@ -15,11 +20,11 @@ async function authToken(): Promise<string | null> {
   if (!host || !email || !apiKey) return null;
 
   try {
-    const r = await fetch(`https://${host}/v2api/auth/login`, {
+    const r = await fetchWithTimeout(`https://${host}/v2api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, api_key: apiKey }),
-    });
+    }, ALFA_TIMEOUT_MS);
     const j: any = await r.json();
     if (!j?.token) return null;
     _tokenCache = { token: j.token, exp: now + 50 * 60 * 1000 };
@@ -36,11 +41,11 @@ export async function getGroupLinks(groupId: number): Promise<{ tg?: string; max
   if (!host || !token) return {};
 
   try {
-    const r = await fetch(`https://${host}/v2api/${BRANCH}/group/index`, {
+    const r = await fetchWithTimeout(`https://${host}/v2api/${BRANCH}/group/index`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
       body: JSON.stringify({ id: groupId, page: 0 }),
-    });
+    }, ALFA_TIMEOUT_MS);
     const j: any = await r.json();
     const note: string = j?.items?.[0]?.note ?? '';
     if (!note) return {};
@@ -62,11 +67,11 @@ export async function getCustomerGroupIds(customerId: number): Promise<number[]>
   if (!host || !token) return [];
 
   try {
-    const r = await fetch(`https://${host}/v2api/${BRANCH}/customer/index`, {
+    const r = await fetchWithTimeout(`https://${host}/v2api/${BRANCH}/customer/index`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
       body: JSON.stringify({ id: customerId, page: 0 }),
-    });
+    }, ALFA_TIMEOUT_MS);
     const j: any = await r.json();
     const item = j?.items?.[0];
     if (!item) return [];
@@ -88,11 +93,11 @@ export async function getCustomerGroupIds(customerId: number): Promise<number[]>
 
     // Fallback — через customer-group
     try {
-      const r2 = await fetch(`https://${host}/v2api/${BRANCH}/customer-group/index`, {
+      const r2 = await fetchWithTimeout(`https://${host}/v2api/${BRANCH}/customer-group/index`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
         body: JSON.stringify({ customer_id: customerId, page: 0 }),
-      });
+      }, ALFA_TIMEOUT_MS);
       const j2: any = await r2.json();
       const ids: number[] = [];
       for (const it of (j2?.items || [])) {

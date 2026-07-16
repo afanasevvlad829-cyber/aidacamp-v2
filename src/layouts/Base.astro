@@ -208,6 +208,19 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
             s.src='https://tagmanager.andata.ru/api/v1/container/9c0aaeb2-3b5c-4f86-aebd-786c79f7314b/published/code.js';
             var f=d.getElementsByTagName('script')[0]; f.parentNode.insertBefore(s,f);
           })(document,'andata-tm');
+          /* OneSignal — тест веб-пуш подписки */
+          if (!__isBot && !__isDevHost) {
+            (function(d){
+              var s = d.createElement('script');
+              s.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
+              s.defer = true;
+              d.head.appendChild(s);
+            })(document);
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            OneSignalDeferred.push(async function (OneSignal) {
+              await OneSignal.init({ appId: '61a5f4f0-28a5-4967-94fe-559a9e55a2d0' });
+            });
+          }
         }
         var t = setTimeout(loadStage2, 20000);
         ['scroll','click','touchstart','keydown'].forEach(function(e){
@@ -412,7 +425,8 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         <DynamicPrices />
         <!-- AgeBar: мобильная плашка выбора возраста (летние смены) — на сезонных лендингах скрыта -->
         {!hideAgeBar && <AgeBar />}
-        <!-- ShiftModal: открывается из AgeBar «Посмотреть» и data-shift-link на всех страницах -->
+        <!-- ShiftModal: открывается из AgeBar «Посмотреть» и data-shift-link на всех страницах
+             (собственный document click-делегат в shift-modal.ts, initShiftModal()) -->
         <ShiftModal />
       </Fragment>
     )}

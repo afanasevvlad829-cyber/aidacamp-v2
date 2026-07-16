@@ -11,8 +11,11 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const STATI_DIR = path.join(ROOT, 'src/pages/stati');
 const REGISTRY = path.join(ROOT, 'src/data/articles.json');
 
+const isRedirectStub = (file) =>
+  fs.readFileSync(path.join(STATI_DIR, file), 'utf8').includes('Astro.redirect');
+
 const fileSlugs = fs.readdirSync(STATI_DIR)
-  .filter(f => f.endsWith('.astro') && f !== 'index.astro')
+  .filter(f => f.endsWith('.astro') && f !== 'index.astro' && !isRedirectStub(f))
   .map(f => f.replace(/\.astro$/, ''));
 
 const reg = JSON.parse(fs.readFileSync(REGISTRY, 'utf8'));

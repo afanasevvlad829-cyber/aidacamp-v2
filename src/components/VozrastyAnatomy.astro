@@ -1,0 +1,76 @@
+---
+/**
+ * VozrastyAnatomy — «Анатомия типичной смены»: три горизонтальные полосы с %.
+ * Чистый HTML+CSS, без JS. Цифры зафиксированы (см. kto-edet-v-lager-vozrasty.astro).
+ */
+const ROWS = [
+  { label: '7–9 лет', pct: 5, kind: 'younger' as const },
+  { label: '10–12 лет', pct: 70, kind: 'core' as const },
+  { label: '13–16 лет', pct: 24, kind: 'older' as const },
+];
+
+const BAR_CLASS: Record<(typeof ROWS)[number]['kind'], string> = {
+  younger: 'bg-blue-500',
+  core: 'bg-primary',
+  older: 'bg-purple-500',
+};
+---
+
+<div class="va-wrap">
+  {ROWS.map((row) => (
+    <div class="va-row">
+      <span class="va-label">{row.label}</span>
+      <div class="va-track">
+        <div class={`va-bar ${BAR_CLASS[row.kind]}`} style={`width:${row.pct}%`}></div>
+      </div>
+      <span class="va-pct">{row.pct}%</span>
+    </div>
+  ))}
+  <div class="va-fact">
+    Средний возраст ребёнка в АйДаКемпе — <b>11 лет</b>. Если вашему 10–12 — вокруг будет целая смена ровесников. Если 13+ — своя группа старших с задачами посложнее.
+  </div>
+</div>
+
+<style>
+  .va-wrap { max-width: 640px; margin: 0 auto; }
+  .va-row {
+    display: grid;
+    grid-template-columns: 96px 1fr 52px;
+    gap: 12px;
+    align-items: center;
+    margin: 12px 0;
+  }
+  @media (min-width: 480px) {
+    .va-row { grid-template-columns: 120px 1fr 56px; }
+  }
+  .va-label { font-weight: 800; font-size: 14px; color: var(--color-body, #17251c); }
+  .va-track {
+    height: 26px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+    border: 2px solid var(--color-primary-dark, #ad5b00);
+  }
+  .va-bar { display: block; height: 100%; border-radius: 6px 0 0 6px; }
+  .va-pct {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--color-body, #17251c);
+    text-align: right;
+  }
+  .va-fact {
+    background: var(--color-primary-soft, #fff1df);
+    border-radius: 16px;
+    padding: 16px 22px;
+    margin-top: 22px;
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--color-body, #17251c);
+  }
+  .va-fact b {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    color: var(--color-primary-text, #9c3d00);
+  }
+</style>

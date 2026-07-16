@@ -35,7 +35,7 @@ async function logFortuneEvent(data: {
 }
 
 // Допустимые скидки (белый список)
-const VALID_DISCOUNTS = new Set([10, 20, 30, 40, 50, 70]);
+const VALID_DISCOUNTS = new Set([30, 40, 50, 70]);
 
 // ── env ──────────────────────────────────────────────────────────────────────
 const TERMINAL  = process.env.TINKOFF_TERMINAL_KEY;
