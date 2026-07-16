@@ -11,6 +11,8 @@
  * />
  */
 
+import ShareButton from './ShareButton.astro';
+
 interface Cue {
   s: number;  // start, секунды
   e: number;  // end, секунды
@@ -27,6 +29,10 @@ interface Props {
   maxHeight?: string;    // max-height превью, дефолт '460px'
   goalName?: string;     // Яндекс.Метрика цель
   uid?: string;          // уникальный суффикс если несколько плееров на странице
+  /** Адрес страницы видео (/video/<slug>/) — включает кнопку «Поделиться» в лайтбоксе. */
+  shareSlug?: string;
+  /** Заголовок для системного меню «поделиться». По умолчанию — title страницы. */
+  shareTitle?: string;
 }
 
 const {
@@ -38,7 +44,11 @@ const {
   maxHeight = '460px',
   goalName = 'video_play',
   uid = 'vp',
+  shareSlug,
+  shareTitle,
 } = Astro.props;
+
+const shareUrl = shareSlug ? `https://aidacamp.ru/video/${shareSlug}/` : undefined;
 
 const modalId   = `${uid}-modal`;
 const playerId  = `${uid}-player`;
@@ -81,6 +91,18 @@ const cuesJson = JSON.stringify(cues);
   {caption && (
     <p class="mt-2 text-[12px] text-body-faint text-center leading-[1.5]" set:html={caption}></p>
   )}
+  {/* Ссылка на страницу видео: обычным <a>, иначе страница остаётся сиротой —
+      кнопка «Поделиться» это JS, поисковик её не видит. */}
+  {shareSlug && (
+    <p class="mt-1.5 text-center">
+      <a
+        href={`/video/${shareSlug}/`}
+        class="text-[12px] font-medium text-body-faint no-underline transition-colors hover:text-primary"
+      >
+        Страница видео
+      </a>
+    </p>
+  )}
 </div>
 
 <!-- Лайтбокс -->
@@ -90,15 +112,18 @@ const cuesJson = JSON.stringify(cues);
 >
   <div class="flex min-h-full items-center justify-center p-4">
     <div class="relative w-full max-w-[400px]">
-      <!-- Кнопка закрытия -->
-      <button
-        id={closeId}
-        type="button"
-        class="absolute -top-10 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-800 hover:bg-slate-100 transition-colors z-10 shadow"
-        aria-label="Закрыть"
-      >
-        <i class="bi bi-x-lg text-base" aria-hidden="true"></i>
-      </button>
+      <!-- Поделиться + закрыть -->
+      <div class="absolute -top-11 right-0 z-10 flex items-center gap-2">
+        {shareUrl && <ShareButton url={shareUrl} title={shareTitle} variant="overlay" />}
+        <button
+          id={closeId}
+          type="button"
+          class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-800 hover:bg-slate-100 transition-colors shadow"
+          aria-label="Закрыть"
+        >
+          <i class="bi bi-x-lg text-base" aria-hidden="true"></i>
+        </button>
+      </div>
       <!-- Видео + karaoke overlay -->
       <div class="relative w-full" style={`aspect-ratio:${aspect};max-height:80svh`}>
         <video
