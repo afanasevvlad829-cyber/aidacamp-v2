@@ -273,6 +273,9 @@ const ARTICLE_MAP: Record<string, LandingPage[]> = {
   '/lager-naro-fominsk': [
     { title: 'Лагерь в Наро-Фоминском районе', description: 'Маршруты, как добраться, инфраструктура', url: '/stati/lager-naro-fominsk/', icon: 'file-earmark-text' },
   ],
+  '/lager-novaya-moskva': [
+    { title: 'Как добраться из Новой Москвы', description: 'Маршрут, трансфер, время в пути', url: '/stati/lager-novaya-moskva/', icon: 'file-earmark-text' },
+  ],
   '/detskiy-lager-podmoskove': [
     { title: 'Лагерь в Наро-Фоминском районе', description: 'Маршруты, как добраться, инфраструктура', url: '/stati/lager-naro-fominsk/', icon: 'file-earmark-text' },
   ],
