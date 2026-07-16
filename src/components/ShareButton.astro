@@ -12,16 +12,23 @@ interface Props {
   /** Абсолютный адрес. Пусто — текущая страница. */
   url?: string;
   title?: string;
-  /** Компактный вид — для оверлея поверх видео в лайтбоксе. */
-  variant?: 'default' | 'overlay';
+  /**
+   * default  — на светлом фоне
+   * onDark   — на тёмной подложке (hero страницы видео)
+   * overlay  — компактный, поверх видео в лайтбоксе
+   */
+  variant?: 'default' | 'onDark' | 'overlay';
   label?: string;
 }
 
 const { url = '', title = '', variant = 'default', label = 'Поделиться' } = Astro.props;
 
-const cls = variant === 'overlay'
-  ? 'inline-flex h-9 items-center gap-1.5 rounded-full bg-white/90 px-3 text-[13px] font-semibold text-body shadow backdrop-blur-sm transition hover:bg-white'
-  : 'inline-flex h-[48px] items-center gap-2 rounded-[10px] border-[1.5px] border-[#e6e6e6] bg-white px-5 text-[16px] font-semibold text-body transition hover:border-primary hover:text-primary';
+const VARIANTS = {
+  overlay: 'inline-flex h-9 items-center gap-1.5 rounded-full bg-white/90 px-3 text-[13px] font-semibold text-body shadow backdrop-blur-sm transition hover:bg-white',
+  onDark: 'inline-flex h-[48px] items-center gap-2 rounded-[10px] border-[1.5px] border-white/25 px-5 text-[16px] font-semibold text-white transition hover:border-white/60 hover:bg-white/10',
+  default: 'inline-flex h-[48px] items-center gap-2 rounded-[10px] border-[1.5px] border-[#e6e6e6] bg-white px-5 text-[16px] font-semibold text-body transition hover:border-primary hover:text-primary',
+};
+const cls = VARIANTS[variant as keyof typeof VARIANTS] ?? VARIANTS.default;
 ---
 
 <button type="button" class={`share-btn ${cls}`} data-share-url={url} data-share-title={title}>
