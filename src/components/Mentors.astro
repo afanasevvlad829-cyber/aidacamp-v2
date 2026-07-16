@@ -132,6 +132,8 @@ const mentors = [
 </dialog>
 
 <script>
+  import { initCarousel } from '../scripts/carousel';
+
   function initMentors() {
     // Why modal
     const modal = document.getElementById('mentorsWhyModal') as HTMLDialogElement | null;
@@ -140,26 +142,7 @@ const mentors = [
     modal?.addEventListener('click', (e) => { if (e.target === modal) modal?.close(); });
 
     // Mobile carousel dots
-    const track = document.getElementById('mentors-mobile-track');
-    const dots = document.querySelectorAll<HTMLElement>('[data-mentor-dot]');
-    if (track && dots.length) {
-      const cards = Array.from(track.children) as HTMLElement[];
-      const obs = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const idx = cards.indexOf(entry.target as HTMLElement);
-            dots.forEach((d, di) => {
-              const active = di === idx;
-              d.classList.toggle('bg-[var(--color-primary,#ec7c00)]', active);
-              d.classList.toggle('w-6', active);
-              d.classList.toggle('bg-slate-300', !active);
-              d.classList.toggle('w-2', !active);
-            });
-          }
-        });
-      }, { root: track, threshold: 0.6 });
-      cards.forEach((c) => obs.observe(c));
-    }
+    initCarousel('mentors-mobile-track', 'mentors-dots');
   }
 
   document.addEventListener('astro:page-load', initMentors);
