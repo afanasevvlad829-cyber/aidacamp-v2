@@ -23,7 +23,7 @@
  * Чтобы изменить сами правила — правь константы здесь.
  */
 
-import { SHIFT_META, taxDeduction } from './shifts.ts';
+import { SHIFT_META, taxDeduction, fmtRub } from './shifts.ts';
 
 interface PriceStage {
   from: string;        // YYYY-MM-DD
@@ -210,7 +210,7 @@ export function getTaxDeduction(shiftId: string, today: Date = new Date()): numb
   return taxDeduction(price, days);
 }
 
-/** Форматирует цену: 93900 → "93 900 ₽" */
+/** Форматирует цену: 93900 → "93 900 ₽". Формат — из shifts.ts, не дублируем. */
 export function fmtPrice(n: number): string {
-  return n.toLocaleString('ru-RU') + ' ₽';
+  return fmtRub(n);
 }

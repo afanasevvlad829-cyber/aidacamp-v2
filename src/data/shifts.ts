@@ -194,7 +194,14 @@ const _days = (d: string) => parseInt(d.replace(/[^\d]/g, ''), 10) || 0;
 export function shiftDeduction(s: Shift): number {
   return Math.round(taxDeduction(_priceNum(s.price), _days(s.duration)) / 50) * 50;
 }
-const _fmtV = (n: number) => n.toLocaleString('ru-RU').replace(/\u00a0/g, ' ') + ' ₽';
+/**
+ * ЕДИНЫЙ формат денег на сайте: 74900 → «74 900 ₽».
+ * Разряды — обычным пробелом: toLocaleString('ru-RU') ставит NBSP (U+00A0),
+ * из-за чего цифры из разных источников выглядели по-разному и не находились
+ * поиском по странице. Единственное место, где задаётся формат — здесь.
+ */
+export const fmtRub = (n: number) => n.toLocaleString('ru-RU').replace(/[\u00a0\u202f]/g, ' ') + ' ₽';
+const _fmtV = fmtRub;
 // Форматированные строки вычета для прозы (как PRICE_*): «6 250 ₽».
 export const VYCHET_S1 = _fmtV(shiftDeduction(_shift1));
 export const VYCHET_S2 = _fmtV(shiftDeduction(_shift2));
