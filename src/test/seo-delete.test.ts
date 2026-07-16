@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Тест эндпоинта src/pages/api/portal/seo-delete.ts.
+// Живёт в src/test/ (НЕ под src/pages/), иначе Astro считает .test.ts роутом
+// и падает на билде при импорте vitest вне раннера.
+//
 // Мокаем слой БД: withDbClient получает fn и вызывает её с фейковым клиентом,
 // у которого query — шпион. Так проверяем, что SQL параметризован (keyword
 // уходит ОТДЕЛЬНЫМ параметром, а не в текст запроса).
@@ -8,11 +12,11 @@ const withDbClientMock = vi.fn(async (fn: (c: any) => Promise<any>) => {
   return fn({ query: querySpy });
 });
 
-vi.mock('../../../lib/db', () => ({
+vi.mock('../lib/db', () => ({
   withDbClient: (...args: any[]) => (withDbClientMock as any)(...args),
 }));
 
-import { POST } from './seo-delete';
+import { POST } from '../pages/api/portal/seo-delete';
 
 function makeCtx(body: unknown, locals: Record<string, unknown>): any {
   return {
