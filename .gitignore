@@ -37,22 +37,29 @@ archive/local_wip/2026-03-25/external-workdirs/*
 !archive/local_wip/2026-03-25/external-workdirs/README.md
 
 # Safety filters for heavy binaries / reports
+# Ловят случайно скачанное/сгенерированное вне public/ (archive/, reports/, корень).
+# Деплой картинки в прод и так не таскает: deploy.sh шаг 2 идёт с --exclude='images/',
+# а шаг 2c доливает в /var/www/aidacamp-media/ только НОВЫЕ файлы (--ignore-existing).
 reports/**
 *.mp4
 *.webm
 *.webp
 *.jpeg
+*.jpg
+
 # Exceptions — production assets in public/
-!public/images/**/*.mp4
-!public/images/**/*.webm
-!public/images/**/*.webp
+# ⚠️ Исключения обязаны идти ПОСЛЕ фильтров: в .gitignore выигрывает ПОСЛЕДНЕЕ
+# совпавшее правило. Перенесёшь их выше — картинки молча перестанут коммититься.
+#
+# public/images/** — ассеты сайта, коммитим в любом формате. Раньше здесь была
+# россыпь исключений по форматам (mp4/webm/webp), а jpg/jpeg не попали в список —
+# и любой новый .jpg молча не коммитился. На этом уже погорели OG-превью страниц
+# видео (og:image → 404, превью в мессенджерах пропадало). Формат картинки —
+# не то, чем должен управлять .gitignore.
+!public/images/**
 !public/video/daria-story.mp4
 !public/video/daria-story-preview.mp4
 !public/video/*.webm
-*.jpg
-# OG-превью страниц видео: мессенджеры не показывают AVIF, поэтому нужен именно JPG.
-# Без исключения они молча не коммитятся → og:image 404 → превью в WhatsApp/Telegram пропадает.
-!public/images/videos/og/*.jpg
 # .claude/ — только settings.json коммитим (общие deny-rules для всех агентов)
 .claude/*
 !.claude/settings.json
