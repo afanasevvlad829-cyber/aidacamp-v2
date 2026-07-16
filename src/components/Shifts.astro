@@ -5,8 +5,6 @@ import ShiftCard from './shifts/ShiftCard.astro';
 import ShiftRetroCard from './shifts/ShiftRetroCard.astro';
 import FortuneShiftCard from './shifts/FortuneShiftCard.astro';
 import ShiftBookModal from './shifts/ShiftBookModal.astro';
-import ShiftCalendarModal from './shifts/ShiftCalendarModal.astro';
-import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
 import ShiftsGuideLink from './ShiftsGuideLink.astro';
 
 interface Props { hideFriendBanner?: boolean; }
@@ -229,8 +227,6 @@ const nowDate = new Date();
 </style>
 
 <ShiftBookModal />
-<ShiftCalendarModal />
-<ShiftInfoModal />
 
 <!-- Toast: популярность смены (slide-in справа, auto-dismiss 3s) -->
 <div
@@ -268,8 +264,6 @@ const nowDate = new Date();
 
 <script>
   import { STORAGE_KEYS } from '../lib/storage';
-  import { shiftInfo } from '../data/shifts';
-  import { renderCalendar } from '../scripts/shift-calendar';
   // submitLead больше не используется здесь — логика в ShiftBookModal.astro
 
   // --- Shift stat toast ---
@@ -373,53 +367,6 @@ const nowDate = new Date();
       });
     });
 
-    // === CALENDAR MODAL ===
-    const calendarModal = document.getElementById('shiftCalendarModal') as HTMLDialogElement | null;
-    if (calendarModal) {
-      const calendarGrid = calendarModal.querySelector('[data-calendar-grid]');
-      const calendarTitle = calendarModal.querySelector('[data-calendar-title]');
-
-      document.querySelectorAll<HTMLElement>('[data-shift-calendar]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const startStr = btn.dataset.start || '';
-          const endStr = btn.dataset.end || '';
-          const shiftName = btn.dataset.shiftName || '';
-          if (calendarGrid && calendarTitle) {
-            renderCalendar(startStr, endStr, shiftName, calendarGrid, calendarTitle);
-          }
-          calendarModal.showModal();
-        });
-      });
-
-      calendarModal.querySelector('[data-calendar-close]')?.addEventListener('click', () => calendarModal.close());
-      calendarModal.addEventListener('click', (e) => { if (e.target === calendarModal) calendarModal.close(); });
-    }
-
-    // === INFO MODAL ===
-    const infoModal = document.getElementById('shiftInfoModal') as HTMLDialogElement | null;
-    if (infoModal) {
-      const infoTitle = infoModal.querySelector('[data-info-title]');
-      const infoDates = infoModal.querySelector('[data-info-dates]');
-      const infoPrice = infoModal.querySelector('[data-info-price]');
-      const infoBody = infoModal.querySelector('[data-info-body]');
-
-      document.querySelectorAll<HTMLElement>('[data-shift-info]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const shiftId = btn.dataset.shiftInfo || '';
-          const info = shiftInfo[shiftId];
-          if (info) {
-            if (infoTitle) infoTitle.textContent = btn.dataset.shiftTitle || '';
-            if (infoDates) infoDates.textContent = info.dates + ' · ' + info.duration;
-            if (infoPrice) infoPrice.textContent = info.price;
-            if (infoBody) infoBody.innerHTML = info.html;
-          }
-          infoModal.showModal();
-        });
-      });
-
-      infoModal.querySelector('[data-info-close]')?.addEventListener('click', () => infoModal.close());
-      infoModal.addEventListener('click', (e) => { if (e.target === infoModal) infoModal.close(); });
-    }
   }
 
   document.addEventListener('astro:page-load', initShifts);
