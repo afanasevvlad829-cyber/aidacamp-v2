@@ -1,5 +1,5 @@
 // shift-modal.ts — единая модалка смены с табами Описание/Календарь/Подробнее
-import { allShifts, shiftInfo, PEER_COUNTS, type Shift } from '../data/shifts';
+import { allShifts, allShiftsIncludingArchived, shiftInfo, PEER_COUNTS, type Shift } from '../data/shifts';
 import { renderCalendar } from './shift-calendar';
 import { trackGoal } from './analytics';
 import { STORAGE_KEYS } from '../lib/storage';
@@ -79,6 +79,11 @@ export function initShiftModal() {
     descriptionEl.textContent = shift.description;
     priceEl.textContent = shift.price;
 
+    // Завершённые смены (не найдены в allShifts, только в allShiftsIncludingArchived) —
+    // модалка read-only, без брони.
+    const isCompleted = !allShifts.some((s) => s.id === shift.id);
+    bookBtn.classList.toggle('hidden', isCompleted);
+
     // Calendar
     renderCalendar(shift.startDate, shift.endDate, shift.name, calendarGrid, document.createElement('div'));
 
@@ -154,7 +159,7 @@ export function initShiftModal() {
   }
 
   function open(shiftId: string, tab: TabName) {
-    const shift = allShifts.find((s) => s.id === shiftId);
+    const shift = allShifts.find((s) => s.id === shiftId) || allShiftsIncludingArchived.find((s) => s.id === shiftId);
     if (!shift) return;
     markShiftViewed(shiftId);
     populate(shift);

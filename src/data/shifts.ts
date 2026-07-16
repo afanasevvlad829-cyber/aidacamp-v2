@@ -134,6 +134,10 @@ export const displayShifts: Shift[] = [_shift1, _shift2, ...mainShifts];
 export const shift1 = _shift1;
 export const shift2 = _shift2;
 
+// Полный список смен, включая архивные под-смены 2.1/2.2 — только для lookup по id
+// (модалка ShiftModal, SHIFT_META). НЕ использовать в UI-каруселях — там displayShifts/mainShifts.
+export const allShiftsIncludingArchived: Shift[] = [_shift1, _shift2, _shift21, _shift22, ...mainShifts];
+
 // === ЕДИНЫЙ ИСТОЧНИК метаданных смены (дата + база + длительность) ===
 // Отсюда dynamicPrices.ts берёт basePrice/startDate/days и применяет правило роста.
 // Включает завершённые смены — для исторических цен и фолбэков.
@@ -145,7 +149,7 @@ export interface ShiftMeta {
   days: number;        // длительность из duration
 }
 export const SHIFT_META: Record<string, ShiftMeta> = Object.fromEntries(
-  [_shift1, _shift2, _shift21, _shift22, ...mainShifts].map((s) => [
+  allShiftsIncludingArchived.map((s) => [
     s.id,
     {
       basePrice: _priceToNum(s.price),
