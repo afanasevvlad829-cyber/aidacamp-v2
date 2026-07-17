@@ -236,6 +236,16 @@ Clean-param: utm_source&utm_medium&utm_campaign&utm_content&utm_term&utm_h1&utm_
 
 **Правило:** если нужно «починить» sitemap — не удалять, а **изменить содержимое по тому же URL** (или вернуть 404). Yandex переобойдёт robots.txt и переосмыслит список sitemap'ов.
 
+### 🟡 Два противоречащих sitemap на проде: свежий `sitemap.xml` + мёртвый `sitemap-0.xml` (17.07.2026)
+
+**Симптом:** `https://aidacamp.ru/sitemap.xml` (309 URL, на него указывает robots.txt) и `https://aidacamp.ru/sitemap-0.xml` (341 URL) — два разных urlset с разным составом. В sitemap-0.xml были страницы, сознательно исключённые фильтром (`/programma-smeny/` и другие noindex-сателлиты).
+
+**Причина:** билд после `astro build` переименовывает `sitemap-0.xml → sitemap.xml` и удаляет `sitemap-0.xml`/`sitemap-index.xml` (шаг в `package.json`). Но rsync статики в `deploy.sh` — сознательно **без `--delete`** (инцидент 22.05.2026), поэтому файлы старого билда от 28.06 остались на проде навсегда. Плюс в `public/sitemap.xml` лежал статический sitemapindex, указывающий на sitemap-0.xml, — ловушка на случай молчаливого сбоя шага переименования.
+
+**Решение:** (1) `rm sitemap-0.xml sitemap-index.xml` в `/var/www/aidacamp/current/client/` → оба отдают 404 (по правилу от 20.04.2026 — правильный способ «удалить» sitemap для Яндекса); (2) удалён `public/sitemap.xml` из репо; (3) шаг переименования в `package.json` теперь роняет билд, если `sitemap-0.xml` не сгенерирован, вместо тихого пропуска.
+
+**Правило:** деплой без `--delete` = удалённые из билда файлы живут на сервере вечно. Убрал файл из билда → проверь и удали его руками из вебрута (prod И dev). Для sitemap/robots это критично: поисковики находят старые артефакты сами.
+
 ### 🟡 `sitemap-index.xml` от `@astrojs/sitemap` отдаёт 404 (15.04.2026)
 
 **Симптом:** Вебмастер ругался на sitemap — URL `sitemap-index.xml` в `robots.txt`, а файл отсутствует.
