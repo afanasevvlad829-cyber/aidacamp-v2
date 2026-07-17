@@ -1,10 +1,27 @@
 // shift-modal.ts — единая модалка смены с табами Описание/Календарь/Подробнее
-import { allShifts, allShiftsIncludingArchived, shiftInfo, PEER_COUNTS, type Shift } from '../data/shifts';
-import { renderCalendar } from './shift-calendar';
 import { trackGoal } from './analytics';
 import { STORAGE_KEYS } from '../lib/storage';
+import type { Shift } from '../data/shifts';
 
 type TabName = 'description' | 'calendar' | 'info';
+
+// ── Ленивая загрузка тяжёлого чанка (данные смен + календарь, ~25 КБ raw) ──
+// Данные нужны только при реальном открытии модалки, поэтому не тянем их
+// статически на каждую страницу — динамический import() при первом open()
+// (тот же паттерн, что await import('../scripts/form-submit') в LeadForm).
+type ShiftsData = typeof import('../data/shifts');
+type CalendarMod = typeof import('./shift-calendar');
+
+let shiftDataPromise: Promise<[ShiftsData, CalendarMod]> | null = null;
+function loadShiftData(): Promise<[ShiftsData, CalendarMod]> {
+  if (!shiftDataPromise) {
+    shiftDataPromise = Promise.all([
+      import('../data/shifts'),
+      import('./shift-calendar'),
+    ]);
+  }
+  return shiftDataPromise;
+}
 
 let initialized = false;
 
@@ -49,6 +66,24 @@ export function initShiftModal() {
 
   let currentShiftId = '';
 
+  // Загруженные модули (ставятся в open() до первого populate/showAgePeers)
+  let shiftsData: ShiftsData | null = null;
+  let calendarMod: CalendarMod | null = null;
+
+  // Прелоад тяжёлого чанка по первому намерению (hover/touch на триггерах),
+  // чтобы первый клик открывал модалку без паузы на догрузку чанка.
+  const PRELOAD_TRIGGERS =
+    '#shifts, [data-shift-calendar], [data-shift-info], [data-occupancy-shift], [data-shift-link]';
+  function preloadOnIntent(e: Event) {
+    const t = e.target as Element | null;
+    if (!t || !(t instanceof Element) || !t.closest(PRELOAD_TRIGGERS)) return;
+    loadShiftData();
+    document.removeEventListener('pointerover', preloadOnIntent, true);
+    document.removeEventListener('touchstart', preloadOnIntent, true);
+  }
+  document.addEventListener('pointerover', preloadOnIntent, { capture: true, passive: true });
+  document.addEventListener('touchstart', preloadOnIntent, { capture: true, passive: true });
+
   function setTab(name: TabName) {
     tabBtns.forEach((btn) => {
       const active = btn.dataset.shiftModalTab === name;
@@ -63,6 +98,9 @@ export function initShiftModal() {
   }
 
   function populate(shift: Shift) {
+    if (!shiftsData || !calendarMod) return; // open() всегда грузит модули до populate
+    const { allShifts, shiftInfo, PEER_COUNTS } = shiftsData;
+    const { renderCalendar } = calendarMod;
     currentShiftId = shift.id;
     titleEl.textContent = shift.name;
     datesEl.textContent = shift.dates;
@@ -124,6 +162,8 @@ export function initShiftModal() {
   }
 
   function showAgePeers(shiftId: string, age: string) {
+    if (!shiftsData) return; // кнопки возраста живут внутри модалки → данные уже загружены
+    const { PEER_COUNTS } = shiftsData;
     const count = PEER_COUNTS[shiftId]?.[age] ?? PEER_COUNTS['shift-1']?.[age] ?? 8;
     ageResult.textContent = `Уже едет ${count} ребят ${age} лет вашего возраста`;
     ageQ.classList.add('hidden');
@@ -158,7 +198,11 @@ export function initShiftModal() {
     } catch {}
   }
 
-  function open(shiftId: string, tab: TabName) {
+  async function open(shiftId: string, tab: TabName) {
+    // Ленивая догрузка данных смен (~50 мс при холодном кэше; прелоад по hover
+    // обычно успевает раньше клика) — см. loadShiftData() выше.
+    [shiftsData, calendarMod] = await loadShiftData();
+    const { allShifts, allShiftsIncludingArchived } = shiftsData;
     const shift = allShifts.find((s) => s.id === shiftId) || allShiftsIncludingArchived.find((s) => s.id === shiftId);
     if (!shift) return;
     markShiftViewed(shiftId);
