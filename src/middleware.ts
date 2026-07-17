@@ -49,6 +49,23 @@ const TILDA_REDIRECTS: Record<string, string> = {
 
 const ipCounts = new Map<string, { count: number; reset: number }>();
 
+// nginx (location ^~ /api/) шлёт X-Real-IP: $remote_addr — nginx его ПЕРЕЗАПИСЫВАЕТ,
+// клиент подделать не может. X-Forwarded-For же собран через $proxy_add_x_forwarded_for,
+// который ДОПИСЫВАЕТ реальный IP в конец уже присланного клиентом значения — первый
+// элемент (.split(',')[0]) остаётся под контролем клиента и обходит rate-limit
+// подделкой заголовка на каждый запрос. Поэтому: X-Real-IP приоритетно, XFF —
+// только как фолбэк (последний элемент, не первый) для окружений без nginx впереди.
+export function getClientIp(request: Request): string {
+  const realIp = request.headers.get('x-real-ip')?.trim();
+  if (realIp) return realIp;
+  const xff = request.headers.get('x-forwarded-for');
+  if (xff) {
+    const parts = xff.split(',').map((s) => s.trim()).filter(Boolean);
+    if (parts.length) return parts[parts.length - 1];
+  }
+  return 'unknown';
+}
+
 function checkRateLimit(ip: string, bucket: string, limit: number, windowMs = 60_000): boolean {
   const key = `${ip}:${bucket}`;
   const now = Date.now();
@@ -152,7 +169,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   }
 
   if (url.pathname === '/api/ask') {
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+    const ip = getClientIp(request);
     if (checkRateLimit(ip, 'ask', 20)) {
       return new Response(
         JSON.stringify({
@@ -168,7 +185,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   }
 
   if (url.pathname === '/api/lead' || url.pathname === '/api/contact-send') {
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+    const ip = getClientIp(request);
     if (checkRateLimit(ip, 'form', 5)) {
       return new Response(
         JSON.stringify({ error: 'Слишком много запросов. Подождите минуту.' }),
