@@ -1,5 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
+import { fetchWithTimeout } from '../../lib/fetchWithTimeout';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -53,7 +54,7 @@ export const GET: APIRoute = async ({ url }) => {
     if (preview) {
       // Get preview URL
       const apiUrl = `https://cloud-api.yandex.net/v1/disk/resources?path=${encodeURIComponent(path)}&fields=preview&preview_size=L`;
-      const res = await fetch(apiUrl, {
+      const res = await fetchWithTimeout(apiUrl, {
         headers: { Authorization: `OAuth ${token}` },
       });
       if (!res.ok) {
@@ -68,7 +69,7 @@ export const GET: APIRoute = async ({ url }) => {
 
     // Get download URL
     const apiUrl = `https://cloud-api.yandex.net/v1/disk/resources/download?path=${encodeURIComponent(path)}`;
-    const res = await fetch(apiUrl, {
+    const res = await fetchWithTimeout(apiUrl, {
       headers: { Authorization: `OAuth ${token}` },
     });
     if (!res.ok) {
@@ -82,7 +83,8 @@ export const GET: APIRoute = async ({ url }) => {
 
     if (mode === 'proxy') {
       // Stream the file through our server
-      const fileRes = await fetch(href);
+      // Скачивание самого файла — больше дефолтных 8с (крупные фото по медленному каналу)
+      const fileRes = await fetchWithTimeout(href, undefined, 30000);
       if (!fileRes.ok || !fileRes.body) {
         return json({ ok: false, error: 'Failed to fetch file' }, 502);
       }
@@ -136,7 +138,7 @@ export const POST: APIRoute = async ({ request }) => {
         }
         try {
           const apiUrl = `https://cloud-api.yandex.net/v1/disk/resources/download?path=${encodeURIComponent(path)}`;
-          const res = await fetch(apiUrl, {
+          const res = await fetchWithTimeout(apiUrl, {
             headers: { Authorization: `OAuth ${token}` },
           });
           if (res.ok) {

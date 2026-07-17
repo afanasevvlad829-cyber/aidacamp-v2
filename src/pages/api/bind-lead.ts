@@ -1,5 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
+import { fetchWithTimeout } from '../../lib/fetchWithTimeout';
 import { verifyLid } from '../../lib/leadLink';
 import { readVisitorId } from '../../lib/attribution/cookie';
 
@@ -13,7 +14,7 @@ async function alfaAuth(): Promise<{ host: string; token: string } | null> {
   const apiKey = process.env.ALFACRM_API_KEY;
   if (!host || !email || !apiKey) return null;
   try {
-    const r = await fetch(`https://${host}/v2api/auth/login`, {
+    const r = await fetchWithTimeout(`https://${host}/v2api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, api_key: apiKey }),
@@ -27,7 +28,7 @@ async function alfaAuth(): Promise<{ host: string; token: string } | null> {
 
 async function getCustomerNote(host: string, token: string, lid: number): Promise<string> {
   try {
-    const r = await fetch(`https://${host}/v2api/${BRANCH}/customer/index?id=${lid}`, {
+    const r = await fetchWithTimeout(`https://${host}/v2api/${BRANCH}/customer/index?id=${lid}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
       body: JSON.stringify({ id: lid }),
@@ -41,7 +42,7 @@ async function getCustomerNote(host: string, token: string, lid: number): Promis
 
 async function updateCustomerNote(host: string, token: string, lid: number, note: string): Promise<boolean> {
   try {
-    const r = await fetch(`https://${host}/v2api/${BRANCH}/customer/update?id=${lid}`, {
+    const r = await fetchWithTimeout(`https://${host}/v2api/${BRANCH}/customer/update?id=${lid}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
       body: JSON.stringify({ id: lid, note }),
@@ -56,7 +57,7 @@ async function updateCustomerNote(host: string, token: string, lid: number, note
 /** Полная карточка клиента (для чтения кастомных полей) */
 async function getCustomer(host: string, token: string, lid: number): Promise<Record<string, unknown> | null> {
   try {
-    const r = await fetch(`https://${host}/v2api/${BRANCH}/customer/index?id=${lid}`, {
+    const r = await fetchWithTimeout(`https://${host}/v2api/${BRANCH}/customer/index?id=${lid}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
       body: JSON.stringify({ id: lid }),
@@ -92,7 +93,7 @@ async function bindAndataFields(
     if (fDom && vals.domainid && !cust[fDom]) upd[fDom] = vals.domainid;
     if (fYm && vals.ymuid && !cust[fYm]) upd[fYm] = vals.ymuid;
     if (!Object.keys(upd).length) return;
-    await fetch(`https://${host}/v2api/${BRANCH}/customer/update?id=${lid}`, {
+    await fetchWithTimeout(`https://${host}/v2api/${BRANCH}/customer/update?id=${lid}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
       body: JSON.stringify({ id: lid, ...upd }),

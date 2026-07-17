@@ -1,5 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
+import { fetchWithTimeout } from '../../lib/fetchWithTimeout';
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
@@ -28,7 +29,8 @@ async function generateAudioElevenLabs(text: string, voiceId: string = 'rachel')
 
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
 
-  const response = await fetch(url, {
+  // Генерация аудио дольше обычного API-вызова — таймаут 30с
+  const response = await fetchWithTimeout(url, {
     method: 'POST',
     headers: {
       'xi-api-key': apiKey,
@@ -42,7 +44,7 @@ async function generateAudioElevenLabs(text: string, voiceId: string = 'rachel')
         similarity_boost: 0.75,
       },
     }),
-  });
+  }, 30000);
 
   if (!response.ok) {
     const error = await response.text();
@@ -60,7 +62,7 @@ async function generateAudioOpenAI(text: string): Promise<Buffer> {
     throw new Error('OPENAI_API_KEY not configured for fallback TTS');
   }
 
-  const response = await fetch('https://api.openai.com/v1/audio/speech', {
+  const response = await fetchWithTimeout('https://api.openai.com/v1/audio/speech', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
@@ -72,7 +74,7 @@ async function generateAudioOpenAI(text: string): Promise<Buffer> {
       voice: 'nova',
       response_format: 'mp3',
     }),
-  });
+  }, 30000);
 
   if (!response.ok) {
     const error = await response.text();

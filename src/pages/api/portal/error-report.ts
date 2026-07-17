@@ -1,5 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
+import { fetchWithTimeout } from '../../../lib/fetchWithTimeout';
 import { apiOk, apiBad } from '../../../lib/portalResponse';
 
 export const POST: APIRoute = async ({ request, locals }) => {
@@ -37,7 +38,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   console.log(`[error-report] sending to Telegram from ${userName}: ${errorText.slice(0, 100)}`);
 
   try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    const res = await fetchWithTimeout(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true }),
