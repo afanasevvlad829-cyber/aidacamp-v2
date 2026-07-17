@@ -2,8 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { ACTIVITIES, getActivity } from './portalActivities';
 
 describe('portalActivities', () => {
-  it('ACTIVITIES содержит 5 элементов', () => {
-    expect(ACTIVITIES.length).toBe(5);
+  it('ACTIVITIES не пустой и slug-и уникальны', () => {
+    // Точное число не фиксируем — методички регулярно добавляются (5 → 11 к июлю 2026).
+    expect(ACTIVITIES.length).toBeGreaterThanOrEqual(5);
+    const slugs = ACTIVITIES.map((a) => a.slug);
+    expect(new Set(slugs).size).toBe(slugs.length);
   });
 
   it('getActivity возвращает объект для известного slug', () => {
