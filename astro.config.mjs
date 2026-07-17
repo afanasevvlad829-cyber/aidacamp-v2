@@ -110,6 +110,7 @@ export default defineConfig({
       JavaScript: true,
       Image: false,
       SVG: false,
+      Exclude: ['metodichki/**', 'demo/**'],
     }),
   ],
   devToolbar: { enabled: false },
