@@ -17,7 +17,8 @@ ALLOW={'40000','41800','44600','45800','47900','49400','50000','53200','89600','
 EXCL=('/demo/','/_archive','/corp/','dlya-kompaniy','lanit-v5','design-v2','glass-','hyperui','CorpHero','CorpShifts','it-lager-vs-kruzhok','kak-provesti-leto-s-polzoy','skolko-stoit-detskiy-lager','kuda-det-rebenka-letom','kuda-otdat-rebenka-na-leto','strakhovka-v-lager','tarif-trevozhniy-roditel','nedorogoy-lager','putyovki-v-lager')
 PRICE=re.compile(r'(\d{2,3}[   ]?\d{3})\s*₽')
 drift={}
-for base in ['src/pages','src/components']:
+# src/lib добавлен 17.07.2026: промпты AI-бота (src/lib/ai) называли клиентам захардкоженные цены
+for base in ['src/pages','src/components','src/lib']:
     for root,_,files in os.walk(base):
         if '_archive' in root or '/demo' in root or '/corp' in root: continue
         for fn in files:
