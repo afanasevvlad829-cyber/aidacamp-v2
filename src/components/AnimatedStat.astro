@@ -66,52 +66,6 @@ const mdFontSize = size === 'xl' ? '96px' : '68px';
 </style>
 
 <script>
-(function () {
-  if (typeof window === 'undefined') return;
-
-  const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
-
-  function animateStat(el: HTMLElement) {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      const raw = el.dataset.target ?? '0';
-      const prefix = el.dataset.prefix ?? '';
-      const unit = el.dataset.unit ?? '';
-      el.textContent = prefix + raw + unit;
-      return;
-    }
-    const raw = el.dataset.target ?? '0';
-    const prefix = el.dataset.prefix ?? '';
-    const unit = el.dataset.unit ?? '';
-    const isFloat = raw.includes('.');
-    const target = parseFloat(raw);
-    const duration = 1400;
-    const start = performance.now();
-
-    function tick(now: number) {
-      const progress = Math.min((now - start) / duration, 1);
-      const current = easeOut(progress) * target;
-      const display = isFloat ? current.toFixed(1) : Math.round(current).toString();
-      el.textContent = prefix + display + unit;
-      if (progress < 1) requestAnimationFrame(tick);
-      else el.textContent = prefix + raw + unit;
-    }
-    requestAnimationFrame(tick);
-  }
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          animateStat(entry.target as HTMLElement);
-          observer.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.4 }
-  );
-
-  document.querySelectorAll<HTMLElement>('[id^="astat-"]').forEach((el) => {
-    observer.observe(el);
-  });
-})();
+  import { initAnimateOnScroll } from '../scripts/animateOnScroll';
+  initAnimateOnScroll('[id^="astat-"]');
 </script>

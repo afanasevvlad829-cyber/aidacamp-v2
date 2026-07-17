@@ -1,9 +1,9 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, VYCHET_MAX, VYCHET_S2 } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, VYCHET_MAX, VYCHET_S2 } from '../shifts';
 import type { LandingData } from './types';
 
 const landing: LandingData = {
   slug: 'lager-pushkino',
-  title: 'Детский лагерь рядом с Пушкино 2026 — IT-смены | АйДаКемп',
+  title: `Детский лагерь рядом с Пушкино ${SEASON_YEAR} — IT-смены | АйДаКемп`,
   description: `Детский IT-лагерь для ребят из Пушкино 7–15 лет. Python, AI, Minecraft, бассейн. Смены от ${PRICE_MIN}, вычет до ${VYCHET_MAX}. Трансфер от м. Солнцево.`,
   h1: 'Детский лагерь рядом с Пушкино',
   canonical: 'https://aidacamp.ru/lager-pushkino',
@@ -74,7 +74,7 @@ const landing: LandingData = {
       ],
     },
     {
-      h2: 'Смены и цены 2026',
+      h2: `Смены и цены ${SEASON_YEAR}`,
       text: 'Августовские смены открыты к брони — места есть, бронируйте сейчас. В стоимость включены проживание, питание, IT-программа, бассейн. Трансфер от м. Солнцево — 2 000 ₽ отдельно. С части стоимости можно вернуть налоговый вычет. Забронировать путёвку на летние каникулы можно заранее — это оздоровительный формат в санатории «Изумруд» в Московской области.',
       list: [
         `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, 7 дней, ${PRICE_S21}`,

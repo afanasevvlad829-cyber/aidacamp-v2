@@ -1,5 +1,5 @@
 ---
-import { VYCHET_MAX } from '../../data/shifts';
+import { PRICE_MAX, PRICE_MIN, VYCHET_MAX, SEASON_YEAR } from '../../data/shifts';
 import '../../styles/global.css';
 import Base from '../../layouts/Base.astro';
 import Header from '../../components/Header.astro';
@@ -11,7 +11,7 @@ import ArticleBottomCta from '../../components/ArticleBottomCta.astro';
 const faqItems = [
   {
     question: "Сколько стоит лагерь и стоит ли это денег?",
-    answer: `Стоимость смены в IT-лагере — от 48 000 до 95 000 рублей в зависимости от длины (7–14 дней). Включено всё: питание, проживание, занятия. Плюс можно вернуть 13% через налоговый вычет — от ~2 800 до ~${VYCHET_MAX} рублей. Стоит ли денег — зависит от результата. Если ребёнок привезёт готовый проект и новых друзей — скорее всего да.`
+    answer: `Стоимость смены в IT-лагере — от ${PRICE_MIN} до ${PRICE_MAX} в зависимости от длины (10 и 13 дней). Включено всё: питание, проживание, занятия. Плюс можно вернуть 13% через налоговый вычет — до ~${VYCHET_MAX}. Стоит ли денег — зависит от результата. Если ребёнок привезёт готовый проект и новых друзей — скорее всего да.`
   },
   {
     question: "Можно ли совмещать лагерь и дачу летом?",
@@ -36,7 +36,7 @@ const faqItems = [
 ];
 
 const relatedPages = [
-  { title: "Смены лета 2026 — цены", url: "/ceny/", icon: "calendar-week", description: "Выбрать смену и забронировать" },
+  { title: `Смены лета ${SEASON_YEAR} — цены`, url: "/ceny/", icon: "calendar-week", description: "Выбрать смену и забронировать" },
   { title: "Детский лагерь", url: "/detskiy-lager/", icon: "house-heart", description: "О лагере АйДаКемп" },
   { title: "Чем занять ребёнка дома", url: "/stati/poleznyj-otdyh-dlya-detej/", icon: "lightbulb", description: "Полезный отдых без гаджетов" },
   { title: "Куда отправить ребёнка летом", url: "/stati/kuda-det-rebenka-letom/", icon: "map", description: "Разбор всех вариантов" },
@@ -308,22 +308,7 @@ const relatedPages = [
   <RelatedPages title="Полезные страницы" pages={relatedPages} />
   <Footer />
 <script>
-  document.querySelectorAll('[data-faq-toggle]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const item = btn.closest('[data-faq-item]');
-      const answer = item.querySelector('[data-faq-answer]');
-      const icon = btn.querySelector('[data-faq-icon]');
-      const isOpen = btn.getAttribute('aria-expanded') === 'true';
-      if (isOpen) {
-        answer.classList.remove('is-open');
-        if (icon) icon.style.transform = '';
-        btn.setAttribute('aria-expanded', 'false');
-      } else {
-        answer.classList.add('is-open');
-        if (icon) icon.style.transform = 'rotate(45deg)';
-        btn.setAttribute('aria-expanded', 'true');
-      }
-    });
-  });
+  import { initFaqAccordion } from '../../scripts/faq-accordion';
+  initFaqAccordion();
 </script>
 </Base>

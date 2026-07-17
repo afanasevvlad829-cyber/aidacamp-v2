@@ -1,9 +1,9 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, VYCHET_S2, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, VYCHET_S2, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
 import type { LandingData } from './types';
 
 const landing: LandingData = {
   slug: 'lager-lubertsy',
-  title: 'Летний детский лагерь рядом с Люберцами 2026 — IT-смены для школьников | АйДаКемп',
+  title: `Летний детский лагерь рядом с Люберцами ${SEASON_YEAR} — IT-смены для школьников | АйДаКемп`,
   description: 'Летний IT-лагерь рядом с Люберцами: ~1 ч 15 мин по Киевскому шоссе, трансфер от м. Солнцево. Python, AI, Minecraft, 7–15 лет. От',
   h1: 'Летний лагерь рядом с Люберцами',
   canonical: 'https://aidacamp.ru/lager-lubertsy',
@@ -83,8 +83,8 @@ const landing: LandingData = {
       ],
     },
     {
-      h2: 'Смены 2026 — цены и наличие мест',
-      text: 'Июль 2026 занят полностью. В июне и августе ещё есть места — бронируйте сейчас. В стоимость включены проживание, питание, полная IT-программа, бассейн.',
+      h2: `Смены ${SEASON_YEAR} — цены и наличие мест`,
+      text: `Июль ${SEASON_YEAR} занят полностью. В июне и августе ещё есть места — бронируйте сейчас. В стоимость включены проживание, питание, полная IT-программа, бассейн.`,
       list: [
         `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, 7 дней — ${PRICE_S21} (налоговый вычет ~${VYCHET_S21})`,
         `Смена 2 (завершена) — ${DATES_SHORT_S2}, 14 дней — ${PRICE_S2} (налоговый вычет до ${VYCHET_S2})`,

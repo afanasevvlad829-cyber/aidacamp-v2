@@ -11,7 +11,8 @@
  */
 
 import AskCta from './AskCta.astro';
-import { mainShifts, getAvailabilityLevel } from '../data/shifts';
+import { mainShifts, getAvailabilityLevel, SEASON_YEAR } from '../data/shifts';
+import { getCurrentPrice, fmtPrice } from '../data/dynamicPrices';
 import { reviews as allReviews } from '../data/reviews';
 import ShiftsGuideLink from './ShiftsGuideLink.astro';
 
@@ -50,6 +51,13 @@ const upcomingShifts = mainShifts
   .filter(s => s.statusType === 'available' && s.startDate >= today)
   .sort((a, b) => a.startDate.localeCompare(b.startDate))
   .slice(0, 2);
+
+// Цена — текущая, по единому правилу роста. shift.price — это база без роста,
+// её показывать нельзя: занижает. Фолбэк на базу только если правило не дало цену.
+const priceOf = (s: (typeof mainShifts)[number]) => {
+  const now = getCurrentPrice(s.id);
+  return now ? fmtPrice(now) : s.price;
+};
 ---
 
 <section class="mx-auto max-w-[860px] px-4 mt-6 md:mt-8">
@@ -75,7 +83,7 @@ const upcomingShifts = mainShifts
                   {shift.name}
                   {shift.popular && <span class="ml-1.5 text-[10px] align-middle font-semibold uppercase tracking-[0.08em] text-orange-600 bg-orange-100 rounded px-1.5 py-0.5">популярная</span>}
                 </p>
-                <p class="text-base font-semibold text-body-muted shrink-0">{shift.price}</p>
+                <p class="text-base font-semibold text-body-muted shrink-0">{priceOf(shift)}</p>
               </div>
               <p class="mt-1 text-base text-body-faint">{shift.dates} · {shift.duration}</p>
             </a>
@@ -98,12 +106,12 @@ const upcomingShifts = mainShifts
           </div>
           );
         }) : (
-          <p class="text-base text-body-faint">Смены 2026 ещё не открыты</p>
+          <p class="text-base text-body-faint">Смены {SEASON_YEAR} ещё не открыты</p>
         )}
       </div>
 
       <a href="/ceny/" class="mt-4 inline-flex items-center gap-1.5 text-base font-medium text-orange-700 hover:text-orange-800 transition-colors group">
-        Все смены и цены 2026
+        Все смены и цены {SEASON_YEAR}
         <i class="bi bi-arrow-right group-hover:translate-x-0.5 transition-transform"></i>
       </a>
 

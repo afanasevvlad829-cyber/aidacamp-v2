@@ -1,5 +1,5 @@
 // Единый источник контактных данных
-import { PRICE_MIN, PRICE_MIN_ID } from './shifts';
+import { PRICE_MIN, PRICE_MIN_ID, SEASON_YEAR } from './shifts';
 
 export const PHONE_MAIN = '+7 (495) 128-44-29';
 export const PHONE_MAIN_RAW = '+74951284429';
@@ -22,8 +22,8 @@ export const YANDEX_MAPS_URL = 'https://yandex.ru/maps/?ll=36.724185,55.265643&z
 // (цель maps_route_click: initContactTracking ловит rtext= в href).
 export const YANDEX_MAPS_ROUTE_URL = 'https://yandex.ru/maps/?rtext=~55.265643%2C36.724185&rtt=auto';
 
-export const STAT_YEARS = '5';           // лет работы (с 2021, синхронно с SchemaOrg foundingDate)
 export const STAT_FOUNDED_YEAR = '2021'; // год основания, синхронно с SchemaOrg foundingDate
+export const STAT_YEARS = String(SEASON_YEAR - Number(STAT_FOUNDED_YEAR)); // лет работы — производная, не хардкодить
 export const STAT_KIDS = '1200+';        // детей
 export const STAT_RATING = '5.0';        // рейтинг на Яндекс.Картах
 export const STAT_RATING_INCAMP = '4.8'; // рейтинг на incamp.ru — ДРУГАЯ площадка, не путать с STAT_RATING (Яндекс.Карты)
@@ -34,7 +34,7 @@ export const STAT_IT_CONTINUE = '78%';   // детей продолжают за
 export const PAYMENT_SPLIT = 'Оплата в два этапа: 50% при бронировании, 50% — за 3 недели до заезда';
 export const STAT_LICENSE = 'Л035-01298-77/01082973'; // образовательная лицензия Минобрнауки
 export const STAT_RTO = '025773'; // реестровый номер туроператора (РТО)
-export const CAMP_SEASON = 'июнь–август 2026';
+export const CAMP_SEASON = `июнь–август ${SEASON_YEAR}`;
 // Якорь «от X» — берётся из минимума ОТКРЫТЫХ смен (PRICE_MIN из shifts.ts),
 // чтобы не устаревать при смене сезона. Сейчас = 74 900 ₽ (10-дневная Смена 4).
 export const CAMP_PRICE_FROM = PRICE_MIN;

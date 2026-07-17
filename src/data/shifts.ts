@@ -3,6 +3,18 @@
  * Используется в Shifts.astro (frontmatter) и в client-side script (через JSON script tag).
  */
 
+/**
+ * Год текущего сезона — используется в маркетинговой прозе (заголовки, meta, FAQ:
+ * «летний лагерь ${SEASON_YEAR}», «цены на ${SEASON_YEAR} год»).
+ * При переходе на новый год смен — меняется ТОЛЬКО здесь.
+ *
+ * НЕ путать с ISO-датами смен (startDate/endDate в SHIFT_META) — они не зависят
+ * от этой константы и обновляются отдельно, когда добавляются новые смены.
+ * НЕ использовать для исторических фактов (дата публикации статьи, дата отзыва,
+ * год основания компании, дата сбора парсенных данных) — там нужен реальный год события.
+ */
+export const SEASON_YEAR = 2026;
+
 export interface Shift {
   id: string;
   name: string;
@@ -134,6 +146,10 @@ export const displayShifts: Shift[] = [_shift1, _shift2, ...mainShifts];
 export const shift1 = _shift1;
 export const shift2 = _shift2;
 
+// Полный список смен, включая архивные под-смены 2.1/2.2 — только для lookup по id
+// (модалка ShiftModal, SHIFT_META). НЕ использовать в UI-каруселях — там displayShifts/mainShifts.
+export const allShiftsIncludingArchived: Shift[] = [_shift1, _shift2, _shift21, _shift22, ...mainShifts];
+
 // === ЕДИНЫЙ ИСТОЧНИК метаданных смены (дата + база + длительность) ===
 // Отсюда dynamicPrices.ts берёт basePrice/startDate/days и применяет правило роста.
 // Включает завершённые смены — для исторических цен и фолбэков.
@@ -145,7 +161,7 @@ export interface ShiftMeta {
   days: number;        // длительность из duration
 }
 export const SHIFT_META: Record<string, ShiftMeta> = Object.fromEntries(
-  [_shift1, _shift2, _shift21, _shift22, ...mainShifts].map((s) => [
+  allShiftsIncludingArchived.map((s) => [
     s.id,
     {
       basePrice: _priceToNum(s.price),
@@ -190,7 +206,14 @@ const _days = (d: string) => parseInt(d.replace(/[^\d]/g, ''), 10) || 0;
 export function shiftDeduction(s: Shift): number {
   return Math.round(taxDeduction(_priceNum(s.price), _days(s.duration)) / 50) * 50;
 }
-const _fmtV = (n: number) => n.toLocaleString('ru-RU').replace(/\u00a0/g, ' ') + ' ₽';
+/**
+ * ЕДИНЫЙ формат денег на сайте: 74900 → «74 900 ₽».
+ * Разряды — обычным пробелом: toLocaleString('ru-RU') ставит NBSP (U+00A0),
+ * из-за чего цифры из разных источников выглядели по-разному и не находились
+ * поиском по странице. Единственное место, где задаётся формат — здесь.
+ */
+export const fmtRub = (n: number) => n.toLocaleString('ru-RU').replace(/[\u00a0\u202f]/g, ' ') + ' ₽';
+const _fmtV = fmtRub;
 // Форматированные строки вычета для прозы (как PRICE_*): «6 250 ₽».
 export const VYCHET_S1 = _fmtV(shiftDeduction(_shift1));
 export const VYCHET_S2 = _fmtV(shiftDeduction(_shift2));

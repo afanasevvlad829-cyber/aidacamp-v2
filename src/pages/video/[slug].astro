@@ -1,0 +1,169 @@
+---
+import '../../styles/global.css';
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import ShareButton from '../../components/ShareButton.astro';
+import { allVideos, videoOgImage, isEmbed, type VideoItem } from '../../data/videos';
+
+export function getStaticPaths() {
+  return allVideos.map((video) => ({ params: { slug: video.slug }, props: { video } }));
+}
+
+interface Props { video: VideoItem }
+const { video } = Astro.props;
+
+const SITE = 'https://aidacamp.ru';
+const pageUrl = `${SITE}/video/${video.slug}/`;
+const embed = isEmbed(video);
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'VideoObject',
+  name: video.title,
+  description: video.description ?? video.title,
+  thumbnailUrl: `${SITE}${videoOgImage(video)}`,
+  uploadDate: video.uploadDate ?? '2025-01-01',
+  ...(embed ? { embedUrl: video.url } : { contentUrl: `${SITE}${video.url}` }),
+  publisher: {
+    '@type': 'Organization',
+    name: 'АйДаКемп',
+    url: SITE,
+    logo: { '@type': 'ImageObject', url: `${SITE}/images/logo-aidacamp.svg` },
+  },
+};
+---
+
+<Base
+  title={`${video.title} — видео АйДаКемп`}
+  description={video.description ?? video.title}
+  ogType="video.other"
+  ogImage={`${SITE}${videoOgImage(video)}`}
+  ogImageAlt={video.alt}
+>
+  <script type="application/ld+json" set:html={JSON.stringify(schema)} slot="head" />
+  <Header />
+
+  <main>
+    {/* Hero — тёмный, как на /video/ и остальных страницах.
+        Header спозиционирован absolute и без своего фона: он рассчитан на тёмную
+        подложку под собой. На белом фоне логотип и меню «плывут». */}
+    <section class="relative overflow-hidden bg-dark-navy text-white">
+      <!-- Декоративный градиент -->
+      <div class="absolute inset-0 bg-[radial-gradient(80%_60%_at_70%_30%,rgba(236,155,68,0.18)_0%,transparent_60%),radial-gradient(60%_50%_at_20%_80%,rgba(59,118,195,0.18)_0%,transparent_60%)]" aria-hidden="true"></div>
+
+      <div class="relative mx-auto max-w-[1312px] px-4 pt-20 pb-14 md:pt-28 md:pb-20">
+        <nav class="mb-6 flex items-center gap-2 text-base text-white/60" aria-label="Хлебные крошки">
+          <a href="/" class="hover:text-white no-underline">Главная</a>
+          <i class="bi bi-chevron-right text-[10px]" aria-hidden="true"></i>
+          <a href="/video/" class="hover:text-white no-underline">Видео</a>
+        </nav>
+
+        <div class="flex flex-col gap-8 md:flex-row md:items-center md:gap-12">
+          {/* Плеер — вертикальный, как исходные ролики. Пока не нажали play,
+              показываем постер с большой кнопкой: и Kinescope-iframe не грузится зря. */}
+          <div class="mx-auto w-full max-w-[360px] shrink-0 md:mx-0 md:w-[340px]">
+            <div
+              id="player"
+              class="vp-facade group relative block w-full cursor-pointer overflow-hidden rounded-[18px] bg-slate-800 shadow-[0_8px_32px_rgba(2,8,20,0.5)]"
+              style="aspect-ratio:9/16"
+              data-src={video.url}
+              data-embed={embed ? '1' : ''}
+              role="button"
+              tabindex="0"
+              aria-label={`Смотреть видео: ${video.title}`}
+            >
+              <img
+                src={video.thumb}
+                alt={video.alt}
+                class="absolute inset-0 h-full w-full object-cover"
+                width="360"
+                height="640"
+              />
+              <span class="absolute inset-0 flex items-center justify-center bg-black/15">
+                <span class="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-xl backdrop-blur-sm transition-transform duration-200 group-hover:scale-110">
+                  <i class="bi bi-play-fill text-[26px] text-primary ml-1" aria-hidden="true"></i>
+                </span>
+              </span>
+            </div>
+          </div>
+
+          {/* Текст + действия */}
+          <div class="min-w-0 flex-1">
+            <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Видео из лагеря</p>
+            <h1 class="mt-3 text-[28px] font-extrabold leading-[1.1] tracking-[-0.02em] text-white md:text-[42px]">
+              {video.title}
+            </h1>
+            {video.description && (
+              <p class="mt-4 max-w-[640px] text-[17px] leading-[1.6] text-white/80">{video.description}</p>
+            )}
+
+            <div class="mt-7 flex flex-wrap items-center gap-3">
+              <a
+                href="/#shifts"
+                class="inline-flex h-[48px] items-center rounded-[10px] bg-primary px-6 text-[16px] font-semibold text-[#0d1a2b] no-underline transition hover:bg-primary-hover"
+              >
+                Выбрать смену
+              </a>
+              <ShareButton url={pageUrl} title={video.title} variant="onDark" />
+            </div>
+
+            <a
+              href="/video/"
+              class="mt-7 inline-flex items-center gap-2 text-base font-medium text-white/70 no-underline transition-colors hover:text-white"
+            >
+              <i class="bi bi-arrow-left text-base" aria-hidden="true"></i>
+              Все видео из лагеря
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+<script>
+  // Фасад → настоящий плеер по клику. До клика Kinescope-iframe не грузится.
+  function initPlayer() {
+    const facade = document.getElementById('player');
+    if (!facade || facade.dataset.ready) return;
+    facade.dataset.ready = '1';
+
+    const open = () => {
+      const src = facade.dataset.src!;
+      const isEmbed = facade.dataset.embed === '1';
+      const node = isEmbed ? document.createElement('iframe') : document.createElement('video');
+
+      node.className = 'absolute inset-0 h-full w-full rounded-[18px]';
+      if (isEmbed) {
+        const f = node as HTMLIFrameElement;
+        f.src = `${src}?autoplay=1`;
+        f.style.border = 'none';
+        f.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
+        f.allowFullscreen = true;
+      } else {
+        const v = node as HTMLVideoElement;
+        v.src = src;
+        v.controls = true;
+        v.playsInline = true;
+        v.classList.add('object-cover');
+      }
+
+      facade.replaceChildren(node);
+      facade.classList.remove('cursor-pointer', 'group');
+      if (!isEmbed) (node as HTMLVideoElement).play().catch(() => {});
+      (window as any).trackGoal?.('video_page_play');
+    };
+
+    facade.addEventListener('click', open);
+    facade.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+    });
+  }
+
+  document.addEventListener('astro:page-load', initPlayer);
+  document.addEventListener('DOMContentLoaded', initPlayer);
+  if (document.readyState === 'complete' || document.readyState === 'interactive') initPlayer();
+</script>
+
+  <Footer />
+</Base>

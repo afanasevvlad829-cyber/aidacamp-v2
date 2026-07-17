@@ -2,7 +2,15 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { Pool } from 'pg';
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+let _pool: Pool | null = null;
+function getPool() {
+  if (!_pool) {
+    const url = process.env.DATABASE_URL;
+    if (!url) return null;
+    _pool = new Pool({ connectionString: url, max: 3, statement_timeout: 5000 });
+  }
+  return _pool;
+}
 
 export const POST: APIRoute = async ({ request }) => {
   let body: { discount?: number; shiftId?: string } = {};
@@ -14,7 +22,7 @@ export const POST: APIRoute = async ({ request }) => {
   const ua       = request.headers.get('user-agent') ?? null;
 
   try {
-    await pool.query(
+    await getPool()?.query(
       `INSERT INTO fortune_events (event_type, discount, shift_id, ip, user_agent)
        VALUES ($1, $2, $3, $4, $5)`,
       ['spin', discount, shiftId, ip, ua]

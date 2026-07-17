@@ -7,12 +7,13 @@ import RelatedPages from '../../components/RelatedPages.astro';
 import ArticleHero from '../../components/ArticleHero.astro';
 import ArticleBottomCta from '../../components/ArticleBottomCta.astro';
 import BlogCTA from '../../components/BlogCTA.astro';
+import { SEASON_YEAR } from '../../data/shifts';
 
 const relatedPages = [
   { title: "Программа смены", url: "/stati/programma-it-lagerya/", icon: "calendar-week", description: "Как устроен день в АйДаКемп" },
   { title: "Хакатон в лагере", url: "/stati/hakaton-v-detskom-lagere/", icon: "trophy", description: "Главное событие смены" },
   { title: "Лагерь для подростков", url: "/lager-dlya-podrostkov/", icon: "rocket-takeoff", description: "Программа 12–16 лет" },
-  { title: "Записаться на смену", url: "/ceny/", icon: "calendar-check", description: "Смены лета 2026" },
+  { title: "Записаться на смену", url: "/ceny/", icon: "calendar-check", description: `Смены лета ${SEASON_YEAR}` },
 ];
 
 const faqItems = [
@@ -383,28 +384,13 @@ const faqItems = [
 
   <ArticleBottomCta
     bookingTitle="Хочешь, чтобы твой ребёнок прошёл через всё это?"
-    bookingSubtitle="Смены 2026 стартуют 30 мая. Питание, проживание, IT-программа — всё включено."
+    bookingSubtitle={`Смены ${SEASON_YEAR} стартуют 30 мая. Питание, проживание, IT-программа — всё включено.`}
   />
 
   <RelatedPages title="Полезные страницы" pages={relatedPages} />
   <Footer />
 <script>
-  document.querySelectorAll('[data-faq-toggle]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const item = btn.closest('[data-faq-item]');
-      const answer = item.querySelector('[data-faq-answer]');
-      const icon = btn.querySelector('[data-faq-icon]');
-      const isOpen = btn.getAttribute('aria-expanded') === 'true';
-      if (isOpen) {
-        answer.classList.remove('is-open');
-        if (icon) icon.style.transform = '';
-        btn.setAttribute('aria-expanded', 'false');
-      } else {
-        answer.classList.add('is-open');
-        if (icon) icon.style.transform = 'rotate(45deg)';
-        btn.setAttribute('aria-expanded', 'true');
-      }
-    });
-  });
+  import { initFaqAccordion } from '../../scripts/faq-accordion';
+  initFaqAccordion();
 </script>
 </Base>

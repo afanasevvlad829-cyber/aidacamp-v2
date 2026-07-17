@@ -82,6 +82,7 @@ const tabs = [
           type="button"
           data-video-open
           data-video-url={projects[0].url}
+          data-video-slug={projects[0].slug}
           data-video-title={projects[0].title}
           class="cursor-pointer group w-full"
           data-proj-main
@@ -103,6 +104,7 @@ const tabs = [
                 type="button"
                 data-proj-thumb
                 data-video-url={v.url}
+                data-video-slug={v.slug}
                 data-video-title={v.title}
                 data-video-thumb-src={v.thumb}
                 class="cursor-pointer group"
@@ -123,23 +125,27 @@ const tabs = [
       <!-- Desktop: grid -->
       <div class="hidden md:grid md:grid-cols-5 md:gap-4">
         {projects.map((v) => (
-          <button
-            type="button"
-            data-video-open
-            data-video-url={v.url}
-            data-video-title={v.title}
-            class="group"
-          >
-            <span class="relative overflow-hidden rounded-[18px] block">
-              <img src={v.thumb} alt={v.alt} class="aspect-[9/16] w-full object-cover transition group-hover:scale-105" loading="lazy" width="360" height="640" />
-              <span class="absolute inset-0 flex items-center justify-center bg-black/20">
-                <span class="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-primary-light">
-                  <svg class="ml-1 h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+          <div>
+            <button
+              type="button"
+              data-video-open
+              data-video-url={v.url}
+              data-video-slug={v.slug}
+              data-video-title={v.title}
+              class="group block w-full cursor-pointer"
+            >
+              <span class="relative overflow-hidden rounded-[18px] block">
+                <img src={v.thumb} alt={v.alt} class="aspect-[9/16] w-full object-cover transition group-hover:scale-105" loading="lazy" width="360" height="640" />
+                <span class="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <span class="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-primary-light">
+                    <svg class="ml-1 h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                  </span>
                 </span>
               </span>
-            </span>
-            <span class="mt-2 line-clamp-2 block text-left text-[16px] leading-[1.4] text-body-muted">{v.title}</span>
-          </button>
+            </button>
+            {/* Заголовок — ссылка на страницу видео: внутренняя перелинковка + адрес, которым можно поделиться */}
+            <a href={`/video/${v.slug}/`} class="mt-2 line-clamp-2 block text-left text-[16px] leading-[1.4] text-body-muted no-underline hover:text-primary transition-colors">{v.title}</a>
+          </div>
         ))}
       </div>
     </div>
@@ -152,6 +158,7 @@ const tabs = [
           type="button"
           data-video-open
           data-video-url={videos[0].url}
+          data-video-slug={videos[0].slug}
           data-video-title={videos[0].title}
           class="group w-full"
           data-vid-main
@@ -172,6 +179,7 @@ const tabs = [
               type="button"
               data-video-thumb
               data-video-url={v.url}
+                data-video-slug={v.slug}
               data-video-title={v.title}
               data-video-thumb-src={v.thumb}
               class="group"
@@ -199,23 +207,27 @@ const tabs = [
         </button>
         <div data-vid-track class="grid grid-cols-5 gap-4">
           {videos.map((v) => (
-            <button
-              type="button"
-              data-video-open
-              data-video-url={v.url}
-              data-video-title={v.title}
-              class="group"
-            >
-              <span class="relative overflow-hidden rounded-[18px] block">
-                <img src={v.thumb} alt={v.alt} class="aspect-[9/16] w-full object-cover transition group-hover:scale-105" loading="lazy" width="360" height="640" />
-                <span class="absolute inset-0 flex items-center justify-center bg-black/20">
-                  <span class="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-primary-light">
-                    <svg class="ml-1 h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+            <div data-vid-card>
+              <button
+                type="button"
+                data-video-open
+                data-video-url={v.url}
+                data-video-slug={v.slug}
+                data-video-title={v.title}
+                class="group block w-full cursor-pointer"
+              >
+                <span class="relative overflow-hidden rounded-[18px] block">
+                  <img src={v.thumb} alt={v.alt} class="aspect-[9/16] w-full object-cover transition group-hover:scale-105" loading="lazy" width="360" height="640" />
+                  <span class="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <span class="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-primary-light">
+                      <svg class="ml-1 h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                    </span>
                   </span>
                 </span>
-              </span>
-              <span class="mt-2 line-clamp-2 block text-left text-[16px] leading-[1.4] text-body-muted">{v.title}</span>
-            </button>
+              </button>
+              {/* Заголовок — ссылка на страницу видео: внутренняя перелинковка + адрес, которым можно поделиться */}
+              <a href={`/video/${v.slug}/`} class="mt-2 line-clamp-2 block text-left text-[16px] leading-[1.4] text-body-muted no-underline hover:text-primary transition-colors">{v.title}</a>
+            </div>
           ))}
         </div>
       </div>
@@ -226,6 +238,24 @@ const tabs = [
 <VideoModal />
 
 <script is:inline>
+  // Лайтбокс общий на всю страницу — при открытии переставляем на него адрес видео,
+  // иначе «Поделиться» отдаст ссылку на предыдущий ролик.
+  function openVideoLightbox(btn) {
+    var url = btn.dataset.videoUrl;
+    if (!url) return;
+    var id = url.split('/').pop();
+    document.getElementById('videoFrame').src = 'https://kinescope.io/embed/' + id + '?autoplay=1';
+    var share = document.querySelector('#videoModal .share-btn');
+    if (share) {
+      share.dataset.shareUrl = btn.dataset.videoSlug
+        ? 'https://aidacamp.ru/video/' + btn.dataset.videoSlug + '/'
+        : '';
+      share.dataset.shareTitle = btn.dataset.videoTitle || '';
+      share.classList.toggle('hidden', !btn.dataset.videoSlug);
+    }
+    document.getElementById('videoModal').showModal();
+  }
+
   // Tab switching
   document.querySelectorAll('[data-video-filter]').forEach(function(btn) {
     btn.addEventListener('click', function() {
@@ -244,49 +274,29 @@ const tabs = [
 
   // Open video modal
   document.querySelectorAll('[data-video-open]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var url = btn.dataset.videoUrl;
-      if (!url) return;
-      var id = url.split('/').pop();
-      var frame = document.getElementById('videoFrame');
-      frame.src = 'https://kinescope.io/embed/' + id + '?autoplay=1';
-      document.getElementById('videoModal').showModal();
-    });
+    btn.addEventListener('click', function() { openVideoLightbox(btn); });
   });
 
-  // Mobile video thumb → swap main (Videos tab)
-  document.querySelectorAll('[data-video-thumb]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var url = btn.dataset.videoUrl;
-      if (!url) return;
-      var id = url.split('/').pop();
-      document.getElementById('videoFrame').src = 'https://kinescope.io/embed/' + id + '?autoplay=1';
-      document.getElementById('videoModal').showModal();
-      var main = document.querySelector('[data-vid-main]');
-      var img = document.querySelector('[data-vid-main-img]');
-      var title = document.querySelector('[data-vid-main-title]');
-      if (main) main.dataset.videoUrl = btn.dataset.videoUrl;
-      if (img) img.src = btn.dataset.videoThumbSrc || '';
-      if (title) title.textContent = btn.dataset.videoTitle || '';
+  // Мобильная миниатюра → открыть в лайтбоксе и подставить в главную карточку
+  function bindThumb(thumbSel, mainSel, imgSel, titleSel) {
+    document.querySelectorAll(thumbSel).forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        openVideoLightbox(btn);
+        var main = document.querySelector(mainSel);
+        var img = document.querySelector(imgSel);
+        var title = document.querySelector(titleSel);
+        if (main) {
+          main.dataset.videoUrl = btn.dataset.videoUrl;
+          main.dataset.videoSlug = btn.dataset.videoSlug || '';
+          main.dataset.videoTitle = btn.dataset.videoTitle || '';
+        }
+        if (img) img.src = btn.dataset.videoThumbSrc || '';
+        if (title) title.textContent = btn.dataset.videoTitle || '';
+      });
     });
-  });
-
-  // Mobile project thumb → swap main (Projects tab)
-  document.querySelectorAll('[data-proj-thumb]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var url = btn.dataset.videoUrl;
-      if (!url) return;
-      var id = url.split('/').pop();
-      document.getElementById('videoFrame').src = 'https://kinescope.io/embed/' + id + '?autoplay=1';
-      document.getElementById('videoModal').showModal();
-      var main = document.querySelector('[data-proj-main]');
-      var img = document.querySelector('[data-proj-main-img]');
-      var title = document.querySelector('[data-proj-main-title]');
-      if (main) main.dataset.videoUrl = btn.dataset.videoUrl;
-      if (img) img.src = btn.dataset.videoThumbSrc || '';
-      if (title) title.textContent = btn.dataset.videoTitle || '';
-    });
-  });
+  }
+  bindThumb('[data-video-thumb]', '[data-vid-main]', '[data-vid-main-img]', '[data-vid-main-title]');
+  bindThumb('[data-proj-thumb]', '[data-proj-main]', '[data-proj-main-img]', '[data-proj-main-title]');
 
   // Desktop carousel arrows (Videos tab)
   (function() {
@@ -294,7 +304,7 @@ const tabs = [
     var prev = document.querySelector('[data-vid-prev]');
     var next = document.querySelector('[data-vid-next]');
     if (!track || !prev || !next) return;
-    var cards = track.querySelectorAll('[data-video-open]');
+    var cards = track.querySelectorAll('[data-vid-card]');
     var offset = 0, total = cards.length;
     function update() { cards.forEach(function(c, i) { c.style.order = (i - offset + total) % total; }); }
     prev.addEventListener('click', function() { offset = (offset - 1 + total) % total; update(); });
