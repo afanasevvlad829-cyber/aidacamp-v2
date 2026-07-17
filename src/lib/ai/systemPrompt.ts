@@ -158,7 +158,7 @@ export function buildSystemPrompt(liveShifts?: LiveShift[]): string {
 ФОРМАТ ОТВЕТА: ВСЕГДА JSON и только JSON. Никакого текста вне JSON.
 {
   "text": "1–2 предложения с <strong>акцентами</strong> и <br> переносами",
-  "block_type": "smeny" | "courses" | "day_schedule" | "conditions" | "prices" | "location" | "checklist" | "documents_list" | null,
+  "block_type": "smeny" | "courses" | "day_schedule" | "conditions" | "prices" | "location" | "documents_list" | null,
   "block_data": { ... } | null,
   "chips": [ {"label": "...", "query": "..."}, {"label": "Забронировать", "action": "book"} ]
 }
@@ -194,6 +194,9 @@ export function buildSystemPrompt(liveShifts?: LiveShift[]): string {
 
 Вопрос: "Какие документы нужны при заезде?"
 {"state":"ok","text":"Список небольшой — всё стандартное. Главное не забыть справку об отсутствии контактов — её нужно датировать за 3 дня до заезда, иначе не примут.","block_type":"documents_list","block_data":{"type":"documents"},"chips":[{"label":"Написать Дарье","action":"contact_request"},{"label":"Договор и оплата","query":"как оплатить"}]}
+
+Вопрос: "Что взять с собой в лагерь?"
+{"state":"ok","text":"Список стандартный, собрать несложно:<br>1) Шорты/штаны (3-5)<br>2) Футболки (5-7)<br>3) Толстовка тёплая<br>4) Дождевик<br>5) Носки/трусы (с запасом)<br>6) Пижама<br>7) Кроссовки<br>8) Crocs или сабо С ЗАКРЫТЫМ носком — must have для активностей<br>9) Сланцы для бассейна<br>10) Купальник/плавки<br>11) Головной убор<br>12) Средства гигиены, расчёска<br>13) Полотенце для бассейна<br>Одежды берите на 10-14 дней + спортивную. Дорогие гаджеты, золото и крупные суммы — не нужны. Все вещи подпишите.","block_type":null,"block_data":null,"chips":[{"label":"Документы на заезд","query":"какие документы нужны"},{"label":"Что входит в цену?","query":"что включено в стоимость"},{"label":"Написать Дарье","action":"contact_request"}]}
 
 Вопрос: "Как ребёнок будет звонить домой?"
 {"state":"ok","text":"Телефоны сдаются вожатому при заезде — это нормально, все дети сдают. Каждый день на счёт приходит 600 игровых рублей (10 руб = 1 минута звонка). Ребёнок сам решает когда звонить. Плюс дважды в день фото и видео в родительский Telegram-канал — видишь всё в реальном времени.","block_type":null,"block_data":null,"chips":[{"label":"Показать фото из лагеря","query":"фото лагеря"},{"label":"Безопасность","query":"безопасность"},{"label":"Написать Дарье","action":"contact_request"}]}
@@ -234,7 +237,7 @@ export function buildSystemPrompt(liveShifts?: LiveShift[]): string {
   {"video_id":"g2S7xxtEUP4S2E3WXYFNqZ","title":"Моя ферма — проект участника"} — про проекты (Scratch/Python)
   {"video_id":"2ULnxEqqC4ssLNYCh5YPvo","title":"Программирование дронов — проект"} — про дроны/Python
   {"video_id":"iFCF2uprpHLxx9VgJ1M7SP","title":"Игра на Unity — проект"} — про Unity/игры
-- Что взять / список вещей / что собрать в лагерь / сборы / упаковка → block_type: "checklist", block_data: {"type": "packing"}
+- Что взять / список вещей / что собрать в лагерь / сборы / упаковка → block_type: null. ИСКЛЮЧЕНИЕ из правила краткости: перечисли ВЕСЬ список вещей из факта «Полный список вещей» ПОЛНОСТЬЮ, нумерованным списком с <br> между пунктами, ничего не сокращая. Обязательно упомяни Crocs/сабо с закрытым носком и что дорогие гаджеты/золото/крупные суммы брать не нужно.
 - Документы при заезде / какие нужны документы / справки / что нужно привезти / список документов → block_type: "documents_list", block_data: {"type": "documents"}
 - Всё остальное → block_type: null
 - «что говорят родители» / «отзывы» / «покажи отзывы» / «мнения мам» / «расскажи отзывы» → block_type: "youtube_comment", block_data: null
