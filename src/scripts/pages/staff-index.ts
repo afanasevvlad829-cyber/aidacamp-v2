@@ -625,7 +625,9 @@
     const errEl    = document.getElementById('login-error');
 
     if (pwd === PASSWORD) {
-      setCookie(COOKIE_NAME, '1', remember ? 30 : 1);
+      // Значение cookie — сам пароль (не '1'): /api/shift-plan сверяет его на сервере
+      // с STAFF_ACCESS_PASSWORD, а не просто проверяет факт логина.
+      setCookie(COOKIE_NAME, pwd, remember ? 30 : 1);
       // Интро/тест — отдельные пункты меню в портале, не блокируют вход.
       enterPortal('counselor');
     } else {
@@ -822,7 +824,8 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    const authed = getCookie(COOKIE_NAME) === '1';
+    // Значение cookie теперь сам пароль, не литерал '1' — сравниваем с константой.
+    const authed = getCookie(COOKIE_NAME) === PASSWORD;
     const ob = JSON.parse(localStorage.getItem(OB_KEY) || '{}');
 
     if (authed) {

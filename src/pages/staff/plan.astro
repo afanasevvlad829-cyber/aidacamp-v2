@@ -477,8 +477,10 @@ export const prerender = true;
 
 <script is:inline>
   (function(){
+    // Cookie теперь хранит сам пароль (не литерал '1') — сервер /api/shift-plan
+    // сверяет его отдельно; здесь достаточно проверить, что она вообще есть.
     var ok = document.cookie.split('; ').reduce(function(r,v){var p=v.split('=');return p[0]==='staff_auth_2026'?decodeURIComponent(p.slice(1).join('=')):r;}, null);
-    if (ok !== '1') { location.replace('/staff'); }
+    if (!ok) { location.replace('/staff'); }
   })();
   window.PERSIST = {
     mode: 'live',

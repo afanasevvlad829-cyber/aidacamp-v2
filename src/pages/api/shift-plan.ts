@@ -8,6 +8,10 @@ export const prerender = false;
  * Хранилище: один JSON-файл на сервере (паттерн как у staff-log.ts).
  * Общий для всех ролей → разные люди заполняют один план.
  * Путь конфигурируется через SHIFT_PLAN_FILE, по умолчанию /var/lib/aidacamp/shift-plan.json.
+ *
+ * Авторизация: /staff/* использует отдельный от /portal общий пароль
+ * (см. src/scripts/pages/staff-index.ts) — cookie staff_auth_2026 хранит сам пароль,
+ * сервер сверяет его с STAFF_ACCESS_PASSWORD. Без этой переменной endpoint fail-closed (503).
  */
 import type { APIRoute } from 'astro';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
@@ -22,7 +26,19 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-export const GET: APIRoute = async () => {
+function checkStaffAuth(request: Request): Response | null {
+  const expected = process.env.STAFF_ACCESS_PASSWORD;
+  if (!expected) return json({ ok: false, error: 'service unavailable' }, 503);
+  const cookie = request.headers.get('cookie') ?? '';
+  const match = cookie.match(/(?:^|;\s*)staff_auth_2026=([^;]*)/);
+  const value = match ? decodeURIComponent(match[1]) : '';
+  if (value !== expected) return json({ ok: false, error: 'unauthorized' }, 401);
+  return null;
+}
+
+export const GET: APIRoute = async ({ request }) => {
+  const denied = checkStaffAuth(request);
+  if (denied) return denied;
   try {
     const raw = await readFile(DATA_FILE, 'utf8');
     return json({ ok: true, plan: JSON.parse(raw) });
@@ -33,6 +49,8 @@ export const GET: APIRoute = async () => {
 };
 
 export const POST: APIRoute = async ({ request }) => {
+  const denied = checkStaffAuth(request);
+  if (denied) return denied;
   try {
     const body = await request.json();
     // Принимаем И старый одиночный план (есть .days), И коллекцию смен (есть .shifts)
