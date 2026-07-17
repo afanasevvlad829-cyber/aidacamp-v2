@@ -1,4 +1,4 @@
-import { MAILRU_PIXEL_ID, YM_COUNTER } from '../data/tracking';
+import { YM_COUNTER } from '../data/tracking';
 import { STORAGE_KEYS } from '../lib/storage';
 
 /** Читает _ym_uid из cookie как fallback для ym_client_id */
@@ -167,9 +167,6 @@ export async function submitLead(data: {
         ym_client_id,
       }),
     });
-
-    (window as any)._tmr = (window as any)._tmr || [];
-    (window as any)._tmr.push({ type: 'reachGoal', id: MAILRU_PIXEL_ID, value: 6375, goal: 'lead' });
 
     return true;
   } catch {

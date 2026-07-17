@@ -1,12 +1,31 @@
-import { YANDEX_METRIKA_ID, MAILRU_PIXEL_ID } from '../data/tracking';
+import { YANDEX_METRIKA_ID, MAILRU_PIXEL_ID, VK_ADS_ENABLED } from '../data/tracking';
 import { STORAGE_KEYS } from '../lib/storage';
+
 const fired = new Set<string>(JSON.parse(sessionStorage.getItem(STORAGE_KEYS.ymFired) || '[]'));
 
 function persist() {
   sessionStorage.setItem(STORAGE_KEYS.ymFired, JSON.stringify([...fired]));
 }
 
-export function trackGoal(id: string, params?: object, value = 100) {
+// VK Ads / Top.Mail.Ru — сейчас ВЫКЛЮЧЕН флагом VK_ADS_ENABLED (src/data/tracking.ts):
+// активных кампаний в VK Ads нет, счётчик top-fwz1.mail.ru не грузим. Порядок включения
+// и причина — в _notes/Библиотека знаний/VK Ads — основные правила.md.
+if (VK_ADS_ENABLED) {
+  (window as any)._tmr = (window as any)._tmr ?? [];
+  (window as any)._tmr.push({ id: MAILRU_PIXEL_ID, type: 'pageView', start: Date.now() });
+  (function (d: Document, id: string) {
+    if (d.getElementById(id)) return;
+    const ts = d.createElement('script');
+    ts.type = 'text/javascript';
+    ts.async = true;
+    ts.id = id;
+    ts.src = 'https://top-fwz1.mail.ru/js/code.js';
+    const s = d.getElementsByTagName('script')[0];
+    s.parentNode?.insertBefore(ts, s);
+  })(document, 'tmr-code');
+}
+
+export function trackGoal(id: string, params?: object) {
   if (fired.has(id)) return;
   fired.add(id);
   persist();
@@ -16,11 +35,13 @@ export function trackGoal(id: string, params?: object, value = 100) {
       (window as any).ym(YANDEX_METRIKA_ID, 'reachGoal', id, params ?? {});
     }
   } catch {}
-  // Top.Mail.Ru (VK Ads attribution) — единственное место вместо 11 дублирований
-  try {
-    (window as any)._tmr = (window as any)._tmr ?? [];
-    (window as any)._tmr.push({ type: 'reachGoal', id: MAILRU_PIXEL_ID, value, goal: id });
-  } catch {}
+  // Top.Mail.Ru (VK Ads) — см. флаг VK_ADS_ENABLED выше
+  if (VK_ADS_ENABLED) {
+    try {
+      (window as any)._tmr = (window as any)._tmr ?? [];
+      (window as any)._tmr.push({ type: 'reachGoal', id: MAILRU_PIXEL_ID, value: 100, goal: id });
+    } catch {}
+  }
   // Своя аналитика — сохраняем параметрированные события в PostgreSQL
   // Отправляем только если есть params (чтобы не флудить простыми scroll_* и т.п.)
   if (params && Object.keys(params).length > 0) {
