@@ -43,6 +43,19 @@ else
   ./scripts/vps-start-agent.sh \"<название задачи>\""
 fi
 
+# ── Сверка реестра фоновых задач ─────────────────────────────────────────────
+# Аудит 17.07.2026: «Перезапущу» было написано — перезапуска не было; задача
+# умерла молча, потому что список выданного жил только в контексте разговора.
+REGISTRY_HOOK="$REPO_ROOT/scripts/hooks/agent-task-registry.py"
+if [[ -f "$REGISTRY_HOOK" ]]; then
+  RECON=$(python3 "$REGISTRY_HOOK" --reconcile 2>/dev/null)
+  if [[ -n "$RECON" ]]; then
+    CONTEXT="$CONTEXT
+
+$RECON"
+  fi
+fi
+
 python3 - <<PYEOF
 import json
 context = """$CONTEXT"""
