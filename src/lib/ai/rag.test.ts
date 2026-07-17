@@ -50,6 +50,10 @@ describe('TRUSTED_PATTERNS (белый список trusted-тира RAG)', () =
       'accommodation_detailed_2026',
       'menu_detailed_2026',
       'otzyvy_yandex',
+      // возвращены 17.07 после парного эвала (просадка «цена»/«документы»)
+      'ceny',
+      'faq',
+      'ДОГОВОР бронирвания 2026',
     ];
     for (const s of brand) {
       expect(matchesWhitelist(s), `должен пройти: ${s}`).toBe(true);
@@ -73,13 +77,10 @@ describe('TRUSTED_PATTERNS (белый список trusted-тира RAG)', () =
       'codims:page',
       'icepartners:page',
       'docx:Методические_рекомендации_к_проведению_хакатона',
-      'ceny',              // спорный — риск устаревших цен
-      'ДОГОВОР бронирвания 2026',
       'coordination',
       'tools',
       'skills',
       'dev',
-      'faq',
       'tg_dialog:1086',    // диалоговый тир — отдельный запрос, не trusted
       'wa_dialog:6775',
     ];
