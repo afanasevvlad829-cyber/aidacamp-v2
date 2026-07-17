@@ -11,15 +11,17 @@ describe('canEditEvent', () => {
     expect(canEditEvent('rukovoditel', [])).toBe(true);
     expect(canEditEvent('rukovoditel', ['vozhaty'])).toBe(true);
   });
-  it('teacher — только свои события', () => {
+  // Ограничения по ролям сняты (ab820070): править может любой сотрудник кроме student,
+  // eventRoles больше не влияет.
+  it('teacher — любые события, eventRoles не влияет', () => {
     expect(canEditEvent('teacher', ['teacher', 'vozhaty'])).toBe(true);
-    expect(canEditEvent('teacher', ['vozhaty'])).toBe(false);
-    expect(canEditEvent('teacher', [])).toBe(false);
-    expect(canEditEvent('teacher', null)).toBe(false);
+    expect(canEditEvent('teacher', ['vozhaty'])).toBe(true);
+    expect(canEditEvent('teacher', [])).toBe(true);
+    expect(canEditEvent('teacher', null)).toBe(true);
   });
-  it('vozhaty — только свои события', () => {
+  it('vozhaty — любые события, eventRoles не влияет', () => {
     expect(canEditEvent('vozhaty', ['vozhaty'])).toBe(true);
-    expect(canEditEvent('vozhaty', ['teacher'])).toBe(false);
+    expect(canEditEvent('vozhaty', ['teacher'])).toBe(true);
   });
   it('student — никогда', () => {
     expect(canEditEvent('student', ['student'])).toBe(false);
