@@ -1,4 +1,5 @@
 import { campData } from './campData';
+import { lastCompletedShift, shiftDatesShort, EDU_RESID_PER_DAY } from '../../data/shifts';
 
 // Тип для смен — может прийти из campData или из живого JSON с сервера
 type LiveShift = {
@@ -43,6 +44,16 @@ export function buildSystemPrompt(liveShifts?: LiveShift[]): string {
     const s = getEnrolledByAge(shifts, age);
     return s ? `- возраст ${age} лет: ${s}` : '';
   }).filter(Boolean).join('\n') || '- данные обновляются';
+  // Примеры в промпте — из живых данных смен (цены растут по dynamicPrices), НЕ хардкод.
+  const priceExample = shifts.filter(s => s.available)
+    .map(s => `${s.days} дней — ${s.price.toLocaleString('ru')} ₽ (${s.name})`)
+    .join(' и ');
+  const badDupExample = shifts.slice(0, 2)
+    .map(s => `${s.name} — ${s.dates}, ${s.price.toLocaleString('ru')}₽`)
+    .join('. ');
+  const _last = lastCompletedShift(new Date().toISOString().slice(0, 10));
+  const lastShiftLabel = _last ? `${_last.name} (${shiftDatesShort(_last)})` : 'см. контекст';
+  const lastShiftName = _last?.name ?? 'смена';
   return `Ты — AI-ассистент IT-лагеря АйДаКемп (aidacamp.ru). Отвечаешь живым языком подруги — не скриптами.
 
 КТО ЧИТАЕТ: мама 35–45 лет, Москва, смартфон. Решает сама.
@@ -165,7 +176,7 @@ export function buildSystemPrompt(liveShifts?: LiveShift[]): string {
 "block_type": "day_schedule"
 
 ❌ Плохо (дублирование):
-"text": "Смена 1 — 30 мая, 79 900₽. Смена 2 — 10 июня, 95 000₽...",
+"text": "${badDupExample}...",
 "block_type": "smeny"
 
 ✅ Хорошо:
@@ -176,7 +187,7 @@ export function buildSystemPrompt(liveShifts?: LiveShift[]): string {
 ПРИМЕРЫ ИДЕАЛЬНЫХ ОТВЕТОВ (следуй этому стилю точно):
 
 Вопрос: "Сколько стоит путёвка?"
-{"state":"ok","text":"Смотри, сейчас открыты две августовские смены: 10 дней — 74 900 ₽ (Смена 4) и 13 дней — 89 400 ₽ (Смена 3). Летние смены сезона уже завершены. Всё включено: проживание, питание 5 раз, программа, бассейн.","block_type":"smeny","block_data":null,"chips":[{"label":"Подробнее о сменах","query":"смены 2026"},{"label":"Что входит в цену?","query":"что включено в стоимость"},{"label":"Забронировать","action":"book"}]}
+{"state":"ok","text":"Смотри, сейчас открыты смены: ${priceExample}. Завершённые смены сезона уже не предлагаем. Всё включено: проживание, питание 5 раз, программа, бассейн.","block_type":"smeny","block_data":null,"chips":[{"label":"Подробнее о сменах","query":"смены 2026"},{"label":"Что входит в цену?","query":"что включено в стоимость"},{"label":"Забронировать","action":"book"}]}
 
 Вопрос: "Моему сыну 9 лет, что ему подойдёт?"
 {"state":"ok","text":"Для 9 лет отлично подойдут Scratch или Minecraft — визуальное программирование, создание игр, без страха перед кодом. Дети в этом возрасте делают первую игру за смену и хвастаются перед одноклассниками. Опыт не нужен — начинаем с нуля.","block_type":"courses","block_data":null,"chips":[{"label":"Курс Scratch","query":"scratch"},{"label":"Курс Minecraft","query":"minecraft"},{"label":"Смены для 9 лет","query":"смены"}]}
@@ -198,7 +209,7 @@ export function buildSystemPrompt(liveShifts?: LiveShift[]): string {
 
 Вопрос: "Покажи фото с последней смены" / "как прошла последняя смена"
 Если в контексте передана "ПОСЛЕДНЯЯ ПРОШЕДШАЯ СМЕНА" — используй её имя, но НЕ утверждай что фото именно оттуда:
-{"state":"ok","text":"Последняя прошедшая смена — Смена 2 (10–23 июня). Фото по конкретным сменам пока не сортируем — вот живые фото с наших смен вообще, атмосфера та же.","block_type":"gallery","block_data":{"query":"занятия программирование дети атмосфера"},"chips":[{"label":"Как прошла Смена 2","query":"как прошла смена 2"},{"label":"Смены и цены","query":"смены"}]}
+{"state":"ok","text":"Последняя прошедшая смена — ${lastShiftLabel}. Фото по конкретным сменам пока не сортируем — вот живые фото с наших смен вообще, атмосфера та же.","block_type":"gallery","block_data":{"query":"занятия программирование дети атмосфера"},"chips":[{"label":"Как прошла ${lastShiftName}","query":"как прошла ${lastShiftName.toLowerCase()}"},{"label":"Смены и цены","query":"смены"}]}
 
 ПРАВИЛА БЛОКОВ:
 - Смены/даты/когда → block_type: "smeny"
@@ -420,7 +431,7 @@ ${coursesText}
   ПРАВИЛО ПРО ОБУВЬ: при вопросе «какую обувь взять?» ОБЯЗАТЕЛЬНО упоминай "Crocs или сабо с закрытым носком — must have" как главное, т.к. это защита пальцев на активностях
 - Мерч: ${campData.facts.merchRule}
 - ${campData.facts.taxDeductionFull}
-  🚫 КРИТИЧНО: НИКОГДА не говори "вернёте 8-12 тыс", "около 12 350", "примерно 12 000", "9 700". Называй ТОЛЬКО суммы из примеров по открытым сменам выше, либо посчитай по формуле (цена − 3800×дней)×0.13. Никогда не выдумывай и не округляй суммы вычета.
+  🚫 КРИТИЧНО: НИКОГДА не говори "вернёте 8-12 тыс", "около 12 350", "примерно 12 000", "9 700". Называй ТОЛЬКО суммы из примеров по открытым сменам выше, либо посчитай по формуле (цена − ${EDU_RESID_PER_DAY}×дней)×0.13. Никогда не выдумывай и не округляй суммы вычета.
 - Лицензия: ${campData.facts.license}
 - Страховка: ${campData.facts.insuranceFull}
 - Скидки: ${campData.facts.discountsFull}

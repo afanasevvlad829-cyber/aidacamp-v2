@@ -1,6 +1,19 @@
 import Anthropic from '@anthropic-ai/sdk';
 import pg from 'pg';
 import { campData } from './campData';
+import { mainShifts, shortShifts, SHIFT_META, EDU_RESID_PER_DAY, fmtRub } from '../../data/shifts';
+import { getCurrentPrice, getTaxDeduction } from '../../data/dynamicPrices';
+
+// Диапазон вычета и пример цены — динамически по ОТКРЫТЫМ сменам (единый источник, не хардкод)
+const _open = [...mainShifts, ...shortShifts];
+const _openDeds = _open.map((s) => getTaxDeduction(s.id));
+const _dedRange = _openDeds.length
+  ? `${fmtRub(Math.min(..._openDeds)).replace(' ₽', '')}–${fmtRub(Math.max(..._openDeds))}`
+  : 'по формуле';
+const _ex = _open[0];
+const _exName = _ex?.name ?? 'Смена';
+const _exDays = _ex ? SHIFT_META[_ex.id].days : 0;
+const _exPrice = _ex ? fmtRub(getCurrentPrice(_ex.id) ?? 0) : '—';
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || import.meta.env.ANTHROPIC_API_KEY,
@@ -22,7 +35,7 @@ function buildFacts(): string {
 Цены смен:
 ${shifts}
 
-Налоговый вычет: 13% только от образовательной части (цена минус 3 800 ₽/день проживания). Реально возвращается 2 800–5 500 ₽. НЕ 8–12 тысяч, НЕ "половина стоимости".
+Налоговый вычет: 13% только от образовательной части (цена минус ${fmtRub(EDU_RESID_PER_DAY)}/день проживания). Реально возвращается ${_dedRange}. НЕ 8–12 тысяч, НЕ "половина стоимости".
 
 Трансфер: ${campData.facts.transfer}.
 
@@ -84,8 +97,8 @@ ${buildFacts()}
 КРИТИЧНО про поле "correction":
 Это текст, который увидит мама на экране ВМЕСТО ответа бота — пиши его как сам ответ, от лица ассистента, тёплым тоном, как будто ошибки не было.
 ЗАПРЕЩЕНО в "correction": слова "бот", "правильный ответ", "должен был", "ошибка", "выдумал", "не ответил на вопрос" — это анализ, а не ответ маме.
-❌ Плохо: "Бот ошибся, правильная цена 89 400 ₽." / "Бот не должен был придумывать детали. Правильный ответ: этой информации у меня нет."
-✅ Хорошо: "Смена 3 (13 дней) стоит 89 400 ₽." / "Такой информации у меня под рукой нет — уточните у Дарьи напрямую."
+❌ Плохо: "Бот ошибся, правильная цена ${_exPrice}." / "Бот не должен был придумывать детали. Правильный ответ: этой информации у меня нет."
+✅ Хорошо: "${_exName} (${_exDays} дней) стоит ${_exPrice}." / "Такой информации у меня под рукой нет — уточните у Дарьи напрямую."
 Если исправить ответ одной фразой нельзя (вопрос полностью проигнорирован, нужен развёрнутый ответ) — верни "valid": false БЕЗ поля "correction", просто issue для лога.
 
 Будь строгим к числам и мягким к формулировкам.`;

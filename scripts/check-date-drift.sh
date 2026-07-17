@@ -28,7 +28,8 @@ def chk(p,line,i,m,a_d,a_m,b_d,b_m,tok):
     if a_m is None or b_m is None: return
     if (a_d,a_m,b_d,b_m) not in canon:
         drift.setdefault(p,[]).append((i,tok.strip()))
-for base in ['src/pages','src/components','src/data/landings']:
+# src/lib добавлен 17.07.2026: промпты AI-бота (src/lib/ai) содержали захардкоженные даты смен
+for base in ['src/pages','src/components','src/data/landings','src/lib']:
     for root,_,files in os.walk(base):
         if any(x in root for x in EXCL): continue
         for fn in files:
