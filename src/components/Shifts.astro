@@ -268,8 +268,8 @@ const nowDate = new Date();
 
 <script>
   import { STORAGE_KEYS } from '../lib/storage';
-  import { shiftInfo } from '../data/shifts';
-  import { renderCalendar } from '../scripts/shift-calendar';
+  // shiftInfo и renderCalendar — тяжёлый чанк (данные смен ~25 КБ raw): грузим
+  // лениво динамическим import() внутри обработчиков клика, не статически.
   // submitLead больше не используется здесь — логика в ShiftBookModal.astro
 
   // --- Shift stat toast ---
@@ -380,11 +380,12 @@ const nowDate = new Date();
       const calendarTitle = calendarModal.querySelector('[data-calendar-title]');
 
       document.querySelectorAll<HTMLElement>('[data-shift-calendar]').forEach((btn) => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
           const startStr = btn.dataset.start || '';
           const endStr = btn.dataset.end || '';
           const shiftName = btn.dataset.shiftName || '';
           if (calendarGrid && calendarTitle) {
+            const { renderCalendar } = await import('../scripts/shift-calendar');
             renderCalendar(startStr, endStr, shiftName, calendarGrid, calendarTitle);
           }
           calendarModal.showModal();
@@ -404,8 +405,9 @@ const nowDate = new Date();
       const infoBody = infoModal.querySelector('[data-info-body]');
 
       document.querySelectorAll<HTMLElement>('[data-shift-info]').forEach((btn) => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
           const shiftId = btn.dataset.shiftInfo || '';
+          const { shiftInfo } = await import('../data/shifts');
           const info = shiftInfo[shiftId];
           if (info) {
             if (infoTitle) infoTitle.textContent = btn.dataset.shiftTitle || '';
