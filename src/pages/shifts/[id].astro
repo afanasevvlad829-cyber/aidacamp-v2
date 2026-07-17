@@ -16,7 +16,7 @@ import Footer from '../../components/Footer.astro';
 import ShiftBookModal from '../../components/shifts/ShiftBookModal.astro';
 import ShiftTimeline from '../../components/shifts/ShiftTimeline.astro';
 import WaitlistInfoIcon from '../../components/shifts/WaitlistInfoIcon.astro';
-import { allShifts, shiftInfo, type Shift, getAvailabilityLevel, getBookingCta, WAITLIST_EXPLANATION } from '../../data/shifts';
+import { allShifts, shiftInfo, type Shift, getAvailabilityLevel, getBookingCta, WAITLIST_EXPLANATION, SEASON_YEAR } from '../../data/shifts';
 import { getCurrentPrice, getTaxDeduction, fmtPrice } from '../../data/dynamicPrices';
 
 export async function getStaticPaths() {
@@ -62,8 +62,8 @@ const ssrPriceFmt = fmtPrice(ssrPrice);
 const ssrVychet   = getTaxDeduction(shift.id);
 
 // SEO
-const seoTitle = `${shift.name} IT-лагеря — летняя смена в Подмосковье, ${shift.dates} 2026 | АйДаКемп`;
-const seoDescription = `Летняя смена в лагере под Москвой: Python, AI, хакатон. ${shift.duration}, возраст 7–15, ${ssrPriceFmt} всё включено. Купить смену в IT-лагерь — смены лагерей с ${shift.dates} 2026.`;
+const seoTitle = `${shift.name} IT-лагеря — летняя смена в Подмосковье, ${shift.dates} ${SEASON_YEAR} | АйДаКемп`;
+const seoDescription = `Летняя смена в лагере под Москвой: Python, AI, хакатон. ${shift.duration}, возраст 7–15, ${ssrPriceFmt} всё включено. Купить смену в IT-лагерь — смены лагерей с ${shift.dates} ${SEASON_YEAR}.`;
 const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
 ---
 
@@ -79,7 +79,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
         {
           "@type": ["EducationEvent", "ChildrensEvent"],
           "@id": `https://aidacamp.ru/shifts/${shift.id}/`,
-          "name": `${shift.name} — АйДаКемп ${shift.dates} 2026`,
+          "name": `${shift.name} — АйДаКемп ${shift.dates} ${SEASON_YEAR}`,
           "description": shift.description,
           "startDate": shift.startDate,
           "endDate": shift.endDate,
@@ -181,7 +181,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
         <!-- Eyebrow tag -->
         <p class="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md px-3 py-1 text-[12px] font-bold uppercase tracking-[0.14em] text-white">
           <span class="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true"></span>
-          {shift.name} · Лето 2026{shift.popular ? ' · Популярная' : ''}
+          {shift.name} · Лето {SEASON_YEAR}{shift.popular ? ' · Популярная' : ''}
         </p>
 
         <!-- Occupancy badge -->
@@ -211,7 +211,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
         )}
 
         <!-- BIG DATES (как в концепте «10—23 июня») -->
-        <h1 class="sr-only">{shift.name}: летняя смена в IT-лагере Подмосковья — {shift.dates} 2026</h1>
+        <h1 class="sr-only">{shift.name}: летняя смена в IT-лагере Подмосковья — {shift.dates} {SEASON_YEAR}</h1>
         <p class="font-extrabold leading-[1.0] tracking-[-0.02em]" style="font-size: clamp(40px, 7vw, 80px);">
           <span class="text-white" style="text-shadow: 0 4px 16px rgba(0,0,0,0.5);">{shift.dates.split('—')[0].trim()} —</span>
           <span class="hero-outline"> {shift.dates.split('—')[1]?.trim() ?? ''}</span>
@@ -221,7 +221,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
           <strong class="font-bold text-white">{shift.duration}</strong> · Санаторий «Изумруд» · 66 км от Москвы
         </p>
         <p class="mt-2 text-base text-white/70 max-w-[640px]" style="text-shadow: 0 1px 3px rgba(0,0,0,0.7);">
-          Летние смены лагерей 2026 для школьников 7–15 лет. Смена в лагере — проживание, питание, IT-программа всё включено.
+          Летние смены лагерей {SEASON_YEAR} для школьников 7–15 лет. Смена в лагере — проживание, питание, IT-программа всё включено.
         </p>
 
         <!-- Meta block: price + occupancy + CTA -->

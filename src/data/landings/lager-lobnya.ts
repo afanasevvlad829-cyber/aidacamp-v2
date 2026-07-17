@@ -1,9 +1,9 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, VYCHET_MAX } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, VYCHET_MAX } from '../shifts';
 import type { LandingData } from './types';
 
 const landing: LandingData = {
   slug: 'lager-lobnya',
-  title: 'Летний IT-лагерь рядом с Лобней 2026 для детей | АйДаКемп',
+  title: `Летний IT-лагерь рядом с Лобней ${SEASON_YEAR} для детей | АйДаКемп`,
   description: `IT-лагерь у Лобни: 66 км от МКАД по Киевскому шоссе, трансфер от Солнцево. Python, AI, Minecraft, 7–15 лет. От ${PRICE_MIN}, вычет до ${VYCHET_MAX}.`,
   h1: 'Летний лагерь рядом с Лобней',
   canonical: 'https://aidacamp.ru/lager-lobnya',
@@ -73,8 +73,8 @@ const landing: LandingData = {
       ],
     },
     {
-      h2: 'Смены и цены 2026',
-      text: `Места на лето 2026 есть — бронируйте сейчас. В стоимость включены проживание, питание, полная IT-программа, бассейн, активности. Трансфер от м. Солнцево — платная опция (2 000 ₽ в одну сторону). Часть стоимости можно вернуть налоговым вычетом — до ${VYCHET_MAX} (максимум, 13-дневная смена).`,
+      h2: `Смены и цены ${SEASON_YEAR}`,
+      text: `Места на лето ${SEASON_YEAR} есть — бронируйте сейчас. В стоимость включены проживание, питание, полная IT-программа, бассейн, активности. Трансфер от м. Солнцево — платная опция (2 000 ₽ в одну сторону). Часть стоимости можно вернуть налоговым вычетом — до ${VYCHET_MAX} (максимум, 13-дневная смена).`,
       list: [
         `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, 7 дней, ${PRICE_S21}`,
         `Смена 2 (завершена) — ${DATES_SHORT_S2}, 14 дней, ${PRICE_S2}`,

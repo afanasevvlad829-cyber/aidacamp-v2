@@ -1,10 +1,10 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, VYCHET_S2, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, VYCHET_S2, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
 import { STAT_IT_CONTINUE } from '../contacts';
 import type { LandingData } from './types';
 
 const landing: LandingData = {
   slug: 'lager-balashiha',
-  title: 'Летний детский лагерь в Балашихе 2026 — IT-смены для школьников | АйДаКемп',
+  title: `Летний детский лагерь в Балашихе ${SEASON_YEAR} — IT-смены для школьников | АйДаКемп`,
   description: 'Детский IT-лагерь для школьников из Балашихи: трансфер от м. Солнцево (2 000 ₽), налоговый вычет, бассейн. Python, AI, Minecraft, 7–15 лет.',
   h1: 'Детский лагерь рядом с Балашихой',
   canonical: 'https://aidacamp.ru/lager-balashiha',
@@ -91,7 +91,7 @@ const landing: LandingData = {
       ],
     },
     {
-      h2: 'Смены 2026 — цены и наличие мест',
+      h2: `Смены ${SEASON_YEAR} — цены и наличие мест`,
       text: 'Открыты августовские смены — бронируйте заранее. В стоимость входят проживание в комнатах по 2–4 человека с санузлом, 5-разовое питание, полная IT-программа и бассейн.',
       list: [
         `Смена 2.1 (завершена): ${DATES_SHORT_S21}, 7 дней — ${PRICE_S21} (налоговый вычет ~${VYCHET_S21})`,
