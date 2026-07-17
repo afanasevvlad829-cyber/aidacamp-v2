@@ -80,8 +80,8 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   const { request, url, cookies, locals } = context;
   const path = url.pathname;
 
-  // ── Гейт портала ───────────────────────────────────────────────
-  if (path.startsWith('/portal') || path.startsWith('/api/portal')) {
+  // ── Гейт портала (+ /api/admin/* — только роль admin) ──────────
+  if (path.startsWith('/portal') || path.startsWith('/api/portal') || path.startsWith('/api/admin')) {
     const cleanPortal = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
     const isPublic = PORTAL_PUBLIC.has(path) || PORTAL_PUBLIC.has(cleanPortal);
     if (!isPublic) {
@@ -140,6 +140,12 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
         // внутренний origin адаптера (localhost:4181) и ломает редирект в браузере.
         const location = `/portal/login?next=${encodeURIComponent(path)}`;
         return new Response(null, { status: 302, headers: { Location: location } });
+      }
+      // /api/admin/* — админ-операции (загрузка медиа, portal-audit с exec) —
+      // только роль admin (консистентно с requireRole(['admin']) в staff.ts/roles.ts).
+      // Без сессии — 401 выше; валидная сессия с другой ролью — 403.
+      if (path.startsWith('/api/admin') && role !== 'admin') {
+        return new Response(JSON.stringify({ ok: false, error: 'forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
       }
       locals.portalRole = role as any;
       locals.portalRoles = staffRoles as any;
