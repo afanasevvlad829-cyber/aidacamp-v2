@@ -5,7 +5,15 @@ import { Pool } from 'pg';
 import { getCurrentPrice } from '../../../data/dynamicPrices';
 import { signDiscount } from './token';
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+let _pool: Pool | null = null;
+function getPool() {
+  if (!_pool) {
+    const url = process.env.DATABASE_URL;
+    if (!url) return null;
+    _pool = new Pool({ connectionString: url, max: 3, statement_timeout: 5000 });
+  }
+  return _pool;
+}
 
 async function logFortuneEvent(data: {
   event_type: string;
@@ -20,7 +28,7 @@ async function logFortuneEvent(data: {
   user_agent?: string | null;
 }) {
   try {
-    await pool.query(
+    await getPool()?.query(
       `INSERT INTO fortune_events
         (event_type, discount, shift_id, name, phone, order_id, final_price, orig_price, ip, user_agent)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,

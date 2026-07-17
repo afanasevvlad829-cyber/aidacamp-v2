@@ -49,6 +49,16 @@ const TILDA_REDIRECTS: Record<string, string> = {
 
 const ipCounts = new Map<string, { count: number; reset: number }>();
 
+function checkRateLimit(ip: string, bucket: string, limit: number, windowMs = 60_000): boolean {
+  const key = `${ip}:${bucket}`;
+  const now = Date.now();
+  const entry = ipCounts.get(key) ?? { count: 0, reset: now + windowMs };
+  if (now > entry.reset) { entry.count = 0; entry.reset = now + windowMs; }
+  entry.count++;
+  ipCounts.set(key, entry);
+  return entry.count > limit;
+}
+
 export const onRequest: MiddlewareHandler = async (context, next) => {
   const { request, url, cookies, locals } = context;
   const path = url.pathname;
@@ -58,9 +68,14 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     const cleanPortal = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
     const isPublic = PORTAL_PUBLIC.has(path) || PORTAL_PUBLIC.has(cleanPortal);
     if (!isPublic) {
+      const portalSecret = process.env.PORTAL_SESSION_SECRET;
+      if (!portalSecret) {
+        if (path.startsWith('/api/')) return new Response('Service Unavailable', { status: 503 });
+        return new Response(null, { status: 302, headers: { Location: `/portal/login?next=${encodeURIComponent(path)}` } });
+      }
       const payload = verifySessionPayload(
         cookies.get('portal_session')?.value,
-        process.env.PORTAL_SESSION_SECRET ?? '',
+        portalSecret,
       );
       let role = payload?.role ?? null;
       // Для сотрудничьих сессий (есть sub) — проверяем active/role в БД (кэш 60с).
@@ -138,13 +153,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
 
   if (url.pathname === '/api/ask') {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
-    const now = Date.now();
-    const entry = ipCounts.get(ip) ?? { count: 0, reset: now + 60000 };
-    if (now > entry.reset) { entry.count = 0; entry.reset = now + 60000; }
-    entry.count++;
-    ipCounts.set(ip, entry);
-
-    if (entry.count > 20) {
+    if (checkRateLimit(ip, 'ask', 20)) {
       return new Response(
         JSON.stringify({
           state: 'error',
@@ -153,6 +162,16 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
           block_data: null,
           chips: [{ label: 'Написать в WhatsApp', query: 'хочу поговорить с человеком' }],
         }),
+        { status: 429, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+  }
+
+  if (url.pathname === '/api/lead' || url.pathname === '/api/contact-send') {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+    if (checkRateLimit(ip, 'form', 5)) {
+      return new Response(
+        JSON.stringify({ error: 'Слишком много запросов. Подождите минуту.' }),
         { status: 429, headers: { 'Content-Type': 'application/json' } }
       );
     }
