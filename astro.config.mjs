@@ -110,7 +110,8 @@ export default defineConfig({
       JavaScript: true,
       Image: false,
       SVG: false,
-      Exclude: ['metodichki/**', 'demo/**'],
+      // @playform/pipe матчит строки как RegExp — glob-строка 'metodichki/**' роняет билд («Nothing to repeat»)
+      Exclude: [/metodichki\//, /demo\//],
     }),
   ],
   devToolbar: { enabled: false },

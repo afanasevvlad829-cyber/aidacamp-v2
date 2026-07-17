@@ -9,20 +9,7 @@ import { lastCompletedShift } from '../../data/shifts';
 import { matchEscalation, templateToResponse } from '../../lib/ai/escalation_templates';
 import { classifyIntent, pickRealStory } from '../../lib/ai/intent_router';
 import { validateBotResponse, logGuardFlag } from '../../lib/ai/validator';
-import { readFileSync } from 'node:fs';
 import pg from 'pg';
-
-// Загружаем живые данные смен с сервера (обновляются cron'ом ежедневно)
-function getLivePrompt(): string {
-  try {
-    const raw = readFileSync('/var/www/aidacamp-data/shifts.json', 'utf-8');
-    const data = JSON.parse(raw);
-    if (data?.shifts?.length >= 4) {
-      return buildSystemPrompt(data.shifts);
-    }
-  } catch { /* файл не найден — используем campData */ }
-  return buildSystemPrompt();
-}
 
 // --- DB pool (lazy, shared with rag.ts) ---
 const DB_URL = process.env.DATABASE_URL;
@@ -71,47 +58,6 @@ const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || import.meta.env.ANTHROPIC_API_KEY,
 });
 
-// Ключевые слова фактических вопросов — при отсутствии RAG-контекста не генерируем факты
-const FACTUAL_KEYWORDS = [
-  'трансфер', 'автобус', 'добраться', 'доехать', 'дорога', 'адрес',
-  'стоит', 'цена', 'стоимость', 'сколько', 'рублей', 'оплат',
-  'когда', 'дата', 'числа', 'июн', 'август', 'май', 'смена',
-  'соседи', 'комнат', 'живут', 'поселен',
-  'преподаватель', 'педагог', 'учитель', 'вожатый',
-  'документ', 'справк', 'договор', 'лицензи',
-];
-
-function isFactualQuestion(q: string): boolean {
-  const lower = q.toLowerCase();
-  return FACTUAL_KEYWORDS.some(kw => lower.includes(kw));
-}
-
-// Ответ-редирект к менеджеру — когда нет RAG для фактического вопроса
-const STORY_DECLINE = JSON.stringify({
-  state: 'ok',
-  text: 'Такой живой истории у меня под рукой нет — выдумывать не буду. Реальные моменты — у родителей в канале смены и в отзывах. Показать? Если хочется услышать живые случаи от Дарьи — напишите ей: <a href="https://wa.me/79688086455">WhatsApp</a> или <a href="https://t.me/Progaschool">Telegram @Progaschool</a>, она расскажет лично.',
-  block_type: 'youtube_comment',
-  block_data: null,
-  chips: [
-    { label: 'Отзывы', query: 'отзывы родителей' },
-    { label: 'Смены и цены', query: 'смены' },
-    { label: 'Написать в WhatsApp', action: 'contact_request' },
-    { label: 'Telegram @Progaschool', action: 'link', url: 'https://t.me/Progaschool' },
-  ],
-});
-
-const NO_RAG_FACTUAL = JSON.stringify({
-  state: 'ok',
-  text: 'Этот вопрос лучше задать Дарье напрямую — она знает все нюансы и ответит точно. WhatsApp: <a href="https://wa.me/79688086455">+7 (968) 808-64-55</a> · Telegram: <a href="https://t.me/Progaschool">@Progaschool</a> — обычно отвечают в течение 10 минут.',
-  block_type: null,
-  block_data: null,
-  chips: [
-    { label: 'Написать в WhatsApp', action: 'contact_request' },
-    { label: 'Telegram @Progaschool', action: 'link', url: 'https://t.me/Progaschool' },
-    { label: 'Смены 2026', query: 'смены и цены' },
-  ],
-});
-
 // Резервный ответ при таймауте — лучше чем пустой экран
 const TIMEOUT_FALLBACK = JSON.stringify({
   state: 'ok',
@@ -145,12 +91,12 @@ export const POST: APIRoute = async ({ request }) => {
     // Генерируем session_id если клиент не прислал
     const sid = sessionId || crypto.randomUUID();
 
-    // RAG + классификация intent — параллельно со сборкой промпта, не последовательно
-    const [ragResult, basePrompt, intent] = await Promise.all([
+    // RAG + классификация intent — параллельно, промпт собирается синхронно из campData
+    const [ragResult, intent] = await Promise.all([
       ragSearch(message),
-      Promise.resolve(getLivePrompt()),
       classifyIntent(message),
     ]);
+    const basePrompt = buildSystemPrompt();
 
     // Hard-gates сняты — доверяем LLM с RAG-контекстом отвечать честно.
     // Если в RAG нет — модель сама скажет не знаю, спросите менеджера по правилу промпта.
@@ -169,7 +115,7 @@ export const POST: APIRoute = async ({ request }) => {
       if (re.test(message)) {
         const photos = findPhotos(query, 3);
         const fastResp = JSON.stringify({ state: 'ok', text: shortText, block_type: 'gallery', block_data: { photos }, chips: [], message_id: null });
-        logSession(sid, message, fastResp, { trustedCount: 0, isEmpty: false, hits: [], fast_photo: true });
+        logSession(sid, message, fastResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, hits: ragResult.hits, fast_photo: true });
         return new Response(fastResp, { headers: { 'Content-Type': 'application/json' } });
       }
     }
@@ -180,7 +126,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (escalation) {
       const tplResp = templateToResponse(escalation);
       const _msgIdEsc = await logSession(sid, message, tplResp,
-        { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, escalation: escalation.id }
+        { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, hits: ragResult.hits, escalation: escalation.id }
       );
       const finalEsc = JSON.stringify({ ...JSON.parse(tplResp), message_id: _msgIdEsc });
       return new Response(finalEsc, { headers: { 'Content-Type': 'application/json' } });
@@ -227,7 +173,7 @@ export const POST: APIRoute = async ({ request }) => {
         `назови смену по имени (${_lastShift.name}), но честно скажи что показываешь ОБЩИЕ живые фото с лагеря,\n` +
         `а не фото именно с этой смены. НЕ утверждай "вот фото именно с ${_lastShift.name}" — это неправда.`
       : '';
-    // basePrompt меняется ~раз в день (cron обновляет shifts.json) — кэшируем отдельным блоком.
+    // basePrompt стабилен внутри деплоя (campData + правило роста цен) — кэшируем отдельным блоком.
     // ctxForLLM/intentBoost меняются на каждый запрос — не кэшируем, иначе маркер в конце
     // общего блока делает байты уникальными почти всегда и кэш никогда не читается.
     const volatileSuffix = ctxForLLM + intentBoost + shiftContext;
@@ -306,7 +252,7 @@ export const POST: APIRoute = async ({ request }) => {
           { label: 'Написать менеджеру', action: 'contact_request' },
         ],
       });
-      logSession(sid, message, fallbackResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty }, metrics);
+      logSession(sid, message, fallbackResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, hits: ragResult.hits }, metrics);
       return new Response(fallbackResp, { headers: { 'Content-Type': 'application/json' } });
     }
 
@@ -332,7 +278,7 @@ export const POST: APIRoute = async ({ request }) => {
         block_data: null,
         chips: [{ label: 'Смены 2026', query: 'смены' }, { label: 'Цены', query: 'цены' }, { label: 'Написать менеджеру', action: 'contact_request' }]
       });
-      logSession(sid, message, parseErrResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty }, metrics);
+      logSession(sid, message, parseErrResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, hits: ragResult.hits }, metrics);
       return new Response(parseErrResp, { headers: { 'Content-Type': 'application/json' } });
     }
 
@@ -350,7 +296,7 @@ export const POST: APIRoute = async ({ request }) => {
           { label: 'Забронировать', action: 'book' },
         ],
       });
-      logSession(sid, message, schemaErrResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty }, metrics);
+      logSession(sid, message, schemaErrResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, hits: ragResult.hits }, metrics);
       return new Response(schemaErrResp, { headers: { 'Content-Type': 'application/json' } });
     }
 
@@ -374,18 +320,22 @@ export const POST: APIRoute = async ({ request }) => {
     const META_CORRECTION = /\bбот\b|правильный ответ|должен был|не должен|выдумал|не ответил на вопрос|проигнорировал|ошиб(ся|ка|очн)/i;
     try {
       const validation = await validateBotResponse(message, responseData.text);
-      if (!validation.valid && validation.correction) {
-        const isMeta = META_CORRECTION.test(validation.correction);
-        logGuardFlag(message, responseData.text, validation.issue || '', validation.correction, !isMeta);
-        if (!isMeta) {
-          responseData.text = validation.correction;
+      if (!validation.valid) {
+        // Логируем ЛЮБОЙ invalid — в т.ч. без correction (раньше такие терялись
+        // молча и ai_guard_flags оставалась пустой).
+        const correction = validation.correction || '';
+        const isMeta = correction !== '' && META_CORRECTION.test(correction);
+        const willCorrect = correction !== '' && !isMeta;
+        logGuardFlag(message, responseData.text, validation.issue || '', correction, willCorrect);
+        if (willCorrect) {
+          responseData.text = correction;
         }
       }
     } catch { /* validateBotResponse сам не бросает, но подстрахуемся */ }
 
     // Сначала логируем (получаем PK), потом инжектим в ответ — иначе TDZ
     const _bodyForLog = JSON.stringify({ state: 'ok', ...responseData });
-    const _msgId = await logSession(sid, message, _bodyForLog, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty }, metrics);
+    const _msgId = await logSession(sid, message, _bodyForLog, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, hits: ragResult.hits }, metrics);
     const finalResp = JSON.stringify({ state: 'ok', ...responseData, message_id: _msgId });
     return new Response(finalResp, { headers: { 'Content-Type': 'application/json' } });
   } catch (e: any) {

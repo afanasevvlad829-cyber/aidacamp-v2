@@ -119,8 +119,10 @@ export async function validateBotResponse(
 
     const result = JSON.parse(jsonMatch[0]);
     return result as ValidationResult;
-  } catch {
-    // При ошибке валидатора — пропускаем, не ломаем основной флоу
+  } catch (err: any) {
+    // При ошибке валидатора — пропускаем, не ломаем основной флоу.
+    // Но причину пишем в лог: молчаливый {valid:true} скрывал, жив ли валидатор вообще.
+    console.error('[validator] validateBotResponse failed:', err?.name, err?.message);
     return { valid: true };
   }
 }
