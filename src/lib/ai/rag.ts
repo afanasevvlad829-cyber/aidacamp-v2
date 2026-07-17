@@ -37,6 +37,10 @@ export const TRUSTED_PATTERNS = [
   'kb\\_%',            // курируемая база фактов: kb_shifts_2026, kb_prices_discounts_2026, kb_tax_deduction_2026 и т.п.
   'accommodation\\_%', // accommodation_detailed_2026 — проживание
   'menu\\_%',          // menu_detailed_2026 — питание
+  // Возвращены после парного эвала 17.07 (просадка по темам «цена»/«документы»):
+  'ceny',              // контент страницы цен — 38 чанков
+  'faq',               // FAQ сайта
+  'ДОГОВОР%',          // договор бронирования — условия возврата/оплаты, 62 чанка
 ];
 
 export function openaiEmbed(text: string): Promise<number[]> {
