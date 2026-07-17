@@ -7,7 +7,7 @@ import pg from 'pg';
 let pool: pg.Pool | null = null;
 
 export function getPool(): pg.Pool | null {
-  const dsn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN;
+  const dsn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || process.env.DATABASE_URL;
   if (!dsn) return null;
   if (!pool) {
     pool = new pg.Pool({
@@ -15,6 +15,7 @@ export function getPool(): pg.Pool | null {
       max: 10,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 5_000,
+      statement_timeout: 5_000,
     });
     pool.on('error', (err) => console.error('[pg pool] idle client error', err));
   }
