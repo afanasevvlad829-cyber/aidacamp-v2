@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { YM_COUNTER } from '../../data/tracking';
+import { getCurrentPrice, fmtPrice } from '../../data/dynamicPrices';
 
 /* ── THEME ── */
 function initTheme(){
@@ -199,13 +200,14 @@ initTheme();
 })();
 
 /* ── CAMP DATA ── */
+const shift3Price=getCurrentPrice('shift-3'), shift4Price=getCurrentPrice('shift-4');
 const SMENY=[
   {n:'Смена 1',dates:'30 мая — 8 июня',days:'10 дней',price:'85 900 ₽',available:false,occupied:23,total:35},
   {n:'Смена 2',dates:'10 — 23 июня',days:'14 дней',price:'99 000 ₽',available:false,popular:true,occupied:41,total:45},
   {n:'Смена 2.1',dates:'10 — 16 июня',days:'7 дней',price:'48 000 ₽',available:false,short:true,occupied:29,total:40},
   {n:'Смена 2.2',dates:'16 — 23 июня',days:'8 дней',price:'75 000 ₽',available:false,short:true,occupied:37,total:45},
-  {n:'Смена 3',dates:'3 — 15 августа',days:'13 дней',price:'89 400 ₽',available:true,occupied:40,total:45},
-  {n:'Смена 4',dates:'17 — 26 августа',days:'10 дней',price:'74 900 ₽',available:true,occupied:31,total:45},
+  {n:'Смена 3',dates:'3 — 15 августа',days:'13 дней',price:shift3Price?fmtPrice(shift3Price):'89 400 ₽',available:true,occupied:40,total:45},
+  {n:'Смена 4',dates:'17 — 26 августа',days:'10 дней',price:shift4Price?fmtPrice(shift4Price):'74 900 ₽',available:true,occupied:31,total:45},
 ];
 const COURSES=[
   {icon:'keyboard',name:'Scratch',age:'8–10 лет',minAge:8,maxAge:10,
