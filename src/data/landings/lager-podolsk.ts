@@ -1,9 +1,9 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, VYCHET_MAX, VYCHET_S2, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, VYCHET_MAX, VYCHET_S2, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
 import type { LandingData } from './types';
 
 const landing: LandingData = {
   slug: 'lager-podolsk',
-  title: 'IT-лагерь рядом с Подольском 2026 — Python для 7-15 лет | АйДаКемп',
+  title: `IT-лагерь рядом с Подольском ${SEASON_YEAR} — Python для 7-15 лет | АйДаКемп`,
   description: `IT-лагерь рядом с Подольском для подростков 13-15 и ребят с 7 лет: Python, AI, нейросети. 66 км от МКАД, трансфер от м. Солнцево 2 000 ₽. Вычет до ${VYCHET_MAX}.`,
   h1: 'Детский лагерь рядом с Подольском',
   canonical: 'https://aidacamp.ru/lager-podolsk',
@@ -12,7 +12,7 @@ const landing: LandingData = {
     { q: 'Как добраться из Подольска до лагеря АйДаКемп?', a: 'Лагерь — санаторий «Изумруд», 66 км от МКАД по Киевскому шоссе (~1 час). Из Подольска на машине по Киевскому шоссе около 35–45 минут без выезда на МКАД, либо до м. Солнцево (Солнцевская линия) и трансфер лагеря — 2 000 ₽ в один конец, сопровождающий до лагеря.' },
     { q: 'Нужен ли опыт программирования?', a: 'Нет. Принимаем ребят 7–15 лет с любым уровнем подготовки. Группы начинающих (с нуля), средний и продвинутый уровень — до 8 человек в группе.' },
     { q: 'Что входит в стоимость путёвки?', a: 'Проживание, 5-разовое питание, IT-программа (Python, AI, Minecraft, Roblox, 3D), бассейн. Трансфер от м. Солнцево — 2 000 ₽ в один конец.' },
-    { q: 'Когда проходят смены в 2026?', a: `Сезон 2026: ${DATES_SHORT_S21} (7 дней, завершена), ${DATES_SHORT_S2} (14 дней, завершена), ${DATES_SHORT_S3} (13 дней), ${DATES_SHORT_S4} (10 дней). Открыты к брони августовские смены — места ещё есть.` },
+    { q: `Когда проходят смены в ${SEASON_YEAR}?`, a: `Сезон ${SEASON_YEAR}: ${DATES_SHORT_S21} (7 дней, завершена), ${DATES_SHORT_S2} (14 дней, завершена), ${DATES_SHORT_S3} (13 дней), ${DATES_SHORT_S4} (10 дней). Открыты к брони августовские смены — места ещё есть.` },
   ],
   courseSchema: {
     name: 'Детский IT-лагерь рядом с Подольском — АйДаКемп',
@@ -92,7 +92,7 @@ const landing: LandingData = {
       ],
     },
     {
-      h2: 'Смены 2026 — цены и наличие мест',
+      h2: `Смены ${SEASON_YEAR} — цены и наличие мест`,
       text: 'Августовские смены открыты к брони — места ещё есть, бронируйте сейчас. В стоимость включены проживание, питание, полная IT-программа, бассейн, активности.',
       list: [
         `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, 7 дней, ${PRICE_S21} (налоговый вычет ~${VYCHET_S21})`,

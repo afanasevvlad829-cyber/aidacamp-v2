@@ -1,9 +1,9 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, VYCHET_MAX } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, VYCHET_MAX } from '../shifts';
 import type { LandingData } from './types';
 
 const landing: LandingData = {
   slug: 'lager-shchelkovo',
-  title: 'Летний лагерь в Щёлково 2026 — IT-смены 7–15 лет | АйДаКемп',
+  title: `Летний лагерь в Щёлково ${SEASON_YEAR} — IT-смены 7–15 лет | АйДаКемп`,
   description: `IT-лагерь для ребят 7–15 лет из Щёлкова: трансфер от м. Солнцево (2 000 ₽), Python, AI, Minecraft, бассейн. Вычет до ${VYCHET_MAX}, смены от ${PRICE_MIN}.`,
   h1: 'Детский лагерь рядом с Щёлковом',
   canonical: 'https://aidacamp.ru/lager-shchelkovo',
@@ -83,8 +83,8 @@ const landing: LandingData = {
       ],
     },
     {
-      h2: 'Смены 2026 — цены',
-      text: `Летние смены 2026 из Щёлкова — доступны две августовские, сезон почти завершён, бронируйте сейчас. Цены — от ${PRICE_MIN} за 10-дневную смену: в стоимость входят проживание в комнатах на 2–4 человека с санузлом, 5-разовое питание, IT-программа, бассейн и вечерние активности. Налоговый вычет вернёт до ${VYCHET_MAX} (максимум, за 13-дневную смену).`,
+      h2: `Смены ${SEASON_YEAR} — цены`,
+      text: `Летние смены ${SEASON_YEAR} из Щёлкова — доступны две августовские, сезон почти завершён, бронируйте сейчас. Цены — от ${PRICE_MIN} за 10-дневную смену: в стоимость входят проживание в комнатах на 2–4 человека с санузлом, 5-разовое питание, IT-программа, бассейн и вечерние активности. Налоговый вычет вернёт до ${VYCHET_MAX} (максимум, за 13-дневную смену).`,
       list: [
         `Смена 2.1 (завершена): ${DATES_SHORT_S21}, 7 дней — ${PRICE_S21}`,
         `Смена 2 (завершена): ${DATES_SHORT_S2}, 14 дней — ${PRICE_S2}`,

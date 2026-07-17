@@ -1,11 +1,11 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, VYCHET_MAX } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, VYCHET_MAX } from '../shifts';
 import { STAT_IT_CONTINUE } from '../contacts';
 import type { LandingData } from './types';
 
 const landing: LandingData = {
   slug: 'lager-nogink',
-  title: 'Детский IT-лагерь рядом с Ногинском 2026 — Python 7–15 лет | АйДаКемп',
-  description: `Детский IT-лагерь для семей в Ногинске: смены август 2026 открыты. Python, AI, Minecraft, 7–15 лет. Вычет до ${VYCHET_MAX}, трансфер от м. Солнцево.`,
+  title: `Детский IT-лагерь рядом с Ногинском ${SEASON_YEAR} — Python 7–15 лет | АйДаКемп`,
+  description: `Детский IT-лагерь для семей в Ногинске: смены август ${SEASON_YEAR} открыты. Python, AI, Minecraft, 7–15 лет. Вычет до ${VYCHET_MAX}, трансфер от м. Солнцево.`,
   h1: 'Детский лагерь — Ногинск',
   canonical: 'https://aidacamp.ru/lager-nogink',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
@@ -66,8 +66,8 @@ const landing: LandingData = {
       ],
     },
     {
-      h2: 'Смены июнь и август 2026 ещё открыты',
-      text: 'Можно выбрать удобную дату: смены в июне и августе 2026 ещё открыты, а места разбирают заранее — лучше забронировать сейчас.',
+      h2: `Смены июнь и август ${SEASON_YEAR} ещё открыты`,
+      text: `Можно выбрать удобную дату: смены в июне и августе ${SEASON_YEAR} ещё открыты, а места разбирают заранее — лучше забронировать сейчас.`,
       list: [
         `Смена 2.1 (завершена): ${DATES_SHORT_S21}, 7 дней — ${PRICE_S21}`,
         `Смена 2 (завершена): ${DATES_SHORT_S2}, 14 дней — ${PRICE_S2}`,

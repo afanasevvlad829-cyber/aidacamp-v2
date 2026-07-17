@@ -1,9 +1,9 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4 } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR } from '../shifts';
 import type { LandingData } from './types';
 
 const landing: LandingData = {
   slug: 'lager-bronnitsy',
-  title: 'Детский лагерь рядом с Бронницами 2026 | АйДаКемп',
+  title: `Детский лагерь рядом с Бронницами ${SEASON_YEAR} | АйДаКемп`,
   description: `Детский IT-лагерь рядом с Бронницами — ~1.5 ч через Новорязанское шоссе → МКАД → Киевское. Python, AI, Minecraft. От ${PRICE_MIN}.`,
   h1: 'Детский лагерь рядом с Бронницами',
   canonical: 'https://aidacamp.ru/lager-bronnitsy',
@@ -69,12 +69,12 @@ const landing: LandingData = {
         '1 преподаватель на 6–8 участников — никто не теряется',
         'Медработник в лагере 24/7 — спокойствие для всей семьи',
         'Ежедневные фото и видео в Telegram — родители всегда видят, что происходит',
-        'Июль 2026 занят полностью. В июне и августе места есть — оставьте заявку',
+        `Июль ${SEASON_YEAR} занят полностью. В июне и августе места есть — оставьте заявку`,
       ],
     },
     {
-      h2: 'Смены и цены 2026',
-      text: `Лагерь работает с июня по август 2026. Открытые к брони смены 10 и 13 дней, стоимость от ${PRICE_MIN}. В стоимость включены проживание, питание, полная IT-программа, бассейн, активности. Трансфер из Москвы — платная опция (2 000 ₽ в одну сторону).`,
+      h2: `Смены и цены ${SEASON_YEAR}`,
+      text: `Лагерь работает с июня по август ${SEASON_YEAR}. Открытые к брони смены 10 и 13 дней, стоимость от ${PRICE_MIN}. В стоимость включены проживание, питание, полная IT-программа, бассейн, активности. Трансфер из Москвы — платная опция (2 000 ₽ в одну сторону).`,
       list: [
         `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, 7 дней, ${PRICE_S21}`,
         `Смена 2 (завершена) — ${DATES_SHORT_S2}, 14 дней, ${PRICE_S2}`,

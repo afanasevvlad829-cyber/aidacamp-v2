@@ -1,9 +1,9 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, VYCHET_MAX } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, VYCHET_MAX } from '../shifts';
 import type { LandingData } from './types';
 
 const landing: LandingData = {
   slug: 'lager-reutov',
-  title: 'Детский лагерь Реутов 2026 — IT-смена рядом | АйДаКемп',
+  title: `Детский лагерь Реутов ${SEASON_YEAR} — IT-смена рядом | АйДаКемп`,
   description: `Из Реутова до IT-лагеря через м. Солнцево + трансфер, налоговый вычет до ${VYCHET_MAX}. Python, AI, Minecraft для 7–15 лет. От ${PRICE_MIN}.`,
   h1: 'Детский лагерь рядом с Реутовом',
   canonical: 'https://aidacamp.ru/lager-reutov',
@@ -73,7 +73,7 @@ const landing: LandingData = {
       ],
     },
     {
-      h2: 'Смены 2026 — цены',
+      h2: `Смены ${SEASON_YEAR} — цены`,
       text: `Бронируйте смену заранее — места уходят быстро. В стоимость включены проживание в комнатах по 2–4 человека с санузлом, 5-разовое питание, полная IT-программа, бассейн, вечерние активности. Налоговый вычет — до ${VYCHET_MAX} (максимум, 13-дневная смена).`,
       list: [
         `Смена 2.1 (завершена): ${DATES_SHORT_S21}, 7 дней — ${PRICE_S21}`,
@@ -119,7 +119,7 @@ const landing: LandingData = {
     label: 'Полезные разделы',
     separator: ' · ',
     links: [
-      { href: '/ceny/', text: 'смены и даты 2026' },
+      { href: '/ceny/', text: `смены и даты ${SEASON_YEAR}` },
       { href: '/ceny/', text: 'стоимость и что входит' },
       { href: '/stati/programma-it-lagerya/', text: 'IT-программы лагеря' },
     ],
