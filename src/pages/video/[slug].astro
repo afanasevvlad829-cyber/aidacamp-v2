@@ -5,6 +5,7 @@ import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import ShareButton from '../../components/ShareButton.astro';
 import { allVideos, videoOgImage, isEmbed, type VideoItem } from '../../data/videos';
+import { DARIA_CUES } from '../../data/dariaCues';
 
 export function getStaticPaths() {
   return allVideos.map((video) => ({ params: { slug: video.slug }, props: { video } }));
@@ -16,6 +17,9 @@ const { video } = Astro.props;
 const SITE = 'https://aidacamp.ru';
 const pageUrl = `${SITE}/video/${video.slug}/`;
 const embed = isEmbed(video);
+// Караоке-субтитры есть только у видео Дарьи (тот же DARIA_CUES, что и в VideoPlayer на главной).
+const cues = video.slug === 'daria-story' ? DARIA_CUES : [];
+const cuesJson = JSON.stringify(cues);
 
 const schema = {
   '@context': 'https://schema.org',
@@ -85,6 +89,14 @@ const schema = {
                   <i class="bi bi-play-fill text-[26px] text-primary ml-1" aria-hidden="true"></i>
                 </span>
               </span>
+              {cues.length > 0 && (
+                <div
+                  id="karaoke"
+                  class="pointer-events-none absolute bottom-14 left-0 right-0 px-4 pb-2 text-center"
+                  aria-live="polite"
+                  aria-atomic="true"
+                ></div>
+              )}
             </div>
           </div>
 
@@ -121,37 +133,73 @@ const schema = {
     </section>
   </main>
 
-<script>
+<script define:vars={{ cuesJson }}>
   // Фасад → настоящий плеер по клику. До клика Kinescope-iframe не грузится.
+  const CUES = JSON.parse(cuesJson);
+  const LINE_STYLE = 'display:inline-block;background:rgba(0,0,0,0.72);border-radius:8px;padding:6px 12px;font-size:15px;font-weight:600;line-height:1.6;text-shadow:0 1px 4px rgba(0,0,0,0.9)';
+
   function initPlayer() {
     const facade = document.getElementById('player');
     if (!facade || facade.dataset.ready) return;
     facade.dataset.ready = '1';
+    const kEl = document.getElementById('karaoke');
 
     const open = () => {
-      const src = facade.dataset.src!;
+      const src = facade.dataset.src;
       const isEmbed = facade.dataset.embed === '1';
       const node = isEmbed ? document.createElement('iframe') : document.createElement('video');
 
       node.className = 'absolute inset-0 h-full w-full rounded-[18px]';
       if (isEmbed) {
-        const f = node as HTMLIFrameElement;
-        f.src = `${src}?autoplay=1`;
-        f.style.border = 'none';
-        f.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
-        f.allowFullscreen = true;
+        node.src = `${src}?autoplay=1`;
+        node.style.border = 'none';
+        node.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
+        node.allowFullscreen = true;
       } else {
-        const v = node as HTMLVideoElement;
-        v.src = src;
-        v.controls = true;
-        v.playsInline = true;
-        v.classList.add('object-cover');
+        node.src = src;
+        node.controls = true;
+        node.playsInline = true;
+        node.classList.add('object-cover');
       }
 
       facade.replaceChildren(node);
+      if (kEl) facade.appendChild(kEl);
       facade.classList.remove('cursor-pointer', 'group');
-      if (!isEmbed) (node as HTMLVideoElement).play().catch(() => {});
-      (window as any).trackGoal?.('video_page_play');
+      if (!isEmbed) node.play().catch(() => {});
+      window.trackGoal?.('video_page_play');
+
+      // Караоке-субтитры — только для локального <video> (у iframe нет доступа к currentTime).
+      if (!isEmbed && kEl && CUES.length) {
+        const player = node;
+        let rafId = 0;
+        function rafLoop() {
+          if (!player.paused) {
+            const t = player.currentTime;
+            const idx = CUES.findIndex((c) => t >= c.s && t < c.e);
+            if (idx === -1) {
+              kEl.innerHTML = '';
+            } else {
+              const cue = CUES[idx];
+              const words = cue.t.split(' ');
+              const wordDur = (cue.e - cue.s) / words.length;
+              const activeW = Math.min(Math.floor((t - cue.s) / wordDur), words.length - 1);
+              const html = words.map((w, i) => {
+                const s = i < activeW
+                  ? 'color:rgba(255,255,255,0.45)'
+                  : i === activeW
+                    ? 'color:#FFD60A;font-weight:800;text-shadow:0 0 10px rgba(255,214,10,0.6)'
+                    : 'color:#ffffff';
+                return `<span style="${s}">${w}</span>`;
+              }).join(' ');
+              kEl.innerHTML = `<span style="${LINE_STYLE}">${html}</span>`;
+            }
+          }
+          rafId = requestAnimationFrame(rafLoop);
+        }
+        player.addEventListener('pause', () => cancelAnimationFrame(rafId));
+        player.addEventListener('play', () => { rafId = requestAnimationFrame(rafLoop); });
+        rafId = requestAnimationFrame(rafLoop);
+      }
     };
 
     facade.addEventListener('click', open);
