@@ -10,6 +10,7 @@
 #   1. canonical без завершающего слеша     — инцидент 03.07.2026 (98 страниц → 301 → выпадение из Яндекса)
 #   2. .test.ts под src/pages               — ломает билд Astro (Astro считает файл страницей)
 #   3. мёртвые суммы вычета 5 434 / 9 737   — инцидент апреля 2026 (28 страниц)
+#   4. цель Astro.redirect() без слеша      — инцидент 17.07.2026 (13 файлов → 2 хопа вместо одного)
 #
 # СОЗНАТЕЛЬНО НЕ ПРОВЕРЯЕТСЯ здесь — «медиа не копировать в client/» (CLAUDE.md, 02.07.2026).
 # Правило уже вшито в scripts/deploy.sh (--exclude images/ videos/ в rsync до client/), и
@@ -117,10 +118,77 @@ for root, dirs, files in os.walk('src'):
                     )
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 4. Цель Astro.redirect() без завершающего слеша.
+#
+# Тот же класс, что и №1, но с другой стороны. Сайт отдаётся в dir-формате, и
+# бесслешевый URL ловит директорный редирект nginx. Значит редирект на цель без
+# слеша даёт ДВА хопа вместо одного:
+#   /lager-elochki-domodedovo → 301 → /lager-na-leto-2026 → 301 → /lager-na-leto-2026/
+#
+# 17.07.2026: так было в 13 файлах (10 на /lager-na-leto-2026, 3 на
+# /spravka-079u-dlya-lagerya-obrazets), замерено живьём — 13 слагов шли в 2 хопа
+# против 15 в один. Все финально 200, то есть глазами не видно: цепочка молча
+# разбавляет вес. Ровно тот случай, где нужен греп, а не внимательность.
+#
+# Проверяем ТОЛЬКО строковые литералы. Шаблонные строки и переменные
+# (Astro.redirect(`/x/${slug}`), Astro.redirect(target)) сознательно пропускаем:
+# что построит рантайм, греп знать не может, а врущий гейт хуже отсутствующего.
+#
+# И главное — лишний хоп возникает НЕ у всякой бесслешевой цели, а только если
+# цель пререндерена в файл: тогда её отдаёт nginx (root client/, try_files $uri $uri/)
+# и сам дописывает слеш редиректом. У страниц с `prerender = false` (portal/*, admin/*)
+# свой location с proxy_pass на ноду — try_files к ним не применяется, и /portal/login
+# отдаёт 200 без всякого редиректа (проверено curl'ом 17.07.2026). Флагать их —
+# значит врать. Поэтому резолвим цель в исходник и смотрим на её режим; если цель
+# в исходник не резолвится (динамика, nginx-редирект) — молчим, а не гадаем.
+REDIRECT = re.compile(r'Astro\.redirect\(\s*(["\'])(/[^"\']*)\1')
+
+def served_by_node(url_path):
+    """True, если цель — страница на запрос: её отдаёт нода, директорного редиректа нет.
+    None, если цель не резолвится в исходник — тогда судить не о чем."""
+    rel = url_path.strip('/')
+    if not rel:
+        return False
+    for cand in (f'src/pages/{rel}.astro', f'src/pages/{rel}/index.astro'):
+        if os.path.isfile(cand):
+            with open(cand, encoding='utf-8') as f:
+                return 'prerender = false' in f.read()
+    return None
+
+for root, dirs, files in os.walk('src'):
+    if 'demo' in root:
+        continue
+    for fn in files:
+        if not fn.endswith('.astro'):
+            continue
+        path = os.path.join(root, fn)
+        with open(path, encoding='utf-8') as fp:
+            for i, line in enumerate(fp, 1):
+                m = REDIRECT.search(line)
+                if not m:
+                    continue
+                target = m.group(2)
+                path_part = target.split('?')[0].split('#')[0]
+                if path_part == '/':          # корень — слеш уже есть
+                    continue
+                last = path_part.rstrip('/').split('/')[-1]
+                if '.' in last and not path_part.endswith('/'):
+                    continue                   # реальный файл (.xml/.txt), не директория
+                mode = served_by_node(path_part)
+                if mode is not False:
+                    continue                   # нода (лишнего хопа нет) либо не резолвится — молчим
+                if not path_part.endswith('/'):
+                    errors.append(
+                        f'❌ {path}:{i} — цель Astro.redirect() без слеша: «{target}»\n'
+                        f'     Бесслешевый URL сам 301-редиректит → выйдет два хопа вместо одного.\n'
+                        f'     Поставь слеш: Astro.redirect("{path_part}/", 301).'
+                    )
+
+# ─────────────────────────────────────────────────────────────────────────────
 if errors:
     print('\n'.join(errors))
     print(f'\n❌ guard-static-rules: {len(errors)} нарушений.')
     sys.exit(1)
 
-print('✅ guard-static-rules: canonical со слешем, тестов в src/pages нет, мёртвых сумм вычета нет.')
+print('✅ guard-static-rules: canonical и цели redirect со слешем, тестов в src/pages нет, мёртвых сумм вычета нет.')
 PY
