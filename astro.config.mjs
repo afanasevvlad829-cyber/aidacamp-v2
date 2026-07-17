@@ -110,6 +110,10 @@ export default defineConfig({
       JavaScript: true,
       Image: false,
       SVG: false,
+      // P1-12: metodichki/ (21МБ статики, за портальной авторизацией) и demo/
+      // (черновики-прототипы) пересобираются compress-ом каждый билд без
+      // необходимости — их HTML/CSS/JS не меняются между релизами.
+      Exclude: ['/metodichki/', '/demo/'],
     }),
   ],
   devToolbar: { enabled: false },
