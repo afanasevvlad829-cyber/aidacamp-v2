@@ -1,5 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
+import { fetchWithTimeout } from '../../../lib/fetchWithTimeout';
 import { createHash } from 'node:crypto';
 import { getPool } from '../../../lib/db';
 import { getCurrentPrice } from '../../../data/dynamicPrices';
@@ -180,7 +181,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   let tData: Record<string, any>;
   try {
-    const tRes = await fetch('https://securepay.tinkoff.ru/v2/Init', {
+    const tRes = await fetchWithTimeout('https://securepay.tinkoff.ru/v2/Init', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({

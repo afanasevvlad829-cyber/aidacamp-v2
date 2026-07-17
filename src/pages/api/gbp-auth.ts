@@ -1,5 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
+import { fetchWithTimeout } from '../../lib/fetchWithTimeout';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 
@@ -60,7 +61,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     const clientSecret = cfg.clientSecret ?? import.meta.env.GBP_CLIENT_SECRET ?? '';
     const redirectUri  = cfg.redirectUri  ?? import.meta.env.GBP_REDIRECT_URI  ?? `${url.origin}/admin/gbp-callback`;
 
-    const res = await fetch('https://oauth2.googleapis.com/token', {
+    const res = await fetchWithTimeout('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ code, client_id: clientId, client_secret: clientSecret, redirect_uri: redirectUri, grant_type: 'authorization_code' }),
@@ -74,7 +75,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     await saveConfig({ ...cfg, refreshToken: tokens.refresh_token });
 
     // Получаем список аккаунтов
-    const accsRes = await fetch('https://mybusiness.googleapis.com/v4/accounts', {
+    const accsRes = await fetchWithTimeout('https://mybusiness.googleapis.com/v4/accounts', {
       headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
     const accs: { accounts?: Array<{ name: string; accountName: string }> } = await accsRes.json();
