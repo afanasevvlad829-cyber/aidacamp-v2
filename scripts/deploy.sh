@@ -400,6 +400,18 @@ if [ "${SKIP_SMOKE:-0}" != "1" ]; then
   fi
 fi
 
+# ── 6e. Smoke: конверсионный контур (Метрика + reachGoal + /api/lead) ─
+# Только прод: на dev Метрика сознательно отключена (__isDevHost в Base.astro).
+# Ловит класс инцидента 16-18.04.2026 (Partytown): страницы отдают 200,
+# обычный smoke зелёный, а Метрика мертва → 0 конверсий → −60К₽ за 2 дня.
+# Провал → fail_deploy → авто-откат; Telegram-алерт шлёт сам скрипт.
+if [ "$TARGET" = "prod" ] && [ "${SKIP_SMOKE:-0}" != "1" ]; then
+  echo ""
+  if ! SSH_KEY="$SSH_KEY" SSH_HOST="$SSH_HOST" "$SCRIPT_DIR/smoke-conversion.sh" "$HEALTH_URL"; then
+    fail_deploy "конверсионный контур сломан (Метрика/reachGoal/api-lead)"
+  fi
+fi
+
 
 # Запишем SHA задеплоенного коммита на сервер для drift-check (cron алертит при расхождении)
 DEPLOY_SHA=$(git rev-parse HEAD 2>/dev/null || echo "unknown")

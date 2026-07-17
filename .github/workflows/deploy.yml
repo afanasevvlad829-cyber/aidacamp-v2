@@ -6,10 +6,13 @@ name: Deploy
 #                                 ↓ красный                                  ↓ красный
 #                             поезд встал                              авто-откат прода
 #
-# Прод защищён тремя рубежами:
+# Прод защищён четырьмя рубежами:
 #   1) quality-gate.yml (check:banned / check:prices / build);
 #   2) smoke на dev — прод не поедет, пока dev красный;
-#   3) авто-откат на последний backup-* при провале верификации/smoke прода.
+#   3) конверсионный smoke прода (scripts/smoke-conversion.sh): Метрика
+#      инициализируется, reachGoal доходит, /api/lead принимает заявку —
+#      ловит класс инцидента Partytown 16-18.04.2026 (0 конверсий, −60К₽);
+#   4) авто-откат на последний backup-* при провале верификации/smoke прода.
 #
 # main МЕРЖИТСЯ, а не ресетится. Прежний `reset --hard`-промоут разъезжал
 # истории и терял правки (инцидент 2026-07-07).
@@ -109,6 +112,9 @@ jobs:
           MASTER_AGENT: '1'    # запуск санкционирован этим workflow
           DEPLOY_YES: '1'      # неинтерактивно: в Actions нет stdin
           AUTO_ROLLBACK: '1'   # провал верификации/smoke → откат на backup-*
+          # Для smoke-conversion.sh: алерт «конверсионный контур сломан, откатывай»
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: ./scripts/deploy.sh prod
 
       - name: Уведомление в Telegram
