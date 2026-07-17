@@ -30,9 +30,16 @@ deploy-prod), но **как** собирается и публикуется к�
   прод-трафика.
 - Раскладка `/var/www`: aidacamp — плоская (rsync-in-place); codims-prod — `current`+`repo`+
   `server`; icepartners-prod и vlad-a-prod — `current`+`previous`.
-- Типы отдачи в переходе: memory `four_sites_serving_topology` — движение к статике Astro
-  (codims переведён 17.07), но на проде ещё живут `server/` (codims) и `icepartners-api.service`.
-  Механизм обязан поддержать **и статику, и SSR** одинаково.
+- Типы отдачи (проверено на сервере 2026-07-17 — systemd + nginx):
+  - **aidacamp** — SSR: `aidacamp-prod.service` → `current/server/entry.mjs`. node_modules нужен.
+  - **codims** — SSR: `codims-prod.service` → `current/server/entry.mjs` (+ nginx отдаёт
+    `current/client/` статикой). node_modules нужен.
+  - **icepartners** — статика: nginx `root current`. node_modules не нужен. Но в репо есть
+    лёгкий API формы лида → деплой перезапускает `icepartners-api.service`.
+  - **vlad-a** — статика: nginx `root current`. node_modules не нужен. В репо API контакта и
+    оплаты → деплой перезапускает `vlad-a-contact.service` и `vlad-a-payment.service`.
+  - Вывод: механизм обязан поддержать **и статику, и SSR** одинаково, а «сервис для reload» —
+    это **список** (0..N имён), не одно имя.
 - Бэкапы: `/opt/restic-full-backup.sh`, `/opt/restic-snapshot.sh` есть; per-deploy снапшот
   дёргается из aidacamp `deploy.sh`. Единого таймера «всё сразу» нет.
 - Реестр эталона: aidacamp `deploy.yml` уже собирает на раннере и rsync'ит `dist` — это
@@ -103,6 +110,18 @@ RCE через lockfile. Требование: зависимости проек
     `site`, `server_paths`, `service` (пусто = статика), `smoke_urls`, `build_cmd`.
 - `deploy.yml` каждого сайта ужимается до ~15 строк: `uses: afanasevvlad829-cyber/deploy-ci/
   .github/workflows/deploy.yml@main` + `with:` его параметры + `secrets: inherit`.
+
+Параметры (входы) по сайтам — единственное, что различается (механизм идентичен):
+
+| Сайт | тип | node_modules | services (reload, список) |
+|---|---|---|---|
+| aidacamp | ssr | да | `aidacamp-prod` |
+| codims | ssr | да | `codims-prod` |
+| icepartners | static | нет | `icepartners-api` |
+| vlad-a | static | нет | `vlad-a-contact`, `vlad-a-payment` |
+
+Плюс на каждый сайт: пути (`site_dir`, dev/prod), `smoke_urls` (домены + ключевые пути),
+`build_cmd` (у всех `npm run build` — по умолчанию).
 - **Доступ на Free-приватных репо:** reusable workflow из приватного репо требует включить
   доступ в Settings → Actions → «Accessible from repositories owned by the user». Настроить
   один раз на `deploy-ci`. Если доступ окажется недоступен на текущем плане — фолбэк:
