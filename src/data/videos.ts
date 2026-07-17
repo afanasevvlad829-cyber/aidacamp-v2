@@ -29,7 +29,7 @@ export const campVideos: VideoItem[] = [
 /** Видео, у которых есть своя страница, но нет карточки в списке на /video/ —
  *  они живут внутри других блоков (MomStory на главной, сезонные лендинги). */
 export const storyVideos: VideoItem[] = [
-  { slug: 'daria-story', url: '/video/daria-story.mp4', title: 'Мы живём в самом прекрасном IT-лагере на свете', thumb: '/images/videos/daria-story.avif', alt: 'Видео об IT-лагере АйДаКемп глазами Дарьи Афанасьевой', description: 'Дарья Афанасьева с иронией рассказывает, как на самом деле проходит смена в АйДаКемп: гречка, Крипер из Майнкрафта и «мама, забери меня» — а потом уезжать перехотелось.', uploadDate: '2025-06-01' },
+  { slug: 'daria-story', url: '/video/daria-story.mp4', title: 'Мы живём в самом прекрасном IT-лагере на свете. А все остальные лагеря нам завидуют', thumb: '/images/videos/daria-story.avif', alt: 'Видео об IT-лагере АйДаКемп глазами Дарьи Афанасьевой', uploadDate: '2025-06-01' },
 ];
 
 /** Все видео с собственной страницей /video/<slug>/ — источник для getStaticPaths. */
