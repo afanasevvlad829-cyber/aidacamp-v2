@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { YM_COUNTER } from '../../data/tracking';
+import { getCurrentPrice, getTaxDeduction, fmtPrice } from '../../data/dynamicPrices';
 
 /* ── THEME ── */
 function initTheme(){
@@ -510,9 +511,10 @@ function blockPrices(){
   const head=mkEl('div','padding:13px 18px;border-bottom:1px solid rgba(13,27,42,.07)');
   head.innerHTML='<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:8px"><i class="bi bi-tag" aria-hidden="true"></i>Стоимость смен</span>';
   card.appendChild(head);
+  const shift4Price=getCurrentPrice('shift-4'), shift3Price=getCurrentPrice('shift-3');
   const tabs=[
-    {label:'10 дней',price:'74 900 ₽',sub:'за смену · Смена 4 (август)',inc:['Всё включено (проживание, питание, IT, трансфер)','Хакатон в последние 2 дня','Сертификат по итогам'],cb:'Налоговый вычет 13% — вернёте до <strong>4 800 ₽</strong> через ФНС'},
-    {label:'13 дней',price:'89 400 ₽',sub:'за смену · Смена 3 (август)',inc:['Полная программа — 13 дней','Всё включено + хакатон','Дети успевают подружиться по-настоящему'],cb:'Налоговый вычет 13% — вернёте до <strong>5 200 ₽</strong> через ФНС'},
+    {label:'10 дней',price:shift4Price?fmtPrice(shift4Price):'74 900 ₽',sub:'за смену · Смена 4 (август)',inc:['Всё включено (проживание, питание, IT, трансфер)','Хакатон в последние 2 дня','Сертификат по итогам'],cb:'Налоговый вычет 13% — вернёте до <strong>'+fmtPrice(getTaxDeduction('shift-4'))+'</strong> через ФНС'},
+    {label:'13 дней',price:shift3Price?fmtPrice(shift3Price):'89 400 ₽',sub:'за смену · Смена 3 (август)',inc:['Полная программа — 13 дней','Всё включено + хакатон','Дети успевают подружиться по-настоящему'],cb:'Налоговый вычет 13% — вернёте до <strong>'+fmtPrice(getTaxDeduction('shift-3'))+'</strong> через ФНС'},
   ];
   const tabRow=mkEl('div','display:flex;gap:1px;background:rgba(13,27,42,.07)');
   const bodies=[];
@@ -890,11 +892,13 @@ function blockPricingBreakdown(){
     +'<span style="font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;background:rgba(34,197,94,.15);color:#15803d">Можно сэкономить</span>';
   card.appendChild(head);
   const body=mkEl('div','padding:18px 20px;display:flex;flex-direction:column;gap:0');
-  const priceEl=mkEl('div','font-size:40px;font-weight:800;color:#0d1a2b;letter-spacing:-.03em;margin-bottom:4px;transition:all .5s','99 000 ₽');
+  const shift2Price=getCurrentPrice('shift-2')||99000;
+  const shift2Deduction=getTaxDeduction('shift-2');
+  const priceEl=mkEl('div','font-size:40px;font-weight:800;color:#0d1a2b;letter-spacing:-.03em;margin-bottom:4px;transition:all .5s',fmtPrice(shift2Price));
   body.appendChild(priceEl);
   body.appendChild(mkEl('div','font-size:13px;color:#4e6072;margin-bottom:20px','августовские смены · всё включено'));
   const steps=[
-    {icon:'mortarboard',label:'Налоговый вычет 13% (через ФНС)',amount:'-5 200 ₽',color:'#1d6fe0',delay:600},
+    {icon:'mortarboard',label:'Налоговый вычет 13% (через ФНС)',amount:'-'+fmtPrice(shift2Deduction),color:'#1d6fe0',delay:600},
   ];
   const rowEls=steps.map(s=>{
     const row=mkEl('div','display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:rgba(13,27,42,.03);border:1px solid rgba(13,27,42,.07);margin-bottom:8px;opacity:0;transform:translateY(8px);transition:all .4s');
@@ -909,7 +913,7 @@ function blockPricingBreakdown(){
   body.appendChild(divider);
   const fin=mkEl('div','display:flex;align-items:center;justify-content:space-between;opacity:0;transition:all .5s');
   fin.appendChild(mkEl('span','font-size:14px;font-weight:600;color:#4e6072','Итого с вычетом'));
-  fin.appendChild(mkEl('span','font-size:26px;font-weight:800;color:#16a34a;letter-spacing:-.02em','82 650 ₽'));
+  fin.appendChild(mkEl('span','font-size:26px;font-weight:800;color:#16a34a;letter-spacing:-.02em',fmtPrice(shift2Price-shift2Deduction)));
   body.appendChild(fin);
   card.appendChild(body);
   card.appendChild(mkEl('div','padding:0 20px 14px;font-size:11px;color:rgba(13,27,42,.35);line-height:1.6','* Налоговый вычет 13% — декларация 3-НДФЛ за обучение (образовательная часть путёвки выделяется в договоре отдельно). Возврат на счёт в течение 3–4 месяцев.'));
