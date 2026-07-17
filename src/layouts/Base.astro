@@ -243,10 +243,30 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     <meta name="twitter:image" content={resolvedOgImage} />
     <link rel="canonical" href={canonicalUrl} />
     <slot name="head" />
-    <!-- Analytics globals: trackGoal, initScrollTracking, initContactTracking — inline, no network request -->
+    <!-- Analytics globals: trackGoal, initScrollTracking, initContactTracking — inline, no network request (кроме VK Ads-пикселя, который сейчас выключен флагом ниже) -->
     <script is:inline>
       (function () {
         var YM_ID = 96499295;
+        // VK Ads / Top.Mail.Ru сейчас ВЫКЛЮЧЕН — активных кампаний в VK Ads нет (решение
+        // владельца 17.07.2026), гонять лишний внешний скрипт без дела незачем. Подробности
+        // и порядок включения — в _notes/Библиотека знаний/VK Ads — основные правила.md
+        // («Пиксель Top.Mail.Ru отключён»). Чтобы вернуть: поставить true — остальной код
+        // (пуш reachGoal/pageView + загрузчик counter.js) уже готов и заработает сразу.
+        var VK_ADS_ENABLED = false;
+        // Должен совпадать с MAILRU_PIXEL_ID в src/data/tracking.ts — сверить перед включением.
+        var MAILRU_PIXEL_ID = 3755202;
+        if (VK_ADS_ENABLED) {
+          window._tmr = window._tmr || [];
+          window._tmr.push({ id: MAILRU_PIXEL_ID, type: 'pageView', start: (new Date()).getTime() });
+          (function (d, w, id) {
+            if (d.getElementById(id)) return;
+            var ts = d.createElement('script');
+            ts.type = 'text/javascript'; ts.async = true; ts.id = id;
+            ts.src = 'https://top-fwz1.mail.ru/js/code.js';
+            var s = d.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(ts, s);
+          })(document, window, 'tmr-code');
+        }
         var _fired = new Set(JSON.parse(sessionStorage.getItem('ym_fired') || '[]'));
         function _persist() { try { sessionStorage.setItem('ym_fired', JSON.stringify([..._fired])); } catch(e){} }
         window.trackGoal = function (id, params) {
@@ -254,6 +274,12 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
           _fired.add(id);
           _persist();
           try { if (typeof window.ym !== 'undefined') window.ym(YM_ID, 'reachGoal', id, params || {}); } catch(e){}
+          if (VK_ADS_ENABLED) {
+            try {
+              window._tmr = window._tmr || [];
+              window._tmr.push({ type: 'reachGoal', id: MAILRU_PIXEL_ID, value: 100, goal: id });
+            } catch(e){}
+          }
           // Своя аналитика — параметрированные события в PostgreSQL
           if (params && Object.keys(params).length > 0) {
             try {
