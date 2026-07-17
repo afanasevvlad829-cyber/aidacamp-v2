@@ -19,10 +19,45 @@
     "deny": [
       "Bash(git push --force*)",
       "Bash(git push -f *)",
+      "Bash(*git push*origin main*)",
       "Bash(*deploy.sh prod*)"
     ]
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|mcp__aidacamp-tools__ssh|mcp__aidacamp-tools__run",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/scripts/hooks/guard-preflight.py\"; [ -f \"$f\" ] || exit 0; python3 \"$f\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Task|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/scripts/hooks/guard-agent-output.py\"; [ -f \"$f\" ] || exit 0; python3 \"$f\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Task|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/scripts/hooks/agent-task-registry.py\"; [ -f \"$f\" ] || exit 0; python3 \"$f\" 2>/dev/null || true",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "hooks": [
