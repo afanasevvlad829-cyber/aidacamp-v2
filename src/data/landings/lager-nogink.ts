@@ -6,7 +6,7 @@ const landing: LandingData = {
   slug: 'lager-nogink',
   title: `Детский IT-лагерь рядом с Ногинском ${SEASON_YEAR} — Python 7–15 лет | АйДаКемп`,
   description: `Детский IT-лагерь для семей в Ногинске: смены август ${SEASON_YEAR} открыты. Python, AI, Minecraft, 7–15 лет. Вычет до ${VYCHET_MAX}, трансфер от м. Солнцево.`,
-  h1: 'Детский лагерь — Ногинск',
+  h1: 'Детский IT-лагерь рядом с Ногинском',
   canonical: 'https://aidacamp.ru/lager-nogink',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
   faqItems: [

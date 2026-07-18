@@ -3,7 +3,7 @@ import type { LandingData } from './types';
 
 const landing: LandingData = {
   slug: 'lager-podolsk',
-  title: `IT-лагерь рядом с Подольском ${SEASON_YEAR} — Python для 7-15 лет | АйДаКемп`,
+  title: `IT-лагерь рядом с Подольском для детей | АйДаКемп`,
   description: `IT-лагерь рядом с Подольском для подростков 13-15 и ребят с 7 лет: Python, AI, нейросети. 66 км от МКАД, трансфер от м. Солнцево 2 000 ₽. Вычет до ${VYCHET_MAX}.`,
   h1: 'Детский лагерь рядом с Подольском',
   canonical: 'https://aidacamp.ru/lager-podolsk',

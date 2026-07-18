@@ -43,6 +43,12 @@ const TILDA_REDIRECTS: Record<string, string> = {
   // Дубль статьи объединён (2026-07-13): -rebenka версия удалена, контент слит в каноническую
   '/stati/lager-dlya-giperaktivnogo-rebenka': '/stati/lager-dlya-giperaktivnogo/',
   '/stati/lager-dlya-giperaktivnogo-rebenka/': '/stati/lager-dlya-giperaktivnogo/',
+  // Смены завершились — [id].astro больше не генерирует страницы для них (404),
+  // редирект на живой пост-отчёт о смене вместо мёртвой ссылки
+  '/shifts/shift-1': '/kak-proshla-smena-1/',
+  '/shifts/shift-1/': '/kak-proshla-smena-1/',
+  '/shifts/shift-2': '/kak-proshla-smena-2/',
+  '/shifts/shift-2/': '/kak-proshla-smena-2/',
 };
 
 // ─── Rate limiter state ─────────────────────────────────────────────────────
