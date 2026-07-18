@@ -3,8 +3,8 @@ import type { LandingData } from './types';
 
 const landing: LandingData = {
   slug: 'lager-korolev',
-  title: `Детский лагерь Королёв ${SEASON_YEAR} — IT-смены 7–15 лет | АйДаКемп`,
-  description: `IT-лагерь рядом с Королёвом: 66 км от МКАД, трансфер от м. Солнцево (2 000 ₽). Python, AI, Minecraft для 7–15 лет. От ${PRICE_MIN}, вычет до ${VYCHET_MAX}.`,
+  title: `Лагерь Королёва ${SEASON_YEAR} — IT-смены 7–15 лет`,
+  description: `IT-лагерь Королёва: 66 км от МКАД, трансфер м. Солнцево 2 000 ₽. Python, AI, Minecraft для 7–15 лет. От ${PRICE_MIN}, вычет до ${VYCHET_MAX}.`,
   h1: 'Детский лагерь рядом с Королёвом',
   canonical: 'https://aidacamp.ru/lager-korolev',
   heroImage: '/images/hero/lager-v-podmoskove.avif',

@@ -4,7 +4,7 @@ import type { LandingData } from './types';
 const landing: LandingData = {
   slug: 'lager-vidnoe',
   title: `Детский лагерь рядом с Видным ${SEASON_YEAR} — IT, бассейн | АйДаКемп`,
-  description: `Загородный IT-лагерь рядом с Видным: бассейн, проживание, 5-разовое питание. От ${PRICE_MIN}, налоговый вычет до ${VYCHET_MAX}. Python, AI для 7–15 лет.`,
+  description: `Загородный IT-лагерь рядом с Видным: бассейн, проживание, питание. От ${PRICE_MIN}, вычет до ${VYCHET_MAX}. Python, AI для 7–15 лет.`,
   h1: 'Детский лагерь рядом с Видным',
   canonical: 'https://aidacamp.ru/lager-vidnoe',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
