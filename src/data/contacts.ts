@@ -1,5 +1,5 @@
 // Единый источник контактных данных
-import { PRICE_MIN, PRICE_MIN_ID, SEASON_YEAR } from './shifts';
+import { PRICE_MIN, PRICE_MIN_ID, SEASON_YEAR, SEASON_MONTHS } from './shifts';
 
 export const PHONE_MAIN = '+7 (495) 128-44-29';
 export const PHONE_MAIN_RAW = '+74951284429';
@@ -34,7 +34,10 @@ export const STAT_IT_CONTINUE = '78%';   // детей продолжают за
 export const PAYMENT_SPLIT = 'Оплата в два этапа: 50% при бронировании, 50% — за 3 недели до заезда';
 export const STAT_LICENSE = 'Л035-01298-77/01082973'; // образовательная лицензия Минобрнауки
 export const STAT_RTO = '025773'; // реестровый номер туроператора (РТО)
-export const CAMP_SEASON = `июнь–август ${SEASON_YEAR}`;
+// Производная от ОТКРЫТЫХ смен (mainShifts) — не хардкодить месяцы напрямую,
+// иначе строка отстаёт при закрытии ранних смен сезона (было "июнь–август"
+// уже после того, как июньские смены завершились).
+export const CAMP_SEASON = `${SEASON_MONTHS} ${SEASON_YEAR}`;
 // Якорь «от X» — берётся из минимума ОТКРЫТЫХ смен (PRICE_MIN из shifts.ts),
 // чтобы не устаревать при смене сезона. Сейчас = 74 900 ₽ (10-дневная Смена 4).
 export const CAMP_PRICE_FROM = PRICE_MIN;
