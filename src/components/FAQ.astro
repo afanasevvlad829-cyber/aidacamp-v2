@@ -1,7 +1,7 @@
 ---
 import { PHONE_MOBILE, PHONE_MOBILE_HREF, WHATSAPP_URL, TELEGRAM_URL } from '../data/contacts';
 import { PRICE_MIN, VYCHET_S21, VYCHET_MAX, SEASON_YEAR } from '../data/shifts';
-const categories = [
+const allCategories = [
   {
     id: 'about2026',
     label: `О лагере ${SEASON_YEAR}`,
@@ -86,6 +86,12 @@ const categories = [
     ],
   },
 ];
+
+interface Props {
+  only?: string[];
+}
+const { only }: Props = Astro.props;
+const visibleCategories = only ? allCategories.filter((cat) => only.includes(cat.id)) : allCategories;
 ---
 
 <section id="faq" class="mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4">
@@ -94,7 +100,7 @@ const categories = [
 
     <!-- Filter tabs -->
     <div class="mt-4 grid grid-cols-3 gap-1.5 md:flex md:flex-wrap md:gap-2" data-faq-filters>
-      {categories.map((cat, i) => (
+      {visibleCategories.map((cat, i) => (
         <button
           type="button"
           data-faq-filter-btn
@@ -107,7 +113,7 @@ const categories = [
     </div>
 
     <!-- FAQ panels -->
-    {categories.map((cat, i) => (
+    {visibleCategories.map((cat, i) => (
       <article data-faq-group-panel={cat.id} class={`mt-5 space-y-2 ${i === 0 ? '' : 'hidden'}`}>
         {cat.items.map((item) => (
           <div class="rounded-[14px] border border-border bg-surface" data-faq-item>
