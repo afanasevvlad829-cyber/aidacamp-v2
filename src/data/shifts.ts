@@ -295,6 +295,15 @@ export const DATES_SHORT_S21 = shiftDatesShort(_shift21);
 export const DATES_SHORT_S22 = shiftDatesShort(_shift22);
 export const SEASON_RANGE = `${shiftDatesShort(mainShifts[0]).split('–')[0].trim()} ${_MONTHS_RU[_d(mainShifts[0].startDate).m-1]} — ${shiftDatesShort(mainShifts[1])}`; // ориентир сезона
 
+// Месяцы, которые реально покрывают ОТКРЫТЫЕ смены (mainShifts) — не хардкодить
+// диапазон месяцев отдельно, иначе он отстаёт при закрытии ранних смен сезона
+// (инцидент: "июнь–август" оставался после того, как июньские смены завершились).
+const _firstMonthIdx = _d(mainShifts[0].startDate).m - 1;
+const _lastMonthIdx = _d(mainShifts[mainShifts.length - 1].endDate).m - 1;
+export const SEASON_MONTHS = _firstMonthIdx === _lastMonthIdx
+  ? _MONTHS_RU[_firstMonthIdx]
+  : `${_MONTHS_RU[_firstMonthIdx]}–${_MONTHS_RU[_lastMonthIdx]}`;
+
 
 // Единый источник: сколько ровесников едет в каждую смену по возрасту
 export const PEER_COUNTS: Record<string, Record<string, number>> = {
