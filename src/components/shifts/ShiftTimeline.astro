@@ -214,6 +214,7 @@ const milestones = isShort
   function initShiftTimeline() {
     const pinned = document.querySelector<HTMLElement>('[data-timeline-pinned]');
     if (!pinned) return;
+    const timeline = pinned;
     const photos = pinned.querySelectorAll<HTMLImageElement>('[data-pin-photo]');
     const slides = pinned.querySelectorAll<HTMLElement>('[data-pin-slide]');
     const bars = pinned.querySelectorAll<HTMLElement>('[data-pin-bar]');
@@ -242,8 +243,8 @@ const milestones = isShort
     }
 
     function update() {
-      const rect = pinned.getBoundingClientRect();
-      const total = pinned.offsetHeight - window.innerHeight;
+      const rect = timeline.getBoundingClientRect();
+      const total = timeline.offsetHeight - window.innerHeight;
       if (total <= 0) return;
       const scrolled = Math.max(0, Math.min(total, -rect.top));
       const progress = scrolled / total;
@@ -254,9 +255,9 @@ const milestones = isShort
 
     buttons.forEach((btn, i) => {
       btn.addEventListener('click', () => {
-        const total = pinned.offsetHeight - window.innerHeight;
+        const total = timeline.offsetHeight - window.innerHeight;
         const segment = total / N;
-        const target = pinned.offsetTop + segment * i + segment / 2;
+        const target = timeline.offsetTop + segment * i + segment / 2;
         window.scrollTo({ top: target, behavior: 'smooth' });
       });
     });

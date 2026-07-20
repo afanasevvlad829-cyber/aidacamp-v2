@@ -31,6 +31,9 @@ export function initVideoLightbox(cfg: VideoLightboxConfig) {
   const overlay  = document.getElementById(cfg.overlayId);
   const kEl      = document.getElementById(cfg.karaokeId);
   if (!lb || !titleEl || !closeBtn || !overlay || !kEl) return;
+  const lightbox = lb;
+  const lightboxTitle = titleEl;
+  const karaoke = kEl;
 
   let player: any = null;
   let cues: Array<{ s: number; e: number; t: string }> = [];
@@ -76,7 +79,7 @@ export function initVideoLightbox(cfg: VideoLightboxConfig) {
       const t = videoEl.currentTime;
       const cue = cues.find((c) => t >= c.s && t < c.e);
       if (!cue) {
-        kEl.innerHTML = '';
+        karaoke.innerHTML = '';
       } else {
         const words = cue.t.split(' ');
         const wordDur = (cue.e - cue.s) / words.length;
@@ -90,18 +93,18 @@ export function initVideoLightbox(cfg: VideoLightboxConfig) {
           const esc = w.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
           return `<span style="${col}">${esc}</span>`;
         }).join(' ');
-        kEl.innerHTML = `<span style="${cfg.lineStyle}">${html}</span>`;
+        karaoke.innerHTML = `<span style="${cfg.lineStyle}">${html}</span>`;
       }
     }
     rafId = requestAnimationFrame(rafLoop);
   }
 
   async function openLb(mp4Src: string, trackSrc: string, poster: string, label: string) {
-    titleEl.textContent = label;
+    lightboxTitle.textContent = label;
     if (cfg.analyticsGoal) {
       try { (window as any).ym?.(96499295, 'reachGoal', cfg.analyticsGoal, { src: mp4Src, title: label }); } catch {}
     }
-    lb.removeAttribute('hidden');
+    lightbox.removeAttribute('hidden');
     document.body.style.overflow = 'hidden';
 
     cues = await loadVTT(trackSrc);
@@ -118,14 +121,14 @@ export function initVideoLightbox(cfg: VideoLightboxConfig) {
 
   function closeLb() {
     cancelAnimationFrame(rafId);
-    kEl.innerHTML = '';
+    karaoke.innerHTML = '';
     cues = [];
     if (player) {
       player.stop();
       const videoEl = document.querySelector(`#${cfg.videoId}`) as HTMLVideoElement | null;
       if (videoEl) { videoEl.pause(); videoEl.removeAttribute('src'); videoEl.load(); }
     }
-    lb.setAttribute('hidden', '');
+    lightbox.setAttribute('hidden', '');
     document.body.style.overflow = '';
   }
 

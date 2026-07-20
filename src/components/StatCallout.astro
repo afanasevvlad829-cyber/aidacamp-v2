@@ -13,14 +13,19 @@
  */
 
 interface Props {
-  value: string;
-  label: string;
-  source: string;
+  value?: string;
+  label?: string;
+  source?: string;
+  stat?: string;
+  description?: string;
   icon?: string;
   tone?: 'neutral' | 'warn' | 'info';
 }
 
-const { value, label, source, icon = 'lightbulb', tone = 'neutral' } = Astro.props;
+const { value, label, source, stat, description, icon = 'lightbulb', tone = 'neutral' } = Astro.props;
+const displayValue = value ?? stat;
+const displaySource = source ?? description;
+const hasStructuredContent = Boolean(displayValue || label || displaySource);
 
 const toneStyles = {
   neutral: { bg: 'bg-slate-50', border: 'border-slate-100', accent: 'text-slate-500', num: 'text-slate-900' },
@@ -36,9 +41,15 @@ const t = toneStyles[tone];
       <i class={`bi bi-${icon} text-[18px] ${t.accent}`}></i>
     </div>
     <div class="min-w-0 flex-1">
-      <p class={`text-[22px] md:text-[24px] font-bold leading-none ${t.num}`}>{value}</p>
-      <p class="mt-1.5 text-base md:text-[14.5px] leading-[1.45] text-slate-700">{label}</p>
-      <p class={`mt-1.5 text-[11.5px] ${t.accent}`}>{source}</p>
+      {hasStructuredContent ? (
+        <>
+          {displayValue && <p class={`text-[22px] md:text-[24px] font-bold leading-none ${t.num}`}>{displayValue}</p>}
+          {label && <p class="mt-1.5 text-base md:text-[14.5px] leading-[1.45] text-slate-700">{label}</p>}
+          {displaySource && <p class={`mt-1.5 text-[11.5px] ${t.accent}`}>{displaySource}</p>}
+        </>
+      ) : (
+        <div class="text-base md:text-[14.5px] leading-[1.55] text-slate-700"><slot /></div>
+      )}
     </div>
   </div>
 </aside>

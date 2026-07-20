@@ -8,14 +8,23 @@
  *   - 3 CSS-эффекта: editorial (оранжевый), accent-bar (синий), split-stagger (индиго)
  */
 
+interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
 interface Props {
   title: string;
   subtitle?: string;
   imageBase?: string;
+  image?: string;
   imageAlt?: string;
   date?: string;
   readTime?: string;
-  breadcrumbsLast: string;
+  breadcrumbsLast?: string;
+  breadcrumb?: string | BreadcrumbItem[];
+  breadcrumbs?: BreadcrumbItem[];
+  category?: string;
   daryaQuote?: string;
   imagePosition?: string;
   icon?: string;
@@ -34,20 +43,26 @@ const {
   title,
   subtitle,
   imageBase,
+  image,
   imageAlt = '',
   date,
   readTime,
-  breadcrumbsLast,
+  breadcrumbsLast: breadcrumbsLastProp,
+  breadcrumb,
+  breadcrumbs,
   daryaQuote,
   imagePosition = 'center_40%',
   icon,
   iconLabel,
 } = Astro.props;
 
+const breadcrumbItems = breadcrumbs ?? (Array.isArray(breadcrumb) ? breadcrumb : undefined);
+const breadcrumbsLast = breadcrumbsLastProp ?? breadcrumbItems?.at(-1)?.label ?? title;
+
 // Все статьи — CSS-hero. Фото только на главной (Hero.astro).
 const showPhoto = false;
 
-const imgSrc = imageBase ? `/images/articles/${imageBase}-1600.jpg` : '';
+const imgSrc = image ?? (imageBase ? `/images/articles/${imageBase}-1600.jpg` : '');
 const avifSrcset = imageBase
   ? `/images/articles/${imageBase}-800.avif 800w, /images/articles/${imageBase}-1200.avif 1200w, /images/articles/${imageBase}-1600.avif 1600w`
   : '';

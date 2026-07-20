@@ -25,13 +25,26 @@ interface Props {
   reviewQuotes?: ReviewQuote[];  // если не передано — возьмём первые 2 из src/data/reviews
   bookingTitle?: string;         // h3 над формой
   bookingSubtitle?: string;
+  title?: string;
+  subtitle?: string;
+  heading?: string;
+  buttonText?: string;
+  buttonUrl?: string;
 }
 
 const {
   reviewQuotes,
-  bookingTitle = 'Забронируйте место на ближайшую смену',
-  bookingSubtitle = 'Ответим за 10 минут. Без навязчивых звонков.',
+  bookingTitle: bookingTitleProp,
+  bookingSubtitle: bookingSubtitleProp,
+  title,
+  subtitle,
+  heading,
+  buttonText,
+  buttonUrl,
 } = Astro.props;
+
+const bookingTitle = bookingTitleProp ?? heading ?? title ?? 'Забронируйте место на ближайшую смену';
+const bookingSubtitle = bookingSubtitleProp ?? subtitle ?? 'Ответим за 10 минут. Без навязчивых звонков.';
 
 const defaultReviews: ReviewQuote[] = [
   {
@@ -154,7 +167,11 @@ const priceOf = (s: (typeof mainShifts)[number]) => {
       </p>
     </div>
     <div class="mt-5 md:max-w-[480px] md:mx-auto">
-      <AskCta />
+      {buttonText && buttonUrl ? (
+        <a class="btn-primary inline-flex w-full justify-center" href={buttonUrl}>{buttonText}</a>
+      ) : (
+        <AskCta />
+      )}
     </div>
   </div>
 

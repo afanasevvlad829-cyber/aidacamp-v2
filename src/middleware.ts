@@ -210,6 +210,5 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   response.headers.set('X-Frame-Options', 'SAMEORIGIN');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=()');
-  response.headers.set('X-XSS-Protection', '1; mode=block');
   return response;
 };

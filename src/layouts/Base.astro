@@ -259,8 +259,9 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
           s.src = 'https://widget.novofon.ru/novofon.js?k=krSWuOAGuEr40pPzs0o66QKdaef8K0BY';
           document.body.appendChild(s);
         }
-        if ('requestIdleCallback' in window) {
-          requestIdleCallback(loadNovofon, { timeout: 5000 });
+        var idleWindow = window as Window & { requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number };
+        if (typeof idleWindow.requestIdleCallback === 'function') {
+          idleWindow.requestIdleCallback(loadNovofon, { timeout: 5000 });
         } else {
           window.addEventListener('load', function () { setTimeout(loadNovofon, 2500); });
         }

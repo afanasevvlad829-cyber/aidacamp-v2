@@ -246,7 +246,7 @@ const ageCountsJson = JSON.stringify({
   const phase2    = document.getElementById('age-bar-phase2');
   const closeBtn  = document.getElementById('age-bar-close');
   const nudgeClose= document.getElementById('age-bar-nudge-close');
-  const ageBtns   = document.querySelectorAll('.age-btn');
+  const ageBtns   = document.querySelectorAll<HTMLElement>('.age-btn');
 
   function isDismissed() {
     // Сессия (мгновенный dismiss) ИЛИ localStorage с TTL 7 дней
@@ -263,7 +263,7 @@ const ageCountsJson = JSON.stringify({
     return true;
   }
 
-  let awakenTimer = null;
+  let awakenTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Единый source of truth для «выбран ли возраст в текущей сессии» — sessionStorage.
   // localStorage (userAgeGroup) остаётся только для персонализации между визитами, но НЕ
@@ -291,7 +291,7 @@ const ageCountsJson = JSON.stringify({
 
     // Через 4 сек — лёгкая пульсация кнопок, если ещё не выбрали
     if (!selectedAge) {
-      clearTimeout(awakenTimer);
+      if (awakenTimer !== null) clearTimeout(awakenTimer);
       awakenTimer = setTimeout(() => {
         if (!currentAge() && !isDismissed()) {
           bar?.classList.add('age-bar-awaken');
@@ -303,7 +303,7 @@ const ageCountsJson = JSON.stringify({
   // Синхронизация: если возраст выбран в другом месте (ShiftModal) —
   // AgeBar тоже переключается в nudge-фазу без перезагрузки.
   document.addEventListener('age-personalize', (e) => {
-    const age = e.detail?.age;
+    const age = (e as CustomEvent<{ age?: string }>).detail?.age;
     if (!age || !AGE_COUNTS[age]) return;
     if (isDismissed()) return;
     bar?.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
@@ -317,7 +317,7 @@ const ageCountsJson = JSON.stringify({
     sessionStorage.setItem(STORAGE_KEYS.ageBarDismissed, '1');
     // Долгосрочный dismiss на 7 дней (если user явно закрыл)
     localStorage.setItem(STORAGE_KEYS.ageBarDismissed, String(Date.now()));
-    clearTimeout(awakenTimer);
+    if (awakenTimer !== null) clearTimeout(awakenTimer);
   }
 
   function showNudge(age?: string) {
@@ -373,7 +373,7 @@ const ageCountsJson = JSON.stringify({
 
       // Убрать пульс после выбора
       bar?.classList.remove('age-bar-awaken');
-      clearTimeout(awakenTimer);
+      if (awakenTimer !== null) clearTimeout(awakenTimer);
 
       // Аналитика
       trackGoal('age_select', { age: age });

@@ -103,10 +103,16 @@
 </div>
 
 <script>
-  var startTime = null, clockTimer = null;
+  var startTime: number | null = null, clockTimer: ReturnType<typeof setInterval> | null = null;
 
-  function log(msg, cls) {
-    var c = document.getElementById('con');
+  function requireElement<T extends HTMLElement>(id: string): T {
+    var element = document.getElementById(id);
+    if (!element) throw new Error('Missing required element: #' + id);
+    return element as T;
+  }
+
+  function log(msg: string, cls: string) {
+    var c = requireElement<HTMLDivElement>('con');
     var d = document.createElement('div');
     d.className = cls || 'l-gray';
     d.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
@@ -115,28 +121,27 @@
     while (c.children.length > 200) c.removeChild(c.children[0]);
   }
 
-  function setAgent(id, status, pct) {
-    var b = document.getElementById('b' + id);
-    var p = document.getElementById('p' + id);
-    if (!b) return;
+  function setAgent(id: string | number, status: string, pct: number) {
+    var b = requireElement<HTMLSpanElement>('b' + id);
+    var p = requireElement<HTMLDivElement>('p' + id);
     b.textContent = status;
     b.className = 'badge badge-' + (status === 'completed' ? 'done' : status === 'running' ? 'running' : 'pending');
-    if (p) p.style.width = (pct || 0) + '%';
+    p.style.width = (pct || 0) + '%';
   }
 
   function updateClock() {
     if (!startTime) return;
     var s = Math.floor((Date.now() - startTime) / 1000);
     var m = Math.floor(s / 60), sec = s % 60;
-    document.getElementById('elapsed').textContent =
+    requireElement<HTMLDivElement>('elapsed').textContent =
       ('0' + m).slice(-2) + ':' + ('0' + sec).slice(-2);
   }
 
-  document.getElementById('startBtn').addEventListener('click', function() {
+  requireElement<HTMLButtonElement>('startBtn').addEventListener('click', function() {
     this.disabled = true;
-    document.getElementById('stopBtn').disabled = false;
-    document.getElementById('status').textContent = 'Запущен';
-    document.getElementById('status').className = 'stat-val green';
+    requireElement<HTMLButtonElement>('stopBtn').disabled = false;
+    requireElement<HTMLDivElement>('status').textContent = 'Запущен';
+    requireElement<HTMLDivElement>('status').className = 'stat-val green';
 
     startTime = Date.now();
     clockTimer = setInterval(updateClock, 1000);
@@ -171,10 +176,10 @@
     });
   });
 
-  document.getElementById('stopBtn').addEventListener('click', function() {
-    clearInterval(clockTimer);
-    document.getElementById('status').textContent = 'Остановлен';
-    document.getElementById('status').className = 'stat-val red';
+  requireElement<HTMLButtonElement>('stopBtn').addEventListener('click', function() {
+    if (clockTimer) clearInterval(clockTimer);
+    requireElement<HTMLDivElement>('status').textContent = 'Остановлен';
+    requireElement<HTMLDivElement>('status').className = 'stat-val red';
     this.disabled = true;
     log('Остановлено', 'l-warn');
   });
