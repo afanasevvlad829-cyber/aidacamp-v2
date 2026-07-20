@@ -160,6 +160,7 @@ function freeLabel(free: number) {
   function initOccupancy() {
     const root = document.querySelector('[data-shift-occupancy]');
     if (!root) return;
+    const occupancyRoot = root;
 
     const states = {
       idle: root.querySelector('[data-state="idle"]') as HTMLElement,
@@ -182,7 +183,7 @@ function freeLabel(free: number) {
 
     function animateBars() {
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      root.querySelectorAll<HTMLElement>('.occupancy-row').forEach((row, i) => {
+      occupancyRoot.querySelectorAll<HTMLElement>('.occupancy-row').forEach((row, i) => {
         setTimeout(() => {
           row.style.opacity = '1';
           if (reducedMotion) {
@@ -226,7 +227,7 @@ function freeLabel(free: number) {
     function applySecondVisit() {
       if (!isReturnVisitor()) return;
 
-      root.querySelectorAll<HTMLElement>('.occupancy-row').forEach((row) => {
+      occupancyRoot.querySelectorAll<HTMLElement>('.occupancy-row').forEach((row) => {
         const rawFree = parseInt(row.dataset.free || '0', 10);
         const rawOccupied = parseInt(row.dataset.occupied || '0', 10);
         const displayFree = Math.max(1, rawFree - 1);
@@ -243,7 +244,7 @@ function freeLabel(free: number) {
       });
     }
 
-    root.querySelector('[data-check-occupancy]')?.addEventListener('click', () => {
+    occupancyRoot.querySelector('[data-check-occupancy]')?.addEventListener('click', () => {
       trackGoal('check_places');
 
       showState('loading');

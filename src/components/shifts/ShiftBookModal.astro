@@ -99,6 +99,7 @@ import { WAITLIST_EXPLANATION } from '../../data/shifts';
     const modal = document.getElementById('shiftBookModal') as HTMLDialogElement | null;
     if (!modal || (modal as any).__bookInit) return;
     (modal as any).__bookInit = true;
+    const bookModal = modal;
 
     const ageBtns = modal.querySelectorAll<HTMLButtonElement>('[data-book-age]');
     const phone = modal.querySelector<HTMLInputElement>('[data-book-phone]');
@@ -114,7 +115,7 @@ import { WAITLIST_EXPLANATION } from '../../data/shifts';
 
     let selectedAge = '';
 
-    function isWaitlist() { return modal.dataset.waitlist === 'true'; }
+    function isWaitlist() { return bookModal.dataset.waitlist === 'true'; }
     function submitLabel() { return isWaitlist() ? 'Оставить заявку в лист ожидания' : 'Отправить заявку'; }
 
     function resetForm() {
@@ -130,7 +131,7 @@ import { WAITLIST_EXPLANATION } from '../../data/shifts';
       waitlistBlock?.classList.toggle('hidden', !isWaitlist());
       if (submit) submit.textContent = submitLabel();
       // Сброс CallTimeSelector (чипы + closure-переменные)
-      modal.querySelector('.call-time-selector')?.dispatchEvent(new CustomEvent('call-time:reset'));
+      bookModal.querySelector('.call-time-selector')?.dispatchEvent(new CustomEvent('call-time:reset'));
     }
 
     ageBtns.forEach((btn) => {

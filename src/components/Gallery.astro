@@ -107,6 +107,8 @@ const baseClass = 'mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4';
     const lbImg     = lightbox?.querySelector<HTMLImageElement>('[data-gallery-lightbox-img]');
     const counterEl = lightbox?.querySelector<HTMLElement>('[data-gallery-counter]');
     if (!lightbox || !lbImg) return;
+    const dialog = lightbox;
+    const lightboxImage = lbImg;
 
     type Photo = { src: string; alt: string };
     let lbPhotos: Photo[] = [];
@@ -114,8 +116,8 @@ const baseClass = 'mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4';
 
     function show(index: number) {
       current = ((index % lbPhotos.length) + lbPhotos.length) % lbPhotos.length;
-      lbImg!.src = lbPhotos[current].src;
-      lbImg!.alt = lbPhotos[current].alt;
+      lightboxImage.src = lbPhotos[current].src;
+      lightboxImage.alt = lbPhotos[current].alt;
       if (counterEl) counterEl.textContent = `${current + 1} / ${lbPhotos.length}`;
     }
 
@@ -123,7 +125,7 @@ const baseClass = 'mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4';
       lbPhotos = photos;
       const idx = photos.findIndex(p => p.src === startSrc);
       show(idx >= 0 ? idx : 0);
-      lightbox.showModal();
+      dialog.showModal();
     }
 
     // /images/gallery/jpg/*.jpg никогда не существовал на сервере (404 для
@@ -299,7 +301,7 @@ const baseClass = 'mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4';
     showSection(defaultFilter);
 
     // ── Lightbox управление ───────────────────────────────────────────────────
-    function closeLb() { lbImg!.src = ''; lightbox.close(); }
+    function closeLb() { lightboxImage.src = ''; dialog.close(); }
 
     lightbox.querySelector('[data-gallery-lightbox-close]')?.addEventListener('click', closeLb);
     lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLb(); });

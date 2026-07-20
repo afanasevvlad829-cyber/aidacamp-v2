@@ -312,26 +312,29 @@ const upsells = [
 
     <script>
       const overlay = document.getElementById('lb-overlay');
-      const lbImg = document.getElementById('lb-img');
+      const lbImg = document.getElementById('lb-img') as HTMLImageElement | null;
       const lbClose = document.getElementById('lb-close');
 
-      document.querySelectorAll('[data-lb-src]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          lbImg.src = btn.dataset.lbSrc;
-          lbImg.alt = btn.dataset.lbAlt || '';
-          overlay.classList.remove('hidden');
-          document.body.style.overflow = 'hidden';
+      if (overlay && lbImg && lbClose) {
+        const lightboxOverlay = overlay;
+        document.querySelectorAll<HTMLElement>('[data-lb-src]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            lbImg.src = btn.dataset.lbSrc || '';
+            lbImg.alt = btn.dataset.lbAlt || '';
+            lightboxOverlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+          });
         });
-      });
 
-      function closeLb() {
-        overlay.classList.add('hidden');
-        document.body.style.overflow = '';
+        function closeLb() {
+          lightboxOverlay.classList.add('hidden');
+          document.body.style.overflow = '';
+        }
+
+        lightboxOverlay.addEventListener('click', (e) => { if (e.target === lightboxOverlay) closeLb(); });
+        lbClose.addEventListener('click', closeLb);
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLb(); });
       }
-
-      overlay.addEventListener('click', (e) => { if (e.target === overlay) closeLb(); });
-      lbClose.addEventListener('click', closeLb);
-      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLb(); });
     </script>
 
     <!-- CTA -->
