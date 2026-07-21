@@ -4,7 +4,7 @@ import type { LandingData } from './types';
 const landing: LandingData = {
   slug: 'lager-shchelkovo',
   title: `Летний лагерь в Щёлково ${SEASON_YEAR} — IT-смены 7–15 лет | АйДаКемп`,
-  description: `IT-лагерь для ребят 7–15 лет из Щёлкова: трансфер от м. Солнцево (2 000 ₽), Python, AI, Minecraft, бассейн. Вычет до ${VYCHET_MAX}, смены от ${PRICE_MIN}.`,
+  description: `Лагерь для ребят 7–15 лет из Щёлкова: трансфер от м. Солнцево (2 000 ₽), Python, AI, Minecraft, бассейн. Вычет до ${VYCHET_MAX}, смены от ${PRICE_MIN}.`,
   h1: 'Детский лагерь рядом с Щёлковом',
   canonical: 'https://aidacamp.ru/lager-shchelkovo',
   heroImage: '/images/hero/lager-v-podmoskove.avif',

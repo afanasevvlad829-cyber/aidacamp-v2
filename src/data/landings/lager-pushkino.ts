@@ -4,7 +4,7 @@ import type { LandingData } from './types';
 const landing: LandingData = {
   slug: 'lager-pushkino',
   title: `Детский лагерь рядом с Пушкино ${SEASON_YEAR} — IT-смены | АйДаКемп`,
-  description: `Детский IT-лагерь для ребят из Пушкино 7–15 лет. Python, AI, Minecraft, бассейн. От ${PRICE_MIN}, вычет до ${VYCHET_MAX}. Трансфер от метро.`,
+  description: `IT-лагерь для ребят из Пушкино 7–15 лет. Python, AI, Minecraft, бассейн. От ${PRICE_MIN}, вычет до ${VYCHET_MAX}. Трансфер от метро.`,
   h1: 'Детский лагерь рядом с Пушкино',
   canonical: 'https://aidacamp.ru/lager-pushkino',
   heroImage: '/images/hero/lager-v-podmoskove.avif',

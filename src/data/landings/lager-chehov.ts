@@ -3,9 +3,9 @@ import type { LandingData } from './types';
 
 const landing: LandingData = {
   slug: 'lager-chehov',
-  title: `Летний детский лагерь рядом с Чеховым ${SEASON_YEAR} | АйДаКемп`,
-  description: `Летний детский лагерь из Чехова: ~50 мин по Симферопольскому шоссе. IT-программа, Python, AI, Minecraft для детей 7–15 лет. От ${PRICE_MIN}.`,
-  h1: 'Летний лагерь под Чеховом',
+  title: `Детский лагерь рядом с городом Чехов — летние смены ${SEASON_YEAR} | АйДаКемп`,
+  description: `Детский лагерь рядом с городом Чехов: около 50 минут по Симферопольскому шоссе. IT-программа, Python, AI и Minecraft для детей 7–15 лет, бассейн и хакатоны. От ${PRICE_MIN}.`,
+  h1: 'Лагерь рядом: Чехов',
   canonical: 'https://aidacamp.ru/lager-chehov',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
   faqItems: [

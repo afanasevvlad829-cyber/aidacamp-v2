@@ -5,7 +5,7 @@ const landing: LandingData = {
   slug: 'lager-himki',
   title: `Летний детский лагерь рядом с Химками ${SEASON_YEAR} — АйДаКемп`,
   description: `Летний IT-лагерь из Химок: прямой веткой метро до м. Солнцево, трансфер лагеря (2 000 ₽). Python, AI, бассейн для детей 7–15 лет, вычет до ${VYCHET_MAX}.`,
-  h1: 'Летний детский лагерь рядом с Химками',
+  h1: `Летний лагерь Химки ${SEASON_YEAR}`,
   canonical: 'https://aidacamp.ru/lager-himki',
   heroImage: '/images/hero/lager-na-leto-2026.avif',
   faqItems: [
