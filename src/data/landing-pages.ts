@@ -117,8 +117,7 @@ export const landingPages: LandingPage[] = [
   // 💰 Коммерческие
   { title: 'Записаться в лагерь', description: 'Как записать ребёнка в IT-лагерь', url: '/zapisatsya/', icon: 'bi-calendar-check' },
   { title: 'Цены на смены 2026', description: 'Стоимость всех смен, что входит', url: '/ceny/', icon: 'bi-coin' },
-  { title: 'Купить путёвку в лагерь', description: 'Оплата, договор, 50% сейчас + 50% за 3 нед.', url: '/kupit-putevku-v-lager/', icon: 'bi-credit-card' },
-  { title: 'Путёвка в лагерь', description: 'Цены на путёвки от 74 900 ₽', url: '/putevka-v-lager/', icon: 'bi-credit-card' },
+  { title: 'Путёвка в лагерь', description: 'Оплата, договор, 50% сейчас + 50% за 3 нед.', url: '/putevka-v-lager/', icon: 'bi-credit-card' },
   { title: 'Сколько стоит лагерь', description: 'Разбор цен по типам лагерей', url: '/skolko-stoit-lager-dlya-rebenka/', icon: 'bi-coin' },
   { title: 'Налоговый вычет 13%', description: 'Калькулятор возврата с путёвки', url: '/nalogovyj-vychet/', icon: 'bi-receipt' },
   { title: 'Лагерь недорого', description: 'От 74 900 ₽ за смену, оплата частями', url: '/lager-nedorogo/', icon: 'bi-tag' },
@@ -286,7 +285,7 @@ const ARTICLE_MAP: Record<string, LandingPage[]> = {
   '/ceny': [
     { title: 'Как оплатить лагерь', description: 'Рассрочка 50/50, способы, документы', url: '/stati/oplata-detskogo-lagerya/', icon: 'cash-coin' },
   ],
-  '/kupit-putevku-v-lager': [
+  '/putevka-v-lager': [
     { title: 'Как оплатить лагерь', description: 'Рассрочка 50/50, способы, документы', url: '/stati/oplata-detskogo-lagerya/', icon: 'cash-coin' },
   ],
   '/lager-dlya-podrostkov': [
