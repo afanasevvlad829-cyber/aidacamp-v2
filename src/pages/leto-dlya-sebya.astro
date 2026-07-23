@@ -1,0 +1,207 @@
+---
+import { PRICE_MIN, PRICE_MAX, SEASON_YEAR, VYCHET_MAX } from '../data/shifts';
+import '../styles/global.css';
+import LandingLayout from '../layouts/LandingLayout.astro';
+import Shifts from '../components/Shifts.astro';
+import FAQ from '../components/FAQ.astro';
+---
+
+<LandingLayout
+  noindex={true}
+  heroImage="/images/landing/hero-default.avif"
+  title={`Едете отдыхать — а ребёнку подарите своё лето | АйДаКемп ${SEASON_YEAR}`}
+  description={`Планируете отдых за городом? Пока вы отдыхаете, ребёнок проведёт лето в IT-лагере в Подмосковье: программирование, роботы, бассейн, друзья. Смены от 7 дней, от ${PRICE_MIN}.`}
+  h1="Едете отдыхать — а ребёнку подарите своё лето"
+>
+  <!-- Хиро: полноэкранное фото + градиент-слой + текст. Кадр подменяется по utm_content -->
+  <section slot="hero" class="relative min-h-[500px] md:min-h-[560px] flex items-center overflow-hidden">
+    <img id="hero-photo" src="/images/landing/hero-default.avif"
+         alt="Летний IT-лагерь АйДаКемп в Подмосковье"
+         class="absolute inset-0 w-full h-full object-cover object-center" fetchpriority="high" />
+    <div class="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/60 to-slate-950/25"></div>
+    <div class="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent"></div>
+
+    <div class="relative w-full max-w-[1312px] mx-auto px-4 py-14 md:py-16">
+      <nav class="text-[13px] text-white/70 mb-4" aria-label="breadcrumb">
+        <a href="/" class="hover:text-white">Главная</a> <span class="mx-1">→</span> <span>Лето для себя</span>
+      </nav>
+      <h1 class="text-white font-bold text-[30px] md:text-[52px] leading-[1.08] tracking-[-0.02em] max-w-[760px]">
+        Едете отдыхать — а ребёнку подарите <span class="text-primary">своё лето</span>
+      </h1>
+      <p class="mt-5 text-[16px] md:text-[19px] leading-[1.55] text-white/90 max-w-[620px]">
+        Глэмпинг и загородный отель придуманы для взрослых. Ребёнку нужен свой драйв.
+        Пока вы отдыхаете на природе — он в IT-лагере создаёт игры и роботов. 7 или 14 дней, Подмосковье.
+      </p>
+      <ul class="mt-6 space-y-2 max-w-[600px]">
+        <li class="flex items-start gap-2 text-[15px] md:text-[16px] text-white/90">
+          <i class="bi bi-check-circle-fill text-primary mt-0.5 shrink-0" aria-hidden="true"></i>
+          <span>Программирование, роботы, нейросети — и бассейн каждый день</span>
+        </li>
+        <li class="flex items-start gap-2 text-[15px] md:text-[16px] text-white/90">
+          <i class="bi bi-check-circle-fill text-primary mt-0.5 shrink-0" aria-hidden="true"></i>
+          <span>Группы до 8 человек — за неделю первый собственный проект</span>
+        </li>
+        <li class="flex items-start gap-2 text-[15px] md:text-[16px] text-white/90">
+          <i class="bi bi-check-circle-fill text-primary mt-0.5 shrink-0" aria-hidden="true"></i>
+          <span>66 км от МКАД, охраняемая территория, питание 5 раз в день</span>
+        </li>
+      </ul>
+      <a href="#shifts"
+         class="mt-8 inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-[16px] font-semibold text-white hover:bg-primary-700 transition-colors">
+        Выбрать смену <i class="bi bi-arrow-right" aria-hidden="true"></i>
+      </a>
+    </div>
+  </section>
+
+  <script is:inline>
+    // Подмена хиро-кадра под сегмент объявления (совпадение объявление → посадочная)
+    (function () {
+      var map = {
+        oteli: 'hero-oteli', 'premium-glamping': 'hero-glamping',
+        glamping: 'hero-glamping', agregatory: 'hero-agg'
+      };
+      try {
+        var seg = new URLSearchParams(location.search).get('utm_content');
+        var img = document.getElementById('hero-photo');
+        if (seg && map[seg] && img) img.src = '/images/landing/' + map[seg] + '.avif';
+      } catch (e) {}
+    })();
+  </script>
+
+  <div class="max-w-[1312px] mx-auto px-4">
+
+    <!-- 1. Инсайт от Дарьи -->
+    <section class="max-w-3xl mx-auto py-10 md:py-14">
+      <div class="flex items-start gap-4 p-6 bg-orange-50 rounded-[20px] border border-orange-100">
+        <div class="shrink-0 w-12 h-12 rounded-full bg-primary flex items-center justify-center">
+          <i class="bi bi-person-fill text-white text-[20px]" aria-hidden="true"></i>
+        </div>
+        <div>
+          <p class="text-base font-semibold text-slate-900 mb-1">Дарья Афанасьева, основатель АйДаКемп</p>
+          <p class="text-[16px] leading-[1.65] text-slate-700">
+            «Мы сами любим выбраться на природу вдвоём — тишина, лес, никаких дел.
+            Но честно: подростку через полдня в глэмпинге становится скучно.
+            Ему нужен свой формат отдыха — где кипит жизнь, есть ровесники и настоящее дело.
+            Поэтому пока родители перезагружаются, у нас ребёнок делает своё лучшее лето:
+            собирает игру, программирует робота, ныряет в бассейн и находит друзей.»
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Два отдыха — сплит с фото -->
+    <section class="py-8 md:py-12">
+      <h2 class="text-[26px] md:text-[36px] font-bold text-slate-900 leading-[1.15] tracking-[-0.02em] mb-8 text-center max-w-3xl mx-auto">
+        Два разных отдыха — и оба удались
+      </h2>
+      <div class="grid md:grid-cols-2 gap-5 max-w-5xl mx-auto">
+        <div class="rounded-[20px] overflow-hidden border border-slate-100 card-shadow bg-white">
+          <img src="/images/landing/park-path.avif" alt="Загородный отдых на природе" loading="lazy"
+               class="w-full h-[220px] md:h-[260px] object-cover" width="1200" height="260" />
+          <div class="p-6">
+            <h3 class="text-[20px] font-bold text-slate-900 mb-2">Вам — тишина и природа</h3>
+            <p class="text-[16px] text-slate-600 leading-[1.6]">Глэмпинг, загородный отель, лес и никакого расписания. Наконец-то отдых, о котором вы мечтали.</p>
+          </div>
+        </div>
+        <div class="rounded-[20px] overflow-hidden border border-slate-100 card-shadow bg-white">
+          <img src="/images/landing/pool-kids.avif" alt="Ребята в бассейне летнего лагеря" loading="lazy"
+               class="w-full h-[220px] md:h-[260px] object-cover object-top" width="1082" height="260" />
+          <div class="p-6">
+            <h3 class="text-[20px] font-bold text-slate-900 mb-2">Ребёнку — драйв и ровесники</h3>
+            <p class="text-[16px] text-slate-600 leading-[1.6]">Программирование, роботы, бассейн, квесты и новые друзья. То, чего в отеле для взрослых точно не будет.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Что получает ребёнок -->
+    <section class="py-10 md:py-14">
+      <div class="max-w-5xl mx-auto grid md:grid-cols-2 gap-8 items-center">
+        <div class="rounded-[20px] overflow-hidden border border-slate-100 card-shadow order-2 md:order-1">
+          <img src="/images/landing/kid-cabin.avif" alt="Ребёнок отдыхает в IT-лагере АйДаКемп" loading="lazy"
+               class="w-full h-[300px] md:h-[360px] object-cover object-top" width="1082" height="360" />
+        </div>
+        <div class="order-1 md:order-2">
+          <h2 class="text-[26px] md:text-[36px] font-bold text-slate-900 leading-[1.15] tracking-[-0.02em] mb-5">
+            Не «сидит за компьютером» — живёт полной сменой
+          </h2>
+          <ul class="space-y-3">
+            <li class="flex items-start gap-2 text-[16px] text-slate-700">
+              <i class="bi bi-cpu text-primary mt-1 shrink-0" aria-hidden="true"></i>
+              <span>IT-занятия дважды в день: Python, Roblox, Minecraft, нейросети — по возрасту и уровню</span>
+            </li>
+            <li class="flex items-start gap-2 text-[16px] text-slate-700">
+              <i class="bi bi-droplet-fill text-primary mt-1 shrink-0" aria-hidden="true"></i>
+              <span>Середина дня — бассейн, спорт, квесты на свежем воздухе</span>
+            </li>
+            <li class="flex items-start gap-2 text-[16px] text-slate-700">
+              <i class="bi bi-people-fill text-primary mt-1 shrink-0" aria-hidden="true"></i>
+              <span>Группы до 8 человек — ровесники, с которыми интересно, и преподаватель, который знает каждого</span>
+            </li>
+            <li class="flex items-start gap-2 text-[16px] text-slate-700">
+              <i class="bi bi-trophy-fill text-primary mt-1 shrink-0" aria-hidden="true"></i>
+              <span>В финале — свой проект и защита на хакатоне. Домой ребёнок вернётся с результатом</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Безопасность и условия -->
+    <section class="max-w-3xl mx-auto py-10 md:py-12">
+      <h2 class="text-[26px] md:text-[36px] font-bold text-slate-900 leading-[1.15] tracking-[-0.02em] mb-6">
+        Чтобы вы отдыхали спокойно
+      </h2>
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div class="flex items-start gap-3 p-4 bg-white rounded-[14px] border border-slate-100 card-shadow">
+          <i class="bi bi-shield-fill-check text-primary text-[22px] shrink-0 mt-0.5" aria-hidden="true"></i>
+          <div>
+            <p class="text-base font-semibold text-slate-900">Закрытая территория</p>
+            <p class="text-base text-slate-600 mt-0.5">КПП, охрана 24/7. Санаторий «Изумруд», Наро-Фоминский округ — 66 км от МКАД.</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3 p-4 bg-white rounded-[14px] border border-slate-100 card-shadow">
+          <i class="bi bi-heart-pulse-fill text-primary text-[22px] shrink-0 mt-0.5" aria-hidden="true"></i>
+          <div>
+            <p class="text-base font-semibold text-slate-900">Медработник на смене</p>
+            <p class="text-base text-slate-600 mt-0.5">Медицинский работник на территории всю смену, медпункт на месте.</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3 p-4 bg-white rounded-[14px] border border-slate-100 card-shadow">
+          <i class="bi bi-cup-hot text-primary text-[22px] shrink-0 mt-0.5" aria-hidden="true"></i>
+          <div>
+            <p class="text-base font-semibold text-slate-900">Питание 5 раз в день</p>
+            <p class="text-base text-slate-600 mt-0.5">Всё включено в стоимость путёвки, свой пищеблок.</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3 p-4 bg-white rounded-[14px] border border-slate-100 card-shadow">
+          <i class="bi bi-patch-check-fill text-primary text-[22px] shrink-0 mt-0.5" aria-hidden="true"></i>
+          <div>
+            <p class="text-base font-semibold text-slate-900">Лицензия и налоговый вычет</p>
+            <p class="text-base text-slate-600 mt-0.5">Официальный образовательный лагерь. Документы для вычета выдаём автоматически.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Цены и вычет -->
+    <section class="max-w-3xl mx-auto py-8 md:py-12">
+      <h2 class="text-[26px] md:text-[36px] font-bold text-slate-900 leading-[1.15] tracking-[-0.02em] mb-4">
+        Сколько стоит
+      </h2>
+      <p class="text-[16px] text-slate-700 mb-4">
+        Путёвка — от {PRICE_MIN} (10 дней) до {PRICE_MAX} (13 дней). В цену включены проживание, питание 5 раз в день,
+        полная IT-программа, оборудование и бассейн. Ноутбук привозить не нужно.
+      </p>
+      <p class="text-[16px] text-slate-700">
+        <strong>Налоговый вычет 13%</strong> — возврат до <strong>~{VYCHET_MAX} (максимум)</strong>.
+        Подробный расчёт — на странице <a href="/nalogovyj-vychet/" class="text-primary underline underline-offset-2 hover:text-primary-700">налоговый вычет за лагерь</a>.
+      </p>
+    </section>
+
+  </div>
+
+  <Shifts />
+  <FAQ />
+
+</LandingLayout>
