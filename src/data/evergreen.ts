@@ -77,6 +77,9 @@ export const SEASON_DATES_FULL =
 /** Всего смен в сезоне прописью: «шесть смен» (с под-сменами 2.1/2.2). */
 export const SEASON_SHIFTS_TOTAL = _season.length;
 export const SEASON_SHIFTS_PHRASE = shiftsPhrase(_season.length);
+/** С заглавной, для начала предложения: «Шесть смен». */
+export const SEASON_SHIFTS_PHRASE_CAP =
+  SEASON_SHIFTS_PHRASE.charAt(0).toUpperCase() + SEASON_SHIFTS_PHRASE.slice(1);
 
 // ── Открытые (предстоящие) смены — меняются по мере прохождения ──────────
 const _open = upcomingShifts(TODAY);
@@ -93,6 +96,8 @@ export const OPEN_SHIFTS_PHRASE_CAP =
 export const OPEN_MONTHS_NOM = joinRu(_openMonths.map(i => MONTH_NOM[i]));
 /** Месяцы открытых смен в предл.п.: «в августе». */
 export const OPEN_MONTHS_PREP = 'в ' + joinRu(_openMonths.map(i => MONTH_PREP[i]));
+/** Прилагательные месяцев открытых смен: «августовские». Для «открыты августовские смены». */
+export const OPEN_MONTHS_ADJ = joinRu(_openMonths.map(i => MONTH_ADJ[i]));
 
 // ── Прошедшие месяцы (для статусных фраз «…смены уже прошли») ────────────
 const _pastMonths = monthsOf(_season).filter(m => !_openMonths.includes(m));
