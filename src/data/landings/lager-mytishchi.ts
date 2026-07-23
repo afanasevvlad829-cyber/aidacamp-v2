@@ -1,5 +1,6 @@
 import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, VYCHET_MAX, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
 import type { LandingData } from './types';
+import { SEASON_FROM_TO } from '../evergreen';
 
 const landing: LandingData = {
   slug: 'lager-mytishchi',
@@ -116,7 +117,7 @@ const landing: LandingData = {
     },
     {
       h2: `Смены ${SEASON_YEAR} — цены`,
-      text: `Лагерь организует летний отдых с IT-программой с июня по август ${SEASON_YEAR} — для развития навыков программирования и отдыха от городской жизни. В июне и августе ещё есть места. В стоимость включены проживание, питание, полная IT-программа, бассейн. Трансфер от м. Солнцево — 2 000 ₽ в один конец.`,
+      text: `Лагерь организует летний отдых с IT-программой ${SEASON_FROM_TO} ${SEASON_YEAR} — для развития навыков программирования и отдыха от городской жизни. В июне и августе ещё есть места. В стоимость включены проживание, питание, полная IT-программа, бассейн. Трансфер от м. Солнцево — 2 000 ₽ в один конец.`,
       list: [
         `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, 7 дней — ${PRICE_S21}`,
         `Смена 2 (завершена) — ${DATES_SHORT_S2}, 14 дней — ${PRICE_S2}`,

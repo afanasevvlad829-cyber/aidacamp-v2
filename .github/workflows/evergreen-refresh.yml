@@ -1,0 +1,61 @@
+name: Evergreen refresh
+
+# Умная пересборка по переходам смен.
+#
+# Сайт статический: сезонная проза («две смены», «майские прошли») вычисляется
+# из дат смен на МОМЕНТ СБОРКИ (src/data/evergreen.ts). Значит между деплоями
+# она может устареть — когда смена началась/закончилась, а пуша не было.
+#
+# Этот воркфлоу раз в день считает эвергрин-сигнатуру (scripts/evergreen-state.py)
+# и сравнивает с .github/evergreen-state (состояние последнего релиза). Отличие =
+# смена пересекла границу → диспатчит обычный Deploy (пересборка возьмёт свежую
+# дату) и обновляет марк-файл. В обычные дни не делает НИЧЕГО — не гоняет прод
+# вхолостую.
+
+on:
+  schedule:
+    - cron: '15 3 * * *'   # 06:15 МСК ежедневно
+  workflow_dispatch:
+
+concurrency:
+  group: evergreen-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write     # коммит марк-файла
+  actions: write      # gh workflow run deploy.yml
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+
+      - name: Посчитать текущую эвергрин-сигнатуру
+        id: now
+        run: echo "sig=$(python3 scripts/evergreen-state.py)" >> "$GITHUB_OUTPUT"
+
+      - name: Прочитать сигнатуру последнего релиза
+        id: last
+        run: echo "sig=$(cat .github/evergreen-state 2>/dev/null || echo none)" >> "$GITHUB_OUTPUT"
+
+      - name: Переход смены? — обновить марк и запустить деплой
+        if: steps.now.outputs.sig != steps.last.outputs.sig
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Переход: '${{ steps.last.outputs.sig }}' → '${{ steps.now.outputs.sig }}'"
+          echo "${{ steps.now.outputs.sig }}" > .github/evergreen-state
+          git config user.name  'aidacamp-bot'
+          git config user.email 'bot@aidacamp.ru'
+          git add .github/evergreen-state
+          git commit -m "chore(evergreen): переход смены — обновить сезонную прозу"
+          git push origin dev
+          # Пуш через GITHUB_TOKEN не триггерит Deploy сам — запускаем явно:
+          gh workflow run deploy.yml --ref dev
+
+      - name: Без изменений — пропуск
+        if: steps.now.outputs.sig == steps.last.outputs.sig
+        run: echo "Сигнатура не изменилась (${{ steps.now.outputs.sig }}) — деплой не нужен."

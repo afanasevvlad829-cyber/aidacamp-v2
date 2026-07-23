@@ -1,3 +1,4 @@
+import { SEASON_MONTHS_NOM } from './evergreen';
 /**
  * Единый источник правды для всех лендингов АйДаКемп.
  *
@@ -32,7 +33,7 @@ export const landingPages: LandingPage[] = [
   { title: 'Детский лагерь', description: 'Для детей 7–15 лет в Подмосковье', url: '/detskiy-lager/', icon: 'bi-house-heart' },
   { title: 'Детский лагерь в Подмосковье', description: '66 км от МКАД, проживание', url: '/detskiy-lager-podmoskove/', icon: 'bi-houses' },
   { title: 'Лагерь в Подмосковье', description: 'Загородный, с бассейном', url: '/lager-v-podmoskove/', icon: 'bi-tree' },
-  { title: 'Лагерь на лето 2026', description: 'Смены июнь–август, календарь', url: '/lager-na-leto-2026/', icon: 'bi-calendar-heart' },
+  { title: 'Лагерь на лето 2026', description: `Смены ${SEASON_MONTHS_NOM}, календарь`, url: '/lager-na-leto-2026/', icon: 'bi-calendar-heart' },
   { title: 'Лагерь в Москве', description: 'Ближнее Подмосковье, 66 км от МКАД', url: '/lager-v-moskve/', icon: 'bi-geo-alt' },
   { title: 'Московские летние лагеря', description: 'IT-лагерь в 66 км от Москвы, трансфер', url: '/moskovskie-letnie-lagerya/', icon: 'bi-geo-alt' },
 

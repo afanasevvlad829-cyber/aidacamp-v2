@@ -1,5 +1,6 @@
 import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR } from '../shifts';
 import type { LandingData } from './types';
+import { SEASON_FROM_TO } from '../evergreen';
 
 const landing: LandingData = {
   slug: 'lager-istra',
@@ -74,7 +75,7 @@ const landing: LandingData = {
     },
     {
       h2: `Смены и цены ${SEASON_YEAR}`,
-      text: `Лагерь работает с июня по август ${SEASON_YEAR}. В стоимость включены проживание, питание, IT-программа, бассейн. Трансфер из Москвы — 2 000 ₽ отдельно. Это формат активного отдыха детей на базе санатория: бассейн, спорт и 5-разовое питание делают смену и оздоровительной, и продуктивной.`,
+      text: `Лагерь работает ${SEASON_FROM_TO} ${SEASON_YEAR}. В стоимость включены проживание, питание, IT-программа, бассейн. Трансфер из Москвы — 2 000 ₽ отдельно. Это формат активного отдыха детей на базе санатория: бассейн, спорт и 5-разовое питание делают смену и оздоровительной, и продуктивной.`,
       list: [
         `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, 7 дней, ${PRICE_S21}`,
         `Смена 2 (завершена) — ${DATES_SHORT_S2}, 14 дней, ${PRICE_S2}`,
