@@ -38,6 +38,22 @@ ALLOW_SUBSTR = (
     'evergreen',             # импорт/использование константы
 )
 
+# Точечный allow: (подстрока-имени-файла, фрагмент в н.р.) — законные НЕ-сезонные вхождения,
+# проверенные вручную. Каждая пара — осознанное решение, не глушим файл целиком.
+ALLOW_PAIRS = {
+    ('seotextblock.astro', 'май–июнь'),                 # фаза-метка «Май–июнь {год}» (усталость к концу учёбы)
+    ('lager-dlya-shkolnikov.astro', 'май — июнь'),      # та же фаза-метка усталости
+    ('lager-dlya-podrostkov.astro', 'четыре смены'),    # 4 ОСНОВНЫЕ смены (каталог), не открытые/сезон
+    ('lager-na-iyun.astro', 'четыре смены'),            # историческое «в июне работали четыре смены»
+    ('lager-na-kanikuly.astro', 'три смены'),           # цитата мамы в отзыве
+    ('lager-na-kanikuly.astro', 'две смены'),           # цитата мамы в отзыве
+    ('dokumenty-dlya-rebenka-v-lager.astro', 'май–июнь'),  # «в пик сезона (май–июнь) педиатры загружены»
+    ('kak-provesti-leto-s-polzoy.astro', 'июль–август'),   # «июль–август — дача или море» (жизненный совет)
+    ('lager-v-avguste.astro', 'двух смен'),             # «расписание отточено после двух смен»
+    ('periody-smeny-v-lagere.astro', 'две смены'),      # FAQ-вопрос «сразу на две смены» (совет о брони)
+    ('skolko-stoit-detskiy-lager.astro', 'май–июнь'),   # метка дат смены-1 (30 мая–8 июня)
+}
+
 def is_comment(line):
     s = line.strip()
     return s.startswith(('//', '/*', '*', '{/*'))
@@ -56,12 +72,13 @@ for base in BASES:
                 if any(a in low for a in ALLOW_SUBSTR):
                     # не глушим всю строку слепо: гасим только если совпадение ВНУТРИ allow-идиомы
                     pass
+                bn = os.path.basename(p).lower()
                 for rx, tag in ((P_RANGE,'месяц–месяц'),(P_FROMTO,'с..по..'),(P_COUNT,'N смен')):
                     for m in rx.finditer(line):
                         frag = m.group(0)
-                        # пропуск разрешённых идиом
-                        ctx = low[max(0,m.start()-12):m.end()+12]
+                        ctx = low[max(0,m.start()-16):m.end()+16]
                         if any(a in ctx for a in ALLOW_SUBSTR): continue
+                        if (bn, frag.strip().lower()) in ALLOW_PAIRS: continue
                         drift.setdefault(p, []).append((i, tag, frag.strip()))
 
 if drift:
