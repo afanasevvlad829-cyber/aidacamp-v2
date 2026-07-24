@@ -4,8 +4,8 @@ import type { LandingData } from './types';
 const landing: LandingData = {
   slug: 'lager-lobnya',
   title: `Лобня: летний IT-лагерь рядом для детей 7–15 лет ${SEASON_YEAR} | АйДаКемп`,
-  description: `Лобня: летний IT-лагерь для детей 7–15 лет в 66 км от МКАД, трансфер от Солнцево. Python, AI, Minecraft, бассейн. От ${PRICE_MIN}, вычет до ${VYCHET_MAX}.`,
-  h1: 'Лобня: летний лагерь рядом',
+  description: `Лобня: летний IT-лагерь для детей 7–15 лет в 66 км от МКАД, трансфер от Солнцево. Python, AI, Minecraft. От ${PRICE_MIN}, налоговый вычет.`,
+  h1: 'Лобня: летний IT-лагерь для ребят 7–15 лет',
   canonical: 'https://aidacamp.ru/lager-lobnya',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
   faqItems: [
