@@ -29,10 +29,6 @@ const roomPhotos: { src: string; alt: string }[] = [
   })),
 ];
 
-function jpgSrc(src: string) {
-  return src.replace('/images/gallery/', '/images/gallery/jpg/').replace('.avif', '.jpg');
-}
-
 const features = [
   { icon: 'bi-house-door-fill',     title: 'Корпуса санатория',         text: 'Капитальные корпуса санатория «Изумруд» — с ремонтом, мебелью и чистотой. Не палатки, не армейские казармы.' },
   { icon: 'bi-people-fill',          title: 'Комнаты на 2–4 человека',   text: 'Личная кровать, тумбочка и место для вещей у каждого. Без переполненных залов.' },
@@ -192,12 +188,9 @@ const relatedPages = [
               <button type="button"
                 data-lightbox-src={big.src} data-lightbox-alt={big.alt}
                 class="group relative w-[45%] shrink-0 overflow-hidden rounded-[18px] bg-slate-100 cursor-zoom-in">
-                <picture>
-                  <source srcset={big.src} type="image/avif" />
-                  <img src={jpgSrc(big.src)} alt={big.alt}
+                <img src={big.src} alt={big.alt}
                     class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     loading="eager" />
-                </picture>
                 <span class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></span>
                 <span class="absolute left-3 top-3 rounded-md bg-white/90 px-2.5 py-1 text-base font-bold tracking-wide text-body backdrop-blur-sm">#АЙДАКЕМП</span>
                 <span class="absolute bottom-3 right-3 rounded-md bg-black/70 px-2.5 py-1 text-base font-semibold uppercase tracking-wide text-white backdrop-blur-sm">РАЗМЕЩЕНИЕ</span>
@@ -208,12 +201,9 @@ const relatedPages = [
                   <button type="button"
                     data-lightbox-src={p.src} data-lightbox-alt={p.alt}
                     class="group relative overflow-hidden rounded-[18px] bg-slate-100 cursor-zoom-in">
-                    <picture>
-                      <source srcset={p.src} type="image/avif" />
-                      <img src={jpgSrc(p.src)} alt={p.alt}
+                    <img src={p.src} alt={p.alt}
                         class="aspect-square w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         loading="lazy" />
-                    </picture>
                     <span class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></span>
                     <span class="absolute left-3 top-3 rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-bold tracking-wide text-body backdrop-blur-sm">#АЙДАКЕМП</span>
                     <span class="absolute bottom-2 right-2 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">РАЗМЕЩЕНИЕ</span>
@@ -228,12 +218,9 @@ const relatedPages = [
                 <button type="button"
                   data-lightbox-src={p.src} data-lightbox-alt={p.alt}
                   class={`group relative overflow-hidden rounded-[12px] bg-slate-100 cursor-zoom-in ${i === 0 ? 'col-span-2' : ''}`}>
-                  <picture>
-                    <source srcset={p.src} type="image/avif" />
-                    <img src={jpgSrc(p.src)} alt={p.alt}
+                  <img src={p.src} alt={p.alt}
                       class={`w-full object-cover transition-transform duration-300 group-hover:scale-105 ${i === 0 ? 'aspect-[2/1]' : 'aspect-square'}`}
                       loading={i === 0 ? 'eager' : 'lazy'} />
-                  </picture>
                   <span class="absolute left-2 top-2 rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-bold tracking-wide text-body backdrop-blur-sm">#АЙДАКЕМП</span>
                 </button>
               ))}
@@ -480,18 +467,14 @@ const relatedPages = [
       const photos: { src: string; alt: string }[] = await res.json();
       if (!Array.isArray(photos) || photos.length <= 5) return;
       for (const p of photos) {
-        const jpgSrc = p.src.replace('/images/gallery/', '/images/gallery/jpg/').replace('.avif', '.jpg');
         const a = document.createElement('button');
         a.type = 'button';
         a.dataset.lightboxSrc = p.src;
         a.dataset.lightboxAlt = p.alt;
         a.className = 'group relative shrink-0 w-[140px] h-[140px] md:w-[160px] md:h-[160px] overflow-hidden rounded-[14px] bg-slate-100 cursor-zoom-in';
         a.innerHTML = `
-          <picture>
-            <source srcset="${p.src}" type="image/avif">
-            <img src="${jpgSrc}" alt="${p.alt}" loading="lazy"
-              class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
-          </picture>`;
+          <img src="${p.src}" alt="${p.alt}" loading="lazy"
+            class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">`;
         strip.appendChild(a);
       }
       wrap.classList.remove('hidden');
