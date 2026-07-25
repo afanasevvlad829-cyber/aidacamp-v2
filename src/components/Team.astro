@@ -1,6 +1,9 @@
 ---
 import { members } from '../data/team';
 import Mentors from './Mentors.astro';
+
+interface Props { compact?: boolean; }
+const { compact = false } = Astro.props;
 ---
 
 <section id="team" class="mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4">
@@ -15,40 +18,113 @@ import Mentors from './Mentors.astro';
     </p>
 
     <div class="mt-5 flex flex-col gap-5 md:flex-row md:gap-6">
-      <!-- Left: Book card -->
-      <div class="w-full shrink-0 md:w-[35%]">
-        <div class="flex h-full flex-col p-5 bg-white rounded-[22px]">
-          <button type="button" data-gallery-open data-gallery-src="/images/team/team-book-main-01.webp" data-gallery-alt="Книга по Python для детей" class="group mx-auto block">
-            <img src="/images/team/team-book-main-01.webp" alt="Книга по Python" class="h-auto w-full max-w-[200px] rounded-lg object-cover shadow-[0_2px_8px_rgba(15,23,42,0.08)] transition group-hover:scale-105" loading="lazy" width="200" height="280" />
-          </button>
-          <p class="mt-4 text-base font-semibold text-body">Собственная книга по Python</p>
-          <p class="mt-2 text-[16px] leading-[1.5] text-body-muted">Команда не только ведёт занятия, но и написала книгу по Python для детей — тираж 2000 экз.</p>
-          <button type="button" data-book-open class="group mt-4 inline-flex items-center gap-1.5 text-base font-semibold text-primary hover:text-primary-hover min-h-[44px]">
-            <i class="bi bi-book text-base" aria-hidden="true"></i>
-            Смотреть книгу
-            <i class="bi bi-arrow-right icon-arrow-right-hover" aria-hidden="true"></i>
-          </button>
+      <!-- Left: Book card — compact (главная): фото крупное, но без описания (только текст «ест» бюджет слов) / полная: большая карточка с описанием -->
+      {compact ? (
+        <div class="w-full shrink-0 md:w-[35%]">
+          <div class="flex h-full flex-col items-center p-5 bg-white rounded-[22px] text-center">
+            <button type="button" data-gallery-open data-gallery-src="/images/team/team-book-main-01.webp" data-gallery-alt="Книга по Python для детей" class="group block">
+              <img src="/images/team/team-book-main-01.webp" alt="Книга по Python" class="h-auto w-full max-w-[160px] rounded-lg object-cover shadow-[0_2px_8px_rgba(15,23,42,0.08)] transition group-hover:scale-105" loading="lazy" width="160" height="224" />
+            </button>
+            <p class="mt-3 text-base font-semibold text-body">Собственная книга по Python</p>
+            <button type="button" data-book-open class="group mt-2 inline-flex items-center gap-1.5 text-base font-semibold text-primary hover:text-primary-hover min-h-[44px]">
+              Смотреть книгу
+              <i class="bi bi-arrow-right icon-arrow-right-hover" aria-hidden="true"></i>
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div class="w-full shrink-0 md:w-[35%]">
+          <div class="flex h-full flex-col p-5 bg-white rounded-[22px]">
+            <button type="button" data-gallery-open data-gallery-src="/images/team/team-book-main-01.webp" data-gallery-alt="Книга по Python для детей" class="group mx-auto block">
+              <img src="/images/team/team-book-main-01.webp" alt="Книга по Python" class="h-auto w-full max-w-[200px] rounded-lg object-cover shadow-[0_2px_8px_rgba(15,23,42,0.08)] transition group-hover:scale-105" loading="lazy" width="200" height="280" />
+            </button>
+            <p class="mt-4 text-base font-semibold text-body">Собственная книга по Python</p>
+            <p class="mt-2 text-[16px] leading-[1.5] text-body-muted">Команда не только ведёт занятия, но и написала книгу по Python для детей — тираж 2000 экз.</p>
+            <button type="button" data-book-open class="group mt-4 inline-flex items-center gap-1.5 text-base font-semibold text-primary hover:text-primary-hover min-h-[44px]">
+              <i class="bi bi-book text-base" aria-hidden="true"></i>
+              Смотреть книгу
+              <i class="bi bi-arrow-right icon-arrow-right-hover" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+      )}
 
-      <!-- Right: Teachers — desktop: top 2 fixed + bottom carousel / mobile: swipe -->
-      <div class="relative w-full md:flex md:w-[65%] md:flex-col">
-        <!-- Desktop layout -->
-        <div class="hidden md:flex md:h-full md:flex-col md:gap-4">
-          <!-- Top row: fixed (members 0 + 1) -->
-          <div class="grid flex-1 grid-cols-2 gap-4" data-team-top-row>
-            {members.slice(0, 2).map((m) => (
-              <article class="flex flex-col items-center rounded-[22px] border border-border-light bg-card p-5">
+      <!-- Right: Teachers — compact (главная): фото+имя всей команды, без менторов (те на /komanda/) / полная: карусель -->
+      {compact ? (
+        <div class="w-full md:w-[65%] flex flex-col bg-white rounded-[22px] p-5">
+          <div class="flex-1 grid grid-cols-3 place-items-center gap-x-4 gap-y-6">
+            {members.map((m) => (
+              <div class="flex flex-col items-center text-center">
                 <img
                   src={m.photo.replace('/images/team/', '/images/team/sm/')}
                   srcset={`${m.photo.replace('/images/team/', '/images/team/sm/')} 1x, ${m.photo} 2x`}
                   alt={m.alt}
-                  class="mx-auto h-16 w-16 rounded-full object-cover object-top ring-2 ring-white"
-                  width="64" height="64" loading="lazy"
+                  class="h-24 w-24 rounded-full object-cover object-top ring-2 ring-white shadow-[0_2px_8px_rgba(15,23,42,0.08)]"
+                  width="96" height="96" loading="lazy"
                 />
+                <p class="mt-2 text-base font-medium text-body leading-[1.25]">{m.name.split(' ')[0]}</p>
+              </div>
+            ))}
+          </div>
+          <a href="/komanda/" class="mt-5 inline-flex items-center gap-1.5 text-base font-semibold text-primary hover:text-primary-hover">
+            Вся команда
+            <i class="bi bi-arrow-right icon-arrow-right-hover" aria-hidden="true"></i>
+          </a>
+        </div>
+      ) : (
+        <div class="relative w-full md:flex md:w-[65%] md:flex-col">
+          <!-- Desktop layout -->
+          <div class="hidden md:flex md:h-full md:flex-col md:gap-4">
+            <!-- Top row: fixed (members 0 + 1) -->
+            <div class="grid flex-1 grid-cols-2 gap-4" data-team-top-row>
+              {members.slice(0, 2).map((m) => (
+                <article class="flex flex-col items-center rounded-[22px] border border-border-light bg-card p-5">
+                  <img
+                    src={m.photo.replace('/images/team/', '/images/team/sm/')}
+                    srcset={`${m.photo.replace('/images/team/', '/images/team/sm/')} 1x, ${m.photo} 2x`}
+                    alt={m.alt}
+                    class="mx-auto h-16 w-16 rounded-full object-cover object-top ring-2 ring-white"
+                    width="64" height="64" loading="lazy"
+                  />
+                  <h3 class="mt-3 text-center text-[16px] font-semibold text-body">{m.name}</h3>
+                  <p class="mt-1 text-center text-base font-medium text-body-faint">{m.role}</p>
+                  <p class="mt-2 text-center text-[16px] leading-[1.55] text-body-faint">{m.bio}</p>
+                  {m.name === 'Дарья Афанасьева' && (
+                    <a href="/tv/" class="mt-3 inline-flex items-center gap-1.5 text-base font-semibold text-primary hover:text-primary-hover">
+                      <i class="bi bi-play-circle" aria-hidden="true"></i>
+                      Интервью на Федеральном ТВ
+                    </a>
+                  )}
+                </article>
+              ))}
+            </div>
+            <!-- Bottom row: carousel of members 2–4 (shows 2 at a time) -->
+            <div class="relative flex flex-1 items-stretch gap-4">
+              <button type="button" data-team-prev aria-label="Назад" class="absolute -left-5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-body-faint shadow-sm transition hover:bg-surface">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              </button>
+              <div data-team-bottom-row class="grid flex-1 grid-cols-2 gap-4">
+                <!-- JS populates 2 visible from bottom pool -->
+              </div>
+              <button type="button" data-team-next aria-label="Вперёд" class="absolute -right-5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-body-faint shadow-sm transition hover:bg-surface">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Mobile: horizontal scroll carousel -->
+          <div class="-mx-[2px] px-[2px] flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:hidden" data-team-mobile-track>
+            {members.map((m) => (
+              <article class="min-w-[72%] snap-start rounded-[22px] border border-border-light bg-card p-5">
+                <img
+                  src={m.photo.replace('/images/team/', '/images/team/sm/')}
+                  srcset={`${m.photo.replace('/images/team/', '/images/team/sm/')} 1x, ${m.photo} 2x`}
+                  alt={m.name}
+                  class="mx-auto h-20 w-20 rounded-full border border-border object-cover object-top"
+                  width="80" height="80" loading="lazy" />
                 <h3 class="mt-3 text-center text-[16px] font-semibold text-body">{m.name}</h3>
                 <p class="mt-1 text-center text-base font-medium text-body-faint">{m.role}</p>
-                <p class="mt-2 text-center text-[16px] leading-[1.55] text-body-faint">{m.bio}</p>
+                <p class="mt-2 text-center text-[16px] leading-[1.5] text-body-muted">{m.bio}</p>
                 {m.name === 'Дарья Афанасьева' && (
                   <a href="/tv/" class="mt-3 inline-flex items-center gap-1.5 text-base font-semibold text-primary hover:text-primary-hover">
                     <i class="bi bi-play-circle" aria-hidden="true"></i>
@@ -58,62 +134,31 @@ import Mentors from './Mentors.astro';
               </article>
             ))}
           </div>
-          <!-- Bottom row: carousel of members 2–4 (shows 2 at a time) -->
-          <div class="relative flex flex-1 items-stretch gap-4">
-            <button type="button" data-team-prev aria-label="Назад" class="absolute -left-5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-body-faint shadow-sm transition hover:bg-surface">
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
-            </button>
-            <div data-team-bottom-row class="grid flex-1 grid-cols-2 gap-4">
-              <!-- JS populates 2 visible from bottom pool -->
-            </div>
-            <button type="button" data-team-next aria-label="Вперёд" class="absolute -right-5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-body-faint shadow-sm transition hover:bg-surface">
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-            </button>
+          <!-- Dots — mobile only -->
+          <div class="mt-3 flex justify-center items-center gap-2 md:hidden" data-team-dots role="group" aria-label="Навигация по команде">
+            {members.map((_, i) => (
+              <span
+                class={`h-2 rounded-full transition-all duration-200 ${i === 0 ? 'w-6 bg-primary-dark' : 'w-2 bg-slate-300'}`}
+                data-team-dot={i}
+                aria-current={i === 0 ? 'true' : 'false'}
+              ></span>
+            ))}
           </div>
         </div>
-
-        <!-- Mobile: horizontal scroll carousel -->
-        <div class="-mx-[2px] px-[2px] flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:hidden" data-team-mobile-track>
-          {members.map((m) => (
-            <article class="min-w-[72%] snap-start rounded-[22px] border border-border-light bg-card p-5">
-              <img
-                src={m.photo.replace('/images/team/', '/images/team/sm/')}
-                srcset={`${m.photo.replace('/images/team/', '/images/team/sm/')} 1x, ${m.photo} 2x`}
-                alt={m.name}
-                class="mx-auto h-20 w-20 rounded-full border border-border object-cover object-top"
-                width="80" height="80" loading="lazy" />
-              <h3 class="mt-3 text-center text-[16px] font-semibold text-body">{m.name}</h3>
-              <p class="mt-1 text-center text-base font-medium text-body-faint">{m.role}</p>
-              <p class="mt-2 text-center text-[16px] leading-[1.5] text-body-muted">{m.bio}</p>
-              {m.name === 'Дарья Афанасьева' && (
-                <a href="/tv/" class="mt-3 inline-flex items-center gap-1.5 text-base font-semibold text-primary hover:text-primary-hover">
-                  <i class="bi bi-play-circle" aria-hidden="true"></i>
-                  Интервью на Федеральном ТВ
-                </a>
-              )}
-            </article>
-          ))}
-        </div>
-        <!-- Dots — mobile only -->
-        <div class="mt-3 flex justify-center items-center gap-2 md:hidden" data-team-dots role="group" aria-label="Навигация по команде">
-          {members.map((_, i) => (
-            <span
-              class={`h-2 rounded-full transition-all duration-200 ${i === 0 ? 'w-6 bg-primary-dark' : 'w-2 bg-slate-300'}`}
-              data-team-dot={i}
-              aria-current={i === 0 ? 'true' : 'false'}
-            ></span>
-          ))}
-        </div>
-      </div>
+      )}
     </div>
-    <!-- Дисклеймер о согласии сотрудников (требование 152-ФЗ / РКН) -->
-    <p class="mt-5 text-base md:text-base leading-[1.5] text-body-faint">
-      Фотографии и имена сотрудников и наставников размещены с их письменного согласия на обработку персональных данных в соответствии с&nbsp;Федеральным законом №&nbsp;152-ФЗ «О персональных данных».
-    </p>
+    {!compact && (
+      <Fragment>
+        <!-- Дисклеймер о согласии сотрудников (требование 152-ФЗ / РКН) -->
+        <p class="mt-5 text-base md:text-base leading-[1.5] text-body-faint">
+          Фотографии и имена сотрудников и наставников размещены с их письменного согласия на обработку персональных данных в соответствии с&nbsp;Федеральным законом №&nbsp;152-ФЗ «О персональных данных».
+        </p>
+      </Fragment>
+    )}
   </div>
 
-  <!-- ── Mentors merged into Team (per design system) ── -->
-  <Mentors />
+  <!-- ── Mentors merged into Team (per design system) — только на полной странице ── -->
+  {!compact && <Mentors />}
 </section>
 
 <!-- Book modal -->
