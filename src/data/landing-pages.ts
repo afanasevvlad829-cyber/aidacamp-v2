@@ -189,6 +189,10 @@ const IT_URLS = new Set([
   '/roblox-lager',
   '/3d-modelirovanie-lager',
   '/it-camp',
+  // Была в landingPages, но отсутствовала в наборе → уходила в общий "else"-пул
+  // и получала inbound только от 1-2 генеральных страниц (SEO-аудит Labrika 25.07:
+  // 2 входящих). Тематически это IT-кластер (IT-программа + проживание).
+  '/it-lager-s-prozhivaniem',
 ]);
 
 /**
@@ -238,6 +242,10 @@ const GEO_URLS = new Set([
   '/lager-zvenigorod',
   '/lager-ruza',
   '/lager-troitsk',
+  // Была в landingPages, но отсутствовала в наборе → уходила в общий "else"-пул
+  // (SEO-аудит Labrika 25.07: 4 входящих, ниже порога 5). Тематически это гео-кластер
+  // (московские летние лагеря = тот же смысловой узел, что и остальные гео-страницы).
+  '/moskovskie-letnie-lagerya',
 ]);
 
 /**
