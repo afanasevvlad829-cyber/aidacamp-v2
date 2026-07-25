@@ -1,11 +1,17 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { writeFile, mkdir, readFile } from 'fs/promises';
+import { existsSync } from 'fs';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { join, extname } from 'path';
 
 const execFileAsync = promisify(execFile);
+
+// Прод/dev: nginx отдаёт /images/gallery/ через alias на /var/www/aidacamp-gallery/
+// (отдельное хранилище галерей смен, см. CLAUDE.md → «Медиа и файлы») — новые
+// фото должны сохраняться туда же, иначе nginx их не найдёт.
+const SHARED_GALLERY_DIR = '/var/www/aidacamp-gallery';
 
 // No filters. Strip ICC profile, force sRGB — just clean format conversion.
 const CONVERT_ARGS = [
@@ -41,8 +47,7 @@ export const POST: APIRoute = async ({ request }) => {
     const tmp = `/tmp/gallery-up-${Date.now()}-${name}${origExt}`;
     await writeFile(tmp, buffer);
 
-    const cwd = process.cwd();
-    const galleryDir   = join(cwd, 'images', 'gallery');
+    const galleryDir   = existsSync(SHARED_GALLERY_DIR) ? SHARED_GALLERY_DIR : join(process.cwd(), 'images', 'gallery');
     const originalsDir = join(galleryDir, 'originals');
     const thumbsDir    = join(galleryDir, 'thumbs');
     const jpgDir       = join(galleryDir, 'jpg');
