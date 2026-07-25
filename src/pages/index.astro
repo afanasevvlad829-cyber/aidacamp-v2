@@ -6,14 +6,12 @@ import Header from '../components/Header.astro';
 import Hero from '../components/Hero.astro';
 import MomStory from '../components/MomStory.astro';
 import About from '../components/About.astro';
-import Philosophy from '../components/Philosophy.astro';
 import Shifts from '../components/Shifts.astro';
 import TrevoznyjRoditel from '../components/TrevoznyjRoditel.astro';
 import GalleryPreview from '../components/GalleryPreview.astro';
 // Videos moved to /video/ page (Phase G)
 import Reviews from '../components/Reviews.astro';
 import FAQ from '../components/FAQ.astro';
-import Guarantees from '../components/Guarantees.astro';
 import Team from '../components/Team.astro';
 // Mentors merged into Team (Phase M, design system)
 import Stay from '../components/Stay.astro';
@@ -27,12 +25,30 @@ import Footer from '../components/Footer.astro';
 import StickyCta from '../components/StickyCta.astro';
 import RelatedPages from '../components/RelatedPages.astro';
 import LiveBookingFeed from '../components/LiveBookingFeed.astro';
-import SeoTextBlock from '../components/SeoTextBlock.astro';
 // ShiftOccupancy removed (proof в hero proof-line)
 // SummerCta removed (дубль sticky CTA, см. design audit 2026-05-02)
 import SchemaOrg from '../components/SchemaOrg.astro';
 // TrustBlock — только на /r/ для возвратников
 import { landingPages as allLandingPages } from '../data/landing-pages';
+
+/**
+ * ПРОТОТИП: главная линкует только на хаб-страницы (тир 0+1 по реальной частотности
+ * Wordstat, + IT-лагерь вне тиров — уже #3 в выдаче, must-keep). Остальные 106
+ * лендингов не теряют вес — они уже связаны между собой через getRelatedPages()
+ * и присутствуют в sitemap. Полный список ссылок и обоснование — в переписке 25.07.2026.
+ */
+const HOMEPAGE_HUB_URLS = [
+  '/detskiy-lager/', '/lager-dlya-detey/', '/lager-v-podmoskove/', '/lager-v-moskve/',
+  '/ozdorovitelnyj-lager/', '/detskie-lagerya/', '/detskiy-lager-podmoskove/',
+  '/putevka-v-lager/', '/lager-na-leto-2026/',
+  '/skolko-stoit-lager-dlya-rebenka/', '/detskiy-lager-oficialnyj/', '/lager-dlya-shkolnikov/',
+  '/lager-nedorogo/', '/lager-dlya-podrostkov/', '/lager-dlya-devochek/', '/lager-dlya-malchikov/',
+  '/zagorodnyj-lager/', '/lager-letnego-prebyvaniya/', '/lager-s-basseynom/', '/moskovskie-letnie-lagerya/',
+  '/it-lager/',
+];
+const homepageHubPages = HOMEPAGE_HUB_URLS
+  .map(url => allLandingPages.find(p => p.url === url))
+  .filter((p): p is NonNullable<typeof p> => p !== undefined);
 ---
 
 <Base
@@ -59,12 +75,11 @@ import { landingPages as allLandingPages } from '../data/landing-pages';
     </div>
 
     <!-- Порядок: Hero → MomStory → Shifts → TrevoznyjRoditel → Reviews → Stay → GalleryPreview → … -->
-    <Shifts />
+    <Shifts compactPastShifts />
     <TrevoznyjRoditel />
     <Reviews />
     <Stay />
     <GalleryPreview />
-    <div class="returning-hide"><Philosophy /></div>
     <div class="returning-hide"><Journey /></div>
     <Economy />
     <div class="returning-hide"><About /></div>
@@ -80,12 +95,18 @@ import { landingPages as allLandingPages } from '../data/landing-pages';
     })();
     </script>
     <Hackathon />
-    <Team />
-    <Guarantees />
-    <FAQ only={['medicine', 'safety', 'food', 'accommodation', 'documents', 'communication', 'payment']} />
+    <Team compact />
+    <FAQ
+      only={['safety', 'food', 'accommodation', 'payment']}
+      moreLink={{ href: '/faq/', text: 'Все вопросы и ответы' }}
+      intro={{
+        text: 'Возврат при болезни, застрахованная ответственность туроператора.',
+        href: '/garantii/',
+        linkText: 'Все гарантии →',
+      }}
+    />
     <Contacts />
-    <SeoTextBlock />
-    <RelatedPages pages={allLandingPages} />
+    <RelatedPages pages={homepageHubPages} />
   </main>
   <Footer />
   <!-- ShiftModal mounted in Base.astro globally — НЕ дублировать здесь (вызывало 2 модала) -->
