@@ -51,6 +51,20 @@ const TILDA_REDIRECTS: Record<string, string> = {
   '/shifts/shift-2/': '/kak-proshla-smena-2/',
 };
 
+// nginx (сзади прокси) шлёт X-Forwarded-Proto: https корректно, но
+// @astrojs/node standalone строит url.protocol по внутреннему (http)
+// TCP-соединению до Node, не по этому заголовку — редирект на абсолютный
+// URL через `new URL(target, url)` эмитит http://, добавляя лишний хоп
+// апгрейда до https. Инцидент: /stati/reiting-detskih-lagerey-podmoskove →
+// http://.../reiting-detskih-lagerej-podmoskove/ → https://... (2 редиректа
+// вместо 1, Labrika: «Множественные редиректы»).
+function redirectTo(url: URL, request: Request, target: string, status = 301): Response {
+  const proto = request.headers.get('x-forwarded-proto') ?? url.protocol.replace(':', '');
+  const dest = new URL(target, url);
+  dest.protocol = `${proto}:`;
+  return Response.redirect(dest, status);
+}
+
 // ─── Rate limiter state ─────────────────────────────────────────────────────
 
 const ipCounts = new Map<string, { count: number; reset: number }>();
@@ -167,17 +181,17 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
 
   // /blog/* → /stati/* (301)
   if (path === '/blog/' || path === '/blog') {
-    return Response.redirect(new URL('/stati/', url), 301);
+    return redirectTo(url, request, '/stati/');
   }
   if (path.startsWith('/blog/')) {
-    return Response.redirect(new URL(path.replace('/blog/', '/stati/'), url), 301);
+    return redirectTo(url, request, path.replace('/blog/', '/stati/'));
   }
 
   // Tilda legacy URLs + duplicate reiting slug (301)
   const cleanPath = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
   const target = TILDA_REDIRECTS[path] ?? TILDA_REDIRECTS[cleanPath];
   if (target) {
-    return Response.redirect(new URL(target, url), 301);
+    return redirectTo(url, request, target);
   }
 
   if (url.pathname === '/api/ask') {
