@@ -9,11 +9,31 @@ import ShiftCalendarModal from './shifts/ShiftCalendarModal.astro';
 import ShiftInfoModal from './shifts/ShiftInfoModal.astro';
 import ShiftsGuideLink from './ShiftsGuideLink.astro';
 
-interface Props { hideFriendBanner?: boolean; }
-const { hideFriendBanner = false } = Astro.props;
+interface Props {
+  hideFriendBanner?: boolean;
+  /** Новая раскладка карточек: актуальные смены слева (крупнее), «как прошли» —
+   *  один компактный слот справа, ширина колонок не хардкод под 4. По умолчанию
+   *  выключено — старые страницы получают прежнее поведение без изменений. */
+  compactPastShifts?: boolean;
+}
+const { hideFriendBanner = false, compactPastShifts = false } = Astro.props;
 
 // Фаза смены считается по датам (getShiftPhase): upcoming → live → done.
 const nowDate = new Date();
+
+const doneShifts = displayShifts.filter((s) => getShiftPhase(s.id, nowDate) === 'done' && s.recapUrl);
+const activeShifts = displayShifts.filter((s) => getShiftPhase(s.id, nowDate) !== 'done');
+
+// Только для compactPastShifts: ширина колонок под реальное число карточек,
+// «как прошли» уже (0.6fr), карточки смен (реальный товар) — шире (1fr).
+const gridColumns = doneShifts.length > 0
+  ? `${'1fr '.repeat(activeShifts.length)}0.6fr`.trim()
+  : `${'1fr '.repeat(activeShifts.length)}`.trim();
+
+const MON_RU = ['','январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const doneMonthLabel = doneShifts.length > 0
+  ? MON_RU[new Date(doneShifts[doneShifts.length - 1].endDate + 'T00:00:00').getMonth() + 1]
+  : '';
 ---
 
 <section id="shifts" class="mx-auto max-w-[1312px] px-[2px] pt-10 md:px-4">
@@ -71,9 +91,7 @@ const nowDate = new Date();
     <!-- Манифест: среда как главная ценность — между мерчем и карточками смен -->
     <div class="mt-6 mb-1 pl-4 border-l-[3px] border-primary">
       <p class="text-[18px] md:text-[20px] font-bold text-body leading-[1.2] tracking-[-0.02em]">Среда решает больше, чем программа.</p>
-      <p class="mt-2 text-base md:text-base text-body-muted leading-[1.65]">Когда рядом те, кому интересно — не потому что заставили, а потому что сами хотят — это заражает. Даже тот, кто приехал просто «посмотреть», через три дня уже не отлипает от проекта.</p>
-      <p class="mt-1.5 text-base md:text-base text-body-muted leading-[1.65]">Мы собираем тех, кому Майнкрафт уже тесноват. Кто хочет понять, как это устроено — и сделать что-то своё.</p>
-      <p class="mt-1.5 text-base md:text-base font-semibold text-body leading-[1.65]">И это чувствуется с первого дня.</p>
+      <p class="mt-2 text-base md:text-base text-body-muted leading-[1.65]">Собираем тех, кому Майнкрафт уже тесноват — и это чувствуется с первого дня.</p>
     </div>
 
     <!-- ═══ КАРТОЧКИ СМЕН: 4 в ряд (desktop) / карусель (mobile) ═══ -->
@@ -85,32 +103,77 @@ const nowDate = new Date();
       <div
         class="shifts-marquee-track flex gap-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         data-shifts-marquee-track
-        data-carousel-initial="2"
+        data-carousel-initial={compactPastShifts ? '0' : '2'}
+        style={compactPastShifts ? `--shift-grid-cols: ${gridColumns}` : undefined}
       >
 
-        {/* ─── Все смены: фаза по датам (предстоит → идёт → прошла) ─── */}
-        {/* Колесо фортуны рендерится скрытым у ближайшей смены; показывается
-            клиентским скриптом ниже по правилу (последние 3 дня + ≤3 места) или по ?fortune=wheel. */}
-        {displayShifts.map((shift) => {
-          const phase = getShiftPhase(shift.id, nowDate);
-          const withFortune = phase === 'upcoming' && shift.nearest && shift.free > 0;
-          return (
-            <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch" data-shift-id={shift.id}>
-              {phase !== 'upcoming' ? (
-                <ShiftRetroCard shift={shift} />
-              ) : withFortune ? (
-                <Fragment>
-                  <div data-fortune-normal class="h-full"><ShiftCard shift={shift} variant="desktop" /></div>
-                  <div data-fortune-wheel hidden data-fortune-start={shift.startDate} data-fortune-free={shift.free} class="h-full">
-                    <FortuneShiftCard shiftId={shift.id} />
-                  </div>
-                </Fragment>
-              ) : (
-                <ShiftCard shift={shift} variant="desktop" />
-              )}
-            </div>
-          );
-        })}
+        {compactPastShifts ? (
+          <Fragment>
+            {/* ─── Новая раскладка: актуальные смены слева (шире), «как прошли» справа (компактно) ─── */}
+            {activeShifts.map((shift) => {
+              const phase = getShiftPhase(shift.id, nowDate);
+              const withFortune = phase === 'upcoming' && shift.nearest && shift.free > 0;
+              return (
+                <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch" data-shift-id={shift.id}>
+                  {phase !== 'upcoming' ? (
+                    <ShiftRetroCard shift={shift} />
+                  ) : withFortune ? (
+                    <Fragment>
+                      <div data-fortune-normal class="h-full"><ShiftCard shift={shift} variant="desktop" /></div>
+                      <div data-fortune-wheel hidden data-fortune-start={shift.startDate} data-fortune-free={shift.free} class="h-full">
+                        <FortuneShiftCard shiftId={shift.id} />
+                      </div>
+                    </Fragment>
+                  ) : (
+                    <ShiftCard shift={shift} variant="desktop" />
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Прошедшие смены справа — один компактный слот с прямыми ссылками на рекапы.
+                График роста цены — на странице каждой смены (kak-proshla-smena-N), не здесь. */}
+            {doneShifts.length > 0 && (
+              <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch">
+                <div class="flex h-full flex-col justify-center gap-2 rounded-[22px] border border-border-light bg-card p-5 md:p-6">
+                  <p class="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Как прошёл {doneMonthLabel}</p>
+                  {doneShifts.map((s) => (
+                    <a href={s.recapUrl} class="group flex items-center justify-between gap-2 text-base font-semibold text-emerald-700 hover:text-emerald-800">
+                      {s.name}
+                      <i class="bi bi-arrow-right icon-arrow-right-hover" aria-hidden="true"></i>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Fragment>
+        ) : (
+          <Fragment>
+            {/* ─── Классическая раскладка: все смены по датам (предстоит → идёт → прошла), полная ShiftRetroCard на каждую прошедшую ─── */}
+            {/* Колесо фортуны рендерится скрытым у ближайшей смены; показывается
+                клиентским скриптом ниже по правилу (последние 3 дня + ≤3 места) или по ?fortune=wheel. */}
+            {displayShifts.map((shift) => {
+              const phase = getShiftPhase(shift.id, nowDate);
+              const withFortune = phase === 'upcoming' && shift.nearest && shift.free > 0;
+              return (
+                <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch" data-shift-id={shift.id}>
+                  {phase !== 'upcoming' ? (
+                    <ShiftRetroCard shift={shift} />
+                  ) : withFortune ? (
+                    <Fragment>
+                      <div data-fortune-normal class="h-full"><ShiftCard shift={shift} variant="desktop" /></div>
+                      <div data-fortune-wheel hidden data-fortune-start={shift.startDate} data-fortune-free={shift.free} class="h-full">
+                        <FortuneShiftCard shiftId={shift.id} />
+                      </div>
+                    </Fragment>
+                  ) : (
+                    <ShiftCard shift={shift} variant="desktop" />
+                  )}
+                </div>
+              );
+            })}
+          </Fragment>
+        )}
 
       </div>
     </div>
@@ -183,7 +246,7 @@ const nowDate = new Date();
     }
     .shifts-marquee-track {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: var(--shift-grid-cols, repeat(4, 1fr));
       overflow-x: visible;
       overflow-y: visible;
       cursor: default;
