@@ -51,6 +51,28 @@ export default defineConfig({
         // reiting-detskih-lager* — оба варианта (ej/ey), оба noindex; reiting-it-* НЕ трогаем (индексируемая).
         !page.includes('/onboarding/') &&
         !page.includes('/stati/reiting-detskih-lager') &&
+        // noindex={true} + canonical → /lager-istra/ (донор-дубль, консолидация с живой
+        // страницей), но не попадал в этот фильтр → висел одновременно в Sitemap и под
+        // noindex — смешанный сигнал. Labrika 24.07.2026.
+        !page.includes('/detskiy-lager-istra-moskovskaya-oblast/') &&
+        // 13 программатик-клонов (owner-решение 24.07.2026, диагностика в
+        // labrika-full-recs/errors-plan): 84.5–97.7% построчного совпадения между
+        // собой, 7 из 13 — 0 просмотров за год, ни один не ранжируется по своему же
+        // ключу (Яндекс выбирает другую страницу сайта). noindex={true} проставлен,
+        // здесь синхронно исключаем из sitemap.
+        !page.includes('/python-dlya-detey/') &&
+        !page.includes('/3d-modelirovanie-obuchenie-dlya-detey/') &&
+        !page.includes('/lager-dlya-detey/') &&
+        !page.includes('/lager-dlya-rebenka-v-gorode/') &&
+        !page.includes('/detskie-lagerya/') &&
+        !page.includes('/nazvanie-lagerey-v-moskve/') &&
+        !page.includes('/lager-s-angliyskim-yazykom-v-podmoskove/') &&
+        !page.includes('/kompensatsiya-za-detskiy-lager-v-moskve/') &&
+        !page.includes('/promt-dlya-neyroseti-dlya-detey/') &&
+        !page.includes('/podmoskovnye-lagerya-dlya-detey/') &&
+        !page.includes('/it-lager-dlya-podrostkov/') &&
+        !page.includes('/skolko-stoit-lager-dlya-rebenka/') &&
+        !page.includes('/scratch-programmirovanie-dlya-detey/') &&
         !page.includes('/lanit-v6/') && // партнёрский черновик ЛАНИТ (как сёстры lanit-v5/lanit-economics), noindex
         !page.includes('/lanit-v5/') && // партнёрский черновик ЛАНИТ, noindex
         !page.includes('/mincifry-v2/') && // клиентская B2B-презентация (Минцифры), не публичная, noindex
