@@ -2,17 +2,31 @@ name: Deploy
 
 # Continuous deployment.
 #
-#   push в dev → деплой dev → smoke dev → merge dev→main → деплой prod → smoke prod
-#                                 ↓ красный                                  ↓ красный
-#                             поезд встал                              авто-откат прода
+#   push в dev → build (1 раз) → деплой dev → smoke dev → merge dev→main → деплой prod (тот же dist) → smoke prod
+#                                                  ↓ красный                                  ↓ красный
+#                                              поезд встал                              авто-откат прода
 #
 # Прод защищён тремя рубежами:
-#   1) quality-gate.yml (check:banned / check:prices / build);
+#   1) quality-gate.yml (check:banned / check:prices / build, включая astro check — required PR-проверка);
 #   2) smoke на dev — прод не поедет, пока dev красный;
 #   3) авто-откат на последний backup-* при провале верификации/smoke прода.
 #
 # main МЕРЖИТСЯ, а не ресетится. Прежний `reset --hard`-промоут разъезжал
 # истории и терял правки (инцидент 2026-07-07).
+#
+# ⚡ Один build-job на весь пуш (2026-07-26). Раньше deploy-dev и deploy-prod
+# каждый гоняли свой npm run build (guard + astro check + astro build + pagefind)
+# с нуля — до ~18 мин на пуш из-за двойной работы. Теперь: build собирает dist/
+# ОДИН раз и кладёт его в artifact, deploy-dev/deploy-prod его только скачивают
+# и рассылают (SKIP_BUILD=1). Это безопасно ровно потому, что:
+#   - astro check уже прошёл как required-проверка quality-gate на этом SHA
+#     (branch protection dev/main требует зелёный `quality`) — доверяем, не
+#     перепроверяем (SKIP_ASTRO_CHECK=1, см. scripts/check-public-astro.mjs);
+#   - dev и prod сейчас собираются побитово одинаково — DEPLOY_ENV ни на что
+#     не влияет, CDN отключён (см. src/data/cdn.ts) — так что один и тот же
+#     dist/ валиден для обоих окружений.
+#   ⚠️ Если вернут CDN/per-env assetsPrefix — вернуть раздельные билды
+#   (убрать job build, вернуть npm run build внутрь deploy-dev/deploy-prod).
 #
 # Требуется секрет SSH_KEY_PROD (приватный ключ для root@159.194.223.55).
 # Опционально: TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID для уведомлений.
@@ -34,9 +48,10 @@ concurrency:
 
 permissions:
   contents: write
+  checks: read   # promote ждёт зелёный check "quality" перед пушем в main
 
 jobs:
-  deploy-dev:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -45,15 +60,41 @@ jobs:
       - uses: actions/setup-node@v5
         with: { node-version: '22', cache: 'npm' }
 
+      - run: npm ci
+
+      # SKIP_ASTRO_CHECK=1: astro check по всем 385 страницам (~2.5 мин) уже
+      # прошёл как required quality-gate проверка на этом SHA — не дублируем.
+      - name: Сборка (один раз на весь пуш)
+        run: SKIP_ASTRO_CHECK=1 NODE_OPTIONS="--max-old-space-size=5120" npm run build --silent
+
+      - name: Загрузка dist как artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-dist
+          path: dist/
+          retention-days: 1
+
+  deploy-dev:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with: { ref: dev, fetch-depth: 0 }
+
       - name: Установка SSH-ключа
         env:
           SSH_KEY: ${{ secrets.SSH_KEY_PROD }}
         run: ./scripts/ci-setup-ssh.sh
 
-      - run: npm ci
+      - name: Скачать собранный dist
+        uses: actions/download-artifact@v4
+        with: { name: site-dist, path: dist }
 
       # deploy.sh dev сам гоняет smoke.sh в конце. Красный smoke → exit 1 → поезд встал.
+      # SKIP_BUILD=1 — используем dist из job build, не пересобираем.
       - name: Деплой на dev + smoke
+        env:
+          SKIP_BUILD: '1'
         run: ./scripts/deploy.sh dev
 
   promote:
@@ -63,6 +104,39 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with: { fetch-depth: 0 }
+
+      # Ждём зелёный required-check "quality" именно на этом SHA перед пушем в main.
+      #
+      # Инцидент 2026-07-26: раньше deploy-dev (со сборкой) был медленнее quality-gate
+      # (~7 мин против ~5 мин) — quality-gate успевал закончиться первым чисто по
+      # случайности порядка, и promote никогда не видел гонку. После ускорения
+      # deploy-dev (~2 мин) он стал финишировать РАНЬШЕ quality-gate, и push в
+      # защищённый main падал: "Required status check "quality" is in progress".
+      # Особенно актуально при squash-мерже PR — squash создаёт НОВЫЙ SHA, для
+      # которого quality-gate стартует с нуля по push-триггеру, а не переиспользует
+      # результат PR-проверки.
+      - name: Дождаться зелёного quality-gate на этом SHA
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA="${{ github.sha }}"
+          echo "Жду check 'quality' на $SHA (таймаут 15 мин)..."
+          for i in $(seq 1 60); do
+            CONCLUSION=$(gh api "repos/${{ github.repository }}/commits/$SHA/check-runs" \
+              --jq '[.check_runs[] | select(.name=="quality")] | sort_by(.started_at) | last | .conclusion // "pending"')
+            echo "  [$i/60] quality: $CONCLUSION"
+            if [ "$CONCLUSION" = "success" ]; then
+              echo "✅ quality зелёный — можно промоутить"
+              exit 0
+            fi
+            if [ "$CONCLUSION" = "failure" ] || [ "$CONCLUSION" = "cancelled" ] || [ "$CONCLUSION" = "timed_out" ]; then
+              echo "::error::quality завершился с '$CONCLUSION' — промоут отменён"
+              exit 1
+            fi
+            sleep 15
+          done
+          echo "::error::quality не позеленел за 15 минут — промоут отменён"
+          exit 1
 
       # Fast-forward, а не merge-коммит.
       #
@@ -94,21 +168,23 @@ jobs:
       - uses: actions/checkout@v5
         with: { ref: main, fetch-depth: 0 }
 
-      - uses: actions/setup-node@v5
-        with: { node-version: '22', cache: 'npm' }
-
       - name: Установка SSH-ключа
         env:
           SSH_KEY: ${{ secrets.SSH_KEY_PROD }}
         run: ./scripts/ci-setup-ssh.sh
 
-      - run: npm ci
+      # Тот же dist, что уже прошёл smoke на dev — main сейчас == dev SHA
+      # (fast-forward в job promote), пересборка не нужна.
+      - name: Скачать собранный dist
+        uses: actions/download-artifact@v4
+        with: { name: site-dist, path: dist }
 
       - name: Деплой на прод (авто-откат при провале)
         env:
           MASTER_AGENT: '1'    # запуск санкционирован этим workflow
           DEPLOY_YES: '1'      # неинтерактивно: в Actions нет stdin
           AUTO_ROLLBACK: '1'   # провал верификации/smoke → откат на backup-*
+          SKIP_BUILD: '1'      # используем dist из job build, не пересобираем
         run: ./scripts/deploy.sh prod
 
       - name: Уведомление в Telegram

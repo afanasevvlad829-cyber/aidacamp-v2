@@ -1,10 +1,16 @@
 name: Quality Gate
 
+# push:[main] намеренно убран (2026-07-26). main получает коммиты ТОЛЬКО через
+# job `promote` в deploy.yml — fast-forward уже провалидированного SHA с dev.
+# GitHub Checks привязаны к SHA, а не к ветке: тот же коммит уже получил
+# зелёный `quality` секундами раньше при пуше в dev, повторный прогон на main
+# перепроверял бы то же самое с нуля (~5 мин CI впустую на каждый пуш, ничего
+# не блокируя — просто трата). push:[dev] остаётся: promote в deploy.yml явно
+# ждёт этот чек перед пушем в main.
 on:
   pull_request:
   push:
     branches:
-      - main
       - dev
 
 jobs:
