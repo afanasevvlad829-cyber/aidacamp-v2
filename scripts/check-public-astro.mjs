@@ -1,5 +1,18 @@
 import { spawnSync } from 'node:child_process';
 
+// deploy.sh гоняет этот же npm run build ещё раз для dev и для prod — на том
+// же коммите, что уже прошёл этот check как required-проверка quality-gate.yml
+// (branch protection на dev/main требует зелёный `quality`, которая тоже
+// вызывает `astro check`). SKIP_ASTRO_CHECK=1 ставится только в
+// .github/workflows/deploy.yml — там гарантия свежая. Локальный/ручной
+// `npm run build` эту переменную не видит и проверяет как обычно.
+if (process.env.SKIP_ASTRO_CHECK === '1') {
+  console.log(
+    'Public Astro check SKIPPED (SKIP_ASTRO_CHECK=1) — уже пройден как required-проверка quality-gate на этом коммите.',
+  );
+  process.exit(0);
+}
+
 const excluded = [
   'src/pages/lanit-v5.astro',
   'src/pages/smena2-editor.astro',
