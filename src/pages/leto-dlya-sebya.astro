@@ -1,18 +1,22 @@
 ---
-import { PRICE_MIN, SEASON_YEAR, VYCHET_MAX } from '../data/shifts';
+import { PRICE_MIN, SEASON_YEAR, VYCHET_MAX, mainShifts } from '../data/shifts';
 import '../styles/global.css';
 import LandingLayout from '../layouts/LandingLayout.astro';
 import MomStory from '../components/MomStory.astro';
 import Shifts from '../components/Shifts.astro';
 import GalleryPreview from '../components/GalleryPreview.astro';
 import FAQ from '../components/FAQ.astro';
+
+// Диапазон длительности открытых смен — из mainShifts, не хардкодить (см. shifts.ts).
+const _durations = mainShifts.map(s => parseInt(s.duration, 10));
+const DURATION_RANGE = `${Math.min(..._durations)}–${Math.max(..._durations)}`;
 ---
 
 <LandingLayout
   noindex={true}
   heroImage="/images/landing/hero-glamping.avif"
   title={`Едете отдыхать — а ребёнку подарите своё лето | АйДаКемп ${SEASON_YEAR}`}
-  description={`Планируете отдых за городом? Пока вы отдыхаете, ребёнок проведёт лето в IT-лагере в Подмосковье: программирование, роботы, бассейн, друзья. Смены от 7 дней, от ${PRICE_MIN}.`}
+  description={`Планируете отдых за городом? Пока вы отдыхаете, ребёнок проведёт лето в IT-лагере в Подмосковье: программирование, роботы, бассейн, друзья. Смены ${DURATION_RANGE} дней, от ${PRICE_MIN}.`}
   h1="Едете отдыхать — а ребёнку подарите своё лето"
 >
   <!-- Хиро: полноэкранное фото + градиент-слой + текст. Кадр подменяется по utm_content -->
@@ -32,7 +36,7 @@ import FAQ from '../components/FAQ.astro';
       </h1>
       <p class="mt-5 text-[16px] md:text-[19px] leading-[1.55] text-white/90 max-w-[620px]">
         Глэмпинг и загородный отель придуманы для взрослых. Ребёнку нужен свой драйв.
-        Пока вы отдыхаете на природе — он в IT-лагере создаёт игры и роботов. 7 или 14 дней, Подмосковье.
+        Пока вы отдыхаете на природе — он в IT-лагере создаёт игры и роботов. {DURATION_RANGE} дней, Подмосковье.
       </p>
       <ul class="mt-6 space-y-2 max-w-[600px]">
         <li class="flex items-start gap-2 text-[15px] md:text-[16px] text-white/90">
