@@ -61,8 +61,10 @@ export const POST: APIRoute = async ({ request }) => {
       headers: { 'Content-Type': 'application/json' },
     });
 
-  // Guard: ключи не настроены
-  if (!TERMINAL || !PASSWORD) {
+  const FORTUNE_MODE = process.env.FORTUNE_MODE ?? 'lead'; // 'payment' | 'lead' — по умолчанию заявка, без Т-банка
+
+  // Guard: ключи Тинькофф нужны только в режиме реальной оплаты
+  if (FORTUNE_MODE === 'payment' && (!TERMINAL || !PASSWORD)) {
     console.error('[fortune/init] TINKOFF_TERMINAL_KEY or TINKOFF_PASSWORD not set');
     return json({ error: 'Платёжный шлюз не настроен' }, 503);
   }
@@ -90,7 +92,6 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   // Динамическая цена (актуальная на момент запроса)
-  const FORTUNE_MODE = process.env.FORTUNE_MODE ?? 'payment'; // 'payment' | 'lead'
   const origPrice  = getCurrentPrice(shiftId) ?? getCurrentPrice('shift-1') ?? 93900;
   const finalPrice = Math.round(origPrice * (1 - discount / 100));
   const deposit    = Math.round(finalPrice * 0.5);       // 50% предоплата
@@ -137,6 +138,12 @@ export const POST: APIRoute = async ({ request }) => {
     logFortuneEvent({ event_type: 'lead_submit', discount, shift_id: shiftId, name, phone, order_id: orderId, final_price: finalPrice, orig_price: origPrice, ip, user_agent: ua });
     console.log(`[fortune/init] LEAD orderId=${orderId} discount=${discount}% finalPrice=${finalPrice}₽ name="${name}" phone="${phone}"`);
     return json({ leadMode: true, orderId, discount, finalPrice, origPrice });
+  }
+
+  // К этой точке дошли только в payment-режиме (lead вернулся раньше выше) —
+  // ключи уже проверены гвардом в начале хендлера, здесь только для TS-narrowing.
+  if (!TERMINAL || !PASSWORD) {
+    return json({ error: 'Платёжный шлюз не настроен' }, 503);
   }
 
   // Параметры запроса в Тинькофф
