@@ -48,6 +48,7 @@ concurrency:
 
 permissions:
   contents: write
+  checks: read   # promote ждёт зелёный check "quality" перед пушем в main
 
 jobs:
   build:
@@ -103,6 +104,39 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with: { fetch-depth: 0 }
+
+      # Ждём зелёный required-check "quality" именно на этом SHA перед пушем в main.
+      #
+      # Инцидент 2026-07-26: раньше deploy-dev (со сборкой) был медленнее quality-gate
+      # (~7 мин против ~5 мин) — quality-gate успевал закончиться первым чисто по
+      # случайности порядка, и promote никогда не видел гонку. После ускорения
+      # deploy-dev (~2 мин) он стал финишировать РАНЬШЕ quality-gate, и push в
+      # защищённый main падал: "Required status check "quality" is in progress".
+      # Особенно актуально при squash-мерже PR — squash создаёт НОВЫЙ SHA, для
+      # которого quality-gate стартует с нуля по push-триггеру, а не переиспользует
+      # результат PR-проверки.
+      - name: Дождаться зелёного quality-gate на этом SHA
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA="${{ github.sha }}"
+          echo "Жду check 'quality' на $SHA (таймаут 15 мин)..."
+          for i in $(seq 1 60); do
+            CONCLUSION=$(gh api "repos/${{ github.repository }}/commits/$SHA/check-runs" \
+              --jq '[.check_runs[] | select(.name=="quality")] | sort_by(.started_at) | last | .conclusion // "pending"')
+            echo "  [$i/60] quality: $CONCLUSION"
+            if [ "$CONCLUSION" = "success" ]; then
+              echo "✅ quality зелёный — можно промоутить"
+              exit 0
+            fi
+            if [ "$CONCLUSION" = "failure" ] || [ "$CONCLUSION" = "cancelled" ] || [ "$CONCLUSION" = "timed_out" ]; then
+              echo "::error::quality завершился с '$CONCLUSION' — промоут отменён"
+              exit 1
+            fi
+            sleep 15
+          done
+          echo "::error::quality не позеленел за 15 минут — промоут отменён"
+          exit 1
 
       # Fast-forward, а не merge-коммит.
       #
