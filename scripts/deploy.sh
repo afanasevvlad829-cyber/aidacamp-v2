@@ -146,33 +146,47 @@ esac
 cd "$PROJECT_DIR"
 
 # ── 0. Сборка ─────────────────────────────────────────────────
-echo ""
-echo ""
-echo "📦 Зависимости (синк с lockfile перед сборкой)..."
-if [ ! -d node_modules ] || ! cmp -s package-lock.json node_modules/.package-lock.json 2>/dev/null; then
-  echo "  ⚙️  lockfile изменился или node_modules нет → npm ci..."
-  npm ci
+# SKIP_BUILD=1 — переиспользовать уже собранный dist/ вместо пересборки.
+# Используется в CI (.github/workflows/deploy.yml): один npm run build на весь
+# пуш (как GitHub Actions artifact), а не по одному на dev и на prod. Сейчас
+# DEPLOY_ENV ни на что не влияет (CDN отключён — см. src/data/cdn.ts), поэтому
+# билд для dev и для prod побитово идентичен и второй прогон был чистым
+# дублированием (~4 мин astro build+pagefind впустую на каждый пуш).
+# ⚠️ Если DEPLOY_ENV снова начнёт влиять на вывод сборки (например, вернут
+# CDN/assetsPrefix) — эту переменную и job `build` в deploy.yml нужно убрать
+# и вернуться на раздельные билды per-env.
+if [ "${SKIP_BUILD:-0}" = "1" ]; then
+  echo ""
+  echo "⏭️  SKIP_BUILD=1 — использую уже собранный dist/ (не пересобираю)"
 else
-  echo "  ✅ node_modules в синке"
-fi
-echo "🔨 Сборка..."
+  echo ""
+  echo ""
+  echo "📦 Зависимости (синк с lockfile перед сборкой)..."
+  if [ ! -d node_modules ] || ! cmp -s package-lock.json node_modules/.package-lock.json 2>/dev/null; then
+    echo "  ⚙️  lockfile изменился или node_modules нет → npm ci..."
+    npm ci
+  else
+    echo "  ✅ node_modules в синке"
+  fi
+  echo "🔨 Сборка..."
 
-# ── guard: пути импортов во вложенных API-файлах ──────────────
-# Файлы в src/pages/api/portal/*/  на уровень глубже и требуют ../../../../lib/
-# Python bulk-замены могут ставить ../../../ — ловим до сборки, а не внутри vite.
-BROKEN_IMPORTS=$(find src/pages/api/portal -mindepth 2 -name "*.ts" \
-  | xargs grep -l "from '\.\./\.\./\.\./lib/" 2>/dev/null || true)
-if [ -n "$BROKEN_IMPORTS" ]; then
-  echo "❌ guard: битые пути импортов (нужен ../../../../lib/ вместо ../../../lib/):"
-  echo "$BROKEN_IMPORTS"
-  exit 1
-fi
-echo "🔒 guard: пути импортов OK"
+  # ── guard: пути импортов во вложенных API-файлах ──────────────
+  # Файлы в src/pages/api/portal/*/  на уровень глубже и требуют ../../../../lib/
+  # Python bulk-замены могут ставить ../../../ — ловим до сборки, а не внутри vite.
+  BROKEN_IMPORTS=$(find src/pages/api/portal -mindepth 2 -name "*.ts" \
+    | xargs grep -l "from '\.\./\.\./\.\./lib/" 2>/dev/null || true)
+  if [ -n "$BROKEN_IMPORTS" ]; then
+    echo "❌ guard: битые пути импортов (нужен ../../../../lib/ вместо ../../../lib/):"
+    echo "$BROKEN_IMPORTS"
+    exit 1
+  fi
+  echo "🔒 guard: пути импортов OK"
 
-# DEPLOY_ENV=dev → assetsPrefix отключён, JS/CSS грузятся с того же хоста
-# DEPLOY_ENV=prod → assetsPrefix=https://huhodirekeka.begetcdn.cloud (CDN)
-# Явная V8-куча: на 8ГБ Маке под нагрузкой дефолт падает (Abort trap/137, инцидент 11.06.2026)
-NODE_OPTIONS="--max-old-space-size=5120" DEPLOY_ENV="$TARGET" npm run build --silent
+  # DEPLOY_ENV=dev → assetsPrefix отключён, JS/CSS грузятся с того же хоста
+  # DEPLOY_ENV=prod → assetsPrefix=https://huhodirekeka.begetcdn.cloud (CDN)
+  # Явная V8-куча: на 8ГБ Маке под нагрузкой дефолт падает (Abort trap/137, инцидент 11.06.2026)
+  NODE_OPTIONS="--max-old-space-size=5120" DEPLOY_ENV="$TARGET" npm run build --silent
+fi
 
 if [ ! -f "dist/client/index.html" ]; then
   echo "❌ dist/client/index.html не найден. Сборка не удалась."
