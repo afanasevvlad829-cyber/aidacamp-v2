@@ -43,13 +43,13 @@ const doneMonthLabel = doneShifts.length > 0
     <p class="mt-1 text-base md:text-base text-body-muted">Данные обновляются в реальном времени. Во всех ценах: питание, проживание, программа. <a href="/nalogovyj-vychet/" class="text-emerald-700 underline underline-offset-2 hover:text-emerald-800">Верните до {VYCHET_MAX} налогового вычета</a>.</p>
 
     <!-- «Едете с другом»: бейджи скидок 5-я/10-я + мерч в одном раскрывающемся блоке -->
-    <div class={`mt-3 rounded-xl border border-slate-200 bg-surface overflow-hidden${hideFriendBanner ? ' hidden' : ''}`} data-toggle-root>
-      <button type="button" data-toggle aria-expanded="false" class="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 select-none">
+    <div class={`mt-3 rounded-xl border border-slate-200 bg-surface overflow-hidden${hideFriendBanner ? ' hidden' : ''}`} data-friend-toggle-root>
+      <button type="button" data-friend-toggle aria-expanded="false" class="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 select-none">
         <i class="bi bi-people-fill text-base text-primary shrink-0" aria-hidden="true"></i>
         <span class="flex-1 text-base font-semibold text-body">Едете с другом? Здесь скидки и мерч</span>
         <i class="bi bi-chevron-down text-[12px] text-body-faint transition-transform duration-200" aria-hidden="true" id="shifts-friend-chevron"></i>
       </button>
-      <div data-toggle-panel class="hidden border-t border-slate-200">
+      <div data-friend-toggle-panel class="hidden border-t border-slate-200">
         <!-- Бейджи скидок (внутри раскрытого блока — про друзей и есть про скидки) -->
         <div class="flex flex-wrap gap-1.5 px-4 pt-3">
           <span class="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-base font-semibold text-primary-700">
@@ -398,9 +398,11 @@ const doneMonthLabel = doneShifts.length > 0
 
   function initShifts() {
     // === FRIEND DISCOUNT TOGGLE ===
-    document.querySelectorAll<HTMLElement>('[data-toggle-root]').forEach((root) => {
-      const btn = root.querySelector<HTMLButtonElement>('[data-toggle]');
-      const panel = root.querySelector<HTMLElement>('[data-toggle-panel]');
+    // Атрибуты уникальные (не data-toggle-root/data-toggle) — Footer.astro вешает свой
+    // обработчик на ЛЮБОЙ [data-toggle-root] на странице, коллизия гасила клик (25.07.2026).
+    document.querySelectorAll<HTMLElement>('[data-friend-toggle-root]').forEach((root) => {
+      const btn = root.querySelector<HTMLButtonElement>('[data-friend-toggle]');
+      const panel = root.querySelector<HTMLElement>('[data-friend-toggle-panel]');
       if (!btn || !panel) return;
       btn.addEventListener('click', () => {
         const expanded = btn.getAttribute('aria-expanded') === 'true';
