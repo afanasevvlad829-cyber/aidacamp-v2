@@ -188,13 +188,18 @@ const doneMonthLabel = doneShifts.length > 0
 </section>
 
 <script is:inline>
-/* Активация колеса фортуны: последние 3 дня перед стартом + ≤3 места.
-   Считается клиентски (главная статична). Превью в любой момент: ?fortune=wheel */
+/* Активация колеса фортуны: последние 3 дня перед стартом + ≤3 места,
+   и только для НОВЫХ посетителей (решение владельца 27.07.2026) — тот, кто уже
+   был на сайте (хоть месяц назад), колесо не видит. Тот же сигнал «уже был»,
+   что уже используют Header/ReturnBanner/MobileMenu для returning-visitor логики.
+   Считается клиентски (главная статична). Превью в любой момент: ?fortune=wheel
+   (force игнорирует и returning-visitor, и days/spots — для теста/демо). */
 (function () {
   var WINDOW_DAYS = 3, LAST_SPOTS = 3; // правило (см. dynamicPrices.ts: FORTUNE_WINDOW_DAYS/LAST_SPOTS)
   function apply() {
     var qs = new URLSearchParams(location.search);
     var force = qs.get('fortune') === 'wheel' || qs.has('wheel');
+    var isReturning = !!localStorage.getItem('ac:viewed_shifts') || /(?:^|[; ])_ym_uid=/.test(document.cookie);
     document.querySelectorAll('[data-fortune-wheel]').forEach(function (wheel) {
       var slot = wheel.closest('[data-shift-id]');
       var normal = slot ? slot.querySelector('[data-fortune-normal]') : null;
@@ -202,7 +207,7 @@ const doneMonthLabel = doneShifts.length > 0
       var free = parseInt(wheel.getAttribute('data-fortune-free') || '0', 10);
       var today = new Date(); today.setHours(0, 0, 0, 0);
       var days = Math.ceil((start.getTime() - today.getTime()) / 86400000);
-      var active = force || (days >= 0 && days <= WINDOW_DAYS && free > 0 && free <= LAST_SPOTS);
+      var active = force || (!isReturning && days >= 0 && days <= WINDOW_DAYS && free > 0 && free <= LAST_SPOTS);
       if (active) { wheel.hidden = false; if (normal) normal.hidden = true; }
       else { wheel.hidden = true; if (normal) normal.hidden = false; }
     });
