@@ -90,11 +90,27 @@ const allCategories = [
 
 interface Props {
   only?: string[];
+  /** Точечный набор вопросов из разных категорий, формат "categoryId:index" (0-based), напр. "documents:0". Рендерится одной плоской панелью без вкладок. */
+  items?: string[];
   moreLink?: { href: string; text: string };
   intro?: { text: string; href: string; linkText: string };
 }
-const { only, moreLink, intro }: Props = Astro.props;
-const visibleCategories = only ? allCategories.filter((cat) => only.includes(cat.id)) : allCategories;
+const { only, items, moreLink, intro }: Props = Astro.props;
+
+let visibleCategories: typeof allCategories;
+if (items) {
+  const picked = items
+    .map((spec) => {
+      const [catId, idxStr] = spec.split(':');
+      const cat = allCategories.find((c) => c.id === catId);
+      return cat?.items[Number(idxStr)];
+    })
+    .filter((item): item is { q: string; a: string } => Boolean(item));
+  visibleCategories = [{ id: 'custom', label: 'Вопросы и ответы', items: picked }];
+} else {
+  visibleCategories = only ? allCategories.filter((cat) => only.includes(cat.id)) : allCategories;
+}
+const showTabs = visibleCategories.length > 1;
 ---
 
 <section id="faq" class="mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4">
@@ -108,7 +124,7 @@ const visibleCategories = only ? allCategories.filter((cat) => only.includes(cat
     )}
 
     <!-- Filter tabs -->
-    <div class="mt-4 grid grid-cols-3 gap-1.5 md:flex md:flex-wrap md:gap-2" data-faq-filters>
+    <div class:list={["mt-4 grid grid-cols-3 gap-1.5 md:flex md:flex-wrap md:gap-2", { hidden: !showTabs }]} data-faq-filters>
       {visibleCategories.map((cat, i) => (
         <button
           type="button"
