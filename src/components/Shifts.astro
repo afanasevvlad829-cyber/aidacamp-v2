@@ -192,15 +192,21 @@ const doneMonthLabel = doneShifts.length > 0
    владельца 27.07.2026) — дни-до-старта/реальный остаток мест на активацию
    больше не влияют, это конверсионный виджет, не завязанный на инвентарь.
    Вернувшийся посетитель (был на сайте хоть месяц назад) колесо не видит —
-   тот же сигнал «уже был», что уже используют Header/ReturnBanner/MobileMenu
-   для returning-visitor логики. Считается клиентски (главная статична).
+   сигнал ac:viewed_shifts (см. ниже, почему без _ym_uid). Header/ReturnBanner/
+   MobileMenu используют похожий, но более широкий сигнал (+ _ym_uid) для
+   своей returning-visitor логики — здесь сознательно уже. Считается клиентски.
    Превью в любой момент: ?fortune=wheel (force показывает и вернувшимся —
    для теста/демо). */
 (function () {
   function apply() {
     var qs = new URLSearchParams(location.search);
     var force = qs.get('fortune') === 'wheel' || qs.has('wheel');
-    var isReturning = !!localStorage.getItem('ac:viewed_shifts') || /(?:^|[; ])_ym_uid=/.test(document.cookie);
+    // Только ac:viewed_shifts — не _ym_uid: Метрика ставит свою uid-куку сама,
+    // сразу на первом визите (до того, как этот скрипт успевает её проверить),
+    // так что _ym_uid ложно помечал бы «уже был» настоящего нового посетителя
+    // в его же первый визит. ac:viewed_shifts ставится только по факту открытия
+    // карточки смены — осознанное действие, надёжный сигнал «уже был раньше».
+    var isReturning = !!localStorage.getItem('ac:viewed_shifts');
     var active = force || !isReturning;
     document.querySelectorAll('[data-fortune-wheel]').forEach(function (wheel) {
       var slot = wheel.closest('[data-shift-id]');
