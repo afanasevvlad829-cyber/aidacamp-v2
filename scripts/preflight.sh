@@ -53,14 +53,25 @@ case "$SERVICE" in
   replicate)
     [[ -z "${REPLICATE_API_TOKEN:-}" ]] \
       && die "нет REPLICATE_API_TOKEN в окружении. Возьми из .env и передай: REPLICATE_API_TOKEN=... bash scripts/preflight.sh replicate"
-    # Официальная тест-модель replicate/hello-world: копеечный запуск проверяет
-    # И валидность токена, И наличие кредита — «insufficient credit» вылетает
-    # прямо на создании prediction, ждать выполнения не нужно.
+    # Тест-модель replicate/hello-world: копеечный запуск проверяет И валидность
+    # токена, И наличие кредита — «insufficient credit» вылетает прямо на создании
+    # prediction, ждать выполнения не нужно.
+    # Эндпоинт /v1/models/<owner>/<name>/predictions работает ТОЛЬКО для official
+    # models; hello-world к ним не относится и отдавал 404 (поймано 28.07.2026 при
+    # первой же проверке живым токеном). Поэтому: GET версии → POST /v1/predictions.
+    META=$(with_timeout 30 curl -sS "https://api.replicate.com/v1/models/replicate/hello-world" \
+      -H "Authorization: Bearer $REPLICATE_API_TOKEN" 2>&1) || die "curl упал: ${META:0:300}"
+    echo "$META" | grep -qiE 'authentication|unauthenticated|invalid.*token' \
+      && die "токен невалиден: ${META:0:300}"
+    VERSION_ID=$(echo "$META" | python3 -c 'import json,sys
+try: print((json.load(sys.stdin).get("latest_version") or {}).get("id") or "")
+except Exception: pass' 2>/dev/null)
+    [[ -z "$VERSION_ID" ]] && die "не удалось получить версию hello-world: ${META:0:300}"
     RESP=$(with_timeout 60 curl -sS -X POST \
-      "https://api.replicate.com/v1/models/replicate/hello-world/predictions" \
+      "https://api.replicate.com/v1/predictions" \
       -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
       -H "Content-Type: application/json" \
-      -d '{"input":{"text":"preflight"}}' 2>&1) || die "curl упал: ${RESP:0:300}"
+      -d "{\"version\":\"${VERSION_ID}\",\"input\":{\"text\":\"preflight\"}}" 2>&1) || die "curl упал: ${RESP:0:300}"
     echo "$RESP" | grep -qi 'insufficient credit' \
       && die "на счету Replicate нет денег — конвейер мертворождённый (инцидент 16.07). Пополни биллинг ДО постройки."
     echo "$RESP" | grep -qiE 'authentication|unauthenticated|invalid.*token' \
