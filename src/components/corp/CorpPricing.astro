@@ -1,5 +1,5 @@
 ---
-import { DATES_S3, DATES_S4, SHIFT_META } from '../../data/shifts';
+import { DATES_S3, DATES_S4, SHIFT_META, EDU_RESID_PER_DAY, EDU_BASE_CAP, NDFL_RATE } from '../../data/shifts';
 import { fmtPrice } from '../../data/dynamicPrices';
 import type { CorpClient } from '../../data/corp/types';
 interface Props { client: CorpClient }
@@ -95,7 +95,7 @@ input[type=range]::-moz-range-thumb { width:28px; height:28px; border-radius:50%
 @media (max-width:640px) { .calc-results { grid-template-columns:1fr; } }
 </style>
 
-<script define:vars={{ shiftsData, discount: client.discount, freeTransferMinKids: client.freeTransferMinKids }}>
+<script define:vars={{ shiftsData, discount: client.discount, freeTransferMinKids: client.freeTransferMinKids, EDU_RESID_PER_DAY, EDU_BASE_CAP, NDFL_RATE }}>
   let currentSmenaIdx = 0;
   function fmt(n) { return n.toLocaleString('ru') + ' ₽'; }
   function selectSmena(idx, el) {
@@ -119,7 +119,8 @@ input[type=range]::-moz-range-thumb { width:28px; height:28px; border-radius:50%
     const kidsEl = document.getElementById('kids-count');
     if (kidsEl) kidsEl.textContent = kids;
     const discountedPrice = Math.round(s.basePrice * (1 - discount / 100));
-    const tax = Math.round((discountedPrice - 3800 * s.days) * 0.13);
+    // формула = taxDeduction() из shifts.ts; константы проброшены через define:vars
+    const tax = Math.round(Math.min(Math.max(discountedPrice - EDU_RESID_PER_DAY * s.days, 0), EDU_BASE_CAP) * NDFL_RATE);
     const pp = document.getElementById('res-pp');
     const ppSub = document.getElementById('res-pp-sub');
     const taxEl = document.getElementById('res-tax');

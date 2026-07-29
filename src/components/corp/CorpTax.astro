@@ -1,13 +1,13 @@
 ---
 import type { CorpClient } from '../../data/corp/types';
-import { SHIFT_META, taxDeduction } from '../../data/shifts';
+import { SHIFT_META, taxDeduction, EDU_RESID_PER_DAY, EDU_BASE_CAP, fmtRub } from '../../data/shifts';
 interface Props { client: CorpClient }
 const { client } = Astro.props;
 
 const basePrice       = SHIFT_META['shift-3'].basePrice;
 const days            = SHIFT_META['shift-3'].days;
 const discountedPrice = Math.round(basePrice * (1 - client.discount / 100));
-const eduPart         = discountedPrice - 3800 * days;
+const eduPart         = discountedPrice - EDU_RESID_PER_DAY * days;
 const taxReturn       = taxDeduction(discountedPrice, days); // единая формула вместо локальной
 
 const steps = [
@@ -18,7 +18,7 @@ const steps = [
 const rows = [
   { label: 'Базовая цена',                                       val: `${basePrice.toLocaleString('ru')} ₽`,           green: false },
   { label: `Скидка ${client.clientName} (−${client.discount}%)`, val: `${discountedPrice.toLocaleString('ru')} ₽`,    green: false },
-  { label: `Жильё + питание (3 800 ₽ × ${days} дней)`,          val: `${(3800*days).toLocaleString('ru')} ₽`,         green: false },
+  { label: `Жильё + питание (${EDU_RESID_PER_DAY.toLocaleString('ru')} ₽ × ${days} дней)`, val: `${(EDU_RESID_PER_DAY*days).toLocaleString('ru')} ₽`, green: false },
   { label: 'Образовательная часть',                              val: `${eduPart.toLocaleString('ru')} ₽`,            green: false },
   { label: 'Возврат 13%',                                        val: `~${taxReturn.toLocaleString('ru')} ₽ назад`,    green: true  },
 ];
@@ -27,7 +27,7 @@ const rows = [
 <section class="corp-section corp-section-alt">
   <div class="corp-wrap">
     <div class="corp-kicker r">Налоговый вычет</div>
-    <h2 class="corp-h2 r mb-10">Верните до <em class="not-italic text-[var(--corp-or2)]">5 300 ₽</em><br/>через налоговый вычет</h2>
+    <h2 class="corp-h2 r mb-10">Верните до <em class="not-italic text-[var(--corp-or2)]">{fmtRub(Math.round(taxReturn / 50) * 50)}</em><br/>через налоговый вычет</h2>
 
     <div class="r grid gap-12 lg:grid-cols-[1.2fr_1fr] items-start">
       <!-- Шаги -->
@@ -65,7 +65,7 @@ const rows = [
           ))}
         </div>
         <p class="mt-5 text-xs leading-relaxed text-[var(--corp-txt2)]">
-          Формула: (цена − 3 800 ₽ × дней) × 13%. Лимит НК РФ — 110 000 ₽/год на ребёнка. Декларация 3-НДФЛ — в следующем году.
+          Формула: (цена − {EDU_RESID_PER_DAY.toLocaleString('ru')} ₽ × дней) × 13%. Лимит НК РФ — {fmtRub(EDU_BASE_CAP)}/год на ребёнка. Декларация 3-НДФЛ — в следующем году.
         </p>
       </div>
     </div>
