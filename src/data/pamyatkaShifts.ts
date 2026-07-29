@@ -25,12 +25,10 @@ const GROUP_TO_SHIFT: Record<number, string> = {
   661: 'shift-2-1',
   662: 'shift-2-2',
   663: 'shift-2',
-  // ⚠️ Блокер данных (см. .superpowers/sdd/task-7-brief.md Step 1): на момент реализации
-  // АйДаКемп AlfaCRM API недоступен (все варианты запроса групп → HTTP 404), group_id
-  // августовских групп (Смены 3/4) НЕ подтверждены — НЕ угадывать (664/665 — предположение,
-  // не факт). Раскомментировать и добавить в объект только после подтверждения в CRM.
-  // 664: 'shift-3', // TODO: подтвердить group_id в АльфаCRM (API недоступен на момент реализации, см. .superpowers/sdd/task-7-brief.md Step 1)
-  // 665: 'shift-4', // TODO: подтвердить group_id в АльфаCRM (API недоступен на момент реализации, см. .superpowers/sdd/task-7-brief.md Step 1)
+  // 664/665 подтверждены в CRM UI 2026-07-29 (владелец): «5 СМЕНА (03.08.2026 - 15.08.2026)»
+  // и «6 СМЕНА (17.08.2026 - 26.08.2026)» — даты совпадают с shift-3/shift-4 в shifts.ts.
+  664: 'shift-3',
+  665: 'shift-4',
 };
 
 const MANAGER = { manager: 'Progaschool', phone: '+79688086455', phoneDisplay: '+7 (968) 808-64-55' };

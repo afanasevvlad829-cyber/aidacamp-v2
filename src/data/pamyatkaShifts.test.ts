@@ -11,10 +11,7 @@ describe('pamyatkaShifts: даты выводятся из shifts.ts', () => {
   it('группа 663 (4 смена CRM) = сайтовая Смена 2 (14 дней)', () => {
     expect(PAMYATKA_SHIFTS[663].dates).toBe(`${shiftDatesFull(byId['shift-2'])} ${SEASON_YEAR}`);
   });
-  // Пропущено: group_id августовских групп (Смены 3/4) не подтверждены в АльфаCRM —
-  // API был недоступен на момент реализации (см. .superpowers/sdd/task-7-brief.md Step 1).
-  // Раскомментировать после подтверждения id и добавления 664/665 в GROUP_TO_SHIFT.
-  it.skip('августовские смены присутствуют (пропустить, если ID из CRM ещё не подтверждены)', () => {
+  it('группы 664/665 (5/6 смена CRM) = сайтовые Смены 3 и 4 (подтверждено в CRM 2026-07-29)', () => {
     const dates = Object.values(PAMYATKA_SHIFTS).map((p) => p.dates);
     expect(dates).toContain(`${shiftDatesFull(byId['shift-3'])} ${SEASON_YEAR}`);
     expect(dates).toContain(`${shiftDatesFull(byId['shift-4'])} ${SEASON_YEAR}`);
