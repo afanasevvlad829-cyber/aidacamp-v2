@@ -234,6 +234,8 @@ export const VYCHET_S4 = _fmtV(shiftDeduction(mainShifts[1]));
 export const VYCHET_S21 = _fmtV(shiftDeduction(_shift21));
 export const VYCHET_S22 = _fmtV(shiftDeduction(_shift22));
 export const VYCHET_MAX = _fmtV(Math.max(shiftDeduction(mainShifts[0]), shiftDeduction(mainShifts[1])));
+// Вычет для смены с ценой PRICE_MIN (см. PRICE_MIN/PRICE_MIN_ID) — для прозы «путёвка за PRICE_MIN → вернёте до VYCHET_MIN».
+export const VYCHET_MIN = _fmtV(shiftDeduction(_sorted[0]));
 
 // === Осень 2026 — ПРЕДВАРИТЕЛЬНО (решение владельца 2026-07-03, утверждение дат и цены — сентябрь) ===
 // Сознательно НЕ в mainShifts/shortShifts: бронь закрыта, на сайте только предзапись (SeasonPreRegister).
