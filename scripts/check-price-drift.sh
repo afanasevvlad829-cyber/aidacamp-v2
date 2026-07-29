@@ -29,14 +29,21 @@ EXCL=('/demo/','/_archive','dlya-kompaniy','lanit-v5','lanit-v6','design-v2','gl
       'articles.json',       # агрегатор HTML статей блога — рыночные цифры в прозе (примеры
                               # других лагерей/расходов); реальные цены АйДаКемп в статьях уже
                               # заведены через getCurrentPrice() в JSON-LD (Task 3), не в тексте
-      'kak-vybrat-lager')    # статья-гайд «как выбрать лагерь» — гипотетический пример скрытых
+      'kak-vybrat-lager',    # статья-гайд «как выбрать лагерь» — гипотетический пример скрытых
                               # доплат у ДРУГИХ лагерей («от 30 000 ₽» → «50 000 ₽»), не наша цена
+      # ниже — доп. находки после подъёма верхней границы 110k→200k (страж лимита вычета 120 000):
+      'TrevoznyjRoditel',    # сатирический тариф «Тревожный родитель» на главной — 150 000 ₽
+                              # часть намеренной сатиры (см. память проекта), не цена путёвки
+      'ceny.astro',          # «летние лагеря Подмосковья стоят от 30 000 до 120 000 ₽ за смену» —
+                              # рыночное сравнение с конкурентами, не наша цена (наши — через PRICE_*)
+      'detskie-lagerya-v-mire',  # статья про лагеря в мире — цены Британии/др. стран (161 000 ₽ и т.д.)
+      'gde-v-rossii-net-lagerey')  # статья-разбор — рыночный диапазон цен по РФ в целом (150 000 ₽)
 P_RUB=re.compile(r'(\d{2,3}[   ]?\d{3})\s*₽')
 # Naked-числа только в ценовом контексте — JSON-LD "price", basePrice, price:/price=
 P_NAKED=re.compile(r'(?:"price"|\bprice\b|basePrice)\s*[:=]\s*["\']?(\d{5,6})\b')
 drift={}
 def check(p,i,v,tok):
-    if not (40000<=int(v)<=110000): return
+    if not (40000<=int(v)<=200000): return
     if v in canon or v in ALLOW: return
     drift.setdefault(p,[]).append((i,tok.strip()))
 for base in ['src/pages','src/components','src/lib','src/scripts','src/data']:

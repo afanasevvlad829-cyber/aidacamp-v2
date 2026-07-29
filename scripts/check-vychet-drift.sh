@@ -20,7 +20,7 @@ if _edu_rate_m: allowed.add(_edu_rate_m.group(1))
 # 2000 ₽ — фиксированная цена трансфера от м. Солнцево (внешняя константа, не из shifts.ts,
 # не относится к вычету); встречается на гео-лендингах в одном абзаце со словом «вычет».
 allowed.add('2000')
-BAN=re.compile(r'5\s?434')
+BAN=re.compile(r'(?<!\w)5[   ]?434(?!\d)')
 # (?<!\d) — иначе «110 000 ₽» ложно матчится как «10 000 ₽» (см. selftest/отчёт Task 8)
 P_SUM=re.compile(r'(?<!\d)(\d{1,2}[   ]?\d{3})\s*₽')
 CTX=re.compile(r'вычет|верн[её]|ФНС|НДФЛ',re.I)
@@ -42,12 +42,12 @@ for base in ['src','scripts']:
             p=os.path.join(root,fn)
             if any(x in p for x in EXCL): continue
             for i,line in enumerate(open(p,encoding='utf-8',errors='ignore'),1):
-                if BAN.search(line):
+                if BAN.search(line) and (CTX.search(line) or '₽' in line):
                     drift.setdefault(p,[]).append((i,'запрещённая цифра 5 434')); continue
                 if not CTX.search(line): continue
                 for m in P_SUM.finditer(line):
                     v=re.sub(r'\D','',m.group(1))
-                    if 1000<=int(v)<=15000 and v not in allowed:
+                    if 1000<=int(v)<=20000 and v not in allowed:
                         drift.setdefault(p,[]).append((i,m.group(0).strip()))
 if drift:
     print('❌ ДРЕЙФ СУММ ВЫЧЕТА (канон вычисляется из shifts.ts: '+', '.join(sorted(allowed,key=int))+'):')
