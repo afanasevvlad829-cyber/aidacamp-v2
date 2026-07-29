@@ -23,7 +23,9 @@ P_FROMTO = re.compile(rf'\bс\s+(?:конца\s+)?{MON}\s+по\s+{MON}', re.I)
 # 3) N смен прописью
 P_COUNT = re.compile(r'\b(одн[ау]|две|дву[хм]|три|четыр[её]|пять|шесть|семь|восемь)\s+смен(?:а|ы|)\b', re.I)
 
-BASES = ['src/pages', 'src/components', 'src/data/landings']
+# src/data (весь, не только landings) + .json добавлены 29.07.2026: hero-variants.json —
+# канон hero-текстов с сезонными плейсхолдерами — не сканировался ни одним стражем
+BASES = ['src/pages', 'src/components', 'src/data']
 # файлы/пути-исключения
 EXCL_PATH = ('/admin/', 'staff-plan', 'gbp-posts', 'lanit',
              'lager-na-osennie-kanikuly', 'lager-na-zimnie-kanikuly',
@@ -36,6 +38,16 @@ ALLOW_SUBSTR = (
     'смены мая',             # «четыре смены мая–июля уже прошли» — историческое число прошедших
     'уже прошли',            # исторический счётчик прошедших смен (не открытые)
     'evergreen',             # импорт/использование константы
+    '· май–июнь',            # articles.json: зеркало метки дат смены-1 из skolko-stoit-detskiy-lager.astro (см. ALLOW_PAIRS)
+    # hero-variants.json: известный, ещё не мигрированный хардкод (не идиома!) — резолвер
+    # плейсхолдеров {OPEN_MONTHS_NOM}/{SEASON_FROM_TO} для этого файла запланирован, но не
+    # реализован (Task 6, docs/superpowers/plans/2026-07-29-sot-hardcode-cleanup.md).
+    # Контекст-специфичные подстроки (не голый «июнь–август»/«с июня по август»), чтобы
+    # новый литерал в этом же файле по-прежнему ловился стражем. Убрать, когда появится резолвер.
+    '7 и 14 дней, июнь–август',
+    '10 и 13 дней, июнь–август',
+    'дней, с июня по август',
+    'мкад, с июня по август',
 )
 
 # Точечный allow: (подстрока-имени-файла, фрагмент в н.р.) — законные НЕ-сезонные вхождения,
@@ -63,7 +75,7 @@ for base in BASES:
     for root, _, files in os.walk(base):
         if any(x in root for x in EXCL_PATH): continue
         for fn in files:
-            if not fn.endswith(('.astro', '.ts')): continue
+            if not fn.endswith(('.astro', '.ts', '.json')): continue
             p = os.path.join(root, fn)
             if any(x in p for x in EXCL_PATH): continue
             for i, line in enumerate(open(p, encoding='utf-8'), 1):
