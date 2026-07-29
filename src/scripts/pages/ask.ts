@@ -589,7 +589,7 @@ function blockTaxCalculator(){
   SHIFTS.forEach(([name,price,days],i)=>{
     const opt=document.createElement('option');
     opt.value=i; opt.textContent=name;
-    if(i===1) opt.selected=true;
+    if(i===0) opt.selected=true;  // дефолт — первая открытая смена (массив отсортирован: открытые сначала)
     sel.appendChild(opt);
   });
   body.appendChild(sel);
