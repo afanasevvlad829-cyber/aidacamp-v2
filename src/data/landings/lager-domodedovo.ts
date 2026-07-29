@@ -1,4 +1,5 @@
 import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, VYCHET_S2, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
+import { SEASON_START_ISO, SEASON_END_ISO } from '../evergreen';
 import { STAT_RATING } from '../contacts';
 import type { LandingData } from './types';
 
@@ -111,10 +112,10 @@ const landing: LandingData = {
     '@context': 'https://schema.org',
     '@type': 'EducationEvent',
     name: 'Летний IT-лагерь АйДаКемп в Домодедово',
-    description: 'Летний лагерь программирования для детей 8-17 лет в Наро-Фоминском округе',
+    description: 'Летний лагерь программирования для детей 7–15 лет в Наро-Фоминском округе',
     image: '/images/hero/lager-na-leto-2026.avif',
-    startDate: '2026-06-10',
-    endDate: '2026-08-26',
+    startDate: SEASON_START_ISO,
+    endDate: SEASON_END_ISO,
     eventStatus: 'EventScheduled',
     eventAttendanceMode: 'OfflineEventAttendanceMode',
     location: {

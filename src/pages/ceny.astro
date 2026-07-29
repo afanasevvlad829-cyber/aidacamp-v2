@@ -9,20 +9,34 @@ import Gallery from '../components/Gallery.astro';
 import TaxCalculator from '../components/TaxCalculator.astro';
 import BenefitCalculator from '../components/BenefitCalculator.astro';
 import { getRelatedPages } from '../data/landing-pages';
-import { PRICE_MAX, PRICE_MIN, PRICE_S1, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, VYCHET_MAX, VYCHET_S1, VYCHET_S2, VYCHET_S21, VYCHET_S22, VYCHET_S3, VYCHET_S4, mainShifts, shortShifts, SEASON_YEAR } from '../data/shifts';
+import { PRICE_MAX, PRICE_MIN, PRICE_S1, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, VYCHET_MAX, VYCHET_S1, VYCHET_S2, VYCHET_S21, VYCHET_S22, VYCHET_S3, VYCHET_S4, mainShifts, shortShifts, SEASON_YEAR, SHIFT_META, allShiftsIncludingArchived } from '../data/shifts';
 import AskCta from '../components/AskCta.astro';
-import { getCurrentPrice } from '../data/dynamicPrices';
+import { getCurrentPrice, getShiftPhase } from '../data/dynamicPrices';
 import FAQSchema from '../components/FAQSchema.astro';
 import { PAYMENT_SPLIT, STAT_RATING } from '../data/contacts';
+import { SEASON_END_ISO } from '../data/evergreen';
 
+const ldPrice = (id: string) => String(getCurrentPrice(id) ?? SHIFT_META[id].basePrice);
 const schemaPrice = {
-  s1:   String(getCurrentPrice('shift-1')   ?? 74900),
-  s2:   String(getCurrentPrice('shift-2')   ?? 99000),
-  s21:  String(getCurrentPrice('shift-2-1') ?? 48000),
-  s22:  String(getCurrentPrice('shift-2-2') ?? 75000),
-  s3:   String(getCurrentPrice('shift-3')   ?? 89400),
-  s4:   String(getCurrentPrice('shift-4')   ?? 74900),
+  s1: ldPrice('shift-1'), s2: ldPrice('shift-2'), s21: ldPrice('shift-2-1'),
+  s22: ldPrice('shift-2-2'), s3: ldPrice('shift-3'), s4: ldPrice('shift-4'),
 };
+
+// Event-блоки JSON-LD всех смен сезона — генерируются из shifts.ts
+const eventLd = allShiftsIncludingArchived.map(s => ({
+  "@context": "https://schema.org",
+  "@type": "Event",
+  "name": `${s.name} — IT-лагерь АйДаКемп ${SEASON_YEAR} (${s.duration})`,
+  "startDate": s.startDate,
+  "endDate": s.endDate,
+  "eventStatus": "https://schema.org/EventScheduled",
+  "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+  "location": { "@type": "Place", "name": "Санаторий Изумруд, Подмосковье", "address": { "@type": "PostalAddress", "addressCountry": "RU", "addressRegion": "Московская область" } },
+  "organizer": { "@type": "Organization", "name": "АйДаКемп", "url": "https://aidacamp.ru" },
+  "description": `${s.description} IT-лагерь для детей 7–15 лет, ${s.duration}.`,
+  "offers": { "@type": "Offer", "price": ldPrice(s.id), "priceCurrency": "RUB", "url": "https://aidacamp.ru/ceny", "availability": getShiftPhase(s.id) === 'done' ? "https://schema.org/SoldOut" : "https://schema.org/InStock" },
+  "audience": { "@type": "PeopleAudience", "suggestedMinAge": 7, "suggestedMaxAge": 15 },
+}));
 
 function freeLabel(free: number): string {
   if (free === 0) return 'Мест нет';
@@ -219,96 +233,11 @@ const sections = [
         "priceCurrency": "RUB",
         "availability": "https://schema.org/InStock",
         "url": "https://aidacamp.ru/ceny",
-        "priceValidUntil": "2026-08-31",
+        "priceValidUntil": SEASON_END_ISO,
         "seller": { "@type": "Organization", "name": "АйДаКемп" }
       }))
     })} />
-    <script type="application/ld+json" set:html={JSON.stringify([
-      {
-        "@context": "https://schema.org",
-        "@type": "Event",
-        "name": "Смена 1 — IT-лагерь АйДаКемп 2026",
-        "startDate": "2026-05-30",
-        "endDate": "2026-06-08",
-        "eventStatus": "https://schema.org/EventScheduled",
-        "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-        "location": { "@type": "Place", "name": "Санаторий Изумруд, Подмосковье", "address": { "@type": "PostalAddress", "addressCountry": "RU", "addressRegion": "Московская область" } },
-        "organizer": { "@type": "Organization", "name": "АйДаКемп", "url": "https://aidacamp.ru" },
-        "description": "Летний IT-лагерь для детей 7–15 лет. Программирование, AI, командные проекты. 10 дней.",
-        "offers": { "@type": "Offer", "price": schemaPrice.s1, "priceCurrency": "RUB", "url": "https://aidacamp.ru/ceny", "availability": "https://schema.org/SoldOut" },
-        "audience": { "@type": "PeopleAudience", "suggestedMinAge": 7, "suggestedMaxAge": 15 }
-      },
-      {
-        "@context": "https://schema.org",
-        "@type": "Event",
-        "name": "Смена 2 — IT-лагерь АйДаКемп 2026 (14 дней)",
-        "startDate": "2026-06-10",
-        "endDate": "2026-06-23",
-        "eventStatus": "https://schema.org/EventScheduled",
-        "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-        "location": { "@type": "Place", "name": "Санаторий Изумруд, Подмосковье", "address": { "@type": "PostalAddress", "addressCountry": "RU", "addressRegion": "Московская область" } },
-        "organizer": { "@type": "Organization", "name": "АйДаКемп", "url": "https://aidacamp.ru" },
-        "description": "Самая длинная смена IT-лагеря — 14 дней. Глубокое погружение в программирование и AI для детей 7–15 лет.",
-        "offers": { "@type": "Offer", "price": schemaPrice.s2, "priceCurrency": "RUB", "url": "https://aidacamp.ru/ceny", "availability": "https://schema.org/SoldOut" },
-        "audience": { "@type": "PeopleAudience", "suggestedMinAge": 7, "suggestedMaxAge": 15 }
-      },
-      {
-        "@context": "https://schema.org",
-        "@type": "Event",
-        "name": "Смена 2.1 — IT-лагерь АйДаКемп 2026 (7 дней)",
-        "startDate": "2026-06-10",
-        "endDate": "2026-06-16",
-        "eventStatus": "https://schema.org/EventScheduled",
-        "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-        "location": { "@type": "Place", "name": "Санаторий Изумруд, Подмосковье", "address": { "@type": "PostalAddress", "addressCountry": "RU", "addressRegion": "Московская область" } },
-        "organizer": { "@type": "Organization", "name": "АйДаКемп", "url": "https://aidacamp.ru" },
-        "description": "Короткая смена IT-лагеря АйДаКемп — 7 дней для детей 7–15 лет. Знакомство с программированием и AI.",
-        "offers": { "@type": "Offer", "price": schemaPrice.s21, "priceCurrency": "RUB", "url": "https://aidacamp.ru/ceny", "availability": "https://schema.org/SoldOut" },
-        "audience": { "@type": "PeopleAudience", "suggestedMinAge": 7, "suggestedMaxAge": 15 }
-      },
-      {
-        "@context": "https://schema.org",
-        "@type": "Event",
-        "name": "Смена 2.2 — IT-лагерь АйДаКемп 2026 (8 дней)",
-        "startDate": "2026-06-16",
-        "endDate": "2026-06-23",
-        "eventStatus": "https://schema.org/EventScheduled",
-        "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-        "location": { "@type": "Place", "name": "Санаторий Изумруд, Подмосковье", "address": { "@type": "PostalAddress", "addressCountry": "RU", "addressRegion": "Московская область" } },
-        "organizer": { "@type": "Organization", "name": "АйДаКемп", "url": "https://aidacamp.ru" },
-        "description": "Короткая смена IT-лагеря АйДаКемп — 8 дней для детей 7–15 лет. Проекты по AI и программированию.",
-        "offers": { "@type": "Offer", "price": schemaPrice.s22, "priceCurrency": "RUB", "url": "https://aidacamp.ru/ceny", "availability": "https://schema.org/SoldOut" },
-        "audience": { "@type": "PeopleAudience", "suggestedMinAge": 7, "suggestedMaxAge": 15 }
-      },
-      {
-        "@context": "https://schema.org",
-        "@type": "Event",
-        "name": "Смена 3 — IT-лагерь АйДаКемп 2026 (август, 13 дней)",
-        "startDate": "2026-08-03",
-        "endDate": "2026-08-15",
-        "eventStatus": "https://schema.org/EventScheduled",
-        "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-        "location": { "@type": "Place", "name": "Санаторий Изумруд, Подмосковье", "address": { "@type": "PostalAddress", "addressCountry": "RU", "addressRegion": "Московская область" } },
-        "organizer": { "@type": "Organization", "name": "АйДаКемп", "url": "https://aidacamp.ru" },
-        "description": "Августовская смена IT-лагеря — 13 дней. Программирование, AI, командный проект для детей 7–15 лет.",
-        "offers": { "@type": "Offer", "price": schemaPrice.s3, "priceCurrency": "RUB", "url": "https://aidacamp.ru/ceny", "availability": "https://schema.org/InStock" },
-        "audience": { "@type": "PeopleAudience", "suggestedMinAge": 7, "suggestedMaxAge": 15 }
-      },
-      {
-        "@context": "https://schema.org",
-        "@type": "Event",
-        "name": "Смена 4 — IT-лагерь АйДаКемп 2026 (август, 10 дней)",
-        "startDate": "2026-08-17",
-        "endDate": "2026-08-26",
-        "eventStatus": "https://schema.org/EventScheduled",
-        "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-        "location": { "@type": "Place", "name": "Санаторий Изумруд, Подмосковье", "address": { "@type": "PostalAddress", "addressCountry": "RU", "addressRegion": "Московская область" } },
-        "organizer": { "@type": "Organization", "name": "АйДаКемп", "url": "https://aidacamp.ru" },
-        "description": "Последняя смена лета — 10 дней в августе. IT-лагерь АйДаКемп для детей 7–15 лет перед школой.",
-        "offers": { "@type": "Offer", "price": schemaPrice.s4, "priceCurrency": "RUB", "url": "https://aidacamp.ru/ceny", "availability": "https://schema.org/InStock" },
-        "audience": { "@type": "PeopleAudience", "suggestedMinAge": 7, "suggestedMaxAge": 15 }
-      }
-    ])} />
+    <script type="application/ld+json" set:html={JSON.stringify(eventLd)} />
   </Fragment>
   <LandingHero slot="hero"
     h1={`Детские лагеря Подмосковья — цены ${SEASON_YEAR}`}

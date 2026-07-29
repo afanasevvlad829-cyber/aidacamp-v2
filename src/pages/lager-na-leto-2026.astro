@@ -9,13 +9,25 @@ import { getRelatedPages } from '../data/landing-pages';
 import AskCta from '../components/AskCta.astro';
 import Gallery from '../components/Gallery.astro';
 import { STAT_DISTANCE, CAMP_PRICE_FROM, STAT_FOUNDED_YEAR, STAT_KIDS, CAMP_SEASON } from '../data/contacts';
-import { PRICE_MAX, PRICE_MIN, VYCHET_MAX, mainShifts, shortShifts, SEASON_YEAR } from '../data/shifts';
+import { PRICE_MAX, PRICE_MIN, VYCHET_MAX, mainShifts, shortShifts, SEASON_YEAR, displayShifts, SHIFT_META, PRICE_MIN_ID } from '../data/shifts';
 import TaxCalculator from '../components/TaxCalculator.astro';
 import { shiftLinkHtml } from '../lib/shift-link';
 import FAQSchema from '../components/FAQSchema.astro';
-import { SEASON_MONTHS_NOM } from '../data/evergreen';
+import { SEASON_MONTHS_NOM, SEASON_END_ISO } from '../data/evergreen';
+import { getCurrentPrice, getShiftPhase } from '../data/dynamicPrices';
 
 const allShiftsForTable = [...mainShifts, ...shortShifts].sort((a, b) => a.startDate.localeCompare(b.startDate));
+
+const ldPrice = (id: string) => String(getCurrentPrice(id) ?? SHIFT_META[id].basePrice);
+const eventList = displayShifts.map(s => ({
+  "@type": "EducationEvent",
+  "name": `Летний IT-лагерь ${SEASON_YEAR} - ${s.name}`,
+  "startDate": s.startDate,
+  "endDate": s.endDate,
+  "eventAttendanceMode": "OfflineEventAttendanceMode",
+  "offers": { "@type": "Offer", "price": ldPrice(s.id), "priceCurrency": "RUB",
+    "availability": getShiftPhase(s.id) === 'done' ? "https://schema.org/SoldOut" : "https://schema.org/InStock" },
+}));
 
 const sections = [
   {
@@ -108,63 +120,10 @@ const sections = [
   "offers": {
     "@type": "Offer",
     "priceCurrency": "RUB",
-    "price": "74900",
-    "priceValidUntil": "2026-08-26"
+    "price": ldPrice(PRICE_MIN_ID),
+    "priceValidUntil": SEASON_END_ISO
   },
-  "event": [
-    {
-      "@type": "EducationEvent",
-      "name": "Летний IT-лагерь 2026 - Смена 3",
-      "startDate": "2026-08-03",
-      "endDate": "2026-08-15",
-      "eventAttendanceMode": "OfflineEventAttendanceMode",
-      "offers": {
-        "@type": "Offer",
-        "price": "89400",
-        "priceCurrency": "RUB",
-        "availability": "https://schema.org/InStock"
-      }
-    },
-    {
-      "@type": "EducationEvent",
-      "name": "Летний IT-лагерь 2026 - Смена 4",
-      "startDate": "2026-08-17",
-      "endDate": "2026-08-26",
-      "eventAttendanceMode": "OfflineEventAttendanceMode",
-      "offers": {
-        "@type": "Offer",
-        "price": "74900",
-        "priceCurrency": "RUB",
-        "availability": "https://schema.org/InStock"
-      }
-    },
-    {
-      "@type": "EducationEvent",
-      "name": "Летний IT-лагерь 2026 - Смена 1",
-      "startDate": "2026-05-30",
-      "endDate": "2026-06-08",
-      "eventAttendanceMode": "OfflineEventAttendanceMode",
-      "offers": {
-        "@type": "Offer",
-        "price": "85900",
-        "priceCurrency": "RUB",
-        "availability": "https://schema.org/SoldOut"
-      }
-    },
-    {
-      "@type": "EducationEvent",
-      "name": "Летний IT-лагерь 2026 - Смена 2",
-      "startDate": "2026-06-10",
-      "endDate": "2026-06-23",
-      "eventAttendanceMode": "OfflineEventAttendanceMode",
-      "offers": {
-        "@type": "Offer",
-        "price": "99000",
-        "priceCurrency": "RUB",
-        "availability": "https://schema.org/SoldOut"
-      }
-    }
-  ]
+  "event": eventList
 })} />
   </Fragment>
   <LandingHero slot="hero"
