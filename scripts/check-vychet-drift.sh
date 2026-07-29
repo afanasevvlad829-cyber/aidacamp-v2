@@ -23,7 +23,7 @@ allowed.add('2000')
 BAN=re.compile(r'(?<!\w)5[   ]?434(?!\d)')
 # (?<!\d) — иначе «110 000 ₽» ложно матчится как «10 000 ₽» (см. selftest/отчёт Task 8)
 P_SUM=re.compile(r'(?<!\d)(\d{1,2}[   ]?\d{3})\s*₽')
-CTX=re.compile(r'вычет|верн[её]|ФНС|НДФЛ',re.I)
+CTX=re.compile(r'вычет|верн[её]|ФНС|НДФЛ|vychet|deduct',re.I)
 EXCL=('/_archive','/demo/','node_modules','eval-graders','.test.','lanit','check-vychet','5 434',
       # ниже — доп. находки при первом прогоне (Task 8, 17.07.2026):
       'disk_index.json', 'photo_catalog.json',   # бинарные индексы (md5/размеры) — «5434» внутри хешей
