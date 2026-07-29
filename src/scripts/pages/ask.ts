@@ -1,5 +1,10 @@
 // @ts-nocheck
 import { YM_COUNTER } from '../../data/tracking';
+import { allShiftsIncludingArchived, mainShifts, SHIFT_META, fmtRub, taxDeduction, shiftDatesShort } from '../../data/shifts';
+import { getCurrentPrice, getShiftPhase, getTaxDeduction } from '../../data/dynamicPrices';
+
+/** Текущая цена смены строкой «74 900 ₽» (правило роста; фолбэк — база). */
+const shiftPriceStr = (id: string) => fmtRub(getCurrentPrice(id) ?? SHIFT_META[id].basePrice);
 
 /* ── THEME ── */
 function initTheme(){
@@ -198,15 +203,18 @@ initTheme();
   resize();addEventListener('resize',resize);requestAnimationFrame(draw);
 })();
 
-/* ── CAMP DATA ── */
-const SMENY=[
-  {n:'Смена 1',dates:'30 мая — 8 июня',days:'10 дней',price:'85 900 ₽',available:false,occupied:23,total:35},
-  {n:'Смена 2',dates:'10 — 23 июня',days:'14 дней',price:'99 000 ₽',available:false,popular:true,occupied:41,total:45},
-  {n:'Смена 2.1',dates:'10 — 16 июня',days:'7 дней',price:'48 000 ₽',available:false,short:true,occupied:29,total:40},
-  {n:'Смена 2.2',dates:'16 — 23 июня',days:'8 дней',price:'75 000 ₽',available:false,short:true,occupied:37,total:45},
-  {n:'Смена 3',dates:'3 — 15 августа',days:'13 дней',price:'89 400 ₽',available:true,occupied:40,total:45},
-  {n:'Смена 4',dates:'17 — 26 августа',days:'10 дней',price:'74 900 ₽',available:true,occupied:31,total:45},
-];
+/* ── CAMP DATA — всё из src/data/shifts.ts, здесь ничего не хардкодим ── */
+const SMENY = allShiftsIncludingArchived.map(s => ({
+  n: s.name,
+  dates: shiftDatesShort(s),
+  days: s.duration,
+  price: shiftPriceStr(s.id),
+  available: getShiftPhase(s.id) === 'upcoming' && s.free > 0,
+  popular: !!s.popular,
+  short: s.statusType === 'short',
+  occupied: s.occupied,
+  total: s.occupied + s.free,
+}));
 const COURSES=[
   {icon:'keyboard',name:'Scratch',age:'8–10 лет',minAge:8,maxAge:10,
    campHook:'Сделает игру с персонажами и уровнями — покажет маме работающее приложение',
@@ -510,10 +518,20 @@ function blockPrices(){
   const head=mkEl('div','padding:13px 18px;border-bottom:1px solid rgba(13,27,42,.07)');
   head.innerHTML='<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:8px"><i class="bi bi-tag" aria-hidden="true"></i>Стоимость смен</span>';
   card.appendChild(head);
-  const tabs=[
-    {label:'10 дней',price:'74 900 ₽',sub:'за смену · Смена 4 (август)',inc:['Всё включено (проживание, питание, IT, трансфер)','Хакатон в последние 2 дня','Сертификат по итогам'],cb:'Налоговый вычет 13% — вернёте от <strong>4 800 ₽</strong> через ФНС'},
-    {label:'13 дней',price:'89 400 ₽',sub:'за смену · Смена 3 (август)',inc:['Полная программа — 13 дней','Всё включено + хакатон','Дети успевают подружиться по-настоящему'],cb:'Налоговый вычет 13% — вернёте от <strong>5 200 ₽</strong> через ФНС'},
-  ];
+  // Табы «Стоимость смен» — по открытым сменам, отсортированы по длительности
+  const tabs = [...mainShifts]
+    .sort((a, b) => SHIFT_META[a.id].days - SHIFT_META[b.id].days)
+    .map(s => ({
+      label: s.duration,
+      price: shiftPriceStr(s.id),
+      sub: `за смену · ${s.name}`,
+      inc: [
+        `Полная программа — ${s.duration}`,
+        'Всё включено (проживание, питание, IT, трансфер) + хакатон',
+        'Сертификат и документы для вычета по итогам',
+      ],
+      cb: `Налоговый вычет 13% — вернёте от <strong>${fmtRub(Math.floor(getTaxDeduction(s.id) / 100) * 100)}</strong> через ФНС`,
+    }));
   const tabRow=mkEl('div','display:flex;gap:1px;background:rgba(13,27,42,.07)');
   const bodies=[];
   tabs.forEach((tab,i)=>{
@@ -542,22 +560,17 @@ function blockPrices(){
 }
 
 function blockTaxCalculator(){
-  // Смены: [название, цена, дней]
-  const SHIFTS=[
-    ['Смена 4 — 17–26 авг, 10 дней', 74900, 10],
-    ['Смена 3 — 3–15 авг, 13 дней', 89400, 13],
-    ['Смена 1 (завершена) — 30 мая–8 июн, 10 дней', 85900, 10],
-    ['Смена 2 (завершена) — 10–23 июн, 14 дней', 99000, 14],
-    ['Смена 2.1 (завершена) — 10–16 июн, 7 дней', 48000, 7],
-    ['Смена 2.2 (завершена) — 16–23 июн, 8 дней', 75000, 8],
-  ];
-  const RESIDENTIAL_PER_DAY=3800;
-  const EDU_LIMIT=110000;
-  function calc(price,days){
-    const res=RESIDENTIAL_PER_DAY*days;
-    const edu=price-res;
-    const base=Math.min(edu,EDU_LIMIT);
-    return Math.round(base*0.13/100)*100;
+  // Смены для калькулятора: [название, текущая цена, дней] — из shifts.ts; открытые сверху
+  const SHIFTS = [...allShiftsIncludingArchived]
+    .sort((a, b) => Number(getShiftPhase(a.id) === 'done') - Number(getShiftPhase(b.id) === 'done'))
+    .map(s => [
+      `${s.name}${getShiftPhase(s.id) === 'done' ? ' (завершена)' : ''} — ${shiftDatesShort(s)}, ${s.duration}`,
+      getCurrentPrice(s.id) ?? SHIFT_META[s.id].basePrice,
+      SHIFT_META[s.id].days,
+    ] as [string, number, number]);
+  function calc(price: number, days: number) {
+    // Единая формула — taxDeduction() из shifts.ts; для виджета округляем до 100 ₽
+    return Math.round(taxDeduction(price, days) / 100) * 100;
   }
   const wrap=mkEl('div','width:100%;animation:blockPop .4s cubic-bezier(.16,1,.3,1) both,blockGlow .8s .2s ease-out both');
   const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
@@ -890,11 +903,15 @@ function blockPricingBreakdown(){
     +'<span style="font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;background:rgba(34,197,94,.15);color:#15803d">Можно сэкономить</span>';
   card.appendChild(head);
   const body=mkEl('div','padding:18px 20px;display:flex;flex-direction:column;gap:0');
-  const priceEl=mkEl('div','font-size:40px;font-weight:800;color:#0d1a2b;letter-spacing:-.03em;margin-bottom:4px;transition:all .5s','99 000 ₽');
+  // Демо-цена/вычет — открытая смена из shifts.ts, текущая цена по правилу роста
+  const _bpShiftId=mainShifts[0].id;
+  const _bpPrice=getCurrentPrice(_bpShiftId) ?? SHIFT_META[_bpShiftId].basePrice;
+  const _bpVychet=Math.floor(getTaxDeduction(_bpShiftId)/100)*100;
+  const priceEl=mkEl('div','font-size:40px;font-weight:800;color:#0d1a2b;letter-spacing:-.03em;margin-bottom:4px;transition:all .5s',shiftPriceStr(_bpShiftId));
   body.appendChild(priceEl);
-  body.appendChild(mkEl('div','font-size:13px;color:#4e6072;margin-bottom:20px','августовские смены · всё включено'));
+  body.appendChild(mkEl('div','font-size:13px;color:#4e6072;margin-bottom:20px','актуальная цена смены · всё включено'));
   const steps=[
-    {icon:'mortarboard',label:'Налоговый вычет 13% (через ФНС)',amount:'-5 200 ₽',color:'#1d6fe0',delay:600},
+    {icon:'mortarboard',label:'Налоговый вычет 13% (через ФНС)',amount:`-${fmtRub(_bpVychet)}`,color:'#1d6fe0',delay:600},
   ];
   const rowEls=steps.map(s=>{
     const row=mkEl('div','display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:rgba(13,27,42,.03);border:1px solid rgba(13,27,42,.07);margin-bottom:8px;opacity:0;transform:translateY(8px);transition:all .4s');
@@ -909,7 +926,7 @@ function blockPricingBreakdown(){
   body.appendChild(divider);
   const fin=mkEl('div','display:flex;align-items:center;justify-content:space-between;opacity:0;transition:all .5s');
   fin.appendChild(mkEl('span','font-size:14px;font-weight:600;color:#4e6072','Итого с вычетом'));
-  fin.appendChild(mkEl('span','font-size:26px;font-weight:800;color:#16a34a;letter-spacing:-.02em','82 650 ₽'));
+  fin.appendChild(mkEl('span','font-size:26px;font-weight:800;color:#16a34a;letter-spacing:-.02em',fmtRub(_bpPrice-_bpVychet)));
   body.appendChild(fin);
   card.appendChild(body);
   card.appendChild(mkEl('div','padding:0 20px 14px;font-size:11px;color:rgba(13,27,42,.35);line-height:1.6','* Налоговый вычет 13% — декларация 3-НДФЛ за обучение (образовательная часть путёвки выделяется в договоре отдельно). Возврат на счёт в течение 3–4 месяцев.'));
