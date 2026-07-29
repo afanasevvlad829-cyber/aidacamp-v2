@@ -1,10 +1,10 @@
 import type { APIRoute } from 'astro';
-import heroVariants from '../../data/hero-variants.json';
+import { HERO_VARIANTS } from '../../data/heroVariants';
 
 export const prerender = false;
 
 export const GET: APIRoute = async () => {
-  return new Response(JSON.stringify(heroVariants), {
+  return new Response(JSON.stringify(HERO_VARIANTS), {
     status: 200,
     headers: {
       'Content-Type': 'application/json',

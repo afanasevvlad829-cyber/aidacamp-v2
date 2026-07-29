@@ -1,4 +1,5 @@
 import { SEASON_MONTHS_NOM } from './evergreen';
+import { PRICE_MIN, SEASON_YEAR } from './shifts';
 /**
  * Единый источник правды для всех лендингов АйДаКемп.
  *
@@ -121,13 +122,13 @@ export const landingPages: LandingPage[] = [
   { title: 'Путёвка в лагерь', description: 'Оплата, договор, 50% сейчас + 50% за 3 нед.', url: '/putevka-v-lager/', icon: 'bi-credit-card' },
   { title: 'Сколько стоит лагерь', description: 'Разбор цен по типам лагерей', url: '/skolko-stoit-lager-dlya-rebenka/', icon: 'bi-coin' },
   { title: 'Налоговый вычет 13%', description: 'Калькулятор возврата с путёвки', url: '/nalogovyj-vychet/', icon: 'bi-receipt' },
-  { title: 'Лагерь недорого', description: 'От 74 900 ₽ за смену, оплата частями', url: '/lager-nedorogo/', icon: 'bi-tag' },
+  { title: 'Лагерь недорого', description: `От ${PRICE_MIN} за смену, оплата частями`, url: '/lager-nedorogo/', icon: 'bi-tag' },
 
   // 🗓 Сезонные
   { title: 'Лагерь летом', description: 'IT-лагерь летом 2026 для детей 7–15 лет', url: '/lager-letom/', icon: 'bi-sun-fill' },
   { title: 'Лагерь на каникулы', description: 'Июнь, июль, август 2026', url: '/lager-na-kanikuly/', icon: 'bi-sun' },
   { title: 'Лагерь на неделю', description: 'Короткие смены 7–10 дней круглый год', url: '/lager-na-nedelyu/', icon: 'bi-calendar2-check' },
-  { title: 'Лагерь на июнь', description: 'Смены июня 2026, с 30 мая', url: '/lager-na-iyun/', icon: 'bi-calendar-event' },
+  { title: 'Лагерь на июнь', description: `Июньские смены ${SEASON_YEAR}`, url: '/lager-na-iyun/', icon: 'bi-calendar-event' },
   { title: 'Лагерь на июль', description: 'Июльские смены 2026 в Подмосковье', url: '/lager-na-iyul/', icon: 'bi-sun' },
   { title: 'Лагерь на август', description: 'Смены августа 2026 в Подмосковье', url: '/lager-na-avgust-podmoskove/', icon: 'bi-sun' },
   { title: 'Лагерь на осенние каникулы', description: 'IT-смена в октябре 2026, предзапись открыта', url: '/lager-na-osennie-kanikuly/', icon: 'bi-cloud-sun' },

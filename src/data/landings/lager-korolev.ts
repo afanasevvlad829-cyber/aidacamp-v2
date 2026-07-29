@@ -1,4 +1,5 @@
 import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, VYCHET_MAX, VYCHET_S2, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
+import { OPEN_DAYS_PHRASE } from '../evergreen';
 import type { LandingData } from './types';
 
 const landing: LandingData = {
@@ -122,7 +123,7 @@ const landing: LandingData = {
     },
     {
       h2: 'Чем АйДаКемп отличается от Кванториума?',
-      text: 'Кванториум — дневные занятия в городе, 2–3 часа в неделю. АйДаКемп — 7 или 14 дней полного погружения с проживанием, питанием, командным проектом и хакатоном. Это не конкуренты — это разные форматы для разных задач.',
+      text: `Кванториум — дневные занятия в городе, 2–3 часа в неделю. АйДаКемп — ${OPEN_DAYS_PHRASE} полного погружения с проживанием, питанием, командным проектом и хакатоном. Это не конкуренты — это разные форматы для разных задач.`,
       list: [
         'Кванториум: регулярные занятия в учебном году, короткие сессии',
         'АйДаКемп: летнее погружение — от утренней зарядки до ночного хакатона',
