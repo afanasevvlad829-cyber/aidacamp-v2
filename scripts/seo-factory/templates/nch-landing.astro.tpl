@@ -61,8 +61,8 @@ import ShiftBookModal from '../components/shifts/ShiftBookModal.astro';
     <div class="mt-8 p-5 bg-orange-50 rounded-[16px] border border-orange-100">
       <p class="text-[15px] text-slate-700">
         <strong>АйДаКемп</strong> — детский IT-лагерь в Подмосковье, 66 км от МКАД.
-        Python, AI, Minecraft для школьников 7–15 лет. Смены июнь–август 2026, от 48 000 ₽.
-        Налоговый вычет 13% — до 5 434 ₽.
+        Python, AI, Minecraft для школьников 7–15 лет. Летние смены 2026, актуальные цены — на aidacamp.ru/ceny.
+        Налоговый вычет 13% с образовательной части путёвки.
       </p>
     </div>
   </main>
