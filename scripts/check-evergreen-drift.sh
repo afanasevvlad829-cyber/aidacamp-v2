@@ -63,7 +63,7 @@ for base in BASES:
     for root, _, files in os.walk(base):
         if any(x in root for x in EXCL_PATH): continue
         for fn in files:
-            if not fn.endswith(('.astro', '.ts')): continue
+            if not fn.endswith(('.astro', '.ts', '.json')): continue
             p = os.path.join(root, fn)
             if any(x in p for x in EXCL_PATH): continue
             for i, line in enumerate(open(p, encoding='utf-8'), 1):

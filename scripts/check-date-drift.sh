@@ -40,7 +40,10 @@ EXCL=('/demo/','/_archive','/corp/','/admin/','lanit','glass-','hyperui','design
       # ниже — доп. находки при первом прогоне после расширения на src/data/src/scripts (Task 8):
       # реестры дат ПУБЛИКАЦИИ статей / снепшотов просмотров — не даты смен, ISO-литералы
       # случайно попадают в летний диапазон
-      'articleDates.ts', 'articleViews.ts')
+      'articleDates.ts', 'articleViews.ts',
+      # доп. находка после расширения стража на .json (Task 9): articles.json — тот же
+      # реестр дат публикации статей (поле "date"), просто в JSON, а не в .ts
+      'articles.json')
 drift={}
 def chk(p,line,i,m,a_d,a_m,b_d,b_m,tok):
     if a_m is None or b_m is None: return
@@ -52,7 +55,7 @@ for base in ['src/pages','src/components','src/data','src/scripts','src/lib']:
     for root,_,files in os.walk(base):
         if any(x in root for x in EXCL): continue
         for fn in files:
-            if not fn.endswith(('.astro','.ts','.md')): continue
+            if not fn.endswith(('.astro','.ts','.md','.json')): continue
             p=os.path.join(root,fn)
             if any(x in p for x in EXCL): continue
             for i,line in enumerate(open(p,encoding='utf-8'),1):
