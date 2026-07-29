@@ -30,10 +30,13 @@ const gridColumns = doneShifts.length > 0
   ? `${'1fr '.repeat(activeShifts.length)}0.6fr`.trim()
   : `${'1fr '.repeat(activeShifts.length)}`.trim();
 
-const MON_RU = ['','январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
-const doneMonthLabel = doneShifts.length > 0
-  ? MON_RU[new Date(doneShifts[doneShifts.length - 1].endDate + 'T00:00:00').getMonth() + 1]
-  : '';
+// Обложки прошедших смен — фото из фотобанка (Immich, альбомы «Смена N — YYYY»),
+// сами файлы лежат в /var/www/aidacamp-gallery/ (общий архив dev+prod, не в репо).
+// Точечная карта id → путь, не постоянное поле данных.
+const DONE_SHIFT_COVERS: Record<string, string> = {
+  'shift-1': '/images/gallery/proto-smena1.webp',
+  'shift-2': '/images/gallery/proto-smena2.webp',
+};
 ---
 
 <section id="shifts" class="mx-auto max-w-[1312px] px-[2px] pt-10 md:px-4">
@@ -132,17 +135,35 @@ const doneMonthLabel = doneShifts.length > 0
               );
             })}
 
-            {/* Прошедшие смены справа — один компактный слот с прямыми ссылками на рекапы.
+            {/* Прошедшие смены справа — один компактный слот с прямыми ссылками на рекапы,
+                фото со смены (Immich) вместо голого текста — жизнь лагеря видна сразу.
                 График роста цены — на странице каждой смены (kak-proshla-smena-N), не здесь. */}
             {doneShifts.length > 0 && (
               <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch">
-                <div class="flex h-full flex-col justify-center gap-2 rounded-[22px] border border-border-light bg-card p-5 md:p-6">
-                  <p class="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Как прошёл {doneMonthLabel}</p>
-                  {doneShifts.map((s) => (
-                    <a href={s.recapUrl} class="group flex items-center justify-between gap-2 text-base font-semibold text-emerald-700 hover:text-emerald-800">
-                      {s.name}
-                      <i class="bi bi-arrow-right icon-arrow-right-hover" aria-hidden="true"></i>
-                    </a>
+                <div class="flex h-full flex-col justify-center gap-4 rounded-[22px] border border-border-light bg-card p-5 md:p-6">
+                  <p class="text-[11px] font-bold uppercase tracking-[0.15em] text-body-faint">Прошедшие смены</p>
+                  {doneShifts.map((s, i) => (
+                    <Fragment>
+                      {i > 0 && <div class="border-t border-border-light"></div>}
+                      <a href={s.recapUrl} class="group flex items-center gap-3 no-underline pt-1 first:pt-0">
+                        <img
+                          src={DONE_SHIFT_COVERS[s.id] ?? '/images/gallery/camp-smile.avif'}
+                          alt={`Фото со смены «${s.name}»`}
+                          class="h-24 w-24 shrink-0 rounded-2xl object-cover"
+                          loading="lazy"
+                          width="96"
+                          height="96"
+                        />
+                        <span class="min-w-0 flex-1">
+                          <span class="block text-[17px] font-bold leading-tight text-body">{s.name}</span>
+                          <span class="mt-1 block text-[13px] leading-snug text-body-faint">{s.dates}</span>
+                          <span class="mt-1.5 inline-flex items-center gap-1 text-[13px] font-semibold text-emerald-600 group-hover:text-emerald-700">
+                            Фото и итоги
+                            <i class="bi bi-arrow-right icon-arrow-right-hover text-[10px]" aria-hidden="true"></i>
+                          </span>
+                        </span>
+                      </a>
+                    </Fragment>
                   ))}
                 </div>
               </div>

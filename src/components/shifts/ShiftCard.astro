@@ -91,6 +91,10 @@ const startDate = shift.startDate ? new Date(shift.startDate + 'T00:00:00') : nu
 const daysLeft = startDate
   ? Math.max(0, Math.ceil((startDate.getTime() - today.getTime()) / 86_400_000))
   : null;
+
+// Полоса занятости — сегментами (24 сегмента), заполненность сразу видна, без блюра/клика
+const SEGMENTS = 24;
+const filledSegments = Math.round((pct / 100) * SEGMENTS);
 ---
 
 <article
@@ -107,89 +111,115 @@ const daysLeft = startDate
     ringCls,
   ]}
 >
-  <!-- NEAREST BANNER -->
-  {shift.nearest && (
-    <div class="-mx-5 -mt-5 mb-4 md:-mx-6 md:-mt-6 flex items-center gap-2 rounded-t-[20px] bg-primary px-5 py-2.5 md:px-6">
-      <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/25 text-base font-extrabold text-white shrink-0">{shiftNum}</span>
-      <span class="text-base font-bold text-white">Ближайшая</span>
-      {daysLeft !== null && daysLeft > 0 && (
-        <span class="ml-auto text-[12px] text-white/75 whitespace-nowrap">через {daysLeft}&nbsp;{pluralDays(daysLeft)}</span>
-      )}
-    </div>
-  )}
-
-  <!-- HEADER: circle + month | status pill -->
-  <div class="flex items-center justify-between gap-2 mb-3">
-    <div class="flex items-center gap-1.5 min-w-0">
-      <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-base font-extrabold text-primary leading-none shrink-0">{shiftNum}</span>
-      <p class="text-[11px] font-bold uppercase tracking-[0.15em] text-body-faint truncate">{eyebrowMonths}</p>
-    </div>
-    {statusPill && (
-      <span class:list={[
-        'shrink-0 inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold',
-        statusPill.cls,
-      ]} data-spots-pill={statusPill.text.startsWith('Осталось') ? shift.free : undefined}>{statusPill.text}</span>
+  <!-- TOP STRIP: единая шапка для nearest/обычных карточек — один и тот же короб (padding/margin/badge),
+       меняется только заливка и содержимое. Так даты у всех карточек в ряду стартуют на одной высоте
+       (раньше баннер «Ближайшая» + обычный заголовок дублировали друг друга и карточки «плыли»). -->
+  <div
+    class:list={[
+      '-mx-5 -mt-5 mb-4 md:-mx-6 md:-mt-6 flex items-center gap-2 rounded-t-[20px] border-b px-5 py-3 md:px-6',
+      shift.nearest
+        ? 'border-[var(--color-primary-100)] bg-[var(--color-primary-soft)]'
+        : 'border-border-light bg-transparent',
+    ]}
+  >
+    <span
+      class:list={[
+        'inline-flex h-7 w-7 items-center justify-center rounded-full text-base font-extrabold leading-none shrink-0',
+        shift.nearest
+          ? 'bg-primary text-white shadow-[0_0_0_3px_rgba(236,124,0,0.18)]'
+          : 'bg-primary/10 text-primary',
+      ]}
+    >{shiftNum}</span>
+    {shift.nearest ? (
+      <Fragment>
+        <span class="text-base font-bold text-body">Ближайшая</span>
+        {daysLeft !== null && daysLeft > 0 && (
+          <span class="ml-auto text-[12px] font-semibold text-primary whitespace-nowrap">через {daysLeft}&nbsp;{pluralDays(daysLeft)}</span>
+        )}
+      </Fragment>
+    ) : (
+      <Fragment>
+        <p class="text-[11px] font-bold uppercase tracking-[0.15em] text-body-faint truncate min-w-0">{eyebrowMonths}</p>
+        {statusPill && (
+          <span class:list={[
+            'ml-auto shrink-0 inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold',
+            statusPill.cls,
+          ]} data-spots-pill={statusPill.text.startsWith('Осталось') ? shift.free : undefined}>{statusPill.text}</span>
+        )}
+      </Fragment>
     )}
   </div>
 
-  <!-- DATES + DURATION: одна строка, не переносится -->
-  <h3 class="text-[18px] font-extrabold tracking-[-0.02em] leading-[1.1] text-body whitespace-nowrap overflow-hidden text-ellipsis">
-    {shift.dates}
-  </h3>
-  <p class="mt-0.5 text-base text-body-muted">{shift.duration}</p>
+  <!-- DATES + КАЛЕНДАРЬ (модалка занятости по дням) + DURATION — один ряд -->
+  <div class="flex items-center justify-between gap-2">
+    <div class="flex items-center gap-0.5 min-w-0">
+      <h3 class="text-[18px] font-extrabold tracking-[-0.02em] leading-[1.1] text-body whitespace-nowrap overflow-hidden text-ellipsis">
+        {shift.dates}
+      </h3>
+      <button
+        type="button"
+        data-shift-calendar
+        data-start={shift.startDate}
+        data-end={shift.endDate}
+        data-shift-name={shift.name}
+        class="inline-flex h-[30px] w-[30px] shrink-0 items-center justify-center text-body-faint transition-colors hover:text-primary"
+        aria-label={`Календарь смены ${shift.name}`}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-[22px] w-[22px]" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>
+        </svg>
+      </button>
+    </div>
+    <p class="text-base text-body-muted whitespace-nowrap shrink-0">{shift.duration}</p>
+  </div>
 
-  <!-- OCCUPANCY BAR — скрыто блюром до клика «узнать места» (раскрытие на сессию, синхронно по data-occ-shift) -->
+  <!-- OCCUPANCY BAR — видна сразу (сегменты), статус справа над баром -->
   {isSoldOut ? (
-    <div class="mt-4 min-h-[40px]">
-      <div class="flex justify-end text-[12px] mb-1.5">
+    <div class="mt-4">
+      <div class="flex justify-end text-[13px] mb-2">
         <span class="inline-flex items-center rounded-full bg-slate-200 px-2.5 py-0.5 text-[11px] font-bold text-slate-600">Мест нет</span>
       </div>
-      <div class="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
-        <div class="h-full w-full rounded-full bg-slate-400"></div>
+      <div class="flex h-3 gap-[3px]">
+        {Array.from({ length: SEGMENTS }).map(() => (
+          <span class="flex-1 rounded-[3px] bg-slate-300"></span>
+        ))}
       </div>
     </div>
   ) : (
-    <div class="mt-4 relative min-h-[40px]" data-occupancy data-occ-shift={shift.id}>
-      <div data-occ-content class="occ-cover transition-[filter,opacity] duration-300">
-        <div class="flex justify-between text-[12px] mb-1.5">
-          <span class="text-body-faint whitespace-nowrap" data-occ-status-slot data-occ-default="Занято">Занято</span>
-          <span data-occ-num class:list={['font-semibold', isLowAvailability ? 'text-primary' : 'text-emerald-600']}>
-            {isLowAvailability
-              ? <Fragment>Осталось <span data-count-to={shift.free}>{shift.free}</span></Fragment>
-              : <Fragment><span data-count-to={shift.occupied}>{shift.occupied}</span> из {total}</Fragment>
-            }
-          </span>
-        </div>
-        <div class="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
-          <div data-shift-bar class:list={['h-full rounded-full', isLowAvailability ? 'bg-primary' : 'bg-emerald-400']} style={`--bar-pct:${pct}%`}></div>
-        </div>
-      </div>
-      <button type="button" data-occ-reveal
-        class="absolute inset-0 z-10 flex items-center justify-center gap-1.5 rounded-lg text-[12px] font-semibold text-primary hover:text-primary-hover transition-colors"
-        aria-label="Узнать число свободных мест в этой смене">
-        <span data-occ-icon class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/40 bg-primary/5">
-          <i class="bi bi-search text-[10px]" aria-hidden="true"></i>
+    <div class="mt-4">
+      <div class="flex justify-end text-[13px] mb-2">
+        <span class:list={['font-bold', isLowAvailability ? 'text-primary' : 'text-body-faint']}>
+          {isLowAvailability
+            ? <Fragment>Осталось <span data-count-to={shift.free}>{shift.free}</span></Fragment>
+            : <Fragment><span data-count-to={shift.occupied}>{shift.occupied}</span> из {total}</Fragment>
+          }
         </span>
-        <span data-occ-label>узнать места</span>
-      </button>
+      </div>
+      <div class="flex h-3 gap-[3px]">
+        {Array.from({ length: SEGMENTS }).map((_, i) => (
+          <span class:list={['flex-1 rounded-[3px]', i < filledSegments ? 'bg-emerald-500' : 'bg-border-light']}></span>
+        ))}
+      </div>
     </div>
   )}
 
-  <!-- PRICE -->
+  <!-- PRICE — цена и рост цены в один ряд, вычет сразу под ним -->
   <div class="mt-4 flex-1 flex flex-col justify-end">
-    <p class="text-[24px] font-extrabold tracking-[-0.02em] leading-none text-primary" data-dynamic-price={shift.id}>{ssrPriceFmt}</p>
+    <div class="flex items-baseline justify-between gap-2">
+      <p class="text-[24px] font-extrabold tracking-[-0.02em] leading-none text-body" data-dynamic-price={shift.id}>{ssrPriceFmt}</p>
+      {priceGrowsToday && (
+        <p class="text-[11px] font-semibold text-primary flex items-center gap-1 whitespace-nowrap shrink-0">
+          <i class="bi bi-graph-up-arrow text-[10px]" aria-hidden="true"></i>
+          Завтра +{priceGrowsDiff.toLocaleString('ru-RU')} ₽
+        </p>
+      )}
+    </div>
     <span class="hidden text-[11px] font-semibold text-orange-500 mt-0.5" data-price-stage={shift.id}></span>
-    {priceGrowsToday && (
-      <p class="text-[11px] font-semibold text-orange-500 mt-0.5 flex items-center gap-1">
-        <i class="bi bi-graph-up-arrow text-[10px]" aria-hidden="true"></i>
-        Завтра +{priceGrowsDiff.toLocaleString('ru-RU')} ₽
-      </p>
-    )}
-    <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+    <div class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
       <span class="text-[12px] text-body-faint">всё включено</span>
       {vychetAmount > 0 && (
-        <span class="text-[12px] text-slate-400">
-          · ↺&nbsp;<a href="/nalogovyj-vychet/" class="underline hover:text-slate-600" data-vychet-link={shift.id}>−{vychetAmount.toLocaleString('ru-RU')} ₽ вычет</a>
+        <span class="text-[12px] text-body-faint">
+          · <a href="/nalogovyj-vychet/" class="text-[var(--color-blue-light)] underline decoration-[var(--color-blue-light)]/45 hover:text-primary" data-vychet-link={shift.id}>{vychetAmount.toLocaleString('ru-RU')} ₽ налогового вычета</a>
         </span>
       )}
     </div>
@@ -239,50 +269,13 @@ const daysLeft = startDate
           : 'border border-border bg-transparent hover:border-primary/40 hover:bg-primary/5 text-body-muted hover:text-primary',
       ]}
     >
-      {isPrimaryCta ? 'Выбрать' : 'Что внутри?'}
+      Выбрать
       <i class="bi bi-arrow-right text-base transition-transform group-hover/cta:translate-x-1" aria-hidden="true"></i>
     </a>
   )}
 
 </article>
 
-<style>
-  /* Счётчик мест скрыт блюром, пока не нажали «узнать места» */
-  .occ-cover { filter: blur(5px); opacity: 0.45; }
-
-  /* Загрузка — яркий пульсирующий кружок + статус primary-цветом */
-  [data-occ-reveal].occ-loading [data-occ-icon] {
-    background: rgb(236, 124, 0);
-    border-color: rgb(236, 124, 0);
-    color: #fff;
-    animation: occ-pulse 0.9s ease-in-out infinite;
-  }
-  [data-occ-reveal].occ-loading [data-occ-label] { color: rgb(236, 124, 0); }
-  @keyframes occ-pulse {
-    0%, 100% { box-shadow: 0 0 0 2px rgba(236, 124, 0, 0.18); }
-    50%      { box-shadow: 0 0 0 7px rgba(236, 124, 0, 0.30); }
-  }
-
-  /* Раскрытие — pop счётчика + вспышка числа */
-  @keyframes occ-pop {
-    0%   { transform: scale(0.9); }
-    55%  { transform: scale(1.07); }
-    100% { transform: scale(1); }
-  }
-  .occ-pop { animation: occ-pop 0.5s cubic-bezier(0.2, 0.8, 0.3, 1.3); }
-  .occ-pop [data-count-to] {
-    border-radius: 6px;
-    padding: 0 3px;
-    animation: occ-glow 1s ease-out;
-  }
-  @keyframes occ-glow {
-    0%   { background: rgba(236, 124, 0, 0.40); box-shadow: 0 0 14px rgba(236, 124, 0, 0.55); }
-    100% { background: transparent; box-shadow: none; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .occ-pop, [data-occ-reveal].occ-loading [data-occ-icon] { animation: none; }
-  }
-</style>
 
 <script>
   function initShiftCards() {
@@ -315,14 +308,11 @@ const daysLeft = startDate
       });
     });
 
-    // ── Progress-bar + counter animate on scroll ──────────────────────────────
+    // ── Счётчик занятости animate on scroll (сегменты бара рендерятся сразу на сервере) ──
     if ((window as any).__shiftBarObserverReady) return;
     (window as any).__shiftBarObserverReady = true;
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      document.querySelectorAll<HTMLElement>('[data-shift-bar]').forEach(b => b.classList.add('bar-filled'));
-      return;
-    }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     function animateCounter(el: HTMLElement) {
       const target = parseInt(el.dataset.countTo || '0', 10);
@@ -343,7 +333,6 @@ const daysLeft = startDate
         entries.forEach((entry) => {
           if (!entry.isIntersecting) return;
           const card = entry.target as HTMLElement;
-          card.querySelectorAll<HTMLElement>('[data-shift-bar]').forEach(b => b.classList.add('bar-filled'));
           card.querySelectorAll<HTMLElement>('[data-count-to]').forEach(animateCounter);
           barObserver.unobserve(card);
         });
@@ -398,132 +387,5 @@ const daysLeft = startDate
   }
   document.addEventListener('astro:page-load', updateShift1Days);
   updateShift1Days();
-
-  // ── Блюр счётчика мест → клик «узнать места» раскрывает смену ──────────────
-  // Гранулярно по смене, синхронно на всех карточках (data-occ-shift).
-  // Храним в sessionStorage → повторный заход снова под блюром → снова событие.
-  function initOccupancy() {
-    const KEY = 'ac:occ_revealed';
-    const getRevealed = () => {
-      try { return JSON.parse(sessionStorage.getItem(KEY) || '[]'); } catch { return []; }
-    };
-    const saveRevealed = (id: string) => {
-      const r = getRevealed();
-      if (!r.includes(id)) { r.push(id); try { sessionStorage.setItem(KEY, JSON.stringify(r)); } catch {} }
-    };
-
-    // Цвет бара по прогрессу проверки: 1-я треть зелёный, 2-я жёлтый, 3-я красный
-    function colorForProgress(t: number) {
-      if (t < 1 / 3) return 'rgb(22, 163, 74)';   // зелёный
-      if (t < 2 / 3) return 'rgb(234, 179, 8)';   // жёлтый
-      return 'rgb(220, 38, 38)';                  // красный
-    }
-    const barPct = (bar: HTMLElement | null) => (bar ? parseFloat(bar.style.getPropertyValue('--bar-pct')) || 0 : 0);
-    // Ширину бара двигаем через --bar-pct (CSS: width: var(--bar-pct) !important — inline width бессилен)
-    function setBar(bar: HTMLElement | null, pct: number, t: number) {
-      if (!bar) return;
-      bar.classList.add('bar-filled');
-      bar.style.transition = 'none';
-      bar.style.setProperty('--bar-pct', pct + '%');
-      bar.style.backgroundColor = colorForProgress(t);
-    }
-
-    function animateCount(el: HTMLElement) {
-      const target = parseInt(el.dataset.countTo || '0', 10);
-      const dur = 600, t0 = performance.now();
-      function tick(now: number) {
-        const t = Math.min((now - t0) / dur, 1);
-        el.textContent = String(Math.round((1 - Math.pow(1 - t, 3)) * target));
-        if (t < 1) requestAnimationFrame(tick);
-      }
-      requestAnimationFrame(tick);
-    }
-
-    const STEPS = ['Сверяемся…', 'Запрос в CRM…', 'Сверяем брони…', 'Смотрим отказы…', 'Просроченные брони…'];
-    const DUR = 7000;
-
-    // Мгновенное финальное состояние — для уже открытых в этой сессии
-    function setFinal(block: HTMLElement) {
-      const bar = block.querySelector<HTMLElement>('[data-shift-bar]');
-      setBar(bar, barPct(bar), 1);
-      block.querySelectorAll<HTMLElement>('[data-count-to]').forEach((el) => { el.textContent = el.dataset.countTo || '0'; });
-      const num = block.querySelector<HTMLElement>('[data-occ-num]');
-      if (num) num.style.display = '';
-      const slot = block.querySelector<HTMLElement>('[data-occ-status-slot]');
-      if (slot) slot.textContent = slot.dataset.occDefault || 'Занято';
-    }
-
-    // Драматичный reveal ~2.5 с: статус-цепочка + бар зелёный→жёлтый→красный
-    function playReveal(block: HTMLElement) {
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setFinal(block); return; }
-      const bar = block.querySelector<HTMLElement>('[data-shift-bar]');
-      const slot = block.querySelector<HTMLElement>('[data-occ-status-slot]');
-      const num = block.querySelector<HTMLElement>('[data-occ-num]');
-      const content = block.querySelector<HTMLElement>('[data-occ-content]');
-      const finalPct = barPct(bar);
-
-      if (num) num.style.display = 'none';          // число прячем, пока «считаем остаток»
-      setBar(bar, 0, 0);                             // старт с нуля, зелёный
-
-      let si = -1;
-      const step = () => { si++; if (slot && si < STEPS.length) slot.innerHTML = `<i class="bi bi-arrow-repeat animate-spin"></i> ${STEPS[si]}`; };
-      step();
-      const iv = setInterval(step, DUR / STEPS.length);
-
-      const t0 = performance.now();
-      function frame(now: number) {
-        const t = Math.min((now - t0) / DUR, 1);
-        // бар растёт линейно вместе со статус-шагами; цвет — по третям прогресса
-        setBar(bar, finalPct * t, t);
-        if (t < 1) { requestAnimationFrame(frame); return; }
-        clearInterval(iv);
-        if (slot) slot.textContent = slot.dataset.occDefault || 'Занято';
-        if (num) num.style.display = '';
-        block.querySelectorAll<HTMLElement>('[data-count-to]').forEach(animateCount);
-        content?.classList.add('occ-pop');
-        setTimeout(() => content?.classList.remove('occ-pop'), 700);
-      }
-      requestAnimationFrame(frame);
-    }
-
-    function revealShift(id: string, animate: boolean) {
-      document.querySelectorAll<HTMLElement>(`[data-occupancy][data-occ-shift="${id}"]`).forEach((block) => {
-        block.querySelector('[data-occ-content]')?.classList.remove('occ-cover');
-        block.querySelector('[data-occ-reveal]')?.classList.add('hidden');
-        if (animate) playReveal(block); else setFinal(block);
-      });
-    }
-
-    // На загрузке — раскрываем уже открытые в этой сессии (без анимации)
-    getRevealed().forEach((id: string) => revealShift(id, false));
-
-    document.querySelectorAll<HTMLElement>('[data-occ-reveal]').forEach((btn) => {
-      if (btn.dataset.occBound) return;
-      btn.dataset.occBound = '1';
-      // не даём клику всплыть до навигации по карточке
-      ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'touchstart', 'touchend'].forEach((ev) =>
-        btn.addEventListener(ev, (e) => e.stopPropagation()));
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const block = btn.closest<HTMLElement>('[data-occupancy]');
-        const id = block?.dataset.occShift;
-        if (!id) return;
-        saveRevealed(id);
-        revealShift(id, true);
-        // trackGoal вместо прямого ym: цель уходит и в Метрику, и в /api/track → analytics_events
-        // (клик «проверить места» = сигнал заполненности в intent-скоринге горячих посетителей)
-        try {
-          if (typeof (window as any).trackGoal === 'function') {
-            (window as any).trackGoal('available_spots', { shift: id, page: location.pathname });
-          } else {
-            (window as any).ym?.(96499295, 'reachGoal', 'available_spots', { shift: id });
-          }
-        } catch {}
-      });
-    });
-  }
-
-  document.addEventListener('astro:page-load', initOccupancy);
-  if (document.readyState !== 'loading') initOccupancy();
 </script>
+
