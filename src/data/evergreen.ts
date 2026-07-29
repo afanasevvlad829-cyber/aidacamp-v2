@@ -81,6 +81,10 @@ export const SEASON_SHIFTS_PHRASE = shiftsPhrase(_season.length);
 export const SEASON_SHIFTS_PHRASE_CAP =
   SEASON_SHIFTS_PHRASE.charAt(0).toUpperCase() + SEASON_SHIFTS_PHRASE.slice(1);
 
+/** Крайние даты сезона ISO — для JSON-LD (startDate/endDate сезонных Event/Offer.priceValidUntil). */
+export const SEASON_START_ISO = _sStart;
+export const SEASON_END_ISO = _sEnd;
+
 // ── Открытые (предстоящие) смены — меняются по мере прохождения ──────────
 const _open = upcomingShifts(TODAY);
 const _openMonths = monthsOf(_open);
@@ -98,6 +102,11 @@ export const OPEN_MONTHS_NOM = joinRu(_openMonths.map(i => MONTH_NOM[i]));
 export const OPEN_MONTHS_PREP = 'в ' + joinRu(_openMonths.map(i => MONTH_PREP[i]));
 /** Прилагательные месяцев открытых смен: «августовские». Для «открыты августовские смены». */
 export const OPEN_MONTHS_ADJ = joinRu(_openMonths.map(i => MONTH_ADJ[i]));
+
+/** Длительности открытых смен: «10 и 13 дней». '' если открытых нет. */
+export const OPEN_DAYS_PHRASE = _open.length
+  ? joinRu([...new Set(_open.map(s => parseInt(s.duration, 10)))].sort((a, b) => a - b).map(String)) + ' дней'
+  : '';
 
 // ── Прошедшие месяцы (для статусных фраз «…смены уже прошли») ────────────
 const _pastMonths = monthsOf(_season).filter(m => !_openMonths.includes(m));
