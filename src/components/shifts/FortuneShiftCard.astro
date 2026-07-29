@@ -11,12 +11,19 @@ const { shiftId = 'shift-1' } = Astro.props;
 const shift = mainShifts.find((s) => s.id === shiftId) ?? mainShifts[0];
 const SHIFT_ID = shift.id;
 
+// Номер смены для кружка в шапке — тот же паттерн, что в ShiftCard.astro
+const shiftNum = shift.id.replace('shift-', '').replace('-', '.');
+
 // Занятость fallback-карточки — было захардкожено "Осталось 3 места"/"width:91%"
 // (05.07.2026: чинил заодно с блюром — число разошлось с реальными данными shifts.ts).
 const fscTotal = shift.free + shift.occupied || 1;
 const fscPct = Math.round((shift.occupied / fscTotal) * 100);
 const fscFreeLabel = shift.free === 1 ? '1 место' : shift.free < 5 ? `${shift.free} места` : `${shift.free} мест`;
 const fscIsLow = getAvailabilityLevel(shift) === 'low';
+
+// Полоса занятости — сегментами, как в ShiftCard.astro (единый стиль)
+const FSC_SEGMENTS = 24;
+const fscFilledSegments = Math.round((fscPct / 100) * FSC_SEGMENTS);
 
 const today = new Date();
 const currentPrice = getCurrentPrice(SHIFT_ID, today) ?? parseInt(shift.price.replace(/\D/g, ''), 10);
@@ -89,10 +96,11 @@ const segData = SEGMENTS.map((seg, i) => {
   class="relative flex flex-col rounded-[22px] border border-transparent bg-card card-shadow ring-2 ring-primary shadow-[0_0_0_4px_rgba(236,124,0,0.12)] p-5"
 >
 
-  <!-- Orange header banner -->
-  <div class="-mx-5 -mt-5 mb-4 flex items-center gap-2 rounded-t-[20px] bg-primary px-5 py-3">
-    <span class="text-[16px] font-extrabold text-white leading-none">{shift.name} · {shift.dates}</span>
-    <span class="ml-auto flex items-center gap-1.5 whitespace-nowrap text-[12px] font-semibold text-white/80">
+  <!-- Header banner — тот же короб, что у «Ближайшей» в ShiftCard.astro (персиковый фон, контрастный кружок) -->
+  <div class="-mx-5 -mt-5 mb-4 flex items-center gap-2 rounded-t-[20px] border-b border-[var(--color-primary-100)] bg-[var(--color-primary-soft)] px-5 py-3">
+    <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-base font-extrabold text-white shrink-0 shadow-[0_0_0_3px_rgba(236,124,0,0.18)]">{shiftNum}</span>
+    <span class="text-base font-bold text-body">{shift.name} · {shift.dates}</span>
+    <span class="ml-auto flex items-center gap-1.5 whitespace-nowrap text-[12px] font-semibold text-primary">
       <i class="bi bi-clock text-[11px]" aria-hidden="true"></i>
       {daysLeftLabel}
     </span>
@@ -110,7 +118,7 @@ const segData = SEGMENTS.map((seg, i) => {
     </span>
     <span class="ml-auto text-right">
       <span class="block text-[10px] font-semibold uppercase tracking-[0.12em] text-body-faint">Стоимость</span>
-      <span class="block text-[20px] font-extrabold text-primary leading-none" data-dynamic-price={SHIFT_ID}>{fmtPrice(currentPrice)}</span>
+      <span class="block text-[20px] font-extrabold text-body leading-none" data-dynamic-price={SHIFT_ID}>{fmtPrice(currentPrice)}</span>
     </span>
   </div>
 
@@ -201,14 +209,15 @@ const segData = SEGMENTS.map((seg, i) => {
 
   <!-- Fallback: стандартная карточка после 3 спинов без бронирования -->
   <div id="fsc-fallback" class="hidden flex-col gap-3 mb-4">
-    <!-- Occupancy bar -->
+    <!-- Occupancy bar — сегментами, как в ShiftCard.astro -->
     <div>
-      <div class="flex justify-between text-base mb-1.5">
-        <span class="text-body-muted">Занято</span>
-        <span data-spots-num data-spots-shift={shift.id} class="cursor-pointer font-bold text-primary blur-[6px] transition-[filter] duration-300 select-none">Осталось {fscFreeLabel}</span>
+      <div class="flex justify-end text-[13px] mb-2">
+        <span data-spots-num data-spots-shift={shift.id} class="cursor-pointer select-none font-bold text-primary blur-[6px] transition-[filter] duration-300">Осталось {fscFreeLabel}</span>
       </div>
-      <div class="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
-        <div class="h-full rounded-full bg-primary" style={`width:${fscPct}%`}></div>
+      <div class="flex h-3 gap-[3px]">
+        {Array.from({ length: FSC_SEGMENTS }).map((_, i) => (
+          <span class:list={['flex-1 rounded-[3px]', i < fscFilledSegments ? 'bg-emerald-500' : 'bg-border-light']}></span>
+        ))}
       </div>
       <button type="button" data-spots-reveal-btn data-spots-shift={shift.id} data-spots-low={fscIsLow ? '1' : undefined} class="mt-1.5 text-[12px] font-semibold text-primary hover:text-primary-hover underline underline-offset-2 transition-colors">
         Узнать точное число мест
@@ -218,7 +227,7 @@ const segData = SEGMENTS.map((seg, i) => {
     <div class="flex items-end justify-between gap-3">
       <div>
         <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-body-faint">Стоимость</p>
-        <p class="mt-1 text-[26px] font-extrabold tracking-[-0.02em] leading-none text-primary" data-dynamic-price={SHIFT_ID}>{fmtPrice(currentPrice)}</p>
+        <p class="mt-1 text-[26px] font-extrabold tracking-[-0.02em] leading-none text-body" data-dynamic-price={SHIFT_ID}>{fmtPrice(currentPrice)}</p>
         <span class="hidden text-[11px] font-semibold text-orange-500 mt-0.5 block" data-price-stage={SHIFT_ID}></span>
         <p class="mt-1 text-[12px] text-body-faint">всё включено</p>
       </div>
