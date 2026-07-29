@@ -1,5 +1,6 @@
 ---
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S22, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, SEASON_YEAR, VYCHET_MAX, VYCHET_S2, VYCHET_S21, VYCHET_S22, VYCHET_S3, VYCHET_S4 } from '../data/shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S22, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, SEASON_YEAR, VYCHET_MAX, VYCHET_S2, VYCHET_S21, VYCHET_S22, VYCHET_S3, VYCHET_S4, displayShifts, SHIFT_META, shiftDatesShort } from '../data/shifts';
+import { getCurrentPrice, getShiftPhase } from '../data/dynamicPrices';
 import '../styles/global.css';
 import LandingLayout from '../layouts/LandingLayout.astro';
 import LandingHero from '../components/LandingHero.astro';
@@ -113,43 +114,20 @@ const sections = [
   "@context": "https://schema.org",
   "@type": "Camp",
   "name": "АйДаКемп — IT-лагерь для школьников",
-  "description": "Летний лагерь программирования и IT для детей 7-17 лет из Москвы",
+  "description": "Летний лагерь программирования и IT для детей 7–15 лет из Москвы",
   "url": "https://aidacamp.ru/lager-zelenograd",
   "image": "https://aidacamp.ru/og-image.jpg",
   "areaServed": {
     "@type": "City",
     "name": "Зеленоград"
   },
-  "offers": [
-    {
-      "@type": "Offer",
-      "name": `Смена 2.1 (${DATES_SHORT_S21}, 7 дней) — завершена`,
-      "price": "48000",
-      "priceCurrency": "RUB",
-      "availability": "https://schema.org/SoldOut"
-    },
-    {
-      "@type": "Offer",
-      "name": `Смена 2 (${DATES_SHORT_S2}, 14 дней) — завершена`,
-      "price": "99000",
-      "priceCurrency": "RUB",
-      "availability": "https://schema.org/SoldOut"
-    },
-    {
-      "@type": "Offer",
-      "name": `Смена 3 (${DATES_SHORT_S3}, 13 дней)`,
-      "price": "89400",
-      "priceCurrency": "RUB",
-      "availability": "https://schema.org/InStock"
-    },
-    {
-      "@type": "Offer",
-      "name": `Смена 4 (${DATES_SHORT_S4}, 10 дней)`,
-      "price": "74900",
-      "priceCurrency": "RUB",
-      "availability": "https://schema.org/InStock"
-    }
-  ],
+  "offers": displayShifts.map(s => ({
+    "@type": "Offer",
+    "name": `${s.name} (${shiftDatesShort(s)}, ${s.duration})${getShiftPhase(s.id) === 'done' ? ' — завершена' : ''}`,
+    "price": String(getCurrentPrice(s.id) ?? SHIFT_META[s.id].basePrice),
+    "priceCurrency": "RUB",
+    "availability": getShiftPhase(s.id) === 'done' ? "https://schema.org/SoldOut" : "https://schema.org/InStock",
+  })),
   "aggregateRating": {
     "@type": "AggregateRating",
     "ratingValue": "4.9",

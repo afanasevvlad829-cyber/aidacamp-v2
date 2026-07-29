@@ -1,13 +1,14 @@
 ---
 import type { CorpClient } from '../../data/corp/types';
+import { SHIFT_META, taxDeduction } from '../../data/shifts';
 interface Props { client: CorpClient }
 const { client } = Astro.props;
 
-const basePrice       = 89400;
-const days            = 13;
+const basePrice       = SHIFT_META['shift-3'].basePrice;
+const days            = SHIFT_META['shift-3'].days;
 const discountedPrice = Math.round(basePrice * (1 - client.discount / 100));
 const eduPart         = discountedPrice - 3800 * days;
-const taxReturn       = Math.round(eduPart * 0.13);
+const taxReturn       = taxDeduction(discountedPrice, days); // единая формула вместо локальной
 
 const steps = [
   { n: '1', title: 'Оплатить лагерь',          text: 'Оплачиваете смену. Мы выдаём договор, акт и чек — все документы для налоговой.' },

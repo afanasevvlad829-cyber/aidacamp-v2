@@ -4,6 +4,7 @@ import { fetchWithTimeout } from '../../../lib/fetchWithTimeout';
 import { createHash } from 'node:crypto';
 import { getPool } from '../../../lib/db';
 import { getCurrentPrice } from '../../../data/dynamicPrices';
+import { SHIFT_META } from '../../../data/shifts';
 import { signDiscount } from './token';
 
 async function logFortuneEvent(data: {
@@ -92,7 +93,7 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   // Динамическая цена (актуальная на момент запроса)
-  const origPrice  = getCurrentPrice(shiftId) ?? getCurrentPrice('shift-1') ?? 93900;
+  const origPrice  = getCurrentPrice(shiftId) ?? getCurrentPrice('shift-1') ?? SHIFT_META['shift-1'].basePrice;
   const finalPrice = Math.round(origPrice * (1 - discount / 100));
   const deposit    = Math.round(finalPrice * 0.5);       // 50% предоплата
   // Тестовый режим: фиксированные 10 рублей вместо реальной суммы
