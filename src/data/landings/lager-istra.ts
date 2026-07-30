@@ -4,7 +4,7 @@ import { SEASON_FROM_TO } from '../evergreen';
 
 const landing: LandingData = {
   slug: 'lager-istra',
-  title: `Детский лагерь рядом с Истрой ${SEASON_YEAR} | АйДаКемп`,
+  title: `Детский лагерь рядом с Истрой ${SEASON_YEAR} — Python, AI, Minecraft, бассейн | АйДаКемп`,
   description: 'Истра — рядом детский IT-лагерь: ~1.5–2 ч через МКАД по Киевскому шоссе. Python, AI, Minecraft для детей 7–15 лет, бассейн, питание. Трансфер от метро Солнцево.',
   h1: 'Истра — рядом детский лагерь АйДаКемп в Подмосковье',
   canonical: 'https://aidacamp.ru/lager-istra',
