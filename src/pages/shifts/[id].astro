@@ -465,6 +465,10 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
         existing.push({ id, ts: Date.now() });
       }
       localStorage.setItem(KEY, JSON.stringify(existing));
+      // Цель «Открыл инфо о смене» (shift_modal_open) — раньше карточка открывала модалку
+      // с этим же trackGoal, с 2026-05-03 карточка ведёт сюда напрямую (навигация вместо
+      // модалки), поэтому просмотр этой страницы теперь и есть «открыл инфо о смене».
+      (window as any).trackGoal?.('shift_modal_open', { shift: id, source: 'page' });
     } catch {}
   })();
 
