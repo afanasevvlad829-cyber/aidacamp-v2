@@ -116,7 +116,11 @@ const DONE_SHIFT_COVERS: Record<string, string> = {
             {/* ─── Новая раскладка: актуальные смены слева (шире), «как прошли» справа (компактно) ─── */}
             {activeShifts.map((shift) => {
               const phase = getShiftPhase(shift.id, nowDate);
-              const withFortune = phase === 'upcoming' && shift.nearest && shift.free > 0;
+              // Разметку колеса рендерим для ВСЕХ предстоящих смен со свободными местами.
+              // Раньше было `shift.nearest` — из-за этого «включить фортуну на смене N»
+              // требовало правки shifts.ts + PR + деплой. Теперь показ решает рантайм-конфиг
+              // (/api/fortune/config), а разметка просто заранее есть и скрыта.
+              const withFortune = phase === 'upcoming' && shift.free > 0;
               return (
                 <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch" data-shift-id={shift.id}>
                   {phase !== 'upcoming' ? (
@@ -176,7 +180,11 @@ const DONE_SHIFT_COVERS: Record<string, string> = {
                 клиентским скриптом ниже по правилу (последние 3 дня + ≤3 места) или по ?fortune=wheel. */}
             {displayShifts.map((shift) => {
               const phase = getShiftPhase(shift.id, nowDate);
-              const withFortune = phase === 'upcoming' && shift.nearest && shift.free > 0;
+              // Разметку колеса рендерим для ВСЕХ предстоящих смен со свободными местами.
+              // Раньше было `shift.nearest` — из-за этого «включить фортуну на смене N»
+              // требовало правки shifts.ts + PR + деплой. Теперь показ решает рантайм-конфиг
+              // (/api/fortune/config), а разметка просто заранее есть и скрыта.
+              const withFortune = phase === 'upcoming' && shift.free > 0;
               return (
                 <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch" data-shift-id={shift.id}>
                   {phase !== 'upcoming' ? (
@@ -219,6 +227,17 @@ const DONE_SHIFT_COVERS: Record<string, string> = {
    Превью в любой момент: ?fortune=wheel (force показывает и вернувшимся —
    для теста/демо). */
 (function () {
+  var CFG_URL = '/api/fortune/config';
+  var cfgCache = null;
+
+  function fetchCfg() {
+    if (cfgCache) return Promise.resolve(cfgCache);
+    return fetch(CFG_URL, { credentials: 'omit' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { cfgCache = (d && d.shifts) || {}; return cfgCache; })
+      .catch(function () { cfgCache = {}; return cfgCache; });
+  }
+
   function apply() {
     var qs = new URLSearchParams(location.search);
     var force = qs.get('fortune') === 'wheel' || qs.has('wheel');
@@ -228,12 +247,36 @@ const DONE_SHIFT_COVERS: Record<string, string> = {
     // в его же первый визит. ac:viewed_shifts ставится только по факту открытия
     // карточки смены — осознанное действие, надёжный сигнал «уже был раньше».
     var isReturning = !!localStorage.getItem('ac:viewed_shifts');
-    var active = force || !isReturning;
-    document.querySelectorAll('[data-fortune-wheel]').forEach(function (wheel) {
-      var slot = wheel.closest('[data-shift-id]');
-      var normal = slot ? slot.querySelector('[data-fortune-normal]') : null;
-      if (active) { wheel.hidden = false; if (normal) normal.hidden = true; }
-      else { wheel.hidden = true; if (normal) normal.hidden = false; }
+
+    fetchCfg().then(function (cfg) {
+      document.querySelectorAll('[data-fortune-wheel]').forEach(function (wheel) {
+        var slot = wheel.closest('[data-shift-id]');
+        var normal = slot ? slot.querySelector('[data-fortune-normal]') : null;
+        var shiftId = slot ? slot.getAttribute('data-shift-id') : null;
+        var rule = shiftId ? cfg[shiftId] : null;
+
+        var active;
+        if (force) {
+          active = true;                       // ?wheel — превью, показываем всегда
+        } else if (!rule) {
+          active = false;                      // в конфиге смены нет — колеса нет
+        } else if (rule.audience === 'all') {
+          active = true;
+        } else if (rule.audience === 'returning') {
+          active = isReturning;
+        } else {
+          active = !isReturning;               // 'new' — поведение по умолчанию
+        }
+
+        // minFree: включать, только когда свободных мест осталось <= N
+        if (active && rule && rule.minFree != null) {
+          var free = parseInt(wheel.getAttribute('data-fortune-free') || '', 10);
+          if (!isNaN(free) && free > rule.minFree) active = false;
+        }
+
+        if (active) { wheel.hidden = false; if (normal) normal.hidden = true; }
+        else { wheel.hidden = true; if (normal) normal.hidden = false; }
+      });
     });
   }
   document.addEventListener('astro:page-load', apply);
