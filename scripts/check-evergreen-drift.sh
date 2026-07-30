@@ -27,9 +27,16 @@ P_COUNT = re.compile(r'\b(одн[ау]|две|дву[хм]|три|четыр[е�
 # канон hero-текстов с сезонными плейсхолдерами — не сканировался ни одним стражем
 BASES = ['src/pages', 'src/components', 'src/data']
 # файлы/пути-исключения
+# articles.json (29.07.2026, находка ultrareview PR #1161): это МАШИННО-СГЕНЕРИРОВАННОЕ
+# зеркало src/pages/stati/*.astro (scripts/gen-articles.mjs), не отдельный источник контента.
+# У генератора баг: extractProp() не резолвит template literals и без границы слова путает
+# title/subtitle — попытка прогнать gen-articles.mjs, чтобы «легально» закрыть здесь найденный
+# хардкод, вместо этого протащила в реестр 9 битых title и 3 неразрешённых ${...} в JSON-LD/RSS.
+# Чинить extractProp — отдельная задача, вне скоупа этого стража. Сами src/pages/stati/*.astro
+# по-прежнему полностью сканируются (base 'src/pages' выше) — дыры в покрытии живого контента нет.
 EXCL_PATH = ('/admin/', 'staff-plan', 'gbp-posts', 'lanit',
              'lager-na-osennie-kanikuly', 'lager-na-zimnie-kanikuly',
-             'lager-na-vesennie-kanikuly', '.test.')
+             'lager-na-vesennie-kanikuly', '.test.', 'data/articles.json')
 # осознанные идиомы и не-сезонные вхождения (подстрока в контексте совпадения — пропускаем)
 ALLOW_SUBSTR = (
     'одна смена',            # «одна смена ≈ 3–4 месяца онлайн-курса» — идиома, не счётчик
@@ -38,7 +45,6 @@ ALLOW_SUBSTR = (
     'смены мая',             # «четыре смены мая–июля уже прошли» — историческое число прошедших
     'уже прошли',            # исторический счётчик прошедших смен (не открытые)
     'evergreen',             # импорт/использование константы
-    '· май–июнь',            # articles.json: зеркало метки дат смены-1 из skolko-stoit-detskiy-lager.astro (см. ALLOW_PAIRS)
     # hero-variants.json: известный, ещё не мигрированный хардкод (не идиома!) — резолвер
     # плейсхолдеров {OPEN_MONTHS_NOM}/{SEASON_FROM_TO} для этого файла запланирован, но не
     # реализован (Task 6, docs/superpowers/plans/2026-07-29-sot-hardcode-cleanup.md).
