@@ -1,0 +1,3233 @@
+- generic [ref=f1e2]:
+  - generic [ref=f1e5539]:
+    - generic [ref=f1e5541]:
+      - generic [ref=f1e5543]:
+        - button [ref=f1e5544] [cursor=pointer]:
+          - generic [ref=f1e5545]: close
+        - button [ref=f1e5547] [cursor=pointer]:
+          - generic [ref=f1e5548]: fullscreen
+        - button "ondemand_video" [ref=f1e5552] [cursor=pointer]
+        - button [ref=f1e5556] [cursor=pointer]:
+          - generic [ref=f1e5557]: help_outline
+      - heading [level=1] [ref=f1e5559]:
+        - text: Страница
+        - link /lager-v-podmoskove/ [ref=f1e5560] [cursor=pointer]:
+          - /url: https://aidacamp.ru/lager-v-podmoskove/
+    - generic [ref=f1e5563]:
+      - generic [ref=f1e5565]:
+        - generic [ref=f1e5566]:
+          - generic [ref=f1e5567]:
+            - generic [ref=f1e5568]:
+              - 'progressbar "Процент оптимизации: 38%" [ref=f1e5570]':
+                - generic [ref=f1e5574]: "38"
+              - generic [ref=f1e5575]: В редакторе
+              - button "Проверить" [ref=f1e5576] [cursor=pointer]
+            - generic [ref=f1e5579]:
+              - 'progressbar "Процент оптимизации: 38%" [ref=f1e5581]':
+                - generic [ref=f1e5585]: "38"
+              - generic [ref=f1e5586]: На сайте
+              - button "Проверить" [ref=f1e5587] [cursor=pointer]
+          - generic [ref=f1e5589]:
+            - button "Получить контент со страницы" [ref=f1e5591] [cursor=pointer]
+            - button "Показать разницу между текстом на сайте и в редакторе" [ref=f1e5595] [cursor=pointer]:
+              - generic [ref=f1e5596]: compare
+        - generic [ref=f1e5598]:
+          - generic [ref=f1e5599]: "Разделы оптимизации:"
+          - button "Рекомендации по тексту 72" [ref=f1e5600] [cursor=pointer]:
+            - generic [ref=f1e5601]:
+              - text: Рекомендации по тексту
+              - generic [ref=f1e5602]: "72"
+          - button "Скрытая семантика 98" [ref=f1e5603] [cursor=pointer]:
+            - generic [ref=f1e5604]:
+              - text: Скрытая семантика
+              - generic [ref=f1e5605]: "98"
+          - button [ref=f1e5606] [cursor=pointer]
+          - button "Ключевые слова 72" [ref=f1e5608] [cursor=pointer]:
+            - generic [ref=f1e5609]:
+              - text: Ключевые слова
+              - generic [ref=f1e5610]: "72"
+          - button [ref=f1e5611] [cursor=pointer]
+          - button [ref=f1e5613] [cursor=pointer]
+          - button [ref=f1e5615] [cursor=pointer]
+          - button [ref=f1e5617] [cursor=pointer]
+          - button [ref=f1e5619] [cursor=pointer]
+          - button [ref=f1e5621] [cursor=pointer]
+          - button [ref=f1e5623] [cursor=pointer]
+          - button [ref=f1e5625] [cursor=pointer]
+      - generic [ref=f1e5629]:
+        - generic [ref=f1e5630]:
+          - generic [ref=f1e5631]:
+            - heading [level=2] [ref=f1e5632]:
+              - text: Title
+              - button "Показать конкурентов" [ref=f1e5635] [cursor=pointer]
+            - generic [ref=f1e5637]: "Количество слов: 9 (рекомендуемое: 8-17)"
+            - generic [ref=f1e5638]:
+              - generic [ref=f1e5639]:
+                - mark [ref=f1e5640]: Летний
+                - mark [ref=f1e5641]: детский
+                - mark [ref=f1e5642]: лагерь
+                - mark [ref=f1e5643]: Подмосковья
+                - mark [ref=f1e5644]: "2026"
+                - text: — Балашиха, Домодедово, Чехов | АйДаКемп
+              - generic [ref=f1e5646]:
+                - button "Копировать TITLE в буфер обмена" [ref=f1e5647] [cursor=pointer]:
+                  - generic [ref=f1e5648]: content_copy
+                - button "Сгенерировать с помощью ИИ" [ref=f1e5650] [cursor=pointer]:
+                  - generic [ref=f1e5651]: auto_fix_high
+          - generic [ref=f1e5653]:
+            - heading [level=2] [ref=f1e5654]:
+              - text: Description
+              - button "Показать конкурентов" [ref=f1e5657] [cursor=pointer]
+            - generic [ref=f1e5659]: "Количество слов: 28 (рекомендуемое: 26-30)"
+            - generic [ref=f1e5660]:
+              - generic [ref=f1e5661]:
+                - mark [ref=f1e5662]: Детский
+                - mark [ref=f1e5663]: летний
+                - mark [ref=f1e5664]: лагерь
+                - text: в
+                - mark [ref=f1e5665]: Подмосковье
+                - text: (Московская область) для
+                - mark [ref=f1e5666]: детей
+                - mark [ref=f1e5667]: "7"
+                - text: –15
+                - mark [ref=f1e5668]: лет
+                - text: ", 66 км от Москвы. IT-смены: Python, AI, Minecraft, бассейн. От 74 900 ₽, ★ 5.0 на Яндекс."
+              - generic [ref=f1e5670]:
+                - button "Копировать DESCRIPTION в буфер обмена" [ref=f1e5671] [cursor=pointer]:
+                  - generic [ref=f1e5672]: content_copy
+                - button "Сгенерировать с помощью ИИ" [ref=f1e5674] [cursor=pointer]:
+                  - generic [ref=f1e5675]: auto_fix_high
+        - generic [ref=f1e5677]:
+          - heading [level=2] [ref=f1e5678]:
+            - text: H1
+            - button "Показать конкурентов" [ref=f1e5681] [cursor=pointer]
+          - generic [ref=f1e5683]: "Количество слов: 17 (рекомендуемое: 3-10)"
+          - generic [ref=f1e5684]:
+            - generic [ref=f1e5685]:
+              - mark [ref=f1e5686]: Летний
+              - mark [ref=f1e5687]: детский
+              - mark [ref=f1e5688]: лагерь
+              - text: в
+              - mark [ref=f1e5689]: Подмосковье
+              - mark [ref=f1e5690]: "2026"
+              - text: — для школьников из Балашихи, Чехова, Домодедово, Щёлково, Лобни, Видного и Щербинки
+            - generic [ref=f1e5692]:
+              - button "Копировать H1 в буфер обмена" [ref=f1e5693] [cursor=pointer]:
+                - generic [ref=f1e5694]: content_copy
+              - button "Сгенерировать с помощью ИИ" [ref=f1e5696] [cursor=pointer]:
+                - generic [ref=f1e5697]: auto_fix_high
+        - generic [ref=f1e5699]:
+          - generic [ref=f1e5700]:
+            - generic [ref=f1e5702]:
+              - text: Body
+              - button "Показать конкурентов" [ref=f1e5704] [cursor=pointer]
+            - generic [ref=f1e5707]:
+              - button "Оптимизация в 1 клик" [ref=f1e5710] [cursor=pointer]
+              - button "Статья в 1 клик" [ref=f1e5714] [cursor=pointer]
+          - generic [ref=f1e5716]: "Количество слов: 3198 (рекомендуемое: 630-2489)"
+          - generic [ref=f1e5717]:
+            - generic [ref=f1e5718]:
+              - button "Отмена" [ref=f1e5719] [cursor=pointer]:
+                - generic [ref=f1e5720]: undo
+              - button "Вернуть" [ref=f1e5721] [cursor=pointer]:
+                - generic [ref=f1e5722]: redo
+            - generic [ref=f1e5723]:
+              - button "Жирный" [ref=f1e5724] [cursor=pointer]
+              - button "Курсив" [ref=f1e5728] [cursor=pointer]
+              - button "Подчёркнутый" [ref=f1e5731] [cursor=pointer]
+            - generic [ref=f1e5736]:
+              - button "Обычный" [ref=f1e5737] [cursor=pointer]
+              - text: Заголовок 2 Заголовок 3 Заголовок 4 Обычный
+            - generic [ref=f1e5741]:
+              - button "Нумерованный список" [ref=f1e5742] [cursor=pointer]
+              - button "Маркированный список" [ref=f1e5747] [cursor=pointer]
+            - generic [ref=f1e5749]:
+              - button "Сбросить форматирование" [ref=f1e5750] [cursor=pointer]
+              - button "Вставить таблицу" [ref=f1e5756] [cursor=pointer]
+            - generic [ref=f1e5766]:
+              - button "Вставить контент из ИИ-писателя" [ref=f1e5767] [cursor=pointer]:
+                - generic [ref=f1e5768]: content_paste_go
+              - button "Сгенерировать подзаголовки с помощью ИИ" [ref=f1e5769] [cursor=pointer]:
+                - generic [ref=f1e5770]: auto_fix_high
+            - button "Копировать HTML в буфер обмена" [ref=f1e5772] [cursor=pointer]:
+              - generic [ref=f1e5773]: content_copy
+        - generic [ref=f1e5776]:
+          - generic [active] [ref=f1e5777]:
+            - paragraph [ref=f1e5778]: Меню
+            - paragraph [ref=f1e5779]: Главное
+            - paragraph [ref=f1e5780]:
+              - mark [ref=f1e5781]: Смены
+            - paragraph [ref=f1e5782]:
+              - mark [ref=f1e5783]: Цены
+            - paragraph [ref=f1e5784]: Философия
+            - paragraph [ref=f1e5785]:
+              - text: О
+              - mark [ref=f1e5786]: лагере
+            - paragraph [ref=f1e5787]:
+              - mark [ref=f1e5788]: Документы
+              - text: и медиа
+            - paragraph [ref=f1e5789]:
+              - text: →
+              - mark [ref=f1e5790]: Лагерь
+              - mark [ref=f1e5791]: в
+              - mark [ref=f1e5792]: Подмосковье
+            - paragraph [ref=f1e5793]:
+              - text: 66 км от
+              - mark [ref=f1e5794]: Москвы
+              - text: по Киевскому шоссе. IT-
+              - mark [ref=f1e5795]: программирование
+              - text: ","
+              - mark [ref=f1e5796]: бассейн
+              - text: ", 5-разовое"
+              - mark [ref=f1e5797]: питание
+              - text: .
+              - mark [ref=f1e5798]: Смены
+              - text: на июнь и
+              - mark [ref=f1e5799]: август
+              - text: ", от"
+              - mark [ref=f1e5800]: "7"
+              - text: до 15
+              - mark [ref=f1e5801]: дней
+              - text: .
+            - list [ref=f1e5802]:
+              - listitem [ref=f1e5803]:
+                - generic: •
+                - text: ✓ 66 км от
+                - mark [ref=f1e5804]: Москвы
+                - text: ", Наро-Фоминский"
+                - mark [ref=f1e5805]: район
+                - text: ", Санаторий Изумруд"
+              - listitem [ref=f1e5806]:
+                - generic: •
+                - text: "✓ IT-программа: Python, AI, Minecraft —"
+                - mark [ref=f1e5807]: проект
+                - text: за
+                - mark [ref=f1e5808]: смену
+              - listitem [ref=f1e5809]:
+                - generic: •
+                - text: ✓
+                - mark [ref=f1e5810]: Бассейн
+                - text: ", охрана 24/"
+                - mark [ref=f1e5811]: "7"
+                - text: ", лицензированный туроператор"
+            - paragraph [ref=f1e5812]: · · · ·
+            - heading [level=2] [ref=f1e5813]:
+              - mark [ref=f1e5814]: Детский
+              - mark [ref=f1e5815]: лагерь
+              - mark [ref=f1e5816]: в
+              - mark [ref=f1e5817]: Подмосковье
+              - text: —
+              - mark [ref=f1e5818]: как
+              - mark [ref=f1e5819]: выбрать
+              - text: "?"
+            - paragraph [ref=f1e5820]:
+              - strong [ref=f1e5821]:
+                - mark [ref=f1e5822]: При
+                - mark [ref=f1e5823]: выборе
+                - mark [ref=f1e5824]: детского
+                - mark [ref=f1e5825]: лагеря
+                - mark [ref=f1e5826]: в
+                - mark [ref=f1e5827]: Подмосковье
+              - text: "проверьте: лицензию на"
+              - mark [ref=f1e5828]: образовательную
+              - mark [ref=f1e5829]: деятельность
+              - text: ","
+              - mark [ref=f1e5830]: отзывы
+              - text: на Яндекс.
+              - mark [ref=f1e5831]: Картах
+              - text: ", программу и"
+              - mark [ref=f1e5832]: возраст
+              - mark [ref=f1e5833]: детей
+              - text: ", транспортную доступность,"
+              - mark [ref=f1e5834]: питание
+              - text: и медицину. Если вы ищете
+              - mark [ref=f1e5835]: детский
+              - mark [ref=f1e5836]: оздоровительный
+              - mark [ref=f1e5837]: лагерь
+              - text: для
+              - mark [ref=f1e5838]: организации
+              - mark [ref=f1e5839]: отдыха
+              - mark [ref=f1e5840]: детей
+              - text: в
+              - mark [ref=f1e5841]: Подмосковье
+              - text: "— проверьте дополнительно:"
+              - mark [ref=f1e5842]: питание
+              - text: по СанПиН, медик 24/
+              - mark [ref=f1e5843]: "7"
+              - text: и закрытая охраняемая
+              - mark [ref=f1e5844]: территория
+              - text: . В АйДаКемп всё это есть. АйДаКемп
+              - mark [ref=f1e5845]: находится
+              - text: в Наро-Фоминском
+              - mark [ref=f1e5846]: районе
+              - text: ", 66 км от МКАД, трансфер от м. Солнцево (2 000 ₽)."
+            - heading [level=2] [ref=f1e5847]:
+              - mark [ref=f1e5848]: Где
+              - mark [ref=f1e5849]: находится
+              - mark [ref=f1e5850]: лагерь
+              - mark [ref=f1e5851]: в
+              - mark [ref=f1e5852]: Подмосковье
+            - paragraph [ref=f1e5853]:
+              - text: АйДаКемп
+              - mark [ref=f1e5854]: расположен
+              - text: в
+              - mark [ref=f1e5855]: Московской
+              - mark [ref=f1e5856]: области
+              - text: — в Наро-Фоминском
+              - mark [ref=f1e5857]: районе
+              - text: ", на"
+              - mark [ref=f1e5858]: территории
+              - text: санатория «Изумруд». До
+              - mark [ref=f1e5859]: лагеря
+              - text: 66 км от МКАД по Киевскому шоссе, около
+              - mark [ref=f1e5860]: часа
+              - text: езды на машине. Это загородная
+              - mark [ref=f1e5861]: лесная
+              - mark [ref=f1e5862]: территория
+              - text: "вдали от города:"
+              - mark [ref=f1e5863]: лес
+              - text: ","
+              - mark [ref=f1e5864]: чистый
+              - text: воздух, закрытая охраняемая
+              - mark [ref=f1e5865]: территория
+              - text: санатория «Изумруд». Трансфер из
+              - mark [ref=f1e5866]: Москвы
+              - text: — платная опция.
+            - heading [level=2] [ref=f1e5867]:
+              - mark [ref=f1e5868]: Какой
+              - mark [ref=f1e5869]: лагерь
+              - mark [ref=f1e5870]: в
+              - mark [ref=f1e5871]: Подмосковье
+              - mark [ref=f1e5872]: выбрать
+              - mark [ref=f1e5873]: в
+              - mark [ref=f1e5874]: "2026"
+              - mark [ref=f1e5875]: году
+              - text: "?"
+            - paragraph [ref=f1e5876]:
+              - text: В
+              - mark [ref=f1e5877]: Подмосковье
+              - text: десятки
+              - mark [ref=f1e5878]: лагерей
+              - text: —
+              - mark [ref=f1e5879]: спортивные
+              - text: ", языковые,"
+              - mark [ref=f1e5880]: тематические
+              - text: ". АйДаКемп занимает нишу IT-образования с реальным результатом:"
+              - mark [ref=f1e5881]: ребёнок
+              - text: уезжает с
+              - mark [ref=f1e5882]: собственным
+              - mark [ref=f1e5883]: проектом
+              - text: на Python или AI. Это не кружок — полноценная
+              - mark [ref=f1e5884]: учебная
+              - text: программа в формате
+              - mark [ref=f1e5885]: лагеря
+              - text: с
+              - mark [ref=f1e5886]: бассейном
+              - text: ","
+              - mark [ref=f1e5887]: питанием
+              - text: и
+              - mark [ref=f1e5888]: проживанием
+              - text: .
+            - list [ref=f1e5889]:
+              - listitem [ref=f1e5890]:
+                - generic: •
+                - text: "Расположение: Наро-Фоминский р-н, 66 км по Киевскому шоссе"
+              - listitem [ref=f1e5891]:
+                - generic: •
+                - mark [ref=f1e5892]: Возраст
+                - text: ":"
+                - mark [ref=f1e5893]: "7"
+                - text: –15
+                - mark [ref=f1e5894]: лет
+                - text: ","
+                - mark [ref=f1e5895]: группы
+                - text: по
+                - mark [ref=f1e5896]: возрасту
+              - listitem [ref=f1e5897]:
+                - generic: •
+                - text: "Программа: Python, AI, Minecraft, 3D-"
+                - mark [ref=f1e5898]: моделирование
+                - text: — по
+                - mark [ref=f1e5899]: выбору
+              - listitem [ref=f1e5900]:
+                - generic: •
+                - mark [ref=f1e5901]: Питание
+                - text: 5 раз в
+                - mark [ref=f1e5902]: день
+                - text: ", медработник 24/"
+                - mark [ref=f1e5903]: "7"
+                - text: ", видеонаблюдение"
+              - listitem [ref=f1e5904]:
+                - generic: •
+                - text: Лицензия Минобрнауки —
+              - listitem [ref=f1e5905]:
+                - generic: •
+                - text: налоговый вычет 13%
+              - listitem [ref=f1e5906]:
+                - generic: •
+                - text: (до 5 200 ₽)
+              - listitem [ref=f1e5907]:
+                - generic: •
+                - text: Подробный разбор именно на
+                - mark [ref=f1e5908]: лето
+                - text: —
+              - listitem [ref=f1e5909]:
+                - generic: •
+                - mark [ref=f1e5910]: детский
+                - mark [ref=f1e5911]: лагерь
+                - mark [ref=f1e5912]: в
+                - mark [ref=f1e5913]: Подмосковье
+                - mark [ref=f1e5914]: на
+                - mark [ref=f1e5915]: лето
+            - heading [level=2] [ref=f1e5916]:
+              - mark [ref=f1e5917]: Почему
+              - mark [ref=f1e5918]: родители
+              - mark [ref=f1e5919]: выбирают
+              - mark [ref=f1e5920]: лагерь
+              - mark [ref=f1e5921]: в
+              - mark [ref=f1e5922]: Подмосковье
+            - paragraph [ref=f1e5923]:
+              - mark [ref=f1e5924]: Подмосковье
+              - text: — оптимальный
+              - mark [ref=f1e5925]: выбор
+              - text: для
+              - mark [ref=f1e5926]: московских
+              - mark [ref=f1e5927]: семей
+              - text: ": близко, но уже по-настоящему за городом."
+              - mark [ref=f1e5928]: Ребёнок
+              - text: в
+              - mark [ref=f1e5929]: безопасности
+              - text: ","
+              - mark [ref=f1e5930]: родители
+              - text: в доступности. В АйДаКемп
+              - mark [ref=f1e5931]: дети
+              - text: не просто отдыхают — они создают IT-
+              - mark [ref=f1e5932]: проекты
+              - text: под руководством преподавателей-практиков, авторов книги по Python для
+              - mark [ref=f1e5933]: детей
+              - text: .
+            - list [ref=f1e5934]:
+              - listitem [ref=f1e5935]:
+                - generic: •
+                - text: Закрытая
+                - mark [ref=f1e5936]: территория
+                - text: санатория, охрана 24/
+                - mark [ref=f1e5937]: "7"
+                - text: ", медработник"
+              - listitem [ref=f1e5938]:
+                - generic: •
+                - text: Комнаты по 2–4 человека с санузлом, 5-разовое
+                - mark [ref=f1e5939]: питание
+              - listitem [ref=f1e5940]:
+                - generic: •
+                - mark [ref=f1e5941]: Инфраструктура
+                - text: для
+                - mark [ref=f1e5942]: активного
+                - mark [ref=f1e5943]: отдыха
+                - text: ":"
+                - mark [ref=f1e5944]: бассейн
+                - text: с ионизированной водой (не хлорированный) и
+                - mark [ref=f1e5945]: спортивные
+                - text: площадки — доступны
+                - mark [ref=f1e5946]: ежедневно
+              - listitem [ref=f1e5947]:
+                - generic: •
+                - mark [ref=f1e5948]: Ежедневные
+                - text: фото и связь с
+                - mark [ref=f1e5949]: родителями
+              - listitem [ref=f1e5950]:
+                - generic: •
+                - text: Договор, лицензия туроператора РТО 025773
+            - heading [level=2] [ref=f1e5951]:
+              - mark [ref=f1e5952]: Детские
+              - mark [ref=f1e5953]: лагеря
+              - mark [ref=f1e5954]: Подмосковья
+              - text: ":"
+              - mark [ref=f1e5955]: чем
+              - mark [ref=f1e5956]: АйДаКемп
+              - mark [ref=f1e5957]: отличается
+            - paragraph [ref=f1e5958]:
+              - mark [ref=f1e5959]: Подмосковные
+              - mark [ref=f1e5960]: лагеря
+              - text: —
+              - mark [ref=f1e5961]: спортивные
+              - text: ", языковые,"
+              - mark [ref=f1e5962]: тематические
+              - text: ". Большинство — общего профиля без узкой специализации. АйДаКемп — один из немногих с полноценной IT-программой: Python, AI, Minecraft, веб-дизайн."
+              - mark [ref=f1e5963]: Занятия
+              - text: ведут преподаватели с
+              - mark [ref=f1e5964]: опытом
+              - mark [ref=f1e5965]: "6"
+              - text: +
+              - mark [ref=f1e5966]: лет
+              - text: ", авторы учебника по"
+              - mark [ref=f1e5967]: программированию
+              - text: для
+              - mark [ref=f1e5968]: детей
+              - text: . Результат
+              - mark [ref=f1e5969]: смены
+              - text: —
+              - mark [ref=f1e5970]: готовый
+              - mark [ref=f1e5971]: проект
+              - text: ", который"
+              - mark [ref=f1e5972]: ребята
+              - text: защищают на итоговом хакатоне.
+            - heading [level=2] [ref=f1e5973]:
+              - mark [ref=f1e5974]: IT
+              - text: "-"
+              - mark [ref=f1e5975]: кружок
+              - mark [ref=f1e5976]: в
+              - mark [ref=f1e5977]: Москве
+              - mark [ref=f1e5978]: vs
+              - mark [ref=f1e5979]: IT
+              - text: "-"
+              - mark [ref=f1e5980]: лагерь
+              - mark [ref=f1e5981]: в
+              - mark [ref=f1e5982]: Подмосковье
+              - text: —
+              - mark [ref=f1e5983]: честное
+              - mark [ref=f1e5984]: сравнение
+            - paragraph [ref=f1e5985]:
+              - text: Многие
+              - mark [ref=f1e5986]: родители
+              - text: сначала рассматривают кружки в городе. Это удобно, но разница в глубине результата очень большая.
+            - list [ref=f1e5987]:
+              - listitem [ref=f1e5988]:
+                - generic: •
+                - text: Кружок в
+                - mark [ref=f1e5989]: Москве
+                - text: ": 1–2"
+                - mark [ref=f1e5990]: часа
+                - text: в неделю,
+                - mark [ref=f1e5991]: ребёнок
+                - text: не успевает погрузиться — тему объяснили,
+                - mark [ref=f1e5992]: дома
+                - text: забыл
+              - listitem [ref=f1e5993]:
+                - generic: •
+                - text: IT-
+                - mark [ref=f1e5994]: лагерь
+                - text: ": 2"
+                - mark [ref=f1e5995]: занятия
+                - text: в
+                - mark [ref=f1e5996]: день
+                - text: ","
+                - mark [ref=f1e5997]: "7"
+                - text: –
+                - mark [ref=f1e5998]: "14"
+                - mark [ref=f1e5999]: дней
+                - text: подряд —
+                - mark [ref=f1e6000]: погружение
+                - text: без разрывов, за
+                - mark [ref=f1e6001]: смену
+                - mark [ref=f1e6002]: готовый
+                - mark [ref=f1e6003]: проект
+              - listitem [ref=f1e6004]:
+                - generic: •
+                - text: "Кружок: ~3 500 ₽/"
+                - mark [ref=f1e6005]: занятие
+                - text: ×
+                - mark [ref=f1e6006]: "10"
+                - mark [ref=f1e6007]: занятий
+                - text: = 35 000 ₽ без
+                - mark [ref=f1e6008]: питания
+                - text: и
+                - mark [ref=f1e6009]: проживания
+              - listitem [ref=f1e6010]:
+                - generic: •
+                - text: "АйДаКемп: от 74 900 ₽ за"
+                - mark [ref=f1e6011]: "10"
+                - mark [ref=f1e6012]: дней
+                - text: —
+                - mark [ref=f1e6013]: питание
+                - text: 5 раз в
+                - mark [ref=f1e6014]: день
+                - text: ","
+                - mark [ref=f1e6015]: проживание
+                - text: ","
+                - mark [ref=f1e6016]: бассейн
+                - text: ", программа"
+                - mark [ref=f1e6017]: включены
+              - listitem [ref=f1e6018]:
+                - generic: •
+                - text: "Кружок: вечером после школы, устал — идёт по привычке."
+                - mark [ref=f1e6019]: Лагерь
+                - text: ": утро свежее, голова"
+                - mark [ref=f1e6020]: чистая
+                - text: —
+                - mark [ref=f1e6021]: занятия
+                - text: идут иначе
+              - listitem [ref=f1e6022]:
+                - generic: •
+                - text: "Итог: в кружке «прошли Python», в"
+                - mark [ref=f1e6023]: лагере
+                - text: — «написал Telegram-бота с
+                - mark [ref=f1e6024]: базой
+                - text: данных»
+              - listitem [ref=f1e6025]:
+                - generic: •
+                - text: Разница в
+                - mark [ref=f1e6026]: навыках
+                - text: "— не в теории, а в рабочем результате: за"
+                - mark [ref=f1e6027]: "10"
+                - text: –
+                - mark [ref=f1e6028]: "14"
+                - mark [ref=f1e6029]: дней
+                - mark [ref=f1e6030]: ребята
+                - text: доводят идею до
+                - mark [ref=f1e6031]: готового
+                - mark [ref=f1e6032]: проекта
+                - text: ", который остаётся с ними"
+            - heading [level=2] [ref=f1e6033]:
+              - mark [ref=f1e6034]: Смены
+              - mark [ref=f1e6035]: в
+              - mark [ref=f1e6036]: Подмосковье
+              - mark [ref=f1e6037]: летом
+              - mark [ref=f1e6038]: "2026"
+              - text: —
+              - mark [ref=f1e6039]: успевайте
+            - paragraph [ref=f1e6040]:
+              - mark [ref=f1e6041]: Лагерь
+              - mark [ref=f1e6042]: работал
+              - text: с конца мая по
+              - mark [ref=f1e6043]: август
+              - mark [ref=f1e6044]: "2026"
+              - text: .
+              - mark [ref=f1e6045]: Летние
+              - mark [ref=f1e6046]: каникулы
+              - mark [ref=f1e6047]: "2026"
+              - text: "— последний шанс успеть: к записи открыты только две августовские"
+              - mark [ref=f1e6048]: смены
+              - text: с ограниченным числом
+              - mark [ref=f1e6049]: мест
+              - text: . Сейчас к записи открыты две августовские
+              - mark [ref=f1e6050]: смены
+              - text: — стоимость от 74 900 ₽ за
+              - mark [ref=f1e6051]: "10"
+              - mark [ref=f1e6052]: дней
+              - text: до 89 400 ₽ за 13
+              - mark [ref=f1e6053]: дней
+              - text: включает
+              - mark [ref=f1e6054]: проживание
+              - text: ","
+              - mark [ref=f1e6055]: питание
+              - text: ", полную IT-программу и"
+              - mark [ref=f1e6056]: активности
+              - text: . Июньские
+              - mark [ref=f1e6057]: смены
+              - text: уже прошли — оставляем их в списке для
+              - mark [ref=f1e6058]: истории
+              - text: .
+            - list [ref=f1e6059]:
+              - listitem [ref=f1e6060]:
+                - generic: •
+                - mark [ref=f1e6061]: Смена
+                - text: 3 — 3–15
+                - mark [ref=f1e6062]: августа
+                - text: ", 13"
+                - mark [ref=f1e6063]: дней
+                - text: ", 89 400 ₽ ("
+                - mark [ref=f1e6064]: места
+                - text: есть)
+              - listitem [ref=f1e6065]:
+                - generic: •
+                - mark [ref=f1e6066]: Смена
+                - text: 4 — 17–26
+                - mark [ref=f1e6067]: августа
+                - text: ","
+                - mark [ref=f1e6068]: "10"
+                - mark [ref=f1e6069]: дней
+                - text: ", 74 900 ₽ ("
+                - mark [ref=f1e6070]: места
+                - text: есть)
+              - listitem [ref=f1e6071]:
+                - generic: •
+                - mark [ref=f1e6072]: Смена
+                - text: 1 (завершена) — 30 мая — 8 июня,
+                - mark [ref=f1e6073]: "10"
+                - mark [ref=f1e6074]: дней
+                - text: ", 85 900 ₽"
+              - listitem [ref=f1e6075]:
+                - generic: •
+                - mark [ref=f1e6076]: Смена
+                - text: 2 (завершена) —
+                - mark [ref=f1e6077]: "10"
+                - text: –23 июня,
+                - mark [ref=f1e6078]: "14"
+                - mark [ref=f1e6079]: дней
+                - text: ", 99 000 ₽ (была"
+                - mark [ref=f1e6080]: самой
+                - mark [ref=f1e6081]: популярной
+                - text: )
+              - listitem [ref=f1e6082]:
+                - generic: •
+                - mark [ref=f1e6083]: Смена
+                - text: 2.1 (завершена) —
+                - mark [ref=f1e6084]: "10"
+                - text: –16 июня,
+                - mark [ref=f1e6085]: "7"
+                - mark [ref=f1e6086]: дней
+                - text: ", 48 000 ₽"
+              - listitem [ref=f1e6087]:
+                - generic: •
+                - mark [ref=f1e6088]: Смена
+                - text: 2.2 (завершена) — 16–23 июня, 8
+                - mark [ref=f1e6089]: дней
+                - text: ", 75 000 ₽"
+            - heading [level=2] [ref=f1e6090]:
+              - mark [ref=f1e6091]: Как
+              - mark [ref=f1e6092]: добраться
+              - mark [ref=f1e6093]: до
+              - mark [ref=f1e6094]: лагеря
+              - mark [ref=f1e6095]: в
+              - mark [ref=f1e6096]: Подмосковье
+            - paragraph [ref=f1e6097]:
+              - text: "Адрес:"
+              - mark [ref=f1e6098]: Московская
+              - mark [ref=f1e6099]: область
+              - text: ", Наро-Фоминский"
+              - mark [ref=f1e6100]: городской
+              - mark [ref=f1e6101]: округ
+              - text: ","
+              - mark [ref=f1e6102]: территория
+              - text: "«Санаторий Изумруд». Координаты: 55.265643, 36.724185. На автомобиле: Киевское шоссе (M-3), 66 км от МКАД. Время в пути — около"
+              - mark [ref=f1e6103]: часа
+              - text: ". Трансфер: организуем из нескольких точек"
+              - mark [ref=f1e6104]: Москвы
+              - text: ", стоимость уточняйте при"
+              - mark [ref=f1e6105]: бронировании
+              - text: .
+            - heading [level=2] [ref=f1e6106]:
+              - mark [ref=f1e6107]: Типы
+              - mark [ref=f1e6108]: лагерей
+              - mark [ref=f1e6109]: в
+              - mark [ref=f1e6110]: Подмосковье
+              - text: —
+              - mark [ref=f1e6111]: краткий
+              - mark [ref=f1e6112]: обзор
+              - mark [ref=f1e6113]: рынка
+            - paragraph [ref=f1e6114]:
+              - mark [ref=f1e6115]: Подмосковный
+              - text: рынок
+              - mark [ref=f1e6116]: детского
+              - mark [ref=f1e6117]: отдыха
+              - text: большой и очень
+              - mark [ref=f1e6118]: разный
+              - text: . Чтобы не тонуть в
+              - mark [ref=f1e6119]: выборе
+              - text: ", мы коротко разложим, какие форматы"
+              - mark [ref=f1e6120]: лагерей
+              - text: в принципе
+              - mark [ref=f1e6121]: работают
+              - text: в
+              - mark [ref=f1e6122]: Московской
+              - mark [ref=f1e6123]: области
+              - text: и чем они отличаются.
+            - list [ref=f1e6124]:
+              - listitem [ref=f1e6125]:
+                - generic: •
+                - text: Общетематические — классические «советские» форматы, упор на
+                - mark [ref=f1e6126]: спорт
+                - text: /дискотеки/кружки.
+                - mark [ref=f1e6127]: Цена
+                - text: 35–55 тыс. ₽/
+                - mark [ref=f1e6128]: смена
+                - text: .
+                - mark [ref=f1e6129]: Подходит
+                - text: ", если нужен «просто"
+                - mark [ref=f1e6130]: отдых
+                - text: ».
+              - listitem [ref=f1e6131]:
+                - generic: •
+                - mark [ref=f1e6132]: Спортивные
+                - mark [ref=f1e6133]: лагеря
+                - text: — хоккей, футбол,
+                - mark [ref=f1e6134]: бассейн
+                - text: ", гимнастика. 50–80 тыс. ₽. Для уже занимающихся"
+                - mark [ref=f1e6135]: детей
+                - text: .
+              - listitem [ref=f1e6136]:
+                - generic: •
+                - text: Языковые —
+                - mark [ref=f1e6137]: погружение
+                - text: в английский (иногда с
+                - mark [ref=f1e6138]: носителями
+                - text: ). 60–120 тыс. ₽. Хороший
+                - mark [ref=f1e6139]: вариант
+                - text: ", если"
+                - mark [ref=f1e6140]: ребёнок
+                - text: уже «в теме».
+              - listitem [ref=f1e6141]:
+                - generic: •
+                - text: IT и STEM-
+                - mark [ref=f1e6142]: лагеря
+                - text: —
+                - mark [ref=f1e6143]: программирование
+                - text: ", робототехника, 3D-печать. 48–95 тыс. ₽. Растущий сегмент,"
+                - mark [ref=f1e6144]: подходит
+                - mark [ref=f1e6145]: детям
+                - text: «в экране», чтобы направить интерес в
+                - mark [ref=f1e6146]: полезное
+                - text: русло. Это наш формат — АйДаКемп.
+              - listitem [ref=f1e6147]:
+                - generic: •
+                - mark [ref=f1e6148]: Военно
+                - text: "-"
+                - mark [ref=f1e6149]: патриотические
+                - text: и «на выживание» — специфика, мальчики
+                - mark [ref=f1e6150]: "10"
+                - text: +. 40–60 тыс. ₽.
+              - listitem [ref=f1e6151]:
+                - generic: •
+                - mark [ref=f1e6152]: Семейные
+                - mark [ref=f1e6153]: лагеря
+                - text: — где
+                - mark [ref=f1e6154]: родители
+                - text: живут рядом. Для первого
+                - mark [ref=f1e6155]: опыта
+                - text: тех, кто боится отпустить.
+            - heading [level=2] [ref=f1e6156]:
+              - mark [ref=f1e6157]: Как
+              - mark [ref=f1e6158]: выбирать
+              - mark [ref=f1e6159]: лагерь
+              - mark [ref=f1e6160]: в
+              - mark [ref=f1e6161]: Подмосковье
+              - text: —
+              - mark [ref=f1e6162]: чек
+              - text: "-"
+              - mark [ref=f1e6163]: лист
+            - paragraph [ref=f1e6164]:
+              - text: Когда читаете сайт
+              - mark [ref=f1e6165]: лагеря
+              - text: ", смотрите не на красивые фотографии и обещания «"
+              - mark [ref=f1e6166]: научим
+              - text: всему» — смотрите в четыре обязательных пункта. Если хотя бы одного нет — лучше не рисковать.
+            - list [ref=f1e6167]:
+              - listitem [ref=f1e6168]:
+                - generic: •
+                - text: Реестровый
+                - mark [ref=f1e6169]: номер
+                - text: туроператора (РТО или РТА) на сайте — это юрлицо имеет право продавать
+                - mark [ref=f1e6170]: путёвки
+                - text: . У нас РТО 025773. Проверить можно на tourism.gov.ru.
+              - listitem [ref=f1e6171]:
+                - generic: •
+                - text: Договор на покупку — с перечнем
+                - mark [ref=f1e6172]: услуг
+                - text: ", пунктом о возврате, персональной страховкой на"
+                - mark [ref=f1e6173]: ребёнка
+                - text: . Без договора — это не
+                - mark [ref=f1e6174]: лагерь
+                - text: ", а «нелицензированный"
+                - mark [ref=f1e6175]: проект
+                - text: ».
+              - listitem [ref=f1e6176]:
+                - generic: •
+                - mark [ref=f1e6177]: Отзывы
+                - text: — не со страницы
+                - mark [ref=f1e6178]: лагеря
+                - text: ", а независимые: Яндекс."
+                - mark [ref=f1e6179]: Карты
+                - text: ", 2ГИС, Otzovik, родительские чаты. Если"
+                - mark [ref=f1e6180]: отзывов
+                - text: меньше 20 или все 5/5 звёзд — звоночек.
+              - listitem [ref=f1e6181]:
+                - generic: •
+                - text: Медик на
+                - mark [ref=f1e6182]: территории
+                - text: круглосуточно и договор со скорой/ближайшей больницей (а не «мы вызовем если что»).
+            - heading [level=2] [ref=f1e6183]:
+              - mark [ref=f1e6184]: Наро
+              - text: "-"
+              - mark [ref=f1e6185]: Фоминский
+              - mark [ref=f1e6186]: район
+              - text: —
+              - mark [ref=f1e6187]: что
+              - mark [ref=f1e6188]: вокруг
+              - mark [ref=f1e6189]: и
+              - mark [ref=f1e6190]: почему
+              - mark [ref=f1e6191]: это
+              - mark [ref=f1e6192]: хорошо
+            - paragraph [ref=f1e6193]:
+              - mark [ref=f1e6194]: Лагерь
+              - mark [ref=f1e6195]: находится
+              - text: в западной части
+              - mark [ref=f1e6196]: Подмосковья
+              - text: ", на Киевском"
+              - mark [ref=f1e6197]: направлении
+              - text: . Этот
+              - mark [ref=f1e6198]: район
+              - text: исторически был «дачным» для
+              - mark [ref=f1e6199]: московской
+              - text: интеллигенции — Наро-Фоминск, Апрелевка, Верея. Наро-Фоминский
+              - mark [ref=f1e6200]: район
+              - text: — экологически
+              - mark [ref=f1e6201]: чистое
+              - mark [ref=f1e6202]: место
+              - text: ": мало промышленности, воздух"
+              - mark [ref=f1e6203]: чистый
+              - text: ", много"
+              - mark [ref=f1e6204]: лесов
+              - text: и рек. Ближайший крупный
+              - mark [ref=f1e6205]: районный
+              - mark [ref=f1e6206]: центр
+              - text: — город Наро-Фоминск (~12 км) с больницами, аптеками и МФЦ. В 5 км от нашего корпуса — усадьба-музей «Архангельское-Тюриково», куда мы возим
+              - mark [ref=f1e6207]: детей
+              - text: на экскурсии. В радиусе 30 км нет крупных производств и трасс с интенсивным грузовым трафиком. Связь 4G и 5G
+              - mark [ref=f1e6208]: работает
+              - text: стабильно (важно, если
+              - mark [ref=f1e6209]: родителям
+              - text: потребуется быстро связаться).
+            - heading [level=2] [ref=f1e6210]:
+              - mark [ref=f1e6211]: Из
+              - mark [ref=f1e6212]: каких
+              - mark [ref=f1e6213]: районов
+              - mark [ref=f1e6214]: Москвы
+              - mark [ref=f1e6215]: удобнее
+              - mark [ref=f1e6216]: всего
+              - mark [ref=f1e6217]: ехать
+            - paragraph [ref=f1e6218]:
+              - mark [ref=f1e6219]: Лагерь
+              - mark [ref=f1e6220]: стоит
+              - text: на юго-западном
+              - mark [ref=f1e6221]: направлении
+              - text: от
+              - mark [ref=f1e6222]: Москвы
+              - text: "— по Киевскому шоссе (А-130). Ближе всего для жителей юго-запада и запада столицы: от метро Тропарёво, Юго-Западная, Саларьево — до выезда на шоссе буквально 5–"
+              - mark [ref=f1e6223]: "10"
+              - text: минут. Из других
+              - mark [ref=f1e6224]: районов
+              - text: "— тоже реально:"
+              - mark [ref=f1e6225]: Москва
+              - text: со всех сторон хорошо связана с ТТК и МКАД, дальше — прямо по А-130. Подробный разбор маршрутов и
+              - mark [ref=f1e6226]: цен
+              - text: именно для москвичей — на странице
+            - paragraph [ref=f1e6227]:
+              - mark [ref=f1e6228]: лагерь
+              - text: в
+              - mark [ref=f1e6229]: Москве
+              - text: на
+              - mark [ref=f1e6230]: лето
+              - mark [ref=f1e6231]: "2026"
+            - paragraph [ref=f1e6232]: .
+            - paragraph [ref=f1e6233]
+            - list [ref=f1e6234]:
+              - listitem [ref=f1e6235]:
+                - generic: •
+                - text: ЮЗАО (Тропарёво, Тёплый Стан, Ясенево) — 40–50 минут на машине,
+                - mark [ref=f1e6236]: самые
+                - text: ближние
+              - listitem [ref=f1e6237]:
+                - generic: •
+                - text: ЗАО (Солнцево, Ново-Переделкино, Очаково) — 45–55 минут, тоже очень удобно
+              - listitem [ref=f1e6238]:
+                - generic: •
+                - text: ЮАО (Чертаново, Бирюлёво, Орехово-Борисово) — 55–70 минут через МКАД и А-130
+              - listitem [ref=f1e6239]:
+                - generic: •
+                - text: ЦАО, СЗАО, СВАО, ВАО — 70–90 минут, зависит от пробок на МКАД
+              - listitem [ref=f1e6240]:
+                - generic: •
+                - text: Из любого
+                - mark [ref=f1e6241]: района
+                - mark [ref=f1e6242]: Москвы
+                - text: можно воспользоваться организованным трансфером — не нужна машина
+            - heading [level=2] [ref=f1e6243]:
+              - mark [ref=f1e6244]: Маршруты
+              - mark [ref=f1e6245]: до
+              - mark [ref=f1e6246]: лагеря
+              - text: —
+              - mark [ref=f1e6247]: на
+              - mark [ref=f1e6248]: машине
+              - text: ","
+              - mark [ref=f1e6249]: автобусе
+              - mark [ref=f1e6250]: и
+              - mark [ref=f1e6251]: электричке
+            - paragraph [ref=f1e6252]:
+              - text: Три рабочих способа добраться. Для первого заезда рекомендуем трансфер —
+              - mark [ref=f1e6253]: дети
+              - text: едут
+              - mark [ref=f1e6254]: вместе
+              - text: ", никакого хаоса на парковке. Для внеплановых визитов или если хотите заехать в середине"
+              - mark [ref=f1e6255]: смены
+              - text: — машина или электричка.
+            - list [ref=f1e6256]:
+              - listitem [ref=f1e6257]:
+                - generic: •
+                - text: "На машине: МКАД → А-101 (Киевское шоссе) →"
+                - mark [ref=f1e6258]: следуйте
+                - text: "до указателя на Наро-Фоминск. GPS-координаты санатория: 55.265643, 36.724185. Парковка на"
+                - mark [ref=f1e6259]: месте
+                - text: бесплатная.
+              - listitem [ref=f1e6260]:
+                - generic: •
+                - text: "Трансфер (рекомендуем): организованный автобус от м. Солнцево в"
+                - mark [ref=f1e6261]: день
+                - text: заезда.
+                - mark [ref=f1e6262]: Место
+                - text: бронируется
+                - mark [ref=f1e6263]: вместе
+                - text: со
+                - mark [ref=f1e6264]: сменой
+                - text: ", стоимость уточните у менеджера."
+              - listitem [ref=f1e6265]:
+                - generic: •
+                - text: "Электричка: с Киевского вокзала до ст. Апрелевка (~50 мин), далее такси 15–20 минут (~400–500 ₽). Удобно для"
+                - mark [ref=f1e6266]: родителей
+                - text: ", которые хотят приехать в гости в середине"
+                - mark [ref=f1e6267]: смены
+                - text: .
+              - listitem [ref=f1e6268]:
+                - generic: •
+                - text: "Яндекс.Такси / Uber: от м. Солнцево около 800–1 200 ₽ в одну сторону. Время в пути 35–50 минут без пробок."
+            - heading [level=2] [ref=f1e6269]:
+              - mark [ref=f1e6270]: Лагерь
+              - mark [ref=f1e6271]: в
+              - mark [ref=f1e6272]: Подмосковье
+              - mark [ref=f1e6273]: из
+              - mark [ref=f1e6274]: Одинцово
+              - text: ","
+              - mark [ref=f1e6275]: Троицка
+              - mark [ref=f1e6276]: и
+              - mark [ref=f1e6277]: Новой
+              - mark [ref=f1e6278]: Москвы
+            - paragraph [ref=f1e6279]:
+              - text: Для
+              - mark [ref=f1e6280]: семей
+              - text: из ближнего
+              - mark [ref=f1e6281]: Подмосковья
+              - text: АйДаКемп — один из
+              - mark [ref=f1e6282]: самых
+              - text: доступных по расстоянию загородных
+              - mark [ref=f1e6283]: лагерей
+              - text: с IT-программой. Не нужно везти
+              - mark [ref=f1e6284]: ребёнка
+              - text: через всю
+              - mark [ref=f1e6285]: Москву
+              - text: ": трассы Киевского"
+              - mark [ref=f1e6286]: направления
+              - text: связывают юго-западный сектор
+              - mark [ref=f1e6287]: Подмосковья
+              - text: напрямую.
+            - list [ref=f1e6288]:
+              - listitem [ref=f1e6289]:
+                - generic: •
+                - text: Одинцово — ~45 км, около 40–50 минут по Можайскому и Киевскому шоссе
+              - listitem [ref=f1e6290]:
+                - generic: •
+                - text: Троицк, Щербинка, Подольск — ~30–40 км, 30–40 минут напрямую
+              - listitem [ref=f1e6291]:
+                - generic: •
+                - text: Новая
+                - mark [ref=f1e6292]: Москва
+                - text: (Коммунарка,
+                - mark [ref=f1e6293]: Московский
+                - text: ", Саларьево) — ~50 км, 50–60 минут"
+              - listitem [ref=f1e6294]:
+                - generic: •
+                - text: Нарофоминск — 12 км, 15 минут.
+                - mark [ref=f1e6295]: Дети
+                - text: из Нарофоминска едут к нам как в «местный»
+                - mark [ref=f1e6296]: лагерь
+              - listitem [ref=f1e6297]:
+                - generic: •
+                - text: Апрелевка, Наро-Фоминск, Верея — в радиусе 20 км,
+                - mark [ref=f1e6298]: самое
+                - text: короткое плечо для местных
+                - mark [ref=f1e6299]: семей
+            - paragraph [ref=f1e6300]:
+              - text: Приезжают
+              - mark [ref=f1e6301]: семьи
+              - text: со всей
+              - mark [ref=f1e6302]: Московской
+              - mark [ref=f1e6303]: области
+              - text: "— из Балашихи и Щёлково, из Домодедово и Видного, из Лобни, Щербинки и Чехова. Для многих городов есть отдельные страницы с маршрутом:"
+            - heading [level=2] [ref=f1e6304]:
+              - mark [ref=f1e6305]: Как
+              - mark [ref=f1e6306]: проходит
+              - mark [ref=f1e6307]: день
+              - mark [ref=f1e6308]: заезда
+              - text: —
+              - mark [ref=f1e6309]: чтобы
+              - mark [ref=f1e6310]: не
+              - mark [ref=f1e6311]: было
+              - mark [ref=f1e6312]: сюрпризов
+            - paragraph [ref=f1e6313]:
+              - text: Заезд всегда в воскресенье, обычно с 12:00 до 15:00. Трансфер приезжает в
+              - mark [ref=f1e6314]: лагерь
+              - text: раньше — примерно к 13:00.
+              - mark [ref=f1e6315]: Родители
+              - text: на машине могут приехать в этот же промежуток. На
+              - mark [ref=f1e6316]: территории
+              - text: — регистрация, медосмотр, распределение по комнатам. Прощание на парковке, не в корпусе — так
+              - mark [ref=f1e6317]: детям
+              - text: проще переключиться.
+            - list [ref=f1e6318]:
+              - listitem [ref=f1e6319]:
+                - generic: •
+                - text: Регистрация 12:00–15:00 в
+                - mark [ref=f1e6320]: день
+                - text: заезда, выезд в последний
+                - mark [ref=f1e6321]: день
+                - text: до
+                - mark [ref=f1e6322]: "14"
+                - text: :00
+              - listitem [ref=f1e6323]:
+                - generic: •
+                - text: На въезде — охрана, все взрослые показывают паспорт
+              - listitem [ref=f1e6324]:
+                - generic: •
+                - text: Медик проверяет справку (форма 079/у) — без неё не пустим, это требование СанПиН
+              - listitem [ref=f1e6325]:
+                - generic: •
+                - mark [ref=f1e6326]: Телефоны
+                - text: у
+                - mark [ref=f1e6327]: детей
+                - text: берём в первый
+                - mark [ref=f1e6328]: день
+                - text: — они становятся внутренней валютой
+                - mark [ref=f1e6329]: лагеря
+                - text: ", не гаджетами"
+              - listitem [ref=f1e6330]:
+                - generic: •
+                - text: Видеозвонок с
+                - mark [ref=f1e6331]: ребёнком
+                - text: —
+                - mark [ref=f1e6332]: ежедневно
+                - text: в фиксированное время, расписание пришлём заранее
+            - heading [level=2] [ref=f1e6333]:
+              - mark [ref=f1e6334]: Фото
+            - paragraph [ref=f1e6335]:
+              - mark [ref=f1e6336]: Лето
+              - mark [ref=f1e6337]: "2026"
+            - heading [level=2] [ref=f1e6338]:
+              - mark [ref=f1e6339]: Свободные
+              - mark [ref=f1e6340]: места
+            - paragraph [ref=f1e6341]:
+              - text: Данные обновляются в реальном времени. Во всех
+              - mark [ref=f1e6342]: ценах
+              - text: ":"
+              - mark [ref=f1e6343]: питание
+              - text: ","
+              - mark [ref=f1e6344]: проживание
+              - text: ", программа."
+            - paragraph [ref=f1e6345]: Верните до 5 200 ₽ налогового вычета
+            - paragraph [ref=f1e6346]: .
+            - paragraph [ref=f1e6347]
+            - paragraph [ref=f1e6348]:
+              - text: Каждая 5-я
+              - mark [ref=f1e6349]: путёвка
+              - text: —
+              - mark [ref=f1e6350]: скидка
+              - text: 50% Каждая
+              - mark [ref=f1e6351]: "10"
+              - text: "-я — за 100 ₽"
+            - paragraph [ref=f1e6352]:
+              - text: Те, кто едет в
+              - mark [ref=f1e6353]: компании
+              - text: ", адаптируются вдвое быстрее"
+            - paragraph [ref=f1e6354]: Позовите друга — подарим фирменный мерч каждому.
+            - paragraph [ref=f1e6355]: Среда решает больше, чем программа.
+            - paragraph [ref=f1e6356]:
+              - text: Когда рядом те, кому
+              - mark [ref=f1e6357]: интересно
+              - text: — не потому что заставили, а потому что сами хотят — это заражает. Даже тот, кто приехал просто «посмотреть», через три
+              - mark [ref=f1e6358]: дня
+              - text: уже не отлипает от
+              - mark [ref=f1e6359]: проекта
+              - text: .
+            - paragraph [ref=f1e6360]:
+              - text: Мы собираем тех, кому Майнкрафт уже тесноват. Кто хочет понять, как это устроено — и
+              - mark [ref=f1e6361]: сделать
+              - text: что-то своё.
+            - paragraph [ref=f1e6362]:
+              - text: И это чувствуется с первого
+              - mark [ref=f1e6363]: дня
+              - text: .
+            - paragraph [ref=f1e6364]: "1"
+            - paragraph [ref=f1e6365]: Май — Июнь
+            - paragraph [ref=f1e6366]: завершена
+            - heading [level=3] [ref=f1e6367]:
+              - mark [ref=f1e6368]: "30"
+              - mark [ref=f1e6369]: мая
+              - text: —
+              - mark [ref=f1e6370]: "8"
+              - mark [ref=f1e6371]: июня
+            - paragraph [ref=f1e6372]:
+              - mark [ref=f1e6373]: "10"
+              - mark [ref=f1e6374]: дней
+            - paragraph [ref=f1e6375]:
+              - mark [ref=f1e6376]: Занято
+              - text: 35 из 35
+            - paragraph [ref=f1e6377]:
+              - text: Как росла
+              - mark [ref=f1e6378]: цена
+            - paragraph [ref=f1e6379]: 74 900 ₽ 93 900 ₽ +25%
+            - paragraph [ref=f1e6380]:
+              - text: Январь → Старт
+              - mark [ref=f1e6381]: смены
+            - paragraph [ref=f1e6382]: Смотреть как прошла
+            - paragraph [ref=f1e6383]: "2"
+            - paragraph [ref=f1e6384]: Июнь
+            - paragraph [ref=f1e6385]: завершена
+            - heading [level=3] [ref=f1e6386]:
+              - mark [ref=f1e6387]: "10"
+              - mark [ref=f1e6388]: июня
+              - text: —
+              - mark [ref=f1e6389]: "23"
+              - mark [ref=f1e6390]: июня
+            - paragraph [ref=f1e6391]:
+              - mark [ref=f1e6392]: "14"
+              - mark [ref=f1e6393]: дней
+            - paragraph [ref=f1e6394]:
+              - mark [ref=f1e6395]: Занято
+              - text: 45 из 45
+            - paragraph [ref=f1e6396]:
+              - text: Как росла
+              - mark [ref=f1e6397]: цена
+            - paragraph [ref=f1e6398]:
+              - text: 95 000 ₽ 108 000 ₽ +
+              - mark [ref=f1e6399]: "14"
+              - text: "%"
+            - paragraph [ref=f1e6400]:
+              - text: Январь → Старт
+              - mark [ref=f1e6401]: смены
+            - paragraph [ref=f1e6402]: Смотреть как прошла
+            - paragraph [ref=f1e6403]:
+              - text: 3 Ближайшая через 18
+              - mark [ref=f1e6404]: дней
+            - paragraph [ref=f1e6405]: "3"
+            - paragraph [ref=f1e6406]:
+              - mark [ref=f1e6407]: Август
+            - heading [level=3] [ref=f1e6408]:
+              - mark [ref=f1e6409]: "3"
+              - mark [ref=f1e6410]: августа
+              - text: —
+              - mark [ref=f1e6411]: "15"
+              - mark [ref=f1e6412]: августа
+            - paragraph [ref=f1e6413]:
+              - text: "13"
+              - mark [ref=f1e6414]: дней
+            - paragraph [ref=f1e6415]:
+              - mark [ref=f1e6416]: Занято
+              - text: Осталось 5
+            - paragraph [ref=f1e6417]: 99 870 ₽
+            - paragraph [ref=f1e6418]: Завтра +500 ₽
+            - paragraph [ref=f1e6419]:
+              - text: всё
+              - mark [ref=f1e6420]: включено
+              - text: · ↺
+            - paragraph [ref=f1e6421]:
+              - text: −
+              - mark [ref=f1e6422]: "6"
+              - text: 561 ₽ вычет
+            - paragraph [ref=f1e6423]:
+              - mark [ref=f1e6424]: Выбрать
+            - paragraph [ref=f1e6425]:
+              - mark [ref=f1e6426]: Смена
+              - text: 3 · 3
+              - mark [ref=f1e6427]: августа
+              - text: — 15
+              - mark [ref=f1e6428]: августа
+              - text: через 18 дн
+            - paragraph [ref=f1e6429]:
+              - text: "13"
+              - mark [ref=f1e6430]: дней
+              - text: Последние 3
+              - mark [ref=f1e6431]: места
+              - text: Стоимость 99 870 ₽
+            - paragraph [ref=f1e6432]:
+              - text: Крутите колесо — разыгрываем
+              - mark [ref=f1e6433]: скидку
+              - text: до 70%
+            - paragraph [ref=f1e6434]:
+              - mark [ref=f1e6435]: Занято
+              - text: Осталось 5
+              - mark [ref=f1e6436]: мест
+            - paragraph [ref=f1e6437]: Стоимость
+            - paragraph [ref=f1e6438]: 99 870 ₽
+            - paragraph [ref=f1e6439]:
+              - text: всё
+              - mark [ref=f1e6440]: включено
+            - paragraph [ref=f1e6441]:
+              - mark [ref=f1e6442]: Выбрать
+            - paragraph [ref=f1e6443]:
+              - text: Ваша
+              - mark [ref=f1e6444]: скидка
+            - paragraph [ref=f1e6445]: —
+            - paragraph [ref=f1e6446]: "Итого: — · Предоплата: —"
+            - paragraph [ref=f1e6447]:
+              - text: Предоплата 50% · оставшиеся 50% до конца
+              - mark [ref=f1e6448]: дня
+              - text: оплаты
+            - paragraph [ref=f1e6449]:
+              - text: Заехать можно до 5
+              - mark [ref=f1e6450]: августа
+              - text: · успейте собрать справки
+            - paragraph [ref=f1e6451]:
+              - text: Что-то пошло не так?
+              - mark [ref=f1e6452]: Сделайте
+              - text: скриншот и
+            - paragraph [ref=f1e6453]: напишите нам в Telegram
+            - paragraph [ref=f1e6454]
+            - paragraph [ref=f1e6455]:
+              - mark [ref=f1e6456]: Место
+              - mark [ref=f1e6457]: забронировано
+            - heading [level=2] [ref=f1e6458]:
+              - mark [ref=f1e6459]: Скидка
+              - text: —
+              - mark [ref=f1e6460]: зафиксирована
+            - paragraph [ref=f1e6461]:
+              - mark [ref=f1e6462]: Цена
+              - text: со
+              - mark [ref=f1e6463]: скидкой
+              - text: —
+            - paragraph [ref=f1e6464]: Предоплата сейчас (50%) —
+            - paragraph [ref=f1e6465]:
+              - text: Ваши ФИО * Ваш
+              - mark [ref=f1e6466]: телефон
+              - text: "* Я согласен(а) на"
+            - paragraph [ref=f1e6467]:
+              - mark [ref=f1e6468]: обработку
+              - mark [ref=f1e6469]: персональных
+              - text: данных
+            - paragraph [ref=f1e6470]: "Что будет после оплаты:"
+            - paragraph [ref=f1e6471]: 1. В течение 30 минут с вами свяжется представитель
+            - paragraph [ref=f1e6472]:
+              - text: 2. Договор подготовим до конца рабочего
+              - mark [ref=f1e6473]: дня
+            - paragraph [ref=f1e6474]:
+              - text: 3. Окончательная оплата — до конца
+              - mark [ref=f1e6475]: дня
+              - text: заезда (3
+              - mark [ref=f1e6476]: августа
+              - text: )
+            - paragraph [ref=f1e6477]:
+              - text: 4. Заехать можно до 5
+              - mark [ref=f1e6478]: августа
+              - text: — время собрать справки
+            - paragraph [ref=f1e6479]: Трансфер оплачивается отдельно.
+            - paragraph [ref=f1e6480]: Что-то пошло не так?
+            - paragraph [ref=f1e6481]: Напишите нам в Telegram
+            - paragraph [ref=f1e6482]: — решим вручную.
+            - paragraph [ref=f1e6483]
+            - paragraph [ref=f1e6484]: "4"
+            - paragraph [ref=f1e6485]:
+              - mark [ref=f1e6486]: Август
+            - heading [level=3] [ref=f1e6487]:
+              - mark [ref=f1e6488]: "17"
+              - mark [ref=f1e6489]: августа
+              - text: —
+              - mark [ref=f1e6490]: "26"
+              - mark [ref=f1e6491]: августа
+            - paragraph [ref=f1e6492]:
+              - mark [ref=f1e6493]: "10"
+              - mark [ref=f1e6494]: дней
+            - paragraph [ref=f1e6495]:
+              - mark [ref=f1e6496]: Занято
+              - text: 37 из 45
+            - paragraph [ref=f1e6497]: 74 900 ₽
+            - paragraph [ref=f1e6498]:
+              - text: всё
+              - mark [ref=f1e6499]: включено
+              - text: · ↺
+            - paragraph [ref=f1e6500]: ·
+            - paragraph [ref=f1e6501]: спеццена −5%
+            - paragraph [ref=f1e6502]:
+              - mark [ref=f1e6503]: Смена
+              - text: распродана. Обычно к её старту 2–3
+              - mark [ref=f1e6504]: семьи
+              - text: отказываются от
+              - mark [ref=f1e6505]: путёвки
+              - text: по
+              - mark [ref=f1e6506]: разным
+              - text: причинам — освободившиеся
+              - mark [ref=f1e6507]: места
+              - mark [ref=f1e6508]: предлагаем
+              - text: по листу ожидания, в порядке очереди. Оставьте заявку — позвоним, как только появится
+              - mark [ref=f1e6509]: место
+              - text: .
+            - paragraph [ref=f1e6510]:
+              - mark [ref=f1e6511]: Возраст
+            - paragraph [ref=f1e6512]:
+              - text: Выберите
+              - mark [ref=f1e6513]: возраст
+              - mark [ref=f1e6514]: ребёнка
+            - paragraph [ref=f1e6515]:
+              - text: Ваш
+              - mark [ref=f1e6516]: номер
+            - paragraph [ref=f1e6517]:
+              - text: Введите
+              - mark [ref=f1e6518]: номер
+              - text: полностью — 11 цифр (+
+              - mark [ref=f1e6519]: "7"
+              - text: …)
+            - paragraph [ref=f1e6520]: Когда позвонить? (необязательно)
+            - paragraph [ref=f1e6521]: Ознакомлен(а) с
+            - paragraph [ref=f1e6522]:
+              - mark [ref=f1e6523]: Политикой
+              - mark [ref=f1e6524]: обработки
+              - mark [ref=f1e6525]: персональных
+              - text: данных
+            - paragraph [ref=f1e6526]: Согласен(а) на
+            - paragraph [ref=f1e6527]:
+              - mark [ref=f1e6528]: обработку
+              - mark [ref=f1e6529]: персональных
+              - text: данных
+            - paragraph [ref=f1e6530]: Поставьте обе галочки — без них не можем принять заявку
+            - paragraph [ref=f1e6531]: С1
+            - paragraph [ref=f1e6532]: С2
+            - paragraph [ref=f1e6533]: С3
+            - paragraph [ref=f1e6534]: С4
+            - heading [level=2] [ref=f1e6535]:
+              - mark [ref=f1e6536]: Частые
+              - mark [ref=f1e6537]: вопросы
+              - mark [ref=f1e6538]: о
+              - mark [ref=f1e6539]: лагере
+              - mark [ref=f1e6540]: в
+              - mark [ref=f1e6541]: Подмосковье
+            - paragraph [ref=f1e6542]:
+              - text: Наро-Фоминский
+              - mark [ref=f1e6543]: район
+              - text: ", 66 км от МКАД по А-101 (Киевское шоссе). Санаторий «Изумруд»."
+            - paragraph [ref=f1e6544]:
+              - text: Открытые августовские
+              - mark [ref=f1e6545]: смены
+              - text: — от 74 900 ₽ (
+              - mark [ref=f1e6546]: "10"
+              - mark [ref=f1e6547]: дней
+              - text: ) до 89 400 ₽ (13
+              - mark [ref=f1e6548]: дней
+              - text: ). Всё
+              - mark [ref=f1e6549]: включено
+              - text: .
+            - paragraph [ref=f1e6550]:
+              - text: На машине по А-101 (Калужское шоссе) — 40–60 минут от МКАД. Трансфер от м. Солнцево в
+              - mark [ref=f1e6551]: день
+              - text: заезда. Электричка с Киевского вокзала до Апрелевки + такси 15 мин.
+            - paragraph [ref=f1e6552]:
+              - text: Python, AI, Minecraft, Roblox, 3D-
+              - mark [ref=f1e6553]: моделирование
+              - text: . 2
+              - mark [ref=f1e6554]: занятия
+              - text: в
+              - mark [ref=f1e6555]: день
+              - text: +
+              - mark [ref=f1e6556]: бассейн
+              - text: +
+              - mark [ref=f1e6557]: активности
+              - text: .
+            - heading [level=2] [ref=f1e6558]:
+              - mark [ref=f1e6559]: FAQ
+            - paragraph [ref=f1e6560]:
+              - text: На
+              - mark [ref=f1e6561]: август
+              - mark [ref=f1e6562]: "2026"
+              - text: открыты две
+              - mark [ref=f1e6563]: смены
+              - text: ":"
+              - mark [ref=f1e6564]: Смена
+              - text: 3 (3–15
+              - mark [ref=f1e6565]: августа
+              - text: ", 13"
+              - mark [ref=f1e6566]: дней
+              - text: ) и
+              - mark [ref=f1e6567]: Смена
+              - text: 4 (17–26
+              - mark [ref=f1e6568]: августа
+              - text: ","
+              - mark [ref=f1e6569]: "10"
+              - mark [ref=f1e6570]: дней
+              - text: ). Стоимость от 74 900 ₽. Запись открыта,
+              - mark [ref=f1e6571]: места
+              - text: ограничены — до 8
+              - mark [ref=f1e6572]: участников
+              - text: в
+              - mark [ref=f1e6573]: группе
+              - text: .
+            - paragraph [ref=f1e6574]:
+              - text: Всё
+              - mark [ref=f1e6575]: включено
+              - text: ":"
+              - mark [ref=f1e6576]: проживание
+              - text: в комнатах по 2–4 человека, 5-разовое горячее
+              - mark [ref=f1e6577]: питание
+              - text: ", IT-программа с преподавателями-практиками, оборудование (ноутбуки предоставляются),"
+              - mark [ref=f1e6578]: бассейн
+              - text: ","
+              - mark [ref=f1e6579]: спорт
+              - text: ", досуг и медработник 24/"
+              - mark [ref=f1e6580]: "7"
+              - text: . Доплачивать за оборудование или
+              - mark [ref=f1e6581]: занятия
+              - text: не нужно.
+            - paragraph [ref=f1e6582]:
+              - text: "Смотрите на три вещи: программу (не просто"
+              - mark [ref=f1e6583]: игры
+              - text: ", а реальный продукт на выходе), размер"
+              - mark [ref=f1e6584]: группы
+              - text: (у нас до 8 человек —
+              - mark [ref=f1e6585]: тренер
+              - text: знает каждого), и лицензию (мы
+              - mark [ref=f1e6586]: работаем
+              - text: по лицензии Минобрнауки — можно вернуть 13% через налоговый вычет). АйДаКемп — в 66 км от МКАД, Наро-Фоминский
+              - mark [ref=f1e6587]: округ
+              - text: .
+            - paragraph [ref=f1e6588]:
+              - text: В обычном
+              - mark [ref=f1e6589]: лагере
+              - mark [ref=f1e6590]: ребята
+              - text: отдыхают. В IT-
+              - mark [ref=f1e6591]: лагере
+              - text: "— отдыхают и создают: каждый уезжает с"
+              - mark [ref=f1e6592]: готовым
+              - mark [ref=f1e6593]: проектом
+              - text: (игрой, ботом, модом или AI-приложением). При этом
+              - mark [ref=f1e6594]: бассейн
+              - text: ","
+              - mark [ref=f1e6595]: спорт
+              - text: и
+              - mark [ref=f1e6596]: вожатые
+              - text: тоже есть — это полноценный
+              - mark [ref=f1e6597]: лагерь
+              - text: ", а не кружок."
+            - paragraph [ref=f1e6598]:
+              - text: Нет. Принимаем с нуля — с
+              - mark [ref=f1e6599]: "7"
+              - mark [ref=f1e6600]: лет
+              - text: .
+              - mark [ref=f1e6601]: Ребята
+              - text: без
+              - mark [ref=f1e6602]: опыта
+              - text: начинают со Scratch и Minecraft Education и за
+              - mark [ref=f1e6603]: "7"
+              - text: –
+              - mark [ref=f1e6604]: "14"
+              - mark [ref=f1e6605]: дней
+              - text: создают первый
+              - mark [ref=f1e6606]: проект
+              - text: . Те, кто уже умеет —
+              - mark [ref=f1e6607]: работают
+              - text: на продвинутом
+              - mark [ref=f1e6608]: уровне
+              - text: .
+              - mark [ref=f1e6609]: Группы
+              - text: делятся по
+              - mark [ref=f1e6610]: возрасту
+              - text: и
+              - mark [ref=f1e6611]: уровню
+              - text: .
+            - paragraph [ref=f1e6612]:
+              - text: Да. Если отказались за
+              - mark [ref=f1e6613]: "14"
+              - text: +
+              - mark [ref=f1e6614]: дней
+              - text: до начала
+              - mark [ref=f1e6615]: смены
+              - text: — возвращаем полную стоимость. Подробные
+              - mark [ref=f1e6616]: условия
+              - text: — в разделе
+              - mark [ref=f1e6617]: Политика
+              - text: возврата. Кроме того, 13% от стоимости можно вернуть через налоговый вычет за
+              - mark [ref=f1e6618]: образовательные
+              - mark [ref=f1e6619]: услуги
+              - text: .
+            - paragraph [ref=f1e6620]:
+              - text: Да. Мы принимаем
+              - mark [ref=f1e6621]: детей
+              - text: со всего
+              - mark [ref=f1e6622]: Подмосковья
+              - text: и
+              - mark [ref=f1e6623]: Москвы
+              - text: . До
+              - mark [ref=f1e6624]: лагеря
+              - text: удобно добраться на машине (66 км от МКАД по Киевскому шоссе) или на трансфере от метро. Из Одинцово — около 40 минут, из Химок и Серпухова — около
+              - mark [ref=f1e6625]: часа
+              - text: .
+            - paragraph [ref=f1e6626]: Нажмите «Записаться» на сайте или напишите в
+            - paragraph [ref=f1e6627]: WhatsApp
+            - paragraph [ref=f1e6628]: /
+            - paragraph [ref=f1e6629]: Telegram
+            - paragraph [ref=f1e6630]:
+              - text: . Менеджер ответит в течение
+              - mark [ref=f1e6631]: часа
+              - text: ", расскажет про свободные"
+              - mark [ref=f1e6632]: смены
+              - text: и ответит на
+              - mark [ref=f1e6633]: вопросы
+              - text: . Бронь подтверждается после предоплаты.
+            - paragraph [ref=f1e6634]:
+              - text: Не более 8 человек на
+              - mark [ref=f1e6635]: группу
+              - text: . 1 преподаватель на
+              - mark [ref=f1e6636]: "6"
+              - text: –8 школьников,
+              - mark [ref=f1e6637]: вожатые
+              - mark [ref=f1e6638]: работают
+              - text: в парах — каждый
+              - mark [ref=f1e6639]: подросток
+              - text: всегда на
+              - mark [ref=f1e6640]: виду
+              - text: и
+              - mark [ref=f1e6641]: получает
+              - text: внимание
+              - mark [ref=f1e6642]: педагога
+              - text: .
+            - paragraph [ref=f1e6643]:
+              - text: Зависит от
+              - mark [ref=f1e6644]: возраста
+              - text: и
+              - mark [ref=f1e6645]: уровня
+              - text: .
+              - mark [ref=f1e6646]: Ребята
+              - mark [ref=f1e6647]: "7"
+              - text: –9
+              - mark [ref=f1e6648]: лет
+              - text: — Scratch-игру или Minecraft-мир. Школьники
+              - mark [ref=f1e6649]: "10"
+              - text: –12
+              - mark [ref=f1e6650]: лет
+              - text: — Python-бот или pygame-игру.
+              - mark [ref=f1e6651]: Подростки
+              - text: 13–15
+              - mark [ref=f1e6652]: лет
+              - text: — AI-приложение, Telegram-бота с нейросетью или 3D-
+              - mark [ref=f1e6653]: проект
+              - text: в Blender. Каждый уезжает с
+              - mark [ref=f1e6654]: готовым
+              - mark [ref=f1e6655]: проектом
+              - text: ", который можно"
+              - mark [ref=f1e6656]: показать
+              - text: друзьям.
+            - paragraph [ref=f1e6657]:
+              - text: Медработник на
+              - mark [ref=f1e6658]: территории
+              - text: 24/
+              - mark [ref=f1e6659]: "7"
+              - text: всю
+              - mark [ref=f1e6660]: смену
+              - text: .
+            - paragraph [ref=f1e6661]: Медик осматривает, при необходимости вызывает скорую. Вы получите звонок сразу.
+            - paragraph [ref=f1e6662]: Передайте медику с инструкцией — будет выдавать по расписанию.
+            - paragraph [ref=f1e6663]: Да, огорожена, КПП с охраной. Посторонние не допускаются.
+            - paragraph [ref=f1e6664]:
+              - text: Не более 8–
+              - mark [ref=f1e6665]: "10"
+              - text: человек,
+              - mark [ref=f1e6666]: вожатые
+              - mark [ref=f1e6667]: работают
+              - text: в парах.
+            - paragraph [ref=f1e6668]: Да, ключевые зоны под видеонаблюдением и контролем администрации.
+            - paragraph [ref=f1e6669]:
+              - text: 5 раз в
+              - mark [ref=f1e6670]: день
+              - text: ": завтрак, второй завтрак, обед, полдник, ужин."
+            - paragraph [ref=f1e6671]:
+              - text: Да. В
+              - mark [ref=f1e6672]: лагере
+              - text: учитываются индивидуальные ограничения и аллергии.
+            - paragraph [ref=f1e6673]:
+              - text: Да,
+              - mark [ref=f1e6674]: питание
+              - text: полноценное, горячее и регулярное.
+            - paragraph [ref=f1e6675]: Два-четыре человека в комнате, оборудованной полноценным санузлом и душевой.
+            - paragraph [ref=f1e6676]:
+              - text: Да, размещение организовано с учётом
+              - mark [ref=f1e6677]: возраста
+              - text: и пола.
+            - paragraph [ref=f1e6678]:
+              - mark [ref=f1e6679]: Ежедневный
+              - text: контроль чистоты, спокойный режим и сопровождение
+              - mark [ref=f1e6680]: вожатых
+              - text: .
+            - paragraph [ref=f1e6681]:
+              - text: "Стандартный пакет: 1) Копия свидетельства о рождении (для"
+              - mark [ref=f1e6682]: детей
+              - text: до
+              - mark [ref=f1e6683]: "14"
+              - mark [ref=f1e6684]: лет
+              - text: ) или паспорт (с
+              - mark [ref=f1e6685]: "14"
+              - mark [ref=f1e6686]: лет
+              - text: ). 2) Полис ОМС (оригинал или копия). 3) Медицинская справка по форме 079/у. 4) Справка об отсутствии контактов с инфекционными больными (форма 095/у). 5) Прививочный сертификат или выписка из формы 063/у.
+              - mark [ref=f1e6687]: "6"
+              - text: ) Анализ на энтеробиоз и яйца гельминтов.
+              - mark [ref=f1e6688]: "7"
+              - text: ) СНИЛС
+              - mark [ref=f1e6689]: ребёнка
+              - text: . Полный список с образцами — на странице
+            - paragraph [ref=f1e6690]:
+              - mark [ref=f1e6691]: Документы
+              - text: для
+              - mark [ref=f1e6692]: ребёнка
+              - text: в
+              - mark [ref=f1e6693]: лагерь
+            - paragraph [ref=f1e6694]: .
+            - paragraph [ref=f1e6695]:
+              - text: Справка 079/у (медицинская справка для
+              - mark [ref=f1e6696]: лагеря
+              - text: ) действительна весь
+              - mark [ref=f1e6697]: сезон
+              - text: при
+              - mark [ref=f1e6698]: условии
+              - text: стабильного состояния
+              - mark [ref=f1e6699]: ребёнка
+              - text: . Оформляется в
+              - mark [ref=f1e6700]: детской
+              - text: поликлинике у педиатра. Обычно делают за 1–3
+              - mark [ref=f1e6701]: дня
+              - text: "— без анализов это 1 визит. Берите её заранее: за 1–2 недели до заезда."
+            - paragraph [ref=f1e6702]:
+              - text: Справка об отсутствии контактов с инфекционными больными (форма 095/у) оформляется НЕ РАНЕЕ чем за 3
+              - mark [ref=f1e6703]: дня
+              - text: до заезда. Это критично — если справка старше 3
+              - mark [ref=f1e6704]: дней
+              - text: ","
+              - mark [ref=f1e6705]: ребёнка
+              - text: не примут на
+              - mark [ref=f1e6706]: смену
+              - text: . Берите её в
+              - mark [ref=f1e6707]: день
+              - text: перед выездом или за
+              - mark [ref=f1e6708]: день
+              - text: . Делают в
+              - mark [ref=f1e6709]: районной
+              - text: поликлинике за 15–30 минут,
+              - mark [ref=f1e6710]: бесплатно
+              - text: по полису ОМС.
+            - paragraph [ref=f1e6711]:
+              - text: "Нужны два анализа: 1) Соскоб на энтеробиоз — действителен"
+              - mark [ref=f1e6712]: "10"
+              - mark [ref=f1e6713]: дней
+              - text: ","
+              - mark [ref=f1e6714]: готовится
+              - text: 1–2
+              - mark [ref=f1e6715]: дня
+              - text: . 2) Анализ кала на яйца гельминтов — действителен
+              - mark [ref=f1e6716]: "10"
+              - mark [ref=f1e6717]: дней
+              - text: ","
+              - mark [ref=f1e6718]: готовится
+              - text: 1–3
+              - mark [ref=f1e6719]: дня
+              - text: . Сдавайте за 5–
+              - mark [ref=f1e6720]: "7"
+              - mark [ref=f1e6721]: дней
+              - text: до заезда, чтобы успеть получить результат и не просрочить срок
+              - mark [ref=f1e6722]: действия
+              - text: .
+              - mark [ref=f1e6723]: Бесплатно
+              - text: по ОМС в
+              - mark [ref=f1e6724]: детской
+              - text: поликлинике или в любой коммерческой лаборатории (Инвитро, Гемотест) — 500–800 ₽ с готовностью за 1
+              - mark [ref=f1e6725]: день
+              - text: .
+            - paragraph [ref=f1e6726]:
+              - text: Это не препятствие. Если есть медотвод или отказ — приносите выписку из формы 063/у с указанием причин. Главное — наличие справок об отсутствии контактов и общем состоянии
+              - mark [ref=f1e6727]: здоровья
+              - text: . Закон не требует обязательной вакцинации для приёма в
+              - mark [ref=f1e6728]: лагерь
+              - text: .
+            - paragraph [ref=f1e6729]:
+              - text: "После оплаты мы присылаем: 1) Договор на оказание"
+              - mark [ref=f1e6730]: услуг
+              - text: — на email в
+              - mark [ref=f1e6731]: день
+              - text: оплаты. 2) Кассовый чек/счёт-фактуру для налогового вычета — в течение 3 рабочих
+              - mark [ref=f1e6732]: дней
+              - text: . Лицензия Минобрнауки + ИНН
+              - mark [ref=f1e6733]: лагеря
+              - text: дают право вернуть 13% через налоговую — подробнее на странице
+            - paragraph [ref=f1e6734]:
+              - mark [ref=f1e6735]: Документы
+              - text: и лицензия
+            - paragraph [ref=f1e6736]: .
+            - paragraph [ref=f1e6737]:
+              - text: "Оптимальный график: за"
+              - mark [ref=f1e6738]: "14"
+              - mark [ref=f1e6739]: дней
+              - text: — собрать копии свидетельства о рождении, полиса ОМС, СНИЛС, прививочного. За
+              - mark [ref=f1e6740]: "7"
+              - mark [ref=f1e6741]: дней
+              - text: — записаться к педиатру на справку 079/у и сдать анализы. За 3
+              - mark [ref=f1e6742]: дня
+              - text: — взять справку 095/у. В
+              - mark [ref=f1e6743]: день
+              - text: заезда — проверить, что все справки на руках и в сроке
+              - mark [ref=f1e6744]: действия
+              - text: .
+            - paragraph [ref=f1e6745]:
+              - text: Да, связь через
+              - mark [ref=f1e6746]: вожатых
+              - text: и администрацию,
+              - mark [ref=f1e6747]: родители
+              - text: всегда на контакте.
+            - paragraph [ref=f1e6748]: WhatsApp
+            - paragraph [ref=f1e6749]: и
+            - paragraph [ref=f1e6750]: Telegram
+            - paragraph [ref=f1e6751]:
+              - text: в разделе «Контакты»,
+              - mark [ref=f1e6752]: телефон
+              - text: +
+              - mark [ref=f1e6753]: "7"
+              - text: (968) 808-64-55
+            - paragraph [ref=f1e6754]: .
+            - paragraph [ref=f1e6755]:
+              - mark [ref=f1e6756]: Ежедневные
+              - text: фото и сообщения в родительском канале.
+            - paragraph [ref=f1e6757]:
+              - text: Да, доступна рассрочка — уточните
+              - mark [ref=f1e6758]: условия
+              - text: "у менеджера при записи. Обычно делим на 2 платежа: предоплата при"
+              - mark [ref=f1e6759]: бронировании
+              - text: ", остаток за"
+              - mark [ref=f1e6760]: "14"
+              - mark [ref=f1e6761]: дней
+              - text: до
+              - mark [ref=f1e6762]: смены
+              - text: . Напишите в
+            - paragraph [ref=f1e6763]: WhatsApp
+            - paragraph [ref=f1e6764]: или
+            - paragraph [ref=f1e6765]: Telegram
+            - paragraph [ref=f1e6766]:
+              - text: — подберём удобный
+              - mark [ref=f1e6767]: вариант
+              - text: .
+            - paragraph [ref=f1e6768]:
+              - mark [ref=f1e6769]: Лагерь
+              - mark [ref=f1e6770]: работает
+              - text: по
+              - mark [ref=f1e6771]: образовательной
+              - text: "лицензии Минобрнауки, поэтому можно вернуть 13% через налоговую (ст. 219 НК РФ). Формула: 13% × (стоимость"
+              - mark [ref=f1e6772]: смены
+              - text: − 3 800 ₽ × количество
+              - mark [ref=f1e6773]: дней
+              - text: ). Для короткой
+              - mark [ref=f1e6774]: смены
+              - text: — около 2 800 ₽, для длинной — до 5 200 ₽. После оплаты мы выдаём договор и кассовый чек. Подробная инструкция — на странице
+            - paragraph [ref=f1e6775]: «Налоговый вычет»
+            - paragraph [ref=f1e6776]: .
+            - paragraph [ref=f1e6777]:
+              - text: Да. Принимаем оплату
+              - mark [ref=f1e6778]: картой
+              - text: (Visa, Mastercard, Мир), переводом через СБП и безналичным расчётом по счёту для юридических лиц. После оплаты сразу
+              - mark [ref=f1e6779]: получаете
+              - text: договор на email и кассовый чек — всё для налогового вычета.
+            - heading [level=2] [ref=f1e6780]:
+              - mark [ref=f1e6781]: Подберите
+              - mark [ref=f1e6782]: лагерь
+              - mark [ref=f1e6783]: по
+              - mark [ref=f1e6784]: интересам
+            - paragraph [ref=f1e6785]:
+              - mark [ref=f1e6786]: Документы
+            - paragraph [ref=f1e6787]: Разделы
+            - paragraph [ref=f1e6788]:
+              - mark [ref=f1e6789]: Статьи
+            - paragraph [ref=f1e6790]: По городам
+            - paragraph [ref=f1e6791]: Соцсети
+            - paragraph [ref=f1e6792]:
+              - text: © 2019–
+              - mark [ref=f1e6793]: "2026"
+              - text: ООО «ВОИП КОННЕКТ»
+            - paragraph [ref=f1e6794]:
+              - text: ИНН 7729713637 · Реестровый
+              - mark [ref=f1e6795]: номер
+              - text: туроператора РТО 025773
+            - paragraph [ref=f1e6796]:
+              - mark [ref=f1e6797]: Образовательная
+              - text: лицензия Л035-01298-77/01082973
+            - paragraph [ref=f1e6798]:
+              - mark [ref=f1e6799]: Информация
+              - text: на сайте носит ознакомительный характер и не является публичной офертой. Права и обязательства сторон определяются исключительно заключённым договором.
+            - paragraph [ref=f1e6800]: Сайт использует cookies и Яндекс.Метрику для аналитики.
+            - paragraph [ref=f1e6801]: Подробнее
+            - paragraph [ref=f1e6802]
+            - paragraph [ref=f1e6803]:
+              - mark [ref=f1e6804]: "7"
+              - text: –9
+            - paragraph [ref=f1e6805]:
+              - mark [ref=f1e6806]: "10"
+              - text: –12
+            - paragraph [ref=f1e6807]: 13–15
+            - paragraph [ref=f1e6808]:
+              - mark [ref=f1e6809]: Сколько
+              - mark [ref=f1e6810]: лет
+              - mark [ref=f1e6811]: ребёнку
+              - text: "? — покажем"
+              - mark [ref=f1e6812]: смену
+              - text: с ровесниками
+            - paragraph [ref=f1e6813]:
+              - text: Подходящие
+              - mark [ref=f1e6814]: смены
+              - text: для вас
+            - paragraph [ref=f1e6815]
+            - paragraph [ref=f1e6816]:
+              - mark [ref=f1e6817]: Смена
+              - text: 3 3
+              - mark [ref=f1e6818]: августа
+              - text: — 15
+              - mark [ref=f1e6819]: августа
+            - paragraph [ref=f1e6820]: уже едут ровесники
+            - paragraph [ref=f1e6821]: 89 400 ₽ →
+            - paragraph [ref=f1e6822]
+            - paragraph [ref=f1e6823]
+            - paragraph [ref=f1e6824]:
+              - mark [ref=f1e6825]: Смена
+              - text: 4 17–26
+              - mark [ref=f1e6826]: августа
+            - paragraph [ref=f1e6827]: уже едут ровесники
+            - paragraph [ref=f1e6828]: 74 900 ₽ →
+            - paragraph [ref=f1e6829]
+            - paragraph [ref=f1e6830]
+            - paragraph [ref=f1e6831]:
+              - text: Гарантия и
+              - mark [ref=f1e6832]: условия
+              - text: возврата
+            - paragraph [ref=f1e6833]
+            - paragraph [ref=f1e6834]:
+              - mark [ref=f1e6835]: занято
+              - text: свободно
+            - paragraph [ref=f1e6836]:
+              - text: Укажите
+              - mark [ref=f1e6837]: возраст
+              - text: — покажем
+              - mark [ref=f1e6838]: сколько
+              - text: ровесников едет
+            - paragraph [ref=f1e6839]:
+              - mark [ref=f1e6840]: Питание
+              - text: ","
+              - mark [ref=f1e6841]: проживание
+              - text: ", программа"
+              - mark [ref=f1e6842]: включены
+            - paragraph [ref=f1e6843]: Написать в Telegram
+            - heading [level=3] [ref=f1e6844]:
+              - mark [ref=f1e6845]: Заявка
+              - mark [ref=f1e6846]: отправлена
+              - text: "!"
+            - paragraph [ref=f1e6847]:
+              - text: Свяжемся в течение
+              - mark [ref=f1e6848]: "10"
+              - text: минут
+            - paragraph [ref=f1e6849]:
+              - text: Те, кто едет в
+              - mark [ref=f1e6850]: компании
+              - text: ", адаптируются вдвое быстрее"
+            - paragraph [ref=f1e6851]: Позовите друга — подарим фирменный мерч каждому
+            - paragraph [ref=f1e6852]:
+              - text: Каждая 5-я —
+              - mark [ref=f1e6853]: скидка
+              - text: 50% Каждая
+              - mark [ref=f1e6854]: "10"
+              - text: "-я — за 100 ₽"
+            - paragraph [ref=f1e6855]: Начните вводить запрос. Ctrl/Cmd + K — открыть поиск.
+            - paragraph [ref=f1e6856]: Посмотреть
+          - text: "Visit URL: EditRemove"
+      - generic [ref=f1e6858]:
+        - generic [ref=f1e6861]:
+          - link "Ключевые слова" [ref=f1e6862] [cursor=pointer]:
+            - /url: "#"
+          - text: на этой странице имеют разный интент.
+        - generic [ref=f1e6865]:
+          - text: Все ключевые слова не войдут в тег TITLE и H1.
+          - link "Перенесите" [ref=f1e6866] [cursor=pointer]:
+            - /url: "#"
+          - text: лишние ключевые слова со страницы, чтобы повысить эффективность.
+        - generic [ref=f1e6867]:
+          - generic [ref=f1e6868]:
+            - generic [ref=f1e6869]: Тег Title
+            - button "лагерь" [ref=f1e6870] [cursor=pointer]
+            - button "подмосковье" [ref=f1e6871] [cursor=pointer]
+            - button "путевки" [ref=f1e6873] [cursor=pointer]
+            - button "детей" [ref=f1e6876] [cursor=pointer]
+            - button "6" [ref=f1e6879] [cursor=pointer]
+            - button "лет" [ref=f1e6882] [cursor=pointer]
+            - button "2026" [ref=f1e6884] [cursor=pointer]
+            - button "летний" [ref=f1e6885] [cursor=pointer]
+            - button "7" [ref=f1e6887] [cursor=pointer]
+            - button "спортивный" [ref=f1e6890] [cursor=pointer]
+            - button "10" [ref=f1e6893] [cursor=pointer]
+            - button "детские" [ref=f1e6895] [cursor=pointer]
+            - button "детский" [ref=f1e6896] [cursor=pointer]
+            - button "компьютерный" [ref=f1e6898] [cursor=pointer]
+            - button "2025" [ref=f1e6901] [cursor=pointer]
+            - button "лето" [ref=f1e6904] [cursor=pointer]
+            - button "лучший" [ref=f1e6907] [cursor=pointer]
+            - button "образовательный" [ref=f1e6910] [cursor=pointer]
+            - button "математический" [ref=f1e6913] [cursor=pointer]
+            - button "семейный" [ref=f1e6916] [cursor=pointer]
+          - generic [ref=f1e6918]:
+            - generic [ref=f1e6919]: Мета-тег Description
+            - button "лагерь" [ref=f1e6920] [cursor=pointer]
+            - button "подмосковье" [ref=f1e6921] [cursor=pointer]
+            - button "путевки" [ref=f1e6923] [cursor=pointer]
+            - button "детей" [ref=f1e6925] [cursor=pointer]
+            - button "6" [ref=f1e6927] [cursor=pointer]
+            - button "лет" [ref=f1e6929] [cursor=pointer]
+            - button "2026" [ref=f1e6931] [cursor=pointer]
+            - button "цена" [ref=f1e6934] [cursor=pointer]
+            - button "летний" [ref=f1e6936] [cursor=pointer]
+            - button "7" [ref=f1e6937] [cursor=pointer]
+            - button "спортивный" [ref=f1e6939] [cursor=pointer]
+            - button "10" [ref=f1e6942] [cursor=pointer]
+            - button "детский" [ref=f1e6944] [cursor=pointer]
+            - button "детские" [ref=f1e6945] [cursor=pointer]
+            - button "лето" [ref=f1e6946] [cursor=pointer]
+            - button "компьютерный" [ref=f1e6948] [cursor=pointer]
+            - button "подростков" [ref=f1e6951] [cursor=pointer]
+            - button "лучший" [ref=f1e6954] [cursor=pointer]
+            - button "оздоровительный" [ref=f1e6957] [cursor=pointer]
+            - button "образовательный" [ref=f1e6960] [cursor=pointer]
+            - button "математический" [ref=f1e6963] [cursor=pointer]
+            - button "бесплатно" [ref=f1e6966] [cursor=pointer]
+            - button "семейный" [ref=f1e6969] [cursor=pointer]
+        - generic [ref=f1e6971]:
+          - generic [ref=f1e6972]: Заголовок H1
+          - button "лагерь" [ref=f1e6973] [cursor=pointer]
+          - button "подмосковье" [ref=f1e6974] [cursor=pointer]
+          - button "детей" [ref=f1e6976] [cursor=pointer]
+          - button "6" [ref=f1e6979] [cursor=pointer]
+          - button "лет" [ref=f1e6982] [cursor=pointer]
+          - button "2026" [ref=f1e6984] [cursor=pointer]
+          - button "летний" [ref=f1e6985] [cursor=pointer]
+          - button "7" [ref=f1e6987] [cursor=pointer]
+          - button "спортивный" [ref=f1e6990] [cursor=pointer]
+          - button "10" [ref=f1e6993] [cursor=pointer]
+          - button "детские" [ref=f1e6995] [cursor=pointer]
+          - button "компьютерный" [ref=f1e6997] [cursor=pointer]
+          - button "детский" [ref=f1e6999] [cursor=pointer]
+          - button "образовательный" [ref=f1e7001] [cursor=pointer]
+          - button "математический" [ref=f1e7004] [cursor=pointer]
+          - button "семейный" [ref=f1e7007] [cursor=pointer]
+        - generic [ref=f1e7009]:
+          - generic [ref=f1e7010]: Ключевые слова в Body
+          - generic "Подсвечивать ключевые слова, посаженные на данный кластер" [ref=f1e7011]:
+            - generic [ref=f1e7013]:
+              - generic [ref=f1e7014]:
+                - checkbox "Подсвечивать ключевые слова" [checked] [ref=f1e7015] [cursor=pointer]
+                - generic [ref=f1e7017]: check_box
+              - generic [ref=f1e7018] [cursor=pointer]: Подсвечивать ключевые слова
+          - generic [ref=f1e7021]:
+            - generic [ref=f1e7022]:
+              - checkbox "Подсвечивать скрытую семантику" [checked] [ref=f1e7023] [cursor=pointer]
+              - generic [ref=f1e7025]: check_box
+            - generic [ref=f1e7026] [cursor=pointer]: Подсвечивать скрытую семантику
+          - generic [ref=f1e7028]:
+            - button "лагерь в подмосковье (точное)" [ref=f1e7032] [cursor=pointer]
+            - generic [ref=f1e7034]:
+              - generic "Больше чем у конкурентов в ТОП10" [ref=f1e7037]:
+                - text: "В тексте: 7"
+                - generic [ref=f1e7038]: arrow_downward
+              - 'button "в ТОП10: 0 – 1" [ref=f1e7041] [cursor=pointer]':
+                - generic [ref=f1e7042]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7043]: 0 – 1
+          - generic [ref=f1e7045]:
+            - button "оздоровительный (словоформа)" [ref=f1e7049] [cursor=pointer]
+            - generic [ref=f1e7051]:
+              - generic [ref=f1e7052]:
+                - generic "Меньше чем у конкурентов в ТОП10" [ref=f1e7054]:
+                  - text: "В тексте: 0"
+                  - generic [ref=f1e7055]: arrow_upward
+                - button "Показать варианты словоформ" [ref=f1e7056] [cursor=pointer]:
+                  - generic [ref=f1e7057]: keyboard_arrow_down
+              - 'button "в ТОП10: 1 – 7" [ref=f1e7061] [cursor=pointer]':
+                - generic [ref=f1e7062]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7063]: 1 – 7
+          - generic [ref=f1e7065]:
+            - button "математический (словоформа)" [ref=f1e7069] [cursor=pointer]
+            - generic [ref=f1e7071]:
+              - generic [ref=f1e7072]:
+                - generic "Меньше чем у конкурентов в ТОП10" [ref=f1e7074]:
+                  - text: "В тексте: 0"
+                  - generic [ref=f1e7075]: arrow_upward
+                - button "Показать варианты словоформ" [ref=f1e7076] [cursor=pointer]:
+                  - generic [ref=f1e7077]: keyboard_arrow_down
+              - 'button "в ТОП10: 4 – 5" [ref=f1e7081] [cursor=pointer]':
+                - generic [ref=f1e7082]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7083]: 4 – 5
+          - generic [ref=f1e7085]:
+            - button "компьютерный (словоформа)" [ref=f1e7089] [cursor=pointer]
+            - generic [ref=f1e7091]:
+              - generic [ref=f1e7092]:
+                - generic "Меньше чем у конкурентов в ТОП10" [ref=f1e7094]:
+                  - text: "В тексте: 0"
+                  - generic [ref=f1e7095]: arrow_upward
+                - button "Показать варианты словоформ" [ref=f1e7096] [cursor=pointer]:
+                  - generic [ref=f1e7097]: keyboard_arrow_down
+              - 'button "в ТОП10: 3 – 5" [ref=f1e7101] [cursor=pointer]':
+                - generic [ref=f1e7102]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7103]: 3 – 5
+          - generic [ref=f1e7105]:
+            - button "подмосковья (точное)" [ref=f1e7109] [cursor=pointer]
+            - generic [ref=f1e7111]:
+              - generic "Больше чем у конкурентов в ТОП10" [ref=f1e7114]:
+                - text: "В тексте: 4"
+                - generic [ref=f1e7115]: arrow_downward
+              - 'button "в ТОП10: 0 – 2" [ref=f1e7118] [cursor=pointer]':
+                - generic [ref=f1e7119]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7120]: 0 – 2
+          - generic [ref=f1e7122]:
+            - button "проживанием (словоформа)" [ref=f1e7126] [cursor=pointer]
+            - generic [ref=f1e7128]:
+              - generic [ref=f1e7129]:
+                - generic "Больше чем у конкурентов в ТОП10" [ref=f1e7131]:
+                  - text: "В тексте: 6"
+                  - generic [ref=f1e7132]: arrow_downward
+                - button "Показать варианты словоформ" [ref=f1e7133] [cursor=pointer]:
+                  - generic [ref=f1e7134]: keyboard_arrow_down
+              - 'button "в ТОП10: 3 – 4" [ref=f1e7138] [cursor=pointer]':
+                - generic [ref=f1e7139]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7140]: 3 – 4
+          - generic [ref=f1e7142]:
+            - button "московская (точное)" [ref=f1e7146] [cursor=pointer]
+            - generic [ref=f1e7148]:
+              - generic "Меньше чем у конкурентов в ТОП10" [ref=f1e7151]:
+                - text: "В тексте: 1"
+                - generic [ref=f1e7152]: arrow_upward
+              - 'button "в ТОП10: 10 – 14" [ref=f1e7155] [cursor=pointer]':
+                - generic [ref=f1e7156]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7157]: 10 – 14
+          - generic [ref=f1e7159]:
+            - button "подростков (точное)" [ref=f1e7163] [cursor=pointer]
+            - generic [ref=f1e7165]:
+              - generic "Меньше чем у конкурентов в ТОП10" [ref=f1e7168]:
+                - text: "В тексте: 0"
+                - generic [ref=f1e7169]: arrow_upward
+              - 'button "в ТОП10: 1 – 3" [ref=f1e7172] [cursor=pointer]':
+                - generic [ref=f1e7173]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7174]: 1 – 3
+          - generic [ref=f1e7176]:
+            - button "спортивный (точное)" [ref=f1e7180] [cursor=pointer]
+            - generic [ref=f1e7182]:
+              - generic "Меньше чем у конкурентов в ТОП10" [ref=f1e7185]:
+                - text: "В тексте: 0"
+                - generic [ref=f1e7186]: arrow_upward
+              - 'button "в ТОП10: 1 – 2" [ref=f1e7189] [cursor=pointer]':
+                - generic [ref=f1e7190]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7191]: 1 – 2
+          - generic [ref=f1e7193]:
+            - button "семейный (точное)" [ref=f1e7197] [cursor=pointer]
+            - generic [ref=f1e7199]:
+              - generic "Меньше чем у конкурентов в ТОП10" [ref=f1e7202]:
+                - text: "В тексте: 0"
+                - generic [ref=f1e7203]: arrow_upward
+              - 'button "в ТОП10: 2 – 4" [ref=f1e7206] [cursor=pointer]':
+                - generic [ref=f1e7207]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7208]: 2 – 4
+          - generic [ref=f1e7210]:
+            - button "детские (точное)" [ref=f1e7214] [cursor=pointer]
+            - generic [ref=f1e7216]:
+              - generic "Меньше чем у конкурентов в ТОП10" [ref=f1e7219]:
+                - text: "В тексте: 1"
+                - generic [ref=f1e7220]: arrow_upward
+              - 'button "в ТОП10: 2 – 3" [ref=f1e7223] [cursor=pointer]':
+                - generic [ref=f1e7224]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7225]: 2 – 3
+          - generic [ref=f1e7227]:
+            - button "детский (точное)" [ref=f1e7231] [cursor=pointer]
+            - generic [ref=f1e7233]:
+              - generic "Меньше чем у конкурентов в ТОП10" [ref=f1e7236]:
+                - text: "В тексте: 1"
+                - generic [ref=f1e7237]: arrow_upward
+              - 'button "в ТОП10: 2 – 7" [ref=f1e7240] [cursor=pointer]':
+                - generic [ref=f1e7241]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7242]: 2 – 7
+          - generic [ref=f1e7244]:
+            - button "ребенка (точное)" [ref=f1e7248] [cursor=pointer]
+            - generic [ref=f1e7250]:
+              - generic "Меньше чем у конкурентов в ТОП10" [ref=f1e7253]:
+                - text: "В тексте: 0"
+                - generic [ref=f1e7254]: arrow_upward
+              - 'button "в ТОП10: 2 – 4" [ref=f1e7257] [cursor=pointer]':
+                - generic [ref=f1e7258]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7259]: 2 – 4
+          - generic [ref=f1e7261]:
+            - button "детские (словоформа)" [ref=f1e7265] [cursor=pointer]
+            - generic [ref=f1e7267]:
+              - generic [ref=f1e7268]:
+                - generic "Больше чем у конкурентов в ТОП10" [ref=f1e7270]:
+                  - text: "В тексте: 2"
+                  - generic [ref=f1e7271]: arrow_downward
+                - button "Показать варианты словоформ" [ref=f1e7272] [cursor=pointer]:
+                  - generic [ref=f1e7273]: keyboard_arrow_down
+              - 'button "в ТОП10: 1" [ref=f1e7277] [cursor=pointer]':
+                - generic [ref=f1e7278]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7279]: "1"
+          - generic [ref=f1e7281]:
+            - button "путевки (словоформа)" [ref=f1e7285] [cursor=pointer]
+            - generic [ref=f1e7287]:
+              - generic [ref=f1e7288]:
+                - generic "Больше чем у конкурентов в ТОП10" [ref=f1e7290]:
+                  - text: "В тексте: 3"
+                  - generic [ref=f1e7291]: arrow_downward
+                - button "Показать варианты словоформ" [ref=f1e7292] [cursor=pointer]:
+                  - generic [ref=f1e7293]: keyboard_arrow_down
+              - 'button "в ТОП10: 0 – 1" [ref=f1e7297] [cursor=pointer]':
+                - generic [ref=f1e7298]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7299]: 0 – 1
+          - generic [ref=f1e7301]:
+            - button "лагеря (точное)" [ref=f1e7305] [cursor=pointer]
+            - generic [ref=f1e7307]:
+              - generic "Больше чем у конкурентов в ТОП10" [ref=f1e7310]:
+                - text: "В тексте: 13"
+                - generic [ref=f1e7311]: arrow_downward
+              - 'button "в ТОП10: 4 – 6" [ref=f1e7314] [cursor=pointer]':
+                - generic [ref=f1e7315]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7316]: 4 – 6
+          - generic [ref=f1e7318]:
+            - button "москва (точное)" [ref=f1e7322] [cursor=pointer]
+            - generic [ref=f1e7324]:
+              - generic "Больше чем у конкурентов в ТОП10" [ref=f1e7327]:
+                - text: "В тексте: 2"
+                - generic [ref=f1e7328]: arrow_downward
+              - 'button "в ТОП10: 1" [ref=f1e7331] [cursor=pointer]':
+                - generic [ref=f1e7332]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7333]: "1"
+          - generic [ref=f1e7335]:
+            - button "лагерь (словоформа)" [ref=f1e7339] [cursor=pointer]
+            - generic [ref=f1e7341]:
+              - generic [ref=f1e7342]:
+                - generic "Меньше чем у конкурентов в ТОП10" [ref=f1e7344]:
+                  - text: "В тексте: 8"
+                  - generic [ref=f1e7345]: arrow_upward
+                - button "Показать варианты словоформ" [ref=f1e7346] [cursor=pointer]:
+                  - generic [ref=f1e7347]: keyboard_arrow_down
+              - 'button "в ТОП10: 9 – 24" [ref=f1e7351] [cursor=pointer]':
+                - generic [ref=f1e7352]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7353]: 9 – 24
+          - generic [ref=f1e7355]:
+            - button "летний (словоформа)" [ref=f1e7359] [cursor=pointer]
+            - generic [ref=f1e7361]:
+              - generic [ref=f1e7362]:
+                - generic "Меньше чем у конкурентов в ТОП10" [ref=f1e7364]:
+                  - text: "В тексте: 1"
+                  - generic [ref=f1e7365]: arrow_upward
+                - button "Показать варианты словоформ" [ref=f1e7366] [cursor=pointer]:
+                  - generic [ref=f1e7367]: keyboard_arrow_down
+              - 'button "в ТОП10: 3" [ref=f1e7371] [cursor=pointer]':
+                - generic [ref=f1e7372]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7373]: "3"
+          - generic [ref=f1e7375]:
+            - button "москва (словоформа)" [ref=f1e7379] [cursor=pointer]
+            - generic [ref=f1e7381]:
+              - generic [ref=f1e7382]:
+                - generic "Больше чем у конкурентов в ТОП10" [ref=f1e7384]:
+                  - text: "В тексте: 13"
+                  - generic [ref=f1e7385]: arrow_downward
+                - button "Показать варианты словоформ" [ref=f1e7386] [cursor=pointer]:
+                  - generic [ref=f1e7387]: keyboard_arrow_down
+              - 'button "в ТОП10: 1 – 2" [ref=f1e7391] [cursor=pointer]':
+                - generic [ref=f1e7392]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7393]: 1 – 2
+          - generic [ref=f1e7395]:
+            - button "отдыха (словоформа)" [ref=f1e7399] [cursor=pointer]
+            - generic [ref=f1e7401]:
+              - generic [ref=f1e7402]:
+                - generic "Меньше чем у конкурентов в ТОП10" [ref=f1e7404]:
+                  - text: "В тексте: 1"
+                  - generic [ref=f1e7405]: arrow_upward
+                - button "Показать варианты словоформ" [ref=f1e7406] [cursor=pointer]:
+                  - generic [ref=f1e7407]: keyboard_arrow_down
+              - 'button "в ТОП10: 3 – 6" [ref=f1e7411] [cursor=pointer]':
+                - generic [ref=f1e7412]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7413]: 3 – 6
+          - generic [ref=f1e7415]:
+            - button "детей (точное)" [ref=f1e7419] [cursor=pointer]
+            - generic [ref=f1e7421]:
+              - generic "Больше чем у конкурентов в ТОП10" [ref=f1e7424]:
+                - text: "В тексте: 9"
+                - generic [ref=f1e7425]: arrow_downward
+              - 'button "в ТОП10: 6" [ref=f1e7428] [cursor=pointer]':
+                - generic [ref=f1e7429]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7430]: "6"
+          - generic [ref=f1e7432]:
+            - button "самый (словоформа)" [ref=f1e7436] [cursor=pointer]
+            - generic [ref=f1e7438]:
+              - generic [ref=f1e7439]:
+                - generic "Больше чем у конкурентов в ТОП10" [ref=f1e7441]:
+                  - text: "В тексте: 4"
+                  - generic [ref=f1e7442]: arrow_downward
+                - button "Показать варианты словоформ" [ref=f1e7443] [cursor=pointer]:
+                  - generic [ref=f1e7444]: keyboard_arrow_down
+              - 'button "в ТОП10: 1" [ref=f1e7448] [cursor=pointer]':
+                - generic [ref=f1e7449]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7450]: "1"
+          - generic [ref=f1e7452]:
+            - button "2025 (точное)" [ref=f1e7456] [cursor=pointer]
+            - generic [ref=f1e7458]:
+              - generic "Меньше чем у конкурентов в ТОП10" [ref=f1e7461]:
+                - text: "В тексте: 0"
+                - generic [ref=f1e7462]: arrow_upward
+              - 'button "в ТОП10: 1 – 3" [ref=f1e7465] [cursor=pointer]':
+                - generic [ref=f1e7466]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7467]: 1 – 3
+          - generic [ref=f1e7469]:
+            - button "2026 (точное)" [ref=f1e7473] [cursor=pointer]
+            - generic [ref=f1e7475]:
+              - generic "Меньше чем у конкурентов в ТОП10" [ref=f1e7478]:
+                - text: "В тексте: 8"
+                - generic [ref=f1e7479]: arrow_upward
+              - 'button "в ТОП10: 9 – 12" [ref=f1e7482] [cursor=pointer]':
+                - generic [ref=f1e7483]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7484]: 9 – 12
+          - generic [ref=f1e7486]:
+            - button "дней (точное)" [ref=f1e7490] [cursor=pointer]
+            - generic [ref=f1e7492]:
+              - generic "Больше чем у конкурентов в ТОП10" [ref=f1e7495]:
+                - text: "В тексте: 33"
+                - generic [ref=f1e7496]: arrow_downward
+              - 'button "в ТОП10: 24 – 26" [ref=f1e7499] [cursor=pointer]':
+                - generic [ref=f1e7500]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7501]: 24 – 26
+          - generic [ref=f1e7503]:
+            - button "цена (точное)" [ref=f1e7507] [cursor=pointer]
+            - generic [ref=f1e7509]:
+              - generic "Больше чем у конкурентов в ТОП10" [ref=f1e7512]:
+                - text: "В тексте: 4"
+                - generic [ref=f1e7513]: arrow_downward
+              - 'button "в ТОП10: 0 – 3" [ref=f1e7516] [cursor=pointer]':
+                - generic [ref=f1e7517]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7518]: 0 – 3
+          - generic [ref=f1e7520]:
+            - button "дней (словоформа)" [ref=f1e7524] [cursor=pointer]
+            - generic [ref=f1e7526]:
+              - generic [ref=f1e7527]:
+                - generic "Больше чем у конкурентов в ТОП10" [ref=f1e7529]:
+                  - text: "В тексте: 26"
+                  - generic [ref=f1e7530]: arrow_downward
+                - button "Показать варианты словоформ" [ref=f1e7531] [cursor=pointer]:
+                  - generic [ref=f1e7532]: keyboard_arrow_down
+              - 'button "в ТОП10: 3 – 5" [ref=f1e7536] [cursor=pointer]':
+                - generic [ref=f1e7537]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7538]: 3 – 5
+          - generic [ref=f1e7540]:
+            - button "цены (словоформа)" [ref=f1e7544] [cursor=pointer]
+            - generic [ref=f1e7546]:
+              - generic [ref=f1e7547]:
+                - generic "Больше чем у конкурентов в ТОП10" [ref=f1e7549]:
+                  - text: "В тексте: 2"
+                  - generic [ref=f1e7550]: arrow_downward
+                - button "Показать варианты словоформ" [ref=f1e7551] [cursor=pointer]:
+                  - generic [ref=f1e7552]: keyboard_arrow_down
+              - 'button "в ТОП10: 1" [ref=f1e7556] [cursor=pointer]':
+                - generic [ref=f1e7557]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7558]: "1"
+          - generic [ref=f1e7560]:
+            - button "лет (точное)" [ref=f1e7564] [cursor=pointer]
+            - generic [ref=f1e7566]:
+              - generic "Меньше чем у конкурентов в ТОП10" [ref=f1e7569]:
+                - text: "В тексте: 9"
+                - generic [ref=f1e7570]: arrow_upward
+              - 'button "в ТОП10: 14 – 17" [ref=f1e7573] [cursor=pointer]':
+                - generic [ref=f1e7574]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7575]: 14 – 17
+          - generic [ref=f1e7577]:
+            - button "лет (словоформа)" [ref=f1e7581] [cursor=pointer]
+            - generic [ref=f1e7583]:
+              - generic [ref=f1e7584]:
+                - generic "Меньше чем у конкурентов в ТОП10" [ref=f1e7586]:
+                  - text: "В тексте: 1"
+                  - generic [ref=f1e7587]: arrow_upward
+                - button "Показать варианты словоформ" [ref=f1e7588] [cursor=pointer]:
+                  - generic [ref=f1e7589]: keyboard_arrow_down
+              - 'button "в ТОП10: 2 – 7" [ref=f1e7593] [cursor=pointer]':
+                - generic [ref=f1e7594]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7595]: 2 – 7
+          - generic [ref=f1e7597]:
+            - button "10 (точное)" [ref=f1e7601] [cursor=pointer]
+            - generic [ref=f1e7603]:
+              - generic "Больше чем у конкурентов в ТОП10" [ref=f1e7606]:
+                - text: "В тексте: 23"
+                - generic [ref=f1e7607]: arrow_downward
+              - 'button "в ТОП10: 3 – 6" [ref=f1e7610] [cursor=pointer]':
+                - generic [ref=f1e7611]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7612]: 3 – 6
+          - generic [ref=f1e7614]:
+            - button "14 (точное)" [ref=f1e7618] [cursor=pointer]
+            - generic [ref=f1e7620]:
+              - generic "Больше чем у конкурентов в ТОП10" [ref=f1e7623]:
+                - text: "В тексте: 12"
+                - generic [ref=f1e7624]: arrow_downward
+              - 'button "в ТОП10: 5 – 10" [ref=f1e7627] [cursor=pointer]':
+                - generic [ref=f1e7628]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7629]: 5 – 10
+          - generic [ref=f1e7631]:
+            - button "детский лагерь в подмосковье на лето (точное)" [ref=f1e7635] [cursor=pointer]
+            - generic [ref=f1e7637]:
+              - generic "Соответствует ТОП10" [ref=f1e7640]:
+                - text: "В тексте: 1"
+                - generic [ref=f1e7641]: done
+              - generic [ref=f1e7642]: "в ТОП10: 0"
+          - generic [ref=f1e7646]:
+            - button "детский лагерь в подмосковье (точное)" [ref=f1e7650] [cursor=pointer]
+            - generic [ref=f1e7652]:
+              - generic "Соответствует ТОП10" [ref=f1e7655]:
+                - text: "В тексте: 1"
+                - generic [ref=f1e7656]: done
+              - generic [ref=f1e7657]: "в ТОП10: 0"
+          - generic [ref=f1e7661]:
+            - button "детский лагерь подмосковье (словоформа)" [ref=f1e7665] [cursor=pointer]
+            - generic [ref=f1e7667]:
+              - generic [ref=f1e7668]:
+                - generic "Соответствует ТОП10" [ref=f1e7670]:
+                  - text: "В тексте: 1"
+                  - generic [ref=f1e7671]: done
+                - button "Показать варианты словоформ" [ref=f1e7672] [cursor=pointer]:
+                  - generic [ref=f1e7673]: keyboard_arrow_down
+              - generic [ref=f1e7675]: "в ТОП10: 0"
+          - generic [ref=f1e7679]:
+            - button "лагерь подмосковье (словоформа)" [ref=f1e7683] [cursor=pointer]
+            - generic [ref=f1e7685]:
+              - generic [ref=f1e7686]:
+                - generic "Соответствует ТОП10" [ref=f1e7688]:
+                  - text: "В тексте: 4"
+                  - generic [ref=f1e7689]: done
+                - button "Показать варианты словоформ" [ref=f1e7690] [cursor=pointer]:
+                  - generic [ref=f1e7691]: keyboard_arrow_down
+              - 'button "в ТОП10: 0 – 4" [ref=f1e7695] [cursor=pointer]':
+                - generic [ref=f1e7696]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7697]: 0 – 4
+          - generic [ref=f1e7699]:
+            - button "образовательный (точное)" [ref=f1e7703] [cursor=pointer]
+            - generic [ref=f1e7705]:
+              - generic "Соответствует ТОП10" [ref=f1e7708]:
+                - text: "В тексте: 0"
+                - generic [ref=f1e7709]: done
+              - 'button "в ТОП10: 0 – 1" [ref=f1e7712] [cursor=pointer]':
+                - generic [ref=f1e7713]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7714]: 0 – 1
+          - generic [ref=f1e7716]:
+            - button "оздоровительный (точное)" [ref=f1e7720] [cursor=pointer]
+            - generic [ref=f1e7722]:
+              - generic "Соответствует ТОП10" [ref=f1e7725]:
+                - text: "В тексте: 1"
+                - generic [ref=f1e7726]: done
+              - 'button "в ТОП10: 1 – 3" [ref=f1e7729] [cursor=pointer]':
+                - generic [ref=f1e7730]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7731]: 1 – 3
+          - generic [ref=f1e7733]:
+            - button "образовательный (словоформа)" [ref=f1e7737] [cursor=pointer]
+            - generic [ref=f1e7739]:
+              - generic [ref=f1e7740]:
+                - generic "Соответствует ТОП10" [ref=f1e7742]:
+                  - text: "В тексте: 4"
+                  - generic [ref=f1e7743]: done
+                - button "Показать варианты словоформ" [ref=f1e7744] [cursor=pointer]:
+                  - generic [ref=f1e7745]: keyboard_arrow_down
+              - 'button "в ТОП10: 1 – 4" [ref=f1e7749] [cursor=pointer]':
+                - generic [ref=f1e7750]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7751]: 1 – 4
+          - generic [ref=f1e7753]:
+            - button "математический (точное)" [ref=f1e7757] [cursor=pointer]
+            - generic [ref=f1e7759]:
+              - generic "Соответствует ТОП10" [ref=f1e7762]:
+                - text: "В тексте: 0"
+                - generic [ref=f1e7763]: done
+              - 'button "в ТОП10: 0 – 1" [ref=f1e7766] [cursor=pointer]':
+                - generic [ref=f1e7767]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7768]: 0 – 1
+          - generic [ref=f1e7770]:
+            - button "компьютерный (точное)" [ref=f1e7774] [cursor=pointer]
+            - generic [ref=f1e7776]:
+              - generic "Соответствует ТОП10" [ref=f1e7779]:
+                - text: "В тексте: 0"
+                - generic [ref=f1e7780]: done
+              - 'button "в ТОП10: 0 – 1" [ref=f1e7783] [cursor=pointer]':
+                - generic [ref=f1e7784]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7785]: 0 – 1
+          - generic [ref=f1e7787]:
+            - button "подмосковные (точное)" [ref=f1e7791] [cursor=pointer]
+            - generic [ref=f1e7793]:
+              - generic "Соответствует ТОП10" [ref=f1e7796]:
+                - text: "В тексте: 1"
+                - generic [ref=f1e7797]: done
+              - generic [ref=f1e7798]: "в ТОП10: 0"
+          - generic [ref=f1e7802]:
+            - button "подмосковные (словоформа)" [ref=f1e7806] [cursor=pointer]
+            - generic [ref=f1e7808]:
+              - generic [ref=f1e7809]:
+                - generic "Соответствует ТОП10" [ref=f1e7811]:
+                  - text: "В тексте: 1"
+                  - generic [ref=f1e7812]: done
+                - button "Показать варианты словоформ" [ref=f1e7813] [cursor=pointer]:
+                  - generic [ref=f1e7814]: keyboard_arrow_down
+              - 'button "в ТОП10: 0 – 1" [ref=f1e7818] [cursor=pointer]':
+                - generic [ref=f1e7819]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7820]: 0 – 1
+          - generic [ref=f1e7822]:
+            - button "подмосковье (точное)" [ref=f1e7826] [cursor=pointer]
+            - generic [ref=f1e7828]:
+              - generic "Соответствует ТОП10" [ref=f1e7831]:
+                - text: "В тексте: 4"
+                - generic [ref=f1e7832]: done
+              - 'button "в ТОП10: 3 – 10" [ref=f1e7835] [cursor=pointer]':
+                - generic [ref=f1e7836]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7837]: 3 – 10
+          - generic [ref=f1e7839]:
+            - button "проживанием (точное)" [ref=f1e7843] [cursor=pointer]
+            - generic [ref=f1e7845]:
+              - generic "Соответствует ТОП10" [ref=f1e7848]:
+                - text: "В тексте: 1"
+                - generic [ref=f1e7849]: done
+              - generic [ref=f1e7850]: "в ТОП10: 0"
+          - generic [ref=f1e7854]:
+            - button "подмосковье (словоформа)" [ref=f1e7858] [cursor=pointer]
+            - generic [ref=f1e7860]:
+              - generic "Соответствует ТОП10" [ref=f1e7863]:
+                - text: "В тексте: 0"
+                - generic [ref=f1e7864]: done
+              - 'button "в ТОП10: 0 – 1" [ref=f1e7867] [cursor=pointer]':
+                - generic [ref=f1e7868]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7869]: 0 – 1
+          - generic [ref=f1e7871]:
+            - button "родителями (точное)" [ref=f1e7875] [cursor=pointer]
+            - generic [ref=f1e7877]:
+              - generic "Соответствует ТОП10" [ref=f1e7880]:
+                - text: "В тексте: 1"
+                - generic [ref=f1e7881]: done
+              - 'button "в ТОП10: 0 – 4" [ref=f1e7884] [cursor=pointer]':
+                - generic [ref=f1e7885]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7886]: 0 – 4
+          - generic [ref=f1e7888]:
+            - button "московская (словоформа)" [ref=f1e7892] [cursor=pointer]
+            - generic [ref=f1e7894]:
+              - generic [ref=f1e7895]:
+                - generic "Соответствует ТОП10" [ref=f1e7897]:
+                  - text: "В тексте: 6"
+                  - generic [ref=f1e7898]: done
+                - button "Показать варианты словоформ" [ref=f1e7899] [cursor=pointer]:
+                  - generic [ref=f1e7900]: keyboard_arrow_down
+              - generic [ref=f1e7902]: "в ТОП10: 0"
+          - generic [ref=f1e7906]:
+            - button "подростков (словоформа)" [ref=f1e7910] [cursor=pointer]
+            - generic [ref=f1e7912]:
+              - generic [ref=f1e7913]:
+                - generic "Соответствует ТОП10" [ref=f1e7915]:
+                  - text: "В тексте: 2"
+                  - generic [ref=f1e7916]: done
+                - button "Показать варианты словоформ" [ref=f1e7917] [cursor=pointer]:
+                  - generic [ref=f1e7918]: keyboard_arrow_down
+              - generic [ref=f1e7920]: "в ТОП10: 0"
+          - generic [ref=f1e7924]:
+            - button "родителями (словоформа)" [ref=f1e7928] [cursor=pointer]
+            - generic [ref=f1e7930]:
+              - generic [ref=f1e7931]:
+                - generic "Соответствует ТОП10" [ref=f1e7933]:
+                  - text: "В тексте: 8"
+                  - generic [ref=f1e7934]: done
+                - button "Показать варианты словоформ" [ref=f1e7935] [cursor=pointer]:
+                  - generic [ref=f1e7936]: keyboard_arrow_down
+              - 'button "в ТОП10: 5 – 16" [ref=f1e7940] [cursor=pointer]':
+                - generic [ref=f1e7941]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7942]: 5 – 16
+          - generic [ref=f1e7944]:
+            - button "спортивный (словоформа)" [ref=f1e7948] [cursor=pointer]
+            - generic [ref=f1e7950]:
+              - generic [ref=f1e7951]:
+                - generic "Соответствует ТОП10" [ref=f1e7953]:
+                  - text: "В тексте: 4"
+                  - generic [ref=f1e7954]: done
+                - button "Показать варианты словоформ" [ref=f1e7955] [cursor=pointer]:
+                  - generic [ref=f1e7956]: keyboard_arrow_down
+              - 'button "в ТОП10: 3 – 6" [ref=f1e7960] [cursor=pointer]':
+                - generic [ref=f1e7961]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7962]: 3 – 6
+          - generic [ref=f1e7964]:
+            - button "бесплатно (точное)" [ref=f1e7968] [cursor=pointer]
+            - generic [ref=f1e7970]:
+              - generic "Соответствует ТОП10" [ref=f1e7973]:
+                - text: "В тексте: 2"
+                - generic [ref=f1e7974]: done
+              - 'button "в ТОП10: 0 – 5" [ref=f1e7977] [cursor=pointer]':
+                - generic [ref=f1e7978]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7979]: 0 – 5
+          - generic [ref=f1e7981]:
+            - button "семейный (словоформа)" [ref=f1e7985] [cursor=pointer]
+            - generic [ref=f1e7987]:
+              - generic [ref=f1e7988]:
+                - generic "Соответствует ТОП10" [ref=f1e7990]:
+                  - text: "В тексте: 1"
+                  - generic [ref=f1e7991]: done
+                - button "Показать варианты словоформ" [ref=f1e7992] [cursor=pointer]:
+                  - generic [ref=f1e7993]: keyboard_arrow_down
+              - 'button "в ТОП10: 0 – 4" [ref=f1e7997] [cursor=pointer]':
+                - generic [ref=f1e7998]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e7999]: 0 – 4
+          - generic [ref=f1e8001]:
+            - button "область (точное)" [ref=f1e8005] [cursor=pointer]
+            - generic [ref=f1e8007]:
+              - generic "Соответствует ТОП10" [ref=f1e8010]:
+                - text: "В тексте: 1"
+                - generic [ref=f1e8011]: done
+              - generic [ref=f1e8012]: "в ТОП10: 0"
+          - generic [ref=f1e8016]:
+            - button "сколько (точное)" [ref=f1e8020] [cursor=pointer]
+            - generic [ref=f1e8022]:
+              - generic "Соответствует ТОП10" [ref=f1e8025]:
+                - text: "В тексте: 2"
+                - generic [ref=f1e8026]: done
+              - generic [ref=f1e8027]: "в ТОП10: 0"
+          - generic [ref=f1e8031]:
+            - button "детский (словоформа)" [ref=f1e8035] [cursor=pointer]
+            - generic [ref=f1e8037]:
+              - generic [ref=f1e8038]:
+                - generic "Соответствует ТОП10" [ref=f1e8040]:
+                  - text: "В тексте: 1"
+                  - generic [ref=f1e8041]: done
+                - button "Показать варианты словоформ" [ref=f1e8042] [cursor=pointer]:
+                  - generic [ref=f1e8043]: keyboard_arrow_down
+              - 'button "в ТОП10: 1 – 3" [ref=f1e8047] [cursor=pointer]':
+                - generic [ref=f1e8048]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e8049]: 1 – 3
+          - generic [ref=f1e8051]:
+            - button "область (словоформа)" [ref=f1e8055] [cursor=pointer]
+            - generic [ref=f1e8057]:
+              - generic [ref=f1e8058]:
+                - generic "Соответствует ТОП10" [ref=f1e8060]:
+                  - text: "В тексте: 3"
+                  - generic [ref=f1e8061]: done
+                - button "Показать варианты словоформ" [ref=f1e8062] [cursor=pointer]:
+                  - generic [ref=f1e8063]: keyboard_arrow_down
+              - generic [ref=f1e8065]: "в ТОП10: 0"
+          - generic [ref=f1e8069]:
+            - button "лагерь (точное)" [ref=f1e8073] [cursor=pointer]
+            - generic [ref=f1e8075]:
+              - generic "Соответствует ТОП10" [ref=f1e8078]:
+                - text: "В тексте: 15"
+                - generic [ref=f1e8079]: done
+              - 'button "в ТОП10: 8 – 23" [ref=f1e8082] [cursor=pointer]':
+                - generic [ref=f1e8083]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e8084]: 8 – 23
+          - generic [ref=f1e8086]:
+            - button "отдыха (точное)" [ref=f1e8090] [cursor=pointer]
+            - generic [ref=f1e8092]:
+              - generic "Соответствует ТОП10" [ref=f1e8095]:
+                - text: "В тексте: 3"
+                - generic [ref=f1e8096]: done
+              - 'button "в ТОП10: 1 – 6" [ref=f1e8099] [cursor=pointer]':
+                - generic [ref=f1e8100]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e8101]: 1 – 6
+          - generic [ref=f1e8103]:
+            - button "лучший (словоформа)" [ref=f1e8107] [cursor=pointer]
+            - generic [ref=f1e8109]:
+              - generic [ref=f1e8110]:
+                - generic "Соответствует ТОП10" [ref=f1e8112]:
+                  - text: "В тексте: 0"
+                  - generic [ref=f1e8113]: done
+                - button "Показать варианты словоформ" [ref=f1e8114] [cursor=pointer]:
+                  - generic [ref=f1e8115]: keyboard_arrow_down
+              - 'button "в ТОП10: 0 – 2" [ref=f1e8119] [cursor=pointer]':
+                - generic [ref=f1e8120]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e8121]: 0 – 2
+          - generic [ref=f1e8123]:
+            - button "стоит (точное)" [ref=f1e8127] [cursor=pointer]
+            - generic [ref=f1e8129]:
+              - generic "Соответствует ТОП10" [ref=f1e8132]:
+                - text: "В тексте: 1"
+                - generic [ref=f1e8133]: done
+              - generic [ref=f1e8134]: "в ТОП10: 0"
+          - generic [ref=f1e8138]:
+            - button "детей (словоформа)" [ref=f1e8142] [cursor=pointer]
+            - generic [ref=f1e8144]:
+              - generic [ref=f1e8145]:
+                - generic "Соответствует ТОП10" [ref=f1e8147]:
+                  - text: "В тексте: 18"
+                  - generic [ref=f1e8148]: done
+                - button "Показать варианты словоформ" [ref=f1e8149] [cursor=pointer]:
+                  - generic [ref=f1e8150]: keyboard_arrow_down
+              - 'button "в ТОП10: 8 – 20" [ref=f1e8154] [cursor=pointer]':
+                - generic [ref=f1e8155]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e8156]: 8 – 20
+          - generic [ref=f1e8158]:
+            - button "2024 (точное)" [ref=f1e8162] [cursor=pointer]
+            - generic [ref=f1e8164]:
+              - generic "Соответствует ТОП10" [ref=f1e8167]:
+                - text: "В тексте: 0"
+                - generic [ref=f1e8168]: done
+              - 'button "в ТОП10: 0 – 3" [ref=f1e8171] [cursor=pointer]':
+                - generic [ref=f1e8172]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e8173]: 0 – 3
+          - generic [ref=f1e8175]:
+            - button "2027 (точное)" [ref=f1e8179] [cursor=pointer]
+            - generic [ref=f1e8181]:
+              - generic "Соответствует ТОП10" [ref=f1e8184]:
+                - text: "В тексте: 0"
+                - generic [ref=f1e8185]: done
+              - 'button "в ТОП10: 0 – 5" [ref=f1e8188] [cursor=pointer]':
+                - generic [ref=f1e8189]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e8190]: 0 – 5
+          - generic [ref=f1e8192]:
+            - button "лето (точное)" [ref=f1e8196] [cursor=pointer]
+            - generic [ref=f1e8198]:
+              - generic "Соответствует ТОП10" [ref=f1e8201]:
+                - text: "В тексте: 3"
+                - generic [ref=f1e8202]: done
+              - 'button "в ТОП10: 3 – 6" [ref=f1e8205] [cursor=pointer]':
+                - generic [ref=f1e8206]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e8207]: 3 – 6
+          - generic [ref=f1e8209]:
+            - button "цены (точное)" [ref=f1e8213] [cursor=pointer]
+            - generic [ref=f1e8215]:
+              - generic "Соответствует ТОП10" [ref=f1e8218]:
+                - text: "В тексте: 1"
+                - generic [ref=f1e8219]: done
+              - generic [ref=f1e8220]: "в ТОП10: 0"
+          - generic [ref=f1e8224]:
+            - button "6 (точное)" [ref=f1e8228] [cursor=pointer]
+            - generic [ref=f1e8230]:
+              - generic "Соответствует ТОП10" [ref=f1e8233]:
+                - text: "В тексте: 4"
+                - generic [ref=f1e8234]: done
+              - 'button "в ТОП10: 2 – 10" [ref=f1e8237] [cursor=pointer]':
+                - generic [ref=f1e8238]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e8239]: 2 – 10
+          - generic [ref=f1e8241]:
+            - button "7 (точное)" [ref=f1e8245] [cursor=pointer]
+            - generic [ref=f1e8247]:
+              - generic "Соответствует ТОП10" [ref=f1e8250]:
+                - text: "В тексте: 19"
+                - generic [ref=f1e8251]: done
+              - 'button "в ТОП10: 12 – 21" [ref=f1e8254] [cursor=pointer]':
+                - generic [ref=f1e8255]:
+                  - text: "в ТОП10:"
+                  - generic [ref=f1e8256]: 12 – 21
+  - generic [ref=f1e9]:
+    - navigation [ref=f1e10]:
+      - generic [ref=f1e11]:
+        - generic [ref=f1e13]:
+          - link [ref=f1e15] [cursor=pointer]:
+            - /url: /dashboard
+          - generic [ref=f1e17]:
+            - generic [ref=f1e18]:
+              - generic [ref=f1e19]: Проект
+              - button [ref=f1e20] [cursor=pointer]
+              - button [ref=f1e24] [cursor=pointer]
+              - button [ref=f1e28] [cursor=pointer]
+              - button [ref=f1e32] [cursor=pointer]
+            - generic [ref=f1e36]:
+              - separator [ref=f1e37]
+              - generic [ref=f1e38]: Инструменты
+              - button [ref=f1e39] [cursor=pointer]
+              - button [ref=f1e43] [cursor=pointer]
+          - generic [ref=f1e47]:
+            - button [ref=f1e49] [cursor=pointer]
+            - button [ref=f1e53] [cursor=pointer]
+        - generic [ref=f1e57]:
+          - generic [ref=f1e58]:
+            - link "aidacamp.ru" [ref=f1e59] [cursor=pointer]:
+              - /url: https://aidacamp.ru/
+            - generic [ref=f1e65] [cursor=pointer]:
+              - button "Запустить проверку сайта" [ref=f1e67]
+              - button [ref=f1e70]:
+                - generic [ref=f1e71]: arrow_drop_down
+          - generic [ref=f1e73]:
+            - generic [ref=f1e74]: SEO анализ и оптимизация
+            - generic [ref=f1e75]:
+              - link "Настройки сайта" [ref=f1e77] [cursor=pointer]:
+                - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/settings"
+              - link "Сводный отчёт" [ref=f1e79] [cursor=pointer]:
+                - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/report/main_report"
+              - link "Независимая ИИ-экспертиза" [ref=f1e81] [cursor=pointer]:
+                - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/ai/reports/main-report-overview"
+              - button "keyboard_arrow_right Позиции сайта" [ref=f1e83] [cursor=pointer]:
+                - generic [ref=f1e84]: keyboard_arrow_right
+                - text: Позиции сайта
+              - generic [ref=f1e85]:
+                - button "keyboard_arrow_down Оптимизация и кластеризация" [ref=f1e86] [cursor=pointer]:
+                  - generic [ref=f1e87]: keyboard_arrow_down
+                  - text: Оптимизация и кластеризация
+                - generic [ref=f1e88]:
+                  - link "Яндекс Москва и область (mobile)" [ref=f1e90] [cursor=pointer]:
+                    - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/report/pages_optimizations/39528"
+                  - link "Google Москва (mobile)" [ref=f1e92] [cursor=pointer]:
+                    - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/report/pages_optimizations/39529"
+                  - link "Оптимизация контента" [ref=f1e94] [cursor=pointer]:
+                    - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/report/content_optimization"
+                  - link "Исключение конкурентов" [ref=f1e96] [cursor=pointer]:
+                    - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/report/site_competitors"
+              - button "keyboard_arrow_right Таблица по ключевым словам" [ref=f1e98] [cursor=pointer]:
+                - generic [ref=f1e99]: keyboard_arrow_right
+                - text: Таблица по ключевым словам
+              - button "keyboard_arrow_right Технический аудит" [ref=f1e101] [cursor=pointer]:
+                - generic [ref=f1e102]: keyboard_arrow_right
+                - text: Технический аудит
+              - button "keyboard_arrow_right Sitemap" [ref=f1e104] [cursor=pointer]:
+                - generic [ref=f1e105]: keyboard_arrow_right
+                - text: Sitemap
+              - button "keyboard_arrow_right SEO-аудит" [ref=f1e107] [cursor=pointer]:
+                - generic [ref=f1e108]: keyboard_arrow_right
+                - text: SEO-аудит
+              - button "keyboard_arrow_right Яндекс Метрика beta" [ref=f1e110] [cursor=pointer]:
+                - generic [ref=f1e111]: keyboard_arrow_right
+                - text: Яндекс Метрика
+                - superscript [ref=f1e112]: beta
+              - button "keyboard_arrow_right Google Analytics beta" [ref=f1e114] [cursor=pointer]:
+                - generic [ref=f1e115]: keyboard_arrow_right
+                - text: Google Analytics
+                - superscript [ref=f1e116]: beta
+              - button "keyboard_arrow_right Поведенческие" [ref=f1e118] [cursor=pointer]:
+                - generic [ref=f1e119]: keyboard_arrow_right
+                - text: Поведенческие
+              - button "keyboard_arrow_right Коммерческие" [ref=f1e121] [cursor=pointer]:
+                - generic [ref=f1e122]: keyboard_arrow_right
+                - text: Коммерческие
+              - button "keyboard_arrow_right Ссылочные" [ref=f1e124] [cursor=pointer]:
+                - generic [ref=f1e125]: keyboard_arrow_right
+                - text: Ссылочные
+              - button "keyboard_arrow_right Аналитика YandexDirect" [ref=f1e127] [cursor=pointer]:
+                - generic [ref=f1e128]: keyboard_arrow_right
+                - text: Аналитика YandexDirect
+              - button "keyboard_arrow_right Печатные версии beta" [ref=f1e130] [cursor=pointer]:
+                - generic [ref=f1e131]: keyboard_arrow_right
+                - text: Печатные версии
+                - superscript [ref=f1e132]: beta
+              - button "keyboard_arrow_right Инструменты" [ref=f1e134] [cursor=pointer]:
+                - generic [ref=f1e135]: keyboard_arrow_right
+                - text: Инструменты
+    - generic [ref=f1e136]:
+      - banner [ref=f1e137]:
+        - generic [ref=f1e138]:
+          - button [ref=f1e139] [cursor=pointer]
+          - link [ref=f1e144] [cursor=pointer]:
+            - /url: "#/"
+          - generic [ref=f1e148]:
+            - generic [ref=f1e152] [cursor=pointer]:
+              - generic [ref=f1e153]: aidacamp.ru
+              - generic [ref=f1e158]: arrow_drop_down
+            - link [ref=f1e162] [cursor=pointer]:
+              - /url: "#/projects/new"
+              - generic [ref=f1e163]: add
+          - complementary [ref=f1e164]
+          - button "shopping_cart" [ref=f1e168] [cursor=pointer]
+          - generic [ref=f1e171]:
+            - button [ref=f1e174] [cursor=pointer]
+            - complementary [ref=f1e177]
+          - button [ref=f1e183] [cursor=pointer]
+          - button [ref=f1e190] [cursor=pointer]
+          - button [ref=f1e196] [cursor=pointer]
+          - button [ref=f1e202] [cursor=pointer]
+          - button "V" [ref=f1e209] [cursor=pointer]
+      - main [ref=f1e211]:
+        - generic [ref=f1e212]:
+          - generic [ref=f1e216]:
+            - heading "Оптимизация контента на 15.07.2026" [level=1] [ref=f1e220]
+            - generic [ref=f1e222]:
+              - generic [ref=f1e1307]:
+                - generic [ref=f1e1308]: warning
+                - generic [ref=f1e1310]:
+                  - paragraph [ref=f1e1311]: "С момента полного анализа сайта вы добавили 2 новых ключевых слова. Вы не запускали их анализ и анализ конкурентов в ТОП10, поэтому они не отображаются здесь. Чтобы получить рекомендации по их оптимизации запустите:"
+                  - list [ref=f1e1312]:
+                    - listitem [ref=f1e1313]: Полный анализ сайта (будут списаны лимиты за полный анализ и посчитаны точки для графиков).
+                    - listitem [ref=f1e1314]: Перекластеризацию (будут списаны только лимиты за новые ключевые слова и будет произведена перегруппировка незакрепленных и новых ключевых слов. В графиках новая точка не появится).
+              - generic [ref=f1e224]:
+                - generic [ref=f1e225]:
+                  - generic [ref=f1e233]:
+                    - combobox [ref=f1e234]: Все кластеры
+                    - generic [ref=f1e235]: arrow_drop_down
+                  - generic [ref=f1e238]:
+                    - button [ref=f1e241] [cursor=pointer]:
+                      - generic [ref=f1e242]:
+                        - generic [ref=f1e243]: filter_list_alt
+                        - text: по оптимизации
+                    - button [ref=f1e246] [cursor=pointer]:
+                      - generic [ref=f1e247]:
+                        - generic [ref=f1e248]: filter_list_alt
+                        - text: по числу запросов
+                    - button [ref=f1e251] [cursor=pointer]:
+                      - generic [ref=f1e252]:
+                        - generic [ref=f1e253]: filter_list_alt
+                        - text: прочее
+                  - button [ref=f1e256] [cursor=pointer]:
+                    - generic [ref=f1e257]:
+                      - generic [ref=f1e258]: add
+                      - text: Добавить кластер
+                - generic [ref=f1e259]:
+                  - generic [ref=f1e260]:
+                    - button "Недавний поиск" [ref=f1e264] [cursor=pointer]
+                    - generic [ref=f1e265]:
+                      - textbox "Поиск или фильтрация результатов..." [ref=f1e274]
+                      - button "Найти" [ref=f1e276] [cursor=pointer]
+                  - generic [ref=f1e277]:
+                    - generic [ref=f1e4533]:
+                      - button "Страница" [ref=f1e4539] [cursor=pointer]
+                      - button "H1" [ref=f1e4547] [cursor=pointer]
+                      - button "Основной ключевой запрос" [ref=f1e4553] [cursor=pointer]
+                      - button "Оптимизация" [ref=f1e4559] [cursor=pointer]
+                      - button "Ключевые слова arrow_drop_up" [ref=f1e4565] [cursor=pointer]:
+                        - generic [ref=f1e4566]:
+                          - text: Ключевые слова
+                          - generic [ref=f1e4567]: arrow_drop_up
+                      - button "Ошибки" [ref=f1e4572] [cursor=pointer]
+                      - button "Индексируема" [ref=f1e4578] [cursor=pointer]
+                      - button "Лучшая позиция" [ref=f1e4584] [cursor=pointer]
+                      - button "Код ответа" [ref=f1e4590] [cursor=pointer]
+                    - generic [ref=f1e4594]:
+                      - generic [ref=f1e4598]:
+                        - button [ref=f1e4601] [cursor=pointer]:
+                          - generic [ref=f1e4602]: menu
+                        - link "https://aidacamp.ru/lager-v-podmoskove/" [ref=f1e4608] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-v-podmoskove/
+                        - button "Редактор" [ref=f1e4611] [cursor=pointer]
+                        - generic [ref=f1e4613]: Летний детский лагерь в Подмосковье 2026 — для школьников из Балашихи, Чехова, Домодедово, Щёлково, Лобни, Видного и Щербинки
+                        - generic [ref=f1e4615]: лагерь для детей 7 лет в подмосковье
+                        - button "38" [ref=f1e4619] [cursor=pointer]
+                        - button "65" [ref=f1e4624] [cursor=pointer]
+                        - button "0" [ref=f1e4629] [cursor=pointer]
+                        - button "Да" [ref=f1e4634] [cursor=pointer]
+                        - generic [ref=f1e4637]: —
+                        - generic [ref=f1e4639]: "200"
+                      - generic [ref=f1e4644]:
+                        - button [ref=f1e4647] [cursor=pointer]:
+                          - generic [ref=f1e4648]: menu
+                        - link "https://aidacamp.ru/lager-na-leto-2026/" [ref=f1e4654] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-na-leto-2026/
+                        - button "Обновить данные" [ref=f1e4657] [cursor=pointer]
+                        - generic [ref=f1e4659]: —
+                        - generic [ref=f1e4661]: —
+                        - button "—" [ref=f1e4665] [cursor=pointer]
+                        - button "55" [ref=f1e4670] [cursor=pointer]
+                        - button "—" [ref=f1e4675] [cursor=pointer]
+                        - generic [ref=f1e4678]: —
+                        - generic [ref=f1e4680]: —
+                        - generic [ref=f1e4682]: —
+                      - generic [ref=f1e4686]:
+                        - button [ref=f1e4689] [cursor=pointer]:
+                          - generic [ref=f1e4690]: menu
+                        - link "https://aidacamp.ru/putevka-v-lager/" [ref=f1e4696] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/putevka-v-lager/
+                        - button "Редактор" [ref=f1e4699] [cursor=pointer]
+                        - generic [ref=f1e4701]: Путёвки в летний лагерь Подмосковья 2026 — купить онлайн
+                        - generic [ref=f1e4703]: путевки в летний лагерь для детей 2026
+                        - button "51" [ref=f1e4707] [cursor=pointer]
+                        - button "50" [ref=f1e4712] [cursor=pointer]
+                        - button "0" [ref=f1e4717] [cursor=pointer]
+                        - button "Да" [ref=f1e4722] [cursor=pointer]
+                        - generic [ref=f1e4725]: —
+                        - generic [ref=f1e4727]: "200"
+                      - generic [ref=f1e4732]:
+                        - button [ref=f1e4735] [cursor=pointer]:
+                          - generic [ref=f1e4736]: menu
+                        - link "https://aidacamp.ru/" [ref=f1e4742] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/
+                        - button "Обновить данные" [ref=f1e4745] [cursor=pointer]
+                        - generic [ref=f1e4747]: —
+                        - generic [ref=f1e4749]: —
+                        - button "—" [ref=f1e4753] [cursor=pointer]
+                        - button "24" [ref=f1e4758] [cursor=pointer]
+                        - button "—" [ref=f1e4763] [cursor=pointer]
+                        - generic [ref=f1e4766]: —
+                        - generic [ref=f1e4768]: —
+                        - generic [ref=f1e4770]: —
+                      - generic [ref=f1e4774]:
+                        - button [ref=f1e4777] [cursor=pointer]:
+                          - generic [ref=f1e4778]: menu
+                        - link "https://aidacamp.ru/lager-v-moskve/" [ref=f1e4784] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-v-moskve/
+                        - button "Редактор" [ref=f1e4787] [cursor=pointer]
+                        - generic [ref=f1e4789]: Детские летние лагеря 2026 — Москва и Подмосковье
+                        - generic [ref=f1e4791]: москва лагерь для детей 2026
+                        - button "71" [ref=f1e4795] [cursor=pointer]
+                        - button "17" [ref=f1e4800] [cursor=pointer]
+                        - button "0" [ref=f1e4805] [cursor=pointer]
+                        - button "Да" [ref=f1e4810] [cursor=pointer]
+                        - generic [ref=f1e4813]: —
+                        - generic [ref=f1e4815]: "200"
+                      - generic [ref=f1e4820]:
+                        - button [ref=f1e4823] [cursor=pointer]:
+                          - generic [ref=f1e4824]: menu
+                        - link "https://aidacamp.ru/luchshie-detskie-lagerya/" [ref=f1e4830] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/luchshie-detskie-lagerya/
+                        - button "Редактор" [ref=f1e4833] [cursor=pointer]
+                        - generic [ref=f1e4835]: Лучшие детские лагеря Подмосковья и России 2026 для детей и подростков — рейтинг по оценкам Яндекс.Карт
+                        - generic [ref=f1e4837]: рейтинг лагерей подмосковья для детей
+                        - button "69" [ref=f1e4841] [cursor=pointer]
+                        - button "16" [ref=f1e4846] [cursor=pointer]
+                        - button "0" [ref=f1e4851] [cursor=pointer]
+                        - button "Да" [ref=f1e4856] [cursor=pointer]
+                        - button "4" [ref=f1e4861] [cursor=pointer]
+                        - generic [ref=f1e4864]: "200"
+                      - generic [ref=f1e4869]:
+                        - button [ref=f1e4872] [cursor=pointer]:
+                          - generic [ref=f1e4873]: menu
+                        - link "https://aidacamp.ru/ozdorovitelnyj-lager/" [ref=f1e4879] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/ozdorovitelnyj-lager/
+                        - button "Редактор" [ref=f1e4882] [cursor=pointer]
+                        - generic [ref=f1e4884]: Детский оздоровительный летний лагерь в Подмосковье 2026
+                        - generic [ref=f1e4886]: оздоровительный лагерь для детей 2026
+                        - button "58" [ref=f1e4890] [cursor=pointer]
+                        - button "12" [ref=f1e4895] [cursor=pointer]
+                        - button "0" [ref=f1e4900] [cursor=pointer]
+                        - button "Да" [ref=f1e4905] [cursor=pointer]
+                        - generic [ref=f1e4908]: —
+                        - generic [ref=f1e4910]: "200"
+                      - generic [ref=f1e4915]:
+                        - button [ref=f1e4918] [cursor=pointer]:
+                          - generic [ref=f1e4919]: menu
+                        - link "https://aidacamp.ru/stati/dokumenty-dlya-rebenka-v-lager/" [ref=f1e4925] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/stati/dokumenty-dlya-rebenka-v-lager/
+                        - button "Редактор" [ref=f1e4928] [cursor=pointer]
+                        - generic [ref=f1e4930]: Какие документы нужны для детского летнего лагеря — чек-лист 2026
+                        - generic [ref=f1e4932]: какие документы нужны для лагеря ребенку 2026
+                        - button "65" [ref=f1e4936] [cursor=pointer]
+                        - button "11" [ref=f1e4941] [cursor=pointer]
+                        - button "0" [ref=f1e4946] [cursor=pointer]
+                        - button "Да" [ref=f1e4951] [cursor=pointer]
+                        - button "3" [ref=f1e4956] [cursor=pointer]
+                        - generic [ref=f1e4959]: "200"
+                      - generic [ref=f1e4964]:
+                        - button [ref=f1e4967] [cursor=pointer]:
+                          - generic [ref=f1e4968]: menu
+                        - link "https://aidacamp.ru/lager-dlya-podrostkov/" [ref=f1e4974] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-dlya-podrostkov/
+                        - button "Редактор" [ref=f1e4977] [cursor=pointer]
+                        - generic [ref=f1e4979]: Летний лагерь для подростков в Подмосковье 2026
+                        - generic [ref=f1e4981]: лагерь для подростков 15 лет
+                        - button "56" [ref=f1e4985] [cursor=pointer]
+                        - button "11" [ref=f1e4990] [cursor=pointer]
+                        - button "1" [ref=f1e4995] [cursor=pointer]
+                        - button "Да" [ref=f1e5000] [cursor=pointer]
+                        - button "39" [ref=f1e5005] [cursor=pointer]
+                        - generic [ref=f1e5008]: "200"
+                      - generic [ref=f1e5013]:
+                        - button [ref=f1e5016] [cursor=pointer]:
+                          - generic [ref=f1e5017]: menu
+                        - link "https://aidacamp.ru/stati/chto-vzyat-v-lager/" [ref=f1e5023] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/stati/chto-vzyat-v-lager/
+                        - button "Редактор" [ref=f1e5026] [cursor=pointer]
+                        - generic [ref=f1e5028]: "Что взять ребёнку в летний лагерь — полный список: вещи, гаджеты и еда"
+                        - generic [ref=f1e5030]: что взять в лагерь на 10 дней
+                        - button "71" [ref=f1e5034] [cursor=pointer]
+                        - button "11" [ref=f1e5039] [cursor=pointer]
+                        - button "0" [ref=f1e5044] [cursor=pointer]
+                        - button "Да" [ref=f1e5049] [cursor=pointer]
+                        - button "22" [ref=f1e5054] [cursor=pointer]
+                        - generic [ref=f1e5057]: "200"
+                      - generic [ref=f1e5062]:
+                        - button [ref=f1e5065] [cursor=pointer]:
+                          - generic [ref=f1e5066]: menu
+                        - link "https://aidacamp.ru/ceny/" [ref=f1e5072] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/ceny/
+                        - button "Редактор" [ref=f1e5075] [cursor=pointer]
+                        - generic [ref=f1e5077]: Цены на лагерь в Подмосковье
+                        - generic [ref=f1e5079]: летний лагерь 2026 цена
+                        - button "67" [ref=f1e5083] [cursor=pointer]
+                        - button "9" [ref=f1e5088] [cursor=pointer]
+                        - button "1" [ref=f1e5093] [cursor=pointer]
+                        - button "Да" [ref=f1e5098] [cursor=pointer]
+                        - button "42" [ref=f1e5103] [cursor=pointer]
+                        - generic [ref=f1e5106]: "200"
+                      - generic [ref=f1e5111]:
+                        - button [ref=f1e5114] [cursor=pointer]:
+                          - generic [ref=f1e5115]: menu
+                        - link "https://aidacamp.ru/skolko-stoit-lager-dlya-rebenka/" [ref=f1e5121] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/skolko-stoit-lager-dlya-rebenka/
+                        - button "Редактор" [ref=f1e5124] [cursor=pointer]
+                        - generic [ref=f1e5126]: Сколько стоит поехать в лагерь — цены АйДаКемп 2026
+                        - generic [ref=f1e5128]: сколько стоит смена в лагере
+                        - button "65" [ref=f1e5132] [cursor=pointer]
+                        - button "8" [ref=f1e5137] [cursor=pointer]
+                        - button "0" [ref=f1e5142] [cursor=pointer]
+                        - button "Да" [ref=f1e5147] [cursor=pointer]
+                        - generic [ref=f1e5150]: —
+                        - generic [ref=f1e5152]: "200"
+                      - generic [ref=f1e5157]:
+                        - button [ref=f1e5160] [cursor=pointer]:
+                          - generic [ref=f1e5161]: menu
+                        - link "https://aidacamp.ru/lager-nedorogo/" [ref=f1e5167] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-nedorogo/
+                        - button "Редактор" [ref=f1e5170] [cursor=pointer]
+                        - generic [ref=f1e5172]: Недорогой детский лагерь в Подмосковье 2026 — оплата в рассрочку
+                        - generic [ref=f1e5174]: недорогой лагерь для детей
+                        - button "71" [ref=f1e5178] [cursor=pointer]
+                        - button "7" [ref=f1e5183] [cursor=pointer]
+                        - button "0" [ref=f1e5188] [cursor=pointer]
+                        - button "Да" [ref=f1e5193] [cursor=pointer]
+                        - button "8" [ref=f1e5198] [cursor=pointer]
+                        - generic [ref=f1e5201]: "200"
+                      - generic [ref=f1e5206]:
+                        - button [ref=f1e5209] [cursor=pointer]:
+                          - generic [ref=f1e5210]: menu
+                        - link "https://aidacamp.ru/it-camp/" [ref=f1e5216] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/it-camp/
+                        - button "Редактор" [ref=f1e5219] [cursor=pointer]
+                        - generic [ref=f1e5221]: IT Camp — летний лагерь программирования в Подмосковье для детей 7–15 лет
+                        - generic [ref=f1e5223]: it лагерь 2026
+                        - button "80" [ref=f1e5227] [cursor=pointer]
+                        - button "7" [ref=f1e5232] [cursor=pointer]
+                        - button "0" [ref=f1e5237] [cursor=pointer]
+                        - button "Да" [ref=f1e5242] [cursor=pointer]
+                        - button "6" [ref=f1e5247] [cursor=pointer]
+                        - generic [ref=f1e5250]: "200"
+                      - generic [ref=f1e5255]:
+                        - button [ref=f1e5258] [cursor=pointer]:
+                          - generic [ref=f1e5259]: menu
+                        - link "https://aidacamp.ru/lager-na-iyun/" [ref=f1e5265] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-na-iyun/
+                        - button "Редактор" [ref=f1e5268] [cursor=pointer]
+                        - generic [ref=f1e5270]: Летний лагерь на июнь 2026 — Подмосковье
+                        - generic [ref=f1e5272]: летний лагерь на июнь 2026
+                        - button "65" [ref=f1e5276] [cursor=pointer]
+                        - button "7" [ref=f1e5281] [cursor=pointer]
+                        - button "1" [ref=f1e5286] [cursor=pointer]
+                        - button "Да" [ref=f1e5291] [cursor=pointer]
+                        - generic [ref=f1e5294]: —
+                        - generic [ref=f1e5296]: "200"
+                      - generic [ref=f1e5301]:
+                        - button [ref=f1e5304] [cursor=pointer]:
+                          - generic [ref=f1e5305]: menu
+                        - link "https://aidacamp.ru/lager-na-osennie-kanikuly/" [ref=f1e5311] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-na-osennie-kanikuly/
+                        - button "Редактор" [ref=f1e5314] [cursor=pointer]
+                        - generic [ref=f1e5316]: IT-лагерь на осенние каникулы 2026, Подмосковье
+                        - generic [ref=f1e5318]: it лагерь на осенние каникулы
+                        - button "66" [ref=f1e5322] [cursor=pointer]
+                        - button "7" [ref=f1e5327] [cursor=pointer]
+                        - button "0" [ref=f1e5332] [cursor=pointer]
+                        - button "Да" [ref=f1e5337] [cursor=pointer]
+                        - button "1" [ref=f1e5342] [cursor=pointer]
+                        - generic [ref=f1e5345]: "200"
+                      - generic [ref=f1e5350]:
+                        - button [ref=f1e5353] [cursor=pointer]:
+                          - generic [ref=f1e5354]: menu
+                        - link "https://aidacamp.ru/lager-15-let/" [ref=f1e5360] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-15-let/
+                        - button "Редактор" [ref=f1e5363] [cursor=pointer]
+                        - generic [ref=f1e5365]: Летний лагерь для подростков 15 лет — FastAPI и AI
+                        - generic [ref=f1e5367]: лагерь для подростков 15 лет
+                        - button "65" [ref=f1e5371] [cursor=pointer]
+                        - button "6" [ref=f1e5376] [cursor=pointer]
+                        - button "0" [ref=f1e5381] [cursor=pointer]
+                        - button "Да" [ref=f1e5386] [cursor=pointer]
+                        - generic [ref=f1e5389]: —
+                        - generic [ref=f1e5391]: "200"
+                      - generic [ref=f1e5396]:
+                        - button [ref=f1e5399] [cursor=pointer]:
+                          - generic [ref=f1e5400]: menu
+                        - link "https://aidacamp.ru/lager-dlya-shkolnikov/" [ref=f1e5406] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-dlya-shkolnikov/
+                        - button "Редактор" [ref=f1e5409] [cursor=pointer]
+                        - generic [ref=f1e5411]: Летний лагерь для школьников 2026 — АйДаКемп
+                        - generic [ref=f1e5413]: лагерь для детей 7 класс
+                        - button "64" [ref=f1e5417] [cursor=pointer]
+                        - button "6" [ref=f1e5422] [cursor=pointer]
+                        - button "0" [ref=f1e5427] [cursor=pointer]
+                        - button "Да" [ref=f1e5432] [cursor=pointer]
+                        - generic [ref=f1e5435]: —
+                        - generic [ref=f1e5437]: "200"
+                      - generic [ref=f1e5442]:
+                        - button [ref=f1e5445] [cursor=pointer]:
+                          - generic [ref=f1e5446]: menu
+                        - link "https://aidacamp.ru/lager-naro-fominsk/" [ref=f1e5452] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-naro-fominsk/
+                        - button "Редактор" [ref=f1e5455] [cursor=pointer]
+                        - generic [ref=f1e5457]: Детский лагерь в Наро-Фоминском районе
+                        - generic [ref=f1e5459]: наро фоминск оздоровительный лагерь
+                        - button "67" [ref=f1e5463] [cursor=pointer]
+                        - button "6" [ref=f1e5468] [cursor=pointer]
+                        - button "0" [ref=f1e5473] [cursor=pointer]
+                        - button "Да" [ref=f1e5478] [cursor=pointer]
+                        - button "2" [ref=f1e5483] [cursor=pointer]
+                        - generic [ref=f1e5486]: "200"
+                      - generic [ref=f1e5491]:
+                        - button [ref=f1e5494] [cursor=pointer]:
+                          - generic [ref=f1e5495]: menu
+                        - link "https://aidacamp.ru/nalogovyj-vychet/" [ref=f1e5501] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/nalogovyj-vychet/
+                        - button "Редактор" [ref=f1e5504] [cursor=pointer]
+                        - generic [ref=f1e5506]: Как получить налоговый вычет за путёвку в детский лагерь 2026
+                        - generic [ref=f1e5508]: как получить налоговый вычет за лагерь
+                        - button "47" [ref=f1e5512] [cursor=pointer]
+                        - button "5" [ref=f1e5517] [cursor=pointer]
+                        - button "0" [ref=f1e5522] [cursor=pointer]
+                        - button "Да" [ref=f1e5527] [cursor=pointer]
+                        - button "4" [ref=f1e5532] [cursor=pointer]
+                        - generic [ref=f1e5535]: "200"
+                  - generic [ref=f1e1250]:
+                    - generic [ref=f1e1251]: "Показано: c 1 по 20 из 314"
+                    - generic [ref=f1e1252]:
+                      - text: "Страница:"
+                      - button "Предыдущая страница" [disabled]:
+                        - generic: keyboard_arrow_left
+                      - spinbutton [ref=f1e1257]: "1"
+                      - button "Следующая страница" [ref=f1e1258] [cursor=pointer]:
+                        - generic [ref=f1e1259]: keyboard_arrow_right
+                      - text: из 16
+                    - generic [ref=f1e1261]:
+                      - text: "Строк на странице:"
+                      - combobox [ref=f1e1262]:
+                        - generic [ref=f1e1265] [cursor=pointer]:
+                          - generic [ref=f1e1266]:
+                            - generic [ref=f1e1267]: "20"
+                            - textbox
+                          - generic [ref=f1e1268]: arrow_drop_down
+          - complementary [ref=f1e1271]:
+            - button [ref=f1e1275] [cursor=pointer]:
+              - generic [ref=f1e1276]: save_alt
+            - button [ref=f1e1281] [cursor=pointer]:
+              - generic [ref=f1e1282]: share
+            - generic [ref=f1e1285]:
+              - button [disabled]:
+                - generic: help_outline
+            - separator [ref=f1e1286]
+            - button [ref=f1e1291] [cursor=pointer]:
+              - generic [ref=f1e1292]: playlist_play
+            - button "Пригласить участников команды" [ref=f1e1296] [cursor=pointer]:
+              - generic [ref=f1e1297]: supervised_user_circle
+    - complementary [ref=f1e1300]
+    - complementary [ref=f1e1302]
+    - complementary [ref=f1e1304]
