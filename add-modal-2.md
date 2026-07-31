@@ -1,0 +1,587 @@
+- generic [ref=f1e2]:
+  - generic [ref=f1e10403]:
+    - generic [ref=f1e10404]:
+      - generic [ref=f1e10405]: Добавить ключевые слова на кластер
+      - generic [ref=f1e10406]:
+        - button [ref=f1e10407] [cursor=pointer]:
+          - generic [ref=f1e10408]: fullscreen
+        - button [ref=f1e10410] [cursor=pointer]:
+          - generic [ref=f1e10411]: close
+    - generic [ref=f1e10415]:
+      - generic [ref=f1e10418] [cursor=pointer]:
+        - generic [ref=f1e10419]: Выберите тег
+        - generic [ref=f1e10420]: arrow_drop_down
+      - generic [ref=f1e10422]:
+        - generic [ref=f1e10423]: Список ключевых слов
+        - generic [ref=f1e10425]:
+          - generic [ref=f1e10426]: "1"
+          - textbox "Введите ключевые слова по одному в строке" [ref=f1e10429]
+    - generic [ref=f1e10431]:
+      - button "Отмена" [ref=f1e10432] [cursor=pointer]
+      - button "Добавить" [ref=f1e10434] [cursor=pointer]
+  - generic [ref=f1e5539]:
+    - generic [ref=f1e5541]:
+      - generic [ref=f1e5543]:
+        - button [ref=f1e5544] [cursor=pointer]:
+          - generic [ref=f1e5545]: close
+        - button [ref=f1e5547] [cursor=pointer]:
+          - generic [ref=f1e5548]: fullscreen
+        - button "ondemand_video" [ref=f1e5552] [cursor=pointer]
+        - button [ref=f1e5556] [cursor=pointer]:
+          - generic [ref=f1e5557]: help_outline
+      - heading [level=1] [ref=f1e5559]:
+        - text: Страница
+        - link /lager-v-podmoskove/ [ref=f1e5560] [cursor=pointer]:
+          - /url: https://aidacamp.ru/lager-v-podmoskove/
+    - generic [ref=f1e5563]:
+      - generic [ref=f1e5565]:
+        - generic [ref=f1e5566]:
+          - generic [ref=f1e5567]:
+            - generic [ref=f1e5568]:
+              - 'progressbar "Процент оптимизации: 38%" [ref=f1e5570]':
+                - generic [ref=f1e5574]: "38"
+              - generic [ref=f1e5575]: В редакторе
+              - button "Проверить" [ref=f1e5576] [cursor=pointer]
+            - generic [ref=f1e5579]:
+              - 'progressbar "Процент оптимизации: 38%" [ref=f1e5581]':
+                - generic [ref=f1e5585]: "38"
+              - generic [ref=f1e5586]: На сайте
+              - button "Проверить" [ref=f1e5587] [cursor=pointer]
+          - generic [ref=f1e5589]:
+            - button "Получить контент со страницы" [ref=f1e5591] [cursor=pointer]
+            - button "Показать разницу между текстом на сайте и в редакторе" [ref=f1e5595] [cursor=pointer]:
+              - generic [ref=f1e5596]: compare
+        - generic [ref=f1e5598]:
+          - generic [ref=f1e5599]: "Разделы оптимизации:"
+          - button "Рекомендации по тексту 72" [ref=f1e5600] [cursor=pointer]:
+            - generic [ref=f1e5601]:
+              - text: Рекомендации по тексту
+              - generic [ref=f1e5602]: "72"
+          - button "Скрытая семантика 98" [ref=f1e5603] [cursor=pointer]:
+            - generic [ref=f1e5604]:
+              - text: Скрытая семантика
+              - generic [ref=f1e5605]: "98"
+          - button [ref=f1e5606] [cursor=pointer]
+          - button [ref=f1e10395] [cursor=pointer]
+          - button [ref=f1e5611] [cursor=pointer]
+          - button [ref=f1e5613] [cursor=pointer]
+          - button [ref=f1e5615] [cursor=pointer]
+          - button [ref=f1e5617] [cursor=pointer]
+          - button [ref=f1e5619] [cursor=pointer]
+          - button [ref=f1e5621] [cursor=pointer]
+          - button [ref=f1e5623] [cursor=pointer]
+          - button [ref=f1e5625] [cursor=pointer]
+      - generic [ref=f1e5628]:
+        - generic [ref=f1e8257]:
+          - table [ref=f1e8258]:
+            - row [ref=f1e8259]:
+              - cell "URL:" [ref=f1e8260]
+              - cell [ref=f1e8261]:
+                - link "https://aidacamp.ru/lager-v-podmoskove/" [ref=f1e8265] [cursor=pointer]:
+                  - /url: https://aidacamp.ru/lager-v-podmoskove/
+            - row [ref=f1e8266]:
+              - cell "Тип страницы:" [ref=f1e8267]
+              - cell "Информационный ?" [ref=f1e8268]:
+                - text: Информационный
+                - generic [ref=f1e8269]: "?"
+            - row [ref=f1e8272]:
+              - cell "Глубина страницы:" [ref=f1e8273]
+              - cell "2" [ref=f1e8274]
+          - generic [ref=f1e10396]:
+            - generic [ref=f1e10397]: warning
+            - generic [ref=f1e10398]: Для начала вам необходимо добавить ключевые слова
+          - generic [ref=f1e8275]:
+            - button [ref=f1e8277] [cursor=pointer]:
+              - generic [ref=f1e8278]:
+                - generic [ref=f1e8279]: auto_fix_high
+                - text: Подобрать ключевые слова
+            - button [ref=f1e8281] [cursor=pointer]:
+              - generic [ref=f1e8282]:
+                - generic [ref=f1e8283]: add
+                - text: Добавить ключевые слова
+        - text: "Обычный Заголовок 2 Заголовок 3 Заголовок 4 Обычный • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • Visit URL: EditRemove"
+  - generic [ref=f1e9]:
+    - navigation [ref=f1e10]:
+      - generic [ref=f1e11]:
+        - generic [ref=f1e13]:
+          - link [ref=f1e15] [cursor=pointer]:
+            - /url: /dashboard
+          - generic [ref=f1e17]:
+            - generic [ref=f1e18]:
+              - generic [ref=f1e19]: Проект
+              - button [ref=f1e20] [cursor=pointer]
+              - button [ref=f1e24] [cursor=pointer]
+              - button [ref=f1e28] [cursor=pointer]
+              - button [ref=f1e32] [cursor=pointer]
+            - generic [ref=f1e36]:
+              - separator [ref=f1e37]
+              - generic [ref=f1e38]: Инструменты
+              - button [ref=f1e39] [cursor=pointer]
+              - button [ref=f1e43] [cursor=pointer]
+          - generic [ref=f1e47]:
+            - button [ref=f1e49] [cursor=pointer]
+            - button [ref=f1e53] [cursor=pointer]
+        - generic [ref=f1e57]:
+          - generic [ref=f1e58]:
+            - link "aidacamp.ru" [ref=f1e59] [cursor=pointer]:
+              - /url: https://aidacamp.ru/
+            - generic [ref=f1e65] [cursor=pointer]:
+              - button "Запустить проверку сайта" [ref=f1e67]
+              - button [ref=f1e70]:
+                - generic [ref=f1e71]: arrow_drop_down
+          - generic [ref=f1e73]:
+            - generic [ref=f1e74]: SEO анализ и оптимизация
+            - generic [ref=f1e75]:
+              - link "Настройки сайта" [ref=f1e77] [cursor=pointer]:
+                - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/settings"
+              - link "Сводный отчёт" [ref=f1e79] [cursor=pointer]:
+                - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/report/main_report"
+              - link "Независимая ИИ-экспертиза" [ref=f1e81] [cursor=pointer]:
+                - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/ai/reports/main-report-overview"
+              - button "keyboard_arrow_right Позиции сайта" [ref=f1e83] [cursor=pointer]:
+                - generic [ref=f1e84]: keyboard_arrow_right
+                - text: Позиции сайта
+              - generic [ref=f1e85]:
+                - button "keyboard_arrow_down Оптимизация и кластеризация" [ref=f1e86] [cursor=pointer]:
+                  - generic [ref=f1e87]: keyboard_arrow_down
+                  - text: Оптимизация и кластеризация
+                - generic [ref=f1e88]:
+                  - link "Яндекс Москва и область (mobile)" [ref=f1e90] [cursor=pointer]:
+                    - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/report/pages_optimizations/39528"
+                  - link "Google Москва (mobile)" [ref=f1e92] [cursor=pointer]:
+                    - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/report/pages_optimizations/39529"
+                  - link "Оптимизация контента" [ref=f1e94] [cursor=pointer]:
+                    - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/report/content_optimization"
+                  - link "Исключение конкурентов" [ref=f1e96] [cursor=pointer]:
+                    - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/report/site_competitors"
+              - button "keyboard_arrow_right Таблица по ключевым словам" [ref=f1e98] [cursor=pointer]:
+                - generic [ref=f1e99]: keyboard_arrow_right
+                - text: Таблица по ключевым словам
+              - button "keyboard_arrow_right Технический аудит" [ref=f1e101] [cursor=pointer]:
+                - generic [ref=f1e102]: keyboard_arrow_right
+                - text: Технический аудит
+              - button "keyboard_arrow_right Sitemap" [ref=f1e104] [cursor=pointer]:
+                - generic [ref=f1e105]: keyboard_arrow_right
+                - text: Sitemap
+              - button "keyboard_arrow_right SEO-аудит" [ref=f1e107] [cursor=pointer]:
+                - generic [ref=f1e108]: keyboard_arrow_right
+                - text: SEO-аудит
+              - button "keyboard_arrow_right Яндекс Метрика beta" [ref=f1e110] [cursor=pointer]:
+                - generic [ref=f1e111]: keyboard_arrow_right
+                - text: Яндекс Метрика
+                - superscript [ref=f1e112]: beta
+              - button "keyboard_arrow_right Google Analytics beta" [ref=f1e114] [cursor=pointer]:
+                - generic [ref=f1e115]: keyboard_arrow_right
+                - text: Google Analytics
+                - superscript [ref=f1e116]: beta
+              - button "keyboard_arrow_right Поведенческие" [ref=f1e118] [cursor=pointer]:
+                - generic [ref=f1e119]: keyboard_arrow_right
+                - text: Поведенческие
+              - button "keyboard_arrow_right Коммерческие" [ref=f1e121] [cursor=pointer]:
+                - generic [ref=f1e122]: keyboard_arrow_right
+                - text: Коммерческие
+              - button "keyboard_arrow_right Ссылочные" [ref=f1e124] [cursor=pointer]:
+                - generic [ref=f1e125]: keyboard_arrow_right
+                - text: Ссылочные
+              - button "keyboard_arrow_right Аналитика YandexDirect" [ref=f1e127] [cursor=pointer]:
+                - generic [ref=f1e128]: keyboard_arrow_right
+                - text: Аналитика YandexDirect
+              - button "keyboard_arrow_right Печатные версии beta" [ref=f1e130] [cursor=pointer]:
+                - generic [ref=f1e131]: keyboard_arrow_right
+                - text: Печатные версии
+                - superscript [ref=f1e132]: beta
+              - button "keyboard_arrow_right Инструменты" [ref=f1e134] [cursor=pointer]:
+                - generic [ref=f1e135]: keyboard_arrow_right
+                - text: Инструменты
+    - generic [ref=f1e136]:
+      - banner [ref=f1e137]:
+        - generic [ref=f1e138]:
+          - button [ref=f1e139] [cursor=pointer]
+          - link [ref=f1e144] [cursor=pointer]:
+            - /url: "#/"
+          - generic [ref=f1e148]:
+            - generic [ref=f1e152] [cursor=pointer]:
+              - generic [ref=f1e153]: aidacamp.ru
+              - generic [ref=f1e158]: arrow_drop_down
+            - link [ref=f1e162] [cursor=pointer]:
+              - /url: "#/projects/new"
+              - generic [ref=f1e163]: add
+          - complementary [ref=f1e164]
+          - button "shopping_cart" [ref=f1e168] [cursor=pointer]
+          - generic [ref=f1e171]:
+            - button [ref=f1e174] [cursor=pointer]
+            - complementary [ref=f1e177]
+          - button [ref=f1e183] [cursor=pointer]
+          - button [ref=f1e190] [cursor=pointer]
+          - button [ref=f1e196] [cursor=pointer]
+          - button [ref=f1e202] [cursor=pointer]
+          - button "V" [ref=f1e209] [cursor=pointer]
+      - main [ref=f1e211]:
+        - generic [ref=f1e212]:
+          - generic [ref=f1e216]:
+            - heading "Оптимизация контента на 15.07.2026" [level=1] [ref=f1e220]
+            - generic [ref=f1e222]:
+              - generic [ref=f1e1307]:
+                - generic [ref=f1e1308]: warning
+                - generic [ref=f1e1310]:
+                  - paragraph [ref=f1e1311]: "С момента полного анализа сайта вы добавили 2 новых ключевых слова. Вы не запускали их анализ и анализ конкурентов в ТОП10, поэтому они не отображаются здесь. Чтобы получить рекомендации по их оптимизации запустите:"
+                  - list [ref=f1e1312]:
+                    - listitem [ref=f1e1313]: Полный анализ сайта (будут списаны лимиты за полный анализ и посчитаны точки для графиков).
+                    - listitem [ref=f1e1314]: Перекластеризацию (будут списаны только лимиты за новые ключевые слова и будет произведена перегруппировка незакрепленных и новых ключевых слов. В графиках новая точка не появится).
+              - generic [ref=f1e224]:
+                - generic [ref=f1e225]:
+                  - generic [ref=f1e233]:
+                    - combobox [ref=f1e234]: Все кластеры
+                    - generic [ref=f1e235]: arrow_drop_down
+                  - generic [ref=f1e238]:
+                    - button [ref=f1e241] [cursor=pointer]:
+                      - generic [ref=f1e242]:
+                        - generic [ref=f1e243]: filter_list_alt
+                        - text: по оптимизации
+                    - button [ref=f1e246] [cursor=pointer]:
+                      - generic [ref=f1e247]:
+                        - generic [ref=f1e248]: filter_list_alt
+                        - text: по числу запросов
+                    - button [ref=f1e251] [cursor=pointer]:
+                      - generic [ref=f1e252]:
+                        - generic [ref=f1e253]: filter_list_alt
+                        - text: прочее
+                  - button [ref=f1e256] [cursor=pointer]:
+                    - generic [ref=f1e257]:
+                      - generic [ref=f1e258]: add
+                      - text: Добавить кластер
+                - generic [ref=f1e259]:
+                  - generic [ref=f1e260]:
+                    - button "Недавний поиск" [ref=f1e264] [cursor=pointer]
+                    - generic [ref=f1e265]:
+                      - textbox "Поиск или фильтрация результатов..." [ref=f1e274]
+                      - button "Найти" [ref=f1e276] [cursor=pointer]
+                  - generic [ref=f1e277]:
+                    - generic [ref=f1e4533]:
+                      - button "Страница" [ref=f1e4539] [cursor=pointer]
+                      - button "H1" [ref=f1e4547] [cursor=pointer]
+                      - button "Основной ключевой запрос" [ref=f1e4553] [cursor=pointer]
+                      - button "Оптимизация" [ref=f1e4559] [cursor=pointer]
+                      - button "Ключевые слова arrow_drop_up" [ref=f1e4565] [cursor=pointer]:
+                        - generic [ref=f1e4566]:
+                          - text: Ключевые слова
+                          - generic [ref=f1e4567]: arrow_drop_up
+                      - button "Ошибки" [ref=f1e4572] [cursor=pointer]
+                      - button "Индексируема" [ref=f1e4578] [cursor=pointer]
+                      - button "Лучшая позиция" [ref=f1e4584] [cursor=pointer]
+                      - button "Код ответа" [ref=f1e4590] [cursor=pointer]
+                    - generic [ref=f1e4594]:
+                      - generic [ref=f1e4598]:
+                        - button [ref=f1e4601] [cursor=pointer]:
+                          - generic [ref=f1e4602]: menu
+                        - link "https://aidacamp.ru/lager-v-podmoskove/" [ref=f1e4608] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-v-podmoskove/
+                        - button "Редактор" [ref=f1e4611] [cursor=pointer]
+                        - generic [ref=f1e4613]: Летний детский лагерь в Подмосковье 2026 — для школьников из Балашихи, Чехова, Домодедово, Щёлково, Лобни, Видного и Щербинки
+                        - generic [ref=f1e4615]: лагерь для детей 7 лет в подмосковье
+                        - button "38" [ref=f1e4619] [cursor=pointer]
+                        - button "65" [ref=f1e4624] [cursor=pointer]
+                        - button "0" [ref=f1e4629] [cursor=pointer]
+                        - button "Да" [ref=f1e4634] [cursor=pointer]
+                        - generic [ref=f1e4637]: —
+                        - generic [ref=f1e4639]: "200"
+                      - generic [ref=f1e4644]:
+                        - button [ref=f1e4647] [cursor=pointer]:
+                          - generic [ref=f1e4648]: menu
+                        - link "https://aidacamp.ru/lager-na-leto-2026/" [ref=f1e4654] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-na-leto-2026/
+                        - button "Обновить данные" [ref=f1e4657] [cursor=pointer]
+                        - generic [ref=f1e4659]: —
+                        - generic [ref=f1e4661]: —
+                        - button "—" [ref=f1e4665] [cursor=pointer]
+                        - button "55" [ref=f1e4670] [cursor=pointer]
+                        - button "—" [ref=f1e4675] [cursor=pointer]
+                        - generic [ref=f1e4678]: —
+                        - generic [ref=f1e4680]: —
+                        - generic [ref=f1e4682]: —
+                      - generic [ref=f1e4686]:
+                        - button [ref=f1e4689] [cursor=pointer]:
+                          - generic [ref=f1e4690]: menu
+                        - link "https://aidacamp.ru/putevka-v-lager/" [ref=f1e4696] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/putevka-v-lager/
+                        - button "Редактор" [ref=f1e4699] [cursor=pointer]
+                        - generic [ref=f1e4701]: Путёвки в летний лагерь Подмосковья 2026 — купить онлайн
+                        - generic [ref=f1e4703]: путевки в летний лагерь для детей 2026
+                        - button "51" [ref=f1e4707] [cursor=pointer]
+                        - button "50" [ref=f1e4712] [cursor=pointer]
+                        - button "0" [ref=f1e4717] [cursor=pointer]
+                        - button "Да" [ref=f1e4722] [cursor=pointer]
+                        - generic [ref=f1e4725]: —
+                        - generic [ref=f1e4727]: "200"
+                      - generic [ref=f1e4732]:
+                        - button [ref=f1e4735] [cursor=pointer]:
+                          - generic [ref=f1e4736]: menu
+                        - link "https://aidacamp.ru/" [ref=f1e4742] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/
+                        - button "Обновить данные" [ref=f1e4745] [cursor=pointer]
+                        - generic [ref=f1e4747]: —
+                        - generic [ref=f1e4749]: —
+                        - button "—" [ref=f1e4753] [cursor=pointer]
+                        - button "24" [ref=f1e4758] [cursor=pointer]
+                        - button "—" [ref=f1e4763] [cursor=pointer]
+                        - generic [ref=f1e4766]: —
+                        - generic [ref=f1e4768]: —
+                        - generic [ref=f1e4770]: —
+                      - generic [ref=f1e4774]:
+                        - button [ref=f1e4777] [cursor=pointer]:
+                          - generic [ref=f1e4778]: menu
+                        - link "https://aidacamp.ru/lager-v-moskve/" [ref=f1e4784] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-v-moskve/
+                        - button "Редактор" [ref=f1e4787] [cursor=pointer]
+                        - generic [ref=f1e4789]: Детские летние лагеря 2026 — Москва и Подмосковье
+                        - generic [ref=f1e4791]: москва лагерь для детей 2026
+                        - button "71" [ref=f1e4795] [cursor=pointer]
+                        - button "17" [ref=f1e4800] [cursor=pointer]
+                        - button "0" [ref=f1e4805] [cursor=pointer]
+                        - button "Да" [ref=f1e4810] [cursor=pointer]
+                        - generic [ref=f1e4813]: —
+                        - generic [ref=f1e4815]: "200"
+                      - generic [ref=f1e4820]:
+                        - button [ref=f1e4823] [cursor=pointer]:
+                          - generic [ref=f1e4824]: menu
+                        - link "https://aidacamp.ru/luchshie-detskie-lagerya/" [ref=f1e4830] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/luchshie-detskie-lagerya/
+                        - button "Редактор" [ref=f1e4833] [cursor=pointer]
+                        - generic [ref=f1e4835]: Лучшие детские лагеря Подмосковья и России 2026 для детей и подростков — рейтинг по оценкам Яндекс.Карт
+                        - generic [ref=f1e4837]: рейтинг лагерей подмосковья для детей
+                        - button "69" [ref=f1e4841] [cursor=pointer]
+                        - button "16" [ref=f1e4846] [cursor=pointer]
+                        - button "0" [ref=f1e4851] [cursor=pointer]
+                        - button "Да" [ref=f1e4856] [cursor=pointer]
+                        - button "4" [ref=f1e4861] [cursor=pointer]
+                        - generic [ref=f1e4864]: "200"
+                      - generic [ref=f1e4869]:
+                        - button [ref=f1e4872] [cursor=pointer]:
+                          - generic [ref=f1e4873]: menu
+                        - link "https://aidacamp.ru/ozdorovitelnyj-lager/" [ref=f1e4879] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/ozdorovitelnyj-lager/
+                        - button "Редактор" [ref=f1e4882] [cursor=pointer]
+                        - generic [ref=f1e4884]: Детский оздоровительный летний лагерь в Подмосковье 2026
+                        - generic [ref=f1e4886]: оздоровительный лагерь для детей 2026
+                        - button "58" [ref=f1e4890] [cursor=pointer]
+                        - button "12" [ref=f1e4895] [cursor=pointer]
+                        - button "0" [ref=f1e4900] [cursor=pointer]
+                        - button "Да" [ref=f1e4905] [cursor=pointer]
+                        - generic [ref=f1e4908]: —
+                        - generic [ref=f1e4910]: "200"
+                      - generic [ref=f1e4915]:
+                        - button [ref=f1e4918] [cursor=pointer]:
+                          - generic [ref=f1e4919]: menu
+                        - link "https://aidacamp.ru/stati/dokumenty-dlya-rebenka-v-lager/" [ref=f1e4925] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/stati/dokumenty-dlya-rebenka-v-lager/
+                        - button "Редактор" [ref=f1e4928] [cursor=pointer]
+                        - generic [ref=f1e4930]: Какие документы нужны для детского летнего лагеря — чек-лист 2026
+                        - generic [ref=f1e4932]: какие документы нужны для лагеря ребенку 2026
+                        - button "65" [ref=f1e4936] [cursor=pointer]
+                        - button "11" [ref=f1e4941] [cursor=pointer]
+                        - button "0" [ref=f1e4946] [cursor=pointer]
+                        - button "Да" [ref=f1e4951] [cursor=pointer]
+                        - button "3" [ref=f1e4956] [cursor=pointer]
+                        - generic [ref=f1e4959]: "200"
+                      - generic [ref=f1e4964]:
+                        - button [ref=f1e4967] [cursor=pointer]:
+                          - generic [ref=f1e4968]: menu
+                        - link "https://aidacamp.ru/lager-dlya-podrostkov/" [ref=f1e4974] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-dlya-podrostkov/
+                        - button "Редактор" [ref=f1e4977] [cursor=pointer]
+                        - generic [ref=f1e4979]: Летний лагерь для подростков в Подмосковье 2026
+                        - generic [ref=f1e4981]: лагерь для подростков 15 лет
+                        - button "56" [ref=f1e4985] [cursor=pointer]
+                        - button "11" [ref=f1e4990] [cursor=pointer]
+                        - button "1" [ref=f1e4995] [cursor=pointer]
+                        - button "Да" [ref=f1e5000] [cursor=pointer]
+                        - button "39" [ref=f1e5005] [cursor=pointer]
+                        - generic [ref=f1e5008]: "200"
+                      - generic [ref=f1e5013]:
+                        - button [ref=f1e5016] [cursor=pointer]:
+                          - generic [ref=f1e5017]: menu
+                        - link "https://aidacamp.ru/stati/chto-vzyat-v-lager/" [ref=f1e5023] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/stati/chto-vzyat-v-lager/
+                        - button "Редактор" [ref=f1e5026] [cursor=pointer]
+                        - generic [ref=f1e5028]: "Что взять ребёнку в летний лагерь — полный список: вещи, гаджеты и еда"
+                        - generic [ref=f1e5030]: что взять в лагерь на 10 дней
+                        - button "71" [ref=f1e5034] [cursor=pointer]
+                        - button "11" [ref=f1e5039] [cursor=pointer]
+                        - button "0" [ref=f1e5044] [cursor=pointer]
+                        - button "Да" [ref=f1e5049] [cursor=pointer]
+                        - button "22" [ref=f1e5054] [cursor=pointer]
+                        - generic [ref=f1e5057]: "200"
+                      - generic [ref=f1e5062]:
+                        - button [ref=f1e5065] [cursor=pointer]:
+                          - generic [ref=f1e5066]: menu
+                        - link "https://aidacamp.ru/ceny/" [ref=f1e5072] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/ceny/
+                        - button "Редактор" [ref=f1e5075] [cursor=pointer]
+                        - generic [ref=f1e5077]: Цены на лагерь в Подмосковье
+                        - generic [ref=f1e5079]: летний лагерь 2026 цена
+                        - button "67" [ref=f1e5083] [cursor=pointer]
+                        - button "9" [ref=f1e5088] [cursor=pointer]
+                        - button "1" [ref=f1e5093] [cursor=pointer]
+                        - button "Да" [ref=f1e5098] [cursor=pointer]
+                        - button "42" [ref=f1e5103] [cursor=pointer]
+                        - generic [ref=f1e5106]: "200"
+                      - generic [ref=f1e5111]:
+                        - button [ref=f1e5114] [cursor=pointer]:
+                          - generic [ref=f1e5115]: menu
+                        - link "https://aidacamp.ru/skolko-stoit-lager-dlya-rebenka/" [ref=f1e5121] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/skolko-stoit-lager-dlya-rebenka/
+                        - button "Редактор" [ref=f1e5124] [cursor=pointer]
+                        - generic [ref=f1e5126]: Сколько стоит поехать в лагерь — цены АйДаКемп 2026
+                        - generic [ref=f1e5128]: сколько стоит смена в лагере
+                        - button "65" [ref=f1e5132] [cursor=pointer]
+                        - button "8" [ref=f1e5137] [cursor=pointer]
+                        - button "0" [ref=f1e5142] [cursor=pointer]
+                        - button "Да" [ref=f1e5147] [cursor=pointer]
+                        - generic [ref=f1e5150]: —
+                        - generic [ref=f1e5152]: "200"
+                      - generic [ref=f1e5157]:
+                        - button [ref=f1e5160] [cursor=pointer]:
+                          - generic [ref=f1e5161]: menu
+                        - link "https://aidacamp.ru/lager-nedorogo/" [ref=f1e5167] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-nedorogo/
+                        - button "Редактор" [ref=f1e5170] [cursor=pointer]
+                        - generic [ref=f1e5172]: Недорогой детский лагерь в Подмосковье 2026 — оплата в рассрочку
+                        - generic [ref=f1e5174]: недорогой лагерь для детей
+                        - button "71" [ref=f1e5178] [cursor=pointer]
+                        - button "7" [ref=f1e5183] [cursor=pointer]
+                        - button "0" [ref=f1e5188] [cursor=pointer]
+                        - button "Да" [ref=f1e5193] [cursor=pointer]
+                        - button "8" [ref=f1e5198] [cursor=pointer]
+                        - generic [ref=f1e5201]: "200"
+                      - generic [ref=f1e5206]:
+                        - button [ref=f1e5209] [cursor=pointer]:
+                          - generic [ref=f1e5210]: menu
+                        - link "https://aidacamp.ru/it-camp/" [ref=f1e5216] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/it-camp/
+                        - button "Редактор" [ref=f1e5219] [cursor=pointer]
+                        - generic [ref=f1e5221]: IT Camp — летний лагерь программирования в Подмосковье для детей 7–15 лет
+                        - generic [ref=f1e5223]: it лагерь 2026
+                        - button "80" [ref=f1e5227] [cursor=pointer]
+                        - button "7" [ref=f1e5232] [cursor=pointer]
+                        - button "0" [ref=f1e5237] [cursor=pointer]
+                        - button "Да" [ref=f1e5242] [cursor=pointer]
+                        - button "6" [ref=f1e5247] [cursor=pointer]
+                        - generic [ref=f1e5250]: "200"
+                      - generic [ref=f1e5255]:
+                        - button [ref=f1e5258] [cursor=pointer]:
+                          - generic [ref=f1e5259]: menu
+                        - link "https://aidacamp.ru/lager-na-iyun/" [ref=f1e5265] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-na-iyun/
+                        - button "Редактор" [ref=f1e5268] [cursor=pointer]
+                        - generic [ref=f1e5270]: Летний лагерь на июнь 2026 — Подмосковье
+                        - generic [ref=f1e5272]: летний лагерь на июнь 2026
+                        - button "65" [ref=f1e5276] [cursor=pointer]
+                        - button "7" [ref=f1e5281] [cursor=pointer]
+                        - button "1" [ref=f1e5286] [cursor=pointer]
+                        - button "Да" [ref=f1e5291] [cursor=pointer]
+                        - generic [ref=f1e5294]: —
+                        - generic [ref=f1e5296]: "200"
+                      - generic [ref=f1e5301]:
+                        - button [ref=f1e5304] [cursor=pointer]:
+                          - generic [ref=f1e5305]: menu
+                        - link "https://aidacamp.ru/lager-na-osennie-kanikuly/" [ref=f1e5311] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-na-osennie-kanikuly/
+                        - button "Редактор" [ref=f1e5314] [cursor=pointer]
+                        - generic [ref=f1e5316]: IT-лагерь на осенние каникулы 2026, Подмосковье
+                        - generic [ref=f1e5318]: it лагерь на осенние каникулы
+                        - button "66" [ref=f1e5322] [cursor=pointer]
+                        - button "7" [ref=f1e5327] [cursor=pointer]
+                        - button "0" [ref=f1e5332] [cursor=pointer]
+                        - button "Да" [ref=f1e5337] [cursor=pointer]
+                        - button "1" [ref=f1e5342] [cursor=pointer]
+                        - generic [ref=f1e5345]: "200"
+                      - generic [ref=f1e5350]:
+                        - button [ref=f1e5353] [cursor=pointer]:
+                          - generic [ref=f1e5354]: menu
+                        - link "https://aidacamp.ru/lager-15-let/" [ref=f1e5360] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-15-let/
+                        - button "Редактор" [ref=f1e5363] [cursor=pointer]
+                        - generic [ref=f1e5365]: Летний лагерь для подростков 15 лет — FastAPI и AI
+                        - generic [ref=f1e5367]: лагерь для подростков 15 лет
+                        - button "65" [ref=f1e5371] [cursor=pointer]
+                        - button "6" [ref=f1e5376] [cursor=pointer]
+                        - button "0" [ref=f1e5381] [cursor=pointer]
+                        - button "Да" [ref=f1e5386] [cursor=pointer]
+                        - generic [ref=f1e5389]: —
+                        - generic [ref=f1e5391]: "200"
+                      - generic [ref=f1e5396]:
+                        - button [ref=f1e5399] [cursor=pointer]:
+                          - generic [ref=f1e5400]: menu
+                        - link "https://aidacamp.ru/lager-dlya-shkolnikov/" [ref=f1e5406] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-dlya-shkolnikov/
+                        - button "Редактор" [ref=f1e5409] [cursor=pointer]
+                        - generic [ref=f1e5411]: Летний лагерь для школьников 2026 — АйДаКемп
+                        - generic [ref=f1e5413]: лагерь для детей 7 класс
+                        - button "64" [ref=f1e5417] [cursor=pointer]
+                        - button "6" [ref=f1e5422] [cursor=pointer]
+                        - button "0" [ref=f1e5427] [cursor=pointer]
+                        - button "Да" [ref=f1e5432] [cursor=pointer]
+                        - generic [ref=f1e5435]: —
+                        - generic [ref=f1e5437]: "200"
+                      - generic [ref=f1e5442]:
+                        - button [ref=f1e5445] [cursor=pointer]:
+                          - generic [ref=f1e5446]: menu
+                        - link "https://aidacamp.ru/lager-naro-fominsk/" [ref=f1e5452] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-naro-fominsk/
+                        - button "Редактор" [ref=f1e5455] [cursor=pointer]
+                        - generic [ref=f1e5457]: Детский лагерь в Наро-Фоминском районе
+                        - generic [ref=f1e5459]: наро фоминск оздоровительный лагерь
+                        - button "67" [ref=f1e5463] [cursor=pointer]
+                        - button "6" [ref=f1e5468] [cursor=pointer]
+                        - button "0" [ref=f1e5473] [cursor=pointer]
+                        - button "Да" [ref=f1e5478] [cursor=pointer]
+                        - button "2" [ref=f1e5483] [cursor=pointer]
+                        - generic [ref=f1e5486]: "200"
+                      - generic [ref=f1e5491]:
+                        - button [ref=f1e5494] [cursor=pointer]:
+                          - generic [ref=f1e5495]: menu
+                        - link "https://aidacamp.ru/nalogovyj-vychet/" [ref=f1e5501] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/nalogovyj-vychet/
+                        - button "Редактор" [ref=f1e5504] [cursor=pointer]
+                        - generic [ref=f1e5506]: Как получить налоговый вычет за путёвку в детский лагерь 2026
+                        - generic [ref=f1e5508]: как получить налоговый вычет за лагерь
+                        - button "47" [ref=f1e5512] [cursor=pointer]
+                        - button "5" [ref=f1e5517] [cursor=pointer]
+                        - button "0" [ref=f1e5522] [cursor=pointer]
+                        - button "Да" [ref=f1e5527] [cursor=pointer]
+                        - button "4" [ref=f1e5532] [cursor=pointer]
+                        - generic [ref=f1e5535]: "200"
+                  - generic [ref=f1e1250]:
+                    - generic [ref=f1e1251]: "Показано: c 1 по 20 из 314"
+                    - generic [ref=f1e1252]:
+                      - text: "Страница:"
+                      - button "Предыдущая страница" [disabled]:
+                        - generic: keyboard_arrow_left
+                      - spinbutton [ref=f1e1257]: "1"
+                      - button "Следующая страница" [ref=f1e1258] [cursor=pointer]:
+                        - generic [ref=f1e1259]: keyboard_arrow_right
+                      - text: из 16
+                    - generic [ref=f1e1261]:
+                      - text: "Строк на странице:"
+                      - combobox [ref=f1e1262]:
+                        - generic [ref=f1e1265] [cursor=pointer]:
+                          - generic [ref=f1e1266]:
+                            - generic [ref=f1e1267]: "20"
+                            - textbox
+                          - generic [ref=f1e1268]: arrow_drop_down
+          - complementary [ref=f1e1271]:
+            - button [ref=f1e1275] [cursor=pointer]:
+              - generic [ref=f1e1276]: save_alt
+            - button [ref=f1e1281] [cursor=pointer]:
+              - generic [ref=f1e1282]: share
+            - generic [ref=f1e1285]:
+              - button [disabled]:
+                - generic: help_outline
+            - separator [ref=f1e1286]
+            - button [ref=f1e1291] [cursor=pointer]:
+              - generic [ref=f1e1292]: playlist_play
+            - button "Пригласить участников команды" [ref=f1e1296] [cursor=pointer]:
+              - generic [ref=f1e1297]: supervised_user_circle
+    - complementary [ref=f1e1300]
+    - complementary [ref=f1e1302]
+    - complementary [ref=f1e1304]
