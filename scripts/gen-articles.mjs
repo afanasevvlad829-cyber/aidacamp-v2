@@ -2,11 +2,19 @@
  * gen-articles.mjs — генератор реестра статей src/data/articles.json (Content Collection).
  *
  * Единый источник метаданных каталога /stati/ — это сами статьи (их <ArticleHero>).
- * Скрипт извлекает title / subtitle / readTime из каждого файла src/pages/stati/*.astro,
- * берёт дату из articleDates.ts, классифицирует рубрику по slug и пишет articles.json.
+ * title/readTime — регексом по src/pages/stati/*.astro (статичные пропы, без Astro-выражений).
+ * subtitle/contentHtml — из УЖЕ СОБРАННОГО dist/client/stati/<slug>/index.html: страницы
+ * содержат `{PRICE_MIN}`, `{item.question}` и т.п. — Astro-выражения, которые резолвятся
+ * только рендером, регекс по исходнику даёт их как есть, буквально в фигурных скобках
+ * (баг найден при ревью sot-hardcode-cleanup: 100/150 статей несли нерезолвленные токены
+ * в RSS/VK-репост). Поэтому этот скрипт запускается ПОСЛЕ `astro build`, не до/вместо —
+ * см. package.json → "build". Извлекатели ищут маркеры data-rss-strip/data-article-subtitle,
+ * добавленные в исходники виджетов (StatCallout/AnimatedStat/DonutChart/AnimatedBarChart/
+ * ArticleBottomCta/BlogCTA/Vozrasty*, ArticleHero) — не угадывают их по CSS-классам.
+ * Дата — из articleDates.ts, рубрика — классификатором по slug.
  * Схема данных описана в src/content.config.ts (Astro Content Layer API, file() loader).
  *
- * Запуск:  node scripts/gen-articles.mjs
+ * Запуск:  npx astro build && node scripts/gen-articles.mjs
  * Идемпотентно: повторный прогон даёт тот же результат. Ручные исключения по рубрике —
  * в карте OVERRIDES ниже (а не правкой articles.json, который перезаписывается).
  * Рубрики (label/tag/tagColor) — в src/data/articleClusters.json.
@@ -19,6 +27,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const STATI_DIR = path.join(ROOT, 'src/pages/stati');
 const PUBLIC_DIR = path.join(ROOT, 'public');
+const DIST_STATI_DIR = path.join(ROOT, 'dist/client/stati');
 const DATES_FILE = path.join(ROOT, 'src/data/articleDates.ts');
 const CLUSTERS_FILE = path.join(ROOT, 'src/data/articleClusters.json');
 const OUT_FILE = path.join(ROOT, 'src/data/articles.json');
@@ -35,34 +44,106 @@ function findJpgImage(avifPath) {
   return FALLBACK_IMAGE;
 }
 
-// Извлечь и очистить HTML контент статьи для RSS/content:encoded
-function extractContent(astroSource) {
-  const articleMatch = astroSource.match(/<article[^>]*>([\s\S]*?)<\/article>/)
-    || astroSource.match(/<main[^>]*class="[^"]*article-body[^"]*"[^>]*>([\s\S]*?)<\/main>/);
-  if (!articleMatch) return '';
-  let html = articleMatch[1];
+// Удалить элемент, отмеченный булевым атрибутом-маркером (напр. data-rss-strip), вместе
+// со всем содержимым. Ищет тег по имени и считает вложенность одноимённых тегов, чтобы
+// корректно найти закрывающий тег даже при вложенных div/section одного типа.
+function stripMarkedElements(html, marker) {
+  let out = html;
+  for (;;) {
+    const attrIdx = out.indexOf(marker);
+    if (attrIdx === -1) return out;
+    const tagStart = out.lastIndexOf('<', attrIdx);
+    const nameMatch = tagStart === -1 ? null : out.slice(tagStart).match(/^<([a-zA-Z][a-zA-Z0-9-]*)/);
+    if (!nameMatch) throw new Error(`stripMarkedElements: не удалось разобрать тег с ${marker} (позиция ${attrIdx})`);
+    const tagName = nameMatch[1];
+    const openTagEnd = out.indexOf('>', attrIdx);
+    const tagRe = new RegExp(`<\\/?${tagName}(?=[\\s>/])`, 'g');
+    tagRe.lastIndex = openTagEnd + 1;
+    let depth = 1;
+    let closeEnd = -1;
+    let m;
+    while ((m = tagRe.exec(out))) {
+      if (out[m.index + 1] === '/') {
+        depth--;
+        if (depth === 0) { closeEnd = out.indexOf('>', m.index) + 1; break; }
+      } else {
+        depth++;
+      }
+    }
+    if (closeEnd === -1) throw new Error(`stripMarkedElements: не найден закрывающий </${tagName}> для ${marker} (позиция ${attrIdx})`);
+    out = out.slice(0, tagStart) + out.slice(closeEnd);
+  }
+}
 
-  html = html.replace(/<[A-Z][A-Za-z]*[^>]*\/>/g, '');
-  html = html.replace(/<[A-Z][A-Za-z]*[^>]*>[\s\S]*?<\/[A-Z][A-Za-z]*>/g, '');
-  html = html.replace(/<i\s[^>]*class="bi[^"]*"[^>]*><\/i>/g, '');
-  html = html.replace(/<i\s[^>]*class="bi[^"]*"[^>]*\/>/g, '');
-  html = html.replace(/<div[^>]*class="list-accent-dot"[^>]*><\/div>/g, '');
+// Развернуть чисто структурные обёртки (div/span/button), сохранив их содержимое —
+// рекурсивно, начиная с самых вложенных, пока такие теги не кончатся.
+function unwrapStructuralTags(html) {
+  const re = /<(div|span|button)\b[^>]*>((?:(?!<(?:div|span|button)\b)(?!<\/(?:div|span|button)>)[\s\S])*?)<\/\1>/g;
+  let out = html;
+  for (let i = 0; i < 200; i++) {
+    const next = out.replace(re, '$2');
+    if (next === out) return out;
+    out = next;
+  }
+  throw new Error('unwrapStructuralTags: превышен лимит итераций — проверь входной HTML');
+}
+
+// Оставить только href у <a>, убрать все атрибуты (class/style/data-*/aria-*) у остальных тегов.
+function stripAttrs(html) {
+  return html.replace(/<([a-zA-Z][a-zA-Z0-9]*)((?:\s+[^<>]*)?)(\/?)>/g, (_full, tag, attrs, selfClose) => {
+    if (tag.toLowerCase() === 'a') {
+      const hrefMatch = attrs.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+))/);
+      const href = hrefMatch ? (hrefMatch[1] ?? hrefMatch[2] ?? hrefMatch[3]) : null;
+      return href ? `<a href="${href}"${selfClose}>` : `<a${selfClose}>`;
+    }
+    return `<${tag}${selfClose}>`;
+  });
+}
+
+// Извлечь и очистить HTML контент статьи из УЖЕ СОБРАННОЙ страницы (dist/client/stati/<slug>/
+// index.html) — все Astro-выражения там уже отрендерены в реальные значения.
+function extractRenderedContent(slug, distHtml) {
+  // <article> — точнее (не тянет ArticleBottomCta, который обычно вне <article>, но внутри
+  // <main>); часть старых статей вообще без <main>, только <article> — берём что есть.
+  const match = distHtml.match(/<article[^>]*>([\s\S]*?)<\/article>/)
+    || distHtml.match(/<main[^>]*>([\s\S]*?)<\/main>/);
+  if (!match) throw new Error(`extractRenderedContent: не найден ни <article>, ни <main> в собранной странице ${slug}`);
+  let html = match[1];
+
+  html = stripMarkedElements(html, 'data-rss-strip');
+  html = html.replace(/<script[^>]*>[\s\S]*?<\/script>/g, '');
+  html = html.replace(/<style[^>]*>[\s\S]*?<\/style>/g, '');
+  html = html.replace(/<!--[\s\S]*?-->/g, '');
+  html = html.replace(/<i\b[^>]*class=(?:"[^"]*\bbi\b[^"]*"|'[^']*\bbi\b[^']*'|\S*\bbi-\S*)[^>]*>\s*<\/i>/g, '');
+  html = html.replace(/<span\b[^>]*data-faq-icon[^>]*>[\s\S]*?<\/span>/g, '');
   html = html.replace(/<h([2-4])[^>]*>([\s\S]*?)<\/h\1>/g, (_, n, inner) => {
     const text = inner.replace(/<[^>]+>/g, '').trim();
-    return `<h${n}>${text}</h${n}>`;
+    return text ? `<h${n}>${text}</h${n}>` : '';
   });
-  html = html.replace(/<div[^>]*class="[^"]*border[^"]*rounded[^"]*"[^>]*>([\s\S]*?)<\/div>/g, (_, inner) => {
-    const text = inner.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    return text ? `<p>${text}</p>` : '';
-  });
-  html = html.replace(/\s(class|style|aria-hidden|aria-label|role)="[^"]*"/g, '');
-  html = html.replace(/<div[^>]*>([\s\S]*?)<\/div>/g, '$1');
-  html = html.replace(/<span[^>]*>([\s\S]*?)<\/span>/g, '$1');
-  html = html.replace(/<li[^>]*>/g, '<li>');
-  html = html.replace(/\n{3,}/g, '\n\n').replace(/[ \t]+/g, ' ').trim();
+  html = unwrapStructuralTags(html);
+  html = stripAttrs(html);
   html = html.replace(/<(p|li|h[2-4])>\s*<\/\1>/g, '');
+  html = html.replace(/\n{3,}/g, '\n\n').replace(/[ \t]+/g, ' ').trim();
 
   return html;
+}
+
+// Извлечь резолвленный subtitle из <p data-article-subtitle> (маркер в ArticleHero.astro) —
+// в исходнике subtitle часто содержит Astro-выражения ({VYCHET_MAX} и т.п.), поэтому берём
+// уже отрендеренный текст, а не regex по src/pages/stati/*.astro.
+function extractRenderedSubtitle(slug, distHtml) {
+  const m = distHtml.match(/<p\b[^>]*\bdata-article-subtitle\b[^>]*>([\s\S]*?)<\/p>/);
+  if (!m) return '';
+  return m[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+}
+
+// Извлечь резолвленный title из <h1 data-article-title> (маркер в ArticleHero.astro) — часть
+// title-пропов написана как `template ${literal}` (напр. `... в ${SEASON_YEAR} году`), regex
+// по исходнику отдаёт их нерезолвленными («в ${SEASON_YEAR} году»).
+function extractRenderedTitle(slug, distHtml) {
+  const m = distHtml.match(/<h1\b[^>]*\bdata-article-title\b[^>]*>([\s\S]*?)<\/h1>/);
+  if (!m) return '';
+  return m[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 }
 
 // Рубрики каталога (порядок = порядок секций на странице) — src/data/articleClusters.json
@@ -134,6 +215,11 @@ const datesSrc = fs.readFileSync(DATES_FILE, 'utf8');
 const DATES = {};
 for (const m of datesSrc.matchAll(/'([^']+)':\s*'(\d{4}-\d{2}-\d{2})'/g)) DATES[m[1]] = m[2];
 
+if (!fs.existsSync(DIST_STATI_DIR)) {
+  console.error(`✗ ${DIST_STATI_DIR} не найден — сначала прогони "astro build" (contentHtml/subtitle читаются из собранных страниц, не из исходников)`);
+  process.exit(1);
+}
+
 // Сбор статей
 const files = fs.readdirSync(STATI_DIR).filter(f => f.endsWith('.astro') && f !== 'index.astro');
 const articles = [];
@@ -141,11 +227,21 @@ for (const file of files) {
   const slug = file.replace(/\.astro$/, '');
   const src = fs.readFileSync(path.join(STATI_DIR, file), 'utf8');
   const block = getHeroBlock(src);
-  const title = extractProp(block, 'title');
-  const description = extractProp(block, 'subtitle');
   const readTimeRaw = extractProp(block, 'readTime');
   const readTime = readTimeRaw ? readTimeRaw.replace(/\s*чтения/, '') : '';
-  if (!title) { console.error(`⚠ нет title в ${file} — пропуск`); continue; }
+  if (!extractProp(block, 'title')) { console.error(`⚠ нет title в ${file} — пропуск`); continue; }
+
+  const distFile = path.join(DIST_STATI_DIR, slug, 'index.html');
+  if (!fs.existsSync(distFile)) {
+    console.error(`✗ нет собранной страницы dist/client/stati/${slug}/index.html — пересобери сайт (astro build) перед gen-articles.mjs`);
+    process.exit(1);
+  }
+  const distHtml = fs.readFileSync(distFile, 'utf8');
+  const title = extractRenderedTitle(slug, distHtml);
+  if (!title) throw new Error(`нет <h1 data-article-title> в собранной странице ${slug} — маркер потерян или разметка ArticleHero изменилась`);
+  const description = extractRenderedSubtitle(slug, distHtml);
+  const contentHtml = extractRenderedContent(slug, distHtml);
+
   const cluster = classifyCluster(slug);
   const ogImageMatch = src.match(/ogImage="([^"]+)"/);
   const ogImage = ogImageMatch ? ogImageMatch[1] : FALLBACK_IMAGE;
@@ -163,7 +259,7 @@ for (const file of files) {
     date: DATES[slug] || '',
     ogImage,
     ogImageJpg: findJpgImage(ogImage),
-    contentHtml: extractContent(src),
+    contentHtml,
   });
 }
 

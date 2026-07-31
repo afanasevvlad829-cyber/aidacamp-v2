@@ -1,0 +1,220 @@
+---
+import '../styles/global.css';
+import LandingLayout from '../layouts/LandingLayout.astro';
+import LandingHero from '../components/LandingHero.astro';
+import Shifts from '../components/Shifts.astro';
+import AskCta from '../components/AskCta.astro';
+import FAQSchema from '../components/FAQSchema.astro';
+import { STAT_LICENSE } from '../data/contacts';
+import { SEASON_YEAR, SHIFT_META } from '../data/shifts';
+import { getCurrentPrice } from '../data/dynamicPrices';
+
+// Всё по смене — только из shifts.ts, ни одной даты и цены руками
+const SHIFT_ID = 'shift-4';
+const meta = SHIFT_META[SHIFT_ID];
+const MONTH_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const dm = (iso: string) => `${parseInt(iso.slice(8, 10), 10)} ${MONTH_GEN[parseInt(iso.slice(5, 7), 10) - 1]}`;
+const startText = dm(meta.startDate);
+const endText = dm(meta.endDate);
+const price = getCurrentPrice(SHIFT_ID);
+const priceText = price ? price.toLocaleString('ru-RU') : '';
+
+const faqItems = [
+  {
+    q: "Кто встречает ребёнка в Петербурге?",
+    a: "Наш сопровождающий — взрослый из команды лагеря, с которым вы познакомитесь заранее: пришлём имя, фотографию и телефон. Он ждёт на Московском вокзале, забирает ребят и едет с ними до самого лагеря. Не «если наберётся группа» — едет в любом случае, даже если поедет один ребёнок."
+  },
+  {
+    q: "Билет правда за ваш счёт?",
+    a: "Да, «Сапсан» в обе стороны мы оплачиваем сами. Вам не нужно ничего искать, бронировать и потом присылать нам чеки — билет уже будет на руках у сопровождающего."
+  },
+  {
+    q: "Во сколько ребёнок окажется в лагере?",
+    a: "Выезжаем из Петербурга утренним «Сапсаном», около 11 утра мы в Москве, дальше электричка с Киевского вокзала — и к обеду ребята уже в лагере, к заезду всей смены. Никаких ночных пересадок и ожиданий на вокзале."
+  },
+  {
+    q: "А если поезд опоздает?",
+    a: "Ждём столько, сколько нужно, и держим вас в курсе. Сопровождающий едет вместе с ребятами, поэтому «потеряться» физически не получится — он рядом от вокзала до ворот лагеря."
+  },
+  {
+    q: "Ребёнку 8 лет, он никуда не ездил один. Это не рано?",
+    a: "Один он и не поедет. Взрослый рядом всю дорогу, а в поезде ребята обычно перезнакомиться успевают раньше, чем доедут — и в лагерь заходят уже не поодиночке, а компанией. Для многих это оказывается самой лёгкой частью смены."
+  },
+  {
+    q: "Какие документы нужны от меня?",
+    a: "Свидетельство о рождении или паспорт ребёнка и согласие на сопровождение — простая бумага, шаблон пришлём. Всё остальное берём на себя."
+  }
+];
+---
+
+<LandingLayout
+  heroImage="/images/hero/lager-dlya-podrostkov.avif"
+  title={`Детский лагерь для петербуржцев — дорога и сопровождение за наш счёт | АйДаКемп ${SEASON_YEAR}`}
+  description={`IT-лагерь в Подмосковье для ребят из Санкт-Петербурга. «Сапсан» за наш счёт, сопровождающий встречает на Московском вокзале и везёт до лагеря. Смена ${startText} — ${endText}, ${priceText} ₽.`}
+  h1="Из Петербурга — до лагеря, и ни одной пересадки на ваших нервах"
+  canonical="https://aidacamp.ru/lager-iz-peterburga"
+>
+  <Fragment slot="head">
+    <FAQSchema items={faqItems} />
+  </Fragment>
+
+  <LandingHero slot="hero"
+    h1="Из Петербурга — до лагеря, и ни одной пересадки на ваших нервах"
+    subtitle="Обычно на этом месте всё и заканчивается: лагерь нравится, отзывы отличные, а потом вы представляете, как ребёнок один тащится с Ленинградского на Киевский — и закрываете вкладку. Поэтому мы сделали проще: билет на «Сапсан» за наш счёт, наш человек встречает на Московском вокзале в Петербурге и едет с ребятами до самого лагеря. Вы прощаетесь на перроне и получаете фотографию уже из Подмосковья."
+    breadcrumb="Из Петербурга"
+    keywords={[
+      "«Сапсан» в обе стороны — за наш счёт",
+      "Сопровождающий от Московского вокзала до лагеря",
+      "8–16 лет · Подмосковье · лицензия Минобрнауки"
+    ]}
+    image="/images/hero/lager-dlya-podrostkov.avif"
+    imageAlt="IT-лагерь АйДаКемп для ребят из Санкт-Петербурга"
+  />
+
+  <div class="mx-auto max-w-[1312px] px-4 pt-8 pb-0 text-center">
+    <a
+      href="#shifts"
+      class="inline-flex items-center gap-2 rounded-[14px] bg-primary px-8 py-4 text-[16px] font-semibold text-white hover:bg-primary-hover transition-colors"
+    >
+      Забронировать место
+      <i class="bi bi-arrow-down text-base" aria-hidden="true"></i>
+    </a>
+    <p class="mt-3 text-base text-body-faint">Смена {startText} — {endText} · {priceText} ₽</p>
+  </div>
+
+  <!-- МАРШРУТ -->
+  <section class="mx-auto max-w-[860px] px-4 pt-14 pb-0">
+    <h2 class="text-[24px] md:text-[30px] font-bold leading-[1.15] tracking-[-0.02em] text-body mb-3">
+      Как проходит дорога
+    </h2>
+    <p class="text-[16px] leading-[1.7] text-body-muted mb-6 max-w-[720px]">
+      Один день, ни одной ночёвки в пути и ни одного момента, когда ребёнок остаётся сам.
+    </p>
+
+    <div class="grid gap-4 md:grid-cols-2">
+      <div class="rounded-[16px] bg-card border border-border-light p-5 flex gap-4 items-start">
+        <i class="bi bi-person-check text-[22px] text-primary shrink-0 mt-1" aria-hidden="true"></i>
+        <div>
+          <p class="text-base font-semibold text-body mb-1">Утро, Московский вокзал</p>
+          <p class="text-base leading-[1.55] text-body-faint">Вы передаёте ребёнка нашему сопровождающему — вы уже знаете его имя и видели фотографию. Дальше он с ребятами до самого конца.</p>
+        </div>
+      </div>
+      <div class="rounded-[16px] bg-card border border-border-light p-5 flex gap-4 items-start">
+        <i class="bi bi-train-front text-[22px] text-primary shrink-0 mt-1" aria-hidden="true"></i>
+        <div>
+          <p class="text-base font-semibold text-body mb-1">«Сапсан», около четырёх часов</p>
+          <p class="text-base leading-[1.55] text-body-faint">Места рядом, билеты у сопровождающего. К концу поездки ребята обычно уже общаются так, будто знакомы неделю.</p>
+        </div>
+      </div>
+      <div class="rounded-[16px] bg-card border border-border-light p-5 flex gap-4 items-start">
+        <i class="bi bi-signpost-split text-[22px] text-primary shrink-0 mt-1" aria-hidden="true"></i>
+        <div>
+          <p class="text-base font-semibold text-body mb-1">Москва, пересадка</p>
+          <p class="text-base leading-[1.55] text-body-faint">Тот самый переезд с одного вокзала на другой, которого вы боялись, проходит без вас и без ребёнка в одиночку — группой, со взрослым.</p>
+        </div>
+      </div>
+      <div class="rounded-[16px] bg-card border border-border-light p-5 flex gap-4 items-start">
+        <i class="bi bi-geo-alt text-[22px] text-primary shrink-0 mt-1" aria-hidden="true"></i>
+        <div>
+          <p class="text-base font-semibold text-body mb-1">К обеду — в лагере</p>
+          <p class="text-base leading-[1.55] text-body-faint">Заезд вместе со всей сменой, а вам приходит фотография: доехали, заселились, всё хорошо.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-5 rounded-[14px] bg-orange-50 border border-orange-100 p-5">
+      <p class="text-base leading-[1.65] text-body-muted">
+        Обратная дорога — так же и за наш счёт: собираем ребят в лагере, сопровождающий довозит до Петербурга и передаёт вам на вокзале.
+      </p>
+    </div>
+  </section>
+
+  <!-- ЧТО ВХОДИТ -->
+  <section class="mx-auto max-w-[860px] px-4 pt-14 pb-0">
+    <h2 class="text-[24px] md:text-[30px] font-bold leading-[1.15] tracking-[-0.02em] text-body mb-5">
+      Что входит, кроме самой смены
+    </h2>
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
+      <div class="rounded-[14px] bg-card border border-border-light p-4 flex gap-3 items-start">
+        <i class="bi bi-train-front-fill text-[20px] text-primary shrink-0 mt-0.5" aria-hidden="true"></i>
+        <div>
+          <p class="text-base font-semibold text-body leading-[1.3]">«Сапсан» туда и обратно</p>
+          <p class="text-[12px] text-body-faint mt-0.5">Бронируем и оплачиваем сами</p>
+        </div>
+      </div>
+      <div class="rounded-[14px] bg-card border border-border-light p-4 flex gap-3 items-start">
+        <i class="bi bi-person-badge text-[20px] text-primary shrink-0 mt-0.5" aria-hidden="true"></i>
+        <div>
+          <p class="text-base font-semibold text-body leading-[1.3]">Сопровождающий из команды</p>
+          <p class="text-[12px] text-body-faint mt-0.5">От вокзала до ворот лагеря</p>
+        </div>
+      </div>
+      <div class="rounded-[14px] bg-card border border-border-light p-4 flex gap-3 items-start">
+        <i class="bi bi-camera text-[20px] text-primary shrink-0 mt-0.5" aria-hidden="true"></i>
+        <div>
+          <p class="text-base font-semibold text-body leading-[1.3]">Фото по приезде</p>
+          <p class="text-[12px] text-body-faint mt-0.5">Чтобы вы выдохнули сразу</p>
+        </div>
+      </div>
+      <div class="rounded-[14px] bg-card border border-border-light p-4 flex gap-3 items-start">
+        <i class="bi bi-patch-check-fill text-[20px] text-primary shrink-0 mt-0.5" aria-hidden="true"></i>
+        <div>
+          <p class="text-base font-semibold text-body leading-[1.3]">Лицензия Минобрнауки</p>
+          <p class="text-[12px] text-body-faint mt-0.5">{STAT_LICENSE}</p>
+        </div>
+      </div>
+      <div class="rounded-[14px] bg-card border border-border-light p-4 flex gap-3 items-start">
+        <i class="bi bi-calendar-check text-[20px] text-primary shrink-0 mt-0.5" aria-hidden="true"></i>
+        <div>
+          <p class="text-base font-semibold text-body leading-[1.3]">Смена {startText} — {endText}</p>
+          <p class="text-[12px] text-body-faint mt-0.5">{priceText} ₽</p>
+        </div>
+      </div>
+      <div class="rounded-[14px] bg-card border border-border-light p-4 flex gap-3 items-start">
+        <i class="bi bi-shield-check text-[20px] text-primary shrink-0 mt-0.5" aria-hidden="true"></i>
+        <div>
+          <p class="text-base font-semibold text-body leading-[1.3]">Связь всю дорогу</p>
+          <p class="text-[12px] text-body-faint mt-0.5">Телефон сопровождающего у вас</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ПОЧЕМУ МЫ ЭТО СДЕЛАЛИ -->
+  <section class="mx-auto max-w-[860px] px-4 pt-14 pb-0">
+    <h2 class="text-[24px] md:text-[30px] font-bold leading-[1.15] tracking-[-0.02em] text-body mb-5">
+      Почему мы вообще это придумали
+    </h2>
+    <div class="space-y-4 text-[16px] leading-[1.7] text-body-muted max-w-[720px]">
+      <p>Из Петербурга нам пишут заметно чаще, чем можно было ожидать. И почти всегда разговор идёт одинаково: смена нравится, вопросы по программе кончаются — а потом пауза и «а как он доберётся».</p>
+      <p>Мы посмотрели на это честно и поняли, что дело не в цене путёвки. Дело в том, что маме приходится держать в голове чужой город, два вокзала и ребёнка с чемоданом посередине. Никакая скидка эту картинку из головы не убирает.</p>
+      <p>Поэтому мы убрали саму картинку. Дорога — наша забота, целиком: и деньги, и человек, который едет рядом.</p>
+    </div>
+  </section>
+
+  <Shifts />
+
+  <section class="mx-auto max-w-[860px] px-4 pt-14 pb-0">
+    <div class="text-center mb-6 max-w-[560px] mx-auto">
+      <h2 class="text-[22px] md:text-[28px] font-bold leading-[1.2] tracking-[-0.02em] text-body">Спросите про дорогу — ответим честно</h2>
+      <p class="mt-2 text-base text-body-faint">Перезвоним в течение 10 минут с 11:00 до 20:00 по Москве. Вечером и ночью — напишем с утра.</p>
+    </div>
+    <AskCta />
+  </section>
+
+  <section class="mx-auto max-w-[860px] px-4 pt-14 pb-20">
+    <h2 class="text-[22px] md:text-[26px] font-bold leading-[1.2] tracking-[-0.02em] text-body mb-6">Частые вопросы</h2>
+    <div class="space-y-3">
+      {faqItems.map(item => (
+        <details class="rounded-[14px] border border-border-light bg-card group">
+          <summary class="flex items-center justify-between gap-4 cursor-pointer p-5 text-[16px] font-semibold text-body list-none select-none">
+            {item.q}
+            <i class="bi bi-chevron-down text-base text-body-faint shrink-0 transition-transform group-open:rotate-180" aria-hidden="true"></i>
+          </summary>
+          <p class="px-5 pb-5 text-base leading-[1.65] text-body-muted">{item.a}</p>
+        </details>
+      ))}
+    </div>
+  </section>
+
+</LandingLayout>

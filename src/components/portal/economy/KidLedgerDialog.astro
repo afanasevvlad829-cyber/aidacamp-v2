@@ -1,0 +1,63 @@
+---
+interface Props {
+  kids: { id: number; name: string; room_number?: number | null; age?: number | null }[];
+}
+const { kids } = Astro.props;
+---
+{/* ── Modal: Начислить/списать игровые рубли ─────────────────────────── */}
+<dialog id="kid-ledger-dialog"
+        class="aida-modal-center rounded-[16px] border border-border p-0 backdrop:bg-black/50">
+  <form method="dialog" class="aida-modal-form">
+    <h3 class="text-[18px] font-semibold text-navy-950">
+      <span id="kl-dialog-title">Начислить рубли</span>
+    </h3>
+    <input type="hidden" id="kl-sign" value="1" />
+
+    <div class="mt-4 space-y-3">
+      <label class="block">
+        <span class="form-label">Кому</span>
+        <select id="kl-kid" required
+                class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 focus:border-primary focus:outline-none">
+          <option value="">— выбери ребёнка —</option>
+          {kids.map((k) => (
+            <option value={k.id} data-name={k.name}>{k.name}{k.room_number ? ` · к.${k.room_number}` : ''}</option>
+          ))}
+        </select>
+      </label>
+
+      <div class="flex gap-2" role="group" aria-label="Начислить или списать">
+        <button type="button" id="kl-sign-plus" data-sign-btn="1"
+                class="flex-1 rounded-[10px] border border-emerald-500 bg-emerald-50 px-3 py-2 text-base font-medium text-emerald-700">
+          <i class="bi bi-plus-circle" aria-hidden="true"></i> Начислить
+        </button>
+        <button type="button" id="kl-sign-minus" data-sign-btn="-1"
+                class="flex-1 rounded-[10px] border border-border bg-white px-3 py-2 text-base font-medium text-body-muted">
+          <i class="bi bi-dash-circle" aria-hidden="true"></i> Списать
+        </button>
+      </div>
+
+      <label class="block">
+        <span class="form-label">Сумма, игровые ₽</span>
+        <input id="kl-amount" type="number" min="1" step="1" inputmode="numeric"
+               class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-right font-mono focus:border-primary focus:outline-none" />
+      </label>
+      <label class="block">
+        <span class="form-label">Причина <span class="text-red-600 font-semibold">*</span></span>
+        <textarea id="kl-reason" rows="2" required data-voice data-voice-append
+                  class="mt-1 w-full rounded-[10px] border border-border bg-white px-3 py-2 text-base focus:border-primary focus:outline-none"
+                  placeholder="За что начислено или списано…"></textarea>
+      </label>
+    </div>
+
+    <div class="mt-5 flex flex-wrap items-center justify-end gap-2">
+      <span id="kl-status" class="mr-auto text-base text-body-muted"></span>
+      <button type="button" id="kl-cancel"
+              class="rounded-[10px] border border-border bg-white px-4 py-2 text-base text-navy-950 hover:border-primary">Отмена</button>
+      <button type="button" id="kl-save"
+              class="rounded-[10px] border border-primary bg-primary px-4 py-2 text-base text-white hover:opacity-90">
+        <i class="bi bi-check-lg" aria-hidden="true"></i>
+        Сохранить
+      </button>
+    </div>
+  </form>
+</dialog>
