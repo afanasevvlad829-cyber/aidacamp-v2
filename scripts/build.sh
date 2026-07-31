@@ -44,5 +44,7 @@ fs.unlinkSync(p + 'sitemap-index.xml');
 console.log('sitemap.xml ready');
 "
 
+node scripts/check-faq-schema.mjs
+
 node scripts/inject-modulepreload.mjs
 npm run pagefind

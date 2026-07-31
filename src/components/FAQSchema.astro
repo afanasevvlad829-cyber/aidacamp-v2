@@ -1,34 +1,34 @@
 ---
 /**
- * FAQSchema — JSON-LD FAQPage из src/data/faq.ts.
+ * FAQSchema — JSON-LD FAQPage без UI.
  *
- * Без UI — только один <script type="application/ld+json"> в <head>/теле.
- * Подключён в LandingLayout.astro — работает на всех лендингах автоматически.
- * На главной уже есть свой SchemaOrg.astro с FAQPage — чтобы не дублировать,
- * этот компонент НЕ включается в Base.astro / index.astro.
+ * ⚠️ items — ОБЯЗАТЕЛЬНЫЙ проп. Раньше был фолбэк на faqFlat (15 общесайтовых
+ * вопросов), и LandingLayout рендерил <FAQSchema /> без пропов — это давало второй
+ * FAQPage на 123 страницах (инцидент 31.07.2026). Фолбэк не возвращать: пропущенный
+ * проп обязан ломать билд, а не тихо подставлять чужой контент.
  *
- * Эффект:
- *  - Rich-snippet accordion в Google/Yandex SERP → +CTR
- *  - Попадание в AI-ответы (Яндекс Нейро, Google AI Overview, ChatGPT)
+ * Один FAQPage на URL — проверяется scripts/check-faq-schema.mjs в npm run build.
+ *
+ * Передаваемые вопросы обязаны быть на странице как видимый текст: этого требует
+ * Google. Страж пока только предупреждает об этом — см. TODO в нём.
  */
 
-import { faqFlat } from '../data/faq';
+import type { FAQItem } from '../data/faq';
 
 interface Props {
-  items?: Array<{ q: string; a: string }>;
+  items: FAQItem[];
 }
 
 const { items } = Astro.props;
-const resolvedItems = items ?? faqFlat;
 
-// Schema.org Text — только чистый текст; HTML-теги (напр. <a> в ответах с
+// Schema.org Text — только чистый текст; HTML-теги (напр. <a> в ответах со
 // ссылками) ломают парсинг JSON-LD у html-minifier-terser и невалидны по спеке.
 const stripHtml = (s: string) => s.replace(/<[^>]+>/g, '');
 
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: resolvedItems.map((item) => ({
+  mainEntity: items.map((item) => ({
     '@type': 'Question',
     name: item.q,
     acceptedAnswer: {
