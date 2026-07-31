@@ -221,7 +221,7 @@ export function initShiftModal() {
       panel.classList.add('translate-y-0', 'md:translate-y-0', 'opacity-100');
     });
 
-    (window as any).trackGoal?.('shift_modal_open', { shift: shift.name, tab });
+    (window as any).trackGoal?.('booking_info_open', { shift: shift.name, tab });
   }
 
   function close() {
@@ -298,7 +298,7 @@ export function initShiftModal() {
     if (row) {
       const id = row.dataset.occupancyShift || '';
       if (id) {
-        (window as any).trackGoal?.('check_places');
+        (window as any).trackGoal?.('view_shifts');
         open(id, 'description');
       }
       return;
