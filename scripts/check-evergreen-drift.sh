@@ -27,13 +27,16 @@ P_COUNT = re.compile(r'\b(одн[ау]|две|дву[хм]|три|четыр[е�
 # канон hero-текстов с сезонными плейсхолдерами — не сканировался ни одним стражем
 BASES = ['src/pages', 'src/components', 'src/data']
 # файлы/пути-исключения
-# articles.json (29.07.2026, находка ultrareview PR #1161): это МАШИННО-СГЕНЕРИРОВАННОЕ
-# зеркало src/pages/stati/*.astro (scripts/gen-articles.mjs), не отдельный источник контента.
-# У генератора баг: extractProp() не резолвит template literals и без границы слова путает
-# title/subtitle — попытка прогнать gen-articles.mjs, чтобы «легально» закрыть здесь найденный
-# хардкод, вместо этого протащила в реестр 9 битых title и 3 неразрешённых ${...} в JSON-LD/RSS.
-# Чинить extractProp — отдельная задача, вне скоупа этого стража. Сами src/pages/stati/*.astro
-# по-прежнему полностью сканируются (base 'src/pages' выше) — дыры в покрытии живого контента нет.
+# articles.json (29.07.2026): это СГЕНЕРИРОВАННЫЙ снимок src/pages/stati/*.astro —
+# scripts/gen-articles.mjs (после #1162) вытаскивает title/description/contentHtml из уже
+# СОБРАННОГО dist/, где {SEASON_FROM_TO}/{OPEN_SHIFTS_PHRASE}/{SEASON_SHIFTS_PHRASE} уже
+# резолвлены Astro в текущее фактическое значение («с мая по август», «две смены» и т.п.).
+# Само это значение живёт в evergreen.ts и меняется по сезону — но раз оно уже вычислено на
+# этапе сборки, в JSON оно всегда будет выглядеть литералом, даже когда исходник использует
+# плейсхолдер правильно. Сканировать здесь — значит либо всегда падать (сезон-то реальный),
+# либо держать allow-строку вроде «с мая по август», которая сама протухнет при смене месяца.
+# Источник правды (src/pages/stati/*.astro) по-прежнему полностью сканируется (base 'src/pages'
+# выше) — дыры в покрытии живого контента нет, только в его замороженном снимке для RSS/JSON-LD.
 EXCL_PATH = ('/admin/', 'staff-plan', 'gbp-posts', 'lanit',
              'lager-na-osennie-kanikuly', 'lager-na-zimnie-kanikuly',
              'lager-na-vesennie-kanikuly', '.test.', 'data/articles.json')
