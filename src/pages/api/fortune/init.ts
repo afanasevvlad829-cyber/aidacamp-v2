@@ -6,6 +6,7 @@ import { getPool } from '../../../lib/db';
 import { getCurrentPrice } from '../../../data/dynamicPrices';
 import { signDiscount } from './token';
 import { readVisitorId } from '../../../lib/attribution/cookie';
+import { saveLeadToPg, createCrmLead } from '../lead';
 
 async function logFortuneEvent(data: {
   event_type: string;
@@ -149,7 +150,36 @@ export const POST: APIRoute = async ({ request }) => {
     const visitorId = readVisitorId(request);
     const ymClientId = typeof (body as any)?.ymClientId === 'string' ? (body as any).ymClientId : null;
     logFortuneEvent({ event_type: 'lead_submit', discount, shift_id: shiftId, name, phone, order_id: orderId, final_price: finalPrice, orig_price: origPrice, ip, user_agent: ua, visitor_id: visitorId, ym_client_id: ymClientId });
-    console.log(`[fortune/init] LEAD orderId=${orderId} discount=${discount}% finalPrice=${finalPrice}₽ name="${name}" phone="${phone}"`);
+
+    // Заявка Фортуны идёт через тот же конвейер, что и обычная форма: сначала
+    // лид в AlfaCRM, потом строка в leads_log с полученным crm_id. Раньше здесь
+    // было только уведомление в Telegram — заявки не доезжали ни до CRM, ни до
+    // базы, и восстановить их можно было лишь из fortune_events (инцидент 31.07.2026).
+    const leadBody: Record<string, string> = {
+      phone:  phone || '',
+      name:   name || '',
+      shift:  shiftLabel,
+      source: 'fortune',
+      form_id: 'Колесо фортуны',
+      note_extra: `🎰 Колесо фортуны: скидка ${discount}%, итоговая цена ${finalPrice.toLocaleString('ru')} ₽ (было ${origPrice.toLocaleString('ru')} ₽). OrderId: ${orderId}`,
+    };
+    if (ymClientId) leadBody.ym_client_id = ymClientId;
+    const referer = request.headers.get('referer');
+    if (referer) leadBody.landing_url = referer;
+
+    let crmId: number | null = null;
+    try {
+      crmId = await createCrmLead(leadBody);
+    } catch (e: any) {
+      console.error('[fortune/init] CRM: заявка не создана:', e?.message);
+    }
+    try {
+      await saveLeadToPg(leadBody, { ip: ip || '', userAgent: ua || '', crmId, visitorId });
+    } catch (e: any) {
+      console.error('[fortune/init] leads_log: запись не сохранена:', e?.message);
+    }
+
+    console.log(`[fortune/init] LEAD orderId=${orderId} discount=${discount}% finalPrice=${finalPrice}₽ name="${name}" phone="${phone}" crmId=${crmId ?? 'нет'}`);
     return json({ leadMode: true, orderId, discount, finalPrice, origPrice });
   }
 
