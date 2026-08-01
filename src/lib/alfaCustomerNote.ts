@@ -71,8 +71,11 @@ export async function fetchCustomer(
     // Пустой ответ — не «нет карточки», а известный дефект фильтра по id
     // на архивных карточках. Один ретрай с removed:1 (он возвращает и
     // архивные, и обычные), дальше сдаёмся.
-    return await requestCustomer(host, token, id, { removed: 1 }, fetchFn);
-  } catch {
+    const archived = await requestCustomer(host, token, id, { removed: 1 }, fetchFn);
+    if (!archived) console.error(`[alfaCustomerNote] fetchCustomer(${id}): карточка не найдена ни обычным фильтром, ни с removed:1`);
+    return archived;
+  } catch (e) {
+    console.error(`[alfaCustomerNote] fetchCustomer(${id}): запрос упал —`, e);
     return null;
   }
 }
@@ -104,8 +107,13 @@ async function writeNote(
       body: JSON.stringify({ id, note }),
     });
     const j = await r.json() as { errors?: unknown } | null;
-    return !!j && !j.errors;
-  } catch {
+    if (!j || j.errors) {
+      console.error(`[alfaCustomerNote] writeNote(${id}): AlfaCRM отклонила запись —`, j?.errors ?? j);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error(`[alfaCustomerNote] writeNote(${id}): запрос упал —`, e);
     return false;
   }
 }
@@ -125,7 +133,11 @@ export async function appendCustomerNote(
   fetchFn: FetchLike = fetchWithTimeout,
 ): Promise<NoteAppendResult> {
   const current = readNote(await fetchCustomer(host, token, id, fetchFn));
-  if (current === null) return 'read_failed';
+  if (current === null) {
+    // fetchCustomer уже залогировал причину — здесь фиксируем сам факт отказа от записи.
+    console.error(`[alfaCustomerNote] appendCustomerNote(${id}): чтение не удалось — строка НЕ дописана, карточка не тронута`);
+    return 'read_failed';
+  }
   const ok = await writeNote(host, token, id, current + line, fetchFn);
   return ok ? 'ok' : 'write_failed';
 }

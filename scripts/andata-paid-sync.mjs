@@ -121,9 +121,18 @@ async function fetchNewPays(token, lastId) {
   return { pays: result, maxId };
 }
 
+/**
+ * Карточка клиента по id. Фильтр {id} по умолчанию не находит архивные карточки
+ * (та же грабля, что чинили в src/lib/alfaCustomerNote.ts 01.08.2026: {id:445} → 0
+ * записей, {id:445, removed:1} → 1) — делаем ретрай перед тем, как сдаться.
+ * null на выходе — «не нашли ни одним фильтром/сеть упала», не «клиента нет» —
+ * вызывающий код обязан залогировать это как деградацию данных, а не молчать.
+ */
 async function fetchCustomer(token, id) {
-  const d = await alfaPost(token, `${BRANCH}/customer/index`, { id, page: 0 });
-  return d?.items?.[0] || null;
+  const direct = await alfaPost(token, `${BRANCH}/customer/index`, { id, page: 0 });
+  if (direct?.items?.[0]) return direct.items[0];
+  const archived = await alfaPost(token, `${BRANCH}/customer/index`, { id, page: 0, removed: 1 });
+  return archived?.items?.[0] || null;
 }
 
 async function sendAndataPaid(pay, customer) {
@@ -210,6 +219,12 @@ async function main() {
   let sent = 0;
   for (const pay of pays) {
     const customer = await fetchCustomer(token, pay.customer_id);
+    if (!customer) {
+      // Не пропускаем оплату целиком (Andata всё равно полезна с order_id/сумма),
+      // но фиксируем деградацию — иначе тихо теряем ubtcuid/phone/email/age
+      // и никто не узнает, почему матчинг визита не сработал именно для этой оплаты.
+      log(`WARN: карточка клиента ${pay.customer_id} (оплата ${pay.id}) не прочиталась — событие уйдёт без телефона/email/возраста/ubtcuid`);
+    }
     const ok = await sendAndataPaid(pay, customer);
     if (ok) sent++;
   }

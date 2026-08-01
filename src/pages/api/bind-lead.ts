@@ -13,7 +13,10 @@ async function alfaAuth(): Promise<{ host: string; token: string } | null> {
   const host = process.env.ALFACRM_HOSTNAME;
   const email = process.env.ALFACRM_EMAIL;
   const apiKey = process.env.ALFACRM_API_KEY;
-  if (!host || !email || !apiKey) return null;
+  if (!host || !email || !apiKey) {
+    console.error('[bind-lead] alfaAuth: ALFACRM_HOSTNAME/EMAIL/API_KEY не заданы');
+    return null;
+  }
   try {
     const r = await fetchWithTimeout(`https://${host}/v2api/auth/login`, {
       method: 'POST',
@@ -21,8 +24,10 @@ async function alfaAuth(): Promise<{ host: string; token: string } | null> {
       body: JSON.stringify({ email, api_key: apiKey }),
     });
     const j = await r.json();
+    if (!j?.token) console.error('[bind-lead] alfaAuth: логин не вернул token —', j?.errors ?? j);
     return j?.token ? { host, token: j.token } : null;
-  } catch {
+  } catch (e) {
+    console.error('[bind-lead] alfaAuth: запрос упал —', e);
     return null;
   }
 }
@@ -48,19 +53,25 @@ async function bindAndataFields(
   if (!vals.ubtcuid && !vals.domainid && !vals.ymuid) return;
   try {
     const cust = await fetchCustomer(host, token, lid);
-    if (!cust) return;
+    if (!cust) {
+      // fetchCustomer уже залогировал причину неудачи чтения — здесь просто
+      // не продолжаем: это fill-if-empty, писать поверх непрочитанной карточки нельзя.
+      return;
+    }
     const upd: Record<string, string> = {};
     if (fUbt && vals.ubtcuid && !cust[fUbt]) upd[fUbt] = vals.ubtcuid;
     if (fDom && vals.domainid && !cust[fDom]) upd[fDom] = vals.domainid;
     if (fYm && vals.ymuid && !cust[fYm]) upd[fYm] = vals.ymuid;
     if (!Object.keys(upd).length) return;
-    await fetchWithTimeout(`https://${host}/v2api/${BRANCH}/customer/update?id=${lid}`, {
+    const r = await fetchWithTimeout(`https://${host}/v2api/${BRANCH}/customer/update?id=${lid}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
       body: JSON.stringify({ id: lid, ...upd }),
     });
-  } catch {
-    /* best-effort */
+    const j = await r.json().catch(() => null);
+    if (!j || j.errors) console.error(`[bind-lead] bindAndataFields(${lid}): запись полей не прошла —`, j?.errors ?? j);
+  } catch (e) {
+    console.error(`[bind-lead] bindAndataFields(${lid}): запрос упал —`, e);
   }
 }
 
