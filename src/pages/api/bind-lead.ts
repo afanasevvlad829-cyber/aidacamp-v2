@@ -3,6 +3,7 @@ import type { APIRoute } from 'astro';
 import { fetchWithTimeout } from '../../lib/fetchWithTimeout';
 import { verifyLid } from '../../lib/leadLink';
 import { readVisitorId } from '../../lib/attribution/cookie';
+import { appendCustomerNote, fetchCustomer } from '../../lib/alfaCustomerNote';
 
 const BRANCH = 5;
 
@@ -26,48 +27,8 @@ async function alfaAuth(): Promise<{ host: string; token: string } | null> {
   }
 }
 
-async function getCustomerNote(host: string, token: string, lid: number): Promise<string> {
-  try {
-    const r = await fetchWithTimeout(`https://${host}/v2api/${BRANCH}/customer/index?id=${lid}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
-      body: JSON.stringify({ id: lid }),
-    });
-    const j = await r.json();
-    return j?.items?.[0]?.note ?? '';
-  } catch {
-    return '';
-  }
-}
-
-async function updateCustomerNote(host: string, token: string, lid: number, note: string): Promise<boolean> {
-  try {
-    const r = await fetchWithTimeout(`https://${host}/v2api/${BRANCH}/customer/update?id=${lid}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
-      body: JSON.stringify({ id: lid, note }),
-    });
-    const j = await r.json();
-    return !!j && !j.errors;
-  } catch {
-    return false;
-  }
-}
-
-/** Полная карточка клиента (для чтения кастомных полей) */
-async function getCustomer(host: string, token: string, lid: number): Promise<Record<string, unknown> | null> {
-  try {
-    const r = await fetchWithTimeout(`https://${host}/v2api/${BRANCH}/customer/index?id=${lid}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
-      body: JSON.stringify({ id: lid }),
-    });
-    const j = await r.json();
-    return j?.items?.[0] ?? null;
-  } catch {
-    return null;
-  }
-}
+// Чтение карточки и безопасный append примечания — в src/lib/alfaCustomerNote.ts
+// (там же fail-safe «не прочитали → не пишем» и фолбэк на архивные карточки).
 
 /**
  * Дописывает id визита (ubtcuid / domain_userid / ym) в кастомные поля AlfaCRM
@@ -86,7 +47,7 @@ async function bindAndataFields(
   if (!fUbt && !fDom && !fYm) return;
   if (!vals.ubtcuid && !vals.domainid && !vals.ymuid) return;
   try {
-    const cust = await getCustomer(host, token, lid);
+    const cust = await fetchCustomer(host, token, lid);
     if (!cust) return;
     const upd: Record<string, string> = {};
     if (fUbt && vals.ubtcuid && !cust[fUbt]) upd[fUbt] = vals.ubtcuid;
@@ -286,10 +247,11 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ ok: true, crm: false }), { status: 200 });
     }
 
-    const currentNote = await getCustomerNote(auth.host, auth.token, lid);
-    const newNote = currentNote + newLine;
-
-    const ok = await updateCustomerNote(auth.host, auth.token, lid, newNote);
+    // Только append. Если текущее примечание прочитать не удалось —
+    // строка теряется, но карточка остаётся целой (см. alfaCustomerNote.ts).
+    // Привязка в pamyatka_bindings уже записана выше и от CRM не зависит.
+    const noteResult = await appendCustomerNote(auth.host, auth.token, lid, newLine);
+    const ok = noteResult === 'ok';
 
     // Andata: матчинг визита постфактум — дописываем id в кастомные поля (fill-if-empty).
     // Не для менеджера, чтобы его устройство не привязалось к чужому заказу.
@@ -299,7 +261,7 @@ export const POST: APIRoute = async ({ request }) => {
       await bindAndataFields(auth.host, auth.token, lid, { ubtcuid: ubt, domainid: dom, ymuid: ymCid });
     }
 
-    return new Response(JSON.stringify({ ok: true, crm: ok, manager: isManager }), { status: 200 });
+    return new Response(JSON.stringify({ ok: true, crm: ok, crm_note: noteResult, manager: isManager }), { status: 200 });
   } catch (e) {
     return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
   }
