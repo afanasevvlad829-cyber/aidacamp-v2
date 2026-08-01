@@ -63,7 +63,7 @@ const ssrVychet   = getTaxDeduction(shift.id);
 
 // SEO
 const seoTitle = shift.id === 'shift-3'
-  ? `${shift.name} IT-лагеря — летняя смена, ${startDay} ${months[startMonth]} — ${endDay} ${months[endMonth]} ${SEASON_YEAR} | АйДаКемп`
+  ? `${shift.name} IT-лагеря — третья летняя смена, ${startDay} ${months[startMonth]} — ${endDay} ${months[endMonth]} ${SEASON_YEAR} | АйДаКемп`
   : `${shift.name} IT-лагеря — летняя смена в Подмосковье, ${shift.dates} ${SEASON_YEAR} | АйДаКемп`;
 const seoDescription = shift.id === 'shift-3'
   ? `Летняя смена в лагере в Подмосковье: Python, AI, хакатон, бассейн, 5-разовое питание. ${shift.duration}, возраст 7–15 лет, ${ssrPriceFmt} — всё включено, доплат нет.`
@@ -465,6 +465,10 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
         existing.push({ id, ts: Date.now() });
       }
       localStorage.setItem(KEY, JSON.stringify(existing));
+      // Цель «Открыл инфо о смене» (shift_modal_open) — раньше карточка открывала модалку
+      // с этим же trackGoal, с 2026-05-03 карточка ведёт сюда напрямую (навигация вместо
+      // модалки), поэтому просмотр этой страницы теперь и есть «открыл инфо о смене».
+      (window as any).trackGoal?.('shift_modal_open', { shift: id, source: 'page' });
     } catch {}
   })();
 

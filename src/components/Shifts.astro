@@ -30,10 +30,13 @@ const gridColumns = doneShifts.length > 0
   ? `${'1fr '.repeat(activeShifts.length)}0.6fr`.trim()
   : `${'1fr '.repeat(activeShifts.length)}`.trim();
 
-const MON_RU = ['','январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
-const doneMonthLabel = doneShifts.length > 0
-  ? MON_RU[new Date(doneShifts[doneShifts.length - 1].endDate + 'T00:00:00').getMonth() + 1]
-  : '';
+// Обложки прошедших смен — фото из фотобанка (Immich, альбомы «Смена N — YYYY»),
+// сами файлы лежат в /var/www/aidacamp-gallery/ (общий архив dev+prod, не в репо).
+// Точечная карта id → путь, не постоянное поле данных.
+const DONE_SHIFT_COVERS: Record<string, string> = {
+  'shift-1': '/images/gallery/proto-smena1.webp',
+  'shift-2': '/images/gallery/proto-smena2.webp',
+};
 ---
 
 <section id="shifts" class="mx-auto max-w-[1312px] px-[2px] pt-10 md:px-4">
@@ -113,7 +116,11 @@ const doneMonthLabel = doneShifts.length > 0
             {/* ─── Новая раскладка: актуальные смены слева (шире), «как прошли» справа (компактно) ─── */}
             {activeShifts.map((shift) => {
               const phase = getShiftPhase(shift.id, nowDate);
-              const withFortune = phase === 'upcoming' && shift.nearest && shift.free > 0;
+              // Разметку колеса рендерим для ВСЕХ предстоящих смен со свободными местами.
+              // Раньше было `shift.nearest` — из-за этого «включить фортуну на смене N»
+              // требовало правки shifts.ts + PR + деплой. Теперь показ решает рантайм-конфиг
+              // (/api/fortune/config), а разметка просто заранее есть и скрыта.
+              const withFortune = phase === 'upcoming' && shift.free > 0;
               return (
                 <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch" data-shift-id={shift.id}>
                   {phase !== 'upcoming' ? (
@@ -132,17 +139,35 @@ const doneMonthLabel = doneShifts.length > 0
               );
             })}
 
-            {/* Прошедшие смены справа — один компактный слот с прямыми ссылками на рекапы.
+            {/* Прошедшие смены справа — один компактный слот с прямыми ссылками на рекапы,
+                фото со смены (Immich) вместо голого текста — жизнь лагеря видна сразу.
                 График роста цены — на странице каждой смены (kak-proshla-smena-N), не здесь. */}
             {doneShifts.length > 0 && (
               <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch">
-                <div class="flex h-full flex-col justify-center gap-2 rounded-[22px] border border-border-light bg-card p-5 md:p-6">
-                  <p class="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Как прошёл {doneMonthLabel}</p>
-                  {doneShifts.map((s) => (
-                    <a href={s.recapUrl} class="group flex items-center justify-between gap-2 text-base font-semibold text-emerald-700 hover:text-emerald-800">
-                      {s.name}
-                      <i class="bi bi-arrow-right icon-arrow-right-hover" aria-hidden="true"></i>
-                    </a>
+                <div class="flex h-full flex-col justify-center gap-4 rounded-[22px] border border-border-light bg-card p-5 md:p-6">
+                  <p class="text-[11px] font-bold uppercase tracking-[0.15em] text-body-faint">Прошедшие смены</p>
+                  {doneShifts.map((s, i) => (
+                    <Fragment>
+                      {i > 0 && <div class="border-t border-border-light"></div>}
+                      <a href={s.recapUrl} class="group flex items-center gap-3 no-underline pt-1 first:pt-0">
+                        <img
+                          src={DONE_SHIFT_COVERS[s.id] ?? '/images/gallery/camp-smile.avif'}
+                          alt={`Фото со смены «${s.name}»`}
+                          class="h-24 w-24 shrink-0 rounded-2xl object-cover"
+                          loading="lazy"
+                          width="96"
+                          height="96"
+                        />
+                        <span class="min-w-0 flex-1">
+                          <span class="block text-[17px] font-bold leading-tight text-body">{s.name}</span>
+                          <span class="mt-1 block text-[13px] leading-snug text-body-faint">{s.dates}</span>
+                          <span class="mt-1.5 inline-flex items-center gap-1 text-[13px] font-semibold text-emerald-600 group-hover:text-emerald-700">
+                            Фото и итоги
+                            <i class="bi bi-arrow-right icon-arrow-right-hover text-[10px]" aria-hidden="true"></i>
+                          </span>
+                        </span>
+                      </a>
+                    </Fragment>
                   ))}
                 </div>
               </div>
@@ -155,7 +180,11 @@ const doneMonthLabel = doneShifts.length > 0
                 клиентским скриптом ниже по правилу (последние 3 дня + ≤3 места) или по ?fortune=wheel. */}
             {displayShifts.map((shift) => {
               const phase = getShiftPhase(shift.id, nowDate);
-              const withFortune = phase === 'upcoming' && shift.nearest && shift.free > 0;
+              // Разметку колеса рендерим для ВСЕХ предстоящих смен со свободными местами.
+              // Раньше было `shift.nearest` — из-за этого «включить фортуну на смене N»
+              // требовало правки shifts.ts + PR + деплой. Теперь показ решает рантайм-конфиг
+              // (/api/fortune/config), а разметка просто заранее есть и скрыта.
+              const withFortune = phase === 'upcoming' && shift.free > 0;
               return (
                 <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch" data-shift-id={shift.id}>
                   {phase !== 'upcoming' ? (
@@ -188,28 +217,66 @@ const doneMonthLabel = doneShifts.length > 0
 </section>
 
 <script is:inline>
-/* Активация колеса фортуны: последние 3 дня перед стартом + ≤3 места,
-   и только для НОВЫХ посетителей (решение владельца 27.07.2026) — тот, кто уже
-   был на сайте (хоть месяц назад), колесо не видит. Тот же сигнал «уже был»,
-   что уже используют Header/ReturnBanner/MobileMenu для returning-visitor логики.
-   Считается клиентски (главная статична). Превью в любой момент: ?fortune=wheel
-   (force игнорирует и returning-visitor, и days/spots — для теста/демо). */
+/* Активация колеса фортуны: показываем ВСЕМ новым посетителям (решение
+   владельца 27.07.2026) — дни-до-старта/реальный остаток мест на активацию
+   больше не влияют, это конверсионный виджет, не завязанный на инвентарь.
+   Вернувшийся посетитель (был на сайте хоть месяц назад) колесо не видит —
+   сигнал ac:viewed_shifts (см. ниже, почему без _ym_uid). Header/ReturnBanner/
+   MobileMenu используют похожий, но более широкий сигнал (+ _ym_uid) для
+   своей returning-visitor логики — здесь сознательно уже. Считается клиентски.
+   Превью в любой момент: ?fortune=wheel (force показывает и вернувшимся —
+   для теста/демо). */
 (function () {
-  var WINDOW_DAYS = 3, LAST_SPOTS = 3; // правило (см. dynamicPrices.ts: FORTUNE_WINDOW_DAYS/LAST_SPOTS)
+  var CFG_URL = '/api/fortune/config';
+  var cfgCache = null;
+
+  function fetchCfg() {
+    if (cfgCache) return Promise.resolve(cfgCache);
+    return fetch(CFG_URL, { credentials: 'omit' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { cfgCache = (d && d.shifts) || {}; return cfgCache; })
+      .catch(function () { cfgCache = {}; return cfgCache; });
+  }
+
   function apply() {
     var qs = new URLSearchParams(location.search);
     var force = qs.get('fortune') === 'wheel' || qs.has('wheel');
-    var isReturning = !!localStorage.getItem('ac:viewed_shifts') || /(?:^|[; ])_ym_uid=/.test(document.cookie);
-    document.querySelectorAll('[data-fortune-wheel]').forEach(function (wheel) {
-      var slot = wheel.closest('[data-shift-id]');
-      var normal = slot ? slot.querySelector('[data-fortune-normal]') : null;
-      var start = new Date((wheel.getAttribute('data-fortune-start') || '') + 'T00:00:00');
-      var free = parseInt(wheel.getAttribute('data-fortune-free') || '0', 10);
-      var today = new Date(); today.setHours(0, 0, 0, 0);
-      var days = Math.ceil((start.getTime() - today.getTime()) / 86400000);
-      var active = force || (!isReturning && days >= 0 && days <= WINDOW_DAYS && free > 0 && free <= LAST_SPOTS);
-      if (active) { wheel.hidden = false; if (normal) normal.hidden = true; }
-      else { wheel.hidden = true; if (normal) normal.hidden = false; }
+    // Только ac:viewed_shifts — не _ym_uid: Метрика ставит свою uid-куку сама,
+    // сразу на первом визите (до того, как этот скрипт успевает её проверить),
+    // так что _ym_uid ложно помечал бы «уже был» настоящего нового посетителя
+    // в его же первый визит. ac:viewed_shifts ставится только по факту открытия
+    // карточки смены — осознанное действие, надёжный сигнал «уже был раньше».
+    var isReturning = !!localStorage.getItem('ac:viewed_shifts');
+
+    fetchCfg().then(function (cfg) {
+      document.querySelectorAll('[data-fortune-wheel]').forEach(function (wheel) {
+        var slot = wheel.closest('[data-shift-id]');
+        var normal = slot ? slot.querySelector('[data-fortune-normal]') : null;
+        var shiftId = slot ? slot.getAttribute('data-shift-id') : null;
+        var rule = shiftId ? cfg[shiftId] : null;
+
+        var active;
+        if (force) {
+          active = true;                       // ?wheel — превью, показываем всегда
+        } else if (!rule) {
+          active = false;                      // в конфиге смены нет — колеса нет
+        } else if (rule.audience === 'all') {
+          active = true;
+        } else if (rule.audience === 'returning') {
+          active = isReturning;
+        } else {
+          active = !isReturning;               // 'new' — поведение по умолчанию
+        }
+
+        // minFree: включать, только когда свободных мест осталось <= N
+        if (active && rule && rule.minFree != null) {
+          var free = parseInt(wheel.getAttribute('data-fortune-free') || '', 10);
+          if (!isNaN(free) && free > rule.minFree) active = false;
+        }
+
+        if (active) { wheel.hidden = false; if (normal) normal.hidden = true; }
+        else { wheel.hidden = true; if (normal) normal.hidden = false; }
+      });
     });
   }
   document.addEventListener('astro:page-load', apply);

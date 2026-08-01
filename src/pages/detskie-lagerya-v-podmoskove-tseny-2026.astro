@@ -1,12 +1,11 @@
 ---
-import { PRICE_MAX, PRICE_MIN, PRICE_S4, VYCHET_MAX, SEASON_YEAR } from '../data/shifts';
+import { PRICE_MAX, PRICE_MIN, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX } from '../data/shifts';
 import '../styles/global.css';
 import LandingLayout from '../layouts/LandingLayout.astro';
 import Shifts from '../components/Shifts.astro';
 import FAQ from '../components/FAQ.astro';
 import RelatedPages from '../components/RelatedPages.astro';
 import { getRelatedPages } from '../data/landing-pages';
-import FAQSchema from '../components/FAQSchema.astro';
 import { SEASON_MONTHS_NOM } from '../data/evergreen';
 ---
 
@@ -17,13 +16,6 @@ import { SEASON_MONTHS_NOM } from '../data/evergreen';
   h1={`Детские лагеря в Подмосковье на лето ${SEASON_YEAR} — цены`}
   canonical="https://aidacamp.ru/detskie-lagerya-v-podmoskove-tseny-2026"
 >
-  <Fragment slot="head">
-    <FAQSchema items={[
-    { q: `Сколько стоят детские лагеря в Подмосковье на лето ${SEASON_YEAR}?`, a: `АйДаКемп — загородный IT-лагерь с проживанием в Наро-Фоминском районе Подмосковья. Смены 10 и 13 дней для школьников 7–15 лет, цена от ${PRICE_MIN}. В стоимость включены проживание, 5-разовое питание, IT-программа и бассейн.` },
-    { q: "Что входит в цену путёвки в детский лагерь?", a: `Проживание, 5-разовое питание, вся IT-программа (Python, AI, Minecraft, Roblox, 3D), бассейн и спорт — без доплат за отдельные занятия. Налоговый вычет 13% возвращает до ${VYCHET_MAX}.` },
-    { q: `Сколько стоит лагерь в ${SEASON_YEAR} году?`, a: `Открыты августовские смены: от ${PRICE_MIN} за 10 дней (Смена 4) до ${PRICE_MAX} за 13 дней (Смена 3). Включены питание, проживание, IT-программа.` }
-  ]} />
-  </Fragment>
 
   <main class="mx-auto max-w-[720px] px-4 py-10">
     <h1 class="text-[28px] md:text-[36px] font-bold text-body leading-tight tracking-[-0.02em] mb-6">
@@ -31,7 +23,7 @@ import { SEASON_MONTHS_NOM } from '../data/evergreen';
     </h1>
 
     <div class="prose prose-lg max-w-none text-body-muted leading-relaxed">
-      <p>АйДаКемп — детский IT-лагерь в Подмосковье для школьников 7–15 лет. Расположен в санатории «Изумруд» в Наро-Фоминском районе Московской области, 66 км от МКАД по Киевскому шоссе. Для семей из Подмосковья — организованный трансфер от м. Солнцево (2 000 ₽). Детские лагеря в {SEASON_YEAR} году в среднем подорожали, поэтому хорошую летнюю путёвку выбирают по сумме факторов: полноценный детский отдых с образовательной составляющей, близость к Москве и зафиксированная цена. АйДаКемп — оздоровительный IT-лагерь в Подмосковье с лицензией Минобрнауки и 5-разовым питанием.</p>
+      <p>АйДаКемп — детский IT-лагерь в Подмосковье для школьников 7–15 лет. Расположен в санатории «Изумруд» в Наро-Фоминском районе Московской области, 66 км от МКАД по Киевскому шоссе. Для семей из Подмосковья — организованный трансфер от м. Солнцево ({TRANSFER_PRICE_FMT}). Детские лагеря в {SEASON_YEAR} году в среднем подорожали, поэтому хорошую летнюю путёвку выбирают по сумме факторов: полноценный детский отдых с образовательной составляющей, близость к Москве и зафиксированная цена. АйДаКемп — оздоровительный IT-лагерь в Подмосковье с лицензией Минобрнауки и 5-разовым питанием.</p>
       <p>Программы: Python, AI и нейросети, Minecraft Education, Roblox Studio, 3D-моделирование. Группы до 8 человек, занятия дважды в день. В финале смены — хакатон и готовый проект. Лагерь для детей 7–15 лет, где команда ребят создаёт реальный IT-продукт за смену. Путёвка от {PRICE_MIN}, налоговый вычет 13% — до {VYCHET_MAX}.</p>
     </div>
 
@@ -50,7 +42,7 @@ import { SEASON_MONTHS_NOM } from '../data/evergreen';
       </li>
       <li class="flex items-start gap-2 text-[16px] text-body">
         <i class="bi bi-check-lg text-primary mt-0.5 shrink-0" aria-hidden="true"></i>
-        <span>Трансфер от м. Солнцево, 2 000 ₽</span>
+        <span>Трансфер от м. Солнцево, {TRANSFER_PRICE_FMT}</span>
       </li>
       <li class="flex items-start gap-2 text-[16px] text-body">
         <i class="bi bi-check-lg text-primary mt-0.5 shrink-0" aria-hidden="true"></i>
@@ -71,7 +63,11 @@ import { SEASON_MONTHS_NOM } from '../data/evergreen';
   </main>
 
   <Shifts />
-  <FAQ />
+  <FAQ extraItems={[
+    { q: `Сколько стоят детские лагеря в Подмосковье на лето ${SEASON_YEAR}?`, a: `АйДаКемп — загородный IT-лагерь с проживанием в Наро-Фоминском районе Подмосковья. Смены 10 и 13 дней для школьников 7–15 лет, цена от ${PRICE_MIN}. В стоимость включены проживание, 5-разовое питание, IT-программа и бассейн.` },
+    { q: "Что входит в цену путёвки в детский лагерь?", a: `Проживание, 5-разовое питание, вся IT-программа (Python, AI, Minecraft, Roblox, 3D), бассейн и спорт — без доплат за отдельные занятия. Налоговый вычет 13% возвращает до ${VYCHET_MAX}.` },
+    { q: `Сколько стоит лагерь в ${SEASON_YEAR} году?`, a: `Открыты августовские смены: от ${PRICE_MIN} за 10 дней (Смена 4) до ${PRICE_MAX} за 13 дней (Смена 3). Включены питание, проживание, IT-программа.` }
+  ]} />
   <div class="mx-auto max-w-[720px] px-4 pb-8 text-center">
     <p class="text-base text-slate-500">
       Подробнее: <a href="/" class="text-primary hover:underline">детский IT-лагерь в Подмосковье</a> ·

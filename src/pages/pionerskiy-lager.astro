@@ -1,5 +1,5 @@
 ---
-import { PRICE_MIN, PRICE_S1, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, SEASON_YEAR, VYCHET_MAX, VYCHET_S1, VYCHET_S2, VYCHET_S21, VYCHET_S22, VYCHET_S3, VYCHET_S4 } from '../data/shifts';
+import { PRICE_MIN, PRICE_S1, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_S1, VYCHET_S2, VYCHET_S21, VYCHET_S22, VYCHET_S3, VYCHET_S4 } from '../data/shifts';
 import '../styles/global.css';
 import LandingLayout from '../layouts/LandingLayout.astro';
 import LandingHero from '../components/LandingHero.astro';
@@ -10,7 +10,6 @@ import RelatedPages from '../components/RelatedPages.astro';
 import { getRelatedPages } from '../data/landing-pages';
 import Gallery from '../components/Gallery.astro';
 import CourseSchema from '../components/CourseSchema.astro';
-import FAQSchema from '../components/FAQSchema.astro';
 import { STAT_INSURED, STAT_RTO } from '../data/contacts';
 
 const sections = [
@@ -73,7 +72,7 @@ const sections = [
   },
   {
     h2: `Сколько стоит путёвка в лагерь ${SEASON_YEAR}`,
-    text: `Цены в АйДаКемп на август ${SEASON_YEAR} — от ${PRICE_MIN} за 10-дневную смену. Включено всё: проживание, питание, оздоровительная и IT-программа, бассейн. По лицензии Минобрнауки можно вернуть 13% через налоговый вычет — до ${VYCHET_MAX} в зависимости от смены. Трансфер от м. Солнцево — 2 000 ₽ в одну сторону, бронируется отдельно. Реестровый туроператор РТО ${STAT_RTO}.`,
+    text: `Цены в АйДаКемп на август ${SEASON_YEAR} — от ${PRICE_MIN} за 10-дневную смену. Включено всё: проживание, питание, оздоровительная и IT-программа, бассейн. По лицензии Минобрнауки можно вернуть 13% через налоговый вычет — до ${VYCHET_MAX} в зависимости от смены. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} в одну сторону, бронируется отдельно. Реестровый туроператор РТО ${STAT_RTO}.`,
     list: [
       `Смена 4 — 10 дней, ${PRICE_S4} (возврат ~${VYCHET_S4}) — открыта`,
       `Смена 3 — 13 дней, ${PRICE_S3} (возврат ~${VYCHET_S3}) — открыта`,
@@ -102,7 +101,6 @@ const faqItems = [
   canonical="https://aidacamp.ru/pionerskiy-lager/"
 >
   <Fragment slot="head">
-    <FAQSchema items={faqItems.map(item => ({ q: item.question, a: item.answer }))} />
     <CourseSchema
       name="Пионерский лагерь — АйДаКемп IT-лагерь в Подмосковье"
       description="Детский IT-лагерь с проживанием в Подмосковье. Современный аналог пионерского лагеря: Python, AI, Minecraft, Roblox для детей 7–15 лет."
@@ -145,7 +143,7 @@ const faqItems = [
     </div>
   </section>
 
-  <FAQ />
+  <FAQ extraItems={faqItems.map(item => ({ q: item.question, a: item.answer }))} />
   <RelatedPages pages={getRelatedPages(Astro.url.pathname)} />
 <script>
   document.querySelectorAll('[data-faq-toggle]').forEach(btn => {
