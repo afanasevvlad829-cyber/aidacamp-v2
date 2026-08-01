@@ -36,7 +36,7 @@ async function saveLead(lead: Record<string, unknown>) {
   }
 }
 
-async function saveLeadToPg(
+export async function saveLeadToPg(
   body: Record<string, string>,
   extra: { ip: string; userAgent: string; crmId: number | null; visitorId: string | null },
 ) {
@@ -173,6 +173,9 @@ function buildTgText(body: Record<string, string>, crmId?: number | null): strin
 function buildCrmNote(body: Record<string, string>): string {
   const lines: string[] = [];
 
+  // Произвольная шапка примечания (Фортуна кладёт сюда скидку и итоговую цену).
+  // Обычные формы поле не шлют — для них ничего не меняется.
+  if (body.note_extra) lines.push(body.note_extra);
   if (body.age)   lines.push(`Возраст: ${body.age}`);
   if (body.shift) lines.push(`Смена: ${body.shift}`);
   if (body.call_time) lines.push(`✅ Позвонить: ${body.call_time}`);
@@ -203,6 +206,7 @@ function buildCrmNote(body: Record<string, string>): string {
   }
 
   // Устройство
+  if (body.device)    lines.push(`Устройство: ${body.device}${body.browser ? ' · ' + body.browser : ''}`);
   if (body.screen)    lines.push(`Экран: ${body.screen}`);
   if (body.viewport)  lines.push(`Viewport: ${body.viewport}`);
   if (body.language)  lines.push(`Язык: ${body.language}`);
@@ -249,7 +253,7 @@ function mapLeadSourceId(body: Record<string, string>): number {
   return 9; // Сайт (прямой/неизвестно)
 }
 
-async function createCrmLead(body: Record<string, string>): Promise<number | null> {
+export async function createCrmLead(body: Record<string, string>): Promise<number | null> {
   const hostname = process.env.ALFACRM_HOSTNAME;
   const email    = process.env.ALFACRM_EMAIL;
   const apiKey   = process.env.ALFACRM_API_KEY;
@@ -281,7 +285,8 @@ async function createCrmLead(body: Record<string, string>): Promise<number | nul
     if (fYm  && body.ym_client_id)   cf[fYm]  = body.ym_client_id;
 
     const payload = {
-      name: `Лид ${body.age || ''}`.trim(),
+      // Фортуна присылает настоящее имя клиента; обычные формы имени не собирают
+      name: (body.name || `Лид ${body.age || ''}`).trim(),
       phone: [phone],
       // Обязательные поля AlfaCRM
       branch_ids: [5],

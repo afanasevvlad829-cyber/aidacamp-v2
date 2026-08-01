@@ -212,6 +212,9 @@ const cuesJson = JSON.stringify(cues);
       player.play().catch(() => {});
       if (CUES.length) rafId = requestAnimationFrame(rafLoop);
       try { window.ym?.(96499295, 'reachGoal', goalName); } catch {}
+      // Агрегатная цель «Открытие видео» — общая для всех VideoPlayer, отдельно от
+      // per-instance goalName (напр. daria_video_play). window.trackGoal — из page-globals.ts.
+      try { window.trackGoal?.('video_open', { goal: goalName }); } catch {}
     };
     const closeModal = () => {
       cancelAnimationFrame(rafId);

@@ -1,5 +1,5 @@
 ---
-import { DATES_S1, DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S22, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S1, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, VYCHET_MAX, SEASON_YEAR } from '../data/shifts';
+import { DATES_S1, DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S22, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S1, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX } from '../data/shifts';
 import '../styles/global.css';
 import LandingLayout from '../layouts/LandingLayout.astro';
 import LandingHero from '../components/LandingHero.astro';
@@ -10,7 +10,6 @@ import RelatedPages from '../components/RelatedPages.astro';
 import { getRelatedPages } from '../data/landing-pages';
 import Gallery from '../components/Gallery.astro';
 import CourseSchema from '../components/CourseSchema.astro';
-import FAQSchema from '../components/FAQSchema.astro';
 import { PAST_SHIFTS_SENTENCE } from '../data/evergreen';
 
 const sections = [
@@ -22,7 +21,7 @@ const sections = [
       "Безопасность: закрытая территория, медработник 24/7, охрана, ионизированный бассейн",
       "Лицензия Минобрнауки — образовательная деятельность официальная, вычет 13% законный",
       "От 7 до 14 дней — короткая смена для первого раза или длинная для глубокого погружения",
-      "Трансфер от м. Солнцево — 2 000 ₽ в одну сторону, бронируется вместе с путёвкой"
+      `Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} в одну сторону, бронируется вместе с путёвкой`
     ]
   },
   {
@@ -76,7 +75,7 @@ const sections = [
       `13 дней — ${PRICE_S3} (Смена 3, открыта)`,
       `Открытые смены — от ${PRICE_MIN} до ${PRICE_MAX}`,
       `Налоговый вычет 13% — возврат до ${VYCHET_MAX} с путёвки`,
-      "Трансфер из Москвы — 2 000 ₽ в одну сторону (опционально)"
+      `Трансфер из Москвы — ${TRANSFER_PRICE_FMT} в одну сторону (опционально)`
     ]
   },
   {
@@ -119,13 +118,6 @@ const sections = [
   canonical="https://aidacamp.ru/lager-na-kanikuly"
 >
   <Fragment slot="head">
-    <FAQSchema items={[
-    { q: "Когда лучше отправить ребёнка в лагерь на каникулы?", a: `${PAST_SHIFTS_SENTENCE}. Сейчас открыты к брони августовские: Смена 3 (${DATES_SHORT_S3}) и Смена 4 (${DATES_SHORT_S4}). Они хороши для тех, кто хочет закончить каникулы активно — перед школой.` },
-    { q: "Можно ли поехать в лагерь на одну неделю?", a: `Короткие 7–8-дневные смены были в июне и уже завершились. Сейчас открыты к брони августовские смены — Смена 4 (10 дней, ${PRICE_S4}) и Смена 3 (13 дней, ${PRICE_S3}).` },
-    { q: `Сколько стоит лагерь на каникулы ${SEASON_YEAR}?`, a: `Открытые августовские смены: от ${PRICE_MIN} за 10 дней (Смена 4) до ${PRICE_MAX} за 13 дней (Смена 3). В стоимость включены проживание, питание, IT-программа, бассейн.` },
-    { q: "Что ребёнок получит от летних каникул в IT-лагере?", a: "Реальный проект — игру, бота, 3D-модель — который можно показать дома. Новых друзей из разных городов. Навык работать в команде и презентовать результат. И ответ на вопрос «чем хочу заниматься»." },
-    { q: "Какой лагерь выбрать ребёнку на летние каникулы?", a: `АйДаКемп — IT-лагерь на летние каникулы в Подмосковье. Июнь (с 30 мая) и август (с 3 августа), смены 7–14 дней, для детей 7–15 лет. Python, AI, Minecraft, Roblox. Реальный проект к концу каникул. Лицензия Минобрнауки, налоговый вычет 13%. От ${PRICE_MIN}.` }
-  ]} />
     <CourseSchema
       name="IT-лагерь на летние каникулы — АйДаКемп"
       description="IT-лагерь на летние каникулы в Подмосковье: июнь, июль, август. Python, AI, Minecraft для детей 7–15 лет."
@@ -145,6 +137,12 @@ const sections = [
   <LandingTwoCol sections={sections} />
   <Gallery />
   <Shifts />
-  <FAQ />
+  <FAQ extraItems={[
+    { q: "Когда лучше отправить ребёнка в лагерь на каникулы?", a: `${PAST_SHIFTS_SENTENCE}. Сейчас открыты к брони августовские: Смена 3 (${DATES_SHORT_S3}) и Смена 4 (${DATES_SHORT_S4}). Они хороши для тех, кто хочет закончить каникулы активно — перед школой.` },
+    { q: "Можно ли поехать в лагерь на одну неделю?", a: `Короткие 7–8-дневные смены были в июне и уже завершились. Сейчас открыты к брони августовские смены — Смена 4 (10 дней, ${PRICE_S4}) и Смена 3 (13 дней, ${PRICE_S3}).` },
+    { q: `Сколько стоит лагерь на каникулы ${SEASON_YEAR}?`, a: `Открытые августовские смены: от ${PRICE_MIN} за 10 дней (Смена 4) до ${PRICE_MAX} за 13 дней (Смена 3). В стоимость включены проживание, питание, IT-программа, бассейн.` },
+    { q: "Что ребёнок получит от летних каникул в IT-лагере?", a: "Реальный проект — игру, бота, 3D-модель — который можно показать дома. Новых друзей из разных городов. Навык работать в команде и презентовать результат. И ответ на вопрос «чем хочу заниматься»." },
+    { q: "Какой лагерь выбрать ребёнку на летние каникулы?", a: `АйДаКемп — IT-лагерь на летние каникулы в Подмосковье. Июнь (с 30 мая) и август (с 3 августа), смены 7–14 дней, для детей 7–15 лет. Python, AI, Minecraft, Roblox. Реальный проект к концу каникул. Лицензия Минобрнауки, налоговый вычет 13%. От ${PRICE_MIN}.` }
+  ]} />
   <RelatedPages pages={getRelatedPages(Astro.url.pathname)} />
 </LandingLayout>

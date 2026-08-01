@@ -1,5 +1,5 @@
 ---
-import { DATES_S1, DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S22, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S1, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, VYCHET_MAX, SEASON_YEAR } from '../data/shifts';
+import { DATES_S1, DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S22, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S1, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX } from '../data/shifts';
 import '../styles/global.css';
 import LandingLayout from '../layouts/LandingLayout.astro';
 import LandingHero from '../components/LandingHero.astro';
@@ -9,7 +9,6 @@ import FAQ from '../components/FAQ.astro';
 import RelatedPages from '../components/RelatedPages.astro';
 import { getRelatedPages } from '../data/landing-pages';
 import Gallery from '../components/Gallery.astro';
-import FAQSchema from '../components/FAQSchema.astro';
 import { OPEN_SHIFTS_PHRASE, PAST_SHIFTS_SENTENCE } from '../data/evergreen';
 
 const sections = [
@@ -126,7 +125,7 @@ const sections = [
       "Погода в июне: +20–24°C, бассейн прогрет, длинный световой день — идеально для лагеря",
       "Опыт программирования: не нужен, группы начинающих стартуют с нуля",
       "Первый лагерь: июнь подходит лучше августа — ребёнок ещё в учебном ритме, адаптация легче",
-      "Трансфер от м. Солнцево в первый день смены — 2 000 ₽, бронируется при записи",
+      `Трансфер от м. Солнцево в первый день смены — ${TRANSFER_PRICE_FMT}, бронируется при записи`,
       `Налоговый вычет 13% — до ${VYCHET_MAX} возврат, справка для ФНС по запросу`
     ]
   }
@@ -140,15 +139,6 @@ const sections = [
   h1={`Летний лагерь в июне ${SEASON_YEAR}`}
   canonical="https://aidacamp.ru/lager-na-iyun"
 >
-  <Fragment slot="head">
-    <FAQSchema items={[
-    { q: `Когда начинаются смены в IT-лагере в июне ${SEASON_YEAR}?`, a: "Первая смена стартует 30 мая, вторая (самая популярная) — 10 июня, заканчивается 23 июня. Также есть короткие смены 7–8 дней в начале июня." },
-    { q: "Почему июньская смена самая популярная?", a: "Погода ещё комфортная, ребёнок только вышел из школы и полон энергии. Самая длинная смена — 14 дней с 10 по 23 июня. Большинство семей бронируют именно её." },
-    { q: "Сколько стоит лагерь в июне?", a: `Июньские смены ${SEASON_YEAR} уже завершились: Смена с 30 мая (10 дней) была ${PRICE_S1}, смена с 10 июня (14 дней) — ${PRICE_S2}, короткие смены 7–8 дней — от ${PRICE_S21}. Открытые августовские смены: от ${PRICE_MIN} за 10 дней (Смена 4) до ${PRICE_MAX} за 13 дней (Смена 3). Оплата частями: 50% сейчас + 50% за 3 недели до заезда.` },
-    { q: "Когда нужно бронировать место на летнюю смену?", a: `Чем раньше — тем лучше. Популярные смены заканчиваются первыми. ${PAST_SHIFTS_SENTENCE}, к брони открыты августовские. Место фиксируется после оплаты 50% суммы.` },
-    { q: "Какие смены были в детском лагере в июне?", a: `АйДаКемп в июне ${SEASON_YEAR} (все завершены): Смена 1 (${DATES_S1}, ${PRICE_S1}), Смена 2.1 (${DATES_SHORT_S21}, ${PRICE_S21}), Смена 2.2 (${DATES_SHORT_S22}, ${PRICE_S22}), Смена 2 (${DATES_SHORT_S2}, ${PRICE_S2}). Открыты к брони августовские Смена 3 (${DATES_SHORT_S3}, ${PRICE_S3}) и Смена 4 (${DATES_SHORT_S4}, ${PRICE_S4}). IT-программа, бассейн, проживание — всё включено.` }
-  ]} />
-  </Fragment>
   <LandingHero slot="hero"
     h1={`Летний лагерь в июне ${SEASON_YEAR}`}
     subtitle={`Июньские смены ${SEASON_YEAR} уже завершились. Открыты к брони августовские смены: Смена 3 (с 3 августа) и Смена 4 (с 17 августа). IT-программа, бассейн, 5-разовое питание.`}
@@ -160,6 +150,12 @@ const sections = [
   <LandingTwoCol sections={sections} />
   <Gallery />
   <Shifts />
-  <FAQ />
+  <FAQ extraItems={[
+    { q: `Когда начинаются смены в IT-лагере в июне ${SEASON_YEAR}?`, a: "Первая смена стартует 30 мая, вторая (самая популярная) — 10 июня, заканчивается 23 июня. Также есть короткие смены 7–8 дней в начале июня." },
+    { q: "Почему июньская смена самая популярная?", a: "Погода ещё комфортная, ребёнок только вышел из школы и полон энергии. Самая длинная смена — 14 дней с 10 по 23 июня. Большинство семей бронируют именно её." },
+    { q: "Сколько стоит лагерь в июне?", a: `Июньские смены ${SEASON_YEAR} уже завершились: Смена с 30 мая (10 дней) была ${PRICE_S1}, смена с 10 июня (14 дней) — ${PRICE_S2}, короткие смены 7–8 дней — от ${PRICE_S21}. Открытые августовские смены: от ${PRICE_MIN} за 10 дней (Смена 4) до ${PRICE_MAX} за 13 дней (Смена 3). Оплата частями: 50% сейчас + 50% за 3 недели до заезда.` },
+    { q: "Когда нужно бронировать место на летнюю смену?", a: `Чем раньше — тем лучше. Популярные смены заканчиваются первыми. ${PAST_SHIFTS_SENTENCE}, к брони открыты августовские. Место фиксируется после оплаты 50% суммы.` },
+    { q: "Какие смены были в детском лагере в июне?", a: `АйДаКемп в июне ${SEASON_YEAR} (все завершены): Смена 1 (${DATES_S1}, ${PRICE_S1}), Смена 2.1 (${DATES_SHORT_S21}, ${PRICE_S21}), Смена 2.2 (${DATES_SHORT_S22}, ${PRICE_S22}), Смена 2 (${DATES_SHORT_S2}, ${PRICE_S2}). Открыты к брони августовские Смена 3 (${DATES_SHORT_S3}, ${PRICE_S3}) и Смена 4 (${DATES_SHORT_S4}, ${PRICE_S4}). IT-программа, бассейн, проживание — всё включено.` }
+  ]} />
   <RelatedPages pages={getRelatedPages(Astro.url.pathname)} />
 </LandingLayout>

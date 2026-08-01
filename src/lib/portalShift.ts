@@ -149,6 +149,23 @@ export async function getDone(_telegramId: number, shiftId: number): Promise<Set
   return new Set((rows ?? []).map((x: any) => `${x.event_id}:${x.checklist_id}:${x.item_id}`));
 }
 
+/** Проверяет, что отмечаемый пункт существует в чек-листе, привязанном к событию. */
+export async function isChecklistItemAttached(eventId: number, checklistId: number, itemId: string): Promise<boolean | null> {
+  return await withDbClient(async (c) => {
+    const r = await c.query(
+      `SELECT EXISTS (
+         SELECT 1
+         FROM event_checklist ec
+         JOIN checklist cl ON cl.id=ec.checklist_id
+         CROSS JOIN LATERAL jsonb_array_elements(cl.items) item
+         WHERE ec.event_id=$1 AND ec.checklist_id=$2 AND item->>'id'=$3
+       ) AS valid`,
+      [eventId, checklistId, itemId],
+    );
+    return r.rows[0]?.valid === true;
+  });
+}
+
 /** Переключить пункт; возвращает {done}. Требует одного соединения (DELETE + условный INSERT). */
 export async function toggleDone(telegramId: number, eventId: number, checklistId: number, itemId: string): Promise<{ done: boolean } | null> {
   return await withDbClient(async (c) => {

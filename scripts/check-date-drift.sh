@@ -15,7 +15,8 @@ for y1,m1,d1,y2,m2,d2 in iso:
     full=f"{a_d} {MON[a_m-1]} — {b_d} {MON[b_m-1]}"
     canon.add((a_d,a_m,b_d,b_m))
 if not canon: print('❌ не нашёл смен в shifts.ts'); sys.exit(2)
-ALLOW={(27,8,28,8),(26,8,27,8),(30,5,31,8)}  # репетитор-контекст, сезон работы
+ALLOW={(27,8,28,8),(26,8,27,8),(30,5,31,8),
+       (28,12,30,12),(8,1,10,1)}  # репетитор-контекст, сезон работы, хедж «ориентировочно» зимней смены (seasons.ts)
 canon|=ALLOW
 mon_idx={m:i+1 for i,m in enumerate(MON)}
 DASH=r'[–—-]'
@@ -24,19 +25,25 @@ P_FULL=re.compile(r'(\d{1,2})\s+([а-яё]+)\s*'+DASH+r'\s*(\d{1,2})\s+([а-яё
 P_SHORT=re.compile(r'(\d{1,2})\s*'+DASH+r'\s*(\d{1,2})\s+([а-яё]+)')
 EXCL=('/demo/','/_archive','/corp/','/admin/','lanit','glass-','hyperui','design-','lager-na-osennie-kanikuly','lager-na-zimnie-kanikuly','lager-na-vesennie-kanikuly')
 drift={}
+def is_comment(line):
+    s=line.strip()
+    return s.startswith(('//','/*','*','{/*'))
 def chk(p,line,i,m,a_d,a_m,b_d,b_m,tok):
     if a_m is None or b_m is None: return
     if (a_d,a_m,b_d,b_m) not in canon:
         drift.setdefault(p,[]).append((i,tok.strip()))
 # src/lib добавлен 17.07.2026: промпты AI-бота (src/lib/ai) содержали захардкоженные даты смен
-for base in ['src/pages','src/components','src/data/landings','src/lib']:
+# src/data (весь, не только landings) + .json добавлены 29.07.2026: hero-variants.json —
+# канон hero-текстов с сезонными плейсхолдерами — не сканировался ни одним стражем
+for base in ['src/pages','src/components','src/data','src/lib']:
     for root,_,files in os.walk(base):
         if any(x in root for x in EXCL): continue
         for fn in files:
-            if not fn.endswith(('.astro','.ts','.md')): continue
+            if not fn.endswith(('.astro','.ts','.md','.json')): continue
             p=os.path.join(root,fn)
             if any(x in p for x in EXCL): continue
             for i,line in enumerate(open(p,encoding='utf-8'),1):
+                if is_comment(line): continue
                 for m in P_FULL.finditer(line):
                     a_m=mon_idx.get(m.group(2)); b_m=mon_idx.get(m.group(4))
                     chk(p,line,i,m,int(m.group(1)),a_m,int(m.group(3)),b_m,m.group(0))

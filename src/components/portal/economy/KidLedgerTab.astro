@@ -1,0 +1,99 @@
+---
+import type { KidBalanceRow } from '../../../lib/portalKidLedger';
+
+interface Props {
+  balances: KidBalanceRow[];
+  fmtRub: (n: number) => string;
+}
+const { balances, fmtRub } = Astro.props;
+---
+<div class="mb-3 text-base text-body-muted">
+  Детей: <b>{balances.length}</b> · Начислять/списывать можно прямо из строки — причина обязательна.
+</div>
+
+{balances.length === 0 ? (
+  <div class="rounded-[14px] border border-border bg-white p-6 text-center text-base text-body-muted card-shadow">
+    Детей пока нет — добавь их в расселении.
+  </div>
+) : (
+  <div class="overflow-x-auto rounded-[14px] border border-border bg-white card-shadow">
+    <table class="w-full text-base">
+      <thead class="bg-page text-left text-[12px] uppercase tracking-wide text-body-muted">
+        <tr>
+          <th class="w-[44px] p-2"></th>
+          <th class="p-2">Ребёнок</th>
+          <th class="w-[90px] p-2 text-right">Заработал</th>
+          <th class="w-[90px] p-2 text-right">Потратил</th>
+          <th class="w-[100px] p-2 text-right">Баланс</th>
+          <th class="w-[140px] p-2"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {balances.map((b, i) => (
+          <tr data-kid-row data-kid-id={b.kid_id} class="border-t border-border align-middle">
+            <td class="p-2 text-center">
+              {i === 0 ? <i class="bi bi-trophy-fill text-amber-500" aria-hidden="true" title="1 место"></i>
+               : i === 1 ? <i class="bi bi-award-fill text-slate-400" aria-hidden="true" title="2 место"></i>
+               : i === 2 ? <i class="bi bi-award-fill text-amber-700" aria-hidden="true" title="3 место"></i>
+               : <span class="text-[12px] text-body-muted">{i + 1}</span>}
+            </td>
+            <td class="p-2">
+              <div class="font-medium text-navy-950" data-kid-name>{b.kid_name}</div>
+              {b.room_number ? <div class="mt-0.5 text-[12px] text-body-muted">к.{b.room_number}</div> : null}
+            </td>
+            <td class="p-2 text-right font-mono tabular-nums text-body-muted" data-kid-earned>{fmtRub(b.earned)}</td>
+            <td class="p-2 text-right font-mono tabular-nums text-body-muted" data-kid-spent>{fmtRub(b.spent)}</td>
+            <td class="p-2 text-right font-mono tabular-nums font-semibold text-navy-950" data-kid-balance>{fmtRub(b.balance)}</td>
+            <td class="p-2">
+              <div class="flex justify-end gap-1">
+                <button type="button" class="flex h-8 w-8 items-center justify-center rounded-[8px] text-emerald-600 hover:bg-emerald-50"
+                        title="Начислить" data-add-ledger data-sign="1" data-kid-id={b.kid_id} data-kid-name={b.kid_name}>
+                  <i class="bi bi-plus-circle" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="flex h-8 w-8 items-center justify-center rounded-[8px] text-red-600 hover:bg-red-50"
+                        title="Списать" data-add-ledger data-sign="-1" data-kid-id={b.kid_id} data-kid-name={b.kid_name}>
+                  <i class="bi bi-dash-circle" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="flex h-8 w-8 items-center justify-center rounded-[8px] text-body-muted hover:bg-primary-soft hover:text-primary"
+                        title="История" data-history data-kid-id={b.kid_id} data-kid-name={b.kid_name}>
+                  <i class="bi bi-clock-history" aria-hidden="true"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
+
+{/* ── Modal: История начислений ребёнка ─────────────────────────────── */}
+<div id="kid-ledger-sheet" class="portal-sheet" hidden>
+  <div class="portal-sheet__backdrop" data-kl-backdrop></div>
+  <div class="portal-sheet__panel">
+    <div class="portal-sheet__body">
+      <div class="flex items-center justify-between gap-2">
+        <h3 class="text-[18px] font-semibold text-navy-950">
+          <i class="bi bi-wallet2 text-primary mr-1" aria-hidden="true"></i>
+          Счёт: <span id="kl-hist-kid-name" class="text-primary"></span>
+        </h3>
+        <button type="button" id="kl-hist-close"
+                class="flex h-8 w-8 items-center justify-center rounded-full text-body-muted hover:bg-red-50 hover:text-red-600">
+          <i class="bi bi-x-lg text-[16px]" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <div id="kl-hist-loading" class="mt-4 text-base text-body-muted">Загрузка…</div>
+      <div id="kl-hist-empty" hidden class="mt-4 text-base text-body-muted">Начислений пока нет.</div>
+      <div id="kl-hist-list" hidden class="mt-3 space-y-2"></div>
+
+      <div class="mt-4 flex items-center justify-between gap-2">
+        <span class="text-[12px] text-body-muted">🗑 Один клик — красный, второй — удалить</span>
+        <button type="button" id="kl-hist-close2"
+                class="rounded-[10px] border border-border bg-white px-4 py-2 text-base text-navy-950 hover:border-primary">
+          Закрыть
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

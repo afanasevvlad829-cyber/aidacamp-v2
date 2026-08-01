@@ -5,6 +5,8 @@ import { createHash } from 'node:crypto';
 import { getPool } from '../../../lib/db';
 import { getCurrentPrice } from '../../../data/dynamicPrices';
 import { signDiscount } from './token';
+import { readVisitorId } from '../../../lib/attribution/cookie';
+import { saveLeadToPg, createCrmLead } from '../lead';
 
 async function logFortuneEvent(data: {
   event_type: string;
@@ -17,19 +19,27 @@ async function logFortuneEvent(data: {
   orig_price?: number;
   ip?: string | null;
   user_agent?: string | null;
+  visitor_id?: string | null;
+  ym_client_id?: string | null;
 }) {
   try {
     await getPool()?.query(
       `INSERT INTO fortune_events
-        (event_type, discount, shift_id, name, phone, order_id, final_price, orig_price, ip, user_agent)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+        (event_type, discount, shift_id, name, phone, order_id, final_price, orig_price,
+         ip, user_agent, visitor_id, ym_client_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
       [data.event_type, data.discount ?? null, data.shift_id ?? null,
        data.name ?? null, data.phone ?? null, data.order_id ?? null,
        data.final_price ?? null, data.orig_price ?? null,
-       data.ip ?? null, data.user_agent ?? null]
+       data.ip ?? null, data.user_agent ?? null,
+       data.visitor_id ?? null, data.ym_client_id ?? null]
     );
+    return true;
   } catch (e: any) {
-    console.error('[fortune/init] DB log error:', e.message);
+    // Заявка с колеса — самое дорогое событие: если она не записалась, источник
+    // восстановить нечем (30.07.2026 пришлось поднимать его из Метрики руками).
+    console.error('[fortune/init] DB WRITE FAILED (заявка не записана):', e.message);
+    return false;
   }
 }
 
@@ -135,8 +145,50 @@ export const POST: APIRoute = async ({ request }) => {
     }
     const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? null;
     const ua = request.headers.get('user-agent') ?? null;
-    logFortuneEvent({ event_type: 'lead_submit', discount, shift_id: shiftId, name, phone, order_id: orderId, final_price: finalPrice, orig_price: origPrice, ip, user_agent: ua });
-    console.log(`[fortune/init] LEAD orderId=${orderId} discount=${discount}% finalPrice=${finalPrice}₽ name="${name}" phone="${phone}"`);
+    // aid_visitor ставит nginx (HttpOnly) — по нему заявка связывается с visits,
+    // где лежат UTM, yclid и источник. Без этого источник восстановить нечем.
+    const visitorId = readVisitorId(request);
+    const ymClientId = typeof (body as any)?.ymClientId === 'string' ? (body as any).ymClientId : null;
+    logFortuneEvent({ event_type: 'lead_submit', discount, shift_id: shiftId, name, phone, order_id: orderId, final_price: finalPrice, orig_price: origPrice, ip, user_agent: ua, visitor_id: visitorId, ym_client_id: ymClientId });
+
+    // Заявка Фортуны идёт через тот же конвейер, что и обычная форма: сначала
+    // лид в AlfaCRM, потом строка в leads_log с полученным crm_id. Раньше здесь
+    // было только уведомление в Telegram — заявки не доезжали ни до CRM, ни до
+    // базы, и восстановить их можно было лишь из fortune_events (инцидент 31.07.2026).
+    // Контекст с клиента — тот же набор, что шлёт обычная форма (collectContext):
+    // UTM, yclid/gclid, страница, реферер, устройство, браузер, экран, время в сессии.
+    // До 31.07.2026 заявка Фортуны приходила без всего этого — в CRM был только телефон.
+    const ctx = (body as any)?.ctx;
+    const leadBody: Record<string, string> = {
+      phone:  phone || '',
+      name:   name || '',
+      shift:  shiftLabel,
+      source: 'fortune',
+      form_id: 'Колесо фортуны',
+      note_extra: `🎰 Колесо фортуны: скидка ${discount}%, итоговая цена ${finalPrice.toLocaleString('ru')} ₽ (было ${origPrice.toLocaleString('ru')} ₽). OrderId: ${orderId}`,
+    };
+    if (ctx && typeof ctx === 'object') {
+      for (const [k, v] of Object.entries(ctx)) {
+        if (typeof v === 'string' && v && !(k in leadBody)) leadBody[k] = v;
+      }
+    }
+    if (ymClientId) leadBody.ym_client_id = ymClientId;
+    const referer = request.headers.get('referer');
+    if (referer && !leadBody.landing_url) leadBody.landing_url = referer;
+
+    let crmId: number | null = null;
+    try {
+      crmId = await createCrmLead(leadBody);
+    } catch (e: any) {
+      console.error('[fortune/init] CRM: заявка не создана:', e?.message);
+    }
+    try {
+      await saveLeadToPg(leadBody, { ip: ip || '', userAgent: ua || '', crmId, visitorId });
+    } catch (e: any) {
+      console.error('[fortune/init] leads_log: запись не сохранена:', e?.message);
+    }
+
+    console.log(`[fortune/init] LEAD orderId=${orderId} discount=${discount}% finalPrice=${finalPrice}₽ name="${name}" phone="${phone}" crmId=${crmId ?? 'нет'}`);
     return json({ leadMode: true, orderId, discount, finalPrice, origPrice });
   }
 
@@ -211,7 +263,9 @@ export const POST: APIRoute = async ({ request }) => {
 
   const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? null;
   const ua = request.headers.get('user-agent') ?? null;
-  logFortuneEvent({ event_type: 'payment_start', discount, shift_id: shiftId, name, phone, order_id: orderId, final_price: finalPrice, orig_price: origPrice, ip, user_agent: ua });
+  const visitorId = readVisitorId(request);
+  const ymClientId = typeof (body as any)?.ymClientId === 'string' ? (body as any).ymClientId : null;
+  logFortuneEvent({ event_type: 'payment_start', discount, shift_id: shiftId, name, phone, order_id: orderId, final_price: finalPrice, orig_price: origPrice, ip, user_agent: ua, visitor_id: visitorId, ym_client_id: ymClientId });
   console.log(`[fortune/init] OK orderId=${orderId} paymentId=${tData.PaymentId} deposit=${deposit}₽ name="${name}" phone="${phone}"`);
 
   // ── Telegram-уведомление (fire-and-forget) ────────────────────────────────

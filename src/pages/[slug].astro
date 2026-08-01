@@ -9,7 +9,6 @@ import RelatedPages from '../components/RelatedPages.astro';
 import { getRelatedPages } from '../data/landing-pages';
 import Gallery from '../components/Gallery.astro';
 import CourseSchema from '../components/CourseSchema.astro';
-import FAQSchema from '../components/FAQSchema.astro';
 import { allLandings } from '../data/landings/index';
 import type { LandingData } from '../data/landings/types';
 
@@ -31,7 +30,6 @@ const landing = Astro.props as LandingData;
   canonical={landing.canonical}
 >
   <Fragment slot="head">
-    <FAQSchema items={landing.faqItems} />
     <CourseSchema
       name={landing.courseSchema.name}
       description={landing.courseSchema.description}
@@ -54,7 +52,11 @@ const landing = Astro.props as LandingData;
   <LandingTwoCol sections={landing.sections} />
   <Gallery />
   <Shifts />
-  <FAQ />
+  {/* faqItems — вопросы этого лендинга: рендерятся первой вкладкой и уходят в FAQPage.
+      Раньше они жили только в разметке (FAQSchema в slot="head") и не были видны. */}
+  {landing.faqDisplayItems
+    ? <FAQ extraItems={landing.faqItems} items={landing.faqDisplayItems} moreLink={{ href: '/faq/', text: 'Остальные вопросы — на странице FAQ' }} />
+    : <FAQ extraItems={landing.faqItems} />}
   <div class="mx-auto max-w-[720px] px-4 py-6 text-center">
     <p class="text-base text-slate-500">
       Подробнее о программе: <a href="/" class="text-primary hover:underline">детский IT-лагерь в Подмосковье</a> — <a href="/stati/kak-dobratsya-do-lagera/" class="text-primary hover:underline">как добраться до лагеря</a>{landing.relatedCities && landing.relatedCities.length > 0 && (<><br />Соседние города:{' '}{landing.relatedCities.map((l, i) => <>{i > 0 && ' — '}<a href={l.href} class="text-primary hover:underline">{l.text}</a></>)}</>)}
