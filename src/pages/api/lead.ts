@@ -206,6 +206,7 @@ function buildCrmNote(body: Record<string, string>): string {
   }
 
   // Устройство
+  if (body.device)    lines.push(`Устройство: ${body.device}${body.browser ? ' · ' + body.browser : ''}`);
   if (body.screen)    lines.push(`Экран: ${body.screen}`);
   if (body.viewport)  lines.push(`Viewport: ${body.viewport}`);
   if (body.language)  lines.push(`Язык: ${body.language}`);
