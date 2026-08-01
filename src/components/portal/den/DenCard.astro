@@ -17,10 +17,24 @@ const done = e.checklists.reduce(
 ---
 <article class="den-card" data-event={e.id}>
   <div class="den-card-main" data-toggle>
-    <div class="den-card-title">{e.title}</div>
+    <div class="den-card-head">
+      <div class="den-card-title">{e.title}</div>
+      <button type="button" class="den-edit" data-edit
+              title="Править блок" aria-label={`Править блок «${e.title}»`}>
+        <i class="bi bi-pencil"></i>
+      </button>
+    </div>
     <div class="den-card-meta">
+      {/* Ответственный меняется прямо здесь — раскрывать карточку не нужно. */}
+      <select class="den-resp-quick" data-field="responsible_staff_id" data-stop
+              data-empty={e.responsible_staff_id ? undefined : ''}
+              aria-label={`Ответственный за «${e.title}»`}>
+        <option value="">— ответственный не назначен —</option>
+        {staff.map((s) => (
+          <option value={s.id} selected={s.id === e.responsible_staff_id}>{s.name}</option>
+        ))}
+      </select>
       {e.content_task && <span class="den-badge tk"><i class="bi bi-camera-reels"></i> {e.content_task.title}</span>}
-      {e.responsible_name && <span class="den-badge resp"><i class="bi bi-person"></i> {e.responsible_name}</span>}
       {total > 0 && <span class="den-badge chk"><i class="bi bi-check2-square"></i> {done}/{total}</span>}
     </div>
     {e.notes && <div class="den-card-note">{e.notes}</div>}
@@ -52,15 +66,6 @@ const done = e.checklists.reduce(
         <input type="text" value={e.title} data-field="title">
       </label>
     </div>
-    <label class="den-field">
-      <span>Ответственный</span>
-      <select data-field="responsible_staff_id">
-        <option value="">— не назначен —</option>
-        {staff.map((s) => (
-          <option value={s.id} selected={s.id === e.responsible_staff_id}>{s.name}</option>
-        ))}
-      </select>
-    </label>
     <label class="den-field">
       <span>Комментарий</span>
       <textarea rows="2" data-field="notes">{e.notes ?? ''}</textarea>
