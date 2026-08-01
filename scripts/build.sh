@@ -45,6 +45,7 @@ console.log('sitemap.xml ready');
 "
 
 node scripts/check-faq-schema.mjs
+node scripts/check-breadcrumb-schema.mjs
 
 node scripts/inject-modulepreload.mjs
 npm run pagefind
