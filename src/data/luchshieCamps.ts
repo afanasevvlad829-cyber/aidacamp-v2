@@ -30,7 +30,7 @@ export const RATING_AS_OF = 'июль 2026';
 export const OUR_CAMP = {
   name: 'АйДаКемп',
   location: 'Наро-Фоминский район, санаторий «Изумруд», 66 км от МКАД',
-  niche: 'Загородный IT-лагерь с проживанием',
+  niche: 'Загородный IT-кемп с проживанием',
   year: 2021,
   rating: 5.0,
   reviews: 51,

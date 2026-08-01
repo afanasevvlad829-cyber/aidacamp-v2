@@ -5,6 +5,7 @@ import { isStaff } from '../../lib/portalPerms';
 import { listPrizeStates, listActivities } from '../../lib/portalEconomy';
 import { listCustomPrizes, countIssuancesByPrize } from '../../lib/portalPrizeOps';
 import { listKids } from '../../lib/portalKid';
+import { listAllBalances } from '../../lib/portalKidLedger';
 import EconomySettings from '../../components/portal/economy/EconomySettings.astro';
 import PrizesTable from '../../components/portal/economy/PrizesTable.astro';
 import GivePrizeDialog from '../../components/portal/economy/GivePrizeDialog.astro';
@@ -12,18 +13,21 @@ import CustomPrizeDialog from '../../components/portal/economy/CustomPrizeDialog
 import ActivitiesTable from '../../components/portal/economy/ActivitiesTable.astro';
 import ActivityDialog from '../../components/portal/economy/ActivityDialog.astro';
 import SummaryTab from '../../components/portal/economy/SummaryTab.astro';
+import KidLedgerTab from '../../components/portal/economy/KidLedgerTab.astro';
+import KidLedgerDialog from '../../components/portal/economy/KidLedgerDialog.astro';
 
 const role = Astro.locals.portalRole!;
 if (!isStaff(role)) {
   return Astro.redirect('/portal/');
 }
 
-const [prizeStates, activities, customPrizes, issuanceCounts, kids] = await Promise.all([
+const [prizeStates, activities, customPrizes, issuanceCounts, kids, kidBalances] = await Promise.all([
   listPrizeStates(),
   listActivities(),
   listCustomPrizes(),
   countIssuancesByPrize(),
   listKids(false),
+  listAllBalances(),
 ]);
 const stateById = new Map(prizeStates.map((s) => [s.prize_id, s]));
 
@@ -104,6 +108,9 @@ const CAT_LABELS: Record<string, string> = {
     <button data-tab="summary" class="tab-btn -mb-px rounded-t-[10px] border border-b-0 border-transparent bg-page px-4 py-2 text-base font-medium text-body-muted">
       <i class="bi bi-bar-chart-line" aria-hidden="true"></i> Сводка
     </button>
+    <button data-tab="kids" class="tab-btn -mb-px rounded-t-[10px] border border-b-0 border-transparent bg-page px-4 py-2 text-base font-medium text-body-muted">
+      <i class="bi bi-wallet2" aria-hidden="true"></i> Личный счёт
+    </button>
   </div>
 
   {/* ── Tab: Prizes ───────────────────────────────────────────────────────── */}
@@ -157,6 +164,12 @@ const CAT_LABELS: Record<string, string> = {
     <SummaryTab {fmtRub} {totalAll} />
   </section>
 
+  {/* ── Tab: Kids — личный счёт ───────────────────────────────────────────── */}
+  <section data-tab-pane="kids" hidden>
+    <KidLedgerTab balances={kidBalances} {fmtRub} />
+    <KidLedgerDialog {kids} />
+  </section>
+
   <style is:global>
     .econ-collapse{border:1px solid var(--border,#e5e7eb);border-radius:14px;background:#fff;overflow:hidden}
     .econ-summary{display:flex;align-items:center;gap:8px;cursor:pointer;padding:14px 16px;font-size:14px;font-weight:600;color:#285085;list-style:none;user-select:none}
@@ -191,4 +204,5 @@ const CAT_LABELS: Record<string, string> = {
     }
   </style>
   <script src="../../scripts/portal/prizes.ts"></script>
+  <script src="../../scripts/portal/kid-ledger.ts"></script>
 </PortalLayout>
