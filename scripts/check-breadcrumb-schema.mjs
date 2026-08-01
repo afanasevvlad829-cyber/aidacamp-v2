@@ -21,6 +21,13 @@
  *   · лендинги        → LandingLayout (единственный на все 110 страниц, знает canonical)
  *   · главная         → SchemaOrg
  * Страница свою вторую цепочку не пишет.
+ *
+ * Вторая проверка — валидность JSON внутри ld+json, по всем блокам любого типа.
+ * Раньше неразобравшийся блок молча пропускался, а это отдельный способ потерять
+ * разметку целиком: блок, написанный дочерним выражением тега вместо set:html,
+ * отдаёт в HTML исходный текст {JSON.stringify({…})}, и краулер его отбрасывает.
+ * Так уже терялись HowTo и Service (#1185, JLD-003) — грепом по src не ловится,
+ * потому что в исходнике выражение выглядит правильным.
  */
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -65,13 +72,15 @@ const sameTrail = (a, b) =>
 
 const dupes = [];
 const multi = [];
+const broken = [];
 let withSchema = 0;
 let total = 0;
 
 for (const file of walk(ROOT)) {
   const html = readFileSync(file, 'utf8');
-  if (!html.includes('BreadcrumbList')) continue;
-  withSchema++;
+  // Смотрим ВСЕ страницы со схемой, а не только с BreadcrumbList: битый блок может
+  // быть любого типа, и до JSON.parse его тип неизвестен.
+  if (!html.includes('application/ld+json')) continue;
 
   const url = '/' + relative(ROOT, file).replace(/index\.html$/, '');
   const lists = [];
@@ -79,9 +88,15 @@ for (const file of walk(ROOT)) {
   let m;
   while ((m = LD_RE.exec(html))) {
     let parsed;
-    try { parsed = JSON.parse(m[1]); } catch { continue; }
+    try {
+      parsed = JSON.parse(m[1]);
+    } catch (e) {
+      broken.push(`${url}\n      ${e.message}\n      ${m[1].trim().slice(0, 100)}`);
+      continue;
+    }
     collectBreadcrumbs(parsed, lists);
   }
+  if (lists.length) withSchema++;
   total += lists.length;
   if (lists.length < 2) continue;
 
@@ -97,6 +112,18 @@ if (multi.length) {
   if (multi.length > 10) console.warn(`  … ещё ${multi.length - 10}`);
 }
 
+if (broken.length) {
+  console.error(`\nFATAL: невалидный JSON внутри ld+json — ${broken.length} блок(ов):`);
+  for (const b of broken.slice(0, 20)) console.error(`  ✗ ${b}`);
+  if (broken.length > 20) console.error(`  … ещё ${broken.length - 20}`);
+  console.error('\nОбычно причина — блок написан дочерним выражением тега:');
+  console.error('  ✗ <script type="application/ld+json">{JSON.stringify({…})}</script>');
+  console.error('  ✓ <script type="application/ld+json" set:html={JSON.stringify({…})} />');
+  console.error('В первом случае в HTML уходит исходный текст выражения, а не JSON,');
+  console.error('и краулер отбрасывает блок целиком (инцидент #1185, JLD-003).\n');
+  process.exit(1);
+}
+
 if (dupes.length) {
   console.error(`\nFATAL: на ${dupes.length} страницах один и тот же путь размечен дважды:`);
   for (const d of dupes.slice(0, 20)) console.error(`  ✗ ${d}`);
@@ -108,4 +135,4 @@ if (dupes.length) {
   process.exit(1);
 }
 
-console.log(`BreadcrumbList OK: ${withSchema} страниц со схемой, ${total} цепочек, дублей пути нет`);
+console.log(`BreadcrumbList OK: ${withSchema} страниц со схемой, ${total} цепочек, дублей пути нет, JSON-LD валиден`);
