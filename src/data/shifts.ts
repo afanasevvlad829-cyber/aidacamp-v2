@@ -225,6 +225,19 @@ export function shiftDeduction(s: Shift): number {
  * поиском по странице. Единственное место, где задаётся формат — здесь.
  */
 export const fmtRub = (n: number) => n.toLocaleString('ru-RU').replace(/[\u00a0\u202f]/g, ' ') + ' ₽';
+// === Трансфер от м. Солнцево — ЕДИНЫЙ ИСТОЧНИК. НЕ хардкодить цену/пункт на страницах! ===
+// Инцидент: на нескольких гео-лендингах (balashiha, lubertsy, krasnogorsk, zelenograd,
+// zagorodnyj-lager) часть текста утверждала «бесплатный трансфер», другая — 2000₽ —
+// потому что цена была захардкожена отдельной строкой в каждом файле, и правки
+// расходились. Страж: npm run check:transfer.
+export const TRANSFER_PRICE = 2000; // ₽, в один конец
+export const TRANSFER_POINT = 'м. Солнцево'; // точка отправления/сбора
+export const TRANSFER_PRICE_FMT = fmtRub(TRANSFER_PRICE); // «2 000 ₽»
+export const TRANSFER_INFO = `${TRANSFER_PRICE_FMT} в один конец, с сопровождающим`; // готовая фраза для прозы
+// Туда-обратно — ПРОИЗВОДНОЕ от TRANSFER_PRICE, не отдельное число (нашли ещё один
+// вариант того же дрейфа: campData.ts называл 4000₽, BookingInfoModal.astro — 5000₽).
+export const TRANSFER_PRICE_ROUNDTRIP_FMT = fmtRub(TRANSFER_PRICE * 2); // «4 000 ₽»
+
 const _fmtV = fmtRub;
 // Форматированные строки вычета для прозы (как PRICE_*): «6 250 ₽».
 export const VYCHET_S1 = _fmtV(shiftDeduction(_shift1));
