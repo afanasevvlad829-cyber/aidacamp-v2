@@ -25,16 +25,10 @@ interface Props { config: SeasonConfig; }
 const { config: c } = Astro.props;
 
 const canonical = `https://aidacamp.ru${c.path}`;
+// BreadcrumbList отдаёт LandingLayout (breadcrumbLabel ниже) — иначе блок задваивался.
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
-    {
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://aidacamp.ru" },
-        { "@type": "ListItem", "position": 2, "name": c.breadcrumb, "item": canonical }
-      ]
-    },
     {
       "@type": "FAQPage",
       "mainEntity": c.faq.items.map((f) => ({
@@ -54,6 +48,7 @@ const jsonLd = {
   h1={c.h1}
   canonical={canonical}
   hideAgeBar={true}
+  breadcrumbLabel={c.breadcrumb}
 >
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
