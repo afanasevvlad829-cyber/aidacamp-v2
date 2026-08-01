@@ -14,7 +14,7 @@ import re
 
 # Шум: краулеры (по User-Agent) и не-страницы (ассеты по расширению URL).
 # Отсекаем В МОМЕНТ ЗАПИСИ, чтобы сырая visits не копила ~59% мусора.
-_BOT_RE = re.compile(r"bot|crawl|spider|externalagent|amazonbot|ahrefs|semrush|duckduck|preview|monitor|uptime|python|curl|wget|go-http|java/|okhttp|headless|phantom|slurp|bingpreview|facebookexternalhit", re.I)
+_BOT_RE = re.compile(r"bot|crawl|spider|externalagent|amazonbot|ahrefs|semrush|duckduck|preview|monitor|uptime|python|curl|wget|go-http|go\.d\.plugin|netdata|prometheus|zabbix|pingdom|statuscake|java/|okhttp|headless|phantom|slurp|bingpreview|facebookexternalhit", re.I)
 _ASSET_RE = re.compile(r"\.(json|webmanifest|xml|txt|ico|css|js|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|map|mp4|webm|pdf)(\?|$)", re.I)
 
 def is_noise(ua: str, uri: str) -> bool:

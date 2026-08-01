@@ -426,6 +426,9 @@ const segData = SEGMENTS.map((seg, i) => {
     TIMER_SECONDS,
   } from '../../scripts/shifts/fortune';
   import { YM_COUNTER } from '../../data/tracking';
+  // Тот же сбор контекста, что у обычной формы: UTM, yclid, страница, устройство,
+  // время в сессии, Яндекс-ID. Без этого заявка Фортуны приходила почти пустой.
+  import { collectContext, getYmClientId } from '../../scripts/form-submit';
 
   function initFortuneCard() {
     const cardEl  = document.querySelector<HTMLElement>('[data-fortune-card]');
@@ -452,10 +455,17 @@ const segData = SEGMENTS.map((seg, i) => {
       document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + exp + '; path=/; SameSite=Lax';
     }
 
-    // Restore state from sessionStorage so page refresh doesn't reset spins
+    // Restore state from sessionStorage so page refresh doesn't reset spins.
+    // Дублируем в куку: sessionStorage умирает вместе с вкладкой, и раньше
+    // выигранная скидка терялась безвозвратно — человек возвращался в пустоту.
     const SS_KEY = 'fortune_' + SHIFT_ID + '_2026';
+    const STATE_COOKIE = 'fortune_' + SHIFT_ID + '_state';
+    const WIN_TTL_DAYS = 30;
     let saved: { attempts: number; wonDiscount: number; wonToken: string; spinsDone: number } | null = null;
     try { saved = JSON.parse(sessionStorage.getItem(SS_KEY) || 'null'); } catch (_) {}
+    if (!saved) {
+      try { saved = JSON.parse(getCookie(STATE_COOKIE) || 'null'); } catch (_) {}
+    }
 
     let attempts    = saved ? saved.attempts    : 3;
     let wonDiscount = saved ? saved.wonDiscount : 0;
@@ -468,11 +478,15 @@ const segData = SEGMENTS.map((seg, i) => {
     if (FSC_TEST) {
       try { sessionStorage.removeItem(SS_KEY); } catch (_) {}
       document.cookie = COOKIE_KEY + '=;path=/;max-age=0;SameSite=Lax';
+      document.cookie = STATE_COOKIE + '=;path=/;max-age=0;SameSite=Lax';
       saved = null; attempts = 99; wonDiscount = 0; wonToken = ''; spinsDone = 0;
     }
 
     function saveState() {
-      try { sessionStorage.setItem(SS_KEY, JSON.stringify({ attempts, wonDiscount, wonToken, spinsDone })); } catch (_) {}
+      const st = JSON.stringify({ attempts, wonDiscount, wonToken, spinsDone });
+      try { sessionStorage.setItem(SS_KEY, st); } catch (_) {}
+      // В куку пишем только когда есть что беречь — саму выигранную скидку.
+      if (wonDiscount > 0) { try { setCookie(STATE_COOKIE, st, WIN_TTL_DAYS); } catch (_) {} }
     }
 
     const wheel        = document.getElementById('fsc-wheel') as SVGSVGElement | null;
@@ -545,6 +559,17 @@ const segData = SEGMENTS.map((seg, i) => {
     if (saved) {
       updateDots();
       if (saved.wonDiscount > 0) {
+        // Токен подписан часовым слотом и живёт ~час (см. api/fortune/init.ts).
+        // При возврате через день сохранённый токен уже недействителен —
+        // запрашиваем свежий под ту же скидку, иначе бронь упадёт с 403.
+        fetch('/api/fortune/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ discount: saved.wonDiscount }),
+        })
+          .then(r => r.json())
+          .then(data => { if (data && data.token) { wonToken = data.token; saveState(); } })
+          .catch(() => {});
         const _fp  = computeFortunePrice(PRICE, saved.wonDiscount);
         const _dep = computeDeposit(_fp);
         if (discPctEl)    discPctEl.textContent    = saved.wonDiscount + '%';
@@ -814,7 +839,8 @@ const segData = SEGMENTS.map((seg, i) => {
 
       const isTest = new URLSearchParams(window.location.search).get('ft') === '1';
 
-      fetch('/api/fortune/init', {
+      Promise.all([getYmClientId().catch(() => ''), Promise.resolve(collectContext())])
+        .then(([ymClientId, ctx]) => fetch('/api/fortune/init', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -824,8 +850,10 @@ const segData = SEGMENTS.map((seg, i) => {
           name,
           phone: phoneInput?.value.trim(),
           test:  isTest,
+          ymClientId,
+          ctx,
         }),
-      })
+      }))
         .then(r => r.json())
         .then(data => {
           if (data.leadMode) {

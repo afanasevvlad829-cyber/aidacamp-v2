@@ -83,6 +83,11 @@ export default defineConfig({
         !page.includes('/r/') && // персонализированная страница для возвратников (рассылка), не для органики
         !page.includes('/smena-taymlayn/') && // персонализированный таймлайн смены (ссылка родителям), не для органики
         !page.includes('/leto-dlya-sebya/') && // noindex={true}, лендинг только под РСЯ (глэмпинги/отели), не для органики
+        !page.includes('/privacy-policy/') && // noindex, follow — политика конфиденциальности, не для органики
+        !page.includes('/press/') && // noindex — страница для прессы, не для органики
+        // /video/<slug>/ — карточки под одно видео для расшаривания в переписке (owner
+        // 30.07.2026), не для органики. /video/ (хаб-листинг) НЕ трогаем — он индексируемый.
+        !/^https:\/\/aidacamp\.ru\/video\/[^/]+\/?$/.test(page) &&
         // Редирект-стабы и битые страницы — НЕ в sitemap (иначе смешанный сигнал
         // Яндексу: карта говорит «индексируй», страница — noindex/редирект → тормозит перенос)
         !/\/(deti-otdokhnuli-v-letnikh-lageryakh|detskie-letnie-lagerya-v-podmoskove|detskie-ozdorovitelnye-lagerya-2026|detskiy-letniy-lager-v-podmoskove|detskiy-ozdorovitelnyy-lager|kanikuly-otdykh-v-lagere|kupit-putevku-v-lager-2026|kupit-putevku-v-lager|lager-letniy-na-20-dney|lager-v-podmoskove-na-leto-2026-nedorogo|lagerya-v-podmoskove-na-leto-dlya-podrostkov|letnie-lagerya-podmoskove|letnie-lagerya|letniy-lager-dlya-detey-v-moskve|letniy-lager-v-moskve|luchshie-detskie-lagerya-podmoskovya|luchshie-lagerya-v-podmoskove|mesta-v-letniy-lager|nedorogoy-letniy-lager-dlya-detey-v-podmoskove|ob-organizacii-otdyha-detej-i-ozdarovleniya|popali-v-letniy-lager|programma-smeny|putevka-v-detskiy-lager-letom|putevka-v-lager-v-podmoskove-2026|putevki-v-detskiy-lager-na-leto-2026|fortune-fail|smena2-editor|gde-poluchit-spravku-079u-dlya-lagerya|lager-elochki-domodedovo|lager-petrushka-v-podmoskove|lager-vshe-dlya-shkolnikov-2026|lagerya-za-granitsu-dlya-podrostkov|mos-ru-detskiy-lager|nalogovyy-vychet-za-detskiy-lager|neo-kemp-detskiy-lager|rozendorf-detskiy-lager|skolko-delaetsya-spravka-079u-dlya-lagerya|skolko-deystvuet-spravka-079u-dlya-lagerya|sportzaniya-lager-v-podmoskove|strannyy-detskiy-lager|terra-nostra-shatura-detskiy-lager|lager-na-vesennie-kanikuly-2026|lager-na-osenie-kanikuly)\/?$/.test(page),

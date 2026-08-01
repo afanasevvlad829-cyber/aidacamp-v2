@@ -103,6 +103,18 @@ export function getRoom(number: number): RoomDef | undefined {
   return ROOMS.find((r) => r.number === number);
 }
 
+/** Проверяет ручное назначение койки до записи в БД. Null/null означает «не расселён». */
+export function validateRoomPlacement(roomNumber: number | null, bedIndex: number | null): string | null {
+  if (roomNumber == null && bedIndex == null) return null;
+  if (roomNumber == null || bedIndex == null) return 'room_number and bed_index must be set together';
+  if (!Number.isInteger(roomNumber) || !Number.isInteger(bedIndex)) return 'room_number and bed_index must be integers';
+
+  const room = getRoom(roomNumber);
+  if (!room || room.type === 'staff' || room.capacity <= 0) return 'room unavailable for accommodation';
+  if (bedIndex < 0 || bedIndex >= room.capacity) return 'bed_index outside room capacity';
+  return null;
+}
+
 export function roomsByFloor(floor: 1 | 2): RoomDef[] {
   return ROOMS.filter((r) => r.floor === floor).sort((a, b) => a.row - b.row || a.col - b.col);
 }

@@ -1,12 +1,11 @@
 ---
-import { PRICE_MAX, PRICE_MIN, PRICE_S4, VYCHET_MAX, SEASON_YEAR } from '../data/shifts';
+import { PRICE_MAX, PRICE_MIN, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX } from '../data/shifts';
 import '../styles/global.css';
 import LandingLayout from '../layouts/LandingLayout.astro';
 import Shifts from '../components/Shifts.astro';
 import FAQ from '../components/FAQ.astro';
 import RelatedPages from '../components/RelatedPages.astro';
 import { getRelatedPages } from '../data/landing-pages';
-import FAQSchema from '../components/FAQSchema.astro';
 import { SEASON_MONTHS_NOM } from '../data/evergreen';
 ---
 
@@ -18,13 +17,6 @@ import { SEASON_MONTHS_NOM } from '../data/evergreen';
   canonical="https://aidacamp.ru/lager-s-angliyskim-yazykom-v-podmoskove"
   noindex={true}
 >
-  <Fragment slot="head">
-    <FAQSchema items={[
-    { q: `Есть ли лагерь с английским языком в подмосковье с проживанием в ${SEASON_YEAR}?`, a: `АйДаКемп — загородный IT-лагерь с проживанием в Наро-Фоминском районе, доступный из С английским. Смены 7–14 дней, летом ${SEASON_YEAR}, для школьников 7–15 лет.` },
-    { q: "Как добраться до лагеря из С английским?", a: "Организованный трансфер отправляется от м. Солнцево (2 000 ₽). На машине: лагерь в Наро-Фоминском районе, 66 км от МКАД по Киевскому шоссе." },
-    { q: `Сколько стоит лагерь в ${SEASON_YEAR} году?`, a: `От ${PRICE_S4} за 10 дней до ${PRICE_MAX} за 13 дней. Включены питание, проживание, IT-программа. Налоговый вычет 13% — до ${VYCHET_MAX}.` }
-  ]} />
-  </Fragment>
 
   <main class="mx-auto max-w-[720px] px-4 py-10">
     <h1 class="text-[28px] md:text-[36px] font-bold text-body leading-tight tracking-[-0.02em] mb-6">
@@ -32,7 +24,7 @@ import { SEASON_MONTHS_NOM } from '../data/evergreen';
     </h1>
 
     <div class="prose prose-lg max-w-none text-body-muted leading-relaxed">
-      <p>АйДаКемп — детский IT-лагерь в Подмосковье для школьников 7–15 лет. Расположен на загородной базе — санатории «Изумруд» в Наро-Фоминском районе Московской области, 66 км от МКАД по Киевскому шоссе. Для семей из С английским — организованный трансфер от м. Солнцево (2 000 ₽).</p>
+      <p>АйДаКемп — детский IT-лагерь в Подмосковье для школьников 7–15 лет. Расположен на загородной базе — санатории «Изумруд» в Наро-Фоминском районе Московской области, 66 км от МКАД по Киевскому шоссе. Для семей из С английским — организованный трансфер от м. Солнцево ({TRANSFER_PRICE_FMT}).</p>
       <p>IT-направления: Python, AI и нейросети, Minecraft Education, Roblox Studio, 3D-моделирование — ребёнок выбирает при записи. Группы до 8 человек, занятия дважды в день. В финале смены — хакатон и готовый проект. Создание собственного проекта от идеи до рабочего кода — практический навык, который ребёнок увозит домой. Путёвка от {PRICE_MIN}, налоговый вычет 13% — до {VYCHET_MAX}.</p>
     </div>
 
@@ -51,7 +43,7 @@ import { SEASON_MONTHS_NOM } from '../data/evergreen';
       </li>
       <li class="flex items-start gap-2 text-[16px] text-body">
         <i class="bi bi-check-lg text-primary mt-0.5 shrink-0" aria-hidden="true"></i>
-        <span>Трансфер от м. Солнцево, 2 000 ₽</span>
+        <span>Трансфер от м. Солнцево, {TRANSFER_PRICE_FMT}</span>
       </li>
       <li class="flex items-start gap-2 text-[16px] text-body">
         <i class="bi bi-check-lg text-primary mt-0.5 shrink-0" aria-hidden="true"></i>
@@ -76,7 +68,11 @@ import { SEASON_MONTHS_NOM } from '../data/evergreen';
   </main>
 
   <Shifts />
-  <FAQ />
+  <FAQ extraItems={[
+    { q: `Есть ли лагерь с английским языком в подмосковье с проживанием в ${SEASON_YEAR}?`, a: `АйДаКемп — загородный IT-лагерь с проживанием в Наро-Фоминском районе, доступный из С английским. Смены 7–14 дней, летом ${SEASON_YEAR}, для школьников 7–15 лет.` },
+    { q: "Как добраться до лагеря из С английским?", a: `Организованный трансфер отправляется от м. Солнцево (${TRANSFER_PRICE_FMT}). На машине: лагерь в Наро-Фоминском районе, 66 км от МКАД по Киевскому шоссе.` },
+    { q: `Сколько стоит лагерь в ${SEASON_YEAR} году?`, a: `От ${PRICE_S4} за 10 дней до ${PRICE_MAX} за 13 дней. Включены питание, проживание, IT-программа. Налоговый вычет 13% — до ${VYCHET_MAX}.` }
+  ]} />
   <div class="mx-auto max-w-[720px] px-4 pb-8 text-center">
     <p class="text-base text-slate-500">
       Подробнее: <a href="/" class="text-primary hover:underline">детский IT-лагерь в Подмосковье</a> ·

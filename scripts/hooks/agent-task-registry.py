@@ -31,6 +31,11 @@ import subprocess
 import sys
 
 RECONCILE_WINDOW_H = 72
+
+# Скретчпад сессии: /tmp/claude-501/<slug>/<uuid>/scratchpad/… (и /private/tmp/…).
+# Тот же паттерн, что в guard-agent-output.py — файлы хуков самодостаточны,
+# поэтому регулярка продублирована сознательно, а не вынесена в общий модуль.
+EPHEMERAL = re.compile(r"(?:^|/)(?:private/)?tmp/claude-\d+/.*?/scratchpad/", re.I)
 TRIM_AFTER_DAYS = 7
 
 # Тот же паттерн, что в guard-agent-output.py (файлы хуков самодостаточны — имя с
@@ -127,6 +132,18 @@ def reconcile() -> str:
         out = e.get("output")
         if out and result_exists(out):
             continue  # артефакт на месте — задача закрыта
+        # Путь ведёт в скретчпад сессии — проверить нечем, и это НЕ вина агента:
+        # скретчпад чистится на ходу, файл мог быть написан и стёрт. Разбор
+        # 01.08.2026: 45 из 46 записей в окне были именно такими, и реестр
+        # показывал их как незакрытые вечно — на такой список перестают смотреть.
+        # Отсутствие каталога целиком — тот же случай, лишь более поздняя стадия.
+        # Новые задачи в скретчпад уже не пропускает guard-agent-output.py,
+        # поэтому фильтр касается только исторических записей.
+        if out and (
+            EPHEMERAL.search(out)
+            or not os.path.isdir(os.path.dirname(os.path.expanduser(out)))
+        ):
+            continue
         where = f"→ {out} (файла нет/пуст)" if out else "(без файлового контракта)"
         open_tasks.append(f"  • {e.get('ts', '?')[:16]} «{e.get('desc', '?')}» {where}")
 
