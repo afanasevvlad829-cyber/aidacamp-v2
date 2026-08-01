@@ -11,6 +11,36 @@ interface Props {
 const { event: e, staff, library, checklistLib, doneSet } = Astro.props;
 
 const fmt = (t: string | null) => (t ? t.slice(0, 5) : '');
+
+/**
+ * Разбор заметки на структуру для читаемого вывода.
+ * Заметки пишутся простым текстом (их правят в textarea), но по факту имеют
+ * устойчивую разметку: ЗАГОЛОВКИ КАПСОМ, пункты через «-» и нумерованные шаги.
+ * Раньше всё это выводилось одним серым полотном — на телефоне в день заезда
+ * по такому не сориентироваться.
+ */
+type NoteLine =
+  | { kind: 'head'; text: string }
+  | { kind: 'item'; text: string }
+  | { kind: 'step'; num: string; text: string }
+  | { kind: 'text'; text: string };
+
+function parseNote(raw: string): NoteLine[] {
+  return raw.split('\n').reduce<NoteLine[]>((acc, ln) => {
+    const s = ln.trim();
+    if (!s) return acc;
+    const step = s.match(/^(\d+)[.)]\s+(.*)$/);
+    if (step) { acc.push({ kind: 'step', num: step[1], text: step[2] }); return acc; }
+    if (/^[-—•]\s+/.test(s)) { acc.push({ kind: 'item', text: s.replace(/^[-—•]\s+/, '') }); return acc; }
+    // Заголовок: строка целиком капсом (буквы есть, строчных нет), допускаем цифры и пунктуацию
+    const letters = s.replace(/[^A-Za-zА-Яа-яЁё]/g, '');
+    if (letters.length >= 3 && letters === letters.toUpperCase()) { acc.push({ kind: 'head', text: s }); return acc; }
+    acc.push({ kind: 'text', text: s });
+    return acc;
+  }, []);
+}
+
+const noteLines = e.notes ? parseNote(e.notes) : [];
 const total = e.checklists.reduce((n, cl) => n + cl.items.length, 0);
 const done = e.checklists.reduce(
   (n, cl) => n + cl.items.filter((it) => doneSet.includes(`${e.id}:${cl.checklist_id}:${it.id}`)).length, 0);
@@ -37,7 +67,16 @@ const done = e.checklists.reduce(
       {e.content_task && <span class="den-badge tk"><i class="bi bi-camera-reels"></i> {e.content_task.title}</span>}
       {total > 0 && <span class="den-badge chk"><i class="bi bi-check2-square"></i> {done}/{total}</span>}
     </div>
-    {e.notes && <div class="den-card-note">{e.notes}</div>}
+    {noteLines.length > 0 && (
+      <div class="den-card-note">
+        {noteLines.map((l) => (
+          l.kind === 'head' ? <div class="den-note-head">{l.text}</div>
+          : l.kind === 'item' ? <div class="den-note-item">{l.text}</div>
+          : l.kind === 'step' ? <div class="den-note-step"><b>{l.num}</b><span>{l.text}</span></div>
+          : <div class="den-note-text">{l.text}</div>
+        ))}
+      </div>
+    )}
     {e.checklists.length > 0 && (
       <ul class="den-card-cl-preview">
         {e.checklists.flatMap((cl) => cl.items.map((it) => ({ it, cl }))).slice(0, 5).map(({ it, cl }) => {
