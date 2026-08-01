@@ -12,10 +12,24 @@ import { WHATSAPP_URL, YANDEX_MAPS_URL, STAT_FOUNDED_YEAR, STAT_YEARS, STAT_KIDS
 
 const relatedPages = getRelatedPages('/otzyvy');
 
+const MONTHS: Record<string, string> = {
+  января: '01', февраля: '02', марта: '03', апреля: '04', мая: '05', июня: '06',
+  июля: '07', августа: '08', сентября: '09', октября: '10', ноября: '11', декабря: '12',
+};
+const parseDate = (d: string) => {
+  const parts = d.split(' ');
+  if (parts.length === 3) {
+    const day = parts[0].padStart(2, '0');
+    const month = MONTHS[parts[1]] ?? '01';
+    return `${parts[2]}-${month}-${day}`;
+  }
+  return d;
+};
+
 const reviewsSchema = reviews.map((r) => ({
   "@type": "Review",
   "author": { "@type": "Person", "name": r.name },
-  "datePublished": r.date,
+  "datePublished": parseDate(r.date),
   "reviewBody": r.fullText ?? r.text,
   "reviewRating": {
     "@type": "Rating",
