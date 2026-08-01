@@ -48,3 +48,18 @@ export async function withDbClient<T>(fn: (c: pg.PoolClient) => Promise<T>): Pro
     client.release();
   }
 }
+
+/** Выполнить несколько связанных запросов атомарно на одном соединении. */
+export async function withDbTransaction<T>(fn: (c: pg.PoolClient) => Promise<T>): Promise<T | null> {
+  return withDbClient(async (client) => {
+    await client.query('BEGIN');
+    try {
+      const result = await fn(client);
+      await client.query('COMMIT');
+      return result;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    }
+  });
+}
