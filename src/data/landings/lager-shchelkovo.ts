@@ -1,17 +1,17 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, VYCHET_MAX } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX } from '../shifts';
 import type { LandingData } from './types';
 
 const landing: LandingData = {
   slug: 'lager-shchelkovo',
   title: `Летний лагерь в Щёлково ${SEASON_YEAR} — IT-смены 7–15 лет | АйДаКемп`,
-  description: `Лагерь для ребят 7–15 лет из Щёлково: трансфер от м. Солнцево (2 000 ₽), Python, AI, Minecraft, бассейн. Вычет до ${VYCHET_MAX}, смены от ${PRICE_MIN}.`,
+  description: `Лагерь для ребят 7–15 лет из Щёлково: трансфер от м. Солнцево (${TRANSFER_PRICE_FMT}), Python, AI, Minecraft, бассейн. Вычет до ${VYCHET_MAX}, смены от ${PRICE_MIN}.`,
   h1: 'Детский лагерь рядом с Щёлково',
   canonical: 'https://aidacamp.ru/lager-shchelkovo',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
   faqDisplayItems: ['documents:0', 'documents:6', 'payment:1', 'payment:2'],
   faqItems: [
-    { q: 'Как добраться из Щёлково до лагеря АйДаКемп?', a: 'АйДаКемп — 66 км от МКАД по Киевскому шоссе (~1 час без пробок). На машине — через МКАД и Киевское шоссе; на автобусе или метро — до м. Солнцево, дальше организованный трансфер (2 000 ₽, ~40 мин).' },
-    { q: 'Сколько стоит путёвка в лагерь из Щёлково?', a: `Смены от ${PRICE_MIN} (10 дней) до ${PRICE_MAX} (13 дней) — включены проживание, питание и IT-программа с бассейном. Трансфер от м. Солнцево — 2 000 ₽ отдельно.` },
+    { q: 'Как добраться из Щёлково до лагеря АйДаКемп?', a: `АйДаКемп — 66 км от МКАД по Киевскому шоссе (~1 час без пробок). На машине — через МКАД и Киевское шоссе; на автобусе или метро — до м. Солнцево, дальше организованный трансфер (${TRANSFER_PRICE_FMT}, ~40 мин).` },
+    { q: 'Сколько стоит путёвка в лагерь из Щёлково?', a: `Смены от ${PRICE_MIN} (10 дней) до ${PRICE_MAX} (13 дней) — включены проживание, питание и IT-программа с бассейном. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} отдельно.` },
   ],
   courseSchema: {
     name: 'Детский IT-лагерь рядом с Щёлково — АйДаКемп',
@@ -37,7 +37,7 @@ const landing: LandingData = {
       text: 'Санаторий «Изумруд», Наро-Фоминский городской округ — 66 км от МКАД по Киевскому шоссе (~1 час без пробок), либо автобус/метро до м. Солнцево и трансфер лагеря.',
       list: [
         'Автобус до м. Щёлковская (~20–30 мин) → метро до м. Солнцево (~45 мин)',
-        'Трансфер от м. Солнцево до лагеря: 2 000 ₽, ~40 мин',
+        `Трансфер от м. Солнцево до лагеря: ${TRANSFER_PRICE_FMT}, ~40 мин`,
       ],
     },
     {
@@ -77,7 +77,7 @@ const landing: LandingData = {
         `Смена 2 (завершена): ${DATES_SHORT_S2}, 14 дней — ${PRICE_S2}`,
         `Смена 3: ${DATES_SHORT_S3}, 13 дней — ${PRICE_S3}`,
         `Смена 4: ${DATES_SHORT_S4}, 10 дней — ${PRICE_S4}`,
-        'Трансфер от м. Солнцево — 2 000 ₽ в одну сторону',
+        `Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} в одну сторону`,
       ],
     },
     {

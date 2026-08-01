@@ -123,6 +123,7 @@
 | **База цены, даты (start/end), длительность** | `src/data/shifts.ts` → `SHIFT_META` (+ строки `price:`/`startDate:` каждой смены) | импорт |
 | **Какие смены открыты к брони** | `src/data/shifts.ts` → `mainShifts` / `shortShifts` | импорт массива |
 | **Текущая цена (с ростом)** | `src/data/dynamicPrices.ts` (правило поверх `SHIFT_META`) | `getCurrentPrice(shiftId)` |
+| **Цена трансфера от м. Солнцево** | `src/data/shifts.ts` → `TRANSFER_PRICE` | `TRANSFER_PRICE_FMT` / `TRANSFER_INFO` / `TRANSFER_PRICE_ROUNDTRIP_FMT` |
 
 **📈 ЕДИНОЕ ПРАВИЛО РОСТА ЦЕНЫ (для всех смен одинаковое, в `dynamicPrices.ts`):**
 1. До «старт − 30 дней» — цена = базовой.
@@ -137,6 +138,7 @@
 - Завершить/открыть смену = добавить/убрать её в `mainShifts`/`shortShifts` — **в одном месте**. Бот (`campData.ts`) и SEO (`SchemaOrg.astro`) фильтруются по этому списку автоматически.
 - Бот не ведёт свой список смен: `campData.ts` берёт цены через `getCurrentPrice()` и фильтрует смены по `mainShifts`/`shortShifts`.
 - Стражи `npm run check:prices` и `check:dates` роняют билд при литерале цены/даты смены вне `shifts.ts`.
+- Цену трансфера (2000₽) НИКОГДА не хардкодить строкой в лендингах/промптах бота — только `TRANSFER_PRICE_FMT`/`TRANSFER_INFO`. Страж `npm run check:transfer` роняет билд при хардкоде «2 000 ₽» вне `shifts.ts` (инцидент: на 5+ лендингах цена трансфера разошлась на «бесплатно» vs «2000₽», т.к. хардкодилась в каждом файле отдельно).
 
 ### 🧱 Новые гео/возрастные SEO-лендинги — через `[slug]`, не копипастой
 
