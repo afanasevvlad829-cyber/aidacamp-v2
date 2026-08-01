@@ -357,7 +357,7 @@ document.getElementById('copy-day')?.addEventListener('click', () => {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
     body: JSON.stringify({ shift_id: Number(shiftId), from_date: date, to_date: target }),
   }).then((r) => r.json()).then((res) => {
-    if (res.ok) { alert('Скопировано блоков: ' + (res.count ?? 0)); location.href = '/portal/den?shift=' + shiftId + '&date=' + target; }
+    if (res.ok) { alert('Скопировано блоков: ' + (res.count ?? 0)); location.href = '/portal/smena?shift=' + shiftId + '&date=' + target; }
     else alert('Ошибка: ' + (res.error || 'copy-day не готов'));
   });
 });

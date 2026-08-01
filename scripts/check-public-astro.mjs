@@ -1,5 +1,19 @@
 import { spawnSync } from 'node:child_process';
 
+// Дизайн (2026-07-26): тайпчек (этот скрипт) гейтит ТОЛЬКО прод, не dev.
+// SKIP_ASTRO_CHECK=1 ставится в .github/workflows/quality-gate.yml (гейт
+// мержа в dev — быстрый, без тайпчека) и в job `build` deploy.yml (общий
+// dist/ для dev+prod, тоже без тайпчека). Реальный прогон — только в job
+// `promote` deploy.yml (`npm run check:public` БЕЗ этого флага), прямо перед
+// автопромоутом dev→main: единственное место, где тайпчек кого-то блокирует.
+// Локальный/ручной `npm run build` эту переменную не видит и проверяет как обычно.
+if (process.env.SKIP_ASTRO_CHECK === '1') {
+  console.log(
+    'Public Astro check SKIPPED (SKIP_ASTRO_CHECK=1) — тайпчек для этого прогона отложен до прод-гейта (deploy.yml:promote).',
+  );
+  process.exit(0);
+}
+
 const excluded = [
   'src/pages/lanit-v5.astro',
   'src/pages/smena2-editor.astro',

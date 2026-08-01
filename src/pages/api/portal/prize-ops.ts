@@ -5,7 +5,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { requireStaff } from '../../../lib/portalPerms';
 import {
-  listIssuances, createIssuance, deleteIssuance, updateIssuance, countIssuancesByPrize,
+  listIssuances, issuePrize, deleteIssuance, updateIssuance, countIssuancesByPrize,
   listCustomPrizes, createCustomPrize, archiveCustomPrize, deleteAllIssuances,
 } from '../../../lib/portalPrizeOps';
 const UPLOADS_ROOT = process.env.PORTAL_UPLOADS_ROOT || '/var/www/aidacamp-dev/uploads/portal';
@@ -75,7 +75,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
           if (mime.startsWith('video/')) video_url = url;
           else photo_url = url;
         }
-        const id = await createIssuance({
+        const issuance = await issuePrize({
           prize_id: prizeId,
           prize_name: form.get('prize_name')?.toString() || null,
           kid_id: form.get('kid_id') ? Number(form.get('kid_id')) : null,
@@ -85,25 +85,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
           note: form.get('note')?.toString() || null,
           bongere_price: form.get('bongere_price') ? Number(form.get('bongere_price')) : null,
         });
-        // Декремент остатка: все призы в portal_prize_custom — уменьшаем qty по slug.
-        let remaining: number | null = null;
-        {
-          const { default: pg } = await import('pg');
-          const conn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
-          if (conn) {
-            const c = new pg.Client({ connectionString: conn });
-            await c.connect();
-            try {
-              const u = await c.query(
-                `UPDATE portal_prize_custom SET qty = GREATEST(qty - 1, 0), updated_at = NOW()
-                 WHERE slug = $1 RETURNING qty`,
-                [prizeId]
-              );
-              if (u.rowCount && u.rowCount > 0) remaining = Number(u.rows[0]?.qty ?? 0);
-            } finally { await c.end(); }
-          }
-        }
-        return j({ ok: true, id, photo_url, video_url, remaining });
+        return j({ ok: true, id: issuance.id, photo_url, video_url, remaining: issuance.remaining });
       }
 
       if (action === 'update_issuance') {

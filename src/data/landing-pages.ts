@@ -153,7 +153,7 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь — альтернатива морю', description: 'Бассейн и IT-программа рядом с домом', url: '/lager-na-more/', icon: 'bi-water' },
   { title: 'Python для детей', description: 'С нуля до первого проекта', url: '/python-dlya-detey/', icon: 'bi-code-slash' },
   { title: 'Что взять в лагерь на 21 день', description: 'Полный чек-лист вещей', url: '/chto-vzyat-v-lager-na-21/', icon: 'bi-bag-check' },
-  { title: 'Справка 079/у для лагеря', description: 'Где получить, образец, срок действия', url: '/spravka-079u-dlya-lagerya-obrazets/', icon: 'bi-clipboard-check' },
+  { title: 'Справка 079/у для лагеря', description: 'Где получить, образец, срок действия', url: '/stati/spravki-dlya-lagera/', icon: 'bi-clipboard-check' },
 
   // 🎨 Прочее
   { title: 'Пионерский лагерь', description: 'Современный аналог — IT-смены 2026', url: '/pionerskiy-lager/', icon: 'bi-flag-fill' },

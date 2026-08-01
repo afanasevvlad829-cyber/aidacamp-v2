@@ -5,16 +5,31 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import RelatedPages from '../components/RelatedPages.astro';
 import Shifts from '../components/Shifts.astro';
+import FAQ from '../components/FAQ.astro';
 import { reviews } from '../data/reviews';
 import { getRelatedPages } from '../data/landing-pages';
 import { WHATSAPP_URL, YANDEX_MAPS_URL, STAT_FOUNDED_YEAR, STAT_YEARS, STAT_KIDS, STAT_RATING } from '../data/contacts';
 
 const relatedPages = getRelatedPages('/otzyvy');
 
+const MONTHS: Record<string, string> = {
+  января: '01', февраля: '02', марта: '03', апреля: '04', мая: '05', июня: '06',
+  июля: '07', августа: '08', сентября: '09', октября: '10', ноября: '11', декабря: '12',
+};
+const parseDate = (d: string) => {
+  const parts = d.split(' ');
+  if (parts.length === 3) {
+    const day = parts[0].padStart(2, '0');
+    const month = MONTHS[parts[1]] ?? '01';
+    return `${parts[2]}-${month}-${day}`;
+  }
+  return d;
+};
+
 const reviewsSchema = reviews.map((r) => ({
   "@type": "Review",
   "author": { "@type": "Person", "name": r.name },
-  "datePublished": r.date,
+  "datePublished": parseDate(r.date),
   "reviewBody": r.fullText ?? r.text,
   "reviewRating": {
     "@type": "Rating",
@@ -48,32 +63,6 @@ const reviewsSchema = reviews.map((r) => ({
       },
       "review": reviewsSchema
     })} />
-    <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "Сколько отзывов у детского лагеря АйДаКемп?",
-          "acceptedAnswer": { "@type": "Answer", "text": `Более 40 верифицированных отзывов на Яндекс.Картах со средней оценкой ${STAT_RATING}. Лагерь работает с ${STAT_FOUNDED_YEAR} года — более ${STAT_KIDS} детей за ${STAT_YEARS} лет.` }
-        },
-        {
-          "@type": "Question",
-          "name": "Где читать отзывы о детских лагерях Подмосковья?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Отзывы об АйДаКемп — на этой странице, на Яндекс.Картах (рейтинг 5.0) и Google Maps. Публикуем без цензуры — в том числе замечания." }
-        },
-        {
-          "@type": "Question",
-          "name": "Что пишут родители в отзывах о детском IT-лагере?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Три самые частые темы: (1) ребёнок вернулся и продолжает программировать дома, (2) хочет поехать снова в следующем году, (3) удивились, что серьёзная IT-программа сочетается с живой загородной атмосферой." }
-        },
-        {
-          "@type": "Question",
-          "name": "Можно ли доверять отзывам о детском лагере на сайте?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Отзывы на этой странице — реальные, от родителей детей которые были в АйДаКемп. Большинство — с Яндекс.Карт (верифицированная платформа). Публикуем без редактуры." }
-        }
-      ]
-    })} />
   </Fragment>
 
   <Header />
@@ -105,7 +94,7 @@ const reviewsSchema = reviews.map((r) => ({
             <span class="text-white/70">Отзывы</span>
           </nav>
 
-          <h1 class="text-[32px] md:text-[46px] font-bold leading-[1.1] tracking-[-0.03em] text-white">Отзывы родителей о детском лагере АйДаКемп</h1>
+          <h1 class="text-[32px] md:text-[46px] font-bold leading-[1.1] tracking-[-0.03em] text-white">Отзывы о детском лагере АйДаКемп</h1>
           <p class="text-[16px] md:text-[17px] leading-[1.6] text-white/70 max-w-[580px]">
             Собрали настоящие отзывы родителей — с Яндекс.Карт, 2ГИС и напрямую от наших мам, которые сами выбирали лагерь для своих ребят. Никакой редактуры, только живые слова. Многим хотелось бы приехать снова — и они приезжают. Виктория едет третий раз. Хочешь узнать больше? <a href="/o-lagere/" class="text-orange-400 hover:underline">о лагере</a> и <a href="/lager-v-podmoskove/" class="text-orange-400 hover:underline">о месте</a>.
           </p>
@@ -173,7 +162,7 @@ const reviewsSchema = reviews.map((r) => ({
     <section id="reviews-parents" class="py-12 md:py-16 bg-slate-50">
       <div class="mx-auto max-w-[1080px] px-4">
         <h2 class="text-[22px] md:text-[26px] font-bold text-slate-900 mb-2">Отзывы родителей</h2>
-        <p class="text-base text-slate-500 mb-8">Что рассказывают мамы и папы, уже отправившие своих ребят в лагерь АйДаКемп. Мы не удаляем критику: если что-то пошло не так, ответ от лагеря публикуется рядом с отзывом.</p>
+        <p class="text-base text-slate-500 mb-8">Что рассказывают мамы и папы, уже отправившие своих ребят в лагерь АйДаКемп. Мы не удаляем критику: если что-то пошло не так, ответ от лагеря публикуется рядом с комментарием.</p>
         <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {reviews.map((review) => (
             <article class="flex flex-col bg-white rounded-[20px] border border-slate-100 shadow-[0_2px_8px_rgba(15,23,42,0.04)] p-6 hover:shadow-[0_4px_16px_rgba(15,23,42,0.08)] transition-shadow duration-200">
@@ -210,7 +199,7 @@ const reviewsSchema = reviews.map((r) => ({
         <!-- Блок "Отзывы ребят" -->
         <div id="reviews-kids" class="mt-16">
           <h2 class="text-[22px] md:text-[26px] font-bold text-slate-900 mb-2">Ребята про лагерь</h2>
-          <p class="text-base text-slate-500 mb-8">Что говорят участники — из постов в соцсетях и устных благодарностей.</p>
+          <p class="text-base text-slate-500 mb-8">Что говорят участники нашего лагеря — из постов в соцсетях и устных благодарностей.</p>
           <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <article class="flex flex-col bg-white rounded-[20px] border border-slate-100 shadow-[0_2px_8px_rgba(15,23,42,0.04)] p-6">
               <div class="flex items-center gap-0.5 mb-3">
@@ -322,6 +311,7 @@ const reviewsSchema = reviews.map((r) => ({
             <a
               href="#shifts"
               class="flex items-center justify-center gap-2 rounded-[14px] border border-white/20 px-6 py-3 text-base text-white/70 hover:border-white/40 hover:text-white transition whitespace-nowrap"
+              onclick="window.trackGoal && window.trackGoal('check_places', {source:'otzyvy_cta'})"
             >
               Посмотреть смены
             </a>
@@ -332,6 +322,19 @@ const reviewsSchema = reviews.map((r) => ({
   </main>
 
   <Shifts />
+  <!-- Вопросы страницы были только в разметке и не показывались никому. only={[]} —
+       рендерим ровно их, без общесайтовых вкладок; FAQPage кладёт сам <FAQ /> -->
+  <FAQ only={[]} extraLabel="Вопросы об отзывах" extraItems={[
+        { q: "Сколько отзывов у детского лагеря АйДаКемп?",
+          a: `Более 40 верифицированных отзывов на Яндекс.Картах со средней оценкой ${STAT_RATING}. Лагерь работает с ${STAT_FOUNDED_YEAR} года — более ${STAT_KIDS} детей за ${STAT_YEARS} лет.` },
+        { q: "Где читать отзывы о детских лагерях Подмосковья?",
+          a: "Отзывы об АйДаКемп — на этой странице, на Яндекс.Картах (рейтинг 5.0) и Google Maps. Публикуем без цензуры — в том числе замечания." },
+        { q: "Что пишут родители в отзывах о детском IT-лагере?",
+          a: "Три самые частые темы: (1) ребёнок вернулся и продолжает программировать дома, (2) хочет поехать снова в следующем году, (3) удивились, что серьёзная IT-программа сочетается с живой атмосферой лагеря." },
+        { q: "Можно ли доверять отзывам о детском лагере на сайте?",
+          a: "Мнения на этой странице — реальные, от родителей детей которые были в АйДаКемп. Большинство — с Яндекс.Карт (верифицированная платформа). Публикуем без редактуры." }
+      ]} />
+
   <RelatedPages title="Полезные страницы" pages={relatedPages} />
   <Footer />
 </Base>

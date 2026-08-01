@@ -2,7 +2,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { isStaff, requireStaff } from '../../../lib/portalPerms';
 import { listAssignments, upsertKid, deleteKid, autoAssign, takeSnapshot } from '../../../lib/portalRasselenie';
-import { ROOMS } from '../../../lib/portalRooms';
+import { ROOMS, validateRoomPlacement } from '../../../lib/portalRooms';
 
 function json(body: object, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
@@ -58,6 +58,8 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const hasExplicitPosition = 'room_number' in b || 'bed_index' in b;
   const room_number = hasExplicitPosition && b.room_number != null && b.room_number !== '' ? Number(b.room_number) : null;
   const bed_index   = hasExplicitPosition && b.bed_index   != null && b.bed_index   !== '' ? Number(b.bed_index)   : null;
+  const placementError = validateRoomPlacement(room_number, bed_index);
+  if (placementError) return json({ ok: false, error: placementError }, 400);
   const r = await upsertKid({
     shift_id, kid_id, kid_name,
     kid_gender: (b.kid_gender === 'M' || b.kid_gender === 'F') ? b.kid_gender : null,

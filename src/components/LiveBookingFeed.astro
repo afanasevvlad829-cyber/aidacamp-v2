@@ -1,7 +1,7 @@
 ---
 /**
  * LiveBookingFeed — тост «кто-то только что записал ребёнка».
- * Появляется раз в 35–55 сек, снизу слева. Исчезает через 5 сек.
+ * Показывается один раз за сессию (sessionStorage), снизу слева. Исчезает через 5 сек.
  * Псевдо-реальные данные (нет API): имена + города из типичных лидов.
  *
  * Смена в фразе — только из mainShifts, у которых getAvailabilityLevel() !== 'soldout'.
@@ -56,18 +56,18 @@ const entries = NAMES_CITIES.map(([name, city], i) => `${name} из ${city} ${ph
 <script define:vars={{ entries }}>
 (function () {
   const ENTRIES = entries;
+  const SHOWN_KEY = 'ac:lbf_shown';
+
+  if (sessionStorage.getItem(SHOWN_KEY)) return;
 
   const toast = document.getElementById('lbf-toast');
   const textEl = document.getElementById('lbf-text');
   if (!toast || !textEl) return;
 
-  let lastIdx = -1;
-
   function show() {
-    let idx;
-    do { idx = Math.floor(Math.random() * ENTRIES.length); } while (idx === lastIdx);
-    lastIdx = idx;
+    const idx = Math.floor(Math.random() * ENTRIES.length);
     textEl.textContent = ENTRIES[idx];
+    sessionStorage.setItem(SHOWN_KEY, '1');
 
     toast.classList.remove('opacity-0', 'translate-y-2');
     toast.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
@@ -78,12 +78,7 @@ const entries = NAMES_CITIES.map(([name, city], i) => `${name} из ${city} ${ph
     }, 5000);
   }
 
-  function scheduleNext() {
-    const delay = 35000 + Math.random() * 20000; // 35–55 сек
-    setTimeout(() => { show(); scheduleNext(); }, delay);
-  }
-
-  // Первый показ через 20–30 сек после загрузки
-  setTimeout(() => { show(); scheduleNext(); }, 20000 + Math.random() * 10000);
+  // Единственный показ за сессию, через 20–30 сек после загрузки
+  setTimeout(show, 20000 + Math.random() * 10000);
 })();
 </script>
