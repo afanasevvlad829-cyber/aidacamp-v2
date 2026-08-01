@@ -4,9 +4,9 @@ import { SEASON_FROM_TO } from '../evergreen';
 
 const landing: LandingData = {
   slug: 'lager-mytishchi',
-  title: `Выездной детский летний лагерь рядом с Мытищами ${SEASON_YEAR} | АйДаКемп`,
+  title: `Выездной детский летний IT-лагерь с проживанием рядом с Мытищами ${SEASON_YEAR} | АйДаКемп`,
   description: `Выездной летний IT-лагерь с проживанием рядом с Мытищами: 66 км от МКАД, трансфер от м. Солнцево. Налоговый вычет до ${VYCHET_MAX}. Python, AI, Minecraft, 7–15 лет.`,
-  h1: 'Летний детский лагерь у Мытищ',
+  h1: 'Летний лагерь у Мытищ',
   canonical: 'https://aidacamp.ru/lager-mytishchi',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
   faqDisplayItems: ['documents:0', 'documents:6', 'payment:1', 'payment:2'],
