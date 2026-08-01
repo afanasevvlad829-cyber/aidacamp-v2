@@ -426,6 +426,9 @@ const segData = SEGMENTS.map((seg, i) => {
     TIMER_SECONDS,
   } from '../../scripts/shifts/fortune';
   import { YM_COUNTER } from '../../data/tracking';
+  // Тот же сбор контекста, что у обычной формы: UTM, yclid, страница, устройство,
+  // время в сессии, Яндекс-ID. Без этого заявка Фортуны приходила почти пустой.
+  import { collectContext, getYmClientId } from '../../scripts/form-submit';
 
   function initFortuneCard() {
     const cardEl  = document.querySelector<HTMLElement>('[data-fortune-card]');
@@ -836,7 +839,8 @@ const segData = SEGMENTS.map((seg, i) => {
 
       const isTest = new URLSearchParams(window.location.search).get('ft') === '1';
 
-      fetch('/api/fortune/init', {
+      Promise.all([getYmClientId().catch(() => ''), Promise.resolve(collectContext())])
+        .then(([ymClientId, ctx]) => fetch('/api/fortune/init', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -846,8 +850,10 @@ const segData = SEGMENTS.map((seg, i) => {
           name,
           phone: phoneInput?.value.trim(),
           test:  isTest,
+          ymClientId,
+          ctx,
         }),
-      })
+      }))
         .then(r => r.json())
         .then(data => {
           if (data.leadMode) {
