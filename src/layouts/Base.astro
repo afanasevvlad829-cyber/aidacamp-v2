@@ -13,6 +13,7 @@ import BackToTop from '../components/BackToTop.astro';
 import DotPatternBackground from '../components/DotPatternBackground.astro';
 import SiteSearch from '../components/SiteSearch.astro';
 import NudgeBanner from '../components/NudgeBanner.astro';
+import GoogleAnalytics from '../components/GoogleAnalytics.astro';
 
 interface Props {
   title: string;
@@ -189,8 +190,10 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
       })();
     </script>
 
-    <!-- Stage 2 scripts (Clarity + Google Analytics) — отложены до первой интеракции или +20 сек -->
+    <!-- Stage 2 (Clarity) — отложен до первой интеракции или +20 сек -->
     <!-- Перф P2 2026-04-20: 8s→20s, чтобы скрипты не грузились внутри 10-сек окна Lighthouse mobile теста -->
+    <!-- GA4 с 01.08.2026 вынесен в GoogleAnalytics.astro и грузится раньше Clarity:
+         его куки `_ga` нужна как второй идентификатор визита при привязке к карточке CRM. -->
     <!-- Leadfeeder/Andata TM/OneSignal убраны из кода 26.07.2026 (решение владельца — из сторонней
          аналитики оставлены только Метрика и Clarity). Сниппеты не удалены, лежат в
          src/_archive/marketing-widgets/andata-leadfeeder-onesignal.md — вернуть при необходимости. -->
@@ -207,17 +210,6 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
               y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
             })(window,document,"clarity","script","w8yoykmszl");
           }
-          /* Google Analytics (GA4) — та же фильтрация бот/dev-хост/внутренние страницы, что у Clarity */
-          if(!window._clarityDisabled){
-            var gaScript = document.createElement('script');
-            gaScript.async = true;
-            gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-PGMT3ET16X';
-            document.head.appendChild(gaScript);
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){ dataLayer.push(arguments); }
-            gtag('js', new Date());
-            gtag('config', 'G-PGMT3ET16X');
-          }
         }
         var t = setTimeout(loadStage2, 20000);
         ['scroll','click','touchstart','keydown'].forEach(function(e){
@@ -225,6 +217,7 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         });
       })();
     </script>
+    <GoogleAnalytics />
     <!-- OG Meta -->
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />

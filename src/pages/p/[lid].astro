@@ -4,6 +4,7 @@ import '../../styles/global.css';
 import { signLid, verifyLid } from '../../lib/leadLink';
 import { getCustomerGroupIds, getGroupLinks } from '../../lib/alfaCrm';
 import { pickPamyatkaShift, type PamyatkaShift } from '../../data/pamyatkaShifts';
+import GoogleAnalytics from '../../components/GoogleAnalytics.astro';
 
 const { lid: lidParam } = Astro.params;
 const t = Astro.url.searchParams.get('t') || '';
@@ -242,6 +243,10 @@ k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNo
 (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
 ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, webvisor:true});
 </script>
+
+<!-- Google Analytics — immediate: куки `_ga` нужна привязке (bindCid) уже на 1,5-й секунде.
+     Страница noindex и открывается по личной ссылке, экономить тут нечего. -->
+<GoogleAnalytics immediate />
 
 <style is:global>
   *,*::before,*::after{box-sizing:border-box}
@@ -897,6 +902,24 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
       const vkMatch = document.cookie.match(/(?:^|;\s*)vk_top_vid=([^;]+)/);
       if (vkMatch) data.vk_vid = vkMatch[1];
 
+      // Google Analytics — второй независимый идентификатор визита рядом с ym.
+      // Куки `_ga` = GA1.<depth>.<random>.<ts>; client_id для GA4 — ОБА последних
+      // сегмента («<random>.<ts>»), не только первый: Measurement Protocol
+      // не примет усечённый id. Хвост <ts> — unix-время первого визита.
+      const gaMatch = document.cookie.match(/(?:^|;\s*)_ga=GA\d+\.\d+\.(\d+\.\d+)/);
+      if (gaMatch) {
+        data.ga_client_id = gaMatch[1];
+        const gaTs = parseInt(gaMatch[1].split('.')[1], 10);
+        if (gaTs > 1000000000) data.ga_first_visit = new Date(gaTs * 1000).toISOString().slice(0,10);
+      }
+
+      // gclid — из URL, иначе из сохранённой атрибуции формы (ключ STORAGE_KEYS.attribution)
+      let gclid = sp.get('gclid') || '';
+      if (!gclid) {
+        try { gclid = (JSON.parse(localStorage.getItem('ac_attribution') || '{}').gclid) || ''; } catch(_) {}
+      }
+      if (gclid) data.gclid = gclid;
+
       // Andata: ubtcuid (трекинг) и domain_userid (Snowplow) — для матчинга визита постфактум
       const ubtMatch = document.cookie.match(/(?:^|;\s*)ubtcuid=([^;]+)/);
       if (ubtMatch) data.ubtcuid = decodeURIComponent(ubtMatch[1]);
@@ -915,9 +938,15 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
 
   function bindCid(cid){
     if (!cid) return;
-    // Менеджерские визиты: логируем на сервере, но в sessionStorage не сохраняем
-    if (!isManagerBrowser && sessionStorage.getItem('pm_bound_'+lid) === cid) return;
     const extra = collectClientData();
+    // Гард с отметкой «был ли ga_client_id»: GA грузится асинхронно, на 1,5-й секунде
+    // куки `_ga` может ещё не быть. Повторно шлём ровно один раз — когда она появилась.
+    // Менеджерские визиты: логируем на сервере, но в sessionStorage не сохраняем.
+    const mark = String(cid) + '|' + (extra.ga_client_id ? '1' : '0');
+    if (!isManagerBrowser) {
+      const prev = sessionStorage.getItem('pm_bound_'+lid);
+      if (prev === mark || prev === String(cid) + '|1') return;
+    }
     fetch('/api/bind-lead', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -926,7 +955,7 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
         ...extra,
       })
     }).then(r=>r.json()).then(j=>{
-      if (j && j.ok && !isManagerBrowser) sessionStorage.setItem('pm_bound_'+lid, String(cid));
+      if (j && j.ok && !isManagerBrowser) sessionStorage.setItem('pm_bound_'+lid, mark);
     }).catch(()=>{});
   }
   function tryBind(){
@@ -940,9 +969,11 @@ ym(96499295, "init", {clickmap:true, trackLinks:true, accurateTrackBounce:true, 
     } catch(_) {}
   }
   // Метрика грузится async — подождём 1.5с. В preview-режиме не биндим.
+  // Третья попытка на 9с — страховка для медленных сетей: к ней куки `_ga` есть точно.
   if (!isPreview) {
     setTimeout(tryBind, 1500);
     setTimeout(tryBind, 4500);
+    setTimeout(tryBind, 9000);
   }
 
   // ====== PWA-инструкция: toggle + платформа ======

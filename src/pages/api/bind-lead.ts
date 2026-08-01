@@ -135,6 +135,8 @@ type ExtraData = {
   referrer?: string; screenW?: number; screenH?: number;
   lang?: string; tz?: string; ymFirstVisit?: string;
   vkVid?: string; utm?: Record<string, string>; visitorId?: string;
+  /** GA4 client_id из куки `_ga` — второй идентификатор визита, если ym не отдался */
+  gaClientId?: string; gaFirstVisit?: string; gclid?: string;
 };
 
 /** Авто-детект менеджера: тот же ymCid или IP открывал другие лиды за 2 часа */
@@ -185,14 +187,16 @@ async function logBinding(
       'is_manager boolean default false', 'crm_updated boolean default false',
       'referrer text', 'screen_w int', 'screen_h int',
       'lang text', 'tz text', 'ym_first_visit date', 'vk_vid text', 'utm jsonb', 'visitor_id text',
+      'ga_client_id text', 'ga_first_visit date', 'gclid text',
     ]) {
       await c.query(`ALTER TABLE pamyatka_bindings ADD COLUMN IF NOT EXISTS ${col}`).catch(() => {});
     }
     await c.query(
       `INSERT INTO pamyatka_bindings(
          crm_id, ym_client_id, ip, user_agent, is_manager, crm_updated,
-         referrer, screen_w, screen_h, lang, tz, ym_first_visit, vk_vid, utm, visitor_id
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+         referrer, screen_w, screen_h, lang, tz, ym_first_visit, vk_vid, utm, visitor_id,
+         ga_client_id, ga_first_visit, gclid
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
       [
         lid, ymCid, ip || null, ua || null, isManager, true,
         extra.referrer || null,
@@ -202,6 +206,9 @@ async function logBinding(
         extra.vkVid || null,
         extra.utm ? JSON.stringify(extra.utm) : null,
         extra.visitorId || null,
+        extra.gaClientId || null,
+        extra.gaFirstVisit || null,
+        extra.gclid || null,
       ],
     );
     await c.end();
@@ -239,6 +246,12 @@ export const POST: APIRoute = async ({ request }) => {
       vkVid:        typeof body.vk_vid        === 'string' ? body.vk_vid.slice(0, 50)        : undefined,
       utm:          (body.utm && typeof body.utm === 'object') ? body.utm as Record<string, string> : undefined,
       visitorId:    readVisitorId(request) ?? undefined,
+      // GA4: client_id вида «<random>.<ts>». Отсутствие — не ошибка: GA грузится
+      // асинхронно, а привязка стреляет уже на 1,5-й секунде. Пишем что есть.
+      gaClientId:   typeof body.ga_client_id  === 'string' && /^\d+\.\d+$/.test(body.ga_client_id)
+                      ? body.ga_client_id : undefined,
+      gaFirstVisit: typeof body.ga_first_visit === 'string' ? body.ga_first_visit.slice(0, 10) : undefined,
+      gclid:        typeof body.gclid         === 'string' ? body.gclid.slice(0, 200)          : undefined,
     };
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -265,6 +278,8 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (isManager)           parts.push(explicitManager ? '[МГР]' : '[МГР-авто]');
     parts.push(`ymCid:${ymCid}`);
+    if (extra.gaClientId)    parts.push(`gaCid:${extra.gaClientId}`);
+    if (extra.gclid)         parts.push(`gclid:${extra.gclid.slice(0, 40)}`);
     parts.push(`${device}/${os}`);
     parts.push(browser);
     if (ip)                  parts.push(`IP:${ip}`);
