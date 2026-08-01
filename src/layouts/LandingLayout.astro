@@ -20,9 +20,16 @@ interface Props {
   noindex?: boolean;
   /** Сезонный лендинг (осень/зима/весна): скрыть AgeBar-плашку с летними сменами */
   hideAgeBar?: boolean;
+  /**
+   * Название страницы во второй крошке. Задавать ТОЛЬКО страницам без <LandingHero>:
+   * если hero есть, крошки рисует и размечает он, а слой молчит — иначе на URL
+   * оказывается две почти одинаковые цепочки (было на 86 лендингах до 01.08.2026,
+   * страж scripts/check-breadcrumb-schema.mjs роняет билд при возврате дубля).
+   */
+  breadcrumb?: string;
 }
 
-const { title, description, h1, canonical, heroImage, noindex, hideAgeBar } = Astro.props;
+const { title, description, h1, canonical, heroImage, noindex, hideAgeBar, breadcrumb } = Astro.props;
 
 const reviewCount = reviews.length.toString();
 
@@ -72,29 +79,28 @@ const jsonLd = {
     "name": "АйДаКемп"
   }
 };
+
+const breadcrumbJsonLd = breadcrumb ? {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://aidacamp.ru/" },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": breadcrumb,
+      "item": ensureTrailingSlash(canonical ?? `https://aidacamp.ru${Astro.url.pathname}`)
+    }
+  ]
+} : null;
 ---
 
 <Base title={title} description={description} ogImage={heroImage} canonical={canonical} noindex={noindex} hideAgeBar={hideAgeBar}>
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
-    <script type="application/ld+json" set:html={JSON.stringify({
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    {
-      "@type": "ListItem",
-      "position": 1,
-      "name": "Главная",
-      "item": "https://aidacamp.ru"
-    },
-    {
-      "@type": "ListItem",
-      "position": 2,
-      "name": h1,
-      "item": ensureTrailingSlash(canonical ?? `https://aidacamp.ru${Astro.url.pathname}`)
-    }
-  ]
-})} />
+    {breadcrumb && (
+      <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
+    )}
     <slot name="head" />
   </Fragment>
   <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-primary focus:text-white focus:font-semibold focus:shadow-lg">Перейти к содержимому</a>

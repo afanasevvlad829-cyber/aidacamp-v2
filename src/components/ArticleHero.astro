@@ -34,6 +34,7 @@ interface Props {
 import { STAT_DISTANCE, CAMP_PRICE_FROM, CAMP_SEASON, YANDEX_MAPS_URL } from '../data/contacts';
 import { getArticleEffect } from '../lib/heroVariant';
 import { ARTICLE_DATES } from '../data/articleDates';
+import { ensureTrailingSlash } from '../utils/canonical';
 
 // Детерминированный эффект по slug статьи
 const _slug = Astro.url.pathname.replace(/\/+$/, '').split('/').pop() ?? '';
@@ -88,13 +89,18 @@ const ORB_COLORS: Record<string, OrbColors> = {
 };
 const orb = ORB_COLORS[_heroEffect] ?? ORB_COLORS['editorial'];
 
+// BreadcrumbList отдаёт ArticleHero — он же рисует видимые крошки ниже. Страницы
+// /stati/* свой блок НЕ кладут: до 01.08.2026 клали, и на 120 статьях висело две
+// почти одинаковые цепочки. Имя последнего звена = видимая крошка (не SEO-title),
+// URL — self-canonical со слешем (утащен из тех самых блоков страниц; у 4 из них он
+// был без слеша → canonical→301, см. src/utils/canonical.ts).
 const breadcrumbJsonLd = {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
   "itemListElement": [
     { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://aidacamp.ru/" },
     { "@type": "ListItem", "position": 2, "name": "Статьи", "item": "https://aidacamp.ru/stati/" },
-    { "@type": "ListItem", "position": 3, "name": breadcrumbsLast }
+    { "@type": "ListItem", "position": 3, "name": breadcrumbsLast, "item": ensureTrailingSlash(Astro.url.pathname) }
   ]
 };
 

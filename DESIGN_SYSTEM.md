@@ -326,6 +326,15 @@ Mobile-first: проектируем 390px, затем upscale до 1280px+.
 | Stay | `Place` + `LodgingBusiness` | name, address, geo, amenityFeature |
 | Contacts | `ContactPoint` | telephone, email, contactType, areaServed |
 
+> **Разметку отдаёт та сущность, которая рисует блок — и только она.**
+> Дважды наступили на одни грабли: FAQPage дублился на 123 страницах (31.07.2026),
+> BreadcrumbList — на 248 (01.08.2026), потому что схему клала и страница, и компонент.
+> - **FAQ** → `<FAQ />` (сам кладёт `FAQPage` по отрисованному) либо `<FAQSchema items>` у страниц со своим accordion. Обе сразу — нельзя.
+> - **Крошки** → `<ArticleHero>` для `/stati/*`, `<LandingHero>` для лендингов. Своего блока на странице быть не должно. `LandingLayout` кладёт цепочку, только если ему передали проп `breadcrumb` — это для страниц без hero.
+>
+> Стражи по собранному `dist` роняют билд при возврате дубля:
+> `scripts/check-faq-schema.mjs`, `scripts/check-breadcrumb-schema.mjs`.
+
 ### Meta tags — обязательны на каждой странице
 
 | Tag | Правило | Пример |

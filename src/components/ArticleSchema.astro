@@ -1,6 +1,7 @@
 ---
 /**
- * ArticleSchema — JSON-LD для статей блога (Article + BreadcrumbList).
+ * ArticleSchema — JSON-LD для статей блога (Article).
+ * Крошки сюда НЕ добавлять — BreadcrumbList отдаёт <ArticleHero>, который их рисует.
  *
  * Использование: добавляй <ArticleSchema slot="head" ...> в <head> статьи.
  * Или вставляй напрямую до </head> в статьях без Layout.
@@ -47,16 +48,9 @@ const article = {
   mainEntityOfPage: { '@type': 'WebPage', '@id': url },
 };
 
-const breadcrumbs = {
-  '@context': 'https://schema.org',
-  '@type': 'BreadcrumbList',
-  itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Главная', item: `${SITE}/` },
-    { '@type': 'ListItem', position: 2, name: 'Статьи', item: `${SITE}/stati/` },
-    { '@type': 'ListItem', position: 3, name: title, item: url },
-  ],
-};
+// BreadcrumbList здесь БОЛЬШЕ НЕТ: все 20 страниц с <ArticleSchema> рисуют крошки
+// через <ArticleHero>, и он же отдаёт разметку — вторая цепочка отсюда была дублем
+// (01.08.2026). Правило то же, что у FAQ: схему отдаёт та сущность, которая рисует.
 ---
 
 <script type="application/ld+json" set:html={JSON.stringify(article)} />
-<script type="application/ld+json" set:html={JSON.stringify(breadcrumbs)} />
