@@ -21,11 +21,16 @@ export interface RoomAssignment {
 /** Сохранить снимок текущего расселения смены (резерв перед массовыми операциями). */
 export async function takeSnapshot(shiftId: number, reason: string): Promise<void> {
   await withDbClient(async (c) => {
+    // shift_id тут сравнивается с колонками РАЗНОГО типа: в снимке он integer,
+    // в room_assignment — bigint. Один и тот же $1 в обеих позициях Postgres
+    // развести не может и падает с «inconsistent types deduced for parameter $1»,
+    // роняя авто-расстановку и сброс. Поэтому два отдельных параметра с явными
+    // приведениями, а не один переиспользованный.
     await c.query(
       `INSERT INTO room_assignment_snapshot(shift_id, reason, snapshot_data)
-       SELECT $1, $2, COALESCE(jsonb_agg(row_to_json(ra)), '[]'::jsonb)
-       FROM room_assignment ra WHERE ra.shift_id = $1`,
-      [shiftId, reason],
+       SELECT $1::int, $2, COALESCE(jsonb_agg(row_to_json(ra)), '[]'::jsonb)
+       FROM room_assignment ra WHERE ra.shift_id = $3::bigint`,
+      [shiftId, reason, shiftId],
     );
   });
 }
