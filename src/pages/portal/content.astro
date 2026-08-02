@@ -1,0 +1,146 @@
+---
+export const prerender = false;
+
+import PortalLayout from '../../layouts/PortalLayout.astro';
+import { getActiveShift, getEventDates } from '../../lib/portalShift';
+import {
+  contentDays, listContent, listTasks, roleLabel,
+  type ShiftContentItem, type ShiftTaskRow,
+} from '../../lib/portalShiftContent';
+import '../../styles/portal-den.css';
+import '../../styles/portal-gallery.css';
+
+// Доступ гейтит middleware: /portal/* открыт только сотрудникам.
+const shift = await getActiveShift();
+const dates = shift ? await getEventDates(shift.id) : [];
+
+// Бот нумерует дни от старта смены (0 — всё, что снято до заезда).
+const counts = await contentDays();
+const hasPre = (counts.get(0) ?? 0) > 0;
+
+function todayDayNo(): number {
+  if (!dates.length) return 1;
+  const today = new Date().toISOString().slice(0, 10);
+  const i = dates.indexOf(today);
+  return i >= 0 ? i + 1 : 0;
+}
+const withContent = [...counts.keys()].filter((d) => d > 0).sort((a, b) => a - b);
+const fallbackDay = todayDayNo() || withContent.at(-1) || 1;
+const reqDay = Astro.url.searchParams.get('day');
+const day = reqDay !== null && reqDay !== '' ? Number(reqDay) : fallbackDay;
+
+const items: ShiftContentItem[] = await listContent(day);
+const tasks: ShiftTaskRow[] = day > 0 ? await listTasks(day) : [];
+const missing = tasks.filter((t) => t.shots === 0);
+
+const dayDate = day > 0 && dates[day - 1] ? dates[day - 1] : null;
+const fmtDate = (iso: string) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}`;
+const fmtTime = (ts: string) =>
+  new Date(ts).toLocaleTimeString('ru-RU', {
+    hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow',
+  });
+
+const KIND_LABEL: Record<string, string> = { photo: 'фото', video: 'видео', voice: 'голосовое' };
+const nPhoto = items.filter((i) => i.kind === 'photo').length;
+const nVideo = items.filter((i) => i.kind === 'video').length;
+const nVoice = items.filter((i) => i.kind === 'voice').length;
+---
+
+<PortalLayout title="Контент смены · АйДаКемп">
+  <div class="den">
+    <header class="den-head">
+      <div>
+        <h1 class="den-title">Контент смены</h1>
+        <p class="den-sub">
+          {shift ? shift.name : 'Нет активной смены'} · сдаётся в бота <a href="https://t.me/Aidacamp2026bot" class="gal-botlink">@Aidacamp2026bot</a>
+        </p>
+      </div>
+    </header>
+
+    {(dates.length > 0 || hasPre) && (
+      <nav class="den-days">
+        {hasPre && (
+          <a href="/portal/content?day=0" class={`den-day${day === 0 ? ' active' : ''}`}>
+            <span class="den-day-n">До смены</span>
+            <span class="den-day-d">{counts.get(0)} шт.</span>
+          </a>
+        )}
+        {dates.map((d, i) => {
+          const n = counts.get(i + 1) ?? 0;
+          return (
+            <a href={`/portal/content?day=${i + 1}`}
+               class={`den-day${day === i + 1 ? ' active' : ''}${n === 0 ? ' gal-day-empty' : ''}`}>
+              <span class="den-day-n">День {i + 1}</span>
+              <span class="den-day-d">{n > 0 ? `${fmtDate(d)} · ${n}` : fmtDate(d)}</span>
+            </a>
+          );
+        })}
+      </nav>
+    )}
+
+    <div class="gal-summary">
+      <span class="gal-count">{items.length} {items.length === 1 ? 'файл' : 'файлов'}</span>
+      {nPhoto > 0 && <span class="gal-chip">фото {nPhoto}</span>}
+      {nVideo > 0 && <span class="gal-chip">видео {nVideo}</span>}
+      {nVoice > 0 && <span class="gal-chip">голосовых {nVoice}</span>}
+      {dayDate && <span class="gal-date">{fmtDate(dayDate)}</span>}
+    </div>
+
+    {missing.length > 0 && (
+      <section class="gal-missing">
+        <h2 class="gal-missing-h">Ещё нет кадра — {missing.length} из {tasks.length}</h2>
+        <ul class="gal-missing-list">
+          {missing.map((t) => (
+            <li class="gal-missing-item">
+              <span class="gal-missing-time">{t.deadline.slice(0, 5)}</span>
+              <span class="gal-missing-title">{t.title}</span>
+              <span class="gal-missing-role">{roleLabel(t.resp_role)}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    {items.length === 0 ? (
+      <p class="gal-empty">
+        За этот день пока ничего не сдано. Всё, что персонал отправит боту, появится здесь автоматически.
+      </p>
+    ) : (
+      <div class="gal-grid">
+        {items.map((it) => (
+          <figure class="gal-tile">
+            {it.kind === 'voice' ? (
+              <div class="gal-voice">
+                <span class="gal-voice-icon" aria-hidden="true">🎙</span>
+                <p class="gal-voice-text">{it.transcript || 'Расшифровка не готова'}</p>
+              </div>
+            ) : (
+              <a href={`/api/portal/shift-content-file?id=${it.id}&size=full`}
+                 target="_blank" rel="noopener" class="gal-shot">
+                <img src={`/api/portal/shift-content-file?id=${it.id}`}
+                     alt={it.kids || KIND_LABEL[it.kind] || 'кадр'}
+                     loading="lazy" decoding="async" class="gal-img" />
+                {it.kind === 'video' && <span class="gal-play" aria-hidden="true">▶</span>}
+              </a>
+            )}
+            <figcaption class="gal-meta">
+              <div class="gal-meta-top">
+                <span class="gal-time">{fmtTime(it.created_at)}</span>
+                <span class={`gal-src${it.compressed ? ' gal-src--soft' : ''}`}>
+                  {it.compressed ? 'сжатое' : 'исходник'}
+                </span>
+              </div>
+              {it.kids && <div class="gal-kids">{it.kids}</div>}
+              {it.task_title && <div class="gal-task">{it.task_title}</div>}
+              {!it.task_title && it.bucket === 'stash' && <div class="gal-stash">в копилку</div>}
+              <div class="gal-author">
+                {it.author || 'неизвестно'}
+                {it.author_role && <span class="gal-role"> · {roleLabel(it.author_role)}</span>}
+              </div>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    )}
+  </div>
+</PortalLayout>
