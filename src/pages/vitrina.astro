@@ -1,0 +1,110 @@
+---
+export const prerender = false;
+
+import Base from '../layouts/Base.astro';
+import '../styles/global.css';
+import { query } from '../lib/db';
+
+/**
+ * Витрина призов смены — публичная страница без входа.
+ * Её открывают сами ребята с телефона и показывают на экране в холле,
+ * поэтому логина тут нет. Персональных данных на странице тоже нет:
+ * только товар, цена и остаток. Из поиска закрыта (noindex) — это
+ * внутренняя витрина лагеря, а не страница сайта.
+ */
+interface Row {
+  name: string;
+  description: string | null;
+  category: string | null;
+  img_url: string | null;
+  qty: number;
+  price: number | null;
+  remaining: number | null;
+}
+
+const rows =
+  (await query<Row>(
+    `SELECT c.name, c.description, c.category, c.img_url, c.qty,
+            s.bongere_price AS price,
+            COALESCE(s.remaining_qty, c.qty) AS remaining
+       FROM portal_prize_custom c
+       LEFT JOIN portal_prize_state s ON s.prize_id = c.slug
+      WHERE c.archived = FALSE
+      ORDER BY s.bongere_price DESC NULLS LAST, c.name`,
+  )) ?? [];
+
+const items = rows.map((r) => ({ ...r, qty: Number(r.qty), price: r.price == null ? null : Number(r.price), remaining: Number(r.remaining ?? 0) }));
+const fmt = (n: number) => new Intl.NumberFormat('ru-RU').format(n);
+const totalLeft = items.reduce((s, i) => s + i.remaining, 0);
+---
+
+<Base
+  title="Витрина призов — АйДаКемп"
+  description="Что можно купить за лагерные рубли: призы смены, цены и остатки."
+  noindex
+>
+  <main class="vitrina">
+    <header class="v-head">
+      <h1 class="v-title">Витрина призов</h1>
+      <p class="v-sub">
+        Что можно купить за лагерные рубли. Осталось {totalLeft} {totalLeft % 10 === 1 && totalLeft % 100 !== 11 ? 'штука' : 'штук'} на {items.length} позиций.
+      </p>
+    </header>
+
+    {items.length === 0 ? (
+      <p class="v-empty">Витрина пока пуста.</p>
+    ) : (
+      <div class="v-grid">
+        {items.map((it) => (
+          <article class={`v-card${it.remaining === 0 ? ' v-card--out' : ''}`}>
+            <div class="v-shot">
+              {it.img_url
+                ? <img src={it.img_url} alt={it.name} loading="lazy" decoding="async" class="v-img" referrerpolicy="no-referrer" />
+                : <span class="v-noimg" aria-hidden="true">🎁</span>}
+              {it.remaining === 0 && <span class="v-out">разобрали</span>}
+            </div>
+            <div class="v-body">
+              <h2 class="v-name">{it.name}</h2>
+              {it.description && <p class="v-descr">{it.description}</p>}
+              <div class="v-foot">
+                <span class="v-price">{it.price != null ? `${fmt(it.price)} ₽` : '—'}</span>
+                <span class="v-left">{it.remaining > 0 ? `осталось ${it.remaining}` : 'нет в наличии'}</span>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    )}
+  </main>
+
+  <style>
+    .vitrina { max-width: 1120px; margin: 0 auto; padding: 24px 16px 64px; }
+    .v-head { margin-bottom: 22px; }
+    .v-title { font-size: 30px; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; margin: 0; }
+    .v-sub { margin: 8px 0 0; font-size: 15px; color: #64748b; }
+    .v-empty { padding: 40px; text-align: center; color: #64748b; background: #f1f5f9; border-radius: 14px; }
+
+    .v-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; }
+    .v-card { display: flex; flex-direction: column; border: 1.5px solid #e2e8f0; border-radius: 16px; overflow: hidden; background: #fff; transition: border-color .15s, box-shadow .15s; }
+    .v-card:hover { border-color: #ec9b44; box-shadow: 0 6px 20px rgba(15, 23, 42, .07); }
+    /* Разобранное не прячем: ребятам важно видеть, что приз реально уходит */
+    .v-card--out { opacity: .55; }
+
+    .v-shot { position: relative; aspect-ratio: 1 / 1; background: #f8fafc; display: flex; align-items: center; justify-content: center; }
+    .v-img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .v-noimg { font-size: 40px; }
+    .v-out { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-8deg); background: rgba(15, 23, 42, .82); color: #fff; font-size: 13px; font-weight: 700; padding: 5px 14px; border-radius: 100px; }
+
+    .v-body { padding: 12px 13px 14px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    .v-name { margin: 0; font-size: 15px; font-weight: 700; line-height: 1.25; }
+    .v-descr { margin: 0; font-size: 13px; line-height: 1.45; color: #475569; flex: 1; }
+    .v-foot { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; }
+    .v-price { font-size: 18px; font-weight: 800; color: #1f5c4a; font-variant-numeric: tabular-nums; }
+    .v-left { margin-left: auto; font-size: 12px; color: #64748b; }
+
+    @media (max-width: 520px) {
+      .v-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 11px; }
+      .v-title { font-size: 24px; }
+    }
+  </style>
+</Base>
