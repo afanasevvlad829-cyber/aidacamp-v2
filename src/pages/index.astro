@@ -55,14 +55,20 @@ const HOMEPAGE_HUB_URLS = [
 const homepageHubPages = HOMEPAGE_HUB_URLS
   .map(url => allLandingPages.find(p => p.url === url))
   .filter((p): p is NonNullable<typeof p> => p !== undefined);
+
+// Без месяца: главная берёт безсезонные головные ключи (детский лагерь,
+// летний лагерь, лагерь в подмосковье), а месячные запросы — страницы
+// /lager-na-iyun/, /lager-na-iyul/, /lager-na-avgust-podmoskove/.
+// «июнь 2026» тут стоял литералом и в августе уводил выдачу в прошлый месяц.
+//
+// Пояснение живёт здесь, а не между атрибутами тега: `{/* ... */}` в позиции
+// атрибута ломает генерацию TSX — astro check падает с "Unterminated string
+// literal" в конце файла, и 02.08.2026 это на полдня остановило все выкаты.
+const PAGE_TITLE = `Детский летний лагерь в Подмосковье для детей и подростков ${SEASON_YEAR}`;
 ---
 
 <Base
-  {/* Без месяца: главная берёт безсезонные головные ключи (детский лагерь,
-      летний лагерь, лагерь в подмосковье), а месячные запросы — страницы
-      /lager-na-iyun/, /lager-na-iyul/, /lager-na-avgust-podmoskove/.
-      «июнь 2026» тут стоял литералом и в августе уводил выдачу в прошлый месяц. */}
-  title={`Детский летний лагерь в Подмосковье для детей и подростков ${SEASON_YEAR}`}
+  title={PAGE_TITLE}
   description={`Летний детский оздоровительный лагерь для детей и подростков в Подмосковье ${SEASON_YEAR} — IT-программа, спорт, нейросети, бассейн, 5-разовое питание, Путевка на лето.`}
   heroPreloadMobile="/images/hero-mobile-bean-v3-414.avif"
   heroPreloadMobileSrcset="/images/hero-mobile-bean-v3.avif 390w, /images/hero-mobile-bean-v3-414.avif 414w, /images/hero-mobile-bean-v3-828.avif 828w"
