@@ -295,7 +295,7 @@ const ARTICLE_MAP: Record<string, LandingPage[]> = {
     { title: 'Как оплатить лагерь', description: 'Рассрочка 50/50, способы, документы', url: '/stati/oplata-detskogo-lagerya/', icon: 'cash-coin' },
   ],
   '/putevka-v-lager': [
-    { title: 'Как оплатить лагерь', description: 'Рассрочка 50/50, способы, документы', url: '/stati/oplata-detskogo-lagerya/', icon: 'cash-coin' },
+    { title: 'Как оплатить смену', description: 'Рассрочка 50/50, способы, документы', url: '/stati/oplata-detskogo-lagerya/', icon: 'cash-coin' },
   ],
   '/lager-dlya-podrostkov': [
     { title: 'Ребёнок не хочет в лагерь', description: 'Разбираемся без скандалов', url: '/stati/rebenok-ne-hochet-v-lager/', icon: 'chat-dots' },
