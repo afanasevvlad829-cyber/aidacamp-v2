@@ -41,12 +41,14 @@ const result = spawnSync(
 const output = `${result.stdout ?? ''}${result.stderr ?? ''}`.replace(/\u001b\[[0-9;]*m/g, '');
 const diagnostics = output
   .split('\n')
-  .map((line) => line.match(/^(.+?):\d+:\d+ - error ts\(\d+\):/))
-  .filter(Boolean)
-  .map((match) => match[1]);
+  .map((line) => {
+    const match = line.match(/^(.+?):\d+:\d+ - error ts\(\d+\):/);
+    return match ? { file: match[1], line } : null;
+  })
+  .filter(Boolean);
 
 const publicErrors = diagnostics.filter(
-  (file) => file.startsWith('src/') && !excluded.some((path) => file === path || file.startsWith(path)),
+  ({ file }) => file.startsWith('src/') && !excluded.some((path) => file === path || file.startsWith(path)),
 );
 
 if (result.error) {
@@ -56,9 +58,14 @@ if (result.error) {
 
 if (publicErrors.length > 0) {
   const counts = new Map();
-  for (const file of publicErrors) counts.set(file, (counts.get(file) ?? 0) + 1);
+  for (const { file } of publicErrors) counts.set(file, (counts.get(file) ?? 0) + 1);
   console.error(`Public Astro check found ${publicErrors.length} errors:`);
   for (const [file, count] of [...counts].sort()) console.error(`- ${file}: ${count}`);
+  // Сам текст диагностики: без него по логу CI видно только «в index.astro
+  // 1 ошибка», а какая — приходится угадывать. 02.08.2026 это стоило полдня
+  // простоя прода: гейт держал все выкаты, а причина была не видна.
+  console.error('\nДиагностика:');
+  for (const { line } of publicErrors) console.error(`  ${line.trim()}`);
   process.exit(1);
 }
 
