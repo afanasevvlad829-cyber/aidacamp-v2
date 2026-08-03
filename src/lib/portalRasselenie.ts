@@ -58,8 +58,12 @@ export async function listAssignments(shiftId: number): Promise<RoomAssignment[]
               ra.kid_gender, ra.kid_age, ra.notes, ra.room_number, ra.bed_index
        FROM room_assignment ra
        LEFT JOIN portal_staff ps
-         ON ra.kid_id LIKE 'staff-%'
-        AND ps.id = CAST(SUBSTRING(ra.kid_id FROM 7) AS INTEGER)
+         ON ra.kid_id ~ '^staff-[0-9]+$'
+        AND ps.id = CASE
+                      WHEN ra.kid_id ~ '^staff-[0-9]+$'
+                      THEN CAST(SUBSTRING(ra.kid_id FROM 7) AS INTEGER)
+                      ELSE NULL
+                    END
        WHERE ra.shift_id=$1
        ORDER BY kid_name`,
       [shiftId],
