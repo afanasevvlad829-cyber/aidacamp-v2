@@ -115,13 +115,18 @@ const nVoice = items.filter((i) => i.kind === 'voice').length;
                 <p class="gal-voice-text">{it.transcript || 'Расшифровка не готова'}</p>
               </div>
             ) : (
-              <a href={`/api/portal/shift-content-file?id=${it.id}&size=full`}
-                 target="_blank" rel="noopener" class="gal-shot">
-                <img src={`/api/portal/shift-content-file?id=${it.id}`}
-                     alt={it.kids || KIND_LABEL[it.kind] || 'кадр'}
-                     loading="lazy" decoding="async" class="gal-img" />
-                {it.kind === 'video' && <span class="gal-play" aria-hidden="true">▶</span>}
-              </a>
+              <>
+                <label class="gal-cb-wrap" title="Выбрать для скачивания">
+                  <input type="checkbox" class="gal-cb" value={it.id} />
+                </label>
+                <a href={`/api/portal/shift-content-file?id=${it.id}&size=full`}
+                   target="_blank" rel="noopener" class="gal-shot">
+                  <img src={`/api/portal/shift-content-file?id=${it.id}`}
+                       alt={it.kids || KIND_LABEL[it.kind] || 'кадр'}
+                       loading="lazy" decoding="async" class="gal-img" />
+                  {it.kind === 'video' && <span class="gal-play" aria-hidden="true">▶</span>}
+                </a>
+              </>
             )}
             <figcaption class="gal-meta">
               <div class="gal-meta-top">
@@ -134,6 +139,13 @@ const nVoice = items.filter((i) => i.kind === 'voice').length;
               {it.caption && <div class="gal-caption">{it.caption}</div>}
               {it.task_title && <div class="gal-task">{it.task_title}</div>}
               {!it.task_title && it.bucket === 'stash' && <div class="gal-stash">в копилку</div>}
+              {it.recognizedNames && (
+                <div class="gal-hashtags">
+                  {it.recognizedNames.split(',').map((n) => n.trim()).filter(Boolean).map((n) => (
+                    <span class="gal-hashtag">#{n.replace(/\s+/g, '_')}</span>
+                  ))}
+                </div>
+              )}
               <div class="gal-author">
                 {it.author || 'неизвестно'}
                 {it.author_role && <span class="gal-role"> · {roleLabel(it.author_role)}</span>}
@@ -143,5 +155,48 @@ const nVoice = items.filter((i) => i.kind === 'voice').length;
         ))}
       </div>
     )}
+
+    <div class="gal-dlbar" id="gal-dlbar" role="region" aria-label="Массовое скачивание">
+      <span class="gal-dlbar-count" id="gal-dlbar-count"></span>
+      <a class="gal-dlbar-btn" id="gal-dlbar-btn" href="#" download>
+        <i class="bi bi-download" aria-hidden="true"></i>
+        <span id="gal-dlbar-label">Скачать</span>
+      </a>
+      <button class="gal-dlbar-cancel" id="gal-dlbar-cancel" type="button" aria-label="Сбросить выбор">×</button>
+    </div>
   </div>
 </PortalLayout>
+
+<script>
+  const bar = document.getElementById('gal-dlbar') as HTMLElement | null;
+  const countEl = document.getElementById('gal-dlbar-count') as HTMLElement | null;
+  const dlBtn = document.getElementById('gal-dlbar-btn') as HTMLAnchorElement | null;
+  const dlLabel = document.getElementById('gal-dlbar-label') as HTMLElement | null;
+  const cancelBtn = document.getElementById('gal-dlbar-cancel') as HTMLElement | null;
+  const day = new URLSearchParams(location.search).get('day') || 'N';
+
+  function refreshBar() {
+    const checked = Array.from(document.querySelectorAll<HTMLInputElement>('.gal-cb:checked'));
+    const n = checked.length;
+    bar?.classList.toggle('visible', n > 0);
+    if (countEl) countEl.textContent = `Выбрано: ${n}`;
+    if (dlLabel) dlLabel.textContent = `Скачать (${n})`;
+    if (dlBtn) {
+      const ids = checked.map((el) => el.value).join(',');
+      dlBtn.href = `/api/portal/shift-content-zip?ids=${ids}&day=${encodeURIComponent(day)}`;
+    }
+    document.querySelectorAll<HTMLElement>('.gal-tile').forEach((tile) => {
+      const cb = tile.querySelector<HTMLInputElement>('.gal-cb');
+      tile.classList.toggle('gal-tile--checked', !!cb?.checked);
+    });
+  }
+
+  document.querySelectorAll('.gal-cb').forEach((cb) => cb.addEventListener('change', refreshBar));
+
+  cancelBtn?.addEventListener('click', () => {
+    document.querySelectorAll<HTMLInputElement>('.gal-cb:checked').forEach((cb) => {
+      cb.checked = false;
+    });
+    refreshBar();
+  });
+</script>
