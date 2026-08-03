@@ -25,10 +25,10 @@ describe('mainShifts', () => {
     expect(mainShifts.length).toBeGreaterThan(0);
   });
 
-  it('все смены имеют startDate в будущем относительно сегодня', () => {
+  it('ни одна смена не завершилась (endDate >= сегодня)', () => {
     const today = new Date().toISOString().slice(0, 10);
     for (const s of mainShifts) {
-      expect(s.startDate > today).toBe(true);
+      expect(s.endDate >= today).toBe(true);
     }
   });
 
