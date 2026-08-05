@@ -45,4 +45,14 @@ export const CONTENT_OVERRIDES: Record<string, PageContentOverrides> = {
       reason: 'Labrika 2026-08-05: «лагерь»(точное) 4→2, цель 2-3',
     },
   },
+  '/lager-mytishchi/': {
+    relatedPagesTitle: {
+      value: 'Похожие направления рядом',
+      reason: 'Labrika 2026-08-05: «лагерь»(точное) цель 3-4, снять 2 общих вхождения',
+    },
+    shiftsGuideLinkText: {
+      value: 'Кому не подходит — честный список причин',
+      reason: 'Labrika 2026-08-05: «лагерь»(точное) цель 3-4, снять 2 общих вхождения',
+    },
+  },
 };
