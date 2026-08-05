@@ -52,6 +52,9 @@ while ((m = KEY_RE.exec(src))) {
   const candidates = [
     `${PAGES_DIR}/${slug}.astro`,
     `${PAGES_DIR}/${slug}/index.astro`,
+    // Программные лендинги: [slug].astro + src/data/landings/<slug>.ts — нет
+    // отдельного .astro-файла, страница существует через getStaticPaths().
+    `src/data/landings/${slug}.ts`,
   ];
   if (!candidates.some((c) => existsSync(c))) {
     missingPage.push(`${pagePath} — нет ни ${candidates.join(', ни ')}`);
