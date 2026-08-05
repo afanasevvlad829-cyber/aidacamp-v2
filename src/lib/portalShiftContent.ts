@@ -33,6 +33,7 @@ export interface ShiftContentItem {
   author_role: string | null;
   task_id: number | null;
   task_title: string | null;
+  recognizedNames: string | null;
 }
 
 export interface ShiftTaskRow {
@@ -58,10 +59,12 @@ const SELECT_ITEM = `
   SELECT c.id, c.day, c.kind, c.path, c.kids, c.caption, c.transcript,
          COALESCE(c.compressed, false) AS compressed, c.bucket, c.created_at,
          s.name AS author, s.role AS author_role,
-         c.task_id, t.title AS task_title
+         c.task_id, t.title AS task_title,
+         iss.recognized_names AS "recognizedNames"
     FROM shift_content c
     LEFT JOIN shift_staff s ON s.tg_id = c.author_tg
-    LEFT JOIN shift_tasks t ON t.id = c.task_id`;
+    LEFT JOIN shift_tasks t ON t.id = c.task_id
+    LEFT JOIN immich_sync_state iss ON iss.content_id = c.id`;
 
 /** Дни, по которым уже что-то сдано (для подсветки вкладок). */
 export async function contentDays(): Promise<Map<number, number>> {
