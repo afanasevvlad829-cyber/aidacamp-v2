@@ -11,6 +11,7 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
   title={shift ? `Фото — ${shift.name}` : 'Фото смены'}
   description="Фото со смены АйДаКемп"
   noindex={true}
+  hideMarketingWidgets={true}
 >
   <style>
     body {
@@ -75,18 +76,25 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
       background: rgba(0, 0, 0, 0.92);
       align-items: center;
       justify-content: center;
+      touch-action: none;
     }
 
     #foto-lightbox.open {
       display: flex;
     }
 
-    #foto-lightbox-img {
+    #foto-lightbox-img,
+    #foto-lightbox-video {
       max-width: 90vw;
       max-height: 90vh;
+      max-height: 90dvh;
       object-fit: contain;
       border-radius: 4px;
       display: block;
+    }
+
+    #foto-lightbox-video {
+      display: none;
     }
 
     .foto-lb-nav {
@@ -143,6 +151,19 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
       background: rgba(255, 255, 255, 0.3);
     }
 
+    .foto-video-badge {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      border-radius: 4px;
+      padding: 2px 5px;
+      font-size: 12px;
+      pointer-events: none;
+      line-height: 1.4;
+    }
+
     @media (max-width: 640px) {
       .foto-lb-nav {
         width: 44px;
@@ -154,8 +175,10 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
       #foto-lb-next { right: 8px; }
 
       /* Сужаем фото чтобы кнопки по бокам не перекрывали */
-      #foto-lightbox-img {
-        max-width: calc(100vw - 120px);
+      #foto-lightbox-img,
+      #foto-lightbox-video {
+        max-width: calc(100vw - 100px);
+        max-height: 85dvh;
       }
     }
   </style>
@@ -183,6 +206,7 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
     <button id="foto-lb-close" aria-label="Закрыть">&#10005;</button>
     <button id="foto-lb-prev" class="foto-lb-nav" aria-label="Предыдущее">&#8249;</button>
     <img id="foto-lightbox-img" src="" alt="Фото" />
+    <video id="foto-lightbox-video" controls></video>
     <button id="foto-lb-next" class="foto-lb-nav" aria-label="Следующее">&#8250;</button>
   </div>
 
@@ -197,14 +221,17 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
 
       const lightbox = document.getElementById('foto-lightbox')!;
       const lbImg = document.getElementById('foto-lightbox-img') as HTMLImageElement;
+      const lbVideo = document.getElementById('foto-lightbox-video') as HTMLVideoElement;
       const lbPrev = document.getElementById('foto-lb-prev') as HTMLButtonElement;
       const lbNext = document.getElementById('foto-lb-next') as HTMLButtonElement;
       const lbClose = document.getElementById('foto-lb-close') as HTMLButtonElement;
 
-      let lbAssets: string[] = [];
+      type AssetRef = { id: string; type: 'IMAGE' | 'VIDEO' };
+
+      let lbAssets: AssetRef[] = [];
       let lbIndex = 0;
 
-      function openLightbox(assets: string[], index: number) {
+      function openLightbox(assets: AssetRef[], index: number) {
         lbAssets = assets;
         lbIndex = index;
         updateLightboxPhoto();
@@ -216,10 +243,25 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
         lightbox.classList.remove('open');
         document.body.style.overflow = '';
         lbImg.src = '';
+        lbVideo.pause();
+        lbVideo.src = '';
+        lbImg.style.display = 'block';
+        lbVideo.style.display = 'none';
       }
 
       function updateLightboxPhoto() {
-        lbImg.src = `/api/foto/image/${lbAssets[lbIndex]}?kind=original`;
+        const asset = lbAssets[lbIndex];
+        const src = `/api/foto/image/${asset.id}?kind=original`;
+        if (asset.type === 'VIDEO') {
+          lbImg.style.display = 'none';
+          lbVideo.style.display = 'block';
+          lbVideo.src = src;
+        } else {
+          lbVideo.style.display = 'none';
+          lbVideo.src = '';
+          lbImg.style.display = 'block';
+          lbImg.src = src;
+        }
         lbPrev.disabled = lbIndex === 0;
         lbNext.disabled = lbIndex === lbAssets.length - 1;
       }
@@ -262,15 +304,24 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
         grid.innerHTML = '';
       }
 
-      function renderPhotoGrid(assetIds: string[]) {
+      function renderPhotoGrid(assets: AssetRef[]) {
         clearGrid();
-        assetIds.forEach((id, idx) => {
+        assets.forEach((asset, idx) => {
+          const wrap = document.createElement('div');
+          wrap.style.cssText = 'position:relative;';
           const img = document.createElement('img');
-          img.src = `/api/foto/image/${id}?kind=thumb`;
+          img.src = `/api/foto/image/${asset.id}?kind=thumb`;
           img.loading = 'lazy';
-          img.style.cssText = 'width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:pointer;';
-          img.addEventListener('click', () => openLightbox(assetIds, idx));
-          grid.appendChild(img);
+          img.style.cssText = 'width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:pointer;display:block;';
+          img.addEventListener('click', () => openLightbox(assets, idx));
+          wrap.appendChild(img);
+          if (asset.type === 'VIDEO') {
+            const badge = document.createElement('span');
+            badge.className = 'foto-video-badge';
+            badge.textContent = '▶';
+            wrap.appendChild(badge);
+          }
+          grid.appendChild(wrap);
         });
       }
 
@@ -294,9 +345,12 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
         const res = await fetch(`/api/foto/${shiftId}/people?personId=${encodeURIComponent(personId)}`);
         const data = await res.json();
         if (!data.ok) { setStatus(data.error); return; }
-        setStatus(`${data.name}: ${data.assetIds.length} фото`);
-        renderPhotoGrid(data.assetIds);
+        setStatus(`${data.name}: ${(data.assetIds as AssetRef[]).length} фото`);
+        renderPhotoGrid(data.assetIds as AssetRef[]);
       }
+
+      type FaceBox = { x1: number; y1: number; x2: number; y2: number; width: number; height: number };
+      type UnsortedFaceData = { assetId: string; faceId: string; assetType: 'IMAGE' | 'VIDEO'; box: FaceBox };
 
       async function loadUnsorted() {
         setStatus('Загружаю неразобранные фото…');
@@ -306,12 +360,44 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
         clearGrid();
         setStatus(`Неразобранных лиц: ${data.faces.length}`);
         const people = data.people as { id: string; name: string }[];
-        for (const face of data.faces as { assetId: string; faceId: string }[]) {
+        for (const face of data.faces as UnsortedFaceData[]) {
           const card = document.createElement('div');
+
+          const cropWrap = document.createElement('div');
+          cropWrap.style.cssText = 'position:relative;overflow:hidden;aspect-ratio:1;border-radius:8px;';
+
           const img = document.createElement('img');
           img.src = `/api/foto/image/${face.assetId}?kind=thumb`;
-          img.style.cssText = 'width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;';
-          card.appendChild(img);
+          img.loading = 'lazy';
+          // fallback until naturalWidth is known
+          img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+
+          img.addEventListener('load', () => {
+            const { naturalWidth } = img;
+            if (!naturalWidth || !face.box.width) return;
+            const containerSize = cropWrap.clientWidth || 140;
+            const half = containerSize / 2;
+            const scale = naturalWidth / face.box.width;
+            const cx = ((face.box.x1 + face.box.x2) / 2) * scale;
+            const cy = ((face.box.y1 + face.box.y2) / 2) * scale;
+            const fw = (face.box.x2 - face.box.x1) * scale;
+            const fh = (face.box.y2 - face.box.y1) * scale;
+            const zoom = containerSize / (Math.max(fw, fh) * 1.6);
+            const tx = half - cx * zoom;
+            const ty = half - cy * zoom;
+            img.style.cssText = `width:${img.naturalWidth}px;height:${img.naturalHeight}px;object-fit:none;transform-origin:0 0;transform:translate(${tx}px,${ty}px) scale(${zoom});`;
+          });
+
+          cropWrap.appendChild(img);
+
+          if (face.assetType === 'VIDEO') {
+            const badge = document.createElement('span');
+            badge.className = 'foto-video-badge';
+            badge.textContent = '▶';
+            cropWrap.appendChild(badge);
+          }
+
+          card.appendChild(cropWrap);
 
           const sel = document.createElement('select');
           sel.style.cssText = 'width:100%;margin-top:4px;';
