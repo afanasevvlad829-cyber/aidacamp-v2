@@ -16,6 +16,7 @@ import { readFileSync, existsSync } from 'node:fs';
 
 const REGISTRY = 'src/data/content-overrides.ts';
 const PAGES_DIR = 'src/pages';
+const LANDINGS_DIR = 'src/data/landings';
 
 if (!existsSync(REGISTRY)) {
   console.error(`FATAL: ${REGISTRY} не найден`);
@@ -52,9 +53,9 @@ while ((m = KEY_RE.exec(src))) {
   const candidates = [
     `${PAGES_DIR}/${slug}.astro`,
     `${PAGES_DIR}/${slug}/index.astro`,
-    // Программные лендинги: [slug].astro + src/data/landings/<slug>.ts — нет
-    // отдельного .astro-файла, страница существует через getStaticPaths().
-    `src/data/landings/${slug}.ts`,
+    // [slug].astro-лендинги (src/data/landings/*.ts) — общий шаблон без
+    // отдельного .astro-файла, страница существует, если есть файл данных.
+    `${LANDINGS_DIR}/${slug}.ts`,
   ];
   if (!candidates.some((c) => existsSync(c))) {
     missingPage.push(`${pagePath} — нет ни ${candidates.join(', ни ')}`);
