@@ -55,4 +55,24 @@ export const CONTENT_OVERRIDES: Record<string, PageContentOverrides> = {
       reason: 'Labrika 2026-08-05: «лагерь»(точное) цель 3-4, снять 2 общих вхождения',
     },
   },
+  '/lager-pushkino/': {
+    relatedPagesTitle: {
+      value: 'Похожие направления рядом',
+      reason: 'Labrika 2026-08-05: «лагерь»(точное) было 12, цель 4-5 — переизбыток, убрать где можно',
+    },
+    shiftsGuideLinkText: {
+      value: 'Кому не подходит — честный список причин',
+      reason: 'Labrika 2026-08-05: «лагерь»(точное) было 12, цель 4-5 — переизбыток, убрать где можно',
+    },
+  },
+  '/lager-odintsovo/': {
+    relatedPagesTitle: {
+      value: 'Похожие направления рядом',
+      reason: 'Labrika 2026-08-05: «лагерь»(точное) 5→3, цель 3',
+    },
+    shiftsGuideLinkText: {
+      value: 'Кому не подходит — честный список причин',
+      reason: 'Labrika 2026-08-05: «лагерь»(точное) 5→3, цель 3',
+    },
+  },
 };
