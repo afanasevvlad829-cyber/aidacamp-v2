@@ -27,8 +27,8 @@ describe('isUnnamedFace', () => {
 
 describe('canTag', () => {
   const index: FaceIndex = {
-    people: [{ id: 'person-1', name: 'Демид', assetIds: ['asset-1'] }],
-    unsorted: [{ assetId: 'asset-2', faceId: 'face-1', box: { x1: 0, y1: 0, x2: 1, y2: 1, width: 10, height: 10 } }],
+    people: [{ id: 'person-1', name: 'Демид', assetIds: [{ id: 'asset-1', type: 'IMAGE' as const }] }],
+    unsorted: [{ assetId: 'asset-2', faceId: 'face-1', assetType: 'IMAGE' as const, box: { x1: 0, y1: 0, x2: 1, y2: 1, width: 10, height: 10 } }],
   };
 
   it('true когда faceId и personId оба реально принадлежат этой смене', () => {

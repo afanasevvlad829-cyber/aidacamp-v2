@@ -59,11 +59,12 @@ export interface FaceBox {
 export interface NamedPerson {
   id: string;
   name: string;
-  assetIds: string[];
+  assetIds: Array<{ id: string; type: 'IMAGE' | 'VIDEO' }>;
 }
 export interface UnsortedFace {
   assetId: string;
   faceId: string;
+  assetType: 'IMAGE' | 'VIDEO';
   box: FaceBox;
 }
 export interface FaceIndex {
@@ -114,7 +115,12 @@ export async function getAlbumFaceIndex(albumId: string): Promise<FaceIndex> {
     headers: immichHeaders(),
   });
   if (!albumRes.ok) throw new Error(`Immich album ${albumId}: ${albumRes.status}`);
-  const album: { assets: { id: string }[] } = await albumRes.json();
+  const album: { assets: { id: string; type: string }[] } = await albumRes.json();
+
+  const assetTypeMap = new Map<string, 'IMAGE' | 'VIDEO'>();
+  for (const a of album.assets) {
+    assetTypeMap.set(a.id, a.type === 'VIDEO' ? 'VIDEO' : 'IMAGE');
+  }
 
   const peopleMap = new Map<string, NamedPerson>();
   const unsorted: UnsortedFace[] = [];
@@ -129,6 +135,7 @@ export async function getAlbumFaceIndex(albumId: string): Promise<FaceIndex> {
         });
         if (!facesRes.ok) return;
         const faces: RawFace[] = await facesRes.json();
+        const assetType = assetTypeMap.get(assetId) ?? 'IMAGE';
         for (const face of faces) {
           const box: FaceBox = {
             x1: face.boundingBoxX1,
@@ -141,16 +148,18 @@ export async function getAlbumFaceIndex(albumId: string): Promise<FaceIndex> {
           if (!isUnnamedFace(face)) {
             const existing = peopleMap.get(face.person!.id);
             if (existing) {
-              if (!existing.assetIds.includes(assetId)) existing.assetIds.push(assetId);
+              if (!existing.assetIds.some((a) => a.id === assetId)) {
+                existing.assetIds.push({ id: assetId, type: assetType });
+              }
             } else {
               peopleMap.set(face.person!.id, {
                 id: face.person!.id,
                 name: face.person!.name,
-                assetIds: [assetId],
+                assetIds: [{ id: assetId, type: assetType }],
               });
             }
           } else {
-            unsorted.push({ assetId, faceId: face.id, box });
+            unsorted.push({ assetId, faceId: face.id, assetType, box });
           }
         }
       }),
