@@ -11,6 +11,7 @@ import Gallery from '../components/Gallery.astro';
 import CourseSchema from '../components/CourseSchema.astro';
 import { allLandings } from '../data/landings/index';
 import type { LandingData } from '../data/landings/types';
+import { CONTENT_OVERRIDES } from '../data/content-overrides';
 
 export function getStaticPaths() {
   return allLandings.map((l) => ({
@@ -20,6 +21,11 @@ export function getStaticPaths() {
 }
 
 const landing = Astro.props as LandingData;
+// Точечные SEO-переопределения текста в общих компонентах (RelatedPages
+// title, ShiftsGuideLink) — см. src/data/content-overrides.ts. Для страниц
+// без записи в реестре ov будет undefined, и компоненты используют свои
+// дефолты — поведение остальных лендингов не меняется.
+const ov = CONTENT_OVERRIDES[`/${landing.slug}/`];
 ---
 
 <LandingLayout
@@ -51,7 +57,7 @@ const landing = Astro.props as LandingData;
   />
   <LandingTwoCol sections={landing.sections} />
   <Gallery />
-  <Shifts />
+  <Shifts shiftsGuideLinkText={ov?.shiftsGuideLinkText?.value} />
   {/* faqItems — вопросы этого лендинга: рендерятся первой вкладкой и уходят в FAQPage.
       Раньше они жили только в разметке (FAQSchema в slot="head") и не были видны. */}
   {landing.faqDisplayItems
@@ -87,5 +93,5 @@ const landing = Astro.props as LandingData;
       </ul>
     </section>
   )}
-  <RelatedPages pages={getRelatedPages(Astro.url.pathname)} />
+  <RelatedPages title={ov?.relatedPagesTitle?.value} pages={getRelatedPages(Astro.url.pathname)} />
 </LandingLayout>
