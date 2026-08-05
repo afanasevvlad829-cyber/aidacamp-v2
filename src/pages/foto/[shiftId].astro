@@ -12,16 +12,164 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
   description="Фото со смены АйДаКемп"
   noindex={true}
 >
-  <main id="foto-root" style="max-width:960px;margin:0 auto;padding:24px 16px;" data-shift-id={shiftId}>
+  <style>
+    body {
+      overflow-x: hidden;
+    }
+
+    #foto-root {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 16px;
+    }
+
+    .foto-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 16px 0;
+    }
+
+    #foto-person-select {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      min-height: 44px;
+    }
+
+    #foto-tab-unsorted {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      cursor: pointer;
+      min-height: 44px;
+    }
+
+    @media (max-width: 640px) {
+      .foto-controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      #foto-person-select,
+      #foto-tab-unsorted {
+        width: 100%;
+        box-sizing: border-box;
+      }
+    }
+
+    @media (max-width: 400px) {
+      #foto-grid {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
+      }
+    }
+
+    /* Lightbox */
+    #foto-lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.92);
+      align-items: center;
+      justify-content: center;
+    }
+
+    #foto-lightbox.open {
+      display: flex;
+    }
+
+    #foto-lightbox-img {
+      max-width: 90vw;
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 4px;
+      display: block;
+    }
+
+    .foto-lb-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: #fff;
+      font-size: 28px;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+      z-index: 10000;
+    }
+
+    .foto-lb-nav:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .foto-lb-nav:disabled {
+      opacity: 0.2;
+      cursor: default;
+    }
+
+    #foto-lb-prev { left: 16px; }
+    #foto-lb-next { right: 16px; }
+
+    #foto-lb-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: #fff;
+      font-size: 20px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      line-height: 1;
+    }
+
+    #foto-lb-close:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    @media (max-width: 640px) {
+      .foto-lb-nav {
+        width: 44px;
+        height: 44px;
+        font-size: 22px;
+      }
+
+      #foto-lb-prev { left: 8px; }
+      #foto-lb-next { right: 8px; }
+
+      /* Сужаем фото чтобы кнопки по бокам не перекрывали */
+      #foto-lightbox-img {
+        max-width: calc(100vw - 120px);
+      }
+    }
+  </style>
+
+  <main id="foto-root" data-shift-id={shiftId}>
     {!shift && <p>Смена не найдена.</p>}
     {shift && (
       <>
         <h1>{shift.name} — фото</h1>
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:16px 0;">
-          <select id="foto-person-select" style="padding:8px 12px;border-radius:8px;border:1px solid #cbd5e1;">
+        <div class="foto-controls">
+          <select id="foto-person-select">
             <option value="">Выбери ребёнка…</option>
           </select>
-          <button id="foto-tab-unsorted" type="button" style="padding:8px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;cursor:pointer;">
+          <button id="foto-tab-unsorted" type="button">
             Неразобранные
           </button>
         </div>
@@ -30,6 +178,13 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
       </>
     )}
   </main>
+
+  <div id="foto-lightbox" role="dialog" aria-modal="true" aria-label="Просмотр фото">
+    <button id="foto-lb-close" aria-label="Закрыть">&#10005;</button>
+    <button id="foto-lb-prev" class="foto-lb-nav" aria-label="Предыдущее">&#8249;</button>
+    <img id="foto-lightbox-img" src="" alt="Фото" />
+    <button id="foto-lb-next" class="foto-lb-nav" aria-label="Следующее">&#8250;</button>
+  </div>
 
   <script>
     const root = document.getElementById('foto-root');
@@ -40,6 +195,66 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
       const status = document.getElementById('foto-status')!;
       const grid = document.getElementById('foto-grid')!;
 
+      const lightbox = document.getElementById('foto-lightbox')!;
+      const lbImg = document.getElementById('foto-lightbox-img') as HTMLImageElement;
+      const lbPrev = document.getElementById('foto-lb-prev') as HTMLButtonElement;
+      const lbNext = document.getElementById('foto-lb-next') as HTMLButtonElement;
+      const lbClose = document.getElementById('foto-lb-close') as HTMLButtonElement;
+
+      let lbAssets: string[] = [];
+      let lbIndex = 0;
+
+      function openLightbox(assets: string[], index: number) {
+        lbAssets = assets;
+        lbIndex = index;
+        updateLightboxPhoto();
+        lightbox.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeLightbox() {
+        lightbox.classList.remove('open');
+        document.body.style.overflow = '';
+        lbImg.src = '';
+      }
+
+      function updateLightboxPhoto() {
+        lbImg.src = `/api/foto/image/${lbAssets[lbIndex]}?kind=original`;
+        lbPrev.disabled = lbIndex === 0;
+        lbNext.disabled = lbIndex === lbAssets.length - 1;
+      }
+
+      function navLightbox(delta: number) {
+        const next = lbIndex + delta;
+        if (next < 0 || next >= lbAssets.length) return;
+        lbIndex = next;
+        updateLightboxPhoto();
+      }
+
+      lbClose.addEventListener('click', closeLightbox);
+      lbPrev.addEventListener('click', () => navLightbox(-1));
+      lbNext.addEventListener('click', () => navLightbox(1));
+
+      lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) closeLightbox();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (!lightbox.classList.contains('open')) return;
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') navLightbox(-1);
+        if (e.key === 'ArrowRight') navLightbox(1);
+      });
+
+      let touchStartX = 0;
+      lightbox.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].clientX;
+      }, { passive: true });
+      lightbox.addEventListener('touchend', (e) => {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) > 50) navLightbox(dx < 0 ? 1 : -1);
+      }, { passive: true });
+
       function setStatus(text: string) {
         status.textContent = text;
       }
@@ -49,14 +264,14 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
 
       function renderPhotoGrid(assetIds: string[]) {
         clearGrid();
-        for (const id of assetIds) {
+        assetIds.forEach((id, idx) => {
           const img = document.createElement('img');
           img.src = `/api/foto/image/${id}?kind=thumb`;
           img.loading = 'lazy';
           img.style.cssText = 'width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:pointer;';
-          img.addEventListener('click', () => window.open(`/api/foto/image/${id}?kind=original`, '_blank'));
+          img.addEventListener('click', () => openLightbox(assetIds, idx));
           grid.appendChild(img);
-        }
+        });
       }
 
       async function loadPeople() {
