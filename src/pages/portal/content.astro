@@ -116,7 +116,9 @@ const nVoice = items.filter((i) => i.kind === 'voice').length;
               </div>
             ) : (
               <a href={`/api/portal/shift-content-file?id=${it.id}&size=full`}
-                 target="_blank" rel="noopener" class="gal-shot">
+                 target="_blank" rel="noopener" class="gal-shot"
+                 data-lb data-kind={it.kind}
+                 data-meta={`${fmtTime(it.created_at)} · ${it.author || 'неизвестно'}`}>
                 <img src={`/api/portal/shift-content-file?id=${it.id}`}
                      alt={it.kids || KIND_LABEL[it.kind] || 'кадр'}
                      loading="lazy" decoding="async" class="gal-img" />
@@ -133,7 +135,7 @@ const nVoice = items.filter((i) => i.kind === 'voice').length;
               {it.kids && <div class="gal-kids">{it.kids}</div>}
               {it.caption && <div class="gal-caption">{it.caption}</div>}
               {it.kind === 'video' && it.transcript && (
-                <p class="gal-voice-text gal-vtext" title={it.transcript}>🎬 {it.transcript}</p>
+                <p class="gal-voice-text gal-vtext">🎬 {it.transcript}</p>
               )}
               {it.task_title && <div class="gal-task">{it.task_title}</div>}
               {!it.task_title && it.bucket === 'stash' && <div class="gal-stash">в копилку</div>}
@@ -147,15 +149,82 @@ const nVoice = items.filter((i) => i.kind === 'voice').length;
       </div>
     )}
   </div>
+
+  <dialog class="lb" id="lb">
+    <button type="button" class="lb-close" data-lb-close aria-label="Закрыть">&times;</button>
+    <button type="button" class="lb-nav lb-prev" data-lb-prev aria-label="Предыдущий">&lsaquo;</button>
+    <button type="button" class="lb-nav lb-next" data-lb-next aria-label="Следующий">&rsaquo;</button>
+    <div class="lb-stage" data-lb-stage></div>
+    <p class="lb-meta" data-lb-meta></p>
+  </dialog>
 </PortalLayout>
 
-<style>
-  /* Расшифровка видео бывает на несколько абзацев — в плитке показываем первые
-     строки, целиком она открывается по наведению (title) и есть в Immich. */
-  .gal-vtext {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+<script>
+  // Лайтбокс кадров смены. Держим ванильным: на портале нет клиентского
+  // фреймворка, а <dialog> уже используется в остальных модалках сайта.
+  const dlg = document.getElementById('lb') as HTMLDialogElement | null;
+  const stage = document.querySelector('[data-lb-stage]');
+  const metaBox = document.querySelector('[data-lb-meta]');
+  const shots = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[data-lb]'));
+  let current = -1;
+
+  function show(i: number) {
+    if (!dlg || !stage || !metaBox || i < 0 || i >= shots.length) return;
+    current = i;
+    const shot = shots[i];
+    const src = shot.getAttribute('href') || '';
+    const isVideo = shot.dataset.kind === 'video';
+
+    // важно очищать: иначе прошлое видео продолжает играть за кадром
+    stage.innerHTML = '';
+    const node = document.createElement(isVideo ? 'video' : 'img');
+    node.className = 'lb-media';
+    node.setAttribute('src', src);
+    if (isVideo) {
+      (node as HTMLVideoElement).controls = true;
+      (node as HTMLVideoElement).autoplay = true;
+      (node as HTMLVideoElement).playsInline = true;
+    } else {
+      node.setAttribute('alt', shot.querySelector('img')?.alt || 'кадр');
+    }
+    stage.appendChild(node);
+
+    metaBox.textContent = `${shot.dataset.meta || ''}  ·  ${i + 1} из ${shots.length}`;
+    dlg.querySelectorAll<HTMLElement>('.lb-nav').forEach((b) => {
+      b.style.display = shots.length > 1 ? '' : 'none';
+    });
+    if (!dlg.open) dlg.showModal();
   }
-</style>
+
+  function close() {
+    if (!dlg) return;
+    if (stage) stage.innerHTML = '';   // останавливает воспроизведение
+    dlg.close();
+  }
+
+  // href/target="_blank" на плитках оставлены осознанно: если этот скрипт не
+  // загрузился, кадр по-прежнему открывается в соседней вкладке.
+  shots.forEach((shot, i) => {
+    shot.addEventListener('click', (e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;  // не ломаем «открыть в новой вкладке»
+      e.preventDefault();
+      show(i);
+    });
+  });
+
+  dlg?.addEventListener('close', () => { if (stage) stage.innerHTML = ''; });
+  document.querySelector('[data-lb-close]')?.addEventListener('click', close);
+  document.querySelector('[data-lb-prev]')?.addEventListener('click',
+    () => show((current - 1 + shots.length) % shots.length));
+  document.querySelector('[data-lb-next]')?.addEventListener('click',
+    () => show((current + 1) % shots.length));
+
+  // клик мимо картинки закрывает: у <dialog> фон — это сам элемент
+  dlg?.addEventListener('click', (e) => { if (e.target === dlg) close(); });
+
+  document.addEventListener('keydown', (e) => {
+    if (!dlg?.open) return;
+    if (e.key === 'ArrowLeft') show((current - 1 + shots.length) % shots.length);
+    if (e.key === 'ArrowRight') show((current + 1) % shots.length);
+  });
+</script>
