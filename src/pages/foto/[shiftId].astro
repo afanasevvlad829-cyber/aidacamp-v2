@@ -1,0 +1,130 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+import { allShiftsIncludingArchived } from '../../data/shifts';
+
+const { shiftId } = Astro.params;
+const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
+---
+
+<Base
+  title={shift ? `Фото — ${shift.name}` : 'Фото смены'}
+  description="Фото со смены АйДаКемп"
+  noindex={true}
+>
+  <main id="foto-root" style="max-width:960px;margin:0 auto;padding:24px 16px;" data-shift-id={shiftId}>
+    {!shift && <p>Смена не найдена.</p>}
+    {shift && (
+      <>
+        <h1>{shift.name} — фото</h1>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:16px 0;">
+          <select id="foto-person-select" style="padding:8px 12px;border-radius:8px;border:1px solid #cbd5e1;">
+            <option value="">Выбери ребёнка…</option>
+          </select>
+          <button id="foto-tab-unsorted" type="button" style="padding:8px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;cursor:pointer;">
+            Неразобранные
+          </button>
+        </div>
+        <div id="foto-status" style="color:#64748b;font-size:14px;min-height:20px;"></div>
+        <div id="foto-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:16px;"></div>
+      </>
+    )}
+  </main>
+
+  <script>
+    const root = document.getElementById('foto-root');
+    if (root) {
+      const shiftId = root.dataset.shiftId;
+      const select = document.getElementById('foto-person-select') as HTMLSelectElement;
+      const tabUnsorted = document.getElementById('foto-tab-unsorted') as HTMLButtonElement;
+      const status = document.getElementById('foto-status')!;
+      const grid = document.getElementById('foto-grid')!;
+
+      function setStatus(text: string) {
+        status.textContent = text;
+      }
+      function clearGrid() {
+        grid.innerHTML = '';
+      }
+
+      function renderPhotoGrid(assetIds: string[]) {
+        clearGrid();
+        for (const id of assetIds) {
+          const img = document.createElement('img');
+          img.src = `/api/foto/image/${id}?kind=thumb`;
+          img.loading = 'lazy';
+          img.style.cssText = 'width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:pointer;';
+          img.addEventListener('click', () => window.open(`/api/foto/image/${id}?kind=original`, '_blank'));
+          grid.appendChild(img);
+        }
+      }
+
+      async function loadPeople() {
+        setStatus('Загружаю список детей…');
+        const res = await fetch(`/api/foto/${shiftId}/people`);
+        const data = await res.json();
+        if (!data.ok) { setStatus(data.error); return; }
+        select.innerHTML = '<option value="">Выбери ребёнка…</option>';
+        for (const p of data.people as { id: string; name: string; count: number }[]) {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = `${p.name} (${p.count})`;
+          select.appendChild(opt);
+        }
+        setStatus(data.people.length ? '' : 'Пока никто не подписан — загляни в «Неразобранные».');
+      }
+
+      async function loadPersonPhotos(personId: string) {
+        setStatus('Загружаю фото…');
+        const res = await fetch(`/api/foto/${shiftId}/people?personId=${encodeURIComponent(personId)}`);
+        const data = await res.json();
+        if (!data.ok) { setStatus(data.error); return; }
+        setStatus(`${data.name}: ${data.assetIds.length} фото`);
+        renderPhotoGrid(data.assetIds);
+      }
+
+      async function loadUnsorted() {
+        setStatus('Загружаю неразобранные фото…');
+        const res = await fetch(`/api/foto/${shiftId}/unsorted`);
+        const data = await res.json();
+        if (!data.ok) { setStatus(data.error); return; }
+        clearGrid();
+        setStatus(`Неразобранных лиц: ${data.faces.length}`);
+        const people = data.people as { id: string; name: string }[];
+        for (const face of data.faces as { assetId: string; faceId: string }[]) {
+          const card = document.createElement('div');
+          const img = document.createElement('img');
+          img.src = `/api/foto/image/${face.assetId}?kind=thumb`;
+          img.style.cssText = 'width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;';
+          card.appendChild(img);
+
+          const sel = document.createElement('select');
+          sel.style.cssText = 'width:100%;margin-top:4px;';
+          sel.innerHTML =
+            '<option value="">Кто это?</option>' +
+            people.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+          sel.addEventListener('change', async () => {
+            if (!sel.value) return;
+            sel.disabled = true;
+            const r = await fetch(`/api/foto/${shiftId}/unsorted`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ faceId: face.faceId, personId: sel.value }),
+            });
+            const rd = await r.json();
+            if (rd.ok) { card.remove(); } else { sel.disabled = false; alert(rd.error); }
+          });
+          card.appendChild(sel);
+          grid.appendChild(card);
+        }
+      }
+
+      select.addEventListener('change', () => {
+        if (select.value) loadPersonPhotos(select.value);
+      });
+      tabUnsorted.addEventListener('click', loadUnsorted);
+
+      loadPeople();
+    }
+  </script>
+</Base>
