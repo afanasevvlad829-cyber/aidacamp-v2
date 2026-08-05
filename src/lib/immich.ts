@@ -167,14 +167,22 @@ export function invalidateFaceIndex(albumId: string): void {
   faceIndexCache.delete(albumId);
 }
 
-/** Переназначает лицо на человека. PUT /api/faces/{faceId} с телом {id: personId}. */
+/**
+ * Переназначает лицо на человека — PUT /api/faces/{personId} с телом {id: faceId}.
+ * ⚠️ У Immich {id} в URL — это ID ЧЕЛОВЕКА, а {id} в теле — ID ЛИЦА (см. FaceDto
+ * в officialном OpenAPI: "Re-assign the face provided in the body to the person
+ * identified by the id in the path parameter"). Перепутанный порядок даёт
+ * `400 "Not found or no person.update access"` — не проблема прав API-ключа,
+ * просто оба параметра называются "id" и легко перепутать местами. Проверено
+ * вживую на проде 2026-08-05.
+ */
 export async function tagFace(faceId: string, personId: string): Promise<void> {
   const res = await fetchWithTimeout(
-    `${IMMICH_BASE}/api/faces/${faceId}`,
+    `${IMMICH_BASE}/api/faces/${personId}`,
     {
       method: 'PUT',
       headers: { ...immichHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: personId }),
+      body: JSON.stringify({ id: faceId }),
     },
     15000,
   );
