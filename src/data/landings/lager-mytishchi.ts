@@ -25,7 +25,7 @@ const landing: LandingData = {
     breadcrumb: 'Из Мытищ',
     keywords: [
       `66 км от МКАД, трансфер от м. Солнцево (${TRANSFER_PRICE_FMT})`,
-      'Детский IT-курс: Python, AI, Minecraft, 7–15 лет',
+      'IT-курс для ребят: Python, AI, Minecraft, 7–15 лет',
       'Выездной, с проживанием, бассейн, 5-разовое питание',
     ],
     imageAlt: 'Дети на занятии в АйДаКемп',
