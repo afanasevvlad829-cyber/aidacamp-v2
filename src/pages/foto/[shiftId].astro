@@ -157,10 +157,102 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
       #foto-lb-next { right: 8px; }
 
       /* Сужаем фото чтобы кнопки по бокам не перекрывали */
-      #foto-lightbox-img {
+      #foto-lightbox-img,
+      #foto-lightbox-vid {
         max-width: calc(100vw - 100px);
         max-height: 85dvh;
       }
+    }
+
+    #foto-lightbox-vid {
+      display: none;
+      max-width: 90vw;
+      max-height: 90vh;
+      max-height: 90dvh;
+      border-radius: 4px;
+    }
+
+    /* Видеобейдж поверх превью */
+    .foto-video-badge {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      pointer-events: none;
+    }
+
+    /* Неразобранные — карточка на одно фото */
+    .foto-unsorted-group {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .foto-unsorted-thumb-wrap {
+      position: relative;
+      display: inline-block;
+      cursor: pointer;
+    }
+
+    .foto-unsorted-thumb {
+      width: 100%;
+      max-height: 360px;
+      object-fit: contain;
+      border-radius: 8px;
+      display: block;
+    }
+
+    .foto-recognized-names {
+      font-size: 13px;
+      color: #475569;
+    }
+
+    .foto-face-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .foto-face-card {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: center;
+      width: 70px;
+    }
+
+    .foto-face-crop-wrap {
+      width: 70px;
+      height: 70px;
+      overflow: hidden;
+      border-radius: 6px;
+      position: relative;
+      background: #e2e8f0;
+    }
+
+    .foto-face-crop-wrap img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      object-fit: cover;
+      width: 100%;
+      height: 100%;
+    }
+
+    .foto-face-card select {
+      width: 70px;
+      font-size: 11px;
     }
   </style>
 
@@ -187,6 +279,7 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
     <button id="foto-lb-close" aria-label="Закрыть">&#10005;</button>
     <button id="foto-lb-prev" class="foto-lb-nav" aria-label="Предыдущее">&#8249;</button>
     <img id="foto-lightbox-img" src="" alt="Фото" />
+    <video id="foto-lightbox-vid" controls></video>
     <button id="foto-lb-next" class="foto-lb-nav" aria-label="Следующее">&#8250;</button>
   </div>
 
@@ -201,14 +294,16 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
 
       const lightbox = document.getElementById('foto-lightbox')!;
       const lbImg = document.getElementById('foto-lightbox-img') as HTMLImageElement;
+      const lbVid = document.getElementById('foto-lightbox-vid') as HTMLVideoElement;
       const lbPrev = document.getElementById('foto-lb-prev') as HTMLButtonElement;
       const lbNext = document.getElementById('foto-lb-next') as HTMLButtonElement;
       const lbClose = document.getElementById('foto-lb-close') as HTMLButtonElement;
 
-      let lbAssets: string[] = [];
+      type LbAsset = { id: string; type: 'IMAGE' | 'VIDEO' };
+      let lbAssets: LbAsset[] = [];
       let lbIndex = 0;
 
-      function openLightbox(assets: string[], index: number) {
+      function openLightbox(assets: LbAsset[], index: number) {
         lbAssets = assets;
         lbIndex = index;
         updateLightboxPhoto();
@@ -220,10 +315,21 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
         lightbox.classList.remove('open');
         document.body.style.overflow = '';
         lbImg.src = '';
+        lbVid.pause();
+        lbVid.src = '';
       }
 
       function updateLightboxPhoto() {
-        lbImg.src = `/api/foto/image/${lbAssets[lbIndex]}?kind=original`;
+        const asset = lbAssets[lbIndex];
+        if (asset.type === 'VIDEO') {
+          lbImg.style.display = 'none';
+          lbVid.style.display = 'block';
+          lbVid.src = `/api/foto/image/${asset.id}?kind=original`;
+        } else {
+          lbVid.style.display = 'none';
+          lbImg.style.display = 'block';
+          lbImg.src = `/api/foto/image/${asset.id}?kind=original`;
+        }
         lbPrev.disabled = lbIndex === 0;
         lbNext.disabled = lbIndex === lbAssets.length - 1;
       }
@@ -266,15 +372,25 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
         grid.innerHTML = '';
       }
 
-      function renderPhotoGrid(assetIds: string[]) {
+      function renderPhotoGrid(assets: LbAsset[]) {
         clearGrid();
-        assetIds.forEach((id, idx) => {
+        grid.style.gridTemplateColumns = 'repeat(auto-fill,minmax(140px,1fr))';
+        assets.forEach((asset, idx) => {
+          const wrap = document.createElement('div');
+          wrap.style.cssText = 'position:relative;cursor:pointer;';
           const img = document.createElement('img');
-          img.src = `/api/foto/image/${id}?kind=thumb`;
+          img.src = `/api/foto/image/${asset.id}?kind=thumb`;
           img.loading = 'lazy';
-          img.style.cssText = 'width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:pointer;';
-          img.addEventListener('click', () => openLightbox(assetIds, idx));
-          grid.appendChild(img);
+          img.style.cssText = 'width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;display:block;';
+          wrap.appendChild(img);
+          if (asset.type === 'VIDEO') {
+            const badge = document.createElement('span');
+            badge.className = 'foto-video-badge';
+            badge.textContent = '▶';
+            wrap.appendChild(badge);
+          }
+          wrap.addEventListener('click', () => openLightbox(assets, idx));
+          grid.appendChild(wrap);
         });
       }
 
@@ -299,7 +415,37 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
         const data = await res.json();
         if (!data.ok) { setStatus(data.error); return; }
         setStatus(`${data.name}: ${data.assetIds.length} фото`);
-        renderPhotoGrid(data.assetIds);
+        renderPhotoGrid(data.assetIds as LbAsset[]);
+      }
+
+      type FaceBox = { x1: number; y1: number; x2: number; y2: number; width: number; height: number };
+      type UnsortedGroup = {
+        assetId: string;
+        assetType: 'IMAGE' | 'VIDEO';
+        recognizedNames: string[];
+        faces: { faceId: string; box: FaceBox }[];
+      };
+
+      function makeFaceCrop(src: string, box: FaceBox): HTMLDivElement {
+        const wrap = document.createElement('div');
+        wrap.className = 'foto-face-crop-wrap';
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = '';
+        img.addEventListener('load', () => {
+          const S = img.naturalWidth / box.width;
+          const faceW = (box.x2 - box.x1) * S;
+          const faceH = (box.y2 - box.y1) * S;
+          const cropS = 70 / (Math.max(faceW, faceH) * 1.6);
+          const cx = (box.x1 + box.x2) / 2 * S;
+          const cy = (box.y1 + box.y2) / 2 * S;
+          const tx = 35 - cx * cropS;
+          const ty = 35 - cy * cropS;
+          img.style.cssText = 'position:absolute;top:0;left:0;transform-origin:0 0;';
+          img.style.transform = `translate(${tx}px,${ty}px) scale(${cropS})`;
+        });
+        wrap.appendChild(img);
+        return wrap;
       }
 
       async function loadUnsorted() {
@@ -308,32 +454,79 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
         const data = await res.json();
         if (!data.ok) { setStatus(data.error); return; }
         clearGrid();
-        setStatus(`Неразобранных лиц: ${data.faces.length}`);
+        grid.style.gridTemplateColumns = '1fr';
+        const groups = data.groups as UnsortedGroup[];
         const people = data.people as { id: string; name: string }[];
-        for (const face of data.faces as { assetId: string; faceId: string }[]) {
-          const card = document.createElement('div');
-          const img = document.createElement('img');
-          img.src = `/api/foto/image/${face.assetId}?kind=thumb`;
-          img.style.cssText = 'width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;';
-          card.appendChild(img);
+        const totalFaces = groups.reduce((n, g) => n + g.faces.length, 0);
+        setStatus(`Неразобранных лиц: ${totalFaces} на ${groups.length} фото`);
 
-          const sel = document.createElement('select');
-          sel.style.cssText = 'width:100%;margin-top:4px;';
-          sel.innerHTML =
-            '<option value="">Кто это?</option>' +
-            people.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
-          sel.addEventListener('change', async () => {
-            if (!sel.value) return;
-            sel.disabled = true;
-            const r = await fetch(`/api/foto/${shiftId}/unsorted`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ faceId: face.faceId, personId: sel.value }),
+        const peopleOptions = '<option value="">Кто это?</option>' +
+          people.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+
+        for (const group of groups) {
+          const card = document.createElement('div');
+          card.className = 'foto-unsorted-group';
+
+          // Превью фото
+          const thumbWrap = document.createElement('div');
+          thumbWrap.className = 'foto-unsorted-thumb-wrap';
+          const thumbImg = document.createElement('img');
+          thumbImg.src = `/api/foto/image/${group.assetId}?kind=thumb`;
+          thumbImg.className = 'foto-unsorted-thumb';
+          thumbImg.alt = '';
+          thumbWrap.appendChild(thumbImg);
+          if (group.assetType === 'VIDEO') {
+            const badge = document.createElement('span');
+            badge.className = 'foto-video-badge';
+            badge.textContent = '▶';
+            thumbWrap.appendChild(badge);
+          }
+          thumbWrap.addEventListener('click', () => openLightbox([{ id: group.assetId, type: group.assetType }], 0));
+          card.appendChild(thumbWrap);
+
+          // Уже опознаны
+          if (group.recognizedNames.length > 0) {
+            const names = document.createElement('div');
+            names.className = 'foto-recognized-names';
+            names.textContent = `Уже опознаны: ${group.recognizedNames.join(', ')}`;
+            card.appendChild(names);
+          }
+
+          // Ряд лиц
+          const faceRow = document.createElement('div');
+          faceRow.className = 'foto-face-row';
+
+          for (const face of group.faces) {
+            const faceCard = document.createElement('div');
+            faceCard.className = 'foto-face-card';
+
+            const cropSrc = `/api/foto/image/${group.assetId}?kind=thumb`;
+            faceCard.appendChild(makeFaceCrop(cropSrc, face.box));
+
+            const sel = document.createElement('select');
+            sel.innerHTML = peopleOptions;
+            sel.addEventListener('change', async () => {
+              if (!sel.value) return;
+              sel.disabled = true;
+              const r = await fetch(`/api/foto/${shiftId}/unsorted`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ faceId: face.faceId, personId: sel.value }),
+              });
+              const rd = await r.json();
+              if (rd.ok) {
+                faceCard.remove();
+                if (faceRow.childElementCount === 0) card.remove();
+              } else {
+                sel.disabled = false;
+                alert(rd.error);
+              }
             });
-            const rd = await r.json();
-            if (rd.ok) { card.remove(); } else { sel.disabled = false; alert(rd.error); }
-          });
-          card.appendChild(sel);
+            faceCard.appendChild(sel);
+            faceRow.appendChild(faceCard);
+          }
+
+          card.appendChild(faceRow);
           grid.appendChild(card);
         }
       }
