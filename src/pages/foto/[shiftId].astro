@@ -201,7 +201,7 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
 
     .foto-unsorted-thumb-wrap {
       position: relative;
-      display: inline-block;
+      display: block;
       cursor: pointer;
     }
 
@@ -218,41 +218,43 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
       color: #475569;
     }
 
-    .foto-face-row {
+    /* Нумерованная метка лица поверх фото */
+    .foto-face-marker {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.65);
+      color: #fff;
+      border: 2px solid #fff;
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      pointer-events: none;
+      line-height: 1;
     }
 
-    .foto-face-card {
+    /* Список выборов под фото */
+    .foto-face-list {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
+    }
+
+    .foto-face-list-item {
+      display: flex;
       align-items: center;
-      width: 70px;
+      gap: 8px;
+      font-size: 14px;
     }
 
-    .foto-face-crop-wrap {
-      width: 70px;
-      height: 70px;
-      overflow: hidden;
+    .foto-face-list-item select {
+      padding: 4px 8px;
       border-radius: 6px;
-      position: relative;
-      background: #e2e8f0;
-    }
-
-    .foto-face-crop-wrap img {
-      position: absolute;
-      top: 0;
-      left: 0;
-      object-fit: cover;
-      width: 100%;
-      height: 100%;
-    }
-
-    .foto-face-card select {
-      width: 70px;
-      font-size: 11px;
+      border: 1px solid #cbd5e1;
+      font-size: 13px;
     }
   </style>
 
@@ -426,28 +428,6 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
         faces: { faceId: string; box: FaceBox }[];
       };
 
-      function makeFaceCrop(src: string, box: FaceBox): HTMLDivElement {
-        const wrap = document.createElement('div');
-        wrap.className = 'foto-face-crop-wrap';
-        const img = document.createElement('img');
-        img.src = src;
-        img.alt = '';
-        img.addEventListener('load', () => {
-          const S = img.naturalWidth / box.width;
-          const faceW = (box.x2 - box.x1) * S;
-          const faceH = (box.y2 - box.y1) * S;
-          const cropS = 70 / (Math.max(faceW, faceH) * 1.6);
-          const cx = (box.x1 + box.x2) / 2 * S;
-          const cy = (box.y1 + box.y2) / 2 * S;
-          const tx = 35 - cx * cropS;
-          const ty = 35 - cy * cropS;
-          img.style.cssText = 'position:absolute;top:0;left:0;transform-origin:0 0;';
-          img.style.transform = `translate(${tx}px,${ty}px) scale(${cropS})`;
-        });
-        wrap.appendChild(img);
-        return wrap;
-      }
-
       async function loadUnsorted() {
         setStatus('Загружаю неразобранные фото…');
         const res = await fetch(`/api/foto/${shiftId}/unsorted`);
@@ -467,7 +447,7 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
           const card = document.createElement('div');
           card.className = 'foto-unsorted-group';
 
-          // Превью фото
+          // Превью фото с нумерованными метками лиц
           const thumbWrap = document.createElement('div');
           thumbWrap.className = 'foto-unsorted-thumb-wrap';
           const thumbImg = document.createElement('img');
@@ -475,12 +455,14 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
           thumbImg.className = 'foto-unsorted-thumb';
           thumbImg.alt = '';
           thumbWrap.appendChild(thumbImg);
+
           if (group.assetType === 'VIDEO') {
             const badge = document.createElement('span');
             badge.className = 'foto-video-badge';
             badge.textContent = '▶';
             thumbWrap.appendChild(badge);
           }
+
           thumbWrap.addEventListener('click', () => openLightbox([{ id: group.assetId, type: group.assetType }], 0));
           card.appendChild(thumbWrap);
 
@@ -492,16 +474,32 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
             card.appendChild(names);
           }
 
-          // Ряд лиц
-          const faceRow = document.createElement('div');
-          faceRow.className = 'foto-face-row';
+          // Список выборов под фото
+          const faceList = document.createElement('div');
+          faceList.className = 'foto-face-list';
+          card.appendChild(faceList);
 
-          for (const face of group.faces) {
-            const faceCard = document.createElement('div');
-            faceCard.className = 'foto-face-card';
+          // Метки на фото и строки выборов для каждого лица
+          const markers: HTMLElement[] = [];
 
-            const cropSrc = `/api/foto/image/${group.assetId}?kind=thumb`;
-            faceCard.appendChild(makeFaceCrop(cropSrc, face.box));
+          for (let i = 0; i < group.faces.length; i++) {
+            const face = group.faces[i];
+
+            // Кружок-метка поверх фото (скрыт до позиционирования)
+            const marker = document.createElement('div');
+            marker.className = 'foto-face-marker';
+            marker.textContent = String(i + 1);
+            marker.style.visibility = 'hidden';
+            thumbWrap.appendChild(marker);
+            markers.push(marker);
+
+            // Строка выбора под фото
+            const listItem = document.createElement('div');
+            listItem.className = 'foto-face-list-item';
+
+            const label = document.createElement('span');
+            label.textContent = `${i + 1})`;
+            listItem.appendChild(label);
 
             const sel = document.createElement('select');
             sel.innerHTML = peopleOptions;
@@ -515,18 +513,56 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
               });
               const rd = await r.json();
               if (rd.ok) {
-                faceCard.remove();
-                if (faceRow.childElementCount === 0) card.remove();
+                marker.remove();
+                listItem.remove();
+                if (faceList.childElementCount === 0) card.remove();
               } else {
                 sel.disabled = false;
                 alert(rd.error);
               }
             });
-            faceCard.appendChild(sel);
-            faceRow.appendChild(faceCard);
+            listItem.appendChild(sel);
+            faceList.appendChild(listItem);
           }
 
-          card.appendChild(faceRow);
+          // Позиционирование кружков по координатам box с учётом object-fit:contain
+          function positionMarkers() {
+            if (!thumbImg.naturalWidth) return;
+            const containerW = thumbWrap.clientWidth;
+            const containerH = thumbWrap.clientHeight;
+            if (!containerW || !containerH) return;
+            const imgAspect = thumbImg.naturalWidth / thumbImg.naturalHeight;
+            const containerAspect = containerW / containerH;
+            let renderedW, renderedH, offsetX, offsetY;
+            if (imgAspect > containerAspect) {
+              renderedW = containerW; renderedH = containerW / imgAspect;
+              offsetX = 0; offsetY = (containerH - renderedH) / 2;
+            } else {
+              renderedH = containerH; renderedW = containerH * imgAspect;
+              offsetY = 0; offsetX = (containerW - renderedW) / 2;
+            }
+            for (let j = 0; j < group.faces.length; j++) {
+              const m = markers[j];
+              if (!m.parentNode) continue;
+              const box = group.faces[j].box;
+              const scale = renderedW / box.width;
+              const markerX = offsetX + ((box.x1 + box.x2) / 2) * scale;
+              const markerY = offsetY + ((box.y1 + box.y2) / 2) * scale;
+              m.style.left = `${markerX - 12}px`;
+              m.style.top = `${markerY - 12}px`;
+              m.style.visibility = '';
+            }
+          }
+
+          thumbImg.addEventListener('load', positionMarkers);
+          if (thumbImg.complete && thumbImg.naturalWidth) positionMarkers();
+
+          let resizeTimer: ReturnType<typeof setTimeout> | undefined;
+          window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(positionMarkers, 150);
+          });
+
           grid.appendChild(card);
         }
       }
