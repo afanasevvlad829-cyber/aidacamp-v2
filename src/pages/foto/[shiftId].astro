@@ -552,8 +552,12 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
               const markerX = offsetX + ((box.x1 + box.x2) / 2) * scale;
               // Метка не на самом лице (закрывала его), а чуть выше — над верхней границей box.
               const markerTopY = offsetY + box.y1 * scale;
-              m.style.left = `${markerX - 12}px`;
-              m.style.top = `${markerTopY - 12 - 6}px`;
+              // Зажимаем в границы реально отображаемого фото (с учётом letterbox-отступов
+              // offsetX/offsetY) — иначе метка для лица у самого края кадра уезжает за фото.
+              const left = Math.min(Math.max(markerX - 12, offsetX), offsetX + renderedW - 24);
+              const top = Math.min(Math.max(markerTopY - 12 - 6, offsetY), offsetY + renderedH - 24);
+              m.style.left = `${left}px`;
+              m.style.top = `${top}px`;
               m.style.visibility = '';
             }
           }
