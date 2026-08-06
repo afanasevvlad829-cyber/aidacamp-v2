@@ -85,4 +85,14 @@ export const CONTENT_OVERRIDES: Record<string, PageContentOverrides> = {
       reason: 'Labrika 2026-08-05: «лагерь»(точное) 5→3, цель 3',
     },
   },
+  '/lager-zhukovskiy/': {
+    relatedPagesTitle: {
+      value: 'Похожие направления рядом',
+      reason: 'Labrika 2026-08-05: «лагерь»(точное) цель 0 — в прозе его нет, снимаем 2 вхождения из общих блоков',
+    },
+    shiftsGuideLinkText: {
+      value: 'Кому не подходит — честный список причин',
+      reason: 'Labrika 2026-08-05: «лагерь»(точное) цель 0 — в прозе его нет, снимаем 2 вхождения из общих блоков',
+    },
+  },
 };
