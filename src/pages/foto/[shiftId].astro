@@ -221,7 +221,8 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
       color: #475569;
     }
 
-    /* Нумерованная метка лица поверх фото (JS-created) */
+    /* Нумерованная метка лица поверх фото (JS-created) — кружок + хвостик-стрелка вниз,
+       чтобы явно указывать на лицо, не закрывая его. */
     .foto-face-marker {
       position: absolute;
       width: 24px;
@@ -237,6 +238,33 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
       font-weight: bold;
       pointer-events: none;
       line-height: 1;
+    }
+
+    .foto-face-marker::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: -7px;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 7px solid #fff;
+    }
+
+    .foto-face-marker::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: -9px;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+      border-top: 8px solid rgba(0, 0, 0, 0.65);
+      z-index: -1;
     }
 
     /* Список выборов под фото (JS-created) */
@@ -550,12 +578,16 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
               const box = group.faces[j].box;
               const scale = renderedW / box.width;
               const markerX = offsetX + ((box.x1 + box.x2) / 2) * scale;
-              // Метка не на самом лице (закрывала его), а чуть выше — над верхней границей box.
-              const markerTopY = offsetY + box.y1 * scale;
+              // Метка-«пин»: кружок с номером + треугольный хвостик, остриё которого указывает
+              // на лицо, не закрывая его. TIP_GAP — зазор между остриём и верхом лица,
+              // TAIL_H — высота хвостика, CIRCLE_H — высота самого кружка (см. CSS).
+              const TIP_GAP = 16, TAIL_H = 8, CIRCLE_H = 24;
+              const tipY = offsetY + box.y1 * scale - TIP_GAP;
+              const circleTopY = tipY - TAIL_H - CIRCLE_H;
               // Зажимаем в границы реально отображаемого фото (с учётом letterbox-отступов
               // offsetX/offsetY) — иначе метка для лица у самого края кадра уезжает за фото.
               const left = Math.min(Math.max(markerX - 12, offsetX), offsetX + renderedW - 24);
-              const top = Math.min(Math.max(markerTopY - 12 - 6, offsetY), offsetY + renderedH - 24);
+              const top = Math.min(Math.max(circleTopY, offsetY), offsetY + renderedH - CIRCLE_H - TAIL_H);
               m.style.left = `${left}px`;
               m.style.top = `${top}px`;
               m.style.visibility = '';
