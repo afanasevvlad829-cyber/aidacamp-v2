@@ -441,7 +441,10 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
           const cy = (box.y1 + box.y2) / 2 * S;
           const tx = 35 - cx * cropS;
           const ty = 35 - cy * cropS;
-          img.style.cssText = 'position:absolute;top:0;left:0;transform-origin:0 0;';
+          // width/height/object-fit наследуются из .foto-face-crop-wrap img (100%/100%/cover) —
+          // это годится как фолбэк, пока картинка не загружена, но ломает расчёт translate/scale
+          // ниже (он завязан на натуральный пиксельный размер картинки). Явно сбрасываем их здесь.
+          img.style.cssText = 'position:absolute;top:0;left:0;transform-origin:0 0;width:auto;height:auto;object-fit:none;';
           img.style.transform = `translate(${tx}px,${ty}px) scale(${cropS})`;
         });
         wrap.appendChild(img);
