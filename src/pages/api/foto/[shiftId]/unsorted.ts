@@ -22,7 +22,7 @@ export const GET: APIRoute = async ({ params }) => {
     const index = await getAlbumFaceIndex(albumId);
     return json({
       ok: true,
-      faces: index.unsorted,
+      groups: index.unsortedByAsset,
       people: index.people.map((p) => ({ id: p.id, name: p.name })),
     });
   } catch (e) {

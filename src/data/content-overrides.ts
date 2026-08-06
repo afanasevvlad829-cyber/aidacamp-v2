@@ -65,6 +65,16 @@ export const CONTENT_OVERRIDES: Record<string, PageContentOverrides> = {
       reason: 'Labrika 2026-08-05: «лагерь»(точное) было 12, цель 4-5 — переизбыток, убрать где можно',
     },
   },
+  '/lager-podolsk/': {
+    relatedPagesTitle: {
+      value: 'Похожие направления рядом',
+      reason: 'Labrika 2026-08-05: «лагерь»(точное) цель 2-5 — снимаем 2 вхождения из общих блоков (вне зоны Body, но снижают общий повтор на странице)',
+    },
+    shiftsGuideLinkText: {
+      value: 'Кому не подходит — честный список причин',
+      reason: 'Labrika 2026-08-05: «лагерь»(точное) цель 2-5 — снимаем 2 вхождения из общих блоков (вне зоны Body, но снижают общий повтор на странице)',
+    },
+  },
   '/lager-odintsovo/': {
     relatedPagesTitle: {
       value: 'Похожие направления рядом',
@@ -73,6 +83,16 @@ export const CONTENT_OVERRIDES: Record<string, PageContentOverrides> = {
     shiftsGuideLinkText: {
       value: 'Кому не подходит — честный список причин',
       reason: 'Labrika 2026-08-05: «лагерь»(точное) 5→3, цель 3',
+    },
+  },
+  '/lager-zhukovskiy/': {
+    relatedPagesTitle: {
+      value: 'Похожие направления рядом',
+      reason: 'Labrika 2026-08-05: «лагерь»(точное) цель 0 — в прозе его нет, снимаем 2 вхождения из общих блоков',
+    },
+    shiftsGuideLinkText: {
+      value: 'Кому не подходит — честный список причин',
+      reason: 'Labrika 2026-08-05: «лагерь»(точное) цель 0 — в прозе его нет, снимаем 2 вхождения из общих блоков',
     },
   },
 };

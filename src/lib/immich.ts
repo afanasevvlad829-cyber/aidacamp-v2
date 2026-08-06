@@ -59,16 +59,17 @@ export interface FaceBox {
 export interface NamedPerson {
   id: string;
   name: string;
-  assetIds: string[];
+  assetIds: { id: string; type: 'IMAGE' | 'VIDEO' }[];
 }
-export interface UnsortedFace {
+export interface UnsortedAssetGroup {
   assetId: string;
-  faceId: string;
-  box: FaceBox;
+  assetType: 'IMAGE' | 'VIDEO';
+  recognizedNames: string[];
+  faces: { faceId: string; box: FaceBox }[];
 }
 export interface FaceIndex {
   people: NamedPerson[];
-  unsorted: UnsortedFace[];
+  unsortedByAsset: UnsortedAssetGroup[];
 }
 
 /** Лицо без привязанного имени — либо не в кластере вообще, либо в кластере без имени. */
@@ -78,7 +79,7 @@ export function isUnnamedFace(face: { person: { name?: string } | null }): boole
 
 /** faceId и personId должны оба реально встречаться в данных ЭТОЙ смены — иначе tag-эндпоинт превратился бы в произвольный IDOR по всей базе Immich. */
 export function canTag(index: FaceIndex, faceId: string, personId: string): boolean {
-  const faceExists = index.unsorted.some((f) => f.faceId === faceId);
+  const faceExists = index.unsortedByAsset.some((g) => g.faces.some((f) => f.faceId === faceId));
   const personExists = index.people.some((p) => p.id === personId);
   return faceExists && personExists;
 }
@@ -114,10 +115,12 @@ export async function getAlbumFaceIndex(albumId: string): Promise<FaceIndex> {
     headers: immichHeaders(),
   });
   if (!albumRes.ok) throw new Error(`Immich album ${albumId}: ${albumRes.status}`);
-  const album: { assets: { id: string }[] } = await albumRes.json();
+  const album: { assets: { id: string; type: 'IMAGE' | 'VIDEO' }[] } = await albumRes.json();
 
   const peopleMap = new Map<string, NamedPerson>();
-  const unsorted: UnsortedFace[] = [];
+  const groupsMap = new Map<string, UnsortedAssetGroup>();
+  const assetTypeMap = new Map<string, 'IMAGE' | 'VIDEO'>();
+  for (const a of album.assets) assetTypeMap.set(a.id, a.type);
   const assetIds = album.assets.map((a) => a.id);
 
   for (let i = 0; i < assetIds.length; i += FACE_FETCH_CONCURRENCY) {
@@ -129,6 +132,7 @@ export async function getAlbumFaceIndex(albumId: string): Promise<FaceIndex> {
         });
         if (!facesRes.ok) return;
         const faces: RawFace[] = await facesRes.json();
+        const assetType = assetTypeMap.get(assetId) ?? 'IMAGE';
         for (const face of faces) {
           const box: FaceBox = {
             x1: face.boundingBoxX1,
@@ -141,23 +145,37 @@ export async function getAlbumFaceIndex(albumId: string): Promise<FaceIndex> {
           if (!isUnnamedFace(face)) {
             const existing = peopleMap.get(face.person!.id);
             if (existing) {
-              if (!existing.assetIds.includes(assetId)) existing.assetIds.push(assetId);
+              if (!existing.assetIds.some((a) => a.id === assetId)) {
+                existing.assetIds.push({ id: assetId, type: assetType });
+              }
             } else {
               peopleMap.set(face.person!.id, {
                 id: face.person!.id,
                 name: face.person!.name,
-                assetIds: [assetId],
+                assetIds: [{ id: assetId, type: assetType }],
               });
             }
+            const group = groupsMap.get(assetId);
+            if (group) {
+              group.recognizedNames.push(face.person!.name);
+            } else {
+              groupsMap.set(assetId, { assetId, assetType, recognizedNames: [face.person!.name], faces: [] });
+            }
           } else {
-            unsorted.push({ assetId, faceId: face.id, box });
+            const group = groupsMap.get(assetId);
+            if (group) {
+              group.faces.push({ faceId: face.id, box });
+            } else {
+              groupsMap.set(assetId, { assetId, assetType, recognizedNames: [], faces: [{ faceId: face.id, box }] });
+            }
           }
         }
       }),
     );
   }
 
-  const data: FaceIndex = { people: [...peopleMap.values()], unsorted };
+  const unsortedByAsset = [...groupsMap.values()].filter((g) => g.faces.length > 0);
+  const data: FaceIndex = { people: [...peopleMap.values()], unsortedByAsset };
   faceIndexCache.set(albumId, { data, expiresAt: Date.now() + FACE_INDEX_TTL_MS });
   return data;
 }
