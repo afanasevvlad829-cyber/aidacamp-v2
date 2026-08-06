@@ -40,6 +40,24 @@ const fmtTime = (ts: string) =>
     hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow',
   });
 
+// Голосовые читают, а не разглядывают: им нужна колонка на всю ширину,
+// а не плитка 480×480 рядом с фото. Поэтому лента отдельно, сетка отдельно.
+const voices = items.filter((i) => i.kind === 'voice');
+const shots = items.filter((i) => i.kind !== 'voice');
+
+// Бот отдаёт расшифровку одним куском без единого переноса — на экране это
+// нечитаемое полотно. Режем на абзацы по три предложения.
+function paragraphs(text: string): string[] {
+  // `|$` обязателен: расшифровка часто обрывается без точки, и без него
+  // последний кусок текста молча пропал бы с экрана.
+  const sentences = text.match(/[^.!?…]+(?:[.!?…]+|$)/g) ?? [text];
+  const out: string[] = [];
+  for (let i = 0; i < sentences.length; i += 3) out.push(sentences.slice(i, i + 3).join('').trim());
+  return out.filter(Boolean);
+}
+const initials = (name: string | null): string =>
+  (name || '?').split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase();
+
 const KIND_LABEL: Record<string, string> = { photo: 'фото', video: 'видео', voice: 'голосовое' };
 const nPhoto = items.filter((i) => i.kind === 'photo').length;
 const nVideo = items.filter((i) => i.kind === 'video').length;
@@ -106,25 +124,43 @@ const nVoice = items.filter((i) => i.kind === 'voice').length;
         За этот день пока ничего не сдано. Всё, что персонал отправит боту, появится здесь автоматически.
       </p>
     ) : (
+      <Fragment>
+      {voices.length > 0 && (
+        <section class="vfeed">
+          <h2 class="vfeed-h">Голосовые отчёты — {voices.length}</h2>
+          {voices.map((it) => (
+            <article class="vcard">
+              <header class="vcard-head">
+                <span class="vcard-av" aria-hidden="true">{initials(it.author)}</span>
+                <span class="vcard-name">{it.author || 'неизвестно'}</span>
+                {it.author_role && <span class="vcard-role">{roleLabel(it.author_role)}</span>}
+                <span class="vcard-time">{fmtTime(it.created_at)}</span>
+              </header>
+              {it.transcript ? (
+                <div class="vcard-body">
+                  {paragraphs(it.transcript).map((p) => <p>{p}</p>)}
+                </div>
+              ) : (
+                <p class="vcard-pending">Расшифровка не готова</p>
+              )}
+              {it.kids && <div class="gal-kids">{it.kids}</div>}
+            </article>
+          ))}
+        </section>
+      )}
+      {shots.length > 0 && (
       <div class="gal-grid">
-        {items.map((it) => (
+        {shots.map((it) => (
           <figure class="gal-tile">
-            {it.kind === 'voice' ? (
-              <div class="gal-voice">
-                <span class="gal-voice-icon" aria-hidden="true">🎙</span>
-                <p class="gal-voice-text">{it.transcript || 'Расшифровка не готова'}</p>
-              </div>
-            ) : (
-              <a href={`/api/portal/shift-content-file?id=${it.id}&size=full`}
-                 target="_blank" rel="noopener" class="gal-shot"
-                 data-lb data-kind={it.kind}
-                 data-meta={`${fmtTime(it.created_at)} · ${it.author || 'неизвестно'}`}>
-                <img src={`/api/portal/shift-content-file?id=${it.id}`}
-                     alt={it.kids || KIND_LABEL[it.kind] || 'кадр'}
-                     loading="lazy" decoding="async" class="gal-img" />
-                {it.kind === 'video' && <span class="gal-play" aria-hidden="true">▶</span>}
-              </a>
-            )}
+            <a href={`/api/portal/shift-content-file?id=${it.id}&size=full`}
+               target="_blank" rel="noopener" class="gal-shot"
+               data-lb data-kind={it.kind}
+               data-meta={`${fmtTime(it.created_at)} · ${it.author || 'неизвестно'}`}>
+              <img src={`/api/portal/shift-content-file?id=${it.id}`}
+                   alt={it.kids || KIND_LABEL[it.kind] || 'кадр'}
+                   loading="lazy" decoding="async" class="gal-img" />
+              {it.kind === 'video' && <span class="gal-play" aria-hidden="true">▶</span>}
+            </a>
             <figcaption class="gal-meta">
               <div class="gal-meta-top">
                 <span class="gal-time">{fmtTime(it.created_at)}</span>
@@ -147,6 +183,8 @@ const nVoice = items.filter((i) => i.kind === 'voice').length;
           </figure>
         ))}
       </div>
+      )}
+      </Fragment>
     )}
   </div>
 
