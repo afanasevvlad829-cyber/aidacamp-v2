@@ -306,10 +306,13 @@ export const POST: APIRoute = async ({ request }) => {
       (responseData as any).chips = (responseData as any).chips.filter((c: any) => c?.action !== 'book');
     }
 
-    // Если бот попросил галерею — подбираем фото по запросу
+    // Если бот попросил галерею — подбираем фото по запросу.
+    // wantsLastShift — тот же regex, что решает "надо ли упоминать последнюю смену" (см. shiftContext
+    // выше): если реально размеченных фото последней смены нет, findPhotos сам падает на общий поиск.
     if (responseData.block_type === 'gallery') {
       const photoQuery = (responseData.block_data as any)?.query || message;
-      responseData.block_data = { photos: findPhotos(photoQuery, 4) };
+      const wantsLastShift = /последн|прошл.*смен/i.test(message);
+      responseData.block_data = { photos: findPhotos(photoQuery, 4, wantsLastShift ? _lastShift?.id : undefined) };
     }
 
     // GUARD: проверяем текст на фактические ошибки (цены, даты, вычет и т.п.) по списку фактов.

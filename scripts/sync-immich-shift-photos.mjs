@@ -12,7 +12,9 @@ const IMMICH_BASE = 'http://127.0.0.1:2283'; // локально на серве
 const KEY = process.env.IMMICH_API_KEY;
 if (!KEY) throw new Error('IMMICH_API_KEY не задан в окружении');
 
-const MEDIA_ROOT = '/var/www/aidacamp-media/images/gallery';
+// /images/gallery/ резолвится nginx-ом в /var/www/aidacamp-gallery/ (location ^~ /images/gallery/,
+// более специфичный префикс чем общий /images/ → aidacamp-media/images/) — НЕ путать с общим медиа-хранилищем.
+const MEDIA_ROOT = '/var/www/aidacamp-gallery';
 const PHOTO_INDEX_PATH = new URL('../src/data/photo-index.json', import.meta.url);
 const PER_SHIFT_LIMIT = 12; // не тянуть все 700+ фото альбома — только разумную подборку
 
