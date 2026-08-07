@@ -831,6 +831,21 @@ const hasAttribution = !!(lid && t);
       function buildAvatars(people: Person[]) {
         avatars.innerHTML = '';
 
+        // «Сегодня» — фиксированная плашка, ВИД ПО УМОЛЧАНИЮ
+        const todayEl = document.createElement('button');
+        todayEl.type = 'button';
+        todayEl.className = 'foto-ava';
+        todayEl.dataset.person = '__today__';
+        const todayCircle = document.createElement('span');
+        todayCircle.className = 'foto-ava-circle foto-ava-all-circle';
+        todayCircle.innerHTML = '<i class="bi bi-calendar-event"></i>';
+        const todayName = document.createElement('span');
+        todayName.className = 'foto-ava-name';
+        todayName.textContent = 'Сегодня';
+        todayEl.append(todayCircle, todayName);
+        todayEl.addEventListener('click', selectToday);
+        avatars.appendChild(todayEl);
+
         // «Все фото» — фиксированная плашка
         const allEl = document.createElement('button');
         allEl.type = 'button';
@@ -910,6 +925,20 @@ const hasAttribution = !!(lid && t);
         if (!data.ok) { setStatus(data.error); currentAssets = []; clearGrid(); updateDownloadAll(); return; }
         currentAssets = data.assets as LbAsset[];
         setStatus(`Все фото смены: ${currentAssets.length}`);
+        renderPhotoGrid(currentAssets);
+      }
+
+      async function selectToday() {
+        exitSelectionMode();
+        grid.classList.remove('unsorted-mode');
+        setActiveAvatar('__today__');
+        clearPersonCookie();
+        setStatus('Загружаю фото за сегодня…');
+        const res = await fetch(`/api/foto/${shiftId}/all?date=today`);
+        const data = await res.json();
+        if (!data.ok) { setStatus(data.error); currentAssets = []; clearGrid(); updateDownloadAll(); return; }
+        currentAssets = data.assets as LbAsset[];
+        setStatus(currentAssets.length ? `Сегодня: ${currentAssets.length}` : 'Сегодня фото пока нет — загляните позже');
         renderPhotoGrid(currentAssets);
       }
 
@@ -1088,7 +1117,7 @@ const hasAttribution = !!(lid && t);
         if (saved && people.some((p) => p.id === saved)) {
           selectPerson(saved);
         } else {
-          selectAll();
+          selectToday();
         }
       }
 
