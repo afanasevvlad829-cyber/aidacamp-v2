@@ -136,12 +136,77 @@ const hasAttribution = !!(lid && t);
 
     /* Masonry-сетка (CSS multi-column) */
     #foto-grid {
-      columns: 2;
-      column-gap: 8px;
       margin-top: 4px;
     }
-    @media (min-width: 640px) { #foto-grid { columns: 3; } }
-    @media (min-width: 1024px) { #foto-grid { columns: 4; } }
+
+    /* Кадры разложены по дням: заголовок дня + своя колоночная раскладка.
+       Раньше columns висели на #foto-grid — теперь на контейнере дня, иначе
+       заголовки затягивало внутрь колонок. */
+    .foto-day-shots {
+      columns: 2;
+      column-gap: 8px;
+    }
+    @media (min-width: 640px) { .foto-day-shots { columns: 3; } }
+    @media (min-width: 1024px) { .foto-day-shots { columns: 4; } }
+
+    .foto-day-head {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin: 22px 0 10px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .foto-day-head:first-child { margin-top: 8px; }
+    .foto-day-head .foto-day-n {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Выбор дня. По умолчанию открыт текущий день — вываливать всю смену
+       одной лентой не нужно, остальные дни родитель открывает сам. */
+    #foto-days {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 2px 0 4px;
+      margin: 6px 0 10px;
+      scrollbar-width: none;
+    }
+    #foto-days::-webkit-scrollbar { display: none; }
+    #foto-days:empty { display: none; }
+
+    .foto-day-chip {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1;
+      cursor: pointer;
+      white-space: nowrap;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .foto-day-chip .foto-day-chip-n {
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.45);
+    }
+    .foto-day-chip.active {
+      background: #ec9b44;
+      border-color: #ec9b44;
+      color: #1a1200;
+    }
+    .foto-day-chip.active .foto-day-chip-n { color: rgba(26, 18, 0, 0.6); }
 
     .foto-cell {
       position: relative;
@@ -390,6 +455,7 @@ const hasAttribution = !!(lid && t);
       <>
         <h1>{shift.name} — фото</h1>
         <div id="foto-avatars"></div>
+        <div id="foto-days"></div>
         <div id="foto-status"></div>
         <button id="foto-download-all" type="button">
           <i class="bi bi-download"></i> <span id="foto-download-all-label">Скачать всё</span>
@@ -450,10 +516,14 @@ const hasAttribution = !!(lid && t);
 
       const toastEl = document.getElementById('foto-toast')!;
 
-      type LbAsset = { id: string; type: 'IMAGE' | 'VIDEO' };
+      type LbAsset = { id: string; type: 'IMAGE' | 'VIDEO'; date?: string };
       type Person = { id: string; name: string; count: number };
 
       let currentAssets: LbAsset[] = [];
+      // Полный список кадров смены держим в памяти, но в сетку отдаём только
+      // выбранный день: 414 превью разом заметно грузят телефон.
+      let allAssets: LbAsset[] = [];
+      let activeDay: string | null = null; // null — показаны все дни
       let selectionMode = false;
       const selectedIds = new Set<string>();
       let longPressActivated = false;
@@ -671,9 +741,59 @@ const hasAttribution = !!(lid && t);
       // ====== Сетка ======
       function clearGrid() { grid.innerHTML = ''; }
 
+      // «Сегодня» / «Вчера» / «6 августа» — по дате съёмки (YYYY-MM-DD).
+      function dayLabel(date: string): string {
+        const today = new Date();
+        const iso = (d: Date) =>
+          `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        if (date === iso(today)) return 'Сегодня';
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+        if (date === iso(yesterday)) return 'Вчера';
+        const [y, m, d] = date.split('-').map(Number);
+        return new Date(y, m - 1, d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+      }
+
       function renderPhotoGrid(assets: LbAsset[]) {
         exitSelectionMode();
         clearGrid();
+
+        // Ассеты приходят отсортированными (свежее сверху), поэтому день
+        // меняется подряд — заводим новый контейнер на каждой смене даты.
+        let openDay: string | null = null;
+        let dayShots: HTMLElement | null = null;
+
+        const dayCounts = new Map<string, number>();
+        for (const a of assets) {
+          if (a.date) dayCounts.set(a.date, (dayCounts.get(a.date) ?? 0) + 1);
+        }
+        // Заголовки нужны только когда в сетке несколько дней («Вся смена»).
+        // При выбранном одном дне об этом уже говорит активный чипс.
+        const showDayHeads = dayCounts.size > 1;
+
+        const appendCell = (asset: LbAsset, cell: HTMLElement) => {
+          if (!asset.date || !showDayHeads) {
+            // Один день или фото ребёнка (дат нет) — одна сетка без заголовков.
+            if (!dayShots) {
+              dayShots = document.createElement('div');
+              dayShots.className = 'foto-day-shots';
+              grid.appendChild(dayShots);
+            }
+          } else if (asset.date !== openDay) {
+            openDay = asset.date;
+            const head = document.createElement('div');
+            head.className = 'foto-day-head';
+            const n = dayCounts.get(asset.date) ?? 0;
+            head.innerHTML =
+              `<span>${dayLabel(asset.date)}</span><span class="foto-day-n">${n}</span>`;
+            grid.appendChild(head);
+            dayShots = document.createElement('div');
+            dayShots.className = 'foto-day-shots';
+            grid.appendChild(dayShots);
+          }
+          dayShots!.appendChild(cell);
+        };
+
         assets.forEach((asset, idx) => {
           const cell = document.createElement('div');
           cell.className = 'foto-cell';
@@ -733,7 +853,7 @@ const hasAttribution = !!(lid && t);
             openLightbox(currentAssets, idx);
           });
 
-          grid.appendChild(cell);
+          appendCell(asset, cell);
         });
         updateDownloadAll();
       }
@@ -791,6 +911,65 @@ const hasAttribution = !!(lid && t);
         }
       }
 
+      // ====== Выбор дня ======
+      const daysEl = document.getElementById('foto-days')!;
+
+      function clearDayChips() { daysEl.innerHTML = ''; }
+
+      /** Чипсы дат по всем кадрам смены + «Вся смена» последней. */
+      function buildDayChips() {
+        clearDayChips();
+        const counts = new Map<string, number>();
+        for (const a of allAssets) {
+          if (a.date) counts.set(a.date, (counts.get(a.date) ?? 0) + 1);
+        }
+        if (counts.size < 2) return; // один день — выбирать не из чего
+
+        const days = [...counts.keys()].sort().reverse(); // свежий слева
+        const addChip = (label: string, n: number, day: string | null) => {
+          const chip = document.createElement('button');
+          chip.type = 'button';
+          chip.className = 'foto-day-chip';
+          chip.dataset.day = day ?? '';
+          chip.innerHTML = `<span>${label}</span><span class="foto-day-chip-n">${n}</span>`;
+          chip.addEventListener('click', () => selectDay(day));
+          daysEl.appendChild(chip);
+        };
+        for (const d of days) addChip(dayLabel(d), counts.get(d) ?? 0, d);
+        addChip('Вся смена', allAssets.length, null);
+        markActiveDay();
+      }
+
+      function markActiveDay() {
+        for (const chip of Array.from(daysEl.querySelectorAll('.foto-day-chip'))) {
+          const day = (chip as HTMLElement).dataset.day || null;
+          chip.classList.toggle('active', day === activeDay);
+        }
+      }
+
+      function selectDay(day: string | null) {
+        exitSelectionMode();
+        activeDay = day;
+        markActiveDay();
+        currentAssets = day ? allAssets.filter((a) => a.date === day) : allAssets;
+        setStatus(
+          day
+            ? `${dayLabel(day)}: ${currentAssets.length} фото`
+            : `Вся смена: ${currentAssets.length} фото`,
+        );
+        renderPhotoGrid(currentAssets);
+      }
+
+      /** Стартовый день: сегодняшний, иначе последний, за который есть кадры. */
+      function defaultDay(): string | null {
+        const dated = allAssets.filter((a) => a.date);
+        if (!dated.length) return null;
+        const today = new Date();
+        const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        if (dated.some((a) => a.date === iso)) return iso;
+        return dated.map((a) => a.date!).sort().at(-1) ?? null;
+      }
+
       // ====== Cookie-память выбора ======
       function setPersonCookie(personId: string) {
         document.cookie = 'foto_person_' + shiftId + '=' + personId +
@@ -815,16 +994,25 @@ const hasAttribution = !!(lid && t);
         setStatus('Загружаю фото смены…');
         const res = await fetch(`/api/foto/${shiftId}/all`);
         const data = await res.json();
-        if (!data.ok) { setStatus(data.error); currentAssets = []; clearGrid(); updateDownloadAll(); return; }
-        currentAssets = data.assets as LbAsset[];
-        setStatus(`Все фото смены: ${currentAssets.length}`);
-        renderPhotoGrid(currentAssets);
+        if (!data.ok) {
+          setStatus(data.error);
+          allAssets = []; currentAssets = []; clearDayChips(); clearGrid(); updateDownloadAll();
+          return;
+        }
+        allAssets = data.assets as LbAsset[];
+        activeDay = defaultDay();
+        buildDayChips();
+        selectDay(activeDay);
       }
 
       async function selectPerson(personId: string) {
         exitSelectionMode();
         setActiveAvatar(personId);
         setPersonCookie(personId);
+        // Фото одного ребёнка приходят без дат (/people отдаёт только id),
+        // фильтровать по дням нечем — прячем чипсы.
+        clearDayChips();
+        activeDay = null;
         setStatus('Загружаю фото…');
         const res = await fetch(`/api/foto/${shiftId}/people?personId=${encodeURIComponent(personId)}`);
         const data = await res.json();

@@ -22,9 +22,24 @@ export const GET: APIRoute = async ({ params }) => {
       headers: { 'x-api-key': apiKey },
     });
     if (!res.ok) return new Response(JSON.stringify({ ok: false, error: 'Immich fetch failed' }), { status: 502 });
-    const album: { assets: { id: string; type: 'IMAGE' | 'VIDEO' }[] } = await res.json();
+    const album: {
+      assets: { id: string; type: 'IMAGE' | 'VIDEO'; localDateTime?: string; fileCreatedAt?: string }[];
+    } = await res.json();
+
+    // Дата съёмки нужна странице, чтобы разложить кадры по дням.
+    // localDateTime — местное время съёмки, fileCreatedAt — запасной вариант.
+    // Порядок ассетов в альбоме Immich не документирован, поэтому сортируем
+    // сами: свежее сверху, чтобы текущий день оказался первым.
+    const assets = album.assets
+      .map((a) => {
+        const ts = a.localDateTime || a.fileCreatedAt || '';
+        return { id: a.id, type: a.type, date: ts.slice(0, 10), ts };
+      })
+      .sort((a, b) => b.ts.localeCompare(a.ts))
+      .map(({ id, type, date }) => ({ id, type, date }));
+
     return new Response(
-      JSON.stringify({ ok: true, assets: album.assets.map((a) => ({ id: a.id, type: a.type })) }),
+      JSON.stringify({ ok: true, assets }),
       { headers: { 'Content-Type': 'application/json' } },
     );
   } catch (e) {
