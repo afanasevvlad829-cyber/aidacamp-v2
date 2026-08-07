@@ -85,6 +85,26 @@ export const CONTENT_OVERRIDES: Record<string, PageContentOverrides> = {
       reason: 'Labrika 2026-08-05: «лагерь»(точное) 5→3, цель 3',
     },
   },
+  '/lager-nogink/': {
+    relatedPagesTitle: {
+      value: 'Похожие направления рядом',
+      reason: 'Labrika 2026-08-06: «лагерь»(точное) 8, цель 3-5 — снимаем вхождения из общих блоков',
+    },
+    shiftsGuideLinkText: {
+      value: 'Кому не подходит — честный список причин',
+      reason: 'Labrika 2026-08-06: «лагерь»(точное) 8, цель 3-5 — снимаем вхождения из общих блоков',
+    },
+  },
+  '/lager-vidnoe/': {
+    relatedPagesTitle: {
+      value: 'Похожие направления рядом',
+      reason: 'Labrika 2026-08-05: «лагерь»(точное) 9→1-4, (словоформа) 12→0-1 — снимаем вхождения из общих блоков',
+    },
+    shiftsGuideLinkText: {
+      value: 'Кому не подходит — честный список причин',
+      reason: 'Labrika 2026-08-05: «лагерь»(точное) 9→1-4, (словоформа) 12→0-1 — снимаем вхождения из общих блоков',
+    },
+  },
   '/lager-zhukovskiy/': {
     relatedPagesTitle: {
       value: 'Похожие направления рядом',

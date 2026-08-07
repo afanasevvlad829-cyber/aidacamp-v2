@@ -185,10 +185,45 @@ for root, dirs, files in os.walk('src'):
                     )
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 5. Хардкод-фолбэк секрета: process.env.<...SECRET|TOKEN|KEY|PWD|PASSWORD> || 'литерал'.
+#
+# Публичный репозиторий делает такой фолбэк общеизвестным → подпись/пароль
+# предсказуемы, дыра открыта даже когда переменная окружения задана в одном месте
+# и забыта в другом. Инцидент (перепроверен 01/07.08.2026):
+#   - shift-plan.ts:  STAFF_AUTH_SECRET || '2026'          → пароль вожатых лежал в коде;
+#   - leadLink.ts:    LEAD_LINK_SECRET  || 'aidacamp-...'   → токен памятки подделывался.
+# Правило: секрета нет → fail-closed (503/бросок), а не фолбэк на литерал.
+#
+# Флагаем только НЕПУСТОЙ строковый литерал (реально пригодный секрет). Пустой
+# `|| ''` / `?? ''` — это сентинел «нет значения», обычно в паре с проверкой-гейтом
+# выше по коду (portal/*), его трогать не надо. Ловим и `||`, и `??`.
+SECRET_FALLBACK = re.compile(
+    r"""process\.env\.[A-Za-z0-9_]*(?:SECRET|TOKEN|KEY|PWD|PASSWORD)[A-Za-z0-9_]*"""
+    r"""\s*(?:\|\||\?\?)\s*(['"])(.+?)\1"""
+)
+
+for root, dirs, files in os.walk('src'):
+    for fn in files:
+        if not fn.endswith(('.astro', '.ts', '.tsx', '.mjs', '.js')):
+            continue
+        path = os.path.join(root, fn)
+        with open(path, encoding='utf-8') as fp:
+            for i, line in enumerate(fp, 1):
+                m = SECRET_FALLBACK.search(line)
+                if not m:
+                    continue
+                errors.append(
+                    f'❌ {path}:{i} — хардкод-фолбэк секрета.\n'
+                    f'     {line.strip()[:110]}\n'
+                    f'     Репозиторий публичный → фолбэк-литерал общеизвестен. Секрета нет —\n'
+                    f'     fail-closed (503/бросок), не «|| \'литерал\'». Образец: src/lib/staffAuth.ts.'
+                )
+
+# ─────────────────────────────────────────────────────────────────────────────
 if errors:
     print('\n'.join(errors))
     print(f'\n❌ guard-static-rules: {len(errors)} нарушений.')
     sys.exit(1)
 
-print('✅ guard-static-rules: canonical и цели redirect со слешем, тестов в src/pages нет, мёртвых сумм вычета нет.')
+print('✅ guard-static-rules: canonical и цели redirect со слешем, тестов в src/pages нет, мёртвых сумм вычета нет, хардкод-фолбэков секретов нет.')
 PY
