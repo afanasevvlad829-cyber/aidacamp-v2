@@ -5,6 +5,12 @@ import { allShiftsIncludingArchived } from '../../data/shifts';
 
 const { shiftId } = Astro.params;
 const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
+
+// Атрибуция визита к CRM-лиду — только если ссылка пришла с подписанными lid+t.
+// Подпись проверяет сам /api/bind-lead (verifyLid) при отправке, здесь пробрасываем как строки.
+const lid = Astro.url.searchParams.get('lid');
+const t = Astro.url.searchParams.get('t');
+const hasAttribution = !!(lid && t);
 ---
 
 <Base
@@ -13,58 +19,252 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
   noindex={true}
   hideMarketingWidgets={true}
 >
-  <style>
+  <style is:global>
+    /* Тёмная премиальная тема — фон навигационный navy-950 */
     body {
+      background: #0d1a2b !important;
       overflow-x: hidden;
     }
 
     #foto-root {
-      max-width: 960px;
+      max-width: 1100px;
       margin: 0 auto;
-      padding: 24px 16px;
+      padding: 24px 16px 96px;
+      color: #fff;
     }
 
-    .foto-controls {
+    #foto-root h1 {
+      color: #fff;
+      font-size: 24px;
+      line-height: 1.2;
+      font-weight: 800;
+      margin: 0 0 6px;
+    }
+
+    #foto-status {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 14px;
+      min-height: 20px;
+    }
+
+    /* Лента аватарок-лиц (горизонтальный скролл) */
+    #foto-avatars {
       display: flex;
-      gap: 12px;
+      gap: 14px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 6px 0 12px;
+      margin: 14px 0 4px;
+      scrollbar-width: none;
+    }
+    #foto-avatars::-webkit-scrollbar { display: none; }
+
+    .foto-ava {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      flex-wrap: wrap;
-      margin: 16px 0;
-    }
-
-    #foto-person-select {
-      padding: 8px 12px;
-      border-radius: 8px;
-      border: 1px solid #cbd5e1;
-      min-height: 44px;
-    }
-
-    #foto-tab-unsorted {
-      padding: 8px 14px;
-      border-radius: 8px;
-      border: 1px solid #cbd5e1;
-      background: #fff;
+      gap: 6px;
+      width: 64px;
+      background: none;
+      border: none;
+      padding: 0;
       cursor: pointer;
-      min-height: 44px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .foto-ava-circle {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px solid transparent;
+      box-sizing: border-box;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .foto-ava-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    /* «Все фото» — плашка (14px), не круг, с акцентной иконкой */
+    .foto-ava-all-circle {
+      border-radius: 14px;
+      background: rgba(236, 155, 68, 0.14);
+      color: #ec9b44;
+      font-size: 24px;
+    }
+    /* Активный элемент — кольцо мягким оранжевым #ec9b44 */
+    .foto-ava.active .foto-ava-circle {
+      border-color: #ec9b44;
+      box-shadow: 0 0 0 2px #ec9b44;
+    }
+    .foto-ava-name {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+      max-width: 64px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: center;
+    }
+    .foto-ava.active .foto-ava-name { color: #fff; }
+
+    /* Кнопка «Скачать всё» над сеткой */
+    #foto-download-all {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0 14px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #foto-download-all.show { display: inline-flex; }
+    #foto-download-all i { color: #ec9b44; font-size: 16px; }
+    #foto-download-all:disabled { opacity: 0.6; cursor: default; }
+
+    /* Masonry-сетка (CSS multi-column) */
+    #foto-grid {
+      columns: 2;
+      column-gap: 8px;
+      margin-top: 4px;
+    }
+    @media (min-width: 640px) { #foto-grid { columns: 3; } }
+    @media (min-width: 1024px) { #foto-grid { columns: 4; } }
+
+    .foto-cell {
+      position: relative;
+      break-inside: avoid;
+      margin-bottom: 8px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    .foto-cell img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 14px;
     }
 
-    @media (max-width: 640px) {
-      .foto-controls {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      #foto-person-select,
-      #foto-tab-unsorted {
-        width: 100%;
-        box-sizing: border-box;
-      }
+    /* Видео-бейдж поверх превью (акцент #ec9b44) */
+    .foto-video-badge {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(13, 26, 43, 0.75);
+      color: #ec9b44;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      pointer-events: none;
     }
 
-    @media (max-width: 400px) {
-      #foto-grid {
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
-      }
+    /* Режим выбора — галочка-оверлей */
+    .foto-select-mark {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: #ec9b44;
+      font-size: 24px;
+      background: rgba(13, 26, 43, 0.35);
+      border: 2px solid rgba(255, 255, 255, 0.85);
+      box-sizing: border-box;
+    }
+    .foto-select-mark i { display: none; line-height: 1; }
+    #foto-grid.selecting .foto-select-mark { display: flex; }
+    #foto-grid.selecting .foto-cell.selected .foto-select-mark {
+      background: transparent;
+      border-color: transparent;
+    }
+    #foto-grid.selecting .foto-cell.selected .foto-select-mark i { display: block; }
+    #foto-grid.selecting .foto-cell:not(.selected) img { opacity: 0.78; }
+    .foto-cell.selected img { outline: 3px solid #ec9b44; outline-offset: -3px; }
+
+    /* Плавающая панель массовых действий (glass, как .pm-progress-wrap в /p/[lid]) */
+    #foto-selbar {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%) translateY(160%);
+      z-index: 80;
+      background: rgba(13, 26, 43, 0.94);
+      color: #fff;
+      backdrop-filter: saturate(160%) blur(14px);
+      padding: 12px 16px;
+      border-radius: 18px;
+      box-shadow: 0 12px 36px rgba(13, 26, 43, 0.4), 0 2px 8px rgba(13, 26, 43, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: calc(100vw - 24px);
+      transition: transform 0.25s ease;
+    }
+    #foto-selbar.open { transform: translateX(-50%) translateY(0); }
+    .foto-selbar-count { font-size: 13px; font-weight: 700; white-space: nowrap; }
+    .foto-selbar-count b { font-variant-numeric: tabular-nums; }
+    .foto-selbar-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+      border-radius: 12px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .foto-selbar-btn.primary { background: #ec9b44; color: #0d1a2b; }
+    .foto-selbar-btn.ghost { background: rgba(255, 255, 255, 0.1); color: #fff; }
+    .foto-selbar-btn:disabled { opacity: 0.5; cursor: default; }
+
+    /* Toast */
+    #foto-toast {
+      position: fixed;
+      left: 50%;
+      bottom: 92px;
+      transform: translateX(-50%) translateY(20px);
+      background: #0d1a2b;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 12px 32px rgba(13, 26, 43, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s, transform 0.3s;
+      z-index: 100;
+    }
+    #foto-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
 
     /* Lightbox */
@@ -73,24 +273,52 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
       position: fixed;
       inset: 0;
       z-index: 9999;
-      background: rgba(0, 0, 0, 0.92);
+      background: rgba(13, 26, 43, 0.96);
       align-items: center;
       justify-content: center;
       touch-action: none;
     }
-
-    #foto-lightbox.open {
-      display: flex;
-    }
-
+    #foto-lightbox.open { display: flex; }
     #foto-lightbox-img {
       max-width: 90vw;
       max-height: 90vh;
       max-height: 90dvh;
       object-fit: contain;
-      border-radius: 4px;
+      border-radius: 8px;
       display: block;
     }
+    #foto-lightbox-vid {
+      display: none;
+      max-width: 90vw;
+      max-height: 90vh;
+      max-height: 90dvh;
+      border-radius: 8px;
+    }
+
+    /* Экшн-кнопки в лайтбоксе (скачать/поделиться) — акцент #ec9b44, верхний левый угол */
+    #foto-lb-actions {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      display: flex;
+      gap: 10px;
+      z-index: 10001;
+    }
+    #foto-lb-actions button {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #ec9b44;
+      font-size: 20px;
+      transition: background 0.15s;
+    }
+    #foto-lb-actions button:hover { background: rgba(255, 255, 255, 0.3); }
 
     .foto-lb-nav {
       position: absolute;
@@ -99,7 +327,7 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
       background: rgba(255, 255, 255, 0.15);
       border: none;
       color: #fff;
-      font-size: 28px;
+      font-size: 24px;
       width: 52px;
       height: 52px;
       border-radius: 50%;
@@ -110,16 +338,8 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
       transition: background 0.15s;
       z-index: 10000;
     }
-
-    .foto-lb-nav:hover {
-      background: rgba(255, 255, 255, 0.3);
-    }
-
-    .foto-lb-nav:disabled {
-      opacity: 0.2;
-      cursor: default;
-    }
-
+    .foto-lb-nav:hover { background: rgba(255, 255, 255, 0.3); }
+    .foto-lb-nav:disabled { opacity: 0.2; cursor: default; }
     #foto-lb-prev { left: 16px; }
     #foto-lb-next { right: 16px; }
 
@@ -130,7 +350,7 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
       background: rgba(255, 255, 255, 0.15);
       border: none;
       color: #fff;
-      font-size: 20px;
+      font-size: 18px;
       width: 44px;
       height: 44px;
       border-radius: 50%;
@@ -139,163 +359,76 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
       align-items: center;
       justify-content: center;
       z-index: 10000;
-      line-height: 1;
     }
-
-    #foto-lb-close:hover {
-      background: rgba(255, 255, 255, 0.3);
-    }
+    #foto-lb-close:hover { background: rgba(255, 255, 255, 0.3); }
 
     @media (max-width: 640px) {
       .foto-lb-nav {
         width: 44px;
         height: 44px;
-        font-size: 22px;
+        font-size: 20px;
       }
-
       #foto-lb-prev { left: 8px; }
       #foto-lb-next { right: 8px; }
-
-      /* Сужаем фото чтобы кнопки по бокам не перекрывали */
+      /* Сужаем медиа, чтобы боковые кнопки его не перекрывали */
       #foto-lightbox-img,
       #foto-lightbox-vid {
         max-width: calc(100vw - 100px);
         max-height: 85dvh;
       }
     }
-
-    #foto-lightbox-vid {
-      display: none;
-      max-width: 90vw;
-      max-height: 90vh;
-      max-height: 90dvh;
-      border-radius: 4px;
-    }
-
   </style>
 
-  <style is:global>
-    /* Видеобейдж поверх превью (JS-created) */
-    .foto-video-badge {
-      position: absolute;
-      bottom: 6px;
-      right: 6px;
-      background: rgba(0,0,0,0.6);
-      color: #fff;
-      border-radius: 50%;
-      width: 28px;
-      height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      pointer-events: none;
-    }
-
-    /* Неразобранные — карточка на одно фото (JS-created) */
-    .foto-unsorted-group {
-      background: #f8fafc;
-      border-radius: 12px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .foto-unsorted-thumb-wrap {
-      position: relative;
-      display: block;
-      cursor: pointer;
-    }
-
-    .foto-unsorted-thumb {
-      width: 100%;
-      max-height: 360px;
-      object-fit: contain;
-      border-radius: 8px;
-      display: block;
-    }
-
-    .foto-recognized-names {
-      font-size: 13px;
-      color: #475569;
-    }
-
-    /* Нумерованная метка лица поверх фото (JS-created) */
-    .foto-face-marker {
-      position: absolute;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: rgba(0, 0, 0, 0.65);
-      color: #fff;
-      border: 2px solid #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: bold;
-      pointer-events: none;
-      line-height: 1;
-    }
-
-    /* Список выборов под фото (JS-created) */
-    .foto-face-list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .foto-face-list-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 14px;
-    }
-
-    .foto-face-list-item select {
-      padding: 4px 8px;
-      border-radius: 6px;
-      border: 1px solid #cbd5e1;
-      font-size: 13px;
-    }
-  </style>
-
-  <main id="foto-root" data-shift-id={shiftId}>
+  <main
+    id="foto-root"
+    data-shift-id={shiftId}
+    data-lid={hasAttribution ? lid : undefined}
+    data-t={hasAttribution ? t : undefined}
+  >
     {!shift && <p>Смена не найдена.</p>}
     {shift && (
       <>
         <h1>{shift.name} — фото</h1>
-        <div class="foto-controls">
-          <select id="foto-person-select">
-            <option value="">Выбери ребёнка…</option>
-          </select>
-          <button id="foto-tab-unsorted" type="button">
-            Неразобранные
-          </button>
-        </div>
-        <div id="foto-status" style="color:#64748b;font-size:14px;min-height:20px;"></div>
-        <div id="foto-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:16px;"></div>
+        <div id="foto-avatars"></div>
+        <div id="foto-status"></div>
+        <button id="foto-download-all" type="button">
+          <i class="bi bi-download"></i> <span id="foto-download-all-label">Скачать всё</span>
+        </button>
+        <div id="foto-grid"></div>
       </>
     )}
   </main>
 
   <div id="foto-lightbox" role="dialog" aria-modal="true" aria-label="Просмотр фото">
-    <button id="foto-lb-close" aria-label="Закрыть">&#10005;</button>
-    <button id="foto-lb-prev" class="foto-lb-nav" aria-label="Предыдущее">&#8249;</button>
+    <div id="foto-lb-actions">
+      <button id="foto-lb-download" type="button" aria-label="Скачать"><i class="bi bi-download"></i></button>
+      <button id="foto-lb-share" type="button" aria-label="Поделиться"><i class="bi bi-share"></i></button>
+    </div>
+    <button id="foto-lb-close" type="button" aria-label="Закрыть"><i class="bi bi-x-lg"></i></button>
+    <button id="foto-lb-prev" class="foto-lb-nav" type="button" aria-label="Предыдущее"><i class="bi bi-chevron-left"></i></button>
     <img id="foto-lightbox-img" src="" alt="Фото" />
     <video id="foto-lightbox-vid" controls></video>
-    <button id="foto-lb-next" class="foto-lb-nav" aria-label="Следующее">&#8250;</button>
+    <button id="foto-lb-next" class="foto-lb-nav" type="button" aria-label="Следующее"><i class="bi bi-chevron-right"></i></button>
   </div>
+
+  <div id="foto-selbar">
+    <span class="foto-selbar-count">Выбрано: <b id="foto-sel-count">0</b></span>
+    <button id="foto-sel-zip" class="foto-selbar-btn primary" type="button"><i class="bi bi-download"></i> Скачать ZIP</button>
+    <button id="foto-sel-share" class="foto-selbar-btn primary" type="button" style="display:none"><i class="bi bi-share"></i> Поделиться</button>
+    <button id="foto-sel-cancel" class="foto-selbar-btn ghost" type="button">Отмена</button>
+  </div>
+
+  <div id="foto-toast"></div>
 
   <script>
     const root = document.getElementById('foto-root');
-    if (root) {
-      const shiftId = root.dataset.shiftId;
-      const select = document.getElementById('foto-person-select') as HTMLSelectElement;
-      const tabUnsorted = document.getElementById('foto-tab-unsorted') as HTMLButtonElement;
+    const grid = document.getElementById('foto-grid');
+    const avatars = document.getElementById('foto-avatars');
+
+    if (root && grid && avatars) {
+      const shiftId = root.dataset.shiftId!;
       const status = document.getElementById('foto-status')!;
-      const grid = document.getElementById('foto-grid')!;
+      const downloadAllBtn = document.getElementById('foto-download-all') as HTMLButtonElement;
 
       const lightbox = document.getElementById('foto-lightbox')!;
       const lbImg = document.getElementById('foto-lightbox-img') as HTMLImageElement;
@@ -303,8 +436,46 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
       const lbPrev = document.getElementById('foto-lb-prev') as HTMLButtonElement;
       const lbNext = document.getElementById('foto-lb-next') as HTMLButtonElement;
       const lbClose = document.getElementById('foto-lb-close') as HTMLButtonElement;
+      const lbDownload = document.getElementById('foto-lb-download') as HTMLButtonElement;
+      const lbShare = document.getElementById('foto-lb-share') as HTMLButtonElement;
+
+      const selbar = document.getElementById('foto-selbar')!;
+      const selCount = document.getElementById('foto-sel-count')!;
+      const selZipBtn = document.getElementById('foto-sel-zip') as HTMLButtonElement;
+      const selShareBtn = document.getElementById('foto-sel-share') as HTMLButtonElement;
+      const selCancelBtn = document.getElementById('foto-sel-cancel') as HTMLButtonElement;
+
+      const toastEl = document.getElementById('foto-toast')!;
 
       type LbAsset = { id: string; type: 'IMAGE' | 'VIDEO' };
+      type Person = { id: string; name: string; count: number };
+
+      let currentAssets: LbAsset[] = [];
+      let selectionMode = false;
+      const selectedIds = new Set<string>();
+      let longPressActivated = false;
+
+      // Поддержка шеринга нескольких файлов (для кнопки «Поделиться» в панели выбора)
+      let canShareFiles = false;
+      try {
+        const probe = new File(['x'], 'x.txt', { type: 'text/plain' });
+        canShareFiles = !!(navigator.canShare && navigator.canShare({ files: [probe] }));
+      } catch {
+        canShareFiles = false;
+      }
+
+      function setStatus(text: string) { status.textContent = text; }
+      function haptic() { try { navigator.vibrate && navigator.vibrate(8); } catch { /* noop */ } }
+
+      let toastTimer: ReturnType<typeof setTimeout> | undefined;
+      function toast(msg: string) {
+        toastEl.textContent = msg;
+        toastEl.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2200);
+      }
+
+      // ====== Лайтбокс ======
       let lbAssets: LbAsset[] = [];
       let lbIndex = 0;
 
@@ -315,7 +486,6 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
         lightbox.classList.add('open');
         document.body.style.overflow = 'hidden';
       }
-
       function closeLightbox() {
         lightbox.classList.remove('open');
         document.body.style.overflow = '';
@@ -323,7 +493,6 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
         lbVid.pause();
         lbVid.src = '';
       }
-
       function updateLightboxPhoto() {
         const asset = lbAssets[lbIndex];
         if (asset.type === 'VIDEO') {
@@ -338,7 +507,6 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
         lbPrev.disabled = lbIndex === 0;
         lbNext.disabled = lbIndex === lbAssets.length - 1;
       }
-
       function navLightbox(delta: number) {
         const next = lbIndex + delta;
         if (next < 0 || next >= lbAssets.length) return;
@@ -349,11 +517,12 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
       lbClose.addEventListener('click', closeLightbox);
       lbPrev.addEventListener('click', () => navLightbox(-1));
       lbNext.addEventListener('click', () => navLightbox(1));
+      lbDownload.addEventListener('click', () => downloadAsset(lbAssets[lbIndex]));
+      lbShare.addEventListener('click', () => shareAsset(lbAssets[lbIndex]));
 
       lightbox.addEventListener('click', (e) => {
         if (e.target === lightbox) closeLightbox();
       });
-
       document.addEventListener('keydown', (e) => {
         if (!lightbox.classList.contains('open')) return;
         if (e.key === 'Escape') closeLightbox();
@@ -370,213 +539,333 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
         if (Math.abs(dx) > 50) navLightbox(dx < 0 ? 1 : -1);
       }, { passive: true });
 
-      function setStatus(text: string) {
-        status.textContent = text;
-      }
-      function clearGrid() {
-        grid.innerHTML = '';
+      // ====== Скачивание / шеринг одного файла ======
+      function downloadAsset(asset: LbAsset) {
+        if (!asset) return;
+        const a = document.createElement('a');
+        a.href = `/api/foto/image/${asset.id}?kind=original&download=1`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
       }
 
+      async function shareAsset(asset: LbAsset) {
+        if (!asset) return;
+        try {
+          const res = await fetch(`/api/foto/image/${asset.id}?kind=original`);
+          const blob = await res.blob();
+          const ext = asset.type === 'VIDEO' ? 'mp4' : 'jpg';
+          const type = blob.type || (asset.type === 'VIDEO' ? 'video/mp4' : 'image/jpeg');
+          const file = new File([blob], `foto-${asset.id}.${ext}`, { type });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file] });
+            return;
+          }
+          if (navigator.share) {
+            await navigator.share({ url: location.href });
+            return;
+          }
+          await navigator.clipboard.writeText(location.href);
+          toast('Ссылка скопирована');
+        } catch {
+          // отмена шеринга пользователем или недоступность — тихо игнорируем
+        }
+      }
+
+      // ====== ZIP (массовое скачивание / шеринг) ======
+      async function fetchZipBlob(ids: string[]): Promise<Blob> {
+        const res = await fetch(`/api/foto/${shiftId}/zip`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids }),
+        });
+        if (!res.ok) throw new Error('zip failed');
+        return await res.blob();
+      }
+      function downloadBlob(blob: Blob, filename: string) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+      async function runZip(ids: string[], btn: HTMLButtonElement, shareMode: boolean) {
+        if (!ids.length) return;
+        const old = btn.innerHTML;
+        btn.disabled = true;
+        btn.textContent = 'Готовлю…';
+        try {
+          const blob = await fetchZipBlob(ids);
+          if (shareMode) {
+            const file = new File([blob], 'foto.zip', { type: 'application/zip' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              await navigator.share({ files: [file] });
+            }
+          } else {
+            downloadBlob(blob, 'foto.zip');
+          }
+        } catch (e) {
+          if (!(e && (e as Error).name === 'AbortError')) toast('Не удалось подготовить архив');
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = old;
+        }
+      }
+
+      downloadAllBtn.addEventListener('click', () => {
+        runZip(currentAssets.map((a) => a.id), downloadAllBtn, false);
+      });
+      selZipBtn.addEventListener('click', () => runZip([...selectedIds], selZipBtn, false));
+      selShareBtn.addEventListener('click', () => runZip([...selectedIds], selShareBtn, true));
+      selCancelBtn.addEventListener('click', exitSelectionMode);
+
+      // ====== Режим выбора ======
+      function updateDownloadAll() {
+        const show = !selectionMode && currentAssets.length > 0;
+        downloadAllBtn.classList.toggle('show', show);
+        const label = document.getElementById('foto-download-all-label');
+        if (label) label.textContent = `Скачать всё (${currentAssets.length} фото)`;
+      }
+      function updateSelbar() {
+        selbar.classList.toggle('open', selectionMode);
+        selCount.textContent = String(selectedIds.size);
+        selShareBtn.style.display = canShareFiles ? 'inline-flex' : 'none';
+        selZipBtn.disabled = selectedIds.size === 0;
+        selShareBtn.disabled = selectedIds.size === 0;
+      }
+      function enterSelectionMode() {
+        if (selectionMode) return;
+        selectionMode = true;
+        grid.classList.add('selecting');
+        updateSelbar();
+        updateDownloadAll();
+      }
+      function exitSelectionMode() {
+        selectionMode = false;
+        selectedIds.clear();
+        grid.classList.remove('selecting');
+        grid.querySelectorAll('.foto-cell.selected').forEach((el) => el.classList.remove('selected'));
+        updateSelbar();
+        updateDownloadAll();
+      }
+      function toggleSelect(id: string, cell: HTMLElement) {
+        if (selectedIds.has(id)) {
+          selectedIds.delete(id);
+          cell.classList.remove('selected');
+        } else {
+          selectedIds.add(id);
+          cell.classList.add('selected');
+        }
+        updateSelbar();
+      }
+
+      // ====== Сетка ======
+      function clearGrid() { grid.innerHTML = ''; }
+
       function renderPhotoGrid(assets: LbAsset[]) {
+        exitSelectionMode();
         clearGrid();
-        grid.style.gridTemplateColumns = 'repeat(auto-fill,minmax(140px,1fr))';
         assets.forEach((asset, idx) => {
-          const wrap = document.createElement('div');
-          wrap.style.cssText = 'position:relative;cursor:pointer;';
+          const cell = document.createElement('div');
+          cell.className = 'foto-cell';
+          cell.dataset.id = asset.id;
+
           const img = document.createElement('img');
           img.src = `/api/foto/image/${asset.id}?kind=thumb`;
           img.loading = 'lazy';
-          img.style.cssText = 'width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;display:block;';
-          wrap.appendChild(img);
+          img.alt = '';
+          cell.appendChild(img);
+
           if (asset.type === 'VIDEO') {
             const badge = document.createElement('span');
             badge.className = 'foto-video-badge';
-            badge.textContent = '▶';
-            wrap.appendChild(badge);
+            badge.innerHTML = '<i class="bi bi-play-fill"></i>';
+            cell.appendChild(badge);
           }
-          wrap.addEventListener('click', () => openLightbox(assets, idx));
-          grid.appendChild(wrap);
+
+          const mark = document.createElement('span');
+          mark.className = 'foto-select-mark';
+          mark.innerHTML = '<i class="bi bi-check-circle-fill"></i>';
+          cell.appendChild(mark);
+
+          // Долгий тап (500мс) включает режим выбора
+          let pressTimer: ReturnType<typeof setTimeout> | null = null;
+          let startX = 0;
+          let startY = 0;
+          const clearPress = () => {
+            if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+          };
+          cell.addEventListener('pointerdown', (e) => {
+            if (selectionMode) return;
+            longPressActivated = false;
+            startX = e.clientX;
+            startY = e.clientY;
+            clearPress();
+            pressTimer = setTimeout(() => {
+              pressTimer = null;
+              enterSelectionMode();
+              toggleSelect(asset.id, cell);
+              longPressActivated = true;
+              haptic();
+            }, 500);
+          });
+          cell.addEventListener('pointermove', (e) => {
+            if (pressTimer && (Math.abs(e.clientX - startX) > 10 || Math.abs(e.clientY - startY) > 10)) {
+              clearPress();
+            }
+          });
+          cell.addEventListener('pointerup', clearPress);
+          cell.addEventListener('pointerleave', clearPress);
+          cell.addEventListener('pointercancel', clearPress);
+
+          cell.addEventListener('click', () => {
+            if (longPressActivated) { longPressActivated = false; return; }
+            if (selectionMode) { toggleSelect(asset.id, cell); return; }
+            openLightbox(currentAssets, idx);
+          });
+
+          grid.appendChild(cell);
+        });
+        updateDownloadAll();
+      }
+
+      // ====== Загрузка данных ======
+      async function loadPeopleData(): Promise<Person[]> {
+        const res = await fetch(`/api/foto/${shiftId}/people`);
+        const data = await res.json();
+        if (!data.ok) { setStatus(data.error); return []; }
+        return data.people as Person[];
+      }
+
+      function setActiveAvatar(personId: string) {
+        avatars.querySelectorAll('.foto-ava').forEach((el) => {
+          (el as HTMLElement).classList.toggle('active', (el as HTMLElement).dataset.person === personId);
         });
       }
 
-      async function loadPeople() {
-        setStatus('Загружаю список детей…');
-        const res = await fetch(`/api/foto/${shiftId}/people`);
-        const data = await res.json();
-        if (!data.ok) { setStatus(data.error); return; }
-        select.innerHTML = '<option value="">Выбери ребёнка…</option>';
-        for (const p of data.people as { id: string; name: string; count: number }[]) {
-          const opt = document.createElement('option');
-          opt.value = p.id;
-          opt.textContent = `${p.name} (${p.count})`;
-          select.appendChild(opt);
+      function buildAvatars(people: Person[]) {
+        avatars.innerHTML = '';
+
+        // «Все фото» — фиксированная плашка
+        const allEl = document.createElement('button');
+        allEl.type = 'button';
+        allEl.className = 'foto-ava';
+        allEl.dataset.person = '';
+        const allCircle = document.createElement('span');
+        allCircle.className = 'foto-ava-circle foto-ava-all-circle';
+        allCircle.innerHTML = '<i class="bi bi-collection"></i>';
+        const allName = document.createElement('span');
+        allName.className = 'foto-ava-name';
+        allName.textContent = 'Все фото';
+        allEl.append(allCircle, allName);
+        allEl.addEventListener('click', selectAll);
+        avatars.appendChild(allEl);
+
+        for (const p of people) {
+          const el = document.createElement('button');
+          el.type = 'button';
+          el.className = 'foto-ava';
+          el.dataset.person = p.id;
+          const circle = document.createElement('span');
+          circle.className = 'foto-ava-circle';
+          const img = document.createElement('img');
+          img.src = `/api/foto/${shiftId}/avatar/${p.id}`;
+          img.loading = 'lazy';
+          img.alt = '';
+          circle.appendChild(img);
+          const name = document.createElement('span');
+          name.className = 'foto-ava-name';
+          name.textContent = p.name;
+          el.append(circle, name);
+          el.addEventListener('click', () => selectPerson(p.id));
+          avatars.appendChild(el);
         }
-        setStatus(data.people.length ? '' : 'Пока никто не подписан — загляни в «Неразобранные».');
       }
 
-      async function loadPersonPhotos(personId: string) {
+      // ====== Cookie-память выбора ======
+      function setPersonCookie(personId: string) {
+        document.cookie = 'foto_person_' + shiftId + '=' + personId +
+          '; path=/foto/' + shiftId + '; max-age=15552000; SameSite=Lax';
+      }
+      function clearPersonCookie() {
+        document.cookie = 'foto_person_' + shiftId + '=; path=/foto/' + shiftId + '; max-age=0';
+      }
+      function readPersonCookie(): string | null {
+        const prefix = 'foto_person_' + shiftId + '=';
+        for (const part of document.cookie.split(';')) {
+          const s = part.trim();
+          if (s.indexOf(prefix) === 0) return s.slice(prefix.length);
+        }
+        return null;
+      }
+
+      async function selectAll() {
+        exitSelectionMode();
+        setActiveAvatar('');
+        clearPersonCookie();
+        setStatus('Загружаю фото смены…');
+        const res = await fetch(`/api/foto/${shiftId}/all`);
+        const data = await res.json();
+        if (!data.ok) { setStatus(data.error); currentAssets = []; clearGrid(); updateDownloadAll(); return; }
+        currentAssets = data.assets as LbAsset[];
+        setStatus(`Все фото смены: ${currentAssets.length}`);
+        renderPhotoGrid(currentAssets);
+      }
+
+      async function selectPerson(personId: string) {
+        exitSelectionMode();
+        setActiveAvatar(personId);
+        setPersonCookie(personId);
         setStatus('Загружаю фото…');
         const res = await fetch(`/api/foto/${shiftId}/people?personId=${encodeURIComponent(personId)}`);
         const data = await res.json();
-        if (!data.ok) { setStatus(data.error); return; }
-        setStatus(`${data.name}: ${data.assetIds.length} фото`);
-        renderPhotoGrid(data.assetIds as LbAsset[]);
+        if (!data.ok) { setStatus(data.error); currentAssets = []; clearGrid(); updateDownloadAll(); return; }
+        currentAssets = (data.assetIds as { id: string; type: 'IMAGE' | 'VIDEO' }[]).map((a) => ({ id: a.id, type: a.type }));
+        setStatus(`${data.name}: ${currentAssets.length} фото`);
+        renderPhotoGrid(currentAssets);
       }
 
-      type FaceBox = { x1: number; y1: number; x2: number; y2: number; width: number; height: number };
-      type UnsortedGroup = {
-        assetId: string;
-        assetType: 'IMAGE' | 'VIDEO';
-        recognizedNames: string[];
-        faces: { faceId: string; box: FaceBox }[];
-      };
-
-      async function loadUnsorted() {
-        setStatus('Загружаю неразобранные фото…');
-        const res = await fetch(`/api/foto/${shiftId}/unsorted`);
-        const data = await res.json();
-        if (!data.ok) { setStatus(data.error); return; }
-        clearGrid();
-        grid.style.gridTemplateColumns = '1fr';
-        const groups = data.groups as UnsortedGroup[];
-        const people = data.people as { id: string; name: string }[];
-        const totalFaces = groups.reduce((n, g) => n + g.faces.length, 0);
-        setStatus(`Неразобранных лиц: ${totalFaces} на ${groups.length} фото`);
-
-        const peopleOptions = '<option value="">Кто это?</option>' +
-          people.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
-
-        for (const group of groups) {
-          const card = document.createElement('div');
-          card.className = 'foto-unsorted-group';
-
-          // Превью фото с нумерованными метками лиц
-          const thumbWrap = document.createElement('div');
-          thumbWrap.className = 'foto-unsorted-thumb-wrap';
-          const thumbImg = document.createElement('img');
-          thumbImg.src = `/api/foto/image/${group.assetId}?kind=thumb`;
-          thumbImg.className = 'foto-unsorted-thumb';
-          thumbImg.alt = '';
-          thumbWrap.appendChild(thumbImg);
-
-          if (group.assetType === 'VIDEO') {
-            const badge = document.createElement('span');
-            badge.className = 'foto-video-badge';
-            badge.textContent = '▶';
-            thumbWrap.appendChild(badge);
-          }
-
-          thumbWrap.addEventListener('click', () => openLightbox([{ id: group.assetId, type: group.assetType }], 0));
-          card.appendChild(thumbWrap);
-
-          // Уже опознаны
-          if (group.recognizedNames.length > 0) {
-            const names = document.createElement('div');
-            names.className = 'foto-recognized-names';
-            names.textContent = `Уже опознаны: ${group.recognizedNames.join(', ')}`;
-            card.appendChild(names);
-          }
-
-          // Список выборов под фото
-          const faceList = document.createElement('div');
-          faceList.className = 'foto-face-list';
-          card.appendChild(faceList);
-
-          // Метки на фото и строки выборов для каждого лица
-          const markers: HTMLElement[] = [];
-
-          for (let i = 0; i < group.faces.length; i++) {
-            const face = group.faces[i];
-
-            // Кружок-метка поверх фото (скрыт до позиционирования)
-            const marker = document.createElement('div');
-            marker.className = 'foto-face-marker';
-            marker.textContent = String(i + 1);
-            marker.style.visibility = 'hidden';
-            thumbWrap.appendChild(marker);
-            markers.push(marker);
-
-            // Строка выбора под фото
-            const listItem = document.createElement('div');
-            listItem.className = 'foto-face-list-item';
-
-            const label = document.createElement('span');
-            label.textContent = `${i + 1})`;
-            listItem.appendChild(label);
-
-            const sel = document.createElement('select');
-            sel.innerHTML = peopleOptions;
-            sel.addEventListener('change', async () => {
-              if (!sel.value) return;
-              sel.disabled = true;
-              const r = await fetch(`/api/foto/${shiftId}/unsorted`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ faceId: face.faceId, personId: sel.value }),
-              });
-              const rd = await r.json();
-              if (rd.ok) {
-                marker.remove();
-                listItem.remove();
-                if (faceList.childElementCount === 0) card.remove();
-              } else {
-                sel.disabled = false;
-                alert(rd.error);
-              }
-            });
-            listItem.appendChild(sel);
-            faceList.appendChild(listItem);
-          }
-
-          // Позиционирование кружков по координатам box с учётом object-fit:contain
-          function positionMarkers() {
-            if (!thumbImg.naturalWidth) return;
-            const containerW = thumbWrap.clientWidth;
-            const containerH = thumbWrap.clientHeight;
-            if (!containerW || !containerH) return;
-            const imgAspect = thumbImg.naturalWidth / thumbImg.naturalHeight;
-            const containerAspect = containerW / containerH;
-            let renderedW, renderedH, offsetX, offsetY;
-            if (imgAspect > containerAspect) {
-              renderedW = containerW; renderedH = containerW / imgAspect;
-              offsetX = 0; offsetY = (containerH - renderedH) / 2;
-            } else {
-              renderedH = containerH; renderedW = containerH * imgAspect;
-              offsetY = 0; offsetX = (containerW - renderedW) / 2;
-            }
-            for (let j = 0; j < group.faces.length; j++) {
-              const m = markers[j];
-              if (!m.parentNode) continue;
-              const box = group.faces[j].box;
-              const scale = renderedW / box.width;
-              const markerX = offsetX + ((box.x1 + box.x2) / 2) * scale;
-              // Метка не на самом лице (закрывала его), а чуть выше — над верхней границей box.
-              const markerTopY = offsetY + box.y1 * scale;
-              m.style.left = `${markerX - 12}px`;
-              m.style.top = `${markerTopY - 12 - 6}px`;
-              m.style.visibility = '';
-            }
-          }
-
-          thumbImg.addEventListener('load', positionMarkers);
-          if (thumbImg.complete && thumbImg.naturalWidth) positionMarkers();
-
-          let resizeTimer: ReturnType<typeof setTimeout> | undefined;
-          window.addEventListener('resize', () => {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(positionMarkers, 150);
-          });
-
-          grid.appendChild(card);
+      async function init() {
+        setStatus('Загружаю…');
+        const people = await loadPeopleData();
+        buildAvatars(people);
+        const saved = readPersonCookie();
+        if (saved && people.some((p) => p.id === saved)) {
+          selectPerson(saved);
+        } else {
+          selectAll();
         }
       }
 
-      select.addEventListener('change', () => {
-        if (select.value) loadPersonPhotos(select.value);
-      });
-      tabUnsorted.addEventListener('click', loadUnsorted);
+      init();
+    }
+  </script>
 
-      loadPeople();
+  <script>
+    import { scheduleBind } from '../../lib/attribution/collectAndBind';
+
+    const rootEl = document.getElementById('foto-root');
+    const lid = rootEl?.dataset.lid;
+    const t = rootEl?.dataset.t;
+    const shiftId = rootEl?.dataset.shiftId;
+
+    // Атрибуция запускается только при подписанной ссылке (lid+t). Без них —
+    // страница работает как для органических визитов, scheduleBind не вызывается.
+    if (lid && t && shiftId) {
+      const isManagerBrowser = (() => {
+        try {
+          return localStorage.getItem('aidacamp_is_manager') === '1';
+        } catch {
+          return false;
+        }
+      })();
+      scheduleBind(
+        { lid: Number(lid), t, isPreview: false, isManagerBrowser, storageKey: 'foto_bound_' + shiftId + '_' + lid },
+        96499295,
+      );
     }
   </script>
 </Base>
