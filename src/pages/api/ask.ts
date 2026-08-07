@@ -4,7 +4,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { buildSystemPrompt } from '../../lib/ai/systemPrompt';
 import { ResponseSchema } from '../../lib/ai/responseSchema';
 import { ragSearch } from '../../lib/ai/rag';
-import { findPhotos } from '../../lib/ai/photoSearch';
+import { findPhotos, hasShiftPhotos } from '../../lib/ai/photoSearch';
 import { lastCompletedShift } from '../../data/shifts';
 import { matchEscalation, templateToResponse } from '../../lib/ai/escalation_templates';
 import { classifyIntent, pickRealStory } from '../../lib/ai/intent_router';
@@ -163,15 +163,20 @@ export const POST: APIRoute = async ({ request }) => {
     // Для story режима убираем общий RAG-контекст (другие истории/видео миксуют) — оставляем ТОЛЬКО pickRealStory
     const ctxForLLM = (intent === 'story') ? '' : ragResult.context;
 
-    // Честный контекст про последнюю прошедшую смену (Task 4) — фото пока НЕ размечены по сменам,
-    // LLM должен называть смену по имени, но не приписывать ей конкретные фото (см. systemPrompt.ts).
+    // Честный контекст про последнюю прошедшую смену (Task 4/5) — часть смен уже имеет реально
+    // размеченные фото (см. hasShiftPhotos, src/lib/ai/photoSearch.ts), часть ещё нет. LLM должен
+    // называть смену по имени и говорить правду именно про текущее состояние разметки.
     const _today = new Date().toISOString().slice(0, 10);
     const _lastShift = lastCompletedShift(_today);
     const shiftContext = _lastShift
-      ? `\n\n=== ПОСЛЕДНЯЯ ПРОШЕДШАЯ СМЕНА ===\nСмена: "${_lastShift.name}" (${_lastShift.dates}).\n` +
-        `ВАЖНО: у нас пока НЕТ фото, размеченных по конкретной смене — если тебя просят "фото с последней смены",\n` +
-        `назови смену по имени (${_lastShift.name}), но честно скажи что показываешь ОБЩИЕ живые фото с лагеря,\n` +
-        `а не фото именно с этой смены. НЕ утверждай "вот фото именно с ${_lastShift.name}" — это неправда.`
+      ? (hasShiftPhotos(_lastShift.id)
+          ? `\n\n=== ПОСЛЕДНЯЯ ПРОШЕДШАЯ СМЕНА ===\nСмена: "${_lastShift.name}" (${_lastShift.dates}).\n` +
+            `У нас ЕСТЬ реальные фото именно с этой смены — если просят "фото с последней смены", можешь честно\n` +
+            `сказать что это фото именно с ${_lastShift.name}.`
+          : `\n\n=== ПОСЛЕДНЯЯ ПРОШЕДШАЯ СМЕНА ===\nСмена: "${_lastShift.name}" (${_lastShift.dates}).\n` +
+            `ВАЖНО: у нас пока НЕТ реальных фото именно с этой смены — если тебя просят "фото с последней смены",\n` +
+            `назови смену по имени (${_lastShift.name}), но честно скажи что показываешь ОБЩИЕ живые фото с лагеря,\n` +
+            `а не фото именно с этой смены. НЕ утверждай "вот фото именно с ${_lastShift.name}" — это неправда.`)
       : '';
     // basePrompt стабилен внутри деплоя (campData + правило роста цен) — кэшируем отдельным блоком.
     // ctxForLLM/intentBoost меняются на каждый запрос — не кэшируем, иначе маркер в конце
