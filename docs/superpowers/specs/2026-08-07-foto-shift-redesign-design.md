@@ -182,8 +182,14 @@ reload той же вкладки (тот же приём, что `pm_bound_{lid
 **Новые:**
 - `src/pages/api/foto/[shiftId]/avatar/[personId].ts`
 - `src/pages/api/foto/[shiftId]/zip.ts`
+- `src/pages/api/foto/[shiftId]/all.ts` — список всех assets альбома смены (нужен для вкладки
+  «Все фото смены»: ни `people.ts`, ни `unsorted.ts` не отдают полный список независимо от
+  распознавания лиц)
 - `src/pages/admin/gallery-tagging/[shiftId].astro`
 - `src/lib/attribution/collectAndBind.ts`
+- `src/lib/fotoZip.ts` — чистые хелперы валидации (`clampIds`, `safeZipFilename`), вынесены
+  отдельно от `zip.ts`, чтобы их можно было юнит-тестировать (тесты `*.test.ts` нельзя класть
+  под `src/pages/`)
 
 **Изменяются:**
 - `src/pages/foto/[shiftId].astro` — полный редизайн разметки/стилей/скрипта
