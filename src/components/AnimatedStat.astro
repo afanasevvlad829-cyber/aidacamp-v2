@@ -35,8 +35,25 @@ const tones = {
 };
 
 const c = tones[tone] ?? tones.orange;
-const fontSize = size === 'xl' ? '72px' : '52px';
-const mdFontSize = size === 'xl' ? '96px' : '68px';
+const maxFontSize = size === 'xl' ? 72 : 52;
+
+/*
+ * Автоподгон размера цифры под ширину карточки.
+ * Карточка — container (cqi), поэтому размер считается от её реальной ширины,
+ * а не от вьюпорта: одинаково работает и в колонке grid, и на всю ширину.
+ * Ширина строки в em ≈ (символы числа × 0.68) + (символы юнита × 0.68 × UNIT_EM),
+ * 0.68 — замеренная ширина цифры font-black tabular-nums плюс небольшой запас.
+ * 100cqi — уже content-box контейнера (паддинги px-6 исключены), 0.5rem — запас.
+ *
+ * Словесный юнит (« млрд $», « млн», «+ мес») рендерится вдвое мельче: иначе он
+ * съедает всё место и цифра ужимается до нечитаемой. Знаковые юниты («%», «+»,
+ * «:15») остаются в размер цифры — они часть самого числа.
+ */
+const isWordUnit = /\s/.test(unit) || /^\p{L}{2,}$/u.test(unit);
+const UNIT_EM = isWordUnit ? 0.5 : 1;
+const numChars = `${prefix}${value}`.length;
+const lineEm = (numChars * 0.68 + unit.length * 0.68 * UNIT_EM).toFixed(2);
+const fontSize = `min(${maxFontSize}px, calc((100cqi - 0.5rem) / ${lineEm}))`;
 ---
 
 <div
@@ -46,23 +63,26 @@ const mdFontSize = size === 'xl' ? '96px' : '68px';
 >
   <div
     id={id}
-    class="font-black leading-none tabular-nums"
+    class="__astat-num font-black leading-none tabular-nums"
     style={`color: ${c.text}; font-size: ${fontSize};`}
     data-prefix={prefix}
     data-unit={unit}
     data-target={value}
   >
-    {prefix}0{unit}
+    <span data-num>{prefix}0</span>{unit && <span style={`font-size: ${UNIT_EM}em`}>{unit}</span>}
   </div>
   <p class="mt-3 text-base leading-[1.5] text-body-muted max-w-[280px] mx-auto">{label}</p>
   {source && <p class="mt-2 text-[11px] text-body-faint font-mono tracking-wide">{source}</p>}
 </div>
 
 <style>
-  @media (min-width: 768px) {
-    .__astat .font-black {
-      /* md override applied via JS below */
-    }
+  .__astat {
+    /* база для cqi: размер цифры считается от ширины карточки */
+    container-type: inline-size;
+  }
+  .__astat-num {
+    /* юнит не переносится на новую строку — иначе карточка «разъезжается» */
+    white-space: nowrap;
   }
 </style>
 
