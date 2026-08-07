@@ -476,9 +476,12 @@ export const prerender = true;
 </div>
 
 <script is:inline>
+  // Гейт авторизации: кука staff_auth_2026 httpOnly, JS её не читает — спрашиваем
+  // сервер. /api/shift-plan отдаёт 401 без валидной куки и 503 без секрета → на /staff.
   (function(){
-    var ok = document.cookie.split('; ').reduce(function(r,v){var p=v.split('=');return p[0]==='staff_auth_2026'?decodeURIComponent(p.slice(1).join('=')):r;}, null);
-    if (ok !== '1') { location.replace('/staff'); }
+    fetch('/api/shift-plan', {cache:'no-store'})
+      .then(function(r){ if (!r.ok) location.replace('/staff'); })
+      .catch(function(){ location.replace('/staff'); });
   })();
   window.PERSIST = {
     mode: 'live',
