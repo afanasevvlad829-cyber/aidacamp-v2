@@ -24,15 +24,16 @@ describe('clampIds', () => {
 });
 
 describe('safeZipFilename', () => {
-  it('оставляет буквы/цифры/пробелы/точки/дефисы, добавляет .zip', () => {
-    expect(safeZipFilename('Смена 3')).toBe('Смена 3.zip');
+  it('оставляет ASCII буквы/цифры/пробелы/точки/дефисы, добавляет .zip', () => {
+    expect(safeZipFilename('Shift 3')).toBe('Shift 3.zip');
   });
 
-  it('вырезает опасные для заголовка символы', () => {
-    expect(safeZipFilename('Смена "3" / test?')).toBe('Смена 3  test.zip');
+  it('вырезает кириллицу и опасные для заголовка символы (ByteString-safety)', () => {
+    expect(safeZipFilename('Смена "3" / test?')).toBe('3  test.zip');
   });
 
   it('пустое имя после очистки → фолбэк foto.zip', () => {
+    expect(safeZipFilename('Смена 3')).not.toBe('.zip'); // не должно давать голый .zip без имени
     expect(safeZipFilename('"""')).toBe('foto.zip');
   });
 });

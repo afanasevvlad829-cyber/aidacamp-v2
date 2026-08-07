@@ -13,8 +13,14 @@ export function clampIds(raw: unknown, max = 300): string[] {
   return out;
 }
 
-/** Имя файла для Content-Disposition — буквы (включая кириллицу)/цифры/пробелы/точки/дефисы, остальное вырезаем. */
+/**
+ * Имя файла для Content-Disposition — только ASCII-безопасные символы
+ * (буквы латиницы/цифры/пробелы/точки/дефисы), остальное вырезаем.
+ * HTTP-заголовки обязаны быть ByteString (Latin-1): кириллица в значении
+ * `filename=` кидает синхронный TypeError в конструкторе Response и роняет
+ * весь процесс — поэтому не-ASCII символы недопустимы.
+ */
 export function safeZipFilename(shiftName: string): string {
-  const cleaned = shiftName.replace(/[^\p{L}\p{N} .-]/gu, '').trim();
+  const cleaned = shiftName.replace(/[^a-zA-Z0-9 .-]/g, '').trim();
   return (cleaned || 'foto') + '.zip';
 }

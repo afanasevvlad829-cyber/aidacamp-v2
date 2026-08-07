@@ -61,7 +61,13 @@ export const POST: APIRoute = async ({ params, request }) => {
         if (!res.ok || !res.body) continue;
         const contentType = res.headers.get('Content-Type') || '';
         const ext = contentType.includes('video') ? 'mp4' : 'jpg';
-        archive.append(Readable.fromWeb(res.body as any), { name: `foto-${id}.${ext}` });
+        const bodyStream = Readable.fromWeb(res.body as any);
+        bodyStream.on('error', () => {
+          // Immich оборвал поток посреди файла (таймаут/сеть) — без этого обработчика
+          // необработанное 'error' на этом Readable крашит весь Node-процесс целиком
+          // (проверено на проде: TypeError → потом DOMException TimeoutError → крах).
+        });
+        archive.append(bodyStream, { name: `foto-${id}.${ext}` });
       } catch {
         // пропускаем недоступный файл, архивируем остальные
       }
