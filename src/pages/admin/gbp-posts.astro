@@ -1,5 +1,6 @@
 ---
 import { PRICE_MIN, VYCHET_MAX } from '../../data/shifts';
+import { CAMP_SEASON } from '../../data/contacts';
 export const prerender = false;
 ---
 <!DOCTYPE html>
@@ -116,7 +117,7 @@ export const prerender = false;
 
       <div class="field">
         <label>Тип поста</label>
-        <select id="topicType" onchange="onTypeChange()">
+        <select id="topicType">
           <option value="STANDARD">Обычный пост</option>
           <option value="EVENT">Событие</option>
           <option value="OFFER">Акция / Предложение</option>
@@ -125,7 +126,7 @@ export const prerender = false;
 
       <div class="field">
         <label>Текст поста <span style="color:#64748b;font-weight:400">(макс. 1500 симв.)</span></label>
-        <textarea id="postText" placeholder="Текст поста для Google Бизнес Профиль..." oninput="onTextInput()"></textarea>
+        <textarea id="postText" placeholder="Текст поста для Google Бизнес Профиль..."></textarea>
         <div class="char-count" id="charCount">0 / 1500</div>
       </div>
 
@@ -166,16 +167,16 @@ export const prerender = false;
 
       <div class="field">
         <label>Фото <span style="color:#64748b;font-weight:400">(URL публичной картинки)</span></label>
-        <input type="url" id="imageUrl" placeholder="https://aidacamp.ru/images/..." oninput="updatePreview()" />
+        <input type="url" id="imageUrl" placeholder="https://aidacamp.ru/images/..." />
       </div>
 
     </div>
     <div class="footer">
-      <button class="btn" id="publishBtn" onclick="publishPost()">
+      <button class="btn" id="publishBtn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
         Опубликовать
       </button>
-      <button class="btn btn-sec" onclick="clearForm()">Очистить</button>
+      <button class="btn btn-sec" id="clearBtn">Очистить</button>
       <div class="status" id="pubStatus"></div>
     </div>
   </div>
@@ -203,15 +204,18 @@ export const prerender = false;
   </div>
 </div>
 
-<script is:inline>
+<script is:inline define:vars={{ PRICE_MIN, VYCHET_MAX, CAMP_SEASON }}>
 // --- Шаблоны ---------------------------------------------------------------
+// Цены/вычет/сезон приходят из frontmatter через define:vars (src/data/shifts.ts,
+// src/data/contacts.ts). Без него `${...}` в шаблонах ниже — необъявленные
+// переменные: скрипт падает с ReferenceError и страница перестаёт работать.
 const TEMPLATES = [
   {
     tag: 'season', tagLabel: 'Сезонное',
     title: 'Открыта запись на лето',
     text: `🌟 Запись на летние смены 2026 открыта!
 
-Детский IT-лагерь АйДаКемп — 66 км от МКАД, смены с июня по август.
+Детский IT-лагерь АйДаКемп — 66 км от МКАД, смены ${CAMP_SEASON}.
 
 Программы: Python, AI, Minecraft Education, Scratch, 3D-моделирование.
 
@@ -324,7 +328,7 @@ Minecraft Education — официальная образовательная в
 «Впервые за 10 дней я не слышала жалоб на скуку»
 «Преподаватели объясняют так, что даже я поняла»
 
-Смены июнь–август 2026. Запись открыта.`,
+Смены ${CAMP_SEASON}. Запись открыта.`,
     cta: 'BOOK',
   },
 ];
@@ -475,9 +479,18 @@ async function loadRecentPosts() {
   }
 }
 
+// --- Обработчики ------------------------------------------------------------
+// Только addEventListener: define:vars выше оборачивает скрипт в IIFE, поэтому
+// функции НЕ глобальные и inline-атрибуты onclick="..." в разметке не сработают.
+document.getElementById('topicType').addEventListener('change', onTypeChange);
+document.getElementById('postText').addEventListener('input', onTextInput);
+document.getElementById('imageUrl').addEventListener('input', updatePreview);
+document.getElementById('publishBtn').addEventListener('click', publishPost);
+document.getElementById('clearBtn').addEventListener('click', clearForm);
+document.getElementById('ctaType').addEventListener('change', updatePreview);
+
 checkStatus();
 loadRecentPosts();
-document.getElementById('ctaType').addEventListener('change', updatePreview);
 </script>
 </body>
 </html>
