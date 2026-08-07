@@ -16,6 +16,12 @@ interface PhotoResult {
   caption: string;
 }
 
+/** Есть ли хоть одно реально размеченное фото для этой смены — используется ask.ts, чтобы решить,
+ * можно ли честно сказать "вот фото именно с этой смены" (Task 5). */
+export function hasShiftPhotos(shiftId: string): boolean {
+  return (photoIndex.photos as Photo[]).some(p => p.shift === shiftId);
+}
+
 /**
  * Ищет 2–4 фото по тематике запроса.
  * query — тема (например "бассейн", "занятия программированием", "еда")

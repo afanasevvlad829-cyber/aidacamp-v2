@@ -1,7 +1,17 @@
 // Code-based грейдеры для eval-ask-bot.mjs — детерминированные, без LLM.
 // Каждый грейдер: (botResponse) => { passed: boolean, reason?: string }
 
+import { readFileSync } from 'node:fs';
 import { getCurrentPrice } from '../src/data/dynamicPrices.ts';
+import { lastCompletedShift } from '../src/data/shifts.ts';
+
+// Читаем photo-index.json напрямую (не через photoSearch.ts) — нативный Node ESM требует
+// import-атрибут `with { type: 'json' }` для JSON-модулей, которого нет в продакшен-коде
+// (Vite/Astro его не требует); дублировать логику дешевле, чем менять прод-импорт ради теста.
+function hasShiftPhotos(shiftId) {
+  const index = JSON.parse(readFileSync(new URL('../src/data/photo-index.json', import.meta.url)));
+  return index.photos.some(p => p.shift === shiftId);
+}
 
 const BANNED_WORDS = ['единиц', 'единицы', 'единицами', 'баллов', 'баллы', 'балла', 'балл'];
 
@@ -28,12 +38,14 @@ export function offers_photo_chip(resp) {
 
 export function honest_about_shift_limits(resp) {
   const text = (resp.text || '').toLowerCase();
-  // Бот не имеет права заявлять "именно с последней смены" / "с прошлой смены" в тексте,
-  // пока фото не размечены по сменам (см. Task 4/5) — иначе это фактическая ложь пользователю.
   const claimsSpecificShift = /именно с (последней|прошлой|\d)|фото с \d-?й? смены/.test(text);
-  return claimsSpecificShift
-    ? { passed: false, reason: `текст утверждает конкретную смену без реальной привязки фото: "${resp.text}"` }
-    : { passed: true };
+  if (!claimsSpecificShift) return { passed: true };
+  // Заявление о конкретной смене — не автоматически ложь: с Task 5 часть смен реально
+  // размечена в photo-index.json (hasShiftPhotos). Фейлим, только если для актуальной
+  // последней смены реальных фото на самом деле нет — тогда это правда была бы ложью.
+  const lastShift = lastCompletedShift(new Date().toISOString().slice(0, 10));
+  if (lastShift && hasShiftPhotos(lastShift.id)) return { passed: true };
+  return { passed: false, reason: `текст утверждает конкретную смену без реальной привязки фото: "${resp.text}"` };
 }
 
 // toLocaleString('ru-RU') вставляет NBSP (U+00A0) как разделитель тысяч, а текст бота —
