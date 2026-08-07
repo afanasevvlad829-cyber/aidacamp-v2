@@ -430,6 +430,60 @@ if [ "${SKIP_SMOKE:-0}" != "1" ]; then
 fi
 
 
+# ── 7. nginx: снипет SSR-редиректов (только prod) ─────────────
+# SSR-редирект (prerender=false + Astro.redirect) работает только если nginx
+# проксирует его слаг в Node — иначе прод отдаёт 404 (инцидент b70ae7b2:
+# редирект жил в репо, блок в nginx руками не добавили, 404 с 02.08 по 07.08).
+# Снипет генерируется из репо и подключён include'ом в server-блок aidacamp.ru.
+# Шаг стоит ПОСЛЕ верификации и smoke: если nginx -t провалится, прод уже
+# проверен и здоров — восстанавливаем снипет и падаем без отката файлов.
+if [ "$TARGET" = "prod" ] && [ "${SKIP_NGINX_REDIRECTS:-0}" != "1" ]; then
+  echo ""
+  echo "🧭 nginx: снипет SSR-редиректов..."
+  SNIPPET_REMOTE="/etc/nginx/snippets/aidacamp-ssr-redirects.conf"
+  SNIPPET_TMP_LOCAL=$(mktemp)
+  "$SCRIPT_DIR/gen-nginx-redirects.sh" "$SNIPPET_TMP_LOCAL"
+
+  # Без include в aidacamp.conf снипет — мёртвый груз: не валим деплой, но кричим.
+  if ! ssh -i "$SSH_KEY" "$SSH_HOST" \
+      "grep -q 'snippets/aidacamp-ssr-redirects.conf' /etc/nginx/sites-enabled/aidacamp.conf"; then
+    echo "  ⚠️  В aidacamp.conf нет include снипета — SSR-редиректы НЕ обновлены."
+    echo "     Добавь в server-блок aidacamp.ru: include snippets/aidacamp-ssr-redirects.conf;"
+  else
+    scp -q -i "$SSH_KEY" "$SNIPPET_TMP_LOCAL" "$SSH_HOST:/tmp/aidacamp-ssr-redirects.conf.new"
+    if ssh -i "$SSH_KEY" "$SSH_HOST" \
+        "cmp -s /tmp/aidacamp-ssr-redirects.conf.new $SNIPPET_REMOTE 2>/dev/null"; then
+      echo "  ✅ Снипет без изменений ($(grep -c 'location ~' "$SNIPPET_TMP_LOCAL") редиректов)"
+      ssh -i "$SSH_KEY" "$SSH_HOST" "rm -f /tmp/aidacamp-ssr-redirects.conf.new"
+    else
+      # Бэкапы конфигов — ТОЛЬКО в /etc/nginx/backups/ (НЕ в sites-enabled и не
+      # рядом со снипетом: include подхватывает *.bak и ломает nginx).
+      if ! ssh -i "$SSH_KEY" "$SSH_HOST" "
+        set -e
+        mkdir -p /etc/nginx/backups
+        if [ -f $SNIPPET_REMOTE ]; then cp $SNIPPET_REMOTE /etc/nginx/backups/aidacamp-ssr-redirects.conf.\$(date +%Y%m%d-%H%M%S); fi
+        mv /tmp/aidacamp-ssr-redirects.conf.new $SNIPPET_REMOTE
+        if nginx -t 2>/dev/null; then
+          systemctl reload nginx
+        else
+          echo 'nginx -t ПРОВАЛЕН — откатываю снипет'
+          LAST_BACKUP=\$(ls -t /etc/nginx/backups/aidacamp-ssr-redirects.conf.* 2>/dev/null | head -1)
+          if [ -n \"\$LAST_BACKUP\" ]; then cp \"\$LAST_BACKUP\" $SNIPPET_REMOTE; else rm -f $SNIPPET_REMOTE; fi
+          nginx -t
+          exit 1
+        fi
+      "; then
+        echo "  ❌ nginx -t провалился на новом снипете — снипет откачен, nginx не перезагружен."
+        echo "     Прод работает (верификация выше пройдена), но новые редиректы НЕ активны."
+        echo "     Смотри: ssh $SSH_HOST 'nginx -t' и /etc/nginx/backups/"
+        exit 1
+      fi
+      echo "  ✅ Снипет обновлён + nginx reload ($(grep -c 'location ~' "$SNIPPET_TMP_LOCAL") редиректов)"
+    fi
+  fi
+  rm -f "$SNIPPET_TMP_LOCAL"
+fi
+
 # Запишем SHA задеплоенного коммита на сервер для drift-check (cron алертит при расхождении)
 DEPLOY_SHA=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
 ssh -i "$SSH_KEY" "$SSH_HOST" "echo $DEPLOY_SHA > $REMOTE_DIR/.deployed-sha" 2>/dev/null || true
