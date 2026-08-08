@@ -59,6 +59,36 @@ const hasAttribution = !!(lid && t);
     }
     #foto-avatars::-webkit-scrollbar { display: none; }
 
+    #foto-days {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 2px 0 14px;
+      margin: 0 0 4px;
+      scrollbar-width: none;
+    }
+    #foto-days::-webkit-scrollbar { display: none; }
+    .foto-day {
+      flex: 0 0 auto;
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .foto-day.active {
+      background: #ec9b44;
+      color: #0d1a2b;
+      border-color: #ec9b44;
+    }
+
     .foto-ava {
       flex: 0 0 auto;
       display: flex;
@@ -464,8 +494,9 @@ const hasAttribution = !!(lid && t);
     {!shift && <p>Смена не найдена.</p>}
     {shift && (
       <>
-        <h1>{shift.name} — {shift.dates}</h1>
+        <h1>{shift.dates}</h1>
         <div id="foto-avatars"></div>
+        <div id="foto-days"></div>
         <div id="foto-status"></div>
         <button id="foto-download-all" type="button">
           <i class="bi bi-download"></i> <span id="foto-download-all-label">Скачать всё</span>
@@ -503,6 +534,7 @@ const hasAttribution = !!(lid && t);
     // ниже, она остаётся: при отсутствии элементов блок просто не выполнится.
     const grid = document.getElementById('foto-grid')!;
     const avatars = document.getElementById('foto-avatars')!;
+    const days = document.getElementById('foto-days')!;
 
     if (root && grid && avatars) {
       const shiftId = root.dataset.shiftId!;
@@ -897,6 +929,55 @@ const hasAttribution = !!(lid && t);
         }
       }
 
+      // ====== Ряд-календарь дней ======
+      function setActiveDay(dateStr: string) {
+        days.querySelectorAll('.foto-day').forEach((el) => {
+          (el as HTMLElement).classList.toggle('active', (el as HTMLElement).dataset.date === dateStr);
+        });
+      }
+
+      function formatDayLabel(dateStr: string): string {
+        // dateStr — YYYY-MM-DD. new Date(dateStr) парсится как UTC-полночь — для короткой
+        // подписи дня (число+месяц) разница в часовом поясе тут не критична.
+        const label = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' }).format(new Date(dateStr));
+        return label.replace(/\.$/, '');
+      }
+
+      function buildDays(dayList: string[]) {
+        days.innerHTML = '';
+        for (const dateStr of dayList) {
+          const el = document.createElement('button');
+          el.type = 'button';
+          el.className = 'foto-day';
+          el.dataset.date = dateStr;
+          el.textContent = formatDayLabel(dateStr);
+          el.addEventListener('click', () => selectDay(dateStr));
+          days.appendChild(el);
+        }
+      }
+
+      async function loadDays() {
+        const res = await fetch(`/api/foto/${shiftId}/days`);
+        const data = await res.json();
+        if (!data.ok) return;
+        buildDays(data.days as string[]);
+      }
+
+      async function selectDay(dateStr: string) {
+        exitSelectionMode();
+        grid.classList.remove('unsorted-mode');
+        setActiveAvatar('__none__');
+        setActiveDay(dateStr);
+        clearPersonCookie();
+        setStatus(`Загружаю фото за ${formatDayLabel(dateStr)}…`);
+        const res = await fetch(`/api/foto/${shiftId}/all?date=${dateStr}`);
+        const data = await res.json();
+        if (!data.ok) { setStatus(data.error); currentAssets = []; clearGrid(); updateDownloadAll(); return; }
+        currentAssets = data.assets as LbAsset[];
+        setStatus(`${formatDayLabel(dateStr)}: ${currentAssets.length}`);
+        renderPhotoGrid(currentAssets);
+      }
+
       // ====== Cookie-память выбора ======
       function setPersonCookie(personId: string) {
         document.cookie = 'foto_person_' + shiftId + '=' + personId +
@@ -917,6 +998,7 @@ const hasAttribution = !!(lid && t);
       async function selectAll() {
         exitSelectionMode();
         grid.classList.remove('unsorted-mode');
+        setActiveDay('');
         setActiveAvatar('');
         clearPersonCookie();
         setStatus('Загружаю фото смены…');
@@ -931,6 +1013,7 @@ const hasAttribution = !!(lid && t);
       async function selectToday() {
         exitSelectionMode();
         grid.classList.remove('unsorted-mode');
+        setActiveDay('');
         setActiveAvatar('__today__');
         clearPersonCookie();
         setStatus('Загружаю фото за сегодня…');
@@ -945,6 +1028,7 @@ const hasAttribution = !!(lid && t);
       async function selectPerson(personId: string) {
         exitSelectionMode();
         grid.classList.remove('unsorted-mode');
+        setActiveDay('');
         setActiveAvatar(personId);
         setPersonCookie(personId);
         setStatus('Загружаю фото…');
@@ -967,6 +1051,7 @@ const hasAttribution = !!(lid && t);
 
       async function selectUnsorted() {
         exitSelectionMode();
+        setActiveDay('');
         setActiveAvatar('__unsorted__');
         clearPersonCookie();
         grid.classList.add('unsorted-mode');
@@ -1113,6 +1198,7 @@ const hasAttribution = !!(lid && t);
         setStatus('Загружаю…');
         const people = await loadPeopleData();
         buildAvatars(people);
+        loadDays();
         const saved = readPersonCookie();
         if (saved && people.some((p) => p.id === saved)) {
           selectPerson(saved);
