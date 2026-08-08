@@ -69,6 +69,30 @@ const hasAttribution = !!(lid && t);
       scrollbar-width: none;
     }
     #foto-days::-webkit-scrollbar { display: none; }
+
+    .foto-staff-section {
+      margin: 4px 0 8px;
+      display: none;
+    }
+    .foto-staff-section.show { display: block; }
+    .foto-staff-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 8px;
+    }
+    #foto-staff {
+      display: flex;
+      gap: 14px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 0 4px;
+      scrollbar-width: none;
+    }
+    #foto-staff::-webkit-scrollbar { display: none; }
+
     .foto-day {
       flex: 0 0 auto;
       background: rgba(255, 255, 255, 0.08);
@@ -497,6 +521,10 @@ const hasAttribution = !!(lid && t);
         <h1>{shift.dates}</h1>
         <div id="foto-avatars"></div>
         <div id="foto-days"></div>
+        <div id="foto-staff-section" class="foto-staff-section">
+          <div class="foto-staff-label">Персонал</div>
+          <div id="foto-staff"></div>
+        </div>
         <div id="foto-status"></div>
         <button id="foto-download-all" type="button">
           <i class="bi bi-download"></i> <span id="foto-download-all-label">Скачать всё</span>
@@ -528,6 +556,8 @@ const hasAttribution = !!(lid && t);
   <div id="foto-toast"></div>
 
   <script>
+    import { CAMP_STAFF_NAMES } from '../../data/campStaff';
+
     const root = document.getElementById('foto-root');
     // `!` только сужает тип: во вложенных функциях (buildAvatars, обработчики)
     // TS теряет narrowing из if-ниже. Реальный null-guard — проверка `if` строкой
@@ -535,6 +565,8 @@ const hasAttribution = !!(lid && t);
     const grid = document.getElementById('foto-grid')!;
     const avatars = document.getElementById('foto-avatars')!;
     const days = document.getElementById('foto-days')!;
+    const staffSection = document.getElementById('foto-staff-section')!;
+    const staffRow = document.getElementById('foto-staff')!;
 
     if (root && grid && avatars) {
       const shiftId = root.dataset.shiftId!;
@@ -908,25 +940,39 @@ const hasAttribution = !!(lid && t);
         unsortedEl.addEventListener('click', selectUnsorted);
         avatars.appendChild(unsortedEl);
 
-        for (const p of people) {
-          const el = document.createElement('button');
-          el.type = 'button';
-          el.className = 'foto-ava';
-          el.dataset.person = p.id;
-          const circle = document.createElement('span');
-          circle.className = 'foto-ava-circle';
-          const img = document.createElement('img');
-          img.src = `/api/foto/${shiftId}/avatar/${p.id}`;
-          img.loading = 'lazy';
-          img.alt = '';
-          circle.appendChild(img);
-          const name = document.createElement('span');
-          name.className = 'foto-ava-name';
-          name.textContent = p.name;
-          el.append(circle, name);
-          el.addEventListener('click', () => selectPerson(p.id));
-          avatars.appendChild(el);
+        const kids = people.filter((p) => !CAMP_STAFF_NAMES.includes(p.name));
+        const staff = people.filter((p) => CAMP_STAFF_NAMES.includes(p.name));
+        kids.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+
+        for (const p of kids) {
+          avatars.appendChild(buildPersonAvatar(p));
         }
+
+        staffRow.innerHTML = '';
+        for (const p of staff) {
+          staffRow.appendChild(buildPersonAvatar(p));
+        }
+        staffSection.classList.toggle('show', staff.length > 0);
+      }
+
+      function buildPersonAvatar(p: Person): HTMLButtonElement {
+        const el = document.createElement('button');
+        el.type = 'button';
+        el.className = 'foto-ava';
+        el.dataset.person = p.id;
+        const circle = document.createElement('span');
+        circle.className = 'foto-ava-circle';
+        const img = document.createElement('img');
+        img.src = `/api/foto/${shiftId}/avatar/${p.id}`;
+        img.loading = 'lazy';
+        img.alt = '';
+        circle.appendChild(img);
+        const name = document.createElement('span');
+        name.className = 'foto-ava-name';
+        name.textContent = p.name;
+        el.append(circle, name);
+        el.addEventListener('click', () => selectPerson(p.id));
+        return el;
       }
 
       // ====== Ряд-календарь дней ======
