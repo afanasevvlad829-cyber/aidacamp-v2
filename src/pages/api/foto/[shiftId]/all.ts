@@ -7,6 +7,15 @@ const IMMICH_BASE =
   process.env.IMMICH_BASE_URL || import.meta.env.IMMICH_BASE_URL || 'http://127.0.0.1:2283';
 
 type RawAsset = { id: string; type: 'IMAGE' | 'VIDEO'; fileCreatedAt?: string; fileModifiedAt?: string; createdAt?: string };
+type RawAssetWithType = { id: string; type: 'IMAGE' | 'VIDEO' };
+
+async function resolveTagId(apiKey: string, sceneKey: string): Promise<string | null> {
+  const res = await fetchWithTimeout(`${IMMICH_BASE}/api/tags`, { headers: { 'x-api-key': apiKey } });
+  if (!res.ok) return null;
+  const tags: { id: string; name: string }[] = await res.json();
+  const tag = tags.find((t) => t.name === `scene:${sceneKey}`);
+  return tag?.id ?? null;
+}
 
 /** YYYY-MM-DD по московскому времени (лагерь в Подмосковье — сравниваем даты по его локальному дню, не по UTC). */
 function moscowDateString(d: Date): string {
@@ -28,6 +37,29 @@ export const GET: APIRoute = async ({ params, url }) => {
     const albumId = await getAlbumIdForShift(shiftId);
     if (!albumId) {
       return new Response(JSON.stringify({ ok: false, error: 'Альбом для этой смены не найден в Immich' }), { status: 404 });
+    }
+    const sceneParam = url.searchParams.get('scene');
+    if (sceneParam) {
+      const tagId = await resolveTagId(apiKey, sceneParam);
+      if (!tagId) {
+        return new Response(JSON.stringify({ ok: true, assets: [] }), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      const searchRes = await fetchWithTimeout(`${IMMICH_BASE}/api/search/metadata`, {
+        method: 'POST',
+        headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ albumIds: [albumId], tagIds: [tagId] }),
+      });
+      if (!searchRes.ok) {
+        return new Response(JSON.stringify({ ok: false, error: 'Immich search failed' }), { status: 502 });
+      }
+      const searchData = await searchRes.json();
+      const items: RawAssetWithType[] = searchData.assets?.items ?? [];
+      return new Response(
+        JSON.stringify({ ok: true, assets: items.map((a) => ({ id: a.id, type: a.type })) }),
+        { headers: { 'Content-Type': 'application/json' } },
+      );
     }
     const res = await fetchWithTimeout(`${IMMICH_BASE}/api/albums/${albumId}`, {
       headers: { 'x-api-key': apiKey },
