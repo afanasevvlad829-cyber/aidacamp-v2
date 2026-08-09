@@ -198,6 +198,14 @@ const IT_URLS = new Set([
   // тематически IT, но не входили в кластер, тонули в общем пуле из 125 страниц.
   '/it-lager-dlya-podrostkov',
   '/it-lager-dlya-detey',
+  // Разбор подкластера C 09.08.2026: тематически IT (языки/AI/хакатон для детей),
+  // но сидели в общем "ПРОЧЕЕ" вне какого-либо кластера — ошибка кластеризации,
+  // не проблема силы ссылок. IT_URLS без пиннинга хабов (только ротация), так что
+  // перенос не создаёт риска для чужого пула, как это было бы у PRICE/SEASON/SHAPE.
+  '/python-dlya-detey',
+  '/hakaton-dlya-shkolnikov',
+  '/promt-dlya-neyroseti-dlya-detey',
+  '/scratch-programmirovanie-dlya-detey',
 ]);
 
 /**
