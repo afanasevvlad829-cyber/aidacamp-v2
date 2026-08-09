@@ -414,11 +414,21 @@ const ARTICLE_MAP: Record<string, LandingPage[]> = {
   '/scratch-lager': [
     { title: 'Scratch для детей', description: 'Что такое, с чего начать, возраст', url: '/stati/scratch-dlya-detej/', icon: 'code-slash' },
   ],
+  // python-dlya-detej вместо 3d-modelirovanie-dlya-detej — синхронизация с хардкодом
+  // на живой странице при переводе на getRelatedPages() 09.08.2026 (страница про
+  // Python ссылалась на статью про Python, не про 3D).
   '/python-lager': [
-    { title: '3D-моделирование для детей', description: 'Blender, первые шаги, возраст', url: '/stati/3d-modelirovanie-dlya-detej/', icon: 'box' },
+    { title: 'Python для детей', description: 'С какого возраста и что можно создать', url: '/stati/python-dlya-detej/', icon: 'code-slash' },
   ],
+  // nejroseti-dlya-detej вместо ii-zamenit-programmista — синхронизация с хардкодом
+  // на живой странице (09.08.2026), тот же принцип.
   '/ai-lager': [
-    { title: 'ИИ заменит программистов?', description: 'Разбираем реальные данные', url: '/stati/ii-zamenit-programmista/', icon: 'cpu' },
+    { title: 'Нейросети для детей', description: 'Как дети изучают и применяют AI', url: '/stati/nejroseti-dlya-detej/', icon: 'cpu' },
+  ],
+  // Добавлена 09.08.2026 при переводе roblox-lager на getRelatedPages() — раньше
+  // статья была только в хардкоде страницы, в ARTICLE_MAP отсутствовала.
+  '/roblox-lager': [
+    { title: 'Roblox для детей', description: 'Как превратить интерес к Roblox в создание игр', url: '/stati/roblox-dlya-detej/', icon: 'controller' },
   ],
   '/luchshie-detskie-lagerya': [
     { title: 'Как выбрать IT-лагерь', description: 'Чек-лист и на что смотреть', url: '/stati/kak-vybrat-it-lager/', icon: 'list-check' },
