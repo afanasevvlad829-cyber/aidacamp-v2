@@ -344,6 +344,10 @@ const hasAttribution = !!(lid && t);
     #foto-grid.selecting .foto-cell.selected .foto-select-mark i { display: block; }
     #foto-grid.selecting .foto-cell:not(.selected) img { opacity: 0.78; }
     .foto-cell.selected img { outline: 3px solid #ec9b44; outline-offset: -3px; }
+    .foto-grid-sentinel {
+      height: 1px;
+      break-inside: avoid;
+    }
 
     /* Плавающая панель массовых действий (glass, как .pm-progress-wrap в /p/[lid]) */
     #foto-selbar {
@@ -833,70 +837,110 @@ const hasAttribution = !!(lid && t);
       // ====== Сетка ======
       function clearGrid() { grid.innerHTML = ''; }
 
+      const GRID_BATCH_SIZE = 40;
+      let gridAssets: LbAsset[] = [];
+      let gridRenderedCount = 0;
+      let gridObserver: IntersectionObserver | null = null;
+      let gridSentinel: HTMLElement | null = null;
+
+      function buildGridCell(asset: LbAsset, idx: number): HTMLElement {
+        const cell = document.createElement('div');
+        cell.className = 'foto-cell';
+        cell.dataset.id = asset.id;
+
+        const img = document.createElement('img');
+        img.src = `/api/foto/image/${asset.id}?kind=thumb`;
+        img.loading = 'lazy';
+        img.alt = '';
+        cell.appendChild(img);
+
+        if (asset.type === 'VIDEO') {
+          const badge = document.createElement('span');
+          badge.className = 'foto-video-badge';
+          badge.innerHTML = '<i class="bi bi-play-fill"></i>';
+          cell.appendChild(badge);
+        }
+
+        const mark = document.createElement('span');
+        mark.className = 'foto-select-mark';
+        mark.innerHTML = '<i class="bi bi-check-circle-fill"></i>';
+        cell.appendChild(mark);
+
+        // Долгий тап (500мс) включает режим выбора
+        let pressTimer: ReturnType<typeof setTimeout> | null = null;
+        let startX = 0;
+        let startY = 0;
+        const clearPress = () => {
+          if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+        };
+        cell.addEventListener('pointerdown', (e) => {
+          if (selectionMode) return;
+          longPressActivated = false;
+          startX = e.clientX;
+          startY = e.clientY;
+          clearPress();
+          pressTimer = setTimeout(() => {
+            pressTimer = null;
+            enterSelectionMode();
+            toggleSelect(asset.id, cell);
+            longPressActivated = true;
+            haptic();
+          }, 500);
+        });
+        cell.addEventListener('pointermove', (e) => {
+          if (pressTimer && (Math.abs(e.clientX - startX) > 10 || Math.abs(e.clientY - startY) > 10)) {
+            clearPress();
+          }
+        });
+        cell.addEventListener('pointerup', clearPress);
+        cell.addEventListener('pointerleave', clearPress);
+        cell.addEventListener('pointercancel', clearPress);
+
+        cell.addEventListener('click', () => {
+          if (longPressActivated) { longPressActivated = false; return; }
+          if (selectionMode) { toggleSelect(asset.id, cell); return; }
+          openLightbox(currentAssets, idx);
+        });
+
+        return cell;
+      }
+
+      function renderNextGridBatch() {
+        const start = gridRenderedCount;
+        const end = Math.min(start + GRID_BATCH_SIZE, gridAssets.length);
+        for (let idx = start; idx < end; idx++) {
+          grid.appendChild(buildGridCell(gridAssets[idx], idx));
+        }
+        gridRenderedCount = end;
+
+        if (gridSentinel) {
+          gridSentinel.remove();
+          gridSentinel = null;
+        }
+        if (gridRenderedCount < gridAssets.length) {
+          gridSentinel = document.createElement('div');
+          gridSentinel.className = 'foto-grid-sentinel';
+          grid.appendChild(gridSentinel);
+          if (!gridObserver) {
+            gridObserver = new IntersectionObserver((entries) => {
+              if (entries.some((e) => e.isIntersecting)) renderNextGridBatch();
+            }, { rootMargin: '800px' });
+          }
+          gridObserver.observe(gridSentinel);
+        }
+      }
+
       function renderPhotoGrid(assets: LbAsset[]) {
         exitSelectionMode();
         clearGrid();
-        assets.forEach((asset, idx) => {
-          const cell = document.createElement('div');
-          cell.className = 'foto-cell';
-          cell.dataset.id = asset.id;
-
-          const img = document.createElement('img');
-          img.src = `/api/foto/image/${asset.id}?kind=thumb`;
-          img.loading = 'lazy';
-          img.alt = '';
-          cell.appendChild(img);
-
-          if (asset.type === 'VIDEO') {
-            const badge = document.createElement('span');
-            badge.className = 'foto-video-badge';
-            badge.innerHTML = '<i class="bi bi-play-fill"></i>';
-            cell.appendChild(badge);
-          }
-
-          const mark = document.createElement('span');
-          mark.className = 'foto-select-mark';
-          mark.innerHTML = '<i class="bi bi-check-circle-fill"></i>';
-          cell.appendChild(mark);
-
-          // Долгий тап (500мс) включает режим выбора
-          let pressTimer: ReturnType<typeof setTimeout> | null = null;
-          let startX = 0;
-          let startY = 0;
-          const clearPress = () => {
-            if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
-          };
-          cell.addEventListener('pointerdown', (e) => {
-            if (selectionMode) return;
-            longPressActivated = false;
-            startX = e.clientX;
-            startY = e.clientY;
-            clearPress();
-            pressTimer = setTimeout(() => {
-              pressTimer = null;
-              enterSelectionMode();
-              toggleSelect(asset.id, cell);
-              longPressActivated = true;
-              haptic();
-            }, 500);
-          });
-          cell.addEventListener('pointermove', (e) => {
-            if (pressTimer && (Math.abs(e.clientX - startX) > 10 || Math.abs(e.clientY - startY) > 10)) {
-              clearPress();
-            }
-          });
-          cell.addEventListener('pointerup', clearPress);
-          cell.addEventListener('pointerleave', clearPress);
-          cell.addEventListener('pointercancel', clearPress);
-
-          cell.addEventListener('click', () => {
-            if (longPressActivated) { longPressActivated = false; return; }
-            if (selectionMode) { toggleSelect(asset.id, cell); return; }
-            openLightbox(currentAssets, idx);
-          });
-
-          grid.appendChild(cell);
-        });
+        if (gridObserver) {
+          gridObserver.disconnect();
+          gridObserver = null;
+        }
+        gridSentinel = null;
+        gridAssets = assets;
+        gridRenderedCount = 0;
+        renderNextGridBatch();
         updateDownloadAll();
       }
 
