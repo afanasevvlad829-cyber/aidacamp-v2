@@ -301,6 +301,23 @@ const hasAttribution = !!(lid && t);
       border-radius: 14px;
     }
 
+    /* Бейдж серии (burst) — bottom-left, видео занимает bottom-right */
+    .foto-burst-badge {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      background: rgba(236, 155, 68, 0.92);
+      color: #0d1a2b;
+      border: none;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      line-height: 1;
+      font-family: inherit;
+    }
+
     /* Видео-бейдж поверх превью (акцент #ec9b44) */
     .foto-video-badge {
       position: absolute;
@@ -608,7 +625,7 @@ const hasAttribution = !!(lid && t);
 
       const toastEl = document.getElementById('foto-toast')!;
 
-      type LbAsset = { id: string; type: 'IMAGE' | 'VIDEO' };
+      type LbAsset = { id: string; type: 'IMAGE' | 'VIDEO'; extraIds?: string[] };
       type Person = { id: string; name: string; count: number };
 
       const SCENE_LABELS: Record<string, { label: string; icon: string }> = {
@@ -788,7 +805,8 @@ const hasAttribution = !!(lid && t);
       }
 
       downloadAllBtn.addEventListener('click', () => {
-        runZip(currentAssets.map((a) => a.id), downloadAllBtn, false);
+        const allIds = currentAssets.flatMap((a) => [a.id, ...(a.extraIds ?? [])]);
+        runZip(allIds, downloadAllBtn, false);
       });
       selZipBtn.addEventListener('click', () => runZip([...selectedIds], selZipBtn, false));
       selShareBtn.addEventListener('click', () => runZip([...selectedIds], selShareBtn, true));
@@ -798,8 +816,9 @@ const hasAttribution = !!(lid && t);
       function updateDownloadAll() {
         const show = !selectionMode && currentAssets.length > 0;
         downloadAllBtn.classList.toggle('show', show);
+        const totalCount = currentAssets.reduce((n, a) => n + 1 + (a.extraIds?.length ?? 0), 0);
         const label = document.getElementById('foto-download-all-label');
-        if (label) label.textContent = `Скачать всё (${currentAssets.length} фото)`;
+        if (label) label.textContent = `Скачать всё (${totalCount} фото)`;
       }
       function updateSelbar() {
         selbar.classList.toggle('open', selectionMode);
@@ -859,6 +878,20 @@ const hasAttribution = !!(lid && t);
           badge.className = 'foto-video-badge';
           badge.innerHTML = '<i class="bi bi-play-fill"></i>';
           cell.appendChild(badge);
+        }
+
+        if (asset.extraIds && asset.extraIds.length > 0) {
+          const burstBadge = document.createElement('button');
+          burstBadge.type = 'button';
+          burstBadge.className = 'foto-burst-badge';
+          burstBadge.textContent = `+${asset.extraIds.length}`;
+          burstBadge.setAttribute('aria-label', `Показать ещё ${asset.extraIds.length} похожих фото`);
+          burstBadge.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const burstAssets: LbAsset[] = [{ id: asset.id, type: asset.type }, ...asset.extraIds!.map((id) => ({ id, type: asset.type }))];
+            openLightbox(burstAssets, 0);
+          });
+          cell.appendChild(burstBadge);
         }
 
         const mark = document.createElement('span');
