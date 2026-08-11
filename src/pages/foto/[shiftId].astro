@@ -41,6 +41,21 @@ const hasAttribution = !!(lid && t);
       margin: 0 0 6px;
     }
 
+    .foto-fan-badge {
+      display: none;
+      margin-left: 10px;
+      vertical-align: middle;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(236, 155, 68, 0.16);
+      color: #ec9b44;
+      border: 1px solid rgba(236, 155, 68, 0.35);
+      border-radius: 999px;
+      padding: 5px 12px;
+      white-space: nowrap;
+    }
+    .foto-fan-badge.show { display: inline-block; }
+
     #foto-status {
       color: rgba(255, 255, 255, 0.7);
       font-size: 14px;
@@ -405,6 +420,31 @@ const hasAttribution = !!(lid && t);
     .foto-selbar-btn.ghost { background: rgba(255, 255, 255, 0.1); color: #fff; }
     .foto-selbar-btn:disabled { opacity: 0.5; cursor: default; }
 
+    #foto-fan-toast {
+      position: fixed;
+      left: 50%;
+      top: 16px;
+      transform: translateX(-50%) translateY(-20px);
+      background: #0d1a2b;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 12px 32px rgba(13, 26, 43, 0.5);
+      border: 1px solid rgba(236, 155, 68, 0.35);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s, transform 0.3s;
+      z-index: 10001;
+      max-width: calc(100vw - 32px);
+      text-align: center;
+    }
+    #foto-fan-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
     /* Toast */
     #foto-toast {
       position: fixed;
@@ -551,6 +591,7 @@ const hasAttribution = !!(lid && t);
     {shift && (
       <>
         <h1>{shift.dates}</h1>
+        <span id="foto-fan-badge" class="foto-fan-badge"></span>
         <div id="foto-avatars"></div>
         <div id="foto-days"></div>
         <div id="foto-scenes"></div>
@@ -587,6 +628,7 @@ const hasAttribution = !!(lid && t);
   </div>
 
   <div id="foto-toast"></div>
+  <div id="foto-fan-toast"></div>
 
   <script>
     import { CAMP_STAFF_NAMES } from '../../data/campStaff';
@@ -624,6 +666,8 @@ const hasAttribution = !!(lid && t);
       const selCancelBtn = document.getElementById('foto-sel-cancel') as HTMLButtonElement;
 
       const toastEl = document.getElementById('foto-toast')!;
+      const fanToastEl = document.getElementById('foto-fan-toast')!;
+      const fanBadgeEl = document.getElementById('foto-fan-badge')!;
 
       type LbAsset = { id: string; type: 'IMAGE' | 'VIDEO'; extraIds?: string[] };
       type Person = { id: string; name: string; count: number };
@@ -659,6 +703,67 @@ const hasAttribution = !!(lid && t);
         toastEl.classList.add('show');
         clearTimeout(toastTimer);
         toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2200);
+      }
+
+      let fanToastTimer: ReturnType<typeof setTimeout> | undefined;
+      function fanToast(msg: string) {
+        fanToastEl.textContent = msg;
+        fanToastEl.classList.add('show');
+        clearTimeout(fanToastTimer);
+        fanToastTimer = setTimeout(() => fanToastEl.classList.remove('show'), 3500);
+      }
+
+      function fanTierLabel(count: number): string | null {
+        if (count >= 10) return 'Легенда смены 🏆';
+        if (count >= 5) return 'Фанат смены 🧡';
+        if (count >= 2) return 'Постоянный зритель 👀';
+        return null;
+      }
+
+      function updateFanBadge(count: number) {
+        const label = fanTierLabel(count);
+        if (label) {
+          fanBadgeEl.textContent = label;
+          fanBadgeEl.classList.add('show');
+        } else {
+          fanBadgeEl.classList.remove('show');
+        }
+      }
+
+      function trackFanVisit() {
+        const countKey = 'foto_visit_count_' + shiftId;
+        const dateKey = 'foto_last_visit_date_' + shiftId;
+        const todayCountKey = 'foto_today_count_' + shiftId;
+
+        let count = 1;
+        let todayCount = 1;
+        try {
+          count = parseInt(localStorage.getItem(countKey) || '0', 10) + 1;
+          localStorage.setItem(countKey, String(count));
+
+          const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Moscow' }).format(new Date());
+          const lastDate = localStorage.getItem(dateKey);
+          if (lastDate === today) {
+            todayCount = parseInt(localStorage.getItem(todayCountKey) || '1', 10) + 1;
+          }
+          localStorage.setItem(dateKey, today);
+          localStorage.setItem(todayCountKey, String(todayCount));
+        } catch {
+          // localStorage недоступен (приватный режим и т.п.) — просто не показываем фичу
+          return;
+        }
+
+        if (todayCount === 2) {
+          fanToast('Сегодня уже второй раз — новые фото ждёте?');
+        } else if (count === 2) {
+          fanToast('О, вы снова здесь! Похоже, вы наш фанат 🧡');
+        } else if (count === 5) {
+          fanToast('Вы точно не пропускаете ни одного кадра');
+        } else if (count === 10) {
+          fanToast('Вы официально самый преданный зритель этой смены');
+        }
+
+        updateFanBadge(count);
       }
 
       // ====== Лайтбокс ======
@@ -1391,6 +1496,7 @@ const hasAttribution = !!(lid && t);
       }
 
       async function init() {
+        trackFanVisit();
         setStatus('Загружаю…');
         const people = await loadPeopleData();
         buildAvatars(people);
