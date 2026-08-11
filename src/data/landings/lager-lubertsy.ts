@@ -4,8 +4,8 @@ import { otzyvyLink, yandexReviewsLink } from '../../lib/reviews-link';
 
 const landing: LandingData = {
   slug: 'lager-lubertsy',
-  title: `Летний детский лагерь рядом с Люберцами ${SEASON_YEAR} — IT-смены и активный отдых для школьников | АйДаКемп`,
-  description: `Летний IT-лагерь рядом с Люберцами: ~1 ч 15 мин по Киевскому шоссе, трансфер от м. Солнцево. Python, AI, Minecraft, 7–15 лет. От ${PRICE_MIN}, лицензия Минобрнауки — 13% налоговый вычет.`,
+  title: `Летний детский лагерь рядом с Люберцами ${SEASON_YEAR} — IT-смены и активный отдых для школьников 7–15 лет | АйДаКемп`,
+  description: `Летний IT-лагерь рядом с Люберцами: ~1 ч 15 мин по Киевскому шоссе, трансфер от м. Солнцево. Python, AI, Minecraft, 7–15 лет. Бассейн, 5-разовое питание, медработник 24/7. От ${PRICE_MIN}, лицензия Минобрнауки — 13% налоговый вычет.`,
   h1: 'Летний лагерь рядом с Люберцами',
   canonical: 'https://aidacamp.ru/lager-lubertsy',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
