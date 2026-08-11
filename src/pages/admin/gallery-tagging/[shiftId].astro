@@ -63,6 +63,30 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
 
   function setStatus(text) { status.textContent = text; }
 
+  // Дубликат логики из src/data/nameSortOverrides.ts — этот скрипт inline
+  // (define:vars), import сюда не работает. Правишь сортировку на публичной
+  // странице — не забудь поправить и здесь тоже.
+  const SHIFT_NAME_ORDER = {
+    'shift-1': 'firstname-first',
+    'shift-2': 'firstname-first',
+    'shift-3': 'surname-first',
+  };
+  const NAME_SORT_OVERRIDES = {
+    'Александр Сытик': 'Сытик Александр',
+    'Данила Рогов': 'Рогов Данила',
+    'Григорьева Людмила': 'Григорьева Людмила',
+    'Вуколов Петр': 'Вуколов Петр',
+  };
+  function surnameSortKey(name, forShiftId) {
+    if (name in NAME_SORT_OVERRIDES) return NAME_SORT_OVERRIDES[name];
+    const order = SHIFT_NAME_ORDER[forShiftId] || 'surname-first';
+    if (order === 'firstname-first') {
+      const parts = name.trim().split(/\s+/);
+      if (parts.length === 2) return `${parts[1]} ${parts[0]}`;
+    }
+    return name;
+  }
+
   async function loadUnsorted() {
     setStatus('Загружаю неразобранные фото…');
     const res = await fetch(`/api/foto/${shiftId}/unsorted`);
@@ -70,7 +94,9 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
     if (!data.ok) { setStatus(data.error); return; }
     grid.innerHTML = '';
     const groups = data.groups;
-    const people = data.people;
+    const people = [...data.people].sort((a, b) =>
+      surnameSortKey(a.name, shiftId).localeCompare(surnameSortKey(b.name, shiftId), 'ru'),
+    );
     const totalFaces = groups.reduce((n, g) => n + g.faces.length, 0);
     setStatus(`Неразобранных лиц: ${totalFaces} на ${groups.length} фото`);
 
