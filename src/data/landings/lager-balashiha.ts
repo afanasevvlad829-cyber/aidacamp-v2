@@ -7,7 +7,7 @@ const landing: LandingData = {
   slug: 'lager-balashiha',
   title: `Детский IT-лагерь в Балашихе ${SEASON_YEAR} | АйДаКемп`,
   description: `Летний детский IT-лагерь для школьников из Балашихи: трансфер от м. Солнцево (${TRANSFER_PRICE_FMT}), налоговый вычет. Python, AI, Minecraft, 7–15 лет.`,
-  h1: 'Летний детский лагерь рядом с Балашихой',
+  h1: 'Детский лагерь рядом с Балашихой',
   canonical: 'https://aidacamp.ru/lager-balashiha',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
   faqItems: [

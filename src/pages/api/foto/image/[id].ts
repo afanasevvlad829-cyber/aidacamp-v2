@@ -28,12 +28,16 @@ export const GET: APIRoute = async ({ params, url }) => {
       15000,
     );
     if (!res.ok || !res.body) return new Response('Immich fetch failed', { status: 502 });
-    return new Response(res.body, {
-      headers: {
-        'Content-Type': res.headers.get('Content-Type') || 'image/jpeg',
-        'Cache-Control': 'public, max-age=3600',
-      },
-    });
+    const contentType = res.headers.get('Content-Type') || 'image/jpeg';
+    const headers: Record<string, string> = {
+      'Content-Type': contentType,
+      'Cache-Control': 'public, max-age=3600',
+    };
+    if (url.searchParams.get('download') === '1') {
+      const ext = contentType.includes('video') ? 'mp4' : contentType.includes('png') ? 'png' : 'jpg';
+      headers['Content-Disposition'] = `attachment; filename="foto-${id}.${ext}"`;
+    }
+    return new Response(res.body, { headers });
   } catch (e) {
     return new Response(String(e), { status: 500 });
   }

@@ -114,6 +114,7 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь рядом с Обнинском', description: 'Лагерь программирования', url: '/lager-obnisk/', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Фрязево', description: 'Летний детский IT-лагерь', url: '/lager-fryazevo/', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с домом', description: 'Как найти лагерь ближе к вам в Подмосковье', url: '/lager-ryadom/', icon: 'bi-geo-alt' },
+  { title: 'Лагерь для петербуржцев', description: 'Компенсируем дорогу, встречаем в Москве', url: '/lager-iz-peterburga/', icon: 'bi-geo-alt-fill' },
 
   // 💰 Коммерческие
   { title: 'Записаться в лагерь', description: 'Как записать ребёнка в IT-лагерь', url: '/zapisatsya/', icon: 'bi-calendar-check' },
@@ -154,6 +155,7 @@ export const landingPages: LandingPage[] = [
   { title: 'Python для детей', description: 'С нуля до первого проекта', url: '/python-dlya-detey/', icon: 'bi-code-slash' },
   { title: 'Что взять в лагерь на 21 день', description: 'Полный чек-лист вещей', url: '/chto-vzyat-v-lager-na-21/', icon: 'bi-bag-check' },
   { title: 'Справка 079/у для лагеря', description: 'Где получить, образец, срок действия', url: '/stati/spravki-dlya-lagera/', icon: 'bi-clipboard-check' },
+  { title: 'Периоды смены в лагере', description: 'Первая, вторая, третья — чем отличаются', url: '/stati/periody-smeny-v-lagere/', icon: 'bi-calendar-range' },
 
   // 🎨 Прочее
   { title: 'Пионерский лагерь', description: 'Современный аналог — IT-смены 2026', url: '/pionerskiy-lager/', icon: 'bi-flag-fill' },
@@ -193,6 +195,18 @@ const IT_URLS = new Set([
   // и получала inbound только от 1-2 генеральных страниц (SEO-аудит Labrika 25.07:
   // 2 входящих). Тематически это IT-кластер (IT-программа + проживание).
   '/it-lager-s-prozhivaniem',
+  // Симуляция графа перелинковки 09.08.2026: 0 и 1 входящая ссылка соответственно —
+  // тематически IT, но не входили в кластер, тонули в общем пуле из 125 страниц.
+  '/it-lager-dlya-podrostkov',
+  '/it-lager-dlya-detey',
+  // Разбор подкластера C 09.08.2026: тематически IT (языки/AI/хакатон для детей),
+  // но сидели в общем "ПРОЧЕЕ" вне какого-либо кластера — ошибка кластеризации,
+  // не проблема силы ссылок. IT_URLS без пиннинга хабов (только ротация), так что
+  // перенос не создаёт риска для чужого пула, как это было бы у PRICE/SEASON/SHAPE.
+  '/python-dlya-detey',
+  '/hakaton-dlya-shkolnikov',
+  '/promt-dlya-neyroseti-dlya-detey',
+  '/scratch-programmirovanie-dlya-detey',
 ]);
 
 /**
@@ -273,6 +287,97 @@ const AGE_URLS = new Set([
 ]);
 
 /**
+ * Ценовые/финансовые страницы. Хабы /lager-nedorogo + /ceny приколоты первыми.
+ * Разбор графа перелинковки 09.08.2026: у этого подкластера, в отличие от GEO/AGE,
+ * не было механизма усиления хаба вообще — 179 у lager-nedorogo и 1 у
+ * detskie-lagerya-v-podmoskove-tseny-2026 (Wordstat, кавычки) получали одинаковый
+ * вес — 5-6 inbound независимо от частотности.
+ */
+const PRICE_URLS = new Set([
+  '/ceny',
+  '/lager-nedorogo',
+  '/nalogovyj-vychet',
+  '/kompensatsiya-za-detskiy-lager-v-moskve',
+  '/putevka-v-lager',
+  '/putyovki-v-lager-2026',
+  '/detskie-lagerya-v-podmoskove-tseny-2026',
+]);
+
+/**
+ * Гео-страницы общего охвата (не привязаны к одному городу — в отличие от GEO_URLS).
+ * Хаб /lagerya-v-gorode-moskva (172, Wordstat) приколот первым. Второй хаб —
+ * ВНЕШНИЙ /lager-v-podmoskove (уже готовый хаб GEO-кластера): по смыслу эти
+ * страницы — общие гео-ключи без привязки к городу, отдельный внутренний второй
+ * хаб был бы искусственным (следующая по частотности страница здесь — 17).
+ */
+const GEO_GENERIC_URLS = new Set([
+  '/lagerya-v-gorode-moskva',
+  '/nazvanie-lagerey-v-moskve',
+  '/podmoskovnye-lagerya-dlya-detey',
+  '/lager-dlya-rebenka-v-gorode',
+  '/detskiy-otdyh-podmoskove',
+  '/detskiy-lager-istra-moskovskaya-oblast',
+]);
+
+/**
+ * Головные родовые ключи. Хабы /luchshie-detskie-lagerya (263) + /detskie-lagerya
+ * (154, Wordstat) — самые частотные в подкластере. /detskiy-lager остаётся членом
+ * подкластера, но НЕ целью пиннинга здесь: он уже пин-хаб для всех GEO (40 стр.)
+ * и AGE (16 стр.) с 62 входящими — пинить его повторно из этого подкластера
+ * означало бы тратить вес на уже перекормленную страницу.
+ */
+const HEAD_URLS = new Set([
+  '/detskiy-lager',
+  '/detskiy-lager-oficialnyj',
+  '/lager-letnego-prebyvaniya',
+  '/ozdorovitelnyj-lager',
+  '/zagorodnyj-lager',
+  '/luchshie-detskie-lagerya',
+  '/detskie-lagerya',
+  '/proverennyj-lager',
+]);
+
+/**
+ * Сезонные страницы (когда ехать). Хабы /lager-na-leto-2026 (482) + /lager-na-nedelyu
+ * (71, Wordstat) — та же форма частотности, что у B/D/F: явный лидер + резкий обрыв
+ * к хвосту (10-dney=26, дальше 0-19). Добавлен по факту прогона симуляции 09.08.2026:
+ * без пиннинга сжатие общего пула (после выноса B/D/F) обнулило /lager-na-leto-2026 —
+ * самую частотную страницу во всём «ПРОЧЕЕ» — и просадило соседей по подкластеру.
+ */
+const SEASON_URLS = new Set([
+  '/lager-na-leto-2026',
+  '/lager-na-nedelyu',
+  '/lager-10-dney',
+  '/lager-na-avgust-podmoskove',
+  '/lager-na-osennie-kanikuly',
+  '/lager-letom',
+  '/lager-na-kanikuly',
+  '/lager-na-iyul',
+  '/lager-na-iyun',
+  '/lager-na-vesennie-kanikuly',
+  '/lager-na-zimnie-kanikuly',
+]);
+
+/**
+ * Формат/фишки программы. Хабы /lager-s-basseynom (92) + /pionerskiy-lager (73,
+ * Wordstat) — та же форма частотности, что у B/D/F/SEASON: 2 лидера, резкий обрыв
+ * к хвосту (28 и ниже). Найден по факту повторной симуляции 09.08.2026: после
+ * добавления SEASON_URLS /lager-s-basseynom (уже был в HOMEPAGE_HUB_URLS) обнулился
+ * в общем графе — тот же класс регрессии, что и у /lager-na-leto-2026 чуть раньше.
+ */
+const SHAPE_URLS = new Set([
+  '/lager-s-basseynom',
+  '/pionerskiy-lager',
+  '/lager-bez-telefonov',
+  '/detox-ot-telefona',
+  '/lager-s-angliyskim-yazykom-v-podmoskove',
+  '/tematicheskiy-lager',
+  '/obrazovatelnyy-lager',
+  '/letnyj-shkolnyj-lager',
+  '/dlya-kompaniy',
+]);
+
+/**
  * Статьи-блог, которые нужно показывать в блоке RelatedPages на конкретных лендингах.
  * Ключ — нормализованный URL лендинга, значение — список статей (до 2 штук).
  * Статьи вставляются в конец результата getRelatedPages и дают им хотя бы 1 inbound link.
@@ -318,11 +423,21 @@ const ARTICLE_MAP: Record<string, LandingPage[]> = {
   '/scratch-lager': [
     { title: 'Scratch для детей', description: 'Что такое, с чего начать, возраст', url: '/stati/scratch-dlya-detej/', icon: 'code-slash' },
   ],
+  // python-dlya-detej вместо 3d-modelirovanie-dlya-detej — синхронизация с хардкодом
+  // на живой странице при переводе на getRelatedPages() 09.08.2026 (страница про
+  // Python ссылалась на статью про Python, не про 3D).
   '/python-lager': [
-    { title: '3D-моделирование для детей', description: 'Blender, первые шаги, возраст', url: '/stati/3d-modelirovanie-dlya-detej/', icon: 'box' },
+    { title: 'Python для детей', description: 'С какого возраста и что можно создать', url: '/stati/python-dlya-detej/', icon: 'code-slash' },
   ],
+  // nejroseti-dlya-detej вместо ii-zamenit-programmista — синхронизация с хардкодом
+  // на живой странице (09.08.2026), тот же принцип.
   '/ai-lager': [
-    { title: 'ИИ заменит программистов?', description: 'Разбираем реальные данные', url: '/stati/ii-zamenit-programmista/', icon: 'cpu' },
+    { title: 'Нейросети для детей', description: 'Как дети изучают и применяют AI', url: '/stati/nejroseti-dlya-detej/', icon: 'cpu' },
+  ],
+  // Добавлена 09.08.2026 при переводе roblox-lager на getRelatedPages() — раньше
+  // статья была только в хардкоде страницы, в ARTICLE_MAP отсутствовала.
+  '/roblox-lager': [
+    { title: 'Roblox для детей', description: 'Как превратить интерес к Roblox в создание игр', url: '/stati/roblox-dlya-detej/', icon: 'controller' },
   ],
   '/luchshie-detskie-lagerya': [
     { title: 'Как выбрать IT-лагерь', description: 'Чек-лист и на что смотреть', url: '/stati/kak-vybrat-it-lager/', icon: 'list-check' },
@@ -362,8 +477,12 @@ function globalHash(s: string, len: number): number {
  * разные страницы показывают разные срезы → входящие ссылки распределяются равномерно
  * по всему кластеру, а не копятся на первых 6 элементах массива (SEO-аудит: было
  * 116 посадочных с <5 входящих — «хвост» кластеров голодал из-за фикс. slice(0,N)).
- * Хабы (/lager-v-podmoskove, /detskiy-lager, /lager-dlya-podrostkov) остаются
- * приколоты первыми — им высокая входящая связность нужна намеренно.
+ * Хабы (/lager-v-podmoskove, /detskiy-lager, /lager-dlya-podrostkov — GEO/AGE;
+ * /lager-nedorogo, /ceny — PRICE_URLS; /lagerya-v-gorode-moskva — GEO_GENERIC_URLS;
+ * /luchshie-detskie-lagerya, /detskie-lagerya — HEAD_URLS; /lager-na-leto-2026,
+ * /lager-na-nedelyu — SEASON_URLS; /lager-s-basseynom, /pionerskiy-lager —
+ * SHAPE_URLS) остаются приколоты первыми — им высокая входящая связность
+ * нужна намеренно.
  * В конец результата добавляются релевантные статьи из ARTICLE_MAP.
  *
  * @param currentUrl URL текущей страницы (без протокола/хоста), например "/minecraft-lager"
@@ -418,6 +537,46 @@ export function getRelatedPages(currentUrl: string, count: number = 6): LandingP
     const agePages = evenPool((u) => AGE_URLS.has(u), ['/detskiy-lager', '/lager-dlya-podrostkov']);
     const rest = evenPool((u) => !AGE_URLS.has(u), ['/detskiy-lager', '/lager-dlya-podrostkov']);
     base = [...priority, ...agePages, ...rest].slice(0, landingCount);
+  }
+  // Ценовая страница → хабы /lager-nedorogo + /ceny приколоты, дальше ценовые и общие
+  else if (PRICE_URLS.has(normalized)) {
+    const priority = [findPage('/lager-nedorogo'), findPage('/ceny')]
+      .filter((p): p is LandingPage => !!p && norm(p.url) !== normalized);
+    const pricePages = evenPool((u) => PRICE_URLS.has(u), ['/lager-nedorogo', '/ceny']);
+    const rest = evenPool((u) => !PRICE_URLS.has(u), ['/lager-nedorogo', '/ceny']);
+    base = [...priority, ...pricePages, ...rest].slice(0, landingCount);
+  }
+  // Гео-страница общего охвата → /lagerya-v-gorode-moskva + /lager-v-podmoskove приколоты
+  else if (GEO_GENERIC_URLS.has(normalized)) {
+    const priority = [findPage('/lagerya-v-gorode-moskva'), findPage('/lager-v-podmoskove')]
+      .filter((p): p is LandingPage => !!p && norm(p.url) !== normalized);
+    const geoGenericPages = evenPool((u) => GEO_GENERIC_URLS.has(u), ['/lagerya-v-gorode-moskva', '/lager-v-podmoskove']);
+    const rest = evenPool((u) => !GEO_GENERIC_URLS.has(u), ['/lagerya-v-gorode-moskva', '/lager-v-podmoskove']);
+    base = [...priority, ...geoGenericPages, ...rest].slice(0, landingCount);
+  }
+  // Головная родовая страница → /luchshie-detskie-lagerya + /detskie-lagerya приколоты
+  else if (HEAD_URLS.has(normalized)) {
+    const priority = [findPage('/luchshie-detskie-lagerya'), findPage('/detskie-lagerya')]
+      .filter((p): p is LandingPage => !!p && norm(p.url) !== normalized);
+    const headPages = evenPool((u) => HEAD_URLS.has(u), ['/luchshie-detskie-lagerya', '/detskie-lagerya']);
+    const rest = evenPool((u) => !HEAD_URLS.has(u), ['/luchshie-detskie-lagerya', '/detskie-lagerya']);
+    base = [...priority, ...headPages, ...rest].slice(0, landingCount);
+  }
+  // Сезонная страница → /lager-na-leto-2026 + /lager-na-nedelyu приколоты
+  else if (SEASON_URLS.has(normalized)) {
+    const priority = [findPage('/lager-na-leto-2026'), findPage('/lager-na-nedelyu')]
+      .filter((p): p is LandingPage => !!p && norm(p.url) !== normalized);
+    const seasonPages = evenPool((u) => SEASON_URLS.has(u), ['/lager-na-leto-2026', '/lager-na-nedelyu']);
+    const rest = evenPool((u) => !SEASON_URLS.has(u), ['/lager-na-leto-2026', '/lager-na-nedelyu']);
+    base = [...priority, ...seasonPages, ...rest].slice(0, landingCount);
+  }
+  // Страница формата/фишек → /lager-s-basseynom + /pionerskiy-lager приколоты
+  else if (SHAPE_URLS.has(normalized)) {
+    const priority = [findPage('/lager-s-basseynom'), findPage('/pionerskiy-lager')]
+      .filter((p): p is LandingPage => !!p && norm(p.url) !== normalized);
+    const shapePages = evenPool((u) => SHAPE_URLS.has(u), ['/lager-s-basseynom', '/pionerskiy-lager']);
+    const rest = evenPool((u) => !SHAPE_URLS.has(u), ['/lager-s-basseynom', '/pionerskiy-lager']);
+    base = [...priority, ...shapePages, ...rest].slice(0, landingCount);
   }
   else {
     // Общие (коммерч./сезон.) страницы — равномерно по всему пулу

@@ -59,7 +59,7 @@ export interface FaceBox {
 export interface NamedPerson {
   id: string;
   name: string;
-  assetIds: { id: string; type: 'IMAGE' | 'VIDEO' }[];
+  assetIds: { id: string; type: 'IMAGE' | 'VIDEO'; box: FaceBox }[];
 }
 export interface UnsortedAssetGroup {
   assetId: string;
@@ -146,13 +146,13 @@ export async function getAlbumFaceIndex(albumId: string): Promise<FaceIndex> {
             const existing = peopleMap.get(face.person!.id);
             if (existing) {
               if (!existing.assetIds.some((a) => a.id === assetId)) {
-                existing.assetIds.push({ id: assetId, type: assetType });
+                existing.assetIds.push({ id: assetId, type: assetType, box });
               }
             } else {
               peopleMap.set(face.person!.id, {
                 id: face.person!.id,
                 name: face.person!.name,
-                assetIds: [{ id: assetId, type: assetType }],
+                assetIds: [{ id: assetId, type: assetType, box }],
               });
             }
             const group = groupsMap.get(assetId);
@@ -205,4 +205,66 @@ export async function tagFace(faceId: string, personId: string): Promise<void> {
     15000,
   );
   if (!res.ok) throw new Error(`Immich tag face ${faceId}: ${res.status}`);
+}
+
+function faceBoxArea(box: FaceBox): number {
+  const w = box.width > 0 ? box.width : 1;
+  const h = box.height > 0 ? box.height : 1;
+  return ((box.x2 - box.x1) * (box.y2 - box.y1)) / (w * h);
+}
+
+/**
+ * Лучшее появление ребёнка для аватарки — где face-box занимает наибольшую
+ * площадь кадра (крупный, чёткий, близкий портрет), а не то, что выбрал сам
+ * Immich (иногда берёт дальний/размытый кадр).
+ */
+export function getBestFaceForPerson(
+  person: NamedPerson,
+): { assetId: string; box: FaceBox } | null {
+  if (person.assetIds.length === 0) return null;
+  let best = person.assetIds[0];
+  let bestArea = faceBoxArea(best.box);
+  for (const a of person.assetIds.slice(1)) {
+    const area = faceBoxArea(a.box);
+    if (area > bestArea) {
+      best = a;
+      bestArea = area;
+    }
+  }
+  return { assetId: best.id, box: best.box };
+}
+
+/**
+ * Квадратная область для кропа аватарки вокруг лица, с отступом ×2.2 от
+ * большей стороны бокса (влезают волосы/плечи, не только глаза-нос-рот),
+ * зажатая в границы imgW×imgH. box в координатах ОРИГИНАЛЬНОЙ картинки
+ * (box.width/box.height = полные исходные размеры) — функция сама
+ * пересчитывает координаты в пространство переданных imgW/imgH, потому что
+ * кропаем чаще всего из уменьшенного Immich-превью, не из оригинала.
+ */
+export function computeAvatarCrop(
+  box: FaceBox,
+  imgW: number,
+  imgH: number,
+): { left: number; top: number; size: number } {
+  const scaleX = imgW / box.width;
+  const scaleY = imgH / box.height;
+
+  const faceW = (box.x2 - box.x1) * scaleX;
+  const faceH = (box.y2 - box.y1) * scaleY;
+  const cx = ((box.x1 + box.x2) / 2) * scaleX;
+  const cy = ((box.y1 + box.y2) / 2) * scaleY;
+
+  const MARGIN = 2.2;
+  const side = Math.max(faceW, faceH) * MARGIN;
+
+  let left = Math.round(cx - side / 2);
+  let top = Math.round(cy - side / 2);
+  let size = Math.round(side);
+
+  left = Math.max(0, Math.min(left, imgW - 1));
+  top = Math.max(0, Math.min(top, imgH - 1));
+  size = Math.max(1, Math.min(size, imgW - left, imgH - top));
+
+  return { left, top, size };
 }

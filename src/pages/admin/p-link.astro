@@ -1,6 +1,7 @@
 ---
 export const prerender = false;
 import { signLid } from '../../lib/leadLink';
+import { allShiftsIncludingArchived } from '../../data/shifts';
 
 const adminKey = process.env.ADMIN_KEY || '';
 const provided = Astro.url.searchParams.get('key') || Astro.request.headers.get('x-admin-key') || '';
@@ -13,6 +14,12 @@ const lidQuery = Astro.url.searchParams.get('lid');
 const lidNum = lidQuery ? Number(lidQuery) : null;
 const valid = lidNum !== null && Number.isInteger(lidNum) && lidNum > 0 && lidNum < 9999999;
 const url = valid ? `https://aidacamp.ru/p/${lidNum}?t=${signLid(lidNum)}` : '';
+
+const shiftIdQuery = Astro.url.searchParams.get('shiftId') || '';
+const fotoUrl =
+  valid && shiftIdQuery
+    ? `https://aidacamp.ru/foto/${shiftIdQuery}?lid=${lidNum}&t=${signLid(lidNum)}`
+    : '';
 ---
 <!doctype html>
 <html lang="ru">
@@ -27,7 +34,7 @@ const url = valid ? `https://aidacamp.ru/p/${lidNum}?t=${signLid(lidNum)}` : '';
   h1{font-size:22px;margin:0 0 18px;font-weight:900;letter-spacing:-.5px}
   .hint{color:#5e6878;font-size:14px;margin-bottom:20px;line-height:1.5}
   form{display:flex;gap:8px;margin-bottom:18px}
-  input{flex:1;padding:12px 14px;font-size:16px;border:1.5px solid #cfcab8;border-radius:10px;background:#fff;font-family:inherit}
+  input, select{flex:1;padding:12px 14px;font-size:16px;border:1.5px solid #cfcab8;border-radius:10px;background:#fff;font-family:inherit}
   input:focus{outline:none;border-color:#ec9b44}
   button{padding:12px 20px;font-size:15px;font-weight:800;background:#ec9b44;color:#0d1a2b;border:none;border-radius:10px;cursor:pointer;font-family:inherit}
   button:hover{background:#f7b96a}
@@ -47,6 +54,12 @@ const url = valid ? `https://aidacamp.ru/p/${lidNum}?t=${signLid(lidNum)}` : '';
   <form method="get">
     <input type="hidden" name="key" value={provided} />
     <input type="text" name="lid" value={lidQuery || ''} placeholder="например, 12345" inputmode="numeric" pattern="[0-9]*" autofocus />
+    <select name="shiftId">
+      <option value="">— смена (для ссылки на фото) —</option>
+      {allShiftsIncludingArchived.map((s) => (
+        <option value={s.id} selected={s.id === shiftIdQuery}>{s.name}</option>
+      ))}
+    </select>
     <button type="submit">Сгенерировать</button>
   </form>
 
@@ -57,6 +70,14 @@ const url = valid ? `https://aidacamp.ru/p/${lidNum}?t=${signLid(lidNum)}` : '';
       <div class="result-lbl">Ссылка для клиента №{lidNum}</div>
       <div class="result-url" id="url">{url}</div>
       <button class="copy-btn" onclick={`navigator.clipboard.writeText(${JSON.stringify(url)});this.textContent='✓ Скопировано'`}>Копировать</button>
+    </div>
+  )}
+
+  {fotoUrl && (
+    <div class="result">
+      <div class="result-lbl">Ссылка на фото смены для клиента №{lidNum}</div>
+      <div class="result-url" id="foto-url">{fotoUrl}</div>
+      <button class="copy-btn" onclick={`navigator.clipboard.writeText(${JSON.stringify(fotoUrl)});this.textContent='✓ Скопировано'`}>Копировать</button>
     </div>
   )}
 </div>

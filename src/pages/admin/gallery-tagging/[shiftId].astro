@@ -1,0 +1,229 @@
+---
+export const prerender = false;
+import { allShiftsIncludingArchived } from '../../../data/shifts';
+
+const adminKey = process.env.ADMIN_KEY || '';
+const provided = Astro.url.searchParams.get('key') || Astro.request.headers.get('x-admin-key') || '';
+if (!adminKey || provided !== adminKey) {
+  return new Response('Forbidden', { status: 403 });
+}
+
+const { shiftId } = Astro.params;
+const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
+---
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex,nofollow" />
+<title>Разметка лиц — {shift ? shift.name : shiftId} — admin</title>
+<link rel="stylesheet" href="/styles/icons.css" />
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  body{margin:0;padding:20px 16px 60px;font-family:'Inter',-apple-system,sans-serif;background:#f7f5f0;color:#0d1a2b}
+  .wrap{max-width:720px;margin:0 auto}
+  h1{font-size:20px;margin:0 0 6px;font-weight:900}
+  .shift-nav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+  .shift-nav a{font-size:12px;padding:5px 10px;border-radius:8px;background:#fff;border:1px solid #ebe7d8;text-decoration:none;color:#5e6878;font-weight:600}
+  .shift-nav a.is-current{background:#0d1a2b;color:#fff;border-color:#0d1a2b}
+  #status{color:#64748b;font-size:14px;min-height:20px;margin-bottom:12px}
+  #grid{display:grid;grid-template-columns:1fr;gap:14px}
+
+  .foto-unsorted-group{background:#fff;border:1px solid #ebe7d8;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+  .foto-unsorted-thumb-wrap{position:relative;display:block}
+  .foto-unsorted-thumb{width:100%;max-height:420px;object-fit:contain;border-radius:8px;display:block;background:#111}
+  .foto-original-link{font-size:12px;color:#5e6878;text-decoration:none;font-weight:600}
+  .foto-original-link:hover{text-decoration:underline}
+  .foto-recognized-names{font-size:13px;color:#475569}
+  .foto-face-marker{position:absolute;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;pointer-events:none;line-height:1}
+  .foto-face-marker::after{content:'';position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid #fff}
+  .foto-face-marker::before{content:'';position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:8px solid rgba(0,0,0,.65);z-index:-1}
+  .foto-face-list{display:flex;flex-direction:column;gap:6px}
+  .foto-face-list-item{display:flex;align-items:center;gap:8px;font-size:14px}
+  .foto-face-list-item select{padding:4px 8px;border-radius:6px;border:1px solid #cbd5e1;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Разметка лиц {shift ? `— ${shift.name}` : ''}</h1>
+  <div class="shift-nav">
+    {allShiftsIncludingArchived.map((s) => (
+      <a href={`/admin/gallery-tagging/${s.id}?key=${provided}`} class={s.id === shiftId ? 'is-current' : ''}>{s.name}</a>
+    ))}
+  </div>
+  {!shift && <p>Смена не найдена.</p>}
+  <div id="status"></div>
+  <div id="grid"></div>
+</div>
+
+<script define:vars={{ shiftId }}>
+  const status = document.getElementById('status');
+  const grid = document.getElementById('grid');
+
+  function setStatus(text) { status.textContent = text; }
+
+  // Дубликат логики из src/data/nameSortOverrides.ts — этот скрипт inline
+  // (define:vars), import сюда не работает. Правишь сортировку на публичной
+  // странице — не забудь поправить и здесь тоже.
+  const SHIFT_NAME_ORDER = {
+    'shift-1': 'firstname-first',
+    'shift-2': 'firstname-first',
+    'shift-3': 'surname-first',
+  };
+  const NAME_SORT_OVERRIDES = {
+    'Александр Сытик': 'Сытик Александр',
+    'Данила Рогов': 'Рогов Данила',
+    'Григорьева Людмила': 'Григорьева Людмила',
+    'Вуколов Петр': 'Вуколов Петр',
+  };
+  function surnameSortKey(name, forShiftId) {
+    if (name in NAME_SORT_OVERRIDES) return NAME_SORT_OVERRIDES[name];
+    const order = SHIFT_NAME_ORDER[forShiftId] || 'surname-first';
+    if (order === 'firstname-first') {
+      const parts = name.trim().split(/\s+/);
+      if (parts.length === 2) return `${parts[1]} ${parts[0]}`;
+    }
+    return name;
+  }
+
+  async function loadUnsorted() {
+    setStatus('Загружаю неразобранные фото…');
+    const res = await fetch(`/api/foto/${shiftId}/unsorted`);
+    const data = await res.json();
+    if (!data.ok) { setStatus(data.error); return; }
+    grid.innerHTML = '';
+    const groups = data.groups;
+    const people = [...data.people].sort((a, b) =>
+      surnameSortKey(a.name, shiftId).localeCompare(surnameSortKey(b.name, shiftId), 'ru'),
+    );
+    const totalFaces = groups.reduce((n, g) => n + g.faces.length, 0);
+    setStatus(`Неразобранных лиц: ${totalFaces} на ${groups.length} фото`);
+
+    const peopleOptions = '<option value="">Кто это?</option>' +
+      people.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+
+    for (const group of groups) {
+      const card = document.createElement('div');
+      card.className = 'foto-unsorted-group';
+
+      const thumbWrap = document.createElement('div');
+      thumbWrap.className = 'foto-unsorted-thumb-wrap';
+      const thumbImg = document.createElement('img');
+      thumbImg.src = `/api/foto/image/${group.assetId}?kind=thumb`;
+      thumbImg.className = 'foto-unsorted-thumb';
+      thumbImg.alt = '';
+      thumbWrap.appendChild(thumbImg);
+      card.appendChild(thumbWrap);
+
+      const original = document.createElement('a');
+      original.className = 'foto-original-link';
+      original.href = `/api/foto/image/${group.assetId}?kind=original`;
+      original.target = '_blank';
+      original.rel = 'noopener';
+      original.textContent = 'Открыть оригинал в новой вкладке';
+      card.appendChild(original);
+
+      if (group.recognizedNames.length > 0) {
+        const names = document.createElement('div');
+        names.className = 'foto-recognized-names';
+        names.textContent = `Уже опознаны: ${group.recognizedNames.join(', ')}`;
+        card.appendChild(names);
+      }
+
+      const faceList = document.createElement('div');
+      faceList.className = 'foto-face-list';
+      card.appendChild(faceList);
+
+      const markers = [];
+
+      for (let i = 0; i < group.faces.length; i++) {
+        const face = group.faces[i];
+
+        const marker = document.createElement('div');
+        marker.className = 'foto-face-marker';
+        marker.textContent = String(i + 1);
+        marker.style.visibility = 'hidden';
+        thumbWrap.appendChild(marker);
+        markers.push(marker);
+
+        const listItem = document.createElement('div');
+        listItem.className = 'foto-face-list-item';
+
+        const label = document.createElement('span');
+        label.textContent = `${i + 1})`;
+        listItem.appendChild(label);
+
+        const sel = document.createElement('select');
+        sel.innerHTML = peopleOptions;
+        sel.addEventListener('change', async () => {
+          if (!sel.value) return;
+          sel.disabled = true;
+          const r = await fetch(`/api/foto/${shiftId}/unsorted`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ faceId: face.faceId, personId: sel.value }),
+          });
+          const rd = await r.json();
+          if (rd.ok) {
+            marker.remove();
+            listItem.remove();
+            if (faceList.childElementCount === 0) card.remove();
+          } else {
+            sel.disabled = false;
+            alert(rd.error);
+          }
+        });
+        listItem.appendChild(sel);
+        faceList.appendChild(listItem);
+      }
+
+      function positionMarkers() {
+        if (!thumbImg.naturalWidth) return;
+        const containerW = thumbWrap.clientWidth;
+        const containerH = thumbWrap.clientHeight;
+        if (!containerW || !containerH) return;
+        const imgAspect = thumbImg.naturalWidth / thumbImg.naturalHeight;
+        const containerAspect = containerW / containerH;
+        let renderedW, renderedH, offsetX, offsetY;
+        if (imgAspect > containerAspect) {
+          renderedW = containerW; renderedH = containerW / imgAspect;
+          offsetX = 0; offsetY = (containerH - renderedH) / 2;
+        } else {
+          renderedH = containerH; renderedW = containerH * imgAspect;
+          offsetY = 0; offsetX = (containerW - renderedW) / 2;
+        }
+        for (let j = 0; j < group.faces.length; j++) {
+          const m = markers[j];
+          if (!m.parentNode) continue;
+          const box = group.faces[j].box;
+          const scale = renderedW / box.width;
+          const markerX = offsetX + ((box.x1 + box.x2) / 2) * scale;
+          const TIP_GAP = 16, TAIL_H = 8, CIRCLE_H = 24;
+          const tipY = offsetY + box.y1 * scale - TIP_GAP;
+          const circleTopY = tipY - TAIL_H - CIRCLE_H;
+          const left = Math.min(Math.max(markerX - 12, offsetX), offsetX + renderedW - 24);
+          const top = Math.min(Math.max(circleTopY, offsetY), offsetY + renderedH - CIRCLE_H - TAIL_H);
+          m.style.left = `${left}px`;
+          m.style.top = `${top}px`;
+          m.style.visibility = '';
+        }
+      }
+
+      thumbImg.addEventListener('load', positionMarkers);
+      if (thumbImg.complete && thumbImg.naturalWidth) positionMarkers();
+
+      let resizeTimer;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(positionMarkers, 150);
+      });
+
+      grid.appendChild(card);
+    }
+  }
+
+  loadUnsorted();
+</script>
+</body>
+</html>
