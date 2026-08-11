@@ -88,6 +88,9 @@ def main() -> int:
     strict = "--strict" in args
     if strict:
         args.remove("--strict")
+    show_drift = "--drift" in args
+    if show_drift:
+        args.remove("--drift")
     page_filter = args[0] if args else None
 
     if not SPEC_DIR.exists():
@@ -127,9 +130,17 @@ def main() -> int:
             if lo is None:
                 continue
             n = count_keyword(kw["keyword"], exact_counts, lemma_counts, morph, text)
-            if n < lo or n > hi:
-                need = f"добавить {lo - n}" if n < lo else f"убрать {n - hi}"
-                page_violations.append(f"  ✗ {kw['keyword']}: {n} (норма {lo}–{hi}) → {need}")
+            cur = kw.get("current")
+            if kw.get("action") in ("add", "remove"):
+                # Нарушение по мнению самой Лабрики — главный сигнал
+                need = f"добавить {max(lo - n, 1)}" if kw["action"] == "add" else f"убрать {max(n - hi, 1)}"
+                page_violations.append(
+                    f"  ✗ {kw['keyword']}: у нас {n}, у Лабрики {cur} (норма {lo}–{hi}) → {need}")
+            elif show_drift and cur is not None and abs(n - cur) > max(2, cur // 3):
+                # Ключ в норме у Лабрики, но наш подсчёт сильно уехал от её
+                # замера — дрейф контента или методики, показываем как warning
+                page_violations.append(
+                    f"  ~ {kw['keyword']}: дрейф — у нас {n}, у Лабрики было {cur} (норма {lo}–{hi})")
         if page_violations:
             violations += len(page_violations)
             print(f"— /{page}/")

@@ -40,7 +40,9 @@ def main() -> int:
         if d.get("error"):
             continue
         rec = d.get("recommendations") or {}
-        keywords = rec.get("keyword_actions") or []
+        # keyword_requirements — полный список требований (включая ok),
+        # keyword_actions — только нарушения (старые выгрузки без requirements)
+        keywords = rec.get("keyword_requirements") or rec.get("keyword_actions") or []
         spec = {
             "url": d["url"],
             "collected_at": d.get("collected_at"),
