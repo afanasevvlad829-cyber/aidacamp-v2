@@ -1338,6 +1338,13 @@ const hasAttribution = !!(lid && t);
         currentAssets = (data.assetIds as { id: string; type: 'IMAGE' | 'VIDEO' }[]).map((a) => ({ id: a.id, type: a.type }));
         setStatus(`${data.name}: ${currentAssets.length} фото`);
         renderPhotoGrid(currentAssets);
+        // Кого именно ищут родители — единственный прямой сигнал спроса на кадры.
+        // Раньше он оставался только в логах nginx, где посетитель различим по IP,
+        // а IP у мобильного интернета меняется. Через цель это ClientID Метрики,
+        // имя ребёнка уходит параметром цели — так виден и спрос, и кто искал.
+        try {
+          (window as any).ym?.(96499295, 'reachGoal', 'foto_person', { foto_person: data.name });
+        } catch {}
       }
 
       // ====== Неразобранные (разметка лиц кликами) ======
