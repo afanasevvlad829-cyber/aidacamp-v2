@@ -6,7 +6,7 @@ import { SEASON_MONTHS_NOM } from '../evergreen';
 const landing: LandingData = {
   slug: 'lager-chehov',
   title: `Летний IT-лагерь Чехов — Москва и Подмосковье ${SEASON_YEAR} | АйДаКемп`,
-  description: `Летний лагерь для школьников 7–15 лет в Москве и Подмосковье, лето 2026. Python, AI, Minecraft, питание. 66 км от МКАД, смены от ${PRICE_MIN}.`,
+  description: `Детский летний лагерь для школьников 7–15 лет в Москве и Подмосковье, лето 2026. Python, AI, Minecraft, питание. 66 км от МКАД, смены от ${PRICE_MIN}.`,
   h1: 'Летний лагерь Чехов — Москва и Подмосковье',
   canonical: 'https://aidacamp.ru/lager-chehov',
   heroImage: '/images/hero/lager-v-podmoskove.avif',

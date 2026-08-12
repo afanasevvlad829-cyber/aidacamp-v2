@@ -5,7 +5,7 @@ import { otzyvyLink, yandexReviewsLink } from '../../lib/reviews-link';
 const landing: LandingData = {
   slug: 'lager-pushkino',
   title: `Детский лагерь рядом с Пушкино ${SEASON_YEAR} — IT-смены и бассейн | АйДаКемп`,
-  description: `Детский IT-лагерь рядом с Пушкино, 7–15 лет. Python, AI, Minecraft, бассейн. От ${PRICE_MIN}, вычет до ${VYCHET_MAX}. Трансфер от метро.`,
+  description: `Детский лагерь рядом с Пушкино, 7–15 лет. Python, AI, Minecraft, бассейн. От ${PRICE_MIN}, вычет до ${VYCHET_MAX}. Трансфер.`,
   h1: 'Детский лагерь у Пушкино',
   canonical: 'https://aidacamp.ru/lager-pushkino',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
