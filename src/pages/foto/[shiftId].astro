@@ -616,7 +616,10 @@ const hasAttribution = !!(lid && t);
     <button id="foto-lb-close" type="button" aria-label="Закрыть"><i class="bi bi-x-lg"></i></button>
     <button id="foto-lb-prev" class="foto-lb-nav" type="button" aria-label="Предыдущее"><i class="bi bi-chevron-left"></i></button>
     <img id="foto-lightbox-img" src="" alt="Фото" />
-    <video id="foto-lightbox-vid" controls></video>
+    <!-- playsinline обязателен: без него iOS Safari не играет видео встроенно и
+         показывает пустой чёрный прямоугольник, пока по нему не ткнут. Постер
+         ставится из миниатюры кадра — иначе до первого касания там нечему появиться. -->
+    <video id="foto-lightbox-vid" controls playsinline webkit-playsinline preload="metadata"></video>
     <button id="foto-lb-next" class="foto-lb-nav" type="button" aria-label="Следующее"><i class="bi bi-chevron-right"></i></button>
   </div>
 
@@ -782,6 +785,7 @@ const hasAttribution = !!(lid && t);
         document.body.style.overflow = '';
         lbImg.src = '';
         lbVid.pause();
+        lbVid.removeAttribute('poster');
         lbVid.src = '';
       }
       function updateLightboxPhoto() {
@@ -789,6 +793,7 @@ const hasAttribution = !!(lid && t);
         if (asset.type === 'VIDEO') {
           lbImg.style.display = 'none';
           lbVid.style.display = 'block';
+          lbVid.poster = `/api/foto/image/${asset.id}?kind=thumb`;
           lbVid.src = `/api/foto/image/${asset.id}?kind=original`;
         } else {
           lbVid.style.display = 'none';
