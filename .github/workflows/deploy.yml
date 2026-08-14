@@ -116,8 +116,12 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      # fetch-depth: 1 — deploy.sh сверяет только HEAD с origin/dev (pre-flight
+      # guard), история для этого не нужна: ветка чекаутится по имени, remote-ref
+      # на месте. Полный клон стоил ~10с на каждый деплой-job (репозиторий тяжёлый,
+      # в нём 60 МБ картинок в public/).
       - uses: actions/checkout@v5
-        with: { ref: dev, fetch-depth: 0 }
+        with: { ref: dev, fetch-depth: 1 }
 
       - name: Установка SSH-ключа
         env:
@@ -214,8 +218,9 @@ jobs:
     needs: promote
     runs-on: ubuntu-latest
     steps:
+      # fetch-depth: 1 — deploy.sh сверяет HEAD с origin/main, история не нужна.
       - uses: actions/checkout@v5
-        with: { ref: main, fetch-depth: 0 }
+        with: { ref: main, fetch-depth: 1 }
 
       - name: Установка SSH-ключа
         env:
