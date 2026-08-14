@@ -217,14 +217,23 @@ function faceBoxArea(box: FaceBox): number {
  * Лучшее появление ребёнка для аватарки — где face-box занимает наибольшую
  * площадь кадра (крупный, чёткий, близкий портрет), а не то, что выбрал сам
  * Immich (иногда берёт дальний/размытый кадр).
+ *
+ * Сначала ищем только среди IMAGE: для видео Immich детектирует лицо на
+ * произвольном кадре ролика, а наш прокси всегда отдаёт превью с ДРУГОГО
+ * (обычно первого) кадра — box для видео почти никогда не совпадает с тем,
+ * что реально видно на этом превью (проверено вживую — box указывал в
+ * пустую стену). Видео берём в расчёт только если у человека вообще нет
+ * появлений на фото.
  */
 export function getBestFaceForPerson(
   person: NamedPerson,
 ): { assetId: string; box: FaceBox } | null {
   if (person.assetIds.length === 0) return null;
-  let best = person.assetIds[0];
+  const images = person.assetIds.filter((a) => a.type === 'IMAGE');
+  const candidates = images.length > 0 ? images : person.assetIds;
+  let best = candidates[0];
   let bestArea = faceBoxArea(best.box);
-  for (const a of person.assetIds.slice(1)) {
+  for (const a of candidates.slice(1)) {
     const area = faceBoxArea(a.box);
     if (area > bestArea) {
       best = a;
@@ -256,15 +265,18 @@ export function computeAvatarCrop(
   const cy = ((box.y1 + box.y2) / 2) * scaleY;
 
   const MARGIN = 2.2;
-  const side = Math.max(faceW, faceH) * MARGIN;
+  // Желаемый размер кропа ограничиваем меньшей стороной кадра ДО центрирования
+  // (не после) — иначе для крупных вертикальных лиц на узких кадрах квадрат
+  // прижимается к углу вместо центрирования на лице (было: реальный случай —
+  // кроп прижимался к верхнему краю, обрезая подбородок).
+  const desiredSide = Math.max(faceW, faceH) * MARGIN;
+  const side = Math.max(1, Math.min(desiredSide, imgW, imgH));
 
   let left = Math.round(cx - side / 2);
   let top = Math.round(cy - side / 2);
-  let size = Math.round(side);
 
-  left = Math.max(0, Math.min(left, imgW - 1));
-  top = Math.max(0, Math.min(top, imgH - 1));
-  size = Math.max(1, Math.min(size, imgW - left, imgH - top));
+  left = Math.max(0, Math.min(left, imgW - side));
+  top = Math.max(0, Math.min(top, imgH - side));
 
-  return { left, top, size };
+  return { left: Math.round(left), top: Math.round(top), size: Math.round(side) };
 }
