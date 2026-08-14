@@ -150,11 +150,15 @@ PAID_CPA="—"
 (( PAID_LEADS_14 > 0 && TOTAL_COST > 0 )) && PAID_CPA="$(( TOTAL_COST / PAID_LEADS_14 )) ₽"
 
 # ── 5. Дзен-очередь из реестра контента ──────────────────────────────────────
+# «scheduled» с прошедшей датой — это УЖЕ вышедшие по расписанию студии посты:
+# реестр не переводит их в published (проверено по живому каналу 14.08.2026,
+# статьи выходят ежедневно). Очередь = только записи без даты или с будущей.
 ZEN_QUEUE=$(PSQL "
   SELECT count(*) FROM publications
-  WHERE channel = 'dzen' AND status <> 'published'")
+  WHERE channel = 'dzen' AND status <> 'published'
+    AND (published_at IS NULL OR published_at >= now())")
 if [[ "$ZEN_QUEUE" =~ ^[0-9]+$ ]]; then
-  (( ZEN_QUEUE > 0 )) && DECISIONS+=("📰 Дзен: ${ZEN_QUEUE} материалов в реестре не опубликованы → публикуем очередью?")
+  (( ZEN_QUEUE > 0 )) && DECISIONS+=("📰 Дзен: ${ZEN_QUEUE} материалов без даты публикации или с будущей → проверить очередь в студии?")
 else
   WARN+=("запрос Дзен-очереди: $ZEN_QUEUE"); ZEN_QUEUE="?"
 fi
