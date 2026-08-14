@@ -1,4 +1,5 @@
 import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_S2, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
+import { SEASON_FROM_TO } from '../evergreen';
 import type { LandingData } from './types';
 
 const landing: LandingData = {
@@ -86,7 +87,7 @@ const landing: LandingData = {
     },
     {
       h2: `Смены ${SEASON_YEAR} — цены`,
-      text: `Летние смены ${SEASON_YEAR} проходят с июня по август — ещё есть свободные места. В стоимость лагеря включены проживание, питание, полная IT-программа, бассейн. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} в один конец.`,
+      text: `Летние смены ${SEASON_YEAR} проходят ${SEASON_FROM_TO} — ещё есть свободные места. В стоимость лагеря включены проживание, питание, полная IT-программа, бассейн. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} в один конец.`,
       list: [
         `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, 7 дней — ${PRICE_S21}`,
         `Смена 2 (завершена) — ${DATES_SHORT_S2}, 14 дней — ${PRICE_S2}`,
