@@ -67,9 +67,15 @@ const HREF = /href=(?:"([^"#?]*)"|'([^'#?]*)'|([^\s>"'#?]+))/g;
 const links = new Map(); // ссылка → страница, где она встретилась
 
 // Источники, которые не проверяем: /demo/ — черновики-прототипы (исключены и из
-// sitemap, и из минификации), /metodichki/ — закрыт auth_request в nginx.
+// sitemap), /metodichki/ — закрыт auth_request в nginx.
 // Ссылки ВНУТРЬ них проверяются как обычно, не проверяются ссылки С них.
-const SKIP_SOURCES = [/^\/demo\//, /^\/metodichki\//];
+//
+// /demo/ вернулся под проверку 14.08.2026: при вводе гейта он был исключён, потому
+// что demo/blocks.astro ссылался на четыре несуществующие страницы (/smeny/,
+// /lager-podmoskovje/, /lager-podrostkov/, /programmirovanie/ — все 404 на проде).
+// Ссылки починены, исключать больше нечего: демо-страницы показывают живые
+// компоненты, и битые примеры в них так же вводят в заблуждение, как в проде.
+const SKIP_SOURCES = [/^\/metodichki\//];
 
 for (const file of files) {
   if (!file.endsWith('.html')) continue;
