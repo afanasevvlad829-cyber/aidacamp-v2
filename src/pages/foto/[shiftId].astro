@@ -1384,12 +1384,14 @@ const hasAttribution = !!(lid && t);
         if (!data.ok) { setStatus(data.error); return; }
         clearGrid();
         const groups = data.groups as UnsortedGroup[];
-        const people = data.people as { id: string; name: string }[];
+        const people = [...(data.people as { id: string; name: string }[])].sort((a, b) =>
+          surnameSortKey(a.name, shiftId).localeCompare(surnameSortKey(b.name, shiftId), 'ru'),
+        );
         const totalFaces = groups.reduce((n, g) => n + g.faces.length, 0);
         setStatus(`Неразобранных лиц: ${totalFaces} на ${groups.length} фото`);
 
         const peopleOptions = '<option value="">Кто это?</option>' +
-          people.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+          people.map((p) => `<option value="${p.id}">${surnameSortKey(p.name, shiftId)}</option>`).join('');
 
         for (const group of groups) {
           const card = document.createElement('div');
