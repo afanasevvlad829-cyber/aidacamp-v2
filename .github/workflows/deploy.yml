@@ -57,13 +57,28 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # fetch-depth: 1 — job только собирает, git-история ему не нужна.
+      # В deploy-dev/deploy-prod намеренно оставлен 0: там deploy.sh сверяет
+      # HEAD с origin/dev (pre-flight guard), и на shallow-клоне это надо
+      # проверять отдельно — экономия 7с того не стоит.
       - uses: actions/checkout@v5
-        with: { ref: dev, fetch-depth: 0 }
+        with: { ref: dev, fetch-depth: 1 }
 
       - uses: actions/setup-node@v5
         with: { node-version: '22', cache: 'npm' }
 
       - run: npm ci
+
+      # Кэш минификации HTML (scripts/html-minify-cached.mjs). Ключ по содержимому
+      # каждой страницы, поэтому даже устаревший кэш полезен: совпадут все страницы,
+      # которых правка не коснулась. restore-keys без хэша — берём самый свежий.
+      - name: Кэш минификации HTML
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache/html-minify
+          key: htmlmin-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            htmlmin-${{ runner.os }}-
 
       # SKIP_ASTRO_CHECK=1: astro check по всем 385 страницам (~2.5 мин) уже
       # прошёл как required quality-gate проверка на этом SHA — не дублируем.
@@ -87,7 +102,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-        with: { ref: dev, fetch-depth: 0 }
+        with: { ref: dev, fetch-depth: 1 }
 
       - uses: actions/setup-node@v5
         with: { node-version: '22', cache: 'npm' }
