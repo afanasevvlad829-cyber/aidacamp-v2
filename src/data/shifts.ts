@@ -248,13 +248,21 @@ export const VYCHET_S21 = _fmtV(shiftDeduction(_shift21));
 export const VYCHET_S22 = _fmtV(shiftDeduction(_shift22));
 export const VYCHET_MAX = _fmtV(Math.max(shiftDeduction(mainShifts[0]), shiftDeduction(mainShifts[1])));
 
-// === Осень 2026 — ПРЕДВАРИТЕЛЬНО (решение владельца 2026-07-03, утверждение дат и цены — сентябрь) ===
-// Сознательно НЕ в mainShifts/shortShifts: бронь закрыта, на сайте только предзапись (SeasonPreRegister).
-// При открытии продаж: перенести в mainShifts обычной сменой и удалить эти константы.
+// === Осень 2026 — окна заездов утверждены владельцем 2026-08-14 (цена — решение 2026-07-03) ===
+// Два заезда: основной под четвертные каникулы, второй под триместровый график школ.
+// Сознательно НЕ в mainShifts/shortShifts: бронь пока закрыта, на сайте только предзапись (SeasonPreRegister).
+// При открытии продаж: перенести в mainShifts обычными сменами и удалить эти константы.
 export const AUTUMN_2026 = {
   price: '49 900 ₽',
-  startDate: '2026-10-27',
-  endDate: '2026-11-02',
+  startDate: '2026-10-25',
+  endDate: '2026-10-31',
+  days: 7,
+} as const;
+// Второй (дополнительный) заезд — для школ с триместровой системой, утверждён 2026-08-14.
+export const AUTUMN_2026_WINDOW2 = {
+  price: '49 900 ₽',
+  startDate: '2026-11-15',
+  endDate: '2026-11-21',
   days: 7,
 } as const;
 export const PRICE_OSEN = AUTUMN_2026.price;
