@@ -36,13 +36,61 @@ WARN=()        # технические проблемы самого пульс
 # Фильтр «чистых» заявок — тот же, что в money-pulse (дедуп PR #828)
 CLEAN="duplicate_of IS NULL AND is_test IS NOT TRUE AND COALESCE(phone,'') NOT LIKE '+7999000%'"
 
-# ── 1. Заявки по неделям (5 недель, текущая неполная помечается) ─────────────
+# ── SVG-график (bar chart) ───────────────────────────────────────────────────
+# Вход: JSON {labels[],values[],current[],color,title,avg} → SVG-строка.
+# По правилам dataviz: тонкие бары со скруглённым верхом, одна ось, пунктирная
+# референс-линия среднего, текущая (неполная) неделя приглушена, подписи
+# значений — выборочно (максимум и последняя завершённая), текст — серым.
+svg_chart() {
+  node -e '
+    const d = JSON.parse(process.argv[1]);
+    const W = 640, H = 190, PT = 26, PB = 26, PL = 8, PR = 8;
+    const n = d.values.length || 1;
+    const max = Math.max(...d.values, d.avg || 0, 1);
+    const plotH = H - PT - PB, plotW = W - PL - PR;
+    const bw = Math.min(44, Math.floor(plotW / n * 0.55));
+    const step = plotW / n;
+    const y = v => PT + plotH - (v / max) * plotH;
+    let out = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${d.title}" style="max-width:100%;height:auto">`;
+    // референс-линия среднего за завершённые недели
+    if (d.avg > 0) {
+      out += `<line x1="${PL}" y1="${y(d.avg)}" x2="${W-PR}" y2="${y(d.avg)}" stroke="#b9b9b9" stroke-dasharray="4 4" stroke-width="1"/>`;
+      out += `<text x="${W-PR}" y="${y(d.avg)-4}" text-anchor="end" font-size="10" fill="#8a8a8a">ср. ${d.avg}</text>`;
+    }
+    const iMax = d.values.indexOf(Math.max(...d.values));
+    let iLastDone = -1;
+    for (let i = n - 1; i >= 0; i--) if (!d.current[i]) { iLastDone = i; break; }
+    d.values.forEach((v, i) => {
+      const x = PL + step * i + (step - bw) / 2;
+      const h = Math.max((v / max) * plotH, v > 0 ? 2 : 0);
+      const op = d.current[i] ? 0.35 : 1;
+      out += `<rect x="${x.toFixed(1)}" y="${(PT+plotH-h).toFixed(1)}" width="${bw}" height="${h.toFixed(1)}" rx="3" fill="${d.color}" fill-opacity="${op}"><title>нед. ${d.labels[i]}: ${v}${d.current[i] ? " (текущая, неполная)" : ""}</title></rect>`;
+      out += `<text x="${(x+bw/2).toFixed(1)}" y="${H-10}" text-anchor="middle" font-size="10" fill="#8a8a8a">${d.labels[i]}</text>`;
+      if (v > 0 && (i === iMax || i === iLastDone))
+        out += `<text x="${(x+bw/2).toFixed(1)}" y="${(PT+plotH-h-5).toFixed(1)}" text-anchor="middle" font-size="11" fill="#444">${v}</text>`;
+    });
+    out += `<line x1="${PL}" y1="${PT+plotH}" x2="${W-PR}" y2="${PT+plotH}" stroke="#ddd" stroke-width="1"/></svg>`;
+    process.stdout.write(out);
+  ' "$1" 2>/dev/null || echo "<!-- svg failed -->"
+}
+
+# Собирает JSON для svg_chart из psql-строк «label|value|current»
+rows_json() { # $1 = rows, $2 = color, $3 = title, $4 = avg
+  node -e '
+    const lines = process.argv[1].trim().split("\n").filter(Boolean);
+    const d = { labels: [], values: [], current: [], color: process.argv[2], title: process.argv[3], avg: parseInt(process.argv[4] || "0", 10) };
+    for (const l of lines) { const [a, b, c] = l.split("|"); d.labels.push(a); d.values.push(parseInt(b, 10) || 0); d.current.push(c === "1"); }
+    process.stdout.write(JSON.stringify(d));
+  ' "$1" "$2" "$3" "${4:-0}" 2>/dev/null
+}
+
+# ── 1. Заявки по неделям (8 недель, текущая неполная помечается) ─────────────
 LEADS_ROWS=$(PSQL "
   SELECT to_char(date_trunc('week', ts), 'DD.MM') AS wk,
          count(*),
          (date_trunc('week', ts) = date_trunc('week', now()))::int AS current
   FROM leads_log
-  WHERE ts >= date_trunc('week', now()) - interval '28 days' AND $CLEAN
+  WHERE ts >= date_trunc('week', now()) - interval '49 days' AND $CLEAN
   GROUP BY date_trunc('week', ts) ORDER BY date_trunc('week', ts)")
 [[ "$LEADS_ROWS" == *ERROR* ]] && { WARN+=("запрос заявок: $LEADS_ROWS"); LEADS_ROWS=""; }
 
@@ -81,7 +129,7 @@ VISITS_ROWS=$(PSQL "
          count(*),
          (date_trunc('week', ts) = date_trunc('week', now()))::int
   FROM visits
-  WHERE ts >= date_trunc('week', now()) - interval '28 days'
+  WHERE ts >= date_trunc('week', now()) - interval '49 days'
   GROUP BY date_trunc('week', ts) ORDER BY date_trunc('week', ts)")
 [[ "$VISITS_ROWS" == *ERROR* ]] && { WARN+=("запрос визитов: $VISITS_ROWS"); VISITS_ROWS=""; }
 read -r VIS_LW VIS_PREV <<< "$(PSQL "
@@ -109,22 +157,53 @@ DIRECT_ROWS=$(PSQL "
   WHERE s.date >= current_date - 14
   GROUP BY s.campaign_id
   HAVING round(sum(s.cost)) >= 1
-  ORDER BY 3 DESC LIMIT 15")
+  ORDER BY 2 DESC LIMIT 10")
 [[ "$DIRECT_ROWS" == *ERROR* ]] && { WARN+=("запрос Директа: $DIRECT_ROWS"); DIRECT_ROWS=""; }
 
-TOTAL_COST=0; PAID_LEADS_BYCAMP=0
+# Таблица — только отображение (топ-10 по расходу). Математика и стоп-лоссы —
+# по ПОЛНОМУ множеству кампаний (инцидент: топ-15 по кликам ÷ все заявки
+# искажал CPA и прятал дорогие кампании с малым числом кликов).
+TOTAL_COST=$(PSQL "
+  SELECT coalesce(round(sum(cost)),0)::int FROM direct_campaign_stats
+  WHERE date >= current_date - 14")
+[[ "$TOTAL_COST" =~ ^[0-9]+$ ]] || { WARN+=("запрос полного расхода: $TOTAL_COST"); TOTAL_COST=0; }
+
 DIRECT_HTML=""
 while IFS='|' read -r CID COST CLICKS CLEADS CNAME; do
   [[ -z "${CID:-}" ]] && continue
-  TOTAL_COST=$(( TOTAL_COST + COST ))
-  PAID_LEADS_BYCAMP=$(( PAID_LEADS_BYCAMP + CLEADS ))
   CPA="—"
   (( CLEADS > 0 )) && CPA="$(( COST / CLEADS )) ₽"
   DIRECT_HTML+="<tr><td>${CNAME}</td><td class=r>${COST} ₽</td><td class=r>${CLICKS}</td><td class=r>${CLEADS}</td><td class=r>${CPA}</td></tr>"
-  if (( COST >= STOPLOSS_RUB && CLEADS == 0 )); then
-    DECISIONS+=("💸 Директ «${CNAME}» (${CID}): ${COST} ₽ за 14 дней, 0 заявок с меткой кампании → пауза/стоп-лосс?")
-  fi
 done <<< "$DIRECT_ROWS"
+
+# Стоп-лосс кандидаты — полное множество, без LIMIT
+STOPLOSS_ROWS=$(PSQL "
+  SELECT s.campaign_id, round(sum(s.cost))::int, left(max(s.campaign_name), 48)
+  FROM direct_campaign_stats s
+  LEFT JOIN (
+    SELECT utm_campaign, count(*) n FROM leads_log
+    WHERE ts >= now() - interval '14 days' AND $CLEAN GROUP BY 1
+  ) l ON l.utm_campaign = s.campaign_id::text
+  WHERE s.date >= current_date - 14
+  GROUP BY s.campaign_id
+  HAVING round(sum(s.cost)) >= $STOPLOSS_RUB AND coalesce(max(l.n),0) = 0
+  ORDER BY 2 DESC")
+if [[ "$STOPLOSS_ROWS" != *ERROR* ]]; then
+  while IFS='|' read -r CID COST CNAME; do
+    [[ -z "${CID:-}" ]] && continue
+    DECISIONS+=("💸 Директ «${CNAME}» (${CID}): ${COST} ₽ за 14 дней, 0 заявок с меткой кампании → пауза/стоп-лосс?")
+  done <<< "$STOPLOSS_ROWS"
+fi
+
+# Расход по неделям (8 недель) — для графика
+SPEND_ROWS=$(PSQL "
+  SELECT to_char(date_trunc('week', date), 'DD.MM'),
+         round(sum(cost))::int,
+         (date_trunc('week', date) = date_trunc('week', now()))::int
+  FROM direct_campaign_stats
+  WHERE date >= (date_trunc('week', now()) - interval '49 days')::date
+  GROUP BY date_trunc('week', date) ORDER BY date_trunc('week', date)")
+[[ "$SPEND_ROWS" == *ERROR* ]] && SPEND_ROWS=""
 
 # Платные заявки суммарно (по любой платной метке, не только по campaign_id —
 # слаг-кампании вроде spb-doroga попадают сюда)
@@ -184,6 +263,27 @@ LEADS_TABLE=$(echo "$LEADS_ROWS" | rows)
 VISITS_TABLE=$(echo "$VISITS_ROWS" | rows)
 CH_TABLE=$(echo "$CH_ROWS" | while IFS='|' read -r CH N; do [[ -n "${CH:-}" ]] && echo "<tr><td>$(echo "$CH" | esc)</td><td class=r>${N}</td></tr>"; done)
 
+# ── Графики и дельты ─────────────────────────────────────────────────────────
+LEADS_SVG=$(svg_chart "$(rows_json "$LEADS_ROWS" "#d97a1f" "Заявки по неделям" "$AVG_N")")
+VISITS_SVG=$(svg_chart "$(rows_json "$VISITS_ROWS" "#2f6fb0" "Визиты по неделям" "")")
+SPEND_SVG=""
+[[ -n "$SPEND_ROWS" ]] && SPEND_SVG=$(svg_chart "$(rows_json "$SPEND_ROWS" "#8a8a8a" "Расход Директа по неделям, ₽" "")")
+
+# Дельта к прошлой неделе: «↑ +25%» / «↓ −40%» / «=» (текстом, не только цветом)
+delta() { # $1=текущее $2=предыдущее
+  local CUR=${1:-0} PREV=${2:-0}
+  if (( PREV == 0 )); then (( CUR > 0 )) && echo "↑ новый" || echo "="; return; fi
+  local D=$(( (CUR - PREV) * 100 / PREV ))
+  if (( D > 0 )); then echo "↑ +${D}%"; elif (( D < 0 )); then echo "↓ ${D}%"; else echo "="; fi
+}
+read -r LW_PREV <<< "$(PSQL "
+  WITH w AS (SELECT date_trunc('week', ts) wk, count(*) n FROM leads_log
+             WHERE ts >= date_trunc('week', now()) - interval '14 days'
+               AND ts < date_trunc('week', now()) AND $CLEAN GROUP BY 1)
+  SELECT coalesce((SELECT n FROM w ORDER BY wk ASC LIMIT 1),0)")"
+LEADS_DELTA=$(delta "$LW_N" "${LW_PREV:-0}")
+VISITS_DELTA=$(delta "$VIS_LW" "$VIS_PREV")
+
 DEC_HTML=""; DEC_TG=""
 if (( ${#DECISIONS[@]} > 0 )); then
   for D in "${DECISIONS[@]}"; do
@@ -205,7 +305,10 @@ cat > "$REPORT" <<HTML
  body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:900px;margin:24px auto;padding:0 16px;color:#1a1a1a;background:#fafafa}
  h1{font-size:1.5rem} h2{font-size:1.15rem;margin-top:0}
  .card{background:#fff;border:1px solid #e3e3e3;border-radius:10px;padding:14px 18px;margin:10px 0}
- .role{background:#eef6ff;border-color:#b7d7f5}
+ .tiles{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+ .tile{flex:1 1 180px;background:#fff;border:1px solid #e3e3e3;border-radius:10px;padding:12px 16px}
+ .tl{font-size:.8rem;color:#777} .tv{font-size:1.7rem;font-weight:650;margin:2px 0}
+ .td{font-size:.95rem;font-weight:500;color:#555} .ts{font-size:.8rem;color:#777}
  table{border-collapse:collapse;margin:8px 0} td,th{border:1px solid #ddd;padding:4px 10px;font-size:.9rem} .r{text-align:right}
  pre{background:#f4f4f4;border-radius:6px;padding:10px;overflow-x:auto;font-size:.82rem;white-space:pre-wrap}
  .muted{color:#777;font-size:.85rem}
@@ -214,27 +317,27 @@ cat > "$REPORT" <<HTML
 <h1>📈 Пульс роста</h1>
 <p class="muted">Прогон: ${NOW_H}. Cron: понедельник 09:45 МСК. Позиции 4 сайтов — отдельным TG-сообщением (seo_weekly_check, пн 10:00). Гигиена и безопасность — money-pulse (пн 09:30).</p>
 
-<div class="card role"><h2>Твоя роль в этом отчёте</h2>
-<p><b>Метрика результата:</b> заявки/неделю. <b>Опережающие:</b> визиты/неделю, платные заявки с меткой (CPA).<br>
-<b>Точка отслеживания:</b> это сообщение по понедельникам — больше никуда ходить не нужно.<br>
-<b>Рычаги:</b> список «Решения» ниже — каждое отвечается «да/нет» одной репликой агенту.</p></div>
+<div class="tiles">
+<div class="tile"><div class="tl">Заявки за неделю</div><div class="tv">${LW_N} <span class="td">${LEADS_DELTA}</span></div><div class="ts">среднее 3 нед: ${AVG_N}</div></div>
+<div class="tile"><div class="tl">Визиты за неделю</div><div class="tv">${VIS_LW} <span class="td">${VISITS_DELTA}</span></div><div class="ts">предыдущая: ${VIS_PREV}</div></div>
+<div class="tile"><div class="tl">Директ, 14 дней</div><div class="tv">${TOTAL_COST} ₽</div><div class="ts">платных заявок: ${PAID_LEADS_14} · CPA: ${PAID_CPA}</div></div>
+</div>
 
-<div class="card"><h2>🎯 Решения на эту неделю</h2><ul>${DEC_HTML}</ul></div>
+<div class="card"><h2>🎯 Решения на эту неделю</h2><ul>${DEC_HTML}</ul>
+<p class="muted">Каждое отвечается «да/нет» одной репликой агенту — это единственные рычаги, остальное крутится само.</p></div>
 
-<div class="card"><h2>Заявки (aidacamp.ru, чистые)</h2>
-<table>${LEADS_TABLE}</table>
-<p>Последняя завершённая неделя: <b>${LW_N}</b>, средняя за 3 предыдущие: <b>${AVG_N}</b>.</p>
-<p class="muted">Каналы за 7 дней (${A7_MARKED} из ${A7_TOTAL} заявок с меткой):</p>
-<table>${CH_TABLE}</table></div>
+<div class="card"><h2>Заявки по неделям <span class="muted">(aidacamp.ru, чистые; пунктир — среднее, бледный бар — текущая неполная неделя)</span></h2>
+${LEADS_SVG}
+<details><summary class="muted">Каналы за 7 дней (${A7_MARKED} из ${A7_TOTAL} с меткой) и таблица</summary>
+<table>${CH_TABLE}</table><table>${LEADS_TABLE}</table></details></div>
 
-<div class="card"><h2>Визиты (aidacamp.ru)</h2>
-<table>${VISITS_TABLE}</table>
-<p>Последняя завершённая неделя: <b>${VIS_LW}</b> (предыдущая: ${VIS_PREV}).</p></div>
+<div class="card"><h2>Визиты по неделям</h2>
+${VISITS_SVG}
+<details><summary class="muted">Таблица</summary><table>${VISITS_TABLE}</table></details></div>
 
-<div class="card"><h2>Директ, 14 дней</h2>
-<table><tr><th>Кампания</th><th>Расход</th><th>Клики</th><th>Заявки*</th><th>CPA</th></tr>${DIRECT_HTML}</table>
-<p>Итого: <b>${TOTAL_COST} ₽</b>, платных заявок по любой метке: <b>${PAID_LEADS_14}</b> (CPA: <b>${PAID_CPA}</b>).</p>
-<p class="muted">* Заявки с utm_campaign = ID кампании. Кампании со слагом в метке (spb-doroga и т.п.) видны только в общем счётчике платных заявок. VK Ads в пульс не входит (1 активная кампания, ручной обзор).</p></div>
+<div class="card"><h2>Директ</h2>
+$( [[ -n "$SPEND_SVG" ]] && echo "$SPEND_SVG" )
+$( [[ -n "$DIRECT_HTML" ]] && echo "<details><summary class=muted>Кампании за 14 дней (топ-10 по расходу; итоги считаются по всем)</summary><table><tr><th>Кампания</th><th>Расход</th><th>Клики</th><th>Заявки*</th><th>CPA</th></tr>${DIRECT_HTML}</table><p class=muted>* Заявки с utm_campaign = ID кампании; слаг-метки — только в общем счётчике. VK Ads закрыт 14.08.2026.</p></details>" || echo "<p class=muted>Активных кампаний нет (межсезонье с 14.08.2026).</p>" )</div>
 
 <div class="card"><h2>Контент</h2>
 <p>Дзен-очередь (реестр контента): <b>${ZEN_QUEUE}</b> материалов без публикации.</p></div>
@@ -255,13 +358,14 @@ if [[ "${GP_NO_TG:-0}" != "1" ]]; then
   TG_CHAT=$(grep -m1 '^TELEGRAM_CHAT_ID=' "$ENV_FILE" | cut -d= -f2- | tr -d '"')
   if [[ -n "$TG_TOKEN" && -n "$TG_CHAT" ]]; then
     MSG="📈 Пульс роста (${NOW_H})
-Заявки/нед: ${LW_N} (среднее 3 нед: ${AVG_N})
-Визиты/нед: ${VIS_LW} (пред: ${VIS_PREV})
-Директ 14д: ${TOTAL_COST} ₽ → платных заявок: ${PAID_LEADS_14} (CPA: ${PAID_CPA})
+
+Заявки: ${LW_N} ${LEADS_DELTA} (ср. ${AVG_N})
+Визиты: ${VIS_LW} ${VISITS_DELTA}
+Директ 14д: ${TOTAL_COST} ₽ · заявок ${PAID_LEADS_14} · CPA ${PAID_CPA}
 
 Решения:${DEC_TG}
 
-Отчёт: https://dev.aidacamp.ru/reports-hub/#growth-pulse"
+📊 Графики: https://dev.aidacamp.ru/reports-hub/#growth-pulse"
     curl -sS -m 15 -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
       -d chat_id="${TG_CHAT}" --data-urlencode text="${MSG}" >/dev/null \
       || echo "⚠️ Telegram-сводка не отправилась"
