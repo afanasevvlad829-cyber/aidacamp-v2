@@ -52,5 +52,12 @@ console.log('sitemap.xml ready');
 node scripts/check-faq-schema.mjs
 node scripts/check-breadcrumb-schema.mjs
 
+# Битые внутренние ссылки — здесь, на сборке, а не в smoke после выката.
+# Раньше это делал только smoke.sh, дёргая ~243 URL у живого сервера (53с на dev,
+# столько же на проде) и уже ПОСЛЕ деплоя. Проверка по dist/ занимает доли секунды
+# и ловит больше: smoke ходил по ссылкам лишь с 10 критичных страниц, а тут
+# просматриваются все 345 (так нашлись /lager-podmoskovje/ и /smeny/ — 404 на проде).
+node scripts/check-internal-links.mjs
+
 node scripts/inject-modulepreload.mjs
 npm run pagefind

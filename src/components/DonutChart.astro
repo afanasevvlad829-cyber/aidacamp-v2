@@ -2,6 +2,7 @@
 /**
  * DonutChart — SVG-пончик с анимацией stroke-dashoffset при появлении в viewport.
  */
+import { stableId } from '../lib/deterministic';
 interface Props {
   percentage: number;   // 0–100
   label: string;
@@ -31,7 +32,9 @@ const cy = size / 2;
 const r = cx - strokeWidth / 2 - 2;
 const circumference = 2 * Math.PI * r;
 const targetOffset = circumference * (1 - percentage / 100);
-const id = `donut-${Math.random().toString(36).slice(2, 9)}`;
+// Детерминированный id вместо Math.random() — см. src/lib/deterministic.ts.
+// Уникальность не нужна: скрипт ниже ищет по префиксу `[id^="donut-"]`.
+const id = stableId('donut', `${percentage}|${label}|${sublabel ?? ''}|${color}|${size}`);
 ---
 
 <div class="__donut my-5 flex flex-col items-center gap-4" data-rss-strip>
