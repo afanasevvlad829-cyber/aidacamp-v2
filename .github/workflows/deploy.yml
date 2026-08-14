@@ -2,15 +2,15 @@ name: Deploy
 
 # Continuous deployment.
 #
-#   push в dev → build (1 раз) → деплой dev → smoke dev → merge dev→main → деплой prod (тот же dist) → smoke prod
-#                                                  ↓ красный                                  ↓ красный
-#                                              поезд встал                              авто-откат прода
+#   push в dev ─┬─ build (1 раз) → деплой dev → smoke dev ─┬→ merge dev→main → деплой prod (тот же dist) → smoke prod
+#               └─ typecheck (параллельно) ───────────────┘        ↓ красный                        ↓ красный
+#                                                             поезд встал                     авто-откат прода
 #
 # Прод защищён четырьмя рубежами:
 #   1) quality-gate.yml (check:banned / check:prices / build — БЕЗ astro check,
 #      required PR-проверка, быстрая — гейтит только мерж в dev);
-#   2) astro check — только здесь, в job `promote`, перед КАЖДЫМ автопромоутом
-#      (см. комментарий в job promote) — гейтит прод, не dev;
+#   2) astro check — job `typecheck`, идёт параллельно с build, promote его ждёт
+#      через needs (см. комментарий в job promote) — гейтит прод, не dev;
 #   3) smoke на dev — прод не поедет, пока dev красный;
 #   4) авто-откат на последний backup-* при провале верификации/smoke прода.
 #
@@ -77,6 +77,26 @@ jobs:
           path: dist/
           retention-days: 1
 
+  # ⚡ Тайпчек отдельным job'ом, параллельно с build (2026-08-14). Он гейтит прод и
+  # больше ничего: от dist/ не зависит, вывод сборки не меняет. Раньше стоял внутри
+  # promote и потому ждал build → deploy-dev, добавляя свои ~2.5 мин прямо в
+  # критический путь push→прод. Теперь стартует одновременно с build и к моменту
+  # промоута давно готов; promote только проверяет его результат через needs.
+  typecheck:
+    if: ${{ !inputs.skip_prod }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with: { ref: dev, fetch-depth: 0 }
+
+      - uses: actions/setup-node@v5
+        with: { node-version: '22', cache: 'npm' }
+
+      - run: npm ci
+
+      - name: Строгий astro check (единственный прод-гейт)
+        run: NODE_OPTIONS="--max-old-space-size=6144" npm run check:public
+
   deploy-dev:
     needs: build
     runs-on: ubuntu-latest
@@ -101,7 +121,7 @@ jobs:
         run: ./scripts/deploy.sh dev
 
   promote:
-    needs: deploy-dev
+    needs: [deploy-dev, typecheck]
     if: ${{ !inputs.skip_prod }}
     runs-on: ubuntu-latest
     steps:
@@ -142,22 +162,15 @@ jobs:
           exit 1
 
       # ⚡ Прод-гейт (2026-07-26): typescript-тайпчек (`astro check`, ~2.5 мин по
-      # всем 385 страницам) сюда и только сюда — не в quality-gate (тот теперь
-      # быстрый, без него, гейтит только мерж в dev). Идея: dev — быстрый
-      # прототип (видно через ~4-5 мин после пуша, без тайпчека вообще), прод —
-      # строгий (тайпчек гоняется здесь, перед КАЖДЫМ автопромоутом, раз промоут
-      # без него полностью автоматический). Упал — job падает, main НЕ
-      # обновляется, dev остаётся с показанным (но непроверенным по типам)
+      # всем 385 страницам) — не в quality-gate (тот быстрый, гейтит только мерж в
+      # dev), а перед КАЖДЫМ автопромоутом. Идея: dev — быстрый прототип (видно
+      # через пару минут после пуша, без тайпчека вообще), прод — строгий. Упал —
+      # main НЕ обновляется, dev остаётся с показанным (но непроверенным по типам)
       # прототипом, прод — на предыдущей исправной версии.
-      # Пересборка не нужна: astro check не меняет вывод сборки, только
-      # проверяет типы — dist/, который уже задеплоен на dev, годится и для прода.
-      - uses: actions/setup-node@v5
-        with: { node-version: '22', cache: 'npm' }
-
-      - run: npm ci
-
-      - name: Строгий astro check (единственный прод-гейт)
-        run: NODE_OPTIONS="--max-old-space-size=6144" npm run check:public
+      # С 2026-08-14 сам чек живёт в job `typecheck` и крутится параллельно с
+      # build; сюда он приходит через needs — гейт тот же, но не в критическом пути.
+      # Пересборка не нужна: astro check не меняет вывод сборки, только проверяет
+      # типы — dist/, который уже задеплоен на dev, годится и для прода.
 
       # Fast-forward, а не merge-коммит.
       #
