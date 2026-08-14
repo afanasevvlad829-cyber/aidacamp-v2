@@ -3,6 +3,7 @@
  * AnimatedStat — большая цифра, считается от 0 при появлении в viewport.
  * Один раз, easeOut, 1.4 сек.
  */
+import { stableId } from '../lib/deterministic';
 interface Props {
   value: string;        // числовая часть: "95", "40", "375", "2.5"
   unit?: string;        // суффикс: "%", "B", "млн", " лет"
@@ -23,7 +24,12 @@ const {
   size = 'xl',
 } = Astro.props;
 
-const id = `astat-${Math.random().toString(36).slice(2, 9)}`;
+// Детерминированный id вместо Math.random(): тот делал сборку невоспроизводимой —
+// страница получала новый HTML на каждом билде, из-за чего rsync гнал её заново,
+// а кэш минификации промахивался (см. src/lib/deterministic.ts).
+// Уникальность здесь не нужна: скрипт ниже ищет элементы по префиксу
+// `[id^="astat-"]`, а не по конкретному id.
+const id = stableId('astat', `${value}|${unit}|${prefix}|${label}|${tone}|${size}`);
 
 const tones = {
   orange: { bg: '#FFF7F0', border: '#FFD8B8', text: '#C94B00', track: '#FFD8B8' },
