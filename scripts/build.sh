@@ -22,8 +22,13 @@ cd "$(dirname "$0")/.."
 npm run guard
 npm run icons
 
-echo "==> astro build (проход 1 — рендерит статьи, чтобы вытащить резолвленный contentHtml)"
-npx astro build
+# Первый проход — SKIP_COMPRESS=1. Его dist/ никуда не едет: он нужен ровно затем,
+# чтобы gen-articles.mjs прочитал отрендеренный HTML статей, после чего всё
+# пересобирается вторым проходом. Минифицировать то, что будет выброшено, — чистая
+# трата: замер по логу CI 14.08.2026 (run 31770755865) — compress занимал 74с на
+# проход при ~30с самого astro build, то есть 148с из 210с двухпроходной сборки.
+echo "==> astro build (проход 1, без минификации — рендерит статьи, чтобы вытащить резолвленный contentHtml)"
+SKIP_COMPRESS=1 npx astro build
 
 node scripts/gen-articles.mjs
 node scripts/check-articles.mjs
