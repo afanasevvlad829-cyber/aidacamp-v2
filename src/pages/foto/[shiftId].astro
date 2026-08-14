@@ -1177,7 +1177,12 @@ const hasAttribution = !!(lid && t);
         circle.appendChild(img);
         const name = document.createElement('span');
         name.className = 'foto-ava-name';
-        name.textContent = p.name;
+        // Подпись показывает ТО ЖЕ значение, что используется для сортировки
+        // (surnameSortKey) — иначе для точечных исключений (напр. «Александр
+        // Сытик» → «Сытик Александр») позиция в списке верна по фамилии, а
+        // подпись всё равно показывает сырое «Имя Фамилия», и визуально
+        // кажется, что сортировка не сработала.
+        name.textContent = surnameSortKey(p.name, shiftId);
         el.append(circle, name);
         el.addEventListener('click', () => selectPerson(p.id));
         return el;
