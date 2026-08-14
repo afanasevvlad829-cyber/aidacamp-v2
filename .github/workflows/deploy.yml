@@ -2,17 +2,29 @@ name: Deploy
 
 # Continuous deployment.
 #
-#   push в dev ─┬─ build (1 раз) → деплой dev → smoke dev ─┬→ merge dev→main → деплой prod (тот же dist) → smoke prod
-#               └─ typecheck (параллельно) ───────────────┘        ↓ красный                        ↓ красный
-#                                                             поезд встал                     авто-откат прода
+#   push в dev ─┬─ build (1 раз) ─┬→ деплой dev + smoke   (параллельно, прод не ждёт)
+#               │                 └→ merge dev→main → деплой prod → верификация + smoke
+#               └─ typecheck ──────────────────────↑                        ↓ красный
+#                                                                     авто-откат прода
 #
-# Прод защищён четырьмя рубежами:
+# ⚡ dev едет ПАРАЛЛЕЛЬНО проду (2026-08-14). Раньше прод ждал зелёный smoke на
+# dev — это стоило 95с в критическом пути. Размен осознанный: dev перестал быть
+# канарейкой, поломка теперь доезжает до прода и откатывается там сама, вместо
+# того чтобы не доехать вовсе. Окно битого прода — время верификации и smoke,
+# порядка минуты. Обратно это разворачивается одной строкой:
+# `promote: needs: [deploy-dev, typecheck]`.
+#
+# Прод защищён тремя рубежами (было четыре — dev-канарейка ушла):
 #   1) quality-gate.yml (check:banned / check:prices / build — БЕЗ astro check,
 #      required PR-проверка, быстрая — гейтит только мерж в dev);
 #   2) astro check — job `typecheck`, идёт параллельно с build, promote его ждёт
 #      через needs (см. комментарий в job promote) — гейтит прод, не dev;
-#   3) smoke на dev — прод не поедет, пока dev красный;
-#   4) авто-откат на последний backup-* при провале верификации/smoke прода.
+#   3) верификация + smoke на самом проде, при провале — авто-откат на последний
+#      backup-* (deploy.sh: fail_deploy → rollback.sh). Это тот же smoke.sh, что
+#      гонялся на dev, так что проверка не потерялась — сместилась во времени.
+#
+# ⚠️ main теперь означает «прошло quality + typecheck», а НЕ «проверено на живом
+# окружении»: promote происходит до того, как dev успел ответить.
 #
 # main МЕРЖИТСЯ, а не ресетится. Прежний `reset --hard`-промоут разъезжал
 # истории и терял правки (инцидент 2026-07-07).
@@ -139,8 +151,27 @@ jobs:
           SKIP_BUILD: '1'
         run: ./scripts/deploy.sh dev
 
+      # С 2026-08-14 dev едет параллельно проду и больше НЕ останавливает поезд.
+      # Раньше его падение было заметно само собой — прод просто не выезжал.
+      # Теперь красный dev ничего не блокирует, поэтому о нём нужно узнавать явно,
+      # иначе он молча деградирует и перестанет быть окружением, которому верят.
+      - name: Сигнал о красном dev
+        if: failure()
+        continue-on-error: true
+        env:
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          [ -z "$TG_TOKEN" ] && { echo "TELEGRAM_BOT_TOKEN не задан — пропускаю"; exit 0; }
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          curl -s -X POST "https://api.telegram.org/bot$TG_TOKEN/sendMessage" \
+            -d chat_id="$TG_CHAT" \
+            -d text="⚠️ dev-деплой упал (прод при этом едет своим путём и проверяется сам)
+          commit: ${{ github.sha }}
+          $RUN_URL" >/dev/null
+
   promote:
-    needs: [deploy-dev, typecheck]
+    needs: [build, typecheck]
     if: ${{ !inputs.skip_prod }}
     runs-on: ubuntu-latest
     steps:
