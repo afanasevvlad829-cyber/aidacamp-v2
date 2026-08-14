@@ -218,22 +218,21 @@ function faceBoxArea(box: FaceBox): number {
  * площадь кадра (крупный, чёткий, близкий портрет), а не то, что выбрал сам
  * Immich (иногда берёт дальний/размытый кадр).
  *
- * Сначала ищем только среди IMAGE: для видео Immich детектирует лицо на
- * произвольном кадре ролика, а наш прокси всегда отдаёт превью с ДРУГОГО
- * (обычно первого) кадра — box для видео почти никогда не совпадает с тем,
- * что реально видно на этом превью (проверено вживую — box указывал в
- * пустую стену). Видео берём в расчёт только если у человека вообще нет
- * появлений на фото.
+ * Только среди IMAGE: для видео Immich детектирует лицо на произвольном
+ * кадре ролика, а наш прокси всегда отдаёт превью с ДРУГОГО (обычно первого)
+ * кадра — box для видео почти никогда не совпадает с тем, что реально видно
+ * на этом превью (проверено вживую — box указывал в пустую стену/траву).
+ * Если у человека вообще нет появлений на фото (только видео) — возвращаем
+ * null, вызывающий код сам фолбэкнется на аватарку Immich по умолчанию.
  */
 export function getBestFaceForPerson(
   person: NamedPerson,
 ): { assetId: string; box: FaceBox } | null {
-  if (person.assetIds.length === 0) return null;
   const images = person.assetIds.filter((a) => a.type === 'IMAGE');
-  const candidates = images.length > 0 ? images : person.assetIds;
-  let best = candidates[0];
+  if (images.length === 0) return null;
+  let best = images[0];
   let bestArea = faceBoxArea(best.box);
-  for (const a of candidates.slice(1)) {
+  for (const a of images.slice(1)) {
     const area = faceBoxArea(a.box);
     if (area > bestArea) {
       best = a;
