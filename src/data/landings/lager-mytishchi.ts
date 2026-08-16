@@ -7,7 +7,7 @@ const landing: LandingData = {
   slug: 'lager-mytishchi',
   title: `Летний IT-лагерь с проживанием у Мытищ ${SEASON_YEAR} | АйДаКемп`,
   description: `Летний IT-лагерь с проживанием у Мытищ: 66 км от МКАД, трансфер от м. Солнцево. Групповые занятия, бассейн. Налоговый вычет до ${VYCHET_MAX}. Python, AI, Minecraft, 7–15 лет.`,
-  h1: `Мытищи: лагерь с проживанием и IT-программой ${SEASON_YEAR}`,
+  h1: `Мытищи: лагерь с проживанием ${SEASON_YEAR}`,
   canonical: 'https://aidacamp.ru/lager-mytishchi',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
   faqDisplayItems: ['documents:0', 'payment:2'],
