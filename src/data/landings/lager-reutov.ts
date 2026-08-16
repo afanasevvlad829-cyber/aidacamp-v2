@@ -6,7 +6,7 @@ const landing: LandingData = {
   slug: 'lager-reutov',
   title: `Детский лагерь Реутов ${SEASON_YEAR} — IT-смена | АйДаКемп`,
   description: `Из Реутова до АйДаКемп через м. Солнцево + трансфер, налоговый вычет 13%. Python, AI, Minecraft для 7–15 лет. От ${PRICE_MIN}.`,
-  h1: `Детский лагерь Реутов ${SEASON_YEAR}`,
+  h1: `Детский летний лагерь Реутов ${SEASON_YEAR}`,
   canonical: 'https://aidacamp.ru/lager-reutov',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
   faqItems: [
