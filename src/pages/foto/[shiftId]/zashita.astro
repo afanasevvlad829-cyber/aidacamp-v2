@@ -1,0 +1,171 @@
+---
+export const prerender = false;
+import Base from '../../../layouts/Base.astro';
+import { allShiftsIncludingArchived } from '../../../data/shifts';
+import { zashitaFolders } from '../../../data/zashitaFolders';
+import { listPublicVideos, type YdiskItem } from '../../../lib/ydiskPublic';
+
+const { shiftId } = Astro.params;
+const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
+const folder = shiftId ? zashitaFolders[shiftId] : undefined;
+
+let items: YdiskItem[] = [];
+let error = '';
+if (folder) {
+  try {
+    items = await listPublicVideos(folder.publicKey);
+  } catch (e) {
+    error = e instanceof Error ? e.message : 'Не удалось прочитать папку';
+  }
+}
+
+const mb = (n: number) => `${Math.round(n / 1024 / 1024)} МБ`;
+---
+
+<Base
+  title={shift ? `Защиты проектов — ${shift.name}` : 'Защиты проектов'}
+  description="Видео защит проектов"
+  noindex={true}
+  hideMarketingWidgets={true}
+>
+  <main id="z-root">
+    <a class="z-back" href={`/foto/${shiftId}`}>← к фотографиям смены</a>
+    <h1>Защиты проектов</h1>
+    <p class="z-sub">
+      {folder ? `${folder.date} · записей: ${items.length}` : 'Для этой смены записей нет'}
+    </p>
+
+    {error && <p class="z-err">Не получилось открыть папку: {error}</p>}
+
+    {items.length > 0 && (
+      <div class="z-grid">
+        {items.map((it) => (
+          <article class="z-card">
+            <button
+              class="z-thumb"
+              data-name={it.name}
+              aria-label={`Смотреть защиту: ${it.title}`}
+              style={it.preview ? `background-image:url('${it.preview}')` : ''}
+            >
+              <span class="z-play" aria-hidden="true"></span>
+            </button>
+            <div class="z-meta">
+              <h2>{it.title}</h2>
+              <a
+                class="z-dl"
+                href={`/api/zashita-file?shift=${shiftId}&name=${encodeURIComponent(it.name)}`}
+                download={it.name}
+              >
+                Скачать · {mb(it.size)}
+              </a>
+            </div>
+          </article>
+        ))}
+      </div>
+    )}
+
+    {folder && !error && items.length === 0 && (
+      <p class="z-sub">В папке пока нет видео.</p>
+    )}
+  </main>
+
+  <div id="z-modal" hidden>
+    <button id="z-close" aria-label="Закрыть">×</button>
+    <div id="z-stage">
+      <video id="z-video" controls playsinline webkit-playsinline preload="metadata"></video>
+      <p id="z-title"></p>
+    </div>
+  </div>
+
+  <style is:global>
+    body { background: #0d1a2b !important; }
+  </style>
+
+  <style>
+    #z-root { max-width: 1100px; margin: 0 auto; padding: 24px 16px 96px; color: #fff; }
+    .z-back {
+      display: inline-block; color: rgba(255,255,255,.7); text-decoration: none;
+      font-size: 14px; margin-bottom: 16px;
+    }
+    .z-back:hover { color: #fff; }
+    #z-root h1 { font-size: 24px; font-weight: 800; margin: 0 0 6px; color: #fff; }
+    .z-sub { color: rgba(255,255,255,.7); font-size: 15px; margin: 0 0 22px; }
+    .z-err { color: #ffb4a2; }
+
+    .z-grid {
+      display: grid; gap: 18px;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    }
+    .z-card {
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px; overflow: hidden;
+    }
+    .z-thumb {
+      display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; padding: 0;
+      background: #16283f center/cover no-repeat; cursor: pointer; position: relative;
+    }
+    .z-play {
+      position: absolute; inset: 0; margin: auto; width: 54px; height: 54px;
+      border-radius: 50%; background: rgba(13,26,43,.72);
+      border: 2px solid rgba(255,255,255,.85);
+    }
+    .z-play::after {
+      content: ''; position: absolute; left: 20px; top: 15px;
+      border-left: 17px solid #fff; border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+    }
+    .z-thumb:hover .z-play { background: rgba(236,106,31,.9); }
+
+    .z-meta { padding: 12px 14px 14px; }
+    .z-meta h2 { font-size: 16px; font-weight: 700; margin: 0 0 8px; color: #fff; }
+    .z-dl {
+      display: inline-block; font-size: 13.5px; font-weight: 700; text-decoration: none;
+      color: #0d1a2b; background: #ec9b44; border-radius: 8px; padding: 7px 12px;
+    }
+    .z-dl:hover { background: #f0a95c; }
+
+    #z-modal {
+      position: fixed; inset: 0; z-index: 100; background: rgba(6,12,20,.94);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    #z-modal[hidden] { display: none; }
+    #z-stage { width: min(1000px, 100%); }
+    #z-video { width: 100%; max-height: 78vh; background: #000; border-radius: 10px; }
+    #z-title { color: #fff; text-align: center; margin: 12px 0 0; font-weight: 700; }
+    #z-close {
+      position: absolute; top: 14px; right: 18px; font-size: 34px; line-height: 1;
+      background: none; border: 0; color: #fff; cursor: pointer;
+    }
+  </style>
+
+  <script define:vars={{ shiftId }}>
+    const modal = document.getElementById('z-modal');
+    const video = document.getElementById('z-video');
+    const title = document.getElementById('z-title');
+
+    function open(name, caption) {
+      // Ссылка резолвится на каждый запрос: прямые ссылки Яндекса живут минуты.
+      video.src = `/api/zashita-file?shift=${shiftId}&name=${encodeURIComponent(name)}`;
+      title.textContent = caption;
+      modal.hidden = false;
+      document.body.style.overflow = 'hidden';
+      video.play().catch(() => {});
+    }
+    function close() {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+      modal.hidden = true;
+      document.body.style.overflow = '';
+    }
+
+    document.querySelectorAll('.z-thumb').forEach((b) => {
+      b.addEventListener('click', () =>
+        open(b.dataset.name, b.closest('.z-card').querySelector('h2').textContent),
+      );
+    });
+    document.getElementById('z-close').addEventListener('click', close);
+    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) close(); });
+  </script>
+</Base>
