@@ -2,9 +2,11 @@
 export const prerender = false;
 import Base from '../../layouts/Base.astro';
 import { allShiftsIncludingArchived } from '../../data/shifts';
+import { zashitaFolders } from '../../data/zashitaFolders';
 
 const { shiftId } = Astro.params;
 const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
+const hasZashita = !!(shiftId && zashitaFolders[shiftId]);
 
 // Атрибуция визита к CRM-лиду — только если ссылка пришла с подписанными lid+t.
 // Подпись проверяет сам /api/bind-lead (verifyLid) при отправке, здесь пробрасываем как строки.
@@ -55,6 +57,22 @@ const hasAttribution = !!(lid && t);
       white-space: nowrap;
     }
     .foto-fan-badge.show { display: inline-block; }
+
+    .foto-zashita-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 10px 0 4px;
+      padding: 9px 14px;
+      border-radius: 10px;
+      background: rgba(236, 155, 68, 0.16);
+      border: 1px solid rgba(236, 155, 68, 0.35);
+      color: #ec9b44;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .foto-zashita-link:hover { background: rgba(236, 155, 68, 0.26); color: #f0a95c; }
 
     #foto-status {
       color: rgba(255, 255, 255, 0.7);
@@ -591,6 +609,11 @@ const hasAttribution = !!(lid && t);
       <>
         <h1>{shift.dates}</h1>
         <span id="foto-fan-badge" class="foto-fan-badge"></span>
+        {hasZashita && (
+          <a class="foto-zashita-link" href={`/foto/${shiftId}/zashita`}>
+            <i class="bi bi-play-circle-fill"></i> Видео защит проектов
+          </a>
+        )}
         <div id="foto-avatars"></div>
         <div id="foto-days"></div>
         <div id="foto-scenes"></div>
