@@ -4,11 +4,19 @@
 # Три проверки, каждая ловит класс дефектов, которые в 2026 жили неделями:
 #   1. Атрибуция:    доля лидов с yclid/UTM в leads_log за 7 дней (<80% → 🔴).
 #                    Инцидент июня: Директ учился на цели с 0 yclid из 25 лидов.
-#   2. SEO-гигиена:  canonical/robots/sitemap на ключевых страницах против эталона
-#                    (любое расхождение → 🔴). Инцидент 03.07: canonical без слеша на 98 стр.
+#   2. SEO-гигиена:  инварианты (200/canonical/noindex/sitemap) на ключевых страницах.
+#                    Инцидент 03.07: canonical без слеша на 98 стр.
 #                    Это НЕ ETL (решение владельца 14.07) — только лёгкий curl-дифф.
 #   3. Безопасность: изменённые за неделю src/pages/api/* в origin/dev — интерполяция
-#                    в execSync/spawn и отсутствие auth-маркеров → 🔴. Инцидент: RCE до 15.07.
+#                    в execSync/spawn → 🔴. Инцидент: RCE до 15.07.
+#
+# Политика шума (переработана 17.08.2026 по требованию владельца — алерты стали
+# «бестолковыми», инцидент /detskie-lagerya/):
+#   • красное и TG — только то, что РЕАЛЬНО жжёт деньги: не-200, canonical не тот,
+#     НЕосознанный noindex, sitemap, RCE-паттерн, атрибуция при ≥5 лидах;
+#   • осознанный noindex (noindex={true} в исходнике origin/dev) — норма, не алерт;
+#   • дифф с эталоном при целых инвариантах — эталон пересобирается САМ, без TG;
+#   • «изменён без auth-маркеров» и <5 лидов/нед — только в отчёт, жёлтым/серым.
 #
 # Результат: HTML в Reports Hub (key=money-pulse, перезапись на месте);
 # Telegram-алерт — ТОЛЬКО при наличии красного.
@@ -78,10 +86,12 @@ SQL="SELECT count(*),
 ROW=$(sudo -u postgres psql -d aidacamp -tAc "$SQL" 2>&1)
 if [[ "$ROW" =~ ^[0-9]+\|[0-9]+$ ]]; then
   TOTAL=${ROW%|*}; ATTRIBUTED=${ROW#*|}
-  if (( TOTAL == 0 )); then
-    ATTR_STATUS="🔴"
-    ATTR_DETAIL="0 лидов за 7 дней (после фильтра дублей и тестов) — либо сезонная тишина, либо форма/логирование сломаны."
-    RED_LINES+=("Атрибуция: 0 лидов за 7 дней")
+  # <5 лидов/нед — процент атрибуции статистически пуст (17.08.2026: «2 лида, 0%»
+  # неделями красил пульс в красное в межсезонье). Поломку форм ловит smoke-forms
+  # ежедневно — здесь при малой выборке только информируем.
+  if (( TOTAL < 5 )); then
+    ATTR_STATUS="⚪"
+    ATTR_DETAIL="Лидов за 7 дней: ${TOTAL}, с yclid/UTM: ${ATTRIBUTED} — выборка <5, процент не считаем (межсезонье). Работоспособность форм проверяет smoke-forms ежедневно."
   else
     PCT=$(( ATTRIBUTED * 100 / TOTAL ))
     ATTR_DETAIL="Лидов за 7 дней: ${TOTAL}, с yclid/UTM: ${ATTRIBUTED} (${PCT}%). Порог: ≥${ATTR_THRESHOLD}%."
@@ -100,6 +110,19 @@ fi
 # Снимок на страницу: HTTP-код | canonical | meta robots | X-Robots-Tag.
 # Astro минифицирует атрибуты без кавычек (rel=canonical href=...) — парсим оба вида.
 SEO_STATUS="🟢"; SEO_DETAIL=""; SEO_DIFF=""; SEO_VIOLATIONS=""
+# Осознанные noindex (17.08.2026): если у страницы в исходнике origin/dev стоит
+# noindex={true} (деканнибализация), то noindex/нет-canonical/вне-sitemap — НОРМА.
+# Красным для такой страницы было бы обратное: она вдруг индексируется.
+git -C "$BUILD_REPO" fetch -q origin dev 2>/dev/null || true
+declare -A SRC_NOINDEX=()
+for P in "${PAGES[@]}"; do
+  SLUG="${P#/}"; SLUG="${SLUG%/}"; [[ -z "$SLUG" ]] && SLUG="index"
+  F="src/pages/${SLUG}.astro"
+  if git -C "$BUILD_REPO" cat-file -e "origin/dev:${F}" 2>/dev/null \
+     && git -C "$BUILD_REPO" show "origin/dev:${F}" 2>/dev/null | grep -q 'noindex={true}'; then
+    SRC_NOINDEX["$P"]=1
+  fi
+done
 SNAP="/tmp/money-pulse-pages.txt"; : > "$SNAP"
 $CURL "${SITE}/robots.txt" -o /tmp/mp-robots.txt 2>/dev/null
 ROBOTS_MD5=$(md5sum /tmp/mp-robots.txt | cut -d' ' -f1)
@@ -120,20 +143,29 @@ for P in "${PAGES[@]}"; do
   [[ -z "$ROBOTS" && -n "$RTAG" ]] && ROBOTS=$(echo "$RTAG" | sed -n 's/.*content=\([^ >]*\).*/\1/p')
   IN_SITEMAP="да"
   grep -q "<loc>${URL}</loc>" /tmp/mp-sitemap.xml || IN_SITEMAP="НЕТ"
-  echo "${P} | ${CODE} | canonical=${CANON:-НЕТ} | robots=${ROBOTS:--} | x-robots=${XROBOTS:--} | sitemap=${IN_SITEMAP}" >> "$SNAP"
+  NOI_MARK=""; [[ -n "${SRC_NOINDEX[$P]:-}" ]] && NOI_MARK=" | noindex-осознанный"
+  echo "${P} | ${CODE} | canonical=${CANON:-НЕТ} | robots=${ROBOTS:--} | x-robots=${XROBOTS:--} | sitemap=${IN_SITEMAP}${NOI_MARK}" >> "$SNAP"
   # Инварианты — красные ВСЕГДА, даже если дефект успел попасть в эталон
   [[ "$CODE" != "200" ]] && SEO_VIOLATIONS+="🔴 ${P} — HTTP ${CODE} (ожидается 200)
 "
-  if [[ "$CODE" == "200" && "${CANON:-}" != "$URL" ]]; then
-    SEO_VIOLATIONS+="🔴 ${P} — canonical «${CANON:-НЕТ}», ожидается «${URL}»
+  if [[ -n "${SRC_NOINDEX[$P]:-}" ]]; then
+    # страница обязана быть закрыта — дефект, если её вдруг видно поисковикам
+    if [[ "$CODE" == "200" ]] && ! echo "${ROBOTS:-} ${XROBOTS:-}" | grep -qi 'noindex\|none'; then
+      SEO_VIOLATIONS+="🔴 ${P} — в исходнике noindex={true}, а страница отдаётся БЕЗ noindex
+"
+    fi
+  else
+    if [[ "$CODE" == "200" && "${CANON:-}" != "$URL" ]]; then
+      SEO_VIOLATIONS+="🔴 ${P} — canonical «${CANON:-НЕТ}», ожидается «${URL}»
+"
+    fi
+    if echo "${ROBOTS:-} ${XROBOTS:-}" | grep -qi 'noindex\|none'; then
+      SEO_VIOLATIONS+="🔴 ${P} — noindex (robots=${ROBOTS:-—}, x-robots=${XROBOTS:-—})
+"
+    fi
+    [[ "$IN_SITEMAP" == "НЕТ" ]] && SEO_VIOLATIONS+="🔴 ${P} — отсутствует в sitemap.xml
 "
   fi
-  if echo "${ROBOTS:-} ${XROBOTS:-}" | grep -qi 'noindex\|none'; then
-    SEO_VIOLATIONS+="🔴 ${P} — noindex (robots=${ROBOTS:-—}, x-robots=${XROBOTS:-—})
-"
-  fi
-  [[ "$IN_SITEMAP" == "НЕТ" ]] && SEO_VIOLATIONS+="🔴 ${P} — отсутствует в sitemap.xml
-"
 done
 echo "robots.txt md5=${ROBOTS_MD5}" >> "$SM"
 
@@ -146,12 +178,19 @@ else
   DIFF_P=$(diff "$BP" "$SNAP" 2>&1 || true)
   DIFF_S=$(diff "$BS" "$SM" 2>&1 || true)
   if [[ -n "$DIFF_P" || -n "$DIFF_S" ]]; then
-    SEO_STATUS="🔴"
     SEO_DIFF="${DIFF_P}
 ${DIFF_S}"
     N_CH=$(echo "$DIFF_P" | grep -c '^<' || true)
-    SEO_DETAIL="Расхождения с эталоном (страниц затронуто: ~${N_CH}). Если изменения осознанные — переснять эталон: <code>bash money-pulse.sh --rebaseline</code>."
-    RED_LINES+=("SEO: расхождение canonical/robots/sitemap с эталоном (~${N_CH} стр)")
+    if [[ -z "$SEO_VIOLATIONS" ]]; then
+      # Инварианты целы → расхождение от осознанного деплоя. Ручной --rebaseline
+      # никто не делал неделями → вечное красное = шум (17.08.2026), поэтому
+      # эталон пересобирается сам; дифф остаётся в отчёте для истории.
+      cp "$SNAP" "$BP"; cp "$SM" "$BS"; cp /tmp/mp-robots.txt "$BASELINE_DIR/robots.txt" 2>/dev/null
+      SEO_DETAIL="Эталон отличался (~${N_CH} стр), инварианты целы — эталон обновлён автоматически, без алерта. Дифф ниже для истории."
+    else
+      SEO_STATUS="🔴"
+      SEO_DETAIL="Расхождения с эталоном (страниц затронуто: ~${N_CH}) на фоне нарушенных инвариантов — эталон НЕ трогаю до починки."
+    fi
   else
     SEO_DETAIL="Все $(wc -l < "$BP") страниц, robots.txt и sitemap.xml совпадают с эталоном."
   fi
@@ -186,12 +225,12 @@ $(echo "$INJ" | head -5 | sed 's/^/    /')
 "
       RED_LINES+=("Безопасность: ${F} — exec/spawn с интерполяцией")
     fi
-    # (b) нет ни одного auth-маркера — повод посмотреть глазами
+    # (b) нет ни одного auth-маркера — повод посмотреть глазами; НЕ алерт
+    # (17.08.2026: публичные по замыслу эндпоинты красили пульс неделями)
     if ! echo "$CONTENT" | grep -qiE 'auth|session|token|cookie|secret|bearer|x-api-key'; then
-      SEC_STATUS="🔴"
-      SEC_FINDINGS+="🔴 ${F} — изменён, auth-маркеров не найдено (если эндпоинт публичный по замыслу — ок, но глянуть глазами)
+      [[ "$SEC_STATUS" == "🟢" ]] && SEC_STATUS="🟡"
+      SEC_FINDINGS+="🟡 ${F} — изменён, auth-маркеров не найдено (если эндпоинт публичный по замыслу — ок; только в отчёт, в TG не шлётся)
 "
-      RED_LINES+=("Безопасность: ${F} — изменён без auth-маркеров")
     fi
   done <<< "$CHANGED"
   [[ -z "$SEC_FINDINGS" ]] && SEC_FINDINGS="Во всех изменённых файлах: интерполяции в exec/spawn нет, auth-маркеры на месте.
