@@ -9,6 +9,13 @@
 #   • опережающие — визиты/неделю (visits) и платные заявки с меткой (CPA);
 #   • ОЧЕРЕДЬ РЕШЕНИЙ — каждое сформулировано как «да/нет» с конкретным действием.
 #
+# С 17.08.2026 решения живут в журнале decision_log (Postgres, БД aidacamp):
+#   • каждое решение — id, «на что влияет», «какого результата ждём», действие (jsonb);
+#   • ответ владельца «да N»/«нет N» в TG исполняет decision-executor.py (прод, */2 мин);
+#   • неотвеченные решения всплывают следующим пульсом с возрастом («ждёт N дн»);
+#   • исполненные стоп-лоссы через 3+ дня замеряются по факту (расход/заявки) —
+#     вердикт в effect_note и в секции «Что дали прошлые решения».
+#
 # Что НЕ дублируется здесь:
 #   • позиции 4 сайтов — их шлёт seo_weekly_check.mjs (пн 10:00 МСК);
 #   • гигиена canonical/robots и безопасность API — money-pulse (пн 09:30 МСК).
@@ -30,8 +37,45 @@ STOPLOSS_RUB=3000
 PSQL() { sudo -u postgres psql -d aidacamp -tA -F'|' -c "$1" 2>&1; }
 
 NOW_H="$(date '+%d.%m.%Y %H:%M %Z')"
-DECISIONS=()   # очередь решений для Telegram и отчёта
+DECISIONS=()   # готовые многострочные блоки для Telegram
+DEC_HTML_ITEMS=()  # то же для HTML-отчёта
+REG_IDS=()     # id решений, зарегистрированных в ЭТОМ прогоне (для истечения остальных)
+NOTES=()       # примечания к решениям (не требуют ответа)
 WARN=()        # технические проблемы самого пульса (сломанный запрос и т.п.)
+
+sq() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
+
+# Регистрация решения в decision_log (журнал решений, введён 17.08.2026).
+# Дедуп по dedup_key: то же условие на следующей неделе НЕ плодит новую запись,
+# а обновляет открытую — id и возраст сохраняются, владелец видит «ждёт N дн».
+# Ответ владельца («да N»/«нет N» в TG) обрабатывает decision-executor.py (прод,
+# cron */2 мин): кампании Директа стопит/запускает сам, manual-решения отдаёт агенту.
+reg_decision() { # $1=dedup_key $2=title $3=action_json $4=влияет-на $5=ожидаемый-результат
+  local KEY="$1" TITLE="$2" ACTION="$3" IMPACT="$4" EXPECTED="$5"
+  local OUT ROW ID AGE
+  OUT=$(PSQL "INSERT INTO decision_log (source, title, action, impact, expected, dedup_key)
+     VALUES ('growth-pulse', $(sq "$TITLE"), $(sq "$ACTION")::jsonb, $(sq "$IMPACT"), $(sq "$EXPECTED"), $(sq "$KEY"))
+     ON CONFLICT (dedup_key) WHERE status='proposed' AND dedup_key IS NOT NULL
+     DO UPDATE SET title=EXCLUDED.title, action=EXCLUDED.action,
+                   impact=EXCLUDED.impact, expected=EXCLUDED.expected
+     RETURNING id || '|' || (current_date - created_at::date)")
+  # psql -tA печатает после строки результата ещё командный тег «INSERT 0 1» —
+  # берём только строку вида «id|возраст» (инцидент первого прогона 17.08.2026)
+  ROW=$(echo "$OUT" | grep -m1 -E '^[0-9]+\|[0-9]+$' || true)
+  if [[ -n "$ROW" ]]; then
+    ID=${ROW%|*}; AGE=${ROW#*|}
+  else
+    WARN+=("журнал решений: $OUT"); ID="?"; AGE=0
+  fi
+  [[ "$ID" != "?" ]] && REG_IDS+=("$ID")
+  local AGE_TXT=""
+  (( AGE > 0 )) && AGE_TXT=" · ждёт уже ${AGE} дн"
+  DECISIONS+=("❓ #${ID} ${TITLE}${AGE_TXT}
+   ↳ влияет: ${IMPACT}
+   ↳ ждём: ${EXPECTED}")
+  DEC_HTML_ITEMS+=("<li><b>#${ID}</b> $(echo "$TITLE" | esc_html)${AGE_TXT}<br><span class=muted>влияет: $(echo "$IMPACT" | esc_html) · ждём: $(echo "$EXPECTED" | esc_html)</span></li>")
+}
+esc_html() { sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'; }
 
 # Фильтр «чистых» заявок — тот же, что в money-pulse (дедуп PR #828)
 CLEAN="duplicate_of IS NULL AND is_test IS NOT TRUE AND COALESCE(phone,'') NOT LIKE '+7999000%'"
@@ -107,7 +151,11 @@ read -r LW_N AVG_N <<< "$(PSQL "
   | tr '|' ' ')"
 LW_N=${LW_N:-0}; AVG_N=${AVG_N:-0}
 if (( AVG_N >= 2 && LW_N * 2 < AVG_N )); then
-  DECISIONS+=("📉 Заявки: ${LW_N} за неделю против средних ${AVG_N} — падение ×2. Разобрать источники (сезон? формы? трафик?)")
+  reg_decision "leads-drop" \
+    "📉 Заявки: ${LW_N} за неделю против средних ${AVG_N} — падение ×2. Разобрать источники (сезон? формы? трафик?)" \
+    '{"type":"manual"}' \
+    "поток заявок — главная метрика результата" \
+    "к следующему пульсу причина названа и контрдействие запущено"
 fi
 
 # ── 2. Каналы заявок за 7 дней ───────────────────────────────────────────────
@@ -176,22 +224,43 @@ while IFS='|' read -r CID COST CLICKS CLEADS CNAME; do
   DIRECT_HTML+="<tr><td>${CNAME}</td><td class=r>${COST} ₽</td><td class=r>${CLICKS}</td><td class=r>${CLEADS}</td><td class=r>${CPA}</td></tr>"
 done <<< "$DIRECT_ROWS"
 
-# Стоп-лосс кандидаты — полное множество, без LIMIT
-STOPLOSS_ROWS=$(PSQL "
+# Стоп-лосс кандидаты — полное множество, без LIMIT.
+# Только по РАБОТАЮЩИМ сейчас кампаниям (снимок состояний direct-pulse, 17.08.2026):
+# исторический расход уже остановленной кампании — прошлое, а не решение
+# (инцидент 17.08: пульс предложил стопить 5 кампаний, остановленных ещё 14.08).
+RUNNING_IDS=$(python3 -c "
+import json
+try:
+    s = json.load(open('/opt/scripts/direct-pulse-state.json'))
+    cs = s['campaign_states']
+    print(','.join(cid for cid, v in cs.items() if v['state'] == 'ON'))
+except Exception:
+    print('NOFILE')" 2>/dev/null || echo "NOFILE")
+STOPLOSS_FILTER="AND s.campaign_id::text = ANY(string_to_array('${RUNNING_IDS}',','))"
+[[ "$RUNNING_IDS" == "NOFILE" ]] && STOPLOSS_FILTER=""   # снимка нет — старое поведение
+if [[ -z "$RUNNING_IDS" ]]; then
+  STOPLOSS_ROWS=""   # запущенных кампаний нет — стоп-лоссы неактуальны
+else
+  STOPLOSS_ROWS=$(PSQL "
   SELECT s.campaign_id, round(sum(s.cost))::int, left(max(s.campaign_name), 48)
   FROM direct_campaign_stats s
   LEFT JOIN (
     SELECT utm_campaign, count(*) n FROM leads_log
     WHERE ts >= now() - interval '14 days' AND $CLEAN GROUP BY 1
   ) l ON l.utm_campaign = s.campaign_id::text
-  WHERE s.date >= current_date - 14
+  WHERE s.date >= current_date - 14 ${STOPLOSS_FILTER}
   GROUP BY s.campaign_id
   HAVING round(sum(s.cost)) >= $STOPLOSS_RUB AND coalesce(max(l.n),0) = 0
   ORDER BY 2 DESC")
+fi
 if [[ "$STOPLOSS_ROWS" != *ERROR* ]]; then
   while IFS='|' read -r CID COST CNAME; do
     [[ -z "${CID:-}" ]] && continue
-    DECISIONS+=("💸 Директ «${CNAME}» (${CID}): ${COST} ₽ за 14 дней, 0 заявок с меткой кампании → пауза/стоп-лосс?")
+    reg_decision "stoploss:${CID}" \
+      "💸 Директ «${CNAME}» (${CID}): ${COST} ₽ за 14 дней, 0 заявок с меткой кампании → остановить?" \
+      "{\"type\":\"direct_suspend\",\"ids\":[${CID}]}" \
+      "расход Директа: примерно −$(( COST / 2 )) ₽/нед" \
+      "экономия без потери заявок (с кампании их 0 за 14 дн); стоп обратим, эффект замерю через неделю"
   done <<< "$STOPLOSS_ROWS"
 fi
 
@@ -223,7 +292,7 @@ SLUG_LEADS=$(PSQL "
     AND COALESCE(utm_campaign,'') <> '' AND utm_campaign !~ '^[0-9]+$'
   GROUP BY utm_campaign ORDER BY 1" | paste -sd', ' -)
 if [[ -n "$SLUG_LEADS" && "$SLUG_LEADS" != *ERROR* ]]; then
-  DECISIONS+=("⚠️ Платные заявки со слаг-метками (${SLUG_LEADS}) не привязаны к ID кампаний — сверь слаг с кампанией, прежде чем стопить что-то из списка выше")
+  NOTES+=("⚠️ Платные заявки со слаг-метками (${SLUG_LEADS}) не привязаны к ID кампаний — сверь слаг с кампанией, прежде чем отвечать «да» на стоп-лоссы")
 fi
 PAID_CPA="—"
 (( PAID_LEADS_14 > 0 && TOTAL_COST > 0 )) && PAID_CPA="$(( TOTAL_COST / PAID_LEADS_14 )) ₽"
@@ -232,12 +301,18 @@ PAID_CPA="—"
 # «scheduled» с прошедшей датой — это УЖЕ вышедшие по расписанию студии посты:
 # реестр не переводит их в published (проверено по живому каналу 14.08.2026,
 # статьи выходят ежедневно). Очередь = только записи без даты или с будущей.
+# Отменённые (note «отменено …», напр. после закрытия канала 14.08.2026) не считаем.
 ZEN_QUEUE=$(PSQL "
   SELECT count(*) FROM publications
   WHERE channel = 'dzen' AND status <> 'published'
-    AND (published_at IS NULL OR published_at >= now())")
+    AND (published_at IS NULL OR published_at >= now())
+    AND coalesce(note,'') NOT ILIKE 'отменено%'")
 if [[ "$ZEN_QUEUE" =~ ^[0-9]+$ ]]; then
-  (( ZEN_QUEUE > 0 )) && DECISIONS+=("📰 Дзен: ${ZEN_QUEUE} материалов без даты публикации или с будущей → проверить очередь в студии?")
+  (( ZEN_QUEUE > 0 )) && reg_decision "zen-queue" \
+    "📰 Дзен: ${ZEN_QUEUE} материалов без даты публикации или с будущей → проверить очередь в студии?" \
+    '{"type":"manual"}' \
+    "непрерывность контент-канала (Дзен-витрина)" \
+    "у всех материалов очереди проставлена дата публикации"
 else
   WARN+=("запрос Дзен-очереди: $ZEN_QUEUE"); ZEN_QUEUE="?"
 fi
@@ -249,6 +324,58 @@ read -r A7_TOTAL A7_MARKED <<< "$(PSQL "
                              OR COALESCE(gclid,'')<>'' OR COALESCE(utm_source,'')<>'')
   FROM leads_log WHERE ts >= now() - interval '7 days' AND $CLEAN" | tr '|' ' ')"
 A7_TOTAL=${A7_TOTAL:-0}; A7_MARKED=${A7_MARKED:-0}
+
+# ── 7. Журнал решений: замер эффекта, истечение, ожидающие агента ────────────
+# Обучение цикла: исполненные стоп-лоссы (direct_suspend старше 3 дней) меряются
+# по факту — расход после остановки и заявки с этих кампаний — и получают вердикт
+# в effect_note (status=measured). Вердикт попадает в отчёт и TG.
+EFFECTS=()
+MEASURE_ROWS=$(PSQL "
+  SELECT id, executed_at::date,
+         array_to_string(ARRAY(SELECT jsonb_array_elements_text(action->'ids')), ',')
+  FROM decision_log
+  WHERE status='executed' AND action->>'type'='direct_suspend'
+    AND executed_at < now() - interval '3 days'")
+if [[ "$MEASURE_ROWS" != *ERROR* ]]; then
+  while IFS='|' read -r EID EDATE EIDS; do
+    [[ -z "${EID:-}" ]] && continue
+    read -r ECOST ELEADS <<< "$(PSQL "
+      SELECT (SELECT coalesce(round(sum(cost)),0)::int FROM direct_campaign_stats
+              WHERE campaign_id::text = ANY(string_to_array('${EIDS}',',')) AND date > '${EDATE}'),
+             (SELECT count(*) FROM leads_log
+              WHERE utm_campaign = ANY(string_to_array('${EIDS}',',')) AND ts > '${EDATE}')" | tr '|' ' ')"
+    NOTE="после остановки (${EDATE} → сегодня): расход ${ECOST:-?} ₽, заявок с кампаний ${ELEADS:-?}"
+    PSQL "UPDATE decision_log SET status='measured', effect_note=$(sq "$NOTE") WHERE id=${EID}" >/dev/null
+    EFFECTS+=("✅ #${EID}: ${NOTE}")
+  done <<< "$MEASURE_ROWS"
+fi
+
+# Решения, одобренные владельцем, но ждущие исполнения агентом (manual)
+PENDING_ROWS=$(PSQL "SELECT '#'||id||' '||title FROM decision_log WHERE status='approved' ORDER BY id")
+[[ "$PENDING_ROWS" == *ERROR* ]] && PENDING_ROWS=""
+
+# Директ вкл/выкл — из снимка direct-pulse (мониторинг состояний, 17.08.2026)
+DIRECT_ON="?"
+if [[ -f /opt/scripts/direct-pulse-state.json ]]; then
+  DIRECT_ON=$(python3 -c "
+import json
+s = json.load(open('/opt/scripts/direct-pulse-state.json'))
+cs = s.get('campaign_states', {})
+print(sum(1 for v in cs.values() if v['state'] == 'ON'))" 2>/dev/null || echo "?")
+fi
+
+# Открытые решения growth-pulse, НЕ воспроизведённые этим прогоном, — условие
+# исчезло само (кампанию остановили руками, очередь рассосалась) → expired.
+if (( ${#REG_IDS[@]} > 0 )); then
+  IDS_CSV=$(IFS=,; echo "${REG_IDS[*]}")
+  PSQL "UPDATE decision_log SET status='expired',
+        effect_note='условие не воспроизвелось в пульсе '||to_char(now(),'DD.MM.YYYY')
+        WHERE source='growth-pulse' AND status='proposed' AND id NOT IN (${IDS_CSV})" >/dev/null
+else
+  PSQL "UPDATE decision_log SET status='expired',
+        effect_note='условие не воспроизвелось в пульсе '||to_char(now(),'DD.MM.YYYY')
+        WHERE source='growth-pulse' AND status='proposed'" >/dev/null
+fi
 
 # ── HTML-отчёт ───────────────────────────────────────────────────────────────
 esc() { sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'; }
@@ -287,12 +414,33 @@ VISITS_DELTA=$(delta "$VIS_LW" "$VIS_PREV")
 DEC_HTML=""; DEC_TG=""
 if (( ${#DECISIONS[@]} > 0 )); then
   for D in "${DECISIONS[@]}"; do
-    DEC_HTML+="<li>$(echo "$D" | esc)</li>"
-    DEC_TG+=$'\n'"• ${D}"
+    DEC_TG+=$'\n\n'"${D}"
   done
+  DEC_TG+=$'\n\n'"Ответ: «да N» / «нет N причина» / «решения» — исполнится автоматически (кампании) или агентом."
+  DEC_HTML=$(printf '%s\n' "${DEC_HTML_ITEMS[@]}")
 else
   DEC_HTML="<li>Решений не требуется — всё идёт своим ходом.</li>"
   DEC_TG=$'\n'"• Решений не требуется"
+fi
+for N in ${NOTES[@]+"${NOTES[@]}"}; do
+  DEC_TG+=$'\n'"${N}"
+  DEC_HTML+="<li class=muted>$(echo "$N" | esc)</li>"
+done
+if [[ -n "$PENDING_ROWS" ]]; then
+  DEC_TG+=$'\n\n'"⏳ Одобрено, ждёт исполнения агентом:"
+  while IFS= read -r PR_LINE; do
+    [[ -z "$PR_LINE" ]] && continue
+    DEC_TG+=$'\n'"• ${PR_LINE}"
+    DEC_HTML+="<li>⏳ $(echo "$PR_LINE" | esc) <span class=muted>(одобрено, ждёт агента)</span></li>"
+  done <<< "$PENDING_ROWS"
+fi
+EFF_TG=""; EFF_HTML=""
+if (( ${#EFFECTS[@]} > 0 )); then
+  EFF_TG=$'\n\n'"Что дали прошлые решения:"
+  for E in "${EFFECTS[@]}"; do
+    EFF_TG+=$'\n'"${E}"
+    EFF_HTML+="<li>$(echo "$E" | esc)</li>"
+  done
 fi
 WARN_HTML=""
 (( ${#WARN[@]} > 0 )) && WARN_HTML="<div class=card><h2>⚠️ Технические проблемы пульса</h2><pre>$(printf '%s\n' "${WARN[@]}" | esc)</pre></div>"
@@ -320,11 +468,12 @@ cat > "$REPORT" <<HTML
 <div class="tiles">
 <div class="tile"><div class="tl">Заявки за неделю</div><div class="tv">${LW_N} <span class="td">${LEADS_DELTA}</span></div><div class="ts">среднее 3 нед: ${AVG_N}</div></div>
 <div class="tile"><div class="tl">Визиты за неделю</div><div class="tv">${VIS_LW} <span class="td">${VISITS_DELTA}</span></div><div class="ts">предыдущая: ${VIS_PREV}</div></div>
-<div class="tile"><div class="tl">Директ, 14 дней</div><div class="tv">${TOTAL_COST} ₽</div><div class="ts">платных заявок: ${PAID_LEADS_14} · CPA: ${PAID_CPA}</div></div>
+<div class="tile"><div class="tl">Директ, 14 дней</div><div class="tv">${TOTAL_COST} ₽</div><div class="ts">платных заявок: ${PAID_LEADS_14} · CPA: ${PAID_CPA} · запущено кампаний: ${DIRECT_ON}</div></div>
 </div>
 
 <div class="card"><h2>🎯 Решения на эту неделю</h2><ul>${DEC_HTML}</ul>
-<p class="muted">Каждое отвечается «да/нет» одной репликой агенту — это единственные рычаги, остальное крутится само.</p></div>
+<p class="muted">Ответ — в TG-чате бота: «да N» / «нет N причина» / «решения». Кампании Директа исполняет decision-executor автоматически, остальное — агент. Журнал: таблица decision_log; неотвеченное всплывает следующим пульсом с возрастом.</p></div>
+$( [[ -n "$EFF_HTML" ]] && echo "<div class=\"card\"><h2>📚 Что дали прошлые решения</h2><ul>${EFF_HTML}</ul></div>" )
 
 <div class="card"><h2>Заявки по неделям <span class="muted">(aidacamp.ru, чистые; пунктир — среднее, бледный бар — текущая неполная неделя)</span></h2>
 ${LEADS_SVG}
@@ -361,9 +510,9 @@ if [[ "${GP_NO_TG:-0}" != "1" ]]; then
 
 Заявки: ${LW_N} ${LEADS_DELTA} (ср. ${AVG_N})
 Визиты: ${VIS_LW} ${VISITS_DELTA}
-Директ 14д: ${TOTAL_COST} ₽ · заявок ${PAID_LEADS_14} · CPA ${PAID_CPA}
+Директ 14д: ${TOTAL_COST} ₽ · заявок ${PAID_LEADS_14} · CPA ${PAID_CPA} · запущено: ${DIRECT_ON}
 
-Решения:${DEC_TG}
+Решения:${DEC_TG}${EFF_TG}
 
 📊 Графики: https://dev.aidacamp.ru/reports-hub/#growth-pulse"
     curl -sS -m 15 -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
