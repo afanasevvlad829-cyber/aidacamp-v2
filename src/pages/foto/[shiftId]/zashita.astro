@@ -142,13 +142,12 @@ const mb = (n: number) => `${Math.round(n / 1024 / 1024)} МБ`;
     const video = document.getElementById('z-video');
     const title = document.getElementById('z-title');
 
-    // Обязательно: Яндекс.Диск отдаёт 403 на запрос с чужим Referer.
-    // Ставим атрибутом из скрипта — в разметке его не пропускают типы Astro.
-    video.setAttribute('referrerpolicy', 'no-referrer');
-
     function open(name, caption) {
-      // Ссылка резолвится на каждый запрос: прямые ссылки Яндекса живут минуты.
-      video.src = `/api/zashita-file?shift=${shiftId}&name=${encodeURIComponent(name)}`;
+      // Плеер идёт через потоковый прокси (zashita-stream), не через редирект:
+      // <video> у Chrome получает 403 от Яндекса на прямой редирект, хотя
+      // fetch/curl с тем же запросом проходят. Кнопка «Скачать» остаётся
+      // прямым редиректом на Яндекс — там это работает штатно.
+      video.src = `/api/zashita-stream?shift=${shiftId}&name=${encodeURIComponent(name)}`;
       title.textContent = caption;
       modal.hidden = false;
       document.body.style.overflow = 'hidden';
