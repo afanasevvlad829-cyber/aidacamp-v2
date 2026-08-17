@@ -221,18 +221,35 @@ while IFS='|' read -r CID COST CLICKS CLEADS CNAME; do
   DIRECT_HTML+="<tr><td>${CNAME}</td><td class=r>${COST} ₽</td><td class=r>${CLICKS}</td><td class=r>${CLEADS}</td><td class=r>${CPA}</td></tr>"
 done <<< "$DIRECT_ROWS"
 
-# Стоп-лосс кандидаты — полное множество, без LIMIT
-STOPLOSS_ROWS=$(PSQL "
+# Стоп-лосс кандидаты — полное множество, без LIMIT.
+# Только по РАБОТАЮЩИМ сейчас кампаниям (снимок состояний direct-pulse, 17.08.2026):
+# исторический расход уже остановленной кампании — прошлое, а не решение
+# (инцидент 17.08: пульс предложил стопить 5 кампаний, остановленных ещё 14.08).
+RUNNING_IDS=$(python3 -c "
+import json
+try:
+    s = json.load(open('/opt/scripts/direct-pulse-state.json'))
+    cs = s['campaign_states']
+    print(','.join(cid for cid, v in cs.items() if v['state'] == 'ON'))
+except Exception:
+    print('NOFILE')" 2>/dev/null || echo "NOFILE")
+STOPLOSS_FILTER="AND s.campaign_id::text = ANY(string_to_array('${RUNNING_IDS}',','))"
+[[ "$RUNNING_IDS" == "NOFILE" ]] && STOPLOSS_FILTER=""   # снимка нет — старое поведение
+if [[ -z "$RUNNING_IDS" ]]; then
+  STOPLOSS_ROWS=""   # запущенных кампаний нет — стоп-лоссы неактуальны
+else
+  STOPLOSS_ROWS=$(PSQL "
   SELECT s.campaign_id, round(sum(s.cost))::int, left(max(s.campaign_name), 48)
   FROM direct_campaign_stats s
   LEFT JOIN (
     SELECT utm_campaign, count(*) n FROM leads_log
     WHERE ts >= now() - interval '14 days' AND $CLEAN GROUP BY 1
   ) l ON l.utm_campaign = s.campaign_id::text
-  WHERE s.date >= current_date - 14
+  WHERE s.date >= current_date - 14 ${STOPLOSS_FILTER}
   GROUP BY s.campaign_id
   HAVING round(sum(s.cost)) >= $STOPLOSS_RUB AND coalesce(max(l.n),0) = 0
   ORDER BY 2 DESC")
+fi
 if [[ "$STOPLOSS_ROWS" != *ERROR* ]]; then
   while IFS='|' read -r CID COST CNAME; do
     [[ -z "${CID:-}" ]] && continue
