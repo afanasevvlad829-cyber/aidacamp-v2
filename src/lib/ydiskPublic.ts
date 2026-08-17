@@ -14,7 +14,8 @@ export type YdiskItem = {
 
 type ListCache = { at: number; items: YdiskItem[] };
 const cache = new Map<string, ListCache>();
-const TTL_MS = 10 * 60 * 1000;
+// Ссылки на превью подписанные и живут недолго — держим кэш коротким.
+const TTL_MS = 4 * 60 * 1000;
 
 /** Список видео в публичной папке. Кэш на 10 минут: ссылки на превью подписанные и протухают. */
 export async function listPublicVideos(publicKey: string): Promise<YdiskItem[]> {
