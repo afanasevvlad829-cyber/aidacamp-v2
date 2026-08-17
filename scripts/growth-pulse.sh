@@ -301,10 +301,12 @@ PAID_CPA="—"
 # «scheduled» с прошедшей датой — это УЖЕ вышедшие по расписанию студии посты:
 # реестр не переводит их в published (проверено по живому каналу 14.08.2026,
 # статьи выходят ежедневно). Очередь = только записи без даты или с будущей.
+# Отменённые (note «отменено …», напр. после закрытия канала 14.08.2026) не считаем.
 ZEN_QUEUE=$(PSQL "
   SELECT count(*) FROM publications
   WHERE channel = 'dzen' AND status <> 'published'
-    AND (published_at IS NULL OR published_at >= now())")
+    AND (published_at IS NULL OR published_at >= now())
+    AND coalesce(note,'') NOT ILIKE 'отменено%'")
 if [[ "$ZEN_QUEUE" =~ ^[0-9]+$ ]]; then
   (( ZEN_QUEUE > 0 )) && reg_decision "zen-queue" \
     "📰 Дзен: ${ZEN_QUEUE} материалов без даты публикации или с будущей → проверить очередь в студии?" \
