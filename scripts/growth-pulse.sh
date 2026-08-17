@@ -325,6 +325,62 @@ read -r A7_TOTAL A7_MARKED <<< "$(PSQL "
   FROM leads_log WHERE ts >= now() - interval '7 days' AND $CLEAN" | tr '|' ' ')"
 A7_TOTAL=${A7_TOTAL:-0}; A7_MARKED=${A7_MARKED:-0}
 
+# ── 6b. Codims (школа) — заявки и визиты из Метрики (добавлено 17.08.2026) ──
+# Заявки codims.ru в БД не логируются (lead.ts шлёт только TG+AlfaCRM), поэтому
+# источник — цель Метрики «Отправка формы записи». Боты цели не жмут, а вот
+# ВИЗИТЫ codims завышены осознанной ПФ-кампанией — визиты только справочно.
+CODIMS_GOAL=556934713
+MTOK=$(grep -m1 '^METRIKA_TOKEN=' /opt/mcp/.env 2>/dev/null | cut -d= -f2- | tr -d '"')
+CODIMS_CID=$(grep -m1 '^CODIMS_COUNTER=' /opt/mcp/.env 2>/dev/null | cut -d= -f2- | tr -d '"')
+CODIMS_OK=0; CODIMS_LW=0; CODIMS_AVG=0; CODIMS_VIS_LW=0; CODIMS_ROWS=""
+if [[ -n "$MTOK" && -n "$CODIMS_CID" ]]; then
+  CODIMS_PARSED=$(curl -sS -m 25 -H "Authorization: OAuth $MTOK" \
+    "https://api-metrika.yandex.net/stat/v1/data/bytime?ids=${CODIMS_CID}&metrics=ym:s:visits,ym:s:goal${CODIMS_GOAL}reaches&group=week&date1=$(date -d '49 days ago' +%F)&date2=$(date +%F)" \
+    | python3 -c "
+import json, sys, datetime
+try:
+    d = json.load(sys.stdin)
+    ivs = d['time_intervals']
+    vis = d['data'][0]['metrics'][0]
+    goals = d['data'][0]['metrics'][1]
+    today = datetime.date.today()
+    cur_week = today - datetime.timedelta(days=today.weekday())
+    rows, done_g, done_v = [], [], []
+    for i, iv in enumerate(ivs):
+        start = datetime.date.fromisoformat(iv[0])
+        cur = 1 if start >= cur_week else 0
+        rows.append(f\"{start.strftime('%d.%m')}|{int(goals[i])}|{cur}\")
+        if not cur:
+            done_g.append(int(goals[i])); done_v.append(int(vis[i]))
+    lw = done_g[-1] if done_g else 0
+    prev = done_g[-4:-1]
+    avg = round(sum(prev) / len(prev)) if prev else 0
+    vlw = done_v[-1] if done_v else 0
+    print('OK'); print(lw); print(avg); print(vlw)
+    print('\n'.join(rows))
+except Exception as e:
+    print('ERR', str(e)[:120])
+" 2>/dev/null)
+  if [[ "$(echo "$CODIMS_PARSED" | head -1)" == "OK" ]]; then
+    CODIMS_OK=1
+    CODIMS_LW=$(echo "$CODIMS_PARSED" | sed -n 2p)
+    CODIMS_AVG=$(echo "$CODIMS_PARSED" | sed -n 3p)
+    CODIMS_VIS_LW=$(echo "$CODIMS_PARSED" | sed -n 4p)
+    CODIMS_ROWS=$(echo "$CODIMS_PARSED" | tail -n +5)
+    if (( CODIMS_AVG >= 2 && CODIMS_LW * 2 < CODIMS_AVG )); then
+      reg_decision "codims-leads-drop" \
+        "📉 Codims: заявок школы ${CODIMS_LW}/нед против средних ${CODIMS_AVG} — падение ×2. Разобрать (сезон набора!)" \
+        '{"type":"manual"}' \
+        "набор школы — главный сезонный поток осени" \
+        "к следующему пульсу причина названа и контрдействие запущено"
+    fi
+  else
+    WARN+=("Метрика codims: $(echo "$CODIMS_PARSED" | head -1)")
+  fi
+else
+  WARN+=("Метрика codims: нет METRIKA_TOKEN/CODIMS_COUNTER в /opt/mcp/.env")
+fi
+
 # ── 7. Журнал решений: замер эффекта, истечение, ожидающие агента ────────────
 # Обучение цикла: исполненные стоп-лоссы (direct_suspend старше 3 дней) меряются
 # по факту — расход после остановки и заявки с этих кампаний — и получают вердикт
@@ -395,6 +451,8 @@ LEADS_SVG=$(svg_chart "$(rows_json "$LEADS_ROWS" "#d97a1f" "Заявки по н
 VISITS_SVG=$(svg_chart "$(rows_json "$VISITS_ROWS" "#2f6fb0" "Визиты по неделям" "")")
 SPEND_SVG=""
 [[ -n "$SPEND_ROWS" ]] && SPEND_SVG=$(svg_chart "$(rows_json "$SPEND_ROWS" "#8a8a8a" "Расход Директа по неделям, ₽" "")")
+CODIMS_SVG=""
+[[ "$CODIMS_OK" == "1" && -n "$CODIMS_ROWS" ]] && CODIMS_SVG=$(svg_chart "$(rows_json "$CODIMS_ROWS" "#3d8b5f" "Заявки школы Codims по неделям" "$CODIMS_AVG")")
 
 # Дельта к прошлой неделе: «↑ +25%» / «↓ −40%» / «=» (текстом, не только цветом)
 delta() { # $1=текущее $2=предыдущее
@@ -468,6 +526,7 @@ cat > "$REPORT" <<HTML
 <div class="tiles">
 <div class="tile"><div class="tl">Заявки за неделю</div><div class="tv">${LW_N} <span class="td">${LEADS_DELTA}</span></div><div class="ts">среднее 3 нед: ${AVG_N}</div></div>
 <div class="tile"><div class="tl">Визиты за неделю</div><div class="tv">${VIS_LW} <span class="td">${VISITS_DELTA}</span></div><div class="ts">предыдущая: ${VIS_PREV}</div></div>
+<div class="tile"><div class="tl">Codims: заявки школы</div><div class="tv">${CODIMS_LW}</div><div class="ts">среднее 3 нед: ${CODIMS_AVG} · визитов: ${CODIMS_VIS_LW} (с ПФ-ботами)</div></div>
 <div class="tile"><div class="tl">Директ, 14 дней</div><div class="tv">${TOTAL_COST} ₽</div><div class="ts">платных заявок: ${PAID_LEADS_14} · CPA: ${PAID_CPA} · запущено кампаний: ${DIRECT_ON}</div></div>
 </div>
 
@@ -483,6 +542,8 @@ ${LEADS_SVG}
 <div class="card"><h2>Визиты по неделям</h2>
 ${VISITS_SVG}
 <details><summary class="muted">Таблица</summary><table>${VISITS_TABLE}</table></details></div>
+
+$( [[ -n "$CODIMS_SVG" ]] && echo "<div class=\"card\"><h2>Codims (школа): заявки по неделям <span class=muted>(цель Метрики «Отправка формы записи»; визиты не показываем — завышены ПФ-кампанией)</span></h2>${CODIMS_SVG}</div>" )
 
 <div class="card"><h2>Директ</h2>
 $( [[ -n "$SPEND_SVG" ]] && echo "$SPEND_SVG" )
@@ -510,6 +571,7 @@ if [[ "${GP_NO_TG:-0}" != "1" ]]; then
 
 Заявки: ${LW_N} ${LEADS_DELTA} (ср. ${AVG_N})
 Визиты: ${VIS_LW} ${VISITS_DELTA}
+Codims: заявок школы ${CODIMS_LW} (ср. ${CODIMS_AVG})
 Директ 14д: ${TOTAL_COST} ₽ · заявок ${PAID_LEADS_14} · CPA ${PAID_CPA} · запущено: ${DIRECT_ON}
 
 Решения:${DEC_TG}${EFF_TG}
