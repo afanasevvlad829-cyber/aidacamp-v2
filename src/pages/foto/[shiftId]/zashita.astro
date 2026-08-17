@@ -70,9 +70,7 @@ const mb = (n: number) => `${Math.round(n / 1024 / 1024)} МБ`;
   <div id="z-modal" hidden>
     <button id="z-close" aria-label="Закрыть">×</button>
     <div id="z-stage">
-      <!-- no-referrer обязателен: Яндекс.Диск отдаёт 403 на запросы с чужим Referer. -->
-      <video id="z-video" controls playsinline webkit-playsinline preload="metadata"
-             referrerpolicy="no-referrer"></video>
+      <video id="z-video" controls playsinline webkit-playsinline preload="metadata"></video>
       <p id="z-title"></p>
     </div>
   </div>
@@ -143,6 +141,10 @@ const mb = (n: number) => `${Math.round(n / 1024 / 1024)} МБ`;
     const modal = document.getElementById('z-modal');
     const video = document.getElementById('z-video');
     const title = document.getElementById('z-title');
+
+    // Обязательно: Яндекс.Диск отдаёт 403 на запрос с чужим Referer.
+    // Ставим атрибутом из скрипта — в разметке его не пропускают типы Astro.
+    video.setAttribute('referrerpolicy', 'no-referrer');
 
     function open(name, caption) {
       // Ссылка резолвится на каждый запрос: прямые ссылки Яндекса живут минуты.
