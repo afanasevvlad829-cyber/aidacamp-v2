@@ -52,17 +52,20 @@ sq() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"; }
 # cron */2 мин): кампании Директа стопит/запускает сам, manual-решения отдаёт агенту.
 reg_decision() { # $1=dedup_key $2=title $3=action_json $4=влияет-на $5=ожидаемый-результат
   local KEY="$1" TITLE="$2" ACTION="$3" IMPACT="$4" EXPECTED="$5"
-  local ROW ID AGE
-  ROW=$(PSQL "INSERT INTO decision_log (source, title, action, impact, expected, dedup_key)
+  local OUT ROW ID AGE
+  OUT=$(PSQL "INSERT INTO decision_log (source, title, action, impact, expected, dedup_key)
      VALUES ('growth-pulse', $(sq "$TITLE"), $(sq "$ACTION")::jsonb, $(sq "$IMPACT"), $(sq "$EXPECTED"), $(sq "$KEY"))
      ON CONFLICT (dedup_key) WHERE status='proposed' AND dedup_key IS NOT NULL
      DO UPDATE SET title=EXCLUDED.title, action=EXCLUDED.action,
                    impact=EXCLUDED.impact, expected=EXCLUDED.expected
      RETURNING id || '|' || (current_date - created_at::date)")
-  if [[ "$ROW" =~ ^[0-9]+\|[0-9]+$ ]]; then
+  # psql -tA печатает после строки результата ещё командный тег «INSERT 0 1» —
+  # берём только строку вида «id|возраст» (инцидент первого прогона 17.08.2026)
+  ROW=$(echo "$OUT" | grep -m1 -E '^[0-9]+\|[0-9]+$' || true)
+  if [[ -n "$ROW" ]]; then
     ID=${ROW%|*}; AGE=${ROW#*|}
   else
-    WARN+=("журнал решений: $ROW"); ID="?"; AGE=0
+    WARN+=("журнал решений: $OUT"); ID="?"; AGE=0
   fi
   [[ "$ID" != "?" ]] && REG_IDS+=("$ID")
   local AGE_TXT=""
