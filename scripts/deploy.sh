@@ -293,6 +293,11 @@ REPO_MODULES="$REPO_DIR/node_modules"
 # 4a. Синкаем package.json + package-lock.json на сервер
 rsync -az -e "ssh -i $SSH_KEY" package.json package-lock.json "$SSH_HOST:$REPO_DIR/"
 
+# 4a-bis. Кроновые mjs-скрипты живут рядом с node_modules репо (Node ищет модули от
+# файла, а не от cwd — из /opt/scripts `pg` не нашёлся бы). Синкаем из репо, чтобы
+# серверная копия не разъезжалась с исходником.
+rsync -az -e "ssh -i $SSH_KEY" scripts/ga-purchase-mp.mjs "$SSH_HOST:$REPO_DIR/scripts/"
+
 # 4b. Сверяем хеш package-lock.json с сохранённым. Если изменился → npm ci.
 LOCAL_LOCK_HASH=$(shasum -a 256 package-lock.json | awk '{print $1}')
 REMOTE_LOCK_HASH=$(ssh -i "$SSH_KEY" "$SSH_HOST" \
