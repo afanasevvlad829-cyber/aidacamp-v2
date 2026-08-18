@@ -77,6 +77,22 @@ document.querySelectorAll('[data-toggle]').forEach((el) => {
   });
 });
 
+// Элементы внутри кликабельной шапки, которые не должны её сворачивать/раскрывать
+// (быстрый выбор ответственного). Кнопка-карандаш, наоборот, раскрытие не гасит.
+document.querySelectorAll('[data-stop]').forEach((el) => {
+  ['click', 'mousedown', 'keydown'].forEach((evt) => {
+    el.addEventListener(evt, (ev) => ev.stopPropagation());
+  });
+});
+
+// Янтарная подсветка «ответственный не назначен» снимается сразу после выбора.
+document.querySelectorAll('.den-resp-quick').forEach((sel) => {
+  sel.addEventListener('change', () => {
+    if ((sel as HTMLSelectElement).value) sel.removeAttribute('data-empty');
+    else sel.setAttribute('data-empty', '');
+  });
+});
+
 // Сохранить блок
 // Фоновое автосохранение карточки (debounce). Без reload — обновляем только сводку.
 const saveTimers = new WeakMap();
@@ -357,7 +373,7 @@ document.getElementById('copy-day')?.addEventListener('click', () => {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
     body: JSON.stringify({ shift_id: Number(shiftId), from_date: date, to_date: target }),
   }).then((r) => r.json()).then((res) => {
-    if (res.ok) { alert('Скопировано блоков: ' + (res.count ?? 0)); location.href = '/portal/den?shift=' + shiftId + '&date=' + target; }
+    if (res.ok) { alert('Скопировано блоков: ' + (res.count ?? 0)); location.href = '/portal/smena?shift=' + shiftId + '&date=' + target; }
     else alert('Ошибка: ' + (res.error || 'copy-day не готов'));
   });
 });

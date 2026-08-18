@@ -1,5 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
+import { fetchWithTimeout } from '../../lib/fetchWithTimeout';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 
@@ -143,7 +144,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Вызываем VK API
     const apiUrl = `https://api.vk.com/method/wall.post?${params.toString()}`;
-    const apiRes = await fetch(apiUrl, {
+    const apiRes = await fetchWithTimeout(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });

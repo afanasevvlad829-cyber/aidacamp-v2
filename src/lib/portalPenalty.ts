@@ -1,6 +1,7 @@
 // Дисциплина сотрудников: штрафы, причины, авто-детекторы.
 // Изолирован от детской игровой экономики (portal_prize_*).
 import { withDbClient } from './db';
+import { fetchWithTimeout } from './fetchWithTimeout';
 
 // Telegram: уведомление сотруднику + копия Дарье и Владимиру
 const DARYA_TG_ID  = 2040464481;   // Дарья Афанасьева
@@ -10,7 +11,7 @@ async function sendTg(chatId: number, text: string): Promise<void> {
   const token = process.env.PORTAL_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || '';
   if (!token || !chatId) return;
   try {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    await fetchWithTimeout(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),

@@ -183,6 +183,19 @@ describe('mergePendingIntoPlaceholder', () => {
     expect(client._rolledBack()).toBe(true);
   });
 
+  it('объединяет с placeholder без staff_key (создан через add-manual без ключа)', async () => {
+    const targetNoKey: Row = { ...validTarget, staff_key: null };
+    const client = makeSmartClient({ pending: validPending, target: targetNoKey });
+    const result = await withMockedClient(client, async () => {
+      const { mergePendingIntoPlaceholder } = await import('./portalStaff');
+      return mergePendingIntoPlaceholder(1, 2, 999);
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(client._committed()).toBe(true);
+    expect(client._rolledBack()).toBe(false);
+  });
+
   it('отказывает если target уже имеет telegram_id', async () => {
     const targetWithTg: Row = { ...validTarget, telegram_id: 777 };
     const client = makeSmartClient({ pending: validPending, target: targetWithTg });

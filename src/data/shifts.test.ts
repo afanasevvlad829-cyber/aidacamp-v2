@@ -12,6 +12,8 @@ import {
   shiftDeduction,
   shiftDatesFull,
   shiftDatesShort,
+  lastCompletedShift,
+  displayShifts,
   type Shift,
 } from './shifts';
 import { getCurrentPrice, getTaxDeduction } from './dynamicPrices';
@@ -23,11 +25,14 @@ describe('mainShifts', () => {
     expect(mainShifts.length).toBeGreaterThan(0);
   });
 
-  it('все смены имеют startDate в будущем относительно сегодня', () => {
+  // До 15.08.2026 держали строгую версию («ни одна смена не завершилась») — упала
+  // 16.08.2026: Смена 3 закончилась накануне (endDate 08-15), Смена 4 ещё не началась
+  // (startDate 08-17) — однодневный зазор между сменами, не забытые протухшие данные.
+  // Смягчили инвариант: хотя бы одна смена в mainShifts должна быть ещё не завершена —
+  // это ловит реально забытую ротацию (весь массив в прошлом), но не однодневный зазор.
+  it('хотя бы одна смена не завершилась (endDate >= сегодня)', () => {
     const today = new Date().toISOString().slice(0, 10);
-    for (const s of mainShifts) {
-      expect(s.startDate > today).toBe(true);
-    }
+    expect(mainShifts.some(s => s.endDate >= today)).toBe(true);
   });
 
   it('endDate после startDate для всех активных смен', () => {
@@ -190,5 +195,30 @@ describe('date exports', () => {
 
   it('DATES_SHORT_S2 — одномесячный диапазон (содержит –)', () => {
     expect(DATES_SHORT_S2).toContain('–');
+  });
+});
+
+// ── lastCompletedShift: честное определение последней завершённой смены ──────
+
+describe('lastCompletedShift', () => {
+  it('находит самую позднюю смену с endDate < today', () => {
+    const s = lastCompletedShift('2026-07-14');
+    expect(s?.id).toBe('shift-2'); // endDate 2026-06-23, позже чем у shift-1 (2026-06-08)
+  });
+
+  it('возвращает null, если ни одна смена ещё не завершилась', () => {
+    const s = lastCompletedShift('2026-01-01');
+    expect(s).toBeNull();
+  });
+
+  it('смена, которая идёт прямо сейчас (today внутри диапазона) — не считается завершённой', () => {
+    const s = lastCompletedShift('2026-06-15'); // внутри shift-2 (10-23 июня)
+    expect(s?.id).not.toBe('shift-2');
+  });
+
+  it('рассматривает все смены из displayShifts, не только mainShifts', () => {
+    // displayShifts включает завершённые _shift1/_shift2 — эта проверка ловит регресс,
+    // если кто-то случайно перепишет функцию на mainShifts (там завершённых уже нет).
+    expect(displayShifts.some(s => s.id === 'shift-2')).toBe(true);
   });
 });

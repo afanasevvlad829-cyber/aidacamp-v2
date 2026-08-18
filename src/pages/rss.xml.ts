@@ -1,21 +1,9 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
-import pg from 'pg';
-
-const { Pool } = pg;
+import { getPool } from '../lib/db';
 
 const BASE_URL = 'https://aidacamp.ru';
-
-let _pool: InstanceType<typeof Pool> | null = null;
-function getPool() {
-  if (!_pool) {
-    const url = process.env.DATABASE_URL || import.meta.env.DATABASE_URL;
-    if (!url) return null;
-    _pool = new Pool({ connectionString: url, max: 3 });
-  }
-  return _pool;
-}
 
 function toRFC822(date: string | Date): string {
   return new Date(date).toUTCString();
@@ -49,8 +37,12 @@ export const GET: APIRoute = async () => {
         pubDates.set(r.slug, r.rss_published_at);
       }
     }
-  } catch {
-    // БД недоступна — пустой фид
+  } catch (e) {
+    // БД недоступна/ошибка запроса — фид уйдёт ПУСТЫМ, поэтому шумим в лог, чтобы
+    // поломка не пряталась месяцами. Инцидент 07.2026: у роли сайта не было SELECT
+    // на article_views → запрос падал → пустой RSS → ноль трафика из Дзена, и никто
+    // не замечал, потому что ошибка глоталась молча.
+    console.error('[rss.xml] запрос rss_published_at упал, фид будет пустым:', e instanceof Error ? e.message : e);
   }
 
   const articleEntries = await getCollection('articles');

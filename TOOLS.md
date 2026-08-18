@@ -1265,9 +1265,29 @@ disown
 mcp__aidacamp-tools__ssh: tail -20 /opt/vlad-a/app/replicate-rescued/poll.log
 ```
 
-`/opt/scripts/replicate-poll.sh <outdir> <id...>` (написан и проверен 13.07.2026) сам ждёт готовности (интервал 15с, потолок 30 мин), сам скачивает готовое видео в `<outdir>/<id>.mp4`, пишет статус в лог. Токен ищет тем же способом, что уже принят в проекте (`r8_...` в `/opt/*/.env*`).
+`/opt/scripts/replicate-poll.sh <outdir> <id...>` (написан и проверен 13.07.2026) сам ждёт готовности (интервал 15с, потолок 30 мин), сам скачивает готовое видео в `<outdir>/<id>.mp4`, пишет статус в лог. Токен ищет тем же способом, что уже принят в проекте (`REPLICATE_API_TOKEN` из окружения либо `r8_...` в `/opt/*/.env*`).
+
+С 17.07.2026 при `succeeded` скрипт дополнительно скачивает **все** output-URL в постоянное хранилище `/var/www/aidacamp-media/replicate/<prediction_id>/` (+ там же `prediction.json` с ответом API) и пишет пути в лог — оплаченный результат больше не теряется, даже если про `<outdir>` забыли.
+Перед скачиванием проверяется диск: при < 5 ГБ свободного — 🚨-алерт в лог вместо скачивания (URL-ы остаются в `prediction.json` — освободить место и скачать вручную, пока Replicate не удалил output).
 
 Тот же принцип — для любой другой долгой операции (не только Replicate): фон на сервере (`nohup`/tmux/systemd) + лог-файл + короткие проверки. Ничего никогда не ждать одним вызовом дольше пары секунд.
+
+### Reaper осиротевших headless Chrome (agent-browser)
+
+**Инцидент 11.08.2026:** `agent-browser` не чистит Chrome-процессы прошлых сессий — накопилось 58 осиротевших (3.3 ГБ, группы висели 8ч–1сутки) → RAM исчерпана → своп-трэшинг (`vmstat`: постоянные si/so, `bi` до 525k) → load average ~16 на 4 ядрах при почти нулевом полезном CPU (`us` 2.3%). Утечка воспроизводится: за ~13ч после ручной чистки накопилась снова.
+
+**Предохранитель:** [`scripts/server/agent-browser-reaper.sh`](scripts/server/agent-browser-reaper.sh) (копия на сервере — `/opt/scripts/agent-browser-reaper.sh`) + systemd `agent-browser-reaper.timer` (hourly). Убивает `agent-browser` Chrome старше `THRESHOLD_SEC` (по умолчанию 4ч), **кроме** процессов в cgroup управляемого юнита `agent-browser-chrome.service` (список берётся из `/sys/fs/cgroup/system.slice/agent-browser-chrome.service/cgroup.procs`) — так живой рабочий Chrome не трогается, даже если он сам живёт дольше порога. Fail-safe: если cgroup юнита не читается — скрипт не убивает ничего (лучше пропустить цикл, чем случайно снести управляемый процесс).
+
+```bash
+# Проверка без убийства (лог, ничего не убивает):
+DRY_RUN=1 /opt/scripts/agent-browser-reaper.sh && tail -20 /var/log/agent-browser-reaper.log
+
+# Статус таймера / последний прогон:
+systemctl list-timers agent-browser-reaper.timer
+systemctl status agent-browser-reaper.service
+```
+
+⚠️ Скрипт лежит в git как источник правды для аудита/изменений — при правке в репо синхронизировать на сервер вручную (`scp` + `chmod +x`), автодеплоя на `/opt/scripts/` нет.
 
 ---
 

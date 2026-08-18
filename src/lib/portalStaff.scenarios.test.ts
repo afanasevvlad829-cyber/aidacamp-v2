@@ -74,11 +74,12 @@ describe('mergePendingIntoPlaceholder', () => {
 });
 
 describe('setRoles — мульти-роль', () => {
-  it('сохраняет массив ролей + активная роль = первая', async () => {
+  it('сохраняет массив ролей + активная роль = наивысшая + флаг активации', async () => {
     const { setRoles } = await import('./portalStaff');
     await setRoles(999, ['rukovoditel', 'vozhaty'] as any, 100);
-    const update = client.calls.find((c) => /UPDATE portal_staff SET roles/.test(c.sql));
+    const update = client.calls.find((c) => /UPDATE portal_staff\s+SET roles/.test(c.sql));
     expect(update).toBeTruthy();
-    expect(update!.params).toEqual([999, ['rukovoditel', 'vozhaty'], 'rukovoditel', 100]);
+    // $5 = willActivate: roles непустой → active=TRUE
+    expect(update!.params).toEqual([999, ['rukovoditel', 'vozhaty'], 'rukovoditel', 100, true]);
   });
 });

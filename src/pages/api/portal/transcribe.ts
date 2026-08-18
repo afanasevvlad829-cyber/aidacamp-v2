@@ -1,5 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
+import { fetchWithTimeout } from '../../../lib/fetchWithTimeout';
 import { requireStaff } from '../../../lib/portalPerms';
 
 const ALLOWED = new Set(['admin', 'rukovoditel', 'teacher', 'vozhaty', 'student']);
@@ -44,11 +45,12 @@ async function callProvider(p: Provider, blob: File): Promise<{ ok: true; text: 
   upstream.append('language', 'ru');
   upstream.append('response_format', 'json');
   try {
-    const r = await fetch(p.url, {
+    // Транскрибация до 8 МБ аудио — дольше обычного API-вызова, таймаут 60с
+    const r = await fetchWithTimeout(p.url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${p.key}` },
       body: upstream,
-    });
+    }, 60000);
     if (!r.ok) {
       const detail = await r.text().catch(() => '');
       return { ok: false, status: r.status, detail: detail.slice(0, 300) };
