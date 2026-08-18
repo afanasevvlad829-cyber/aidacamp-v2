@@ -1,7 +1,21 @@
 // Чтение публичной папки Яндекс.Диска без токена и без перекачки файлов на сервер.
 // Видео отдаёт сам Яндекс: мы только резолвим временную прямую ссылку и редиректим.
 
+import { existsSync } from 'node:fs';
+
 const API = 'https://cloud-api.yandex.net/v1/disk/public/resources';
+const LOCAL_ROOT = '/var/www/aidacamp-media/videos/zashita';
+
+/**
+ * Локальная (например, с почищенным звуком) копия защиты, если она есть —
+ * тогда отдаём её вместо прокси на Яндекс. Имя файла приходит только из
+ * items, уже сверенных со списком с Яндекс.Диска (см. вызовы), так что
+ * путь по конструкции не может выйти за пределы LOCAL_ROOT.
+ */
+export function localVideoUrl(shiftId: string, name: string): string | null {
+  const path = `${LOCAL_ROOT}/${shiftId}/${name}`;
+  return existsSync(path) ? `/videos/zashita/${shiftId}/${encodeURIComponent(name)}` : null;
+}
 
 export type YdiskItem = {
   name: string;
