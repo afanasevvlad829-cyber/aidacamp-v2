@@ -4,6 +4,16 @@ import tailwindcss from '@tailwindcss/vite';
 import node from '@astrojs/node';
 import sitemap from '@astrojs/sitemap';
 import compress from '@playform/compress';
+import htmlMinifyCached from './scripts/html-minify-cached.mjs';
+
+// SKIP_COMPRESS=1 выключает минификацию. Нужен первому проходу build.sh: тот проход
+// существует только чтобы отрендерить статьи для gen-articles.mjs, его dist/ никуда
+// не едет — а compress стоит ~74с (замер по логу CI 14.08.2026: он один занимает 148с
+// из 210с двухпроходной сборки, тогда как сам astro build — ~30с за проход).
+// gen-articles.mjs парсит результат по маркерам-атрибутам (data-rss-strip,
+// data-article-subtitle) и сам нормализует пробелы, поэтому минифицирован вход
+// или нет — ему безразлично.
+const SKIP_COMPRESS = process.env.SKIP_COMPRESS === '1';
 
 export default defineConfig({
   site: 'https://aidacamp.ru',
@@ -78,6 +88,7 @@ export default defineConfig({
         !page.includes('/mincifry-v2/') && // клиентская B2B-презентация (Минцифры), не публичная, noindex
         !page.includes('/fortune-success/') && // thank-you страница оплаты, noindex
         !page.includes('/staff/') && // внутренний конструктор смен, доступ по cookie, noindex
+        !page.includes('/foto/') && // фото по сменам с фильтром по ребёнку, noindex — см. docs/superpowers/specs/2026-08-03-shift-photo-filter-design.md
         !page.includes('/audit-portal') && // внутренние security/audit-дашборды, noindex
         !page.includes('/prototype/') && // черновики-прототипы, noindex
         !page.includes('/r/') && // персонализированная страница для возвратников (рассылка), не для органики
@@ -132,15 +143,20 @@ export default defineConfig({
         return item;
       },
     }),
-    compress({
+    // HTML минифицируем сами, с кэшем по содержимому (scripts/html-minify-cached.mjs):
+    // у compress это 74с на КАЖДУЮ сборку по всем 344 страницам, хотя типичная правка
+    // задевает единицы. CSS/JS оставлены ему — там 32 и 110 файлов и экономия 5.28 КБ
+    // и 7.7 КБ, отдельный кэш не окупается.
+    htmlMinifyCached(),
+    ...(SKIP_COMPRESS ? [] : [compress({
       CSS: true,
-      HTML: true,
+      HTML: false,
       JavaScript: true,
       Image: false,
       SVG: false,
       // @playform/pipe матчит строки как RegExp — glob-строка 'metodichki/**' роняет билд («Nothing to repeat»)
       Exclude: [/metodichki\//, /demo\//],
-    }),
+    })]),
   ],
   devToolbar: { enabled: false },
   vite: {

@@ -51,15 +51,29 @@ const HOMEPAGE_HUB_URLS = [
   '/lager-nedorogo/', '/lager-dlya-podrostkov/', '/lager-dlya-devochek/', '/lager-dlya-malchikov/',
   '/zagorodnyj-lager/', '/lager-letnego-prebyvaniya/', '/lager-s-basseynom/', '/moskovskie-letnie-lagerya/',
   '/it-lager/',
+  // Симуляция графа перелинковки 09.08.2026: 1 входящая ссылка при частотности 151
+  // (Wordstat, кавычки) — «Цены» в главном меню ведёт на /#shifts, не на /ceny/.
+  // Не трогаем меню (виджет смен на главной — сознательный UX), добавляем сюда.
+  '/ceny/',
 ];
 const homepageHubPages = HOMEPAGE_HUB_URLS
   .map(url => allLandingPages.find(p => p.url === url))
   .filter((p): p is NonNullable<typeof p> => p !== undefined);
+
+// Без месяца: главная берёт безсезонные головные ключи (детский лагерь,
+// летний лагерь, лагерь в подмосковье), а месячные запросы — страницы
+// /lager-na-iyun/, /lager-na-iyul/, /lager-na-avgust-podmoskove/.
+// «июнь 2026» тут стоял литералом и в августе уводил выдачу в прошлый месяц.
+//
+// Пояснение живёт здесь, а не между атрибутами тега: `{/* ... */}` в позиции
+// атрибута ломает генерацию TSX — astro check падает с "Unterminated string
+// literal" в конце файла, и 02.08.2026 это на полдня остановило все выкаты.
+const PAGE_TITLE = `Путёвка в детский летний лагерь в Подмосковье для детей и подростков ${SEASON_YEAR}`;
 ---
 
 <Base
-  title={`Летний детский лагерь для детей и подростков, Подмосковье, июнь ${SEASON_YEAR}`}
-  description={`Летний детский оздоровительный лагерь для детей и подростков в Подмосковье ${SEASON_YEAR} — IT-программа, спорт, нейросети, бассейн, 5-разовое питание, Путевка на лето.`}
+  title={PAGE_TITLE}
+  description={`Летний детский оздоровительный лагерь для детей и подростков в Подмосковье ${SEASON_YEAR} — IT-программа, спорт, нейросети, бассейн, 5-разовое питание, медработник 24/7. Путёвка на лето — от ${PRICE_MIN}.`}
   heroPreloadMobile="/images/hero-mobile-bean-v3-414.avif"
   heroPreloadMobileSrcset="/images/hero-mobile-bean-v3.avif 390w, /images/hero-mobile-bean-v3-414.avif 414w, /images/hero-mobile-bean-v3-828.avif 828w"
   heroPreloadDesktop="/images/hero-desktop-1440.avif"
@@ -103,6 +117,7 @@ const homepageHubPages = HOMEPAGE_HUB_URLS
     <Hackathon />
     <Team compact />
     <FAQ
+      heading="FAQ лагеря"
       only={['safety', 'food', 'accommodation', 'payment']}
       moreLink={{ href: '/faq/', text: 'Все вопросы и ответы' }}
       intro={{
@@ -113,7 +128,7 @@ const homepageHubPages = HOMEPAGE_HUB_URLS
     />
     <Contacts />
     <SeoTextBlock />
-    <RelatedPages pages={homepageHubPages} />
+    <RelatedPages pages={homepageHubPages} title="Лагеря Подмосковья по интересам" />
   </main>
   <Footer />
   <!-- ShiftModal mounted in Base.astro globally — НЕ дублировать здесь (вызывало 2 модала) -->
