@@ -1,7 +1,15 @@
 ---
-import { DATES_S3, DATES_SHORT_S4, PEER_COUNTS, PRICE_S3, PRICE_S4 } from '../data/shifts';
+import { DATES_S3, DATES_SHORT_S4, PEER_COUNTS, PRICE_S3, PRICE_S4, SEASON_YEAR } from '../data/shifts';
+import { isSalesOpen } from '../data/dynamicPrices';
+import { AUTUMN_SEASON } from '../data/seasons';
 // AgeBar.astro — плашка выбора возраста (снизу экрана)
 // v3: scroll-triggered (25%), без таймера, мобилка + десктоп, вторичные страницы
+// v4 (2026-08-17): смена 3/4 — единственные в mainShifts — обе закрыты для брони
+// (getShiftPhase 'done'/'live'). isSalesOpen() проверяет это по датам, не хардкодом —
+// когда в mainShifts появится смена в фазе 'upcoming' (новый сезон открыт к продаже),
+// бар сам вернётся к обычному возрастному роутингу без правки этого файла.
+
+const salesOpen = isSalesOpen();
 
 const ageCountsJson = JSON.stringify({
   '7–9':   { 'shift-3': PEER_COUNTS['shift-3']['7–9'],  'shift-4': PEER_COUNTS['shift-4']['7–9']  },
@@ -47,6 +55,38 @@ const ageCountsJson = JSON.stringify({
          translate-y-full opacity-0 pointer-events-none
          transition-all duration-500 ease-out"
 >
+  <!-- Сезон закрыт для брони (обе смены mainShifts прошли фазу 'upcoming') —
+       вместо возрастного роутинга показываем предзапись на следующий сезон. -->
+  {!salesOpen ? (
+  <div
+    id="age-bar-closed"
+    class="bg-white/97 backdrop-blur-md border-t border-slate-200
+           shadow-[0_-6px_24px_rgba(15,23,42,0.08)]"
+  >
+    <div class="mx-auto max-w-[640px] px-4 py-4 flex items-center gap-3">
+      <div class="min-w-0 flex-1">
+        <p class="text-base font-semibold text-body leading-tight">Лето {SEASON_YEAR} — свободных мест больше нет</p>
+        <p class="text-base text-body-muted mt-0.5 leading-snug">Следующий заезд — осень, {AUTUMN_SEASON.seasonMeta.dates}. Открыта предзапись.</p>
+      </div>
+      <a
+        href={`${AUTUMN_SEASON.path}/`}
+        class="shrink-0 rounded-[10px] bg-primary/10 border border-primary/30 px-4 py-2.5
+               text-base font-semibold text-primary hover:bg-primary/16 hover:border-primary/50
+               transition-colors active:scale-95"
+        data-age-bar-preregister
+      >Узнать →</a>
+      <button
+        id="age-bar-close"
+        aria-label="Закрыть"
+        class="shrink-0 text-body-faint hover:text-body-muted
+               transition-colors px-2 py-2 rounded-[8px] hover:bg-surface-alt"
+      >
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+  </div>
+  ) : (
+  <Fragment>
   <!-- Фаза 1: выбор возраста — светлая тема, согласована с сайтом -->
   <!-- data-bg-dismiss: клик по фону (мимо кнопок) = "Позже", устраняет dead clicks -->
   <div
@@ -162,6 +202,8 @@ const ageCountsJson = JSON.stringify({
       </p>
     </div>
   </div>
+  </Fragment>
+  )}
 </div>
 
 <style>
