@@ -6,14 +6,12 @@ import Header from '../components/Header.astro';
 import Hero from '../components/Hero.astro';
 import MomStory from '../components/MomStory.astro';
 import About from '../components/About.astro';
-import Philosophy from '../components/Philosophy.astro';
 import Shifts from '../components/Shifts.astro';
 import TrevoznyjRoditel from '../components/TrevoznyjRoditel.astro';
 import GalleryPreview from '../components/GalleryPreview.astro';
 // Videos moved to /video/ page (Phase G)
 import Reviews from '../components/Reviews.astro';
 import FAQ from '../components/FAQ.astro';
-import Guarantees from '../components/Guarantees.astro';
 import Team from '../components/Team.astro';
 // Mentors merged into Team (Phase M, design system)
 import Stay from '../components/Stay.astro';
@@ -26,21 +24,59 @@ import Contacts from '../components/Contacts.astro';
 import Footer from '../components/Footer.astro';
 import StickyCta from '../components/StickyCta.astro';
 import RelatedPages from '../components/RelatedPages.astro';
-import LiveBookingFeed from '../components/LiveBookingFeed.astro';
 import SeoTextBlock from '../components/SeoTextBlock.astro';
+import LiveBookingFeed from '../components/LiveBookingFeed.astro';
 // ShiftOccupancy removed (proof в hero proof-line)
 // SummerCta removed (дубль sticky CTA, см. design audit 2026-05-02)
 import SchemaOrg from '../components/SchemaOrg.astro';
 // TrustBlock — только на /r/ для возвратников
 import { landingPages as allLandingPages } from '../data/landing-pages';
+
+/**
+ * ПРОТОТИП: главная линкует только на хаб-страницы (тир 0+1 по реальной частотности
+ * Wordstat, + IT-лагерь вне тиров — уже #3 в выдаче, must-keep). Остальные 106
+ * лендингов не теряют вес — они уже связаны между собой через getRelatedPages()
+ * и присутствуют в sitemap. Полный список ссылок и обоснование — в переписке 25.07.2026.
+ *
+ * /lager-dlya-detey/, /detskie-lagerya/, /skolko-stoit-lager-dlya-rebenka/ —
+ * исключены 25.07.2026: попали в noindex 24.07.2026 (решение владельца, #1110,
+ * консолидация 13 программатик-клонов) и уже вне sitemap (astro.config.mjs) —
+ * линковать с главной на заноиндексированные страницы не нужно.
+ */
+const HOMEPAGE_HUB_URLS = [
+  '/detskiy-lager/', '/lager-v-podmoskove/', '/lager-v-moskve/',
+  '/ozdorovitelnyj-lager/', '/detskiy-lager-podmoskove/',
+  '/putevka-v-lager/', '/lager-na-leto-2026/',
+  '/detskiy-lager-oficialnyj/', '/lager-dlya-shkolnikov/',
+  '/lager-nedorogo/', '/lager-dlya-podrostkov/', '/lager-dlya-devochek/', '/lager-dlya-malchikov/',
+  '/zagorodnyj-lager/', '/lager-letnego-prebyvaniya/', '/lager-s-basseynom/', '/moskovskie-letnie-lagerya/',
+  '/it-lager/',
+  // Симуляция графа перелинковки 09.08.2026: 1 входящая ссылка при частотности 151
+  // (Wordstat, кавычки) — «Цены» в главном меню ведёт на /#shifts, не на /ceny/.
+  // Не трогаем меню (виджет смен на главной — сознательный UX), добавляем сюда.
+  '/ceny/',
+];
+const homepageHubPages = HOMEPAGE_HUB_URLS
+  .map(url => allLandingPages.find(p => p.url === url))
+  .filter((p): p is NonNullable<typeof p> => p !== undefined);
+
+// Без месяца: главная берёт безсезонные головные ключи (детский лагерь,
+// летний лагерь, лагерь в подмосковье), а месячные запросы — страницы
+// /lager-na-iyun/, /lager-na-iyul/, /lager-na-avgust-podmoskove/.
+// «июнь 2026» тут стоял литералом и в августе уводил выдачу в прошлый месяц.
+//
+// Пояснение живёт здесь, а не между атрибутами тега: `{/* ... */}` в позиции
+// атрибута ломает генерацию TSX — astro check падает с "Unterminated string
+// literal" в конце файла, и 02.08.2026 это на полдня остановило все выкаты.
+const PAGE_TITLE = `Путёвка в детский летний лагерь в Подмосковье для детей и подростков ${SEASON_YEAR}`;
 ---
 
 <Base
-  title={`Летний детский лагерь в Подмосковье ${SEASON_YEAR} | АйДаКемп — IT`}
-  description={`Летний детский оздоровительный лагерь в Подмосковье ${SEASON_YEAR} — IT-программа, бассейн, 5-разовое питание. Летние лагеря: смены с 30 мая по 26 авг, 10 и 13 дней. Трансфер от метро. От ${PRICE_MIN}. Рейтинг 5.0 ★`}
+  title={PAGE_TITLE}
+  description={`Летний детский оздоровительный лагерь для детей и подростков в Подмосковье ${SEASON_YEAR} — IT-программа, спорт, нейросети, бассейн, 5-разовое питание, медработник 24/7. Путёвка на лето — от ${PRICE_MIN}.`}
   heroPreloadMobile="/images/hero-mobile-bean-v3-414.avif"
   heroPreloadMobileSrcset="/images/hero-mobile-bean-v3.avif 390w, /images/hero-mobile-bean-v3-414.avif 414w, /images/hero-mobile-bean-v3-828.avif 828w"
-  heroPreloadDesktop="/images/hero-desktop.avif"
+  heroPreloadDesktop="/images/hero-desktop-1440.avif"
 >
   <Fragment slot="head">
     {/* P2 LCP: preloads перенесены в heroPreloadMobile/heroPreloadDesktop props Base.astro
@@ -59,12 +95,11 @@ import { landingPages as allLandingPages } from '../data/landing-pages';
     </div>
 
     <!-- Порядок: Hero → MomStory → Shifts → TrevoznyjRoditel → Reviews → Stay → GalleryPreview → … -->
-    <Shifts />
+    <Shifts compactPastShifts />
     <TrevoznyjRoditel />
     <Reviews />
     <Stay />
     <GalleryPreview />
-    <div class="returning-hide"><Philosophy /></div>
     <div class="returning-hide"><Journey /></div>
     <Economy />
     <div class="returning-hide"><About /></div>
@@ -80,12 +115,20 @@ import { landingPages as allLandingPages } from '../data/landing-pages';
     })();
     </script>
     <Hackathon />
-    <Team />
-    <Guarantees />
-    <FAQ />
+    <Team compact />
+    <FAQ
+      heading="FAQ лагеря"
+      only={['safety', 'food', 'accommodation', 'payment']}
+      moreLink={{ href: '/faq/', text: 'Все вопросы и ответы' }}
+      intro={{
+        text: 'Частые вопросы по лагерю: возврат при болезни, застрахованная ответственность туроператора.',
+        href: '/garantii/',
+        linkText: 'Все гарантии →',
+      }}
+    />
     <Contacts />
     <SeoTextBlock />
-    <RelatedPages pages={allLandingPages} />
+    <RelatedPages pages={homepageHubPages} title="Лагеря Подмосковья по интересам" />
   </main>
   <Footer />
   <!-- ShiftModal mounted in Base.astro globally — НЕ дублировать здесь (вызывало 2 модала) -->

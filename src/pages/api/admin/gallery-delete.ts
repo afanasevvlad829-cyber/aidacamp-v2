@@ -2,7 +2,11 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { unlink, readFile, writeFile } from 'fs/promises';
 import { join, extname } from 'path';
-import { readdirSync } from 'fs';
+import { readdirSync, existsSync } from 'fs';
+
+// Прод/dev: nginx отдаёт /images/gallery/ через alias на /var/www/aidacamp-gallery/
+// (отдельное хранилище галерей смен, см. CLAUDE.md → «Медиа и файлы»).
+const SHARED_GALLERY_DIR = '/var/www/aidacamp-gallery';
 
 export const DELETE: APIRoute = async ({ request }) => {
   try {
@@ -11,7 +15,7 @@ export const DELETE: APIRoute = async ({ request }) => {
       return json({ error: 'Неверное имя файла' }, 400);
     }
 
-    const galleryDir = join(process.cwd(), 'images', 'gallery');
+    const galleryDir = existsSync(SHARED_GALLERY_DIR) ? SHARED_GALLERY_DIR : join(process.cwd(), 'images', 'gallery');
 
     // Удаляем все варианты файла
     const targets = [

@@ -119,12 +119,12 @@ export const mainShifts: Shift[] = [
     name: 'Смена 4',
     dates: '17 августа — 26 августа',
     duration: '10 дней',
-    status: 'места есть',
+    status: 'мало мест',
     statusType: 'available',
     description: 'Закрытие лета: сильный проект и уверенный результат.',
     price: '74 900 ₽',
-    free: 8,
-    occupied: 37,
+    free: 3,
+    occupied: 42,
     startDate: '2026-08-17',
     endDate: '2026-08-26',
   },
@@ -225,6 +225,19 @@ export function shiftDeduction(s: Shift): number {
  * поиском по странице. Единственное место, где задаётся формат — здесь.
  */
 export const fmtRub = (n: number) => n.toLocaleString('ru-RU').replace(/[\u00a0\u202f]/g, ' ') + ' ₽';
+// === Трансфер от м. Солнцево — ЕДИНЫЙ ИСТОЧНИК. НЕ хардкодить цену/пункт на страницах! ===
+// Инцидент: на нескольких гео-лендингах (balashiha, lubertsy, krasnogorsk, zelenograd,
+// zagorodnyj-lager) часть текста утверждала «бесплатный трансфер», другая — 2000₽ —
+// потому что цена была захардкожена отдельной строкой в каждом файле, и правки
+// расходились. Страж: npm run check:transfer.
+export const TRANSFER_PRICE = 2000; // ₽, в один конец
+export const TRANSFER_POINT = 'м. Солнцево'; // точка отправления/сбора
+export const TRANSFER_PRICE_FMT = fmtRub(TRANSFER_PRICE); // «2 000 ₽»
+export const TRANSFER_INFO = `${TRANSFER_PRICE_FMT} в один конец, с сопровождающим`; // готовая фраза для прозы
+// Туда-обратно — ПРОИЗВОДНОЕ от TRANSFER_PRICE, не отдельное число (нашли ещё один
+// вариант того же дрейфа: campData.ts называл 4000₽, BookingInfoModal.astro — 5000₽).
+export const TRANSFER_PRICE_ROUNDTRIP_FMT = fmtRub(TRANSFER_PRICE * 2); // «4 000 ₽»
+
 const _fmtV = fmtRub;
 // Форматированные строки вычета для прозы (как PRICE_*): «6 250 ₽».
 export const VYCHET_S1 = _fmtV(shiftDeduction(_shift1));
@@ -235,13 +248,21 @@ export const VYCHET_S21 = _fmtV(shiftDeduction(_shift21));
 export const VYCHET_S22 = _fmtV(shiftDeduction(_shift22));
 export const VYCHET_MAX = _fmtV(Math.max(shiftDeduction(mainShifts[0]), shiftDeduction(mainShifts[1])));
 
-// === Осень 2026 — ПРЕДВАРИТЕЛЬНО (решение владельца 2026-07-03, утверждение дат и цены — сентябрь) ===
-// Сознательно НЕ в mainShifts/shortShifts: бронь закрыта, на сайте только предзапись (SeasonPreRegister).
-// При открытии продаж: перенести в mainShifts обычной сменой и удалить эти константы.
+// === Осень 2026 — окна заездов утверждены владельцем 2026-08-14 (цена — решение 2026-07-03) ===
+// Два заезда: основной под четвертные каникулы, второй под триместровый график школ.
+// Сознательно НЕ в mainShifts/shortShifts: бронь пока закрыта, на сайте только предзапись (SeasonPreRegister).
+// При открытии продаж: перенести в mainShifts обычными сменами и удалить эти константы.
 export const AUTUMN_2026 = {
   price: '49 900 ₽',
-  startDate: '2026-10-27',
-  endDate: '2026-11-02',
+  startDate: '2026-10-25',
+  endDate: '2026-10-31',
+  days: 7,
+} as const;
+// Второй (дополнительный) заезд — для школ с триместровой системой, утверждён 2026-08-14.
+export const AUTUMN_2026_WINDOW2 = {
+  price: '49 900 ₽',
+  startDate: '2026-11-15',
+  endDate: '2026-11-21',
   days: 7,
 } as const;
 export const PRICE_OSEN = AUTUMN_2026.price;
@@ -294,6 +315,15 @@ export const DATES_SHORT_S4 = shiftDatesShort(mainShifts[1]);
 export const DATES_SHORT_S21 = shiftDatesShort(_shift21);
 export const DATES_SHORT_S22 = shiftDatesShort(_shift22);
 export const SEASON_RANGE = `${shiftDatesShort(mainShifts[0]).split('–')[0].trim()} ${_MONTHS_RU[_d(mainShifts[0].startDate).m-1]} — ${shiftDatesShort(mainShifts[1])}`; // ориентир сезона
+
+// Месяцы, которые реально покрывают ОТКРЫТЫЕ смены (mainShifts) — не хардкодить
+// диапазон месяцев отдельно, иначе он отстаёт при закрытии ранних смен сезона
+// (инцидент: "июнь–август" оставался после того, как июньские смены завершились).
+const _firstMonthIdx = _d(mainShifts[0].startDate).m - 1;
+const _lastMonthIdx = _d(mainShifts[mainShifts.length - 1].endDate).m - 1;
+export const SEASON_MONTHS = _firstMonthIdx === _lastMonthIdx
+  ? _MONTHS_RU[_firstMonthIdx]
+  : `${_MONTHS_RU[_firstMonthIdx]}–${_MONTHS_RU[_lastMonthIdx]}`;
 
 
 // Единый источник: сколько ровесников едет в каждую смену по возрасту
@@ -414,7 +444,7 @@ export const shiftInfo: Record<string, {
   'shift-3': {
     dates: '3 августа — 15 августа', duration: '13 дней', price: '89 400 ₽',
     html:
-      '<p class="text-[14px] leading-[1.6] text-slate-700">Смена, в которой важна не только работа над проектом, но и взаимодействие внутри команды.</p>' +
+      '<p class="text-[14px] leading-[1.6] text-slate-700">Смена, в которой лагерь становится не просто площадкой для проекта, а настоящей командой.</p>' +
       section('Первые дни — старт и распределение',
         'Знакомство, деление по группам, первые задания. Сразу начинается практика: сборка базовых элементов проекта.') +
       section('Далее — работа над проектом',
@@ -427,8 +457,8 @@ export const shiftInfo: Record<string, {
       ]) +
       '<p class="mt-2 text-[16px] leading-[1.65] text-slate-600">Часть задач выполняется индивидуально, часть — в команде.</p>' +
       section('Командная работа',
-        'Проекты собираются совместно: распределяются роли, обсуждаются решения, объединяются части проекта. Это добавляет понимание, как создаётся общий результат.') +
-      section('К середине смены', 'Есть рабочий проект с базовой структурой.') +
+        'Проекты собираются совместно: распределяются роли, обсуждаются решения, объединяются части проекта. Лагерь на пару недель — как маленькая компания, где у каждого своя роль.') +
+      section('На середине пути', 'Есть рабочий проект с базовой структурой.') +
       section('Вторая половина — усиление',
         'Добавляются функции, дорабатывается логика, улучшается внешний вид, собирается целостный проект. За 2–3 дня до конца — хакатон.') +
       section('Финальные дни', 'Доработка и завершение проекта.') +
@@ -440,7 +470,7 @@ export const shiftInfo: Record<string, {
       section('Как устроен AI',
         'Используется как инструмент внутри проекта: например, для более «живого» поведения элементов.') +
       section('Внутренняя экономика',
-        'Работает в течение всей смены: ресурсы ограничены, решения имеют значение.') +
+        'Работает без остановки: ресурсы ограничены, решения имеют значение.') +
       section('Дополнительно',
         'Чемпионаты лагеря (футбол, пионербол) проходят регулярно и дополняют программу.'),
   },

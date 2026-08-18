@@ -93,12 +93,19 @@ import Layout from '../layouts/Base.astro'
       agents: Array<{ name: string; status: string }>
     }
 
-    const activeAuditDiv = document.getElementById('activeAudit')!
-    const resultsSection = document.getElementById('resultsSection')!
-    const auditProgress = document.getElementById('auditProgress')!
-    const auditLog = document.getElementById('auditLog')!
-    const startAuditBtn = document.getElementById('startAuditBtn')!
-    const newAuditBtn = document.getElementById('newAuditBtn')!
+    function requireElement<T extends HTMLElement>(id: string): T {
+      const element = document.getElementById(id)
+      if (!element) throw new Error(`Missing required element: #${id}`)
+      return element as T
+    }
+
+    const activeAuditDiv = requireElement<HTMLDivElement>('activeAudit')
+    const resultsSection = requireElement<HTMLDivElement>('resultsSection')
+    const auditProgress = requireElement<HTMLDivElement>('auditProgress')
+    const auditLog = requireElement<HTMLDivElement>('auditLog')
+    const startAuditBtn = requireElement<HTMLButtonElement>('startAuditBtn')
+    const newAuditBtn = requireElement<HTMLButtonElement>('newAuditBtn')
+    const auditWindow = window as Window & { currentResults?: Record<string, unknown> }
 
     let currentRunId: string | null = null
 
@@ -263,7 +270,7 @@ import Layout from '../layouts/Base.astro'
             startAuditBtn.style.display = 'none'
 
             // Store results for download
-            window.currentResults = data.data
+            auditWindow.currentResults = data.data
           }
         }
       } catch (err) {
@@ -273,8 +280,8 @@ import Layout from '../layouts/Base.astro'
 
     // Download JSON handler
     document.getElementById('downloadJsonBtn')?.addEventListener('click', () => {
-      if (window.currentResults) {
-        const json = JSON.stringify(window.currentResults, null, 2)
+      if (auditWindow.currentResults) {
+        const json = JSON.stringify(auditWindow.currentResults, null, 2)
         const blob = new Blob([json], { type: 'application/json' })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
@@ -327,11 +334,5 @@ import Layout from '../layouts/Base.astro'
     // Initial load
     loadAuditHistory()
 
-    // TypeScript augmentation
-    declare global {
-      interface Window {
-        currentResults?: Record<string, unknown>
-      }
-    }
   </script>
 </Layout>

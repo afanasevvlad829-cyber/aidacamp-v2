@@ -1,0 +1,130 @@
+---
+export const prerender = false;
+import PortalLayout from '../../layouts/PortalLayout.astro';
+
+// Гайд для персонала — как @aidacanp_bank_bot устроен для вожатых и для детей.
+// Ученикам эта страница не нужна: у них нет входа на этот домен, они работают
+// только через бота (см. syomka.astro — тот же паттерн).
+const role = Astro.locals.portalRole!;
+if (role === 'student') return Astro.redirect('/portal/');
+
+const QR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" class="segno"><path class="qrline" stroke="#123a2e" d="M0 0.5h7m2 0h1m1 0h1m4 0h5m1 0h7m-29 1h1m5 0h1m1 0h2m3 0h6m3 0h1m5 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h1m4 0h1m1 0h1m1 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m8 0h1m1 0h1m1 0h1m2 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m3 0h3m1 0h1m2 0h1m1 0h1m2 0h1m1 0h3m1 0h1m-29 1h1m5 0h1m3 0h2m1 0h5m1 0h1m2 0h1m5 0h1m-29 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-20 1h1m1 0h2m4 0h1m1 0h1m-19 1h3m1 0h2m2 0h1m3 0h1m1 0h4m1 0h1m5 0h2m-27 1h2m5 0h1m1 0h1m1 0h3m1 0h1m1 0h1m1 0h5m3 0h1m-27 1h2m1 0h2m2 0h1m2 0h2m3 0h2m3 0h1m1 0h2m1 0h1m-26 1h1m2 0h1m1 0h2m1 0h2m3 0h1m2 0h1m4 0h2m3 0h1m-28 1h4m1 0h1m2 0h1m6 0h4m1 0h1m1 0h1m2 0h3m-29 1h2m1 0h1m3 0h1m1 0h1m1 0h1m1 0h1m1 0h2m2 0h2m1 0h2m1 0h2m1 0h1m-29 1h2m2 0h1m1 0h1m1 0h2m1 0h1m2 0h2m1 0h3m2 0h4m1 0h2m-28 1h1m6 0h1m2 0h2m1 0h1m1 0h1m3 0h3m1 0h2m-25 1h1m3 0h2m1 0h2m1 0h1m2 0h1m3 0h1m1 0h2m3 0h1m-25 1h1m1 0h3m1 0h3m1 0h2m4 0h2m1 0h1m2 0h1m1 0h1m-26 1h1m5 0h2m1 0h4m1 0h1m2 0h1m4 0h1m1 0h2m-21 1h1m2 0h2m1 0h1m1 0h7m1 0h3m1 0h2m1 0h1m-28 1h3m2 0h1m1 0h1m2 0h1m1 0h6m1 0h8m-20 1h1m4 0h2m1 0h1m1 0h3m3 0h2m1 0h2m-29 1h7m4 0h2m1 0h1m1 0h5m1 0h1m1 0h1m1 0h2m-28 1h1m5 0h1m1 0h1m1 0h1m1 0h3m1 0h1m3 0h1m3 0h1m3 0h1m-29 1h1m1 0h3m1 0h1m2 0h4m1 0h1m3 0h1m1 0h7m-27 1h1m1 0h3m1 0h1m1 0h1m3 0h2m3 0h1m1 0h1m4 0h2m1 0h1m-28 1h1m1 0h3m1 0h1m1 0h2m1 0h3m2 0h1m3 0h1m2 0h1m1 0h2m1 0h1m-29 1h1m5 0h1m1 0h1m3 0h1m1 0h2m4 0h2m2 0h2m1 0h1m-28 1h7m2 0h2m1 0h1m1 0h1m3 0h4m1 0h1m1 0h1m1 0h1"/></svg>`;
+---
+<PortalLayout title="БотБанк — Портал АйДаКемп">
+  <style>
+    .bb-root{--bg:#f1f5f9;--surface:#fff;--forest:#1f5c4a;--forest-soft:#e4efe9;--forest-ink:#123a2e;
+      --border:#e2e8f0;--orange:#ec9b44;--text:#0f172a;--text2:#334155;--text3:#64748b;
+      max-width:820px;margin:0 auto;color:var(--text);font-size:16px;line-height:1.6;
+      -webkit-font-smoothing:antialiased}
+    .bb-root *{box-sizing:border-box}
+    .bb-hero{background:linear-gradient(135deg,var(--forest-soft) 0%,#fdf2f8 100%);border:1px solid var(--forest);
+      border-radius:20px;padding:24px 22px;margin-bottom:22px}
+    .bb-hero h1{font-size:26px;font-weight:800;line-height:1.2;margin:0 0 8px}
+    .bb-hero p{font-size:15px;color:var(--text2);margin:0}
+    .bb-botlink{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:var(--surface);
+      border:1px solid var(--forest);border-radius:100px;padding:8px 16px;font-size:14px;font-weight:700;
+      color:var(--forest-ink);text-decoration:none}
+    .bb-sec{margin:30px 0 14px;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+      color:var(--text3);display:flex;align-items:center;gap:8px}
+    .bb-sec i{color:var(--orange)}
+    .bb-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px}
+    .bb-step{display:flex;gap:14px;margin-bottom:16px;align-items:flex-start}
+    .bb-step:last-child{margin-bottom:0}
+    .bb-num{flex:none;width:28px;height:28px;border-radius:50%;background:var(--forest);color:#fff;
+      font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center}
+    .bb-step h3{font-size:15px;margin:0 0 3px}
+    .bb-step p{font-size:14px;line-height:1.5;margin:0;color:var(--text2)}
+    .bb-hint{display:inline-block;margin-top:6px;font-size:12.5px;color:#78716c;background:#f8fafc;
+      border:1px dashed #cbd5e1;border-radius:8px;padding:3px 8px}
+    .bb-menu{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:16px}
+    .bb-menu h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--text3)}
+    .bb-menu ul{margin:0;padding-left:18px;font-size:14px;line-height:1.7}
+    .bb-warn{background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 16px;margin-top:16px;
+      font-size:13.5px;color:#9a3412;line-height:1.5}
+    .bb-warn b{display:block;margin-bottom:2px;text-transform:uppercase;font-size:11.5px;letter-spacing:.04em}
+    .bb-qrblock{display:flex;align-items:center;gap:18px;background:var(--forest-soft);border:1px solid var(--forest);
+      border-radius:14px;padding:16px 18px;margin-top:16px}
+    .bb-qrblock .qr{width:96px;height:96px;flex:none;background:#fff;border-radius:10px;padding:8px}
+    .bb-qrblock .qr :global(svg){width:100%;height:100%}
+    .bb-qrblock .qr :global(path){fill:none;stroke-width:1}
+    .bb-qrblock p{margin:0;font-size:13.5px;color:var(--forest-ink);line-height:1.5}
+    .bb-foot{margin-top:26px;font-size:13.5px;color:var(--text3)}
+    .bb-foot a{color:var(--forest);font-weight:600}
+  </style>
+
+  <div class="bb-root">
+    <div class="bb-hero">
+      <h1>🤖 АйДаКемп БотБанк</h1>
+      <p>Учёт лагерных рублей. Одна и та же запись видна и здесь, на портале
+        (<a href="/portal/prizes/">/portal/prizes/</a>), и в боте — начислили в одном месте,
+        баланс обновился везде.</p>
+      <a class="bb-botlink" href="https://t.me/aidacanp_bank_bot" target="_blank" rel="noopener">
+        <i class="bi bi-telegram" aria-hidden="true"></i> t.me/aidacanp_bank_bot
+      </a>
+    </div>
+
+    <div class="bb-sec"><i class="bi bi-people-fill" aria-hidden="true"></i> Для команды смены</div>
+    <div class="bb-card">
+      <div class="bb-step">
+        <div class="bb-num">1</div>
+        <div><h3>Открыть бота, нажать /start</h3>
+          <p>Бот узнаёт вас автоматически — вы уже в списке команды. Ничего вводить не нужно.</p></div>
+      </div>
+      <div class="bb-step">
+        <div class="bb-num">2</div>
+        <div><h3>Найти ребёнка</h3>
+          <p>«По комнатам» — если знаете, где живёт. «Все ребята» — сплошной список по алфавиту.</p></div>
+      </div>
+      <div class="bb-step">
+        <div class="bb-num">3</div>
+        <div><h3>Начислить или списать</h3>
+          <p>В карточке ребёнка — ➕ Начислить или ➖ Списать. Бот спросит сумму и причину.</p>
+          <span class="bb-hint">Причина обязательна, короче трёх символов не примет — по ней потом разбирают смену</span></div>
+      </div>
+      <div class="bb-step">
+        <div class="bb-num">4</div>
+        <div><h3>Готово</h3>
+          <p>Новый баланс виден сразу — и на портале, и самому ребёнку.</p></div>
+      </div>
+      <div class="bb-menu">
+        <h4>Остальные кнопки меню</h4>
+        <ul>
+          <li><b>📜 История</b> — последние операции ребёнка: кто, сколько, когда и за что</li>
+          <li><b>🏆 Рейтинг</b> — топ-15 по балансу</li>
+        </ul>
+      </div>
+      <div class="bb-warn">
+        <b>Если ребёнок просит помочь войти</b>
+        Код на карточке — шестизначный, свой у каждого. После первого верного ввода бот запоминает
+        Telegram ребёнка, и код больше не спросит. Пять неверных попыток подряд — бот отправляет к вам.
+      </div>
+    </div>
+
+    <div class="bb-sec"><i class="bi bi-stars" aria-hidden="true"></i> Для ребят</div>
+    <div class="bb-card">
+      <div class="bb-step">
+        <div class="bb-num">1</div>
+        <div><h3>Открыть бота</h3>
+          <p>Отсканировать QR-код на карточке — попадёшь прямо в бота. Или найти в Telegram: @aidacanp_bank_bot.</p></div>
+      </div>
+      <div class="bb-step">
+        <div class="bb-num">2</div>
+        <div><h3>Нажать /start и ввести код</h3>
+          <p>В первый раз бот попросит шесть цифр с карточки — свои, никому их не говорить.</p></div>
+      </div>
+      <div class="bb-step">
+        <div class="bb-num">3</div>
+        <div><h3>Дальше — без кода</h3>
+          <p>Бот запомнит. В меню — 💰 Мой баланс и 📜 Мои операции: за что начисляли и списывали.</p></div>
+      </div>
+      <div class="bb-qrblock">
+        <div class="qr" set:html={QR_SVG} />
+        <p><b>Общий QR для показа на экране</b> — ведёт просто в бота, без личного кода.
+          Свой шестизначный код ребёнок вводит сам с карточки (у каждого он свой,
+          на этот QR он не завязан).</p>
+      </div>
+    </div>
+
+    <p class="bb-foot">Что можно купить за лагерные рубли — витрина призов: <a href="/vitrina/" target="_blank" rel="noopener">aidacamp.ru/vitrina/</a></p>
+  </div>
+</PortalLayout>

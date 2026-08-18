@@ -62,8 +62,12 @@ const ssrPriceFmt = fmtPrice(ssrPrice);
 const ssrVychet   = getTaxDeduction(shift.id);
 
 // SEO
-const seoTitle = `${shift.name} IT-лагеря — летняя смена в Подмосковье, ${shift.dates} ${SEASON_YEAR} | АйДаКемп`;
-const seoDescription = `Летняя смена в лагере под Москвой: Python, AI, хакатон. ${shift.duration}, возраст 7–15, ${ssrPriceFmt} всё включено. Купить смену в IT-лагерь — смены лагерей с ${shift.dates} ${SEASON_YEAR}.`;
+const seoTitle = shift.id === 'shift-3'
+  ? `${shift.name} IT-лагеря — летняя смена, ${startDay}—${endDay} ${months[startMonth]} ${SEASON_YEAR} | АйДаКемп`
+  : `${shift.name} IT-лагеря — летняя смена в Подмосковье, ${shift.dates} ${SEASON_YEAR} | АйДаКемп`;
+const seoDescription = shift.id === 'shift-3'
+  ? `Летняя смена в лагере в Подмосковье: Python, AI, хакатон, бассейн, 5-разовое питание. ${shift.duration}, возраст 7–15, ${ssrPriceFmt} — всё включено, доплат нет.`
+  : `Летняя смена в лагере под Москвой: Python, AI, хакатон. ${shift.duration}, возраст 7–15, ${ssrPriceFmt} всё включено. Купить смену в IT-лагерь — смены лагерей с ${shift.dates} ${SEASON_YEAR}.`;
 const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
 ---
 
@@ -211,7 +215,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
         )}
 
         <!-- BIG DATES (как в концепте «10—23 июня») -->
-        <h1 class="sr-only">{shift.name}: летняя смена в IT-лагере Подмосковья — {shift.dates} {SEASON_YEAR}</h1>
+        <h1 class="sr-only">{shift.id === 'shift-3' ? `${shift.name}: летняя смена в лагере Подмосковья` : `${shift.name}: летняя смена в IT-лагере Подмосковья — ${shift.dates} ${SEASON_YEAR}`}</h1>
         <p class="font-extrabold leading-[1.0] tracking-[-0.02em]" style="font-size: clamp(40px, 7vw, 80px);">
           <span class="text-white" style="text-shadow: 0 4px 16px rgba(0,0,0,0.5);">{shift.dates.split('—')[0].trim()} —</span>
           <span class="hero-outline"> {shift.dates.split('—')[1]?.trim() ?? ''}</span>
@@ -376,6 +380,15 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
       </div>
     </section>
 
+    <!-- ═══════ SEO-текст: точечно для Смены 3 (Лабрика), другие смены не задевает ═══════ -->
+    {shift.id === 'shift-3' && (
+      <section class="mx-auto max-w-[760px] px-5 pb-4 md:px-8">
+        <p class="text-base leading-[1.6] text-body-muted">
+          На этой смене в лагере — не про пассивный отдых у бассейна. Ребята приезжают в лагерь на {shift.duration}: {shift.dates} {SEASON_YEAR} года, санаторий «Изумруд» в Наро-Фоминском округе, 66 км от Москвы. Территория лагеря большая: бассейн и лес — жизнь лагеря не сводится к монитору. Группы смены — до 8 человек, тренер успевает разобраться с каждым проектом лично, а вечерами вместе с ребятами гуляет по лагерю. Программа смены строится вокруг Python и нейросетей: с первого дня в лагере ребята пишут код своими руками, а не слушают теорию с доски. Вечером — настолки и разговоры: распорядок лагеря устроен так, чтобы кодинг не занимал весь день. К финалу смены каждый защищает свой проект на хакатоне и увозит его домой рабочим — не сертификат, а результат. Стоимость — {ssrPriceFmt}, всё включено: проживание, питание и программа лагеря без доплат. Заявку в лагерь на эту смену стоит оставить заранее — свободных мест немного.
+        </p>
+      </section>
+    )}
+
     <!-- ═══════ BOOKING — финальная форма ═══════ -->
     <section id="booking" class="border-t border-border-light bg-surface">
       <div class="mx-auto max-w-[640px] px-5 py-12 md:px-8 md:py-20">
@@ -461,6 +474,10 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
         existing.push({ id, ts: Date.now() });
       }
       localStorage.setItem(KEY, JSON.stringify(existing));
+      // Цель «Открыл инфо о смене» (shift_modal_open) — раньше карточка открывала модалку
+      // с этим же trackGoal, с 2026-05-03 карточка ведёт сюда напрямую (навигация вместо
+      // модалки), поэтому просмотр этой страницы теперь и есть «открыл инфо о смене».
+      (window as any).trackGoal?.('shift_modal_open', { shift: id, source: 'page' });
     } catch {}
   })();
 
@@ -500,8 +517,8 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
   initBookButtons();
 
   // Top bar close button
-  var closeBtn = document.getElementById('shift-top-bar-close');
-  var topBar = document.getElementById('shift-top-bar');
+  const closeBtn = document.getElementById('shift-top-bar-close');
+  const topBar = document.getElementById('shift-top-bar');
   if (closeBtn && topBar) {
     closeBtn.addEventListener('click', function() {
       topBar.style.display = 'none';
