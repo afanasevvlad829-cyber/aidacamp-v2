@@ -25,16 +25,11 @@ interface Props { config: SeasonConfig; }
 const { config: c } = Astro.props;
 
 const canonical = `https://aidacamp.ru${c.path}`;
+// BreadcrumbList отсюда убран 01.08.2026 — цепочку отдаёт LandingLayout, ему же
+// передаём видимую крошку пропом breadcrumb (страж scripts/check-breadcrumb-schema.mjs).
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
-    {
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://aidacamp.ru" },
-        { "@type": "ListItem", "position": 2, "name": c.breadcrumb, "item": canonical }
-      ]
-    },
     {
       "@type": "FAQPage",
       "mainEntity": c.faq.items.map((f) => ({
@@ -53,6 +48,7 @@ const jsonLd = {
   description={c.description}
   h1={c.h1}
   canonical={canonical}
+  breadcrumb={c.breadcrumb}
   hideAgeBar={true}
 >
   <Fragment slot="head">

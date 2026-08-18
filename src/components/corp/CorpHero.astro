@@ -294,6 +294,8 @@ const { client } = Astro.props;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    const gameCanvas = canvas;
+    const gameContext = ctx;
 
     const SZ = 16;
     let W: number, H: number, cols: number, rows: number;
@@ -310,10 +312,10 @@ const { client } = Astro.props;
     const LEVELS = ['Junior Dev','Middle Dev','Senior Dev','Tech Lead','CTO'];
 
     function resize() {
-      const wrap = canvas.parentElement;
+      const wrap = gameCanvas.parentElement;
       if (!wrap) return;
       W = wrap.clientWidth; H = wrap.clientHeight;
-      canvas.width = W; canvas.height = H;
+      gameCanvas.width = W; gameCanvas.height = H;
       cols = Math.floor(W / SZ); rows = Math.floor(H / SZ);
     }
 
@@ -340,7 +342,7 @@ const { client } = Astro.props;
       if (t - lastTime < SPEED) return;
       lastTime = t;
       update();
-      render(ctx, W, H);
+      render(gameContext, W, H);
     }
 
     function update() {

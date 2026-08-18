@@ -6,7 +6,9 @@ export interface VideoItem {
   title: string;
   thumb: string;
   alt: string;
-  description?: string;
+  /** Обязательно: без него страница /video/<slug>/ получала DESCRIPTION == H1
+   * (был молчаливый фолбэк `?? video.title` в [slug].astro). Labrika 24.07.2026. */
+  description: string;
   uploadDate?: string;
 }
 
@@ -29,7 +31,7 @@ export const campVideos: VideoItem[] = [
 /** Видео, у которых есть своя страница, но нет карточки в списке на /video/ —
  *  они живут внутри других блоков (MomStory на главной, сезонные лендинги). */
 export const storyVideos: VideoItem[] = [
-  { slug: 'daria-story', url: '/video/daria-story.mp4', title: 'Мы живём в самом прекрасном IT-лагере на свете. А все остальные лагеря нам завидуют', thumb: '/images/videos/daria-story.avif', alt: 'Видео об IT-лагере АйДаКемп глазами Дарьи Афанасьевой', uploadDate: '2025-06-01' },
+  { slug: 'daria-story', url: '/video/daria-story.mp4', title: 'Мы живём в самом прекрасном IT-лагере на свете. А все остальные лагеря нам завидуют', thumb: '/images/videos/daria-story.avif', alt: 'Видео об IT-лагере АйДаКемп глазами Дарьи Афанасьевой', description: 'Дарья Афанасьева рассказывает, как устроен АйДаКемп изнутри и почему ребята просятся сюда на следующее лето.', uploadDate: '2025-06-01' },
 ];
 
 /** Все видео с собственной страницей /video/<slug>/ — источник для getStaticPaths. */

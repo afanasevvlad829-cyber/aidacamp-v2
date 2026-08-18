@@ -186,14 +186,15 @@ import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, WHATSAPP_
     // --- Mobile sticky v2 (P1 2026-04-20) ---
     // Показывается после скролла 480px, скрывается кликом на крест (sessionStorage)
     if (bar && bar.hasAttribute('data-sticky-bar-v2') && window.matchMedia('(max-width: 767px)').matches) {
+      const stickyBar = bar;
       const DISMISS_KEY = 'ac_sticky_v2_dismissed';
       let shown = false;
 
       function hideBar() {
         shown = false;
         sessionStorage.setItem(DISMISS_KEY, '1');
-        bar.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
-        bar.setAttribute('inert', '');
+        stickyBar.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+        stickyBar.setAttribute('inert', '');
       }
 
       function showBar() {
@@ -204,14 +205,14 @@ import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, WHATSAPP_
         if (ageBar) {
           ageBar.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
         }
-        bar.removeAttribute('inert');
+        stickyBar.removeAttribute('inert');
         // Анимация видимости — но пока pointer-events-none чтобы не было ghost click
-        bar.classList.remove('translate-y-full', 'opacity-0');
+        stickyBar.classList.remove('translate-y-full', 'opacity-0');
         // Разрешаем клики только через 400мс после появления (защита от ghost click при скролле)
         setTimeout(() => {
-          bar.classList.remove('pointer-events-none');
+          stickyBar.classList.remove('pointer-events-none');
           // Вешаем listener ПОСЛЕ снятия pointer-events-none
-          const closeBtn = bar.querySelector<HTMLElement>('[data-sticky-close]');
+          const closeBtn = stickyBar.querySelector<HTMLElement>('[data-sticky-close]');
           closeBtn?.addEventListener('click', hideBar, { once: true });
           closeBtn?.addEventListener('touchend', (e) => { e.preventDefault(); hideBar(); }, { once: true, passive: false });
         }, 400);
@@ -234,13 +235,13 @@ import { PHONE_MAIN, PHONE_MAIN_HREF, PHONE_MOBILE, PHONE_MOBILE_HREF, WHATSAPP_
         }
       }
 
-      bar.querySelector<HTMLAnchorElement>('[data-sticky-call]')?.addEventListener('click', () => {
+      stickyBar.querySelector<HTMLAnchorElement>('[data-sticky-call]')?.addEventListener('click', () => {
         try { (window as any).trackGoal?.('sticky_call_mobile'); } catch {}
       });
-      bar.querySelector<HTMLAnchorElement>('[data-sticky-wa]')?.addEventListener('click', () => {
+      stickyBar.querySelector<HTMLAnchorElement>('[data-sticky-wa]')?.addEventListener('click', () => {
         try { (window as any).trackGoal?.('sticky_wa_mobile'); } catch {}
       });
-      bar.querySelector<HTMLAnchorElement>('[data-sticky-tg]')?.addEventListener('click', () => {
+      stickyBar.querySelector<HTMLAnchorElement>('[data-sticky-tg]')?.addEventListener('click', () => {
         try { (window as any).trackGoal?.('sticky_tg_mobile'); } catch {}
       });
     }

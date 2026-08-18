@@ -1,0 +1,91 @@
+---
+/**
+ * RelatedArticlesAuto — перелинковка «статья → статья», подбор автоматический.
+ *
+ * Зачем: до 24.07.2026 статьи ссылались только НАРУЖУ (RelatedPages → лендинги),
+ * а входящие получали лишь с хаба /stati/. Labrika: 95 записей «мало входящих
+ * ссылок» — одна причина на все.
+ *
+ * Как подбирает: кольцо по всем статьям, отсортированным по кластеру. Статья на
+ * позиции i ссылается на i+1, i+2, … по циклу. Каждая статья получает РОВНО
+ * столько входящих, сколько отдаёт, — в отличие от подбора «первые N из
+ * кластера», где весь вес утыкается в несколько страниц.
+ * Подбор детерминированный — одинаковый на каждой сборке, диффы не шумят.
+ *
+ * Почему кольцо общее, а не внутри кластера: кластеры geo и money по 3 статьи,
+ * они не набирают count. Первая версия падала для них в общий список и делала
+ * горячие точки — замер 24.07 показал 2 статьи с 26 входящими и 5 с нулём.
+ * Сортировка по кластеру сохраняет тематическую близость: границу пересекают
+ * только карточки на стыках кластеров (≈4% ссылок).
+ *
+ * Объём: только заголовки, без описаний — ~54 слова на страницу. Описания дали бы
+ * ~150 и выбили бы коридоры Labrika у страниц, которым 23.07 резали объём.
+ *
+ * Новые статьи подхватываются автоматически: источник — src/data/articles.json.
+ */
+import articles from '../data/articles.json';
+
+interface Props {
+  /** Сколько карточек показать. По умолчанию 6. */
+  count?: number;
+  title?: string;
+}
+const { count = 6, title = 'Читайте также' } = Astro.props;
+
+type Article = { url: string; title: string; cluster?: string; tag?: string; readTime?: string };
+const all = articles as Article[];
+
+// Текущий URL в том же виде, что и в articles.json (со слешем на конце)
+const here = Astro.url.pathname.replace(/\/+$/, '') + '/';
+// Одно кольцо по ВСЕМ статьям, отсортированным по кластеру.
+// Почему не кольцо внутри кластера: кластеры geo и money по 3 статьи — они не
+// набирают count и падали бы в общий список, создавая горячие точки (замер
+// 24.07: 2 статьи получали по 26 входящих, 5 — ни одной).
+// Кольцо по отсортированному списку даёт РОВНО count входящих каждой статье,
+// а тематическая близость сохраняется: границу кластера пересекают только
+// последние карточки на стыках (≈4% ссылок).
+const ring = [...all].sort((a, b) =>
+  (a.cluster ?? '').localeCompare(b.cluster ?? '') || a.url.localeCompare(b.url)
+);
+const idx = ring.findIndex(a => a.url.replace(/\/+$/, '') + '/' === here);
+
+const picked: Article[] = [];
+if (idx >= 0) {
+  for (let step = 1; picked.length < count && step < ring.length; step++) {
+    picked.push(ring[(idx + step) % ring.length]);
+  }
+}
+---
+
+{picked.length > 0 && (
+  <section data-related-auto class="mx-auto max-w-[1312px] px-4 mt-8 mb-4">
+    <div class="rounded-[24px] border border-slate-200 bg-white p-[18px] md:p-8">
+
+      <div class="flex items-center gap-2 mb-5">
+        <div class="w-1 h-5 rounded-full bg-slate-300 shrink-0"></div>
+        <h2 class="text-[18px] md:text-[20px] font-bold text-slate-900">{title}</h2>
+      </div>
+
+      <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        {picked.map(a => (
+          <a href={a.url}
+            class="group flex items-start gap-3 rounded-[14px] border border-slate-100 bg-slate-50 p-4 hover:border-slate-200 hover:bg-white hover:shadow-[0_2px_8px_rgba(15,23,42,0.06)] transition-all duration-200">
+            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white border border-slate-200 text-slate-500 group-hover:border-primary/30 group-hover:text-primary transition-colors">
+              <i class="bi bi-file-text text-base" aria-hidden="true"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-base font-semibold leading-[1.4] text-slate-800 group-hover:text-slate-900 transition-colors line-clamp-3">
+                {a.title}
+              </p>
+              {a.readTime && (
+                <p class="mt-1 text-[13px] leading-[1.5] text-slate-400">{a.readTime}</p>
+              )}
+            </div>
+            <i class="bi bi-arrow-right text-base text-slate-300 group-hover:text-primary shrink-0 mt-0.5 transition-colors" aria-hidden="true"></i>
+          </a>
+        ))}
+      </div>
+
+    </div>
+  </section>
+)}

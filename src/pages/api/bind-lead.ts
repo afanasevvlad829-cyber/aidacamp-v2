@@ -3,6 +3,7 @@ import type { APIRoute } from 'astro';
 import { fetchWithTimeout } from '../../lib/fetchWithTimeout';
 import { verifyLid } from '../../lib/leadLink';
 import { readVisitorId } from '../../lib/attribution/cookie';
+import { appendCustomerNote, fetchCustomer, type NoteAppendResult } from '../../lib/alfaCustomerNote';
 
 const BRANCH = 5;
 
@@ -26,48 +27,8 @@ async function alfaAuth(): Promise<{ host: string; token: string } | null> {
   }
 }
 
-async function getCustomerNote(host: string, token: string, lid: number): Promise<string> {
-  try {
-    const r = await fetchWithTimeout(`https://${host}/v2api/${BRANCH}/customer/index?id=${lid}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
-      body: JSON.stringify({ id: lid }),
-    });
-    const j = await r.json();
-    return j?.items?.[0]?.note ?? '';
-  } catch {
-    return '';
-  }
-}
-
-async function updateCustomerNote(host: string, token: string, lid: number, note: string): Promise<boolean> {
-  try {
-    const r = await fetchWithTimeout(`https://${host}/v2api/${BRANCH}/customer/update?id=${lid}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
-      body: JSON.stringify({ id: lid, note }),
-    });
-    const j = await r.json();
-    return !!j && !j.errors;
-  } catch {
-    return false;
-  }
-}
-
-/** Полная карточка клиента (для чтения кастомных полей) */
-async function getCustomer(host: string, token: string, lid: number): Promise<Record<string, unknown> | null> {
-  try {
-    const r = await fetchWithTimeout(`https://${host}/v2api/${BRANCH}/customer/index?id=${lid}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
-      body: JSON.stringify({ id: lid }),
-    });
-    const j = await r.json();
-    return j?.items?.[0] ?? null;
-  } catch {
-    return null;
-  }
-}
+// Чтение карточки и безопасный append примечания — в src/lib/alfaCustomerNote.ts
+// (там же fail-safe «не прочитали → не пишем» и фолбэк на архивные карточки).
 
 /**
  * Дописывает id визита (ubtcuid / domain_userid / ym) в кастомные поля AlfaCRM
@@ -86,7 +47,7 @@ async function bindAndataFields(
   if (!fUbt && !fDom && !fYm) return;
   if (!vals.ubtcuid && !vals.domainid && !vals.ymuid) return;
   try {
-    const cust = await getCustomer(host, token, lid);
+    const cust = await fetchCustomer(host, token, lid);
     if (!cust) return;
     const upd: Record<string, string> = {};
     if (fUbt && vals.ubtcuid && !cust[fUbt]) upd[fUbt] = vals.ubtcuid;
@@ -159,12 +120,18 @@ async function detectManagerInDB(ymCid: string, ip: string, lid: number): Promis
   }
 }
 
+/**
+ * Логирует привязку в pamyatka_bindings ВСЕГДА, до похода в CRM.
+ * crm_updated на этот момент честно false — реальный исход записи примечания
+ * ещё не известен; его проставит markCrmNoteResult() по id вставленной строки.
+ * @returns id вставленной строки либо null (нет DSN / БД недоступна).
+ */
 async function logBinding(
   lid: number, ymCid: string, ip: string, ua: string,
   isManager: boolean, extra: ExtraData = {},
-) {
+): Promise<number | null> {
   const dsn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
-  if (!dsn) return;
+  if (!dsn) return null;
   try {
     const { default: pg } = await import('pg');
     const c = new pg.Client({ connectionString: dsn });
@@ -185,16 +152,18 @@ async function logBinding(
       'is_manager boolean default false', 'crm_updated boolean default false',
       'referrer text', 'screen_w int', 'screen_h int',
       'lang text', 'tz text', 'ym_first_visit date', 'vk_vid text', 'utm jsonb', 'visitor_id text',
+      'crm_note_result text',
     ]) {
       await c.query(`ALTER TABLE pamyatka_bindings ADD COLUMN IF NOT EXISTS ${col}`).catch(() => {});
     }
-    await c.query(
+    const ins = await c.query<{ id: number }>(
       `INSERT INTO pamyatka_bindings(
          crm_id, ym_client_id, ip, user_agent, is_manager, crm_updated,
          referrer, screen_w, screen_h, lang, tz, ym_first_visit, vk_vid, utm, visitor_id
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+       RETURNING id`,
       [
-        lid, ymCid, ip || null, ua || null, isManager, true,
+        lid, ymCid, ip || null, ua || null, isManager, false,
         extra.referrer || null,
         extra.screenW || null, extra.screenH || null,
         extra.lang || null, extra.tz || null,
@@ -203,6 +172,30 @@ async function logBinding(
         extra.utm ? JSON.stringify(extra.utm) : null,
         extra.visitorId || null,
       ],
+    );
+    await c.end();
+    return ins.rows[0]?.id ?? null;
+  } catch { return null; /* best-effort */ }
+}
+
+/** Исход похода в CRM для строки привязки (расширяет NoteAppendResult). */
+type CrmNoteOutcome = NoteAppendResult | 'auth_failed';
+
+/**
+ * Короткий UPDATE по id строки, вставленной logBinding(): проставляет
+ * реальный исход записи примечания в CRM. crm_updated=true только при 'ok'.
+ */
+async function markCrmNoteResult(bindingId: number | null, result: CrmNoteOutcome): Promise<void> {
+  if (bindingId == null) return;
+  const dsn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
+  if (!dsn) return;
+  try {
+    const { default: pg } = await import('pg');
+    const c = new pg.Client({ connectionString: dsn });
+    await c.connect();
+    await c.query(
+      `UPDATE pamyatka_bindings SET crm_updated = $2, crm_note_result = $3 WHERE id = $1`,
+      [bindingId, result === 'ok', result],
     );
     await c.end();
   } catch { /* best-effort */ }
@@ -256,8 +249,9 @@ export const POST: APIRoute = async ({ request }) => {
 
     const isManager = explicitManager || autoManager;
 
-    // ── Логируем в БД всегда ──────────────────────────────────────────────────
-    await logBinding(lid, ymCid, ip, ua, isManager, extra);
+    // ── Логируем в БД всегда (не зависит от доступности CRM) ────────────────
+    // crm_updated пока false — честный исход проставит markCrmNoteResult() ниже.
+    const bindingId = await logBinding(lid, ymCid, ip, ua, isManager, extra);
 
     // ── Строим строку для CRM (все данные в одну строку) ─────────────────────
     const stamp = new Date().toISOString().replace('T', ' ').slice(0, 16);
@@ -283,13 +277,16 @@ export const POST: APIRoute = async ({ request }) => {
     // ── Пишем в CRM: ВСЕГДА APPEND, ничего не перетираем ────────────────────
     const auth = await alfaAuth();
     if (!auth) {
+      await markCrmNoteResult(bindingId, 'auth_failed');
       return new Response(JSON.stringify({ ok: true, crm: false }), { status: 200 });
     }
 
-    const currentNote = await getCustomerNote(auth.host, auth.token, lid);
-    const newNote = currentNote + newLine;
-
-    const ok = await updateCustomerNote(auth.host, auth.token, lid, newNote);
+    // Только append. Если текущее примечание прочитать не удалось —
+    // строка теряется, но карточка остаётся целой (см. alfaCustomerNote.ts).
+    // Привязка в pamyatka_bindings уже записана выше и от CRM не зависит.
+    const noteResult = await appendCustomerNote(auth.host, auth.token, lid, newLine);
+    const ok = noteResult === 'ok';
+    await markCrmNoteResult(bindingId, noteResult);
 
     // Andata: матчинг визита постфактум — дописываем id в кастомные поля (fill-if-empty).
     // Не для менеджера, чтобы его устройство не привязалось к чужому заказу.
@@ -299,7 +296,7 @@ export const POST: APIRoute = async ({ request }) => {
       await bindAndataFields(auth.host, auth.token, lid, { ubtcuid: ubt, domainid: dom, ymuid: ymCid });
     }
 
-    return new Response(JSON.stringify({ ok: true, crm: ok, manager: isManager }), { status: 200 });
+    return new Response(JSON.stringify({ ok: true, crm: ok, crm_note: noteResult, manager: isManager }), { status: 200 });
   } catch (e) {
     return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
   }
