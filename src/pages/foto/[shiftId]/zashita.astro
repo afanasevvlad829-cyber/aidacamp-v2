@@ -41,12 +41,10 @@ const mb = (n: number) => `${Math.round(n / 1024 / 1024)} МБ`;
       <div class="z-grid">
         {items.map((it) => (
           <article class="z-card">
-            <button
-              class="z-thumb"
-              data-name={it.name}
-              aria-label={`Смотреть защиту: ${it.title}`}
-              style={it.preview ? `background-image:url('${it.preview}')` : ''}
-            >
+            <button class="z-thumb" data-name={it.name} aria-label={`Смотреть защиту: ${it.title}`}>
+              {it.preview && (
+                <img src={it.preview} alt="" referrerpolicy="no-referrer" />
+              )}
               <span class="z-play" aria-hidden="true"></span>
             </button>
             <div class="z-meta">
@@ -102,8 +100,9 @@ const mb = (n: number) => `${Math.round(n / 1024 / 1024)} МБ`;
     }
     .z-thumb {
       display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; padding: 0;
-      background: #16283f center/cover no-repeat; cursor: pointer; position: relative;
+      background: #16283f; cursor: pointer; position: relative; overflow: hidden;
     }
+    .z-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .z-play {
       position: absolute; inset: 0; margin: auto; width: 54px; height: 54px;
       border-radius: 50%; background: rgba(13,26,43,.72);
@@ -144,8 +143,11 @@ const mb = (n: number) => `${Math.round(n / 1024 / 1024)} МБ`;
     const title = document.getElementById('z-title');
 
     function open(name, caption) {
-      // Ссылка резолвится на каждый запрос: прямые ссылки Яндекса живут минуты.
-      video.src = `/api/zashita-file?shift=${shiftId}&name=${encodeURIComponent(name)}`;
+      // Плеер идёт через потоковый прокси (zashita-stream), не через редирект:
+      // <video> у Chrome получает 403 от Яндекса на прямой редирект, хотя
+      // fetch/curl с тем же запросом проходят. Кнопка «Скачать» остаётся
+      // прямым редиректом на Яндекс — там это работает штатно.
+      video.src = `/api/zashita-stream?shift=${shiftId}&name=${encodeURIComponent(name)}`;
       title.textContent = caption;
       modal.hidden = false;
       document.body.style.overflow = 'hidden';
