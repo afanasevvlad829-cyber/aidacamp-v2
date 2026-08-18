@@ -103,6 +103,18 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
           sessionStorage.setItem('ac_session_start', String(Date.now()));
         }
       } catch (_) {}
+      // === Рекламные метки — сохранить в момент захода, а не сабмита ===
+      // Формы читают ac_attribution (STORAGE_KEYS.attribution в src/lib/storage.ts) при отправке,
+      // но человек приходит с ?yclid= на лендинг, а форму заполняет позже на другой странице —
+      // к тому моменту query-параметров уже нет. Новые метки перезаписывают старые (последний
+      // значимый источник, как в Метрике).
+      try {
+        var __ap = new URLSearchParams(location.search);
+        var __am = {};
+        ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','yclid','ysclid','gclid']
+          .forEach(function (k) { var v = __ap.get(k); if (v) __am[k] = v; });
+        if (Object.keys(__am).length) localStorage.setItem('ac_attribution', JSON.stringify(__am));
+      } catch (_) {}
     </script>
     <script is:inline>
       // === Аналитика: отключение для тестовых страниц + ботов ===

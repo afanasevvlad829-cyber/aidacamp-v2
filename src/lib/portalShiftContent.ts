@@ -85,6 +85,34 @@ export async function getContentItem(id: number): Promise<ShiftContentItem | nul
   return rows?.[0] ?? null;
 }
 
+export interface ShiftFeedbackItem {
+  id: number;
+  day: number;
+  text: string;
+  created_at: string;
+  author: string | null;
+  author_role: string | null;
+}
+
+/**
+ * Отчёты, написанные текстом. Живут в отдельной таблице, потому что приходят
+ * не файлом, а сообщением, — но для читающего это тот же отчёт за день, что и
+ * голосовой. Пока их здесь не было, вечер выглядел пустым: 11.08 голосовых не
+ * прислал никто, а четыре текстовых отчёта в ленту не попадали.
+ */
+export async function listFeedback(day: number): Promise<ShiftFeedbackItem[]> {
+  const rows = await query<ShiftFeedbackItem>(
+    `SELECT f.id, f.day, f.text, f.created_at,
+            s.name AS author, s.role AS author_role
+       FROM shift_feedback f
+       LEFT JOIN shift_staff s ON s.tg_id = f.tg_id
+      WHERE f.day = $1
+      ORDER BY f.created_at DESC, f.id DESC`,
+    [day],
+  );
+  return rows ?? [];
+}
+
 /** Задания дня + сколько кадров под каждое уже сдано. */
 export async function listTasks(day: number): Promise<ShiftTaskRow[]> {
   const rows = await query<ShiftTaskRow>(

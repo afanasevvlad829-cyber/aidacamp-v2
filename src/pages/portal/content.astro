@@ -4,8 +4,8 @@ export const prerender = false;
 import PortalLayout from '../../layouts/PortalLayout.astro';
 import { getActiveShift, getEventDates } from '../../lib/portalShift';
 import {
-  contentDays, listContent, listTasks, roleLabel,
-  type ShiftContentItem, type ShiftTaskRow,
+  contentDays, listContent, listFeedback, listTasks, roleLabel,
+  type ShiftContentItem, type ShiftFeedbackItem, type ShiftTaskRow,
 } from '../../lib/portalShiftContent';
 import '../../styles/portal-den.css';
 import '../../styles/portal-gallery.css';
@@ -30,6 +30,7 @@ const reqDay = Astro.url.searchParams.get('day');
 const day = reqDay !== null && reqDay !== '' ? Number(reqDay) : fallbackDay;
 
 const items: ShiftContentItem[] = await listContent(day);
+const written: ShiftFeedbackItem[] = day > 0 ? await listFeedback(day) : [];
 const tasks: ShiftTaskRow[] = day > 0 ? await listTasks(day) : [];
 const missing = tasks.filter((t) => t.shots === 0);
 
@@ -48,7 +49,32 @@ const nVoice = items.filter((i) => i.kind === 'voice').length;
 // Текст и медиа разнесены по секциям: расшифровку читают абзацем, кадры смотрят
 // сеткой. В одной колонке 190px голосовое на абзац превращалось в нечитаемую кишку.
 const media = items.filter((i) => i.kind === 'photo' || i.kind === 'video');
-const voices = items.filter((i) => i.kind === 'voice');
+
+// Голосом или текстом — для читающего это один и тот же отчёт за день, поэтому
+// они идут одной лентой по времени, а формат помечен значком.
+type SpokenItem = {
+  id: string;
+  written: boolean;
+  text: string;
+  created_at: string;
+  author: string | null;
+  author_role: string | null;
+  task_title: string | null;
+};
+const spoken: SpokenItem[] = [
+  ...items.filter((i) => i.kind === 'voice').map((i) => ({
+    id: `v${i.id}`, written: false,
+    text: i.transcript || 'Расшифровка не готова',
+    created_at: i.created_at, author: i.author, author_role: i.author_role,
+    task_title: i.task_title,
+  })),
+  ...written.map((f) => ({
+    id: `f${f.id}`, written: true, text: f.text,
+    created_at: f.created_at, author: f.author, author_role: f.author_role,
+    task_title: null,
+  })),
+].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
+const nWritten = written.length;
 
 // kids приходит хэштегами по строке + служебные пометки («+N не опознано»,
 // «(распознано автоматически)»). Чипсы — только сами теги, пометки — мелким.
@@ -98,6 +124,7 @@ function splitKids(kids: string | null) {
       {nPhoto > 0 && <span class="gal-chip">фото {nPhoto}</span>}
       {nVideo > 0 && <span class="gal-chip">видео {nVideo}</span>}
       {nVoice > 0 && <span class="gal-chip">голосовых {nVoice}</span>}
+      {nWritten > 0 && <span class="gal-chip">текстом {nWritten}</span>}
       {dayDate && <span class="gal-date">{fmtDate(dayDate)}</span>}
     </div>
 
@@ -116,7 +143,7 @@ function splitKids(kids: string | null) {
       </section>
     )}
 
-    {items.length === 0 && (
+    {items.length === 0 && spoken.length === 0 && (
       <p class="gal-empty">
         За этот день пока ничего не сдано. Всё, что персонал отправит боту, появится здесь автоматически.
       </p>
@@ -189,24 +216,24 @@ function splitKids(kids: string | null) {
       </>
     )}
 
-    {voices.length > 0 && (
+    {spoken.length > 0 && (
       <>
         <h2 class="gal-section">
-          <span class="gal-section-ic" aria-hidden="true">🎙</span> Голосовые заметки
-          <span class="gal-section-n">{voices.length}</span>
+          <span class="gal-section-ic" aria-hidden="true">🎙</span> Отчёты словами
+          <span class="gal-section-n">{spoken.length}</span>
         </h2>
         <div class="gal-voices">
-          {voices.map((it) => (
+          {spoken.map((it) => (
             <article class="gal-voice">
               <div class="gal-voice-top">
-                <span class="gal-voice-ic" aria-hidden="true">🎙</span>
+                <span class="gal-voice-ic" aria-hidden="true">{it.written ? '✍️' : '🎙'}</span>
                 <span class="gal-voice-who">
                   {it.author || 'неизвестно'}
                   {it.author_role && <span class="gal-role"> · {roleLabel(it.author_role)}</span>}
                 </span>
                 <span class="gal-voice-time">{fmtTime(it.created_at)}</span>
               </div>
-              <p class="gal-voice-text">{it.transcript || 'Расшифровка не готова'}</p>
+              <p class="gal-voice-text">{it.text}</p>
               {it.task_title && <div class="gal-task">{it.task_title}</div>}
             </article>
           ))}

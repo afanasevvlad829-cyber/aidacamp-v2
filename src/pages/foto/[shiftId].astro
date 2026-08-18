@@ -2,9 +2,11 @@
 export const prerender = false;
 import Base from '../../layouts/Base.astro';
 import { allShiftsIncludingArchived } from '../../data/shifts';
+import { zashitaFolders } from '../../data/zashitaFolders';
 
 const { shiftId } = Astro.params;
 const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
+const hasZashita = !!(shiftId && zashitaFolders[shiftId]);
 
 // Атрибуция визита к CRM-лиду — только если ссылка пришла с подписанными lid+t.
 // Подпись проверяет сам /api/bind-lead (verifyLid) при отправке, здесь пробрасываем как строки.
@@ -41,23 +43,53 @@ const hasAttribution = !!(lid && t);
       margin: 0 0 6px;
     }
 
+    .foto-fan-badge {
+      display: none;
+      margin-left: 10px;
+      vertical-align: middle;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(236, 155, 68, 0.16);
+      color: #ec9b44;
+      border: 1px solid rgba(236, 155, 68, 0.35);
+      border-radius: 999px;
+      padding: 5px 12px;
+      white-space: nowrap;
+    }
+    .foto-fan-badge.show { display: inline-block; }
+
+    .foto-zashita-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 10px 0 4px;
+      padding: 9px 14px;
+      border-radius: 10px;
+      background: rgba(236, 155, 68, 0.16);
+      border: 1px solid rgba(236, 155, 68, 0.35);
+      color: #ec9b44;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .foto-zashita-link:hover { background: rgba(236, 155, 68, 0.26); color: #f0a95c; }
+
     #foto-status {
       color: rgba(255, 255, 255, 0.7);
       font-size: 14px;
       min-height: 20px;
     }
 
-    /* Лента аватарок-лиц (горизонтальный скролл) */
+    /* Сетка аватарок-лиц — все видны сразу, перенос по строкам, обычная
+       вертикальная прокрутка страницы (было: горизонтальный скролл без
+       видимого скроллбара — на десктопе мышью нечем было сдвинуть). */
     #foto-avatars {
       display: flex;
+      flex-wrap: wrap;
       gap: 14px;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
       padding: 6px 0 12px;
       margin: 14px 0 4px;
-      scrollbar-width: none;
     }
-    #foto-avatars::-webkit-scrollbar { display: none; }
 
     #foto-days {
       display: flex;
@@ -130,7 +162,7 @@ const hasAttribution = !!(lid && t);
       flex-direction: column;
       align-items: center;
       gap: 6px;
-      width: 64px;
+      width: 72px;
       background: none;
       border: none;
       padding: 0;
@@ -138,8 +170,8 @@ const hasAttribution = !!(lid && t);
       -webkit-tap-highlight-color: transparent;
     }
     .foto-ava-circle {
-      width: 56px;
-      height: 56px;
+      width: 64px;
+      height: 64px;
       border-radius: 50%;
       overflow: hidden;
       display: flex;
@@ -169,9 +201,9 @@ const hasAttribution = !!(lid && t);
       box-shadow: 0 0 0 2px #ec9b44;
     }
     .foto-ava-name {
-      font-size: 12px;
+      font-size: 13px;
       color: rgba(255, 255, 255, 0.7);
-      max-width: 64px;
+      max-width: 72px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -405,6 +437,31 @@ const hasAttribution = !!(lid && t);
     .foto-selbar-btn.ghost { background: rgba(255, 255, 255, 0.1); color: #fff; }
     .foto-selbar-btn:disabled { opacity: 0.5; cursor: default; }
 
+    #foto-fan-toast {
+      position: fixed;
+      left: 50%;
+      top: 16px;
+      transform: translateX(-50%) translateY(-20px);
+      background: #0d1a2b;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 12px 32px rgba(13, 26, 43, 0.5);
+      border: 1px solid rgba(236, 155, 68, 0.35);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s, transform 0.3s;
+      z-index: 10001;
+      max-width: calc(100vw - 32px);
+      text-align: center;
+    }
+    #foto-fan-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
     /* Toast */
     #foto-toast {
       position: fixed;
@@ -551,6 +608,12 @@ const hasAttribution = !!(lid && t);
     {shift && (
       <>
         <h1>{shift.dates}</h1>
+        <span id="foto-fan-badge" class="foto-fan-badge"></span>
+        {hasZashita && (
+          <a class="foto-zashita-link" href={`/foto/${shiftId}/zashita`}>
+            <i class="bi bi-play-circle-fill"></i> Видео защит проектов
+          </a>
+        )}
         <div id="foto-avatars"></div>
         <div id="foto-days"></div>
         <div id="foto-scenes"></div>
@@ -575,7 +638,10 @@ const hasAttribution = !!(lid && t);
     <button id="foto-lb-close" type="button" aria-label="Закрыть"><i class="bi bi-x-lg"></i></button>
     <button id="foto-lb-prev" class="foto-lb-nav" type="button" aria-label="Предыдущее"><i class="bi bi-chevron-left"></i></button>
     <img id="foto-lightbox-img" src="" alt="Фото" />
-    <video id="foto-lightbox-vid" controls></video>
+    <!-- playsinline обязателен: без него iOS Safari не играет видео встроенно и
+         показывает пустой чёрный прямоугольник, пока по нему не ткнут. Постер
+         ставится из миниатюры кадра — иначе до первого касания там нечему появиться. -->
+    <video id="foto-lightbox-vid" controls playsinline webkit-playsinline preload="metadata"></video>
     <button id="foto-lb-next" class="foto-lb-nav" type="button" aria-label="Следующее"><i class="bi bi-chevron-right"></i></button>
   </div>
 
@@ -587,6 +653,7 @@ const hasAttribution = !!(lid && t);
   </div>
 
   <div id="foto-toast"></div>
+  <div id="foto-fan-toast"></div>
 
   <script>
     import { CAMP_STAFF_NAMES } from '../../data/campStaff';
@@ -624,6 +691,8 @@ const hasAttribution = !!(lid && t);
       const selCancelBtn = document.getElementById('foto-sel-cancel') as HTMLButtonElement;
 
       const toastEl = document.getElementById('foto-toast')!;
+      const fanToastEl = document.getElementById('foto-fan-toast')!;
+      const fanBadgeEl = document.getElementById('foto-fan-badge')!;
 
       type LbAsset = { id: string; type: 'IMAGE' | 'VIDEO'; extraIds?: string[] };
       type Person = { id: string; name: string; count: number };
@@ -661,6 +730,67 @@ const hasAttribution = !!(lid && t);
         toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2200);
       }
 
+      let fanToastTimer: ReturnType<typeof setTimeout> | undefined;
+      function fanToast(msg: string) {
+        fanToastEl.textContent = msg;
+        fanToastEl.classList.add('show');
+        clearTimeout(fanToastTimer);
+        fanToastTimer = setTimeout(() => fanToastEl.classList.remove('show'), 3500);
+      }
+
+      function fanTierLabel(count: number): string | null {
+        if (count >= 10) return 'Легенда смены 🏆';
+        if (count >= 5) return 'Фанат смены 🧡';
+        if (count >= 2) return 'Постоянный зритель 👀';
+        return null;
+      }
+
+      function updateFanBadge(count: number) {
+        const label = fanTierLabel(count);
+        if (label) {
+          fanBadgeEl.textContent = label;
+          fanBadgeEl.classList.add('show');
+        } else {
+          fanBadgeEl.classList.remove('show');
+        }
+      }
+
+      function trackFanVisit() {
+        const countKey = 'foto_visit_count_' + shiftId;
+        const dateKey = 'foto_last_visit_date_' + shiftId;
+        const todayCountKey = 'foto_today_count_' + shiftId;
+
+        let count = 1;
+        let todayCount = 1;
+        try {
+          count = parseInt(localStorage.getItem(countKey) || '0', 10) + 1;
+          localStorage.setItem(countKey, String(count));
+
+          const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Moscow' }).format(new Date());
+          const lastDate = localStorage.getItem(dateKey);
+          if (lastDate === today) {
+            todayCount = parseInt(localStorage.getItem(todayCountKey) || '1', 10) + 1;
+          }
+          localStorage.setItem(dateKey, today);
+          localStorage.setItem(todayCountKey, String(todayCount));
+        } catch {
+          // localStorage недоступен (приватный режим и т.п.) — просто не показываем фичу
+          return;
+        }
+
+        if (todayCount === 2) {
+          fanToast('Сегодня уже второй раз — новые фото ждёте?');
+        } else if (count === 2) {
+          fanToast('О, вы снова здесь! Похоже, вы наш фанат 🧡');
+        } else if (count === 5) {
+          fanToast('Вы точно не пропускаете ни одного кадра');
+        } else if (count === 10) {
+          fanToast('Вы официально самый преданный зритель этой смены');
+        }
+
+        updateFanBadge(count);
+      }
+
       // ====== Лайтбокс ======
       let lbAssets: LbAsset[] = [];
       let lbIndex = 0;
@@ -677,6 +807,7 @@ const hasAttribution = !!(lid && t);
         document.body.style.overflow = '';
         lbImg.src = '';
         lbVid.pause();
+        lbVid.removeAttribute('poster');
         lbVid.src = '';
       }
       function updateLightboxPhoto() {
@@ -684,6 +815,7 @@ const hasAttribution = !!(lid && t);
         if (asset.type === 'VIDEO') {
           lbImg.style.display = 'none';
           lbVid.style.display = 'block';
+          lbVid.poster = `/api/foto/image/${asset.id}?kind=thumb`;
           lbVid.src = `/api/foto/image/${asset.id}?kind=original`;
         } else {
           lbVid.style.display = 'none';
@@ -1068,7 +1200,12 @@ const hasAttribution = !!(lid && t);
         circle.appendChild(img);
         const name = document.createElement('span');
         name.className = 'foto-ava-name';
-        name.textContent = p.name;
+        // Подпись показывает ТО ЖЕ значение, что используется для сортировки
+        // (surnameSortKey) — иначе для точечных исключений (напр. «Александр
+        // Сытик» → «Сытик Александр») позиция в списке верна по фамилии, а
+        // подпись всё равно показывает сырое «Имя Фамилия», и визуально
+        // кажется, что сортировка не сработала.
+        name.textContent = surnameSortKey(p.name, shiftId);
         el.append(circle, name);
         el.addEventListener('click', () => selectPerson(p.id));
         return el;
@@ -1233,6 +1370,13 @@ const hasAttribution = !!(lid && t);
         currentAssets = (data.assetIds as { id: string; type: 'IMAGE' | 'VIDEO' }[]).map((a) => ({ id: a.id, type: a.type }));
         setStatus(`${data.name}: ${currentAssets.length} фото`);
         renderPhotoGrid(currentAssets);
+        // Кого именно ищут родители — единственный прямой сигнал спроса на кадры.
+        // Раньше он оставался только в логах nginx, где посетитель различим по IP,
+        // а IP у мобильного интернета меняется. Через цель это ClientID Метрики,
+        // имя ребёнка уходит параметром цели — так виден и спрос, и кто искал.
+        try {
+          (window as any).ym?.(96499295, 'reachGoal', 'foto_person', { foto_person: data.name });
+        } catch {}
       }
 
       // ====== Неразобранные (разметка лиц кликами) ======
@@ -1263,12 +1407,14 @@ const hasAttribution = !!(lid && t);
         if (!data.ok) { setStatus(data.error); return; }
         clearGrid();
         const groups = data.groups as UnsortedGroup[];
-        const people = data.people as { id: string; name: string }[];
+        const people = [...(data.people as { id: string; name: string }[])].sort((a, b) =>
+          surnameSortKey(a.name, shiftId).localeCompare(surnameSortKey(b.name, shiftId), 'ru'),
+        );
         const totalFaces = groups.reduce((n, g) => n + g.faces.length, 0);
         setStatus(`Неразобранных лиц: ${totalFaces} на ${groups.length} фото`);
 
         const peopleOptions = '<option value="">Кто это?</option>' +
-          people.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+          people.map((p) => `<option value="${p.id}">${surnameSortKey(p.name, shiftId)}</option>`).join('');
 
         for (const group of groups) {
           const card = document.createElement('div');
@@ -1391,6 +1537,7 @@ const hasAttribution = !!(lid && t);
       }
 
       async function init() {
+        trackFanVisit();
         setStatus('Загружаю…');
         const people = await loadPeopleData();
         buildAvatars(people);

@@ -114,6 +114,7 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь рядом с Обнинском', description: 'Лагерь программирования', url: '/lager-obnisk/', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Фрязево', description: 'Летний детский IT-лагерь', url: '/lager-fryazevo/', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с домом', description: 'Как найти лагерь ближе к вам в Подмосковье', url: '/lager-ryadom/', icon: 'bi-geo-alt' },
+  { title: 'Лагерь для петербуржцев', description: 'Компенсируем дорогу, встречаем в Москве', url: '/lager-iz-peterburga/', icon: 'bi-geo-alt-fill' },
 
   // 💰 Коммерческие
   { title: 'Записаться в лагерь', description: 'Как записать ребёнка в IT-лагерь', url: '/zapisatsya/', icon: 'bi-calendar-check' },

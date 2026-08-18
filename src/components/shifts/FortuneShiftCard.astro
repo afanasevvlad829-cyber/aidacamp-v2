@@ -2,6 +2,7 @@
 import { getCurrentPrice, fmtPrice } from '../../data/dynamicPrices';
 import { mainShifts, getAvailabilityLevel } from '../../data/shifts';
 import { MS_PER_DAY, daysUntil, formatDaysLabel } from '../../scripts/shifts/fortune';
+import { seededShuffle } from '../../lib/deterministic';
 
 interface Props {
   shiftId?: string;
@@ -40,15 +41,17 @@ interface Seg { label: string; d: number; w: number; color: string }
 
 // Порядок секторов на колесе — вперемешку, не по возрастанию (чисто визуально,
 // вес/шанс каждого значения не зависит от позиции на круге).
-function shuffleSegs(arr: Seg[]): Seg[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-const SEGMENTS: Seg[] = shuffleSegs([
+//
+// Тасовка засеяна id смены, а не Math.random(). Прежний вариант перемешивал
+// НА СБОРКЕ, и это не давало ничего из задуманного: порядок всё равно застывал
+// до следующего деплоя, одинаковый для всех посетителей. Зато делал сборку
+// невоспроизводимой — Shifts.astro подключён на 115 страницах, и каждая
+// получала новый HTML на каждом билде (rsync гнал их заново, кэш минификации
+// промахивался). Замер 14.08.2026: 151 изменённая страница из 336 на пустой
+// правке. Сейчас порядок стабилен между сборками и по-прежнему разный у разных
+// смен. Настоящая случайность на каждый показ, если понадобится, делается
+// в браузере — не здесь. См. src/lib/deterministic.ts.
+const SEGMENTS: Seg[] = seededShuffle([
   { label: '10%', d: 10, w: 22, color: '#fdba74' },
   { label: '15%', d: 15, w: 18, color: '#fcae67' },
   { label: '20%', d: 20, w: 16, color: '#fb923c' },
@@ -57,7 +60,7 @@ const SEGMENTS: Seg[] = shuffleSegs([
   { label: '40%', d: 40, w: 9,  color: '#ea580c' },
   { label: '50%', d: 50, w: 6,  color: '#c2410c' },
   { label: '70%', d: 70, w: 3,  color: '#7c2d12' },
-]);
+], SHIFT_ID);
 
 // Pre-compute SVG paths server-side
 const R = 108, CX = 120, CY = 120;
