@@ -14,14 +14,12 @@
 #      (seo-pulse-keywords.txt — правь руками под текущую волну), чтобы не
 #      жечь лимит. Новый домен в ТОП-10 против вчерашнего снятия той же фразы —
 #      подсвечивается. Реализация — scripts/seo-pulse-arsenkin.mjs.
-#   3. Волна конвейера — РУЧНОЙ лог /opt/scripts/seo-conveyor-log.jsonl. Скор
-#      Лабрики и разбор конкурентов вручную (в браузере) — это работа агента
-#      внутри сессии, крон её не делает и не может; агент, который вёл волну,
-#      сам дописывает строку в конце волны:
-#        {"date":"YYYY-MM-DD","site":"aidacamp"|"codims","pages":N,
-#         "score_before":N,"score_after":N,"competitors_checked":N,"notes":"..."}
-#      Нет строки за сегодня → отчёт честно показывает «конвейер сегодня не
-#      запускался», а не выдумывает данные.
+#   3. Волна цикла (фронт A методики, [[seo-wave-cycle]] skill) — таблица
+#      seo_wave_log (Postgres): страницы в ожидании замера (сколько дней
+#      осталось), только что перемеренные (delta, выстрелило/нет), открытые
+#      PR. Источник истины — сама таблица, ничего вручную логировать не нужно.
+#      Лабрика-конвейер (скор/конкуренты вручную в браузере) — отдельный,
+#      сюда НЕ входит: это работа агента внутри сессии, крон её не видит.
 #
 # ЧЕГО ЗДЕСЬ НЕТ: позиций по сайтам — это отдельный еженедельный отчёт
 # (seo_weekly_check.mjs, Пн 10:00 МСК, Telegram) — [[project-money-pulse]]-стиль
@@ -39,7 +37,6 @@ AIDACAMP_REPO="/opt/aidacamp-build"
 CODIMS_REPO="/var/www/codims-prod/repo"
 PUBLISH="/opt/reports-hub/publish.sh"
 REPORT="/tmp/seo-pulse-report.html"
-CONVEYOR_LOG="/opt/scripts/seo-conveyor-log.jsonl"
 ARSENKIN_SCRIPT="/opt/scripts/seo-pulse-arsenkin.latest.mjs"
 KEYWORDS_FILE="/opt/scripts/seo-pulse-keywords.latest.txt"
 
@@ -62,15 +59,30 @@ if [[ -f "$ARSENKIN_SCRIPT" && -f "$KEYWORDS_FILE" ]]; then
 else
   ARS_ERR="скрипт/список ключей ещё не подтянуты кроном (первый прогон после мержа?)"
 fi
-ARS_KEYWORD=""; ARS_BASE=""; ARS_QUOTED=""; ARS_TOP10=""; ARS_NEW=""; ARS_PREV=""
+ARS_KEYWORD=""; ARS_BASE=""; ARS_QUOTED=""; ARS_TOP10=""; ARS_NEW=""; ARS_PREV=""; ARS_STRONG=""
 if [[ -n "$ARS_LINE" ]]; then
   # \x1F (не таб/пробел) — иначе bash схлопывает подряд идущие пустые поля
-  IFS=$'\x1f' read -r ARS_KEYWORD ARS_BASE ARS_QUOTED ARS_TOP10 ARS_NEW ARS_PREV <<< "$ARS_LINE"
+  IFS=$'\x1f' read -r ARS_KEYWORD ARS_BASE ARS_QUOTED ARS_TOP10 ARS_NEW ARS_PREV ARS_STRONG <<< "$ARS_LINE"
+fi
+ARS_STRONG_NOTE=""
+if [[ -n "$ARS_STRONG" ]]; then
+  ARS_STRONG_NOTE=" — Мутаген strong: <b>${ARS_STRONG}</b>"
+  if (( $(echo "$ARS_STRONG" | cut -d. -f1) <= 10 )); then
+    ARS_STRONG_NOTE+=" (можно брать в работу)"
+  elif (( $(echo "$ARS_STRONG" | cut -d. -f1) >= 15 )); then
+    ARS_STRONG_NOTE+=" (не в лоб — широкая)"
+  fi
 fi
 
-# ── 3. Волна конвейера (ручной лог) ─────────────────────────────────────────
-CONVEYOR_TODAY=""
-[[ -f "$CONVEYOR_LOG" ]] && CONVEYOR_TODAY=$(grep "\"date\":\"${TODAY}\"" "$CONVEYOR_LOG" || true)
+# ── 3. Волна цикла (seo_wave_log) ───────────────────────────────────────────
+WAVE_PENDING=$(sudo -u postgres psql -d aidacamp -tAc "
+  SELECT site || ' | ' || target_url || ' | до замера: ' || GREATEST(0, EXTRACT(day FROM measure_due_at - now())::int) || ' дн.'
+  FROM seo_wave_log WHERE status='awaiting_measure' ORDER BY site, measure_due_at" 2>/dev/null || true)
+WAVE_MEASURED=$(sudo -u postgres psql -d aidacamp -tAc "
+  SELECT site || ' | ' || target_url || ' | ' || status || ' | delta=' || COALESCE(delta::text,'—')
+  FROM seo_wave_log WHERE measured_at >= now() - interval '24 hours' ORDER BY measured_at DESC" 2>/dev/null || true)
+WAVE_OPEN_PRS=$(sudo -u postgres psql -d aidacamp -tAc "
+  SELECT site || ' | ' || pr_url FROM seo_wave_log WHERE pr_url IS NOT NULL AND edited_at >= now() - interval '24 hours'" 2>/dev/null || true)
 
 # ── HTML-отчёт ───────────────────────────────────────────────────────────────
 cat > "$REPORT" <<HTML
@@ -85,8 +97,8 @@ cat > "$REPORT" <<HTML
  .muted{color:#777;font-size:.85rem}
  .new{color:#b45309;font-weight:600}
 </style></head><body>
-<h1>🧭 SEO-пульс конвейера</h1>
-<p class="muted">Ежедневный срез конвейера Labrika-оптимизации. Прогон: ${NOW_H}. Cron: ежедневно 09:00 МСК, лог: /var/log/seo-pulse.log</p>
+<h1>🧭 SEO-пульс</h1>
+<p class="muted">Ежедневный срез: правки за сутки, конкуренты/частотность, волна цикла (фронт A). Прогон: ${NOW_H}. Cron: ежедневно 09:00 МСК, лог: /var/log/seo-pulse.log</p>
 
 <div class="card"><h2>✏️ 1. Правки за сутки</h2>
 <p>aidacamp.ru (dev): <b>${AC_N}</b> коммит(ов) | codims.ru (прод): <b>${CD_N}</b> коммит(ов)</p>
@@ -97,7 +109,7 @@ $( [[ -z "$AC_COMMITS" && -z "$CD_COMMITS" ]] && echo "<p>За сутки пра
 
 <div class="card"><h2>🎯 2. Конкуренты и частотность (Арсенкин)</h2>
 $( if [[ -n "$ARS_LINE" ]]; then cat <<INNER
-<p>Фраза дня: <b>$(echo "$ARS_KEYWORD" | esc)</b>$( [[ -n "$ARS_BASE" ]] && echo " — частотность: ${ARS_BASE} (в кавычках: ${ARS_QUOTED})" )</p>
+<p>Фраза дня: <b>$(echo "$ARS_KEYWORD" | esc)</b>$( [[ -n "$ARS_BASE" ]] && echo " — частотность: ${ARS_BASE} (в кавычках: ${ARS_QUOTED})" )${ARS_STRONG_NOTE}</p>
 <p>ТОП-10 (Яндекс, регион Москва):</p><pre>$(echo "$ARS_TOP10" | tr '|' '\n' | esc)</pre>
 $( if [[ -n "$ARS_NEW" ]]; then echo "<p class=\"new\">⚠️ Новые домены в ТОП-10 против $( [[ -n "$ARS_PREV" ]] && echo "$ARS_PREV" || echo "прошлого снятия" ): $(echo "$ARS_NEW" | tr '|' ', ' | esc)</p>"; elif [[ -n "$ARS_PREV" ]]; then echo "<p class=\"muted\">Без изменений против снятия от ${ARS_PREV}.</p>"; else echo "<p class=\"muted\">Первое снятие этой фразы — сравнивать пока не с чем.</p>"; fi )
 INNER
@@ -106,9 +118,14 @@ else
 fi )
 <p class="muted">Ротация — одна фраза в день (scripts/seo-pulse-keywords.txt), чтобы не жечь лимит Арсенкина. Позиции по всем сайтам — отдельный еженедельный отчёт (Пн, Telegram).</p></div>
 
-<div class="card"><h2>🌊 3. Волна конвейера сегодня</h2>
-$( if [[ -n "$CONVEYOR_TODAY" ]]; then echo "<pre>$(echo "$CONVEYOR_TODAY" | esc)</pre>"; else echo "<p>Конвейер сегодня не запускался (или агент не дописал запись в лог).</p>"; fi )
-<p class="muted">Скор Лабрики и разбор конкурентов вручную — это работа агента в браузере внутри сессии, крон её не делает. Формат записи — в шапке scripts/seo-pulse.sh.</p></div>
+<div class="card"><h2>🌊 3. Волна цикла (фронт A, seo_wave_log)</h2>
+<p class="muted">В ожидании замера:</p>
+$( if [[ -n "$WAVE_PENDING" ]]; then echo "<pre>$(echo "$WAVE_PENDING" | esc)</pre>"; else echo "<p>Пусто.</p>"; fi )
+<p class="muted">Перемерены за сутки:</p>
+$( if [[ -n "$WAVE_MEASURED" ]]; then echo "<pre>$(echo "$WAVE_MEASURED" | esc)</pre>"; else echo "<p>Пусто.</p>"; fi )
+<p class="muted">Открытые PR за сутки:</p>
+$( if [[ -n "$WAVE_OPEN_PRS" ]]; then echo "<pre>$(echo "$WAVE_OPEN_PRS" | esc)</pre>"; else echo "<p>Пусто.</p>"; fi )
+<p class="muted">Источник — таблица seo_wave_log, заполняется скиллом seo-wave-cycle. Лабрика-конвейер (скор/конкуренты вручную в браузере) сюда не входит — отдельная ручная работа в сессии.</p></div>
 
 <p class="muted">Скрипт: scripts/seo-pulse.sh (репо aidacamp-v2, самообновляется из origin/dev).</p>
 </body></html>
