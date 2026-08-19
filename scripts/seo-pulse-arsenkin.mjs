@@ -123,6 +123,13 @@ function findKey(obj, key) {
     base = wd.base ?? ''; quoted = wd.quoted ?? '';
   } catch { /* частотность необязательна для отчёта */ }
 
+  // Мутаген: strong — сложность продвижения фразы (методика §1.5: ≤10 брать в работу, ≥15 не в лоб)
+  let strong = '';
+  try {
+    const mgRes = await callTool(sid, 'run', { service: 'mutagen', action: 'check', params: { query: keyword } });
+    strong = mgRes?.strong ?? findKey(mgRes, 'strong') ?? '';
+  } catch { /* strong необязателен для отчёта */ }
+
   // История для сравнения доменов ТОП-10 день-к-дню
   let history = {};
   if (existsSync(HISTORY_FILE)) {
@@ -133,5 +140,5 @@ function findKey(obj, key) {
   history[keyword] = { date: new Date().toISOString().slice(0, 10), domains: top10 };
   writeFileSync(HISTORY_FILE, JSON.stringify(history, null, 2));
 
-  console.log([keyword, base, quoted, top10.join('|'), newEntrants.join('|'), prev?.date || ''].join('\x1F'));
+  console.log([keyword, base, quoted, top10.join('|'), newEntrants.join('|'), prev?.date || '', strong].join('\x1F'));
 })().catch(e => { console.error('ERROR: ' + e.message); process.exit(1); });
