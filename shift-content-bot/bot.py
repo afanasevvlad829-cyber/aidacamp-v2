@@ -85,6 +85,33 @@ def shift_day():
     if d > SHIFT_DAYS: return -1
     return d
 
+_shift_id = None
+def shift_id():
+    """
+    id смены из таблицы `shift` — им помечается всё, что бот принимает.
+    В shift_content раньше был только `day`, а номера дней каждый заезд
+    начинает заново: 20.08.2026 на /portal/content?day=4 сошлись 86 кадров
+    смены 3–15 августа и 46 сегодняшних. `SHIFT_NO` из .env ключом быть не
+    может — это подпись для патч-ноутов, и она уже расходилась с таблицей
+    (SHIFT_NO=6 против «Смена 4»).
+
+    Резолвим по SHIFT_START и кэшируем на процесс (смена меняется вместе с
+    .env и рестартом). Промах не кэшируем: если строку в `shift` заведут
+    позже, она подхватится сама, без рестарта.
+    """
+    global _shift_id
+    if _shift_id is None:
+        rows = q("SELECT id FROM shift "
+                 " WHERE start_date = %s OR %s BETWEEN start_date AND end_date "
+                 " ORDER BY (start_date = %s) DESC LIMIT 1",
+                 (SHIFT_START, SHIFT_START, SHIFT_START))
+        if rows:
+            _shift_id = rows[0][0]
+        else:
+            print(f"shift_id: в таблице shift нет смены на SHIFT_START={SHIFT_START}, "
+                  f"пишу NULL — портал подхватит такую строку только по окну дат", flush=True)
+    return _shift_id
+
 pending = {}   # user_id -> {"stage": "kids"|"task"|"feedback", "content_id": int}
 
 client = TelegramClient(os.path.join(HERE, "bot"), API_ID, API_HASH, proxy=PROXY)
@@ -220,9 +247,9 @@ async def save_content(ev, kind, compressed):
             path = jpg
     size_mb = os.path.getsize(path) / 1e6
     caption = (ev.message.message or "").strip()
-    rows = q("INSERT INTO shift_content(day, kind, path, author_tg, caption, compressed, created_at) "
-             "VALUES(%s,%s,%s,%s,%s,%s,now()) RETURNING id",
-             (d, kind, path, ev.sender_id, caption, compressed))
+    rows = q("INSERT INTO shift_content(day, shift_id, kind, path, author_tg, caption, compressed, created_at) "
+             "VALUES(%s,%s,%s,%s,%s,%s,%s,now()) RETURNING id",
+             (d, shift_id(), kind, path, ev.sender_id, caption, compressed))
     cid = rows[0][0]
     note = " · сжатое (для канала ок; для архива лучше файлом)" if compressed else " · исходник 👍"
     head = f"Принял ({size_mb:.1f} МБ){note}"
@@ -362,8 +389,9 @@ async def incoming_voice(ev):
         # "доставлено" и думает, что всё сохранилось. Найдено 19.08.2026.
         print(f"incoming_voice: скачивание упало для {ev.sender_id}: {e}", flush=True)
         return await ev.respond("Не получилось скачать голосовое — попробуйте отправить ещё раз.")
-    rows = q("INSERT INTO shift_content(day, kind, path, author_tg, bucket, created_at) "
-             "VALUES(%s,'voice',%s,%s,'stash',now()) RETURNING id", (d, path, ev.sender_id))
+    rows = q("INSERT INTO shift_content(day, shift_id, kind, path, author_tg, bucket, created_at) "
+             "VALUES(%s,%s,'voice',%s,%s,'stash',now()) RETURNING id",
+             (d, shift_id(), path, ev.sender_id))
     cid = rows[0][0]
     msg = await ev.respond("Голосовое принял, расшифровываю…")
     text = await transcribe(path)
@@ -400,8 +428,8 @@ async def free_text_report(ev):
         return await ev.respond(
             "Это слишком коротко для отчёта, поэтому не сохранил.\n"
             "Пришлите текст подробнее или голосовое — приму и то, и другое.")
-    q("INSERT INTO shift_feedback(day, tg_id, text, created_at) VALUES(%s,%s,%s,now())",
-      (shift_day(), ev.sender_id, text))
+    q("INSERT INTO shift_feedback(day, shift_id, tg_id, text, created_at) VALUES(%s,%s,%s,%s,now())",
+      (shift_day(), shift_id(), ev.sender_id, text))
     await ev.respond(f"Отчёт принял, записал за день {shift_day()} 👍\n"
                      f"{len(text)} символов. Голосовым тоже можно — расшифрую.")
 
@@ -474,8 +502,8 @@ async def text_router(ev):
         btns.append([Button.inline("🗃 Просто так — в копилку", f"task:{st['content_id']}:0".encode())])
         await ev.respond("Это по контентному заданию или просто так?", buttons=btns)
     elif st["stage"] == "feedback":
-        q("INSERT INTO shift_feedback(day, tg_id, text, created_at) VALUES(%s,%s,%s,now())",
-          (shift_day(), ev.sender_id, ev.text.strip()))
+        q("INSERT INTO shift_feedback(day, shift_id, tg_id, text, created_at) VALUES(%s,%s,%s,%s,now())",
+          (shift_day(), shift_id(), ev.sender_id, ev.text.strip()))
         pending.pop(ev.sender_id, None)
         await ev.respond("Отчёт принял 🙌 Спокойной ночи!")
 
