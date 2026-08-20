@@ -28,7 +28,7 @@ ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "systemctl restart shift-content
 ## Привязка к смене
 
 `shift_content.shift_id` / `shift_feedback.shift_id` — FK на `shift(id)`.
-Бот резолвит его сам по своему `SHIFT_START` из `.env` (`resolve_shift_id()`),
+Бот резолвит его сам по своему `SHIFT_START` из `.env` (`shift_id()`),
 руками номер нигде не проставляется. `SHIFT_NO` из `.env` — только подпись для
 патч-ноутов, ключом не является: он уже расходился с таблицей (`SHIFT_NO=6`
 против «Смена 4»). Миграция и бэкфилл — `scripts/migrations/002-shift-content-shift-id.sql`.
