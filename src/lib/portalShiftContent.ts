@@ -63,19 +63,43 @@ const SELECT_ITEM = `
     LEFT JOIN shift_staff s ON s.tg_id = c.author_tg
     LEFT JOIN shift_tasks t ON t.id = c.task_id`;
 
+/**
+ * Окно текущей смены. В `shift_content` нет номера смены — только `day`, и
+ * каждая новая смена переиспользует те же номера дней. Без окна на дне 4
+ * оказывались вперемешку кадры прошлой смены и сегодняшние (20.08.2026:
+ * 86 фото от 5–6 августа против 46 настоящих). Нижняя граница сдвинута на
+ * месяц назад, чтобы не потерять «день 0» — то, что снято до заезда.
+ */
+export interface ShiftWindow {
+  from: string; // ISO-дата старта смены
+  to: string;   // ISO-дата окончания
+}
+
+function windowClause(win: ShiftWindow | null, alias: string, firstIdx: number): { sql: string; params: string[] } {
+  if (!win) return { sql: '', params: [] };
+  return {
+    sql: ` AND ${alias}.created_at >= ($${firstIdx}::date - interval '30 days')
+           AND ${alias}.created_at < ($${firstIdx + 1}::date + interval '2 days')`,
+    params: [win.from, win.to],
+  };
+}
+
 /** Дни, по которым уже что-то сдано (для подсветки вкладок). */
-export async function contentDays(): Promise<Map<number, number>> {
+export async function contentDays(win: ShiftWindow | null = null): Promise<Map<number, number>> {
+  const w = windowClause(win, 'c', 1);
   const rows = await query<{ day: number; n: string }>(
-    'SELECT day, count(*)::text AS n FROM shift_content GROUP BY day ORDER BY day',
+    `SELECT day, count(*)::text AS n FROM shift_content c WHERE true${w.sql} GROUP BY day ORDER BY day`,
+    w.params,
   );
   return new Map((rows ?? []).map((r) => [Number(r.day), Number(r.n)]));
 }
 
-/** Всё сданное за день, новое сверху. */
-export async function listContent(day: number): Promise<ShiftContentItem[]> {
+/** Всё сданное за день текущей смены, новое сверху. */
+export async function listContent(day: number, win: ShiftWindow | null = null): Promise<ShiftContentItem[]> {
+  const w = windowClause(win, 'c', 2);
   const rows = await query<ShiftContentItem>(
-    `${SELECT_ITEM} WHERE c.day = $1 ORDER BY c.created_at DESC, c.id DESC`,
-    [day],
+    `${SELECT_ITEM} WHERE c.day = $1${w.sql} ORDER BY c.created_at DESC, c.id DESC`,
+    [String(day), ...w.params],
   );
   return rows ?? [];
 }
@@ -100,15 +124,16 @@ export interface ShiftFeedbackItem {
  * голосовой. Пока их здесь не было, вечер выглядел пустым: 11.08 голосовых не
  * прислал никто, а четыре текстовых отчёта в ленту не попадали.
  */
-export async function listFeedback(day: number): Promise<ShiftFeedbackItem[]> {
+export async function listFeedback(day: number, win: ShiftWindow | null = null): Promise<ShiftFeedbackItem[]> {
+  const w = windowClause(win, 'f', 2); // те же номера дней у прошлых смен — см. ShiftWindow
   const rows = await query<ShiftFeedbackItem>(
     `SELECT f.id, f.day, f.text, f.created_at,
             s.name AS author, s.role AS author_role
        FROM shift_feedback f
        LEFT JOIN shift_staff s ON s.tg_id = f.tg_id
-      WHERE f.day = $1
+      WHERE f.day = $1${w.sql}
       ORDER BY f.created_at DESC, f.id DESC`,
-    [day],
+    [String(day), ...w.params],
   );
   return rows ?? [];
 }

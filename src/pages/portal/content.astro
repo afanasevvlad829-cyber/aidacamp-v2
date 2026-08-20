@@ -2,7 +2,7 @@
 export const prerender = false;
 
 import PortalLayout from '../../layouts/PortalLayout.astro';
-import { getActiveShift, getEventDates } from '../../lib/portalShift';
+import { getActiveShift, getEventDates, listShifts } from '../../lib/portalShift';
 import {
   contentDays, listContent, listFeedback, listTasks, roleLabel,
   type ShiftContentItem, type ShiftFeedbackItem, type ShiftTaskRow,
@@ -11,11 +11,21 @@ import '../../styles/portal-den.css';
 import '../../styles/portal-gallery.css';
 
 // Доступ гейтит middleware: /portal/* открыт только сотрудникам.
-const shift = await getActiveShift();
+// Смену можно выбрать вручную (?shift=id) — архив прошлых заездов лежит в тех
+// же таблицах; по умолчанию открывается активная.
+const shifts = await listShifts();
+const reqShift = Number(Astro.url.searchParams.get('shift') || 0);
+const active = await getActiveShift();
+const shift = (reqShift && shifts.find((s) => Number(s.id) === reqShift)) || active || shifts[0] || null;
 const dates = shift ? await getEventDates(shift.id) : [];
 
-// Бот нумерует дни от старта смены (0 — всё, что снято до заезда).
-const counts = await contentDays();
+// Бот нумерует дни от старта смены (0 — всё, что снято до заезда). Номера
+// дней повторяются от смены к смене, поэтому все выборки ограничиваем окном
+// активной смены — иначе в дне смешиваются кадры прошлых заездов.
+// Выбранная смена должна сохраняться при переходах по дням.
+const shiftQ = shift ? `&shift=${shift.id}` : '';
+const shiftWindow = dates.length ? { from: dates[0], to: dates[dates.length - 1] } : null;
+const counts = await contentDays(shiftWindow);
 const hasPre = (counts.get(0) ?? 0) > 0;
 
 function todayDayNo(): number {
@@ -29,8 +39,8 @@ const fallbackDay = todayDayNo() || withContent.at(-1) || 1;
 const reqDay = Astro.url.searchParams.get('day');
 const day = reqDay !== null && reqDay !== '' ? Number(reqDay) : fallbackDay;
 
-const items: ShiftContentItem[] = await listContent(day);
-const written: ShiftFeedbackItem[] = day > 0 ? await listFeedback(day) : [];
+const items: ShiftContentItem[] = await listContent(day, shiftWindow);
+const written: ShiftFeedbackItem[] = day > 0 ? await listFeedback(day, shiftWindow) : [];
 const tasks: ShiftTaskRow[] = day > 0 ? await listTasks(day) : [];
 const missing = tasks.filter((t) => t.shots === 0);
 
@@ -96,12 +106,24 @@ function splitKids(kids: string | null) {
           {shift ? shift.name : 'Нет активной смены'} · сдаётся в бота <a href="https://t.me/Aidacamp2026bot" class="gal-botlink">@Aidacamp2026bot</a>
         </p>
       </div>
+      {shifts.length > 1 && (
+        <form method="get" class="den-shiftpick">
+          <label for="shiftpick">Смена:</label>
+          <select id="shiftpick" name="shift" onchange="this.form.submit()">
+            {shifts.map((s) => (
+              <option value={s.id} selected={shift && Number(s.id) === Number(shift.id)}>
+                {s.name}{s.status === 'active' ? ' · идёт' : ''}
+              </option>
+            ))}
+          </select>
+        </form>
+      )}
     </header>
 
     {(dates.length > 0 || hasPre) && (
       <nav class="den-days">
         {hasPre && (
-          <a href="/portal/content?day=0" class={`den-day${day === 0 ? ' active' : ''}`}>
+          <a href={`/portal/content?day=0${shiftQ}`} class={`den-day${day === 0 ? ' active' : ''}`}>
             <span class="den-day-n">До смены</span>
             <span class="den-day-d">{counts.get(0)} шт.</span>
           </a>
@@ -109,7 +131,7 @@ function splitKids(kids: string | null) {
         {dates.map((d, i) => {
           const n = counts.get(i + 1) ?? 0;
           return (
-            <a href={`/portal/content?day=${i + 1}`}
+            <a href={`/portal/content?day=${i + 1}${shiftQ}`}
                class={`den-day${day === i + 1 ? ' active' : ''}${n === 0 ? ' gal-day-empty' : ''}`}>
               <span class="den-day-n">День {i + 1}</span>
               <span class="den-day-d">{n > 0 ? `${fmtDate(d)} · ${n}` : fmtDate(d)}</span>
