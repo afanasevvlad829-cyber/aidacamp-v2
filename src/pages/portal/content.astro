@@ -20,12 +20,14 @@ const shift = (reqShift && shifts.find((s) => Number(s.id) === reqShift)) || act
 const dates = shift ? await getEventDates(shift.id) : [];
 
 // Бот нумерует дни от старта смены (0 — всё, что снято до заезда). Номера
-// дней повторяются от смены к смене, поэтому все выборки ограничиваем окном
-// активной смены — иначе в дне смешиваются кадры прошлых заездов.
+// дней повторяются от смены к смене, поэтому все выборки ограничиваем самой
+// сменой — иначе в дне смешиваются кадры прошлых заездов. Фильтруем по
+// shift_id, а не по датам заезда: окно дат приходилось расширять назад ради
+// «дня 0», и в него целиком попадала предыдущая смена.
 // Выбранная смена должна сохраняться при переходах по дням.
 const shiftQ = shift ? `&shift=${shift.id}` : '';
-const shiftWindow = dates.length ? { from: dates[0], to: dates[dates.length - 1] } : null;
-const counts = await contentDays(shiftWindow);
+const shiftId = shift ? Number(shift.id) : null;
+const counts = await contentDays(shiftId);
 const hasPre = (counts.get(0) ?? 0) > 0;
 
 function todayDayNo(): number {
@@ -39,9 +41,9 @@ const fallbackDay = todayDayNo() || withContent.at(-1) || 1;
 const reqDay = Astro.url.searchParams.get('day');
 const day = reqDay !== null && reqDay !== '' ? Number(reqDay) : fallbackDay;
 
-const items: ShiftContentItem[] = await listContent(day, shiftWindow);
-const written: ShiftFeedbackItem[] = day > 0 ? await listFeedback(day, shiftWindow) : [];
-const tasks: ShiftTaskRow[] = day > 0 ? await listTasks(day) : [];
+const items: ShiftContentItem[] = await listContent(day, shiftId);
+const written: ShiftFeedbackItem[] = day > 0 ? await listFeedback(day, shiftId) : [];
+const tasks: ShiftTaskRow[] = day > 0 ? await listTasks(day, shiftId) : [];
 const missing = tasks.filter((t) => t.shots === 0);
 
 const dayDate = day > 0 && dates[day - 1] ? dates[day - 1] : null;
