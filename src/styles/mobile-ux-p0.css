@@ -3,7 +3,7 @@
  * Цель: закрыть критичные находки UX-аудита (62/100, 8 critical) для мобильных.
  *  - body 16px + line-height 1.65 (аудит: 14px/1.4 слишком мелко и тесно)
  *  - светло-серый secondary text (slate-400/500) → #4b5563 (WCAG AA)
- *  - оранжевый CTA #ff7700 → #ad5b00 (WCAG AA 4.5:1 на белом)
+ *  - оранжевый CTA #ff7700 → var(--color-primary-dark) (WCAG AA 4.5:1 на белом)
  *  - основной CTA full-width + min-height 48px (Fitts's Law, 81% drop-off)
  *  - вертикальные отступы секций 8→16px
  *
@@ -53,30 +53,29 @@
   }
 
   /* Оранжевый CTA — WCAG AA
-     Только текст на белом фоне (contrast ratio ec7c00/white ≈ 3:1, AA требует 4.5:1).
-     Фоны (banner, кнопки) НЕ переопределяем — там белый текст на оранжевом,
-     что даёт 3:1 при крупном/bold тексте (Large text AA OK). */
+     Бренд #ec9b44 как текст на белом даёт 2.25:1, AA требует 4.5:1 — поэтому
+     текстовые/бордерные применения подменяем на --color-primary-text (#8c540c,
+     6.20:1 на белом). primary-dark (#b66d10) даёт лишь 4.05:1 и не проходит.
+     Фоны (banner, кнопки) НЕ переопределяем — там белый текст на оранжевом. */
   .text-primary,
-  .text-\[\#ec7c00\],
-  .text-\[\#ec7c00\],
+  .text-\[\#ec9b44\],
   .text-orange-500,
   .text-orange-600 {
-    color: var(--color-primary-dark) !important;
+    color: var(--color-primary-text) !important;
   }
   .border-primary,
-  .border-\[\#ec7c00\],
-  .border-\[\#ec7c00\] {
-    border-color: var(--color-primary-dark) !important;
+  .border-\[\#ec9b44\] {
+    border-color: var(--color-primary-text) !important;
   }
   /* Focus state (LeadForm phone input) */
-  .focus\:border-\[\#ec7c00\]:focus,
-  .focus\:border-\[\#ec7c00\]:focus {
-    border-color: var(--color-primary-dark) !important;
+  .focus\:border-primary:focus,
+  .focus\:border-\[\#ec9b44\]:focus {
+    border-color: var(--color-primary-text) !important;
   }
   /* Checkbox accent (LeadForm consent) */
-  .accent-\[\#ec7c00\],
-  .accent-\[\#ec7c00\] {
-    accent-color: var(--color-primary-dark) !important;
+  .accent-primary,
+  .accent-\[\#ec9b44\] {
+    accent-color: var(--color-primary-text) !important;
   }
 
   /* Primary CTA — 48px min-height, в формах/бронировании full-width */
