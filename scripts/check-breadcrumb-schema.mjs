@@ -20,6 +20,8 @@
  *   · /stati/*        → ArticleHero (рисует nav Главная → Статьи → …)
  *   · лендинги        → LandingLayout (единственный на все 110 страниц, знает canonical)
  *   · главная         → SchemaOrg
+ *   · страницы на голом Base (/kontakty/, /otzyvy/, /faq/…) → <BreadcrumbSchema label>
+ *     рядом с их собственной вёрсткой крошек
  * Страница свою вторую цепочку не пишет.
  *
  * Вторая проверка — валидность JSON внутри ld+json, по всем блокам любого типа.
@@ -131,7 +133,8 @@ if (dupes.length) {
   console.error('\nЦепочку отдаёт одна сущность — та, что рисует видимые крошки:');
   console.error('  · /stati/*  → ArticleHero, страница свой <script ld+json> с BreadcrumbList не пишет');
   console.error('  · лендинги  → LandingLayout, LandingHero свою цепочку не дублирует');
-  console.error('  · главная   → SchemaOrg\n');
+  console.error('  · главная   → SchemaOrg');
+  console.error('  · на голом Base → <BreadcrumbSchema label="…" />, и только если крошки нарисованы\n');
   process.exit(1);
 }
 
