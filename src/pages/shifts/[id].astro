@@ -19,7 +19,7 @@ import WaitlistInfoIcon from '../../components/shifts/WaitlistInfoIcon.astro';
 import { allShifts, shiftInfo, type Shift, getAvailabilityLevel, getBookingCta, WAITLIST_EXPLANATION, SEASON_YEAR } from '../../data/shifts';
 import { getCurrentPrice, getTaxDeduction, fmtPrice } from '../../data/dynamicPrices';
 import { getShiftPhase } from '../../data/dynamicPrices';
-import { AUTUMN_SEASON } from '../../data/seasons';
+import { getNextSeason } from '../../data/seasons';
 
 export async function getStaticPaths() {
   return allShifts.map((shift) => ({
@@ -47,6 +47,7 @@ const bookingCta = getBookingCta(shift);
    смены с ненулевым free кнопка оставалась живой. Проверяем фазу отдельно. */
 const phase = getShiftPhase(shift.id);
 const bookingClosed = phase !== 'upcoming';
+const nextSeason = getNextSeason();
 
 // Парсинг дат для крупного отображения «10—23 июня»
 const months: Record<string, string> = {
@@ -150,7 +151,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
         <div class="flex min-w-0 flex-1 items-center justify-center gap-1.5 flex-wrap">
           <i class="bi bi-lightning-charge text-base shrink-0" aria-hidden="true"></i>
           <span>Осталось <span data-spots-num data-spots-shift={shift.id} class="cursor-pointer blur-[6px] transition-[filter] duration-300 select-none">{shift.free} {shift.free === 1 ? 'место' : shift.free < 5 ? 'места' : 'мест'}</span> · Старт 30 мая ·</span>
-          {bookingClosed ? <a href={`${AUTUMN_SEASON.path}/`} class="underline underline-offset-2 hover:text-white/90 transition-colors whitespace-nowrap">Предзапись на осень →</a> : <a href="#booking" class="underline underline-offset-2 hover:text-white/90 transition-colors whitespace-nowrap">Забронировать →</a>}
+          {bookingClosed && nextSeason ? <a href={`${nextSeason.path}/`} class="underline underline-offset-2 hover:text-white/90 transition-colors whitespace-nowrap">Предзапись: {nextSeason.shortName} →</a> : <a href="#booking" class="underline underline-offset-2 hover:text-white/90 transition-colors whitespace-nowrap">Забронировать →</a>}
         </div>
         <button
           id="shift-top-bar-close"
@@ -282,12 +283,12 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
                 {phase === 'live' ? 'Смена идёт прямо сейчас — места не бронируются.' : 'Смена завершилась.'}
               </p>
               <a
-                href={`${AUTUMN_SEASON.path}/`}
-                data-analytics-goal="shift_autumn_prereg"
+                href={nextSeason ? `${nextSeason.path}/` : '/'}
+                data-analytics-goal="shift_next_season_prereg"
                 data-analytics-label={shift.name}
                 class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover px-6 py-3.5 text-[16px] font-semibold text-white transition-colors min-h-[52px] whitespace-nowrap"
               >
-                Предзапись на осень
+                {nextSeason ? `Предзапись: ${nextSeason.shortName}` : 'Смотреть смены'}
                 <i class="bi bi-arrow-right text-base" aria-hidden="true"></i>
               </a>
             </div>

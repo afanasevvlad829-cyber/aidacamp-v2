@@ -39,6 +39,7 @@ export interface SeasonConfig {
   h1: string;
   subtitle: string;             // подзаголовок hero
   breadcrumb: string;
+  shortName: string;            // «осень» / «зима» / «весна» — для фраз «Следующий заезд — {shortName}»
   heroImage: string;
   heroImageAlt: string;
   heroKeywords: string[];       // буллеты в hero
@@ -72,6 +73,7 @@ export const AUTUMN_SEASON: SeasonConfig = {
   h1: 'Лагерь: осенние каникулы, программирование, Москва, Подмосковье',
   subtitle: 'Детский лагерь на неделю — и ребёнок возвращается с готовым IT-проектом, а не ноябрьской скукой.',
   breadcrumb: 'Лагерь на осенние каникулы',
+  shortName: 'осень',
   heroImage: '/images/hero/lager-na-osennie-kanikuly.avif',
   heroImageAlt: 'Корпус АйДаКемп в осенней листве — санаторий «Изумруд», Подмосковье',
   heroKeywords: [
@@ -160,6 +162,7 @@ export const WINTER_SEASON: SeasonConfig = {
   h1: 'IT-лагерь на зимние каникулы 2026–2027',
   subtitle: 'Самые длинные каникулы после лета — 10 дней с друзьями и собственным проектом вместо дивана и сериалов.',
   breadcrumb: 'Лагерь на зимние каникулы',
+  shortName: 'зима',
   heroImage: '/images/hero/lager-na-zimnie-kanikuly.avif',
   heroImageAlt: 'Корпус АйДаКемп зимой в снегу — санаторий «Изумруд», Подмосковье',
   heroKeywords: [
@@ -242,6 +245,7 @@ export const SPRING_SEASON: SeasonConfig = {
   h1: 'IT-лагерь на весенние каникулы 2027',
   subtitle: 'Перезагрузка перед последней четвертью: за неделю ребёнок отдохнёт от школы — и соберёт свой первый проект.',
   breadcrumb: 'Лагерь на весенние каникулы',
+  shortName: 'весна',
   heroImage: '/images/hero/lager-na-vesennie-kanikuly.avif',
   heroImageAlt: 'Корпус АйДаКемп весной в зелени — санаторий «Изумруд», Подмосковье',
   heroKeywords: [
@@ -314,3 +318,40 @@ export const SPRING_SEASON: SeasonConfig = {
     ],
   },
 };
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Переключение сезонов — единая точка
+
+   Раньше каждое место, которому нужен «следующий сезон», импортировало
+   AUTUMN_SEASON напрямую (AgeBar, /ceny/, страницы смен). После осени такой
+   хардкод пришлось бы править руками во всех этих файлах и легко забыть
+   часть — как уже случилось с кнопками брони летних смен.
+
+   Теперь сезон выбирается по датам: активен тот, у которого ещё не прошёл
+   последний заезд. Порядок в SEASONS — хронологический.
+   ───────────────────────────────────────────────────────────────────────── */
+
+export const SEASONS: SeasonConfig[] = [AUTUMN_SEASON, WINTER_SEASON, SPRING_SEASON];
+
+/** Дата окончания последнего заезда сезона (ISO). */
+export function seasonEnd(s: SeasonConfig): string {
+  const w = s.calendarWindows ?? [];
+  return w.reduce((max, x) => (x.to > max ? x.to : max), w[0]?.to ?? '');
+}
+
+/** Дата начала первого заезда сезона (ISO). */
+export function seasonStart(s: SeasonConfig): string {
+  const w = s.calendarWindows ?? [];
+  return w.reduce((min, x) => (x.from < min ? x.from : min), w[0]?.from ?? '9999-12-31');
+}
+
+/**
+ * Ближайший сезон, на который есть смысл собирать предзапись: последний заезд
+ * ещё не прошёл. Возвращает null, когда все описанные сезоны позади — тогда
+ * вызывающий код не должен предлагать предзапись (нужно добавить новый сезон).
+ */
+export function getNextSeason(today: string = new Date().toISOString().slice(0, 10)): SeasonConfig | null {
+  return SEASONS
+    .filter((s) => seasonEnd(s) >= today)
+    .sort((a, b) => seasonStart(a).localeCompare(seasonStart(b)))[0] ?? null;
+}
