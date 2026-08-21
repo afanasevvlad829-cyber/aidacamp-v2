@@ -1,0 +1,74 @@
+---
+/**
+ * Фотополоса во всю ширину экрана — единственное место, где вёрстка выходит
+ * за пределы колонки. Работает как разворот в журнале: после «денег» нужен
+ * воздух и лица, прежде чем читать отзывы.
+ *
+ * Кадры листаются горизонтально: на мобиле это привычный жест, на десктопе
+ * полоса просто шире экрана и обрезается по краю — видно, что фото ещё есть.
+ */
+const shots = [
+  { src: '/images/gallery/camp-smile.avif', alt: 'Ребята на территории лагеря' },
+  { src: '/images/gallery/study-dome-group.avif', alt: 'Занятие в купольной аудитории' },
+  { src: '/images/gallery/pool-kids-edge.avif', alt: 'Бассейн: ребята на бортике' },
+  { src: '/images/gallery/sport-football.avif', alt: 'Футбол на спортивном поле' },
+  { src: '/images/gallery/camp-group-beanbags.avif', alt: 'Отряд на креслах-мешках' },
+  { src: '/images/gallery/study-stage-girl.avif', alt: 'Защита проекта на сцене' },
+];
+---
+
+<section class="r-gallery" id="gallery">
+  <div class="r-wrap r-gallery__head">
+    <div>
+      <p class="r-kicker">Фотоархив</p>
+      <h2 class="r-h2">Смена глазами <span class="r-em">тех, кто в ней был</span></h2>
+    </div>
+    <a href="/foto/" class="r-btn r-btn--outline">Все фото по дням</a>
+  </div>
+
+  <div class="r-gallery__strip" role="group" aria-label="Фотографии со смен">
+    {shots.map(s => (
+      <figure class="r-figure r-gallery__shot">
+        <img src={s.src} alt={s.alt} loading="lazy" decoding="async" width="640" height="800" class="r-photo" />
+      </figure>
+    ))}
+  </div>
+</section>
+
+<style>
+  .r-gallery { padding-block: clamp(56px, 8vw, 104px); overflow: hidden; }
+
+  .r-gallery__head {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: clamp(28px, 3.5vw, 44px);
+  }
+
+  .r-gallery__strip {
+    display: flex;
+    gap: 14px;
+    /* Полоса начинается там же, где текстовая колонка, и уходит за правый край:
+       иначе первый кадр обрезается на широком экране раньше, чем начнётся заголовок. */
+    padding-inline: max(var(--r-gutter), (100vw - var(--r-max)) / 2 + var(--r-gutter)) var(--r-gutter);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .r-gallery__strip::-webkit-scrollbar { display: none; }
+
+  .r-gallery__shot {
+    flex: 0 0 min(74vw, 300px);
+    aspect-ratio: 4 / 5;
+    scroll-snap-align: start;
+  }
+  /* Каждый третий кадр ниже — полоса перестаёт читаться как ровный конвейер */
+  .r-gallery__shot:nth-child(3n) { aspect-ratio: 4 / 3; align-self: center; }
+
+  @media (min-width: 860px) {
+    .r-gallery__head { flex-direction: row; align-items: flex-end; justify-content: space-between; }
+    .r-gallery__shot { flex-basis: 340px; }
+  }
+</style>
