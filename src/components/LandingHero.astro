@@ -35,9 +35,12 @@ interface Props {
   /** Сезонная мета вместо летней («смены июнь–август · от PRICE_MIN»):
    *  чипы дат и цены сезона, ведут на #prezapis. Для осень/зима/весна. */
   seasonMeta?: { dates: string; price: string };
+  /** Куда ведут сезонные чипы. По умолчанию якорь #prezapis (страницы сезонов),
+   *  но на страницах без формы предзаписи нужен путь на сам сезон. */
+  seasonMetaHref?: string;
 }
 
-const { h1, subtitle, breadcrumb, keywords, image, imageAlt = '', seasonMeta } = Astro.props;
+const { h1, subtitle, breadcrumb, keywords, image, imageAlt = '', seasonMeta, seasonMetaHref = '#prezapis' } = Astro.props;
 
 // BreadcrumbList отсюда убран 01.08.2026. Все 88 страниц с <LandingHero> лежат внутри
 // LandingLayout, который отдаёт ту же цепочку «Главная → …», но с canonical-URL в item
@@ -137,11 +140,11 @@ const { h1, subtitle, breadcrumb, keywords, image, imageAlt = '', seasonMeta } =
           <span class="text-white/30" aria-hidden="true">·</span>
           {seasonMeta ? (
             <>
-              <a href="#prezapis" class="hover:text-white/85 transition-colors">
+              <a href={seasonMetaHref} class="hover:text-white/85 transition-colors">
                 {seasonMeta.dates}
               </a>
               <span class="text-white/30" aria-hidden="true">·</span>
-              <a href="#prezapis" class="hover:text-white/85 transition-colors">
+              <a href={seasonMetaHref} class="hover:text-white/85 transition-colors">
                 {seasonMeta.price}
               </a>
             </>
