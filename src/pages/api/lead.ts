@@ -84,6 +84,40 @@ export async function saveLeadToPg(
   }
 }
 
+/**
+ * Фолбэк атрибуции: последний размеченный визит этого браузера из таблицы visits.
+ * Визиты пишутся server-side из логов nginx (scripts/attribution/visits_ingest.py),
+ * поэтому переживают адблок и очистку localStorage. Возвращает только метки,
+ * пустой объект — если визитов нет или БД недоступна (best-effort, лид не блокируем).
+ */
+async function lookupVisitAttribution(visitorId: string | null): Promise<Record<string, string>> {
+  const pgDsn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
+  if (!pgDsn || !visitorId) return {};
+  try {
+    const { default: pg } = await import('pg');
+    const client = new pg.Client({ connectionString: pgDsn, connectionTimeoutMillis: 2000, query_timeout: 2000 });
+    await client.connect();
+    try {
+      const r = await client.query(
+        `SELECT utm_source, utm_medium, utm_campaign, utm_content, utm_term, yclid, ysclid, gclid
+         FROM visits
+         WHERE visitor_id = $1
+           AND coalesce(utm_source, yclid, ysclid, gclid) IS NOT NULL
+         ORDER BY ts DESC LIMIT 1`,
+        [visitorId],
+      );
+      const row = r.rows[0] || {};
+      const out: Record<string, string> = {};
+      for (const [k, v] of Object.entries(row)) if (v) out[k] = String(v);
+      return out;
+    } finally {
+      await client.end();
+    }
+  } catch {
+    return {};
+  }
+}
+
 function esc(s: unknown): string {
   return String(s ?? '')
     .replace(/&/g, '&amp;')
@@ -336,6 +370,14 @@ export const POST: APIRoute = async ({ request }) => {
       || '';
     const userAgent = request.headers.get('user-agent') || '';
 
+    // Атрибуция: если форма пришла без меток (клик по рекламе был раньше, на другой
+    // странице/в другой день), восстанавливаем их из визитов ДО записи в CRM/TG/PG —
+    // тогда lead_source_id, заметка CRM и уведомление получают настоящий источник.
+    const visitorId = readVisitorId(request);
+    if (!(body.utm_source || body.yclid || body.ysclid || body.gclid)) {
+      Object.assign(body, await lookupVisitAttribution(visitorId));
+    }
+
     // Always save to filesystem first (backup)
     await saveLead(body);
 
@@ -350,7 +392,7 @@ export const POST: APIRoute = async ({ request }) => {
     const crmId = await createCrmLead(body);
 
     // PG лог (best-effort)
-    await saveLeadToPg(body, { ip, userAgent, crmId, visitorId: readVisitorId(request) });
+    await saveLeadToPg(body, { ip, userAgent, crmId, visitorId });
 
     // Andata — событие order_new. Fire-and-forget: НЕ ждём ответ и НЕ блокируем
     // путь заявки (у sendAndataEvent есть свой таймаут и он не бросает исключений).
