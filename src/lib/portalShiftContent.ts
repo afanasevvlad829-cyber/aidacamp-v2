@@ -150,15 +150,27 @@ export async function listFeedback(day: number, scope: ShiftScope | null = null)
   return rows ?? [];
 }
 
-/** Задания дня + сколько кадров под каждое уже сдано. */
-export async function listTasks(day: number): Promise<ShiftTaskRow[]> {
+/**
+ * Задания дня + сколько кадров под каждое уже сдано.
+ *
+ * Саму `shift_tasks` смена не разделяет: это общий шаблон дней 1–13 на все
+ * заезды, своего `shift_id` у него нет и не нужно. А вот привязанные кадры
+ * считаем в рамках смены — `task_id` переиспользуется теми же заданиями, и без
+ * фильтра задание выглядит закрытым чужой съёмкой и пропадает из списка «не
+ * сдано». 21.08.2026 так молча выпадали три задания: «Ролик ребят: обзор
+ * комнаты» и «Сюжет дня: „Первый баг“» (день 2) и «Ролик ребят: обзор
+ * бассейна» (день 4) — каждое закрывал ровно один кадр прошлого заезда.
+ */
+export async function listTasks(day: number, scope: ShiftScope | null = null): Promise<ShiftTaskRow[]> {
+  const w = scopeClause(scope, 'c', 2);
   const rows = await query<ShiftTaskRow>(
     `SELECT t.id, t.day, t.title, t.resp_role, t.deadline::text AS deadline, t.done,
-            (SELECT count(*) FROM shift_content c WHERE c.task_id = t.id)::int AS shots
+            (SELECT count(*) FROM shift_content c
+              WHERE c.task_id = t.id${w.sql})::int AS shots
        FROM shift_tasks t
       WHERE t.day = $1
       ORDER BY t.deadline, t.id`,
-    [day],
+    [String(day), ...w.params],
   );
   return rows ?? [];
 }
