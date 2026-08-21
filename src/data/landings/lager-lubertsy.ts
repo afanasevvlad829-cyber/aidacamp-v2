@@ -92,6 +92,7 @@ const landing: LandingData = {
         "<a href='/lager-zhukovskiy/'>Жуковский</a> — ~85 км, ~1 ч 20 мин",
         "<a href='/lager-vidnoe/'>Видное</a> — ~55 км, ~1 ч по Киевскому шоссе",
         "<a href='/lager-podolsk/'>Подольск</a> — ~45 км, ~50 мин прямо по Киевскому",
+        "<a href='/lager-balashiha/'>Лагерь в Балашихе</a> — ~120 км, тот же трансфер от м. Солнцево",
       ],
     },
     {
