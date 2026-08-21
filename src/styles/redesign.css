@@ -1,0 +1,236 @@
+/* ══════════════════════════════════════════════════════════════
+   РЕДИЗАЙН 2026 — гибрид Editorial + тёплый премиум
+   Прототип. Живёт отдельно от global.css, ничего в нём не трогает.
+   Все классы с префиксом r- — коллизий с Tailwind-утилитами нет.
+
+   Идея: журнальная типографика и воздух Editorial + фирменный
+   soft orange там, где решается конверсия (CTA, цена, статус мест).
+   ══════════════════════════════════════════════════════════════ */
+
+.r-root {
+  /* ── Поверхности: тёплая бумага вместо холодного #f7f8fb ── */
+  --r-paper:      #FBF8F3;  /* основной фон страницы */
+  --r-paper-2:    #F4EDE2;  /* вторая поверхность, чередование секций */
+  --r-card:       #FFFFFF;
+  --r-forest:     #33513F;  /* хвойный — тёмные секции вместо navy */
+  --r-forest-2:   #24382C;
+
+  /* ── Чернила: тёплые, не синие ── */
+  --r-ink:        #191713;
+  --r-body:       #4A443C;
+  --r-muted:      #837A6D;
+  --r-line:       #E6DDCF;
+  --r-line-soft:  #F0E8DB;
+
+  /* ── Акцент конверсии: фирменный soft orange (DESIGN_SYSTEM §2) ── */
+  --r-accent:      #EC9B44;
+  --r-accent-hover:#D68830;
+  --r-accent-ink:  #8C540C;  /* текст акцентом на светлом: 6.2:1 — AA */
+  --r-accent-soft: #FDF6EC;
+
+  /* ── Семантика ── */
+  --r-ok:      #2F7D57;
+  --r-warn:    #B4541F;
+  --r-star:    #E0A63A;
+
+  /* ── Ритм ── */
+  --r-gutter: 24px;
+  --r-max:    1200px;
+  --r-radius: 4px;   /* почти прямые углы — editorial, не «карточки» */
+  --r-radius-photo: 2px;
+
+  background: var(--r-paper);
+  color: var(--r-body);
+  font-family: "Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 17px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Контейнер и ритм секций ────────────────────────────────── */
+.r-wrap {
+  max-width: var(--r-max);
+  margin: 0 auto;
+  padding-inline: var(--r-gutter);
+}
+.r-wrap--wide { max-width: 1440px; }
+
+.r-section { padding-block: clamp(56px, 8vw, 104px); }
+.r-section--tight { padding-block: clamp(40px, 5vw, 64px); }
+.r-section--paper2 { background: var(--r-paper-2); }
+.r-section--forest { background: var(--r-forest); color: rgba(255,255,255,.82); }
+
+/* ── Типографика ────────────────────────────────────────────── */
+.r-display,
+.r-h2,
+.r-h3 {
+  font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  font-weight: 600;
+  color: var(--r-ink);
+  letter-spacing: -.01em;
+  text-wrap: balance;
+  margin: 0;
+}
+.r-display { font-size: clamp(38px, 6.2vw, 76px); line-height: 1.02; }
+.r-h2      { font-size: clamp(30px, 4.2vw, 48px); line-height: 1.08; }
+.r-h3      { font-size: clamp(21px, 2.4vw, 28px); line-height: 1.2; }
+.r-em { font-style: italic; font-weight: 400; }
+.r-section--forest .r-display,
+.r-section--forest .r-h2,
+.r-section--forest .r-h3 { color: #FBF8F3; }
+
+.r-kicker {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--r-muted);
+  margin: 0 0 16px;
+}
+.r-section--forest .r-kicker { color: rgba(251,248,243,.62); }
+
+.r-lead { font-size: clamp(17px, 1.7vw, 20px); line-height: 1.6; color: var(--r-body); margin: 0; }
+.r-text { margin: 0; max-width: 62ch; }
+.r-text + .r-text { margin-top: 16px; }
+.r-small { font-size: 14px; line-height: 1.5; color: var(--r-muted); margin: 0; }
+
+/* Буквица — приём журнала, только в первом абзаце вводных блоков */
+.r-dropcap::first-letter {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  float: left;
+  font-size: 66px;
+  line-height: .76;
+  padding: 8px 12px 0 0;
+  color: var(--r-forest);
+}
+
+/* ── Кнопки ─────────────────────────────────────────────────── */
+.r-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 17px 30px;
+  border: 1px solid transparent;
+  border-radius: var(--r-radius);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease;
+}
+.r-btn--primary { background: var(--r-accent); color: #201503; }
+.r-btn--primary:hover { background: var(--r-accent-hover); }
+.r-btn--outline { background: transparent; color: var(--r-ink); border-color: var(--r-ink); }
+.r-btn--outline:hover { background: var(--r-ink); color: var(--r-paper); }
+.r-btn--ghost {
+  background: transparent; color: var(--r-ink);
+  border: 0; border-bottom: 1px solid currentColor;
+  border-radius: 0; padding: 6px 0;
+}
+.r-btn--ghost:hover { color: var(--r-accent-ink); }
+.r-section--forest .r-btn--outline { color: #FBF8F3; border-color: rgba(251,248,243,.55); }
+.r-section--forest .r-btn--outline:hover { background: #FBF8F3; color: var(--r-forest); }
+.r-btn:focus-visible { outline: 2px solid var(--r-accent-ink); outline-offset: 3px; }
+
+/* ── Фото ───────────────────────────────────────────────────── */
+.r-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--r-radius-photo);
+}
+.r-figure { margin: 0; position: relative; overflow: hidden; border-radius: var(--r-radius-photo); }
+.r-figure figcaption {
+  font-size: 13px;
+  color: var(--r-muted);
+  padding-top: 10px;
+  line-height: 1.45;
+}
+
+/* ── Метки и чипы ───────────────────────────────────────────── */
+.r-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border: 1px solid var(--r-line);
+  border-radius: 999px;
+  background: var(--r-card);
+  color: var(--r-body);
+  white-space: nowrap;
+}
+.r-chip i { color: var(--r-accent-ink); font-size: 15px; line-height: 1; }
+
+.r-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.r-status::before {
+  content: "";
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.r-status--low { color: var(--r-warn); }
+.r-status--ok { color: var(--r-ok); }
+.r-status--closed { color: var(--r-muted); }
+
+/* ── Разделители ────────────────────────────────────────────── */
+.r-rule { height: 1px; background: var(--r-line); border: 0; margin: 0; }
+.r-rule--short { width: 56px; height: 2px; background: var(--r-accent); }
+
+/* ── Данные: определения фактов ─────────────────────────────── */
+.r-facts { display: grid; gap: 22px; margin: 0; }
+.r-fact { display: flex; flex-direction: column; gap: 2px; }
+.r-fact dt {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--r-muted);
+}
+.r-fact dd {
+  margin: 0;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 28px;
+  line-height: 1.15;
+  color: var(--r-ink);
+  font-variant-numeric: tabular-nums;
+}
+.r-fact small { font-size: 14px; color: var(--r-muted); font-family: "Onest", sans-serif; }
+.r-section--forest .r-fact dt { color: rgba(251,248,243,.6); }
+.r-section--forest .r-fact dd { color: #FBF8F3; }
+.r-section--forest .r-fact small { color: rgba(251,248,243,.66); }
+
+/* ── Заголовок секции: подпись слева, заголовок справа ──────── */
+.r-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  margin-bottom: clamp(32px, 4vw, 56px);
+}
+@media (min-width: 900px) {
+  .r-head { grid-template-columns: 200px minmax(0, 1fr); gap: 40px; align-items: start; }
+  .r-head .r-kicker { margin: 8px 0 0; }
+}
+.r-head__body { display: flex; flex-direction: column; gap: 18px; }
+
+/* ── Доступность движения ───────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .r-root *, .r-root *::before, .r-root *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}

@@ -1,0 +1,160 @@
+---
+/**
+ * Деньги: цена, что в неё входит, вычет, порядок оплаты. Тёмная хвойная секция —
+ * единственная тёмная на странице, поэтому вся тяжесть темы визуально собрана в одном месте.
+ * Числа — только из shifts.ts и contacts.ts.
+ */
+import {
+  PRICE_OSEN,
+  VYCHET_OSEN,
+  AUTUMN_2026,
+  TRANSFER_PRICE_FMT,
+  TRANSFER_POINT,
+} from '../../data/shifts';
+import { PAYMENT_SPLIT, STAT_LICENSE } from '../../data/contacts';
+
+const included = [
+  'Проживание в корпусе санатория',
+  'Пятиразовое питание',
+  'Занятия и вся техника',
+  'Бассейн и спорт',
+  'Вожатые и медработник',
+  'Хакатон и защита проекта',
+];
+---
+
+<section class="r-section r-section--forest" id="price">
+  <div class="r-wrap">
+    <div class="r-head">
+      <p class="r-kicker">Стоимость</p>
+      <div class="r-head__body">
+        <h2 class="r-h2">Одна цифра, и в ней <span class="r-em">уже всё</span></h2>
+        <p class="r-lead r-money__lead">
+          Осенний заезд — {PRICE_OSEN} за {AUTUMN_2026.days} дней. Доплат внутри смены нет:
+          техника, бассейн, хакатон и добавка в столовой входят в путёвку.
+        </p>
+      </div>
+    </div>
+
+    <div class="r-money__grid">
+      <div class="r-money__price">
+        <p class="r-money__amount">{PRICE_OSEN}</p>
+        <p class="r-money__amount-note">за {AUTUMN_2026.days} дней, всё включено</p>
+        <hr class="r-rule r-rule--short" />
+        <dl class="r-facts r-money__facts">
+          <div class="r-fact">
+            <dt>Налоговый вычет</dt>
+            <dd>≈ {VYCHET_OSEN}</dd>
+            <small>13% за образовательные услуги, лицензия {STAT_LICENSE}</small>
+          </div>
+          <div class="r-fact">
+            <dt>Дорога</dt>
+            <dd>{TRANSFER_PRICE_FMT}</dd>
+            <small>в один конец от {TRANSFER_POINT}, с сопровождающим</small>
+          </div>
+        </dl>
+        <p class="r-money__split">{PAYMENT_SPLIT}</p>
+      </div>
+
+      <div class="r-money__included">
+        <p class="r-money__sub">Что входит в путёвку</p>
+        <ul>
+          {included.map(item => (
+            <li><i class="bi bi-check2" aria-hidden="true"></i>{item}</li>
+          ))}
+        </ul>
+
+        <div class="r-money__econ">
+          <h3 class="r-h3">Телефон здесь зарабатывают</h3>
+          <p>
+            Похоже на «Монополию»: за прожитый день ребята получают лагерные рубли и сами решают,
+            на что потратить — звонок домой, кино, костёр или лишний час с телефоном.
+            Никто ничего не отбирает, работает собственный выбор.
+          </p>
+          <a href="/stati/vnutrennyaya-ekonomika-v-lagere/" class="r-money__link">
+            Про внутреннюю экономику <i class="bi bi-arrow-right" aria-hidden="true"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .r-money__lead { color: rgba(251, 248, 243, .82); }
+
+  .r-money__grid { display: grid; gap: clamp(36px, 5vw, 64px); }
+
+  .r-money__amount {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: clamp(52px, 8vw, 86px);
+    font-weight: 600;
+    line-height: 1;
+    color: #FBF8F3;
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .r-money__amount-note { font-size: 15px; color: rgba(251, 248, 243, .68); margin: 10px 0 24px; }
+  .r-money__facts { margin-top: 26px; }
+  .r-money__split {
+    font-size: 14.5px;
+    color: rgba(251, 248, 243, .68);
+    margin: 26px 0 0;
+    padding-top: 20px;
+    border-top: 1px solid rgba(251, 248, 243, .18);
+    max-width: 40ch;
+  }
+
+  .r-money__sub {
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: rgba(251, 248, 243, .6);
+    margin: 0 0 18px;
+  }
+  .r-money__included ul {
+    list-style: none;
+    margin: 0 0 40px;
+    padding: 0;
+    display: grid;
+    gap: 12px;
+  }
+  .r-money__included li {
+    display: flex;
+    align-items: baseline;
+    gap: 11px;
+    font-size: 16px;
+    color: rgba(251, 248, 243, .88);
+  }
+  .r-money__included li i { color: var(--r-accent); font-size: 15px; flex: none; }
+
+  .r-money__econ {
+    padding-top: 28px;
+    border-top: 1px solid rgba(251, 248, 243, .18);
+  }
+  .r-money__econ p {
+    font-size: 16px;
+    line-height: 1.6;
+    color: rgba(251, 248, 243, .8);
+    margin: 12px 0 16px;
+    max-width: 52ch;
+  }
+  .r-money__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 15.5px;
+    color: var(--r-accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+  }
+  .r-money__link:hover { border-bottom-color: currentColor; }
+  .r-money__link i { font-size: 13px; }
+
+  @media (min-width: 900px) {
+    .r-money__grid { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 80px; }
+    .r-money__included ul { grid-template-columns: repeat(2, 1fr); gap: 14px 28px; }
+  }
+</style>

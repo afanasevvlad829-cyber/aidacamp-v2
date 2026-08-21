@@ -1,0 +1,187 @@
+---
+/**
+ * Шапка редизайна. Прозрачная поверх hero-фото, при скролле — бумажная с линией.
+ * Телефон — главный CTA (DESIGN_SYSTEM §1, принцип 6), поэтому он единственный
+ * элемент шапки с акцентной заливкой.
+ */
+import { PHONE_MAIN, PHONE_MAIN_HREF } from '../../data/contacts';
+
+const nav = [
+  { href: '#shifts', label: 'Смены и цены' },
+  { href: '#day', label: 'Как проходит день' },
+  { href: '#stay', label: 'Проживание' },
+  { href: '#reviews', label: 'Отзывы' },
+];
+---
+
+<header class="r-header" data-r-header>
+  <div class="r-wrap r-header__inner">
+    <a href="/" class="r-header__logo">АйДаКемп</a>
+
+    <nav class="r-header__nav" aria-label="Основное меню">
+      {nav.map(item => <a href={item.href}>{item.label}</a>)}
+    </nav>
+
+    <a href={PHONE_MAIN_HREF} class="r-header__phone">
+      <i class="bi bi-telephone" aria-hidden="true"></i>
+      <span>{PHONE_MAIN}</span>
+    </a>
+
+    <button class="r-header__burger" type="button" aria-label="Открыть меню" data-r-burger aria-expanded="false">
+      <span></span><span></span>
+    </button>
+  </div>
+
+  <div class="r-header__drawer" data-r-drawer hidden>
+    <div class="r-wrap">
+      {nav.map(item => <a href={item.href}>{item.label}</a>)}
+      <a href={PHONE_MAIN_HREF} class="r-header__drawer-phone">{PHONE_MAIN}</a>
+    </div>
+  </div>
+</header>
+
+<style>
+  .r-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: transparent;
+    transition: background-color .28s ease, border-color .28s ease;
+    border-bottom: 1px solid transparent;
+  }
+  .r-header__inner {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    padding-block: 18px;
+  }
+  .r-header__logo {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: .01em;
+    color: #FBF8F3;
+    text-decoration: none;
+    transition: color .28s ease;
+  }
+  .r-header__nav {
+    display: none;
+    gap: 26px;
+    margin-inline-start: auto;
+    font-size: 15px;
+  }
+  .r-header__nav a {
+    color: rgba(251, 248, 243, .88);
+    text-decoration: none;
+    padding-block: 4px;
+    border-bottom: 1px solid transparent;
+    transition: color .2s ease, border-color .2s ease;
+  }
+  .r-header__nav a:hover { border-bottom-color: currentColor; }
+
+  .r-header__phone {
+    display: none;
+    align-items: center;
+    gap: 9px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #201503;
+    background: var(--r-accent);
+    padding: 11px 20px;
+    border-radius: var(--r-radius);
+    text-decoration: none;
+    transition: background-color .2s ease;
+  }
+  .r-header__phone:hover { background: var(--r-accent-hover); }
+
+  .r-header__burger {
+    margin-inline-start: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    width: 44px;
+    height: 44px;
+    padding: 0 10px;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+  }
+  .r-header__burger span {
+    display: block;
+    height: 1.5px;
+    background: #FBF8F3;
+    transition: background-color .28s ease, transform .28s ease;
+  }
+
+  /* Состояние после скролла — бумажный фон, тёмный текст */
+  .r-header.is-stuck {
+    background: rgba(251, 248, 243, .96);
+    backdrop-filter: blur(10px);
+    border-bottom-color: var(--r-line);
+  }
+  .r-header.is-stuck .r-header__logo { color: var(--r-ink); }
+  .r-header.is-stuck .r-header__nav a { color: var(--r-body); }
+  .r-header.is-stuck .r-header__burger span { background: var(--r-ink); }
+
+  .r-header__drawer {
+    background: rgba(251, 248, 243, .98);
+    border-bottom: 1px solid var(--r-line);
+    padding-block: 12px 20px;
+  }
+  .r-header__drawer .r-wrap { display: flex; flex-direction: column; }
+  .r-header__drawer a {
+    color: var(--r-ink);
+    text-decoration: none;
+    font-size: 17px;
+    padding-block: 13px;
+    border-bottom: 1px solid var(--r-line-soft);
+  }
+  .r-header__drawer-phone {
+    font-weight: 600;
+    color: var(--r-accent-ink) !important;
+    border-bottom: 0 !important;
+  }
+
+  @media (min-width: 960px) {
+    .r-header__nav { display: flex; }
+    .r-header__phone { display: inline-flex; }
+    .r-header__burger { display: none; }
+    .r-header__drawer { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .r-header, .r-header * { transition: none; }
+  }
+</style>
+
+<script is:inline>
+  (function () {
+    var header = document.querySelector('[data-r-header]');
+    var burger = document.querySelector('[data-r-burger]');
+    var drawer = document.querySelector('[data-r-drawer]');
+    if (!header) return;
+
+    // Шапка становится бумажной, как только hero уехал за верхнюю кромку
+    var onScroll = function () {
+      header.classList.toggle('is-stuck', window.scrollY > 40);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    if (burger && drawer) {
+      burger.addEventListener('click', function () {
+        var open = drawer.hasAttribute('hidden');
+        if (open) { drawer.removeAttribute('hidden'); } else { drawer.setAttribute('hidden', ''); }
+        burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+        burger.setAttribute('aria-label', open ? 'Закрыть меню' : 'Открыть меню');
+      });
+      drawer.addEventListener('click', function (e) {
+        if (e.target.tagName === 'A') {
+          drawer.setAttribute('hidden', '');
+          burger.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
+  })();
+</script>

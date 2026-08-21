@@ -1,0 +1,208 @@
+---
+/**
+ * Смены. Вместо плиточной карусели — журнальное расписание: строка на заезд,
+ * даты крупным серифом слева, цена и действие справа, линия между.
+ * Цена, даты, вычет и трансфер приходят только из shifts.ts/seasons.ts —
+ * ни одного числа руками (инвариант CLAUDE.md).
+ */
+import { AUTUMN_SEASON } from '../../data/seasons';
+import {
+  PRICE_OSEN,
+  VYCHET_OSEN,
+  AUTUMN_2026,
+  TRANSFER_INFO,
+  displayShifts,
+  SEASON_YEAR,
+} from '../../data/shifts';
+
+const today = new Date().toISOString().slice(0, 10);
+
+// Осенние заезды — из конфига сезона, чтобы подписи совпадали с лендингом /lager-na-osennie-kanikuly/
+const autumnWindows = AUTUMN_SEASON.calendarWindows;
+
+// Завершённые смены с разбором «как прошло» — социальное доказательство,
+// а не мёртвый список: показываем только те, у которых есть recapUrl.
+const pastWithRecap = displayShifts.filter(s => s.endDate < today && s.recapUrl);
+---
+
+<section class="r-section r-shifts" id="shifts">
+  <div class="r-wrap">
+    <div class="r-head">
+      <p class="r-kicker">Расписание</p>
+      <div class="r-head__body">
+        <h2 class="r-h2">Ближайшие заезды — <span class="r-em">осенние каникулы</span></h2>
+        <p class="r-lead r-text">
+          Летний сезон {SEASON_YEAR} закрыт. Дальше — две недели осенью: основной заезд под
+          четвертные каникулы и второй под триместровый график школ. Сейчас идёт предварительная
+          запись: она ни к чему не обязывает и даёт цену раньше открытия продаж.
+        </p>
+      </div>
+    </div>
+
+    <ol class="r-shifts__list">
+      {autumnWindows.map((w, i) => (
+        <li class="r-shift">
+          <div class="r-shift__when">
+            <span class="r-shift__index">0{i + 1}</span>
+            <div>
+              <p class="r-shift__dates">{w.sub.split(' · ')[0]}</p>
+              <p class="r-shift__note">{w.label} · {AUTUMN_2026.days} дней</p>
+            </div>
+          </div>
+
+          <p class="r-shift__desc">
+            {i === 0
+              ? 'Под каникулы большинства московских школ. Свой проект от идеи до защиты, бассейн, хакатон в финале.'
+              : 'Для школ с триместрами — та же программа неделей позже, отдельный набор ребят.'}
+          </p>
+
+          <div class="r-shift__deal">
+            <p class="r-shift__price">{PRICE_OSEN}</p>
+            <p class="r-shift__sub">вернётся ~{VYCHET_OSEN} вычета</p>
+            <span class="r-status r-status--ok">Предзапись открыта</span>
+          </div>
+
+          <div class="r-shift__act">
+            <a href={`${AUTUMN_SEASON.path}/`} class="r-btn r-btn--primary">Записаться заранее</a>
+          </div>
+        </li>
+      ))}
+
+      <li class="r-shift r-shift--muted">
+        <div class="r-shift__when">
+          <span class="r-shift__index">03</span>
+          <div>
+            <p class="r-shift__dates">Лето {SEASON_YEAR + 1}</p>
+            <p class="r-shift__note">даты откроем осенью</p>
+          </div>
+        </div>
+        <p class="r-shift__desc">
+          Смены следующего лета собираются с сентября. Кто записался в лист ожидания — выбирает
+          даты первым и по цене старта.
+        </p>
+        <div class="r-shift__deal">
+          <p class="r-shift__price r-shift__price--soft">по цене старта</p>
+          <p class="r-shift__sub">цена растёт по мере набора</p>
+          <span class="r-status r-status--closed">Лист ожидания</span>
+        </div>
+        <div class="r-shift__act">
+          <a href="#zapis" class="r-btn r-btn--outline">Встать в лист</a>
+        </div>
+      </li>
+    </ol>
+
+    <p class="r-shifts__fine">
+      В стоимость входит всё: проживание, пятиразовое питание, занятия, бассейн, техника.
+      Отдельно — только дорога: {TRANSFER_INFO}.
+    </p>
+
+    {pastWithRecap.length > 0 && (
+      <div class="r-shifts__past">
+        <p class="r-kicker">Как прошло это лето</p>
+        <div class="r-shifts__past-grid">
+          {pastWithRecap.map(s => (
+            <a href={s.recapUrl} class="r-past">
+              <span class="r-past__name">{s.name}</span>
+              <span class="r-past__dates">{s.dates}</span>
+              <span class="r-past__link">Смотреть, как прошла <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+</section>
+
+<style>
+  .r-shifts__list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--r-line); }
+
+  .r-shift {
+    display: grid;
+    gap: 18px;
+    padding-block: 30px;
+    border-bottom: 1px solid var(--r-line);
+    align-items: start;
+  }
+  .r-shift--muted { color: var(--r-muted); }
+
+  .r-shift__when { display: flex; gap: 16px; align-items: baseline; }
+  .r-shift__index {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    color: var(--r-muted);
+    font-variant-numeric: tabular-nums;
+    padding-top: 6px;
+  }
+  .r-shift__dates {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: clamp(26px, 3.2vw, 36px);
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--r-ink);
+    margin: 0;
+  }
+  .r-shift--muted .r-shift__dates { color: var(--r-body); }
+  .r-shift__note { font-size: 14px; color: var(--r-muted); margin: 4px 0 0; }
+
+  .r-shift__desc { font-size: 16px; line-height: 1.55; margin: 0; max-width: 46ch; }
+
+  .r-shift__deal { display: flex; flex-direction: column; gap: 4px; }
+  .r-shift__price {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--r-ink);
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .r-shift__price--soft { font-size: 26px; color: var(--r-body); }
+  .r-shift__sub { font-size: 13.5px; color: var(--r-muted); margin: 0 0 6px; }
+
+  .r-shift__act { display: flex; }
+  .r-shift__act .r-btn { width: 100%; }
+
+  .r-shifts__fine {
+    font-size: 14.5px;
+    color: var(--r-muted);
+    margin: 22px 0 0;
+    max-width: 70ch;
+  }
+
+  .r-shifts__past { margin-top: clamp(40px, 5vw, 64px); }
+  .r-shifts__past-grid { display: grid; gap: 14px; }
+  .r-past {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 20px 22px;
+    background: var(--r-card);
+    border: 1px solid var(--r-line);
+    border-radius: var(--r-radius);
+    text-decoration: none;
+    transition: border-color .2s ease, transform .2s ease;
+  }
+  .r-past:hover { border-color: var(--r-accent); transform: translateY(-2px); }
+  .r-past__name {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--r-ink);
+  }
+  .r-past__dates { font-size: 14px; color: var(--r-muted); }
+  .r-past__link { font-size: 14.5px; font-weight: 500; color: var(--r-accent-ink); margin-top: 8px; }
+  .r-past__link i { font-size: 13px; }
+
+  @media (min-width: 860px) {
+    .r-shift {
+      grid-template-columns: minmax(220px, 1.1fr) minmax(0, 1.3fr) 200px 220px;
+      gap: 28px;
+      align-items: center;
+      padding-block: 34px;
+    }
+    .r-shift__act { justify-content: flex-end; }
+    .r-shift__act .r-btn { width: auto; }
+    .r-shifts__past-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  }
+</style>

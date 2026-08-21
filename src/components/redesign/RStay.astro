@@ -1,0 +1,93 @@
+---
+/**
+ * Проживание и питание — блок, который мама читает внимательнее всех остальных.
+ * Тексты повторяют факты из Stay.astro (комнаты 2–4, душ в блоке, холлы),
+ * фотосетка асимметричная: крупный кадр номера + три поддерживающих.
+ */
+const facts = [
+  { icon: 'bi-door-open', title: 'Комнаты на 2–4 человека', text: 'Тёплый корпус санатория, удобства в номере, мягкая постель.' },
+  { icon: 'bi-droplet', title: 'Душ в каждом блоке', text: 'Горячая вода всегда, уборка ежедневно.' },
+  { icon: 'bi-cup-hot', title: 'Пятиразовое питание', text: 'Столовая санатория, домашняя кухня, добавка без вопросов.' },
+  { icon: 'bi-heart-pulse', title: 'Медработник 24/7', text: 'На территории всю смену, а не по вызову из города.' },
+];
+---
+
+<section class="r-section" id="stay">
+  <div class="r-wrap">
+    <div class="r-head">
+      <p class="r-kicker">Проживание и еда</p>
+      <div class="r-head__body">
+        <h2 class="r-h2">Санаторий, а не <span class="r-em">дощатые домики</span></h2>
+        <p class="r-lead r-text">
+          Живём в корпусе санатория «Изумруд» в Наро-Фоминском округе: отопление, горячая вода,
+          закрытая территория с соснами и бассейном. Это тот случай, когда фотографии можно
+          показывать бабушке без предварительных объяснений.
+        </p>
+      </div>
+    </div>
+
+    <div class="r-stay__gallery">
+      <figure class="r-figure r-stay__hero">
+        <img src="/images/gallery/stay-room-01.avif" alt="Номер в корпусе: кровати, тумбы, светлая комната" loading="lazy" decoding="async" width="960" height="720" class="r-photo" />
+        <figcaption>Номер на 2–4 человека — удобства внутри</figcaption>
+      </figure>
+      <figure class="r-figure">
+        <img src="/images/food/food-hall.avif" alt="Столовая санатория" loading="lazy" decoding="async" width="640" height="480" class="r-photo" />
+        <figcaption>Столовая: пять приёмов пищи в день</figcaption>
+      </figure>
+      <figure class="r-figure">
+        <img src="/images/gallery/stay-lounge-01.avif" alt="Холл корпуса с диванами" loading="lazy" decoding="async" width="640" height="480" class="r-photo" />
+        <figcaption>Холл для настолок и вечерних сборов</figcaption>
+      </figure>
+      <figure class="r-figure">
+        <img src="/images/gallery/territory-alley.avif" alt="Сосновая аллея на территории" loading="lazy" decoding="async" width="640" height="480" class="r-photo" />
+        <figcaption>Закрытая территория, сосны, свой бассейн</figcaption>
+      </figure>
+    </div>
+
+    <ul class="r-stay__facts">
+      {facts.map(f => (
+        <li class="r-stay__fact">
+          <i class={`bi ${f.icon}`} aria-hidden="true"></i>
+          <div>
+            <p class="r-stay__fact-title">{f.title}</p>
+            <p class="r-stay__fact-text">{f.text}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .r-stay__gallery { display: grid; gap: 14px; }
+  .r-stay__gallery .r-figure { aspect-ratio: 4 / 3; display: flex; flex-direction: column; }
+  .r-stay__gallery .r-figure img { flex: 1; min-height: 0; }
+  .r-stay__hero { aspect-ratio: 4 / 3; }
+
+  .r-stay__facts {
+    list-style: none;
+    margin: clamp(32px, 4vw, 48px) 0 0;
+    padding: 0;
+    display: grid;
+    gap: 24px;
+  }
+  .r-stay__fact { display: flex; gap: 14px; align-items: flex-start; }
+  .r-stay__fact i { font-size: 20px; color: var(--r-accent-ink); line-height: 1.3; flex: none; }
+  .r-stay__fact-title { font-weight: 600; color: var(--r-ink); margin: 0 0 3px; font-size: 16px; }
+  .r-stay__fact-text { font-size: 15px; color: var(--r-body); margin: 0; line-height: 1.5; }
+
+  @media (min-width: 760px) {
+    .r-stay__gallery { grid-template-columns: repeat(4, 1fr); }
+    /* Крупный кадр держит половину сетки; три поддерживающих замыкают блок
+       ровным прямоугольником — иначе последний кадр уезжает в третью строку.
+       Пропорции задаёт каждая фигура: строки сетки остаются auto, иначе
+       1fr-строки схлопываются в ноль (у картинок нет собственной высоты). */
+    .r-stay__hero { grid-column: span 2; grid-row: span 2; aspect-ratio: auto; }
+    .r-stay__gallery .r-figure:nth-child(4) { grid-column: span 2; aspect-ratio: 8 / 3; }
+    .r-stay__facts { grid-template-columns: repeat(2, 1fr); gap: 28px 40px; }
+  }
+  @media (min-width: 1080px) {
+    .r-stay__facts { grid-template-columns: repeat(4, 1fr); }
+  }
+</style>

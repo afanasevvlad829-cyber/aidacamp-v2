@@ -1,0 +1,142 @@
+---
+/**
+ * Голоса: сначала Дарья (основатель — мама, а не «эксперт в очках»), затем
+ * настоящие отзывы из reviews.ts. Крупная врезка + три колонки — журнальная
+ * страница мнений, а не карусель карточек.
+ */
+import { reviews } from '../../data/reviews';
+import { STAT_RATING, YANDEX_MAPS_URL } from '../../data/contacts';
+
+// Берём первые четыре — они самые содержательные и разнесены по годам
+const picked = reviews.slice(0, 4);
+---
+
+<section class="r-section r-section--paper2" id="reviews">
+  <div class="r-wrap">
+    <div class="r-voices__daria">
+      <figure class="r-voices__portrait">
+        <img
+          src="/images/team/daria-wave-01.avif"
+          alt="Дарья Афанасьева, основатель АйДаКемп"
+          loading="lazy"
+          decoding="async"
+          width="192"
+          height="192"
+          class="r-photo"
+        />
+      </figure>
+      <blockquote class="r-voices__quote">
+        <p>
+          «У нас ребята плачут дважды. Первый раз в трубку: „Мама, забери меня отсюда!“
+          Второй раз, когда мама приезжает, а уезжать <span class="r-em">перехотелось</span>».
+        </p>
+        <footer>
+          <span class="r-voices__author">Дарья Афанасьева</span>
+          <span class="r-voices__role">основатель лагеря, мама подростка</span>
+        </footer>
+      </blockquote>
+    </div>
+
+    <div class="r-head r-voices__head">
+      <p class="r-kicker">Отзывы</p>
+      <div class="r-head__body">
+        <h2 class="r-h2">Что пишут родители</h2>
+        <p class="r-lead r-text">
+          Ниже — отзывы с Яндекс.Карт, без правок и сокращений. Средняя оценка — {STAT_RATING}.
+        </p>
+      </div>
+    </div>
+
+    <div class="r-voices__grid">
+      {picked.map(r => (
+        <article class="r-review">
+          <div class="r-review__stars" aria-label="Оценка 5 из 5">
+            {[1, 2, 3, 4, 5].map(() => <i class="bi bi-star-fill" aria-hidden="true"></i>)}
+          </div>
+          <p class="r-review__text">{r.text}</p>
+          <footer class="r-review__meta">
+            <img src={r.photo} alt="" loading="lazy" decoding="async" width="40" height="40" />
+            <span>
+              <b>{r.name}</b>
+              <small>{r.date}</small>
+            </span>
+          </footer>
+        </article>
+      ))}
+    </div>
+
+    <div class="r-voices__more">
+      <a href="/otzyvy/" class="r-btn r-btn--outline">Все отзывы</a>
+      <a href={YANDEX_MAPS_URL} target="_blank" rel="noopener" class="r-btn r-btn--ghost">
+        Проверить на Яндекс.Картах
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .r-voices__daria {
+    display: grid;
+    gap: 24px;
+    align-items: center;
+    padding-bottom: clamp(40px, 5vw, 64px);
+    margin-bottom: clamp(40px, 5vw, 64px);
+    border-bottom: 1px solid var(--r-line);
+  }
+  .r-voices__portrait {
+    margin: 0;
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex: none;
+  }
+  .r-voices__quote { margin: 0; }
+  .r-voices__quote p {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: clamp(26px, 3.4vw, 42px);
+    line-height: 1.16;
+    color: var(--r-ink);
+    margin: 0 0 18px;
+    text-wrap: balance;
+  }
+  .r-voices__quote footer { display: flex; flex-direction: column; gap: 2px; }
+  .r-voices__author { font-weight: 600; color: var(--r-ink); font-size: 15.5px; }
+  .r-voices__role { font-size: 14px; color: var(--r-muted); }
+
+  .r-voices__head { margin-bottom: clamp(28px, 3vw, 40px); }
+
+  .r-voices__grid { display: grid; gap: 20px; }
+  .r-review {
+    display: flex;
+    flex-direction: column;
+    background: var(--r-card);
+    border: 1px solid var(--r-line);
+    border-radius: var(--r-radius);
+    padding: 24px;
+  }
+  .r-review__stars { display: flex; gap: 3px; color: var(--r-star); font-size: 13px; margin-bottom: 14px; }
+  .r-review__text { font-size: 15.5px; line-height: 1.6; margin: 0 0 20px; flex: 1; }
+  .r-review__meta { display: flex; align-items: center; gap: 12px; }
+  .r-review__meta img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+  .r-review__meta span { display: flex; flex-direction: column; }
+  .r-review__meta b { font-size: 15px; color: var(--r-ink); font-weight: 600; }
+  .r-review__meta small { font-size: 13px; color: var(--r-muted); }
+
+  .r-voices__more {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: clamp(28px, 3vw, 40px);
+  }
+
+  @media (min-width: 760px) {
+    .r-voices__daria { grid-template-columns: 192px minmax(0, 1fr); gap: 44px; }
+    .r-voices__portrait { width: 192px; height: 192px; border-radius: var(--r-radius-photo); }
+    .r-voices__grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (min-width: 1080px) {
+    .r-voices__grid { grid-template-columns: repeat(4, 1fr); }
+  }
+</style>
