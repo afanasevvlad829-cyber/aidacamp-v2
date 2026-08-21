@@ -13,7 +13,15 @@
 #      конвейером для LSI/top_export), ОДНА фраза в день по ротации
 #      (seo-pulse-keywords.txt — правь руками под текущую волну), чтобы не
 #      жечь лимит. Новый домен в ТОП-10 против вчерашнего снятия той же фразы —
-#      подсвечивается. Реализация — scripts/seo-pulse-arsenkin.mjs.
+#      подсвечивается. Плюс Мутаген strong-скор той же фразы. Реализация —
+#      scripts/seo-pulse-arsenkin.mjs.
+#   2b. Just Magic (второй источник LSI, для сравнения с Арсенкином — владелец
+#      19.08.2026: «тестируем все возможные инструменты, обязательно сравнивать
+#      показатели»). Задачи Just Magic не мгновенные (минуты) — двухфазная схема
+#      без блокировки: сегодня забираем результат ВЧЕРАШНЕЙ задачи, сразу ставим
+#      новую на сегодня. Ротация — свой pages-файл (seo-pulse-jm-pages.txt,
+#      keyword+url, т.к. Just Magic анализирует конкретную страницу против ТОП-10,
+#      а не голую фразу). Реализация — scripts/seo-pulse-justmagic.mjs.
 #   3. Волна цикла (фронт A методики, [[seo-wave-cycle]] skill) — таблица
 #      seo_wave_log (Postgres): страницы в ожидании замера (сколько дней
 #      осталось), только что перемеренные (delta, выстрелило/нет), открытые
@@ -39,6 +47,8 @@ PUBLISH="/opt/reports-hub/publish.sh"
 REPORT="/tmp/seo-pulse-report.html"
 ARSENKIN_SCRIPT="/opt/scripts/seo-pulse-arsenkin.latest.mjs"
 KEYWORDS_FILE="/opt/scripts/seo-pulse-keywords.latest.txt"
+JM_SCRIPT="/opt/scripts/seo-pulse-justmagic.latest.mjs"
+JM_PAGES_FILE="/opt/scripts/seo-pulse-jm-pages.latest.txt"
 
 NOW_H="$(date '+%d.%m.%Y %H:%M %Z')"
 TODAY="$(date '+%Y-%m-%d')"
@@ -72,6 +82,18 @@ if [[ -n "$ARS_STRONG" ]]; then
   elif (( $(echo "$ARS_STRONG" | cut -d. -f1) >= 15 )); then
     ARS_STRONG_NOTE+=" (не в лоб — широкая)"
   fi
+fi
+
+# ── 2b. Just Magic: второй источник LSI, для сравнения с Арсенкином ─────────
+JM_LINE=""; JM_ERR=""
+if [[ -f "$JM_SCRIPT" && -f "$JM_PAGES_FILE" ]]; then
+  JM_LINE=$(node "$JM_SCRIPT" "$JM_PAGES_FILE" 2>/tmp/seo-pulse-jm.err) || JM_ERR=$(cat /tmp/seo-pulse-jm.err 2>/dev/null)
+else
+  JM_ERR="скрипт/список страниц ещё не подтянуты кроном (первый прогон после мержа?)"
+fi
+JM_PREV_KW=""; JM_PREV_URL=""; JM_DIFF=""; JM_TODAY_KW=""; JM_SUBMIT=""
+if [[ -n "$JM_LINE" ]]; then
+  IFS=$'\x1f' read -r JM_PREV_KW JM_PREV_URL JM_DIFF JM_TODAY_KW JM_SUBMIT <<< "$JM_LINE"
 fi
 
 # ── 3. Волна цикла (seo_wave_log) ───────────────────────────────────────────
@@ -138,6 +160,20 @@ else
   echo "<p>Не выполнено: $(echo "${ARS_ERR:-нет данных}" | esc)</p>"
 fi )
 <p class="muted">Ротация — одна фраза в день (scripts/seo-pulse-keywords.txt), чтобы не жечь лимит Арсенкина. Позиции по всем сайтам — отдельный еженедельный отчёт (Пн, Telegram).</p></div>
+
+<div class="card"><h2>🆚 2b. Just Magic — сравнение с Арсенкином</h2>
+$( if [[ -n "$JM_PREV_KW" && -n "$JM_DIFF" ]]; then cat <<INNER2
+<p>Результат по вчерашней фразе: <b>$(echo "$JM_PREV_KW" | esc)</b> — <a href="$(echo "$JM_PREV_URL" | esc)">$(echo "$JM_PREV_URL" | esc)</a></p>
+<p class="muted">Отклонение вхождений в body от среднего ТОП-10 (отрицательное — отстаём, есть куда добавить):</p>
+<pre>$(echo "$JM_DIFF" | tr ';' '\n' | esc)</pre>
+INNER2
+elif [[ -n "$JM_PREV_KW" ]]; then
+  echo "<p>Задача по фразе «$(echo "$JM_PREV_KW" | esc)» ещё в работе у Just Magic (обычно несколько минут — заберём завтра).</p>"
+else
+  echo "<p>$(echo "${JM_ERR:-нет данных}" | esc)</p>"
+fi )
+$( [[ -n "$JM_TODAY_KW" ]] && echo "<p class=\"muted\">Сегодня поставлена задача по фразе «$(echo "$JM_TODAY_KW" | esc)» ($(echo "$JM_SUBMIT" | esc)) — результат завтра.</p>" )
+<p class="muted">Ротация — своя (scripts/seo-pulse-jm-pages.txt, keyword+url — Just Magic анализирует конкретную страницу против ТОП-10, не голую фразу). Задачи не мгновенные, поэтому цикл на сутки: сегодня забираем вчерашнее, ставим новое.</p></div>
 
 <div class="card"><h2>🌊 3. Волна цикла (фронт A, seo_wave_log)</h2>
 <p class="muted">В ожидании замера:</p>
