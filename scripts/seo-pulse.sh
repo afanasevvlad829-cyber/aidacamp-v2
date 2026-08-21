@@ -13,7 +13,15 @@
 #      конвейером для LSI/top_export), ОДНА фраза в день по ротации
 #      (seo-pulse-keywords.txt — правь руками под текущую волну), чтобы не
 #      жечь лимит. Новый домен в ТОП-10 против вчерашнего снятия той же фразы —
-#      подсвечивается. Реализация — scripts/seo-pulse-arsenkin.mjs.
+#      подсвечивается. Плюс Мутаген strong-скор той же фразы. Реализация —
+#      scripts/seo-pulse-arsenkin.mjs.
+#   2b. Just Magic (второй источник LSI, для сравнения с Арсенкином — владелец
+#      19.08.2026: «тестируем все возможные инструменты, обязательно сравнивать
+#      показатели»). Задачи Just Magic не мгновенные (минуты) — двухфазная схема
+#      без блокировки: сегодня забираем результат ВЧЕРАШНЕЙ задачи, сразу ставим
+#      новую на сегодня. Ротация — свой pages-файл (seo-pulse-jm-pages.txt,
+#      keyword+url, т.к. Just Magic анализирует конкретную страницу против ТОП-10,
+#      а не голую фразу). Реализация — scripts/seo-pulse-justmagic.mjs.
 #   3. Волна цикла (фронт A методики, [[seo-wave-cycle]] skill) — таблица
 #      seo_wave_log (Postgres): страницы в ожидании замера (сколько дней
 #      осталось), только что перемеренные (delta, выстрелило/нет), открытые
@@ -39,6 +47,8 @@ PUBLISH="/opt/reports-hub/publish.sh"
 REPORT="/tmp/seo-pulse-report.html"
 ARSENKIN_SCRIPT="/opt/scripts/seo-pulse-arsenkin.latest.mjs"
 KEYWORDS_FILE="/opt/scripts/seo-pulse-keywords.latest.txt"
+JM_SCRIPT="/opt/scripts/seo-pulse-justmagic.latest.mjs"
+JM_PAGES_FILE="/opt/scripts/seo-pulse-jm-pages.latest.txt"
 
 NOW_H="$(date '+%d.%m.%Y %H:%M %Z')"
 TODAY="$(date '+%Y-%m-%d')"
@@ -74,6 +84,18 @@ if [[ -n "$ARS_STRONG" ]]; then
   fi
 fi
 
+# ── 2b. Just Magic: второй источник LSI, для сравнения с Арсенкином ─────────
+JM_LINE=""; JM_ERR=""
+if [[ -f "$JM_SCRIPT" && -f "$JM_PAGES_FILE" ]]; then
+  JM_LINE=$(node "$JM_SCRIPT" "$JM_PAGES_FILE" 2>/tmp/seo-pulse-jm.err) || JM_ERR=$(cat /tmp/seo-pulse-jm.err 2>/dev/null)
+else
+  JM_ERR="скрипт/список страниц ещё не подтянуты кроном (первый прогон после мержа?)"
+fi
+JM_PREV_KW=""; JM_PREV_URL=""; JM_DIFF=""; JM_TODAY_KW=""; JM_SUBMIT=""
+if [[ -n "$JM_LINE" ]]; then
+  IFS=$'\x1f' read -r JM_PREV_KW JM_PREV_URL JM_DIFF JM_TODAY_KW JM_SUBMIT <<< "$JM_LINE"
+fi
+
 # ── 3. Волна цикла (seo_wave_log) ───────────────────────────────────────────
 WAVE_PENDING=$(sudo -u postgres psql -d aidacamp -tAc "
   SELECT site || ' | ' || target_url || ' | до замера: ' || GREATEST(0, EXTRACT(day FROM measure_due_at - now())::int) || ' дн.'
@@ -83,6 +105,27 @@ WAVE_MEASURED=$(sudo -u postgres psql -d aidacamp -tAc "
   FROM seo_wave_log WHERE measured_at >= now() - interval '24 hours' ORDER BY measured_at DESC" 2>/dev/null || true)
 WAVE_OPEN_PRS=$(sudo -u postgres psql -d aidacamp -tAc "
   SELECT site || ' | ' || pr_url FROM seo_wave_log WHERE pr_url IS NOT NULL AND edited_at >= now() - interval '24 hours'" 2>/dev/null || true)
+
+# ── 4. Очередь работы (seo_keyword_backlog) ─────────────────────────────────
+# Показываем не только сделанное, но и что впереди: сколько ключей ждёт, какая
+# страница следующая по приоритету. Ранжирование — то же, что использует цикл
+# (Шаг E.1 скилла seo-wave-cycle): коммерческие кластеры вперёд, главную не трогаем.
+BACKLOG_STATE=$(sudo -u postgres psql -d aidacamp -tAc "
+  SELECT site || ': в очереди ' || COUNT(*) FILTER (WHERE status='new' AND position BETWEEN 11 AND 40)
+      || ', в работе ' || COUNT(*) FILTER (WHERE status='in_wave')
+      || ', закрыто ' || COUNT(*) FILTER (WHERE status='done')
+      || ' (частотность у ' || COUNT(volume) || '/' || COUNT(*) || ')'
+  FROM seo_keyword_backlog GROUP BY site ORDER BY site" 2>/dev/null || true)
+BACKLOG_NEXT=$(sudo -u postgres psql -d aidacamp -tAc "
+  SELECT site || ' | ' || cluster_page || ' | ключей ' || COUNT(*)
+      || ' (комм. ' || COUNT(*) FILTER (WHERE intent='commercial') || ')'
+      || ' | лучшая поз. ' || MIN(position)
+  FROM seo_keyword_backlog
+  WHERE status='new' AND position BETWEEN 11 AND 40 AND cluster_page IS NOT NULL
+    AND cluster_page !~ '^https?://[^/]+/?\$'
+  GROUP BY site, cluster_page
+  HAVING COUNT(*) FILTER (WHERE intent='commercial') > 0
+  ORDER BY site, COUNT(*) FILTER (WHERE intent='commercial') DESC, SUM(priority) DESC" 2>/dev/null | awk '!seen[$1]++' || true)
 
 # ── HTML-отчёт ───────────────────────────────────────────────────────────────
 cat > "$REPORT" <<HTML
@@ -118,6 +161,20 @@ else
 fi )
 <p class="muted">Ротация — одна фраза в день (scripts/seo-pulse-keywords.txt), чтобы не жечь лимит Арсенкина. Позиции по всем сайтам — отдельный еженедельный отчёт (Пн, Telegram).</p></div>
 
+<div class="card"><h2>🆚 2b. Just Magic — сравнение с Арсенкином</h2>
+$( if [[ -n "$JM_PREV_KW" && -n "$JM_DIFF" ]]; then cat <<INNER2
+<p>Результат по вчерашней фразе: <b>$(echo "$JM_PREV_KW" | esc)</b> — <a href="$(echo "$JM_PREV_URL" | esc)">$(echo "$JM_PREV_URL" | esc)</a></p>
+<p class="muted">Отклонение вхождений в body от среднего ТОП-10 (отрицательное — отстаём, есть куда добавить):</p>
+<pre>$(echo "$JM_DIFF" | tr ';' '\n' | esc)</pre>
+INNER2
+elif [[ -n "$JM_PREV_KW" ]]; then
+  echo "<p>Задача по фразе «$(echo "$JM_PREV_KW" | esc)» ещё в работе у Just Magic (обычно несколько минут — заберём завтра).</p>"
+else
+  echo "<p>$(echo "${JM_ERR:-нет данных}" | esc)</p>"
+fi )
+$( [[ -n "$JM_TODAY_KW" ]] && echo "<p class=\"muted\">Сегодня поставлена задача по фразе «$(echo "$JM_TODAY_KW" | esc)» ($(echo "$JM_SUBMIT" | esc)) — результат завтра.</p>" )
+<p class="muted">Ротация — своя (scripts/seo-pulse-jm-pages.txt, keyword+url — Just Magic анализирует конкретную страницу против ТОП-10, не голую фразу). Задачи не мгновенные, поэтому цикл на сутки: сегодня забираем вчерашнее, ставим новое.</p></div>
+
 <div class="card"><h2>🌊 3. Волна цикла (фронт A, seo_wave_log)</h2>
 <p class="muted">В ожидании замера:</p>
 $( if [[ -n "$WAVE_PENDING" ]]; then echo "<pre>$(echo "$WAVE_PENDING" | esc)</pre>"; else echo "<p>Пусто.</p>"; fi )
@@ -126,6 +183,12 @@ $( if [[ -n "$WAVE_MEASURED" ]]; then echo "<pre>$(echo "$WAVE_MEASURED" | esc)<
 <p class="muted">Открытые PR за сутки:</p>
 $( if [[ -n "$WAVE_OPEN_PRS" ]]; then echo "<pre>$(echo "$WAVE_OPEN_PRS" | esc)</pre>"; else echo "<p>Пусто.</p>"; fi )
 <p class="muted">Источник — таблица seo_wave_log, заполняется скиллом seo-wave-cycle. Лабрика-конвейер (скор/конкуренты вручную в браузере) сюда не входит — отдельная ручная работа в сессии.</p></div>
+
+<div class="card"><h2>📋 4. Очередь работы (бэклог ключей)</h2>
+$( if [[ -n "$BACKLOG_STATE" ]]; then echo "<pre>$(echo "$BACKLOG_STATE" | esc)</pre>"; else echo "<p>Бэклог пуст — нужен прогон scripts/seo-backlog-build.mjs.</p>"; fi )
+<p class="muted">Следующая цель по каждому сайту (коммерческие кластеры вперёд, главная исключена):</p>
+$( if [[ -n "$BACKLOG_NEXT" ]]; then echo "<pre>$(echo "$BACKLOG_NEXT" | esc)</pre>"; else echo "<p>Коммерческих кластеров в диапазоне 11-40 не осталось.</p>"; fi )
+<p class="muted">Единица работы — страница со всем кластером ключей: одна правка закрывает сразу все её запросы. Приоритет = спрос (показы Вебмастера, иначе Wordstat) × близость к ТОП-10 × √размер кластера × интент (коммерция ×1.5, инфо ×0.3).</p></div>
 
 <p class="muted">Скрипт: scripts/seo-pulse.sh (репо aidacamp-v2, самообновляется из origin/dev).</p>
 </body></html>
