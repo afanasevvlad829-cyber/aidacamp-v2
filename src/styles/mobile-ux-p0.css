@@ -52,32 +52,6 @@
     color: #64748b !important;
   }
 
-  /* Оранжевый CTA — WCAG AA
-     Бренд #ec9b44 как текст на белом даёт 2.25:1, AA требует 4.5:1 — поэтому
-     текстовые/бордерные применения подменяем на --color-primary-text (#8c540c,
-     6.20:1 на белом). primary-dark (#b66d10) даёт лишь 4.05:1 и не проходит.
-     Фоны (banner, кнопки) НЕ переопределяем — там белый текст на оранжевом. */
-  .text-primary,
-  .text-\[\#ec9b44\],
-  .text-orange-500,
-  .text-orange-600 {
-    color: var(--color-primary-text) !important;
-  }
-  .border-primary,
-  .border-\[\#ec9b44\] {
-    border-color: var(--color-primary-text) !important;
-  }
-  /* Focus state (LeadForm phone input) */
-  .focus\:border-primary:focus,
-  .focus\:border-\[\#ec9b44\]:focus {
-    border-color: var(--color-primary-text) !important;
-  }
-  /* Checkbox accent (LeadForm consent) */
-  .accent-primary,
-  .accent-\[\#ec9b44\] {
-    accent-color: var(--color-primary-text) !important;
-  }
-
   /* Primary CTA — 48px min-height, в формах/бронировании full-width */
   a.bg-primary,
   button.bg-primary,
@@ -129,6 +103,76 @@
     min-height: 44px;
   }
 }
+}
+
+/* ─── Контраст бренд-оранжевого — WCAG AA, ВСЕ ширины ───────────────────
+ * Было только в @media (max-width:768px) — десктоп оставался без защиты
+ * (27 из 32 оранжевых текстов главной ниже нормы). Снято 21.08.2026.
+ *
+ * Бренд #ec9b44 как ТЕКСТ на белом даёт 2.25:1 при норме 4.5:1, поэтому
+ * текстовые/бордерные применения подменяются на --color-primary-text
+ * (#8c540c, 6.20:1). primary-dark (#b66d10) даёт лишь 4.05:1 — не проходит.
+ * Прозрачные подложки (bg-primary/8 и т.п.) — отдельные классы, не затронуты.
+ */
+/* Значение по умолчанию — тёмно-янтарный, рассчитан на светлый фон. */
+:root {
+  --brand-text: var(--color-primary-text);
+}
+
+/* Тёмные поверхности возвращают яркий бренд: на #0f1c2e он даёт 7.62:1,
+ * а тёмно-янтарный — всего 2.76:1. Переменная НАСЛЕДУЕТСЯ, поэтому
+ * работает на любой глубине вложенности и не зависит от специфичности. */
+.bg-black,
+.bg-dark,
+.bg-dark-navy,
+.bg-navy-800,
+.bg-navy-900,
+.bg-navy-950,
+.bg-slate-800,
+.bg-slate-900,
+.bg-slate-950,
+.bg-\[\#0d1a2b\],
+.bg-\[\#0f1c2e\],
+.bg-\[\#060a12\],
+.bg-\[\#152a46\],
+[data-surface="dark"] {
+  --brand-text: var(--color-primary);
+}
+
+.text-primary,
+.text-\[\#ec9b44\],
+.text-orange-500,
+.text-orange-600 {
+  color: var(--brand-text) !important;
+}
+.border-primary,
+.border-\[\#ec9b44\] {
+  border-color: var(--brand-text) !important;
+}
+/* Focus state (LeadForm phone input) */
+.focus\:border-primary:focus,
+.focus\:border-\[\#ec9b44\]:focus {
+  border-color: var(--brand-text) !important;
+}
+/* Checkbox accent (LeadForm consent) */
+.accent-primary,
+.accent-\[\#ec9b44\] {
+  accent-color: var(--brand-text) !important;
+}
+
+/* ─── Текст на оранжевой заливке — тёмный вместо белого ─────────────────
+ * Белый на #ec9b44 = 2.25:1 (провал). Тёмный navy-950 = 7.78:1, на hover
+ * #d68830 = 6.19:1, на primary-light #eba955 = 8.62:1 — все проходят AA.
+ * Это ещё и премиальная подача из DESIGN_SYSTEM.md §1 (soft, не «реклама»).
+ * bg-primary-dark (#b66d10) НЕ трогаем: там тёмный даёт 4.32:1, тоже ниже
+ * нормы, а замена белого ничего не выигрывает — случай на отдельный разбор.
+ * Специфичность 2 класса > .text-white (1), поэтому !important не нужен.
+ */
+.bg-primary.text-white,
+.bg-primary-hover.text-white,
+.bg-primary-light.text-white,
+.hover\:bg-primary.text-white:hover {
+  color: var(--color-navy-950);
 }
 
 /* ─── Mobile keyboard handling (Q) ──────────────────────────────────────
