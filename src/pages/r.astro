@@ -15,6 +15,12 @@ import Contacts from '../components/Contacts.astro';
 import { TELEGRAM_URL } from '../data/contacts';
 import { YM_COUNTER } from '../data/tracking';
 import { mainShifts } from '../data/shifts';
+import { isSalesOpen } from '../data/dynamicPrices';
+import { AUTUMN_SEASON } from '../data/seasons';
+
+/* Сезон закрыт — кнопка брони открывала модалку выбора смены, где все смены
+   уже прошли. Ведём на предзапись следующего сезона. */
+const salesOpen = isSalesOpen();
 import { getCurrentPrice, getDays } from '../data/dynamicPrices';
 
 const allShifts = [...mainShifts];
@@ -129,15 +135,26 @@ const shiftsJson = JSON.stringify(allShifts.map(s => ({
               <span id="r-seats-inline" class="text-base font-semibold text-primary whitespace-nowrap opacity-0 transition-opacity duration-500"></span>
             </div>
 
-            <!-- Забронировать — белая кнопка -->
-            <button
-              id="r-book-btn"
-              type="button"
-              class="inline-flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-white/90 px-6 py-3 text-base font-bold text-[#0d1a2b] transition active:scale-[0.98] min-h-[48px]"
-            >
-              <i class="bi bi-calendar-check text-base" aria-hidden="true"></i>
-              Забронировать
-            </button>
+            <!-- Забронировать — белая кнопка (сезон закрыт → предзапись на осень) -->
+            {salesOpen ? (
+              <button
+                id="r-book-btn"
+                type="button"
+                class="inline-flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-white/90 px-6 py-3 text-base font-bold text-[#0d1a2b] transition active:scale-[0.98] min-h-[48px]"
+              >
+                <i class="bi bi-calendar-check text-base" aria-hidden="true"></i>
+                Забронировать
+              </button>
+            ) : (
+              <a
+                href={`${AUTUMN_SEASON.path}/`}
+                data-analytics-goal="r_autumn_prereg"
+                class="inline-flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-white/90 px-6 py-3 text-base font-bold text-[#0d1a2b] transition active:scale-[0.98] min-h-[48px] no-underline"
+              >
+                <i class="bi bi-calendar-check text-base" aria-hidden="true"></i>
+                Предзапись на осень
+              </a>
+            )}
 
             <!-- Telegram — мягкий -->
             <a href={TELEGRAM_URL} target="_blank" rel="noopener"
