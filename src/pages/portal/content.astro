@@ -5,7 +5,7 @@ import PortalLayout from '../../layouts/PortalLayout.astro';
 import { getActiveShift, getEventDates, listShifts } from '../../lib/portalShift';
 import {
   contentDays, listContent, listFeedback, listTasks, roleLabel,
-  type ShiftContentItem, type ShiftFeedbackItem, type ShiftTaskRow,
+  type ShiftContentItem, type ShiftFeedbackItem, type ShiftScope, type ShiftTaskRow,
 } from '../../lib/portalShiftContent';
 import '../../styles/portal-den.css';
 import '../../styles/portal-gallery.css';
@@ -20,12 +20,15 @@ const shift = (reqShift && shifts.find((s) => Number(s.id) === reqShift)) || act
 const dates = shift ? await getEventDates(shift.id) : [];
 
 // Бот нумерует дни от старта смены (0 — всё, что снято до заезда). Номера
-// дней повторяются от смены к смене, поэтому все выборки ограничиваем окном
-// активной смены — иначе в дне смешиваются кадры прошлых заездов.
-// Выбранная смена должна сохраняться при переходах по дням.
+// дней повторяются от смены к смене, поэтому выборки ограничиваем самой
+// сменой: `shift_content.shift_id` — иначе в дне смешиваются кадры прошлых
+// заездов. Даты передаём тем же скоупом как фолбэк — на случай строки без
+// shift_id (см. ShiftScope). Выбранная смена держится при переходах по дням.
 const shiftQ = shift ? `&shift=${shift.id}` : '';
-const shiftWindow = dates.length ? { from: dates[0], to: dates[dates.length - 1] } : null;
-const counts = await contentDays(shiftWindow);
+const scope: ShiftScope | null = shift
+  ? { id: Number(shift.id), from: shift.start_date, to: shift.end_date }
+  : null;
+const counts = await contentDays(scope);
 const hasPre = (counts.get(0) ?? 0) > 0;
 
 function todayDayNo(): number {
@@ -39,8 +42,8 @@ const fallbackDay = todayDayNo() || withContent.at(-1) || 1;
 const reqDay = Astro.url.searchParams.get('day');
 const day = reqDay !== null && reqDay !== '' ? Number(reqDay) : fallbackDay;
 
-const items: ShiftContentItem[] = await listContent(day, shiftWindow);
-const written: ShiftFeedbackItem[] = day > 0 ? await listFeedback(day, shiftWindow) : [];
+const items: ShiftContentItem[] = await listContent(day, scope);
+const written: ShiftFeedbackItem[] = day > 0 ? await listFeedback(day, scope) : [];
 const tasks: ShiftTaskRow[] = day > 0 ? await listTasks(day) : [];
 const missing = tasks.filter((t) => t.shots === 0);
 
