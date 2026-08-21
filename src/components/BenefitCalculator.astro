@@ -18,7 +18,8 @@
 import { EDU_RESID_PER_DAY, NDFL_RATE, EDU_BASE_CAP, SEASON_YEAR } from '../data/shifts';
 import { fmtPrice } from '../data/dynamicPrices';
 import { getShiftSelectOptions } from '../utils/shiftSelectOptions';
-import { AUTUMN_SEASON } from '../data/seasons';
+import { getNextSeason } from '../data/seasons';
+const nextSeason = getNextSeason();
 
 // Опции смен (цена/дни из data/shifts.ts) — единый источник, без дублирования парсинга.
 // Только смены, ещё открытые для брони (getOpenShifts внутри) — калькулятор группы/вычета
@@ -45,13 +46,17 @@ const shifts = getShiftSelectOptions();
           <span class="font-semibold">Открытых смен для записи сейчас нет</span> — расчёт скидок и вычета
           вернём, когда откроется бронь на новый сезон.
         </p>
-        <p class="mt-2 text-base text-body-muted leading-[1.6]">
-          Следующий заезд — осень, {AUTUMN_SEASON.seasonMeta.dates}. Открыта предзапись.
-        </p>
-        <a
-          href={`${AUTUMN_SEASON.path}/`}
-          class="mt-4 inline-flex items-center gap-2 rounded-[12px] border border-primary/55 bg-primary/8 px-6 py-3 text-base font-semibold text-primary transition-colors hover:bg-primary/14 hover:border-primary/75"
-        >Узнать про осень →</a>
+        {nextSeason && (
+          <Fragment>
+            <p class="mt-2 text-base text-body-muted leading-[1.6]">
+              Следующий заезд — {nextSeason.shortName}, {nextSeason.seasonMeta.dates}. Открыта предзапись.
+            </p>
+            <a
+              href={`${nextSeason.path}/`}
+              class="mt-4 inline-flex items-center gap-2 rounded-[12px] border border-primary/55 bg-primary/8 px-6 py-3 text-base font-semibold text-primary transition-colors hover:bg-primary/14 hover:border-primary/75"
+            >Узнать про {nextSeason.shortName} →</a>
+          </Fragment>
+        )}
       </div>
     ) : (
     <Fragment>
