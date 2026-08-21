@@ -107,7 +107,7 @@ const landing: LandingData = {
       list: [
         "<a href='/lager-korolev/'>Королёв</a> — рядом, тот же северо-восток, похожий маршрут через Солнцево",
         "<a href='/lager-balashiha/'>Балашиха</a> — трансфер от м. Солнцево, тот же формат",
-        "<a href='/lager-shchelkovo/'>Щёлково</a> — трансфер от м. Солнцево",
+        "<a href='/lager-shchelkovo/'>лагерь Щёлково</a> — трансфер от м. Солнцево",
       ],
     },
   ],
