@@ -1,0 +1,255 @@
+---
+/**
+ * «Смена в цифрах» — дашборд-секция в светлой палитре.
+ *
+ * Референс — футуристичные светлые дашборды, но правило жёсткое: каждая цифра
+ * настоящая и приходит из данных проекта (contacts.ts, shifts.ts). Никаких
+ * декоративных графиков: спарклайн строится по фактической заполненности
+ * летних смен, кольцо — по доле вернувшихся.
+ */
+import { STAT_KIDS, STAT_RETURN, STAT_IT_CONTINUE, STAT_RATING } from '../../data/contacts';
+import { displayShifts, shift1, shift2, fmtRub } from '../../data/shifts';
+
+// Заполненность реальных смен сезона: occupied / (occupied + free)
+const load = displayShifts.map(s => {
+  const total = s.occupied + s.free;
+  return {
+    name: s.name.replace('Смена ', ''),
+    dates: s.dates,
+    pct: total > 0 ? Math.round((s.occupied / total) * 100) : 0,
+    occupied: s.occupied,
+    total,
+  };
+});
+
+// Динамика цены: смены, у которых зафиксированы стартовая и финальная цена.
+// Спарклайн по заполненности не строим — он повторял бы столбцы ниже.
+const num = (p: string) => parseInt(p.replace(/[^\d]/g, ''), 10);
+const ladder = [shift1, shift2]
+  .filter(s => s.priceFrom && s.priceTo)
+  .map(s => {
+    const from = num(s.priceFrom!);
+    const to = num(s.priceTo!);
+    return { name: s.name, from, to, growth: Math.round(((to - from) / from) * 100) };
+  });
+const ladderMax = Math.max(...ladder.map(l => l.to));
+
+// Кольцо доли вернувшихся
+const returnPct = parseInt(STAT_RETURN, 10);
+const R = 34, C = 2 * Math.PI * R;
+---
+
+<section class="r-section r-stats r-grid-bg" id="stats">
+  <div class="r-wrap">
+    <div class="r-head">
+      <p class="r-kicker">Смена в цифрах</p>
+      <div class="r-head__body">
+        <h2 class="r-h2">Что видно, когда <span class="r-em">считаешь</span></h2>
+        <p class="r-lead r-text">
+          Данные сезона без округлений в свою пользу: сколько мест разошлось,
+          сколько ребят возвращается и что с ними происходит после смены.
+        </p>
+      </div>
+    </div>
+
+    <div class="r-stats__grid">
+      <!-- Заполненность смен: столбцы + линия по тем же значениям -->
+      <article class="r-panel r-panel--ticks r-stats__wide">
+        <div class="r-stats__panel-head">
+          <p class="r-mono r-mono--data">Заполненность смен сезона</p>
+          <span class="r-tag r-tag--data">факт</span>
+        </div>
+
+        <dl class="r-stats__bars">
+          {load.map(d => (
+            <div class="r-stats__bar">
+              <dt>
+                <span class="r-mono">{d.name}</span>
+                <small>{d.dates}</small>
+              </dt>
+              <dd>
+                {/* Карта мест: один квадрат — одно место. Читается точнее полосы:
+                    видно не только долю, но и сколько мест это в штуках. */}
+                <span class="r-seats" role="img" aria-label={`Занято ${d.occupied} мест из ${d.total}`}>
+                  {Array.from({ length: d.total }, (_, i) => (
+                    <i class={i < d.occupied ? 'is-taken' : ''}></i>
+                  ))}
+                </span>
+                <b>{d.occupied}/{d.total}</b>
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </article>
+
+      <!-- Динамика цены: шкала от стартовой цены к финальной -->
+      <article class="r-panel r-stats__ladder r-stats__wide">
+        <div class="r-stats__panel-head">
+          <p class="r-mono r-mono--data">Как росла цена смены</p>
+          <span class="r-tag">лето {shift1.startDate.slice(0, 4)}</span>
+        </div>
+        {ladder.map(l => (
+          <div class="r-ladder">
+            <div class="r-ladder__head">
+              <span class="r-mono">{l.name}</span>
+              <b>+{l.growth}%</b>
+            </div>
+            <div class="r-ladder__track">
+              <span class="r-ladder__fill" style={`width:${(l.from / ladderMax) * 100}%`}></span>
+              <span class="r-ladder__rest" style={`width:${((l.to - l.from) / ladderMax) * 100}%`}></span>
+            </div>
+            <div class="r-ladder__ends">
+              <span>старт {fmtRub(l.from)}</span>
+              <span>к заезду {fmtRub(l.to)}</span>
+            </div>
+          </div>
+        ))}
+        <p class="r-metric__note">
+          Цена поднимается по мере набора: кто бронирует в начале продаж, платит меньше.
+        </p>
+      </article>
+
+      <!-- Кольцо: доля вернувшихся -->
+      <article class="r-panel r-stats__ring-card">
+        <p class="r-mono r-mono--data">Возвращаются снова</p>
+        <div class="r-stats__ring">
+          {/* Шкала набрана делениями, а не сплошной дугой: деление = процент,
+              закрашенных ровно столько, сколько показывает метрика. */}
+          <svg viewBox="0 0 80 80" role="img" aria-label={`Возвращаются снова: ${STAT_RETURN}`}>
+            {Array.from({ length: 60 }, (_, i) => {
+              const angle = (i / 60) * 360 - 90;
+              const rad = (angle * Math.PI) / 180;
+              const inner = 25.5, outer = i % 5 === 0 ? 33 : 31;
+              const filled = i / 60 < returnPct / 100;
+              return (
+                <line
+                  x1={40 + inner * Math.cos(rad)} y1={40 + inner * Math.sin(rad)}
+                  x2={40 + outer * Math.cos(rad)} y2={40 + outer * Math.sin(rad)}
+                  stroke={filled ? 'var(--r-accent)' : 'var(--r-line)'}
+                  stroke-width={i % 5 === 0 ? 1.4 : 0.9}
+                  stroke-linecap="round"
+                />
+              );
+            })}
+            <circle cx="40" cy="40" r="21" fill="none" stroke="var(--r-line-soft)" stroke-width="0.8" />
+          </svg>
+          <span class="r-stats__ring-value">{STAT_RETURN}</span>
+        </div>
+        <p class="r-metric__note">Приезжают повторно или по рекомендации знакомых.</p>
+      </article>
+
+      <!-- Метрики результата -->
+      <article class="r-panel r-stats__metrics">
+        <div class="r-metric">
+          <span class="r-metric__label">Продолжают IT после смены</span>
+          <span class="r-metric__value">{STAT_IT_CONTINUE}</span>
+          <span class="r-metric__note">По опросу выпускников.</span>
+        </div>
+        <div class="r-metric">
+          <span class="r-metric__label">Прошли смены</span>
+          <span class="r-metric__value">{STAT_KIDS}</span>
+          <span class="r-metric__note">С 2021 года.</span>
+        </div>
+        <div class="r-metric">
+          <span class="r-metric__label">Оценка на Яндекс.Картах</span>
+          <span class="r-metric__value">{STAT_RATING}</span>
+          <span class="r-metric__note">Отзывы без модерации с нашей стороны.</span>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<style>
+  .r-stats__grid { display: grid; gap: 16px; }
+
+  .r-stats__panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .r-stats__panel-head .r-mono { margin: 0; }
+
+  .r-stats__ladder { display: grid; gap: 20px; align-content: start; }
+  .r-ladder { display: grid; gap: 8px; }
+  .r-ladder__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .r-ladder__head b {
+    font-family: var(--r-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--r-accent-ink);
+    font-variant-numeric: tabular-nums;
+  }
+  /* Две части одной шкалы: оплаченный старт и надбавка к заезду */
+  .r-ladder__track { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--r-line-soft); }
+  .r-ladder__fill { background: var(--r-data); }
+  .r-ladder__rest { background: var(--r-accent); }
+  .r-ladder__ends {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-family: var(--r-mono);
+    font-size: 11.5px;
+    color: var(--r-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .r-stats__bars { margin: 0; display: grid; gap: 14px; }
+  .r-stats__bar { display: grid; gap: 6px; }
+  .r-stats__bar dt { display: flex; align-items: baseline; gap: 10px; }
+  .r-stats__bar dt small { font-size: 13px; color: var(--r-muted); }
+  .r-stats__bar dd {
+    margin: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+  }
+  .r-seats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+  .r-seats i {
+    width: 7px;
+    height: 7px;
+    border-radius: 1px;
+    background: var(--r-line);
+    display: block;
+  }
+  .r-seats i.is-taken { background: var(--r-data); }
+
+  .r-stats__bar dd b {
+    font-family: var(--r-mono);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--r-body);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .r-stats__ring-card { display: flex; flex-direction: column; gap: 16px; }
+  .r-stats__ring { position: relative; width: 132px; align-self: center; }
+  .r-stats__ring svg { width: 100%; display: block; }
+  .r-stats__ring-value {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-family: var(--r-mono);
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--r-ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .r-stats__metrics { display: grid; gap: 22px; align-content: start; }
+
+  @media (min-width: 880px) {
+    .r-stats__grid {
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr) minmax(0, 1fr);
+      align-items: stretch;
+    }
+  }
+</style>

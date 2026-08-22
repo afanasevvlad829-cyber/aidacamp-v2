@@ -234,3 +234,160 @@
     transition-duration: .01ms !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   ЦИФРОВОЙ СЛОЙ — интерфейсная графика в светлой палитре
+   ══════════════════════════════════════════════════════════════
+   Референс — футуристичные дашборды, но без тёмного фона и неона:
+   свечение на белом читается как грязь, а тёмная тема ломает
+   позиционирование лагеря. Технологичность здесь держится на другом —
+   хайрлайны в 1px, координатная сетка, моноширинные подписи,
+   настоящие метрики и микрографики.
+
+   Правило: цифра на экране обязана быть настоящей (цена, места,
+   этапы проекта, лагерные рубли). Декоративных «графиков ради
+   графиков» здесь нет — иначе это карго-культ дашборда.
+   ══════════════════════════════════════════════════════════════ */
+
+.r-root {
+  --r-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --r-grid-line: rgba(25, 23, 19, .045); /* координатная сетка на бумаге — почти на пределе видимости */
+  --r-panel: rgba(255, 255, 255, .72);   /* стекло по-светлому */
+  --r-panel-line: rgba(25, 23, 19, .12);
+  --r-data: #2F4B7C;                     /* холодный акцент только для данных */
+  --r-data-soft: rgba(47, 75, 124, .1);
+}
+
+/* ── Координатная сетка: фон секции, а не картинка ─────────── */
+.r-grid-bg {
+  position: relative;
+  isolation: isolate;
+}
+.r-grid-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(to right, var(--r-grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--r-grid-line) 1px, transparent 1px);
+  background-size: 120px 120px;
+  /* Сетка живёт только в правой половине разворота и гаснет к краям:
+     сплошное полотно читается как миллиметровка, а не как интерфейс. */
+  mask-image:
+    linear-gradient(to right, transparent 42%, #000 68%, #000 88%, transparent 100%),
+    linear-gradient(to bottom, transparent 4%, #000 30%, #000 82%, transparent 100%);
+  mask-composite: intersect;
+  -webkit-mask-composite: source-in;
+}
+
+/* ── Моноширинные подписи интерфейса ───────────────────────── */
+.r-mono {
+  font-family: var(--r-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--r-muted);
+  font-variant-numeric: tabular-nums;
+}
+.r-mono--data { color: var(--r-data); }
+
+/* ── Панель: светлое «стекло» с хайрлайном ─────────────────── */
+.r-panel {
+  background: var(--r-panel);
+  border: 1px solid var(--r-panel-line);
+  border-radius: var(--r-radius);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 20px;
+}
+.r-panel--flush { padding: 0; overflow: hidden; }
+
+/* Уголки-визиры — считываются как интерфейс, стоят четыре псевдолинии */
+.r-panel--ticks { position: relative; }
+.r-panel--ticks::before,
+.r-panel--ticks::after {
+  content: "";
+  position: absolute;
+  width: 10px; height: 10px;
+  border: 1px solid var(--r-data);
+  opacity: .5;
+}
+.r-panel--ticks::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.r-panel--ticks::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+/* ── Метрика: подпись сверху, число моноширинным ───────────── */
+.r-metric { display: flex; flex-direction: column; gap: 4px; }
+.r-metric__label {
+  font-family: var(--r-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--r-muted);
+}
+.r-metric__value {
+  font-family: var(--r-mono);
+  font-size: clamp(20px, 2.4vw, 26px);
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--r-ink);
+  font-variant-numeric: tabular-nums;
+}
+.r-metric__note { font-size: 12.5px; color: var(--r-muted); line-height: 1.4; }
+
+/* ── Полоса заполнения: места, прогресс проекта ────────────── */
+.r-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--r-line-soft);
+  overflow: hidden;
+}
+.r-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--r-accent);
+}
+.r-bar--data i { background: var(--r-data); }
+
+/* ── Чип технологии: моноширинный, как тег в интерфейсе ────── */
+.r-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--r-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: .02em;
+  padding: 5px 10px;
+  border: 1px solid var(--r-panel-line);
+  border-radius: 3px;
+  color: var(--r-body);
+  background: var(--r-card);
+  white-space: nowrap;
+}
+.r-tag--data { color: var(--r-data); border-color: rgba(47, 75, 124, .28); background: var(--r-data-soft); }
+
+/* ── Строка данных: ключ слева, значение справа, линия между ─ */
+.r-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding-block: 11px;
+  border-bottom: 1px solid var(--r-line-soft);
+  font-size: 14.5px;
+}
+.r-row:last-child { border-bottom: 0; }
+.r-row dt { color: var(--r-muted); }
+.r-row dd {
+  margin: 0;
+  font-family: var(--r-mono);
+  font-weight: 600;
+  color: var(--r-ink);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.r-row--total dd { color: var(--r-data); font-size: 16px; }

@@ -11,9 +11,15 @@
  * цена — сноска в расписании, а не аргумент.
  */
 import { STAT_DISTANCE } from '../../data/contacts';
+import { AUTUMN_2026 } from '../../data/shifts';
+
+// Дата ближайшего заезда — форматируем из ISO, чтобы подпись не разъезжалась с shifts.ts
+const fmt = (iso: string) =>
+  new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }).replace('.', '');
+const autumnRange = `${fmt(AUTUMN_2026.startDate)} — ${fmt(AUTUMN_2026.endDate)}`;
 ---
 
-<section class="r-hero">
+<section class="r-hero r-grid-bg">
   <div class="r-wrap r-hero__grid">
     <div class="r-hero__copy">
       <p class="r-hero__kicker">Подмосковье · {STAT_DISTANCE} от Москвы · 7–15 лет</p>
@@ -34,17 +40,39 @@ import { STAT_DISTANCE } from '../../data/contacts';
       </div>
     </div>
 
-    <figure class="r-figure r-hero__figure">
-      <img
-        src="/images/gallery/territory-alley.avif"
-        alt="Сосновая аллея на территории лагеря"
-        width="960"
-        height="1200"
-        fetchpriority="high"
-        decoding="async"
-        class="r-photo"
-      />
-    </figure>
+    <div class="r-hero__visual">
+      <figure class="r-figure r-hero__figure">
+        <img
+          src="/images/gallery/territory-alley.avif"
+          alt="Сосновая аллея на территории лагеря"
+          width="960"
+          height="1200"
+          fetchpriority="high"
+          decoding="async"
+          class="r-photo"
+        />
+      </figure>
+
+      {/* Панель ближайшего заезда: светлое стекло поверх кадра. Все значения —
+          из shifts.ts, декоративных цифр в панели нет. */}
+      <div class="r-panel r-panel--ticks r-hero__panel">
+        <p class="r-mono r-mono--data">Ближайший заезд</p>
+        <div class="r-hero__panel-grid">
+          <div class="r-metric">
+            <span class="r-metric__label">Даты</span>
+            <span class="r-metric__value">{autumnRange}</span>
+          </div>
+          <div class="r-metric">
+            <span class="r-metric__label">Длительность</span>
+            <span class="r-metric__value">{AUTUMN_2026.days} дней</span>
+          </div>
+          <div class="r-metric">
+            <span class="r-metric__label">В группе</span>
+            <span class="r-metric__value">до 8</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="r-wrap r-hero__foot">
@@ -96,7 +124,21 @@ import { STAT_DISTANCE } from '../../data/contacts';
     gap: 14px 26px;
   }
 
+  .r-hero__visual { position: relative; }
   .r-hero__figure { aspect-ratio: 4 / 5; }
+
+  .r-hero__panel {
+    margin-top: -56px;
+    margin-inline: 16px 0;
+    position: relative;
+    z-index: 1;
+  }
+  .r-hero__panel .r-mono { margin: 0 0 14px; }
+  .r-hero__panel-grid {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    gap: 18px 26px;
+  }
 
   /* Одна строка вместо полосы счётчиков: «5.0 / 1200+ / 24/7» — язык
      агрегаторов, а не бренда. */
@@ -120,6 +162,9 @@ import { STAT_DISTANCE } from '../../data/contacts';
       gap: 72px;
     }
     /* Фотография опущена относительно текста — разворот, а не две ровные колонки */
-    .r-hero__figure { margin-top: 40px; }
+    .r-hero__visual { margin-top: 40px; }
+    /* Панель выходит за левый край кадра — слой интерфейса поверх фотографии,
+       а не подпись под ней */
+    .r-hero__panel { margin-left: -48px; margin-right: 32px; }
   }
 </style>
