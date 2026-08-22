@@ -841,6 +841,71 @@ def _hq_set_slot(did, slot, patch):
 # голосом. Голосовое транскрибируем тут же (Whisper), чтобы в Штабе был текст,
 # а не «ответила голосовым». Зарегистрирован ДО общих хендлеров текста/голоса.
 
+async def classify_reaction(task_title, answer, artifact=None):
+    """Что это за ответ на задачу: сделано, взято, не могу, не по делу.
+
+    Разделение нужно потому, что «сделаю позже» и «сделано» — разные вещи, а
+    закрывался раньше и тот и другой. Ответы короткие, модель дешёвая.
+    Если классификатор недоступен — задача НЕ закрывается: молчаливое закрытие
+    дороже лишнего вопроса.
+    """
+    text = (answer or "").strip()
+    if not text:
+        return {"reaction": "unclear", "note": "пустой ответ"}
+    need = artifact or "конкретное подтверждение: что именно сделано, с деталями"
+    res = await ask_model(
+        f"Задача сотруднику: {task_title}\n"
+        f"Чем задача считается подтверждённой: {need}\n"
+        f"Ответ сотрудника: {text}\n\n"
+        'Верни JSON: {"reaction": "done|claimed|taken|blocked|unclear", "note": "одной строкой почему", "due": "YYYY-MM-DD HH:MM или null"}.\n'
+        "done — задача выполнена И в ответе есть подтверждение по существу "
+        "(содержательный отчёт о разговоре, что именно отправлено и куда, результат).\n"
+        "claimed — говорит, что сделал, но подтверждения нет: «Отправлено», «Сделала», «Готово» "
+        "без единой детали. Это НЕ done.\n"
+        "taken — обещает сделать позже («в конце смены», «завтра займусь», «после обеда»).\n"
+        "blocked — не может выполнить и называет причину.\n"
+        "unclear — ответ не про эту задачу. Пример: на просьбу собрать фото питания за ВЕСЬ "
+        "период пришла подпись «Обед 20.08».\n"
+        "due — ТОЧНЫЕ дата и время из ответа, если названы («завтра к 12» + сегодня "
+        f"{datetime.date.today().isoformat()} → посчитай дату). Расплывчатое «в конце смены», "
+        "«на днях», «скоро» — это НЕ срок, верни null. Не выдумывай.",
+        system="Ты разбираешь отчёты сотрудников детского лагеря. Отвечай только JSON.")
+    if not isinstance(res, dict) or res.get("reaction") not in ("done", "claimed", "taken", "blocked", "unclear"):
+        return {"reaction": "unclear", "note": "классификатор недоступен"}
+    res["due"] = sane_due(res.get("due"))
+    return res
+
+
+def sane_due(raw):
+    """Дата из ответа модели, если она вообще похожа на правду.
+
+    Модель считает относительные сроки плохо: на «в понедельник пришлют» она
+    вернула 2023-10-23, хотя текущую дату получала в промпте. Такая дата тихо
+    отправляет задачу в прошлое (значит «просрочено») или в никуда. Проверка
+    дешёвая и надёжная: срок в прошлом или дальше года — не срок.
+    """
+    if not raw or not isinstance(raw, str):
+        return None
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?", raw.strip())
+    if not m:
+        return None
+    try:
+        d = datetime.date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    except ValueError:
+        return None
+    today = datetime.datetime.now(MSK).date()
+    if d < today or d > today + datetime.timedelta(days=365):
+        print(f"[classify] срок {raw} вне разумного окна — отброшен", file=sys.stderr)
+        return None
+    return f"{d.isoformat()} {m.group(4) or '23'}:{m.group(5) or '59'}"
+
+
+def _hq_task_artifact(did):
+    """Чем задача считается подтверждённой — из payload.artifact."""
+    rows = q("SELECT payload->>'artifact' FROM decision_log WHERE id=%s", (did,))
+    return rows[0][0] if rows and rows[0][0] else None
+
+
 def _hq_task_by_msg(mid):
     rows = q("""SELECT id, title FROM decision_log
                 WHERE kind='staff_task' AND status IN ('proposed','edited')
@@ -863,11 +928,58 @@ async def hq_task_report(ev):
             text = (await transcribe(path)) or ""
         except Exception as e:
             text = f"(голосовое, расшифровка не удалась: {e})"
-    q("""UPDATE decision_log SET status='executed', executed_at=now(),
-           feedback = COALESCE(feedback,'') || %s,
-           execution = COALESCE(execution,'{}'::jsonb) || jsonb_build_object('report', %s::text, 'reported_at', now())
-         WHERE id=%s""", (f"\n[отчёт Дарьи] {text}", text, did))
-    await ev.reply("✅ Отчёт принят, задача закрыта. Спасибо!")
+    # Реакция != выполнение. Раньше задачу закрывал ЛЮБОЙ reply: «В конце смены
+    # сделаем» и «Обед 20.08» (подпись к одному фото в ответ на просьбу собрать
+    # питание за весь период договора) уходили в executed. Владелец 21.08.2026:
+    # «закрыто, но не сделано — верни в работу». Теперь закрывает только done.
+    artifact = _hq_task_artifact(did)
+    react = await classify_reaction(title, text, artifact)
+    kind_r = (react or {}).get("reaction", "unclear")
+    note = (react or {}).get("note") or ""
+    due = (react or {}).get("due")
+
+    # Отложенное без точного срока не считается планом: «в конце смены» и «на
+    # днях» — это не дата. Дожимаем вопросом, пока не назовут число и время
+    # (владелец 21.08.2026: «добиваться от исполнителя чёткой даты и времени»).
+    if kind_r == "taken" and not due:
+        q("""UPDATE decision_log SET
+               feedback = COALESCE(feedback,'') || %s,
+               execution = COALESCE(execution,'{}'::jsonb) || jsonb_build_object(
+                 'reaction','taken','reaction_note',%s::text,
+                 'prev_report',%s::text,'reacted_at',now()) - 'reaction_due'
+             WHERE id=%s""",
+          (f"\n[ответ Дарьи, срок не назван] {text}", note or "срок не назван", text, did))
+        await ev.reply(
+            "📝 Записала как «взято в работу». Только срок не назван — "
+            "напиши, пожалуйста, точные дату и время, к которым сделаешь "
+            "(например «22.08 к 14:00»). Пока срока нет, задача висит без плана.")
+        raise events.StopPropagation
+
+    if kind_r == "done":
+        q("""UPDATE decision_log SET status='executed', executed_at=now(),
+               feedback = COALESCE(feedback,'') || %s,
+               execution = COALESCE(execution,'{}'::jsonb) || jsonb_build_object(
+                 'report', %s::text, 'reported_at', now(), 'reaction', 'done')
+             WHERE id=%s""", (f"\n[отчёт Дарьи] {text}", text, did))
+        await ev.reply("✅ Отчёт принят, задача закрыта. Спасибо!")
+    else:
+        q("""UPDATE decision_log SET
+               feedback = COALESCE(feedback,'') || %s,
+               execution = COALESCE(execution,'{}'::jsonb) || jsonb_build_object(
+                 'reaction', %s::text, 'reaction_note', %s::text,
+                 'reaction_due', %s::text, 'prev_report', %s::text, 'reacted_at', now())
+             WHERE id=%s""",
+          (f"\n[ответ Дарьи, {kind_r}] {text}", kind_r, note, due, text, did))
+        need = artifact or "что именно сделано, с деталями"
+        replies = {
+            "taken": "📝 Принято как «взято в работу» — задача остаётся открытой до отчёта о выполнении.",
+            "claimed": f"📌 Записала. Чтобы закрыть задачу, нужно подтверждение — {need}. "
+                       "Пришли его сюда ответом на это сообщение.",
+            "blocked": "⚠️ Записала как «не могу выполнить» — задача остаётся открытой.",
+            "unclear": "❓ Это не похоже на отчёт по задаче — оставляю её открытой. Напиши, что именно сделано.",
+        }
+        tail = f" Срок: {due}." if due else ""
+        await ev.reply(replies.get(kind_r, replies["unclear"]) + tail)
     raise events.StopPropagation
 
 
