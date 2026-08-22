@@ -23,7 +23,10 @@ export async function getOrCreateCollectingDraft(authorTelegramId: number, shift
     `INSERT INTO draft_post (shift_id, author_telegram_id, status) VALUES ($1, $2, 'collecting') RETURNING id, shift_id, author_telegram_id, status, text, reviewer_chat_id, reviewer_message_id`,
     [shiftId, authorTelegramId],
   );
-  return created![0];
+  if (!created?.[0]) {
+    throw new Error('Не удалось создать draft_post — нет соединения с БД');
+  }
+  return created[0];
 }
 
 export async function getDraft(id: number): Promise<DraftPost | null> {
