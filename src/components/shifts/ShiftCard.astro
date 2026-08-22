@@ -208,9 +208,11 @@ const filledSegments = Math.round((pct / 100) * SEGMENTS);
     <div class="flex items-baseline justify-between gap-2">
       <p class="text-[24px] font-extrabold tracking-[-0.02em] leading-none text-body" data-dynamic-price={shift.id}>{ssrPriceFmt}</p>
       {priceGrowsToday && (
-        <p class="text-[11px] font-semibold text-primary flex items-center gap-1 whitespace-nowrap shrink-0">
-          <i class="bi bi-graph-up-arrow text-[10px]" aria-hidden="true"></i>
-          Завтра +{priceGrowsDiff.toLocaleString('ru-RU')} ₽
+        /* Премиум-деталь: было ярко-оранжевым с иконкой роста — читалось как
+           дискаунтер-скидка. Информация настоящая (реальный рост из dynamicPrices),
+           но подача притушена: приглушённый цвет, табличные цифры, без иконки. */
+        <p class="text-[11px] font-medium text-body-faint tabular-nums whitespace-nowrap shrink-0">
+          завтра +{priceGrowsDiff.toLocaleString('ru-RU')} ₽
         </p>
       )}
     </div>
@@ -233,11 +235,9 @@ const filledSegments = Math.round((pct / 100) * SEGMENTS);
     </div>
   )}
 
-  <!-- Смотрят сейчас -->
-  <p class="mt-3 flex items-center gap-1.5 text-[11px] text-body-faint" data-watchers={shift.id}>
-    <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-    <span data-watchers-count></span>
-  </p>
+  {/* Счётчик «N смотрят прямо сейчас» убран 23.08.2026: число было не настоящим
+      (base + random(-1..1), обновлялось таймером) — фиктивная социальная активность
+      противоречит правилу проекта «факты, не гипотезы». Решение владельца. */}
 
   <!-- CTA: полная ширина снизу -->
   {isSoldOut ? (
@@ -345,37 +345,6 @@ const filledSegments = Math.round((pct / 100) * SEGMENTS);
 
   document.addEventListener('astro:page-load', initShiftCards);
   if (document.readyState !== 'loading') initShiftCards();
-
-  // ── Счётчик «смотрят сейчас» ──────────────────────────────────────────────
-  function initWatchers() {
-    // Базовые числа по смене (чтобы у каждой были разные — привязываем к id)
-    const BASE: Record<string, number> = {
-      'shift-3': 3, 'shift-4': 3, 'shift-1': 2, 'shift-2': 2,
-      'shift-2-1': 2, 'shift-2-2': 2,
-    };
-    document.querySelectorAll<HTMLElement>('[data-watchers]').forEach(el => {
-      const id = el.dataset.watchers!;
-      const base = BASE[id] ?? 5;
-      const countEl = el.querySelector<HTMLElement>('[data-watchers-count]');
-      if (!countEl) return;
-      const watcherCount = countEl;
-
-      function randomN() {
-        return base + Math.floor(Math.random() * 3) - 1;
-      }
-
-      function update() {
-        const n = Math.max(2, randomN());
-        watcherCount.textContent = `${n} смотрят прямо сейчас`;
-      }
-
-      update();
-      setInterval(update, 8000 + Math.random() * 4000);
-    });
-  }
-
-  document.addEventListener('astro:page-load', initWatchers);
-  if (document.readyState !== 'loading') initWatchers();
 
   // Обновляем счётчик дней до Смены 1 динамически
   function updateShift1Days() {
