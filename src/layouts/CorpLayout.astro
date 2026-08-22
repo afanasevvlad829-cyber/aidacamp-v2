@@ -620,31 +620,33 @@ footer { border-top: 1px solid var(--bdr); background: var(--bg); padding: 28px 
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
+        const matrixCanvas = canvas;
+        const matrixContext = ctx;
 
         let cols: number[] = [];
         const CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ01アイウエオabcdefABCDEF{}<>/|\\'.split('');
         const FS = 14;
 
         function resize() {
-          canvas.width = window.innerWidth;
-          canvas.height = window.innerHeight;
-          const numCols = Math.floor(canvas.width / FS);
-          cols = Array.from({ length: numCols }, () => Math.random() * canvas.height / FS | 0);
+          matrixCanvas.width = window.innerWidth;
+          matrixCanvas.height = window.innerHeight;
+          const numCols = Math.floor(matrixCanvas.width / FS);
+          cols = Array.from({ length: numCols }, () => Math.random() * matrixCanvas.height / FS | 0);
         }
         resize();
         window.addEventListener('resize', resize);
 
         function draw() {
           const theme = document.documentElement.getAttribute('data-theme');
-          ctx.fillStyle = theme === 'light' ? 'rgba(244,245,248,0.15)' : 'rgba(12,14,17,0.15)';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.fillStyle = '#FF5A1F';
-          ctx.font = `${FS}px 'SF Mono', monospace`;
+          matrixContext.fillStyle = theme === 'light' ? 'rgba(244,245,248,0.15)' : 'rgba(12,14,17,0.15)';
+          matrixContext.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+          matrixContext.fillStyle = '#FF5A1F';
+          matrixContext.font = `${FS}px 'SF Mono', monospace`;
           cols.forEach((y, i) => {
             const ch = CHARS[Math.random() * CHARS.length | 0];
             const x = i * FS;
-            ctx.fillText(ch, x, y * FS);
-            if (y * FS > canvas.height && Math.random() > 0.975) cols[i] = 0;
+            matrixContext.fillText(ch, x, y * FS);
+            if (y * FS > matrixCanvas.height && Math.random() > 0.975) cols[i] = 0;
             else cols[i] = y + 1;
           });
         }

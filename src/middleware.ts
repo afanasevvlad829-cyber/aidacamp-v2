@@ -43,7 +43,32 @@ const TILDA_REDIRECTS: Record<string, string> = {
   // Дубль статьи объединён (2026-07-13): -rebenka версия удалена, контент слит в каноническую
   '/stati/lager-dlya-giperaktivnogo-rebenka': '/stati/lager-dlya-giperaktivnogo/',
   '/stati/lager-dlya-giperaktivnogo-rebenka/': '/stati/lager-dlya-giperaktivnogo/',
+  // Смены завершились — [id].astro больше не генерирует страницы для них (404),
+  // редирект на живой пост-отчёт о смене вместо мёртвой ссылки
+  '/shifts/shift-1': '/kak-proshla-smena-1/',
+  '/shifts/shift-1/': '/kak-proshla-smena-1/',
+  '/shifts/shift-2': '/kak-proshla-smena-2/',
+  '/shifts/shift-2/': '/kak-proshla-smena-2/',
+  // Смена 2.1/2.2 — половины той же Смены 2, отдельного пост-отчёта нет
+  '/shifts/shift-2-1': '/kak-proshla-smena-2/',
+  '/shifts/shift-2-1/': '/kak-proshla-smena-2/',
+  '/shifts/shift-2-2': '/kak-proshla-smena-2/',
+  '/shifts/shift-2-2/': '/kak-proshla-smena-2/',
 };
+
+// nginx (сзади прокси) шлёт X-Forwarded-Proto: https корректно, но
+// @astrojs/node standalone строит url.protocol по внутреннему (http)
+// TCP-соединению до Node, не по этому заголовку — редирект на абсолютный
+// URL через `new URL(target, url)` эмитит http://, добавляя лишний хоп
+// апгрейда до https. Инцидент: /stati/reiting-detskih-lagerey-podmoskove →
+// http://.../reiting-detskih-lagerej-podmoskove/ → https://... (2 редиректа
+// вместо 1, Labrika: «Множественные редиректы»).
+function redirectTo(url: URL, request: Request, target: string, status = 301): Response {
+  const proto = request.headers.get('x-forwarded-proto') ?? url.protocol.replace(':', '');
+  const dest = new URL(target, url);
+  dest.protocol = `${proto}:`;
+  return Response.redirect(dest, status);
+}
 
 // ─── Rate limiter state ─────────────────────────────────────────────────────
 
@@ -161,17 +186,17 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
 
   // /blog/* → /stati/* (301)
   if (path === '/blog/' || path === '/blog') {
-    return Response.redirect(new URL('/stati/', url), 301);
+    return redirectTo(url, request, '/stati/');
   }
   if (path.startsWith('/blog/')) {
-    return Response.redirect(new URL(path.replace('/blog/', '/stati/'), url), 301);
+    return redirectTo(url, request, path.replace('/blog/', '/stati/'));
   }
 
   // Tilda legacy URLs + duplicate reiting slug (301)
   const cleanPath = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
   const target = TILDA_REDIRECTS[path] ?? TILDA_REDIRECTS[cleanPath];
   if (target) {
-    return Response.redirect(new URL(target, url), 301);
+    return redirectTo(url, request, target);
   }
 
   if (url.pathname === '/api/ask') {
@@ -204,6 +229,5 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   response.headers.set('X-Frame-Options', 'SAMEORIGIN');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=()');
-  response.headers.set('X-XSS-Protection', '1; mode=block');
   return response;
 };

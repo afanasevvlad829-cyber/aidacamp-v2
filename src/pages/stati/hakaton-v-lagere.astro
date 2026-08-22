@@ -8,6 +8,7 @@ import RelatedPages from '../../components/RelatedPages.astro';
 import ArticleHero from '../../components/ArticleHero.astro';
 import ArticleBottomCta from '../../components/ArticleBottomCta.astro';
 import BlogCTA from '../../components/BlogCTA.astro';
+import RelatedArticlesAuto from '../../components/RelatedArticlesAuto.astro';
 
 const relatedPages = [
   { title: "Лагерь для подростков", url: "/lager-dlya-podrostkov/", icon: "people", description: "Программирование, проекты, команда" },
@@ -141,32 +142,34 @@ const relatedPages = [
           const caption = document.getElementById('hlCaption');
           const counter = document.getElementById('hlCounter');
           if (!modal || !img) return;
+          const lightbox = modal;
+          const lightboxImage = img;
           let current = 0;
           function show(i: number) {
             current = ((i % photos.length) + photos.length) % photos.length;
-            img!.src = photos[current].src;
-            img!.alt = photos[current].alt;
+            lightboxImage.src = photos[current].src;
+            lightboxImage.alt = photos[current].alt;
             if (caption) caption.textContent = photos[current].alt;
             if (counter) counter.textContent = `${current + 1} / ${photos.length}`;
           }
           document.querySelectorAll('[data-hakaton-open]').forEach((el) => {
             el.addEventListener('click', () => {
               show(Number((el as HTMLElement).dataset.hakatonIndex));
-              modal.showModal();
+              lightbox.showModal();
             });
           });
-          function close() { img!.src = ''; modal.close(); }
-          modal.querySelector('[data-hl-close]')?.addEventListener('click', close);
-          modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
-          modal.querySelector('[data-hl-prev]')?.addEventListener('click', () => show(current - 1));
-          modal.querySelector('[data-hl-next]')?.addEventListener('click', () => show(current + 1));
-          modal.addEventListener('keydown', (e) => {
+          function close() { lightboxImage.src = ''; lightbox.close(); }
+          lightbox.querySelector('[data-hl-close]')?.addEventListener('click', close);
+          lightbox.addEventListener('click', (e) => { if (e.target === lightbox) close(); });
+          lightbox.querySelector('[data-hl-prev]')?.addEventListener('click', () => show(current - 1));
+          lightbox.querySelector('[data-hl-next]')?.addEventListener('click', () => show(current + 1));
+          lightbox.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft') show(current - 1);
             if (e.key === 'ArrowRight') show(current + 1);
           });
           let tx = 0;
-          modal.addEventListener('touchstart', (e) => { tx = e.touches[0].clientX; }, { passive: true });
-          modal.addEventListener('touchend', (e) => {
+          lightbox.addEventListener('touchstart', (e) => { tx = e.touches[0].clientX; }, { passive: true });
+          lightbox.addEventListener('touchend', (e) => {
             const d = tx - e.changedTouches[0].clientX;
             if (Math.abs(d) > 50) show(d > 0 ? current + 1 : current - 1);
           }, { passive: true });
@@ -412,6 +415,8 @@ const relatedPages = [
             <div class="w-full rounded-2xl overflow-hidden bg-black shadow-[0_4px_16px_rgba(15,23,42,0.08)]" style="aspect-ratio:16/9">
               <iframe
                 src="https://kinescope.io/embed/uM8tRMTwHpVhsdSZdLDNZ5?controls=1"
+                title="Проект «Бульбастан» — защита на хакатоне"
+                loading="lazy"
                 allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer; clipboard-write"
                 allowfullscreen
                 class="w-full h-full block border-0"></iframe>
@@ -423,6 +428,8 @@ const relatedPages = [
             <div class="w-full rounded-2xl overflow-hidden bg-black shadow-[0_4px_16px_rgba(15,23,42,0.08)]" style="aspect-ratio:16/9">
               <iframe
                 src="https://kinescope.io/embed/fkbK2kZXP1hwX7MgCY562X?controls=1"
+                title="Проект «Мистер-Лобстер» — защита на хакатоне"
+                loading="lazy"
                 allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer; clipboard-write"
                 allowfullscreen
                 class="w-full h-full block border-0"></iframe>
@@ -434,6 +441,8 @@ const relatedPages = [
             <div class="w-full rounded-2xl overflow-hidden bg-black shadow-[0_4px_16px_rgba(15,23,42,0.08)]" style="aspect-ratio:16/9">
               <iframe
                 src="https://kinescope.io/embed/8EB4asRnZXssGtAxySBc5D?controls=1"
+                title="Проект «Инвиктус» — победитель хакатона"
+                loading="lazy"
                 allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer; clipboard-write"
                 allowfullscreen
                 class="w-full h-full block border-0"></iframe>
@@ -445,6 +454,8 @@ const relatedPages = [
             <div class="w-full rounded-2xl overflow-hidden bg-black shadow-[0_4px_16px_rgba(15,23,42,0.08)]" style="aspect-ratio:16/9">
               <iframe
                 src="https://kinescope.io/embed/hedTGgsszcJ7LSEvHabR9x?controls=1"
+                title="Защита проектов перед инвесторами"
+                loading="lazy"
                 allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer; clipboard-write"
                 allowfullscreen
                 class="w-full h-full block border-0"></iframe>
@@ -480,5 +491,6 @@ const relatedPages = [
   />
 
   <RelatedPages title="Похожие статьи" pages={relatedPages} />
+  <RelatedArticlesAuto />
   <Footer />
 </Base>

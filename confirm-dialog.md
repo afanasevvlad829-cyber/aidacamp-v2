@@ -1,0 +1,1767 @@
+- generic [ref=f1e2]:
+  - generic [ref=f1e5539]:
+    - generic [ref=f1e5541]:
+      - generic [ref=f1e5543]:
+        - button [ref=f1e5544] [cursor=pointer]:
+          - generic [ref=f1e5545]: close
+        - button [ref=f1e5547] [cursor=pointer]:
+          - generic [ref=f1e5548]: fullscreen
+        - button "ondemand_video" [ref=f1e5552] [cursor=pointer]
+        - button [ref=f1e5556] [cursor=pointer]:
+          - generic [ref=f1e5557]: help_outline
+      - heading [level=1] [ref=f1e5559]:
+        - text: Страница
+        - link /lager-v-podmoskove/ [ref=f1e5560] [cursor=pointer]:
+          - /url: https://aidacamp.ru/lager-v-podmoskove/
+    - generic [ref=f1e5563]:
+      - generic [ref=f1e5565]:
+        - generic [ref=f1e5566]:
+          - generic [ref=f1e5567]:
+            - generic [ref=f1e5568]:
+              - 'progressbar "Процент оптимизации: 38%" [ref=f1e5570]':
+                - generic [ref=f1e5574]: "38"
+              - generic [ref=f1e5575]: В редакторе
+              - button "Проверить" [ref=f1e5576] [cursor=pointer]
+            - generic [ref=f1e5579]:
+              - 'progressbar "Процент оптимизации: 38%" [ref=f1e5581]':
+                - generic [ref=f1e5585]: "38"
+              - generic [ref=f1e5586]: На сайте
+              - button "Проверить" [ref=f1e5587] [cursor=pointer]
+          - generic [ref=f1e5589]:
+            - button "Получить контент со страницы" [ref=f1e5591] [cursor=pointer]
+            - button "Показать разницу между текстом на сайте и в редакторе" [ref=f1e5595] [cursor=pointer]:
+              - generic [ref=f1e5596]: compare
+        - generic [ref=f1e5598]:
+          - generic [ref=f1e5599]: "Разделы оптимизации:"
+          - button "Рекомендации по тексту 72" [ref=f1e5600] [cursor=pointer]:
+            - generic [ref=f1e5601]:
+              - text: Рекомендации по тексту
+              - generic [ref=f1e5602]: "72"
+          - button "Скрытая семантика 98" [ref=f1e5603] [cursor=pointer]:
+            - generic [ref=f1e5604]:
+              - text: Скрытая семантика
+              - generic [ref=f1e5605]: "98"
+          - button [ref=f1e5606] [cursor=pointer]
+          - button "Ключевые слова 72" [ref=f1e5608] [cursor=pointer]:
+            - generic [ref=f1e5609]:
+              - text: Ключевые слова
+              - generic [ref=f1e5610]: "72"
+          - button [ref=f1e5611] [cursor=pointer]
+          - button [ref=f1e5613] [cursor=pointer]
+          - button [ref=f1e5615] [cursor=pointer]
+          - button [ref=f1e5617] [cursor=pointer]
+          - button [ref=f1e5619] [cursor=pointer]
+          - button [ref=f1e5621] [cursor=pointer]
+          - button [ref=f1e5623] [cursor=pointer]
+          - button [ref=f1e5625] [cursor=pointer]
+      - generic [ref=f1e5628]:
+        - generic [ref=f1e8257]:
+          - table [ref=f1e8258]:
+            - row [ref=f1e8259]:
+              - cell "URL:" [ref=f1e8260]
+              - cell [ref=f1e8261]:
+                - link "https://aidacamp.ru/lager-v-podmoskove/" [ref=f1e8265] [cursor=pointer]:
+                  - /url: https://aidacamp.ru/lager-v-podmoskove/
+            - row [ref=f1e8266]:
+              - cell "Тип страницы:" [ref=f1e8267]
+              - cell "Информационный ?" [ref=f1e8268]:
+                - text: Информационный
+                - generic [ref=f1e8269]: "?"
+            - row [ref=f1e8272]:
+              - cell "Глубина страницы:" [ref=f1e8273]
+              - cell "2" [ref=f1e8274]
+          - generic [ref=f1e8275]:
+            - generic [ref=f1e10371]:
+              - button [ref=f1e10372] [cursor=pointer]:
+                - generic [ref=f1e10373]:
+                  - generic [ref=f1e10374]: redo
+                  - text: Пересадить
+              - button [ref=f1e10375] [cursor=pointer]:
+                - generic [ref=f1e10376]:
+                  - generic [ref=f1e10377]: delete
+                  - text: Удалить
+            - button [ref=f1e8277] [cursor=pointer]:
+              - generic [ref=f1e8278]:
+                - generic [ref=f1e8279]: auto_fix_high
+                - text: Подобрать ключевые слова
+            - button [ref=f1e8281] [cursor=pointer]:
+              - generic [ref=f1e8282]:
+                - generic [ref=f1e8283]: add
+                - text: Добавить ключевые слова
+          - table [ref=f1e8284]:
+            - rowgroup [ref=f1e8285]:
+              - row [ref=f1e8286]:
+                - columnheader "Ключевое слово" [ref=f1e8287]
+                - columnheader "Интент фразы" [ref=f1e8288]
+                - columnheader [ref=f1e8289]:
+                  - generic [ref=f1e8290]: Частотностьпо Яндексу
+                - columnheader [ref=f1e8291]:
+                  - generic [ref=f1e8292]: "\"Частотность\"по Яндексу"
+                - columnheader "Глубина по ТОП10 ?" [ref=f1e8293]:
+                  - generic [ref=f1e8294]: Глубинапо ТОП10
+                  - generic [ref=f1e8295]: "?"
+                - columnheader "Позиция" [ref=f1e8298]
+                - columnheader [ref=f1e8299]
+            - rowgroup [ref=f1e8300]:
+              - row [ref=f1e8301]:
+                - cell "лагерь в подмосковье" [ref=f1e8302]:
+                  - generic [ref=f1e8305]:
+                    - checkbox "лагерь в подмосковье" [checked] [ref=f1e8307]
+                    - generic [ref=f1e8308]: лагерь в подмосковье
+                - cell "Коммерческий" [ref=f1e8309]
+                - cell "31979" [ref=f1e8311]
+                - cell "2058" [ref=f1e8313]
+                - cell "1" [ref=f1e8315]
+                - cell [ref=f1e8317]:
+                  - generic [ref=f1e8318]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8322] [cursor=pointer]:
+                      - generic [ref=f1e8323]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь в подмосковье" [ref=f1e8326] [cursor=pointer]':
+                      - generic [ref=f1e8327]: list_alt
+                - cell [ref=f1e8329]:
+                  - button "Удалить" [ref=f1e8330] [cursor=pointer]:
+                    - generic [ref=f1e8331]: delete_forever
+              - row [ref=f1e8333]:
+                - cell "лагерь в подмосковье 2026" [ref=f1e8334]:
+                  - generic [ref=f1e8337]:
+                    - checkbox "лагерь в подмосковье 2026" [checked] [ref=f1e8339]
+                    - generic [ref=f1e8340]: лагерь в подмосковье 2026
+                - cell "Коммерческий" [ref=f1e8341]
+                - cell "8161" [ref=f1e8343]
+                - cell "70" [ref=f1e8345]
+                - cell "3+" [ref=f1e8347]
+                - cell [ref=f1e8349]:
+                  - generic [ref=f1e8350]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8354] [cursor=pointer]:
+                      - generic [ref=f1e8355]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь в подмосковье 2026" [ref=f1e8358] [cursor=pointer]':
+                      - generic [ref=f1e8359]: list_alt
+                - cell [ref=f1e8361]:
+                  - button "Удалить" [ref=f1e8362] [cursor=pointer]:
+                    - generic [ref=f1e8363]: delete_forever
+              - row [ref=f1e8365]:
+                - cell "лагерь подмосковье 2026" [ref=f1e8366]:
+                  - generic [ref=f1e8369]:
+                    - checkbox "лагерь подмосковье 2026" [checked] [ref=f1e8371]
+                    - generic [ref=f1e8372]: лагерь подмосковье 2026
+                - cell "Коммерческий" [ref=f1e8373]
+                - cell "7852" [ref=f1e8375]
+                - cell "375" [ref=f1e8377]
+                - cell "2" [ref=f1e8379]
+                - cell [ref=f1e8381]:
+                  - generic [ref=f1e8382]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8386] [cursor=pointer]:
+                      - generic [ref=f1e8387]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь подмосковье 2026" [ref=f1e8390] [cursor=pointer]':
+                      - generic [ref=f1e8391]: list_alt
+                - cell [ref=f1e8393]:
+                  - button "Удалить" [ref=f1e8394] [cursor=pointer]:
+                    - generic [ref=f1e8395]: delete_forever
+              - row [ref=f1e8397]:
+                - cell "лагерь в подмосковье на лето" [ref=f1e8398]:
+                  - generic [ref=f1e8401]:
+                    - checkbox "лагерь в подмосковье на лето" [checked] [ref=f1e8403]
+                    - generic [ref=f1e8404]: лагерь в подмосковье на лето
+                - cell "Коммерческий" [ref=f1e8405]
+                - cell "7372" [ref=f1e8407]
+                - cell "343" [ref=f1e8409]
+                - cell "3+" [ref=f1e8411]
+                - cell [ref=f1e8413]:
+                  - generic [ref=f1e8414]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8418] [cursor=pointer]:
+                      - generic [ref=f1e8419]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь в подмосковье на лето" [ref=f1e8422] [cursor=pointer]':
+                      - generic [ref=f1e8423]: list_alt
+                - cell [ref=f1e8425]:
+                  - button "Удалить" [ref=f1e8426] [cursor=pointer]:
+                    - generic [ref=f1e8427]: delete_forever
+              - row [ref=f1e8429]:
+                - cell "лагеря в подмосковье на лето 2026" [ref=f1e8430]:
+                  - generic [ref=f1e8433]:
+                    - checkbox "лагеря в подмосковье на лето 2026" [checked] [ref=f1e8435]
+                    - generic [ref=f1e8436]: лагеря в подмосковье на лето 2026
+                - cell "Коммерческий" [ref=f1e8437]
+                - cell "6078" [ref=f1e8439]
+                - cell "745" [ref=f1e8441]
+                - cell "2" [ref=f1e8443]
+                - cell [ref=f1e8445]:
+                  - generic [ref=f1e8446]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8450] [cursor=pointer]:
+                      - generic [ref=f1e8451]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагеря в подмосковье на лето 2026" [ref=f1e8454] [cursor=pointer]':
+                      - generic [ref=f1e8455]: list_alt
+                - cell [ref=f1e8457]:
+                  - button "Удалить" [ref=f1e8458] [cursor=pointer]:
+                    - generic [ref=f1e8459]: delete_forever
+              - row [ref=f1e8461]:
+                - cell "детский лагерь в подмосковье" [ref=f1e8462]:
+                  - generic [ref=f1e8465]:
+                    - checkbox "детский лагерь в подмосковье" [checked] [ref=f1e8467]
+                    - generic [ref=f1e8468]: детский лагерь в подмосковье
+                - cell "Коммерческий" [ref=f1e8469]
+                - cell "5290" [ref=f1e8471]
+                - cell "1216" [ref=f1e8473]
+                - cell "1" [ref=f1e8475]
+                - cell [ref=f1e8477]:
+                  - generic [ref=f1e8478]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8482] [cursor=pointer]:
+                      - generic [ref=f1e8483]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: детский лагерь в подмосковье" [ref=f1e8486] [cursor=pointer]':
+                      - generic [ref=f1e8487]: list_alt
+                - cell [ref=f1e8489]:
+                  - button "Удалить" [ref=f1e8490] [cursor=pointer]:
+                    - generic [ref=f1e8491]: delete_forever
+              - row [ref=f1e8493]:
+                - cell "лагерь в подмосковье на лето 2026" [ref=f1e8494]:
+                  - generic [ref=f1e8497]:
+                    - checkbox "лагерь в подмосковье на лето 2026" [checked] [ref=f1e8499]
+                    - generic [ref=f1e8500]: лагерь в подмосковье на лето 2026
+                - cell "Смешанный" [ref=f1e8501]
+                - cell "5086" [ref=f1e8503]
+                - cell "483" [ref=f1e8505]
+                - cell "2" [ref=f1e8507]
+                - cell [ref=f1e8509]:
+                  - generic [ref=f1e8510]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8514] [cursor=pointer]:
+                      - generic [ref=f1e8515]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь в подмосковье на лето 2026" [ref=f1e8518] [cursor=pointer]':
+                      - generic [ref=f1e8519]: list_alt
+                - cell [ref=f1e8521]:
+                  - button "Удалить" [ref=f1e8522] [cursor=pointer]:
+                    - generic [ref=f1e8523]: delete_forever
+              - row [ref=f1e8525]:
+                - cell "детский лагерь в подмосковье 2026" [ref=f1e8526]:
+                  - generic [ref=f1e8529]:
+                    - checkbox "детский лагерь в подмосковье 2026" [checked] [ref=f1e8531]
+                    - generic [ref=f1e8532]: детский лагерь в подмосковье 2026
+                - cell "Коммерческий" [ref=f1e8533]
+                - cell "3754" [ref=f1e8535]
+                - cell "48" [ref=f1e8537]
+                - cell "2" [ref=f1e8539]
+                - cell [ref=f1e8541]:
+                  - generic [ref=f1e8542]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8546] [cursor=pointer]:
+                      - generic [ref=f1e8547]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: детский лагерь в подмосковье 2026" [ref=f1e8550] [cursor=pointer]':
+                      - generic [ref=f1e8551]: list_alt
+                - cell [ref=f1e8553]:
+                  - button "Удалить" [ref=f1e8554] [cursor=pointer]:
+                    - generic [ref=f1e8555]: delete_forever
+              - row [ref=f1e8557]:
+                - cell "детский лагерь подмосковье 2026" [ref=f1e8558]:
+                  - generic [ref=f1e8561]:
+                    - checkbox "детский лагерь подмосковье 2026" [checked] [ref=f1e8563]
+                    - generic [ref=f1e8564]: детский лагерь подмосковье 2026
+                - cell "Коммерческий" [ref=f1e8565]
+                - cell "3599" [ref=f1e8567]
+                - cell "127" [ref=f1e8569]
+                - cell "2" [ref=f1e8571]
+                - cell [ref=f1e8573]:
+                  - generic [ref=f1e8574]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8578] [cursor=pointer]:
+                      - generic [ref=f1e8579]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: детский лагерь подмосковье 2026" [ref=f1e8582] [cursor=pointer]':
+                      - generic [ref=f1e8583]: list_alt
+                - cell [ref=f1e8585]:
+                  - button "Удалить" [ref=f1e8586] [cursor=pointer]:
+                    - generic [ref=f1e8587]: delete_forever
+              - row [ref=f1e8589]:
+                - cell "детский лагерь в подмосковье на лето" [ref=f1e8590]:
+                  - generic [ref=f1e8593]:
+                    - checkbox "детский лагерь в подмосковье на лето" [checked] [ref=f1e8595]
+                    - generic [ref=f1e8596]: детский лагерь в подмосковье на лето
+                - cell "Коммерческий" [ref=f1e8597]
+                - cell "3582" [ref=f1e8599]
+                - cell "246" [ref=f1e8601]
+                - cell "2" [ref=f1e8603]
+                - cell [ref=f1e8605]:
+                  - generic [ref=f1e8606]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8610] [cursor=pointer]:
+                      - generic [ref=f1e8611]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: детский лагерь в подмосковье на лето" [ref=f1e8614] [cursor=pointer]':
+                      - generic [ref=f1e8615]: list_alt
+                - cell [ref=f1e8617]:
+                  - button "Удалить" [ref=f1e8618] [cursor=pointer]:
+                    - generic [ref=f1e8619]: delete_forever
+              - row [ref=f1e8621]:
+                - cell "детский лагерь подмосковье лето 2026" [ref=f1e8622]:
+                  - generic [ref=f1e8625]:
+                    - checkbox "детский лагерь подмосковье лето 2026" [checked] [ref=f1e8627]
+                    - generic [ref=f1e8628]: детский лагерь подмосковье лето 2026
+                - cell "Коммерческий" [ref=f1e8629]
+                - cell "3170" [ref=f1e8631]
+                - cell "103" [ref=f1e8633]
+                - cell "2" [ref=f1e8635]
+                - cell [ref=f1e8637]:
+                  - generic [ref=f1e8638]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8642] [cursor=pointer]:
+                      - generic [ref=f1e8643]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: детский лагерь подмосковье лето 2026" [ref=f1e8646] [cursor=pointer]':
+                      - generic [ref=f1e8647]: list_alt
+                - cell [ref=f1e8649]:
+                  - button "Удалить" [ref=f1e8650] [cursor=pointer]:
+                    - generic [ref=f1e8651]: delete_forever
+              - row [ref=f1e8653]:
+                - cell "летний лагерь в подмосковье" [ref=f1e8654]:
+                  - generic [ref=f1e8657]:
+                    - checkbox "летний лагерь в подмосковье" [checked] [ref=f1e8659]
+                    - generic [ref=f1e8660]: летний лагерь в подмосковье
+                - cell "Коммерческий" [ref=f1e8661]
+                - cell "2986" [ref=f1e8663]
+                - cell "411" [ref=f1e8665]
+                - cell "3+" [ref=f1e8667]
+                - cell [ref=f1e8669]:
+                  - generic [ref=f1e8670]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8674] [cursor=pointer]:
+                      - generic [ref=f1e8675]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: летний лагерь в подмосковье" [ref=f1e8678] [cursor=pointer]':
+                      - generic [ref=f1e8679]: list_alt
+                - cell [ref=f1e8681]:
+                  - button "Удалить" [ref=f1e8682] [cursor=pointer]:
+                    - generic [ref=f1e8683]: delete_forever
+              - row [ref=f1e8685]:
+                - cell "лагерь для детей в подмосковье" [ref=f1e8686]:
+                  - generic [ref=f1e8689]:
+                    - checkbox "лагерь для детей в подмосковье" [checked] [ref=f1e8691]
+                    - generic [ref=f1e8692]: лагерь для детей в подмосковье
+                - cell "Коммерческий" [ref=f1e8693]
+                - cell "2974" [ref=f1e8695]
+                - cell "306" [ref=f1e8697]
+                - cell "1" [ref=f1e8699]
+                - cell [ref=f1e8701]:
+                  - generic [ref=f1e8702]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8706] [cursor=pointer]:
+                      - generic [ref=f1e8707]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь для детей в подмосковье" [ref=f1e8710] [cursor=pointer]':
+                      - generic [ref=f1e8711]: list_alt
+                - cell [ref=f1e8713]:
+                  - button "Удалить" [ref=f1e8714] [cursor=pointer]:
+                    - generic [ref=f1e8715]: delete_forever
+              - row [ref=f1e8717]:
+                - cell "детский лагерь в подмосковье на лето 2026" [ref=f1e8718]:
+                  - generic [ref=f1e8721]:
+                    - checkbox "детский лагерь в подмосковье на лето 2026" [checked] [ref=f1e8723]
+                    - generic [ref=f1e8724]: детский лагерь в подмосковье на лето 2026
+                - cell "Коммерческий" [ref=f1e8725]
+                - cell "2900" [ref=f1e8727]
+                - cell "1743" [ref=f1e8729]
+                - cell "2" [ref=f1e8731]
+                - cell [ref=f1e8733]:
+                  - generic [ref=f1e8734]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8738] [cursor=pointer]:
+                      - generic [ref=f1e8739]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: детский лагерь в подмосковье на лето 2026" [ref=f1e8742] [cursor=pointer]':
+                      - generic [ref=f1e8743]: list_alt
+                - cell [ref=f1e8745]:
+                  - button "Удалить" [ref=f1e8746] [cursor=pointer]:
+                    - generic [ref=f1e8747]: delete_forever
+              - row [ref=f1e8749]:
+                - cell "детские лагеря в подмосковье на лето" [ref=f1e8750]:
+                  - generic [ref=f1e8753]:
+                    - checkbox "детские лагеря в подмосковье на лето" [checked] [ref=f1e8755]
+                    - generic [ref=f1e8756]: детские лагеря в подмосковье на лето
+                - cell "Смешанный" [ref=f1e8757]
+                - cell "2698" [ref=f1e8759]
+                - cell "241" [ref=f1e8761]
+                - cell "3+" [ref=f1e8763]
+                - cell [ref=f1e8765]:
+                  - generic [ref=f1e8766]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8770] [cursor=pointer]:
+                      - generic [ref=f1e8771]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: детские лагеря в подмосковье на лето" [ref=f1e8774] [cursor=pointer]':
+                      - generic [ref=f1e8775]: list_alt
+                - cell [ref=f1e8777]:
+                  - button "Удалить" [ref=f1e8778] [cursor=pointer]:
+                    - generic [ref=f1e8779]: delete_forever
+              - row [ref=f1e8781]:
+                - cell "лагеря подмосковья для подростков" [ref=f1e8782]:
+                  - generic [ref=f1e8785]:
+                    - checkbox "лагеря подмосковья для подростков" [checked] [ref=f1e8787]
+                    - generic [ref=f1e8788]: лагеря подмосковья для подростков
+                - cell "Коммерческий" [ref=f1e8789]
+                - cell "1624" [ref=f1e8791]
+                - cell "98" [ref=f1e8793]
+                - cell "3+" [ref=f1e8795]
+                - cell [ref=f1e8797]:
+                  - generic [ref=f1e8798]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8802] [cursor=pointer]:
+                      - generic [ref=f1e8803]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагеря подмосковья для подростков" [ref=f1e8806] [cursor=pointer]':
+                      - generic [ref=f1e8807]: list_alt
+                - cell [ref=f1e8809]:
+                  - button "Удалить" [ref=f1e8810] [cursor=pointer]:
+                    - generic [ref=f1e8811]: delete_forever
+              - row [ref=f1e8813]:
+                - cell "летний лагерь подмосковье 2026" [ref=f1e8814]:
+                  - generic [ref=f1e8817]:
+                    - checkbox "летний лагерь подмосковье 2026" [checked] [ref=f1e8819]
+                    - generic [ref=f1e8820]: летний лагерь подмосковье 2026
+                - cell "Коммерческий" [ref=f1e8821]
+                - cell "927" [ref=f1e8823]
+                - cell "69" [ref=f1e8825]
+                - cell "2" [ref=f1e8827]
+                - cell [ref=f1e8829]:
+                  - generic [ref=f1e8830]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8834] [cursor=pointer]:
+                      - generic [ref=f1e8835]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: летний лагерь подмосковье 2026" [ref=f1e8838] [cursor=pointer]':
+                      - generic [ref=f1e8839]: list_alt
+                - cell [ref=f1e8841]:
+                  - button "Удалить" [ref=f1e8842] [cursor=pointer]:
+                    - generic [ref=f1e8843]: delete_forever
+              - row [ref=f1e8845]:
+                - cell "лагерь подмосковье недорого" [ref=f1e8846]:
+                  - generic [ref=f1e8849]:
+                    - checkbox "лагерь подмосковье недорого" [checked] [ref=f1e8851]
+                    - generic [ref=f1e8852]: лагерь подмосковье недорого
+                - cell "Коммерческий" [ref=f1e8853]
+                - cell "879" [ref=f1e8855]
+                - cell "17" [ref=f1e8857]
+                - cell "3+" [ref=f1e8859]
+                - cell [ref=f1e8861]:
+                  - generic [ref=f1e8862]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8866] [cursor=pointer]:
+                      - generic [ref=f1e8867]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь подмосковье недорого" [ref=f1e8870] [cursor=pointer]':
+                      - generic [ref=f1e8871]: list_alt
+                - cell [ref=f1e8873]:
+                  - button "Удалить" [ref=f1e8874] [cursor=pointer]:
+                    - generic [ref=f1e8875]: delete_forever
+              - row [ref=f1e8877]:
+                - cell "летний лагерь в подмосковье 2026" [ref=f1e8878]:
+                  - generic [ref=f1e8881]:
+                    - checkbox "летний лагерь в подмосковье 2026" [checked] [ref=f1e8883]
+                    - generic [ref=f1e8884]: летний лагерь в подмосковье 2026
+                - cell "Коммерческий" [ref=f1e8885]
+                - cell "843" [ref=f1e8887]
+                - cell "247" [ref=f1e8889]
+                - cell "2" [ref=f1e8891]
+                - cell [ref=f1e8893]:
+                  - generic [ref=f1e8894]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8898] [cursor=pointer]:
+                      - generic [ref=f1e8899]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: летний лагерь в подмосковье 2026" [ref=f1e8902] [cursor=pointer]':
+                      - generic [ref=f1e8903]: list_alt
+                - cell [ref=f1e8905]:
+                  - button "Удалить" [ref=f1e8906] [cursor=pointer]:
+                    - generic [ref=f1e8907]: delete_forever
+              - row [ref=f1e8909]:
+                - cell "летний лагерь московская область" [ref=f1e8910]:
+                  - generic [ref=f1e8913]:
+                    - checkbox "летний лагерь московская область" [checked] [ref=f1e8915]
+                    - generic [ref=f1e8916]: летний лагерь московская область
+                - cell "Коммерческий" [ref=f1e8917]
+                - cell "709" [ref=f1e8919]
+                - cell "75" [ref=f1e8921]
+                - cell "3+" [ref=f1e8923]
+                - cell [ref=f1e8925]:
+                  - generic [ref=f1e8926]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8930] [cursor=pointer]:
+                      - generic [ref=f1e8931]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: летний лагерь московская область" [ref=f1e8934] [cursor=pointer]':
+                      - generic [ref=f1e8935]: list_alt
+                - cell [ref=f1e8937]:
+                  - button "Удалить" [ref=f1e8938] [cursor=pointer]:
+                    - generic [ref=f1e8939]: delete_forever
+              - row [ref=f1e8941]:
+                - cell "лагерь в подмосковье цена" [ref=f1e8942]:
+                  - generic [ref=f1e8945]:
+                    - checkbox "лагерь в подмосковье цена" [checked] [ref=f1e8947]
+                    - generic [ref=f1e8948]: лагерь в подмосковье цена
+                - cell "Коммерческий" [ref=f1e8949]
+                - cell "692" [ref=f1e8951]
+                - cell "19" [ref=f1e8953]
+                - cell "2" [ref=f1e8955]
+                - cell [ref=f1e8957]:
+                  - generic [ref=f1e8958]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8962] [cursor=pointer]:
+                      - generic [ref=f1e8963]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь в подмосковье цена" [ref=f1e8966] [cursor=pointer]':
+                      - generic [ref=f1e8967]: list_alt
+                - cell [ref=f1e8969]:
+                  - button "Удалить" [ref=f1e8970] [cursor=pointer]:
+                    - generic [ref=f1e8971]: delete_forever
+              - row [ref=f1e8973]:
+                - cell "летний лагерь в подмосковье для детей" [ref=f1e8974]:
+                  - generic [ref=f1e8977]:
+                    - checkbox "летний лагерь в подмосковье для детей" [checked] [ref=f1e8979]
+                    - generic [ref=f1e8980]: летний лагерь в подмосковье для детей
+                - cell "Коммерческий" [ref=f1e8981]
+                - cell "691" [ref=f1e8983]
+                - cell "139" [ref=f1e8985]
+                - cell "3+" [ref=f1e8987]
+                - cell [ref=f1e8989]:
+                  - generic [ref=f1e8990]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e8994] [cursor=pointer]:
+                      - generic [ref=f1e8995]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: летний лагерь в подмосковье для детей" [ref=f1e8998] [cursor=pointer]':
+                      - generic [ref=f1e8999]: list_alt
+                - cell [ref=f1e9001]:
+                  - button "Удалить" [ref=f1e9002] [cursor=pointer]:
+                    - generic [ref=f1e9003]: delete_forever
+              - row [ref=f1e9005]:
+                - cell "лагерь для детей в подмосковье на лето" [ref=f1e9006]:
+                  - generic [ref=f1e9009]:
+                    - checkbox "лагерь для детей в подмосковье на лето" [checked] [ref=f1e9011]
+                    - generic [ref=f1e9012]: лагерь для детей в подмосковье на лето
+                - cell "Коммерческий" [ref=f1e9013]
+                - cell "623" [ref=f1e9015]
+                - cell "9" [ref=f1e9017]
+                - cell "3+" [ref=f1e9019]
+                - cell [ref=f1e9021]:
+                  - generic [ref=f1e9022]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9026] [cursor=pointer]:
+                      - generic [ref=f1e9027]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь для детей в подмосковье на лето" [ref=f1e9030] [cursor=pointer]':
+                      - generic [ref=f1e9031]: list_alt
+                - cell [ref=f1e9033]:
+                  - button "Удалить" [ref=f1e9034] [cursor=pointer]:
+                    - generic [ref=f1e9035]: delete_forever
+              - row [ref=f1e9037]:
+                - cell "лагерь для детей в подмосковье на лето 2024" [ref=f1e9038]:
+                  - generic [ref=f1e9041]:
+                    - checkbox "лагерь для детей в подмосковье на лето 2024" [checked] [ref=f1e9043]
+                    - generic [ref=f1e9044]: лагерь для детей в подмосковье на лето 2024
+                - cell "Коммерческий" [ref=f1e9045]
+                - cell "623" [ref=f1e9047]
+                - cell "9" [ref=f1e9049]
+                - cell "3+" [ref=f1e9051]
+                - cell [ref=f1e9053]:
+                  - generic [ref=f1e9054]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9058] [cursor=pointer]:
+                      - generic [ref=f1e9059]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь для детей в подмосковье на лето 2024" [ref=f1e9062] [cursor=pointer]':
+                      - generic [ref=f1e9063]: list_alt
+                - cell [ref=f1e9065]:
+                  - button "Удалить" [ref=f1e9066] [cursor=pointer]:
+                    - generic [ref=f1e9067]: delete_forever
+              - row [ref=f1e9069]:
+                - cell "лагерь для детей в подмосковье на лето 2025" [ref=f1e9070]:
+                  - generic [ref=f1e9073]:
+                    - checkbox "лагерь для детей в подмосковье на лето 2025" [checked] [ref=f1e9075]
+                    - generic [ref=f1e9076]: лагерь для детей в подмосковье на лето 2025
+                - cell "Коммерческий" [ref=f1e9077]
+                - cell "623" [ref=f1e9079]
+                - cell "9" [ref=f1e9081]
+                - cell "3+" [ref=f1e9083]
+                - cell [ref=f1e9085]:
+                  - generic [ref=f1e9086]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9090] [cursor=pointer]:
+                      - generic [ref=f1e9091]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь для детей в подмосковье на лето 2025" [ref=f1e9094] [cursor=pointer]':
+                      - generic [ref=f1e9095]: list_alt
+                - cell [ref=f1e9097]:
+                  - button "Удалить" [ref=f1e9098] [cursor=pointer]:
+                    - generic [ref=f1e9099]: delete_forever
+              - row [ref=f1e9101]:
+                - cell "детские лагеря в подмосковье цены" [ref=f1e9102]:
+                  - generic [ref=f1e9105]:
+                    - checkbox "детские лагеря в подмосковье цены" [checked] [ref=f1e9107]
+                    - generic [ref=f1e9108]: детские лагеря в подмосковье цены
+                - cell "Коммерческий" [ref=f1e9109]
+                - cell "545" [ref=f1e9111]
+                - cell "12" [ref=f1e9113]
+                - cell "3+" [ref=f1e9115]
+                - cell [ref=f1e9117]:
+                  - generic [ref=f1e9118]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9122] [cursor=pointer]:
+                      - generic [ref=f1e9123]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: детские лагеря в подмосковье цены" [ref=f1e9126] [cursor=pointer]':
+                      - generic [ref=f1e9127]: list_alt
+                - cell [ref=f1e9129]:
+                  - button "Удалить" [ref=f1e9130] [cursor=pointer]:
+                    - generic [ref=f1e9131]: delete_forever
+              - row [ref=f1e9133]:
+                - cell "лагеря в подмосковье на лето недорого" [ref=f1e9134]:
+                  - generic [ref=f1e9137]:
+                    - checkbox "лагеря в подмосковье на лето недорого" [checked] [ref=f1e9139]
+                    - generic [ref=f1e9140]: лагеря в подмосковье на лето недорого
+                - cell "Коммерческий" [ref=f1e9141]
+                - cell "438" [ref=f1e9143]
+                - cell "22" [ref=f1e9145]
+                - cell "3+" [ref=f1e9147]
+                - cell [ref=f1e9149]:
+                  - generic [ref=f1e9150]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9154] [cursor=pointer]:
+                      - generic [ref=f1e9155]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагеря в подмосковье на лето недорого" [ref=f1e9158] [cursor=pointer]':
+                      - generic [ref=f1e9159]: list_alt
+                - cell [ref=f1e9161]:
+                  - button "Удалить" [ref=f1e9162] [cursor=pointer]:
+                    - generic [ref=f1e9163]: delete_forever
+              - row [ref=f1e9165]:
+                - cell "детский лагерь в подмосковье на лето цена" [ref=f1e9166]:
+                  - generic [ref=f1e9169]:
+                    - checkbox "детский лагерь в подмосковье на лето цена" [checked] [ref=f1e9171]
+                    - generic [ref=f1e9172]: детский лагерь в подмосковье на лето цена
+                - cell "Коммерческий" [ref=f1e9173]
+                - cell "388" [ref=f1e9175]
+                - cell "2" [ref=f1e9177]
+                - cell "3+" [ref=f1e9179]
+                - cell [ref=f1e9181]:
+                  - generic [ref=f1e9182]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9186] [cursor=pointer]:
+                      - generic [ref=f1e9187]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: детский лагерь в подмосковье на лето цена" [ref=f1e9190] [cursor=pointer]':
+                      - generic [ref=f1e9191]: list_alt
+                - cell [ref=f1e9193]:
+                  - button "Удалить" [ref=f1e9194] [cursor=pointer]:
+                    - generic [ref=f1e9195]: delete_forever
+              - row [ref=f1e9197]:
+                - cell "летний лагерь для детей в подмосковье" [ref=f1e9198]:
+                  - generic [ref=f1e9201]:
+                    - checkbox "летний лагерь для детей в подмосковье" [checked] [ref=f1e9203]
+                    - generic [ref=f1e9204]: летний лагерь для детей в подмосковье
+                - cell "Коммерческий" [ref=f1e9205]
+                - cell "384" [ref=f1e9207]
+                - cell "93" [ref=f1e9209]
+                - cell "2" [ref=f1e9211]
+                - cell [ref=f1e9213]:
+                  - generic [ref=f1e9214]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9218] [cursor=pointer]:
+                      - generic [ref=f1e9219]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: летний лагерь для детей в подмосковье" [ref=f1e9222] [cursor=pointer]':
+                      - generic [ref=f1e9223]: list_alt
+                - cell [ref=f1e9225]:
+                  - button "Удалить" [ref=f1e9226] [cursor=pointer]:
+                    - generic [ref=f1e9227]: delete_forever
+              - row [ref=f1e9229]:
+                - cell "путевка в детский лагерь в подмосковье" [ref=f1e9230]:
+                  - generic [ref=f1e9233]:
+                    - checkbox "путевка в детский лагерь в подмосковье" [checked] [ref=f1e9235]
+                    - generic [ref=f1e9236]: путевка в детский лагерь в подмосковье
+                - cell "Коммерческий" [ref=f1e9237]
+                - cell "343" [ref=f1e9239]
+                - cell "30" [ref=f1e9241]
+                - cell "1" [ref=f1e9243]
+                - cell "—" [ref=f1e9245]:
+                  - generic [ref=f1e9246]:
+                    - generic [ref=f1e9247]: —
+                    - 'button "Показать конкурентов по ключевой фразе: путевка в детский лагерь в подмосковье" [ref=f1e9249] [cursor=pointer]':
+                      - generic [ref=f1e9250]: list_alt
+                - cell [ref=f1e9252]:
+                  - button "Удалить" [ref=f1e9253] [cursor=pointer]:
+                    - generic [ref=f1e9254]: delete_forever
+              - row [ref=f1e9256]:
+                - cell "летний лагерь для детей в подмосковье 2026" [ref=f1e9257]:
+                  - generic [ref=f1e9260]:
+                    - checkbox "летний лагерь для детей в подмосковье 2026" [checked] [ref=f1e9262]
+                    - generic [ref=f1e9263]: летний лагерь для детей в подмосковье 2026
+                - cell "Коммерческий" [ref=f1e9264]
+                - cell "337" [ref=f1e9266]
+                - cell "268" [ref=f1e9268]
+                - cell "2" [ref=f1e9270]
+                - cell [ref=f1e9272]:
+                  - generic [ref=f1e9273]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9277] [cursor=pointer]:
+                      - generic [ref=f1e9278]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: летний лагерь для детей в подмосковье 2026" [ref=f1e9281] [cursor=pointer]':
+                      - generic [ref=f1e9282]: list_alt
+                - cell [ref=f1e9284]:
+                  - button "Удалить" [ref=f1e9285] [cursor=pointer]:
+                    - generic [ref=f1e9286]: delete_forever
+              - row [ref=f1e9288]:
+                - cell "детский лагерь летний в подмосковье" [ref=f1e9289]:
+                  - generic [ref=f1e9292]:
+                    - checkbox "детский лагерь летний в подмосковье" [checked] [ref=f1e9294]
+                    - generic [ref=f1e9295]: детский лагерь летний в подмосковье
+                - cell "Коммерческий" [ref=f1e9296]
+                - cell "235" [ref=f1e9298]
+                - cell "74" [ref=f1e9300]
+                - cell "3+" [ref=f1e9302]
+                - cell [ref=f1e9304]:
+                  - generic [ref=f1e9305]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9309] [cursor=pointer]:
+                      - generic [ref=f1e9310]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: детский лагерь летний в подмосковье" [ref=f1e9313] [cursor=pointer]':
+                      - generic [ref=f1e9314]: list_alt
+                - cell [ref=f1e9316]:
+                  - button "Удалить" [ref=f1e9317] [cursor=pointer]:
+                    - generic [ref=f1e9318]: delete_forever
+              - row [ref=f1e9320]:
+                - cell "дол в подмосковье" [ref=f1e9321]:
+                  - generic [ref=f1e9324]:
+                    - checkbox "дол в подмосковье" [checked] [ref=f1e9326]
+                    - generic [ref=f1e9327]: дол в подмосковье
+                - cell "Коммерческий" [ref=f1e9328]
+                - cell "229" [ref=f1e9330]
+                - cell "25" [ref=f1e9332]
+                - cell "3+" [ref=f1e9334]
+                - cell "—" [ref=f1e9336]:
+                  - generic [ref=f1e9337]:
+                    - generic [ref=f1e9338]: —
+                    - 'button "Показать конкурентов по ключевой фразе: дол в подмосковье" [ref=f1e9340] [cursor=pointer]':
+                      - generic [ref=f1e9341]: list_alt
+                - cell [ref=f1e9343]:
+                  - button "Удалить" [ref=f1e9344] [cursor=pointer]:
+                    - generic [ref=f1e9345]: delete_forever
+              - row [ref=f1e9347]:
+                - cell "подмосковные лагеря для детей" [ref=f1e9348]:
+                  - generic [ref=f1e9351]:
+                    - checkbox "подмосковные лагеря для детей" [checked] [ref=f1e9353]
+                    - generic [ref=f1e9354]: подмосковные лагеря для детей
+                - cell "Коммерческий" [ref=f1e9355]
+                - cell "106" [ref=f1e9357]
+                - cell "38" [ref=f1e9359]
+                - cell "2" [ref=f1e9361]
+                - cell [ref=f1e9363]:
+                  - generic [ref=f1e9364]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9368] [cursor=pointer]:
+                      - generic [ref=f1e9369]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: подмосковные лагеря для детей" [ref=f1e9372] [cursor=pointer]':
+                      - generic [ref=f1e9373]: list_alt
+                - cell [ref=f1e9375]:
+                  - button "Удалить" [ref=f1e9376] [cursor=pointer]:
+                    - generic [ref=f1e9377]: delete_forever
+              - row [ref=f1e9379]:
+                - cell "лагерь для детей 7 лет в подмосковье" [ref=f1e9380]:
+                  - generic [ref=f1e9383]:
+                    - checkbox "лагерь для детей 7 лет в подмосковье" [checked] [ref=f1e9385]
+                    - generic [ref=f1e9386]: лагерь для детей 7 лет в подмосковье
+                - cell "Коммерческий" [ref=f1e9387]
+                - cell "92" [ref=f1e9389]
+                - cell "42" [ref=f1e9391]
+                - cell "3+" [ref=f1e9393]
+                - cell [ref=f1e9395]:
+                  - generic [ref=f1e9396]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9400] [cursor=pointer]:
+                      - generic [ref=f1e9401]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь для детей 7 лет в подмосковье" [ref=f1e9404] [cursor=pointer]':
+                      - generic [ref=f1e9405]: list_alt
+                - cell [ref=f1e9407]:
+                  - button "Удалить" [ref=f1e9408] [cursor=pointer]:
+                    - generic [ref=f1e9409]: delete_forever
+              - row [ref=f1e9411]:
+                - cell "самый лучший лагерь в подмосковье" [ref=f1e9412]:
+                  - generic [ref=f1e9415]:
+                    - checkbox "самый лучший лагерь в подмосковье" [checked] [ref=f1e9417]
+                    - generic [ref=f1e9418]: самый лучший лагерь в подмосковье
+                - cell "Смешанный" [ref=f1e9419]
+                - cell "87" [ref=f1e9421]
+                - cell "41" [ref=f1e9423]
+                - cell "3+" [ref=f1e9425]
+                - cell [ref=f1e9427]:
+                  - generic [ref=f1e9428]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9432] [cursor=pointer]:
+                      - generic [ref=f1e9433]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: самый лучший лагерь в подмосковье" [ref=f1e9436] [cursor=pointer]':
+                      - generic [ref=f1e9437]: list_alt
+                - cell [ref=f1e9439]:
+                  - button "Удалить" [ref=f1e9440] [cursor=pointer]:
+                    - generic [ref=f1e9441]: delete_forever
+              - row [ref=f1e9443]:
+                - cell "лагерь с проживанием подмосковье" [ref=f1e9444]:
+                  - generic [ref=f1e9447]:
+                    - checkbox "лагерь с проживанием подмосковье" [checked] [ref=f1e9449]
+                    - generic [ref=f1e9450]: лагерь с проживанием подмосковье
+                - cell "Коммерческий" [ref=f1e9451]
+                - cell "80" [ref=f1e9453]
+                - cell "2" [ref=f1e9455]
+                - cell "1" [ref=f1e9457]
+                - cell [ref=f1e9459]:
+                  - generic [ref=f1e9460]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9464] [cursor=pointer]:
+                      - generic [ref=f1e9465]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь с проживанием подмосковье" [ref=f1e9468] [cursor=pointer]':
+                      - generic [ref=f1e9469]: list_alt
+                - cell [ref=f1e9471]:
+                  - button "Удалить" [ref=f1e9472] [cursor=pointer]:
+                    - generic [ref=f1e9473]: delete_forever
+              - row [ref=f1e9475]:
+                - cell "купить путевку в детский лагерь подмосковье" [ref=f1e9476]:
+                  - generic [ref=f1e9479]:
+                    - checkbox "купить путевку в детский лагерь подмосковье" [checked] [ref=f1e9481]
+                    - generic [ref=f1e9482]: купить путевку в детский лагерь подмосковье
+                - cell "Коммерческий" [ref=f1e9483]
+                - cell "62" [ref=f1e9485]
+                - cell "4" [ref=f1e9487]
+                - cell "2" [ref=f1e9489]
+                - cell [ref=f1e9491]:
+                  - generic [ref=f1e9492]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9496] [cursor=pointer]:
+                      - generic [ref=f1e9497]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: купить путевку в детский лагерь подмосковье" [ref=f1e9500] [cursor=pointer]':
+                      - generic [ref=f1e9501]: list_alt
+                - cell [ref=f1e9503]:
+                  - button "Удалить" [ref=f1e9504] [cursor=pointer]:
+                    - generic [ref=f1e9505]: delete_forever
+              - row [ref=f1e9507]:
+                - cell "подростковый лагерь в подмосковье" [ref=f1e9508]:
+                  - generic [ref=f1e9511]:
+                    - checkbox "подростковый лагерь в подмосковье" [checked] [ref=f1e9513]
+                    - generic [ref=f1e9514]: подростковый лагерь в подмосковье
+                - cell "Коммерческий" [ref=f1e9515]
+                - cell "50" [ref=f1e9517]
+                - cell "36" [ref=f1e9519]
+                - cell "1" [ref=f1e9521]
+                - cell [ref=f1e9523]:
+                  - generic [ref=f1e9524]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9528] [cursor=pointer]:
+                      - generic [ref=f1e9529]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: подростковый лагерь в подмосковье" [ref=f1e9532] [cursor=pointer]':
+                      - generic [ref=f1e9533]: list_alt
+                - cell [ref=f1e9535]:
+                  - button "Удалить" [ref=f1e9536] [cursor=pointer]:
+                    - generic [ref=f1e9537]: delete_forever
+              - row [ref=f1e9539]:
+                - cell "сколько стоит детский лагерь в подмосковье" [ref=f1e9540]:
+                  - generic [ref=f1e9543]:
+                    - checkbox "сколько стоит детский лагерь в подмосковье" [checked] [ref=f1e9545]
+                    - generic [ref=f1e9546]: сколько стоит детский лагерь в подмосковье
+                - cell "Коммерческий" [ref=f1e9547]
+                - cell "41" [ref=f1e9549]
+                - cell "8" [ref=f1e9551]
+                - cell "2" [ref=f1e9553]
+                - cell [ref=f1e9555]:
+                  - generic [ref=f1e9556]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9560] [cursor=pointer]:
+                      - generic [ref=f1e9561]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: сколько стоит детский лагерь в подмосковье" [ref=f1e9564] [cursor=pointer]':
+                      - generic [ref=f1e9565]: list_alt
+                - cell [ref=f1e9567]:
+                  - button "Удалить" [ref=f1e9568] [cursor=pointer]:
+                    - generic [ref=f1e9569]: delete_forever
+              - row [ref=f1e9571]:
+                - cell "детские лагеря отдыха в подмосковье" [ref=f1e9572]:
+                  - generic [ref=f1e9575]:
+                    - checkbox "детские лагеря отдыха в подмосковье" [checked] [ref=f1e9577]
+                    - generic [ref=f1e9578]: детские лагеря отдыха в подмосковье
+                - cell "Коммерческий" [ref=f1e9579]
+                - cell "31" [ref=f1e9581]
+                - cell "20" [ref=f1e9583]
+                - cell "2" [ref=f1e9585]
+                - cell [ref=f1e9587]:
+                  - generic [ref=f1e9588]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9592] [cursor=pointer]:
+                      - generic [ref=f1e9593]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: детские лагеря отдыха в подмосковье" [ref=f1e9596] [cursor=pointer]':
+                      - generic [ref=f1e9597]: list_alt
+                - cell [ref=f1e9599]:
+                  - button "Удалить" [ref=f1e9600] [cursor=pointer]:
+                    - generic [ref=f1e9601]: delete_forever
+              - row [ref=f1e9603]:
+                - cell "детский лагерь с родителями в подмосковье" [ref=f1e9604]:
+                  - generic [ref=f1e9607]:
+                    - checkbox "детский лагерь с родителями в подмосковье" [checked] [ref=f1e9609]
+                    - generic [ref=f1e9610]: детский лагерь с родителями в подмосковье
+                - cell "Коммерческий" [ref=f1e9611]
+                - cell "31" [ref=f1e9613]
+                - cell "24" [ref=f1e9615]
+                - cell "3+" [ref=f1e9617]
+                - cell [ref=f1e9619]:
+                  - generic [ref=f1e9620]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9624] [cursor=pointer]:
+                      - generic [ref=f1e9625]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: детский лагерь с родителями в подмосковье" [ref=f1e9628] [cursor=pointer]':
+                      - generic [ref=f1e9629]: list_alt
+                - cell [ref=f1e9631]:
+                  - button "Удалить" [ref=f1e9632] [cursor=pointer]:
+                    - generic [ref=f1e9633]: delete_forever
+              - row [ref=f1e9635]:
+                - cell "летний спортивный лагерь для детей в подмосковье" [ref=f1e9636]:
+                  - generic [ref=f1e9639]:
+                    - checkbox "летний спортивный лагерь для детей в подмосковье" [checked] [ref=f1e9641]
+                    - generic [ref=f1e9642]: летний спортивный лагерь для детей в подмосковье
+                - cell "Смешанный" [ref=f1e9643]
+                - cell "18" [ref=f1e9645]
+                - cell "12" [ref=f1e9647]
+                - cell "3+" [ref=f1e9649]
+                - cell "—" [ref=f1e9651]:
+                  - generic [ref=f1e9652]:
+                    - generic [ref=f1e9653]: —
+                    - 'button "Показать конкурентов по ключевой фразе: летний спортивный лагерь для детей в подмосковье" [ref=f1e9655] [cursor=pointer]':
+                      - generic [ref=f1e9656]: list_alt
+                - cell [ref=f1e9658]:
+                  - button "Удалить" [ref=f1e9659] [cursor=pointer]:
+                    - generic [ref=f1e9660]: delete_forever
+              - row [ref=f1e9662]:
+                - cell "лагерь в подмосковье недорого 14 дней" [ref=f1e9663]:
+                  - generic [ref=f1e9666]:
+                    - checkbox "лагерь в подмосковье недорого 14 дней" [checked] [ref=f1e9668]
+                    - generic [ref=f1e9669]: лагерь в подмосковье недорого 14 дней
+                - cell "Коммерческий" [ref=f1e9670]
+                - cell "14" [ref=f1e9672]
+                - cell "6" [ref=f1e9674]
+                - cell "3+" [ref=f1e9676]
+                - cell [ref=f1e9678]:
+                  - generic [ref=f1e9679]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9683] [cursor=pointer]:
+                      - generic [ref=f1e9684]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь в подмосковье недорого 14 дней" [ref=f1e9687] [cursor=pointer]':
+                      - generic [ref=f1e9688]: list_alt
+                - cell [ref=f1e9690]:
+                  - button "Удалить" [ref=f1e9691] [cursor=pointer]:
+                    - generic [ref=f1e9692]: delete_forever
+              - row [ref=f1e9694]:
+                - cell "лагерь для детей от 6 лет в подмосковье" [ref=f1e9695]:
+                  - generic [ref=f1e9698]:
+                    - checkbox "лагерь для детей от 6 лет в подмосковье" [checked] [ref=f1e9700]
+                    - generic [ref=f1e9701]: лагерь для детей от 6 лет в подмосковье
+                - cell "Коммерческий" [ref=f1e9702]
+                - cell "11" [ref=f1e9704]
+                - cell "0" [ref=f1e9706]
+                - cell "3+" [ref=f1e9708]
+                - cell [ref=f1e9710]:
+                  - generic [ref=f1e9711]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9715] [cursor=pointer]:
+                      - generic [ref=f1e9716]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь для детей от 6 лет в подмосковье" [ref=f1e9719] [cursor=pointer]':
+                      - generic [ref=f1e9720]: list_alt
+                - cell [ref=f1e9722]:
+                  - button "Удалить" [ref=f1e9723] [cursor=pointer]:
+                    - generic [ref=f1e9724]: delete_forever
+              - row [ref=f1e9726]:
+                - cell "компьютерный лагерь для детей в подмосковье" [ref=f1e9727]:
+                  - generic [ref=f1e9728]:
+                    - generic [ref=f1e9730]:
+                      - checkbox "компьютерный лагерь для детей в подмосковье" [checked] [ref=f1e9732]
+                      - generic [ref=f1e9733]: компьютерный лагерь для детей в подмосковье
+                    - generic [ref=f1e9734]: warning
+                - cell "Коммерческий" [ref=f1e9739]
+                - cell "7" [ref=f1e9741]
+                - cell "7" [ref=f1e9743]
+                - cell "3+" [ref=f1e9745]
+                - cell [ref=f1e9747]:
+                  - generic [ref=f1e9748]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9752] [cursor=pointer]:
+                      - generic [ref=f1e9753]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: компьютерный лагерь для детей в подмосковье" [ref=f1e9756] [cursor=pointer]':
+                      - generic [ref=f1e9757]: list_alt
+                - cell [ref=f1e9759]:
+                  - button "Удалить" [ref=f1e9760] [cursor=pointer]:
+                    - generic [ref=f1e9761]: delete_forever
+              - row [ref=f1e9763]:
+                - cell "лагеря в подмосковье на лето 2025" [ref=f1e9764]:
+                  - generic [ref=f1e9767]:
+                    - checkbox "лагеря в подмосковье на лето 2025" [checked] [ref=f1e9769]
+                    - generic [ref=f1e9770]: лагеря в подмосковье на лето 2025
+                - cell "Коммерческий" [ref=f1e9771]
+                - cell "5" [ref=f1e9773]
+                - cell "1" [ref=f1e9775]
+                - cell "3+" [ref=f1e9777]
+                - cell [ref=f1e9779]:
+                  - generic [ref=f1e9780]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9784] [cursor=pointer]:
+                      - generic [ref=f1e9785]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагеря в подмосковье на лето 2025" [ref=f1e9788] [cursor=pointer]':
+                      - generic [ref=f1e9789]: list_alt
+                - cell [ref=f1e9791]:
+                  - button "Удалить" [ref=f1e9792] [cursor=pointer]:
+                    - generic [ref=f1e9793]: delete_forever
+              - row [ref=f1e9795]:
+                - cell "детский лагерь в подмосковье на лето 2025 цены на путевки" [ref=f1e9796]:
+                  - generic [ref=f1e9799]:
+                    - checkbox "детский лагерь в подмосковье на лето 2025 цены на путевки" [checked] [ref=f1e9801]
+                    - generic [ref=f1e9802]: детский лагерь в подмосковье на лето 2025 цены на путевки
+                - cell "Коммерческий" [ref=f1e9803]
+                - cell "3" [ref=f1e9805]
+                - cell "0" [ref=f1e9807]
+                - cell "2" [ref=f1e9809]
+                - cell [ref=f1e9811]:
+                  - generic [ref=f1e9812]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9816] [cursor=pointer]:
+                      - generic [ref=f1e9817]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: детский лагерь в подмосковье на лето 2025 цены на путевки" [ref=f1e9820] [cursor=pointer]':
+                      - generic [ref=f1e9821]: list_alt
+                - cell [ref=f1e9823]:
+                  - button "Удалить" [ref=f1e9824] [cursor=pointer]:
+                    - generic [ref=f1e9825]: delete_forever
+              - row [ref=f1e9827]:
+                - cell "детский лагерь подмосковье лето 2025" [ref=f1e9828]:
+                  - generic [ref=f1e9831]:
+                    - checkbox "детский лагерь подмосковье лето 2025" [checked] [ref=f1e9833]
+                    - generic [ref=f1e9834]: детский лагерь подмосковье лето 2025
+                - cell "Коммерческий" [ref=f1e9835]
+                - cell "3" [ref=f1e9837]
+                - cell "0" [ref=f1e9839]
+                - cell "1" [ref=f1e9841]
+                - cell [ref=f1e9843]:
+                  - generic [ref=f1e9844]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9848] [cursor=pointer]:
+                      - generic [ref=f1e9849]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: детский лагерь подмосковье лето 2025" [ref=f1e9852] [cursor=pointer]':
+                      - generic [ref=f1e9853]: list_alt
+                - cell [ref=f1e9855]:
+                  - button "Удалить" [ref=f1e9856] [cursor=pointer]:
+                    - generic [ref=f1e9857]: delete_forever
+              - row [ref=f1e9859]:
+                - cell "лагерь в подмосковье образовательный" [ref=f1e9860]:
+                  - generic [ref=f1e9863]:
+                    - checkbox "лагерь в подмосковье образовательный" [checked] [ref=f1e9865]
+                    - generic [ref=f1e9866]: лагерь в подмосковье образовательный
+                - cell "Коммерческий" [ref=f1e9867]
+                - cell "3" [ref=f1e9869]
+                - cell "0" [ref=f1e9871]
+                - cell "3+" [ref=f1e9873]
+                - cell [ref=f1e9875]:
+                  - generic [ref=f1e9876]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9880] [cursor=pointer]:
+                      - generic [ref=f1e9881]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь в подмосковье образовательный" [ref=f1e9884] [cursor=pointer]':
+                      - generic [ref=f1e9885]: list_alt
+                - cell [ref=f1e9887]:
+                  - button "Удалить" [ref=f1e9888] [cursor=pointer]:
+                    - generic [ref=f1e9889]: delete_forever
+              - row [ref=f1e9891]:
+                - cell "подбор лагеря в подмосковье" [ref=f1e9892]:
+                  - generic [ref=f1e9895]:
+                    - checkbox "подбор лагеря в подмосковье" [checked] [ref=f1e9897]
+                    - generic [ref=f1e9898]: подбор лагеря в подмосковье
+                - cell "Коммерческий" [ref=f1e9899]
+                - cell "1" [ref=f1e9901]
+                - cell "0" [ref=f1e9903]
+                - cell "3+" [ref=f1e9905]
+                - cell [ref=f1e9907]:
+                  - generic [ref=f1e9908]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9912] [cursor=pointer]:
+                      - generic [ref=f1e9913]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: подбор лагеря в подмосковье" [ref=f1e9916] [cursor=pointer]':
+                      - generic [ref=f1e9917]: list_alt
+                - cell [ref=f1e9919]:
+                  - button "Удалить" [ref=f1e9920] [cursor=pointer]:
+                    - generic [ref=f1e9921]: delete_forever
+              - row [ref=f1e9923]:
+                - cell "детский летний лагерь в подмосковье 2025" [ref=f1e9924]:
+                  - generic [ref=f1e9927]:
+                    - checkbox "детский летний лагерь в подмосковье 2025" [checked] [ref=f1e9929]
+                    - generic [ref=f1e9930]: детский летний лагерь в подмосковье 2025
+                - cell "Коммерческий" [ref=f1e9931]
+                - cell "0" [ref=f1e9933]
+                - cell "0" [ref=f1e9935]
+                - cell "1" [ref=f1e9937]
+                - cell [ref=f1e9939]:
+                  - generic [ref=f1e9940]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9944] [cursor=pointer]:
+                      - generic [ref=f1e9945]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: детский летний лагерь в подмосковье 2025" [ref=f1e9948] [cursor=pointer]':
+                      - generic [ref=f1e9949]: list_alt
+                - cell [ref=f1e9951]:
+                  - button "Удалить" [ref=f1e9952] [cursor=pointer]:
+                    - generic [ref=f1e9953]: delete_forever
+              - row [ref=f1e9955]:
+                - cell "летний лагерь в подмосковье для подростков 2025" [ref=f1e9956]:
+                  - generic [ref=f1e9959]:
+                    - checkbox "летний лагерь в подмосковье для подростков 2025" [checked] [ref=f1e9961]
+                    - generic [ref=f1e9962]: летний лагерь в подмосковье для подростков 2025
+                - cell "Коммерческий" [ref=f1e9963]
+                - cell "0" [ref=f1e9965]
+                - cell "0" [ref=f1e9967]
+                - cell "1" [ref=f1e9969]
+                - cell [ref=f1e9971]:
+                  - generic [ref=f1e9972]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e9976] [cursor=pointer]:
+                      - generic [ref=f1e9977]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: летний лагерь в подмосковье для подростков 2025" [ref=f1e9980] [cursor=pointer]':
+                      - generic [ref=f1e9981]: list_alt
+                - cell [ref=f1e9983]:
+                  - button "Удалить" [ref=f1e9984] [cursor=pointer]:
+                    - generic [ref=f1e9985]: delete_forever
+              - row [ref=f1e9987]:
+                - cell "спортивный лагерь в подмосковье на лето 2025" [ref=f1e9988]:
+                  - generic [ref=f1e9991]:
+                    - checkbox "спортивный лагерь в подмосковье на лето 2025" [checked] [ref=f1e9993]
+                    - generic [ref=f1e9994]: спортивный лагерь в подмосковье на лето 2025
+                - cell "Коммерческий" [ref=f1e9995]
+                - cell "0" [ref=f1e9997]
+                - cell "0" [ref=f1e9999]
+                - cell "1" [ref=f1e10001]
+                - cell [ref=f1e10003]:
+                  - generic [ref=f1e10004]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e10008] [cursor=pointer]:
+                      - generic [ref=f1e10009]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: спортивный лагерь в подмосковье на лето 2025" [ref=f1e10012] [cursor=pointer]':
+                      - generic [ref=f1e10013]: list_alt
+                - cell [ref=f1e10015]:
+                  - button "Удалить" [ref=f1e10016] [cursor=pointer]:
+                    - generic [ref=f1e10017]: delete_forever
+              - row [ref=f1e10019]:
+                - cell "детский лагерь москва и подмосковье" [ref=f1e10020]:
+                  - generic [ref=f1e10023]:
+                    - checkbox "детский лагерь москва и подмосковье" [checked] [ref=f1e10025]
+                    - generic [ref=f1e10026]: детский лагерь москва и подмосковье
+                - cell "Коммерческий" [ref=f1e10027]
+                - cell "—" [ref=f1e10029]
+                - cell "—" [ref=f1e10031]
+                - cell "2" [ref=f1e10033]
+                - cell [ref=f1e10035]:
+                  - generic [ref=f1e10036]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e10040] [cursor=pointer]:
+                      - generic [ref=f1e10041]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: детский лагерь москва и подмосковье" [ref=f1e10044] [cursor=pointer]':
+                      - generic [ref=f1e10045]: list_alt
+                - cell [ref=f1e10047]:
+                  - button "Удалить" [ref=f1e10048] [cursor=pointer]:
+                    - generic [ref=f1e10049]: delete_forever
+              - row [ref=f1e10051]:
+                - cell "детский летний лагерь в подмосковье 2026" [ref=f1e10052]:
+                  - generic [ref=f1e10055]:
+                    - checkbox "детский летний лагерь в подмосковье 2026" [checked] [ref=f1e10057]
+                    - generic [ref=f1e10058]: детский летний лагерь в подмосковье 2026
+                - cell "Коммерческий" [ref=f1e10059]
+                - cell "—" [ref=f1e10061]
+                - cell "—" [ref=f1e10063]
+                - cell "2" [ref=f1e10065]
+                - cell [ref=f1e10067]:
+                  - generic [ref=f1e10068]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e10072] [cursor=pointer]:
+                      - generic [ref=f1e10073]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: детский летний лагерь в подмосковье 2026" [ref=f1e10076] [cursor=pointer]':
+                      - generic [ref=f1e10077]: list_alt
+                - cell [ref=f1e10079]:
+                  - button "Удалить" [ref=f1e10080] [cursor=pointer]:
+                    - generic [ref=f1e10081]: delete_forever
+              - row [ref=f1e10083]:
+                - cell "лагерь в подмосковье для подростков недорого" [ref=f1e10084]:
+                  - generic [ref=f1e10087]:
+                    - checkbox "лагерь в подмосковье для подростков недорого" [checked] [ref=f1e10089]
+                    - generic [ref=f1e10090]: лагерь в подмосковье для подростков недорого
+                - cell "Коммерческий" [ref=f1e10091]
+                - cell "—" [ref=f1e10093]
+                - cell "—" [ref=f1e10095]
+                - cell "3+" [ref=f1e10097]
+                - cell [ref=f1e10099]:
+                  - generic [ref=f1e10100]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e10104] [cursor=pointer]:
+                      - generic [ref=f1e10105]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь в подмосковье для подростков недорого" [ref=f1e10108] [cursor=pointer]':
+                      - generic [ref=f1e10109]: list_alt
+                - cell [ref=f1e10111]:
+                  - button "Удалить" [ref=f1e10112] [cursor=pointer]:
+                    - generic [ref=f1e10113]: delete_forever
+              - row [ref=f1e10115]:
+                - cell "лагерь в подмосковье на 2027 год недорого" [ref=f1e10116]:
+                  - generic [ref=f1e10119]:
+                    - checkbox "лагерь в подмосковье на 2027 год недорого" [checked] [ref=f1e10121]
+                    - generic [ref=f1e10122]: лагерь в подмосковье на 2027 год недорого
+                - cell "Коммерческий" [ref=f1e10123]
+                - cell "—" [ref=f1e10125]
+                - cell "—" [ref=f1e10127]
+                - cell "3+" [ref=f1e10129]
+                - cell [ref=f1e10131]:
+                  - generic [ref=f1e10132]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e10136] [cursor=pointer]:
+                      - generic [ref=f1e10137]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь в подмосковье на 2027 год недорого" [ref=f1e10140] [cursor=pointer]':
+                      - generic [ref=f1e10141]: list_alt
+                - cell [ref=f1e10143]:
+                  - button "Удалить" [ref=f1e10144] [cursor=pointer]:
+                    - generic [ref=f1e10145]: delete_forever
+              - row [ref=f1e10147]:
+                - cell "лагерь для ребенка 10 лет в подмосковье" [ref=f1e10148]:
+                  - generic [ref=f1e10151]:
+                    - checkbox "лагерь для ребенка 10 лет в подмосковье" [checked] [ref=f1e10153]
+                    - generic [ref=f1e10154]: лагерь для ребенка 10 лет в подмосковье
+                - cell "Коммерческий" [ref=f1e10155]
+                - cell "—" [ref=f1e10157]
+                - cell "—" [ref=f1e10159]
+                - cell "3+" [ref=f1e10161]
+                - cell [ref=f1e10163]:
+                  - generic [ref=f1e10164]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e10168] [cursor=pointer]:
+                      - generic [ref=f1e10169]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь для ребенка 10 лет в подмосковье" [ref=f1e10172] [cursor=pointer]':
+                      - generic [ref=f1e10173]: list_alt
+                - cell [ref=f1e10175]:
+                  - button "Удалить" [ref=f1e10176] [cursor=pointer]:
+                    - generic [ref=f1e10177]: delete_forever
+              - row [ref=f1e10179]:
+                - cell "лагерь подмосковье бесплатно" [ref=f1e10180]:
+                  - generic [ref=f1e10181]:
+                    - generic [ref=f1e10183]:
+                      - checkbox "лагерь подмосковье бесплатно" [checked] [ref=f1e10185]
+                      - generic [ref=f1e10186]: лагерь подмосковье бесплатно
+                    - generic [ref=f1e10187]: warning
+                - cell "Информационный" [ref=f1e10192]
+                - cell "—" [ref=f1e10194]
+                - cell "—" [ref=f1e10196]
+                - cell "3+" [ref=f1e10198]
+                - cell [ref=f1e10200]:
+                  - generic [ref=f1e10201]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e10205] [cursor=pointer]:
+                      - generic [ref=f1e10206]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: лагерь подмосковье бесплатно" [ref=f1e10209] [cursor=pointer]':
+                      - generic [ref=f1e10210]: list_alt
+                - cell [ref=f1e10212]:
+                  - button "Удалить" [ref=f1e10213] [cursor=pointer]:
+                    - generic [ref=f1e10214]: delete_forever
+              - row [ref=f1e10216]:
+                - cell "летний лагерь в подмосковье для детей недорого" [ref=f1e10217]:
+                  - generic [ref=f1e10220]:
+                    - checkbox "летний лагерь в подмосковье для детей недорого" [checked] [ref=f1e10222]
+                    - generic [ref=f1e10223]: летний лагерь в подмосковье для детей недорого
+                - cell "Коммерческий" [ref=f1e10224]
+                - cell "—" [ref=f1e10226]
+                - cell "—" [ref=f1e10228]
+                - cell "3+" [ref=f1e10230]
+                - cell [ref=f1e10232]:
+                  - generic [ref=f1e10233]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e10237] [cursor=pointer]:
+                      - generic [ref=f1e10238]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: летний лагерь в подмосковье для детей недорого" [ref=f1e10241] [cursor=pointer]':
+                      - generic [ref=f1e10242]: list_alt
+                - cell [ref=f1e10244]:
+                  - button "Удалить" [ref=f1e10245] [cursor=pointer]:
+                    - generic [ref=f1e10246]: delete_forever
+              - row [ref=f1e10248]:
+                - cell "летний лагерь в подмосковье недорого" [ref=f1e10249]:
+                  - generic [ref=f1e10252]:
+                    - checkbox "летний лагерь в подмосковье недорого" [checked] [ref=f1e10254]
+                    - generic [ref=f1e10255]: летний лагерь в подмосковье недорого
+                - cell "Коммерческий" [ref=f1e10256]
+                - cell "—" [ref=f1e10258]
+                - cell "—" [ref=f1e10260]
+                - cell "3+" [ref=f1e10262]
+                - cell [ref=f1e10264]:
+                  - generic [ref=f1e10265]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e10269] [cursor=pointer]:
+                      - generic [ref=f1e10270]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: летний лагерь в подмосковье недорого" [ref=f1e10273] [cursor=pointer]':
+                      - generic [ref=f1e10274]: list_alt
+                - cell [ref=f1e10276]:
+                  - button "Удалить" [ref=f1e10277] [cursor=pointer]:
+                    - generic [ref=f1e10278]: delete_forever
+              - row [ref=f1e10280]:
+                - cell "летний оздоровительный лагерь в подмосковье" [ref=f1e10281]:
+                  - generic [ref=f1e10284]:
+                    - checkbox "летний оздоровительный лагерь в подмосковье" [checked] [ref=f1e10286]
+                    - generic [ref=f1e10287]: летний оздоровительный лагерь в подмосковье
+                - cell "Коммерческий" [ref=f1e10288]
+                - cell "—" [ref=f1e10290]
+                - cell "—" [ref=f1e10292]
+                - cell "3+" [ref=f1e10294]
+                - cell "—" [ref=f1e10296]:
+                  - generic [ref=f1e10297]:
+                    - generic [ref=f1e10298]: —
+                    - 'button "Показать конкурентов по ключевой фразе: летний оздоровительный лагерь в подмосковье" [ref=f1e10300] [cursor=pointer]':
+                      - generic [ref=f1e10301]: list_alt
+                - cell [ref=f1e10303]:
+                  - button "Удалить" [ref=f1e10304] [cursor=pointer]:
+                    - generic [ref=f1e10305]: delete_forever
+              - row [ref=f1e10307]:
+                - cell "математический лагерь в подмосковье" [ref=f1e10308]:
+                  - generic [ref=f1e10309]:
+                    - generic [ref=f1e10311]:
+                      - checkbox "математический лагерь в подмосковье" [checked] [ref=f1e10313]
+                      - generic [ref=f1e10314]: математический лагерь в подмосковье
+                    - generic [ref=f1e10315]: warning
+                - cell "Смешанный" [ref=f1e10320]
+                - cell "—" [ref=f1e10322]
+                - cell "—" [ref=f1e10324]
+                - cell "3+" [ref=f1e10326]
+                - cell [ref=f1e10328]:
+                  - generic [ref=f1e10329]:
+                    - button "Ключевое слово имеет позиции на другой посадочной. Нажмите, чтобы узнать подробнее" [ref=f1e10333] [cursor=pointer]:
+                      - generic [ref=f1e10334]: report_problem
+                    - 'button "Показать конкурентов по ключевой фразе: математический лагерь в подмосковье" [ref=f1e10337] [cursor=pointer]':
+                      - generic [ref=f1e10338]: list_alt
+                - cell [ref=f1e10340]:
+                  - button "Удалить" [ref=f1e10341] [cursor=pointer]:
+                    - generic [ref=f1e10342]: delete_forever
+              - row [ref=f1e10344]:
+                - cell "семейный лагерь подмосковье" [ref=f1e10345]:
+                  - generic [ref=f1e10348]:
+                    - checkbox "семейный лагерь подмосковье" [checked] [ref=f1e10350]
+                    - generic [ref=f1e10351]: семейный лагерь подмосковье
+                - cell "Коммерческий" [ref=f1e10352]
+                - cell "—" [ref=f1e10354]
+                - cell "—" [ref=f1e10356]
+                - cell "3+" [ref=f1e10358]
+                - cell "—" [ref=f1e10360]:
+                  - generic [ref=f1e10361]:
+                    - generic [ref=f1e10362]: —
+                    - 'button "Показать конкурентов по ключевой фразе: семейный лагерь подмосковье" [ref=f1e10364] [cursor=pointer]':
+                      - generic [ref=f1e10365]: list_alt
+                - cell [ref=f1e10367]:
+                  - button "Удалить" [ref=f1e10368] [cursor=pointer]:
+                    - generic [ref=f1e10369]: delete_forever
+        - text: "Обычный Заголовок 2 Заголовок 3 Заголовок 4 Обычный • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • Visit URL: EditRemove"
+  - generic [ref=f1e10380]:
+    - generic [ref=f1e10381]: Вы действительно хотите удалить выбранные ключевые слова? Они будут удалены из всех отчётов и настроек сайта.
+    - generic [ref=f1e10387]:
+      - button "Отмена" [ref=f1e10388] [cursor=pointer]
+      - button "Удалить" [ref=f1e10390] [cursor=pointer]
+  - generic [ref=f1e9]:
+    - navigation [ref=f1e10]:
+      - generic [ref=f1e11]:
+        - generic [ref=f1e13]:
+          - link [ref=f1e15] [cursor=pointer]:
+            - /url: /dashboard
+          - generic [ref=f1e17]:
+            - generic [ref=f1e18]:
+              - generic [ref=f1e19]: Проект
+              - button [ref=f1e20] [cursor=pointer]
+              - button [ref=f1e24] [cursor=pointer]
+              - button [ref=f1e28] [cursor=pointer]
+              - button [ref=f1e32] [cursor=pointer]
+            - generic [ref=f1e36]:
+              - separator [ref=f1e37]
+              - generic [ref=f1e38]: Инструменты
+              - button [ref=f1e39] [cursor=pointer]
+              - button [ref=f1e43] [cursor=pointer]
+          - generic [ref=f1e47]:
+            - button [ref=f1e49] [cursor=pointer]
+            - button [ref=f1e53] [cursor=pointer]
+        - generic [ref=f1e57]:
+          - generic [ref=f1e58]:
+            - link "aidacamp.ru" [ref=f1e59] [cursor=pointer]:
+              - /url: https://aidacamp.ru/
+            - generic [ref=f1e65] [cursor=pointer]:
+              - button "Запустить проверку сайта" [ref=f1e67]
+              - button [ref=f1e70]:
+                - generic [ref=f1e71]: arrow_drop_down
+          - generic [ref=f1e73]:
+            - generic [ref=f1e74]: SEO анализ и оптимизация
+            - generic [ref=f1e75]:
+              - link "Настройки сайта" [ref=f1e77] [cursor=pointer]:
+                - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/settings"
+              - link "Сводный отчёт" [ref=f1e79] [cursor=pointer]:
+                - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/report/main_report"
+              - link "Независимая ИИ-экспертиза" [ref=f1e81] [cursor=pointer]:
+                - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/ai/reports/main-report-overview"
+              - button "keyboard_arrow_right Позиции сайта" [ref=f1e83] [cursor=pointer]:
+                - generic [ref=f1e84]: keyboard_arrow_right
+                - text: Позиции сайта
+              - generic [ref=f1e85]:
+                - button "keyboard_arrow_down Оптимизация и кластеризация" [ref=f1e86] [cursor=pointer]:
+                  - generic [ref=f1e87]: keyboard_arrow_down
+                  - text: Оптимизация и кластеризация
+                - generic [ref=f1e88]:
+                  - link "Яндекс Москва и область (mobile)" [ref=f1e90] [cursor=pointer]:
+                    - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/report/pages_optimizations/39528"
+                  - link "Google Москва (mobile)" [ref=f1e92] [cursor=pointer]:
+                    - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/report/pages_optimizations/39529"
+                  - link "Оптимизация контента" [ref=f1e94] [cursor=pointer]:
+                    - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/report/content_optimization"
+                  - link "Исключение конкурентов" [ref=f1e96] [cursor=pointer]:
+                    - /url: "#/site/3be12006f1184eb19e2bc6b229a0a6ff/report/site_competitors"
+              - button "keyboard_arrow_right Таблица по ключевым словам" [ref=f1e98] [cursor=pointer]:
+                - generic [ref=f1e99]: keyboard_arrow_right
+                - text: Таблица по ключевым словам
+              - button "keyboard_arrow_right Технический аудит" [ref=f1e101] [cursor=pointer]:
+                - generic [ref=f1e102]: keyboard_arrow_right
+                - text: Технический аудит
+              - button "keyboard_arrow_right Sitemap" [ref=f1e104] [cursor=pointer]:
+                - generic [ref=f1e105]: keyboard_arrow_right
+                - text: Sitemap
+              - button "keyboard_arrow_right SEO-аудит" [ref=f1e107] [cursor=pointer]:
+                - generic [ref=f1e108]: keyboard_arrow_right
+                - text: SEO-аудит
+              - button "keyboard_arrow_right Яндекс Метрика beta" [ref=f1e110] [cursor=pointer]:
+                - generic [ref=f1e111]: keyboard_arrow_right
+                - text: Яндекс Метрика
+                - superscript [ref=f1e112]: beta
+              - button "keyboard_arrow_right Google Analytics beta" [ref=f1e114] [cursor=pointer]:
+                - generic [ref=f1e115]: keyboard_arrow_right
+                - text: Google Analytics
+                - superscript [ref=f1e116]: beta
+              - button "keyboard_arrow_right Поведенческие" [ref=f1e118] [cursor=pointer]:
+                - generic [ref=f1e119]: keyboard_arrow_right
+                - text: Поведенческие
+              - button "keyboard_arrow_right Коммерческие" [ref=f1e121] [cursor=pointer]:
+                - generic [ref=f1e122]: keyboard_arrow_right
+                - text: Коммерческие
+              - button "keyboard_arrow_right Ссылочные" [ref=f1e124] [cursor=pointer]:
+                - generic [ref=f1e125]: keyboard_arrow_right
+                - text: Ссылочные
+              - button "keyboard_arrow_right Аналитика YandexDirect" [ref=f1e127] [cursor=pointer]:
+                - generic [ref=f1e128]: keyboard_arrow_right
+                - text: Аналитика YandexDirect
+              - button "keyboard_arrow_right Печатные версии beta" [ref=f1e130] [cursor=pointer]:
+                - generic [ref=f1e131]: keyboard_arrow_right
+                - text: Печатные версии
+                - superscript [ref=f1e132]: beta
+              - button "keyboard_arrow_right Инструменты" [ref=f1e134] [cursor=pointer]:
+                - generic [ref=f1e135]: keyboard_arrow_right
+                - text: Инструменты
+    - generic [ref=f1e136]:
+      - banner [ref=f1e137]:
+        - generic [ref=f1e138]:
+          - button [ref=f1e139] [cursor=pointer]
+          - link [ref=f1e144] [cursor=pointer]:
+            - /url: "#/"
+          - generic [ref=f1e148]:
+            - generic [ref=f1e152] [cursor=pointer]:
+              - generic [ref=f1e153]: aidacamp.ru
+              - generic [ref=f1e158]: arrow_drop_down
+            - link [ref=f1e162] [cursor=pointer]:
+              - /url: "#/projects/new"
+              - generic [ref=f1e163]: add
+          - complementary [ref=f1e164]
+          - button "shopping_cart" [ref=f1e168] [cursor=pointer]
+          - generic [ref=f1e171]:
+            - button [ref=f1e174] [cursor=pointer]
+            - complementary [ref=f1e177]
+          - button [ref=f1e183] [cursor=pointer]
+          - button [ref=f1e190] [cursor=pointer]
+          - button [ref=f1e196] [cursor=pointer]
+          - button [ref=f1e202] [cursor=pointer]
+          - button "V" [ref=f1e209] [cursor=pointer]
+      - main [ref=f1e211]:
+        - generic [ref=f1e212]:
+          - generic [ref=f1e216]:
+            - heading "Оптимизация контента на 15.07.2026" [level=1] [ref=f1e220]
+            - generic [ref=f1e222]:
+              - generic [ref=f1e1307]:
+                - generic [ref=f1e1308]: warning
+                - generic [ref=f1e1310]:
+                  - paragraph [ref=f1e1311]: "С момента полного анализа сайта вы добавили 2 новых ключевых слова. Вы не запускали их анализ и анализ конкурентов в ТОП10, поэтому они не отображаются здесь. Чтобы получить рекомендации по их оптимизации запустите:"
+                  - list [ref=f1e1312]:
+                    - listitem [ref=f1e1313]: Полный анализ сайта (будут списаны лимиты за полный анализ и посчитаны точки для графиков).
+                    - listitem [ref=f1e1314]: Перекластеризацию (будут списаны только лимиты за новые ключевые слова и будет произведена перегруппировка незакрепленных и новых ключевых слов. В графиках новая точка не появится).
+              - generic [ref=f1e224]:
+                - generic [ref=f1e225]:
+                  - generic [ref=f1e233]:
+                    - combobox [ref=f1e234]: Все кластеры
+                    - generic [ref=f1e235]: arrow_drop_down
+                  - generic [ref=f1e238]:
+                    - button [ref=f1e241] [cursor=pointer]:
+                      - generic [ref=f1e242]:
+                        - generic [ref=f1e243]: filter_list_alt
+                        - text: по оптимизации
+                    - button [ref=f1e246] [cursor=pointer]:
+                      - generic [ref=f1e247]:
+                        - generic [ref=f1e248]: filter_list_alt
+                        - text: по числу запросов
+                    - button [ref=f1e251] [cursor=pointer]:
+                      - generic [ref=f1e252]:
+                        - generic [ref=f1e253]: filter_list_alt
+                        - text: прочее
+                  - button [ref=f1e256] [cursor=pointer]:
+                    - generic [ref=f1e257]:
+                      - generic [ref=f1e258]: add
+                      - text: Добавить кластер
+                - generic [ref=f1e259]:
+                  - generic [ref=f1e260]:
+                    - button "Недавний поиск" [ref=f1e264] [cursor=pointer]
+                    - generic [ref=f1e265]:
+                      - textbox "Поиск или фильтрация результатов..." [ref=f1e274]
+                      - button "Найти" [ref=f1e276] [cursor=pointer]
+                  - generic [ref=f1e277]:
+                    - generic [ref=f1e4533]:
+                      - button "Страница" [ref=f1e4539] [cursor=pointer]
+                      - button "H1" [ref=f1e4547] [cursor=pointer]
+                      - button "Основной ключевой запрос" [ref=f1e4553] [cursor=pointer]
+                      - button "Оптимизация" [ref=f1e4559] [cursor=pointer]
+                      - button "Ключевые слова arrow_drop_up" [ref=f1e4565] [cursor=pointer]:
+                        - generic [ref=f1e4566]:
+                          - text: Ключевые слова
+                          - generic [ref=f1e4567]: arrow_drop_up
+                      - button "Ошибки" [ref=f1e4572] [cursor=pointer]
+                      - button "Индексируема" [ref=f1e4578] [cursor=pointer]
+                      - button "Лучшая позиция" [ref=f1e4584] [cursor=pointer]
+                      - button "Код ответа" [ref=f1e4590] [cursor=pointer]
+                    - generic [ref=f1e4594]:
+                      - generic [ref=f1e4598]:
+                        - button [ref=f1e4601] [cursor=pointer]:
+                          - generic [ref=f1e4602]: menu
+                        - link "https://aidacamp.ru/lager-v-podmoskove/" [ref=f1e4608] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-v-podmoskove/
+                        - button "Редактор" [ref=f1e4611] [cursor=pointer]
+                        - generic [ref=f1e4613]: Летний детский лагерь в Подмосковье 2026 — для школьников из Балашихи, Чехова, Домодедово, Щёлково, Лобни, Видного и Щербинки
+                        - generic [ref=f1e4615]: лагерь для детей 7 лет в подмосковье
+                        - button "38" [ref=f1e4619] [cursor=pointer]
+                        - button "65" [ref=f1e4624] [cursor=pointer]
+                        - button "0" [ref=f1e4629] [cursor=pointer]
+                        - button "Да" [ref=f1e4634] [cursor=pointer]
+                        - generic [ref=f1e4637]: —
+                        - generic [ref=f1e4639]: "200"
+                      - generic [ref=f1e4644]:
+                        - button [ref=f1e4647] [cursor=pointer]:
+                          - generic [ref=f1e4648]: menu
+                        - link "https://aidacamp.ru/lager-na-leto-2026/" [ref=f1e4654] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-na-leto-2026/
+                        - button "Обновить данные" [ref=f1e4657] [cursor=pointer]
+                        - generic [ref=f1e4659]: —
+                        - generic [ref=f1e4661]: —
+                        - button "—" [ref=f1e4665] [cursor=pointer]
+                        - button "55" [ref=f1e4670] [cursor=pointer]
+                        - button "—" [ref=f1e4675] [cursor=pointer]
+                        - generic [ref=f1e4678]: —
+                        - generic [ref=f1e4680]: —
+                        - generic [ref=f1e4682]: —
+                      - generic [ref=f1e4686]:
+                        - button [ref=f1e4689] [cursor=pointer]:
+                          - generic [ref=f1e4690]: menu
+                        - link "https://aidacamp.ru/putevka-v-lager/" [ref=f1e4696] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/putevka-v-lager/
+                        - button "Редактор" [ref=f1e4699] [cursor=pointer]
+                        - generic [ref=f1e4701]: Путёвки в летний лагерь Подмосковья 2026 — купить онлайн
+                        - generic [ref=f1e4703]: путевки в летний лагерь для детей 2026
+                        - button "51" [ref=f1e4707] [cursor=pointer]
+                        - button "50" [ref=f1e4712] [cursor=pointer]
+                        - button "0" [ref=f1e4717] [cursor=pointer]
+                        - button "Да" [ref=f1e4722] [cursor=pointer]
+                        - generic [ref=f1e4725]: —
+                        - generic [ref=f1e4727]: "200"
+                      - generic [ref=f1e4732]:
+                        - button [ref=f1e4735] [cursor=pointer]:
+                          - generic [ref=f1e4736]: menu
+                        - link "https://aidacamp.ru/" [ref=f1e4742] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/
+                        - button "Обновить данные" [ref=f1e4745] [cursor=pointer]
+                        - generic [ref=f1e4747]: —
+                        - generic [ref=f1e4749]: —
+                        - button "—" [ref=f1e4753] [cursor=pointer]
+                        - button "24" [ref=f1e4758] [cursor=pointer]
+                        - button "—" [ref=f1e4763] [cursor=pointer]
+                        - generic [ref=f1e4766]: —
+                        - generic [ref=f1e4768]: —
+                        - generic [ref=f1e4770]: —
+                      - generic [ref=f1e4774]:
+                        - button [ref=f1e4777] [cursor=pointer]:
+                          - generic [ref=f1e4778]: menu
+                        - link "https://aidacamp.ru/lager-v-moskve/" [ref=f1e4784] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-v-moskve/
+                        - button "Редактор" [ref=f1e4787] [cursor=pointer]
+                        - generic [ref=f1e4789]: Детские летние лагеря 2026 — Москва и Подмосковье
+                        - generic [ref=f1e4791]: москва лагерь для детей 2026
+                        - button "71" [ref=f1e4795] [cursor=pointer]
+                        - button "17" [ref=f1e4800] [cursor=pointer]
+                        - button "0" [ref=f1e4805] [cursor=pointer]
+                        - button "Да" [ref=f1e4810] [cursor=pointer]
+                        - generic [ref=f1e4813]: —
+                        - generic [ref=f1e4815]: "200"
+                      - generic [ref=f1e4820]:
+                        - button [ref=f1e4823] [cursor=pointer]:
+                          - generic [ref=f1e4824]: menu
+                        - link "https://aidacamp.ru/luchshie-detskie-lagerya/" [ref=f1e4830] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/luchshie-detskie-lagerya/
+                        - button "Редактор" [ref=f1e4833] [cursor=pointer]
+                        - generic [ref=f1e4835]: Лучшие детские лагеря Подмосковья и России 2026 для детей и подростков — рейтинг по оценкам Яндекс.Карт
+                        - generic [ref=f1e4837]: рейтинг лагерей подмосковья для детей
+                        - button "69" [ref=f1e4841] [cursor=pointer]
+                        - button "16" [ref=f1e4846] [cursor=pointer]
+                        - button "0" [ref=f1e4851] [cursor=pointer]
+                        - button "Да" [ref=f1e4856] [cursor=pointer]
+                        - button "4" [ref=f1e4861] [cursor=pointer]
+                        - generic [ref=f1e4864]: "200"
+                      - generic [ref=f1e4869]:
+                        - button [ref=f1e4872] [cursor=pointer]:
+                          - generic [ref=f1e4873]: menu
+                        - link "https://aidacamp.ru/ozdorovitelnyj-lager/" [ref=f1e4879] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/ozdorovitelnyj-lager/
+                        - button "Редактор" [ref=f1e4882] [cursor=pointer]
+                        - generic [ref=f1e4884]: Детский оздоровительный летний лагерь в Подмосковье 2026
+                        - generic [ref=f1e4886]: оздоровительный лагерь для детей 2026
+                        - button "58" [ref=f1e4890] [cursor=pointer]
+                        - button "12" [ref=f1e4895] [cursor=pointer]
+                        - button "0" [ref=f1e4900] [cursor=pointer]
+                        - button "Да" [ref=f1e4905] [cursor=pointer]
+                        - generic [ref=f1e4908]: —
+                        - generic [ref=f1e4910]: "200"
+                      - generic [ref=f1e4915]:
+                        - button [ref=f1e4918] [cursor=pointer]:
+                          - generic [ref=f1e4919]: menu
+                        - link "https://aidacamp.ru/stati/dokumenty-dlya-rebenka-v-lager/" [ref=f1e4925] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/stati/dokumenty-dlya-rebenka-v-lager/
+                        - button "Редактор" [ref=f1e4928] [cursor=pointer]
+                        - generic [ref=f1e4930]: Какие документы нужны для детского летнего лагеря — чек-лист 2026
+                        - generic [ref=f1e4932]: какие документы нужны для лагеря ребенку 2026
+                        - button "65" [ref=f1e4936] [cursor=pointer]
+                        - button "11" [ref=f1e4941] [cursor=pointer]
+                        - button "0" [ref=f1e4946] [cursor=pointer]
+                        - button "Да" [ref=f1e4951] [cursor=pointer]
+                        - button "3" [ref=f1e4956] [cursor=pointer]
+                        - generic [ref=f1e4959]: "200"
+                      - generic [ref=f1e4964]:
+                        - button [ref=f1e4967] [cursor=pointer]:
+                          - generic [ref=f1e4968]: menu
+                        - link "https://aidacamp.ru/lager-dlya-podrostkov/" [ref=f1e4974] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-dlya-podrostkov/
+                        - button "Редактор" [ref=f1e4977] [cursor=pointer]
+                        - generic [ref=f1e4979]: Летний лагерь для подростков в Подмосковье 2026
+                        - generic [ref=f1e4981]: лагерь для подростков 15 лет
+                        - button "56" [ref=f1e4985] [cursor=pointer]
+                        - button "11" [ref=f1e4990] [cursor=pointer]
+                        - button "1" [ref=f1e4995] [cursor=pointer]
+                        - button "Да" [ref=f1e5000] [cursor=pointer]
+                        - button "39" [ref=f1e5005] [cursor=pointer]
+                        - generic [ref=f1e5008]: "200"
+                      - generic [ref=f1e5013]:
+                        - button [ref=f1e5016] [cursor=pointer]:
+                          - generic [ref=f1e5017]: menu
+                        - link "https://aidacamp.ru/stati/chto-vzyat-v-lager/" [ref=f1e5023] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/stati/chto-vzyat-v-lager/
+                        - button "Редактор" [ref=f1e5026] [cursor=pointer]
+                        - generic [ref=f1e5028]: "Что взять ребёнку в летний лагерь — полный список: вещи, гаджеты и еда"
+                        - generic [ref=f1e5030]: что взять в лагерь на 10 дней
+                        - button "71" [ref=f1e5034] [cursor=pointer]
+                        - button "11" [ref=f1e5039] [cursor=pointer]
+                        - button "0" [ref=f1e5044] [cursor=pointer]
+                        - button "Да" [ref=f1e5049] [cursor=pointer]
+                        - button "22" [ref=f1e5054] [cursor=pointer]
+                        - generic [ref=f1e5057]: "200"
+                      - generic [ref=f1e5062]:
+                        - button [ref=f1e5065] [cursor=pointer]:
+                          - generic [ref=f1e5066]: menu
+                        - link "https://aidacamp.ru/ceny/" [ref=f1e5072] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/ceny/
+                        - button "Редактор" [ref=f1e5075] [cursor=pointer]
+                        - generic [ref=f1e5077]: Цены на лагерь в Подмосковье
+                        - generic [ref=f1e5079]: летний лагерь 2026 цена
+                        - button "67" [ref=f1e5083] [cursor=pointer]
+                        - button "9" [ref=f1e5088] [cursor=pointer]
+                        - button "1" [ref=f1e5093] [cursor=pointer]
+                        - button "Да" [ref=f1e5098] [cursor=pointer]
+                        - button "42" [ref=f1e5103] [cursor=pointer]
+                        - generic [ref=f1e5106]: "200"
+                      - generic [ref=f1e5111]:
+                        - button [ref=f1e5114] [cursor=pointer]:
+                          - generic [ref=f1e5115]: menu
+                        - link "https://aidacamp.ru/skolko-stoit-lager-dlya-rebenka/" [ref=f1e5121] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/skolko-stoit-lager-dlya-rebenka/
+                        - button "Редактор" [ref=f1e5124] [cursor=pointer]
+                        - generic [ref=f1e5126]: Сколько стоит поехать в лагерь — цены АйДаКемп 2026
+                        - generic [ref=f1e5128]: сколько стоит смена в лагере
+                        - button "65" [ref=f1e5132] [cursor=pointer]
+                        - button "8" [ref=f1e5137] [cursor=pointer]
+                        - button "0" [ref=f1e5142] [cursor=pointer]
+                        - button "Да" [ref=f1e5147] [cursor=pointer]
+                        - generic [ref=f1e5150]: —
+                        - generic [ref=f1e5152]: "200"
+                      - generic [ref=f1e5157]:
+                        - button [ref=f1e5160] [cursor=pointer]:
+                          - generic [ref=f1e5161]: menu
+                        - link "https://aidacamp.ru/lager-nedorogo/" [ref=f1e5167] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-nedorogo/
+                        - button "Редактор" [ref=f1e5170] [cursor=pointer]
+                        - generic [ref=f1e5172]: Недорогой детский лагерь в Подмосковье 2026 — оплата в рассрочку
+                        - generic [ref=f1e5174]: недорогой лагерь для детей
+                        - button "71" [ref=f1e5178] [cursor=pointer]
+                        - button "7" [ref=f1e5183] [cursor=pointer]
+                        - button "0" [ref=f1e5188] [cursor=pointer]
+                        - button "Да" [ref=f1e5193] [cursor=pointer]
+                        - button "8" [ref=f1e5198] [cursor=pointer]
+                        - generic [ref=f1e5201]: "200"
+                      - generic [ref=f1e5206]:
+                        - button [ref=f1e5209] [cursor=pointer]:
+                          - generic [ref=f1e5210]: menu
+                        - link "https://aidacamp.ru/it-camp/" [ref=f1e5216] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/it-camp/
+                        - button "Редактор" [ref=f1e5219] [cursor=pointer]
+                        - generic [ref=f1e5221]: IT Camp — летний лагерь программирования в Подмосковье для детей 7–15 лет
+                        - generic [ref=f1e5223]: it лагерь 2026
+                        - button "80" [ref=f1e5227] [cursor=pointer]
+                        - button "7" [ref=f1e5232] [cursor=pointer]
+                        - button "0" [ref=f1e5237] [cursor=pointer]
+                        - button "Да" [ref=f1e5242] [cursor=pointer]
+                        - button "6" [ref=f1e5247] [cursor=pointer]
+                        - generic [ref=f1e5250]: "200"
+                      - generic [ref=f1e5255]:
+                        - button [ref=f1e5258] [cursor=pointer]:
+                          - generic [ref=f1e5259]: menu
+                        - link "https://aidacamp.ru/lager-na-iyun/" [ref=f1e5265] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-na-iyun/
+                        - button "Редактор" [ref=f1e5268] [cursor=pointer]
+                        - generic [ref=f1e5270]: Летний лагерь на июнь 2026 — Подмосковье
+                        - generic [ref=f1e5272]: летний лагерь на июнь 2026
+                        - button "65" [ref=f1e5276] [cursor=pointer]
+                        - button "7" [ref=f1e5281] [cursor=pointer]
+                        - button "1" [ref=f1e5286] [cursor=pointer]
+                        - button "Да" [ref=f1e5291] [cursor=pointer]
+                        - generic [ref=f1e5294]: —
+                        - generic [ref=f1e5296]: "200"
+                      - generic [ref=f1e5301]:
+                        - button [ref=f1e5304] [cursor=pointer]:
+                          - generic [ref=f1e5305]: menu
+                        - link "https://aidacamp.ru/lager-na-osennie-kanikuly/" [ref=f1e5311] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-na-osennie-kanikuly/
+                        - button "Редактор" [ref=f1e5314] [cursor=pointer]
+                        - generic [ref=f1e5316]: IT-лагерь на осенние каникулы 2026, Подмосковье
+                        - generic [ref=f1e5318]: it лагерь на осенние каникулы
+                        - button "66" [ref=f1e5322] [cursor=pointer]
+                        - button "7" [ref=f1e5327] [cursor=pointer]
+                        - button "0" [ref=f1e5332] [cursor=pointer]
+                        - button "Да" [ref=f1e5337] [cursor=pointer]
+                        - button "1" [ref=f1e5342] [cursor=pointer]
+                        - generic [ref=f1e5345]: "200"
+                      - generic [ref=f1e5350]:
+                        - button [ref=f1e5353] [cursor=pointer]:
+                          - generic [ref=f1e5354]: menu
+                        - link "https://aidacamp.ru/lager-15-let/" [ref=f1e5360] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-15-let/
+                        - button "Редактор" [ref=f1e5363] [cursor=pointer]
+                        - generic [ref=f1e5365]: Летний лагерь для подростков 15 лет — FastAPI и AI
+                        - generic [ref=f1e5367]: лагерь для подростков 15 лет
+                        - button "65" [ref=f1e5371] [cursor=pointer]
+                        - button "6" [ref=f1e5376] [cursor=pointer]
+                        - button "0" [ref=f1e5381] [cursor=pointer]
+                        - button "Да" [ref=f1e5386] [cursor=pointer]
+                        - generic [ref=f1e5389]: —
+                        - generic [ref=f1e5391]: "200"
+                      - generic [ref=f1e5396]:
+                        - button [ref=f1e5399] [cursor=pointer]:
+                          - generic [ref=f1e5400]: menu
+                        - link "https://aidacamp.ru/lager-dlya-shkolnikov/" [ref=f1e5406] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-dlya-shkolnikov/
+                        - button "Редактор" [ref=f1e5409] [cursor=pointer]
+                        - generic [ref=f1e5411]: Летний лагерь для школьников 2026 — АйДаКемп
+                        - generic [ref=f1e5413]: лагерь для детей 7 класс
+                        - button "64" [ref=f1e5417] [cursor=pointer]
+                        - button "6" [ref=f1e5422] [cursor=pointer]
+                        - button "0" [ref=f1e5427] [cursor=pointer]
+                        - button "Да" [ref=f1e5432] [cursor=pointer]
+                        - generic [ref=f1e5435]: —
+                        - generic [ref=f1e5437]: "200"
+                      - generic [ref=f1e5442]:
+                        - button [ref=f1e5445] [cursor=pointer]:
+                          - generic [ref=f1e5446]: menu
+                        - link "https://aidacamp.ru/lager-naro-fominsk/" [ref=f1e5452] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/lager-naro-fominsk/
+                        - button "Редактор" [ref=f1e5455] [cursor=pointer]
+                        - generic [ref=f1e5457]: Детский лагерь в Наро-Фоминском районе
+                        - generic [ref=f1e5459]: наро фоминск оздоровительный лагерь
+                        - button "67" [ref=f1e5463] [cursor=pointer]
+                        - button "6" [ref=f1e5468] [cursor=pointer]
+                        - button "0" [ref=f1e5473] [cursor=pointer]
+                        - button "Да" [ref=f1e5478] [cursor=pointer]
+                        - button "2" [ref=f1e5483] [cursor=pointer]
+                        - generic [ref=f1e5486]: "200"
+                      - generic [ref=f1e5491]:
+                        - button [ref=f1e5494] [cursor=pointer]:
+                          - generic [ref=f1e5495]: menu
+                        - link "https://aidacamp.ru/nalogovyj-vychet/" [ref=f1e5501] [cursor=pointer]:
+                          - /url: https://aidacamp.ru/nalogovyj-vychet/
+                        - button "Редактор" [ref=f1e5504] [cursor=pointer]
+                        - generic [ref=f1e5506]: Как получить налоговый вычет за путёвку в детский лагерь 2026
+                        - generic [ref=f1e5508]: как получить налоговый вычет за лагерь
+                        - button "47" [ref=f1e5512] [cursor=pointer]
+                        - button "5" [ref=f1e5517] [cursor=pointer]
+                        - button "0" [ref=f1e5522] [cursor=pointer]
+                        - button "Да" [ref=f1e5527] [cursor=pointer]
+                        - button "4" [ref=f1e5532] [cursor=pointer]
+                        - generic [ref=f1e5535]: "200"
+                  - generic [ref=f1e1250]:
+                    - generic [ref=f1e1251]: "Показано: c 1 по 20 из 314"
+                    - generic [ref=f1e1252]:
+                      - text: "Страница:"
+                      - button "Предыдущая страница" [disabled]:
+                        - generic: keyboard_arrow_left
+                      - spinbutton [ref=f1e1257]: "1"
+                      - button "Следующая страница" [ref=f1e1258] [cursor=pointer]:
+                        - generic [ref=f1e1259]: keyboard_arrow_right
+                      - text: из 16
+                    - generic [ref=f1e1261]:
+                      - text: "Строк на странице:"
+                      - combobox [ref=f1e1262]:
+                        - generic [ref=f1e1265] [cursor=pointer]:
+                          - generic [ref=f1e1266]:
+                            - generic [ref=f1e1267]: "20"
+                            - textbox
+                          - generic [ref=f1e1268]: arrow_drop_down
+          - complementary [ref=f1e1271]:
+            - button [ref=f1e1275] [cursor=pointer]:
+              - generic [ref=f1e1276]: save_alt
+            - button [ref=f1e1281] [cursor=pointer]:
+              - generic [ref=f1e1282]: share
+            - generic [ref=f1e1285]:
+              - button [disabled]:
+                - generic: help_outline
+            - separator [ref=f1e1286]
+            - button [ref=f1e1291] [cursor=pointer]:
+              - generic [ref=f1e1292]: playlist_play
+            - button "Пригласить участников команды" [ref=f1e1296] [cursor=pointer]:
+              - generic [ref=f1e1297]: supervised_user_circle
+    - complementary [ref=f1e1300]
+    - complementary [ref=f1e1302]
+    - complementary [ref=f1e1304]

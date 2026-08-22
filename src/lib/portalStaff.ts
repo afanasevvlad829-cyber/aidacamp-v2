@@ -60,7 +60,7 @@ export async function listStaff(): Promise<StaffRowFull[]> {
 }
 
 /**
- * Объединяет pending-запись (без роли, без staff_key) с placeholder-ом (без telegram_id, со staff_key).
+ * Объединяет pending-запись (без роли, без staff_key) с placeholder-ом (без telegram_id; staff_key опционален).
  * Транзакция: переносит telegram_id/tg_username/full_name в target, удаляет pending.
  */
 export async function mergePendingIntoPlaceholder(
@@ -106,10 +106,8 @@ export async function mergePendingIntoPlaceholder(
         await c.query('ROLLBACK');
         return { ok: false as const, error: 'target уже имеет telegram_id — не является placeholder-ом' };
       }
-      if (target.staff_key == null) {
-        await c.query('ROLLBACK');
-        return { ok: false as const, error: 'target не имеет staff_key — не является placeholder-ом' };
-      }
+      // staff_key НЕ требуем: add-manual создаёт placeholder и без семантического ключа —
+      // признак placeholder-а здесь только отсутствие telegram_id.
 
       await c.query(
         `UPDATE portal_staff

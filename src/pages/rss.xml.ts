@@ -37,8 +37,12 @@ export const GET: APIRoute = async () => {
         pubDates.set(r.slug, r.rss_published_at);
       }
     }
-  } catch {
-    // БД недоступна — пустой фид
+  } catch (e) {
+    // БД недоступна/ошибка запроса — фид уйдёт ПУСТЫМ, поэтому шумим в лог, чтобы
+    // поломка не пряталась месяцами. Инцидент 07.2026: у роли сайта не было SELECT
+    // на article_views → запрос падал → пустой RSS → ноль трафика из Дзена, и никто
+    // не замечал, потому что ошибка глоталась молча.
+    console.error('[rss.xml] запрос rss_published_at упал, фид будет пустым:', e instanceof Error ? e.message : e);
   }
 
   const articleEntries = await getCollection('articles');
