@@ -99,6 +99,14 @@ export async function getLatestShift(): Promise<Shift | null> {
   return rows?.[0] ?? null;
 }
 
+export async function getShiftById(id: number): Promise<Shift | null> {
+  const rows = await query<Shift>(
+    "SELECT id,name,to_char(start_date,'YYYY-MM-DD') start_date,to_char(end_date,'YYYY-MM-DD') end_date,status FROM shift WHERE id=$1",
+    [id],
+  );
+  return rows?.[0] ?? null;
+}
+
 /** Отсортированный список дат смены (для навигации/шахматки) — без загрузки событий. */
 export async function getEventDates(shiftId: number): Promise<string[]> {
   const rows = await query(
