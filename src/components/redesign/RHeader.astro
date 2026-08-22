@@ -120,9 +120,15 @@ const nav = [
     backdrop-filter: blur(10px);
     border-bottom-color: var(--r-line);
   }
-  .r-header.is-stuck .r-header__logo { color: var(--r-ink); }
+  .r-header.is-stuck .r-header__logo,
+  .r-header.is-open .r-header__logo { color: var(--r-ink); }
   .r-header.is-stuck .r-header__nav a { color: var(--r-body); }
-  .r-header.is-stuck .r-header__burger span { background: var(--r-ink); }
+  .r-header.is-stuck .r-header__burger span,
+  .r-header.is-open .r-header__burger span { background: var(--r-ink); }
+  .r-header.is-open { background: rgba(251, 248, 243, .98); }
+  /* Крестик вместо трёх линий — состояние кнопки должно быть видно, а не угадываться */
+  .r-header.is-open .r-header__burger span:first-child { transform: translateY(3.75px) rotate(45deg); }
+  .r-header.is-open .r-header__burger span:last-child { transform: translateY(-3.75px) rotate(-45deg); }
 
   .r-header__drawer {
     background: rgba(251, 248, 243, .98);
@@ -175,11 +181,15 @@ const nav = [
         if (open) { drawer.removeAttribute('hidden'); } else { drawer.setAttribute('hidden', ''); }
         burger.setAttribute('aria-expanded', open ? 'true' : 'false');
         burger.setAttribute('aria-label', open ? 'Закрыть меню' : 'Открыть меню');
+        // Меню бумажное — над ним белые лого и бургер исчезают,
+        // поэтому на время открытия шапка переходит в тёмное состояние.
+        header.classList.toggle('is-open', open);
       });
       drawer.addEventListener('click', function (e) {
         if (e.target.tagName === 'A') {
           drawer.setAttribute('hidden', '');
           burger.setAttribute('aria-expanded', 'false');
+          header.classList.remove('is-open');
         }
       });
     }
