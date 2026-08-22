@@ -1,4 +1,6 @@
 import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_S2, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
+import { STAT_RATING } from '../contacts';
+import { otzyvyLink, yandexReviewsLink } from '../../lib/reviews-link';
 import type { LandingData } from './types';
 
 const landing: LandingData = {
@@ -115,6 +117,10 @@ const landing: LandingData = {
         'После смены школьник сам ставит Python дома и доделывает проект — это, пожалуй, самая частая история',
         'Дорога в час с небольшим пугает только до первой поездки: обратно едут уже спокойно',
       ],
+    },
+    {
+      h2: 'Отзывы родителей из Подольска',
+      text: `Мамы и папы из Подольска выбирают лагерь не по одной фотографии в директ и не наугад — читают, что говорят другие. Цитаты с именами мы не публикуем на лендингах: настоящие ${otzyvyLink()} открыты на сайте, плюс карточка лагеря с рейтингом ${STAT_RATING} на ${yandexReviewsLink()}. Из того, что чаще всего пишут: летние каникулы прошли не перед экраном, а с проектом, который потом показывают всей семье.`,
     },
   ],
 };
