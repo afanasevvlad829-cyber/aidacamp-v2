@@ -1,6 +1,7 @@
 ---
 /**
- * Шапка редизайна. Прозрачная поверх hero-фото, при скролле — бумажная с линией.
+ * Шапка редизайна. Бумажная с первого пикселя: hero больше не тёмный,
+ * прозрачная шапка поверх него нечитаема. При скролле добавляется линия.
  * Телефон — главный CTA (DESIGN_SYSTEM §1, принцип 6), поэтому он единственный
  * элемент шапки с акцентной заливкой.
  */
@@ -45,7 +46,7 @@ const nav = [
     position: sticky;
     top: 0;
     z-index: 50;
-    background: transparent;
+    background: var(--r-paper);
     transition: background-color .28s ease, border-color .28s ease;
     border-bottom: 1px solid transparent;
   }
@@ -60,7 +61,7 @@ const nav = [
     font-size: 26px;
     font-weight: 600;
     letter-spacing: .01em;
-    color: #FBF8F3;
+    color: var(--r-ink);
     text-decoration: none;
     transition: color .28s ease;
   }
@@ -71,7 +72,7 @@ const nav = [
     font-size: 15px;
   }
   .r-header__nav a {
-    color: rgba(251, 248, 243, .88);
+    color: var(--r-body);
     text-decoration: none;
     padding-block: 4px;
     border-bottom: 1px solid transparent;
@@ -79,20 +80,23 @@ const nav = [
   }
   .r-header__nav a:hover { border-bottom-color: currentColor; }
 
+  /* Телефон — без заливки: оранжевая пилюля поверх фотографии удешевляла
+     первый экран. Заливку получает только форма записи внизу страницы. */
   .r-header__phone {
     display: none;
     align-items: center;
     gap: 9px;
     font-size: 15px;
     font-weight: 600;
-    color: #201503;
-    background: var(--r-accent);
-    padding: 11px 20px;
-    border-radius: var(--r-radius);
+    color: var(--r-ink);
+    padding: 11px 0;
     text-decoration: none;
-    transition: background-color .2s ease;
+    border-bottom: 1px solid transparent;
+    transition: color .2s ease, border-color .2s ease;
   }
-  .r-header__phone:hover { background: var(--r-accent-hover); }
+  .r-header__phone:hover { border-bottom-color: currentColor; }
+  .r-header.is-stuck .r-header__phone,
+  .r-header.is-open .r-header__phone { color: var(--r-ink); }
 
   .r-header__burger {
     margin-inline-start: auto;
@@ -110,13 +114,13 @@ const nav = [
   .r-header__burger span {
     display: block;
     height: 1.5px;
-    background: #FBF8F3;
+    background: var(--r-ink);
     transition: background-color .28s ease, transform .28s ease;
   }
 
   /* Состояние после скролла — бумажный фон, тёмный текст */
   .r-header.is-stuck {
-    background: rgba(251, 248, 243, .96);
+    background: rgba(251, 248, 243, .94);
     backdrop-filter: blur(10px);
     border-bottom-color: var(--r-line);
   }

@@ -1,205 +1,125 @@
 ---
 /**
- * Hero редизайна — журнальный разворот: фото на всю ширину, заголовок поверх,
- * под ним полоса фактов. Никаких gradient orbs: работает фотография
- * (DESIGN_SYSTEM §1, принцип 1).
+ * Hero — редакционный разворот, а не фото с текстом поверх.
  *
- * H1 держит поисковый ключ («детский IT-лагерь в Подмосковье»), эмоция уходит
- * в надзаголовок и лид — так редакционная подача не стоит SEO ничего.
+ * Почему так: текст на групповом кадре всегда конфликтует с лицами и требует
+ * затемнения, а затемнение съедает саму фотографию. Здесь типографика живёт
+ * на бумаге и читается чисто, снимок работает отдельным кадром — и слабый
+ * кадр портит впечатление меньше, чем растянутый во весь экран.
+ *
+ * На первом экране сознательно нет цены, счётчиков и цветных кнопок:
+ * цена — сноска в расписании, а не аргумент.
  */
-import { PRICE_OSEN, AUTUMN_2026 } from '../../data/shifts';
-import { STAT_DISTANCE, STAT_RATING, STAT_KIDS } from '../../data/contacts';
+import { STAT_DISTANCE } from '../../data/contacts';
 ---
 
 <section class="r-hero">
-  <picture class="r-hero__media">
-    <source
-      media="(max-width: 768px)"
-      srcset="/images/hero-mobile-bean-v3.avif 390w, /images/hero-mobile-bean-v3-828.avif 828w"
-      sizes="100vw"
-      type="image/avif"
-    />
-    <source
-      srcset="/images/hero-desktop-1080.avif 1080w, /images/hero-desktop-1440.avif 1440w"
-      sizes="100vw"
-      type="image/avif"
-    />
-    <img
-      src="/images/hero-desktop-1440.avif"
-      alt="Ребята на территории АйДаКемп летом"
-      width="1440"
-      height="960"
-      fetchpriority="high"
-      decoding="async"
-      class="r-photo"
-    />
-  </picture>
+  <div class="r-wrap r-hero__grid">
+    <div class="r-hero__copy">
+      <p class="r-hero__kicker">Подмосковье · {STAT_DISTANCE} от Москвы · 7–15 лет</p>
 
-  <div class="r-hero__scrim"></div>
+      <h1 class="r-display r-hero__title">
+        Детский IT-лагерь, из которого
+        <span class="r-em">не хотят уезжать</span>
+      </h1>
 
-  <div class="r-wrap r-hero__inner">
-    <p class="r-hero__kicker">Подмосковье · {STAT_DISTANCE} от Москвы · 7–15 лет</p>
+      <p class="r-hero__lead">
+        Сосновый лес в часе от города. Занятия с преподавателями-практиками до обеда,
+        бассейн и своя лагерная жизнь после.
+      </p>
 
-    <h1 class="r-display r-hero__title">
-      Детский IT-лагерь,<br />
-      из которого <span class="r-em">не хотят уезжать</span>
-    </h1>
-
-    <p class="r-hero__lead">
-      Программирование и нейросети до обеда, бассейн и спорт после. Ближайший заезд —
-      осенние каникулы, {AUTUMN_2026.days} дней за {PRICE_OSEN}, часть вернётся налоговым вычетом.
-    </p>
-
-    <div class="r-hero__actions">
-      <a href="#shifts" class="r-btn r-btn--primary">Смотреть смены и цены</a>
-      <a href="#day" class="r-btn r-btn--outline r-hero__outline">Как проходит день</a>
+      <div class="r-hero__actions">
+        <a href="#shifts" class="r-btn r-btn--outline">Смены</a>
+        <a href="#day" class="r-btn r-btn--ghost">Как проходит день</a>
+      </div>
     </div>
+
+    <figure class="r-figure r-hero__figure">
+      <img
+        src="/images/gallery/territory-alley.avif"
+        alt="Сосновая аллея на территории лагеря"
+        width="960"
+        height="1200"
+        fetchpriority="high"
+        decoding="async"
+        class="r-photo"
+      />
+    </figure>
   </div>
 
-  <div class="r-hero__strip">
-    <div class="r-wrap r-hero__strip-inner">
-      <div class="r-hero__stat">
-        <b>{STAT_RATING}</b>
-        <span>на Яндекс.Картах</span>
-      </div>
-      <div class="r-hero__stat">
-        <b>{STAT_KIDS}</b>
-        <span>ребят прошли смены</span>
-      </div>
-      <div class="r-hero__stat">
-        <b>24/7</b>
-        <span>медработник на территории</span>
-      </div>
-      <div class="r-hero__stat">
-        <b>5 раз</b>
-        <span>питание в день</span>
-      </div>
-    </div>
+  <div class="r-wrap r-hero__foot">
+    <p>
+      Санаторий «Изумруд», закрытая территория с бассейном. Отряды до восьми человек,
+      медработник на смене круглосуточно.
+    </p>
   </div>
 </section>
 
 <style>
   .r-hero {
-    position: relative;
-    min-height: min(92svh, 720px);
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    margin-top: calc(-1 * (18px * 2 + 44px)); /* заезжает под прозрачную шапку */
-    padding-top: calc(18px * 2 + 44px);
-    overflow: hidden;
-    isolation: isolate;
-  }
-  .r-hero__media {
-    position: absolute;
-    inset: 0;
-    z-index: -2;
-  }
-  .r-hero__media img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; }
-
-  /* Затемнение снизу — чтобы белый текст читался на любом кадре (AA на всей площади) */
-  .r-hero__scrim {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    /* На мобиле текст занимает почти весь экран и попадает на светлые участки
-       кадра (кресла, лица) — поэтому подложка здесь плотная и высокая.
-       На десктопе текст сидит в нижней трети, там хватает мягкого градиента. */
-    background:
-      linear-gradient(to top,
-        rgba(10, 12, 9, .9) 0%,
-        rgba(10, 12, 9, .74) 40%,
-        rgba(10, 12, 9, .46) 68%,
-        rgba(10, 12, 9, .26) 100%);
-  }
-  @media (min-width: 768px) {
-    .r-hero__scrim {
-      background:
-        linear-gradient(to top,
-          rgba(10, 12, 9, .88) 0%,
-          rgba(10, 12, 9, .56) 34%,
-          rgba(10, 12, 9, .1) 62%,
-          rgba(10, 12, 9, .3) 100%);
-    }
+    padding-top: clamp(28px, 5vw, 64px);
+    padding-bottom: clamp(40px, 6vw, 80px);
   }
 
-  .r-hero__inner {
-    padding-bottom: clamp(36px, 6vw, 72px);
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0;
+  .r-hero__grid {
+    display: grid;
+    gap: clamp(32px, 5vw, 64px);
+    align-items: center;
   }
+
   .r-hero__kicker {
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 600;
-    letter-spacing: .1em; /* на 375px разрядка .18em ломала строку надвое */
+    letter-spacing: .14em;
     text-transform: uppercase;
-    color: rgba(251, 248, 243, .86);
-    margin: 0 0 18px;
-  }
-  @media (min-width: 768px) {
-    .r-hero__kicker { font-size: 12px; letter-spacing: .18em; margin-bottom: 20px; }
-  }
-  .r-hero__title {
-    color: #FDFBF7;
-    max-width: 16ch;
+    color: var(--r-muted);
     margin: 0 0 22px;
-    text-shadow: 0 2px 30px rgba(0, 0, 0, .3);
+  }
+    .r-hero__title {
+    max-width: 20ch;
+    margin: 0 0 26px;
+    /* Кегль чуть ниже общего display: «IT-лагерь» — длинное неразрывное слово,
+       на крупном размере оно ломало строку посередине. */
+    font-size: clamp(34px, 4.6vw, 58px);
   }
   .r-hero__lead {
-    font-size: clamp(16.5px, 1.7vw, 19px);
-    line-height: 1.58;
-    color: rgba(253, 251, 247, .9);
-    max-width: 46ch;
-    margin: 0 0 32px;
+    font-size: clamp(17px, 1.6vw, 19.5px);
+    line-height: 1.6;
+    color: var(--r-body);
+    max-width: 40ch;
+    margin: 0 0 38px;
   }
-  /* На мобиле кнопки во всю ширину: разноширокие пилюли на узком экране
-     читаются как случайность, а первичное действие должно быть заметно больше */
-  .r-hero__actions { display: flex; flex-direction: column; gap: 12px; align-self: stretch; }
-  .r-hero__actions .r-btn { width: 100%; }
-  @media (min-width: 768px) {
-    .r-hero__actions { flex-direction: row; flex-wrap: wrap; gap: 14px; align-self: auto; }
-    .r-hero__actions .r-btn { width: auto; }
-  }
-  .r-hero__outline { color: #FDFBF7; border-color: rgba(253, 251, 247, .6); }
-  .r-hero__outline:hover { background: #FDFBF7; color: var(--r-ink); }
-
-  /* Полоса доверия — на бумаге, а не на фото: цифры должны читаться, а не тонуть */
-  .r-hero__strip {
-    background: var(--r-paper);
-    border-bottom: 1px solid var(--r-line);
-  }
-  .r-hero__strip-inner {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0;
-  }
-  .r-hero__stat {
+  .r-hero__actions {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 18px 16px 18px 0;
-    border-bottom: 1px solid var(--r-line-soft);
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px 26px;
   }
-  .r-hero__stat:nth-child(n + 3) { border-bottom: 0; }
-  .r-hero__stat b {
-    font-family: "Cormorant Garamond", Georgia, serif;
-    font-size: 30px;
-    font-weight: 600;
-    line-height: 1.1;
-    color: var(--r-ink);
-    font-variant-numeric: tabular-nums;
-  }
-  .r-hero__stat span { font-size: 13.5px; color: var(--r-muted); line-height: 1.35; }
 
-  @media (min-width: 768px) {
-    .r-hero__strip-inner { grid-template-columns: repeat(4, 1fr); }
-    .r-hero__stat {
-      padding: 22px 24px;
-      border-bottom: 0;
-      border-left: 1px solid var(--r-line-soft);
+  .r-hero__figure { aspect-ratio: 4 / 5; }
+
+  /* Одна строка вместо полосы счётчиков: «5.0 / 1200+ / 24/7» — язык
+     агрегаторов, а не бренда. */
+  .r-hero__foot {
+    margin-top: clamp(36px, 5vw, 64px);
+    padding-top: 22px;
+  }
+  .r-hero__foot p {
+    margin: 0;
+    padding-top: 22px;
+    border-top: 1px solid var(--r-line);
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--r-muted);
+    max-width: 68ch;
+  }
+
+  @media (min-width: 900px) {
+    .r-hero__grid {
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+      gap: 72px;
     }
-    .r-hero__stat:first-child { border-left: 0; padding-left: 0; }
+    /* Фотография опущена относительно текста — разворот, а не две ровные колонки */
+    .r-hero__figure { margin-top: 40px; }
   }
 </style>
