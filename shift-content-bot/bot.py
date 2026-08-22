@@ -497,7 +497,10 @@ async def text_router(ev):
         q("UPDATE shift_content SET kids=%s WHERE id=%s", (ev.text.strip(), st["content_id"]))
         st["stage"] = "task"
         d = shift_day()
-        tasks = q("SELECT id, title FROM shift_tasks WHERE day=%s AND NOT done ORDER BY deadline", (d,))
+        # Чек-лист свой у каждой смены (миграция 003): без shift_id в выбор
+        # попадали задачи прошлых заездов с теми же номерами дней.
+        tasks = q("SELECT id, title FROM shift_tasks WHERE day=%s AND shift_id=%s "
+                  "AND NOT done ORDER BY deadline", (d, shift_id()))
         btns = [[Button.inline(t[:55], f"task:{st['content_id']}:{tid}".encode())] for tid, t in tasks[:6]]
         btns.append([Button.inline("🗃 Просто так — в копилку", f"task:{st['content_id']}:0".encode())])
         await ev.respond("Это по контентному заданию или просто так?", buttons=btns)
@@ -596,8 +599,8 @@ async def task_ok(ev):
         return await ev.answer("Задача уже обработана", alert=True)
     t = st["task"]
     d = shift_day()
-    q("INSERT INTO shift_tasks (day, title, resp_role, deadline) VALUES(%s,%s,%s,%s)",
-      (d, t["title"], t.get("role", "all"), t.get("deadline", "21:00")))
+    q("INSERT INTO shift_tasks (day, shift_id, title, resp_role, deadline) VALUES(%s,%s,%s,%s,%s)",
+      (d, shift_id(), t["title"], t.get("role", "all"), t.get("deadline", "21:00")))
     role = t.get("role", "all")
     rows = q("SELECT tg_id FROM shift_staff WHERE %s='all' OR role=%s", (role, role))
     who, _ = staff_name(ev.sender_id)
@@ -637,7 +640,8 @@ async def status_cmd(ev):
     if ev.sender_id not in ADMINS:
         return
     d = shift_day()
-    rows = q("SELECT title, resp_role, deadline, done FROM shift_tasks WHERE day=%s ORDER BY deadline", (d,))
+    rows = q("SELECT title, resp_role, deadline, done FROM shift_tasks "
+             "WHERE day=%s AND shift_id=%s ORDER BY deadline", (d, shift_id()))
     if not rows:
         return await ev.respond(f"На день {d} задач нет.")
     role_ru = {"vozh": "вожатые", "prep": "преподаватели", "oper": "фотограф", "all": "все"}
@@ -664,7 +668,8 @@ def build_svodka():
     vd_c = q("SELECT count(*) FROM shift_content WHERE day=%s AND kind='video' AND compressed", (d,))[0][0]
     vc = q("SELECT count(*) FROM shift_content WHERE day=%s AND kind='voice'", (d,))[0][0]
     stash = q("SELECT count(*) FROM shift_content WHERE day=%s AND bucket='stash'", (d,))[0][0]
-    open_tasks = q("SELECT title FROM shift_tasks WHERE day=%s AND NOT done", (d,))
+    open_tasks = q("SELECT title FROM shift_tasks WHERE day=%s AND shift_id=%s AND NOT done",
+                   (d, shift_id()))
     fb = q("SELECT count(DISTINCT tg_id) FROM shift_feedback WHERE day=%s", (d,))[0][0]
     staff_n = q("SELECT count(*) FROM shift_staff", ())[0][0]
     disk = os.statvfs(STORAGE if os.path.exists(STORAGE) else "/")
@@ -694,7 +699,8 @@ async def scheduler():
             d = shift_day()
             if d > 0:
                 for tid, title, deadline, role in q(
-                        "SELECT id, title, deadline, resp_role FROM shift_tasks WHERE day=%s AND NOT done", (d,)):
+                        "SELECT id, title, deadline, resp_role FROM shift_tasks "
+                        "WHERE day=%s AND shift_id=%s AND NOT done", (d, shift_id())):
                     dl = datetime.datetime.combine(n.date(), deadline, MSK)
                     delta = (dl - n).total_seconds()
                     if 0 < delta <= 15 * 60 and tid not in reminded:
