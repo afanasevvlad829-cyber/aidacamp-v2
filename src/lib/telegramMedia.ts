@@ -17,15 +17,15 @@ const VIDEO_INSTRUCTION =
 
 export function classifyIncomingMedia(msg: TelegramMessageLike): MediaClassification {
   if (msg.photo) {
-    return { accept: false, reason: 'Сжатое фото', instructionText: PHOTO_INSTRUCTION };
+    return { accept: false, reason: 'compressed_photo', instructionText: PHOTO_INSTRUCTION };
   }
   if (msg.video) {
-    return { accept: false, reason: 'Сжатое видео', instructionText: VIDEO_INSTRUCTION };
+    return { accept: false, reason: 'compressed_video', instructionText: VIDEO_INSTRUCTION };
   }
   if (!msg.document) {
     return {
       accept: false,
-      reason: 'Нет вложения',
+      reason: 'no_attachment',
       instructionText: 'Пришлите фото или видео файлом (📎 → Файл).',
     };
   }
