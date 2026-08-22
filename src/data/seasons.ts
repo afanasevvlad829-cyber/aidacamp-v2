@@ -53,6 +53,10 @@ export interface SeasonConfig {
   windows?: string[];           // окна заездов для предзаписи (четверти/триместры)
   windowsBlock?: { heading: string; intro: string; items: string[] };
   calendarWindows?: SeasonCalWindow[];  // те же окна в виде мини-календарей
+  // Есть ли отдельные страницы заездов (/<path>/<slug>/). Флаг, а не вывод по
+  // наличию calendarWindows: окна есть у всех сезонов, а страницы пока только
+  // у осени — без флага лендинги зимы и весны ссылались бы в никуда.
+  hasWindowPages?: boolean;
   schedule: { heading: string; intro: string; days: SeasonDay[] };
   quote?: {
     text: string;
@@ -63,6 +67,26 @@ export interface SeasonConfig {
   };
   options: { heading: string; intro: string; items: SeasonOption[] };
   faq: { heading: string; items: SeasonFaqItem[] };
+}
+
+// Слаг заезда из даты начала: 2026-10-25 → «25-oktyabrya». Читаемо в рекламе
+// и в отчётах Метрики, в отличие от window-1/window-2. Живёт здесь, потому что
+// им пользуются и маршрут страницы заезда, и ссылки с сезонного лендинга —
+// расхождение между ними дало бы битые ссылки.
+const MONTH_SLUG: Record<string, string> = {
+  '01': 'yanvarya', '02': 'fevralya', '03': 'marta', '04': 'aprelya',
+  '05': 'maya', '06': 'iyunya', '07': 'iyulya', '08': 'avgusta',
+  '09': 'sentyabrya', '10': 'oktyabrya', '11': 'noyabrya', '12': 'dekabrya',
+};
+
+export function seasonWindowSlug(from: string): string {
+  const [, mm, dd] = from.split('-');
+  return `${parseInt(dd, 10)}-${MONTH_SLUG[mm]}`;
+}
+
+/** Полный путь страницы заезда: /lager-na-osennie-kanikuly/25-oktyabrya/ */
+export function seasonWindowHref(seasonPath: string, from: string): string {
+  return `${seasonPath}/${seasonWindowSlug(from)}/`;
 }
 
 export const AUTUMN_SEASON: SeasonConfig = {
