@@ -39,6 +39,7 @@ export interface SeasonConfig {
   h1: string;
   subtitle: string;             // подзаголовок hero
   breadcrumb: string;
+  shortName: string;            // «осень» / «зима» / «весна» — для фраз «Следующий заезд — {shortName}»
   heroImage: string;
   heroImageAlt: string;
   heroKeywords: string[];       // буллеты в hero
@@ -52,6 +53,10 @@ export interface SeasonConfig {
   windows?: string[];           // окна заездов для предзаписи (четверти/триместры)
   windowsBlock?: { heading: string; intro: string; items: string[] };
   calendarWindows?: SeasonCalWindow[];  // те же окна в виде мини-календарей
+  // Есть ли отдельные страницы заездов (/<path>/<slug>/). Флаг, а не вывод по
+  // наличию calendarWindows: окна есть у всех сезонов, а страницы пока только
+  // у осени — без флага лендинги зимы и весны ссылались бы в никуда.
+  hasWindowPages?: boolean;
   schedule: { heading: string; intro: string; days: SeasonDay[] };
   quote?: {
     text: string;
@@ -64,6 +69,26 @@ export interface SeasonConfig {
   faq: { heading: string; items: SeasonFaqItem[] };
 }
 
+// Слаг заезда из даты начала: 2026-10-25 → «25-oktyabrya». Читаемо в рекламе
+// и в отчётах Метрики, в отличие от window-1/window-2. Живёт здесь, потому что
+// им пользуются и маршрут страницы заезда, и ссылки с сезонного лендинга —
+// расхождение между ними дало бы битые ссылки.
+const MONTH_SLUG: Record<string, string> = {
+  '01': 'yanvarya', '02': 'fevralya', '03': 'marta', '04': 'aprelya',
+  '05': 'maya', '06': 'iyunya', '07': 'iyulya', '08': 'avgusta',
+  '09': 'sentyabrya', '10': 'oktyabrya', '11': 'noyabrya', '12': 'dekabrya',
+};
+
+export function seasonWindowSlug(from: string): string {
+  const [, mm, dd] = from.split('-');
+  return `${parseInt(dd, 10)}-${MONTH_SLUG[mm]}`;
+}
+
+/** Полный путь страницы заезда: /lager-na-osennie-kanikuly/25-oktyabrya/ */
+export function seasonWindowHref(seasonPath: string, from: string): string {
+  return `${seasonPath}/${seasonWindowSlug(from)}/`;
+}
+
 export const AUTUMN_SEASON: SeasonConfig = {
   slug: 'osen-2026',
   path: '/lager-na-osennie-kanikuly',
@@ -72,6 +97,7 @@ export const AUTUMN_SEASON: SeasonConfig = {
   h1: 'Лагерь: осенние каникулы, программирование, Москва, Подмосковье',
   subtitle: 'Детский лагерь на неделю — и ребёнок возвращается с готовым IT-проектом, а не ноябрьской скукой.',
   breadcrumb: 'Лагерь на осенние каникулы',
+  shortName: 'осень',
   heroImage: '/images/hero/lager-na-osennie-kanikuly.avif',
   heroImageAlt: 'Корпус АйДаКемп в осенней листве — санаторий «Изумруд», Подмосковье',
   heroKeywords: [
@@ -160,6 +186,7 @@ export const WINTER_SEASON: SeasonConfig = {
   h1: 'IT-лагерь на зимние каникулы 2026–2027',
   subtitle: 'Самые длинные каникулы после лета — 10 дней с друзьями и собственным проектом вместо дивана и сериалов.',
   breadcrumb: 'Лагерь на зимние каникулы',
+  shortName: 'зима',
   heroImage: '/images/hero/lager-na-zimnie-kanikuly.avif',
   heroImageAlt: 'Корпус АйДаКемп зимой в снегу — санаторий «Изумруд», Подмосковье',
   heroKeywords: [
@@ -242,6 +269,7 @@ export const SPRING_SEASON: SeasonConfig = {
   h1: 'IT-лагерь на весенние каникулы 2027',
   subtitle: 'Перезагрузка перед последней четвертью: за неделю ребёнок отдохнёт от школы — и соберёт свой первый проект.',
   breadcrumb: 'Лагерь на весенние каникулы',
+  shortName: 'весна',
   heroImage: '/images/hero/lager-na-vesennie-kanikuly.avif',
   heroImageAlt: 'Корпус АйДаКемп весной в зелени — санаторий «Изумруд», Подмосковье',
   heroKeywords: [
@@ -314,3 +342,40 @@ export const SPRING_SEASON: SeasonConfig = {
     ],
   },
 };
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Переключение сезонов — единая точка
+
+   Раньше каждое место, которому нужен «следующий сезон», импортировало
+   AUTUMN_SEASON напрямую (AgeBar, /ceny/, страницы смен). После осени такой
+   хардкод пришлось бы править руками во всех этих файлах и легко забыть
+   часть — как уже случилось с кнопками брони летних смен.
+
+   Теперь сезон выбирается по датам: активен тот, у которого ещё не прошёл
+   последний заезд. Порядок в SEASONS — хронологический.
+   ───────────────────────────────────────────────────────────────────────── */
+
+export const SEASONS: SeasonConfig[] = [AUTUMN_SEASON, WINTER_SEASON, SPRING_SEASON];
+
+/** Дата окончания последнего заезда сезона (ISO). */
+export function seasonEnd(s: SeasonConfig): string {
+  const w = s.calendarWindows ?? [];
+  return w.reduce((max, x) => (x.to > max ? x.to : max), w[0]?.to ?? '');
+}
+
+/** Дата начала первого заезда сезона (ISO). */
+export function seasonStart(s: SeasonConfig): string {
+  const w = s.calendarWindows ?? [];
+  return w.reduce((min, x) => (x.from < min ? x.from : min), w[0]?.from ?? '9999-12-31');
+}
+
+/**
+ * Ближайший сезон, на который есть смысл собирать предзапись: последний заезд
+ * ещё не прошёл. Возвращает null, когда все описанные сезоны позади — тогда
+ * вызывающий код не должен предлагать предзапись (нужно добавить новый сезон).
+ */
+export function getNextSeason(today: string = new Date().toISOString().slice(0, 10)): SeasonConfig | null {
+  return SEASONS
+    .filter((s) => seasonEnd(s) >= today)
+    .sort((a, b) => seasonStart(a).localeCompare(seasonStart(b)))[0] ?? null;
+}

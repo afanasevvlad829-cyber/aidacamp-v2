@@ -20,6 +20,7 @@ import Contacts from '../Contacts.astro';
 import RelatedPages from '../RelatedPages.astro';
 import { getRelatedPages } from '../../data/landing-pages';
 import type { SeasonConfig } from '../../data/seasons';
+import { seasonWindowHref } from '../../data/seasons';
 
 interface Props { config: SeasonConfig; }
 const { config: c } = Astro.props;
@@ -94,6 +95,25 @@ const jsonLd = {
         <h2 class="text-[24px] md:text-[30px] font-extrabold tracking-[-0.02em] leading-[1.15] text-body mb-4">{c.windowsBlock.heading}</h2>
         <p class="text-[16px] leading-[1.65] text-body-muted mb-6 max-w-[860px]">{c.windowsBlock.intro}</p>
         <SeasonCalendar windows={c.calendarWindows} />
+
+        {/* Ссылки на страницы заездов. Разбор мая 2026: страница конкретной
+            смены конвертирует в разы лучше общей (4–9% против 0,19% на
+            главной) — человек там уже выбрал и смотрит даты, а не решает,
+            ехать ли вообще. Сезонный лендинг показывает оба окна сразу,
+            поэтому даём отсюда прямой вход в нужное. */}
+        {c.hasWindowPages && (
+        <div class="mt-6 flex flex-wrap gap-3">
+          {c.calendarWindows.map((w) => (
+            <a href={seasonWindowHref(c.path, w.from)}
+               class="inline-flex items-center gap-2 rounded-[12px] border border-primary/30 bg-white
+                      px-4 py-3 text-[16px] font-semibold text-primary
+                      hover:bg-primary/5 hover:border-primary/50 transition-colors">
+              {w.sub.split('·')[0].trim()}
+              <span aria-hidden="true">→</span>
+            </a>
+          ))}
+        </div>
+        )}
       </div>
     </section>
   )}
@@ -118,7 +138,7 @@ const jsonLd = {
 
   <!-- Цитата Дарьи: слева цитата + фото, справа видео (как на главной) -->
   {c.quote && (
-    <section class="py-14 md:py-18 bg-[#0d1a2b] overflow-hidden">
+    <section class="py-14 md:py-18 bg-navy-950 overflow-hidden">
       <div class="mx-auto max-w-[1080px] px-5 md:px-8">
         <div class="flex flex-col md:flex-row items-center gap-10 md:gap-14">
           <div class="min-w-0 flex-1">

@@ -96,6 +96,9 @@ export default defineConfig({
         !page.includes('/leto-dlya-sebya/') && // noindex={true}, лендинг только под РСЯ (глэмпинги/отели), не для органики
         !page.includes('/privacy-policy/') && // noindex, follow — политика конфиденциальности, не для органики
         !page.includes('/press/') && // noindex — страница для прессы, не для органики
+        // noindex + лежала в sitemap = смешанный сигнал; внутренняя витрина призов за
+        // лагерные рубли, ссылка только из портала. Labrika 07.08.2026 (sitemap-сироты).
+        !page.includes('/vitrina/') &&
         // /video/<slug>/ — карточки под одно видео для расшаривания в переписке (owner
         // 30.07.2026), не для органики. /video/ (хаб-листинг) НЕ трогаем — он индексируемый.
         !/^https:\/\/aidacamp\.ru\/video\/[^/]+\/?$/.test(page) &&
