@@ -3,9 +3,9 @@ import { join, extname } from 'path';
 import { randomUUID } from 'crypto';
 import { getStaff } from './portalStaff';
 import { getActiveShift } from './portalShift';
-import { getOrCreateCollectingDraft, appendDraftText, setDraftStatus, setReviewerMessage, type DraftPost } from './draftPost';
+import { getOrCreateCollectingDraft, appendDraftText, setDraftStatus, setReviewerMessage, setDraftText, type DraftPost } from './draftPost';
 import { classifyIncomingMedia, type TelegramMessageLike } from './telegramMedia';
-import { attachMedia, listMedia, type MediaItem } from './portalMedia';
+import { attachMedia, listMedia, deleteMedia, reorderMedia, type MediaItem } from './portalMedia';
 import { query } from './db';
 import { getTelegramClient } from './telegramClient';
 import { Button } from 'telegram/tl/custom/button';
@@ -128,4 +128,33 @@ export async function handleReadyCommand(telegramId: number): Promise<IncomingTe
   await setReviewerMessage(draft.id, director.telegram_id, (sent as any).id);
 
   return { reply: 'Черновик отправлен руководителю на одобрение.' };
+}
+
+export type ReviewCallback =
+  | { action: 'edit_text'; draftId: number }
+  | { action: 'remove'; draftId: number }
+  | { action: 'reorder'; draftId: number }
+  | { action: 'approve'; draftId: number }
+  | { action: 'reject'; draftId: number };
+
+const KNOWN_ACTIONS = new Set(['edit_text', 'remove', 'reorder', 'approve', 'reject']);
+
+export function parseCallbackData(data: string): ReviewCallback | null {
+  const [action, idRaw] = data.split(':');
+  const draftId = Number(idRaw);
+  if (!KNOWN_ACTIONS.has(action) || !Number.isFinite(draftId)) return null;
+  return { action: action as ReviewCallback['action'], draftId };
+}
+
+export async function applyTextEdit(draftId: number, newText: string): Promise<void> {
+  await setDraftText(draftId, newText);
+}
+
+export async function applyRemoveMedia(mediaId: number): Promise<void> {
+  await deleteMedia(mediaId);
+}
+
+export async function applyReorder(draftId: number, orderedMediaIds: number[]): Promise<void> {
+  void draftId; // порядок применяется глобально к списку id — draftId для будущей валидации принадлежности
+  await reorderMedia(orderedMediaIds);
 }

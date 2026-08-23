@@ -11,11 +11,18 @@ vi.mock('./draftPost', () => ({
   appendDraftText: vi.fn(async () => {}),
   setDraftStatus: vi.fn(async () => {}),
   setReviewerMessage: vi.fn(async () => {}),
+  setDraftText: vi.fn(async () => {}),
 }));
-vi.mock('./portalMedia', () => ({
-  attachMedia: vi.fn(async () => 42),
-  listMedia: vi.fn(async () => []),
-}));
+vi.mock('./portalMedia', async (orig) => {
+  const actual = await (orig as any)();
+  return {
+    ...actual,
+    attachMedia: vi.fn(async () => 42),
+    listMedia: vi.fn(async () => [{ id: 1, file_type: 'photo' }, { id: 2, file_type: 'video' }]),
+    deleteMedia: vi.fn(async () => {}),
+    reorderMedia: vi.fn(async () => {}),
+  };
+});
 vi.mock('./db', () => ({
   query: vi.fn(async () => []),
   withDbClient: vi.fn(),
@@ -119,5 +126,43 @@ describe('handleReadyCommand', () => {
     expect(r.reply).toContain('отправлен');
     expect(setDraftStatus).toHaveBeenCalledWith(5, 'pending_review');
     expect(setReviewerMessage).toHaveBeenCalledWith(5, 777, 999);
+  });
+});
+
+describe('parseCallbackData', () => {
+  it('парсит approve:5', async () => {
+    const { parseCallbackData } = await import('./telegramDraftBot');
+    expect(parseCallbackData('approve:5')).toEqual({ action: 'approve', draftId: 5 });
+  });
+  it('парсит edit_text:12', async () => {
+    const { parseCallbackData } = await import('./telegramDraftBot');
+    expect(parseCallbackData('edit_text:12')).toEqual({ action: 'edit_text', draftId: 12 });
+  });
+  it('возвращает null для мусора', async () => {
+    const { parseCallbackData } = await import('./telegramDraftBot');
+    expect(parseCallbackData('что-то не то')).toBeNull();
+  });
+});
+
+describe('applyTextEdit / applyRemoveMedia / applyReorder', () => {
+  it('applyTextEdit пишет новый текст', async () => {
+    const { setDraftText } = await import('./draftPost');
+    const { applyTextEdit } = await import('./telegramDraftBot');
+    await applyTextEdit(5, 'Новый текст');
+    expect(setDraftText).toHaveBeenCalledWith(5, 'Новый текст');
+  });
+
+  it('applyRemoveMedia вызывает deleteMedia', async () => {
+    const { deleteMedia } = await import('./portalMedia');
+    const { applyRemoveMedia } = await import('./telegramDraftBot');
+    await applyRemoveMedia(2);
+    expect(deleteMedia).toHaveBeenCalledWith(2);
+  });
+
+  it('applyReorder вызывает reorderMedia с порядком', async () => {
+    const { reorderMedia } = await import('./portalMedia');
+    const { applyReorder } = await import('./telegramDraftBot');
+    await applyReorder(5, [3, 1, 2]);
+    expect(reorderMedia).toHaveBeenCalledWith([3, 1, 2]);
   });
 });
