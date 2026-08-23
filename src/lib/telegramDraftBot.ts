@@ -3,7 +3,7 @@ import { join, extname } from 'path';
 import { randomUUID } from 'crypto';
 import { getStaff } from './portalStaff';
 import { getActiveShift } from './portalShift';
-import { getOrCreateCollectingDraft, appendDraftText, setDraftStatus, setReviewerMessage, setDraftText, type DraftPost } from './draftPost';
+import { getOrCreateCollectingDraft, appendDraftText, setDraftStatus, setReviewerMessage, setDraftText, getDraft, type DraftPost } from './draftPost';
 import { classifyIncomingMedia, type TelegramMessageLike } from './telegramMedia';
 import { attachMedia, listMedia, deleteMedia, reorderMedia, type MediaItem } from './portalMedia';
 import { query } from './db';
@@ -157,4 +157,15 @@ export async function applyRemoveMedia(mediaId: number): Promise<void> {
 export async function applyReorder(draftId: number, orderedMediaIds: number[]): Promise<void> {
   void draftId; // порядок применяется глобально к списку id — draftId для будущей валидации принадлежности
   await reorderMedia(orderedMediaIds);
+}
+
+export async function applyReject(draftId: number): Promise<void> {
+  const draft = await getDraft(draftId);
+  await setDraftStatus(draftId, 'rejected');
+  if (draft) {
+    const client = await getTelegramClient();
+    await client.sendMessage(draft.author_telegram_id, {
+      message: 'Ваш черновик отклонён руководителем.',
+    });
+  }
 }

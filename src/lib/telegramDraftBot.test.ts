@@ -12,6 +12,7 @@ vi.mock('./draftPost', () => ({
   setDraftStatus: vi.fn(async () => {}),
   setReviewerMessage: vi.fn(async () => {}),
   setDraftText: vi.fn(async () => {}),
+  getDraft: vi.fn(),
 }));
 vi.mock('./portalMedia', async (orig) => {
   const actual = await (orig as any)();
@@ -164,5 +165,15 @@ describe('applyTextEdit / applyRemoveMedia / applyReorder', () => {
     const { applyReorder } = await import('./telegramDraftBot');
     await applyReorder(5, [3, 1, 2]);
     expect(reorderMedia).toHaveBeenCalledWith([3, 1, 2]);
+  });
+});
+
+describe('applyReject', () => {
+  it('переводит черновик в rejected и уведомляет автора', async () => {
+    const { getDraft, setDraftStatus } = await import('./draftPost');
+    (getDraft as any).mockResolvedValue({ id: 5, shift_id: 3, author_telegram_id: 111, status: 'pending_review', text: 'X', reviewer_chat_id: 777, reviewer_message_id: 1 });
+    const { applyReject } = await import('./telegramDraftBot');
+    await applyReject(5);
+    expect(setDraftStatus).toHaveBeenCalledWith(5, 'rejected');
   });
 });
