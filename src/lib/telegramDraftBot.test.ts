@@ -10,9 +10,19 @@ vi.mock('./draftPost', () => ({
   getOrCreateCollectingDraft: vi.fn(async () => ({ id: 5, shift_id: 3, author_telegram_id: 111, status: 'collecting', text: null, reviewer_chat_id: null, reviewer_message_id: null })),
   appendDraftText: vi.fn(async () => {}),
 }));
+vi.mock('./portalMedia', () => ({
+  attachMedia: vi.fn(async () => 42),
+}));
+vi.mock('fs/promises', () => ({ mkdir: vi.fn(async () => {}), writeFile: vi.fn(async () => {}) }));
+vi.mock('./telegramClient', () => ({
+  getTelegramClient: vi.fn(async () => ({
+    downloadMedia: vi.fn(async () => Buffer.from('fake-bytes')),
+  })),
+}));
 
 import { getStaff } from './portalStaff';
 import { appendDraftText } from './draftPost';
+import { attachMedia } from './portalMedia';
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -54,5 +64,15 @@ describe('handleIncomingMedia', () => {
     const { handleIncomingMedia } = await import('./telegramDraftBot');
     const r = await handleIncomingMedia(111, { photo: {} });
     expect(r.reply).toContain('Файл');
+  });
+
+  it('скачивает и сохраняет document с image/*', async () => {
+    (getStaff as any).mockResolvedValue({ telegram_id: 111, role: 'vozhaty', roles: ['vozhaty'], active: true, full_name: 'Вася', tg_username: null });
+    const { handleIncomingMedia } = await import('./telegramDraftBot');
+    const r = await handleIncomingMedia(111, { document: { mimeType: 'image/jpeg', size: 1000 } } as any);
+    expect(attachMedia).toHaveBeenCalledWith(
+      expect.objectContaining({ entity_type: 'draft_post', entity_id: 5, file_type: 'photo', mime: 'image/jpeg', author_telegram_id: 111 }),
+    );
+    expect(r.reply).toContain('Принято');
   });
 });
