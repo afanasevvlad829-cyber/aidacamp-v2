@@ -104,9 +104,10 @@ const esc = s => String(s).replace(/'/g, "''");
   // передаются только limit/order_by/date_from/date_to. Постраничный цикл поэтому
   // бесконечно возвращал одну и ту же первую страницу (поймано 20.08.2026).
   // limit=500 — жёсткий потолок Яндекса («Limit min value is 0, max value is 500»).
-  // Вместе с отсутствием offset это значит: берём ТОП-500 по показам. Хвост за пределами
-  // 500 — запросы с единичными показами, их ценность близка к нулю; если понадобится
-  // полное покрытие — надо добавить offset в /opt/mcp/lib/run/webmaster.mjs.
+  // ⚠️ УСТАРЕЛО (24.08.2026): сам API Яндекса offset ПОДДЕРЖИВАЕТ — не пробрасывала только
+  // обёртка. Полная выгрузка постранично сделана вручную; чтобы это работало из скрипта,
+  // надо добавить offset в /opt/mcp/lib/run/webmaster.mjs. Но спешить некуда: хвост за
+  // пределами ТОП-500 — ключи с 1-2 показами, их отсекает scripts/seo-backlog-gate.sh.
   const res = await callTool(sid, 'run', {
     service: 'webmaster', action: 'queries',
     params: { host_id: HOST_ID, limit: 500, order_by: 'IMPRESSIONS' },
