@@ -31,16 +31,26 @@ psql "$PG" -v ON_ERROR_STOP=1 <<SQL
 \set imp $MIN_IMPRESSIONS
 \set vol $MIN_VOLUME
 
--- в отложенные: не дотягивает ни по показам, ни по частотности
+-- в отложенные: не дотягивает ни по показам, ни по частотности.
+-- ⚠️ СЕЗОННЫЕ КЛЮЧИ ИСКЛЮЧЕНЫ ИЗ ПОРОГА (владелец 25.08.2026).
+-- Порог смотрит на ТЕКУЩИЙ спрос, а сезонный запрос по определению спит вне
+-- своего окна: у «лагерь на осенние каникулы» в конце августа 2 показа, и первая
+-- версия порога отправила его в parked — то есть отсекла ровно то, что нужно
+-- готовить ЗАРАНЕЕ. Позиции под осенние смены и раннее бронирование лета
+-- набираются за месяцы до спроса, а не когда он уже пришёл.
 UPDATE seo_keyword_backlog SET status='parked', updated_at=now()
  WHERE status='new'
    AND COALESCE(impressions,0) < :imp
-   AND COALESCE(volume,0)      < :vol;
+   AND COALESCE(volume,0)      < :vol
+   AND keyword !~* 'осен|каникул|октябр|ноябр|декабр|зимн|новогодн|весенн|март|февральск|ранн(ее|его) бронирован';
 
 -- обратно в работу: спрос подрос (сезон, новая выгрузка, добор частотности)
+-- либо ключ сезонный и попал в parked прежней версией порога.
 UPDATE seo_keyword_backlog SET status='new', updated_at=now()
  WHERE status='parked'
-   AND (COALESCE(impressions,0) >= :imp OR COALESCE(volume,0) >= :vol);
+   AND (COALESCE(impressions,0) >= :imp OR COALESCE(volume,0) >= :vol
+        OR (keyword ~* 'осен|каникул|октябр|ноябр|декабр|зимн|новогодн|весенн|март|февральск|ранн(ее|его) бронирован'
+            AND COALESCE(position,101) BETWEEN 11 AND 50));
 
 SELECT site,
        COUNT(*) FILTER (WHERE status='new')    AS в_работе,
