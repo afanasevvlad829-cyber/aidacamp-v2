@@ -25,8 +25,16 @@ const env = Object.fromEntries(
 );
 const MCP_BASE = 'http://127.0.0.1:3457';
 const PG = 'postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp';
-const BATCH = 100;
+// BATCH 100 → 30 (27.08.2026). Проверено вручную: батч 30 реальных ключей проходит
+// за 45с и отдаёт частотность; батч 100 стабильно ловил 429 и ронял весь прогон
+// («добрано 0, без ответа 4362» каждую ночь). Время ответа почти не зависит от
+// размера батча — упирается не объём, а частота обращений.
+const BATCH = 30;
 const PAUSE_MS = 30_000;
+// Потолок за один прогон. Пытаться взять все 4000+ разом бессмысленно: лимит
+// Арсенкина исчерпывается, и прогон не добирает НИЧЕГО. За 600 ключей уходит
+// ~25 минут, за неделю ночных прогонов добирается вся очередь.
+const MAX_PER_RUN = Number(process.env.MAX_PER_RUN || 600);
 
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -109,17 +117,43 @@ async function askVolumes(sid, keywords) {
   } catch (e) {
     const msg = e.message || '';
     if (msg.includes('429')) { const err = new Error('rate'); err.rate = true; throw err; }
-    if (msg.includes('422') || msg.includes('JSON_VALIDATION_ERROR')) { const err = new Error('bad'); err.bad = true; throw err; }
+    if (msg.includes('422') || msg.includes('JSON_VALIDATION_ERROR')) {
+      const err = new Error('bad');
+      err.bad = true;
+      // Арсенкин НАЗЫВАЕТ виновную фразу прямым текстом:
+      //   «Ошибки в поле queries.0: Запрос "..." содержит недопустимые символы: "—"»
+      // Раньше это сообщение игнорировалось, и батч делился пополам вслепую —
+      // кривая фраза оставалась в одной из половин, деление шло до конца, а
+      // прогон уходил в ретраи (27.08.2026). Достаём фразу и убираем точечно.
+      // Кавычки в сообщении могут быть экранированы (оно приходит внутри JSON),
+      // поэтому допускаем и «"», и «\"».
+      const m = msg.match(/Запрос\s+\\?"(.+?)\\?"\s+содержит/);
+      if (m) err.phrase = m[1];
+      else log(`    (не смог извлечь фразу из ответа: ${msg.slice(0, 160)})`);
+      throw err;
+    }
     throw e;
   }
 }
 
-// 422 = где-то одна кривая фраза: делим пополам, пока не изолируем виноватую
+// 422: если API назвал виновную фразу — убираем именно её и повторяем батч.
+// Деление пополам осталось фолбэком на случай, когда фразу назвать не удалось.
 async function askWithSplit(sid, keywords, depth = 0) {
   try {
     return await askVolumes(sid, keywords);
   } catch (e) {
     if (!e.bad) throw e;
+
+    // API назвал виновную фразу — убираем её точечно и повторяем батч целиком.
+    // Это на порядок дешевле деления пополам: один лишний запрос вместо log2(N)
+    // и без потери здоровых фраз, застрявших в «плохой» половине.
+    if (e.phrase && keywords.length > 1 && keywords.includes(e.phrase)) {
+      log(`    ✗ API отверг фразу, помечаю недоступной: «${e.phrase}»`);
+      sql(`UPDATE seo_keyword_backlog SET volume=-1, updated_at=now() WHERE keyword='${esc(e.phrase)}' AND volume IS NULL`);
+      await sleep(3000);
+      return await askWithSplit(sid, keywords.filter(k => k !== e.phrase), depth);
+    }
+
     if (keywords.length === 1) {
       log(`    ✗ фраза не принимается Арсенкином, помечаю недоступной: «${keywords[0]}»`);
       sql(`UPDATE seo_keyword_backlog SET volume=-1, updated_at=now() WHERE keyword='${esc(keywords[0])}' AND volume IS NULL`);
@@ -134,16 +168,54 @@ async function askWithSplit(sid, keywords, depth = 0) {
   }
 }
 
+// Фразы, которые Арсенкин/Wordstat не принимают в принципе. Отправлять их —
+// значит ронять ВЕСЬ батч в 422 и терять вместе с ними здоровые ключи: скрипт
+// начинает делить батч пополам, кривая фраза остаётся в обеих половинах, и
+// прогон уходит в бесполезные ретраи. Поймано 27.08.2026 — первым же ключом в
+// очереди по важности стоял «зависимость от телефона лечение narcolog-expert.ru»,
+// мусор из выгрузки Вебмастера с доменом внутри, и он ронял каждый прогон.
+// Такие помечаем volume = -1 («частотность недоступна») и больше не трогаем.
+function isBadPhrase(kw) {
+  if (!kw || kw.length > 100) return true;                 // Wordstat режет длинные
+  if (/https?:\/\//i.test(kw)) return true;                 // ссылки
+  if (/[a-z0-9-]+\.(ru|com|net|org|io|me|info|biz)(\s|$|\/)/i.test(kw)) return true; // домены
+  // Символы, которые Арсенкин отвергает явным текстом:
+  //   «Запрос "..." содержит недопустимые символы: "—"» (проверено 27.08.2026).
+  // Длинное тире приходит из заголовков статей, попавших в выгрузку Вебмастера,
+  // и роняло КАЖДЫЙ прогон: одна такая фраза = 422 на весь батч, деление пополам
+  // не помогает — она остаётся в одной из половин, и прогон уходит в ретраи.
+  if (/[—–―«»""„@#$%^&*=~`{}\[\]<>|\\"]/.test(kw)) return true;
+  return false;
+}
+
 (async () => {
   const sid = await initMcp();
-  const rows = sql(`SELECT site || E'\\t' || keyword FROM seo_keyword_backlog WHERE volume IS NULL ORDER BY site, keyword`)
+  // ⚠️ Порядок — ПО ВАЖНОСТИ, не по алфавиту (исправлено 27.08.2026). Было
+  // `ORDER BY site, keyword`: при исчерпании лимита добиралось начало алфавита,
+  // а значимые ключи месяцами оставались без частотности. Сначала те, что уже в
+  // работе и уже показываются, потом ближе к ТОП-10, потом остальные.
+  const rows = sql(`SELECT site || E'\\t' || keyword FROM seo_keyword_backlog
+     WHERE volume IS NULL
+     ORDER BY (status = 'new') DESC,
+              COALESCE(impressions, 0) DESC,
+              COALESCE(position, 999) ASC,
+              site, keyword
+     LIMIT ${MAX_PER_RUN}`)
     .split('\n').filter(Boolean).map(l => { const [site, ...k] = l.split('\t'); return { site, keyword: k.join('\t') }; });
-  log(`без частотности: ${rows.length}`);
-  if (!rows.length) { log('нечего добирать'); return; }
+  const bad = rows.filter(r => isBadPhrase(r.keyword));
+  for (const r of bad) {
+    sql(`UPDATE seo_keyword_backlog SET volume = -1, updated_at = now()
+         WHERE site = '${r.site.replace(/'/g, "''")}' AND keyword = '${r.keyword.replace(/'/g, "''")}'`);
+  }
+  if (bad.length) log(`отсеяно как непринимаемое API: ${bad.length} (помечены volume=-1)`);
+  const clean = rows.filter(r => !isBadPhrase(r.keyword));
+
+  log(`без частотности: ${clean.length} (из ${rows.length} выбранных)`);
+  if (!clean.length) { log('нечего добирать'); return; }
 
   let done = 0, failed = 0;
-  for (let i = 0; i < rows.length; i += BATCH) {
-    const chunk = rows.slice(i, i + BATCH);
+  for (let i = 0; i < clean.length; i += BATCH) {
+    const chunk = clean.slice(i, i + BATCH);
     const kws = chunk.map(r => r.keyword);
     let vols = null;
     for (let attempt = 1; attempt <= 4 && !vols; attempt++) {
@@ -167,8 +239,8 @@ async function askWithSplit(sid, keywords, depth = 0) {
       if (updates) execFileSync('psql', [PG, '-v', 'ON_ERROR_STOP=1', '-c', updates], { stdio: ['ignore', 'ignore', 'inherit'] });
       done += vols.size;
     }
-    log(`  прогресс: ${Math.min(i + BATCH, rows.length)}/${rows.length} (записано ${done}, без ответа ${failed})`);
-    if (i + BATCH < rows.length) await sleep(PAUSE_MS);
+    log(`  прогресс: ${Math.min(i + BATCH, clean.length)}/${clean.length} (записано ${done}, без ответа ${failed})`);
+    if (i + BATCH < clean.length) await sleep(PAUSE_MS);
   }
 
   // Разметка интента для строк, где её ещё нет (новые ключи из build/webmaster-скриптов).
