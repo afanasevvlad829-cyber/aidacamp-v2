@@ -16,6 +16,7 @@ import {
   getTaxDeduction,
   fmtPrice,
 } from './dynamicPrices';
+import { SHIFT_META } from './shifts';
 
 /** Строит Date из YYYY-MM-DD в полдень UTC — безопасно для daysDiff в любой TZ. */
 const d = (s: string) => new Date(s + 'T12:00:00Z');
@@ -23,8 +24,12 @@ const d = (s: string) => new Date(s + 'T12:00:00Z');
 // ── PRICING shape ────────────────────────────────────────────────────────────
 
 describe('PRICING config', () => {
-  it('содержит 6 смен', () => {
-    expect(Object.keys(PRICING)).toHaveLength(6);
+  // Было жёстко «6 смен» — сломалось 27.08.2026 при открытии осенних продаж
+  // (стало 8). Число смен меняется каждый сезон, поэтому проверяем инвариант,
+  // а не константу: PRICING обязан покрывать РОВНО состав SHIFT_META.
+  it('покрывает ровно состав SHIFT_META', () => {
+    expect(Object.keys(PRICING).sort()).toEqual(Object.keys(SHIFT_META).sort());
+    expect(Object.keys(PRICING).length).toBeGreaterThan(0);
   });
 
   it('каждая смена имеет 3 ступени (база → рост → фиксация)', () => {
