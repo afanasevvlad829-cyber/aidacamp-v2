@@ -52,6 +52,7 @@ if [ -f "$PIDFILE" ]; then
       age=$(( $(date +%s) - $(stat -c %Y "$PIDFILE" 2>/dev/null || echo 0) ))
       if [ "$age" -gt "$STALE_AFTER" ]; then
         say "ВНИМАНИЕ: прогон pid=$pid идёт $((age/3600)) ч — похоже, завис. Сам не убиваю, разбирать руками."
+        echo "pid=$pid, лог: /home/claude-run/seo-wave-cycle.log" | /opt/scripts/seo-alert.sh warn watchdog "прогон идёт $((age/3600)) ч — возможно, завис"
       else
         say "пропуск: прогон уже идёт (pid=$pid, $((age/60)) мин)"
       fi
@@ -68,7 +69,11 @@ fi
 
 REMAIN=$(sudo -u postgres psql -d aidacamp -tAc \
   "SELECT COUNT(*) FROM seo_keyword_backlog WHERE status='new' AND position >= 11" 2>/dev/null | tr -d ' ')
-if [ -z "$REMAIN" ]; then say "пропуск: БД не ответила — проверить postgres"; exit 0; fi
+if [ -z "$REMAIN" ]; then
+  say "пропуск: БД не ответила — проверить postgres"
+  echo "psql -d aidacamp не ответил при опросе очереди" | /opt/scripts/seo-alert.sh error watchdog "БД недоступна, конвейер не поднять"
+  exit 0
+fi
 if [ "$REMAIN" -eq 0 ] 2>/dev/null; then say "пропуск: очередь пуста, работы нет"; exit 0; fi
 
 if [ -f "$STAMP" ]; then
@@ -85,4 +90,7 @@ echo "[$(date '+%F %T')] watchdog: конвейер не запущен, в бэ
 sudo -u claude-run -i "$RUNNER" >> "$LOG" 2>&1
 rc=$?
 say "прогон завершился, код возврата $rc"
+if [ "$rc" -ne 0 ]; then
+  tail -20 "$LOG" 2>/dev/null | /opt/scripts/seo-alert.sh error watchdog "прогон конвейера упал (код $rc)"
+fi
 exit $rc
