@@ -92,14 +92,16 @@ export async function saveLeadToPg(
  * ночного моста AlfaCRM→aidaplus. Best-effort: секрет/сеть недоступны — не блокируем
  * заявку, она всё равно есть в AlfaCRM/Telegram/ФС/PG.
  */
-async function sendToAidaplus(body: Record<string, string>): Promise<void> {
+async function sendToAidaplus(body: Record<string, string>, crmId: number | null): Promise<void> {
   const secret = process.env.AIDAPLUS_LEADS_WEBHOOK_SECRET;
   if (!secret) return;
   try {
     await fetchWithTimeout('https://aidaplus.ru/api/leads/webhook', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Leads-Secret': secret },
-      body: JSON.stringify({ site: 'aidacamp', ...body }),
+      // crm_id — 26.08.2026, см. LeadsWebhookController: карточка заводится сразу
+      // под этим id, чтобы ночной мост AlfaCRM→aidaplus её обновил, а не задвоил.
+      body: JSON.stringify({ site: 'aidacamp', crm_id: crmId ?? undefined, ...body }),
     }, AIDAPLUS_WEBHOOK_TIMEOUT_MS);
   } catch {
     // best-effort — не блокируем ответ
@@ -417,7 +419,7 @@ export const POST: APIRoute = async ({ request }) => {
     await saveLeadToPg(body, { ip, userAgent, crmId, visitorId });
 
     // aidaplus CRM (best-effort, переходный период — см. sendToAidaplus)
-    void sendToAidaplus(body);
+    void sendToAidaplus(body, crmId);
 
     // Andata — событие order_new. Fire-and-forget: НЕ ждём ответ и НЕ блокируем
     // путь заявки (у sendAndataEvent есть свой таймаут и он не бросает исключений).
