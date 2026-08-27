@@ -2,6 +2,7 @@ import type { MiddlewareHandler } from 'astro';
 import { verifySessionPayload } from './lib/portalSession';
 import { getStaff, getStaffById } from './lib/portalStaff';
 import { touchLastSeen } from './lib/portalLog';
+import { STAFF_COOKIE, getStaffSecret, isStaffAuthed } from './lib/staffAuth';
 
 const PORTAL_PUBLIC = new Set(['/portal/login', '/portal/login/', '/portal/tg-app', '/api/portal/login', '/api/portal/check', '/api/portal/tg', '/api/portal/penalty/scan']);
 
@@ -105,8 +106,27 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   const { request, url, cookies, locals } = context;
   const path = url.pathname;
 
-  // ── Гейт портала (+ /api/admin/* — только роль admin) ──────────
-  if (path.startsWith('/portal') || path.startsWith('/api/portal') || path.startsWith('/api/admin')) {
+  // ── Гейт внутренних API с чувствительными данными ──────────────
+  // /api/shift-roster отдаёт ФИО/пол/возраст детей из AlfaCRM, /api/ab-monitor-data —
+  // внутренние метрики A/B. Оба вызываются из ДВУХ контуров с разными куками:
+  // портал (portal_session) и конструктор смены /staff/plan (staff_auth_2026),
+  // поэтому принимаем любую из двух сессий. Раньше гейта не было вовсе.
+  if (path.startsWith('/api/shift-roster') || path.startsWith('/api/ab-monitor-data')) {
+    const portalSecret = process.env.PORTAL_SESSION_SECRET;
+    const hasPortal = !!portalSecret && !!verifySessionPayload(cookies.get('portal_session')?.value, portalSecret)?.role;
+    const staffSecret = getStaffSecret();
+    const hasStaff = !!staffSecret && isStaffAuthed(cookies.get(STAFF_COOKIE)?.value, staffSecret);
+    if (!hasPortal && !hasStaff) {
+      return new Response(JSON.stringify({ ok: false, error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+    }
+  }
+
+  // ── Гейт портала (+ /api/admin/* и /admin/* — только роль admin) ──────────
+  // /admin (без /api) до 27.08.2026 не гейтился вообще: страницы hero/gallery/
+  // ab-monitor/gbp-setup были открыты по прямой ссылке. Исключение — /admin/p-link,
+  // у него собственная проверка ADMIN_KEY (не ломаем существующий вход владельца).
+  const isAdminPage = path.startsWith('/admin') && !path.startsWith('/admin/p-link');
+  if (path.startsWith('/portal') || path.startsWith('/api/portal') || path.startsWith('/api/admin') || isAdminPage) {
     const cleanPortal = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
     const isPublic = PORTAL_PUBLIC.has(path) || PORTAL_PUBLIC.has(cleanPortal);
     if (!isPublic) {
@@ -169,8 +189,11 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
       // /api/admin/* — админ-операции (загрузка медиа, portal-audit с exec) —
       // только роль admin (консистентно с requireRole(['admin']) в staff.ts/roles.ts).
       // Без сессии — 401 выше; валидная сессия с другой ролью — 403.
-      if (path.startsWith('/api/admin') && role !== 'admin') {
-        return new Response(JSON.stringify({ ok: false, error: 'forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+      if ((path.startsWith('/api/admin') || isAdminPage) && role !== 'admin') {
+        if (path.startsWith('/api/')) {
+          return new Response(JSON.stringify({ ok: false, error: 'forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+        }
+        return new Response('Forbidden', { status: 403 });
       }
       locals.portalRole = role as any;
       locals.portalRoles = staffRoles as any;
