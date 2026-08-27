@@ -9,10 +9,10 @@
  * решил и смотрит даты, цену и что там будет. Осенью таких страниц не было —
  * только сезонный лендинг с двумя окнами сразу.
  *
- * Почему не через allShifts. Заезды осени сознательно не входят в mainShifts
- * (см. комментарий у AUTUMN_2026 в data/shifts.ts): бронь закрыта, идёт только
- * предзапись. Добавление их туда включило бы продажи во всех компонентах —
- * от AgeBar до SchemaOrg. Поэтому маршрут свой, а CTA ведёт в предзапись.
+ * Свой маршрут, а не allShifts. Исторически заезды осени не входили в mainShifts,
+ * пока шла предзапись. С 27.08.2026 они там (продажи открыты), но отдельные
+ * страницы заездов сохранены — они конвертируют кратно лучше общих, см. разбор
+ * выше. Форма на странице работает в режиме продажи, флаг AUTUMN_SEASON.datesPending.
  */
 import Base from '../../layouts/Base.astro';
 import Header from '../../components/Header.astro';
@@ -56,7 +56,7 @@ const otherHref = other ? seasonWindowHref(AUTUMN_SEASON.path, other.from) : nul
 const otherDates = other ? other.sub.split('·')[0].trim() : null;
 
 const title = `Лагерь на осенние каникулы ${datesHuman} ${AUTUMN_2026.startDate.slice(0, 4)} — заезд ${AUTUMN_2026.days} дней | АйДаКемп`;
-const description = `IT-лагерь в Подмосковье, заезд ${datesHuman}: ${AUTUMN_2026.days} дней, программирование и нейросети, бассейн, ${PRICE_OSEN}. ${reasonRaw}. Открыта предварительная запись.`;
+const description = `IT-лагерь в Подмосковье, заезд ${datesHuman}: ${AUTUMN_2026.days} дней, программирование и нейросети, бассейн, ${PRICE_OSEN}. ${reasonRaw}. Идёт запись на смену.`;
 ---
 
 <Base title={title} description={description}>
@@ -107,13 +107,15 @@ const description = `IT-лагерь в Подмосковье, заезд ${dat
       </p>
     </section>
 
-    {/* Предзапись — главное действие страницы. Бронь осенью ещё закрыта:
-        даты каникул школы публикуют в сентябре, до этого фиксируем цену. */}
+    {/* Заявка на заезд — главное действие страницы. Даты утверждены,
+        продажи открыты с 27.08.2026. */}
     <div id="prereg">
       <SeasonPreRegister
         seasonAcc={AUTUMN_SEASON.seasonAcc}
         slug={`${AUTUMN_SEASON.slug}-${win.from}`}
-        calWindows={[win]} />
+        calWindows={[win]}
+        datesPending={AUTUMN_SEASON.datesPending}
+      />
     </div>
 
     <section class="mx-auto max-w-[1080px] px-4 py-10">
