@@ -161,6 +161,23 @@ export const mainShifts: Shift[] = [
     startDate: '2026-11-15',
     endDate: '2026-11-21',
   },
+  // === Зима 2026-2027 — ПРОДАЖИ ОТКРЫТЫ 27.08.2026 (решение владельца) ===
+  // Даты зафиксированы как есть, не дожидаясь сентябрьского расписания школ:
+  // зимние каникулы у всех школ практически совпадают, риск сдвига минимален.
+  {
+    id: 'shift-winter-1',
+    name: 'Зимняя смена',
+    dates: '30 декабря — 8 января',
+    duration: '10 дней',
+    status: 'идёт запись',
+    statusType: 'available',
+    description: 'Новый год со сменой: ёлка, хакатон и собственный проект за каникулы.',
+    price: '74 900 ₽',
+    free: 45,
+    occupied: 0,
+    startDate: '2026-12-30',
+    endDate: '2027-01-08',
+  },
 ];
 
 export const shortShifts: Shift[] = [];
@@ -304,11 +321,13 @@ export const AUTUMN_2026_WINDOW2 = {
 export const PRICE_OSEN = AUTUMN_2026.price;
 export const VYCHET_OSEN = _fmtV(Math.round(taxDeduction(_priceNum(AUTUMN_2026.price), AUTUMN_2026.days) / 50) * 50);
 
-// === Зима 2026–2027 — ПРЕДВАРИТЕЛЬНО (цена — текущая зимняя, даты уточнятся в сентябре) ===
+// === Зима 2026–2027 — продажи открыты 27.08.2026, смена перенесена в mainShifts ===
+// Константы оставлены производными: их импортирует seasons.ts.
+const _winter1 = mainShifts.find(s => s.id === 'shift-winter-1')!;
 export const WINTER_2026 = {
-  price: '74 900 ₽',
-  startDate: '2026-12-30',
-  endDate: '2027-01-08',
+  price: _winter1.price,
+  startDate: _winter1.startDate,
+  endDate: _winter1.endDate,
   days: 10,
 } as const;
 export const PRICE_ZIMA = WINTER_2026.price;
