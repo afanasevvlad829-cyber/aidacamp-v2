@@ -316,6 +316,43 @@ export const POST: APIRoute = async ({ request }) => {
       (responseData as any).chips = (responseData as any).chips.filter((c: any) => c?.action !== 'book');
     }
 
+    // SAFETY-NET: Haiku иногда обрывает длинный текстовый список на вводной фразе
+    // («Вот полный перечень:») вместо самого перечисления — инцидент 28.08.2026 после
+    // ask-bot документов-фикса (PR #1057), где block_type:null стал требовать перечислить
+    // факт целиком текстом вместо короткого «мостика». Один ретрай на Sonnet, только если
+    // ответ дала дешёвая модель и текст обрывается на двоеточии без продолжения.
+    const TRUNCATED_TAIL = /:\s*(<br\s*\/?>\s*)*$/i;
+    if (usedModel === 'claude-haiku-4-5-20251001' && TRUNCATED_TAIL.test((responseData.text || '').trim())) {
+      console.warn('[ask] Haiku truncated response, retrying on Sonnet:', message.slice(0, 80));
+      try {
+        const retryResponse = await client.messages.create({
+          model: 'claude-sonnet-4-5-20250929',
+          max_tokens: 1200,
+          temperature: 0,
+          system: [
+            { type: 'text', text: basePrompt, cache_control: { type: 'ephemeral' } },
+            { type: 'text', text: volatileSuffix },
+          ],
+          messages,
+        });
+        const retryRaw = retryResponse.content[0].type === 'text' ? retryResponse.content[0].text : '';
+        const retryMatch = retryRaw.match(/\{[\s\S]*\}/);
+        let retryJson: any = null;
+        if (retryMatch) { try { retryJson = JSON.parse(retryMatch[0]); } catch { retryJson = null; } }
+        const retryParsed = retryJson ? ResponseSchema.safeParse(retryJson) : null;
+        if (retryParsed?.success && !TRUNCATED_TAIL.test((retryParsed.data.text || '').trim())) {
+          Object.assign(responseData, retryParsed.data);
+          if (Array.isArray((responseData as any).chips)) {
+            (responseData as any).chips = (responseData as any).chips.filter((c: any) => c?.action !== 'book');
+          }
+          usedModel = 'claude-sonnet-4-5-20250929';
+          metrics.model = usedModel;
+        }
+      } catch (retryErr: any) {
+        console.warn('[ask] Truncation retry failed:', retryErr?.message);
+      }
+    }
+
     // Если бот попросил галерею — подбираем фото по запросу.
     // wantsLastShift — тот же regex, что решает "надо ли упоминать последнюю смену" (см. shiftContext
     // выше): если реально размеченных фото последней смены нет, findPhotos сам падает на общий поиск.
