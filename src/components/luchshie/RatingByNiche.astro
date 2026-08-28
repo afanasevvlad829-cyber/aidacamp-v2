@@ -12,7 +12,7 @@ const { niches, asOf } = Astro.props;
 
 // Чипы-фильтры: интент-подпись → id ниши (совпадает с campNiches).
 const filters = [
-  { id: 'all',       label: 'Все лагеря',            icon: 'bi-grid' },
+  { id: 'all',       label: 'Все ниши',              icon: 'bi-grid' },
   { id: 'health',    label: 'Отдохнуть',             icon: 'bi-tree' },
   { id: 'it',        label: 'Научиться (IT)',        icon: 'bi-cpu' },
   { id: 'language',  label: 'Английский и языки',    icon: 'bi-translate' },
@@ -33,12 +33,12 @@ function priceNumber(priceFrom?: string): number {
 ---
 
 <section class="mx-auto max-w-[1080px] px-4 pb-4" data-rating-root>
-  <h2 class="text-[24px] md:text-[30px] font-bold text-body leading-tight mb-2">Лагеря Подмосковья по нишам — сравнение</h2>
-  <p class="text-[16px] text-body-muted leading-relaxed mb-5 max-w-[780px]">Собрали лагеря по нишам с проверяемыми фактами: год работы, цена «от» и оценка на Яндекс.Картах (данные на {asOf}). Оценку показываем только там, где у лагеря есть собственная карточка на Яндекс.Картах — свою оценку не придумываем.</p>
+  <h2 class="text-[24px] md:text-[30px] font-bold text-body leading-tight mb-2">Детские лагеря по нишам — сравнение</h2>
+  <p class="text-[16px] text-body-muted leading-relaxed mb-5 max-w-[780px]">Собрали варианты для детей по нишам с проверяемыми фактами: год работы, цена «от» и оценка на Яндекс.Картах (данные на {asOf}). Показываем оценку только там, где у площадки есть собственная карточка — ничего не придумываем.</p>
 
   <!-- Фильтры -->
   <div class="flex flex-wrap items-center justify-between gap-3 mb-8">
-    <div class="flex flex-wrap gap-2" data-rating-filters role="group" aria-label="Фильтр лагерей">
+    <div class="flex flex-wrap gap-2" data-rating-filters role="group" aria-label="Фильтр направлений">
       {filters.map((f) => (
         <button
           type="button"
@@ -71,6 +71,9 @@ function priceNumber(priceFrom?: string): number {
         <i class={`bi ${nicheIcon[niche.id] ?? 'bi-grid'} text-orange-500 text-[17px]`} aria-hidden="true"></i>
         {niche.label}
       </h3>
+      {niche.description && (
+        <p class="text-[14px] text-body-muted leading-relaxed -mt-2 mb-3 max-w-[720px]">{niche.description}</p>
+      )}
       <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-niche-grid>
         {niche.camps.map((camp) => (
           <article class="rounded-[16px] border border-slate-100 bg-white p-4 shadow-[0_2px_8px_rgba(15,23,42,0.04)]" data-price={priceNumber(camp.priceFrom)} data-rating={camp.rating ?? 0}>
@@ -91,7 +94,7 @@ function priceNumber(priceFrom?: string): number {
       </div>
     </div>
   ))}
-  <p class="text-[13px] text-slate-400">Сравнение информационное, по открытым данным Яндекс.Карт и каталогов на {asOf}. Оценки и цены могут меняться. Мы не связаны с перечисленными лагерями.</p>
+  <p class="text-[13px] text-slate-400">Сравнение информационное, по открытым данным Яндекс.Карт и каталогов на {asOf}. Оценки и цены могут меняться. Мы не связаны с перечисленными организациями.</p>
 </section>
 
 <script>
@@ -99,7 +102,7 @@ function priceNumber(priceFrom?: string): number {
     const chips = Array.from(bar.querySelectorAll('button[data-filter]'));
     const sections = Array.from(document.querySelectorAll('[data-niche-section]'));
     const moreBlocks = Array.from(document.querySelectorAll('[data-more-block]'));
-    const setActive = (active) => {
+    const setActive = (active: Element) => {
       chips.forEach((c) => {
         const on = c === active;
         c.setAttribute('aria-pressed', on ? 'true' : 'false');

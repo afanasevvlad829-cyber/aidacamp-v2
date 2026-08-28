@@ -1,13 +1,15 @@
 ---
-import type { AstroComponentFactory } from 'astro';
+import '../styles/icons.css';
 
 interface Props {
   title?: string;
   description?: string;
   ogImage?: string;
+  /** Запрет индексации страницы поисковиками (robots: noindex, nofollow) */
+  noindex?: boolean;
 }
 
-const { title = 'ЛАНИТ — IT лагерь онлайн', description = 'Обучение программированию в онлайн-формате с менторами ЛАНИТ', ogImage } = Astro.props;
+const { title = 'ЛАНИТ — IT лагерь онлайн', description = 'Обучение программированию в онлайн-формате с менторами ЛАНИТ', ogImage, noindex = false } = Astro.props;
 ---
 
 <!DOCTYPE html>
@@ -16,6 +18,7 @@ const { title = 'ЛАНИТ — IT лагерь онлайн', description = 'О
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content={description} />
+    <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     {ogImage && <meta property="og:image" content={ogImage} />}
@@ -67,7 +70,7 @@ const { title = 'ЛАНИТ — IT лагерь онлайн', description = 'О
 
       [data-theme="light"] {
         --bg: #F4F5F8;
-        --bg2: #FFFFFF;
+        --bg2: var(--color-white);
         --bg3: #EEEFF3;
         --bg4: #E4E6EF;
         --bdr: rgba(0, 0, 0, 0.08);
@@ -183,11 +186,12 @@ const { title = 'ЛАНИТ — IT лагерь онлайн', description = 'О
         ym(96499295, 'init', {clickmap:true, referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:false});
       }
     </script>
-    <noscript><div><img src="https://mc.yandex.ru/watch/96499295" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
     <!-- /Yandex.Metrika counter -->
   </head>
 
   <body>
+    <!-- noscript-фолбэк Метрики: в body (в head div внутри noscript невалиден) -->
+    <noscript><img src="https://mc.yandex.ru/watch/96499295" style="position:absolute;left:-9999px" alt="" /></noscript>
     <nav class="nav">
       <div class="wrap nav-inner">
         <div class="logo">ЛАНИТ</div>

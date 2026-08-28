@@ -8,7 +8,9 @@
  *  • При отправке формы добавляет discount=true в данные заявки
  */
 
-import { fmtPrice } from '../data/dynamicPrices';
+// fmtPrice статически тянет dynamicPrices → shifts.ts (тяжёлые данные смен,
+// ~25 КБ raw) в eager-бандл каждой страницы. Грузим лениво в patchModalPrice —
+// он выполняется только при открытой модалке с активной скидкой.
 
 const DURATION_MS = 30 * 60 * 1000; // 30 минут
 const LS_START    = 'discount_start_v1';
@@ -53,9 +55,13 @@ function parsePrice(priceStr: string): number {
 
 let modalPriceInterval: ReturnType<typeof setInterval> | null = null;
 
-function patchModalPrice(priceEl: HTMLElement, originalPriceText: string) {
+async function patchModalPrice(priceEl: HTMLElement, originalPriceText: string) {
   const orig = parsePrice(originalPriceText);
   if (!orig) return;
+
+  // Ленивый импорт (см. комментарий вверху файла); к этому моменту модалка
+  // открыта и чанк данных смен уже загружен shift-modal'ом — из кэша.
+  const { fmtPrice } = await import('../data/dynamicPrices');
 
   const discounted = Math.round(orig * (1 - DISCOUNT));
 

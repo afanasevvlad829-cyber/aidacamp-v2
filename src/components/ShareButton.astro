@@ -1,0 +1,88 @@
+---
+/**
+ * ShareButton — «Поделиться»: системное меню на мобилке (navigator.share),
+ * копирование в буфер на десктопе.
+ *
+ * <ShareButton url="https://aidacamp.ru/video/daria-story/" title="…" />
+ *
+ * url можно не задавать — тогда берётся адрес текущей страницы (data-share-url="").
+ * Внутри лайтбокса адрес свой, поэтому там url передаётся явно.
+ */
+interface Props {
+  /** Абсолютный адрес. Пусто — текущая страница. */
+  url?: string;
+  title?: string;
+  /**
+   * default  — на светлом фоне
+   * onDark   — на тёмной подложке (hero страницы видео)
+   * overlay  — компактный, поверх видео в лайтбоксе
+   */
+  variant?: 'default' | 'onDark' | 'overlay';
+  label?: string;
+}
+
+const { url = '', title = '', variant = 'default', label = 'Поделиться' } = Astro.props;
+
+const VARIANTS = {
+  overlay: 'inline-flex h-9 items-center gap-1.5 rounded-full bg-white/90 px-3 text-[13px] font-semibold text-body shadow backdrop-blur-sm transition hover:bg-white',
+  onDark: 'inline-flex h-[48px] items-center gap-2 rounded-[10px] border-[1.5px] border-white/25 px-5 text-[16px] font-semibold text-white transition hover:border-white/60 hover:bg-white/10',
+  default: 'inline-flex h-[48px] items-center gap-2 rounded-[10px] border-[1.5px] border-[#e6e6e6] bg-white px-5 text-[16px] font-semibold text-body transition hover:border-primary hover:text-primary',
+};
+const cls = VARIANTS[variant as keyof typeof VARIANTS] ?? VARIANTS.default;
+---
+
+<button type="button" class={`share-btn ${cls}`} data-share-url={url} data-share-title={title}>
+  <i class="bi bi-share text-[14px]" aria-hidden="true"></i>
+  <span data-share-label>{label}</span>
+</button>
+
+<script>
+  function initShare() {
+    document.querySelectorAll<HTMLButtonElement>('.share-btn').forEach((btn) => {
+      if (btn.dataset.shareReady) return;
+      btn.dataset.shareReady = '1';
+
+      const labelEl = btn.querySelector<HTMLElement>('[data-share-label]');
+      const iconEl = btn.querySelector<HTMLElement>('i');
+      const original = labelEl?.textContent ?? 'Поделиться';
+
+      const flash = (text: string) => {
+        if (labelEl) labelEl.textContent = text;
+        iconEl?.classList.replace('bi-share', 'bi-check-lg');
+        setTimeout(() => {
+          if (labelEl) labelEl.textContent = original;
+          iconEl?.classList.replace('bi-check-lg', 'bi-share');
+        }, 2000);
+      };
+
+      btn.addEventListener('click', async () => {
+        const url = btn.dataset.shareUrl || location.href;
+        const title = btn.dataset.shareTitle || document.title;
+
+        // Мобилка: системное меню «поделиться» — сразу в WhatsApp/Telegram.
+        if (navigator.share) {
+          try {
+            await navigator.share({ title, url });
+            (window as any).trackGoal?.('video_share');
+            return;
+          } catch {
+            // Пользователь закрыл меню — молча выходим, копировать не нужно.
+            return;
+          }
+        }
+
+        try {
+          await navigator.clipboard.writeText(url);
+          flash('Ссылка скопирована');
+          (window as any).trackGoal?.('video_share');
+        } catch {
+          flash('Не удалось скопировать');
+        }
+      });
+    });
+  }
+
+  document.addEventListener('astro:page-load', initShare);
+  document.addEventListener('DOMContentLoaded', initShare);
+  if (document.readyState === 'complete' || document.readyState === 'interactive') initShare();
+</script>

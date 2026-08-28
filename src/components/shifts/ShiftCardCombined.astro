@@ -7,7 +7,8 @@
  * с подписями. Цена «От {min}». CTA primary (orange) если хоть одна low-avail.
  */
 import type { Shift } from '../../data/shifts';
-import { fmtPrice } from '../../data/dynamicPrices';
+import { getAvailabilityLevel } from '../../data/shifts';
+import { fmtPrice, getCurrentPrice } from '../../data/dynamicPrices';
 
 interface Props {
   shifts: [Shift, Shift];
@@ -75,13 +76,47 @@ const sizeCls = isMobile
     {shifts.map((s, idx) => {
       const total = s.occupied + s.free || 1;
       const pct = Math.round((s.occupied / total) * 100);
+      const isSoldOut = getAvailabilityLevel(s) === 'soldout';
       const isLow = pct >= 85;
       const freeColor = isLow ? 'text-primary' : 'text-emerald-700';
-      const barColor = isLow ? 'bg-primary' : 'bg-emerald-400';
+      const barColor = isSoldOut ? 'bg-slate-400' : isLow ? 'bg-primary' : 'bg-emerald-400';
       // Индексный бейдж: разный акцентный цвет, чтобы строки визуально отличались
       const idxBadge = idx === 0
         ? 'bg-blue-100 text-blue-700'
         : 'bg-purple-100 text-purple-700';
+      const rowPrice = getCurrentPrice(s.id);
+      const rowPriceFmt = rowPrice ? fmtPrice(rowPrice) : s.price;
+      if (isSoldOut) {
+        return (
+          <button
+            type="button"
+            data-shift-book={s.id}
+            data-shift-book-name={s.name}
+            data-shift-book-dates={s.dates}
+            data-shift-book-duration={s.duration}
+            data-shift-book-price={rowPriceFmt}
+            data-shift-waitlist="true"
+            class="block w-full text-left no-underline group/row relative -mx-2 px-2 py-3 first:pt-0 first:-mt-1 last:pb-1 rounded-lg transition-colors duration-200 hover:bg-slate-50"
+          >
+            <div class="flex items-center justify-between gap-2 text-base mb-1.5">
+              <span class="flex items-center gap-2 min-w-0">
+                <span class={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] ${idxBadge}`}>
+                  №{idx === 0 ? 3 : 4}
+                </span>
+                <span class="text-body group-hover/row:text-primary transition-colors font-medium truncate">
+                  {s.dates} <span class="text-body-faint font-normal">· {s.duration}</span>
+                </span>
+              </span>
+              <span class="font-semibold whitespace-nowrap text-slate-500">
+                Мест нет · <span class="text-primary underline">лист ожидания</span>
+              </span>
+            </div>
+            <div class="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
+              <div class={`h-full rounded-full ${barColor}`} style="width:100%"></div>
+            </div>
+          </button>
+        );
+      }
       return (
         <a
           href={`/shifts/${s.id}/`}

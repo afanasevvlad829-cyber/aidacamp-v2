@@ -1,10 +1,16 @@
 name: Quality Gate
 
+# push:[main] намеренно убран (2026-07-26). main получает коммиты ТОЛЬКО через
+# job `promote` в deploy.yml — fast-forward уже провалидированного SHA с dev.
+# GitHub Checks привязаны к SHA, а не к ветке: тот же коммит уже получил
+# зелёный `quality` секундами раньше при пуше в dev, повторный прогон на main
+# перепроверял бы то же самое с нуля (~5 мин CI впустую на каждый пуш, ничего
+# не блокируя — просто трата). push:[dev] остаётся: promote в deploy.yml явно
+# ждёт этот чек перед пушем в main.
 on:
   pull_request:
   push:
     branches:
-      - main
       - dev
 
 jobs:
@@ -13,10 +19,10 @@ jobs:
 
     steps:
       - name: Checkout site
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: 'npm'
@@ -27,8 +33,9 @@ jobs:
       # Кеш Astro — инкрементальный билд (Вариант B)
       # restore-keys без хеша = берём самый свежий кеш независимо от изменений
       # Astro сам решает что пересобирать на основе .astro/cache
+      # Кешируем и на PR тоже: билд там теперь тоже гоняется (см. «Build site»),
+      # без кеша он бы стоил ~15 мин на каждый PR.
       - name: Cache Astro build
-        if: github.event_name == 'push'
         uses: actions/cache@v4
         with:
           path: |
@@ -37,6 +44,26 @@ jobs:
           key: astro-${{ runner.os }}-${{ hashFiles('src/**', 'public/**', 'astro.config.*', 'package-lock.json') }}
           restore-keys: |
             astro-${{ runner.os }}-
+
+      # Невалидный workflow не падает громко — он получает startup_failure
+      # и молча не выполняется. Так guard-agent-prs.yml 2.5 месяца числился
+      # защитой и не срабатывал ни разу (сломан 2026-04-24, найден 2026-07-08).
+      - name: Валидность workflow-файлов
+        run: |
+          python3 - <<'PY'
+          import glob, sys, yaml
+          bad = []
+          for f in sorted(glob.glob('.github/workflows/*.yml') + glob.glob('.github/workflows/*.yaml')):
+              try:
+                  yaml.safe_load(open(f))
+                  print(f'  OK   {f}')
+              except yaml.YAMLError as e:
+                  bad.append(f)
+                  print(f'  FAIL {f}\n       {e}')
+          if bad:
+              print(f'::error::Невалидный YAML в {len(bad)} workflow — GitHub не сможет их запустить')
+              sys.exit(1)
+          PY
 
       - name: Гейт TS2304 (несуществующие переменные)
         run: npm run check:undefined
@@ -47,11 +74,41 @@ jobs:
       - name: Проверка цен
         run: npm run check:prices
 
-      # Полный билд — только при пуше в ветки (не на PR)
-      # С кешем Astro пересобирает только изменившиеся страницы
+      - name: Покрытие ключевой бизнес-логики
+        run: npm run test:coverage:core
+
+      # Полный билд — на PR ТОЖЕ, а не только при пуше.
+      #
+      # Инцидент 17.07.2026: #1021 убрал импорт PRICE_MIN, оставив использование
+      # в .astro. На PR билд не гонялся (стояло `if: github.event_name == 'push'`),
+      # грепы выше этого не видят, а гейт TS2304 гоняет tsc только по серверному
+      # .ts и до .astro не достаёт. CI был зелёный → PR смержился → билд впервые
+      # упал уже при пуше в dev → выкаты встали, прод замёрз на прошлой сборке.
+      #
+      # Билд обязан падать ДО мержа, а не после. `quality` — единственная required
+      # проверка на dev, поэтому гейт живёт именно здесь: красный билд на PR теперь
+      # физически не даёт смержить. С кешем Astro пересобирает только изменившееся.
+      #
+      # SKIP_ASTRO_CHECK=1 (2026-07-26): typescript-тайпчек (`astro check`, ~2.5 мин
+      # по всем 385 страницам) убран отсюда — теперь единственный гейт перед
+      # deploy.yml:promote (см. его шаг «Строгий astro check»), не перед мержем в
+      # dev. Инцидент #1021 (см. выше) ЭТИМ не переоткрывается: там ломался сам
+      # рантайм-рендер страницы (ReferenceError на несуществующей переменной) —
+      # его по-прежнему ловит именно `astro build` ниже (реальный prerender всех
+      # страниц): на PR — этот шаг, на push в dev — job `build` в deploy.yml,
+      # который тоже стоит перед продом. astro check ловит другой класс багов
+      # (тип не совпадает, но код не падает) — эти теперь всплывают на prod-гейте,
+      # не на PR. Компромисс осознанный: dev — быстрый прототип, прод — строгий.
+      #
+      # ⚡ Только на PR (2026-08-14). На push в dev ровно эту же сборку, той же
+      # командой и на том же SHA, уже делает job `build` в deploy.yml — второй
+      # прогон не проверял бы ничего нового, а стоил ~4 мин раннера на каждый пуш.
+      # Гейт при этом не ослаб: сломанная сборка валит job `build`, deploy-dev от
+      # него зависит — поезд встаёт и до прода не доходит. На PR deploy.yml не
+      # запускается вовсе, поэтому там сборка остаётся единственной проверкой.
       - name: Build site
-        if: github.event_name == 'push'
-        run: npm run build
+        if: github.event_name == 'pull_request'
+        run: SKIP_ASTRO_CHECK=1 npm run build
 
       # ——— Optional: pull tooling branch and run quality scripts ———
       - name: Fetch tooling branch (best-effort)

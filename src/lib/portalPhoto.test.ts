@@ -4,9 +4,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockQuery = vi.fn();
 const mockConnect = vi.fn();
 const mockEnd = vi.fn();
-const MockClient = vi.fn(() => ({ connect: mockConnect, query: mockQuery, end: mockEnd }));
+const mockRelease = vi.fn();
+const clientInstance = { connect: mockConnect, query: mockQuery, end: mockEnd, release: mockRelease };
+const MockClient = vi.fn(() => clientInstance);
+// db.ts берёт клиента из pool.connect() (не new pg.Client() напрямую) — мокаем Pool так же.
+const MockPool = vi.fn(() => ({ connect: vi.fn(async () => clientInstance), on: vi.fn() }));
 
-vi.mock('pg', () => ({ default: { Client: MockClient } }));
+vi.mock('pg', () => ({ default: { Client: MockClient, Pool: MockPool } }));
 
 // Re-import after mock is registered
 const { insertPhoto, listPhotosByEvent, setContentTaskCompleted, listEventContentTasks } =

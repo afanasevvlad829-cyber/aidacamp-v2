@@ -61,6 +61,22 @@ kb_search("портрет клиента мама страхи мотиваци�
 
 ---
 
+## 📣 ПУБЛИКАТОР — единая точка для всех публикаций
+
+**Любая задача про публикации (Дзен, VK, FB/IG, LinkedIn, YouTube, контент-план,
+тайминги, статусы) начинается здесь:**
+
+```bash
+~/MCP/social-poster/publisher/pub status   # сводка по всем каналам
+~/MCP/social-poster/publisher/pub help     # все команды
+```
+
+Карта методов, тайминги и грабли: `~/MCP/social-poster/publisher/README.md`.
+Источник правды по статусам — Postgres `aidacamp` (content_items/publications).
+Не изобретать новые способы постинга, не прочитав этот README.
+
+---
+
 ## 🔐 КАК ПОЛУЧАТЬ ТОКЕНЫ
 
 ### На сервере (скрипты через SSH)
@@ -737,6 +753,45 @@ def get_keywords_frequency(keywords_list, regions=[213]):
 
 ---
 
+### Яндекс.Вебмастер
+**Токен:** `WEBMASTER_TOKEN` (fallback `YANDEX_METRIKA_TOKEN`), `WEBMASTER_USER_ID`  
+**Код:** `~/MCP/remote-mcp/lib/run/webmaster.mjs`  
+**Вызов:** `run(service="webmaster", action="...", params={...})`
+
+> Действия: `queries`, `sitemaps`, `hosts`, `indexing`, `errors`, `recrawl`, `ping_sitemap`.
+
+**⚠️ Грабли — для любого домена кроме aidacamp.ru нужен `host_id`.**
+Если его не передать, сервер молча берёт дефолт `https:aidacamp.ru:443`
+(см. `webmaster.mjs:11`) — переобход codims.ru/icepartners.ru/vlad-a.ru
+без этого параметра падает с `400 INVALID_URL` (запрос уходит на хост
+aidacamp с чужим URL). Инцидент 2026-07-10: полчаса потратили на это,
+пока не открыли код — площадка была подключена и верифицирована всё время.
+
+Формат `host_id`: `https:<домен>:443` (без `//`, порт обязателен).
+Список подключённых площадок и их `host_id` — action `hosts`.
+
+```python
+# Переобход страницы на aidacamp.ru — host_id не нужен (дефолт)
+run(service="webmaster", action="recrawl", params={
+    "urls": ["https://aidacamp.ru/lager-v-moskve/"]
+})
+
+# Переобход на ЛЮБОМ другом домене — host_id ОБЯЗАТЕЛЕН
+run(service="webmaster", action="recrawl", params={
+    "host_id": "https:codims.ru:443",
+    "urls": ["https://codims.ru/gorodskoy-lager/"]
+})
+
+# Список подключённых площадок (проверить host_id перед первым вызовом)
+run(service="webmaster", action="hosts", params={})
+```
+
+Известные `host_id`: `https:aidacamp.ru:443` (дефолт), `https:codims.ru:443`,
+`https:icepartners.ru:443`, `https:vlad-a.ru:443`, `https:k-d-a.ru:443`,
+`https:code-rock.ru:443`.
+
+---
+
 ### DataForSEO
 **Ключи:** `DATAFORSEO_LOGIN`, `DATAFORSEO_KEY`  
 **Документация:** https://docs.dataforseo.com/  
@@ -1084,6 +1139,42 @@ stats = kinescope("GET", f"videos/{video_id}/statistics")
 
 ---
 
+## 🌐 ИНТЕРАКТИВНОЕ УПРАВЛЕНИЕ БРАУЗЕРОМ (локальный Chrome, живые сессии)
+
+⚠️ **`Chrome MCP` / `Claude in Chrome` — ЗАПРЕЩЕНЫ правилом проекта** (см. `CLAUDE.md` → «Используй только aidacamp-tools MCP»). Не вызывать, не предлагать, не документировать как рабочий вариант — только два инструмента ниже.
+
+Отличается от `browser_agent` выше (MCP-инструмент, server-side Playwright через SSH — для скрапинга/скриншотов aidacamp.ru без интерактивности). Этот раздел — про управление РЕАЛЬНЫМ Chrome на Маке пользователя с живыми залогиненными сессиями: личные кабинеты, соцсети, сторонние сервисы.
+
+**Два уровня — эскалируй по возрастанию, начинай всегда с первого:**
+
+### 1. Playwright MCP `--extension` (дефолт)
+
+Подключён глобально (`claude mcp add --scope user playwright -- npx @playwright/mcp@latest --extension`, `--scope user`). Работает в реальном Chrome пользователя через официальное расширение «Playwright Extension» (Chrome Web Store, id `mmlmfjhmonkocbjadbfplnigmagldckm`) — при первом действии всплывает выбор вкладки, дальше живая сессия с логинами.
+
+Когда использовать: навигация/клики/чтение DOM/скриншоты/формы на любом сайте, где нужна текущая сессия пользователя. Industrial-grade auto-wait, надёжные локаторы, загрузка файлов через `setInputFiles`.
+
+Ограничение: `newCDPSession` запрещён — не годится для приватных CDP-трюков (см. уровень 2).
+
+### 2. agent-browser (сырой CDP — эскалация)
+
+CLI с демоном (`~/.claude/skills/agent-browser`, `npm i -g agent-browser`), профиль Chrome «Profile 1» = Дарья (используется для автопостинга Дзен/VK, отдельная headed-сессия с логином).
+
+Когда использовать: сайт активно ломает synthetic paste/type/drag через JS-события (проверено на редакторе Дзена, Draft.js — content-script/execCommand/synthetic paste рушат Draft.js, `isTrusted`-проверка блокирует загрузку файлов). Единственный уровень с полным CDP: `agent-browser get cdp-url` → подключение по WebSocket напрямую → `Input.dispatchKeyEvent {commands:['Paste']}` для нативной вставки из системного буфера, `DOM.setFileInputFiles` для загрузки файлов в обход `isTrusted`-проверки.
+
+Требует ручных скриптов — см. `~/MCP/social-poster/zen-scripts/` и полный рецепт для Дзена в памяти агента (`reference_browser_automation_stack.md`).
+
+### Решётка выбора
+
+| Задача | Инструмент |
+|---|---|
+| Прочитать/кликнуть/скрин/заполнить форму на любом сайте | Playwright MCP `--extension` |
+| Сайт блокирует вставку/тайп через JS (Draft.js и т.п.) | agent-browser (сырой CDP) |
+| Скрапинг/PDF/HAR по aidacamp.ru без интерактивности | `browser_agent` (MCP, server-side, выше) |
+
+**Запрещено:** Kapture, Desktop Commander для браузера, Chrome MCP, Claude in Chrome, computer-use для веб-страниц (только для нативных десктоп-приложений — Finder, Notes и т.п.).
+
+---
+
 ## 🗄 ЛОКАЛЬНАЯ БД PostgreSQL (только CRM-данные)
 
 Хост: `localhost` (только с сервера), БД: `aidacamp`, пользователь: `postgres`  
@@ -1103,7 +1194,9 @@ ai_tg_users           — маппинг телефон → TG peer_id
 
 ## 📤 ЗАГРУЗКА ФАЙЛОВ НА СЕРВЕР
 
-**Два шага, без вариантов:**
+> ⚠️ **УСТАРЕЛО (13.07.2026): `Desktop_Commander` полностью удалён** (см. `reference_desktop_commander_idle_shutdown` в памяти агента — регулярно «зависал» на простое ~4 мин). Рецепт ниже больше не работает как описано. Актуальный способ — см. «ОТДАТЬ ФАЙЛ ВНЕШНЕМУ API ПО ССЫЛКЕ» чуть ниже, либо прямой SCP по SSH-ключу без Desktop Commander.
+
+**Два шага, без вариантов (АРХИВ, для истории):**
 1. `aidacamp_tools.write_file` → записать на Мак (локально)
 2. `Desktop_Commander.start_process("scp -i ~/.ssh/aidacamp_prod /путь/на/маке root@159.194.223.55:/путь/на/сервере")` → скопировать на сервер
 
@@ -1130,6 +1223,70 @@ Desktop_Commander.start_process(
 **Канонические пути для скиллов:**
 - Мак:    `/Users/vladimirafanasev/Aidacamp-cloude/.claude/skills/`
 - Сервер: `/opt/aidacamp-build/.claude/skills/`
+
+---
+
+## 🔗 ОТДАТЬ ЛОКАЛЬНЫЙ ФАЙЛ ВНЕШНЕМУ API ПО ССЫЛКЕ (проверено 13.07.2026)
+
+Когда стороннему API (Replicate, любой другой генератор по URL) нужна публичная ссылка на файл (картинка/видео с диска) — **не использовать сторонние хостинги вроде tmpfiles.org** (без авторизации, эфемерные, потенциальная утечка данных). Своя площадка уже есть и отдаёт публично:
+
+```
+aidacamp_tools.write_file(
+    path="/var/www/aidacamp-media/tmp/<имя-файла>",
+    content="<base64 для бинарных / текст как есть>",
+    encoding="base64"   # для картинок/видео; "utf8" по умолчанию для текста
+)
+# → сразу доступно по адресу:
+# https://dev.aidacamp.ru/media/tmp/<имя-файла>
+```
+
+Работает потому что `write_file` в текущей регистрации `aidacamp-tools` (HTTP-транспорт на `dev.aidacamp.ru/mcp`) пишет **прямо на сервер**, а nginx-конфиг `aidacamp-dev.conf:308` отдаёт весь `/var/www/aidacamp-media/` целиком по префиксу `/media/` (`location ^~ /media/ { alias /var/www/aidacamp-media/; }`) — вложенные подпапки типа `tmp/` работают из коробки, ничего доп. настраивать не нужно. Проверено сквозным тестом: запись → `curl` → HTTP 200 с верным содержимым.
+
+**Важно:**
+- Только `dev.aidacamp.ru` (закрыт от индексации) — на проде `/media/` location нет, специально.
+- Файлы в `tmp/` НЕ чистятся автоматически — удалять вручную по SSH после использования (`rm /var/www/aidacamp-media/tmp/<файл>`), иначе будут копиться. Если нужен регулярный клининг — заводить отдельный cron осознанно, не по умолчанию.
+- Не путать с `images/`, `videos/`, `docs/` — это постоянное хранилище сайта (см. правило «Медиа и файлы» в `CLAUDE.md`); `tmp/` — только для одноразовой передачи внешним API.
+
+---
+
+## ⏳ ДОЛГОЕ ОЖИДАНИЕ / ПОЛЛИНГ ВНЕШНЕГО API (Replicate и подобные) — НЕ через `sleep` в MCP-вызове
+
+**Правило:** ни один tool-call не должен сам ждать больше нескольких секунд (`sleep N`, цепочка из нескольких блокирующих запросов). У клиента (особенно у Claude Desktop, см. память `project_mcp_crash_diagnosis`) есть свой независимый от сервера тайм-аут — если он сработает посреди ожидания, работа на сервере может успешно завершиться, а результат потеряется (Replicate удаляет `output` файла через некоторое время после готовности — `data_removed: true`, если не скачать вовремя; **инцидент 13.07.2026** — так потеряли 4 из 8 сгенерированных видео).
+
+**Правильный паттерн — поллинг живёт на сервере, а не в вызове:**
+
+```bash
+# Запустить в фоне на сервере (через tmux-сессию cc или nohup) — вызов возвращается мгновенно:
+nohup /opt/scripts/replicate-poll.sh /opt/vlad-a/app/replicate-rescued <id1> <id2> ... > /opt/vlad-a/app/replicate-rescued/poll.log 2>&1 &
+disown
+
+# Проверять готовность короткими вызовами (не sleep!), раз в минуту-другую:
+mcp__aidacamp-tools__ssh: tail -20 /opt/vlad-a/app/replicate-rescued/poll.log
+```
+
+`/opt/scripts/replicate-poll.sh <outdir> <id...>` (написан и проверен 13.07.2026) сам ждёт готовности (интервал 15с, потолок 30 мин), сам скачивает готовое видео в `<outdir>/<id>.mp4`, пишет статус в лог. Токен ищет тем же способом, что уже принят в проекте (`REPLICATE_API_TOKEN` из окружения либо `r8_...` в `/opt/*/.env*`).
+
+С 17.07.2026 при `succeeded` скрипт дополнительно скачивает **все** output-URL в постоянное хранилище `/var/www/aidacamp-media/replicate/<prediction_id>/` (+ там же `prediction.json` с ответом API) и пишет пути в лог — оплаченный результат больше не теряется, даже если про `<outdir>` забыли.
+Перед скачиванием проверяется диск: при < 5 ГБ свободного — 🚨-алерт в лог вместо скачивания (URL-ы остаются в `prediction.json` — освободить место и скачать вручную, пока Replicate не удалил output).
+
+Тот же принцип — для любой другой долгой операции (не только Replicate): фон на сервере (`nohup`/tmux/systemd) + лог-файл + короткие проверки. Ничего никогда не ждать одним вызовом дольше пары секунд.
+
+### Reaper осиротевших headless Chrome (agent-browser)
+
+**Инцидент 11.08.2026:** `agent-browser` не чистит Chrome-процессы прошлых сессий — накопилось 58 осиротевших (3.3 ГБ, группы висели 8ч–1сутки) → RAM исчерпана → своп-трэшинг (`vmstat`: постоянные si/so, `bi` до 525k) → load average ~16 на 4 ядрах при почти нулевом полезном CPU (`us` 2.3%). Утечка воспроизводится: за ~13ч после ручной чистки накопилась снова.
+
+**Предохранитель:** [`scripts/server/agent-browser-reaper.sh`](scripts/server/agent-browser-reaper.sh) (копия на сервере — `/opt/scripts/agent-browser-reaper.sh`) + systemd `agent-browser-reaper.timer` (hourly). Убивает `agent-browser` Chrome старше `THRESHOLD_SEC` (по умолчанию 4ч), **кроме** процессов в cgroup управляемого юнита `agent-browser-chrome.service` (список берётся из `/sys/fs/cgroup/system.slice/agent-browser-chrome.service/cgroup.procs`) — так живой рабочий Chrome не трогается, даже если он сам живёт дольше порога. Fail-safe: если cgroup юнита не читается — скрипт не убивает ничего (лучше пропустить цикл, чем случайно снести управляемый процесс).
+
+```bash
+# Проверка без убийства (лог, ничего не убивает):
+DRY_RUN=1 /opt/scripts/agent-browser-reaper.sh && tail -20 /var/log/agent-browser-reaper.log
+
+# Статус таймера / последний прогон:
+systemctl list-timers agent-browser-reaper.timer
+systemctl status agent-browser-reaper.service
+```
+
+⚠️ Скрипт лежит в git как источник правды для аудита/изменений — при правке в репо синхронизировать на сервер вручную (`scp` + `chmod +x`), автодеплоя на `/opt/scripts/` нет.
 
 ---
 

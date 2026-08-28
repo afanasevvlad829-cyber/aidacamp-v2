@@ -1,4 +1,5 @@
 ---
+import { SEASON_YEAR } from '../../data/shifts';
 import '../../styles/global.css';
 import Base from '../../layouts/Base.astro';
 import Header from '../../components/Header.astro';
@@ -7,12 +8,13 @@ import RelatedPages from '../../components/RelatedPages.astro';
 import ArticleBottomCta from '../../components/ArticleBottomCta.astro';
 import ArticleHero from '../../components/ArticleHero.astro';
 import BlogCTA from '../../components/BlogCTA.astro';
+import RelatedArticlesAuto from '../../components/RelatedArticlesAuto.astro';
 
 const relatedPages = [
   { title: "AI-лагерь для детей", url: "/ai-lager/", icon: "cpu", description: "Нейросети, ChatGPT API, AI-проекты" },
   { title: "Лагерь Python", url: "/python-lager/", icon: "laptop", description: "Python с нуля до бота" },
   { title: "Нейросети для детей", url: "/stati/nejroseti-dlya-detej/", icon: "cpu", description: "С чего начать и зачем" },
-  { title: "Смены 2026 — цены", url: "/ceny/", icon: "calendar-week", description: "Выбрать смену и записаться" },
+  { title: `Смены ${SEASON_YEAR} — цены`, url: "/ceny/", icon: "calendar-week", description: "Выбрать смену и записаться" },
 ];
 
 const faqItems = [
@@ -46,7 +48,7 @@ const faqItems = [
 <Base
   title="Нейросети для детей в лагере — чему учат на AI-смене АйДаКемп"
   description="Что такое AI-смена в детском IT-лагере: ChatGPT API, Gemini, реальные проекты детей 10–15 лет. Нужно ли знать программирование. Подробно про AI-трек АйДаКемп."
-  ogImage="/images/hero/ai-lager.avif"
+  ogImage="/images/articles/og-ai-proekty-v-lagere.jpg"
 >
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify([
@@ -77,15 +79,6 @@ const faqItems = [
         }))
       }
     ])} />
-      <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://aidacamp.ru/" },
-        { "@type": "ListItem", "position": 2, "name": "Статьи", "item": "https://aidacamp.ru/stati/" },
-        { "@type": "ListItem", "position": 3, "name": "Нейросети для детей в лагере", "item": "https://aidacamp.ru/stati/ai-proekty-v-lagere/" }
-      ]
-    })} />
   </Fragment>
 
   <Header />
@@ -122,7 +115,7 @@ const faqItems = [
           AI-смена — это специальный трек в рамках стандартной смены АйДаКемп. Дети 10–15 лет учатся работать с нейросетями не как с развлечением, а как с инструментом для решения задач. Ключевое отличие от кружка по ChatGPT: здесь есть финальный проект, который нужно защитить на хакатоне.
         </p>
         <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
-          Инструменты, с которыми работают дети: ChatGPT API (не просто чат, а настоящий программный доступ), Gemini, Kandinsky (генерация изображений), Suno (генерация музыки), а для старших — интеграция нейросетей в Python-код.
+          Инструменты, с которыми работают дети: ChatGPT API (не просто чат, а настоящий программный доступ), Gemini, Kandinsky (генерация изображений), Suno (генерация музыки), а для старших — интеграция нейросетей в Python-код. Разбор, какие <a href="/stati/nejroseti-dlya-detej/" class="text-orange-600 underline underline-offset-2 hover:text-orange-700">нейросети для детей</a> стоит пробовать дома и с чего начать, — в отдельной статье.
         </p>
         <div class="rounded-[14px] bg-orange-50 border border-orange-100 p-4 md:p-5 max-w-[720px] mb-4">
           <p class="text-base font-semibold text-orange-700 mb-1">Важно понимать</p>
@@ -295,24 +288,10 @@ const faqItems = [
     bookingSubtitle="Запишите на IT-смену — за две недели ребята создают реальные AI-проекты."
   />
   <RelatedPages title="Полезные страницы" pages={relatedPages} />
+  <RelatedArticlesAuto />
   <Footer />
 <script>
-  document.querySelectorAll('[data-faq-toggle]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const item = btn.closest('[data-faq-item]');
-      const answer = item.querySelector('[data-faq-answer]');
-      const icon = btn.querySelector('[data-faq-icon]');
-      const isOpen = btn.getAttribute('aria-expanded') === 'true';
-      if (isOpen) {
-        answer.classList.remove('is-open');
-        if (icon) icon.style.transform = '';
-        btn.setAttribute('aria-expanded', 'false');
-      } else {
-        answer.classList.add('is-open');
-        if (icon) icon.style.transform = 'rotate(45deg)';
-        btn.setAttribute('aria-expanded', 'true');
-      }
-    });
-  });
+  import { initFaqAccordion } from '../../scripts/faq-accordion';
+  initFaqAccordion();
 </script>
 </Base>

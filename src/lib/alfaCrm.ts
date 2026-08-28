@@ -1,6 +1,12 @@
 // Лёгкий клиент Альфа-CRM для SSR-страниц.
 // Кеш токена в памяти процесса до 50 минут.
 
+import { fetchWithTimeout } from './fetchWithTimeout';
+import { PAMYATKA_SHIFTS } from '../data/pamyatkaShifts';
+
+// Таймаут на все запросы к AlfaCRM: зависший CRM не должен вешать SSR/приём заявки.
+const ALFA_TIMEOUT_MS = 8000;
+
 const BRANCH = 5;
 
 let _tokenCache: { token: string; exp: number } | null = null;
@@ -15,11 +21,11 @@ async function authToken(): Promise<string | null> {
   if (!host || !email || !apiKey) return null;
 
   try {
-    const r = await fetch(`https://${host}/v2api/auth/login`, {
+    const r = await fetchWithTimeout(`https://${host}/v2api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, api_key: apiKey }),
-    });
+    }, ALFA_TIMEOUT_MS);
     const j: any = await r.json();
     if (!j?.token) return null;
     _tokenCache = { token: j.token, exp: now + 50 * 60 * 1000 };
@@ -36,11 +42,11 @@ export async function getGroupLinks(groupId: number): Promise<{ tg?: string; max
   if (!host || !token) return {};
 
   try {
-    const r = await fetch(`https://${host}/v2api/${BRANCH}/group/index`, {
+    const r = await fetchWithTimeout(`https://${host}/v2api/${BRANCH}/group/index`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
       body: JSON.stringify({ id: groupId, page: 0 }),
-    });
+    }, ALFA_TIMEOUT_MS);
     const j: any = await r.json();
     const note: string = j?.items?.[0]?.note ?? '';
     if (!note) return {};
@@ -57,52 +63,60 @@ export async function getGroupLinks(groupId: number): Promise<{ tg?: string; max
 }
 
 export async function getCustomerGroupIds(customerId: number): Promise<number[]> {
+  return findCustomerGroups(customerId, Object.keys(PAMYATKA_SHIFTS).map(Number));
+}
+
+/**
+ * Ищем группы клиента ОБРАТНЫМ запросом: спрашиваем состав каждой группы-кандидата
+ * и смотрим, есть ли там наш клиент.
+ *
+ * Прямой путь не работает: `customer/index` по `{id}` отдаёт карточку БЕЗ полей
+ * `group_ids`/`groups`/`customer_groups` (проверено на проде 01.08.2026), а
+ * запасной `customer-group/index` в этой CRM отвечает 404. Из-за этого функция
+ * всегда возвращала [] и блок смены на /p/<id> не показывался вообще никому.
+ *
+ * Состав группы кешируем на 5 минут: иначе на каждый SSR-рендер уходило бы
+ * по запросу на каждую смену.
+ */
+const _groupMembers = new Map<number, { ids: Set<number>; exp: number }>();
+const GROUP_TTL_MS = 5 * 60 * 1000;
+
+async function groupMemberIds(groupId: number): Promise<Set<number> | null> {
+  const cached = _groupMembers.get(groupId);
+  if (cached && cached.exp > Date.now()) return cached.ids;
+
   const host = process.env.ALFACRM_HOSTNAME;
   const token = await authToken();
-  if (!host || !token) return [];
+  if (!host || !token) return null;
 
+  const ids = new Set<number>();
   try {
-    const r = await fetch(`https://${host}/v2api/${BRANCH}/customer/index`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
-      body: JSON.stringify({ id: customerId, page: 0 }),
-    });
-    const j: any = await r.json();
-    const item = j?.items?.[0];
-    if (!item) return [];
-
-    // У клиента в API могут быть массивы groups/customer_groups/group_ids
-    // Альфа отдаёт связь через отдельный endpoint customer-group, но иногда есть в самой записи.
-    const directIds: number[] = [];
-    for (const key of ['group_ids', 'groups']) {
-      const v = item[key];
-      if (Array.isArray(v)) {
-        for (const g of v) {
-          if (typeof g === 'number') directIds.push(g);
-          else if (g && typeof g === 'object' && typeof g.id === 'number') directIds.push(g.id);
-          else if (g && typeof g === 'object' && typeof g.group_id === 'number') directIds.push(g.group_id);
-        }
-      }
-    }
-    if (directIds.length) return [...new Set(directIds)];
-
-    // Fallback — через customer-group
-    try {
-      const r2 = await fetch(`https://${host}/v2api/${BRANCH}/customer-group/index`, {
+    for (let page = 0; page < 10; page++) {
+      const r = await fetchWithTimeout(`https://${host}/v2api/${BRANCH}/customer/index`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token },
-        body: JSON.stringify({ customer_id: customerId, page: 0 }),
-      });
-      const j2: any = await r2.json();
-      const ids: number[] = [];
-      for (const it of (j2?.items || [])) {
-        if (typeof it?.group_id === 'number') ids.push(it.group_id);
-      }
-      return [...new Set(ids)];
-    } catch {
-      return [];
+        // removed:1 — иначе архивные карточки не видны (та же грабля, что с {id})
+        body: JSON.stringify({ group_id: groupId, page, removed: 1 }),
+      }, ALFA_TIMEOUT_MS);
+      const j: any = await r.json();
+      const items = j?.items || [];
+      if (!items.length) break;
+      for (const c of items) if (typeof c?.id === 'number') ids.add(c.id);
     }
   } catch {
-    return [];
+    // Не удалось узнать состав — это НЕ «группа пустая». Не кешируем и не врём.
+    return null;
   }
+
+  _groupMembers.set(groupId, { ids, exp: Date.now() + GROUP_TTL_MS });
+  return ids;
+}
+
+async function findCustomerGroups(customerId: number, candidates: number[]): Promise<number[]> {
+  const found: number[] = [];
+  for (const gid of candidates) {
+    const members = await groupMemberIds(gid);
+    if (members?.has(customerId)) found.push(gid);
+  }
+  return found;
 }

@@ -9,6 +9,7 @@ export const prerender = false;
  * Креды: process.env (ALFACRM_HOSTNAME/EMAIL/API_KEY) или /opt/alfacrm-exporter/.env.
  */
 import type { APIRoute } from 'astro';
+import { fetchWithTimeout } from '../../lib/fetchWithTimeout';
 import { readFile } from 'node:fs/promises';
 
 const SHIFT_GROUP: Record<number, number> = { 1: 660, 2: 661, 3: 662, 4: 663, 5: 664, 6: 665 };
@@ -42,7 +43,7 @@ async function getCreds(): Promise<{ H?: string; E?: string; K?: string }> {
 }
 
 async function post(host: string, path: string, body: unknown, token?: string): Promise<any> {
-  const r = await fetch(`https://${host}/v2api${path}`, {
+  const r = await fetchWithTimeout(`https://${host}/v2api${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token || '' },
     body: JSON.stringify(body),

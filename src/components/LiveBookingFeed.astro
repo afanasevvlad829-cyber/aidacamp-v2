@@ -1,9 +1,43 @@
 ---
 /**
  * LiveBookingFeed — тост «кто-то только что записал ребёнка».
- * Появляется раз в 35–55 сек, снизу слева. Исчезает через 5 сек.
+ * Показывается один раз за сессию (sessionStorage), снизу слева. Исчезает через 5 сек.
  * Псевдо-реальные данные (нет API): имена + города из типичных лидов.
+ *
+ * Смена в фразе — только из mainShifts, у которых getAvailabilityLevel() !== 'soldout'.
+ * Распроданная смена (сейчас — Смена 3) автоматически выпадает из фраз при билде,
+ * без правки строк руками. Если распроданы все смены — фразы падают на generic
+ * (без названия смены), тост не пропадает совсем.
  */
+import { mainShifts, getAvailabilityLevel } from '../data/shifts';
+
+const NAMES_CITIES: [string, string][] = [
+  ['Анна', 'Москвы'],
+  ['Елена', 'Подольска'],
+  ['Мария', 'Балашихи'],
+  ['Ольга', 'Химок'],
+  ['Светлана', 'Мытищ'],
+  ['Ирина', 'Красногорска'],
+  ['Наталья', 'Люберец'],
+  ['Екатерина', 'Королёва'],
+  ['Татьяна', 'Домодедово'],
+  ['Юлия', 'Одинцово'],
+];
+
+// "Смена N" → "Смену N" (винительный падеж: "записала на ...", "забронировала ...")
+const availableShiftNamesAcc = mainShifts
+  .filter((s) => getAvailabilityLevel(s) !== 'soldout')
+  .map((s) => s.name.replace('Смена', 'Смену'));
+
+const shiftPhrases = availableShiftNamesAcc.flatMap((name) => [
+  `записала дочь на ${name}`,
+  `записала сына на ${name}`,
+  `забронировала ${name}`,
+]);
+const genericPhrases = ['забронировала место', 'записала дочь', 'записала ребёнка', 'выбрала место'];
+const phrases = [...shiftPhrases, ...genericPhrases];
+
+const entries = NAMES_CITIES.map(([name, city], i) => `${name} из ${city} ${phrases[i % phrases.length]}`);
 ---
 
 <div id="lbf-toast" aria-live="polite" aria-atomic="true"
@@ -19,32 +53,21 @@
   </div>
 </div>
 
-<script>
+<script define:vars={{ entries }}>
 (function () {
-  const ENTRIES = [
-    'Анна из Москвы записала дочь на Смену 3',
-    'Елена из Подольска забронировала место',
-    'Мария из Балашихи записала сына на Смену 4',
-    'Ольга из Химок выбрала Смену 3',
-    'Светлана из Мытищ записала дочь',
-    'Ирина из Красногорска забронировала Смену 4',
-    'Наталья из Люберец записала ребёнка',
-    'Екатерина из Королёва выбрала место',
-    'Татьяна из Домодедово записала дочь на Смену 3',
-    'Юлия из Одинцово забронировала Смену 4',
-  ];
+  const ENTRIES = entries;
+  const SHOWN_KEY = 'ac:lbf_shown';
+
+  if (sessionStorage.getItem(SHOWN_KEY)) return;
 
   const toast = document.getElementById('lbf-toast');
   const textEl = document.getElementById('lbf-text');
   if (!toast || !textEl) return;
 
-  let lastIdx = -1;
-
   function show() {
-    let idx;
-    do { idx = Math.floor(Math.random() * ENTRIES.length); } while (idx === lastIdx);
-    lastIdx = idx;
+    const idx = Math.floor(Math.random() * ENTRIES.length);
     textEl.textContent = ENTRIES[idx];
+    sessionStorage.setItem(SHOWN_KEY, '1');
 
     toast.classList.remove('opacity-0', 'translate-y-2');
     toast.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
@@ -55,12 +78,7 @@
     }, 5000);
   }
 
-  function scheduleNext() {
-    const delay = 35000 + Math.random() * 20000; // 35–55 сек
-    setTimeout(() => { show(); scheduleNext(); }, delay);
-  }
-
-  // Первый показ через 20–30 сек после загрузки
-  setTimeout(() => { show(); scheduleNext(); }, 20000 + Math.random() * 10000);
+  // Единственный показ за сессию, через 20–30 сек после загрузки
+  setTimeout(show, 20000 + Math.random() * 10000);
 })();
 </script>

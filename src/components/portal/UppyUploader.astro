@@ -49,6 +49,7 @@ const rootId = id ?? `uppy-${Math.random().toString(36).slice(2)}`;
   import GoldenRetriever from '@uppy/golden-retriever';
   import '@uppy/core/css/style.min.css';
   import '@uppy/dashboard/css/style.min.css';
+  import { UPPY_LOCALE_STRINGS, buildUppyRestrictions, UPPY_DASHBOARD_BASE, UPPY_XHR_BASE, attachGoldenRetriever, formatUploadError } from '../../scripts/portal/uppyShared';
 
   const initialised = new WeakSet<HTMLElement>();
 
@@ -78,46 +79,24 @@ const rootId = id ?? `uppy-${Math.random().toString(36).slice(2)}`;
     const uppy = new Uppy({
       id: 'uppy-' + uploaderId,
       autoProceed: true,
-      restrictions: {
-        maxFileSize: 500 * 1024 * 1024,
-        maxNumberOfFiles: 5,
-        allowedFileTypes: accept.split(',').map((s) => s.trim()).filter(Boolean),
-      },
+      restrictions: buildUppyRestrictions(accept, 5),
     });
 
     uppy.use(Dashboard, {
       target: mount,
-      inline: true,
-      width: '100%',
+      ...UPPY_DASHBOARD_BASE,
       height: 240,
-      proudlyDisplayPoweredByUppy: false,
-      showProgressDetails: true,
-      hideUploadButton: false,
       note,
-      locale: {
-        strings: {
-          dropPasteFiles: 'Перетащи файл сюда или %{browseFiles}',
-          browseFiles: 'выбери файл',
-          dropPasteImportFiles: 'Перетащи файл сюда, %{browseFiles} или импортируй из %{importFrom}',
-          uploadComplete: 'Загружено',
-          uploadPaused: 'Пауза',
-          uploadingXFiles: { 0: 'Загружаю %{smart_count} файл', 1: 'Загружаю %{smart_count} файла', 2: 'Загружаю %{smart_count} файлов' },
-          processingXFiles: { 0: 'Обработка %{smart_count} файла', 1: 'Обработка %{smart_count} файлов', 2: 'Обработка %{smart_count} файлов' },
-        },
-      },
+      locale: { strings: UPPY_LOCALE_STRINGS },
     });
 
     uppy.use(XHRUpload, {
       endpoint: '/api/portal/photo',
-      method: 'POST',
-      formData: true,
-      fieldName: 'file',
-      withCredentials: true,
-      timeout: 0,
+      ...UPPY_XHR_BASE,
     });
     uppy.setMeta({ event_id: eventId, content_task_id: ctId });
 
-    try { uppy.use(GoldenRetriever, { serviceWorker: false }); } catch {}
+    attachGoldenRetriever(uppy, GoldenRetriever);
 
     uppy.on('upload-success', (_file, response) => {
       const body = (response as any)?.body ?? {};
@@ -132,8 +111,7 @@ const rootId = id ?? `uppy-${Math.random().toString(36).slice(2)}`;
     });
 
     uppy.on('upload-error', (_file, error, response) => {
-      const code = (response as any)?.status ?? '';
-      const msg = (error as any)?.message || 'unknown error';
+      const { code, msg } = formatUploadError(error, response);
       showStatus(status, `Ошибка${code ? ' (HTTP ' + code + ')' : ''}: ${msg}`, true);
       if (toast) toast.error('Не загрузилось: ' + msg);
     });

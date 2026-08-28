@@ -1,6 +1,5 @@
 ---
-import ShiftModal from './ShiftModal.astro';
-import { STAT_DISTANCE, CAMP_PRICE_FROM, CAMP_SEASON, YANDEX_MAPS_URL, STAT_RATING } from '../data/contacts';
+import { STAT_DISTANCE, CAMP_PRICE_FROM, CAMP_PRICE_FROM_ID, CAMP_SEASON, YANDEX_MAPS_URL, STAT_RATING } from '../data/contacts';
 import { getSeoEffect, getTopicEffect } from '../lib/heroVariant';
 
 // Детерминированный эффект по slug страницы
@@ -36,26 +35,24 @@ interface Props {
   /** Сезонная мета вместо летней («смены июнь–август · от PRICE_MIN»):
    *  чипы дат и цены сезона, ведут на #prezapis. Для осень/зима/весна. */
   seasonMeta?: { dates: string; price: string };
+  /** Куда ведут сезонные чипы. По умолчанию якорь #prezapis (страницы сезонов),
+   *  но на страницах без формы предзаписи нужен путь на сам сезон. */
+  seasonMetaHref?: string;
 }
 
-const { h1, subtitle, breadcrumb, keywords, image, imageAlt = '', seasonMeta } = Astro.props;
+const { h1, subtitle, breadcrumb, keywords, image, imageAlt = '', seasonMeta, seasonMetaHref = '#prezapis' } = Astro.props;
 
-const breadcrumbJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://aidacamp.ru/" },
-    { "@type": "ListItem", "position": 2, "name": breadcrumb }
-  ]
-};
+// BreadcrumbList отсюда убран 01.08.2026. Все 88 страниц с <LandingHero> лежат внутри
+// LandingLayout, который отдаёт ту же цепочку «Главная → …», но с canonical-URL в item
+// и на все 110 лендингов сразу (в т.ч. 22 без LandingHero). Если видимая крошка короче
+// h1 — передавай её в LandingLayout пропом breadcrumb, а не второй цепочкой отсюда.
+// Страж — scripts/check-breadcrumb-schema.mjs.
 ---
 
-<section data-hero-effect={_heroEffect} data-hero-bg={_heroBg} class="relative overflow-hidden bg-[#0d1a2b] px-5 pt-10 pb-8 md:px-14 md:pt-14 md:pb-12">
-  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
-
+<section data-hero-effect={_heroEffect} data-hero-bg={_heroBg} class="relative overflow-hidden bg-navy-950 px-5 pt-10 pb-8 md:px-14 md:pt-14 md:pb-12">
   {/* CSS backgrounds — photo removed per TZ v3.0 */}
   {_heroEffect === 'mesh' && (
-    <div class="absolute inset-0 z-0 bg-[#0d1a2b]">
+    <div class="absolute inset-0 z-0 bg-navy-950">
       <div class="lp-blob lp-blob-1 absolute"></div>
       <div class="lp-blob lp-blob-2 absolute"></div>
       <div class="lp-blob lp-blob-3 absolute"></div>
@@ -76,14 +73,14 @@ const breadcrumbJsonLd = {
     <div class="absolute inset-0 z-[1]" aria-hidden="true">
       <img
         src={image}
-        alt=""
+        alt={imageAlt}
         loading="eager"
         fetchpriority="high"
         class="h-full w-full object-cover"
       />
-      <div class="absolute inset-0 bg-[#0d1a2b]/70 md:hidden"></div>
-      <div class="hidden md:block absolute inset-0 bg-gradient-to-r from-[#0d1a2b]/95 via-[#0d1a2b]/70 to-[#0d1a2b]/25"></div>
-      <div class="absolute inset-0 bg-gradient-to-t from-[#0d1a2b]/60 via-transparent to-transparent"></div>
+      <div class="absolute inset-0 bg-navy-950/70 md:hidden"></div>
+      <div class="hidden md:block absolute inset-0 bg-gradient-to-r from-navy-950/95 via-navy-950/70 to-navy-950/25"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-navy-950/60 via-transparent to-transparent"></div>
     </div>
   )}
 
@@ -143,11 +140,11 @@ const breadcrumbJsonLd = {
           <span class="text-white/30" aria-hidden="true">·</span>
           {seasonMeta ? (
             <>
-              <a href="#prezapis" class="hover:text-white/85 transition-colors">
+              <a href={seasonMetaHref} class="hover:text-white/85 transition-colors">
                 {seasonMeta.dates}
               </a>
               <span class="text-white/30" aria-hidden="true">·</span>
-              <a href="#prezapis" class="hover:text-white/85 transition-colors">
+              <a href={seasonMetaHref} class="hover:text-white/85 transition-colors">
                 {seasonMeta.price}
               </a>
             </>
@@ -157,7 +154,7 @@ const breadcrumbJsonLd = {
                 смены {CAMP_SEASON}
               </a>
               <span class="text-white/30" aria-hidden="true">·</span>
-              <button type="button" data-shift-link="shift-2-1" class="hover:text-white/85 transition-colors cursor-pointer">
+              <button type="button" data-shift-link={CAMP_PRICE_FROM_ID} class="hover:text-white/85 transition-colors cursor-pointer">
                 от {CAMP_PRICE_FROM}
               </button>
             </>
@@ -173,6 +170,4 @@ const breadcrumbJsonLd = {
     </div>
   </div>
 </section>
-
-
-<ShiftModal />
+<!-- ShiftModal НЕ рендерим здесь — уже есть в Base.astro, дубль давал id="shift-modal" дважды (Labrika, 10.07.2026) -->

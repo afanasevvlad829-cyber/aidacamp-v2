@@ -1,15 +1,8 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { requireStaff } from '../../../../lib/portalPerms';
+import { withDbClient } from '../../../../lib/db';
 
-function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
-async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
-  const conn = dsn(); if (!conn) return null;
-  const { default: pg } = await import('pg');
-  const client = new pg.Client({ connectionString: conn });
-  await client.connect();
-  try { return await fn(client); } finally { await client.end(); }
-}
 function json(body: object, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
 }
@@ -39,7 +32,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate)) return json({ ok: false, error: 'end_date invalid' }, 400);
   if (endDate < startDate) return json({ ok: false, error: 'end_date < start_date' }, 400);
 
-  const result = await withClient(async (c) => {
+  const result = await withDbClient(async (c) => {
     // Получаем источник
     const src = await c.query('SELECT start_date FROM shift WHERE id=$1', [sourceShiftId]);
     if (src.rowCount === 0) return { code: 404, error: 'source shift not found' };

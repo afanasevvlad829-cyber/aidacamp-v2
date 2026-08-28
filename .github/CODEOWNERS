@@ -1,28 +1,43 @@
 # GitHub CODEOWNERS — автоматическое назначение reviewers
 # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# ⚠️ Логин обязан существовать И иметь push-права на репозиторий.
+# До 2026-07-08 здесь везде стоял @afanasevvlad829 — такого пользователя
+# НЕ СУЩЕСТВУЕТ (GitHub API отдаёт 404). Правила молча не срабатывали:
+# файл выглядел строгим, но не назначал ревьюера ни разу.
+# Реальный владелец — @afanasevvlad829-cyber.
+#
+# Само по себе CODEOWNERS ничего не блокирует. Чтобы правила работали как
+# гейт, в branch protection ветки dev нужно включить
+# "Require review from Code Owners".
 
-# 🔴 HOT files — single owner (@afanasevvlad829)
-# Требует approval перед merge в dev/main
-src/components/hero/Mobile.astro          @afanasevvlad829
-src/components/booking/BookingBar.astro   @afanasevvlad829
-src/pages/design-v2.astro                 @afanasevvlad829
-src/components/corp/CorpNav.astro         @afanasevvlad829
-src/components/corp/CorpRefund.astro      @afanasevvlad829
+# ── 🔥 Деплой-код: исполняется на проде под root ──────────────
+# С автодеплоем (.github/workflows/deploy.yml) любой смёрженный в dev PR
+# выполняется на боевом сервере. Изменения здесь — только через ревью.
+.github/workflows/**                      @afanasevvlad829-cyber
+.github/CODEOWNERS                        @afanasevvlad829-cyber
+scripts/**                                @afanasevvlad829-cyber
+
+# 🔴 HOT files — single owner
+src/components/hero/Mobile.astro          @afanasevvlad829-cyber
+src/components/booking/BookingBar.astro   @afanasevvlad829-cyber
+src/pages/design-v2.astro                 @afanasevvlad829-cyber
+src/components/corp/CorpNav.astro         @afanasevvlad829-cyber
+src/components/corp/CorpRefund.astro      @afanasevvlad829-cyber
 
 # 🟡 Corp pages — owner approval required
-src/pages/corp/**/*.astro                 @afanasevvlad829
-src/layouts/CorpLayout.astro              @afanasevvlad829
+src/pages/corp/**/*.astro                 @afanasevvlad829-cyber
+src/layouts/CorpLayout.astro              @afanasevvlad829-cyber
 
-# 🟢 Shared resources (любой может трогать)
-src/styles/**                             @afanasevvlad829
-src/data/**                               @afanasevvlad829
-src/components/**/*.astro                 @afanasevvlad829
+# 🟢 Shared resources
+src/styles/**                             @afanasevvlad829-cyber
+src/data/**                               @afanasevvlad829-cyber
+src/components/**/*.astro                 @afanasevvlad829-cyber
 
-# Config & scripts (strict owner)
-astro.config.mjs                          @afanasevvlad829
-.gitignore                                @afanasevvlad829
-scripts/deploy.sh                         @afanasevvlad829
-package.json                              @afanasevvlad829
+# Config (strict owner)
+astro.config.mjs                          @afanasevvlad829-cyber
+.gitignore                                @afanasevvlad829-cyber
+package.json                              @afanasevvlad829-cyber
 
 # Everything else defaults to owner
-*                                         @afanasevvlad829
+*                                         @afanasevvlad829-cyber

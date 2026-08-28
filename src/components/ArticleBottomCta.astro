@@ -11,7 +11,8 @@
  */
 
 import AskCta from './AskCta.astro';
-import { mainShifts } from '../data/shifts';
+import { mainShifts, getAvailabilityLevel, SEASON_YEAR } from '../data/shifts';
+import { getCurrentPrice, fmtPrice } from '../data/dynamicPrices';
 import { reviews as allReviews } from '../data/reviews';
 import ShiftsGuideLink from './ShiftsGuideLink.astro';
 
@@ -24,13 +25,26 @@ interface Props {
   reviewQuotes?: ReviewQuote[];  // если не передано — возьмём первые 2 из src/data/reviews
   bookingTitle?: string;         // h3 над формой
   bookingSubtitle?: string;
+  title?: string;
+  subtitle?: string;
+  heading?: string;
+  buttonText?: string;
+  buttonUrl?: string;
 }
 
 const {
   reviewQuotes,
-  bookingTitle = 'Забронируйте место на ближайшую смену',
-  bookingSubtitle = 'Ответим за 10 минут. Без навязчивых звонков.',
+  bookingTitle: bookingTitleProp,
+  bookingSubtitle: bookingSubtitleProp,
+  title,
+  subtitle,
+  heading,
+  buttonText,
+  buttonUrl,
 } = Astro.props;
+
+const bookingTitle = bookingTitleProp ?? heading ?? title ?? 'Забронируйте место на ближайшую смену';
+const bookingSubtitle = bookingSubtitleProp ?? subtitle ?? 'Ответим за 10 минут. Без навязчивых звонков.';
 
 const defaultReviews: ReviewQuote[] = [
   {
@@ -50,9 +64,16 @@ const upcomingShifts = mainShifts
   .filter(s => s.statusType === 'available' && s.startDate >= today)
   .sort((a, b) => a.startDate.localeCompare(b.startDate))
   .slice(0, 2);
+
+// Цена — текущая, по единому правилу роста. shift.price — это база без роста,
+// её показывать нельзя: занижает. Фолбэк на базу только если правило не дало цену.
+const priceOf = (s: (typeof mainShifts)[number]) => {
+  const now = getCurrentPrice(s.id);
+  return now ? fmtPrice(now) : s.price;
+};
 ---
 
-<section class="mx-auto max-w-[860px] px-4 mt-6 md:mt-8">
+<section class="mx-auto max-w-[860px] px-4 mt-6 md:mt-8" data-rss-strip>
 
   <!-- 2 WIDGETS ROW -->
   <div class="grid gap-4 md:grid-cols-2 md:gap-5">
@@ -65,28 +86,45 @@ const upcomingShifts = mainShifts
       </div>
 
       <div class="mt-4 space-y-3">
-        {upcomingShifts.length > 0 ? upcomingShifts.map(shift => (
-          <a href="/ceny/" class="block rounded-[12px] bg-card border border-border-light p-3.5 hover:border-orange-200 hover:shadow-[0_4px_12px_rgba(236,124,0,0.1)] transition-all group">
-            <div class="flex items-baseline justify-between gap-2">
-              <p class="text-base font-bold text-body">
-                {shift.name}
-                {shift.popular && <span class="ml-1.5 text-[10px] align-middle font-semibold uppercase tracking-[0.08em] text-orange-600 bg-orange-100 rounded px-1.5 py-0.5">популярная</span>}
-              </p>
-              <p class="text-base font-semibold text-body-muted shrink-0">{shift.price}</p>
-            </div>
-            <p class="mt-1 text-base text-body-faint">{shift.dates} · {shift.duration}</p>
-            <p class="mt-2 inline-flex items-center gap-1.5 text-base text-body-muted">
-              <i class="bi bi-circle-fill text-[6px] text-emerald-500"></i>
-              <span>Свободно <span data-spots-num data-spots-shift={shift.id} class="blur-[6px] transition-[filter] duration-300 select-none">{shift.free} мест</span></span>
+        {upcomingShifts.length > 0 ? upcomingShifts.map(shift => {
+          const isSoldOut = getAvailabilityLevel(shift) === 'soldout';
+          return (
+          <div class="rounded-[12px] bg-card border border-border-light p-3.5 hover:border-orange-200 hover:shadow-[0_4px_12px_rgba(236,124,0,0.1)] transition-all group">
+            <a href="/ceny/" class="block no-underline">
+              <div class="flex items-baseline justify-between gap-2">
+                <p class="text-base font-bold text-body">
+                  {shift.name}
+                  {shift.popular && <span class="ml-1.5 text-[10px] align-middle font-semibold uppercase tracking-[0.08em] text-orange-600 bg-orange-100 rounded px-1.5 py-0.5">популярная</span>}
+                </p>
+                <p class="text-base font-semibold text-body-muted shrink-0">{priceOf(shift)}</p>
+              </div>
+              <p class="mt-1 text-base text-body-faint">{shift.dates} · {shift.duration}</p>
+            </a>
+            <p class="mt-2 flex items-center gap-1.5 text-base text-body-muted">
+              {isSoldOut ? (
+                <Fragment>
+                  <i class="bi bi-circle-fill text-[6px] text-slate-400"></i>
+                  <span>Мест нет · <span class="text-primary underline">лист ожидания</span></span>
+                </Fragment>
+              ) : (
+                <Fragment>
+                  <i class="bi bi-circle-fill text-[6px] text-emerald-500"></i>
+                  <span>Свободно <span data-spots-num data-spots-shift={shift.id} class="cursor-pointer blur-[6px] transition-[filter] duration-300 select-none">{shift.free} мест</span></span>
+                  <button type="button" data-spots-reveal-btn data-spots-shift={shift.id} class="text-[11px] font-semibold text-primary underline underline-offset-2 hover:text-primary-hover transition-colors">
+                    узнать
+                  </button>
+                </Fragment>
+              )}
             </p>
-          </a>
-        )) : (
-          <p class="text-base text-body-faint">Смены 2026 ещё не открыты</p>
+          </div>
+          );
+        }) : (
+          <p class="text-base text-body-faint">Смены {SEASON_YEAR} ещё не открыты</p>
         )}
       </div>
 
       <a href="/ceny/" class="mt-4 inline-flex items-center gap-1.5 text-base font-medium text-orange-700 hover:text-orange-800 transition-colors group">
-        Все смены и цены 2026
+        Все смены и цены {SEASON_YEAR}
         <i class="bi bi-arrow-right group-hover:translate-x-0.5 transition-transform"></i>
       </a>
 
@@ -129,7 +167,11 @@ const upcomingShifts = mainShifts
       </p>
     </div>
     <div class="mt-5 md:max-w-[480px] md:mx-auto">
-      <AskCta />
+      {buttonText && buttonUrl ? (
+        <a class="btn-primary inline-flex w-full justify-center" href={buttonUrl}>{buttonText}</a>
+      ) : (
+        <AskCta />
+      )}
     </div>
   </div>
 

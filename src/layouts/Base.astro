@@ -9,11 +9,11 @@ import AgeBar from '../components/AgeBar.astro';
 import DynamicPrices from '../components/DynamicPrices.astro';
 import ReferralModal from '../components/hero/ReferralModal.astro';
 import ShiftModal from '../components/ShiftModal.astro';
-import GlobalShiftLinkHandler from '../components/GlobalShiftLinkHandler.astro';
 import BackToTop from '../components/BackToTop.astro';
 import DotPatternBackground from '../components/DotPatternBackground.astro';
 import SiteSearch from '../components/SiteSearch.astro';
 import NudgeBanner from '../components/NudgeBanner.astro';
+import GoogleAnalytics from '../components/GoogleAnalytics.astro';
 
 interface Props {
   title: string;
@@ -38,6 +38,9 @@ interface Props {
   canonical?: string;
   /** Скрыть нижнюю AgeBar-плашку с летними сменами (сезонные лендинги: осень/зима/весна) */
   hideAgeBar?: boolean;
+  /** Скрыть конверсионные виджеты (DynamicPrices, AgeBar, ShiftModal, ReferralModal,
+   *  NudgeBanner) — для страниц без воронки записи (404, юридические документы). */
+  hideMarketingWidgets?: boolean;
 }
 
 const {
@@ -54,6 +57,7 @@ const {
   noindex = false,
   canonical: canonicalProp,
   hideAgeBar = false,
+  hideMarketingWidgets = false,
 } = Astro.props;
 const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `https://aidacamp.ru${ogImage}`;
 // canonical/og:url — на финальный слеш-URL (см. src/utils/canonical.ts, инцидент 03.07.2026).
@@ -100,6 +104,18 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
           sessionStorage.setItem('ac_session_start', String(Date.now()));
         }
       } catch (_) {}
+      // === Рекламные метки — сохранить в момент захода, а не сабмита ===
+      // Формы читают ac_attribution (STORAGE_KEYS.attribution в src/lib/storage.ts) при отправке,
+      // но человек приходит с ?yclid= на лендинг, а форму заполняет позже на другой странице —
+      // к тому моменту query-параметров уже нет. Новые метки перезаписывают старые (последний
+      // значимый источник, как в Метрике).
+      try {
+        var __ap = new URLSearchParams(location.search);
+        var __am = {};
+        ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','yclid','ysclid','gclid']
+          .forEach(function (k) { var v = __ap.get(k); if (v) __am[k] = v; });
+        if (Object.keys(__am).length) localStorage.setItem('ac_attribution', JSON.stringify(__am));
+      } catch (_) {}
     </script>
     <script is:inline>
       // === Аналитика: отключение для тестовых страниц + ботов ===
@@ -113,16 +129,11 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         || /bot|crawl|spider|headless|puppeteer|playwright|phantom|chrome-lighthouse|gptbot|claudebot|perplexity|ahrefs|semrush|googlebot|yandexbot|bingbot|duckduckbot|applebot|facebookexternalhit/i.test(__ua)
         || (navigator.plugins && navigator.plugins.length === 0 && /Chrome/.test(__ua) && !/Mobile/.test(__ua));
 
-      // ⏳ ВРЕМЕННО (с 2026-07-04, на пару дней): __isBot убран из условий Метрики,
-      // чтобы робот-проверка Яндекс.Бизнеса увидела счётчик. Вернуть __isBot в оба
-      // условия Метрики + lazy-load ниже (см. git history). Clarity фильтрует ботов как раньше.
-      if (window.location.search.includes('ym_disable=1') || __isInternalPath || __isDevHost) {
-        document.cookie = 'ym_disable96499295=true; expires=Thu, 31 Dec 2099 23:59:59 UTC; path=/';
-      }
       if (window.location.search.includes('ym_disable=1') || __isInternalPath || __isBot || __isDevHost) {
+        document.cookie = 'ym_disable96499295=true; expires=Thu, 31 Dec 2099 23:59:59 UTC; path=/';
         document.cookie = 'clarity_disable=true; expires=Thu, 31 Dec 2099 23:59:59 UTC; path=/';
       }
-      if (document.cookie.indexOf('ym_disable96499295=true') !== -1 || __isInternalPath || __isDevHost) {
+      if (document.cookie.indexOf('ym_disable96499295=true') !== -1 || __isInternalPath || __isBot || __isDevHost) {
         window.ym_disable96499295 = true;
       }
       if (document.cookie.indexOf('clarity_disable=true') !== -1 || __isInternalPath || __isBot || __isDevHost) {
@@ -131,23 +142,37 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     </script>
     {/* eagerMetrika: устанавливает глобальный флаг ДО инлайн-скрипта Метрики */}
     {eagerMetrika && <script is:inline>window.__ymEager=true;</script>}
-    <!-- Yandex.Metrika counter -->
-    <!-- ⏳ ВРЕМЕННО (с 2026-07-04, на пару дней): стандартный сниппет из Яндекс.Бизнеса
-         вместо lazy-load, чтобы проверка увидела счётчик. Вернуть lazy-load из git history. -->
+    <!-- Yandex.Metrika — lazy load: ym() stub queues calls until tag.js is fetched -->
     <script type="text/javascript" is:inline>
-      (function(m,e,t,r,i,k,a){
+      (function(m,i){
         m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
         m[i].l=1*new Date();
-        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-      })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=96499295', 'ym');
-
+      })(window,'ym');
       if (!window.ym_disable96499295 && !window._ymInited) {
         window._ymInited = true;
         ym(96499295, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
       }
+      (function(){
+        if(window.ym_disable96499295) return;
+        var loaded=false;
+        function loadYM(){
+          if(loaded) return; loaded=true;
+          var s=document.createElement('script'); s.async=1;
+          s.src='https://mc.yandex.ru/metrika/tag.js?id=96499295';
+          document.head.appendChild(s);
+        }
+        if(window.__ymEager){
+          /* eagerMetrika: load immediately */
+          loadYM();
+        } else {
+          var t=setTimeout(loadYM,8000);
+          ['scroll','click','touchstart','keydown'].forEach(function(e){
+            document.addEventListener(e,function(){clearTimeout(t);loadYM();},{once:true,passive:true});
+          });
+        }
+      })();
     </script>
-    <noscript><div><img src="https://mc.yandex.ru/watch/96499295" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    {/* noscript-фолбэк Метрики вынесен в <body> (Footer.astro) — в <head> он невалиден (div внутри noscript) и ломал W3C-валидацию на всех страницах */}
     <!-- /Yandex.Metrika counter -->
     <!-- WebView detection: tags visit in Metrika + adds data-webview attr for CSS fallbacks -->
     <script is:inline>
@@ -177,8 +202,13 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
       })();
     </script>
 
-    <!-- Stage 2 scripts (Clarity + Leadfeeder + Mail.ru + Andata) — отложены до первой интеракции или +20 сек -->
+    <!-- Stage 2 (Clarity) — отложен до первой интеракции или +20 сек -->
     <!-- Перф P2 2026-04-20: 8s→20s, чтобы скрипты не грузились внутри 10-сек окна Lighthouse mobile теста -->
+    <!-- GA4 с 01.08.2026 вынесен в GoogleAnalytics.astro и грузится раньше Clarity:
+         его куки `_ga` нужна как второй идентификатор визита при привязке к карточке CRM. -->
+    <!-- Leadfeeder/Andata TM/OneSignal убраны из кода 26.07.2026 (решение владельца — из сторонней
+         аналитики оставлены только Метрика и Clarity). Сниппеты не удалены, лежат в
+         src/_archive/marketing-widgets/andata-leadfeeder-onesignal.md — вернуть при необходимости. -->
     <script is:inline type="text/javascript">
       (function(){
         var loaded = false;
@@ -192,19 +222,6 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
               y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
             })(window,document,"clarity","script","w8yoykmszl");
           }
-          /* Leadfeeder */
-          (function(ss,ex){
-            window.ldfdr=window.ldfdr||function(){(ldfdr._q=ldfdr._q||[]).push([].slice.call(arguments));};
-            (function(d,s){var fs=d.getElementsByTagName(s)[0];function ce(src){var cs=d.createElement(s);cs.src=src;cs.async=1;fs.parentNode.insertBefore(cs,fs);}
-            ce('https://sc.lfeeder.com/lftracker_v1_'+ss+(ex?'_'+ex:'')+'.js');})(document,'script');
-          })('YEgkB8lbGVx4ep3Z');
-          /* Andata TM */
-          (function(d,id){
-            if(d.getElementById(id)) return;
-            var s=d.createElement('script'); s.id=id; s.async=1;
-            s.src='https://tagmanager.andata.ru/api/v1/container/9c0aaeb2-3b5c-4f86-aebd-786c79f7314b/published/code.js';
-            var f=d.getElementsByTagName('script')[0]; f.parentNode.insertBefore(s,f);
-          })(document,'andata-tm');
         }
         var t = setTimeout(loadStage2, 20000);
         ['scroll','click','touchstart','keydown'].forEach(function(e){
@@ -212,6 +229,7 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         });
       })();
     </script>
+    <GoogleAnalytics />
     <!-- OG Meta -->
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -225,104 +243,12 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     <meta property="og:site_name" content="АйДаКемп" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content={resolvedOgImage} />
-    <link rel="canonical" href={canonicalUrl} />
+    {!noindex && <link rel="canonical" href={canonicalUrl} />}
     <slot name="head" />
-    <!-- Analytics globals: trackGoal, initScrollTracking, initContactTracking — inline, no network request -->
-    <script is:inline>
-      (function () {
-        var YM_ID = 96499295;
-        var _fired = new Set(JSON.parse(sessionStorage.getItem('ym_fired') || '[]'));
-        function _persist() { try { sessionStorage.setItem('ym_fired', JSON.stringify([..._fired])); } catch(e){} }
-        window.trackGoal = function (id, params) {
-          if (_fired.has(id)) return;
-          _fired.add(id);
-          _persist();
-          try { if (typeof window.ym !== 'undefined') window.ym(YM_ID, 'reachGoal', id, params || {}); } catch(e){}
-          // Своя аналитика — параметрированные события в PostgreSQL
-          if (params && Object.keys(params).length > 0) {
-            try {
-              var payload = JSON.stringify({ goal: id, params: params, url: location.href,
-                referrer: document.referrer || undefined,
-                client_id: (document.cookie.match(/_ym_uid=(\d+)/) || [])[1] || undefined });
-              if (navigator.sendBeacon) {
-                navigator.sendBeacon('/api/track', new Blob([payload], { type: 'application/json' }));
-              } else {
-                fetch('/api/track', { method: 'POST', body: payload,
-                  headers: { 'Content-Type': 'application/json' }, keepalive: true }).catch(function(){});
-              }
-            } catch(e) {}
-          }
-        };
-        window.initScrollTracking = function () {
-          var goals = [{p:25,id:'scroll_25'},{p:50,id:'scroll_50'},{p:75,id:'scroll_75'},{p:90,id:'scroll_90'}];
-          window.addEventListener('scroll', function () {
-            var h = document.documentElement.scrollHeight - (window.visualViewport ? window.visualViewport.height : window.innerHeight);
-            if (!h) return;
-            var pct = Math.round(window.scrollY / h * 100);
-            goals.forEach(function (g) { if (pct >= g.p) window.trackGoal(g.id); });
-          }, { passive: true });
-        };
-        window.initContactTracking = function (scope) {
-          document.querySelectorAll(scope + ' a[href^="tel:"]').forEach(function (a) {
-            a.addEventListener('click', function () { window.trackGoal('phone_click'); });
-          });
-          document.querySelectorAll(scope + ' a[href*="wa.me"]').forEach(function (a) {
-            a.addEventListener('click', function () { window.trackGoal('whatsapp_click'); });
-          });
-          document.querySelectorAll(scope + ' a[href*="t.me"]').forEach(function (a) {
-            a.addEventListener('click', function () { window.trackGoal('telegram_click'); });
-          });
-        };
-        // Яндекс.Карты: клик по любой ссылке на карты и «Построить маршрут» (rtext=) —
-        // горячий intent-сигнал («собирается ехать»). Делегирование: ловит все страницы
-        // и все места (hero-чип, контакты, сезонные карточки) без scope-инициализации.
-        document.addEventListener('click', function (e) {
-          var a = e.target && e.target.closest ? e.target.closest('a[href*="yandex.ru/maps"]') : null;
-          if (!a) return;
-          var goal = a.href.indexOf('rtext=') !== -1 ? 'maps_route_click' : 'maps_click';
-          window.trackGoal(goal, { href: a.href.slice(0, 150), page: location.pathname });
-        });
-        // Число свободных мест скрыто блюром до клика «узнать места» — единый
-        // глобальный обработчик (05.07.2026), работает на любой странице для любого
-        // числа смен сразу: разметка [data-spots-num]/[data-spots-bar]/[data-spots-reveal-btn]
-        // с общим [data-spots-shift=<id>]. Раскрытие — на сессию (sessionStorage),
-        // синхронно между всеми страницами/карточками одной смены.
-        var SPOTS_KEY = 'ac:occ_revealed';
-        function spotsRevealed() {
-          try { return JSON.parse(sessionStorage.getItem(SPOTS_KEY) || '[]'); } catch (e) { return []; }
-        }
-        function spotsReveal(shiftId) {
-          document.querySelectorAll('[data-spots-num][data-spots-shift="' + shiftId + '"]').forEach(function (el) {
-            el.classList.remove('blur-[6px]');
-          });
-          document.querySelectorAll('[data-spots-bar][data-spots-shift="' + shiftId + '"]').forEach(function (el) {
-            el.style.width = el.dataset.spotsWidth || '0%';
-          });
-          document.querySelectorAll('[data-spots-reveal-btn][data-spots-shift="' + shiftId + '"]').forEach(function (el) {
-            el.classList.add('hidden');
-          });
-        }
-        function spotsInit() {
-          var revealed = spotsRevealed();
-          revealed.forEach(spotsReveal);
-        }
-        document.addEventListener('click', function (e) {
-          var btn = e.target && e.target.closest ? e.target.closest('[data-spots-reveal-btn]') : null;
-          if (!btn) return;
-          var shiftId = btn.dataset.spotsShift;
-          if (!shiftId) return;
-          var revealed = spotsRevealed();
-          if (!revealed.includes(shiftId)) {
-            revealed.push(shiftId);
-            try { sessionStorage.setItem(SPOTS_KEY, JSON.stringify(revealed)); } catch (e2) {}
-          }
-          spotsReveal(shiftId);
-          window.trackGoal('available_spots', { shift: shiftId });
-          if (btn.dataset.spotsLow === '1') window.trackGoal('viewed_low_availability', { shift: shiftId });
-        });
-        document.addEventListener('astro:page-load', spotsInit);
-        if (document.readyState !== 'loading') spotsInit();
-      })();
+    <!-- page-globals + dynamic-prices-client: глобальные обработчики + динамические цены -->
+    <script>
+      import '../scripts/page-globals';
+      import '../scripts/dynamic-prices-client';
     </script>
     <!-- Novofon — отложенная загрузка (idle/после load/первое взаимодействие), чтобы не конкурировать с LCP -->
     <script>
@@ -335,8 +261,9 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
           s.src = 'https://widget.novofon.ru/novofon.js?k=krSWuOAGuEr40pPzs0o66QKdaef8K0BY';
           document.body.appendChild(s);
         }
-        if ('requestIdleCallback' in window) {
-          requestIdleCallback(loadNovofon, { timeout: 5000 });
+        var idleWindow = window as Window & { requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number };
+        if (typeof idleWindow.requestIdleCallback === 'function') {
+          idleWindow.requestIdleCallback(loadNovofon, { timeout: 5000 });
         } else {
           window.addEventListener('load', function () { setTimeout(loadNovofon, 2500); });
         }
@@ -350,11 +277,6 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
   <body class="font-sans text-[var(--color-text)] bg-white antialiased">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-primary focus:text-white focus:font-semibold focus:shadow-lg">Перейти к содержимому</a>
     <slot />
-    <script is:inline>
-      document.addEventListener('DOMContentLoaded', function () {
-        if (window.initScrollTracking) window.initScrollTracking();
-      });
-    </script>
 
     <!-- Cookie Banner -->
     <div id="cookieBanner" class="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:bottom-[90px] md:w-[340px]" style="display:none">
@@ -367,43 +289,21 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
       </div>
     </div>
 
-    <script is:inline>
-      (function() {
-        if (!localStorage.getItem('cookieAccepted')) {
-          var banner = document.getElementById('cookieBanner');
-          if (banner) {
-            banner.style.display = 'block';
-            document.getElementById('cookieAccept').addEventListener('click', function() {
-              localStorage.setItem('cookieAccepted', '1');
-              banner.style.display = 'none';
-            });
-          }
-        }
-      })();
-    </script>
-    <!-- DynamicPrices: единый скрипт динамических цен для всех страниц -->
-    <DynamicPrices />
-    <!-- AgeBar: мобильная плашка выбора возраста (летние смены) — на сезонных лендингах скрыта -->
-    {!hideAgeBar && <AgeBar />}
-    <!-- ShiftModal: открывается из AgeBar «Посмотреть» и data-shift-link на всех страницах -->
-    <ShiftModal />
-    <GlobalShiftLinkHandler />
-    <ReferralModal />
+    <!-- Cookie banner обработан в page-globals.ts -->
+    {!hideMarketingWidgets && (
+      <Fragment>
+        <!-- DynamicPrices: единый скрипт динамических цен для всех страниц -->
+        <DynamicPrices />
+        <!-- AgeBar: мобильная плашка выбора возраста (летние смены) — на сезонных лендингах скрыта -->
+        {!hideAgeBar && <AgeBar />}
+        <!-- ShiftModal: открывается из AgeBar «Посмотреть» и data-shift-link на всех страницах
+             (собственный document click-делегат в shift-modal.ts, initShiftModal()) -->
+        <ShiftModal />
+      </Fragment>
+    )}
+    {!hideMarketingWidgets && <ReferralModal />}
     <!-- <ExitIntentPopup /> отключён -->
-    <!-- Debug: ?modal=referral открывает модалку напрямую -->
-    <script is:inline>
-      (function () {
-        var param = new URLSearchParams(location.search).get('modal');
-        if (!param) return;
-        function tryOpen() {
-          var el = document.getElementById(param + 'Modal');
-          if (!el || el.open) return;
-          try { el.showModal(); } catch(e) {}
-        }
-        setTimeout(tryOpen, 100);
-        document.addEventListener('astro:page-load', function() { setTimeout(tryOpen, 100); });
-      })();
-    </script>
+    <!-- Debug: ?modal=referral → обработано в page-globals.ts -->
 
     <DotPatternBackground />
     <BackToTop />
@@ -415,28 +315,9 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     </script>
     <SiteSearch />
     <!-- ReturnBanner отключён → заменён на NudgeBanner (догрев повторщиков, A/B отзывы vs ТВ) -->
-    <NudgeBanner />
+    {!hideMarketingWidgets && <NudgeBanner />}
 
-    <!-- Неизвестные якоря и ретаргет-трафик → #shifts -->
-    <script is:inline>
-      (function () {
-        var KNOWN = ['shifts','about','gallery','gallery-preview','faq','booking','price','smeny','program','tracks','philosophy','economy','journey','team','stay','reviews','contacts','videos','hackathon','mentors','hero','waitlist'];
-        var hash = (location.hash || '').replace('#','');
-        var isRetarget = location.search.indexOf('ybaip=1') !== -1;
-        var isUnknownHash = hash && KNOWN.indexOf(hash) === -1;
-        if (isRetarget || isUnknownHash) {
-          function scrollToShifts() {
-            var el = document.getElementById('shifts');
-            if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
-          }
-          if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', scrollToShifts);
-          } else {
-            scrollToShifts();
-          }
-        }
-      })();
-    </script>
+    <!-- Неизвестные якоря и ретаргет-трафик → #shifts (обработано в page-globals.ts) -->
 
     <!-- Andata Tag Manager — загружается лениво в Stage 2 вместе с Clarity/Mail.ru -->
   </body>

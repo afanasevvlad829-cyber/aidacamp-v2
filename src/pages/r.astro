@@ -15,6 +15,13 @@ import Contacts from '../components/Contacts.astro';
 import { TELEGRAM_URL } from '../data/contacts';
 import { YM_COUNTER } from '../data/tracking';
 import { mainShifts } from '../data/shifts';
+import { isSalesOpen } from '../data/dynamicPrices';
+import { getNextSeason } from '../data/seasons';
+
+/* Сезон закрыт — кнопка брони открывала модалку выбора смены, где все смены
+   уже прошли. Ведём на предзапись следующего сезона. */
+const salesOpen = isSalesOpen();
+const nextSeason = getNextSeason();
 import { getCurrentPrice, getDays } from '../data/dynamicPrices';
 
 const allShifts = [...mainShifts];
@@ -52,7 +59,7 @@ const shiftsJson = JSON.stringify(allShifts.map(s => ({
   <main>
 
     <!-- ═══ HERO ═══ -->
-    <section class="relative overflow-hidden bg-[#0d1a2b] pt-16 pb-12 md:pt-20 md:pb-16">
+    <section class="relative overflow-hidden bg-navy-950 pt-16 pb-12 md:pt-20 md:pb-16">
       <!-- Анимированный фон (Minecraft-сцена) -->
       <iframe
         src="/r-bg.html"
@@ -71,11 +78,6 @@ const shiftsJson = JSON.stringify(allShifts.map(s => ({
         <p id="r-eyebrow" class="text-[12px] font-bold uppercase tracking-[0.18em] text-primary mb-3 opacity-0 transition-opacity duration-500">
           Вы это смотрели
         </p>
-        <p id="r-from-badge" class="hidden mb-3 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-[12px] font-bold text-primary">
-          <i class="bi bi-mortarboard-fill text-[11px]" aria-hidden="true"></i>
-          Вы с сайта нашей школы — −5%
-        </p>
-
         <!-- Codims badge (скрыт по умолчанию, показывается JS) -->
         <p id="r-from-badge" class="hidden mb-3 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-[12px] font-bold text-primary">
           <i class="bi bi-mortarboard-fill text-[11px]" aria-hidden="true"></i>
@@ -134,15 +136,26 @@ const shiftsJson = JSON.stringify(allShifts.map(s => ({
               <span id="r-seats-inline" class="text-base font-semibold text-primary whitespace-nowrap opacity-0 transition-opacity duration-500"></span>
             </div>
 
-            <!-- Забронировать — белая кнопка -->
-            <button
-              id="r-book-btn"
-              type="button"
-              class="inline-flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-white/90 px-6 py-3 text-base font-bold text-[#0d1a2b] transition active:scale-[0.98] min-h-[48px]"
-            >
-              <i class="bi bi-calendar-check text-base" aria-hidden="true"></i>
-              Забронировать
-            </button>
+            <!-- Забронировать — белая кнопка (сезон закрыт → предзапись на осень) -->
+            {salesOpen || !nextSeason ? (
+              <button
+                id="r-book-btn"
+                type="button"
+                class="inline-flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-white/90 px-6 py-3 text-base font-bold text-navy-950 transition active:scale-[0.98] min-h-[48px]"
+              >
+                <i class="bi bi-calendar-check text-base" aria-hidden="true"></i>
+                Забронировать
+              </button>
+            ) : (
+              <a
+                href={`${nextSeason.path}/`}
+                data-analytics-goal="r_next_season_prereg"
+                class="inline-flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-white/90 px-6 py-3 text-base font-bold text-navy-950 transition active:scale-[0.98] min-h-[48px] no-underline"
+              >
+                <i class="bi bi-calendar-check text-base" aria-hidden="true"></i>
+                Предзапись: {nextSeason.shortName}
+              </a>
+            )}
 
             <!-- Telegram — мягкий -->
             <a href={TELEGRAM_URL} target="_blank" rel="noopener"
@@ -236,15 +249,13 @@ const shiftsJson = JSON.stringify(allShifts.map(s => ({
     <Reviews />
 
     <!-- ═══ FAQ + CONTACTS ═══ -->
-    <FAQ />
+    <FAQ items={['medicine:0', 'safety:0', 'food:0', 'communication:0', 'payment:0', 'about2026:5', 'documents:0', 'documents:1']} />
     <Contacts />
 
   </main>
   <Footer />
 
   <ShiftBookModal />
-</Base>
-
 <script define:vars={{ shiftsJson, vychetMap, YM_COUNTER }}>
 const SHIFTS = JSON.parse(shiftsJson);
 
@@ -512,3 +523,4 @@ function init() {
 document.addEventListener('astro:page-load', init);
 init();
 </script>
+</Base>

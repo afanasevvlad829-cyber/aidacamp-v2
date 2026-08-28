@@ -1,5 +1,6 @@
 ---
 import CallTimeSelector from '../CallTimeSelector.astro';
+import { WAITLIST_EXPLANATION } from '../../data/shifts';
 ---
 
 <!-- ShiftBookModal: bottom-sheet on mobile, centered on desktop -->
@@ -26,6 +27,13 @@ import CallTimeSelector from '../CallTimeSelector.astro';
             спеццена −5%
           </span>
         </div>
+      </div>
+
+      <!-- Лист ожидания — объяснение, показывается только в waitlist-режиме (см. modal.dataset.waitlist) -->
+      <div class="hidden mt-3 rounded-[14px] border border-slate-200 bg-white p-3" data-book-waitlist-block>
+        <p class="text-base leading-[1.5] text-slate-600">
+          {WAITLIST_EXPLANATION}
+        </p>
       </div>
 
       <!-- Age — без предвыбора, обязателен -->
@@ -71,7 +79,7 @@ import CallTimeSelector from '../CallTimeSelector.astro';
         data-book-submit
         data-haptic
         data-spring-btn
-        class="mt-4 h-[52px] w-full rounded-xl bg-primary text-[16px] font-semibold text-[#0d1a2b] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(236,124,0,0.35)] hover:-translate-y-[1px] active:translate-y-0"
+        class="mt-4 h-[52px] w-full rounded-xl bg-primary text-[16px] font-semibold text-navy-950 transition-all duration-200 hover:shadow-[0_4px_16px_rgba(236,124,0,0.35)] hover:-translate-y-[1px] active:translate-y-0"
       >
         Отправить заявку
       </button>
@@ -91,6 +99,7 @@ import CallTimeSelector from '../CallTimeSelector.astro';
     const modal = document.getElementById('shiftBookModal') as HTMLDialogElement | null;
     if (!modal || (modal as any).__bookInit) return;
     (modal as any).__bookInit = true;
+    const bookModal = modal;
 
     const ageBtns = modal.querySelectorAll<HTMLButtonElement>('[data-book-age]');
     const phone = modal.querySelector<HTMLInputElement>('[data-book-phone]');
@@ -102,8 +111,12 @@ import CallTimeSelector from '../CallTimeSelector.astro';
     const hintAge = modal.querySelector<HTMLElement>('[data-book-hint-age]');
     const hintPhone = modal.querySelector<HTMLElement>('[data-book-hint-phone]');
     const hintConsent = modal.querySelector<HTMLElement>('[data-book-hint-consent]');
+    const waitlistBlock = modal.querySelector<HTMLElement>('[data-book-waitlist-block]');
 
     let selectedAge = '';
+
+    function isWaitlist() { return bookModal.dataset.waitlist === 'true'; }
+    function submitLabel() { return isWaitlist() ? 'Оставить заявку в лист ожидания' : 'Отправить заявку'; }
 
     function resetForm() {
       selectedAge = '';
@@ -115,8 +128,10 @@ import CallTimeSelector from '../CallTimeSelector.astro';
       hintPhone?.classList.add('hidden');
       hintConsent?.classList.add('hidden');
       errEl?.classList.add('hidden');
+      waitlistBlock?.classList.toggle('hidden', !isWaitlist());
+      if (submit) submit.textContent = submitLabel();
       // Сброс CallTimeSelector (чипы + closure-переменные)
-      modal.querySelector('.call-time-selector')?.dispatchEvent(new CustomEvent('call-time:reset'));
+      bookModal.querySelector('.call-time-selector')?.dispatchEvent(new CustomEvent('call-time:reset'));
     }
 
     ageBtns.forEach((btn) => {
@@ -178,7 +193,7 @@ import CallTimeSelector from '../CallTimeSelector.astro';
           phone: phone?.value || '',
           age: selectedAge,
           shift: nameEl?.textContent || '',
-          form: 'shifts_book',
+          form: isWaitlist() ? 'shifts_book_waitlist' : 'shifts_book',
           call_time: callTimeInput?.value || '',
         });
         modal.close();
@@ -192,7 +207,7 @@ import CallTimeSelector from '../CallTimeSelector.astro';
         }
       } finally {
         submit.disabled = false;
-        submit.textContent = 'Отправить заявку';
+        submit.textContent = submitLabel();
       }
     });
 

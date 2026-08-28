@@ -15,11 +15,15 @@
  *   13% × min(discountedEdu, 110 000 ₽) — независимая опция, применяется поверх.
  */
 
-import { EDU_RESID_PER_DAY, NDFL_RATE, EDU_BASE_CAP } from '../data/shifts';
+import { EDU_RESID_PER_DAY, NDFL_RATE, EDU_BASE_CAP, SEASON_YEAR } from '../data/shifts';
 import { fmtPrice } from '../data/dynamicPrices';
 import { getShiftSelectOptions } from '../utils/shiftSelectOptions';
+import { getNextSeason } from '../data/seasons';
+const nextSeason = getNextSeason();
 
 // Опции смен (цена/дни из data/shifts.ts) — единый источник, без дублирования парсинга.
+// Только смены, ещё открытые для брони (getOpenShifts внутри) — калькулятор группы/вычета
+// не имеет смысла для смены, которую уже нельзя купить.
 const shifts = getShiftSelectOptions();
 ---
 
@@ -33,6 +37,29 @@ const shifts = getShiftSelectOptions();
         Калькулятор выгоды
       </h2>
     </div>
+
+    {shifts.length === 0 ? (
+      <!-- Открытых для брони смен нет — расчёт скидок/вычета по закрытой смене вводит в
+           заблуждение (цена больше не актуальна), поэтому вместо формы — предзапись. -->
+      <div class="rounded-[14px] border border-orange-100 bg-orange-50/40 p-5">
+        <p class="text-base text-body leading-[1.6]">
+          <span class="font-semibold">Открытых смен для записи сейчас нет</span> — расчёт скидок и вычета
+          вернём, когда откроется бронь на новый сезон.
+        </p>
+        {nextSeason && (
+          <Fragment>
+            <p class="mt-2 text-base text-body-muted leading-[1.6]">
+              Следующий заезд — {nextSeason.shortName}, {nextSeason.seasonMeta.dates}. Открыта предзапись.
+            </p>
+            <a
+              href={`${nextSeason.path}/`}
+              class="mt-4 inline-flex items-center gap-2 rounded-[12px] border border-primary/55 bg-primary/8 px-6 py-3 text-base font-semibold text-primary transition-colors hover:bg-primary/14 hover:border-primary/75"
+            >Узнать про {nextSeason.shortName} →</a>
+          </Fragment>
+        )}
+      </div>
+    ) : (
+    <Fragment>
     <p class="mt-3 mb-6 text-base text-body-muted leading-[1.65]">
       Сложите все скидки сразу: групповая запись и налоговый вычет от государства.
       Посмотрите, сколько реально стоит смена.
@@ -41,7 +68,7 @@ const shifts = getShiftSelectOptions();
     <!-- 1. Выбор смены -->
     <div class="mb-5">
       <label for="bc-shift" class="mb-2 block text-base font-semibold text-body-muted uppercase tracking-wide">
-        Выберите смену 2026
+        Выберите смену {SEASON_YEAR}
       </label>
       <div class="relative">
         <select
@@ -165,11 +192,13 @@ const shifts = getShiftSelectOptions();
     </p>
 
     <a
-      href="/kupit-putevku-v-lager/"
+      href="/putevka-v-lager/"
       class="mt-5 inline-flex items-center gap-2 rounded-[12px] border border-primary/55 bg-primary/8 px-6 py-3 text-base font-semibold text-primary transition-colors hover:bg-primary/14 hover:border-primary/75"
     >
       Забронировать смену →
     </a>
+    </Fragment>
+    )}
   </div>
 </section>
 
@@ -181,6 +210,8 @@ const shifts = getShiftSelectOptions();
   const roundTo100 = (n) => Math.round(n / 100) * 100;
 
   const shiftSel  = document.getElementById('bc-shift');
+  // Нет открытых смен → форма не отрендерена (см. frontmatter), только карточка предзаписи.
+  if (!shiftSel) return;
   // Константы вычета — из data/shifts.ts через data-атрибуты <select> (единый источник).
   const RESIDENTIAL_PER_DAY = Number(shiftSel?.dataset.eduResid) || 3800;
   const TAX_RATE = Number(shiftSel?.dataset.ndflRate) || 0.13;
