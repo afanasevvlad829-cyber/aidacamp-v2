@@ -3,10 +3,29 @@ export const prerender = false;
 import Base from '../../layouts/Base.astro';
 import { allShiftsIncludingArchived } from '../../data/shifts';
 import { zashitaFolders } from '../../data/zashitaFolders';
+import { fotoCookieName, fotoCookieOptions, verifyShiftFoto } from '../../lib/fotoLink';
+import { verifySessionPayload } from '../../lib/portalSession';
 
 const { shiftId } = Astro.params;
 const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
 const hasZashita = !!(shiftId && zashitaFolders[shiftId]);
+// ── Доступ к альбому смены ────────────────────────────────────────
+// Альбом открывается подписанной ссылкой /foto/<id>?s=<token> (scripts/foto-link.mjs).
+// Валидный токен ставит httpOnly-куку на 60 дней — дальше родитель заходит без токена
+// в URL, и все запросы к /api/foto/* авторизуются этой кукой (см. middleware.ts).
+// Персонал проходит по портальной сессии. Нет ни того, ни другого → 404: не
+// подтверждаем даже существование альбома.
+const fotoToken = Astro.url.searchParams.get('s');
+const fotoCookie = fotoCookieName(shiftId ?? '');
+const okToken = verifyShiftFoto(shiftId, fotoToken);
+const okCookie = verifyShiftFoto(shiftId, Astro.cookies.get(fotoCookie)?.value);
+const portalSecret = process.env.PORTAL_SESSION_SECRET;
+const okPortal = !!portalSecret && !!verifySessionPayload(Astro.cookies.get('portal_session')?.value, portalSecret)?.role;
+if (okToken && !okCookie) Astro.cookies.set(fotoCookie, fotoToken!, fotoCookieOptions());
+if (!okToken && !okCookie && !okPortal) {
+  return new Response('Not found', { status: 404 });
+}
+
 
 // Атрибуция визита к CRM-лиду — только если ссылка пришла с подписанными lid+t.
 // Подпись проверяет сам /api/bind-lead (verifyLid) при отправке, здесь пробрасываем как строки.
