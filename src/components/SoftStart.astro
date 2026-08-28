@@ -1,5 +1,21 @@
 ---
-import TaxWidget from './TaxWidget.astro';
+/**
+ * Виджет налогового вычета 13% (бывший TaxWidget, вариант 'card') — встроен сюда,
+ * т.к. SoftStart был его единственным потребителем.
+ *
+ * Показывает ориентировочную сумму возврата за самую популярную смену (Смена 2)
+ * и при клике открывает модалку с полным TaxCalculator.
+ *
+ * Работает одинаково на десктопе и мобилке (модалка адаптивная).
+ *
+ * Метрика:
+ *   - Я.Метрика (ID 96499295): reachGoal 'tax_widget_click', 'tax_widget_modal_open'
+ *   - Top.Mail.Ru (VK Pixel, ID 3755202): reachGoal 'tax_widget_click'
+ *   - data-атрибуты: data-ya-goal="tax-widget-open"
+ */
+
+import TaxCalculator from './TaxCalculator.astro';
+import { PRICE_S2, VYCHET_S2 } from '../data/shifts';
 ---
 
 <section class="mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4 md:pt-8">
@@ -53,7 +69,127 @@ import TaxWidget from './TaxWidget.astro';
 
       <!-- Right: виджет налогового вычета -->
       <aside class="w-full">
-        <TaxWidget variant="card" />
+        <button
+          type="button"
+          id="tax-widget-trigger"
+          data-ya-goal="tax-widget-open"
+          aria-label="Налоговый вычет 13% — открыть калькулятор"
+          class="group block w-full text-left rounded-[16px] border border-orange-200 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-50 p-5 md:p-6 shadow-[0_4px_20px_rgba(236,124,0,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_28px_rgba(236,124,0,0.18)] hover:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2"
+        >
+          <div class="flex items-start gap-3">
+            <div class="flex h-10 w-10 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
+              <i class="bi bi-receipt text-[20px] md:text-[22px] text-orange-600"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[11px] md:text-[12px] font-bold uppercase tracking-wider text-orange-700">
+                Налоговый вычет 13%
+              </div>
+              <div class="mt-1 text-base md:text-base leading-[1.4] text-slate-700">
+                Возврат за самую популярную <b>Смену 2</b> (14 дней, {PRICE_S2})
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 flex items-baseline justify-between gap-2 rounded-[12px] bg-white/70 px-4 py-3 border border-orange-100">
+            <span class="text-[12px] md:text-base text-slate-500">Ориентировочно:</span>
+            <span class="text-[24px] md:text-[28px] font-bold leading-none text-orange-600 tabular-nums whitespace-nowrap">
+              {VYCHET_S2}
+            </span>
+          </div>
+
+          <div class="mt-4 inline-flex items-center gap-2 text-base md:text-base font-semibold text-orange-600 group-hover:text-orange-700 transition-colors">
+            <i class="bi bi-calculator-fill text-[16px]"></i>
+            <span>Рассчитать точно и посмотреть остальные смены</span>
+            <i class="bi bi-arrow-right text-[16px] transition-transform group-hover:translate-x-0.5"></i>
+          </div>
+        </button>
+
+<!-- МОДАЛКА (рендерится один раз на странице) -->
+<div
+  id="tax-widget-modal"
+  class="fixed inset-0 z-[90] hidden items-start md:items-center justify-center p-0 md:p-4 bg-slate-900/60 backdrop-blur-sm"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="tax-widget-modal-title"
+>
+  <div
+    id="tax-widget-modal-inner"
+    class="relative w-full md:max-w-[760px] max-h-[100dvh] md:max-h-[92dvh] overflow-y-auto bg-white md:rounded-[16px] shadow-[0_8px_24px_rgba(15,23,42,0.18)]"
+  >
+    <!-- Верхняя плашка с крестиком (sticky) -->
+    <div class="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-slate-100 bg-white/95 backdrop-blur px-4 md:px-6 py-3">
+      <h3 id="tax-widget-modal-title" class="text-[16px] md:text-[18px] font-bold text-slate-900 flex items-center gap-2">
+        <i class="bi bi-receipt text-orange-600"></i>
+        Калькулятор налогового вычета
+      </h3>
+      <button
+        type="button"
+        id="tax-widget-close"
+        aria-label="Закрыть"
+        class="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-400"
+      >
+        <i class="bi bi-x-lg text-[18px]"></i>
+      </button>
+    </div>
+
+    <!-- Содержимое -->
+    <div class="px-0 pb-4">
+      <TaxCalculator variant="full" title="Посчитайте возврат по вашей смене" />
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+  (function () {
+    const triggers = document.querySelectorAll('#tax-widget-trigger');
+    const modal = document.getElementById('tax-widget-modal');
+  // iOS Safari: overflow:hidden alone doesn't prevent scroll — use position:fixed
+  let _savedScrollY = 0;
+  function _lockScroll() {
+    _savedScrollY = window.scrollY;
+    Object.assign(document.body.style, { position: 'fixed', top: `-${_savedScrollY}px`, width: '100%', overflow: 'hidden' });
+  }
+  function _unlockScroll() {
+    Object.assign(document.body.style, { position: '', top: '', width: '', overflow: '' });
+    window.scrollTo(0, _savedScrollY);
+  }
+    const closeBtn = document.getElementById('tax-widget-close');
+    if (!modal) return;
+
+    var sendMetrika = function(goal) { window.trackGoal?.(goal); };
+
+    function openModal() {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      _lockScroll();
+      sendMetrika('tax_widget_click');
+      sendMetrika('tax_widget_modal_open');
+      // Триггер пересчёта TaxCalculator при открытии (на случай если селект ещё не проинициализирован)
+      const sel = document.getElementById('tc-shift');
+      if (sel) sel.dispatchEvent(new Event('change'));
+    }
+
+    function closeModal() {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      _unlockScroll();
+      sendMetrika('tax_widget_modal_close');
+    }
+
+    triggers.forEach((t) => t.addEventListener('click', openModal));
+    closeBtn?.addEventListener('click', closeModal);
+
+    // Клик по backdrop закрывает
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    // Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+    });
+  })();
+</script>
       </aside>
 
     </div>

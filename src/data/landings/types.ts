@@ -88,6 +88,9 @@ export interface LandingData {
   noindex?: boolean;
   heroImage: string;
   faqItems: FAQItem[];
+  /** Точечный набор вопросов для видимого блока FAQ (формат "categoryId:index", см. FAQ.astro).
+   *  Если не задан — рендерится полный FAQ (все категории). faqItems (выше) — только для JSON-LD, не связан с этим полем. */
+  faqDisplayItems?: string[];
   courseSchema: {
     name: string;
     description: string;

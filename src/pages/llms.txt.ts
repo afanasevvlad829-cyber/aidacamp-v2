@@ -1,6 +1,6 @@
 export const prerender = false; // как feed.xml.ts — всегда свежие цены/смены из shifts.ts
 import type { APIRoute } from 'astro';
-import { mainShifts } from '../data/shifts';
+import { mainShifts, SEASON_YEAR } from '../data/shifts';
 import { getCurrentPrice } from '../data/dynamicPrices';
 
 const BASE = 'https://aidacamp.ru';
@@ -23,7 +23,7 @@ export const GET: APIRoute = () => {
 ${shifts}
 
 ## Основные страницы
-- [Главная](${BASE}/): детский IT-лагерь в Подмосковье 2026
+- [Главная](${BASE}/): детский IT-лагерь в Подмосковье ${SEASON_YEAR}
 - [Цены](${BASE}/ceny/): стоимость смен, что входит, рассрочка
 - [Размещение](${BASE}/razmeshchenie/): корпус, питание, бассейн
 - [Налоговый вычет](${BASE}/nalogovyj-vychet/): возврат 13% за IT-лагерь

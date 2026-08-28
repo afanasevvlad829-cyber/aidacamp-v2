@@ -1,9 +1,10 @@
 ---
 /**
- * Guarantees — блок «Гарантии» на главном лендинге.
+ * Guarantees — блок «Гарантии». compact=true (главная) — 2 предложения + ссылка на /garantii/.
  * Четыре ключевые гарантии АйДаКемп: возврат, безопасность, результат, ответственность туроператора.
- * Размещать после Reviews, перед FAQ.
  */
+interface Props { compact?: boolean; }
+const { compact = false } = Astro.props;
 const guarantees = [
   {
     icon: 'bi-cash-coin',
@@ -40,27 +41,42 @@ const guarantees = [
   <h2 class="text-center text-[26px] md:text-[32px] font-bold text-slate-900 mb-2">
     Наши гарантии
   </h2>
-  <p class="text-center text-slate-500 text-[16px] mb-8 max-w-xl mx-auto">
-    Мы несём ответственность — юридически и по-человечески
-  </p>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-    {guarantees.map(g => (
-      <div class="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-        <div class={`h-11 w-11 rounded-xl ${g.color} flex items-center justify-center shrink-0`}>
-          <i class={`bi ${g.icon} text-[20px] ${g.iconColor}`} aria-hidden="true"></i>
-        </div>
-        <div>
-          <p class="font-semibold text-slate-900 text-[16px] mb-1">{g.title}</p>
-          <p class="text-slate-500 text-base leading-relaxed">{g.text}</p>
-        </div>
+  {compact ? (
+    <div class="max-w-xl mx-auto text-center">
+      <p class="text-slate-500 text-[16px] leading-[1.6]">
+        Возврат при болезни и застрахованная ответственность туроператора — мы несём ответственность юридически и по-человечески.
+      </p>
+      <a href="/garantii/" class="mt-3 inline-flex items-center gap-1.5 text-base font-semibold text-primary hover:text-primary-hover">
+        Все гарантии подробно
+        <i class="bi bi-arrow-right icon-arrow-right-hover" aria-hidden="true"></i>
+      </a>
+    </div>
+  ) : (
+    <Fragment>
+      <p class="text-center text-slate-500 text-[16px] mb-8 max-w-xl mx-auto">
+        Мы несём ответственность — юридически и по-человечески
+      </p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {guarantees.map(g => (
+          <div class="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+            <div class={`h-11 w-11 rounded-xl ${g.color} flex items-center justify-center shrink-0`}>
+              <i class={`bi ${g.icon} text-[20px] ${g.iconColor}`} aria-hidden="true"></i>
+            </div>
+            <div>
+              <p class="font-semibold text-slate-900 text-[16px] mb-1">{g.title}</p>
+              <p class="text-slate-500 text-base leading-relaxed">{g.text}</p>
+            </div>
+          </div>
+        ))}
       </div>
-    ))}
-  </div>
 
-  <p class="text-center mt-6 text-base text-slate-400">
-    Полные условия возврата — в{' '}
-    <a href="/politika-vozvrata/" class="underline underline-offset-2 hover:text-slate-600">Политике возврата</a>.
-    Ответственность туроператора застрахована (договор с Росгосстрахом).
-  </p>
+      <p class="text-center mt-6 text-base text-slate-400">
+        Полные условия возврата — в{' '}
+        <a href="/politika-vozvrata/" class="underline underline-offset-2 hover:text-slate-600">Политике возврата</a>.
+        Ответственность туроператора застрахована (договор с Росгосстрахом).
+      </p>
+    </Fragment>
+  )}
 </section>

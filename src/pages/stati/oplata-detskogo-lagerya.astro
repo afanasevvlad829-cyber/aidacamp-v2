@@ -1,5 +1,5 @@
 ---
-import { VYCHET_MAX } from '../../data/shifts';
+import { VYCHET_MAX, SEASON_YEAR } from '../../data/shifts';
 import '../../styles/global.css';
 import Base from '../../layouts/Base.astro';
 import Header from '../../components/Header.astro';
@@ -8,11 +8,12 @@ import RelatedPages from '../../components/RelatedPages.astro';
 import ArticleHero from '../../components/ArticleHero.astro';
 import ArticleBottomCta from '../../components/ArticleBottomCta.astro';
 import BlogCTA from '../../components/BlogCTA.astro';
+import RelatedArticlesAuto from '../../components/RelatedArticlesAuto.astro';
 
 const relatedPages = [
-  { title: "Цены и смены 2026", url: "/ceny/", icon: "calendar-week", description: "Стоимость и расписание" },
+  { title: `Цены и смены ${SEASON_YEAR}`, url: "/ceny/", icon: "calendar-week", description: "Стоимость и расписание" },
   { title: "Налоговый вычет", url: "/nalogovyj-vychet/", icon: "cash-coin", description: "Как вернуть 13% за лагерь" },
-  { title: "Купить путёвку в лагерь", url: "/kupit-putevku-v-lager/", icon: "bag-check", description: "Как забронировать место" },
+  { title: "Купить путёвку в лагерь", url: "/putevka-v-lager/", icon: "bag-check", description: "Как забронировать место" },
   { title: "О лагере АйДаКемп", url: "/o-lagere/", icon: "info-circle", description: "Что входит в стоимость" },
 ];
 
@@ -45,9 +46,9 @@ const faqItems = [
 ---
 
 <Base
-  title="Как оплатить детский лагерь 2026 — рассрочка 50/50, возврат 13%"
+  title={`Как оплатить детский лагерь ${SEASON_YEAR} — рассрочка 50/50, возврат 13%`}
   description={`Оплата детского лагеря: три способа — онлайн, рассрочка 50/50 без переплат, сертификат. Налоговый вычет до ${VYCHET_MAX}. Бронируете сейчас — доплачиваете за 3 недели до смены.`}
-  ogImage="/images/hero/lager-na-leto-2026.avif"
+  ogImage="/images/articles/og-oplata-detskogo-lagerya.jpg"
 >
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify([
@@ -78,15 +79,6 @@ const faqItems = [
         }))
       }
     ])} />
-      <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://aidacamp.ru/" },
-        { "@type": "ListItem", "position": 2, "name": "Статьи", "item": "https://aidacamp.ru/stati/" },
-        { "@type": "ListItem", "position": 3, "name": "Как оплатить детский лагерь 2026", "item": "https://aidacamp.ru/stati/oplata-detskogo-lagerya/" }
-      ]
-    })} />
   </Fragment>
   <Header />
 
@@ -233,6 +225,9 @@ const faqItems = [
         <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px]">
           Подробная инструкция как оформить вычет через Госуслуги или налоговую — <a href="/nalogovyj-vychet/" class="text-primary font-semibold hover:underline">на отдельной странице</a>.
         </p>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
+          Полный алгоритм — с документами по шагам и сроками поступления денег — читайте в статье «<a href="/stati/nalogovyj-vychet-za-lager-poshagovaya-instrukciya/" class="text-primary font-semibold hover:underline">налоговый вычет за лагерь</a>».
+        </p>
 
         <div class="mt-5 bg-orange-50 border border-orange-200 rounded-2xl p-5 flex items-start gap-4">
           <i class="bi bi-coin text-orange-500 text-[22px] shrink-0 mt-0.5" aria-hidden="true"></i>
@@ -327,24 +322,10 @@ const faqItems = [
   />
 
   <RelatedPages title="Полезные страницы" pages={relatedPages} />
+  <RelatedArticlesAuto />
   <Footer />
 <script>
-  document.querySelectorAll('[data-faq-toggle]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const item = btn.closest('[data-faq-item]');
-      const answer = item.querySelector('[data-faq-answer]');
-      const icon = btn.querySelector('[data-faq-icon]');
-      const isOpen = btn.getAttribute('aria-expanded') === 'true';
-      if (isOpen) {
-        answer.classList.remove('is-open');
-        if (icon) icon.style.transform = '';
-        btn.setAttribute('aria-expanded', 'false');
-      } else {
-        answer.classList.add('is-open');
-        if (icon) icon.style.transform = 'rotate(45deg)';
-        btn.setAttribute('aria-expanded', 'true');
-      }
-    });
-  });
+  import { initFaqAccordion } from '../../scripts/faq-accordion';
+  initFaqAccordion();
 </script>
 </Base>

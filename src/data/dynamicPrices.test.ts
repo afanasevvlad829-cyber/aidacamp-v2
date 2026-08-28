@@ -16,6 +16,7 @@ import {
   getTaxDeduction,
   fmtPrice,
 } from './dynamicPrices';
+import { SHIFT_META } from './shifts';
 
 /** Строит Date из YYYY-MM-DD в полдень UTC — безопасно для daysDiff в любой TZ. */
 const d = (s: string) => new Date(s + 'T12:00:00Z');
@@ -23,8 +24,12 @@ const d = (s: string) => new Date(s + 'T12:00:00Z');
 // ── PRICING shape ────────────────────────────────────────────────────────────
 
 describe('PRICING config', () => {
-  it('содержит 6 смен', () => {
-    expect(Object.keys(PRICING)).toHaveLength(6);
+  // Было жёстко «6 смен» — сломалось 27.08.2026 при открытии осенних продаж
+  // (стало 8). Число смен меняется каждый сезон, поэтому проверяем инвариант,
+  // а не константу: PRICING обязан покрывать РОВНО состав SHIFT_META.
+  it('покрывает ровно состав SHIFT_META', () => {
+    expect(Object.keys(PRICING).sort()).toEqual(Object.keys(SHIFT_META).sort());
+    expect(Object.keys(PRICING).length).toBeGreaterThan(0);
   });
 
   it('каждая смена имеет 3 ступени (база → рост → фиксация)', () => {
@@ -237,9 +242,9 @@ describe('getTaxDeduction', () => {
 // ── fmtPrice ─────────────────────────────────────────────────────────────────
 
 describe('fmtPrice', () => {
-  it('форматирует 93900 с неразрывным пробелом и символом рубля', () => {
-    // toLocaleString('ru-RU') разделяет тысячи через U+00A0 (non-breaking space)
-    expect(fmtPrice(93900)).toBe('93 900 ₽');
+  it('форматирует 93900 с пробелом-разделителем и символом рубля', () => {
+    // fmtRub нормализует разделитель тысяч из ICU (U+00A0/U+202F) в обычный пробел
+    expect(fmtPrice(93900)).toBe('93 900 ₽');
   });
 
   it('форматирует 0', () => {

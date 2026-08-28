@@ -132,10 +132,12 @@ case "$TARGET" in
     echo "🧹 Ротация бэкапов (оставляю 3 последних)..."
     ssh -i "$SSH_KEY" "$SSH_HOST" "ls -dt /var/www/aidacamp/backup-* 2>/dev/null | tail -n +4 | xargs -r rm -rf"
     echo "✅ Старые бэкапы удалены"
-    echo "📸 Restic-снапшот критичных данных (галерея/.env/БД) перед деплоем..."
-    ssh -i "$SSH_KEY" "$SSH_HOST" "/opt/restic-snapshot.sh" >/dev/null 2>&1 \
-      && echo "✅ Снапшот создан (restic)" \
-      || echo "⚠️  снапшот не создан — см. /var/log/restic-snapshot.log (деплой продолжается)"
+    # Restic-снапшот (галерея/.env/БД) убран отсюда (2026-07-26) — раньше гонял
+    # /opt/restic-snapshot.sh синхронно перед КАЖДЫМ прод-деплоем (~1м15с в
+    # критическом пути). Теперь отдельный systemd-таймер restic-snapshot.timer
+    # на сервере (каждую ночь) — офсайт-бэкап не зависит от того, как часто
+    # деплоят, и не тормозит сам деплой. cp -a бэкап прод-вебрута (шаг выше)
+    # остаётся синхронным — он и есть механизм отката (./scripts/rollback.sh).
     ;;
   *)
     echo "Использование: $0 [dev|prod]"
@@ -146,33 +148,47 @@ esac
 cd "$PROJECT_DIR"
 
 # ── 0. Сборка ─────────────────────────────────────────────────
-echo ""
-echo ""
-echo "📦 Зависимости (синк с lockfile перед сборкой)..."
-if [ ! -d node_modules ] || ! cmp -s package-lock.json node_modules/.package-lock.json 2>/dev/null; then
-  echo "  ⚙️  lockfile изменился или node_modules нет → npm ci..."
-  npm ci
+# SKIP_BUILD=1 — переиспользовать уже собранный dist/ вместо пересборки.
+# Используется в CI (.github/workflows/deploy.yml): один npm run build на весь
+# пуш (как GitHub Actions artifact), а не по одному на dev и на prod. Сейчас
+# DEPLOY_ENV ни на что не влияет (CDN отключён — см. src/data/cdn.ts), поэтому
+# билд для dev и для prod побитово идентичен и второй прогон был чистым
+# дублированием (~4 мин astro build+pagefind впустую на каждый пуш).
+# ⚠️ Если DEPLOY_ENV снова начнёт влиять на вывод сборки (например, вернут
+# CDN/assetsPrefix) — эту переменную и job `build` в deploy.yml нужно убрать
+# и вернуться на раздельные билды per-env.
+if [ "${SKIP_BUILD:-0}" = "1" ]; then
+  echo ""
+  echo "⏭️  SKIP_BUILD=1 — использую уже собранный dist/ (не пересобираю)"
 else
-  echo "  ✅ node_modules в синке"
-fi
-echo "🔨 Сборка..."
+  echo ""
+  echo ""
+  echo "📦 Зависимости (синк с lockfile перед сборкой)..."
+  if [ ! -d node_modules ] || ! cmp -s package-lock.json node_modules/.package-lock.json 2>/dev/null; then
+    echo "  ⚙️  lockfile изменился или node_modules нет → npm ci..."
+    npm ci
+  else
+    echo "  ✅ node_modules в синке"
+  fi
+  echo "🔨 Сборка..."
 
-# ── guard: пути импортов во вложенных API-файлах ──────────────
-# Файлы в src/pages/api/portal/*/  на уровень глубже и требуют ../../../../lib/
-# Python bulk-замены могут ставить ../../../ — ловим до сборки, а не внутри vite.
-BROKEN_IMPORTS=$(find src/pages/api/portal -mindepth 2 -name "*.ts" \
-  | xargs grep -l "from '\.\./\.\./\.\./lib/" 2>/dev/null || true)
-if [ -n "$BROKEN_IMPORTS" ]; then
-  echo "❌ guard: битые пути импортов (нужен ../../../../lib/ вместо ../../../lib/):"
-  echo "$BROKEN_IMPORTS"
-  exit 1
-fi
-echo "🔒 guard: пути импортов OK"
+  # ── guard: пути импортов во вложенных API-файлах ──────────────
+  # Файлы в src/pages/api/portal/*/  на уровень глубже и требуют ../../../../lib/
+  # Python bulk-замены могут ставить ../../../ — ловим до сборки, а не внутри vite.
+  BROKEN_IMPORTS=$(find src/pages/api/portal -mindepth 2 -name "*.ts" \
+    | xargs grep -l "from '\.\./\.\./\.\./lib/" 2>/dev/null || true)
+  if [ -n "$BROKEN_IMPORTS" ]; then
+    echo "❌ guard: битые пути импортов (нужен ../../../../lib/ вместо ../../../lib/):"
+    echo "$BROKEN_IMPORTS"
+    exit 1
+  fi
+  echo "🔒 guard: пути импортов OK"
 
-# DEPLOY_ENV=dev → assetsPrefix отключён, JS/CSS грузятся с того же хоста
-# DEPLOY_ENV=prod → assetsPrefix=https://huhodirekeka.begetcdn.cloud (CDN)
-# Явная V8-куча: на 8ГБ Маке под нагрузкой дефолт падает (Abort trap/137, инцидент 11.06.2026)
-NODE_OPTIONS="--max-old-space-size=5120" DEPLOY_ENV="$TARGET" npm run build --silent
+  # DEPLOY_ENV=dev → assetsPrefix отключён, JS/CSS грузятся с того же хоста
+  # DEPLOY_ENV=prod → assetsPrefix=https://huhodirekeka.begetcdn.cloud (CDN)
+  # Явная V8-куча: на 8ГБ Маке под нагрузкой дефолт падает (Abort trap/137, инцидент 11.06.2026)
+  NODE_OPTIONS="--max-old-space-size=5120" DEPLOY_ENV="$TARGET" npm run build --silent
+fi
 
 if [ ! -f "dist/client/index.html" ]; then
   echo "❌ dist/client/index.html не найден. Сборка не удалась."
@@ -195,7 +211,20 @@ echo "🚀 Деплой статики на $LABEL..."
 # Статика кладётся в REMOTE_DIR/client/ — там её ищет Astro standalone SSR-сервер
 # (entry.mjs резолвит ../client/ относительно server/).
 # REMOTE_DIR = current/ → SSR читает current/client/.
-rsync -az --checksum --stats \
+# --delete здесь БЕЗОПАСЕН и НУЖЕН — но только здесь. Разница с предупреждением
+# выше: цель этого шага — current/client/, куда попадает ИСКЛЮЧИТЕЛЬНО вывод сборки.
+# Ни .env, ни current/, ни server/, ни node_modules внутри client/ не лежат
+# (проверено 2026-07-24). Инцидент 22.05.2026 был про ПЛОСКИЙ веб-корень, где они
+# лежат рядом, — там --delete по-прежнему запрещён (см. шаг 2b для dev).
+# Исключённые пути (images/) rsync при --delete не удаляет — для этого нужен
+# --delete-excluded, его тут нет и быть не должно.
+#
+# Зачем: без --delete удалённые из сборки страницы жили на проде вечно и
+# ПЕРЕКРЫВАЛИ SSR-маршруты. Инцидент 24.07.2026: 15 редирект-стабов
+# (prerender=false + Astro.redirect 301) отдавали 200 с мета-рефрешем, потому что
+# nginx находил протухший статический файл раньше, чем запрос доходил до Node.
+# Для Яндекса это разница между «страница переехала» и «страница есть».
+rsync -az --checksum --delete --stats \
   --exclude='.env' \
   --exclude='current/' \
   --exclude='server/' \
@@ -263,6 +292,11 @@ REPO_MODULES="$REPO_DIR/node_modules"
 
 # 4a. Синкаем package.json + package-lock.json на сервер
 rsync -az -e "ssh -i $SSH_KEY" package.json package-lock.json "$SSH_HOST:$REPO_DIR/"
+
+# 4a-bis. Кроновые mjs-скрипты живут рядом с node_modules репо (Node ищет модули от
+# файла, а не от cwd — из /opt/scripts `pg` не нашёлся бы). Синкаем из репо, чтобы
+# серверная копия не разъезжалась с исходником.
+rsync -az -e "ssh -i $SSH_KEY" scripts/ga-purchase-mp.mjs "$SSH_HOST:$REPO_DIR/scripts/"
 
 # 4b. Сверяем хеш package-lock.json с сохранённым. Если изменился → npm ci.
 LOCAL_LOCK_HASH=$(shasum -a 256 package-lock.json | awk '{print $1}')
@@ -400,6 +434,60 @@ if [ "${SKIP_SMOKE:-0}" != "1" ]; then
   fi
 fi
 
+
+# ── 7. nginx: снипет SSR-редиректов (только prod) ─────────────
+# SSR-редирект (prerender=false + Astro.redirect) работает только если nginx
+# проксирует его слаг в Node — иначе прод отдаёт 404 (инцидент b70ae7b2:
+# редирект жил в репо, блок в nginx руками не добавили, 404 с 02.08 по 07.08).
+# Снипет генерируется из репо и подключён include'ом в server-блок aidacamp.ru.
+# Шаг стоит ПОСЛЕ верификации и smoke: если nginx -t провалится, прод уже
+# проверен и здоров — восстанавливаем снипет и падаем без отката файлов.
+if [ "$TARGET" = "prod" ] && [ "${SKIP_NGINX_REDIRECTS:-0}" != "1" ]; then
+  echo ""
+  echo "🧭 nginx: снипет SSR-редиректов..."
+  SNIPPET_REMOTE="/etc/nginx/snippets/aidacamp-ssr-redirects.conf"
+  SNIPPET_TMP_LOCAL=$(mktemp)
+  "$SCRIPT_DIR/gen-nginx-redirects.sh" "$SNIPPET_TMP_LOCAL"
+
+  # Без include в aidacamp.conf снипет — мёртвый груз: не валим деплой, но кричим.
+  if ! ssh -i "$SSH_KEY" "$SSH_HOST" \
+      "grep -q 'snippets/aidacamp-ssr-redirects.conf' /etc/nginx/sites-enabled/aidacamp.conf"; then
+    echo "  ⚠️  В aidacamp.conf нет include снипета — SSR-редиректы НЕ обновлены."
+    echo "     Добавь в server-блок aidacamp.ru: include snippets/aidacamp-ssr-redirects.conf;"
+  else
+    scp -q -i "$SSH_KEY" "$SNIPPET_TMP_LOCAL" "$SSH_HOST:/tmp/aidacamp-ssr-redirects.conf.new"
+    if ssh -i "$SSH_KEY" "$SSH_HOST" \
+        "cmp -s /tmp/aidacamp-ssr-redirects.conf.new $SNIPPET_REMOTE 2>/dev/null"; then
+      echo "  ✅ Снипет без изменений ($(grep -c 'location ~' "$SNIPPET_TMP_LOCAL") редиректов)"
+      ssh -i "$SSH_KEY" "$SSH_HOST" "rm -f /tmp/aidacamp-ssr-redirects.conf.new"
+    else
+      # Бэкапы конфигов — ТОЛЬКО в /etc/nginx/backups/ (НЕ в sites-enabled и не
+      # рядом со снипетом: include подхватывает *.bak и ломает nginx).
+      if ! ssh -i "$SSH_KEY" "$SSH_HOST" "
+        set -e
+        mkdir -p /etc/nginx/backups
+        if [ -f $SNIPPET_REMOTE ]; then cp $SNIPPET_REMOTE /etc/nginx/backups/aidacamp-ssr-redirects.conf.\$(date +%Y%m%d-%H%M%S); fi
+        mv /tmp/aidacamp-ssr-redirects.conf.new $SNIPPET_REMOTE
+        if nginx -t 2>/dev/null; then
+          systemctl reload nginx
+        else
+          echo 'nginx -t ПРОВАЛЕН — откатываю снипет'
+          LAST_BACKUP=\$(ls -t /etc/nginx/backups/aidacamp-ssr-redirects.conf.* 2>/dev/null | head -1)
+          if [ -n \"\$LAST_BACKUP\" ]; then cp \"\$LAST_BACKUP\" $SNIPPET_REMOTE; else rm -f $SNIPPET_REMOTE; fi
+          nginx -t
+          exit 1
+        fi
+      "; then
+        echo "  ❌ nginx -t провалился на новом снипете — снипет откачен, nginx не перезагружен."
+        echo "     Прод работает (верификация выше пройдена), но новые редиректы НЕ активны."
+        echo "     Смотри: ssh $SSH_HOST 'nginx -t' и /etc/nginx/backups/"
+        exit 1
+      fi
+      echo "  ✅ Снипет обновлён + nginx reload ($(grep -c 'location ~' "$SNIPPET_TMP_LOCAL") редиректов)"
+    fi
+  fi
+  rm -f "$SNIPPET_TMP_LOCAL"
+fi
 
 # Запишем SHA задеплоенного коммита на сервер для drift-check (cron алертит при расхождении)
 DEPLOY_SHA=$(git rev-parse HEAD 2>/dev/null || echo "unknown")

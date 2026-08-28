@@ -1,5 +1,5 @@
 ---
-import { PRICE_MIN, PRICE_S3, VYCHET_MAX } from '../../data/shifts';
+import { PRICE_MIN, PRICE_S3, SEASON_YEAR, VYCHET_MAX } from '../../data/shifts';
 import '../../styles/global.css';
 import Base from '../../layouts/Base.astro';
 import Header from '../../components/Header.astro';
@@ -8,6 +8,8 @@ import RelatedPages from '../../components/RelatedPages.astro';
 import ArticleHero from '../../components/ArticleHero.astro';
 import ArticleBottomCta from '../../components/ArticleBottomCta.astro';
 import StatCallout from '../../components/StatCallout.astro';
+import { SEASON_FROM_TO } from '../../data/evergreen';
+import RelatedArticlesAuto from '../../components/RelatedArticlesAuto.astro';
 
 const relatedPages = [
   { title: "Зависимость от телефона у подростков", url: "/stati/zavisimost-ot-telefona-u-podrostkov/", icon: "phone", description: "Признаки и что реально помогает без скандала" },
@@ -48,7 +50,7 @@ const faqItems = [
 <Base
   title="Ребёнок целыми днями в телефоне: куда отдать летом, чтобы не ругаться | АйДаКемп"
   description="«Куда отдать ребёнка если целыми днями в телефоне» — реальный опыт мамы. Запреты не сработали. Что сработало: IT-лагерь, где экран становится инструментом, а не привычкой."
-  ogImage="/images/hero/lager-bez-telefonov.avif"
+  ogImage="/images/articles/og-lager-dlya-rebenka-kotoryy-tselymi-dnyami-v-telefone.jpg"
 >
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify([
@@ -79,15 +81,6 @@ const faqItems = [
         }))
       }
     ])} />
-    <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://aidacamp.ru/" },
-        { "@type": "ListItem", "position": 2, "name": "Статьи", "item": "https://aidacamp.ru/stati/" },
-        { "@type": "ListItem", "position": 3, "name": "Ребёнок целыми днями в телефоне: куда отдать летом", "item": "https://aidacamp.ru/stati/lager-dlya-rebenka-kotoryy-tselymi-dnyami-v-telefone/" }
-      ]
-    })} />
   </Fragment>
   <Header />
 
@@ -333,7 +326,7 @@ const faqItems = [
           </h2>
         </div>
         <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
-          АйДаКемп — IT-лагерь в Подмосковье, 66 км от МКАД. Смены лета 2026 с конца мая по август, для школьников 10–14 лет.
+          АйДаКемп — IT-лагерь в Подмосковье, 66 км от МКАД. Смены лета {SEASON_YEAR} {SEASON_FROM_TO}, для школьников 10–14 лет.
         </p>
 
         <div class="grid md:grid-cols-2 gap-3 mb-5">
@@ -409,32 +402,18 @@ const faqItems = [
   <div class="mx-auto max-w-[720px] px-4 py-8">
     <div class="rounded-[16px] bg-[#fff8f0] border border-primary/20 p-6">
       <p class="text-base text-slate-700 mb-3">Хотите, чтобы экран стал инструментом, а не привычкой?</p>
-      <a href="/it-lager/" class="inline-block bg-primary text-white font-semibold text-base px-5 py-2.5 rounded-[10px] hover:bg-[#d67000] transition" data-analytics-goal="Клик-ITLager-ArticlePhone">
-        IT-лагерь АйДаКемп — смены 2026 →
+      <a href="/it-lager/" class="inline-block bg-primary text-white font-semibold text-base px-5 py-2.5 rounded-[10px] hover:bg-[#d68830] transition" data-analytics-goal="Клик-ITLager-ArticlePhone">
+        IT-лагерь АйДаКемп — смены {SEASON_YEAR} →
       </a>
     </div>
   </div>
 
   <RelatedPages title="Похожие статьи" pages={relatedPages} />
+  <RelatedArticlesAuto />
   <Footer />
 
   <script>
-    document.querySelectorAll('[data-faq-toggle]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const item = btn.closest('[data-faq-item]');
-        const answer = item.querySelector('[data-faq-answer]');
-        const icon = btn.querySelector('[data-faq-icon]');
-        const isOpen = btn.getAttribute('aria-expanded') === 'true';
-        if (isOpen) {
-          answer.classList.remove('is-open');
-          if (icon) icon.style.transform = '';
-          btn.setAttribute('aria-expanded', 'false');
-        } else {
-          answer.classList.add('is-open');
-          if (icon) icon.style.transform = 'rotate(45deg)';
-          btn.setAttribute('aria-expanded', 'true');
-        }
-      });
-    });
-  </script>
+  import { initFaqAccordion } from '../../scripts/faq-accordion';
+  initFaqAccordion();
+</script>
 </Base>
