@@ -451,19 +451,21 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    const text = (isTestLead ? '🧪 <b>ТЕСТ — проверочная заявка, звонить не нужно</b>\n' : '')
-      + buildTgText(body, crmId);
+    // Тестовая заявка: в TG не шлём вообще (владелец 28.08.2026 — сперва
+    // «беззвучно», затем «телеграм тоже удаляй»). След остаётся в PG-логе
+    // leads_log и файловом бэкапе, этого достаточно для проверки пути.
+    if (isTestLead) {
+      return new Response(JSON.stringify({ ok: true, test: true, tg: false }), { status: 200 });
+    }
+
+    const text = buildTgText(body, crmId);
 
     let tgData: any;
     try {
       const res = await fetchWithTimeout(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: chatId, text, parse_mode: 'HTML',
-          // Тестовая заявка — сообщение приходит без звука/вибрации
-          disable_notification: isTestLead,
-        }),
+        body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
       }, TELEGRAM_TIMEOUT_MS);
       tgData = await res.json();
     } catch {
