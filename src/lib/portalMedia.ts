@@ -9,6 +9,7 @@ export interface MediaItem {
   entity_type: EntityType | null;
   entity_id: number | null;
   file_url: string | null;
+  file_path: string | null;
   file_type: string;          // 'photo' | 'video'
   mime: string | null;
   size_bytes: number | null;
@@ -24,7 +25,7 @@ export interface MediaItem {
 
 const SELECT_BASE = `
   SELECT ap.id, ap.entity_type, ap.entity_id, ap.event_id,
-         ap.file_url, ap.file_type, ap.mime, ap.size_bytes,
+         ap.file_url, ap.file_path, ap.file_type, ap.mime, ap.size_bytes,
          ap.width, ap.height, ap.duration_ms,
          ap.author_telegram_id, ps.full_name AS author_name,
          ap.sort_order, ap.uploaded_at

@@ -191,12 +191,12 @@ export async function applyApprove(
     const videos = media.filter((m) => m.file_type === 'video');
     if (photos.length > 0) {
       await client.sendFile(channelId, {
-        file: photos.map((p) => p.file_path ?? p.file_url),
+        file: photos.map((p) => (p.file_path ?? p.file_url) as string),
         caption: draft.text ?? '',
       });
     }
     for (const v of videos) {
-      await client.sendFile(channelId, { file: v.file_path ?? v.file_url });
+      await client.sendFile(channelId, { file: (v.file_path ?? v.file_url) as string });
     }
     if (photos.length === 0 && videos.length === 0 && draft.text) {
       await client.sendMessage(channelId, { message: draft.text });

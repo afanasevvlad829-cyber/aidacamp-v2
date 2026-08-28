@@ -205,4 +205,20 @@ describe('applyApprove', () => {
     expect(r).toEqual({ ok: true });
     expect(setDraftStatus).toHaveBeenCalledWith(5, 'approved', 777);
   });
+
+  it('sendFile падает — возвращает ok:false и не переводит черновик в approved', async () => {
+    const { getDraft, setDraftStatus } = await import('./draftPost');
+    (getDraft as any).mockResolvedValue({ id: 5, shift_id: 3, author_telegram_id: 111, status: 'pending_review', text: 'Текст', reviewer_chat_id: 777, reviewer_message_id: 1 });
+    const { getShiftById } = await import('./portalShift');
+    (getShiftById as any).mockResolvedValue({ id: 3, name: 'Смена', start_date: '2026-06-10', end_date: '2026-06-23', status: 'active', tg_parent_channel_id: -100123 });
+    const { getTelegramClient } = await import('./telegramClient');
+    (getTelegramClient as any).mockResolvedValueOnce({
+      sendFile: vi.fn(async () => { throw new Error('Telegram недоступен'); }),
+      sendMessage: vi.fn(async () => ({ id: 999 })),
+    });
+    const { applyApprove } = await import('./telegramDraftBot');
+    const r = await applyApprove(5, 777);
+    expect(r).toEqual({ ok: false, error: expect.stringContaining('Ошибка публикации') });
+    expect(setDraftStatus).not.toHaveBeenCalledWith(5, 'approved', expect.anything());
+  });
 });
