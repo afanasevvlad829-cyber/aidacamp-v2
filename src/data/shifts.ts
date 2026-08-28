@@ -110,7 +110,6 @@ export const mainShifts: Shift[] = [
     free: 5,
     occupied: 41,
     highlighted: true,
-    nearest: true,
     startDate: '2026-08-03',
     endDate: '2026-08-15',
   },
@@ -119,14 +118,68 @@ export const mainShifts: Shift[] = [
     name: 'Смена 4',
     dates: '17 августа — 26 августа',
     duration: '10 дней',
-    status: 'места есть',
+    status: 'мало мест',
     statusType: 'available',
     description: 'Закрытие лета: сильный проект и уверенный результат.',
     price: '74 900 ₽',
-    free: 8,
-    occupied: 37,
+    free: 3,
+    occupied: 42,
     startDate: '2026-08-17',
     endDate: '2026-08-26',
+  },
+  // === Осень 2026 — ПРОДАЖИ ОТКРЫТЫ 27.08.2026 (решение владельца) ===
+  // free: 20 — реальная ёмкость межсезонного заезда со слов владельца (27.08.2026):
+  // «сорок пять мы не наберём, нужно мест двадцать». Летние смены идут по 45,
+  // осенне-зимние короче и набираются слабее — не копировать летнюю вместимость.
+  // До этого заезды жили отдельными константами AUTUMN_2026/AUTUMN_2026_WINDOW2 с
+  // предзаписью без оплаты. Перенесены в mainShifts, как и предписывал комментарий
+  // при их заведении. Константы ниже теперь ВЫЧИСЛЯЮТСЯ из этих смен — единый
+  // источник правды сохранён, дублирования цен и дат нет.
+  {
+    id: 'shift-autumn-1',
+    name: 'Осенняя смена',
+    dates: '25 октября — 31 октября',
+    duration: '7 дней',
+    status: 'идёт запись',
+    statusType: 'available',
+    description: 'Осенние каникулы: программирование, нейросети и хакатон за неделю.',
+    price: '49 900 ₽',
+    free: 20,
+    occupied: 0,
+    nearest: true,
+    startDate: '2026-10-25',
+    endDate: '2026-10-31',
+  },
+  {
+    id: 'shift-autumn-2',
+    name: 'Осенняя смена (триместр)',
+    dates: '15 ноября — 21 ноября',
+    duration: '7 дней',
+    status: 'идёт запись',
+    statusType: 'available',
+    description: 'Заезд для школ с триместровым графиком — та же программа, свои даты.',
+    price: '49 900 ₽',
+    free: 20,
+    occupied: 0,
+    startDate: '2026-11-15',
+    endDate: '2026-11-21',
+  },
+  // === Зима 2026-2027 — ПРОДАЖИ ОТКРЫТЫ 27.08.2026 (решение владельца) ===
+  // Даты зафиксированы как есть, не дожидаясь сентябрьского расписания школ:
+  // зимние каникулы у всех школ практически совпадают, риск сдвига минимален.
+  {
+    id: 'shift-winter-1',
+    name: 'Зимняя смена',
+    dates: '30 декабря — 8 января',
+    duration: '10 дней',
+    status: 'идёт запись',
+    statusType: 'available',
+    description: 'Новый год со сменой: ёлка, хакатон и собственный проект за каникулы.',
+    price: '74 900 ₽',
+    free: 20,
+    occupied: 0,
+    startDate: '2026-12-30',
+    endDate: '2027-01-08',
   },
 ];
 
@@ -225,6 +278,19 @@ export function shiftDeduction(s: Shift): number {
  * поиском по странице. Единственное место, где задаётся формат — здесь.
  */
 export const fmtRub = (n: number) => n.toLocaleString('ru-RU').replace(/[\u00a0\u202f]/g, ' ') + ' ₽';
+// === Трансфер от м. Солнцево — ЕДИНЫЙ ИСТОЧНИК. НЕ хардкодить цену/пункт на страницах! ===
+// Инцидент: на нескольких гео-лендингах (balashiha, lubertsy, krasnogorsk, zelenograd,
+// zagorodnyj-lager) часть текста утверждала «бесплатный трансфер», другая — 2000₽ —
+// потому что цена была захардкожена отдельной строкой в каждом файле, и правки
+// расходились. Страж: npm run check:transfer.
+export const TRANSFER_PRICE = 2000; // ₽, в один конец
+export const TRANSFER_POINT = 'м. Солнцево'; // точка отправления/сбора
+export const TRANSFER_PRICE_FMT = fmtRub(TRANSFER_PRICE); // «2 000 ₽»
+export const TRANSFER_INFO = `${TRANSFER_PRICE_FMT} в один конец, с сопровождающим`; // готовая фраза для прозы
+// Туда-обратно — ПРОИЗВОДНОЕ от TRANSFER_PRICE, не отдельное число (нашли ещё один
+// вариант того же дрейфа: campData.ts называл 4000₽, BookingInfoModal.astro — 5000₽).
+export const TRANSFER_PRICE_ROUNDTRIP_FMT = fmtRub(TRANSFER_PRICE * 2); // «4 000 ₽»
+
 const _fmtV = fmtRub;
 // Форматированные строки вычета для прозы (как PRICE_*): «6 250 ₽».
 export const VYCHET_S1 = _fmtV(shiftDeduction(_shift1));
@@ -235,23 +301,36 @@ export const VYCHET_S21 = _fmtV(shiftDeduction(_shift21));
 export const VYCHET_S22 = _fmtV(shiftDeduction(_shift22));
 export const VYCHET_MAX = _fmtV(Math.max(shiftDeduction(mainShifts[0]), shiftDeduction(mainShifts[1])));
 
-// === Осень 2026 — ПРЕДВАРИТЕЛЬНО (решение владельца 2026-07-03, утверждение дат и цены — сентябрь) ===
-// Сознательно НЕ в mainShifts/shortShifts: бронь закрыта, на сайте только предзапись (SeasonPreRegister).
-// При открытии продаж: перенести в mainShifts обычной сменой и удалить эти константы.
+// === Осень 2026 — окна заездов утверждены владельцем 2026-08-14 (цена — решение 2026-07-03) ===
+// Два заезда: основной под четвертные каникулы, второй под триместровый график школ.
+// ⚠️ Заезды ПЕРЕНЕСЕНЫ в mainShifts 27.08.2026 (продажи открыты). Константы оставлены
+// как производные — их импортируют seasons.ts, lager-na-nedelyu.astro и
+// lager-na-osennie-kanikuly/[window].astro; удалять их без правки этих страниц нельзя.
+const _autumn1 = mainShifts.find(s => s.id === 'shift-autumn-1')!;
 export const AUTUMN_2026 = {
-  price: '49 900 ₽',
-  startDate: '2026-10-27',
-  endDate: '2026-11-02',
+  price: _autumn1.price,
+  startDate: _autumn1.startDate,
+  endDate: _autumn1.endDate,
+  days: 7,
+} as const;
+// Второй (дополнительный) заезд — для школ с триместровой системой, утверждён 2026-08-14.
+const _autumn2 = mainShifts.find(s => s.id === 'shift-autumn-2')!;
+export const AUTUMN_2026_WINDOW2 = {
+  price: _autumn2.price,
+  startDate: _autumn2.startDate,
+  endDate: _autumn2.endDate,
   days: 7,
 } as const;
 export const PRICE_OSEN = AUTUMN_2026.price;
 export const VYCHET_OSEN = _fmtV(Math.round(taxDeduction(_priceNum(AUTUMN_2026.price), AUTUMN_2026.days) / 50) * 50);
 
-// === Зима 2026–2027 — ПРЕДВАРИТЕЛЬНО (цена — текущая зимняя, даты уточнятся в сентябре) ===
+// === Зима 2026–2027 — продажи открыты 27.08.2026, смена перенесена в mainShifts ===
+// Константы оставлены производными: их импортирует seasons.ts.
+const _winter1 = mainShifts.find(s => s.id === 'shift-winter-1')!;
 export const WINTER_2026 = {
-  price: '74 900 ₽',
-  startDate: '2026-12-30',
-  endDate: '2027-01-08',
+  price: _winter1.price,
+  startDate: _winter1.startDate,
+  endDate: _winter1.endDate,
   days: 10,
 } as const;
 export const PRICE_ZIMA = WINTER_2026.price;
@@ -423,7 +502,7 @@ export const shiftInfo: Record<string, {
   'shift-3': {
     dates: '3 августа — 15 августа', duration: '13 дней', price: '89 400 ₽',
     html:
-      '<p class="text-[14px] leading-[1.6] text-slate-700">Смена, в которой важна не только работа над проектом, но и взаимодействие внутри команды.</p>' +
+      '<p class="text-[14px] leading-[1.6] text-slate-700">Смена, в которой лагерь становится не просто площадкой для проекта, а настоящей командой.</p>' +
       section('Первые дни — старт и распределение',
         'Знакомство, деление по группам, первые задания. Сразу начинается практика: сборка базовых элементов проекта.') +
       section('Далее — работа над проектом',
@@ -436,8 +515,8 @@ export const shiftInfo: Record<string, {
       ]) +
       '<p class="mt-2 text-[16px] leading-[1.65] text-slate-600">Часть задач выполняется индивидуально, часть — в команде.</p>' +
       section('Командная работа',
-        'Проекты собираются совместно: распределяются роли, обсуждаются решения, объединяются части проекта. Это добавляет понимание, как создаётся общий результат.') +
-      section('К середине смены', 'Есть рабочий проект с базовой структурой.') +
+        'Проекты собираются совместно: распределяются роли, обсуждаются решения, объединяются части проекта. Лагерь на пару недель — как маленькая компания, где у каждого своя роль.') +
+      section('На середине пути', 'Есть рабочий проект с базовой структурой.') +
       section('Вторая половина — усиление',
         'Добавляются функции, дорабатывается логика, улучшается внешний вид, собирается целостный проект. За 2–3 дня до конца — хакатон.') +
       section('Финальные дни', 'Доработка и завершение проекта.') +
@@ -449,7 +528,7 @@ export const shiftInfo: Record<string, {
       section('Как устроен AI',
         'Используется как инструмент внутри проекта: например, для более «живого» поведения элементов.') +
       section('Внутренняя экономика',
-        'Работает в течение всей смены: ресурсы ограничены, решения имеют значение.') +
+        'Работает без остановки: ресурсы ограничены, решения имеют значение.') +
       section('Дополнительно',
         'Чемпионаты лагеря (футбол, пионербол) проходят регулярно и дополняют программу.'),
   },

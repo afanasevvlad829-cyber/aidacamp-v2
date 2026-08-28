@@ -276,6 +276,33 @@ MASTER_AGENT=1 ./scripts/deploy.sh prod       # локальный билд, и�
 #### Статьи — только в `/stati/`, не в `/blog/`
 `src/pages/blog/` **исключён из sitemap** и не индексируется. Все SEO-статьи — в `src/pages/stati/`.
 
+#### SSR-редиректы: nginx-снипет генерируется деплоем, руками не править
+
+SSR-редирект (`prerender = false` + `Astro.redirect` в `src/pages/*.astro`) работает
+на проде только если nginx проксирует его слаг в Node (127.0.0.1:4185). Инцидент
+b70ae7b2 (02.08.2026): редирект попал в репо, location-блок руками не добавили —
+прод отдавал 404 пять дней.
+
+С 2026-08-07 это автоматика:
+- `scripts/gen-nginx-redirects.sh` собирает слаги всех redirect-страниц из репо
+  (вне `portal/`, `staff/`, `api/`) и генерирует
+  `/etc/nginx/snippets/aidacamp-ssr-redirects.conf`;
+- снипет подключён `include`'ом в server-блоке `aidacamp.ru`
+  (`/etc/nginx/sites-enabled/aidacamp.conf`, на месте бывших 45 inline-блоков);
+- `deploy.sh` (шаг 7, только prod, после smoke) обновляет снипет при изменении:
+  бэкап старого в `/etc/nginx/backups/`, `nginx -t`, reload; при провале `nginx -t`
+  снипет откатывается, nginx не перезагружается, деплой падает (прод при этом
+  жив — файлы уже проверены верификацией и smoke). Обход: `SKIP_NGINX_REDIRECTS=1`.
+
+**Правила:**
+- Новый SSR-редирект = просто страница в репо. В nginx ничего руками не добавлять —
+  снипет перезапишется деплоем и ручные правки в нём потеряются.
+- Бэкапы nginx-конфигов — только в `/etc/nginx/backups/` (в `sites-enabled/`
+  include подхватит `*.bak` и сломает nginx).
+- Редиректы путей **без** физической `.astro`-страницы (карта `TILDA_REDIRECTS`
+  в `src/middleware.ts`) — это ДРУГОЙ механизм: прямые `location = ... return 301`
+  в `aidacamp.conf`, по-прежнему руками (см. комментарий в middleware.ts).
+
 ### 6.2. После деплоя
 - Проверить что HTTP 200 на главной (deploy.sh автоматически)
 - В первые 5 минут — открыть aidacamp.ru на мобиле, проверить главную и CTA
