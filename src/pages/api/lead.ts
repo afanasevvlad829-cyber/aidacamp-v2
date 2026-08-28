@@ -418,13 +418,16 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // CRM (best-effort, не блокирует TG)
-    const crmId = await createCrmLead(body);
+    // Тестовые заявки лидов в CRM не создают вовсе (удалить их через API
+    // нельзя — customer/delete в AlfaCRM не существует, проверено 28.08.2026;
+    // владелец: «удаляй тестовые лиды»). Путь проверяется тихим TG + PG-логом.
+    const crmId = isTestLead ? null : await createCrmLead(body);
 
     // PG лог (best-effort)
     await saveLeadToPg(body, { ip, userAgent, crmId, visitorId });
 
     // aidaplus CRM (best-effort, переходный период — см. sendToAidaplus)
-    void sendToAidaplus(body, crmId);
+    if (!isTestLead) void sendToAidaplus(body, crmId);
 
     // Andata — событие order_new. Fire-and-forget: НЕ ждём ответ и НЕ блокируем
     // путь заявки (у sendAndataEvent есть свой таймаут и он не бросает исключений).
