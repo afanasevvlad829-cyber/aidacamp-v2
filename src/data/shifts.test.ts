@@ -41,10 +41,16 @@ describe('mainShifts', () => {
     }
   });
 
-  it('free >= 0 и occupied > 0', () => {
+  // occupied > 0 требуем только у смен, которые уже начались: у смены с открытыми
+  // продажами, но не стартовавшей, ноль записавшихся — нормальное состояние, а не
+  // забытые данные (поймано 27.08.2026 при открытии осенних продаж). Для будущих
+  // смен проверяем лишь неотрицательность — забытый мусор это по-прежнему ловит.
+  it('free >= 0; occupied > 0 у начавшихся смен', () => {
+    const today = new Date().toISOString().slice(0, 10);
     for (const s of mainShifts) {
       expect(s.free).toBeGreaterThanOrEqual(0);
-      expect(s.occupied).toBeGreaterThan(0);
+      expect(s.occupied).toBeGreaterThanOrEqual(0);
+      if (s.startDate <= today) expect(s.occupied).toBeGreaterThan(0);
     }
   });
 });
