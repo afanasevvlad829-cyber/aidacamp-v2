@@ -1,5 +1,7 @@
 ---
 import { PRICE_MIN, SEASON_YEAR, VYCHET_MAX, mainShifts } from '../data/shifts';
+import { AUTUMN_SEASON } from '../data/seasons';
+import SeasonPreRegister from '../components/SeasonPreRegister.astro';
 import '../styles/global.css';
 import LandingLayout from '../layouts/LandingLayout.astro';
 import MomStory from '../components/MomStory.astro';
@@ -10,14 +12,20 @@ import FAQ from '../components/FAQ.astro';
 // Диапазон длительности открытых смен — из mainShifts, не хардкодить (см. shifts.ts).
 const _durations = mainShifts.map(s => parseInt(s.duration, 10));
 const DURATION_RANGE = `${Math.min(..._durations)}–${Math.max(..._durations)}`;
+
+// Даты осенних заездов — из seasons.ts, не хардкодить (гард check:dates).
+const AUTUMN_DATES = (AUTUMN_SEASON.calendarWindows ?? [])
+  .map(w => w.sub.split(' · ')[0])
+  .join(' и ');
 ---
 
 <LandingLayout
   noindex={true}
   heroImage="/images/landing/hero-glamping.avif"
   title={`Едете отдыхать — а ребёнку подарите своё лето | АйДаКемп ${SEASON_YEAR}`}
-  description={`Планируете отдых за городом? Пока вы отдыхаете, ребёнок проведёт лето в IT-лагере в Подмосковье: программирование, нейросети, бассейн, друзья. Смены ${DURATION_RANGE} дней, от ${PRICE_MIN}.`}
+  description={`Планируете отдых? Пока вы отдыхаете, ребёнок — в IT-лагере в Подмосковье: программирование, нейросети, бассейн, друзья. Ближайшие заезды на осенние каникулы: ${AUTUMN_DATES}.`}
   h1="Едете отдыхать — а ребёнку подарите своё лето"
+  breadcrumb="Лето для себя"
 >
   <!-- Хиро: полноэкранное фото + градиент-слой + текст. Кадр подменяется по utm_content -->
   <section slot="hero" class="relative min-h-[500px] md:min-h-[560px] flex items-center overflow-hidden">
@@ -52,10 +60,13 @@ const DURATION_RANGE = `${Math.min(..._durations)}–${Math.max(..._durations)}`
           <span>66 км от МКАД, охраняемая территория, питание 5 раз в день</span>
         </li>
       </ul>
-      <a href="#shifts"
+      <a href="#prereg"
          class="mt-8 inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-[16px] font-semibold text-white hover:bg-primary-700 transition-colors">
-        Выбрать смену <i class="bi bi-arrow-right" aria-hidden="true"></i>
+        Записаться на осенние каникулы <i class="bi bi-arrow-right" aria-hidden="true"></i>
       </a>
+      <p class="mt-3 text-[14px] text-white/70">
+        Летние смены {SEASON_YEAR} завершены. Ближайшие заезды — {AUTUMN_DATES}.
+      </p>
     </div>
   </section>
 
@@ -188,6 +199,14 @@ const DURATION_RANGE = `${Math.min(..._durations)}–${Math.max(..._durations)}`
       </p>
     </section>
 
+  </div>
+
+  <div id="prereg">
+    <SeasonPreRegister
+      seasonAcc={AUTUMN_SEASON.seasonAcc}
+      slug={AUTUMN_SEASON.slug}
+      windows={AUTUMN_SEASON.windows}
+      calWindows={AUTUMN_SEASON.calendarWindows} />
   </div>
 
   <Shifts compactPastShifts />

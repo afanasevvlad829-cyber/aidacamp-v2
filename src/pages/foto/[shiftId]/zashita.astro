@@ -4,10 +4,25 @@ import Base from '../../../layouts/Base.astro';
 import { allShiftsIncludingArchived } from '../../../data/shifts';
 import { zashitaFolders } from '../../../data/zashitaFolders';
 import { listPublicVideos, type YdiskItem } from '../../../lib/ydiskPublic';
+import { fotoCookieName, fotoCookieOptions, verifyShiftFoto } from '../../../lib/fotoLink';
+import { verifySessionPayload } from '../../../lib/portalSession';
 
 const { shiftId } = Astro.params;
 const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
 const folder = shiftId ? zashitaFolders[shiftId] : undefined;
+// ── Доступ: тот же гейт, что у альбома смены (см. foto/[shiftId].astro) ──
+// Проверяем ДО обращения к Яндекс.Диску: аноним не должен инициировать запрос.
+const fotoToken = Astro.url.searchParams.get('s');
+const fotoCookie = fotoCookieName(shiftId ?? '');
+const okToken = verifyShiftFoto(shiftId, fotoToken);
+const okCookie = verifyShiftFoto(shiftId, Astro.cookies.get(fotoCookie)?.value);
+const portalSecret = process.env.PORTAL_SESSION_SECRET;
+const okPortal = !!portalSecret && !!verifySessionPayload(Astro.cookies.get('portal_session')?.value, portalSecret)?.role;
+if (okToken && !okCookie) Astro.cookies.set(fotoCookie, fotoToken!, fotoCookieOptions());
+if (!okToken && !okCookie && !okPortal) {
+  return new Response('Not found', { status: 404 });
+}
+
 
 let items: YdiskItem[] = [];
 let error = '';
@@ -76,7 +91,7 @@ const mb = (n: number) => `${Math.round(n / 1024 / 1024)} МБ`;
   </div>
 
   <style is:global>
-    body { background: #0d1a2b !important; }
+    body { background: var(--color-navy-950) !important; }
   </style>
 
   <style>
@@ -119,7 +134,7 @@ const mb = (n: number) => `${Math.round(n / 1024 / 1024)} МБ`;
     .z-meta h2 { font-size: 16px; font-weight: 700; margin: 0 0 8px; color: #fff; }
     .z-dl {
       display: inline-block; font-size: 13.5px; font-weight: 700; text-decoration: none;
-      color: #0d1a2b; background: #ec9b44; border-radius: 8px; padding: 7px 12px;
+      color: var(--color-navy-950); background: var(--color-primary); border-radius: 8px; padding: 7px 12px;
     }
     .z-dl:hover { background: #f0a95c; }
 

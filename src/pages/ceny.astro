@@ -11,6 +11,14 @@ import BenefitCalculator from '../components/BenefitCalculator.astro';
 import { getRelatedPages } from '../data/landing-pages';
 import { PRICE_MAX, PRICE_MIN, PRICE_S1, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_S1, VYCHET_S2, VYCHET_S21, VYCHET_S22, VYCHET_S3, VYCHET_S4, mainShifts, shortShifts } from '../data/shifts';
 import AskCta from '../components/AskCta.astro';
+import { isSalesOpen } from '../data/dynamicPrices';
+import { getNextSeason } from '../data/seasons';
+
+/* Сезон закрыт (ни одной смены в фазе 'upcoming') — таблица остаётся справкой
+   по ценам завершившегося сезона, но продающие элементы гаснут: кнопка брони
+   и счётчик свободных мест. Проверка по датам через isSalesOpen(), не хардкодом. */
+const salesOpen = isSalesOpen();
+const nextSeason = getNextSeason();
 import { getCurrentPrice } from '../data/dynamicPrices';
 import { PAYMENT_SPLIT, STAT_RATING } from '../data/contacts';
 
@@ -67,7 +75,7 @@ const priceRows = [
 
 const sections = [
   {
-    h2: 'Актуальные заезды',
+    h2: salesOpen ? 'Актуальные заезды' : 'Заезды прошедшего сезона',
     text: `Последние смены летнего сезона прошли: 10 дней — ${PRICE_S4}, 13 дней — ${PRICE_S3}. Сумма была указана за ребёнка в лагере и включала проживание, питание, программу и бассейн, без доплат. Детский лагерь находится в Подмосковье, в Наро-Фоминском округе; оформление проходило по официальному договору с оплатой в рублях.`,
   },
   {
@@ -116,7 +124,7 @@ const sections = [
   },
   {
     h2: 'Из каких расходов складывается программа летнего лагеря',
-    text: 'Расходы складываются из постоянных статей: педагоги-IT, вожатые 1:8, проживание в санатории «Изумруд», медработник круглосуточно. Питание, бассейн и оборудование — без доплат. Для сравнения: детские лагеря в Подмосковье — от 30 000 до 120 000 ₽ за заезд, АйДаКемп — детский лагерь среднего сегмента, но с IT-программой.',
+    text: 'Расходы складываются из постоянных статей: педагоги-IT, вожатые 1:8, проживание в санатории «Изумруд», медработник круглосуточно. Питание, бассейн и оборудование — без доплат. Для сравнения: детские лагеря в Подмосковье — от 30 000 до 120 000 ₽ за заезд, АйДаКемп — детский лагерь среднего сегмента, но с IT-программой. Итоговая стоимость путёвки в лагерь зависит от длительности смены: короткие 10-дневные заезды стоят меньше двухнедельных, но день в длинной смене выходит выгоднее.',
   },
   {
     h2: 'Когда лучше бронировать',
@@ -187,6 +195,7 @@ const sections = [
   h1={`Цены на детские смены ${SEASON_YEAR} — летний лагерь в Подмосковье`}
   canonical="https://aidacamp.ru/ceny"
   heroImage="/images/hero/kupit-putevku-v-lager.avif"
+  breadcrumb="Расценки"
 >
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify({
@@ -301,14 +310,24 @@ const sections = [
   </Fragment>
   <LandingHero slot="hero"
     h1={`Цены на детские смены ${SEASON_YEAR} — летний лагерь в Подмосковье`}
-    subtitle={`Заезды в детский лагерь в Подмосковье на ${SEASON_YEAR} год: от ${PRICE_MIN} за 10 дней до ${PRICE_MAX} за 13 дней. Проживание, питание, IT-программа и бассейн — всё включено без скрытых доплат.`}
+    subtitle={salesOpen
+      ? `Заезды в детский лагерь в Подмосковье на ${SEASON_YEAR} год: от ${PRICE_MIN} за 10 дней до ${PRICE_MAX} за 13 дней. Проживание, питание, IT-программа и бассейн — всё включено без скрытых доплат.`
+      : nextSeason
+        ? `Летний сезон ${SEASON_YEAR} завершён — суммы ниже сохранены для ориентира. Ближайший заезд: ${nextSeason.shortName}, ${nextSeason.seasonMeta.dates}, ${nextSeason.seasonMeta.price}. Проживание, питание, IT-программа и бассейн — всё включено без скрытых доплат.`
+        : `Суммы летнего сезона ${SEASON_YEAR} — от ${PRICE_MIN} за 10 дней до ${PRICE_MAX} за 13 дней. Проживание, питание, IT-программа и бассейн — всё включено без скрытых доплат.`}
     breadcrumb="Расценки"
     keywords={[
-      `От ${PRICE_MIN} за лагерь — без доплат и скрытых платежей`,
-      `Детские IT-заезды ${SEASON_YEAR} — Python, AI, Minecraft, 3D`,
+      salesOpen || !nextSeason
+        ? `От ${PRICE_MIN} за лагерь — без доплат и скрытых платежей`
+        : `Ближайший заезд: ${nextSeason.seasonMeta.dates} — ${nextSeason.seasonMeta.price}`,
+      salesOpen || !nextSeason
+        ? `Детские IT-заезды ${SEASON_YEAR} — Python, AI, Minecraft, 3D`
+        : 'Детские IT-заезды — Python, AI, Minecraft, 3D',
       `Налоговый вычет 13% — до ${VYCHET_MAX} возврата`,
       'Оплата 100% или частями (50% сейчас + 50% за 3 нед. до заезда), банковский перевод или карта',
     ]}
+    seasonMeta={!salesOpen && nextSeason ? nextSeason.seasonMeta : undefined}
+    seasonMetaHref={nextSeason ? `${nextSeason.path}/` : undefined}
     image="/images/hero/kupit-putevku-v-lager.avif"
     imageAlt="Цены программы АйДаКемп для детей"
   />
@@ -333,7 +352,7 @@ const sections = [
             <th class="px-4 py-3 text-left">Длительность</th>
             <th class="px-4 py-3 text-right">Сумма</th>
             <th class="px-2 py-3 w-[110px]" aria-label="Метка"></th>
-            <th class="px-4 py-3 w-[160px] text-right" aria-label="Действие"></th>
+            {salesOpen && <th class="px-4 py-3 w-[160px] text-right" aria-label="Действие"></th>}
           </tr>
         </thead>
         <tbody>
@@ -343,7 +362,7 @@ const sections = [
               onclick={`location.href='/shifts/${row.id}/'`}
               role="link"
               tabindex="0"
-              aria-label={`Смена ${row.name} — подробнее и бронирование`}
+              aria-label={salesOpen ? `Смена ${row.name} — подробнее и бронирование` : `Смена ${row.name} — подробнее`}
             >
               <td class="px-4 py-3 font-semibold text-slate-900">
                 {row.name}
@@ -362,36 +381,55 @@ const sections = [
                   {row.note && (
                     <span class="inline-flex rounded-full bg-[var(--color-primary-50)] px-2.5 py-0.5 text-[12px] font-medium text-[var(--color-primary-700)]">{row.note}</span>
                   )}
-                  <span class={row.freeBadgeClass}>
-                    <i class="bi bi-people-fill text-[11px]" aria-hidden="true"></i>
-                    {row.freeLabel}
-                  </span>
+                  {salesOpen && (
+                    <span class={row.freeBadgeClass}>
+                      <i class="bi bi-people-fill text-[11px]" aria-hidden="true"></i>
+                      {row.freeLabel}
+                    </span>
+                  )}
                 </div>
               </td>
-              <td class="px-4 py-3 text-right">
-                <a
-                  href={`/shifts/${row.id}/`}
-                  class="inline-flex items-center gap-1 rounded-full bg-primary hover:bg-primary-hover text-white px-3 py-1.5 text-base font-semibold transition-colors whitespace-nowrap"
-                  data-analytics-goal="ceny_table_book"
-                  data-analytics-label={row.id}
-                  onclick="event.stopPropagation()"
-                >
-                  Забронировать
-                  <i class="bi bi-arrow-right-short text-base" aria-hidden="true"></i>
-                </a>
-              </td>
+              {salesOpen && (
+                <td class="px-4 py-3 text-right">
+                  <a
+                    href={`/shifts/${row.id}/`}
+                    class="inline-flex items-center gap-1 rounded-full bg-primary hover:bg-primary-hover text-white px-3 py-1.5 text-base font-semibold transition-colors whitespace-nowrap"
+                    data-analytics-goal="ceny_table_book"
+                    data-analytics-label={row.id}
+                    onclick="event.stopPropagation()"
+                  >
+                    Забронировать
+                    <i class="bi bi-arrow-right-short text-base" aria-hidden="true"></i>
+                  </a>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
       </table>
     </div>
 
-    <p class="mt-4 text-base text-slate-500">
-      Суммы на сезон зафиксированы, оплата в рублях. Клик по строке — подробности и бронирование заезда в лагере. Все открытые даты лагеря: <a href="/#shifts" class="text-primary hover:underline">Выбрать →</a>
-    </p>
-    <p class="mt-2 text-base text-slate-500">
-      Готовы выбрать лагерь? <a href="/zapisatsya/" class="text-primary hover:underline">Как забронировать место</a> — пошаговая инструкция.
-    </p>
+    {salesOpen ? (
+      <Fragment>
+        <p class="mt-4 text-base text-slate-500">
+          Суммы на сезон зафиксированы, оплата в рублях. Клик по строке — подробности и бронирование заезда в лагере. Все открытые даты лагеря: <a href="/#shifts" class="text-primary hover:underline">Выбрать →</a>
+        </p>
+        <p class="mt-2 text-base text-slate-500">
+          Готовы выбрать лагерь? <a href="/zapisatsya/" class="text-primary hover:underline">Как забронировать место</a> — пошаговая инструкция.
+        </p>
+      </Fragment>
+    ) : (
+      <Fragment>
+        <p class="mt-4 text-base text-slate-500">
+          Суммы летнего сезона {SEASON_YEAR} — для ориентира: заезды прошли, места на них не бронируются. Клик по строке — подробности заезда.
+        </p>
+        {nextSeason && (
+          <p class="mt-2 text-base text-slate-500">
+            Ближайший заезд — {nextSeason.shortName}, {nextSeason.seasonMeta.dates}, {nextSeason.seasonMeta.price}. <a href={`${nextSeason.path}/`} class="text-primary hover:underline">Открыта предзапись →</a>
+          </p>
+        )}
+      </Fragment>
+    )}
 
     <!-- Mobile CTA — ссылка на первую смену для выбора -->
     <div class="mt-4 md:hidden">
