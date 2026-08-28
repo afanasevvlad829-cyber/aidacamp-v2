@@ -2,7 +2,7 @@ import { mkdir, writeFile } from 'fs/promises';
 import { join, extname } from 'path';
 import { randomUUID } from 'crypto';
 import { getStaff } from './portalStaff';
-import { getActiveShift } from './portalShift';
+import { getActiveShift, getShiftById } from './portalShift';
 import { getOrCreateCollectingDraft, appendDraftText, setDraftStatus, setReviewerMessage, setDraftText, getDraft, type DraftPost } from './draftPost';
 import { classifyIncomingMedia, type TelegramMessageLike } from './telegramMedia';
 import { attachMedia, listMedia, deleteMedia, reorderMedia, type MediaItem } from './portalMedia';
@@ -168,4 +168,43 @@ export async function applyReject(draftId: number): Promise<void> {
       message: 'Ваш черновик отклонён руководителем.',
     });
   }
+}
+
+export async function applyApprove(
+  draftId: number,
+  approvedBy: number,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const draft = await getDraft(draftId);
+  if (!draft) return { ok: false, error: 'Черновик не найден' };
+
+  const shift = draft.shift_id ? await getShiftById(draft.shift_id) : null;
+  const channelId = (shift as any)?.tg_parent_channel_id;
+  if (!channelId) {
+    return { ok: false, error: 'У смены не настроен канал (tg_parent_channel_id) — обратитесь к администратору' };
+  }
+
+  const media = await listMedia('draft_post', draftId);
+  const client = await getTelegramClient();
+
+  try {
+    const photos = media.filter((m) => m.file_type === 'photo');
+    const videos = media.filter((m) => m.file_type === 'video');
+    if (photos.length > 0) {
+      await client.sendFile(channelId, {
+        file: photos.map((p) => p.file_path ?? p.file_url),
+        caption: draft.text ?? '',
+      });
+    }
+    for (const v of videos) {
+      await client.sendFile(channelId, { file: v.file_path ?? v.file_url });
+    }
+    if (photos.length === 0 && videos.length === 0 && draft.text) {
+      await client.sendMessage(channelId, { message: draft.text });
+    }
+  } catch (e) {
+    return { ok: false, error: `Ошибка публикации: ${String(e)}` };
+  }
+
+  await setDraftStatus(draftId, 'approved', approvedBy);
+  return { ok: true };
 }

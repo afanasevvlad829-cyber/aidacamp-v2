@@ -5,6 +5,7 @@ vi.mock('./portalStaff', () => ({
 }));
 vi.mock('./portalShift', () => ({
   getActiveShift: vi.fn(async () => ({ id: 3, name: 'Смена', start_date: '2026-06-10', end_date: '2026-06-23', status: 'active' })),
+  getShiftById: vi.fn(),
 }));
 vi.mock('./draftPost', () => ({
   getOrCreateCollectingDraft: vi.fn(async () => ({ id: 5, shift_id: 3, author_telegram_id: 111, status: 'collecting', text: null, reviewer_chat_id: null, reviewer_message_id: null })),
@@ -33,6 +34,7 @@ vi.mock('./telegramClient', () => ({
   getTelegramClient: vi.fn(async () => ({
     downloadMedia: vi.fn(async () => Buffer.from('fake-bytes')),
     sendMessage: vi.fn(async () => ({ id: 999 })),
+    sendFile: vi.fn(async () => ({ id: 999 })),
   })),
 }));
 
@@ -178,5 +180,29 @@ describe('applyReject', () => {
     expect(setDraftStatus).toHaveBeenCalledWith(5, 'rejected');
     const mockClient = await (getTelegramClient as any).mock.results[0].value;
     expect(mockClient.sendMessage).toHaveBeenCalledWith(111, expect.objectContaining({ message: expect.any(String) }));
+  });
+});
+
+describe('applyApprove', () => {
+  it('без tg_parent_channel_id у смены — возвращает ошибку, не публикует, не меняет статус', async () => {
+    const { getDraft, setDraftStatus } = await import('./draftPost');
+    (getDraft as any).mockResolvedValue({ id: 5, shift_id: 3, author_telegram_id: 111, status: 'pending_review', text: 'Текст', reviewer_chat_id: 777, reviewer_message_id: 1 });
+    const { getShiftById } = await import('./portalShift');
+    (getShiftById as any).mockResolvedValue({ id: 3, name: 'Смена', start_date: '2026-06-10', end_date: '2026-06-23', status: 'active' });
+    const { applyApprove } = await import('./telegramDraftBot');
+    const r = await applyApprove(5, 777);
+    expect(r).toEqual({ ok: false, error: expect.stringContaining('канал') });
+    expect(setDraftStatus).not.toHaveBeenCalledWith(5, 'approved', expect.anything());
+  });
+
+  it('публикует и переводит в approved', async () => {
+    const { getDraft, setDraftStatus } = await import('./draftPost');
+    (getDraft as any).mockResolvedValue({ id: 5, shift_id: 3, author_telegram_id: 111, status: 'pending_review', text: 'Текст', reviewer_chat_id: 777, reviewer_message_id: 1 });
+    const { getShiftById } = await import('./portalShift');
+    (getShiftById as any).mockResolvedValue({ id: 3, name: 'Смена', start_date: '2026-06-10', end_date: '2026-06-23', status: 'active', tg_parent_channel_id: -100123 });
+    const { applyApprove } = await import('./telegramDraftBot');
+    const r = await applyApprove(5, 777);
+    expect(r).toEqual({ ok: true });
+    expect(setDraftStatus).toHaveBeenCalledWith(5, 'approved', 777);
   });
 });
