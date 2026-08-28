@@ -4,6 +4,16 @@ import tailwindcss from '@tailwindcss/vite';
 import node from '@astrojs/node';
 import sitemap from '@astrojs/sitemap';
 import compress from '@playform/compress';
+import htmlMinifyCached from './scripts/html-minify-cached.mjs';
+
+// SKIP_COMPRESS=1 выключает минификацию. Нужен первому проходу build.sh: тот проход
+// существует только чтобы отрендерить статьи для gen-articles.mjs, его dist/ никуда
+// не едет — а compress стоит ~74с (замер по логу CI 14.08.2026: он один занимает 148с
+// из 210с двухпроходной сборки, тогда как сам astro build — ~30с за проход).
+// gen-articles.mjs парсит результат по маркерам-атрибутам (data-rss-strip,
+// data-article-subtitle) и сам нормализует пробелы, поэтому минифицирован вход
+// или нет — ему безразлично.
+const SKIP_COMPRESS = process.env.SKIP_COMPRESS === '1';
 
 export default defineConfig({
   site: 'https://aidacamp.ru',
@@ -78,11 +88,20 @@ export default defineConfig({
         !page.includes('/mincifry-v2/') && // клиентская B2B-презентация (Минцифры), не публичная, noindex
         !page.includes('/fortune-success/') && // thank-you страница оплаты, noindex
         !page.includes('/staff/') && // внутренний конструктор смен, доступ по cookie, noindex
+        !page.includes('/foto/') && // фото по сменам с фильтром по ребёнку, noindex — см. docs/superpowers/specs/2026-08-03-shift-photo-filter-design.md
         !page.includes('/audit-portal') && // внутренние security/audit-дашборды, noindex
         !page.includes('/prototype/') && // черновики-прототипы, noindex
         !page.includes('/r/') && // персонализированная страница для возвратников (рассылка), не для органики
         !page.includes('/smena-taymlayn/') && // персонализированный таймлайн смены (ссылка родителям), не для органики
         !page.includes('/leto-dlya-sebya/') && // noindex={true}, лендинг только под РСЯ (глэмпинги/отели), не для органики
+        !page.includes('/privacy-policy/') && // noindex, follow — политика конфиденциальности, не для органики
+        !page.includes('/press/') && // noindex — страница для прессы, не для органики
+        // noindex + лежала в sitemap = смешанный сигнал; внутренняя витрина призов за
+        // лагерные рубли, ссылка только из портала. Labrika 07.08.2026 (sitemap-сироты).
+        !page.includes('/vitrina/') &&
+        // /video/<slug>/ — карточки под одно видео для расшаривания в переписке (owner
+        // 30.07.2026), не для органики. /video/ (хаб-листинг) НЕ трогаем — он индексируемый.
+        !/^https:\/\/aidacamp\.ru\/video\/[^/]+\/?$/.test(page) &&
         // Редирект-стабы и битые страницы — НЕ в sitemap (иначе смешанный сигнал
         // Яндексу: карта говорит «индексируй», страница — noindex/редирект → тормозит перенос)
         !/\/(deti-otdokhnuli-v-letnikh-lageryakh|detskie-letnie-lagerya-v-podmoskove|detskie-ozdorovitelnye-lagerya-2026|detskiy-letniy-lager-v-podmoskove|detskiy-ozdorovitelnyy-lager|kanikuly-otdykh-v-lagere|kupit-putevku-v-lager-2026|kupit-putevku-v-lager|lager-letniy-na-20-dney|lager-v-podmoskove-na-leto-2026-nedorogo|lagerya-v-podmoskove-na-leto-dlya-podrostkov|letnie-lagerya-podmoskove|letnie-lagerya|letniy-lager-dlya-detey-v-moskve|letniy-lager-v-moskve|luchshie-detskie-lagerya-podmoskovya|luchshie-lagerya-v-podmoskove|mesta-v-letniy-lager|nedorogoy-letniy-lager-dlya-detey-v-podmoskove|ob-organizacii-otdyha-detej-i-ozdarovleniya|popali-v-letniy-lager|programma-smeny|putevka-v-detskiy-lager-letom|putevka-v-lager-v-podmoskove-2026|putevki-v-detskiy-lager-na-leto-2026|fortune-fail|smena2-editor|gde-poluchit-spravku-079u-dlya-lagerya|lager-elochki-domodedovo|lager-petrushka-v-podmoskove|lager-vshe-dlya-shkolnikov-2026|lagerya-za-granitsu-dlya-podrostkov|mos-ru-detskiy-lager|nalogovyy-vychet-za-detskiy-lager|neo-kemp-detskiy-lager|rozendorf-detskiy-lager|skolko-delaetsya-spravka-079u-dlya-lagerya|skolko-deystvuet-spravka-079u-dlya-lagerya|sportzaniya-lager-v-podmoskove|strannyy-detskiy-lager|terra-nostra-shatura-detskiy-lager|lager-na-vesennie-kanikuly-2026|lager-na-osenie-kanikuly)\/?$/.test(page),
@@ -127,15 +146,20 @@ export default defineConfig({
         return item;
       },
     }),
-    compress({
+    // HTML минифицируем сами, с кэшем по содержимому (scripts/html-minify-cached.mjs):
+    // у compress это 74с на КАЖДУЮ сборку по всем 344 страницам, хотя типичная правка
+    // задевает единицы. CSS/JS оставлены ему — там 32 и 110 файлов и экономия 5.28 КБ
+    // и 7.7 КБ, отдельный кэш не окупается.
+    htmlMinifyCached(),
+    ...(SKIP_COMPRESS ? [] : [compress({
       CSS: true,
-      HTML: true,
+      HTML: false,
       JavaScript: true,
       Image: false,
       SVG: false,
       // @playform/pipe матчит строки как RegExp — glob-строка 'metodichki/**' роняет билд («Nothing to repeat»)
       Exclude: [/metodichki\//, /demo\//],
-    }),
+    })]),
   ],
   devToolbar: { enabled: false },
   vite: {

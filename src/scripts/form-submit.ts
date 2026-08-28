@@ -11,13 +11,18 @@ function getYmUidCookie(): string {
   }
 }
 
-/** getClientID асинхронный — ждём callback до 300ms, затем fallback на cookie */
-function getYmClientId(): Promise<string> {
+/**
+ * getClientID асинхронный — ждём callback, затем fallback на cookie.
+ * Ожидание поднято с 300 мс до 1200 мс (31.07.2026): счётчик грузится лениво,
+ * за 300 мс callback обычно не успевал и почти всегда срабатывал резервный путь.
+ * Промис резолвится сразу по callback — задержка возникает только в худшем случае.
+ */
+export function getYmClientId(): Promise<string> {
   return new Promise((resolve) => {
     try {
       const ym = (window as any).ym;
       if (typeof ym === 'function') {
-        const timer = setTimeout(() => resolve(getYmUidCookie()), 300);
+        const timer = setTimeout(() => resolve(getYmUidCookie()), 1200);
         ym(YM_COUNTER, 'getClientID', (id: string) => {
           clearTimeout(timer);
           resolve(id || getYmUidCookie());
@@ -63,8 +68,9 @@ function getDomainUserId(): string {
   return '';
 }
 
-/** Собирает контекст атрибуции и устройства */
-function collectContext(): Record<string, string> {
+/** Собирает контекст атрибуции и устройства. Экспортирован 31.07.2026 —
+ *  колесо фортуны шлёт тот же набор, что и обычная форма. */
+export function collectContext(): Record<string, string> {
   const qs = new URLSearchParams(window.location.search);
   const pick = (k: string) => qs.get(k) || '';
 
