@@ -56,6 +56,7 @@ const rootId = `mm-${entityType}-${entityId}-${Math.random().toString(36).slice(
   import GoldenRetriever from '@uppy/golden-retriever';
   import '@uppy/core/css/style.min.css';
   import '@uppy/dashboard/css/style.min.css';
+  import { UPPY_LOCALE_STRINGS, buildUppyRestrictions, UPPY_DASHBOARD_BASE, UPPY_XHR_BASE, attachGoldenRetriever, formatUploadError } from '../../scripts/portal/uppyShared';
 
   const initialised = new WeakSet<HTMLElement>();
 
@@ -92,51 +93,31 @@ const rootId = `mm-${entityType}-${entityId}-${Math.random().toString(36).slice(
     const uppy = new Uppy({
       id: `uppy-${root.id}`,
       autoProceed: true,
-      restrictions: {
-        maxFileSize: 500 * 1024 * 1024,
-        maxNumberOfFiles: maxFiles,
-        allowedFileTypes: accept.split(',').map((s) => s.trim()).filter(Boolean),
-      },
+      restrictions: buildUppyRestrictions(accept, maxFiles),
     });
 
     uppy.use(Dashboard, {
       target: uploadEl,
-      inline: true,
-      width: '100%',
+      ...UPPY_DASHBOARD_BASE,
       height: 200,
-      proudlyDisplayPoweredByUppy: false,
-      showProgressDetails: true,
-      hideUploadButton: false,
       note,
-      locale: {
-        strings: {
-          dropPasteFiles: 'Перетащи файл сюда или %{browseFiles}',
-          browseFiles: 'выбери файл',
-          uploadComplete: 'Загружено',
-          uploadPaused: 'Пауза',
-        } as any,
-      },
+      locale: { strings: UPPY_LOCALE_STRINGS },
     });
 
     uppy.use(XHRUpload, {
       endpoint: '/api/portal/media',
-      method: 'POST',
-      formData: true,
-      fieldName: 'file',
-      withCredentials: true,
-      timeout: 0,
+      ...UPPY_XHR_BASE,
     });
     uppy.setMeta({ entity_type: entityType, entity_id: entityId });
 
-    try { uppy.use(GoldenRetriever, { serviceWorker: false }); } catch {}
+    attachGoldenRetriever(uppy, GoldenRetriever);
 
     uppy.on('upload-success', () => {
       if (toast) toast.success('Загружено');
       refresh();
     });
     uppy.on('upload-error', (_f, error, response) => {
-      const code = (response as any)?.status ?? '';
-      const msg = (error as any)?.message || 'unknown error';
+      const { code, msg } = formatUploadError(error, response);
       if (toast) toast.error(`Ошибка${code ? ' (HTTP ' + code + ')' : ''}: ${msg}`);
     });
     uppy.on('restriction-failed', (_f, error) => {

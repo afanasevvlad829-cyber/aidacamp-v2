@@ -2,6 +2,7 @@
  * Data-layer для экономики смены: серверные override-ы состояния призов
  * и каталог активностей-«подарков» (телефон на ночь, отменить зарядку и т.д.).
  */
+import { withDbClient } from './db';
 
 export interface PrizeState {
   prize_id: string;
@@ -28,19 +29,10 @@ export interface ActivityOffer {
   archived: boolean;
 }
 
-function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
-async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
-  const conn = dsn(); if (!conn) return null;
-  const { default: pg } = await import('pg');
-  const client = new pg.Client({ connectionString: conn });
-  await client.connect();
-  try { return await fn(client); } finally { await client.end(); }
-}
-
 // ── Prize state ────────────────────────────────────────────────────────────
 
 export async function listPrizeStates(): Promise<PrizeState[]> {
-  const r = await withClient(async (c) => {
+  const r = await withDbClient(async (c) => {
     const q = await c.query(
       `SELECT prize_id, hidden, bongere_price, custom_photo, remaining_qty,
               to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SSOF') AS updated_at, updated_by
@@ -57,7 +49,7 @@ export async function listPrizeStates(): Promise<PrizeState[]> {
 
 /** Уменьшает оставшееся количество приза на 1 (для hardcoded — в portal_prize_state.remaining_qty). */
 export async function decrementPrizeRemaining(prizeId: string, initialQty: number): Promise<number> {
-  const r = await withClient(async (c) => {
+  const r = await withDbClient(async (c) => {
     // Если строки ещё нет, создаём с remaining_qty = initialQty - 1
     // Если есть и remaining_qty NULL, ставим initialQty - 1
     // Если есть число, уменьшаем на 1 (не ниже 0)
@@ -80,7 +72,7 @@ export async function upsertPrizeState(
   patch: { hidden?: boolean; bongere_price?: number | null; custom_photo?: string | null },
   updatedBy: string | null
 ): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     await c.query(
       `INSERT INTO portal_prize_state (prize_id, hidden, bongere_price, custom_photo, updated_at, updated_by)
        VALUES ($1, COALESCE($2, FALSE), $3, $4, NOW(), $5)
@@ -109,7 +101,7 @@ export async function replacePrizeState(
   customPhoto: string | null,
   updatedBy: string | null
 ): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     await c.query(
       `INSERT INTO portal_prize_state (prize_id, hidden, bongere_price, custom_photo, updated_at, updated_by)
        VALUES ($1, $2, $3, $4, NOW(), $5)
@@ -127,7 +119,7 @@ export async function replacePrizeState(
 // ── Activity offers ────────────────────────────────────────────────────────
 
 export async function listActivities(includeArchived = false): Promise<ActivityOffer[]> {
-  const r = await withClient(async (c) => {
+  const r = await withDbClient(async (c) => {
     const q = await c.query(
       `SELECT id, name, description, category, base_price, participants_hint,
               target_days, target_share_pct, repeat_multiplier::float8 AS repeat_multiplier,
@@ -147,7 +139,7 @@ export async function listActivities(includeArchived = false): Promise<ActivityO
 }
 
 export async function upsertActivity(p: Partial<ActivityOffer> & { name: string }): Promise<number> {
-  const r = await withClient(async (c) => {
+  const r = await withDbClient(async (c) => {
     if (p.id) {
       // Поддерживаем set custom_price = NULL для «сброса к рекомендованной»
       const hasCustom = 'custom_price' in p;
@@ -183,7 +175,7 @@ export async function upsertActivity(p: Partial<ActivityOffer> & { name: string 
 }
 
 export async function deleteActivity(id: number): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     await c.query(`UPDATE portal_activity_offer SET archived = TRUE, updated_at = NOW() WHERE id = $1`, [id]);
   });
 }
@@ -208,7 +200,7 @@ export async function seedDefaultActivities(): Promise<number> {
     { name: 'Дополнительные 30 мин в бассейне', description: '+30 мин водных активностей сверх расписания', category: 'fun', base_price: 0, participants_hint: 10, target_days: null, target_share_pct: null, repeat_multiplier: null, custom_price: null },
   ];
 
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     // Сидим только если таблица пустая
     const cnt = await c.query(`SELECT COUNT(*)::int AS n FROM portal_activity_offer`);
     if (cnt.rows[0].n > 0) return 0;

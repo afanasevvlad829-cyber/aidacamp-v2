@@ -4,6 +4,7 @@
  * Один ребёнок ∈ shift_id уникален (UNIQUE shift_id+kid_id).
  * Одна койка (shift+room+bed) занята максимум одним ребёнком.
  */
+import { withDbClient } from './db';
 
 export interface RoomAssignment {
   id: number;
@@ -17,30 +18,26 @@ export interface RoomAssignment {
   bed_index: number | null;
 }
 
-function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
-async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
-  const conn = dsn(); if (!conn) return null;
-  const { default: pg } = await import('pg');
-  const client = new pg.Client({ connectionString: conn });
-  await client.connect();
-  try { return await fn(client); } finally { await client.end(); }
-}
-
 /** Сохранить снимок текущего расселения смены (резерв перед массовыми операциями). */
 export async function takeSnapshot(shiftId: number, reason: string): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
+    // shift_id тут сравнивается с колонками РАЗНОГО типа: в снимке он integer,
+    // в room_assignment — bigint. Один и тот же $1 в обеих позициях Postgres
+    // развести не может и падает с «inconsistent types deduced for parameter $1»,
+    // роняя авто-расстановку и сброс. Поэтому два отдельных параметра с явными
+    // приведениями, а не один переиспользованный.
     await c.query(
       `INSERT INTO room_assignment_snapshot(shift_id, reason, snapshot_data)
-       SELECT $1, $2, COALESCE(jsonb_agg(row_to_json(ra)), '[]'::jsonb)
-       FROM room_assignment ra WHERE ra.shift_id = $1`,
-      [shiftId, reason],
+       SELECT $1::int, $2, COALESCE(jsonb_agg(row_to_json(ra)), '[]'::jsonb)
+       FROM room_assignment ra WHERE ra.shift_id = $3::bigint`,
+      [shiftId, reason, shiftId],
     );
   });
 }
 
 /** Все назначения для смены (включая нерасселённых). */
 export async function listAssignments(shiftId: number): Promise<RoomAssignment[]> {
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     // Для записей staff-{id} берём актуальное имя из portal_staff.
     // kid_name остаётся fallback если запись была удалена из portal_staff.
     const r = await c.query(
@@ -61,8 +58,12 @@ export async function listAssignments(shiftId: number): Promise<RoomAssignment[]
               ra.kid_gender, ra.kid_age, ra.notes, ra.room_number, ra.bed_index
        FROM room_assignment ra
        LEFT JOIN portal_staff ps
-         ON ra.kid_id LIKE 'staff-%'
-        AND ps.id = CAST(SUBSTRING(ra.kid_id FROM 7) AS INTEGER)
+         ON ra.kid_id ~ '^staff-[0-9]+$'
+        AND ps.id = CASE
+                      WHEN ra.kid_id ~ '^staff-[0-9]+$'
+                      THEN CAST(SUBSTRING(ra.kid_id FROM 7) AS INTEGER)
+                      ELSE NULL
+                    END
        WHERE ra.shift_id=$1
        ORDER BY kid_name`,
       [shiftId],
@@ -92,7 +93,7 @@ export async function upsertKid(input: {
            bed_index   = COALESCE(EXCLUDED.bed_index,   room_assignment.bed_index),`
     : `room_number = EXCLUDED.room_number,
            bed_index   = EXCLUDED.bed_index,`;
-  return await withClient(async (c) => {
+  return await withDbClient(async (c) => {
     await c.query('BEGIN');
     let bumped: string | null = null;
     try {
@@ -142,7 +143,7 @@ export async function upsertKid(input: {
 /** Снять всех детей с коек (комнаты обнуляются, дети остаются в реестре). */
 export async function resetAssignmentsForShift(shiftId: number): Promise<number> {
   await takeSnapshot(shiftId, 'reset_all');
-  const n = await withClient(async (c) => {
+  const n = await withDbClient(async (c) => {
     const r = await c.query(
       `UPDATE room_assignment SET room_number=NULL, bed_index=NULL, updated_at=now()
        WHERE shift_id=$1 AND (room_number IS NOT NULL OR bed_index IS NOT NULL)`,
@@ -154,21 +155,62 @@ export async function resetAssignmentsForShift(shiftId: number): Promise<number>
 }
 
 /**
- * Авто-расстановка:
- *  — Свободные дети сортируются по полу+возрасту.
- *  — Для каждого выбирается лучшая комната: тот же пол (или пустая), близкий возраст (±3 года),
- *    не нарушаем capacity. Score: совпадение пола +5, есть соседи +2, пожелания не учитываем (нет пока).
- *  — Уже расселённых не трогаем.
+ * Авто-расстановка. Три правила, в порядке важности:
+ *  1. Персонал — отдельно от детей. Записи `staff-*` никогда не попадают в
+ *     детскую комнату и селятся последними, в то, что осталось.
+ *  2. Мальчики с мальчиками, девочки с девочками.
+ *  3. Внутри своей группы — по возрасту: очередь сортируется по годам и
+ *     пакуется подряд, поэтому соседи по комнате всегда близки по возрасту.
+ *
+ * Комната принадлежит одной группе целиком, смешения не бывает. Для группы
+ * берём наименьшую комнату, куда влезают ВСЕ оставшиеся: четыре девочки
+ * попадают в один четырёхместный люкс, а не растекаются по двушкам.
+ * Уже расселённых не трогаем.
  */
-const AGE_SPREAD = 3;
 export interface AutoAssignRoomDef { number: number; capacity: number; }
+
+type Group = 'F' | 'M' | 'U' | 'STAFF';
+
+const isStaffRecord = (a: RoomAssignment) => String(a.kid_id ?? '').startsWith('staff-');
+
+/**
+ * Пол по ФИО. Отчество — самый надёжный признак (-вна/-чна против -вич/-ич),
+ * фамилия — запасной. Списки имён не заводим: они никогда не полны.
+ */
+export function inferGenderFromName(fullName: string): 'M' | 'F' | null {
+  const parts = String(fullName ?? '')
+    .replace(/\s*\([^)]*\)\s*$/, '') // «Ильдар Салехетдинов (Вожатый)» — служебная приписка
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  const patronymic = (parts[2] ?? '').toLowerCase();
+  if (/(вна|чна)$/.test(patronymic)) return 'F';
+  if (/(вич|ич)$/.test(patronymic)) return 'M';
+  const surname = (parts[0] ?? '').toLowerCase();
+  if (/(ова|ева|ёва|ина|ына|ская|цкая)$/.test(surname)) return 'F';
+  if (/(ов|ев|ёв|ин|ын|ский|цкий)$/.test(surname)) return 'M';
+  return null;
+}
+
+/**
+ * Группа для расселения. Имя главнее галочки пола из CRM: 02.08.2026 две
+ * девочки (Гусаковская Алёна Ивановна, Фомичева Ангелада Викторовна) числились
+ * там мальчиками — по такому флагу их поселили бы к мальчикам.
+ */
+export function groupOf(a: Pick<RoomAssignment, 'kid_id' | 'kid_name' | 'kid_gender'>): Group {
+  if (String(a.kid_id ?? '').startsWith('staff-')) return 'STAFF';
+  const byName = inferGenderFromName(a.kid_name ?? '');
+  const g = byName ?? (a.kid_gender === 'M' || a.kid_gender === 'F' ? a.kid_gender : null);
+  return g ?? 'U';
+}
+
 export async function autoAssign(shiftId: number, rooms: AutoAssignRoomDef[]): Promise<{ assigned: number; skipped: number }> {
   await takeSnapshot(shiftId, 'auto_assign');
   const items = await listAssignments(shiftId);
-  // Карта занятости коек и текущие жильцы по комнате
+
+  const occBed = new Set<string>();
   const occByRoom = new Map<number, RoomAssignment[]>();
-  const occBed = new Set<string>(); // "room:bed"
-  const unassigned: RoomAssignment[] = [];
+  const waiting: RoomAssignment[] = [];
   for (const a of items) {
     if (a.room_number != null && a.bed_index != null) {
       occBed.add(`${a.room_number}:${a.bed_index}`);
@@ -176,76 +218,67 @@ export async function autoAssign(shiftId: number, rooms: AutoAssignRoomDef[]): P
       arr.push(a);
       occByRoom.set(a.room_number, arr);
     } else {
-      unassigned.push(a);
+      waiting.push(a);
     }
   }
 
-  // Сортируем нерасселённых по полу (девочки→мальчики) + возрасту
-  unassigned.sort((a, b) => {
-    const ga = a.kid_gender === 'F' ? 0 : a.kid_gender === 'M' ? 1 : 2;
-    const gb = b.kid_gender === 'F' ? 0 : b.kid_gender === 'M' ? 1 : 2;
-    return ga - gb || (a.kid_age ?? 99) - (b.kid_age ?? 99);
-  });
+  const usable = rooms.filter((r) => r.capacity > 0);
+  const freeBedsIn = (room: AutoAssignRoomDef): number[] => {
+    const out: number[] = [];
+    for (let i = 0; i < room.capacity; i++) if (!occBed.has(`${room.number}:${i}`)) out.push(i);
+    return out;
+  };
+  /** Чья комната, если в ней уже кто-то живёт. */
+  const groupIn = (room: AutoAssignRoomDef): Group | null => {
+    const occ = occByRoom.get(room.number) ?? [];
+    return occ.length ? groupOf(occ[0]) : null;
+  };
 
-  let assigned = 0, skipped = 0;
+  let assigned = 0;
+  let skipped = 0;
 
-  for (const kid of unassigned) {
-    let bestRoom: number | null = null;
-    let bestBed = -1;
-    let bestScore = -1;
+  // Порядок важен: девочек селим первыми, иначе мальчики разберут большие
+  // комнаты и четырём девочкам придётся жить порознь. Персонал — последним,
+  // ему достаётся то, что не понадобилось детям.
+  for (const group of ['F', 'M', 'U', 'STAFF'] as Group[]) {
+    const queue = waiting
+      .filter((a) => groupOf(a) === group)
+      .sort((a, b) => (a.kid_age ?? 99) - (b.kid_age ?? 99));
 
-    for (const room of rooms) {
-      const occ = occByRoom.get(room.number) ?? [];
-      // Найти первую свободную койку
-      let freeBed = -1;
-      for (let i = 0; i < room.capacity; i++) {
-        if (!occBed.has(`${room.number}:${i}`)) { freeBed = i; break; }
+    while (queue.length) {
+      const candidates = usable
+        .filter((r) => freeBedsIn(r).length > 0)
+        .filter((r) => {
+          const g = groupIn(r);
+          return g === null || g === group; // комната либо пустая, либо своя
+        });
+      if (!candidates.length) { skipped += queue.length; break; }
+
+      // Наименьшая комната, куда влезут все оставшиеся; если такой нет — самая
+      // вместительная. Так группа держится вместе и не дробится зря.
+      const fits = candidates.filter((r) => freeBedsIn(r).length >= queue.length);
+      const room = fits.length
+        ? fits.reduce((a, b) => (freeBedsIn(a).length <= freeBedsIn(b).length ? a : b))
+        : candidates.reduce((a, b) => (freeBedsIn(a).length >= freeBedsIn(b).length ? a : b));
+
+      for (const bed of freeBedsIn(room)) {
+        const kid = queue.shift();
+        if (!kid) break;
+        await upsertKid({
+          shift_id: shiftId,
+          kid_id: kid.kid_id,
+          kid_name: kid.kid_name,
+          kid_gender: kid.kid_gender,
+          kid_age: kid.kid_age,
+          room_number: room.number,
+          bed_index: bed,
+        });
+        occBed.add(`${room.number}:${bed}`);
+        const arr = occByRoom.get(room.number) ?? [];
+        arr.push({ ...kid, room_number: room.number, bed_index: bed });
+        occByRoom.set(room.number, arr);
+        assigned++;
       }
-      if (freeBed < 0) continue;
-
-      // Пол: если в комнате уже есть жильцы другого пола — пропускаем
-      const genders = new Set(occ.map((o) => o.kid_gender).filter((g) => g === 'M' || g === 'F'));
-      if (kid.kid_gender && genders.size > 0 && !genders.has(kid.kid_gender)) continue;
-      // Если в комнате уже смешано — пропускаем тоже
-      if (genders.size > 1) continue;
-
-      // Возраст: проверяем общий разброс
-      const ages = occ.map((o) => o.kid_age).filter((x): x is number => x != null);
-      if (kid.kid_age != null && ages.length > 0) {
-        const minA = Math.min(...ages, kid.kid_age);
-        const maxA = Math.max(...ages, kid.kid_age);
-        if (maxA - minA > AGE_SPREAD) continue;
-      }
-
-      // Score: совпадение пола +5, компактность (есть соседи) +2, иначе базовый 10
-      let score = 10;
-      if (kid.kid_gender && genders.has(kid.kid_gender)) score += 5;
-      if (occ.length > 0) score += 2;
-
-      if (score > bestScore) {
-        bestScore = score;
-        bestRoom = room.number;
-        bestBed = freeBed;
-      }
-    }
-
-    if (bestRoom != null && bestBed >= 0) {
-      await upsertKid({
-        shift_id: shiftId,
-        kid_id: kid.kid_id,
-        kid_name: kid.kid_name,
-        kid_gender: kid.kid_gender,
-        kid_age: kid.kid_age,
-        room_number: bestRoom,
-        bed_index: bestBed,
-      });
-      occBed.add(`${bestRoom}:${bestBed}`);
-      const arr = occByRoom.get(bestRoom) ?? [];
-      arr.push({ ...kid, room_number: bestRoom, bed_index: bestBed });
-      occByRoom.set(bestRoom, arr);
-      assigned++;
-    } else {
-      skipped++;
     }
   }
 
@@ -255,7 +288,7 @@ export async function autoAssign(shiftId: number, rooms: AutoAssignRoomDef[]): P
 /** Полная очистка списка детей смены (удаляем все записи). */
 export async function wipeKidsForShift(shiftId: number): Promise<number> {
   await takeSnapshot(shiftId, 'wipe_all');
-  const n = await withClient(async (c) => {
+  const n = await withDbClient(async (c) => {
     const r = await c.query('DELETE FROM room_assignment WHERE shift_id=$1', [shiftId]);
     return r.rowCount ?? 0;
   });
@@ -264,7 +297,7 @@ export async function wipeKidsForShift(shiftId: number): Promise<number> {
 
 /** Удалить ребёнка полностью из реестра расселения. */
 export async function deleteKid(shiftId: number, kidId: string): Promise<boolean> {
-  const ok = await withClient(async (c) => {
+  const ok = await withDbClient(async (c) => {
     const r = await c.query(
       'DELETE FROM room_assignment WHERE shift_id=$1 AND kid_id=$2',
       [shiftId, kidId],

@@ -1,5 +1,7 @@
 // @ts-nocheck
 import { YM_COUNTER } from '../../data/tracking';
+import { allShiftsIncludingArchived, SHIFT_META, fmtRub, taxDeduction, EDU_BASE_CAP, VYCHET_S3, VYCHET_S4 } from '../../data/shifts';
+import { getCurrentPrice, getTaxDeduction, getDays, getShiftPhase } from '../../data/dynamicPrices';
 
 /* ── THEME ── */
 function initTheme(){
@@ -199,14 +201,19 @@ initTheme();
 })();
 
 /* ── CAMP DATA ── */
-const SMENY=[
-  {n:'Смена 1',dates:'30 мая — 8 июня',days:'10 дней',price:'85 900 ₽',available:false,occupied:23,total:35},
-  {n:'Смена 2',dates:'10 — 23 июня',days:'14 дней',price:'99 000 ₽',available:false,popular:true,occupied:41,total:45},
-  {n:'Смена 2.1',dates:'10 — 16 июня',days:'7 дней',price:'48 000 ₽',available:false,short:true,occupied:29,total:40},
-  {n:'Смена 2.2',dates:'16 — 23 июня',days:'8 дней',price:'75 000 ₽',available:false,short:true,occupied:37,total:45},
-  {n:'Смена 3',dates:'3 — 15 августа',days:'13 дней',price:'89 400 ₽',available:true,occupied:40,total:45},
-  {n:'Смена 4',dates:'17 — 26 августа',days:'10 дней',price:'74 900 ₽',available:true,occupied:31,total:45},
-];
+// Цены/даты/места — из shifts.ts (единый источник); текущая цена — по правилу dynamicPrices.ts.
+const SMENY=allShiftsIncludingArchived.map(s=>{
+  const done=getShiftPhase(s.id)==='done';
+  const cur=getCurrentPrice(s.id);
+  return {
+    id:s.id,n:s.name,dates:s.dates,days:s.duration,
+    price:!done&&cur?fmtRub(cur):s.price,
+    available:!done&&s.free>0,
+    popular:!!(s.popular||s.highlighted),
+    short:s.statusType==='short',
+    occupied:s.occupied,total:s.occupied+s.free,
+  };
+});
 const COURSES=[
   {icon:'keyboard',name:'Scratch',age:'8–10 лет',minAge:8,maxAge:10,
    campHook:'Сделает игру с персонажами и уровнями — покажет маме работающее приложение',
@@ -511,8 +518,8 @@ function blockPrices(){
   head.innerHTML='<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:8px"><i class="bi bi-tag" aria-hidden="true"></i>Стоимость смен</span>';
   card.appendChild(head);
   const tabs=[
-    {label:'10 дней',price:'74 900 ₽',sub:'за смену · Смена 4 (август)',inc:['Всё включено (проживание, питание, IT, трансфер)','Хакатон в последние 2 дня','Сертификат по итогам'],cb:'Налоговый вычет 13% — вернёте до <strong>4 800 ₽</strong> через ФНС'},
-    {label:'13 дней',price:'89 400 ₽',sub:'за смену · Смена 3 (август)',inc:['Полная программа — 13 дней','Всё включено + хакатон','Дети успевают подружиться по-настоящему'],cb:'Налоговый вычет 13% — вернёте до <strong>5 200 ₽</strong> через ФНС'},
+    {label:getDays('shift-4')+' дней',price:fmtRub(getCurrentPrice('shift-4')||0),sub:'за смену · Смена 4 (август)',inc:['Всё включено (проживание, питание, IT, трансфер)','Хакатон в последние 2 дня','Сертификат по итогам'],cb:'Налоговый вычет 13% — вернёте от <strong>'+VYCHET_S4+'</strong> через ФНС'},
+    {label:getDays('shift-3')+' дней',price:fmtRub(getCurrentPrice('shift-3')||0),sub:'за смену · Смена 3 (август)',inc:['Полная программа — 13 дней','Всё включено + хакатон','Дети успевают подружиться по-настоящему'],cb:'Налоговый вычет 13% — вернёте от <strong>'+VYCHET_S3+'</strong> через ФНС'},
   ];
   const tabRow=mkEl('div','display:flex;gap:1px;background:rgba(13,27,42,.07)');
   const bodies=[];
@@ -542,22 +549,17 @@ function blockPrices(){
 }
 
 function blockTaxCalculator(){
-  // Смены: [название, цена, дней]
-  const SHIFTS=[
-    ['Смена 4 — 17–26 авг, 10 дней', 74900, 10],
-    ['Смена 3 — 3–15 авг, 13 дней', 89400, 13],
-    ['Смена 1 (завершена) — 30 мая–8 июн, 10 дней', 85900, 10],
-    ['Смена 2 (завершена) — 10–23 июн, 14 дней', 99000, 14],
-    ['Смена 2.1 (завершена) — 10–16 июн, 7 дней', 48000, 7],
-    ['Смена 2.2 (завершена) — 16–23 июн, 8 дней', 75000, 8],
-  ];
-  const RESIDENTIAL_PER_DAY=3800;
-  const EDU_LIMIT=110000;
+  // Смены: [название, цена, дней] — данные из shifts.ts, формула вычета — taxDeduction() оттуда же.
+  // Активные — по текущей цене, завершённые — по фактической (базовой).
+  const _active=allShiftsIncludingArchived.filter(s=>getShiftPhase(s.id)!=='done');
+  const _done=allShiftsIncludingArchived.filter(s=>getShiftPhase(s.id)==='done');
+  const SHIFTS=[..._active,..._done].map(s=>{
+    const done=getShiftPhase(s.id)==='done';
+    const price=done?SHIFT_META[s.id].basePrice:(getCurrentPrice(s.id)||SHIFT_META[s.id].basePrice);
+    return [s.name+(done?' (завершена)':'')+' — '+s.dates+', '+s.duration,price,getDays(s.id)];
+  });
   function calc(price,days){
-    const res=RESIDENTIAL_PER_DAY*days;
-    const edu=price-res;
-    const base=Math.min(edu,EDU_LIMIT);
-    return Math.round(base*0.13/100)*100;
+    return Math.round(taxDeduction(price,days)/100)*100; // округление до 100 ₽ — только для «~» в демо
   }
   const wrap=mkEl('div','width:100%;animation:blockPop .4s cubic-bezier(.16,1,.3,1) both,blockGlow .8s .2s ease-out both');
   const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
@@ -576,7 +578,6 @@ function blockTaxCalculator(){
   SHIFTS.forEach(([name,price,days],i)=>{
     const opt=document.createElement('option');
     opt.value=i; opt.textContent=name;
-    if(i===1) opt.selected=true;
     sel.appendChild(opt);
   });
   body.appendChild(sel);
@@ -590,7 +591,7 @@ function blockTaxCalculator(){
     const i=parseInt(sel.value)||0;
     const [,price,days]=SHIFTS[i];
     const amount=calc(price,days);
-    resNum.textContent='~'+amount.toLocaleString('ru-RU')+' ₽';
+    resNum.textContent='~'+fmtRub(amount);
   }
   updateResult();
   sel.onchange=updateResult;
@@ -598,7 +599,7 @@ function blockTaxCalculator(){
   body.appendChild(resCard);
   // Note
   const note=mkEl('div','font-size:11px;color:#9aaabb;line-height:1.5');
-  note.textContent='* Расчёт ориентировочный. Точная сумма зависит от вашего дохода и уже использованных вычетов в этом году. Лимит НК РФ — 110 000 ₽ на обучение.';
+  note.textContent='* Расчёт ориентировочный. Точная сумма зависит от вашего дохода и уже использованных вычетов в этом году. Лимит НК РФ — '+fmtRub(EDU_BASE_CAP)+' на обучение.';
   body.appendChild(note);
   // CTA
   const btn=mkEl('button','padding:12px 16px;background:linear-gradient(135deg,#ad5b00,#a34e00);border:none;border-radius:12px;font-family:inherit;font-size:15px;font-weight:700;color:#fff;cursor:pointer;width:100%;display:block;box-shadow:0 4px 14px rgba(236,124,0,.3)','Забронировать и вернуть вычет →');
@@ -890,11 +891,15 @@ function blockPricingBreakdown(){
     +'<span style="font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;background:rgba(34,197,94,.15);color:#15803d">Можно сэкономить</span>';
   card.appendChild(head);
   const body=mkEl('div','padding:18px 20px;display:flex;flex-direction:column;gap:0');
-  const priceEl=mkEl('div','font-size:40px;font-weight:800;color:#0d1a2b;letter-spacing:-.03em;margin-bottom:4px;transition:all .5s','99 000 ₽');
+  // Цена/вычет — из единого источника: ближайшая доступная смена, текущая цена и вычет от неё.
+  const bd=SMENY.find(s=>s.available)||SMENY[SMENY.length-1];
+  const bdPrice=getCurrentPrice(bd.id)||0;
+  const bdVychet=getTaxDeduction(bd.id);
+  const priceEl=mkEl('div','font-size:40px;font-weight:800;color:#0d1a2b;letter-spacing:-.03em;margin-bottom:4px;transition:all .5s',fmtRub(bdPrice));
   body.appendChild(priceEl);
-  body.appendChild(mkEl('div','font-size:13px;color:#4e6072;margin-bottom:20px','августовские смены · всё включено'));
+  body.appendChild(mkEl('div','font-size:13px;color:#4e6072;margin-bottom:20px',bd.n+' ('+bd.days+') · всё включено'));
   const steps=[
-    {icon:'mortarboard',label:'Налоговый вычет 13% (через ФНС)',amount:'-5 200 ₽',color:'#1d6fe0',delay:600},
+    {icon:'mortarboard',label:'Налоговый вычет 13% (через ФНС)',amount:'-'+fmtRub(bdVychet),color:'#1d6fe0',delay:600},
   ];
   const rowEls=steps.map(s=>{
     const row=mkEl('div','display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:rgba(13,27,42,.03);border:1px solid rgba(13,27,42,.07);margin-bottom:8px;opacity:0;transform:translateY(8px);transition:all .4s');
@@ -909,7 +914,7 @@ function blockPricingBreakdown(){
   body.appendChild(divider);
   const fin=mkEl('div','display:flex;align-items:center;justify-content:space-between;opacity:0;transition:all .5s');
   fin.appendChild(mkEl('span','font-size:14px;font-weight:600;color:#4e6072','Итого с вычетом'));
-  fin.appendChild(mkEl('span','font-size:26px;font-weight:800;color:#16a34a;letter-spacing:-.02em','82 650 ₽'));
+  fin.appendChild(mkEl('span','font-size:26px;font-weight:800;color:#16a34a;letter-spacing:-.02em',fmtRub(bdPrice-bdVychet)));
   body.appendChild(fin);
   card.appendChild(body);
   card.appendChild(mkEl('div','padding:0 20px 14px;font-size:11px;color:rgba(13,27,42,.35);line-height:1.6','* Налоговый вычет 13% — декларация 3-НДФЛ за обучение (образовательная часть путёвки выделяется в договоре отдельно). Возврат на счёт в течение 3–4 месяцев.'));
@@ -1121,6 +1126,35 @@ function addMsg(role,html,onDone){
   return d;
 }
 
+/* ── CSAT: кнопки «полезно / не полезно» под ответом бота ── */
+function addCsat(aiEl,messageId){
+  if(!messageId||!aiEl)return;
+  const row=document.createElement('div');
+  row.className='csat-row';
+  const mk=(val,icon,label)=>{
+    const b=document.createElement('button');
+    b.className='csat-btn';
+    b.title=label;
+    b.setAttribute('aria-label',label);
+    b.innerHTML='<i class="bi bi-hand-thumbs-'+icon+'" aria-hidden="true"></i>';
+    b.onclick=()=>{
+      if(b.classList.contains('on'))return;
+      row.querySelectorAll('.csat-btn').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      // Повторный клик по другой кнопке — просто перезапись оценки (endpoint делает UPDATE)
+      fetch('/api/ask-feedback',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({message_id:messageId,csat:val})
+      }).catch(()=>{});
+    };
+    return b;
+  };
+  row.appendChild(mk(1,'up','Полезно'));
+  row.appendChild(mk(-1,'down','Не полезно'));
+  aiEl.insertAdjacentElement('afterend',row);
+}
+
 function addChips(items){
   const row=document.createElement('div');
   row.style.cssText='align-self:flex-start;display:flex;gap:8px;flex-wrap:wrap;animation:up .3s .1s cubic-bezier(.16,1,.3,1) both;padding:2px 0 4px';
@@ -1329,7 +1363,9 @@ async function go(txt){
     aiState='speak';
 
     if(data.state==='error'||!data.text){
-      addMsg('ai',data.text||'Что-то пошло не так. Попробуйте ещё раз.');
+      addMsg('ai',data.text||'Что-то пошло не так. Попробуйте ещё раз.',(aiEl)=>{
+        addCsat(aiEl,data.message_id);
+      });
     } else {
       // Сохраняем в историю сразу — не ждём анимации
       const blockNote=data.block_type?` [показан блок: ${data.block_type}]`:'';
@@ -1347,6 +1383,7 @@ async function go(txt){
 
       // Последовательный показ: текст печатается → блок появляется → чипсы
       addMsg('ai',data.text,(aiEl)=>{
+        addCsat(aiEl,data.message_id);
         if(blockAllowed){
           // После окончания печати — небольшая пауза, потом блок
           setTimeout(()=>{
@@ -1765,7 +1802,7 @@ function closeQR(){
 
 // Expose global functions for HTML event handlers
 Object.assign(window, {
-  addChips, addEl, addMsg, autoGrow, autoLink,
+  addChips, addCsat, addEl, addMsg, autoGrow, autoLink,
   blockCond, blockCourses, blockDay, blockGallery, blockHackathon,
   blockLocation, blockOccupancyChart, blockPhotoCarousel, blockPrices,
   blockPricingBreakdown, blockSmeny, blockTaxCalculator, blockVideoPlayer,

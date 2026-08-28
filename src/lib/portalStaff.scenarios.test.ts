@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { makeFakeClient, type FakeClient } from '../test/fakePg';
 
 let client: FakeClient = makeFakeClient();
-vi.mock('pg', () => ({ default: { Client: vi.fn(() => client) } }));
+vi.mock('pg', () => ({ default: { Client: vi.fn(() => client), Pool: vi.fn(() => ({ connect: vi.fn(async () => client), query: vi.fn((...args: any[]) => (client.query as any)(...args)), on: vi.fn() })) } }));
 
 beforeEach(() => {
   process.env.AIDAPLUS_PG_DSN = 'postgres://fake/aidacamp';
@@ -74,11 +74,12 @@ describe('mergePendingIntoPlaceholder', () => {
 });
 
 describe('setRoles — мульти-роль', () => {
-  it('сохраняет массив ролей + активная роль = первая', async () => {
+  it('сохраняет массив ролей + активная роль = наивысшая + флаг активации', async () => {
     const { setRoles } = await import('./portalStaff');
     await setRoles(999, ['rukovoditel', 'vozhaty'] as any, 100);
-    const update = client.calls.find((c) => /UPDATE portal_staff SET roles/.test(c.sql));
+    const update = client.calls.find((c) => /UPDATE portal_staff\s+SET roles/.test(c.sql));
     expect(update).toBeTruthy();
-    expect(update!.params).toEqual([999, ['rukovoditel', 'vozhaty'], 'rukovoditel', 100]);
+    // $5 = willActivate: roles непустой → active=TRUE
+    expect(update!.params).toEqual([999, ['rukovoditel', 'vozhaty'], 'rukovoditel', 100, true]);
   });
 });

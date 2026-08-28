@@ -4,11 +4,14 @@
  *
  * <VideoPlayer
  *   src="/video/daria-story.mp4"
+ *   previewSrc="/video/daria-story-preview.mp4"
  *   caption="«Мы живём в самом прекрасном IT-лагере»"
  *   cues={DARIA_CUES}
  *   goalName="daria_video_play"
  * />
  */
+
+import ShareButton from './ShareButton.astro';
 
 interface Cue {
   s: number;  // start, секунды
@@ -18,23 +21,34 @@ interface Cue {
 
 interface Props {
   src: string;
+  /** Лёгкий немой луп для авто-превью в viewport (без звука, короче полного). По умолчанию — src (полный файл). */
+  previewSrc?: string;
   caption?: string;
   cues?: Cue[];
   aspect?: string;       // CSS aspect-ratio, дефолт '9/16'
   maxHeight?: string;    // max-height превью, дефолт '460px'
   goalName?: string;     // Яндекс.Метрика цель
   uid?: string;          // уникальный суффикс если несколько плееров на странице
+  /** Адрес страницы видео (/video/<slug>/) — включает кнопку «Поделиться» в лайтбоксе. */
+  shareSlug?: string;
+  /** Заголовок для системного меню «поделиться». По умолчанию — title страницы. */
+  shareTitle?: string;
 }
 
 const {
   src,
+  previewSrc = src,
   caption,
   cues = [],
   aspect = '9/16',
   maxHeight = '460px',
   goalName = 'video_play',
   uid = 'vp',
+  shareSlug,
+  shareTitle,
 } = Astro.props;
+
+const shareUrl = shareSlug ? `https://aidacamp.ru/video/${shareSlug}/` : undefined;
 
 const modalId   = `${uid}-modal`;
 const playerId  = `${uid}-player`;
@@ -47,8 +61,9 @@ const cuesJson = JSON.stringify(cues);
 
 <!-- Превью-блок -->
 <div>
-  <button
-    type="button"
+  <div
+    role="button"
+    tabindex="0"
     id={wrapId}
     class="vp-wrap group relative block w-full overflow-hidden rounded-[18px] bg-slate-100 shadow-[0_4px_24px_rgba(15,23,42,0.12)] cursor-pointer hover:shadow-[0_8px_32px_rgba(15,23,42,0.18)] transition-shadow"
     style={`aspect-ratio:${aspect};max-height:${maxHeight}`}
@@ -72,9 +87,21 @@ const cuesJson = JSON.stringify(cues);
         <i class="bi bi-play-fill text-[26px] text-primary ml-1" aria-hidden="true"></i>
       </span>
     </span>
-  </button>
+  </div>
   {caption && (
     <p class="mt-2 text-[12px] text-body-faint text-center leading-[1.5]" set:html={caption}></p>
+  )}
+  {/* Ссылка на страницу видео: обычным <a>, иначе страница остаётся сиротой —
+      кнопка «Поделиться» это JS, поисковик её не видит. */}
+  {shareSlug && (
+    <p class="mt-1.5 text-center">
+      <a
+        href={`/video/${shareSlug}/`}
+        class="text-[12px] font-medium text-body-faint no-underline transition-colors hover:text-primary"
+      >
+        Страница видео
+      </a>
+    </p>
   )}
 </div>
 
@@ -85,15 +112,18 @@ const cuesJson = JSON.stringify(cues);
 >
   <div class="flex min-h-full items-center justify-center p-4">
     <div class="relative w-full max-w-[400px]">
-      <!-- Кнопка закрытия -->
-      <button
-        id={closeId}
-        type="button"
-        class="absolute -top-10 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-800 hover:bg-slate-100 transition-colors z-10 shadow"
-        aria-label="Закрыть"
-      >
-        <i class="bi bi-x-lg text-base" aria-hidden="true"></i>
-      </button>
+      <!-- Поделиться + закрыть -->
+      <div class="absolute -top-11 right-0 z-10 flex items-center gap-2">
+        {shareUrl && <ShareButton url={shareUrl} title={shareTitle} variant="overlay" />}
+        <button
+          id={closeId}
+          type="button"
+          class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-800 hover:bg-slate-100 transition-colors shadow"
+          aria-label="Закрыть"
+        >
+          <i class="bi bi-x-lg text-base" aria-hidden="true"></i>
+        </button>
+      </div>
       <!-- Видео + karaoke overlay -->
       <div class="relative w-full" style={`aspect-ratio:${aspect};max-height:80svh`}>
         <video
@@ -114,7 +144,7 @@ const cuesJson = JSON.stringify(cues);
   </div>
 </dialog>
 
-<script define:vars={{ src, modalId, playerId, karaokeId, closeId, wrapId, cuesJson, goalName }}>
+<script define:vars={{ src, previewSrc, modalId, playerId, karaokeId, closeId, wrapId, cuesJson, goalName }}>
   const CUES = JSON.parse(cuesJson);
   const LINE_STYLE = 'display:inline-block;background:rgba(0,0,0,0.72);border-radius:8px;padding:6px 12px;font-size:15px;font-weight:600;line-height:1.6;text-shadow:0 1px 4px rgba(0,0,0,0.9)';
 
@@ -142,7 +172,7 @@ const cuesJson = JSON.stringify(cues);
         if (!entries[0].isIntersecting) return;
         io.disconnect();
         // src устанавливается здесь — до этого момента сеть не используется
-        preview.src = src;
+        preview.src = previewSrc;
         preview.load();
       }, { threshold: 0.1 });
       io.observe(wrap);
@@ -182,6 +212,9 @@ const cuesJson = JSON.stringify(cues);
       player.play().catch(() => {});
       if (CUES.length) rafId = requestAnimationFrame(rafLoop);
       try { window.ym?.(96499295, 'reachGoal', goalName); } catch {}
+      // Агрегатная цель «Открытие видео» — общая для всех VideoPlayer, отдельно от
+      // per-instance goalName (напр. daria_video_play). window.trackGoal — из page-globals.ts.
+      try { window.trackGoal?.('video_open', { goal: goalName }); } catch {}
     };
     const closeModal = () => {
       cancelAnimationFrame(rafId);
@@ -195,6 +228,10 @@ const cuesJson = JSON.stringify(cues);
     player.addEventListener('play',  () => { if (CUES.length) rafId = requestAnimationFrame(rafLoop); });
 
     wrap.addEventListener('click', openModal);
+    // wrap — div role="button" (в button нельзя вкладывать div-скелетон), нужен свой keydown
+    wrap.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(); }
+    });
     closeBtn?.addEventListener('click', closeModal);
     modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.open) closeModal(); });

@@ -89,13 +89,15 @@ const baseClass = 'mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4';
       <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
     </button>
     <div class="flex flex-col items-center">
-      <img data-gallery-lightbox-img class="max-h-[80vh] max-w-full rounded-lg object-contain" src="" alt="" />
+      <img data-gallery-lightbox-img class="max-h-[80vh] max-w-full rounded-lg object-contain" alt="" />
       <p data-gallery-counter class="mt-3 text-center text-base text-white/60"></p>
     </div>
   </div>
 </dialog>
 
 <script>
+  import { trackGoal } from '../scripts/analytics';
+
   function initGallery() {
     const root = document.querySelector('[data-gallery-root]');
     if (!root) return;
@@ -107,6 +109,8 @@ const baseClass = 'mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4';
     const lbImg     = lightbox?.querySelector<HTMLImageElement>('[data-gallery-lightbox-img]');
     const counterEl = lightbox?.querySelector<HTMLElement>('[data-gallery-counter]');
     if (!lightbox || !lbImg) return;
+    const dialog = lightbox;
+    const lightboxImage = lbImg;
 
     type Photo = { src: string; alt: string };
     let lbPhotos: Photo[] = [];
@@ -114,8 +118,8 @@ const baseClass = 'mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4';
 
     function show(index: number) {
       current = ((index % lbPhotos.length) + lbPhotos.length) % lbPhotos.length;
-      lbImg!.src = lbPhotos[current].src;
-      lbImg!.alt = lbPhotos[current].alt;
+      lightboxImage.src = lbPhotos[current].src;
+      lightboxImage.alt = lbPhotos[current].alt;
       if (counterEl) counterEl.textContent = `${current + 1} / ${lbPhotos.length}`;
     }
 
@@ -123,12 +127,8 @@ const baseClass = 'mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4';
       lbPhotos = photos;
       const idx = photos.findIndex(p => p.src === startSrc);
       show(idx >= 0 ? idx : 0);
-      lightbox.showModal();
-    }
-
-    function jpgFallback(src: string) {
-      if (!src.endsWith('.avif')) return src;
-      return src.replace('/images/gallery/', '/images/gallery/jpg/').replace('.avif', '.jpg');
+      dialog.showModal();
+      trackGoal('photo_open', { src: startSrc });
     }
 
     function makePhotoBtn(p: Photo, className: string, imgClass: string): HTMLButtonElement {
@@ -136,14 +136,10 @@ const baseClass = 'mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4';
       btn.type = 'button';
       btn.className = `cursor-pointer group relative overflow-hidden ${className}`;
       btn.dataset.gallerySrc = p.src;
-      const avifSource = p.src.endsWith('.avif') ? `<source srcset="${p.src}" type="image/avif">` : '';
       btn.innerHTML = `
-        <picture>
-          ${avifSource}
-          <img src="${jpgFallback(p.src)}" alt="${p.alt}" loading="lazy"
-            style="object-position:50% 25%"
-            class="${imgClass} transition group-hover:scale-105">
-        </picture>
+        <img src="${p.src}" alt="${p.alt}" loading="lazy"
+          style="object-position:50% 25%"
+          class="${imgClass} transition group-hover:scale-105">
         <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
         <span class="absolute left-3 top-3 rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-bold tracking-wide text-body backdrop-blur-sm">#АЙДАКЕМП</span>`;
       return btn;
@@ -228,11 +224,8 @@ const baseClass = 'mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4';
         btn.type = 'button';
         btn.className = 'group relative shrink-0 w-[140px] h-[140px] md:w-[160px] md:h-[160px] overflow-hidden rounded-[14px] bg-slate-100 cursor-pointer';
         btn.innerHTML = `
-          <picture>
-            <source srcset="${p.src}" type="image/avif">
-            <img src="${jpgFallback(p.src)}" alt="${p.alt}" loading="lazy"
-              class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
-          </picture>`;
+          <img src="${p.src}" alt="${p.alt}" loading="lazy"
+            class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">`;
         btn.addEventListener('click', () => openLb(photos, p.src));
         stripEl.appendChild(btn);
       });
@@ -297,7 +290,7 @@ const baseClass = 'mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4';
     showSection(defaultFilter);
 
     // ── Lightbox управление ───────────────────────────────────────────────────
-    function closeLb() { lbImg!.src = ''; lightbox.close(); }
+    function closeLb() { lightboxImage.src = ''; dialog.close(); }
 
     lightbox.querySelector('[data-gallery-lightbox-close]')?.addEventListener('click', closeLb);
     lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLb(); });

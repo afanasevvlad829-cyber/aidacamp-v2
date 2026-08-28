@@ -74,6 +74,221 @@ import LanitPageLayout from '../../layouts/LanitPageLayout.astro';
       </div>
     </div>
   </section>
+<script>
+  interface StatusData {
+    timestamp: string;
+    locks: Array<{
+      path: string;
+      agentId: string;
+      sessionId: string;
+      lockedAt: string;
+      expiresAt: string;
+      reason: string;
+      isExpired: boolean;
+      minutesRemaining: number;
+    }>;
+    branches: Array<{
+      name: string;
+      ahead: number;
+      behind: number;
+      lastCommitTime: string;
+      lastCommitAuthor: string;
+    }>;
+    deployStatus: {
+      lastDeployTime: string | null;
+      environment: 'dev' | 'prod' | 'unknown';
+      buildStatus: 'clean' | 'dirty' | 'unknown';
+    };
+    summary: {
+      activeLocksCount: number;
+      staleLocksCount: number;
+      branchesAheadOfDev: number;
+      buildHealthy: boolean;
+    };
+  }
+
+  let currentStatus: StatusData | null = null;
+
+  async function fetchStatus() {
+    try {
+      const response = await fetch('/api/status');
+      const data = (await response.json()) as StatusData;
+      currentStatus = data;
+      renderDashboard(data);
+    } catch (error) {
+      console.error('Failed to fetch status:', error);
+      renderError('Failed to load dashboard data');
+    }
+  }
+
+  function renderDashboard(data: StatusData) {
+    const summaryGrid = document.getElementById('summary-grid');
+    if (summaryGrid) {
+      summaryGrid.innerHTML = `
+        <div class="summary-card">
+          <div class="card-label">Active Locks</div>
+          <div class="card-value">${data.summary.activeLocksCount}</div>
+        </div>
+        <div class="summary-card">
+          <div class="card-label">Stale Locks</div>
+          <div class="card-value">${data.summary.staleLocksCount}</div>
+        </div>
+        <div class="summary-card">
+          <div class="card-label">Branches Ahead</div>
+          <div class="card-value">${data.summary.branchesAheadOfDev}</div>
+        </div>
+        <div class="summary-card">
+          <div class="card-label">Build Status</div>
+          <div class="card-value">${data.summary.buildHealthy ? '✓' : '✗'}</div>
+        </div>
+      `;
+    }
+
+    const locksList = document.getElementById('locks-list');
+    if (locksList) {
+      if (data.locks.length === 0) {
+        locksList.innerHTML = '<div class="loading-placeholder">No active locks</div>';
+      } else {
+        locksList.innerHTML = data.locks
+          .map(
+            (lock) => `
+          <div class="lock-item">
+            <div class="lock-path">${lock.path}</div>
+            <div class="lock-meta">
+              <div class="lock-meta-item">
+                <div class="lock-meta-label">Agent</div>
+                <div class="lock-meta-value">${lock.agentId}</div>
+              </div>
+              <div class="lock-meta-item">
+                <div class="lock-meta-label">Session</div>
+                <div class="lock-meta-value">${lock.sessionId}</div>
+              </div>
+              <div class="lock-meta-item">
+                <div class="lock-meta-label">Locked At</div>
+                <div class="lock-meta-value">${new Date(lock.lockedAt).toLocaleString()}</div>
+              </div>
+              <div class="lock-meta-item">
+                <div class="lock-meta-label">Expires In</div>
+                <div class="lock-meta-value">${lock.minutesRemaining} min</div>
+              </div>
+            </div>
+            <div class="lock-status">
+              <div class="lock-status-indicator ${lock.isExpired ? 'expired' : 'active'}"></div>
+              <span>${lock.isExpired ? 'EXPIRED' : 'ACTIVE'}</span>
+            </div>
+            ${lock.reason ? `<div class="lock-reason">${lock.reason}</div>` : ''}
+          </div>
+        `
+          )
+          .join('');
+      }
+    }
+
+    const locksCount = document.getElementById('locks-count');
+    if (locksCount) {
+      locksCount.textContent = `${data.locks.length} lock${data.locks.length !== 1 ? 's' : ''}`;
+    }
+
+    const branchesList = document.getElementById('branches-list');
+    if (branchesList) {
+      if (data.branches.length === 0) {
+        branchesList.innerHTML = '<div class="loading-placeholder">No branch data available</div>';
+      } else {
+        branchesList.innerHTML = data.branches
+          .map(
+            (branch) => `
+          <div class="branch-item">
+            <div class="branch-name">${branch.name}</div>
+            <div class="branch-stats">
+              <div class="branch-stat">
+                <span class="stat-label">Ahead:</span>
+                <span class="stat-value ahead">${branch.ahead}</span>
+              </div>
+              <div class="branch-stat">
+                <span class="stat-label">Behind:</span>
+                <span class="stat-value behind">${branch.behind}</span>
+              </div>
+              <div class="branch-stat">
+                <span class="stat-label">Author:</span>
+                <span class="stat-value">${branch.lastCommitAuthor}</span>
+              </div>
+            </div>
+          </div>
+        `
+          )
+          .join('');
+      }
+    }
+
+    const branchesCount = document.getElementById('branches-count');
+    if (branchesCount) {
+      branchesCount.textContent = `${data.branches.length} branch${data.branches.length !== 1 ? 'es' : ''}`;
+    }
+
+    const deployInfo = document.getElementById('deploy-info');
+    if (deployInfo) {
+      const status = data.deployStatus;
+      const lastDeployDate = status.lastDeployTime ? new Date(status.lastDeployTime).toLocaleString() : 'Never';
+
+      deployInfo.innerHTML = `
+        <div class="deploy-row">
+          <div class="deploy-label">Environment</div>
+          <div class="deploy-value">
+            <span class="status-badge ${status.environment === 'unknown' ? 'unknown' : ''}">${status.environment.toUpperCase()}</span>
+          </div>
+        </div>
+        <div class="deploy-row">
+          <div class="deploy-label">Build Status</div>
+          <div class="deploy-value">
+            <span class="status-badge ${status.buildStatus === 'clean' ? 'clean' : status.buildStatus === 'dirty' ? 'dirty' : 'unknown'}">
+              <span class="badge-dot"></span>
+              ${status.buildStatus.toUpperCase()}
+            </span>
+          </div>
+        </div>
+        <div class="deploy-row">
+          <div class="deploy-label">Last Deploy</div>
+          <div class="deploy-value">${lastDeployDate}</div>
+        </div>
+      `;
+    }
+
+    const lastUpdated = document.getElementById('last-updated');
+    if (lastUpdated) {
+      lastUpdated.textContent = new Date(data.timestamp).toLocaleTimeString();
+    }
+  }
+
+  function renderError(message: string) {
+    const locksList = document.getElementById('locks-list');
+    if (locksList) {
+      locksList.innerHTML = `<div class="error-message">${message}</div>`;
+    }
+  }
+
+  const refreshBtn = document.getElementById('refresh-btn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+      refreshBtn.classList.add('rotating');
+      fetchStatus().finally(() => refreshBtn.classList.remove('rotating'));
+    });
+  }
+
+  const copyBtn = document.getElementById('copy-status-btn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      if (currentStatus) {
+        navigator.clipboard.writeText(JSON.stringify(currentStatus, null, 2));
+        const originalLabel = copyBtn.getAttribute('aria-label');
+        copyBtn.setAttribute('aria-label', 'Copied!');
+        setTimeout(() => copyBtn.setAttribute('aria-label', originalLabel || ''), 2000);
+      }
+    });
+  }
+
+  fetchStatus();
+  setInterval(fetchStatus, 10000);
+</script>
 </LanitPageLayout>
 
 <style>
@@ -473,219 +688,3 @@ import LanitPageLayout from '../../layouts/LanitPageLayout.astro';
     }
   }
 </style>
-
-<script>
-  interface StatusData {
-    timestamp: string;
-    locks: Array<{
-      path: string;
-      agentId: string;
-      sessionId: string;
-      lockedAt: string;
-      expiresAt: string;
-      reason: string;
-      isExpired: boolean;
-      minutesRemaining: number;
-    }>;
-    branches: Array<{
-      name: string;
-      ahead: number;
-      behind: number;
-      lastCommitTime: string;
-      lastCommitAuthor: string;
-    }>;
-    deployStatus: {
-      lastDeployTime: string | null;
-      environment: 'dev' | 'prod' | 'unknown';
-      buildStatus: 'clean' | 'dirty' | 'unknown';
-    };
-    summary: {
-      activeLocksCount: number;
-      staleLocksCount: number;
-      branchesAheadOfDev: number;
-      buildHealthy: boolean;
-    };
-  }
-
-  let currentStatus: StatusData | null = null;
-
-  async function fetchStatus() {
-    try {
-      const response = await fetch('/api/status');
-      const data = (await response.json()) as StatusData;
-      currentStatus = data;
-      renderDashboard(data);
-    } catch (error) {
-      console.error('Failed to fetch status:', error);
-      renderError('Failed to load dashboard data');
-    }
-  }
-
-  function renderDashboard(data: StatusData) {
-    const summaryGrid = document.getElementById('summary-grid');
-    if (summaryGrid) {
-      summaryGrid.innerHTML = `
-        <div class="summary-card">
-          <div class="card-label">Active Locks</div>
-          <div class="card-value">${data.summary.activeLocksCount}</div>
-        </div>
-        <div class="summary-card">
-          <div class="card-label">Stale Locks</div>
-          <div class="card-value">${data.summary.staleLocksCount}</div>
-        </div>
-        <div class="summary-card">
-          <div class="card-label">Branches Ahead</div>
-          <div class="card-value">${data.summary.branchesAheadOfDev}</div>
-        </div>
-        <div class="summary-card">
-          <div class="card-label">Build Status</div>
-          <div class="card-value">${data.summary.buildHealthy ? '✓' : '✗'}</div>
-        </div>
-      `;
-    }
-
-    const locksList = document.getElementById('locks-list');
-    if (locksList) {
-      if (data.locks.length === 0) {
-        locksList.innerHTML = '<div class="loading-placeholder">No active locks</div>';
-      } else {
-        locksList.innerHTML = data.locks
-          .map(
-            (lock) => `
-          <div class="lock-item">
-            <div class="lock-path">${lock.path}</div>
-            <div class="lock-meta">
-              <div class="lock-meta-item">
-                <div class="lock-meta-label">Agent</div>
-                <div class="lock-meta-value">${lock.agentId}</div>
-              </div>
-              <div class="lock-meta-item">
-                <div class="lock-meta-label">Session</div>
-                <div class="lock-meta-value">${lock.sessionId}</div>
-              </div>
-              <div class="lock-meta-item">
-                <div class="lock-meta-label">Locked At</div>
-                <div class="lock-meta-value">${new Date(lock.lockedAt).toLocaleString()}</div>
-              </div>
-              <div class="lock-meta-item">
-                <div class="lock-meta-label">Expires In</div>
-                <div class="lock-meta-value">${lock.minutesRemaining} min</div>
-              </div>
-            </div>
-            <div class="lock-status">
-              <div class="lock-status-indicator ${lock.isExpired ? 'expired' : 'active'}"></div>
-              <span>${lock.isExpired ? 'EXPIRED' : 'ACTIVE'}</span>
-            </div>
-            ${lock.reason ? `<div class="lock-reason">${lock.reason}</div>` : ''}
-          </div>
-        `
-          )
-          .join('');
-      }
-    }
-
-    const locksCount = document.getElementById('locks-count');
-    if (locksCount) {
-      locksCount.textContent = `${data.locks.length} lock${data.locks.length !== 1 ? 's' : ''}`;
-    }
-
-    const branchesList = document.getElementById('branches-list');
-    if (branchesList) {
-      if (data.branches.length === 0) {
-        branchesList.innerHTML = '<div class="loading-placeholder">No branch data available</div>';
-      } else {
-        branchesList.innerHTML = data.branches
-          .map(
-            (branch) => `
-          <div class="branch-item">
-            <div class="branch-name">${branch.name}</div>
-            <div class="branch-stats">
-              <div class="branch-stat">
-                <span class="stat-label">Ahead:</span>
-                <span class="stat-value ahead">${branch.ahead}</span>
-              </div>
-              <div class="branch-stat">
-                <span class="stat-label">Behind:</span>
-                <span class="stat-value behind">${branch.behind}</span>
-              </div>
-              <div class="branch-stat">
-                <span class="stat-label">Author:</span>
-                <span class="stat-value">${branch.lastCommitAuthor}</span>
-              </div>
-            </div>
-          </div>
-        `
-          )
-          .join('');
-      }
-    }
-
-    const branchesCount = document.getElementById('branches-count');
-    if (branchesCount) {
-      branchesCount.textContent = `${data.branches.length} branch${data.branches.length !== 1 ? 'es' : ''}`;
-    }
-
-    const deployInfo = document.getElementById('deploy-info');
-    if (deployInfo) {
-      const status = data.deployStatus;
-      const lastDeployDate = status.lastDeployTime ? new Date(status.lastDeployTime).toLocaleString() : 'Never';
-
-      deployInfo.innerHTML = `
-        <div class="deploy-row">
-          <div class="deploy-label">Environment</div>
-          <div class="deploy-value">
-            <span class="status-badge ${status.environment === 'unknown' ? 'unknown' : ''}">${status.environment.toUpperCase()}</span>
-          </div>
-        </div>
-        <div class="deploy-row">
-          <div class="deploy-label">Build Status</div>
-          <div class="deploy-value">
-            <span class="status-badge ${status.buildStatus === 'clean' ? 'clean' : status.buildStatus === 'dirty' ? 'dirty' : 'unknown'}">
-              <span class="badge-dot"></span>
-              ${status.buildStatus.toUpperCase()}
-            </span>
-          </div>
-        </div>
-        <div class="deploy-row">
-          <div class="deploy-label">Last Deploy</div>
-          <div class="deploy-value">${lastDeployDate}</div>
-        </div>
-      `;
-    }
-
-    const lastUpdated = document.getElementById('last-updated');
-    if (lastUpdated) {
-      lastUpdated.textContent = new Date(data.timestamp).toLocaleTimeString();
-    }
-  }
-
-  function renderError(message: string) {
-    const locksList = document.getElementById('locks-list');
-    if (locksList) {
-      locksList.innerHTML = `<div class="error-message">${message}</div>`;
-    }
-  }
-
-  const refreshBtn = document.getElementById('refresh-btn');
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', () => {
-      refreshBtn.classList.add('rotating');
-      fetchStatus().finally(() => refreshBtn.classList.remove('rotating'));
-    });
-  }
-
-  const copyBtn = document.getElementById('copy-status-btn');
-  if (copyBtn) {
-    copyBtn.addEventListener('click', () => {
-      if (currentStatus) {
-        navigator.clipboard.writeText(JSON.stringify(currentStatus, null, 2));
-        const originalLabel = copyBtn.getAttribute('aria-label');
-        copyBtn.setAttribute('aria-label', 'Copied!');
-        setTimeout(() => copyBtn.setAttribute('aria-label', originalLabel || ''), 2000);
-      }
-    });
-  }
-
-  fetchStatus();
-  setInterval(fetchStatus, 10000);
-</script>

@@ -3,15 +3,8 @@ import type { APIRoute } from 'astro';
 import { requireStaff } from '../../../../lib/portalPerms';
 import { canEditEvent } from '../../../../lib/portalShiftPerms';
 import type { PortalRole } from '../../../../lib/portalSession';
+import { withDbClient } from '../../../../lib/db';
 
-function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
-async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
-  const conn = dsn(); if (!conn) return null;
-  const { default: pg } = await import('pg');
-  const client = new pg.Client({ connectionString: conn });
-  await client.connect();
-  try { return await fn(client); } finally { await client.end(); }
-}
 function json(body: object, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
 }
@@ -39,7 +32,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(toDate)) return json({ ok: false, error: 'to_date invalid' }, 400);
   if (fromDate === toDate) return json({ ok: false, error: 'даты совпадают' }, 400);
 
-  const result = await withClient(async (c) => {
+  const result = await withDbClient(async (c) => {
     const src = await c.query(
       `SELECT id, start_time, end_time, title, notes, sort,
               responsible_staff_id, content_task_template_id, roles, event_type, activity_type

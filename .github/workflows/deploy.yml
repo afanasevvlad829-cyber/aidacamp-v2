@@ -1,54 +1,290 @@
-name: Deploy to Server
+name: Deploy
+
+# Continuous deployment.
+#
+#   push в dev ─┬─ build (1 раз) ─┬→ деплой dev + smoke   (параллельно, прод не ждёт)
+#               │                 └→ merge dev→main → деплой prod → верификация + smoke
+#               └─ typecheck ──────────────────────↑                        ↓ красный
+#                                                                     авто-откат прода
+#
+# ⚡ dev едет ПАРАЛЛЕЛЬНО проду (2026-08-14). Раньше прод ждал зелёный smoke на
+# dev — это стоило 95с в критическом пути. Размен осознанный: dev перестал быть
+# канарейкой, поломка теперь доезжает до прода и откатывается там сама, вместо
+# того чтобы не доехать вовсе. Окно битого прода — время верификации и smoke,
+# порядка минуты. Обратно это разворачивается одной строкой:
+# `promote: needs: [deploy-dev, typecheck]`.
+#
+# Прод защищён тремя рубежами (было четыре — dev-канарейка ушла):
+#   1) quality-gate.yml (check:banned / check:prices / build — БЕЗ astro check,
+#      required PR-проверка, быстрая — гейтит только мерж в dev);
+#   2) astro check — job `typecheck`, идёт параллельно с build, promote его ждёт
+#      через needs (см. комментарий в job promote) — гейтит прод, не dev;
+#   3) верификация + smoke на самом проде, при провале — авто-откат на последний
+#      backup-* (deploy.sh: fail_deploy → rollback.sh). Это тот же smoke.sh, что
+#      гонялся на dev, так что проверка не потерялась — сместилась во времени.
+#
+# ⚠️ main теперь означает «прошло quality + typecheck», а НЕ «проверено на живом
+# окружении»: promote происходит до того, как dev успел ответить.
+#
+# main МЕРЖИТСЯ, а не ресетится. Прежний `reset --hard`-промоут разъезжал
+# истории и терял правки (инцидент 2026-07-07).
+#
+# ⚡ Один build-job на весь пуш (2026-07-26). Раньше deploy-dev и deploy-prod
+# каждый гоняли свой npm run build (guard + astro check + astro build + pagefind)
+# с нуля — до ~18 мин на пуш из-за двойной работы. Теперь: build собирает dist/
+# ОДИН раз и кладёт его в artifact, deploy-dev/deploy-prod его только скачивают
+# и рассылают (SKIP_BUILD=1). Это безопасно ровно потому, что:
+#   - astro check (тайпчек) больше не гейтит ни dev, ни этот build — он гоняется
+#     отдельно и единственный раз в job `promote`, перед прод-веткой
+#     (SKIP_ASTRO_CHECK=1 здесь, см. scripts/check-public-astro.mjs);
+#   - dev и prod сейчас собираются побитово одинаково — DEPLOY_ENV ни на что
+#     не влияет, CDN отключён (см. src/data/cdn.ts) — так что один и тот же
+#     dist/ валиден для обоих окружений, пересборка после тайпчека не нужна.
+#   ⚠️ Если вернут CDN/per-env assetsPrefix — вернуть раздельные билды
+#   (убрать job build, вернуть npm run build внутрь deploy-dev/deploy-prod).
+#
+# Требуется секрет SSH_KEY_PROD (приватный ключ для root@159.194.223.55).
+# Опционально: TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID для уведомлений.
 
 on:
+  push:
+    branches: [dev]
   workflow_dispatch:
     inputs:
-      confirm:
-        description: 'Введите "deploy" для подтверждения деплоя на ПРОД'
-        required: true
-        default: ''
+      skip_prod:
+        description: 'Только dev, без прода'
+        type: boolean
+        required: false
+        default: false
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false   # деплой не прерываем на середине
+
+permissions:
+  contents: write
+  checks: read   # promote ждёт зелёный check "quality" перед пушем в main
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Check confirmation
-        if: github.event.inputs.confirm != 'deploy'
+      # fetch-depth: 1 — job только собирает, git-история ему не нужна.
+      # В deploy-dev/deploy-prod намеренно оставлен 0: там deploy.sh сверяет
+      # HEAD с origin/dev (pre-flight guard), и на shallow-клоне это надо
+      # проверять отдельно — экономия 7с того не стоит.
+      - uses: actions/checkout@v5
+        with: { ref: dev, fetch-depth: 1 }
+
+      - uses: actions/setup-node@v5
+        with: { node-version: '22', cache: 'npm' }
+
+      - run: npm ci
+
+      # Кэш минификации HTML (scripts/html-minify-cached.mjs). Ключ по содержимому
+      # каждой страницы, поэтому даже устаревший кэш полезен: совпадут все страницы,
+      # которых правка не коснулась. restore-keys без хэша — берём самый свежий.
+      - name: Кэш минификации HTML
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache/html-minify
+          key: htmlmin-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            htmlmin-${{ runner.os }}-
+
+      # SKIP_ASTRO_CHECK=1: astro check по всем 385 страницам (~2.5 мин) уже
+      # прошёл как required quality-gate проверка на этом SHA — не дублируем.
+      - name: Сборка (один раз на весь пуш)
+        run: SKIP_ASTRO_CHECK=1 NODE_OPTIONS="--max-old-space-size=5120" npm run build --silent
+
+      - name: Загрузка dist как artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-dist
+          path: dist/
+          retention-days: 1
+
+  # ⚡ Тайпчек отдельным job'ом, параллельно с build (2026-08-14). Он гейтит прод и
+  # больше ничего: от dist/ не зависит, вывод сборки не меняет. Раньше стоял внутри
+  # promote и потому ждал build → deploy-dev, добавляя свои ~2.5 мин прямо в
+  # критический путь push→прод. Теперь стартует одновременно с build и к моменту
+  # промоута давно готов; promote только проверяет его результат через needs.
+  typecheck:
+    if: ${{ !inputs.skip_prod }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with: { ref: dev, fetch-depth: 1 }
+
+      - uses: actions/setup-node@v5
+        with: { node-version: '22', cache: 'npm' }
+
+      - run: npm ci
+
+      - name: Строгий astro check (единственный прод-гейт)
+        run: NODE_OPTIONS="--max-old-space-size=6144" npm run check:public
+
+  deploy-dev:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # fetch-depth: 1 — deploy.sh сверяет только HEAD с origin/dev (pre-flight
+      # guard), история для этого не нужна: ветка чекаутится по имени, remote-ref
+      # на месте. Полный клон стоил ~10с на каждый деплой-job (репозиторий тяжёлый,
+      # в нём 60 МБ картинок в public/).
+      - uses: actions/checkout@v5
+        with: { ref: dev, fetch-depth: 1 }
+
+      - name: Установка SSH-ключа
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY_PROD }}
+        run: ./scripts/ci-setup-ssh.sh
+
+      - name: Скачать собранный dist
+        uses: actions/download-artifact@v4
+        with: { name: site-dist, path: dist }
+
+      # deploy.sh dev сам гоняет smoke.sh в конце. Красный smoke → exit 1 → поезд встал.
+      # SKIP_BUILD=1 — используем dist из job build, не пересобираем.
+      - name: Деплой на dev + smoke
+        env:
+          SKIP_BUILD: '1'
+        run: ./scripts/deploy.sh dev
+
+      # С 2026-08-14 dev едет параллельно проду и больше НЕ останавливает поезд.
+      # Раньше его падение было заметно само собой — прод просто не выезжал.
+      # Теперь красный dev ничего не блокирует, поэтому о нём нужно узнавать явно,
+      # иначе он молча деградирует и перестанет быть окружением, которому верят.
+      - name: Сигнал о красном dev
+        if: failure()
+        continue-on-error: true
+        env:
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          echo "❌ Отменено: введите 'deploy' для подтверждения"
+          [ -z "$TG_TOKEN" ] && { echo "TELEGRAM_BOT_TOKEN не задан — пропускаю"; exit 0; }
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          curl -s -X POST "https://api.telegram.org/bot$TG_TOKEN/sendMessage" \
+            -d chat_id="$TG_CHAT" \
+            -d text="⚠️ dev-деплой упал (прод при этом едет своим путём и проверяется сам)
+          commit: ${{ github.sha }}
+          $RUN_URL" >/dev/null
+
+  promote:
+    needs: [build, typecheck]
+    if: ${{ !inputs.skip_prod }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with: { fetch-depth: 0 }
+
+      # Ждём зелёный required-check "quality" именно на этом SHA перед пушем в main.
+      #
+      # Инцидент 2026-07-26: раньше deploy-dev (со сборкой) был медленнее quality-gate
+      # (~7 мин против ~5 мин) — quality-gate успевал закончиться первым чисто по
+      # случайности порядка, и promote никогда не видел гонку. После ускорения
+      # deploy-dev (~2 мин) он стал финишировать РАНЬШЕ quality-gate, и push в
+      # защищённый main падал: "Required status check "quality" is in progress".
+      # Особенно актуально при squash-мерже PR — squash создаёт НОВЫЙ SHA, для
+      # которого quality-gate стартует с нуля по push-триггеру, а не переиспользует
+      # результат PR-проверки.
+      - name: Дождаться зелёного quality-gate на этом SHA
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA="${{ github.sha }}"
+          echo "Жду check 'quality' на $SHA (таймаут 15 мин)..."
+          for i in $(seq 1 60); do
+            CONCLUSION=$(gh api "repos/${{ github.repository }}/commits/$SHA/check-runs" \
+              --jq '[.check_runs[] | select(.name=="quality")] | sort_by(.started_at) | last | .conclusion // "pending"')
+            echo "  [$i/60] quality: $CONCLUSION"
+            if [ "$CONCLUSION" = "success" ]; then
+              echo "✅ quality зелёный — можно промоутить"
+              exit 0
+            fi
+            if [ "$CONCLUSION" = "failure" ] || [ "$CONCLUSION" = "cancelled" ] || [ "$CONCLUSION" = "timed_out" ]; then
+              echo "::error::quality завершился с '$CONCLUSION' — промоут отменён"
+              exit 1
+            fi
+            sleep 15
+          done
+          echo "::error::quality не позеленел за 15 минут — промоут отменён"
           exit 1
 
-      - uses: actions/checkout@v4
-        with:
-          ref: Cloude
+      # ⚡ Прод-гейт (2026-07-26): typescript-тайпчек (`astro check`, ~2.5 мин по
+      # всем 385 страницам) — не в quality-gate (тот быстрый, гейтит только мерж в
+      # dev), а перед КАЖДЫМ автопромоутом. Идея: dev — быстрый прототип (видно
+      # через пару минут после пуша, без тайпчека вообще), прод — строгий. Упал —
+      # main НЕ обновляется, dev остаётся с показанным (но непроверенным по типам)
+      # прототипом, прод — на предыдущей исправной версии.
+      # С 2026-08-14 сам чек живёт в job `typecheck` и крутится параллельно с
+      # build; сюда он приходит через needs — гейт тот же, но не в критическом пути.
+      # Пересборка не нужна: astro check не меняет вывод сборки, только проверяет
+      # типы — dist/, который уже задеплоен на dev, годится и для прода.
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+      # Fast-forward, а не merge-коммит.
+      #
+      # main получает РОВНО тот SHA, что и dev — тот самый, на котором уже
+      # зелёный quality. Новых непроверенных коммитов в main не появляется,
+      # и ветки физически не могут разойтись.
+      #
+      # Merge-коммит так не умеет: у него свой SHA без статусов, и он
+      # оставляет main впереди dev — после чего strict-проверка блокирует
+      # следующий PR. Именно от этого main и dev разъехались на 16 коммитов,
+      # а хотфикс fix(ask) пришлось коммитить дважды.
+      #
+      # `git push origin dev:main` не форсит: если main не предок dev,
+      # push отклоняется — это стоп-сигнал, а не тихое затирание.
+      - name: Fast-forward main → dev
+        run: |
+          git fetch origin main dev
+          if ! git merge-base --is-ancestor origin/main origin/dev; then
+            echo "::error::main не является предком dev — fast-forward невозможен."
+            echo "Нужен back-merge main→dev отдельным PR, затем повтор."
+            exit 1
+          fi
+          git push origin refs/remotes/origin/dev:refs/heads/main
 
-      - name: Install dependencies
-        run: npm ci
+  deploy-prod:
+    needs: promote
+    runs-on: ubuntu-latest
+    steps:
+      # fetch-depth: 1 — deploy.sh сверяет HEAD с origin/main, история не нужна.
+      - uses: actions/checkout@v5
+        with: { ref: main, fetch-depth: 1 }
 
-      - name: Build
-        run: npm run build
+      - name: Установка SSH-ключа
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SSH_KEY: ${{ secrets.SSH_KEY_PROD }}
+        run: ./scripts/ci-setup-ssh.sh
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd /var/www/aidacamp
-            git fetch origin
-            git checkout Cloude
-            git pull origin Cloude
-            npm ci --production
-            npm run build
-            pm2 restart aidacamp || pm2 start npm --name aidacamp -- run preview -- --host 0.0.0.0 --port 3000
-            pm2 save
+      # Тот же dist, что уже прошёл smoke на dev — main сейчас == dev SHA
+      # (fast-forward в job promote), пересборка не нужна.
+      - name: Скачать собранный dist
+        uses: actions/download-artifact@v4
+        with: { name: site-dist, path: dist }
+
+      - name: Деплой на прод (авто-откат при провале)
+        env:
+          MASTER_AGENT: '1'    # запуск санкционирован этим workflow
+          DEPLOY_YES: '1'      # неинтерактивно: в Actions нет stdin
+          AUTO_ROLLBACK: '1'   # провал верификации/smoke → откат на backup-*
+          SKIP_BUILD: '1'      # используем dist из job build, не пересобираем
+        run: ./scripts/deploy.sh prod
+
+      - name: Уведомление в Telegram
+        if: always()
+        continue-on-error: true
+        env:
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          STATUS: ${{ job.status }}
+        run: |
+          [ -z "$TG_TOKEN" ] && { echo "TELEGRAM_BOT_TOKEN не задан — пропускаю"; exit 0; }
+          if [ "$STATUS" = "success" ]; then ICON="✅"; else ICON="🔥"; fi
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          curl -s -X POST "https://api.telegram.org/bot$TG_TOKEN/sendMessage" \
+            -d chat_id="$TG_CHAT" \
+            -d text="$ICON Прод-деплой: $STATUS
+          commit: ${{ github.sha }}
+          $RUN_URL" >/dev/null

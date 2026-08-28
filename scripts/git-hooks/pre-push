@@ -1,17 +1,132 @@
-#!/usr/bin/env bash
-# Local gate: block force-push and non-fast-forward pushes to protected branches.
-set -e
-remote="$1"
-protected_re='^(refs/heads/)?(site-prod|main)$'
-while read -r local_ref local_sha remote_ref remote_sha; do
-  if [[ "$remote_ref" =~ $protected_re ]]; then
-    # Reject if remote sha is non-zero and not ancestor of local (force push)
-    if [[ "$remote_sha" != "0000000000000000000000000000000000000000" ]]; then
-      if ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
-        echo "✖ Force-push/non-ff в '$remote_ref' запрещён. Используй ./promote или ./deploy." >&2
-        [[ "${PIPELINE_BYPASS:-}" == "1" ]] || exit 1
-      fi
-    fi
-  fi
-done
-exit 0
+#!/usr/bin/env python3
+"""
+pre-push: не пускает push в main. Живёт в репозитории, ставится setup-hooks.sh.
+
+ЗАЧЕМ. main продвигается единственным способом — ff-промоутом из dev, внутри
+deploy.yml, из CI, после зелёного smoke. Любой локальный push в main — даже
+обычный fast-forward — делает main потомком того, чего нет в dev, и следующий
+промоут падает на `merge-base --is-ancestor`. Прод перестаёт ехать, и молча:
+заметно только когда кто-то запушит в dev.
+
+ТАК УЖЕ БЫЛО. 16.07.2026 на icepartners два PR смержили с base=main — промоут
+встал, обнаружили сутки спустя, случайно. Тот случай был через GitHub (его
+ловит .github/workflows), но идентичный результат даёт `git push origin main`
+из терминала, а его не ловило ничто.
+
+ПОЧЕМУ ЛЮБОЙ PUSH, А НЕ ТОЛЬКО FORCE. Прежняя версия этого хука проверяла
+ТОЛЬКО force/non-ff. Обычный fast-forward push в main проходил насквозь —
+и заклинивал промоут ровно так же. Дыра была не в строгости, а в области.
+
+ТРИ СЛОЯ ЗАЩИТЫ main, у каждого своя область — ни один не заменяет другой:
+  агент пушит с мака      → permissions.deny в .claude/settings.json
+  кто угодно открывает PR → .github/workflows/guard-*.yml
+  человек пушит с мака    → ЭТОТ ХУК
+
+АВАРИЙНЫЙ ОБХОД:  PIPELINE_BYPASS=1 git push origin main
+Выбран намеренно: агентам он недоступен — глобальный хук guard-destructive-ops.py
+блокирует им установку PIPELINE_BYPASS=1/MASTER_AGENT=1 «за владельца»
+(AGENTS.md). Дверь есть, но открыть её может только человек, руками.
+
+Самотест: python3 scripts/git-hooks/pre-push --selftest
+
+Контракт pre-push: argv = [remote_name, remote_url];
+stdin = строки "<local_ref> <local_sha> <remote_ref> <remote_sha>";
+ненулевой exit = push отменён.
+"""
+
+import os
+import subprocess
+import sys
+
+# Push сюда запрещён полностью.
+BLOCKED = {"main"}
+
+# Здесь запрещён только force / non-fast-forward.
+# Поведение прежней версии хука, сохранено намеренно, чтобы замена ничего не потеряла.
+FF_ONLY = {"site-prod"}
+
+ZERO = "0" * 40
+BYPASS_ENV = "PIPELINE_BYPASS"
+
+
+def _branch(ref: str) -> str:
+    return ref.split("/")[-1] if ref else ""
+
+
+def explain(branch: str) -> str:
+    return f"""
+✖ push в '{branch}' отменён.
+
+  '{branch}' продвигается ТОЛЬКО ff-промоутом из dev, внутри deploy.yml, из CI,
+  после зелёного smoke. Локальный push — даже обычный fast-forward — делает
+  '{branch}' потомком того, чего нет в dev, и следующий промоут падает на
+  `merge-base --is-ancestor`. Прод перестаёт ехать, и молча.
+
+  Так 16.07.2026 встал icepartners — обнаружили сутки спустя, случайно.
+
+  Как надо:  ветка → PR → dev → (автоматически) → {branch} → прод
+
+  Если правда нужно (аварийный обход, вы понимаете последствия):
+      {BYPASS_ENV}=1 git push origin {branch}
+"""
+
+
+def check(lines, env):
+    """Чистая функция: (exit_code, сообщение). Вынесена ради самотеста."""
+    if env.get(BYPASS_ENV) == "1":
+        return 0, f"  ⚠ {BYPASS_ENV}=1 — проверка pre-push отключена осознанно."
+
+    for line in lines:
+        parts = line.split()
+        if len(parts) != 4:
+            continue
+        _local_ref, local_sha, remote_ref, remote_sha = parts
+        branch = _branch(remote_ref)
+
+        if branch in BLOCKED:
+            return 1, explain(branch)
+
+        if branch in FF_ONLY and remote_sha != ZERO:
+            ok = subprocess.run(
+                ["git", "merge-base", "--is-ancestor", remote_sha, local_sha],
+                capture_output=True,
+            ).returncode == 0
+            if not ok:
+                return 1, f"\n✖ force/non-ff push в '{branch}' запрещён.\n"
+
+    return 0, ""
+
+
+def selftest() -> int:
+    a, b = "a" * 40, "b" * 40
+    cases = [
+        (1, [f"refs/heads/main {a} refs/heads/main {b}"], {}, "push в main"),
+        (1, [f"refs/heads/dev {a} refs/heads/main {b}"], {}, "dev:main — тоже main"),
+        (1, [f"refs/heads/main {a} refs/heads/main {ZERO}"], {}, "создание main"),
+        (0, [f"refs/heads/dev {a} refs/heads/dev {b}"], {}, "push в dev — норма"),
+        (0, [f"refs/heads/x {a} refs/heads/feature/x {b}"], {}, "фича-ветка — норма"),
+        (0, [f"refs/heads/main {a} refs/heads/main {b}"], {BYPASS_ENV: "1"}, "обход человеком"),
+        (0, [], {}, "пустой stdin"),
+        (0, ["мусор"], {}, "битая строка"),
+    ]
+    bad = 0
+    for want, lines, env, why in cases:
+        got, _ = check(lines, env)
+        ok = got == want
+        bad += 0 if ok else 1
+        print(f"  {'✅' if ok else '❌'} {'БЛОК' if want else 'пропуск':7} | {why}")
+    print(f"\n{'✅ самотест пройден' if not bad else f'❌ провалов: {bad}'}")
+    return 1 if bad else 0
+
+
+def main() -> int:
+    if "--selftest" in sys.argv:
+        return selftest()
+    code, msg = check(sys.stdin.read().splitlines(), os.environ)
+    if msg:
+        print(msg, file=sys.stderr)
+    return code
+
+
+if __name__ == "__main__":
+    sys.exit(main())

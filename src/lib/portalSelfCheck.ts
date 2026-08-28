@@ -1,4 +1,5 @@
 // Self-check для событий типа «Подъём»: каждый сотрудник отмечает себя сам.
+import { withDbClient } from './db';
 
 export interface SelfCheckRow {
   staff_id: number;
@@ -7,19 +8,9 @@ export interface SelfCheckRow {
   checked_at: string | null;   // null = ещё не отметился
 }
 
-function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
-
-async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
-  const conn = dsn(); if (!conn) return null;
-  const { default: pg } = await import('pg');
-  const client = new pg.Client({ connectionString: conn });
-  await client.connect();
-  try { return await fn(client); } finally { await client.end(); }
-}
-
 /** Список активных staff и их отметки для конкретного события. */
 export async function listForEvent(eventId: number): Promise<SelfCheckRow[]> {
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     const r = await c.query(
       `SELECT s.id staff_id, s.full_name, s.role, esc.checked_at
          FROM portal_staff s
@@ -39,7 +30,7 @@ export async function listForEvent(eventId: number): Promise<SelfCheckRow[]> {
 
 /** Отметить «я встал» — текущий пользователь (telegramId → portal_staff.id). */
 export async function markChecked(eventId: number, telegramId: number): Promise<{ ok: true; checked_at: string } | { ok: false; error: string }> {
-  const res = await withClient(async (c) => {
+  const res = await withDbClient(async (c) => {
     const s = await c.query('SELECT id, active FROM portal_staff WHERE telegram_id=$1', [telegramId]);
     if (s.rowCount === 0) return { ok: false as const, error: 'staff not found' };
     if (!s.rows[0].active) return { ok: false as const, error: 'staff inactive' };
@@ -61,7 +52,7 @@ export async function markChecked(eventId: number, telegramId: number): Promise<
 
 /** Снять отметку (на случай ошибки). Только сам с себя. */
 export async function unmark(eventId: number, telegramId: number): Promise<{ ok: boolean }> {
-  const res = await withClient(async (c) => {
+  const res = await withDbClient(async (c) => {
     const s = await c.query('SELECT id FROM portal_staff WHERE telegram_id=$1', [telegramId]);
     if (s.rowCount === 0) return { ok: false };
     await c.query('DELETE FROM event_self_check WHERE event_id=$1 AND staff_id=$2', [eventId, Number(s.rows[0].id)]);
@@ -72,7 +63,7 @@ export async function unmark(eventId: number, telegramId: number): Promise<{ ok:
 
 /** Отметить по staff_id напрямую (для код-входа без telegram_id). */
 export async function markCheckedByStaffId(eventId: number, staffId: number): Promise<{ ok: true; checked_at: string } | { ok: false; error: string }> {
-  const res = await withClient(async (c) => {
+  const res = await withDbClient(async (c) => {
     const s = await c.query('SELECT id, active FROM portal_staff WHERE id=$1', [staffId]);
     if (s.rowCount === 0 || !s.rows[0].active) return { ok: false as const, error: 'сотрудник не найден или неактивен' };
     const r = await c.query(
@@ -88,7 +79,7 @@ export async function markCheckedByStaffId(eventId: number, staffId: number): Pr
 
 /** Снять отметку по staff_id напрямую (для код-входа без telegram_id). */
 export async function unmarkByStaffId(eventId: number, staffId: number): Promise<{ ok: boolean }> {
-  const res = await withClient(async (c) => {
+  const res = await withDbClient(async (c) => {
     await c.query('DELETE FROM event_self_check WHERE event_id=$1 AND staff_id=$2', [eventId, staffId]);
     return { ok: true };
   });

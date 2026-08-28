@@ -6,6 +6,8 @@ import Footer from '../components/Footer.astro';
 import Shifts from '../components/Shifts.astro';
 import { PHONE_MAIN_HREF, TELEGRAM_URL, WHATSAPP_URL } from '../data/contacts';
 import { getCurrentPrice } from '../data/dynamicPrices';
+import { SEASON_YEAR } from '../data/shifts';
+import BreadcrumbSchema from '../components/BreadcrumbSchema.astro';
 
 const s3Price = getCurrentPrice('shift-3') ?? 89400;
 const s3Discount = Math.round(s3Price / 2);
@@ -13,10 +15,11 @@ const fmt = (n: number) => n.toLocaleString('ru-RU');
 ---
 
 <Base
-  title="Акции и скидки — АйДаКемп 2026"
+  title={`Акции и скидки — АйДаКемп ${SEASON_YEAR}`}
   description="Скидки на путёвки в IT-лагерь АйДаКемп: едете с другом −10%, приводишь пятерых −50%, приводишь девятерых — 10-я путёвка бесплатно."
 >
   <Fragment slot="head">
+    <BreadcrumbSchema label="Акции и скидки" />
   </Fragment>
 
   <Header />
@@ -26,12 +29,19 @@ const fmt = (n: number) => n.toLocaleString('ru-RU');
     <div class="relative z-10 mx-auto max-w-4xl px-4 pt-12 pb-12 md:pt-20 md:pb-16">
       <div class="inline-flex items-center gap-1.5 rounded-full bg-white/15 border border-white/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-[.1em] text-primary backdrop-blur-sm mb-6">
         <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" aria-hidden="true"></span>
-        АйДаКемп · Лето 2026
+        АйДаКемп · Лето {SEASON_YEAR}
       </div>
+
+      <!-- Breadcrumb -->
+      <nav class="text-base text-white/50 mb-3">
+        <a href="/" class="hover:text-white/80 transition-colors">Главная</a>
+        <span class="mx-2">&rarr;</span>
+        <span class="text-white/70">Акции и скидки</span>
+      </nav>
 
       <h1 class="text-[32px] md:text-[52px] font-extrabold leading-[1.06] tracking-[-0.03em] text-white mb-5">
         Акции и скидки<br>
-        <span class="text-primary">на путёвки 2026</span>
+        <span class="text-primary">на путёвки {SEASON_YEAR}</span>
       </h1>
       <p class="text-base md:text-lg text-white/70 max-w-xl leading-relaxed mb-8">
         Три способа сэкономить без промокодов. Чем больше — тем выгоднее. Акции суммируются между собой.
@@ -95,16 +105,17 @@ const fmt = (n: number) => n.toLocaleString('ru-RU');
           <img
             src="/images/merch-hoodie-junior.avif"
             alt="Фирменное худи АйДаКемп Junior — оранжевое, с лого"
+            title="Худи АйДаКемп Junior — приз за приглашённого друга"
             width="640" height="640"
             loading="eager"
             class="w-full object-cover transition-transform duration-500 group-hover:scale-105"
           >
-          <div class="absolute inset-0 flex items-end justify-end p-4 pointer-events-none">
+          <span class="absolute inset-0 flex items-end justify-end p-4 pointer-events-none">
             <span class="inline-flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 text-[13px] text-white backdrop-blur-sm">
               <i class="bi bi-zoom-in" aria-hidden="true"></i>
               Увеличить
             </span>
-          </div>
+          </span>
         </button>
 
         <!-- Описание -->
@@ -114,7 +125,7 @@ const fmt = (n: number) => n.toLocaleString('ru-RU');
               { icon: 'stars',          title: 'Оранжевое худи Junior', text: 'Вышитый логотип АйДаКемп, принт с Python-кодом на спине — «# TODO: become a pro»' },
               { icon: 'people-fill',    title: 'Обоим участникам', text: 'Тот, кто позвал, и тот, кого позвали — оба получают худи' },
               { icon: 'geo-alt-fill',   title: 'Выдаём при заезде', text: 'В первый день смены, без лишних условий' },
-              { icon: 'shield-check',   title: '1-й сезон — First Deploy', text: 'Коллекция 2026. Носят весь сезон как знак принадлежности к комьюнити' },
+              { icon: 'shield-check',   title: '1-й сезон — First Deploy', text: `Коллекция ${SEASON_YEAR}. Носят весь сезон как знак принадлежности к комьюнити` },
             ].map(item => (
               <div class="flex items-start gap-3 rounded-[14px] bg-slate-50 border border-slate-100 p-4">
                 <div class="w-9 h-9 rounded-[10px] bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-[18px] shrink-0">
@@ -214,7 +225,7 @@ const fmt = (n: number) => n.toLocaleString('ru-RU');
             </div>
           ))}
           <a href={TELEGRAM_URL} target="_blank" rel="noopener"
-             class="mt-auto inline-flex items-center justify-center gap-2 rounded-[14px] bg-primary text-[#1e2430] font-semibold text-[15px] px-5 py-3 min-h-[44px] transition-all hover:bg-[#d68830] hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(236,155,68,.35)]">
+             class="mt-auto inline-flex items-center justify-center gap-2 rounded-[14px] bg-primary text-[#1e2430] font-semibold text-[15px] px-5 py-3 min-h-[44px] transition-all hover:bg-primary-hover hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(236,155,68,.35)]">
             <i class="bi bi-telegram" aria-hidden="true"></i>
             Написать в Telegram
           </a>
@@ -303,7 +314,7 @@ const fmt = (n: number) => n.toLocaleString('ru-RU');
           </p>
           <ul class="space-y-2 text-[16px] text-[#1e2430]/80">
             {[
-              'Вы + 9 друзей в любые смены лета 2026',
+              `Вы + 9 друзей в любые смены лета ${SEASON_YEAR}`,
               'Девять путёвок оплачены — ваша за 100 ₽',
               'Оформляется через менеджера',
               'Суммируется с акцией «Едете вдвоём»',
@@ -334,7 +345,7 @@ const fmt = (n: number) => n.toLocaleString('ru-RU');
             ))}
           </div>
           <a href={PHONE_MAIN_HREF}
-             class="mt-auto inline-flex items-center justify-center gap-2 rounded-[14px] bg-primary text-[#1e2430] font-semibold text-[15px] px-5 py-3 min-h-[44px] transition-all hover:bg-[#d68830] hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(236,155,68,.35)]">
+             class="mt-auto inline-flex items-center justify-center gap-2 rounded-[14px] bg-primary text-[#1e2430] font-semibold text-[15px] px-5 py-3 min-h-[44px] transition-all hover:bg-primary-hover hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(236,155,68,.35)]">
             <i class="bi bi-telephone-fill" aria-hidden="true"></i>
             Позвонить — уточнить условия
           </a>
@@ -432,7 +443,7 @@ const fmt = (n: number) => n.toLocaleString('ru-RU');
   <section class="mx-auto max-w-4xl px-4 py-14 md:py-20">
     <div class="text-[11px] font-bold tracking-[.1em] uppercase text-primary mb-3">Записаться</div>
     <h2 class="text-[26px] md:text-[36px] font-bold leading-[1.15] tracking-[-0.02em] text-slate-900 mb-2">
-      Открытые смены лета 2026
+      Открытые смены лета {SEASON_YEAR}
     </h2>
     <p class="text-base text-slate-500 mb-10 max-w-xl leading-relaxed">
       Выберите смену — скидки по акциям применяются при записи через менеджера.

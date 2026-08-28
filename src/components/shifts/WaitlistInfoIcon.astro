@@ -1,0 +1,36 @@
+---
+/**
+ * Иконка «?» рядом с кнопкой «Лист ожидания» — по клику показывает объяснение механики.
+ * Тултип по клику (не hover), чтобы работало на мобильных. Обработчик — глобальный
+ * делегированный клик в Base.astro (data-waitlist-info-btn), единый для всей разметки.
+ */
+import { WAITLIST_EXPLANATION } from '../../data/shifts';
+
+interface Props {
+  class?: string;
+  /** true — для использования на тёмном фоне (hero-секция) */
+  dark?: boolean;
+}
+const { class: className = '', dark = false } = Astro.props;
+---
+
+<div class:list={['relative mt-1 inline-flex shrink-0', className]} data-waitlist-info>
+  <button
+    type="button"
+    data-waitlist-info-btn
+    aria-label="Что такое лист ожидания?"
+    class:list={[
+      'inline-flex h-5 w-5 items-center justify-center transition-colors',
+      dark ? 'text-white/70 hover:text-white' : 'text-slate-400 hover:text-slate-600',
+    ]}
+  >
+    <i class="bi bi-question-circle text-[16px]" aria-hidden="true"></i>
+  </button>
+  <div
+    data-waitlist-info-tooltip
+    class="pointer-events-none absolute bottom-full right-0 z-30 mb-2 hidden w-[210px] max-w-[calc(100vw-2.5rem)] rounded-lg bg-slate-800 px-3 py-2 text-left text-[12px] leading-[1.45] text-white shadow-lg"
+  >
+    {WAITLIST_EXPLANATION}
+    <span class="absolute right-2 top-full h-0 w-0 border-x-4 border-t-4 border-x-transparent border-t-slate-800"></span>
+  </div>
+</div>

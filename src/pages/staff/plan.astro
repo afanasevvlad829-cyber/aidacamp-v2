@@ -10,12 +10,12 @@ export const prerender = true;
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
 <title>Конструктор смены · АйДаКемп</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="/styles/icons.css">
 <style is:global>
   :root{
-    --bg:#f1f5f9;--surface:#fff;--surface2:#f8fafc;--border:#e2e8f0;--border2:#cbd5e1;
+    --bg:var(--color-slate-100);--surface:#fff;--surface2:var(--color-slate-50);--border:var(--color-slate-200);--border2:var(--color-slate-300);
     --orange:#f97316;--orange-bg:rgba(236,124,0,.08);--orange-border:rgba(236,124,0,.3);
-    --text:#0f172a;--text2:#334155;--text3:#64748b;
+    --text:var(--color-slate-900);--text2:var(--color-slate-700);--text3:var(--color-slate-500);
     --green:#16a34a;--green-bg:rgba(22,163,74,.10);--red:#dc2626;--red-bg:rgba(220,38,38,.08);
     --blue:#2563eb;--blue-bg:rgba(37,99,235,.08);--purple:#9333ea;--radius:12px;
   }
@@ -476,9 +476,12 @@ export const prerender = true;
 </div>
 
 <script is:inline>
+  // Гейт авторизации: кука staff_auth_2026 httpOnly, JS её не читает — спрашиваем
+  // сервер. /api/shift-plan отдаёт 401 без валидной куки и 503 без секрета → на /staff.
   (function(){
-    var ok = document.cookie.split('; ').reduce(function(r,v){var p=v.split('=');return p[0]==='staff_auth_2026'?decodeURIComponent(p.slice(1).join('=')):r;}, null);
-    if (ok !== '1') { location.replace('/staff'); }
+    fetch('/api/shift-plan', {cache:'no-store'})
+      .then(function(r){ if (!r.ok) location.replace('/staff'); })
+      .catch(function(){ location.replace('/staff'); });
   })();
   window.PERSIST = {
     mode: 'live',

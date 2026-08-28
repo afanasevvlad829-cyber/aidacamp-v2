@@ -1,6 +1,7 @@
 /**
  * Data-layer для инвентаризации комнат 3-го корпуса.
  */
+import { withDbClient } from './db';
 
 export interface RoomInventoryRow {
   id: number;
@@ -19,18 +20,10 @@ export interface RoomInventoryCheck {
   comment: string | null;
 }
 
-function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
-async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
-  const conn = dsn(); if (!conn) return null;
-  const { default: pg } = await import('pg');
-  const client = new pg.Client({ connectionString: conn });
-  await client.connect();
-  try { return await fn(client); } finally { await client.end(); }
-}
 
 /** Все записи по смене (по одной на комнату), отсортированы по room_number. */
 export async function listInventoryByShift(shiftId: number): Promise<RoomInventoryRow[]> {
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     const r = await c.query(
       `SELECT id, shift_id, room_number, status::text, inspected_by,
               to_char(inspected_at,'YYYY-MM-DD"T"HH24:MI:SS"Z"') inspected_at,
@@ -46,7 +39,7 @@ export async function getInventory(shiftId: number, roomNumber: number): Promise
   row: RoomInventoryRow | null;
   checks: RoomInventoryCheck[];
 }> {
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     const r = await c.query(
       `SELECT id, shift_id, room_number, status::text, inspected_by,
               to_char(inspected_at,'YYYY-MM-DD"T"HH24:MI:SS"Z"') inspected_at,
@@ -69,7 +62,7 @@ export async function getInventory(shiftId: number, roomNumber: number): Promise
 
 /** Гарантировать строку инвентаризации для (shift, room) — возвращает id. */
 export async function ensureInventory(shiftId: number, roomNumber: number): Promise<number | null> {
-  return await withClient(async (c) => {
+  return await withDbClient(async (c) => {
     const r = await c.query(
       `INSERT INTO room_inventory(shift_id, room_number)
        VALUES($1,$2)
@@ -88,7 +81,7 @@ export async function toggleCheck(
   done: boolean,
   comment: string | null,
 ): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     await c.query(
       `INSERT INTO room_inventory_check(room_inventory_id, item_id, done, comment, done_at)
        VALUES($1,$2,$3,$4, CASE WHEN $3 THEN now() ELSE NULL END)
@@ -107,7 +100,7 @@ export async function setStatus(
   status: 'pending' | 'ok' | 'defects',
   inspectedBy: number,
 ): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     await c.query(
       `UPDATE room_inventory SET status=$2::room_inventory_status_enum, inspected_by=$3, inspected_at=now() WHERE id=$1`,
       [invId, status, inspectedBy],
@@ -117,14 +110,14 @@ export async function setStatus(
 
 /** Сохранить общий комментарий по приёмке комнаты (одно поле на комнату). */
 export async function setNotes(invId: number, notes: string | null): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     await c.query(`UPDATE room_inventory SET notes=$2 WHERE id=$1`, [invId, notes]);
   });
 }
 
 /** Привязать видео обхода (archive_photo.id). */
 export async function attachWalkthrough(invId: number, photoId: number): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     await c.query(`UPDATE room_inventory SET walkthrough_photo_id=$2 WHERE id=$1`, [invId, photoId]);
   });
 }

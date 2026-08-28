@@ -1,5 +1,5 @@
 ---
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, VYCHET_MAX } from '../data/shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, VYCHET_MAX, SEASON_YEAR } from '../data/shifts';
 import '../styles/global.css';
 import LandingLayout from '../layouts/LandingLayout.astro';
 import LandingHero from '../components/LandingHero.astro';
@@ -9,19 +9,18 @@ import FAQ from '../components/FAQ.astro';
 import RelatedPages from '../components/RelatedPages.astro';
 import { getRelatedPages } from '../data/landing-pages';
 import Gallery from '../components/Gallery.astro';
-import ShiftBookModal from '../components/shifts/ShiftBookModal.astro';
 import RelatedArticles from '../components/RelatedArticles.astro';
-import FAQSchema from '../components/FAQSchema.astro';
+import { PAST_SHIFTS_SENTENCE } from '../data/evergreen';
 
 const sections = [
   {
     h2: "Виды детского отдыха летом",
-    text: "Планируете лето — и сразу куча вопросов: дача, город, лагерь, море? Давайте разберём честно, без рекламы. Каждый формат подходит под свои задачи — главное понять, что важно именно вашей семье.",
+    text: "Каникулы с пользой — лагерь с проживанием решает задачу «чем занять ребёнка летом» лучше других форматов. Планируете лето — и сразу куча вопросов: дача, город, лагерь, море? Давайте разберём честно, без рекламы. Каждый формат подходит под свои задачи — главное понять, что важно именно вашей семье.",
     list: [
       "Дача или у бабушки — хорошо как часть лета, тяжело все три месяца",
       "Городские курсы — 2–3 часа в день, вечером снова дома и телефон",
       "Море — перезагрузка, но не занятость, нужна дополнительная программа",
-      "Лагерь с проживанием — полное погружение, ребёнок занят и доволен"
+      "Лагерь с проживанием — лучший формат отдыха детей: полное погружение, ребёнок занят и доволен"
     ]
   },
   {
@@ -31,13 +30,14 @@ const sections = [
       "Полное погружение: расписание, команда, общая цель",
       "Самостоятельность — сам решает, сам разбирается",
       "Новые друзья из разных школ и городов",
+      "Живое общение — когда нет смартфонов, разговор сам заводится, дружба складывается с первого вечера",
       "Результат — IT-проект, который можно показать и потрогать",
       "Родители выдыхают — 10 дней без «мама, что делать»"
     ]
   },
   {
     h2: "Что делают дети в IT-лагере АйДаКемп",
-    text: "Не сидят за компьютером весь день — это важно сказать сразу. Занятия по программированию занимают утреннюю половину дня. Остальное время — бассейн, спорт, квесты, прогулки в лесу.",
+    text: "Не сидят за компьютером весь день — это важно сказать сразу. Занятия по программированию занимают утреннюю половину дня. Остальное время — бассейн, спорт, квесты, прогулки в лесу: как <a href='/stati/detskiy-lager-v-lesu/' class='text-orange-600 underline underline-offset-2'>детский лагерь в лесу</a> влияет на ребёнка, разобрали в отдельной статье.",
     list: [
       "Утро: IT-занятия в мини-группах до 8 человек",
       "День: бассейн, спорт, свободное время",
@@ -59,7 +59,7 @@ const sections = [
   },
   {
     h2: "Для детей какого возраста подходит",
-    text: "АйДаКемп принимает детей от 7 до 17 лет. Группы делятся строго по возрасту — 8-летний не попадёт в группу к 14-летним. У каждой группы своя программа, свои педагоги, своё крыло корпуса.",
+    text: "АйДаКемп принимает детей от 7 до 17 лет. Группы делятся строго по возрасту — 8-летний не попадёт в группу к 14-летним. У каждой группы своя программа, свои педагоги, своё крыло корпуса. Каждая группа — свои задачи развития и своя программа: 7–9 лет — Scratch и Minecraft Education, 10–12 лет — Python, 13–17 лет — AI и командные хакатоны.",
     list: [
       "7–9 лет: Scratch, Minecraft Education, первые игры",
       "10–12 лет: Python, Telegram-боты",
@@ -84,8 +84,8 @@ const sections = [
       "9:30–11:00 — первое IT-занятие в группе до 8 человек (Python, Scratch, AI или Minecraft)",
       "11:00–14:00 — свободное время, спорт, командные активности, прогулки",
       "14:00–15:30 — второе IT-занятие: работа над проектом, кодинг",
-      "Бассейн с ионизированной водой — через день по расписанию, 28–30°С",
-      "Вечер: квесты, кино, настолки, командные игры — без телефонов",
+      "Бассейн с ионизированной водой — плавание по расписанию через день, 28–30°С",
+      "Вечером ребят ждут квесты, кино, настолки, командные игры — без телефонов",
       "Финал смены: хакатон, где каждый школьник защищает свой IT-проект"
     ]
   },
@@ -93,7 +93,7 @@ const sections = [
     h2: "Природа и территория",
     text: "Для настоящего отдыха нужна настоящая природа — не городской двор и не асфальт. Санаторий «Изумруд» стоит в сосновом лесу Наро-Фоминского района.",
     list: [
-      "5 гектаров огороженной территории — лес, газоны, дорожки",
+      "Лесная территория санатория «Изумруд»: 5 гектаров огороженного леса, дорожки, беседки, спортплощадки",
       "Река Нара в 15 минутах пешком — пологий берег, можно гулять",
       "Спортивные площадки: футбол, волейбол, баскетбол",
       "Беседки и зоны для командных игр на свежем воздухе",
@@ -101,13 +101,13 @@ const sections = [
     ]
   },
   {
-    h2: "Места на смены лета 2026",
-    text: "Июньские смены уже прошли. Август — ещё есть свободные места. Не откладывайте до последнего: в прошлом году места разбирали за 3 недели.",
+    h2: `Места на смены лета ${SEASON_YEAR}`,
+    text: `${PAST_SHIFTS_SENTENCE}. Август — ещё есть свободные места. Не откладывайте до последнего: в прошлом году места разбирали за 3 недели.`,
     list: [
       `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, 7 дн., ${PRICE_S21}`,
       `Смена 2 (завершена) — ${DATES_SHORT_S2}, 14 дн., ${PRICE_S2}`,
-      `Смена 3 (${DATES_SHORT_S3}, 13 дн., ${PRICE_S3}) — есть места`,
-      `Смена 4 (${DATES_SHORT_S4}, 10 дн., ${PRICE_S4}) — есть места`,
+      `Смена 3 (${DATES_SHORT_S3}, 13 дн., ${PRICE_S3}) — прошла`,
+      `Смена 4 (${DATES_SHORT_S4}, 10 дн., ${PRICE_S4}) — прошла`,
       "Бронь на 72 часа без предоплаты — место резервируется, пока думаете"
     ]
   }
@@ -135,21 +135,19 @@ const faqItems = [
 
 <LandingLayout
   heroImage="/images/hero/detskiy-otdyh-podmoskove.avif"
-  title="Детский отдых в Подмосковье летом 2026 — путёвки для детей 7–17 лет | АйДаКемп"
-  description={`Детский отдых в Подмосковье летом 2026: загородная смена для детей 7–17 лет. Программирование, бассейн, лес. 66 км от МКАД. От ${PRICE_MIN} всё включено.`}
-  h1="Детский отдых в Подмосковье летом 2026"
+  title={`Отдых в Подмосковье летом ${SEASON_YEAR} — детские лагеря | АйДаКемп`}
+  description={`Детский отдых в Подмосковье летом ${SEASON_YEAR}: загородная смена для детей 7–17 лет. Программирование, бассейн, лес. 66 км от МКАД. От ${PRICE_MIN} всё включено.`}
+  h1="Детский отдых в Подмосковье"
   canonical="https://aidacamp.ru/detskiy-otdyh-podmoskove"
+  breadcrumb="Детский отдых в Подмосковье"
 >
-  <Fragment slot="head">
-    <FAQSchema items={faqItems.map(item => ({ q: item.question, a: item.answer }))} />
-  </Fragment>
   <LandingHero slot="hero"
-    h1="Детский отдых в Подмосковье летом 2026"
+    h1="Детский отдых в Подмосковье"
     subtitle="Загородная смена для детей 7–17 лет: программирование, бассейн, лес и настоящие друзья. 66 км от МКАД."
     breadcrumb="Детский отдых в Подмосковье"
     keywords={["IT-проект за смену: игра, бот или сайт", "Бассейн, лес, свежий воздух — 66 км от МКАД", "Группы по возрасту 7–9, 10–12, 13–17 лет"]}
     image="/images/hero/detskiy-otdyh-podmoskove.avif"
-    imageAlt="Детский отдых в Подмосковье 2026 — летний IT-лагерь АйДаКемп"
+    imageAlt={`Детский отдых в Подмосковье ${SEASON_YEAR} — летний IT-лагерь АйДаКемп`}
   />
   <LandingTwoCol sections={sections} />
   <Gallery />
@@ -176,21 +174,21 @@ const faqItems = [
     </div>
   </section>
 
-  <FAQ />
-  <ShiftBookModal />
+  <FAQ items={['medicine:0', 'safety:0', 'food:0', 'communication:0', 'about2026:2', 'about2026:0', 'about2026:6', 'about2026:7']} extraItems={faqItems.map(item => ({ q: item.question, a: item.answer }))} />
   <RelatedArticles articles={[
     { title: "Куда деть ребёнка летом — 5 вариантов", url: "/stati/kuda-det-rebenka-letom/", description: "Честный разбор: дача, лагерь, море — плюсы и минусы.", icon: "lightbulb" },
     { title: "Детский лагерь в Подмосковье", url: "/detskiy-lager-podmoskove/", description: "66 км от МКАД, проживание.", icon: "houses" },
     { title: "Лагерь с бассейном", url: "/lager-s-basseynom/", description: "Закрытый бассейн, всё включено.", icon: "sun" },
-    { title: "Цены на смены 2026", url: "/ceny/", description: "Полное расписание и стоимость.", icon: "calendar-week" },
+    { title: `Цены на смены ${SEASON_YEAR}`, url: "/ceny/", description: "Полное расписание и стоимость.", icon: "calendar-week" },
   ]} />
   <RelatedPages pages={getRelatedPages(Astro.url.pathname)} />
 <script>
   document.querySelectorAll('[data-faq-toggle]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const item = btn.closest('[data-faq-item]');
-      const answer = item.querySelector('[data-faq-answer]');
-      const icon = btn.querySelector('[data-faq-icon]');
+      const item = btn.closest<HTMLElement>('[data-faq-item]');
+      const answer = item?.querySelector<HTMLElement>('[data-faq-answer]');
+      const icon = btn.querySelector<HTMLElement>('[data-faq-icon]');
+      if (!answer) return;
       const isOpen = btn.getAttribute('aria-expanded') === 'true';
       if (isOpen) {
         answer.classList.remove('is-open');

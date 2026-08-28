@@ -5,6 +5,7 @@ export const prerender = false;
  * Используется в UI расселения для выбора одной или нескольких групп.
  */
 import type { APIRoute } from 'astro';
+import { fetchWithTimeout } from '../../../lib/fetchWithTimeout';
 import { readFile } from 'node:fs/promises';
 import { requireStaff } from '../../../lib/portalPerms';
 
@@ -36,7 +37,7 @@ async function getCreds(): Promise<{ H?: string; E?: string; K?: string }> {
 }
 
 async function post(host: string, path: string, body: unknown, token?: string): Promise<any> {
-  const r = await fetch(`https://${host}/v2api${path}`, {
+  const r = await fetchWithTimeout(`https://${host}/v2api${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token || '' },
     body: JSON.stringify(body),

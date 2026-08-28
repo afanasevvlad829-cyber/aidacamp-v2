@@ -4,23 +4,12 @@ import Anthropic from '@anthropic-ai/sdk';
 import { buildSystemPrompt } from '../../lib/ai/systemPrompt';
 import { ResponseSchema } from '../../lib/ai/responseSchema';
 import { ragSearch } from '../../lib/ai/rag';
-import { findPhotos } from '../../lib/ai/photoSearch';
+import { findPhotos, hasShiftPhotos } from '../../lib/ai/photoSearch';
+import { lastCompletedShift } from '../../data/shifts';
 import { matchEscalation, templateToResponse } from '../../lib/ai/escalation_templates';
 import { classifyIntent, pickRealStory } from '../../lib/ai/intent_router';
-import { readFileSync } from 'node:fs';
+import { validateBotResponse, logGuardFlag } from '../../lib/ai/validator';
 import pg from 'pg';
-
-// Загружаем живые данные смен с сервера (обновляются cron'ом ежедневно)
-function getLivePrompt(): string {
-  try {
-    const raw = readFileSync('/var/www/aidacamp-data/shifts.json', 'utf-8');
-    const data = JSON.parse(raw);
-    if (data?.shifts?.length >= 4) {
-      return buildSystemPrompt(data.shifts);
-    }
-  } catch { /* файл не найден — используем campData */ }
-  return buildSystemPrompt();
-}
 
 // --- DB pool (lazy, shared with rag.ts) ---
 const DB_URL = process.env.DATABASE_URL;
@@ -69,47 +58,6 @@ const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || import.meta.env.ANTHROPIC_API_KEY,
 });
 
-// Ключевые слова фактических вопросов — при отсутствии RAG-контекста не генерируем факты
-const FACTUAL_KEYWORDS = [
-  'трансфер', 'автобус', 'добраться', 'доехать', 'дорога', 'адрес',
-  'стоит', 'цена', 'стоимость', 'сколько', 'рублей', 'оплат',
-  'когда', 'дата', 'числа', 'июн', 'август', 'май', 'смена',
-  'соседи', 'комнат', 'живут', 'поселен',
-  'преподаватель', 'педагог', 'учитель', 'вожатый',
-  'документ', 'справк', 'договор', 'лицензи',
-];
-
-function isFactualQuestion(q: string): boolean {
-  const lower = q.toLowerCase();
-  return FACTUAL_KEYWORDS.some(kw => lower.includes(kw));
-}
-
-// Ответ-редирект к менеджеру — когда нет RAG для фактического вопроса
-const STORY_DECLINE = JSON.stringify({
-  state: 'ok',
-  text: 'Такой живой истории у меня под рукой нет — выдумывать не буду. Реальные моменты — у родителей в канале смены и в отзывах. Показать? Если хочется услышать живые случаи от Дарьи — напишите ей: <a href="https://wa.me/79688086455">WhatsApp</a> или <a href="https://t.me/Progaschool">Telegram @Progaschool</a>, она расскажет лично.',
-  block_type: 'youtube_comment',
-  block_data: null,
-  chips: [
-    { label: 'Отзывы', query: 'отзывы родителей' },
-    { label: 'Смены и цены', query: 'смены' },
-    { label: 'Написать в WhatsApp', action: 'contact_request' },
-    { label: 'Telegram @Progaschool', action: 'link', url: 'https://t.me/Progaschool' },
-  ],
-});
-
-const NO_RAG_FACTUAL = JSON.stringify({
-  state: 'ok',
-  text: 'Этот вопрос лучше задать Дарье напрямую — она знает все нюансы и ответит точно. WhatsApp: <a href="https://wa.me/79688086455">+7 (968) 808-64-55</a> · Telegram: <a href="https://t.me/Progaschool">@Progaschool</a> — обычно отвечают в течение 10 минут.',
-  block_type: null,
-  block_data: null,
-  chips: [
-    { label: 'Написать в WhatsApp', action: 'contact_request' },
-    { label: 'Telegram @Progaschool', action: 'link', url: 'https://t.me/Progaschool' },
-    { label: 'Смены 2026', query: 'смены и цены' },
-  ],
-});
-
 // Резервный ответ при таймауте — лучше чем пустой экран
 const TIMEOUT_FALLBACK = JSON.stringify({
   state: 'ok',
@@ -143,11 +91,12 @@ export const POST: APIRoute = async ({ request }) => {
     // Генерируем session_id если клиент не прислал
     const sid = sessionId || crypto.randomUUID();
 
-    // RAG: ищем релевантные фрагменты из базы знаний (параллельно со сборкой промпта)
-    const [ragResult, basePrompt] = await Promise.all([
+    // RAG + классификация intent — параллельно, промпт собирается синхронно из campData
+    const [ragResult, intent] = await Promise.all([
       ragSearch(message),
-      Promise.resolve(getLivePrompt()),
+      classifyIntent(message),
     ]);
+    const basePrompt = buildSystemPrompt();
 
     // Hard-gates сняты — доверяем LLM с RAG-контекстом отвечать честно.
     // Если в RAG нет — модель сама скажет не знаю, спросите менеджера по правилу промпта.
@@ -166,7 +115,7 @@ export const POST: APIRoute = async ({ request }) => {
       if (re.test(message)) {
         const photos = findPhotos(query, 3);
         const fastResp = JSON.stringify({ state: 'ok', text: shortText, block_type: 'gallery', block_data: { photos }, chips: [], message_id: null });
-        logSession(sid, message, fastResp, { trustedCount: 0, isEmpty: false, hits: [], fast_photo: true });
+        logSession(sid, message, fastResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, hits: ragResult.hits, fast_photo: true });
         return new Response(fastResp, { headers: { 'Content-Type': 'application/json' } });
       }
     }
@@ -177,18 +126,18 @@ export const POST: APIRoute = async ({ request }) => {
     if (escalation) {
       const tplResp = templateToResponse(escalation);
       const _msgIdEsc = await logSession(sid, message, tplResp,
-        { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, escalation: escalation.id }
+        { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, hits: ragResult.hits, escalation: escalation.id }
       );
       const finalEsc = JSON.stringify({ ...JSON.parse(tplResp), message_id: _msgIdEsc });
       return new Response(finalEsc, { headers: { 'Content-Type': 'application/json' } });
     }
 
-    // INTENT ROUTER: классифицируем запрос. Для intent=story достаём 1 реальную историю
-    // и жёстко ограничиваем модель её пересказывать, без миксования с маркетингом/видео.
-    const intent = await classifyIntent(message);
+    // INTENT ROUTER: intent уже классифицирован выше (параллельно с RAG). Для intent=story
+    // достаём 1 реальную историю и жёстко ограничиваем модель её пересказывать, без
+    // миксования с маркетингом/видео.
     let intentBoost = '';
     if (intent === 'story') {
-      const real = await pickRealStory();
+      const real = await pickRealStory(message);
       if (real) {
         intentBoost =
           '\n\n=== РЕЖИМ ИСТОРИИ (intent=story) ===\n' +
@@ -213,7 +162,26 @@ export const POST: APIRoute = async ({ request }) => {
     }
     // Для story режима убираем общий RAG-контекст (другие истории/видео миксуют) — оставляем ТОЛЬКО pickRealStory
     const ctxForLLM = (intent === 'story') ? '' : ragResult.context;
-    const systemText = basePrompt + ctxForLLM + intentBoost;
+
+    // Честный контекст про последнюю прошедшую смену (Task 4/5) — часть смен уже имеет реально
+    // размеченные фото (см. hasShiftPhotos, src/lib/ai/photoSearch.ts), часть ещё нет. LLM должен
+    // называть смену по имени и говорить правду именно про текущее состояние разметки.
+    const _today = new Date().toISOString().slice(0, 10);
+    const _lastShift = lastCompletedShift(_today);
+    const shiftContext = _lastShift
+      ? (hasShiftPhotos(_lastShift.id)
+          ? `\n\n=== ПОСЛЕДНЯЯ ПРОШЕДШАЯ СМЕНА ===\nСмена: "${_lastShift.name}" (${_lastShift.dates}).\n` +
+            `У нас ЕСТЬ реальные фото именно с этой смены — если просят "фото с последней смены", можешь честно\n` +
+            `сказать что это фото именно с ${_lastShift.name}.`
+          : `\n\n=== ПОСЛЕДНЯЯ ПРОШЕДШАЯ СМЕНА ===\nСмена: "${_lastShift.name}" (${_lastShift.dates}).\n` +
+            `ВАЖНО: у нас пока НЕТ реальных фото именно с этой смены — если тебя просят "фото с последней смены",\n` +
+            `назови смену по имени (${_lastShift.name}), но честно скажи что показываешь ОБЩИЕ живые фото с лагеря,\n` +
+            `а не фото именно с этой смены. НЕ утверждай "вот фото именно с ${_lastShift.name}" — это неправда.`)
+      : '';
+    // basePrompt стабилен внутри деплоя (campData + правило роста цен) — кэшируем отдельным блоком.
+    // ctxForLLM/intentBoost меняются на каждый запрос — не кэшируем, иначе маркер в конце
+    // общего блока делает байты уникальными почти всегда и кэш никогда не читается.
+    const volatileSuffix = ctxForLLM + intentBoost + shiftContext;
 
     const messages: Anthropic.MessageParam[] = [
       ...history.slice(-12).map((m: ChatMessage) => ({
@@ -225,7 +193,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     // A/B: ?m=haiku -> используем haiku как primary (для замера latency/CSAT)
     // X-Audit: 1 → форсируем Haiku для дешёвого аудита (x3.75 экономия)
-    const _forceHaiku = _isAudit || _abMod === 'haiku' || _auditModelOverride === 'haiku';
+    // fact_lookup: intent уже классифицирован (Haiku) выше для intentBoost — переиспользуем
+    // бесплатно как сигнал роутинга. Промпт intentBoost для fact_lookup и так жёстко
+    // ограничивает модель фактами из RAG ("НЕ выдумывай"), а Haiku-guard ниже перепроверяет
+    // фактическую точность ответа — двойная страховка позволяет доверить рутинные
+    // вопросы-факты (цена/дата/трансфер) дешёвой модели, не трогая тон story/experience/general.
+    const _forceHaiku = _isAudit || _abMod === 'haiku' || _auditModelOverride === 'haiku' || intent === 'fact_lookup';
     const _forceSonnet = _auditModelOverride === 'sonnet';
     const PRIMARY_MODEL = (_forceSonnet ? false : _forceHaiku)
       ? 'claude-haiku-4-5-20251001'
@@ -241,7 +214,10 @@ export const POST: APIRoute = async ({ request }) => {
         model: PRIMARY_MODEL,
         max_tokens: 1200,
         temperature: 0,
-        system: [{ type: 'text', text: systemText, cache_control: { type: 'ephemeral' } }],
+        system: [
+          { type: 'text', text: basePrompt, cache_control: { type: 'ephemeral' } },
+          { type: 'text', text: volatileSuffix },
+        ],
         messages,
       });
     } catch (primaryErr: any) {
@@ -251,14 +227,21 @@ export const POST: APIRoute = async ({ request }) => {
         model: FALLBACK_MODEL,
         max_tokens: 1200,
         temperature: 0,
-        system: [{ type: 'text', text: systemText, cache_control: { type: 'ephemeral' } }],
+        system: [
+          { type: 'text', text: basePrompt, cache_control: { type: 'ephemeral' } },
+          { type: 'text', text: volatileSuffix },
+        ],
         messages,
       });
     }
     const latencyMs = Date.now() - t0;
     const inputTokens = response?.usage?.input_tokens ?? null;
     const outputTokens = response?.usage?.output_tokens ?? null;
-    const metrics = { latencyMs, model: usedModel, inputTokens, outputTokens };
+    const cacheReadTokens = response?.usage?.cache_read_input_tokens ?? null;
+    const cacheCreationTokens = response?.usage?.cache_creation_input_tokens ?? null;
+    const metrics = { latencyMs, model: usedModel, inputTokens, outputTokens, cacheReadTokens, cacheCreationTokens };
+    // Видимость кэша в логах сервера — ai_ask_sessions пока не хранит эти поля (нет колонок в БД)
+    console.log(`[ask] cache read=${cacheReadTokens} created=${cacheCreationTokens} input=${inputTokens} model=${usedModel}`);
 
     const raw = response.content[0].type === 'text' ? response.content[0].text : '';
 
@@ -279,7 +262,7 @@ export const POST: APIRoute = async ({ request }) => {
           { label: 'Написать менеджеру', action: 'contact_request' },
         ],
       });
-      logSession(sid, message, fallbackResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty }, metrics);
+      logSession(sid, message, fallbackResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, hits: ragResult.hits }, metrics);
       return new Response(fallbackResp, { headers: { 'Content-Type': 'application/json' } });
     }
 
@@ -305,7 +288,7 @@ export const POST: APIRoute = async ({ request }) => {
         block_data: null,
         chips: [{ label: 'Смены 2026', query: 'смены' }, { label: 'Цены', query: 'цены' }, { label: 'Написать менеджеру', action: 'contact_request' }]
       });
-      logSession(sid, message, parseErrResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty }, metrics);
+      logSession(sid, message, parseErrResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, hits: ragResult.hits }, metrics);
       return new Response(parseErrResp, { headers: { 'Content-Type': 'application/json' } });
     }
 
@@ -323,7 +306,7 @@ export const POST: APIRoute = async ({ request }) => {
           { label: 'Забронировать', action: 'book' },
         ],
       });
-      logSession(sid, message, schemaErrResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty }, metrics);
+      logSession(sid, message, schemaErrResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, hits: ragResult.hits }, metrics);
       return new Response(schemaErrResp, { headers: { 'Content-Type': 'application/json' } });
     }
 
@@ -333,15 +316,39 @@ export const POST: APIRoute = async ({ request }) => {
       (responseData as any).chips = (responseData as any).chips.filter((c: any) => c?.action !== 'book');
     }
 
-    // Если бот попросил галерею — подбираем фото по запросу
+    // Если бот попросил галерею — подбираем фото по запросу.
+    // wantsLastShift — тот же regex, что решает "надо ли упоминать последнюю смену" (см. shiftContext
+    // выше): если реально размеченных фото последней смены нет, findPhotos сам падает на общий поиск.
     if (responseData.block_type === 'gallery') {
       const photoQuery = (responseData.block_data as any)?.query || message;
-      responseData.block_data = { photos: findPhotos(photoQuery, 4) };
+      const wantsLastShift = /последн|прошл.*смен/i.test(message);
+      responseData.block_data = { photos: findPhotos(photoQuery, 4, wantsLastShift ? _lastShift?.id : undefined) };
     }
+
+    // GUARD: проверяем текст на фактические ошибки (цены, даты, вычет и т.п.) по списку фактов.
+    // Блокирующе (Haiku, быстро) — иначе галлюцинация уходит пользователю до всякой проверки.
+    // Инцидент 08.07: Haiku иногда кладёт в correction мета-разбор ("бот ошибся, правильный
+    // ответ...") вместо чистой фразы — такое НЕЛЬЗЯ показывать пользователю напрямую.
+    // Не полагаемся только на промпт — фильтруем по форме перед подстановкой.
+    const META_CORRECTION = /\bбот\b|правильный ответ|должен был|не должен|выдумал|не ответил на вопрос|проигнорировал|ошиб(ся|ка|очн)/i;
+    try {
+      const validation = await validateBotResponse(message, responseData.text);
+      if (!validation.valid) {
+        // Логируем ЛЮБОЙ invalid — в т.ч. без correction (раньше такие терялись
+        // молча и ai_guard_flags оставалась пустой).
+        const correction = validation.correction || '';
+        const isMeta = correction !== '' && META_CORRECTION.test(correction);
+        const willCorrect = correction !== '' && !isMeta;
+        logGuardFlag(message, responseData.text, validation.issue || '', correction, willCorrect);
+        if (willCorrect) {
+          responseData.text = correction;
+        }
+      }
+    } catch { /* validateBotResponse сам не бросает, но подстрахуемся */ }
 
     // Сначала логируем (получаем PK), потом инжектим в ответ — иначе TDZ
     const _bodyForLog = JSON.stringify({ state: 'ok', ...responseData });
-    const _msgId = await logSession(sid, message, _bodyForLog, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty }, metrics);
+    const _msgId = await logSession(sid, message, _bodyForLog, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, hits: ragResult.hits }, metrics);
     const finalResp = JSON.stringify({ state: 'ok', ...responseData, message_id: _msgId });
     return new Response(finalResp, { headers: { 'Content-Type': 'application/json' } });
   } catch (e: any) {

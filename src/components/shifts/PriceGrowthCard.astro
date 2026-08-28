@@ -1,0 +1,45 @@
+---
+/**
+ * PriceGrowthCard — инфографика роста цены смены для страницы рекапа
+ * (kak-proshla-smena-N). Расчёт продублирован из ShiftRetroCard.astro
+ * намеренно один раз в одном месте — источник данных общий (shift.priceFrom/
+ * priceTo из shifts.ts), просто более крупная подача для отдельной страницы.
+ */
+import type { Shift } from '../../data/shifts';
+import { getCurrentPrice, fmtPrice } from '../../data/dynamicPrices';
+
+interface Props { shift: Shift; }
+const { shift } = Astro.props;
+
+const num = (s: string) => parseInt(s.replace(/\D/g, ''), 10) || 0;
+const sd = new Date(shift.startDate + 'T00:00:00');
+const priceFromStr = shift.priceFrom ?? shift.price;
+const startPrice = getCurrentPrice(shift.id, sd);
+const priceToStr = shift.priceTo ?? (startPrice ? fmtPrice(startPrice) : shift.price);
+const fromN = num(priceFromStr);
+const toN = num(priceToStr);
+const growthPct = fromN > 0 ? Math.round(((toN - fromN) / fromN) * 100) : 0;
+---
+
+<section class="rounded-[20px] border border-slate-200 bg-white p-5 md:p-6">
+  <p class="text-[12px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-1">Как росла цена этой смены</p>
+  <h2 class="text-[18px] font-bold text-slate-900 mb-4">С {priceFromStr} до {priceToStr} — рост {growthPct}%</h2>
+
+  <div class="flex items-center gap-4">
+    <div class="text-center">
+      <p class="text-[11px] text-slate-400 uppercase tracking-wide">Январь</p>
+      <p class="text-[20px] md:text-[24px] font-extrabold text-slate-400">{priceFromStr}</p>
+    </div>
+    <div class="flex-1 h-2 rounded-full bg-gradient-to-r from-slate-200 to-primary relative">
+      {growthPct > 0 && (
+        <span class="absolute -top-6 right-0 text-[11px] font-bold bg-primary/10 text-primary rounded-full px-2 py-0.5">+{growthPct}%</span>
+      )}
+    </div>
+    <div class="text-center">
+      <p class="text-[11px] text-slate-400 uppercase tracking-wide">Старт смены</p>
+      <p class="text-[20px] md:text-[24px] font-extrabold text-primary">{priceToStr}</p>
+    </div>
+  </div>
+
+  <p class="mt-4 text-base text-slate-500 leading-[1.5]">Цена растёт по мере приближения даты смены — кто бронирует раньше, платит меньше. Те же {toN > fromN ? 'правила' : 'условия'} действуют и на новые смены.</p>
+</section>

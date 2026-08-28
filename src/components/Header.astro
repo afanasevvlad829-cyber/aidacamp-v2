@@ -6,14 +6,21 @@ import BrandName from './BrandName.astro';
 
 // Menu per Design System v3 (Section 16):
 // Top: главные конверсионные + философия. More: вспомогательные.
-const navItems = [
+interface NavItem {
+  label: string;
+  href: string;
+  returningHide?: boolean;
+  highlight?: boolean;
+}
+
+const navItems: NavItem[] = [
   { label: 'Смены', href: '/#shifts' },
   { label: 'Цены', href: '/#shifts' },
   { label: 'Статьи', href: '/stati/' },
   { label: 'Философия', href: '/#philosophy', returningHide: true },
 ];
 
-const moreItems = [
+const moreItems: NavItem[] = [
   { label: 'О лагере', href: '/#about', returningHide: true },
   { label: 'Как проходит смена', href: '/#journey', returningHide: true },
   { label: 'Команда', href: '/#team' },
@@ -147,21 +154,22 @@ const allNavItems = [...navItems, ...moreItems];
     const menu = document.getElementById('nav-more-menu');
     const chevron = document.getElementById('nav-more-chevron');
     if (!root || !toggle || !menu) return;
+    const navMenu = menu;
 
     function open() {
-      menu.classList.remove('hidden');
+      navMenu.classList.remove('hidden');
       toggle!.setAttribute('aria-expanded', 'true');
       if (chevron) chevron.style.transform = 'rotate(180deg)';
     }
     function close() {
-      menu.classList.add('hidden');
+      navMenu.classList.add('hidden');
       toggle!.setAttribute('aria-expanded', 'false');
       if (chevron) chevron.style.transform = '';
     }
 
     toggle.addEventListener('click', (e) => {
       e.stopPropagation();
-      menu.classList.contains('hidden') ? open() : close();
+      navMenu.classList.contains('hidden') ? open() : close();
     });
 
     document.addEventListener('click', (e) => {

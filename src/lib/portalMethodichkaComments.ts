@@ -3,6 +3,7 @@
  * Версии формируются так: на каждое редактирование пишем новую строку,
  * parent_id = id предыдущей версии, version += 1.
  */
+import { withDbClient } from './db';
 
 export interface MethodichkaComment {
   id: number;
@@ -18,18 +19,9 @@ export interface MethodichkaComment {
   updated_at: string;
 }
 
-function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
-async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
-  const conn = dsn(); if (!conn) return null;
-  const { default: pg } = await import('pg');
-  const client = new pg.Client({ connectionString: conn });
-  await client.connect();
-  try { return await fn(client); } finally { await client.end(); }
-}
-
 /** Все активные комментарии по slug. */
 export async function listComments(slug: string): Promise<MethodichkaComment[]> {
-  const r = await withClient(async (c) => {
+  const r = await withDbClient(async (c) => {
     const q = await c.query(
       `SELECT id, activity_slug, author, author_name, body, source, version, parent_id,
               archived,
@@ -47,7 +39,7 @@ export async function listComments(slug: string): Promise<MethodichkaComment[]> 
 
 /** История версий по конкретному корню (рекурсивно по parent_id). */
 export async function listHistory(rootId: number): Promise<MethodichkaComment[]> {
-  const r = await withClient(async (c) => {
+  const r = await withDbClient(async (c) => {
     const q = await c.query(
       `WITH RECURSIVE chain AS (
          SELECT * FROM portal_methodichka_comment WHERE id = $1
@@ -77,7 +69,7 @@ export async function createComment(p: {
   author_name: string | null;
   parent_id?: number | null;
 }): Promise<number> {
-  const r = await withClient(async (c) => {
+  const r = await withDbClient(async (c) => {
     let version = 1;
     let parentId: number | null = p.parent_id ?? null;
     if (parentId) {
@@ -111,7 +103,7 @@ export async function createComment(p: {
 }
 
 export async function archiveComment(id: number): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     await c.query(`UPDATE portal_methodichka_comment SET archived = TRUE WHERE id = $1`, [id]);
   });
 }

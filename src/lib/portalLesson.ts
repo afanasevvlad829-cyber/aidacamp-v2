@@ -1,4 +1,5 @@
 // Уроки преподавателей: расписание, тема, методичка, прогресс детей.
+import { withDbClient } from './db';
 
 export type LessonStatus = 'planned' | 'in_progress' | 'done' | 'skipped' | 'cancelled';
 export type LessonProgress = 'not_started' | 'attended' | 'completed' | 'absent' | 'excused';
@@ -36,15 +37,6 @@ export interface LessonProgressRow {
   recorded_at: string;
 }
 
-function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
-
-async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
-  const conn = dsn(); if (!conn) return null;
-  const { default: pg } = await import('pg');
-  const client = new pg.Client({ connectionString: conn });
-  await client.connect();
-  try { return await fn(client); } finally { await client.end(); }
-}
 
 const SELECT_LESSON = `
   SELECT l.id, l.shift_id, to_char(l.date,'YYYY-MM-DD') AS date,
@@ -65,7 +57,7 @@ export async function listLessons(filter: {
   date?: string;
   status?: LessonStatus | LessonStatus[];
 } = {}): Promise<Lesson[]> {
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     const where: string[] = [];
     const vals: unknown[] = [];
     if (filter.shift_id)         { vals.push(filter.shift_id);         where.push(`l.shift_id=$${vals.length}`); }
@@ -84,7 +76,7 @@ export async function listLessons(filter: {
 }
 
 export async function getLesson(id: number): Promise<Lesson | null> {
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     const r = await c.query(`${SELECT_LESSON} WHERE l.id=$1`, [id]);
     return (r.rows[0] as Lesson) ?? null;
   })) ?? null;
@@ -109,7 +101,7 @@ export interface UpsertInput {
 }
 
 export async function upsertLesson(inp: UpsertInput): Promise<number | null> {
-  return await withClient(async (c) => {
+  return await withDbClient(async (c) => {
     if (inp.id) {
       await c.query(
         `UPDATE portal_lesson SET
@@ -143,7 +135,7 @@ export async function upsertLesson(inp: UpsertInput): Promise<number | null> {
 }
 
 export async function deleteLesson(id: number): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     await c.query('DELETE FROM portal_lesson WHERE id=$1', [id]);
   });
 }
@@ -151,7 +143,7 @@ export async function deleteLesson(id: number): Promise<void> {
 // ── Progress per kid ─────────────────────────────────────────
 
 export async function listProgress(lessonId: number): Promise<LessonProgressRow[]> {
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     const r = await c.query(
       `SELECT lp.id, lp.lesson_id, lp.kid_id, k.name AS kid_name,
               lp.status::text AS status, lp.outcome_note, lp.difficulty_note,
@@ -175,7 +167,7 @@ export async function upsertProgress(inp: {
   artifact_url?: string | null;
   recorded_by?: number | null;
 }): Promise<void> {
-  await withClient(async (c) => {
+  await withDbClient(async (c) => {
     await c.query(
       `INSERT INTO portal_lesson_progress
          (lesson_id, kid_id, status, outcome_note, difficulty_note, artifact_url, recorded_by)
@@ -196,7 +188,7 @@ export async function upsertProgress(inp: {
 
 /** Прогресс конкретного ребёнка по всем урокам смены — для «карточки ученика». */
 export async function kidLearningPath(kidId: number, shiftId: number): Promise<Array<Lesson & { kid_status: LessonProgress | null; kid_outcome: string | null }>> {
-  return (await withClient(async (c) => {
+  return (await withDbClient(async (c) => {
     const r = await c.query(
       `${SELECT_LESSON.replace('SELECT', `SELECT lp.status::text AS kid_status, lp.outcome_note AS kid_outcome,`)}
          LEFT JOIN portal_lesson_progress lp ON lp.lesson_id=l.id AND lp.kid_id=$1

@@ -4,15 +4,7 @@ import { requireStaff } from '../../../../lib/portalPerms';
 import { canEditEvent } from '../../../../lib/portalShiftPerms';
 import type { PortalRole } from '../../../../lib/portalSession';
 import { logAction, clientIp } from '../../../../lib/portalLog';
-
-function dsn(): string { return process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || ''; }
-async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promise<T | null> {
-  const conn = dsn(); if (!conn) return null;
-  const { default: pg } = await import('pg');
-  const client = new pg.Client({ connectionString: conn });
-  await client.connect();
-  try { return await fn(client); } finally { await client.end(); }
-}
+import { withDbClient } from '../../../../lib/db';
 
 function json(body: object, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -55,7 +47,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
     if (!Number.isFinite(shiftId) || shiftId <= 0) return json({ ok: false, error: 'shift_id required' }, 400);
     if (!date) return json({ ok: false, error: 'date required' }, 400);
     if (!title) return json({ ok: false, error: 'title required' }, 400);
-    const created = await withClient(async (c) => {
+    const created = await withDbClient(async (c) => {
       const r = await c.query(
         `INSERT INTO shift_event(shift_id, date, title, start_time, end_time, notes, sort)
          VALUES($1,$2,$3,$4,$5,$6,COALESCE($7,0)) RETURNING id`,
@@ -76,7 +68,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const eventId = Number(body.event_id);
   if (!Number.isFinite(eventId) || eventId <= 0) return json({ ok: false, error: 'event_id required' }, 400);
 
-  const result = await withClient(async (c) => {
+  const result = await withDbClient(async (c) => {
     // Получить event для проверки доступа + payload лога.
     const ev = await c.query('SELECT id, title, date, start_time, end_time, notes, roles FROM shift_event WHERE id=$1', [eventId]);
     if (ev.rowCount === 0) return { code: 404, error: 'event not found' };
