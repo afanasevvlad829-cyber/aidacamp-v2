@@ -172,8 +172,11 @@ describe('applyReject', () => {
   it('переводит черновик в rejected и уведомляет автора', async () => {
     const { getDraft, setDraftStatus } = await import('./draftPost');
     (getDraft as any).mockResolvedValue({ id: 5, shift_id: 3, author_telegram_id: 111, status: 'pending_review', text: 'X', reviewer_chat_id: 777, reviewer_message_id: 1 });
+    const { getTelegramClient } = await import('./telegramClient');
     const { applyReject } = await import('./telegramDraftBot');
     await applyReject(5);
     expect(setDraftStatus).toHaveBeenCalledWith(5, 'rejected');
+    const mockClient = await (getTelegramClient as any).mock.results[0].value;
+    expect(mockClient.sendMessage).toHaveBeenCalledWith(111, expect.objectContaining({ message: expect.any(String) }));
   });
 });
