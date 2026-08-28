@@ -388,6 +388,11 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ ok: false, error: 'invalid_phone' }), { status: 400 });
     }
 
+    // Тестовые/проверочные заявки (диапазон +7999000XXXX и health-check) —
+    // уведомление в TG уходит беззвучно и с пометкой, чтобы не дёргать
+    // менеджеров (владелец 28.08.2026).
+    const isTestLead = digits.startsWith('7999000') || body.form_id === 'health_smoke';
+
     // Извлекаем IP и User-Agent для логирования
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
       || request.headers.get('x-real-ip')
@@ -443,14 +448,19 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    const text = buildTgText(body, crmId);
+    const text = (isTestLead ? '🧪 <b>ТЕСТ — проверочная заявка, звонить не нужно</b>\n' : '')
+      + buildTgText(body, crmId);
 
     let tgData: any;
     try {
       const res = await fetchWithTimeout(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
+        body: JSON.stringify({
+          chat_id: chatId, text, parse_mode: 'HTML',
+          // Тестовая заявка — сообщение приходит без звука/вибрации
+          disable_notification: isTestLead,
+        }),
       }, TELEGRAM_TIMEOUT_MS);
       tgData = await res.json();
     } catch {
