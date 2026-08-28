@@ -1,7 +1,7 @@
 ---
 import { DATES_S3, DATES_SHORT_S4, PEER_COUNTS, PRICE_S3, PRICE_S4, SEASON_YEAR } from '../data/shifts';
 import { isSalesOpen } from '../data/dynamicPrices';
-import { AUTUMN_SEASON } from '../data/seasons';
+import { getNextSeason } from '../data/seasons';
 // AgeBar.astro — плашка выбора возраста (снизу экрана)
 // v3: scroll-triggered (25%), без таймера, мобилка + десктоп, вторичные страницы
 // v4 (2026-08-17): смена 3/4 — единственные в mainShifts — обе закрыты для брони
@@ -10,6 +10,9 @@ import { AUTUMN_SEASON } from '../data/seasons';
 // бар сам вернётся к обычному возрастному роутингу без правки этого файла.
 
 const salesOpen = isSalesOpen();
+// Сезон предзаписи выбирается по датам (getNextSeason), а не прибит к осени —
+// после осени плашка сама переключится на зиму, править компонент не нужно.
+const nextSeason = getNextSeason();
 
 const ageCountsJson = JSON.stringify({
   '7–9':   { 'shift-3': PEER_COUNTS['shift-3']['7–9'],  'shift-4': PEER_COUNTS['shift-4']['7–9']  },
@@ -30,15 +33,15 @@ const ageCountsJson = JSON.stringify({
     <!-- Мини-гистограмма -->
     <div class="flex items-end gap-2 mb-2.5" style="height:48px">
       <div class="flex-1 flex flex-col items-center gap-1">
-        <div id="ast-bar-79"   class="w-full rounded-t-sm"  style="background:#e2e8f0;height:0%;transition:height 0.45s cubic-bezier(.22,.61,.36,1)"></div>
+        <div id="ast-bar-79"   class="w-full rounded-t-sm"  style="background:var(--color-slate-200);height:0%;transition:height 0.45s cubic-bezier(.22,.61,.36,1)"></div>
         <span class="text-[10px] text-body-faint font-medium leading-none">7–9</span>
       </div>
       <div class="flex-1 flex flex-col items-center gap-1">
-        <div id="ast-bar-1012" class="w-full rounded-t-sm"  style="background:#e2e8f0;height:0%;transition:height 0.45s cubic-bezier(.22,.61,.36,1) 0.08s"></div>
+        <div id="ast-bar-1012" class="w-full rounded-t-sm"  style="background:var(--color-slate-200);height:0%;transition:height 0.45s cubic-bezier(.22,.61,.36,1) 0.08s"></div>
         <span class="text-[10px] text-body-faint font-medium leading-none">10–12</span>
       </div>
       <div class="flex-1 flex flex-col items-center gap-1">
-        <div id="ast-bar-1315" class="w-full rounded-t-sm"  style="background:#e2e8f0;height:0%;transition:height 0.45s cubic-bezier(.22,.61,.36,1) 0.16s"></div>
+        <div id="ast-bar-1315" class="w-full rounded-t-sm"  style="background:var(--color-slate-200);height:0%;transition:height 0.45s cubic-bezier(.22,.61,.36,1) 0.16s"></div>
         <span class="text-[10px] text-body-faint font-medium leading-none">13–15</span>
       </div>
     </div>
@@ -57,7 +60,7 @@ const ageCountsJson = JSON.stringify({
 >
   <!-- Сезон закрыт для брони (обе смены mainShifts прошли фазу 'upcoming') —
        вместо возрастного роутинга показываем предзапись на следующий сезон. -->
-  {!salesOpen ? (
+  {!salesOpen && nextSeason ? (
   <div
     id="age-bar-closed"
     class="bg-white/97 backdrop-blur-md border-t border-slate-200
@@ -66,10 +69,10 @@ const ageCountsJson = JSON.stringify({
     <div class="mx-auto max-w-[640px] px-4 py-4 flex items-center gap-3">
       <div class="min-w-0 flex-1">
         <p class="text-base font-semibold text-body leading-tight">Лето {SEASON_YEAR} — свободных мест больше нет</p>
-        <p class="text-base text-body-muted mt-0.5 leading-snug">Следующий заезд — осень, {AUTUMN_SEASON.seasonMeta.dates}. Открыта предзапись.</p>
+        <p class="text-base text-body-muted mt-0.5 leading-snug">Следующий заезд — {nextSeason.shortName}, {nextSeason.seasonMeta.dates}. Открыта предзапись.</p>
       </div>
       <a
-        href={`${AUTUMN_SEASON.path}/`}
+        href={`${nextSeason.path}/`}
         class="shrink-0 rounded-[10px] bg-primary/10 border border-primary/30 px-4 py-2.5
                text-base font-semibold text-primary hover:bg-primary/16 hover:border-primary/50
                transition-colors active:scale-95"
@@ -106,7 +109,7 @@ const ageCountsJson = JSON.stringify({
             class="age-btn flex-1 py-2.5 rounded-[10px]
                    text-base font-semibold
                    text-body bg-white border border-slate-200
-                   hover:border-primary hover:bg-[#fff8f2] hover:text-primary
+                   hover:border-primary hover:bg-primary-warm hover:text-primary
                    transition-all active:scale-95"
           >7–9</button>
           <button
@@ -114,7 +117,7 @@ const ageCountsJson = JSON.stringify({
             class="age-btn flex-1 py-2.5 rounded-[10px]
                    text-base font-semibold
                    text-body bg-white border border-slate-200
-                   hover:border-primary hover:bg-[#fff8f2] hover:text-primary
+                   hover:border-primary hover:bg-primary-warm hover:text-primary
                    transition-all active:scale-95"
           >10–12</button>
           <button
@@ -122,7 +125,7 @@ const ageCountsJson = JSON.stringify({
             class="age-btn flex-1 py-2.5 rounded-[10px]
                    text-base font-semibold
                    text-body bg-white border border-slate-200
-                   hover:border-primary hover:bg-[#fff8f2] hover:text-primary
+                   hover:border-primary hover:bg-primary-warm hover:text-primary
                    transition-all active:scale-95"
           >13–15</button>
         </div>
@@ -161,7 +164,7 @@ const ageCountsJson = JSON.stringify({
         href="/shifts/shift-3/"
         data-age-shift-link="shift-3"
         class="flex items-center justify-between gap-3
-               rounded-[12px] bg-[#fff8f2] border border-primary/30
+               rounded-[12px] bg-primary-warm border border-primary/30
                px-3.5 py-3 mb-2 active:scale-[0.98] transition-transform"
       >
         <div class="min-w-0">

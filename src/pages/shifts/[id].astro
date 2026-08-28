@@ -18,6 +18,8 @@ import ShiftTimeline from '../../components/shifts/ShiftTimeline.astro';
 import WaitlistInfoIcon from '../../components/shifts/WaitlistInfoIcon.astro';
 import { allShifts, shiftInfo, type Shift, getAvailabilityLevel, getBookingCta, WAITLIST_EXPLANATION, SEASON_YEAR } from '../../data/shifts';
 import { getCurrentPrice, getTaxDeduction, fmtPrice } from '../../data/dynamicPrices';
+import { getShiftPhase } from '../../data/dynamicPrices';
+import { getNextSeason } from '../../data/seasons';
 
 export async function getStaticPaths() {
   return allShifts.map((shift) => ({
@@ -39,6 +41,13 @@ const occupiedPct = Math.round((shift.occupied / total) * 100);
 const isLowAvail = occupiedPct >= 85;
 const isSoldOut = getAvailabilityLevel(shift) === 'soldout';
 const bookingCta = getBookingCta(shift);
+
+/* Смена уже идёт или прошла — бронировать нечего. getBookingCta знает только про
+   распроданность (free/occupied), фазу по датам — нет, поэтому у завершившейся
+   смены с ненулевым free кнопка оставалась живой. Проверяем фазу отдельно. */
+const phase = getShiftPhase(shift.id);
+const bookingClosed = phase !== 'upcoming';
+const nextSeason = getNextSeason();
 
 // Парсинг дат для крупного отображения «10—23 июня»
 const months: Record<string, string> = {
@@ -142,7 +151,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
         <div class="flex min-w-0 flex-1 items-center justify-center gap-1.5 flex-wrap">
           <i class="bi bi-lightning-charge text-base shrink-0" aria-hidden="true"></i>
           <span>Осталось <span data-spots-num data-spots-shift={shift.id} class="cursor-pointer blur-[6px] transition-[filter] duration-300 select-none">{shift.free} {shift.free === 1 ? 'место' : shift.free < 5 ? 'места' : 'мест'}</span> · Старт 30 мая ·</span>
-          <a href="#booking" class="underline underline-offset-2 hover:text-white/90 transition-colors whitespace-nowrap">Забронировать →</a>
+          {bookingClosed && nextSeason ? <a href={`${nextSeason.path}/`} class="underline underline-offset-2 hover:text-white/90 transition-colors whitespace-nowrap">Предзапись: {nextSeason.shortName} →</a> : <a href="#booking" class="underline underline-offset-2 hover:text-white/90 transition-colors whitespace-nowrap">Забронировать →</a>}
         </div>
         <button
           id="shift-top-bar-close"
@@ -268,6 +277,22 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
           )}
 
           <!-- Primary CTA -->
+          {bookingClosed ? (
+            <div class="flex flex-col gap-2">
+              <p class="text-[15px] text-white/70">
+                {phase === 'live' ? 'Смена идёт прямо сейчас — места не бронируются.' : 'Смена завершилась.'}
+              </p>
+              <a
+                href={nextSeason ? `${nextSeason.path}/` : '/'}
+                data-analytics-goal="shift_next_season_prereg"
+                data-analytics-label={shift.name}
+                class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover px-6 py-3.5 text-[16px] font-semibold text-white transition-colors min-h-[52px] whitespace-nowrap"
+              >
+                {nextSeason ? `Предзапись: ${nextSeason.shortName}` : 'Смотреть смены'}
+                <i class="bi bi-arrow-right text-base" aria-hidden="true"></i>
+              </a>
+            </div>
+          ) : (
           <div class="flex items-center gap-2">
             <button type="button"
               data-shift-book={shift.id}
@@ -288,6 +313,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
             </button>
             {isSoldOut && <WaitlistInfoIcon dark />}
           </div>
+          )}
         </div>
       </div>
     </section>
@@ -389,7 +415,8 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
       </section>
     )}
 
-    <!-- ═══════ BOOKING — финальная форма ═══════ -->
+    <!-- ═══════ BOOKING — финальная форма (только пока смена открыта) ═══════ -->
+    {!bookingClosed && (
     <section id="booking" class="border-t border-border-light bg-surface">
       <div class="mx-auto max-w-[640px] px-5 py-12 md:px-8 md:py-20">
         <div class="rounded-[20px] bg-card p-6 md:p-8 card-shadow">
@@ -447,6 +474,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
         </div>
       </div>
     </section>
+    )}
 
     <!-- ═══════ Back to all shifts ═══════ -->
     <div class="mx-auto max-w-[1200px] px-5 py-10 md:px-8 text-center">
