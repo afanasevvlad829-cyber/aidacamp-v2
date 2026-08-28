@@ -22,8 +22,13 @@ cd "$(dirname "$0")/.."
 npm run guard
 npm run icons
 
-echo "==> astro build (проход 1 — рендерит статьи, чтобы вытащить резолвленный contentHtml)"
-npx astro build
+# Первый проход — SKIP_COMPRESS=1. Его dist/ никуда не едет: он нужен ровно затем,
+# чтобы gen-articles.mjs прочитал отрендеренный HTML статей, после чего всё
+# пересобирается вторым проходом. Минифицировать то, что будет выброшено, — чистая
+# трата: замер по логу CI 14.08.2026 (run 31770755865) — compress занимал 74с на
+# проход при ~30с самого astro build, то есть 148с из 210с двухпроходной сборки.
+echo "==> astro build (проход 1, без минификации — рендерит статьи, чтобы вытащить резолвленный contentHtml)"
+SKIP_COMPRESS=1 npx astro build
 
 node scripts/gen-articles.mjs
 node scripts/check-articles.mjs
@@ -45,6 +50,14 @@ console.log('sitemap.xml ready');
 "
 
 node scripts/check-faq-schema.mjs
+node scripts/check-breadcrumb-schema.mjs
+
+# Битые внутренние ссылки — здесь, на сборке, а не в smoke после выката.
+# Раньше это делал только smoke.sh, дёргая ~243 URL у живого сервера (53с на dev,
+# столько же на проде) и уже ПОСЛЕ деплоя. Проверка по dist/ занимает доли секунды
+# и ловит больше: smoke ходил по ссылкам лишь с 10 критичных страниц, а тут
+# просматриваются все 345 (так нашлись /lager-podmoskovje/ и /smeny/ — 404 на проде).
+node scripts/check-internal-links.mjs
 
 node scripts/inject-modulepreload.mjs
 npm run pagefind

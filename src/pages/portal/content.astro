@@ -1,0 +1,376 @@
+---
+export const prerender = false;
+
+import PortalLayout from '../../layouts/PortalLayout.astro';
+import { getActiveShift, getEventDates, listShifts } from '../../lib/portalShift';
+import {
+  contentDays, listContent, listFeedback, listTasks, roleLabel,
+  type ShiftContentItem, type ShiftFeedbackItem, type ShiftScope, type ShiftTaskRow,
+} from '../../lib/portalShiftContent';
+import '../../styles/portal-den.css';
+import '../../styles/portal-gallery.css';
+
+// Доступ гейтит middleware: /portal/* открыт только сотрудникам.
+// Смену можно выбрать вручную (?shift=id) — архив прошлых заездов лежит в тех
+// же таблицах; по умолчанию открывается активная.
+const shifts = await listShifts();
+const reqShift = Number(Astro.url.searchParams.get('shift') || 0);
+const active = await getActiveShift();
+const shift = (reqShift && shifts.find((s) => Number(s.id) === reqShift)) || active || shifts[0] || null;
+const dates = shift ? await getEventDates(shift.id) : [];
+
+// Бот нумерует дни от старта смены (0 — всё, что снято до заезда). Номера
+// дней повторяются от смены к смене, поэтому выборки ограничиваем самой
+// сменой: `shift_content.shift_id` — иначе в дне смешиваются кадры прошлых
+// заездов. Даты передаём тем же скоупом как фолбэк — на случай строки без
+// shift_id (см. ShiftScope). Выбранная смена держится при переходах по дням.
+const shiftQ = shift ? `&shift=${shift.id}` : '';
+const scope: ShiftScope | null = shift
+  ? { id: Number(shift.id), from: shift.start_date, to: shift.end_date }
+  : null;
+const counts = await contentDays(scope);
+const hasPre = (counts.get(0) ?? 0) > 0;
+
+function todayDayNo(): number {
+  if (!dates.length) return 1;
+  const today = new Date().toISOString().slice(0, 10);
+  const i = dates.indexOf(today);
+  return i >= 0 ? i + 1 : 0;
+}
+const withContent = [...counts.keys()].filter((d) => d > 0).sort((a, b) => a - b);
+const fallbackDay = todayDayNo() || withContent.at(-1) || 1;
+const reqDay = Astro.url.searchParams.get('day');
+const day = reqDay !== null && reqDay !== '' ? Number(reqDay) : fallbackDay;
+
+const items: ShiftContentItem[] = await listContent(day, scope);
+const written: ShiftFeedbackItem[] = day > 0 ? await listFeedback(day, scope) : [];
+const tasks: ShiftTaskRow[] = day > 0 ? await listTasks(day, scope) : [];
+const missing = tasks.filter((t) => t.shots === 0);
+
+const dayDate = day > 0 && dates[day - 1] ? dates[day - 1] : null;
+const fmtDate = (iso: string) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}`;
+const fmtTime = (ts: string) =>
+  new Date(ts).toLocaleTimeString('ru-RU', {
+    hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow',
+  });
+
+const KIND_LABEL: Record<string, string> = { photo: 'фото', video: 'видео', voice: 'голосовое' };
+const nPhoto = items.filter((i) => i.kind === 'photo').length;
+const nVideo = items.filter((i) => i.kind === 'video').length;
+const nVoice = items.filter((i) => i.kind === 'voice').length;
+
+// Текст и медиа разнесены по секциям: расшифровку читают абзацем, кадры смотрят
+// сеткой. В одной колонке 190px голосовое на абзац превращалось в нечитаемую кишку.
+const media = items.filter((i) => i.kind === 'photo' || i.kind === 'video');
+
+// Голосом или текстом — для читающего это один и тот же отчёт за день, поэтому
+// они идут одной лентой по времени, а формат помечен значком.
+type SpokenItem = {
+  id: string;
+  written: boolean;
+  text: string;
+  created_at: string;
+  author: string | null;
+  author_role: string | null;
+  task_title: string | null;
+};
+const spoken: SpokenItem[] = [
+  ...items.filter((i) => i.kind === 'voice').map((i) => ({
+    id: `v${i.id}`, written: false,
+    text: i.transcript || 'Расшифровка не готова',
+    created_at: i.created_at, author: i.author, author_role: i.author_role,
+    task_title: i.task_title,
+  })),
+  ...written.map((f) => ({
+    id: `f${f.id}`, written: true, text: f.text,
+    created_at: f.created_at, author: f.author, author_role: f.author_role,
+    task_title: null,
+  })),
+].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
+const nWritten = written.length;
+
+// kids приходит хэштегами по строке + служебные пометки («+N не опознано»,
+// «(распознано автоматически)»). Чипсы — только сами теги, пометки — мелким.
+function splitKids(kids: string | null) {
+  const lines = (kids || '').split('\n').map((s) => s.trim()).filter(Boolean);
+  return {
+    tags: lines.filter((l) => l.startsWith('#')),
+    notes: lines.filter((l) => !l.startsWith('#')),
+  };
+}
+---
+
+<PortalLayout title="Контент смены · АйДаКемп">
+  <div class="den">
+    <header class="den-head">
+      <div>
+        <h1 class="den-title">Контент смены</h1>
+        <p class="den-sub">
+          {shift ? shift.name : 'Нет активной смены'} · сдаётся в бота <a href="https://t.me/Aidacamp2026bot" class="gal-botlink">@Aidacamp2026bot</a>
+        </p>
+      </div>
+      {shifts.length > 1 && (
+        <form method="get" class="den-shiftpick">
+          <label for="shiftpick">Смена:</label>
+          <select id="shiftpick" name="shift" onchange="this.form.submit()">
+            {shifts.map((s) => (
+              <option value={s.id} selected={shift && Number(s.id) === Number(shift.id)}>
+                {s.name}{s.status === 'active' ? ' · идёт' : ''}
+              </option>
+            ))}
+          </select>
+        </form>
+      )}
+    </header>
+
+    {(dates.length > 0 || hasPre) && (
+      <nav class="den-days">
+        {hasPre && (
+          <a href={`/portal/content?day=0${shiftQ}`} class={`den-day${day === 0 ? ' active' : ''}`}>
+            <span class="den-day-n">До смены</span>
+            <span class="den-day-d">{counts.get(0)} шт.</span>
+          </a>
+        )}
+        {dates.map((d, i) => {
+          const n = counts.get(i + 1) ?? 0;
+          return (
+            <a href={`/portal/content?day=${i + 1}${shiftQ}`}
+               class={`den-day${day === i + 1 ? ' active' : ''}${n === 0 ? ' gal-day-empty' : ''}`}>
+              <span class="den-day-n">День {i + 1}</span>
+              <span class="den-day-d">{n > 0 ? `${fmtDate(d)} · ${n}` : fmtDate(d)}</span>
+            </a>
+          );
+        })}
+      </nav>
+    )}
+
+    <div class="gal-summary">
+      <span class="gal-count">{items.length} {items.length === 1 ? 'файл' : 'файлов'}</span>
+      {nPhoto > 0 && <span class="gal-chip">фото {nPhoto}</span>}
+      {nVideo > 0 && <span class="gal-chip">видео {nVideo}</span>}
+      {nVoice > 0 && <span class="gal-chip">голосовых {nVoice}</span>}
+      {nWritten > 0 && <span class="gal-chip">текстом {nWritten}</span>}
+      {dayDate && <span class="gal-date">{fmtDate(dayDate)}</span>}
+    </div>
+
+    {missing.length > 0 && (
+      <section class="gal-missing">
+        <h2 class="gal-missing-h">Ещё нет кадра — {missing.length} из {tasks.length}</h2>
+        <ul class="gal-missing-list">
+          {missing.map((t) => (
+            <li class="gal-missing-item">
+              <span class="gal-missing-time">{t.deadline.slice(0, 5)}</span>
+              <span class="gal-missing-title">{t.title}</span>
+              <span class="gal-missing-role">{roleLabel(t.resp_role)}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    {items.length === 0 && spoken.length === 0 && (
+      <p class="gal-empty">
+        За этот день пока ничего не сдано. Всё, что персонал отправит боту, появится здесь автоматически.
+      </p>
+    )}
+
+    {media.length > 0 && (
+      <>
+        <h2 class="gal-section">
+          <span class="gal-section-ic" aria-hidden="true">📷</span> Фото и видео
+          <span class="gal-section-n">{media.length} · клик открывает крупно</span>
+        </h2>
+        <div class="gal-grid">
+          {media.map((it) => {
+            const { tags, notes } = splitKids(it.kids);
+            return (
+              <figure class="gal-tile">
+                <a href={`/api/portal/shift-content-file?id=${it.id}&size=full`}
+                   target="_blank" rel="noopener" class="gal-shot"
+                   data-lb data-kind={it.kind}
+                   data-meta={`${fmtTime(it.created_at)} · ${it.author || 'неизвестно'}`}>
+                  <img src={`/api/portal/shift-content-file?id=${it.id}`}
+                       alt={it.kids || KIND_LABEL[it.kind] || 'кадр'}
+                       loading="lazy" decoding="async" class="gal-img" />
+                  {it.kind === 'video' && <span class="gal-play" aria-hidden="true">▶</span>}
+                  <span class="gal-zoom" aria-hidden="true">⤢ {it.kind === 'video' ? 'плеер' : 'крупно'}</span>
+                </a>
+                <figcaption class="gal-meta">
+                  <div class="gal-meta-top">
+                    <span class="gal-time">{fmtTime(it.created_at)}</span>
+                    <span class={`gal-src${it.compressed ? ' gal-src--soft' : ''}`}>
+                      {it.compressed ? 'сжатое' : 'исходник'}
+                    </span>
+                  </div>
+                  {it.caption && <div class="gal-caption">{it.caption}</div>}
+
+                  {tags.length > 0 ? (
+                    <div class="gal-tags-wrap">
+                      <div class="gal-tags-head">
+                        <span class="gal-tags-label">на {it.kind === 'video' ? 'видео' : 'фото'} · {tags.length}</span>
+                        <button type="button" class="gal-copy" data-copy={tags.join(' ')}>
+                          <span aria-hidden="true">⧉</span> копировать
+                        </button>
+                      </div>
+                      <div class="gal-tags">
+                        {tags.map((t) => <span class="gal-tag">{t}</span>)}
+                      </div>
+                      {notes.map((n) => <div class="gal-tags-note">{n}</div>)}
+                    </div>
+                  ) : (
+                    <div class="gal-tags-empty">лица не распознаны</div>
+                  )}
+
+                  {it.kind === 'video' && it.transcript && (
+                    <details class="gal-vdetails">
+                      <summary>🎬 расшифровка</summary>
+                      <p class="gal-vtext">{it.transcript}</p>
+                    </details>
+                  )}
+                  {it.task_title && <div class="gal-task">{it.task_title}</div>}
+                  {!it.task_title && it.bucket === 'stash' && <div class="gal-stash">в копилку</div>}
+                  <div class="gal-author">
+                    {it.author || 'неизвестно'}
+                    {it.author_role && <span class="gal-role"> · {roleLabel(it.author_role)}</span>}
+                  </div>
+                </figcaption>
+              </figure>
+            );
+          })}
+        </div>
+      </>
+    )}
+
+    {spoken.length > 0 && (
+      <>
+        <h2 class="gal-section">
+          <span class="gal-section-ic" aria-hidden="true">🎙</span> Отчёты словами
+          <span class="gal-section-n">{spoken.length}</span>
+        </h2>
+        <div class="gal-voices">
+          {spoken.map((it) => (
+            <article class="gal-voice">
+              <div class="gal-voice-top">
+                <span class="gal-voice-ic" aria-hidden="true">{it.written ? '✍️' : '🎙'}</span>
+                <span class="gal-voice-who">
+                  {it.author || 'неизвестно'}
+                  {it.author_role && <span class="gal-role"> · {roleLabel(it.author_role)}</span>}
+                </span>
+                <span class="gal-voice-time">{fmtTime(it.created_at)}</span>
+              </div>
+              <p class="gal-voice-text">{it.text}</p>
+              {it.task_title && <div class="gal-task">{it.task_title}</div>}
+            </article>
+          ))}
+        </div>
+      </>
+    )}
+  </div>
+
+  <dialog class="lb" id="lb">
+    <button type="button" class="lb-close" data-lb-close aria-label="Закрыть">&times;</button>
+    <button type="button" class="lb-nav lb-prev" data-lb-prev aria-label="Предыдущий">&lsaquo;</button>
+    <button type="button" class="lb-nav lb-next" data-lb-next aria-label="Следующий">&rsaquo;</button>
+    <div class="lb-stage" data-lb-stage></div>
+    <p class="lb-meta" data-lb-meta></p>
+  </dialog>
+</PortalLayout>
+
+<script>
+  // Лайтбокс кадров смены. Держим ванильным: на портале нет клиентского
+  // фреймворка, а <dialog> уже используется в остальных модалках сайта.
+  const dlg = document.getElementById('lb') as HTMLDialogElement | null;
+  const stage = document.querySelector('[data-lb-stage]');
+  const metaBox = document.querySelector('[data-lb-meta]');
+  const shots = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[data-lb]'));
+  let current = -1;
+
+  function show(i: number) {
+    if (!dlg || !stage || !metaBox || i < 0 || i >= shots.length) return;
+    current = i;
+    const shot = shots[i];
+    const src = shot.getAttribute('href') || '';
+    const isVideo = shot.dataset.kind === 'video';
+
+    // важно очищать: иначе прошлое видео продолжает играть за кадром
+    stage.innerHTML = '';
+    const node = document.createElement(isVideo ? 'video' : 'img');
+    node.className = 'lb-media';
+    node.setAttribute('src', src);
+    if (isVideo) {
+      (node as HTMLVideoElement).controls = true;
+      (node as HTMLVideoElement).autoplay = true;
+      (node as HTMLVideoElement).playsInline = true;
+    } else {
+      node.setAttribute('alt', shot.querySelector('img')?.alt || 'кадр');
+    }
+    stage.appendChild(node);
+
+    metaBox.textContent = `${shot.dataset.meta || ''}  ·  ${i + 1} из ${shots.length}`;
+    dlg.querySelectorAll<HTMLElement>('.lb-nav').forEach((b) => {
+      b.style.display = shots.length > 1 ? '' : 'none';
+    });
+    if (!dlg.open) dlg.showModal();
+  }
+
+  function close() {
+    if (!dlg) return;
+    if (stage) stage.innerHTML = '';   // останавливает воспроизведение
+    dlg.close();
+  }
+
+  // href/target="_blank" на плитках оставлены осознанно: если этот скрипт не
+  // загрузился, кадр по-прежнему открывается в соседней вкладке.
+  shots.forEach((shot, i) => {
+    shot.addEventListener('click', (e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;  // не ломаем «открыть в новой вкладке»
+      e.preventDefault();
+      show(i);
+    });
+  });
+
+  dlg?.addEventListener('close', () => { if (stage) stage.innerHTML = ''; });
+  document.querySelector('[data-lb-close]')?.addEventListener('click', close);
+  document.querySelector('[data-lb-prev]')?.addEventListener('click',
+    () => show((current - 1 + shots.length) % shots.length));
+  document.querySelector('[data-lb-next]')?.addEventListener('click',
+    () => show((current + 1) % shots.length));
+
+  // клик мимо картинки закрывает: у <dialog> фон — это сам элемент
+  dlg?.addEventListener('click', (e) => { if (e.target === dlg) close(); });
+
+  document.addEventListener('keydown', (e) => {
+    if (!dlg?.open) return;
+    if (e.key === 'ArrowLeft') show((current - 1 + shots.length) % shots.length);
+    if (e.key === 'ArrowRight') show((current + 1) % shots.length);
+  });
+
+  // Копирование хэштегов кадра одной строкой. clipboard может быть недоступен
+  // (http, старый браузер) — тогда молча падаем на execCommand через textarea.
+  function copyText(text: string): Promise<void> {
+    if (navigator.clipboard) return navigator.clipboard.writeText(text);
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    return Promise.resolve();
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('.gal-copy').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      copyText(btn.dataset.copy || '').then(() => {
+        const prev = btn.innerHTML;
+        btn.innerHTML = '<span aria-hidden="true">✓</span> скопировано';
+        btn.classList.add('is-done');
+        setTimeout(() => {
+          btn.innerHTML = prev;
+          btn.classList.remove('is-done');
+        }, 1600);
+      });
+    });
+  });
+</script>

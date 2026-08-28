@@ -155,6 +155,10 @@ export const POST: APIRoute = async ({ request }) => {
     // лид в AlfaCRM, потом строка в leads_log с полученным crm_id. Раньше здесь
     // было только уведомление в Telegram — заявки не доезжали ни до CRM, ни до
     // базы, и восстановить их можно было лишь из fortune_events (инцидент 31.07.2026).
+    // Контекст с клиента — тот же набор, что шлёт обычная форма (collectContext):
+    // UTM, yclid/gclid, страница, реферер, устройство, браузер, экран, время в сессии.
+    // До 31.07.2026 заявка Фортуны приходила без всего этого — в CRM был только телефон.
+    const ctx = (body as any)?.ctx;
     const leadBody: Record<string, string> = {
       phone:  phone || '',
       name:   name || '',
@@ -163,9 +167,14 @@ export const POST: APIRoute = async ({ request }) => {
       form_id: 'Колесо фортуны',
       note_extra: `🎰 Колесо фортуны: скидка ${discount}%, итоговая цена ${finalPrice.toLocaleString('ru')} ₽ (было ${origPrice.toLocaleString('ru')} ₽). OrderId: ${orderId}`,
     };
+    if (ctx && typeof ctx === 'object') {
+      for (const [k, v] of Object.entries(ctx)) {
+        if (typeof v === 'string' && v && !(k in leadBody)) leadBody[k] = v;
+      }
+    }
     if (ymClientId) leadBody.ym_client_id = ymClientId;
     const referer = request.headers.get('referer');
-    if (referer) leadBody.landing_url = referer;
+    if (referer && !leadBody.landing_url) leadBody.landing_url = referer;
 
     let crmId: number | null = null;
     try {

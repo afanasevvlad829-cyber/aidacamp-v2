@@ -11,6 +11,7 @@ import { fetchWithTimeout } from '../../lib/fetchWithTimeout';
 // не должен вешать приём заявки. Ошибка таймаута ловится существующими try/catch.
 const ALFA_TIMEOUT_MS = 8000;
 const TELEGRAM_TIMEOUT_MS = 5000;
+const AIDAPLUS_WEBHOOK_TIMEOUT_MS = 4000;
 
 /** Цена выбранной смены в рублях по её названию (для Andata order_value) */
 function shiftPrice(shift: string): number | undefined {
@@ -81,6 +82,63 @@ export async function saveLeadToPg(
     await client.end();
   } catch {
     // best-effort — не блокируем ответ
+  }
+}
+
+/**
+ * Переходный период (25.08.2026, владелец: «пиши сразу в оба потока») — параллельно
+ * с созданием лида в старой AlfaCRM (createCrmLead выше) отправляем ту же заявку
+ * в новую aidaplus CRM, чтобы «Новые лиды» там видели её сразу, без ожидания
+ * ночного моста AlfaCRM→aidaplus. Best-effort: секрет/сеть недоступны — не блокируем
+ * заявку, она всё равно есть в AlfaCRM/Telegram/ФС/PG.
+ */
+async function sendToAidaplus(body: Record<string, string>, crmId: number | null): Promise<void> {
+  const secret = process.env.AIDAPLUS_LEADS_WEBHOOK_SECRET;
+  if (!secret) return;
+  try {
+    await fetchWithTimeout('https://aidaplus.ru/api/leads/webhook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Leads-Secret': secret },
+      // crm_id — 26.08.2026, см. LeadsWebhookController: карточка заводится сразу
+      // под этим id, чтобы ночной мост AlfaCRM→aidaplus её обновил, а не задвоил.
+      body: JSON.stringify({ site: 'aidacamp', crm_id: crmId ?? undefined, ...body }),
+    }, AIDAPLUS_WEBHOOK_TIMEOUT_MS);
+  } catch {
+    // best-effort — не блокируем ответ
+  }
+}
+
+/**
+ * Фолбэк атрибуции: последний размеченный визит этого браузера из таблицы visits.
+ * Визиты пишутся server-side из логов nginx (scripts/attribution/visits_ingest.py),
+ * поэтому переживают адблок и очистку localStorage. Возвращает только метки,
+ * пустой объект — если визитов нет или БД недоступна (best-effort, лид не блокируем).
+ */
+async function lookupVisitAttribution(visitorId: string | null): Promise<Record<string, string>> {
+  const pgDsn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
+  if (!pgDsn || !visitorId) return {};
+  try {
+    const { default: pg } = await import('pg');
+    const client = new pg.Client({ connectionString: pgDsn, connectionTimeoutMillis: 2000, query_timeout: 2000 });
+    await client.connect();
+    try {
+      const r = await client.query(
+        `SELECT utm_source, utm_medium, utm_campaign, utm_content, utm_term, yclid, ysclid, gclid
+         FROM visits
+         WHERE visitor_id = $1
+           AND coalesce(utm_source, yclid, ysclid, gclid) IS NOT NULL
+         ORDER BY ts DESC LIMIT 1`,
+        [visitorId],
+      );
+      const row = r.rows[0] || {};
+      const out: Record<string, string> = {};
+      for (const [k, v] of Object.entries(row)) if (v) out[k] = String(v);
+      return out;
+    } finally {
+      await client.end();
+    }
+  } catch {
+    return {};
   }
 }
 
@@ -206,6 +264,7 @@ function buildCrmNote(body: Record<string, string>): string {
   }
 
   // Устройство
+  if (body.device)    lines.push(`Устройство: ${body.device}${body.browser ? ' · ' + body.browser : ''}`);
   if (body.screen)    lines.push(`Экран: ${body.screen}`);
   if (body.viewport)  lines.push(`Viewport: ${body.viewport}`);
   if (body.language)  lines.push(`Язык: ${body.language}`);
@@ -335,6 +394,14 @@ export const POST: APIRoute = async ({ request }) => {
       || '';
     const userAgent = request.headers.get('user-agent') || '';
 
+    // Атрибуция: если форма пришла без меток (клик по рекламе был раньше, на другой
+    // странице/в другой день), восстанавливаем их из визитов ДО записи в CRM/TG/PG —
+    // тогда lead_source_id, заметка CRM и уведомление получают настоящий источник.
+    const visitorId = readVisitorId(request);
+    if (!(body.utm_source || body.yclid || body.ysclid || body.gclid)) {
+      Object.assign(body, await lookupVisitAttribution(visitorId));
+    }
+
     // Always save to filesystem first (backup)
     await saveLead(body);
 
@@ -349,7 +416,10 @@ export const POST: APIRoute = async ({ request }) => {
     const crmId = await createCrmLead(body);
 
     // PG лог (best-effort)
-    await saveLeadToPg(body, { ip, userAgent, crmId, visitorId: readVisitorId(request) });
+    await saveLeadToPg(body, { ip, userAgent, crmId, visitorId });
+
+    // aidaplus CRM (best-effort, переходный период — см. sendToAidaplus)
+    void sendToAidaplus(body, crmId);
 
     // Andata — событие order_new. Fire-and-forget: НЕ ждём ответ и НЕ блокируем
     // путь заявки (у sendAndataEvent есть свой таймаут и он не бросает исключений).
