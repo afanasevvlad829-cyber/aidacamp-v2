@@ -1,0 +1,154 @@
+---
+/**
+ * Страница конкретного осеннего заезда — /lager-na-osennie-kanikuly/<slug>/
+ *
+ * Зачем отдельные страницы на каждый заезд. Разбор мая 2026 показал, что
+ * страницы конкретных смен конвертируют в разы лучше общих: shift-2-1 — 9,1%,
+ * shift-3 — 6,9%, shift-2 — 4,2% против 0,19% на главной. Логика простая: на
+ * общей странице человек решает, ехать ли вообще; на странице заезда он уже
+ * решил и смотрит даты, цену и что там будет. Осенью таких страниц не было —
+ * только сезонный лендинг с двумя окнами сразу.
+ *
+ * Свой маршрут, а не allShifts. Исторически заезды осени не входили в mainShifts,
+ * пока шла предзапись. С 27.08.2026 они там (продажи открыты), но отдельные
+ * страницы заездов сохранены — они конвертируют кратно лучше общих, см. разбор
+ * выше. Форма на странице работает в режиме продажи, флаг AUTUMN_SEASON.datesPending.
+ */
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import SeasonPreRegister from '../../components/SeasonPreRegister.astro';
+import { AUTUMN_SEASON, seasonWindowSlug, seasonWindowHref, type SeasonCalWindow } from '../../data/seasons';
+import { PRICE_OSEN, VYCHET_OSEN, AUTUMN_2026 } from '../../data/shifts';
+
+export async function getStaticPaths() {
+  const windows = AUTUMN_SEASON.calendarWindows ?? [];
+  return windows.map((w) => ({
+    params: { window: seasonWindowSlug(w.from) },
+    props: { win: w, all: windows },
+  }));
+}
+
+interface Props { win: SeasonCalWindow; all: SeasonCalWindow[] }
+const { win, all } = Astro.props;
+
+const MONTHS: Record<string, string> = {
+  '01': 'января', '02': 'февраля', '03': 'марта', '04': 'апреля',
+  '05': 'мая', '06': 'июня', '07': 'июля', '08': 'августа',
+  '09': 'сентября', '10': 'октября', '11': 'ноября', '12': 'декабря',
+};
+const [, fromM, fromD] = win.from.split('-');
+const [, toM, toD] = win.to.split('-');
+const sameMonth = fromM === toM;
+const datesHuman = sameMonth
+  ? `${parseInt(fromD, 10)}–${parseInt(toD, 10)} ${MONTHS[toM]}`
+  : `${parseInt(fromD, 10)} ${MONTHS[fromM]} — ${parseInt(toD, 10)} ${MONTHS[toM]}`;
+const heroBig = sameMonth ? `${parseInt(fromD, 10)}—${parseInt(toD, 10)}` : `${parseInt(fromD, 10)}.${fromM}—${parseInt(toD, 10)}.${toM}`;
+
+// Повод, по которому родитель выбирает именно этот заезд: у московских школ
+// две системы каникул, и человек ищет ту, что совпадает с его расписанием.
+const reasonRaw = win.sub.split('·')[1]?.trim() || win.label;
+// В данных повод записан строчными как часть подписи календаря —
+// здесь он начинает предложение, поэтому поднимаем первую букву.
+const reason = reasonRaw.charAt(0).toUpperCase() + reasonRaw.slice(1);
+const other = all.find((w) => w.from !== win.from);
+const otherHref = other ? seasonWindowHref(AUTUMN_SEASON.path, other.from) : null;
+const otherDates = other ? other.sub.split('·')[0].trim() : null;
+
+const title = `Лагерь на осенние каникулы ${datesHuman} ${AUTUMN_2026.startDate.slice(0, 4)} — заезд ${AUTUMN_2026.days} дней | АйДаКемп`;
+const description = `IT-лагерь в Подмосковье, заезд ${datesHuman}: ${AUTUMN_2026.days} дней, программирование и нейросети, бассейн, ${PRICE_OSEN}. ${reasonRaw}. Идёт запись на смену.`;
+---
+
+<Base title={title} description={description}>
+  <Header />
+  <main>
+    <section class="mx-auto max-w-[1080px] px-4 pt-24 pb-10 md:pt-28">
+      <a href={`${AUTUMN_SEASON.path}/`} class="text-base text-body-muted hover:text-primary transition-colors">
+        ← Осенние каникулы
+      </a>
+
+      <div class="mt-4 flex flex-wrap items-end gap-x-6 gap-y-2">
+        <span class="text-[52px] md:text-[76px] font-extrabold leading-none tracking-[-0.03em] text-navy-950">
+          {heroBig}
+        </span>
+        <span class="text-[22px] md:text-[28px] font-semibold text-body-muted pb-1">
+          {sameMonth ? MONTHS[toM] : ''}
+        </span>
+        <span class="rounded-full bg-primary-soft px-3 py-1 text-base font-semibold text-primary">
+          {win.label}
+        </span>
+      </div>
+
+      <h1 class="mt-4 text-[24px] md:text-[32px] font-bold leading-tight text-navy-950">
+        Лагерь на осенние каникулы, {datesHuman}
+      </h1>
+      <p class="mt-2 text-[17px] text-body-muted max-w-[640px] leading-snug">
+        {reason}. {AUTUMN_2026.days} дней в санатории «Изумруд» в Подмосковье, 66 км от МКАД.
+        Ребёнок уезжает с работающим проектом — игрой, ботом или приложением.
+      </p>
+
+      {/* Ключевые факты — то, что спрашивают в первую очередь */}
+      <dl class="mt-7 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+        {[
+          { t: 'Даты', v: datesHuman },
+          { t: 'Длительность', v: `${AUTUMN_2026.days} дней` },
+          { t: 'Возраст', v: '7–15 лет' },
+          { t: 'Цена', v: PRICE_OSEN },
+        ].map((f) => (
+          <div class="rounded-[14px] border border-border bg-white px-4 py-3">
+            <dt class="text-[13px] text-body-faint">{f.t}</dt>
+            <dd class="mt-0.5 text-[17px] font-bold text-navy-950">{f.v}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <p class="mt-3 text-[15px] text-body-muted">
+        Налоговый вычет вернёт до {VYCHET_OSEN} — лагерь работает по образовательной лицензии.
+      </p>
+    </section>
+
+    {/* Заявка на заезд — главное действие страницы. Даты утверждены,
+        продажи открыты с 27.08.2026. */}
+    <div id="prereg">
+      <SeasonPreRegister
+        seasonAcc={AUTUMN_SEASON.seasonAcc}
+        slug={`${AUTUMN_SEASON.slug}-${win.from}`}
+        calWindows={[win]}
+        datesPending={AUTUMN_SEASON.datesPending}
+      />
+    </div>
+
+    <section class="mx-auto max-w-[1080px] px-4 py-10">
+      <h2 class="text-[22px] font-bold text-navy-950">Как проходит смена</h2>
+      <p class="mt-2 text-[16px] text-body-muted max-w-[680px] leading-snug">
+        {AUTUMN_SEASON.schedule.intro}
+      </p>
+      <ol class="mt-5 space-y-3">
+        {AUTUMN_SEASON.schedule.days.map((d) => (
+          <li class="flex gap-3 rounded-[14px] border border-border bg-white px-4 py-3">
+            <span class="shrink-0 w-[68px] text-[14px] font-bold text-primary">{d.day}</span>
+            <span class="min-w-0">
+              <b class="text-[16px] text-navy-950">{d.title}</b>
+              <span class="block text-[15px] text-body-muted leading-snug mt-0.5">{d.text}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    {otherHref && (
+      <section class="mx-auto max-w-[1080px] px-4 pb-14">
+        <div class="rounded-[16px] border border-border bg-surface-alt px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+          <p class="text-[16px] text-body">
+            Эти даты не подходят? Есть второй заезд — <b>{otherDates}</b>.
+          </p>
+          <a href={otherHref}
+             class="rounded-[10px] bg-white border border-primary/30 px-4 py-2.5 text-base font-semibold text-primary hover:bg-primary/5 transition-colors">
+            Посмотреть →
+          </a>
+        </div>
+      </section>
+    )}
+  </main>
+  <Footer />
+</Base>

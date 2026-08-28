@@ -193,7 +193,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     // A/B: ?m=haiku -> используем haiku как primary (для замера latency/CSAT)
     // X-Audit: 1 → форсируем Haiku для дешёвого аудита (x3.75 экономия)
-    const _forceHaiku = _isAudit || _abMod === 'haiku' || _auditModelOverride === 'haiku';
+    // fact_lookup: intent уже классифицирован (Haiku) выше для intentBoost — переиспользуем
+    // бесплатно как сигнал роутинга. Промпт intentBoost для fact_lookup и так жёстко
+    // ограничивает модель фактами из RAG ("НЕ выдумывай"), а Haiku-guard ниже перепроверяет
+    // фактическую точность ответа — двойная страховка позволяет доверить рутинные
+    // вопросы-факты (цена/дата/трансфер) дешёвой модели, не трогая тон story/experience/general.
+    const _forceHaiku = _isAudit || _abMod === 'haiku' || _auditModelOverride === 'haiku' || intent === 'fact_lookup';
     const _forceSonnet = _auditModelOverride === 'sonnet';
     const PRIMARY_MODEL = (_forceSonnet ? false : _forceHaiku)
       ? 'claude-haiku-4-5-20251001'

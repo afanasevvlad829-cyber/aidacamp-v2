@@ -7,6 +7,52 @@ const IMMICH_BASE =
   process.env.IMMICH_BASE_URL || import.meta.env.IMMICH_BASE_URL || 'http://127.0.0.1:2283';
 
 type RawAsset = { id: string; type: 'IMAGE' | 'VIDEO'; fileCreatedAt?: string; fileModifiedAt?: string; createdAt?: string };
+type RawAssetWithType = { id: string; type: 'IMAGE' | 'VIDEO'; fileCreatedAt?: string; fileModifiedAt?: string; createdAt?: string };
+
+const BURST_WINDOW_MS = 3000;
+
+/**
+ * Группирует подряд снятые (по времени) кадры в «серии» — соседние по времени
+ * фото с разницей ≤ BURST_WINDOW_MS считаются одной серией камеры (например,
+ * 10 кадров подноса с чаем за долю секунды). Показываем только первый кадр
+ * серии, остальные — в `extraIds` (не выбрасываются, просто скрыты за бейджем
+ * на фронте — «Скачать всё» по-прежнему включает их все).
+ */
+function groupBursts(
+  assets: { id: string; type: 'IMAGE' | 'VIDEO'; ts: number }[],
+): { id: string; type: 'IMAGE' | 'VIDEO'; extraIds?: string[] }[] {
+  const sorted = [...assets].sort((a, b) => a.ts - b.ts);
+  const result: { id: string; type: 'IMAGE' | 'VIDEO'; extraIds?: string[] }[] = [];
+  let lastTs = -Infinity;
+  for (const a of sorted) {
+    const prev = result[result.length - 1];
+    if (prev && a.ts - lastTs <= BURST_WINDOW_MS) {
+      prev.extraIds = [...(prev.extraIds ?? []), a.id];
+    } else {
+      result.push({ id: a.id, type: a.type });
+    }
+    lastTs = a.ts;
+  }
+  return result;
+}
+
+function toTimedAssets(items: RawAssetWithType[]): { id: string; type: 'IMAGE' | 'VIDEO'; ts: number }[] {
+  return items
+    .map((a) => {
+      const raw = a.fileCreatedAt ?? a.fileModifiedAt ?? a.createdAt;
+      const ts = raw ? new Date(raw).getTime() : NaN;
+      return { id: a.id, type: a.type, ts };
+    })
+    .filter((a) => !Number.isNaN(a.ts));
+}
+
+async function resolveTagId(apiKey: string, sceneKey: string): Promise<string | null> {
+  const res = await fetchWithTimeout(`${IMMICH_BASE}/api/tags`, { headers: { 'x-api-key': apiKey } });
+  if (!res.ok) return null;
+  const tags: { id: string; name: string }[] = await res.json();
+  const tag = tags.find((t) => t.name === `scene:${sceneKey}`);
+  return tag?.id ?? null;
+}
 
 /** YYYY-MM-DD по московскому времени (лагерь в Подмосковье — сравниваем даты по его локальному дню, не по UTC). */
 function moscowDateString(d: Date): string {
@@ -29,6 +75,29 @@ export const GET: APIRoute = async ({ params, url }) => {
     if (!albumId) {
       return new Response(JSON.stringify({ ok: false, error: 'Альбом для этой смены не найден в Immich' }), { status: 404 });
     }
+    const sceneParam = url.searchParams.get('scene');
+    if (sceneParam) {
+      const tagId = await resolveTagId(apiKey, sceneParam);
+      if (!tagId) {
+        return new Response(JSON.stringify({ ok: true, assets: [] }), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      const searchRes = await fetchWithTimeout(`${IMMICH_BASE}/api/search/metadata`, {
+        method: 'POST',
+        headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ albumIds: [albumId], tagIds: [tagId] }),
+      });
+      if (!searchRes.ok) {
+        return new Response(JSON.stringify({ ok: false, error: 'Immich search failed' }), { status: 502 });
+      }
+      const searchData = await searchRes.json();
+      const items: RawAssetWithType[] = searchData.assets?.items ?? [];
+      return new Response(
+        JSON.stringify({ ok: true, assets: groupBursts(toTimedAssets(items)) }),
+        { headers: { 'Content-Type': 'application/json' } },
+      );
+    }
     const res = await fetchWithTimeout(`${IMMICH_BASE}/api/albums/${albumId}`, {
       headers: { 'x-api-key': apiKey },
     });
@@ -47,7 +116,7 @@ export const GET: APIRoute = async ({ params, url }) => {
     }
 
     return new Response(
-      JSON.stringify({ ok: true, assets: assets.map((a) => ({ id: a.id, type: a.type })) }),
+      JSON.stringify({ ok: true, assets: groupBursts(toTimedAssets(assets)) }),
       { headers: { 'Content-Type': 'application/json' } },
     );
   } catch (e) {

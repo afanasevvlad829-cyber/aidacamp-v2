@@ -21,13 +21,13 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
 <link rel="stylesheet" href="/styles/icons.css" />
 <style>
   *,*::before,*::after{box-sizing:border-box}
-  body{margin:0;padding:20px 16px 60px;font-family:'Inter',-apple-system,sans-serif;background:#f7f5f0;color:#0d1a2b}
+  body{margin:0;padding:20px 16px 60px;font-family:'Inter',-apple-system,sans-serif;background:#f7f5f0;color:var(--color-navy-950)}
   .wrap{max-width:720px;margin:0 auto}
   h1{font-size:20px;margin:0 0 6px;font-weight:900}
   .shift-nav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
   .shift-nav a{font-size:12px;padding:5px 10px;border-radius:8px;background:#fff;border:1px solid #ebe7d8;text-decoration:none;color:#5e6878;font-weight:600}
-  .shift-nav a.is-current{background:#0d1a2b;color:#fff;border-color:#0d1a2b}
-  #status{color:#64748b;font-size:14px;min-height:20px;margin-bottom:12px}
+  .shift-nav a.is-current{background:var(--color-navy-950);color:#fff;border-color:var(--color-navy-950)}
+  #status{color:var(--color-slate-500);font-size:14px;min-height:20px;margin-bottom:12px}
   #grid{display:grid;grid-template-columns:1fr;gap:14px}
 
   .foto-unsorted-group{background:#fff;border:1px solid #ebe7d8;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
@@ -35,13 +35,13 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
   .foto-unsorted-thumb{width:100%;max-height:420px;object-fit:contain;border-radius:8px;display:block;background:#111}
   .foto-original-link{font-size:12px;color:#5e6878;text-decoration:none;font-weight:600}
   .foto-original-link:hover{text-decoration:underline}
-  .foto-recognized-names{font-size:13px;color:#475569}
+  .foto-recognized-names{font-size:13px;color:var(--color-slate-600)}
   .foto-face-marker{position:absolute;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;pointer-events:none;line-height:1}
   .foto-face-marker::after{content:'';position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid #fff}
   .foto-face-marker::before{content:'';position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:8px solid rgba(0,0,0,.65);z-index:-1}
   .foto-face-list{display:flex;flex-direction:column;gap:6px}
   .foto-face-list-item{display:flex;align-items:center;gap:8px;font-size:14px}
-  .foto-face-list-item select{padding:4px 8px;border-radius:6px;border:1px solid #cbd5e1;font-size:13px}
+  .foto-face-list-item select{padding:4px 8px;border-radius:6px;border:1px solid var(--color-slate-300);font-size:13px}
 </style>
 </head>
 <body>
@@ -63,6 +63,30 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
 
   function setStatus(text) { status.textContent = text; }
 
+  // Дубликат логики из src/data/nameSortOverrides.ts — этот скрипт inline
+  // (define:vars), import сюда не работает. Правишь сортировку на публичной
+  // странице — не забудь поправить и здесь тоже.
+  const SHIFT_NAME_ORDER = {
+    'shift-1': 'firstname-first',
+    'shift-2': 'firstname-first',
+    'shift-3': 'surname-first',
+  };
+  const NAME_SORT_OVERRIDES = {
+    'Александр Сытик': 'Сытик Александр',
+    'Данила Рогов': 'Рогов Данила',
+    'Григорьева Людмила': 'Григорьева Людмила',
+    'Вуколов Петр': 'Вуколов Петр',
+  };
+  function surnameSortKey(name, forShiftId) {
+    if (name in NAME_SORT_OVERRIDES) return NAME_SORT_OVERRIDES[name];
+    const order = SHIFT_NAME_ORDER[forShiftId] || 'surname-first';
+    if (order === 'firstname-first') {
+      const parts = name.trim().split(/\s+/);
+      if (parts.length === 2) return `${parts[1]} ${parts[0]}`;
+    }
+    return name;
+  }
+
   async function loadUnsorted() {
     setStatus('Загружаю неразобранные фото…');
     const res = await fetch(`/api/foto/${shiftId}/unsorted`);
@@ -70,12 +94,14 @@ const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
     if (!data.ok) { setStatus(data.error); return; }
     grid.innerHTML = '';
     const groups = data.groups;
-    const people = data.people;
+    const people = [...data.people].sort((a, b) =>
+      surnameSortKey(a.name, shiftId).localeCompare(surnameSortKey(b.name, shiftId), 'ru'),
+    );
     const totalFaces = groups.reduce((n, g) => n + g.faces.length, 0);
     setStatus(`Неразобранных лиц: ${totalFaces} на ${groups.length} фото`);
 
     const peopleOptions = '<option value="">Кто это?</option>' +
-      people.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+      people.map((p) => `<option value="${p.id}">${surnameSortKey(p.name, shiftId)}</option>`).join('');
 
     for (const group of groups) {
       const card = document.createElement('div');
