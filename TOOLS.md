@@ -298,12 +298,11 @@ direct_api("negativekeywordsharedsets", "update", {"NegativeKeywordSharedSets": 
     "NegativeKeywords": sets[0]["NegativeKeywords"] + ["новая минус фраза"],
 }]})
 
-# Исключённые площадки РСЯ
-resp = direct_api("adimages", params={})  # не то
-# Площадки — через excludedsites (специальный endpoint):
-body = json.dumps({"method": "add", "params": {
-    "ExcludedSites": [{"CampaignId": 123456, "Sites": ["bad-site.ru"]}]
-}}).encode()
+# Исключённые площадки РСЯ — API-МЕТОДА НЕТ (проверено 06.07.2026)
+# v5 REST (json/v5/excludedsites и варианты имени) → HTTP 404
+# v4 Live (method: ExcludedSites) → {"error_code":55,"error_str":"Метод не существует"}
+# Запрещённые площадки добавляются ТОЛЬКО вручную в интерфейсе Директа:
+# Кампания → Настройки → «Запрещённые площадки и внешние сети» (лимит 1000 доменов)
 ```
 
 #### Reports API — статистика
@@ -1078,6 +1077,29 @@ def green_send(phone, message, instance_id, token, channel="wa"):
     with urllib.request.urlopen(req, timeout=15) as r:
         return json.loads(r.read())
 ```
+
+---
+
+### Почта — `run(service="mail")` (IMAP/SMTP, с 29.07.2026)
+
+**Ключи:** `CODIMS_MAIL_USER` / `CODIMS_MAIL_TOKEN` (OAuth-токен Яндекса, scopes `mail:imap_full` + `mail:smtp`)
+**Ящик по умолчанию:** `hello@codims.ru` — он же публичный адрес на aidacamp.ru (`src/data/contacts.ts` → `EMAIL`)
+**Код:** `remote-mcp/lib/run/mail.mjs` в репо MCP — чистый `node:tls`, без зависимостей
+
+```
+run(service="mail", action="folders")                       // папки ящика
+run(service="mail", action="list",  params={folder:"INBOX", limit:20})
+run(service="mail", action="search", params={unseen:true, since:"25-Jul-2026", from:"..."})
+run(service="mail", action="read",  params={uid:30431, folder:"INBOX"})
+run(service="mail", action="draft", params={to:"x@y.ru", subject:"...", text:"...", from_name:"Дарья Афанасьева, АйДаКемп"})
+run(service="mail", action="send",  params={to:"x@y.ru", subject:"...", text:"...", confirm:true})
+```
+
+- **Черновик (`draft`) — способ по умолчанию:** письмо кладётся в «Черновики», человек проверяет и жмёт «Отправить».
+- **`send` без `confirm:true` заблокирован** — письмо наружу уходит только по прямому решению человека. При отправке копия сама кладётся в «Отправленные» (Яндекс по SMTP этого не делает).
+- **Отложенной отправки в API нет** — только кнопка «Отправить позже» на черновике в веб-интерфейсе Яндекс.Почты.
+- **Почта `aidacamp.ru` — НЕ на Яндексе** (MX → `beget.com`), для неё зарезервирован `account:"aidacamp"`: нужны `AIDACAMP_MAIL_USER`/`AIDACAMP_MAIL_PASSWORD` + `AIDACAMP_MAIL_IMAP`/`AIDACAMP_MAIL_SMTP` в `.env`.
+- Яндекс 360 Admin API (`api360.yandex.net`) отправку/чтение писем **не умеет** — только настройки ящиков и правила, поэтому здесь именно IMAP/SMTP.
 
 ---
 
