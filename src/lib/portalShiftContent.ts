@@ -63,19 +63,55 @@ const SELECT_ITEM = `
     LEFT JOIN shift_staff s ON s.tg_id = c.author_tg
     LEFT JOIN shift_tasks t ON t.id = c.task_id`;
 
+/**
+ * Смена, к которой относится выборка. Номера дней (`day`) каждый заезд
+ * начинает заново, поэтому одного дня мало: 20.08.2026 на дне 4 сошлись
+ * 86 кадров смены 3–15 августа и 56 сегодняшних.
+ *
+ * Основной ключ — `shift_id` (FK на `shift`), его проставляет бот при приёме
+ * и миграция `scripts/migrations/002-shift-content-shift-id.sql` для всего,
+ * что снято раньше. Окно дат осталось фолбэком: им подхватываются строки,
+ * у которых `shift_id` пуст (бот не смог сопоставить свой SHIFT_START со
+ * строкой в `shift`). Нижняя граница окна сдвинута на месяц назад, чтобы не
+ * потерять «день 0» — то, что снято до заезда.
+ */
+export interface ShiftScope {
+  id: number;    // shift.id
+  from?: string; // ISO-дата старта смены — только для фолбэка
+  to?: string;   // ISO-дата окончания
+}
+
+function scopeClause(scope: ShiftScope | null, alias: string, firstIdx: number): { sql: string; params: string[] } {
+  if (!scope) return { sql: '', params: [] };
+  const params: string[] = [String(scope.id)];
+  const exact = `${alias}.shift_id = $${firstIdx}::bigint`;
+  if (!scope.from || !scope.to) return { sql: ` AND ${exact}`, params };
+  params.push(scope.from, scope.to);
+  return {
+    sql: ` AND (${exact}
+           OR (${alias}.shift_id IS NULL
+               AND ${alias}.created_at >= ($${firstIdx + 1}::date - interval '30 days')
+               AND ${alias}.created_at < ($${firstIdx + 2}::date + interval '2 days')))`,
+    params,
+  };
+}
+
 /** Дни, по которым уже что-то сдано (для подсветки вкладок). */
-export async function contentDays(): Promise<Map<number, number>> {
+export async function contentDays(scope: ShiftScope | null = null): Promise<Map<number, number>> {
+  const w = scopeClause(scope, 'c', 1);
   const rows = await query<{ day: number; n: string }>(
-    'SELECT day, count(*)::text AS n FROM shift_content GROUP BY day ORDER BY day',
+    `SELECT day, count(*)::text AS n FROM shift_content c WHERE true${w.sql} GROUP BY day ORDER BY day`,
+    w.params,
   );
   return new Map((rows ?? []).map((r) => [Number(r.day), Number(r.n)]));
 }
 
-/** Всё сданное за день, новое сверху. */
-export async function listContent(day: number): Promise<ShiftContentItem[]> {
+/** Всё сданное за день текущей смены, новое сверху. */
+export async function listContent(day: number, scope: ShiftScope | null = null): Promise<ShiftContentItem[]> {
+  const w = scopeClause(scope, 'c', 2);
   const rows = await query<ShiftContentItem>(
-    `${SELECT_ITEM} WHERE c.day = $1 ORDER BY c.created_at DESC, c.id DESC`,
-    [day],
+    `${SELECT_ITEM} WHERE c.day = $1${w.sql} ORDER BY c.created_at DESC, c.id DESC`,
+    [String(day), ...w.params],
   );
   return rows ?? [];
 }
@@ -85,15 +121,61 @@ export async function getContentItem(id: number): Promise<ShiftContentItem | nul
   return rows?.[0] ?? null;
 }
 
-/** Задания дня + сколько кадров под каждое уже сдано. */
-export async function listTasks(day: number): Promise<ShiftTaskRow[]> {
+export interface ShiftFeedbackItem {
+  id: number;
+  day: number;
+  text: string;
+  created_at: string;
+  author: string | null;
+  author_role: string | null;
+}
+
+/**
+ * Отчёты, написанные текстом. Живут в отдельной таблице, потому что приходят
+ * не файлом, а сообщением, — но для читающего это тот же отчёт за день, что и
+ * голосовой. Пока их здесь не было, вечер выглядел пустым: 11.08 голосовых не
+ * прислал никто, а четыре текстовых отчёта в ленту не попадали.
+ */
+export async function listFeedback(day: number, scope: ShiftScope | null = null): Promise<ShiftFeedbackItem[]> {
+  const w = scopeClause(scope, 'f', 2); // те же номера дней у прошлых смен — см. ShiftScope
+  const rows = await query<ShiftFeedbackItem>(
+    `SELECT f.id, f.day, f.text, f.created_at,
+            s.name AS author, s.role AS author_role
+       FROM shift_feedback f
+       LEFT JOIN shift_staff s ON s.tg_id = f.tg_id
+      WHERE f.day = $1${w.sql}
+      ORDER BY f.created_at DESC, f.id DESC`,
+    [String(day), ...w.params],
+  );
+  return rows ?? [];
+}
+
+/**
+ * Задания дня + сколько кадров под каждое уже сдано.
+ *
+ * До 21.08.2026 `shift_tasks` была одним общим списком на все заезды, и здесь
+ * стояла оговорка, что своего `shift_id` ей не нужно. Оговорка не выдержала:
+ * общим оставался и флаг `done`, поэтому галочка одной смены переезжала в
+ * следующую, а «сдано 2 из 6» нельзя было отнести ни к какому заезду.
+ * Миграция 003 раздала задачи по сменам — исходный 13-дневный план остался
+ * смене 3–15 августа, текущая получила свою копию с днями 1–10.
+ *
+ * Фильтр по смене строгий, без фолбэка по датам: у задачи нет `created_at`,
+ * по которому её можно было бы отнести к заезду, — строка без `shift_id`
+ * просто не покажется. Кадры под задание считаем тем же скоупом: `task_id`
+ * теперь уникален внутри смены, но фильтр оставлен как страховка.
+ */
+export async function listTasks(day: number, scope: ShiftScope | null = null): Promise<ShiftTaskRow[]> {
+  const w = scopeClause(scope, 'c', 2);
+  const ownShift = scope ? ' AND t.shift_id = $2::bigint' : '';
   const rows = await query<ShiftTaskRow>(
     `SELECT t.id, t.day, t.title, t.resp_role, t.deadline::text AS deadline, t.done,
-            (SELECT count(*) FROM shift_content c WHERE c.task_id = t.id)::int AS shots
+            (SELECT count(*) FROM shift_content c
+              WHERE c.task_id = t.id${w.sql})::int AS shots
        FROM shift_tasks t
-      WHERE t.day = $1
+      WHERE t.day = $1${ownShift}
       ORDER BY t.deadline, t.id`,
-    [day],
+    [String(day), ...w.params],
   );
   return rows ?? [];
 }
