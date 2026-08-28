@@ -1,0 +1,80 @@
+name: Evergreen refresh
+
+# Умная пересборка по переходам смен.
+#
+# Сайт статический: сезонная проза («две смены», «майские прошли») вычисляется
+# из дат смен на МОМЕНТ СБОРКИ (src/data/evergreen.ts). Значит между деплоями
+# она может устареть — когда смена началась/закончилась, а пуша не было.
+#
+# Этот воркфлоу раз в день сравнивает эвергрин-сигнатуру (scripts/evergreen-state.py)
+# НА СЕГОДНЯ с сигнатурой НА ДАТУ последнего успешного рана Deploy. Отличие =
+# смена пересекла границу после последней сборки → диспатчит обычный Deploy
+# (пересборка возьмёт свежую дату). В обычные дни не делает НИЧЕГО — не гоняет
+# прод вхолостую.
+#
+# История (2026-08-07): раньше состояние жило марк-файлом .github/evergreen-state,
+# который воркфлоу при переходе коммитил прямо в dev. 04.08 на dev включили
+# branch protection (required check "quality") — пуш от GITHUB_TOKEN стал
+# невозможен (GH006), воркфлоу падал 4 дня подряд. Теперь состояние не хранится
+# вообще: точка отсчёта — created_at последнего успешного Deploy. Даты везде
+# UTC — и created_at, и date.today() в evergreen-state.py на раннере, и
+# new Date() при сборке; сравнение согласовано. Бонус против старой схемы:
+# упавший деплой не теряет переход — сигнатуры расходятся, пока какой-нибудь
+# деплой не пройдёт успешно.
+#
+# Слепое пятно (осознанное): ручной Deploy с input skip_prod=true обновляет
+# только dev, но засчитывается как точка отсчёта. Редкий ручной случай —
+# лечится следующим обычным деплоем.
+
+on:
+  schedule:
+    - cron: '15 3 * * *'   # 06:15 МСК ежедневно
+  workflow_dispatch:
+
+concurrency:
+  group: evergreen-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: write      # gh run list по Deploy + gh workflow run deploy.yml
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+
+      - name: Сигнатура сегодня vs на дату последнего деплоя
+        id: sig
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOW=$(python3 scripts/evergreen-state.py)
+          LAST_DEPLOY=$(gh run list -R "${{ github.repository }}" \
+            --workflow deploy.yml --status success --limit 1 \
+            --json createdAt --jq '.[0].createdAt // empty' | cut -dT -f1)
+          if [ -z "$LAST_DEPLOY" ]; then
+            echo "Успешных ранов Deploy не найдено — считаем, что пересборка нужна."
+            THEN=none
+          else
+            THEN=$(python3 scripts/evergreen-state.py "$LAST_DEPLOY")
+          fi
+          echo "Сегодня:          $NOW"
+          echo "Последний деплой: ${LAST_DEPLOY:-—} → $THEN"
+          echo "now=$NOW"   >> "$GITHUB_OUTPUT"
+          echo "then=$THEN" >> "$GITHUB_OUTPUT"
+
+      - name: Переход смены? — запустить деплой
+        if: steps.sig.outputs.now != steps.sig.outputs.then
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Переход: '${{ steps.sig.outputs.then }}' → '${{ steps.sig.outputs.now }}'"
+          gh workflow run deploy.yml --ref dev
+
+      - name: Без изменений — пропуск
+        if: steps.sig.outputs.now == steps.sig.outputs.then
+        run: echo "Сигнатура не изменилась (${{ steps.sig.outputs.now }}) — деплой не нужен."

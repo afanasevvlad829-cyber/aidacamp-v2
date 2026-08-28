@@ -79,7 +79,7 @@ import { WAITLIST_EXPLANATION } from '../../data/shifts';
         data-book-submit
         data-haptic
         data-spring-btn
-        class="mt-4 h-[52px] w-full rounded-xl bg-primary text-[16px] font-semibold text-[#0d1a2b] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(236,124,0,0.35)] hover:-translate-y-[1px] active:translate-y-0"
+        class="mt-4 h-[52px] w-full rounded-xl bg-primary text-[16px] font-semibold text-navy-950 transition-all duration-200 hover:shadow-[0_4px_16px_rgba(236,124,0,0.35)] hover:-translate-y-[1px] active:translate-y-0"
       >
         Отправить заявку
       </button>
@@ -99,6 +99,7 @@ import { WAITLIST_EXPLANATION } from '../../data/shifts';
     const modal = document.getElementById('shiftBookModal') as HTMLDialogElement | null;
     if (!modal || (modal as any).__bookInit) return;
     (modal as any).__bookInit = true;
+    const bookModal = modal;
 
     const ageBtns = modal.querySelectorAll<HTMLButtonElement>('[data-book-age]');
     const phone = modal.querySelector<HTMLInputElement>('[data-book-phone]');
@@ -114,7 +115,7 @@ import { WAITLIST_EXPLANATION } from '../../data/shifts';
 
     let selectedAge = '';
 
-    function isWaitlist() { return modal.dataset.waitlist === 'true'; }
+    function isWaitlist() { return bookModal.dataset.waitlist === 'true'; }
     function submitLabel() { return isWaitlist() ? 'Оставить заявку в лист ожидания' : 'Отправить заявку'; }
 
     function resetForm() {
@@ -130,7 +131,7 @@ import { WAITLIST_EXPLANATION } from '../../data/shifts';
       waitlistBlock?.classList.toggle('hidden', !isWaitlist());
       if (submit) submit.textContent = submitLabel();
       // Сброс CallTimeSelector (чипы + closure-переменные)
-      modal.querySelector('.call-time-selector')?.dispatchEvent(new CustomEvent('call-time:reset'));
+      bookModal.querySelector('.call-time-selector')?.dispatchEvent(new CustomEvent('call-time:reset'));
     }
 
     ageBtns.forEach((btn) => {

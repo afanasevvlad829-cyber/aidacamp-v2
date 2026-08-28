@@ -1,18 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import pg from 'pg';
-
-const { Pool } = pg;
-
-let _pool: InstanceType<typeof Pool> | null = null;
-function getPool() {
-  if (!_pool) {
-    const url = process.env.DATABASE_URL || import.meta.env.DATABASE_URL;
-    if (!url) return null;
-    _pool = new Pool({ connectionString: url, max: 3 });
-  }
-  return _pool;
-}
+import { getPool } from '../../lib/db';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 

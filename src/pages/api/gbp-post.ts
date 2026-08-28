@@ -1,5 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
+import { fetchWithTimeout } from '../../lib/fetchWithTimeout';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 
@@ -19,7 +20,7 @@ async function readConfig(): Promise<Record<string, string>> {
 }
 
 async function getAccessToken(cfg: Record<string, string>): Promise<string> {
-  const res = await fetch('https://oauth2.googleapis.com/token', {
+  const res = await fetchWithTimeout('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -88,7 +89,7 @@ export const POST: APIRoute = async ({ request }) => {
     const parent = `${accountId}/locations/${locationId.replace('locations/', '')}`;
     const apiUrl = `https://mybusiness.googleapis.com/v4/${parent}/localPosts`;
 
-    const apiRes = await fetch(apiUrl, {
+    const apiRes = await fetchWithTimeout(apiUrl, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -125,7 +126,7 @@ export const GET: APIRoute = async () => {
 
     const accessToken = await getAccessToken(cfg);
     const parent = `${accountId}/locations/${locationId.replace('locations/', '')}`;
-    const apiRes = await fetch(`https://mybusiness.googleapis.com/v4/${parent}/localPosts?pageSize=10`, {
+    const apiRes = await fetchWithTimeout(`https://mybusiness.googleapis.com/v4/${parent}/localPosts?pageSize=10`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 

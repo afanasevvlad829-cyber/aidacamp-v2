@@ -2,6 +2,8 @@ import type { MiddlewareHandler } from 'astro';
 import { verifySessionPayload } from './lib/portalSession';
 import { getStaff, getStaffById } from './lib/portalStaff';
 import { touchLastSeen } from './lib/portalLog';
+import { STAFF_COOKIE, getStaffSecret, isStaffAuthed } from './lib/staffAuth';
+import { fotoCookieName, verifyShiftFoto } from './lib/fotoLink';
 
 const PORTAL_PUBLIC = new Set(['/portal/login', '/portal/login/', '/portal/tg-app', '/api/portal/login', '/api/portal/check', '/api/portal/tg', '/api/portal/penalty/scan']);
 
@@ -43,24 +45,139 @@ const TILDA_REDIRECTS: Record<string, string> = {
   // Дубль статьи объединён (2026-07-13): -rebenka версия удалена, контент слит в каноническую
   '/stati/lager-dlya-giperaktivnogo-rebenka': '/stati/lager-dlya-giperaktivnogo/',
   '/stati/lager-dlya-giperaktivnogo-rebenka/': '/stati/lager-dlya-giperaktivnogo/',
+  // Смены завершились — [id].astro больше не генерирует страницы для них (404),
+  // редирект на живой пост-отчёт о смене вместо мёртвой ссылки
+  '/shifts/shift-1': '/kak-proshla-smena-1/',
+  '/shifts/shift-1/': '/kak-proshla-smena-1/',
+  '/shifts/shift-2': '/kak-proshla-smena-2/',
+  '/shifts/shift-2/': '/kak-proshla-smena-2/',
+  // Смена 2.1/2.2 — половины той же Смены 2, отдельного пост-отчёта нет
+  '/shifts/shift-2-1': '/kak-proshla-smena-2/',
+  '/shifts/shift-2-1/': '/kak-proshla-smena-2/',
+  '/shifts/shift-2-2': '/kak-proshla-smena-2/',
+  '/shifts/shift-2-2/': '/kak-proshla-smena-2/',
 };
+
+// nginx (сзади прокси) шлёт X-Forwarded-Proto: https корректно, но
+// @astrojs/node standalone строит url.protocol по внутреннему (http)
+// TCP-соединению до Node, не по этому заголовку — редирект на абсолютный
+// URL через `new URL(target, url)` эмитит http://, добавляя лишний хоп
+// апгрейда до https. Инцидент: /stati/reiting-detskih-lagerey-podmoskove →
+// http://.../reiting-detskih-lagerej-podmoskove/ → https://... (2 редиректа
+// вместо 1, Labrika: «Множественные редиректы»).
+function redirectTo(url: URL, request: Request, target: string, status = 301): Response {
+  const proto = request.headers.get('x-forwarded-proto') ?? url.protocol.replace(':', '');
+  const dest = new URL(target, url);
+  dest.protocol = `${proto}:`;
+  return Response.redirect(dest, status);
+}
 
 // ─── Rate limiter state ─────────────────────────────────────────────────────
 
 const ipCounts = new Map<string, { count: number; reset: number }>();
 
+// nginx (location ^~ /api/) шлёт X-Real-IP: $remote_addr — nginx его ПЕРЕЗАПИСЫВАЕТ,
+// клиент подделать не может. X-Forwarded-For же собран через $proxy_add_x_forwarded_for,
+// который ДОПИСЫВАЕТ реальный IP в конец уже присланного клиентом значения — первый
+// элемент (.split(',')[0]) остаётся под контролем клиента и обходит rate-limit
+// подделкой заголовка на каждый запрос. Поэтому: X-Real-IP приоритетно, XFF —
+// только как фолбэк (последний элемент, не первый) для окружений без nginx впереди.
+export function getClientIp(request: Request): string {
+  const realIp = request.headers.get('x-real-ip')?.trim();
+  if (realIp) return realIp;
+  const xff = request.headers.get('x-forwarded-for');
+  if (xff) {
+    const parts = xff.split(',').map((s) => s.trim()).filter(Boolean);
+    if (parts.length) return parts[parts.length - 1];
+  }
+  return 'unknown';
+}
+
+function checkRateLimit(ip: string, bucket: string, limit: number, windowMs = 60_000): boolean {
+  const key = `${ip}:${bucket}`;
+  const now = Date.now();
+  const entry = ipCounts.get(key) ?? { count: 0, reset: now + windowMs };
+  if (now > entry.reset) { entry.count = 0; entry.reset = now + windowMs; }
+  entry.count++;
+  ipCounts.set(key, entry);
+  return entry.count > limit;
+}
+
 export const onRequest: MiddlewareHandler = async (context, next) => {
   const { request, url, cookies, locals } = context;
   const path = url.pathname;
 
-  // ── Гейт портала ───────────────────────────────────────────────
-  if (path.startsWith('/portal') || path.startsWith('/api/portal')) {
+  // ── Гейт альбомов смен: /api/foto/* ────────────────────────────
+  // Фото и распознанные лица детей. До 27.08.2026 открыто любому — защитой
+  // было только незнание URL. Доступ даёт подписанная ссылка /foto/<id>?s=<token>:
+  // страница при валидном токене ставит httpOnly-куку foto_s_<id>, и запросы к API
+  // авторизуются ею. Персонал проходит по портальной/staff-сессии.
+  //
+  // /api/foto/image/<assetId> не содержит номера смены в пути, поэтому принимает
+  // ЛЮБУЮ валидную куку альбома: id ассета — неугадываемый UUID из Immich, а
+  // альтернатива (протаскивать shift в каждый <img src>) переписывает десяток мест
+  // клиентского кода ради границы, которая всё равно опирается на неугадываемость id.
+  if (path.startsWith('/api/foto/')) {
+    const seg = path.split('/');            // ['', 'api', 'foto', '<shiftId|image>', ...]
+    const shiftSeg = seg[3];
+    const isImage = shiftSeg === 'image';
+    const portalSecret = process.env.PORTAL_SESSION_SECRET;
+    const hasPortal = !!portalSecret && !!verifySessionPayload(cookies.get('portal_session')?.value, portalSecret)?.role;
+    const staffSecret = getStaffSecret();
+    const hasStaff = !!staffSecret && isStaffAuthed(cookies.get(STAFF_COOKIE)?.value, staffSecret);
+    let hasAlbum = false;
+    if (isImage) {
+      // Любая валидная кука альбома (см. комментарий выше).
+      hasAlbum = (request.headers.get('cookie') ?? '')
+        .split(';')
+        .map((c) => c.trim())
+        .filter((c) => c.startsWith('foto_s_'))
+        .some((c) => {
+          const eq = c.indexOf('=');
+          if (eq < 0) return false;
+          return verifyShiftFoto(c.slice('foto_s_'.length, eq), decodeURIComponent(c.slice(eq + 1)));
+        });
+    } else {
+      hasAlbum = verifyShiftFoto(shiftSeg, cookies.get(fotoCookieName(shiftSeg))?.value)
+        || verifyShiftFoto(shiftSeg, url.searchParams.get('s'));
+    }
+    if (!hasPortal && !hasStaff && !hasAlbum) {
+      return new Response(JSON.stringify({ ok: false, error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+    }
+  }
+
+  // ── Гейт внутренних API с чувствительными данными ──────────────
+  // /api/shift-roster отдаёт ФИО/пол/возраст детей из AlfaCRM, /api/ab-monitor-data —
+  // внутренние метрики A/B. Оба вызываются из ДВУХ контуров с разными куками:
+  // портал (portal_session) и конструктор смены /staff/plan (staff_auth_2026),
+  // поэтому принимаем любую из двух сессий. Раньше гейта не было вовсе.
+  if (path.startsWith('/api/shift-roster') || path.startsWith('/api/ab-monitor-data')) {
+    const portalSecret = process.env.PORTAL_SESSION_SECRET;
+    const hasPortal = !!portalSecret && !!verifySessionPayload(cookies.get('portal_session')?.value, portalSecret)?.role;
+    const staffSecret = getStaffSecret();
+    const hasStaff = !!staffSecret && isStaffAuthed(cookies.get(STAFF_COOKIE)?.value, staffSecret);
+    if (!hasPortal && !hasStaff) {
+      return new Response(JSON.stringify({ ok: false, error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+    }
+  }
+
+  // ── Гейт портала (+ /api/admin/* и /admin/* — только роль admin) ──────────
+  // /admin (без /api) до 27.08.2026 не гейтился вообще: страницы hero/gallery/
+  // ab-monitor/gbp-setup были открыты по прямой ссылке. Исключение — /admin/p-link,
+  // у него собственная проверка ADMIN_KEY (не ломаем существующий вход владельца).
+  const isAdminPage = path.startsWith('/admin') && !path.startsWith('/admin/p-link');
+  if (path.startsWith('/portal') || path.startsWith('/api/portal') || path.startsWith('/api/admin') || isAdminPage) {
     const cleanPortal = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
     const isPublic = PORTAL_PUBLIC.has(path) || PORTAL_PUBLIC.has(cleanPortal);
     if (!isPublic) {
+      const portalSecret = process.env.PORTAL_SESSION_SECRET;
+      if (!portalSecret) {
+        if (path.startsWith('/api/')) return new Response('Service Unavailable', { status: 503 });
+        return new Response(null, { status: 302, headers: { Location: `/portal/login?next=${encodeURIComponent(path)}` } });
+      }
       const payload = verifySessionPayload(
         cookies.get('portal_session')?.value,
-        process.env.PORTAL_SESSION_SECRET ?? '',
+        portalSecret,
       );
       let role = payload?.role ?? null;
       // Для сотрудничьих сессий (есть sub) — проверяем active/role в БД (кэш 60с).
@@ -109,6 +226,15 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
         const location = `/portal/login?next=${encodeURIComponent(path)}`;
         return new Response(null, { status: 302, headers: { Location: location } });
       }
+      // /api/admin/* — админ-операции (загрузка медиа, portal-audit с exec) —
+      // только роль admin (консистентно с requireRole(['admin']) в staff.ts/roles.ts).
+      // Без сессии — 401 выше; валидная сессия с другой ролью — 403.
+      if ((path.startsWith('/api/admin') || isAdminPage) && role !== 'admin') {
+        if (path.startsWith('/api/')) {
+          return new Response(JSON.stringify({ ok: false, error: 'forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+        }
+        return new Response('Forbidden', { status: 403 });
+      }
       locals.portalRole = role as any;
       locals.portalRoles = staffRoles as any;
       locals.portalName = staffName ?? undefined;
@@ -123,28 +249,22 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
 
   // /blog/* → /stati/* (301)
   if (path === '/blog/' || path === '/blog') {
-    return Response.redirect(new URL('/stati/', url), 301);
+    return redirectTo(url, request, '/stati/');
   }
   if (path.startsWith('/blog/')) {
-    return Response.redirect(new URL(path.replace('/blog/', '/stati/'), url), 301);
+    return redirectTo(url, request, path.replace('/blog/', '/stati/'));
   }
 
   // Tilda legacy URLs + duplicate reiting slug (301)
   const cleanPath = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
   const target = TILDA_REDIRECTS[path] ?? TILDA_REDIRECTS[cleanPath];
   if (target) {
-    return Response.redirect(new URL(target, url), 301);
+    return redirectTo(url, request, target);
   }
 
   if (url.pathname === '/api/ask') {
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
-    const now = Date.now();
-    const entry = ipCounts.get(ip) ?? { count: 0, reset: now + 60000 };
-    if (now > entry.reset) { entry.count = 0; entry.reset = now + 60000; }
-    entry.count++;
-    ipCounts.set(ip, entry);
-
-    if (entry.count > 20) {
+    const ip = getClientIp(request);
+    if (checkRateLimit(ip, 'ask', 20)) {
       return new Response(
         JSON.stringify({
           state: 'error',
@@ -157,11 +277,20 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
       );
     }
   }
+
+  if (url.pathname === '/api/lead' || url.pathname === '/api/contact-send') {
+    const ip = getClientIp(request);
+    if (checkRateLimit(ip, 'form', 5)) {
+      return new Response(
+        JSON.stringify({ error: 'Слишком много запросов. Подождите минуту.' }),
+        { status: 429, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+  }
   const response = await next();
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'SAMEORIGIN');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=()');
-  response.headers.set('X-XSS-Protection', '1; mode=block');
   return response;
 };

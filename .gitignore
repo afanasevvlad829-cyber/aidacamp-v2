@@ -5,6 +5,7 @@ node_modules/
 .runtime/
 tools/__pycache__/
 __pycache__/
+scripts/.venv/
 
 # Generated
 build/
@@ -50,6 +51,12 @@ reports/**
 !public/video/daria-story-preview.mp4
 !public/video/*.webm
 *.jpg
+# OG-превью страниц видео: мессенджеры не показывают AVIF, поэтому нужен именно JPG.
+# Без исключения они молча не коммитятся → og:image 404 → превью в WhatsApp/Telegram пропадает.
+!public/images/videos/og/*.jpg
+# OG-превью статей: та же причина — соцсети и мессенджеры тянут только JPG.
+# Файлы 1200x630, ~120 КБ, отдаются лишь парсерам превью и на скорость страниц не влияют.
+!public/images/articles/og-*.jpg
 # .claude/ — только settings.json коммитим (общие deny-rules для всех агентов)
 .claude/*
 !.claude/settings.json
@@ -71,6 +78,7 @@ audio/
 
 # Playwright E2E artifacts
 test-results/
+coverage/
 playwright-report/
 /playwright/.cache/
 
@@ -98,3 +106,15 @@ agent-secrets.env
 .briefs/
 .lock-sha256
 .worktrees/
+
+# Мусор в корне репо — скриншоты, временные скрипты, артефакты браузерных сессий
+# (ведущий /, чтобы не задеть public/ и src/)
+/.codex-artifacts/
+/.playwright-mcp/
+/tmp_*.py
+/probe*.py
+/*.png
+/*.jpeg
+
+# Куки яндекс-сессии для автоматизации Директа — локально нужен, в git нельзя
+/.direct-session.json

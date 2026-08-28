@@ -19,8 +19,8 @@ const ROLE_LABEL: Record<string, string> = {
 
 // Pending: telegram_id есть, role нет, staff_key нет
 const pending = staff.filter((s) => s.telegram_id != null && s.role == null && s.staff_key == null);
-// Placeholder: telegram_id нет, staff_key есть
-const placeholders = staff.filter((s) => s.telegram_id == null && s.staff_key != null);
+// Placeholder: telegram_id нет (staff_key опционален — add-manual может создать без ключа)
+const placeholders = staff.filter((s) => s.telegram_id == null);
 // Для выпадайки «привязать к должности» — только активные placeholder
 const activePlaceholders = placeholders.filter((p) => p.active);
 // Linked: telegram_id есть, role есть
@@ -372,7 +372,7 @@ const roleLabel = (r: string | null | undefined): string => (r ? ROLE_LABELS[r] 
             <i class="bi bi-check-lg text-base" aria-hidden="true"></i>
           </button>
           <span class="whitespace-nowrap text-base text-body">— <b>{roleLabel(ph.role) || 'без роли'}</b></span>
-          <span class="hidden text-base text-body-muted md:inline">key: {ph.staff_key}</span>
+          {ph.staff_key && <span class="hidden text-base text-body-muted md:inline">key: {ph.staff_key}</span>}
           {!ph.active && <span class="text-base font-semibold text-red-600">отключён</span>}
         </form>
         <span class="hidden text-base text-body-muted lg:inline">Ждёт TG</span>

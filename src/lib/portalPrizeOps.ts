@@ -1,7 +1,7 @@
 /**
  * Серверные операции над призами: журнал выдач + кастомный каталог.
  */
-import { withDbClient } from './db';
+import { withDbClient, withDbTransaction } from './db';
 
 export interface PrizeIssuance {
   id: number;
@@ -122,7 +122,7 @@ export async function countIssuancesByPrize(): Promise<Record<string, number>> {
   return r ?? {};
 }
 
-export async function createIssuance(p: {
+export async function issuePrize(p: {
   prize_id: string;
   prize_name?: string | null;
   kid_id?: number | null;
@@ -132,17 +132,30 @@ export async function createIssuance(p: {
   video_url?: string | null;
   note?: string | null;
   bongere_price?: number | null;
-}): Promise<number> {
-  const r = await withDbClient(async (c) => {
-    const q = await c.query(
+}): Promise<{ id: number; remaining: number }> {
+  const result = await withDbTransaction(async (client) => {
+    const stock = await client.query(
+      `UPDATE portal_prize_custom
+          SET qty = qty - 1, updated_at = NOW()
+        WHERE slug = $1 AND archived = FALSE AND qty > 0
+        RETURNING qty`,
+      [p.prize_id]
+    );
+    if (!stock.rowCount) throw new Error('prize unavailable or out of stock');
+
+    const issuance = await client.query(
       `INSERT INTO portal_prize_issuance (prize_id, prize_name, kid_id, kid_name, issued_by, photo_url, video_url, note, bongere_price)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
       [p.prize_id, p.prize_name ?? null, p.kid_id ?? null, p.kid_name ?? null, p.issued_by ?? null,
        p.photo_url ?? null, p.video_url ?? null, p.note ?? null, p.bongere_price ?? null]
     );
-    return Number(q.rows[0].id);
+    return {
+      id: Number(issuance.rows[0].id),
+      remaining: Number(stock.rows[0].qty),
+    };
   });
-  return r ?? 0;
+  if (!result) throw new Error('database unavailable');
+  return result;
 }
 
 export async function deleteIssuance(id: number): Promise<void> {

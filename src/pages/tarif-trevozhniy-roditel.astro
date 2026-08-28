@@ -4,6 +4,7 @@ import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { TELEGRAM_URL } from '../data/contacts';
+import BreadcrumbSchema from '../components/BreadcrumbSchema.astro';
 
 const TG_TEXT = encodeURIComponent('Хочу тариф «Тревожный родитель» 😅');
 const tgLink = `${TELEGRAM_URL}?text=${TG_TEXT}`;
@@ -78,6 +79,7 @@ const upsells = [
   description="Подробное расписание тарифа «Тревожный родитель» в IT-лагере АйДаКемп. 10 дней, фильтрованная вода, шикарный вид на лес, сертификат «Я отпустил(а)»."
 >
   <Fragment slot="head">
+    <BreadcrumbSchema label="Тревожный родитель" />
   </Fragment>
 
   <Header />
@@ -90,6 +92,13 @@ const upsells = [
         <i class="bi bi-heart-fill text-base" aria-hidden="true"></i>
         Эксклюзивный тариф
       </div>
+
+      <!-- Breadcrumb -->
+      <nav class="text-base text-white/50 mb-3">
+        <a href="/" class="hover:text-white/80 transition-colors">Главная</a>
+        <span class="mx-2">&rarr;</span>
+        <span class="text-white/70">Тревожный родитель</span>
+      </nav>
 
       <h1 class="text-[28px] md:text-[40px] font-extrabold text-white leading-tight">
         Программа «Тревожный родитель»
@@ -312,26 +321,29 @@ const upsells = [
 
     <script>
       const overlay = document.getElementById('lb-overlay');
-      const lbImg = document.getElementById('lb-img');
+      const lbImg = document.getElementById('lb-img') as HTMLImageElement | null;
       const lbClose = document.getElementById('lb-close');
 
-      document.querySelectorAll('[data-lb-src]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          lbImg.src = btn.dataset.lbSrc;
-          lbImg.alt = btn.dataset.lbAlt || '';
-          overlay.classList.remove('hidden');
-          document.body.style.overflow = 'hidden';
+      if (overlay && lbImg && lbClose) {
+        const lightboxOverlay = overlay;
+        document.querySelectorAll<HTMLElement>('[data-lb-src]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            lbImg.src = btn.dataset.lbSrc || '';
+            lbImg.alt = btn.dataset.lbAlt || '';
+            lightboxOverlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+          });
         });
-      });
 
-      function closeLb() {
-        overlay.classList.add('hidden');
-        document.body.style.overflow = '';
+        function closeLb() {
+          lightboxOverlay.classList.add('hidden');
+          document.body.style.overflow = '';
+        }
+
+        lightboxOverlay.addEventListener('click', (e) => { if (e.target === lightboxOverlay) closeLb(); });
+        lbClose.addEventListener('click', closeLb);
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLb(); });
       }
-
-      overlay.addEventListener('click', (e) => { if (e.target === overlay) closeLb(); });
-      lbClose.addEventListener('click', closeLb);
-      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLb(); });
     </script>
 
     <!-- CTA -->

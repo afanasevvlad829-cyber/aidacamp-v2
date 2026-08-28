@@ -12,6 +12,7 @@ import LandingHero from '../LandingHero.astro';
 import SeasonPreRegister from '../SeasonPreRegister.astro';
 import SeasonCalendar from './SeasonCalendar.astro';
 import VideoPlayer from '../VideoPlayer.astro';
+import { getVideoByUrl } from '../../data/videos';
 import { DARIA_CUES } from '../../data/dariaCues';
 import Stay from '../Stay.astro';
 import Team from '../Team.astro';
@@ -19,21 +20,17 @@ import Contacts from '../Contacts.astro';
 import RelatedPages from '../RelatedPages.astro';
 import { getRelatedPages } from '../../data/landing-pages';
 import type { SeasonConfig } from '../../data/seasons';
+import { seasonWindowHref } from '../../data/seasons';
 
 interface Props { config: SeasonConfig; }
 const { config: c } = Astro.props;
 
 const canonical = `https://aidacamp.ru${c.path}`;
+// BreadcrumbList отсюда убран 01.08.2026 — цепочку отдаёт LandingLayout, ему же
+// передаём видимую крошку пропом breadcrumb (страж scripts/check-breadcrumb-schema.mjs).
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
-    {
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Главная", "item": "https://aidacamp.ru" },
-        { "@type": "ListItem", "position": 2, "name": c.breadcrumb, "item": canonical }
-      ]
-    },
     {
       "@type": "FAQPage",
       "mainEntity": c.faq.items.map((f) => ({
@@ -52,6 +49,7 @@ const jsonLd = {
   description={c.description}
   h1={c.h1}
   canonical={canonical}
+  breadcrumb={c.breadcrumb}
   hideAgeBar={true}
 >
   <Fragment slot="head">
@@ -84,7 +82,7 @@ const jsonLd = {
       <p class="mt-5">
         <a href="#prezapis" class="inline-flex items-center gap-2 rounded-xl bg-primary hover:bg-orange-400 px-6 py-3 text-base font-semibold text-white transition-colors">
           <i class="bi bi-calendar-heart" aria-hidden="true"></i>
-          Предварительная запись — без оплаты
+          {c.datesPending ? 'Предварительная запись — без оплаты' : 'Записаться на смену'}
         </a>
       </p>
     </div>
@@ -97,6 +95,25 @@ const jsonLd = {
         <h2 class="text-[24px] md:text-[30px] font-extrabold tracking-[-0.02em] leading-[1.15] text-body mb-4">{c.windowsBlock.heading}</h2>
         <p class="text-[16px] leading-[1.65] text-body-muted mb-6 max-w-[860px]">{c.windowsBlock.intro}</p>
         <SeasonCalendar windows={c.calendarWindows} />
+
+        {/* Ссылки на страницы заездов. Разбор мая 2026: страница конкретной
+            смены конвертирует в разы лучше общей (4–9% против 0,19% на
+            главной) — человек там уже выбрал и смотрит даты, а не решает,
+            ехать ли вообще. Сезонный лендинг показывает оба окна сразу,
+            поэтому даём отсюда прямой вход в нужное. */}
+        {c.hasWindowPages && (
+        <div class="mt-6 flex flex-wrap gap-3">
+          {c.calendarWindows.map((w) => (
+            <a href={seasonWindowHref(c.path, w.from)}
+               class="inline-flex items-center gap-2 rounded-[12px] border border-primary/30 bg-white
+                      px-4 py-3 text-[16px] font-semibold text-primary
+                      hover:bg-primary/5 hover:border-primary/50 transition-colors">
+              {w.sub.split('·')[0].trim()}
+              <span aria-hidden="true">→</span>
+            </a>
+          ))}
+        </div>
+        )}
       </div>
     </section>
   )}
@@ -121,7 +138,7 @@ const jsonLd = {
 
   <!-- Цитата Дарьи: слева цитата + фото, справа видео (как на главной) -->
   {c.quote && (
-    <section class="py-14 md:py-18 bg-[#0d1a2b] overflow-hidden">
+    <section class="py-14 md:py-18 bg-navy-950 overflow-hidden">
       <div class="mx-auto max-w-[1080px] px-5 md:px-8">
         <div class="flex flex-col md:flex-row items-center gap-10 md:gap-14">
           <div class="min-w-0 flex-1">
@@ -145,6 +162,8 @@ const jsonLd = {
                 cues={DARIA_CUES}
                 uid={`season-daria-${c.slug}`}
                 goalName="daria_video_play"
+                shareSlug={getVideoByUrl(c.quote.videoSrc)?.slug}
+                shareTitle={getVideoByUrl(c.quote.videoSrc)?.title}
               />
             </div>
           )}
@@ -180,7 +199,7 @@ const jsonLd = {
     </div>
   </section>
 
-  <SeasonPreRegister seasonAcc={c.seasonAcc} slug={c.slug} windows={c.windows} calWindows={c.calendarWindows} />
+  <SeasonPreRegister seasonAcc={c.seasonAcc} slug={c.slug} windows={c.windows} calWindows={c.calendarWindows} datesPending={c.datesPending} />
 
   <!-- Размещение и команда — те же блоки, что на главной -->
   <Stay />

@@ -1,8 +1,14 @@
 ---
 /**
- * SeasonPreRegister — предварительная запись на сезонную смену (осень/зима/весна).
- * Даты каникул школы публикуют в сентябре — до этого собираем предзапись без оплаты:
- * контакт + обещание написать первыми и зафиксировать раннюю цену.
+ * SeasonPreRegister — заявка на сезонную смену (осень/зима/весна).
+ *
+ * ⚠️ 27.08.2026 осенние смены переведены из предзаписи в обычную продажу
+ * (перенесены в mainShifts). Тексты здесь переписаны с «предзаписи без оплаты»
+ * на запись на конкретный заезд: даты утверждены, цена действует и растёт по
+ * общему правилу. Компонент по-прежнему используется зимой и весной, где даты
+ * ещё предварительные, — поэтому дисклеймер про уточнение дат вынесен в проп
+ * `datesPending`, а не удалён совсем.
+ *
  * Окна заездов: calWindows (карточки с мини-календарями) или windows (текстовые чипы).
  */
 import { buildMonthCells, monthLabel, WEEKDAYS } from '../utils/seasonCalendar';
@@ -17,8 +23,14 @@ interface Props {
   windows?: string[];
   /** Окна заездов карточками с мини-календарями (приоритетно) */
   calWindows?: SeasonCalWindow[];
+  /**
+   * Даты сезона ещё не утверждены → режим предзаписи без оплаты (зима, весна).
+   * По умолчанию false: у сезона с открытыми продажами тексты говорят о записи
+   * на конкретный заезд, а не о сборе контактов «на будущее».
+   */
+  datesPending?: boolean;
 }
-const { seasonAcc, slug, windows, calWindows } = Astro.props;
+const { seasonAcc, slug, windows, calWindows, datesPending = false } = Astro.props;
 const uid = `spr-${slug}`;
 
 const CELL_CLS: Record<string, string> = {
@@ -39,20 +51,29 @@ const calCards = (calWindows ?? []).map((w) => ({
 <section id="prezapis" class="py-14 md:py-20 bg-orange-50/70 border-y border-orange-100">
   <div class="mx-auto max-w-[760px] px-5 md:px-8">
 
-    <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-primary mb-3">Предварительная запись</p>
+    <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-primary mb-3">{datesPending ? 'Предварительная запись' : 'Запись на смену'}</p>
 
     <h2 class="text-[26px] md:text-[32px] font-extrabold tracking-[-0.02em] leading-[1.15] text-body mb-4">
-      Запишитесь на {seasonAcc} заранее — без оплаты
+      {datesPending ? `Запишитесь на ${seasonAcc} заранее — без оплаты` : `Запишитесь на ${seasonAcc}`}
     </h2>
 
-    <p class="text-[16px] leading-[1.65] text-body-muted mb-2">
-      Даты смены пока предварительные: школы опубликуют расписание каникул в сентябре,
-      и мы сразу скорректируем даты под него.
-    </p>
-    <p class="text-[16px] leading-[1.65] text-body-muted mb-8">
-      Оставьте контакт — как только даты подтвердятся, напишем первыми и зафиксируем
-      за вами раннюю цену. <strong class="font-medium text-body">Это не бронь и ни к чему не обязывает.</strong>
-    </p>
+    {datesPending ? (
+      <>
+        <p class="text-[16px] leading-[1.65] text-body-muted mb-2">
+          Даты смены пока предварительные: школы опубликуют расписание каникул в сентябре,
+          и мы сразу скорректируем даты под него.
+        </p>
+        <p class="text-[16px] leading-[1.65] text-body-muted mb-8">
+          Оставьте контакт — как только даты подтвердятся, напишем первыми и зафиксируем
+          за вами раннюю цену. <strong class="font-medium text-body">Это не бронь и ни к чему не обязывает.</strong>
+        </p>
+      </>
+    ) : (
+      <p class="text-[16px] leading-[1.65] text-body-muted mb-8">
+        Даты утверждены, места есть. Оставьте контакт — расскажем про заезд, ответим
+        на вопросы и поможем оформить путёвку. <strong class="font-medium text-body">Чем раньше, тем ниже цена.</strong>
+      </p>
+    )}
 
     <form id={`${uid}-form`} class="flex flex-col gap-3" novalidate data-slug={slug} data-season={seasonAcc}>
       {calCards.length > 0 ? (
@@ -134,11 +155,11 @@ const calCards = (calWindows ?? []).map((w) => ({
           class="inline-flex items-center gap-2 rounded-xl bg-primary hover:bg-orange-400 active:scale-[0.98] px-7 py-3.5 text-base font-semibold text-white transition-all duration-150 min-h-[48px] cursor-pointer"
         >
           <i class="bi bi-calendar-heart text-base" aria-hidden="true"></i>
-          Записаться заранее
+          {datesPending ? 'Записаться заранее' : 'Записаться на смену'}
         </button>
       </div>
       <p class="text-[12px] text-slate-500 leading-[1.5] mt-1">
-        Напишем один раз — когда подтвердятся даты. Без рассылок.
+        {datesPending ? 'Напишем один раз — когда подтвердятся даты. Без рассылок.' : 'Свяжемся в течение дня. Без рассылок.'}
       </p>
     </form>
 
@@ -228,7 +249,7 @@ const calCards = (calWindows ?? []).map((w) => ({
         form.classList.add('hidden');
         successEl.classList.remove('hidden');
         if (typeof window.ym === 'function') {
-          window.ym(88121468, 'reachGoal', 'form_submit');
+          window.ym(96499295, 'reachGoal', 'form_submit');
         }
       } catch {
         submitBtn.disabled = false;
