@@ -47,25 +47,28 @@ for p in "${PAGES[@]}"; do
 done
 
 echo ""
-echo "── 2. Внутренние ссылки с этих страниц (ожидаем не 4xx/5xx) ──"
-# Собираем уникальные внутренние href.
-# @playform/compress вырезает кавычки у атрибутов (href=/ceny/), поэтому
-# ловим оба варианта: href="/x/" и href=/x/.
-# Строки с ' + { } $ — это JS-шаблоны из inline-скриптов, не настоящие ссылки.
-LINKS=$(for p in "${PAGES[@]}"; do
-  curl -s --max-time 20 "$BASE$p" \
-    | grep -oE 'href=("/[^"#]*"|/[^ >"#]*)' \
-    | sed 's/^href=//; s/^"//; s/"$//'
-done | sort -u \
-  | grep -vE "['+{}$\\\\]" \
-  | grep -vE '\.(js|css|xml|txt|ico|png|jpe?g|avif|webp|svg|woff2?|pdf)$')
+echo "── 2. SSR-редиректы (ожидаем 2xx/3xx — что nginx проксирует слаг в Node) ──"
+# Здесь раньше обходились ВСЕ внутренние ссылки со страниц выше: ~243 запроса,
+# 53с на окружение (замер 14.08.2026), и всегда уже ПОСЛЕ выката.
+#
+# Эту работу забрал scripts/check-internal-links.mjs — он сверяет ссылки с
+# собранным dist/ прямо на сборке: доли секунды, до деплоя, и по всем 345
+# страницам вместо десяти. Так нашлись /lager-podmoskovje/ и /smeny/ — оба 404
+# на проде, мимо прежней проверки (они не на критичных страницах).
+#
+# По сети осталось то, что по dist/ проверить нельзя в принципе: редирект-стабы
+# (prerender=false + Astro.redirect). Файла в dist/ у них нет, а работают они
+# только если nginx проксирует слаг в Node — это конфиг сервера, не репозиторий.
+# Инцидент b70ae7b2: страница-редирект попала в репо, блок в nginx руками не
+# добавили — прод отдавал 404 с 02.08 по 07.08.2026.
+REDIRECT_SLUGS=$(grep -rl --include='*.astro' 'prerender = false' src/pages 2>/dev/null \
+  | grep -v -E '^src/pages/(portal|staff|api)/' \
+  | while read -r f; do
+      grep -q 'return Astro.redirect' "$f" || continue
+      slug="${f#src/pages/}"
+      echo "/${slug%.astro}/"
+    done | sort)
 
-# Проверяем ВСЕ ссылки, без обрезания: битая может стоять на любой позиции
-# (например /stati/nalogovyy-vychet-za-lager/ был 208-м из 283).
-# Параллелим пачками по 12 — последовательно это минуты.
-# xargs -I{} здесь не годится: на длинных списках падает с
-# "command line cannot be assembled, too long".
-CHECKED=$(printf '%s\n' "$LINKS" | grep -c . || echo 0)
 ERR_FILE=$(mktemp)
 trap 'rm -f "$ERR_FILE"' EXIT
 
@@ -77,26 +80,26 @@ check_one() {
   # 000 = сетевой сбой (часто просто параллельный таймаут) — один повтор
   [ "$c" = "000" ] && { sleep 1; c=$(curl -s -o /dev/null -w "%{http_code}" --max-time 25 "$url"); }
   case "$c" in
-    2*|3*) : ;;                       # 3xx допустим: канонизация слеша и т.п.
+    2*|3*) : ;;                       # 2xx тоже ок: часть стабов отдаёт мета-рефреш
     *) printf '  ❌ %-44s %s\n' "$1" "$c" >> "$ERR_FILE" ;;
   esac
 }
 
 # 8 потоков, не 12: на 12 прод начинает отдавать 000 по таймауту.
-N=0
+CHECKED=0
 while IFS= read -r l; do
   [ -z "$l" ] && continue
   check_one "$l" &
-  N=$((N + 1))
-  [ $((N % 8)) -eq 0 ] && wait
-done <<< "$LINKS"
+  CHECKED=$((CHECKED + 1))
+  [ $((CHECKED % 8)) -eq 0 ] && wait
+done <<< "$REDIRECT_SLUGS"
 wait
 
 if [ -s "$ERR_FILE" ]; then
   sort "$ERR_FILE"
   FAIL=$((FAIL + $(grep -c . "$ERR_FILE")))
 fi
-echo "  проверено внутренних ссылок: $CHECKED"
+echo "  проверено редирект-слагов: $CHECKED"
 
 echo ""
 if [ "$FAIL" -gt 0 ]; then

@@ -31,7 +31,27 @@ export const GET: APIRoute = async ({ params }) => {
   if (!person) return new Response('Person not found', { status: 404 });
 
   const best = getBestFaceForPerson(person);
-  if (!best) return new Response('No faces for this person', { status: 404 });
+  if (!best) {
+    // Нет ни одного появления на фото (только видео, где box лица не
+    // совпадает с кадром нашего превью) — доверяем собственному подбору
+    // Immich вместо попытки кропать ненадёжный видео-кадр.
+    try {
+      const res = await fetchWithTimeout(
+        `${IMMICH_BASE}/api/people/${personId}/thumbnail`,
+        { headers: { 'x-api-key': apiKey } },
+        15000,
+      );
+      if (!res.ok || !res.body) return new Response('Immich fetch failed', { status: 502 });
+      return new Response(res.body, {
+        headers: {
+          'Content-Type': res.headers.get('Content-Type') || 'image/jpeg',
+          'Cache-Control': 'public, max-age=21600',
+        },
+      });
+    } catch (e) {
+      return new Response(String(e), { status: 500 });
+    }
+  }
 
   try {
     const res = await fetchWithTimeout(

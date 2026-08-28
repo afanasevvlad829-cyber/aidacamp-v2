@@ -1,4 +1,4 @@
-import { mainShifts } from '../data/shifts';
+import { getOpenShifts } from '../data/dynamicPrices';
 
 /** Опция смены для <select> калькуляторов. Цена/дни распарсены из строк shifts.ts. */
 export interface ShiftOption {
@@ -15,10 +15,12 @@ const parseDays = (s: string) => parseInt(s, 10) || 0;
 
 /**
  * Опции смен для калькуляторов вычета/выгоды.
- * Единый источник — data/shifts.ts (mainShifts). Не дублировать парсинг в компонентах.
+ * Единый источник — data/shifts.ts (mainShifts), только смены, ещё открытые для брони
+ * (getOpenShifts — фаза 'upcoming'). Закрытая/идущая смена калькулятору не предлагается,
+ * иначе он подсказывает купить то, что купить уже нельзя. Не дублировать парсинг в компонентах.
  */
 export function getShiftSelectOptions(): ShiftOption[] {
-  return [...mainShifts].map((s) => ({
+  return getOpenShifts().map((s) => ({
     id: s.id,
     label: `${s.name} — ${s.dates}, ${s.duration}`,
     price: parsePrice(s.price),

@@ -2,9 +2,30 @@
 export const prerender = false;
 import Base from '../../layouts/Base.astro';
 import { allShiftsIncludingArchived } from '../../data/shifts';
+import { zashitaFolders } from '../../data/zashitaFolders';
+import { fotoCookieName, fotoCookieOptions, verifyShiftFoto } from '../../lib/fotoLink';
+import { verifySessionPayload } from '../../lib/portalSession';
 
 const { shiftId } = Astro.params;
 const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
+const hasZashita = !!(shiftId && zashitaFolders[shiftId]);
+// ── Доступ к альбому смены ────────────────────────────────────────
+// Альбом открывается подписанной ссылкой /foto/<id>?s=<token> (scripts/foto-link.mjs).
+// Валидный токен ставит httpOnly-куку на 60 дней — дальше родитель заходит без токена
+// в URL, и все запросы к /api/foto/* авторизуются этой кукой (см. middleware.ts).
+// Персонал проходит по портальной сессии. Нет ни того, ни другого → 404: не
+// подтверждаем даже существование альбома.
+const fotoToken = Astro.url.searchParams.get('s');
+const fotoCookie = fotoCookieName(shiftId ?? '');
+const okToken = verifyShiftFoto(shiftId, fotoToken);
+const okCookie = verifyShiftFoto(shiftId, Astro.cookies.get(fotoCookie)?.value);
+const portalSecret = process.env.PORTAL_SESSION_SECRET;
+const okPortal = !!portalSecret && !!verifySessionPayload(Astro.cookies.get('portal_session')?.value, portalSecret)?.role;
+if (okToken && !okCookie) Astro.cookies.set(fotoCookie, fotoToken!, fotoCookieOptions());
+if (!okToken && !okCookie && !okPortal) {
+  return new Response('Not found', { status: 404 });
+}
+
 
 // Атрибуция визита к CRM-лиду — только если ссылка пришла с подписанными lid+t.
 // Подпись проверяет сам /api/bind-lead (verifyLid) при отправке, здесь пробрасываем как строки.
@@ -22,7 +43,7 @@ const hasAttribution = !!(lid && t);
   <style is:global>
     /* Тёмная премиальная тема — фон навигационный navy-950 */
     body {
-      background: #0d1a2b !important;
+      background: var(--color-navy-950) !important;
       overflow-x: hidden;
     }
 
@@ -48,7 +69,7 @@ const hasAttribution = !!(lid && t);
       font-size: 12px;
       font-weight: 700;
       background: rgba(236, 155, 68, 0.16);
-      color: #ec9b44;
+      color: var(--color-primary);
       border: 1px solid rgba(236, 155, 68, 0.35);
       border-radius: 999px;
       padding: 5px 12px;
@@ -56,23 +77,38 @@ const hasAttribution = !!(lid && t);
     }
     .foto-fan-badge.show { display: inline-block; }
 
+    .foto-zashita-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 10px 0 4px;
+      padding: 9px 14px;
+      border-radius: 10px;
+      background: rgba(236, 155, 68, 0.16);
+      border: 1px solid rgba(236, 155, 68, 0.35);
+      color: var(--color-primary);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .foto-zashita-link:hover { background: rgba(236, 155, 68, 0.26); color: #f0a95c; }
+
     #foto-status {
       color: rgba(255, 255, 255, 0.7);
       font-size: 14px;
       min-height: 20px;
     }
 
-    /* Лента аватарок-лиц (горизонтальный скролл) */
+    /* Сетка аватарок-лиц — все видны сразу, перенос по строкам, обычная
+       вертикальная прокрутка страницы (было: горизонтальный скролл без
+       видимого скроллбара — на десктопе мышью нечем было сдвинуть). */
     #foto-avatars {
       display: flex;
+      flex-wrap: wrap;
       gap: 14px;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
       padding: 6px 0 12px;
       margin: 14px 0 4px;
-      scrollbar-width: none;
     }
-    #foto-avatars::-webkit-scrollbar { display: none; }
 
     #foto-days {
       display: flex;
@@ -134,9 +170,9 @@ const hasAttribution = !!(lid && t);
       -webkit-tap-highlight-color: transparent;
     }
     .foto-day.active {
-      background: #ec9b44;
-      color: #0d1a2b;
-      border-color: #ec9b44;
+      background: var(--color-primary);
+      color: var(--color-navy-950);
+      border-color: var(--color-primary);
     }
 
     .foto-ava {
@@ -145,7 +181,7 @@ const hasAttribution = !!(lid && t);
       flex-direction: column;
       align-items: center;
       gap: 6px;
-      width: 64px;
+      width: 72px;
       background: none;
       border: none;
       padding: 0;
@@ -153,8 +189,8 @@ const hasAttribution = !!(lid && t);
       -webkit-tap-highlight-color: transparent;
     }
     .foto-ava-circle {
-      width: 56px;
-      height: 56px;
+      width: 64px;
+      height: 64px;
       border-radius: 50%;
       overflow: hidden;
       display: flex;
@@ -175,18 +211,18 @@ const hasAttribution = !!(lid && t);
     .foto-ava-all-circle {
       border-radius: 14px;
       background: rgba(236, 155, 68, 0.14);
-      color: #ec9b44;
+      color: var(--color-primary);
       font-size: 24px;
     }
-    /* Активный элемент — кольцо мягким оранжевым #ec9b44 */
+    /* Активный элемент — кольцо мягким оранжевым var(--color-primary) */
     .foto-ava.active .foto-ava-circle {
-      border-color: #ec9b44;
-      box-shadow: 0 0 0 2px #ec9b44;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 2px var(--color-primary);
     }
     .foto-ava-name {
-      font-size: 12px;
+      font-size: 13px;
       color: rgba(255, 255, 255, 0.7);
-      max-width: 64px;
+      max-width: 72px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -211,7 +247,7 @@ const hasAttribution = !!(lid && t);
       -webkit-tap-highlight-color: transparent;
     }
     #foto-download-all.show { display: inline-flex; }
-    #foto-download-all i { color: #ec9b44; font-size: 16px; }
+    #foto-download-all i { color: var(--color-primary); font-size: 16px; }
     #foto-download-all:disabled { opacity: 0.6; cursor: default; }
 
     /* Masonry-сетка (CSS multi-column) */
@@ -322,7 +358,7 @@ const hasAttribution = !!(lid && t);
       bottom: 8px;
       left: 8px;
       background: rgba(236, 155, 68, 0.92);
-      color: #0d1a2b;
+      color: var(--color-navy-950);
       border: none;
       border-radius: 999px;
       padding: 4px 9px;
@@ -333,13 +369,13 @@ const hasAttribution = !!(lid && t);
       font-family: inherit;
     }
 
-    /* Видео-бейдж поверх превью (акцент #ec9b44) */
+    /* Видео-бейдж поверх превью (акцент var(--color-primary)) */
     .foto-video-badge {
       position: absolute;
       bottom: 8px;
       right: 8px;
       background: rgba(13, 26, 43, 0.75);
-      color: #ec9b44;
+      color: var(--color-primary);
       border-radius: 50%;
       width: 30px;
       height: 30px;
@@ -361,7 +397,7 @@ const hasAttribution = !!(lid && t);
       display: none;
       align-items: center;
       justify-content: center;
-      color: #ec9b44;
+      color: var(--color-primary);
       font-size: 24px;
       background: rgba(13, 26, 43, 0.35);
       border: 2px solid rgba(255, 255, 255, 0.85);
@@ -375,7 +411,7 @@ const hasAttribution = !!(lid && t);
     }
     #foto-grid.selecting .foto-cell.selected .foto-select-mark i { display: block; }
     #foto-grid.selecting .foto-cell:not(.selected) img { opacity: 0.78; }
-    .foto-cell.selected img { outline: 3px solid #ec9b44; outline-offset: -3px; }
+    .foto-cell.selected img { outline: 3px solid var(--color-primary); outline-offset: -3px; }
     .foto-grid-sentinel {
       height: 1px;
       break-inside: avoid;
@@ -416,7 +452,7 @@ const hasAttribution = !!(lid && t);
       font-family: inherit;
       white-space: nowrap;
     }
-    .foto-selbar-btn.primary { background: #ec9b44; color: #0d1a2b; }
+    .foto-selbar-btn.primary { background: var(--color-primary); color: var(--color-navy-950); }
     .foto-selbar-btn.ghost { background: rgba(255, 255, 255, 0.1); color: #fff; }
     .foto-selbar-btn:disabled { opacity: 0.5; cursor: default; }
 
@@ -425,7 +461,7 @@ const hasAttribution = !!(lid && t);
       left: 50%;
       top: 16px;
       transform: translateX(-50%) translateY(-20px);
-      background: #0d1a2b;
+      background: var(--color-navy-950);
       color: #fff;
       padding: 12px 18px;
       border-radius: 12px;
@@ -451,7 +487,7 @@ const hasAttribution = !!(lid && t);
       left: 50%;
       bottom: 92px;
       transform: translateX(-50%) translateY(20px);
-      background: #0d1a2b;
+      background: var(--color-navy-950);
       color: #fff;
       padding: 12px 18px;
       border-radius: 12px;
@@ -497,7 +533,7 @@ const hasAttribution = !!(lid && t);
       border-radius: 8px;
     }
 
-    /* Экшн-кнопки в лайтбоксе (скачать/поделиться) — акцент #ec9b44, верхний левый угол */
+    /* Экшн-кнопки в лайтбоксе (скачать/поделиться) — акцент var(--color-primary), верхний левый угол */
     #foto-lb-actions {
       position: absolute;
       top: 16px;
@@ -516,7 +552,7 @@ const hasAttribution = !!(lid && t);
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      color: #ec9b44;
+      color: var(--color-primary);
       font-size: 20px;
       transition: background 0.15s;
     }
@@ -592,6 +628,11 @@ const hasAttribution = !!(lid && t);
       <>
         <h1>{shift.dates}</h1>
         <span id="foto-fan-badge" class="foto-fan-badge"></span>
+        {hasZashita && (
+          <a class="foto-zashita-link" href={`/foto/${shiftId}/zashita`}>
+            <i class="bi bi-play-circle-fill"></i> Видео защит проектов
+          </a>
+        )}
         <div id="foto-avatars"></div>
         <div id="foto-days"></div>
         <div id="foto-scenes"></div>
@@ -616,7 +657,10 @@ const hasAttribution = !!(lid && t);
     <button id="foto-lb-close" type="button" aria-label="Закрыть"><i class="bi bi-x-lg"></i></button>
     <button id="foto-lb-prev" class="foto-lb-nav" type="button" aria-label="Предыдущее"><i class="bi bi-chevron-left"></i></button>
     <img id="foto-lightbox-img" src="" alt="Фото" />
-    <video id="foto-lightbox-vid" controls></video>
+    <!-- playsinline обязателен: без него iOS Safari не играет видео встроенно и
+         показывает пустой чёрный прямоугольник, пока по нему не ткнут. Постер
+         ставится из миниатюры кадра — иначе до первого касания там нечему появиться. -->
+    <video id="foto-lightbox-vid" controls playsinline webkit-playsinline preload="metadata"></video>
     <button id="foto-lb-next" class="foto-lb-nav" type="button" aria-label="Следующее"><i class="bi bi-chevron-right"></i></button>
   </div>
 
@@ -782,6 +826,7 @@ const hasAttribution = !!(lid && t);
         document.body.style.overflow = '';
         lbImg.src = '';
         lbVid.pause();
+        lbVid.removeAttribute('poster');
         lbVid.src = '';
       }
       function updateLightboxPhoto() {
@@ -789,6 +834,7 @@ const hasAttribution = !!(lid && t);
         if (asset.type === 'VIDEO') {
           lbImg.style.display = 'none';
           lbVid.style.display = 'block';
+          lbVid.poster = `/api/foto/image/${asset.id}?kind=thumb`;
           lbVid.src = `/api/foto/image/${asset.id}?kind=original`;
         } else {
           lbVid.style.display = 'none';
@@ -1173,7 +1219,12 @@ const hasAttribution = !!(lid && t);
         circle.appendChild(img);
         const name = document.createElement('span');
         name.className = 'foto-ava-name';
-        name.textContent = p.name;
+        // Подпись показывает ТО ЖЕ значение, что используется для сортировки
+        // (surnameSortKey) — иначе для точечных исключений (напр. «Александр
+        // Сытик» → «Сытик Александр») позиция в списке верна по фамилии, а
+        // подпись всё равно показывает сырое «Имя Фамилия», и визуально
+        // кажется, что сортировка не сработала.
+        name.textContent = surnameSortKey(p.name, shiftId);
         el.append(circle, name);
         el.addEventListener('click', () => selectPerson(p.id));
         return el;
@@ -1375,12 +1426,14 @@ const hasAttribution = !!(lid && t);
         if (!data.ok) { setStatus(data.error); return; }
         clearGrid();
         const groups = data.groups as UnsortedGroup[];
-        const people = data.people as { id: string; name: string }[];
+        const people = [...(data.people as { id: string; name: string }[])].sort((a, b) =>
+          surnameSortKey(a.name, shiftId).localeCompare(surnameSortKey(b.name, shiftId), 'ru'),
+        );
         const totalFaces = groups.reduce((n, g) => n + g.faces.length, 0);
         setStatus(`Неразобранных лиц: ${totalFaces} на ${groups.length} фото`);
 
         const peopleOptions = '<option value="">Кто это?</option>' +
-          people.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+          people.map((p) => `<option value="${p.id}">${surnameSortKey(p.name, shiftId)}</option>`).join('');
 
         for (const group of groups) {
           const card = document.createElement('div');
