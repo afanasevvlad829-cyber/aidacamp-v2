@@ -221,4 +221,98 @@ describe('applyApprove', () => {
     expect(r).toEqual({ ok: false, error: expect.stringContaining('Ошибка публикации') });
     expect(setDraftStatus).not.toHaveBeenCalledWith(5, 'approved', expect.anything());
   });
+
+  it('Finding 1: передаёт в GramJS абсолютный путь (join UPLOADS_ROOT + file_path), а не сырой относительный', async () => {
+    const { getDraft, setDraftStatus } = await import('./draftPost');
+    (getDraft as any).mockResolvedValue({ id: 5, shift_id: 3, author_telegram_id: 111, status: 'pending_review', text: 'Текст', reviewer_chat_id: 777, reviewer_message_id: 1 });
+    const { getShiftById } = await import('./portalShift');
+    (getShiftById as any).mockResolvedValue({ id: 3, tg_parent_channel_id: -100123 });
+    const { listMedia } = await import('./portalMedia');
+    (listMedia as any).mockResolvedValue([
+      { id: 1, file_type: 'photo', file_path: 'media/draft_post/5/uuid.jpg', file_url: '/portal/uploads/media/draft_post/5/uuid.jpg' },
+    ]);
+    const { getTelegramClient } = await import('./telegramClient');
+    const sendFile = vi.fn(async () => ({ id: 999 }));
+    (getTelegramClient as any).mockResolvedValueOnce({ sendFile, sendMessage: vi.fn(async () => ({ id: 999 })) });
+    const { applyApprove } = await import('./telegramDraftBot');
+    const r = await applyApprove(5, 777);
+    expect(r).toEqual({ ok: true });
+    expect(sendFile).toHaveBeenCalledWith(
+      -100123,
+      expect.objectContaining({
+        file: ['/var/www/aidacamp-dev/uploads/portal/media/draft_post/5/uuid.jpg'],
+        caption: 'Текст',
+        parseMode: false,
+      }),
+    );
+    expect(setDraftStatus).toHaveBeenCalledWith(5, 'approved', 777);
+  });
+
+  it('Finding 2: черновик с видео без фото не теряет текст — уходит отдельным sendMessage', async () => {
+    const { getDraft, setDraftStatus } = await import('./draftPost');
+    (getDraft as any).mockResolvedValue({ id: 5, shift_id: 3, author_telegram_id: 111, status: 'pending_review', text: 'Подпись к видео', reviewer_chat_id: 777, reviewer_message_id: 1 });
+    const { getShiftById } = await import('./portalShift');
+    (getShiftById as any).mockResolvedValue({ id: 3, tg_parent_channel_id: -100123 });
+    const { listMedia } = await import('./portalMedia');
+    (listMedia as any).mockResolvedValue([
+      { id: 2, file_type: 'video', file_path: 'media/draft_post/5/v.mp4', file_url: '/portal/uploads/media/draft_post/5/v.mp4' },
+    ]);
+    const { getTelegramClient } = await import('./telegramClient');
+    const sendFile = vi.fn(async () => ({ id: 999 }));
+    const sendMessage = vi.fn(async () => ({ id: 999 }));
+    (getTelegramClient as any).mockResolvedValueOnce({ sendFile, sendMessage });
+    const { applyApprove } = await import('./telegramDraftBot');
+    const r = await applyApprove(5, 777);
+    expect(r).toEqual({ ok: true });
+    expect(sendFile).toHaveBeenCalledWith(
+      -100123,
+      expect.objectContaining({ file: '/var/www/aidacamp-dev/uploads/portal/media/draft_post/5/v.mp4' }),
+    );
+    expect(sendMessage).toHaveBeenCalledWith(-100123, { message: 'Подпись к видео', parseMode: false });
+  });
+
+  it('Finding 3: черновик уже в статусе approved — отказ без повторной публикации', async () => {
+    const { getDraft, setDraftStatus } = await import('./draftPost');
+    (getDraft as any).mockResolvedValue({ id: 5, shift_id: 3, author_telegram_id: 111, status: 'approved', text: 'Текст', reviewer_chat_id: 777, reviewer_message_id: 1 });
+    // Клиент Telegram намеренно не мокается через mockResolvedValueOnce — если бы код дошёл
+    // до публикации, getTelegramClient был бы вызван; проверяем именно то, что он не вызывается.
+    const { getTelegramClient } = await import('./telegramClient');
+    const { applyApprove } = await import('./telegramDraftBot');
+    const r = await applyApprove(5, 777);
+    expect(r.ok).toBe(false);
+    expect(getTelegramClient).not.toHaveBeenCalled();
+    expect(setDraftStatus).not.toHaveBeenCalled();
+  });
+
+  it('Finding 3: черновик уже в статусе rejected — отказ без повторной публикации', async () => {
+    const { getDraft, setDraftStatus } = await import('./draftPost');
+    (getDraft as any).mockResolvedValue({ id: 5, shift_id: 3, author_telegram_id: 111, status: 'rejected', text: 'Текст', reviewer_chat_id: 777, reviewer_message_id: 1 });
+    const { getTelegramClient } = await import('./telegramClient');
+    const { applyApprove } = await import('./telegramDraftBot');
+    const r = await applyApprove(5, 777);
+    expect(r.ok).toBe(false);
+    expect(getTelegramClient).not.toHaveBeenCalled();
+    expect(setDraftStatus).not.toHaveBeenCalled();
+  });
+
+  it('Finding 4: во все паблишинг-вызовы передаётся parseMode:false (markdown-парсинг отключён)', async () => {
+    const { getDraft } = await import('./draftPost');
+    (getDraft as any).mockResolvedValue({ id: 5, shift_id: 3, author_telegram_id: 111, status: 'pending_review', text: '5*5 _привет_', reviewer_chat_id: 777, reviewer_message_id: 1 });
+    const { getShiftById } = await import('./portalShift');
+    (getShiftById as any).mockResolvedValue({ id: 3, tg_parent_channel_id: -100123 });
+    const { listMedia } = await import('./portalMedia');
+    (listMedia as any).mockResolvedValue([
+      { id: 1, file_type: 'photo', file_path: 'media/draft_post/5/p.jpg' },
+      { id: 2, file_type: 'video', file_path: 'media/draft_post/5/v.mp4' },
+    ]);
+    const { getTelegramClient } = await import('./telegramClient');
+    const sendFile = vi.fn(async () => ({ id: 999 }));
+    (getTelegramClient as any).mockResolvedValueOnce({ sendFile, sendMessage: vi.fn(async () => ({ id: 999 })) });
+    const { applyApprove } = await import('./telegramDraftBot');
+    await applyApprove(5, 777);
+    expect(sendFile).toHaveBeenCalledTimes(2);
+    for (const call of sendFile.mock.calls as any[]) {
+      expect(call[1].parseMode).toBe(false);
+    }
+  });
 });
