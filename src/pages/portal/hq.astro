@@ -1,0 +1,308 @@
+---
+export const prerender = false;
+
+import PortalLayout from '../../layouts/PortalLayout.astro';
+import {
+  listCards, listTasks, listEpisodes, counts, KIND_LABEL,
+  type HqCard, type HqTask, type HqEpisode,
+} from '../../lib/portalHq';
+
+// Доступ гейтит middleware (/portal/* — только сотрудники), но очередь решений
+// принадлежит владельцу: сотруднику здесь смотреть нечего.
+const role = Astro.locals.portalRole;
+if (role !== 'admin' && role !== 'rukovoditel') {
+  return Astro.redirect('/portal/', 302);
+}
+
+// Три вкладки вместо одной длинной ленты: на телефоне длинный список не
+// листают, а бросают. Вкладка держится в адресе, чтобы возврат из Telegram
+// открывал ту же.
+const TABS = ['queue', 'tasks', 'debts'] as const;
+type Tab = (typeof TABS)[number];
+const reqTab = Astro.url.searchParams.get('tab') as Tab | null;
+const tab: Tab = reqTab && TABS.includes(reqTab) ? reqTab : 'queue';
+
+const c = await counts();
+const cards: HqCard[]     = tab === 'queue' ? await listCards() : [];
+const tasks: HqTask[]     = tab === 'tasks' ? await listTasks() : [];
+const debts: HqEpisode[]  = tab === 'debts' ? await listEpisodes('us') : [];
+
+// Очередь делится на «ждёт тебя» и «копится зря»: второе — не работа владельца,
+// а неподключённый транспорт, и мешать их в одном списке нечестно.
+const needsYou = cards.filter((x) => x.needs_you);
+const blocked  = cards.filter((x) => x.blocked_reason);
+const other    = cards.filter((x) => !x.needs_you && !x.blocked_reason);
+
+const TASK_STATE: Record<string, { label: string; tone: string }> = {
+  overdue:  { label: 'просрочено',            tone: 'bad'  },
+  not_sent: { label: 'не отправлял',          tone: 'bad'  },
+  unclear:  { label: 'ответ не по делу',      tone: 'warn' },
+  claimed:  { label: 'без артефакта',         tone: 'warn' },
+  no_date:  { label: 'срок не назван',        tone: 'warn' },
+  blocked:  { label: 'не может',              tone: 'warn' },
+  silent:   { label: 'тишина',                tone: 'mute' },
+  planned:  { label: 'в плане',               tone: 'ok'   },
+  done:     { label: 'подтверждено',          tone: 'ok'   },
+};
+
+const SOURCE_LABEL: Record<string, string> = {
+  wa_gapi: 'WhatsApp', tg_gapi: 'Telegram',
+};
+const srcLabel = (s: string) => SOURCE_LABEL[s] || (s.startsWith('mail:') ? 'Почта' : s);
+
+const fmtDay = (ts: string) => {
+  const d = new Date(ts);
+  const days = Math.floor((Date.now() - d.getTime()) / 86_400_000);
+  if (days === 0) return 'сегодня';
+  if (days === 1) return 'вчера';
+  return `${days} дн. назад`;
+};
+---
+
+<PortalLayout title="Штаб — АйДаКемп">
+  <div class="hq">
+    <nav class="hq-tabs" aria-label="Разделы Штаба">
+      <a href="?tab=queue" class:list={['hq-tab', { on: tab === 'queue' }]}>
+        Очередь{c._needs_you ? <span class="hq-badge">{c._needs_you}</span> : null}
+      </a>
+      <a href="?tab=tasks" class:list={['hq-tab', { on: tab === 'tasks' }]}>Задачи</a>
+      <a href="?tab=debts" class:list={['hq-tab', { on: tab === 'debts' }]}>
+        Долги{c._ep_us ? <span class="hq-badge">{c._ep_us}</span> : null}
+      </a>
+    </nav>
+
+    {tab === 'queue' && (
+      <>
+        {needsYou.length === 0 && blocked.length === 0 && other.length === 0 && (
+          <p class="hq-empty">Очередь пуста — решать нечего.</p>
+        )}
+
+        {needsYou.length > 0 && (
+          <section class="hq-group" data-group="needs">
+            <h2 class="hq-h">Ждёт тебя<span class="hq-n">{needsYou.length}</span></h2>
+            {needsYou.map((x) => (
+              <article class="hq-card" data-id={x.id}>
+                <label class="hq-pick">
+                  <input type="checkbox" class="hq-cb" value={x.id} />
+                  <span class="hq-kind">{KIND_LABEL[x.kind] || x.kind}</span>
+                  <span class="hq-age">{fmtDay(x.created_at)}</span>
+                </label>
+                <h3 class="hq-title">{x.title}</h3>
+                {x.text && <p class="hq-text">{x.text.slice(0, 400)}</p>}
+              </article>
+            ))}
+          </section>
+        )}
+
+        {blocked.length > 0 && (
+          <section class="hq-group" data-group="blocked">
+            <h2 class="hq-h hq-h--mute">
+              Копится зря<span class="hq-n">{blocked.length}</span>
+            </h2>
+            <p class="hq-note">Исполнить нечем: {[...new Set(blocked.map((b) => b.blocked_reason))].join('; ')}.</p>
+            {blocked.map((x) => (
+              <article class="hq-card hq-card--mute" data-id={x.id}>
+                <label class="hq-pick">
+                  <input type="checkbox" class="hq-cb" value={x.id} />
+                  <span class="hq-kind">{KIND_LABEL[x.kind] || x.kind}</span>
+                  <span class="hq-age">{fmtDay(x.created_at)}</span>
+                </label>
+                <h3 class="hq-title">{x.title}</h3>
+              </article>
+            ))}
+          </section>
+        )}
+
+        {other.length > 0 && (
+          <section class="hq-group" data-group="other">
+            <h2 class="hq-h hq-h--mute">Прочее<span class="hq-n">{other.length}</span></h2>
+            {other.map((x) => (
+              <article class="hq-card hq-card--mute" data-id={x.id}>
+                <label class="hq-pick">
+                  <input type="checkbox" class="hq-cb" value={x.id} />
+                  <span class="hq-kind">{KIND_LABEL[x.kind] || x.kind}</span>
+                  <span class="hq-age">{fmtDay(x.created_at)}</span>
+                </label>
+                <h3 class="hq-title">{x.title}</h3>
+              </article>
+            ))}
+          </section>
+        )}
+      </>
+    )}
+
+    {tab === 'tasks' && (
+      <section class="hq-group">
+        {tasks.length === 0 && <p class="hq-empty">Задач нет.</p>}
+        {tasks.map((t) => {
+          const st = TASK_STATE[t.state] || { label: t.state, tone: 'mute' };
+          return (
+            <article class="hq-card">
+              <div class="hq-pick">
+                <span class:list={['hq-state', `is-${st.tone}`]}>{st.label}</span>
+                {t.due_raw && <span class="hq-age">срок {t.due_raw}</span>}
+              </div>
+              <h3 class="hq-title">{t.title.replace(/^📋 Задача:\s*/, '')}</h3>
+              {t.reaction_note && <p class="hq-text">{t.reaction_note}</p>}
+              {t.artifact_given
+                ? <p class="hq-proof">✓ {t.artifact_given}</p>
+                : t.artifact_required && <p class="hq-need">Нужен: {t.artifact_required}</p>}
+            </article>
+          );
+        })}
+      </section>
+    )}
+
+    {tab === 'debts' && (
+      <section class="hq-group">
+        {debts.length === 0 && <p class="hq-empty">За нами ничего не числится.</p>}
+        {debts.map((e) => (
+          <article class="hq-card">
+            <div class="hq-pick">
+              <span class="hq-kind">{srcLabel(e.source)}</span>
+              <span class="hq-age">{fmtDay(e.last_msg_at)}</span>
+            </div>
+            <h3 class="hq-title">{e.peer_name || e.peer_id} — {e.topic}</h3>
+            {e.open_promise && (
+              <p class="hq-need">
+                За нами: {e.open_promise}{e.promise_due ? ` (до ${e.promise_due})` : ''}
+              </p>
+            )}
+            {e.open_questions?.length > 0 && (
+              <p class="hq-text">Без ответа: {e.open_questions.join(' · ')}</p>
+            )}
+          </article>
+        ))}
+      </section>
+    )}
+  </div>
+
+  {/* Панель массового действия — появляется, только когда что-то выбрано.
+      Ради неё портал и нужен: в ленте бота шестнадцать однотипных карточек
+      закрываются по одной. */}
+  <div class="hq-bar" id="hq-bar" hidden>
+    <span id="hq-count">0</span>
+    <button type="button" class="hq-btn" data-act="close">Снять</button>
+    <button type="button" class="hq-btn hq-btn--no" data-act="decline">Отклонить</button>
+  </div>
+</PortalLayout>
+
+<style>
+  .hq { padding: 12px 12px 96px; max-width: 720px; margin: 0 auto; }
+
+  /* Вкладки липнут к верху: на телефоне пролистал вниз — переключиться нечем. */
+  .hq-tabs {
+    display: flex; gap: 6px; position: sticky; top: 0; z-index: 5;
+    background: var(--color-bg, #fff); padding: 8px 0; margin-bottom: 4px;
+  }
+  .hq-tab {
+    flex: 1; text-align: center; padding: 10px 8px; border-radius: 999px;
+    font-size: 15px; font-weight: 600; text-decoration: none;
+    color: var(--color-body-muted, #667); background: #f1f3f6;
+  }
+  .hq-tab.on { background: var(--color-primary, #2f6fed); color: #fff; }
+  .hq-badge {
+    display: inline-block; min-width: 18px; margin-left: 5px; padding: 0 5px;
+    border-radius: 9px; background: #e5484d; color: #fff; font-size: 12px; line-height: 18px;
+  }
+
+  .hq-h {
+    display: flex; align-items: center; gap: 8px;
+    margin: 18px 0 8px; font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  }
+  .hq-h--mute { color: var(--color-body-muted, #667); font-weight: 600; }
+  .hq-n {
+    font-size: 12px; font-weight: 600; color: #667;
+    background: #eef0f4; border-radius: 9px; padding: 1px 7px;
+  }
+  .hq-note { margin: -4px 0 8px; font-size: 13px; color: var(--color-body-muted, #667); }
+  .hq-empty { padding: 40px 0; text-align: center; color: var(--color-body-muted, #667); }
+
+  .hq-card {
+    border: 1px solid var(--color-border, #e6e8ec); border-radius: 14px;
+    padding: 12px; margin-bottom: 8px; background: #fff;
+  }
+  .hq-card--mute { opacity: 0.72; }
+  .hq-card.sel { border-color: var(--color-primary, #2f6fed); box-shadow: 0 0 0 2px rgba(47,111,237,.12); }
+
+  /* Чекбокс во всю ширину строки — пальцем попадают по строке, не по квадратику. */
+  .hq-pick { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; cursor: pointer; }
+  .hq-cb { width: 20px; height: 20px; accent-color: var(--color-primary, #2f6fed); flex: none; }
+  .hq-kind { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--color-primary, #2f6fed); }
+  .hq-age { margin-left: auto; font-size: 12px; color: var(--color-body-muted, #889); }
+
+  .hq-title { margin: 0 0 4px; font-size: 15px; font-weight: 600; line-height: 1.35; }
+  .hq-text {
+    margin: 0; font-size: 14px; line-height: 1.45; color: var(--color-body-muted, #556);
+    white-space: pre-wrap; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .hq-need { margin: 6px 0 0; font-size: 13px; color: #b25000; }
+  .hq-proof { margin: 6px 0 0; font-size: 13px; color: #1a7f45; overflow-wrap: anywhere; }
+
+  .hq-state { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+  .hq-state.is-bad  { background: #fdecec; color: #b3261e; }
+  .hq-state.is-warn { background: #fff3e0; color: #a35200; }
+  .hq-state.is-ok   { background: #e7f6ec; color: #1a7f45; }
+  .hq-state.is-mute { background: #eef0f4; color: #566; }
+
+  /* Панель действий над нижним краем: в Telegram Mini App снизу свой хром. */
+  .hq-bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: #fff; border-top: 1px solid var(--color-border, #e6e8ec);
+  }
+  .hq-bar[hidden] { display: none; }
+  #hq-count { font-size: 14px; font-weight: 700; }
+  .hq-btn {
+    flex: 1; padding: 12px; border: 0; border-radius: 12px;
+    font-size: 15px; font-weight: 600; color: #fff; background: var(--color-primary, #2f6fed);
+  }
+  .hq-btn--no { background: var(--color-text-faint); }
+  .hq-btn:disabled { opacity: .5; }
+</style>
+
+<script>
+  const bar = document.getElementById('hq-bar');
+  const countEl = document.getElementById('hq-count');
+  const boxes = () => Array.from(document.querySelectorAll('.hq-cb'));
+  const picked = () => boxes().filter((b) => b.checked);
+
+  function sync() {
+    const n = picked().length;
+    countEl.textContent = String(n);
+    bar.hidden = n === 0;
+    boxes().forEach((b) => b.closest('.hq-card')?.classList.toggle('sel', b.checked));
+  }
+
+  document.addEventListener('change', (e) => {
+    if (e.target.classList?.contains('hq-cb')) sync();
+  });
+
+  bar.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.hq-btn');
+    if (!btn) return;
+    const ids = picked().map((b) => Number(b.value));
+    if (!ids.length) return;
+
+    Array.from(bar.querySelectorAll('.hq-btn')).forEach((b) => (b.disabled = true));
+    try {
+      const res = await fetch('/api/portal/hq/act', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, action: btn.dataset.act }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'ошибка');
+      // Карточки убираем сразу: перезагрузка на телефоне теряет позицию списка.
+      ids.forEach((id) => document.querySelector(`.hq-card[data-id="${id}"]`)?.remove());
+      sync();
+      window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.('success');
+    } catch (err) {
+      alert('Не удалось: ' + err.message);
+    } finally {
+      Array.from(bar.querySelectorAll('.hq-btn')).forEach((b) => (b.disabled = false));
+    }
+  });
+</script>

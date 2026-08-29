@@ -6,6 +6,8 @@
  * Здесь только JS-поведение, которое у них буквально совпадало.
  */
 
+import { trackGoal } from './analytics';
+
 export interface VideoLightboxConfig {
   lbId: string;
   titleId: string;
@@ -104,6 +106,9 @@ export function initVideoLightbox(cfg: VideoLightboxConfig) {
     if (cfg.analyticsGoal) {
       try { (window as any).ym?.(96499295, 'reachGoal', cfg.analyticsGoal, { src: mp4Src, title: label }); } catch {}
     }
+    // Агрегатная цель «Открытие видео» — общая для VideoGallery/VideoCarouselVertical,
+    // отдельно от опционального per-instance cfg.analyticsGoal.
+    trackGoal('video_open', { src: mp4Src, title: label });
     lightbox.removeAttribute('hidden');
     document.body.style.overflow = 'hidden';
 

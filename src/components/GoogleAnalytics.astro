@@ -1,0 +1,67 @@
+---
+/**
+ * GoogleAnalytics.astro — единственное место, где грузится GA4.
+ *
+ * Было: сниппет жил только внутри loadStage2 в Base.astro, поэтому автономные
+ * страницы (памятка /p/[lid]) оставались без GA — а значит и без куки `_ga`,
+ * второго независимого идентификатора визита рядом с ym('getClientID').
+ *
+ * Два режима:
+ *   immediate — грузим сразу (страницы, где нужен client_id, а не скорость:
+ *               памятка noindex, её открывают по личной ссылке);
+ *   ленивый   — после window.load, в ближайший idle, но не позже `delay` мс,
+ *               плюс мгновенно по первому взаимодействию.
+ *
+ * Гейт `window._clarityDisabled` (боты / dev-хост / внутренние пути) ставится
+ * в Base.astro. На автономных страницах флага нет — там гейт просто не срабатывает.
+ */
+interface Props {
+  /** Грузить немедленно, не дожидаясь load/интеракции */
+  immediate?: boolean;
+  /** Потолок ожидания idle после window.load, мс (только для ленивого режима) */
+  delay?: number;
+}
+const { immediate = false, delay = 3000 } = Astro.props;
+const GA_ID = 'G-PGMT3ET16X';
+---
+
+<script is:inline define:vars={{ GA_ID, immediate, delay }}>
+  (function () {
+    if (window.__gaScheduled) return;
+    window.__gaScheduled = true;
+
+    var loaded = false;
+    function loadGA() {
+      if (loaded) return;
+      loaded = true;
+      if (window._clarityDisabled) return;
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+      document.head.appendChild(s);
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { window.dataLayer.push(arguments); }
+      window.gtag = gtag;
+      gtag('js', new Date());
+      gtag('config', GA_ID);
+    }
+
+    if (immediate) { loadGA(); return; }
+
+    /* Ленивый режим: ждём load (LCP уже позади), дальше — первый idle, но не дольше delay */
+    function scheduleAfterLoad() {
+      if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(loadGA, { timeout: delay });
+      } else {
+        setTimeout(loadGA, delay);
+      }
+    }
+    if (document.readyState === 'complete') scheduleAfterLoad();
+    else window.addEventListener('load', scheduleAfterLoad, { once: true });
+
+    /* Любое взаимодействие — грузим сразу: человек уже здесь, визит надо посчитать */
+    ['scroll', 'click', 'touchstart', 'keydown'].forEach(function (e) {
+      document.addEventListener(e, loadGA, { once: true, passive: true });
+    });
+  })();
+</script>

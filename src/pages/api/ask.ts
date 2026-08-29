@@ -4,7 +4,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { buildSystemPrompt } from '../../lib/ai/systemPrompt';
 import { ResponseSchema } from '../../lib/ai/responseSchema';
 import { ragSearch } from '../../lib/ai/rag';
-import { findPhotos } from '../../lib/ai/photoSearch';
+import { findPhotos, hasShiftPhotos } from '../../lib/ai/photoSearch';
 import { lastCompletedShift } from '../../data/shifts';
 import { matchEscalation, templateToResponse } from '../../lib/ai/escalation_templates';
 import { classifyIntent, pickRealStory } from '../../lib/ai/intent_router';
@@ -163,15 +163,20 @@ export const POST: APIRoute = async ({ request }) => {
     // Для story режима убираем общий RAG-контекст (другие истории/видео миксуют) — оставляем ТОЛЬКО pickRealStory
     const ctxForLLM = (intent === 'story') ? '' : ragResult.context;
 
-    // Честный контекст про последнюю прошедшую смену (Task 4) — фото пока НЕ размечены по сменам,
-    // LLM должен называть смену по имени, но не приписывать ей конкретные фото (см. systemPrompt.ts).
+    // Честный контекст про последнюю прошедшую смену (Task 4/5) — часть смен уже имеет реально
+    // размеченные фото (см. hasShiftPhotos, src/lib/ai/photoSearch.ts), часть ещё нет. LLM должен
+    // называть смену по имени и говорить правду именно про текущее состояние разметки.
     const _today = new Date().toISOString().slice(0, 10);
     const _lastShift = lastCompletedShift(_today);
     const shiftContext = _lastShift
-      ? `\n\n=== ПОСЛЕДНЯЯ ПРОШЕДШАЯ СМЕНА ===\nСмена: "${_lastShift.name}" (${_lastShift.dates}).\n` +
-        `ВАЖНО: у нас пока НЕТ фото, размеченных по конкретной смене — если тебя просят "фото с последней смены",\n` +
-        `назови смену по имени (${_lastShift.name}), но честно скажи что показываешь ОБЩИЕ живые фото с лагеря,\n` +
-        `а не фото именно с этой смены. НЕ утверждай "вот фото именно с ${_lastShift.name}" — это неправда.`
+      ? (hasShiftPhotos(_lastShift.id)
+          ? `\n\n=== ПОСЛЕДНЯЯ ПРОШЕДШАЯ СМЕНА ===\nСмена: "${_lastShift.name}" (${_lastShift.dates}).\n` +
+            `У нас ЕСТЬ реальные фото именно с этой смены — если просят "фото с последней смены", можешь честно\n` +
+            `сказать что это фото именно с ${_lastShift.name}.`
+          : `\n\n=== ПОСЛЕДНЯЯ ПРОШЕДШАЯ СМЕНА ===\nСмена: "${_lastShift.name}" (${_lastShift.dates}).\n` +
+            `ВАЖНО: у нас пока НЕТ реальных фото именно с этой смены — если тебя просят "фото с последней смены",\n` +
+            `назови смену по имени (${_lastShift.name}), но честно скажи что показываешь ОБЩИЕ живые фото с лагеря,\n` +
+            `а не фото именно с этой смены. НЕ утверждай "вот фото именно с ${_lastShift.name}" — это неправда.`)
       : '';
     // basePrompt стабилен внутри деплоя (campData + правило роста цен) — кэшируем отдельным блоком.
     // ctxForLLM/intentBoost меняются на каждый запрос — не кэшируем, иначе маркер в конце
@@ -188,7 +193,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     // A/B: ?m=haiku -> используем haiku как primary (для замера latency/CSAT)
     // X-Audit: 1 → форсируем Haiku для дешёвого аудита (x3.75 экономия)
-    const _forceHaiku = _isAudit || _abMod === 'haiku' || _auditModelOverride === 'haiku';
+    // fact_lookup: intent уже классифицирован (Haiku) выше для intentBoost — переиспользуем
+    // бесплатно как сигнал роутинга. Промпт intentBoost для fact_lookup и так жёстко
+    // ограничивает модель фактами из RAG ("НЕ выдумывай"), а Haiku-guard ниже перепроверяет
+    // фактическую точность ответа — двойная страховка позволяет доверить рутинные
+    // вопросы-факты (цена/дата/трансфер) дешёвой модели, не трогая тон story/experience/general.
+    const _forceHaiku = _isAudit || _abMod === 'haiku' || _auditModelOverride === 'haiku' || intent === 'fact_lookup';
     const _forceSonnet = _auditModelOverride === 'sonnet';
     const PRIMARY_MODEL = (_forceSonnet ? false : _forceHaiku)
       ? 'claude-haiku-4-5-20251001'
@@ -306,10 +316,50 @@ export const POST: APIRoute = async ({ request }) => {
       (responseData as any).chips = (responseData as any).chips.filter((c: any) => c?.action !== 'book');
     }
 
-    // Если бот попросил галерею — подбираем фото по запросу
+    // SAFETY-NET: Haiku иногда обрывает длинный текстовый список на вводной фразе
+    // («Вот полный перечень:») вместо самого перечисления — инцидент 28.08.2026 после
+    // ask-bot документов-фикса (PR #1057), где block_type:null стал требовать перечислить
+    // факт целиком текстом вместо короткого «мостика». Один ретрай на Sonnet, только если
+    // ответ дала дешёвая модель и текст обрывается на двоеточии без продолжения.
+    const TRUNCATED_TAIL = /:\s*(<br\s*\/?>\s*)*$/i;
+    if (usedModel === 'claude-haiku-4-5-20251001' && TRUNCATED_TAIL.test((responseData.text || '').trim())) {
+      console.warn('[ask] Haiku truncated response, retrying on Sonnet:', message.slice(0, 80));
+      try {
+        const retryResponse = await client.messages.create({
+          model: 'claude-sonnet-4-5-20250929',
+          max_tokens: 1200,
+          temperature: 0,
+          system: [
+            { type: 'text', text: basePrompt, cache_control: { type: 'ephemeral' } },
+            { type: 'text', text: volatileSuffix },
+          ],
+          messages,
+        });
+        const retryRaw = retryResponse.content[0].type === 'text' ? retryResponse.content[0].text : '';
+        const retryMatch = retryRaw.match(/\{[\s\S]*\}/);
+        let retryJson: any = null;
+        if (retryMatch) { try { retryJson = JSON.parse(retryMatch[0]); } catch { retryJson = null; } }
+        const retryParsed = retryJson ? ResponseSchema.safeParse(retryJson) : null;
+        if (retryParsed?.success && !TRUNCATED_TAIL.test((retryParsed.data.text || '').trim())) {
+          Object.assign(responseData, retryParsed.data);
+          if (Array.isArray((responseData as any).chips)) {
+            (responseData as any).chips = (responseData as any).chips.filter((c: any) => c?.action !== 'book');
+          }
+          usedModel = 'claude-sonnet-4-5-20250929';
+          metrics.model = usedModel;
+        }
+      } catch (retryErr: any) {
+        console.warn('[ask] Truncation retry failed:', retryErr?.message);
+      }
+    }
+
+    // Если бот попросил галерею — подбираем фото по запросу.
+    // wantsLastShift — тот же regex, что решает "надо ли упоминать последнюю смену" (см. shiftContext
+    // выше): если реально размеченных фото последней смены нет, findPhotos сам падает на общий поиск.
     if (responseData.block_type === 'gallery') {
       const photoQuery = (responseData.block_data as any)?.query || message;
-      responseData.block_data = { photos: findPhotos(photoQuery, 4) };
+      const wantsLastShift = /последн|прошл.*смен/i.test(message);
+      responseData.block_data = { photos: findPhotos(photoQuery, 4, wantsLastShift ? _lastShift?.id : undefined) };
     }
 
     // GUARD: проверяем текст на фактические ошибки (цены, даты, вычет и т.п.) по списку фактов.
