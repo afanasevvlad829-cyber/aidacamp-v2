@@ -1,0 +1,162 @@
+/*
+ * Тема «Apple» — демо-скин, включается атрибутом [data-theme="apple"] на <html>.
+ * Не влияет на прод: без атрибута ни одно правило не применяется.
+ *
+ * Идея: минимализм и премиальность через переменные, а не переверстку —
+ * та же разметка, тот же Tailwind-класс, другое значение под классом.
+ * Работает только там, где утилиты Tailwind резолвятся в var(--color-*) —
+ * это подтверждено на волне 1 токенизации (983 замены, см. git log).
+ *
+ * Референс — реальный сайт apple.com, не общее чувство «минимализм»:
+ * - фирменный CTA-синий #0071e3, не чёрно-белая гамма (проверено contrast
+ *   ratio 4.70:1 на белом и белым по кнопке — AA на грани, не ниже)
+ * - тёмные секции — истинный чёрный (#000), не тёмно-синий navy
+ * - нейтрали без тёплого оттенка (surface-warm сайта — #f7f5f2 с желтизной,
+ *   здесь — #fbfbfd, нейтральный)
+ * - тени почти не видны, форма держится на контрасте и белом поле, не на glow
+ * - шрифт — системный SF Pro на устройствах Apple, Inter — везде остальном
+ *
+ * Серый #86868b — то, что реально использует apple.com для faint-текста —
+ * даёт 3.62:1 на белом и не проходит WCAG AA (замерено; см. волну WCAG
+ * fix(a11y) 48fd746d). Проект держит планку AA, поэтому взят более тёмный
+ * #737378 (4.72:1) в той же гамме — того же духа, но не регресс контраста.
+ */
+
+[data-theme="apple"] {
+  /* ── Бренд-акцент: Apple Blue вместо soft orange ── */
+  --color-primary:        #0071e3;
+  --color-primary-hover:  #0068d1;
+  --color-primary-dark:   #004fac;
+  --color-primary-light:  #2997ff;
+  --color-primary-soft:   #f0f7ff;
+  --color-primary-warm:   #fbfdff;
+  --color-primary-text:   #0068d1;
+  --color-primary-muted:  rgba(0,113,227,0.08);
+
+  /* Текст на сплошной заливке bg-primary (см. mobile-ux-p0.css) — на
+     оранжевом фоне выигрывает тёмный (7.78:1), на этом синем — белый
+     (4.70:1 против 4.47:1 у чёрного, оба на грани AA, но белый чуть выше
+     порога, а не ниже). */
+  --color-primary-oncolor: #ffffff;
+
+  --color-primary-50:  #eef6ff;
+  --color-primary-100: #d6ebff;
+  --color-primary-200: #aed4ff;
+  --color-primary-300: #7ab8ff;
+  --color-primary-400: #439aff;
+  --color-primary-500: #0071e3;
+  --color-primary-600: #0068d1;
+  --color-primary-700: #0058ac;
+  --color-primary-800: #00478a;
+  --color-primary-900: #003665;
+  --color-primary-950: #001f3d;
+
+  /* ── Тёмные секции: истинный чёрный, без синего оттенка navy ── */
+  --color-navy-50:  #f5f5f7;
+  --color-navy-100: #e8e8ed;
+  --color-navy-200: #d2d2d7;
+  --color-navy-300: #aeaeb2;
+  --color-navy-400: #86868b;
+  --color-navy-500: #737378;
+  --color-navy-600: #636366;
+  --color-navy-700: #48484a;
+  --color-navy-800: #363638;
+  --color-navy-900: #1d1d1f;
+  --color-navy-950: #000000;
+  --color-dark-navy: #000000;
+  --color-dark:      #000000;
+
+  /* ── Нейтральные поверхности: без тёплого оттенка ── */
+  --color-surface:      #f5f5f7;
+  --color-surface-alt:  #f5f5f7;
+  --color-surface-warm: #fbfbfd;
+  --color-bg:           #f5f5f7;
+  --color-page:         #fbfbfd;
+  --color-card:         #ffffff;
+  --color-card-alt:     #f5f5f7;
+
+  --color-body:        #1d1d1f;
+  --color-body-muted:  #6e6e73;
+  --color-body-faint:  #737378;
+  --color-text:        #1d1d1f;
+  --color-text-muted:  #6e6e73;
+  --color-text-faint:  #737378;
+
+  --color-border:       #d2d2d7;
+  --color-border-light: #e8e8ed;
+  --color-line:         #d2d2d7;
+
+  /* ── Тени: почти плоские — форма держится на белом поле, не на glow ── */
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:  0 1px 4px rgba(0,0,0,0.05);
+  --shadow-lg:  0 2px 10px rgba(0,0,0,0.06);
+  --shadow-xl:  0 6px 20px rgba(0,0,0,0.08);
+  --shadow-2xl: 0 12px 34px rgba(0,0,0,0.10);
+  --shadow-glow-primary: 0 6px 20px rgba(0,113,227,0.28);
+  --shadow-inner-glass:  inset 0 1px 0 rgba(255,255,255,0.4);
+
+  /* ── Радиусы: чуть крупнее — континуальные углы вместо резких ── */
+  --radius-sm:  10px;
+  --radius-md:  14px;
+  --radius-lg:  20px;
+  --radius-xl:  24px;
+  --radius-2xl: 28px;
+
+  /* ── Шрифт: настоящий SF Pro на устройствах Apple, Inter — везде ── */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Segoe UI", sans-serif;
+}
+
+/* Кнопки, где текст на bg-primary закреплён напрямую классом text-navy-950
+ * (а не через .text-white + --color-primary-oncolor, как в mobile-ux-p0.css) —
+ * это выбор автора конкретного компонента, не общий механизм. На оранжевом
+ * фоне такой текст читаем, но здесь navy-950 темы = #000000, чёрный на синем
+ * даёт только 4.47:1 (см. --color-primary-oncolor выше). Правило скоуплено
+ * только на тему — сайт вне [data-theme="apple"] не затронут. */
+[data-theme="apple"] .bg-primary.text-navy-950 {
+  color: var(--color-primary-oncolor);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Дальше цвета: разметку компонентов трогать нельзя — тема переключается
+   JS-атрибутом на уже отрендеренной странице, правка .astro-файла задела бы
+   и дефолтную тему тоже. Поэтому здесь — точный прицел по стабильным id
+   и подстрокам класса (Tailwind сохраняет исходную строку в атрибуте
+   class, `[class*="..."]` матчит её буквально, это валидный CSS, не хак
+   именно Tailwind). Общие классы вроде .font-bold или .bg-primary НЕ
+   трогаем — они на 500+ элементах разного назначения (иконки, бейджи).
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Заголовок hero — 800 extrabold у Apple не встречается, их крупные
+   заголовки держатся на 600 (semibold) при том же кегле и трекинге. */
+[data-theme="apple"] #hero-call {
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1.08;
+}
+[data-theme="apple"] #hero-subtitle {
+  margin-top: 1.25rem;
+}
+[data-theme="apple"] #hero-subtitle .font-bold {
+  font-weight: 600;
+}
+
+/* Заголовки секций (H2) — паттерн одинаков по всему сайту (About, Shifts,
+   FAQ и т.д.): text-[24/26px] font-bold leading-[1.1] tracking-[-0.02em].
+   700 → 600 и чуть больше воздуха снизу — тот же приём, что и в hero. */
+[data-theme="apple"] h2.font-bold {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+/* Крупные CTA-кнопки — конвенция проекта: bg-primary + min-h-[48px]/h-[48px]
+   (см. комментарий "Primary CTA — 48px min-height" в mobile-ux-p0.css).
+   Не трогаем просто .bg-primary — на нём же иконки-кружки h-10/h-12,
+   ужать которые нельзя. Полная пилюля и больше воздуха — как настоящая
+   кнопка "Купить" на apple.com. */
+[data-theme="apple"] .bg-primary[class*="48px"],
+[data-theme="apple"] a[class*="bg-primary"][class*="48px"],
+[data-theme="apple"] button[class*="bg-primary"][class*="48px"] {
+  border-radius: 980px;
+  padding-left: 1.75rem;
+  padding-right: 1.75rem;
+}
