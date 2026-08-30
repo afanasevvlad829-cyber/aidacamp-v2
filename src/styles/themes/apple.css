@@ -160,3 +160,60 @@
   padding-left: 1.75rem;
   padding-right: 1.75rem;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Уровень 2, продолжение — остальные компоненты главной. Тот же принцип:
+   стабильный id секции/семантический тег/уникальная подстрока класса,
+   никогда общая Tailwind-утилита целиком.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Header — постоянный тёмный «glass», а не сплошная заливка при скролле
+   (такого JS-переключателя в проекте нет, это Level 3). Тёмный, не белый:
+   nav-ссылки — text-white с чёрным text-shadow под фото, на белом фоне
+   были бы нечитаемы. У Apple на страницах с фото-hero навбар тоже
+   полупрозрачно-тёмный, не белый — тот же приём, не хак. */
+[data-theme="apple"] header.absolute {
+  background: rgba(0, 0, 0, 0.32);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+/* Hero-фото — лёгкая имитация предметной apple-съёмки через фильтр, без
+   замены файла: чуть меньше насыщенности и капля контраста. object-cover —
+   подстрока, общая для десктоп- и мобайл-версии картинки, но скоуплено
+   на #hero — вне hero таких элементов с этим id-предком нет. */
+[data-theme="apple"] #hero img[class*="object-cover"] {
+  filter: saturate(0.85) contrast(1.04);
+}
+
+/* HeroFeatures — плашки фактов (опыт/ноутбук/лицензия...): убираем
+   hover-заливку в духе плоских карточек, разряжаем леттер-спейсинг лейбла. */
+[data-theme="apple"] .hero-features-chip button {
+  background: transparent !important;
+}
+[data-theme="apple"] .hero-features-chip span[class*="tracking-[0.16em]"] {
+  letter-spacing: 0.2em;
+}
+
+
+
+/* Карточки смен (#shifts) — без границы, только тень; больше отступ между
+   карточками читается воздушнее, ближе к карточкам apple.com/store. */
+[data-theme="apple"] #shifts [class*="rounded-[22px]"] {
+  border-color: transparent;
+  box-shadow: var(--shadow-lg);
+}
+
+/* FAQ — убираем рамку у каждого пункта, оставляем только тонкий разделитель
+   снизу (тот же приём, что и в Apple Support: список, не набор карточек). */
+[data-theme="apple"] #faq [data-faq-item] {
+  border-color: transparent;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Footer — легче фон карточки-подложки, тоньше граница. */
+[data-theme="apple"] footer > div[class*="border-t"] {
+  background: transparent;
+}
