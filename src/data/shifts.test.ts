@@ -25,11 +25,14 @@ describe('mainShifts', () => {
     expect(mainShifts.length).toBeGreaterThan(0);
   });
 
-  it('ни одна смена не завершилась (endDate >= сегодня)', () => {
+  // До 15.08.2026 держали строгую версию («ни одна смена не завершилась») — упала
+  // 16.08.2026: Смена 3 закончилась накануне (endDate 08-15), Смена 4 ещё не началась
+  // (startDate 08-17) — однодневный зазор между сменами, не забытые протухшие данные.
+  // Смягчили инвариант: хотя бы одна смена в mainShifts должна быть ещё не завершена —
+  // это ловит реально забытую ротацию (весь массив в прошлом), но не однодневный зазор.
+  it('хотя бы одна смена не завершилась (endDate >= сегодня)', () => {
     const today = new Date().toISOString().slice(0, 10);
-    for (const s of mainShifts) {
-      expect(s.endDate >= today).toBe(true);
-    }
+    expect(mainShifts.some(s => s.endDate >= today)).toBe(true);
   });
 
   it('endDate после startDate для всех активных смен', () => {
@@ -38,10 +41,16 @@ describe('mainShifts', () => {
     }
   });
 
-  it('free >= 0 и occupied > 0', () => {
+  // occupied > 0 требуем только у смен, которые уже начались: у смены с открытыми
+  // продажами, но не стартовавшей, ноль записавшихся — нормальное состояние, а не
+  // забытые данные (поймано 27.08.2026 при открытии осенних продаж). Для будущих
+  // смен проверяем лишь неотрицательность — забытый мусор это по-прежнему ловит.
+  it('free >= 0; occupied > 0 у начавшихся смен', () => {
+    const today = new Date().toISOString().slice(0, 10);
     for (const s of mainShifts) {
       expect(s.free).toBeGreaterThanOrEqual(0);
-      expect(s.occupied).toBeGreaterThan(0);
+      expect(s.occupied).toBeGreaterThanOrEqual(0);
+      if (s.startDate <= today) expect(s.occupied).toBeGreaterThan(0);
     }
   });
 });

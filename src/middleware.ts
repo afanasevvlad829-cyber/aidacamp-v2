@@ -2,6 +2,8 @@ import type { MiddlewareHandler } from 'astro';
 import { verifySessionPayload } from './lib/portalSession';
 import { getStaff, getStaffById } from './lib/portalStaff';
 import { touchLastSeen } from './lib/portalLog';
+import { STAFF_COOKIE, getStaffSecret, isStaffAuthed } from './lib/staffAuth';
+import { fotoCookieName, verifyShiftFoto } from './lib/fotoLink';
 
 const PORTAL_PUBLIC = new Set(['/portal/login', '/portal/login/', '/portal/tg-app', '/api/portal/login', '/api/portal/check', '/api/portal/tg', '/api/portal/penalty/scan']);
 
@@ -105,8 +107,66 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   const { request, url, cookies, locals } = context;
   const path = url.pathname;
 
-  // ── Гейт портала (+ /api/admin/* — только роль admin) ──────────
-  if (path.startsWith('/portal') || path.startsWith('/api/portal') || path.startsWith('/api/admin')) {
+  // ── Гейт альбомов смен: /api/foto/* ────────────────────────────
+  // Фото и распознанные лица детей. До 27.08.2026 открыто любому — защитой
+  // было только незнание URL. Доступ даёт подписанная ссылка /foto/<id>?s=<token>:
+  // страница при валидном токене ставит httpOnly-куку foto_s_<id>, и запросы к API
+  // авторизуются ею. Персонал проходит по портальной/staff-сессии.
+  //
+  // /api/foto/image/<assetId> не содержит номера смены в пути, поэтому принимает
+  // ЛЮБУЮ валидную куку альбома: id ассета — неугадываемый UUID из Immich, а
+  // альтернатива (протаскивать shift в каждый <img src>) переписывает десяток мест
+  // клиентского кода ради границы, которая всё равно опирается на неугадываемость id.
+  if (path.startsWith('/api/foto/')) {
+    const seg = path.split('/');            // ['', 'api', 'foto', '<shiftId|image>', ...]
+    const shiftSeg = seg[3];
+    const isImage = shiftSeg === 'image';
+    const portalSecret = process.env.PORTAL_SESSION_SECRET;
+    const hasPortal = !!portalSecret && !!verifySessionPayload(cookies.get('portal_session')?.value, portalSecret)?.role;
+    const staffSecret = getStaffSecret();
+    const hasStaff = !!staffSecret && isStaffAuthed(cookies.get(STAFF_COOKIE)?.value, staffSecret);
+    let hasAlbum = false;
+    if (isImage) {
+      // Любая валидная кука альбома (см. комментарий выше).
+      hasAlbum = (request.headers.get('cookie') ?? '')
+        .split(';')
+        .map((c) => c.trim())
+        .filter((c) => c.startsWith('foto_s_'))
+        .some((c) => {
+          const eq = c.indexOf('=');
+          if (eq < 0) return false;
+          return verifyShiftFoto(c.slice('foto_s_'.length, eq), decodeURIComponent(c.slice(eq + 1)));
+        });
+    } else {
+      hasAlbum = verifyShiftFoto(shiftSeg, cookies.get(fotoCookieName(shiftSeg))?.value)
+        || verifyShiftFoto(shiftSeg, url.searchParams.get('s'));
+    }
+    if (!hasPortal && !hasStaff && !hasAlbum) {
+      return new Response(JSON.stringify({ ok: false, error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+    }
+  }
+
+  // ── Гейт внутренних API с чувствительными данными ──────────────
+  // /api/shift-roster отдаёт ФИО/пол/возраст детей из AlfaCRM, /api/ab-monitor-data —
+  // внутренние метрики A/B. Оба вызываются из ДВУХ контуров с разными куками:
+  // портал (portal_session) и конструктор смены /staff/plan (staff_auth_2026),
+  // поэтому принимаем любую из двух сессий. Раньше гейта не было вовсе.
+  if (path.startsWith('/api/shift-roster') || path.startsWith('/api/ab-monitor-data')) {
+    const portalSecret = process.env.PORTAL_SESSION_SECRET;
+    const hasPortal = !!portalSecret && !!verifySessionPayload(cookies.get('portal_session')?.value, portalSecret)?.role;
+    const staffSecret = getStaffSecret();
+    const hasStaff = !!staffSecret && isStaffAuthed(cookies.get(STAFF_COOKIE)?.value, staffSecret);
+    if (!hasPortal && !hasStaff) {
+      return new Response(JSON.stringify({ ok: false, error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+    }
+  }
+
+  // ── Гейт портала (+ /api/admin/* и /admin/* — только роль admin) ──────────
+  // /admin (без /api) до 27.08.2026 не гейтился вообще: страницы hero/gallery/
+  // ab-monitor/gbp-setup были открыты по прямой ссылке. Исключение — /admin/p-link,
+  // у него собственная проверка ADMIN_KEY (не ломаем существующий вход владельца).
+  const isAdminPage = path.startsWith('/admin') && !path.startsWith('/admin/p-link');
+  if (path.startsWith('/portal') || path.startsWith('/api/portal') || path.startsWith('/api/admin') || isAdminPage) {
     const cleanPortal = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
     const isPublic = PORTAL_PUBLIC.has(path) || PORTAL_PUBLIC.has(cleanPortal);
     if (!isPublic) {
@@ -169,8 +229,11 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
       // /api/admin/* — админ-операции (загрузка медиа, portal-audit с exec) —
       // только роль admin (консистентно с requireRole(['admin']) в staff.ts/roles.ts).
       // Без сессии — 401 выше; валидная сессия с другой ролью — 403.
-      if (path.startsWith('/api/admin') && role !== 'admin') {
-        return new Response(JSON.stringify({ ok: false, error: 'forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+      if ((path.startsWith('/api/admin') || isAdminPage) && role !== 'admin') {
+        if (path.startsWith('/api/')) {
+          return new Response(JSON.stringify({ ok: false, error: 'forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+        }
+        return new Response('Forbidden', { status: 403 });
       }
       locals.portalRole = role as any;
       locals.portalRoles = staffRoles as any;

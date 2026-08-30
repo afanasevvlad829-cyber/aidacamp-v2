@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { ZipArchive } from 'archiver';
+import archiver from 'archiver';
 import { requireStaff } from '../../../lib/portalPerms';
 import { getContentItem, readOriginal } from '../../../lib/portalShiftContent';
 
@@ -40,7 +40,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
 
   if (!files.length) return new Response('no files found', { status: 404 });
 
-  const archive = new ZipArchive({ zlib: { level: 6 } });
+  const archive = archiver('zip', { zlib: { level: 6 } });
   const chunks: Buffer[] = [];
   archive.on('data', (chunk: Buffer) => chunks.push(chunk));
 

@@ -6,11 +6,11 @@
     "node": ">=22.12.0 <23"
   },
   "scripts": {
-    "dev": "astro dev",
+    "dev": "node --env-file-if-exists=.env ./node_modules/.bin/astro dev",
     "check:stack": "node scripts/check-stack-standard.mjs",
     "check:astro": "node --max-old-space-size=6144 ./node_modules/.bin/astro check --minimumSeverity error --minimumFailingSeverity error",
     "check:public": "node scripts/check-public-astro.mjs",
-    "guard": "npm run check:stack && npm run check:public && bash scripts/guard-no-partytown.sh && bash scripts/check-banned-words.sh && bash scripts/check-price-drift.sh && bash scripts/check-transfer-price-drift.sh && bash scripts/check-date-drift.sh && bash scripts/check-evergreen-drift.sh && bash scripts/guard-static-rules.sh && bash scripts/guard-icons-fresh.sh && bash scripts/check-undefined-vars.sh && npm run check:hooks && node scripts/check-articles.mjs",
+    "guard": "npm run check:stack && npm run check:public && bash scripts/guard-no-partytown.sh && bash scripts/check-banned-words.sh && bash scripts/check-price-drift.sh && bash scripts/check-transfer-price-drift.sh && bash scripts/check-date-drift.sh && bash scripts/check-evergreen-drift.sh && bash scripts/guard-static-rules.sh && bash scripts/guard-icons-fresh.sh && bash scripts/check-undefined-vars.sh && npm run check:hooks && node scripts/check-articles.mjs && node scripts/check-content-overrides.mjs",
     "articles": "node scripts/gen-articles.mjs",
     "check:articles": "node scripts/check-articles.mjs",
     "check:dates": "bash scripts/check-date-drift.sh",
@@ -20,6 +20,7 @@
     "check:static": "bash scripts/guard-static-rules.sh",
     "check:hooks": "python3 scripts/hooks/guard-preflight.py --selftest && python3 scripts/hooks/guard-agent-output.py --selftest && python3 scripts/hooks/agent-task-registry.py --selftest",
     "check:icons": "bash scripts/guard-icons-fresh.sh",
+    "check:seo-spec": "scripts/.venv/bin/python3 scripts/check-seo-spec.py",
     "eval:ask": "node scripts/eval-ask-bot.mjs",
     "check:undefined": "bash scripts/check-undefined-vars.sh",
     "check:faq": "node scripts/check-faq-schema.mjs",
@@ -27,7 +28,7 @@
     "icons": "node scripts/build-icons-css.mjs",
     "build": "bash scripts/build.sh",
     "pagefind": "pagefind --site dist/client --output-subdir _pagefind --exclude-selectors '[data-pagefind-ignore], header, footer, nav, .ad, [data-analytics-goal]'",
-    "preview": "astro preview",
+    "preview": "node --env-file-if-exists=.env ./node_modules/.bin/astro preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
@@ -35,18 +36,19 @@
     "test:coverage": "vitest run --coverage --coverage.reporter=text-summary",
     "test:coverage:core": "vitest run --config vitest.core.config.ts --coverage --coverage.reporter=text-summary",
     "export:articles": "npx tsx scripts/export-articles-json.ts",
-    "check:evergreen": "bash scripts/check-evergreen-drift.sh"
+    "check:evergreen": "bash scripts/check-evergreen-drift.sh",
+    "check:content-overrides": "node scripts/check-content-overrides.mjs"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.9",
     "@playwright/test": "^1.60.0",
-    "@types/archiver": "^8.0.0",
+    "@types/archiver": "^6.0.4",
     "@types/pg": "^8.20.0",
     "@vitest/coverage-v8": "3.2.7",
     "bootstrap-icons": "^1.13.1",
     "pagefind": "^1.5.2",
     "typescript": "5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.7"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",
@@ -58,7 +60,7 @@
     "@uppy/dashboard": "^5.1.1",
     "@uppy/golden-retriever": "^5.2.1",
     "@uppy/xhr-upload": "^5.2.0",
-    "archiver": "^8.0.0",
+    "archiver": "^7.0.1",
     "astro": "6.4.8",
     "dayjs": "^1.11.21",
     "mammoth": "^1.12.0",
