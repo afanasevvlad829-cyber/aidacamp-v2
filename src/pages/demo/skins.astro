@@ -1,0 +1,81 @@
+---
+/**
+ * /demo/skins — демо переключателя тем. Показывает главную в iframe и
+ * переключает [data-theme] на её <html> напрямую (iframe same-origin,
+ * contentDocument доступен без postMessage).
+ *
+ * На прод-поведение главной НЕ влияет: apple.css скоуплен на
+ * [data-theme="apple"], без атрибута ни одно правило не резолвится.
+ */
+import Base from '../../layouts/Base.astro';
+---
+
+<Base title="Скины — демо" noindex>
+  <style is:inline>
+    .skins-bar {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 20px;
+      background: #0d1a2b; color: #fff;
+      font-family: Inter, sans-serif;
+    }
+    .skins-bar strong { font-size: 15px; font-weight: 700; margin-right: 8px; }
+    .skins-bar button {
+      appearance: none; cursor: pointer;
+      padding: 8px 18px; border-radius: 999px;
+      font-size: 14px; font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: transparent; color: rgba(255,255,255,0.75);
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .skins-bar button:hover { border-color: rgba(255,255,255,0.5); color: #fff; }
+    .skins-bar button[aria-pressed="true"] {
+      background: #fff; color: #0d1a2b; border-color: #fff;
+    }
+    .skins-frame-wrap { width: 100%; height: calc(100vh - 56px); }
+    .skins-frame-wrap iframe { width: 100%; height: 100%; border: 0; display: block; }
+  </style>
+
+  <div class="skins-bar">
+    <strong>Скин:</strong>
+    <button type="button" id="skin-default" aria-pressed="true">Обычная</button>
+    <button type="button" id="skin-apple" aria-pressed="false">Apple</button>
+  </div>
+
+  <div class="skins-frame-wrap">
+    <iframe id="skins-frame" src="/" title="Главная страница — предпросмотр скина"></iframe>
+  </div>
+
+  <script is:inline>
+    (function () {
+      const frame = document.getElementById('skins-frame');
+      const btnDefault = document.getElementById('skin-default');
+      const btnApple = document.getElementById('skin-apple');
+
+      function applyTheme(theme) {
+        try {
+          const doc = frame.contentDocument;
+          if (!doc) return;
+          if (theme === 'apple') doc.documentElement.setAttribute('data-theme', 'apple');
+          else doc.documentElement.removeAttribute('data-theme');
+        } catch (e) {
+          // Кросс-origin — не должно случиться, iframe грузит тот же домен.
+        }
+      }
+
+      function setActive(theme) {
+        btnDefault.setAttribute('aria-pressed', String(theme !== 'apple'));
+        btnApple.setAttribute('aria-pressed', String(theme === 'apple'));
+        applyTheme(theme);
+      }
+
+      // Каждая навигация внутри iframe (клик по ссылке) сбрасывает документ —
+      // тему нужно применить заново после каждой загрузки.
+      let currentTheme = 'default';
+      frame.addEventListener('load', function () { applyTheme(currentTheme); });
+
+      btnDefault.addEventListener('click', function () { currentTheme = 'default'; setActive(currentTheme); });
+      btnApple.addEventListener('click', function () { currentTheme = 'apple'; setActive(currentTheme); });
+    })();
+  </script>
+</Base>
