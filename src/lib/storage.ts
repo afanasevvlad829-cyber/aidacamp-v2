@@ -23,6 +23,8 @@ export const STORAGE_KEYS = {
   viewedShifts:       'ac:viewed_shifts',
   /** sessionStorage — старт визита + счётчик страниц, для цели quality_visit */
   qualityVisit:       'ac:qv_session',
+  /** sessionStorage — последняя отправленная заявка {k: 'телефон|смена', ts} — защита от повторного сабмита */
+  leadSent:           'ac:lead_sent',
 } as const;
 
 export type StorageKey = typeof STORAGE_KEYS[keyof typeof STORAGE_KEYS];
