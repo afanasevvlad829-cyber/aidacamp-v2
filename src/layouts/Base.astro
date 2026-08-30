@@ -314,6 +314,44 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
       import { initReveal } from '../scripts/reveal';
       initReveal();
     </script>
+
+    <!-- Уровень 3 Apple-скина: секции всплывают при скролле, как на apple.com.
+         Инфраструктура (.reveal/.reveal-in, IntersectionObserver, уважает
+         prefers-reduced-motion) уже была в проекте (см. reveal.ts) — просто
+         почти нигде на главной не навешан класс .reveal. Разметку компонентов
+         трогать нельзя (задело бы дефолтную тему), поэтому класс добавляется
+         сюда, в общий Base.astro, и ТОЛЬКО когда есть data-theme="apple".
+         MutationObserver, а не разовая проверка на load: наш /demo/skins
+         выставляет атрибут на уже отрендеренный документ через iframe
+         снаружи, а не при обычной навигации — обычный DOMContentLoaded это
+         бы не поймал. -->
+    <script>
+      import { initReveal } from '../scripts/reveal';
+
+      const APPLE_REVEAL_SELECTORS = ['#shifts', '#faq', 'footer', '.hero-features'];
+      let appleRevealApplied = false;
+
+      function applyAppleReveal() {
+        if (appleRevealApplied) return;
+        appleRevealApplied = true;
+        APPLE_REVEAL_SELECTORS.forEach((sel) => {
+          document.querySelectorAll<HTMLElement>(sel).forEach((el) => {
+            el.classList.add('reveal');
+          });
+        });
+        initReveal();
+      }
+
+      function checkAppleTheme() {
+        if (document.documentElement.getAttribute('data-theme') === 'apple') applyAppleReveal();
+      }
+
+      checkAppleTheme();
+      new MutationObserver(checkAppleTheme).observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-theme'],
+      });
+    </script>
     <SiteSearch />
     <!-- ReturnBanner отключён → заменён на NudgeBanner (догрев повторщиков, A/B отзывы vs ТВ) -->
     {!hideMarketingWidgets && <NudgeBanner />}
