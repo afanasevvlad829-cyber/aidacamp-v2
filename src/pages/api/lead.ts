@@ -11,6 +11,7 @@ import { fetchWithTimeout } from '../../lib/fetchWithTimeout';
 // не должен вешать приём заявки. Ошибка таймаута ловится существующими try/catch.
 const ALFA_TIMEOUT_MS = 8000;
 const TELEGRAM_TIMEOUT_MS = 5000;
+const AIDAPLUS_WEBHOOK_TIMEOUT_MS = 4000;
 
 /** Цена выбранной смены в рублях по её названию (для Andata order_value) */
 function shiftPrice(shift: string): number | undefined {
@@ -38,7 +39,7 @@ async function saveLead(lead: Record<string, unknown>) {
 
 export async function saveLeadToPg(
   body: Record<string, string>,
-  extra: { ip: string; userAgent: string; crmId: number | null; visitorId: string | null },
+  extra: { ip: string; userAgent: string; crmId: number | null; visitorId: string | null; duplicateOf?: number | null },
 ) {
   const pgDsn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
   if (!pgDsn) return;
@@ -46,7 +47,20 @@ export async function saveLeadToPg(
     const { default: pg } = await import('pg');
     const client = new pg.Client({ connectionString: pgDsn });
     await client.connect();
-    await client.query(
+    const values = [
+      body.phone || null, body.age || null, body.shift || null, body.source || null,
+      body.utm_source || null, body.utm_medium || null, body.utm_campaign || null,
+      body.utm_content || null, body.utm_term || null,
+      body.yclid || null, body.ysclid || null, body.gclid || null,
+      body.landing_url || null, body.page_title || null, body.referrer || null,
+      body.form_id || null, body.ym_client_id || null,
+      body.screen || null, body.viewport || null, body.language || null,
+      body.tz || null,
+      body.session_ms ? parseInt(body.session_ms, 10) : null,
+      extra.crmId, extra.ip || null, extra.userAgent || null, JSON.stringify(body),
+      extra.visitorId || null,
+    ];
+    const insert = (withDup: boolean) => client.query(
       `INSERT INTO leads_log (
         phone, age, shift, source,
         utm_source, utm_medium, utm_campaign, utm_content, utm_term,
@@ -54,7 +68,7 @@ export async function saveLeadToPg(
         landing_url, page_title, referrer,
         form_id, ym_client_id,
         screen, viewport, language, tz, session_ms,
-        crm_id, ip, user_agent, raw, visitor_id
+        crm_id, ip, user_agent, raw, visitor_id${withDup ? ', duplicate_of' : ''}
       ) VALUES (
         $1,$2,$3,$4,
         $5,$6,$7,$8,$9,
@@ -62,25 +76,109 @@ export async function saveLeadToPg(
         $13,$14,$15,
         $16,$17,
         $18,$19,$20,$21,$22,
-        $23,$24,$25,$26,$27
+        $23,$24,$25,$26,$27${withDup ? ',$28' : ''}
       )`,
-      [
-        body.phone || null, body.age || null, body.shift || null, body.source || null,
-        body.utm_source || null, body.utm_medium || null, body.utm_campaign || null,
-        body.utm_content || null, body.utm_term || null,
-        body.yclid || null, body.ysclid || null, body.gclid || null,
-        body.landing_url || null, body.page_title || null, body.referrer || null,
-        body.form_id || null, body.ym_client_id || null,
-        body.screen || null, body.viewport || null, body.language || null,
-        body.tz || null,
-        body.session_ms ? parseInt(body.session_ms, 10) : null,
-        extra.crmId, extra.ip || null, extra.userAgent || null, JSON.stringify(body),
-        extra.visitorId || null,
-      ],
+      withDup ? [...values, extra.duplicateOf ?? null] : values,
     );
+    try {
+      await insert(true);
+    } catch {
+      // колонка duplicate_of ещё не создана (миграция не применена) — пишем без неё,
+      // чтобы не терять лог заявок; см. scripts/leads-log-duplicate-of-migration.sql
+      await insert(false);
+    }
     await client.end();
   } catch {
     // best-effort — не блокируем ответ
+  }
+}
+
+/**
+ * Переходный период (25.08.2026, владелец: «пиши сразу в оба потока») — параллельно
+ * с созданием лида в старой AlfaCRM (createCrmLead выше) отправляем ту же заявку
+ * в новую aidaplus CRM, чтобы «Новые лиды» там видели её сразу, без ожидания
+ * ночного моста AlfaCRM→aidaplus. Best-effort: секрет/сеть недоступны — не блокируем
+ * заявку, она всё равно есть в AlfaCRM/Telegram/ФС/PG.
+ */
+async function sendToAidaplus(body: Record<string, string>, crmId: number | null): Promise<void> {
+  const secret = process.env.AIDAPLUS_LEADS_WEBHOOK_SECRET;
+  if (!secret) return;
+  try {
+    await fetchWithTimeout('https://aidaplus.ru/api/leads/webhook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Leads-Secret': secret },
+      // crm_id — 26.08.2026, см. LeadsWebhookController: карточка заводится сразу
+      // под этим id, чтобы ночной мост AlfaCRM→aidaplus её обновил, а не задвоил.
+      body: JSON.stringify({ site: 'aidacamp', crm_id: crmId ?? undefined, ...body }),
+    }, AIDAPLUS_WEBHOOK_TIMEOUT_MS);
+  } catch {
+    // best-effort — не блокируем ответ
+  }
+}
+
+/**
+ * Фолбэк атрибуции: последний размеченный визит этого браузера из таблицы visits.
+ * Визиты пишутся server-side из логов nginx (scripts/attribution/visits_ingest.py),
+ * поэтому переживают адблок и очистку localStorage. Возвращает только метки,
+ * пустой объект — если визитов нет или БД недоступна (best-effort, лид не блокируем).
+ */
+async function lookupVisitAttribution(visitorId: string | null): Promise<Record<string, string>> {
+  const pgDsn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
+  if (!pgDsn || !visitorId) return {};
+  try {
+    const { default: pg } = await import('pg');
+    const client = new pg.Client({ connectionString: pgDsn, connectionTimeoutMillis: 2000, query_timeout: 2000 });
+    await client.connect();
+    try {
+      const r = await client.query(
+        `SELECT utm_source, utm_medium, utm_campaign, utm_content, utm_term, yclid, ysclid, gclid
+         FROM visits
+         WHERE visitor_id = $1
+           AND coalesce(utm_source, yclid, ysclid, gclid) IS NOT NULL
+         ORDER BY ts DESC LIMIT 1`,
+        [visitorId],
+      );
+      const row = r.rows[0] || {};
+      const out: Record<string, string> = {};
+      for (const [k, v] of Object.entries(row)) if (v) out[k] = String(v);
+      return out;
+    } finally {
+      await client.end();
+    }
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Дубль заявки: та же смена и тот же телефон (по цифрам) за последние 5 минут.
+ * При недоступном PG дедуп отключается — принять заявку важнее, чем отсечь дубль.
+ */
+async function findRecentDuplicate(
+  phoneDigits: string,
+  shift: string,
+): Promise<{ id: number; crmId: number | null } | null> {
+  // Смоук-тесты (+7999000XXXX) шлют один номер многократно — для них дедуп выключен
+  if (phoneDigits.startsWith('7999000')) return null;
+  const pgDsn = process.env.AIDAPLUS_PG_DSN || process.env.PG_DSN || '';
+  if (!pgDsn) return null;
+  try {
+    const { default: pg } = await import('pg');
+    const client = new pg.Client({ connectionString: pgDsn });
+    await client.connect();
+    const { rows } = await client.query(
+      `SELECT id, crm_id FROM leads_log
+       WHERE regexp_replace(coalesce(phone, ''), '\\D', '', 'g') = $1
+         AND coalesce(shift, '') = $2
+         AND ts > now() - interval '5 minutes'
+       ORDER BY id DESC
+       LIMIT 1`,
+      [phoneDigits, shift],
+    );
+    await client.end();
+    return rows[0] ? { id: rows[0].id, crmId: rows[0].crm_id ?? null } : null;
+  } catch {
+    return null;
   }
 }
 
@@ -341,11 +439,38 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ ok: false, error: 'invalid_phone' }), { status: 400 });
     }
 
+    // Тестовые/проверочные заявки (диапазон +7999000XXXX и health-check) —
+    // уведомление в TG уходит беззвучно и с пометкой, чтобы не дёргать
+    // менеджеров (владелец 28.08.2026).
+    const isTestLead = digits.startsWith('7999000') || body.form_id === 'health_smoke';
+
     // Извлекаем IP и User-Agent для логирования
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
       || request.headers.get('x-real-ip')
       || '';
     const userAgent = request.headers.get('user-agent') || '';
+
+    // Атрибуция: если форма пришла без меток (клик по рекламе был раньше, на другой
+    // странице/в другой день), восстанавливаем их из визитов ДО записи в CRM/TG/PG —
+    // тогда lead_source_id, заметка CRM и уведомление получают настоящий источник.
+    const visitorId = readVisitorId(request);
+    if (!(body.utm_source || body.yclid || body.ysclid || body.gclid)) {
+      Object.assign(body, await lookupVisitAttribution(visitorId));
+    }
+
+    // Дедуп: повторная заявка с тем же телефоном и сменой за 5 минут — идемпотентный 200
+    // без второго лида в CRM, TG и Andata (инцидент 03.07.2026: crm 5235/5236 от одного клиента)
+    const dup = await findRecentDuplicate(digits, shift || '');
+    if (dup) {
+      await saveLead({ ...body, duplicate_of: dup.id });
+      await saveLeadToPg(body, {
+        ip, userAgent, crmId: null, visitorId, duplicateOf: dup.id,
+      });
+      return new Response(
+        JSON.stringify({ ok: true, duplicate: true, crm_id: dup.crmId }),
+        { status: 200 },
+      );
+    }
 
     // Always save to filesystem first (backup)
     await saveLead(body);
@@ -358,10 +483,16 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // CRM (best-effort, не блокирует TG)
-    const crmId = await createCrmLead(body);
+    // Тестовые заявки лидов в CRM не создают вовсе (удалить их через API
+    // нельзя — customer/delete в AlfaCRM не существует, проверено 28.08.2026;
+    // владелец: «удаляй тестовые лиды»). Путь проверяется тихим TG + PG-логом.
+    const crmId = isTestLead ? null : await createCrmLead(body);
 
     // PG лог (best-effort)
-    await saveLeadToPg(body, { ip, userAgent, crmId, visitorId: readVisitorId(request) });
+    await saveLeadToPg(body, { ip, userAgent, crmId, visitorId });
+
+    // aidaplus CRM (best-effort, переходный период — см. sendToAidaplus)
+    if (!isTestLead) void sendToAidaplus(body, crmId);
 
     // Andata — событие order_new. Fire-and-forget: НЕ ждём ответ и НЕ блокируем
     // путь заявки (у sendAndataEvent есть свой таймаут и он не бросает исключений).
@@ -383,6 +514,13 @@ export const POST: APIRoute = async ({ request }) => {
           ym_uid: body.ym_client_id || undefined,
         },
       });
+    }
+
+    // Тестовая заявка: в TG не шлём вообще (владелец 28.08.2026 — сперва
+    // «беззвучно», затем «телеграм тоже удаляй»). След остаётся в PG-логе
+    // leads_log и файловом бэкапе, этого достаточно для проверки пути.
+    if (isTestLead) {
+      return new Response(JSON.stringify({ ok: true, test: true, tg: false }), { status: 200 });
     }
 
     const text = buildTgText(body, crmId);
