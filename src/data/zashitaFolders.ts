@@ -7,4 +7,8 @@ export const zashitaFolders: Record<string, { publicKey: string; date: string }>
     publicKey: 'https://disk.yandex.ru/d/nDObMPutleVKYw',
     date: '16 августа 2026',
   },
+  'shift-4': {
+    publicKey: 'https://disk.yandex.ru/d/EdJ2ZFDFtj0zRw',
+    date: '26 августа 2026',
+  },
 };
