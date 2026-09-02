@@ -57,12 +57,9 @@ case "$cmd" in
     # Создаём worktree
     git worktree add "$WORKTREE_DIR" "$BRANCH"
 
-    # Копируем settings.json (хук SessionStart) — без settings.local.json!
+    # Копируем settings.json (хуки guard-preflight/guard-agent-output/registry) — без settings.local.json!
     mkdir -p "$WORKTREE_DIR/.claude"
     cp "$REPO_ROOT/.claude/settings.json" "$WORKTREE_DIR/.claude/settings.json" 2>/dev/null || true
-
-    # Записываем назначенную ветку — pre-commit и session-start читают это
-    echo "$BRANCH" > "$WORKTREE_DIR/.claude/MY_BRANCH"
 
     echo ""
     echo -e "${GREEN}${BOLD}✅ Воркер создан!${NC}"
