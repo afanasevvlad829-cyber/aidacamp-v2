@@ -22,7 +22,7 @@ export const YANDEX_MAPS_URL = 'https://yandex.ru/maps/?ll=36.724185,55.265643&z
 // (цель maps_route_click: initContactTracking ловит rtext= в href).
 export const YANDEX_MAPS_ROUTE_URL = 'https://yandex.ru/maps/?rtext=~55.265643%2C36.724185&rtt=auto';
 
-export const STAT_FOUNDED_YEAR = '2021'; // год основания, синхронно с SchemaOrg foundingDate
+export const STAT_FOUNDED_YEAR = '2022'; // год основания, синхронно с SchemaOrg foundingDate
 export const STAT_YEARS = String(SEASON_YEAR - Number(STAT_FOUNDED_YEAR)); // лет работы — производная, не хардкодить
 export const STAT_KIDS = '1200+';        // детей
 export const STAT_RATING = '5.0';        // рейтинг на Яндекс.Картах
