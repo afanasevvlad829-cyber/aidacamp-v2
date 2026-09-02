@@ -3,7 +3,7 @@ export const prerender = false;
 import Base from '../../../layouts/Base.astro';
 import { allShiftsIncludingArchived } from '../../../data/shifts';
 import { zashitaFolders } from '../../../data/zashitaFolders';
-import { listPublicVideos, type YdiskItem } from '../../../lib/ydiskPublic';
+import { listPublicVideos, localVttUrl, type YdiskItem } from '../../../lib/ydiskPublic';
 
 const { shiftId } = Astro.params;
 const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
@@ -18,6 +18,8 @@ if (folder) {
     error = e instanceof Error ? e.message : 'Не удалось прочитать папку';
   }
 }
+
+const vttOf = (name: string) => (shiftId ? localVttUrl(shiftId, name) : null);
 
 const mb = (n: number) => `${Math.round(n / 1024 / 1024)} МБ`;
 ---
@@ -41,7 +43,12 @@ const mb = (n: number) => `${Math.round(n / 1024 / 1024)} МБ`;
       <div class="z-grid">
         {items.map((it) => (
           <article class="z-card">
-            <button class="z-thumb" data-name={it.name} aria-label={`Смотреть защиту: ${it.title}`}>
+            <button
+              class="z-thumb"
+              data-name={it.name}
+              data-vtt={vttOf(it.name) ?? ''}
+              aria-label={`Смотреть защиту: ${it.title}`}
+            >
               {it.preview && (
                 <img src={it.preview} alt="" referrerpolicy="no-referrer" />
               )}
@@ -142,12 +149,22 @@ const mb = (n: number) => `${Math.round(n / 1024 / 1024)} МБ`;
     const video = document.getElementById('z-video');
     const title = document.getElementById('z-title');
 
-    function open(name, caption) {
+    function open(name, caption, vttUrl) {
       // Плеер идёт через потоковый прокси (zashita-stream), не через редирект:
       // <video> у Chrome получает 403 от Яндекса на прямой редирект, хотя
       // fetch/curl с тем же запросом проходят. Кнопка «Скачать» остаётся
       // прямым редиректом на Яндекс — там это работает штатно.
       video.src = `/api/zashita-stream?shift=${shiftId}&name=${encodeURIComponent(name)}`;
+      video.querySelectorAll('track').forEach((t) => t.remove());
+      if (vttUrl) {
+        const track = document.createElement('track');
+        track.kind = 'subtitles';
+        track.srclang = 'ru';
+        track.label = 'Русский';
+        track.src = vttUrl;
+        track.default = true;
+        video.appendChild(track);
+      }
       title.textContent = caption;
       modal.hidden = false;
       document.body.style.overflow = 'hidden';
@@ -156,6 +173,7 @@ const mb = (n: number) => `${Math.round(n / 1024 / 1024)} МБ`;
     function close() {
       video.pause();
       video.removeAttribute('src');
+      video.querySelectorAll('track').forEach((t) => t.remove());
       video.load();
       modal.hidden = true;
       document.body.style.overflow = '';
@@ -163,7 +181,7 @@ const mb = (n: number) => `${Math.round(n / 1024 / 1024)} МБ`;
 
     document.querySelectorAll('.z-thumb').forEach((b) => {
       b.addEventListener('click', () =>
-        open(b.dataset.name, b.closest('.z-card').querySelector('h2').textContent),
+        open(b.dataset.name, b.closest('.z-card').querySelector('h2').textContent, b.dataset.vtt),
       );
     });
     document.getElementById('z-close').addEventListener('click', close);
