@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="ru" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>Знать ответы становится дешевле</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;600;700;800;900&display=block"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background-color: #f3eee3;
+        font-family: "Inter", sans-serif;
+        color: #201a12;
+      }
+
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        background: #f3eee3;
+        overflow: hidden;
+      }
+
+      .masthead {
+        position: absolute;
+        top: 64px;
+        left: 56px;
+        right: 56px;
+        z-index: 25;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: rgba(32, 26, 18, 0.55);
+        opacity: 0;
+      }
+      .masthead .rule-h {
+        position: absolute;
+        bottom: -18px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: rgba(32, 26, 18, 0.2);
+      }
+
+      .brand-tag {
+        position: absolute;
+        left: 50%;
+        bottom: 64px;
+        transform: translateX(-50%);
+        z-index: 25;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        color: rgba(32, 26, 18, 0.55);
+        opacity: 0;
+      }
+
+      .scene {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 0 56px;
+        opacity: 0;
+      }
+
+      .accent {
+        color: #c9711e;
+      }
+
+      /* Scene 1 — hook: serif editorial headline, thin rule split */
+      .s1-part {
+        font-family: "Playfair Display", serif;
+        font-size: 118px;
+        font-weight: 900;
+        line-height: 1.03;
+        letter-spacing: -0.01em;
+        opacity: 0;
+      }
+      .s1-rule {
+        width: 100%;
+        height: 3px;
+        background: #201a12;
+        margin: 36px 0;
+      }
+
+      .body-text {
+        font-size: 92px;
+        font-weight: 800;
+        line-height: 1.12;
+        opacity: 0;
+      }
+      .kicker {
+        font-size: 40px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #c9711e;
+        margin-bottom: 36px;
+        opacity: 0;
+      }
+
+      /* Scene 2 — three-row data table, magazine pull-quote style.
+         Number stacked above its label (not side-by-side) so both can run
+         large without crowding at this scale. */
+      .stat-table {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+      .stat-row {
+        padding: 30px 0;
+        border-bottom: 2px solid rgba(32, 26, 18, 0.18);
+        opacity: 0;
+      }
+      .stat-row:first-child {
+        border-top: 2px solid rgba(32, 26, 18, 0.18);
+      }
+      .stat-num {
+        display: block;
+        font-family: "Playfair Display", serif;
+        font-weight: 900;
+        font-size: 88px;
+        line-height: 1.05;
+      }
+      .stat-num.down {
+        color: #6b6355;
+      }
+      .stat-num.up {
+        color: #c9711e;
+      }
+      .stat-label {
+        display: block;
+        margin-top: 8px;
+        font-size: 38px;
+        font-weight: 600;
+        color: #201a12;
+      }
+
+      .rule {
+        width: 140px;
+        height: 6px;
+        background: #c9711e;
+        margin: 44px 0 0;
+      }
+
+      .cta-text {
+        font-size: 78px;
+        font-weight: 800;
+        line-height: 1.16;
+        opacity: 0;
+      }
+      .cta-question {
+        margin-top: 48px;
+        font-family: "Playfair Display", serif;
+        font-style: italic;
+        font-size: 64px;
+        font-weight: 700;
+        color: #c9711e;
+        opacity: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="20"
+      data-width="1080"
+      data-height="1920"
+    >
+      <!-- Background music bed -->
+      <audio
+        id="bgm"
+        src=".media/audio/bgm/bgm_001_trim20.mp3"
+        data-start="0"
+        data-duration="20"
+        data-track-index="0"
+        data-has-audio="true"
+      ></audio>
+
+      <div class="masthead" id="masthead">
+        <span>Аидакодить · заметки</span>
+        <span>№ 04</span>
+        <div class="rule-h"></div>
+      </div>
+
+      <!-- Scene 1: Hook -->
+      <div id="scene-1" class="scene">
+        <div class="s1-part">Знать ответы</div>
+        <div class="s1-part accent">становится дешевле.</div>
+        <div class="s1-rule"></div>
+        <div class="s1-part">Выбирать вопросы</div>
+        <div class="s1-part accent">дороже.</div>
+      </div>
+
+      <!-- Scene 2 — data table -->
+      <div id="scene-2" class="scene">
+        <div class="kicker">Экономика знаний перевернулась</div>
+        <div class="stat-table">
+          <div class="stat-row" id="row-1">
+            <span class="stat-num down">≈0 ₽</span>
+            <span class="stat-label">стоит получить готовый ответ</span>
+          </div>
+          <div class="stat-row" id="row-2">
+            <span class="stat-num up">дорого</span>
+            <span class="stat-label">стоит хороший вопрос</span>
+          </div>
+          <div class="stat-row" id="row-3">
+            <span class="stat-num up">дороже всего</span>
+            <span class="stat-label">стоит проверка ответа</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 3 -->
+      <div id="scene-3" class="scene">
+        <div class="body-text">
+          Школа пока в основном тренирует то, что подешевело:
+          <span class="accent">запомни и воспроизведи ответ</span>.
+        </div>
+        <div class="rule"></div>
+      </div>
+
+      <!-- Scene 4 -->
+      <div id="scene-4" class="scene">
+        <div class="body-text">
+          Мы стараемся тренировать
+          <span class="accent">подорожавшее</span>. Каждый проект начинается
+          с вопроса, которого нет в учебнике.
+        </div>
+      </div>
+
+      <!-- Scene 5: CTA -->
+      <div id="scene-5" class="scene">
+        <div class="cta-text">
+          И заканчивается проверкой, которую не сделает никто, кроме
+          автора.
+        </div>
+        <div class="cta-question">А вы сегодня искали ответ — или задавали вопрос?</div>
+      </div>
+
+      <div class="brand-tag">@aida_codit</div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      // --- BGM ---
+      const BGM_LEVEL = 0.3;
+      tl.set("#bgm", { volume: 0 }, 0);
+      tl.to("#bgm", { volume: BGM_LEVEL, duration: 0.5, ease: "power1.out" }, 0);
+      tl.to("#bgm", { volume: 0, duration: 0.8, ease: "power1.in" }, 19.2);
+
+      // --- Masthead: present the whole way except during the hook ---
+      tl.set("#masthead", { opacity: 0 }, 0);
+      tl.to("#masthead", { opacity: 1, duration: 0.4 }, 3.3);
+      tl.to("#masthead", { opacity: 0, duration: 0.2 }, 19.8);
+
+      // --- Prep: rule scaleX driven by GSAP only, never CSS transform ---
+      tl.set(".s1-rule", { scaleX: 0, transformOrigin: "left center" }, 0);
+      tl.set(".rule", { scaleX: 0, transformOrigin: "left center" }, 0);
+
+      // --- Scene 1: Hook (0 – 3.2s) — serif lines stack in ---
+      tl.set("#scene-1", { opacity: 1 }, 0);
+      tl.fromTo(
+        "#scene-1 .s1-part",
+        { opacity: 0, x: -30 },
+        { opacity: 1, x: 0, duration: 0.4, ease: "power3.out", stagger: 0.15 },
+        0.1,
+      );
+      tl.to(".s1-rule", { scaleX: 1, duration: 0.45, ease: "power2.out" }, 0.55);
+      tl.to("#scene-1", { opacity: 0, duration: 0.3 }, 2.9);
+
+      // --- Scene 2: data table (3.2 – 7.6s) ---
+      tl.set("#scene-2", { opacity: 1 }, 3.2);
+      tl.fromTo(".kicker", { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.35 }, 3.35);
+      tl.fromTo(
+        ".stat-row",
+        { opacity: 0, x: -20 },
+        { opacity: 1, x: 0, duration: 0.35, ease: "power2.out", stagger: 0.22 },
+        3.7,
+      );
+      tl.to("#scene-2", { opacity: 0, duration: 0.3 }, 7.3);
+
+      // --- Scene 3 (7.6 – 12.0s) ---
+      tl.set("#scene-3", { opacity: 1 }, 7.6);
+      tl.fromTo(
+        "#scene-3 .body-text",
+        { opacity: 0, y: 26 },
+        { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
+        7.75,
+      );
+      tl.to("#scene-3 .rule", { scaleX: 1, duration: 0.4, ease: "power2.out" }, 8.4);
+      tl.to("#scene-3", { opacity: 0, duration: 0.3 }, 11.7);
+
+      // --- Scene 4 (12.0 – 16.0s) ---
+      tl.set("#scene-4", { opacity: 1 }, 12.0);
+      tl.fromTo(
+        "#scene-4 .body-text",
+        { opacity: 0, y: 26 },
+        { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
+        12.15,
+      );
+      tl.to("#scene-4", { opacity: 0, duration: 0.3 }, 15.7);
+
+      // --- Scene 5: CTA (16.0 – 20.0s) ---
+      tl.set("#scene-5", { opacity: 1 }, 16.0);
+      tl.fromTo(
+        ".cta-text",
+        { opacity: 0, y: 26 },
+        { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
+        16.15,
+      );
+      tl.fromTo(
+        ".cta-question",
+        { opacity: 0, y: 18 },
+        { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
+        16.9,
+      );
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="ru" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>Три признака, что нейросеть врёт</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=block"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background-color: #06060a;
+        font-family: "Inter", sans-serif;
+        color: #eef2f5;
+      }
+
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        background: #06060a;
+        overflow: hidden;
+      }
+
+      /* Subtle tech grid, static — the motion comes from the scanline + text */
+      .grid-bg {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        background-image: linear-gradient(rgba(236, 155, 68, 0.06) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(236, 155, 68, 0.06) 1px, transparent 1px);
+        background-size: 64px 64px;
+      }
+      .scanline {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 3px;
+        z-index: 5;
+        background: linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(46, 217, 255, 0.55) 50%,
+          transparent 100%
+        );
+        filter: blur(1px);
+      }
+      .vignette {
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        pointer-events: none;
+        background: radial-gradient(ellipse at center, transparent 35%, rgba(0, 0, 0, 0.7) 100%);
+      }
+
+      .brand-tag {
+        position: absolute;
+        left: 50%;
+        bottom: 64px;
+        transform: translateX(-50%);
+        z-index: 25;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: rgba(46, 217, 255, 0.7);
+        opacity: 0;
+        text-shadow: 0 0 18px rgba(46, 217, 255, 0.6);
+      }
+
+      .scene {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 0 64px;
+        opacity: 0;
+        text-align: center;
+      }
+
+      .glow-orange {
+        color: #ec9b44;
+        text-shadow:
+          0 0 12px rgba(236, 155, 68, 0.85),
+          0 0 40px rgba(236, 155, 68, 0.55),
+          0 0 90px rgba(236, 155, 68, 0.35);
+      }
+      .glow-cyan {
+        color: #6fe3ff;
+        text-shadow:
+          0 0 12px rgba(111, 227, 255, 0.9),
+          0 0 40px rgba(111, 227, 255, 0.55),
+          0 0 90px rgba(111, 227, 255, 0.3);
+      }
+
+      /* Scene 1 — hook: giant glowing number */
+      .s1-num {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 340px;
+        font-weight: 800;
+        line-height: 1;
+        opacity: 0;
+      }
+      .s1-caption {
+        margin-top: 12px;
+        font-size: 76px;
+        font-weight: 900;
+        line-height: 1.12;
+        text-transform: uppercase;
+        letter-spacing: -0.01em;
+        opacity: 0;
+      }
+
+      /* Checklist scenes — big index number + statement */
+      .check-index {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 220px;
+        font-weight: 800;
+        line-height: 1;
+        opacity: 0;
+      }
+      .check-text {
+        margin-top: 16px;
+        font-size: 78px;
+        font-weight: 800;
+        line-height: 1.16;
+        max-width: 960px;
+        opacity: 0;
+      }
+
+      .cta-text {
+        font-size: 70px;
+        font-weight: 800;
+        line-height: 1.2;
+        max-width: 960px;
+        opacity: 0;
+      }
+      .cta-question {
+        margin-top: 52px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 52px;
+        font-weight: 700;
+        max-width: 900px;
+        opacity: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="20"
+      data-width="1080"
+      data-height="1920"
+    >
+      <!-- Background music bed -->
+      <audio
+        id="bgm"
+        src=".media/audio/bgm/bgm_001_trim20.mp3"
+        data-start="0"
+        data-duration="20"
+        data-track-index="0"
+        data-has-audio="true"
+      ></audio>
+
+      <div class="grid-bg"></div>
+      <div class="scanline" id="scanline"></div>
+
+      <!-- Scene 1: Hook -->
+      <div id="scene-1" class="scene">
+        <div class="s1-num glow-orange">3</div>
+        <div class="s1-caption">признака, что<br />нейросеть врёт</div>
+      </div>
+
+      <!-- Scene 2 — признак 1 -->
+      <div id="scene-2" class="scene">
+        <div class="check-index glow-cyan">01</div>
+        <div class="check-text">
+          Нет источника, который можно открыть и
+          <span class="glow-cyan">проверить</span>.
+        </div>
+      </div>
+
+      <!-- Scene 3 — признак 2 -->
+      <div id="scene-3" class="scene">
+        <div class="check-index glow-cyan">02</div>
+        <div class="check-text">
+          Подозрительная <span class="glow-cyan">уверенность</span> на узком
+          вопросе.
+        </div>
+      </div>
+
+      <!-- Scene 4 — признак 3 -->
+      <div id="scene-4" class="scene">
+        <div class="check-index glow-cyan">03</div>
+        <div class="check-text">
+          После уточнения факты тихо
+          <span class="glow-cyan">меняются</span>.
+        </div>
+      </div>
+
+      <!-- Scene 5: CTA -->
+      <div id="scene-5" class="scene">
+        <div class="cta-text">
+          Кстати, все три признака прекрасно работают и на
+          <span class="glow-orange">людях</span>.
+        </div>
+        <div class="cta-question glow-orange">Проверяли хоть раз на себе?</div>
+      </div>
+
+      <div class="vignette"></div>
+      <div class="brand-tag">@aida_codit</div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      // --- BGM ---
+      const BGM_LEVEL = 0.32;
+      tl.set("#bgm", { volume: 0 }, 0);
+      tl.to("#bgm", { volume: BGM_LEVEL, duration: 0.5, ease: "power1.out" }, 0);
+      tl.to("#bgm", { volume: 0, duration: 0.8, ease: "power1.in" }, 19.2);
+
+      // --- Scanline: sweeps top to bottom continuously, the whole 20s ---
+      tl.set("#scanline", { y: -3 }, 0);
+      tl.to(
+        "#scanline",
+        { y: 1923, duration: 4, ease: "none", repeat: 4 },
+        0,
+      );
+
+      // --- Scene 1: Hook (0 – 3.2s) ---
+      tl.set("#scene-1", { opacity: 1 }, 0);
+      tl.fromTo(
+        ".s1-num",
+        { opacity: 0, scale: 0.6 },
+        { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(2.4)" },
+        0.1,
+      );
+      tl.fromTo(
+        ".s1-caption",
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
+        0.5,
+      );
+      tl.to("#scene-1", { opacity: 0, duration: 0.3 }, 2.9);
+
+      // --- Scenes 2-4: same checklist rhythm ---
+      const checklistScenes = [
+        { id: "#scene-2", start: 3.2, end: 7.6 },
+        { id: "#scene-3", start: 7.6, end: 12.0 },
+        { id: "#scene-4", start: 12.0, end: 16.0 },
+      ];
+      checklistScenes.forEach(({ id, start, end }) => {
+        tl.set(id, { opacity: 1 }, start);
+        tl.fromTo(
+          `${id} .check-index`,
+          { opacity: 0, scale: 0.7 },
+          { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" },
+          start + 0.1,
+        );
+        tl.fromTo(
+          `${id} .check-text`,
+          { opacity: 0, y: 24 },
+          { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
+          start + 0.35,
+        );
+        tl.to(id, { opacity: 0, duration: 0.3 }, end - 0.3);
+      });
+
+      // --- Scene 5: CTA (16.0 – 20.0s) ---
+      tl.set("#scene-5", { opacity: 1 }, 16.0);
+      tl.fromTo(
+        ".cta-text",
+        { opacity: 0, y: 26 },
+        { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
+        16.15,
+      );
+      tl.fromTo(
+        ".cta-question",
+        { opacity: 0, y: 18 },
+        { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
+        16.9,
+      );
+
+      // --- Brand tag ---
+      tl.to(".brand-tag", { opacity: 1, duration: 0.4 }, 3.3);
+      tl.to(".brand-tag", { opacity: 0, duration: 0.2 }, 19.8);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
