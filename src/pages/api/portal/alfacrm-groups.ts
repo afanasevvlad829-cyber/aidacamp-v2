@@ -57,10 +57,20 @@ export const GET: APIRoute = async ({ locals }) => {
   try {
     const login = await post(H, '/auth/login', { email: E, api_key: K });
     const token = login?.token;
-    if (!token) return json({ ok: false, error: 'AlfaCRM login failed' }, 502);
+    if (!token) {
+      console.error('[alfacrm-groups] AlfaCRM login failed —', login?.errors ?? login);
+      return json({ ok: false, error: 'AlfaCRM login failed' }, 502);
+    }
 
     const res = await post(H, `/${BRANCH}/group/index`, { page: 0, is_active: 1 }, token);
-    const items: any[] = Array.isArray(res?.items) ? res.items : [];
+    if (!Array.isArray(res?.items)) {
+      // Ответ пришёл, но без items — сбой чтения (битый JSON/ошибка API),
+      // а не «активных групп нет». Раньше это тихо превращалось в groups:[],
+      // и UI расселения показывал пустой список вместо явной ошибки.
+      console.error('[alfacrm-groups] ответ без items —', res?.errors ?? res);
+      return json({ ok: false, error: 'AlfaCRM read failed' }, 502);
+    }
+    const items: any[] = res.items;
 
     const groups = items
       .map((g: any) => ({
@@ -72,6 +82,7 @@ export const GET: APIRoute = async ({ locals }) => {
 
     return json({ ok: true, groups });
   } catch (e) {
+    console.error('[alfacrm-groups] запрос упал —', e);
     return json({ ok: false, error: String(e) }, 502);
   }
 };

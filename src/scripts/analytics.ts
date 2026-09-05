@@ -80,6 +80,44 @@ export function initScrollTracking() {
   }, { passive: true });
 }
 
+/**
+ * Составная цель "quality_visit": ≥3 мин на сайте И ≥5 просмотренных страниц за визит.
+ * Заявок мало (0,19% визитов) — смарт-стратегиям Директа не хватает сигнала для обучения.
+ * Анализ пересечений (ball_intersect, 05.08.2026) показал: время и глубина сами по себе
+ * коррелируют между собой и порознь почти не предсказывают заявку, а вот их пересечение —
+ * визиты одновременно с обоими признаками — даёт долю заявок в 30-80 раз выше базовой.
+ * Эта цель — прокси-сигнал для обучения стратегий, более частый и честный, чем "заявка".
+ */
+function qvState(): { start: number; pages: number } {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEYS.qualityVisit);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return { start: Date.now(), pages: 0 };
+}
+
+function qvSave(st: { start: number; pages: number }) {
+  try { sessionStorage.setItem(STORAGE_KEYS.qualityVisit, JSON.stringify(st)); } catch {}
+}
+
+function qvCheck() {
+  const st = qvState();
+  const elapsedSec = (Date.now() - st.start) / 1000;
+  if (elapsedSec >= 180 && st.pages >= 5) trackGoal('quality_visit');
+}
+
+export function initEngagementTracking() {
+  const onNav = () => {
+    const st = qvState();
+    st.pages += 1;
+    qvSave(st);
+    qvCheck();
+  };
+  onNav(); // текущая страница (первая в визите или после client-side навигации)
+  document.addEventListener('astro:page-load', onNav);
+  setInterval(qvCheck, 20000); // ловит случай "долистал до 5 страниц, потом завис на одной"
+}
+
 /** ID счётчика Яндекс.Метрики. */
 export const YM_COUNTER = YANDEX_METRIKA_ID;
 export const YM_COUNTER_ID = String(YANDEX_METRIKA_ID);

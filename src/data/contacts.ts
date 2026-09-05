@@ -15,14 +15,14 @@ export const EMAIL_HREF = 'mailto:hello@codims.ru';
 export const WHATSAPP_URL = 'https://wa.me/79688086455';
 export const TELEGRAM_URL = 'https://t.me/Progaschool';
 export const VK_URL = 'https://vk.com/aidacamp';
-export const INSTAGRAM_URL = 'https://www.instagram.com/aidacamp.ru/';
+export const INSTAGRAM_URL = 'https://www.instagram.com/aida_codit/';
 
 export const YANDEX_MAPS_URL = 'https://yandex.ru/maps/?ll=36.724185,55.265643&z=15&pt=36.724185,55.265643,pm2rdm';
 // Маршрут «моё местоположение → лагерь» в Яндекс.Картах. Клик = горячий intent-сигнал
 // (цель maps_route_click: initContactTracking ловит rtext= в href).
 export const YANDEX_MAPS_ROUTE_URL = 'https://yandex.ru/maps/?rtext=~55.265643%2C36.724185&rtt=auto';
 
-export const STAT_FOUNDED_YEAR = '2021'; // год основания, синхронно с SchemaOrg foundingDate
+export const STAT_FOUNDED_YEAR = '2022'; // год основания, синхронно с SchemaOrg foundingDate
 export const STAT_YEARS = String(SEASON_YEAR - Number(STAT_FOUNDED_YEAR)); // лет работы — производная, не хардкодить
 export const STAT_KIDS = '1200+';        // детей
 export const STAT_RATING = '5.0';        // рейтинг на Яндекс.Картах

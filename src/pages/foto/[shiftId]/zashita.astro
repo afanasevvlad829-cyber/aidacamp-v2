@@ -4,10 +4,25 @@ import Base from '../../../layouts/Base.astro';
 import { allShiftsIncludingArchived } from '../../../data/shifts';
 import { zashitaFolders } from '../../../data/zashitaFolders';
 import { listPublicVideos, localVttUrl, type YdiskItem } from '../../../lib/ydiskPublic';
+import { fotoCookieName, fotoCookieOptions, verifyShiftFoto } from '../../../lib/fotoLink';
+import { verifySessionPayload } from '../../../lib/portalSession';
 
 const { shiftId } = Astro.params;
 const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);
 const folder = shiftId ? zashitaFolders[shiftId] : undefined;
+// ── Доступ: тот же гейт, что у альбома смены (см. foto/[shiftId].astro) ──
+// Проверяем ДО обращения к Яндекс.Диску: аноним не должен инициировать запрос.
+const fotoToken = Astro.url.searchParams.get('s');
+const fotoCookie = fotoCookieName(shiftId ?? '');
+const okToken = verifyShiftFoto(shiftId, fotoToken);
+const okCookie = verifyShiftFoto(shiftId, Astro.cookies.get(fotoCookie)?.value);
+const portalSecret = process.env.PORTAL_SESSION_SECRET;
+const okPortal = !!portalSecret && !!verifySessionPayload(Astro.cookies.get('portal_session')?.value, portalSecret)?.role;
+if (okToken && !okCookie) Astro.cookies.set(fotoCookie, fotoToken!, fotoCookieOptions());
+if (!okToken && !okCookie && !okPortal) {
+  return new Response('Not found', { status: 404 });
+}
+
 
 let items: YdiskItem[] = [];
 let error = '';
