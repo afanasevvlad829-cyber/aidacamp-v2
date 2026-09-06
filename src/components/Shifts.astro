@@ -24,11 +24,30 @@ const nowDate = new Date();
 const doneShifts = displayShifts.filter((s) => getShiftPhase(s.id, nowDate) === 'done' && s.recapUrl);
 const activeShifts = displayShifts.filter((s) => getShiftPhase(s.id, nowDate) !== 'done');
 
+// Eyebrow секции — по сезонам смен, которые реально показаны, а не жёстко «Лето SEASON_YEAR».
+// В сентябре в блоке остались только осенние и зимние заезды, а подпись продолжала
+// обещать лето (баг 06.09.2026). Зимний сезон подписывается двумя годами: заезд
+// стартует 30 декабря и заканчивается в январе следующего года.
+const seasonLabel = (startDate: string): string => {
+  const year = Number(startDate.slice(0, 4));
+  const m = Number(startDate.slice(5, 7));
+  if (m === 12) return `Зима ${year}—${year + 1}`;
+  if (m <= 2) return `Зима ${year - 1}—${year}`;
+  if (m <= 5) return `Весна ${year}`;
+  if (m <= 8) return `Лето ${year}`;
+  return `Осень ${year}`;
+};
+const seasonsLabel = [...new Set(activeShifts.map((s) => seasonLabel(s.startDate)))].join(' · ')
+  || `Лето ${SEASON_YEAR}`;
+
 // Только для compactPastShifts: ширина колонок под реальное число карточек,
 // «как прошли» уже (0.6fr), карточки смен (реальный товар) — шире (1fr).
+// minmax(0, …) обязателен: голый 1fr не сжимается ниже min-content колонки, а внутри
+// карточек есть whitespace-nowrap (даты «30 декабря — 8 января»). Из-за этого сетка
+// вылезала за контейнер на ~76px и правая колонка обрезалась (баг 06.09.2026).
 const gridColumns = doneShifts.length > 0
-  ? `${'1fr '.repeat(activeShifts.length)}0.6fr`.trim()
-  : `${'1fr '.repeat(activeShifts.length)}`.trim();
+  ? `${'minmax(0, 1fr) '.repeat(activeShifts.length)}minmax(0, 0.6fr)`.trim()
+  : `${'minmax(0, 1fr) '.repeat(activeShifts.length)}`.trim();
 
 // Обложки прошедших смен — фото из фотобанка (Immich, альбомы «Смена N — YYYY»),
 // сами файлы лежат в /var/www/aidacamp-gallery/ (общий архив dev+prod, не в репо).
@@ -41,7 +60,7 @@ const DONE_SHIFT_COVERS: Record<string, string> = {
 
 <section id="shifts" class="mx-auto max-w-[1312px] px-[2px] pt-10 md:px-4">
   <div class="p-[18px]">
-    <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 mb-2">Лето {SEASON_YEAR}</p>
+    <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 mb-2">{seasonsLabel}</p>
     <div class="flex items-center gap-2 mb-1"><div class="list-accent-dot"></div><h2 class="text-[24px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[30px]">Свободные места</h2></div>
     <p class="mt-1 text-base md:text-base text-body-muted">Данные обновляются в реальном времени. Во всех ценах: питание, проживание, программа. <a href="/nalogovyj-vychet/" class="text-emerald-700 underline underline-offset-2 hover:text-emerald-800">Верните до {VYCHET_MAX} налогового вычета</a>.</p>
 
@@ -149,11 +168,11 @@ const DONE_SHIFT_COVERS: Record<string, string> = {
                   {doneShifts.map((s, i) => (
                     <Fragment>
                       {i > 0 && <div class="border-t border-border-light"></div>}
-                      <a href={s.recapUrl} class="group flex items-center gap-3 no-underline pt-1 first:pt-0">
+                      <a href={s.recapUrl} class="group flex items-center gap-3 no-underline pt-1 first:pt-0 md:flex-col md:items-stretch md:gap-2">
                         <img
                           src={DONE_SHIFT_COVERS[s.id] ?? '/images/gallery/camp-smile.avif'}
                           alt={`Фото со смены «${s.name}»`}
-                          class="h-24 w-24 shrink-0 rounded-2xl object-cover"
+                          class="h-24 w-24 shrink-0 rounded-2xl object-cover md:h-[88px] md:w-full"
                           loading="lazy"
                           width="96"
                           height="96"

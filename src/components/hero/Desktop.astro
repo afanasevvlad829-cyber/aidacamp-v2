@@ -1,7 +1,7 @@
 ---
 // imports cleaned: stats/distance/price/url убраны после Variant A declutter
 import { CDN } from '../../data/cdn';
-import { SEASON_YEAR } from '../../data/shifts';
+import { SEASON_YEAR, upcomingShifts, shiftDatesShort, getShiftBadge } from '../../data/shifts';
 
 interface Props {
   imageSrc?: string;
@@ -9,6 +9,20 @@ interface Props {
 }
 
 const { imageSrc = `${CDN}/images/hero-desktop`, hasVariants = false } = Astro.props;
+
+// Ближайшие смены для hero — заменили ленту AI-новостей (06.09.2026, решение владельца):
+// новости уводили с сайта, а первый экран должен вести на открытые заезды.
+// Берём предстоящие смены со свободными местами, максимум 3 — состав считается
+// из shifts.ts, руками список не править.
+const heroShiftLinks = upcomingShifts(new Date().toISOString().slice(0, 10))
+  .filter((s) => s.free > 0)
+  .slice(0, 3)
+  .map((s) => ({
+    href: `/shifts/${s.id}/`,
+    dates: shiftDatesShort(s),
+    name: s.name,
+    badge: getShiftBadge(s),
+  }));
 ---
 
 <!-- ===== DESKTOP HERO ===== -->
@@ -56,25 +70,24 @@ const { imageSrc = `${CDN}/images/hero-desktop`, hasVariants = false } = Astro.p
       Вам — <span class="font-bold text-white">14 дней для себя</span>.
     </p>
 
-    <!-- News Jazz — живые AI-новости -->
-    <a id="nj-link-d" href="#" class="nj-card" aria-label="Читать AI-новость">
-      <div class="nj-stripe"></div>
-      <div class="nj-body">
-        <div class="nj-label">
-          <div class="nj-dot" aria-hidden="true"></div>
-          <span class="nj-label-text">AI News</span>
+    <!-- Ближайшие смены — на месте бывшей ленты AI-новостей -->
+    {heroShiftLinks.length > 0 && (
+      <div class="hero-shifts">
+        <div class="hero-shifts-label">
+          <span class="hero-shifts-dot" aria-hidden="true"></span>
+          <span>Идёт запись</span>
         </div>
-        <div id="nj-text-d" class="nj-text"></div>
-        <div id="nj-orig-d" class="nj-orig"></div>
-        <div class="nj-footer">
-          <span id="nj-source-d" class="nj-source"></span>
-          <span id="nj-time-d" class="nj-time"></span>
+        <div class="hero-shifts-links">
+          {heroShiftLinks.map((s) => (
+            <a href={s.href} class="hero-shift-link" aria-label={`${s.name}: ${s.dates}`}>
+              {s.badge.kind === 'icon' && <i class:list={['bi', s.badge.icon, 'hero-shift-ico']} aria-hidden="true"></i>}
+              <span class="hero-shift-dates">{s.dates}</span>
+              <i class="bi bi-arrow-right hero-shift-arrow" aria-hidden="true"></i>
+            </a>
+          ))}
         </div>
       </div>
-      <div class="nj-arrow" aria-hidden="true">
-        <i class="bi bi-arrow-up-right" style="font-size:14px"></i>
-      </div>
-    </a>
+    )}
 
     {/* Chat-CTA убран из hero — мама первый раз листает, не спрашивает.
         Shifts сразу под Hero — естественный скролл. TODO: вернуть как floating-bubble после 30s сессии. */}
@@ -100,3 +113,75 @@ const { imageSrc = `${CDN}/images/hero-desktop`, hasVariants = false } = Astro.p
     }, 2200);
   })();
 </script>
+
+<style is:global>
+  /* Ближайшие смены в hero — на месте бывшей карточки AI-новостей (.nj-card).
+     Тёмный фон hero: полупрозрачное стекло + акцентная полоса слева, как было у ленты. */
+  .hero-shifts {
+    margin-top: 24px;
+    max-width: 460px;
+    padding-left: 12px;
+    border-left: 3px solid var(--color-primary);
+  }
+
+  .hero-shifts-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--color-primary);
+  }
+
+  .hero-shifts-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    flex-shrink: 0;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-shifts-dot { animation: hero-shifts-pulse 1.6s ease-in-out infinite; }
+  }
+  @keyframes hero-shifts-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .hero-shifts-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .hero-shift-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  }
+
+  .hero-shift-link:hover {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    transform: translateY(-1px);
+  }
+
+  .hero-shift-ico { font-size: 13px; color: var(--color-primary); }
+  .hero-shift-link:hover .hero-shift-ico { color: #fff; }
+
+  .hero-shift-arrow { font-size: 12px; opacity: 0.55; }
+  .hero-shift-link:hover .hero-shift-arrow { opacity: 1; }
+</style>
