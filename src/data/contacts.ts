@@ -15,6 +15,11 @@ export const EMAIL_HREF = 'mailto:hello@codims.ru';
 export const WHATSAPP_URL = 'https://wa.me/79688086455';
 export const TELEGRAM_URL = 'https://t.me/Progaschool';
 export const VK_URL = 'https://vk.com/aidacamp';
+
+export const PHONE_MAX = '+7 (985) 449-27-80';
+// MAX не поддерживает диплинк по номеру телефона (в отличие от wa.me) — только
+// личная ссылка вида max.ru/u/..., которую владелец аккаунта создаёт в приложении.
+export const MAX_URL = 'https://max.ru/u/f9LHodD0cOJZGABwl8vAn-N9vcuTjrqqk1I9TbZDEzo0bC7yDlg0kZoonwU';
 export const INSTAGRAM_URL = 'https://www.instagram.com/aida_codit/';
 
 export const YANDEX_MAPS_URL = 'https://yandex.ru/maps/?ll=36.724185,55.265643&z=15&pt=36.724185,55.265643,pm2rdm';
