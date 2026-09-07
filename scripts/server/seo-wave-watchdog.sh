@@ -67,8 +67,20 @@ if [ -f "$PIDFILE" ]; then
 fi
 [ "$running" -eq 1 ] && exit 0
 
+# ⚠️ Считаем ТОЛЬКО работу фронта A (07.09.2026). Прежний запрос считал все
+# ключи new с pos>=11, включая целящие в главную. Фронт A главную не трогает
+# (она чемпион, её разгружает фронт C), поэтому такие ключи для конвейера —
+# не работа: сторож видел «очередь не пуста», поднимал прогон, прогон не мог
+# ничего с ними сделать и отбраковывал их в declined, лишь бы сторож замолчал.
+# Так фронт A уничтожал материал фронта C — 22 ключа главной codims
+# отбракованы дважды за сутки (06.09 в логе прогона, повторно 06.09 23:28).
 REMAIN=$(sudo -u postgres psql -d aidacamp -tAc \
-  "SELECT COUNT(*) FROM seo_keyword_backlog WHERE status='new' AND position >= 11" 2>/dev/null | tr -d ' ')
+  "SELECT COUNT(*) FROM seo_keyword_backlog
+    WHERE status='new' AND position >= 11
+      AND COALESCE(front,'A') <> 'C'
+      AND cluster_page IS NOT NULL
+      AND cluster_page !~ '^https?://[^/]+/?\$'
+      AND cluster_page !~ '^/\$'" 2>/dev/null | tr -d ' ')
 if [ -z "$REMAIN" ]; then
   say "пропуск: БД не ответила — проверить postgres"
   echo "psql -d aidacamp не ответил при опросе очереди" | /opt/scripts/seo-alert.sh error watchdog "БД недоступна, конвейер не поднять"
