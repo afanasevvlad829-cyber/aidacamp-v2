@@ -292,7 +292,7 @@ export interface ScanResult {
  * dedup_key = `<reason>:event=<id>:slot=<N>` — один штраф на слот, не дублируется.
  * Слот 1 = первые 30 мин просрочки, слот 2 = следующие 30 мин, и т.д.
  */
-export async function scanOverdueEvents(graceMinutes = 30): Promise<ScanResult> {
+async function scanOverdueEvents(graceMinutes = 30): Promise<ScanResult> {
   const out: ScanResult = { scanned: 0, created: 0, reasons: {} };
   await withDbClient(async (c) => {
     const r = await c.query(
@@ -365,7 +365,7 @@ export async function scanOverdueEvents(graceMinutes = 30): Promise<ScanResult> 
  * Штрафует руководителя смены (берём из portal_staff WHERE staff_key='director' и в этой смене).
  * dedup_key = `event_unassigned:event=<id>` — один раз за событие.
  */
-export async function scanUnassignedEvents(): Promise<ScanResult> {
+async function scanUnassignedEvents(): Promise<ScanResult> {
   const out: ScanResult = { scanned: 0, created: 0, reasons: {} };
   await withDbClient(async (c) => {
     const r = await c.query(
@@ -408,7 +408,7 @@ export async function scanUnassignedEvents(): Promise<ScanResult> {
  * штрафует тех активных staff, у кого нет записи в event_self_check.
  * dedup_key = `wakeup_missed:event=<id>:staff=<sid>`.
  */
-export async function scanWakeupMissed(graceMinutes = 30): Promise<ScanResult> {
+async function scanWakeupMissed(graceMinutes = 30): Promise<ScanResult> {
   const out: ScanResult = { scanned: 0, created: 0, reasons: {} };
   await withDbClient(async (c) => {
     const r = await c.query(

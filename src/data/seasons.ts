@@ -364,16 +364,16 @@ export const SPRING_SEASON: SeasonConfig = {
    последний заезд. Порядок в SEASONS — хронологический.
    ───────────────────────────────────────────────────────────────────────── */
 
-export const SEASONS: SeasonConfig[] = [AUTUMN_SEASON, WINTER_SEASON, SPRING_SEASON];
+const SEASONS: SeasonConfig[] = [AUTUMN_SEASON, WINTER_SEASON, SPRING_SEASON];
 
 /** Дата окончания последнего заезда сезона (ISO). */
-export function seasonEnd(s: SeasonConfig): string {
+function seasonEnd(s: SeasonConfig): string {
   const w = s.calendarWindows ?? [];
   return w.reduce((max, x) => (x.to > max ? x.to : max), w[0]?.to ?? '');
 }
 
 /** Дата начала первого заезда сезона (ISO). */
-export function seasonStart(s: SeasonConfig): string {
+function seasonStart(s: SeasonConfig): string {
   const w = s.calendarWindows ?? [];
   return w.reduce((min, x) => (x.from < min ? x.from : min), w[0]?.from ?? '9999-12-31');
 }
