@@ -1,6 +1,6 @@
 ---
 import type { Shift } from '../../data/shifts';
-import { renderCard, PEER_COUNTS, getAvailabilityLevel, getBookingCta } from '../../data/shifts';
+import { renderCard, PEER_COUNTS, getAvailabilityLevel, getBookingCta, getShiftBadge } from '../../data/shifts';
 import { pluralDays } from '../../utils/plural';
 import { getTaxDeduction, getCurrentPrice, getNextDayPrice, getDays, fmtPrice } from '../../data/dynamicPrices';
 import WaitlistInfoIcon from './WaitlistInfoIcon.astro';
@@ -24,8 +24,8 @@ const isSoldOut = availability === 'soldout';
 const isLowAvailability = availability === 'low';
 const bookingCta = getBookingCta(shift);
 
-// Номер смены: 'shift-3' → '3', 'shift-2-1' → '2.1'
-const shiftNum = shift.id.replace('shift-', '').replace('-', '.');
+// Значок в кружке: номер у летних смен, иконка сезона у осенних/зимних (см. getShiftBadge)
+const badge = getShiftBadge(shift);
 
 // Eyebrow с месяцами по диапазону дат
 const monthsRu: Record<string, string> = {
@@ -129,7 +129,7 @@ const filledSegments = Math.round((pct / 100) * SEGMENTS);
           ? 'bg-primary text-white shadow-[0_0_0_3px_rgba(236,124,0,0.18)]'
           : 'bg-primary/10 text-primary',
       ]}
-    >{shiftNum}</span>
+    >{badge.kind === 'num' ? badge.text : <i class:list={['bi', badge.icon, 'text-[13px]']} title={badge.label} aria-label={badge.label} role="img"></i>}</span>
     {shift.nearest ? (
       <Fragment>
         <span class="text-base font-bold text-body">Ближайшая</span>

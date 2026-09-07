@@ -1,6 +1,6 @@
 ---
 import { getCurrentPrice, fmtPrice } from '../../data/dynamicPrices';
-import { mainShifts, getAvailabilityLevel } from '../../data/shifts';
+import { mainShifts, getAvailabilityLevel, getShiftBadge } from '../../data/shifts';
 import { MS_PER_DAY, daysUntil, formatDaysLabel } from '../../scripts/shifts/fortune';
 import { seededShuffle } from '../../lib/deterministic';
 
@@ -12,8 +12,8 @@ const { shiftId = 'shift-1' } = Astro.props;
 const shift = mainShifts.find((s) => s.id === shiftId) ?? mainShifts[0];
 const SHIFT_ID = shift.id;
 
-// Номер смены для кружка в шапке — тот же паттерн, что в ShiftCard.astro
-const shiftNum = shift.id.replace('shift-', '').replace('-', '.');
+// Значок в кружке — общий с ShiftCard.astro (номер летом, иконка сезона в межсезонье)
+const badge = getShiftBadge(shift);
 
 // Занятость fallback-карточки — было захардкожено "Осталось 3 места"/"width:91%"
 // (05.07.2026: чинил заодно с блюром — число разошлось с реальными данными shifts.ts).
@@ -101,7 +101,7 @@ const segData = SEGMENTS.map((seg, i) => {
 
   <!-- Header banner — тот же короб, что у «Ближайшей» в ShiftCard.astro (персиковый фон, контрастный кружок) -->
   <div class="-mx-5 -mt-5 mb-4 flex items-center gap-2 rounded-t-[20px] border-b border-[var(--color-primary-100)] bg-[var(--color-primary-soft)] px-5 py-3">
-    <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-base font-extrabold text-white shrink-0 shadow-[0_0_0_3px_rgba(236,124,0,0.18)]">{shiftNum}</span>
+    <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-base font-extrabold text-white shrink-0 shadow-[0_0_0_3px_rgba(236,124,0,0.18)]">{badge.kind === 'num' ? badge.text : <i class:list={['bi', badge.icon, 'text-[13px]']} title={badge.label} aria-label={badge.label} role="img"></i>}</span>
     <span class="text-base font-bold text-body">{shift.name} · {shift.dates}</span>
     <span class="ml-auto flex items-center gap-1.5 whitespace-nowrap text-[12px] font-semibold text-primary">
       <i class="bi bi-clock text-[11px]" aria-hidden="true"></i>

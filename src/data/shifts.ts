@@ -65,6 +65,27 @@ export function getBookingCta(shift: Pick<Shift, 'free' | 'occupied'>): { label:
   return { label: isWaitlist ? 'Лист ожидания' : 'Забронировать', isWaitlist };
 }
 
+/**
+ * Значок смены для кружка в шапке карточки — ЕДИНЫЙ источник для всех карточек.
+ * Летние смены нумерованные (shift-3, shift-2-1) → «3», «2.1».
+ * Межсезонные номера не имеют: их id раскрывался как «autumn.1»/«winter.1»,
+ * не влезал в кружок 28px и наезжал на «Ближайшая»/месяц в шапке (баг 06.09.2026).
+ * Для них — иконка сезона по месяцу старта.
+ */
+export type ShiftBadge =
+  | { kind: 'num'; text: string }
+  | { kind: 'icon'; icon: string; label: string };
+
+export function getShiftBadge(shift: Pick<Shift, 'id' | 'startDate'>): ShiftBadge {
+  const num = shift.id.replace('shift-', '').replace('-', '.');
+  if (/^\d+(\.\d+)?$/.test(num)) return { kind: 'num', text: num };
+  const month = parseInt(shift.startDate?.split('-')[1] ?? '', 10);
+  if (month === 12 || month === 1 || month === 2) return { kind: 'icon', icon: 'bi-snow', label: 'Зимняя смена' };
+  if (month >= 9 && month <= 11) return { kind: 'icon', icon: 'bi-tree', label: 'Осенняя смена' };
+  if (month >= 3 && month <= 5) return { kind: 'icon', icon: 'bi-flower1', label: 'Весенняя смена' };
+  return { kind: 'icon', icon: 'bi-sun', label: 'Летняя смена' };
+}
+
 /** Единый текст объяснения механики листа ожидания — используется и в попапе, и в модалке брони. */
 export const WAITLIST_EXPLANATION =
   'Смена распродана. Обычно к её старту 2–3 семьи отказываются от путёвки по разным причинам — освободившиеся места предлагаем по листу ожидания, в порядке очереди. Оставьте заявку — позвоним, как только появится место.';

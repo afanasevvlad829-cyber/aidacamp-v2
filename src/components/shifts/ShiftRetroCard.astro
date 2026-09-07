@@ -9,6 +9,7 @@
  *   иначе выводим из правила: база (shift.price) → цена на старте (getCurrentPrice).
  */
 import type { Shift } from '../../data/shifts';
+import { getShiftBadge } from '../../data/shifts';
 import { getShiftPhase, getCurrentPrice, fmtPrice, getDays } from '../../data/dynamicPrices';
 
 interface Props {
@@ -21,8 +22,8 @@ const phase = getShiftPhase(shift.id, today); // 'live' | 'done'
 const isLive = phase === 'live';
 const isDone = phase === 'done';
 
-// Номер в кружке: shift-2-1 → "2.1"
-const circle = shift.id.replace('shift-', '').replace('-', '.');
+// Значок в кружке: номер у летних смен, иконка сезона у межсезонных (см. getShiftBadge)
+const badge = getShiftBadge(shift);
 
 // Подпись месяца(ев) из дат старта/конца
 const MON = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
@@ -52,7 +53,7 @@ const growthPct = fromN > 0 ? Math.round(((toN - fromN) / fromN) * 100) : 0;
   <!-- header: circle + month | status -->
   <div class="flex items-center justify-between gap-2 mb-3">
     <div class="flex items-center gap-1.5">
-      <span class={`inline-flex h-6 w-6 items-center justify-center rounded-full text-base font-extrabold leading-none shrink-0 ${isLive ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-400'}`}>{circle}</span>
+      <span class={`inline-flex h-6 w-6 items-center justify-center rounded-full text-base font-extrabold leading-none shrink-0 ${isLive ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-400'}`}>{badge.kind === 'num' ? badge.text : <i class:list={['bi', badge.icon, 'text-[11px]']} title={badge.label} aria-label={badge.label} role="img"></i>}</span>
       <p class="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">{monthLabel}</p>
     </div>
     {isLive ? (
