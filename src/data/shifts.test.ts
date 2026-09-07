@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import {
   mainShifts,
@@ -8,10 +9,16 @@ import {
   PRICE_S1, PRICE_S2, PRICE_S3, PRICE_S4, PRICE_S21, PRICE_S22,
   VYCHET_S1, VYCHET_S2, VYCHET_S3, VYCHET_S4, VYCHET_S21, VYCHET_S22,
   DATES_SHORT_S1, DATES_SHORT_S2, DATES_SHORT_S3, DATES_SHORT_S4,
+  DATES_S3, DATES_S4,
+  DAYS_S1, DAYS_S2, DAYS_S3, DAYS_S4, DAYS_S21, DAYS_S22, DAYS_MIN, DAYS_MAX,
+  VYCHET_MAX, VYCHET_MAX_DAYS,
+  allShiftsIncludingArchived,
+  shiftLine,
   taxDeduction,
   shiftDeduction,
   shiftDatesFull,
   shiftDatesShort,
+  fmtRub,
   lastCompletedShift,
   displayShifts,
   type Shift,
@@ -187,13 +194,9 @@ describe('price / vychet exports', () => {
 // ── Форматирование дат ─────────────────────────────────────────────────────
 
 describe('date exports', () => {
-  it('DATES_SHORT_S3 содержит августа', () => {
-    expect(DATES_SHORT_S3).toContain('августа');
-  });
-
-  it('DATES_SHORT_S4 содержит августа', () => {
-    expect(DATES_SHORT_S4).toContain('августа');
-  });
+  // Было «DATES_SHORT_S3 содержит августа» — проверка проходила бы и после того,
+  // как экспорт молча переехал бы на любую другую августовскую смену. Привязка
+  // по id ниже, в describe('привязка экспортов по id').
 
   it('DATES_SHORT_S1 — кросс-месяц (содержит —)', () => {
     expect(DATES_SHORT_S1).toContain('—');
@@ -226,5 +229,122 @@ describe('lastCompletedShift', () => {
     // displayShifts включает завершённые _shift1/_shift2 — эта проверка ловит регресс,
     // если кто-то случайно перепишет функцию на mainShifts (там завершённых уже нет).
     expect(displayShifts.some(s => s.id === 'shift-2')).toBe(true);
+  });
+});
+
+// ── Привязка экспортов ПО ID, а не по позиции в mainShifts ──────────────────
+// Инцидент 07.09.2026: PRICE_S3/S4, DATES_S3/S4, DATES_SHORT_S3/S4, VYCHET_S3/S4
+// и SEASON_RANGE выводились как mainShifts[0]/mainShifts[1]. Имя говорило
+// «Смена 3», смысл был «первая смена в массиве»: попытка вынести завершённые
+// летние смены в архив увела бы экспорты на осенние, и страницы напечатали бы
+// «Смена 3: 25–31 октября, 13 дней — 49 900 ₽».
+
+describe('привязка экспортов по id', () => {
+  const byId = (id: string): Shift => {
+    const s = allShiftsIncludingArchived.find(x => x.id === id);
+    if (!s) throw new Error(`нет смены ${id}`);
+    return s;
+  };
+
+  it('PRICE_S3/PRICE_S4 — цены смен shift-3/shift-4', () => {
+    expect(PRICE_S3).toBe(byId('shift-3').price);
+    expect(PRICE_S4).toBe(byId('shift-4').price);
+  });
+
+  it('DAYS_S* — длительности своих смен', () => {
+    expect(DAYS_S1).toBe(byId('shift-1').duration);
+    expect(DAYS_S2).toBe(byId('shift-2').duration);
+    expect(DAYS_S3).toBe(byId('shift-3').duration);
+    expect(DAYS_S4).toBe(byId('shift-4').duration);
+    expect(DAYS_S21).toBe(byId('shift-2-1').duration);
+    expect(DAYS_S22).toBe(byId('shift-2-2').duration);
+  });
+
+  it('DATES_S3/S4 и DATES_SHORT_S3/S4 — даты своих смен', () => {
+    expect(DATES_S3).toBe(shiftDatesFull(byId('shift-3')));
+    expect(DATES_S4).toBe(shiftDatesFull(byId('shift-4')));
+    expect(DATES_SHORT_S3).toBe(shiftDatesShort(byId('shift-3')));
+    expect(DATES_SHORT_S4).toBe(shiftDatesShort(byId('shift-4')));
+  });
+
+  it('VYCHET_S3/S4 — вычеты своих смен', () => {
+    expect(VYCHET_S3).toBe(fmtRub(shiftDeduction(byId('shift-3'))));
+    expect(VYCHET_S4).toBe(fmtRub(shiftDeduction(byId('shift-4'))));
+  });
+
+});
+
+// ── Границы диапазона несут СВОЮ длительность ──────────────────────────────
+// Инцидент 27.08.2026 (найден 07.09.2026): осенние смены вошли в mainShifts,
+// PRICE_MIN упал с 74 900 ₽ (10 дней) на 49 900 ₽ (7 дней), а зашитая текстом
+// «10 дней» осталась — «от 49 900 ₽ за 10 дней» уехало в прод на 93 строках.
+
+describe('DAYS_MIN / DAYS_MAX / VYCHET_MAX_DAYS', () => {
+  const toNum = (p: string) => parseInt(p.replace(/\D/g, ''), 10);
+
+  it('DAYS_MIN — длительность смены, задающей PRICE_MIN', () => {
+    const cheapest = [...mainShifts].sort((a, b) => toNum(a.price) - toNum(b.price))[0];
+    expect(PRICE_MIN).toBe(cheapest.price);
+    expect(DAYS_MIN).toBe(cheapest.duration);
+  });
+
+  it('DAYS_MAX — длительность смены, задающей PRICE_MAX', () => {
+    const priciest = [...mainShifts].sort((a, b) => toNum(b.price) - toNum(a.price))[0];
+    expect(PRICE_MAX).toBe(priciest.price);
+    expect(DAYS_MAX).toBe(priciest.duration);
+  });
+
+  it('VYCHET_MAX и VYCHET_MAX_DAYS — от ОДНОЙ и той же смены', () => {
+    const best = mainShifts.reduce((a, b) => (shiftDeduction(b) > shiftDeduction(a) ? b : a));
+    expect(VYCHET_MAX).toBe(fmtRub(shiftDeduction(best)));
+    expect(VYCHET_MAX_DAYS).toBe(best.duration);
+  });
+
+  it('VYCHET_MAX — максимум по ВСЕМ открытым сменам, не по двум первым', () => {
+    const max = Math.max(...mainShifts.map(shiftDeduction));
+    expect(VYCHET_MAX).toBe(fmtRub(max));
+  });
+});
+
+// ── Статическая проверка: позиционной привязки в shifts.ts больше нет ────────
+// Значения совпадают, пока смены лежат на «своих» позициях, поэтому одних
+// сверок значений мало — регресс вернётся незамеченным. Читаем исходник.
+
+describe('shifts.ts не адресует смены по позиции', () => {
+  const src = readFileSync(new URL('./shifts.ts', import.meta.url), 'utf-8');
+
+  it('никакой экспорт не адресует смену по индексу mainShifts[...]', () => {
+    const bad = src
+      .split('\n')
+      .map((line, i) => [i + 1, line] as const)
+      .filter(([, l]) => !l.trimStart().startsWith('//') && !l.trimStart().startsWith('*'))
+      .filter(([, l]) => /mainShifts\[[^\]]+\]/.test(l));
+    expect(bad.map(([n, l]) => `${n}: ${l.trim()}`)).toEqual([]);
+  });
+});
+
+// ── shiftLine: канон для новых страниц ─────────────────────────────────────
+
+describe('shiftLine', () => {
+  it('склеивает имя, даты, длительность и цену из самой смены', () => {
+    const s = allShiftsIncludingArchived.find(x => x.id === 'shift-3')!;
+    const line = shiftLine(s);
+    expect(line).toContain(s.name);
+    expect(line).toContain(s.duration);
+    expect(line).toContain(s.price);
+    expect(line).toContain(shiftDatesShort(s));
+  });
+
+  it('с opts.vychet добавляет вычет той же смены', () => {
+    const s = allShiftsIncludingArchived.find(x => x.id === 'shift-4')!;
+    expect(shiftLine(s, { vychet: true })).toContain(fmtRub(shiftDeduction(s)));
+  });
+
+  it('не содержит ни одной зашитой цифры длительности мимо duration', () => {
+    for (const s of allShiftsIncludingArchived) {
+      const line = shiftLine(s);
+      const days = (line.match(/\d+\s+(?:дней|дня|день)/g) ?? []);
+      expect(days).toEqual([s.duration]);
+    }
   });
 });

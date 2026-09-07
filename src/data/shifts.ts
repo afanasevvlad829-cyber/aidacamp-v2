@@ -257,6 +257,29 @@ export const shift2 = _shift2;
 // (модалка ShiftModal, SHIFT_META). НЕ использовать в UI-каруселях — там displayShifts/mainShifts.
 export const allShiftsIncludingArchived: Shift[] = [_shift1, _shift2, _shift21, _shift22, ...mainShifts];
 
+/**
+ * Смена по id — ЕДИНСТВЕННЫЙ способ адресовать конкретную смену в производных
+ * экспортах ниже (PRICE_S3, DATES_S4, VYCHET_S3 и т.д.).
+ *
+ * Зачем: до 07.09.2026 эти экспорты выводились ПО ПОЗИЦИИ — mainShifts[0] и
+ * mainShifts[1]. Имя говорило «Смена 3», смысл был «первая смена в массиве».
+ * Пока летний сезон шёл, это совпадало; при попытке вынести завершённые летние
+ * смены в архив экспорты молча переехали бы на осенние, и страницы напечатали бы
+ * «Смена 3: 25–31 октября, 13 дней — 49 900 ₽» — имя, длительность и цена от трёх
+ * разных смен в одной строке.
+ *
+ * Ищет по allShiftsIncludingArchived, а не по mainShifts, — поэтому экспорт
+ * продолжает работать ПОСЛЕ выноса смены в архив. Бросает при опечатке в id:
+ * молчаливого переезда на соседнюю смену больше не будет ни при каких правках.
+ */
+function byId(id: string): Shift {
+  const s = allShiftsIncludingArchived.find((x) => x.id === id);
+  if (!s) throw new Error(`shifts.ts: смены «${id}» нет в allShiftsIncludingArchived`);
+  return s;
+}
+const _s3 = byId('shift-3');
+const _s4 = byId('shift-4');
+
 // === ЕДИНЫЙ ИСТОЧНИК метаданных смены (дата + база + длительность) ===
 // Отсюда dynamicPrices.ts берёт basePrice/startDate/days и применяет правило роста.
 // Включает завершённые смены — для исторических цен и фолбэков.
@@ -283,16 +306,37 @@ export const SHIFT_META: Record<string, ShiftMeta> = Object.fromEntries(
 const _allForPrice = [...mainShifts];
 const _priceNum = (p: string) => parseInt(p.replace(/[^\d]/g, ''), 10);
 const _sorted = [..._allForPrice].sort((a, b) => _priceNum(a.price) - _priceNum(b.price));
-export const PRICE_MIN = _sorted[0].price;
-export const PRICE_MIN_ID = _sorted[0].id; // id смены с ценой PRICE_MIN — для ссылок «от X ₽», ведущих на эту смену
-export const PRICE_MAX = _sorted[_sorted.length - 1].price;
+const _cheapest = _sorted[0];
+const _priciest = _sorted[_sorted.length - 1];
+export const PRICE_MIN = _cheapest.price;
+export const PRICE_MIN_ID = _cheapest.id; // id смены с ценой PRICE_MIN — для ссылок «от X ₽», ведущих на эту смену
+export const PRICE_MAX = _priciest.price;
 export const PRICE_RANGE = `от ${PRICE_MIN} до ${PRICE_MAX}`;
 export const PRICE_S1 = _shift1.price;
 export const PRICE_S2 = _shift2.price;
-export const PRICE_S3 = mainShifts[0].price;
-export const PRICE_S4 = mainShifts[1].price;
+export const PRICE_S3 = _s3.price;
+export const PRICE_S4 = _s4.price;
 export const PRICE_S21 = _shift21.price;
 export const PRICE_S22 = _shift22.price;
+
+// === Длительность — ПРОИЗВОДНАЯ, как цена и даты. НЕ писать «13 дней» текстом! ===
+// Длительность жила в объекте смены (duration), но на страницах была зашита
+// текстом рядом с динамическими ${DATES_SHORT_S3} и ${PRICE_S3}. Меняется
+// привязка — цена и дата едут, длительность остаётся, и в одной строке
+// оказываются данные от разных смен. Страж: npm run check:durations.
+export const DAYS_S1 = _shift1.duration;
+export const DAYS_S2 = _shift2.duration;
+export const DAYS_S3 = _s3.duration;
+export const DAYS_S4 = _s4.duration;
+export const DAYS_S21 = _shift21.duration;
+export const DAYS_S22 = _shift22.duration;
+// Длительности смен, задающих границы PRICE_MIN/PRICE_MAX. Без них проза
+// «от ${PRICE_MIN} за 10 дней до ${PRICE_MAX} за 13 дней» врёт, как только
+// границу занимает смена другой длины: 27.08.2026 осенние смены вошли в
+// mainShifts, PRICE_MIN упал с 74 900 (10 дней) на 49 900 (7 дней), а зашитая
+// «10 дней» осталась — и так и уехало в прод на 93 строках.
+export const DAYS_MIN = _cheapest.duration;
+export const DAYS_MAX = _priciest.duration;
 
 // === Возврат при отказе от путёвки (ФЗ №2300-1 о защите прав потребителей) ===
 export const BYT_PER_DAY = 6100;     // фактические расходы лагеря/день (предоплата базе отдыха) — удерживаются при возврате
@@ -337,11 +381,20 @@ const _fmtV = fmtRub;
 // Форматированные строки вычета для прозы (как PRICE_*): «6 250 ₽».
 export const VYCHET_S1 = _fmtV(shiftDeduction(_shift1));
 export const VYCHET_S2 = _fmtV(shiftDeduction(_shift2));
-export const VYCHET_S3 = _fmtV(shiftDeduction(mainShifts[0]));
-export const VYCHET_S4 = _fmtV(shiftDeduction(mainShifts[1]));
+export const VYCHET_S3 = _fmtV(shiftDeduction(_s3));
+export const VYCHET_S4 = _fmtV(shiftDeduction(_s4));
 export const VYCHET_S21 = _fmtV(shiftDeduction(_shift21));
 export const VYCHET_S22 = _fmtV(shiftDeduction(_shift22));
-export const VYCHET_MAX = _fmtV(Math.max(shiftDeduction(mainShifts[0]), shiftDeduction(mainShifts[1])));
+// Максимальный вычет — по ВСЕМ открытым сменам, а не по двум первым в массиве.
+// Было Math.max(mainShifts[0], mainShifts[1]) — та же позиционная привязка.
+// Сегодняшнее значение не меняется (максимум и так у Смены 3), меняется
+// поведение после выноса лета в архив.
+const _maxVychetShift = mainShifts.reduce((a, b) => (shiftDeduction(b) > shiftDeduction(a) ? b : a));
+export const VYCHET_MAX = _fmtV(shiftDeduction(_maxVychetShift));
+// Длительность смены, дающей VYCHET_MAX. Проза «до ${VYCHET_MAX} за 13-дневную
+// смену» встречается на 76 строках — без этого экспорта она врёт, как только
+// максимум переезжает на смену другой длины.
+export const VYCHET_MAX_DAYS = _maxVychetShift.duration;
 
 // === Осень 2026 — окна заездов утверждены владельцем 2026-08-14 (цена — решение 2026-07-03) ===
 // Два заезда: основной под четвертные каникулы, второй под триместровый график школ.
@@ -485,23 +538,41 @@ export function shiftDatesShort(s: Shift): string {
 }
 export const DATES_S1 = shiftDatesFull(_shift1);
 export const DATES_S2 = shiftDatesFull(_shift2);
-export const DATES_S3 = shiftDatesFull(mainShifts[0]);
-export const DATES_S4 = shiftDatesFull(mainShifts[1]);
+export const DATES_S3 = shiftDatesFull(_s3);
+export const DATES_S4 = shiftDatesFull(_s4);
 export const DATES_S21 = shiftDatesFull(_shift21);
 export const DATES_S22 = shiftDatesFull(_shift22);
 export const DATES_SHORT_S1 = shiftDatesShort(_shift1);
 export const DATES_SHORT_S2 = shiftDatesShort(_shift2);
-export const DATES_SHORT_S3 = shiftDatesShort(mainShifts[0]);
-export const DATES_SHORT_S4 = shiftDatesShort(mainShifts[1]);
+export const DATES_SHORT_S3 = shiftDatesShort(_s3);
+export const DATES_SHORT_S4 = shiftDatesShort(_s4);
 export const DATES_SHORT_S21 = shiftDatesShort(_shift21);
 export const DATES_SHORT_S22 = shiftDatesShort(_shift22);
-export const SEASON_RANGE = `${shiftDatesShort(mainShifts[0]).split('–')[0].trim()} ${_MONTHS_RU[_d(mainShifts[0].startDate).m-1]} — ${shiftDatesShort(mainShifts[1])}`; // ориентир сезона
+
+/**
+ * Каноническая строка смены для прозы: «Смена 3 — 3–15 августа, 13 дней, 89 400 ₽».
+ * С opts.vychet — «… (налоговый вычет ~5 200 ₽)».
+ *
+ * Для НОВЫХ страниц. Существующие 170+ страниц сознательно сохраняют свои
+ * формулировки (их не меньше 12 видов) и собираются из атомов DAYS_, PRICE_ и
+ * DATES_: переписывать видимый текст на 50 страницах с FAQ-разметкой ради
+ * единообразия — SEO-риск без выгоды. Решение владельца 07.09.2026.
+ */
+export function shiftLine(s: Shift, opts?: { vychet?: boolean }): string {
+  const base = `${s.name} — ${shiftDatesShort(s)}, ${s.duration}, ${s.price}`;
+  return opts?.vychet ? `${base} (налоговый вычет ~${fmtRub(shiftDeduction(s))})` : base;
+}
 
 // Месяцы, которые реально покрывают ОТКРЫТЫЕ смены (mainShifts) — не хардкодить
 // диапазон месяцев отдельно, иначе он отстаёт при закрытии ранних смен сезона
 // (инцидент: "июнь–август" оставался после того, как июньские смены завершились).
-const _firstMonthIdx = _d(mainShifts[0].startDate).m - 1;
-const _lastMonthIdx = _d(mainShifts[mainShifts.length - 1].endDate).m - 1;
+// Берём МИНИМАЛЬНУЮ startDate и МАКСИМАЛЬНУЮ endDate, а не первый и последний
+// элемент массива: порядок mainShifts — вопрос вёрстки карточек, а не хронологии,
+// и одна переставленная смена молча сдвигала бы весь диапазон месяцев.
+const _earliestStart = mainShifts.reduce((a, b) => (b.startDate < a.startDate ? b : a)).startDate;
+const _latestEnd = mainShifts.reduce((a, b) => (b.endDate > a.endDate ? b : a)).endDate;
+const _firstMonthIdx = _d(_earliestStart).m - 1;
+const _lastMonthIdx = _d(_latestEnd).m - 1;
 export const SEASON_MONTHS = _firstMonthIdx === _lastMonthIdx
   ? _MONTHS_RU[_firstMonthIdx]
   : `${_MONTHS_RU[_firstMonthIdx]}–${_MONTHS_RU[_lastMonthIdx]}`;
