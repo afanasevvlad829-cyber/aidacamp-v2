@@ -14,7 +14,7 @@ name: Deploy
 # порядка минуты. Обратно это разворачивается одной строкой:
 # `promote: needs: [deploy-dev, typecheck]`.
 #
-# Прод защищён тремя рубежами (было четыре — dev-канарейка ушла):
+# Прод защищён четырьмя рубежами (dev-канарейка ушла, добавился конверсионный smoke):
 #   1) quality-gate.yml (check:banned / check:prices / build — БЕЗ astro check,
 #      required PR-проверка, быстрая — гейтит только мерж в dev);
 #   2) astro check — job `typecheck`, идёт параллельно с build, promote его ждёт
@@ -22,6 +22,10 @@ name: Deploy
 #   3) верификация + smoke на самом проде, при провале — авто-откат на последний
 #      backup-* (deploy.sh: fail_deploy → rollback.sh). Это тот же smoke.sh, что
 #      гонялся на dev, так что проверка не потерялась — сместилась во времени.
+#   4) конверсионный smoke прода (scripts/smoke-conversion.sh, шаг 6e — сразу
+#      после обычного smoke.sh, тот же fail_deploy → авто-откат): Метрика
+#      инициализируется, reachGoal доходит, /api/lead принимает заявку —
+#      ловит класс инцидента Partytown 16-18.04.2026 (0 конверсий, −60К₽).
 #
 # ⚠️ main теперь означает «прошло quality + typecheck», а НЕ «проверено на живом
 # окружении»: promote происходит до того, как dev успел ответить.
@@ -270,6 +274,9 @@ jobs:
           DEPLOY_YES: '1'      # неинтерактивно: в Actions нет stdin
           AUTO_ROLLBACK: '1'   # провал верификации/smoke → откат на backup-*
           SKIP_BUILD: '1'      # используем dist из job build, не пересобираем
+          # Для smoke-conversion.sh: алерт «конверсионный контур сломан, откатывай»
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: ./scripts/deploy.sh prod
 
       - name: Уведомление в Telegram
