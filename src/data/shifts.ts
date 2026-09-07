@@ -118,36 +118,43 @@ const _shift22: Shift = {
   price: '75 000 ₽', free: 0, occupied: 45, startDate: '2026-06-16', endDate: '2026-06-23',
 };
 
+// === Лето 2026 — ЗАВЕРШЕНО (закрыто 07.09.2026) ===
+// Смены 3 и 4 прошли 3-15 и 17-26 августа, но оставались в mainShifts со
+// статусом «мало мест» и остатком свободных мест. Живая главная из-за этого
+// в блоке «Подходящие смены для вас» предлагала родителю Смену 3 с ценой
+// 89 400 ₽ и подписью «уже едут ровесники» — три недели спустя после её конца.
+// Переносим в архив к Сменам 1 и 2: free: 0, статус «завершена», из mainShifts
+// убраны. Отчётов /kak-proshla-smena-3|4/ нет, поэтому recapUrl не ставим.
+const _shift3: Shift = {
+  id: 'shift-3',
+  name: 'Смена 3',
+  dates: '3 августа — 15 августа',
+  duration: '13 дней',
+  status: 'завершена',
+  statusType: 'available',
+  description: 'Проект от идеи до результата с акцентом на командную работу.',
+  price: '89 400 ₽',
+  free: 0,
+  occupied: 46,
+  startDate: '2026-08-03',
+  endDate: '2026-08-15',
+};
+const _shift4: Shift = {
+  id: 'shift-4',
+  name: 'Смена 4',
+  dates: '17 августа — 26 августа',
+  duration: '10 дней',
+  status: 'завершена',
+  statusType: 'available',
+  description: 'Закрытие лета: сильный проект и уверенный результат.',
+  price: '74 900 ₽',
+  free: 0,
+  occupied: 45,
+  startDate: '2026-08-17',
+  endDate: '2026-08-26',
+};
+
 export const mainShifts: Shift[] = [
-  {
-    id: 'shift-3',
-    name: 'Смена 3',
-    dates: '3 августа — 15 августа',
-    duration: '13 дней',
-    status: 'мало мест',
-    statusType: 'available',
-    description: 'Проект от идеи до результата с акцентом на командную работу.',
-    price: '89 400 ₽',
-    free: 5,
-    occupied: 41,
-    highlighted: true,
-    startDate: '2026-08-03',
-    endDate: '2026-08-15',
-  },
-  {
-    id: 'shift-4',
-    name: 'Смена 4',
-    dates: '17 августа — 26 августа',
-    duration: '10 дней',
-    status: 'мало мест',
-    statusType: 'available',
-    description: 'Закрытие лета: сильный проект и уверенный результат.',
-    price: '74 900 ₽',
-    free: 3,
-    occupied: 42,
-    startDate: '2026-08-17',
-    endDate: '2026-08-26',
-  },
   // === Осень 2026 — ПРОДАЖИ ОТКРЫТЫ 27.08.2026 (решение владельца) ===
   // free: 20 — реальная ёмкость межсезонного заезда со слов владельца (27.08.2026):
   // «сорок пять мы не наберём, нужно мест двадцать». Летние смены идут по 45,
@@ -234,7 +241,7 @@ export const shift2 = _shift2;
 
 // Полный список смен, включая архивные под-смены 2.1/2.2 — только для lookup по id
 // (модалка ShiftModal, SHIFT_META). НЕ использовать в UI-каруселях — там displayShifts/mainShifts.
-export const allShiftsIncludingArchived: Shift[] = [_shift1, _shift2, _shift21, _shift22, ...mainShifts];
+export const allShiftsIncludingArchived: Shift[] = [_shift1, _shift2, _shift21, _shift22, _shift3, _shift4, ...mainShifts];
 
 // === ЕДИНЫЙ ИСТОЧНИК метаданных смены (дата + база + длительность) ===
 // Отсюда dynamicPrices.ts берёт basePrice/startDate/days и применяет правило роста.
