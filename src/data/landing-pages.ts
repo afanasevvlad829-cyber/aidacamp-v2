@@ -1,4 +1,5 @@
 import { SEASON_MONTHS_NOM } from './evergreen';
+import { SUMMER_2027 } from './shifts';
 /**
  * Единый источник правды для всех лендингов АйДаКемп.
  *
@@ -34,6 +35,7 @@ export const landingPages: LandingPage[] = [
   { title: 'Детский лагерь в Подмосковье', description: '66 км от МКАД, проживание', url: '/detskiy-lager-podmoskove/', icon: 'bi-houses' },
   { title: 'Лагерь в Подмосковье', description: 'Загородный, с бассейном', url: '/lager-v-podmoskove/', icon: 'bi-tree' },
   { title: 'Лагерь на лето 2026', description: `Смены ${SEASON_MONTHS_NOM}, календарь`, url: '/lager-na-leto-2026/', icon: 'bi-calendar-heart' },
+  { title: 'Лагерь на лето 2027', description: `${SUMMER_2027.length} смен по ${SUMMER_2027[0].duration}, идёт предзапись`, url: '/lager-na-leto-2027/', icon: 'bi-calendar-heart' },
   { title: 'Лагерь в Москве', description: 'Ближнее Подмосковье, 66 км от МКАД', url: '/lager-v-moskve/', icon: 'bi-geo-alt' },
   { title: 'Московские летние лагеря', description: 'IT-лагерь в 66 км от Москвы, трансфер', url: '/moskovskie-letnie-lagerya/', icon: 'bi-geo-alt' },
 
@@ -353,6 +355,12 @@ const HEAD_URLS = new Set([
  */
 const SEASON_URLS = new Set([
   '/lager-na-leto-2026',
+  // Хаб следующего сезона. Добавлен 07.09.2026 вместе с созданием страницы:
+  // выдача по «лагеря на лето 2027» практически пуста (выгрузка ТОП-10 Арсенкина
+  // вернула один URL на запрос), а спрос уже идёт. Без пиннинга в этом пуле
+  // новая страница осталась бы без входящих ссылок — ровно та болезнь, из-за
+  // которой /ochnye-kursy-programmirovaniya/ на codims числился несуществующим.
+  '/lager-na-leto-2027',
   '/lager-na-nedelyu',
   '/lager-10-dney',
   '/lager-na-avgust-podmoskove',

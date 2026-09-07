@@ -1,0 +1,161 @@
+---
+import '../styles/global.css';
+import LandingLayout from '../layouts/LandingLayout.astro';
+import LandingHero from '../components/LandingHero.astro';
+import LandingTwoCol from '../components/LandingTwoCol.astro';
+import FAQ from '../components/FAQ.astro';
+import RelatedPages from '../components/RelatedPages.astro';
+import { getRelatedPages } from '../data/landing-pages';
+import AskCta from '../components/AskCta.astro';
+import Gallery from '../components/Gallery.astro';
+import { STAT_DISTANCE, STAT_FOUNDED_YEAR, STAT_KIDS } from '../data/contacts';
+import { SUMMER_2027, PRICE_LETO_2027, SEATS_PER_SHIFT_2027 } from '../data/shifts';
+
+// Страница сезона 2027. Даты смен ПРЕДВАРИТЕЛЬНЫЕ — точные будут 15.10.2026,
+// и об этом сказано на самой странице открытым текстом, а не мелким шрифтом.
+// Смены читаются из SUMMER_2027 (не из mainShifts: там то, что уже продаётся).
+// Схему EducationEvent намеренно НЕ отдаём: пока даты не подтверждены,
+// размечать их как событие — вводить в заблуждение и поисковик, и родителя.
+const DATES_KNOWN = '15 октября';
+
+// Сезонные фразы выводим из SUMMER_2027, а не пишем словами: страж
+// check:evergreen справедливо ловит литералы вроде «шесть смен» и
+// «с июня по август» — они разойдутся с данными при первой же правке сетки.
+// Константы из evergreen.ts тут не годятся: они описывают ТЕКУЩИЙ сезон 2026.
+const _NUM_W = ['ноль', 'одна', 'две', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь'];
+const SHIFTS_N = SUMMER_2027.length;
+const SHIFTS_PHRASE = `${_NUM_W[SHIFTS_N] ?? SHIFTS_N} ${SHIFTS_N === 1 ? 'смена' : 'смен'}`;
+const _MON_GEN = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+const _MON_ACC = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+const _monIdx = (iso: string) => Number(iso.split('-')[1]) - 1;
+const _first = _monIdx(SUMMER_2027[0].startDate);
+const _last = _monIdx(SUMMER_2027[SHIFTS_N - 1].startDate);
+const SEASON_FROM_TO_2027 = `с ${_MON_GEN[_first]} по ${_MON_ACC[_last]}`;
+const SEASON_MONTHS_2027 = `${_MON_ACC[_first]}–${_MON_ACC[_last]}`;
+// Месяцы, в которых есть смены, в порядке следования — для фразы «по две в ...»
+const SEASON_MONTHS_LIST_2027 = [...new Set(SUMMER_2027.map((s) => _MON_ACC[_monIdx(s.startDate)]))].join(', ');
+
+const sections = [
+  {
+    h2: 'Почему страница появилась за девять месяцев до смены',
+    text: `Хорошие даты разбирают заранее — к весне остаются те, что подошли не всем. Мы открываем сезон 2027 сейчас, чтобы у вас была возможность выбрать спокойно: посмотреть сетку, прикинуть отпуск, сопоставить со школьными делами. Ничего оплачивать не нужно — на этом этапе мы просто записываем, кому написать первым, когда даты станут точными.`,
+  },
+  {
+    h2: 'Что уже известно, а что уточняется',
+    text: 'Мы предпочитаем сказать прямо, где у нас точность, а где ещё рамка.',
+    list: [
+      `Известно точно: ${SHIFTS_PHRASE}, по две в каждом из месяцев (${SEASON_MONTHS_LIST_2027}), каждая на ${SUMMER_2027[0].duration}, ${SEATS_PER_SHIFT_2027} мест`,
+      `Известно точно: стоимость смены — ${PRICE_LETO_2027}, проживание, пятиразовое питание, программа и бассейн включены`,
+      `Уточняется: конкретные числа заездов. Сейчас это «первая» и «вторая половина месяца» — точные даты будут ${DATES_KNOWN}`,
+      'Уточняется: состав программы на сезон — обновляем каждый год, чтобы вернувшимся ребятам не было повторов',
+    ],
+  },
+  {
+    h2: 'Что за лагерь',
+    text: `Загородный IT-лагерь в Наро-Фоминском районе, ${STAT_DISTANCE} от Москвы. Работаем с ${STAT_FOUNDED_YEAR} года, через смены прошли более ${STAT_KIDS} школьников 7–15 лет. Каждый уезжает с собственным проектом — не с сертификатом об участии, а с тем, что сам сделал и показал на защите. Программирование, искусственный интеллект, разработка игр; рядом бассейн, лес и обычная лагерная жизнь без экранной рутины по вечерам.`,
+  },
+  {
+    h2: 'Как попасть в список',
+    text: 'Три шага, ни один из них ничего не стоит.',
+    list: [
+      'Оставляете заявку — только имя и телефон, без анкет',
+      `${DATES_KNOWN} мы публикуем точные даты и пишем вам первыми, до общего объявления`,
+      'Выбираете смену и бронируете; бронь фиксирует место и стоимость, оплата частями',
+    ],
+  },
+];
+---
+
+<LandingLayout
+  heroImage="/images/hero/lager-na-leto-2026.avif"
+  title="Детский лагерь на лето 2027 в Подмосковье — смены и цены"
+  description={`Летний лагерь 2027 в Подмосковье: ${SHIFTS_PHRASE} по ${SUMMER_2027[0].duration}, ${SEASON_MONTHS_2027}, ${PRICE_LETO_2027}, для детей 7–15 лет. IT-программа, бассейн, питание. Точные даты — ${DATES_KNOWN}, идёт предзапись.`}
+  h1="Детский лагерь на лето 2027 в Подмосковье"
+  canonical="https://aidacamp.ru/lager-na-leto-2027"
+  breadcrumb="Лето 2027"
+>
+  <LandingHero slot="hero"
+    h1="Детский лагерь на лето 2027 в Подмосковье"
+    subtitle={`${SHIFTS_PHRASE.charAt(0).toUpperCase() + SHIFTS_PHRASE.slice(1)} по ${SUMMER_2027[0].duration} ${SEASON_FROM_TO_2027}, ${PRICE_LETO_2027}, для ребят 7–15 лет. Точные даты объявим ${DATES_KNOWN} — сейчас идёт предзапись.`}
+    breadcrumb="Лето 2027"
+    keywords={[
+      `${SHIFTS_PHRASE.charAt(0).toUpperCase() + SHIFTS_PHRASE.slice(1)}: по две в каждом месяце (${SEASON_MONTHS_LIST_2027})`,
+      `14 дней, ${SEATS_PER_SHIFT_2027} мест на смену, ${PRICE_LETO_2027}`,
+      `${STAT_DISTANCE} от Москвы, IT-программа, бассейн, питание`,
+    ]}
+    image="/images/hero/lager-na-leto-2026.avif"
+    imageAlt="Летний детский лагерь в Подмосковье"
+  />
+
+  <!-- Сетка смен. Даты предварительные — говорим об этом прямо над таблицей,
+       а не сноской под ней. -->
+  <section class="mx-auto max-w-[1312px] px-4 pt-8 pb-4 md:pt-10">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="list-accent-dot"></div>
+      <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
+        Смены лета 2027
+      </h2>
+    </div>
+    <p class="mb-4 text-base text-slate-600">
+      Сетка утверждена: {SHIFTS_PHRASE} по {SUMMER_2027[0].duration}, по две в каждом летнем месяце.
+      <strong class="font-semibold text-slate-900">Числа заездов пока предварительные</strong> —
+      точные объявим {DATES_KNOWN}. Стоимость и длительность уже окончательные.
+    </p>
+    <div class="overflow-x-auto rounded-[22px] border border-border-light bg-card card-shadow">
+      <table class="w-full min-w-[560px] border-collapse bg-white text-base">
+        <thead>
+          <tr class="bg-slate-50 text-[12px] font-semibold uppercase tracking-wide text-slate-500">
+            <th class="px-4 py-2.5 text-left">Смена</th>
+            <th class="px-4 py-2.5 text-left">Ориентировочные даты</th>
+            <th class="px-4 py-2.5 text-left">Дней</th>
+            <th class="px-4 py-2.5 text-left">Мест</th>
+            <th class="px-4 py-2.5 text-right font-bold text-slate-700">Цена</th>
+          </tr>
+        </thead>
+        <tbody>
+          {SUMMER_2027.map((s) => (
+            <tr class="border-t border-slate-100 text-slate-700">
+              <td class="px-4 py-2.5 font-semibold text-slate-900">{s.name}</td>
+              <td class="px-4 py-2.5 text-slate-500">{s.dates}</td>
+              <td class="px-4 py-2.5 text-slate-500">{s.duration}</td>
+              <td class="px-4 py-2.5 text-slate-500">{s.free}</td>
+              <td class="px-4 py-2.5 text-right font-bold text-primary">{s.price}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="mt-3 text-base text-slate-400">
+      В стоимость входят проживание, пятиразовое питание, IT-программа и бассейн.
+      Пока сезон 2027 готовится, ближайшие заезды — <a href="/lager-na-osennie-kanikuly/" class="text-primary hover:underline">осенние каникулы</a>
+      и зимняя смена; их даты уже точные.
+    </p>
+  </section>
+
+  <LandingTwoCol sections={sections} />
+
+  <section class="mx-auto max-w-[1312px] px-4 pt-2">
+    <p class="text-base text-slate-500">
+      Фотографии — с прошлых сезонов, без постановки. Как проходят смены, видно в отчётах
+      <a href="/kak-proshla-smena-1/" class="text-primary hover:underline">«Смена 1»</a> и
+      <a href="/kak-proshla-smena-2/" class="text-primary hover:underline">«Смена 2»</a>.
+    </p>
+  </section>
+  <Gallery />
+
+  <FAQ extraItems={[
+    { q: 'Когда будут известны точные даты смен на лето 2027?', a: `${DATES_KNOWN} 2026 года. Сетка уже утверждена — ${SHIFTS_PHRASE} по ${SUMMER_2027[0].duration}, по две в каждом месяце (${SEASON_MONTHS_LIST_2027}); уточняются конкретные числа заездов. Кто оставил заявку, получит даты первым, до общего объявления.` },
+    { q: 'Сколько стоит смена в лагере летом 2027?', a: `${PRICE_LETO_2027} за ${SUMMER_2027[0].duration}. В стоимость входят проживание, пятиразовое питание, IT-программа и бассейн. Стоимость окончательная, она не изменится после объявления дат.` },
+    { q: 'Сколько смен и какой они длительности?', a: `${SHIFTS_PHRASE.charAt(0).toUpperCase() + SHIFTS_PHRASE.slice(1)}, каждая по ${SUMMER_2027[0].duration}: по две в каждом месяце (${SEASON_MONTHS_LIST_2027}). На смене ${SEATS_PER_SHIFT_2027} мест.` },
+    { q: 'Можно ли забронировать место уже сейчас?', a: `Пока идёт предзапись, а не бронирование: фиксировать место на неподтверждённые даты было бы нечестно. Заявка ничего не стоит и ни к чему не обязывает — она означает, что мы напишем вам ${DATES_KNOWN}, когда даты станут точными.` },
+    { q: 'С какого возраста берёте?', a: 'С 7 лет. Возрастные группы: 7–9, 10–12, 13–15 лет, у каждой своя программа.' },
+    { q: 'Нужен ли опыт программирования?', a: 'Нет. Внутри каждой возрастной группы программа начинается с нуля.' },
+    { q: 'Будет ли программа отличаться от прошлых лет?', a: 'Да. Программу обновляем каждый сезон, чтобы вернувшимся ребятам не было повторов. Состав блоков на 2027 объявим вместе с датами.' },
+    { q: 'Где находится лагерь и есть ли трансфер?', a: `Наро-Фоминский район Московской области, ${STAT_DISTANCE} от Москвы. Организованный трансфер от метро Солнцево.` },
+  ]} only={['medicine', 'safety', 'food', 'accommodation', 'communication']} />
+
+  <RelatedPages pages={getRelatedPages(Astro.url.pathname)} />
+  <section id="lead-form" class="mx-auto max-w-[1312px] px-4 py-10">
+    <AskCta />
+  </section>
+</LandingLayout>
