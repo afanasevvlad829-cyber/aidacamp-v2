@@ -63,7 +63,7 @@ export const EVENT_TYPE_LABELS: Record<string, string> = {
 };
 
 /** Tailwind-классы для цветной плашки event_type (bg + text + border). */
-export const EVENT_TYPE_COLORS: Record<string, string> = {
+const EVENT_TYPE_COLORS: Record<string, string> = {
   meal:          'bg-amber-50 text-amber-800 border-amber-200',
   lesson:        'bg-blue-50 text-blue-800 border-blue-200',
   pool:          'bg-cyan-50 text-cyan-800 border-cyan-200',

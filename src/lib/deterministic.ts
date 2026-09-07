@@ -42,7 +42,7 @@ export function stableId(prefix: string, seed: string): string {
  * Детерминированный PRNG (xorshift32) от строкового seed.
  * Одинаковый seed → одинаковая последовательность.
  */
-export function seededRandom(seed: string): () => number {
+function seededRandom(seed: string): () => number {
   let state = hash32(seed) || 1; // 0 — вырожденное состояние xorshift
   return () => {
     state ^= state << 13;

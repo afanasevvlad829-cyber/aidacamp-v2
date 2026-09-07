@@ -23,7 +23,7 @@ const CONTACT_CHIPS = [
 // Сокращённый набор когда нужны только контакты, без альтернативы
 const CONTACT_ONLY = CONTACT_CHIPS;
 
-export const ESCALATION_TEMPLATES: EscalationTemplate[] = [
+const ESCALATION_TEMPLATES: EscalationTemplate[] = [
   // 1. Уже обещали скидку
   {
     id: 'promised_discount',

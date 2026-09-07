@@ -102,7 +102,7 @@ export const OPEN_MONTHS_ADJ = joinRu(_openMonths.map(i => MONTH_ADJ[i]));
 // ── Прошедшие месяцы (для статусных фраз «…смены уже прошли») ────────────
 const _pastMonths = monthsOf(_season).filter(m => !_openMonths.includes(m));
 /** Прилагательные прошедших месяцев: «майские и июньские». Пусто, если ничего не прошло. */
-export const PAST_MONTHS_ADJ = joinRu(_pastMonths.map(i => MONTH_ADJ[i]));
+const PAST_MONTHS_ADJ = joinRu(_pastMonths.map(i => MONTH_ADJ[i]));
 /** Готовая фраза статуса: «Майские и июньские смены уже прошли». '' если нечему. */
 export const PAST_SHIFTS_SENTENCE = _pastMonths.length
   ? `${PAST_MONTHS_ADJ[0].toUpperCase()}${PAST_MONTHS_ADJ.slice(1)} смены уже прошли`

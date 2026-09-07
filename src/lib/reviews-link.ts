@@ -12,7 +12,7 @@
  * если именная цитата снова появится в src/pages или src/data/landings.
  */
 
-export const YANDEX_REVIEWS_URL =
+const YANDEX_REVIEWS_URL =
   'https://yandex.ru/maps/org/aydakemp/35558479035/reviews/';
 
 const LINK_CLASS =
