@@ -1,4 +1,4 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_S2, VYCHET_S3, VYCHET_S4 } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_S2, VYCHET_S3, VYCHET_S4 } from '../shifts';
 import type { LandingData } from './types';
 import { otzyvyLink, yandexReviewsLink } from '../../lib/reviews-link';
 import { SEASON_FROM_TO } from '../evergreen';
@@ -14,7 +14,7 @@ const landing: LandingData = {
   faqItems: [
     { q: 'Как доехать до АйДаКемп?', a: `АйДаКемп — 66 км от МКАД по Киевскому шоссе (~1 час без пробок). На машине — по МКАД на юг до Киевского шоссе (А-101), либо на метро до м. Солнцево, а дальше — трансфер (${TRANSFER_PRICE_FMT}, с сопровождающим до места).` },
     { q: 'Как работает трансфер?', a: `Трансфер отправляется от м. Солнцево — ${TRANSFER_PRICE_FMT} в одну сторону, с сопровождающим до места. До Солнцево из большинства городов Подмосковья и севера Москвы можно доехать на метро без пересадок.` },
-    { q: 'Сколько длится смена?', a: `Открытые к брони смены: 10 дней (${PRICE_S4}) и 13 дней (${PRICE_S3}). Стоимость — от ${PRICE_MIN} до ${PRICE_MAX}. Сезон длится ${SEASON_FROM_TO} ${SEASON_YEAR}.` },
+    { q: 'Сколько длится смена?', a: `Открытые к брони смены: ${DAYS_S4} (${PRICE_S4}) и ${DAYS_S3} (${PRICE_S3}). Стоимость — от ${PRICE_MIN} до ${PRICE_MAX}. Сезон длится ${SEASON_FROM_TO} ${SEASON_YEAR}.` },
     { q: 'Нужен ли опыт программирования, чтобы записаться?', a: 'Нет, опыт не нужен. Группы формируются по уровню: начинающие, средний, продвинутые. Занятия в группах до 8 человек, преподаватели помогают каждому.' },
     { q: 'Что входит в стоимость путёвки?', a: `Проживание (комнаты 2–4 чел. с санузлом), 5-разовое питание, полная IT-программа (2 занятия по 90 мин. в день), бассейн, вечерние активности. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} в одну сторону отдельно.` },
   ],
@@ -55,9 +55,9 @@ const landing: LandingData = {
       h2: 'Налоговый вычет для родителей',
       text: 'АйДаКемп — лицензированная образовательная организация. Налоговый вычет доступен всем российским налогоплательщикам, оформляется через nalog.ru, никуда ехать не нужно.',
       list: [
-        `10 дней (${PRICE_S4}) → возврат ~${VYCHET_S4}`,
-        `13 дней (${PRICE_S3}) → возврат ~${VYCHET_S3}`,
-        `14 дней, завершена (${PRICE_S2}) → возврат был ~${VYCHET_S2}`,
+        `${DAYS_S4} (${PRICE_S4}) → возврат ~${VYCHET_S4}`,
+        `${DAYS_S3} (${PRICE_S3}) → возврат ~${VYCHET_S3}`,
+        `${DAYS_S2}, завершена (${PRICE_S2}) → возврат был ~${VYCHET_S2}`,
         'Подробнее о документах: раздел «Налоговый вычет» на сайте',
       ],
     },
@@ -89,10 +89,10 @@ const landing: LandingData = {
       h2: `Летние смены и цены ${SEASON_YEAR}`,
       text: `Сезон длится ${SEASON_FROM_TO} ${SEASON_YEAR}. Открытые к брони смены — 10 и 13 дней, от ${PRICE_MIN}. В стоимость входят проживание, питание, IT-программа, бассейн и активности. Трансфер из Москвы — платная опция (${TRANSFER_PRICE_FMT} в одну сторону).`,
       list: [
-        `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, 7 дней, ${PRICE_S21}`,
-        `Смена 2 (завершена) — ${DATES_SHORT_S2}, 14 дней, ${PRICE_S2}`,
-        `Смена 3 — ${DATES_SHORT_S3}, 13 дней, ${PRICE_S3}`,
-        `Смена 4 — ${DATES_SHORT_S4}, 10 дней, ${PRICE_S4}`,
+        `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, ${DAYS_S21}, ${PRICE_S21}`,
+        `Смена 2 (завершена) — ${DATES_SHORT_S2}, ${DAYS_S2}, ${PRICE_S2}`,
+        `Смена 3 — ${DATES_SHORT_S3}, ${DAYS_S3}, ${PRICE_S3}`,
+        `Смена 4 — ${DATES_SHORT_S4}, ${DAYS_S4}, ${PRICE_S4}`,
       ],
     },
     {
