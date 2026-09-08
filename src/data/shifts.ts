@@ -118,53 +118,31 @@ const _shift22: Shift = {
   price: '75 000 ₽', free: 0, occupied: 45, startDate: '2026-06-16', endDate: '2026-06-23',
 };
 
-// === Лето 2026 — ЗАВЕРШЕНО (закрыто 07.09.2026) ===
-// Смены 3 и 4 прошли 3-15 и 17-26 августа, но оставались со статусом «мало мест»
-// и остатком свободных мест. Живая главная из-за этого в блоке «Подходящие смены
-// для вас» предлагала родителю Смену 3 за 89 400 ₽ с подписью «уже едут
-// ровесники» — три недели спустя после её конца.
+// === Лето 2026 — ЗАВЕРШЕНО ===
+// Смены 3 и 4 прошли 3–15 и 17–26 августа. 07.09.2026 их закрыли заплаткой:
+// оставили в mainShifts (позиции сохранены), но пометили завершёнными с нулём
+// мест — вынести в архив тогда было нельзя, потому что PRICE_S3/S4, DATES_S3/S4
+// и VYCHET_S3/S4 выводились ПО ПОЗИЦИИ (mainShifts[0] и mainShifts[1]) и молча
+// переехали бы на осенние смены.
 //
-// ⚠️ ЗАПЛАТКА, А НЕ РЕШЕНИЕ (владелец 07.09.2026, вариант А).
-// Правильно было бы вынести их в архив, как Смены 1 и 2. Сделать этого сейчас
-// НЕЛЬЗЯ: экспорты PRICE_S3/S4, DATES_S3/S4, DATES_SHORT_S3/S4, VYCHET_S3/S4 и
-// SEASON_RANGE выводятся ПО ПОЗИЦИИ — mainShifts[0] и mainShifts[1]. Уберёшь
-// смены из массива — эти экспорты молча переедут на осенние смены, и 173 страницы
-// напечатают «Смена 3: 25–31 октября, 13 дней — 49 900 ₽»: имя, длительность и
-// цена от разных смен в одной строке. Длительность зашита текстом в 632 местах,
-// половина из них — внутри FAQ-разметки. Тест shifts.test.ts это ловит.
-//
-// Поэтому смены ОСТАЮТСЯ в массиве (позиции сохранены), но помечены
-// завершёнными и с нулём мест — главная больше не предлагает их как доступные.
-// Развязка потребителей от «Смены 3/4» — отдельная задача (вариант Б).
+// Теперь эти экспорты привязаны по id через byId() и ищут смену в
+// allShiftsIncludingArchived — поэтому смены переносятся в архив, как Смены 1 и 2,
+// а заплатка снята. Страж npm run check:durations не даёт вернуть зашитую
+// длительность рядом с ценой или датой смены.
+const _shift3: Shift = {
+  id: 'shift-3', name: 'Смена 3', dates: '3 августа — 15 августа', duration: '13 дней',
+  status: 'завершена', statusType: 'available',
+  description: 'Проект от идеи до результата с акцентом на командную работу.',
+  price: '89 400 ₽', free: 0, occupied: 46, startDate: '2026-08-03', endDate: '2026-08-15',
+};
+const _shift4: Shift = {
+  id: 'shift-4', name: 'Смена 4', dates: '17 августа — 26 августа', duration: '10 дней',
+  status: 'завершена', statusType: 'available',
+  description: 'Закрытие лета: сильный проект и уверенный результат.',
+  price: '74 900 ₽', free: 0, occupied: 45, startDate: '2026-08-17', endDate: '2026-08-26',
+};
+
 export const mainShifts: Shift[] = [
-  {
-    id: 'shift-3',
-    name: 'Смена 3',
-    dates: '3 августа — 15 августа',
-    duration: '13 дней',
-    status: 'завершена',
-    statusType: 'available',
-    description: 'Проект от идеи до результата с акцентом на командную работу.',
-    price: '89 400 ₽',
-    free: 0,
-    occupied: 46,
-    startDate: '2026-08-03',
-    endDate: '2026-08-15',
-  },
-  {
-    id: 'shift-4',
-    name: 'Смена 4',
-    dates: '17 августа — 26 августа',
-    duration: '10 дней',
-    status: 'завершена',
-    statusType: 'available',
-    description: 'Закрытие лета: сильный проект и уверенный результат.',
-    price: '74 900 ₽',
-    free: 0,
-    occupied: 45,
-    startDate: '2026-08-17',
-    endDate: '2026-08-26',
-  },
   // === Осень 2026 — ПРОДАЖИ ОТКРЫТЫ 27.08.2026 (решение владельца) ===
   // free: 20 — реальная ёмкость межсезонного заезда со слов владельца (27.08.2026):
   // «сорок пять мы не наберём, нужно мест двадцать». Летние смены идут по 45,
@@ -227,6 +205,23 @@ export const mainShifts: Shift[] = [
 
 export const shortShifts: Shift[] = [];
 
+/**
+ * Ближайшая смена В ПРОДАЖЕ — для CTA и ссылок, которые должны вести на
+ * актуальный заезд, а не на конкретный id, зашитый в вёрстку.
+ *
+ * Инцидент 08.09.2026: CTA в /stati/kto-edet-v-lager-vozrasty/ вёл на
+ * /shifts/shift-4/ с подписью «Последняя смена этого лета: 17–26 августа».
+ * Когда летние смены вынесли в архив, страницы смены не стало и сборка упала
+ * на проверке внутренних ссылок — но текст врал ещё до этого.
+ *
+ * Приоритет: смена с флагом nearest → самая ранняя из открытых по дате →
+ * самая ранняя вообще (чтобы ссылка не осталась пустой между сезонами).
+ */
+const _openByDate = [...mainShifts].filter((s) => s.free > 0).sort((a, b) => a.startDate.localeCompare(b.startDate));
+const _allByDate = [...mainShifts].sort((a, b) => a.startDate.localeCompare(b.startDate));
+export const NEAREST_OPEN_SHIFT: Shift =
+  mainShifts.find((s) => s.nearest && s.free > 0) ?? _openByDate[0] ?? _allByDate[0];
+
 export const allShifts = [...mainShifts];
 
 /** Смены, которые ещё не начались (startDate >= today). Передай today = new Date().toISOString().slice(0,10). */
@@ -249,13 +244,13 @@ export function lastCompletedShift(today: string): Shift | null {
 
 // Все смены для показа в карусели (завершённые + активные), в хронологии.
 // Фаза (предстоит/идёт/прошла) считается по датам в getShiftPhase().
-export const displayShifts: Shift[] = [_shift1, _shift2, ...mainShifts];
+export const displayShifts: Shift[] = [_shift1, _shift2, _shift3, _shift4, ...mainShifts];
 export const shift1 = _shift1;
 export const shift2 = _shift2;
 
 // Полный список смен, включая архивные под-смены 2.1/2.2 — только для lookup по id
 // (модалка ShiftModal, SHIFT_META). НЕ использовать в UI-каруселях — там displayShifts/mainShifts.
-export const allShiftsIncludingArchived: Shift[] = [_shift1, _shift2, _shift21, _shift22, ...mainShifts];
+export const allShiftsIncludingArchived: Shift[] = [_shift1, _shift2, _shift21, _shift22, _shift3, _shift4, ...mainShifts];
 
 /**
  * Смена по id — ЕДИНСТВЕННЫЙ способ адресовать конкретную смену в производных

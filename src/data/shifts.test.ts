@@ -14,6 +14,7 @@ import {
   VYCHET_MAX, VYCHET_MAX_DAYS,
   allShiftsIncludingArchived,
   shiftLine,
+  NEAREST_OPEN_SHIFT,
   daysAdj,
   daysNum,
   taxDeduction,
@@ -397,5 +398,25 @@ describe('daysNum', () => {
 
   it('бросает на неразбираемой длительности', () => {
     expect(() => daysNum('без цифр')).toThrow();
+  });
+});
+
+// ── NEAREST_OPEN_SHIFT: CTA ведут на актуальный заезд, а не на зашитый id ────
+
+describe('NEAREST_OPEN_SHIFT', () => {
+  it('это смена из mainShifts', () => {
+    expect(mainShifts.some(s => s.id === NEAREST_OPEN_SHIFT.id)).toBe(true);
+  });
+
+  it('в продаже, если хоть одна смена открыта', () => {
+    if (mainShifts.some(s => s.free > 0)) expect(NEAREST_OPEN_SHIFT.free).toBeGreaterThan(0);
+  });
+
+  it('самая ранняя по дате среди открытых, если флага nearest ни у кого нет', () => {
+    const flagged = mainShifts.find(s => s.nearest && s.free > 0);
+    if (flagged) { expect(NEAREST_OPEN_SHIFT.id).toBe(flagged.id); return; }
+    const earliest = [...mainShifts].filter(s => s.free > 0)
+      .sort((a, b) => a.startDate.localeCompare(b.startDate))[0];
+    if (earliest) expect(NEAREST_OPEN_SHIFT.id).toBe(earliest.id);
   });
 });
