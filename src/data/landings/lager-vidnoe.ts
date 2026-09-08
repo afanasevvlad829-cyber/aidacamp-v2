@@ -1,4 +1,4 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_MAX, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX } from '../shifts';
 import type { LandingData } from './types';
 
 const landing: LandingData = {
@@ -12,7 +12,7 @@ const landing: LandingData = {
     { q: 'Как добраться из Видного до АйДаКемп?', a: `АйДаКемп — 66 км от МКАД по Киевскому шоссе (~1 час), санаторий «Изумруд» у посёлка Атепцево. Из Видного: на машине через МКАД на Киевское шоссе, либо до м. Солнцево и наш трансфер (${TRANSFER_PRICE_FMT}, ~40 мин).` },
     { q: 'Сколько ехать из Видного до АйДаКемп?', a: 'Это 66 км от МКАД по Киевскому шоссе — примерно час без пробок. Из Видного маршрут идёт через МКАД на Киевское шоссе.' },
     { q: 'Есть ли трансфер из Видного?', a: `Организованный трансфер отправляется от м. Солнцево (${TRANSFER_PRICE_FMT}, ~40 мин в пути, с сопровождающим). Многие семьи из Видного привозят ребят и самостоятельно — по Киевскому шоссе до санатория «Изумруд».` },
-    { q: 'Сколько стоит путёвка из Видного?', a: `Смены от ${PRICE_MIN} (10 дней) до ${PRICE_MAX} (13 дней). Включены проживание, питание, IT-программа, бассейн. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} отдельно.` },
+    { q: 'Сколько стоит путёвка из Видного?', a: `Смены от ${PRICE_MIN} (10 дней) до ${PRICE_MAX} (${DAYS_MAX}). Включены проживание, питание, IT-программа, бассейн. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} отдельно.` },
   ],
   courseSchema: {
     name: 'Детская IT-программа рядом с Видным — АйДаКемп',

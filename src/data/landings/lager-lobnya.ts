@@ -1,4 +1,4 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_MAX, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_MAX_DAYS, daysAdj } from '../shifts';
 import type { LandingData } from './types';
 import { otzyvyLink, yandexReviewsLink } from '../../lib/reviews-link';
 
@@ -14,7 +14,7 @@ const landing: LandingData = {
     { q: 'Как добраться из Лобни до АйДаКемп?', a: `АйДаКемп — 66 км от МКАД по Киевскому шоссе (А-101), около часа без пробок. Оттуда: на машине по Дмитровскому шоссе → МКАД → Киевское шоссе, либо до м. Солнцево (аэроэкспресс + метро) и организованный трансфер (${TRANSFER_PRICE_FMT}, ~40 мин).` },
     { q: 'Есть ли трансфер из Лобни?', a: `Прямого трансфера отсюда нет — организованный трансфер отправляется от м. Солнцево (${TRANSFER_PRICE_FMT} в одну сторону). Удобно добраться аэроэкспрессом до Белорусского вокзала, а затем на метро до Солнцево.` },
     { q: 'Нужен ли опыт программирования для поступления в лагерь?', a: 'Нет, опыт не нужен. Группы формируются по уровню: начинающие, средний, продвинутые. Занятия в группах до 8 человек, преподаватели помогают каждому ребёнку.' },
-    { q: 'Сколько стоит путёвка в лагерь?', a: `Смены от ${PRICE_MIN} (10 дней) до ${PRICE_MAX} (13 дней). В стоимость входят проживание, питание, IT-программа, бассейн. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} отдельно.` },
+    { q: 'Сколько стоит путёвка в лагерь?', a: `Смены от ${PRICE_MIN} (10 дней) до ${PRICE_MAX} (${DAYS_MAX}). В стоимость входят проживание, питание, IT-программа, бассейн. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} отдельно.` },
   ],
   courseSchema: {
     name: 'Детская IT-программа — АйДаКемп',
@@ -76,7 +76,7 @@ const landing: LandingData = {
     },
     {
       h2: `Смены и цены ${SEASON_YEAR}`,
-      text: `Места на лето ${SEASON_YEAR} есть — бронируйте сейчас. В стоимость включены проживание, питание, полная IT-программа, бассейн, активности. Трансфер от м. Солнцево — платная опция (${TRANSFER_PRICE_FMT} в одну сторону). Часть стоимости можно вернуть налоговым вычетом — до ${VYCHET_MAX} (максимум, 13-дневная смена).`,
+      text: `Места на лето ${SEASON_YEAR} есть — бронируйте сейчас. В стоимость включены проживание, питание, полная IT-программа, бассейн, активности. Трансфер от м. Солнцево — платная опция (${TRANSFER_PRICE_FMT} в одну сторону). Часть стоимости можно вернуть налоговым вычетом — до ${VYCHET_MAX} (максимум, ${daysAdj(VYCHET_MAX_DAYS, 'nom')} смена).`,
       list: [
         `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, ${DAYS_S21}, ${PRICE_S21}`,
         `Смена 2 (завершена) — ${DATES_SHORT_S2}, ${DAYS_S2}, ${PRICE_S2}`,

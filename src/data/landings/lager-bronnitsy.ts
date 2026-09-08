@@ -1,4 +1,4 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_MAX, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT } from '../shifts';
 import type { LandingData } from './types';
 import { otzyvyLink, yandexReviewsLink } from '../../lib/reviews-link';
 import { SEASON_FROM_TO } from '../evergreen';
@@ -14,7 +14,7 @@ const landing: LandingData = {
     { q: 'Как добраться из Бронниц до лагеря АйДаКемп?', a: `Из Бронниц до лагеря около 100 км и ~1.5 часа езды: по Новорязанскому шоссе → МКАД → Киевское шоссе (M-3) → посёлок Атепцево. Или добраться до м. Солнцево и сесть на организованный трансфер АйДаКемп (${TRANSFER_PRICE_FMT}).` },
     { q: 'Есть ли трансфер из Бронниц?', a: `Прямого трансфера из Бронниц нет. Организованный трансфер отправляется от м. Солнцево (${TRANSFER_PRICE_FMT} в одну сторону). Из Бронниц удобно добраться электричкой до Казанского вокзала, затем на метро до Солнцево.` },
     { q: 'Нужен ли опыт программирования для поступления в лагерь?', a: 'Нет, опыт не нужен. Группы формируются по уровню: начинающие, средний, продвинутые. Занятия в группах до 8 человек, преподаватели помогают каждому ребёнку.' },
-    { q: 'Сколько стоит путёвка в лагерь из Бронниц?', a: `Открытые смены от ${PRICE_MIN} (10 дней) до ${PRICE_MAX} (13 дней). В стоимость входят проживание, питание, IT-программа, бассейн. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} отдельно.` },
+    { q: 'Сколько стоит путёвка в лагерь из Бронниц?', a: `Открытые смены от ${PRICE_MIN} (10 дней) до ${PRICE_MAX} (${DAYS_MAX}). В стоимость входят проживание, питание, IT-программа, бассейн. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} отдельно.` },
   ],
   courseSchema: {
     name: 'Детский IT-лагерь рядом с Бронницами — АйДаКемп',
