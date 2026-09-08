@@ -13,7 +13,7 @@
  * Валидатор: https://search.google.com/test/rich-results + Яндекс.Вебмастер → Инструменты → Валидатор.
  */
 
-import { mainShifts, shortShifts, type Shift, SEASON_YEAR } from '../data/shifts';
+import { mainShifts, shortShifts, type Shift, shiftYearLabel } from '../data/shifts';
 import { getCurrentPrice } from '../data/dynamicPrices';
 import { members as teamMembers } from '../data/team';
 import { reviews } from '../data/reviews';
@@ -159,17 +159,24 @@ const summerCamp = {
   })),
 };
 
+// Годы берём из САМИХ смен, а не из глобального SEASON_YEAR (08.09.2026).
+// В allShifts теперь не только лето: зимняя смена идёт 2026-12-30 — 2027-01-08,
+// и разметка называла её «АйДаКемп 2026» при endDate в 2027-м — имя события
+// противоречило его же датам в тех же данных. Поисковик читает это напрямую.
+const _shiftYears = [...new Set(allShifts.flatMap((sh) => [sh.startDate.slice(0, 4), sh.endDate.slice(0, 4)]))].sort();
+const listYears = _shiftYears.length > 1 ? `${_shiftYears[0]}–${_shiftYears[_shiftYears.length - 1]}` : _shiftYears[0];
+
 const eventsList = {
   '@context': 'https://schema.org',
   '@type': 'ItemList',
-  name: `Смены АйДаКемп ${SEASON_YEAR}`,
+  name: `Смены АйДаКемп ${listYears}`,
   itemListElement: allShifts.map((shift, idx) => ({
     '@type': 'ListItem',
     position: idx + 1,
     item: {
       '@type': ['EducationEvent', 'ChildrensEvent'],
       '@id': `${SITE_URL}/#event-${shift.id}`,
-      name: `${shift.name} — АйДаКемп ${SEASON_YEAR} (${shift.duration})`,
+      name: `${shift.name} — АйДаКемп ${shiftYearLabel(shift)} (${shift.duration})`,
       description: shift.description,
       startDate: shift.startDate,
       endDate: shift.endDate,
