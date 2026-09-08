@@ -19,7 +19,18 @@ const SKIP_COMPRESS = process.env.SKIP_COMPRESS === '1';
 export default defineConfig({
   site: 'https://aidacamp.ru',
   adapter: node({ mode: 'standalone' }),
-  security: { checkOrigin: false },
+  // CSRF-проверка Origin (checkOrigin, дефолт true) снова включена. В апреле (bf40ff3f)
+  // её выключили: за nginx-прокси Astro без allowedDomains не доверяет X-Forwarded-Proto,
+  // строил URL как http://aidacamp.ru, Origin https://… не совпадал → 403 на form-POST.
+  // allowedDomains — доверяем Host/X-Forwarded-Proto только для наших доменов
+  // (astro/core/app/validate-headers.js; сверка с доками 08.09.2026). Smoke §3 проверяет
+  // оба случая: свой Origin проходит, чужой получает 403.
+  security: {
+    allowedDomains: [
+      { hostname: 'aidacamp.ru', protocol: 'https' },
+      { hostname: 'dev.aidacamp.ru', protocol: 'https' },
+    ],
+  },
   integrations: [
     // Иконки — astro-icon (Iconify-набор Bootstrap Icons, inline SVG, без блокирующего
     // CSS). include: весь набор bi — это только серверный реестр, в HTML попадают лишь
