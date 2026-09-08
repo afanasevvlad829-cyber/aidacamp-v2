@@ -1,24 +1,49 @@
 ---
-import { DATES_S3, DATES_SHORT_S4, PEER_COUNTS, PRICE_S3, PRICE_S4, SEASON_YEAR } from '../data/shifts';
-import { isSalesOpen } from '../data/dynamicPrices';
+import { PEER_COUNTS, shiftDatesFull, shiftDatesShort } from '../data/shifts';
+import { getOpenShifts, isSalesOpen } from '../data/dynamicPrices';
 import { getNextSeason } from '../data/seasons';
 // AgeBar.astro — плашка выбора возраста (снизу экрана)
 // v3: scroll-triggered (25%), без таймера, мобилка + десктоп, вторичные страницы
 // v4 (2026-08-17): смена 3/4 — единственные в mainShifts — обе закрыты для брони
-// (getShiftPhase 'done'/'live'). isSalesOpen() проверяет это по датам, не хардкодом —
-// когда в mainShifts появится смена в фазе 'upcoming' (новый сезон открыт к продаже),
-// бар сам вернётся к обычному возрастному роутингу без правки этого файла.
+// (getShiftPhase 'done'/'live'). isSalesOpen() проверяет это по датам, не хардкодом.
+//
+// v5 (2026-09-07). Допущение «в mainShifts только смены 3/4» сломалось 27.08, когда
+// туда добавили осенние и зимнюю смены: isSalesOpen() стал true, запасная ветка
+// «сезон закрыт» перестала срабатывать — и обнажился блок, где смены 3 и 4 были
+// ЗАШИТЫ (ссылка /shifts/shift-3/, подпись «Смена 3», DATES_S3, PRICE_S3).
+// Результат на проде 07.09: родитель указывал возраст ребёнка и получал
+// «Смена 3 · 3 августа — 15 августа · уже едут ровесники · 89 400 ₽» — три недели
+// спустя после конца смены. Пометить смены завершёнными не помогало: компонент
+// не смотрел ни на статус, ни на число мест.
+//
+// Теперь блок выводится из getOpenShifts() — того самого хелпера, в докстроке
+// которого AgeBar назван прямым текстом. Строка «уже едут ровесники» показывается
+// ТОЛЬКО там, где есть реальные данные в PEER_COUNTS: у осенних и зимней смен
+// occupied = 0, и обещать ровесников было бы враньём.
 
 const salesOpen = isSalesOpen();
 // Сезон предзаписи выбирается по датам (getNextSeason), а не прибит к осени —
 // после осени плашка сама переключится на зиму, править компонент не нужно.
 const nextSeason = getNextSeason();
 
-const ageCountsJson = JSON.stringify({
-  '7–9':   { 'shift-3': PEER_COUNTS['shift-3']['7–9'],  'shift-4': PEER_COUNTS['shift-4']['7–9']  },
-  '10–12': { 'shift-3': PEER_COUNTS['shift-3']['10–12'], 'shift-4': PEER_COUNTS['shift-4']['10–12'] },
-  '13–15': { 'shift-3': PEER_COUNTS['shift-3']['13–15'], 'shift-4': PEER_COUNTS['shift-4']['13–15'] },
-});
+// Две ближайшие смены, реально открытые к брони.
+const openShifts = getOpenShifts();
+const shiftPrimary = openShifts[0];
+const shiftAlt     = openShifts[1];
+
+// Счётчики ровесников — только по сменам, для которых есть данные.
+const ageCountsJson = JSON.stringify(
+  Object.fromEntries(
+    ['7–9', '10–12', '13–15'].map((age) => [
+      age,
+      Object.fromEntries(
+        openShifts
+          .filter((sh) => PEER_COUNTS[sh.id])
+          .map((sh) => [sh.id, PEER_COUNTS[sh.id][age]]),
+      ),
+    ]),
+  ),
+);
 ---
 
 <!-- Toast: статистика возраста (slide-in справа, auto-dismiss 2.5s) -->
@@ -68,7 +93,7 @@ const ageCountsJson = JSON.stringify({
   >
     <div class="mx-auto max-w-[640px] px-4 py-4 flex items-center gap-3">
       <div class="min-w-0 flex-1">
-        <p class="text-base font-semibold text-body leading-tight">Лето {SEASON_YEAR} — свободных мест больше нет</p>
+        <p class="text-base font-semibold text-body leading-tight">Свободных мест на ближайшие смены больше нет</p>
         <p class="text-base text-body-muted mt-0.5 leading-snug">Следующий заезд — {nextSeason.shortName}, {nextSeason.seasonMeta.dates}. Открыта предзапись.</p>
       </div>
       <a
@@ -159,45 +184,53 @@ const ageCountsJson = JSON.stringify({
         </button>
       </div>
 
-      <!-- Смена 3 — основная (primary) -->
+      <!-- Ближайшая смена в продаже — основная (primary) -->
+      {shiftPrimary && (
       <a
-        href="/shifts/shift-3/"
-        data-age-shift-link="shift-3"
+        href={`/shifts/${shiftPrimary.id}/`}
+        data-age-shift-link={shiftPrimary.id}
         class="flex items-center justify-between gap-3
                rounded-[12px] bg-primary-warm border border-primary/30
                px-3.5 py-3 mb-2 active:scale-[0.98] transition-transform"
       >
         <div class="min-w-0">
           <p class="text-base font-bold text-body leading-tight">
-            Смена 3
-            <span class="ml-1.5 text-[11px] font-semibold text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">{DATES_S3}</span>
+            {shiftPrimary.name}
+            <span class="ml-1.5 text-[11px] font-semibold text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">{shiftDatesFull(shiftPrimary)}</span>
           </p>
-          <p id="ab-shift1-count" class="text-[12px] text-body-muted mt-0.5 leading-snug">
+          {PEER_COUNTS[shiftPrimary.id] && (
+          <p id="ab-shift1-count" data-shift-id={shiftPrimary.id} class="text-[12px] text-body-muted mt-0.5 leading-snug">
             <i class="bi bi-people-fill text-primary mr-1" aria-hidden="true"></i>уже едут ровесники
           </p>
+          )}
         </div>
-        <span class="shrink-0 text-base font-bold text-primary whitespace-nowrap"><span data-dynamic-price="shift-3">{PRICE_S3}</span> →</span>
+        <span class="shrink-0 text-base font-bold text-primary whitespace-nowrap"><span data-dynamic-price={shiftPrimary.id}>{shiftPrimary.price}</span> →</span>
       </a>
+      )}
 
-      <!-- Смена 4 — альтернатива -->
+      <!-- Следующая смена — альтернатива -->
+      {shiftAlt && (
       <a
-        href="/shifts/shift-4/"
-        data-age-shift-link="shift-4"
+        href={`/shifts/${shiftAlt.id}/`}
+        data-age-shift-link={shiftAlt.id}
         class="flex items-center justify-between gap-3
                rounded-[12px] bg-surface border border-border
                px-3.5 py-2.5 mb-2.5 active:scale-[0.98] transition-transform"
       >
         <div class="min-w-0">
           <p class="text-base font-semibold text-body leading-tight">
-            Смена 4
-            <span class="ml-1.5 text-[11px] font-medium text-body-faint">{DATES_SHORT_S4}</span>
+            {shiftAlt.name}
+            <span class="ml-1.5 text-[11px] font-medium text-body-faint">{shiftDatesShort(shiftAlt)}</span>
           </p>
-          <p id="ab-shift2-count" class="text-[12px] text-body-muted mt-0.5 leading-snug">
+          {PEER_COUNTS[shiftAlt.id] && (
+          <p id="ab-shift2-count" data-shift-id={shiftAlt.id} class="text-[12px] text-body-muted mt-0.5 leading-snug">
             <i class="bi bi-people-fill text-body-faint mr-1" aria-hidden="true"></i>уже едут ровесники
           </p>
+          )}
         </div>
-        <span class="shrink-0 text-base font-semibold text-body-muted whitespace-nowrap"><span data-dynamic-price="shift-4">{PRICE_S4}</span> →</span>
+        <span class="shrink-0 text-base font-semibold text-body-muted whitespace-nowrap"><span data-dynamic-price={shiftAlt.id}>{shiftAlt.price}</span> →</span>
       </a>
+      )}
 
       <!-- Гарантия -->
       <p class="text-[11.5px] text-body-faint text-center leading-snug">
@@ -369,13 +402,21 @@ const ageCountsJson = JSON.stringify({
     phase1?.classList.add('hidden');
     phase2?.classList.remove('hidden');
     // Обновляем счётчики ровесников по выбранному возрасту (были захардкожены — dead clicks)
+    // id смены берём из data-атрибута: карточки выводятся из getOpenShifts(),
+    // и хардкод 'shift-3'/'shift-4' переставал попадать в цель при смене сезона.
+    // Элемента может не быть вовсе — строку про ровесников рисуем только там,
+    // где есть данные в PEER_COUNTS.
     if (age && AGE_COUNTS[age]) {
-      const c1 = AGE_COUNTS[age]['shift-3'] ?? 0;
-      const c2 = AGE_COUNTS[age]['shift-4'] ?? 0;
       const s1 = document.getElementById('ab-shift1-count');
       const s2 = document.getElementById('ab-shift2-count');
-      if (s1) s1.innerHTML = `<i class="bi bi-people-fill text-primary mr-1" aria-hidden="true"></i>${c1} ребят вашего возраста уже едут`;
-      if (s2) s2.innerHTML = `<i class="bi bi-people-fill text-body-faint mr-1" aria-hidden="true"></i>${c2} ребят вашего возраста уже едут`;
+      if (s1) {
+        const c1 = AGE_COUNTS[age][s1.dataset.shiftId ?? ''] ?? 0;
+        s1.innerHTML = `<i class="bi bi-people-fill text-primary mr-1" aria-hidden="true"></i>${c1} ребят вашего возраста уже едут`;
+      }
+      if (s2) {
+        const c2 = AGE_COUNTS[age][s2.dataset.shiftId ?? ''] ?? 0;
+        s2.innerHTML = `<i class="bi bi-people-fill text-body-faint mr-1" aria-hidden="true"></i>${c2} ребят вашего возраста уже едут`;
+      }
     }
   }
 
