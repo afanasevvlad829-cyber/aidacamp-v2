@@ -94,8 +94,6 @@ export default defineConfig({
         !page.includes('/it-lager-dlya-podrostkov/') &&
         !page.includes('/skolko-stoit-lager-dlya-rebenka/') &&
         !page.includes('/scratch-programmirovanie-dlya-detey/') &&
-        !page.includes('/lanit-v6/') && // партнёрский черновик ЛАНИТ (как сёстры lanit-v5/lanit-economics), noindex
-        !page.includes('/lanit-v5/') && // партнёрский черновик ЛАНИТ, noindex
         !page.includes('/mincifry-v2/') && // клиентская B2B-презентация (Минцифры), не публичная, noindex
         !page.includes('/fortune-success/') && // thank-you страница оплаты, noindex
         !page.includes('/staff/') && // внутренний конструктор смен, доступ по cookie, noindex
@@ -115,7 +113,7 @@ export default defineConfig({
         !/^https:\/\/aidacamp\.ru\/video\/[^/]+\/?$/.test(page) &&
         // Редирект-стабы и битые страницы — НЕ в sitemap (иначе смешанный сигнал
         // Яндексу: карта говорит «индексируй», страница — noindex/редирект → тормозит перенос)
-        !/\/(deti-otdokhnuli-v-letnikh-lageryakh|detskie-letnie-lagerya-v-podmoskove|detskie-ozdorovitelnye-lagerya-2026|detskiy-letniy-lager-v-podmoskove|detskiy-ozdorovitelnyy-lager|kanikuly-otdykh-v-lagere|kupit-putevku-v-lager-2026|kupit-putevku-v-lager|lager-letniy-na-20-dney|lager-v-podmoskove-na-leto-2026-nedorogo|lagerya-v-podmoskove-na-leto-dlya-podrostkov|letnie-lagerya-podmoskove|letnie-lagerya|letniy-lager-dlya-detey-v-moskve|letniy-lager-v-moskve|luchshie-detskie-lagerya-podmoskovya|luchshie-lagerya-v-podmoskove|mesta-v-letniy-lager|nedorogoy-letniy-lager-dlya-detey-v-podmoskove|ob-organizacii-otdyha-detej-i-ozdarovleniya|popali-v-letniy-lager|programma-smeny|putevka-v-detskiy-lager-letom|putevka-v-lager-v-podmoskove-2026|putevki-v-detskiy-lager-na-leto-2026|fortune-fail|smena2-editor|gde-poluchit-spravku-079u-dlya-lagerya|lager-elochki-domodedovo|lager-petrushka-v-podmoskove|lager-vshe-dlya-shkolnikov-2026|lagerya-za-granitsu-dlya-podrostkov|mos-ru-detskiy-lager|nalogovyy-vychet-za-detskiy-lager|neo-kemp-detskiy-lager|rozendorf-detskiy-lager|skolko-delaetsya-spravka-079u-dlya-lagerya|skolko-deystvuet-spravka-079u-dlya-lagerya|sportzaniya-lager-v-podmoskove|strannyy-detskiy-lager|terra-nostra-shatura-detskiy-lager|lager-na-vesennie-kanikuly-2026|lager-na-osenie-kanikuly)\/?$/.test(page),
+        !/\/(deti-otdokhnuli-v-letnikh-lageryakh|detskie-letnie-lagerya-v-podmoskove|detskie-ozdorovitelnye-lagerya-2026|detskiy-letniy-lager-v-podmoskove|detskiy-ozdorovitelnyy-lager|kanikuly-otdykh-v-lagere|kupit-putevku-v-lager-2026|kupit-putevku-v-lager|lager-letniy-na-20-dney|lager-v-podmoskove-na-leto-2026-nedorogo|lagerya-v-podmoskove-na-leto-dlya-podrostkov|letnie-lagerya-podmoskove|letnie-lagerya|letniy-lager-dlya-detey-v-moskve|letniy-lager-v-moskve|luchshie-detskie-lagerya-podmoskovya|luchshie-lagerya-v-podmoskove|mesta-v-letniy-lager|nedorogoy-letniy-lager-dlya-detey-v-podmoskove|ob-organizacii-otdyha-detej-i-ozdarovleniya|popali-v-letniy-lager|programma-smeny|putevka-v-detskiy-lager-letom|putevka-v-lager-v-podmoskove-2026|putevki-v-detskiy-lager-na-leto-2026|fortune-fail|smena2-editor|gde-poluchit-spravku-079u-dlya-lagerya|lager-elochki-domodedovo|lager-petrushka-v-podmoskove|lager-vshe-dlya-shkolnikov-2026|lagerya-za-granitsu-dlya-podrostkov|mos-ru-detskiy-lager|nalogovyy-vychet-za-detskiy-lager|neo-kemp-detskiy-lager|rozendorf-detskiy-lager|skolko-delaetsya-spravka-079u-dlya-lagerya|skolko-deystvuet-spravka-079u-dlya-lagerya|sportzaniya-lager-v-podmoskove|strannyy-detskiy-lager|terra-nostra-shatura-detskiy-lager|lager-na-vesennie-kanikuly-2026|lager-na-osenie-kanikuly|lager-na-leto-2026|lager-na-leto-2027|spravka-079u-dlya-lagerya-obrazets)\/?$/.test(page),
       // lastmod = дата деплоя. Даём Google понять, что страницы актуальны.
       // priority: P1=0.9, P2=0.7, P3=0.5 (на основе SEO-архитектуры 2026)
       serialize(item) {
@@ -124,7 +122,7 @@ export default defineConfig({
         // P1: главные коммерческие страницы (высокая частота, высокая конкурентность)
         const P1_EXACT = [
           '/', '/ceny', '/detskiy-lager', '/it-camp',
-          '/lager-v-podmoskove', '/lager-na-leto-2026',
+          '/lager-v-podmoskove', '/lager-na-leto',
           '/kompyuternyy-lager', '/nalogovyj-vychet',
         ];
 
@@ -173,6 +171,12 @@ export default defineConfig({
     })]),
   ],
   devToolbar: { enabled: false },
+  // Prefetch страниц по наведению (Astro встроенный, guides/prefetch). prefetchAll — все
+  // внутренние ссылки без разметки; hover не срабатывает на тач, для мобильного меню
+  // стоит data-astro-prefetch="viewport" в MobileMenu.astro. Astro сам откатывается на
+  // tap при data-saver / медленной сети. Safari требует кэш-заголовков на HTML — у прода
+  // на HTML no-cache, там prefetch не даёт выигрыша (сверка с доками 08.09.2026).
+  prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   vite: {
     plugins: [tailwindcss()],
     build: {

@@ -11,6 +11,9 @@ const ALLOWED_SLUGS = new Set([
   'detskiy-lager-podmoskove','detskiy-lager','dlya-kompaniy',
   'kompyuternyy-lager','kupit-putevku-v-lager','lager-bez-telefonov',
   'lager-dlya-podrostkov','lager-dlya-shkolnikov','lager-na-avgust-podmoskove',
+  // Слаг = имя файла в public/images/hero, а не URL страницы. Страница
+  // переехала на /lager-na-leto/, но файл lager-na-leto-2026.avif
+  // остался прежним: его делят 60 страниц и он уже расшарен как OG.
   'lager-na-leto-2026','lager-nedorogo','lager-programmirovaniya',
   'lager-v-moskve','lager-v-podmoskove','letnyaya-it-shkola',
   'minecraft-lager','obrazovatelnyy-lager','tematicheskiy-lager',
