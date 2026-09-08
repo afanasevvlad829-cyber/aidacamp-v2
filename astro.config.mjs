@@ -83,8 +83,6 @@ export default defineConfig({
         !page.includes('/it-lager-dlya-podrostkov/') &&
         !page.includes('/skolko-stoit-lager-dlya-rebenka/') &&
         !page.includes('/scratch-programmirovanie-dlya-detey/') &&
-        !page.includes('/lanit-v6/') && // партнёрский черновик ЛАНИТ (как сёстры lanit-v5/lanit-economics), noindex
-        !page.includes('/lanit-v5/') && // партнёрский черновик ЛАНИТ, noindex
         !page.includes('/mincifry-v2/') && // клиентская B2B-презентация (Минцифры), не публичная, noindex
         !page.includes('/fortune-success/') && // thank-you страница оплаты, noindex
         !page.includes('/staff/') && // внутренний конструктор смен, доступ по cookie, noindex
