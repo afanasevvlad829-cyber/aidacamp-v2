@@ -223,13 +223,13 @@ Mobile-first шкала. Минимум на мобилке: **16px для body*
 
 ## 9. Иконки
 
-- **Только Bootstrap Icons** через `<i class="bi bi-*" aria-hidden="true">`. Никаких эмодзи в UI.
-- Размер: `text-[14px]` inline, `text-[20px]–[24px]` для card heroes.
-- Цвет: `text-primary` для акцента, `text-slate-400`–`text-slate-500` нейтрально.
-- Любая новая иконка → `src/data/icons-manifest.json` → `npm run icons`.
-- **НИКОГДА не редактируй `src/styles/icons.css` вручную** (auto-generated).
-
-Полная карта замены эмодзи → bi-* в `CLAUDE.md`.
+- **Только Bootstrap Icons**, в разметке — через astro-icon: `<Icon name="bi-*" … />` →
+  `import { Icon } from 'astro-icon/components'; <Icon name="bi:calendar-check" class="bi bi-calendar-check text-primary" aria-hidden="true" />`.
+  Классы `bi bi-*` на `<Icon>` оставляем: на них завязаны селекторы и размеры (`svg.bi` = 1em, см. global.css). Никаких эмодзи в UI.
+- Динамическое имя из данных: `name={`bi:${String(icon).replace(/^bi-/, '')}`}` (в данных имена с префиксом `bi-`).
+- Размер: `text-[14px]` inline, `text-[20px]–[24px]` для card heroes. Цвет: `text-primary` для акцента, `text-slate-400`–`text-slate-500` нейтрально.
+- **Legacy `<i class="bi bi-*">`** остаётся только там, где иконку рождает JS-строка (`innerHTML`, `className`, `classList.replace`) и в portal/staff/admin: там нужен CSS. Наборы: `src/data/icons-js-manifest.json` → `icons-js.css` (публичные страницы, подключён в Base), `icons-manifest.json` → `icons.css` (портал и astro-icon `include`). Новая иконка → в нужный манифест → `npm run icons`.
+- **НИКОГДА не редактируй `icons.css` / `icons-js.css` вручную** (auto-generated, гард `check:icons`).
 
 ---
 

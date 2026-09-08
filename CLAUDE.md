@@ -102,8 +102,8 @@ SELECT state, org, topics, last_contact FROM outreach_memory
 
 ## 🎨 UI (краткий чек, полное — [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md))
 
-- **Иконки** — только Bootstrap Icons из `src/data/icons-manifest.json`. Никаких эмодзи в UI.
-- Иконки нет в манифесте → добавить в JSON → `npm run icons`. Никогда не редактировать `icons.css` вручную.
+- **Иконки** — только Bootstrap Icons через astro-icon `<Icon name="bi:…" class="bi bi-…">`; legacy `<i class="bi bi-…">` только для JS-строк и портала. Никаких эмодзи в UI.
+- Иконки нет в манифесте → добавить в `src/data/icons-manifest.json` (для JS-строк — `icons-js-manifest.json`) → `npm run icons`. Никогда не редактировать `icons*.css` вручную.
 - Эталонные компоненты: `src/components/Shifts.astro`, `src/components/FAQ.astro`.
 
 ## Фоновые агенты (headless)
