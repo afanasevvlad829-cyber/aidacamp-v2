@@ -1,4 +1,4 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_MAX_DAYS, daysAdj } from '../shifts';
 import type { LandingData } from './types';
 import { otzyvyLink, yandexReviewsLink } from '../../lib/reviews-link';
 
@@ -71,7 +71,7 @@ const landing: LandingData = {
     },
     {
       h2: `Смены ${SEASON_YEAR} — цены`,
-      text: `Обе открытые смены — августовские, в разгаре летних каникул: успеете и отдохнуть, и подготовиться к 1 сентября. Бронируйте смену заранее — места уходят быстро. В стоимость включены проживание в комнатах по 2–4 человека с санузлом, 5-разовое питание, полная IT-программа, бассейн, вечерние активности. Налоговый вычет — до ${VYCHET_MAX} (максимум, 13-дневная смена).`,
+      text: `Обе открытые смены — августовские, в разгаре летних каникул: успеете и отдохнуть, и подготовиться к 1 сентября. Бронируйте смену заранее — места уходят быстро. В стоимость включены проживание в комнатах по 2–4 человека с санузлом, 5-разовое питание, полная IT-программа, бассейн, вечерние активности. Налоговый вычет — до ${VYCHET_MAX} (максимум, ${daysAdj(VYCHET_MAX_DAYS, 'nom')} смена).`,
       list: [
         `Смена 2.1 (завершена): ${DATES_SHORT_S21}, ${DAYS_S21} — ${PRICE_S21}`,
         `Смена 2 (завершена): ${DATES_SHORT_S2}, ${DAYS_S2} — ${PRICE_S2}`,
