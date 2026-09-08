@@ -34,8 +34,7 @@ export const landingPages: LandingPage[] = [
   { title: 'Детский лагерь', description: 'Для детей 7–15 лет в Подмосковье', url: '/detskiy-lager/', icon: 'bi-house-heart' },
   { title: 'Детский лагерь в Подмосковье', description: '66 км от МКАД, проживание', url: '/detskiy-lager-podmoskove/', icon: 'bi-houses' },
   { title: 'Лагерь в Подмосковье', description: 'Загородный, с бассейном', url: '/lager-v-podmoskove/', icon: 'bi-tree' },
-  { title: 'Лагерь на лето 2026', description: `Смены ${SEASON_MONTHS_NOM}, календарь`, url: '/lager-na-leto-2026/', icon: 'bi-calendar-heart' },
-  { title: 'Лагерь на лето 2027', description: `${SUMMER_2027.length} смен по ${SUMMER_2027[0].duration}, идёт предзапись`, url: '/lager-na-leto-2027/', icon: 'bi-calendar-heart' },
+  { title: `Лагерь на лето ${SUMMER_2027[0].startDate.slice(0, 4)}`, description: `${SUMMER_2027.length} смен по ${SUMMER_2027[0].duration}, идёт предзапись`, url: '/lager-na-leto/', icon: 'bi-calendar-heart' },
   { title: 'Лагерь в Москве', description: 'Ближнее Подмосковье, 66 км от МКАД', url: '/lager-v-moskve/', icon: 'bi-geo-alt' },
   { title: 'Московские летние лагеря', description: 'IT-лагерь в 66 км от Москвы, трансфер', url: '/moskovskie-letnie-lagerya/', icon: 'bi-geo-alt' },
 
@@ -347,20 +346,18 @@ const HEAD_URLS = new Set([
 ]);
 
 /**
- * Сезонные страницы (когда ехать). Хабы /lager-na-leto-2026 (482) + /lager-na-nedelyu
+ * Сезонные страницы (когда ехать). Хабы /lager-na-leto (482) + /lager-na-nedelyu
  * (71, Wordstat) — та же форма частотности, что у B/D/F: явный лидер + резкий обрыв
  * к хвосту (10-dney=26, дальше 0-19). Добавлен по факту прогона симуляции 09.08.2026:
- * без пиннинга сжатие общего пула (после выноса B/D/F) обнулило /lager-na-leto-2026 —
+ * без пиннинга сжатие общего пула (после выноса B/D/F) обнулило /lager-na-leto —
  * самую частотную страницу во всём «ПРОЧЕЕ» — и просадило соседей по подкластеру.
  */
 const SEASON_URLS = new Set([
-  '/lager-na-leto-2026',
-  // Хаб следующего сезона. Добавлен 07.09.2026 вместе с созданием страницы:
-  // выдача по «лагеря на лето 2027» практически пуста (выгрузка ТОП-10 Арсенкина
-  // вернула один URL на запрос), а спрос уже идёт. Без пиннинга в этом пуле
-  // новая страница осталась бы без входящих ссылок — ровно та болезнь, из-за
-  // которой /ochnye-kursy-programmirovaniya/ на codims числился несуществующим.
-  '/lager-na-leto-2027',
+  // Вечный хаб летнего сезона: год в тексте, не в URL. Собран 08.09.2026 из
+  // /lager-na-leto-2026 (широкая семантика, позиции) и /lager-na-leto-2027
+  // (сетка сезона, честная рамка по датам) — оба отдают сюда 301, чтобы вес
+  // не сгорал вместе с сезоном и не возникала пара страниц-каннибалов.
+  '/lager-na-leto',
   '/lager-na-nedelyu',
   '/lager-10-dney',
   '/lager-na-avgust-podmoskove',
@@ -378,7 +375,7 @@ const SEASON_URLS = new Set([
  * Wordstat) — та же форма частотности, что у B/D/F/SEASON: 2 лидера, резкий обрыв
  * к хвосту (28 и ниже). Найден по факту повторной симуляции 09.08.2026: после
  * добавления SEASON_URLS /lager-s-basseynom (уже был в HOMEPAGE_HUB_URLS) обнулился
- * в общем графе — тот же класс регрессии, что и у /lager-na-leto-2026 чуть раньше.
+ * в общем графе — тот же класс регрессии, что и у /lager-na-leto чуть раньше.
  */
 const SHAPE_URLS = new Set([
   '/lager-s-basseynom',
@@ -494,7 +491,7 @@ function globalHash(s: string, len: number): number {
  * 116 посадочных с <5 входящих — «хвост» кластеров голодал из-за фикс. slice(0,N)).
  * Хабы (/lager-v-podmoskove, /detskiy-lager, /lager-dlya-podrostkov — GEO/AGE;
  * /lager-nedorogo, /ceny — PRICE_URLS; /lagerya-v-gorode-moskva — GEO_GENERIC_URLS;
- * /luchshie-detskie-lagerya, /detskie-lagerya — HEAD_URLS; /lager-na-leto-2026,
+ * /luchshie-detskie-lagerya, /detskie-lagerya — HEAD_URLS; /lager-na-leto,
  * /lager-na-nedelyu — SEASON_URLS; /lager-s-basseynom, /pionerskiy-lager —
  * SHAPE_URLS) остаются приколоты первыми — им высокая входящая связность
  * нужна намеренно.
@@ -577,12 +574,12 @@ export function getRelatedPages(currentUrl: string, count: number = 6): LandingP
     const rest = evenPool((u) => !HEAD_URLS.has(u), ['/luchshie-detskie-lagerya', '/detskie-lagerya']);
     base = [...priority, ...headPages, ...rest].slice(0, landingCount);
   }
-  // Сезонная страница → /lager-na-leto-2026 + /lager-na-nedelyu приколоты
+  // Сезонная страница → /lager-na-leto + /lager-na-nedelyu приколоты
   else if (SEASON_URLS.has(normalized)) {
-    const priority = [findPage('/lager-na-leto-2026'), findPage('/lager-na-nedelyu')]
+    const priority = [findPage('/lager-na-leto'), findPage('/lager-na-nedelyu')]
       .filter((p): p is LandingPage => !!p && norm(p.url) !== normalized);
-    const seasonPages = evenPool((u) => SEASON_URLS.has(u), ['/lager-na-leto-2026', '/lager-na-nedelyu']);
-    const rest = evenPool((u) => !SEASON_URLS.has(u), ['/lager-na-leto-2026', '/lager-na-nedelyu']);
+    const seasonPages = evenPool((u) => SEASON_URLS.has(u), ['/lager-na-leto', '/lager-na-nedelyu']);
+    const rest = evenPool((u) => !SEASON_URLS.has(u), ['/lager-na-leto', '/lager-na-nedelyu']);
     base = [...priority, ...seasonPages, ...rest].slice(0, landingCount);
   }
   // Страница формата/фишек → /lager-s-basseynom + /pionerskiy-lager приколоты

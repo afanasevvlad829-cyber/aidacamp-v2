@@ -1,4 +1,6 @@
 ---
+import { Icon } from 'astro-icon/components';
+import { iconName } from '../utils/icons';
 import { DAYS_S1, DAYS_S2, DAYS_S21, DAYS_S22, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S1, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, SEASON_YEAR, VYCHET_MAX, VYCHET_S1, VYCHET_S2, VYCHET_S21, VYCHET_S22, VYCHET_S3, VYCHET_S4 } from '../data/shifts';
 import '../styles/global.css';
 import Base from '../layouts/Base.astro';
@@ -117,7 +119,11 @@ const faqItems = [
                   ['Адрес юридического лица', '109542, г. Москва, Рязанский проспект, д. 86/1, стр. 3, комн. 13А'],
                   ['Адрес площадки проведения смен', 'Московская область, Наро-Фоминский городской округ, ЛОК «Изумруд» (66 км от МКАД)'],
                   ['Режим работы', 'Сезонный: 30 мая — 31 августа'],
-                  ['Телефон', '<a href={PHONE_MAIN_HREF} class="text-orange-600 hover:underline">{PHONE_MAIN}</a>, <a href={PHONE_MOBILE_HREF} class="text-orange-600 hover:underline">{PHONE_MOBILE}</a>'],
+                  // Шаблонная строка, а не обычная: в одинарных кавычках {PHONE_MAIN}
+                  // остаётся текстом. До 08.09.2026 на живой странице так и висело
+                  // «{PHONE_MAIN}» вместо номера, а href={PHONE_MAIN_HREF} отдавал 404
+                  // (Лабрика показала обе ссылки в отчёте «Ошибки 4xx»).
+                  ['Телефон', `<a href="${PHONE_MAIN_HREF}" class="text-orange-600 hover:underline">${PHONE_MAIN}</a>, <a href="${PHONE_MOBILE_HREF}" class="text-orange-600 hover:underline">${PHONE_MOBILE}</a>`],
                   ['Электронная почта', '<a href="mailto:hello@codims.ru" class="text-orange-600 hover:underline">hello@codims.ru</a>'],
                   ['Сайт', 'aidacamp.ru'],
                   ['Руководитель', 'Афанасьев Владимир Владимирович, директор'],
@@ -172,7 +178,7 @@ const faqItems = [
                 },
               ].map(doc => (
                 <li class="flex items-start gap-3 rounded-[12px] border border-gray-200 px-4 py-3 hover:border-gray-300 transition-colors">
-                  <i class="bi bi-file-earmark-pdf-fill text-[20px] text-red-500 mt-0.5 shrink-0" aria-hidden="true"></i>
+                  <Icon name="bi:file-earmark-pdf-fill" class="bi bi-file-earmark-pdf-fill text-[20px] text-red-500 mt-0.5 shrink-0" aria-hidden="true" />
                   <div class="flex-1 min-w-0">
                     {doc.href ? (
                       <a
@@ -182,7 +188,7 @@ const faqItems = [
                         class="text-base font-medium text-[#1a56db] hover:underline"
                       >
                         {doc.title}
-                        {doc.external && <i class="bi bi-box-arrow-up-right text-[11px] ml-1" aria-hidden="true"></i>}
+                        {doc.external && <Icon name="bi:box-arrow-up-right" class="bi bi-box-arrow-up-right text-[11px] ml-1" aria-hidden="true" />}
                       </a>
                     ) : (
                       <span class="text-base font-medium text-gray-400">{doc.title}</span>
@@ -219,7 +225,7 @@ const faqItems = [
               4. Педагогический состав
             </h2>
             <div class="rounded-[12px] border border-dashed border-gray-300 px-6 py-6 text-center text-gray-400">
-              <i class="bi bi-people text-[28px] mb-2 block" aria-hidden="true"></i>
+              <Icon name="bi:people" class="bi bi-people text-[28px] mb-2 block" aria-hidden="true" />
               <p class="text-base">Состав педагогического коллектива формируется.</p>
               <p class="text-base mt-1">Актуальный список размещается до начала каждой смены.</p>
             </div>
@@ -403,7 +409,7 @@ const faqItems = [
                 },
               ].map(item => (
                 <li class="flex gap-4 rounded-[12px] border border-gray-200 px-5 py-4">
-                  <i class={`bi bi-${item.icon} text-[22px] ${item.color} mt-0.5 shrink-0`} aria-hidden="true"></i>
+                  <Icon name={iconName(item.icon)} class={`bi bi-${item.icon} text-[22px] ${item.color} mt-0.5 shrink-0`} aria-hidden="true" />
                   <div>
                     <p class="text-base font-semibold text-gray-900 mb-1">{item.title}</p>
                     <p class="text-base text-gray-600 leading-[1.6]">{item.text}</p>
@@ -446,7 +452,7 @@ const faqItems = [
               ].map(item => (
                 <div class="rounded-[12px] border border-gray-200 px-5 py-4">
                   <div class="flex items-center gap-2 mb-2">
-                    <i class={`bi bi-${item.icon} text-[18px] text-[#0b1623]`} aria-hidden="true"></i>
+                    <Icon name={iconName(item.icon)} class={`bi bi-${item.icon} text-[18px] text-[#0b1623]`} aria-hidden="true" />
                     <p class="text-base font-semibold text-gray-900">{item.title}</p>
                   </div>
                   <p class="text-base text-gray-600 leading-[1.6]">{item.text}</p>
@@ -509,7 +515,7 @@ const faqItems = [
                 'Справка об оказанных образовательных услугах (выдаём после смены по запросу)',
               ].map(item => (
                 <li class="flex items-start gap-2 text-base text-gray-700">
-                  <i class="bi bi-check-lg text-green-600 shrink-0 mt-0.5" aria-hidden="true"></i>
+                  <Icon name="bi:check-lg" class="bi bi-check-lg text-green-600 shrink-0 mt-0.5" aria-hidden="true" />
                   {item}
                 </li>
               ))}
@@ -529,9 +535,9 @@ const faqItems = [
                 <li class="rounded-[12px] border border-gray-200 overflow-hidden">
                   <details class="group">
                     <summary class="flex items-start gap-3 px-5 py-4 cursor-pointer list-none select-none hover:bg-gray-50 transition-colors">
-                      <i class="bi bi-question-circle text-[18px] text-gray-400 shrink-0 mt-0.5" aria-hidden="true"></i>
+                      <Icon name="bi:question-circle" class="bi bi-question-circle text-[18px] text-gray-400 shrink-0 mt-0.5" aria-hidden="true" />
                       <span class="text-base font-medium text-gray-900 flex-1">{item.q}</span>
-                      <i class="bi bi-chevron-down text-[12px] text-gray-400 shrink-0 mt-1 group-open:rotate-180 transition-transform" aria-hidden="true"></i>
+                      <Icon name="bi:chevron-down" class="bi bi-chevron-down text-[12px] text-gray-400 shrink-0 mt-1 group-open:rotate-180 transition-transform" aria-hidden="true" />
                     </summary>
                     <div class="px-5 pb-4 pl-[52px]">
                       <p class="text-base text-gray-600 leading-[1.65]">{item.a}</p>
