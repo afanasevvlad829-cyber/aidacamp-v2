@@ -14,6 +14,7 @@ import {
   VYCHET_MAX, VYCHET_MAX_DAYS,
   allShiftsIncludingArchived,
   shiftLine,
+  daysAdj,
   taxDeduction,
   shiftDeduction,
   shiftDatesFull,
@@ -346,5 +347,33 @@ describe('shiftLine', () => {
       const days = (line.match(/\d+\s+(?:дней|дня|день)/g) ?? []);
       expect(days).toEqual([s.duration]);
     }
+  });
+});
+
+// ── daysAdj: косвенные падежи длительности ─────────────────────────────────
+// «за 13-дневную смену» — подстановка ${DAYS_S3} дала бы «за 13 дней смену».
+
+describe('daysAdj', () => {
+  const s3 = allShiftsIncludingArchived.find(x => x.id === 'shift-3')!;
+
+  it('склоняет по падежам, беря число из самой смены', () => {
+    expect(daysAdj(s3)).toBe('13-дневная');
+    expect(daysAdj(s3, 'nom')).toBe('13-дневная');
+    expect(daysAdj(s3, 'acc')).toBe('13-дневную');
+    expect(daysAdj(s3, 'gen')).toBe('13-дневной');
+  });
+
+  it('принимает строку длительности — для VYCHET_MAX_DAYS', () => {
+    expect(daysAdj(VYCHET_MAX_DAYS, 'acc')).toBe(`${parseInt(VYCHET_MAX_DAYS, 10)}-дневную`);
+  });
+
+  it('число всегда совпадает с duration смены', () => {
+    for (const s of allShiftsIncludingArchived) {
+      expect(daysAdj(s)).toBe(`${parseInt(s.duration, 10)}-дневная`);
+    }
+  });
+
+  it('бросает на неразбираемой длительности', () => {
+    expect(() => daysAdj('без цифр')).toThrow();
   });
 });

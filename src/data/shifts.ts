@@ -338,6 +338,27 @@ export const DAYS_S22 = _shift22.duration;
 export const DAYS_MIN = _cheapest.duration;
 export const DAYS_MAX = _priciest.duration;
 
+/**
+ * Прилагательное «13-дневная» от смены — для прозы, где длительность стоит в
+ * косвенном падеже: «до 5 200 ₽ за 13-дневную смену», «вычет с 13-дневной».
+ *
+ * Подставить туда ${DAYS_S3} нельзя — получится «за 13 дней смену». Заводить
+ * падежные экспорты тоже незачем: основа всегда «N-дневн», меняется только
+ * окончание, словарь не нужен. Род женский — во всей прозе сайта это
+ * согласуется со «сменой»; для множественного числа («7-дневные») формы нет,
+ * такие места переписываются под единственное.
+ *
+ * Принимает саму смену или строку длительности («13 дней»), чтобы работать и
+ * с VYCHET_MAX_DAYS: daysAdj(VYCHET_MAX_DAYS, 'acc') → «13-дневную».
+ */
+export type DaysAdjCase = 'nom' | 'acc' | 'gen';
+export function daysAdj(src: Shift | string, form: DaysAdjCase = 'nom'): string {
+  const n = parseInt(typeof src === 'string' ? src : src.duration, 10);
+  if (!Number.isFinite(n)) throw new Error(`daysAdj: не разобрал длительность «${String(src)}»`);
+  const ending = form === 'acc' ? 'ую' : form === 'gen' ? 'ой' : 'ая';
+  return `${n}-дневн${ending}`;
+}
+
 // === Возврат при отказе от путёвки (ФЗ №2300-1 о защите прав потребителей) ===
 export const BYT_PER_DAY = 6100;     // фактические расходы лагеря/день (предоплата базе отдыха) — удерживаются при возврате
 

@@ -1,4 +1,4 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_S2 } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_S2 } from '../shifts';
 import type { LandingData } from './types';
 import { otzyvyLink, yandexReviewsLink } from '../../lib/reviews-link';
 
@@ -88,10 +88,10 @@ const landing: LandingData = {
       h2: `Смены и цены ${SEASON_YEAR}`,
       text: `Августовские смены открыты к брони — места есть, бронируйте сейчас. В стоимость включены проживание, питание, IT-программа, бассейн. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} отдельно. С части стоимости можно вернуть налоговый вычет — оздоровительный формат в санатории «Изумруд». Все смены проходят на одной территории лагеря — с бассейном, IT-классами и медпунктом.`,
       list: [
-        `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, 7 дней, ${PRICE_S21}`,
-        `Смена 2 (завершена) — ${DATES_SHORT_S2}, 14 дней, ${PRICE_S2}`,
-        `Смена 3 — ${DATES_SHORT_S3}, 13 дней, ${PRICE_S3}`,
-        `Смена 4 — ${DATES_SHORT_S4}, 10 дней, ${PRICE_S4}`,
+        `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, ${DAYS_S21}, ${PRICE_S21}`,
+        `Смена 2 (завершена) — ${DATES_SHORT_S2}, ${DAYS_S2}, ${PRICE_S2}`,
+        `Смена 3 — ${DATES_SHORT_S3}, ${DAYS_S3}, ${PRICE_S3}`,
+        `Смена 4 — ${DATES_SHORT_S4}, ${DAYS_S4}, ${PRICE_S4}`,
       ],
     },
     {
