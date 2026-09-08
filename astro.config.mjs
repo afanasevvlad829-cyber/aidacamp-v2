@@ -1,5 +1,5 @@
 // ⚠️ ВНИМАНИЕ: Partytown ЗАПРЕЩЁН — не возвращайте его. См. CLAUDE.md → раздел «Запрещённые зависимости»
-import { defineConfig } from 'astro/config';
+import { defineConfig, fontProviders } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import node from '@astrojs/node';
 import sitemap from '@astrojs/sitemap';
@@ -169,6 +169,24 @@ export default defineConfig({
       // @playform/pipe матчит строки как RegExp — glob-строка 'metodichki/**' роняет билд («Nothing to repeat»)
       Exclude: [/metodichki\//, /demo\//],
     })]),
+  ],
+  // Шрифты — Fonts API (Astro 6): @font-face, preload и fallback с подогнанными метриками
+  // генерирует Astro; в head — <Font cssVariable="--font-inter" />. Файлы в src/assets/fonts
+  // (не public/: иначе дублируются в сборке). Сабсеты latin/cyrillic — те же unicode-range,
+  // что были в ручных @font-face в global.css (сверка с доками 08.09.2026).
+  fonts: [
+    {
+      provider: fontProviders.local(),
+      name: 'Inter',
+      cssVariable: '--font-inter',
+      fallbacks: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+      options: {
+        variants: [
+          { weight: '100 900', style: 'normal', src: ['./src/assets/fonts/inter-latin.woff2'], display: 'swap', unicodeRange: ['U+0000-00FF', 'U+0131', 'U+0152-0153', 'U+02BB-02BC', 'U+02C6', 'U+02DA', 'U+02DC', 'U+2000-206F', 'U+2074', 'U+20AC', 'U+2122', 'U+2191', 'U+2193', 'U+2212', 'U+2215', 'U+FEFF', 'U+FFFD'] },
+          { weight: '100 900', style: 'normal', src: ['./src/assets/fonts/inter-cyrillic.woff2'], display: 'swap', unicodeRange: ['U+0400-045F', 'U+0490-0491', 'U+04B0-04B1', 'U+2116'] },
+        ],
+      },
+    },
   ],
   devToolbar: { enabled: false },
   // Prefetch страниц по наведению (Astro встроенный, guides/prefetch). prefetchAll — все
