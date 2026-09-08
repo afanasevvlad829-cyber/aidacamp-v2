@@ -102,6 +102,27 @@ fi
 echo "  проверено редирект-слагов: $CHECKED"
 
 echo ""
+echo "── 3. CSRF: form-POST со своим Origin проходит, с чужим — 403 ──"
+# checkOrigin (Astro) сравнивает Origin с URL запроса; за nginx URL собирается из
+# X-Forwarded-Proto + Host под security.allowedDomains. Если что-то из этого
+# разъедется — свой Origin получит 403 и вход в портал сломается молча (апрель 2026).
+# Пробуем один неверный код: ожидаем любой ответ, кроме 403/000 (рейт-лимит логина —
+# 10 попыток в минуту с IP, одна попытка на smoke укладывается).
+csrf_post() { curl -s -o /dev/null -w "%{http_code}" --max-time 15 -X POST -H "Origin: $1" \
+  -H "Content-Type: application/x-www-form-urlencoded" --data "password=000000" "$BASE/api/portal/login" || echo "000"; }
+c_own=$(csrf_post "$BASE"); c_evil=$(csrf_post "https://evil.example")
+if [ "$c_own" != "403" ] && [ "$c_own" != "000" ]; then
+  printf '  ✅ %-44s %s\n' "свой Origin → не 403" "$c_own"
+else
+  printf '  ❌ %-44s %s\n' "свой Origin получил" "$c_own"; FAIL=$((FAIL + 1))
+fi
+if [ "$c_evil" = "403" ]; then
+  printf '  ✅ %-44s %s\n' "чужой Origin → 403" "$c_evil"
+else
+  printf '  ❌ %-44s %s (защита не работает)\n' "чужой Origin получил" "$c_evil"; FAIL=$((FAIL + 1))
+fi
+
+echo ""
 if [ "$FAIL" -gt 0 ]; then
   echo "❌ SMOKE FAILED: $FAIL проблем"
   exit 1
