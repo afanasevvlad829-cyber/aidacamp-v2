@@ -59,6 +59,36 @@ done
 
 date > "$STAMP"
 
+# ── Страж классификации замеров (08.09.2026) ────────────────────────────────
+# Статус волны ставит агент конвейера по правилу из скилла seo-wave-cycle:
+#   delta >= 2 → improved, delta <= -2 → regressed, иначе flat.
+# Правило чисто арифметическое, но исполняет его LLM — и ошибается. 08.09.2026
+# волна /stati/detskiy-lager-v-lesu/ с delta=11.0 (23→12) была записана как
+# flat. Цена ошибки конкретная: по шагу M4 скилла страница со статусом flat вне
+# ТОП-10 идёт на НОВУЮ ГИПОТЕЗУ немедленно — то есть конвейер потратил бы волну
+# на страницу, которая только что выросла на 11 позиций. Плюс перекос в
+# статистике, по которой судят, работает ли конвейер вообще.
+# Одна ошибка на 50 измеренных волн — не эпидемия, но ловится она арифметикой
+# за секунду, а не чтением отчётов. Проверяем и сообщаем, НЕ исправляя молча:
+# расхождение может означать и то, что кто-то поменял правило в скилле.
+MISMATCH=$(sudo -u postgres psql -d aidacamp -tAc "
+  SELECT count(*) FROM seo_wave_log
+   WHERE delta IS NOT NULL AND status IN ('improved','flat','regressed')
+     AND status <> CASE WHEN delta >= 2 THEN 'improved'
+                        WHEN delta <= -2 THEN 'regressed' ELSE 'flat' END" 2>/dev/null | tr -d ' ')
+if [ -n "$MISMATCH" ] && [ "$MISMATCH" -gt 0 ] 2>/dev/null; then
+  DETAIL=$(sudo -u postgres psql -d aidacamp -tAc "
+    SELECT string_agg(site||' '||target_url||' delta='||round(delta::numeric,1)||' записано '||status, E'\n')
+      FROM seo_wave_log
+     WHERE delta IS NOT NULL AND status IN ('improved','flat','regressed')
+       AND status <> CASE WHEN delta >= 2 THEN 'improved'
+                          WHEN delta <= -2 THEN 'regressed' ELSE 'flat' END" 2>/dev/null)
+  say "расхождений статуса с delta: $MISMATCH"
+  printf '%s\n' "$DETAIL" | "$ALERT" warn positions-check "статус волны не сходится с delta ($MISMATCH шт.)"
+else
+  say "классификация замеров сходится с delta"
+fi
+
 if [ -n "$FAILED" ]; then
   echo "Не запустился съём:$FAILED. Лог: $LOG" | "$ALERT" error positions-check "съём позиций частично не прошёл"
   exit 1
