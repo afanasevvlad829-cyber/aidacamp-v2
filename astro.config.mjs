@@ -6,7 +6,6 @@ import sitemap from '@astrojs/sitemap';
 import compress from '@playform/compress';
 import htmlMinifyCached from './scripts/html-minify-cached.mjs';
 import icon from 'astro-icon';
-import iconsManifest from './src/data/icons-manifest.json' with { type: 'json' };
 
 // SKIP_COMPRESS=1 выключает минификацию. Нужен первому проходу build.sh: тот проход
 // существует только чтобы отрендерить статьи для gen-articles.mjs, его dist/ никуда
@@ -23,13 +22,14 @@ export default defineConfig({
   security: { checkOrigin: false },
   integrations: [
     // Иконки — astro-icon (Iconify-набор Bootstrap Icons, inline SVG, без блокирующего
-    // CSS). include ограничивает набор списком из icons-manifest.json — он же остаётся
-    // источником для legacy icons.css (портал/стафф/ask, где иконки рождаются в JS).
-    // iconDir — два кастомных SVG (blocks, phone-x), которых нет в Bootstrap Icons; имя без префикса.
+    // CSS). include: весь набор bi — это только серверный реестр, в HTML попадают лишь
+    // использованные иконки; список-манифест здесь не нужен (CI 08.09.2026: три иконки в
+    // разметке не были в манифесте и раньше молча рендерились пустыми, а astro-icon роняет
+    // сборку — незнакомое имя теперь ловится на билде). icons-manifest.json остаётся
+    // источником только для legacy icons.css (портал/стафф и иконки из JS-строк).
     icon({
-      // blocks и phone-x — кастомные SVG из iconDir, в Iconify-наборе их нет → в include не передаём
-      include: { bi: iconsManifest.filter((n) => !['blocks', 'phone-x'].includes(n)) },
-      iconDir: 'src/styles/custom-icons',
+      include: { bi: ['*'] },
+      iconDir: 'src/styles/custom-icons', // blocks, phone-x — кастомные SVG, в Iconify их нет
     }),
     // Стабильные имена server-чанков (без content-hash). SSR-серверу кэш-бастинг
     // не нужен (Node читает файлы с диска при старте), а хэш в имени ломал
