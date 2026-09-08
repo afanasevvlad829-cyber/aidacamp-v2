@@ -351,6 +351,17 @@ export const DAYS_MAX = _priciest.duration;
  * Принимает саму смену или строку длительности («13 дней»), чтобы работать и
  * с VYCHET_MAX_DAYS: daysAdj(VYCHET_MAX_DAYS, 'acc') → «13-дневную».
  */
+/**
+ * Только число дней смены, без слова: «13». Для перечислений, где слово стоит
+ * один раз в конце — «смены 10 и 13 дней». Подставить туда ${DAYS_S4} нельзя:
+ * получится «10 дней и 13 дней».
+ */
+export function daysNum(src: Shift | string): number {
+  const n = parseInt(typeof src === 'string' ? src : src.duration, 10);
+  if (!Number.isFinite(n)) throw new Error(`daysNum: не разобрал длительность «${String(src)}»`);
+  return n;
+}
+
 export type DaysAdjCase = 'nom' | 'acc' | 'gen';
 export function daysAdj(src: Shift | string, form: DaysAdjCase = 'nom'): string {
   const n = parseInt(typeof src === 'string' ? src : src.duration, 10);
@@ -438,6 +449,10 @@ export const AUTUMN_2026_WINDOW2 = {
   days: 7,
 } as const;
 export const PRICE_OSEN = AUTUMN_2026.price;
+// Длительность межсезонного заезда — рядом с ценой, по той же причине, что
+// DAYS_S3 рядом с PRICE_S3: «${PRICE_OSEN} за 7 дней» разъедется, как только
+// у осенней смены изменится длина. Страж: npm run check:durations.
+export const DAYS_OSEN = _autumn1.duration;
 export const VYCHET_OSEN = _fmtV(Math.round(taxDeduction(_priceNum(AUTUMN_2026.price), AUTUMN_2026.days) / 50) * 50);
 
 // === Зима 2026–2027 — продажи открыты 27.08.2026, смена перенесена в mainShifts ===
@@ -450,6 +465,7 @@ export const WINTER_2026 = {
   days: 10,
 } as const;
 export const PRICE_ZIMA = WINTER_2026.price;
+export const DAYS_ZIMA = _winter1.duration;
 export const VYCHET_ZIMA = _fmtV(Math.round(taxDeduction(_priceNum(WINTER_2026.price), WINTER_2026.days) / 50) * 50);
 
 // === Весна 2027 — ПРЕДВАРИТЕЛЬНО (модель осенней недели, утверждение — к январю) ===
@@ -541,6 +557,17 @@ export const DISCOUNT_LETO_2027 = `${(_priceDigits(PRICE_LETO_2027_FULL) - _pric
 export const SEATS_PER_SHIFT_2027 = 50;
 
 export const PRICE_VESNA = SPRING_2027.price;
+// У весны 2027 своего объекта Shift пока нет (даты предварительные), поэтому
+// строка собирается из числа: 5–20 дней — всегда «дней», особые формы «день»
+// и «дня» здесь недостижимы, но helper их учитывает на будущее.
+const _daysWord = (n: number) => {
+  const t = n % 100, o = n % 10;
+  if (t >= 11 && t <= 14) return 'дней';
+  if (o === 1) return 'день';
+  if (o >= 2 && o <= 4) return 'дня';
+  return 'дней';
+};
+export const DAYS_VESNA = `${SPRING_2027.days} ${_daysWord(SPRING_2027.days)}`;
 export const VYCHET_VESNA = _fmtV(Math.round(taxDeduction(_priceNum(SPRING_2027.price), SPRING_2027.days) / 50) * 50);
 
 // === Даты смен — ПРОИЗВОДНЫЕ от startDate/endDate (ISO). НЕ хардкодить даты на страницах! ===

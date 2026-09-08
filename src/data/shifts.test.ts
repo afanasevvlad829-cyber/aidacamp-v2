@@ -15,6 +15,7 @@ import {
   allShiftsIncludingArchived,
   shiftLine,
   daysAdj,
+  daysNum,
   taxDeduction,
   shiftDeduction,
   shiftDatesFull,
@@ -375,5 +376,26 @@ describe('daysAdj', () => {
 
   it('бросает на неразбираемой длительности', () => {
     expect(() => daysAdj('без цифр')).toThrow();
+  });
+});
+
+// ── daysNum: число без слова, для перечислений ─────────────────────────────
+// «смены 10 и 13 дней»: ${DAYS_S4} дал бы «10 дней и 13 дней».
+
+describe('daysNum', () => {
+  it('возвращает число из смены и из строки длительности', () => {
+    const s3 = allShiftsIncludingArchived.find(x => x.id === 'shift-3')!;
+    expect(daysNum(s3)).toBe(13);
+    expect(daysNum(DAYS_S4)).toBe(10);
+  });
+
+  it('совпадает с числом в duration для всех смен', () => {
+    for (const s of allShiftsIncludingArchived) {
+      expect(daysNum(s)).toBe(parseInt(s.duration, 10));
+    }
+  });
+
+  it('бросает на неразбираемой длительности', () => {
+    expect(() => daysNum('без цифр')).toThrow();
   });
 });
