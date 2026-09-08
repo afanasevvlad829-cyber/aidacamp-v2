@@ -1,4 +1,4 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_MAX, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_MAX_DAYS, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_MAX, DAYS_MIN, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_MAX_DAYS, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
 import type { LandingData } from './types';
 import { otzyvyLink, yandexReviewsLink } from '../../lib/reviews-link';
 import { SEASON_FROM_TO } from '../evergreen';
@@ -15,7 +15,7 @@ const landing: LandingData = {
     { q: 'Как добраться из Мытищ до АйДаКемп?', a: `На машине — через МКАД и Киевское шоссе (А-101), 66 км, около часа без пробок. На метро — до м. Солнцево (~50–60 минут), дальше трансфер (${TRANSFER_PRICE_FMT}) в день заезда.` },
     { q: 'Есть ли трансфер?', a: `Да, от м. Солнцево — ${TRANSFER_PRICE_FMT} в один конец, с сопровождающим. Дорога от Солнцево до метро — около часа.` },
     { q: 'Можно ли вернуть часть стоимости путёвки?', a: `Да, налоговый вычет 13% от образовательной части: от ~${VYCHET_S4} (${DAYS_S4}) до ${VYCHET_MAX} (${VYCHET_MAX_DAYS}). Документы выдаём при заезде.` },
-    { q: 'Сколько стоит путёвка?', a: `От ${PRICE_MIN} за 10 дней до ${PRICE_MAX} за ${DAYS_MAX} (август ${SEASON_YEAR}). В стоимость входит всё, кроме трансфера.` },
+    { q: 'Сколько стоит путёвка?', a: `От ${PRICE_MIN} за ${DAYS_MIN} до ${PRICE_MAX} за ${DAYS_MAX} (август ${SEASON_YEAR}). В стоимость входит всё, кроме трансфера.` },
   ],
   courseSchema: {
     name: 'Детский лагерь Мытищи — выездная IT-программа АйДаКемп',

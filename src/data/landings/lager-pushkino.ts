@@ -1,4 +1,4 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_MAX, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_S2 } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_MAX, DAYS_MIN, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_S2 } from '../shifts';
 import type { LandingData } from './types';
 import { otzyvyLink, yandexReviewsLink } from '../../lib/reviews-link';
 
@@ -14,7 +14,7 @@ const landing: LandingData = {
     { q: 'Как добраться из Пушкино до АйДаКемп?', a: `От м. Солнцево — трансфер лагеря (${TRANSFER_PRICE_FMT}). Или на машине: Ярославское шоссе → МКАД → Киевское шоссе, 66 км от МКАД, Наро-Фоминский район.` },
     { q: 'Сколько времени ехать из Пушкино до лагеря?', a: 'Лагерь в 66 км от МКАД по Киевскому шоссе, ~1 час без пробок. Из города добавьте время до МКАД.' },
     { q: 'Есть ли трансфер из Пушкино?', a: `Прямого трансфера из города нет, но от м. Солнцево организован автобус АйДаКемп. Доехать до Солнцево — около 30 минут на машине. Стоимость трансфера ${TRANSFER_PRICE_FMT}.` },
-    { q: 'Сколько стоит смена в АйДаКемп?', a: `От ${PRICE_MIN} за 10 дней до ${PRICE_MAX} за ${DAYS_MAX}. В стоимость включены проживание, питание, IT-программа, бассейн.` },
+    { q: 'Сколько стоит смена в АйДаКемп?', a: `От ${PRICE_MIN} за ${DAYS_MIN} до ${PRICE_MAX} за ${DAYS_MAX}. В стоимость включены проживание, питание, IT-программа, бассейн.` },
   ],
   courseSchema: {
     name: 'Детский IT-лагерь рядом с Пушкино — АйДаКемп',

@@ -1,4 +1,4 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_MAX, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_MAX_DAYS, daysAdj } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_MAX, DAYS_MIN, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_MAX_DAYS, daysAdj } from '../shifts';
 import type { LandingData } from './types';
 import { otzyvyLink, yandexReviewsLink } from '../../lib/reviews-link';
 
@@ -13,7 +13,7 @@ const landing: LandingData = {
     { q: 'Как добраться из Реутова до АйДаКемп?', a: `АйДаКемп — 66 км от МКАД по Киевскому шоссе (~1 час). Оттуда: на машине через МКАД на Киевское шоссе, либо до м. Солнцево (~40 мин на метро) и трансфер (${TRANSFER_PRICE_FMT}, ~40 мин).` },
     { q: 'Сколько ехать из Реутова до АйДаКемп?', a: `АйДаКемп в 66 км от МКАД по Киевскому шоссе, ~1 час без пробок. До м. Солнцево оттуда — около 40 минут на метро, дальше — трансфер (${TRANSFER_PRICE_FMT}).` },
     { q: 'Есть ли трансфер из Реутова?', a: `Прямого трансфера оттуда нет. Организованный трансфер отправляется от м. Солнцево (${TRANSFER_PRICE_FMT}). До Солнцево удобно доехать за 40 минут на метро.` },
-    { q: 'Сколько стоит путёвка из Реутова?', a: `Смены от ${PRICE_MIN} (10 дней) до ${PRICE_MAX} (${DAYS_MAX}). Включены проживание, питание, IT-программа, бассейн. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} отдельно.` },
+    { q: 'Сколько стоит путёвка из Реутова?', a: `Смены от ${PRICE_MIN} (${DAYS_MIN}) до ${PRICE_MAX} (${DAYS_MAX}). Включены проживание, питание, IT-программа, бассейн. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} отдельно.` },
   ],
   courseSchema: {
     name: 'Детский IT-лагерь рядом с Реутовом — АйДаКемп',
