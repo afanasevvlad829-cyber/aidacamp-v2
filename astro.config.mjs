@@ -162,6 +162,12 @@ export default defineConfig({
     })]),
   ],
   devToolbar: { enabled: false },
+  // Prefetch страниц по наведению (Astro встроенный, guides/prefetch). prefetchAll — все
+  // внутренние ссылки без разметки; hover не срабатывает на тач, для мобильного меню
+  // стоит data-astro-prefetch="viewport" в MobileMenu.astro. Astro сам откатывается на
+  // tap при data-saver / медленной сети. Safari требует кэш-заголовков на HTML — у прода
+  // на HTML no-cache, там prefetch не даёт выигрыша (сверка с доками 08.09.2026).
+  prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   vite: {
     plugins: [tailwindcss()],
     build: {
