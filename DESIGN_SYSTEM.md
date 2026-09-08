@@ -228,7 +228,7 @@ Mobile-first шкала. Минимум на мобилке: **16px для body*
   Классы `bi bi-*` на `<Icon>` оставляем: на них завязаны селекторы и размеры (`svg.bi` = 1em, см. global.css). Никаких эмодзи в UI.
 - Динамическое имя из данных: `name={`bi:${String(icon).replace(/^bi-/, '')}`}` (в данных имена с префиксом `bi-`).
 - Размер: `text-[14px]` inline, `text-[20px]–[24px]` для card heroes. Цвет: `text-primary` для акцента, `text-slate-400`–`text-slate-500` нейтрально.
-- **Legacy `<i class="bi bi-*">`** остаётся только там, где иконку рождает JS-строка (`innerHTML`, `className`, `classList.replace`) и в portal/staff/admin: там нужен CSS. Наборы: `src/data/icons-js-manifest.json` → `icons-js.css` (публичные страницы, подключён в Base), `icons-manifest.json` → `icons.css` (портал и astro-icon `include`). Новая иконка → в нужный манифест → `npm run icons`.
+- **Legacy `<i class="bi bi-*">`** остаётся только там, где иконку рождает JS-строка (`innerHTML`, `className`, `classList.replace`) и в portal/staff/admin: там нужен CSS. Наборы: `src/data/icons-js-manifest.json` → `icons-js.css` (публичные страницы, подключён в Base), `icons-manifest.json` → `icons.css` (портал/стафф). Для `<Icon>` манифест не нужен: astro-icon знает весь набор bi, незнакомое имя роняет сборку. Новая иконка → в нужный манифест → `npm run icons`.
 - **НИКОГДА не редактируй `icons.css` / `icons-js.css` вручную** (auto-generated, гард `check:icons`).
 
 ---
