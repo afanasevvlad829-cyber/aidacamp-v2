@@ -449,7 +449,21 @@ export const SUMMER_2027: Shift[] = [
     startDate: '2027-08-16', endDate: '2027-08-29',
   },
 ];
-export const PRICE_LETO_2027 = SUMMER_2027[0].price;
+// Цена раннего бронирования (её платит родитель) и полная — от которой считается
+// скидка. Решение владельца 07.09.2026 после разбора конкурентов:
+//   Enjoy Camp, 14 дней:  150 000 ₽ полная / 120 000 ₽ раннее бронирование
+//   Дружите.ру, 7 дней:    55 900-59 900 ₽ полная, скидка 3 000-10 000 ₽ в карточке
+// Обе показывают ДВЕ цены и явную скидку. У нас механика роста цены к старту смены
+// уже есть (RAMP_DAYS/DAILY_INC в dynamicPrices.ts), но подана как «дорожает» —
+// покупатель видит рост, а не выгоду. Полная цена даёт точку отсчёта, от которой
+// скидка вообще становится видимой.
+// 139 000 ₽ = 9 929 ₽/день — ниже Enjoy Camp (10 714 ₽/день), но в их лиге.
+export const PRICE_LETO_2027_FULL = '139 000 ₽';
+export const PRICE_LETO_2027 = SUMMER_2027[0].price;          // раннее бронирование
+export const PRICE_LETO_2027_EARLY = PRICE_LETO_2027;
+// Скидка ВЫВОДИТСЯ, а не пишется руками: поменяешь любую из двух цен — сойдётся сама.
+const _priceDigits = (p: string) => Number(p.replace(/[^0-9]/g, ''));
+export const DISCOUNT_LETO_2027 = `${(_priceDigits(PRICE_LETO_2027_FULL) - _priceDigits(PRICE_LETO_2027)).toLocaleString('ru-RU')} \u20BD`;
 export const SEATS_PER_SHIFT_2027 = 50;
 
 export const PRICE_VESNA = SPRING_2027.price;
