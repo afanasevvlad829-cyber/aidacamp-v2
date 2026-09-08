@@ -87,6 +87,8 @@
 
 Mobile-first шкала. Минимум на мобилке: **16px для body** (иначе Safari auto-zoom).
 
+**Шрифт:** Inter (variable 100–900, сабсеты latin + cyrillic) подключён через Fonts API Astro: конфиг в `astro.config.mjs → fonts`, в head каждого layout — `<Font cssVariable="--font-inter" />` (в Base — с `preload`). Файлы в `src/assets/fonts/`, не в `public/`. `@font-face`, preload и fallback с подогнанными метриками генерирует Astro; в Tailwind шрифт зарегистрирован как `@theme inline { --font-sans: var(--font-inter) }`. Ручных `@font-face` и `<link rel="preload" as="font">` быть не должно.
+
 | Уровень | Mobile | Desktop | Класс | Применение |
 |---|---|---|---|---|
 | **Hero H1** | 38px | 56px | `text-[38px] md:text-[56px] font-extrabold leading-[1.05] tracking-[-0.03em]` | Hero главная |
