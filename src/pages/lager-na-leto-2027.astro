@@ -9,7 +9,7 @@ import { getRelatedPages } from '../data/landing-pages';
 import AskCta from '../components/AskCta.astro';
 import Gallery from '../components/Gallery.astro';
 import { STAT_DISTANCE, STAT_FOUNDED_YEAR, STAT_KIDS } from '../data/contacts';
-import { SUMMER_2027, PRICE_LETO_2027, SEATS_PER_SHIFT_2027 } from '../data/shifts';
+import { SUMMER_2027, PRICE_LETO_2027, PRICE_LETO_2027_FULL, DISCOUNT_LETO_2027, SEATS_PER_SHIFT_2027 } from '../data/shifts';
 
 // Страница сезона 2027. Даты смен ПРЕДВАРИТЕЛЬНЫЕ — точные будут 15.10.2026,
 // и об этом сказано на самой странице открытым текстом, а не мелким шрифтом.
@@ -45,7 +45,7 @@ const sections = [
     text: 'Мы предпочитаем сказать прямо, где у нас точность, а где ещё рамка.',
     list: [
       `Известно точно: ${SHIFTS_PHRASE}, по две в каждом из месяцев (${SEASON_MONTHS_LIST_2027}), каждая на ${SUMMER_2027[0].duration}, ${SEATS_PER_SHIFT_2027} мест`,
-      `Известно точно: стоимость смены — ${PRICE_LETO_2027}, проживание, пятиразовое питание, программа и бассейн включены`,
+      `Известно точно: ${PRICE_LETO_2027} при ранней записи вместо ${PRICE_LETO_2027_FULL} — выгода ${DISCOUNT_LETO_2027}. Проживание, пятиразовое питание, программа и бассейн включены`,
       `Уточняется: конкретные числа заездов. Сейчас это «первая» и «вторая половина месяца» — точные даты будут ${DATES_KNOWN}`,
       'Уточняется: состав программы на сезон — обновляем каждый год, чтобы вернувшимся ребятам не было повторов',
     ],
@@ -80,7 +80,7 @@ const sections = [
     breadcrumb="Лето 2027"
     keywords={[
       `${SHIFTS_PHRASE.charAt(0).toUpperCase() + SHIFTS_PHRASE.slice(1)}: по две в каждом месяце (${SEASON_MONTHS_LIST_2027})`,
-      `14 дней, ${SEATS_PER_SHIFT_2027} мест на смену, ${PRICE_LETO_2027}`,
+      `${SUMMER_2027[0].duration}, ${SEATS_PER_SHIFT_2027} мест, ${PRICE_LETO_2027} вместо ${PRICE_LETO_2027_FULL}`,
       `${STAT_DISTANCE} от Москвы, IT-программа, бассейн, питание`,
     ]}
     image="/images/hero/lager-na-leto-2026.avif"
@@ -110,6 +110,7 @@ const sections = [
             <th class="px-4 py-2.5 text-left">Дней</th>
             <th class="px-4 py-2.5 text-left">Мест</th>
             <th class="px-4 py-2.5 text-right font-bold text-slate-700">Цена</th>
+            <th class="px-4 py-2.5 text-right font-bold text-slate-700">При ранней записи</th>
           </tr>
         </thead>
         <tbody>
@@ -119,6 +120,7 @@ const sections = [
               <td class="px-4 py-2.5 text-slate-500">{s.dates}</td>
               <td class="px-4 py-2.5 text-slate-500">{s.duration}</td>
               <td class="px-4 py-2.5 text-slate-500">{s.free}</td>
+              <td class="px-4 py-2.5 text-right text-slate-400 line-through">{PRICE_LETO_2027_FULL}</td>
               <td class="px-4 py-2.5 text-right font-bold text-primary">{s.price}</td>
             </tr>
           ))}
@@ -126,6 +128,8 @@ const sections = [
       </table>
     </div>
     <p class="mt-3 text-base text-slate-400">
+      <strong class="font-semibold text-slate-700">Цена при ранней записи — {PRICE_LETO_2027} вместо {PRICE_LETO_2027_FULL}, выгода {DISCOUNT_LETO_2027}.</strong>
+      Она действует, пока идёт предзапись, и фиксируется договором при бронировании.
       В стоимость входят проживание, пятиразовое питание, IT-программа и бассейн.
       Пока сезон 2027 готовится, ближайшие заезды — <a href="/lager-na-osennie-kanikuly/" class="text-primary hover:underline">осенние каникулы</a>
       и зимняя смена; их даты уже точные.
@@ -145,7 +149,7 @@ const sections = [
 
   <FAQ extraItems={[
     { q: 'Когда будут известны точные даты смен на лето 2027?', a: `${DATES_KNOWN} 2026 года. Сетка уже утверждена — ${SHIFTS_PHRASE} по ${SUMMER_2027[0].duration}, по две в каждом месяце (${SEASON_MONTHS_LIST_2027}); уточняются конкретные числа заездов. Кто оставил заявку, получит даты первым, до общего объявления.` },
-    { q: 'Сколько стоит смена в лагере летом 2027?', a: `${PRICE_LETO_2027} за ${SUMMER_2027[0].duration}. В стоимость входят проживание, пятиразовое питание, IT-программа и бассейн. Стоимость окончательная, она не изменится после объявления дат.` },
+    { q: 'Сколько стоит смена в лагере летом 2027?', a: `${PRICE_LETO_2027} за ${SUMMER_2027[0].duration} при ранней записи — вместо ${PRICE_LETO_2027_FULL}, выгода ${DISCOUNT_LETO_2027}. В стоимость входят проживание, пятиразовое питание, IT-программа и бассейн. Стоимость окончательная, она не изменится после объявления дат.` },
     { q: 'Сколько смен и какой они длительности?', a: `${SHIFTS_PHRASE.charAt(0).toUpperCase() + SHIFTS_PHRASE.slice(1)}, каждая по ${SUMMER_2027[0].duration}: по две в каждом месяце (${SEASON_MONTHS_LIST_2027}). На смене ${SEATS_PER_SHIFT_2027} мест.` },
     { q: 'Можно ли забронировать место уже сейчас?', a: `Пока идёт предзапись, а не бронирование: фиксировать место на неподтверждённые даты было бы нечестно. Заявка ничего не стоит и ни к чему не обязывает — она означает, что мы напишем вам ${DATES_KNOWN}, когда даты станут точными.` },
     { q: 'С какого возраста берёте?', a: 'С 7 лет. Возрастные группы: 7–9, 10–12, 13–15 лет, у каждой своя программа.' },
