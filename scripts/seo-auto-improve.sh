@@ -1,6 +1,11 @@
 #!/bin/bash
 # SEO Auto-Improve: читает план с сервера, улучшает топ-2 страницы, деплоит на dev, шлёт TG
 # Cron: 30 9 * * 2 (вторник 9:30 — после того как seo_advisor.py отработал в 8:00)
+#
+# ⛔ НЕАКТИВЕН с 08.09.2026. Источник планов — SEO-ETL (/opt/seo-etl/plans) — списан
+# 14.07.2026 решением владельца и в архиве; с тех пор скрипт каждый вторник слал
+# «план не найден на сервере». Крон на маке выключен (#DISABLED_NOISE в crontab).
+# Уведомления идут через единую точку /opt/scripts/notify.sh на проде, не своим ботом.
 set -e
 
 REPO_DIR="/Users/vladimirafanasev/Aidacamp-cloude"
@@ -8,8 +13,6 @@ SSH_KEY="$HOME/.ssh/aidacamp_prod"
 SERVER="root@159.194.223.55"
 PLANS_DIR="/opt/seo-etl/plans"
 LOG="$REPO_DIR/logs/seo-auto-improve.log"
-TG_BOT="8619240142:AAEZluPyzdCTDNEiRFSLt7I8Ka4dC8ntfHc"
-TG_CHAT="244314247"
 CLAUDE_BIN="$HOME/.local/bin/claude"
 
 mkdir -p "$REPO_DIR/logs"
@@ -19,19 +22,16 @@ echo "=== SEO Auto-Improve $(date '+%Y-%m-%d %H:%M:%S') ==="
 
 # --- Утилиты ---
 
+# Уведомления — только через единую точку на проде (маршрутизация, тег, журнал notify_log).
+# Кнопки reply-клавиатуры точка не умеет — текст уходит без них.
 tg() {
   local text="$1"
-  curl -s -X POST "https://api.telegram.org/bot${TG_BOT}/sendMessage" \
-    -H "Content-Type: application/json" \
-    -d "{\"chat_id\":\"${TG_CHAT}\",\"text\":$(echo "$text" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'),\"parse_mode\":\"HTML\"}" > /dev/null
+  ssh -i "$SSH_KEY" "$SERVER" "/opt/scripts/notify.sh -t seo \"\$(cat)\"" <<< "$text" || \
+    echo "не удалось отправить уведомление: ${text:0:80}"
 }
 
 tg_with_buttons() {
-  local text="$1"
-  local buttons="$2"
-  curl -s -X POST "https://api.telegram.org/bot${TG_BOT}/sendMessage" \
-    -H "Content-Type: application/json" \
-    -d "{\"chat_id\":\"${TG_CHAT}\",\"text\":$(echo "$text" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'),\"parse_mode\":\"HTML\",\"reply_markup\":{\"keyboard\":${buttons},\"one_time_keyboard\":true,\"resize_keyboard\":true}}" > /dev/null
+  tg "$1"
 }
 
 # Перевод URL → путь к .astro файлу
