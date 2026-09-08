@@ -16,7 +16,7 @@ import Footer from '../../components/Footer.astro';
 import ShiftBookModal from '../../components/shifts/ShiftBookModal.astro';
 import ShiftTimeline from '../../components/shifts/ShiftTimeline.astro';
 import WaitlistInfoIcon from '../../components/shifts/WaitlistInfoIcon.astro';
-import { allShifts, shiftInfo, type Shift, getAvailabilityLevel, getBookingCta, WAITLIST_EXPLANATION, SEASON_YEAR } from '../../data/shifts';
+import { allShifts, shiftInfo, type Shift, getAvailabilityLevel, getBookingCta, WAITLIST_EXPLANATION, getShiftSeason, shiftYearLabel } from '../../data/shifts';
 import { getCurrentPrice, getTaxDeduction, fmtPrice } from '../../data/dynamicPrices';
 import { getShiftPhase } from '../../data/dynamicPrices';
 import { getNextSeason } from '../../data/seasons';
@@ -70,13 +70,28 @@ const ssrPrice    = getCurrentPrice(shift.id) ?? parseInt(shift.price.replace(/\
 const ssrPriceFmt = fmtPrice(ssrPrice);
 const ssrVychet   = getTaxDeduction(shift.id);
 
+// Сезон и год берём из САМОЙ смены, а не из глобального SEASON_YEAR (08.09.2026).
+// До этого шаблон писал «летняя смена» всем: на проде висело «Зимняя смена:
+// летняя смена в IT-лагере» и «Осенняя смена: летняя смена» — на страницах,
+// которые продаются прямо сейчас. Год у зимней смены был 2026, хотя она
+// заканчивается 8 января 2027.
+const season = getShiftSeason(shift);
+const seasonAdj = season.adj;                    // «летняя» / «осенняя» / «зимняя»
+const seasonAdjCap = seasonAdj.charAt(0).toUpperCase() + seasonAdj.slice(1);
+const shiftYear = shiftYearLabel(shift);         // «2026» или «2026/2027»
+// У именованных смен сезон уже в названии («Осенняя смена»), и добавлять его
+// второй раз даёт «Осенняя смена: осенняя смена». У нумерованных («Смена 3»)
+// сезон, наоборот, нужен. Поэтому подпись строится по факту, а не по id.
+const nameHasSeason = shift.name.toLowerCase().includes(seasonAdj);
+const seasonSuffix = nameHasSeason ? '' : `${seasonAdj} смена `;
+
 // SEO
 const seoTitle = shift.id === 'shift-3'
-  ? `${shift.name} IT-лагеря — летняя смена, ${startDay}—${endDay} ${months[startMonth]} ${SEASON_YEAR} | АйДаКемп`
-  : `${shift.name} IT-лагеря — летняя смена в Подмосковье, ${shift.dates} ${SEASON_YEAR} | АйДаКемп`;
+  ? `${shift.name} IT-лагеря — ${seasonAdj} смена, ${startDay}—${endDay} ${months[startMonth]} ${shiftYear} | АйДаКемп`
+  : `${shift.name} IT-лагеря${nameHasSeason ? '' : ` — ${seasonAdj} смена`} в Подмосковье, ${shift.dates} ${shiftYear} | АйДаКемп`;
 const seoDescription = shift.id === 'shift-3'
-  ? `Летняя смена в лагере в Подмосковье: Python, AI, хакатон, бассейн, 5-разовое питание. ${shift.duration}, возраст 7–15, ${ssrPriceFmt} — всё включено, доплат нет.`
-  : `Летняя смена в лагере под Москвой: Python, AI, хакатон. ${shift.duration}, возраст 7–15, ${ssrPriceFmt} всё включено. Купить смену в IT-лагерь — смены лагерей с ${shift.dates} ${SEASON_YEAR}.`;
+  ? `${seasonAdjCap} смена в лагере в Подмосковье: Python, AI, хакатон, бассейн, 5-разовое питание. ${shift.duration}, возраст 7–15, ${ssrPriceFmt} — всё включено, доплат нет.`
+  : `${seasonAdjCap} смена в лагере под Москвой: Python, AI, хакатон. ${shift.duration}, возраст 7–15, ${ssrPriceFmt} всё включено. Купить смену в IT-лагерь — смены лагерей с ${shift.dates} ${shiftYear}.`;
 const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
 ---
 
@@ -92,7 +107,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
         {
           "@type": ["EducationEvent", "ChildrensEvent"],
           "@id": `https://aidacamp.ru/shifts/${shift.id}/`,
-          "name": `${shift.name} — АйДаКемп ${shift.dates} ${SEASON_YEAR}`,
+          "name": `${shift.name} — АйДаКемп ${shift.dates} ${shiftYear}`,
           "description": shift.description,
           "startDate": shift.startDate,
           "endDate": shift.endDate,
@@ -194,7 +209,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
         <!-- Eyebrow tag -->
         <p class="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md px-3 py-1 text-[12px] font-bold uppercase tracking-[0.14em] text-white">
           <span class="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true"></span>
-          {shift.name} · Лето {SEASON_YEAR}{shift.popular ? ' · Популярная' : ''}
+          {shift.name} · {season.nom} {shiftYear}{shift.popular ? ' · Популярная' : ''}
         </p>
 
         <!-- Occupancy badge -->
@@ -224,7 +239,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
         )}
 
         <!-- BIG DATES (как в концепте «10—23 июня») -->
-        <h1 class="sr-only">{shift.id === 'shift-3' ? `${shift.name}: летняя смена в лагере Подмосковья` : `${shift.name}: летняя смена в IT-лагере Подмосковья — ${shift.dates} ${SEASON_YEAR}`}</h1>
+        <h1 class="sr-only">{shift.id === 'shift-3' ? `${shift.name}: ${seasonAdj} смена в лагере Подмосковья` : `${shift.name}${nameHasSeason ? '' : `: ${seasonAdj} смена`} в IT-лагере Подмосковья — ${shift.dates} ${shiftYear}`}</h1>
         <p class="font-extrabold leading-[1.0] tracking-[-0.02em]" style="font-size: clamp(40px, 7vw, 80px);">
           <span class="text-white" style="text-shadow: 0 4px 16px rgba(0,0,0,0.5);">{shift.dates.split('—')[0].trim()} —</span>
           <span class="hero-outline"> {shift.dates.split('—')[1]?.trim() ?? ''}</span>
@@ -234,7 +249,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
           <strong class="font-bold text-white">{shift.duration}</strong> · Санаторий «Изумруд» · 66 км от Москвы
         </p>
         <p class="mt-2 text-base text-white/70 max-w-[640px]" style="text-shadow: 0 1px 3px rgba(0,0,0,0.7);">
-          Летние смены лагерей {SEASON_YEAR} для школьников 7–15 лет. Смена в лагере — проживание, питание, IT-программа всё включено.
+          {season.nom === 'Лето' ? 'Летние' : season.nom === 'Осень' ? 'Осенние' : season.nom === 'Зима' ? 'Зимние' : 'Весенние'} смены лагерей {shiftYear} для школьников 7–15 лет. Смена в лагере — проживание, питание, IT-программа всё включено.
         </p>
 
         <!-- Meta block: price + occupancy + CTA -->
@@ -410,7 +425,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
     {shift.id === 'shift-3' && (
       <section class="mx-auto max-w-[760px] px-5 pb-4 md:px-8">
         <p class="text-base leading-[1.6] text-body-muted">
-          На этой смене в лагере — не про пассивный отдых у бассейна. Ребята приезжают в лагерь на {shift.duration}: {shift.dates} {SEASON_YEAR} года, санаторий «Изумруд» в Наро-Фоминском округе, 66 км от Москвы. Территория лагеря большая: бассейн и лес — жизнь лагеря не сводится к монитору. Группы смены — до 8 человек, тренер успевает разобраться с каждым проектом лично, а вечерами вместе с ребятами гуляет по лагерю. Программа смены строится вокруг Python и нейросетей: с первого дня в лагере ребята пишут код своими руками, а не слушают теорию с доски. Вечером — настолки и разговоры: распорядок лагеря устроен так, чтобы кодинг не занимал весь день. К финалу смены каждый защищает свой проект на хакатоне и увозит его домой рабочим — не сертификат, а результат. Стоимость — {ssrPriceFmt}, всё включено: проживание, питание и программа лагеря без доплат. Заявку в лагерь на эту смену стоит оставить заранее — свободных мест немного.
+          На этой смене в лагере — не про пассивный отдых у бассейна. Ребята приезжают в лагерь на {shift.duration}: {shift.dates} {shiftYear} года, санаторий «Изумруд» в Наро-Фоминском округе, 66 км от Москвы. Территория лагеря большая: бассейн и лес — жизнь лагеря не сводится к монитору. Группы смены — до 8 человек, тренер успевает разобраться с каждым проектом лично, а вечерами вместе с ребятами гуляет по лагерю. Программа смены строится вокруг Python и нейросетей: с первого дня в лагере ребята пишут код своими руками, а не слушают теорию с доски. Вечером — настолки и разговоры: распорядок лагеря устроен так, чтобы кодинг не занимал весь день. К финалу смены каждый защищает свой проект на хакатоне и увозит его домой рабочим — не сертификат, а результат. Стоимость — {ssrPriceFmt}, всё включено: проживание, питание и программа лагеря без доплат. Заявку в лагерь на эту смену стоит оставить заранее — свободных мест немного.
         </p>
       </section>
     )}

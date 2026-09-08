@@ -4,7 +4,7 @@ export type PortalRole = 'admin' | 'teacher' | 'student' | 'vozhaty' | 'rukovodi
 export const PORTAL_ROLES: PortalRole[] = ['admin', 'teacher', 'student', 'vozhaty', 'rukovoditel'];
 
 /** Срок жизни сессии — 30 дней. */
-export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 interface SessionPayload {
   role: PortalRole;

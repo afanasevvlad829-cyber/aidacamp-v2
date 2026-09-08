@@ -164,7 +164,14 @@ export function initShiftModal() {
   function showAgePeers(shiftId: string, age: string) {
     if (!shiftsData) return; // кнопки возраста живут внутри модалки → данные уже загружены
     const { PEER_COUNTS } = shiftsData;
-    const count = PEER_COUNTS[shiftId]?.[age] ?? PEER_COUNTS['shift-1']?.[age] ?? 8;
+    // ⛔ ВЫКЛЮЧЕНО 07.09.2026 по решению владельца («и ровесников»).
+    // Здесь был фолбэк: PEER_COUNTS[shiftId]?.[age] ?? PEER_COUNTS['shift-1']?.[age] ?? 8.
+    // Для смен без данных он брал счётчик у Смены 1 (закончилась в июне), а если
+    // и там пусто — подставлял число 8. То есть родителю показывалось выдуманное
+    // социальное доказательство: у осенних и зимней смен occupied = 0, никто ещё
+    // не забронировал. Теперь показываем ТОЛЬКО реальные данные, иначе молчим.
+    const count = PEER_COUNTS[shiftId]?.[age];
+    if (count === undefined) return;
     ageResult.textContent = `Уже едет ${count} ребят ${age} лет вашего возраста`;
     ageQ.classList.add('hidden');
     ageR.classList.remove('hidden');

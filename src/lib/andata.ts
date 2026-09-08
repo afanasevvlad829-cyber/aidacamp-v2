@@ -12,7 +12,7 @@ const ANDATA_CONTAINER_ID = '9c0aaeb2-3b5c-4f86-aebd-786c79f7314b';
 const ANDATA_TIMEOUT_MS = 3000;
 
 /** tag_id событий из Andata Tag Manager (см. ТЗ) */
-export const ANDATA_TAGS = {
+const ANDATA_TAGS = {
   order_new: 'a1d3354b-eb9c-4c58-bb42-950dcdf78740',
   order_paid: 'a1d33586-42a1-4c1b-9e9a-68b768180049',
 } as const;
