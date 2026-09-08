@@ -1,4 +1,4 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_MAX, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_S2, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_S2, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
 import { STAT_IT_CONTINUE } from '../contacts';
 import type { LandingData } from './types';
 import { otzyvyLink, yandexReviewsLink } from '../../lib/reviews-link';
@@ -16,7 +16,7 @@ const landing: LandingData = {
   faqItems: [
     { q: 'Как добраться из Балашихи?', a: `Около 120 км и ~1 ч 20 мин на машине: МКАД → Киевское шоссе (M-3) → Апрелевка. Удобнее доехать до м. Солнцево (около часа на метро) и сесть на трансфер АйДаКемп (${TRANSFER_PRICE_FMT}).` },
     { q: 'Есть ли прямой трансфер?', a: `Прямого трансфера нет. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} в один конец, с сопровождающим, отправляется в день заезда и обратно в день отъезда. Оттуда до Солнцево — около часа на метро (синяя ветка).` },
-    { q: 'Сколько стоит путёвка из Балашихи?', a: `От ${PRICE_MIN} (10 дней) до ${PRICE_MAX} (${DAYS_MAX}). В стоимость входят проживание, питание, IT-программа, бассейн. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} в один конец.` },
+    { q: 'Сколько стоит путёвка из Балашихи?', a: `От ${PRICE_MIN} (10 дней) до ${PRICE_MAX} (13 дней). В стоимость входят проживание, питание, IT-программа, бассейн. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} в один конец.` },
   ],
   courseSchema: {
     name: 'Детский IT-лагерь рядом с Балашихой — АйДаКемп',
