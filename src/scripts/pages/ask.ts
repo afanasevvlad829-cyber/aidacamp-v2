@@ -1453,6 +1453,16 @@ function pa(btn){
   btn.classList.add('on');
 }
 
+/** Промокод из общего модуля: код + расшифровка условий для CRM и Telegram. */
+function promoFields(){
+  try{
+    const code=sessionStorage.getItem('ac:promo')||'';
+    if(!code)return{};
+    const note=window.__promoNote?.();
+    return note?{promo:code,note_extra:note}:{promo:code};
+  }catch{return{};}
+}
+
 async function submitBooking(){
   const phoneEl=document.getElementById('popPhone');
   const phone=phoneEl.value.trim();
@@ -1475,7 +1485,7 @@ async function submitBooking(){
     await fetch('/api/lead',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({phone,shift,age,source:'ask-chat',sessionId,landing_url:location.href,page_title:document.title})
+      body:JSON.stringify({phone,shift,age,source:'ask-chat',sessionId,landing_url:location.href,page_title:document.title,...promoFields()})
     });
     if(typeof ym!=='undefined'){
       ym(YM_COUNTER,'reachGoal','ai_form_submit');

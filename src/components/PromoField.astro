@@ -1,0 +1,64 @@
+---
+/**
+ * PromoField — поле промокода + плашка со спецусловиями. Один компонент на все
+ * формы заявки сайта: модалка брони, история Дарьи, предзапись на сезон,
+ * баннер возврата, колесо фортуны.
+ *
+ * Логика (валидация, плашка, пересчёт цены, передача в заявку) — в
+ * src/scripts/promo.ts, инициализируется один раз на страницу и сама находит
+ * все поля с data-promo-input. Компонент отвечает только за разметку.
+ *
+ * Цену пересчитывает, если внутри той же формы есть элемент [data-promo-price]
+ * с атрибутом data-price="49900" — иначе просто показывает плашку.
+ */
+interface Props {
+  /** Заголовок над полем. */
+  label?: string;
+  /** Дополнительные классы обёртки — отступ под конкретную форму. */
+  class?: string;
+}
+const { label = 'Промокод', class: cls = 'mt-4' } = Astro.props;
+---
+
+<div class={cls} data-promo-root>
+  <p class="text-base font-semibold text-slate-700">
+    {label} <span class="font-normal text-slate-400">(если есть)</span>
+  </p>
+  <input
+    type="text"
+    data-promo-input
+    placeholder="Введите промокод"
+    autocomplete="off"
+    autocapitalize="characters"
+    spellcheck="false"
+    class="mt-2 h-[52px] w-full rounded-xl border border-slate-200 bg-white px-4 text-[16px] uppercase text-slate-700 placeholder:normal-case placeholder:text-slate-400 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+  />
+
+  <!-- Плашка спецусловий — заполняется скриптом, показывается при верном коде -->
+  <div
+    data-promo-ok
+    hidden
+    class="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5"
+    role="status"
+    aria-live="polite"
+  >
+    <p class="flex items-start gap-2 text-base font-semibold leading-snug text-emerald-800">
+      <i class="bi bi-check-circle-fill mt-[3px] shrink-0 text-[13px]" aria-hidden="true"></i>
+      <span data-promo-ok-title></span>
+    </p>
+    <p class="mt-0.5 pl-[21px] text-base leading-snug text-emerald-700" data-promo-ok-benefits></p>
+    <p hidden class="mt-1 pl-[21px] text-base leading-snug text-emerald-700" data-promo-ok-price></p>
+  </div>
+
+  <p data-promo-bad hidden class="mt-1.5 text-base text-red-500">
+    Такого промокода нет — проверьте написание
+  </p>
+</div>
+
+<script>
+  // Astro бандлит скрипт компонента один раз на страницу, даже если PromoField
+  // вставлен в несколько форм — initPromoFields() сам обойдёт все поля и
+  // защищён от повторной инициализации.
+  import { initPromoFields } from '../scripts/promo';
+  initPromoFields();
+</script>

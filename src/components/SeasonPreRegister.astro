@@ -1,5 +1,6 @@
 ---
 import { Icon } from 'astro-icon/components';
+import PromoField from './PromoField.astro';
 /**
  * SeasonPreRegister — заявка на сезонную смену (осень/зима/весна).
  *
@@ -137,6 +138,8 @@ const calCards = (calWindows ?? []).map((w) => ({
         </div>
       </div>
 
+      <PromoField class="mt-1" />
+
       <p id={`${uid}-error`} class="hidden text-base text-red-500">Укажите телефон — по нему напишем в WhatsApp, когда подтвердятся даты</p>
 
       <label class="flex cursor-pointer items-start gap-3 mt-1">
@@ -234,6 +237,14 @@ const calCards = (calWindows ?? []).map((w) => ({
         page_title: document.title,
         referrer: document.referrer,
       };
+      // Промокод — общий модуль: код в отдельном поле, расшифровка условий
+      // в note_extra (её читают Telegram-уведомление и примечание CRM).
+      const { getStoredPromoCode, promoNoteForLead } = await import('../scripts/promo');
+      const promoCode = getStoredPromoCode();
+      if (promoCode) {
+        body.promo = promoCode;
+        body.note_extra = promoNoteForLead();
+      }
       const urlParams = new URLSearchParams(window.location.search);
       ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','yclid','ysclid'].forEach(k => {
         const v = urlParams.get(k);
