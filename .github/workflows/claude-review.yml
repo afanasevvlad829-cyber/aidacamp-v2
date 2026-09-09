@@ -87,14 +87,23 @@ jobs:
           # --setting-sources user: хуки проекта из .claude/settings.json
           # (session-start.sh, guard-*.py) в контейнере не нужны и не сработают.
           # Ошибка CLI не валит job: в PR уйдёт пометка, что ревью не удалось.
-          if ! claude -p "$(cat .github/claude-review-prompt.md)" \
+          # В режиме -p текст ошибки («Failed to authenticate…») CLI пишет в
+          # stdout, не в stderr — поэтому вывод сохраняем и показываем целиком.
+          if claude -p "$(cat .github/claude-review-prompt.md)" \
                 --tools "Read,Grep,Glob" \
                 --allowedTools "Read,Grep,Glob" \
                 --setting-sources user \
                 --no-session-persistence \
-                --output-format text > /tmp/review.md 2> /tmp/review.err; then
-            echo "claude завершился с ошибкой:"; cat /tmp/review.err
-            printf '**Вердикт:** ревью не выполнено\n\nCLI завершился с ошибкой — смотри лог прогона.\n' > /tmp/review.md
+                --output-format text > /tmp/review.out 2> /tmp/review.err; then
+            cp /tmp/review.out /tmp/review.md
+          else
+            echo "claude завершился с ошибкой. stdout:"; cat /tmp/review.out
+            echo "stderr:"; cat /tmp/review.err
+            {
+              printf '**Вердикт:** ревью не выполнено\n\nCLI завершился с ошибкой:\n\n```\n'
+              head -c 1500 /tmp/review.out; head -c 500 /tmp/review.err
+              printf '\n```\n'
+            } > /tmp/review.md
           fi
           echo "--- review.md ---"; cat /tmp/review.md
 
