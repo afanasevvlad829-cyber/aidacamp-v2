@@ -102,6 +102,46 @@ fi
 echo "  проверено редирект-слагов: $CHECKED"
 
 echo ""
+echo "── 3. Стили: главная реально получает Tailwind ──"
+# Вторая линия после check-css-utilities.mjs (тот проверяет dist/, этот — живой сайт).
+# Инцидент 08.09.2026: главный CSS публичной части похудел с 220 КБ до 25 КБ, сайт
+# 12 часов отдавался голым HTML. Все коды ответов при этом были 200, файлы на месте —
+# поэтому smoke обязан смотреть В содержимое CSS, а не только на его доступность.
+CSS_HREF=$(curl -s --max-time 15 "$BASE/" | grep -oE 'href=["'"'"']?/_astro/[A-Za-z0-9._-]+\.css' | sed 's|href=["'"'"']*||' | head -1)
+if [ -z "$CSS_HREF" ]; then
+  printf '  ❌ %-44s\n' "на главной нет <link> на /_astro/*.css"; FAIL=$((FAIL + 1))
+else
+  CSS_BODY=$(curl -s --max-time 20 "$BASE$CSS_HREF")
+  CSS_SIZE=$(printf '%s' "$CSS_BODY" | wc -c | tr -d ' ')
+  if printf '%s' "$CSS_BODY" | grep -q '\.flex{'; then
+    printf '  ✅ %-44s %s байт\n' "Tailwind в подключённом CSS" "$CSS_SIZE"
+  else
+    printf '  ❌ %-44s %s байт (сайт без стилей!)\n' "утилит Tailwind нет в" "$CSS_SIZE"; FAIL=$((FAIL + 1))
+  fi
+fi
+
+echo ""
+echo "── 4. CSRF: form-POST со своим Origin проходит, с чужим — 403 ──"
+# checkOrigin (Astro) сравнивает Origin с URL запроса; за nginx URL собирается из
+# X-Forwarded-Proto + Host под security.allowedDomains. Если что-то из этого
+# разъедется — свой Origin получит 403 и вход в портал сломается молча (апрель 2026).
+# Пробуем один неверный код: ожидаем любой ответ, кроме 403/000 (рейт-лимит логина —
+# 10 попыток в минуту с IP, одна попытка на smoke укладывается).
+csrf_post() { curl -s -o /dev/null -w "%{http_code}" --max-time 15 -X POST -H "Origin: $1" \
+  -H "Content-Type: application/x-www-form-urlencoded" --data "password=000000" "$BASE/api/portal/login" || echo "000"; }
+c_own=$(csrf_post "$BASE"); c_evil=$(csrf_post "https://evil.example")
+if [ "$c_own" != "403" ] && [ "$c_own" != "000" ]; then
+  printf '  ✅ %-44s %s\n' "свой Origin → не 403" "$c_own"
+else
+  printf '  ❌ %-44s %s\n' "свой Origin получил" "$c_own"; FAIL=$((FAIL + 1))
+fi
+if [ "$c_evil" = "403" ]; then
+  printf '  ✅ %-44s %s\n' "чужой Origin → 403" "$c_evil"
+else
+  printf '  ❌ %-44s %s (защита не работает)\n' "чужой Origin получил" "$c_evil"; FAIL=$((FAIL + 1))
+fi
+
+echo ""
 if [ "$FAIL" -gt 0 ]; then
   echo "❌ SMOKE FAILED: $FAIL проблем"
   exit 1

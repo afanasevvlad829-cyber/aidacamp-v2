@@ -13,7 +13,7 @@ import BenefitCalculator from '../components/BenefitCalculator.astro';
 import { getRelatedPages } from '../data/landing-pages';
 import { DAYS_MAX, DAYS_MIN, DAYS_S1, DAYS_S2, DAYS_S21, DAYS_S22, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S1, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_S1, VYCHET_S2, VYCHET_S21, VYCHET_S22, VYCHET_S3, VYCHET_S4, mainShifts, shortShifts } from '../data/shifts';
 import AskCta from '../components/AskCta.astro';
-import { isSalesOpen } from '../data/dynamicPrices';
+import { isSalesOpen, getOpenShifts } from '../data/dynamicPrices';
 import { getNextSeason } from '../data/seasons';
 
 /* Сезон закрыт (ни одной смены в фазе 'upcoming') — таблица остаётся справкой
@@ -21,6 +21,19 @@ import { getNextSeason } from '../data/seasons';
    и счётчик свободных мест. Проверка по датам через isSalesOpen(), не хардкодом. */
 const salesOpen = isSalesOpen();
 const nextSeason = getNextSeason();
+
+/* Цены в заголовках — только по сменам, которые реально можно купить.
+   PRICE_MIN/PRICE_MAX считаются по всему mainShifts, включая завершённые:
+   до 08.09.2026 подзаголовок звал «до 89 400 ₽ за 13 дней» — на Смену 3,
+   закрытую с августа. Диапазон схлопывается в одну цену, если она одна. */
+const _openShifts = getOpenShifts();
+const _openNum = (p: string) => parseInt(p.replace(/[^\d]/g, ''), 10);
+const _openSorted = [..._openShifts].sort((a, b) => _openNum(a.price) - _openNum(b.price));
+const OPEN_PRICE_MIN = _openSorted[0]?.price ?? PRICE_MIN;
+const OPEN_PRICE_MAX = _openSorted[_openSorted.length - 1]?.price ?? PRICE_MAX;
+const OPEN_PRICE_RANGE = OPEN_PRICE_MIN === OPEN_PRICE_MAX
+  ? OPEN_PRICE_MIN
+  : `от ${OPEN_PRICE_MIN} до ${OPEN_PRICE_MAX}`;
 import { getCurrentPrice } from '../data/dynamicPrices';
 import { PAYMENT_SPLIT, STAT_RATING } from '../data/contacts';
 
@@ -192,9 +205,9 @@ const sections = [
 ---
 
 <LandingLayout
-  title={`Цены на путевки в детский летний лагерь Подмосковья смена ${SEASON_YEAR}`}
-  description={`Цены на детский лагерь АйДаКемп ${SEASON_YEAR}: путёвки от ${PRICE_MIN} за смену в Подмосковье. Питание, проживание, IT-программа, бассейн включены. Налоговый вычет 13% до ${VYCHET_MAX}, рассрочка.`}
-  h1={`Цены на детские смены ${SEASON_YEAR} — летний лагерь в Подмосковье`}
+  title="Цены на путёвки в детский лагерь в Подмосковье — стоимость смен и что входит"
+  description={`Цены на детский лагерь АйДаКемп: путёвки ${OPEN_PRICE_RANGE} за смену в Подмосковье. Питание, проживание, IT-программа, бассейн включены. Налоговый вычет 13% до ${VYCHET_MAX}, рассрочка.`}
+  h1="Цены на путёвки в детский лагерь в Подмосковье"
   canonical="https://aidacamp.ru/ceny"
   heroImage="/images/hero/kupit-putevku-v-lager.avif"
   breadcrumb="Расценки"
@@ -311,9 +324,9 @@ const sections = [
     ])} />
   </Fragment>
   <LandingHero slot="hero"
-    h1={`Цены на детские смены ${SEASON_YEAR} — летний лагерь в Подмосковье`}
+    h1="Цены на путёвки в детский лагерь в Подмосковье"
     subtitle={salesOpen
-      ? `Заезды в детский лагерь в Подмосковье на ${SEASON_YEAR} год: от ${PRICE_MIN} за ${DAYS_MIN} до ${PRICE_MAX} за ${DAYS_MAX}. Проживание, питание, IT-программа и бассейн — всё включено без скрытых доплат.`
+      ? `Заезды в детский лагерь в Подмосковье, открытые к записи: ${OPEN_PRICE_RANGE} за смену. Проживание, питание, IT-программа и бассейн — всё включено без скрытых доплат.`
       : nextSeason
         ? `Летний сезон ${SEASON_YEAR} завершён — суммы ниже сохранены для ориентира. Ближайший заезд: ${nextSeason.shortName}, ${nextSeason.seasonMeta.dates}, ${nextSeason.seasonMeta.price}. Проживание, питание, IT-программа и бассейн — всё включено без скрытых доплат.`
         : `Суммы летнего сезона ${SEASON_YEAR} — от ${PRICE_MIN} за ${DAYS_MIN} до ${PRICE_MAX} за ${DAYS_MAX}. Проживание, питание, IT-программа и бассейн — всё включено без скрытых доплат.`}
