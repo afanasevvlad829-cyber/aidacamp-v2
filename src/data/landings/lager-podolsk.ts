@@ -1,4 +1,4 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_S2, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_S2, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
 import { STAT_RATING } from '../contacts';
 import { otzyvyLink, yandexReviewsLink } from '../../lib/reviews-link';
 import type { LandingData } from './types';
@@ -22,7 +22,7 @@ const landing: LandingData = {
     { q: 'Подольск: как добраться до АйДаКемп?', a: `Отсюда это санаторий «Изумруд», 66 км от МКАД по Киевскому шоссе (~1 час на машине, без выезда на МКАД). Либо до м. Солнцево (Солнцевская линия), дальше трансфер — ${TRANSFER_PRICE_FMT} в один конец, с сопровождающим.` },
     { q: 'Нужен ли опыт программирования?', a: 'Нет. Принимаем ребят 7–15 лет с любым уровнем подготовки. Группы начинающих (с нуля), средний и продвинутый уровень — до 8 человек в группе.' },
     { q: 'Что входит в стоимость путёвки?', a: `Проживание, 5-разовое питание, IT-программа (Python, AI, Minecraft, Roblox, 3D), бассейн. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} в один конец.` },
-    { q: `Когда проходят смены в ${SEASON_YEAR}?`, a: `Сезон ${SEASON_YEAR}: ${DATES_SHORT_S21} (7 дней, завершена), ${DATES_SHORT_S2} (14 дней, завершена), ${DATES_SHORT_S3} (13 дней), ${DATES_SHORT_S4} (10 дней). Открыты к брони августовские смены — места ещё есть.` },
+    { q: `Когда проходят смены в ${SEASON_YEAR}?`, a: `Сезон ${SEASON_YEAR}: ${DATES_SHORT_S21} (${DAYS_S21}, завершена), ${DATES_SHORT_S2} (${DAYS_S2}, завершена), ${DATES_SHORT_S3} (${DAYS_S3}), ${DATES_SHORT_S4} (${DAYS_S4}). Открыты к брони августовские смены — места ещё есть.` },
   ],
   courseSchema: {
     name: 'IT-лагерь АйДаКемп для школьников',
@@ -102,10 +102,10 @@ const landing: LandingData = {
       h2: `Смены ${SEASON_YEAR} — цены и наличие мест`,
       text: 'Августовские смены открыты к брони — места ещё есть, бронируйте сейчас. В стоимость включены проживание, питание, полная IT-программа, бассейн, активности. Лагерь принимает ребят на все смены сезона.',
       list: [
-        `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, 7 дней, ${PRICE_S21} (налоговый вычет ~${VYCHET_S21})`,
-        `Смена 2 (завершена) — ${DATES_SHORT_S2}, 14 дней, ${PRICE_S2} (налоговый вычет до ${VYCHET_S2})`,
-        `Смена 3 — ${DATES_SHORT_S3}, 13 дней, ${PRICE_S3} (налоговый вычет ~${VYCHET_S3})`,
-        `Смена 4 — ${DATES_SHORT_S4}, 10 дней, ${PRICE_S4} (налоговый вычет ~${VYCHET_S4})`,
+        `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, ${DAYS_S21}, ${PRICE_S21} (налоговый вычет ~${VYCHET_S21})`,
+        `Смена 2 (завершена) — ${DATES_SHORT_S2}, ${DAYS_S2}, ${PRICE_S2} (налоговый вычет до ${VYCHET_S2})`,
+        `Смена 3 — ${DATES_SHORT_S3}, ${DAYS_S3}, ${PRICE_S3} (налоговый вычет ~${VYCHET_S3})`,
+        `Смена 4 — ${DATES_SHORT_S4}, ${DAYS_S4}, ${PRICE_S4} (налоговый вычет ~${VYCHET_S4})`,
         `Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT}`,
       ],
     },
