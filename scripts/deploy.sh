@@ -154,6 +154,43 @@ esac
 
 cd "$PROJECT_DIR"
 
+# ── Remote deploy lock ─────────────────────────────────────────
+# Инцидент 09.09.2026: два деплоя на prod с разных машин/worktree стартовали
+# почти одновременно (два бэкапа с разницей 1м51с). Rsync каждого дошёл до
+# сервера — контент отдал тот, что финишировал последним, а .deployed-sha
+# записал тот, чей `git rev-parse HEAD` (в самом хвосте скрипта, уже после
+# многоминутной сборки) выполнился последним. Это НЕ обязательно тот же
+# процесс — итог: живой контент от одного деплоя, маркер от другого.
+# mkdir на сервере атомарен — им и блокируем: второй параллельный запуск
+# видит чужой лок и падает сразу, а не гоняется взапуски до самого rsync.
+LOCK_DIR="/var/www/aidacamp/.deploy-${TARGET}.lock"
+LOCK_MAX_AGE_SEC=1200  # дольше самого долгого нормального деплоя — если лок
+                       # старше, прошлый процесс почти наверняка упал без trap
+                       # (kill -9, обрыв сессии) и лок можно снять как протухший.
+if ! ssh -i "$SSH_KEY_PROD" "$SSH_HOST" "mkdir '$LOCK_DIR' 2>/dev/null"; then
+  LOCK_AGE=$(ssh -i "$SSH_KEY_PROD" "$SSH_HOST" \
+    "echo \$(( \$(date +%s) - \$(stat -c %Y '$LOCK_DIR' 2>/dev/null || echo 0) ))" 2>/dev/null || echo 0)
+  if [ "$LOCK_AGE" -gt "$LOCK_MAX_AGE_SEC" ] 2>/dev/null; then
+    echo "⚠️  Лок $LOCK_DIR старше ${LOCK_MAX_AGE_SEC}с (${LOCK_AGE}с) — считаю протухшим, снимаю."
+    ssh -i "$SSH_KEY_PROD" "$SSH_HOST" "rmdir '$LOCK_DIR' 2>/dev/null" || true
+    ssh -i "$SSH_KEY_PROD" "$SSH_HOST" "mkdir '$LOCK_DIR'" || {
+      echo "❌ DEPLOY BLOCKED: не удалось перевзять лок $LOCK_DIR после снятия протухшего."
+      exit 1
+    }
+  else
+    echo "❌ DEPLOY BLOCKED: другой деплой на $TARGET уже идёт (лок $LOCK_DIR, возраст ${LOCK_AGE}с)."
+    echo "   Подожди его завершения и запусти снова. Если знаешь, что он мёртв:"
+    echo "     ssh -i $SSH_KEY_PROD $SSH_HOST \"rmdir $LOCK_DIR\""
+    exit 1
+  fi
+fi
+trap 'ssh -i "$SSH_KEY_PROD" "$SSH_HOST" "rmdir '"'"'$LOCK_DIR'"'"'" 2>/dev/null || true' EXIT
+
+# Коммит фиксируем ЗДЕСЬ, а не в хвосте скрипта: раньше `git rev-parse HEAD`
+# читался после многоминутной сборки, и с этим локом уже не нужно защищаться
+# от гонки — но само чтение HEAD как можно раньше остаётся правильнее.
+DEPLOY_SHA=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+
 # ── 0. Сборка ─────────────────────────────────────────────────
 # SKIP_BUILD=1 — переиспользовать уже собранный dist/ вместо пересборки.
 # Используется в CI (.github/workflows/deploy.yml): один npm run build на весь
@@ -501,7 +538,7 @@ fi
 
 
 # Запишем SHA задеплоенного коммита на сервер для drift-check (cron алертит при расхождении)
-DEPLOY_SHA=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+# DEPLOY_SHA вычислен в начале скрипта (см. лок выше), не здесь.
 ssh -i "$SSH_KEY" "$SSH_HOST" "echo $DEPLOY_SHA > $REMOTE_DIR/.deployed-sha" 2>/dev/null || true
 
 echo ""
