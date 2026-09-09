@@ -458,9 +458,10 @@ function createPR(pagesCount) {
   if (DRY_RUN) return;
   try {
     execSync(
-      `gh pr create --base dev --head "${BRANCH}" `
+      // PR в Forgejo через tea (gh не используется с 08.09.2026 — аккаунт GitHub заблокирован)
+      `tea pr create --base dev --head "${BRANCH}" `
     + `--title "feat(seo): SEO-фабрика ${TODAY} — ${pagesCount} страниц" `
-    + `--body "Автоматически сгенерировано SEO-фабрикой.\\n\\n`
+    + `--description "Автоматически сгенерировано SEO-фабрикой.\\n\\n`
     + `**Страниц создано:** ${pagesCount}\\n`
     + `**Дата:** ${TODAY}\\n\\n`
     + `Каждая страница: НЧ/СЧ кластер без позиции → Astro лендинг → FAQPage schema."`,
