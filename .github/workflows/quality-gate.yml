@@ -48,6 +48,13 @@ jobs:
       # Невалидный workflow не падает громко — он получает startup_failure
       # и молча не выполняется. Так guard-agent-prs.yml 2.5 месяца числился
       # защитой и не срабатывал ни разу (сломан 2026-04-24, найден 2026-07-08).
+      # PyYAML на раннере Forgejo не предустановлен (образ node:22-bookworm),
+      # в отличие от ubuntu-latest на GitHub. Ставим явно — иначе шаг падает
+      # с ModuleNotFoundError и роняет весь quality-gate (найдено 08.09.2026
+      # при первом прогоне на своём CI).
+      - name: PyYAML для проверки workflow
+        run: python3 -m pip install --quiet --break-system-packages pyyaml || pip3 install --quiet pyyaml
+
       - name: Валидность workflow-файлов
         run: |
           python3 - <<'PY'

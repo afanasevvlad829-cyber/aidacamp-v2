@@ -151,6 +151,10 @@ export async function submitLead(data: {
   source?: string;
   form?: string;
   call_time?: string;
+  /** Промокод, введённый в форме (канонический вид, см. data/promo.ts). */
+  promo?: string;
+  /** Шапка примечания для CRM/Telegram — расшифровка промокода, цена со скидкой. */
+  note_extra?: string;
 }): Promise<boolean> {
   (window as any).trackGoal?.('form_submit', { form: data.form || 'booking', age: data.age });
 
@@ -172,6 +176,8 @@ export async function submitLead(data: {
         // form_id раньше не отправлялся вовсе — leads_log.form_id был пуст,
         // из-за чего нельзя было понять, какая форма дала заявку (инцидент 03.07.2026)
         form_id: data.form || '',
+        promo: data.promo || '',
+        note_extra: data.note_extra || '',
         ...ctx,
         ym_client_id,
       }),
