@@ -14,16 +14,19 @@
 #   ./scripts/release.sh          # собрать и выкатить прод
 #   ./scripts/release.sh --dev    # то же самое на dev-стенд
 #   ./scripts/release.sh --skip-build   # выкатить уже собранный dist/
+#   ./scripts/release.sh --force        # хотфикс мимо стражей (не из dev)
 #
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 TARGET="prod"
 SKIP_BUILD=0
+FORCE=0
 for arg in "$@"; do
   case "$arg" in
     --dev)        TARGET="dev" ;;
     --skip-build) SKIP_BUILD=1 ;;
+    --force)      FORCE=1 ;;       # хотфикс не из dev / с незакоммиченным — мимо стражей deploy.sh
     -h|--help)    sed -n '3,17p' "$0"; exit 0 ;;
     *) echo "Неизвестный аргумент: $arg"; exit 1 ;;
   esac
@@ -50,9 +53,12 @@ if [ "$SKIP_BUILD" = "0" ]; then
   echo
 fi
 
-# FORCE_BRANCH/SKIP_GIT_GUARD: deploy.sh по умолчанию требует ветку main и
-# сверку с origin на GitHub. Пока GitHub недоступен, сверять не с чем —
-# гарантию даёт вопрос про незакоммиченные правки выше и smoke-тесты внутри
-# deploy.sh. AUTO_ROLLBACK оставляем включённым: красный smoke → откат.
-FORCE_BRANCH=1 SKIP_GIT_GUARD=1 AUTO_ROLLBACK=1 SKIP_BUILD=1 \
-  ./scripts/deploy.sh "$TARGET"
+# Стражи deploy.sh с 09.09.2026 смотрят на dev (единственная боевая ветка на
+# Forgejo): чистое дерево + HEAD == origin/dev. Это и есть гарантия «выкатили то,
+# что в git». Хотфикс мимо стражей — только осознанно: --force.
+# AUTO_ROLLBACK оставляем включённым: красный smoke → откат.
+if [ "${FORCE:-0}" = "1" ]; then
+  FORCE_BRANCH=1 SKIP_GIT_GUARD=1 AUTO_ROLLBACK=1 SKIP_BUILD=1 ./scripts/deploy.sh "$TARGET"
+else
+  AUTO_ROLLBACK=1 SKIP_BUILD=1 ./scripts/deploy.sh "$TARGET"
+fi
