@@ -1559,10 +1559,13 @@ const hasAttribution = !!(lid && t);
       async function init() {
         trackFanVisit();
         setStatus('Загружаю…');
-        const people = await loadPeopleData();
-        buildAvatars(people);
+        // loadDays/loadScenes не зависят от people — запускаем сразу, не дожидаясь
+        // ответа /people, чтобы не терять на нём round-trip впустую.
+        const peoplePromise = loadPeopleData();
         loadDays();
         loadScenes();
+        const people = await peoplePromise;
+        buildAvatars(people);
         const saved = readPersonCookie();
         if (saved && people.some((p) => p.id === saved)) {
           selectPerson(saved);

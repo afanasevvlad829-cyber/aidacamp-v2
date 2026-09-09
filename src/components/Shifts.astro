@@ -2,9 +2,7 @@
 import { Icon } from 'astro-icon/components';
 import { mainShifts, displayShifts, VYCHET_MAX, SEASON_YEAR } from '../data/shifts';
 import { getShiftPhase } from '../data/dynamicPrices';
-import ShiftCard from './shifts/ShiftCard.astro';
-import ShiftRetroCard from './shifts/ShiftRetroCard.astro';
-import FortuneShiftCard from './shifts/FortuneShiftCard.astro';
+import ShiftCardSlot from './shifts/ShiftCardSlot.astro';
 import ShiftBookModal from './shifts/ShiftBookModal.astro';
 import ShiftsGuideLink from './ShiftsGuideLink.astro';
 
@@ -134,30 +132,7 @@ const DONE_SHIFT_COVERS: Record<string, string> = {
         {compactPastShifts ? (
           <Fragment>
             {/* ─── Новая раскладка: актуальные смены слева (шире), «как прошли» справа (компактно) ─── */}
-            {activeShifts.map((shift) => {
-              const phase = getShiftPhase(shift.id, nowDate);
-              // Разметку колеса рендерим для ВСЕХ предстоящих смен со свободными местами.
-              // Раньше было `shift.nearest` — из-за этого «включить фортуну на смене N»
-              // требовало правки shifts.ts + PR + деплой. Теперь показ решает рантайм-конфиг
-              // (/api/fortune/config), а разметка просто заранее есть и скрыта.
-              const withFortune = phase === 'upcoming' && shift.free > 0;
-              return (
-                <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch" data-shift-id={shift.id}>
-                  {phase !== 'upcoming' ? (
-                    <ShiftRetroCard shift={shift} />
-                  ) : withFortune ? (
-                    <Fragment>
-                      <div data-fortune-normal class="h-full"><ShiftCard shift={shift} variant="desktop" /></div>
-                      <div data-fortune-wheel hidden data-fortune-start={shift.startDate} data-fortune-free={shift.free} class="h-full">
-                        <FortuneShiftCard shiftId={shift.id} />
-                      </div>
-                    </Fragment>
-                  ) : (
-                    <ShiftCard shift={shift} variant="desktop" />
-                  )}
-                </div>
-              );
-            })}
+            {activeShifts.map((shift) => <ShiftCardSlot shift={shift} now={nowDate} />)}
 
             {/* Прошедшие смены справа — один компактный слот с прямыми ссылками на рекапы,
                 фото со смены (Immich) вместо голого текста — жизнь лагеря видна сразу.
@@ -198,30 +173,7 @@ const DONE_SHIFT_COVERS: Record<string, string> = {
             {/* ─── Классическая раскладка: все смены по датам (предстоит → идёт → прошла), полная ShiftRetroCard на каждую прошедшую ─── */}
             {/* Колесо фортуны рендерится скрытым у ближайшей смены; показывается
                 клиентским скриптом ниже по правилу (последние 3 дня + ≤3 места) или по ?fortune=wheel. */}
-            {displayShifts.map((shift) => {
-              const phase = getShiftPhase(shift.id, nowDate);
-              // Разметку колеса рендерим для ВСЕХ предстоящих смен со свободными местами.
-              // Раньше было `shift.nearest` — из-за этого «включить фортуну на смене N»
-              // требовало правки shifts.ts + PR + деплой. Теперь показ решает рантайм-конфиг
-              // (/api/fortune/config), а разметка просто заранее есть и скрыта.
-              const withFortune = phase === 'upcoming' && shift.free > 0;
-              return (
-                <div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch" data-shift-id={shift.id}>
-                  {phase !== 'upcoming' ? (
-                    <ShiftRetroCard shift={shift} />
-                  ) : withFortune ? (
-                    <Fragment>
-                      <div data-fortune-normal class="h-full"><ShiftCard shift={shift} variant="desktop" /></div>
-                      <div data-fortune-wheel hidden data-fortune-start={shift.startDate} data-fortune-free={shift.free} class="h-full">
-                        <FortuneShiftCard shiftId={shift.id} />
-                      </div>
-                    </Fragment>
-                  ) : (
-                    <ShiftCard shift={shift} variant="desktop" />
-                  )}
-                </div>
-              );
-            })}
+            {displayShifts.map((shift) => <ShiftCardSlot shift={shift} now={nowDate} />)}
           </Fragment>
         )}
 
@@ -387,264 +339,32 @@ const DONE_SHIFT_COVERS: Record<string, string> = {
 <ShiftBookModal />
 
 <script>
-  import { STORAGE_KEYS } from '../lib/storage';
-  // submitLead больше не используется здесь — логика в ShiftBookModal.astro
+  import { initFriendToggle } from '../scripts/shifts/friendToggle';
+  import { initBookingModal } from '../scripts/shifts/bookingModal';
+  import { initShiftAgePersonalization } from '../scripts/shifts/agePersonalization';
+  import { initShiftsMarquee } from '../scripts/shifts/marquee';
+  import { initViewedShiftScroll } from '../scripts/shifts/viewedShiftScroll';
+  import { initReturningVisitorSpots } from '../scripts/shifts/returningVisitorSpots';
+  import { onIdle } from '../lib/onIdle';
 
   function initShifts() {
-    // === FRIEND DISCOUNT TOGGLE ===
-    // Атрибуты уникальные (не data-toggle-root/data-toggle) — Footer.astro вешает свой
-    // обработчик на ЛЮБОЙ [data-toggle-root] на странице, коллизия гасила клик (25.07.2026).
-    document.querySelectorAll<HTMLElement>('[data-friend-toggle-root]').forEach((root) => {
-      const btn = root.querySelector<HTMLButtonElement>('[data-friend-toggle]');
-      const panel = root.querySelector<HTMLElement>('[data-friend-toggle-panel]');
-      if (!btn || !panel) return;
-      btn.addEventListener('click', () => {
-        const expanded = btn.getAttribute('aria-expanded') === 'true';
-        btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-        panel.classList.toggle('hidden', expanded);
-        const chevron = btn.querySelector<HTMLElement>('i[id="shifts-friend-chevron"]') || document.getElementById('shifts-friend-chevron');
-        if (chevron) chevron.style.transform = expanded ? '' : 'rotate(180deg)';
-      });
-    });
-
-    // === BOOKING MODAL — лишь биндинг кнопок открытия + заполнение данных смены.
-    // Вся логика валидации/сабмита формы — внутри ShiftBookModal.astro (self-contained).
-    const bookModal = document.getElementById('shiftBookModal') as HTMLDialogElement | null;
-    if (!bookModal) return;
-    const bookShiftBlock = bookModal.querySelector<HTMLElement>('[data-book-shift-block]');
-    const bookName = bookModal.querySelector('[data-book-shift-name]');
-    const bookDates = bookModal.querySelector('[data-book-shift-dates]');
-    const bookDuration = bookModal.querySelector('[data-book-shift-duration]');
-    const bookPrice = bookModal.querySelector('[data-book-shift-price]');
-
-    document.querySelectorAll('[data-shift-book]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const el = btn as HTMLElement;
-        const name = el.dataset.shiftBookName || '';
-        if (bookName) bookName.textContent = name;
-        if (bookDates) bookDates.textContent = el.dataset.shiftBookDates || '';
-        if (bookDuration) bookDuration.textContent = el.dataset.shiftBookDuration || '';
-        if (bookPrice) bookPrice.textContent = el.dataset.shiftBookPrice || '';
-        if (bookShiftBlock) bookShiftBlock.classList.toggle('hidden', !name);
-        (bookModal as HTMLElement).dataset.waitlist = el.dataset.shiftWaitlist === 'true' ? 'true' : 'false';
-        bookModal.showModal();
-        (window as any).trackGoal?.(el.dataset.shiftWaitlist === 'true' ? 'waitlist_click' : 'shift_book_click', { shift: name }, 500);
-      });
-    });
+    initFriendToggle();
+    initBookingModal();
   }
 
   document.addEventListener('astro:page-load', initShifts);
   // Defer — Shifts ниже fold, не блокируем LCP
-  if ('requestIdleCallback' in window) {
-    requestIdleCallback(initShifts, { timeout: 2000 });
-  } else {
-    setTimeout(initShifts, 200);
-  }
-
-  // === AGE PERSONALIZATION: показываем счётчик ровесников ===
-  function showPeerCounts(age: string) {
-    document.querySelectorAll<HTMLElement>('.peer-count-badge').forEach((badge) => {
-      const counts = JSON.parse(badge.dataset.peerCounts || '{}');
-      const n = counts[age];
-      if (!n) return;
-      const textEl = badge.querySelector<HTMLElement>('.peer-count-text');
-      if (textEl) textEl.textContent = `${n} ровесников уже едут в эту смену`;
-      badge.classList.remove('hidden');
-      badge.classList.add('flex');
-    });
-  }
-
-  function initShiftAgePersonalization() {
-    // Fix 2026-04-20: показываем peer-count ТОЛЬКО после явного выбора в сессии
-    // (не читаем из localStorage — иначе на первом заходе показывается "ровесники"
-    // без реального выбора возраста, логика бьётся).
-    const sessionAge = sessionStorage.getItem(STORAGE_KEYS.selectedAge);
-    if (sessionAge) showPeerCounts(sessionAge);
-    document.addEventListener('age-personalize', (e: Event) => {
-      showPeerCounts((e as CustomEvent<{ age: string }>).detail.age);
-    });
-  }
+  onIdle(initShifts, 2000);
 
   document.addEventListener('astro:page-load', initShiftAgePersonalization);
-  if ('requestIdleCallback' in window) {
-    requestIdleCallback(initShiftAgePersonalization, { timeout: 2000 });
-  } else {
-    setTimeout(initShiftAgePersonalization, 200);
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // INFINITE MARQUEE
-  // ═══════════════════════════════════════════════════════════
-  function initShiftsMarquee() {
-    const vp    = document.querySelector<HTMLElement>('[data-shifts-marquee-vp]');
-    const track = document.querySelector<HTMLElement>('[data-shifts-marquee-track]');
-    if (!vp || !track) return;
-    if (track.dataset.mqReady) return;
-    track.dataset.mqReady = '1';
-
-    const origItems = Array.from(track.querySelectorAll<HTMLElement>('.shifts-mq-item'));
-    if (!origItems.length) return;
-
-    // Mobile initial scroll to active shift (index from data-carousel-initial)
-    if (window.innerWidth < 768) {
-      const initialIdx = parseInt(track.dataset.carouselInitial || '0', 10);
-      if (initialIdx > 0 && origItems[initialIdx]) {
-        requestAnimationFrame(() => {
-          const item = origItems[initialIdx];
-          const vw = window.innerWidth;
-          track.scrollLeft = item.offsetLeft - (vw - item.offsetWidth) / 2;
-        });
-      }
-    }
-
-    // ── Dot-индикаторы ───────────────────────────────────────
-    const dotsContainer = document.querySelector<HTMLElement>('[data-shifts-dots]');
-    const dotEls: HTMLElement[] = [];
-    if (dotsContainer) {
-      dotsContainer.innerHTML = '';
-      origItems.forEach((_, i) => {
-        const d = document.createElement('span');
-        d.className = 'block h-2 rounded-full transition-all duration-300 ' + (i === 0 ? 'w-6 bg-primary' : 'w-2 bg-border');
-        d.setAttribute('aria-hidden', 'true');
-        dotsContainer.appendChild(d);
-        dotEls.push(d);
-      });
-
-      const dotObserver = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && (entry.intersectionRatio ?? 0) > 0.5) {
-            const idx = origItems.indexOf(entry.target as HTMLElement);
-            if (idx < 0) return;
-            dotEls.forEach((d, di) => {
-              const active = di === idx;
-              d.className = 'block h-2 rounded-full transition-all duration-300 ' + (active ? 'w-6 bg-primary' : 'w-2 bg-border');
-            });
-          }
-        });
-      }, { root: vp, threshold: 0.5 });
-
-      origItems.forEach((item) => dotObserver.observe(item));
-    }
-
-    // ── Mouse drag ───────────────────────────────────────────
-    let isDragging = false;
-    let dragStartX = 0;
-    let dragScrollL = 0;
-
-    track.addEventListener('mousedown', (e: MouseEvent) => {
-      if ((e.target as HTMLElement).closest('a, button')) return;
-      isDragging  = true;
-      dragStartX  = e.pageX - track.offsetLeft;
-      dragScrollL = track.scrollLeft;
-      track.classList.add('is-dragging');
-    });
-    document.addEventListener('mousemove', (e: MouseEvent) => {
-      if (!isDragging) return;
-      e.preventDefault();
-      track.scrollLeft = dragScrollL - (e.pageX - track.offsetLeft - dragStartX);
-    });
-    document.addEventListener('mouseup', () => {
-      if (!isDragging) return;
-      isDragging = false;
-      track.classList.remove('is-dragging');
-    });
-  }
+  onIdle(initShiftAgePersonalization, 2000);
 
   document.addEventListener('astro:page-load', initShiftsMarquee);
-  if ('requestIdleCallback' in window) {
-    requestIdleCallback(initShiftsMarquee, { timeout: 1500 });
-  } else {
-    setTimeout(initShiftsMarquee, 150);
-  }
-</script>
-
-<script>
-  // Auto-scroll returning mobile visitors to their previously viewed shift
-  function initViewedShiftScroll() {
-    if (window.innerWidth >= 768) return;
-    if (sessionStorage.getItem('ac:scroll_done')) return;
-
-    let viewed: Array<{ id: string; ts: number }>;
-    try {
-      viewed = JSON.parse(localStorage.getItem('ac:viewed_shifts') || '[]');
-    } catch {
-      return;
-    }
-    if (!viewed.length) return;
-
-    // Most recently viewed shift
-    const targetId = viewed.sort((a, b) => b.ts - a.ts)[0].id;
-    const track = document.querySelector<HTMLElement>('[data-shifts-marquee-track]');
-    if (!track) return;
-
-    // Find the item — querySelector gets the first (pre-duplication) occurrence
-    const item = track.querySelector<HTMLElement>(`[data-shift-id="${targetId}"]`);
-    if (!item) return;
-
-    sessionStorage.setItem('ac:scroll_done', '1');
-
-    // Wait for marquee JS to finish (it might reorder items), then scroll
-    setTimeout(() => {
-      const shiftsSection = document.getElementById('shifts');
-      if (shiftsSection) {
-        shiftsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-      // Scroll the carousel track so the viewed shift card is centred
-      setTimeout(() => {
-        const vw = window.innerWidth;
-        const itemLeft = item.offsetLeft;
-        const itemWidth = item.offsetWidth;
-        track.scrollTo({ left: itemLeft - (vw - itemWidth) / 2, behavior: 'smooth' });
-      }, 400);
-    }, 600);
-  }
+  onIdle(initShiftsMarquee, 1500);
 
   document.addEventListener('astro:page-load', initViewedShiftScroll);
   initViewedShiftScroll();
-</script>
 
-<!-- Динамические цены — глобальный DynamicPrices.astro из Base.astro -->
-
-<script>
-// Returning visitor: показываем на 1 место меньше для смен 1, 2, 2.1, 2.2
-(function () {
-  const ADJUSTABLE = new Set(['shift-1', 'shift-2', 'shift-2-1', 'shift-2-2']);
-  const KEY = 'ac_rv';
-
-  function spotsText(n: number): string {
-    if (n === 1) return 'Осталось 1 место';
-    if (n >= 2 && n <= 4) return `Осталось ${n} места`;
-    return `Осталось ${n} мест`;
-  }
-
-  const isReturning = !!localStorage.getItem(KEY);
-  if (!isReturning) {
-    localStorage.setItem(KEY, '1');
-    return;
-  }
-
-  document.querySelectorAll<HTMLElement>('[data-shift-card][data-shift-id]').forEach(card => {
-    const shiftId = card.dataset.shiftId ?? '';
-    if (!ADJUSTABLE.has(shiftId)) return;
-
-    const base = parseInt(card.dataset.shiftSpots ?? '0', 10);
-    if (!base || base <= 1) return;
-    const adj = base - 1;
-
-    // Баннер ближайшей смены
-    const nearestSpan = card.querySelector<HTMLElement>('[data-spots-nearest]');
-    if (nearestSpan) nearestSpan.textContent = spotsText(adj);
-
-    // Счётчик занятости
-    const countEl = card.querySelector<HTMLElement>('[data-count-to]');
-    if (countEl && parseInt(countEl.dataset.countTo ?? '0', 10) === base) {
-      countEl.textContent = String(adj);
-      countEl.dataset.countTo = String(adj);
-    }
-
-    // Пилюля (только если содержала «Осталось»)
-    const pill = card.querySelector<HTMLElement>('[data-spots-pill]');
-    if (pill) pill.textContent = `Осталось ${adj}`;
-  });
-})();
+  // Динамические цены — глобальный DynamicPrices.astro из Base.astro
+  initReturningVisitorSpots();
 </script>
