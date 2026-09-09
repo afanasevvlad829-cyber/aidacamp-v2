@@ -49,11 +49,14 @@ jobs:
       # и молча не выполняется. Так guard-agent-prs.yml 2.5 месяца числился
       # защитой и не срабатывал ни разу (сломан 2026-04-24, найден 2026-07-08).
       # PyYAML на раннере Forgejo не предустановлен (образ node:22-bookworm),
-      # в отличие от ubuntu-latest на GitHub. Ставим явно — иначе шаг падает
-      # с ModuleNotFoundError и роняет весь quality-gate (найдено 08.09.2026
-      # при первом прогоне на своём CI).
+      # в отличие от ubuntu-latest на GitHub. Первая попытка (08.09.2026) —
+      # `pip3 install pyyaml` — тоже падала: в этом образе нет ни модуля pip
+      # у python3, ни бинаря pip3 вообще (подтверждено прогоном 09.09.2026,
+      # PR #9: "No module named pip" / "pip3: command not found", job упал
+      # на этом шаге раньше любых реальных проверок). Ставим системным apt —
+      # образ debian-based, шаг идёт от root, лишних прав не требует.
       - name: PyYAML для проверки workflow
-        run: python3 -m pip install --quiet --break-system-packages pyyaml || pip3 install --quiet pyyaml
+        run: apt-get update -qq && apt-get install -y --no-install-recommends -qq python3-yaml
 
       - name: Валидность workflow-файлов
         run: |
