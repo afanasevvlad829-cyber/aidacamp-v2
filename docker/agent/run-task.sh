@@ -2,6 +2,18 @@
 # run-task.sh — ENTRYPOINT контейнера. Клонирует репо из GitHub, запускает
 # claude над брифом, коммитит, пушит ветку, открывает PR. Всё ВНУТРИ контейнера.
 #
+# ⚠️ СЛОМАНО с 08.09.2026: GitHub-аккаунт заблокирован, репо переехало на свой
+# Forgejo (git.aidaplus.ru) — см. DEV_PROTOCOL.md. Клон ниже всё ещё тянет с
+# github.com по GH_TOKEN и упадёт на первом же шаге. PR-шаг внизу уже переведён
+# на `tea` (09.09.2026), но это не спасает: до него дело не доходит. Полный
+# перенос требует: 1) клонировать с git.aidaplus.ru (SSH-ключ или Forgejo-токен
+# по HTTPS — не проверено, какой формат авторизации Forgejo принимает без
+# интерактивного логина); 2) в Dockerfile поставить `tea` вместо/вместе с `gh`;
+# 3) обновить agent-secrets.env.example и README.md; 4) прогнать вживую — здесь
+# не тестировалось (Docker Desktop не был поднят). До переноса
+# `./scripts/agent-docker.sh` не работает — Правило №1 для критичных задач
+# временно недоступно, использовать headless claude -p на сервере как запасной путь.
+#
 # Ожидает (через --env-file / -e):
 #   GH_TOKEN            — fine-grained PAT (только этот репо: contents+PR write)
 #   ANTHROPIC_API_KEY   — ключ для claude
@@ -46,7 +58,8 @@ fi
 
 echo "▶ push + PR"
 git push origin "$BRANCH"
-gh pr create --repo "$REPO" --base dev --head "$BRANCH" \
+# PR — в Forgejo (git.aidaplus.ru) через tea; gh с 08.09.2026 не используется
+tea pr create --base dev --head "$BRANCH" \
   --title "$SLUG (агент-контейнер)" \
-  --body "Сгенерировано dev-агентом в изолированном контейнере. Бриф:\n\n$(cat "$BRIEF_FILE")" \
-  && echo "✅ PR создан" || echo "⚠ gh pr create не удался (возможно PR уже есть)"
+  --description "Сгенерировано dev-агентом в изолированном контейнере. Бриф:\n\n$(cat "$BRIEF_FILE")" \
+  && echo "✅ PR создан" || echo "⚠ tea pr create не удался (возможно PR уже есть)"
