@@ -1,28 +1,35 @@
 #!/usr/bin/env bash
-# run-task.sh — ENTRYPOINT контейнера. Клонирует репо из GitHub, запускает
+# run-task.sh — ENTRYPOINT контейнера. Клонирует репо из Forgejo, запускает
 # claude над брифом, коммитит, пушит ветку, открывает PR. Всё ВНУТРИ контейнера.
 #
-# ⚠️ СЛОМАНО с 08.09.2026: GitHub-аккаунт заблокирован, репо переехало на свой
-# Forgejo (git.aidaplus.ru) — см. DEV_PROTOCOL.md. Клон ниже всё ещё тянет с
-# github.com по GH_TOKEN и упадёт на первом же шаге. PR-шаг внизу уже переведён
-# на `tea` (09.09.2026), но это не спасает: до него дело не доходит. Полный
-# перенос требует: 1) клонировать с git.aidaplus.ru (SSH-ключ или Forgejo-токен
-# по HTTPS — не проверено, какой формат авторизации Forgejo принимает без
-# интерактивного логина); 2) в Dockerfile поставить `tea` вместо/вместе с `gh`;
-# 3) обновить agent-secrets.env.example и README.md; 4) прогнать вживую — здесь
-# не тестировалось (Docker Desktop не был поднят). До переноса
-# `./scripts/agent-docker.sh` не работает — Правило №1 для критичных задач
-# временно недоступно, использовать headless claude -p на сервере как запасной путь.
+# С 08.09.2026 репо на своём Forgejo (git.aidaplus.ru) — GitHub-аккаунт
+# заблокирован, см. DEV_PROTOCOL.md. Перенесено 09.09.2026: клон и push —
+# HTTPS с FORGEJO_TOKEN как паролем (проверено вручную: `git ls-remote
+# https://vlad:$TOKEN@git.aidaplus.ru/vlad/aidacamp-v2.git` — стандартная
+# Forgejo/Gitea-схема, тот же принцип, что был у GitHub с x-access-token).
+# PR — через `tea`, авторизуется тем же токеном (`tea login add --token`),
+# т.к. у Forgejo нет отдельного «PR-only» аналога gh: PR — это issue с scope
+# write:issue, плюс write:repository для git push. Токен переиспользован из
+# существующего личного (`tea-cli-shifts-pr`, id 4 на git.aidaplus.ru) —
+# минтить новый выделенный под контейнер через API не стал: создание токенов
+# требует ручного подтверждения (chore/agent-docker-forgejo, 09.09.2026); если
+# хочешь по духу исходного дизайна (радиус = только этот репо) — заведи
+# отдельный токен в Settings → Applications и впиши его вместо личного.
+#
+# ⚠️ НЕ ПРОТЕСТИРОВАНО живым прогоном контейнера — Docker Desktop на маке не
+# был поднят на момент переноса. `docker build` + один прогон перед боевым
+# использованием обязательны.
 #
 # Ожидает (через --env-file / -e):
-#   GH_TOKEN            — fine-grained PAT (только этот репо: contents+PR write)
+#   FORGEJO_TOKEN       — токен Forgejo (git.aidaplus.ru), scopes write:repository+write:issue
 #   ANTHROPIC_API_KEY   — ключ для claude
-#   REPO                — owner/name (напр. afanasevvlad829-cyber/aidacamp-v2)
+#   REPO                — owner/name на Forgejo (по умолчанию vlad/aidacamp-v2)
 #   BRANCH, SLUG        — имя ветки/слаг
 # Бриф: /work/brief.txt (монтируется read-only с хоста)
 set -euo pipefail
 
-: "${GH_TOKEN:?нет GH_TOKEN}"
+: "${FORGEJO_TOKEN:?нет FORGEJO_TOKEN}"
+FORGEJO_HOST="${FORGEJO_HOST:-git.aidaplus.ru}"
 # Авторизация claude: подписка (CLAUDE_CODE_OAUTH_TOKEN) ИЛИ платный API-ключ.
 # Подписка предпочтительна — не тратит API-кредиты (claude setup-token).
 if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] && [ -z "${ANTHROPIC_API_KEY:-}" ]; then
@@ -32,15 +39,15 @@ fi
 BRIEF_FILE="/work/brief.txt"; [ -f "$BRIEF_FILE" ] || { echo "нет $BRIEF_FILE"; exit 1; }
 
 cd /work
-echo "▶ clone $REPO (ветка dev, depth 50)"
+echo "▶ clone $REPO с $FORGEJO_HOST (ветка dev, depth 50)"
 # Клонируем именно dev: shallow-клон тянет только указанную ветку, поэтому
 # branch создаём от dev напрямую (раньше клонировался main → origin/dev отсутствовал).
-git clone --depth 50 --branch dev "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" repo
+git clone --depth 50 --branch dev "https://vlad:${FORGEJO_TOKEN}@${FORGEJO_HOST}/${REPO}.git" repo
 cd repo
 git config user.email "agent@aidacamp.local"
 git config user.name  "aidacamp-agent"
 git checkout -b "$BRANCH"
-export GH_TOKEN   # для gh
+tea login add --url "https://${FORGEJO_HOST}" --token "$FORGEJO_TOKEN" >/dev/null 2>&1 || true
 
 echo "▶ claude над брифом ($(wc -w < "$BRIEF_FILE") слов)"
 # Non-root в контейнере → --dangerously-skip-permissions разрешён. Изоляция = сам контейнер.
