@@ -66,7 +66,10 @@ fi
 echo "▶ push + PR"
 git push origin "$BRANCH"
 # PR — в Forgejo (git.aidaplus.ru) через tea; gh с 08.09.2026 не используется
-tea pr create --base dev --head "$BRANCH" \
+# --repo явно: tea не всегда умеет вытащить owner/repo из git-remote, когда
+# в URL вшиты креды (https://vlad:token@host/...) — падал с "remote repository
+# required" при живом прогоне 09.09.2026, хотя push и clone отработали.
+tea pr create --repo "$REPO" --base dev --head "$BRANCH" \
   --title "$SLUG (агент-контейнер)" \
   --description "Сгенерировано dev-агентом в изолированном контейнере. Бриф:\n\n$(cat "$BRIEF_FILE")" \
   && echo "✅ PR создан" || echo "⚠ tea pr create не удался (возможно PR уже есть)"
