@@ -219,7 +219,16 @@ export default defineConfig({
     // блокировал рендер 1350мс → переключили на 'always' (CSS в <style> в HTML).
     // 2026-07-03: CDN отключён — вернули 'auto': CSS отдаётся same-origin с
     // иммутабельным кэшем, HTML худеет на сотни KB, SSR-манифест 148MB → ~4MB.
-    inlineStylesheets: 'auto',
+    // 2026-09-11: снова 'always'. При 'auto' с 357 страницами Vite/Rollup стабильно
+    // (не гонка — воспроизводилось детерминированно, concurrency тут ни при чём,
+    // проверено отдельно) отдавал общий Tailwind-чанк (global.css, тянется через
+    // Base.astro у ВСЕХ страниц) только части HTML — например странице /status/,
+    // а не главной. Прод простоял без стилей: ни preflight, ни одной утилиты на
+    // /, /ceny/ и остальных «непобедивших» страницах. inlineStylesheets: 'always'
+    // кладёт CSS прямо в каждый HTML — зависимости от того, какой странице
+    // достанется общий чанк, больше нет. HTML разово потяжелеет — цена меньше,
+    // чем сайт без стилей.
+    inlineStylesheets: 'always',
     // CDN отключён: cross-origin overhead (DNS+TCP+TLS к huhodirekeka.begetcdn.cloud)
     // замедляет LCP с 1.6s до 3.7s на мобильном тесте. Сервер в России → CDN не даёт
     // выигрыша в latency, только overhead. Откат 2026-05-24.
