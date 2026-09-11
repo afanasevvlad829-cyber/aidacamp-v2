@@ -113,7 +113,12 @@ if [ -n "$CSS_HREF" ]; then
   # inlineStylesheets: 'auto'|'never' — утилиты в подключённом файле.
   CSS_BODY=$(curl -s --max-time 20 "$BASE$CSS_HREF")
   CSS_SIZE=$(printf '%s' "$CSS_BODY" | wc -c | tr -d ' ')
-  if printf '%s' "$CSS_BODY" | grep -q '\.flex{'; then
+  # Чистая bash-проверка подстроки, не пайп в grep: grep -q закрывает stdin, как
+  # только находит совпадение, и на многосоткилобайтном теле пишущий в пайп
+  # printf получает SIGPIPE ДО того, как успевает дописать остаток — при
+  # set -o pipefail это превращает пайплайн в "не найдено" на страницах, где
+  # совпадение вообще-то есть (сломано 11.09.2026, поймано на живом деплое).
+  if [[ "$CSS_BODY" == *'.flex{'* ]]; then
     printf '  ✅ %-44s %s байт\n' "Tailwind в подключённом CSS" "$CSS_SIZE"
   else
     printf '  ❌ %-44s %s байт (сайт без стилей!)\n' "утилит Tailwind нет в" "$CSS_SIZE"; FAIL=$((FAIL + 1))
@@ -123,7 +128,7 @@ else
   # Раньше страж падал тут ложно: «нет <link>» ≠ «нет стилей», Astro просто
   # кладёт CSS в HTML другим способом — страж обязан проверить оба варианта.
   INLINE_SIZE=$(printf '%s' "$HOME_HTML" | wc -c | tr -d ' ')
-  if printf '%s' "$HOME_HTML" | grep -q '\.flex{'; then
+  if [[ "$HOME_HTML" == *'.flex{'* ]]; then
     printf '  ✅ %-44s %s байт\n' "Tailwind инлайном в HTML" "$INLINE_SIZE"
   else
     printf '  ❌ %-44s\n' "ни <link> на CSS, ни инлайн-утилит Tailwind нет"; FAIL=$((FAIL + 1))
