@@ -211,6 +211,9 @@ const DONE_SHIFT_COVERS: Record<string, string> = {
   }
 
   function apply() {
+    var wheels = document.querySelectorAll('[data-fortune-wheel]');
+    if (!wheels.length) return; // на странице нет ни одной подходящей смены — конфиг не нужен
+
     var qs = new URLSearchParams(location.search);
     var force = qs.get('fortune') === 'wheel' || qs.has('wheel');
     // Только ac:viewed_shifts — не _ym_uid: Метрика ставит свою uid-куку сама,
@@ -221,7 +224,7 @@ const DONE_SHIFT_COVERS: Record<string, string> = {
     var isReturning = !!localStorage.getItem('ac:viewed_shifts');
 
     fetchCfg().then(function (cfg) {
-      document.querySelectorAll('[data-fortune-wheel]').forEach(function (wheel) {
+      wheels.forEach(function (wheel) {
         var slot = wheel.closest('[data-shift-id]');
         var normal = slot ? slot.querySelector('[data-fortune-normal]') : null;
         var shiftId = slot ? slot.getAttribute('data-shift-id') : null;
