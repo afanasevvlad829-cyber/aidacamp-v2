@@ -258,8 +258,13 @@ import { lockScroll, unlockScroll } from '../scripts/scrollLock';
       marqueeTrack.style.setProperty('--hf-duration', `${dur}s`);
     }
 
-    updateDuration();
-    track.classList.add('hf-animating');
+    // rAF: чтение scrollWidth сразу после синхронного клонирования/appendChild
+    // выше форсит layout посреди скрипта (PageSpeed «Forced reflow»). К моменту
+    // rAF браузер уже посчитал layout для первого кадра — чтение бесплатное.
+    requestAnimationFrame(() => {
+      updateDuration();
+      track.classList.add('hf-animating');
+    });
 
     // Пауза на hover / touch
     const vp = track.parentElement as HTMLElement;
