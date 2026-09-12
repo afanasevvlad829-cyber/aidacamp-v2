@@ -221,7 +221,19 @@ import { lockScroll, unlockScroll } from '../scripts/scrollLock';
     origItems.forEach(li => {
       const clone = li.cloneNode(true) as HTMLLIElement;
       clone.setAttribute('aria-hidden', 'true');
-      clone.querySelectorAll('[data-hf-key]').forEach(btn => (btn as HTMLElement).setAttribute('tabindex', '-1'));
+      // Клон должен остаться кликабельным (клик делегирован на трек по
+      // closest('[data-hf-key]')), но не focusable — aria-hidden запрещает
+      // фокусируемых потомков (axe aria-hidden-focus). tabindex="-1" этого
+      // не гарантирует: нативная <button> всё равно получает фокус по клику.
+      // Меняем тег на <div> — визуально и по кликам ничего не меняется.
+      clone.querySelectorAll('[data-hf-key]').forEach(btn => {
+        const replacement = document.createElement('div');
+        Array.from(btn.attributes).forEach(attr => {
+          if (attr.name !== 'type') replacement.setAttribute(attr.name, attr.value);
+        });
+        replacement.innerHTML = btn.innerHTML;
+        btn.replaceWith(replacement);
+      });
       track.appendChild(clone);
     });
 
