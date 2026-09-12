@@ -255,8 +255,12 @@ const DONE_SHIFT_COVERS: Record<string, string> = {
     });
   }
   document.addEventListener('astro:page-load', apply);
-  if (document.readyState !== 'loading') apply();
-  else document.addEventListener('DOMContentLoaded', apply);
+  // Не ждём DOMContentLoaded: разметка [data-fortune-wheel] уже отрендерена
+  // ВЫШЕ этого <script> в том же компоненте, парсер до неё дошёл раньше.
+  // Ожидание DOMContentLoaded откладывало fetch до конца очереди из десятков
+  // module-чанков — на throttled mobile PageSpeed запрос улетал последним,
+  // ~2.3с. Дерево доступности запроса от этого не зависит.
+  apply();
 })();
 </script>
 
