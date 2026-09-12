@@ -19,6 +19,7 @@ import DotPatternBackground from '../components/DotPatternBackground.astro';
 import SiteSearch from '../components/SiteSearch.astro';
 import NudgeBanner from '../components/NudgeBanner.astro';
 import GoogleAnalytics from '../components/GoogleAnalytics.astro';
+import OrganizationSchema from '../components/OrganizationSchema.astro';
 
 interface Props {
   title: string;
@@ -249,6 +250,9 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content={resolvedOgImage} />
     {!noindex && <link rel="canonical" href={canonicalUrl} />}
+    {/* Organization JSON-LD — на всех страницах, кроме главной: там уже есть более
+        полный Organization внутри SchemaOrg.astro (src/pages/index.astro), совпадающий @id. */}
+    {Astro.url.pathname !== '/' && <OrganizationSchema />}
     <slot name="head" />
     <!-- page-globals + dynamic-prices-client: глобальные обработчики + динамические цены -->
     <script>
