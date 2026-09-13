@@ -69,7 +69,11 @@ const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `https://aidacamp
 // canonical/og:url — на финальный слеш-URL (см. src/utils/canonical.ts, инцидент 03.07.2026).
 const canonicalUrl = ensureTrailingSlash(canonicalProp ?? new URL(Astro.url.pathname, 'https://aidacamp.ru').href);
 // Автодетект: /stati/ → article, остальные → website
-const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !Astro.url.pathname.endsWith('/stati/') ? 'article' : 'website');
+const isArticlePage = Astro.url.pathname.startsWith('/stati/') && !Astro.url.pathname.endsWith('/stati/');
+const resolvedOgType = ogType ?? (isArticlePage ? 'article' : 'website');
+// Markdown-зеркало статьи (см. src/pages/stati/[slug].md.ts) — подсказка AI-агентам,
+// где взять чистый текст страницы без вёрстки.
+const markdownUrl = isArticlePage ? `${canonicalUrl.replace(/\/$/, '')}.md` : null;
 ---
 
 <!doctype html>
@@ -250,6 +254,7 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content={resolvedOgImage} />
     {!noindex && <link rel="canonical" href={canonicalUrl} />}
+    {markdownUrl && <link rel="alternate" type="text/markdown" href={markdownUrl} />}
     {/* Organization JSON-LD — на всех страницах, кроме главной: там уже есть более
         полный Organization внутри SchemaOrg.astro (src/pages/index.astro), совпадающий @id. */}
     {Astro.url.pathname !== '/' && <OrganizationSchema />}
