@@ -224,6 +224,7 @@ const DONE_SHIFT_COVERS: Record<string, string> = {
     var isReturning = !!localStorage.getItem('ac:viewed_shifts');
 
     fetchCfg().then(function (cfg) {
+      var anyActive = false;
       wheels.forEach(function (wheel) {
         var slot = wheel.closest('[data-shift-id]');
         var normal = slot ? slot.querySelector('[data-fortune-normal]') : null;
@@ -249,9 +250,20 @@ const DONE_SHIFT_COVERS: Record<string, string> = {
           if (!isNaN(free) && free > rule.minFree) active = false;
         }
 
-        if (active) { wheel.hidden = false; if (normal) normal.hidden = true; }
+        if (active) { wheel.hidden = false; if (normal) normal.hidden = true; anyActive = true; }
         else { wheel.hidden = true; if (normal) normal.hidden = false; }
       });
+      // Интерактивный JS колеса (~4 КБ, форма, спин, оплата) грузим ТОЛЬКО когда
+      // колесо реально включено хотя бы для одной смены — а не безусловно на
+      // каждой загрузке главной, как раньше (PageSpeed: чанк тянул критический
+      // путь ради виджета, который 9 из 10 посетителей не видят).
+      // Флаг, а не прямой вызов: обычный <script> ниже с самим import() —
+      // module-скрипт, он отложен (как defer) и может выполниться ПОСЛЕ того,
+      // как здесь резолвится fetch (гонка). Флаг работает в любом порядке.
+      if (anyActive) {
+        if (window.__loadFortuneWheel) window.__loadFortuneWheel();
+        else window.__fortuneWheelWanted = true;
+      }
     });
   }
   document.addEventListener('astro:page-load', apply);
@@ -262,6 +274,21 @@ const DONE_SHIFT_COVERS: Record<string, string> = {
   // ~2.3с. Дерево доступности запроса от этого не зависит.
   apply();
 })();
+</script>
+
+<script>
+  // Мост для is:inline-скрипта выше: сам dynamic import() должен разбираться
+  // Vite (для code-splitting в отдельный чанк с хэшем в имени) — is:inline
+  // Astro не обрабатывает, поэтому импорт вынесен в этот обычный <script>.
+  // Этот script — module, он отложен (как defer) и может выполниться позже
+  // is:inline-скрипта выше, поэтому проверяем флаг «уже хотели»: вдруг тот
+  // успел решить, что колесо нужно, раньше, чем этот код объявил функцию.
+  function doLoadFortuneWheel() {
+    (window as any).__loadFortuneWheel = function () {}; // не грузим дважды
+    import('../scripts/shifts/fortune-wheel-init').then((m) => m.initFortuneCards());
+  }
+  if ((window as any).__fortuneWheelWanted) doLoadFortuneWheel();
+  else (window as any).__loadFortuneWheel = doLoadFortuneWheel;
 </script>
 
 <style>
