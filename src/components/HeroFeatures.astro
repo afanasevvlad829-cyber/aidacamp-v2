@@ -44,7 +44,7 @@ const features = [
 </div>
 
 <!-- Bottom-sheet модалка -->
-<div id="hf-modal" role="dialog" aria-modal="true" aria-labelledby="hf-modal-title" aria-hidden="true"
+<div id="hf-modal" role="dialog" aria-modal="true" aria-labelledby="hf-modal-title" aria-hidden="true" inert
   class="fixed inset-0 z-[200] flex items-end justify-center opacity-0 pointer-events-none transition-opacity duration-200">
   <div class="absolute inset-0 bg-black/50" id="hf-backdrop"></div>
   <div id="hf-sheet"
@@ -186,6 +186,7 @@ import { lockScroll, unlockScroll } from '../scripts/scrollLock';
     modal.classList.remove('pointer-events-none', 'opacity-0');
     modal.classList.add('opacity-100');
     modal.setAttribute('aria-hidden', 'false');
+    modal.removeAttribute('inert');
     sheet.classList.add('hf-opening');
     sheet.classList.remove('translate-y-4');
     sheet.addEventListener('transitionend', () => sheet.classList.remove('hf-opening'), { once: true });
@@ -198,6 +199,7 @@ import { lockScroll, unlockScroll } from '../scripts/scrollLock';
     modal.classList.add('opacity-0');
     modal.classList.remove('opacity-100');
     modal.setAttribute('aria-hidden', 'true');
+    modal.setAttribute('inert', '');
     sheet.classList.add('translate-y-4');
     unlockScroll();
     setTimeout(() => modal.classList.add('pointer-events-none'), 220);
@@ -219,7 +221,19 @@ import { lockScroll, unlockScroll } from '../scripts/scrollLock';
     origItems.forEach(li => {
       const clone = li.cloneNode(true) as HTMLLIElement;
       clone.setAttribute('aria-hidden', 'true');
-      clone.querySelectorAll('[data-hf-key]').forEach(btn => (btn as HTMLElement).setAttribute('tabindex', '-1'));
+      // Клон должен остаться кликабельным (клик делегирован на трек по
+      // closest('[data-hf-key]')), но не focusable — aria-hidden запрещает
+      // фокусируемых потомков (axe aria-hidden-focus). tabindex="-1" этого
+      // не гарантирует: нативная <button> всё равно получает фокус по клику.
+      // Меняем тег на <div> — визуально и по кликам ничего не меняется.
+      clone.querySelectorAll('[data-hf-key]').forEach(btn => {
+        const replacement = document.createElement('div');
+        Array.from(btn.attributes).forEach(attr => {
+          if (attr.name !== 'type') replacement.setAttribute(attr.name, attr.value);
+        });
+        replacement.innerHTML = btn.innerHTML;
+        btn.replaceWith(replacement);
+      });
       track.appendChild(clone);
     });
 
@@ -244,8 +258,13 @@ import { lockScroll, unlockScroll } from '../scripts/scrollLock';
       marqueeTrack.style.setProperty('--hf-duration', `${dur}s`);
     }
 
-    updateDuration();
-    track.classList.add('hf-animating');
+    // rAF: чтение scrollWidth сразу после синхронного клонирования/appendChild
+    // выше форсит layout посреди скрипта (PageSpeed «Forced reflow»). К моменту
+    // rAF браузер уже посчитал layout для первого кадра — чтение бесплатное.
+    requestAnimationFrame(() => {
+      updateDuration();
+      track.classList.add('hf-animating');
+    });
 
     // Пауза на hover / touch
     const vp = track.parentElement as HTMLElement;

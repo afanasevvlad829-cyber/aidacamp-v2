@@ -1,5 +1,5 @@
 import { OPEN_MONTHS_RANGE_NOM } from '../evergreen';
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_S2, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_MAX, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_S2, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
 import type { LandingData } from './types';
 import { otzyvyLink, yandexReviewsLink } from '../../lib/reviews-link';
 
@@ -14,7 +14,7 @@ const landing: LandingData = {
     { q: 'Как доехать до АйДаКемп?', a: `Около 110 км: МКАД → Киевское шоссе, ~1 ч 15 мин в пути. Либо электричкой до Курского вокзала, дальше метро до Солнцево (~40 мин от города) и трансфер (${TRANSFER_PRICE_FMT}).` },
     { q: 'Сколько времени в пути?', a: 'Час с небольшим на машине по МКАД и Киевскому шоссе — около 110 км. На трансфере через Солнцево прибавьте ещё минут 40 на дорогу до метро.' },
     { q: 'Есть ли трансфер?', a: `Да, от м. Солнцево — ${TRANSFER_PRICE_FMT} в один конец, с сопровождающим. От города до Солнцево — около 40 минут на электричке через Курский вокзал.` },
-    { q: 'Сколько стоит путёвка?', a: `От ${PRICE_MIN} за смену 10 дней до ${PRICE_MAX} за 13 дней. Открыты смены ${OPEN_MONTHS_RANGE_NOM}. В стоимость входит проживание, питание, IT-программа, бассейн. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT}.` },
+    { q: 'Сколько стоит путёвка?', a: `От ${PRICE_MIN} за смену ${DAYS_MAX} до ${PRICE_MAX} за ${DAYS_MAX}. Открыты смены ${OPEN_MONTHS_RANGE_NOM}. В стоимость входит проживание, питание, IT-программа, бассейн. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT}.` },
   ],
   courseSchema: {
     name: 'IT-смена для школьников — АйДаКемп',
@@ -82,10 +82,10 @@ const landing: LandingData = {
       h2: `Смены ${SEASON_YEAR} — цены и наличие мест`,
       text: `На открытые смены тёплого сезона ещё есть места — бронируйте заранее. В стоимость включены проживание, питание, полная IT-программа, бассейн.`,
       list: [
-        `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, 7 дней — ${PRICE_S21} (налоговый вычет ~${VYCHET_S21})`,
-        `Смена 2 (завершена) — ${DATES_SHORT_S2}, 14 дней — ${PRICE_S2} (налоговый вычет до ${VYCHET_S2})`,
-        `Смена 3 — ${DATES_SHORT_S3}, 13 дней — ${PRICE_S3} (налоговый вычет ~${VYCHET_S3})`,
-        `Смена 4 — ${DATES_SHORT_S4}, 10 дней — ${PRICE_S4} (налоговый вычет ~${VYCHET_S4})`,
+        `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, ${DAYS_S21} — ${PRICE_S21} (налоговый вычет ~${VYCHET_S21})`,
+        `Смена 2 (завершена) — ${DATES_SHORT_S2}, ${DAYS_S2} — ${PRICE_S2} (налоговый вычет до ${VYCHET_S2})`,
+        `Смена 3 — ${DATES_SHORT_S3}, ${DAYS_S3} — ${PRICE_S3} (налоговый вычет ~${VYCHET_S3})`,
+        `Смена 4 — ${DATES_SHORT_S4}, ${DAYS_S4} — ${PRICE_S4} (налоговый вычет ~${VYCHET_S4})`,
         `Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT}`,
       ],
     },

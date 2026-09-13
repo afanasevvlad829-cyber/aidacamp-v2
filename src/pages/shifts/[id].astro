@@ -3,13 +3,16 @@ import { Icon } from 'astro-icon/components';
 /**
  * Динамическая страница смены — /shifts/[id]/
  *
- * Берёт данные из src/data/shifts.ts (allShifts) + src/data/shift-info.ts
+ * Берёт данные из src/data/shifts.ts (displayShifts) + src/data/shift-info.ts
  * Layout вдохновлён shift-story_2.html: hero с большими датами →
  * strip с мета (возраст/группы/опыт) → story timeline → milestones → result → booking.
  *
- * Создаётся на каждую смену из allShifts (не displayShifts!) — завершённые смены
- * (shift-1, shift-2, shift-2-1, shift-2-2) в allShifts больше не входят, страниц
- * для них getStaticPaths не генерирует. Сейчас: shift-3, shift-4.
+ * Создаётся на каждую смену из displayShifts — включая завершённые. Раньше брали
+ * allShifts (только смены в продаже), но 08.09.2026 при выносе лета в архив
+ * /shifts/shift-3/ и /shifts/shift-4/ просто исчезли бы, хотя месяцами были в
+ * индексе, — а на shift-4 ещё и вела ссылка из статьи. Ронять живые URL в 404
+ * ради чистоты массива незачем: страница сама показывает фазу «завершена» и
+ * не предлагает бронь (bookingClosed ниже).
  */
 import Base from '../../layouts/Base.astro';
 import Header from '../../components/Header.astro';
@@ -17,13 +20,13 @@ import Footer from '../../components/Footer.astro';
 import ShiftBookModal from '../../components/shifts/ShiftBookModal.astro';
 import ShiftTimeline from '../../components/shifts/ShiftTimeline.astro';
 import WaitlistInfoIcon from '../../components/shifts/WaitlistInfoIcon.astro';
-import { allShifts, shiftInfo, type Shift, getAvailabilityLevel, getBookingCta, WAITLIST_EXPLANATION, getShiftSeason, shiftYearLabel } from '../../data/shifts';
+import { displayShifts, shiftInfo, type Shift, getAvailabilityLevel, getBookingCta, WAITLIST_EXPLANATION, getShiftSeason, shiftYearLabel } from '../../data/shifts';
 import { getCurrentPrice, getTaxDeduction, fmtPrice } from '../../data/dynamicPrices';
 import { getShiftPhase } from '../../data/dynamicPrices';
 import { getNextSeason } from '../../data/seasons';
 
 export async function getStaticPaths() {
-  return allShifts.map((shift) => ({
+  return displayShifts.map((shift) => ({
     params: { id: shift.id },
     props: { shift },
   }));
@@ -181,7 +184,7 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
     </div>
   )}
   <Header />
-  <main class="pb-20 md:pb-0">
+  <main id="main-content" class="pb-20 md:pb-0">
 
     <!-- ═══════ HERO — крупные даты, цена, occupancy, CTA ═══════ -->
     <section class="relative overflow-hidden bg-dark-navy text-white">

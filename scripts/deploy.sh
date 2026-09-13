@@ -27,18 +27,25 @@ if [ "$TARGET" = "prod" ] && [ "${MASTER_AGENT:-0}" != "1" ] && [ "${SKIP_GIT_GU
   exit 1
 fi
 
-# ── 0a. BRANCH GUARD: прод деплоится ТОЛЬКО из main ─────────
-# Эта проверка не обходится SKIP_GIT_GUARD — только явный FORCE_BRANCH=1.
+# ── 0a. BRANCH GUARD: прод деплоится ТОЛЬКО из dev ──────────
+# С 09.09.2026 dev — единственная боевая ветка (решение владельца после переезда
+# на Forgejo: промоут dev→main делал GitHub Actions, на своём CI его нет, main
+# перестал быть зеркалом прода). Требуем: текущая ветка dev ИЛИ HEAD равен
+# origin/dev (release.sh катит из detached worktree). Эта проверка не обходится
+# SKIP_GIT_GUARD — только явный FORCE_BRANCH=1.
 # Инцидент 2026-06-25: деплой из fix/video-player-import → сломанный прод.
 cd "$PROJECT_DIR"
 if [ "$TARGET" = "prod" ] && [ "${FORCE_BRANCH:-0}" != "1" ]; then
   CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "detached")
-  if [ "$CURRENT_BRANCH" != "main" ]; then
-    echo "❌ DEPLOY BLOCKED: прод деплоится только из ветки main"
-    echo "   Текущая ветка: $CURRENT_BRANCH"
+  git fetch origin --quiet 2>/dev/null || true
+  ORIGIN_DEV_SHA=$(git rev-parse origin/dev 2>/dev/null || echo "")
+  HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
+  if [ "$CURRENT_BRANCH" != "dev" ] && [ -z "$ORIGIN_DEV_SHA" -o "$HEAD_SHA" != "$ORIGIN_DEV_SHA" ]; then
+    echo "❌ DEPLOY BLOCKED: прод деплоится только из ветки dev (или HEAD == origin/dev)"
+    echo "   Текущая ветка: $CURRENT_BRANCH, HEAD: ${HEAD_SHA:0:8}, origin/dev: ${ORIGIN_DEV_SHA:0:8}"
     echo ""
-    echo "→ git checkout main && git pull origin main"
-    echo "   ./scripts/deploy.sh prod"
+    echo "→ git checkout dev && git pull origin dev"
+    echo "   ./scripts/release.sh"
     echo ""
     echo "Исключение (хотфикс прямо из этой ветки): FORCE_BRANCH=1 ./scripts/deploy.sh prod"
     exit 1
@@ -51,7 +58,7 @@ fi
 if [ "${SKIP_GIT_GUARD:-0}" != "1" ]; then
   case "$TARGET" in
     dev)  GUARD_BRANCH="dev" ;;
-    prod) GUARD_BRANCH="main" ;;
+    prod) GUARD_BRANCH="dev" ;;   # dev — единственная боевая ветка (09.09.2026)
     *)    GUARD_BRANCH="" ;;
   esac
 
@@ -63,7 +70,7 @@ if [ "${SKIP_GIT_GUARD:-0}" != "1" ]; then
     echo "→ Положи изменения в git через PR:"
     echo "   git checkout -b agent/<task> origin/dev"
     echo "   git add -A && git commit -m '...' && git push origin agent/<task>"
-    echo "   gh pr create --base dev"
+    echo "   tea pr create --base dev   # PR в Forgejo (git.aidaplus.ru)"
     echo ""
     echo "Hotfix владельцем — SKIP_GIT_GUARD=1 ./scripts/deploy.sh $TARGET"
     exit 1

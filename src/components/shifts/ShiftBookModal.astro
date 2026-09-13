@@ -1,13 +1,14 @@
 ---
 import { Icon } from 'astro-icon/components';
 import CallTimeSelector from '../CallTimeSelector.astro';
+import PromoField from '../PromoField.astro';
 import { WAITLIST_EXPLANATION } from '../../data/shifts';
 ---
 
 <!-- ShiftBookModal: bottom-sheet on mobile, centered on desktop -->
 <dialog id="shiftBookModal" class="m-0 h-full w-full max-w-none border-0 outline-none bg-black/50 p-0 backdrop:bg-black/50">
   <div class="flex h-full w-full flex-col items-center justify-end sm:justify-center sm:px-4 sm:py-8">
-    <div class="relative w-full max-w-[420px] overflow-y-auto rounded-t-[24px] bg-white px-5 pb-6 pt-4 shadow-[0_-8px_40px_rgba(15,23,42,0.20)] sm:rounded-[20px] sm:shadow-[0_20px_50px_rgba(15,23,42,0.25)]"
+    <div data-promo-scope class="relative w-full max-w-[420px] overflow-y-auto rounded-t-[24px] bg-white px-5 pb-6 pt-4 shadow-[0_-8px_40px_rgba(15,23,42,0.20)] sm:rounded-[20px] sm:shadow-[0_20px_50px_rgba(15,23,42,0.25)]"
          style="max-height:92dvh;" data-glass>
       <!-- Drag handle -->
       <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-200 sm:hidden"></div>
@@ -22,7 +23,7 @@ import { WAITLIST_EXPLANATION } from '../../data/shifts';
         <p class="pr-8 text-[16px] font-semibold text-slate-900" data-book-shift-name></p>
         <p class="mt-0.5 text-base text-slate-500" data-book-shift-dates-row><span data-book-shift-dates></span><span class="mx-1 text-slate-400">·</span><span data-book-shift-duration></span></p>
         <div class="mt-1 flex items-center gap-2 flex-wrap">
-          <p class="text-[20px] font-bold text-slate-900" data-book-shift-price></p>
+          <p class="text-[20px] font-bold text-slate-900" data-book-shift-price data-promo-price></p>
           <span class="hidden items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-bold text-orange-600" data-book-shift-special>
             <Icon name="bi:lightning-charge" class="bi bi-lightning-charge text-[10px]" aria-hidden="true" />
             спеццена −5%
@@ -63,6 +64,8 @@ import { WAITLIST_EXPLANATION } from '../../data/shifts';
 
       <CallTimeSelector />
 
+      <PromoField />
+
       <!-- Consent: два чекбокса по требованиям 152-ФЗ / РКН -->
       <label class="mt-3 flex cursor-pointer items-start gap-3">
         <input type="checkbox" data-book-consent-policy class="mt-[3px] h-5 w-5 shrink-0 rounded border-slate-300 accent-primary" />
@@ -91,172 +94,31 @@ import { WAITLIST_EXPLANATION } from '../../data/shifts';
 </dialog>
 
 <script>
-  import { formatPhone } from '../../utils/phoneMask';
-  import { hapticTap } from '../../scripts/haptic';
-  import { STORAGE_KEYS } from '../../lib/storage';
-  document.querySelectorAll<HTMLElement>('button[data-haptic], a[data-haptic]')
-    .forEach(el => el.addEventListener('click', hapticTap));
+  // Вся логика модалки (2 КБ: форма, валидация, отправка) вынесена в
+  // src/scripts/shifts/shiftBookModal-init.ts и грузится лениво — по факту
+  // открытия <dialog>, а не безусловно на каждой странице со сменами. Модалку
+  // открывают другие компоненты (Hero.astro, [id].astro) через обычный
+  // showModal() — им ничего менять не нужно: наблюдаем за атрибутом open
+  // самостоятельно, это единственная точка входа диалога.
+  function bootstrapShiftBookModal() {
+    const el = document.getElementById('shiftBookModal') as HTMLDialogElement | null;
+    if (!el || (el as any).__bookBootstrapped) return;
+    (el as any).__bookBootstrapped = true;
+    const modal = el; // TS не сужает null через замыкание loadInit — фиксируем тип явно
 
-  // Защита от повторной отправки той же заявки (телефон+смена) в течение 5 минут —
-  // инцидент 03.07.2026: два сабмита с интервалом 15 сек → два лида в CRM
-  const LEAD_RESEND_MS = 5 * 60 * 1000;
-  function wasRecentlySent(key: string): boolean {
-    try {
-      const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEYS.leadSent) || 'null');
-      return Boolean(saved) && saved.k === key && Date.now() - saved.ts < LEAD_RESEND_MS;
-    } catch {
-      return false;
-    }
-  }
-  function markSent(key: string): void {
-    try {
-      sessionStorage.setItem(STORAGE_KEYS.leadSent, JSON.stringify({ k: key, ts: Date.now() }));
-    } catch { /* ignore */ }
-  }
-
-  function initShiftBookModal() {
-    const modal = document.getElementById('shiftBookModal') as HTMLDialogElement | null;
-    if (!modal || (modal as any).__bookInit) return;
-    (modal as any).__bookInit = true;
-    const bookModal = modal;
-
-    const ageBtns = modal.querySelectorAll<HTMLButtonElement>('[data-book-age]');
-    const phone = modal.querySelector<HTMLInputElement>('[data-book-phone]');
-    const consent = modal.querySelector<HTMLInputElement>('[data-book-consent]');
-    const consentPolicy = modal.querySelector<HTMLInputElement>('[data-book-consent-policy]');
-    const submit = modal.querySelector<HTMLButtonElement>('[data-book-submit]');
-    const nameEl = modal.querySelector<HTMLElement>('[data-book-shift-name]');
-    const errEl = modal.querySelector<HTMLElement>('[data-book-error]');
-    const hintAge = modal.querySelector<HTMLElement>('[data-book-hint-age]');
-    const hintPhone = modal.querySelector<HTMLElement>('[data-book-hint-phone]');
-    const hintConsent = modal.querySelector<HTMLElement>('[data-book-hint-consent]');
-    const waitlistBlock = modal.querySelector<HTMLElement>('[data-book-waitlist-block]');
-
-    let selectedAge = '';
-
-    function isWaitlist() { return bookModal.dataset.waitlist === 'true'; }
-    function submitLabel() { return isWaitlist() ? 'Оставить заявку в лист ожидания' : 'Отправить заявку'; }
-
-    function resetForm() {
-      selectedAge = '';
-      ageBtns.forEach((b) => {
-        b.classList.remove('bg-primary', 'text-[#0d1a2b]', 'font-semibold');
-        b.classList.add('border', 'border-slate-200', 'text-slate-700', 'font-medium');
-      });
-      hintAge?.classList.add('hidden');
-      hintPhone?.classList.add('hidden');
-      hintConsent?.classList.add('hidden');
-      errEl?.classList.add('hidden');
-      waitlistBlock?.classList.toggle('hidden', !isWaitlist());
-      if (submit) submit.textContent = submitLabel();
-      // Сброс CallTimeSelector (чипы + closure-переменные)
-      bookModal.querySelector('.call-time-selector')?.dispatchEvent(new CustomEvent('call-time:reset'));
+    let loaded = false;
+    function loadInit() {
+      if (loaded || !modal.open) return;
+      loaded = true;
+      observer.disconnect();
+      import('../../scripts/shifts/shiftBookModal-init').then((m) => m.initShiftBookModal());
     }
 
-    ageBtns.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        ageBtns.forEach((b) => {
-          b.classList.remove('bg-primary', 'text-[#0d1a2b]', 'font-semibold');
-          b.classList.add('border', 'border-slate-200', 'text-slate-700', 'font-medium');
-        });
-        btn.classList.remove('border', 'border-slate-200', 'text-slate-700', 'font-medium');
-        btn.classList.add('bg-primary', 'text-[#0d1a2b]', 'font-semibold');
-        selectedAge = btn.dataset.bookAge || '';
-        hintAge?.classList.add('hidden');
-      });
-    });
-
-    phone?.addEventListener('input', () => {
-      phone.value = formatPhone(phone.value);
-      if ((phone.value.replace(/\D/g, '')).length === 11) hintPhone?.classList.add('hidden');
-    });
-
-    function bothConsentsChecked() {
-      return (consent?.checked ?? false) && (consentPolicy?.checked ?? false);
-    }
-    consent?.addEventListener('change', () => { if (bothConsentsChecked()) hintConsent?.classList.add('hidden'); });
-    consentPolicy?.addEventListener('change', () => { if (bothConsentsChecked()) hintConsent?.classList.add('hidden'); });
-
-    function isPhoneValid() {
-      const d = (phone?.value || '').replace(/\D/g, '');
-      return d.length === 11 && d.startsWith('7');
-    }
-    function isAgeValid() { return Boolean(selectedAge); }
-
-    submit?.addEventListener('click', async () => {
-      errEl?.classList.add('hidden');
-      const ageOk = isAgeValid();
-      const phoneOk = isPhoneValid();
-      const consentsOk = bothConsentsChecked();
-
-      hintAge?.classList.toggle('hidden', ageOk);
-      hintPhone?.classList.toggle('hidden', phoneOk);
-      hintConsent?.classList.toggle('hidden', consentsOk);
-
-      if (!ageOk || !phoneOk || !consentsOk) {
-        let firstInvalid: HTMLElement | null = null;
-        if (!ageOk) firstInvalid = modal.querySelector<HTMLElement>('[data-book-age-group]');
-        else if (!phoneOk) firstInvalid = phone;
-        else if (!consentsOk) firstInvalid = consentPolicy;
-        firstInvalid?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        (firstInvalid as HTMLInputElement | null)?.focus?.();
-        return;
-      }
-
-      const dedupKey = `${(phone?.value || '').replace(/\D/g, '')}|${(nameEl?.textContent || '').trim()}`;
-      if (wasRecentlySent(dedupKey)) {
-        // Эта заявка уже ушла — не постим второй раз, ведём себя как при успехе
-        modal.close();
-        (document.getElementById('referralModal') as HTMLDialogElement | null)?.showModal();
-        resetForm();
-        return;
-      }
-
-      submit.disabled = true;
-      submit.textContent = 'Отправляем…';
-      submit.classList.add('btn-loading');
-      try {
-        const callTimeInput = modal.querySelector<HTMLInputElement>('[data-call-time-value]');
-        const { submitLead } = await import('../../scripts/form-submit');
-        const ok = await submitLead({
-          phone: phone?.value || '',
-          age: selectedAge,
-          shift: nameEl?.textContent || '',
-          form: isWaitlist() ? 'shifts_book_waitlist' : 'shifts_book',
-          call_time: callTimeInput?.value || '',
-        });
-        if (ok) markSent(dedupKey);
-        modal.close();
-        const referralModal = document.getElementById('referralModal') as HTMLDialogElement | null;
-        referralModal?.showModal();
-        resetForm();
-      } catch (e) {
-        if (errEl) {
-          errEl.textContent = 'Не удалось отправить — проверьте интернет и попробуйте ещё раз';
-          errEl.classList.remove('hidden');
-        }
-      } finally {
-        submit.disabled = false;
-        submit.textContent = submitLabel();
-        submit.classList.remove('btn-loading');
-      }
-    });
-
-    // Сброс при каждом открытии (через MutationObserver, т.к. dialog не имеет 'open' event)
-    const observer = new MutationObserver(() => {
-      if (modal.open) resetForm();
-    });
+    const observer = new MutationObserver(loadInit);
     observer.observe(modal, { attributes: true, attributeFilter: ['open'] });
-
-    // Закрытие
-    modal.querySelector('[data-shift-book-close]')?.addEventListener('click', () => modal.close());
-    modal.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
+    // На случай если showModal() уже вызван раньше, чем этот скрипт выполнился.
+    loadInit();
   }
-  document.addEventListener('astro:page-load', initShiftBookModal);
-  // Defer init — модалка не нужна до взаимодействия, не должна блокировать LCP
-  if ('requestIdleCallback' in window) {
-    requestIdleCallback(initShiftBookModal, { timeout: 2000 });
-  } else {
-    setTimeout(initShiftBookModal, 200);
-  }
+  document.addEventListener('astro:page-load', bootstrapShiftBookModal);
+  bootstrapShiftBookModal();
 </script>

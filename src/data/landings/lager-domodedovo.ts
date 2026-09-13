@@ -1,4 +1,4 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_S2, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_MAX, DAYS_MIN, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_S2, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
 import { STAT_RATING } from '../contacts';
 import { otzyvyLink, yandexReviewsLink } from '../../lib/reviews-link';
 import type { LandingData } from './types';
@@ -15,7 +15,7 @@ const landing: LandingData = {
     { q: 'Сколько ехать из Домодедово и как добраться?', a: `АйДаКемп — 66 км от МКАД по Киевскому шоссе, ~1 час без пробок. Без машины — до м. Солнцево и трансфер (${TRANSFER_PRICE_FMT}, ~40 мин).` },
     { q: 'Для каких детей подходит наша IT-программа?', a: 'Для детей 7–15 лет, без опыта — группы для начинающих, среднего и продвинутого уровня, до 8 человек с IT-специалистами.' },
     { q: 'Что входит в стоимость путёвки?', a: `Проживание, 5-разовое питание, IT-программа (2 занятия по 90 мин. в день), бассейн, вечерние активности. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} в один конец.` },
-    { q: 'Есть ли возможность оплатить путёвку частями?', a: `Да: 50% при бронировании, 50% за 3 недели до заезда. Открытые смены от ${PRICE_MIN} (10 дней) до ${PRICE_MAX} (13 дней).` },
+    { q: 'Есть ли возможность оплатить путёвку частями?', a: `Да: 50% при бронировании, 50% за 3 недели до заезда. Открытые смены от ${PRICE_MIN} (${DAYS_MIN}) до ${PRICE_MAX} (${DAYS_MAX}).` },
     { q: `Что есть для ребят рядом с Домодедово летом ${SEASON_YEAR}?`, a: `Мы — в том же направлении: 66 км от МКАД, летние смены 7–14 дней, Python, AI, Minecraft, Roblox для школьников 7–15 лет.` },
   ],
   courseSchema: {
@@ -79,10 +79,10 @@ const landing: LandingData = {
       h2: 'Сколько стоит и как вернуть 13%',
       text: 'В стоимость входит всё: проживание, питание, IT-программа, ноутбуки, бассейн, медик, хакатон. Доплат нет.',
       list: [
-        `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, 7 дней, ${PRICE_S21} → налоговый возврат ~${VYCHET_S21}`,
-        `Смена 2 (завершена) — ${DATES_SHORT_S2}, 14 дней, ${PRICE_S2} → возврат ~${VYCHET_S2}`,
-        `Смена 3 — ${DATES_SHORT_S3}, 13 дней, ${PRICE_S3} → возврат ~${VYCHET_S3}`,
-        `Смена 4 — ${DATES_SHORT_S4}, 10 дней, ${PRICE_S4} → возврат ~${VYCHET_S4}`,
+        `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, ${DAYS_S21}, ${PRICE_S21} → налоговый возврат ~${VYCHET_S21}`,
+        `Смена 2 (завершена) — ${DATES_SHORT_S2}, ${DAYS_S2}, ${PRICE_S2} → возврат ~${VYCHET_S2}`,
+        `Смена 3 — ${DATES_SHORT_S3}, ${DAYS_S3}, ${PRICE_S3} → возврат ~${VYCHET_S3}`,
+        `Смена 4 — ${DATES_SHORT_S4}, ${DAYS_S4}, ${PRICE_S4} → возврат ~${VYCHET_S4}`,
         '<a href="/politika-vozvrata/" class="text-orange-600 underline underline-offset-2 hover:text-orange-700">Гарантия и условия возврата →</a>',
       ],
     },

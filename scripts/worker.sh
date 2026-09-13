@@ -98,7 +98,8 @@ case "$cmd" in
 
     # Открытые PR
     echo -e "${BOLD}Открытые PR в dev:${NC}"
-    gh pr list --base dev --json number,title,headRefName,state 2>/dev/null \
+    # PR — в Forgejo (git.aidaplus.ru) через tea; gh с 08.09.2026 не используется
+    tea pr list --state open --fields index,head,title --output json 2>/dev/null \
       | python3 -c "
 import sys, json
 prs = json.load(sys.stdin)
@@ -106,8 +107,8 @@ if not prs:
     print('  (нет открытых PR)')
 else:
     for pr in prs:
-        print(f'  #{pr[\"number\"]} [{pr[\"headRefName\"]}] {pr[\"title\"]}')
-" 2>/dev/null || echo "  (gh не доступен)"
+        print(f'  #{pr[\"index\"]} [{pr[\"head\"]}] {pr[\"title\"]}')
+" 2>/dev/null || echo "  (tea не доступен)"
     ;;
 
   # ─── done: удалить воркер после мержа ────────────────────────────────────

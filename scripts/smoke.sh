@@ -102,7 +102,41 @@ fi
 echo "  проверено редирект-слагов: $CHECKED"
 
 echo ""
-echo "── 3. CSRF: form-POST со своим Origin проходит, с чужим — 403 ──"
+echo "── 3. Стили: главная реально получает Tailwind ──"
+# Вторая линия после check-css-utilities.mjs (тот проверяет dist/, этот — живой сайт).
+# Инцидент 08.09.2026: главный CSS публичной части похудел с 220 КБ до 25 КБ, сайт
+# 12 часов отдавался голым HTML. Все коды ответов при этом были 200, файлы на месте —
+# поэтому smoke обязан смотреть В содержимое CSS, а не только на его доступность.
+HOME_HTML=$(curl -s --max-time 15 "$BASE/")
+CSS_HREF=$(printf '%s' "$HOME_HTML" | grep -oE 'href=["'"'"']?/_astro/[A-Za-z0-9._-]+\.css' | sed 's|href=["'"'"']*||' | head -1)
+if [ -n "$CSS_HREF" ]; then
+  # inlineStylesheets: 'auto'|'never' — утилиты в подключённом файле.
+  CSS_BODY=$(curl -s --max-time 20 "$BASE$CSS_HREF")
+  CSS_SIZE=$(printf '%s' "$CSS_BODY" | wc -c | tr -d ' ')
+  # Чистая bash-проверка подстроки, не пайп в grep: grep -q закрывает stdin, как
+  # только находит совпадение, и на многосоткилобайтном теле пишущий в пайп
+  # printf получает SIGPIPE ДО того, как успевает дописать остаток — при
+  # set -o pipefail это превращает пайплайн в "не найдено" на страницах, где
+  # совпадение вообще-то есть (сломано 11.09.2026, поймано на живом деплое).
+  if [[ "$CSS_BODY" == *'.flex{'* ]]; then
+    printf '  ✅ %-44s %s байт\n' "Tailwind в подключённом CSS" "$CSS_SIZE"
+  else
+    printf '  ❌ %-44s %s байт (сайт без стилей!)\n' "утилит Tailwind нет в" "$CSS_SIZE"; FAIL=$((FAIL + 1))
+  fi
+else
+  # inlineStylesheets: 'always' (с 11.09.2026) — утилиты прямо в <style> главной.
+  # Раньше страж падал тут ложно: «нет <link>» ≠ «нет стилей», Astro просто
+  # кладёт CSS в HTML другим способом — страж обязан проверить оба варианта.
+  INLINE_SIZE=$(printf '%s' "$HOME_HTML" | wc -c | tr -d ' ')
+  if [[ "$HOME_HTML" == *'.flex{'* ]]; then
+    printf '  ✅ %-44s %s байт\n' "Tailwind инлайном в HTML" "$INLINE_SIZE"
+  else
+    printf '  ❌ %-44s\n' "ни <link> на CSS, ни инлайн-утилит Tailwind нет"; FAIL=$((FAIL + 1))
+  fi
+fi
+
+echo ""
+echo "── 4. CSRF: form-POST со своим Origin проходит, с чужим — 403 ──"
 # checkOrigin (Astro) сравнивает Origin с URL запроса; за nginx URL собирается из
 # X-Forwarded-Proto + Host под security.allowedDomains. Если что-то из этого
 # разъедется — свой Origin получит 403 и вход в портал сломается молча (апрель 2026).

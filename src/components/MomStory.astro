@@ -2,6 +2,7 @@
 import { Icon } from 'astro-icon/components';
 import { DARIA_CUES } from '../data/dariaCues';
 import CallTimeSelector from './CallTimeSelector.astro';
+import PromoField from './PromoField.astro';
 import VideoPlayer from './VideoPlayer.astro';
 
 
@@ -176,6 +177,8 @@ const photoH = compact ? 96 : 192;
 
       <CallTimeSelector />
 
+      <PromoField class="mt-3" />
+
       <!-- Consent: два чекбокса по требованиям 152-ФЗ / РКН -->
       <label class="mt-4 flex items-start gap-2 text-base leading-[1.4] text-body-muted">
         <input type="checkbox" id="daria-callback-consent-policy" class="mt-[2px] h-4 w-4 shrink-0 rounded border border-slate-300 accent-primary" />
@@ -319,11 +322,14 @@ const photoH = compact ? 96 : 192;
 
     try {
       const { submitLead } = await import('../scripts/form-submit');
+      const { getStoredPromoCode, promoNoteForLead } = await import('../scripts/promo');
       await submitLead({
         phone: phoneInput.value,
         age: '',
         form: 'daria_callback',
         call_time: callTimeInput?.value || '',
+        promo: getStoredPromoCode(),
+        note_extra: promoNoteForLead(),
       });
       // Show success
       const formEls = modal?.querySelectorAll<HTMLElement>('p, input, label, button[id="daria-callback-submit"]');

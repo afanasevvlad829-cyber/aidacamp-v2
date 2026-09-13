@@ -1,6 +1,6 @@
 ---
 import { Icon } from 'astro-icon/components';
-import { PRICE_MAX, PRICE_MIN, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX } from '../data/shifts';
+import { DAYS_MAX, DAYS_MIN, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_MAX_DAYS, daysAdj } from '../data/shifts';
 import '../styles/global.css';
 import LandingLayout from '../layouts/LandingLayout.astro';
 import Shifts from '../components/Shifts.astro';
@@ -13,7 +13,7 @@ import { SEASON_MONTHS_NOM } from '../data/evergreen';
 <LandingLayout
   heroImage="/images/hero/lager-v-podmoskove.avif"
   title={`Детские лагеря в Подмосковье на лето ${SEASON_YEAR} — цены | АйДаКемп`}
-  description={`Детские лагеря в Подмосковье на лето ${SEASON_YEAR} — цены АйДаКемп: смены 10 и 13 дней от ${PRICE_MIN}, всё включено. Python, AI, Minecraft, бассейн, налоговый вычет 13%. 66 км от МКАД.`}
+  description={`Детские лагеря в Подмосковье на лето ${SEASON_YEAR} — цены АйДаКемп: смены ${DAYS_S4} и ${DAYS_S3} от ${PRICE_MIN}, всё включено. Python, AI, Minecraft, бассейн, налоговый вычет 13%. 66 км от МКАД.`}
   h1={`Детские лагеря в Подмосковье на лето ${SEASON_YEAR} — цены`}
   canonical="https://aidacamp.ru/detskie-lagerya-v-podmoskove-tseny-2026"
 >
@@ -65,9 +65,9 @@ import { SEASON_MONTHS_NOM } from '../data/evergreen';
 
   <Shifts />
   <FAQ items={['medicine:0', 'safety:0', 'food:0', 'communication:0', 'about2026:2', 'about2026:0', 'about2026:7', 'payment:1']} extraItems={[
-    { q: `Сколько стоят детские лагеря в Подмосковье на лето ${SEASON_YEAR}?`, a: `АйДаКемп — загородный IT-лагерь с проживанием в Наро-Фоминском районе Подмосковья. Смены 10 и 13 дней для школьников 7–15 лет, цена от ${PRICE_MIN}. В стоимость включены проживание, 5-разовое питание, IT-программа и бассейн.` },
+    { q: `Сколько стоят детские лагеря в Подмосковье на лето ${SEASON_YEAR}?`, a: `АйДаКемп — загородный IT-лагерь с проживанием в Наро-Фоминском районе Подмосковья. Смены ${DAYS_S4} и ${DAYS_S3} для школьников 7–15 лет, цена от ${PRICE_MIN}. В стоимость включены проживание, 5-разовое питание, IT-программа и бассейн.` },
     { q: "Что входит в цену путёвки в детский лагерь?", a: `Проживание, 5-разовое питание, вся IT-программа (Python, AI, Minecraft, Roblox, 3D), бассейн и спорт — без доплат за отдельные занятия. Налоговый вычет 13% возвращает до ${VYCHET_MAX}.` },
-    { q: `Сколько стоит лагерь в ${SEASON_YEAR} году?`, a: `Летний сезон ${SEASON_YEAR} завершён. Стоимость прошедших смен: от ${PRICE_MIN} за 10 дней (Смена 4) до ${PRICE_MAX} за 13 дней (Смена 3). Включены питание, проживание, IT-программа.` }
+    { q: `Сколько стоит лагерь в ${SEASON_YEAR} году?`, a: `Летний сезон ${SEASON_YEAR} завершён. Стоимость прошедших смен: от ${PRICE_MIN} за ${DAYS_MIN} (Смена 4) до ${PRICE_MAX} за ${DAYS_MAX} (Смена 3). Включены питание, проживание, IT-программа.` }
   ]} />
   <div class="mx-auto max-w-[720px] px-4 pb-8 text-center">
     <p class="text-base text-slate-500">
@@ -85,17 +85,17 @@ import { SEASON_MONTHS_NOM } from '../data/evergreen';
   <section class="mx-auto max-w-[720px] px-4 py-8 prose prose-lg max-w-none text-body-muted leading-relaxed">
     <h2 class="text-[22px] md:text-[28px] font-bold text-body mb-4">Что входит в стоимость</h2>
     <p>Цена путёвки в АйДаКемп закрывает всё, что нужно на смене: проживание, 5-разовое питание, IT-программу, бассейн и спорт. Доплат за отдельные занятия нет — все направления уже включены.</p>
-    <p>Стоимость путёвки в АйДаКемп — от {PRICE_S4} за 10 дней, всё включено: проживание, питание, IT-программа, бассейн.</p>
-    <p>Августовские смены завершились: 10 и 13 дней, стоимость — от {PRICE_MIN} до {PRICE_MAX} в зависимости от длины. Часть денег возвращается: налоговый вычет 13% даёт до {VYCHET_MAX} за самую длинную, 13-дневную смену.</p>
+    <p>Стоимость путёвки в АйДаКемп — от {PRICE_S4} за {DAYS_S4}, всё включено: проживание, питание, IT-программа, бассейн.</p>
+    <p>Августовские смены завершились: {DAYS_S4} и {DAYS_S3}, стоимость — от {PRICE_MIN} до {PRICE_MAX} в зависимости от длины. Часть денег возвращается: налоговый вычет 13% даёт до {VYCHET_MAX} за самую длинную, {daysAdj(VYCHET_MAX_DAYS, 'acc')} смену.</p>
     <p>Лагерь работает в санатории «Изумруд» в Наро-Фоминском районе, 66 км от МКАД. Группы до 8 человек, медработник круглосуточно, а родителям каждый день приходят фото из отряда в Telegram.</p>
     <h2 class="text-[22px] md:text-[28px] font-bold text-body mb-4 mt-8">Цены коротко</h2>
     <ul class="space-y-2">
-      <li>Смена 10 дней — от {PRICE_MIN}</li>
-      <li>Смена 13 дней — до {PRICE_MAX}</li>
+      <li>Смена {DAYS_MIN} — от {PRICE_MIN}</li>
+      <li>Смена {DAYS_MAX} — до {PRICE_MAX}</li>
       <li>В цене: проживание, 5-разовое питание, все IT-направления, бассейн</li>
       <li>Все IT-направления включены в путёвку: ребёнок уедет домой с практическими навыками и готовым проектом</li>
       <li>Без скрытых доплат за занятия</li>
-      <li>Налоговый вычет 13% — до {VYCHET_MAX} за 14-дневную смену</li>
+      <li>Налоговый вычет 13% — до {VYCHET_MAX} за {daysAdj(VYCHET_MAX_DAYS, 'acc')} смену</li>
     </ul>
   </section>
 </LandingLayout>

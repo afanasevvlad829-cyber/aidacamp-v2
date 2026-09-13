@@ -11,9 +11,9 @@ import Gallery from '../components/Gallery.astro';
 import TaxCalculator from '../components/TaxCalculator.astro';
 import BenefitCalculator from '../components/BenefitCalculator.astro';
 import { getRelatedPages } from '../data/landing-pages';
-import { PRICE_MAX, PRICE_MIN, PRICE_S1, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_S1, VYCHET_S2, VYCHET_S21, VYCHET_S22, VYCHET_S3, VYCHET_S4, mainShifts, shortShifts } from '../data/shifts';
+import { DAYS_MAX, DAYS_MIN, DAYS_S1, DAYS_S2, DAYS_S21, DAYS_S22, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S1, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_S1, VYCHET_S2, VYCHET_S21, VYCHET_S22, VYCHET_S3, VYCHET_S4, mainShifts, shortShifts } from '../data/shifts';
 import AskCta from '../components/AskCta.astro';
-import { isSalesOpen } from '../data/dynamicPrices';
+import { isSalesOpen, getOpenShifts } from '../data/dynamicPrices';
 import { getNextSeason } from '../data/seasons';
 
 /* Сезон закрыт (ни одной смены в фазе 'upcoming') — таблица остаётся справкой
@@ -21,6 +21,19 @@ import { getNextSeason } from '../data/seasons';
    и счётчик свободных мест. Проверка по датам через isSalesOpen(), не хардкодом. */
 const salesOpen = isSalesOpen();
 const nextSeason = getNextSeason();
+
+/* Цены в заголовках — только по сменам, которые реально можно купить.
+   PRICE_MIN/PRICE_MAX считаются по всему mainShifts, включая завершённые:
+   до 08.09.2026 подзаголовок звал «до 89 400 ₽ за 13 дней» — на Смену 3,
+   закрытую с августа. Диапазон схлопывается в одну цену, если она одна. */
+const _openShifts = getOpenShifts();
+const _openNum = (p: string) => parseInt(p.replace(/[^\d]/g, ''), 10);
+const _openSorted = [..._openShifts].sort((a, b) => _openNum(a.price) - _openNum(b.price));
+const OPEN_PRICE_MIN = _openSorted[0]?.price ?? PRICE_MIN;
+const OPEN_PRICE_MAX = _openSorted[_openSorted.length - 1]?.price ?? PRICE_MAX;
+const OPEN_PRICE_RANGE = OPEN_PRICE_MIN === OPEN_PRICE_MAX
+  ? OPEN_PRICE_MIN
+  : `от ${OPEN_PRICE_MIN} до ${OPEN_PRICE_MAX}`;
 import { getCurrentPrice } from '../data/dynamicPrices';
 import { PAYMENT_SPLIT, STAT_RATING } from '../data/contacts';
 
@@ -78,7 +91,7 @@ const priceRows = [
 const sections = [
   {
     h2: salesOpen ? 'Актуальные заезды' : 'Заезды прошедшего сезона',
-    text: `Последние смены летнего сезона прошли: 10 дней — ${PRICE_S4}, 13 дней — ${PRICE_S3}. Сумма была указана за ребёнка в лагере и включала проживание, питание, программу и бассейн, без доплат. Детский лагерь находится в Подмосковье, в Наро-Фоминском округе; оформление проходило по официальному договору с оплатой в рублях.`,
+    text: `Последние смены летнего сезона прошли: ${DAYS_S4} — ${PRICE_S4}, ${DAYS_S3} — ${PRICE_S3}. Сумма была указана за ребёнка в лагере и включала проживание, питание, программу и бассейн, без доплат. Детский лагерь находится в Подмосковье, в Наро-Фоминском округе; оформление проходило по официальному договору с оплатой в рублях.`,
   },
   {
     h2: 'Что входит в программу',
@@ -115,12 +128,12 @@ const sections = [
     h2: 'Налоговый вычет 13%',
     text: 'АйДаКемп работает по лицензии Минобрнауки — можно вернуть 13% от образовательной части взноса (бытовая составляющая — проживание и питание — в вычет не входит). Документы высылаем автоматически после оплаты, расчёт — в калькуляторе ниже. Подробнее: <a href=\'/nalogovyj-vychet/\' class=\'text-orange-600 underline underline-offset-2\'>как оформить налоговый вычет за лагерь</a>. Пошагово, <a href=\'/stati/nalogovyj-vychet-za-lager-poshagovaya-instrukciya/\' class=\'text-orange-600 underline underline-offset-2\'>как вернуть 13% за лагерь</a> — в отдельной инструкции.',
     list: [
-      `Смена 4 (10 дней, ${PRICE_S4}) — возврат ~${VYCHET_S4}`,
-      `Смена 3 (13 дней, ${PRICE_S3}) — возврат ~${VYCHET_S3}`,
-      `Смена 1 (завершена, 10 дней, ${PRICE_S1}) — возврат ~${VYCHET_S1}`,
-      `Смена 2.1 (завершена, 7 дней, ${PRICE_S21}) — возврат ~${VYCHET_S21}`,
-      `Смена 2.2 (завершена, 8 дней, ${PRICE_S22}) — возврат ~${VYCHET_S22}`,
-      `Смена 2 (завершена, 14 дней, ${PRICE_S2}) — возврат ~${VYCHET_S2} (максимум сезона)`,
+      `Смена 4 (${DAYS_S4}, ${PRICE_S4}) — возврат ~${VYCHET_S4}`,
+      `Смена 3 (${DAYS_S3}, ${PRICE_S3}) — возврат ~${VYCHET_S3}`,
+      `Смена 1 (завершена, ${DAYS_S1}, ${PRICE_S1}) — возврат ~${VYCHET_S1}`,
+      `Смена 2.1 (завершена, ${DAYS_S21}, ${PRICE_S21}) — возврат ~${VYCHET_S21}`,
+      `Смена 2.2 (завершена, ${DAYS_S22}, ${PRICE_S22}) — возврат ~${VYCHET_S22}`,
+      `Смена 2 (завершена, ${DAYS_S2}, ${PRICE_S2}) — возврат ~${VYCHET_S2} (максимум сезона)`,
       'Оформляется через ФНС — декларация 3-НДФЛ или через Госуслуги',
     ],
   },
@@ -182,7 +195,7 @@ const sections = [
     text: 'Отвечаем на частые вопросы о лагере: что входит в программу и как снизить расходы.',
     list: [
       'В программу входит всё, что нужно ребятам летом: проживание, 5-разовое питание, IT-программа, бассейн, охрана — без скрытых доплат',
-      `Самая доступная открытая программа — 10 дней от ${PRICE_MIN} (август)`,
+      `Самая доступная открытая программа — ${DAYS_MIN} от ${PRICE_MIN}`,
       `Налоговый вычет 13% возвращается из бюджета — от ${VYCHET_S21} до ${VYCHET_MAX} в зависимости от даты заезда`,
       'Рассрочка по карте Т-банк — делим оплату на 3–6 месяцев без переплат',
       `Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} в одну сторону, бронируется отдельно`,
@@ -192,9 +205,9 @@ const sections = [
 ---
 
 <LandingLayout
-  title={`Цены на путевки в детский летний лагерь Подмосковья смена ${SEASON_YEAR}`}
-  description={`Цены на детский лагерь АйДаКемп ${SEASON_YEAR}: путёвки от ${PRICE_MIN} за смену в Подмосковье. Питание, проживание, IT-программа, бассейн включены. Налоговый вычет 13% до ${VYCHET_MAX}, рассрочка.`}
-  h1={`Цены на детские смены ${SEASON_YEAR} — летний лагерь в Подмосковье`}
+  title="Цены на путёвки в детский лагерь в Подмосковье — стоимость смен и что входит"
+  description={`Цены на детский лагерь АйДаКемп: путёвки ${OPEN_PRICE_RANGE} за смену в Подмосковье. Питание, проживание, IT-программа, бассейн включены. Налоговый вычет 13% до ${VYCHET_MAX}, рассрочка.`}
+  h1="Цены на путёвки в детский лагерь в Подмосковье"
   canonical="https://aidacamp.ru/ceny"
   heroImage="/images/hero/kupit-putevku-v-lager.avif"
   breadcrumb="Расценки"
@@ -311,12 +324,12 @@ const sections = [
     ])} />
   </Fragment>
   <LandingHero slot="hero"
-    h1={`Цены на детские смены ${SEASON_YEAR} — летний лагерь в Подмосковье`}
+    h1="Цены на путёвки в детский лагерь в Подмосковье"
     subtitle={salesOpen
-      ? `Заезды в детский лагерь в Подмосковье на ${SEASON_YEAR} год: от ${PRICE_MIN} за 10 дней до ${PRICE_MAX} за 13 дней. Проживание, питание, IT-программа и бассейн — всё включено без скрытых доплат.`
+      ? `Заезды в детский лагерь в Подмосковье, открытые к записи: ${OPEN_PRICE_RANGE} за смену. Проживание, питание, IT-программа и бассейн — всё включено без скрытых доплат.`
       : nextSeason
         ? `Летний сезон ${SEASON_YEAR} завершён — суммы ниже сохранены для ориентира. Ближайший заезд: ${nextSeason.shortName}, ${nextSeason.seasonMeta.dates}, ${nextSeason.seasonMeta.price}. Проживание, питание, IT-программа и бассейн — всё включено без скрытых доплат.`
-        : `Суммы летнего сезона ${SEASON_YEAR} — от ${PRICE_MIN} за 10 дней до ${PRICE_MAX} за 13 дней. Проживание, питание, IT-программа и бассейн — всё включено без скрытых доплат.`}
+        : `Суммы летнего сезона ${SEASON_YEAR} — от ${PRICE_MIN} за ${DAYS_MIN} до ${PRICE_MAX} за ${DAYS_MAX}. Проживание, питание, IT-программа и бассейн — всё включено без скрытых доплат.`}
     breadcrumb="Расценки"
     keywords={[
       salesOpen || !nextSeason
@@ -462,8 +475,8 @@ const sections = [
   <Gallery />
 
   <FAQ items={['medicine:0', 'safety:0', 'food:0', 'communication:0', 'about2026:2', 'about2026:6', 'payment:2', 'about2026:9']} extraItems={[
-    { q: `Сколько стоил летний лагерь в ${SEASON_YEAR} году?`, a: `Последние смены сезона стоили ${PRICE_S4} за 10 дней и ${PRICE_S3} за 13 дней. В сумму входили проживание, питание, IT-программа и бассейн, без доплат.` },
-    { q: "Какова цена летнего лагеря для детей в Подмосковье?", a: `От ${PRICE_MIN} (10 дней) до ${PRICE_MAX} (13 дней). Налоговый вычет 13% возвращает до ${VYCHET_MAX} от образовательной части — оформляется после заезда в лагерь.` },
+    { q: `Сколько стоил летний лагерь в ${SEASON_YEAR} году?`, a: `Последние смены сезона стоили ${PRICE_S4} за ${DAYS_S4} и ${PRICE_S3} за ${DAYS_S3}. В сумму входили проживание, питание, IT-программа и бассейн, без доплат.` },
+    { q: "Какова цена летнего лагеря для детей в Подмосковье?", a: `От ${PRICE_MIN} (${DAYS_MIN}) до ${PRICE_MAX} (${DAYS_MAX}). Налоговый вычет 13% возвращает до ${VYCHET_MAX} от образовательной части — оформляется после заезда в лагерь.` },
     { q: "Можно ли оплатить лагерь частями?", a: `Да. ${PAYMENT_SPLIT}. Место в лагере фиксируется после первого взноса. Принимаем банковский перевод и карту.` },
     { q: "Что входит в цену путевки?", a: `Проживание, 5-разовое питание, IT-программа (2 занятия по 90 мин. в день), бассейн и вечерние активности в лагере. Трансфер из Москвы — ${TRANSFER_PRICE_FMT} отдельно.` },
     { q: "Можно ли вернуть деньги за путевку?", a: "Да, в соответствии с Законом о защите прав потребителей. При отказе за 30+ дней — полный возврат за вычетом расходов, понесённых лагерем. Подробнее — в Политике возврата на сайте." },
