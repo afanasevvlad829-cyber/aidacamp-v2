@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { YM_COUNTER } from '../../data/tracking';
-import { allShiftsIncludingArchived, SHIFT_META, fmtRub, taxDeduction, EDU_BASE_CAP, VYCHET_S3, VYCHET_S4 } from '../../data/shifts';
+import { allShiftsIncludingArchived, SHIFT_META, fmtRub, taxDeduction, EDU_BASE_CAP, VYCHET_S3, VYCHET_S4, SEASON_YEAR } from '../../data/shifts';
 import { getCurrentPrice, getTaxDeduction, getDays, getShiftPhase } from '../../data/dynamicPrices';
 
 /* ── THEME ── */
@@ -270,7 +270,7 @@ function blockSmeny(){
 
   // header
   const head=mkEl('div','padding:12px 16px;border-bottom:1px solid rgba(13,27,42,.07);display:flex;align-items:center;justify-content:space-between');
-  head.innerHTML='<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:7px"><i class="bi bi-calendar-event" aria-hidden="true"></i>Смены лета 2026</span>'
+  head.innerHTML=`<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55);display:flex;align-items:center;gap:7px"><i class="bi bi-calendar-event" aria-hidden="true"></i>Смены лета ${SEASON_YEAR}</span>`
     +'<span style="font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;background:rgba(236,124,0,.12);color:#ad5b00">Запись открыта</span>';
   card.appendChild(head);
 
