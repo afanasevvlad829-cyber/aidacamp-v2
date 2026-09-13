@@ -13,7 +13,12 @@ REGISTRY="$REPO_ROOT/.agent-registry.json"
 [[ "$CURRENT_BRANCH" != agent/* ]] && exit 0
 
 # Проверяем статус PR
-PR_STATE=$(gh pr view "$CURRENT_BRANCH" --json state -q .state 2>/dev/null || echo "NONE")
+# Forgejo через tea: ветка среди смерженных PR → MERGED (gh не используется с 08.09.2026)
+if tea pr list --state closed --limit 50 --fields head,state --output tsv 2>/dev/null | grep -P "^\Q$CURRENT_BRANCH\E\t" | grep -qi "merged"; then
+  PR_STATE="MERGED"
+else
+  PR_STATE="NONE"
+fi
 
 if [[ "$PR_STATE" == "MERGED" ]]; then
   CURRENT_WORKTREE=$(git rev-parse --show-toplevel)

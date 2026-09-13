@@ -36,8 +36,10 @@ PR_BODY="## $DESCRIPTION
 - [ ] Проверено на dev.aidacamp.ru
 
 *Создано через agent-done.sh*"
-PR_URL=$(gh pr create --base dev --head "$BRANCH" --title "$DESCRIPTION" --body "$PR_BODY" 2>/dev/null) \
-  || PR_URL=$(gh pr view "$BRANCH" --json url -q .url 2>/dev/null || echo "(gh недоступен)")
+# PR — в Forgejo (git.aidaplus.ru) через tea (brew install tea; логин: tea login add
+# --url https://git.aidaplus.ru). gh с 08.09.2026 не используется: аккаунт GitHub заблокирован.
+PR_URL=$(tea pr create --base dev --head "$BRANCH" --title "$DESCRIPTION" --description "$PR_BODY" 2>/dev/null | grep -oE 'https?://[^ ]+/pulls/[0-9]+' | head -1)
+[ -n "$PR_URL" ] || PR_URL="(tea недоступен — открой PR руками: https://git.aidaplus.ru/vlad/aidacamp-v2/compare/dev...$BRANCH)"
 echo -e "  ${GREEN}✅ PR: $PR_URL${NC}"
 if [[ -f "$REGISTRY" ]]; then
 python3 - <<PYEOF
@@ -54,5 +56,5 @@ echo -e "${GREEN}${BOLD}  ✅ ГОТОВО! PR: $PR_URL${NC}"
 echo ""
 echo -e "${BOLD}  Что дальше (владелец):${NC}"
 echo -e "  1. Проверь dev.aidacamp.ru"
-echo -e "  2. ${CYAN}gh pr merge --squash${NC}"
+echo -e "  2. мерж PR в Forgejo (${CYAN}tea pr merge <N>${NC} или кнопкой), затем ${CYAN}./scripts/release.sh${NC}"
 echo -e "  3. ${CYAN}./scripts/worker.sh done $TASK_SLUG${NC}"

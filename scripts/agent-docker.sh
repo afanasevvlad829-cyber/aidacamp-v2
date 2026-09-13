@@ -3,8 +3,8 @@
 #
 # Безопасность:
 #   - контейнер под non-root (USER agent), --rm (удаляется после задачи)
-#   - НЕ монтирует прод-файлы/секреты; репо клонируется внутри из GitHub
-#   - секреты только через --env-file (scoped GitHub PAT + ANTHROPIC_API_KEY)
+#   - НЕ монтирует прод-файлы/секреты; репо клонируется внутри из Forgejo (git.aidaplus.ru)
+#   - секреты только через --env-file (scoped Forgejo-токен + ANTHROPIC_API_KEY)
 #   - радиус поражения = только репозиторий (по правам PAT)
 #
 # Использование: ./scripts/agent-docker.sh "<задача>" ["<детальный бриф>"]
@@ -14,7 +14,7 @@ TITLE="${1:?Использование: $0 \"<задача>\" [\"<бриф>\"]}"
 BRIEF="${2:-$TITLE}"
 SLUG=$(echo "$TITLE" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g; s/--*/-/g; s/^-//; s/-$//')
 BRANCH="agent/$SLUG"
-REPO="${AGENT_REPO:-afanasevvlad829-cyber/aidacamp-v2}"
+REPO="${AGENT_REPO:-vlad/aidacamp-v2}"  # Forgejo (git.aidaplus.ru), с 08.09.2026 не GitHub
 IMAGE="${AGENT_IMAGE:-aidacamp-agent:latest}"
 SECRETS="${AGENT_SECRETS:-$HOME/.agent-secrets.env}"
 

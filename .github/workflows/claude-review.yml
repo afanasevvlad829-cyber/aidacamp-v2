@@ -1,0 +1,158 @@
+name: Claude Review
+
+# Авторевью каждого PR в dev силами Claude Code CLI на своём раннере Forgejo.
+#
+# Отдельный workflow, а не job внутри quality-gate — намеренно: ревью
+# информационное, оно не должно ни блокировать мерж, ни ронять гейт.
+# Официальный anthropics/claude-code-action здесь не работает — он создаёт
+# GitHub App-токен и ходит в GitHub GraphQL, которого у Forgejo нет
+# (проверено 09.09.2026). Поэтому — официальный CLI + Forgejo REST API.
+#
+# Аутентификация — токен подписки Claude (Pro/Max), не API-ключ:
+# `claude setup-token` на маке → секрет репозитория CLAUDE_CODE_OAUTH_TOKEN.
+# Каждый прогон тратит окно подписки владельца, поэтому concurrency отменяет
+# незаконченное ревью при новом пуше в тот же PR.
+#
+# Инструменты Claude ограничены чтением (Read/Grep/Glob) — правок в ветку
+# не делает по построению. Дифф PR для него — данные, не инструкции.
+#
+# Проверять YAML перед коммитом:
+#   python3 -c "import yaml;yaml.safe_load(open('.github/workflows/claude-review.yml'))"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - dev
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      BASE_REF: ${{ github.event.pull_request.base.ref }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      # Forgejo отдаёт GITHUB_API_URL как зеркало FORGEJO_API_URL; запасной
+      # вариант — собрать из адреса сервера.
+      API_URL: ${{ github.api_url }}
+      MAX_DIFF_LINES: '4000'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Дифф PR
+        id: diff
+        run: |
+          set -euo pipefail
+          # Генерированное и вендорное не ревьюим — только шум и объём.
+          git diff "origin/${BASE_REF}...HEAD" -- . \
+            ':(exclude)src/styles/icons*.css' \
+            ':(exclude)package-lock.json' \
+            ':(exclude)dist/**' \
+            ':(exclude)**/*.min.*' \
+            > /tmp/pr.diff
+          lines=$(wc -l < /tmp/pr.diff | tr -d ' ')
+          echo "lines=${lines}" >> "$GITHUB_OUTPUT"
+          echo "Строк диффа: ${lines}"
+          if [ "$lines" -eq 0 ]; then
+            echo "skip=empty" >> "$GITHUB_OUTPUT"
+          elif [ "$lines" -gt "$MAX_DIFF_LINES" ]; then
+            echo "skip=big" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Установка Claude Code CLI
+        if: steps.diff.outputs.skip == ''
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Ревью
+        if: steps.diff.outputs.skip == ''
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
+            echo "Секрет CLAUDE_CODE_OAUTH_TOKEN не задан — ревью пропущено."
+            printf '**Вердикт:** ревью не выполнено\n\nСекрет `CLAUDE_CODE_OAUTH_TOKEN` не задан в настройках репозитория.\n' > /tmp/review.md
+            exit 0
+          fi
+          # --setting-sources user: хуки проекта из .claude/settings.json
+          # (session-start.sh, guard-*.py) в контейнере не нужны и не сработают.
+          # Ошибка CLI не валит job: в PR уйдёт пометка, что ревью не удалось.
+          # В режиме -p текст ошибки («Failed to authenticate…») CLI пишет в
+          # stdout, не в stderr — поэтому вывод сохраняем и показываем целиком.
+          if claude -p "$(cat .github/claude-review-prompt.md)" \
+                --tools "Read,Grep,Glob" \
+                --allowedTools "Read,Grep,Glob" \
+                --setting-sources user \
+                --no-session-persistence \
+                --output-format text > /tmp/review.out 2> /tmp/review.err; then
+            cp /tmp/review.out /tmp/review.md
+          else
+            echo "claude завершился с ошибкой. stdout:"; cat /tmp/review.out
+            echo "stderr:"; cat /tmp/review.err
+            {
+              printf '**Вердикт:** ревью не выполнено\n\nCLI завершился с ошибкой:\n\n```\n'
+              head -c 1500 /tmp/review.out; head -c 500 /tmp/review.err
+              printf '\n```\n'
+            } > /tmp/review.md
+          fi
+          echo "--- review.md ---"; cat /tmp/review.md
+
+      - name: Пометка о пропуске
+        if: steps.diff.outputs.skip != ''
+        run: |
+          case "${{ steps.diff.outputs.skip }}" in
+            empty) printf '**Вердикт:** ревью не выполнено\n\nДифф пуст после исключения генерированных файлов.\n' ;;
+            big)   printf '**Вердикт:** ревью не выполнено\n\nДифф слишком большой: %s строк при лимите %s. Разбей PR или проверь, не попали ли в него генерированные файлы.\n' \
+                     "${{ steps.diff.outputs.lines }}" "$MAX_DIFF_LINES" ;;
+          esac > /tmp/review.md
+
+      - name: Комментарий в PR
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request, urllib.error
+
+          api = (os.environ.get("API_URL") or os.environ.get("GITHUB_API_URL")
+                 or os.environ["GITHUB_SERVER_URL"].rstrip("/") + "/api/v1").rstrip("/")
+          repo = os.environ["GITHUB_REPOSITORY"]
+          pr = os.environ["PR_NUMBER"]
+          sha = os.environ["HEAD_SHA"][:8]
+          marker = "<!-- claude-review -->"
+          body = (marker + "\n## Claude Review\n\n"
+                  + open("/tmp/review.md", encoding="utf-8").read().strip()
+                  + f"\n\n<sub>Коммит {sha}. Комментарий обновляется при каждом пуше.</sub>\n")
+          hdr = {"Authorization": "token " + os.environ["TOKEN"],
+                 "Content-Type": "application/json", "Accept": "application/json"}
+
+          def call(method, url, data=None):
+              req = urllib.request.Request(
+                  url, method=method, headers=hdr,
+                  data=json.dumps(data).encode() if data is not None else None)
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  return json.load(r)
+
+          base = f"{api}/repos/{repo}/issues/{pr}/comments"
+          try:
+              existing = [c for c in call("GET", base + "?limit=50")
+                          if (c.get("body") or "").startswith(marker)]
+              if existing:
+                  call("PATCH", f"{api}/repos/{repo}/issues/comments/{existing[0]['id']}", {"body": body})
+                  print(f"Обновлён комментарий {existing[0]['id']}")
+              else:
+                  c = call("POST", base, {"body": body})
+                  print(f"Создан комментарий {c.get('id')}")
+          except urllib.error.HTTPError as e:
+              print(f"Forgejo API {e.code}: {e.read().decode(errors='replace')[:500]}")
+              raise SystemExit(1)
+          PY

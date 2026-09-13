@@ -27,15 +27,15 @@ cp docker/agent/agent-secrets.env.example ~/.agent-secrets.env && chmod 600 ~/.a
 ```
 
 - **Локально — только хотфиксы владельца** (`MASTER_AGENT=1`).
-- **Прод выкатывается автоматически** после мержа в `dev` (см. §6.1). Вручную прод не катят.
+- **Прод выкатывается вручную** командой `./scripts/release.sh` из актуального `dev` (см. §6.1). С 08.09.2026 GitHub Actions недоступны (аккаунт заблокирован), репо живёт на Forgejo (git.aidaplus.ru).
 
 **Что агенту можно по деплою** (`.claude/settings.json` → `permissions`):
 
 | Можно | Нельзя |
 |---|---|
-| `gh pr merge` — мерж PR в `dev` | `./scripts/deploy.sh prod` — прямой прод-деплой (в `deny`) |
-| `gh workflow run` / `enable` — запуск выката | обход `MASTER_AGENT` и `pre-merge` хука |
-| `gh run watch` / `view` — наблюдение за раном | ввод секретов и токенов в любые поля |
+| `tea pr merge` — мерж PR в `dev` (Forgejo) | `./scripts/deploy.sh prod` напрямую (в `deny`) — только через `release.sh` |
+| `./scripts/release.sh` / `--dev` — выкат из актуального `dev` | обход `MASTER_AGENT` и `pre-merge` хука |
+| `tea pr list` / `tea pr checkout` — работа с PR | ввод секретов и токенов в любые поля |
 | `./scripts/rollback.sh prod` — откат прода | `git push --force` (в `deny`) |
 
 Логика: **весь выкат идёт через CI**, где есть `quality-gate` → smoke на dev → авто-откат прода.
@@ -146,10 +146,10 @@ git pull --rebase origin dev   # только если рабочая ветка
 ### 4.3. Branch hygiene
 - Работаем ТОЛЬКО в ветке `agent/<задача>` (или ветке владельца, если он сам пишет)
 - Pre-commit/pre-merge hooks блокируют коммит в `dev`/`main` без `MASTER_AGENT=1`
-- Финальный шаг — `gh pr create --base dev`. Мержить PR может агент (`gh pr merge`) — при зелёном `quality-gate`
+- Финальный шаг — `tea pr create --base dev` (Forgejo). Мержить PR может агент (`tea pr merge <N>`) — при зелёном `quality-gate` на своём раннере
 
-> ⚠️ Мерж в `dev` = **выкат в прод**. Убедись, что PR действительно готов: `gh pr checks <N>` зелёный,
-> ветка не `BEHIND`. Прод подстрахован smoke + авто-откатом, но лучше не проверять их лишний раз.
+> ⚠️ Мерж в `dev` больше **не** выкатывает прод сам: после мержа — `./scripts/release.sh` (сборка + штатный
+> deploy.sh со smoke и авто-откатом). Стражи deploy.sh требуют чистое дерево и HEAD == origin/dev.
 
 ### 4.4. Commit message
 Семантический формат (пре-коммит хук блокирует не-семантические):
@@ -241,26 +241,27 @@ run(service="ssh", action="run", params={host:"aidacamp",
 > rsync -a /opt/aidacamp-site/dist/client/stati/СТРАНИЦА/ /var/www/aidacamp-dev/stati/СТРАНИЦА/
 > ```
 
-#### Прод — автоматически, руками не катят
+#### Прод — вручную из dev, одной командой
 
-Мерж PR в `dev` запускает [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml):
+С 08.09.2026 (GitHub-аккаунт заблокирован) автовыкат по push не работает; репо и CI —
+на Forgejo (git.aidaplus.ru, раннер на EU-сервере). `dev` — **единственная боевая
+ветка** (решение владельца 09.09.2026): промоут `dev→main` делал GitHub Actions, на своём
+CI его нет, `main` больше не зеркало прода и не участвует в выкате.
 
 ```
-push в dev → деплой dev → smoke dev → merge dev→main → деплой prod → smoke prod
-                              ↓ красный                                  ↓ красный
-                          поезд встал                              авто-откат прода
+PR → quality-gate (Forgejo) → мерж в dev → ./scripts/release.sh
+                                              ├─ npm run build (гарды, страж Tailwind)
+                                              └─ deploy.sh prod: бэкап → rsync → nginx-снипет → smoke → авто-откат
 ```
 
 Три рубежа защиты:
-1. `quality-gate.yml` — `check:banned`, `check:prices`, `build`;
-2. **smoke на dev** — прод не поедет, пока dev красный;
-3. **авто-откат** на последний `backup-*`, если верификация или smoke прода провалились.
+1. `quality-gate.yml` на раннере Forgejo — `check:banned`, `check:prices`, `build`;
+2. стражи `deploy.sh`: чистое дерево, HEAD == `origin/dev` (обход только `release.sh --force`);
+3. **smoke прода** (страницы, редиректы, Tailwind в CSS, CSRF в обе стороны) + **авто-откат**
+   на последний `backup-*`.
 
-`main` **мержится**, а не ресетится: прежний `reset --hard`-промоут разъезжал истории
-и терял правки (инцидент 2026-07-07), из-за чего один хотфикс пришлось делать дважды.
-
-**Как остановить выкат:** выключить workflow `Deploy` в GitHub Actions,
-либо запустить его вручную (`workflow_dispatch`) с галкой `skip_prod`.
+`release.sh --dev` — то же самое на dev-стенд. Хотфикс не из `dev` — `release.sh --force`,
+осознанно.
 
 **Откат вручную** (если авто-откат не справился):
 ```bash
