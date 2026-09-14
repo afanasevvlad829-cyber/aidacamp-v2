@@ -1,6 +1,6 @@
-# Единый конвейер публикаций (VK/LinkedIn/Telegram/Zernio) — дизайн
+# Единый конвейер публикаций VK + LinkedIn — дизайн
 
-Дата: 2026-09-14
+Дата: 2026-09-14 (ревизия того же дня — после обнаружения `pub` и `agent-hq`, см. «История ревизий»)
 
 ## Проблема
 
@@ -11,94 +11,97 @@
 - `vk-poster.js` — статьи блога (VK+Дзен RSS), своя логика поверх `article_views`; очередь уже пуста, кандидат на архивацию отдельно от этого конвейера
 - `linkedin-poster.mjs` — страницы компаний, ни разу не запускался (ждёт токен)
 
-Инцидент 08-13.09.2026 (Flood control на личный VK-токен Дарьи) ударил по двум из них одновременно и вскрыл дублирование: `uploadPhoto`-логика с флуд-контролем правилась в двух местах (`vk-poster.js` и новый `vk-group.mjs`) параллельно. Источника правды по контенту тоже нет — `content_items`/`publications` ([2026-07-09-content-registry-design.md](2026-07-09-content-registry-design.md)) существует, но это **пассивный исторический реестр без текста/медиа и без диспетчера** («Не строим движок... Не мигрируем JSON» — этот спек явно этого не предполагал).
+Инцидент 08-13.09.2026 (Flood control на личный VK-токен Дарьи) ударил по двум из них одновременно и вскрыл дублирование: `uploadPhoto`-логика с флуд-контролем правилась в двух местах (`vk-poster.js` и новый `vk-group.mjs`) параллельно.
+
+## История ревизий (важно для понимания дизайна)
+
+Первая версия этого спека (утро 14.09.2026) предполагала: единый конвейер на ВСЕ каналы (VK/LinkedIn/Telegram/Zernio), новые таблицы/колонки в `content_items`/`publications`, `UNIQUE(content_id, channel)`. При переходе к плану реализации выяснилось — до начала любых ALTER TABLE — что это неверная картина:
+
+- **`publications` — НЕ пассивный реестр.** У неё уже есть `status` (CHECK: draft/scheduled/claimed/published/failed/unknown), `source_decision_id` (UNIQUE, ссылка на `decision_log` в agent-hq), `payload` (jsonb, текст+контекст), `claimed_at`. Это чужая, уже эволюционировавшая схема, а не пустой лист.
+- **`pub`** (`~/MCP/social-poster/publisher/pub`, CLI на маке владельца, SSH+psql в прод) — живой ручной инструмент, публикует в Дзен/Zernio(FB/IG/LinkedIn/YouTube), пишет напрямую в `content_items`/`publications`. Использовался ЭТОЙ неделей (14.09).
+- **`agent-hq`** (systemd на проде) — генерирует черновики постов для Telegram-канала через `decision_log` → `publications(channel='telegram', status='draft')` каждые 5 мин (`agent-hq-post-queue.timer`, enabled). Реальная отправка (`agent-hq-post-publish.timer`) собрана, но осознанно выключена — ждёт решения владельца о целевом канале.
+- **`/opt/social-poster/queue/`** (Aug-19 scaffold, отдельная `publication_queue`) подтверждён мёртвым — таблицы физически нет.
+
+**Вывод и решение владельца (14.09.2026):** не изобретать пятую систему. Zernio и Telegram уже покрыты (`pub`, `agent-hq`) — им не хватает только расписания/включения, не нового кода. Этот конвейер сужен до **VK (стена+группа) и LinkedIn** — единственного, что реально дублируется в четырёх местах без единого источника. Схема `content_items`/`publications` используется КАК ЕСТЬ, с реальными колонками, а не с придуманными.
 
 ## Цель
 
-Один источник данных (Postgres, расширяем существующий `content_items`/`publications`) + один общий диспетчер-скрипт на канал вместо четырёх независимых копий логики. Каждый канал сохраняет свой таймер и каденс (как сейчас), но код диспетчера и адаптеров — общий.
+Общий диспетчер + адаптер для VK (заменяет `content-poster.mjs` + `backfill-poster.mjs`), задел под LinkedIn — вместо трёх копий логики очереди/аплоада. Используем существующие `content_items`/`publications` как третьего равноправного писателя рядом с `pub` и `agent-hq`, не ломая их данные и соглашения.
 
-## Модель данных
-
-Расширяем существующие таблицы (не создаём новые — 241 строка `content_items` остаётся, история не переносится и не ломается):
+## Модель данных — используем как есть, без новых колонок
 
 ```sql
-ALTER TABLE content_items
-  ADD COLUMN IF NOT EXISTS text     TEXT,             -- текст поста (NULL у старых article/video-строк — у них текст не тут)
-  ADD COLUMN IF NOT EXISTS media    JSONB,             -- [{ "url": "...", "type": "photo" }], NULL если без медиа
-  ADD COLUMN IF NOT EXISTS channels TEXT[],             -- целевые каналы, напр. {'vk_content','linkedin_school'}; NULL у старых строк
-  ADD COLUMN IF NOT EXISTS meta     JSONB;              -- произвольный контекст (org: school|camp, src_wall_post_id, и т.п.)
-
-ALTER TABLE publications
-  ALTER COLUMN published_at DROP NOT NULL,              -- у queued-строк ещё нет даты публикации
-  ADD COLUMN IF NOT EXISTS status      TEXT NOT NULL DEFAULT 'published'
-        CHECK (status IN ('queued','claimed','published','failed','skipped')),
-  ADD COLUMN IF NOT EXISTS target      TEXT,             -- id канала/группы/страницы
-  ADD COLUMN IF NOT EXISTS external_id TEXT,             -- id поста у площадки — источник правды «ушло ли»
-  ADD COLUMN IF NOT EXISTS error       TEXT,
-  ADD COLUMN IF NOT EXISTS attempts    INTEGER NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS claimed_at  TIMESTAMPTZ;
-
--- Применять после проверки, что не конфликтует со старыми данными (см. «Риски»):
-CREATE UNIQUE INDEX IF NOT EXISTS idx_publications_content_channel ON publications(content_id, channel);
+-- Единственное необходимое изменение: расширить допустимые status —
+-- 'queued' там нет, а он нужен как «в очереди, диспетчер ещё не брал».
+-- Аддитивно (только добавляет значение), не ломает existing constraint-checks
+-- ни у pub, ни у agent-hq — они пишут свои значения (draft/scheduled/...), не queued.
+ALTER TABLE publications DROP CONSTRAINT publications_status_check;
+ALTER TABLE publications ADD CONSTRAINT publications_status_check
+  CHECK (status IN ('queued','draft','scheduled','claimed','published','failed','unknown'));
 ```
 
-Старые 241 строка `publications` получают `status='published'` по умолчанию — ничего не переоткрывается. `channel` остаётся свободным TEXT (без CHECK) — старые значения (`vk`, `zernio_fb`, `zernio_linkedin`...) и новые (`vk_content`, `linkedin_school`...) сосуществуют, старые никем не переобрабатываются.
+Больше никаких ALTER — ни новых колонок, ни новых таблиц. Конкретно:
 
-Новые строки `content_items`, авторские для этого конвейера (не привязанные к отдельной статье/видео), получают `type='social_post'` — новое значение поля, не конфликтует со старыми `article`/`video`/`photo`. `path_or_slug` (NOT NULL UNIQUE(type, path_or_slug)) для них — синтетический идентификатор источника, например `vk96/7`, `backfill-v3/5`.
+- **Текст поста** → `content_items.title` (уже так используется: `content_id=346`, title = полный текст поста «Дарья, с днём рождения!…» — не «заголовок» в бытовом смысле, а тело поста; это установленное соглашение, не моя придумка).
+- **`content_items.type`** → `'post'` (уже существует в CHECK, уже 82 строки этого типа).
+- **`content_items.path_or_slug`** (NOT NULL, UNIQUE с `type`) → для ЕЩЁ НЕ опубликованных постов (наш случай — очередь 96 и бэкфилл публикуются впервые) синтетический id `vk96-<n>` / `backfill-v3-<n>`, где `<n>` — номер из старого `queue.json`/`queue-backfill.json`. После публикации переименовывать в `vk-<owner>_<post_id>` (соглашение для УЖЕ опубликованных строк) — не обязательно, не блокирует функциональность.
+- **Медиа** → `publications.payload` (jsonb, уже существует, уже используется `agent-hq` для текста+контекста черновиков): `{"media": [{"url": "...", "type": "photo"}]}`. Для бэкфилла фото не известны заранее (берутся с оригинала стены на момент публикации, как сейчас) — `payload` может быть пустым, адаптер фетчит на лету.
+- **Канал** → `channel='vk'` (личная стена) и `channel='vk_group'` (группа) — **раздельные строки**, не одна как в старом (первом) варианте спека. Это уже установленная в реестре гранулярность (видно по историческим строкам `vk`/`vk_group` как разным значениям) и она честнее: стена может скипнуться (Flood control), группа — нет, это два независимых факта, не один флаг `wall_skipped` внутри одной записи.
+- **Идемпотентность** — БЕЗ `UNIQUE(content_id, channel)`. В реальных данных 119 групп дублей (см. историю ревизий) — индекс физически не встанет, а чистка чужой истории не в объёме этой задачи. Вместо constraint — прикладная проверка перед вставкой (`SELECT 1 FROM publications WHERE content_id=$1 AND channel=$2 AND status NOT IN ('failed')`), тот же паттерн, что уже использует `pub` (подтверждено при расследовании — `pub` делает `SELECT id FROM publications WHERE content_id=... AND channel=...` перед записью).
+- **`source_decision_id`** — не используем, остаётся NULL у наших строк (это поле принадлежит `agent-hq`).
 
-### Каналы v1 (не 1:1 с платформой — с реальным поведением)
+### Каналы v1
 
-| channel | Что делает | Каденс (OnCalendar) | Адаптер |
+| channel | Что делает | Каденс | Адаптер |
 |---|---|---|---|
-| `vk_content` | Личная стена Дарьи + кросспост в группу, грейсфул-скип стены | ежедневно 10:00 UTC | `adapters/vk-content.mjs` (реюз `vk-group.mjs`) |
-| `vk_backfill_group` | Старые посты стены → только группа | ежедневно 14:00 UTC | `adapters/vk-content.mjs` (тот же адаптер, target=группа) |
-| `linkedin_school` | Страница школы АйдаКодить | пн/вт/чт/пт 13:00 МСК | `adapters/linkedin.mjs` (новый, реюз logика linkedin-poster.mjs) |
-| `linkedin_camp` | Страница лагеря АйДаКемп | пн/вт/чт/пт 13:00 МСК | `adapters/linkedin.mjs` |
-| `telegram_channel` | Telegram-канал | TBD (нет прецедента — решить в плане реализации) | `adapters/telegram.mjs` (уже рабочий, `queue/adapters/telegram.mjs`) |
-| `zernio_fb` / `zernio_ig` | FB algopb / IG aida_codit через Zernio API | TBD (старый батч исчерпан, новой каденции пока нет) | `adapters/zernio.mjs` (новый, на основе `/opt/social-poster/zernio/zernio_schedule.py`, перенесённого на сервер 14.09.2026) |
+| `vk` | Личная стена Дарьи | ежедневно 10:00 UTC | `adapters/vk.mjs` (реюз `vk-group.mjs`/`vk-poster.js`) |
+| `vk_group` | Группа aida_codit — и очередь 96, и бэкфилл целятся сюда | ежедневно 10:00 UTC (96) / 14:00 UTC (бэкфилл) | тот же `adapters/vk.mjs`, target разный |
+| `linkedin_school` / `linkedin_camp` | Страницы компаний | пн/вт/чт/пт 13:00 МСК | `adapters/linkedin.mjs` (новый, реюз linkedin-poster.mjs; включать только после токена) |
+
+Telegram и Zernio — **вне объёма этого конвейера**, см. «Не делаем».
 
 ## Диспетчер
 
-Один скрипт `pipeline/publish-next.mjs --channel=<name>`, вызывается таймером per-channel (как сейчас, ничего нового в scheduling — просто общий код вместо четырёх копий):
+`pipeline/publish-next.mjs --channel=<name>`, вызывается systemd-таймером per-channel. `target` — константа на канал (не хранится в БД): `vk`→`VK_OWNER_ID`, `vk_group`→`VK_GROUP_ID`, `linkedin_school`/`linkedin_camp`→свой `urn:li:organization:<id>` — те же константы, что уже зашиты в `vk-poster.js`/README LinkedIn.
 
-1. `SELECT` одну строку `content_items` без опубликованной/зафейленной `publications`-строки для этого `channel`, где `channel = ANY(channels)`, `ORDER BY id LIMIT 1 FOR UPDATE SKIP LOCKED`.
-2. Нет строк → лог и выход 0 (очередь пуста, это не ошибка).
-3. `INSERT publications(content_id, channel, status='claimed', target, claimed_at=now())`.
-4. Вызов `adapter.publish({ text, media, target })`.
-5. Успех → `UPDATE ... SET status='published', published_at=now(), external_id=...`.
-6. Провал → `UPDATE ... SET status='failed', error=...`, алерт в ТГ (как сейчас у каждого постера), **не удаляем строку и не пробуем другой content_item в этом прогоне** — 1 таймер = 1 попытка, как сейчас.
+Шаги:
 
-`DRY_RUN=1` поддерживается на уровне диспетчера (не пишет в БД, не зовёт адаптер по-настоящему) — тот же контракт, что у всех текущих постеров.
+1. Прикладная проверка идемпотентности (см. выше) — если для следующего кандидата уже есть незафейленная публикация в этот `channel`, пропустить его и взять следующий `content_item`.
+2. `SELECT` следующий `content_items(type='post')` без такой строки в `publications` для `channel`, `ORDER BY id LIMIT 1`.
+3. Нет кандидатов → лог и выход 0 (очередь пуста — не ошибка).
+4. `INSERT INTO publications(content_id, channel, status='claimed', claimed_at=now())`.
+5. Вызов `adapter.publish({ text: content_item.title, media: payload?.media, target })`.
+6. Успех → `UPDATE publications SET status='published', published_at=now(), url=..., payload=payload||jsonb_build_object('external_id', ...)`.
+7. Провал → `UPDATE ... SET status='failed', payload=payload||jsonb_build_object('error', ...)`, алерт в ТГ (как сейчас). Не удаляем строку, не пробуем следующий item в этом же прогоне — 1 таймер = 1 попытка, как сейчас.
 
-## Payload-контракт медиа
-
-`media: [{ "url": "...", "type": "photo" }]` — URL на `aidacamp-media` (единое хранилище, уже правило проекта). Адаптер сам решает: скачать и залить нативным методом (VK, LinkedIn) или передать URL напрямую (Zernio, Telegram `sendPhoto`).
+`DRY_RUN=1` — не пишет в БД, не зовёт адаптер по-настоящему (тот же контракт, что у всех текущих постеров).
 
 ## Миграция очередей в полёте
 
 Разовый скрипт `pipeline/migrate-legacy-queues.mjs`:
 
-- `content-queue/queue.json` (96 шт) + `state.json` (7 сделано) → 89 новых `content_items(channels=['vk_content'])` + 7 `publications(status='published', external_id=<wall/group id из state.json>)` для уже вышедших.
-- `content-queue/queue-backfill.json` (109 шт) + `state-backfill.json` (5 сделано на 14.09) → 104 новых `content_items(channels=['vk_backfill_group'])` + 5 `publications(status='published')`.
-- Идемпотентно (повторный запуск не дублирует — проверка по `meta->>'legacy_source_n'` перед вставкой).
+- `content-queue/queue.json` (96 шт) + `state.json` (7 сделано) → 89 новых `content_items(type='post', path_or_slug='vk96-<n>')`. Для каждого — по строке `publications(channel='vk')` и `publications(channel='vk_group')` (личный + кросспост, как сейчас). 7 уже вышедших → сразу `status='published', url=<из state.json>` (для тех, где стена была скипнута Flood control'ом — только строка `vk_group` published, `vk` не создаём вовсе, а не «published с пустым url»).
+- `content-queue/queue-backfill.json` (109 шт) + `state-backfill.json` (5 сделано на 14.09) → 104 новых `content_items(type='post', path_or_slug='backfill-v3-<n>')` + по одной строке `publications(channel='vk_group')` каждому (бэкфилл никогда не трогает личную стену). 5 сделанных → `status='published'`.
+- Идемпотентно: перед вставкой проверка `SELECT 1 FROM content_items WHERE type='post' AND path_or_slug=$1` (полагается на существующий `UNIQUE(type, path_or_slug)`, повторный запуск скрипта безопасен — `ON CONFLICT DO NOTHING`).
 - Старые `queue.json`/`state.json`/`queue-backfill.json`/`state-backfill.json` → `/opt/social-poster/_archive/` **после** проверки, что новый диспетчер публикует то же самое (несколько дней параллельного наблюдения перед выключением старых таймеров).
 
 ## Порядок раскатки
 
-1. Схема (ALTER TABLE) + диспетчер + `adapters/vk-content.mjs` (самый обкатанный код — вчерашний фикс на Flood control уже в `vk-group.mjs`). Мигрируем `vk_content`, переключаем таймер, наблюдаем несколько дней.
-2. `vk_backfill_group` — тот же адаптер, другой target. Переключаем таймер.
-3. Новые каналы с нуля на общем диспетчере: Telegram (адаптер готов, нужен только target/каденс), LinkedIn (ждёт токен независимо от этого конвейера — код можно готовить параллельно), Zernio (адаптер на основе уже перенесённого на сервер `zernio_schedule.py`; новой каденции/контента пока нет — не таймерим, пока не появится контент-план).
+1. `ALTER TABLE` (расширение `status` CHECK) + `pipeline/publish-next.mjs` + `pipeline/adapters/vk.mjs` (реюз `vk-group.mjs`, уже обкатанного вчерашним фиксом на Flood control). Миграция очереди 96, переключение таймера на `channel=vk`+`channel=vk_group` (10:00 UTC), несколько дней наблюдения.
+2. Миграция бэкфилла, переключение таймера (`channel=vk_group`, 14:00 UTC).
+3. LinkedIn — код `adapters/linkedin.mjs` можно готовить параллельно, включать только после токена (см. [[project-linkedin-company-poster]]).
 
-## Риски и открытые вопросы (для плана реализации, не решаем здесь)
+## Риски и открытые вопросы
 
-- **UNIQUE(content_id, channel)** нужно проверить на реальных 241 строках `publications` перед применением индекса — если есть дубли (например, статья публиковалась в один канал дважды с разным `note`), индекс не встанет. Проверочный `SELECT content_id, channel, count(*) ... HAVING count(*)>1` — первый шаг реализации.
-- **Telegram-канал**: нет прецедента, какой именно канал/цель и с какой периodичностью — решить с владельцем в процессе реализации, не входит в этот спек.
-- **Zernio-каденция**: старый батч (30 постов, июль-август) полностью исчерпан. Новой контент-партии нет — адаптер и перенос кода готовы, но таймер не создаём, пока владелец не подтвердит новый контент-план.
-- **LinkedIn** остаётся заблокирован на ревью Community Management API — код адаптера можно готовить, включить нельзя до токена (см. [[project-linkedin-company-poster]] в памяти).
+- **Не чистим 119 групп дублей** в исторических `publications` — они принадлежат `pub`/бэкфиллу реестра, не в объёме этой задачи; идемпотентность нового писателя не зависит от их состояния (см. «Модель данных»).
+- **`ALTER TABLE ... DROP/ADD CONSTRAINT`** на живой таблице, которую параллельно пишут `pub` и `agent-hq` — аддитивное изменение (расширяет допустимые значения), но выполнять вне часов активности `agent-hq-post-queue.timer` (тикает каждые 5 мин) не обязательно technически, но разумно как процедурная предосторожность — делать через `ssh`+`psql`, проверить `\d publications` до и после.
+- **LinkedIn** остаётся заблокирован на ревью Community Management API — код адаптера можно готовить, включить нельзя до токена.
 
 ## Не делаем
 
-- Не интегрируемся с agent-hq `decision_log` (недоделанный `queue/` от 19.08.2026 был заточен под это — новый конвейер использует прямой INSERT в БД скриптом/сессией, решение владельца от 14.09.2026).
-- Не строим UI/дашборд поверх очереди — не входит в объём.
-- Не трогаем Дзен (закрыт 13.09.2026) и `smena_photos`/фотоархив.
-- Не переносим сам факт хранения старых 241 строк `publications` — только расширяем схему, история не меняется.
+- **Telegram-канал** — уже есть `agent-hq` (генератор + очередь черновиков), не хватает только включения `agent-hq-post-publish.timer` — отдельная маленькая задача с владельцем о выборе канала, не часть этого конвейера.
+- **Zernio (FB/IG/LinkedIn/YouTube)** — уже есть рабочий `pub zernio`, используется вручную. Если понадобится автоматизация — обернуть существующий `pub` в таймер, не переписывать адаптер заново.
+- **Дзен** — `pub dzen` уже покрывает, плюс сам Дзен закрыл RSS-автоимпорт 13.09.2026 отдельно.
+- Не строим UI/дашборд поверх очереди.
+- Не трогаем `source_decision_id`/`decision_log` — это зона `agent-hq`.
+- Не чистим и не переоткрываем существующие 476+195+... строк `publications` — только добавляем свои поверх.
