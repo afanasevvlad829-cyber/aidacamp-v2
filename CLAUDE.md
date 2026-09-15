@@ -9,14 +9,12 @@
 ## 🔀 Git: канон — Forgejo, GitHub — резерв (решение владельца 15.09.2026, все 4 сайта)
 
 - **Канон** — `origin` = `ssh://git@git.aidaplus.ru:2222/vlad/aidacamp-v2.git` (Forgejo). Ветки — от `origin/dev`,
-  PR — в `dev` на Forgejo (`tea pr create --login aidaplus --repo vlad/aidacamp-v2 --base dev`), `--base dev`
-  указывать явно: default branch на Forgejo пока не `dev`.
-- **GitHub** (`github` remote) — резерв: руками не пушить, оттуда не мержить, CI оттуда не ждать. Код туда
-  должен приходить push-mirror'ом с Forgejo (как у `aidacamp-mcp`); на 15.09.2026 зеркало у этого репо
-  **не настроено**, `github/dev` и `origin/dev` разошлись — перед веткой проверь, что нужная правка есть в `origin/dev`.
-- Деплой-workflow в `.github/workflows/` исполняет GitHub Actions и без зеркала код с Forgejo не видит.
-  Общее правило и состояние по всем сайтам — `~/.claude/CLAUDE.md` → «Git: канон — Forgejo».
-
+  PR — в `dev` на Forgejo (`tea pr create --login aidaplus --repo vlad/aidacamp-v2 --base dev`; default branch там `dev`).
+- **GitHub** (`github` remote) — резерв: руками не пушить, оттуда не мержить, PR там не открывать. Код туда
+  приходит push-mirror'ом с Forgejo (все ветки, каждые 10 мин и при каждом push; включено 15.09.2026).
+  Ветка, которой нет на Forgejo, при следующем синке с GitHub исчезнет — работа живёт только на Forgejo.
+- Деплой не менялся: workflow в `.github/workflows/` исполняет GitHub Actions по push в `dev`, который теперь
+  делает зеркало. Общее правило по всем сайтам — `~/.claude/CLAUDE.md` → «Git: канон — Forgejo».
 ## 📂 Карта документов (читай первым)
 
 | Файл | За что отвечает |
