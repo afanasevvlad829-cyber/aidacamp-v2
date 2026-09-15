@@ -17,6 +17,13 @@ export function localVideoUrl(shiftId: string, name: string): string | null {
   return existsSync(path) ? `/videos/zashita/${shiftId}/${encodeURIComponent(name)}` : null;
 }
 
+/** Субтитры (VTT) лежат рядом с локальной копией видео под тем же именем без расширения. */
+export function localVttUrl(shiftId: string, name: string): string | null {
+  const base = name.replace(/\.[^.]+$/, '');
+  const path = `${LOCAL_ROOT}/${shiftId}/${base}.vtt`;
+  return existsSync(path) ? `/videos/zashita/${shiftId}/${encodeURIComponent(base)}.vtt` : null;
+}
+
 export type YdiskItem = {
   name: string;
   /** имя без расширения — подпись под превью */
