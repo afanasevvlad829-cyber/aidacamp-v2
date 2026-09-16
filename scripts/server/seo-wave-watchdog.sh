@@ -74,13 +74,22 @@ fi
 # ничего с ними сделать и отбраковывал их в declined, лишь бы сторож замолчал.
 # Так фронт A уничтожал материал фронта C — 22 ключа главной codims
 # отбракованы дважды за сутки (06.09 в логе прогона, повторно 06.09 23:28).
+#
+# ⚠️ 16.09.2026: живая проверка кластера (SKILL.md, Шаг E, п.3b) теперь пишет
+# вердикт обратно в БД — на исчерпанное сегодня (champion/phantom/declined/просто
+# «смотрели») ставится updated_at=now(), даже если status остаётся 'new'
+# (качели). Без этого фильтра сторож продолжал бы видеть тот же REMAIN и поднимать
+# прогон каждые 2 часа даже после того, как весь today_lane реально пройден и
+# правок больше нет до смены календарной даты — 4 прогона подряд 16.09 именно так
+# и было. Условие ниже — то же самое, что в запросе выбора кандидата SKILL.md.
 REMAIN=$(sudo -u postgres psql -d aidacamp -tAc \
   "SELECT COUNT(*) FROM seo_keyword_backlog
     WHERE status='new' AND position >= 11
       AND COALESCE(front,'A') <> 'C'
       AND cluster_page IS NOT NULL
       AND cluster_page !~ '^https?://[^/]+/?\$'
-      AND cluster_page !~ '^/\$'" 2>/dev/null | tr -d ' ')
+      AND cluster_page !~ '^/\$'
+      AND (updated_at IS NULL OR updated_at < current_date)" 2>/dev/null | tr -d ' ')
 if [ -z "$REMAIN" ]; then
   say "пропуск: БД не ответила — проверить postgres"
   echo "psql -d aidacamp не ответил при опросе очереди" | /opt/scripts/seo-alert.sh error watchdog "БД недоступна, конвейер не поднять"
