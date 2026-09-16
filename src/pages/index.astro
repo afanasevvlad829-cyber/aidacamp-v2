@@ -1,5 +1,5 @@
 ---
-import { PRICE_MIN, SEASON_YEAR } from '../data/shifts';
+import { PRICE_MIN } from '../data/shifts';
 import '../styles/global.css';
 import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
@@ -19,15 +19,11 @@ import Journey from '../components/Journey.astro';
 import Economy from '../components/Economy.astro';
 import Hackathon from '../components/Hackathon.astro';
 // BookingBar removed — booking inside shift modal only (per design system Section 18)
-// SoftStart removed (дубль CTA, см. design audit 2026-05-02)
 import Contacts from '../components/Contacts.astro';
 import Footer from '../components/Footer.astro';
 import StickyCta from '../components/StickyCta.astro';
 import RelatedPages from '../components/RelatedPages.astro';
 import SeoTextBlock from '../components/SeoTextBlock.astro';
-import LiveBookingFeed from '../components/LiveBookingFeed.astro';
-// ShiftOccupancy removed (proof в hero proof-line)
-// SummerCta removed (дубль sticky CTA, см. design audit 2026-05-02)
 import SchemaOrg from '../components/SchemaOrg.astro';
 // TrustBlock — только на /r/ для возвратников
 import { landingPages as allLandingPages } from '../data/landing-pages';
@@ -46,7 +42,7 @@ import { landingPages as allLandingPages } from '../data/landing-pages';
 const HOMEPAGE_HUB_URLS = [
   '/detskiy-lager/', '/lager-v-podmoskove/', '/lager-v-moskve/',
   '/ozdorovitelnyj-lager/', '/detskiy-lager-podmoskove/',
-  '/putevka-v-lager/', '/lager-na-leto-2026/',
+  '/putevka-v-lager/', '/lager-na-leto/',
   '/detskiy-lager-oficialnyj/', '/lager-dlya-shkolnikov/',
   '/lager-nedorogo/', '/lager-dlya-podrostkov/', '/lager-dlya-devochek/', '/lager-dlya-malchikov/',
   '/zagorodnyj-lager/', '/lager-letnego-prebyvaniya/', '/lager-s-basseynom/', '/moskovskie-letnie-lagerya/',
@@ -68,14 +64,15 @@ const homepageHubPages = HOMEPAGE_HUB_URLS
 // Пояснение живёт здесь, а не между атрибутами тега: `{/* ... */}` в позиции
 // атрибута ломает генерацию TSX — astro check падает с "Unterminated string
 // literal" в конце файла, и 02.08.2026 это на полдня остановило все выкаты.
-const PAGE_TITLE = `Путёвка в детский летний лагерь в Подмосковье для детей и подростков ${SEASON_YEAR}`;
+const PAGE_TITLE = 'Путёвка в детский летний лагерь в Подмосковье для детей и подростков';
 ---
 
 <Base
   title={PAGE_TITLE}
-  description={`Летний детский оздоровительный лагерь для детей и подростков в Подмосковье ${SEASON_YEAR} — IT-программа, спорт, нейросети, бассейн, 5-разовое питание, медработник 24/7. Путёвка на лето — от ${PRICE_MIN}.`}
-  heroPreloadMobile="/images/hero-mobile-bean-v3-414.avif"
-  heroPreloadMobileSrcset="/images/hero-mobile-bean-v3.avif 390w, /images/hero-mobile-bean-v3-414.avif 414w, /images/hero-mobile-bean-v3-828.avif 828w"
+  description={`Летний детский оздоровительный лагерь для детей и подростков в Подмосковье — IT-программа, спорт, нейросети, бассейн, 5-разовое питание, медработник 24/7. Путёвка — от ${PRICE_MIN}.`}
+  preloadFonts={false}
+  heroPreloadMobile="/optimized-media/hero-mobile-optimized-414.avif"
+  heroPreloadMobileSrcset="/optimized-media/hero-mobile-optimized-390.avif 390w, /optimized-media/hero-mobile-optimized-414.avif 414w, /optimized-media/hero-mobile-optimized-600.avif 600w, /optimized-media/hero-mobile-optimized-828.avif 828w"
   heroPreloadDesktop="/images/hero-desktop-1440.avif"
 >
   <Fragment slot="head">
@@ -84,7 +81,7 @@ const PAGE_TITLE = `Путёвка в детский летний лагерь �
 
   </Fragment>
   <Header />
-  <main class="pb-20 md:pb-0">
+  <main id="main-content" class="pb-20 md:pb-0">
     <Hero hasVariants={true} />
 
     {/* Печать «Ноутбук не нужен» удалена — этот факт теперь в HeroFeatures (chip «Ноутбук — не нужен»). */}
@@ -136,5 +133,6 @@ const PAGE_TITLE = `Путёвка в детский летний лагерь �
   <!-- <StickyCta /> -->
   <!-- JSON-LD вынесен из <head> в конец body — не блокирует критический путь; Google/Яндекс находят в любом месте документа -->
   <SchemaOrg />
-  <LiveBookingFeed />
+  <!-- LiveBookingFeed удалён 07.09.2026: выключен владельцем 06.09 как показывавший
+       псевдо-брони («Татьяна из Домодедово»), не реальные данные. Код — в истории git. -->
 </Base>

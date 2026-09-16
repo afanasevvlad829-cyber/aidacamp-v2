@@ -49,6 +49,12 @@ fs.unlinkSync(p + 'sitemap-index.xml');
 console.log('sitemap.xml ready');
 "
 
+# Tailwind реально доехал до публичных страниц. Инцидент 08.09.2026: @import
+# "tailwindcss" удалили из global.css заодно с @font-face, утилиты перестали
+# генерироваться, прод 12 часов отдавался голым HTML — и ни один страж этого не
+# увидел, потому что сборка была зелёной, а файлы CSS лежали на месте.
+node scripts/check-css-utilities.mjs
+
 node scripts/check-faq-schema.mjs
 node scripts/check-breadcrumb-schema.mjs
 

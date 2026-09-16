@@ -5,6 +5,12 @@
 # Usage: bash scripts/guard-icons-fresh.sh
 
 set -e
+# Второй набор: icons-js-manifest.json → icons-js.css (иконки, которые публичный JS рождает строками)
+JS_CSS="src/styles/icons-js.css"; JS_MANIFEST="src/data/icons-js-manifest.json"
+JS_TMP=$(mktemp /tmp/icons-js-fresh-XXXXXX.css)
+node scripts/build-icons-css.mjs --manifest "$JS_MANIFEST" --out "$JS_TMP" 2>/dev/null || { echo "[guard-icons-fresh] ERROR: build-icons-css.mjs (js manifest) failed"; rm -f "$JS_TMP"; exit 1; }
+if ! diff -q "$JS_CSS" "$JS_TMP" > /dev/null 2>&1; then echo "[guard-icons-fresh] ERROR: $JS_CSS is out of sync with $JS_MANIFEST — run: npm run icons"; rm -f "$JS_TMP"; exit 1; fi
+rm -f "$JS_TMP"
 
 ICONS_CSS="src/styles/icons.css"
 MANIFEST="src/data/icons-manifest.json"

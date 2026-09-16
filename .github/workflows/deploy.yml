@@ -46,11 +46,29 @@ name: Deploy
 # Требуется секрет SSH_KEY_PROD (приватный ключ для root@159.194.223.55).
 # Опционально: TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID для уведомлений.
 
+# ⚠️ Автозапуск по push отключён 08.09.2026 при переезде с GitHub на свой
+# Forgejo (git.aidaplus.ru). Причина: зеркальный пуш всех веток разом поставил
+# в очередь 56 прогонов, среди них — выкаты прода из старых веток. Пока CI
+# на новом месте не обкатан, прод выкатывается осознанно: вручную из UI
+# (workflow_dispatch) или скриптом ./scripts/release.sh с машины владельца.
+# Вернуть автодеплой = раскомментировать push-блок ниже.
 on:
-  push:
-    branches: [dev]
+  # push:
+  #   branches: [dev]
   workflow_dispatch:
     inputs:
+      release_sha:
+        description: 'Изолированный hotfix: полный SHA, уже merged в dev; пусто = обычный dev release'
+        type: string
+        default: ''
+      expected_prod_sha:
+        description: 'Полный текущий prod SHA; обязателен для release_sha'
+        type: string
+        default: ''
+      expected_runtime_digest:
+        description: 'SHA256 manifest текущих client/server; обязателен для isolated release'
+        type: string
+        default: ''
       skip_prod:
         description: 'Только dev, без прода'
         type: boolean
@@ -66,7 +84,40 @@ permissions:
   checks: read   # promote ждёт зелёный check "quality" перед пушем в main
 
 jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.pin.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v5
+        with: { ref: dev, fetch-depth: 0 }
+      - id: pin
+        env:
+          RELEASE_SHA: ${{ inputs.release_sha }}
+          EXPECTED_PROD_SHA: ${{ inputs.expected_prod_sha }}
+          EXPECTED_RUNTIME_DIGEST: ${{ inputs.expected_runtime_digest }}
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+        run: |
+          git fetch origin main dev
+          if [ -n "$RELEASE_SHA" ]; then
+            test "$EVENT" = workflow_dispatch
+            test "$REF" = refs/heads/dev
+            printf '%s' "$RELEASE_SHA" | grep -Eq '^[0-9a-f]{40}$'
+            printf '%s' "$EXPECTED_PROD_SHA" | grep -Eq '^[0-9a-f]{40}$'
+            printf '%s' "$EXPECTED_RUNTIME_DIGEST" | grep -Eq '^[0-9a-f]{64}$'
+            MAIN_SHA=$(git rev-parse origin/main)
+            test "$MAIN_SHA" = "$EXPECTED_PROD_SHA" || test "$MAIN_SHA" = "$RELEASE_SHA"
+            git merge-base --is-ancestor "$EXPECTED_PROD_SHA" "$RELEASE_SHA"
+            git merge-base --is-ancestor "$RELEASE_SHA" origin/dev
+            test "$RELEASE_SHA" != "$EXPECTED_PROD_SHA"
+          else
+            RELEASE_SHA=$(git rev-parse origin/dev)
+          fi
+          echo "sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: resolve
     runs-on: ubuntu-latest
     steps:
       # fetch-depth: 1 — job только собирает, git-история ему не нужна.
@@ -74,7 +125,7 @@ jobs:
       # HEAD с origin/dev (pre-flight guard), и на shallow-клоне это надо
       # проверять отдельно — экономия 7с того не стоит.
       - uses: actions/checkout@v5
-        with: { ref: dev, fetch-depth: 1 }
+        with: { ref: '${{ needs.resolve.outputs.sha }}', fetch-depth: 1 }
 
       - uses: actions/setup-node@v5
         with: { node-version: '22', cache: 'npm' }
@@ -98,7 +149,7 @@ jobs:
         run: SKIP_ASTRO_CHECK=1 NODE_OPTIONS="--max-old-space-size=5120" npm run build --silent
 
       - name: Загрузка dist как artifact
-        uses: actions/upload-artifact@v4
+        uses: https://code.forgejo.org/forgejo/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3, Forgejo-compatible
         with:
           name: site-dist
           path: dist/
@@ -110,11 +161,12 @@ jobs:
   # критический путь push→прод. Теперь стартует одновременно с build и к моменту
   # промоута давно готов; promote только проверяет его результат через needs.
   typecheck:
-    if: ${{ !inputs.skip_prod }}
+    needs: resolve
+    if: ${{ inputs.skip_prod != 'true' && inputs.skip_prod != true }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-        with: { ref: dev, fetch-depth: 1 }
+        with: { ref: '${{ needs.resolve.outputs.sha }}', fetch-depth: 1 }
 
       - uses: actions/setup-node@v5
         with: { node-version: '22', cache: 'npm' }
@@ -125,6 +177,7 @@ jobs:
         run: NODE_OPTIONS="--max-old-space-size=6144" npm run check:public
 
   deploy-dev:
+    if: ${{ !inputs.release_sha }}
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -141,7 +194,7 @@ jobs:
         run: ./scripts/ci-setup-ssh.sh
 
       - name: Скачать собранный dist
-        uses: actions/download-artifact@v4
+        uses: https://code.forgejo.org/forgejo/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3, Forgejo-compatible
         with: { name: site-dist, path: dist }
 
       # deploy.sh dev сам гоняет smoke.sh в конце. Красный smoke → exit 1 → поезд встал.
@@ -171,8 +224,8 @@ jobs:
           $RUN_URL" >/dev/null
 
   promote:
-    needs: [build, typecheck]
-    if: ${{ !inputs.skip_prod }}
+    needs: [resolve, build, typecheck]
+    if: ${{ inputs.skip_prod != 'true' && inputs.skip_prod != true }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -189,6 +242,7 @@ jobs:
       # которого quality-gate стартует с нуля по push-триггеру, а не переиспользует
       # результат PR-проверки.
       - name: Дождаться зелёного quality-gate на этом SHA
+        if: ${{ !inputs.release_sha }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -236,8 +290,12 @@ jobs:
       # `git push origin dev:main` не форсит: если main не предок dev,
       # push отклоняется — это стоп-сигнал, а не тихое затирание.
       - name: Fast-forward main → dev
+        if: ${{ !inputs.release_sha }}
+        env:
+          BUILD_SHA: ${{ needs.resolve.outputs.sha }}
         run: |
           git fetch origin main dev
+          test "$(git rev-parse origin/dev)" = "$BUILD_SHA"
           if ! git merge-base --is-ancestor origin/main origin/dev; then
             echo "::error::main не является предком dev — fast-forward невозможен."
             echo "Нужен back-merge main→dev отдельным PR, затем повтор."
@@ -245,27 +303,83 @@ jobs:
           fi
           git push origin refs/remotes/origin/dev:refs/heads/main
 
+      - name: SSH для проверки исходного прода
+        if: ${{ inputs.release_sha }}
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY_PROD }}
+        run: ./scripts/ci-setup-ssh.sh
+
+      - name: Проверить и продвинуть только проверенный hotfix
+        if: ${{ inputs.release_sha }}
+        env:
+          RELEASE_SHA: ${{ needs.resolve.outputs.sha }}
+          EXPECTED_PROD_SHA: ${{ inputs.expected_prod_sha }}
+          EXPECTED_RUNTIME_DIGEST: ${{ inputs.expected_runtime_digest }}
+          API_URL: ${{ github.api_url }}
+          REPOSITORY: ${{ github.repository }}
+          API_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/check-hotfix-status.py
+          git fetch origin main dev
+          MAIN_SHA=$(git rev-parse origin/main)
+          test "$MAIN_SHA" = "$EXPECTED_PROD_SHA" || test "$MAIN_SHA" = "$RELEASE_SHA"
+          git merge-base --is-ancestor "$EXPECTED_PROD_SHA" "$RELEASE_SHA"
+          git merge-base --is-ancestor "$RELEASE_SHA" origin/dev
+          ACTUAL=$(ssh -i "$HOME/.ssh/aidacamp_prod" root@159.194.223.55 'cat /var/www/aidacamp/current/.deployed-sha')
+          test "$ACTUAL" = "$EXPECTED_PROD_SHA"
+          ssh -i "$HOME/.ssh/aidacamp_prod" root@159.194.223.55 python3 - "$EXPECTED_RUNTIME_DIGEST" < scripts/check-hotfix-runtime.py
+          ssh -i "$HOME/.ssh/aidacamp_prod" root@159.194.223.55 /opt/restic-snapshot.sh
+          ACTUAL=$(ssh -i "$HOME/.ssh/aidacamp_prod" root@159.194.223.55 'cat /var/www/aidacamp/current/.deployed-sha')
+          test "$ACTUAL" = "$EXPECTED_PROD_SHA"
+          ssh -i "$HOME/.ssh/aidacamp_prod" root@159.194.223.55 python3 - "$EXPECTED_RUNTIME_DIGEST" < scripts/check-hotfix-runtime.py
+          git push origin "$RELEASE_SHA:refs/heads/main"
+
   deploy-prod:
-    needs: promote
+    needs: [resolve, promote]
     runs-on: ubuntu-latest
     steps:
       # fetch-depth: 1 — deploy.sh сверяет HEAD с origin/main, история не нужна.
       - uses: actions/checkout@v5
-        with: { ref: main, fetch-depth: 1 }
+        with: { ref: main, fetch-depth: 0 }
 
       - name: Установка SSH-ключа
         env:
           SSH_KEY: ${{ secrets.SSH_KEY_PROD }}
         run: ./scripts/ci-setup-ssh.sh
 
+      - name: Проверить соответствие main собранному SHA
+        env:
+          BUILD_SHA: ${{ needs.resolve.outputs.sha }}
+          EXPECTED_PROD_SHA: ${{ inputs.expected_prod_sha }}
+          ISOLATED: ${{ inputs.release_sha }}
+          EXPECTED_RUNTIME_DIGEST: ${{ inputs.expected_runtime_digest }}
+          CONTROL_SHA: ${{ github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$BUILD_SHA"
+          if [ -n "$ISOLATED" ]; then
+            ACTUAL=$(ssh -i "$HOME/.ssh/aidacamp_prod" root@159.194.223.55 'cat /var/www/aidacamp/current/.deployed-sha')
+            test "$ACTUAL" = "$EXPECTED_PROD_SHA"
+            git show "$CONTROL_SHA:scripts/check-hotfix-runtime.py" > "$RUNNER_TEMP/check-hotfix-runtime.py"
+            ssh -i "$HOME/.ssh/aidacamp_prod" root@159.194.223.55 python3 - "$EXPECTED_RUNTIME_DIGEST" < "$RUNNER_TEMP/check-hotfix-runtime.py"
+          fi
+
       # Тот же dist, что уже прошёл smoke на dev — main сейчас == dev SHA
       # (fast-forward в job promote), пересборка не нужна.
       - name: Скачать собранный dist
-        uses: actions/download-artifact@v4
+        uses: https://code.forgejo.org/forgejo/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3, Forgejo-compatible
         with: { name: site-dist, path: dist }
+
+      - name: Установить rsync для штатного deploy.sh
+        run: |
+          if ! command -v rsync >/dev/null; then
+            apt-get update
+            apt-get install -y --no-install-recommends rsync
+          fi
+          for tool in curl rsync ssh tar bash; do command -v "$tool"; done
 
       - name: Деплой на прод (авто-откат при провале)
         env:
+          ISOLATED_RELEASE_SHA: ${{ inputs.release_sha && needs.resolve.outputs.sha || '' }}
           MASTER_AGENT: '1'    # запуск санкционирован этим workflow
           DEPLOY_YES: '1'      # неинтерактивно: в Actions нет stdin
           AUTO_ROLLBACK: '1'   # провал верификации/smoke → откат на backup-*

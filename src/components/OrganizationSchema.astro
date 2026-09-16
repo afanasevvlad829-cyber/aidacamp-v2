@@ -1,0 +1,83 @@
+---
+/**
+ * Сайт-wide Organization JSON-LD (schema.org) — рендерится в <head> Base.astro
+ * на КАЖДОЙ странице, кроме главной (там уже есть более полный Organization
+ * внутри общего @graph в components/SchemaOrg.astro, см. src/pages/index.astro).
+ *
+ * Зачем отдельно от SchemaOrg.astro: тот подключён только на главной и двух demo-страницах
+ * (grep "SchemaOrg" src/pages/*.astro). Остальные 180+ страниц (лендинги через
+ * LandingLayout.astro, /stati/, прочие через Base напрямую) либо вообще не декларируют
+ * сущность бренда, либо (LandingLayout.astro) ссылаются на `@id: .../#organization` как
+ * на parentOrganization, не определяя сам узел на странице — повторный краулинг не видит
+ * фактов о сущности за пределами одной главной. Этот компонент закрывает разрыв: даёт
+ * поисковикам и AI одинаковый набор фактов о бренде на любой точке входа сайта.
+ *
+ * @id совпадает с https://aidacamp.ru/#organization из SchemaOrg.astro — это ожидаемо
+ * и осознанно: по мере краулинга разных страниц Google/AI-краулеры собирают факты об
+ * одной и той же сущности (стандартный паттерн schema.org для сайт-wide брендов).
+ *
+ * sameAs — ТОЛЬКО каналы, которые реально принадлежат АйДаКемп (лагерю), не школе
+ * Codims/АйдаКодить. t.me/Progaschool, instagram @aida_codit, youtube @aida_codit,
+ * tiktok @aidacodit0 — чужие аккаунты школы Codims, показанные в общем Footer.astro,
+ * и сюда НЕ включаются (ложное tождество только усугубит путаницу двух брендов).
+ * Источник реальных лагерных URL — components/Footer.astro (`socials`, живые ссылки
+ * с сайта), не выдумано.
+ */
+import { PHONE_MAIN, PHONE_MOBILE, EMAIL, VK_URL, STAT_LICENSE } from '../data/contacts';
+
+const SITE_URL = 'https://aidacamp.ru';
+// Реальный файл логотипа из Header.astro (используется в шапке на каждой странице).
+// components/SchemaOrg.astro ссылается на /images/logo-aidacamp.svg — такого файла
+// нет на диске (проверено find public -iname), поэтому здесь — рабочий путь.
+const LOGO_URL = `${SITE_URL}/assets/icons/aidacamp-wordmark.png`;
+
+// LinkedIn/OK — реально лагерные страницы, URL сверены с components/Footer.astro
+// (`socials`), не с текстом аудита (там был неверный адрес — см. commit message).
+const LINKEDIN_URL = 'https://www.linkedin.com/company/it-лагерь-для-детей-айдакемп';
+const OK_URL = 'https://ok.ru/group/64689601773621';
+
+const organization = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  '@id': `${SITE_URL}/#organization`,
+  name: 'АйДаКемп',
+  url: SITE_URL,
+  logo: LOGO_URL,
+  telephone: PHONE_MAIN,
+  email: EMAIL,
+  description:
+    'АйДаКемп — загородный IT-лагерь для школьников 7–15 лет в Подмосковье, 66 км от МКАД. Программирование, AI, Minecraft, Scratch. Работает по лицензии Минобрнауки.',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: 'территория «Санаторий Изумруд»',
+    addressLocality: 'Наро-Фоминский городской округ',
+    addressRegion: 'Московская область',
+    addressCountry: 'RU',
+    postalCode: '143381',
+  },
+  identifier: {
+    '@type': 'PropertyValue',
+    name: 'Лицензия Минобрнауки',
+    value: STAT_LICENSE,
+  },
+  contactPoint: [
+    {
+      '@type': 'ContactPoint',
+      telephone: PHONE_MAIN,
+      contactType: 'customer service',
+      areaServed: 'RU',
+      availableLanguage: ['Russian'],
+    },
+    {
+      '@type': 'ContactPoint',
+      telephone: PHONE_MOBILE,
+      contactType: 'customer support',
+      areaServed: 'RU',
+      availableLanguage: ['Russian'],
+    },
+  ],
+  sameAs: [VK_URL, LINKEDIN_URL, OK_URL],
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(organization)} />

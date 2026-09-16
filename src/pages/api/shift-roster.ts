@@ -78,18 +78,39 @@ export const GET: APIRoute = async ({ url }) => {
   try {
     const login = await post(H, '/auth/login', { email: E, api_key: K });
     const token = login?.token;
-    if (!token) return json({ ok: false, error: 'AlfaCRM login failed' });
+    if (!token) {
+      console.error('[shift-roster] AlfaCRM login failed —', login?.errors ?? login);
+      return json({ ok: false, error: 'AlfaCRM login failed' }, 502);
+    }
 
-    const res = await post(H, `/${BRANCH}/customer/index`, { group_id: group, page: 0, is_study: 1 }, token);
-    const items = Array.isArray(res?.items) ? res.items : [];
-    const kids = items.map((it: any) => ({
-      alfaId: it.id,
-      name: it.name,
-      gender: it.gender === 1 ? 1 : it.gender === 0 ? 0 : null,
-      age: ageFrom(it.dob || it.b_date),
-    }));
+    // Пагинация: без неё группа с составом больше одной страницы обрезалась бы
+    // молча — сотрудник увидел бы «полный» список, где на деле не хватает детей.
+    const kids: { alfaId: unknown; name: unknown; gender: 0 | 1 | null; age: number | null }[] = [];
+    for (let page = 0; page < 10; page++) {
+      const res = await post(H, `/${BRANCH}/customer/index`, { group_id: group, page, is_study: 1 }, token);
+      if (!Array.isArray(res?.items)) {
+        // Ответ пришёл, но без items — это сбой чтения (битый ответ/ошибка API),
+        // а не «в группе никого нет». Отдаём то, что успели собрать, но явно
+        // помечаем partial:true, чтобы UI не выдал неполный список за полный.
+        console.error(`[shift-roster] group=${group} page=${page}: ответ без items —`, res?.errors ?? res);
+        return json({
+          ok: kids.length > 0, partial: true, group, count: kids.length, kids,
+          error: kids.length ? 'AlfaCRM вернула неполные данные — часть страниц не прочиталась' : 'AlfaCRM read failed',
+        });
+      }
+      if (!res.items.length) break;
+      for (const it of res.items) {
+        kids.push({
+          alfaId: it.id,
+          name: it.name,
+          gender: it.gender === 1 ? 1 : it.gender === 0 ? 0 : null,
+          age: ageFrom(it.dob || it.b_date),
+        });
+      }
+    }
     return json({ ok: true, group, count: kids.length, kids });
   } catch (e) {
-    return json({ ok: false, error: String(e) });
+    console.error(`[shift-roster] group=${group}: запрос упал —`, e);
+    return json({ ok: false, error: String(e) }, 502);
   }
 };

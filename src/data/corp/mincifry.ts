@@ -1,9 +1,10 @@
 import type { CorpClient } from './types';
+import { PHONE_MAIN } from '../contacts';
 
 export const mincifry: CorpClient = {
   clientName: 'Минцифры России',
   partnerBadge: 'ПАРТНЁРСКАЯ ПРОГРАММА · МИНЦИФРЫ',
-  phone: '+7 (495) 128-44-29',
+  phone: PHONE_MAIN,
   discount: 10,
   transferFrom: null,
   freeTransferMinKids: 10,

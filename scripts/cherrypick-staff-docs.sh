@@ -69,10 +69,10 @@ git push origin agent/staff-docs-cherrypick
 
 # 6. Открываем PR
 echo ""
-echo "6/6 → gh pr create --base dev"
-gh pr create --base dev \
+echo "6/6 → tea pr create --base dev (Forgejo)"
+tea pr create --base dev \
   --title "feat(staff): регламенты команды (cherry-pick из #248)" \
-  --body "Cherry-pick изолированной staff-части PR #248. Без 37 устаревших файлов hero/glass-orbs.
+  --description "Cherry-pick изолированной staff-части PR #248. Без 37 устаревших файлов hero/glass-orbs.
 
 **Что внутри:**
 - 7 регламентов в \`public/staff/docs/*.docx\`: руководитель смены, преподаватель, вожатый (+расширенная), ЧС, чек-лист приёмки, игровая механика

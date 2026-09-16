@@ -6,6 +6,18 @@
 > - Локально на маке — только хотфиксы владельца.
 > - ⚠️ Старый `vps-start-agent.sh` (агент под root на проде) — **DEPRECATED**, не путать с `claude-run`.
 
+## 🔀 Git: канон — Forgejo, GitHub — резерв (решение владельца 15.09.2026, все 4 сайта)
+
+- **Канон** — `origin` = `ssh://git@git.aidaplus.ru:2222/vlad/aidacamp-v2.git` (Forgejo). Ветки — от `origin/dev`,
+  PR — в `dev` на Forgejo (`tea pr create --login aidaplus --repo vlad/aidacamp-v2 --base dev`; default branch там `dev`).
+- **CI/CD — Forgejo Actions:** те же `.github/workflows/*.yml` исполняет раннер Forgejo. Push в `dev` →
+  стейджинг → ff-промоут `main` ← `dev` → прод. Статус — веб Forgejo → Actions или
+  `GET /api/v1/repos/vlad/aidacamp-v2/actions/tasks`. `gh run list` про деплой больше ничего не знает.
+- **GitHub** (`github` remote) — резерв, не канон: руками не пушить, оттуда не мержить, PR там не открывать.
+  Код туда приходит push-mirror'ом с Forgejo (все ветки, каждые 10 мин и при каждом push; включено 15.09.2026).
+  Ветка, которой нет на Forgejo, при следующем синке с GitHub исчезнет. Workflow `Deploy` на GitHub выключен
+  вручную — не включать: двойной выкат с одних серверов ломает `npm ci` (ENOTEMPTY) обоим.
+  Общее правило по всем сайтам — `~/.claude/CLAUDE.md` → «Git: канон — Forgejo».
 ## 📂 Карта документов (читай первым)
 
 | Файл | За что отвечает |
@@ -102,8 +114,8 @@ SELECT state, org, topics, last_contact FROM outreach_memory
 
 ## 🎨 UI (краткий чек, полное — [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md))
 
-- **Иконки** — только Bootstrap Icons из `src/data/icons-manifest.json`. Никаких эмодзи в UI.
-- Иконки нет в манифесте → добавить в JSON → `npm run icons`. Никогда не редактировать `icons.css` вручную.
+- **Иконки** — только Bootstrap Icons через astro-icon `<Icon name="bi:…" class="bi bi-…">`; legacy `<i class="bi bi-…">` только для JS-строк и портала. Никаких эмодзи в UI.
+- Иконки нет в манифесте → добавить в `src/data/icons-manifest.json` (для JS-строк — `icons-js-manifest.json`) → `npm run icons`. Никогда не редактировать `icons*.css` вручную.
 - Эталонные компоненты: `src/components/Shifts.astro`, `src/components/FAQ.astro`.
 
 ## Фоновые агенты (headless)
