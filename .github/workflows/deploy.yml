@@ -106,7 +106,8 @@ jobs:
             printf '%s' "$RELEASE_SHA" | grep -Eq '^[0-9a-f]{40}$'
             printf '%s' "$EXPECTED_PROD_SHA" | grep -Eq '^[0-9a-f]{40}$'
             printf '%s' "$EXPECTED_RUNTIME_DIGEST" | grep -Eq '^[0-9a-f]{64}$'
-            test "$(git rev-parse origin/main)" = "$EXPECTED_PROD_SHA"
+            MAIN_SHA=$(git rev-parse origin/main)
+            test "$MAIN_SHA" = "$EXPECTED_PROD_SHA" || test "$MAIN_SHA" = "$RELEASE_SHA"
             git merge-base --is-ancestor "$EXPECTED_PROD_SHA" "$RELEASE_SHA"
             git merge-base --is-ancestor "$RELEASE_SHA" origin/dev
             test "$RELEASE_SHA" != "$EXPECTED_PROD_SHA"
@@ -320,7 +321,8 @@ jobs:
         run: |
           python3 scripts/check-hotfix-status.py
           git fetch origin main dev
-          test "$(git rev-parse origin/main)" = "$EXPECTED_PROD_SHA"
+          MAIN_SHA=$(git rev-parse origin/main)
+          test "$MAIN_SHA" = "$EXPECTED_PROD_SHA" || test "$MAIN_SHA" = "$RELEASE_SHA"
           git merge-base --is-ancestor "$EXPECTED_PROD_SHA" "$RELEASE_SHA"
           git merge-base --is-ancestor "$RELEASE_SHA" origin/dev
           ACTUAL=$(ssh -i "$HOME/.ssh/aidacamp_prod" root@159.194.223.55 'cat /var/www/aidacamp/current/.deployed-sha')
@@ -366,6 +368,14 @@ jobs:
       - name: Скачать собранный dist
         uses: https://code.forgejo.org/forgejo/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3, Forgejo-compatible
         with: { name: site-dist, path: dist }
+
+      - name: Установить rsync для штатного deploy.sh
+        run: |
+          if ! command -v rsync >/dev/null; then
+            apt-get update
+            apt-get install -y --no-install-recommends rsync
+          fi
+          for tool in curl rsync ssh tar bash; do command -v "$tool"; done
 
       - name: Деплой на прод (авто-откат при провале)
         env:
