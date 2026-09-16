@@ -84,6 +84,22 @@ fi
 # Работа фронта A теперь = (есть new-кандидаты С lane=today_lane И у их сайта
 # остаток дневной квоты > 0) ИЛИ есть просроченные измерения (Шаг M не
 # зависит от лейна/квоты вообще — иначе awaiting_measure копится бесконечно).
+#
+# ⚠️ 16.09.2026: живая проверка кластера (SKILL.md, Шаг E, п.3b) теперь пишет
+# вердикт обратно в БД — на исчерпанное сегодня (champion/phantom/declined/просто
+# «смотрели») ставится updated_at=now(), даже если status остаётся 'new'
+# (качели). Без этого фильтра сторож продолжал бы видеть тот же REMAIN и поднимать
+# прогон каждые 2 часа даже после того, как весь today_lane реально пройден и
+# правок больше нет до смены календарной даты — 4 прогона подряд 16.09 именно так
+# и было. Условие ниже — то же самое, что в запросе выбора кандидата SKILL.md.
+#
+# ⚠️ 16.09.2026: position IS NULL тоже считаем работой, если cluster_page уже
+# проставлен. NULL — это «Топвизор не видит позицию» (>ТОП-50/нет данных), а не
+# «не пойми что»: такие строки получают cluster_page только когда владелец/агент
+# сознательно подтвердил страницу-владельца (разбор «за топ-100» 16.09.2026).
+# Старый фильтр `position >= 11` в SQL для NULL не истина — сторож их тихо не
+# видел как работу, даже с привязанной страницей. Условие ниже синхронно с
+# SKILL.md, Шаг E, п.2.
 REMAIN_NEW=$(sudo -u postgres psql -d aidacamp -tAc \
   "WITH quota(site, daily_quota) AS (VALUES
      ('codims', 25), ('aidacamp', 15), ('icepartners', 10), ('vlad-a', 0)
@@ -95,11 +111,12 @@ REMAIN_NEW=$(sudo -u postgres psql -d aidacamp -tAc \
    SELECT COUNT(*) FROM seo_keyword_backlog b
    JOIN quota q ON q.site = b.site
    LEFT JOIN used u ON u.site = b.site
-   WHERE b.status='new' AND b.position >= 11
+   WHERE b.status='new' AND (b.position >= 11 OR b.position IS NULL)
      AND COALESCE(b.front,'A') <> 'C'
      AND b.cluster_page IS NOT NULL
      AND b.cluster_page !~ '^https?://[^/]+/?\$'
      AND b.cluster_page !~ '^/\$'
+     AND (b.updated_at IS NULL OR b.updated_at < current_date)
      AND b.lane = (1 + (((extract(epoch from current_date)::bigint / 86400) % 3 + 3) % 3))
      AND q.daily_quota - COALESCE(u.used_today, 0) > 0" 2>/dev/null | tr -d ' ')
 REMAIN_MEASURE=$(sudo -u postgres psql -d aidacamp -tAc \

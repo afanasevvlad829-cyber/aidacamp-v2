@@ -33,7 +33,9 @@ import { Icon } from 'astro-icon/components';
   }
 
   window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
+  // Initial state is hidden. Read restored scroll position after layout, not
+  // while the parser is still applying styles (PSI forced-reflow audit).
+  window.addEventListener('pageshow', onScroll, { once: true });
 
   btn.addEventListener('click', function () {
     window.scrollTo({ top: 0, behavior: 'smooth' });

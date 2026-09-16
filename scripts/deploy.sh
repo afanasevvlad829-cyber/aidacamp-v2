@@ -35,7 +35,21 @@ fi
 # SKIP_GIT_GUARD — только явный FORCE_BRANCH=1.
 # Инцидент 2026-06-25: деплой из fix/video-player-import → сломанный прод.
 cd "$PROJECT_DIR"
-if [ "$TARGET" = "prod" ] && [ "${FORCE_BRANCH:-0}" != "1" ]; then
+# Isolated CI release is still a merged dev commit, pinned and promoted to main.
+# This is a separately validated route, not SKIP_GIT_GUARD/FORCE_BRANCH.
+ISOLATED_RELEASE_VALIDATED=0
+if [ -n "${ISOLATED_RELEASE_SHA:-}" ]; then
+  [ "$TARGET" = prod ] && [ "${GITHUB_ACTIONS:-}" = true ] &&
+    [ "${GITHUB_EVENT_NAME:-}" = workflow_dispatch ] &&
+    [ "${GITHUB_REF:-}" = refs/heads/dev ] || { echo 'Invalid isolated CI context'; exit 1; }
+  printf '%s' "$ISOLATED_RELEASE_SHA" | grep -Eq '^[0-9a-f]{40}$' || exit 1
+  git fetch origin main dev
+  [ "$(git rev-parse HEAD)" = "$ISOLATED_RELEASE_SHA" ] || exit 1
+  [ "$(git rev-parse origin/main)" = "$ISOLATED_RELEASE_SHA" ] || exit 1
+  git merge-base --is-ancestor "$ISOLATED_RELEASE_SHA" origin/dev || exit 1
+  ISOLATED_RELEASE_VALIDATED=1
+fi
+if [ "$TARGET" = "prod" ] && [ "${FORCE_BRANCH:-0}" != "1" ] && [ "$ISOLATED_RELEASE_VALIDATED" != 1 ]; then
   CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "detached")
   git fetch origin --quiet 2>/dev/null || true
   ORIGIN_DEV_SHA=$(git rev-parse origin/dev 2>/dev/null || echo "")
@@ -58,7 +72,7 @@ fi
 if [ "${SKIP_GIT_GUARD:-0}" != "1" ]; then
   case "$TARGET" in
     dev)  GUARD_BRANCH="dev" ;;
-    prod) GUARD_BRANCH="dev" ;;   # dev — единственная боевая ветка (09.09.2026)
+    prod) if [ "$ISOLATED_RELEASE_VALIDATED" = 1 ]; then GUARD_BRANCH="main"; else GUARD_BRANCH="dev"; fi ;;   # dev — единственная боевая ветка (09.09.2026)
     *)    GUARD_BRANCH="" ;;
   esac
 

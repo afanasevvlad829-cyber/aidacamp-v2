@@ -35,9 +35,8 @@ interface Props {
   heroPreloadMobileSrcset?: string;
   /** Responsive hero preload: десктоп ≥769px (рендерится ДО аналитики) */
   heroPreloadDesktop?: string;
-  /** Загружать tag.js Метрики немедленно (без задержки 8 сек / интеракции).
-   *  Используй для страниц с коротким визитом — /r/, /akciya/ и т.п. */
-  eagerMetrika?: boolean;
+  /** Allow image-led pages to prioritize their LCP image over font preloads. */
+  preloadFonts?: boolean;
   /** Запрет индексации страницы поисковиками (robots: noindex, follow) */
   noindex?: boolean;
   /** Переопределяет self-canonical. Если не задан — строится из Astro.url.pathname. */
@@ -59,7 +58,7 @@ const {
   heroPreloadMobile,
   heroPreloadMobileSrcset,
   heroPreloadDesktop,
-  eagerMetrika = false,
+  preloadFonts = true,
   noindex = false,
   canonical: canonicalProp,
   hideAgeBar = false,
@@ -103,7 +102,7 @@ const markdownUrl = isArticlePage ? `${canonicalUrl.replace(/\/$/, '')}.md` : nu
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     {/* Inter: @font-face + preload обоих сабсетов + fallback-метрики — Fonts API */}
-    <Font cssVariable="--font-inter" preload />
+    <Font cssVariable="--font-inter" preload={preloadFonts} />
     <!-- Bootstrap Icons: subset of 30 icons inlined locally (no CDN, no font download) -->
     {/* Метрика грузится с задержкой после отрисовки — preconnect не успевает
         пригодиться и просто тратит ранний слот браузера (флаг PageSpeed
@@ -153,9 +152,7 @@ const markdownUrl = isArticlePage ? `${canonicalUrl.replace(/\/$/, '')}.md` : nu
         window._clarityDisabled = true;
       }
     </script>
-    {/* eagerMetrika: устанавливает глобальный флаг ДО инлайн-скрипта Метрики */}
-    {eagerMetrika && <script is:inline>window.__ymEager=true;</script>}
-    <!-- Yandex.Metrika — lazy load: ym() stub queues calls until tag.js is fetched -->
+    <!-- Yandex.Metrika -->
     <script type="text/javascript" is:inline>
       (function(m,i){
         m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
@@ -163,27 +160,13 @@ const markdownUrl = isArticlePage ? `${canonicalUrl.replace(/\/$/, '')}.md` : nu
       })(window,'ym');
       if (!window.ym_disable96499295 && !window._ymInited) {
         window._ymInited = true;
-        ym(96499295, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+        ym(96499295, 'init', {ssr:true, webvisor:false, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
       }
-      (function(){
-        if(window.ym_disable96499295) return;
-        var loaded=false;
-        function loadYM(){
-          if(loaded) return; loaded=true;
-          var s=document.createElement('script'); s.async=1;
-          s.src='https://mc.yandex.ru/metrika/tag.js?id=96499295';
-          document.head.appendChild(s);
-        }
-        if(window.__ymEager){
-          /* eagerMetrika: load immediately */
-          loadYM();
-        } else {
-          var t=setTimeout(loadYM,8000);
-          ['scroll','click','touchstart','keydown'].forEach(function(e){
-            document.addEventListener(e,function(){clearTimeout(t);loadYM();},{once:true,passive:true});
-          });
-        }
-      })();
+      if (!window.ym_disable96499295) {
+        var s=document.createElement('script'); s.async=1;
+        s.src='https://mc.yandex.ru/metrika/tag.js?id=96499295';
+        document.head.appendChild(s);
+      }
     </script>
     {/* noscript-фолбэк Метрики вынесен в <body> (Footer.astro) — в <head> он невалиден (div внутри noscript) и ломал W3C-валидацию на всех страницах */}
     <!-- /Yandex.Metrika counter -->
@@ -310,12 +293,6 @@ const markdownUrl = isArticlePage ? `${canonicalUrl.replace(/\/$/, '')}.md` : nu
     <DotPatternBackground />
     <BackToTop />
 
-    <!-- Reveal-on-scroll анимация для карточек (концепт aidacamp-full_9) -->
-    <script>
-      import { initReveal } from '../scripts/reveal';
-      initReveal();
-    </script>
-
     <!-- Уровень 3 Apple-скина: секции всплывают при скролле, как на apple.com.
          Инфраструктура (.reveal/.reveal-in, IntersectionObserver, уважает
          prefers-reduced-motion) уже была в проекте (см. reveal.ts) — просто
@@ -328,6 +305,9 @@ const markdownUrl = isArticlePage ? `${canonicalUrl.replace(/\/$/, '')}.md` : nu
          бы не поймал. -->
     <script>
       import { initReveal } from '../scripts/reveal';
+
+      // Keep default and Apple-theme initialization in one entry point.
+      initReveal();
 
       const APPLE_REVEAL_SELECTORS = ['#shifts', '#faq', 'footer', '.hero-features'];
       let appleRevealApplied = false;

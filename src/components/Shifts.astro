@@ -145,6 +145,8 @@ const DONE_SHIFT_COVERS: Record<string, string> = {
                     <Fragment>
                       {i > 0 && <div class="border-t border-border-light"></div>}
                       <a href={s.recapUrl} class="group flex items-center gap-3 no-underline pt-1 first:pt-0 md:flex-col md:items-stretch md:gap-2">
+                        <picture class="contents">
+                          {DONE_SHIFT_COVERS[s.id] && <source type="image/avif" srcset={[96, 192, 320].map(w => `${DONE_SHIFT_COVERS[s.id].replace('/images/gallery/', '/optimized-media/').replace('.webp', '')}-${w}.avif ${Math.min(w, 220)}w`).join(', ')} sizes="(min-width: 768px) 220px, 96px" />}
                         <img
                           src={DONE_SHIFT_COVERS[s.id] ?? '/images/gallery/camp-smile.avif'}
                           alt={`Фото со смены «${s.name}»`}
@@ -153,6 +155,7 @@ const DONE_SHIFT_COVERS: Record<string, string> = {
                           width="96"
                           height="96"
                         />
+                        </picture>
                         <span class="min-w-0 flex-1">
                           <span class="block text-[17px] font-bold leading-tight text-body">{s.name}</span>
                           <span class="mt-1 block text-[13px] leading-snug text-body-faint">{s.dates}</span>
@@ -397,7 +400,10 @@ const DONE_SHIFT_COVERS: Record<string, string> = {
   onIdle(initShiftsMarquee, 1500);
 
   document.addEventListener('astro:page-load', initViewedShiftScroll);
-  initViewedShiftScroll();
+  // PSI t1gzraijat: initial viewport read forced 58ms of layout during parsing.
+  // Returning visitors still scroll after the first page has been painted.
+  if (document.readyState === 'complete') initViewedShiftScroll();
+  else window.addEventListener('pageshow', initViewedShiftScroll, { once: true });
 
   // Динамические цены — глобальный DynamicPrices.astro из Base.astro
   initReturningVisitorSpots();
