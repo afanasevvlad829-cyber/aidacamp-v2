@@ -7,6 +7,9 @@ test('mobile hero loads one responsive image and back-to-top remains functional'
     if (/\/(?:images|optimized-media)\/hero-mobile-.*\.(avif|webp)/.test(request.url())) images.push(request.url());
   });
   await page.goto('/');
+  await expect(page.locator('link[rel=preload][as=font]')).toHaveCount(0);
+  const otherPage = await page.request.get('/ceny/');
+  expect((await otherPage.text()).match(/<link[^>]*rel=preload[^>]*as=font[^>]*>/g)).toHaveLength(2);
   const hero = page.locator('#hero-mobile-photo');
   await expect(hero).toBeVisible();
   await expect.poll(() => hero.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
@@ -29,4 +32,29 @@ test('mobile hero loads one responsive image and back-to-top remains functional'
   await back.click();
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   await expect(back).toBeHidden();
+});
+
+test('returning visitor reaches the viewed shift once across page lifecycle events', async ({ page }) => {
+  await page.goto('/');
+  const shiftId = await page.locator('[data-shifts-marquee-track] [data-shift-id]').first().getAttribute('data-shift-id');
+  expect(shiftId).toBeTruthy();
+  await page.evaluate(id => {
+    localStorage.setItem('ac:viewed_shifts', JSON.stringify([{ id, ts: Date.now() }]));
+    sessionStorage.removeItem('ac:scroll_done');
+  }, shiftId);
+  await page.addInitScript(() => {
+    (window as any).shiftsScrollCalls = 0;
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function (options) {
+      if (this.id === 'shifts') (window as any).shiftsScrollCalls++;
+      return original.call(this, options);
+    };
+  });
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => (window as any).shiftsScrollCalls)).toBe(1);
+  await page.evaluate(() => document.dispatchEvent(new Event('astro:page-load')));
+  await page.waitForTimeout(800);
+  expect(await page.evaluate(() => (window as any).shiftsScrollCalls)).toBe(1);
+  expect(await page.evaluate(() => sessionStorage.getItem('ac:scroll_done'))).toBe('1');
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 });
