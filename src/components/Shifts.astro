@@ -400,7 +400,10 @@ const DONE_SHIFT_COVERS: Record<string, string> = {
   onIdle(initShiftsMarquee, 1500);
 
   document.addEventListener('astro:page-load', initViewedShiftScroll);
-  initViewedShiftScroll();
+  // PSI t1gzraijat: initial viewport read forced 58ms of layout during parsing.
+  // Returning visitors still scroll after the first page has been painted.
+  if (document.readyState === 'complete') initViewedShiftScroll();
+  else window.addEventListener('pageshow', initViewedShiftScroll, { once: true });
 
   // Динамические цены — глобальный DynamicPrices.astro из Base.astro
   initReturningVisitorSpots();

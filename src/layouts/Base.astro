@@ -38,6 +38,8 @@ interface Props {
   /** Загружать tag.js Метрики немедленно (без задержки 8 сек / интеракции).
    *  Используй для страниц с коротким визитом — /r/, /akciya/ и т.п. */
   eagerMetrika?: boolean;
+  /** Allow image-led pages to prioritize their LCP image over font preloads. */
+  preloadFonts?: boolean;
   /** Запрет индексации страницы поисковиками (robots: noindex, follow) */
   noindex?: boolean;
   /** Переопределяет self-canonical. Если не задан — строится из Astro.url.pathname. */
@@ -60,6 +62,7 @@ const {
   heroPreloadMobileSrcset,
   heroPreloadDesktop,
   eagerMetrika = false,
+  preloadFonts = true,
   noindex = false,
   canonical: canonicalProp,
   hideAgeBar = false,
@@ -103,7 +106,7 @@ const markdownUrl = isArticlePage ? `${canonicalUrl.replace(/\/$/, '')}.md` : nu
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     {/* Inter: @font-face + preload обоих сабсетов + fallback-метрики — Fonts API */}
-    <Font cssVariable="--font-inter" preload />
+    <Font cssVariable="--font-inter" preload={preloadFonts} />
     <!-- Bootstrap Icons: subset of 30 icons inlined locally (no CDN, no font download) -->
     <link rel="preconnect" href="https://mc.yandex.ru" crossorigin />
     <link rel="dns-prefetch" href="https://mc.yandex.ru" />
