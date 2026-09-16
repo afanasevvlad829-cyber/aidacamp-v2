@@ -82,9 +82,17 @@ fi
 # прогон каждые 2 часа даже после того, как весь today_lane реально пройден и
 # правок больше нет до смены календарной даты — 4 прогона подряд 16.09 именно так
 # и было. Условие ниже — то же самое, что в запросе выбора кандидата SKILL.md.
+#
+# ⚠️ 16.09.2026: position IS NULL тоже считаем работой, если cluster_page уже
+# проставлен. NULL — это «Топвизор не видит позицию» (>ТОП-50/нет данных), а не
+# «не пойми что»: такие строки получают cluster_page только когда владелец/агент
+# сознательно подтвердил страницу-владельца (разбор «за топ-100» 16.09.2026).
+# Старый фильтр `position >= 11` в SQL для NULL не истина — сторож их тихо не
+# видел как работу, даже с привязанной страницей. Условие ниже синхронно с
+# SKILL.md, Шаг E, п.2.
 REMAIN=$(sudo -u postgres psql -d aidacamp -tAc \
   "SELECT COUNT(*) FROM seo_keyword_backlog
-    WHERE status='new' AND position >= 11
+    WHERE status='new' AND (position >= 11 OR position IS NULL)
       AND COALESCE(front,'A') <> 'C'
       AND cluster_page IS NOT NULL
       AND cluster_page !~ '^https?://[^/]+/?\$'
