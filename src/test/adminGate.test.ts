@@ -12,7 +12,7 @@ import { signSession } from '../lib/portalSession';
 
 const SECRET = 'test-secret-for-admin-gate';
 
-function makeContext(path: string, cookie?: string) {
+function makeContext(path: string, cookie?: string, staffCookie?: string) {
   const url = new URL(`http://localhost${path}`);
   const locals: Record<string, unknown> = {};
   return {
@@ -20,7 +20,11 @@ function makeContext(path: string, cookie?: string) {
     url,
     locals,
     cookies: {
-      get: (name: string) => (name === 'portal_session' && cookie ? { value: cookie } : undefined),
+      get: (name: string) => {
+        if (name === 'portal_session' && cookie) return { value: cookie };
+        if (name === 'staff_auth_2026' && staffCookie) return { value: staffCookie };
+        return undefined;
+      },
     },
   } as any;
 }
@@ -61,5 +65,137 @@ describe('гейт /api/admin/*', () => {
     const res = await onRequest(makeContext('/api/admin/gallery-upload', token), next);
     expect(res.status).toBe(200);
     expect(await res.text()).toBe('ok');
+  });
+});
+
+// Контекст дыры (27.08.2026, найдена архитектурным аудитом): тот же класс бага,
+// что и в июле, но в трёх новых местах. /api/shift-roster отдавал ФИО/пол/возраст
+// детей смены любому анониму (проверено на проде: HTTP 200), /api/foto/* — фото и
+// распознанные лица, /admin/*.astro — админ-страницы по прямой ссылке.
+// Причина — копипаста хелперов AlfaCRM без переноса модели доступа.
+const STAFF_SECRET = 'test-staff-secret-for-roster-gate';
+
+describe('гейт /api/shift-roster (персональные данные детей)', () => {
+  let prevStaff: string | undefined;
+  beforeAll(() => {
+    prevStaff = process.env.STAFF_AUTH_SECRET;
+    process.env.STAFF_AUTH_SECRET = STAFF_SECRET;
+  });
+  afterAll(() => {
+    if (prevStaff === undefined) delete process.env.STAFF_AUTH_SECRET;
+    else process.env.STAFF_AUTH_SECRET = prevStaff;
+  });
+
+  it('аноним без cookie → 401 (раньше было 200 с ФИО детей — дыра)', async () => {
+    const res = await onRequest(makeContext('/api/shift-roster?shift=1'), next);
+    expect(res.status).toBe(401);
+  });
+
+  it('портальная сессия (любая роль) → проходит: контур /portal/rooms', async () => {
+    const token = signSession('vozhaty', SECRET);
+    const res = await onRequest(makeContext('/api/shift-roster?shift=1', token), next);
+    expect(res.status).toBe(200);
+  });
+
+  it('staff-кука → проходит: контур конструктора смены /staff/plan', async () => {
+    const res = await onRequest(makeContext('/api/shift-roster?shift=1', undefined, STAFF_SECRET), next);
+    expect(res.status).toBe(200);
+  });
+
+  it('staff-кука с неверным значением → 401', async () => {
+    const res = await onRequest(makeContext('/api/shift-roster?shift=1', undefined, 'nope'), next);
+    expect(res.status).toBe(401);
+  });
+
+  it('/api/ab-monitor-data — тот же гейт', async () => {
+    const res = await onRequest(makeContext('/api/ab-monitor-data?limit=30'), next);
+    expect(res.status).toBe(401);
+  });
+});
+
+describe('гейт страниц /admin/*', () => {
+  it('аноним → 302 на логин (раньше страница открывалась любому)', async () => {
+    const res = await onRequest(makeContext('/admin/hero'), next);
+    expect(res.status).toBe(302);
+  });
+
+  it('валидная сессия с ролью не admin → 403', async () => {
+    const token = signSession('student', SECRET, Date.now(), 12345);
+    const res = await onRequest(makeContext('/admin/gallery', token), next);
+    expect(res.status).toBe(403);
+  });
+
+  it('admin-сессия → страница отдаётся', async () => {
+    const token = signSession('admin', SECRET);
+    const res = await onRequest(makeContext('/admin/ab-monitor', token), next);
+    expect(res.status).toBe(200);
+  });
+
+  it('/admin/p-link — исключение: своя проверка ADMIN_KEY, гейт не вмешивается', async () => {
+    const res = await onRequest(makeContext('/admin/p-link'), next);
+    expect(res.status).toBe(200);
+  });
+});
+
+// ── Гейт альбомов смен (27.08.2026) ───────────────────────────────────────
+// /api/foto/* отдавал фото и распознанные лица детей любому анониму. Доступ
+// теперь даёт подписанная ссылка /foto/<id>?s=<token> → httpOnly-кука foto_s_<id>.
+import { signShiftFoto } from '../lib/fotoLink';
+
+function makeFotoContext(path: string, cookieHeader?: string) {
+  const url = new URL(`http://localhost${path}`);
+  const headers = new Headers();
+  if (cookieHeader) headers.set('cookie', cookieHeader);
+  const jar = new Map<string, string>();
+  if (cookieHeader) {
+    for (const part of cookieHeader.split(';')) {
+      const [k, ...v] = part.trim().split('=');
+      jar.set(k, v.join('='));
+    }
+  }
+  return {
+    request: new Request(url, { headers }),
+    url,
+    locals: {},
+    cookies: { get: (name: string) => (jar.has(name) ? { value: jar.get(name)! } : undefined) },
+  } as any;
+}
+
+describe('гейт /api/foto/* (фото и лица детей)', () => {
+  let prevLead: string | undefined;
+  beforeAll(() => { prevLead = process.env.LEAD_LINK_SECRET; process.env.LEAD_LINK_SECRET = 'test-foto-secret-mw'; });
+  afterAll(() => { if (prevLead === undefined) delete process.env.LEAD_LINK_SECRET; else process.env.LEAD_LINK_SECRET = prevLead; });
+
+  it('аноним → 401 (раньше было 200 с фото детей — дыра)', async () => {
+    const res = await onRequest(makeFotoContext('/api/foto/smena-1/people'), next);
+    expect(res.status).toBe(401);
+  });
+
+  it('подписанная ссылка ?s= → проходит', async () => {
+    const token = signShiftFoto('smena-1');
+    const res = await onRequest(makeFotoContext(`/api/foto/smena-1/people?s=${token}`), next);
+    expect(res.status).toBe(200);
+  });
+
+  it('кука альбома → проходит', async () => {
+    const res = await onRequest(makeFotoContext('/api/foto/smena-1/zip', `foto_s_smena-1=${signShiftFoto('smena-1')}`), next);
+    expect(res.status).toBe(200);
+  });
+
+  it('кука чужой смены не открывает альбом', async () => {
+    const res = await onRequest(makeFotoContext('/api/foto/smena-2/people', `foto_s_smena-1=${signShiftFoto('smena-1')}`), next);
+    expect(res.status).toBe(401);
+  });
+
+  it('поддельный токен → 401', async () => {
+    const res = await onRequest(makeFotoContext('/api/foto/smena-1/days?s=deadbeef00'), next);
+    expect(res.status).toBe(401);
+  });
+
+  it('/api/foto/image/<uuid> — любая валидная кука альбома (номера смены в пути нет)', async () => {
+    const ok = await onRequest(makeFotoContext('/api/foto/image/abc-uuid?kind=thumb', `foto_s_smena-1=${signShiftFoto('smena-1')}`), next);
+    expect(ok.status).toBe(200);
+    const anon = await onRequest(makeFotoContext('/api/foto/image/abc-uuid?kind=thumb'), next);
+    expect(anon.status).toBe(401);
   });
 });

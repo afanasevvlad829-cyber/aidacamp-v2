@@ -595,23 +595,9 @@
   }
 
   // ── AUTH ──────────────────────────────────────────────────────────────────
-  const COOKIE_NAME = 'staff_auth_2026';
-  const PASSWORD    = '2026';
-
-  function getCookie(name) {
-    return document.cookie.split('; ').reduce((r, v) => {
-      const [k, ...val] = v.split('=');
-      return k === name ? decodeURIComponent(val.join('=')) : r;
-    }, null);
-  }
-  function setCookie(name, value, days) {
-    const d = new Date();
-    d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
-    document.cookie = `${name}=${encodeURIComponent(value)};expires=${d.toUTCString()};path=/;SameSite=Lax`;
-  }
-  function removeCookie(name) {
-    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-  }
+  // Пароль проверяется ТОЛЬКО на сервере (/api/staff-login) и сверяется с
+  // STAFF_AUTH_SECRET. Никакого пароля/куки в браузерном коде — репозиторий публичный.
+  // Кука staff_auth_2026 — httpOnly, ставит и снимает её только сервер.
 
   function showPortal() {
     document.getElementById('login-screen').style.display = 'none';
@@ -619,18 +605,35 @@
     renderDays('counselor');
   }
 
-  function handleLogin() {
+  async function handleLogin() {
     const pwd      = document.getElementById('pwd-input').value.trim();
     const remember = document.getElementById('remember-me').checked;
     const errEl    = document.getElementById('login-error');
-
-    if (pwd === PASSWORD) {
-      setCookie(COOKIE_NAME, '1', remember ? 30 : 1);
-      // Интро/тест — отдельные пункты меню в портале, не блокируют вход.
-      enterPortal('counselor');
-    } else {
+    const btn      = document.getElementById('login-btn');
+    errEl.style.display = 'none';
+    if (btn) btn.disabled = true;
+    try {
+      const r = await fetch('/api/staff-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwd, remember }),
+      });
+      if (r.ok) {
+        // Интро/тест — отдельные пункты меню в портале, не блокируют вход.
+        const ob = JSON.parse(localStorage.getItem(OB_KEY) || '{}');
+        enterPortal(ob.role || 'counselor');
+        return;
+      }
+      errEl.textContent = r.status === 503
+        ? 'Вход временно недоступен — обратитесь к администратору.'
+        : 'Неверный пароль';
       errEl.style.display = 'block';
       document.getElementById('pwd-input').value = '';
+    } catch (e) {
+      errEl.textContent = 'Ошибка сети. Попробуйте ещё раз.';
+      errEl.style.display = 'block';
+    } finally {
+      if (btn) btn.disabled = false;
     }
   }
 
@@ -822,19 +825,20 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    const authed = getCookie(COOKIE_NAME) === '1';
     const ob = JSON.parse(localStorage.getItem(OB_KEY) || '{}');
 
-    if (authed) {
-      enterPortal(ob.role || 'counselor');
-    }
+    // Статус авторизации спрашиваем у сервера (кука httpOnly, JS её не видит).
+    fetch('/api/staff-login', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(j => { if (j && j.authed) enterPortal(ob.role || 'counselor'); })
+      .catch(() => {});
 
     document.getElementById('login-btn').addEventListener('click', handleLogin);
     document.getElementById('pwd-input').addEventListener('keydown', e => {
       if (e.key === 'Enter') handleLogin();
     });
-    document.getElementById('logout-btn').addEventListener('click', () => {
-      removeCookie(COOKIE_NAME);
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      try { await fetch('/api/staff-login', { method: 'DELETE' }); } catch (e) {}
       location.reload();
     });
 

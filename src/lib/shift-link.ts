@@ -1,6 +1,6 @@
 /**
  * shiftLinkHtml(shiftId, label) → inline HTML кнопка, которая открывает
- * ShiftInfoModal с описанием указанной смены.
+ * ShiftModal (таб «Программа») с описанием указанной смены.
  *
  * Использование в `list:` секций LandingTwoCol / articles:
  *   `${shiftLinkHtml('shift-3', 'Смена 3')} — 13 дней, 89 400 ₽`

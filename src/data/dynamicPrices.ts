@@ -23,7 +23,7 @@
  * Чтобы изменить сами правила — правь константы здесь.
  */
 
-import { SHIFT_META, taxDeduction, fmtRub } from './shifts.ts';
+import { SHIFT_META, taxDeduction, fmtRub, mainShifts } from './shifts.ts';
 
 interface PriceStage {
   from: string;        // YYYY-MM-DD
@@ -190,6 +190,21 @@ export function getShiftPhase(shiftId: string, today: Date = new Date()): ShiftP
   if (today < start) return 'upcoming';
   if (today > end)   return 'done';
   return 'live';
+}
+
+/**
+ * Смены из mainShifts, ещё открытые для новой брони (фаза 'upcoming').
+ * Пусто → сезон закрыт: продающие CTA (AgeBar, калькуляторы) должны переключиться
+ * на предзапись следующего сезона, а не предлагать смену, которая уже идёт/прошла.
+ * Единая точка проверки — не дублировать getShiftPhase(id) === 'upcoming' по компонентам.
+ */
+export function getOpenShifts(today: Date = new Date()) {
+  return mainShifts.filter((s) => getShiftPhase(s.id, today) === 'upcoming');
+}
+
+/** Есть ли прямо сейчас хотя бы одна смена, доступная к бронированию. */
+export function isSalesOpen(today: Date = new Date()): boolean {
+  return getOpenShifts(today).length > 0;
 }
 
 /** Длительность смены в днях. */

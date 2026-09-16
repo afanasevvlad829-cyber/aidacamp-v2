@@ -99,7 +99,7 @@ export const FLOOR_GRID: Record<1 | 2, { title: string; cols: number; rowsTempla
   },
 };
 
-export function getRoom(number: number): RoomDef | undefined {
+function getRoom(number: number): RoomDef | undefined {
   return ROOMS.find((r) => r.number === number);
 }
 

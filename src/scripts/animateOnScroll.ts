@@ -25,9 +25,16 @@ export function animateCounter(
   const unit = el.dataset.unit ?? '';
   const isFloat = String(to).includes('.');
 
+  // Если внутри есть [data-num] — пишем только туда, юнит остаётся отдельным
+  // элементом (он может быть стилизован иначе). Иначе — старое поведение.
+  const numEl = el.querySelector<HTMLElement>('[data-num]');
+  const write = (display: string) => {
+    if (numEl) numEl.textContent = prefix + display;
+    else el.textContent = prefix + display + unit;
+  };
+
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const display = isFloat ? to.toFixed(1) : String(Math.round(to));
-    el.textContent = prefix + display + unit;
+    write(isFloat ? to.toFixed(1) : String(Math.round(to)));
     return;
   }
 
@@ -36,14 +43,12 @@ export function animateCounter(
   function tick(now: number) {
     const progress = Math.min((now - start) / duration, 1);
     const current = easeOut(progress) * (to - from) + from;
-    const display = isFloat ? current.toFixed(1) : Math.round(current).toString();
-    el.textContent = prefix + display + unit;
+    write(isFloat ? current.toFixed(1) : Math.round(current).toString());
     if (progress < 1) {
       requestAnimationFrame(tick);
     } else {
       // Зафиксировать точное финальное значение
-      const finalDisplay = isFloat ? to.toFixed(1) : String(Math.round(to));
-      el.textContent = prefix + finalDisplay + unit;
+      write(isFloat ? to.toFixed(1) : String(Math.round(to)));
     }
   }
 

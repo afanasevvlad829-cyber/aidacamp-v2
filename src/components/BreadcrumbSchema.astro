@@ -1,0 +1,46 @@
+---
+/**
+ * BreadcrumbSchema — BreadcrumbList «Главная → label» для страниц на голом Base.
+ *
+ * Для чего: у страниц вроде /kontakty/, /otzyvy/, /faq/ нет ни ArticleHero, ни
+ * LandingLayout — они рисуют крошки своей вёрсткой, а разметку не отдавал никто
+ * (найдено обходом прода 01.08.2026: 7 страниц с видимыми крошками и без схемы).
+ *
+ * Правило прежнее — размечает тот, кто рисует. Поэтому:
+ *   · label = ТОТ ЖЕ текст, что в видимой крошке, а не title и не h1;
+ *   · подключать только там, где крошки реально нарисованы. Страницам без
+ *     видимых крошек (/aktsii/, /tv/, /video/…) схема не нужна — это была бы
+ *     невидимая разметка, ровно та, что чинили у FAQ (PR #1183).
+ *
+ * Ставится в <Fragment slot="head"> страницы. Страницы с ArticleHero /
+ * LandingLayout / SchemaOrg этот компонент НЕ подключают — там цепочку уже
+ * отдаёт сам компонент, и получился бы дубль (страж
+ * scripts/check-breadcrumb-schema.mjs уронит билд).
+ */
+import { ensureTrailingSlash } from '../utils/canonical';
+
+interface Props {
+  /** Текст последнего звена — как в видимой крошке. */
+  label: string;
+  /** Переопределяет URL последнего звена. По умолчанию — текущая страница. */
+  href?: string;
+}
+
+const { label, href } = Astro.props;
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://aidacamp.ru/' },
+    {
+      '@type': 'ListItem',
+      position: 2,
+      name: label,
+      item: ensureTrailingSlash(href ?? `https://aidacamp.ru${Astro.url.pathname}`),
+    },
+  ],
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />

@@ -1,5 +1,6 @@
 ---
-import { PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, VYCHET_MAX, VYCHET_S2, VYCHET_S21, VYCHET_S22, VYCHET_S4, SEASON_YEAR } from '../../data/shifts';
+import { Icon } from 'astro-icon/components';
+import { DAYS_S2, DAYS_S21, DAYS_S22, DAYS_S3, DAYS_S4, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, SEASON_YEAR, VYCHET_MAX, VYCHET_MAX_DAYS, VYCHET_S2, VYCHET_S21, VYCHET_S22, VYCHET_S4, daysAdj } from '../../data/shifts';
 import '../../styles/global.css';
 import Base from '../../layouts/Base.astro';
 import Header from '../../components/Header.astro';
@@ -34,6 +35,10 @@ const faqItems = [
   {
     question: "Можно ли вернуть налоговый вычет за прошлые годы?",
     answer: `Да. Срок давности — 3 года. В ${SEASON_YEAR} году можно подать декларацию за 2023, 2024 и 2025 годы одновременно. То есть если вы пропустили вычет за лагерь в прошлые сезоны — деньги ещё не потеряны. Для каждого года нужна отдельная декларация 3-НДФЛ и соответствующие документы того года.`
+  },
+  {
+    question: "«Возврат налога за лагерь», «вернуть 13 процентов», «возврат НДФЛ» — это тот же вычет?",
+    answer: "Да, это одно и то же. Налоговый вычет за лагерь — это и есть возврат части уплаченного НДФЛ: вам возвращают 13% от стоимости образовательной смены. Как бы вы ни искали — «возврат налога за детский лагерь», «как вернуть 13 процентов» или «возврат НДФЛ за ребёнка» — порядок действий один: собрать четыре документа выше и подать заявление через личный кабинет ФНС."
   }
 ];
 
@@ -48,7 +53,7 @@ const relatedPages = [
 <Base
   title={`Как получить налоговый вычет за детский лагерь — пошаговая инструкция ${SEASON_YEAR} | АйДаКемп`}
   description="Как получить налоговый вычет за детский лагерь через Госуслуги: какие документы собрать, куда загрузить, когда придут деньги. Пошаговая инструкция и реальный опыт родителей АйДаКемп."
-  ogImage="/images/hero/o-lagere.avif"
+  ogImage="/images/articles/og-nalogovyj-vychet-za-lager-poshagovaya-instrukciya.jpg"
 >
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify([
@@ -88,14 +93,14 @@ const relatedPages = [
     daryaQuote="Первый раз я потратила на это три часа и чуть не бросила. Второй раз — 15 минут. Разница только в том, что я заранее знала какие именно бумажки нужны. Вот эта инструкция — чтобы у вас было 15 минут сразу."
   />
 
-  <main class="mx-auto max-w-[860px] px-4 pt-8 pb-0 md:pt-12">
+  <main id="main-content" class="mx-auto max-w-[860px] px-4 pt-8 pb-0 md:pt-12">
     <article>
 
       <div class="mb-10">
         <p class="text-sm text-slate-500 mb-4">Правовая основа: <a href="https://www.consultant.ru/document/cons_doc_LAW_28165/6bce38481d3c84d61c0a61b00498b2d04b7daead/" target="_blank" rel="noopener" class="underline">статья 219 НК РФ, пункт 2</a> — социальный налоговый вычет на обучение. Материал актуален на {SEASON_YEAR} год. Закон требует, чтобы организация вела образовательную деятельность на основании лицензии Минобрнауки — только тогда вычет разрешён.</p>
         <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px]">
-          Налоговый вычет за детский лагерь — это социальный вычет на обучение по ст. 219 НК РФ: если ребёнок ездил туда с образовательной лицензией, государство возвращает 13% от стоимости. По открытым августовским сменам АйДаКемп возврат составляет от ~{VYCHET_S4} (10 дней) до ~{VYCHET_MAX} (13 дней). Оформляется онлайн через личный кабинет ФНС или Госуслуги.
-         Получение вычета — это компенсация за образовательную услугу в путёвке на отдых ребёнка: оформлять можно за прошлые годы, и это не про лечение, а про обучение.</p>
+          <a href="/nalogovyj-vychet/" class="underline">Налоговый вычет за детский лагерь</a> — это социальный вычет на обучение по ст. 219 НК РФ: если ребёнок ездил туда с образовательной лицензией, государство возвращает 13% от стоимости. По прошедшим августовским сменам АйДаКемп возврат составляет от ~{VYCHET_S4} ({DAYS_S4}) до ~{VYCHET_MAX} ({VYCHET_MAX_DAYS}). Оформляется онлайн через личный кабинет ФНС или Госуслуги.
+         Вычет за путёвку в детский лагерь — это компенсация за образовательную часть её стоимости: оформлять можно за прошлые годы, и это не про лечение, а про обучение. Родители часто ищут это как «возврат за лагерь» или «компенсацию за путёвку» — по закону это один и тот же социальный вычет на обучение, поэтому вернуть 13% можно за любую смену с образовательной лицензией.</p>
       </div>
 
       <div class="mb-8 pt-2">
@@ -106,23 +111,23 @@ const relatedPages = [
           </h2>
         </div>
         <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
-          Вычет может получить родитель или опекун ребёнка до 24 лет, который:
+          Лагерь для этого обязательно должен иметь образовательную лицензию — без неё вычет не оформить. Вычет может получить родитель или опекун ребёнка до 24 лет, который:
         </p>
         <ul class="flex flex-col gap-2 mb-4">
           <li class="flex items-start gap-2.5">
-            <i class="bi bi-check-lg text-orange-500 shrink-0 mt-0.5" aria-hidden="true"></i>
+            <Icon name="bi:check-lg" class="bi bi-check-lg text-orange-500 shrink-0 mt-0.5" aria-hidden="true" />
             <span class="text-[16px] text-slate-700">Является налоговым резидентом России (живёт в стране более 183 дней в год)</span>
           </li>
           <li class="flex items-start gap-2.5">
-            <i class="bi bi-check-lg text-orange-500 shrink-0 mt-0.5" aria-hidden="true"></i>
+            <Icon name="bi:check-lg" class="bi bi-check-lg text-orange-500 shrink-0 mt-0.5" aria-hidden="true" />
             <span class="text-[16px] text-slate-700">Платит НДФЛ 13% — то есть работает официально или имеет другой облагаемый доход</span>
           </li>
           <li class="flex items-start gap-2.5">
-            <i class="bi bi-check-lg text-orange-500 shrink-0 mt-0.5" aria-hidden="true"></i>
-            <span class="text-[16px] text-slate-700">Оплатил обучение в организации с образовательной лицензией</span>
+            <Icon name="bi:check-lg" class="bi bi-check-lg text-orange-500 shrink-0 mt-0.5" aria-hidden="true" />
+            <span class="text-[16px] text-slate-700">Оплатил обучение по образовательной программе в организации с образовательной лицензией</span>
           </li>
           <li class="flex items-start gap-2.5">
-            <i class="bi bi-check-lg text-orange-500 shrink-0 mt-0.5" aria-hidden="true"></i>
+            <Icon name="bi:check-lg" class="bi bi-check-lg text-orange-500 shrink-0 mt-0.5" aria-hidden="true" />
             <span class="text-[16px] text-slate-700">Договор и платёжные документы оформлены на родителя, а не на ребёнка</span>
           </li>
         </ul>
@@ -139,7 +144,7 @@ const relatedPages = [
           </h2>
         </div>
         <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
-          Формула: 13% от суммы, которую вы заплатили за образовательную часть смены. Для лагерей с лицензией — это стоимость смены минус нормативные расходы на питание и проживание (3 800 рублей в день по нормативу). При расчёте вычета учитывается только образовательная часть стоимости — за питание и проживание вычет не положен.
+          Лагерь входит в расчёт только той частью стоимости, которая относится к обучению. Формула: 13% от суммы, которую вы заплатили за образовательную часть смены. Для лагерей с лицензией — это стоимость смены минус нормативные расходы на питание и проживание (3 800 рублей в день по нормативу). При расчёте вычета учитывается только образовательная часть стоимости — за питание и проживание вычет не положен.
         </p>
         <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
           13% от стоимости путёвки — сумма, которая возвращается на счёт родителя после подачи декларации.
@@ -147,18 +152,18 @@ const relatedPages = [
 
         <StatCallout
           value={`до ${VYCHET_MAX}`}
-          label={`максимальная выплата по открытым сменам — за 13-дневную смену. За 10-дневную — от ~${VYCHET_S4}.`}
+          label={`максимальная выплата по прошедшим сменам — за ${daysAdj(DAYS_S3, 'acc')} смену. За ${daysAdj(DAYS_S4, 'acc')} — от ~${VYCHET_S4}.`}
           icon="cash-coin"
           tone="neutral"
         />
 
         <div class="space-y-2 mt-5 mb-4">
           {[
-            [`Смена 4 — 10 дней (${PRICE_S4})`, `~${VYCHET_S4}`],
-            [`Смена 3 — 13 дней (${PRICE_S3})`, `~${VYCHET_MAX}`],
-            [`Смена 2.1 (завершена) — 7 дней (${PRICE_S21})`, `~${VYCHET_S21}`],
-            [`Смена 2.2 (завершена) — 8 дней (${PRICE_S22})`, `~${VYCHET_S22}`],
-            [`Смена 2 (завершена) — 14 дней (${PRICE_S2})`, `~${VYCHET_S2}`],
+            [`Смена 4 — ${DAYS_S4} (${PRICE_S4})`, `~${VYCHET_S4}`],
+            [`Смена 3 — ${DAYS_S3} (${PRICE_S3})`, `~${VYCHET_MAX}`],
+            [`Смена 2.1 (завершена) — ${DAYS_S21} (${PRICE_S21})`, `~${VYCHET_S21}`],
+            [`Смена 2.2 (завершена) — ${DAYS_S22} (${PRICE_S22})`, `~${VYCHET_S22}`],
+            [`Смена 2 (завершена) — ${DAYS_S2} (${PRICE_S2})`, `~${VYCHET_S2}`],
           ].map(([smena, sum]) => (
             <div class="flex items-center justify-between border border-slate-200 rounded-xl px-4 py-3">
               <span class="text-base text-slate-700">{smena}</span>
@@ -172,13 +177,13 @@ const relatedPages = [
 
         <div class="my-6 rounded-xl bg-blue-50 border border-blue-200 p-5">
           <p class="font-semibold text-slate-800 mb-1">Оба родителя могут получить вычет независимо</p>
-          <p class="text-slate-600 text-sm">Каждый родитель получает вычет со своего НДФЛ — на одни и те же расходы. За открытую 13-дневную смену каждый может вернуть до <strong>{VYCHET_MAX}</strong>, а оба вместе — вдвое больше.</p>
+          <p class="text-slate-600 text-sm">Каждый родитель в одной семье получает вычет со своего НДФЛ — на одни и те же расходы. За прошедшую {daysAdj(DAYS_S3, 'acc')} смену каждый может вернуть до <strong>{VYCHET_MAX}</strong>, а оба вместе — вдвое больше.</p>
         </div>
 
         <div class="my-6 rounded-xl bg-orange-50 border border-orange-200 p-5">
           <p class="font-semibold text-slate-800 mb-1">АйДаКемп предоставляет полный пакет документов для вычета</p>
           <p class="text-slate-600 text-sm mb-3">Справка об оплате образовательных услуг, договор с номером лицензии — всё приходит автоматически после смены.</p>
-          <a href="/ceny/" class="inline-block bg-[#EC7C00] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-orange-700 transition-colors">Посмотреть смены и цены</a>
+          <a href="/ceny/" class="inline-block bg-[#ec9b44] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-orange-700 transition-colors">Посмотреть смены и цены</a>
         </div>
       </div>
 
@@ -190,7 +195,7 @@ const relatedPages = [
           </h2>
         </div>
         <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
-          Собрать документы — самое важное. Потом без них вычет не оформить. Необходимо собрать четыре документа — без любого из них налоговая откажет в вычете. Вот что нужно взять у нас:
+          Лагерь обязан предоставить полный пакет документов по первому запросу родителя. Собрать документы — самое важное. Потом без них вычет не оформить. Необходимо собрать четыре документа — без любого из них налоговая откажет в вычете. Вот что нужно взять у нас:
         </p>
         <div class="space-y-3 mb-4">
           {[
@@ -218,7 +223,7 @@ const relatedPages = [
           </h2>
         </div>
         <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-5">
-          Это самый удобный способ — декларацию можно подать онлайн, не приходя в налоговую.
+          Это самый удобный способ — декларацию можно подать онлайн через портал Госуслуг, не приходя в налоговую.
         </p>
         <div class="space-y-3 mb-4">
           {[
@@ -253,7 +258,7 @@ const relatedPages = [
           Как это сделать: подайте в ФНС заявление на подтверждение права на вычет (через личный кабинет, без декларации). Получите уведомление — и передайте его в бухгалтерию работодателя. Уведомление ФНС сформирует автоматически примерно за 30 дней.
         </p>
         <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px]">
-          Этот способ удобен если не хочется возиться с декларацией, и вы работаете в одном месте официально.
+          Этот способ удобен если не хочется возиться с декларацией, и вы работаете в одном месте официально. Лагерь в этой части процесса не участвует — все шаги идут через ФНС и бухгалтерию работодателя.
         </p>
       </div>
 
@@ -271,7 +276,7 @@ const relatedPages = [
           Занимает 10–15 минут. Доступно если работодатель подключён к обмену данными с ФНС — это большинство крупных компаний. Проверить просто: зайдите в личный кабинет ФНС и посмотрите, появляется ли вкладка «Упрощённый порядок» в разделе вычетов.
         </p>
         <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px]">
-          Если вкладки нет — используйте стандартный путь через декларацию 3-НДФЛ, описанный выше.
+          Если вкладки нет — используйте стандартный путь через декларацию 3-НДФЛ, описанный выше. Лагерь на выбор способа никак не влияет — это только вопрос настроек в личном кабинете ФНС.
         </p>
       </div>
 
@@ -288,7 +293,7 @@ const relatedPages = [
             ["Через налоговую (декларация)", "До 4 месяцев: камеральная проверка 3 месяца + выплата до 1 месяца. При онлайн-подаче без ошибок — реально 1,5–2,5 месяца."],
           ].map(([way, desc]) => (
             <div class="flex items-start gap-3 border border-slate-200 rounded-xl p-4">
-              <i class="bi bi-clock text-orange-500 text-[16px] shrink-0 mt-0.5" aria-hidden="true"></i>
+              <Icon name="bi:clock" class="bi bi-clock text-orange-500 text-[16px] shrink-0 mt-0.5" aria-hidden="true" />
               <div>
                 <p class="text-base font-semibold text-slate-800">{way}</p>
                 <p class="text-base leading-[1.6] text-slate-600 mt-0.5">{desc}</p>
@@ -297,7 +302,7 @@ const relatedPages = [
           ))}
         </div>
         <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px]">
-          Важно: декларацию за текущий год можно подать только в следующем. Ребёнок едет туда в {SEASON_YEAR} году — декларацию подаёте с 1 января 2027. Зато подать можно за 3 прошедших года разом, если пропустили.
+          Важно: декларацию за текущий год можно подать только в следующем. Ребёнок едет туда в {SEASON_YEAR} году — декларацию подаёте с 1 января 2027. Зато подать можно за 3 прошедших года разом, если пропустили. Лагерь при этом выдаёт документы за каждый год отдельно.
         </p>
       </div>
 
@@ -316,7 +321,7 @@ const relatedPages = [
             ["Подаёте декларацию в том же году", `За ${SEASON_YEAR} год декларацию подаёте не раньше 1 января 2027. В том же году — только через работодателя.`],
           ].map(([title, desc]) => (
             <div class="flex items-start gap-3 bg-red-50 border border-red-100 rounded-xl p-4">
-              <i class="bi bi-exclamation-triangle-fill text-red-500 text-[16px] shrink-0 mt-0.5" aria-hidden="true"></i>
+              <Icon name="bi:exclamation-triangle-fill" class="bi bi-exclamation-triangle-fill text-red-500 text-[16px] shrink-0 mt-0.5" aria-hidden="true" />
               <div>
                 <p class="text-base font-semibold text-slate-800 mb-0.5">{title}</p>
                 <p class="text-base leading-[1.6] text-slate-600">{desc}</p>

@@ -1,5 +1,7 @@
 ---
+import { Icon } from 'astro-icon/components';
 import '../../styles/global.css';
+import { NEAREST_OPEN_SHIFT, shiftDatesShort, SEASON_YEAR } from '../../data/shifts';
 import Base from '../../layouts/Base.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
@@ -37,14 +39,15 @@ const relatedPages = [
 ---
 
 <Base
+  ogImage="/images/articles/og-kto-edet-v-lager-vozrasty.jpg"
   title="Кто едет в IT-лагерь: честный расклад по возрастам | АйДаКемп"
-  description="Честная статистика IT-лагеря АйДаКемп: какие возрасты интересуются лагерем, кто реально едет, как устроена типичная смена — по данным сезона-2026."
+  description={`Честная статистика IT-лагеря АйДаКемп: какие возрасты интересуются лагерем, кто реально едет, как устроена типичная смена — по данным сезона-${SEASON_YEAR}.`}
 >
   <Fragment slot="head">
     <ArticleSchema
       slug="kto-edet-v-lager-vozrasty"
       title="Кто едет в IT-лагерь: честный расклад по возрастам"
-      description="Честная статистика IT-лагеря АйДаКемп: какие возрасты интересуются лагерем, кто реально едет, как устроена типичная смена — по данным сезона-2026."
+      description={`Честная статистика IT-лагеря АйДаКемп: какие возрасты интересуются лагерем, кто реально едет, как устроена типичная смена — по данным сезона-${SEASON_YEAR}.`}
       datePublished="2026-07-13"
     />
     <FAQSchema items={faqItems.map((f) => ({ q: f.question, a: f.answer }))} />
@@ -57,10 +60,10 @@ const relatedPages = [
     breadcrumbsLast="Возрасты в лагере"
     readTime="6 мин"
     icon="graph-up"
-    iconLabel="Статистика сезона-2026"
+    iconLabel={`Статистика сезона-${SEASON_YEAR}`}
   />
 
-  <main class="mx-auto max-w-[860px] px-4 pt-8 pb-0 md:pt-12">
+  <main id="main-content" class="mx-auto max-w-[860px] px-4 pt-8 pb-0 md:pt-12">
     <article>
 
       <!-- Кто интересуется — и кто едет -->
@@ -119,22 +122,22 @@ const relatedPages = [
         <VozrastyGirls />
       </div>
 
-      <!-- CTA к смене 4 -->
+      <!-- CTA к ближайшей смене в продаже (не к зашитому id: смена уходит в архив) -->
       <a
-        href="/shifts/shift-4/"
+        href={`/shifts/${NEAREST_OPEN_SHIFT.id}/`}
         class="group my-10 block no-underline rounded-[22px] bg-primary text-white p-7 md:p-9 text-center card-shadow hover:bg-primary-hover transition-colors"
         data-analytics-goal="blog_cta_click"
         data-analytics-label="vozrasty-shift4-cta"
       >
         <h2 class="text-white text-[20px] md:text-[24px] font-bold leading-[1.25] tracking-[-0.01em]">
-          Последняя смена этого лета: 17–26 августа
+          Ближайшая смена: {shiftDatesShort(NEAREST_OPEN_SHIFT)}
         </h2>
         <p class="mt-3 text-[15px] md:text-[16px] text-white/90 leading-[1.6] max-w-[520px] mx-auto">
-          10 дней, возраст 8–16, группы по возрасту и уровню. Проект, хакатон, защита перед залом — и сентябрь без раскачки.
+          {NEAREST_OPEN_SHIFT.duration}, возраст 8–16, группы по возрасту и уровню. Проект, хакатон, защита перед залом.
         </p>
         <span class="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-white px-6 py-3 text-primary font-bold text-[15px]">
           Посмотреть программу и места
-          <i class="bi bi-arrow-right icon-arrow-right-hover" aria-hidden="true"></i>
+          <Icon name="bi:arrow-right" class="bi bi-arrow-right icon-arrow-right-hover" aria-hidden="true" />
         </span>
       </a>
 
@@ -163,7 +166,7 @@ const relatedPages = [
       </div>
 
       <p class="text-[13px] text-slate-400 leading-[1.6] mb-2">
-        Все цифры — собственная статистика АйДаКемп по сезону-2026: запросы о лагере и реальные путёвки этого лета.
+        Все цифры — собственная статистика АйДаКемп по сезону-{SEASON_YEAR}: запросы о лагере и реальные путёвки этого лета.
       </p>
       <!-- TODO: добавить ссылку на статью-дневник смены про «ночь с телефонами», когда она будет опубликована
            (поиск по слову «телефон» в заголовках /stati/ на 2026-07-13 такой статьи не нашёл). -->

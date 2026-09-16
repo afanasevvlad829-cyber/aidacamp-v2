@@ -1,66 +1,36 @@
+/* ⚠️ Эти два импорта — фундамент всех стилей публичной части. Без первого
+   Tailwind 4 не генерирует НИ ОДНОЙ утилиты, и сайт отдаётся голым HTML.
+   Инцидент 08.09.2026: обе строки удалены заодно с блоками @font-face при
+   переводе шрифтов на Fonts API (8697c01e) — прод простоял без стилей ~12 часов,
+   потому что локальные сборки брали CSS из кэша и поломку не показывали. */
 @import "tailwindcss";
 @import './components/utilities.css';
 
-/* ===== Inter — локальный, font-display: swap предотвращает FOUT ===== */
-@font-face {
-  font-family: "Montserrat";
-  src: url("/fonts/montserrat-latin-600.woff2") format("woff2");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
-    U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-@font-face {
-  font-family: "Montserrat";
-  src: url("/fonts/montserrat-cyrillic-600.woff2") format("woff2");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
-}
-
-@font-face {
-  font-family: "Inter";
-  src: url("/fonts/inter-latin.woff2") format("woff2");
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
-    U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-@font-face {
-  font-family: "Inter";
-  src: url("/fonts/inter-cyrillic.woff2") format("woff2");
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
-}
-
 @theme {
-  /* ── BRAND ORANGE (единственный источник истины) ── */
-  --color-primary:        #ec7c00;   /* кнопки, акценты */
-  --color-primary-hover:  #d67000;   /* hover state */
-  --color-primary-dark:   #ad5b00;   /* активные точки, pressed state */
-  --color-primary-light:  #ffa33d;   /* иконки, подчёркивания */
-  --color-primary-soft:   #fff1df;   /* мягкий фон (≈ #fff2e3) */
-  --color-primary-warm:   #fff8f2;   /* очень мягкий фон */
-  --color-primary-text:   #9c3d00;   /* текст на светло-оранжевом фоне */
-  --color-primary-muted:  rgba(236,124,0,0.12); /* ghost-bg */
+  /* ── BRAND ORANGE — soft (единственный источник истины) ── */
+  /* Решение владельца 21.08.2026: бренд = #ec9b44 (soft), как в DESIGN_SYSTEM.md.
+     Hard orange #ec7c00 читался как «реклама», soft — как «премиум». */
+  --color-primary:        #ec9b44;   /* кнопки, акценты */
+  --color-primary-hover:  #d68830;   /* hover state */
+  --color-primary-dark:   #b66d10;   /* активные точки, pressed state */
+  --color-primary-light:  #eba955;   /* иконки, подчёркивания */
+  --color-primary-soft:   #fdf6ec;   /* мягкий фон */
+  --color-primary-warm:   #fff8f2;   /* очень мягкий фон (почти белый, оттенок не читается) */
+  --color-primary-text:   #8c540c;   /* текст на светлом фоне: 6.20:1 на белом — AA */
+  --color-primary-muted:  rgba(236,155,68,0.12); /* ghost-bg */
 
-  /* ── PRIMARY 50-950 SCALE (Tailwind-style, for codemod consolidation) ── */
-  --color-primary-50:  #fff7ef;
-  --color-primary-100: #ffeedb;
-  --color-primary-200: #ffdab2;
-  --color-primary-300: #ffc07a;
-  --color-primary-400: #ffa33d;
-  --color-primary-500: #ec7c00;
-  --color-primary-600: #d67000;
-  --color-primary-700: #ad5b00;
-  --color-primary-800: #844500;
-  --color-primary-900: #5b3000;
-  --color-primary-950: #2f1a03;
+  /* ── PRIMARY 50-950 SCALE (soft, источник — DESIGN_SYSTEM.md §2) ── */
+  --color-primary-50:  #fdf6ec;
+  --color-primary-100: #faead0;
+  --color-primary-200: #f5d4a4;
+  --color-primary-300: #f0bb78;
+  --color-primary-400: #eba955;
+  --color-primary-500: #ec9b44;
+  --color-primary-600: #d68830;
+  --color-primary-700: #b66d10;
+  --color-primary-800: #8c540c;
+  --color-primary-900: #603b08;
+  --color-primary-950: #321e04;
 
   /* ── NAVY 50-950 SCALE (hero bg = navy-950) ── */
   --color-navy-50:  #f3f6fb;
@@ -118,6 +88,7 @@
   --color-accent-green:       #2fa768;
   --color-accent-green-light: #45c97f;
   --color-accent-green-soft:  #e9f8ef;
+  --color-error:               #c4515c; /* документирован в DESIGN_SYSTEM.md §2, токена не было */
 
   /* ── TYPOGRAPHY SCALE (mobile-first) ── */
   /* xs=12, sm=14, base=16, md=18, lg=20, xl=24, 2xl=28, 3xl=36, 4xl=44 */
@@ -181,7 +152,13 @@
   --z-tooltip:     80;
 
   /* ── FONT ── */
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Шрифт — Fonts API (astro.config → fonts, <Font cssVariable="--font-inter"> в head).
+   Значение со ссылкой на чужую переменную Tailwind v4 принимает только в @theme inline
+   (иначе молча выбрасывает --font-sans, и body падает на Times — проверено 08.09.2026). */
+@theme inline {
+  --font-sans: var(--font-inter);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -240,7 +217,7 @@
     cursor: pointer;
   }
   body {
-    font-family: var(--font-sans);
+    font-family: var(--font-sans, var(--font-inter)); /* --font-sans как переменная задаёт только тема apple */
     font-size: 18px;
     color: var(--color-text);
     background-color: var(--color-page);
@@ -723,8 +700,8 @@
     radial-gradient(circle 4px at 25% 30%, #f5a624, transparent 70%),
     radial-gradient(circle 4px at 50% 50%, #f5a624, transparent 70%),
     radial-gradient(circle 4px at 75% 70%, #f5a624, transparent 70%),
-    radial-gradient(circle 4px at 65% 25%, #ec7c00, transparent 70%),
-    radial-gradient(circle 4px at 35% 75%, #ec7c00, transparent 70%),
+    radial-gradient(circle 4px at 65% 25%, var(--color-primary), transparent 70%),
+    radial-gradient(circle 4px at 35% 75%, var(--color-primary), transparent 70%),
     #050510;
 }
 [data-hero-bg="hexagons"]::before {
@@ -851,9 +828,9 @@
 /* === quantum (CSS-fallback) === */
 [data-hero-bg="quantum"] {
   background:
-    radial-gradient(circle 8px at 18% 30%, #ec7c00, transparent 70%),
+    radial-gradient(circle 8px at 18% 30%, var(--color-primary), transparent 70%),
     radial-gradient(circle 8px at 50% 60%, #f5a624, transparent 70%),
-    radial-gradient(circle 8px at 80% 35%, #ec7c00, transparent 70%),
+    radial-gradient(circle 8px at 80% 35%, var(--color-primary), transparent 70%),
     radial-gradient(circle 8px at 30% 75%, #f5a624, transparent 70%),
     radial-gradient(ellipse 60% 50% at 50% 50%, rgba(255,138,0,0.18) 0%, transparent 60%),
     #0d1a2b;
@@ -891,7 +868,7 @@
 [data-hero-bg="fiber"] {
   background:
     repeating-radial-gradient(circle at center, transparent 0 30px, rgba(255,138,0,0.18) 30px 32px),
-    radial-gradient(ellipse at center, #ec7c00 0%, #050510 70%);
+    radial-gradient(ellipse at center, var(--color-primary) 0%, #050510 70%);
 }
 [data-hero-bg="fiber"]::before {
   content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
@@ -1260,3 +1237,7 @@ html {
 body {
   background-color: var(--color-white);
 }
+
+/* Иконки astro-icon (<Icon name="bi:…" class="bi bi-…">): тот же бокс, что у legacy .bi
+   из icons.css (1em, baseline -0.125em). Селекторы .bi/.bi-* в компонентах продолжают работать. */
+svg.bi { display: inline-block; width: 1em; height: 1em; vertical-align: -0.125em; }

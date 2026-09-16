@@ -8,6 +8,7 @@ interface Photo {
   file: string;
   tags: string[];
   caption: string;
+  shift?: string; // ISO id смены ('shift-2'), если фото реально размечено — см. Task 5
 }
 
 interface PhotoResult {
@@ -15,13 +16,30 @@ interface PhotoResult {
   caption: string;
 }
 
+/** Есть ли хоть одно реально размеченное фото для этой смены — используется ask.ts, чтобы решить,
+ * можно ли честно сказать "вот фото именно с этой смены" (Task 5). */
+export function hasShiftPhotos(shiftId: string): boolean {
+  return (photoIndex.photos as Photo[]).some(p => p.shift === shiftId);
+}
+
 /**
  * Ищет 2–4 фото по тематике запроса.
  * query — тема (например "бассейн", "занятия программированием", "еда")
+ * shiftId — если передан и есть реально размеченные фото этой смены ('shift-2' и т.п.,
+ * см. Task 5), они идут первыми и отдаются как есть. Если фото со сменой нет вообще —
+ * НЕ подменяем общими фото молча, а просто продолжаем обычный поиск по тегам ниже.
  */
-export function findPhotos(query: string, count = 4): PhotoResult[] {
+export function findPhotos(query: string, count = 4, shiftId?: string): PhotoResult[] {
   const q = query.toLowerCase();
   const base = photoIndex.base;
+  const allPhotos = photoIndex.photos as Photo[];
+
+  if (shiftId) {
+    const shiftPhotos = allPhotos.filter(p => p.shift === shiftId);
+    if (shiftPhotos.length > 0) {
+      return shiftPhotos.slice(0, count).map(p => ({ url: base + p.file, caption: p.caption }));
+    }
+  }
 
   // Считаем score по совпадению тегов
   const scored = (photoIndex.photos as Photo[]).map(photo => {

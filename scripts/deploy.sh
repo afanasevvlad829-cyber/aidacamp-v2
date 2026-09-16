@@ -27,18 +27,39 @@ if [ "$TARGET" = "prod" ] && [ "${MASTER_AGENT:-0}" != "1" ] && [ "${SKIP_GIT_GU
   exit 1
 fi
 
-# ── 0a. BRANCH GUARD: прод деплоится ТОЛЬКО из main ─────────
-# Эта проверка не обходится SKIP_GIT_GUARD — только явный FORCE_BRANCH=1.
+# ── 0a. BRANCH GUARD: прод деплоится ТОЛЬКО из dev ──────────
+# С 09.09.2026 dev — единственная боевая ветка (решение владельца после переезда
+# на Forgejo: промоут dev→main делал GitHub Actions, на своём CI его нет, main
+# перестал быть зеркалом прода). Требуем: текущая ветка dev ИЛИ HEAD равен
+# origin/dev (release.sh катит из detached worktree). Эта проверка не обходится
+# SKIP_GIT_GUARD — только явный FORCE_BRANCH=1.
 # Инцидент 2026-06-25: деплой из fix/video-player-import → сломанный прод.
 cd "$PROJECT_DIR"
-if [ "$TARGET" = "prod" ] && [ "${FORCE_BRANCH:-0}" != "1" ]; then
+# Isolated CI release is still a merged dev commit, pinned and promoted to main.
+# This is a separately validated route, not SKIP_GIT_GUARD/FORCE_BRANCH.
+ISOLATED_RELEASE_VALIDATED=0
+if [ -n "${ISOLATED_RELEASE_SHA:-}" ]; then
+  [ "$TARGET" = prod ] && [ "${GITHUB_ACTIONS:-}" = true ] &&
+    [ "${GITHUB_EVENT_NAME:-}" = workflow_dispatch ] &&
+    [ "${GITHUB_REF:-}" = refs/heads/dev ] || { echo 'Invalid isolated CI context'; exit 1; }
+  printf '%s' "$ISOLATED_RELEASE_SHA" | grep -Eq '^[0-9a-f]{40}$' || exit 1
+  git fetch origin main dev
+  [ "$(git rev-parse HEAD)" = "$ISOLATED_RELEASE_SHA" ] || exit 1
+  [ "$(git rev-parse origin/main)" = "$ISOLATED_RELEASE_SHA" ] || exit 1
+  git merge-base --is-ancestor "$ISOLATED_RELEASE_SHA" origin/dev || exit 1
+  ISOLATED_RELEASE_VALIDATED=1
+fi
+if [ "$TARGET" = "prod" ] && [ "${FORCE_BRANCH:-0}" != "1" ] && [ "$ISOLATED_RELEASE_VALIDATED" != 1 ]; then
   CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "detached")
-  if [ "$CURRENT_BRANCH" != "main" ]; then
-    echo "❌ DEPLOY BLOCKED: прод деплоится только из ветки main"
-    echo "   Текущая ветка: $CURRENT_BRANCH"
+  git fetch origin --quiet 2>/dev/null || true
+  ORIGIN_DEV_SHA=$(git rev-parse origin/dev 2>/dev/null || echo "")
+  HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
+  if [ "$CURRENT_BRANCH" != "dev" ] && [ -z "$ORIGIN_DEV_SHA" -o "$HEAD_SHA" != "$ORIGIN_DEV_SHA" ]; then
+    echo "❌ DEPLOY BLOCKED: прод деплоится только из ветки dev (или HEAD == origin/dev)"
+    echo "   Текущая ветка: $CURRENT_BRANCH, HEAD: ${HEAD_SHA:0:8}, origin/dev: ${ORIGIN_DEV_SHA:0:8}"
     echo ""
-    echo "→ git checkout main && git pull origin main"
-    echo "   ./scripts/deploy.sh prod"
+    echo "→ git checkout dev && git pull origin dev"
+    echo "   ./scripts/release.sh"
     echo ""
     echo "Исключение (хотфикс прямо из этой ветки): FORCE_BRANCH=1 ./scripts/deploy.sh prod"
     exit 1
@@ -51,7 +72,7 @@ fi
 if [ "${SKIP_GIT_GUARD:-0}" != "1" ]; then
   case "$TARGET" in
     dev)  GUARD_BRANCH="dev" ;;
-    prod) GUARD_BRANCH="main" ;;
+    prod) if [ "$ISOLATED_RELEASE_VALIDATED" = 1 ]; then GUARD_BRANCH="main"; else GUARD_BRANCH="dev"; fi ;;   # dev — единственная боевая ветка (09.09.2026)
     *)    GUARD_BRANCH="" ;;
   esac
 
@@ -63,7 +84,7 @@ if [ "${SKIP_GIT_GUARD:-0}" != "1" ]; then
     echo "→ Положи изменения в git через PR:"
     echo "   git checkout -b agent/<task> origin/dev"
     echo "   git add -A && git commit -m '...' && git push origin agent/<task>"
-    echo "   gh pr create --base dev"
+    echo "   tea pr create --base dev   # PR в Forgejo (git.aidaplus.ru)"
     echo ""
     echo "Hotfix владельцем — SKIP_GIT_GUARD=1 ./scripts/deploy.sh $TARGET"
     exit 1
@@ -293,6 +314,11 @@ REPO_MODULES="$REPO_DIR/node_modules"
 # 4a. Синкаем package.json + package-lock.json на сервер
 rsync -az -e "ssh -i $SSH_KEY" package.json package-lock.json "$SSH_HOST:$REPO_DIR/"
 
+# 4a-bis. Кроновые mjs-скрипты живут рядом с node_modules репо (Node ищет модули от
+# файла, а не от cwd — из /opt/scripts `pg` не нашёлся бы). Синкаем из репо, чтобы
+# серверная копия не разъезжалась с исходником.
+rsync -az -e "ssh -i $SSH_KEY" scripts/ga-purchase-mp.mjs "$SSH_HOST:$REPO_DIR/scripts/"
+
 # 4b. Сверяем хеш package-lock.json с сохранённым. Если изменился → npm ci.
 LOCAL_LOCK_HASH=$(shasum -a 256 package-lock.json | awk '{print $1}')
 REMOTE_LOCK_HASH=$(ssh -i "$SSH_KEY" "$SSH_HOST" \
@@ -417,6 +443,64 @@ fi
 echo "  ✅ HTML hash совпадает"
 echo "  ✅ Все hero-images на месте ($(echo "$HERO_IMAGES" | wc -l | tr -d ' ') файлов)"
 echo "  ✅ HTTP $HTTP_STATUS"
+
+# ── 6c. nginx: снипет SSR-редиректов (только prod) ────────────
+# SSR-редирект (prerender=false + Astro.redirect) работает только если nginx
+# проксирует его слаг в Node — иначе прод отдаёт 404 (инцидент b70ae7b2:
+# редирект жил в репо, блок в nginx руками не добавили, 404 с 02.08 по 07.08).
+# Снипет генерируется из репо и подключён include'ом в server-блок aidacamp.ru.
+# Шаг стоит ДО smoke: smoke проверяет те же слаги из репо, и новый редирект без
+# location в nginx давал 404 → smoke красный → авто-откат здорового прода
+# (08.09.2026: два прод-деплоя подряд упали на /lager-na-leto-2026|2027/, пока
+# снипет не применили руками). Если nginx -t провалится — снипет восстанавливаем
+# из бэкапа и уходим в fail_deploy (файлы откатываются штатно). После отката
+# файлов новый снипет остаётся: лишний location лишь проксирует слаг в Node,
+# который отвечает по своему роутингу — это не хуже 404 от nginx.
+if [ "$TARGET" = "prod" ] && [ "${SKIP_NGINX_REDIRECTS:-0}" != "1" ]; then
+  echo ""
+  echo "🧭 nginx: снипет SSR-редиректов..."
+  SNIPPET_REMOTE="/etc/nginx/snippets/aidacamp-ssr-redirects.conf"
+  SNIPPET_TMP_LOCAL=$(mktemp)
+  "$SCRIPT_DIR/gen-nginx-redirects.sh" "$SNIPPET_TMP_LOCAL"
+
+  # Без include в aidacamp.conf снипет — мёртвый груз: не валим деплой, но кричим.
+  if ! ssh -i "$SSH_KEY" "$SSH_HOST" \
+      "grep -q 'snippets/aidacamp-ssr-redirects.conf' /etc/nginx/sites-enabled/aidacamp.conf"; then
+    echo "  ⚠️  В aidacamp.conf нет include снипета — SSR-редиректы НЕ обновлены."
+    echo "     Добавь в server-блок aidacamp.ru: include snippets/aidacamp-ssr-redirects.conf;"
+  else
+    scp -q -i "$SSH_KEY" "$SNIPPET_TMP_LOCAL" "$SSH_HOST:/tmp/aidacamp-ssr-redirects.conf.new"
+    if ssh -i "$SSH_KEY" "$SSH_HOST" \
+        "cmp -s /tmp/aidacamp-ssr-redirects.conf.new $SNIPPET_REMOTE 2>/dev/null"; then
+      echo "  ✅ Снипет без изменений ($(grep -c 'location ~' "$SNIPPET_TMP_LOCAL") редиректов)"
+      ssh -i "$SSH_KEY" "$SSH_HOST" "rm -f /tmp/aidacamp-ssr-redirects.conf.new"
+    else
+      # Бэкапы конфигов — ТОЛЬКО в /etc/nginx/backups/ (НЕ в sites-enabled и не
+      # рядом со снипетом: include подхватывает *.bak и ломает nginx).
+      if ! ssh -i "$SSH_KEY" "$SSH_HOST" "
+        set -e
+        mkdir -p /etc/nginx/backups
+        if [ -f $SNIPPET_REMOTE ]; then cp $SNIPPET_REMOTE /etc/nginx/backups/aidacamp-ssr-redirects.conf.\$(date +%Y%m%d-%H%M%S); fi
+        mv /tmp/aidacamp-ssr-redirects.conf.new $SNIPPET_REMOTE
+        if nginx -t 2>/dev/null; then
+          systemctl reload nginx
+        else
+          echo 'nginx -t ПРОВАЛЕН — откатываю снипет'
+          LAST_BACKUP=\$(ls -t /etc/nginx/backups/aidacamp-ssr-redirects.conf.* 2>/dev/null | head -1)
+          if [ -n \"\$LAST_BACKUP\" ]; then cp \"\$LAST_BACKUP\" $SNIPPET_REMOTE; else rm -f $SNIPPET_REMOTE; fi
+          nginx -t
+          exit 1
+        fi
+      "; then
+        echo "  ❌ nginx -t провалился на новом снипете — снипет откачен, nginx не перезагружен."
+        echo "     Смотри: ssh $SSH_HOST 'nginx -t' и /etc/nginx/backups/"
+        fail_deploy "nginx -t провалился на новом снипете SSR-редиректов"
+      fi
+      echo "  ✅ Снипет обновлён + nginx reload ($(grep -c 'location ~' "$SNIPPET_TMP_LOCAL") редиректов)"
+    fi
+  fi
+  rm -f "$SNIPPET_TMP_LOCAL"
+fi
 
 # ── 6d. Smoke: критичные страницы + внутренние ссылки ─────────
 # Ловит то, что не видно по одной главной странице: битую перелинковку,

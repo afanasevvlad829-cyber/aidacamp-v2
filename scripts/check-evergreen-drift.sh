@@ -22,6 +22,26 @@ P_RANGE = re.compile(rf'{MON}\s*{DASH}\s*{MON}', re.I)
 P_FROMTO = re.compile(rf'\bс\s+(?:конца\s+)?{MON}\s+по\s+{MON}', re.I)
 # 3) N смен прописью
 P_COUNT = re.compile(r'\b(одн[ау]|две|дву[хм]|три|четыр[её]|пять|шесть|семь|восемь)\s+смен(?:а|ы|)\b', re.I)
+# 4) Месяц + ГОД в title=/description=/h1= (добавлено 01.08.2026).
+# Диапазоны ловились и раньше, а «июнь 2026» в Title главной проходил мимо: в
+# августе он уводил выдачу в прошедший месяц и отбирал запросы у /lager-na-iyun/.
+# Ловим только связку «месяц + год» — она гарантированно протухает. Одиночный
+# месяц без года не трогаем: в ретроспективах («смена прошла в июне») он уместен.
+P_META_MONTH = re.compile(
+    rf'(?<![A-Za-z])(?:title|description|h1)\s*=\s*\{{?\s*[`"\'][^`"\']*?\b({MON})\b[^`"\']{{0,6}}?(?:\d{{4}}|\$\{{SEASON_YEAR\}})',
+    re.I)
+_MONTH_SLUG = {'ма': 'may', 'июн': 'iyun', 'июл': 'iyul', 'авг': 'avgust'}
+
+def month_ok(basename, month_word):
+    """Месяц в метатеге допустим на странице этого же месяца, а также в
+    ретроспективах kak-proshla-*: там дата описывает прошедшее событие и
+    устареть не может."""
+    if basename.startswith('kak-proshla'):
+        return True
+    for stem, slug in _MONTH_SLUG.items():
+        if month_word.lower().startswith(stem):
+            return slug in basename
+    return False
 
 # src/data (весь, не только landings) + .json добавлены 29.07.2026: hero-variants.json —
 # канон hero-текстов с сезонными плейсхолдерами — не сканировался ни одним стражем
@@ -101,6 +121,9 @@ for base in BASES:
                         if any(a in ctx for a in ALLOW_SUBSTR): continue
                         if (bn, frag.strip().lower()) in ALLOW_PAIRS: continue
                         drift.setdefault(p, []).append((i, tag, frag.strip()))
+                for m in P_META_MONTH.finditer(line):
+                    if month_ok(bn, m.group(1)): continue
+                    drift.setdefault(p, []).append((i, 'месяц в метатеге', m.group(0).strip()[:70]))
 
 if drift:
     print('❌ ЭВЕРГРИН-ДРЕЙФ (сезонная фраза захардкожена — брать из evergreen.ts):')

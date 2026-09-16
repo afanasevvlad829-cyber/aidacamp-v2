@@ -20,6 +20,8 @@
  *   · /stati/*        → ArticleHero (рисует nav Главная → Статьи → …)
  *   · лендинги        → LandingLayout (единственный на все 110 страниц, знает canonical)
  *   · главная         → SchemaOrg
+ *   · страницы на голом Base (/kontakty/, /otzyvy/, /faq/…) → <BreadcrumbSchema label>
+ *     рядом с их собственной вёрсткой крошек
  * Страница свою вторую цепочку не пишет.
  *
  * Вторая проверка — валидность JSON внутри ld+json, по всем блокам любого типа.
@@ -70,7 +72,27 @@ const chainOf = (bc) =>
 const sameTrail = (a, b) =>
   a.length === b.length && a.length > 0 && a.slice(0, -1).every((v, i) => v === b[i]);
 
+// Текст нарисованных крошек: <nav>, первое звено которого — ссылка «Главная».
+const NAV_RE = /<nav\b[^>]*>([\s\S]*?)<\/nav>/gi;
+const navItems = (html) => {
+  NAV_RE.lastIndex = 0;
+  let m;
+  while ((m = NAV_RE.exec(html))) {
+    const parts = m[1]
+      .replace(/<[^>]+>/g, '|')
+      .replace(/&rarr;|&nbsp;|&middot;|&raquo;|&laquo;/g, '|')
+      .replace(/&mdash;/g, '—')
+      .replace(/&amp;/g, '&')
+      .split('|')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (parts[0] === 'Главная') return parts;
+  }
+  return null;
+};
+
 const dupes = [];
+const drift = [];
 const multi = [];
 const broken = [];
 let withSchema = 0;
@@ -98,6 +120,19 @@ for (const file of walk(ROOT)) {
   }
   if (lists.length) withSchema++;
   total += lists.length;
+
+  // Дрейф метки: последнее звено разметки должно совпадать с нарисованной крошкой.
+  // Ловит случай, когда текст на экране поменяли, а label в схеме забыли (01.08.2026:
+  // /otzyvy/ уехал в прод с «Отзывы» в схеме и «Мнения» на экране).
+  if (lists.length === 1) {
+    const vis = navItems(html);
+    if (vis && vis.length >= 2) {
+      const visLast = norm(vis.at(-1));
+      const schemaLast = chainOf(lists[0]).at(-1);
+      if (visLast !== schemaLast) drift.push(`${url}\n      экран=«${visLast}»  разметка=«${schemaLast}»`);
+    }
+  }
+
   if (lists.length < 2) continue;
 
   const chains = lists.map(chainOf);
@@ -121,7 +156,16 @@ if (broken.length) {
   console.error('  ✓ <script type="application/ld+json" set:html={JSON.stringify({…})} />');
   console.error('В первом случае в HTML уходит исходный текст выражения, а не JSON,');
   console.error('и краулер отбрасывает блок целиком (инцидент #1185, JLD-003).\n');
-  process.exit(1);
+}
+
+if (drift.length) {
+  console.error(`\nFATAL: на ${drift.length} страницах последнее звено разметки не совпадает с нарисованной крошкой:`);
+  for (const d of drift.slice(0, 20)) console.error(`  ✗ ${d}`);
+  if (drift.length > 20) console.error(`  … ещё ${drift.length - 20}`);
+  console.error('\nBreadcrumbList должен отражать ту цепочку, которую видит пользователь.');
+  console.error('  · лендинг → передай LandingLayout тот же breadcrumb, что и LandingHero');
+  console.error('  · страница на Base → label у <BreadcrumbSchema> = текст видимой крошки');
+  console.error('  · /stati/* → breadcrumbsLast у <ArticleHero>\n');
 }
 
 if (dupes.length) {
@@ -131,8 +175,10 @@ if (dupes.length) {
   console.error('\nЦепочку отдаёт одна сущность — та, что рисует видимые крошки:');
   console.error('  · /stati/*  → ArticleHero, страница свой <script ld+json> с BreadcrumbList не пишет');
   console.error('  · лендинги  → LandingLayout, LandingHero свою цепочку не дублирует');
-  console.error('  · главная   → SchemaOrg\n');
-  process.exit(1);
+  console.error('  · главная   → SchemaOrg');
+  console.error('  · на голом Base → <BreadcrumbSchema label="…" />, и только если крошки нарисованы\n');
 }
+
+if (broken.length || drift.length || dupes.length) process.exit(1);
 
 console.log(`BreadcrumbList OK: ${withSchema} страниц со схемой, ${total} цепочек, дублей пути нет, JSON-LD валиден`);

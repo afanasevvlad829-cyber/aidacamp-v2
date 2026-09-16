@@ -298,12 +298,11 @@ direct_api("negativekeywordsharedsets", "update", {"NegativeKeywordSharedSets": 
     "NegativeKeywords": sets[0]["NegativeKeywords"] + ["новая минус фраза"],
 }]})
 
-# Исключённые площадки РСЯ
-resp = direct_api("adimages", params={})  # не то
-# Площадки — через excludedsites (специальный endpoint):
-body = json.dumps({"method": "add", "params": {
-    "ExcludedSites": [{"CampaignId": 123456, "Sites": ["bad-site.ru"]}]
-}}).encode()
+# Исключённые площадки РСЯ — API-МЕТОДА НЕТ (проверено 06.07.2026)
+# v5 REST (json/v5/excludedsites и варианты имени) → HTTP 404
+# v4 Live (method: ExcludedSites) → {"error_code":55,"error_str":"Метод не существует"}
+# Запрещённые площадки добавляются ТОЛЬКО вручную в интерфейсе Директа:
+# Кампания → Настройки → «Запрещённые площадки и внешние сети» (лимит 1000 доменов)
 ```
 
 #### Reports API — статистика
@@ -1081,6 +1080,29 @@ def green_send(phone, message, instance_id, token, channel="wa"):
 
 ---
 
+### Почта — `run(service="mail")` (IMAP/SMTP, с 29.07.2026)
+
+**Ключи:** `CODIMS_MAIL_USER` / `CODIMS_MAIL_TOKEN` (OAuth-токен Яндекса, scopes `mail:imap_full` + `mail:smtp`)
+**Ящик по умолчанию:** `hello@codims.ru` — он же публичный адрес на aidacamp.ru (`src/data/contacts.ts` → `EMAIL`)
+**Код:** `remote-mcp/lib/run/mail.mjs` в репо MCP — чистый `node:tls`, без зависимостей
+
+```
+run(service="mail", action="folders")                       // папки ящика
+run(service="mail", action="list",  params={folder:"INBOX", limit:20})
+run(service="mail", action="search", params={unseen:true, since:"25-Jul-2026", from:"..."})
+run(service="mail", action="read",  params={uid:30431, folder:"INBOX"})
+run(service="mail", action="draft", params={to:"x@y.ru", subject:"...", text:"...", from_name:"Дарья Афанасьева, АйДаКемп"})
+run(service="mail", action="send",  params={to:"x@y.ru", subject:"...", text:"...", confirm:true})
+```
+
+- **Черновик (`draft`) — способ по умолчанию:** письмо кладётся в «Черновики», человек проверяет и жмёт «Отправить».
+- **`send` без `confirm:true` заблокирован** — письмо наружу уходит только по прямому решению человека. При отправке копия сама кладётся в «Отправленные» (Яндекс по SMTP этого не делает).
+- **Отложенной отправки в API нет** — только кнопка «Отправить позже» на черновике в веб-интерфейсе Яндекс.Почты.
+- **Почта `aidacamp.ru` — НЕ на Яндексе** (MX → `beget.com`), для неё зарезервирован `account:"aidacamp"`: нужны `AIDACAMP_MAIL_USER`/`AIDACAMP_MAIL_PASSWORD` + `AIDACAMP_MAIL_IMAP`/`AIDACAMP_MAIL_SMTP` в `.env`.
+- Яндекс 360 Admin API (`api360.yandex.net`) отправку/чтение писем **не умеет** — только настройки ящиков и правила, поэтому здесь именно IMAP/SMTP.
+
+---
+
 ### Kinescope (видеохостинг)
 **Токен:** `KINESCOPE_TOKEN`  
 **Документация:** https://kinescope.io/api/
@@ -1271,6 +1293,23 @@ mcp__aidacamp-tools__ssh: tail -20 /opt/vlad-a/app/replicate-rescued/poll.log
 Перед скачиванием проверяется диск: при < 5 ГБ свободного — 🚨-алерт в лог вместо скачивания (URL-ы остаются в `prediction.json` — освободить место и скачать вручную, пока Replicate не удалил output).
 
 Тот же принцип — для любой другой долгой операции (не только Replicate): фон на сервере (`nohup`/tmux/systemd) + лог-файл + короткие проверки. Ничего никогда не ждать одним вызовом дольше пары секунд.
+
+### Reaper осиротевших headless Chrome (agent-browser)
+
+**Инцидент 11.08.2026:** `agent-browser` не чистит Chrome-процессы прошлых сессий — накопилось 58 осиротевших (3.3 ГБ, группы висели 8ч–1сутки) → RAM исчерпана → своп-трэшинг (`vmstat`: постоянные si/so, `bi` до 525k) → load average ~16 на 4 ядрах при почти нулевом полезном CPU (`us` 2.3%). Утечка воспроизводится: за ~13ч после ручной чистки накопилась снова.
+
+**Предохранитель:** [`scripts/server/agent-browser-reaper.sh`](scripts/server/agent-browser-reaper.sh) (копия на сервере — `/opt/scripts/agent-browser-reaper.sh`) + systemd `agent-browser-reaper.timer` (hourly). Убивает `agent-browser` Chrome старше `THRESHOLD_SEC` (по умолчанию 4ч), **кроме** процессов в cgroup управляемого юнита `agent-browser-chrome.service` (список берётся из `/sys/fs/cgroup/system.slice/agent-browser-chrome.service/cgroup.procs`) — так живой рабочий Chrome не трогается, даже если он сам живёт дольше порога. Fail-safe: если cgroup юнита не читается — скрипт не убивает ничего (лучше пропустить цикл, чем случайно снести управляемый процесс).
+
+```bash
+# Проверка без убийства (лог, ничего не убивает):
+DRY_RUN=1 /opt/scripts/agent-browser-reaper.sh && tail -20 /var/log/agent-browser-reaper.log
+
+# Статус таймера / последний прогон:
+systemctl list-timers agent-browser-reaper.timer
+systemctl status agent-browser-reaper.service
+```
+
+⚠️ Скрипт лежит в git как источник правды для аудита/изменений — при правке в репо синхронизировать на сервер вручную (`scp` + `chmod +x`), автодеплоя на `/opt/scripts/` нет.
 
 ---
 

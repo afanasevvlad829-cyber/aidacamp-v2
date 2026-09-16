@@ -87,6 +87,8 @@
 
 Mobile-first шкала. Минимум на мобилке: **16px для body** (иначе Safari auto-zoom).
 
+**Шрифт:** Inter (variable 100–900, сабсеты latin + cyrillic) подключён через Fonts API Astro: конфиг в `astro.config.mjs → fonts`, в head каждого layout — `<Font cssVariable="--font-inter" />` (в Base — с `preload`). Файлы в `src/assets/fonts/`, не в `public/`. `@font-face`, preload и fallback с подогнанными метриками генерирует Astro; в Tailwind шрифт зарегистрирован как `@theme inline { --font-sans: var(--font-inter) }`. Ручных `@font-face` и `<link rel="preload" as="font">` быть не должно.
+
 | Уровень | Mobile | Desktop | Класс | Применение |
 |---|---|---|---|---|
 | **Hero H1** | 38px | 56px | `text-[38px] md:text-[56px] font-extrabold leading-[1.05] tracking-[-0.03em]` | Hero главная |
@@ -223,13 +225,13 @@ Mobile-first шкала. Минимум на мобилке: **16px для body*
 
 ## 9. Иконки
 
-- **Только Bootstrap Icons** через `<i class="bi bi-*" aria-hidden="true">`. Никаких эмодзи в UI.
-- Размер: `text-[14px]` inline, `text-[20px]–[24px]` для card heroes.
-- Цвет: `text-primary` для акцента, `text-slate-400`–`text-slate-500` нейтрально.
-- Любая новая иконка → `src/data/icons-manifest.json` → `npm run icons`.
-- **НИКОГДА не редактируй `src/styles/icons.css` вручную** (auto-generated).
-
-Полная карта замены эмодзи → bi-* в `CLAUDE.md`.
+- **Только Bootstrap Icons**, в разметке — через astro-icon: `<Icon name="bi-*" … />` →
+  `import { Icon } from 'astro-icon/components'; <Icon name="bi:calendar-check" class="bi bi-calendar-check text-primary" aria-hidden="true" />`.
+  Классы `bi bi-*` на `<Icon>` оставляем: на них завязаны селекторы и размеры (`svg.bi` = 1em, см. global.css). Никаких эмодзи в UI.
+- Динамическое имя из данных: `name={`bi:${String(icon).replace(/^bi-/, '')}`}` (в данных имена с префиксом `bi-`).
+- Размер: `text-[14px]` inline, `text-[20px]–[24px]` для card heroes. Цвет: `text-primary` для акцента, `text-slate-400`–`text-slate-500` нейтрально.
+- **Legacy `<i class="bi bi-*">`** остаётся только там, где иконку рождает JS-строка (`innerHTML`, `className`, `classList.replace`) и в portal/staff/admin: там нужен CSS. Наборы: `src/data/icons-js-manifest.json` → `icons-js.css` (публичные страницы, подключён в Base), `icons-manifest.json` → `icons.css` (портал/стафф). Для `<Icon>` манифест не нужен: astro-icon знает весь набор bi, незнакомое имя роняет сборку. Новая иконка → в нужный манифест → `npm run icons`.
+- **НИКОГДА не редактируй `icons.css` / `icons-js.css` вручную** (auto-generated, гард `check:icons`).
 
 ---
 
@@ -325,6 +327,26 @@ Mobile-first: проектируем 390px, затем upscale до 1280px+.
 | Articles | `Article` + `Person author` | headline, datePublished, dateModified, author, image |
 | Stay | `Place` + `LodgingBusiness` | name, address, geo, amenityFeature |
 | Contacts | `ContactPoint` | telephone, email, contactType, areaServed |
+
+> **Одна сущность на один тип разметки — и это та, что рисует блок.**
+> Дважды наступили на одни грабли за два дня: FAQPage дублился на 123 страницах
+> (31.07.2026), BreadcrumbList — на 248 (01.08.2026). Оба раза схему клал и компонент,
+> и страница поверх него.
+>
+> | Что | Кто отдаёт | Кто молчит |
+> |---|---|---|
+> | FAQ | `<FAQ />` — по отрисованным вопросам. У страницы свой accordion → `<FAQSchema items={те же вопросы} />` | вторая из этой пары; `<FAQSchema />` без пропов |
+> | Крошки `/stati/*` | `<ArticleHero>` — он рисует nav «Главная → Статьи → …» | страница, `<ArticleSchema>` |
+> | Крошки лендингов | `LandingLayout` — один на все 110 страниц, знает canonical. Видимая крошка короче h1 → передавай её пропом `breadcrumb` | `<LandingHero>`, страница, `SeasonLanding` |
+> | Крошки главной | `SchemaOrg` | — |
+> | Крошки страниц на голом `Base` (`/kontakty/`, `/otzyvy/`, `/faq/`…) | `<BreadcrumbSchema label="…" />` в `slot="head"`, `label` = текст видимой крошки | страницы без нарисованных крошек — им схема не нужна |
+>
+> **URL в `item` — только со слешем** (`ensureTrailingSlash`): версии без слеша
+> 301-редиректят, и крошка начинает вести на редирект (инцидент 03.07.2026).
+>
+> Стражи по собранному `dist` роняют билд при возврате дубля — грепом по исходникам
+> это не ловится, блоки собираются из компонента и страницы одновременно:
+> `scripts/check-faq-schema.mjs`, `scripts/check-breadcrumb-schema.mjs`.
 
 ### Meta tags — обязательны на каждой странице
 

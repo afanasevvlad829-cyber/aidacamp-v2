@@ -17,7 +17,10 @@ import { fileURLToPath } from 'node:url';
 const __dir = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dir, '..');
 
-const manifestPath = join(ROOT, 'src/data/icons-manifest.json');
+// --manifest <file>: второй набор (icons-js-manifest.json → icons-js.css) — только иконки,
+// которые публичные страницы рождают в JS-строках; статичные идут через astro-icon.
+const manifestFlagIdx = process.argv.indexOf('--manifest');
+const manifestPath = manifestFlagIdx !== -1 ? join(ROOT, process.argv[manifestFlagIdx + 1]) : join(ROOT, 'src/data/icons-manifest.json');
 const outputPath = join(ROOT, 'src/styles/icons.css');
 const iconsDir = join(ROOT, 'node_modules/bootstrap-icons/icons');
 const customIconsDir = join(ROOT, 'src/styles/custom-icons');
@@ -62,7 +65,7 @@ for (const name of manifest) {
     continue;
   }
   const svg = readFileSync(svgPath, 'utf8');
-  lines.push(`.bi-${name} { --i: ${svgToUrl(svg)}; }`);
+  lines.push(`i.bi-${name} { --i: ${svgToUrl(svg)}; }`);
 }
 
 if (missing.length > 0) {
@@ -75,7 +78,7 @@ const css = `/* AUTO-GENERATED — DO NOT EDIT */
 /* Source: src/data/icons-manifest.json + node_modules/bootstrap-icons/icons/ */
 /* To add/remove icons: edit icons-manifest.json, then run \`npm run icons\` */
 
-.bi {
+i.bi {
   display: inline-block;
   width: 1em;
   height: 1em;

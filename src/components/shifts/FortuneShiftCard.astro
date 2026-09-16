@@ -1,7 +1,10 @@
 ---
+import { Icon } from 'astro-icon/components';
+import { iconName } from '../../utils/icons';
 import { getCurrentPrice, fmtPrice } from '../../data/dynamicPrices';
-import { mainShifts, getAvailabilityLevel } from '../../data/shifts';
+import { mainShifts, getAvailabilityLevel, getShiftBadge } from '../../data/shifts';
 import { MS_PER_DAY, daysUntil, formatDaysLabel } from '../../scripts/shifts/fortune';
+import { seededShuffle } from '../../lib/deterministic';
 
 interface Props {
   shiftId?: string;
@@ -11,12 +14,19 @@ const { shiftId = 'shift-1' } = Astro.props;
 const shift = mainShifts.find((s) => s.id === shiftId) ?? mainShifts[0];
 const SHIFT_ID = shift.id;
 
+// Значок в кружке — общий с ShiftCard.astro (номер летом, иконка сезона в межсезонье)
+const badge = getShiftBadge(shift);
+
 // Занятость fallback-карточки — было захардкожено "Осталось 3 места"/"width:91%"
 // (05.07.2026: чинил заодно с блюром — число разошлось с реальными данными shifts.ts).
 const fscTotal = shift.free + shift.occupied || 1;
 const fscPct = Math.round((shift.occupied / fscTotal) * 100);
 const fscFreeLabel = shift.free === 1 ? '1 место' : shift.free < 5 ? `${shift.free} места` : `${shift.free} мест`;
 const fscIsLow = getAvailabilityLevel(shift) === 'low';
+
+// Полоса занятости — сегментами, как в ShiftCard.astro (единый стиль)
+const FSC_SEGMENTS = 24;
+const fscFilledSegments = Math.round((fscPct / 100) * FSC_SEGMENTS);
 
 const today = new Date();
 const currentPrice = getCurrentPrice(SHIFT_ID, today) ?? parseInt(shift.price.replace(/\D/g, ''), 10);
@@ -40,15 +50,17 @@ interface Seg { label: string; d: number; w: number; color: string }
 
 // Порядок секторов на колесе — вперемешку, не по возрастанию (чисто визуально,
 // вес/шанс каждого значения не зависит от позиции на круге).
-function shuffleSegs(arr: Seg[]): Seg[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-const SEGMENTS: Seg[] = shuffleSegs([
+//
+// Тасовка засеяна id смены, а не Math.random(). Прежний вариант перемешивал
+// НА СБОРКЕ, и это не давало ничего из задуманного: порядок всё равно застывал
+// до следующего деплоя, одинаковый для всех посетителей. Зато делал сборку
+// невоспроизводимой — Shifts.astro подключён на 115 страницах, и каждая
+// получала новый HTML на каждом билде (rsync гнал их заново, кэш минификации
+// промахивался). Замер 14.08.2026: 151 изменённая страница из 336 на пустой
+// правке. Сейчас порядок стабилен между сборками и по-прежнему разный у разных
+// смен. Настоящая случайность на каждый показ, если понадобится, делается
+// в браузере — не здесь. См. src/lib/deterministic.ts.
+const SEGMENTS: Seg[] = seededShuffle([
   { label: '10%', d: 10, w: 22, color: '#fdba74' },
   { label: '15%', d: 15, w: 18, color: '#fcae67' },
   { label: '20%', d: 20, w: 16, color: '#fb923c' },
@@ -57,7 +69,7 @@ const SEGMENTS: Seg[] = shuffleSegs([
   { label: '40%', d: 40, w: 9,  color: '#ea580c' },
   { label: '50%', d: 50, w: 6,  color: '#c2410c' },
   { label: '70%', d: 70, w: 3,  color: '#7c2d12' },
-]);
+], SHIFT_ID);
 
 // Pre-compute SVG paths server-side
 const R = 108, CX = 120, CY = 120;
@@ -89,11 +101,12 @@ const segData = SEGMENTS.map((seg, i) => {
   class="relative flex flex-col rounded-[22px] border border-transparent bg-card card-shadow ring-2 ring-primary shadow-[0_0_0_4px_rgba(236,124,0,0.12)] p-5"
 >
 
-  <!-- Orange header banner -->
-  <div class="-mx-5 -mt-5 mb-4 flex items-center gap-2 rounded-t-[20px] bg-primary px-5 py-3">
-    <span class="text-[16px] font-extrabold text-white leading-none">{shift.name} · {shift.dates}</span>
-    <span class="ml-auto flex items-center gap-1.5 whitespace-nowrap text-[12px] font-semibold text-white/80">
-      <i class="bi bi-clock text-[11px]" aria-hidden="true"></i>
+  <!-- Header banner — тот же короб, что у «Ближайшей» в ShiftCard.astro (персиковый фон, контрастный кружок) -->
+  <div class="-mx-5 -mt-5 mb-4 flex items-center gap-2 rounded-t-[20px] border-b border-[var(--color-primary-100)] bg-[var(--color-primary-soft)] px-5 py-3">
+    <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-base font-extrabold text-white shrink-0 shadow-[0_0_0_3px_rgba(236,124,0,0.18)]">{badge.kind === 'num' ? badge.text : <Icon name={iconName(badge.icon)} class:list={['bi', badge.icon, 'text-[13px]']} title={badge.label} aria-label={badge.label} role="img" />}</span>
+    <span class="text-base font-bold text-body">{shift.name} · {shift.dates}</span>
+    <span class="ml-auto flex items-center gap-1.5 whitespace-nowrap text-[12px] font-semibold text-primary">
+      <Icon name="bi:clock" class="bi bi-clock text-[11px]" aria-hidden="true" />
       {daysLeftLabel}
     </span>
   </div>
@@ -101,24 +114,24 @@ const segData = SEGMENTS.map((seg, i) => {
   <!-- Tags row: duration + spots + price -->
   <div class="flex items-center gap-1.5 mb-4 flex-wrap">
     <span class="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-1 text-[12px] font-semibold text-orange-700">
-      <i class="bi bi-calendar-event text-[10px]" aria-hidden="true"></i>
+      <Icon name="bi:calendar-event" class="bi bi-calendar-event text-[10px]" aria-hidden="true" />
       {shift.duration}
     </span>
     <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-[12px] font-bold text-red-700">
-      <i class="bi bi-fire text-[10px]" aria-hidden="true"></i>
+      <Icon name="bi:fire" class="bi bi-fire text-[10px]" aria-hidden="true" />
       Последние 3 места
     </span>
     <span class="ml-auto text-right">
       <span class="block text-[10px] font-semibold uppercase tracking-[0.12em] text-body-faint">Стоимость</span>
-      <span class="block text-[20px] font-extrabold text-primary leading-none" data-dynamic-price={SHIFT_ID}>{fmtPrice(currentPrice)}</span>
+      <span class="block text-[20px] font-extrabold text-body leading-none" data-dynamic-price={SHIFT_ID}>{fmtPrice(currentPrice)}</span>
     </span>
   </div>
 
   <!-- Wheel area: tagline + SVG + dots + spin btn (скрывается после 3 спинов) -->
-  <div id="fsc-wheel-area">
+  <div id={`fsc-wheel-area-${SHIFT_ID}`}>
   <!-- Wheel tagline -->
   <p class="text-center text-base font-semibold text-body-muted mb-2">
-    <i class="bi bi-trophy-fill text-orange-400 text-[12px] mr-1" aria-hidden="true"></i>
+    <Icon name="bi:trophy-fill" class="bi bi-trophy-fill text-orange-400 text-[12px] mr-1" aria-hidden="true" />
     Крутите колесо — разыгрываем скидку до 70%
   </p>
 
@@ -137,7 +150,7 @@ const segData = SEGMENTS.map((seg, i) => {
 
     <div class="w-[220px] max-w-full relative" style="aspect-ratio:1">
       <svg
-        id="fsc-wheel"
+        id={`fsc-wheel-${SHIFT_ID}`}
         viewBox="0 0 240 240"
         style="width:100%;height:100%;transform-origin:50% 50%"
       >
@@ -182,33 +195,34 @@ const segData = SEGMENTS.map((seg, i) => {
 
   <!-- Attempts dots + spin button -->
   <div class="flex flex-col items-center gap-2.5 mb-4">
-    <div id="fsc-attempts" class="flex items-center gap-1.5" role="group" aria-label="Оставшиеся попытки">
+    <div id={`fsc-attempts-${SHIFT_ID}`} class="flex items-center gap-1.5" role="group" aria-label="Оставшиеся попытки">
       <span class="w-2.5 h-2.5 rounded-full transition-colors" data-dot="0" style="background:var(--color-primary,#f97316)"></span>
       <span class="w-2.5 h-2.5 rounded-full transition-colors" data-dot="1" style="background:var(--color-primary,#f97316)"></span>
       <span class="w-2.5 h-2.5 rounded-full transition-colors" data-dot="2" style="background:var(--color-primary,#f97316)"></span>
     </div>
     <button
-      id="fsc-spin-btn"
+      id={`fsc-spin-btn-${SHIFT_ID}`}
       type="button"
       class="flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-base px-10 py-3 min-h-[44px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      <i id="fsc-spin-icon" class="bi bi-arrow-repeat text-[16px]" aria-hidden="true"></i>
-      <span id="fsc-spin-label">Крутить!</span>
+      <Icon name="bi:arrow-repeat" id={`fsc-spin-icon-${SHIFT_ID}`} class="bi bi-arrow-repeat text-[16px]" aria-hidden="true" />
+      <span id={`fsc-spin-label-${SHIFT_ID}`}>Крутить!</span>
     </button>
   </div>
 
   </div><!-- /fsc-wheel-area -->
 
   <!-- Fallback: стандартная карточка после 3 спинов без бронирования -->
-  <div id="fsc-fallback" class="hidden flex-col gap-3 mb-4">
-    <!-- Occupancy bar -->
+  <div id={`fsc-fallback-${SHIFT_ID}`} class="hidden flex-col gap-3 mb-4">
+    <!-- Occupancy bar — сегментами, как в ShiftCard.astro -->
     <div>
-      <div class="flex justify-between text-base mb-1.5">
-        <span class="text-body-muted">Занято</span>
-        <span data-spots-num data-spots-shift={shift.id} class="cursor-pointer font-bold text-primary blur-[6px] transition-[filter] duration-300 select-none">Осталось {fscFreeLabel}</span>
+      <div class="flex justify-end text-[13px] mb-2">
+        <span data-spots-num data-spots-shift={shift.id} class="cursor-pointer select-none font-bold text-primary blur-[6px] transition-[filter] duration-300">Осталось {fscFreeLabel}</span>
       </div>
-      <div class="h-1.5 w-full overflow-hidden rounded-full bg-border-light">
-        <div class="h-full rounded-full bg-primary" style={`width:${fscPct}%`}></div>
+      <div class="flex h-3 gap-[3px]">
+        {Array.from({ length: FSC_SEGMENTS }).map((_, i) => (
+          <span class:list={['flex-1 rounded-[3px]', i < fscFilledSegments ? 'bg-emerald-500' : 'bg-border-light']}></span>
+        ))}
       </div>
       <button type="button" data-spots-reveal-btn data-spots-shift={shift.id} data-spots-low={fscIsLow ? '1' : undefined} class="mt-1.5 text-[12px] font-semibold text-primary hover:text-primary-hover underline underline-offset-2 transition-colors">
         Узнать точное число мест
@@ -218,7 +232,7 @@ const segData = SEGMENTS.map((seg, i) => {
     <div class="flex items-end justify-between gap-3">
       <div>
         <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-body-faint">Стоимость</p>
-        <p class="mt-1 text-[26px] font-extrabold tracking-[-0.02em] leading-none text-primary" data-dynamic-price={SHIFT_ID}>{fmtPrice(currentPrice)}</p>
+        <p class="mt-1 text-[26px] font-extrabold tracking-[-0.02em] leading-none text-body" data-dynamic-price={SHIFT_ID}>{fmtPrice(currentPrice)}</p>
         <span class="hidden text-[11px] font-semibold text-orange-500 mt-0.5 block" data-price-stage={SHIFT_ID}></span>
         <p class="mt-1 text-[12px] text-body-faint">всё включено</p>
       </div>
@@ -227,28 +241,28 @@ const segData = SEGMENTS.map((seg, i) => {
         class="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-5 py-3 text-base font-semibold transition-colors min-h-[44px] no-underline bg-primary hover:bg-primary-hover text-white"
       >
         Выбрать
-        <i class="bi bi-arrow-right text-base" aria-hidden="true"></i>
+        <Icon name="bi:arrow-right" class="bi bi-arrow-right text-base" aria-hidden="true" />
       </a>
     </div>
   </div>
 
   <!-- Win result block (hidden until first spin resolves) -->
-  <div id="fsc-win-block" class="hidden flex-col items-center gap-2.5 mb-4">
+  <div id={`fsc-win-block-${SHIFT_ID}`} class="hidden flex-col items-center gap-2.5 mb-4">
     <div class="w-full rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-center">
       <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-green-600 mb-0.5">Ваша скидка</p>
-      <p class="text-[34px] font-extrabold text-green-700 leading-none" id="fsc-disc-pct">—</p>
+      <p class="text-[34px] font-extrabold text-green-700 leading-none" id={`fsc-disc-pct-${SHIFT_ID}`}>—</p>
       <p class="text-base text-green-600 mt-1.5 space-x-2">
-        <span>Итого: <strong id="fsc-final-price">—</strong></span>
+        <span>Итого: <strong id={`fsc-final-price-${SHIFT_ID}`}>—</strong></span>
         <span class="text-green-400">·</span>
-        <span>Предоплата: <strong id="fsc-dep-price">—</strong></span>
+        <span>Предоплата: <strong id={`fsc-dep-price-${SHIFT_ID}`}>—</strong></span>
       </p>
     </div>
     <button
-      id="fsc-book-btn"
+      id={`fsc-book-btn-${SHIFT_ID}`}
       type="button"
       class="w-full flex items-center justify-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-base py-3.5 min-h-[48px] transition-colors"
     >
-      <i class="bi bi-calendar-check text-[16px]" aria-hidden="true"></i>
+      <Icon name="bi:calendar-check" class="bi bi-calendar-check text-[16px]" aria-hidden="true" />
       Забронировать место
     </button>
   </div>
@@ -256,15 +270,15 @@ const segData = SEGMENTS.map((seg, i) => {
   <!-- Bottom conditions -->
   <div class="mt-auto border-t border-border-light pt-3 space-y-0.5 text-[11px] text-body-faint">
     <p>
-      <i class="bi bi-shield-check text-[10px] mr-1" aria-hidden="true"></i>
+      <Icon name="bi:shield-check" class="bi bi-shield-check text-[10px] mr-1" aria-hidden="true" />
       Предоплата 50% · оставшиеся 50% до конца дня оплаты
     </p>
     <p>
-      <i class="bi bi-calendar-event text-[10px] mr-1" aria-hidden="true"></i>
+      <Icon name="bi:calendar-event" class="bi bi-calendar-event text-[10px] mr-1" aria-hidden="true" />
       Заехать можно до {arriveDayLabel} · успейте собрать справки
     </p>
     <p class="pt-1">
-      <i class="bi bi-telegram text-[10px] mr-1" aria-hidden="true"></i>
+      <Icon name="bi:telegram" class="bi bi-telegram text-[10px] mr-1" aria-hidden="true" />
       Что-то пошло не так? Сделайте скриншот и
       <a href="https://t.me/Progaschool" target="_blank" rel="noopener"
          class="underline underline-offset-2 hover:text-primary transition-colors">напишите нам в Telegram</a>
@@ -274,12 +288,12 @@ const segData = SEGMENTS.map((seg, i) => {
 
 <!-- ── Booking Modal (fixed overlay, position:fixed → not clipped by carousel) ── -->
 <div
-  id="fsc-modal"
+  id={`fsc-modal-${SHIFT_ID}`}
   class="fixed inset-0 z-[100] hidden items-center justify-center overflow-y-auto"
   style="background:rgba(0,0,0,0.55);backdrop-filter:blur(4px)"
   role="dialog"
   aria-modal="true"
-  aria-labelledby="fsc-modal-title"
+  aria-labelledby={`fsc-modal-title-${SHIFT_ID}`}
 >
   <div class="flex min-h-full items-center justify-center p-4 sm:py-8">
   <div class="relative w-full max-w-sm md:max-w-3xl max-h-[92dvh] overflow-y-auto md:overflow-hidden flex flex-col md:flex-row bg-white rounded-2xl shadow-2xl">
@@ -290,21 +304,27 @@ const segData = SEGMENTS.map((seg, i) => {
     <!-- Modal header: green -->
     <div class="bg-green-600 px-6 py-4 rounded-t-2xl md:rounded-none">
       <p class="text-[11px] font-bold uppercase tracking-[0.15em] text-green-100 mb-0.5">Место забронировано</p>
-      <h2 id="fsc-modal-title" class="text-[22px] font-extrabold text-white leading-none">
-        Скидка <span id="fsc-modal-disc">—</span> зафиксирована
-      </h2>
+      <!-- Заголовок ДИАЛОГА, а не документа. Был <h2>, из-за чего на странице
+           появлялось столько же одинаковых заголовков, сколько карточек смен —
+           Лабрика 31.08.2026 показала это как единственную ошибку главной
+           («Найдено несколько заголовков h1-h6 с одинаковым содержанием
+           "Скидка — зафиксирована"»). aria-labelledby работает с любым тегом,
+           поэтому доступность не страдает, а вид не меняется — классы те же. -->
+      <p id={`fsc-modal-title-${SHIFT_ID}`} class="text-[22px] font-extrabold text-white leading-none">
+        Скидка <span id={`fsc-modal-disc-${SHIFT_ID}`}>—</span> зафиксирована
+      </p>
     </div>
 
 
     <!-- Payment summary -->
     <div class="px-6 py-3 border-b border-gray-100 md:border-b-0 space-y-1.5 md:flex-1">
-      <div class="flex justify-between text-base">
+      <div class="flex justify-between items-baseline gap-2 text-base">
         <span class="text-gray-500">Цена со скидкой</span>
-        <span id="fsc-modal-final" class="font-bold text-gray-800">—</span>
+        <span id={`fsc-modal-final-${SHIFT_ID}`} class="font-bold text-gray-800 whitespace-nowrap">—</span>
       </div>
-      <div class="flex justify-between">
+      <div class="flex justify-between items-baseline gap-2">
         <span class="text-base text-gray-500">Предоплата сейчас (50%)</span>
-        <span id="fsc-modal-dep" class="text-[18px] font-extrabold text-primary leading-none">—</span>
+        <span id={`fsc-modal-dep-${SHIFT_ID}`} class="text-[18px] font-extrabold text-primary leading-none whitespace-nowrap">—</span>
       </div>
     </div>
 
@@ -314,11 +334,11 @@ const segData = SEGMENTS.map((seg, i) => {
     <div class="flex flex-col md:flex-1 md:min-w-0 md:overflow-y-auto md:max-h-[92dvh]">
 
     <!-- Form -->
-    <div id="fsc-form-wrap" class="px-6 py-4 space-y-3">
+    <div id={`fsc-form-wrap-${SHIFT_ID}`} class="px-6 py-4 space-y-3">
       <div>
-        <label for="fsc-name" class="block text-base font-semibold text-gray-700 mb-1.5">Ваши ФИО *</label>
+        <label for={`fsc-name-${SHIFT_ID}`} class="block text-base font-semibold text-gray-700 mb-1.5">Ваши ФИО *</label>
         <input
-          id="fsc-name"
+          id={`fsc-name-${SHIFT_ID}`}
           type="text"
           placeholder="Иванов Иван Иванович"
           required
@@ -327,9 +347,9 @@ const segData = SEGMENTS.map((seg, i) => {
         />
       </div>
       <div>
-        <label for="fsc-phone" class="block text-base font-semibold text-gray-700 mb-1.5">Ваш телефон *</label>
+        <label for={`fsc-phone-${SHIFT_ID}`} class="block text-base font-semibold text-gray-700 mb-1.5">Ваш телефон *</label>
         <input
-          id="fsc-phone"
+          id={`fsc-phone-${SHIFT_ID}`}
           type="tel"
           placeholder="+7 (999) 000-00-00"
           required
@@ -341,32 +361,32 @@ const segData = SEGMENTS.map((seg, i) => {
       <!-- Согласие на обработку персональных данных -->
       <div class="flex items-start gap-2.5 pt-1">
         <input
-          id="fsc-consent"
+          id={`fsc-consent-${SHIFT_ID}`}
           type="checkbox"
           class="mt-0.5 h-4 w-4 shrink-0 accent-primary cursor-pointer"
         />
-        <label for="fsc-consent" class="text-[12px] text-gray-500 leading-[1.4] cursor-pointer select-none">
+        <label for={`fsc-consent-${SHIFT_ID}`} class="text-[12px] text-gray-500 leading-[1.4] cursor-pointer select-none">
           Я согласен(а) на <a href="/privacy-policy/" target="_blank" rel="noopener" class="underline hover:text-primary transition-colors">обработку персональных данных</a>
         </label>
       </div>
-      <p id="fsc-form-error" class="hidden text-[12px] text-red-600 font-medium"></p>
+      <p id={`fsc-form-error-${SHIFT_ID}`} class="hidden text-[12px] text-red-600 font-medium"></p>
     </div>
 
     <!-- Pay button -->
-    <div id="fsc-pay-btn-wrap" class="px-6 pb-4">
+    <div id={`fsc-pay-btn-wrap-${SHIFT_ID}`} class="px-6 pb-4">
       <button
-        id="fsc-pay-btn"
+        id={`fsc-pay-btn-${SHIFT_ID}`}
         type="button"
         class="w-full flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-base py-3.5 min-h-[52px] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        <i id="fsc-pay-icon" class="bi bi-send text-[16px]" aria-hidden="true"></i>
-        <span id="fsc-pay-label">Отправить заявку</span>
-        <span id="fsc-pay-disc" class="ml-1 rounded-full bg-white/20 px-2 py-0.5 text-base font-extrabold hidden">−<span id="fsc-pay-disc-val">0</span>%</span>
+        <Icon name="bi:send" id={`fsc-pay-icon-${SHIFT_ID}`} class="bi bi-send text-[16px]" aria-hidden="true" />
+        <span id={`fsc-pay-label-${SHIFT_ID}`}>Отправить заявку</span>
+        <span id={`fsc-pay-disc-${SHIFT_ID}`} class="ml-1 rounded-full bg-white/20 px-2 py-0.5 text-base font-extrabold hidden">−<span id={`fsc-pay-disc-val-${SHIFT_ID}`}>0</span>%</span>
       </button>
     </div>
 
     <!-- What happens next (ниже кнопки) -->
-    <div id="fsc-next-steps" class="px-6 pb-4 border-t border-gray-100 pt-4 space-y-1.5 text-[12px] text-gray-500">
+    <div id={`fsc-next-steps-${SHIFT_ID}`} class="px-6 pb-4 border-t border-gray-100 pt-4 space-y-1.5 text-[12px] text-gray-500">
       <p class="font-semibold text-gray-700 text-base mb-2">Что будет после оплаты:</p>
       <p><span class="inline-block w-4 text-orange-500 font-bold">1.</span> В течение 30 минут с вами свяжется представитель</p>
       <p><span class="inline-block w-4 text-orange-500 font-bold">2.</span> Договор подготовим до конца рабочего дня</p>
@@ -386,13 +406,13 @@ const segData = SEGMENTS.map((seg, i) => {
           class="inline-flex items-center gap-1 text-primary hover:underline font-medium"
           data-analytics-goal="fortune_tg_fallback"
         >
-          <i class="bi bi-telegram text-[12px]" aria-hidden="true"></i>
+          <Icon name="bi:telegram" class="bi bi-telegram text-[12px]" aria-hidden="true" />
           Напишите нам в Telegram
         </a>
         — решим вручную.
       </p>
       <button
-        id="fsc-modal-close"
+        id={`fsc-modal-close-${SHIFT_ID}`}
         type="button"
         class="text-base text-gray-600 hover:text-gray-900 underline underline-offset-2 transition"
       >
@@ -415,514 +435,3 @@ const segData = SEGMENTS.map((seg, i) => {
   };
 </script>
 
-<!-- Fortune card interactive logic -->
-<script>
-  import {
-    computeFortunePrice,
-    computeDeposit,
-    formatRub,
-    formatTimerTick,
-    MS_PER_DAY,
-    TIMER_SECONDS,
-  } from '../../scripts/shifts/fortune';
-  import { YM_COUNTER } from '../../data/tracking';
-  // Тот же сбор контекста, что у обычной формы: UTM, yclid, страница, устройство,
-  // время в сессии, Яндекс-ID. Без этого заявка Фортуны приходила почти пустой.
-  import { collectContext, getYmClientId } from '../../scripts/form-submit';
-
-  function initFortuneCard() {
-    const cardEl  = document.querySelector<HTMLElement>('[data-fortune-card]');
-    const SHIFT_ID = cardEl?.dataset.shiftId ?? '';
-    const cfg = SHIFT_ID ? (window as any).__fsc?.[SHIFT_ID] : null;
-    if (!cfg) return;
-
-    const segs: Array<{ label: string; d: number; w: number; color: string }> = cfg.segs;
-    const PRICE: number = cfg.price;
-    const fortuneMode: string = cfg.mode;
-
-    let isSpinning = false;
-    let currentRot = 0;
-    let timerInterval: number | null = null;
-
-    // ── Cookie helpers ─────────────────────────────────────────────────────
-    const COOKIE_KEY = 'fortune_' + SHIFT_ID + '_played';
-    function getCookie(name: string): string | null {
-      const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
-      return m ? decodeURIComponent(m[1]) : null;
-    }
-    function setCookie(name: string, value: string, days: number) {
-      const exp = new Date(Date.now() + days * MS_PER_DAY).toUTCString();
-      document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + exp + '; path=/; SameSite=Lax';
-    }
-
-    // Restore state from sessionStorage so page refresh doesn't reset spins.
-    // Дублируем в куку: sessionStorage умирает вместе с вкладкой, и раньше
-    // выигранная скидка терялась безвозвратно — человек возвращался в пустоту.
-    const SS_KEY = 'fortune_' + SHIFT_ID + '_2026';
-    const STATE_COOKIE = 'fortune_' + SHIFT_ID + '_state';
-    const WIN_TTL_DAYS = 30;
-    let saved: { attempts: number; wonDiscount: number; wonToken: string; spinsDone: number } | null = null;
-    try { saved = JSON.parse(sessionStorage.getItem(SS_KEY) || 'null'); } catch (_) {}
-    if (!saved) {
-      try { saved = JSON.parse(getCookie(STATE_COOKIE) || 'null'); } catch (_) {}
-    }
-
-    let attempts    = saved ? saved.attempts    : 3;
-    let wonDiscount = saved ? saved.wonDiscount : 0;
-    let wonToken    = saved ? saved.wonToken    : '';
-    let spinsDone   = (saved && typeof saved.spinsDone === 'number') ? saved.spinsDone : 0;
-
-    // ТЕСТ-РЕЖИМ: ?wheeltest — сброс состояния + 99 попыток (для проверки колеса)
-    let FSC_TEST = false;
-    try { FSC_TEST = new URLSearchParams(location.search).has('wheeltest'); } catch (_) {}
-    if (FSC_TEST) {
-      try { sessionStorage.removeItem(SS_KEY); } catch (_) {}
-      document.cookie = COOKIE_KEY + '=;path=/;max-age=0;SameSite=Lax';
-      document.cookie = STATE_COOKIE + '=;path=/;max-age=0;SameSite=Lax';
-      saved = null; attempts = 99; wonDiscount = 0; wonToken = ''; spinsDone = 0;
-    }
-
-    function saveState() {
-      const st = JSON.stringify({ attempts, wonDiscount, wonToken, spinsDone });
-      try { sessionStorage.setItem(SS_KEY, st); } catch (_) {}
-      // В куку пишем только когда есть что беречь — саму выигранную скидку.
-      if (wonDiscount > 0) { try { setCookie(STATE_COOKIE, st, WIN_TTL_DAYS); } catch (_) {} }
-    }
-
-    const wheel        = document.getElementById('fsc-wheel') as SVGSVGElement | null;
-    const spinBtn      = document.getElementById('fsc-spin-btn') as HTMLButtonElement | null;
-    const spinLabel    = document.getElementById('fsc-spin-label');
-    const attemptsEl   = document.getElementById('fsc-attempts');
-    const winBlock     = document.getElementById('fsc-win-block')!;
-    const fallback     = document.getElementById('fsc-fallback');
-    const wheelArea    = document.getElementById('fsc-wheel-area');
-    const discPctEl    = document.getElementById('fsc-disc-pct');
-    const finalPriceEl = document.getElementById('fsc-final-price');
-    const depPriceEl   = document.getElementById('fsc-dep-price');
-    const bookBtn      = document.getElementById('fsc-book-btn');
-    const modal        = document.getElementById('fsc-modal')!;
-    const modalDisc    = document.getElementById('fsc-modal-disc');
-    const modalFinal   = document.getElementById('fsc-modal-final');
-    const modalDep     = document.getElementById('fsc-modal-dep');
-    const timerEl      = document.getElementById('fsc-timer');
-    const nameInput    = document.getElementById('fsc-name') as HTMLInputElement | null;
-    const phoneInput   = document.getElementById('fsc-phone') as HTMLInputElement | null;
-    const consentBox   = document.getElementById('fsc-consent') as HTMLInputElement | null;
-    const formError    = document.getElementById('fsc-form-error');
-    const payBtn       = document.getElementById('fsc-pay-btn') as HTMLButtonElement | null;
-    const payLabel     = document.getElementById('fsc-pay-label');
-    const modalClose   = document.getElementById('fsc-modal-close');
-
-    if (!wheel || !spinBtn || !modal) return; // guard
-    const spinButton = spinBtn;
-
-    // Портал: выносим модалку в <body>, чтобы position:fixed считался от вьюпорта,
-    // а не от трансформируемого/скроллящегося предка (карусель) — иначе панель
-    // прижимается влево и обрезается сверху на десктопе.
-    if (modal.parentElement !== document.body) document.body.appendChild(modal);
-
-    // ── Lead-режим: обновляем блок «что будет» ─────────────────────────────
-    if (fortuneMode === 'lead') {
-      const stepsBlock = document.getElementById('fsc-next-steps');
-      if (stepsBlock) stepsBlock.innerHTML = [
-        '<p class="font-semibold text-gray-700 text-base mb-2">Что будет дальше:</p>',
-        '<p><span class="inline-block w-4 text-orange-500 font-bold">1.</span> Менеджер свяжется с вами и ответит на вопросы</p>',
-        '<p><span class="inline-block w-4 text-orange-500 font-bold">2.</span> Поможем оформить договор — спокойно, без спешки</p>',
-        '<p><span class="inline-block w-4 text-orange-500 font-bold">3.</span> Счёт выставим позже, без предоплаты сейчас</p>',
-        '<p class="text-gray-400 pt-1">Скидка действует по реальному остатку мест — если место не успеют оформить, оно может уйти другому.</p>',
-      ].join('');
-    }
-
-    // ── Вернувшийся посетитель (кука есть, активной сессии нет) ────────────
-    // Условие: кука = "уже крутил", sessionStorage = нет (вкладка была закрыта)
-    // → скидка утеряна, показываем стандартную карточку без колеса
-    if (!saved && getCookie(COOKIE_KEY) === '1') {
-      if (wheelArea) wheelArea.classList.add('hidden');
-      winBlock.classList.add('hidden'); winBlock.classList.remove('flex');
-      if (fallback) { fallback.classList.remove('hidden'); fallback.classList.add('flex'); }
-      return; // дальше ничего не инициализируем
-    }
-
-    // ── Аналитика: колесо появилось на экране ──────────────────────────────
-    let _wheelViewed = false;
-    if ('IntersectionObserver' in window) {
-      new IntersectionObserver((entries, obs) => {
-        if (entries[0].isIntersecting && !_wheelViewed) {
-          _wheelViewed = true;
-          try { (window as any).ym && (window as any).ym(YM_COUNTER, 'reachGoal', 'fortune_wheel_view'); } catch (_e) {}
-          obs.disconnect();
-        }
-      }, { threshold: 0.4 }).observe(wheelArea || wheel);
-    }
-
-    // Restore UI from saved session state
-    if (saved) {
-      updateDots();
-      if (saved.wonDiscount > 0) {
-        // Токен подписан часовым слотом и живёт ~час (см. api/fortune/init.ts).
-        // При возврате через день сохранённый токен уже недействителен —
-        // запрашиваем свежий под ту же скидку, иначе бронь упадёт с 403.
-        fetch('/api/fortune/token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ discount: saved.wonDiscount }),
-        })
-          .then(r => r.json())
-          .then(data => { if (data && data.token) { wonToken = data.token; saveState(); } })
-          .catch(() => {});
-        const _fp  = computeFortunePrice(PRICE, saved.wonDiscount);
-        const _dep = computeDeposit(_fp);
-        if (discPctEl)    discPctEl.textContent    = saved.wonDiscount + '%';
-        if (finalPriceEl) finalPriceEl.textContent = formatRub(_fp);
-        if (depPriceEl)   depPriceEl.textContent   = formatRub(_dep);
-        winBlock.classList.remove('hidden');
-        winBlock.classList.add('flex');
-        if (saved.attempts <= 0) {
-          spinBtn.disabled = true;
-          if (spinLabel) spinLabel.textContent = 'Попытки исчерпаны';
-        }
-      } else if (saved.attempts <= 0) {
-        showFallback();
-      }
-    }
-
-    function updateDots() {
-      if (!attemptsEl) return;
-      const dots = attemptsEl.querySelectorAll<HTMLElement>('[data-dot]');
-      dots.forEach((dot, i) => {
-        dot.style.background = i < attempts
-          ? 'var(--color-primary, #f97316)'
-          : '#e2e8f0';
-      });
-    }
-
-    function showWin(segIdx: number) {
-      const d = segs[segIdx].d;
-      wonDiscount = d;
-
-      // Логируем кручение в БД (fire-and-forget)
-      fetch('/api/fortune/spin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ discount: d, shiftId: SHIFT_ID }),
-      }).catch(() => {});
-
-      const fp  = computeFortunePrice(PRICE, d);
-      const dep = computeDeposit(fp);
-
-      if (discPctEl)    discPctEl.textContent    = d + '%';
-      if (finalPriceEl) finalPriceEl.textContent = formatRub(fp);
-      if (depPriceEl)   depPriceEl.textContent   = formatRub(dep);
-
-      winBlock.classList.remove('hidden');
-      winBlock.classList.add('flex');
-
-      // Получаем подписанный токен для этой скидки с сервера
-      fetch('/api/fortune/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ discount: d }),
-      })
-        .then(r => r.json())
-        .then(data => { wonToken = data.token || ''; saveState(); })
-        .catch(() => { wonToken = ''; });
-
-      // Metrika: выиграл скидку
-      try {
-        (window as any).ym && (window as any).ym(YM_COUNTER, 'reachGoal', 'fortune_win', {
-          discount:      d,
-          price_full:    PRICE,
-          price_final:   fp,
-          attempts_left: attempts,
-        });
-      } catch (_e) {}
-
-      // Re-enable spin button if attempts remain
-      if (attempts > 0) {
-        spinButton.disabled = false;
-        if (spinLabel) spinLabel.textContent = 'Попробовать ещё раз';
-      } else {
-        spinButton.disabled = true;
-        if (spinLabel) spinLabel.textContent = 'Попытки исчерпаны';
-      }
-    }
-
-    function showFallback() {
-      if (wheelArea) wheelArea.classList.add('hidden');
-      winBlock.classList.add('hidden');
-      winBlock.classList.remove('flex');
-      if (fallback) {
-        fallback.classList.remove('hidden');
-        fallback.classList.add('flex');
-      }
-      try { (window as any).ym && (window as any).ym(YM_COUNTER, 'reachGoal', 'fortune_fallback_shown'); } catch (_) {}
-    }
-
-    // Weighted random from a subset of segment indices
-    function pickFrom(indices: number[]): number {
-      let total = 0;
-      for (let i = 0; i < indices.length; i++) total += segs[indices[i]].w;
-      let r = Math.random() * total;
-      let cum = 0;
-      for (let j = 0; j < indices.length; j++) {
-        cum += segs[indices[j]].w;
-        if (r < cum) return indices[j];
-      }
-      return indices[indices.length - 1];
-    }
-
-    // Индексы считаются от ЗНАЧЕНИЯ сегмента, а не от позиции в массиве —
-    // раньше (до фикса) тут были захардкожены позиции 0–5, и когда SEGMENTS
-    // сократили до 4 элементов, индексы 4/5 стали undefined и колесо падало
-    // на 2–3 прокруте. Не хардкодить индексы заново.
-    const GUARANTEED_PCT = 30; // 1-й прокрут — гарантированный процент
-    function pickWinner(spinNumber: number): number {
-      const allIdx = segs.map((_s, i) => i);
-      if (spinNumber === 1) {
-        const idx = segs.findIndex((s) => s.d === GUARANTEED_PCT);
-        return idx >= 0 ? idx : 0;
-      }
-      if (spinNumber === 3) {
-        // Всё, кроме самого маленького значения на колесе (как в исходном дизайне)
-        let minIdx = 0;
-        for (let i = 1; i < segs.length; i++) if (segs[i].d < segs[minIdx].d) minIdx = i;
-        return pickFrom(allIdx.filter((i) => i !== minIdx));
-      }
-      return pickFrom(allIdx);
-    }
-
-    // Target rotation so segment i lands at top pointer (0° position)
-    function targetRotation(segIdx: number): number {
-      const segDeg = 360 / segs.length; // делит круг поровну на все сегменты
-      const segCenterDeg = (segIdx + 0.5) * segDeg; // 0° = top
-      const naturalStop  = (360 - segCenterDeg + 360) % 360;
-      const jitter = (Math.random() - 0.5) * 30; // ±15°
-      // 5+ full spins from current position
-      const base = Math.ceil(currentRot / 360) * 360;
-      return base + 5 * 360 + naturalStop + jitter;
-    }
-
-    // ── Spin ──
-    spinBtn.addEventListener('click', () => {
-      if (isSpinning || attempts <= 0) return;
-      isSpinning = true;
-      setCookie(COOKIE_KEY, '1', 90); // помечаем: этот браузер уже крутил (90 дней)
-      attempts--;
-      updateDots();
-      spinBtn.disabled = true;
-      if (spinLabel) spinLabel.textContent = 'Крутим...';
-
-      spinsDone++;
-      const spinNumber = spinsDone; // 1 = первое кручение (всегда 30%), далее рандом
-
-      // Metrika: спин (номер попытки 1–3)
-      try { (window as any).ym && (window as any).ym(YM_COUNTER, 'reachGoal', 'fortune_spin', { attempt: spinNumber }); } catch (_) {}
-
-      // Hide previous win block while spinning
-      winBlock.classList.add('hidden');
-      winBlock.classList.remove('flex');
-
-      const winner = pickWinner(spinNumber);
-      const target = targetRotation(winner);
-
-      wheel.style.transition = 'transform 3s cubic-bezier(0.17, 0.67, 0.12, 1.0)';
-      wheel.style.transform  = 'rotate(' + target + 'deg)';
-      currentRot = target;
-
-      setTimeout(() => {
-        isSpinning = false;
-        saveState();
-        showWin(winner);
-      }, 3150);
-    });
-
-    // ── Open booking modal ──
-    bookBtn?.addEventListener('click', () => {
-      const d   = wonDiscount;
-      const fp  = computeFortunePrice(PRICE, d);
-      const dep = computeDeposit(fp);
-
-      if (modalDisc)  modalDisc.textContent  = d + '%';
-      if (modalFinal) modalFinal.textContent = formatRub(fp);
-      if (modalDep)   modalDep.textContent   = formatRub(dep);
-
-      // Кнопка: текст и бейдж скидки
-      const discBadge    = document.getElementById('fsc-pay-disc');
-      const discBadgeVal = document.getElementById('fsc-pay-disc-val');
-      if (fortuneMode === 'lead') {
-        if (payLabel)    payLabel.textContent    = 'Отправить заявку';
-        if (discBadgeVal) discBadgeVal.textContent = String(d);
-        if (discBadge)    discBadge.classList.remove('hidden');
-      } else {
-        if (payLabel) payLabel.textContent = 'Оплатить ' + formatRub(dep) + ' через Т-банк';
-      }
-
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-      startTimer();
-      setTimeout(() => { nameInput?.focus(); }, 50);
-
-      // Metrika: открыл форму бронирования
-      try { (window as any).ym && (window as any).ym(YM_COUNTER, 'reachGoal', 'fortune_modal_open', { discount: d }); } catch (_) {}
-    });
-
-    // ── Timer ──
-    function startTimer() {
-      if (!timerEl) return; // таймер убран — ничего не делаем
-      if (timerInterval !== null) clearInterval(timerInterval);
-      let secs = TIMER_SECONDS;
-      function tick() {
-        timerEl!.textContent = formatTimerTick(secs);
-        if (secs <= 0) {
-          clearInterval(timerInterval!);
-          timerEl!.style.color = '#dc2626';
-        }
-        secs--;
-      }
-      tick();
-      timerInterval = window.setInterval(tick, 1000);
-    }
-
-    function closeModal() {
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-      if (timerInterval !== null) clearInterval(timerInterval);
-      try { (window as any).ym && (window as any).ym(YM_COUNTER, 'reachGoal', 'fortune_modal_close', { discount: wonDiscount }); } catch (_e) {}
-    }
-
-    modalClose?.addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => {
-      // закрыть если клик по подложке, но не по карточке
-      if (e.target === modal || (e.target instanceof Element && e.target.closest(`[id="fsc-modal"]`) && !e.target.closest('[role="dialog"] .bg-white'))) closeModal();
-    });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
-    });
-
-    // ── Pay button ──
-    payBtn?.addEventListener('click', () => {
-      if (formError) {
-        formError.classList.add('hidden');
-        formError.textContent = '';
-      }
-
-      const name  = nameInput?.value.trim() ?? '';
-      const phone = phoneInput?.value.replace(/\D/g, '') ?? '';
-
-      if (!name || name.split(' ').length < 2) {
-        if (formError) { formError.textContent = 'Введите фамилию и имя'; formError.classList.remove('hidden'); }
-        nameInput?.focus();
-        return;
-      }
-      if (phone.length < 10) {
-        if (formError) { formError.textContent = 'Введите корректный номер телефона'; formError.classList.remove('hidden'); }
-        phoneInput?.focus();
-        return;
-      }
-      if (consentBox && !consentBox.checked) {
-        if (formError) { formError.textContent = 'Подтвердите согласие на обработку персональных данных'; formError.classList.remove('hidden'); }
-        consentBox.focus();
-        return;
-      }
-
-      // Metrika: перехватываем лид до отправки в банк
-      try {
-        (window as any).ym && (window as any).ym(YM_COUNTER, 'reachGoal', 'fortune_lead_capture', {
-          discount: wonDiscount,
-          name,
-          phone: phoneInput?.value.trim(),
-        });
-      } catch (_) {}
-
-      if (payBtn) payBtn.disabled = true;
-      if (payLabel) payLabel.textContent = fortuneMode === 'lead' ? 'Отправляем…' : 'Переходим в банк…';
-
-      const isTest = new URLSearchParams(window.location.search).get('ft') === '1';
-
-      Promise.all([getYmClientId().catch(() => ''), Promise.resolve(collectContext())])
-        .then(([ymClientId, ctx]) => fetch('/api/fortune/init', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          shiftId:  SHIFT_ID,
-          discount: wonDiscount,
-          token:    wonToken,
-          name,
-          phone: phoneInput?.value.trim(),
-          test:  isTest,
-          ymClientId,
-          ctx,
-        }),
-      }))
-        .then(r => r.json())
-        .then(data => {
-          if (data.leadMode) {
-            if (timerInterval !== null) clearInterval(timerInterval);
-            try {
-              (window as any).ym && (window as any).ym(YM_COUNTER, 'reachGoal', 'fortune_lead', {
-                discount: wonDiscount,
-                order_id: data.orderId,
-              });
-            } catch (_e) {}
-            // Прячем форму, показываем экран благодарности
-            const formWrap = document.getElementById('fsc-form-wrap');
-            if (formWrap) formWrap.innerHTML = [
-              '<div class="flex flex-col items-center gap-4 py-6 text-center">',
-              '  <div class="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">',
-              '    <i class="bi bi-check-lg text-[28px] text-emerald-600" aria-hidden="true"></i>',
-              '  </div>',
-              '  <p class="text-[18px] font-bold text-body">Заявка принята!</p>',
-              '  <p class="text-base text-body-muted leading-[1.5]">Менеджер свяжется с вами, ответит на вопросы<br>и поможет оформить договор — спокойно, без спешки.</p>',
-              '  <div class="rounded-xl bg-primary/8 px-4 py-3 text-center">',
-              '    <p class="text-[12px] text-body-faint uppercase tracking-wider mb-0.5">Ваша скидка</p>',
-              '    <p class="text-[22px] font-extrabold text-primary">' + wonDiscount + '%</p>',
-              '    <p class="text-base text-body-muted">Итоговая цена: <b>' + (data.finalPrice || '').toLocaleString('ru-RU') + ' ₽</b></p>',
-              '  </div>',
-              '</div>',
-            ].join('');
-            // Кнопка и «Что будет после оплаты» больше не нужны — заявка уже принята,
-            // без этого кнопка так и висела на "Отправляем…" (баг, найден 26.07.2026).
-            document.getElementById('fsc-pay-btn-wrap')?.classList.add('hidden');
-            document.getElementById('fsc-next-steps')?.classList.add('hidden');
-          } else if (data.paymentUrl) {
-            if (timerInterval !== null) clearInterval(timerInterval);
-            try {
-              (window as any).ym && (window as any).ym(YM_COUNTER, 'reachGoal', 'fortune_payment_start', {
-                discount:   wonDiscount,
-                deposit:    data.deposit,
-                order_id:   data.orderId,
-                payment_id: data.paymentId,
-              });
-            } catch (_e) {}
-            window.location.href = data.paymentUrl;
-          } else {
-            if (formError) { formError.textContent = data.error || 'Ошибка оплаты. Попробуйте ещё раз.'; formError.classList.remove('hidden'); }
-            if (payBtn) payBtn.disabled = false;
-            if (payLabel) payLabel.textContent = fortuneMode === 'lead' ? 'Отправить заявку' : 'Оплатить через Т-банк';
-          }
-        })
-        .catch(() => {
-          if (formError) { formError.textContent = 'Ошибка соединения. Проверьте интернет и попробуйте снова.'; formError.classList.remove('hidden'); }
-          if (payBtn) payBtn.disabled = false;
-          if (payLabel) payLabel.textContent = fortuneMode === 'lead' ? 'Отправить заявку' : 'Оплатить через Т-банк';
-        });
-    });
-
-    // ── Phone mask ──
-    phoneInput?.addEventListener('input', () => {
-      if (!phoneInput) return;
-      let raw = phoneInput.value.replace(/\D/g, '');
-      if (!raw.length) return;
-      if (raw[0] === '8') raw = '7' + raw.slice(1);
-      if (raw[0] === '9') raw = '7' + raw; // пользователь ввёл без 7 в начале
-      let out = '+' + raw[0];
-      if (raw.length > 1) out += ' (' + raw.slice(1, 4);
-      if (raw.length >= 4) out += ') ' + raw.slice(4, 7);
-      if (raw.length >= 7) out += '-' + raw.slice(7, 9);
-      if (raw.length >= 9) out += '-' + raw.slice(9, 11);
-      phoneInput.value = out;
-    });
-  }
-
-  initFortuneCard();
-</script>

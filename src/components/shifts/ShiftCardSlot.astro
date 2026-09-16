@@ -1,0 +1,39 @@
+---
+// Один слот карточки смены: обычная / ретро (прошедшая) / с колесом фортуны.
+// Вынесено из Shifts.astro — этот блок был дословно продублирован между
+// раскладками compactPastShifts и классической (09.09.2026, разбор hotspot-файлов).
+import type { Shift } from '../../data/shifts';
+import { getShiftPhase } from '../../data/dynamicPrices';
+import ShiftCard from './ShiftCard.astro';
+import ShiftRetroCard from './ShiftRetroCard.astro';
+import FortuneShiftCard from './FortuneShiftCard.astro';
+
+interface Props {
+  shift: Shift;
+  /** Момент расчёта фазы — единый на всю секцию, чтобы все карточки
+   *  сверялись с одним и тем же «сейчас». */
+  now: Date;
+}
+const { shift, now } = Astro.props;
+const phase = getShiftPhase(shift.id, now);
+// Разметку колеса рендерим для ВСЕХ предстоящих смен со свободными местами.
+// Раньше было `shift.nearest` — из-за этого «включить фортуну на смене N»
+// требовало правки shifts.ts + PR + деплой. Теперь показ решает рантайм-конфиг
+// (/api/fortune/config), а разметка просто заранее есть и скрыта.
+const withFortune = phase === 'upcoming' && shift.free > 0;
+---
+
+<div class="shifts-mq-item shrink-0 w-[calc(100vw-56px)] md:w-auto md:flex-1 self-stretch" data-shift-id={shift.id}>
+  {phase !== 'upcoming' ? (
+    <ShiftRetroCard shift={shift} />
+  ) : withFortune ? (
+    <Fragment>
+      <div data-fortune-normal class="h-full"><ShiftCard shift={shift} variant="desktop" /></div>
+      <div data-fortune-wheel hidden data-fortune-start={shift.startDate} data-fortune-free={shift.free} class="h-full">
+        <FortuneShiftCard shiftId={shift.id} />
+      </div>
+    </Fragment>
+  ) : (
+    <ShiftCard shift={shift} variant="desktop" />
+  )}
+</div>

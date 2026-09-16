@@ -1,5 +1,8 @@
 ---
+import { Icon } from 'astro-icon/components';
 import { PRICE_MIN, SEASON_YEAR, VYCHET_MAX, mainShifts } from '../data/shifts';
+import { AUTUMN_SEASON } from '../data/seasons';
+import SeasonPreRegister from '../components/SeasonPreRegister.astro';
 import '../styles/global.css';
 import LandingLayout from '../layouts/LandingLayout.astro';
 import MomStory from '../components/MomStory.astro';
@@ -10,14 +13,20 @@ import FAQ from '../components/FAQ.astro';
 // Диапазон длительности открытых смен — из mainShifts, не хардкодить (см. shifts.ts).
 const _durations = mainShifts.map(s => parseInt(s.duration, 10));
 const DURATION_RANGE = `${Math.min(..._durations)}–${Math.max(..._durations)}`;
+
+// Даты осенних заездов — из seasons.ts, не хардкодить (гард check:dates).
+const AUTUMN_DATES = (AUTUMN_SEASON.calendarWindows ?? [])
+  .map(w => w.sub.split(' · ')[0])
+  .join(' и ');
 ---
 
 <LandingLayout
   noindex={true}
   heroImage="/images/landing/hero-glamping.avif"
   title={`Едете отдыхать — а ребёнку подарите своё лето | АйДаКемп ${SEASON_YEAR}`}
-  description={`Планируете отдых за городом? Пока вы отдыхаете, ребёнок проведёт лето в IT-лагере в Подмосковье: программирование, нейросети, бассейн, друзья. Смены ${DURATION_RANGE} дней, от ${PRICE_MIN}.`}
+  description={`Планируете отдых? Пока вы отдыхаете, ребёнок — в IT-лагере в Подмосковье: программирование, нейросети, бассейн, друзья. Ближайшие заезды на осенние каникулы: ${AUTUMN_DATES}.`}
   h1="Едете отдыхать — а ребёнку подарите своё лето"
+  breadcrumb="Лето для себя"
 >
   <!-- Хиро: полноэкранное фото + градиент-слой + текст. Кадр подменяется по utm_content -->
   <section slot="hero" class="relative min-h-[500px] md:min-h-[560px] flex items-center overflow-hidden">
@@ -40,22 +49,25 @@ const DURATION_RANGE = `${Math.min(..._durations)}–${Math.max(..._durations)}`
       </p>
       <ul class="mt-6 space-y-2 max-w-[600px]">
         <li class="flex items-start gap-2 text-[15px] md:text-[16px] text-white/90">
-          <i class="bi bi-check-circle-fill text-primary mt-0.5 shrink-0" aria-hidden="true"></i>
+          <Icon name="bi:check-circle-fill" class="bi bi-check-circle-fill text-primary mt-0.5 shrink-0" aria-hidden="true" />
           <span>Программирование, нейросети — и бассейн каждый день</span>
         </li>
         <li class="flex items-start gap-2 text-[15px] md:text-[16px] text-white/90">
-          <i class="bi bi-check-circle-fill text-primary mt-0.5 shrink-0" aria-hidden="true"></i>
+          <Icon name="bi:check-circle-fill" class="bi bi-check-circle-fill text-primary mt-0.5 shrink-0" aria-hidden="true" />
           <span>Группы до 8 человек — за неделю первый собственный проект</span>
         </li>
         <li class="flex items-start gap-2 text-[15px] md:text-[16px] text-white/90">
-          <i class="bi bi-check-circle-fill text-primary mt-0.5 shrink-0" aria-hidden="true"></i>
+          <Icon name="bi:check-circle-fill" class="bi bi-check-circle-fill text-primary mt-0.5 shrink-0" aria-hidden="true" />
           <span>66 км от МКАД, охраняемая территория, питание 5 раз в день</span>
         </li>
       </ul>
-      <a href="#shifts"
+      <a href="#prereg"
          class="mt-8 inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-[16px] font-semibold text-white hover:bg-primary-700 transition-colors">
-        Выбрать смену <i class="bi bi-arrow-right" aria-hidden="true"></i>
+        Записаться на осенние каникулы <Icon name="bi:arrow-right" class="bi bi-arrow-right" aria-hidden="true" />
       </a>
+      <p class="mt-3 text-[14px] text-white/70">
+        Летние смены {SEASON_YEAR} завершены. Ближайшие заезды — {AUTUMN_DATES}: смотрите программу и даты на странице <a href="/lager-na-osennie-kanikuly/" class="underline hover:text-white">детский лагерь на осенние каникулы</a>.
+      </p>
     </div>
   </section>
 
@@ -119,19 +131,19 @@ const DURATION_RANGE = `${Math.min(..._durations)}–${Math.max(..._durations)}`
           </h2>
           <ul class="space-y-3">
             <li class="flex items-start gap-2 text-[16px] text-slate-700">
-              <i class="bi bi-cpu text-primary mt-1 shrink-0" aria-hidden="true"></i>
+              <Icon name="bi:cpu" class="bi bi-cpu text-primary mt-1 shrink-0" aria-hidden="true" />
               <span>IT-занятия дважды в день: Python, Roblox, Minecraft, нейросети — по возрасту и уровню</span>
             </li>
             <li class="flex items-start gap-2 text-[16px] text-slate-700">
-              <i class="bi bi-droplet-fill text-primary mt-1 shrink-0" aria-hidden="true"></i>
+              <Icon name="bi:droplet-fill" class="bi bi-droplet-fill text-primary mt-1 shrink-0" aria-hidden="true" />
               <span>Середина дня — бассейн, спорт, квесты на свежем воздухе</span>
             </li>
             <li class="flex items-start gap-2 text-[16px] text-slate-700">
-              <i class="bi bi-people-fill text-primary mt-1 shrink-0" aria-hidden="true"></i>
+              <Icon name="bi:people-fill" class="bi bi-people-fill text-primary mt-1 shrink-0" aria-hidden="true" />
               <span>Группы до 8 человек — ровесники, с которыми интересно, и преподаватель, который знает каждого</span>
             </li>
             <li class="flex items-start gap-2 text-[16px] text-slate-700">
-              <i class="bi bi-trophy-fill text-primary mt-1 shrink-0" aria-hidden="true"></i>
+              <Icon name="bi:trophy-fill" class="bi bi-trophy-fill text-primary mt-1 shrink-0" aria-hidden="true" />
               <span>В финале — свой проект и защита на хакатоне. Домой ребёнок вернётся с результатом</span>
             </li>
           </ul>
@@ -146,28 +158,28 @@ const DURATION_RANGE = `${Math.min(..._durations)}–${Math.max(..._durations)}`
       </h2>
       <div class="grid sm:grid-cols-2 gap-4">
         <div class="flex items-start gap-3 p-4 bg-white rounded-[14px] border border-slate-100 card-shadow">
-          <i class="bi bi-shield-fill-check text-primary text-[22px] shrink-0 mt-0.5" aria-hidden="true"></i>
+          <Icon name="bi:shield-fill-check" class="bi bi-shield-fill-check text-primary text-[22px] shrink-0 mt-0.5" aria-hidden="true" />
           <div>
             <p class="text-base font-semibold text-slate-900">Закрытая территория</p>
             <p class="text-base text-slate-600 mt-0.5">КПП, охрана 24/7. Санаторий «Изумруд», Наро-Фоминский округ — 66 км от МКАД.</p>
           </div>
         </div>
         <div class="flex items-start gap-3 p-4 bg-white rounded-[14px] border border-slate-100 card-shadow">
-          <i class="bi bi-heart-pulse-fill text-primary text-[22px] shrink-0 mt-0.5" aria-hidden="true"></i>
+          <Icon name="bi:heart-pulse-fill" class="bi bi-heart-pulse-fill text-primary text-[22px] shrink-0 mt-0.5" aria-hidden="true" />
           <div>
             <p class="text-base font-semibold text-slate-900">Медработник на смене</p>
             <p class="text-base text-slate-600 mt-0.5">Медицинский работник на территории всю смену, медпункт на месте.</p>
           </div>
         </div>
         <div class="flex items-start gap-3 p-4 bg-white rounded-[14px] border border-slate-100 card-shadow">
-          <i class="bi bi-cup-hot text-primary text-[22px] shrink-0 mt-0.5" aria-hidden="true"></i>
+          <Icon name="bi:cup-hot" class="bi bi-cup-hot text-primary text-[22px] shrink-0 mt-0.5" aria-hidden="true" />
           <div>
             <p class="text-base font-semibold text-slate-900">Питание 5 раз в день</p>
             <p class="text-base text-slate-600 mt-0.5">Всё включено в стоимость путёвки, свой пищеблок.</p>
           </div>
         </div>
         <div class="flex items-start gap-3 p-4 bg-white rounded-[14px] border border-slate-100 card-shadow">
-          <i class="bi bi-patch-check-fill text-primary text-[22px] shrink-0 mt-0.5" aria-hidden="true"></i>
+          <Icon name="bi:patch-check-fill" class="bi bi-patch-check-fill text-primary text-[22px] shrink-0 mt-0.5" aria-hidden="true" />
           <div>
             <p class="text-base font-semibold text-slate-900">Лицензия и налоговый вычет</p>
             <p class="text-base text-slate-600 mt-0.5">Официальный образовательный лагерь. Документы для вычета выдаём автоматически.</p>
@@ -188,6 +200,14 @@ const DURATION_RANGE = `${Math.min(..._durations)}–${Math.max(..._durations)}`
       </p>
     </section>
 
+  </div>
+
+  <div id="prereg">
+    <SeasonPreRegister
+      seasonAcc={AUTUMN_SEASON.seasonAcc}
+      slug={AUTUMN_SEASON.slug}
+      windows={AUTUMN_SEASON.windows}
+      calWindows={AUTUMN_SEASON.calendarWindows} />
   </div>
 
   <Shifts compactPastShifts />

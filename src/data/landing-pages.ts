@@ -1,4 +1,5 @@
 import { SEASON_MONTHS_NOM } from './evergreen';
+import { SEASON_YEAR, SUMMER_2027 } from './shifts';
 /**
  * Единый источник правды для всех лендингов АйДаКемп.
  *
@@ -33,7 +34,7 @@ export const landingPages: LandingPage[] = [
   { title: 'Детский лагерь', description: 'Для детей 7–15 лет в Подмосковье', url: '/detskiy-lager/', icon: 'bi-house-heart' },
   { title: 'Детский лагерь в Подмосковье', description: '66 км от МКАД, проживание', url: '/detskiy-lager-podmoskove/', icon: 'bi-houses' },
   { title: 'Лагерь в Подмосковье', description: 'Загородный, с бассейном', url: '/lager-v-podmoskove/', icon: 'bi-tree' },
-  { title: 'Лагерь на лето 2026', description: `Смены ${SEASON_MONTHS_NOM}, календарь`, url: '/lager-na-leto-2026/', icon: 'bi-calendar-heart' },
+  { title: `Лагерь на лето ${SUMMER_2027[0].startDate.slice(0, 4)}`, description: `${SUMMER_2027.length} смен по ${SUMMER_2027[0].duration}, идёт предзапись`, url: '/lager-na-leto/', icon: 'bi-calendar-heart' },
   { title: 'Лагерь в Москве', description: 'Ближнее Подмосковье, 66 км от МКАД', url: '/lager-v-moskve/', icon: 'bi-geo-alt' },
   { title: 'Московские летние лагеря', description: 'IT-лагерь в 66 км от Москвы, трансфер', url: '/moskovskie-letnie-lagerya/', icon: 'bi-geo-alt' },
 
@@ -66,10 +67,10 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь для детей 13 лет', description: 'IT-проекты и хакатон для 13 лет', url: '/lager-13-let/', icon: 'bi-rocket-takeoff' },
   { title: 'Лагерь для детей 14 лет', description: 'Python Advanced, AI-проект в портфолио', url: '/lager-14-let/', icon: 'bi-rocket-takeoff' },
   { title: 'Лагерь для детей 15 лет', description: 'IT-проекты для подростков 15 лет', url: '/lager-15-let/', icon: 'bi-rocket-takeoff' },
-  { title: 'Летний лагерь для подростков', description: 'Подмосковье, смены 11–15 лет 2026', url: '/lager-dlya-podrostkov/', icon: 'bi-rocket-takeoff' },
+  { title: 'Летний лагерь для подростков', description: `Подмосковье, смены 11–15 лет ${SEASON_YEAR}`, url: '/lager-dlya-podrostkov/', icon: 'bi-rocket-takeoff' },
   { title: 'Лагерь для школьников', description: '1–8 класс, IT-проект', url: '/lager-dlya-shkolnikov/', icon: 'bi-backpack' },
-  { title: 'Лагерь для школьников на лето', description: 'IT-смены 2026 для 1–8 класса', url: '/lager-dlya-shkolnikov-na-leto/', icon: 'bi-backpack' },
-  { title: 'Лагерь для школьников Подмосковья', description: 'IT-смены 2026 рядом с домом', url: '/lager-dlya-shkolnikov-podmoskove/', icon: 'bi-backpack' },
+  { title: 'Лагерь для школьников на лето', description: `IT-смены ${SEASON_YEAR} для 1–8 класса`, url: '/lager-dlya-shkolnikov-na-leto/', icon: 'bi-backpack' },
+  { title: 'Лагерь для школьников Подмосковья', description: `IT-смены ${SEASON_YEAR} рядом с домом`, url: '/lager-dlya-shkolnikov-podmoskove/', icon: 'bi-backpack' },
   { title: 'Лагерь для детей', description: 'Группы по возрасту, IT-лагерь в Подмосковье', url: '/lager-dlya-detey/', icon: 'bi-house-heart' },
   { title: 'Лагерь для мальчиков', description: 'Minecraft, Roblox, Python, AI', url: '/lager-dlya-malchikov/', icon: 'bi-rocket-takeoff' },
   { title: 'Лагерь для девочек', description: 'AI, 3D-моделирование, Python', url: '/lager-dlya-devochek/', icon: 'bi-star-fill' },
@@ -114,31 +115,33 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь рядом с Обнинском', description: 'Лагерь программирования', url: '/lager-obnisk/', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с Фрязево', description: 'Летний детский IT-лагерь', url: '/lager-fryazevo/', icon: 'bi-geo-alt' },
   { title: 'Лагерь рядом с домом', description: 'Как найти лагерь ближе к вам в Подмосковье', url: '/lager-ryadom/', icon: 'bi-geo-alt' },
+  // Лежала в sitemap с нулём входящих ссылок (Labrika 07.08.2026, отчёт «Страницы-сироты»).
+  { title: 'Лагерь для петербуржцев', description: 'Компенсируем дорогу, встречаем в Москве', url: '/lager-iz-peterburga/', icon: 'bi-geo-alt-fill' },
 
   // 💰 Коммерческие
   { title: 'Записаться в лагерь', description: 'Как записать ребёнка в IT-лагерь', url: '/zapisatsya/', icon: 'bi-calendar-check' },
-  { title: 'Цены на смены 2026', description: 'Стоимость всех смен, что входит', url: '/ceny/', icon: 'bi-coin' },
+  { title: `Цены на смены ${SEASON_YEAR}`, description: 'Стоимость всех смен, что входит', url: '/ceny/', icon: 'bi-coin' },
   { title: 'Путёвка в лагерь', description: 'Оплата, договор, 50% сейчас + 50% за 3 нед.', url: '/putevka-v-lager/', icon: 'bi-credit-card' },
-  { title: 'Сколько стоит лагерь', description: 'Разбор цен по типам лагерей', url: '/skolko-stoit-lager-dlya-rebenka/', icon: 'bi-coin' },
+  { title: 'Сколько стоит лагерь', description: 'Разбор цен по типам лагерей', url: '/stati/skolko-stoit-detskiy-lager/', icon: 'bi-coin' },
   { title: 'Налоговый вычет 13%', description: 'Калькулятор возврата с путёвки', url: '/nalogovyj-vychet/', icon: 'bi-receipt' },
   { title: 'Лагерь недорого', description: 'От 74 900 ₽ за смену, оплата частями', url: '/lager-nedorogo/', icon: 'bi-tag' },
 
   // 🗓 Сезонные
-  { title: 'Лагерь летом', description: 'IT-лагерь летом 2026 для детей 7–15 лет', url: '/lager-letom/', icon: 'bi-sun-fill' },
-  { title: 'Лагерь на каникулы', description: 'Июнь, июль, август 2026', url: '/lager-na-kanikuly/', icon: 'bi-sun' },
+  { title: 'Лагерь летом', description: `IT-лагерь летом ${SEASON_YEAR} для детей 7–15 лет`, url: '/lager-letom/', icon: 'bi-sun-fill' },
+  { title: 'Лагерь на каникулы', description: `Июнь, июль, август ${SEASON_YEAR}`, url: '/lager-na-kanikuly/', icon: 'bi-sun' },
   { title: 'Лагерь на неделю', description: 'Короткие смены 7–10 дней круглый год', url: '/lager-na-nedelyu/', icon: 'bi-calendar2-check' },
-  { title: 'Лагерь на июнь', description: 'Смены июня 2026, с 30 мая', url: '/lager-na-iyun/', icon: 'bi-calendar-event' },
-  { title: 'Лагерь на июль', description: 'Июльские смены 2026 в Подмосковье', url: '/lager-na-iyul/', icon: 'bi-sun' },
-  { title: 'Лагерь на август', description: 'Смены августа 2026 в Подмосковье', url: '/lager-na-avgust-podmoskove/', icon: 'bi-sun' },
-  { title: 'Лагерь на осенние каникулы', description: 'IT-смена в октябре 2026, предзапись открыта', url: '/lager-na-osennie-kanikuly/', icon: 'bi-cloud-sun' },
-  { title: 'Лагерь на зимние каникулы', description: 'IT-смена в декабре 2026 — январе 2027', url: '/lager-na-zimnie-kanikuly/', icon: 'bi-snow' },
+  { title: 'Лагерь на июнь', description: `Смены июня ${SEASON_YEAR}, с 30 мая`, url: '/lager-na-iyun/', icon: 'bi-calendar-event' },
+  { title: 'Лагерь на июль', description: `Июльские смены ${SEASON_YEAR} в Подмосковье`, url: '/lager-na-iyul/', icon: 'bi-sun' },
+  { title: 'Лагерь на август', description: `Смены августа ${SEASON_YEAR} в Подмосковье`, url: '/lager-na-avgust-podmoskove/', icon: 'bi-sun' },
+  { title: 'Лагерь на осенние каникулы', description: `IT-смена в октябре ${SEASON_YEAR}, предзапись открыта`, url: '/lager-na-osennie-kanikuly/', icon: 'bi-cloud-sun' },
+  { title: 'Лагерь на зимние каникулы', description: `IT-смена в декабре ${SEASON_YEAR} — январе ${SEASON_YEAR + 1}`, url: '/lager-na-zimnie-kanikuly/', icon: 'bi-snow' },
   { title: 'Лагерь на весенние каникулы', description: 'IT-смена в марте 2027, предзапись открыта', url: '/lager-na-vesennie-kanikuly/', icon: 'bi-flower1' },
 
   // 🏠 Хвост коммерческих/гео (Labrika-аудит 10.07: 0 входящих, не были нигде зарегистрированы)
   { title: 'Лагерь для ребёнка в городе', description: 'Городской формат IT-лагеря', url: '/lager-dlya-rebenka-v-gorode/', icon: 'bi-building' },
   { title: 'Лагерь с английским языком', description: 'IT-программа + разговорный английский', url: '/lager-s-angliyskim-yazykom-v-podmoskove/', icon: 'bi-translate' },
   { title: 'Детские лагеря Подмосковья', description: 'Летние IT-смены для школьников, цены', url: '/detskie-lagerya/', icon: 'bi-houses' },
-  { title: 'Детские лагеря: цены 2026', description: 'Цены на лето 2026 в Подмосковье', url: '/detskie-lagerya-v-podmoskove-tseny-2026/', icon: 'bi-coin' },
+  { title: `Детские лагеря: цены ${SEASON_YEAR}`, description: `Цены на лето ${SEASON_YEAR} в Подмосковье`, url: '/detskie-lagerya-v-podmoskove-tseny-2026/', icon: 'bi-coin' },
   { title: 'Подмосковные лагеря для детей', description: 'Как выбрать IT-смену', url: '/podmoskovnye-lagerya-dlya-detey/', icon: 'bi-houses' },
   { title: 'Лагеря в Москве', description: 'Название и как выбрать', url: '/nazvanie-lagerey-v-moskve/', icon: 'bi-geo-alt' },
   { title: 'Лагеря в городе Москве', description: 'IT-лагерь рядом со столицей', url: '/lagerya-v-gorode-moskva/', icon: 'bi-geo-alt' },
@@ -147,16 +150,17 @@ export const landingPages: LandingPage[] = [
   { title: '3D-моделирование: обучение', description: 'Blender для детей — с чего начать', url: '/3d-modelirovanie-obuchenie-dlya-detey/', icon: 'bi-box' },
   { title: 'Scratch: программирование', description: 'Первый язык для детей 7–10 лет', url: '/scratch-programmirovanie-dlya-detey/', icon: 'bi-blocks' },
   { title: 'Промт для нейросети', description: 'Как объяснить ребёнку', url: '/promt-dlya-neyroseti-dlya-detey/', icon: 'bi-cpu' },
-  { title: 'Путёвки в лагерь 2026', description: 'Купить путёвку в АйДаКемп', url: '/putyovki-v-lager-2026/', icon: 'bi-credit-card' },
+  { title: `Путёвки в лагерь ${SEASON_YEAR}`, description: 'Купить путёвку в АйДаКемп', url: '/putyovki-v-lager-2026/', icon: 'bi-credit-card' },
   { title: 'Компенсация за лагерь в Москве', description: 'Как оформить возврат части стоимости', url: '/kompensatsiya-za-detskiy-lager-v-moskve/', icon: 'bi-receipt' },
   { title: 'Лагерь на 10 дней', description: 'Короткая IT-смена в Подмосковье', url: '/lager-10-dney/', icon: 'bi-calendar2-check' },
   { title: 'Лагерь — альтернатива морю', description: 'Бассейн и IT-программа рядом с домом', url: '/lager-na-more/', icon: 'bi-water' },
   { title: 'Python для детей', description: 'С нуля до первого проекта', url: '/python-dlya-detey/', icon: 'bi-code-slash' },
   { title: 'Что взять в лагерь на 21 день', description: 'Полный чек-лист вещей', url: '/chto-vzyat-v-lager-na-21/', icon: 'bi-bag-check' },
   { title: 'Справка 079/у для лагеря', description: 'Где получить, образец, срок действия', url: '/stati/spravki-dlya-lagera/', icon: 'bi-clipboard-check' },
+  { title: 'Периоды смены в лагере', description: 'Первая, вторая, третья — чем отличаются', url: '/stati/periody-smeny-v-lagere/', icon: 'bi-calendar-range' },
 
   // 🎨 Прочее
-  { title: 'Пионерский лагерь', description: 'Современный аналог — IT-смены 2026', url: '/pionerskiy-lager/', icon: 'bi-flag-fill' },
+  { title: 'Пионерский лагерь', description: `Современный аналог — IT-смены ${SEASON_YEAR}`, url: '/pionerskiy-lager/', icon: 'bi-flag-fill' },
   { title: 'Лагерь без телефонов', description: 'Ребёнок без гаджетов 24/7', url: '/lager-bez-telefonov/', icon: 'bi-phone-x' },
   { title: 'Детокс от телефона', description: 'IT-лагерь без гаджетов', url: '/detox-ot-telefona/', icon: 'bi-phone-x' },
   { title: 'Тревожный родитель', description: 'Расписание и связь с ребёнком на 10 дней', url: '/tarif-trevozhniy-roditel/', icon: 'bi-shield-check' },
@@ -193,6 +197,18 @@ const IT_URLS = new Set([
   // и получала inbound только от 1-2 генеральных страниц (SEO-аудит Labrika 25.07:
   // 2 входящих). Тематически это IT-кластер (IT-программа + проживание).
   '/it-lager-s-prozhivaniem',
+  // Симуляция графа перелинковки 09.08.2026: 0 и 1 входящая ссылка соответственно —
+  // тематически IT, но не входили в кластер, тонули в общем пуле из 125 страниц.
+  '/it-lager-dlya-podrostkov',
+  '/it-lager-dlya-detey',
+  // Разбор подкластера C 09.08.2026: тематически IT (языки/AI/хакатон для детей),
+  // но сидели в общем "ПРОЧЕЕ" вне какого-либо кластера — ошибка кластеризации,
+  // не проблема силы ссылок. IT_URLS без пиннинга хабов (только ротация), так что
+  // перенос не создаёт риска для чужого пула, как это было бы у PRICE/SEASON/SHAPE.
+  '/python-dlya-detey',
+  '/hakaton-dlya-shkolnikov',
+  '/promt-dlya-neyroseti-dlya-detey',
+  '/scratch-programmirovanie-dlya-detey',
 ]);
 
 /**
@@ -246,6 +262,12 @@ const GEO_URLS = new Set([
   // (SEO-аудит Labrika 25.07: 4 входящих, ниже порога 5). Тематически это гео-кластер
   // (московские летние лагеря = тот же смысловой узел, что и остальные гео-страницы).
   '/moskovskie-letnie-lagerya',
+  // Единственная не-подмосковная в наборе: город отправления, а не расположения лагеря.
+  // Держим здесь сознательно — только членство в кластере даёт входящие ссылки: одного
+  // присутствия в массиве landingPages мало, гео/возрастные страницы добирают цели из
+  // своего набора и до общего «rest»-пула не доходят (проверено сборкой 07.08.2026:
+  // страница была в landingPages и получала 0 входящих).
+  '/lager-iz-peterburga',
 ]);
 
 /**
@@ -273,6 +295,101 @@ const AGE_URLS = new Set([
 ]);
 
 /**
+ * Ценовые/финансовые страницы. Хабы /lager-nedorogo + /ceny приколоты первыми.
+ * Разбор графа перелинковки 09.08.2026: у этого подкластера, в отличие от GEO/AGE,
+ * не было механизма усиления хаба вообще — 179 у lager-nedorogo и 1 у
+ * detskie-lagerya-v-podmoskove-tseny-2026 (Wordstat, кавычки) получали одинаковый
+ * вес — 5-6 inbound независимо от частотности.
+ */
+const PRICE_URLS = new Set([
+  '/ceny',
+  '/lager-nedorogo',
+  '/nalogovyj-vychet',
+  '/kompensatsiya-za-detskiy-lager-v-moskve',
+  '/putevka-v-lager',
+  '/putyovki-v-lager-2026',
+  '/detskie-lagerya-v-podmoskove-tseny-2026',
+]);
+
+/**
+ * Гео-страницы общего охвата (не привязаны к одному городу — в отличие от GEO_URLS).
+ * Хаб /lagerya-v-gorode-moskva (172, Wordstat) приколот первым. Второй хаб —
+ * ВНЕШНИЙ /lager-v-podmoskove (уже готовый хаб GEO-кластера): по смыслу эти
+ * страницы — общие гео-ключи без привязки к городу, отдельный внутренний второй
+ * хаб был бы искусственным (следующая по частотности страница здесь — 17).
+ */
+const GEO_GENERIC_URLS = new Set([
+  '/lagerya-v-gorode-moskva',
+  '/nazvanie-lagerey-v-moskve',
+  '/podmoskovnye-lagerya-dlya-detey',
+  '/lager-dlya-rebenka-v-gorode',
+  '/detskiy-otdyh-podmoskove',
+  '/detskiy-lager-istra-moskovskaya-oblast',
+]);
+
+/**
+ * Головные родовые ключи. Хабы /luchshie-detskie-lagerya (263) + /detskie-lagerya
+ * (154, Wordstat) — самые частотные в подкластере. /detskiy-lager остаётся членом
+ * подкластера, но НЕ целью пиннинга здесь: он уже пин-хаб для всех GEO (40 стр.)
+ * и AGE (16 стр.) с 62 входящими — пинить его повторно из этого подкластера
+ * означало бы тратить вес на уже перекормленную страницу.
+ */
+const HEAD_URLS = new Set([
+  '/detskiy-lager',
+  '/detskiy-lager-oficialnyj',
+  '/lager-letnego-prebyvaniya',
+  '/ozdorovitelnyj-lager',
+  '/zagorodnyj-lager',
+  '/luchshie-detskie-lagerya',
+  '/detskie-lagerya',
+  '/proverennyj-lager',
+]);
+
+/**
+ * Сезонные страницы (когда ехать). Хабы /lager-na-leto (482) + /lager-na-nedelyu
+ * (71, Wordstat) — та же форма частотности, что у B/D/F: явный лидер + резкий обрыв
+ * к хвосту (10-dney=26, дальше 0-19). Добавлен по факту прогона симуляции 09.08.2026:
+ * без пиннинга сжатие общего пула (после выноса B/D/F) обнулило /lager-na-leto —
+ * самую частотную страницу во всём «ПРОЧЕЕ» — и просадило соседей по подкластеру.
+ */
+const SEASON_URLS = new Set([
+  // Вечный хаб летнего сезона: год в тексте, не в URL. Собран 08.09.2026 из
+  // /lager-na-leto-2026 (широкая семантика, позиции) и /lager-na-leto-2027
+  // (сетка сезона, честная рамка по датам) — оба отдают сюда 301, чтобы вес
+  // не сгорал вместе с сезоном и не возникала пара страниц-каннибалов.
+  '/lager-na-leto',
+  '/lager-na-nedelyu',
+  '/lager-10-dney',
+  '/lager-na-avgust-podmoskove',
+  '/lager-na-osennie-kanikuly',
+  '/lager-letom',
+  '/lager-na-kanikuly',
+  '/lager-na-iyul',
+  '/lager-na-iyun',
+  '/lager-na-vesennie-kanikuly',
+  '/lager-na-zimnie-kanikuly',
+]);
+
+/**
+ * Формат/фишки программы. Хабы /lager-s-basseynom (92) + /pionerskiy-lager (73,
+ * Wordstat) — та же форма частотности, что у B/D/F/SEASON: 2 лидера, резкий обрыв
+ * к хвосту (28 и ниже). Найден по факту повторной симуляции 09.08.2026: после
+ * добавления SEASON_URLS /lager-s-basseynom (уже был в HOMEPAGE_HUB_URLS) обнулился
+ * в общем графе — тот же класс регрессии, что и у /lager-na-leto чуть раньше.
+ */
+const SHAPE_URLS = new Set([
+  '/lager-s-basseynom',
+  '/pionerskiy-lager',
+  '/lager-bez-telefonov',
+  '/detox-ot-telefona',
+  '/lager-s-angliyskim-yazykom-v-podmoskove',
+  '/tematicheskiy-lager',
+  '/obrazovatelnyy-lager',
+  '/letnyj-shkolnyj-lager',
+  '/dlya-kompaniy',
+]);
+
+/**
  * Статьи-блог, которые нужно показывать в блоке RelatedPages на конкретных лендингах.
  * Ключ — нормализованный URL лендинга, значение — список статей (до 2 штук).
  * Статьи вставляются в конец результата getRelatedPages и дают им хотя бы 1 inbound link.
@@ -295,7 +412,7 @@ const ARTICLE_MAP: Record<string, LandingPage[]> = {
     { title: 'Как оплатить лагерь', description: 'Рассрочка 50/50, способы, документы', url: '/stati/oplata-detskogo-lagerya/', icon: 'cash-coin' },
   ],
   '/putevka-v-lager': [
-    { title: 'Как оплатить лагерь', description: 'Рассрочка 50/50, способы, документы', url: '/stati/oplata-detskogo-lagerya/', icon: 'cash-coin' },
+    { title: 'Как оплатить смену', description: 'Рассрочка 50/50, способы, документы', url: '/stati/oplata-detskogo-lagerya/', icon: 'cash-coin' },
   ],
   '/lager-dlya-podrostkov': [
     { title: 'Ребёнок не хочет в лагерь', description: 'Разбираемся без скандалов', url: '/stati/rebenok-ne-hochet-v-lager/', icon: 'chat-dots' },
@@ -318,20 +435,30 @@ const ARTICLE_MAP: Record<string, LandingPage[]> = {
   '/scratch-lager': [
     { title: 'Scratch для детей', description: 'Что такое, с чего начать, возраст', url: '/stati/scratch-dlya-detej/', icon: 'code-slash' },
   ],
+  // python-dlya-detej вместо 3d-modelirovanie-dlya-detej — синхронизация с хардкодом
+  // на живой странице при переводе на getRelatedPages() 09.08.2026 (страница про
+  // Python ссылалась на статью про Python, не про 3D).
   '/python-lager': [
-    { title: '3D-моделирование для детей', description: 'Blender, первые шаги, возраст', url: '/stati/3d-modelirovanie-dlya-detej/', icon: 'box' },
+    { title: 'Python для детей', description: 'С какого возраста и что можно создать', url: '/stati/python-dlya-detej/', icon: 'code-slash' },
   ],
+  // nejroseti-dlya-detej вместо ii-zamenit-programmista — синхронизация с хардкодом
+  // на живой странице (09.08.2026), тот же принцип.
   '/ai-lager': [
-    { title: 'ИИ заменит программистов?', description: 'Разбираем реальные данные', url: '/stati/ii-zamenit-programmista/', icon: 'cpu' },
+    { title: 'Нейросети для детей', description: 'Как дети изучают и применяют AI', url: '/stati/nejroseti-dlya-detej/', icon: 'cpu' },
+  ],
+  // Добавлена 09.08.2026 при переводе roblox-lager на getRelatedPages() — раньше
+  // статья была только в хардкоде страницы, в ARTICLE_MAP отсутствовала.
+  '/roblox-lager': [
+    { title: 'Roblox для детей', description: 'Как превратить интерес к Roblox в создание игр', url: '/stati/roblox-dlya-detej/', icon: 'controller' },
   ],
   '/luchshie-detskie-lagerya': [
     { title: 'Как выбрать IT-лагерь', description: 'Чек-лист и на что смотреть', url: '/stati/kak-vybrat-it-lager/', icon: 'list-check' },
   ],
   '/detskiy-lager': [
-    { title: 'Документы для ребёнка в лагерь', description: 'Полный чек-лист 2026', url: '/stati/dokumenty-dlya-rebenka-v-lager/', icon: 'file-earmark-text' },
+    { title: 'Документы для ребёнка в лагерь', description: `Полный чек-лист ${SEASON_YEAR}`, url: '/stati/dokumenty-dlya-rebenka-v-lager/', icon: 'file-earmark-text' },
   ],
   '/lager-v-podmoskove': [
-    { title: 'Документы для ребёнка в лагерь', description: 'Полный чек-лист 2026', url: '/stati/dokumenty-dlya-rebenka-v-lager/', icon: 'file-earmark-text' },
+    { title: 'Документы для ребёнка в лагерь', description: `Полный чек-лист ${SEASON_YEAR}`, url: '/stati/dokumenty-dlya-rebenka-v-lager/', icon: 'file-earmark-text' },
   ],
 };
 
@@ -362,8 +489,12 @@ function globalHash(s: string, len: number): number {
  * разные страницы показывают разные срезы → входящие ссылки распределяются равномерно
  * по всему кластеру, а не копятся на первых 6 элементах массива (SEO-аудит: было
  * 116 посадочных с <5 входящих — «хвост» кластеров голодал из-за фикс. slice(0,N)).
- * Хабы (/lager-v-podmoskove, /detskiy-lager, /lager-dlya-podrostkov) остаются
- * приколоты первыми — им высокая входящая связность нужна намеренно.
+ * Хабы (/lager-v-podmoskove, /detskiy-lager, /lager-dlya-podrostkov — GEO/AGE;
+ * /lager-nedorogo, /ceny — PRICE_URLS; /lagerya-v-gorode-moskva — GEO_GENERIC_URLS;
+ * /luchshie-detskie-lagerya, /detskie-lagerya — HEAD_URLS; /lager-na-leto,
+ * /lager-na-nedelyu — SEASON_URLS; /lager-s-basseynom, /pionerskiy-lager —
+ * SHAPE_URLS) остаются приколоты первыми — им высокая входящая связность
+ * нужна намеренно.
  * В конец результата добавляются релевантные статьи из ARTICLE_MAP.
  *
  * @param currentUrl URL текущей страницы (без протокола/хоста), например "/minecraft-lager"
@@ -418,6 +549,46 @@ export function getRelatedPages(currentUrl: string, count: number = 6): LandingP
     const agePages = evenPool((u) => AGE_URLS.has(u), ['/detskiy-lager', '/lager-dlya-podrostkov']);
     const rest = evenPool((u) => !AGE_URLS.has(u), ['/detskiy-lager', '/lager-dlya-podrostkov']);
     base = [...priority, ...agePages, ...rest].slice(0, landingCount);
+  }
+  // Ценовая страница → хабы /lager-nedorogo + /ceny приколоты, дальше ценовые и общие
+  else if (PRICE_URLS.has(normalized)) {
+    const priority = [findPage('/lager-nedorogo'), findPage('/ceny')]
+      .filter((p): p is LandingPage => !!p && norm(p.url) !== normalized);
+    const pricePages = evenPool((u) => PRICE_URLS.has(u), ['/lager-nedorogo', '/ceny']);
+    const rest = evenPool((u) => !PRICE_URLS.has(u), ['/lager-nedorogo', '/ceny']);
+    base = [...priority, ...pricePages, ...rest].slice(0, landingCount);
+  }
+  // Гео-страница общего охвата → /lagerya-v-gorode-moskva + /lager-v-podmoskove приколоты
+  else if (GEO_GENERIC_URLS.has(normalized)) {
+    const priority = [findPage('/lagerya-v-gorode-moskva'), findPage('/lager-v-podmoskove')]
+      .filter((p): p is LandingPage => !!p && norm(p.url) !== normalized);
+    const geoGenericPages = evenPool((u) => GEO_GENERIC_URLS.has(u), ['/lagerya-v-gorode-moskva', '/lager-v-podmoskove']);
+    const rest = evenPool((u) => !GEO_GENERIC_URLS.has(u), ['/lagerya-v-gorode-moskva', '/lager-v-podmoskove']);
+    base = [...priority, ...geoGenericPages, ...rest].slice(0, landingCount);
+  }
+  // Головная родовая страница → /luchshie-detskie-lagerya + /detskie-lagerya приколоты
+  else if (HEAD_URLS.has(normalized)) {
+    const priority = [findPage('/luchshie-detskie-lagerya'), findPage('/detskie-lagerya')]
+      .filter((p): p is LandingPage => !!p && norm(p.url) !== normalized);
+    const headPages = evenPool((u) => HEAD_URLS.has(u), ['/luchshie-detskie-lagerya', '/detskie-lagerya']);
+    const rest = evenPool((u) => !HEAD_URLS.has(u), ['/luchshie-detskie-lagerya', '/detskie-lagerya']);
+    base = [...priority, ...headPages, ...rest].slice(0, landingCount);
+  }
+  // Сезонная страница → /lager-na-leto + /lager-na-nedelyu приколоты
+  else if (SEASON_URLS.has(normalized)) {
+    const priority = [findPage('/lager-na-leto'), findPage('/lager-na-nedelyu')]
+      .filter((p): p is LandingPage => !!p && norm(p.url) !== normalized);
+    const seasonPages = evenPool((u) => SEASON_URLS.has(u), ['/lager-na-leto', '/lager-na-nedelyu']);
+    const rest = evenPool((u) => !SEASON_URLS.has(u), ['/lager-na-leto', '/lager-na-nedelyu']);
+    base = [...priority, ...seasonPages, ...rest].slice(0, landingCount);
+  }
+  // Страница формата/фишек → /lager-s-basseynom + /pionerskiy-lager приколоты
+  else if (SHAPE_URLS.has(normalized)) {
+    const priority = [findPage('/lager-s-basseynom'), findPage('/pionerskiy-lager')]
+      .filter((p): p is LandingPage => !!p && norm(p.url) !== normalized);
+    const shapePages = evenPool((u) => SHAPE_URLS.has(u), ['/lager-s-basseynom', '/pionerskiy-lager']);
+    const rest = evenPool((u) => !SHAPE_URLS.has(u), ['/lager-s-basseynom', '/pionerskiy-lager']);
+    base = [...priority, ...shapePages, ...rest].slice(0, landingCount);
   }
   else {
     // Общие (коммерч./сезон.) страницы — равномерно по всему пулу

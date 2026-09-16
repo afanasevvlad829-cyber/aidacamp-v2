@@ -47,11 +47,22 @@ function shiftNoun(n: number): string {
 function shiftsPhrase(n: number): string {
   return `${numWordF(n)} ${shiftNoun(n)}`;
 }
-/** Уникальные месяцы набора смен, по возрастанию (индексы 0–11). */
+/**
+ * Уникальные месяцы набора смен в ХРОНОЛОГИЧЕСКОМ порядке (индексы 0–11).
+ * Сортировать по номеру месяца нельзя: зимний заезд 30 декабря — 8 января даёт
+ * январь (0) раньше октября (9), и диапазон схлопывался в «январь–декабрь» —
+ * ровно это стояло на лендингах («Смены январь–декабрь», найдено 07.09.2026),
+ * как только в сезоне появилась смена с переходом через Новый год.
+ */
 function monthsOf(shifts: Shift[]): number[] {
-  const s = new Set<number>();
-  for (const sh of shifts) { s.add(monthIdx(sh.startDate)); s.add(monthIdx(sh.endDate)); }
-  return [...s].sort((a, b) => a - b);
+  const seen = new Set<number>();
+  const out: number[] = [];
+  const push = (m: number) => { if (!seen.has(m)) { seen.add(m); out.push(m); } };
+  for (const sh of [...shifts].sort((a, b) => a.startDate.localeCompare(b.startDate))) {
+    push(monthIdx(sh.startDate));
+    push(monthIdx(sh.endDate));
+  }
+  return out;
 }
 /** Соединить список слов: «май и август», «май, июнь и август». */
 function joinRu(items: string[]): string {
@@ -96,13 +107,19 @@ export const OPEN_SHIFTS_PHRASE_CAP =
 export const OPEN_MONTHS_NOM = joinRu(_openMonths.map(i => MONTH_NOM[i]));
 /** Месяцы открытых смен в предл.п.: «в августе». */
 export const OPEN_MONTHS_PREP = 'в ' + joinRu(_openMonths.map(i => MONTH_PREP[i]));
+/** Диапазон месяцев открытых смен через тире: «октябрь–январь». Короткая
+ *  замена SEASON_MONTHS_NOM в продающих фразах: тот считает по всему сезону,
+ *  включая уже прошедшие смены, и обещает месяцы, которых нет в продаже. */
+export const OPEN_MONTHS_RANGE_NOM = _openMonths.length > 1
+  ? `${MONTH_NOM[_openMonths[0]]}–${MONTH_NOM[_openMonths[_openMonths.length - 1]]}`
+  : MONTH_NOM[_openMonths[0]] ?? '';
 /** Прилагательные месяцев открытых смен: «августовские». Для «открыты августовские смены». */
 export const OPEN_MONTHS_ADJ = joinRu(_openMonths.map(i => MONTH_ADJ[i]));
 
 // ── Прошедшие месяцы (для статусных фраз «…смены уже прошли») ────────────
 const _pastMonths = monthsOf(_season).filter(m => !_openMonths.includes(m));
 /** Прилагательные прошедших месяцев: «майские и июньские». Пусто, если ничего не прошло. */
-export const PAST_MONTHS_ADJ = joinRu(_pastMonths.map(i => MONTH_ADJ[i]));
+const PAST_MONTHS_ADJ = joinRu(_pastMonths.map(i => MONTH_ADJ[i]));
 /** Готовая фраза статуса: «Майские и июньские смены уже прошли». '' если нечему. */
 export const PAST_SHIFTS_SENTENCE = _pastMonths.length
   ? `${PAST_MONTHS_ADJ[0].toUpperCase()}${PAST_MONTHS_ADJ.slice(1)} смены уже прошли`

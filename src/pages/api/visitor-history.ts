@@ -2,6 +2,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { getVisitorShiftHistory, formatVisitDate } from '../../lib/visitorHistory';
 import { displayShifts, shiftDatesShort, DATES_SHORT_S21, DATES_SHORT_S22, getAvailabilityLabel } from '../../data/shifts';
+import { getShiftPhase } from '../../data/dynamicPrices';
 
 // Главная страница отдаётся nginx статикой (root .../current/client/, try_files),
 // Node для неё не вызывается — SSR-персонализация прямо в Astro-компоненте не
@@ -23,7 +24,9 @@ export const GET: APIRoute = async ({ cookies }) => {
   const history = await getVisitorShiftHistory(visitorId);
   const views = history
     .map((v) => ({ ...v, meta: shiftMeta[v.shiftId] }))
-    .filter((v) => v.meta)
+    // Смена уже прошла (фаза 'done') — «вы смотрели» вело бы на закрытую бронь,
+    // мёртвый CTA для возвратника.
+    .filter((v) => v.meta && getShiftPhase(v.shiftId) !== 'done')
     .slice(0, 2)
     .map((v) => ({
       shiftId: v.shiftId,
