@@ -6,6 +6,15 @@
 > - Локально на маке — только хотфиксы владельца.
 > - ⚠️ Старый `vps-start-agent.sh` (агент под root на проде) — **DEPRECATED**, не путать с `claude-run`.
 
+## 🔀 Git: канон — Forgejo, GitHub — резерв (решение владельца 15.09.2026, все 4 сайта)
+
+- **Канон** — `origin` = `ssh://git@git.aidaplus.ru:2222/vlad/aidacamp-v2.git` (Forgejo). Ветки — от `origin/dev`,
+  PR — в `dev` на Forgejo (`tea pr create --login aidaplus --repo vlad/aidacamp-v2 --base dev`; default branch там `dev`).
+- **GitHub** (`github` remote) — резерв: руками не пушить, оттуда не мержить, PR там не открывать. Код туда
+  приходит push-mirror'ом с Forgejo (все ветки, каждые 10 мин и при каждом push; включено 15.09.2026).
+  Ветка, которой нет на Forgejo, при следующем синке с GitHub исчезнет — работа живёт только на Forgejo.
+- Деплой не менялся: workflow в `.github/workflows/` исполняет GitHub Actions по push в `dev`, который теперь
+  делает зеркало. Общее правило по всем сайтам — `~/.claude/CLAUDE.md` → «Git: канон — Forgejo».
 ## 📂 Карта документов (читай первым)
 
 | Файл | За что отвечает |
