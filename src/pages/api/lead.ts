@@ -216,6 +216,9 @@ function buildTgText(body: Record<string, string>, crmId?: number | null): strin
   if (body.name) lines.push(`🙋 <b>${esc(body.name)}</b>`);
   lines.push(`📞 <b>${esc(phone)}</b>  |  👶 ${esc(age) || '—'}  |  🏕 ${esc(shift) || '—'}`);
   if (body.call_time) lines.push(`⏰ Позвонить: <b>${esc(body.call_time)}</b>`);
+  // Промокод виден менеджеру сразу в шапке: по нему считается скидка и трансфер,
+  // а не только в примечании CRM.
+  if (body.promo) lines.push(`🎫 Промокод: <b>${esc(body.promo)}</b>`);
   if (isReferral) lines.push('→ Отправить мерч тому кто поделился!');
   lines.push('');
 
@@ -355,7 +358,10 @@ export async function createCrmLead(body: Record<string, string>): Promise<numbe
   const hostname = process.env.ALFACRM_HOSTNAME;
   const email    = process.env.ALFACRM_EMAIL;
   const apiKey   = process.env.ALFACRM_API_KEY;
-  if (!hostname || !email || !apiKey) return null;
+  if (!hostname || !email || !apiKey) {
+    console.error('[lead] createCrmLead: ALFACRM_HOSTNAME/EMAIL/API_KEY не заданы — лид создан НЕ будет в CRM');
+    return null;
+  }
 
   try {
     // Auth (один токен на всё)
@@ -366,7 +372,10 @@ export async function createCrmLead(body: Record<string, string>): Promise<numbe
     }, ALFA_TIMEOUT_MS);
     const authData = await authRes.json();
     const token: string = authData?.token;
-    if (!token) return null;
+    if (!token) {
+      console.error('[lead] createCrmLead: логин не вернул token —', authData?.errors ?? authData);
+      return null;
+    }
 
     const headers = { 'Content-Type': 'application/json', 'X-ALFACRM-TOKEN': token };
     const phone = body.phone?.replace(/\D/g, '') || '';
@@ -411,8 +420,13 @@ export async function createCrmLead(body: Record<string, string>): Promise<numbe
       body: JSON.stringify(payload),
     }, ALFA_TIMEOUT_MS);
     const custData = await custRes.json();
-    return custData?.model?.id ?? null;
-  } catch {
+    if (!custData?.model?.id) {
+      console.error('[lead] createCrmLead: customer/create не вернул id —', custData?.errors ?? custData);
+      return null;
+    }
+    return custData.model.id;
+  } catch (e) {
+    console.error('[lead] createCrmLead: запрос упал (лид уйдёт в TG/PG без crm_id) —', e);
     return null;
   }
 }

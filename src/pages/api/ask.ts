@@ -5,7 +5,7 @@ import { buildSystemPrompt } from '../../lib/ai/systemPrompt';
 import { ResponseSchema } from '../../lib/ai/responseSchema';
 import { ragSearch } from '../../lib/ai/rag';
 import { findPhotos, hasShiftPhotos } from '../../lib/ai/photoSearch';
-import { lastCompletedShift } from '../../data/shifts';
+import { lastCompletedShift, SEASON_YEAR } from '../../data/shifts';
 import { matchEscalation, templateToResponse } from '../../lib/ai/escalation_templates';
 import { classifyIntent, pickRealStory } from '../../lib/ai/intent_router';
 import { validateBotResponse, logGuardFlag } from '../../lib/ai/validator';
@@ -257,7 +257,7 @@ export const POST: APIRoute = async ({ request }) => {
         block_type: null,
         block_data: null,
         chips: [
-          { label: 'Смены 2026', query: 'смены' },
+          { label: `Смены ${SEASON_YEAR}`, query: 'смены' },
           { label: 'Цены', query: 'цены' },
           { label: 'Написать менеджеру', action: 'contact_request' },
         ],
@@ -286,7 +286,7 @@ export const POST: APIRoute = async ({ request }) => {
         text: raw.replace(/```json|```|\{[\s\S]*\}/g, '').trim() || 'Уточните вопрос.',
         block_type: null,
         block_data: null,
-        chips: [{ label: 'Смены 2026', query: 'смены' }, { label: 'Цены', query: 'цены' }, { label: 'Написать менеджеру', action: 'contact_request' }]
+        chips: [{ label: `Смены ${SEASON_YEAR}`, query: 'смены' }, { label: 'Цены', query: 'цены' }, { label: 'Написать менеджеру', action: 'contact_request' }]
       });
       logSession(sid, message, parseErrResp, { trustedCount: ragResult.trustedCount, isEmpty: ragResult.isEmpty, hits: ragResult.hits }, metrics);
       return new Response(parseErrResp, { headers: { 'Content-Type': 'application/json' } });
@@ -301,7 +301,7 @@ export const POST: APIRoute = async ({ request }) => {
         block_type: null,
         block_data: null,
         chips: [
-          { label: 'Смены 2026', query: 'смены' },
+          { label: `Смены ${SEASON_YEAR}`, query: 'смены' },
           { label: 'Цены', query: 'цены' },
           { label: 'Забронировать', action: 'book' },
         ],

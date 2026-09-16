@@ -1,4 +1,4 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_MAX, DAYS_MIN, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, daysNum } from '../shifts';
 import type { LandingData } from './types';
 import { otzyvyLink, yandexReviewsLink } from '../../lib/reviews-link';
 import { SEASON_FROM_TO } from '../evergreen';
@@ -21,7 +21,7 @@ const landing: LandingData = {
     { q: 'Как добраться из Коломны до лагеря АйДаКемп?', a: `Около 130 км, ~2 часа: Новорязанское шоссе (М-5) → МКАД → Киевское шоссе (M-3) → посёлок Атепцево. Или до м. Солнцево — и трансфер АйДаКемп (${TRANSFER_PRICE_FMT}).` },
     { q: 'Есть ли трансфер из Коломны?', a: `Прямого трансфера нет. Организованный трансфер идёт от м. Солнцево (${TRANSFER_PRICE_FMT}). Оттуда — электричкой до Казанского вокзала, затем метро.` },
     { q: 'Нужен ли опыт программирования, чтобы заниматься в лагере?', a: 'Нет. Группы формируются по уровню — начинающие, средний, продвинутые — до 8 человек в группе.' },
-    { q: 'Сколько стоит смена в детском лагере?', a: `От ${PRICE_MIN} (10 дней) до ${PRICE_MAX} (13 дней) — проживание, питание, IT-программа, бассейн. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} отдельно.` },
+    { q: 'Сколько стоит смена в детском лагере?', a: `От ${PRICE_MIN} (${DAYS_MIN}) до ${PRICE_MAX} (${DAYS_MAX}) — проживание, питание, IT-программа, бассейн. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT} отдельно.` },
   ],
   courseSchema: {
     name: 'Детский IT-лагерь рядом с Коломной — АйДаКемп',
@@ -82,12 +82,12 @@ const landing: LandingData = {
     },
     {
       h2: `Смены и цены ${SEASON_YEAR}`,
-      text: `Детский лагерь принимает ребят ${SEASON_FROM_TO} ${SEASON_YEAR}. Открытые смены — от 10 до 13 дней, стоимость от ${PRICE_MIN}. В стоимость включены проживание, питание, полная IT-программа, бассейн, активности. Трансфер из Москвы — платная опция (${TRANSFER_PRICE_FMT} в одну сторону).`,
+      text: `Детский лагерь принимает ребят ${SEASON_FROM_TO} ${SEASON_YEAR}. Открытые смены — от ${daysNum(DAYS_S4)} до ${DAYS_S3}, стоимость от ${PRICE_MIN}. В стоимость включены проживание, питание, полная IT-программа, бассейн, активности. Трансфер из Москвы — платная опция (${TRANSFER_PRICE_FMT} в одну сторону).`,
       list: [
-        `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, 7 дней, ${PRICE_S21}`,
-        `Смена 2 (завершена) — ${DATES_SHORT_S2}, 14 дней, ${PRICE_S2}`,
-        `Смена 3 — ${DATES_SHORT_S3}, 13 дней, ${PRICE_S3}`,
-        `Смена 4 — ${DATES_SHORT_S4}, 10 дней, ${PRICE_S4}`,
+        `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, ${DAYS_S21}, ${PRICE_S21}`,
+        `Смена 2 (завершена) — ${DATES_SHORT_S2}, ${DAYS_S2}, ${PRICE_S2}`,
+        `Смена 3 — ${DATES_SHORT_S3}, ${DAYS_S3}, ${PRICE_S3}`,
+        `Смена 4 — ${DATES_SHORT_S4}, ${DAYS_S4}, ${PRICE_S4}`,
       ],
     },
     {

@@ -15,7 +15,7 @@ export interface CorpClient {
   freeTransferMinKids: number;
   /** UTM source для ссылок */
   utmSource: string;
-  /** Slug страницы: "lanit" → /lanit-v6 */
+  /** Slug корпоративной страницы, например "mincifry" → /mincifry-v1.html */
   slug: string;
 }
 

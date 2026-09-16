@@ -19,7 +19,6 @@ if (process.env.SKIP_ASTRO_CHECK === '1') {
 // (например, файл из исключённой зоны импортируют из публичной страницы — тогда
 // tsc проверит его по графу зависимостей, несмотря на exclude).
 const excluded = [
-  'src/pages/lanit-v5.astro',
   'src/pages/smena2-editor.astro',
   'src/pages/onboarding.astro',
   'src/pages/portal/',

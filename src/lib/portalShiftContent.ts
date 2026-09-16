@@ -12,7 +12,7 @@ import { query } from './db';
 const execFileP = promisify(execFile);
 
 /** Куда бот складывает исходники (его STORAGE). */
-export const SHIFT_CONTENT_ROOT =
+const SHIFT_CONTENT_ROOT =
   process.env.SHIFT_CONTENT_STORAGE || '/var/lib/shift-content/shift5';
 /** Кэш превью — рядом с хранилищем, чтобы не смешивать с исходниками. */
 const THUMB_DIR = path.join(path.dirname(SHIFT_CONTENT_ROOT), 'thumbs');

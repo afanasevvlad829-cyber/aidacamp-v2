@@ -5,7 +5,7 @@ export interface CalRange { from: string; to: string; primary?: boolean; }
 export type CellState = 'primary' | 'secondary' | 'month' | 'off';
 export interface CalCell { day: number; state: CellState; }
 
-export const MONTH_NAMES = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const MONTH_NAMES = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 export const WEEKDAYS = ['пн','вт','ср','чт','пт','сб','вс'];
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);

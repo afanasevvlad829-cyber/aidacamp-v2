@@ -27,18 +27,39 @@ if [ "$TARGET" = "prod" ] && [ "${MASTER_AGENT:-0}" != "1" ] && [ "${SKIP_GIT_GU
   exit 1
 fi
 
-# ── 0a. BRANCH GUARD: прод деплоится ТОЛЬКО из main ─────────
-# Эта проверка не обходится SKIP_GIT_GUARD — только явный FORCE_BRANCH=1.
+# ── 0a. BRANCH GUARD: прод деплоится ТОЛЬКО из dev ──────────
+# С 09.09.2026 dev — единственная боевая ветка (решение владельца после переезда
+# на Forgejo: промоут dev→main делал GitHub Actions, на своём CI его нет, main
+# перестал быть зеркалом прода). Требуем: текущая ветка dev ИЛИ HEAD равен
+# origin/dev (release.sh катит из detached worktree). Эта проверка не обходится
+# SKIP_GIT_GUARD — только явный FORCE_BRANCH=1.
 # Инцидент 2026-06-25: деплой из fix/video-player-import → сломанный прод.
 cd "$PROJECT_DIR"
-if [ "$TARGET" = "prod" ] && [ "${FORCE_BRANCH:-0}" != "1" ]; then
+# Isolated CI release is still a merged dev commit, pinned and promoted to main.
+# This is a separately validated route, not SKIP_GIT_GUARD/FORCE_BRANCH.
+ISOLATED_RELEASE_VALIDATED=0
+if [ -n "${ISOLATED_RELEASE_SHA:-}" ]; then
+  [ "$TARGET" = prod ] && [ "${GITHUB_ACTIONS:-}" = true ] &&
+    [ "${GITHUB_EVENT_NAME:-}" = workflow_dispatch ] &&
+    [ "${GITHUB_REF:-}" = refs/heads/dev ] || { echo 'Invalid isolated CI context'; exit 1; }
+  printf '%s' "$ISOLATED_RELEASE_SHA" | grep -Eq '^[0-9a-f]{40}$' || exit 1
+  git fetch origin main dev
+  [ "$(git rev-parse HEAD)" = "$ISOLATED_RELEASE_SHA" ] || exit 1
+  [ "$(git rev-parse origin/main)" = "$ISOLATED_RELEASE_SHA" ] || exit 1
+  git merge-base --is-ancestor "$ISOLATED_RELEASE_SHA" origin/dev || exit 1
+  ISOLATED_RELEASE_VALIDATED=1
+fi
+if [ "$TARGET" = "prod" ] && [ "${FORCE_BRANCH:-0}" != "1" ] && [ "$ISOLATED_RELEASE_VALIDATED" != 1 ]; then
   CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "detached")
-  if [ "$CURRENT_BRANCH" != "main" ]; then
-    echo "❌ DEPLOY BLOCKED: прод деплоится только из ветки main"
-    echo "   Текущая ветка: $CURRENT_BRANCH"
+  git fetch origin --quiet 2>/dev/null || true
+  ORIGIN_DEV_SHA=$(git rev-parse origin/dev 2>/dev/null || echo "")
+  HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
+  if [ "$CURRENT_BRANCH" != "dev" ] && [ -z "$ORIGIN_DEV_SHA" -o "$HEAD_SHA" != "$ORIGIN_DEV_SHA" ]; then
+    echo "❌ DEPLOY BLOCKED: прод деплоится только из ветки dev (или HEAD == origin/dev)"
+    echo "   Текущая ветка: $CURRENT_BRANCH, HEAD: ${HEAD_SHA:0:8}, origin/dev: ${ORIGIN_DEV_SHA:0:8}"
     echo ""
-    echo "→ git checkout main && git pull origin main"
-    echo "   ./scripts/deploy.sh prod"
+    echo "→ git checkout dev && git pull origin dev"
+    echo "   ./scripts/release.sh"
     echo ""
     echo "Исключение (хотфикс прямо из этой ветки): FORCE_BRANCH=1 ./scripts/deploy.sh prod"
     exit 1
@@ -51,7 +72,7 @@ fi
 if [ "${SKIP_GIT_GUARD:-0}" != "1" ]; then
   case "$TARGET" in
     dev)  GUARD_BRANCH="dev" ;;
-    prod) GUARD_BRANCH="main" ;;
+    prod) if [ "$ISOLATED_RELEASE_VALIDATED" = 1 ]; then GUARD_BRANCH="main"; else GUARD_BRANCH="dev"; fi ;;   # dev — единственная боевая ветка (09.09.2026)
     *)    GUARD_BRANCH="" ;;
   esac
 
@@ -63,7 +84,7 @@ if [ "${SKIP_GIT_GUARD:-0}" != "1" ]; then
     echo "→ Положи изменения в git через PR:"
     echo "   git checkout -b agent/<task> origin/dev"
     echo "   git add -A && git commit -m '...' && git push origin agent/<task>"
-    echo "   gh pr create --base dev"
+    echo "   tea pr create --base dev   # PR в Forgejo (git.aidaplus.ru)"
     echo ""
     echo "Hotfix владельцем — SKIP_GIT_GUARD=1 ./scripts/deploy.sh $TARGET"
     exit 1
@@ -423,37 +444,18 @@ echo "  ✅ HTML hash совпадает"
 echo "  ✅ Все hero-images на месте ($(echo "$HERO_IMAGES" | wc -l | tr -d ' ') файлов)"
 echo "  ✅ HTTP $HTTP_STATUS"
 
-# ── 6d. Smoke: критичные страницы + внутренние ссылки ─────────
-# Ловит то, что не видно по одной главной странице: битую перелинковку,
-# упавший раздел, 404 после переименования слага.
-if [ "${SKIP_SMOKE:-0}" != "1" ]; then
-  echo ""
-  echo "🔥 Smoke-тест..."
-  if ! "$SCRIPT_DIR/smoke.sh" "$HEALTH_URL"; then
-    fail_deploy "smoke-тест не пройден"
-  fi
-fi
-
-# ── 6e. Smoke: конверсионный контур (Метрика + reachGoal + /api/lead) ─
-# Только прод: на dev Метрика сознательно отключена (__isDevHost в Base.astro).
-# Ловит класс инцидента 16-18.04.2026 (Partytown): страницы отдают 200,
-# обычный smoke зелёный, а Метрика мертва → 0 конверсий → −60К₽ за 2 дня.
-# Провал → fail_deploy → авто-откат; Telegram-алерт шлёт сам скрипт.
-if [ "$TARGET" = "prod" ] && [ "${SKIP_SMOKE:-0}" != "1" ]; then
-  echo ""
-  if ! SSH_KEY="$SSH_KEY" SSH_HOST="$SSH_HOST" "$SCRIPT_DIR/smoke-conversion.sh" "$HEALTH_URL"; then
-    fail_deploy "конверсионный контур сломан (Метрика/reachGoal/api-lead)"
-  fi
-fi
-
-
-# ── 7. nginx: снипет SSR-редиректов (только prod) ─────────────
+# ── 6c. nginx: снипет SSR-редиректов (только prod) ────────────
 # SSR-редирект (prerender=false + Astro.redirect) работает только если nginx
 # проксирует его слаг в Node — иначе прод отдаёт 404 (инцидент b70ae7b2:
 # редирект жил в репо, блок в nginx руками не добавили, 404 с 02.08 по 07.08).
 # Снипет генерируется из репо и подключён include'ом в server-блок aidacamp.ru.
-# Шаг стоит ПОСЛЕ верификации и smoke: если nginx -t провалится, прод уже
-# проверен и здоров — восстанавливаем снипет и падаем без отката файлов.
+# Шаг стоит ДО smoke: smoke проверяет те же слаги из репо, и новый редирект без
+# location в nginx давал 404 → smoke красный → авто-откат здорового прода
+# (08.09.2026: два прод-деплоя подряд упали на /lager-na-leto-2026|2027/, пока
+# снипет не применили руками). Если nginx -t провалится — снипет восстанавливаем
+# из бэкапа и уходим в fail_deploy (файлы откатываются штатно). После отката
+# файлов новый снипет остаётся: лишний location лишь проксирует слаг в Node,
+# который отвечает по своему роутингу — это не хуже 404 от nginx.
 if [ "$TARGET" = "prod" ] && [ "${SKIP_NGINX_REDIRECTS:-0}" != "1" ]; then
   echo ""
   echo "🧭 nginx: снипет SSR-редиректов..."
@@ -491,15 +493,38 @@ if [ "$TARGET" = "prod" ] && [ "${SKIP_NGINX_REDIRECTS:-0}" != "1" ]; then
         fi
       "; then
         echo "  ❌ nginx -t провалился на новом снипете — снипет откачен, nginx не перезагружен."
-        echo "     Прод работает (верификация выше пройдена), но новые редиректы НЕ активны."
         echo "     Смотри: ssh $SSH_HOST 'nginx -t' и /etc/nginx/backups/"
-        exit 1
+        fail_deploy "nginx -t провалился на новом снипете SSR-редиректов"
       fi
       echo "  ✅ Снипет обновлён + nginx reload ($(grep -c 'location ~' "$SNIPPET_TMP_LOCAL") редиректов)"
     fi
   fi
   rm -f "$SNIPPET_TMP_LOCAL"
 fi
+
+# ── 6d. Smoke: критичные страницы + внутренние ссылки ─────────
+# Ловит то, что не видно по одной главной странице: битую перелинковку,
+# упавший раздел, 404 после переименования слага.
+if [ "${SKIP_SMOKE:-0}" != "1" ]; then
+  echo ""
+  echo "🔥 Smoke-тест..."
+  if ! "$SCRIPT_DIR/smoke.sh" "$HEALTH_URL"; then
+    fail_deploy "smoke-тест не пройден"
+  fi
+fi
+
+# ── 6e. Smoke: конверсионный контур (Метрика + reachGoal + /api/lead) ─
+# Только прод: на dev Метрика сознательно отключена (__isDevHost в Base.astro).
+# Ловит класс инцидента 16-18.04.2026 (Partytown): страницы отдают 200,
+# обычный smoke зелёный, а Метрика мертва → 0 конверсий → −60К₽ за 2 дня.
+# Провал → fail_deploy → авто-откат; Telegram-алерт шлёт сам скрипт.
+if [ "$TARGET" = "prod" ] && [ "${SKIP_SMOKE:-0}" != "1" ]; then
+  echo ""
+  if ! SSH_KEY="$SSH_KEY" SSH_HOST="$SSH_HOST" "$SCRIPT_DIR/smoke-conversion.sh" "$HEALTH_URL"; then
+    fail_deploy "конверсионный контур сломан (Метрика/reachGoal/api-lead)"
+  fi
+fi
+
 
 # Запишем SHA задеплоенного коммита на сервер для drift-check (cron алертит при расхождении)
 DEPLOY_SHA=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
