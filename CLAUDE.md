@@ -10,11 +10,14 @@
 
 - **Канон** — `origin` = `ssh://git@git.aidaplus.ru:2222/vlad/aidacamp-v2.git` (Forgejo). Ветки — от `origin/dev`,
   PR — в `dev` на Forgejo (`tea pr create --login aidaplus --repo vlad/aidacamp-v2 --base dev`; default branch там `dev`).
-- **GitHub** (`github` remote) — резерв: руками не пушить, оттуда не мержить, PR там не открывать. Код туда
-  приходит push-mirror'ом с Forgejo (все ветки, каждые 10 мин и при каждом push; включено 15.09.2026).
-  Ветка, которой нет на Forgejo, при следующем синке с GitHub исчезнет — работа живёт только на Forgejo.
-- Деплой не менялся: workflow в `.github/workflows/` исполняет GitHub Actions по push в `dev`, который теперь
-  делает зеркало. Общее правило по всем сайтам — `~/.claude/CLAUDE.md` → «Git: канон — Forgejo».
+- **CI/CD — Forgejo Actions:** те же `.github/workflows/*.yml` исполняет раннер Forgejo. Push в `dev` →
+  стейджинг → ff-промоут `main` ← `dev` → прод. Статус — веб Forgejo → Actions или
+  `GET /api/v1/repos/vlad/aidacamp-v2/actions/tasks`. `gh run list` про деплой больше ничего не знает.
+- **GitHub** (`github` remote) — резерв, не канон: руками не пушить, оттуда не мержить, PR там не открывать.
+  Код туда приходит push-mirror'ом с Forgejo (все ветки, каждые 10 мин и при каждом push; включено 15.09.2026).
+  Ветка, которой нет на Forgejo, при следующем синке с GitHub исчезнет. Workflow `Deploy` на GitHub выключен
+  вручную — не включать: двойной выкат с одних серверов ломает `npm ci` (ENOTEMPTY) обоим.
+  Общее правило по всем сайтам — `~/.claude/CLAUDE.md` → «Git: канон — Forgejo».
 ## 📂 Карта документов (читай первым)
 
 | Файл | За что отвечает |
